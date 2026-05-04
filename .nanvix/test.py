@@ -25,6 +25,7 @@ from pathlib import Path
 from typing import Any
 
 import sys as _sys
+
 _sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _loader import load_sibling
 
@@ -36,6 +37,7 @@ ramfs_mod = load_sibling("ramfs", __file__)
 # ---------------------------------------------------------------------------
 # Windows: download release artifacts as install cache
 # ---------------------------------------------------------------------------
+
 
 def _download_release_as_cache(
     repo_root: Path,
@@ -74,9 +76,11 @@ def _download_release_as_cache(
     asset_name = None
     for a in release.get("assets", []):
         name = a.get("name", "")
-        if (name.startswith(asset_prefix)
-                and name.endswith(".tar.bz2")
-                and "buildroot" not in name):
+        if (
+            name.startswith(asset_prefix)
+            and name.endswith(".tar.bz2")
+            and "buildroot" not in name
+        ):
             asset_url = a["browser_download_url"]
             asset_name = name
             break
@@ -103,9 +107,7 @@ def _download_release_as_cache(
         base = cache_dir.resolve()
         for member in tf.getmembers():
             if member.issym() or member.islnk():
-                raise tarfile.TarError(
-                    f"refusing to extract link entry: {member.name}"
-                )
+                raise tarfile.TarError(f"refusing to extract link entry: {member.name}")
             resolved = (base / member.name).resolve()
             if os.path.commonpath([str(base), str(resolved)]) != str(base):
                 raise tarfile.TarError(
@@ -155,6 +157,7 @@ def _download_release_as_cache(
 # Staging
 # ---------------------------------------------------------------------------
 
+
 def stage(
     sysroot: str | Path,
     toolchain: str | Path,
@@ -191,7 +194,10 @@ def stage(
             # without a prior ``./z build`` (which requires Docker).
             print("  Install cache not found — downloading release artifacts...")
             install_cache = _download_release_as_cache(
-                repo_root, platform, process_mode, memory_size,
+                repo_root,
+                platform,
+                process_mode,
+                memory_size,
             )
             shutil.copytree(install_cache, staging)
             print("  Using downloaded release as install cache")
@@ -227,7 +233,10 @@ def stage(
             # Install into staging, skipping the outer build prereq
             # and stubbing PYTHON_FOR_BUILD for the inner make.
             build_mod.install(
-                sysroot, toolchain, repo_root, staging,
+                sysroot,
+                toolchain,
+                repo_root,
+                staging,
                 platform=platform,
                 process_mode=process_mode,
                 memory_size=memory_size,
@@ -239,7 +248,9 @@ def stage(
             )
         else:
             build_mod.build(
-                sysroot, toolchain, repo_root,
+                sysroot,
+                toolchain,
+                repo_root,
                 platform=platform,
                 process_mode=process_mode,
                 memory_size=memory_size,
@@ -250,7 +261,10 @@ def stage(
             )
 
             build_mod.install(
-                sysroot, toolchain, repo_root, staging,
+                sysroot,
+                toolchain,
+                repo_root,
+                staging,
                 platform=platform,
                 process_mode=process_mode,
                 memory_size=memory_size,
@@ -282,7 +296,9 @@ def stage(
         else:
             print(f"  WARNING: pybuilddir.txt not found; cannot locate {scdata_name}")
     else:
-        print(f"  Verified: {scdata_name} installed ({scdata_dst.stat().st_size} bytes)")
+        print(
+            f"  Verified: {scdata_name} installed ({scdata_dst.stat().st_size} bytes)"
+        )
 
     # Copy test script — a simple smoke test that validates the interpreter.
     hello_script = sysroot_dir / "test_hello.py"
@@ -296,8 +312,14 @@ def stage(
     bin_dir = sysroot_dir / "bin"
     bin_dir.mkdir(parents=True, exist_ok=True)
     nanvix_home = Path(sysroot)
-    for binary in ["nanvixd.elf", "kernel.elf", "linuxd.elf", "uservm.elf",
-                    "nanvixd.exe", "kernel.exe"]:
+    for binary in [
+        "nanvixd.elf",
+        "kernel.elf",
+        "linuxd.elf",
+        "uservm.elf",
+        "nanvixd.exe",
+        "kernel.exe",
+    ]:
         src = nanvix_home / "bin" / binary
         if src.is_file():
             shutil.copy2(src, bin_dir / binary)
@@ -329,6 +351,7 @@ def stage(
 # ---------------------------------------------------------------------------
 # Ramfs staging (standalone mode)
 # ---------------------------------------------------------------------------
+
 
 def stage_ramfs(
     staging: Path,
@@ -366,7 +389,9 @@ def stage_ramfs(
 
     # Trim and build ramfs image (keep tests for test pipeline).
     ramfs_mod.trim_and_build(
-        ramfs_cache, nanvix_home, ramfs_img,
+        ramfs_cache,
+        nanvix_home,
+        ramfs_img,
         keep_tests=True,
     )
 
@@ -376,6 +401,7 @@ def stage_ramfs(
 # ---------------------------------------------------------------------------
 # Hello-world test
 # ---------------------------------------------------------------------------
+
 
 def run_hello(
     staging: Path,
@@ -393,7 +419,11 @@ def run_hello(
     use direct host-filesystem access (no ramfs).
     """
     sysroot = staging / "sysroot"
-    resolved_extra: list[str] = nanvixd_extra if nanvixd_extra is not None else config.PLATFORM_NANVIXD_ARGS.get(platform, [])
+    resolved_extra: list[str] = (
+        nanvixd_extra
+        if nanvixd_extra is not None
+        else config.PLATFORM_NANVIXD_ARGS.get(platform, [])
+    )
     # On Windows, CreateProcess searches for the executable relative to the
     # *parent's* CWD, not the child's cwd. Use an absolute path to avoid this.
     nanvixd = str((sysroot / "bin" / config.nanvixd_binary()).resolve())
@@ -417,9 +447,13 @@ def run_hello(
         # Standalone: semicolon-delimited env vars + ramfs.
         cmd = [
             nanvixd,
-            "-bin-dir", "./bin", "-ramfs", str(ramfs_img),
+            "-bin-dir",
+            "./bin",
+            "-ramfs",
+            str(ramfs_img),
             *resolved_extra,
-            "--", python_bin,
+            "--",
+            python_bin,
             f"-B ./test_hello.py;PYTHONHOME=/ PYTHONDONTWRITEBYTECODE=1"
             f" _PYTHON_SYSCONFIGDATA_NAME={config.SYSCONFIGDATA_NAME}",
         ]
@@ -428,7 +462,8 @@ def run_hello(
         cmd = [
             nanvixd,
             *resolved_extra,
-            "--", python_bin,
+            "--",
+            python_bin,
             "./test_hello.py",
         ]
 
@@ -452,9 +487,7 @@ def run_hello(
     if result.returncode != 0:
         print(f"  FAIL: Hello test exited with status {result.returncode}")
         print(output)
-        raise RuntimeError(
-            f"Hello test exited with status {result.returncode}"
-        )
+        raise RuntimeError(f"Hello test exited with status {result.returncode}")
 
     # Validate output.
     found_hello = False
@@ -477,6 +510,7 @@ def run_hello(
 # Regression tests
 # ---------------------------------------------------------------------------
 
+
 def run_regrtest(
     staging: Path,
     repo_root: Path,
@@ -497,7 +531,11 @@ def run_regrtest(
     if test_list is None:
         test_list = list(config.NANVIX_TEST_LIST)
 
-    resolved_nanvixd_extra: list[str] = nanvixd_extra if nanvixd_extra is not None else config.PLATFORM_NANVIXD_ARGS.get(platform, [])
+    resolved_nanvixd_extra: list[str] = (
+        nanvixd_extra
+        if nanvixd_extra is not None
+        else config.PLATFORM_NANVIXD_ARGS.get(platform, [])
+    )
     standalone = process_mode == "standalone"
 
     sysroot = staging / "sysroot"
@@ -531,21 +569,24 @@ def run_regrtest(
     print(f"Test: regrtest ({len(test_list)} modules, {process_mode})...")
     result = subprocess.run(cmd, cwd=sysroot, env=env)
     if result.returncode != 0:
-        raise RuntimeError(
-            f"regrtest failed with exit code {result.returncode}"
-        )
+        raise RuntimeError(f"regrtest failed with exit code {result.returncode}")
 
 
 # ---------------------------------------------------------------------------
 # Cleanup
 # ---------------------------------------------------------------------------
 
+
 def cleanup(repo_root: Path) -> None:
     """Clean up test artifacts."""
     staging = repo_root / ".nanvix" / "_test_staging"
     if staging.is_dir():
         shutil.rmtree(staging)
-    for name in ["cpython_test.log", "cpython_regrtest.log", "cpython_regrtest_batch.log"]:
+    for name in [
+        "cpython_test.log",
+        "cpython_regrtest.log",
+        "cpython_regrtest_batch.log",
+    ]:
         p = repo_root / ".nanvix" / name
         if p.is_file():
             p.unlink()
@@ -565,6 +606,7 @@ def deep_cleanup(repo_root: Path) -> None:
 # ---------------------------------------------------------------------------
 # Aggregate test runner
 # ---------------------------------------------------------------------------
+
 
 def run_all(
     sysroot: str | Path,
@@ -587,7 +629,9 @@ def run_all(
 
     # Stage.
     staging = stage(
-        sysroot, toolchain, repo_root,
+        sysroot,
+        toolchain,
+        repo_root,
         platform=platform,
         process_mode=process_mode,
         memory_size=memory_size,
@@ -614,7 +658,8 @@ def run_all(
 
     # Regression tests.
     run_regrtest(
-        staging, repo_root,
+        staging,
+        repo_root,
         process_mode=process_mode,
         platform=platform,
         test_list=test_list,

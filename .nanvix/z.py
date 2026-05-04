@@ -44,6 +44,7 @@ from nanvix_zutil import (
 # ---------------------------------------------------------------------------
 
 import sys as _sys
+
 _sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _loader import load_sibling
 
@@ -136,17 +137,13 @@ class CPythonBuild(ZScript):
         Works on both Linux (ELF binaries) and Windows (.exe binaries).
         """
         # CLI flag takes precedence; fall back to persisted config.
-        nanvix_path = self._local_nanvix_path or self.config.get(
-            _CFG_LOCAL_NANVIX, ""
-        )
+        nanvix_path = self._local_nanvix_path or self.config.get(_CFG_LOCAL_NANVIX, "")
         if not nanvix_path:
             return
 
         nanvix_path = os.path.abspath(os.path.expanduser(nanvix_path))
         if not os.path.isdir(nanvix_path):
-            log.warning(
-                f"--with-nanvix path no longer exists: {nanvix_path}"
-            )
+            log.warning(f"--with-nanvix path no longer exists: {nanvix_path}")
             return
 
         # Persist so subsequent commands reuse the same path.
@@ -172,8 +169,11 @@ class CPythonBuild(ZScript):
             binaries = ["nanvixd.exe", "mkramfs.exe", "kernel.elf"]
         else:
             binaries = [
-                "nanvixd.elf", "kernel.elf", "mkramfs.elf",
-                "linuxd.elf", "uservm.elf",
+                "nanvixd.elf",
+                "kernel.elf",
+                "mkramfs.elf",
+                "linuxd.elf",
+                "uservm.elf",
             ]
 
         for name in binaries:
@@ -262,7 +262,7 @@ class CPythonBuild(ZScript):
             release=(release == "yes"),
         )
 
-    def setup(self) -> None:
+    def setup(self) -> bool:
         """Download the Nanvix sysroot and dependencies.
 
         Delegates sysroot download, Windows binary augmentation, and
@@ -273,12 +273,13 @@ class CPythonBuild(ZScript):
         if local_nanvix:
             local_nanvix = os.path.abspath(os.path.expanduser(local_nanvix))
 
+        used_fallback = False
         if local_nanvix and os.path.isdir(local_nanvix):
             self._setup_from_local_nanvix(local_nanvix)
         else:
             # Base class handles: download sysroot, download Windows
             # binaries (if on Windows), verify required files.
-            super().setup()
+            used_fallback = super().setup()
 
         self._install_missing_deps()
 
@@ -287,7 +288,7 @@ class CPythonBuild(ZScript):
         buildroot = self.nanvix_dir / "buildroot"
         sysroot = self.config.get(CFG_SYSROOT, "")
         if not sysroot or not buildroot.is_dir():
-            return
+            return used_fallback
 
         sysroot_path = Path(sysroot)
         for subdir in ("lib", "include"):
@@ -307,6 +308,7 @@ class CPythonBuild(ZScript):
 
         # Overlay local Nanvix binaries last so they take precedence.
         self._overlay_local_nanvix()
+        return used_fallback
 
     def build(self) -> None:
         """Cross-compile python.elf and libpython.a for Nanvix."""
@@ -314,7 +316,9 @@ class CPythonBuild(ZScript):
         sysroot, toolchain = self._get_host_paths()
         release = os.environ.get(_MAKE_VAR_RELEASE, "no") == "yes"
         build_mod.build(
-            sysroot, toolchain, self.repo_root,
+            sysroot,
+            toolchain,
+            self.repo_root,
             **self._build_kwargs(release=release),
             run_fn=lambda *args, **kw: self.run(*args, **kw),  # type: ignore[arg-type]
             docker=self.docker is not None,
@@ -327,7 +331,9 @@ class CPythonBuild(ZScript):
         kwargs = self._build_kwargs()
 
         test_mod.run_all(
-            sysroot, toolchain, self.repo_root,
+            sysroot,
+            toolchain,
+            self.repo_root,
             **kwargs,
             run_fn=lambda *args, **kw: self.run(*args, **kw),  # type: ignore[arg-type]
             docker=self.docker is not None,
@@ -340,7 +346,9 @@ class CPythonBuild(ZScript):
         kwargs = self._build_kwargs(release=True)
 
         package_mod.package(
-            sysroot, toolchain, self.repo_root,
+            sysroot,
+            toolchain,
+            self.repo_root,
             **kwargs,
             run_fn=lambda *args, **kw: self.run(*args, **kw),  # type: ignore[arg-type]
             docker=self.docker is not None,
@@ -379,8 +387,11 @@ class CPythonBuild(ZScript):
             binaries = ["nanvixd.exe", "mkramfs.exe", "kernel.elf"]
         else:
             binaries = [
-                "nanvixd.elf", "kernel.elf", "mkramfs.elf",
-                "linuxd.elf", "uservm.elf",
+                "nanvixd.elf",
+                "kernel.elf",
+                "mkramfs.elf",
+                "linuxd.elf",
+                "uservm.elf",
             ]
         for name in binaries:
             src = local / "bin" / name

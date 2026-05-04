@@ -62,9 +62,7 @@ def run_batch(
             # string.  nanvixd splits on spaces for argv and on semicolons
             # for environment variables.
             modules_str = " ".join(batch)
-            regrtest_args = (
-                f"-B -m test --timeout={REGRTEST_TIMEOUT} {modules_str}"
-            )
+            regrtest_args = f"-B -m test --timeout={REGRTEST_TIMEOUT} {modules_str}"
             python_arg = (
                 f"{regrtest_args};PYTHONHOME=/ PYTHONDONTWRITEBYTECODE=1"
                 f" TMPDIR=/tmp"
@@ -106,9 +104,7 @@ def run_batch(
             ]
 
         try:
-            rc = subprocess.run(
-                cmd, stdin=subprocess.DEVNULL, timeout=600
-            ).returncode
+            rc = subprocess.run(cmd, stdin=subprocess.DEVNULL, timeout=600).returncode
         except subprocess.TimeoutExpired:
             print(f"  TIMEOUT: batch {batch_num} exceeded 600s")
             rc = 124  # match GNU timeout exit code
@@ -155,7 +151,9 @@ def main() -> int:
 
     total = len(modules)
     if failed:
-        print(f"  FAILED: {failed_batches} batch(es) ({len(failed)}/{total} modules affected):")
+        print(
+            f"  FAILED: {failed_batches} batch(es) ({len(failed)}/{total} modules affected):"
+        )
         print(f"    {' '.join(failed)}")
         return 1
 

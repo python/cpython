@@ -14,6 +14,7 @@ import subprocess
 from pathlib import Path
 
 import sys as _sys
+
 _sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _loader import load_sibling
 
