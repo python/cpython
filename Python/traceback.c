@@ -41,7 +41,7 @@
 
 #if defined(__STDC_NO_VLA__) && (__STDC_NO_VLA__ == 1)
 /* Use alloca() for VLAs. */
-#  define VLA(type, name, size) type *name = alloca(size)
+#  define VLA(type, name, size) type *name = alloca(sizeof(type) * (size))
 #elif !defined(__STDC_NO_VLA__) || (__STDC_NO_VLA__ == 0)
 /* Use actual C VLAs.*/
 #  define VLA(type, name, size) type name[size]
@@ -55,7 +55,7 @@
 
 #define MAX_STRING_LENGTH 500
 #define MAX_FRAME_DEPTH 100
-#define MAX_NTHREADS 100
+#define DEFAULT_MAX_NTHREADS 100
 
 /* Function from Parser/tokenizer/file_tokenizer.c */
 extern char* _PyTokenizer_FindEncodingFilename(int, PyObject *);
@@ -415,6 +415,9 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
     npath = PyList_Size(syspath);
 
     open = PyObject_GetAttr(io, &_Py_ID(open));
+    if (open == NULL) {
+        goto error;
+    }
     for (i = 0; i < npath; i++) {
         v = PyList_GetItem(syspath, i);
         if (v == NULL) {
@@ -1032,11 +1035,11 @@ _Py_DumpWideString(int fd, wchar_t *str)
 
    Return 0 on success. Return -1 if the frame is invalid. */
 
-static int
+static int _Py_NO_SANITIZE_THREAD
 dump_frame(int fd, _PyInterpreterFrame *frame)
 {
     if (frame->owner == FRAME_OWNED_BY_INTERPRETER) {
-        /* Ignore trampoline frame */
+        /* Ignore trampoline frames and base frame sentinel */
         return 0;
     }
 
@@ -1085,7 +1088,7 @@ dump_frame(int fd, _PyInterpreterFrame *frame)
     return res;
 }
 
-static int
+static int _Py_NO_SANITIZE_THREAD
 tstate_is_freed(PyThreadState *tstate)
 {
     if (_PyMem_IsPtrFreed(tstate)) {
@@ -1094,18 +1097,21 @@ tstate_is_freed(PyThreadState *tstate)
     if (_PyMem_IsPtrFreed(tstate->interp)) {
         return 1;
     }
+    if (_PyMem_IsULongFreed(tstate->thread_id)) {
+        return 1;
+    }
     return 0;
 }
 
 
-static int
+static int _Py_NO_SANITIZE_THREAD
 interp_is_freed(PyInterpreterState *interp)
 {
     return _PyMem_IsPtrFreed(interp);
 }
 
 
-static void
+static void _Py_NO_SANITIZE_THREAD
 dump_traceback(int fd, PyThreadState *tstate, int write_header)
 {
     if (write_header) {
@@ -1113,7 +1119,7 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
     }
 
     if (tstate_is_freed(tstate)) {
-        PUTS(fd, "  <tstate is freed>\n");
+        PUTS(fd, "  <freed thread state>\n");
         return;
     }
 
@@ -1138,12 +1144,16 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
             PUTS(fd, "  <freed frame>\n");
             break;
         }
+        // Read frame->previous early since memory can be freed during
+        // dump_frame()
+        _PyInterpreterFrame *previous = frame->previous;
+
         if (dump_frame(fd, frame) < 0) {
             PUTS(fd, "  <invalid frame>\n");
             break;
         }
 
-        frame = frame->previous;
+        frame = previous;
         if (frame == NULL) {
             break;
         }
@@ -1176,7 +1186,7 @@ _Py_DumpTraceback(int fd, PyThreadState *tstate)
 
 
 // Write the thread name
-static void
+static void _Py_NO_SANITIZE_THREAD
 write_thread_name(int fd, PyThreadState *tstate)
 {
 #ifndef MS_WINDOWS
@@ -1229,7 +1239,7 @@ write_thread_name(int fd, PyThreadState *tstate)
 
    This function is signal safe (except on Windows). */
 
-static void
+static void _Py_NO_SANITIZE_THREAD
 write_thread_id(int fd, PyThreadState *tstate, int is_current)
 {
     if (is_current)
@@ -1240,7 +1250,9 @@ write_thread_id(int fd, PyThreadState *tstate, int is_current)
                         tstate->thread_id,
                         sizeof(unsigned long) * 2);
 
-    write_thread_name(fd, tstate);
+    if (!_PyMem_IsULongFreed(tstate->thread_id)) {
+        write_thread_name(fd, tstate);
+    }
 
     PUTS(fd, " (most recent call first):\n");
 }
@@ -1251,10 +1263,15 @@ write_thread_id(int fd, PyThreadState *tstate, int is_current)
 
    The caller is responsible to call PyErr_CheckSignals() to call Python signal
    handlers if signals were received. */
-const char*
+const char* _Py_NO_SANITIZE_THREAD
 _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
-                         PyThreadState *current_tstate)
+                         PyThreadState *current_tstate,
+                         Py_ssize_t max_threads)
 {
+    if (max_threads == 0) {
+        max_threads = DEFAULT_MAX_NTHREADS;
+    }
+
     if (current_tstate == NULL) {
         /* _Py_DumpTracebackThreads() is called from signal handlers by
            faulthandler.
@@ -1298,23 +1315,29 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
         return "unable to get the thread head state";
 
     /* Dump the traceback of each thread */
-    tstate = PyInterpreterState_ThreadHead(interp);
-    unsigned int nthreads = 0;
+    Py_ssize_t nthreads = 0;
     _Py_BEGIN_SUPPRESS_IPH
     do
     {
         if (nthreads != 0)
             PUTS(fd, "\n");
-        if (nthreads >= MAX_NTHREADS) {
+        if (nthreads >= max_threads) {
             PUTS(fd, "...\n");
             break;
         }
+
+        if (tstate_is_freed(tstate)) {
+            PUTS(fd, "<freed thread state>\n");
+            break;
+        }
+
         write_thread_id(fd, tstate, tstate == current_tstate);
         if (tstate == current_tstate && tstate->interp->gc.collecting) {
             PUTS(fd, "  Garbage-collecting\n");
         }
         dump_traceback(fd, tstate, 0);
-        tstate = PyThreadState_Next(tstate);
+
+        tstate = tstate->next;
         nthreads++;
     } while (tstate != NULL);
     _Py_END_SUPPRESS_IPH

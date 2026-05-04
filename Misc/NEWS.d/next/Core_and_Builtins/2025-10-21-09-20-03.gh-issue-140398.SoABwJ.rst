@@ -1,4 +1,0 @@
-Fix memory leaks in :mod:`readline` functions
-:func:`~readline.read_init_file`, :func:`~readline.read_history_file`,
-:func:`~readline.write_history_file`, and
-:func:`~readline.append_history_file` when :c:func:`PySys_Audit` fails.

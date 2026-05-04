@@ -1,8 +1,19 @@
+What's New in IDLE 3.15.0
+(since 3.14.0)
+Released on 2026-10-01
+=========================
+
+
+gh-143774: Better explain the operation of Format / Format Paragraph.
+Patch by Terry J. Reedy.
+
+gh-139742: Colorize t-string prefixes for template strings in IDLE,
+as done for f-string prefixes.  Patch by Anuradha Agrawal.
+
 What's New in IDLE 3.14.0
 (since 3.13.0)
 Released on 2025-10-07
 =========================
-
 
 gh-129873: Simplify displaying the IDLE doc by only copying the text
 section of idle.html to idlelib/help.html. Patch by Stan Ulbrych.

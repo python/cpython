@@ -4,7 +4,7 @@
 .. _asyncio-event-loop:
 
 ==========
-Event Loop
+Event loop
 ==========
 
 **Source code:** :source:`Lib/asyncio/events.py`,
@@ -105,7 +105,7 @@ This documentation page contains the following sections:
 
 .. _asyncio-event-loop-methods:
 
-Event Loop Methods
+Event loop methods
 ==================
 
 Event loops have **low-level** APIs for the following:
@@ -297,8 +297,9 @@ clocks to track time.
    are called is undefined.
 
    The optional positional *args* will be passed to the callback when
-   it is called. If you want the callback to be called with keyword
-   arguments use :func:`functools.partial`.
+   it is called. Use :func:`functools.partial`
+   :ref:`to pass keyword arguments <asyncio-pass-keywords>` to
+   *callback*.
 
    An optional keyword-only *context* argument allows specifying a
    custom :class:`contextvars.Context` for the *callback* to run in.
@@ -360,7 +361,7 @@ clocks to track time.
    The :func:`asyncio.sleep` function.
 
 
-Creating Futures and Tasks
+Creating futures and tasks
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. method:: loop.create_future()
@@ -961,7 +962,7 @@ Transferring files
    .. versionadded:: 3.7
 
 
-TLS Upgrade
+TLS upgrade
 ^^^^^^^^^^^
 
 .. method:: loop.start_tls(transport, protocol, \
@@ -1034,8 +1035,8 @@ Watching file descriptors
 .. method:: loop.add_writer(fd, callback, *args)
 
    Start monitoring the *fd* file descriptor for write availability and
-   invoke *callback* with the specified arguments once *fd* is available for
-   writing.
+   invoke *callback* with the specified arguments *args* once *fd* is
+   available for writing.
 
    Any preexisting callback registered for *fd* is cancelled and replaced by
    *callback*.
@@ -1308,7 +1309,8 @@ Unix signals
 
 .. method:: loop.add_signal_handler(signum, callback, *args)
 
-   Set *callback* as the handler for the *signum* signal.
+   Set *callback* as the handler for the *signum* signal,
+   passing *args* as positional arguments.
 
    The callback will be invoked by *loop*, along with other queued callbacks
    and runnable coroutines of that event loop. Unlike signal handlers
@@ -1343,7 +1345,8 @@ Executing code in thread or process pools
 
 .. awaitablemethod:: loop.run_in_executor(executor, func, *args)
 
-   Arrange for *func* to be called in the specified executor.
+   Arrange for *func* to be called in the specified executor
+   passing *args* as positional arguments.
 
    The *executor* argument should be an :class:`concurrent.futures.Executor`
    instance. The default executor is used if *executor* is ``None``.
@@ -1428,7 +1431,7 @@ Executing code in thread or process pools
       :class:`~concurrent.futures.ThreadPoolExecutor`.
 
 
-Error Handling API
+Error handling API
 ^^^^^^^^^^^^^^^^^^
 
 Allows customizing how exceptions are handled in the event loop.
@@ -1531,7 +1534,7 @@ Enabling debug mode
    The :ref:`debug mode of asyncio <asyncio-debug-mode>`.
 
 
-Running Subprocesses
+Running subprocesses
 ^^^^^^^^^^^^^^^^^^^^
 
 Methods described in this subsections are low-level.  In regular
@@ -1669,7 +1672,7 @@ async/await code consider using the high-level
    are going to be used to construct shell commands.
 
 
-Callback Handles
+Callback handles
 ================
 
 .. class:: Handle
@@ -1712,7 +1715,7 @@ Callback Handles
       .. versionadded:: 3.7
 
 
-Server Objects
+Server objects
 ==============
 
 Server objects are created by :meth:`loop.create_server`,
@@ -1855,7 +1858,7 @@ Do not instantiate the :class:`Server` class directly.
 .. _asyncio-event-loops:
 .. _asyncio-event-loop-implementations:
 
-Event Loop Implementations
+Event loop implementations
 ==========================
 
 asyncio ships with two different event loop implementations:
@@ -1968,10 +1971,10 @@ callback uses the :meth:`loop.call_later` method to reschedule itself
 after 5 seconds, and then stops the event loop::
 
     import asyncio
-    import datetime
+    import datetime as dt
 
     def display_date(end_time, loop):
-        print(datetime.datetime.now())
+        print(dt.datetime.now())
         if (loop.time() + 1.0) < end_time:
             loop.call_later(1, display_date, end_time, loop)
         else:
@@ -2052,7 +2055,7 @@ Wait until a file descriptor received some data using the
 Set signal handlers for SIGINT and SIGTERM
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-(This ``signals`` example only works on Unix.)
+(This ``signal`` example only works on Unix.)
 
 Register handlers for signals :const:`~signal.SIGINT` and :const:`~signal.SIGTERM`
 using the :meth:`loop.add_signal_handler` method::

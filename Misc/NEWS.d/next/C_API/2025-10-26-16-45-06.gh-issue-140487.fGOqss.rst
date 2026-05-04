@@ -1,2 +1,0 @@
-Fix :c:macro:`Py_RETURN_NOTIMPLEMENTED` in limited C API 3.11 and older:
-don't treat ``Py_NotImplemented`` as immortal. Patch by Victor Stinner.

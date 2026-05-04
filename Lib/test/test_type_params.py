@@ -152,6 +152,13 @@ class TypeParamsInvalidTest(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, r"\(MRO\) for bases object, Generic"):
             class My[X](object): ...
 
+    def test_compile_error_in_type_param_bound(self):
+        # This should not crash, see gh-145187
+        check_syntax_error(
+            self,
+            "if True:\n class h[l:{7for*()in 0}]:2"
+        )
+
 
 class TypeParamsNonlocalTest(unittest.TestCase):
     def test_nonlocal_disallowed_01(self):

@@ -1,1 +1,0 @@
-Add :func:`enum.show_flag_values` and ``enum.bin`` to ``enum.__all__``.

@@ -1,3 +1,0 @@
-Remove outdated sencence in the documentation for :mod:`multiprocessing`,
-that implied that :class:`concurrent.futures.ThreadPoolExecutor` did not
-exist.

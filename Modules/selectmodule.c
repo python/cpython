@@ -15,6 +15,7 @@
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
 #include "pycore_time.h"          // _PyTime_FromSecondsObject()
+#include "pycore_tuple.h"         // _PyTuple_FromPairSteal
 
 #include <stdbool.h>
 #include <stddef.h>               // offsetof()
@@ -427,7 +428,7 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
     return ret;
 }
 
-#if defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)
+#if (defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)
 /*
  * poll() support
  */
@@ -626,7 +627,7 @@ select_poll_poll_impl(pollObject *self, PyObject *timeout_obj)
     PyObject *result_list = NULL;
     int poll_result, i, j;
     PyObject *value = NULL, *num = NULL;
-    PyTime_t timeout = -1, ms = -1, deadline = 0;
+    PyTime_t timeout = -1, deadline = 0;
     int async_err = 0;
 
     if (timeout_obj != Py_None) {
@@ -639,15 +640,28 @@ select_poll_poll_impl(pollObject *self, PyObject *timeout_obj)
             }
             return NULL;
         }
+    }
 
-        ms = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_TIMEOUT);
-        if (ms < INT_MIN || ms > INT_MAX) {
-            PyErr_SetString(PyExc_OverflowError, "timeout is too large");
+#ifdef HAVE_PPOLL
+    struct timespec ts, *ts_p = NULL;
+
+    if (timeout_obj != Py_None) {
+        if (_PyTime_AsTimespec(timeout, &ts) < 0) {
             return NULL;
         }
 
         if (timeout >= 0) {
-            deadline = _PyDeadline_Init(timeout);
+            ts_p = &ts;
+        }
+    }
+#else
+    PyTime_t ms = -1;
+
+    if (timeout_obj != Py_None) {
+        ms = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_TIMEOUT);
+        if (ms < INT_MIN || ms > INT_MAX) {
+            PyErr_SetString(PyExc_OverflowError, "timeout is too large");
+            return NULL;
         }
     }
 
@@ -660,6 +674,11 @@ select_poll_poll_impl(pollObject *self, PyObject *timeout_obj)
 #else
         ms = -1;
 #endif
+    }
+#endif
+
+    if (timeout >= 0) {
+        deadline = _PyDeadline_Init(timeout);
     }
 
     /* Avoid concurrent poll() invocation, issue 8865 */
@@ -681,7 +700,11 @@ select_poll_poll_impl(pollObject *self, PyObject *timeout_obj)
     do {
         Py_BEGIN_ALLOW_THREADS
         errno = 0;
+#ifdef HAVE_PPOLL
+        poll_result = ppoll(self->ufds, self->ufd_len, ts_p, NULL);
+#else
         poll_result = poll(self->ufds, self->ufd_len, (int)ms);
+#endif
         Py_END_ALLOW_THREADS
 
         if (errno != EINTR)
@@ -699,8 +722,16 @@ select_poll_poll_impl(pollObject *self, PyObject *timeout_obj)
                 poll_result = 0;
                 break;
             }
+#ifdef HAVE_PPOLL
+            if (_PyTime_AsTimespec(timeout, &ts) < 0) {
+                poll_result = -1;
+                break;
+            }
+            assert(ts_p == &ts);
+#else
             ms = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_CEILING);
-            /* retry poll() with the recomputed timeout */
+#endif
+            /* retry poll()/ppoll() with the recomputed timeout */
         }
     } while (1);
 
@@ -1045,9 +1076,7 @@ select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj)
             Py_XDECREF(num2);
             goto error;
         }
-        value = PyTuple_Pack(2, num1, num2);
-        Py_DECREF(num1);
-        Py_DECREF(num2);
+        value = _PyTuple_FromPairSteal(num1, num2);
         if (value == NULL)
             goto error;
         PyList_SET_ITEM(result_list, i, value);
@@ -1088,8 +1117,9 @@ static PyObject *
 select_devpoll_close_impl(devpollObject *self)
 /*[clinic end generated code: output=26b355bd6429f21b input=408fde21a377ccfb]*/
 {
-    errno = devpoll_internal_close(self);
-    if (errno < 0) {
+    int err = devpoll_internal_close(self);
+    if (err != 0) {
+        errno = err;
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
@@ -1416,8 +1446,9 @@ static PyObject *
 select_epoll_close_impl(pyEpoll_Object *self)
 /*[clinic end generated code: output=ee2144c446a1a435 input=f626a769192e1dbe]*/
 {
-    errno = pyepoll_internal_close(self);
-    if (errno < 0) {
+    int err = pyepoll_internal_close(self);
+    if (err != 0) {
+        errno = err;
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
@@ -2233,8 +2264,9 @@ static PyObject *
 select_kqueue_close_impl(kqueue_queue_Object *self)
 /*[clinic end generated code: output=d1c7df0b407a4bc1 input=6d763c858b17b690]*/
 {
-    errno = kqueue_queue_internal_close(self);
-    if (errno < 0) {
+    int err = kqueue_queue_internal_close(self);
+    if (err != 0) {
+        errno = err;
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
@@ -2466,7 +2498,7 @@ static PyGetSetDef kqueue_queue_getsetlist[] = {
 
 #include "clinic/selectmodule.c.h"
 
-#if defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)
+#if (defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)
 
 static PyMethodDef poll_methods[] = {
     SELECT_POLL_REGISTER_METHODDEF
@@ -2661,7 +2693,7 @@ _select_exec(PyObject *m)
     ADD_INT(PIPE_BUF);
 #endif
 
-#if defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)
+#if (defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)
 #ifdef __APPLE__
     if (select_have_broken_poll()) {
         if (PyObject_DelAttrString(m, "poll") == -1) {
@@ -2879,6 +2911,7 @@ _select_exec(PyObject *m)
 }
 
 static PyModuleDef_Slot _select_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, _select_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

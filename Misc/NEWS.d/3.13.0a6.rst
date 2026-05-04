@@ -224,7 +224,7 @@ When the collecting space becomes empty, the two spaces are swapped.
 .. date: 2023-10-14-00-05-17
 .. gh-issue: 109870
 .. nonce: oKpJ3P
-.. section: Core and Builtins
+.. section: Library
 
 Dataclasses now calls :func:`exec` once per dataclass, instead of once per
 method being added.  This can speed up dataclass creation by up to 20%.
@@ -234,7 +234,7 @@ method being added.  This can speed up dataclass creation by up to 20%.
 .. date: 2022-10-05-09-33-48
 .. gh-issue: 97901
 .. nonce: BOLluU
-.. section: Core and Builtins
+.. section: Library
 
 Mime type ``text/rtf`` is now supported by :mod:`mimetypes`.
 

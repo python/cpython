@@ -48,7 +48,9 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
     #data['base_interpreter'] = sys._base_executable
     data['base_interpreter'] = os.path.join(
         sysconfig.get_path('scripts'),
-        'python' + sysconfig.get_config_var('VERSION'),
+        "python"
+        + sysconfig.get_config_var('LDVERSION')
+        + sysconfig.get_config_var('EXE'),
     )
     data['platform'] = sysconfig.get_platform()
 

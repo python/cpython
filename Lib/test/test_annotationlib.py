@@ -8,6 +8,7 @@ import functools
 import itertools
 import pickle
 from string.templatelib import Template, Interpolation
+import types
 import typing
 import sys
 import unittest
@@ -120,8 +121,8 @@ class TestForwardRefFormat(unittest.TestCase):
             beta: +some,
             gamma: some < obj,
             delta: some | {obj: module},
-            epsilon: some | {obj, module},
-            zeta: some | [obj],
+            epsilon: some | {obj},
+            zeta: some | [obj, module],
             eta: some | (),
         ):
             pass
@@ -157,11 +158,11 @@ class TestForwardRefFormat(unittest.TestCase):
 
         epsilon_anno = anno["epsilon"]
         self.assertIsInstance(epsilon_anno, ForwardRef)
-        self.assertEqual(epsilon_anno, support.EqualToForwardRef("some | {obj, module}", owner=f))
+        self.assertEqual(epsilon_anno, support.EqualToForwardRef("some | {obj}", owner=f))
 
         zeta_anno = anno["zeta"]
         self.assertIsInstance(zeta_anno, ForwardRef)
-        self.assertEqual(zeta_anno, support.EqualToForwardRef("some | [obj]", owner=f))
+        self.assertEqual(zeta_anno, support.EqualToForwardRef("some | [obj, module]", owner=f))
 
         eta_anno = anno["eta"]
         self.assertIsInstance(eta_anno, ForwardRef)
@@ -645,6 +646,31 @@ class TestGetAnnotations(unittest.TestCase):
             get_annotations(foo, format=Format.FORWARDREF, eval_str=True)
             get_annotations(foo, format=Format.STRING, eval_str=True)
 
+    def test_eval_str_wrapped_cycle_self(self):
+        # gh-146556: self-referential __wrapped__ cycle must not hang.
+        def f(x: 'int') -> 'str': ...
+        f.__wrapped__ = f
+        # Cycle is detected and broken; globals from f itself are used.
+        result = get_annotations(f, eval_str=True)
+        self.assertEqual(result, {'x': int, 'return': str})
+
+    def test_eval_str_wrapped_cycle_mutual(self):
+        # gh-146556: mutual __wrapped__ cycle (a -> b -> a) must not hang.
+        def a(x: 'int'): ...
+        def b(): ...
+        a.__wrapped__ = b
+        b.__wrapped__ = a
+        result = get_annotations(a, eval_str=True)
+        self.assertEqual(result, {'x': int})
+
+    def test_eval_str_wrapped_chain_no_cycle(self):
+        # gh-146556: a valid (non-cyclic) __wrapped__ chain must still work.
+        def inner(x: 'int'): ...
+        def outer(x: 'int'): ...
+        outer.__wrapped__ = inner
+        result = get_annotations(outer, eval_str=True)
+        self.assertEqual(result, {'x': int})
+
     def test_stock_annotations(self):
         def foo(a: int, b: str):
             pass
@@ -883,6 +909,9 @@ class TestGetAnnotations(unittest.TestCase):
 
     def test_stringized_annotations_with_star_unpack(self):
         def f(*args: "*tuple[int, ...]"): ...
+        self.assertEqual(get_annotations(f, eval_str=True),
+                         {'args': (*tuple[int, ...],)[0]})
+        def f(*args: " *tuple[int, ...]"): ...
         self.assertEqual(get_annotations(f, eval_str=True),
                          {'args': (*tuple[int, ...],)[0]})
 
@@ -1590,6 +1619,84 @@ class TestCallAnnotateFunction(unittest.TestCase):
             # Some non-Format value
             annotationlib.call_annotate_function(annotate, 7)
 
+    def test_basic_non_function_annotate(self):
+        class Annotate:
+            def __call__(self, format, /, __Format=Format,
+                         __NotImplementedError=NotImplementedError):
+                if format == __Format.VALUE:
+                    return {'x': str}
+                elif format == __Format.VALUE_WITH_FAKE_GLOBALS:
+                    return {'x': int}
+                elif format == __Format.STRING:
+                    return {'x': "float"}
+                else:
+                    raise __NotImplementedError(format)
+
+        annotations = annotationlib.call_annotate_function(Annotate(), Format.VALUE)
+        self.assertEqual(annotations, {"x": str})
+
+        annotations = annotationlib.call_annotate_function(Annotate(), Format.STRING)
+        self.assertEqual(annotations, {"x": "float"})
+
+        with self.assertRaises(AttributeError) as cm:
+            annotations = annotationlib.call_annotate_function(
+                Annotate(), Format.FORWARDREF
+            )
+
+        self.assertEqual(cm.exception.name, "__builtins__")
+        self.assertIsInstance(cm.exception.obj, Annotate)
+
+    def test_full_non_function_annotate(self):
+        def outer():
+            local = str
+
+            class Annotate:
+                called_formats = []
+
+                def __call__(self, format=None, *, _self=None):
+                    nonlocal local
+                    if _self is not None:
+                        self, format = _self, self
+
+                    self.called_formats.append(format)
+                    if format == 1:  # VALUE
+                        return {"x": MyClass, "y": int, "z": local}
+                    if format == 2:  # VALUE_WITH_FAKE_GLOBALS
+                        return {"w": unknown, "x": MyClass, "y": int, "z": local}
+                    raise NotImplementedError
+
+                __globals__ = {"MyClass": MyClass}
+                __builtins__ = {"int": int}
+                __closure__ = (types.CellType(str),)
+                __defaults__ = (None,)
+
+                __kwdefaults__ = property(lambda self: dict(_self=self))
+                __code__ = property(lambda self: self.__call__.__code__)
+
+            return Annotate()
+
+        annotate = outer()
+
+        self.assertEqual(
+            annotationlib.call_annotate_function(annotate, Format.VALUE),
+            {"x": MyClass, "y": int, "z": str}
+        )
+        self.assertEqual(annotate.called_formats[-1], Format.VALUE)
+
+        self.assertEqual(
+            annotationlib.call_annotate_function(annotate, Format.STRING),
+            {"w": "unknown", "x": "MyClass", "y": "int", "z": "local"}
+        )
+        self.assertIn(Format.STRING, annotate.called_formats)
+        self.assertEqual(annotate.called_formats[-1], Format.VALUE_WITH_FAKE_GLOBALS)
+
+        self.assertEqual(
+            annotationlib.call_annotate_function(annotate, Format.FORWARDREF),
+            {"w": support.EqualToForwardRef("unknown"), "x": MyClass, "y": int, "z": str}
+        )
+        self.assertIn(Format.FORWARDREF, annotate.called_formats)
+        self.assertEqual(annotate.called_formats[-1], Format.VALUE_WITH_FAKE_GLOBALS)
+
     def test_error_from_value_raised(self):
         # Test that the error from format.VALUE is raised
         # if all formats fail
@@ -1859,6 +1966,39 @@ class TestForwardRefClass(unittest.TestCase):
         self.assertNotEqual(hash(c3), hash(c4))
         self.assertEqual(hash(c3), hash(ForwardRef("int", module=__name__)))
 
+    def test_forward_equality_and_hash_with_cells(self):
+        """Regression test for GH-143831."""
+        class A:
+            def one(_) -> C1:
+                """One cell."""
+
+            one_f = ForwardRef("C1", owner=one)
+            one_f_ga1 = get_annotations(one, format=Format.FORWARDREF)["return"]
+            one_f_ga2 = get_annotations(one, format=Format.FORWARDREF)["return"]
+            self.assertIsInstance(one_f_ga1.__cell__, types.CellType)
+            self.assertIs(one_f_ga1.__cell__, one_f_ga2.__cell__)
+
+            def two(_) -> C1 | C2:
+                """Two cells."""
+
+            two_f_ga1 = get_annotations(two, format=Format.FORWARDREF)["return"]
+            two_f_ga2 = get_annotations(two, format=Format.FORWARDREF)["return"]
+            self.assertIsNot(two_f_ga1.__cell__, two_f_ga2.__cell__)
+            self.assertIsInstance(two_f_ga1.__cell__, dict)
+            self.assertIsInstance(two_f_ga2.__cell__, dict)
+
+        type C1 = None
+        type C2 = None
+
+        self.assertNotEqual(A.one_f, A.one_f_ga1)
+        self.assertNotEqual(hash(A.one_f), hash(A.one_f_ga1))
+
+        self.assertEqual(A.one_f_ga1, A.one_f_ga2)
+        self.assertEqual(hash(A.one_f_ga1), hash(A.one_f_ga2))
+
+        self.assertEqual(A.two_f_ga1, A.two_f_ga2)
+        self.assertEqual(hash(A.two_f_ga1), hash(A.two_f_ga2))
+
     def test_forward_equality_namespace(self):
         def namespace1():
             a = ForwardRef("A")
@@ -1897,6 +2037,15 @@ class TestForwardRefClass(unittest.TestCase):
         self.assertEqual(
             repr(List[ForwardRef("int", owner="class")]),
             "typing.List[ForwardRef('int', owner='class')]",
+        )
+
+    def test_forward_repr_extra_names(self):
+        def f(a: undefined | str): ...
+
+        annos = get_annotations(f, format=Format.FORWARDREF)
+
+        self.assertRegex(
+            repr(annos['a']), r"ForwardRef\('undefined \| str'.*\)"
         )
 
     def test_forward_recursion_actually(self):
@@ -1974,6 +2123,17 @@ class TestForwardRefClass(unittest.TestCase):
     def test_evaluate_string_format(self):
         fr = ForwardRef("set[Any]")
         self.assertEqual(fr.evaluate(format=Format.STRING), "set[Any]")
+
+    def test_evaluate_string_format_extra_names(self):
+        # Test that internal extra_names are replaced when evaluating as strings
+        def f(a: unknown | str | int | list[str] | tuple[int, ...]): ...
+
+        fr = get_annotations(f, format=Format.FORWARDREF)['a']
+        # Test the cache is not populated before access
+        self.assertIsNone(fr.__resolved_str_cache__)
+
+        self.assertEqual(fr.evaluate(format=Format.STRING), "unknown | str | int | list[str] | tuple[int, ...]")
+        self.assertEqual(fr.__resolved_str_cache__, "unknown | str | int | list[str] | tuple[int, ...]")
 
     def test_evaluate_forwardref_format(self):
         fr = ForwardRef("undef")
@@ -2148,6 +2308,51 @@ class TestForwardRefClass(unittest.TestCase):
         fr = ForwardRef("1+")
         with self.assertRaises(SyntaxError):
             fr.evaluate()
+
+    def test_re_evaluate_generics(self):
+        global global_alias
+
+        # If we've already run this test before,
+        # ensure the variable is still undefined
+        if "global_alias" in globals():
+            del global_alias
+
+        class C:
+            x: global_alias[int]
+
+        # Evaluate the ForwardRef once
+        evaluated = get_annotations(C, format=Format.FORWARDREF)["x"].evaluate(
+            format=Format.FORWARDREF
+        )
+
+        # Now define the global and ensure that the ForwardRef evaluates
+        global_alias = list
+        self.assertEqual(evaluated.evaluate(), list[int])
+
+    def test_fwdref_evaluate_argument_mutation(self):
+        class C[T]:
+            nonlocal alias
+            x: alias[T]
+
+        # Mutable arguments
+        globals_ = globals()
+        globals_copy = globals_.copy()
+        locals_ = locals()
+        locals_copy = locals_.copy()
+
+        # Evaluate the ForwardRef, ensuring we use __cell__ and type params
+        get_annotations(C, format=Format.FORWARDREF)["x"].evaluate(
+            globals=globals_,
+            locals=locals_,
+            type_params=C.__type_params__,
+            format=Format.FORWARDREF,
+        )
+
+        # Check if the passed in mutable arguments equal the originals
+        self.assertEqual(globals_, globals_copy)
+        self.assertEqual(locals_, locals_copy)
+
+        alias = list
 
     def test_fwdref_final_class(self):
         with self.assertRaises(TypeError):
