@@ -1475,22 +1475,50 @@
             break;
         }
 
-        case _GUARD_NOS_DICT: {
-            JitOptRef nos;
-            nos = stack_pointer[-2];
-            if (sym_matches_type(nos, &PyDict_Type)) {
-                ADD_OP(_NOP, 0, 0);
-            }
-            sym_set_type(nos, &PyDict_Type);
-            break;
-        }
-
-        case _GUARD_NOS_ANY_DICT: {
+        case _GUARD_NOS_DICT_SUBSCRIPT: {
             JitOptRef nos;
             nos = stack_pointer[-2];
             PyTypeObject *tp = sym_get_type(nos);
-            if (tp == &PyDict_Type || tp == &PyFrozenDict_Type) {
-                ADD_OP(_NOP, 0, 0);
+            bool definite = true;
+            if (!tp) {
+                tp = sym_get_probable_type(nos);
+                definite = false;
+            }
+            if (tp && tp->tp_as_mapping &&
+                tp->tp_as_mapping->mp_subscript == _PyDict_Subscript) {
+                if (definite) {
+                    ADD_OP(_NOP, 0, 0);
+                }
+                else {
+                    ADD_OP(_GUARD_TYPE, 0, (uintptr_t)tp);
+                    sym_set_type(nos, tp);
+                }
+                PyType_Watch(TYPE_WATCHER_ID, (PyObject *)tp);
+                _Py_BloomFilter_Add(dependencies, tp);
+            }
+            break;
+        }
+
+        case _GUARD_NOS_DICT_STORE_SUBSCRIPT: {
+            JitOptRef nos;
+            nos = stack_pointer[-2];
+            PyTypeObject *tp = sym_get_type(nos);
+            bool definite = true;
+            if (!tp) {
+                tp = sym_get_probable_type(nos);
+                definite = false;
+            }
+            if (tp && tp->tp_as_mapping &&
+                tp->tp_as_mapping->mp_ass_subscript == _PyDict_StoreSubscript) {
+                if (definite) {
+                    ADD_OP(_NOP, 0, 0);
+                }
+                else {
+                    ADD_OP(_GUARD_TYPE, 0, (uintptr_t)tp);
+                    sym_set_type(nos, tp);
+                }
+                PyType_Watch(TYPE_WATCHER_ID, (PyObject *)tp);
+                _Py_BloomFilter_Add(dependencies, tp);
             }
             break;
         }
@@ -1582,14 +1610,10 @@
                     /* Start of uop copied from bytecodes for constant evaluation */
                     PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
                     PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
-                    assert(PyAnyDict_CheckExact(dict));
+                    assert(Py_TYPE(dict)->tp_as_mapping->mp_subscript == _PyDict_Subscript);
                     STAT_INC(BINARY_OP, hit);
-                    PyObject *res_o;
-                    int rc = PyDict_GetItemRef(dict, sub, &res_o);
-                    if (rc == 0) {
-                        _PyErr_SetKeyError(sub);
-                    }
-                    if (rc <= 0) {
+                    PyObject *res_o = _PyDict_Subscript(dict, sub);
+                    if (res_o == NULL) {
                         JUMP_TO_LABEL(error);
                     }
                     res_stackref = PyStackRef_FromPyObjectSteal(res_o);
@@ -1911,8 +1935,14 @@
             JitOptRef value;
             assert(oparg < NUM_COMMON_CONSTANTS);
             PyObject *val = _PyInterpreterState_GET()->common_consts[oparg];
-            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
-            value = PyJitRef_Borrow(sym_new_const(ctx, val));
+            if (_Py_IsImmortal(val)) {
+                ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
+                value = PyJitRef_Borrow(sym_new_const(ctx, val));
+            }
+            else {
+                ADD_OP(_LOAD_CONST_INLINE, 0, (uintptr_t)val);
+                value = sym_new_const(ctx, val);
+            }
             CHECK_STACK_BOUNDS(1);
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -2518,7 +2548,7 @@
             owner = stack_pointer[-1];
             uint32_t type_version = (uint32_t)this_instr->operand0;
             assert(type_version);
-            assert(this_instr[-1].opcode == _RECORD_TOS_TYPE);
+            assert(this_instr[-1].opcode == _RECORD_TOS_TYPE || this_instr[-1].opcode == _RECORD_TOS);
             if (sym_matches_type_version(owner, type_version)) {
                 ADD_OP(_NOP, 0, 0);
             }
@@ -2528,8 +2558,7 @@
                     probable_type->tp_version_tag == type_version) {
                     sym_set_type(owner, probable_type);
                     sym_set_type_version(owner, type_version);
-                    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)probable_type);
-                    _Py_BloomFilter_Add(dependencies, probable_type);
+                    watch_type(probable_type, dependencies);
                 }
                 else {
                     ctx->contradiction = true;
@@ -2554,10 +2583,7 @@
                     probable_type->tp_version_tag == type_version) {
                     sym_set_type(owner, probable_type);
                     sym_set_type_version(owner, type_version);
-                    if ((probable_type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
-                        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)probable_type);
-                        _Py_BloomFilter_Add(dependencies, probable_type);
-                    }
+                    watch_type(probable_type, dependencies);
                 }
                 else {
                     ctx->contradiction = true;
@@ -2676,17 +2702,14 @@
             JitOptRef owner;
             owner = stack_pointer[-1];
             uint32_t type_version = (uint32_t)this_instr->operand0;
-            PyObject *type = (PyObject *)_PyType_LookupByVersion(type_version);
-            if (type) {
+            PyObject *type = sym_get_probable_value(owner);
+            if (type != NULL && ((PyTypeObject *)type)->tp_version_tag == type_version) {
                 if (type == sym_get_const(ctx, owner)) {
                     ADD_OP(_NOP, 0, 0);
                 }
                 else {
                     sym_set_const(owner, type);
-                    if ((((PyTypeObject *)type)->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
-                        PyType_Watch(TYPE_WATCHER_ID, type);
-                        _Py_BloomFilter_Add(dependencies, type);
-                    }
+                    watch_type((PyTypeObject *)type, dependencies);
                 }
             }
             break;
@@ -3775,10 +3798,7 @@
                         0, (uintptr_t)descr);
                     ADD_OP(_SWAP, 3, 0);
                     optimize_pop_top(ctx, this_instr, method_and_self[0]);
-                    if ((type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
-                        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
-                        _Py_BloomFilter_Add(dependencies, type);
-                    }
+                    watch_type(type, dependencies);
                     method_and_self[0] = sym_new_const(ctx, descr);
                     optimized = true;
                 }
@@ -4314,8 +4334,7 @@
                 assert(PyFunction_Check(init));
                 callable = sym_new_const(ctx, init);
                 stack_pointer[-2 - oparg] = callable;
-                PyType_Watch(TYPE_WATCHER_ID, callable_o);
-                _Py_BloomFilter_Add(dependencies, callable_o);;
+                watch_type((PyTypeObject *)callable_o, dependencies);
             }
             else {
                 callable = sym_new_not_null(ctx);
