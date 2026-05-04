@@ -86,33 +86,31 @@ def get_family_record_names(
     record_slot_keys: dict[str, str],
 ) -> list[str]:
     member_records = [instruction_records[m.name] for m in family_members]
-    all_member_names = {n for names in member_records for n in names}
+    head_records = instruction_records[family_head.name]
     records: list[str] = []
     slot_index: dict[str, int] = {}
 
     def add(name: str) -> None:
         kind = record_slot_keys[name]
-        # Prefer the raw recorder if any member uses it; otherwise the given form.
-        raw = f"_RECORD_{kind}"
-        source = raw if raw in all_member_names else name
         existing = slot_index.get(kind)
         if existing is None:
             slot_index[kind] = len(records)
-            records.append(source)
-        elif records[existing] != source:
-            raise ValueError(
-                f"Family {family_head.name} has incompatible recorders for "
-                f"slot {kind}: {records[existing]} and {source}"
-            )
+            records.append(name)
+        elif records[existing] != name:
+            raw = f"_RECORD_{kind}"
+            if raw not in record_slot_keys:
+                raise ValueError(
+                    f"Family {family_head.name} has incompatible recorders for "
+                    f"slot {kind}: {records[existing]} and {name}, "
+                    f"and no raw recorder {raw} exists to use as a base."
+                )
+            records[existing] = raw
 
     for names in member_records:
         for name in names:
             add(name)
-    # Family head supplies any slots no member exercises.
-    for name in instruction_records[family_head.name]:
-        if record_slot_keys[name] not in slot_index:
-            slot_index[record_slot_keys[name]] = len(records)
-            records.append(name)
+    for name in head_records:
+        add(name)
     return records
 
 

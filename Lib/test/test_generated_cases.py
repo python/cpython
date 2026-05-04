@@ -2181,8 +2181,8 @@ class TestRecorderTableGeneration(unittest.TestCase):
         output = self.generate_tables(input)
         self.assert_slot_map_lines(
             output,
-            "[OP_RAW] = {1, 1, {0}}",
-            "[OP_RAW_SPECIALIZED] = {1, 0, {0}}",
+            "[OP_RAW] = {1, 0, {0}}",
+            "[OP_RAW_SPECIALIZED] = {1, 1, {0}}",
             "[OP_TYPED] = {1, 0, {0}}",
             "[OP_TYPED_SPECIALIZED] = {1, 0, {0}}",
         )
@@ -2227,8 +2227,8 @@ class TestRecorderTableGeneration(unittest.TestCase):
         output = self.generate_tables(input)
         self.assert_slot_map_lines(
             output,
-            "[OP] = {1, 1, {0}}",
-            "[OP_SPECIALIZED] = {1, 0, {0}}",
+            "[OP] = {1, 0, {0}}",
+            "[OP_SPECIALIZED] = {1, 1, {0}}",
         )
 
     def test_family_head_records_union_of_member_recorders(self):
@@ -2277,12 +2277,12 @@ class TestRecorderTableGeneration(unittest.TestCase):
             ),
             ["_RECORD_TOS_TYPE"],
         )
-        self.assertIn("[OP] = {1, {_RECORD_TOS_TYPE_INDEX}}", output)
-        self.assertIn("[OP_SPECIALIZED] = {1, {_RECORD_TOS_TYPE_INDEX}}", output)
+        self.assertIn("[OP] = {1, {_RECORD_TOS_INDEX}}", output)
+        self.assertIn("[OP_SPECIALIZED] = {1, {_RECORD_TOS_INDEX}}", output)
         self.assert_slot_map_lines(
             output,
-            "[OP] = {1, 1, {0}}",
-            "[OP_SPECIALIZED] = {1, 0, {0}}",
+            "[OP] = {1, 0, {0}}",
+            "[OP_SPECIALIZED] = {1, 1, {0}}",
         )
 
     def test_family_head_falls_back_for_missing_member_slots(self):

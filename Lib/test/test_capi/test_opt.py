@@ -598,7 +598,7 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_FOR_ITER_TIER_TWO", uops)
+        self.assertIn("_ITER_NEXT_INLINE", uops)
 
 
 @requires_specialization
@@ -1461,7 +1461,132 @@ class TestUopsOptimization(unittest.TestCase):
         res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertEqual(res, TIER2_THRESHOLD * (TIER2_THRESHOLD - 1) // 2)
         self.assertIsNotNone(ex)
-        self.assertIn("_FOR_ITER_TIER_TWO", get_opnames(ex))
+        self.assertIn("_ITER_NEXT_INLINE", get_opnames(ex))
+
+    def test_for_iter_direct_dict_items(self):
+        def testfunc(n):
+            d = {i: i * 2 for i in range(10)}
+            total = 0
+            for _ in range(n):
+                for k, v in d.items():
+                    total += k + v
+            return total
+
+        expected = 0
+        d = {i: i * 2 for i in range(10)}
+        for _ in range(TIER2_THRESHOLD):
+            for k, v in d.items():
+                expected += k + v
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, expected)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_ITER_NEXT_INLINE", uops)
+        self.assertNotIn("_FOR_ITER_TIER_TWO", uops)
+
+    def test_for_iter_direct_dict_keys(self):
+        def testfunc(n):
+            d = {i: i for i in range(10)}
+            total = 0
+            for _ in range(n):
+                for k in d.keys():
+                    total += k
+            return total
+
+        expected = TIER2_THRESHOLD * sum(range(10))
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, expected)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_ITER_NEXT_INLINE", uops)
+        self.assertNotIn("_FOR_ITER_TIER_TWO", uops)
+
+    def test_for_iter_direct_dict_values(self):
+        def testfunc(n):
+            d = {i: i * 3 for i in range(10)}
+            total = 0
+            for _ in range(n):
+                for v in d.values():
+                    total += v
+            return total
+
+        expected = TIER2_THRESHOLD * sum(i * 3 for i in range(10))
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, expected)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_ITER_NEXT_INLINE", uops)
+        self.assertNotIn("_FOR_ITER_TIER_TWO", uops)
+
+    def test_for_iter_direct_set(self):
+        def testfunc(n):
+            s = set(range(10))
+            total = 0
+            for _ in range(n):
+                for x in s:
+                    total += x
+            return total
+
+        expected = TIER2_THRESHOLD * sum(range(10))
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, expected)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_ITER_NEXT_INLINE", uops)
+        self.assertNotIn("_FOR_ITER_TIER_TWO", uops)
+
+    def test_for_iter_direct_reversed(self):
+        def testfunc(n):
+            lst = list(range(10))
+            total = 0
+            for _ in range(n):
+                for x in reversed(lst):
+                    total += x
+            return total
+
+        expected = TIER2_THRESHOLD * sum(range(10))
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, expected)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_ITER_NEXT_INLINE", uops)
+        self.assertNotIn("_FOR_ITER_TIER_TWO", uops)
+
+    def test_for_iter_direct_enumerate(self):
+        def testfunc(n):
+            lst = list(range(10))
+            total = 0
+            for _ in range(n):
+                for i, x in enumerate(lst):
+                    total += i + x
+            return total
+
+        expected = TIER2_THRESHOLD * sum(i + x for i, x in enumerate(range(10)))
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, expected)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_ITER_NEXT_INLINE", uops)
+        self.assertNotIn("_FOR_ITER_TIER_TWO", uops)
+
+    def test_for_iter_direct_zip(self):
+        def testfunc(n):
+            a = list(range(10))
+            b = list(range(10, 20))
+            total = 0
+            for _ in range(n):
+                for x, y in zip(a, b):
+                    total += x + y
+            return total
+
+        expected = TIER2_THRESHOLD * sum(x + y for x, y in zip(range(10), range(10, 20)))
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, expected)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_ITER_NEXT_INLINE", uops)
+        self.assertNotIn("_FOR_ITER_TIER_TWO", uops)
 
     def test_modified_local_is_seen_by_optimized_code(self):
         l = sys._getframe().f_locals
@@ -2273,9 +2398,48 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertEqual(uops.count("_GUARD_NOS_DICT"), 0)
-        self.assertEqual(uops.count("_STORE_SUBSCR_DICT_KNOWN_HASH"), 1)
+        self.assertEqual(uops.count("_GUARD_NOS_DICT_SUBSCRIPT"), 0)
+        self.assertEqual(uops.count("_GUARD_NOS_DICT_STORE_SUBSCRIPT"), 0)
         self.assertEqual(uops.count("_BINARY_OP_SUBSCR_DICT_KNOWN_HASH"), 1)
+
+    def test_dict_subclass_subscr(self):
+        import collections
+
+        def f(n):
+            x = 0
+            d = collections.defaultdict(int)
+            for _ in range(n):
+                d["key"] = 1
+                x += d["key"]
+            return x
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertEqual(uops.count("_BINARY_OP_SUBSCR_DICT_KNOWN_HASH"), 1)
+        self.assertEqual(uops.count("_STORE_SUBSCR_DICT_KNOWN_HASH"), 1)
+        self.assertEqual(uops.count("_GUARD_NOS_DICT_SUBSCRIPT"), 0)
+        self.assertEqual(uops.count("_GUARD_NOS_DICT_STORE_SUBSCRIPT"), 0)
+        self.assertEqual(uops.count("_GUARD_TYPE"), 1)
+
+    def test_dict_subclass_subscr_with_override(self):
+        class MyDict(dict):
+            def __getitem__(self, key):
+                return 42
+
+        def f(n):
+            d = MyDict()
+            x = 0
+            for _ in range(n):
+                x += d["anything"]
+            return x
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, 42 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertEqual(uops.count("_BINARY_OP_SUBSCR_INIT_CALL"), 1)
 
     def test_remove_guard_for_known_type_list(self):
         def f(n):
@@ -2599,6 +2763,23 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_BINARY_OP_SUBSCR_DICT_KNOWN_HASH", uops)
         self.assertNotIn("_BINARY_OP_SUBSCR_DICT", uops)
 
+    def test_binary_op_subscr_defaultdict_known_hash(self):
+        # str, int, bytes, float, complex, tuple and any python object which has generic hash
+        import collections
+
+        def testfunc(n):
+            x = 0
+            d = collections.defaultdict(lambda: 1)
+            for _ in range(n):
+                x += d['a'] + d[1] + d[b'b'] + d[(1, 2)] + d[_GENERIC_KEY] + d[1.5] + d[1+2j]
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 7 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_SUBSCR_DICT_KNOWN_HASH", uops)
+        self.assertNotIn("_BINARY_OP_SUBSCR_DICT", uops)
 
     def test_binary_op_subscr_constant_frozendict_known_hash(self):
         def testfunc(n):
@@ -2618,6 +2799,28 @@ class TestUopsOptimization(unittest.TestCase):
         # str, int, bytes, float, complex, tuple and any python object which has generic hash
         def testfunc(n):
             d = {'a': 0, 1: 0, b'b': 0, (1, 2): 0, _GENERIC_KEY: 0, 1.5: 0, 1+2j: 0}
+            for _ in range(n):
+                d['a'] += 1
+                d[1] += 2
+                d[b'b'] += 3
+                d[(1, 2)] += 4
+                d[_GENERIC_KEY] += 5
+                d[1.5] += 6
+                d[1+2j] += 7
+            return d['a'] + d[1] + d[b'b'] + d[(1, 2)] + d[_GENERIC_KEY] + d[1.5] + d[1+2j]
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 28 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_STORE_SUBSCR_DICT_KNOWN_HASH", uops)
+        self.assertNotIn("_STORE_SUBSCR_DICT", uops)
+
+    def test_store_subscr_defaultdict_known_hash(self):
+        import collections
+
+        def testfunc(n):
+            d = collections.defaultdict(lambda: 0)
             for _ in range(n):
                 d['a'] += 1
                 d[1] += 2
