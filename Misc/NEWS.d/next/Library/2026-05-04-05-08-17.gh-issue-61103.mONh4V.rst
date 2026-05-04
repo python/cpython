@@ -1,0 +1,2 @@
+Use :pep:`3118` type codes for the buffer protocol support of complex types
+in the :mod:`ctypes`.  Patch by Sergey B Kirpichev.

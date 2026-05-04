@@ -1,3 +1,4 @@
+import ctypes
 import re
 import sys
 import unittest
@@ -230,6 +231,14 @@ native_types = [
     (CFUNCTYPE(None),           "X{}",                  (),           CFUNCTYPE(None)),
 
     ]
+
+if hasattr(ctypes, 'c_float_complex'):
+    c_float_complex = ctypes.c_float_complex
+    c_double_complex = ctypes.c_double_complex
+    c_longdouble_complex = ctypes.c_longdouble_complex
+    native_types.extend([(c_float_complex * 4,      "<Zf", (4,), c_float_complex),
+                         (c_double_complex * 4,     "<Zd", (4,), c_double_complex),
+                         (c_longdouble_complex * 4, "<Zg", (4,), c_longdouble_complex)])
 
 
 class BEPoint(BigEndianStructure):

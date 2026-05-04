@@ -311,7 +311,7 @@ _ctypes_alloc_format_string_for_type(char code, int big_endian)
         break;
     }
 
-    result = PyMem_Malloc(3);
+    result = PyMem_Malloc(4);
     if (result == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -320,6 +320,7 @@ _ctypes_alloc_format_string_for_type(char code, int big_endian)
     result[0] = big_endian ? '>' : '<';
     result[1] = pep_code;
     result[2] = '\0';
+    result[3] = '\0';
     return result;
 }
 
@@ -3120,7 +3121,27 @@ PyCData_NewGetBuffer(PyObject *myself, Py_buffer *view, int flags)
     view->len = self->b_size;
     view->readonly = 0;
     /* use default format character if not set */
-    view->format = info->format ? info->format : "B";
+    if (!info->format) {
+        view->format = "B";
+    }
+    else {
+        view->format = info->format;
+        if (view->format[1] == 'F') {
+            view->format[1] = 'Z';
+            view->format[2] = 'f';
+            view->format[3] = '\0';
+        }
+        if (view->format[1] == 'D') {
+            view->format[1] = 'Z';
+            view->format[2] = 'd';
+            view->format[3] = '\0';
+        }
+        if (view->format[1] == 'G') {
+            view->format[1] = 'Z';
+            view->format[2] = 'g';
+            view->format[3] = '\0';
+        }
+    }
     view->ndim = info->ndim;
     view->shape = info->shape;
     view->itemsize = item_info->size;
