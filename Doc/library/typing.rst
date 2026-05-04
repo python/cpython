@@ -2156,7 +2156,7 @@ without the dedicated syntax, as documented below.
       Added support for the ``bound``, ``covariant``, ``contravariant``, and
       ``infer_variance`` parameters.
 
-.. class:: ParamSpec(name, *, bound=None, covariant=False, contravariant=False, default=typing.NoDefault)
+.. class:: ParamSpec(name, *, bound=None, covariant=False, contravariant=False, infer_variance=False, default=typing.NoDefault)
 
    Parameter specification variable.  A specialized version of
    :ref:`type variables <typevar>`.

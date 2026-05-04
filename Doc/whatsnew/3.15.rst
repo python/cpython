@@ -322,6 +322,9 @@ Key features include:
   * Profile running processes by PID (``attach``) - attach to already-running applications
   * Run and profile scripts directly (``run``) - profile from the very start of execution
   * Execute and profile modules (``run -m``) - profile packages run as ``python -m module``
+  * Capture a one-shot snapshot of a running process (``dump``) - print a
+    traceback-style stack of every thread (or all asyncio tasks with
+    ``--async-aware``). Useful for investigating hung processes.
 
 * **Multiple profiling modes**: Choose what to measure based on your performance investigation:
 
