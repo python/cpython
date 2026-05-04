@@ -4,6 +4,55 @@
 extern "C" {
 #endif
 
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
+#endif
+
+#include "pycore_backoff.h"     // _Py_BackoffCounter
+#include "pycore_structs.h"     // _Py_CODEUNIT
+#include "pycore_tstate.h"      // _PyThreadStateImpl
+
+
+#define _PyCode_CODE(CO) _Py_RVALUE((_Py_CODEUNIT *)(CO)->co_code_adaptive)
+#define _PyCode_NBYTES(CO) (Py_SIZE(CO) * (Py_ssize_t)sizeof(_Py_CODEUNIT))
+
+
+/* These macros only remain defined for compatibility. */
+#define _Py_OPCODE(word) ((word).op.code)
+#define _Py_OPARG(word) ((word).op.arg)
+
+static inline _Py_CODEUNIT
+_py_make_codeunit(uint8_t opcode, uint8_t oparg)
+{
+    // No designated initialisers because of C++ compat
+    _Py_CODEUNIT word;
+    word.op.code = opcode;
+    word.op.arg = oparg;
+    return word;
+}
+
+static inline void
+_py_set_opcode(_Py_CODEUNIT *word, uint8_t opcode)
+{
+    word->op.code = opcode;
+}
+
+#define _Py_MAKE_CODEUNIT(opcode, oparg) _py_make_codeunit((opcode), (oparg))
+#define _Py_SET_OPCODE(word, opcode) _py_set_opcode(&(word), (opcode))
+
+
+// We hide some of the newer PyCodeObject fields behind macros.
+// This helps with backporting certain changes to 3.12.
+#define _PyCode_HAS_EXECUTORS(CODE) \
+    (CODE->co_executors != NULL)
+#define _PyCode_HAS_INSTRUMENTATION(CODE) \
+    (CODE->_co_instrumentation_version > 0)
+
+
+extern PyStatus _PyCode_Init(PyInterpreterState *interp);
+extern void _PyCode_Fini(PyInterpreterState *interp);
+
+
 /* PEP 659
  * Specialization and quickening structs and helper functions
  */
@@ -16,110 +65,112 @@ extern "C" {
 #define CACHE_ENTRIES(cache) (sizeof(cache)/sizeof(_Py_CODEUNIT))
 
 typedef struct {
-    _Py_CODEUNIT counter;
-    _Py_CODEUNIT index;
-    _Py_CODEUNIT module_keys_version[2];
-    _Py_CODEUNIT builtin_keys_version;
+    _Py_BackoffCounter counter;
+    uint16_t module_keys_version;
+    uint16_t builtin_keys_version;
+    uint16_t index;
 } _PyLoadGlobalCache;
 
 #define INLINE_CACHE_ENTRIES_LOAD_GLOBAL CACHE_ENTRIES(_PyLoadGlobalCache)
 
 typedef struct {
-    _Py_CODEUNIT counter;
+    _Py_BackoffCounter counter;
+    uint16_t external_cache[4];
 } _PyBinaryOpCache;
 
 #define INLINE_CACHE_ENTRIES_BINARY_OP CACHE_ENTRIES(_PyBinaryOpCache)
 
 typedef struct {
-    _Py_CODEUNIT counter;
+    _Py_BackoffCounter counter;
 } _PyUnpackSequenceCache;
 
 #define INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE \
     CACHE_ENTRIES(_PyUnpackSequenceCache)
 
 typedef struct {
-    _Py_CODEUNIT counter;
-    _Py_CODEUNIT mask;
+    _Py_BackoffCounter counter;
 } _PyCompareOpCache;
 
 #define INLINE_CACHE_ENTRIES_COMPARE_OP CACHE_ENTRIES(_PyCompareOpCache)
 
 typedef struct {
-    _Py_CODEUNIT counter;
-    _Py_CODEUNIT type_version[2];
-    _Py_CODEUNIT func_version;
-} _PyBinarySubscrCache;
+    _Py_BackoffCounter counter;
+} _PySuperAttrCache;
 
-#define INLINE_CACHE_ENTRIES_BINARY_SUBSCR CACHE_ENTRIES(_PyBinarySubscrCache)
+#define INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR CACHE_ENTRIES(_PySuperAttrCache)
 
 typedef struct {
-    _Py_CODEUNIT counter;
-    _Py_CODEUNIT version[2];
-    _Py_CODEUNIT index;
+    _Py_BackoffCounter counter;
+    uint16_t version[2];
+    uint16_t index;
 } _PyAttrCache;
 
-#define INLINE_CACHE_ENTRIES_LOAD_ATTR CACHE_ENTRIES(_PyAttrCache)
+typedef struct {
+    _Py_BackoffCounter counter;
+    uint16_t type_version[2];
+    union {
+        uint16_t keys_version[2];
+        uint16_t dict_offset;
+    };
+    uint16_t descr[4];
+} _PyLoadMethodCache;
+
+
+// MUST be the max(_PyAttrCache, _PyLoadMethodCache)
+#define INLINE_CACHE_ENTRIES_LOAD_ATTR CACHE_ENTRIES(_PyLoadMethodCache)
 
 #define INLINE_CACHE_ENTRIES_STORE_ATTR CACHE_ENTRIES(_PyAttrCache)
 
 typedef struct {
-    _Py_CODEUNIT counter;
-    _Py_CODEUNIT type_version[2];
-    _Py_CODEUNIT dict_offset;
-    _Py_CODEUNIT keys_version[2];
-    _Py_CODEUNIT descr[4];
-} _PyLoadMethodCache;
-
-#define INLINE_CACHE_ENTRIES_LOAD_METHOD CACHE_ENTRIES(_PyLoadMethodCache)
-
-typedef struct {
-    _Py_CODEUNIT counter;
-    _Py_CODEUNIT func_version[2];
-    _Py_CODEUNIT min_args;
+    _Py_BackoffCounter counter;
+    uint16_t func_version[2];
 } _PyCallCache;
 
 #define INLINE_CACHE_ENTRIES_CALL CACHE_ENTRIES(_PyCallCache)
+#define INLINE_CACHE_ENTRIES_CALL_KW CACHE_ENTRIES(_PyCallCache)
 
 typedef struct {
-    _Py_CODEUNIT counter;
-} _PyPrecallCache;
-
-#define INLINE_CACHE_ENTRIES_PRECALL CACHE_ENTRIES(_PyPrecallCache)
-
-typedef struct {
-    _Py_CODEUNIT counter;
+    _Py_BackoffCounter counter;
 } _PyStoreSubscrCache;
 
 #define INLINE_CACHE_ENTRIES_STORE_SUBSCR CACHE_ENTRIES(_PyStoreSubscrCache)
 
-#define QUICKENING_WARMUP_DELAY 8
+typedef struct {
+    _Py_BackoffCounter counter;
+} _PyForIterCache;
 
-/* We want to compare to zero for efficiency, so we offset values accordingly */
-#define QUICKENING_INITIAL_WARMUP_VALUE (-QUICKENING_WARMUP_DELAY)
+#define INLINE_CACHE_ENTRIES_FOR_ITER CACHE_ENTRIES(_PyForIterCache)
 
-void _PyCode_Quicken(PyCodeObject *code);
+typedef struct {
+    _Py_BackoffCounter counter;
+} _PyGetIterCache;
 
-static inline void
-_PyCode_Warmup(PyCodeObject *code)
-{
-    if (code->co_warmup != 0) {
-        code->co_warmup++;
-        if (code->co_warmup == 0) {
-            _PyCode_Quicken(code);
-        }
-    }
-}
+#define INLINE_CACHE_ENTRIES_GET_ITER CACHE_ENTRIES(_PyGetIterCache)
 
-extern uint8_t _PyOpcode_Adaptive[256];
+typedef struct {
+    _Py_BackoffCounter counter;
+} _PySendCache;
 
-extern Py_ssize_t _Py_QuickenedCount;
+#define INLINE_CACHE_ENTRIES_SEND CACHE_ENTRIES(_PySendCache)
 
-// Borrowed references to common callables:
-struct callable_cache {
-    PyObject *isinstance;
-    PyObject *len;
-    PyObject *list_append;
-};
+typedef struct {
+    _Py_BackoffCounter counter;
+    uint16_t version[2];
+} _PyToBoolCache;
+
+#define INLINE_CACHE_ENTRIES_TO_BOOL CACHE_ENTRIES(_PyToBoolCache)
+
+typedef struct {
+    _Py_BackoffCounter counter;
+} _PyContainsOpCache;
+
+#define INLINE_CACHE_ENTRIES_CONTAINS_OP CACHE_ENTRIES(_PyContainsOpCache)
+
+typedef struct {
+    _Py_BackoffCounter counter;
+} _PyCallFunctionExCache;
+
+#define INLINE_CACHE_ENTRIES_CALL_FUNCTION_EX CACHE_ENTRIES(_PyCallFunctionExCache)
 
 /* "Locals plus" for a code object is the set of locals + cell vars +
  * free vars.  This relates to variable names as well as offsets into
@@ -138,11 +189,14 @@ struct callable_cache {
  */
 
 // Note that these all fit within a byte, as do combinations.
-// Later, we will use the smaller numbers to differentiate the different
-// kinds of locals (e.g. pos-only arg, varkwargs, local-only).
-#define CO_FAST_LOCAL   0x20
-#define CO_FAST_CELL    0x40
-#define CO_FAST_FREE    0x80
+#define CO_FAST_ARG_POS (0x02)  // pos-only, pos-or-kw, varargs
+#define CO_FAST_ARG_KW  (0x04)  // kw-only, pos-or-kw, varkwargs
+#define CO_FAST_ARG_VAR (0x08)  // varargs, varkwargs
+#define CO_FAST_ARG     (CO_FAST_ARG_POS | CO_FAST_ARG_KW | CO_FAST_ARG_VAR)
+#define CO_FAST_HIDDEN  (0x10)
+#define CO_FAST_LOCAL   (0x20)
+#define CO_FAST_CELL    (0x40)
+#define CO_FAST_FREE    (0x80)
 
 typedef unsigned char _PyLocals_Kind;
 
@@ -207,8 +261,8 @@ struct _PyCodeConstructor {
 // back to a regular function signature.  Regardless, this approach
 // wouldn't be appropriate if this weren't a strictly internal API.
 // (See the comments in https://github.com/python/cpython/pull/26258.)
-PyAPI_FUNC(int) _PyCode_Validate(struct _PyCodeConstructor *);
-PyAPI_FUNC(PyCodeObject *) _PyCode_New(struct _PyCodeConstructor *);
+extern int _PyCode_Validate(struct _PyCodeConstructor *);
+extern PyCodeObject* _PyCode_New(struct _PyCodeConstructor *);
 
 
 /* Private API */
@@ -220,7 +274,7 @@ extern PyObject* _PyCode_GetFreevars(PyCodeObject *);
 extern PyObject* _PyCode_GetCode(PyCodeObject *);
 
 /** API for initializing the line number tables. */
-extern int _PyCode_InitAddressRange(PyCodeObject* co, PyCodeAddressRange *bounds);
+PyAPI_FUNC(int) _PyCode_InitAddressRange(PyCodeObject* co, PyCodeAddressRange *bounds);
 
 /** Out of process API for initializing the location table. */
 extern void _PyLineTable_InitAddressRange(
@@ -230,215 +284,122 @@ extern void _PyLineTable_InitAddressRange(
     PyCodeAddressRange *range);
 
 /** API for traversing the line number table. */
-extern int _PyLineTable_NextAddressRange(PyCodeAddressRange *range);
+PyAPI_FUNC(int) _PyLineTable_NextAddressRange(PyCodeAddressRange *range);
 extern int _PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
 
+// Similar to PyCode_Addr2Line(), but return -1 if the code object is invalid
+// and can be called without an attached tstate. Used by dump_frame() in
+// Python/traceback.c. The function uses heuristics to detect freed memory,
+// it's not 100% reliable.
+extern int _PyCode_SafeAddr2Line(PyCodeObject *co, int addr);
 
-#define ADAPTIVE_CACHE_BACKOFF 64
 
-/* Specialization functions */
+/** API for executors */
+extern void _PyCode_Clear_Executors(PyCodeObject *code);
 
-extern int _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr,
-                                   PyObject *name);
-extern int _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr,
+
+#define ENABLE_SPECIALIZATION 1
+
+/* Specialization functions, these are exported only for other re-generated
+ * interpreters to call */
+
+PyAPI_FUNC(void) _Py_Specialize_LoadSuperAttr(_PyStackRef global_super, _PyStackRef cls,
+                                         _Py_CODEUNIT *instr, int load_method);
+PyAPI_FUNC(void) _Py_Specialize_LoadAttr(_PyStackRef owner, _Py_CODEUNIT *instr,
                                     PyObject *name);
-extern int _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins, _Py_CODEUNIT *instr, PyObject *name);
-extern int _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr,
+PyAPI_FUNC(void) _Py_Specialize_StoreAttr(_PyStackRef owner, _Py_CODEUNIT *instr,
                                      PyObject *name);
-extern int _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container, _Py_CODEUNIT *instr);
-extern int _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *instr);
-extern int _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr,
-                               int nargs, PyObject *kwnames);
-extern int _Py_Specialize_Precall(PyObject *callable, _Py_CODEUNIT *instr,
-                                  int nargs, PyObject *kwnames, int oparg);
-extern void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
-                                    int oparg, PyObject **locals);
-extern void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
+PyAPI_FUNC(void) _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins,
+                                      _Py_CODEUNIT *instr, PyObject *name);
+PyAPI_FUNC(void) _Py_Specialize_StoreSubscr(_PyStackRef container, _PyStackRef sub,
+                                       _Py_CODEUNIT *instr);
+PyAPI_FUNC(void) _Py_Specialize_Call(_PyStackRef callable, _PyStackRef self_or_null,
+                                _Py_CODEUNIT *instr, int nargs);
+PyAPI_FUNC(void) _Py_Specialize_CallKw(_PyStackRef callable, _Py_CODEUNIT *instr,
+                                  int nargs);
+PyAPI_FUNC(void) _Py_Specialize_BinaryOp(_PyStackRef lhs, _PyStackRef rhs, _Py_CODEUNIT *instr,
+                                    int oparg, _PyStackRef *locals);
+PyAPI_FUNC(void) _Py_Specialize_CompareOp(_PyStackRef lhs, _PyStackRef rhs,
                                      _Py_CODEUNIT *instr, int oparg);
-extern void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
+PyAPI_FUNC(void) _Py_Specialize_UnpackSequence(_PyStackRef seq, _Py_CODEUNIT *instr,
                                           int oparg);
+PyAPI_FUNC(void) _Py_Specialize_ForIter(_PyStackRef iter, _PyStackRef null_or_index, _Py_CODEUNIT *instr, int oparg);
+PyAPI_FUNC(void) _Py_Specialize_Send(_PyStackRef receiver, _Py_CODEUNIT *instr);
+PyAPI_FUNC(void) _Py_Specialize_ToBool(_PyStackRef value, _Py_CODEUNIT *instr);
+PyAPI_FUNC(void) _Py_Specialize_ContainsOp(_PyStackRef value, _Py_CODEUNIT *instr);
+PyAPI_FUNC(void) _Py_GatherStats_GetIter(_PyStackRef iterable);
+PyAPI_FUNC(void) _Py_Specialize_CallFunctionEx(_PyStackRef func_st, _Py_CODEUNIT *instr);
+PyAPI_FUNC(void) _Py_Specialize_Resume(_Py_CODEUNIT *instr, PyThreadState *tstate, _PyInterpreterFrame *frame);
+PyAPI_FUNC(void) _Py_Specialize_GetIter(_PyStackRef iterable, _Py_CODEUNIT *instr);
 
-/* Deallocator function for static codeobjects used in deepfreeze.py */
-extern void _PyStaticCode_Dealloc(PyCodeObject *co);
-/* Function to intern strings of codeobjects */
-extern int _PyStaticCode_InternStrings(PyCodeObject *co);
+// Utility functions for reading/writing 32/64-bit values in the inline caches.
+// Great care should be taken to ensure that these functions remain correct and
+// performant! They should compile to just "move" instructions on all supported
+// compilers and platforms.
 
-#ifdef Py_STATS
-
-#define SPECIALIZATION_FAILURE_KINDS 30
-
-typedef struct _specialization_stats {
-    uint64_t success;
-    uint64_t failure;
-    uint64_t hit;
-    uint64_t deferred;
-    uint64_t miss;
-    uint64_t deopt;
-    uint64_t failure_kinds[SPECIALIZATION_FAILURE_KINDS];
-} SpecializationStats;
-
-typedef struct _opcode_stats {
-    SpecializationStats specialization;
-    uint64_t execution_count;
-    uint64_t pair_count[256];
-} OpcodeStats;
-
-typedef struct _call_stats {
-    uint64_t inlined_py_calls;
-    uint64_t pyeval_calls;
-    uint64_t frames_pushed;
-    uint64_t frame_objects_created;
-} CallStats;
-
-typedef struct _object_stats {
-    uint64_t allocations;
-    uint64_t allocations512;
-    uint64_t allocations4k;
-    uint64_t allocations_big;
-    uint64_t frees;
-    uint64_t to_freelist;
-    uint64_t from_freelist;
-    uint64_t new_values;
-    uint64_t dict_materialized_on_request;
-    uint64_t dict_materialized_new_key;
-    uint64_t dict_materialized_too_big;
-    uint64_t dict_materialized_str_subclass;
-} ObjectStats;
-
-typedef struct _stats {
-    OpcodeStats opcode_stats[256];
-    CallStats call_stats;
-    ObjectStats object_stats;
-} PyStats;
-
-extern PyStats _py_stats;
-
-#define STAT_INC(opname, name) _py_stats.opcode_stats[opname].specialization.name++
-#define STAT_DEC(opname, name) _py_stats.opcode_stats[opname].specialization.name--
-#define OPCODE_EXE_INC(opname) _py_stats.opcode_stats[opname].execution_count++
-#define CALL_STAT_INC(name) _py_stats.call_stats.name++
-#define OBJECT_STAT_INC(name) _py_stats.object_stats.name++
-#define OBJECT_STAT_INC_COND(name, cond) \
-    do { if (cond) _py_stats.object_stats.name++; } while (0)
-
-extern void _Py_PrintSpecializationStats(int to_file);
-
-// Used by the _opcode extension which is built as a shared library
-PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
-
-#else
-#define STAT_INC(opname, name) ((void)0)
-#define STAT_DEC(opname, name) ((void)0)
-#define OPCODE_EXE_INC(opname) ((void)0)
-#define CALL_STAT_INC(name) ((void)0)
-#define OBJECT_STAT_INC(name) ((void)0)
-#define OBJECT_STAT_INC_COND(name, cond) ((void)0)
-#endif  // !Py_STATS
-
-// Cache values are only valid in memory, so use native endianness.
-#ifdef WORDS_BIGENDIAN
+// We use memcpy to let the C compiler handle unaligned accesses and endianness
+// issues for us. It also seems to produce better code than manual copying for
+// most compilers (see https://blog.regehr.org/archives/959 for more info).
 
 static inline void
 write_u32(uint16_t *p, uint32_t val)
 {
-    p[0] = (uint16_t)(val >> 16);
-    p[1] = (uint16_t)(val >>  0);
+    memcpy(p, &val, sizeof(val));
 }
 
 static inline void
 write_u64(uint16_t *p, uint64_t val)
 {
-    p[0] = (uint16_t)(val >> 48);
-    p[1] = (uint16_t)(val >> 32);
-    p[2] = (uint16_t)(val >> 16);
-    p[3] = (uint16_t)(val >>  0);
+    memcpy(p, &val, sizeof(val));
+}
+
+static inline void
+write_ptr(uint16_t *p, void *val)
+{
+    memcpy(p, &val, sizeof(val));
+}
+
+static inline uint16_t
+read_u16(uint16_t *p)
+{
+    return *p;
 }
 
 static inline uint32_t
 read_u32(uint16_t *p)
 {
-    uint32_t val = 0;
-    val |= (uint32_t)p[0] << 16;
-    val |= (uint32_t)p[1] <<  0;
+    uint32_t val;
+    memcpy(&val, p, sizeof(val));
     return val;
 }
 
 static inline uint64_t
 read_u64(uint16_t *p)
 {
-    uint64_t val = 0;
-    val |= (uint64_t)p[0] << 48;
-    val |= (uint64_t)p[1] << 32;
-    val |= (uint64_t)p[2] << 16;
-    val |= (uint64_t)p[3] <<  0;
+    uint64_t val;
+    memcpy(&val, p, sizeof(val));
     return val;
-}
-
-#else
-
-static inline void
-write_u32(uint16_t *p, uint32_t val)
-{
-    p[0] = (uint16_t)(val >>  0);
-    p[1] = (uint16_t)(val >> 16);
-}
-
-static inline void
-write_u64(uint16_t *p, uint64_t val)
-{
-    p[0] = (uint16_t)(val >>  0);
-    p[1] = (uint16_t)(val >> 16);
-    p[2] = (uint16_t)(val >> 32);
-    p[3] = (uint16_t)(val >> 48);
-}
-
-static inline uint32_t
-read_u32(uint16_t *p)
-{
-    uint32_t val = 0;
-    val |= (uint32_t)p[0] <<  0;
-    val |= (uint32_t)p[1] << 16;
-    return val;
-}
-
-static inline uint64_t
-read_u64(uint16_t *p)
-{
-    uint64_t val = 0;
-    val |= (uint64_t)p[0] <<  0;
-    val |= (uint64_t)p[1] << 16;
-    val |= (uint64_t)p[2] << 32;
-    val |= (uint64_t)p[3] << 48;
-    return val;
-}
-
-#endif
-
-static inline void
-write_obj(uint16_t *p, PyObject *obj)
-{
-    uintptr_t val = (uintptr_t)obj;
-#if SIZEOF_VOID_P == 8
-    write_u64(p, val);
-#elif SIZEOF_VOID_P == 4
-    write_u32(p, val);
-#else
-    #error "SIZEOF_VOID_P must be 4 or 8"
-#endif
 }
 
 static inline PyObject *
 read_obj(uint16_t *p)
 {
-    uintptr_t val;
-#if SIZEOF_VOID_P == 8
-    val = read_u64(p);
-#elif SIZEOF_VOID_P == 4
-    val = read_u32(p);
-#else
-    #error "SIZEOF_VOID_P must be 4 or 8"
-#endif
-    return (PyObject *)val;
+    PyObject *val;
+    memcpy(&val, p, sizeof(val));
+    return val;
+}
+
+/* See InternalDocs/exception_handling.md for details.
+ */
+static inline unsigned char *
+parse_varint(unsigned char *p, int *result) {
+    int val = p[0] & 63;
+    while (p[0] & 64) {
+        p++;
+        val = (val << 6) | (p[0] & 63);
+    }
+    *result = val;
+    return p+1;
 }
 
 static inline int
@@ -450,29 +411,288 @@ write_varint(uint8_t *ptr, unsigned int val)
         val >>= 6;
         written++;
     }
-    *ptr = val;
+    *ptr = (uint8_t)val;
     return written;
 }
 
 static inline int
 write_signed_varint(uint8_t *ptr, int val)
 {
+    unsigned int uval;
     if (val < 0) {
-        val = ((-val)<<1) | 1;
+        // (unsigned int)(-val) has an undefined behavior for INT_MIN
+        uval = ((0 - (unsigned int)val) << 1) | 1;
     }
     else {
-        val = val << 1;
+        uval = (unsigned int)val << 1;
     }
-    return write_varint(ptr, val);
+    return write_varint(ptr, uval);
 }
 
 static inline int
 write_location_entry_start(uint8_t *ptr, int code, int length)
 {
     assert((code & 15) == code);
-    *ptr = 128 | (code << 3) | (length - 1);
+    *ptr = 128 | (uint8_t)(code << 3) | (uint8_t)(length - 1);
     return 1;
 }
+
+
+/** Counters
+ * The first 16-bit value in each inline cache is a counter.
+ *
+ * When counting executions until the next specialization attempt,
+ * exponential backoff is used to reduce the number of specialization failures.
+ * See pycore_backoff.h for more details.
+ * On a specialization failure, the backoff counter is restarted.
+ */
+
+// A value of 1 means that we attempt to specialize the *second* time each
+// instruction is executed. Executing twice is a much better indicator of
+// "hotness" than executing once, but additional warmup delays only prevent
+// specialization. Most types stabilize by the second execution, too:
+#define ADAPTIVE_WARMUP_VALUE 1
+#define ADAPTIVE_WARMUP_BACKOFF 1
+
+// A value of 52 means that we attempt to re-specialize after 53 misses (a prime
+// number, useful for avoiding artifacts if every nth value is a different type
+// or something). Setting the backoff to 0 means that the counter is reset to
+// the same state as a warming-up instruction (value == 1, backoff == 1) after
+// deoptimization. This isn't strictly necessary, but it is bit easier to reason
+// about when thinking about the opcode transitions as a state machine:
+#define ADAPTIVE_COOLDOWN_VALUE 52
+#define ADAPTIVE_COOLDOWN_BACKOFF 0
+
+// Can't assert this in pycore_backoff.h because of header order dependencies
+#if JUMP_BACKWARD_INITIAL_VALUE <= ADAPTIVE_COOLDOWN_VALUE
+#  error  "JIT threshold value should be larger than adaptive cooldown value"
+#endif
+#if SIDE_EXIT_INITIAL_VALUE <= ADAPTIVE_COOLDOWN_VALUE
+#  error  "Cold exit value should be larger than adaptive cooldown value"
+#endif
+
+static inline _Py_BackoffCounter
+adaptive_counter_bits(uint16_t value, uint16_t backoff) {
+    return make_backoff_counter(value, backoff);
+}
+
+static inline _Py_BackoffCounter
+adaptive_counter_warmup(void) {
+    return adaptive_counter_bits(ADAPTIVE_WARMUP_VALUE,
+                                 ADAPTIVE_WARMUP_BACKOFF);
+}
+
+static inline _Py_BackoffCounter
+adaptive_counter_cooldown(void) {
+    return adaptive_counter_bits(ADAPTIVE_COOLDOWN_VALUE,
+                                 ADAPTIVE_COOLDOWN_BACKOFF);
+}
+
+static inline _Py_BackoffCounter
+adaptive_counter_backoff(_Py_BackoffCounter counter) {
+    return restart_backoff_counter(counter);
+}
+
+/* Specialization Extensions */
+
+/* callbacks for an external specialization */
+typedef int (*binaryopguardfunc)(PyObject *lhs, PyObject *rhs);
+typedef PyObject *(*binaryopactionfunc)(PyObject *lhs, PyObject *rhs);
+
+typedef struct {
+    int oparg;
+    binaryopguardfunc guard;
+    binaryopactionfunc action;
+    /* Static type of the result, or NULL if unknown. Used by the tier 2
+       optimizer to propagate type information through _BINARY_OP_EXTEND. */
+    PyTypeObject *result_type;
+    /* Nonzero iff `action` always returns a freshly allocated object (not
+       aliased to either operand). Used by the tier 2 optimizer to enable
+       inplace follow-up ops. */
+    int result_unique;
+    /* Expected types of the left and right operands. Used by the tier 2
+       optimizer to eliminate _GUARD_BINARY_OP_EXTEND when the operand
+       types are already known. NULL means unknown/don't eliminate. */
+    PyTypeObject *lhs_type;
+    PyTypeObject *rhs_type;
+} _PyBinaryOpSpecializationDescr;
+
+/* Comparison bit masks. */
+
+/* Note this evaluates its arguments twice each */
+#define COMPARISON_BIT(x, y) (1 << (2 * ((x) >= (y)) + ((x) <= (y))))
+
+/*
+ * The following bits are chosen so that the value of
+ * COMPARSION_BIT(left, right)
+ * masked by the values below will be non-zero if the
+ * comparison is true, and zero if it is false */
+
+/* This is for values that are unordered, ie. NaN, not types that are unordered, e.g. sets */
+#define COMPARISON_UNORDERED 1
+
+#define COMPARISON_LESS_THAN 2
+#define COMPARISON_GREATER_THAN 4
+#define COMPARISON_EQUALS 8
+
+#define COMPARISON_NOT_EQUALS (COMPARISON_UNORDERED | COMPARISON_LESS_THAN | COMPARISON_GREATER_THAN)
+
+PyAPI_FUNC(int) _Py_Instrument(PyCodeObject *co, PyInterpreterState *interp);
+
+extern _Py_CODEUNIT _Py_GetBaseCodeUnit(PyCodeObject *code, int offset);
+
+extern int _PyInstruction_GetLength(PyCodeObject *code, int offset);
+
+extern PyObject *_PyInstrumentation_BranchesIterator(PyCodeObject *code);
+
+struct _PyCode8 _PyCode_DEF(8);
+
+PyAPI_DATA(const struct _PyCode8) _Py_InitCleanup;
+
+#ifdef Py_GIL_DISABLED
+
+static inline _PyCodeArray *
+_PyCode_GetTLBCArray(PyCodeObject *co)
+{
+    return _Py_STATIC_CAST(_PyCodeArray *,
+                           _Py_atomic_load_ptr_acquire(&co->co_tlbc));
+}
+
+// Return a pointer to the thread-local bytecode for the current thread, if it
+// exists.
+static inline _Py_CODEUNIT *
+_PyCode_GetTLBCFast(PyThreadState *tstate, PyCodeObject *co)
+{
+    _PyCodeArray *code = _PyCode_GetTLBCArray(co);
+    int32_t idx = ((_PyThreadStateImpl*) tstate)->tlbc_index;
+    if (idx < code->size && code->entries[idx] != NULL) {
+        return (_Py_CODEUNIT *) code->entries[idx];
+    }
+    return NULL;
+}
+
+// Return a pointer to the thread-local bytecode for the current thread,
+// creating it if necessary.
+PyAPI_FUNC(_Py_CODEUNIT *) _PyCode_GetTLBC(PyCodeObject *co);
+
+// Reserve an index for the current thread into thread-local bytecode
+// arrays
+//
+// Returns the reserved index or -1 on error.
+extern int32_t _Py_ReserveTLBCIndex(PyInterpreterState *interp);
+
+// Release the current thread's index into thread-local bytecode arrays
+extern void _Py_ClearTLBCIndex(_PyThreadStateImpl *tstate);
+
+// Free all TLBC copies not associated with live threads.
+//
+// Returns 0 on success or -1 on error.
+extern int _Py_ClearUnusedTLBC(PyInterpreterState *interp);
+#endif
+
+
+typedef struct {
+    int total;
+    struct co_locals_counts {
+        int total;
+        struct {
+            int total;
+            int numposonly;
+            int numposorkw;
+            int numkwonly;
+            int varargs;
+            int varkwargs;
+        } args;
+        int numpure;
+        struct {
+            int total;
+            // numargs does not contribute to locals.total.
+            int numargs;
+            int numothers;
+        } cells;
+        struct {
+            int total;
+            int numpure;
+            int numcells;
+        } hidden;
+    } locals;
+    int numfree;  // nonlocal
+    struct co_unbound_counts {
+        int total;
+        struct {
+            int total;
+            int numglobal;
+            int numbuiltin;
+            int numunknown;
+        } globals;
+        int numattrs;
+        int numunknown;
+    } unbound;
+} _PyCode_var_counts_t;
+
+PyAPI_FUNC(void) _PyCode_GetVarCounts(
+        PyCodeObject *,
+        _PyCode_var_counts_t *);
+PyAPI_FUNC(int) _PyCode_SetUnboundVarCounts(
+        PyThreadState *,
+        PyCodeObject *,
+        _PyCode_var_counts_t *,
+        PyObject *globalnames,
+        PyObject *attrnames,
+        PyObject *globalsns,
+        PyObject *builtinsns);
+
+
+/* "Stateless" code is a function or code object which does not rely on
+ * external state or internal state.  It may rely on arguments and
+ * builtins, but not globals or a closure.  Thus it does not rely
+ * on __globals__ or __closure__, and a stateless function
+ * is equivalent to its code object.
+ *
+ * Stateless code also does not keep any persistent state
+ * of its own, so it can't have any executors, monitoring,
+ * instrumentation, or "extras" (i.e. co_extra).
+ *
+ * Stateless code may create nested functions, including closures.
+ * However, nested functions must themselves be stateless, except they
+ * *can* close on the enclosing locals.
+ *
+ * Stateless code may return any value, including nested functions and closures.
+ *
+ * Stateless code that takes no arguments and doesn't return anything
+ * may be treated like a script.
+ *
+ * We consider stateless code to be "portable" if it does not return
+ * any object that holds a reference to any of the code's locals.  Thus
+ * generators and coroutines are not portable.  Likewise a function
+ * that returns a closure is not portable.  The concept of
+ * portability is useful in cases where the code is run
+ * in a different execution context than where
+ * the return value will be used. */
+
+PyAPI_FUNC(int) _PyCode_CheckNoInternalState(PyCodeObject *, const char **);
+PyAPI_FUNC(int) _PyCode_CheckNoExternalState(
+        PyCodeObject *,
+        _PyCode_var_counts_t *,
+        const char **);
+PyAPI_FUNC(int) _PyCode_VerifyStateless(
+        PyThreadState *,
+        PyCodeObject *,
+        PyObject *globalnames,
+        PyObject *globalsns,
+        PyObject *builtinsns);
+
+PyAPI_FUNC(int) _PyCode_CheckPureFunction(PyCodeObject *, const char **);
+PyAPI_FUNC(int) _PyCode_ReturnsOnlyNone(PyCodeObject *);
+
+/* Create a comparable key used to compare constants taking in account the
+ * object type. It is used to make sure types are not coerced (e.g., float and
+ * complex) _and_ to distinguish 0.0 from -0.0 e.g. on IEEE platforms
+ *
+ * Return (type(obj), obj, ...): a tuple with variable size (at least 2 items)
+ * depending on the type and the value. The type is the first item to not
+ * compare bytes and str which can raise a BytesWarning exception. */
+extern PyObject* _PyCode_ConstantKey(PyObject *obj);
 
 
 #ifdef __cplusplus

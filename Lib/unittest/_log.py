@@ -30,7 +30,7 @@ class _AssertLogsContext(_BaseTestCaseContext):
 
     LOGGING_FORMAT = "%(levelname)s:%(name)s:%(message)s"
 
-    def __init__(self, test_case, logger_name, level, no_logs):
+    def __init__(self, test_case, logger_name, level, no_logs, formatter=None):
         _BaseTestCaseContext.__init__(self, test_case)
         self.logger_name = logger_name
         if level:
@@ -39,13 +39,14 @@ class _AssertLogsContext(_BaseTestCaseContext):
             self.level = logging.INFO
         self.msg = None
         self.no_logs = no_logs
+        self.formatter = formatter
 
     def __enter__(self):
         if isinstance(self.logger_name, logging.Logger):
             logger = self.logger = self.logger_name
         else:
             logger = self.logger = logging.getLogger(self.logger_name)
-        formatter = logging.Formatter(self.LOGGING_FORMAT)
+        formatter = self.formatter or logging.Formatter(self.LOGGING_FORMAT)
         handler = _CapturingHandler()
         handler.setLevel(self.level)
         handler.setFormatter(formatter)

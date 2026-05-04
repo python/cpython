@@ -15,6 +15,9 @@
     <ClInclude Include="..\Modules\_ctypes\_ctypes_test.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\Modules\_ctypes\_ctypes_test_generated.c.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_ctypes\_ctypes_test.c">

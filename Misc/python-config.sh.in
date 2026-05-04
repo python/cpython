@@ -4,7 +4,13 @@
 
 exit_with_usage ()
 {
-    echo "Usage: $0 --prefix|--exec-prefix|--includes|--libs|--cflags|--ldflags|--extension-suffix|--help|--abiflags|--configdir|--embed"
+    local usage
+    usage="Usage: $0 --prefix|--exec-prefix|--includes|--libs|--cflags|--ldflags|--extension-suffix|--help|--abiflags|--configdir|--embed"
+    if [ "$1" -eq 0 ]; then
+        echo "$usage"
+    else
+        echo "$usage" >&2
+    fi
     exit $1
 }
 

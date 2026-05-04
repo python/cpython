@@ -18,7 +18,7 @@ def abstractmethod(funcobj):
 
         class C(metaclass=ABCMeta):
             @abstractmethod
-            def my_abstract_method(self, ...):
+            def my_abstract_method(self, arg1, arg2, argN):
                 ...
     """
     funcobj.__isabstractmethod__ = True

@@ -4,7 +4,7 @@
 
 The Python team applies security fixes according to the table
 in [the devguide](
-https://devguide.python.org/#status-of-python-branches
+https://devguide.python.org/versions/#supported-versions
 ).
 
 ## Reporting a Vulnerability

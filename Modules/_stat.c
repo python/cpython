@@ -11,12 +11,13 @@
  *
  */
 
-#define PY_SSIZE_T_CLEAN
-#include "Python.h"
-
-#ifdef __cplusplus
-extern "C" {
+// Need limited C API version 3.13 for PyModule_Add() on Windows
+#include "pyconfig.h"   // Py_GIL_DISABLED
+#ifndef Py_GIL_DISABLED
+#  define Py_LIMITED_API 0x030d0000
 #endif
+
+#include "Python.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -56,7 +57,7 @@ typedef unsigned short mode_t;
  * Only the names are defined by POSIX but not their value. All common file
  * types seems to have the same numeric value on all platforms, though.
  *
- * pyport.h guarantees S_IFMT, S_IFDIR, S_IFCHR, S_IFREG and S_IFLNK
+ * fileutils.h guarantees S_IFMT, S_IFDIR, S_IFCHR, S_IFREG and S_IFLNK
  */
 
 #ifndef S_IFBLK
@@ -85,7 +86,7 @@ typedef unsigned short mode_t;
 
 
 /* S_ISXXX()
- * pyport.h defines S_ISDIR(), S_ISREG() and S_ISCHR()
+ * fileutils.h defines S_ISDIR(), S_ISREG() and S_ISCHR()
  */
 
 #ifndef S_ISBLK
@@ -200,6 +201,10 @@ typedef unsigned short mode_t;
 
 
 /* Names for file flags */
+#ifndef UF_SETTABLE
+#  define UF_SETTABLE 0x0000ffff
+#endif
+
 #ifndef UF_NODUMP
 #  define UF_NODUMP 0x00000001
 #endif
@@ -224,8 +229,20 @@ typedef unsigned short mode_t;
 #  define UF_COMPRESSED 0x00000020
 #endif
 
+#ifndef UF_TRACKED
+#  define UF_TRACKED 0x00000040
+#endif
+
+#ifndef UF_DATAVAULT
+#  define UF_DATAVAULT 0x00000080
+#endif
+
 #ifndef UF_HIDDEN
 #  define UF_HIDDEN 0x00008000
+#endif
+
+#ifndef SF_SETTABLE
+#  define SF_SETTABLE 0xffff0000
 #endif
 
 #ifndef SF_ARCHIVED
@@ -248,15 +265,51 @@ typedef unsigned short mode_t;
 #  define SF_SNAPSHOT 0x00200000
 #endif
 
+#ifndef SF_FIRMLINK
+#  define SF_FIRMLINK 0x00800000
+#endif
+
+#ifndef SF_DATALESS
+#  define SF_DATALESS 0x40000000
+#endif
+
+#if defined(__APPLE__) && !defined(SF_SUPPORTED)
+   /* On older macOS versions the definition of SF_SUPPORTED is different
+    * from that on newer versions.
+    *
+    * Provide a consistent experience by redefining.
+    *
+    * None of bit bits set in the actual SF_SUPPORTED but not in this
+    * definition are defined on these versions of macOS.
+    */
+#  undef SF_SETTABLE
+#  define SF_SUPPORTED 0x009f0000
+#  define SF_SETTABLE 0x3fff0000
+#  define SF_SYNTHETIC 0xc0000000
+#endif
+
+
 static mode_t
 _PyLong_AsMode_t(PyObject *op)
 {
     unsigned long value;
     mode_t mode;
 
-    value = PyLong_AsUnsignedLong(op);
-    if ((value == (unsigned long)-1) && PyErr_Occurred())
+    if (PyLong_Check(op)) {
+        value = PyLong_AsUnsignedLong(op);
+    }
+    else {
+        op = PyNumber_Index(op);
+        if (op == NULL) {
+            return (mode_t)-1;
+        }
+        value = PyLong_AsUnsignedLong(op);
+        Py_DECREF(op);
+    }
+
+    if ((value == (unsigned long)-1) && PyErr_Occurred()) {
         return (mode_t)-1;
+    }
 
     mode = (mode_t)value;
     if ((unsigned long)mode != value) {
@@ -465,18 +518,29 @@ S_IWOTH: write by others\n\
 S_IXOTH: execute by others\n\
 \n"
 
-"UF_NODUMP: do not dump file\n\
+"UF_SETTABLE: mask of owner changeable flags\n\
+UF_NODUMP: do not dump file\n\
 UF_IMMUTABLE: file may not be changed\n\
 UF_APPEND: file may only be appended to\n\
 UF_OPAQUE: directory is opaque when viewed through a union stack\n\
 UF_NOUNLINK: file may not be renamed or deleted\n\
-UF_COMPRESSED: OS X: file is hfs-compressed\n\
-UF_HIDDEN: OS X: file should not be displayed\n\
+UF_COMPRESSED: macOS: file is hfs-compressed\n\
+UF_TRACKED: used for dealing with document IDs\n\
+UF_DATAVAULT: entitlement required for reading and writing\n\
+UF_HIDDEN: macOS: file should not be displayed\n\
+SF_SETTABLE: mask of super user changeable flags\n\
 SF_ARCHIVED: file may be archived\n\
 SF_IMMUTABLE: file may not be changed\n\
 SF_APPEND: file may only be appended to\n\
+SF_RESTRICTED: entitlement required for writing\n\
 SF_NOUNLINK: file may not be renamed or deleted\n\
 SF_SNAPSHOT: file is a snapshot file\n\
+SF_FIRMLINK: file is a firmlink\n\
+SF_DATALESS: file is a dataless object\n\
+\n\
+On macOS:\n\
+SF_SUPPORTED: mask of super user supported flags\n\
+SF_SYNTHETIC: mask of read-only synthetic flags\n\
 \n"
 
 "ST_MODE\n\
@@ -541,18 +605,32 @@ stat_exec(PyObject *module)
     ADD_INT_MACRO(module, S_IWOTH);
     ADD_INT_MACRO(module, S_IXOTH);
 
+    ADD_INT_MACRO(module, UF_SETTABLE);
     ADD_INT_MACRO(module, UF_NODUMP);
     ADD_INT_MACRO(module, UF_IMMUTABLE);
     ADD_INT_MACRO(module, UF_APPEND);
     ADD_INT_MACRO(module, UF_OPAQUE);
     ADD_INT_MACRO(module, UF_NOUNLINK);
     ADD_INT_MACRO(module, UF_COMPRESSED);
+    ADD_INT_MACRO(module, UF_TRACKED);
+    ADD_INT_MACRO(module, UF_DATAVAULT);
     ADD_INT_MACRO(module, UF_HIDDEN);
+    ADD_INT_MACRO(module, SF_SETTABLE);
     ADD_INT_MACRO(module, SF_ARCHIVED);
     ADD_INT_MACRO(module, SF_IMMUTABLE);
     ADD_INT_MACRO(module, SF_APPEND);
     ADD_INT_MACRO(module, SF_NOUNLINK);
     ADD_INT_MACRO(module, SF_SNAPSHOT);
+    ADD_INT_MACRO(module, SF_FIRMLINK);
+    ADD_INT_MACRO(module, SF_DATALESS);
+
+#ifdef SF_SUPPORTED
+    ADD_INT_MACRO(module, SF_SUPPORTED);
+#endif
+#ifdef SF_SYNTHETIC
+    ADD_INT_MACRO(module, SF_SYNTHETIC);
+#endif
+
 
     const char* st_constants[] = {
         "ST_MODE",
@@ -592,17 +670,17 @@ stat_exec(PyObject *module)
     ADD_INT_MACRO(module, FILE_ATTRIBUTE_TEMPORARY);
     ADD_INT_MACRO(module, FILE_ATTRIBUTE_VIRTUAL);
 
-    if (PyModule_AddObject(module, "IO_REPARSE_TAG_SYMLINK",
-                           PyLong_FromUnsignedLong(IO_REPARSE_TAG_SYMLINK)) < 0) {
-            return -1;
+    if (PyModule_Add(module, "IO_REPARSE_TAG_SYMLINK",
+            PyLong_FromUnsignedLong(IO_REPARSE_TAG_SYMLINK)) < 0) {
+        return -1;
     }
-    if (PyModule_AddObject(module, "IO_REPARSE_TAG_MOUNT_POINT",
-                           PyLong_FromUnsignedLong(IO_REPARSE_TAG_MOUNT_POINT)) < 0) {
-            return -1;
+    if (PyModule_Add(module, "IO_REPARSE_TAG_MOUNT_POINT",
+            PyLong_FromUnsignedLong(IO_REPARSE_TAG_MOUNT_POINT)) < 0) {
+        return -1;
     }
-    if (PyModule_AddObject(module, "IO_REPARSE_TAG_APPEXECLINK",
-                           PyLong_FromUnsignedLong(IO_REPARSE_TAG_APPEXECLINK)) < 0) {
-            return -1;
+    if (PyModule_Add(module, "IO_REPARSE_TAG_APPEXECLINK",
+            PyLong_FromUnsignedLong(IO_REPARSE_TAG_APPEXECLINK)) < 0) {
+        return -1;
     }
 #endif
 
@@ -612,6 +690,8 @@ stat_exec(PyObject *module)
 
 static PyModuleDef_Slot stat_slots[] = {
     {Py_mod_exec, stat_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 
@@ -631,7 +711,3 @@ PyInit__stat(void)
 {
     return PyModuleDef_Init(&statmodule);
 }
-
-#ifdef __cplusplus
-}
-#endif

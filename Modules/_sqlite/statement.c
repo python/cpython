@@ -21,21 +21,21 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "connection.h"
 #include "statement.h"
 #include "util.h"
 
-/* prototypes */
-static int pysqlite_check_remaining_sql(const char* tail);
+#include "pycore_object.h"        // _PyObject_VisitType()
 
-typedef enum {
-    LINECOMMENT_1,
-    IN_LINECOMMENT,
-    COMMENTSTART_1,
-    IN_COMMENT,
-    COMMENTEND_1,
-    NORMAL
-} parse_remaining_sql_state;
+
+#define _pysqlite_Statement_CAST(op)    ((pysqlite_Statement *)(op))
+
+/* prototypes */
+static const char *lstrip_sql(const char *sql);
 
 pysqlite_Statement *
 pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
@@ -69,11 +69,11 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     Py_END_ALLOW_THREADS
 
     if (rc != SQLITE_OK) {
-        _pysqlite_seterror(state, db);
+        set_error_from_db(state, db);
         return NULL;
     }
 
-    if (pysqlite_check_remaining_sql(tail)) {
+    if (lstrip_sql(tail) != NULL) {
         PyErr_SetString(connection->ProgrammingError,
                         "You can only execute one statement at a time.");
         goto error;
@@ -82,20 +82,12 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     /* Determine if the statement is a DML statement.
        SELECT is the only exception. See #9924. */
     int is_dml = 0;
-    for (const char *p = sql_cstr; *p != 0; p++) {
-        switch (*p) {
-            case ' ':
-            case '\r':
-            case '\n':
-            case '\t':
-                continue;
-        }
-
+    const char *p = lstrip_sql(sql_cstr);
+    if (p != NULL) {
         is_dml = (PyOS_strnicmp(p, "insert", 6) == 0)
                   || (PyOS_strnicmp(p, "update", 6) == 0)
                   || (PyOS_strnicmp(p, "delete", 6) == 0)
                   || (PyOS_strnicmp(p, "replace", 7) == 0);
-        break;
     }
 
     pysqlite_Statement *self = PyObject_GC_New(pysqlite_Statement,
@@ -105,112 +97,104 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     }
 
     self->st = stmt;
-    self->in_use = 0;
     self->is_dml = is_dml;
 
     PyObject_GC_Track(self);
     return self;
 
 error:
-    (void)sqlite3_finalize(stmt);
+    assert(PyErr_Occurred());
+    if (sqlite3_finalize(stmt) != SQLITE_OK) {
+        PyObject *exc = PyErr_GetRaisedException();
+        PyErr_SetString(connection->InternalError, "cannot finalize statement");
+        _PyErr_ChainExceptions1(exc);
+    }
     return NULL;
 }
 
 static void
-stmt_dealloc(pysqlite_Statement *self)
+stmt_dealloc(PyObject *op)
 {
+    pysqlite_Statement *self = _pysqlite_Statement_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
-    PyObject_GC_UnTrack(self);
+    PyObject_GC_UnTrack(op);
     if (self->st) {
+        int rc;
         Py_BEGIN_ALLOW_THREADS
-        sqlite3_finalize(self->st);
+        rc = sqlite3_finalize(self->st);
         Py_END_ALLOW_THREADS
-        self->st = 0;
+        self->st = NULL;
+        if (rc != SQLITE_OK) {
+            pysqlite_state *state = PyType_GetModuleState(Py_TYPE(op));
+            PyErr_SetString(state->InternalError, "cannot finalize statement");
+            PyErr_FormatUnraisable("Exception ignored in stmt_dealloc()");
+        }
     }
     tp->tp_free(self);
     Py_DECREF(tp);
 }
 
-static int
-stmt_traverse(pysqlite_Statement *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
-}
-
 /*
- * Checks if there is anything left in an SQL string after SQLite compiled it.
- * This is used to check if somebody tried to execute more than one SQL command
- * with one execute()/executemany() command, which the DB-API and we don't
- * allow.
+ * Strip leading whitespace and comments from incoming SQL (null terminated C
+ * string) and return a pointer to the first non-whitespace, non-comment
+ * character.
  *
- * Returns 1 if there is more left than should be. 0 if ok.
+ * This is used to check if somebody tries to execute more than one SQL query
+ * with one execute()/executemany() command, which the DB-API don't allow.
+ *
+ * It is also used to harden DML query detection.
  */
-static int pysqlite_check_remaining_sql(const char* tail)
+static inline const char *
+lstrip_sql(const char *sql)
 {
-    const char* pos = tail;
-
-    parse_remaining_sql_state state = NORMAL;
-
-    for (;;) {
+    // This loop is borrowed from the SQLite source code.
+    for (const char *pos = sql; *pos; pos++) {
         switch (*pos) {
-            case 0:
-                return 0;
-            case '-':
-                if (state == NORMAL) {
-                    state  = LINECOMMENT_1;
-                } else if (state == LINECOMMENT_1) {
-                    state = IN_LINECOMMENT;
-                }
-                break;
             case ' ':
             case '\t':
-                break;
+            case '\f':
             case '\n':
-            case 13:
-                if (state == IN_LINECOMMENT) {
-                    state = NORMAL;
-                }
+            case '\r':
+                // Skip whitespace.
                 break;
+            case '-':
+                // Skip line comments.
+                if (pos[1] == '-') {
+                    pos += 2;
+                    while (pos[0] && pos[0] != '\n') {
+                        pos++;
+                    }
+                    if (pos[0] == '\0') {
+                        return NULL;
+                    }
+                    continue;
+                }
+                return pos;
             case '/':
-                if (state == NORMAL) {
-                    state = COMMENTSTART_1;
-                } else if (state == COMMENTEND_1) {
-                    state = NORMAL;
-                } else if (state == COMMENTSTART_1) {
-                    return 1;
+                // Skip C style comments.
+                if (pos[1] == '*') {
+                    pos += 2;
+                    while (pos[0] && (pos[0] != '*' || pos[1] != '/')) {
+                        pos++;
+                    }
+                    if (pos[0] == '\0') {
+                        return NULL;
+                    }
+                    pos++;
+                    continue;
                 }
-                break;
-            case '*':
-                if (state == NORMAL) {
-                    return 1;
-                } else if (state == LINECOMMENT_1) {
-                    return 1;
-                } else if (state == COMMENTSTART_1) {
-                    state = IN_COMMENT;
-                } else if (state == IN_COMMENT) {
-                    state = COMMENTEND_1;
-                }
-                break;
+                return pos;
             default:
-                if (state == COMMENTEND_1) {
-                    state = IN_COMMENT;
-                } else if (state == IN_LINECOMMENT) {
-                } else if (state == IN_COMMENT) {
-                } else {
-                    return 1;
-                }
+                return pos;
         }
-
-        pos++;
     }
 
-    return 0;
+    return NULL;
 }
 
 static PyType_Slot stmt_slots[] = {
     {Py_tp_dealloc, stmt_dealloc},
-    {Py_tp_traverse, stmt_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {0, NULL},
 };
 

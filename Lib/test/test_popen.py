@@ -57,14 +57,21 @@ class PopenTest(unittest.TestCase):
     def test_contextmanager(self):
         with os.popen("echo hello") as f:
             self.assertEqual(f.read(), "hello\n")
+            self.assertFalse(f.closed)
+        self.assertTrue(f.closed)
 
     def test_iterating(self):
         with os.popen("echo hello") as f:
             self.assertEqual(list(f), ["hello\n"])
+            self.assertFalse(f.closed)
+        self.assertTrue(f.closed)
 
     def test_keywords(self):
-        with os.popen(cmd="exit 0", mode="w", buffering=-1):
-            pass
+        with os.popen(cmd="echo hello", mode="r", buffering=-1) as f:
+            self.assertEqual(f.read(), "hello\n")
+            self.assertFalse(f.closed)
+        self.assertTrue(f.closed)
+
 
 if __name__ == "__main__":
     unittest.main()

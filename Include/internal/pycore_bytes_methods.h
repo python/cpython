@@ -26,17 +26,29 @@ extern void _Py_bytes_title(char *result, const char *s, Py_ssize_t len);
 extern void _Py_bytes_capitalize(char *result, const char *s, Py_ssize_t len);
 extern void _Py_bytes_swapcase(char *result, const char *s, Py_ssize_t len);
 
-extern PyObject *_Py_bytes_find(const char *str, Py_ssize_t len, PyObject *args);
-extern PyObject *_Py_bytes_index(const char *str, Py_ssize_t len, PyObject *args);
-extern PyObject *_Py_bytes_rfind(const char *str, Py_ssize_t len, PyObject *args);
-extern PyObject *_Py_bytes_rindex(const char *str, Py_ssize_t len, PyObject *args);
-extern PyObject *_Py_bytes_count(const char *str, Py_ssize_t len, PyObject *args);
+extern PyObject *_Py_bytes_find(const char *str, Py_ssize_t len, PyObject *sub,
+                                Py_ssize_t start, Py_ssize_t end);
+extern PyObject *_Py_bytes_index(const char *str, Py_ssize_t len, PyObject *sub,
+                                 Py_ssize_t start, Py_ssize_t end);
+extern PyObject *_Py_bytes_rfind(const char *str, Py_ssize_t len, PyObject *sub,
+                                 Py_ssize_t start, Py_ssize_t end);
+extern PyObject *_Py_bytes_rindex(const char *str, Py_ssize_t len, PyObject *sub,
+                                 Py_ssize_t start, Py_ssize_t end);
+extern PyObject *_Py_bytes_count(const char *str, Py_ssize_t len, PyObject *sub,
+                                 Py_ssize_t start, Py_ssize_t end);
 extern int _Py_bytes_contains(const char *str, Py_ssize_t len, PyObject *arg);
-extern PyObject *_Py_bytes_startswith(const char *str, Py_ssize_t len, PyObject *args);
-extern PyObject *_Py_bytes_endswith(const char *str, Py_ssize_t len, PyObject *args);
+extern PyObject *_Py_bytes_startswith(const char *str, Py_ssize_t len,
+                                      PyObject *subobj, Py_ssize_t start,
+                                      Py_ssize_t end);
+extern PyObject *_Py_bytes_endswith(const char *str, Py_ssize_t len,
+                                    PyObject *subobj, Py_ssize_t start,
+                                    Py_ssize_t end);
 
 /* The maketrans() static method. */
 extern PyObject* _Py_bytes_maketrans(Py_buffer *frm, Py_buffer *to);
+
+/* Helper for repr(bytes) and repr(bytearray). */
+extern PyObject *_Py_bytes_repr(const char *, Py_ssize_t, int, const char *);
 
 /* Shared __doc__ strings. */
 extern const char _Py_isspace__doc__[];

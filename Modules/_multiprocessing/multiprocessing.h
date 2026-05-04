@@ -1,18 +1,27 @@
 #ifndef MULTIPROCESSING_H
 #define MULTIPROCESSING_H
 
-#define PY_SSIZE_T_CLEAN
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 
 #include "Python.h"
 #include "structmember.h"
 #include "pythread.h"
+#include "pycore_signal.h"        // _PyOS_IsMainThread()
+
+#ifndef MS_WINDOWS
+#  include <unistd.h>             // sysconf()
+#endif
 
 /*
  * Platform includes and definitions
  */
 
 #ifdef MS_WINDOWS
-#  define WIN32_LEAN_AND_MEAN
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#  endif
 #  include <windows.h>
 #  include <winsock2.h>
 #  include <process.h>               /* getpid() */
@@ -89,7 +98,7 @@ PyObject *_PyMp_SetError(PyObject *Type, int num);
  * Externs - not all will really exist on all platforms
  */
 
-extern PyTypeObject _PyMp_SemLockType;
+extern PyType_Spec _PyMp_SemLockType_spec;
 extern PyObject *_PyMp_sem_unlink(const char *name);
 
 #endif /* MULTIPROCESSING_H */

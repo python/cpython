@@ -81,7 +81,7 @@ class RelativeImports:
             self.__import__('pkg')  # For __import__().
             module = self.__import__('', global_, fromlist=['mod2'], level=1)
             self.assertEqual(module.__name__, 'pkg')
-            self.assertTrue(hasattr(module, 'mod2'))
+            self.assertHasAttr(module, 'mod2')
             self.assertEqual(module.mod2.attr, 'pkg.mod2')
         self.relative_import_test(create, globals_, callback)
 
@@ -107,7 +107,7 @@ class RelativeImports:
             module = self.__import__('', global_, fromlist=['module'],
                              level=1)
             self.assertEqual(module.__name__, 'pkg')
-            self.assertTrue(hasattr(module, 'module'))
+            self.assertHasAttr(module, 'module')
             self.assertEqual(module.module.attr, 'pkg.module')
         self.relative_import_test(create, globals_, callback)
 
@@ -131,7 +131,7 @@ class RelativeImports:
             module = self.__import__('', global_, fromlist=['subpkg2'],
                                             level=2)
             self.assertEqual(module.__name__, 'pkg')
-            self.assertTrue(hasattr(module, 'subpkg2'))
+            self.assertHasAttr(module, 'subpkg2')
             self.assertEqual(module.subpkg2.attr, 'pkg.subpkg2.__init__')
         self.relative_import_test(create, globals_, callback)
 
@@ -222,6 +222,21 @@ class RelativeImports:
         with self.assertRaises(ImportError):
             self.__import__('sys', {'__package__': '', '__spec__': None},
                             level=1)
+
+    def test_malicious_relative_import(self):
+        # https://github.com/python/cpython/issues/134100
+        # Test to make sure UAF bug with error msg doesn't come back to life
+        import sys
+        loooong = "".ljust(0x23000, "b")
+        name = f"a.{loooong}.c"
+
+        with util.uncache(name):
+            sys.modules[name] = {}
+            with self.assertRaisesRegex(
+                KeyError,
+                r"'a\.b+' not in sys\.modules as expected"
+            ):
+                __import__(f"{loooong}.c", {"__package__": "a"}, level=1)
 
 
 (Frozen_RelativeImports,

@@ -18,6 +18,7 @@ multitasking). Here's an overview:
    multiprocessing.shared_memory.rst
    concurrent.rst
    concurrent.futures.rst
+   concurrent.interpreters.rst
    subprocess.rst
    sched.rst
    queue.rst

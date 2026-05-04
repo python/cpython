@@ -1,13 +1,11 @@
-:mod:`test` --- Regression tests package for Python
-===================================================
+:mod:`!test` --- Regression tests package for Python
+====================================================
 
 .. module:: test
    :synopsis: Regression tests package containing the testing suite for Python.
 
-.. sectionauthor:: Brett Cannon <brett@python.org>
-
 .. note::
-   The :mod:`test` package is meant for internal use by Python only. It is
+   The :mod:`!test` package is meant for internal use by Python only. It is
    documented for the benefit of the core developers of Python. Any use of
    this package outside of Python's standard library is discouraged as code
    mentioned here can change or be removed without notice between releases of
@@ -15,12 +13,12 @@
 
 --------------
 
-The :mod:`test` package contains all regression tests for Python as well as the
+The :mod:`!test` package contains all regression tests for Python as well as the
 modules :mod:`test.support` and :mod:`test.regrtest`.
 :mod:`test.support` is used to enhance your tests while
 :mod:`test.regrtest` drives the testing suite.
 
-Each module in the :mod:`test` package whose name starts with ``test_`` is a
+Each module in the :mod:`!test` package whose name starts with ``test_`` is a
 testing suite for a specific module or feature. All new tests should be written
 using the :mod:`unittest` or :mod:`doctest` module.  Some older tests are
 written using a "traditional" testing style that compares output printed to
@@ -38,8 +36,8 @@ written using a "traditional" testing style that compares output printed to
 
 .. _writing-tests:
 
-Writing Unit Tests for the :mod:`test` package
-----------------------------------------------
+Writing Unit Tests for the :mod:`!test` package
+-----------------------------------------------
 
 It is preferred that tests that use the :mod:`unittest` module follow a few
 guidelines. One is to name the test module by starting it with ``test_`` and end
@@ -143,7 +141,7 @@ guidelines to be followed:
          arg = (1, 2, 3)
 
   When using this pattern, remember that all classes that inherit from
-  :class:`unittest.TestCase` are run as tests.  The :class:`Mixin` class in the example above
+  :class:`unittest.TestCase` are run as tests.  The :class:`!TestFuncAcceptsSequencesMixin` class in the example above
   does not have any data and so can't be run by itself, thus it does not
   inherit from :class:`unittest.TestCase`.
 
@@ -159,12 +157,15 @@ guidelines to be followed:
 Running tests using the command-line interface
 ----------------------------------------------
 
-The :mod:`test` package can be run as a script to drive Python's regression
+.. module:: test.regrtest
+   :synopsis: Drives the regression test suite.
+
+The :mod:`!test` package can be run as a script to drive Python's regression
 test suite, thanks to the :option:`-m` option: :program:`python -m test`. Under
-the hood, it uses :mod:`test.regrtest`; the call :program:`python -m
+the hood, it uses :mod:`!test.regrtest`; the call :program:`python -m
 test.regrtest` used in previous Python versions still works.  Running the
 script by itself automatically starts running all regression tests in the
-:mod:`test` package. It does this by finding all modules in the package whose
+:mod:`!test` package. It does this by finding all modules in the package whose
 name starts with ``test_``, importing them, and executing the function
 :func:`test_main` if present or loading the tests via
 unittest.TestLoader.loadTestsFromModule if ``test_main`` does not exist.  The
@@ -172,14 +173,14 @@ names of tests to execute may also be passed to the script. Specifying a single
 regression test (:program:`python -m test test_spam`) will minimize output and
 only print whether the test passed or failed.
 
-Running :mod:`test` directly allows what resources are available for
+Running :mod:`!test` directly allows what resources are available for
 tests to use to be set. You do this by using the ``-u`` command-line
 option. Specifying ``all`` as the value for the ``-u`` option enables all
 possible resources: :program:`python -m test -uall`.
 If all but one resource is desired (a more common case), a
 comma-separated list of resources that are not desired may be listed after
 ``all``. The command :program:`python -m test -uall,-audio,-largefile`
-will run :mod:`test` with all resources except the ``audio`` and
+will run :mod:`!test` with all resources except the ``audio`` and
 ``largefile`` resources. For a list of all resources and more command-line
 options, run :program:`python -m test -h`.
 
@@ -189,20 +190,24 @@ top-level directory where Python was built. On Windows,
 executing :program:`rt.bat` from your :file:`PCbuild` directory will run all
 regression tests.
 
+.. versionadded:: 3.14
+   Output is colorized by default and can be
+   :ref:`controlled using environment variables <using-on-controlling-color>`.
 
-:mod:`test.support` --- Utilities for the Python test suite
-===========================================================
+
+:mod:`!test.support` --- Utilities for the Python test suite
+============================================================
 
 .. module:: test.support
    :synopsis: Support for Python's regression test suite.
 
 
-The :mod:`test.support` module provides support for Python's regression
+The :mod:`!test.support` module provides support for Python's regression
 test suite.
 
 .. note::
 
-   :mod:`test.support` is not a public module.  It is documented here to help
+   :mod:`!test.support` is not a public module.  It is documented here to help
    Python developers write tests.  The API of this module is subject to change
    without backwards compatibility concerns between releases.
 
@@ -223,7 +228,7 @@ This module defines the following exceptions:
    function.
 
 
-The :mod:`test.support` module defines the following constants:
+The :mod:`!test.support` module defines the following constants:
 
 .. data:: verbose
 
@@ -239,7 +244,27 @@ The :mod:`test.support` module defines the following constants:
 
 .. data:: is_android
 
-   ``True`` if the system is Android.
+   ``True`` if ``sys.platform`` is ``android``.
+
+
+.. data:: is_emscripten
+
+   ``True`` if ``sys.platform`` is ``emscripten``.
+
+
+.. data:: is_wasi
+
+   ``True`` if ``sys.platform`` is ``wasi``.
+
+
+.. data:: is_apple_mobile
+
+   ``True`` if ``sys.platform`` is ``ios``, ``tvos``, or ``watchos``.
+
+
+.. data:: is_apple
+
+   ``True`` if ``sys.platform`` is ``darwin`` or ``is_apple_mobile`` is ``True``.
 
 
 .. data:: unix_shell
@@ -319,6 +344,15 @@ The :mod:`test.support` module defines the following constants:
    to make writes blocking.
 
 
+.. data:: Py_DEBUG
+
+   ``True`` if Python was built with the :c:macro:`Py_DEBUG` macro
+   defined, that is, if
+   Python was :ref:`built in debug mode <debug-build>`.
+
+   .. versionadded:: 3.12
+
+
 .. data:: SOCK_MAX_SIZE
 
    A constant that is likely larger than the underlying OS socket buffer size,
@@ -327,7 +361,7 @@ The :mod:`test.support` module defines the following constants:
 
 .. data:: TEST_SUPPORT_DIR
 
-   Set to the top level directory that contains :mod:`test.support`.
+   Set to the top level directory that contains :mod:`!test.support`.
 
 
 .. data:: TEST_HOME_DIR
@@ -359,13 +393,19 @@ The :mod:`test.support` module defines the following constants:
 
 .. data:: MISSING_C_DOCSTRINGS
 
-   Return ``True`` if running on CPython, not on Windows, and configuration
-   not set with ``WITH_DOC_STRINGS``.
+   Set to ``True`` if Python is built without docstrings (the
+   :c:macro:`WITH_DOC_STRINGS` macro is not defined).
+   See the :option:`configure --without-doc-strings <--without-doc-strings>` option.
+
+   See also the :data:`HAVE_DOCSTRINGS` variable.
 
 
 .. data:: HAVE_DOCSTRINGS
 
-   Check for presence of docstrings.
+   Set to ``True`` if function docstrings are available.
+   See the :option:`python -OO <-O>` option, which strips docstrings of functions implemented in Python.
+
+   See also the :data:`MISSING_C_DOCSTRINGS` variable.
 
 
 .. data:: TEST_HTTP_URL
@@ -396,13 +436,64 @@ The :mod:`test.support` module defines the following constants:
    Used to test mixed type comparison.
 
 
-The :mod:`test.support` module defines the following functions:
+The :mod:`!test.support` module defines the following functions:
+
+.. function:: busy_retry(timeout, err_msg=None, /, *, error=True)
+
+   Run the loop body until ``break`` stops the loop.
+
+   After *timeout* seconds, raise an :exc:`AssertionError` if *error* is true,
+   or just stop the loop if *error* is false.
+
+   Example::
+
+       for _ in support.busy_retry(support.SHORT_TIMEOUT):
+           if check():
+               break
+
+   Example of error=False usage::
+
+       for _ in support.busy_retry(support.SHORT_TIMEOUT, error=False):
+           if check():
+               break
+       else:
+           raise RuntimeError('my custom error')
+
+.. function:: sleeping_retry(timeout, err_msg=None, /, *, init_delay=0.010, max_delay=1.0, error=True)
+
+   Wait strategy that applies exponential backoff.
+
+   Run the loop body until ``break`` stops the loop. Sleep at each loop
+   iteration, but not at the first iteration. The sleep delay is doubled at
+   each iteration (up to *max_delay* seconds).
+
+   See :func:`busy_retry` documentation for the parameters usage.
+
+   Example raising an exception after SHORT_TIMEOUT seconds::
+
+       for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+           if check():
+               break
+
+   Example of error=False usage::
+
+       for _ in support.sleeping_retry(support.SHORT_TIMEOUT, error=False):
+           if check():
+               break
+       else:
+           raise RuntimeError('my custom error')
 
 .. function:: is_resource_enabled(resource)
 
    Return ``True`` if *resource* is enabled and available. The list of
    available resources is only set when :mod:`test.regrtest` is executing the
    tests.
+
+
+.. function:: get_resource_value(resource)
+
+   Return the value specified for *resource* (as :samp:`-u {resource}={value}`).
+   Return ``None`` if *resource* is disabled or no value is specified.
 
 
 .. function:: python_is_optimized()
@@ -412,7 +503,7 @@ The :mod:`test.support` module defines the following functions:
 
 .. function:: with_pymalloc()
 
-   Return :data:`_testcapi.WITH_PYMALLOC`.
+   Return :const:`_testcapi.WITH_PYMALLOC`.
 
 
 .. function:: requires(resource, msg=None)
@@ -421,11 +512,6 @@ The :mod:`test.support` module defines the following functions:
    argument to :exc:`ResourceDenied` if it is raised. Always returns
    ``True`` if called by a function whose ``__name__`` is ``'__main__'``.
    Used when tests are executed by :mod:`test.regrtest`.
-
-
-.. function:: system_must_validate_cert(f)
-
-   Raise :exc:`unittest.SkipTest` on TLS certification validation failures.
 
 
 .. function:: sortdict(dict)
@@ -443,42 +529,11 @@ The :mod:`test.support` module defines the following functions:
    rather than looking directly in the path directories.
 
 
-.. function:: match_test(test)
+.. function:: get_pagesize()
 
-   Match *test* to patterns set in :func:`set_match_tests`.
+   Get size of a page in bytes.
 
-
-.. function:: set_match_tests(patterns)
-
-   Define match test with regular expression *patterns*.
-
-
-.. function:: run_unittest(*classes)
-
-   Execute :class:`unittest.TestCase` subclasses passed to the function. The
-   function scans the classes for methods starting with the prefix ``test_``
-   and executes the tests individually.
-
-   It is also legal to pass strings as parameters; these should be keys in
-   ``sys.modules``. Each associated module will be scanned by
-   ``unittest.TestLoader.loadTestsFromModule()``. This is usually seen in the
-   following :func:`test_main` function::
-
-      def test_main():
-          support.run_unittest(__name__)
-
-   This will run all tests defined in the named module.
-
-
-.. function:: run_doctest(module, verbosity=None, optionflags=0)
-
-   Run :func:`doctest.testmod` on the given *module*.  Return
-   ``(failure_count, test_count)``.
-
-   If *verbosity* is ``None``, :func:`doctest.testmod` is run with verbosity
-   set to :data:`verbose`.  Otherwise, it is run with verbosity set to
-   ``None``.  *optionflags* is passed as ``optionflags`` to
-   :func:`doctest.testmod`.
+   .. versionadded:: 3.12
 
 
 .. function:: setswitchinterval(interval)
@@ -490,7 +545,9 @@ The :mod:`test.support` module defines the following functions:
 .. function:: check_impl_detail(**guards)
 
    Use this check to guard CPython's implementation-specific tests or to
-   run them only on the implementations guarded by the arguments::
+   run them only on the implementations guarded by the arguments.  This
+   function returns ``True`` or ``False`` depending on the host platform.
+   Example usage::
 
       check_impl_detail()               # Only on CPython (default).
       check_impl_detail(jython=True)    # Only on Jython.
@@ -509,7 +566,7 @@ The :mod:`test.support` module defines the following functions:
    time the regrtest began.
 
 
-.. function:: get_original_stdout
+.. function:: get_original_stdout()
 
    Return the original stdout set by :func:`record_original_stdout` or
    ``sys.stdout`` if it's not set.
@@ -554,7 +611,7 @@ The :mod:`test.support` module defines the following functions:
 
 .. function:: disable_faulthandler()
 
-   A context manager that replaces ``sys.stderr`` with ``sys.__stderr__``.
+   A context manager that temporary disables :mod:`faulthandler`.
 
 
 .. function:: gc_collect()
@@ -567,8 +624,8 @@ The :mod:`test.support` module defines the following functions:
 
 .. function:: disable_gc()
 
-   A context manager that disables the garbage collector upon entry and
-   reenables it upon exit.
+   A context manager that disables the garbage collector on entry. On
+   exit, the garbage collector is restored to its prior state.
 
 
 .. function:: swap_attr(obj, attr, new_val)
@@ -642,14 +699,14 @@ The :mod:`test.support` module defines the following functions:
 
 .. function:: calcobjsize(fmt)
 
-   Return :func:`struct.calcsize` for ``nP{fmt}0n`` or, if ``gettotalrefcount``
-   exists, ``2PnP{fmt}0P``.
+   Return the size of the :c:type:`PyObject` whose structure members are
+   defined by *fmt*. The returned value includes the size of the Python object header and alignment.
 
 
 .. function:: calcvobjsize(fmt)
 
-   Return :func:`struct.calcsize` for ``nPn{fmt}0n`` or, if ``gettotalrefcount``
-   exists, ``2PnPn{fmt}0P``.
+   Return the size of the :c:type:`PyVarObject` whose structure members are
+   defined by *fmt*. The returned value includes the size of the Python object header and alignment.
 
 
 .. function:: checksizeof(test, o, size)
@@ -663,6 +720,11 @@ The :mod:`test.support` module defines the following functions:
    A decorator to conditionally mark tests with
    :func:`unittest.expectedFailure`. Any use of this decorator should
    have an associated comment identifying the relevant tracker issue.
+
+
+.. function:: system_must_validate_cert(f)
+
+   A decorator that skips the decorated test on TLS certification validation failures.
 
 
 .. decorator:: run_with_locale(catstr, *locales)
@@ -682,19 +744,25 @@ The :mod:`test.support` module defines the following functions:
 .. decorator:: requires_freebsd_version(*min_version)
 
    Decorator for the minimum version when running test on FreeBSD.  If the
-   FreeBSD version is less than the minimum, raise :exc:`unittest.SkipTest`.
+   FreeBSD version is less than the minimum, the test is skipped.
 
 
 .. decorator:: requires_linux_version(*min_version)
 
    Decorator for the minimum version when running test on Linux.  If the
-   Linux version is less than the minimum, raise :exc:`unittest.SkipTest`.
+   Linux version is less than the minimum, the test is skipped.
 
 
 .. decorator:: requires_mac_version(*min_version)
 
    Decorator for the minimum version when running test on macOS.  If the
-   macOS version is less than the minimum, raise :exc:`unittest.SkipTest`.
+   macOS version is less than the minimum, the test is skipped.
+
+
+.. decorator:: requires_gil_enabled
+
+   Decorator for skipping tests on the free-threaded build.  If the
+   :term:`GIL` is disabled, the test is skipped.
 
 
 .. decorator:: requires_IEEE_754
@@ -732,7 +800,13 @@ The :mod:`test.support` module defines the following functions:
    Decorator for only running the test if :data:`HAVE_DOCSTRINGS`.
 
 
-.. decorator:: cpython_only(test)
+.. decorator:: requires_limited_api
+
+   Decorator for only running the test if :ref:`Limited C API <limited-c-api>`
+   is available.
+
+
+.. decorator:: cpython_only
 
    Decorator for tests only applicable to CPython.
 
@@ -742,13 +816,18 @@ The :mod:`test.support` module defines the following functions:
    Decorator for invoking :func:`check_impl_detail` on *guards*.  If that
    returns ``False``, then uses *msg* as the reason for skipping the test.
 
+.. decorator:: thread_unsafe(reason=None)
 
-.. decorator:: no_tracing(func)
+   Decorator for marking tests as thread-unsafe.  This test always runs in one
+   thread even when invoked with ``--parallel-threads``.
+
+
+.. decorator:: no_tracing
 
    Decorator to temporarily turn off tracing for the duration of the test.
 
 
-.. decorator:: refcount_test(test)
+.. decorator:: refcount_test
 
    Decorator for tests which involve reference counting.  The decorator does
    not run the test if it is not run by CPython.  Any trace function is unset
@@ -771,10 +850,18 @@ The :mod:`test.support` module defines the following functions:
    means the test doesn't support dummy runs when ``-M`` is not specified.
 
 
-.. decorator:: bigaddrspacetest(f)
+.. decorator:: bigaddrspacetest
 
-   Decorator for tests that fill the address space.  *f* is the function to
-   wrap.
+   Decorator for tests that fill the address space.
+
+
+.. function:: linked_to_musl()
+
+   Return ``False`` if there is no evidence the interpreter was compiled with
+   ``musl``, otherwise return a version triple, either ``(0, 0, 0)`` if the
+   version is unknown, or the actual version if it is known.  Intended for use
+   in ``skip`` decorators.  ``emscripten`` and ``wasi`` are assumed to be
+   compiled with ``musl``; otherwise ``platform.libc_ver`` is checked.
 
 
 .. function:: check_syntax_error(testcase, statement, errtext='', *, lineno=None, offset=None)
@@ -876,7 +963,7 @@ The :mod:`test.support` module defines the following functions:
 
 .. function:: check_free_after_iterating(test, iter, cls, args=())
 
-   Assert that *iter* is deallocated after iterating.
+   Assert instances of *cls* are deallocated after iterating.
 
 
 .. function:: missing_compiler_executable(cmd_names=[])
@@ -901,7 +988,7 @@ The :mod:`test.support` module defines the following functions:
    other modules, possibly a C backend (like ``csv`` and its ``_csv``).
 
    The *extra* argument can be a set of names that wouldn't otherwise be automatically
-   detected as "public", like objects without a proper ``__module__``
+   detected as "public", like objects without a proper :attr:`~definition.__module__`
    attribute. If provided, it will be added to the automatically detected ones.
 
    The *not_exported* argument can be a set of names that must not be treated
@@ -944,7 +1031,17 @@ The :mod:`test.support` module defines the following functions:
    .. versionadded:: 3.10
 
 
-The :mod:`test.support` module defines the following classes:
+.. function:: adjust_int_max_str_digits(max_digits)
+
+   This function returns a context manager that will change the global
+   :func:`sys.set_int_max_str_digits` setting for the duration of the
+   context to allow execution of test code that needs a different limit
+   on the number of digits when converting between an integer and string.
+
+   .. versionadded:: 3.11
+
+
+The :mod:`!test.support` module defines the following classes:
 
 
 .. class:: SuppressCrashReport()
@@ -956,16 +1053,26 @@ The :mod:`test.support` module defines the following classes:
    `SetErrorMode <https://msdn.microsoft.com/en-us/library/windows/desktop/ms680621.aspx>`_.
 
    On UNIX, :func:`resource.setrlimit` is used to set
-   :attr:`resource.RLIMIT_CORE`'s soft limit to 0 to prevent coredump file
+   :const:`resource.RLIMIT_CORE`'s soft limit to 0 to prevent coredump file
    creation.
 
-   On both platforms, the old value is restored by :meth:`__exit__`.
+   On both platforms, the old value is restored by :meth:`~object.__exit__`.
 
 
 .. class:: SaveSignals()
 
    Class to save and restore signal handlers registered by the Python signal
    handler.
+
+   .. method:: save(self)
+
+      Save the signal handlers to a dictionary mapping signal numbers to the
+      current signal handler.
+
+   .. method:: restore(self)
+
+      Set the signal numbers from the :meth:`save` dictionary to the saved
+      handler.
 
 
 .. class:: Matcher()
@@ -980,21 +1087,14 @@ The :mod:`test.support` module defines the following classes:
       Try to match a single stored value (*dv*) with a supplied value (*v*).
 
 
-.. class:: BasicTestRunner()
-
-   .. method:: run(test)
-
-      Run *test* and return the result.
-
-
-:mod:`test.support.socket_helper` --- Utilities for socket tests
-================================================================
+:mod:`!test.support.socket_helper` --- Utilities for socket tests
+=================================================================
 
 .. module:: test.support.socket_helper
    :synopsis: Support for socket tests.
 
 
-The :mod:`test.support.socket_helper` module provides support for socket tests.
+The :mod:`!test.support.socket_helper` module provides support for socket tests.
 
 .. versionadded:: 3.9
 
@@ -1048,7 +1148,7 @@ The :mod:`test.support.socket_helper` module provides support for socket tests.
 
 .. function:: bind_unix_socket(sock, addr)
 
-   Bind a unix socket, raising :exc:`unittest.SkipTest` if
+   Bind a Unix socket, raising :exc:`unittest.SkipTest` if
    :exc:`PermissionError` is raised.
 
 
@@ -1065,14 +1165,14 @@ The :mod:`test.support.socket_helper` module provides support for socket tests.
    exceptions.
 
 
-:mod:`test.support.script_helper` --- Utilities for the Python execution tests
-==============================================================================
+:mod:`!test.support.script_helper` --- Utilities for the Python execution tests
+===============================================================================
 
 .. module:: test.support.script_helper
    :synopsis: Support for Python's script execution tests.
 
 
-The :mod:`test.support.script_helper` module provides support for Python's
+The :mod:`!test.support.script_helper` module provides support for Python's
 script execution tests.
 
 .. function:: interpreter_requires_environment()
@@ -1110,11 +1210,11 @@ script execution tests.
    variables *env_vars* succeeds (``rc == 0``) and return a ``(return code,
    stdout, stderr)`` tuple.
 
-   If the ``__cleanenv`` keyword is set, *env_vars* is used as a fresh
+   If the *__cleanenv* keyword-only parameter is set, *env_vars* is used as a fresh
    environment.
 
    Python is started in isolated mode (command line option ``-I``),
-   except if the ``__isolated`` keyword is set to ``False``.
+   except if the *__isolated* keyword-only parameter is set to ``False``.
 
    .. versionchanged:: 3.9
       The function no longer strips whitespaces from *stderr*.
@@ -1176,13 +1276,13 @@ script execution tests.
    path and the archive name for the zip file.
 
 
-:mod:`test.support.bytecode_helper` --- Support tools for testing correct bytecode generation
-=============================================================================================
+:mod:`!test.support.bytecode_helper` --- Support tools for testing correct bytecode generation
+==============================================================================================
 
 .. module:: test.support.bytecode_helper
    :synopsis: Support tools for testing correct bytecode generation.
 
-The :mod:`test.support.bytecode_helper` module provides support for testing
+The :mod:`!test.support.bytecode_helper` module provides support for testing
 and inspecting bytecode generation.
 
 .. versionadded:: 3.9
@@ -1208,13 +1308,13 @@ The module defines the following class:
    Throws :exc:`AssertionError` if *opname* is found.
 
 
-:mod:`test.support.threading_helper` --- Utilities for threading tests
-======================================================================
+:mod:`!test.support.threading_helper` --- Utilities for threading tests
+=======================================================================
 
 .. module:: test.support.threading_helper
    :synopsis: Support for threading tests.
 
-The :mod:`test.support.threading_helper` module provides support for threading tests.
+The :mod:`!test.support.threading_helper` module provides support for threading tests.
 
 .. versionadded:: 3.10
 
@@ -1225,15 +1325,17 @@ The :mod:`test.support.threading_helper` module provides support for threading t
    is still alive after *timeout* seconds.
 
 
-.. decorator:: reap_threads(func)
+.. decorator:: reap_threads
 
    Decorator to ensure the threads are cleaned up even if the test fails.
 
 
 .. function:: start_threads(threads, unlock=None)
 
-   Context manager to start *threads*.  It attempts to join the threads upon
-   exit.
+   Context manager to start *threads*, which is a sequence of threads.
+   *unlock* is a function called after the threads are started, even if an
+   exception was raised; an example would be :meth:`threading.Event.set`.
+   ``start_threads`` will attempt to join the started threads upon exit.
 
 
 .. function:: threading_cleanup(*original_values)
@@ -1286,13 +1388,20 @@ The :mod:`test.support.threading_helper` module provides support for threading t
    .. versionadded:: 3.8
 
 
-:mod:`test.support.os_helper` --- Utilities for os tests
-========================================================================
+.. function:: run_concurrently(worker_func, nthreads, args=(), kwargs={})
+
+    Run the worker function concurrently in multiple threads.
+    Re-raises an exception if any thread raises one, after all threads have
+    finished.
+
+
+:mod:`!test.support.os_helper` --- Utilities for os tests
+=========================================================
 
 .. module:: test.support.os_helper
    :synopsis: Support for os tests.
 
-The :mod:`test.support.os_helper` module provides support for os tests.
+The :mod:`!test.support.os_helper` module provides support for os tests.
 
 .. versionadded:: 3.10
 
@@ -1315,7 +1424,10 @@ The :mod:`test.support.os_helper` module provides support for os tests.
 
 .. data:: TESTFN_NONASCII
 
-   Set to a filename containing the :data:`FS_NONASCII` character.
+   Set to a filename containing the :data:`FS_NONASCII` character, if it exists.
+   This guarantees that if the filename exists, it can be encoded and decoded
+   with the default filesystem encoding. This allows tests that require a
+   non-ASCII filename to be easily skipped on platforms where they can't work.
 
 
 .. data:: TESTFN_UNENCODABLE
@@ -1351,7 +1463,8 @@ The :mod:`test.support.os_helper` module provides support for os tests.
 
 .. class:: FakePath(path)
 
-   Simple :term:`path-like object`.  It implements the :meth:`__fspath__`
+   Simple :term:`path-like object`.  It implements the
+   :meth:`~os.PathLike.__fspath__`
    method which just returns the *path* argument.  If *path* is an exception,
    it will be raised in :meth:`!__fspath__`.
 
@@ -1362,9 +1475,12 @@ The :mod:`test.support.os_helper` module provides support for os tests.
    ``value``.
 
 
-.. method:: EnvironmentVarGuard.unset(envvar)
+.. method:: EnvironmentVarGuard.unset(envvar, *others)
 
-   Temporarily unset the environment variable ``envvar``.
+   Temporarily unset one or more environment variables.
+
+   .. versionchanged:: 3.14
+      More than one environment variable can be unset.
 
 
 .. function:: can_symlink()
@@ -1413,13 +1529,16 @@ The :mod:`test.support.os_helper` module provides support for os tests.
 .. function:: rmdir(filename)
 
    Call :func:`os.rmdir` on *filename*.  On Windows platforms, this is
-   wrapped with a wait loop that checks for the existence of the file.
+   wrapped with a wait loop that checks for the existence of the file,
+   which is needed due to antivirus programs that can hold files open and prevent
+   deletion.
 
 
 .. function:: rmtree(path)
 
    Call :func:`shutil.rmtree` on *path* or call :func:`os.lstat` and
-   :func:`os.rmdir` to remove a path and its contents.  On Windows platforms,
+   :func:`os.rmdir` to remove a path and its contents.  As with :func:`rmdir`,
+   on Windows platforms
    this is wrapped with a wait loop that checks for the existence of the files.
 
 
@@ -1466,17 +1585,18 @@ The :mod:`test.support.os_helper` module provides support for os tests.
 
 .. function:: unlink(filename)
 
-   Call :func:`os.unlink` on *filename*.  On Windows platforms, this is
+   Call :func:`os.unlink` on *filename*.  As with :func:`rmdir`,
+   on Windows platforms, this is
    wrapped with a wait loop that checks for the existence of the file.
 
 
-:mod:`test.support.import_helper` --- Utilities for import tests
-================================================================
+:mod:`!test.support.import_helper` --- Utilities for import tests
+=================================================================
 
 .. module:: test.support.import_helper
    :synopsis: Support for import tests.
 
-The :mod:`test.support.import_helper` module provides support for import tests.
+The :mod:`!test.support.import_helper` module provides support for import tests.
 
 .. versionadded:: 3.10
 
@@ -1523,7 +1643,7 @@ The :mod:`test.support.import_helper` module provides support for import tests.
    .. versionadded:: 3.1
 
 
-.. function:: import_module(name, deprecated=False, *, required_on())
+.. function:: import_module(name, deprecated=False, *, required_on=())
 
    This function imports and returns the named module. Unlike a normal
    import, this function raises :exc:`unittest.SkipTest` if the module
@@ -1565,7 +1685,7 @@ The :mod:`test.support.import_helper` module provides support for import tests.
 
    A context manager to force import to return a new module reference.  This
    is useful for testing module-level behaviors, such as the emission of a
-   DeprecationWarning on import.  Example usage::
+   :exc:`DeprecationWarning` on import.  Example usage::
 
       with CleanImport('foo'):
           importlib.import_module('foo')  # New reference.
@@ -1573,7 +1693,7 @@ The :mod:`test.support.import_helper` module provides support for import tests.
 
 .. class:: DirsOnSysPath(*paths)
 
-   A context manager to temporarily add directories to sys.path.
+   A context manager to temporarily add directories to :data:`sys.path`.
 
    This makes a copy of :data:`sys.path`, appends any directories given
    as positional arguments, then reverts :data:`sys.path` to the copied
@@ -1584,15 +1704,30 @@ The :mod:`test.support.import_helper` module provides support for import tests.
    will be reverted at the end of the block.
 
 
-:mod:`test.support.warnings_helper` --- Utilities for warnings tests
-====================================================================
+:mod:`!test.support.warnings_helper` --- Utilities for warnings tests
+=====================================================================
 
 .. module:: test.support.warnings_helper
    :synopsis: Support for warnings tests.
 
-The :mod:`test.support.warnings_helper` module provides support for warnings tests.
+The :mod:`!test.support.warnings_helper` module provides support for warnings tests.
 
 .. versionadded:: 3.10
+
+
+.. function:: ignore_warnings(*, category)
+
+   Suppress warnings that are instances of *category*,
+   which must be :exc:`Warning` or a subclass.
+   Roughly equivalent to :func:`warnings.catch_warnings`
+   with :meth:`warnings.simplefilter('ignore', category=category) <warnings.simplefilter>`.
+   For example::
+
+      @warning_helper.ignore_warnings(category=DeprecationWarning)
+      def test_suppress_warning():
+          # do something
+
+   .. versionadded:: 3.8
 
 
 .. function:: check_no_resource_warning(testcase)
@@ -1618,7 +1753,7 @@ The :mod:`test.support.warnings_helper` module provides support for warnings tes
 
 .. function:: check_warnings(*filters, quiet=True)
 
-   A convenience wrapper for :func:`warnings.catch_warnings()` that makes it
+   A convenience wrapper for :func:`warnings.catch_warnings` that makes it
    easier to test that a warning was correctly raised.  It is approximately
    equivalent to calling ``warnings.catch_warnings(record=True)`` with
    :meth:`warnings.simplefilter` set to ``always`` and with the option to

@@ -3,11 +3,12 @@
 from idlelib import run
 import io
 import sys
-from test.support import captured_output, captured_stderr, has_no_debug_ranges
+from test.support import captured_output, captured_stderr
 import unittest
 from unittest import mock
 import idlelib
 from idlelib.idle_test.mock_idle import Func
+from test.support import force_not_colorized
 
 idlelib.testing = True  # Use {} for executing test user code.
 
@@ -33,23 +34,20 @@ class ExceptionTest(unittest.TestCase):
                         run.print_exception()
 
         tb = output.getvalue().strip().splitlines()
-        if has_no_debug_ranges():
-            self.assertEqual(11, len(tb))
-            self.assertIn('UnhashableException: ex2', tb[3])
-            self.assertIn('UnhashableException: ex1', tb[10])
-        else:
-            self.assertEqual(13, len(tb))
-            self.assertIn('UnhashableException: ex2', tb[4])
-            self.assertIn('UnhashableException: ex1', tb[12])
+        self.assertEqual(11, len(tb))
+        self.assertIn('UnhashableException: ex2', tb[3])
+        self.assertIn('UnhashableException: ex1', tb[10])
 
     data = (('1/0', ZeroDivisionError, "division by zero\n"),
             ('abc', NameError, "name 'abc' is not defined. "
-                               "Did you mean: 'abs'?\n"),
+                               "Did you mean: 'abs'? "
+                               "Or did you forget to import 'abc'?\n"),
             ('int.reel', AttributeError,
                  "type object 'int' has no attribute 'reel'. "
-                 "Did you mean: 'real'?\n"),
+                 "Did you mean '.real' instead of '.reel'?\n"),
             )
 
+    @force_not_colorized
     def test_get_message(self):
         for code, exc, msg in self.data:
             with self.subTest(code=code):
@@ -61,6 +59,7 @@ class ExceptionTest(unittest.TestCase):
                     expect = f'{exc.__name__}: {msg}'
                     self.assertEqual(actual, expect)
 
+    @force_not_colorized
     @mock.patch.object(run, 'cleanup_traceback',
                        new_callable=lambda: (lambda t, e: None))
     def test_get_multiple_message(self, mock):
@@ -82,6 +81,99 @@ class ExceptionTest(unittest.TestCase):
                         self.assertIn(msg2, actual)
                         subtests += 1
         self.assertEqual(subtests, len(data2))  # All subtests ran?
+
+    def _capture_exception(self):
+        """Call run.print_exception() and return its stderr output."""
+        with captured_stderr() as output:
+            with mock.patch.object(run, 'cleanup_traceback') as ct:
+                ct.side_effect = lambda t, e: t
+                run.print_exception()
+        return output.getvalue()
+
+    @force_not_colorized
+    def test_print_exception_group_nested(self):
+        try:
+            try:
+                raise ExceptionGroup('inner', [ValueError('v1')])
+            except ExceptionGroup as inner:
+                raise ExceptionGroup('outer', [inner, TypeError('t1')])
+        except ExceptionGroup:
+            tb = self._capture_exception()
+
+        self.assertIn('ExceptionGroup: outer (2 sub-exceptions)', tb)
+        self.assertIn('ExceptionGroup: inner', tb)
+        self.assertIn('ValueError: v1', tb)
+        self.assertIn('TypeError: t1', tb)
+        # Verify tree structure characters.
+        self.assertIn('+-+---------------- 1 ----------------', tb)
+        self.assertIn('+---------------- 2 ----------------', tb)
+        self.assertIn('+------------------------------------', tb)
+
+    @force_not_colorized
+    def test_print_exception_group_chaining(self):
+        # __cause__ on a sub-exception exercises the prefixed
+        # chaining-message path (margin chars on separator lines).
+        sub = TypeError('t1')
+        sub.__cause__ = ValueError('original')
+        try:
+            raise ExceptionGroup('eg1', [sub])
+        except ExceptionGroup:
+            tb = self._capture_exception()
+        self.assertIn('ValueError: original', tb)
+        self.assertIn('| The above exception was the direct cause', tb)
+        self.assertIn('ExceptionGroup: eg1', tb)
+
+        # __context__ (implicit chaining) on a sub-exception.
+        sub = TypeError('t2')
+        sub.__context__ = ValueError('first')
+        try:
+            raise ExceptionGroup('eg2', [sub])
+        except ExceptionGroup:
+            tb = self._capture_exception()
+        self.assertIn('ValueError: first', tb)
+        self.assertIn('| During handling of the above exception', tb)
+        self.assertIn('ExceptionGroup: eg2', tb)
+
+    @force_not_colorized
+    def test_print_exception_group_seen(self):
+        shared = ValueError('shared')
+        try:
+            raise ExceptionGroup('eg', [shared, shared])
+        except ExceptionGroup:
+            tb = self._capture_exception()
+
+        self.assertIn('ValueError: shared', tb)
+        self.assertIn('<exception ValueError has printed>', tb)
+
+    @force_not_colorized
+    def test_print_exception_group_max_width(self):
+        excs = [ValueError(f'v{i}') for i in range(20)]
+        try:
+            raise ExceptionGroup('eg', excs)
+        except ExceptionGroup:
+            tb = self._capture_exception()
+
+        self.assertIn('+---------------- 15 ----------------', tb)
+        self.assertIn('+---------------- ... ----------------', tb)
+        self.assertIn('and 5 more exceptions', tb)
+        self.assertNotIn('+---------------- 16 ----------------', tb)
+
+    @force_not_colorized
+    def test_print_exception_group_max_depth(self):
+        def make_nested(depth):
+            if depth == 0:
+                return ValueError('leaf')
+            return ExceptionGroup(f'level{depth}',
+                                  [make_nested(depth - 1)])
+
+        try:
+            raise make_nested(15)
+        except ExceptionGroup:
+            tb = self._capture_exception()
+
+        self.assertIn('... (max_group_depth is 10)', tb)
+        self.assertIn('ExceptionGroup: level15', tb)
+        self.assertNotIn('ValueError: leaf', tb)
 
 # StdioFile tests.
 

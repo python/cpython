@@ -1,17 +1,14 @@
-:mod:`xmlrpc.server` --- Basic XML-RPC servers
-==============================================
+:mod:`!xmlrpc.server` --- Basic XML-RPC servers
+===============================================
 
 .. module:: xmlrpc.server
    :synopsis: Basic XML-RPC server implementations.
-
-.. moduleauthor:: Brian Quinlan <brianq@activestate.com>
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
 **Source code:** :source:`Lib/xmlrpc/server.py`
 
 --------------
 
-The :mod:`xmlrpc.server` module provides a basic server framework for XML-RPC
+The :mod:`!xmlrpc.server` module provides a basic server framework for XML-RPC
 servers written in Python.  Servers can either be free standing, using
 :class:`SimpleXMLRPCServer`, or embedded in a CGI environment, using
 :class:`CGIXMLRPCRequestHandler`.
@@ -19,10 +16,11 @@ servers written in Python.  Servers can either be free standing, using
 
 .. warning::
 
-   The :mod:`xmlrpc.server` module is not secure against maliciously
-   constructed data.  If you need to parse untrusted or unauthenticated data see
-   :ref:`xml-vulnerabilities`.
+   The :mod:`!xmlrpc.server` module is not secure against maliciously
+   constructed data.  If you need to parse untrusted or unauthenticated data,
+   see :ref:`xml-security`.
 
+.. include:: ../includes/wasm-notavail.rst
 
 .. class:: SimpleXMLRPCServer(addr, requestHandler=SimpleXMLRPCRequestHandler,\
                logRequests=True, allow_none=False, encoding=None,\
@@ -71,7 +69,7 @@ servers written in Python.  Servers can either be free standing, using
 
 .. _simple-xmlrpc-servers:
 
-SimpleXMLRPCServer Objects
+SimpleXMLRPCServer objects
 --------------------------
 
 The :class:`SimpleXMLRPCServer` class is based on
@@ -83,12 +81,12 @@ alone XML-RPC servers.
 
    Register a function that can respond to XML-RPC requests.  If *name* is given,
    it will be the method name associated with *function*, otherwise
-   ``function.__name__`` will be used.  *name* is a string, and may contain
+   :attr:`function.__name__` will be used.  *name* is a string, and may contain
    characters not legal in Python identifiers, including the period character.
 
    This method can also be used as a decorator.  When used as a decorator,
    *name* can only be given as a keyword argument to register *function* under
-   *name*.  If no *name* is given, ``function.__name__`` will be used.
+   *name*.  If no *name* is given, :attr:`function.__name__` will be used.
 
    .. versionchanged:: 3.7
       :meth:`register_function` can be used as a decorator.
@@ -142,7 +140,7 @@ alone XML-RPC servers.
 
 .. _simplexmlrpcserver-example:
 
-SimpleXMLRPCServer Example
+SimpleXMLRPCServer example
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 Server code::
 
@@ -229,11 +227,11 @@ a server allowing dotted names and registering a multicall function.
 
   Enabling the *allow_dotted_names* option allows intruders to access your
   module's global variables and may allow intruders to execute arbitrary code on
-  your machine.  Only use this example only within a secure, closed network.
+  your machine.  Only use this example within a secure, closed network.
 
 ::
 
-    import datetime
+    import datetime as dt
 
     class ExampleService:
         def getData(self):
@@ -242,7 +240,7 @@ a server allowing dotted names and registering a multicall function.
         class currentTime:
             @staticmethod
             def getCurrentTime():
-                return datetime.datetime.now()
+                return dt.datetime.now()
 
     with SimpleXMLRPCServer(("localhost", 8000)) as server:
         server.register_function(pow)
@@ -262,7 +260,7 @@ This ExampleService demo can be invoked from the command line::
 
 
 The client that interacts with the above server is included in
-`Lib/xmlrpc/client.py`::
+``Lib/xmlrpc/client.py``::
 
     server = ServerProxy("http://localhost:8000")
 
@@ -297,12 +295,12 @@ requests sent to Python CGI scripts.
 
    Register a function that can respond to XML-RPC requests.  If *name* is given,
    it will be the method name associated with *function*, otherwise
-   ``function.__name__`` will be used.  *name* is a string, and may contain
+   :attr:`function.__name__` will be used.  *name* is a string, and may contain
    characters not legal in Python identifiers, including the period character.
 
    This method can also be used as a decorator.  When used as a decorator,
    *name* can only be given as a keyword argument to register *function* under
-   *name*.  If no *name* is given, ``function.__name__`` will be used.
+   *name*.  If no *name* is given, :attr:`function.__name__` will be used.
 
    .. versionchanged:: 3.7
       :meth:`register_function` can be used as a decorator.
@@ -389,7 +387,7 @@ to HTTP GET requests.  Servers can either be free standing, using
 
 .. _doc-xmlrpc-servers:
 
-DocXMLRPCServer Objects
+DocXMLRPCServer objects
 -----------------------
 
 The :class:`DocXMLRPCServer` class is derived from :class:`SimpleXMLRPCServer`

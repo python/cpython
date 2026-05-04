@@ -2,12 +2,15 @@ import unittest
 from test import support
 from test.support import import_helper
 from test.support import socket_helper
+import os
 import smtplib
 import socket
 
 ssl = import_helper.import_module("ssl")
 
 support.requires("network")
+
+SMTP_TEST_SERVER = os.getenv('CPYTHON_TEST_SMTP_SERVER', 'smtp.gmail.com')
 
 def check_ssl_verifiy(host, port):
     context = ssl.create_default_context()
@@ -22,7 +25,7 @@ def check_ssl_verifiy(host, port):
 
 
 class SmtpTest(unittest.TestCase):
-    testServer = 'smtp.gmail.com'
+    testServer = SMTP_TEST_SERVER
     remotePort = 587
 
     def test_connect_starttls(self):
@@ -42,9 +45,62 @@ class SmtpTest(unittest.TestCase):
             server.ehlo()
             server.quit()
 
+    def test_connect_host_port_starttls(self):
+        support.get_attribute(smtplib, 'SMTP_SSL')
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+        with socket_helper.transient_internet(self.testServer):
+            server = smtplib.SMTP(f'{self.testServer}:{self.remotePort}')
+            try:
+                server.starttls(context=context)
+            except smtplib.SMTPException as e:
+                if e.args[0] == 'STARTTLS extension not supported by server.':
+                    unittest.skip(e.args[0])
+                else:
+                    raise
+            server.ehlo()
+            server.quit()
+
+    def test_explicit_connect_starttls(self):
+        support.get_attribute(smtplib, 'SMTP_SSL')
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+        with socket_helper.transient_internet(self.testServer):
+            server = smtplib.SMTP()
+            server.connect(self.testServer, self.remotePort)
+            try:
+                server.starttls(context=context)
+            except smtplib.SMTPException as e:
+                if e.args[0] == 'STARTTLS extension not supported by server.':
+                    unittest.skip(e.args[0])
+                else:
+                    raise
+            server.ehlo()
+            server.quit()
+
+    def test_explicit_connect_host_port_starttls(self):
+        support.get_attribute(smtplib, 'SMTP_SSL')
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+        with socket_helper.transient_internet(self.testServer):
+            server = smtplib.SMTP()
+            server.connect(f'{self.testServer}:{self.remotePort}')
+            try:
+                server.starttls(context=context)
+            except smtplib.SMTPException as e:
+                if e.args[0] == 'STARTTLS extension not supported by server.':
+                    unittest.skip(e.args[0])
+                else:
+                    raise
+            server.ehlo()
+            server.quit()
+
 
 class SmtpSSLTest(unittest.TestCase):
-    testServer = 'smtp.gmail.com'
+    testServer = SMTP_TEST_SERVER
     remotePort = 465
 
     def test_connect(self):
@@ -61,6 +117,7 @@ class SmtpSSLTest(unittest.TestCase):
             server.ehlo()
             server.quit()
 
+    @support.requires_resource('walltime')
     def test_connect_using_sslcontext(self):
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         context.check_hostname = False

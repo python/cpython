@@ -1,5 +1,5 @@
-:mod:`site` --- Site-specific configuration hook
-================================================
+:mod:`!site` --- Site-specific configuration hook
+=================================================
 
 .. module:: site
    :synopsis: Module responsible for site-specific configuration.
@@ -15,11 +15,12 @@ import can be suppressed using the interpreter's :option:`-S` option.
 
 .. index:: triple: module; search; path
 
-Importing this module will append site-specific paths to the module search path
-and add a few builtins, unless :option:`-S` was used.  In that case, this module
+Importing this module normally appends site-specific paths to the module search path
+and adds :ref:`callables <site-consts>`, including :func:`help` to the built-in
+namespace. However, Python startup option :option:`-S` blocks this, and this module
 can be safely imported with no automatic modifications to the module search path
 or additions to the builtins.  To explicitly trigger the usual site-specific
-additions, call the :func:`site.main` function.
+additions, call the :func:`main` function.
 
 .. versionchanged:: 3.3
    Importing the module used to trigger paths manipulation even when using
@@ -32,7 +33,10 @@ It starts by constructing up to four directories from a head and a tail part.
 For the head part, it uses ``sys.prefix`` and ``sys.exec_prefix``; empty heads
 are skipped.  For the tail part, it uses the empty string and then
 :file:`lib/site-packages` (on Windows) or
-:file:`lib/python{X.Y}/site-packages` (on Unix and macOS).  For each
+:file:`lib/python{X.Y[t]}/site-packages` (on Unix and macOS). (The
+optional suffix "t" indicates the :term:`free-threaded build`, and is
+appended if ``"t"`` is present in the :data:`sys.abiflags` constant.)
+For each
 of the distinct head-tail combinations, it sees if it refers to an existing
 directory, and if so, adds it to ``sys.path`` and also inspects the newly
 added path for configuration files.
@@ -40,49 +44,148 @@ added path for configuration files.
 .. versionchanged:: 3.5
    Support for the "site-python" directory has been removed.
 
-If a file named "pyvenv.cfg" exists one directory above sys.executable,
-sys.prefix and sys.exec_prefix are set to that directory and
-it is also checked for site-packages (sys.base_prefix and
-sys.base_exec_prefix will always be the "real" prefixes of the Python
-installation). If "pyvenv.cfg" (a bootstrap configuration file) contains
-the key "include-system-site-packages" set to anything other than "true"
-(case-insensitive), the system-level prefixes will not be
-searched for site-packages; otherwise they will.
+.. versionchanged:: 3.13
+   On Unix, :term:`Free threading <free threading>` Python installations are
+   identified by the "t" suffix in the version-specific directory name, such as
+   :file:`lib/python3.13t/`.
+
+.. versionchanged:: 3.14
+
+   :mod:`!site` is no longer responsible for updating :data:`sys.prefix` and
+   :data:`sys.exec_prefix` on :ref:`sys-path-init-virtual-environments`. This is
+   now done during the :ref:`path initialization <sys-path-init>`. As a result,
+   under :ref:`sys-path-init-virtual-environments`, :data:`sys.prefix` and
+   :data:`sys.exec_prefix` no longer depend on the :mod:`!site` initialization,
+   and are therefore unaffected by :option:`-S`.
+
+.. _site-virtual-environments-configuration:
+
+When running under a :ref:`virtual environment <sys-path-init-virtual-environments>`,
+the ``pyvenv.cfg`` file in :data:`sys.prefix` is checked for site-specific
+configurations. If the ``include-system-site-packages`` key exists and is set to
+``true`` (case-insensitive), the system-level prefixes will be searched for
+site-packages, otherwise they won't.  If the system-level prefixes are not searched then
+the user site prefixes are also implicitly not searched for site-packages.
 
 .. index::
    single: # (hash); comment
-   statement: import
+   pair: statement; import
 
-A path configuration file is a file whose name has the form :file:`{name}.pth`
-and exists in one of the four directories mentioned above; its contents are
-additional items (one per line) to be added to ``sys.path``.  Non-existing items
-are never added to ``sys.path``, and no check is made that the item refers to a
-directory rather than a file.  No item is added to ``sys.path`` more than
-once.  Blank lines and lines beginning with ``#`` are skipped.  Lines starting
-with ``import`` (followed by space or tab) are executed.
+The :mod:`!site` module recognizes two startup configuration files of the form
+:file:`{name}.pth` for path configurations, and :file:`{name}.start` for
+pre-first-line code execution.  Both files can exist in one of the four
+directories mentioned above.  Within each directory, these files are sorted
+alphabetically by filename, then parsed in sorted order.
+
+.. _site-pth-files:
+
+Path extensions (:file:`.pth` files)
+------------------------------------
+
+:file:`{name}.pth` contains additional items (one per line) to be appended to
+``sys.path``.  Items that name non-existing directories are never added to
+``sys.path``, and no check is made that the item refers to a directory rather
+than a file.  No item is added to ``sys.path`` more than once.  Blank lines
+and lines beginning with ``#`` are skipped.
+
+For backward compatibility, lines starting with ``import`` (followed by space
+or tab) are executed with :func:`exec`.
+
+.. versionchanged:: 3.13
+
+   The :file:`.pth` files are now decoded by UTF-8 at first and then by the
+   :term:`locale encoding` if it fails.
+
+.. versionchanged:: next
+
+   :file:`.pth` file lines starting with ``import`` are deprecated.  During
+   the deprecation period, such lines are still executed (except in the case
+   below), but a diagnostic message is emitted only when the :option:`-v` flag
+   is given.
+
+   ``import`` lines in :file:`{name}.pth` are silently ignored when a
+   :ref:`matching <site-start-files>` :file:`{name}.start` file exists.
+
+   Errors on individual lines no longer abort processing of the rest of the
+   file.  Each error is reported and the remaining lines continue to be
+   processed.
+
+.. deprecated-removed:: next 3.20
+
+   Decoding :file:`{name}.pth` files in any encoding other than ``utf-8-sig``
+   is deprecated in Python 3.15, and support for decoding from the locale
+   encoding will be removed in Python 3.20.
+
+   ``import`` lines in :file:`{name}.pth` files are deprecated and will be
+   silently ignored in Python 3.18 and 3.19.  In Python 3.20 a warning will be
+   produced for ``import`` lines in :file:`{name}.pth` files.
+
+
+.. _site-start-files:
+
+Startup entry points (:file:`.start` files)
+-------------------------------------------
+
+.. versionadded:: next
+
+A startup entry point file is a file whose name has the form
+:file:`{name}.start` and exists in one of the site-packages directories
+described above.  Each file specifies entry points to be called during
+interpreter startup, using the ``pkg.mod:callable`` syntax understood by
+:func:`pkgutil.resolve_name`.
+
+Each non-blank line that does not begin with ``#`` must contain an entry
+point reference in the form ``pkg.mod:callable``.  The colon and callable
+portion are mandatory.  Each callable is invoked with no arguments, and
+any return value is discarded.
+
+:file:`.start` files are processed after all :file:`.pth` path extensions
+have been applied to :data:`sys.path`, ensuring that paths are available
+before any startup code runs.
+
+Unlike :data:`sys.path` extensions from :file:`.pth` files, duplicate entry
+points are **not** de-duplicated --- if an entry point appears more than once,
+it will be called more than once.
+
+If an exception occurs during resolution or invocation of an entry point,
+a traceback is printed to :data:`sys.stderr` and processing continues with
+the remaining entry points.
+
+:file:`.start` files must be encoded in UTF-8.
+
+:pep:`829` defined the original specification for these features.
 
 .. note::
 
-   An executable line in a :file:`.pth` file is run at every Python startup,
+   If a :file:`{name}.start` file exists alongside a :file:`{name}.pth` file
+   with the same base name, any ``import`` lines in the :file:`.pth` file are
+   ignored in favor of the entry points in the :file:`.start` file.
+
+.. note::
+
+   Executable lines (``import`` lines in :file:`{name}.pth` files and
+   :file:`{name}.start` file entry points) are always run at Python startup
+   (unless :option:`-S` is given to disable the ``site.py`` module entirely),
    regardless of whether a particular module is actually going to be used.
-   Its impact should thus be kept to a minimum.
-   The primary intended purpose of executable lines is to make the
-   corresponding module(s) importable
-   (load 3rd-party import hooks, adjust :envvar:`PATH` etc).
-   Any other initialization is supposed to be done upon a module's
-   actual import, if and when it happens.
-   Limiting a code chunk to a single line is a deliberate measure
-   to discourage putting anything more complex here.
+
+.. note::
+
+   :file:`{name}.start` files invoke :func:`pkgutil.resolve_name` with
+   ``strict=True``, which requires the full ``pkg.mod:callable`` form.
 
 .. index::
    single: package
    triple: path; configuration; file
 
+
+Startup file examples
+---------------------
+
 For example, suppose ``sys.prefix`` and ``sys.exec_prefix`` are set to
 :file:`/usr/local`.  The Python X.Y library is then installed in
 :file:`/usr/local/lib/python{X.Y}`.  Suppose this has
 a subdirectory :file:`/usr/local/lib/python{X.Y}/site-packages` with three
-subsubdirectories, :file:`foo`, :file:`bar` and :file:`spam`, and two path
+sub-subdirectories, :file:`foo`, :file:`bar` and :file:`spam`, and two path
 configuration files, :file:`foo.pth` and :file:`bar.pth`.  Assume
 :file:`foo.pth` contains the following::
 
@@ -109,32 +212,79 @@ directory precedes the :file:`foo` directory because :file:`bar.pth` comes
 alphabetically before :file:`foo.pth`; and :file:`spam` is omitted because it is
 not mentioned in either path configuration file.
 
-.. index:: module: sitecustomize
+Let's say that there is also a :file:`foo.start` file containing the
+following::
+
+    # foo package startup code
+
+    foo.submod:initialize
+
+Now, after ``sys.path`` has been extended as above, and before Python turns
+control over to user code, the ``foo.submod`` module is imported and the
+``initialize()`` function from that module is called.
+
+
+.. _site-migration-guide:
+
+Migrating from ``import`` lines in ``.pth`` files to ``.start`` files
+---------------------------------------------------------------------
+
+If your package currently ships a :file:`{name}.pth` file, you can keep all
+``sys.path`` extension lines unchanged.  Only ``import`` lines need to be
+migrated.
+
+To migrate, create a callable (taking zero arguments) within an importable
+module in your package.  Reference it as a ``pkg.mod:callable`` entry point
+in a matching :file:`{name}.start` file.  Move everything on your ``import``
+line after the first semi-colon into the ``callable()`` function.
+
+If your package must straddle older Pythons that do not support :pep:`829`
+and newer Pythons that do, change the ``import`` lines in your
+:file:`{name}.pth` to use the following form:
+
+.. code-block:: python
+
+   import pkg.mod; pkg.mod.callable()
+
+Older Pythons will execute these ``import`` lines, while newer Pythons will
+ignore them in favor of the :file:`{name}.start` file.  After the straddling
+period, remove all ``import`` lines from your :file:`.pth` files.
+
+
+:mod:`!sitecustomize`
+---------------------
+
+.. module:: sitecustomize
 
 After these path manipulations, an attempt is made to import a module named
-:mod:`sitecustomize`, which can perform arbitrary site-specific customizations.
+:mod:`!sitecustomize`, which can perform arbitrary site-specific customizations.
 It is typically created by a system administrator in the site-packages
 directory.  If this import fails with an :exc:`ImportError` or its subclass
-exception, and the exception's :attr:`name` attribute equals to ``'sitecustomize'``,
+exception, and the exception's :attr:`~ImportError.name`
+attribute equals ``'sitecustomize'``,
 it is silently ignored.  If Python is started without output streams available, as
 with :file:`pythonw.exe` on Windows (which is used by default to start IDLE),
-attempted output from :mod:`sitecustomize` is ignored.  Any other exception
+attempted output from :mod:`!sitecustomize` is ignored.  Any other exception
 causes a silent and perhaps mysterious failure of the process.
 
-.. index:: module: usercustomize
+:mod:`!usercustomize`
+---------------------
 
-After this, an attempt is made to import a module named :mod:`usercustomize`,
+.. module:: usercustomize
+
+After this, an attempt is made to import a module named :mod:`!usercustomize`,
 which can perform arbitrary user-specific customizations, if
-:data:`ENABLE_USER_SITE` is true.  This file is intended to be created in the
+:data:`~site.ENABLE_USER_SITE` is true.  This file is intended to be created in the
 user site-packages directory (see below), which is part of ``sys.path`` unless
 disabled by :option:`-s`.  If this import fails with an :exc:`ImportError` or
-its subclass exception, and the exception's :attr:`name` attribute equals to
-``'usercustomize'``, it is silently ignored.
+its subclass exception, and the exception's :attr:`~ImportError.name`
+attribute equals ``'usercustomize'``, it is silently ignored.
 
 Note that for some non-Unix systems, ``sys.prefix`` and ``sys.exec_prefix`` are
 empty, and the path manipulations are skipped; however the import of
-:mod:`sitecustomize` and :mod:`usercustomize` is still attempted.
+:mod:`sitecustomize` and :mod:`!usercustomize` is still attempted.
 
+.. currentmodule:: site
 
 .. _rlcompleter-config:
 
@@ -144,7 +294,7 @@ Readline configuration
 On systems that support :mod:`readline`, this module will also import and
 configure the :mod:`rlcompleter` module, if Python is started in
 :ref:`interactive mode <tut-interactive>` and without the :option:`-S` option.
-The default behavior is enable tab-completion and to use
+The default behavior is to enable tab completion and to use
 :file:`~/.python_history` as the history save file.  To disable it, delete (or
 override) the :data:`sys.__interactivehook__` attribute in your
 :mod:`sitecustomize` or :mod:`usercustomize` module or your
@@ -176,11 +326,12 @@ Module contents
 
    Path to the user site-packages for the running Python.  Can be ``None`` if
    :func:`getusersitepackages` hasn't been called yet.  Default value is
-   :file:`~/.local/lib/python{X.Y}/site-packages` for UNIX and non-framework
+   :file:`~/.local/lib/python{X.Y}[t]/site-packages` for UNIX and non-framework
    macOS builds, :file:`~/Library/Python/{X.Y}/lib/python/site-packages` for macOS
    framework builds, and :file:`{%APPDATA%}\\Python\\Python{XY}\\site-packages`
-   on Windows.  This directory is a site directory, which means that
-   :file:`.pth` files in it will be processed.
+   on Windows.  The optional "t" indicates the free-threaded build.  This
+   directory is a site directory, which means that :file:`.pth` files in it
+   will be processed.
 
 
 .. data:: USER_BASE
@@ -189,9 +340,9 @@ Module contents
    :func:`getuserbase` hasn't been called yet.  Default value is
    :file:`~/.local` for UNIX and macOS non-framework builds,
    :file:`~/Library/Python/{X.Y}` for macOS framework builds, and
-   :file:`{%APPDATA%}\\Python` for Windows.  This value is used by Distutils to
+   :file:`{%APPDATA%}\\Python` for Windows.  This value is used to
    compute the installation directories for scripts, data files, Python modules,
-   etc. for the :ref:`user installation scheme <inst-alt-install-user>`.
+   etc. for the :ref:`user installation scheme <sysconfig-user-scheme>`.
    See also :envvar:`PYTHONUSERBASE`.
 
 
@@ -205,10 +356,27 @@ Module contents
       This function used to be called unconditionally.
 
 
-.. function:: addsitedir(sitedir, known_paths=None)
+.. function:: addsitedir(sitedir, known_paths=None, *, defer_processing_start_files=False)
 
-   Add a directory to sys.path and process its :file:`.pth` files.  Typically
-   used in :mod:`sitecustomize` or :mod:`usercustomize` (see above).
+   Add a directory to sys.path and parse the :file:`.pth` and :file:`.start`
+   files found in that directory.  Typically used in :mod:`sitecustomize` or
+   :mod:`usercustomize` (see above).
+
+   The *known_paths* argument is an optional set of case-normalized paths
+   used to prevent duplicate :data:`sys.path` entries.  When ``None`` (the
+   default), the set is built from the current :data:`sys.path`.
+
+   While :file:`.pth` and :file:`.start` files are always parsed, set
+   *defer_processing_start_files* to ``True`` to prevent processing the
+   startup data found in those files, so that you can process them explicitly
+   (this is typically used by the :func:`main` function).
+
+   .. versionchanged:: next
+
+      Also processes :file:`.start` files.  See :ref:`site-start-files`.
+      All :file:`.pth` and :file:`.start` files are now read and
+      accumulated before any path extensions, ``import`` line execution,
+      or entry point invocations take place.
 
 
 .. function:: getsitepackages()
@@ -240,29 +408,29 @@ Module contents
 
 .. _site-commandline:
 
-Command Line Interface
+Command-line interface
 ----------------------
 
 .. program:: site
 
-The :mod:`site` module also provides a way to get the user directories from the
+The :mod:`!site` module also provides a way to get the user directories from the
 command line:
 
 .. code-block:: shell-session
 
-   $ python3 -m site --user-site
-   /home/user/.local/lib/python3.3/site-packages
+   $ python -m site --user-site
+   /home/user/.local/lib/python3.11/site-packages
 
 If it is called without arguments, it will print the contents of
 :data:`sys.path` on the standard output, followed by the value of
 :data:`USER_BASE` and whether the directory exists, then the same thing for
 :data:`USER_SITE`, and finally the value of :data:`ENABLE_USER_SITE`.
 
-.. cmdoption:: --user-base
+.. option:: --user-base
 
    Print the path to the user base directory.
 
-.. cmdoption:: --user-site
+.. option:: --user-site
 
    Print the path to the user site-packages directory.
 
@@ -277,5 +445,6 @@ value greater than 2 if there is an error.
 .. seealso::
 
    * :pep:`370` -- Per user site-packages directory
+   * :pep:`829` -- Startup entry points and the deprecation of import lines in ``.pth`` files
    * :ref:`sys-path-init` -- The initialization of :data:`sys.path`.
 

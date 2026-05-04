@@ -1,5 +1,5 @@
-:mod:`email.charset`: Representing character sets
--------------------------------------------------
+:mod:`!email.charset`: Representing character sets
+--------------------------------------------------
 
 .. module:: email.charset
    :synopsis: Character Sets
@@ -19,7 +19,7 @@ registry and several convenience methods for manipulating this registry.
 Instances of :class:`Charset` are used in several other modules within the
 :mod:`email` package.
 
-Import this class from the :mod:`email.charset` module.
+Import this class from the :mod:`!email.charset` module.
 
 
 .. class:: Charset(input_charset=DEFAULT_CHARSET)
@@ -150,7 +150,7 @@ Import this class from the :mod:`email.charset` module.
    .. method:: __str__()
 
       Returns *input_charset* as a string coerced to lower
-      case. :meth:`__repr__` is an alias for :meth:`__str__`.
+      case. :meth:`!__repr__` is an alias for :meth:`!__str__`.
 
 
    .. method:: __eq__(other)
@@ -164,7 +164,7 @@ Import this class from the :mod:`email.charset` module.
       This method allows you to compare two :class:`Charset` instances for
       inequality.
 
-The :mod:`email.charset` module also provides the following functions for adding
+The :mod:`!email.charset` module also provides the following functions for adding
 new entries to the global character set, alias, and codec registries:
 
 
