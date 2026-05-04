@@ -2529,7 +2529,30 @@ then
   AX_CHECK_COMPILE_FLAG([-D_FORTIFY_SOURCE=3], [CFLAGS_NODIST="$CFLAGS_NODIST -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3"], [AC_MSG_WARN([-D_FORTIFY_SOURCE=3 not supported])], [-Werror])
 fi
 
+AC_MSG_CHECKING([whether to build with frame pointers])
+AC_ARG_WITH([frame-pointers],
+  [AS_HELP_STRING([--without-frame-pointers],
+                  [build without frame pointers (default is no)])],
+  [],
+  [with_frame_pointers=yes])
+AC_MSG_RESULT([$with_frame_pointers])
+
 AS_VAR_IF([ac_cv_gcc_compat], [yes], [
+    dnl Keep frame pointers in CPython, stdlib objects, and third-party
+    dnl extensions built against this Python (BASECFLAGS propagates via
+    dnl sysconfig) so native profilers can unwind interpreter frames and
+    dnl generated trampolines without DWARF.
+    frame_pointer_cflags=
+    AX_CHECK_COMPILE_FLAG([-fno-omit-frame-pointer], [
+      frame_pointer_cflags="-fno-omit-frame-pointer"
+      AX_CHECK_COMPILE_FLAG([-mno-omit-leaf-frame-pointer], [
+        frame_pointer_cflags="$frame_pointer_cflags -mno-omit-leaf-frame-pointer"
+      ], [], [-Werror])
+    ], [], [-Werror])
+    if test -n "$frame_pointer_cflags" && test "x$with_frame_pointers" != xno; then
+      BASECFLAGS="$frame_pointer_cflags $BASECFLAGS"
+    fi
+
     CFLAGS_NODIST="$CFLAGS_NODIST -std=c11"
 
     PY_CHECK_CC_WARNING([enable], [extra], [if we can add -Wextra])
@@ -3788,11 +3811,6 @@ AC_MSG_RESULT([$perf_trampoline])
 AS_VAR_IF([perf_trampoline], [yes], [
   AC_DEFINE([PY_HAVE_PERF_TRAMPOLINE], [1], [Define to 1 if you have the perf trampoline.])
   PERF_TRAMPOLINE_OBJ=Python/asm_trampoline.o
-
-  dnl perf needs frame pointers for unwinding, include compiler option in debug builds
-  AS_VAR_IF([Py_DEBUG], [true], [
-    AS_VAR_APPEND([BASECFLAGS], [" -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer"])
-  ])
 ])
 AC_SUBST([PERF_TRAMPOLINE_OBJ])
 

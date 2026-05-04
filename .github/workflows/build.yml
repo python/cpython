@@ -278,13 +278,13 @@ jobs:
           # unsupported as it most resembles other 1.1.1-work-a-like ssl APIs
           # supported by important vendors such as AWS-LC.
           - { name: openssl, version: 1.1.1w }
-          - { name: openssl, version: 3.0.19 }
-          - { name: openssl, version: 3.3.6 }
-          - { name: openssl, version: 3.4.4 }
-          - { name: openssl, version: 3.5.5 }
-          - { name: openssl, version: 3.6.1 }
+          - { name: openssl, version: 3.0.20 }
+          - { name: openssl, version: 3.3.7 }
+          - { name: openssl, version: 3.4.5 }
+          - { name: openssl, version: 3.5.6 }
+          - { name: openssl, version: 3.6.2 }
           ## AWS-LC
-          - { name: aws-lc, version: 1.68.0 }
+          - { name: aws-lc, version: 1.72.1 }
     env:
       SSLLIB_VER: ${{ matrix.ssllib.version }}
       MULTISSL_DIR: ${{ github.workspace }}/multissl
@@ -398,7 +398,7 @@ jobs:
     needs: build-context
     if: needs.build-context.outputs.run-ubuntu == 'true'
     env:
-      OPENSSL_VER: 3.5.5
+      OPENSSL_VER: 3.5.6
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -506,7 +506,7 @@ jobs:
       matrix:
         os: [ubuntu-24.04]
     env:
-      OPENSSL_VER: 3.5.5
+      OPENSSL_VER: 3.5.6
       PYTHONSTRICTEXTENSIONBUILD: 1
       ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
     steps:
