@@ -91,7 +91,7 @@ Summary -- Release highlights
 * :ref:`Improved error messages <whatsnew315-improved-error-messages>`
 * :ref:`The official Windows 64-bit binaries now use the tail-calling interpreter
   <whatsnew315-windows-tail-calling-interpreter>`
-* :pep:`829`: Package Startup Configuration Files
+* :pep:`829`: :ref:`Package Startup Configuration Files <whatsnew315-startup-files>`
 
 New features
 ============
@@ -447,6 +447,31 @@ If this is the case for your tool, compile for ``cp315t`` separately.
 If not using a build tool -- or when writing such a tool -- you can select
 ``abi3t`` by setting the macro :c:macro:`!Py_TARGET_ABI3T` as discussed
 in :ref:`abi3-compiling`.
+
+
+.. _whatsnew315-startup-files:
+
+:pep:`829`: Startup Configuration Files
+---------------------------------------
+
+Loaded by the :mod:`site` module when ``-S`` is not given, :file:`.pth` files
+can contain lines that both extend :data:`sys.path` and execute arbitrary code
+when the line starts with ``import`` (followed by a space or tab).  The latter
+functionality can be problematic, since it is difficult to know exactly what
+gets executed when Python starts up.
+
+As a step towards improving the ability to audit pre-start executable code,
+Python 3.15 introduces :file:`.start` files which contain entry point
+specifications of the form ``pkg.mod:callable`` where ``pkg.mod`` is the
+import path to the given callable.  When Python starts up, the callable is
+located and called with no arguments.
+
+``import`` lines in :file:`.pth` files are silently deprecated.  When a
+matching :file:`.start` file is found, ``import`` lines in :file:`.pth` files
+are ignored.  There is no change to :data:`sys.path` extension lines in
+:file:`.pth` files.
+
+(Contributed by Barry Warsaw in :gh:`148641`.)
 
 
 .. _whatsnew315-improved-error-messages:
