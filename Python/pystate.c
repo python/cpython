@@ -3477,17 +3477,15 @@ PyInterpreterView_FromMain(void)
         return NULL;
     }
 
-    _PyRuntimeState *runtime = &_PyRuntime;
-    HEAD_LOCK(runtime);
-    view->id = runtime->_main_interpreter.id;
-    HEAD_UNLOCK(runtime);
+    // The main interpreter always has an ID of zero.
+    view->id = 0;
 
     return view;
 }
 
-static const PyThreadStateToken *_no_tstate_sentinel = &_no_tstate_sentinel;
+static const PyThreadStateToken *_no_tstate_sentinel = (const PyThreadStateToken *)&_no_tstate_sentinel;
 
-#define NO_TSTATE_SENTINEL ((PyThreadStateToken *)_no_tstate_sentinel)
+#define NO_TSTATE_SENTINEL (_no_tstate_sentinel)
 
 PyThreadStateToken *
 PyThreadState_Ensure(PyInterpreterGuard *guard)
