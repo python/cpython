@@ -3728,8 +3728,9 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
         _PyErr_SetString(tstate, PyExc_KeyError, "'__name__' not in globals");
         goto error;
     }
-    if (!PyDict_Check(globals)) {
-        _PyErr_SetString(tstate, PyExc_TypeError, "globals must be a dict");
+    if (!PyAnyDict_Check(globals)) {
+        _PyErr_SetString(tstate, PyExc_TypeError,
+                         "globals must be a dict or a frozendict");
         goto error;
     }
     if (PyDict_GetItemRef(globals, &_Py_ID(__package__), &package) < 0) {
@@ -4376,6 +4377,12 @@ register_lazy_on_parent(PyThreadState *tstate, PyObject *name,
         Py_ssize_t dot = PyUnicode_FindChar(name, '.', 0,
                                             PyUnicode_GET_LENGTH(name), -1);
         if (dot < 0) {
+            PyObject *lazy_submodules = ensure_lazy_submodules(
+                (PyDictObject *)lazy_modules, name);
+            if (lazy_submodules == NULL) {
+                goto done;
+            }
+            Py_DECREF(lazy_submodules);
             ret = 0;
             goto done;
         }
@@ -4468,6 +4475,17 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
                                       PyObject *globals, PyObject *locals,
                                       PyObject *fromlist, int level)
 {
+    assert(name != NULL);
+    if (!PyUnicode_Check(name)) {
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "module name must be a string, got %T", name);
+        return NULL;
+    }
+    if (level < 0) {
+        _PyErr_SetString(tstate, PyExc_ValueError, "level must be >= 0");
+        return NULL;
+    }
+
     PyObject *abs_name = get_abs_name(tstate, name, globals, level);
     if (abs_name == NULL) {
         return NULL;
@@ -4501,7 +4519,11 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
             assert(!PyErr_Occurred());
             modname = Py_NewRef(Py_None);
         }
-        PyObject *args[] = {modname, name, fromlist};
+        if (fromlist == NULL) {
+            assert(!PyErr_Occurred());
+            fromlist = Py_NewRef(Py_None);
+        }
+        PyObject *args[] = {modname, abs_name, fromlist};
         PyObject *res = PyObject_Vectorcall(filter, args, 3, NULL);
 
         Py_DECREF(modname);
@@ -5627,6 +5649,7 @@ _imp__set_lazy_attributes_impl(PyObject *module, PyObject *modobj,
 
     module_dict = get_mod_dict(modobj);
     if (module_dict == NULL || !PyDict_CheckExact(module_dict)) {
+        Py_DECREF(lazy_submodules);
         goto done;
     }
 
@@ -5697,6 +5720,7 @@ imp_module_exec(PyObject *module)
 
 
 static PyModuleDef_Slot imp_slots[] = {
+     _Py_ABI_SLOT,
     {Py_mod_exec, imp_module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

@@ -13,6 +13,7 @@
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"      // struct _PyErr_SetRaisedException
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 
 #include "osdefs.h"               // SEP
 #include "clinic/exceptions.c.h"
@@ -214,7 +215,7 @@ BaseException___reduce___impl(PyBaseExceptionObject *self)
     if (self->args && self->dict)
         return PyTuple_Pack(3, Py_TYPE(self), self->args, self->dict);
     else
-        return PyTuple_Pack(2, Py_TYPE(self), self->args);
+        return _PyTuple_FromPair((PyObject *)Py_TYPE(self), self->args);
 }
 
 /*
@@ -912,7 +913,7 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     exceptions = PySequence_Tuple(exceptions);
     if (!exceptions) {
-        return NULL;
+        goto error;
     }
 
     /* We are now holding a ref to the exceptions tuple */
@@ -934,7 +935,7 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         if (!PyExceptionInstance_Check(exc)) {
             PyErr_Format(
                 PyExc_ValueError,
-                "Item %d of second argument (exceptions) is not an exception",
+                "Item %zd of second argument (exceptions) is not an exception",
                 i);
             goto error;
         }
@@ -1008,8 +1009,7 @@ _PyExc_CreateExceptionGroup(const char *msg_str, PyObject *excs)
     if (!msg) {
         return NULL;
     }
-    PyObject *args = PyTuple_Pack(2, msg, excs);
-    Py_DECREF(msg);
+    PyObject *args = _PyTuple_FromPairSteal(msg, Py_NewRef(excs));
     if (!args) {
         return NULL;
     }
@@ -1091,7 +1091,8 @@ BaseExceptionGroup_repr(PyObject *op)
          * value of self.args[1]; but this can be mutable and go out-of-sync
          * with self.exceptions. Instead, use self.exceptions for accuracy,
          * making it look like self.args[1] for backwards compatibility. */
-        if (PyList_Check(PyTuple_GET_ITEM(self->args, 1))) {
+        assert(PyTuple_Check(self->args));
+        if (PyTuple_GET_SIZE(self->args) == 2 && PyList_Check(PyTuple_GET_ITEM(self->args, 1))) {
             PyObject *exceptions_list = PySequence_List(self->excs);
             if (!exceptions_list) {
                 return NULL;
@@ -1132,7 +1133,7 @@ BaseExceptionGroup_derive_impl(PyBaseExceptionGroupObject *self,
                                PyObject *excs)
 /*[clinic end generated code: output=4307564218dfbf06 input=f72009d38e98cec1]*/
 {
-    PyObject *init_args = PyTuple_Pack(2, self->msg, excs);
+    PyObject *init_args = _PyTuple_FromPair(self->msg, excs);
     if (!init_args) {
         return NULL;
     }
@@ -1449,13 +1450,11 @@ BaseExceptionGroup_split_impl(PyBaseExceptionGroupObject *self,
         return NULL;
     }
 
-    PyObject *result = PyTuple_Pack(
-            2,
+    assert(_Py_IsStaticImmortal(Py_None));
+    PyObject *result = _PyTuple_FromPairSteal(
             split_result.match ? split_result.match : Py_None,
             split_result.rest ? split_result.rest : Py_None);
 
-    Py_XDECREF(split_result.match);
-    Py_XDECREF(split_result.rest);
     return result;
 }
 
@@ -1715,7 +1714,7 @@ PyUnstable_Exc_PrepReraiseStar(PyObject *orig, PyObject *excs)
         PyObject *exc = PyList_GET_ITEM(excs, i);
         if (exc == NULL || !(PyExceptionInstance_Check(exc) || Py_IsNone(exc))) {
             PyErr_Format(PyExc_TypeError,
-                         "item %d of excs is not an exception", i);
+                         "item %zd of excs is not an exception", i);
             return NULL;
         }
     }
@@ -1764,8 +1763,8 @@ static PyObject*
 create_exception_group_class(void) {
     struct _Py_exc_state *state = get_exc_state();
 
-    PyObject *bases = PyTuple_Pack(
-        2, PyExc_BaseExceptionGroup, PyExc_Exception);
+    PyObject *bases = _PyTuple_FromPair(
+        PyExc_BaseExceptionGroup, PyExc_Exception);
     if (bases == NULL) {
         return NULL;
     }
@@ -1913,7 +1912,7 @@ ImportError_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
         return NULL;
     PyBaseExceptionObject *exc = PyBaseExceptionObject_CAST(self);
     if (state == Py_None)
-        res = PyTuple_Pack(2, Py_TYPE(self), exc->args);
+        res = _PyTuple_FromPair((PyObject *)Py_TYPE(self), exc->args);
     else
         res = PyTuple_Pack(3, Py_TYPE(self), exc->args, state);
     Py_DECREF(state);
@@ -2421,7 +2420,7 @@ OSError_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
     if (self->dict)
         res = PyTuple_Pack(3, Py_TYPE(self), args, self->dict);
     else
-        res = PyTuple_Pack(2, Py_TYPE(self), args);
+        res = _PyTuple_FromPair((PyObject *)Py_TYPE(self), args);
     Py_DECREF(args);
     return res;
 }
@@ -2803,23 +2802,25 @@ SyntaxError_init(PyObject *op, PyObject *args, PyObject *kwds)
             return -1;
         }
 
-        self->end_lineno = NULL;
-        self->end_offset = NULL;
+        PyObject *filename, *lineno, *offset, *text;
+        PyObject *end_lineno = NULL;
+        PyObject *end_offset = NULL;
+        PyObject *metadata = NULL;
         if (!PyArg_ParseTuple(info, "OOOO|OOO",
-                              &self->filename, &self->lineno,
-                              &self->offset, &self->text,
-                              &self->end_lineno, &self->end_offset, &self->metadata)) {
+                              &filename, &lineno,
+                              &offset, &text,
+                              &end_lineno, &end_offset, &metadata)) {
             Py_DECREF(info);
             return -1;
         }
 
-        Py_INCREF(self->filename);
-        Py_INCREF(self->lineno);
-        Py_INCREF(self->offset);
-        Py_INCREF(self->text);
-        Py_XINCREF(self->end_lineno);
-        Py_XINCREF(self->end_offset);
-        Py_XINCREF(self->metadata);
+        Py_XSETREF(self->filename, Py_NewRef(filename));
+        Py_XSETREF(self->lineno, Py_NewRef(lineno));
+        Py_XSETREF(self->offset, Py_NewRef(offset));
+        Py_XSETREF(self->text, Py_NewRef(text));
+        Py_XSETREF(self->end_lineno, Py_XNewRef(end_lineno));
+        Py_XSETREF(self->end_offset, Py_XNewRef(end_offset));
+        Py_XSETREF(self->metadata, Py_XNewRef(metadata));
         Py_DECREF(info);
 
         if (self->end_lineno != NULL && self->end_offset == NULL) {

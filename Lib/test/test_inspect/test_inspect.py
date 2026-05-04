@@ -173,6 +173,15 @@ class custom_descriptor:
         return self.func.__get__(instance, owner)
 
 
+class TestImportTime(unittest.TestCase):
+
+    @cpython_only
+    def test_lazy_import(self):
+        import_helper.ensure_lazy_imports(
+            "inspect", {"re", "tokenize"}
+        )
+
+
 class TestPredicates(IsTestBase):
 
     def test_excluding_predicates(self):
@@ -6267,8 +6276,7 @@ class TestSignatureDefinitions(unittest.TestCase):
     def test_os_module_has_signatures(self):
         unsupported_signature = {'chmod', 'utime'}
         unsupported_signature |= {name for name in
-            ['get_terminal_size', 'link', 'posix_spawn', 'posix_spawnp',
-             'register_at_fork', 'startfile']
+            ['get_terminal_size', 'link', 'register_at_fork', 'startfile']
             if hasattr(os, name)}
         self._test_module_has_signatures(os, unsupported_signature=unsupported_signature)
 

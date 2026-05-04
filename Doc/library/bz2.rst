@@ -4,11 +4,6 @@
 .. module:: bz2
    :synopsis: Interfaces for bzip2 compression and decompression.
 
-.. moduleauthor:: Gustavo Niemeyer <niemeyer@conectiva.com>
-.. moduleauthor:: Nadeem Vawda <nadeem.vawda@gmail.com>
-.. sectionauthor:: Gustavo Niemeyer <niemeyer@conectiva.com>
-.. sectionauthor:: Nadeem Vawda <nadeem.vawda@gmail.com>
-
 **Source code:** :source:`Lib/bz2.py`
 
 --------------

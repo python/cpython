@@ -4,8 +4,6 @@
 .. module:: mimetypes
    :synopsis: Mapping of filename extensions to MIME types.
 
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
 **Source code:** :source:`Lib/mimetypes.py`
 
 .. index:: pair: MIME; content type
@@ -56,8 +54,8 @@ the information :func:`init` sets up.
    .. versionchanged:: 3.8
       Added support for *url* being a :term:`path-like object`.
 
-   .. deprecated:: 3.13
-      Passing a file path instead of URL is :term:`soft deprecated`.
+   .. soft-deprecated:: 3.13
+      Passing a file path instead of URL.
       Use :func:`guess_file_type` for this.
 
 

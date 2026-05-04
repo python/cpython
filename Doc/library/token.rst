@@ -4,8 +4,6 @@
 .. module:: token
    :synopsis: Constants representing terminal nodes of the parse tree.
 
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
 **Source code:** :source:`Lib/token.py`
 
 --------------

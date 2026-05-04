@@ -1,6 +1,9 @@
 import netrc, os, unittest, sys, textwrap
+from pathlib import Path
 from test import support
 from test.support import os_helper
+from unittest.mock import patch
+
 
 temp_filename = os_helper.TESTFN
 
@@ -308,6 +311,26 @@ class NetrcTestCase(unittest.TestCase):
             os.chmod(fn, 0o622)
             self.assertEqual(nrc.hosts['foo.domain.com'],
                              ('anonymous', '', 'pass'))
+
+    @unittest.skipUnless(os.name == 'posix', 'POSIX only test')
+    @unittest.skipUnless(hasattr(os, 'getuid'), "os.getuid is required")
+    @os_helper.skip_unless_working_chmod
+    def test_security_only_once(self):
+        # Make sure security check is only run once per parse when multiple
+        # entries are found.
+        with patch.object(netrc.netrc, "_security_check") as mock:
+            with os_helper.temp_dir() as tmp_dir:
+                netrc_path = Path(tmp_dir) / '.netrc'
+                netrc_path.write_text("""\
+                machine foo.domain.com login bar password pass
+                machine bar.domain.com login foo password pass
+                """)
+                netrc_path.chmod(0o600)
+                with os_helper.EnvironmentVarGuard() as environ:
+                    environ.set('HOME', tmp_dir)
+                    netrc.netrc()
+
+            mock.assert_called_once()
 
 
 if __name__ == "__main__":

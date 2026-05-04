@@ -48,10 +48,8 @@ read_py_str(
     uintptr_t address,
     Py_ssize_t max_len
 ) {
-    PyObject *result = NULL;
-    char *buf = NULL;
-
-    // Read the entire PyUnicodeObject at once
+    // Read the entire PyUnicodeObject at once; for short strings the data
+    // is inline right after the header and we'll already have (some of) it.
     char unicode_obj[SIZEOF_UNICODE_OBJ];
     int res = _Py_RemoteDebug_PagedReadRemoteMemory(
         &unwinder->handle,
@@ -61,7 +59,7 @@ read_py_str(
     );
     if (res < 0) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read PyUnicodeObject");
-        goto err;
+        return NULL;
     }
 
     Py_ssize_t len = GET_MEMBER(Py_ssize_t, unicode_obj, unwinder->debug_offsets.unicode_object.length);
@@ -72,36 +70,94 @@ read_py_str(
         return NULL;
     }
 
-    buf = (char *)PyMem_RawMalloc(len+1);
-    if (buf == NULL) {
-        PyErr_NoMemory();
-        set_exception_cause(unwinder, PyExc_MemoryError, "Failed to allocate buffer for string reading");
+    // Inspect state to pick the right data offset and character width.
+    // We rely on the remote process sharing this Python version's
+    // PyASCIIObject layout, the same assumption already used for `length`.
+    struct _PyUnicodeObject_state state = GET_MEMBER(
+        struct _PyUnicodeObject_state,
+        unicode_obj,
+        unwinder->debug_offsets.unicode_object.state);
+
+    if (!state.compact) {
+        PyErr_Format(PyExc_RuntimeError,
+                     "Cannot read non-compact Unicode object at 0x%lx", address);
+        set_exception_cause(unwinder, PyExc_RuntimeError,
+                            "Legacy (non-compact) Unicode objects are not supported");
         return NULL;
     }
 
-    size_t offset = (size_t)unwinder->debug_offsets.unicode_object.asciiobject_size;
-    res = _Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, address + offset, len, buf);
-    if (res < 0) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read string data from remote memory");
-        goto err;
+    int kind = (int)state.kind;
+    Py_UCS4 max_char;
+    switch (kind) {
+        case PyUnicode_1BYTE_KIND:
+            max_char = state.ascii ? 0x7F : 0xFF;
+            break;
+        case PyUnicode_2BYTE_KIND:
+            max_char = 0xFFFF;
+            break;
+        case PyUnicode_4BYTE_KIND:
+            max_char = 0x10FFFF;
+            break;
+        default:
+            PyErr_Format(PyExc_RuntimeError,
+                         "Invalid Unicode kind %d at 0x%lx", kind, address);
+            set_exception_cause(unwinder, PyExc_RuntimeError,
+                                "Invalid kind in remote Unicode object");
+            return NULL;
     }
-    buf[len] = '\0';
 
-    result = PyUnicode_FromStringAndSize(buf, len);
+    size_t header_size = state.ascii
+        ? (size_t)unwinder->debug_offsets.unicode_object.asciiobject_size
+        : (size_t)unwinder->debug_offsets.unicode_object.compactunicodeobject_size;
+
+    // len * kind is bounded by max_len * 4 (kind <= 4, len <= max_len), so
+    // the multiplication can't overflow for any caller-sane max_len, but the
+    // explicit cap here keeps a corrupted remote `length` from later turning
+    // into a giant allocation.
+    size_t nbytes = (size_t)len * (size_t)kind;
+    if ((size_t)len > (SIZE_MAX / 4) || nbytes > (size_t)max_len * 4) {
+        PyErr_Format(PyExc_RuntimeError,
+                     "Implausible Unicode byte size %zu at 0x%lx", nbytes, address);
+        set_exception_cause(unwinder, PyExc_RuntimeError,
+                            "Garbage byte size in remote Unicode object");
+        return NULL;
+    }
+
+    PyObject *result = PyUnicode_New(len, max_char);
     if (result == NULL) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to create PyUnicode from remote string data");
-        goto err;
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to allocate PyUnicode for remote string");
+        return NULL;
+    }
+    if (nbytes == 0) {
+        return result;
     }
 
-    PyMem_RawFree(buf);
-    assert(result != NULL);
+    void *data = PyUnicode_DATA(result);
+
+    // Reuse data already present in the header read; only round-trip for
+    // whatever spills past it.
+    size_t inline_avail = (header_size < SIZEOF_UNICODE_OBJ)
+        ? SIZEOF_UNICODE_OBJ - header_size
+        : 0;
+    size_t inline_bytes = nbytes < inline_avail ? nbytes : inline_avail;
+    if (inline_bytes > 0) {
+        memcpy(data, unicode_obj + header_size, inline_bytes);
+    }
+
+    if (nbytes > inline_bytes) {
+        res = _Py_RemoteDebug_PagedReadRemoteMemory(
+            &unwinder->handle,
+            address + header_size + inline_bytes,
+            nbytes - inline_bytes,
+            (char *)data + inline_bytes);
+        if (res < 0) {
+            Py_DECREF(result);
+            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read string data from remote memory");
+            return NULL;
+        }
+    }
+
     return result;
-
-err:
-    if (buf != NULL) {
-        PyMem_RawFree(buf);
-    }
-    return NULL;
 }
 
 PyObject *
@@ -196,6 +252,8 @@ read_py_long(
 
     // Validate size: reject garbage (negative or unreasonably large)
     if (size < 0 || size > MAX_LONG_DIGITS) {
+        PyErr_Format(PyExc_RuntimeError,
+            "Invalid PyLong digit count: %zd (expected 0-%d)", size, MAX_LONG_DIGITS);
         set_exception_cause(unwinder, PyExc_RuntimeError,
             "Invalid PyLong size (corrupted remote memory)");
         return -1;

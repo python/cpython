@@ -4,9 +4,6 @@
 .. module:: curses.ascii
    :synopsis: Constants and set-membership functions for ASCII characters.
 
-.. moduleauthor:: Eric S. Raymond <esr@thyrsus.com>
-.. sectionauthor:: Eric S. Raymond <esr@thyrsus.com>
-
 **Source code:** :source:`Lib/curses/ascii.py`
 
 --------------

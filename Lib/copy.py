@@ -204,7 +204,17 @@ def _deepcopy_dict(x, memo, deepcopy=deepcopy):
 d[dict] = _deepcopy_dict
 
 def _deepcopy_frozendict(x, memo, deepcopy=deepcopy):
-    y = _deepcopy_dict(x, memo, deepcopy)
+    y = {}
+    for key, value in x.items():
+        y[deepcopy(key, memo)] = deepcopy(value, memo)
+
+    # We're not going to put the frozendict in the memo, but it's still
+    # important we check for it, in case the frozendict contains recursive
+    # mutable structures.
+    try:
+        return memo[id(x)]
+    except KeyError:
+        pass
     return frozendict(y)
 d[frozendict] = _deepcopy_frozendict
 

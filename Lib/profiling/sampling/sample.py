@@ -58,6 +58,10 @@ class SampleProfiler:
         try:
             self.unwinder = self._new_unwinder(native, gc, opcodes, skip_non_matching_threads)
         except RuntimeError as err:
+            if os.name == "nt" and sys.executable.endswith("python.exe"):
+                raise SystemExit(
+                    "Running profiling.sampling from virtualenv on Windows platform is not supported"
+                ) from err
             raise SystemExit(err) from err
         # Track sample intervals and total sample count
         self.sample_intervals = deque(maxlen=100)
@@ -164,7 +168,8 @@ class SampleProfiler:
         # Don't print stats for live mode (curses is handling display)
         is_live_mode = LiveStatsCollector is not None and isinstance(collector, LiveStatsCollector)
         if not is_live_mode:
-            print(f"Captured {num_samples:n} samples in {fmt(running_time_sec, 2)} seconds")
+            s = "" if num_samples == 1 else "s"
+            print(f"Captured {num_samples:n} sample{s} in {fmt(running_time_sec, 2)} seconds")
             print(f"Sample rate: {fmt(sample_rate, 2)} samples/sec")
             print(f"Error rate: {fmt(error_rate, 2)}")
 

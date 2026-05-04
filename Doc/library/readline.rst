@@ -2,10 +2,7 @@
 ===========================================
 
 .. module:: readline
-   :platform: Unix
    :synopsis: GNU readline support for Python.
-
-.. sectionauthor:: Skip Montanaro <skip.montanaro@gmail.com>
 
 --------------
 
@@ -27,6 +24,8 @@ Readline library in general.
 .. include:: ../includes/wasm-mobile-notavail.rst
 
 .. include:: ../includes/optional-module.rst
+
+.. availability:: Unix.
 
 .. note::
 

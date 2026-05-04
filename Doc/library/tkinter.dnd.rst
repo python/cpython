@@ -2,7 +2,6 @@
 =============================================
 
 .. module:: tkinter.dnd
-   :platform: Tk
    :synopsis: Tkinter drag-and-drop interface
 
 **Source code:** :source:`Lib/tkinter/dnd.py`

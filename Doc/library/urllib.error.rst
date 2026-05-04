@@ -4,9 +4,6 @@
 .. module:: urllib.error
    :synopsis: Exception classes raised by urllib.request.
 
-.. moduleauthor:: Jeremy Hylton <jeremy@alum.mit.edu>
-.. sectionauthor:: Senthil Kumaran <orsenthil@gmail.com>
-
 **Source code:** :source:`Lib/urllib/error.py`
 
 --------------

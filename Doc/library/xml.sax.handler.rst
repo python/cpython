@@ -4,9 +4,6 @@
 .. module:: xml.sax.handler
    :synopsis: Base classes for SAX event handlers.
 
-.. moduleauthor:: Lars Marius Garshol <larsga@garshol.priv.no>
-.. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
-
 **Source code:** :source:`Lib/xml/sax/handler.py`
 
 --------------

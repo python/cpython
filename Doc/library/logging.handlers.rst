@@ -4,9 +4,6 @@
 .. module:: logging.handlers
    :synopsis: Handlers for the logging module.
 
-.. moduleauthor:: Vinay Sajip <vinay_sajip@red-dove.com>
-.. sectionauthor:: Vinay Sajip <vinay_sajip@red-dove.com>
-
 **Source code:** :source:`Lib/logging/handlers.py`
 
 .. sidebar:: Important
