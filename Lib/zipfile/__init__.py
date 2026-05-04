@@ -2328,7 +2328,7 @@ def main(args=None):
     import argparse
 
     description = 'A simple command-line interface for zipfile module.'
-    parser = argparse.ArgumentParser(description=description, color=True)
+    parser = argparse.ArgumentParser(description=description)
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-l', '--list', metavar='<zipfile>',
                        help='Show listing of a zipfile')
@@ -2341,7 +2341,7 @@ def main(args=None):
     group.add_argument('-t', '--test', metavar='<zipfile>',
                        help='Test if a zipfile is valid')
     parser.add_argument('--metadata-encoding', metavar='<encoding>',
-                        help='Specify encoding of member names for -l, -e and -t')
+                        help='Specify encoding of member names for `-l`, `-e` and `-t`')
     args = parser.parse_args(args)
 
     encoding = args.metadata_encoding
