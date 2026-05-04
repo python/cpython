@@ -1,0 +1,7 @@
+Add four new ``PyUnstable_*`` C API functions for signal-safe, allocation-free
+call-stack iteration: :c:func:`PyUnstable_ThreadState_GetInterpreterFrame`,
+:c:func:`PyUnstable_InterpreterFrame_GetNextComplete`,
+:c:func:`PyUnstable_InterpreterFrame_GetCodeSafe`, and
+:c:func:`PyUnstable_InterpreterFrame_GetLineSafe`.  These functions do not
+allocate memory, do not change reference counts, and do not acquire the GIL,
+making them safe to call from signal handlers and custom memory allocator hooks.
