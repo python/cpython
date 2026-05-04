@@ -991,12 +991,12 @@ Glossary
 
    mapping
       A container object that supports arbitrary key lookups and implements the
-      methods specified in the :class:`collections.abc.Mapping` or
-      :class:`collections.abc.MutableMapping`
-      :ref:`abstract base classes <collections-abstract-base-classes>`.  Examples
-      include :class:`dict`, :class:`collections.defaultdict`,
+      methods of :class:`collections.abc.Mapping` or
+      :class:`collections.abc.MutableMapping` :term:`abstract base classes <abstract base class>`.
+      Examples include :class:`dict`, :class:`collections.defaultdict`,
       :class:`collections.OrderedDict` and :class:`collections.Counter`.
 
+      See more details on implemented methods :ref:`there <collections-abstract-base-classes>`. 
    meta path finder
       A :term:`finder` returned by a search of :data:`sys.meta_path`.  Meta path
       finders are related to, but different from :term:`path entry finders
