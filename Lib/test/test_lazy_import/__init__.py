@@ -1948,6 +1948,13 @@ class LazyImportDisTests(unittest.TestCase):
         else:
             self.assertFail("IMPORT_NAME not found")
 
+    def test_eager_import_dis(self):
+        """non module level import should show eager"""
+        code = compile("def f(): import foo", "exec", "exec")
+        f = io.StringIO()
+        dis.dis(code, file=f)
+        self.assertIn("foo + eager", f.getvalue())
+
 
 @unittest.skipIf(_testcapi is None, 'need the _testcapi module')
 class LazyCApiTests(unittest.TestCase):
