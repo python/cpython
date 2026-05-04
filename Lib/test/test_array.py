@@ -31,7 +31,10 @@ class ArraySubclassWithKwargs(array.array):
     def __init__(self, typecode, newarg=None):
         array.array.__init__(self)
 
-typecodes = 'uwbBhHiIlLfdqQFDe'
+typecodes = (
+    'u', 'w', 'b', 'B', 'h', 'H', 'i', 'I', 'l', 'L',
+    'f', 'd', 'q', 'Q', 'e', 'Zf', 'Zd')
+
 
 class MiscTest(unittest.TestCase):
 
@@ -42,8 +45,9 @@ class MiscTest(unittest.TestCase):
     def test_bad_constructor(self):
         self.assertRaises(TypeError, array.array)
         self.assertRaises(TypeError, array.array, spam=42)
-        self.assertRaises(TypeError, array.array, 'xx')
+        self.assertRaises(ValueError, array.array, 'xx')
         self.assertRaises(ValueError, array.array, 'x')
+        self.assertRaises(ValueError, array.array, 'Z')
 
     @support.cpython_only
     def test_disallow_instantiation(self):
@@ -84,6 +88,12 @@ class MiscTest(unittest.TestCase):
                 a = array.array(typecode)
                 with self.assertRaises(TypeError):
                     a.fromlist(lst)
+
+    def test_typecodes(self):
+        self.assertIsInstance(array.typecodes, tuple)
+        for typecode in array.typecodes:
+            self.assertIsInstance(typecode, str)
+            self.assertGreaterEqual(len(typecode), 1)
 
 
 # Machine format codes.
@@ -200,13 +210,13 @@ class ArrayReconstructorTest(unittest.TestCase):
              [9006104071832581.0, float('inf'), float('-inf'), -0.0]),
             (['d'], IEEE_754_DOUBLE_BE, '>dddd',
              [9006104071832581.0, float('inf'), float('-inf'), -0.0]),
-            (['F'], IEEE_754_FLOAT_COMPLEX_LE, '<FFFF',
+            (['Zf'], IEEE_754_FLOAT_COMPLEX_LE, '<ZfZfZfZf',
              [16711938.0j, float('inf'), complex('1-infj'), -0.0]),
-            (['F'], IEEE_754_FLOAT_COMPLEX_BE, '>FFFF',
+            (['Zf'], IEEE_754_FLOAT_COMPLEX_BE, '>ZfZfZfZf',
              [16711938.0j, float('inf'), complex('1-infj'), -0.0]),
-            (['D'], IEEE_754_DOUBLE_COMPLEX_LE, '<DDDD',
+            (['Zd'], IEEE_754_DOUBLE_COMPLEX_LE, '<ZdZdZdZd',
              [9006104071832581.0j, float('inf'), complex('1-infj'), -0.0]),
-            (['D'], IEEE_754_DOUBLE_COMPLEX_BE, '>DDDD',
+            (['Zd'], IEEE_754_DOUBLE_COMPLEX_BE, '>ZdZdZdZd',
              [9006104071832581.0j, float('inf'), complex('1-infj'), -0.0]),
         )
         for testcase in testcases:
@@ -1237,6 +1247,9 @@ class BaseTest:
         support.check_free_after_iterating(self, reversed, array.array,
                                            (self.typecode,))
 
+    def test_known_typecode(self):
+        self.assertIn(self.typecode, array.typecodes)
+
 class StringTest(BaseTest):
 
     def test_setitem(self):
@@ -1576,7 +1589,7 @@ class CFPTest(NumberTest):
     def test_byteswap(self):
         a = array.array(self.typecode, self.example)
         self.assertRaises(TypeError, a.byteswap, 42)
-        if a.itemsize in (1, 2, 4, 8):
+        if a.itemsize in (1, 2, 4, 8, 16):
             b = array.array(self.typecode, self.example)
             b.byteswap()
             if a.itemsize == 1:
@@ -1624,11 +1637,11 @@ class DoubleTest(FPTest, unittest.TestCase):
 
 
 class ComplexFloatTest(CFPTest, unittest.TestCase):
-    typecode = 'F'
+    typecode = 'Zf'
     minitemsize = 8
 
 class ComplexDoubleTest(CFPTest, unittest.TestCase):
-    typecode = 'D'
+    typecode = 'Zd'
     minitemsize = 16
 
 

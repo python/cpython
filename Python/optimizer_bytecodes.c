@@ -1452,6 +1452,28 @@ dummy_func(void) {
         }
     }
 
+    op(_FOR_ITER_TIER_TWO, (iter, null_or_index -- iter, null_or_index, next)) {
+        bool definite = true;
+        PyTypeObject *type = sym_get_type(iter);
+        if (type == NULL) {
+            type = sym_get_probable_type(iter);
+            definite = false;
+        }
+        if (type != NULL && type != &PyGen_Type && type->tp_iternext != NULL) {
+            PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
+            _Py_BloomFilter_Add(dependencies, type);
+            if (!definite) {
+                sym_set_type(iter, type);
+                assert((this_instr - 1)->opcode == _RECORD_NOS_TYPE);
+                int32_t orig_target = (this_instr - 1)->target;
+                ADD_OP(_GUARD_TYPE_ITER, 0, (uintptr_t)type);
+                uop_buffer_last(&ctx->out_buffer)->target = orig_target;
+            }
+            ADD_OP(_ITER_NEXT_INLINE, 0, (uintptr_t)type->tp_iternext);
+        }
+        next = sym_new_not_null(ctx);
+    }
+
     op(_GUARD_ITERATOR, (iterable -- iterable)) {
         bool definite = true;
         PyTypeObject *tp = sym_get_type(iterable);
@@ -2166,17 +2188,45 @@ dummy_func(void) {
         }
     }
 
-    op(_GUARD_NOS_DICT, (nos, unused -- nos, unused)) {
-        if (sym_matches_type(nos, &PyDict_Type)) {
-            ADD_OP(_NOP, 0, 0);
+    op(_GUARD_NOS_DICT_SUBSCRIPT, (nos, unused -- nos, unused)) {
+        PyTypeObject *tp = sym_get_type(nos);
+        bool definite = true;
+        if (!tp) {
+            tp = sym_get_probable_type(nos);
+            definite = false;
         }
-        sym_set_type(nos, &PyDict_Type);
+        if (tp && tp->tp_as_mapping &&
+            tp->tp_as_mapping->mp_subscript == _PyDict_Subscript) {
+            if (definite) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                ADD_OP(_GUARD_TYPE, 0, (uintptr_t)tp);
+                sym_set_type(nos, tp);
+            }
+            PyType_Watch(TYPE_WATCHER_ID, (PyObject *)tp);
+            _Py_BloomFilter_Add(dependencies, tp);
+        }
     }
 
-    op(_GUARD_NOS_ANY_DICT, (nos, unused -- nos, unused)) {
+    op(_GUARD_NOS_DICT_STORE_SUBSCRIPT, (unused, nos, unused -- unused, nos, unused)) {
         PyTypeObject *tp = sym_get_type(nos);
-        if (tp == &PyDict_Type || tp == &PyFrozenDict_Type) {
-            ADD_OP(_NOP, 0, 0);
+        bool definite = true;
+        if (!tp) {
+            tp = sym_get_probable_type(nos);
+            definite = false;
+        }
+        if (tp && tp->tp_as_mapping &&
+            tp->tp_as_mapping->mp_ass_subscript == _PyDict_StoreSubscript) {
+            if (definite) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                ADD_OP(_GUARD_TYPE, 0, (uintptr_t)tp);
+                sym_set_type(nos, tp);
+            }
+            PyType_Watch(TYPE_WATCHER_ID, (PyObject *)tp);
+            _Py_BloomFilter_Add(dependencies, tp);
         }
     }
 
