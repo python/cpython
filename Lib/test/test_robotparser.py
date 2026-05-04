@@ -388,8 +388,8 @@ Disallow: /another/path
     expected_output = """\
 User-agent: spambot
 User-agent: eggsbot
-Disallow: /another/path
-Disallow: /some/path\
+Disallow: /some/path
+Disallow: /another/path\
 """
 
 
@@ -445,10 +445,10 @@ Disallow: /h$*$$**z
            '/e$$', '/ex$y$', '/g']
     expected_output = """\
 User-agent: *
+Disallow: /a$
 Disallow: /c*
 Disallow: /d*z
 Disallow: /e*$
-Disallow: /a$
 Disallow: /g$\
 """
 

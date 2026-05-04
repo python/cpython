@@ -81,7 +81,6 @@ class RobotFileParser:
                 self.groups[agent] = entry
             else:
                 self.groups[agent] = merge_entries(self.groups[agent], entry)
-            sort_rulelines(self.groups[agent].rulelines)
 
     def parse(self, lines):
         """Parse the input lines from a robots.txt file.
@@ -306,9 +305,6 @@ class Entry:
         """Preconditions:
         - our agent applies to this entry
         - filename is URL encoded
-        - rules are sorted:
-          - wildcards before literal paths
-          - literal paths from longest to shortest, "Allow" before "Disallow"
         """
         best_match = -1
         allowance = True
@@ -320,9 +316,6 @@ class Entry:
                     allowance = line.allowance
                 elif m == best_match and not allowance:
                     allowance = line.allowance
-            # Optimization. Requires rules to be sorted.
-            if line.matcher is None and (m or len(line.path) + 1 < best_match):
-                break
         return allowance
 
 
@@ -360,11 +353,3 @@ def merge_entries(e1, e2):
     entry.delay = e1.delay if e2.delay is None else e2.delay
     entry.req_rate = e1.req_rate if e2.req_rate is None else e2.req_rate
     return entry
-
-def sort_rulelines(rulelines):
-    def sortkey(line):
-        if line.matcher is not None:
-            return (True,)
-        else:
-            return (False, len(line.path), line.allowance)
-    rulelines.sort(key=sortkey, reverse=True)
