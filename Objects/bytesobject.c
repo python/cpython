@@ -661,7 +661,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
         arglen = -1;
         argidx = -2;
     }
-    if (Py_TYPE(args)->tp_as_mapping && Py_TYPE(args)->tp_as_mapping->mp_subscript &&
+    if (Py_TYPE(args)->tp_as_mapping->mp_subscript &&
         !PyTuple_Check(args) && !PyBytes_Check(args) && !PyUnicode_Check(args) &&
         !PyByteArray_Check(args)) {
             dict = args;
