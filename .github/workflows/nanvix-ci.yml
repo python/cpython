@@ -75,7 +75,10 @@ jobs:
       github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     env:
-      RELEASE_TAG: ${{ (needs.ci.outputs.package_version || needs.ci-scheduled.outputs.package_version) }}-nanvix-${{ (needs.ci.outputs.nanvix_version || needs.ci-scheduled.outputs.nanvix_version) }}
+      RELEASE_TAG: >-
+        ${{ (needs.ci.outputs.package_version || needs.ci-scheduled.outputs.package_version)
+        }}-nanvix-${{
+        (needs.ci.outputs.nanvix_version || needs.ci-scheduled.outputs.nanvix_version) }}
     steps:
       - uses: actions/checkout@v5
 
