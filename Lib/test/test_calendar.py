@@ -1256,6 +1256,15 @@ class CommandLineTestCase(unittest.TestCase):
             self.assertIn(b'<link rel="stylesheet" href="custom.css">', output)
 
 
+@support.force_colorized_test_class
+class ColorTestCase(unittest.TestCase):
+    def test_formatmonth_color(self):
+        today = datetime.date(2026, 5, 4)
+        cal = calendar._CLIDemoCalendar(highlight_day=today)
+        output = cal.formatmonth(2026, 5)
+        self.assertIn("\x1b[30m\x1b[43mMay 2026\x1b[0m\n\x1b[36m", output)
+
+
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         not_exported = {
