@@ -3669,19 +3669,13 @@ frozendict_length(PyObject *self)
     return _PyAnyDict_CAST(self)->ma_used;
 }
 
-static PyObject *
-dict_subscript(PyObject *self, PyObject *key)
+PyObject *
+_PyDict_SubscriptKnownHash(PyObject *self, PyObject *key, Py_hash_t hash)
 {
     PyDictObject *mp = (PyDictObject *)self;
     Py_ssize_t ix;
-    Py_hash_t hash;
     PyObject *value;
 
-    hash = _PyObject_HashFast(key);
-    if (hash == -1) {
-        dict_unhashable_type(self, key);
-        return NULL;
-    }
     ix = _Py_dict_lookup_threadsafe(mp, key, hash, &value);
     if (ix == DKIX_ERROR)
         return NULL;
@@ -3705,8 +3699,19 @@ dict_subscript(PyObject *self, PyObject *key)
     return value;
 }
 
-static int
-dict_ass_sub(PyObject *mp, PyObject *v, PyObject *w)
+PyObject *
+_PyDict_Subscript(PyObject *self, PyObject *key)
+{
+    Py_hash_t hash = _PyObject_HashFast(key);
+    if (hash == -1) {
+        dict_unhashable_type(self, key);
+        return NULL;
+    }
+    return _PyDict_SubscriptKnownHash(self, key, hash);
+}
+
+int
+_PyDict_StoreSubscript(PyObject *mp, PyObject *v, PyObject *w)
 {
     if (w == NULL)
         return PyDict_DelItem(mp, v);
@@ -3716,8 +3721,8 @@ dict_ass_sub(PyObject *mp, PyObject *v, PyObject *w)
 
 static PyMappingMethods dict_as_mapping = {
     dict_length, /*mp_length*/
-    dict_subscript, /*mp_subscript*/
-    dict_ass_sub, /*mp_ass_subscript*/
+    _PyDict_Subscript, /*mp_subscript*/
+    _PyDict_StoreSubscript, /*mp_ass_subscript*/
 };
 
 static PyObject *
@@ -5103,7 +5108,7 @@ In either case, this is followed by: for k in F:  D[k] = F[k]");
 
 static PyMethodDef mapp_methods[] = {
     DICT___CONTAINS___METHODDEF
-    {"__getitem__",     dict_subscript,                 METH_O | METH_COEXIST,
+    {"__getitem__",     _PyDict_Subscript,                 METH_O | METH_COEXIST,
      getitem__doc__},
     DICT___SIZEOF___METHODDEF
     DICT_GET_METHODDEF
@@ -8153,12 +8158,12 @@ static PyNumberMethods frozendict_as_number = {
 
 static PyMappingMethods frozendict_as_mapping = {
     .mp_length = frozendict_length,
-    .mp_subscript = dict_subscript,
+    .mp_subscript = _PyDict_Subscript,
 };
 
 static PyMethodDef frozendict_methods[] = {
     DICT___CONTAINS___METHODDEF
-    {"__getitem__", dict_subscript, METH_O | METH_COEXIST, getitem__doc__},
+    {"__getitem__", _PyDict_Subscript, METH_O | METH_COEXIST, getitem__doc__},
     DICT___SIZEOF___METHODDEF
     DICT_GET_METHODDEF
     DICT_KEYS_METHODDEF
