@@ -18,21 +18,37 @@
 #include "pydtrace.h"
 
 // Upper bound on the adaptive threshold, expressed as long_lived_total / N
-// (where long_lived_total is the count of objects in the mimalloc GC heap).
-// Scaling with the heap size keeps the amortized GC cost roughly linear in
-// total allocations: when the heap is large we can afford to wait longer
-// between passes, since each pass costs O(long_lived_total) for the
-// mark-alive walk.  At divisor 2, no more than one GC pass fires per heap
-// doubling in the no-trash limit.
+// (where long_lived_total is the count of *surviving* objects in the
+// mimalloc GC heap after the most recent pass -- it is decremented as
+// unreachable objects are identified).  Scaling with the survivor count
+// keeps the amortized GC cost roughly linear in total allocations: when
+// the live heap is large we can afford to wait longer between passes,
+// since each pass costs O(long_lived_total) for the mark-alive walk.
+#ifndef GC_THRESHOLD_MAX_DIVISOR
 #define GC_THRESHOLD_MAX_DIVISOR 2
+#endif
 
-// Decay constant for mapping the trash ratio (collected / long_lived_total)
-// to a target threshold via 1 / (1 + K * ratio).  With K=8: ratio=0.05 maps
-// to ~71% of the max range, ratio=0.25 to ~33%, ratio=0.5 to ~20%,
-// ratio=1.0 to ~11%.  Higher K decays faster.  The 1/4-up / 3/4-down step
-// applied later does most of the noise filtering, so the exact shape here
-// matters less than the monotonicity.
+// Decay constant for mapping the trash ratio collected/long_lived_total
+// (i.e. trash collected per surviving live object, equivalently C/(N-C)
+// in pre-collection terms -- unbounded above) to a target threshold via
+// 1 / (1 + K * ratio).  With K=8, expressing the input as the fraction
+// of pre-collection heap that was trash:  5% trash maps to ~70% of the
+// [min, max] range, 20% to ~33%, 50% to ~11%, 75% to ~4%, 90% to
+// ~1.4%.  Higher K decays faster.  The lower endpoint of the range is
+// base (so the user's gc.set_threshold value is a hard floor); see
+// GC_THRESHOLD_MIN_DIVISOR if you want to change that.
+#ifndef GC_THRESHOLD_DECAY_K
 #define GC_THRESHOLD_DECAY_K 8
+#endif
+
+// Lower asymptote of the adaptive curve, expressed as base / N.  N=1
+// makes the user's threshold a hard floor: the adaptive system
+// never collects more often than the user asked via gc.set_threshold.
+// Larger N treats base as a pivot, allowing heavy-trash workloads to
+// collect more frequently than requested.
+#ifndef GC_THRESHOLD_MIN_DIVISOR
+#define GC_THRESHOLD_MIN_DIVISOR 1
+#endif
 
 // enable the "mark alive" pass of GC
 #define GC_ENABLE_MARK_ALIVE 1
@@ -2085,86 +2101,76 @@ record_deallocation(PyThreadState *tstate)
 }
 
 // Update the adaptive threshold for the next collection based on how
-// much trash this pass found relative to the cost of the pass.  The
-// GC cost is dominated by the mark-alive walk, which is O(objects in
-// the mimalloc GC heap) -- that's exactly what long_lived_total
-// counts (including untracked and frozen objects in the heap).  So
-// the productive ratio is collected / long_lived_total: the fraction
-// of GC work that actually freed memory.  A high ratio means we
-// should collect sooner; a low ratio means GC work was largely wasted
-// and we can afford to wait longer.  We map the ratio through a
-// hyperbolic decay to a target in [base, max_threshold]:
-//     target = base + (max - base) * total / (total + K * collected)
-// where max_threshold scales with long_lived_total so that amortized
-// GC cost stays linear in total allocations on large heaps.
-//
-// We adapt the threshold asymmetrically: slowly when raising it and
-// quickly when lowering it.  The two directions have very different
-// failure modes -- raising too aggressively risks heap blowup (and
-// possibly OOM in memory-constrained environments like containers),
-// while lowering too slowly only costs a few extra GC passes.  So we
-// err on the side of more frequent collection.  When trash appears,
-// we snap toward the new (lower) target in a single big step; when
-// trash disappears, we creep up gradually so that one fortunate pass
-// doesn't push us into a long deferral.
-//
-// Both updates are weighted moves toward the target rather than
-// direct assignments, to avoid "hunting" -- bouncing around due to
-// pass-to-pass noise.  Up: 1/4 step.  Down: 3/4 step.
+// much trash this pass found relative to the cost of the pass.
 static void
-update_adaptive_threshold(GCState *gcstate, Py_ssize_t collected,
-                          Py_ssize_t total)
+update_adaptive_threshold(GCState *gcstate, long long collected,
+                          long long live)
 {
+    // The GC cost is dominated by the mark-alive walk, which is O(objects in
+    // the mimalloc GC heap) -- that's exactly what long_lived_total counts
+    // (including untracked and frozen objects in the heap).  By the time we
+    // are called it has already been decremented for the objects this pass
+    // identified as unreachable, so it is the survivor count L (= N - C in
+    // pre-collection terms).  The productive ratio is collected/live = C/L,
+    // i.e. trash freed per surviving live object; equivalently C/(N-C).  This
+    // is unbounded above: as a pass approaches collecting everything, L
+    // shrinks toward zero and the ratio grows without bound, which is what we
+    // want -- a 99%-trash pass should drive the threshold to its floor.  A
+    // high ratio means we should collect sooner; a low ratio means GC work
+    // was largely wasted and we can afford to wait longer.  We map the ratio
+    // through a hyperbolic decay to a target in [min, max_threshold]: target
+    // = min + (max - min) * live / (live + K * collected) where max_threshold
+    // scales with long_lived_total so that amortized GC cost stays linear
+    // in total allocations on large heaps, and min_threshold = base /
+    // GC_THRESHOLD_MIN_DIVISOR acts as the curve's lower asymptote and hard
+    // floor.  The default MIN_DIVISOR=1 makes the user's gc.set_threshold
+    // value a true minimum interval between collections.
     int base = gcstate->young.threshold;
     if (base <= 0) {
         return;
     }
-    Py_ssize_t max_threshold = total / GC_THRESHOLD_MAX_DIVISOR;
+    int min_threshold = base / GC_THRESHOLD_MIN_DIVISOR;
+    if (min_threshold < 1) {
+        min_threshold = 1;
+    }
+    if (collected < 0) {
+        collected = 0;
+    }
+    if (live < 0) {
+        live = 0;
+    }
+    long long max_threshold = live / GC_THRESHOLD_MAX_DIVISOR;
     if (max_threshold > INT_MAX) {
         max_threshold = INT_MAX;
     }
     if (max_threshold < base) {
-        // For small heaps the heap-scaled max would be below the
-        // user-configured base; fall back to base in that case.
         max_threshold = base;
     }
-    // Scale total/collected down if needed to keep the multiply below
+    // Scale live/collected down if needed to keep the multiply below
     // from overflowing.  Only the ratio matters here, not the scale.
-    Py_ssize_t r_total = total;
-    Py_ssize_t r_collected = collected;
-    while (r_total > ((Py_ssize_t)1 << 30)) {
-        r_total >>= 1;
-        r_collected >>= 1;
+    // Cap at 2^30 so that K*collected and (max-min)*live both fit
+    // comfortably in long long.
+    while (live > (1LL << 30)) {
+        live >>= 1;
+        collected >>= 1;
     }
-    Py_ssize_t denom = r_total + (Py_ssize_t)GC_THRESHOLD_DECAY_K * r_collected;
-    Py_ssize_t target = denom > 0
-        ? base + (max_threshold - base) * r_total / denom
+    long long denom = live + GC_THRESHOLD_DECAY_K * collected;
+    long long target = denom > 0
+        ? min_threshold + (max_threshold - min_threshold) * live / denom
         : max_threshold;
-    int target_i = target > INT_MAX ? INT_MAX : (int)target;
-    int adaptive = gcstate->adaptive_threshold;
-    if (adaptive < base) {
-        // User changed the base via gc.set_threshold; resync.
-        adaptive = base;
-    }
-    if (target_i >= adaptive) {
-        // Raising the threshold: cautious 1/4 step.
-        adaptive = (int)(((long long)adaptive * 3 + (long long)target_i) / 4);
-    }
-    else {
-        // Lowering the threshold: aggressive 3/4 step.
-        adaptive = (int)(((long long)adaptive + (long long)target_i * 3) / 4);
-    }
-    if (adaptive < base) {
-        adaptive = base;
+    int adaptive = target > INT_MAX ? INT_MAX : (int)target;
+    if (adaptive < min_threshold) {
+        adaptive = min_threshold;
     }
     else if (adaptive > max_threshold) {
         adaptive = (int)max_threshold;
     }
+    // The new threshold is set directly to the computed target -- no
+    // smoothing.  Software workloads can change abruptly (a program may go
+    // from zero cyclic trash to millions/sec and back within seconds), and in
+    // that regime the most recent pass is a better predictor of the next pass
+    // than a moving average.
     gcstate->adaptive_threshold = adaptive;
-#if 0
-    fprintf(stderr, "gc adapt collected %zd long_lived %zd max %zd target %zd adaptive %d\n",
-            collected, total, max_threshold, target, adaptive);
-#endif
 }
 
 static void
