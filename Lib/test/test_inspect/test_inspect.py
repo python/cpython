@@ -6541,7 +6541,7 @@ class TestModuleCLI(unittest.TestCase):
 
     def test_error_extension(self):
         _, out, err = assert_python_failure('-m', 'inspect',
-                                            '_pickle')
+                                            '_testcapi')
         lines = err.decode().splitlines()
         self.assertEqual(lines, [self.NO_SOURCE_ERROR])
 
@@ -6638,14 +6638,14 @@ class TestModuleCLI(unittest.TestCase):
         self.assertEqual(output_lines, expected_lines)
         self.assertEqual(err, b'')
 
-    def _check_details(self, module, details, other_expected_keys=(), *, error=None, alias=None):
+    def _check_details(self, module, details, other_expected_keys=(), *, alias=None, error=None):
         expected_keys = {"target", "origin", "source", "cached"}
-        if error is not None:
-            expected_keys.add("error")
-        if alias is not None:
-            expected_keys.add("alias")
         if other_expected_keys:
             expected_keys |= other_expected_keys
+        if alias is not None:
+            expected_keys.add("alias")
+        if error is not None:
+            expected_keys.add("error")
         self.assertEqual(set(details.keys()), expected_keys)
         self.assertEqual(module.__spec__.origin, details["origin"])
         try:
@@ -6664,7 +6664,8 @@ class TestModuleCLI(unittest.TestCase):
         if alias is not None:
             self.assertEqual(details["alias"], alias)
             self.assertNotEqual(details["target"], alias)
-
+        if error is not None:
+            self.assertEqual(details["error"], error)
 
     def test_get_cli_details_for_source_module(self):
         module_name = "inspect"
@@ -6689,7 +6690,7 @@ class TestModuleCLI(unittest.TestCase):
         self.assertEqual(inspect.findsource(target)[1], details["lineno"])
 
     def test_get_cli_details_for_builtin_module(self):
-        expected_error = "No source code available for builtin module"
+        expected_error = self.BUILTIN_ERROR
         module_name = "sys"
         module = importlib.import_module(module_name)
         details = inspect._get_details_for_cli(module, module_name, module)
@@ -6713,12 +6714,12 @@ class TestModuleCLI(unittest.TestCase):
         self.assertEqual(inspect.findsource(target)[1], details["lineno"])
 
     def test_get_cli_details_for_extension_module(self):
-        expected_error = "No source code available for this module"
-        module_name = "_pickle"
+        expected_error = self.NO_SOURCE_ERROR
+        module_name = "_testcapi"
         module = importlib.import_module(module_name)
         details = inspect._get_details_for_cli(module, module_name, module)
         self._check_details(module, details, {"loader"}, error=expected_error)
-        target = module.load
+        target = module.fatal_error
         nominal_target = f"{module_name}:{target.__qualname__}"
         details = inspect._get_details_for_cli(module, nominal_target, target)
         self._check_details(module, details, error=expected_error)
