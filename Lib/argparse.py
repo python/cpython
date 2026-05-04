@@ -538,7 +538,8 @@ class HelpFormatter(object):
             return text
         text = _re.sub(
             r'`([^`]+)`',
-            rf'{t.prog_extra}\1{t.reset}',
+r'(`{1,2})([^`]+)\1',
+rf'{t.prog_extra}\2{t.reset}',
             text,
         )
         return text
