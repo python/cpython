@@ -1,3 +1,4 @@
+import collections
 import copy
 import pickle
 import dis
@@ -1863,7 +1864,43 @@ class TestSpecializer(TestBase):
                 self.assertEqual(a[2], 3)
 
         binary_subscr_frozen_dict_subclass()
-        self.assert_no_opcode(binary_subscr_frozen_dict_subclass, "BINARY_OP_SUBSCR_DICT")
+        self.assert_specialized(binary_subscr_frozen_dict_subclass, "BINARY_OP_SUBSCR_DICT")
+        self.assert_no_opcode(binary_subscr_frozen_dict_subclass, "BINARY_OP")
+
+        def binary_subscr_defaultdict():
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a = collections.defaultdict(lambda: 42, {1: 2, 2: 3})
+                self.assertEqual(a[1], 2)
+                self.assertEqual(a[2], 3)
+                self.assertEqual(a[7], 42)
+
+        binary_subscr_defaultdict()
+        self.assert_specialized(binary_subscr_defaultdict, "BINARY_OP_SUBSCR_DICT")
+        self.assert_no_opcode(binary_subscr_defaultdict, "BINARY_OP")
+
+        def binary_subscr_counter():
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a = collections.Counter('abcdeabcdabcaba')
+                self.assertEqual(a['a'], 5)
+                self.assertEqual(a['b'], 4)
+                self.assertEqual(a['m'], 0)
+
+        binary_subscr_counter()
+        self.assert_specialized(binary_subscr_counter, "BINARY_OP_SUBSCR_DICT")
+        self.assert_no_opcode(binary_subscr_counter, "BINARY_OP")
+
+        def binary_subscr_dict_subclass_override():
+            class MyDict(dict):
+                def __getitem__(self, key):
+                    return 42
+
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a = MyDict()
+                self.assertEqual(a['a'], 42)
+                self.assertEqual(a['b'], 42)
+
+        binary_subscr_dict_subclass_override()
+        self.assert_no_opcode(binary_subscr_dict_subclass_override, "BINARY_OP_SUBSCR_DICT")
 
         def binary_subscr_str_int():
             for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
@@ -1923,6 +1960,29 @@ class TestSpecializer(TestBase):
             store_subscr_frozen_dict()
         self.assert_specialized(store_subscr_frozen_dict, "STORE_SUBSCR_DICT")
         self.assert_no_opcode(store_subscr_frozen_dict, "STORE_SUBSCR")
+
+        def store_subscr_defaultdict():
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a = collections.defaultdict(int)
+                a[1] = 4
+                self.assertEqual(a[1], 4)
+
+        store_subscr_defaultdict()
+        self.assert_specialized(store_subscr_defaultdict, "STORE_SUBSCR_DICT")
+        self.assert_no_opcode(store_subscr_defaultdict, "STORE_SUBSCR")
+
+        def store_subscr_dict_subclass_override():
+            class MyDict(dict):
+                def __setitem__(self, key, value):
+                    super().__setitem__(key, value * 2)
+
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a = MyDict()
+                a['x'] = 5
+                self.assertEqual(a['x'], 10)
+
+        store_subscr_dict_subclass_override()
+        self.assert_no_opcode(store_subscr_dict_subclass_override, "STORE_SUBSCR_DICT")
 
     @cpython_only
     @requires_specialization

@@ -15,9 +15,14 @@ except ImportError:
         "Test only runs when _remote_debugging is available"
     )
 
-from test.support import is_emscripten, requires_remote_subprocess_debugging
+from test.support import (
+    force_not_colorized,
+    is_emscripten,
+    requires_remote_subprocess_debugging,
+)
 
 from profiling.sampling.cli import main
+from profiling.sampling.constants import PROFILING_MODE_ALL, PROFILING_MODE_WALL
 from profiling.sampling.errors import SamplingScriptNotFoundError, SamplingModuleNotFoundError, SamplingUnknownProcessError
 
 class TestSampleProfilerCLI(unittest.TestCase):
@@ -523,6 +528,154 @@ class TestSampleProfilerCLI(unittest.TestCase):
             main()
 
             mock_sample.assert_called_once()
+
+    def _run_dump_cli(
+        self,
+        *cli_args,
+        dump_return=None,
+        dump_side_effect=None,
+        process_running=True,
+    ):
+        """Run main() for a `dump` invocation, returning (mock_dump, mock_print)."""
+        argv = ["profiling.sampling.cli", "dump", *cli_args]
+        dump_kwargs = {}
+        if dump_side_effect is not None:
+            dump_kwargs["side_effect"] = dump_side_effect
+        else:
+            dump_kwargs["return_value"] = [] if dump_return is None else dump_return
+        with (
+            mock.patch("sys.argv", argv),
+            mock.patch(
+                "profiling.sampling.cli._is_process_running",
+                return_value=process_running,
+            ),
+            mock.patch("profiling.sampling.cli.dump_stack", **dump_kwargs) as mock_dump_stack,
+            mock.patch("profiling.sampling.cli.print_stack_dump") as mock_print_stack_dump,
+        ):
+            main()
+        return mock_dump_stack, mock_print_stack_dump
+
+    def _run_dump_cli_expecting_exit(self, *cli_args, capture="stderr"):
+        """Run main() for a `dump` invocation expected to SystemExit, return (cm, captured_text)."""
+        argv = ["profiling.sampling.cli", "dump", *cli_args]
+        buf = io.StringIO()
+        stream = "sys.stderr" if capture == "stderr" else "sys.stdout"
+        with (
+            mock.patch("sys.argv", argv),
+            mock.patch(stream, buf),
+            self.assertRaises(SystemExit) as cm,
+        ):
+            main()
+        return cm, buf.getvalue()
+
+    def test_cli_dump_subcommand(self):
+        stack_frames = [mock.sentinel.stack_frames]
+        mock_dump_stack, mock_print_stack_dump = self._run_dump_cli(
+            "12345", dump_return=stack_frames
+        )
+
+        mock_dump_stack.assert_called_once()
+        self.assertEqual(mock_dump_stack.call_args.args, (12345,))
+        call_kwargs = mock_dump_stack.call_args.kwargs
+        self.assertFalse(call_kwargs["all_threads"])
+        self.assertIsNone(call_kwargs["async_aware"])
+        self.assertFalse(call_kwargs["native"])
+        self.assertTrue(call_kwargs["gc"])
+        self.assertFalse(call_kwargs["opcodes"])
+        self.assertFalse(call_kwargs["blocking"])
+        self.assertEqual(call_kwargs["mode"], PROFILING_MODE_ALL)
+        mock_print_stack_dump.assert_called_once_with(stack_frames, pid=12345)
+
+    def test_cli_dump_subcommand_options(self):
+        mock_dump_stack, _ = self._run_dump_cli(
+            "-a", "--native", "--no-gc", "--opcodes", "--blocking", "12345"
+        )
+
+        call_kwargs = mock_dump_stack.call_args.kwargs
+        self.assertTrue(call_kwargs["all_threads"])
+        self.assertTrue(call_kwargs["native"])
+        self.assertFalse(call_kwargs["gc"])
+        self.assertTrue(call_kwargs["opcodes"])
+        self.assertTrue(call_kwargs["blocking"])
+        self.assertEqual(call_kwargs["mode"], PROFILING_MODE_ALL)
+
+    def test_cli_dump_rejects_mode_option(self):
+        cm, stderr = self._run_dump_cli_expecting_exit("12345", "--mode", "cpu")
+        self.assertEqual(cm.exception.code, 2)
+        self.assertIn("unrecognized arguments: --mode", stderr)
+
+    def test_cli_dump_async_aware_defaults_to_all(self):
+        mock_dump_stack, _ = self._run_dump_cli("--async-aware", "12345")
+        call_kwargs = mock_dump_stack.call_args.kwargs
+        self.assertEqual(call_kwargs["async_aware"], "all")
+        self.assertEqual(call_kwargs["mode"], PROFILING_MODE_WALL)
+
+    def test_cli_dump_async_mode_all_is_forwarded(self):
+        mock_dump_stack, _ = self._run_dump_cli(
+            "--async-aware", "--async-mode", "all", "12345"
+        )
+        call_kwargs = mock_dump_stack.call_args.kwargs
+        self.assertEqual(call_kwargs["async_aware"], "all")
+        self.assertEqual(call_kwargs["mode"], PROFILING_MODE_WALL)
+
+    def test_cli_dump_async_mode_running_is_forwarded(self):
+        mock_dump_stack, _ = self._run_dump_cli(
+            "--async-aware", "--async-mode", "running", "12345"
+        )
+        call_kwargs = mock_dump_stack.call_args.kwargs
+        self.assertEqual(call_kwargs["async_aware"], "running")
+        self.assertEqual(call_kwargs["mode"], PROFILING_MODE_WALL)
+
+    def test_cli_dump_async_mode_requires_async_aware(self):
+        cm, stderr = self._run_dump_cli_expecting_exit(
+            "--async-mode", "running", "12345"
+        )
+        self.assertEqual(cm.exception.code, 2)
+        self.assertIn("--async-mode requires --async-aware", stderr)
+
+    def test_cli_dump_rejects_async_aware_with_all_threads(self):
+        cm, stderr = self._run_dump_cli_expecting_exit(
+            "--async-aware", "-a", "12345"
+        )
+        self.assertEqual(cm.exception.code, 2)
+        self.assertIn("--all-threads", stderr)
+        self.assertIn("incompatible with --async-aware", stderr)
+
+    def test_cli_dump_rejects_async_aware_with_native(self):
+        cm, stderr = self._run_dump_cli_expecting_exit(
+            "--async-aware", "--native", "12345"
+        )
+        self.assertEqual(cm.exception.code, 2)
+        self.assertIn("--native", stderr)
+        self.assertIn("incompatible with --async-aware", stderr)
+
+    def test_cli_dump_rejects_async_aware_with_no_gc(self):
+        cm, stderr = self._run_dump_cli_expecting_exit(
+            "--async-aware", "--no-gc", "12345"
+        )
+        self.assertEqual(cm.exception.code, 2)
+        self.assertIn("--no-gc", stderr)
+        self.assertIn("incompatible with --async-aware", stderr)
+
+    def test_cli_dump_unknown_process(self):
+        with self.assertRaises(SamplingUnknownProcessError):
+            self._run_dump_cli("12345", process_running=False)
+
+    def test_cli_dump_process_exits_before_snapshot(self):
+        with self.assertRaises(SystemExit) as cm:
+            self._run_dump_cli("12345", dump_side_effect=ProcessLookupError)
+        self.assertIn(
+            "No stack dump collected - process 12345 exited",
+            str(cm.exception.code),
+        )
+
+    @force_not_colorized
+    def test_cli_dump_help_lists_dump_options_without_mode(self):
+        cm, stdout = self._run_dump_cli_expecting_exit("--help", capture="stdout")
+        self.assertEqual(cm.exception.code, 0)
+        self.assertIn("--async-mode {running,all}", stdout)
+        self.assertIn("--opcodes", stdout)
+        self.assertNotIn("--mode {wall,cpu,gil,exception}", stdout)
 
     def test_sort_options(self):
         sort_options = [
