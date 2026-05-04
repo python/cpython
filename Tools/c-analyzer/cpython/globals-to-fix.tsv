@@ -92,7 +92,7 @@ Objects/sliceobject.c	-	PySlice_Type	-
 Objects/templateobject.c	-	_PyTemplateIter_Type	-
 Objects/templateobject.c	-	_PyTemplate_Type	-
 Objects/tupleobject.c	-	PyTupleIter_Type	-
-Objects/tupleobject.c	-	PyTuple_Type	-  
+Objects/tupleobject.c	-	PyTuple_Type	-
 Objects/typeobject.c	-	_PyBufferWrapper_Type	-
 Objects/typeobject.c	-	PyBaseObject_Type	-
 Objects/typeobject.c	-	PySuper_Type	-
