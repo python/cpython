@@ -31,7 +31,7 @@
 #define FIELD_SIZE(type, member) sizeof(((type *)0)->member)
 
 enum {
-    PY_REMOTE_DEBUG_OFFSETS_TOTAL_SIZE = 840,
+    PY_REMOTE_DEBUG_OFFSETS_TOTAL_SIZE = 848,
     PY_REMOTE_ASYNC_DEBUG_OFFSETS_TOTAL_SIZE = 104,
 };
 
@@ -304,7 +304,9 @@ validate_fixed_field(
 
 #define PY_REMOTE_DEBUG_UNICODE_OBJECT_FIELDS(APPLY, buffer_size) \
     APPLY(unicode_object, length, sizeof(Py_ssize_t), _Alignof(Py_ssize_t), buffer_size); \
-    APPLY(unicode_object, asciiobject_size, sizeof(char), _Alignof(char), buffer_size)
+    APPLY(unicode_object, state, sizeof(struct _PyUnicodeObject_state), _Alignof(struct _PyUnicodeObject_state), buffer_size); \
+    APPLY(unicode_object, asciiobject_size, sizeof(char), _Alignof(char), buffer_size); \
+    APPLY(unicode_object, compactunicodeobject_size, sizeof(char), _Alignof(char), buffer_size)
 
 #define PY_REMOTE_DEBUG_GEN_OBJECT_FIELDS(APPLY, buffer_size) \
     APPLY(gen_object, gi_frame_state, sizeof(int8_t), _Alignof(int8_t), buffer_size); \
@@ -370,11 +372,25 @@ _PyRemoteDebug_ValidateDebugOffsetsLayout(struct _Py_DebugOffsets *debug_offsets
         sizeof(uintptr_t),
         _Alignof(uintptr_t),
         SIZEOF_GC_RUNTIME_STATE);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        gc,
+        generation_stats,
+        sizeof(uintptr_t),
+        _Alignof(uintptr_t),
+        SIZEOF_GC_RUNTIME_STATE);
     PY_REMOTE_DEBUG_VALIDATE_NESTED_FIELD(
         interpreter_state,
         gc,
         gc,
         frame,
+        sizeof(uintptr_t),
+        _Alignof(uintptr_t),
+        INTERP_STATE_BUFFER_SIZE);
+    PY_REMOTE_DEBUG_VALIDATE_NESTED_FIELD(
+        interpreter_state,
+        gc,
+        gc,
+        generation_stats,
         sizeof(uintptr_t),
         _Alignof(uintptr_t),
         INTERP_STATE_BUFFER_SIZE);

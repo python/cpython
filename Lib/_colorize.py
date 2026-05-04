@@ -360,6 +360,23 @@ LiveProfilerLight = LiveProfiler(
 
 
 @dataclass(frozen=True, kw_only=True)
+class ProfilerDump(ThemeSection):
+    header: str = ANSIColors.BOLD_BLUE
+    interpreter: str = ANSIColors.GREY
+    thread: str = ANSIColors.BOLD_CYAN
+    status: str = ANSIColors.YELLOW
+    frame_index: str = ANSIColors.GREY
+    frame: str = ANSIColors.BOLD_GREEN
+    filename: str = ANSIColors.CYAN
+    line_no: str = ANSIColors.YELLOW
+    source: str = ANSIColors.WHITE
+    source_highlight: str = ANSIColors.BOLD_YELLOW
+    opcode: str = ANSIColors.GREY
+    warning: str = ANSIColors.YELLOW
+    reset: str = ANSIColors.RESET
+
+
+@dataclass(frozen=True, kw_only=True)
 class Pickletools(ThemeSection):
     annotation: str = ANSIColors.GREY
     arg_number: str = ANSIColors.YELLOW
@@ -447,6 +464,7 @@ class Theme:
     http_server: HttpServer = field(default_factory=HttpServer)
     live_profiler: LiveProfiler = field(default_factory=LiveProfiler)
     pickletools: Pickletools = field(default_factory=Pickletools)
+    profiler_dump: ProfilerDump = field(default_factory=ProfilerDump)
     syntax: Syntax = field(default_factory=Syntax)
     timeit: Timeit = field(default_factory=Timeit)
     tokenize: Tokenize = field(default_factory=Tokenize)
@@ -463,6 +481,7 @@ class Theme:
         http_server: HttpServer | None = None,
         live_profiler: LiveProfiler | None = None,
         pickletools: Pickletools | None = None,
+        profiler_dump: ProfilerDump | None = None,
         syntax: Syntax | None = None,
         timeit: Timeit | None = None,
         tokenize: Tokenize | None = None,
@@ -482,6 +501,7 @@ class Theme:
             http_server=http_server or self.http_server,
             live_profiler=live_profiler or self.live_profiler,
             pickletools=pickletools or self.pickletools,
+            profiler_dump=profiler_dump or self.profiler_dump,
             syntax=syntax or self.syntax,
             timeit=timeit or self.timeit,
             tokenize=tokenize or self.tokenize,
@@ -505,6 +525,7 @@ class Theme:
             http_server=HttpServer.no_colors(),
             live_profiler=LiveProfiler.no_colors(),
             pickletools=Pickletools.no_colors(),
+            profiler_dump=ProfilerDump.no_colors(),
             syntax=Syntax.no_colors(),
             timeit=Timeit.no_colors(),
             tokenize=Tokenize.no_colors(),
