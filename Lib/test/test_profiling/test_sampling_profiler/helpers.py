@@ -190,13 +190,13 @@ def jsonl_tables(records):
     str_defs = {
         item["str_id"]: item["value"]
         for record in records
-        if record["type"] == "str_def"
-        for item in record["defs"]
+        if record["type"] == "string_table"
+        for item in record["strings"]
     }
     frame_defs = [
         item
         for record in records
-        if record["type"] == "frame_def"
-        for item in record["defs"]
+        if record["type"] == "frame_table"
+        for item in record["frames"]
     ]
     return meta, str_defs, frame_defs, agg, end

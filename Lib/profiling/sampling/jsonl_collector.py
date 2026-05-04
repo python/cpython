@@ -15,34 +15,36 @@ demultiplexing concatenated streams). Records appear in this fixed order:
 
 1. ``meta`` (exactly one, first line)::
 
-      {"type":"meta","v":1,"run_id":"<hex>",
+      {"type":"meta","v":0,"run_id":"<hex>",
        "sample_interval_usec":<int>,"mode":"wall|cpu|gil|all|exception"}
 
    ``mode`` is omitted when not provided.
 
-2. ``str_def`` (zero or more)::
+2. ``string_table`` (zero or more)::
 
-      {"type":"str_def","v":1,"run_id":"<hex>",
-       "defs":[{"str_id":<int>,"value":"<str>"}, ...]}
+      {"type":"string_table","v":0,"run_id":"<hex>",
+       "strings":[{"str_id":<int>,"value":"<str>"}, ...]}
 
    Strings (filenames, function names) are interned to keep repeated values
-   compact. Each chunk holds up to ``_CHUNK_SIZE`` entries.
+   compact. IDs are zero-based. Each chunk holds up to ``_CHUNK_SIZE``
+   entries, and each entry carries its explicit ``str_id`` so consumers do
+   not need to infer offsets across chunks.
 
-3. ``frame_def`` (zero or more)::
+3. ``frame_table`` (zero or more)::
 
-      {"type":"frame_def","v":1,"run_id":"<hex>",
-       "defs":[{"frame_id":<int>,"path_str_id":<int>,"func_str_id":<int>,
-                "line":<int>,"end_line":<int>,"col":<int>,"end_col":<int>,
-                "synthetic":true}, ...]}
+      {"type":"frame_table","v":0,"run_id":"<hex>",
+       "frames":[{"frame_id":<int>,"path_str_id":<int>,"func_str_id":<int>,
+                  "line":<int>,"end_line":<int>,"col":<int>,
+                  "end_col":<int>}, ...]}
 
    ``end_line``/``col``/``end_col`` are *omitted* when source location data
    is unavailable (a missing key means "not available", not zero or null).
-   ``synthetic`` is present only on synthetic frames (for example, internal
-   marker frames whose source location is None) and absent otherwise.
+   ``line`` is ``0`` for synthetic frames (for example, internal marker
+   frames whose source location is None). Frame IDs are zero-based.
 
 4. ``agg`` (zero or more)::
 
-      {"type":"agg","v":1,"run_id":"<hex>","kind":"frame","scope":"final",
+      {"type":"agg","v":0,"run_id":"<hex>","kind":"frame","scope":"final",
        "samples_total":<int>,
        "entries":[{"frame_id":<int>,"self":<int>,"cumulative":<int>}, ...]}
 
@@ -54,7 +56,7 @@ demultiplexing concatenated streams). Records appear in this fixed order:
 
 5. ``end`` (exactly one, last line)::
 
-      {"type":"end","v":1,"run_id":"<hex>","samples_total":<int>}
+      {"type":"end","v":0,"run_id":"<hex>","samples_total":<int>}
 
    Presence of ``end`` is the consumer's signal that the file is complete.
 
@@ -71,26 +73,13 @@ import json
 import uuid
 from itertools import batched
 
-from .constants import (
-    PROFILING_MODE_ALL,
-    PROFILING_MODE_CPU,
-    PROFILING_MODE_EXCEPTION,
-    PROFILING_MODE_GIL,
-    PROFILING_MODE_WALL,
-)
+from .constants import PROFILING_MODE_NAMES
 from .collector import normalize_location
 from .stack_collector import StackTraceCollector
 
 
 _CHUNK_SIZE = 256
-
-_MODE_NAMES = {
-    PROFILING_MODE_WALL: "wall",
-    PROFILING_MODE_CPU: "cpu",
-    PROFILING_MODE_GIL: "gil",
-    PROFILING_MODE_ALL: "all",
-    PROFILING_MODE_EXCEPTION: "exception",
-}
+_SCHEMA_VERSION = 0
 
 
 class JsonlCollector(StackTraceCollector):
@@ -143,21 +132,29 @@ class JsonlCollector(StackTraceCollector):
             self._write_message(output, self._build_meta_record())
             self._write_chunked_records(
                 output,
-                {"type": "str_def", "v": 1, "run_id": self.run_id},
-                "defs",
+                {
+                    "type": "string_table",
+                    "v": _SCHEMA_VERSION,
+                    "run_id": self.run_id,
+                },
+                "strings",
                 self._strings,
             )
             self._write_chunked_records(
                 output,
-                {"type": "frame_def", "v": 1, "run_id": self.run_id},
-                "defs",
+                {
+                    "type": "frame_table",
+                    "v": _SCHEMA_VERSION,
+                    "run_id": self.run_id,
+                },
+                "frames",
                 self._frames,
             )
             self._write_chunked_records(
                 output,
                 {
                     "type": "agg",
-                    "v": 1,
+                    "v": _SCHEMA_VERSION,
                     "run_id": self.run_id,
                     "kind": "frame",
                     "scope": "final",
@@ -171,20 +168,22 @@ class JsonlCollector(StackTraceCollector):
     def _build_meta_record(self):
         record = {
             "type": "meta",
-            "v": 1,
+            "v": _SCHEMA_VERSION,
             "run_id": self.run_id,
             "sample_interval_usec": self.sample_interval_usec,
         }
 
         if self._mode is not None:
-            record["mode"] = _MODE_NAMES.get(self._mode, str(self._mode))
+            record["mode"] = PROFILING_MODE_NAMES.get(
+                self._mode, str(self._mode)
+            )
 
         return record
 
     def _build_end_record(self):
         record = {
             "type": "end",
-            "v": 1,
+            "v": _SCHEMA_VERSION,
             "run_id": self.run_id,
             "samples_total": self._samples_total,
         }
@@ -201,7 +200,6 @@ class JsonlCollector(StackTraceCollector):
             }
 
     def _get_or_create_frame_id(self, filename, location, funcname):
-        synthetic = location is None
         location_fields = self._location_to_export_fields(location)
         func_str_id = self._intern_string(funcname)
         path_str_id = self._intern_string(filename)
@@ -213,21 +211,18 @@ class JsonlCollector(StackTraceCollector):
             location_fields.get("end_line"),
             location_fields.get("col"),
             location_fields.get("end_col"),
-            synthetic,
         )
 
         if (frame_id := self._frame_to_id.get(frame_key)) is not None:
             return frame_id
 
-        frame_id = len(self._frames) + 1
+        frame_id = len(self._frames)
         frame_record = {
             "frame_id": frame_id,
             "path_str_id": path_str_id,
             "func_str_id": func_str_id,
             **location_fields,
         }
-        if synthetic:
-            frame_record["synthetic"] = True
 
         self._frame_to_id[frame_key] = frame_id
         self._frames.append(frame_record)
@@ -239,7 +234,7 @@ class JsonlCollector(StackTraceCollector):
         if (string_id := self._string_to_id.get(value)) is not None:
             return string_id
 
-        string_id = len(self._strings) + 1
+        string_id = len(self._strings)
         self._string_to_id[value] = string_id
         self._strings.append({"str_id": string_id, "value": value})
         return string_id

@@ -1728,11 +1728,11 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertEqual(
             content,
             (
-                '{"type":"meta","v":1,"run_id":"run-123","sample_interval_usec":1000}\n'
-                '{"type":"str_def","v":1,"run_id":"run-123","defs":[{"str_id":1,"value":"func1"},{"str_id":2,"value":"file.py"},{"str_id":3,"value":"func2"},{"str_id":4,"value":"other_func"},{"str_id":5,"value":"other.py"}]}\n'
-                '{"type":"frame_def","v":1,"run_id":"run-123","defs":[{"frame_id":1,"path_str_id":2,"func_str_id":1,"line":10,"end_line":10},{"frame_id":2,"path_str_id":2,"func_str_id":3,"line":20,"end_line":20},{"frame_id":3,"path_str_id":5,"func_str_id":4,"line":5,"end_line":5}]}\n'
-                '{"type":"agg","v":1,"run_id":"run-123","kind":"frame","scope":"final","samples_total":3,"entries":[{"frame_id":1,"self":2,"cumulative":2},{"frame_id":2,"self":0,"cumulative":2},{"frame_id":3,"self":1,"cumulative":1}]}\n'
-                '{"type":"end","v":1,"run_id":"run-123","samples_total":3}\n'
+                '{"type":"meta","v":0,"run_id":"run-123","sample_interval_usec":1000}\n'
+                '{"type":"string_table","v":0,"run_id":"run-123","strings":[{"str_id":0,"value":"func1"},{"str_id":1,"value":"file.py"},{"str_id":2,"value":"func2"},{"str_id":3,"value":"other_func"},{"str_id":4,"value":"other.py"}]}\n'
+                '{"type":"frame_table","v":0,"run_id":"run-123","frames":[{"frame_id":0,"path_str_id":1,"func_str_id":0,"line":10,"end_line":10},{"frame_id":1,"path_str_id":1,"func_str_id":2,"line":20,"end_line":20},{"frame_id":2,"path_str_id":4,"func_str_id":3,"line":5,"end_line":5}]}\n'
+                '{"type":"agg","v":0,"run_id":"run-123","kind":"frame","scope":"final","samples_total":3,"entries":[{"frame_id":0,"self":2,"cumulative":2},{"frame_id":1,"self":0,"cumulative":2},{"frame_id":2,"self":1,"cumulative":1}]}\n'
+                '{"type":"end","v":0,"run_id":"run-123","samples_total":3}\n'
             ),
         )
 
@@ -1919,18 +1919,19 @@ class TestSampleProfilerComponents(unittest.TestCase):
             records
         )
         str_chunks = [
-            record for record in records if record["type"] == "str_def"
+            record for record in records if record["type"] == "string_table"
         ]
         frame_chunks = [
-            record for record in records if record["type"] == "frame_def"
+            record for record in records if record["type"] == "frame_table"
         ]
         agg_chunks = [record for record in records if record["type"] == "agg"]
 
         self.assertEqual(
-            [len(record["defs"]) for record in str_chunks], [256, 256, 2]
+            [len(record["strings"]) for record in str_chunks],
+            [256, 256, 2],
         )
         self.assertEqual(
-            [len(record["defs"]) for record in frame_chunks], [256, 1]
+            [len(record["frames"]) for record in frame_chunks], [256, 1]
         )
         self.assertEqual(
             [len(record["entries"]) for record in agg_chunks], [256, 1]
@@ -1960,11 +1961,11 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertEqual(agg["samples_total"], 5)
         self.assertEqual(
             {str_defs[fd["func_str_id"]]: fd["frame_id"] for fd in frame_defs},
-            {"leaf": 1, "non_leaf": 2},
+            {"leaf": 0, "non_leaf": 1},
         )
         self.assertEqual(agg["entries"], [
-            {"frame_id": 1, "self": 5, "cumulative": 5},
-            {"frame_id": 2, "self": 0, "cumulative": 5},
+            {"frame_id": 0, "self": 5, "cumulative": 5},
+            {"frame_id": 1, "self": 0, "cumulative": 5},
         ])
 
     def test_jsonl_collector_recursion_with_weight(self):
@@ -1984,7 +1985,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         _, _, frame_defs, agg, _ = jsonl_tables(records)
         self.assertEqual(len(frame_defs), 1)
         self.assertEqual(agg["entries"], [
-            {"frame_id": 1, "self": 3, "cumulative": 3},
+            {"frame_id": 0, "self": 3, "cumulative": 3},
         ])
 
     def test_jsonl_collector_emits_col_and_end_col_when_present(self):
@@ -2009,22 +2010,22 @@ class TestSampleProfilerComponents(unittest.TestCase):
         _, str_defs, frame_defs, _, _ = jsonl_tables(records)
         self.assertEqual(frame_defs, [
             {
-                "frame_id": 1,
-                "path_str_id": 2,
-                "func_str_id": 1,
+                "frame_id": 0,
+                "path_str_id": 1,
+                "func_str_id": 0,
                 "line": 42,
                 "end_line": 45,
                 "col": 4,
                 "end_col": 12,
             },
         ])
-        self.assertEqual(str_defs, {1: "f", 2: "test.py"})
+        self.assertEqual(str_defs, {0: "f", 1: "test.py"})
 
     def test_jsonl_collector_partial_location_elision(self):
         """Negative col/end_col/end_line fields are individually elided."""
         # _get_or_create_frame_id interns funcname before filename, so
-        # func_str_id=1 ("f") and path_str_id=2 ("test.py").
-        common = {"frame_id": 1, "path_str_id": 2, "func_str_id": 1}
+        # func_str_id=0 ("f") and path_str_id=1 ("test.py").
+        common = {"frame_id": 0, "path_str_id": 1, "func_str_id": 0}
         cases = [
             (LocationInfo(42, 45, -1, 12),
              {**common, "line": 42, "end_line": 45, "end_col": 12}),
@@ -2500,7 +2501,7 @@ class TestLocationInCollectors(unittest.TestCase):
         self.assertEqual(
             frame_defs[0],
             {
-                "frame_id": 1,
+                "frame_id": 0,
                 "path_str_id": frame_defs[0]["path_str_id"],
                 "func_str_id": frame_defs[0]["func_str_id"],
                 "line": 42,
@@ -2541,11 +2542,10 @@ class TestLocationInCollectors(unittest.TestCase):
         self.assertEqual(
             frame_defs[0],
             {
-                "frame_id": 1,
+                "frame_id": 0,
                 "path_str_id": frame_defs[0]["path_str_id"],
                 "func_str_id": frame_defs[0]["func_str_id"],
                 "line": 0,
-                "synthetic": True,
             },
         )
 

@@ -1260,7 +1260,7 @@ class TestBinaryReplayToJsonl(BinaryFormatTestBase):
 
         self.assertEqual(end["samples_total"], 50)
         self.assertEqual(agg["entries"], [
-            {"frame_id": 1, "self": 50, "cumulative": 50},
+            {"frame_id": 0, "self": 50, "cumulative": 50},
         ])
 
     def test_binary_replay_to_jsonl_omits_unavailable_columns(self):
