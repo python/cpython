@@ -6545,9 +6545,6 @@ class TestModuleCLI(unittest.TestCase):
         lines = err.decode().splitlines()
         self.assertEqual(lines, [self.NO_SOURCE_ERROR])
 
-    # End-to-end frozen module test is intentionally omitted, as whether that
-    # works without any errors depends on if the source file is still present
-
     def test_error_data(self):
         _, out, err = assert_python_failure('-m', 'inspect',
                                             'importlib.machinery:SOURCE_SUFFIXES')
@@ -6617,6 +6614,7 @@ class TestModuleCLI(unittest.TestCase):
         self.assertEqual(output_lines, expected_lines)
         self.assertEqual(err, b'')
 
+    @unittest.skipIf(not os.path.exists(os.path.__file__), "Needs frozen source file")
     def test_details_option_with_aliased_target(self):
         # Also an end-to-end test of successful non-module lookups
         module = importlib.import_module("os.path")
