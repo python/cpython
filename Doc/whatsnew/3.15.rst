@@ -2022,6 +2022,11 @@ New features
 
   (Contributed by Victor Stinner in :gh:`129813`.)
 
+* :c:type:`PyCriticalSection` and related functions are added to the Stable
+  ABI.
+
+  (Contributed in :gh:`149227`.)
+
 * Add a new :c:func:`PyImport_CreateModuleFromInitfunc` C-API for creating
   a module from a *spec* and *initfunc*.
   (Contributed by Itamar Oren in :gh:`116146`.)
