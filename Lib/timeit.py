@@ -268,7 +268,7 @@ This module avoids a number of common traps for measuring execution
 times. See also Tim Peters' introduction to the Algorithms chapter in
 the Python Cookbook, published by O'Reilly.
 
-Library usage: see the Timer class.""",
+Library usage: see the `Timer` class.""",
         epilog=epilog,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -291,9 +291,9 @@ Library usage: see the Timer class.""",
         "--setup",
         action="append",
         default=[],
-        help="statement to be executed once initially "
-        "(default 'pass'). Execution time of this "
-        "setup statement is NOT timed.",
+        help="statement to be executed once initially. "
+        "Execution time of this setup statement is NOT timed. "
+        "(default 'pass')",
     )
     parser.add_argument(
         "-p",
