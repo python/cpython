@@ -1,0 +1,2 @@
+Fix :term:`REPL` completions inserted incorrectly when there was spaces in
+import statements.
