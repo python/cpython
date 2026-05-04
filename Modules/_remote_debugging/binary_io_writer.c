@@ -966,7 +966,7 @@ process_thread_sample(BinaryWriter *writer, PyObject *thread_info,
         curr_stack, curr_depth,
         &shared_count, &pop_count, &push_count);
 
-    if (encoding == STACK_REPEAT && !is_new_thread) {
+    if (encoding == STACK_REPEAT) {
         /* Buffer this sample for RLE */
         if (GROW_ARRAY(entry->pending_rle, entry->pending_rle_count,
                        entry->pending_rle_capacity, PendingRLESample) < 0) {
