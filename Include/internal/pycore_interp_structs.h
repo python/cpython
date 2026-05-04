@@ -232,7 +232,6 @@ struct _gc_runtime_state {
     struct gc_generation young;
     struct gc_generation old[2];
 #endif
-
     /* a permanent generation which won't be collected */
     struct gc_generation permanent_generation;
     struct gc_stats *generation_stats;
