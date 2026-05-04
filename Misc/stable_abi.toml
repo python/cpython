@@ -2691,7 +2691,6 @@
     added = '3.15'
 
 # PEP 757 import/export API.
-
 [function.PyLong_GetNativeLayout]
     added = '3.15'
 [function.PyLong_Export]
@@ -2715,3 +2714,6 @@
     # Note: The `_reserved` member of this struct is for interal use only.
     # (The definition of 'full-abi' was clarified when this entry was added.)
     struct_abi_kind = 'full-abi'
+
+[function.PyObject_CallFinalizerFromDealloc]
+    added = '3.15'
