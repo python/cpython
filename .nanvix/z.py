@@ -262,7 +262,7 @@ class CPythonBuild(ZScript):
             release=(release == "yes"),
         )
 
-    def setup(self) -> None:
+    def setup(self) -> bool:
         """Download the Nanvix sysroot and dependencies.
 
         Delegates sysroot download, Windows binary augmentation, and
@@ -273,12 +273,13 @@ class CPythonBuild(ZScript):
         if local_nanvix:
             local_nanvix = os.path.abspath(os.path.expanduser(local_nanvix))
 
+        used_fallback = False
         if local_nanvix and os.path.isdir(local_nanvix):
             self._setup_from_local_nanvix(local_nanvix)
         else:
             # Base class handles: download sysroot, download Windows
             # binaries (if on Windows), verify required files.
-            super().setup()
+            used_fallback = super().setup()
 
         self._install_missing_deps()
 
@@ -287,7 +288,7 @@ class CPythonBuild(ZScript):
         buildroot = self.nanvix_dir / "buildroot"
         sysroot = self.config.get(CFG_SYSROOT, "")
         if not sysroot or not buildroot.is_dir():
-            return
+            return used_fallback
 
         sysroot_path = Path(sysroot)
         for subdir in ("lib", "include"):
@@ -307,6 +308,7 @@ class CPythonBuild(ZScript):
 
         # Overlay local Nanvix binaries last so they take precedence.
         self._overlay_local_nanvix()
+        return used_fallback
 
     def build(self) -> None:
         """Cross-compile python.elf and libpython.a for Nanvix."""
