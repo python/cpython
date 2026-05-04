@@ -366,81 +366,76 @@ frozendict2({'RPM_cal': 0,
         self.assertEqual(_pformat(frozendict2(o)), exp)
 
         o = range(100)
-        line_ranges = [(0, 22), (22, 42), (42, 62), (62, 82), (82, 100)]
-        ints = ",\n ".join(
-            ", ".join(str(i) for i in range(a, b)) for a, b in line_ranges
-        )
-        exp = f"dict_keys([{ints}])"
+        exp = 'dict_keys([%s])' % ',\n '.join(map(str, o))
         keys = dict.fromkeys(o).keys()
-        self.assertEqual(_pformat(keys), exp)
+        self.assertEqual(_pformat(keys, width=1), exp)
         keys = frozendict.fromkeys(o).keys()
-        self.assertEqual(_pformat(keys), exp)
+        self.assertEqual(_pformat(keys, width=1), exp)
 
-        exp = f"dict_values([{ints}])"
+        o = range(100)
+        exp = 'dict_values([%s])' % ',\n '.join(map(str, o))
         values = {v: v for v in o}.values()
-        self.assertEqual(_pformat(values), exp)
+        self.assertEqual(_pformat(values, width=1), exp)
         values = frozendict({v: v for v in o}).values()
-        self.assertEqual(_pformat(values), exp)
+        self.assertEqual(_pformat(values, width=1), exp)
 
-        line_ranges = [
-            (0, 10), (10, 18), (18, 26), (26, 34), (34, 42), (42, 50), (50, 58),
-            (58, 66), (66, 74), (74, 82), (82, 90), (90, 98), (98, 100),
-        ]
-        tups = ",\n ".join(
-            ", ".join(f"({i}, {i})" for i in range(a, b)) for a, b in line_ranges
-        )
-        exp = f"dict_items([{tups}])"
+        o = range(100)
+        exp = 'dict_items([%s])' % ',\n '.join("(%s, %s)" % (i, i) for i in o)
         items = {v: v for v in o}.items()
-        self.assertEqual(_pformat(items), exp)
+        self.assertEqual(_pformat(items, width=11), exp)
         items = frozendict({v: v for v in o}).items()
-        self.assertEqual(_pformat(items), exp)
+        self.assertEqual(_pformat(items, width=11), exp)
 
-        exp = f"odict_keys([{ints}])"
+        o = range(100)
+        exp = 'odict_keys([%s])' % ',\n '.join(map(str, o))
         keys = collections.OrderedDict.fromkeys(o).keys()
-        self.assertEqual(_pformat(keys), exp)
+        self.assertEqual(_pformat(keys, width=1), exp)
 
-        exp = f"odict_values([{ints}])"
+        o = range(100)
+        exp = 'odict_values([%s])' % ',\n '.join(map(str, o))
         values = collections.OrderedDict({v: v for v in o}).values()
-        self.assertEqual(_pformat(values), exp)
+        self.assertEqual(_pformat(values, width=1), exp)
 
-        exp = f"odict_items([{tups}])"
+        o = range(100)
+        exp = 'odict_items([%s])' % ',\n '.join("(%s, %s)" % (i, i) for i in o)
         items = collections.OrderedDict({v: v for v in o}).items()
-        self.assertEqual(_pformat(items), exp)
+        self.assertEqual(_pformat(items, width=11), exp)
 
-        # KeysView etc. wrap a dict, which always formats one item per line.
-        none_pairs = ": None,\n ".join(map(str, o)) + ": None"
-        exp = f"KeysView({{{none_pairs}}})"
+        o = range(100)
+        exp = 'KeysView({%s})' % (': None,\n '.join(map(str, o)) + ': None')
         keys_view = KeysView(dict.fromkeys(o))
         self.assertEqual(_pformat(keys_view), exp)
 
-        exp = f"ItemsView({{{none_pairs}}})"
+        o = range(100)
+        exp = 'ItemsView({%s})' % (': None,\n '.join(map(str, o)) + ': None')
         items_view = ItemsView(dict.fromkeys(o))
         self.assertEqual(_pformat(items_view), exp)
 
-        exp = f"MappingView({{{none_pairs}}})"
+        o = range(100)
+        exp = 'MappingView({%s})' % (': None,\n '.join(map(str, o)) + ': None')
         mapping_view = MappingView(dict.fromkeys(o))
         self.assertEqual(_pformat(mapping_view), exp)
 
-        exp = f"ValuesView({{{none_pairs}}})"
+        o = range(100)
+        exp = 'ValuesView({%s})' % (': None,\n '.join(map(str, o)) + ': None')
         values_view = ValuesView(dict.fromkeys(o))
         self.assertEqual(_pformat(values_view), exp)
 
-        exp = f"[{ints}]"
+        o = range(100)
+        exp = '[%s]' % ',\n '.join(map(str, o))
         for type in [list, list2]:
-            self.assertEqual(_pformat(type(o)), exp)
+            self.assertEqual(_pformat(type(o), width=1), exp)
 
-        exp = f"({ints})"
+        o = tuple(range(100))
+        exp = '(%s)' % ',\n '.join(map(str, o))
         for type in [tuple, tuple2]:
-            self.assertEqual(_pformat(type(o)), exp)
+            self.assertEqual(_pformat(type(o), width=1), exp)
 
         # indent parameter
-        line_ranges = [(0, 21), (21, 40), (40, 59), (59, 78), (78, 97), (97, 100)]
-        ints = ",\n    ".join(
-            ", ".join(str(i) for i in range(a, b)) for a, b in line_ranges
-        )
-        exp = f"[   {ints}]"
+        o = range(100)
+        exp = '[   %s]' % ',\n    '.join(map(str, o))
         for type in [list, list2]:
-            self.assertEqual(_pformat(type(o), indent=4), exp)
+            self.assertEqual(_pformat(type(o), indent=4, width=1), exp)
 
     def test_nested_indentations(self):
         o1 = list(range(10))
