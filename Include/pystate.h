@@ -127,9 +127,7 @@ PyAPI_FUNC(PyThreadState *) PyGILState_GetThisThreadState(void);
 typedef struct PyInterpreterGuard PyInterpreterGuard;
 typedef struct PyInterpreterView PyInterpreterView;
 
-// CPython detail: this struct is not defined anywhere; tokens are special
-// sentinels or PyThreadState's.
-typedef struct PyThreadStateToken PyThreadStateToken;
+typedef void PyThreadStateToken;
 
 PyAPI_FUNC(PyInterpreterGuard *) PyInterpreterGuard_FromCurrent(void);
 PyAPI_FUNC(void) PyInterpreterGuard_Close(PyInterpreterGuard *guard);
