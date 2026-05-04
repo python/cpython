@@ -1561,12 +1561,12 @@ _remote_debugging_BinaryWriter_finalize_impl(BinaryWriterObject *self)
         return NULL;
     }
 
-    /* Save total_samples before finalizing */
-    self->cached_total_samples = self->writer->total_samples;
-
     if (binary_writer_finalize(self->writer) < 0) {
         return NULL;
     }
+
+    /* Save total_samples before finalizing */
+    self->cached_total_samples = self->writer->total_samples;
 
     binary_writer_destroy(self->writer);
     self->writer = NULL;
