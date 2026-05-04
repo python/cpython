@@ -1415,6 +1415,39 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertGreater(child["baseline"], 0)
         self.assertAlmostEqual(child["diff"], -child["baseline"])
 
+    def test_diff_flamegraph_elided_top_level_root(self):
+        """Elided top-level roots do not crash metadata generation."""
+        baseline_frames_1 = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 10, "kept_leaf"),
+                    MockFrameInfo("file.py", 20, "kept_root"),
+                ])
+            ])
+        ]
+        baseline_frames_2 = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 30, "old_leaf"),
+                    MockFrameInfo("file.py", 40, "old_root"),
+                ])
+            ])
+        ]
+
+        diff = make_diff_collector_with_mock_baseline([
+            baseline_frames_1,
+            baseline_frames_2,
+        ])
+        diff.collect(baseline_frames_1)
+
+        data = diff._convert_to_flamegraph_format()
+        elided = data["stats"]["elided_flamegraph"]
+        elided_strings = elided.get("strings", [])
+        children = elided.get("children", [])
+
+        self.assertEqual(len(children), 1)
+        self.assertIn("old_root", resolve_name(children[0], elided_strings))
+
     def test_diff_flamegraph_function_matched_despite_line_change(self):
         """Functions match by (filename, funcname), ignoring lineno."""
         baseline_frames = [
