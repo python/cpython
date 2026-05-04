@@ -1,4 +1,3 @@
-Add :func:`locale.localize`, :func:`locale.delocalize`,
-``locale.locale_encoding_alias``, ``locale.locale_alias``,
-``locale.windows_locale`` and platform-specific locale constants
+Add :func:`locale.localize`, :func:`locale.delocalize`
+and platform-specific locale constants
 from the :mod:`!_locale` module to ``locale.__all__``.
