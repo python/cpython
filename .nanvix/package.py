@@ -21,6 +21,7 @@ from _loader import load_sibling
 
 config = load_sibling("config", __file__)
 build_mod = load_sibling("build", __file__)
+lxml_mod = load_sibling("lxml", __file__)
 ramfs_mod = load_sibling("ramfs", __file__)
 
 
@@ -100,6 +101,9 @@ def package(
     sysroot_installed = release_staging / "sysroot"
     if not sysroot_installed.is_dir():
         raise FileNotFoundError(f"Install did not produce {sysroot_installed}")
+
+    # Stage lxml Python package into the installed sysroot.
+    lxml_mod.stage_lxml_runtime(repo_root, sysroot_installed)
 
     # --- Buildroot: build dependencies ---
     buildroot_pkg = release_staging / "buildroot-pkg"
