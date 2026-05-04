@@ -1751,16 +1751,6 @@ _CROSS_LANGUAGE_HINTS = frozendict({
     "__xor__": ((float, "Did you mean to use an 'int' object? Bitwise operators are not supported by 'float'.", True),),
     "__lshift__": ((float, "Did you mean to use an 'int' object? Bitwise operators are not supported by 'float'.", True),),
     "__rshift__": ((float, "Did you mean to use an 'int' object? Bitwise operators are not supported by 'float'.", True),),
-    # NoneType -- common methods tried on None (got None instead of expected type)
-    "keys": ((types.NoneType, "Did you expect a 'dict'?", True),),
-    "values": ((types.NoneType, "Did you expect a 'dict'?", True),),
-    "items": ((types.NoneType, "Did you expect a 'dict'?", True),),
-    "upper": ((types.NoneType, "Did you expect a 'str'?", True),),
-    "lower": ((types.NoneType, "Did you expect a 'str'?", True),),
-    "strip": ((types.NoneType, "Did you expect a 'str'?", True),),
-    "split": ((types.NoneType, "Did you expect a 'str'?", True),),
-    "sort": ((types.NoneType, "Did you expect a 'list'?", True),),
-    "pop": ((types.NoneType, "Did you expect a 'list' or 'dict'?", True),),
 })
 
 

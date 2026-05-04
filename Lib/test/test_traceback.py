@@ -4645,25 +4645,6 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
                 self.assertEndsWith(actual, expected)
 
     @force_not_colorized
-    def test_cross_language_none_suggestions(self):
-        # Common methods tried on None suggest the expected type
-        cases = [
-            ('keys', "Did you expect a 'dict'?"),
-            ('values', "Did you expect a 'dict'?"),
-            ('items', "Did you expect a 'dict'?"),
-            ('upper', "Did you expect a 'str'?"),
-            ('lower', "Did you expect a 'str'?"),
-            ('strip', "Did you expect a 'str'?"),
-            ('split', "Did you expect a 'str'?"),
-            ('sort', "Did you expect a 'list'?"),
-            ('pop', "Did you expect a 'list' or 'dict'?"),
-        ]
-        for attr, expected in cases:
-            with self.subTest(attr=attr):
-                actual = self.get_suggestion(None, attr)
-                self.assertEndsWith(actual, expected)
-
-    @force_not_colorized
     def test_cross_language_float_bitwise(self):
         # Bitwise operators on float suggest using int
         cases = ['__or__', '__and__', '__xor__', '__lshift__', '__rshift__']
