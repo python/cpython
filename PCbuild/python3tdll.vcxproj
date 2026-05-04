@@ -67,21 +67,18 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{7467D86C-1CEB-4CB9-B65E-E9A54ABDC933}</ProjectGuid>
-    <RootNamespace>_testlimitedcapi</RootNamespace>
+    <ProjectGuid>{947BB5F5-6025-4A4F-8182-1B175469F8D2}</ProjectGuid>
+    <RootNamespace>python3tdll</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <SupportPGO>false</SupportPGO>
   </PropertyGroup>
   <Import Project="python.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration">
+    <TargetName>python3t</TargetName>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <PropertyGroup>
-    <TargetExt>$(PyStdlibPydExt)</TargetExt>
-  </PropertyGroup>
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="PropertySheets">
@@ -92,47 +89,20 @@
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
   </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>PYTHON_DLL_NAME="$(PyDllName)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+    </ClCompile>
+    <Link>
+      <NoEntryPoint>true</NoEntryPoint>
+    </Link>
+  </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\Modules\_testlimitedcapi.c" />
-    <ClCompile Include="..\Modules\_testlimitedcapi\abstract.c" />
-    <ClCompile Include="..\Modules\_testlimitedcapi\bytearray.c" />
-    <ClCompile Include="..\Modules\_testlimitedcapi\bytes.c" />
-    <ClCompile Include="..\Modules\_testlimitedcapi\codec.c" />
-    <ClCompile Include="..\Modules\_testlimitedcapi\complex.c" />
-    <ClCompile Include="..\Modules\_testlimitedcapi\dict.c" />
-    <ClCompile Include="..\Modules\_testlimitedcapi\eval.c" />
-    <ClCompile Include="..\Modules\_testlimitedcapi\float.c" />
-    <ClCompile Include="..\Modules\_testlimitedcapi\heaptype_relative.c" />
-    <ClCompile Include="..\Modules\_testlimitedcapi\import.c" />
-    <ClCompile Include="..\Modules\_testlimitedcapi\list.c" />
-    <ClCompile Include="..\Modules\_testlimitedcapi\long.c" />
-    <ClCompile Include="..\Modules\_testlimitedcapi\object.c" />
-    <ClCompile Include="..\Modules\_testlimitedcapi\pyos.c" />
-    <ClCompile Include="..\Modules\_testlimitedcapi\set.c" />
-    <ClCompile Include="..\Modules\_testlimitedcapi\sys.c" />
-    <ClCompile Include="..\Modules\_testlimitedcapi\threadstate.c" />
-    <ClCompile Include="..\Modules\_testlimitedcapi\tuple.c" />
-    <ClCompile Include="..\Modules\_testlimitedcapi\unicode.c" />
-    <ClCompile Include="..\Modules\_testlimitedcapi\vectorcall_limited.c" />
-    <ClCompile Include="..\Modules\_testlimitedcapi\version.c" />
-    <ClCompile Include="..\Modules\_testlimitedcapi\file.c" />
+    <ClCompile Include="..\PC\python3dll.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="pythoncore.vcxproj">
-      <Project>{cf7ac3d1-e2df-41d2-bea6-1e2556cdea26}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="python3dll.vcxproj">
-      <Project>{885d4898-d08d-4091-9c40-c700cfe3fc5a}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="python3tdll.vcxproj">
-      <Project>{947BB5F5-6025-4A4F-8182-1B175469F8D2}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

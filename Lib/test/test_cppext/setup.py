@@ -1,7 +1,6 @@
 # gh-91321: Build a basic C++ test extension to check that the Python C API is
 # compatible with C++ and does not emit C++ compiler warnings.
 import os
-import platform
 import shlex
 import sys
 import sysconfig
@@ -48,6 +47,8 @@ def main():
     module_name = os.environ["CPYTHON_TEST_EXT_NAME"]
     limited = bool(os.environ.get("CPYTHON_TEST_LIMITED", ""))
     internal = bool(int(os.environ.get("TEST_INTERNAL_C_API", "0")))
+    incdirs = os.environ.get("CPYTHON_EXTRA_INCDIRS", "")
+    libdirs = os.environ.get("CPYTHON_EXTRA_LIBDIRS", "")
 
     cppflags = list(CPPFLAGS)
     cppflags.append(f'-DMODULE_NAME={module_name}')
@@ -90,19 +91,16 @@ def main():
     if extra_cflags:
         cppflags.extend(shlex.split(extra_cflags))
 
-    # On Windows, add PCbuild\amd64\ to include and library directories
+    # Add additional include and library directories, typically for in-tree
+    # testing where not all directories are inferred
     include_dirs = []
     library_dirs = []
-    if support.MS_WINDOWS:
-        srcdir = sysconfig.get_config_var('srcdir')
-        machine = platform.uname().machine
-        pcbuild = os.path.join(srcdir, 'PCbuild', machine)
-        if os.path.exists(pcbuild):
-            # pyconfig.h is generated in PCbuild\amd64\
-            include_dirs.append(pcbuild)
-            # python313.lib is generated in PCbuild\amd64\
-            library_dirs.append(pcbuild)
-            print(f"Add PCbuild directory: {pcbuild}")
+    if incdirs:
+        print("Add incdirs:", incdirs)
+        include_dirs.extend(incdirs.split(os.pathsep))
+    if libdirs:
+        print("Add libdirs:", libdirs)
+        library_dirs.extend(libdirs.split(os.pathsep))
 
     # Display information to help debugging
     for env_name in ('CC', 'CXX', 'CFLAGS', 'CPPFLAGS', 'CXXFLAGS'):

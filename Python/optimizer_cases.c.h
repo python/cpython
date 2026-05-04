@@ -3640,6 +3640,40 @@
         /* _FOR_ITER is not a viable micro-op for tier 2 */
 
         case _FOR_ITER_TIER_TWO: {
+            JitOptRef iter;
+            JitOptRef next;
+            iter = stack_pointer[-2];
+            bool definite = true;
+            PyTypeObject *type = sym_get_type(iter);
+            if (type == NULL) {
+                type = sym_get_probable_type(iter);
+                definite = false;
+            }
+            if (type != NULL && type != &PyGen_Type && type->tp_iternext != NULL) {
+                PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
+                _Py_BloomFilter_Add(dependencies, type);
+                if (!definite) {
+                    sym_set_type(iter, type);
+                    assert((this_instr - 1)->opcode == _RECORD_NOS_TYPE);
+                    int32_t orig_target = (this_instr - 1)->target;
+                    ADD_OP(_GUARD_TYPE_ITER, 0, (uintptr_t)type);
+                    uop_buffer_last(&ctx->out_buffer)->target = orig_target;
+                }
+                ADD_OP(_ITER_NEXT_INLINE, 0, (uintptr_t)type->tp_iternext);
+            }
+            next = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[0] = next;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _GUARD_TYPE_ITER: {
+            break;
+        }
+
+        case _ITER_NEXT_INLINE: {
             JitOptRef next;
             next = sym_new_not_null(ctx);
             CHECK_STACK_BOUNDS(1);
