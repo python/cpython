@@ -259,11 +259,12 @@ class TestTimeit(unittest.TestCase):
         return s.getvalue()
 
     def test_main_bad_switch(self):
-        s = self.run_main(switches=['--bad-switch'])
-        self.assertEqual(s, dedent("""\
-            option --bad-switch not recognized
-            use -h/--help for command line help
-            """))
+        with captured_stderr() as error_stringio:
+            s = self.run_main(switches=["--bad-switch"])
+        self.assertEqual(s, "")
+        self.assertIn(
+            "unrecognized arguments: --bad-switch", error_stringio.getvalue()
+        )
 
     def test_main_seconds(self):
         s = self.run_main(seconds_per_increment=5.5)
@@ -301,10 +302,11 @@ class TestTimeit(unittest.TestCase):
         s = self.run_main(seconds_per_increment=60.0, switches=['-r-5'])
         self.assertEqual(s, "1 loop, best of 1: 60 sec per loop\n")
 
-    @unittest.skipIf(sys.flags.optimize >= 2, "need __doc__")
     def test_main_help(self):
         s = self.run_main(switches=['-h'])
-        self.assertEqual(s, timeit.__doc__)
+        self.assertIn("Tool for measuring execution time", s)
+        self.assertIn("-n", s)
+        self.assertIn("--number", s)
 
     def test_main_verbose(self):
         s = self.run_main(switches=['-v'])
@@ -353,10 +355,12 @@ class TestTimeit(unittest.TestCase):
                 "100 loops, best of 5: 3e+03 usec per loop\n")
         # Test invalid unit input
         with captured_stderr() as error_stringio:
-            invalid = self.run_main(seconds_per_increment=0.003,
-                    switches=['-u', 'parsec'])
-        self.assertEqual(error_stringio.getvalue(),
-                    "Unrecognized unit. Please select nsec, usec, msec, or sec.\n")
+            invalid = self.run_main(
+                seconds_per_increment=0.003, switches=["-u", "parsec"]
+            )
+        self.assertIn(
+            "choose from nsec, usec, msec, sec", error_stringio.getvalue()
+        )
 
     def test_main_exception(self):
         with captured_stderr() as error_stringio:

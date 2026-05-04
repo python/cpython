@@ -1,0 +1,2 @@
+Add a ``-H`` or ``--header`` CLI option to :program:`python -m http.server`. Contributed by
+Anton I. Sipos.
