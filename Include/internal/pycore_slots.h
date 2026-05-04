@@ -29,7 +29,7 @@ typedef enum _PySlot_KIND {
 } _PySlot_KIND;
 
 typedef enum _PySlot_PROBLEM_HANDLING {
-    _PySlot_PROBLEM_ALLOW = 0,
+    _PySlot_PROBLEM_ALLOW,
     _PySlot_PROBLEM_DEPRECATED,
     _PySlot_PROBLEM_REJECT,
 } _PySlot_PROBLEM_HANDLING;
@@ -73,7 +73,7 @@ typedef struct {
 
 } _PySlotIterator;
 
-/* Initialize an iterator using a Py_Slot array */
+/* Initialize an iterator using a PySlot array */
 PyAPI_FUNC(void)
 _PySlotIterator_Init(_PySlotIterator *it, const PySlot *slots,
                      _PySlot_KIND result_kind);

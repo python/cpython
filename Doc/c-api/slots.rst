@@ -173,7 +173,7 @@ Convenience macros
 
 .. c:macro:: PySlot_END
 
-   Convenience macros to mark the end of a :c:type:`!PySlot` array.
+   Convenience macro to mark the end of a :c:type:`!PySlot` array.
 
    Defined as::
 

@@ -433,7 +433,7 @@ module_from_slots_and_spec(
     _PySlotIterator it;
 
     PyModuleDef _dummy_def = {0};
-    PyModuleDef* def_like;
+    PyModuleDef *def_like;
     if (slots) {
         assert(!original_def);
         def_like = &_dummy_def;

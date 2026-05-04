@@ -7,7 +7,7 @@ struct PySlot {
     uint16_t sl_id;
     uint16_t sl_flags;
     _Py_ANONYMOUS union {
-        uint32_t sl_reserved;
+        uint32_t sl_reserved; // must be 0
     };
     _Py_ANONYMOUS union {
         void *sl_ptr;

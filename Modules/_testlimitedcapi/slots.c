@@ -294,7 +294,7 @@ type_from_slots(PyObject* module, PyObject *args)
 
 #undef CASE
 #undef ENDCASE
-    PyErr_Format(PyExc_AssertionError, "bad case: %s", case_name);
+    PyErr_Format(PyExc_SystemError, "bad case: %s", case_name);
     return NULL;
 }
 
@@ -544,7 +544,7 @@ module_from_slots(PyObject* Py_UNUSED(module), PyObject *args)
 #undef ENDCASE
     if (!mod) {
         if (!PyErr_Occurred()) {
-            PyErr_Format(PyExc_AssertionError, "bad case: %s", case_name);
+            PyErr_Format(PyExc_SystemError, "bad case: %s", case_name);
             return NULL;
         }
         return NULL;
