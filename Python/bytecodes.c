@@ -3830,7 +3830,6 @@ dummy_func(
 
         macro(FOR_ITER_VIRTUAL) =
             unused/1 +  // Skip over the counter
-            _RECORD_NOS +  // Required for family-uniform recording (gh-148571).
             _GUARD_NOS_ITER_VIRTUAL +
             _FOR_ITER_VIRTUAL;
 

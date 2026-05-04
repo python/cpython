@@ -213,7 +213,6 @@ const _PyOpcodeRecordSlotMap _PyOpcode_RecordSlotMaps[256] = {
         [GET_ITER_SELF] = {1, 0, {0}},
         [GET_ITER_VIRTUAL] = {1, 0, {0}},
         [FOR_ITER] = {1, 1, {0}},
-        [FOR_ITER_VIRTUAL] = {1, 0, {0}},
         [FOR_ITER_GEN] = {1, 1, {0}},
         [LOAD_SPECIAL] = {1, 0, {0}},
         [LOAD_ATTR_METHOD_WITH_VALUES] = {1, 1, {0}},
