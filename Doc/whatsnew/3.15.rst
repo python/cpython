@@ -454,8 +454,8 @@ in :ref:`abi3-compiling`.
 
 .. _whatsnew315-startup-files:
 
-:pep:`829`: Startup Configuration Files
----------------------------------------
+:pep:`829`: Package startup configuration files
+-----------------------------------------------
 
 Loaded by the :mod:`site` module when ``-S`` is not given, :file:`.pth` files
 can contain lines that both extend :data:`sys.path` and execute arbitrary code
