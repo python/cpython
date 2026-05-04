@@ -682,7 +682,7 @@ class HelpFormatter(object):
     def _expand_help(self, action):
         help_string = self._get_help_string(action)
         if '%' not in help_string:
-            return help_string
+            return self._apply_text_markup(help_string)
         params = dict(vars(action), prog=self._prog)
         for name in list(params):
             value = params[name]
@@ -726,7 +726,9 @@ class HelpFormatter(object):
             # bare %s etc. - format with full params dict, no colorization
             return spec % params
 
-        return _re.sub(fmt_spec, colorize, help_string, flags=_re.VERBOSE)
+        return self._apply_text_markup(
+            _re.sub(fmt_spec, colorize, help_string, flags=_re.VERBOSE)
+        )
 
     def _iter_indented_subactions(self, action):
         try:
