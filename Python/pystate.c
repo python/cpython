@@ -2898,7 +2898,9 @@ get_main_interp_guard(void)
         return NULL;
     }
 
-    return PyInterpreterGuard_FromView(view);
+    PyInterpreterGuard *guard = PyInterpreterGuard_FromView(view);
+    PyInterpreterView_Close(view);
+    return guard;
 }
 
 PyGILState_STATE
