@@ -93,6 +93,9 @@ Objects/templateobject.c	-	_PyTemplateIter_Type	-
 Objects/templateobject.c	-	_PyTemplate_Type	-
 Objects/tupleobject.c	-	PyTupleIter_Type	-
 Objects/tupleobject.c	-	PyTuple_Type	-
+Objects/typeobject.c    -   _Py_empty_mapping_methods   -
+Objects/typeobject.c    -   _Py_empty_number_methods    -
+Objects/typeobject.c    -   _Py_empty_sequence_methods  -   
 Objects/typeobject.c	-	_PyBufferWrapper_Type	-
 Objects/typeobject.c	-	PyBaseObject_Type	-
 Objects/typeobject.c	-	PySuper_Type	-
