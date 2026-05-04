@@ -410,6 +410,11 @@ Initializing and finalizing the interpreter
    (zero) if not.  After :c:func:`Py_FinalizeEx` is called, this returns false until
    :c:func:`Py_Initialize` is called again.
 
+   .. versionchanged:: next
+      This function no longer returns true until initialization has fully
+      completed, including import of the :mod:`site` module.  Previously it
+      could return true while :c:func:`Py_Initialize` was still running.
+
 
 .. c:function:: int Py_IsFinalizing()
 

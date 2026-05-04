@@ -94,7 +94,7 @@ typedef struct {
     void* (*init_state)(void);
     // Callback to register every trampoline being created
     void (*write_state)(void* state, const void *code_addr,
-                        unsigned int code_size, PyCodeObject* code);
+                        size_t code_size, PyCodeObject* code);
     // Callback to free the trampoline state
     int (*free_state)(void* state);
 } _PyPerf_Callbacks;
@@ -108,6 +108,10 @@ extern PyStatus _PyPerfTrampoline_AfterFork_Child(void);
 #ifdef PY_HAVE_PERF_TRAMPOLINE
 extern _PyPerf_Callbacks _Py_perfmap_callbacks;
 extern _PyPerf_Callbacks _Py_perfmap_jit_callbacks;
+extern void _PyPerfJit_WriteNamedCode(const void *code_addr,
+                                      size_t code_size,
+                                      const char *entry,
+                                      const char *filename);
 #endif
 
 static inline PyObject*
@@ -121,17 +125,10 @@ _PyEval_EvalFrame(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwfl
 }
 
 #ifdef _Py_TIER2
-#ifdef _Py_JIT
-_Py_CODEUNIT *_Py_LazyJitShim(
-    struct _PyExecutorObject *current_executor, _PyInterpreterFrame *frame,
-    _PyStackRef *stack_pointer, PyThreadState *tstate
-);
-#else
 _Py_CODEUNIT *_PyTier2Interpreter(
     struct _PyExecutorObject *current_executor, _PyInterpreterFrame *frame,
     _PyStackRef *stack_pointer, PyThreadState *tstate
 );
-#endif
 #endif
 
 extern _PyJitEntryFuncPtr _Py_jit_entry;
@@ -249,16 +246,7 @@ static inline void _Py_LeaveRecursiveCallTstate(PyThreadState *tstate) {
 
 PyAPI_FUNC(void) _Py_InitializeRecursionLimits(PyThreadState *tstate);
 
-static inline int _Py_ReachedRecursionLimit(PyThreadState *tstate)  {
-    uintptr_t here_addr = _Py_get_machine_stack_pointer();
-    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-    assert(_tstate->c_stack_hard_limit != 0);
-#if _Py_STACK_GROWS_DOWN
-    return here_addr <= _tstate->c_stack_soft_limit;
-#else
-    return here_addr >= _tstate->c_stack_soft_limit;
-#endif
-}
+PyAPI_FUNC(int) _Py_ReachedRecursionLimit(PyThreadState *tstate);
 
 // Export for test_peg_generator
 PyAPI_FUNC(int) _Py_ReachedRecursionLimitWithMargin(
@@ -311,7 +299,7 @@ PyAPI_FUNC(int) _PyEval_ExceptionGroupMatch(_PyInterpreterFrame *, PyObject* exc
 PyAPI_FUNC(void) _PyEval_FormatAwaitableError(PyThreadState *tstate, PyTypeObject *type, int oparg);
 PyAPI_FUNC(void) _PyEval_FormatExcCheckArg(PyThreadState *tstate, PyObject *exc, const char *format_str, PyObject *obj);
 PyAPI_FUNC(void) _PyEval_FormatExcUnbound(PyThreadState *tstate, PyCodeObject *co, int oparg);
-PyAPI_FUNC(void) _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwargs);
+PyAPI_FUNC(void) _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwargs, PyObject *dupkey);
 PyAPI_FUNC(PyObject *) _PyEval_ImportFrom(PyThreadState *, PyObject *, PyObject *);
 
 PyAPI_FUNC(PyObject *) _PyEval_LazyImportName(
@@ -329,7 +317,7 @@ PyObject * _PyEval_ImportNameWithImport(
 PyAPI_FUNC(PyObject *)_PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type, Py_ssize_t nargs, PyObject *kwargs);
 PyAPI_FUNC(PyObject *)_PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys);
 PyAPI_FUNC(void) _PyEval_MonitorRaise(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *instr);
-PyAPI_FUNC(bool) _PyEval_NoToolsForUnwind(PyThreadState *tstate);
+PyAPI_FUNC(bool) _PyEval_NoToolsForUnwind(PyThreadState *tstate, _PyInterpreterFrame *frame);
 PyAPI_FUNC(int) _PyEval_UnpackIterableStackRef(PyThreadState *tstate, PyObject *v, int argcnt, int argcntafter, _PyStackRef *sp);
 PyAPI_FUNC(void) _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
 PyAPI_FUNC(PyObject **) _PyObjectArray_FromStackRefArray(_PyStackRef *input, Py_ssize_t nargs, PyObject **scratch);
@@ -342,6 +330,7 @@ PyAPI_FUNC(PyObject *) _PyEval_GetAwaitable(PyObject *iterable, int oparg);
 PyAPI_FUNC(PyObject *) _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *name);
 PyAPI_FUNC(int)
 _Py_Check_ArgsIterable(PyThreadState *tstate, PyObject *func, PyObject *args);
+PyAPI_FUNC(_PyStackRef) _PyEval_GetIter(_PyStackRef iterable, _PyStackRef *null_or_index, int yield_from);
 
 /*
  * Indicate whether a special method of given 'oparg' can use the (improved)
@@ -441,35 +430,35 @@ _Py_VectorCallInstrumentation_StackRefSteal(
     PyThreadState* tstate);
 
 PyAPI_FUNC(PyObject *)
-_Py_BuiltinCallFast_StackRefSteal(
+_Py_BuiltinCallFast_StackRef(
     _PyStackRef callable,
     _PyStackRef *arguments,
     int total_args);
 
 PyAPI_FUNC(PyObject *)
-_Py_BuiltinCallFastWithKeywords_StackRefSteal(
+_Py_BuiltinCallFastWithKeywords_StackRef(
     _PyStackRef callable,
     _PyStackRef *arguments,
     int total_args);
 
 PyAPI_FUNC(PyObject *)
-_PyCallMethodDescriptorFast_StackRefSteal(
+_PyCallMethodDescriptorFast_StackRef(
     _PyStackRef callable,
-    PyMethodDef *meth,
+    PyCFunctionFast cfunc,
     PyObject *self,
     _PyStackRef *arguments,
     int total_args);
 
 PyAPI_FUNC(PyObject *)
-_PyCallMethodDescriptorFastWithKeywords_StackRefSteal(
+_PyCallMethodDescriptorFastWithKeywords_StackRef(
     _PyStackRef callable,
-    PyMethodDef *meth,
+    PyCFunctionFastWithKeywords cfunc,
     PyObject *self,
     _PyStackRef *arguments,
     int total_args);
 
 PyAPI_FUNC(PyObject *)
-_Py_CallBuiltinClass_StackRefSteal(
+_Py_CallBuiltinClass_StackRef(
     _PyStackRef callable,
     _PyStackRef *arguments,
     int total_args);

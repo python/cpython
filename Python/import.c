@@ -4377,6 +4377,12 @@ register_lazy_on_parent(PyThreadState *tstate, PyObject *name,
         Py_ssize_t dot = PyUnicode_FindChar(name, '.', 0,
                                             PyUnicode_GET_LENGTH(name), -1);
         if (dot < 0) {
+            PyObject *lazy_submodules = ensure_lazy_submodules(
+                (PyDictObject *)lazy_modules, name);
+            if (lazy_submodules == NULL) {
+                goto done;
+            }
+            Py_DECREF(lazy_submodules);
             ret = 0;
             goto done;
         }
@@ -4517,7 +4523,7 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
             assert(!PyErr_Occurred());
             fromlist = Py_NewRef(Py_None);
         }
-        PyObject *args[] = {modname, name, fromlist};
+        PyObject *args[] = {modname, abs_name, fromlist};
         PyObject *res = PyObject_Vectorcall(filter, args, 3, NULL);
 
         Py_DECREF(modname);
@@ -5714,6 +5720,7 @@ imp_module_exec(PyObject *module)
 
 
 static PyModuleDef_Slot imp_slots[] = {
+     _Py_ABI_SLOT,
     {Py_mod_exec, imp_module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
