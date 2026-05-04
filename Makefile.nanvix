@@ -16,6 +16,7 @@
 #   - OpenSSL (libssl.a, libcrypto.a in NANVIX_HOME/lib)
 #   - bzip2 (libbz2.a in NANVIX_HOME/lib)
 #   - libffi (libffi.a in NANVIX_HOME/lib)
+#   - liblzma (liblzma.a in NANVIX_HOME/lib)
 
 # Nanvix Docker image for cross-compilation
 NANVIX_DOCKER_IMAGE ?= nanvix/toolchain:latest-minimal

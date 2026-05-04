@@ -71,6 +71,7 @@ def toolchain_paths(
         "libsqlite3": sr / "lib" / "libsqlite3.a",
         "libssl": sr / "lib" / "libssl.a",
         "libcrypto": sr / "lib" / "libcrypto.a",
+        "liblzma": sr / "lib" / "liblzma.a",
     }
 
 
