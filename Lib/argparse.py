@@ -529,7 +529,7 @@ class HelpFormatter(object):
         """Apply color markup to text.
 
         Supported markup:
-          `...` - inline code (rendered with prog_extra color)
+          `...` or ``...`` - inline code (rendered with prog_extra color)
 
         When colors are disabled, backticks are preserved as-is.
         """

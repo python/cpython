@@ -638,13 +638,14 @@ are set.
 .. versionadded:: 3.14
 
 To highlight inline code in your description, epilog, or argument ``help``
-text, you can use backticks::
+text, you can use single or double backticks::
 
    >>> parser = argparse.ArgumentParser(
    ...     formatter_class=argparse.RawDescriptionHelpFormatter,
+   ...     description='Run ``python -m myapp`` to start.',
    ...     epilog='''Examples:
    ...   `python -m myapp --verbose`
-   ...   `python -m myapp --config settings.json`
+   ...   ``python -m myapp --config settings.json``
    ... ''')
    >>> parser.add_argument('--foo', help='set the `foo` value')
 

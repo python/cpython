@@ -7620,21 +7620,25 @@ class TestColorized(TestCase):
         parser = argparse.ArgumentParser(
             prog='PROG',
             color=True,
-            description='Run `python -m myapp` to start.',
+            description='Run `python myapp` or ``python -m myapp`` to start.',
         )
 
         prog_extra = self.theme.prog_extra
         reset = self.theme.reset
 
         help_text = parser.format_help()
-        self.assertIn(f'Run {prog_extra}python -m myapp{reset} to start.',
-                      help_text)
+        self.assertIn(
+            f'Run {prog_extra}python myapp{reset} or '
+            f'{prog_extra}python -m myapp{reset} to start.',
+            help_text,
+        )
+        self.assertNotIn("`", help_text)
 
     def test_backtick_markup_multiple(self):
         parser = argparse.ArgumentParser(
             prog='PROG',
             color=True,
-            epilog='Try `app run` or `app test`.',
+            epilog='Try `app run` or ``app test``.',
         )
 
         prog_extra = self.theme.prog_extra
@@ -7643,17 +7647,19 @@ class TestColorized(TestCase):
         help_text = parser.format_help()
         self.assertIn(f'{prog_extra}app run{reset}', help_text)
         self.assertIn(f'{prog_extra}app test{reset}', help_text)
+        self.assertNotIn('`', help_text)
 
     def test_backtick_markup_not_applied_when_color_disabled(self):
         # When color is disabled, backticks are preserved as-is
         parser = argparse.ArgumentParser(
             prog='PROG',
             color=False,
-            epilog='Example: `python -m myapp`',
+            epilog='Examples: `python -m myapp` or ``python -m myapp --x``',
         )
 
         help_text = parser.format_help()
         self.assertIn('`python -m myapp`', help_text)
+        self.assertIn('``python -m myapp --x``', help_text)
         self.assertNotIn('\x1b[', help_text)
 
     def test_backtick_markup_with_format_string(self):
