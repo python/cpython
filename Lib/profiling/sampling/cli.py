@@ -14,7 +14,8 @@ import webbrowser
 from contextlib import nullcontext
 
 from .errors import SamplingUnknownProcessError, SamplingModuleNotFoundError, SamplingScriptNotFoundError
-from .sample import sample, sample_live, _is_process_running
+from .sample import sample, sample_live, dump_stack, _is_process_running
+from .dump import print_stack_dump
 from .pstats_collector import PstatsCollector
 from .stack_collector import CollapsedStackCollector, FlamegraphCollector, DiffFlamegraphCollector
 from .heatmap_collector import HeatmapCollector
@@ -71,6 +72,9 @@ Examples:
 
   # Attach to a running process
   `python -m profiling.sampling attach 1234`
+
+  # Dump a running process's current stack
+  `python -m profiling.sampling dump 1234`
 
   # Live interactive mode for a script
   `python -m profiling.sampling run --live script.py`
@@ -548,6 +552,51 @@ def _add_pstats_options(parser):
     )
 
 
+def _add_dump_options(parser):
+    """Add one-shot stack dump options to a parser."""
+    dump_group = parser.add_argument_group("Dump options")
+    dump_group.add_argument(
+        "-a",
+        "--all-threads",
+        action="store_true",
+        help="Dump all threads in the process instead of just the main thread",
+    )
+    dump_group.add_argument(
+        "--native",
+        action="store_true",
+        help='Include artificial "<native>" frames to denote calls to non-Python code',
+    )
+    dump_group.add_argument(
+        "--no-gc",
+        action="store_false",
+        dest="gc",
+        help='Don\'t include artificial "<GC>" frames to denote active garbage collection',
+    )
+    dump_group.add_argument(
+        "--opcodes",
+        action="store_true",
+        help="Show bytecode opcode names when available.",
+    )
+    dump_group.add_argument(
+        "--async-aware",
+        action="store_true",
+        help="Enable async-aware stack reconstruction",
+    )
+    dump_group.add_argument(
+        "--async-mode",
+        choices=["running", "all"],
+        default=argparse.SUPPRESS,
+        help='Async stack mode: "running" (only running task) '
+        'or "all" (all tasks including waiting, default for dump). '
+        "Requires --async-aware",
+    )
+    dump_group.add_argument(
+        "--blocking",
+        action="store_true",
+        help="Stop all threads in target process before dumping the stack.",
+    )
+
+
 def _sort_to_mode(sort_choice):
     """Convert sort choice string to SORT_MODE constant."""
     sort_map = {
@@ -785,18 +834,10 @@ def _validate_args(args, parser):
         args: Parsed command-line arguments
         parser: ArgumentParser instance for error reporting
     """
-    # Replay command has no special validation needed
-    if getattr(args, 'command', None) == "replay":
-        return
+    command = getattr(args, 'command', None)
 
-    # Warn about blocking mode with aggressive sampling intervals
-    if args.blocking and args.sample_interval_usec < 100:
-        print(
-            f"Warning: --blocking with a {args.sample_interval_usec} µs interval will stop all threads "
-            f"{1_000_000 // args.sample_interval_usec} times per second. "
-            "Consider using --sampling-rate 1khz or lower to reduce overhead.",
-            file=sys.stderr
-        )
+    if command == "replay":
+        return
 
     # Check if live mode is available
     if hasattr(args, 'live') and args.live and LiveStatsCollector is None:
@@ -817,9 +858,9 @@ def _validate_args(args, parser):
     # Async-aware mode is incompatible with --native, --no-gc, --mode, and --all-threads
     if getattr(args, 'async_aware', False):
         issues = []
-        if args.native:
+        if getattr(args, 'native', False):
             issues.append("--native")
-        if not args.gc:
+        if not getattr(args, 'gc', True):
             issues.append("--no-gc")
         if hasattr(args, 'mode') and args.mode != "wall":
             issues.append(f"--mode={args.mode}")
@@ -831,9 +872,26 @@ def _validate_args(args, parser):
                 "Async-aware profiling uses task-based stack reconstruction."
             )
 
-    # --async-mode requires --async-aware
-    if hasattr(args, 'async_mode') and args.async_mode != "running" and not getattr(args, 'async_aware', False):
-        parser.error("--async-mode requires --async-aware to be enabled.")
+    # --async-mode requires --async-aware when explicitly set
+    if not getattr(args, 'async_aware', False):
+        if command == "dump":
+            # dump uses SUPPRESS default, so attr only exists if user passed it
+            if hasattr(args, 'async_mode'):
+                parser.error("--async-mode requires --async-aware to be enabled.")
+        elif hasattr(args, 'async_mode') and args.async_mode != "running":
+            parser.error("--async-mode requires --async-aware to be enabled.")
+
+    if command == "dump":
+        return
+
+    # Warn about blocking mode with aggressive sampling intervals
+    if args.blocking and args.sample_interval_usec < 100:
+        print(
+            f"Warning: --blocking with a {args.sample_interval_usec} µs interval will stop all threads "
+            f"{1_000_000 // args.sample_interval_usec} times per second. "
+            "Consider using --sampling-rate 1khz or lower to reduce overhead.",
+            file=sys.stderr
+        )
 
     # Live mode is incompatible with format options
     if hasattr(args, 'live') and args.live:
@@ -990,6 +1048,27 @@ Examples:
     _add_format_options(attach_parser)
     _add_pstats_options(attach_parser)
 
+    # === DUMP COMMAND ===
+    dump_parser = subparsers.add_parser(
+        "dump",
+        help="Dump a running process's current stack",
+        formatter_class=CustomFormatter,
+        description="""Dump a running process's current Python stack
+
+Examples:
+  # Dump the main thread stack
+  `python -m profiling.sampling dump 1234`
+
+  # Dump all thread stacks
+  `python -m profiling.sampling dump -a 1234`""",
+    )
+    dump_parser.add_argument(
+        "pid",
+        type=int,
+        help="Process ID to dump",
+    )
+    _add_dump_options(dump_parser)
+
     # === REPLAY COMMAND ===
     replay_parser = subparsers.add_parser(
         "replay",
@@ -1024,6 +1103,7 @@ Examples:
     command_handlers = {
         "run": _handle_run,
         "attach": _handle_attach,
+        "dump": _handle_dump,
         "replay": _handle_replay,
     }
 
@@ -1083,6 +1163,34 @@ def _handle_attach(args):
             blocking=args.blocking,
         )
         _handle_output(collector, args, args.pid, mode)
+
+
+def _handle_dump(args):
+    if not _is_process_running(args.pid):
+        raise SamplingUnknownProcessError(args.pid)
+
+    # Async-aware reconstruction requires wall mode so every thread is sampled,
+    # not just those holding the GIL or on CPU.
+    mode = PROFILING_MODE_WALL if args.async_aware else PROFILING_MODE_ALL
+    async_mode = getattr(args, "async_mode", "all") if args.async_aware else None
+    try:
+        stack_frames = dump_stack(
+            args.pid,
+            all_threads=args.all_threads,
+            mode=mode,
+            async_aware=async_mode,
+            native=args.native,
+            gc=args.gc,
+            opcodes=args.opcodes,
+            blocking=args.blocking,
+        )
+    except ProcessLookupError:
+        sys.exit(
+            f"No stack dump collected - process {args.pid} exited before "
+            "its stack could be read."
+        )
+
+    print_stack_dump(stack_frames, pid=args.pid)
 
 
 def _handle_run(args):
