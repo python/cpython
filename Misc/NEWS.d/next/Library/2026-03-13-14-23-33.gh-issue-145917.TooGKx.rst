@@ -1,8 +1,2 @@
-Add the following to ``mimetypes``:
-
-``font/collection``
-``haptics/ivs``
-``haptics/hjif``
-``haptics/hmpg``
-
+Add MIME types for TTC and Haptics formats to :mod:`mimetypes`.
 (Contributed by Charlie Lin in :gh:`145918`.)
