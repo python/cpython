@@ -1658,8 +1658,9 @@ _remote_debugging_BinaryWriter_get_stats_impl(BinaryWriterObject *self)
 }
 
 static PyObject *
-BinaryWriter_get_total_samples(BinaryWriterObject *self, void *closure)
+BinaryWriter_get_total_samples(PyObject *op, void *closure)
 {
+    BinaryWriterObject *self = BinaryWriter_CAST(op);
     if (!self->writer) {
         /* Use cached value after finalize/close */
         return PyLong_FromUnsignedLong(self->cached_total_samples);
@@ -1668,7 +1669,7 @@ BinaryWriter_get_total_samples(BinaryWriterObject *self, void *closure)
 }
 
 static PyGetSetDef BinaryWriter_getset[] = {
-    {"total_samples", (getter)BinaryWriter_get_total_samples, NULL, "Total samples written", NULL},
+    {"total_samples", BinaryWriter_get_total_samples, NULL, "Total samples written", NULL},
     {NULL}
 };
 
