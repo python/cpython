@@ -3,7 +3,7 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "monthly"
+      interval: "quarterly"
     labels:
       - "skip issue"
       - "skip news"
@@ -24,7 +24,7 @@ updates:
   - package-ecosystem: "pip"
     directory: "/Tools/"
     schedule:
-      interval: "monthly"
+      interval: "quarterly"
     labels:
       - "skip issue"
       - "skip news"

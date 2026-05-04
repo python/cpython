@@ -1,0 +1,2 @@
+Add MIME types for TTC and Haptics formats to :mod:`mimetypes`.
+(Contributed by Charlie Lin in :gh:`145918`.)

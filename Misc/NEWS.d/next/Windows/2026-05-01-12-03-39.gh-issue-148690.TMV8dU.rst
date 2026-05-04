@@ -1,0 +1,3 @@
+Non-freethreaded builds on Windows now support extensions linked to
+``python3t.dll``, and will include a copy of that library in normal installs
+that references the non-freethreaded runtime.

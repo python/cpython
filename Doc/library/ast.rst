@@ -35,12 +35,14 @@ The abstract grammar is currently defined as follows:
    :language: asdl
 
 
+.. _ast_nodes:
+
 Node classes
 ------------
 
 .. class:: AST
 
-   This is the base of all AST node classes.  The actual node classes are
+   This is the abstract base of all AST node classes.  The actual node classes are
    derived from the :file:`Parser/Python.asdl` file, which is reproduced
    :ref:`above <abstract-grammar>`.  They are defined in the :mod:`!_ast` C
    module and re-exported in :mod:`!ast`.
@@ -131,6 +133,14 @@ Node classes
    Simple indices are represented by their value, extended slices are
    represented as tuples.
 
+.. versionchanged:: 3.13
+
+    AST node constructors were changed to provide sensible defaults for omitted
+    fields: optional fields now default to ``None``, list fields default to an
+    empty list, and fields of type :class:`!ast.expr_context` default to
+    :class:`Load() <ast.Load>`. Previously, omitted attributes would not exist on constructed
+    nodes (accessing them raised :exc:`AttributeError`).
+
 .. versionchanged:: 3.14
 
     The :meth:`~object.__repr__` output of :class:`~ast.AST` nodes includes
@@ -156,8 +166,16 @@ Node classes
    Previous versions of Python allowed the creation of AST nodes that were missing
    required fields. Similarly, AST node constructors allowed arbitrary keyword
    arguments that were set as attributes of the AST node, even if they did not
-   match any of the fields of the AST node. This behavior is deprecated and will
-   be removed in Python 3.15.
+   match any of the fields of the AST node. These cases now raise a :exc:`TypeError`.
+
+.. deprecated-removed:: next 3.20
+
+    In the :ref:`grammar above <abstract-grammar>`, the AST node classes that
+    correspond to production rules with variants (aka "sums") are abstract
+    classes. Previous versions of Python allowed for the creation of direct
+    instances of these abstract node classes. This behavior is deprecated and
+    will be removed in Python 3.20.
+
 
 .. note::
     The descriptions of the specific node classes displayed here
@@ -262,18 +280,25 @@ Root nodes
 Literals
 ^^^^^^^^
 
-.. class:: Constant(value)
+.. class:: Constant(value, kind)
 
    A constant value. The ``value`` attribute of the ``Constant`` literal contains the
    Python object it represents. The values represented can be instances of :class:`str`,
    :class:`bytes`, :class:`int`, :class:`float`, :class:`complex`, and :class:`bool`,
    and the constants :data:`None` and :data:`Ellipsis`.
 
+   The ``kind`` attribute is an optional string. For string literals with a
+   ``u`` prefix, ``kind`` is set to ``'u'``. For all other
+   constants, ``kind`` is ``None``.
+
    .. doctest::
 
         >>> print(ast.dump(ast.parse('123', mode='eval'), indent=4))
         Expression(
             body=Constant(value=123))
+        >>> print(ast.dump(ast.parse("u'hello'", mode='eval'), indent=4))
+        Expression(
+            body=Constant(value='hello', kind='u'))
 
 
 .. class:: FormattedValue(value, conversion, format_spec)
@@ -2472,7 +2497,7 @@ and classes for traversing abstract syntax trees:
       node = YourTransformer().visit(node)
 
 
-.. function:: dump(node, annotate_fields=True, include_attributes=False, *, indent=None, show_empty=False)
+.. function:: dump(node, annotate_fields=True, include_attributes=False, *, color=False, indent=None, show_empty=False)
 
    Return a formatted dump of the tree in *node*.  This is mainly useful for
    debugging purposes.  If *annotate_fields* is true (by default),
@@ -2481,6 +2506,10 @@ and classes for traversing abstract syntax trees:
    omitting unambiguous field names.  Attributes such as line
    numbers and column offsets are not dumped by default.  If this is wanted,
    *include_attributes* can be set to true.
+
+   If *color* is ``True``, the returned string is syntax highlighted using
+   ANSI escape sequences.
+   If ``False`` (the default), colored output is always disabled.
 
    If *indent* is a non-negative integer or string, then the tree will be
    pretty-printed with that indent level.  An indent level
@@ -2519,6 +2548,23 @@ and classes for traversing abstract syntax trees:
    .. versionchanged:: 3.15
       Omit optional ``Load()`` values by default.
 
+   .. versionchanged:: next
+      Added the *color* parameter.
+
+
+.. function:: compare(a, b, /, *, compare_attributes=False)
+
+   Recursively compares two ASTs.
+
+   *compare_attributes* affects whether AST attributes are considered
+   in the comparison. If *compare_attributes* is ``False`` (default), then
+   attributes are ignored. Otherwise they must all be equal. This
+   option is useful to check whether the ASTs are structurally equal but
+   differ in whitespace or similar details. Attributes include line numbers
+   and column offsets.
+
+   .. versionadded:: 3.14
+
 
 .. _ast-compiler-flags:
 
@@ -2555,26 +2601,16 @@ effects on the compilation of a program:
    .. versionadded:: 3.8
 
 
-.. function:: compare(a, b, /, *, compare_attributes=False)
-
-   Recursively compares two ASTs.
-
-   *compare_attributes* affects whether AST attributes are considered
-   in the comparison. If *compare_attributes* is ``False`` (default), then
-   attributes are ignored. Otherwise they must all be equal. This
-   option is useful to check whether the ASTs are structurally equal but
-   differ in whitespace or similar details. Attributes include line numbers
-   and column offsets.
-
-   .. versionadded:: 3.14
-
-
 .. _ast-cli:
 
 Command-line usage
 ------------------
 
 .. versionadded:: 3.9
+
+.. versionchanged:: next
+   The output is now syntax highlighted by default. This can be
+   :ref:`controlled using environment variables <using-on-controlling-color>`.
 
 The :mod:`!ast` module can be executed as a script from the command line.
 It is as simple as:

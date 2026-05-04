@@ -100,12 +100,12 @@ Lib/test/test_build_details.py          @FFY00
 InternalDocs/                 @AA-Turner
 
 # Tools, Configuration, etc
-Doc/Makefile                  @AA-Turner @hugovk
-Doc/_static/                  @AA-Turner @hugovk
-Doc/conf.py                   @AA-Turner @hugovk
-Doc/make.bat                  @AA-Turner @hugovk
-Doc/requirements.txt          @AA-Turner @hugovk
-Doc/tools/                    @AA-Turner @hugovk
+Doc/Makefile                  @AA-Turner @hugovk @StanFromIreland
+Doc/_static/                  @AA-Turner @hugovk @StanFromIreland
+Doc/conf.py                   @AA-Turner @hugovk @StanFromIreland
+Doc/make.bat                  @AA-Turner @hugovk @StanFromIreland
+Doc/requirements.txt          @AA-Turner @hugovk @StanFromIreland
+Doc/tools/                    @AA-Turner @hugovk @StanFromIreland
 
 # PR Previews
 .readthedocs.yml              @AA-Turner
@@ -427,19 +427,19 @@ Lib/dataclasses.py            @ericvsmith
 Lib/test/test_dataclasses/    @ericvsmith
 
 # Dates and times
-Doc/**/*time.rst                 @pganssle @abalkin @StanFromIreland
+Doc/**/*time.rst                 @pganssle @StanFromIreland
 Doc/library/datetime-*           @pganssle @StanFromIreland
 Doc/library/zoneinfo.rst         @pganssle @StanFromIreland
-Include/datetime.h               @pganssle @abalkin @StanFromIreland
-Include/internal/pycore_time.h   @pganssle @abalkin @StanFromIreland
+Include/datetime.h               @pganssle @StanFromIreland
+Include/internal/pycore_time.h   @pganssle @StanFromIreland
 Lib/test/test_zoneinfo/          @pganssle @StanFromIreland
 Lib/zoneinfo/                    @pganssle @StanFromIreland
-Lib/*time.py                     @pganssle @abalkin @StanFromIreland
-Lib/test/datetimetester.py       @pganssle @abalkin @StanFromIreland
-Lib/test/test_*time.py           @pganssle @abalkin @StanFromIreland
+Lib/*time.py                     @pganssle @StanFromIreland
+Lib/test/datetimetester.py       @pganssle @StanFromIreland
+Lib/test/test_*time.py           @pganssle @StanFromIreland
 Modules/*zoneinfo*               @pganssle @StanFromIreland
-Modules/*time*                   @pganssle @abalkin @StanFromIreland
-Python/pytime.c                  @pganssle @abalkin @StanFromIreland
+Modules/*time*                   @pganssle @StanFromIreland
+Python/pytime.c                  @pganssle @StanFromIreland
 
 # Dbm
 Doc/library/dbm.rst           @corona10 @erlend-aasland @serhiy-storchaka

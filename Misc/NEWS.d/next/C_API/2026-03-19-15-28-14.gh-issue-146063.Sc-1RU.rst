@@ -1,0 +1,2 @@
+Add :c:func:`PyObject_CallFinalizerFromDealloc` function to the limited C API.
+Patch by Victor Stinner.

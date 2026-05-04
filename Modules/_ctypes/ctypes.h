@@ -280,7 +280,7 @@ extern CThunkObject *_ctypes_alloc_callback(ctypes_state *st,
                                            int flags);
 /* a table entry describing a predefined ctypes type */
 struct fielddesc {
-    char code;
+    const char *code;
     ffi_type *pffi_type; /* always statically allocated */
     SETFUNC setfunc;
     GETFUNC getfunc;
@@ -289,7 +289,8 @@ struct fielddesc {
 };
 
 // Get all single-character type codes (for use in error messages)
-extern char *_ctypes_get_simple_type_chars(void);
+extern const char* _ctypes_get_simple_type_chars(void);
+extern const char* _ctypes_get_complex_type_formats(void);
 
 typedef struct CFieldObject {
     PyObject_HEAD
@@ -614,15 +615,14 @@ PyStgInfo_FromAny(ctypes_state *state, PyObject *obj, StgInfo **result)
  * state is torn down.
  */
 static inline StgInfo *
-_PyStgInfo_FromType_NoState(PyObject *type)
+_PyStgInfo_FromType_DuringGC(PyObject *type)
 {
     PyTypeObject *PyCType_Type;
-    if (_PyType_GetBaseByToken_Borrow(Py_TYPE(type), &pyctype_type_spec, &PyCType_Type) < 0 ||
-        PyCType_Type == NULL) {
+    PyType_GetBaseByToken_DuringGC(Py_TYPE(type), &pyctype_type_spec, &PyCType_Type);
+    if (PyCType_Type == NULL) {
         return NULL;
     }
-
-    return PyObject_GetTypeData(type, PyCType_Type);
+    return PyObject_GetTypeData_DuringGC(type, PyCType_Type);
 }
 
 // Initialize StgInfo on a newly created type

@@ -1830,7 +1830,7 @@ PyDoc_STRVAR(sys_set_lazy_imports_filter__doc__,
 "would otherwise be enabled. Returns True if the import is still enabled\n"
 "or False to disable it. The callable is called with:\n"
 "\n"
-"(importing_module_name, imported_module_name, [fromlist])\n"
+"(importing_module_name, resolved_imported_module_name, [fromlist])\n"
 "\n"
 "Pass None to clear the filter.");
 
@@ -2121,4 +2121,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=adbadb629b98eabf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e8333fe10c01ae66 input=a9049054013a1b77]*/
