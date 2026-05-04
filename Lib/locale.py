@@ -24,8 +24,7 @@ __all__ = ["getlocale", "getdefaultlocale", "getpreferredencoding", "Error",
            "str", "atof", "atoi", "format_string", "currency",
            "normalize", "LC_CTYPE", "LC_COLLATE", "LC_TIME", "LC_MONETARY",
            "LC_NUMERIC", "LC_ALL", "CHAR_MAX", "getencoding", "delocalize",
-           "localize", "locale_encoding_alias", "locale_alias",
-           "windows_locale"]
+           "localize"]
 
 def _strcoll(a,b):
     """ strcoll(string,string) -> int.
