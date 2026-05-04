@@ -305,13 +305,41 @@ _ctypes_alloc_format_string_for_type(char code, int big_endian)
 #else
 # error SIZEOF__BOOL has an unexpected value
 #endif /* SIZEOF__BOOL */
+#if defined(_Py_FFI_SUPPORT_C_COMPLEX)
+    /* complex types */
+    case 'F':
+    case 'D':
+    case 'G':
+    {
+        result = PyMem_Malloc(4);
+        if (result == NULL) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+
+        result[0] = big_endian ? '>' : '<';
+        result[1] = 'Z';
+        switch (code) {
+        case 'F':
+            result[2] = 'f';
+            break;
+        case 'D':
+            result[2] = 'd';
+            break;
+        default:
+            result[2] = 'g';
+        }
+        result[3] = '\0';
+        return result;
+    }
+#endif
     default:
         /* The standard-size code is the same as the ctypes one */
         pep_code = code;
         break;
     }
 
-    result = PyMem_Malloc(4);
+    result = PyMem_Malloc(3);
     if (result == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -320,7 +348,6 @@ _ctypes_alloc_format_string_for_type(char code, int big_endian)
     result[0] = big_endian ? '>' : '<';
     result[1] = pep_code;
     result[2] = '\0';
-    result[3] = '\0';
     return result;
 }
 
@@ -3121,27 +3148,7 @@ PyCData_NewGetBuffer(PyObject *myself, Py_buffer *view, int flags)
     view->len = self->b_size;
     view->readonly = 0;
     /* use default format character if not set */
-    if (!info->format) {
-        view->format = "B";
-    }
-    else {
-        view->format = info->format;
-        if (view->format[1] == 'F') {
-            view->format[1] = 'Z';
-            view->format[2] = 'f';
-            view->format[3] = '\0';
-        }
-        if (view->format[1] == 'D') {
-            view->format[1] = 'Z';
-            view->format[2] = 'd';
-            view->format[3] = '\0';
-        }
-        if (view->format[1] == 'G') {
-            view->format[1] = 'Z';
-            view->format[2] = 'g';
-            view->format[3] = '\0';
-        }
-    }
+    view->format = info->format ? info->format : "B";
     view->ndim = info->ndim;
     view->shape = info->shape;
     view->itemsize = item_info->size;
