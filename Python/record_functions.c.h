@@ -100,9 +100,9 @@ void _PyOpcode_RecordFunction_CODE(_PyInterpreterFrame *frame, _PyStackRef *stac
 
 #define _RECORD_TOS_TYPE_INDEX 1
 #define _RECORD_NOS_INDEX 2
-#define _RECORD_3OS_GEN_FUNC_INDEX 3
-#define _RECORD_TOS_INDEX 4
-#define _RECORD_NOS_GEN_FUNC_INDEX 5
+#define _RECORD_NOS_TYPE_INDEX 3
+#define _RECORD_3OS_GEN_FUNC_INDEX 4
+#define _RECORD_TOS_INDEX 5
 #define _RECORD_CALLABLE_INDEX 6
 #define _RECORD_CALLABLE_KW_INDEX 7
 #define _RECORD_4OS_INDEX 8
@@ -132,6 +132,9 @@ const _PyOpcodeRecordEntry _PyOpcode_RecordEntries[256] = {
         [BINARY_OP_SUBSCR_TUPLE_INT] = {2, {_RECORD_NOS_INDEX, _RECORD_TOS_TYPE_INDEX}},
         [BINARY_OP_SUBSCR_DICT] = {2, {_RECORD_NOS_INDEX, _RECORD_TOS_TYPE_INDEX}},
         [BINARY_OP_SUBSCR_GETITEM] = {2, {_RECORD_NOS_INDEX, _RECORD_TOS_TYPE_INDEX}},
+        [STORE_SUBSCR] = {1, {_RECORD_NOS_TYPE_INDEX}},
+        [STORE_SUBSCR_LIST_INT] = {1, {_RECORD_NOS_TYPE_INDEX}},
+        [STORE_SUBSCR_DICT] = {1, {_RECORD_NOS_TYPE_INDEX}},
         [SEND] = {1, {_RECORD_3OS_GEN_FUNC_INDEX}},
         [SEND_GEN] = {1, {_RECORD_3OS_GEN_FUNC_INDEX}},
         [STORE_ATTR] = {1, {_RECORD_TOS_TYPE_INDEX}},
@@ -152,12 +155,12 @@ const _PyOpcodeRecordEntry _PyOpcode_RecordEntries[256] = {
         [GET_ITER] = {1, {_RECORD_TOS_TYPE_INDEX}},
         [GET_ITER_SELF] = {1, {_RECORD_TOS_TYPE_INDEX}},
         [GET_ITER_VIRTUAL] = {1, {_RECORD_TOS_TYPE_INDEX}},
-        [FOR_ITER] = {1, {_RECORD_NOS_GEN_FUNC_INDEX}},
-        [FOR_ITER_VIRTUAL] = {1, {_RECORD_NOS_GEN_FUNC_INDEX}},
-        [FOR_ITER_LIST] = {1, {_RECORD_NOS_GEN_FUNC_INDEX}},
-        [FOR_ITER_TUPLE] = {1, {_RECORD_NOS_GEN_FUNC_INDEX}},
-        [FOR_ITER_RANGE] = {1, {_RECORD_NOS_GEN_FUNC_INDEX}},
-        [FOR_ITER_GEN] = {1, {_RECORD_NOS_GEN_FUNC_INDEX}},
+        [FOR_ITER] = {1, {_RECORD_NOS_INDEX}},
+        [FOR_ITER_VIRTUAL] = {1, {_RECORD_NOS_INDEX}},
+        [FOR_ITER_LIST] = {1, {_RECORD_NOS_INDEX}},
+        [FOR_ITER_TUPLE] = {1, {_RECORD_NOS_INDEX}},
+        [FOR_ITER_RANGE] = {1, {_RECORD_NOS_INDEX}},
+        [FOR_ITER_GEN] = {1, {_RECORD_NOS_INDEX}},
         [LOAD_SPECIAL] = {1, {_RECORD_TOS_TYPE_INDEX}},
         [LOAD_ATTR_METHOD_WITH_VALUES] = {1, {_RECORD_TOS_INDEX}},
         [LOAD_ATTR_METHOD_NO_DICT] = {1, {_RECORD_TOS_INDEX}},
@@ -197,7 +200,9 @@ const _PyOpcodeRecordEntry _PyOpcode_RecordEntries[256] = {
 
 const _PyOpcodeRecordSlotMap _PyOpcode_RecordSlotMaps[256] = {
         [TO_BOOL_ALWAYS_TRUE] = {1, 0, {0}},
+        [BINARY_OP_SUBSCR_DICT] = {1, 1, {0}},
         [BINARY_OP_SUBSCR_GETITEM] = {1, 0, {0}},
+        [STORE_SUBSCR_DICT] = {1, 0, {0}},
         [SEND_GEN] = {1, 0, {0}},
         [LOAD_SUPER_ATTR_METHOD] = {1, 0, {0}},
         [LOAD_ATTR_INSTANCE_VALUE] = {1, 1, {0}},
@@ -213,7 +218,8 @@ const _PyOpcodeRecordSlotMap _PyOpcode_RecordSlotMaps[256] = {
         [GET_ITER] = {1, 0, {0}},
         [GET_ITER_SELF] = {1, 0, {0}},
         [GET_ITER_VIRTUAL] = {1, 0, {0}},
-        [FOR_ITER_GEN] = {1, 0, {0}},
+        [FOR_ITER] = {1, 1, {0}},
+        [FOR_ITER_GEN] = {1, 1, {0}},
         [LOAD_SPECIAL] = {1, 0, {0}},
         [LOAD_ATTR_METHOD_WITH_VALUES] = {1, 1, {0}},
         [LOAD_ATTR_METHOD_NO_DICT] = {1, 1, {0}},
@@ -243,9 +249,9 @@ const _Py_RecordFuncPtr _PyOpcode_RecordFunctions[9] = {
         [0] = NULL,
         [_RECORD_TOS_TYPE_INDEX] = _PyOpcode_RecordFunction_TOS_TYPE,
         [_RECORD_NOS_INDEX] = _PyOpcode_RecordFunction_NOS,
+        [_RECORD_NOS_TYPE_INDEX] = _PyOpcode_RecordFunction_NOS_TYPE,
         [_RECORD_3OS_GEN_FUNC_INDEX] = _PyOpcode_RecordFunction_3OS_GEN_FUNC,
         [_RECORD_TOS_INDEX] = _PyOpcode_RecordFunction_TOS,
-        [_RECORD_NOS_GEN_FUNC_INDEX] = _PyOpcode_RecordFunction_NOS_GEN_FUNC,
         [_RECORD_CALLABLE_INDEX] = _PyOpcode_RecordFunction_CALLABLE,
         [_RECORD_CALLABLE_KW_INDEX] = _PyOpcode_RecordFunction_CALLABLE_KW,
         [_RECORD_4OS_INDEX] = _PyOpcode_RecordFunction_4OS,

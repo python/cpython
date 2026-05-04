@@ -637,7 +637,7 @@ class ArrayMemoryviewTest(unittest.TestCase,
                 check_equal(m, True)
 
         # Test complex formats
-        for complex_format in 'FD':
+        for complex_format in ('Zf', 'Zd'):
             with self.subTest(format=complex_format):
                 data = struct.pack(complex_format * 3, 1.0, 2.0, float('nan'))
                 m = memoryview(data).cast(complex_format)
@@ -719,8 +719,8 @@ class OtherTest(unittest.TestCase):
     def test_complex_types(self):
         float_complex_data = struct.pack('FFF', 0.0, -1.5j, 1+2j)
         double_complex_data = struct.pack('DDD', 0.0, -1.5j, 1+2j)
-        float_complex_view = memoryview(float_complex_data).cast('F')
-        double_complex_view = memoryview(double_complex_data).cast('D')
+        float_complex_view = memoryview(float_complex_data).cast('Zf')
+        double_complex_view = memoryview(double_complex_data).cast('Zd')
         self.assertEqual(float_complex_view.nbytes * 2, double_complex_view.nbytes)
         self.assertListEqual(float_complex_view.tolist(), double_complex_view.tolist())
 
