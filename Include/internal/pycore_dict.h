@@ -123,6 +123,8 @@ PyAPI_FUNC(Py_ssize_t) _Py_dict_lookup(PyDictObject *mp, PyObject *key, Py_hash_
 extern Py_ssize_t _Py_dict_lookup_threadsafe(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr);
 extern Py_ssize_t _Py_dict_lookup_threadsafe_stackref(PyDictObject *mp, PyObject *key, Py_hash_t hash, _PyStackRef *value_addr);
 
+extern void _Py_dict_unhashable_type(PyObject *op, PyObject *key);
+
 extern int _PyDict_GetMethodStackRef(PyDictObject *dict, PyObject *name, _PyStackRef *method);
 
 // Exported for external JIT support

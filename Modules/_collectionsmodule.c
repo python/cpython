@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_critical_section.h"  // _PyCriticalSection_WarnIfNotHeld()
 #include "pycore_dict.h"          // _PyDict_GetItem_KnownHash()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
@@ -2222,9 +2223,39 @@ typedef struct {
 
 static PyType_Spec defdict_spec;
 
+PyDoc_STRVAR(defdict_getitem_doc,
+"__getitem__($self, key, /)\n--\n\n\
+Return self[key]. If the item doesn't exist, self.__missing__(key) is called\n\
+to create it.\
+");
+
+static PyObject *
+defdict_subscript(PyObject *op, PyObject *key)
+{
+    Py_ssize_t ix;
+    Py_hash_t hash;
+    PyObject *value;
+
+    hash = _PyObject_HashFast(key);
+    if (hash == -1) {
+        _Py_dict_unhashable_type(op, key);
+        return NULL;
+    }
+    Py_BEGIN_CRITICAL_SECTION(op);
+    ix = _Py_dict_lookup((PyDictObject *)op, key, hash, &value);
+    if (value != NULL) {
+        Py_INCREF(value);
+    } else if (ix != DKIX_ERROR) {
+        value = PyObject_CallMethodOneArg(op, &_Py_ID(__missing__), key);
+    }
+    Py_END_CRITICAL_SECTION();
+    return value;
+}
+
 PyDoc_STRVAR(defdict_missing_doc,
-"__missing__(key) # Called by __getitem__ for missing key; pseudo-code:\n\
-  if self.default_factory is None: raise KeyError((key,))\n\
+"__missing__($self, key, /)\n--\n\n\
+  # Called by __getitem__ for missing key. Equivalent to:\n\
+  if self.default_factory is None: raise KeyError(key)\n\
   self[key] = value = self.default_factory()\n\
   return value\n\
 ");
@@ -2232,26 +2263,26 @@ PyDoc_STRVAR(defdict_missing_doc,
 static PyObject *
 defdict_missing(PyObject *op, PyObject *key)
 {
+    if (_PyCriticalSection_WarnIfNotHeld(op,
+        "the defaultdict.__missing__ method should not be called directly; "
+        "use dd.pop(key, None) to safely trigger a reset to a default value "
+        "the next time key is accessed") < 0)
+        return NULL;
     defdictobject *dd = defdictobject_CAST(op);
     PyObject *factory = dd->default_factory;
     PyObject *value;
     if (factory == NULL || factory == Py_None) {
-        /* XXX Call dict.__missing__(key) */
-        PyObject *tup;
-        tup = PyTuple_Pack(1, key);
-        if (!tup) return NULL;
-        PyErr_SetObject(PyExc_KeyError, tup);
-        Py_DECREF(tup);
+        _PyErr_SetKeyError(key);
         return NULL;
     }
     value = _PyObject_CallNoArgs(factory);
     if (value == NULL)
         return value;
-    PyObject *result = NULL;
-    (void)PyDict_SetDefaultRef(op, key, value, &result);
-    // 'result' is NULL, or a strong reference to 'value' or 'op[key]'
-    Py_DECREF(value);
-    return result;
+    if (PyObject_SetItem(op, key, value) < 0) {
+        Py_DECREF(value);
+        return NULL;
+    }
+    return value;
 }
 
 static inline PyObject*
@@ -2331,6 +2362,8 @@ defdict_reduce(PyObject *op, PyObject *Py_UNUSED(dummy))
 }
 
 static PyMethodDef defdict_methods[] = {
+    {"__getitem__", defdict_subscript, METH_O|METH_COEXIST,
+     defdict_getitem_doc},
     {"__missing__", defdict_missing, METH_O,
      defdict_missing_doc},
     {"copy", defdict_copy, METH_NOARGS,
@@ -2511,6 +2544,7 @@ static PyType_Slot defdict_slots[] = {
     {Py_tp_init, defdict_init},
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_free, PyObject_GC_Del},
+    {Py_mp_subscript, defdict_subscript},
     {0, NULL},
 };
 
