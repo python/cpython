@@ -712,7 +712,7 @@ def _parse_args(args):
     from argparse import ArgumentParser
 
     parser = ArgumentParser(
-        description='map filename extensions to MIME types', color=True
+        description='map filename extensions to MIME types',
     )
     parser.add_argument(
         '-e', '--extension',
