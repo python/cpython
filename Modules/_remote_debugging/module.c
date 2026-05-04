@@ -1552,6 +1552,24 @@ Finalize and close the binary file.
 Writes string/frame tables, footer, and updates header.
 [clinic start generated code]*/
 
+/* Finalize the writer, cache total_samples, and destroy it.
+ *
+ * The cache assignment must happen AFTER binary_writer_finalize(): finalize
+ * flushes pending RLE samples via flush_pending_rle(), which increments
+ * writer->total_samples for each one. Caching before finalize would lose
+ * those trailing samples. */
+static int
+binary_writer_finalize_and_cache(BinaryWriterObject *self)
+{
+    if (binary_writer_finalize(self->writer) < 0) {
+        return -1;
+    }
+    self->cached_total_samples = self->writer->total_samples;
+    binary_writer_destroy(self->writer);
+    self->writer = NULL;
+    return 0;
+}
+
 static PyObject *
 _remote_debugging_BinaryWriter_finalize_impl(BinaryWriterObject *self)
 /*[clinic end generated code: output=3534b88c6628de88 input=c02191750682f6a2]*/
@@ -1561,15 +1579,9 @@ _remote_debugging_BinaryWriter_finalize_impl(BinaryWriterObject *self)
         return NULL;
     }
 
-    if (binary_writer_finalize(self->writer) < 0) {
+    if (binary_writer_finalize_and_cache(self) < 0) {
         return NULL;
     }
-
-    /* Preserve total_samples before destroying the writer */
-    self->cached_total_samples = self->writer->total_samples;
-
-    binary_writer_destroy(self->writer);
-    self->writer = NULL;
 
     Py_RETURN_NONE;
 }
@@ -1624,14 +1636,18 @@ _remote_debugging_BinaryWriter___exit___impl(BinaryWriterObject *self,
     if (self->writer) {
         /* Only finalize on normal exit (no exception) */
         if (exc_type == Py_None) {
-            if (binary_writer_finalize(self->writer) < 0) {
-                binary_writer_destroy(self->writer);
-                self->writer = NULL;
+            if (binary_writer_finalize_and_cache(self) < 0) {
+                if (self->writer) {
+                    binary_writer_destroy(self->writer);
+                    self->writer = NULL;
+                }
                 return NULL;
             }
         }
-        binary_writer_destroy(self->writer);
-        self->writer = NULL;
+        else {
+            binary_writer_destroy(self->writer);
+            self->writer = NULL;
+        }
     }
     Py_RETURN_FALSE;
 }

@@ -810,34 +810,84 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
             with BinaryReader("/nonexistent/path/file.bin") as reader:
                 reader.replay_samples(RawCollector())
 
-    def test_binary_collector_skips_samples_with_empty_stacks(self):
-        """BinaryCollector skips samples that contain empty stacks."""
-        frame = make_frame("a.py", 1, "f")
-        samples = [
-            [
-                make_interpreter(
-                    0, [make_thread(99, [], status=THREAD_STATUS_UNKNOWN)]
-                )
-            ],
-            [
-                make_interpreter(
-                    0,
-                    [
-                        make_thread(1, [frame]),
-                        make_thread(99, [], status=THREAD_STATUS_UNKNOWN),
-                    ],
-                )
-            ],
-            [make_interpreter(0, [make_thread(1, [frame])])],
+    def test_writer_handles_empty_stack_first_sample(self):
+        """BinaryWriter.write_sample tolerates an empty stack on a fresh thread.
+
+        Regression test for the C-level RLE bug in process_thread_sample: a
+        freshly-created ThreadEntry has prev_stack_depth == 0, so an empty
+        curr_stack compares as STACK_REPEAT against the zero-initialized
+        previous stack. Before the fix, this fell through the
+        `&& !is_new_thread` guard into write_sample_with_encoding, which had
+        no handler for STACK_REPEAT and raised
+        RuntimeError("Invalid stack encoding type"). Goes through
+        BinaryWriter.write_sample directly so the test cannot be masked by
+        any Python-level filtering.
+        """
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+            filename = f.name
+        self.temp_files.append(filename)
+
+        writer = _remote_debugging.BinaryWriter(filename, 1000, 0, compression=0)
+        empty_sample = [
+            make_interpreter(
+                0, [make_thread(99, [], status=THREAD_STATUS_UNKNOWN)]
+            )
         ]
-        collector, count = self.roundtrip(samples)
-        self.assertEqual(count, 1)
-        self.assert_samples_equal(
-            [[make_interpreter(0, [make_thread(1, [frame])])]], collector
-        )
+        # First sample for a fresh thread has empty frame_info — the exact
+        # scenario that exposes the bug.
+        writer.write_sample(empty_sample, 1000)
+        writer.write_sample(empty_sample, 2000)
+        # Mix in a real sample to exercise the transition out of the
+        # empty-stack RLE buffer.
+        real_sample = [
+            make_interpreter(0, [make_thread(1, [make_frame("a.py", 1, "f")])])
+        ]
+        writer.write_sample(real_sample, 3000)
+        writer.finalize()
+
+        reader_collector = RawCollector()
+        with BinaryReader(filename) as reader:
+            count = reader.replay_samples(reader_collector)
+        # Empty-stack samples are recorded as STACK_REPEAT records with
+        # depth-0 stacks; the file must replay all three samples.
+        self.assertEqual(count, 3)
+
+    def test_writer_handles_mixed_empty_and_real_first_sample(self):
+        """First sample with one empty + one real thread roundtrips through C."""
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+            filename = f.name
+        self.temp_files.append(filename)
+
+        writer = _remote_debugging.BinaryWriter(filename, 1000, 0, compression=0)
+        sample = [
+            make_interpreter(
+                0,
+                [
+                    make_thread(1, [make_frame("a.py", 1, "f")]),
+                    make_thread(99, [], status=THREAD_STATUS_UNKNOWN),
+                ],
+            )
+        ]
+        # Two samples so RLE state is exercised.
+        writer.write_sample(sample, 1000)
+        writer.write_sample(sample, 2000)
+        writer.finalize()
+
+        # Replay must succeed without raising RuntimeError, and the real
+        # thread's frames must round-trip.
+        reader_collector = RawCollector()
+        with BinaryReader(filename) as reader:
+            reader.replay_samples(reader_collector)
+        self.assertIn((0, 1), reader_collector.by_thread)
+        self.assertEqual(len(reader_collector.by_thread[(0, 1)]), 2)
 
     def test_writer_total_samples_after_finalize_matches_reader(self):
         """BinaryWriter.total_samples after finalize() matches the reader's count."""
+        # Five IDENTICAL samples force every sample beyond the first into the
+        # per-thread RLE buffer. Regression for the cached_total_samples
+        # ordering bug: capturing the cache BEFORE binary_writer_finalize()
+        # missed the buffered samples that flush_pending_rle() counts. Keep
+        # the samples identical to preserve coverage. See gh-149342.
         samples = [
             [make_interpreter(0, [make_thread(1, [make_frame("a.py", 1, "f")])])]
         ] * 5
@@ -847,6 +897,45 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
             replayed = reader.replay_samples(reader_collector)
         self.assertEqual(writer_collector.total_samples, len(samples))
         self.assertEqual(writer_collector.total_samples, replayed)
+
+    def test_writer_total_samples_after_context_manager_matches_reader(self):
+        """total_samples after `with BinaryWriter(...)` matches the reader's count.
+
+        Regression for the asymmetry between finalize() and __exit__ in
+        module.c: __exit__ also calls binary_writer_finalize and must
+        preserve cached_total_samples like finalize() does, otherwise the
+        getter returns 0 once self->writer is NULL.
+        """
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+            filename = f.name
+        self.temp_files.append(filename)
+
+        sample = [
+            make_interpreter(0, [make_thread(1, [make_frame("a.py", 1, "f")])])
+        ]
+        with _remote_debugging.BinaryWriter(filename, 1000, 0, compression=0) as w:
+            for i in range(5):
+                w.write_sample(sample, i * 1000)
+        self.assertEqual(w.total_samples, 5)
+
+        reader_collector = RawCollector()
+        with BinaryReader(filename) as reader:
+            self.assertEqual(reader.replay_samples(reader_collector), 5)
+
+    def test_writer_total_samples_after_close_returns_zero(self):
+        """close() discards data; total_samples reflects no cached count."""
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+            filename = f.name
+        self.temp_files.append(filename)
+
+        w = _remote_debugging.BinaryWriter(filename, 1000, 0, compression=0)
+        sample = [
+            make_interpreter(0, [make_thread(1, [make_frame("a.py", 1, "f")])])
+        ]
+        for i in range(5):
+            w.write_sample(sample, i * 1000)
+        w.close()
+        self.assertEqual(w.total_samples, 0)
 
 
 class TestBinaryEncodings(BinaryFormatTestBase):

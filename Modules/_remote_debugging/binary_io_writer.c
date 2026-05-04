@@ -487,7 +487,7 @@ writer_get_or_create_thread_entry(BinaryWriter *writer, uint64_t thread_id,
     entry->prev_stack_capacity = MAX_STACK_DEPTH;
     entry->pending_rle_capacity = INITIAL_RLE_CAPACITY;
 
-    entry->prev_stack = PyMem_Malloc(entry->prev_stack_capacity * sizeof(uint32_t));
+    entry->prev_stack = PyMem_Calloc(entry->prev_stack_capacity, sizeof(uint32_t));
     if (!entry->prev_stack) {
         PyErr_NoMemory();
         return NULL;
@@ -941,9 +941,8 @@ process_thread_sample(BinaryWriter *writer, PyObject *thread_info,
     }
     uint8_t status = (uint8_t)status_long;
 
-    int is_new_thread = 0;
     ThreadEntry *entry = writer_get_or_create_thread_entry(
-        writer, thread_id, interpreter_id, &is_new_thread);
+        writer, thread_id, interpreter_id, NULL);
     if (!entry) {
         return -1;
     }
@@ -967,7 +966,14 @@ process_thread_sample(BinaryWriter *writer, PyObject *thread_info,
         &shared_count, &pop_count, &push_count);
 
     if (encoding == STACK_REPEAT) {
-        /* Buffer this sample for RLE */
+        /* Buffer this sample for RLE.
+         *
+         * STACK_REPEAT also covers the "first sample for a fresh thread,
+         * empty stack" case: a new ThreadEntry has prev_stack_depth == 0
+         * and a zero-initialized prev_stack, so compare_stacks() returns
+         * STACK_REPEAT against an empty curr_stack (depth 0). Buffering
+         * it here is correct; the RLE flush path emits it as a normal
+         * STACK_REPEAT record. */
         if (GROW_ARRAY(entry->pending_rle, entry->pending_rle_count,
                        entry->pending_rle_capacity, PendingRLESample) < 0) {
             return -1;
