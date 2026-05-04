@@ -18,9 +18,9 @@ struct PySlot {
     };
 };
 
-#define PySlot_OPTIONAL 0x01
-#define PySlot_STATIC 0x02
-#define PySlot_INTPTR 0x04
+#define PySlot_OPTIONAL 0x0001
+#define PySlot_STATIC 0x0002
+#define PySlot_INTPTR 0x0004
 
 #define Py_slot_invalid 0xffff
 
@@ -44,6 +44,8 @@ struct PySlot {
 
 #define PySlot_END {0}
 
+
+// Macros without designated initializers (for C++11 and below):
 
 #define PySlot_PTR(NAME, VALUE) \
     {(NAME), PySlot_INTPTR, {0}, {(void*)(VALUE)}}

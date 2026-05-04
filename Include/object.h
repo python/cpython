@@ -365,7 +365,7 @@ PyAPI_FUNC(int) PyType_GetBaseByToken(PyTypeObject *, void *, PyTypeObject **);
 #define Py_TP_USE_SPEC NULL
 #endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 15)
-PyAPI_FUNC(PyObject *) PyType_FromSlots(struct PySlot *);
+PyAPI_FUNC(PyObject *) PyType_FromSlots(struct PySlot *slots);
 #endif
 
 /* Generic type check */
