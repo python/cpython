@@ -2,5 +2,5 @@
 the lazy import registry, with :class:`frozenset` values, instead of a live
 mutable :class:`dict` of :class:`set` objects. Each access of
 ``sys.lazy_modules`` returns a fresh snapshot built via
-:meth:`sys.__getattr__`, so the internal bookkeeping structure stays private
-to the import system.
+:meth:`sys.__getattr__`. The live registry remains available (undocumented)
+as ``sys._lazy_modules``.

@@ -5714,26 +5714,6 @@ error:
     return ret;
 }
 
-/*[clinic input]
-_imp._clear_lazy_modules
-
-Clear the per-interpreter lazy import registry.
-
-(internal-only) Used by the test suite to reset state between tests.
-[clinic start generated code]*/
-
-static PyObject *
-_imp__clear_lazy_modules_impl(PyObject *module)
-/*[clinic end generated code: output=8c1e605969f1d16b input=0c01a8d30cdebed2]*/
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyObject *lazy_modules = LAZY_MODULES(interp);
-    if (lazy_modules != NULL) {
-        PyDict_Clear(lazy_modules);
-    }
-    Py_RETURN_NONE;
-}
-
 PyDoc_STRVAR(doc_imp,
 "(Extremely) low-level import machinery bits as used by importlib.");
 
@@ -5758,7 +5738,6 @@ static PyMethodDef imp_methods[] = {
     _IMP__FIX_CO_FILENAME_METHODDEF
     _IMP_SOURCE_HASH_METHODDEF
     _IMP__SET_LAZY_ATTRIBUTES_METHODDEF
-    _IMP__CLEAR_LAZY_MODULES_METHODDEF
     {NULL, NULL}  /* sentinel */
 };
 

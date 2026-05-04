@@ -1,6 +1,5 @@
 """Tests for PEP 810 lazy imports."""
 
-import _imp
 import io
 import dis
 import subprocess
@@ -32,7 +31,7 @@ class LazyImportTests(unittest.TestCase):
 
         sys.set_lazy_imports_filter(None)
         sys.set_lazy_imports("normal")
-        _imp._clear_lazy_modules()
+        sys._lazy_modules.clear()
 
     def test_basic_unused(self):
         """Lazy imported module should not be loaded if never accessed."""
@@ -507,6 +506,16 @@ class SysLazyImportsAPITests(unittest.TestCase):
             snapshot["foo"] = frozenset()
         with self.assertRaises(AttributeError):
             snapshot.clear()
+
+    def test_underscore_lazy_modules_is_live_dict(self):
+        """sys._lazy_modules should be the live, mutable registry."""
+        registry = sys._lazy_modules
+        self.assertIsInstance(registry, dict)
+        self.assertNotIsInstance(registry, frozendict)
+        # Same identity across accesses (it is the registry itself).
+        self.assertIs(sys._lazy_modules, registry)
+        # Snapshot reflects the live registry contents.
+        self.assertEqual(dict(sys.lazy_modules), dict(registry))
 
     @support.requires_subprocess()
     def test_lazy_modules_tracks_lazy_imports(self):

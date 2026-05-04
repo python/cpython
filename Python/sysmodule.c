@@ -2917,7 +2917,8 @@ PyDoc_STRVAR(sys_getattr_doc,
 "\n"
 "Used to expose dynamic, snapshot-style attributes such as\n"
 "``sys.lazy_modules``, which is rebuilt on each access as a\n"
-"``frozendict[str, frozenset[str]]`` view of the lazy import registry.");
+"``frozendict[str, frozenset[str]]`` snapshot of the live lazy import\n"
+"registry exposed (undocumented) as ``sys._lazy_modules``.");
 
 static PyObject *
 sys_getattr(PyObject *self, PyObject *name)
@@ -4381,10 +4382,15 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
         goto error;
     }
 
-    // The lazy import registry is kept private. ``sys.lazy_modules`` is
-    // exposed via ``sys.__getattr__`` as a frozendict snapshot built on
-    // each access (see ``sys_getattr``).
-    if (_PyImport_InitLazyModules(interp) == NULL) {
+    // The live lazy import registry is exposed (undocumented) as
+    // ``sys._lazy_modules``. ``sys.lazy_modules`` is exposed via
+    // ``sys.__getattr__`` as a frozendict snapshot rebuilt on each access
+    // (see ``sys_getattr``).
+    PyObject *lazy_modules = _PyImport_InitLazyModules(interp);
+    if (lazy_modules == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItemString(sysdict, "_lazy_modules", lazy_modules) < 0) {
         goto error;
     }
 

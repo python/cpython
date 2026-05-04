@@ -657,26 +657,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_imp__clear_lazy_modules__doc__,
-"_clear_lazy_modules($module, /)\n"
-"--\n"
-"\n"
-"Clear the per-interpreter lazy import registry.\n"
-"\n"
-"(internal-only) Used by the test suite to reset state between tests.");
-
-#define _IMP__CLEAR_LAZY_MODULES_METHODDEF    \
-    {"_clear_lazy_modules", (PyCFunction)_imp__clear_lazy_modules, METH_NOARGS, _imp__clear_lazy_modules__doc__},
-
-static PyObject *
-_imp__clear_lazy_modules_impl(PyObject *module);
-
-static PyObject *
-_imp__clear_lazy_modules(PyObject *module, PyObject *Py_UNUSED(ignored))
-{
-    return _imp__clear_lazy_modules_impl(module);
-}
-
 #ifndef _IMP_CREATE_DYNAMIC_METHODDEF
     #define _IMP_CREATE_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_CREATE_DYNAMIC_METHODDEF) */
@@ -684,4 +664,4 @@ _imp__clear_lazy_modules(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=daca49038f5e889c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5fa42f580441b3fa input=a9049054013a1b77]*/
