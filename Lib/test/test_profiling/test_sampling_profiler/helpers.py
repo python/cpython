@@ -174,3 +174,29 @@ def close_and_unlink(file):
     """Close a file and unlink it from the filesystem."""
     file.close()
     unlink(file.name)
+
+
+def jsonl_tables(records):
+    """Extract the canonical sections of a parsed JSONL profile.
+
+    Returns ``(meta, str_defs, frame_defs, agg, end)`` where ``str_defs`` is a
+    ``{str_id: value}`` dict, ``frame_defs`` is a flat list of all frame
+    definitions across chunks, and ``agg`` is the first agg record (sufficient
+    for tests that only emit one chunk).
+    """
+    meta = next(record for record in records if record["type"] == "meta")
+    end = next(record for record in records if record["type"] == "end")
+    agg = next(record for record in records if record["type"] == "agg")
+    str_defs = {
+        item["str_id"]: item["value"]
+        for record in records
+        if record["type"] == "str_def"
+        for item in record["defs"]
+    }
+    frame_defs = [
+        item
+        for record in records
+        if record["type"] == "frame_def"
+        for item in record["defs"]
+    ]
+    return meta, str_defs, frame_defs, agg, end

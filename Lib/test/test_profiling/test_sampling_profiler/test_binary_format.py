@@ -1,5 +1,6 @@
 """Tests for binary format round-trip functionality."""
 
+import json
 import os
 import random
 import tempfile
@@ -21,7 +22,7 @@ try:
         THREAD_STATUS_MAIN_THREAD,
     )
     from profiling.sampling.binary_collector import BinaryCollector
-    from profiling.sampling.binary_reader import BinaryReader
+    from profiling.sampling.binary_reader import BinaryReader, convert_binary_to_format
     from profiling.sampling.gecko_collector import GeckoCollector
 
     ZSTD_AVAILABLE = _remote_debugging.zstd_available()
@@ -29,6 +30,8 @@ except ImportError:
     raise unittest.SkipTest(
         "Test only runs when _remote_debugging is available"
     )
+
+from .helpers import jsonl_tables
 
 
 def make_frame(filename, lineno, funcname, end_lineno=None, column=None,
@@ -1209,6 +1212,71 @@ class TestTimestampPreservation(BinaryFormatTestBase):
 
         self.assertEqual(count, 50)
         self.assertEqual(ts_collector.all_timestamps, expected_timestamps)
+
+
+class TestBinaryReplayToJsonl(BinaryFormatTestBase):
+    """Tests for binary -> JSONL replay via convert_binary_to_format."""
+
+    def _replay_to_jsonl(self, samples, interval=1000):
+        bin_path = self.create_binary_file(samples, interval=interval)
+        with tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False) as f:
+            jsonl_path = f.name
+        self.temp_files.append(jsonl_path)
+
+        convert_binary_to_format(bin_path, jsonl_path, "jsonl")
+
+        with open(jsonl_path, "r", encoding="utf-8") as f:
+            return [json.loads(line) for line in f]
+
+    def test_binary_replay_to_jsonl_basic(self):
+        """Replay a small .bin to JSONL: meta/end shape, samples_total, run_id."""
+        frame = make_frame("hot.py", 99, "hot_func")
+        samples = [
+            [make_interpreter(0, [make_thread(1, [frame])])]
+            for _ in range(5)
+        ]
+        records = self._replay_to_jsonl(samples, interval=2000)
+        meta, _, frame_defs, _, end = jsonl_tables(records)
+
+        self.assertEqual(meta["sample_interval_usec"], 2000)
+        self.assertEqual(end["samples_total"], 5)
+
+        run_ids = {r["run_id"] for r in records}
+        self.assertEqual(len(run_ids), 1)
+        self.assertRegex(next(iter(run_ids)), r"^[0-9a-f]{32}$")
+
+        self.assertEqual(len(frame_defs), 1)
+        self.assertEqual(frame_defs[0]["line"], 99)
+
+    def test_binary_replay_to_jsonl_rle_weight_propagation(self):
+        """RLE-batched identical samples land as a single agg entry with the right total."""
+        frame = make_frame("rle.py", 42, "rle_func")
+        samples = [
+            [make_interpreter(0, [make_thread(1, [frame])])]
+            for _ in range(50)
+        ]
+        records = self._replay_to_jsonl(samples)
+        _, _, _, agg, end = jsonl_tables(records)
+
+        self.assertEqual(end["samples_total"], 50)
+        self.assertEqual(agg["entries"], [
+            {"frame_id": 1, "self": 50, "cumulative": 50},
+        ])
+
+    def test_binary_replay_to_jsonl_omits_unavailable_columns(self):
+        """Columns the binary recorder did not capture are omitted, not 0."""
+        # make_frame defaults column/end_column to 0; pass column=-1 / end_column=-1
+        # so the binary side records LOCATION_NOT_AVAILABLE.
+        frame = make_frame("nocol.py", 7, "no_col", column=-1, end_column=-1)
+        samples = [[make_interpreter(0, [make_thread(1, [frame])])]]
+        records = self._replay_to_jsonl(samples)
+        _, _, frame_defs, _, _ = jsonl_tables(records)
+
+        self.assertEqual(len(frame_defs), 1)
+        fd = frame_defs[0]
+        self.assertEqual(fd["line"], 7)
+        self.assertNotIn("col", fd)
+        self.assertNotIn("end_col", fd)
 
 
 if __name__ == "__main__":

@@ -496,7 +496,7 @@ def _add_format_options(parser, include_compression=True, include_binary=True):
         action="store_const",
         const="jsonl",
         dest="format",
-        help="Generate JSONL snapshot output for external consumers",
+        help="Generate newline-delimited JSON (JSONL) for programmatic consumers",
     )
     if include_binary:
         format_group.add_argument(

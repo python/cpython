@@ -1,4 +1,70 @@
-"""JSONL collector."""
+"""JSON Lines (JSONL) collector for the sampling profiler.
+
+Emits a normalized newline-delimited JSON record stream suitable for
+programmatic consumption by external tools, scripts, and agents. Each line
+is one JSON object; consumers can parse the file incrementally line by
+line, but the producer writes the whole file at the end of the run (it is
+not a live/streaming producer).
+
+Record schema
+=============
+
+Every record is a JSON object with at least ``"type"``, ``"v"`` (record
+schema version), and ``"run_id"`` (UUID4 hex tagging the run; allows
+demultiplexing concatenated streams). Records appear in this fixed order:
+
+1. ``meta`` (exactly one, first line)::
+
+      {"type":"meta","v":1,"run_id":"<hex>",
+       "sample_interval_usec":<int>,"mode":"wall|cpu|gil|all|exception"}
+
+   ``mode`` is omitted when not provided.
+
+2. ``str_def`` (zero or more)::
+
+      {"type":"str_def","v":1,"run_id":"<hex>",
+       "defs":[{"str_id":<int>,"value":"<str>"}, ...]}
+
+   Strings (filenames, function names) are interned to keep repeated values
+   compact. Each chunk holds up to ``_CHUNK_SIZE`` entries.
+
+3. ``frame_def`` (zero or more)::
+
+      {"type":"frame_def","v":1,"run_id":"<hex>",
+       "defs":[{"frame_id":<int>,"path_str_id":<int>,"func_str_id":<int>,
+                "line":<int>,"end_line":<int>,"col":<int>,"end_col":<int>,
+                "synthetic":true}, ...]}
+
+   ``end_line``/``col``/``end_col`` are *omitted* when source location data
+   is unavailable (a missing key means "not available", not zero or null).
+   ``synthetic`` is present only on synthetic frames (for example, internal
+   marker frames whose source location is None) and absent otherwise.
+
+4. ``agg`` (zero or more)::
+
+      {"type":"agg","v":1,"run_id":"<hex>","kind":"frame","scope":"final",
+       "samples_total":<int>,
+       "entries":[{"frame_id":<int>,"self":<int>,"cumulative":<int>}, ...]}
+
+   ``self`` counts samples where the frame was the leaf (currently
+   executing); ``cumulative`` counts samples where the frame appeared
+   anywhere in the stack (deduped per sample so recursion does not
+   double-count). ``samples_total`` is the run-wide total, repeated on
+   each chunk so a streaming consumer always knows the denominator.
+
+5. ``end`` (exactly one, last line)::
+
+      {"type":"end","v":1,"run_id":"<hex>","samples_total":<int>}
+
+   Presence of ``end`` is the consumer's signal that the file is complete.
+
+Forward compatibility
+=====================
+
+Consumers MUST ignore unknown record ``"type"`` values and unknown object
+fields. New fields will be added by adding optional keys; an incompatible
+schema change will bump the per-record ``"v"``.
+"""
 
 from collections import Counter
 import json
@@ -28,7 +94,12 @@ _MODE_NAMES = {
 
 
 class JsonlCollector(StackTraceCollector):
-    """Collector that exports finalized profiling data as JSONL."""
+    """Collector that exports finalized profiling data as JSONL.
+
+    See the module docstring for the full record schema. The collector
+    accumulates samples in memory and writes the complete file at
+    ``export()`` time.
+    """
 
     def __init__(self, sample_interval_usec, *, skip_idle=False, mode=None):
         super().__init__(sample_interval_usec, skip_idle=skip_idle)

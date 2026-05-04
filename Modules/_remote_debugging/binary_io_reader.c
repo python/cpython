@@ -785,9 +785,9 @@ build_frame_list(RemoteDebuggingState *state, BinaryReader *reader,
         if (frame->lineno != LOCATION_NOT_AVAILABLE) {
             location = Py_BuildValue("(iiii)",
                 frame->lineno,
-                frame->end_lineno != LOCATION_NOT_AVAILABLE ? frame->end_lineno : frame->lineno,
-                frame->column != LOCATION_NOT_AVAILABLE ? frame->column : 0,
-                frame->end_column != LOCATION_NOT_AVAILABLE ? frame->end_column : 0);
+                frame->end_lineno,
+                frame->column,
+                frame->end_column);
             if (!location) {
                 Py_DECREF(frame_info);
                 goto error;

@@ -39,7 +39,7 @@ except ImportError:
 from test.support import captured_stdout, captured_stderr
 
 from .mocks import MockFrameInfo, MockThreadInfo, MockInterpreterInfo, LocationInfo, make_diff_collector_with_mock_baseline
-from .helpers import close_and_unlink
+from .helpers import close_and_unlink, jsonl_tables
 
 
 def resolve_name(node, strings):
@@ -56,25 +56,6 @@ def find_child_by_name(children, strings, substr):
         if substr in resolve_name(child, strings):
             return child
     return None
-
-
-def _jsonl_tables(records):
-    meta = next(record for record in records if record["type"] == "meta")
-    end = next(record for record in records if record["type"] == "end")
-    agg = next(record for record in records if record["type"] == "agg")
-    str_defs = {
-        item["str_id"]: item["value"]
-        for record in records
-        if record["type"] == "str_def"
-        for item in record["defs"]
-    }
-    frame_defs = [
-        item
-        for record in records
-        if record["type"] == "frame_def"
-        for item in record["defs"]
-    ]
-    return meta, str_defs, frame_defs, agg, end
 
 
 class TestSampleProfilerComponents(unittest.TestCase):
@@ -1834,7 +1815,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         with open(jsonl_out.name, "r", encoding="utf-8") as f:
             records = [json.loads(line) for line in f]
 
-        _, _, frame_defs, agg_record, end_record = _jsonl_tables(records)
+        _, _, frame_defs, agg_record, end_record = jsonl_tables(records)
         self.assertEqual(len(frame_defs), 1)
         self.assertEqual(
             agg_record["entries"],
@@ -1885,7 +1866,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
             with open(jsonl_out.name, "r", encoding="utf-8") as f:
                 records = [json.loads(line) for line in f]
 
-            _, str_defs, frame_defs, agg_record, _ = _jsonl_tables(records)
+            _, str_defs, frame_defs, agg_record, _ = jsonl_tables(records)
             paths = {str_defs[item["path_str_id"]] for item in frame_defs}
             funcs = {str_defs[item["func_str_id"]] for item in frame_defs}
             return paths, funcs, agg_record["samples_total"]
@@ -1934,7 +1915,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertEqual(len(run_ids), 1)
         self.assertRegex(next(iter(run_ids)), r"^[0-9a-f]{32}$")
 
-        _, str_defs, frame_defs, agg_record, end_record = _jsonl_tables(
+        _, str_defs, frame_defs, agg_record, end_record = jsonl_tables(
             records
         )
         str_chunks = [
@@ -1958,6 +1939,122 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertEqual(len(frame_defs), 257)
         self.assertEqual(agg_record["samples_total"], 257)
         self.assertEqual(end_record["samples_total"], 257)
+
+    def test_jsonl_collector_respects_weight_for_rle_batched_samples(self):
+        """weight>1 (from binary replay RLE) is honored in self/cumulative."""
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
+
+        collector = JsonlCollector(1000)
+        leaf = MockFrameInfo("file.py", 10, "leaf")
+        non_leaf = MockFrameInfo("file.py", 20, "non_leaf")
+
+        collector.process_frames([leaf, non_leaf], _thread_id=1, weight=5)
+        collector.export(jsonl_out.name)
+
+        with open(jsonl_out.name, "r", encoding="utf-8") as f:
+            records = [json.loads(line) for line in f]
+
+        _, str_defs, frame_defs, agg, end = jsonl_tables(records)
+        self.assertEqual(end["samples_total"], 5)
+        self.assertEqual(agg["samples_total"], 5)
+        self.assertEqual(
+            {str_defs[fd["func_str_id"]]: fd["frame_id"] for fd in frame_defs},
+            {"leaf": 1, "non_leaf": 2},
+        )
+        self.assertEqual(agg["entries"], [
+            {"frame_id": 1, "self": 5, "cumulative": 5},
+            {"frame_id": 2, "self": 0, "cumulative": 5},
+        ])
+
+    def test_jsonl_collector_recursion_with_weight(self):
+        """Recursion dedup respects weight, not occurrence count."""
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
+
+        collector = JsonlCollector(1000)
+        recursive = MockFrameInfo("rec.py", 10, "f")
+
+        collector.process_frames([recursive] * 3, _thread_id=1, weight=3)
+        collector.export(jsonl_out.name)
+
+        with open(jsonl_out.name, "r", encoding="utf-8") as f:
+            records = [json.loads(line) for line in f]
+
+        _, _, frame_defs, agg, _ = jsonl_tables(records)
+        self.assertEqual(len(frame_defs), 1)
+        self.assertEqual(agg["entries"], [
+            {"frame_id": 1, "self": 3, "cumulative": 3},
+        ])
+
+    def test_jsonl_collector_emits_col_and_end_col_when_present(self):
+        """All four location fields are emitted when col/end_col are >= 0."""
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
+
+        collector = JsonlCollector(1000)
+        frame = MockFrameInfo("test.py", 0, "f")
+        frame.location = LocationInfo(42, 45, 4, 12)
+        frames = [
+            MockInterpreterInfo(
+                0, [MockThreadInfo(1, [frame], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+        collector.collect(frames)
+        collector.export(jsonl_out.name)
+
+        with open(jsonl_out.name, "r", encoding="utf-8") as f:
+            records = [json.loads(line) for line in f]
+
+        _, str_defs, frame_defs, _, _ = jsonl_tables(records)
+        self.assertEqual(frame_defs, [
+            {
+                "frame_id": 1,
+                "path_str_id": 2,
+                "func_str_id": 1,
+                "line": 42,
+                "end_line": 45,
+                "col": 4,
+                "end_col": 12,
+            },
+        ])
+        self.assertEqual(str_defs, {1: "f", 2: "test.py"})
+
+    def test_jsonl_collector_partial_location_elision(self):
+        """Negative col/end_col/end_line fields are individually elided."""
+        # _get_or_create_frame_id interns funcname before filename, so
+        # func_str_id=1 ("f") and path_str_id=2 ("test.py").
+        common = {"frame_id": 1, "path_str_id": 2, "func_str_id": 1}
+        cases = [
+            (LocationInfo(42, 45, -1, 12),
+             {**common, "line": 42, "end_line": 45, "end_col": 12}),
+            (LocationInfo(42, 45, 4, -1),
+             {**common, "line": 42, "end_line": 45, "col": 4}),
+            (LocationInfo(42, 0, 4, 8),
+             {**common, "line": 42, "col": 4, "end_col": 8}),
+        ]
+        for loc, expected_frame_def in cases:
+            with self.subTest(location=loc):
+                jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+                self.addCleanup(close_and_unlink, jsonl_out)
+
+                collector = JsonlCollector(1000)
+                frame = MockFrameInfo("test.py", 0, "f")
+                frame.location = loc
+                frames = [
+                    MockInterpreterInfo(
+                        0,
+                        [MockThreadInfo(1, [frame], status=THREAD_STATUS_HAS_GIL)],
+                    )
+                ]
+                collector.collect(frames)
+                collector.export(jsonl_out.name)
+
+                with open(jsonl_out.name, "r", encoding="utf-8") as f:
+                    records = [json.loads(line) for line in f]
+
+                _, _, frame_defs, _, _ = jsonl_tables(records)
+                self.assertEqual(frame_defs, [expected_frame_def])
 
 
 class TestRecursiveFunctionHandling(unittest.TestCase):
@@ -2167,6 +2264,15 @@ class TestLocationHelpers(unittest.TestCase):
     def test_extract_lineno_from_none(self):
         """Test extracting lineno from None (synthetic frames)."""
         self.assertEqual(extract_lineno(None), 0)
+
+    def test_extract_lineno_from_int(self):
+        """Test extracting lineno from a bare integer line number.
+
+        Mirrors normalize_location's int contract so callers like the
+        collapsed/flamegraph collectors do not crash on a bare-int location.
+        """
+        self.assertEqual(extract_lineno(42), 42)
+        self.assertEqual(extract_lineno(0), 0)
 
     def test_normalize_location_with_int(self):
         """Test normalize_location expands a legacy integer line number."""
@@ -2384,7 +2490,7 @@ class TestLocationInCollectors(unittest.TestCase):
         with open(jsonl_out.name, "r", encoding="utf-8") as f:
             records = [json.loads(line) for line in f]
 
-        meta, str_defs, frame_defs, agg, end = _jsonl_tables(records)
+        meta, str_defs, frame_defs, agg, end = jsonl_tables(records)
         self.assertEqual(meta["sample_interval_usec"], 1000)
         self.assertEqual(agg["samples_total"], 1)
         self.assertEqual(end["samples_total"], 1)
@@ -2425,7 +2531,7 @@ class TestLocationInCollectors(unittest.TestCase):
         with open(jsonl_out.name, "r", encoding="utf-8") as f:
             records = [json.loads(line) for line in f]
 
-        meta, str_defs, frame_defs, agg, end = _jsonl_tables(records)
+        meta, str_defs, frame_defs, agg, end = jsonl_tables(records)
         self.assertEqual(meta["sample_interval_usec"], 1000)
         self.assertEqual(agg["samples_total"], 1)
         self.assertEqual(end["samples_total"], 1)
@@ -2675,7 +2781,7 @@ class TestCollectorFrameFormat(unittest.TestCase):
         with open(f.name, "r", encoding="utf-8") as fp:
             records = [json.loads(line) for line in fp]
 
-        _, str_defs, frame_defs, _, _ = _jsonl_tables(records)
+        _, str_defs, frame_defs, _, _ = jsonl_tables(records)
 
         self.assertEqual(len(frame_defs), 3)
 
@@ -2842,7 +2948,7 @@ class TestInternalFrameFiltering(unittest.TestCase):
         with open(jsonl_out.name, "r", encoding="utf-8") as f:
             records = [json.loads(line) for line in f]
 
-        _, str_defs, frame_defs, _, _ = _jsonl_tables(records)
+        _, str_defs, frame_defs, _, _ = jsonl_tables(records)
 
         paths = {str_defs[item["path_str_id"]] for item in frame_defs}
 
