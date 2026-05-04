@@ -16,10 +16,11 @@ _PyIndex_Check(PyObject *obj)
     return (tp_as_number != NULL && tp_as_number->nb_index != NULL);
 }
 
-PyObject *_PyNumber_PowerNoMod(PyObject *lhs, PyObject *rhs);
-PyObject *_PyNumber_InPlacePowerNoMod(PyObject *lhs, PyObject *rhs);
+// Exported for external JIT support
+PyAPI_FUNC(PyObject *) _PyNumber_PowerNoMod(PyObject *lhs, PyObject *rhs);
+PyAPI_FUNC(PyObject *) _PyNumber_InPlacePowerNoMod(PyObject *lhs, PyObject *rhs);
 
-extern int _PyObject_HasLen(PyObject *o);
+PyAPI_FUNC(int) _PyObject_HasLen(PyObject *o);
 
 /* === Sequence protocol ================================================ */
 

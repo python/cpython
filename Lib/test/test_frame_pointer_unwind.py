@@ -27,9 +27,8 @@ def _frame_pointers_expected(machine):
     )
 
     if "no-omit-frame-pointer" in cflags:
-        # For example, configure adds -fno-omit-frame-pointer if Python
-        # has perf trampoline (PY_HAVE_PERF_TRAMPOLINE) and Python is built
-        # in debug mode.
+        # For example, configure adds -fno-omit-frame-pointer by default on
+        # supported GCC-compatible builds.
         return True
     if "omit-frame-pointer" in cflags:
         return False

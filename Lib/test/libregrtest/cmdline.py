@@ -15,73 +15,73 @@ DESCRIPTION = """\
 Run Python regression tests.
 
 If no arguments or options are provided, finds all files matching
-the pattern "test_*" in the Lib/test subdirectory and runs
-them in alphabetical order (but see -M and -u, below, for exceptions).
+the pattern `test_*` in the `Lib/test` subdirectory and runs
+them in alphabetical order (but see `-M` and `-u`, below, for exceptions).
 
 For more rigorous testing, it is useful to use the following
 command line:
 
-python -E -Wd -m test [options] [test_name1 ...]
+`python -E -Wd -m test [options] [test_name1 ...]`
 """
 
 EPILOG = """\
 Additional option details:
 
--r randomizes test execution order. You can use --randseed=int to provide an
-int seed value for the randomizer. The randseed value will be used
+`-r` randomizes test execution order. You can use `--randseed=int` to provide an
+int seed value for the randomizer. The `randseed` value will be used
 to set seeds for all random usages in tests
-(including randomizing the tests order if -r is set).
+(including randomizing the tests order if `-r` is set).
 By default we always set random seed, but do not randomize test order.
 
--s On the first invocation of regrtest using -s, the first test file found
+`-s` On the first invocation of regrtest using `-s`, the first test file found
 or the first test file given on the command line is run, and the name of
-the next test is recorded in a file named pynexttest.  If run from the
-Python build directory, pynexttest is located in the 'build' subdirectory,
-otherwise it is located in tempfile.gettempdir().  On subsequent runs,
-the test in pynexttest is run, and the next test is written to pynexttest.
-When the last test has been run, pynexttest is deleted.  In this way it
+the next test is recorded in a file named `pynexttest`.  If run from the
+Python build directory, `pynexttest` is located in the 'build' subdirectory,
+otherwise it is located in `tempfile.gettempdir()`.  On subsequent runs,
+the test in `pynexttest` is run, and the next test is written to `pynexttest`.
+When the last test has been run, `pynexttest` is deleted.  In this way it
 is possible to single step through the test files.  This is useful when
 doing memory analysis on the Python interpreter, which process tends to
 consume too many resources to run the full regression test non-stop.
 
--S is used to resume running tests after an interrupted run.  It will
-maintain the order a standard run (i.e. it assumes -r is not used).
+`-S` is used to resume running tests after an interrupted run.  It will
+maintain the order a standard run (i.e. it assumes `-r` is not used).
 This is useful after the tests have prematurely stopped for some external
 reason and you want to resume the run from where you left off rather
-than starting from the beginning. Note: this is different from --prioritize.
+than starting from the beginning. Note: this is different from `--prioritize`.
 
---prioritize is used to influence the order of selected tests, such that
+`--prioritize` is used to influence the order of selected tests, such that
 the tests listed as an argument are executed first. This is especially
-useful when combined with -j and -r to pin the longest-running tests
-to start at the beginning of a test run. Pass --prioritize=test_a,test_b
-to make test_a run first, followed by test_b, and then the other tests.
-If test_a wasn't selected for execution by regular means, --prioritize will
+useful when combined with `-j` and `-r` to pin the longest-running tests
+to start at the beginning of a test run. Pass `--prioritize=test_a,test_b`
+to make `test_a` run first, followed by `test_b`, and then the other tests.
+If test_a wasn't selected for execution by regular means, `--prioritize` will
 not make it execute.
 
--f reads the names of tests from the file given as f's argument, one
+`-f` reads the names of tests from the file given as `f`'s argument, one
 or more test names per line.  Whitespace is ignored.  Blank lines and
-lines beginning with '#' are ignored.  This is especially useful for
+lines beginning with `#` are ignored.  This is especially useful for
 whittling down failures involving interactions among tests.
 
--L causes the leaks(1) command to be run just before exit if it exists.
-leaks(1) is available on Mac OS X and presumably on some other
+`-L` causes the leaks(1) command to be run just before exit if it exists.
+leaks(1) is available on macOS and presumably on some other
 FreeBSD-derived systems.
 
--R runs each test several times and examines sys.gettotalrefcount() to
+`-R` runs each test several times and examines `sys.gettotalrefcount()` to
 see if the test appears to be leaking references.  The argument should
-be of the form stab:run:fname where 'stab' is the number of times the
-test is run to let gettotalrefcount settle down, 'run' is the number
-of times further it is run and 'fname' is the name of the file the
-reports are written to.  These parameters all have defaults (5, 4 and
-"reflog.txt" respectively), and the minimal invocation is '-R :'.
+be of the form `stab:run:fname` where `stab` is the number of times the
+test is run to let gettotalrefcount settle down, `run` is the number
+of times further it is run and `fname` is the name of the file the
+reports are written to.  These parameters all have defaults (`5`, `4` and
+`"reflog.txt"` respectively), and the minimal invocation is `-R :`.
 
--M runs tests that require an exorbitant amount of memory. These tests
+`-M` runs tests that require an exorbitant amount of memory. These tests
 typically try to ascertain containers keep working when containing more than
 2 billion objects, which only works on 64-bit systems. There are also some
 tests that try to exhaust the address space of the process, which only makes
 sense on 32-bit systems with at least 2Gb of memory. The passed-in memlimit,
-which is a string in the form of '2.5Gb', determines how much memory the
-tests will limit themselves to (but they may go slightly over.) The number
+which is a string in the form of `'2.5Gb'`, determines how much memory the
+tests will limit themselves to (but they may go slightly over). The number
 shouldn't be more memory than the machine has (including swap memory). You
 should also keep in mind that swap memory is generally much, much slower
 than RAM, and setting memlimit to all available RAM or higher will heavily
@@ -90,7 +90,7 @@ limit of less than 2.5Gb, and many require more than 20Gb. Tests that expect
 to use more than memlimit memory will be skipped. The big-memory tests
 generally run very, very long.
 
--u is used to specify which special resource intensive tests to run,
+`-u` is used to specify which special resource intensive tests to run,
 such as those requiring large file support or network connectivity.
 The argument is a comma-separated list of words indicating the
 resources to test.  Currently only the following are defined:
@@ -137,16 +137,16 @@ resources to test.  Currently only the following are defined:
     wantobjects -    Allows to run Tkinter tests with the specified value of
                      tkinter.wantobjects.
 
-To enable all resources except one, use '-uall,-<resource>'.  For
-example, to run all the tests except for the gui tests, give the
-option '-uall,-gui'.
+To enable all resources except one, use `-uall,-<resource>`.  For
+example, to run all the tests except for the `gui` tests, give the
+option `-uall,-gui`.
 
---matchfile filters tests using a text file, one pattern per line.
+`--matchfile` filters tests using a text file, one pattern per line.
 Pattern examples:
 
-- test method: test_stat_attributes
-- test class: FileTests
-- test identifier: test_os.FileTests.test_stat_attributes
+- test method: `test_stat_attributes`
+- test class: `FileTests`
+- test identifier: `test_os.FileTests.test_stat_attributes`
 """
 
 

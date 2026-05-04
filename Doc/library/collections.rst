@@ -326,7 +326,7 @@ For example::
         .. versionadded:: 3.10
 
     The usual dictionary methods are available for :class:`Counter` objects
-    except for two which work differently for counters.
+    except for these two which work differently for counters:
 
     .. method:: fromkeys(iterable)
 

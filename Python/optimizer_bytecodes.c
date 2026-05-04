@@ -1,4 +1,6 @@
 #include "Python.h"
+#include "pycore_long.h"
+#include "pycore_opcode_utils.h"
 #include "pycore_optimizer.h"
 #include "pycore_uops.h"
 #include "pycore_uop_ids.h"
@@ -147,10 +149,7 @@ dummy_func(void) {
                 // Promote the probable type version to a known one.
                 sym_set_type(owner, probable_type);
                 sym_set_type_version(owner, type_version);
-                if ((probable_type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
-                    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)probable_type);
-                    _Py_BloomFilter_Add(dependencies, probable_type);
-                }
+                watch_type(probable_type, dependencies);
             }
             else {
                 ctx->contradiction = true;
@@ -229,24 +228,21 @@ dummy_func(void) {
     }
 
     op(_CHECK_ATTR_CLASS, (type_version/2, owner -- owner)) {
-        PyObject *type = (PyObject *)_PyType_LookupByVersion(type_version);
-        if (type) {
+        PyObject *type = sym_get_probable_value(owner);
+        if (type != NULL && ((PyTypeObject *)type)->tp_version_tag == type_version) {
             if (type == sym_get_const(ctx, owner)) {
                 ADD_OP(_NOP, 0, 0);
             }
             else {
                 sym_set_const(owner, type);
-                if ((((PyTypeObject *)type)->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
-                    PyType_Watch(TYPE_WATCHER_ID, type);
-                    _Py_BloomFilter_Add(dependencies, type);
-                }
+                watch_type((PyTypeObject *)type, dependencies);
             }
         }
     }
 
     op(_GUARD_TYPE_VERSION, (type_version/2, owner -- owner)) {
         assert(type_version);
-        assert(this_instr[-1].opcode == _RECORD_TOS_TYPE);
+        assert(this_instr[-1].opcode == _RECORD_TOS_TYPE || this_instr[-1].opcode == _RECORD_TOS);
         if (sym_matches_type_version(owner, type_version)) {
             ADD_OP(_NOP, 0, 0);
         }
@@ -256,8 +252,7 @@ dummy_func(void) {
                 probable_type->tp_version_tag == type_version) {
                 sym_set_type(owner, probable_type);
                 sym_set_type_version(owner, type_version);
-                PyType_Watch(TYPE_WATCHER_ID, (PyObject *)probable_type);
-                _Py_BloomFilter_Add(dependencies, probable_type);
+                watch_type(probable_type, dependencies);
             }
             else {
                 ctx->contradiction = true;
@@ -293,6 +288,7 @@ dummy_func(void) {
                            || oparg == NB_INPLACE_TRUE_DIVIDE);
         bool is_remainder = (oparg == NB_REMAINDER
                              || oparg == NB_INPLACE_REMAINDER);
+        int emit_op = _BINARY_OP;
         // Promote probable-float operands to known floats via speculative
         // guards. _RECORD_TOS_TYPE / _RECORD_NOS_TYPE in the BINARY_OP macro
         // record the observed operand type during tracing, which
@@ -300,7 +296,7 @@ dummy_func(void) {
         // narrowing unlocks a meaningful downstream win:
         //   - NB_TRUE_DIVIDE: enables the specialized float path below.
         //   - NB_REMAINDER: lets the float result type propagate.
-        // NB_POWER is excluded — speculative guards there regressed
+        // NB_POWER is excluded: speculative guards there regressed
         // test_power_type_depends_on_input_values (GH-127844).
         if (is_truediv || is_remainder) {
             if (!sym_has_type(rhs)
@@ -318,17 +314,17 @@ dummy_func(void) {
         }
         if (is_truediv && lhs_float && rhs_float) {
             if (PyJitRef_IsUnique(lhs)) {
-                ADD_OP(_BINARY_OP_TRUEDIV_FLOAT_INPLACE, 0, 0);
+                emit_op = _BINARY_OP_TRUEDIV_FLOAT_INPLACE;
                 l = sym_new_null(ctx);
                 r = rhs;
             }
             else if (PyJitRef_IsUnique(rhs)) {
-                ADD_OP(_BINARY_OP_TRUEDIV_FLOAT_INPLACE_RIGHT, 0, 0);
+                emit_op = _BINARY_OP_TRUEDIV_FLOAT_INPLACE_RIGHT;
                 l = lhs;
                 r = sym_new_null(ctx);
             }
             else {
-                ADD_OP(_BINARY_OP_TRUEDIV_FLOAT, 0, 0);
+                emit_op = _BINARY_OP_TRUEDIV_FLOAT;
                 l = lhs;
                 r = rhs;
             }
@@ -382,6 +378,7 @@ dummy_func(void) {
         else {
             res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
         }
+        ADD_OP(emit_op, oparg, 0);
     }
 
     op(_BINARY_OP_ADD_INT, (left, right -- res, l, r)) {
@@ -873,8 +870,14 @@ dummy_func(void) {
     op(_LOAD_COMMON_CONSTANT, (-- value)) {
         assert(oparg < NUM_COMMON_CONSTANTS);
         PyObject *val = _PyInterpreterState_GET()->common_consts[oparg];
-        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
-        value = PyJitRef_Borrow(sym_new_const(ctx, val));
+        if (_Py_IsImmortal(val)) {
+            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
+            value = PyJitRef_Borrow(sym_new_const(ctx, val));
+        }
+        else {
+            ADD_OP(_LOAD_CONST_INLINE, 0, (uintptr_t)val);
+            value = sym_new_const(ctx, val);
+        }
     }
 
     op(_LOAD_SMALL_INT, (-- value)) {
@@ -932,6 +935,13 @@ dummy_func(void) {
         bottom = top;
         top = temp;
         assert(oparg >= 2);
+    }
+
+    op(_RROT_3, (bottom, middle, top -- bottom, middle, top)) {
+        JitOptRef temp = top;
+        top = middle;
+        middle = bottom;
+        bottom = temp;
     }
 
     op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr, o)) {
@@ -1309,8 +1319,7 @@ dummy_func(void) {
             assert(init != NULL);
             assert(PyFunction_Check(init));
             callable = sym_new_const(ctx, init);
-            PyType_Watch(TYPE_WATCHER_ID, callable_o);
-            _Py_BloomFilter_Add(dependencies, callable_o);;
+            watch_type((PyTypeObject *)callable_o, dependencies);
         }
         else {
             callable = sym_new_not_null(ctx);
@@ -2016,10 +2025,7 @@ dummy_func(void) {
                        0, (uintptr_t)descr);
                 ADD_OP(_SWAP, 3, 0);
                 optimize_pop_top(ctx, this_instr, method_and_self[0]);
-                if ((type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
-                    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
-                    _Py_BloomFilter_Add(dependencies, type);
-                }
+                watch_type(type, dependencies);
                 method_and_self[0] = sym_new_const(ctx, descr);
                 optimized = true;
             }
@@ -2160,17 +2166,45 @@ dummy_func(void) {
         }
     }
 
-    op(_GUARD_NOS_DICT, (nos, unused -- nos, unused)) {
-        if (sym_matches_type(nos, &PyDict_Type)) {
-            ADD_OP(_NOP, 0, 0);
+    op(_GUARD_NOS_DICT_SUBSCRIPT, (nos, unused -- nos, unused)) {
+        PyTypeObject *tp = sym_get_type(nos);
+        bool definite = true;
+        if (!tp) {
+            tp = sym_get_probable_type(nos);
+            definite = false;
         }
-        sym_set_type(nos, &PyDict_Type);
+        if (tp && tp->tp_as_mapping &&
+            tp->tp_as_mapping->mp_subscript == _PyDict_Subscript) {
+            if (definite) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                ADD_OP(_GUARD_TYPE, 0, (uintptr_t)tp);
+                sym_set_type(nos, tp);
+            }
+            PyType_Watch(TYPE_WATCHER_ID, (PyObject *)tp);
+            _Py_BloomFilter_Add(dependencies, tp);
+        }
     }
 
-    op(_GUARD_NOS_ANY_DICT, (nos, unused -- nos, unused)) {
+    op(_GUARD_NOS_DICT_STORE_SUBSCRIPT, (unused, nos, unused -- unused, nos, unused)) {
         PyTypeObject *tp = sym_get_type(nos);
-        if (tp == &PyDict_Type || tp == &PyFrozenDict_Type) {
-            ADD_OP(_NOP, 0, 0);
+        bool definite = true;
+        if (!tp) {
+            tp = sym_get_probable_type(nos);
+            definite = false;
+        }
+        if (tp && tp->tp_as_mapping &&
+            tp->tp_as_mapping->mp_ass_subscript == _PyDict_StoreSubscript) {
+            if (definite) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                ADD_OP(_GUARD_TYPE, 0, (uintptr_t)tp);
+                sym_set_type(nos, tp);
+            }
+            PyType_Watch(TYPE_WATCHER_ID, (PyObject *)tp);
+            _Py_BloomFilter_Add(dependencies, tp);
         }
     }
 
@@ -2330,7 +2364,10 @@ dummy_func(void) {
                 goto error;
             }
             if (_Py_IsImmortal(temp)) {
-                ADD_OP(_SHUFFLE_3_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)temp);
+                ADD_OP(_SWAP, 2, 0);
+                optimize_pop_top(ctx, this_instr, null);
+                ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)temp);
+                ADD_OP(_SWAP, 3, 0);
             }
             res = sym_new_const(ctx, temp);
             Py_DECREF(temp);
