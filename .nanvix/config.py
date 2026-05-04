@@ -97,7 +97,7 @@ def configure_env(toolchain: str | Path, sysroot: str | Path) -> dict[str, str]:
         ),
         "LIBS": (
             f"-Wl,--start-group {tp['libposix']} {tp['libc']} {tp['libm']} "
-            f"-lsqlite3 -lssl -lcrypto -lz -lbz2 -lffi -Wl,--end-group"
+            f"-lsqlite3 -lssl -lcrypto -lz -lbz2 -llzma -lffi -Wl,--end-group"
         ),
         "LIBSQLITE3_LIBS": f"-L{sr}/lib -lsqlite3",
         "LIBSQLITE3_CFLAGS": f"-I{sr}/include",
@@ -105,6 +105,8 @@ def configure_env(toolchain: str | Path, sysroot: str | Path) -> dict[str, str]:
         "ZLIB_CFLAGS": f"-I{sr}/include",
         "BZIP2_LIBS": f"-L{sr}/lib -lbz2",
         "BZIP2_CFLAGS": f"-I{sr}/include",
+        "LIBLZMA_LIBS": f"-L{sr}/lib -llzma",
+        "LIBLZMA_CFLAGS": f"-I{sr}/include",
         "LIBFFI_LIBS": f"-L{sr}/lib -lffi",
         "LIBFFI_CFLAGS": f"-I{sr}/include",
     }

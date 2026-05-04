@@ -126,13 +126,15 @@ CONFIGURE_ENV = \
 	CFLAGS="-O3 -fomit-frame-pointer -fno-unwind-tables -fno-asynchronous-unwind-tables -I$(SYSROOT_PATH)/include" \
 	CFLAGS_NODIST="-fno-semantic-interposition" \
 	LDFLAGS="-L$(SYSROOT_PATH)/lib -T$(SYSROOT_PATH)/lib/user.ld -Wl,--allow-multiple-definition -no-pie -Wl,--export-dynamic -Wl,--no-dynamic-linker" \
-	LIBS="-Wl,--start-group $(LIBPOSIX) $(LIBC) $(LIBM) -lsqlite3 -lssl -lcrypto -lz -lbz2 -lffi -Wl,--end-group" \
+	LIBS="-Wl,--start-group $(LIBPOSIX) $(LIBC) $(LIBM) -lsqlite3 -lssl -lcrypto -lz -lbz2 -llzma -lffi -Wl,--end-group" \
 	LIBSQLITE3_LIBS="-L$(SYSROOT_PATH)/lib -lsqlite3" \
 	LIBSQLITE3_CFLAGS="-I$(SYSROOT_PATH)/include" \
 	ZLIB_LIBS="-L$(SYSROOT_PATH)/lib -lz" \
 	ZLIB_CFLAGS="-I$(SYSROOT_PATH)/include" \
 	BZIP2_LIBS="-L$(SYSROOT_PATH)/lib -lbz2" \
 	BZIP2_CFLAGS="-I$(SYSROOT_PATH)/include" \
+	LIBLZMA_LIBS="-L$(SYSROOT_PATH)/lib -llzma" \
+	LIBLZMA_CFLAGS="-I$(SYSROOT_PATH)/include" \
 	LIBFFI_LIBS="-L$(SYSROOT_PATH)/lib -lffi" \
 	LIBFFI_CFLAGS="-I$(SYSROOT_PATH)/include"
 
