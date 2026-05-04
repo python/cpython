@@ -932,7 +932,7 @@ fromfloat:;
         if (nsobj == NULL) {
             return -1;
         }
-        int rc = _PyTime_FromLong(tp, nsobj);
+        int rc = PyLong_AsInt64(nsobj, tp);
         Py_DECREF(nsobj);
         return rc;
     }
