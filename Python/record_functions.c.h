@@ -258,18 +258,55 @@ const _Py_RecordFuncPtr _PyOpcode_RecordFunctions[10] = {
         [_RECORD_4OS_INDEX] = _PyOpcode_RecordFunction_4OS,
 };
 
+static PyObject *
+_PyOpcode_RecordTransform_NOS_TYPE(PyObject *recorded_value)
+{
+    PyObject *transformed_value = NULL;
+    _PyStackRef nos;
+    nos = PyStackRef_FromPyObjectBorrow(recorded_value);
+    transformed_value = (PyObject *)Py_TYPE(PyStackRef_AsPyObjectBorrow(nos));
+    Py_XINCREF(transformed_value);
+    Py_DECREF(recorded_value);
+    return transformed_value;
+}
+
+static PyObject *
+_PyOpcode_RecordTransform_TOS_TYPE(PyObject *recorded_value)
+{
+    PyObject *transformed_value = NULL;
+    _PyStackRef tos;
+    tos = PyStackRef_FromPyObjectBorrow(recorded_value);
+    transformed_value = (PyObject *)Py_TYPE(PyStackRef_AsPyObjectBorrow(tos));
+    Py_XINCREF(transformed_value);
+    Py_DECREF(recorded_value);
+    return transformed_value;
+}
+
+static PyObject *
+_PyOpcode_RecordTransform_BOUND_METHOD(PyObject *recorded_value)
+{
+    PyObject *transformed_value = NULL;
+    _PyStackRef callable;
+    callable = PyStackRef_FromPyObjectBorrow(recorded_value);
+    PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+    if (Py_TYPE(callable_o) == &PyMethod_Type) {
+        transformed_value = (PyObject *)callable_o;
+        Py_XINCREF(transformed_value);
+    }
+    Py_DECREF(recorded_value);
+    return transformed_value;
+}
+
 PyObject *
 _PyOpcode_RecordTransformValue(int uop, PyObject *value)
 {
         switch (uop) {
-                case _RECORD_TOS_TYPE:
                 case _RECORD_NOS_TYPE:
-                    return record_trace_transform_to_type(value);
-                case _RECORD_NOS_GEN_FUNC:
-                case _RECORD_3OS_GEN_FUNC:
-                    return record_trace_transform_gen_func(value);
+                    return _PyOpcode_RecordTransform_NOS_TYPE(value);
+                case _RECORD_TOS_TYPE:
+                    return _PyOpcode_RecordTransform_TOS_TYPE(value);
                 case _RECORD_BOUND_METHOD:
-                    return record_trace_transform_bound_method(value);
+                    return _PyOpcode_RecordTransform_BOUND_METHOD(value);
                 default:
                     return value;
         }
