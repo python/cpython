@@ -17,7 +17,7 @@ extern "C" {
 // Operations that need to lock two objects at once must use
 // `Py_BEGIN_CRITICAL_SECTION2()`. You *CANNOT* use nested critical sections
 // to lock more than one object at once, because the inner critical section
-// may  suspend the outer critical sections. This API does not provide a way
+// may suspend the outer critical sections. This API does not provide a way
 // to lock more than two objects at once (though it could be added later
 // if actually needed).
 //
