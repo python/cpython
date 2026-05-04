@@ -92,6 +92,9 @@ _DEP_EXPECTED_LIBS: dict[str, list[str]] = {
     "zlib": ["libz.a"],
     "sqlite": ["libsqlite3.a"],
     "openssl": ["libssl.a", "libcrypto.a"],
+    "libxml2": ["libxml2.a"],
+    "libxslt": ["libxslt.a", "libexslt.a"],
+    "lxml": ["liblxml_etree.a", "liblxml_elementpath.a"],
 }
 
 
@@ -436,7 +439,15 @@ class CPythonBuild(ZScript):
             expected = _DEP_EXPECTED_LIBS.get(dep.name, [])
             if not expected:
                 continue
-            if all((lib_dir / lib).exists() for lib in expected):
+            libs_present = all((lib_dir / lib).exists() for lib in expected)
+            # For lxml, also require the python-packages payload.
+            if dep.name == "lxml":
+                pkg_present = (
+                    buildroot / "python-packages" / "lxml" / "__init__.py"
+                ).exists()
+                if libs_present and pkg_present:
+                    continue
+            elif libs_present:
                 continue
             resolved = suffix_dep(dep, nanvix_version) if nanvix_version else dep
             self._download_dep_fallback(
@@ -556,6 +567,23 @@ class CPythonBuild(ZScript):
                     else:
                         shutil.copy2(item, target)
                 log.info(f"Installed headers for {dep_name}")
+                break
+
+            # Extract python-packages/ (e.g. lxml pure-Python files).
+            for pkg_src in extract_dir.rglob("python-packages"):
+                if not pkg_src.is_dir():
+                    continue
+                pkg_dst = buildroot / "python-packages"
+                pkg_dst.mkdir(parents=True, exist_ok=True)
+                for item in pkg_src.iterdir():
+                    target = pkg_dst / item.name
+                    if item.is_dir():
+                        if target.exists():
+                            shutil.rmtree(target)
+                        shutil.copytree(item, target)
+                    else:
+                        shutil.copy2(item, target)
+                log.info(f"Installed python packages for {dep_name}")
                 break
 
 

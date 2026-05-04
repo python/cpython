@@ -326,6 +326,8 @@ NANVIX_TEST_LIST: list[str] = [
     # #323 wave 8 — regex and plistlib
     "test_re",
     "test_plistlib",
+    # #600 — lxml built-in smoke test
+    "test_nanvix_lxml",
 ]
 
 # Default batch size for regrtest VM invocations.
@@ -362,12 +364,17 @@ SYSROOT_TRIM_DIRS: list[str] = [
     f"lib/{PYTHON_LIB_DIR}/ensurepip",
     f"lib/{PYTHON_LIB_DIR}/pydoc_data",
     f"lib/{PYTHON_LIB_DIR}/venv",
-    f"lib/{PYTHON_LIB_DIR}/site-packages",
     f"lib/{PYTHON_LIB_DIR}/__phello__",
     "include",
     "share",
     "lib/pkgconfig",
 ]
+
+# site-packages is no longer trimmed because lxml runtime files may be
+# installed there by downstream packaging.  When the directory is empty
+# it remains harmlessly on disk (ramfs.trim_sysroot only removes empty
+# bin/).  To force-trim site-packages for minimal images, add the path
+# back into SYSROOT_TRIM_DIRS above.
 
 # Files removed from sysroot bin/ during ramfs trimming.
 SYSROOT_TRIM_BIN_PATTERNS: list[str] = [
@@ -406,6 +413,7 @@ DOCKER_CRLF_FILES: list[str] = [
     "install-sh",
     "Modules/makesetup",
     "Modules/Setup",
+    "Modules/Setup.local",
     "Modules/Setup.bootstrap.in",
     "Modules/Setup.stdlib.in",
     "Modules/config.c.in",
