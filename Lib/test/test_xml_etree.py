@@ -3197,7 +3197,7 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
         # This should raise a RecursionError and not crash.
         # See https://github.com/python/cpython/issues/148801.
         root = cur = ET.Element('s')
-        for _ in range(150_000):
+        for _ in range(500_000):
             cur = ET.SubElement(cur, 'u')
         with support.infinite_recursion():
             with self.assertRaises(RecursionError):

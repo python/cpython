@@ -508,6 +508,14 @@ binascii_a2b_uu_impl(PyObject *module, Py_buffer *data)
     assert(ascii_len >= 0);
 
     /* First byte: binary data length (in bytes) */
+    if (ascii_len == 0) {
+        state = get_binascii_state(module);
+        if (state == NULL) {
+            return NULL;
+        }
+        PyErr_SetString(state->Error, "Missing length byte");
+        return NULL;
+    }
     bin_len = (*ascii_data++ - ' ') & 077;
     ascii_len--;
 

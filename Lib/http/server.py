@@ -551,13 +551,17 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
                     (self.protocol_version, code, message)).encode(
                         'latin-1', 'strict'))
 
-    def send_header(self, keyword, value):
+    def send_header(self, keyword, value, *, _is_extra=False):
         """Send a MIME header to the headers buffer."""
         if self.request_version != 'HTTP/0.9':
             if not hasattr(self, '_headers_buffer'):
                 self._headers_buffer = []
             self._headers_buffer.append(
                 ("%s: %s\r\n" % (keyword, value)).encode('latin-1', 'strict'))
+            if not hasattr(self, '_default_response_headers'):
+                self._default_response_headers = []
+            if not _is_extra:
+                self._default_response_headers.append((keyword, value))
 
         if keyword.lower() == 'connection':
             if value.lower() == 'close':
@@ -575,6 +579,8 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         if hasattr(self, '_headers_buffer'):
             self.wfile.write(b"".join(self._headers_buffer))
             self._headers_buffer = []
+        if hasattr(self, '_default_response_headers'):
+            self._default_response_headers = []
 
     def _colorize_request(self, code, size, t):
         try:
@@ -736,10 +742,11 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         '.xz': 'application/x-xz',
     }
 
-    def __init__(self, *args, directory=None, **kwargs):
+    def __init__(self, *args, directory=None, extra_response_headers=None, **kwargs):
         if directory is None:
             directory = os.getcwd()
         self.directory = os.fspath(directory)
+        self.extra_response_headers = extra_response_headers
         super().__init__(*args, **kwargs)
 
     def do_GET(self):
@@ -756,6 +763,16 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         f = self.send_head()
         if f:
             f.close()
+
+    def _send_extra_response_headers(self):
+        """Send the headers stored in self.extra_response_headers."""
+        if self.extra_response_headers is not None:
+            default_headers = {h.lower() for h, _ in self._default_response_headers}
+            for header, value in self.extra_response_headers:
+                # Don't send the header if it's already sent
+                # as part of the default response headers
+                if header.lower() not in default_headers:
+                    self.send_header(header, value, _is_extra=True)
 
     def send_head(self):
         """Common code for GET and HEAD commands.
@@ -839,6 +856,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(fs[6]))
             self.send_header("Last-Modified",
                 self.date_time_string(fs.st_mtime))
+            self._send_extra_response_headers()
             self.end_headers()
             return f
         except:
@@ -903,6 +921,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-type", "text/html; charset=%s" % enc)
         self.send_header("Content-Length", str(len(encoded)))
+        self._send_extra_response_headers()
         self.end_headers()
         return f
 
@@ -1011,6 +1030,22 @@ def _get_best_family(*address):
     return family, sockaddr
 
 
+def _make_server(HandlerClass=BaseHTTPRequestHandler,
+                 ServerClass=ThreadingHTTPServer,
+                 protocol="HTTP/1.0", port=8000, bind=None,
+                 tls_cert=None, tls_key=None, tls_password=None,
+                 default_content_type=SimpleHTTPRequestHandler.default_content_type):
+    ServerClass.address_family, addr = _get_best_family(bind, port)
+    HandlerClass.protocol_version = protocol
+    HandlerClass.default_content_type = default_content_type
+
+    if tls_cert:
+        return ServerClass(addr, HandlerClass, certfile=tls_cert,
+                           keyfile=tls_key, password=tls_password)
+    else:
+        return ServerClass(addr, HandlerClass)
+
+
 def test(HandlerClass=SimpleHTTPRequestHandler,
          ServerClass=ThreadingHTTPServer,
          protocol="HTTP/1.0", port=8000, bind=None,
@@ -1019,19 +1054,13 @@ def test(HandlerClass=SimpleHTTPRequestHandler,
     """Test the HTTP request handler class.
 
     This runs an HTTP server on port 8000 (or the port argument).
-
     """
-    ServerClass.address_family, addr = _get_best_family(bind, port)
-    HandlerClass.protocol_version = protocol
-    HandlerClass.default_content_type = content_type
-
-    if tls_cert:
-        server = ServerClass(addr, HandlerClass, certfile=tls_cert,
-                             keyfile=tls_key, password=tls_password)
-    else:
-        server = ServerClass(addr, HandlerClass)
-
-    with server as httpd:
+    with _make_server(
+        HandlerClass=HandlerClass, ServerClass=ServerClass,
+        protocol=protocol, port=port, bind=bind,
+        tls_cert=tls_cert, tls_key=tls_key, tls_password=tls_password,
+        default_content_type=content_type,
+    ) as httpd:
         host, port = httpd.socket.getsockname()[:2]
         url_host = f'[{host}]' if ':' in host else host
         protocol = 'HTTPS' if tls_cert else 'HTTP'
@@ -1076,6 +1105,10 @@ def _main(args=None):
     parser.add_argument('port', default=8000, type=int, nargs='?',
                         help='bind to this port '
                              '(default: %(default)s)')
+    parser.add_argument('-H', '--header', nargs=2, action='append',
+                        metavar=('HEADER', 'VALUE'),
+                        help='Add a custom response header '
+                             '(can be specified multiple times)')
     args = parser.parse_args(args)
 
     if not args.tls_cert and args.tls_key:
@@ -1104,7 +1137,8 @@ def _main(args=None):
 
         def finish_request(self, request, client_address):
             self.RequestHandlerClass(request, client_address, self,
-                                     directory=args.directory)
+                                     directory=args.directory,
+                                     extra_response_headers=args.header)
 
     class HTTPDualStackServer(DualStackServerMixin, ThreadingHTTPServer):
         pass

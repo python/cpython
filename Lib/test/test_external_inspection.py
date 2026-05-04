@@ -564,6 +564,75 @@ class TestGetStackTrace(RemoteInspectionTestBase):
         sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
         "Test only runs on Linux with process_vm_readv support",
     )
+    def test_remote_stack_trace_non_ascii_names(self):
+        # Exercise each PyUnicode kind (1-byte non-ASCII, 2-byte BMP,
+        # 4-byte non-BMP) for both the filename and the function name
+        # reported in the stack trace.
+        latin1 = "zażółć"          # 1-byte non-ASCII (forces non-ASCII path)
+        bmp = "λάμβδα"             # 2-byte BMP
+        astral = "𐌀𐌁𐌂𐌃"            # 4-byte non-BMP (Old Italic; XID, no NFKC fold)
+        func_name = f"{latin1}_{bmp}_{astral}"
+        script_basename = f"mod_{latin1}_{bmp}_{astral}"
+
+        port = find_unused_port()
+        script = textwrap.dedent(
+            f"""\
+            import socket
+            import time
+
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect(('localhost', {port}))
+
+            def {func_name}():
+                sock.sendall(b"ready")
+                time.sleep(10_000)
+
+            {func_name}()
+            """
+        )
+        with os_helper.temp_dir() as work_dir:
+            script_dir = os.path.join(work_dir, "script_pkg")
+            os.mkdir(script_dir)
+            script_name = _make_test_script(script_dir, script_basename, script)
+
+            server_socket = _create_server_socket(port)
+            client_socket = None
+            try:
+                p = subprocess.Popen([sys.executable, script_name])
+                client_socket, _ = server_socket.accept()
+                server_socket.close()
+                _wait_for_signal(client_socket, b"ready")
+
+                stack_trace = get_stack_trace(p.pid)
+            except PermissionError:
+                self.skipTest("Insufficient permissions to read the stack trace")
+            finally:
+                if client_socket is not None:
+                    client_socket.close()
+                p.kill()
+                p.wait(timeout=SHORT_TIMEOUT)
+
+            frames = [
+                frame
+                for interp in stack_trace
+                for thread in interp.threads
+                for frame in thread.frame_info
+            ]
+            target = next(
+                (f for f in frames if f.funcname == func_name), None
+            )
+            self.assertIsNotNone(
+                target,
+                f"Frame for {func_name!r} missing; got "
+                f"{[(f.filename, f.funcname) for f in frames]}",
+            )
+            self.assertEqual(target.filename, script_name)
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
     def test_async_remote_stack_trace(self):
         port = find_unused_port()
         script = textwrap.dedent(
