@@ -14,7 +14,9 @@
    This module roughly corresponds to::
 
       class Xxo:
-         """A class that explicitly stores attributes in an internal dict"""
+         """A class that explicitly stores attributes in an internal dict
+         (to simulate custom attribute handling).
+         """
 
           def __init__(self):
               # In the C class, "_x_attr" is not accessible from Python code
@@ -85,13 +87,16 @@ typedef struct {
 // Instance state
 typedef struct {
     PyObject_HEAD
-    PyObject            *x_attr;           /* Attributes dictionary */
+    PyObject            *x_attr;           /* Attributes dictionary.
+                                            * May be NULL, which acts as an
+                                            * empty dict.
+                                            */
     char                x_buffer[BUFSIZE]; /* buffer for Py_buffer */
     Py_ssize_t          x_exports;         /* how many buffer are exported */
 } XxoObject;
 
 #define XxoObject_CAST(op)  ((XxoObject *)(op))
-// XXX: no good way to do this yet
+// TODO: full support for type-checking was added in 3.14 (Py_tp_token)
 // #define XxoObject_Check(v)      Py_IS_TYPE(v, Xxo_Type)
 
 static XxoObject *
@@ -112,8 +117,13 @@ newXxoObject(PyObject *module)
     return self;
 }
 
-/* Xxo finalization */
+/* Xxo finalization.
+ *
+ * Types that store references to other PyObjects generally need to implement
+ * the GC slots: traverse, clear, dealloc, and (optionally) finalize.
+ */
 
+// traverse: Visit all references from an object, including its type
 static int
 Xxo_traverse(PyObject *op, visitproc visit, void *arg)
 {
@@ -126,6 +136,7 @@ Xxo_traverse(PyObject *op, visitproc visit, void *arg)
     return 0;
 }
 
+// clear: drop references in order to break all reference cycles
 static int
 Xxo_clear(PyObject *op)
 {
@@ -134,6 +145,8 @@ Xxo_clear(PyObject *op)
     return 0;
 }
 
+// finalize: like clear, but should leave the object in a consistent state.
+// Equivalent to `__del__` in Python.
 static void
 Xxo_finalize(PyObject *op)
 {
@@ -141,6 +154,7 @@ Xxo_finalize(PyObject *op)
     Py_CLEAR(self->x_attr);
 }
 
+// dealloc: drop all remaining references and free memory
 static void
 Xxo_dealloc(PyObject *self)
 {
@@ -155,6 +169,7 @@ Xxo_dealloc(PyObject *self)
 
 /* Xxo attribute handling */
 
+// Get an attribute.
 static PyObject *
 Xxo_getattro(PyObject *op, PyObject *name)
 {
@@ -168,9 +183,12 @@ Xxo_getattro(PyObject *op, PyObject *name)
             return NULL;
         }
     }
+    // Fall back to generic implementation (this handles special attributes,
+    // raising AttributeError, etc.)
     return PyObject_GenericGetAttr(op, name);
 }
 
+// Set or delete an attribute.
 static int
 Xxo_setattro(PyObject *op, PyObject *name, PyObject *v)
 {
@@ -198,7 +216,9 @@ Xxo_setattro(PyObject *op, PyObject *name, PyObject *v)
     }
 }
 
-/* Xxo methods */
+/* Xxo methods: C functions plus a PyMethodDef array that lists them and
+ * specifies metadata.
+ */
 
 static PyObject *
 Xxo_demo(PyObject *op, PyTypeObject *defining_class,
@@ -234,7 +254,10 @@ static PyMethodDef Xxo_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
-/* Xxo buffer interface */
+/* Xxo buffer interface: C functions later referenced from PyType_Slot array.
+ * Other interfaces (e.g. for sequence-like or number-like types) are defined
+ * similarly.
+ */
 
 static int
 Xxo_getbuffer(PyObject *op, Py_buffer *view, int flags)
@@ -300,6 +323,7 @@ static PyType_Spec Xxo_Type_spec = {
 /* Str type definition*/
 
 static PyType_Slot Str_Type_slots[] = {
+    // slots array intentionally kept empty
     {0, 0},  /* sentinel */
 };
 
@@ -400,11 +424,31 @@ xx_modexec(PyObject *m)
 }
 
 static PyModuleDef_Slot xx_slots[] = {
+
+    /* exec function to initialize the module (called as part of import
+     * after the object was added to sys.modules)
+     */
     {Py_mod_exec, xx_modexec},
+
+    /* Signal that this module supports being loaded in multiple interpreters
+     * with separate GILs (global interpreter locks).
+     * See "Isolating Extension Modules" on how to prepare a module for this:
+     *   https://docs.python.org/3/howto/isolating-extensions.html
+     */
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+
+    /* Signal that this module does not rely on the GIL for its own needs.
+     * Without this slot, free-threaded builds of CPython will enable
+     * the GIL when this module is loaded.
+     */
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+
     {0, NULL}
 };
+
+// Module finalization: modules that hold references in their module state
+// need to implement the fullowing GC hooks. They're similar to the ones for
+// types (see "Xxo finalization").
 
 static int
 xx_traverse(PyObject *module, visitproc visit, void *arg)
@@ -444,7 +488,9 @@ static struct PyModuleDef xxmodule = {
 };
 
 
-/* Export function for the module (*must* be called PyInit_xx) */
+/* Export function for the module. *Must* be called PyInit_xx; usually it is
+ * the only non-`static` object in a module definition.
+ */
 
 PyMODINIT_FUNC
 PyInit_xxlimited(void)

@@ -1765,13 +1765,15 @@ class PyUnicodeWriterTest(unittest.TestCase):
         writer.write_utf8(b'var', -1)
 
         # test PyUnicodeWriter_WriteChar()
-        writer.write_char('=')
+        writer.write_char(ord('='))
 
         # test PyUnicodeWriter_WriteSubstring()
         writer.write_substring("[long]", 1, 5)
+        # CRASHES writer.write_substring(NULL, 0, 0)
 
         # test PyUnicodeWriter_WriteStr()
         writer.write_str(" value ")
+        # CRASHES writer.write_str(NULL)
 
         # test PyUnicodeWriter_WriteRepr()
         writer.write_repr("repr")
@@ -1779,14 +1781,35 @@ class PyUnicodeWriterTest(unittest.TestCase):
         self.assertEqual(writer.finish(),
                          "var=long value 'repr'")
 
+    def test_repr_null(self):
+        writer = self.create_writer(0)
+        writer.write_utf8(b'var=', -1)
+        writer.write_repr(NULL)
+        self.assertEqual(writer.finish(),
+                         "var=<NULL>")
+
+    def test_write_char(self):
+        writer = self.create_writer(0)
+        writer.write_char(0)
+        writer.write_char(ord('$'))
+        writer.write_char(0x20ac)
+        writer.write_char(0x10_ffff)
+        self.assertRaises(ValueError, writer.write_char, 0x11_0000)
+        self.assertRaises(ValueError, writer.write_char, 0xFFFF_FFFF)
+        self.assertEqual(writer.finish(),
+                         "\0$\u20AC\U0010FFFF")
+
     def test_utf8(self):
         writer = self.create_writer(0)
         writer.write_utf8(b"ascii", -1)
-        writer.write_char('-')
+        writer.write_char(ord('-'))
         writer.write_utf8(b"latin1=\xC3\xA9", -1)
-        writer.write_char('-')
+        writer.write_char(ord('-'))
         writer.write_utf8(b"euro=\xE2\x82\xAC", -1)
-        writer.write_char('.')
+        writer.write_char(ord('.'))
+        writer.write_utf8(NULL, 0)
+        # CRASHES writer.write_utf8(NULL, 1)
+        # CRASHES writer.write_utf8(NULL, -1)
         self.assertEqual(writer.finish(),
                          "ascii-latin1=\xE9-euro=\u20AC.")
 
@@ -1794,6 +1817,9 @@ class PyUnicodeWriterTest(unittest.TestCase):
         writer = self.create_writer(0)
         writer.write_ascii(b"Hello ", -1)
         writer.write_ascii(b"", 0)
+        writer.write_ascii(NULL, 0)
+        # CRASHES writer.write_ascii(NULL, 1)
+        # CRASHES writer.write_ascii(NULL, -1)
         writer.write_ascii(b"Python! <truncated>", 6)
         self.assertEqual(writer.finish(), "Hello Python")
 
@@ -1810,6 +1836,9 @@ class PyUnicodeWriterTest(unittest.TestCase):
         # write fails with an invalid string
         with self.assertRaises(UnicodeDecodeError):
             writer.write_utf8(b"invalid\xFF", -1)
+        with self.assertRaises(UnicodeDecodeError):
+            s = "truncated\u20AC".encode()
+            writer.write_utf8(s, len(s) - 1)
 
         # retry write with a valid string
         writer.write_utf8(b"valid", -1)
@@ -1821,12 +1850,18 @@ class PyUnicodeWriterTest(unittest.TestCase):
         # test PyUnicodeWriter_DecodeUTF8Stateful()
         writer = self.create_writer(0)
         writer.decodeutf8stateful(b"ign\xFFore", -1, b"ignore")
-        writer.write_char('-')
+        writer.write_char(ord('-'))
         writer.decodeutf8stateful(b"replace\xFF", -1, b"replace")
-        writer.write_char('-')
+        writer.write_char(ord('-'))
 
         # incomplete trailing UTF-8 sequence
         writer.decodeutf8stateful(b"incomplete\xC3", -1, b"replace")
+
+        writer.decodeutf8stateful(NULL, 0, b"replace")
+        # CRASHES writer.decodeutf8stateful(NULL, 1, b"replace")
+        # CRASHES writer.decodeutf8stateful(NULL, -1, b"replace")
+        with self.assertRaises(UnicodeDecodeError):
+            writer.decodeutf8stateful(b"default\xFF", -1, NULL)
 
         self.assertEqual(writer.finish(),
                          "ignore-replace\uFFFD-incomplete\uFFFD")
@@ -1838,12 +1873,12 @@ class PyUnicodeWriterTest(unittest.TestCase):
         # valid string
         consumed = writer.decodeutf8stateful(b"text", -1, b"strict", True)
         self.assertEqual(consumed, 4)
-        writer.write_char('-')
+        writer.write_char(ord('-'))
 
         # non-ASCII
         consumed = writer.decodeutf8stateful(b"\xC3\xA9-\xE2\x82\xAC", 6, b"strict", True)
         self.assertEqual(consumed, 6)
-        writer.write_char('-')
+        writer.write_char(ord('-'))
 
         # invalid UTF-8 (consumed is 0 on error)
         with self.assertRaises(UnicodeDecodeError):
@@ -1852,54 +1887,92 @@ class PyUnicodeWriterTest(unittest.TestCase):
         # ignore error handler
         consumed = writer.decodeutf8stateful(b"more\xFF", -1, b"ignore", True)
         self.assertEqual(consumed, 5)
-        writer.write_char('-')
+        writer.write_char(ord('-'))
 
         # incomplete trailing UTF-8 sequence
         consumed = writer.decodeutf8stateful(b"incomplete\xC3", -1, b"ignore", True)
         self.assertEqual(consumed, 10)
+        writer.write_char(ord('-'))
 
-        self.assertEqual(writer.finish(), "text-\xE9-\u20AC-more-incomplete")
+        consumed = writer.decodeutf8stateful(NULL, 0, b"replace", True)
+        self.assertEqual(consumed, 0)
+        # CRASHES writer.decodeutf8stateful(NULL, 1, b"replace", True)
+        # CRASHES writer.decodeutf8stateful(NULL, -1, b"replace", True)
+        consumed = writer.decodeutf8stateful(b"default\xC3", -1, NULL, True)
+        self.assertEqual(consumed, 7)
+
+        self.assertEqual(writer.finish(), "text-\xE9-\u20AC-more-incomplete-default")
 
     def test_widechar(self):
+        from _testcapi import SIZEOF_WCHAR_T
+
+        if SIZEOF_WCHAR_T == 2:
+            encoding = 'utf-16le' if sys.byteorder == 'little' else 'utf-16be'
+        elif SIZEOF_WCHAR_T == 4:
+            encoding = 'utf-32le' if sys.byteorder == 'little' else 'utf-32be'
+
         writer = self.create_writer(0)
-        writer.write_widechar("latin1=\xE9")
-        writer.write_widechar("-")
-        writer.write_widechar("euro=\u20AC")
-        writer.write_char("-")
-        writer.write_widechar("max=\U0010ffff")
-        writer.write_char('.')
+        writer.write_widechar("latin1=\xE9".encode(encoding))
+        writer.write_char(ord("-"))
+        writer.write_widechar("euro=\u20AC".encode(encoding))
+        writer.write_char(ord("-"))
+        writer.write_widechar("max=\U0010ffff".encode(encoding))
+        writer.write_char(ord("-"))
+        writer.write_widechar("zeroes=".encode(encoding).ljust(SIZEOF_WCHAR_T * 10, b'\0'),
+                              10)
+        writer.write_char(ord('.'))
+
+        if SIZEOF_WCHAR_T == 4:
+            invalid = (b'\x00\x00\x11\x00' if sys.byteorder == 'little' else
+                       b'\x00\x11\x00\x00')
+            with self.assertRaises(ValueError):
+                writer.write_widechar("invalid=".encode(encoding) + invalid)
+        writer.write_widechar(b'', -5)
+        writer.write_widechar(NULL, 0)
+        # CRASHES writer.write_widechar(NULL, 1)
+        # CRASHES writer.write_widechar(NULL, -1)
+
         self.assertEqual(writer.finish(),
-                         "latin1=\xE9-euro=\u20AC-max=\U0010ffff.")
+                         "latin1=\xE9-euro=\u20AC-max=\U0010ffff-zeroes=\0\0\0.")
 
     def test_ucs4(self):
+        encoding = 'utf-32le' if sys.byteorder == 'little' else 'utf-32be'
+
         writer = self.create_writer(0)
-        writer.write_ucs4("ascii IGNORED", 5)
-        writer.write_char("-")
-        writer.write_ucs4("latin1=\xe9", 8)
-        writer.write_char("-")
-        writer.write_ucs4("euro=\u20ac", 6)
-        writer.write_char("-")
-        writer.write_ucs4("max=\U0010ffff", 5)
-        writer.write_char(".")
+        writer.write_ucs4("ascii IGNORED".encode(encoding), 5)
+        writer.write_char(ord("-"))
+        writer.write_ucs4("latin1=\xe9".encode(encoding))
+        writer.write_char(ord("-"))
+        writer.write_ucs4("euro=\u20ac".encode(encoding))
+        writer.write_char(ord("-"))
+        writer.write_ucs4("max=\U0010ffff".encode(encoding))
+        writer.write_char(ord("."))
         self.assertEqual(writer.finish(),
                          "ascii-latin1=\xE9-euro=\u20AC-max=\U0010ffff.")
 
         # Test some special characters
         writer = self.create_writer(0)
         # Lone surrogate character
-        writer.write_ucs4("lone\uDC80", 5)
-        writer.write_char("-")
+        writer.write_ucs4("lone\uDC80".encode(encoding, 'surrogatepass'))
+        writer.write_char(ord("-"))
         # Surrogate pair
-        writer.write_ucs4("pair\uDBFF\uDFFF", 5)
-        writer.write_char("-")
-        writer.write_ucs4("null[\0]", 7)
+        writer.write_ucs4("pair\uD83D\uDC0D".encode(encoding, 'surrogatepass'))
+        writer.write_char(ord("-"))
+        writer.write_ucs4("null[\0]".encode(encoding), 7)
+        invalid = (b'\x00\x00\x11\x00' if sys.byteorder == 'little' else
+                   b'\x00\x11\x00\x00')
+        # CRASHES writer.write_ucs4("invalid".encode(encoding) + invalid)
+        writer.write_ucs4(NULL, 0)
+        # CRASHES writer.write_ucs4(NULL, 1)
         self.assertEqual(writer.finish(),
-                         "lone\udc80-pair\udbff-null[\0]")
+                         "lone\udc80-pair\ud83d\udc0d-null[\x00]")
 
         # invalid size
         writer = self.create_writer(0)
         with self.assertRaises(ValueError):
-            writer.write_ucs4("text", -1)
+            writer.write_ucs4("text".encode(encoding), -1)
+        self.assertRaises(ValueError, writer.write_ucs4, b'', -1)
+        self.assertRaises(ValueError, writer.write_ucs4, NULL, -1)
 
     def test_substring_empty(self):
         writer = self.create_writer(0)
@@ -1925,7 +1998,7 @@ class PyUnicodeWriterFormatTest(unittest.TestCase):
         from ctypes import c_int
         writer = self.create_writer(0)
         self.writer_format(writer, b'%s %i', b'abc', c_int(123))
-        writer.write_char('.')
+        writer.write_char(ord('.'))
         self.assertEqual(writer.finish(), 'abc 123.')
 
     def test_recover_error(self):

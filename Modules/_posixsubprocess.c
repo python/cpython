@@ -514,7 +514,13 @@ _close_open_fds_maybe_unsafe(int start_fd, int *fds_to_keep,
         proc_fd_dir = NULL;
     else
 #endif
+#if defined(_AIX)
+        char fd_path[PATH_MAX];
+        snprintf(fd_path, sizeof(fd_path), "/proc/%ld/fd", (long)getpid());
+        proc_fd_dir = opendir(fd_path);
+#else
         proc_fd_dir = opendir(FD_DIR);
+#endif
     if (!proc_fd_dir) {
         /* No way to get a list of open fds. */
         _close_range_except(start_fd, -1, fds_to_keep, fds_to_keep_len,
@@ -630,7 +636,7 @@ reset_signal_handlers(const sigset_t *child_sigmask)
  * (v)fork to set things up and call exec().
  *
  * All of the code in this function must only use async-signal-safe functions,
- * listed at `man 7 signal` or
+ * listed at `man 7 signal-safety` or
  * http://www.opengroup.org/onlinepubs/009695399/functions/xsh_chap02_04.html.
  *
  * This restriction is documented at
@@ -1331,6 +1337,7 @@ static PyMethodDef module_methods[] = {
 };
 
 static PyModuleDef_Slot _posixsubprocess_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}

@@ -1,4 +1,5 @@
 import errno
+import pathlib
 import os
 import sys
 import textwrap
@@ -13,6 +14,7 @@ from _colorize import get_theme
 
 
 @support.requires_subprocess()
+@support.skip_if_pgo_task
 class TestMain(unittest.TestCase):
     data = """
 
@@ -153,6 +155,14 @@ class TestMain(unittest.TestCase):
     def test_jsonlines(self):
         args = sys.executable, '-m', self.module, '--json-lines'
         process = subprocess.run(args, input=self.jsonlines_raw, capture_output=True, text=True, check=True)
+        self.assertEqual(process.stdout, self.jsonlines_expect)
+        self.assertEqual(process.stderr, '')
+
+    @force_not_colorized
+    def test_jsonlines_from_file(self):
+        jsonl = pathlib.Path(__file__).parent / 'json_lines.jsonl'
+        args = sys.executable, '-m', self.module, '--json-lines', jsonl
+        process = subprocess.run(args, capture_output=True, text=True, check=True)
         self.assertEqual(process.stdout, self.jsonlines_expect)
         self.assertEqual(process.stderr, '')
 
@@ -319,6 +329,7 @@ class TestMain(unittest.TestCase):
 
 
 @support.requires_subprocess()
+@support.skip_if_pgo_task
 class TestTool(TestMain):
     module = 'json.tool'
 

@@ -2,14 +2,13 @@
 ======================================================
 
 .. module:: tkinter.messagebox
-   :platform: Tk
    :synopsis: Various types of alert dialogs
 
 **Source code:** :source:`Lib/tkinter/messagebox.py`
 
 --------------
 
-The :mod:`tkinter.messagebox` module provides a template base class as well as
+The :mod:`!tkinter.messagebox` module provides a template base class as well as
 a variety of convenience methods for commonly used configurations. The message
 boxes are modal and will return a subset of (``True``, ``False``, ``None``,
 :data:`OK`, :data:`CANCEL`, :data:`YES`, :data:`NO`) based on

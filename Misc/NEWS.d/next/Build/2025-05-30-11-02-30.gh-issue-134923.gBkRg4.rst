@@ -1,3 +1,0 @@
-Windows builds with profile-guided optimization enabled now use
-``/GENPROFILE`` and ``/USEPROFILE`` instead of deprecated ``/LTCG:``
-options.

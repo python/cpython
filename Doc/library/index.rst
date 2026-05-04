@@ -43,6 +43,7 @@ the `Python Package Index <https://pypi.org>`_.
    constants.rst
    stdtypes.rst
    exceptions.rst
+   threadsafety.rst
 
    text.rst
    binary.rst

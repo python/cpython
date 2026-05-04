@@ -146,6 +146,7 @@
     <ClCompile Include="..\Objects\genobject.c" />
     <ClCompile Include="..\Objects\interpolationobject.c" />
     <ClCompile Include="..\Objects\iterobject.c" />
+    <ClCompile Include="..\Objects\lazyimportobject.c" />
     <ClCompile Include="..\Objects\listobject.c" />
     <ClCompile Include="..\Objects\longobject.c" />
     <ClCompile Include="..\Objects\memoryobject.c" />
@@ -157,6 +158,7 @@
     <ClCompile Include="..\Objects\odictobject.c" />
     <ClCompile Include="..\Objects\picklebufobject.c" />
     <ClCompile Include="..\Objects\rangeobject.c" />
+    <ClCompile Include="..\Objects\sentinelobject.c" />
     <ClCompile Include="..\Objects\setobject.c" />
     <ClCompile Include="..\Objects\sliceobject.c" />
     <ClCompile Include="..\Objects\structseq.c" />
@@ -164,7 +166,10 @@
     <ClCompile Include="..\Objects\tupleobject.c" />
     <ClCompile Include="..\Objects\typeobject.c" />
     <ClCompile Include="..\Objects\typevarobject.c" />
+    <ClCompile Include="..\Objects\unicode_format.c" />
     <ClCompile Include="..\Objects\unicodectype.c" />
+    <ClCompile Include="..\Objects\unicode_formatter.c" />
+    <ClCompile Include="..\Objects\unicode_writer.c" />
     <ClCompile Include="..\Objects\unicodeobject.c" />
     <ClCompile Include="..\Objects\unionobject.c" />
     <ClCompile Include="..\Objects\weakrefobject.c" />
@@ -209,7 +214,6 @@
     <ClCompile Include="..\Python\errors.c" />
     <ClCompile Include="..\Python\fileutils.c" />
     <ClCompile Include="..\Python\flowgraph.c" />
-    <ClCompile Include="..\Python\formatter_unicode.c" />
     <ClCompile Include="..\Python\frame.c" />
     <ClCompile Include="..\Python\future.c" />
     <ClCompile Include="..\Python\gc.c" />
@@ -255,6 +259,7 @@
     <ClCompile Include="..\Python\pylifecycle.c" />
     <ClCompile Include="..\Python\pymath.c" />
     <ClCompile Include="..\Python\pystate.c" />
+    <ClCompile Include="..\Python\pystats.c" />
     <ClCompile Include="..\Python\pystrcmp.c" />
     <ClCompile Include="..\Python\pystrhex.c" />
     <ClCompile Include="..\Python\pystrtod.c" />
@@ -306,6 +311,26 @@
       <IntFile>$(IntDir)codecs.g.h</IntFile>
       <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\codecs.h</OutFile>
     </None>
+    <None Include="..\Lib\encodings\__init__.py">
+      <ModName>encodings</ModName>
+      <IntFile>$(IntDir)encodings.g.h</IntFile>
+      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\encodings.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\aliases.py">
+      <ModName>encodings.aliases</ModName>
+      <IntFile>$(IntDir)encodings.aliases.g.h</IntFile>
+      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\encodings.aliases.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\utf_8.py">
+      <ModName>encodings.utf_8</ModName>
+      <IntFile>$(IntDir)encodings.utf_8.g.h</IntFile>
+      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\encodings.utf_8.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\_win_cp_codecs.py">
+      <ModName>encodings._win_cp_codecs</ModName>
+      <IntFile>$(IntDir)encodings._win_cp_codecs.g.h</IntFile>
+      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\encodings._win_cp_codecs.h</OutFile>
+    </None>
     <None Include="..\Lib\io.py">
       <ModName>io</ModName>
       <IntFile>$(IntDir)io.g.h</IntFile>
@@ -350,6 +375,11 @@
       <ModName>stat</ModName>
       <IntFile>$(IntDir)stat.g.h</IntFile>
       <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\stat.h</OutFile>
+    </None>
+    <None Include="..\Lib\linecache.py">
+      <ModName>linecache</ModName>
+      <IntFile>$(IntDir)linecache.g.h</IntFile>
+      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\linecache.h</OutFile>
     </None>
     <None Include="..\Lib\importlib\util.py">
       <ModName>importlib.util</ModName>

@@ -1,2 +1,0 @@
-The :class:`!_random.Random` C type is now immutable. Patch by Bénédikt
-Tran.

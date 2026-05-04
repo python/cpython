@@ -12,7 +12,7 @@
 #include "pycore_modsupport.h"    // _PyArg_NoPositional()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_structseq.h"     // PyStructSequence_InitType()
-#include "pycore_tuple.h"         // _PyTuple_FromArray()
+#include "pycore_tuple.h"         // _PyTuple_RESET_HASH_CACHE()
 #include "pycore_typeobject.h"    // _PyStaticType_FiniBuiltin()
 
 static const char visible_length_key[] = "n_sequence_fields";
@@ -28,7 +28,11 @@ static Py_ssize_t
 get_type_attr_as_size(PyTypeObject *tp, PyObject *name)
 {
     PyObject *v = PyDict_GetItemWithError(_PyType_GetDict(tp), name);
-    if (v == NULL && !PyErr_Occurred()) {
+
+    if (v == NULL) {
+        if (PyErr_Occurred()) {
+            return -1;
+        }
         PyErr_Format(PyExc_TypeError,
                      "Missed attribute '%U' of type %s",
                      name, tp->tp_name);
@@ -353,7 +357,7 @@ structseq_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
     if (n_unnamed_fields < 0) {
         return NULL;
     }
-    tup = _PyTuple_FromArray(self->ob_item, n_visible_fields);
+    tup = PyTuple_FromArray(self->ob_item, n_visible_fields);
     if (!tup)
         goto error;
 
@@ -445,6 +449,7 @@ structseq_replace(PyObject *op, PyObject *args, PyObject *kwargs)
         }
     }
 
+    _PyObject_GC_TRACK(result);
     return (PyObject *)result;
 
 error:
@@ -515,7 +520,8 @@ initialize_structseq_dict(PyStructSequence_Desc *desc, PyObject* dict,
     }
 
     if (_PyTuple_Resize(&keys, k) == -1) {
-        goto error;
+        assert(keys == NULL);
+        return -1;
     }
 
     if (PyDict_SetItemString(dict, match_args_key, keys) < 0) {
