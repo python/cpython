@@ -10343,6 +10343,106 @@ else case e in #(
 esac
 fi
 
+      case $host_cpu in #(
+  arm|armv*) :
+
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -marm" >&5
+printf %s "checking whether C compiler accepts -marm... " >&6; }
+if test ${ax_cv_check_cflags__Werror__marm+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e)
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS -Werror -marm"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags__Werror__marm=yes
+else case e in #(
+  e) ax_cv_check_cflags__Werror__marm=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__marm" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__marm" >&6; }
+if test "x$ax_cv_check_cflags__Werror__marm" = xyes
+then :
+
+          frame_pointer_cflags="$frame_pointer_cflags -marm"
+
+else case e in #(
+  e) : ;;
+esac
+fi
+
+       ;; #(
+  *) :
+     ;;
+esac
+      case $host_cpu in #(
+  s390*) :
+
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mbackchain" >&5
+printf %s "checking whether C compiler accepts -mbackchain... " >&6; }
+if test ${ax_cv_check_cflags__Werror__mbackchain+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e)
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS -Werror -mbackchain"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags__Werror__mbackchain=yes
+else case e in #(
+  e) ax_cv_check_cflags__Werror__mbackchain=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__mbackchain" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__mbackchain" >&6; }
+if test "x$ax_cv_check_cflags__Werror__mbackchain" = xyes
+then :
+
+          frame_pointer_cflags="$frame_pointer_cflags -mbackchain"
+
+else case e in #(
+  e) : ;;
+esac
+fi
+
+       ;; #(
+  *) :
+     ;;
+esac
 
 else case e in #(
   e) : ;;
