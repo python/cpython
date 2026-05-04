@@ -810,34 +810,31 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
             with BinaryReader("/nonexistent/path/file.bin") as reader:
                 reader.replay_samples(RawCollector())
 
-    def test_new_thread_empty_stack(self):
-        """Empty stack roundtrips cleanly."""
+    def test_binary_collector_skips_samples_with_empty_stacks(self):
+        """BinaryCollector skips samples that contain empty stacks."""
+        frame = make_frame("a.py", 1, "f")
         samples = [
-            [
-                make_interpreter(
-                    0, [make_thread(99, [], status=THREAD_STATUS_UNKNOWN)]
-                )
-            ]
-        ]
-        collector, count = self.roundtrip(samples)
-        self.assertEqual(count, 1)
-        self.assert_samples_equal(samples, collector)
-
-    def test_new_thread_empty_stack_then_frames(self):
-        """Empty stack interleaved with normal stacks roundtrips clearly."""
-        samples = [
-            [make_interpreter(0, [make_thread(1, [make_frame("a.py", 1, "f")])])],
-            [make_interpreter(0, [make_thread(1, [make_frame("a.py", 1, "f")])])],
             [
                 make_interpreter(
                     0, [make_thread(99, [], status=THREAD_STATUS_UNKNOWN)]
                 )
             ],
-            [make_interpreter(0, [make_thread(1, [make_frame("a.py", 1, "f")])])],
+            [
+                make_interpreter(
+                    0,
+                    [
+                        make_thread(1, [frame]),
+                        make_thread(99, [], status=THREAD_STATUS_UNKNOWN),
+                    ],
+                )
+            ],
+            [make_interpreter(0, [make_thread(1, [frame])])],
         ]
         collector, count = self.roundtrip(samples)
-        self.assertEqual(count, 4)
-        self.assert_samples_equal(samples, collector)
+        self.assertEqual(count, 1)
+        self.assert_samples_equal(
+            [[make_interpreter(0, [make_thread(1, [frame])])]], collector
+        )
 
     def test_writer_total_samples_after_finalize_matches_reader(self):
         """BinaryWriter.total_samples after finalize() matches the reader's count."""
