@@ -721,7 +721,7 @@ array
 -----
 
 * Support the :c:expr:`float complex` and :c:expr:`double complex` C types:
-  formatting characters ``'F'``/``'Zd'`` and ``'D'``/``'Zd'`` respectively.
+  formatting characters ``'F'``/``'Zf'`` and ``'D'``/``'Zd'`` respectively.
   (Contributed by Sergey B Kirpichev and Victor Stinner in :gh:`146151`
   and :gh:`148675`.)
 

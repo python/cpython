@@ -281,7 +281,7 @@ last_dim_is_contiguous(const Py_buffer *dest, const Py_buffer *src)
 /* This is not a general function for determining format equivalence.
    It is used in copy_single() and copy_buffer() to weed out non-matching
    formats. Skipping the '@' character is specifically used in slice
-   assignments, where the lvalue is already known to have a single character
+   assignments, where the lvalue is already known to have a
    format. This is a performance hack that could be rewritten (if properly
    benchmarked). */
 static inline int
@@ -1255,7 +1255,7 @@ get_native_fmtstr(const char *fmt)
         return NULL;
     }
     if (fmt[0] == 'Z') {
-        if (fmt[2] != '\0') {
+        if (fmt[1] == '\0' || fmt[2] != '\0') {
             return NULL;
         }
     }
@@ -1327,8 +1327,8 @@ cast_to_1D(PyMemoryViewObject *mv, PyObject *format)
     itemsize = get_native_fmtchar(&destfmt, PyBytes_AS_STRING(asciifmt));
     if (itemsize < 0) {
         PyErr_SetString(PyExc_ValueError,
-            "memoryview: destination format must be a native single "
-            "character format prefixed with an optional '@'");
+            "memoryview: destination format must be a native "
+            "format prefixed with an optional '@'");
         goto out;
     }
 

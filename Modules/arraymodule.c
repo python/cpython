@@ -3167,7 +3167,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
     Py_XDECREF(it);
     PyErr_SetString(PyExc_ValueError,
-        "bad typecode (must be b, B, u, w, h, H, i, I, l, L, q, Q, f, d, F, D, Zd or Zf)");
+        "bad typecode (must be b, B, u, w, h, H, i, I, l, L, q, Q, e, f, d, F, D, Zf or Zd)");
     return NULL;
 }
 

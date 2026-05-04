@@ -1818,6 +1818,16 @@ for code in 'sbBcdgfhHiIlLqQPzuUXvO':
     if (!result || !result->code) {
         return NULL;
     }
+    if (fmt[1] != '\0') {
+        if (fmt[0] == 'Z') {
+            if (fmt[2] != '\0') {
+                return NULL;
+            }
+        }
+        else {
+            return NULL;
+        }
+    }
     assert(result->pffi_type);
     assert(result->setfunc);
     assert(result->getfunc);

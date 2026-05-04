@@ -2376,17 +2376,15 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
         if (complex_formats) {
             PyErr_Format(PyExc_AttributeError,
                          "class must define a '_type_' attribute which must be\n"
-                         "a single character string containing one of the\n"
-                         "supported types: '%s', or one of these strings:\n"
-                         "%s.",
+                         "one of these characters: '%s',\n"
+                         "or one of these strings: %s.",
                          _ctypes_get_simple_type_chars(),
                          complex_formats);
         }
         else {
             PyErr_Format(PyExc_AttributeError,
                          "class must define a '_type_' attribute which must be\n"
-                         "a single character string containing one of the\n"
-                         "supported types: '%s'.\n",
+                         "one of these characters: '%s'.\n",
                          _ctypes_get_simple_type_chars());
         }
         goto error;
