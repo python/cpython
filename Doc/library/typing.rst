@@ -2970,7 +2970,7 @@ types.
    .. versionchanged:: 3.13
       Support for the :data:`ReadOnly` qualifier was added. See :pep:`705`.
 
-   .. versionchanged:: 3.15
+   .. versionchanged:: next
       Support for the *closed* and *extra_items* class arguments was added. See :pep:`728`.
 
 
