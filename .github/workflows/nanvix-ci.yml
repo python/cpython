@@ -25,7 +25,7 @@ concurrency:
 jobs:
   ci:
     if: github.event_name != 'schedule' && github.event_name != 'workflow_dispatch'
-    uses: nanvix/workflows/.github/workflows/nanvix-ci.yml@v1.13.0
+    uses: nanvix/workflows/.github/workflows/nanvix-ci.yml@v1.14.0
     with:
       zutil-version: "v0.7.42"
       platforms: '["microvm"]'
@@ -46,7 +46,7 @@ jobs:
       actions: write
       issues: write
       pull-requests: write
-    uses: nanvix/workflows/.github/workflows/nanvix-ci.yml@v1.13.0
+    uses: nanvix/workflows/.github/workflows/nanvix-ci.yml@v1.14.0
     with:
       zutil-version: "v0.7.42"
       platforms: '["microvm"]'
