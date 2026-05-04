@@ -14,6 +14,7 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_signal.h"        // _Py_RestoreSignals()
 #include "pycore_time.h"          // _PyTime_FromSecondsObject()
+#include "pycore_tuple.h"         // _PyTuple_FromPairSteal
 
 #ifndef MS_WINDOWS
 #  include "posixmodule.h"        // _PyLong_FromUid()
@@ -193,27 +194,16 @@ double_from_timeval(struct timeval *tv)
 static PyObject *
 itimer_retval(struct itimerval *iv)
 {
-    PyObject *r, *v;
-
-    r = PyTuple_New(2);
-    if (r == NULL)
-        return NULL;
-
-    if(!(v = PyFloat_FromDouble(double_from_timeval(&iv->it_value)))) {
-        Py_DECREF(r);
+    PyObject *value = PyFloat_FromDouble(double_from_timeval(&iv->it_value));
+    if (value == NULL) {
         return NULL;
     }
-
-    PyTuple_SET_ITEM(r, 0, v);
-
-    if(!(v = PyFloat_FromDouble(double_from_timeval(&iv->it_interval)))) {
-        Py_DECREF(r);
+    PyObject *interval = PyFloat_FromDouble(double_from_timeval(&iv->it_interval));
+    if (interval == NULL) {
+        Py_DECREF(value);
         return NULL;
     }
-
-    PyTuple_SET_ITEM(r, 1, v);
-
-    return r;
+    return _PyTuple_FromPairSteal(value, interval);
 }
 #endif
 

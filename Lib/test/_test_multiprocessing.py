@@ -207,10 +207,38 @@ def only_run_in_spawn_testsuite(reason):
     return decorator
 
 
+def only_run_in_forkserver_testsuite(reason):
+    """Returns a decorator: raises SkipTest unless fork is supported
+    and the current start method is forkserver.
+
+    Combines @support.requires_fork() with the single-run semantics of
+    only_run_in_spawn_testsuite(), but uses the forkserver testsuite as
+    the single-run target.  Appropriate for tests that exercise
+    os.fork() directly (raw fork or mp.set_start_method("fork") in a
+    subprocess) and don't vary by start method, since forkserver is
+    only available on platforms that support fork.
+    """
+
+    def decorator(test_item):
+
+        @functools.wraps(test_item)
+        def forkserver_check_wrapper(*args, **kwargs):
+            if not support.has_fork_support:
+                raise unittest.SkipTest("requires working os.fork()")
+            if (start_method := multiprocessing.get_start_method()) != "forkserver":
+                raise unittest.SkipTest(
+                    f"{start_method=}, not 'forkserver'; {reason}")
+            return test_item(*args, **kwargs)
+
+        return forkserver_check_wrapper
+
+    return decorator
+
+
 class TestInternalDecorators(unittest.TestCase):
     """Logic within a test suite that could errantly skip tests? Test it!"""
 
-    @unittest.skipIf(sys.platform == "win32", "test requires that fork exists.")
+    @support.requires_fork()
     def test_only_run_in_spawn_testsuite(self):
         if multiprocessing.get_start_method() != "spawn":
             raise unittest.SkipTest("only run in test_multiprocessing_spawn.")
@@ -229,6 +257,30 @@ class TestInternalDecorators(unittest.TestCase):
             multiprocessing.set_start_method("fork", force=True)
             with self.assertRaises(unittest.SkipTest) as ctx:
                 return_four_if_spawn()
+            self.assertIn("testing this decorator", str(ctx.exception))
+            self.assertIn("start_method=", str(ctx.exception))
+        finally:
+            multiprocessing.set_start_method(orig_start_method, force=True)
+
+    @support.requires_fork()
+    def test_only_run_in_forkserver_testsuite(self):
+        if multiprocessing.get_start_method() != "forkserver":
+            raise unittest.SkipTest("only run in test_multiprocessing_forkserver.")
+
+        try:
+            @only_run_in_forkserver_testsuite("testing this decorator")
+            def return_four_if_forkserver():
+                return 4
+        except Exception as err:
+            self.fail(f"expected decorated `def` not to raise; caught {err}")
+
+        orig_start_method = multiprocessing.get_start_method(allow_none=True)
+        try:
+            multiprocessing.set_start_method("forkserver", force=True)
+            self.assertEqual(return_four_if_forkserver(), 4)
+            multiprocessing.set_start_method("spawn", force=True)
+            with self.assertRaises(unittest.SkipTest) as ctx:
+                return_four_if_forkserver()
             self.assertIn("testing this decorator", str(ctx.exception))
             self.assertIn("start_method=", str(ctx.exception))
         finally:
@@ -6269,8 +6321,9 @@ class TestResourceTracker(unittest.TestCase):
     def _is_resource_tracker_reused(conn, pid):
         from multiprocessing.resource_tracker import _resource_tracker
         _resource_tracker.ensure_running()
-        # The pid should be None in the child process, expect for the fork
-        # context. It should not be a new value.
+        # The pid should be None in the child (the at-fork handler clears
+        # it for fork; spawn/forkserver children never had it set).  It
+        # should not be a new value.
         reused = _resource_tracker._pid in (None, pid)
         reused &= _resource_tracker._check_alive()
         conn.send(reused)
@@ -6355,6 +6408,183 @@ class TestResourceTracker(unittest.TestCase):
         finally:
             # restore sigmask to what it was before executing test
             signal.pthread_sigmask(signal.SIG_SETMASK, orig_sigmask)
+
+    @only_run_in_forkserver_testsuite("avoids redundant testing.")
+    def test_resource_tracker_fork_deadlock(self):
+        # gh-146313: ResourceTracker.__del__ used to deadlock if a forked
+        # child still held the pipe's write end open when the parent
+        # exited, because the parent would block in waitpid() waiting for
+        # the tracker to exit, but the tracker would never see EOF.
+        cmd = '''if 1:
+            import os, signal
+            from multiprocessing.resource_tracker import ensure_running
+            ensure_running()
+            if os.fork() == 0:
+                signal.pause()
+                os._exit(0)
+            # parent falls through and exits, triggering __del__
+        '''
+        proc = subprocess.Popen([sys.executable, '-c', cmd],
+                                start_new_session=True)
+        try:
+            try:
+                proc.wait(timeout=support.SHORT_TIMEOUT)
+            except subprocess.TimeoutExpired:
+                self.fail(
+                    "Parent process deadlocked in ResourceTracker.__del__"
+                )
+            self.assertEqual(proc.returncode, 0)
+        finally:
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            proc.wait()
+
+    @only_run_in_forkserver_testsuite("avoids redundant testing.")
+    def test_resource_tracker_mp_fork_reuse_and_prompt_reap(self):
+        # gh-146313 / gh-80849: A child started via multiprocessing.Process
+        # with the 'fork' start method should reuse the parent's resource
+        # tracker (the at-fork handler preserves the inherited pipe fd),
+        # *and* the parent should be able to reap the tracker promptly
+        # after joining the child, without hitting the waitpid timeout.
+        cmd = textwrap.dedent('''
+            import multiprocessing as mp
+            from multiprocessing.resource_tracker import _resource_tracker
+
+            def child(conn):
+                # Prove we can talk to the parent's tracker by registering
+                # and unregistering a dummy resource over the inherited fd.
+                # If the fd were closed, ensure_running would launch a new
+                # tracker and _pid would be non-None.
+                _resource_tracker.register("x", "dummy")
+                _resource_tracker.unregister("x", "dummy")
+                conn.send((_resource_tracker._fd is not None,
+                           _resource_tracker._pid is None,
+                           _resource_tracker._check_alive()))
+
+            if __name__ == "__main__":
+                mp.set_start_method("fork")
+                _resource_tracker.ensure_running()
+                r, w = mp.Pipe(duplex=False)
+                p = mp.Process(target=child, args=(w,))
+                p.start()
+                child_has_fd, child_pid_none, child_alive = r.recv()
+                p.join()
+                w.close(); r.close()
+
+                # Now simulate __del__: the child has exited and released
+                # its fd copy, so the tracker should see EOF and exit
+                # promptly -- no timeout.
+                _resource_tracker._stop(wait_timeout=5.0)
+                print(child_has_fd, child_pid_none, child_alive,
+                      _resource_tracker._waitpid_timed_out,
+                      _resource_tracker._exitcode)
+        ''')
+        rc, out, err = script_helper.assert_python_ok('-c', cmd)
+        parts = out.decode().split()
+        self.assertEqual(parts, ['True', 'True', 'True', 'False', '0'],
+            f"unexpected: {parts!r} stderr={err!r}")
+
+    @only_run_in_forkserver_testsuite("avoids redundant testing.")
+    def test_resource_tracker_raw_fork_prompt_reap(self):
+        # gh-146313: After a raw os.fork() the at-fork handler closes the
+        # child's inherited fd, so the parent can reap the tracker
+        # immediately -- even while the child is still alive -- rather
+        # than waiting out the 1s timeout.
+        cmd = textwrap.dedent('''
+            import os, signal
+            from multiprocessing.resource_tracker import _resource_tracker
+
+            _resource_tracker.ensure_running()
+            r, w = os.pipe()
+            pid = os.fork()
+            if pid == 0:
+                os.close(r)
+                # Report whether our fd was closed by the at-fork handler.
+                os.write(w, b"1" if _resource_tracker._fd is None else b"0")
+                os.close(w)
+                signal.pause()  # stay alive so parent's reap is meaningful
+                os._exit(0)
+            os.close(w)
+            child_fd_closed = os.read(r, 1) == b"1"
+            os.close(r)
+
+            # Child is still alive and paused.  Because it closed its fd
+            # copy, our close below is the last one and the tracker exits.
+            _resource_tracker._stop(wait_timeout=5.0)
+
+            os.kill(pid, signal.SIGKILL)
+            os.waitpid(pid, 0)
+            print(child_fd_closed,
+                  _resource_tracker._waitpid_timed_out,
+                  _resource_tracker._exitcode)
+        ''')
+        rc, out, err = script_helper.assert_python_ok('-c', cmd)
+        parts = out.decode().split()
+        self.assertEqual(parts, ['True', 'False', '0'],
+            f"unexpected: {parts!r} stderr={err!r}")
+
+    @only_run_in_forkserver_testsuite("avoids redundant testing.")
+    def test_resource_tracker_lock_reinit_after_fork(self):
+        # gh-146313: If a parent thread held the tracker's lock at fork
+        # time, the child would inherit the held lock and deadlock on
+        # its next ensure_running().  The at-fork handler reinits it.
+        cmd = textwrap.dedent('''
+            import os, threading
+            from multiprocessing.resource_tracker import _resource_tracker
+
+            held = threading.Event()
+            release = threading.Event()
+            def hold():
+                with _resource_tracker._lock:
+                    held.set()
+                    release.wait()
+            t = threading.Thread(target=hold)
+            t.start()
+            held.wait()
+
+            pid = os.fork()
+            if pid == 0:
+                ok = _resource_tracker._lock.acquire(timeout=5.0)
+                os._exit(0 if ok else 1)
+
+            release.set()
+            t.join()
+            _, status = os.waitpid(pid, 0)
+            print(os.waitstatus_to_exitcode(status))
+        ''')
+        rc, out, err = script_helper.assert_python_ok(
+            '-W', 'ignore::DeprecationWarning', '-c', cmd)
+        self.assertEqual(out.strip(), b'0',
+            f"child failed to acquire lock: stderr={err!r}")
+
+    @only_run_in_forkserver_testsuite("avoids redundant testing.")
+    def test_resource_tracker_safety_net_timeout(self):
+        # gh-146313: When an mp.Process(fork) child holds the preserved
+        # fd and the parent calls _stop() without joining (simulating
+        # abnormal shutdown), the safety-net timeout should fire rather
+        # than deadlocking.
+        cmd = textwrap.dedent('''
+            import multiprocessing as mp
+            import signal
+            from multiprocessing.resource_tracker import _resource_tracker
+
+            if __name__ == "__main__":
+                mp.set_start_method("fork")
+                _resource_tracker.ensure_running()
+                p = mp.Process(target=signal.pause)
+                p.start()
+                # Stop WITHOUT joining -- child still holds preserved fd
+                _resource_tracker._stop(wait_timeout=0.5)
+                print(_resource_tracker._waitpid_timed_out)
+                p.terminate()
+                p.join()
+        ''')
+        rc, out, err = script_helper.assert_python_ok('-c', cmd)
+        self.assertEqual(out.strip(), b'True',
+            f"safety-net timeout did not fire: stderr={err!r}")
+
 
 class TestSimpleQueue(unittest.TestCase):
 
@@ -7130,6 +7360,23 @@ class MiscTestCase(unittest.TestCase):
             f"fun:{expected_argv}",
             f"module:{expected_argv}",
             f"fun:{expected_argv}",
+            '',
+        ])
+
+    @only_run_in_forkserver_testsuite("forkserver specific test.")
+    def test_preload_main_large_sys_argv(self):
+        # gh-144503: a very large parent sys.argv must not prevent the
+        # forkserver from starting (it previously overflowed the OS
+        # per-argument length limit when repr'd into the -c command string).
+        name = os.path.join(os.path.dirname(__file__),
+                            'mp_preload_large_sysargv.py')
+        _, out, err = test.support.script_helper.assert_python_ok(name)
+        self.assertEqual(err, b'')
+
+        out = out.decode().split("\n")
+        self.assertEqual(out, [
+            'preload:5002:sentinel',
+            'worker:5002:sentinel',
             '',
         ])
 

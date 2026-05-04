@@ -1,2 +1,0 @@
-Improve scaling of type attribute lookups in the :term:`free-threaded build` by
-avoiding contention on the internal type lock.

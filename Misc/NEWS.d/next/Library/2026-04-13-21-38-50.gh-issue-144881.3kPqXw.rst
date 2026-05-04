@@ -1,0 +1,4 @@
+:mod:`asyncio` debugging tools (``python -m asyncio ps`` and ``pstree``)
+now retry automatically on transient errors that can occur when attaching
+to a process under active thread delegation. The number of retries can be
+controlled with the ``--retries`` flag. Patch by Bartosz Sławecki.

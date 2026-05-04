@@ -149,6 +149,11 @@ static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *
     int stacktop = (int)(src->stackpointer - src->localsplus);
     assert(stacktop >= 0);
     dest->stackpointer = dest->localsplus + stacktop;
+    // visited is GC bookkeeping for the current stack walk, not frame state.
+    dest->visited = 0;
+#ifdef Py_DEBUG
+    dest->lltrace = src->lltrace;
+#endif
     for (int i = 0; i < stacktop; i++) {
         dest->localsplus[i] = PyStackRef_MakeHeapSafe(src->localsplus[i]);
     }
@@ -297,7 +302,8 @@ _PyFrame_GetFrameObject(_PyInterpreterFrame *frame)
     return _PyFrame_MakeAndSetFrameObject(frame);
 }
 
-void
+// Exported for external JIT support
+PyAPI_FUNC(void)
 _PyFrame_ClearLocals(_PyInterpreterFrame *frame);
 
 /* Clears all references in the frame.
@@ -308,8 +314,10 @@ _PyFrame_ClearLocals(_PyInterpreterFrame *frame);
  * in the frame.
  * take should  be set to 1 for heap allocated
  * frames like the ones in generators and coroutines.
+ *
+ * Exported for external JIT support
  */
-void
+ PyAPI_FUNC(void)
 _PyFrame_ClearExceptCode(_PyInterpreterFrame * frame);
 
 int
@@ -333,7 +341,8 @@ _PyThreadState_HasStackSpace(PyThreadState *tstate, int size)
         size < tstate->datastack_limit - tstate->datastack_top;
 }
 
-extern _PyInterpreterFrame *
+// Exported for external JIT support
+PyAPI_FUNC(_PyInterpreterFrame *)
 _PyThreadState_PushFrame(PyThreadState *tstate, size_t size);
 
 PyAPI_FUNC(void) _PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame *frame);

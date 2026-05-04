@@ -116,8 +116,8 @@ test_sizeof_c_types(PyObject *self, PyObject *Py_UNUSED(ignored))
     do { \
         if (EXPECTED != sizeof(TYPE)) { \
             PyErr_Format(get_testerror(self),               \
-                         "sizeof(%s) = %u instead of %u",   \
-                         #TYPE, sizeof(TYPE), EXPECTED);    \
+                         "sizeof(%s) = %zu instead of %u",   \
+                         #TYPE, sizeof(TYPE), (unsigned)(EXPECTED));    \
             return (PyObject*)NULL; \
         } \
     } while (0)
@@ -3280,9 +3280,8 @@ typedef struct {
 } ManagedDictObject;
 
 int ManagedDict_traverse(PyObject *self, visitproc visit, void *arg) {
-    PyObject_VisitManagedDict(self, visit, arg);
     Py_VISIT(Py_TYPE(self));
-    return 0;
+    return PyObject_VisitManagedDict(self, visit, arg);
 }
 
 int ManagedDict_clear(PyObject *self) {

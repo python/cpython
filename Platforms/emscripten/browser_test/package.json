@@ -11,7 +11,8 @@
   "description": "",
   "dependencies": {
     "@playwright/test": "^1.54.1",
-    "@types/node": "^24.1.0",
+    "@types/node": "^24.12.0",
+    "get-port-cli": "^3.0.0",
     "http-server": "^14.1.1",
     "playwright": "^1.54.1"
   }

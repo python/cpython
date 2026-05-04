@@ -32,6 +32,7 @@
 #include <Python.h>
 #include "pycore_object.h"        // _PyObject_VisitType()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_typeobject.h"
 
 #include <mpdecimal.h>
@@ -3975,7 +3976,6 @@ _decimal_Decimal_as_integer_ratio_impl(PyObject *self, PyTypeObject *cls)
     PyObject *numerator = NULL;
     PyObject *denominator = NULL;
     PyObject *exponent = NULL;
-    PyObject *result = NULL;
     PyObject *tmp;
     mpd_ssize_t exp;
     PyObject *context;
@@ -4035,6 +4035,7 @@ _decimal_Decimal_as_integer_ratio_impl(PyObject *self, PyTypeObject *cls)
 
     if (exp >= 0) {
         Py_SETREF(numerator, state->_py_long_multiply(numerator, exponent));
+        Py_CLEAR(exponent);
         if (numerator == NULL) {
             goto error;
         }
@@ -4061,15 +4062,13 @@ _decimal_Decimal_as_integer_ratio_impl(PyObject *self, PyTypeObject *cls)
             goto error;
         }
     }
-
-    result = PyTuple_Pack(2, numerator, denominator);
-
+    return _PyTuple_FromPairSteal(numerator, denominator);
 
 error:
     Py_XDECREF(exponent);
     Py_XDECREF(denominator);
     Py_XDECREF(numerator);
-    return result;
+    return NULL;
 }
 
 /*[clinic input]
@@ -4613,7 +4612,6 @@ nm_mpd_qdivmod(PyObject *v, PyObject *w)
     PyObject *q, *r;
     PyObject *context;
     uint32_t status = 0;
-    PyObject *ret;
 
     decimal_state *state = find_state_left_or_right(v, w);
     CURRENT_CONTEXT(state, context);
@@ -4642,10 +4640,7 @@ nm_mpd_qdivmod(PyObject *v, PyObject *w)
         return NULL;
     }
 
-    ret = PyTuple_Pack(2, q, r);
-    Py_DECREF(r);
-    Py_DECREF(q);
-    return ret;
+    return _PyTuple_FromPairSteal(q, r);
 }
 
 static PyObject *
@@ -6674,7 +6669,6 @@ _decimal_Context_divmod_impl(PyObject *context, PyObject *x, PyObject *y)
     PyObject *a, *b;
     PyObject *q, *r;
     uint32_t status = 0;
-    PyObject *ret;
 
     CONVERT_BINOP_RAISE(&a, &b, x, y, context);
     decimal_state *state = get_module_state_from_ctx(context);
@@ -6701,10 +6695,7 @@ _decimal_Context_divmod_impl(PyObject *context, PyObject *x, PyObject *y)
         return NULL;
     }
 
-    ret = PyTuple_Pack(2, q, r);
-    Py_DECREF(r);
-    Py_DECREF(q);
-    return ret;
+    return _PyTuple_FromPairSteal(q, r);
 }
 
 /* Binary or ternary arithmetic functions */
@@ -7810,15 +7801,15 @@ _decimal_exec(PyObject *m)
 
         switch (cm->flag) {
         case MPD_Float_operation:
-            base = PyTuple_Pack(2, state->DecimalException, PyExc_TypeError);
+            base = _PyTuple_FromPair(state->DecimalException, PyExc_TypeError);
             break;
         case MPD_Division_by_zero:
-            base = PyTuple_Pack(2, state->DecimalException,
-                                PyExc_ZeroDivisionError);
+            base = _PyTuple_FromPair(state->DecimalException,
+                                     PyExc_ZeroDivisionError);
             break;
         case MPD_Overflow:
-            base = PyTuple_Pack(2, state->signal_map[INEXACT].ex,
-                                   state->signal_map[ROUNDED].ex);
+            base = _PyTuple_FromPair(state->signal_map[INEXACT].ex,
+                                     state->signal_map[ROUNDED].ex);
             break;
         case MPD_Underflow:
             base = PyTuple_Pack(3, state->signal_map[INEXACT].ex,
@@ -7857,7 +7848,7 @@ _decimal_exec(PyObject *m)
     for (cm = state->cond_map+1; cm->name != NULL; cm++) {
         PyObject *base;
         if (cm->flag == MPD_Division_undefined) {
-            base = PyTuple_Pack(2, state->signal_map[0].ex, PyExc_ZeroDivisionError);
+            base = _PyTuple_FromPair(state->signal_map[0].ex, PyExc_ZeroDivisionError);
         }
         else {
             base = PyTuple_Pack(1, state->signal_map[0].ex);

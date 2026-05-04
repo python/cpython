@@ -370,15 +370,19 @@ in both C and ``libffi``, the following complex types are available:
    * - :class:`c_float_complex`
      - :c:expr:`float complex`
      - :py:class:`complex`
-     - ``'F'``
+     - ``'Zf'``
    * - :class:`c_double_complex`
      - :c:expr:`double complex`
      - :py:class:`complex`
-     - ``'D'``
+     - ``'Zd'``
    * - :class:`c_longdouble_complex`
      - :c:expr:`long double complex`
      - :py:class:`complex`
-     - ``'G'``
+     - ``'Zg'``
+
+.. versionchanged:: next
+   The :py:attr:`~_SimpleCData._type_` types ``F``, ``D`` and ``G`` have been
+   replaced with ``Zf``, ``Zd`` and ``Zg``.
 
 
 All these types can be created by calling them with an optional initializer of
@@ -1735,7 +1739,7 @@ If wrapping a shared library with :mod:`!ctypes`, consider determining the
 shared library name at development time, and hardcoding it into the wrapper
 module instead of using :func:`!find_library` to locate the library
 at runtime.
-Also consider addding a configuration option or environment variable to let
+Also consider adding a configuration option or environment variable to let
 users select a library to use, and then perhaps use :func:`!find_library`
 as a default or fallback.
 
@@ -1756,11 +1760,10 @@ as a default or fallback.
    (or by) Python.
    It is recommended to only use this function as a default or fallback,
 
-   .. deprecated:: next
+   .. soft-deprecated:: 3.15
 
-      This function is :term:`soft deprecated`.
-      It is kept for use in cases where it works, but not expected to be
-      updated for additional platforms and configurations.
+      This function is kept for use in cases where it works, but not expected to
+      be updated for additional platforms and configurations.
 
 On Linux, :func:`!find_library` tries to run external
 programs (``/sbin/ldconfig``, ``gcc``, ``objdump`` and ``ld``) to find the
@@ -3191,8 +3194,8 @@ Arrays and pointers
    Equivalent to ``type * length``, where *type* is a
    :mod:`!ctypes` data type and *length* an integer.
 
-   This function is :term:`soft deprecated` in favor of multiplication.
-   There are no plans to remove it.
+   .. soft-deprecated:: 3.14
+      In favor of multiplication.
 
 
 .. class:: _Pointer

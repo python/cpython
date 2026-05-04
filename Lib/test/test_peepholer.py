@@ -1,3 +1,4 @@
+import ast
 import dis
 import gc
 from itertools import combinations, product
@@ -105,7 +106,7 @@ class TestTranforms(BytecodeTestCase):
                 self.check_lnotab(code)
 
     def test_global_as_constant(self):
-        # LOAD_GLOBAL None/True/False  -->  LOAD_CONST None/True/False
+        # LOAD_GLOBAL None/True/False  -->  LOAD_COMMON_CONSTANT None/True/False
         def f():
             x = None
             x = None
@@ -120,7 +121,7 @@ class TestTranforms(BytecodeTestCase):
         for func, elem in ((f, None), (g, True), (h, False)):
             with self.subTest(func=func):
                 self.assertNotInBytecode(func, 'LOAD_GLOBAL')
-                self.assertInBytecode(func, 'LOAD_CONST', elem)
+                self.assertInBytecode(func, 'LOAD_COMMON_CONSTANT', elem)
                 self.check_lnotab(func)
 
         def f():
@@ -128,7 +129,7 @@ class TestTranforms(BytecodeTestCase):
             return None
 
         self.assertNotInBytecode(f, 'LOAD_GLOBAL')
-        self.assertInBytecode(f, 'LOAD_CONST', None)
+        self.assertInBytecode(f, 'LOAD_COMMON_CONSTANT', None)
         self.check_lnotab(f)
 
     def test_while_one(self):
@@ -145,13 +146,14 @@ class TestTranforms(BytecodeTestCase):
 
     def test_pack_unpack(self):
         for line, elem in (
-            ('a, = a,', 'LOAD_CONST',),
+            ('a, = a,', None),
             ('a, b = a, b', 'SWAP',),
             ('a, b, c = a, b, c', 'SWAP',),
             ):
             with self.subTest(line=line):
                 code = compile(line,'','single')
-                self.assertInBytecode(code, elem)
+                if elem is not None:
+                    self.assertInBytecode(code, elem)
                 self.assertNotInBytecode(code, 'BUILD_TUPLE')
                 self.assertNotInBytecode(code, 'UNPACK_SEQUENCE')
                 self.check_lnotab(code)
@@ -173,10 +175,10 @@ class TestTranforms(BytecodeTestCase):
         # Long tuples should be folded too.
         code = compile(repr(tuple(range(10000))),'','single')
         self.assertNotInBytecode(code, 'BUILD_TUPLE')
-        # One LOAD_CONST for the tuple, one for the None return value
+        # One LOAD_CONST for the tuple; None return value uses LOAD_COMMON_CONSTANT
         load_consts = [instr for instr in dis.get_instructions(code)
                               if instr.opname == 'LOAD_CONST']
-        self.assertEqual(len(load_consts), 2)
+        self.assertEqual(len(load_consts), 1)
         self.check_lnotab(code)
 
         # Bug 1053819:  Tuple of constants misidentified when presented with:
@@ -282,11 +284,11 @@ class TestTranforms(BytecodeTestCase):
             ('-0.0', 'UNARY_NEGATIVE', None, True, 'LOAD_CONST', -0.0),
             ('-(1.0-1.0)', 'UNARY_NEGATIVE', None, True, 'LOAD_CONST', -0.0),
             ('-0.5', 'UNARY_NEGATIVE', None, True, 'LOAD_CONST', -0.5),
-            ('---1', 'UNARY_NEGATIVE', None, True, 'LOAD_CONST', -1),
+            ('---1', 'UNARY_NEGATIVE', None, True, 'LOAD_COMMON_CONSTANT', -1),
             ('---""', 'UNARY_NEGATIVE', None, False, None, None),
             ('~~~1', 'UNARY_INVERT', None, True, 'LOAD_CONST', -2),
             ('~~~""', 'UNARY_INVERT', None, False, None, None),
-            ('not not True', 'UNARY_NOT', None, True, 'LOAD_CONST', True),
+            ('not not True', 'UNARY_NOT', None, True, 'LOAD_COMMON_CONSTANT', True),
             ('not not x', 'UNARY_NOT', None, True, 'LOAD_NAME', 'x'),  # this should be optimized regardless of constant or not
             ('+++1', 'CALL_INTRINSIC_1', intrinsic_positive, True, 'LOAD_SMALL_INT', 1),
             ('---x', 'UNARY_NEGATIVE', None, False, None, None),
@@ -325,7 +327,7 @@ class TestTranforms(BytecodeTestCase):
             ('1 + 2', 'NB_ADD', True, 'LOAD_SMALL_INT', 3),
             ('1 + 2 + 3', 'NB_ADD', True, 'LOAD_SMALL_INT', 6),
             ('1 + ""', 'NB_ADD', False, None, None),
-            ('1 - 2', 'NB_SUBTRACT', True, 'LOAD_CONST', -1),
+            ('1 - 2', 'NB_SUBTRACT', True, 'LOAD_COMMON_CONSTANT', -1),
             ('1 - 2 - 3', 'NB_SUBTRACT', True, 'LOAD_CONST', -4),
             ('1 - ""', 'NB_SUBTRACT', False, None, None),
             ('2 * 2', 'NB_MULTIPLY', True, 'LOAD_SMALL_INT', 4),
@@ -1131,6 +1133,53 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
 
 class DirectCfgOptimizerTests(CfgOptimizationTestCase):
 
+    def test_optimize_cfg_const_index_out_of_range(self):
+        insts = [
+            ('LOAD_CONST', 2, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        seq = self.seq_from_insts(insts)
+        with self.assertRaisesRegex(ValueError, "out of range"):
+            _testinternalcapi.optimize_cfg(seq, [0, 1], 0)
+
+    def test_optimize_cfg_consts_must_be_list(self):
+        insts = [
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        seq = self.seq_from_insts(insts)
+        with self.assertRaisesRegex(TypeError, "consts must be a list"):
+            _testinternalcapi.optimize_cfg(seq, (0,), 0)
+
+    def test_compiler_codegen_metadata_consts_roundtrips_optimize_cfg(self):
+        tree = ast.parse("x = (1, 2)", mode="exec", optimize=1)
+        insts, meta = _testinternalcapi.compiler_codegen(tree, "<s>", 0)
+        consts = meta["consts"]
+        self.assertIsInstance(consts, list)
+        _testinternalcapi.optimize_cfg(insts, consts, 0)
+
+    def test_compiler_codegen_consts_include_none_required_for_implicit_return(self):
+        # Module "pass" only needs the const table entry for None once
+        # _PyCodegen_AddReturnAtEnd runs. If metadata["consts"] were taken
+        # before that, the list would not match LOAD_CONST opargs (here: 0
+        # for None), and optimize_cfg would read out of range.
+        tree = ast.parse("pass", mode="exec", optimize=1)
+        insts, meta = _testinternalcapi.compiler_codegen(tree, "<s>", 0)
+        consts = meta["consts"]
+        self.assertEqual(consts, [None])
+
+        load_const = opcode.opmap["LOAD_CONST"]
+        self.assertEqual(
+            [t[1] for t in insts.get_instructions() if t[0] == load_const],
+            [0],
+        )
+
+        # As if consts were snapshotted before AddReturnAtEnd: still LOAD_CONST 0, no row.
+        with self.assertRaisesRegex(ValueError, "out of range"):
+            _testinternalcapi.optimize_cfg(insts, [], 0)
+
+        _testinternalcapi.optimize_cfg(insts, list(consts), 0)
+
     def cfg_optimization_test(self, insts, expected_insts,
                               consts=None, expected_consts=None,
                               nlocals=0):
@@ -1491,7 +1540,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             end,
             ('END_FOR', None, 0),
             ('POP_ITER', None, 0),
-            ('LOAD_CONST', 0, 0),
+            ('LOAD_COMMON_CONSTANT', 7, 0),
             ('RETURN_VALUE', None, 0),
         ]
         self.cfg_optimization_test(before, after, consts=[None], expected_consts=[None, (1, 2)])
@@ -1524,7 +1573,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             end,
             ('END_FOR', None, 0),
             ('POP_ITER', None, 0),
-            ('LOAD_CONST', 0, 0),
+            ('LOAD_COMMON_CONSTANT', 7, 0),
             ('RETURN_VALUE', None, 0),
         ]
         self.cfg_optimization_test(before, after, consts=[None], expected_consts=[None])
@@ -1556,7 +1605,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             end,
             ('END_FOR', None, 0),
             ('POP_ITER', None, 0),
-            ('LOAD_CONST', 0, 0),
+            ('LOAD_COMMON_CONSTANT', 7, 0),
             ('RETURN_VALUE', None, 0),
         ]
         self.cfg_optimization_test(before, after, consts=[None], expected_consts=[None, frozenset({1, 2})])
@@ -1578,7 +1627,22 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_CONST', 0, 0),
             ('RETURN_VALUE', None, 0),
         ]
-        self.cfg_optimization_test(same, same, consts=[None], expected_consts=[None])
+        expected = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_NAME', 0, 0),
+            ('BUILD_SET', 2, 0),
+            ('GET_ITER', 0, 0),
+            start := self.Label(),
+            ('FOR_ITER', end := self.Label(), 0),
+            ('STORE_FAST', 0, 0),
+            ('JUMP', start, 0),
+            end,
+            ('END_FOR', None, 0),
+            ('POP_ITER', None, 0),
+            ('LOAD_COMMON_CONSTANT', 7, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(same, expected, consts=[None], expected_consts=[None])
 
     def test_optimize_literal_list_contains(self):
         # x in [1, 2]  ==>  x in (1, 2)
@@ -1597,7 +1661,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_CONST', 1, 0),
             ('CONTAINS_OP', 0, 0),
             ('POP_TOP', None, 0),
-            ('LOAD_CONST', 0, 0),
+            ('LOAD_COMMON_CONSTANT', 7, 0),
             ('RETURN_VALUE', None, 0),
         ]
         self.cfg_optimization_test(before, after, consts=[None], expected_consts=[None, (1, 2)])
@@ -1620,7 +1684,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('BUILD_TUPLE', 2, 0),
             ('CONTAINS_OP', 0, 0),
             ('POP_TOP', None, 0),
-            ('LOAD_CONST', 0, 0),
+            ('LOAD_COMMON_CONSTANT', 7, 0),
             ('RETURN_VALUE', None, 0),
         ]
         self.cfg_optimization_test(before, after, consts=[None], expected_consts=[None])
@@ -1642,7 +1706,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_CONST', 1, 0),
             ('CONTAINS_OP', 0, 0),
             ('POP_TOP', None, 0),
-            ('LOAD_CONST', 0, 0),
+            ('LOAD_COMMON_CONSTANT', 7, 0),
             ('RETURN_VALUE', None, 0),
         ]
         self.cfg_optimization_test(before, after, consts=[None], expected_consts=[None, frozenset({1, 2})])
@@ -1659,7 +1723,17 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_CONST', 0, 0),
             ('RETURN_VALUE', None, 0),
         ]
-        self.cfg_optimization_test(same, same, consts=[None], expected_consts=[None])
+        expected = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_NAME', 1, 0),
+            ('BUILD_SET', 2, 0),
+            ('CONTAINS_OP', 0, 0),
+            ('POP_TOP', None, 0),
+            ('LOAD_COMMON_CONSTANT', 7, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(same, expected, consts=[None], expected_consts=[None])
 
     def test_optimize_unary_not(self):
         # test folding
@@ -1670,10 +1744,10 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('RETURN_VALUE', None, 0),
         ]
         after = [
-            ('LOAD_CONST', 1, 0),
+            ('LOAD_COMMON_CONSTANT', 10, 0),
             ('RETURN_VALUE', None, 0),
         ]
-        self.cfg_optimization_test(before, after, consts=[], expected_consts=[True, False])
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[True])
 
         # test cancel out
         before = [
@@ -1721,7 +1795,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('RETURN_VALUE', None, 0),
         ]
         after = [
-            ('LOAD_CONST', 0, 0),
+            ('LOAD_COMMON_CONSTANT', 9, 0),
             ('RETURN_VALUE', None, 0),
         ]
         self.cfg_optimization_test(before, after, consts=[], expected_consts=[True])
@@ -1737,10 +1811,10 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('RETURN_VALUE', None, 0),
         ]
         after = [
-            ('LOAD_CONST', 1, 0),
+            ('LOAD_COMMON_CONSTANT', 10, 0),
             ('RETURN_VALUE', None, 0),
         ]
-        self.cfg_optimization_test(before, after, consts=[], expected_consts=[True, False])
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[True])
 
         # test cancel out & eliminate to bool (to bool stays as we are not iterating to a fixed point)
         before = [
@@ -2382,7 +2456,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             end,
             ("END_FOR", None, 11),
             ("POP_TOP", None, 12),
-            ("LOAD_CONST", 0, 13),
+            ("LOAD_COMMON_CONSTANT", 7, 13),
             ("RETURN_VALUE", None, 14),
         ]
         self.cfg_optimization_test(insts, expected_insts, consts=[None])
@@ -2406,7 +2480,7 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
                 maxconst = max(maxconst, arg)
         consts = [None for _ in range(maxconst + 1)]
         return insts + [
-            ("LOAD_CONST", 0, last_loc + 1),
+            ("LOAD_COMMON_CONSTANT", 7, last_loc + 1),
             ("RETURN_VALUE", None, last_loc + 2),
         ], consts
 
@@ -2437,7 +2511,7 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
         ]
         expected = [
             ("LOAD_FAST_BORROW", 0, 1),
-            ("LOAD_CONST", 1, 2),
+            ("LOAD_COMMON_CONSTANT", 7, 2),
             ("SWAP", 2, 3),
             ("POP_TOP", None, 4),
         ]
@@ -2475,7 +2549,13 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
             ("STORE_FAST", 0, 3),
             ("POP_TOP", None, 4),
         ]
-        self.check(insts, insts)
+        expected = [
+            ("LOAD_FAST", 0, 1),
+            ("LOAD_COMMON_CONSTANT", 7, 2),
+            ("STORE_FAST", 0, 3),
+            ("POP_TOP", None, 4),
+        ]
+        self.check(insts, expected)
 
         insts = [
             ("LOAD_FAST", 0, 1),
@@ -2484,7 +2564,14 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
             ("STORE_FAST_STORE_FAST", ((0 << 4) | 1), 4),
             ("POP_TOP", None, 5),
         ]
-        self.check(insts, insts)
+        expected = [
+            ("LOAD_FAST", 0, 1),
+            ("LOAD_COMMON_CONSTANT", 7, 2),
+            ("LOAD_COMMON_CONSTANT", 7, 3),
+            ("STORE_FAST_STORE_FAST", ((0 << 4) | 1), 4),
+            ("POP_TOP", None, 5),
+        ]
+        self.check(insts, expected)
 
         insts = [
             ("LOAD_FAST", 0, 1),
@@ -2505,7 +2592,12 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
             ("LOAD_CONST", 0, 3),
             ("STORE_FAST_STORE_FAST", ((0 << 4) | 1), 4),
         ]
-        self.check(insts, insts)
+        expected = [
+            ("LOAD_FAST", 0, 1),
+            ("LOAD_COMMON_CONSTANT", 7, 3),
+            ("STORE_FAST_STORE_FAST", ((0 << 4) | 1), 4),
+        ]
+        self.check(insts, expected)
 
     def test_consume_no_inputs(self):
         insts = [
@@ -2550,7 +2642,19 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
             ("LOAD_CONST", 0, 7),
             ("RETURN_VALUE", None, 8),
         ]
-        self.cfg_optimization_test(insts, insts, consts=[None])
+        expected = [
+            ("LOAD_FAST", 0, 1),
+            top := self.Label(),
+            ("FOR_ITER", end := self.Label(), 2),
+            ("STORE_FAST", 2, 3),
+            ("JUMP", top, 4),
+            end,
+            ("END_FOR", None, 5),
+            ("POP_TOP", None, 6),
+            ("LOAD_COMMON_CONSTANT", 7, 7),
+            ("RETURN_VALUE", None, 8),
+        ]
+        self.cfg_optimization_test(insts, expected, consts=[None])
 
     def test_load_attr(self):
         insts = [
@@ -2619,10 +2723,10 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
             ("LOAD_FAST", 0, 1),
             ("LOAD_FAST_BORROW", 1, 2),
             ("SEND", end := self.Label(), 3),
-            ("LOAD_CONST", 0, 4),
+            ("LOAD_COMMON_CONSTANT", 7, 4),
             ("RETURN_VALUE", None, 5),
             end,
-            ("LOAD_CONST", 0, 6),
+            ("LOAD_COMMON_CONSTANT", 7, 6),
             ("RETURN_VALUE", None, 7)
         ]
         self.cfg_optimization_test(insts, expected, consts=[None])
@@ -2660,7 +2764,15 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
             ("LOAD_CONST", 0, 5),
             ("RETURN_VALUE", None, 6)
         ]
-        self.cfg_optimization_test(insts, insts, consts=[None])
+        expected = [
+            ("LOAD_COMMON_CONSTANT", 7, 1),
+            ("LOAD_FAST", 0, 2),
+            ("SET_FUNCTION_ATTRIBUTE", 2, 3),
+            ("STORE_FAST", 1, 4),
+            ("LOAD_COMMON_CONSTANT", 7, 5),
+            ("RETURN_VALUE", None, 6)
+        ]
+        self.cfg_optimization_test(insts, expected, consts=[None])
 
         insts = [
             ("LOAD_CONST", 0, 1),
@@ -2669,7 +2781,7 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
             ("RETURN_VALUE", None, 4)
         ]
         expected = [
-            ("LOAD_CONST", 0, 1),
+            ("LOAD_COMMON_CONSTANT", 7, 1),
             ("LOAD_FAST_BORROW", 0, 2),
             ("SET_FUNCTION_ATTRIBUTE", 2, 3),
             ("RETURN_VALUE", None, 4)
@@ -2692,7 +2804,22 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
             ("LOAD_CONST", 0, 11),
             ("RETURN_VALUE", None, 12),
         ]
-        self.cfg_optimization_test(insts, insts, consts=[None])
+        expected = [
+            ("LOAD_FAST", 0, 1),
+            ("GET_ITER", 1, 2),
+            ("PUSH_NULL", None, 3),
+            ("LOAD_COMMON_CONSTANT", 7, 4),
+            send := self.Label(),
+            ("SEND", end := self.Label(), 6),
+            ("YIELD_VALUE", 1, 7),
+            ("RESUME", 2, 8),
+            ("JUMP", send, 9),
+            end,
+            ("END_SEND", None, 10),
+            ("LOAD_COMMON_CONSTANT", 7, 11),
+            ("RETURN_VALUE", None, 12),
+        ]
+        self.cfg_optimization_test(insts, expected, consts=[None])
 
     def test_push_exc_info(self):
         insts = [

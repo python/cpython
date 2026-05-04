@@ -31,15 +31,13 @@ not** have to exist as physical files and directories on the file system:
 for example, a package and its resources can be imported from a zip file using
 :py:mod:`zipimport`.
 
-.. note::
+.. warning::
 
-   This module provides functionality similar to `pkg_resources
-   <https://setuptools.readthedocs.io/en/latest/pkg_resources.html>`_ `Basic
-   Resource Access
-   <https://setuptools.readthedocs.io/en/latest/pkg_resources.html#basic-resource-access>`_
-   without the performance overhead of that package.  This makes reading
-   resources included in packages easier, with more stable and consistent
-   semantics.
+   :mod:`importlib.resources` follows the same security model as the built-in
+   :func:`open` function. Passing untrusted inputs to the functions
+   in this module is unsafe.
+
+.. note::
 
    The standalone backport of this module provides more information
    on `using importlib.resources
