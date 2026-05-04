@@ -537,9 +537,8 @@ class HelpFormatter(object):
         if not t.reset:
             return text
         text = _re.sub(
-            r'`([^`]+)`',
-r'(`{1,2})([^`]+)\1',
-rf'{t.prog_extra}\2{t.reset}',
+            r'(`{1,2})([^`]+)\1',
+            rf'{t.prog_extra}\2{t.reset}',
             text,
         )
         return text
