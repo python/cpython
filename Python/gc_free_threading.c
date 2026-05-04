@@ -17,30 +17,22 @@
 
 #include "pydtrace.h"
 
-// Platform-specific includes for get_process_mem_usage().
-#ifdef _WIN32
-    #include <windows.h>
-    #include <psapi.h> // For GetProcessMemoryInfo
-#elif defined(__linux__)
-    #include <unistd.h> // For sysconf, getpid
-#elif defined(__APPLE__)
-    #include <mach/mach.h>
-    #include <mach/task.h> // Required for TASK_VM_INFO
-    #include <unistd.h> // For sysconf, getpid
-#elif defined(__FreeBSD__)
-    #include <sys/types.h>
-    #include <sys/sysctl.h>
-    #include <sys/user.h> // Requires sys/user.h for kinfo_proc definition
-    #include <kvm.h>
-    #include <unistd.h> // For sysconf, getpid
-    #include <fcntl.h> // For O_RDONLY
-    #include <limits.h> // For _POSIX2_LINE_MAX
-#elif defined(__OpenBSD__)
-    #include <sys/types.h>
-    #include <sys/sysctl.h>
-    #include <sys/user.h> // For kinfo_proc
-    #include <unistd.h> // For sysconf, getpid
-#endif
+// Upper bound on the adaptive threshold, expressed as long_lived_total / N
+// (where long_lived_total is the count of objects in the mimalloc GC heap).
+// Scaling with the heap size keeps the amortized GC cost roughly linear in
+// total allocations: when the heap is large we can afford to wait longer
+// between passes, since each pass costs O(long_lived_total) for the
+// mark-alive walk.  At divisor 2, no more than one GC pass fires per heap
+// doubling in the no-trash limit.
+#define GC_THRESHOLD_MAX_DIVISOR 2
+
+// Decay constant for mapping the trash ratio (collected / long_lived_total)
+// to a target threshold via 1 / (1 + K * ratio).  With K=8: ratio=0.05 maps
+// to ~71% of the max range, ratio=0.25 to ~33%, ratio=0.5 to ~20%,
+// ratio=1.0 to ~11%.  Higher K decays faster.  The 1/4-up / 3/4-down step
+// applied later does most of the noise filtering, so the exact shape here
+// matters less than the monotonicity.
+#define GC_THRESHOLD_DECAY_K 8
 
 // enable the "mark alive" pass of GC
 #define GC_ENABLE_MARK_ALIVE 1
@@ -1690,6 +1682,7 @@ _PyGC_InitState(GCState *gcstate)
 {
     // TODO: move to pycore_runtime_init.h once the incremental GC lands.
     gcstate->young.threshold = 2000;
+    gcstate->adaptive_threshold = gcstate->young.threshold;
 }
 
 
@@ -2016,205 +2009,32 @@ cleanup_worklist(struct worklist *worklist)
     }
 }
 
-// Return the memory usage (typically RSS + swap) of the process, in units of
-// KB.  Returns -1 if this operation is not supported or on failure.
-static Py_ssize_t
-get_process_mem_usage(void)
-{
-#ifdef _WIN32
-    // Windows implementation using GetProcessMemoryInfo
-    // Returns WorkingSetSize + PagefileUsage
-    PROCESS_MEMORY_COUNTERS pmc;
-    HANDLE hProcess = GetCurrentProcess();
-    if (NULL == hProcess) {
-        // Should not happen for the current process
-        return -1;
-    }
-
-    // GetProcessMemoryInfo returns non-zero on success
-    if (GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc))) {
-        // Values are in bytes, convert to KB.
-        return (Py_ssize_t)((pmc.WorkingSetSize + pmc.PagefileUsage) / 1024);
-    }
-    else {
-        return -1;
-    }
-
-#elif __linux__
-    FILE* fp = fopen("/proc/self/status", "r");
-    if (fp == NULL) {
-        return -1;
-    }
-
-    char line_buffer[256];
-    long long rss_kb = -1;
-    long long swap_kb = -1;
-
-    while (fgets(line_buffer, sizeof(line_buffer), fp) != NULL) {
-        if (rss_kb == -1 && strncmp(line_buffer, "VmRSS:", 6) == 0) {
-            sscanf(line_buffer + 6, "%lld", &rss_kb);
-        }
-        else if (swap_kb == -1 && strncmp(line_buffer, "VmSwap:", 7) == 0) {
-            sscanf(line_buffer + 7, "%lld", &swap_kb);
-        }
-        if (rss_kb != -1 && swap_kb != -1) {
-            break; // Found both
-        }
-    }
-    fclose(fp);
-
-    if (rss_kb != -1 && swap_kb != -1) {
-        return (Py_ssize_t)(rss_kb + swap_kb);
-    }
-    return -1;
-
-#elif defined(__APPLE__)
-    // --- MacOS (Darwin) ---
-    // Returns phys_footprint (RAM + compressed memory)
-    task_vm_info_data_t vm_info;
-    mach_msg_type_number_t count = TASK_VM_INFO_COUNT;
-    kern_return_t kerr;
-
-    kerr = task_info(mach_task_self(), TASK_VM_INFO, (task_info_t)&vm_info, &count);
-    if (kerr != KERN_SUCCESS) {
-        return -1;
-    }
-    // phys_footprint is in bytes. Convert to KB.
-    return (Py_ssize_t)(vm_info.phys_footprint / 1024);
-
-#elif defined(__FreeBSD__)
-    // NOTE: Returns RSS only. Per-process swap usage isn't readily available
-    long page_size_kb = sysconf(_SC_PAGESIZE) / 1024;
-    if (page_size_kb <= 0) {
-        return -1;
-    }
-
-    // Using /dev/null for vmcore avoids needing dump file.
-    // NULL for kernel file uses running kernel.
-    char errbuf[_POSIX2_LINE_MAX]; // For kvm error messages
-    kvm_t *kd = kvm_openfiles(NULL, "/dev/null", NULL, O_RDONLY, errbuf);
-    if (kd == NULL) {
-        return -1;
-    }
-
-    // KERN_PROC_PID filters for the specific process ID
-    // n_procs will contain the number of processes returned (should be 1 or 0)
-    pid_t pid = getpid();
-    int n_procs;
-    struct kinfo_proc *kp = kvm_getprocs(kd, KERN_PROC_PID, pid, &n_procs);
-    if (kp == NULL) {
-        kvm_close(kd);
-        return -1;
-    }
-
-    Py_ssize_t rss_kb = -1;
-    if (n_procs > 0) {
-        // kp[0] contains the info for our process
-        // ki_rssize is in pages. Convert to KB.
-        rss_kb = (Py_ssize_t)kp->ki_rssize * page_size_kb;
-    }
-    else {
-        // Process with PID not found, shouldn't happen for self.
-        rss_kb = -1;
-    }
-
-    kvm_close(kd);
-    return rss_kb;
-
-#elif defined(__OpenBSD__)
-    // NOTE: Returns RSS only. Per-process swap usage isn't readily available
-    long page_size_kb = sysconf(_SC_PAGESIZE) / 1024;
-    if (page_size_kb <= 0) {
-        return -1;
-    }
-
-    struct kinfo_proc kp;
-    pid_t pid = getpid();
-    int mib[6];
-    size_t len = sizeof(kp);
-
-    mib[0] = CTL_KERN;
-    mib[1] = KERN_PROC;
-    mib[2] = KERN_PROC_PID;
-    mib[3] = pid;
-    mib[4] = sizeof(struct kinfo_proc); // size of the structure we want
-    mib[5] = 1;                         // want 1 structure back
-    if (sysctl(mib, 6, &kp, &len, NULL, 0) == -1) {
-         return -1;
-    }
-
-    if (len > 0) {
-        // p_vm_rssize is in pages on OpenBSD. Convert to KB.
-        return (Py_ssize_t)kp.p_vm_rssize * page_size_kb;
-    }
-    else {
-        // Process info not returned
-        return -1;
-    }
-#else
-    // Unsupported platform
-    return -1;
-#endif
-}
-
 static bool
-gc_should_collect_mem_usage(GCState *gcstate)
+gc_should_collect(PyThreadState *tstate)
 {
-    Py_ssize_t mem = get_process_mem_usage();
-    if (mem < 0) {
-        // Reading process memory usage is not support or failed.
-        return true;
-    }
-    int threshold = gcstate->young.threshold;
-    Py_ssize_t deferred = _Py_atomic_load_ssize_relaxed(&gcstate->deferred_count);
-    if (deferred > threshold * 40) {
-        // Too many new container objects since last GC, even though memory use
-        // might not have increased much.  This is intended to avoid resource
-        // exhaustion if some objects consume resources but don't result in a
-        // memory usage increase.  We use 40x as the factor here because older
-        // versions of Python would do full collections after roughly every
-        // 70,000 new container objects.
-        return true;
-    }
-    Py_ssize_t last_mem = _Py_atomic_load_ssize_relaxed(&gcstate->last_mem);
-    Py_ssize_t mem_threshold = Py_MAX(last_mem / 10, 128);
-    if ((mem - last_mem) > mem_threshold) {
-        // The process memory usage has increased too much, do a collection.
-        return true;
-    }
-    else {
-        // The memory usage has not increased enough, defer the collection and
-        // clear the young object count so we don't check memory usage again
-        // on the next call to gc_should_collect().
-        PyMutex_Lock(&gcstate->mutex);
-        int young_count = _Py_atomic_exchange_int(&gcstate->young.count, 0);
-        _Py_atomic_store_ssize_relaxed(&gcstate->deferred_count,
-                                       gcstate->deferred_count + young_count);
-        PyMutex_Unlock(&gcstate->mutex);
-        return false;
-    }
-}
-
-static bool
-gc_should_collect(GCState *gcstate)
-{
+    GCState *gcstate = &tstate->interp->gc;
     int count = _Py_atomic_load_int_relaxed(&gcstate->young.count);
-    int threshold = gcstate->young.threshold;
+    int base = gcstate->young.threshold;
+    int adaptive = gcstate->adaptive_threshold;
     int gc_enabled = _Py_atomic_load_int_relaxed(&gcstate->enabled);
-    if (count <= threshold || threshold == 0 || !gc_enabled) {
+    if (base == 0 || !gc_enabled) {
         return false;
     }
     if (gcstate->old[0].threshold == 0) {
-        // A few tests rely on immediate scheduling of the GC so we ignore the
-        // extra conditions if generations[1].threshold is set to zero.
-        return true;
+        // A few tests rely on immediate scheduling of the GC so we ignore
+        // the adaptive threshold if generations[1].threshold is set to zero
+        // and just trigger when the base is exceeded.
+        return count > base;
     }
-    if (count < gcstate->long_lived_total / 4) {
-        // Avoid quadratic behavior by scaling threshold to the number of live
-        // objects.
+    if (count <= adaptive) {
         return false;
     }
-    return gc_should_collect_mem_usage(gcstate);
+    if (count < gcstate->long_lived_total / 4) {
+        // Avoid quadratic behavior by scaling the trigger to the number of
+        // live objects.
+        return false;
+    }
+    return true;
 }
 
 static void
@@ -2231,7 +2051,7 @@ record_allocation(PyThreadState *tstate)
         _Py_atomic_add_int(&gcstate->young.count, (int)gc->alloc_count);
         gc->alloc_count = 0;
 
-        if (gc_should_collect(gcstate) &&
+        if (gc_should_collect(tstate) &&
             !_Py_atomic_load_int_relaxed(&gcstate->collecting))
         {
             _Py_ScheduleGC(tstate);
@@ -2264,6 +2084,89 @@ record_deallocation(PyThreadState *tstate)
     }
 }
 
+// Update the adaptive threshold for the next collection based on how
+// much trash this pass found relative to the cost of the pass.  The
+// GC cost is dominated by the mark-alive walk, which is O(objects in
+// the mimalloc GC heap) -- that's exactly what long_lived_total
+// counts (including untracked and frozen objects in the heap).  So
+// the productive ratio is collected / long_lived_total: the fraction
+// of GC work that actually freed memory.  A high ratio means we
+// should collect sooner; a low ratio means GC work was largely wasted
+// and we can afford to wait longer.  We map the ratio through a
+// hyperbolic decay to a target in [base, max_threshold]:
+//     target = base + (max - base) * total / (total + K * collected)
+// where max_threshold scales with long_lived_total so that amortized
+// GC cost stays linear in total allocations on large heaps.
+//
+// We adapt the threshold asymmetrically: slowly when raising it and
+// quickly when lowering it.  The two directions have very different
+// failure modes -- raising too aggressively risks heap blowup (and
+// possibly OOM in memory-constrained environments like containers),
+// while lowering too slowly only costs a few extra GC passes.  So we
+// err on the side of more frequent collection.  When trash appears,
+// we snap toward the new (lower) target in a single big step; when
+// trash disappears, we creep up gradually so that one fortunate pass
+// doesn't push us into a long deferral.
+//
+// Both updates are weighted moves toward the target rather than
+// direct assignments, to avoid "hunting" -- bouncing around due to
+// pass-to-pass noise.  Up: 1/4 step.  Down: 3/4 step.
+static void
+update_adaptive_threshold(GCState *gcstate, Py_ssize_t collected,
+                          Py_ssize_t total)
+{
+    int base = gcstate->young.threshold;
+    if (base <= 0) {
+        return;
+    }
+    Py_ssize_t max_threshold = total / GC_THRESHOLD_MAX_DIVISOR;
+    if (max_threshold > INT_MAX) {
+        max_threshold = INT_MAX;
+    }
+    if (max_threshold < base) {
+        // For small heaps the heap-scaled max would be below the
+        // user-configured base; fall back to base in that case.
+        max_threshold = base;
+    }
+    // Scale total/collected down if needed to keep the multiply below
+    // from overflowing.  Only the ratio matters here, not the scale.
+    Py_ssize_t r_total = total;
+    Py_ssize_t r_collected = collected;
+    while (r_total > ((Py_ssize_t)1 << 30)) {
+        r_total >>= 1;
+        r_collected >>= 1;
+    }
+    Py_ssize_t denom = r_total + (Py_ssize_t)GC_THRESHOLD_DECAY_K * r_collected;
+    Py_ssize_t target = denom > 0
+        ? base + (max_threshold - base) * r_total / denom
+        : max_threshold;
+    int target_i = target > INT_MAX ? INT_MAX : (int)target;
+    int adaptive = gcstate->adaptive_threshold;
+    if (adaptive < base) {
+        // User changed the base via gc.set_threshold; resync.
+        adaptive = base;
+    }
+    if (target_i >= adaptive) {
+        // Raising the threshold: cautious 1/4 step.
+        adaptive = (int)(((long long)adaptive * 3 + (long long)target_i) / 4);
+    }
+    else {
+        // Lowering the threshold: aggressive 3/4 step.
+        adaptive = (int)(((long long)adaptive + (long long)target_i * 3) / 4);
+    }
+    if (adaptive < base) {
+        adaptive = base;
+    }
+    else if (adaptive > max_threshold) {
+        adaptive = (int)max_threshold;
+    }
+    gcstate->adaptive_threshold = adaptive;
+#if 0
+    fprintf(stderr, "gc adapt collected %zd long_lived %zd max %zd target %zd adaptive %d\n",
+            collected, total, max_threshold, target, adaptive);
+#endif
+}
+
 static void
 gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, int generation)
 {
@@ -2275,7 +2178,6 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     }
 
     state->gcstate->young.count = 0;
-    state->gcstate->deferred_count = 0;
     for (int i = 1; i <= generation; ++i) {
         state->gcstate->old[i-1].count = 0;
     }
@@ -2379,10 +2281,14 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     // to be freed.
     delete_garbage(state);
 
-    // Store the current memory usage, can be smaller now if breaking cycles
-    // freed some memory.
-    Py_ssize_t last_mem = get_process_mem_usage();
-    _Py_atomic_store_ssize_relaxed(&state->gcstate->last_mem, last_mem);
+    // Only update the adaptive threshold for collections triggered by
+    // hitting the threshold itself.  Manual gc.collect() calls and
+    // shutdown collections are not representative of the steady-state
+    // trash ratio and would skew the adaptation.
+    if (state->reason == _Py_GC_REASON_HEAP) {
+        update_adaptive_threshold(state->gcstate, state->collected,
+                                  state->long_lived_total);
+    }
 
     // Append objects with legacy finalizers to the "gc.garbage" list.
     handle_legacy_finalizers(state);
@@ -2423,7 +2329,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         return 0;
     }
 
-    if (reason == _Py_GC_REASON_HEAP && !gc_should_collect(gcstate)) {
+    if (reason == _Py_GC_REASON_HEAP && !gc_should_collect(tstate)) {
         // Don't collect if the threshold is not exceeded.
         _Py_atomic_store_int(&gcstate->collecting, 0);
         return 0;

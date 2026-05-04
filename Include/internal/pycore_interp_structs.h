@@ -264,12 +264,10 @@ struct _gc_runtime_state {
     /* True if gc.freeze() has been used. */
     int freeze_active;
 
-    /* Memory usage of the process (RSS + swap) after last GC. */
-    Py_ssize_t last_mem;
-
-    /* This accumulates the new object count whenever collection is deferred
-       due to the RSS increase condition not being meet.  Reset on collection. */
-    Py_ssize_t deferred_count;
+    /* Adaptive threshold used to decide when to trigger a collection.
+       Adjusted after each collection based on the fraction of objects found to
+       be trash. */
+    int adaptive_threshold;
 
     /* Mutex held for gc_should_collect_mem_usage(). */
     PyMutex mutex;
