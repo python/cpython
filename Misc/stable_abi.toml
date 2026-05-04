@@ -2715,3 +2715,5 @@
     # Note: The `_reserved` member of this struct is for interal use only.
     # (The definition of 'full-abi' was clarified when this entry was added.)
     struct_abi_kind = 'full-abi'
+[function.PyObject_GC_NewWithExtraData]
+    added = '3.15'

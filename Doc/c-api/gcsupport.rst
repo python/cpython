@@ -100,7 +100,7 @@ rules:
       * :c:member:`~PyTypeObject.tp_alloc`
 
 
-.. c:function:: PyObject* PyUnstable_Object_GC_NewWithExtraData(PyTypeObject *type, size_t extra_size)
+.. c:function:: PyObject* PyObject_GC_NewWithExtraData(PyTypeObject *type, size_t extra_size)
 
    Analogous to :c:macro:`PyObject_GC_New` but allocates *extra_size*
    bytes at the end of the object (at offset
@@ -115,14 +115,17 @@ rules:
    :c:func:`PyObject_GC_Del` (usually called via the object's
    :c:member:`~PyTypeObject.tp_free` slot).
 
-   .. warning::
-      The function is marked as unstable because the final mechanism
-      for reserving extra data after an instance is not yet decided.
-      For allocating a variable number of fields, prefer using
-      :c:type:`PyVarObject` and :c:member:`~PyTypeObject.tp_itemsize`
-      instead.
+   For allocating a variable number of fields, prefer using
+   :c:type:`PyVarObject` and :c:member:`~PyTypeObject.tp_itemsize`
+   instead.
 
    .. versionadded:: 3.12
+
+   .. versionchanged:: 3.15
+      The function is now part of the :ref:`limited API <limited-c-api>`.
+
+      Previously, the function was named
+      ``PyUnstable_Object_GC_NewWithExtraData``.
 
 
 .. c:macro:: PyObject_GC_Resize(TYPE, op, newsize)

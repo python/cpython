@@ -1,0 +1,3 @@
+Rename :c:func:`!PyUnstable_Object_GC_NewWithExtraData` to
+:c:func:`PyObject_GC_NewWithExtraData` and add it to the
+:ref:`limited API <limited-c-api>`.

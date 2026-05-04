@@ -573,6 +573,7 @@ SYMBOL_NAMES = (
     "PyObject_GC_Del",
     "PyObject_GC_IsFinalized",
     "PyObject_GC_IsTracked",
+    "PyObject_GC_NewWithExtraData",
     "PyObject_GC_Track",
     "PyObject_GC_UnTrack",
     "PyObject_GenericGetAttr",
