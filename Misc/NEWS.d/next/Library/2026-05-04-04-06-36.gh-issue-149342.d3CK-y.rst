@@ -1,2 +1,2 @@
-Fix :mod:!_remote_debugging binary writing for threads with an empty stack.
+Fix :mod:`!_remote_debugging` binary writing for threads with an empty stack.
 Patch by Maurycy Pawłowski-Wieroński.
