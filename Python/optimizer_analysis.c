@@ -156,6 +156,16 @@ type_watcher_callback(PyTypeObject* type)
     return 0;
 }
 
+static void
+watch_type(PyTypeObject *type, _PyBloomFilter *filter)
+{
+    if (_Py_IsImmortal(type) && (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE)) {
+        return;
+    }
+    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
+    _Py_BloomFilter_Add(filter, type);
+}
+
 static PyObject *
 convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj)
 {
@@ -367,8 +377,7 @@ optimize_dict_known_hash(
         // for user-defined objects which don't override tp_hash
         Py_hash_t hash = PyObject_Hash(sub);
         ADD_OP(opcode, 0, hash);
-        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)Py_TYPE(sub));
-        _Py_BloomFilter_Add(dependencies, Py_TYPE(sub));
+        watch_type(Py_TYPE(sub), dependencies);
     }
 }
 
@@ -401,8 +410,7 @@ lookup_attr(JitOptContext *ctx, _PyBloomFilter *dependencies, _PyUOpInstruction 
                 ADD_OP(suffix, 2, 0);
             }
             if ((type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
-                PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
-                _Py_BloomFilter_Add(dependencies, type);
+                watch_type(type, dependencies);
             }
             return sym_new_const(ctx, lookup);
         }
@@ -473,10 +481,8 @@ lookup_super_attr(JitOptContext *ctx, _PyBloomFilter *dependencies,
     }
     // if obj_type is immutable, then all its superclasses are immutable
     if ((obj_type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
-        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)su_type);
-        _Py_BloomFilter_Add(dependencies, su_type);
-        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)obj_type);
-        _Py_BloomFilter_Add(dependencies, obj_type);
+        watch_type(su_type, dependencies);
+        watch_type(obj_type, dependencies);
     }
     return sym_new_const_steal(ctx, lookup);
 }
