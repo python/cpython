@@ -87,7 +87,7 @@ cellvars: ()
 freevars: ()
 nlocals: 0
 flags: 67108867
-consts: ("'doc string'", 'None')
+consts: ("'doc string'",)
 
 >>> def keywordonly_args(a,b,*,k1):
 ...     return a,b,k1
@@ -161,7 +161,7 @@ cellvars: ()
 freevars: ()
 nlocals: 3
 flags: 67108995
-consts: ("'This is a docstring from async function'", 'None')
+consts: ("'This is a docstring from async function'",)
 
 >>> def no_docstring(x, y, z):
 ...     return x + "hello" + y + z + "world"
@@ -532,7 +532,7 @@ class CodeTest(unittest.TestCase):
             ],
             [
                 ("PUSH_EXC_INFO", None),
-                ("LOAD_CONST", None), # artificial 'None'
+                ("LOAD_COMMON_CONSTANT", None), # artificial 'None'
                 ("STORE_NAME", "e"),  # XX: we know the location for this
                 ("DELETE_NAME", "e"),
                 ("RERAISE", 1),

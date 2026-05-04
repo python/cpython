@@ -1115,6 +1115,7 @@ enable_bolt
 with_strict_overflow
 enable_safety
 enable_slower_safety
+with_frame_pointers
 enable_experimental_jit
 with_dsymutil
 with_address_sanitizer
@@ -1912,6 +1913,8 @@ Optional Packages:
                           is no)
   --with-strict-overflow  if 'yes', add -fstrict-overflow to CFLAGS, else add
                           -fno-strict-overflow (default is no)
+  --without-frame-pointers
+                          build without frame pointers (default is no)
   --with-dsymutil         link debug information into final executable with
                           dsymutil in macOS (default is no)
   --with-address-sanitizer
@@ -10241,8 +10244,114 @@ fi
 
 fi
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether to build with frame pointers" >&5
+printf %s "checking whether to build with frame pointers... " >&6; }
+
+# Check whether --with-frame-pointers was given.
+if test ${with_frame_pointers+y}
+then :
+  withval=$with_frame_pointers;
+else case e in #(
+  e) with_frame_pointers=yes ;;
+esac
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_frame_pointers" >&5
+printf "%s\n" "$with_frame_pointers" >&6; }
+
 if test "x$ac_cv_gcc_compat" = xyes
 then :
+
+                    frame_pointer_cflags=
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fno-omit-frame-pointer" >&5
+printf %s "checking whether C compiler accepts -fno-omit-frame-pointer... " >&6; }
+if test ${ax_cv_check_cflags__Werror__fno_omit_frame_pointer+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e)
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS -Werror -fno-omit-frame-pointer"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags__Werror__fno_omit_frame_pointer=yes
+else case e in #(
+  e) ax_cv_check_cflags__Werror__fno_omit_frame_pointer=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__fno_omit_frame_pointer" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__fno_omit_frame_pointer" >&6; }
+if test "x$ax_cv_check_cflags__Werror__fno_omit_frame_pointer" = xyes
+then :
+
+      frame_pointer_cflags="-fno-omit-frame-pointer"
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mno-omit-leaf-frame-pointer" >&5
+printf %s "checking whether C compiler accepts -mno-omit-leaf-frame-pointer... " >&6; }
+if test ${ax_cv_check_cflags__Werror__mno_omit_leaf_frame_pointer+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e)
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS -Werror -mno-omit-leaf-frame-pointer"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags__Werror__mno_omit_leaf_frame_pointer=yes
+else case e in #(
+  e) ax_cv_check_cflags__Werror__mno_omit_leaf_frame_pointer=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__mno_omit_leaf_frame_pointer" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__mno_omit_leaf_frame_pointer" >&6; }
+if test "x$ax_cv_check_cflags__Werror__mno_omit_leaf_frame_pointer" = xyes
+then :
+
+        frame_pointer_cflags="$frame_pointer_cflags -mno-omit-leaf-frame-pointer"
+
+else case e in #(
+  e) : ;;
+esac
+fi
+
+
+else case e in #(
+  e) : ;;
+esac
+fi
+
+    if test -n "$frame_pointer_cflags" && test "x$with_frame_pointers" != xno; then
+      BASECFLAGS="$frame_pointer_cflags $BASECFLAGS"
+    fi
 
     CFLAGS_NODIST="$CFLAGS_NODIST -std=c11"
 
@@ -14123,13 +14232,6 @@ then :
 printf "%s\n" "#define PY_HAVE_PERF_TRAMPOLINE 1" >>confdefs.h
 
   PERF_TRAMPOLINE_OBJ=Python/asm_trampoline.o
-
-    if test "x$Py_DEBUG" = xtrue
-then :
-
-    as_fn_append BASECFLAGS " -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer"
-
-fi
 
 fi
 

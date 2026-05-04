@@ -12,6 +12,7 @@ import tempfile
 import typing
 import shlex
 
+import _dwarf
 import _llvm
 import _optimizers
 import _schema
@@ -37,6 +38,27 @@ _R = typing.TypeVar(
 )
 
 
+_ELF_UNWIND_AARCH64 = _dwarf.ELFUnwindConfig(
+    frame_pointer="W29",
+    return_address="W30",
+    register_numbers={
+        "W29": 29,
+        "W30": 30,
+    },
+    call_instruction_prefixes=("blr ",),
+)
+
+_ELF_UNWIND_X86_64 = _dwarf.ELFUnwindConfig(
+    frame_pointer="RBP",
+    return_address="RIP",
+    register_numbers={
+        "RBP": 6,
+        "RIP": 16,
+    },
+    call_instruction_prefixes=("callq ", "call "),
+)
+
+
 @dataclasses.dataclass
 class _Target(typing.Generic[_S, _R]):
     triple: str
@@ -52,6 +74,7 @@ class _Target(typing.Generic[_S, _R]):
     verbose: bool = False
     cflags: str = ""
     frame_pointers: bool = False
+    unwind: _dwarf.ELFUnwindConfig | None = None
     llvm_version: str = _llvm._LLVM_VERSION
     llvm_tools_install_dir: str | None = None
     known_symbols: dict[str, int] = dataclasses.field(default_factory=dict)
@@ -87,6 +110,32 @@ class _Target(typing.Generic[_S, _R]):
             for filename in sorted(filenames):
                 hasher.update(pathlib.Path(dirpath, filename).read_bytes())
         return hasher.hexdigest()
+
+    def _write_generated_header(
+        self,
+        output: pathlib.Path,
+        *,
+        digest: str,
+        comment: str,
+        lines: typing.Iterable[str],
+    ) -> None:
+        output_new = output.with_name(f"{output.name}.new")
+        try:
+            with output_new.open("w") as file:
+                file.write(digest)
+                if comment:
+                    file.write(f"// {comment}\n")
+                file.write("\n")
+                for line in lines:
+                    file.write(f"{line}\n")
+            try:
+                output_new.replace(output)
+            except FileNotFoundError:
+                # another process probably already moved the file
+                if not output.is_file():
+                    raise
+        finally:
+            output_new.unlink(missing_ok=True)
 
     async def _parse(self, path: pathlib.Path) -> _stencils.StencilGroup:
         group = _stencils.StencilGroup()
@@ -234,7 +283,7 @@ class _Target(typing.Generic[_S, _R]):
             args_o += self._shim_compile_args()
             args_o += [
                 "-c",
-                # The linked shim is a real function in the final binary, so
+                # The shim is a real function in the final binary, so
                 # keep unwind info for debuggers and stack walkers.
                 "-fasynchronous-unwind-tables",
             ]
@@ -250,6 +299,11 @@ class _Target(typing.Generic[_S, _R]):
                 llvm_version=self.llvm_version,
                 llvm_tools_install_dir=self.llvm_tools_install_dir,
             )
+
+    async def _get_shim_unwind_info(
+        self, output: pathlib.Path
+    ) -> _dwarf.UnwindInfo | None:
+        return None
 
     async def _build_stencils(self) -> dict[str, _stencils.StencilGroup]:
         generated_cases = PYTHON_EXECUTOR_CASES_C_H.read_text()
@@ -289,6 +343,7 @@ class _Target(typing.Generic[_S, _R]):
         force: bool = False,
         jit_stencils: pathlib.Path,
         jit_shim_object: pathlib.Path,
+        jit_unwind_info: pathlib.Path,
     ) -> None:
         """Build jit_stencils.h and the shim object in the given directory."""
         jit_stencils.parent.mkdir(parents=True, exist_ok=True)
@@ -300,39 +355,42 @@ class _Target(typing.Generic[_S, _R]):
             outline = "=" * len(warning)
             print("\n".join(["", outline, warning, request, outline, ""]))
         digest = f"// {self._compute_digest()}\n"
+        # The generated headers include the input digest as their first line.
+        # If every generated artifact is current, skip the expensive rebuild.
         if (
             not force
             and jit_stencils.exists()
             and jit_stencils.read_text().startswith(digest)
             and jit_shim_object.exists()
+            and jit_unwind_info.exists()
+            and jit_unwind_info.read_text().startswith(digest)
         ):
             return
+        # Build the shim first so its compiled DWARF CFI can be used to derive
+        # the unwind rules emitted into jit_unwind_info-<triple>.h.
         ASYNCIO_RUNNER.run(self._build_shim_object(jit_shim_object))
+        unwind_info = ASYNCIO_RUNNER.run(self._get_shim_unwind_info(jit_shim_object))
+        self._write_generated_header(
+            jit_unwind_info,
+            digest=digest,
+            comment=comment,
+            lines=_writer.dump_unwind_info(unwind_info),
+        )
+        # Build the uop stencils after the shim metadata has been emitted.
         stencil_groups = ASYNCIO_RUNNER.run(self._build_stencils())
-        jit_stencils_new = jit_stencils.parent / "jit_stencils.h.new"
-        try:
-            with jit_stencils_new.open("w") as file:
-                file.write(digest)
-                if comment:
-                    file.write(f"// {comment}\n")
-                file.write("\n")
-                for line in _writer.dump(stencil_groups, self.known_symbols):
-                    file.write(f"{line}\n")
-            try:
-                jit_stencils_new.replace(jit_stencils)
-            except FileNotFoundError:
-                # another process probably already moved the file
-                if not jit_stencils.is_file():
-                    raise
-        finally:
-            jit_stencils_new.unlink(missing_ok=True)
+        self._write_generated_header(
+            jit_stencils,
+            digest=digest,
+            comment=comment,
+            lines=_writer.dump(stencil_groups, self.known_symbols),
+        )
 
 
 class _COFF(
     _Target[_schema.COFFSection, _schema.COFFRelocation]
 ):  # pylint: disable = too-few-public-methods
     def _shim_compile_args(self) -> list[str]:
-        # The linked shim is part of pythoncore, not a shared extension.
+        # The shim is part of pythoncore, not a shared extension.
         # On Windows, Py_BUILD_CORE_MODULE makes public APIs import from
         # pythonXY.lib, which creates a self-dependency when linking
         # pythoncore.dll. Build the shim with builtin/core semantics.
@@ -449,6 +507,19 @@ class _ELF(
     label_prefix = ".L"
     symbol_prefix = ""
     re_global = re.compile(r'\s*\.globl\s+(?P<label>[\w."$?@]+)(\s+.*)?')
+
+    async def _get_shim_unwind_info(
+        self, output: pathlib.Path
+    ) -> _dwarf.UnwindInfo | None:
+        assert self.unwind is not None
+        return await _dwarf.ELFUnwindInfo(
+            self.triple,
+            config=self.unwind,
+            verbose=self.verbose,
+            llvm_version=self.llvm_version,
+            llvm_tools_install_dir=self.llvm_tools_install_dir,
+            llvm_run=_llvm.run,
+        ).extract(output)
 
     def _handle_section(
         self, section: _schema.ELFSection, group: _stencils.StencilGroup
@@ -662,7 +733,12 @@ def get_target(host: str) -> _COFF32 | _COFF64 | _ELF | _MachO:
         args = ["-fpic", "-mno-outline-atomics"]
         optimizer = _optimizers.OptimizerAArch64
         target = _ELF(
-            host, condition, args=args, optimizer=optimizer, frame_pointers=True
+            host,
+            condition,
+            args=args,
+            optimizer=optimizer,
+            frame_pointers=True,
+            unwind=_ELF_UNWIND_AARCH64,
         )
     elif re.fullmatch(r"i686-pc-windows-msvc", host):
         host = "i686-pc-windows-msvc"
@@ -689,7 +765,12 @@ def get_target(host: str) -> _COFF32 | _COFF64 | _ELF | _MachO:
         args = ["-fno-pic", "-mcmodel=medium", "-mlarge-data-threshold=0", "-fno-plt"]
         optimizer = _optimizers.OptimizerX86
         target = _ELF(
-            host, condition, args=args, optimizer=optimizer, frame_pointers=True
+            host,
+            condition,
+            args=args,
+            optimizer=optimizer,
+            frame_pointers=True,
+            unwind=_ELF_UNWIND_X86_64,
         )
     else:
         raise ValueError(host)
