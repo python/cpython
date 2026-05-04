@@ -81,6 +81,12 @@ class BinaryCollector(Collector):
         """
         if timestamp_us is None:
             timestamp_us = int(time.monotonic() * 1_000_000)
+        if any(
+            not thread_info.frame_info
+            for interpreter_info in stack_frames
+            for thread_info in interpreter_info.threads
+        ):
+            return
         self._writer.write_sample(stack_frames, timestamp_us)
 
     def collect_failed_sample(self):
