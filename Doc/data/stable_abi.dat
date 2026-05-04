@@ -704,6 +704,7 @@ func,PySys_SetObject,3.2,,
 func,PySys_WriteStderr,3.2,,
 func,PySys_WriteStdout,3.2,,
 type,PyThreadState,3.2,,opaque
+type,PyThreadStateToken,3.15,,opaque
 func,PyThreadState_Clear,3.2,,
 func,PyThreadState_Delete,3.2,,
 func,PyThreadState_Ensure,3.15,,

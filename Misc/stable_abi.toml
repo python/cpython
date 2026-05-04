@@ -2742,3 +2742,6 @@
     added = '3.15'
 [function.PyThreadState_Release]
     added = '3.15'
+[struct.PyThreadStateToken]
+    added = '3.15'
+    struct_abi_kind = 'opaque'

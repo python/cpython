@@ -254,7 +254,7 @@ Some notes about this:
 Attaching/detaching thread states
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. c:function:: PyThreadState *PyThreadState_Ensure(PyInterpreterGuard *guard)
+.. c:function:: PyThreadStateToken *PyThreadState_Ensure(PyInterpreterGuard *guard)
 
    Ensure that the thread has an attached thread state for the
    interpreter protected by *guard*, and thus can safely invoke that
@@ -271,13 +271,8 @@ Attaching/detaching thread states
    On error, this function returns ``NULL`` *without* an exception set.
    Do not call :c:func:`!PyThreadState_Release` in this case.
 
-   On success, this function returns a pointer to the :term:`thread state` that
-   was previously attached, or, if no state was previously attached, a value that
-   is not a valid :c:type:`!PyThreadState` pointer.
-
-   The returned value must be passed to the matching call to :c:func:`!PyThreadState_Release`,
-   and must not be passed to any other C API functions
-   (unless it matches a known valid :c:type:`!PyThreadState` pointer).
+   On success, this function returns a pointer value that must be passed
+   to the matching call to :c:func:`!PyThreadState_Release`.
 
    The conditions in which this function creates a new :term:`thread state` are
    considered unstable and implementation-dependent. If you need to control the
@@ -311,7 +306,7 @@ Attaching/detaching thread states
    .. versionadded:: next
 
 
-.. c:function:: PyThreadState *PyThreadState_EnsureFromView(PyInterpreterView *view)
+.. c:function:: PyThreadStateToken *PyThreadState_EnsureFromView(PyInterpreterView *view)
 
    Get an attached thread state for the interpreter referenced by *view*.
 
@@ -323,14 +318,16 @@ Attaching/detaching thread states
    .. versionadded:: next
 
 
-.. c:function:: void PyThreadState_Release(PyThreadState *tstate)
+.. c:function:: void PyThreadState_Release(PyThreadStateToken *token)
 
-   Undo a :c:func:`PyThreadState_Ensure` call. This must be called exactly once
-   for each successful call to ``PyThreadState_Ensure``.
+   Undo a :c:func:`PyThreadState_Ensure` or
+   :c:func:`PyThreadState_EnsureFromView` call.
 
-   If *tstate* is non-``NULL``, it will be attached upon returning.
-   If *tstate* indicates that no prior thread state was attached, there will be
-   no attached thread state upon returning.
+   This must be called exactly once for each successful *Ensure* call, with
+   *token* set to that call's return value.
+
+   The state that was attached before the corresponding *Ensure* call
+   (if any) will be attached when :c:func:`PyThreadState_Release` returns.
 
    The exact behavior of whether this function deletes a thread state is
    considered unstable and implementation-dependent.
@@ -346,6 +343,11 @@ Attaching/detaching thread states
       reaching zero. Otherwise, nothing happens when the counter reaches zero.
 
    .. versionadded:: next
+
+.. c:type:: PyThreadStateToken
+
+   An opaque token retreived from a :c:func:`PyThreadState_Ensure` call
+   and passed to a corresponding :c:func:`PyThreadState_Release` call.
 
 
 .. _legacy-api:

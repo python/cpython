@@ -2659,16 +2659,16 @@ test_thread_state_ensure_nested(PyObject *self, PyObject *unused)
 
     PyThreadState *save_tstate = PyThreadState_Swap(NULL);
     assert(PyGILState_GetThisThreadState() == save_tstate);
-    PyThreadState *thread_states[10];
+    PyThreadStateToken *tokens[10];
 
     for (int i = 0; i < 10; ++i) {
         // Test reactivation of the detached tstate.
-        thread_states[i] = PyThreadState_Ensure(guard);
-        assert(thread_states[i] != NULL);
+        tokens[i] = PyThreadState_Ensure(guard);
+        assert(tokens[i] != NULL);
 
         // No new thread state should've been created.
         assert(PyThreadState_Get() == save_tstate);
-        PyThreadState_Release(thread_states[i]);
+        PyThreadState_Release(tokens[i]);
     }
 
     assert(PyThreadState_GetUnchecked() == NULL);
@@ -2677,14 +2677,14 @@ test_thread_state_ensure_nested(PyObject *self, PyObject *unused)
     // If the (detached) gilstate matches the interpreter, then it shouldn't
     // create a new thread state.
     for (int i = 0; i < 10; ++i) {
-        thread_states[i] = PyThreadState_Ensure(guard);
-        assert(thread_states[i] != NULL);
+        tokens[i] = PyThreadState_Ensure(guard);
+        assert(tokens[i] != NULL);
         assert(PyThreadState_Get() == save_tstate);
     }
 
     for (int i = 9; i >= 0; --i) {
         assert(PyThreadState_Get() == save_tstate);
-        PyThreadState_Release(thread_states[i]);
+        PyThreadState_Release(tokens[i]);
     }
 
     assert(PyThreadState_GetUnchecked() == NULL);
@@ -2714,22 +2714,22 @@ test_thread_state_ensure_crossinterp(PyObject *self, PyObject *unused)
        interp = interpreters.create()
        interp.exec(some_func)
        */
-    PyThreadState *thread_state = PyThreadState_Ensure(guard);
-    assert(thread_state != NULL);
+    PyThreadStateToken *token = PyThreadState_Ensure(guard);
+    assert(token != NULL);
 
     PyThreadState *ensured_tstate = PyThreadState_Get();
     assert(ensured_tstate != save_tstate);
     assert(PyGILState_GetThisThreadState() == ensured_tstate);
 
     // Now though, we should reactivate the thread state
-    PyThreadState *other_thread_state = PyThreadState_Ensure(guard);
-    assert(other_thread_state != NULL);
+    PyThreadStateToken *other_token = PyThreadState_Ensure(guard);
+    assert(other_token != NULL);
     assert(PyThreadState_Get() == ensured_tstate);
 
-    PyThreadState_Release(other_thread_state);
+    PyThreadState_Release(other_token);
 
     // Ensure that we're restoring the prior thread state
-    PyThreadState_Release(thread_state);
+    PyThreadState_Release(token);
     assert(PyThreadState_Get() == interp_tstate);
     assert(PyGILState_GetThisThreadState() == interp_tstate);
 
@@ -2789,35 +2789,35 @@ test_thread_state_ensure_view(PyObject *self, PyObject *unused)
     assert(view != NULL);
 
     Py_BEGIN_ALLOW_THREADS;
-    PyThreadState *tstate = PyThreadState_EnsureFromView(view);
-    assert(tstate != NULL);
+    PyThreadStateToken *token = PyThreadState_EnsureFromView(view);
+    assert(token != NULL);
     assert(PyThreadState_Get() == interp_tstate);
 
     // Test a nested call
-    PyThreadState *tstate2 = PyThreadState_EnsureFromView(view);
+    PyThreadStateToken *token2 = PyThreadState_EnsureFromView(view);
     assert(PyThreadState_Get() == interp_tstate);
 
     // We're in a new interpreter now. PyThreadState_EnsureFromView() should
     // now create a new thread state.
-    PyThreadState *main_tstate = PyThreadState_EnsureFromView(main_view);
-    assert(main_tstate == interp_tstate); // The old thread state
+    PyThreadStateToken *main_token = PyThreadState_EnsureFromView(main_view);
+    assert(main_token == (PyThreadStateToken*)interp_tstate); // The old thread state
     assert(PyInterpreterState_Get() == PyInterpreterState_Main());
 
     // Going back to the old interpreter should create a new thread state again.
-    PyThreadState *tstate3 = PyThreadState_EnsureFromView(view);
+    PyThreadStateToken *token3 = PyThreadState_EnsureFromView(view);
     assert(PyInterpreterState_Get() == PyThreadState_GetInterpreter(interp_tstate));
     assert(PyThreadState_Get() != interp_tstate);
-    PyThreadState_Release(tstate3);
-    PyThreadState_Release(main_tstate);
+    PyThreadState_Release(token3);
+    PyThreadState_Release(main_token);
 
     // We're back in the original interpreter. PyThreadState_EnsureFromView() should
     // no longer create a new thread state.
     assert(PyThreadState_Get() == interp_tstate);
-    PyThreadState *tstate4 = PyThreadState_EnsureFromView(view);
+    PyThreadStateToken *token4 = PyThreadState_EnsureFromView(view);
     assert(PyThreadState_Get() == interp_tstate);
-    PyThreadState_Release(tstate4);
-    PyThreadState_Release(tstate2);
-    PyThreadState_Release(tstate);
+    PyThreadState_Release(token4);
+    PyThreadState_Release(token2);
+    PyThreadState_Release(token);
     assert(PyThreadState_GetUnchecked() == NULL);
     Py_END_ALLOW_THREADS;
 

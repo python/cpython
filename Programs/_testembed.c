@@ -2691,24 +2691,24 @@ static void
 do_tstate_ensure(void *arg)
 {
     ThreadData *data = (ThreadData *)arg;
-    PyThreadState *tstates[4];
+    PyThreadStateToken *tokens[4];
     PyInterpreterGuard *guard = data->argument;
-    tstates[0] = PyThreadState_Ensure(guard);
-    tstates[1] = PyThreadState_Ensure(guard);
-    tstates[2] = PyThreadState_Ensure(guard);
+    tokens[0] = PyThreadState_Ensure(guard);
+    tokens[1] = PyThreadState_Ensure(guard);
+    tokens[2] = PyThreadState_Ensure(guard);
     PyGILState_STATE gstate = PyGILState_Ensure();
-    tstates[3] = PyThreadState_Ensure(guard);
-    assert(tstates[0] != NULL);
-    assert(tstates[1] != NULL);
-    assert(tstates[2] != NULL);
-    assert(tstates[3] != NULL);
+    tokens[3] = PyThreadState_Ensure(guard);
+    assert(tokens[0] != NULL);
+    assert(tokens[1] != NULL);
+    assert(tokens[2] != NULL);
+    assert(tokens[3] != NULL);
     int res = PyRun_SimpleString(THREAD_CODE);
     assert(res == 0);
-    PyThreadState_Release(tstates[3]);
+    PyThreadState_Release(tokens[3]);
     PyGILState_Release(gstate);
-    PyThreadState_Release(tstates[2]);
-    PyThreadState_Release(tstates[1]);
-    PyThreadState_Release(tstates[0]);
+    PyThreadState_Release(tokens[2]);
+    PyThreadState_Release(tokens[1]);
+    PyThreadState_Release(tokens[0]);
     PyInterpreterGuard_Close(guard);
     data->done = 1;
 }
@@ -2768,13 +2768,13 @@ do_tstate_ensure_from_view(void *arg)
     ThreadData *data = (ThreadData *)arg;
     PyInterpreterView *view = data->argument;
     assert(view != NULL);
-    PyThreadState *tstate = PyThreadState_EnsureFromView(view);
-    assert(tstate != NULL);
+    PyThreadStateToken *token = PyThreadState_EnsureFromView(view);
+    assert(token != NULL);
     _PyEvent_Notify(&data->event);
     int res = PyRun_SimpleString(THREAD_CODE);
     assert(res == 0);
     data->done = 1;
-    PyThreadState_Release(tstate);
+    PyThreadState_Release(token);
 }
 
 static int

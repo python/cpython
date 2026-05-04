@@ -3505,29 +3505,18 @@ PyInterpreterView_FromMain(void)
     return view;
 }
 
-// This is a bit of a hack -- since NULL is reserved for failure, we need
-// to have our own sentinel for when we want to indicate that no prior
-// thread state was attached.
-// To do this, we just use the memory address of a global variable and
-// cast it to a PyThreadState *.
-#ifdef Py_DEBUG
-// For debugging, use a null thread state. Since thread states are large, we
-// don't want to do this on release builds.
-static const PyThreadState _no_tstate_sentinel = {0};
-#else
 static const uint8_t _no_tstate_sentinel = 0;
-#endif
 
-#define NO_TSTATE_SENTINEL ((PyThreadState *)&_no_tstate_sentinel)
+#define NO_TSTATE_SENTINEL ((PyThreadStateToken *)&_no_tstate_sentinel)
 
 static inline void
 ensure_tstate_is_valid(PyThreadState *tstate)
 {
     assert(tstate != NULL);
-    assert(tstate != NO_TSTATE_SENTINEL);
+    assert(tstate != (PyThreadState*)NO_TSTATE_SENTINEL);
 }
 
-PyThreadState *
+PyThreadStateToken *
 PyThreadState_Ensure(PyInterpreterGuard *guard)
 {
     assert(guard != NULL);
@@ -3558,7 +3547,7 @@ PyThreadState_Ensure(PyInterpreterGuard *guard)
     fresh_tstate->ensure.delete_on_release = 1;
 
     if (attached_tstate != NULL) {
-        return PyThreadState_Swap(fresh_tstate);
+        return (PyThreadStateToken*)PyThreadState_Swap(fresh_tstate);
     } else {
         _PyThreadState_Attach(fresh_tstate);
     }
@@ -3566,7 +3555,7 @@ PyThreadState_Ensure(PyInterpreterGuard *guard)
     return NO_TSTATE_SENTINEL;
 }
 
-PyThreadState *
+PyThreadStateToken *
 PyThreadState_EnsureFromView(PyInterpreterView *view)
 {
     assert(view != NULL);
@@ -3575,8 +3564,8 @@ PyThreadState_EnsureFromView(PyInterpreterView *view)
         return NULL;
     }
 
-    PyThreadState *result_tstate = PyThreadState_Ensure(guard);
-    if (result_tstate == NULL) {
+    PyThreadStateToken *result = (PyThreadStateToken*)PyThreadState_Ensure(guard);
+    if (result == NULL) {
         PyInterpreterGuard_Close(guard);
         return NULL;
     }
@@ -3592,11 +3581,11 @@ PyThreadState_EnsureFromView(PyInterpreterView *view)
         tstate->ensure.owned_guard = guard;
     }
 
-    return result_tstate;
+    return result;
 }
 
 void
-PyThreadState_Release(PyThreadState *old_tstate)
+PyThreadState_Release(PyThreadStateToken *token)
 {
     PyThreadState *tstate = current_fast_get();
     _Py_EnsureTstateNotNULL(tstate);
@@ -3610,11 +3599,11 @@ PyThreadState_Release(PyThreadState *old_tstate)
     }
 
     PyThreadState *to_restore;
-    if (old_tstate == NO_TSTATE_SENTINEL) {
+    if (token == NO_TSTATE_SENTINEL) {
         to_restore = NULL;
     }
     else {
-        to_restore = old_tstate;
+        to_restore = (PyThreadState*)token;
     }
 
     PyInterpreterGuard *owned_guard = tstate->ensure.owned_guard;
