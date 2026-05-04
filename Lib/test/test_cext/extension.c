@@ -99,6 +99,10 @@ _testcext_exec(PyObject *module)
     obj = NULL;
     Py_CLEAR(obj);
 
+    // Test that Py_BEGIN_CRITICAL_SECTION is available
+    Py_BEGIN_CRITICAL_SECTION(module);
+    Py_END_CRITICAL_SECTION();
+
     return 0;
 }
 
@@ -119,8 +123,10 @@ _Py_COMP_DIAG_PUSH
 #endif
 
 PyDoc_STRVAR(_testcext_doc, "C test extension.");
+PyABIInfo_VAR(abi_info);
 
 static PyModuleDef_Slot _testcext_slots[] = {
+    {Py_mod_abi, &abi_info},
     {Py_mod_name, STR(MODULE_NAME)},
     {Py_mod_doc, (void*)(char*)_testcext_doc},
     {Py_mod_exec, (void*)_testcext_exec},

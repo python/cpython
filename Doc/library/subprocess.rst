@@ -627,6 +627,12 @@ functions.
    the value in ``pw_uid`` will be used. If the value is an integer, it will
    be passed verbatim. (POSIX only)
 
+   .. note::
+
+      Specifying *user* will not drop existing supplementary group memberships!
+      The caller must also pass ``extra_groups=()`` to reduce the group membership
+      of the child process for security purposes.
+
    .. availability:: POSIX
    .. versionadded:: 3.9
 
@@ -963,6 +969,11 @@ Reassigning them to new values is unsupported:
 
    A negative value ``-N`` indicates that the child was terminated by signal
    ``N`` (POSIX only).
+
+   When ``shell=True``, the return code reflects the exit status of the shell
+   itself (e.g. ``/bin/sh``), which may map signals to codes such as
+   ``128+N``. See the documentation of the shell (for example, the Bash
+   manual's Exit Status) for details.
 
 
 Windows Popen Helpers

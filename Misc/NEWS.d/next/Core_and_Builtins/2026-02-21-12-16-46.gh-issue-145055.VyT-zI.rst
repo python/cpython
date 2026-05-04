@@ -1,2 +1,0 @@
-:func:`exec` and :func:`eval` now accept :class:`frozendict` for *globals*.
-Patch by Victor Stinner.

@@ -203,6 +203,10 @@ def generate_tier1_labels(
     emitter.emit("\n")
     # Emit tail-callable labels as function defintions
     for name, label in analysis.labels.items():
+        if name == 'stop_tracing':
+            emitter.emit("#if _Py_TAIL_CALL_INTERP && !defined(_Py_TIER2)\n")
+            emitter.emit("Py_GCC_ATTRIBUTE((unused))\n")
+            emitter.emit("#endif\n")
         emitter.emit(f"LABEL({name})\n")
         storage = Storage(Stack(), [], [], 0, False)
         if label.spilled:

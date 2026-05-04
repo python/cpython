@@ -364,7 +364,7 @@ add_code_watcher(PyObject *self, PyObject *which_watcher)
         watcher_id = PyCode_AddWatcher(error_code_event_handler);
     }
     else {
-        PyErr_Format(PyExc_ValueError, "invalid watcher %d", which_l);
+        PyErr_Format(PyExc_ValueError, "invalid watcher %ld", which_l);
         return NULL;
     }
     if (watcher_id < 0) {
@@ -673,7 +673,7 @@ add_context_watcher(PyObject *self, PyObject *which_watcher)
     assert(PyLong_Check(which_watcher));
     long which_l = PyLong_AsLong(which_watcher);
     if (which_l < 0 || which_l >= (long)Py_ARRAY_LENGTH(callbacks)) {
-        PyErr_Format(PyExc_ValueError, "invalid watcher %d", which_l);
+        PyErr_Format(PyExc_ValueError, "invalid watcher %ld", which_l);
         return NULL;
     }
     int watcher_id = PyContext_AddWatcher(callbacks[which_l]);

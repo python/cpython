@@ -1,0 +1,2 @@
+:mod:`array`, :mod:`struct`: Add support for ``Zd`` and ``Zf`` formats for
+double complex and float complex. Patch by Victor Stinner.

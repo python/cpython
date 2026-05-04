@@ -1,9 +1,11 @@
 """Extract, format and print information about Python stack traces."""
 
 import collections.abc
+import functools
 import itertools
 import linecache
 import os
+import re
 import sys
 import textwrap
 import types
@@ -684,12 +686,12 @@ class StackSummary(list):
                         colorized_line_parts = []
                         colorized_carets_parts = []
 
-                        for color, group in itertools.groupby(itertools.zip_longest(line, carets, fillvalue=""), key=lambda x: x[1]):
+                        for color, group in itertools.groupby(_zip_display_width(line, carets), key=lambda x: x[1]):
                             caret_group = list(group)
-                            if color == "^":
+                            if "^" in color:
                                 colorized_line_parts.append(theme.error_highlight + "".join(char for char, _ in caret_group) + theme.reset)
                                 colorized_carets_parts.append(theme.error_highlight + "".join(caret for _, caret in caret_group) + theme.reset)
-                            elif color == "~":
+                            elif "~" in color:
                                 colorized_line_parts.append(theme.error_range + "".join(char for char, _ in caret_group) + theme.reset)
                                 colorized_carets_parts.append(theme.error_range + "".join(caret for _, caret in caret_group) + theme.reset)
                             else:
@@ -971,7 +973,54 @@ def _extract_caret_anchors_from_line_segment(segment):
 
     return None
 
-_WIDE_CHAR_SPECIFIERS = "WF"
+
+def _zip_display_width(line, carets):
+    carets = iter(carets)
+    if line.isascii() and '\x1a' not in line:
+        for char in line:
+            yield char, next(carets, "")
+        return
+
+    import unicodedata
+    for char in unicodedata.iter_graphemes(line):
+        char = str(char)
+        char_width = _display_width(char)
+        yield char, "".join(itertools.islice(carets, char_width))
+
+
+@functools.cache
+def _str_width(c: str) -> int:
+    # copied from _pyrepl.utils to fix gh-130273
+
+    if ord(c) < 128:
+        return 1
+    import unicodedata
+    # gh-139246 for zero-width joiner and combining characters
+    if unicodedata.combining(c):
+        return 0
+    category = unicodedata.category(c)
+    if category == "Cf" and c != "\u00ad":
+        return 0
+    w = unicodedata.east_asian_width(c)
+    if w in ("N", "Na", "H", "A"):
+        return 1
+    return 2
+
+
+_ANSI_ESCAPE_SEQUENCE = re.compile(r"\x1b\[[ -@]*[A-~]")
+
+
+def _wlen(s: str) -> int:
+    # copied from _pyrepl.utils to fix gh-130273
+
+    if len(s) == 1 and s != "\x1a":
+        return _str_width(s)
+    length = sum(_str_width(i) for i in s)
+    # remove lengths of any escape sequences
+    sequence = _ANSI_ESCAPE_SEQUENCE.findall(s)
+    ctrl_z_cnt = s.count("\x1a")
+    return length - sum(len(i) for i in sequence) + ctrl_z_cnt
+
 
 def _display_width(line, offset=None):
     """Calculate the extra amount of width space the given source
@@ -979,19 +1028,14 @@ def _display_width(line, offset=None):
     width output device. Supports wide unicode characters and emojis."""
 
     if offset is None:
-        offset = len(line)
+        return _wlen(line)
 
-    # Fast track for ASCII-only strings
-    if line.isascii():
-        return offset
+    return _wlen(line[:offset])
 
-    import unicodedata
 
-    return sum(
-        2 if unicodedata.east_asian_width(char) in _WIDE_CHAR_SPECIFIERS else 1
-        for char in line[:offset]
-    )
-
+def _format_note(note, indent, theme):
+    for l in note.split("\n"):
+        yield f"{indent}{theme.note}{l}{theme.reset}\n"
 
 
 class _ExceptionPrintContext:
@@ -1291,6 +1335,10 @@ class TracebackException:
         well, recursively, with indentation relative to their nesting depth.
         """
         colorize = kwargs.get("colorize", False)
+        if colorize:
+            theme = _colorize.get_theme(force_color=True).traceback
+        else:
+            theme = _colorize.get_theme(force_no_color=True).traceback
 
         indent = 3 * _depth * ' '
         if not self._have_exc_type:
@@ -1319,9 +1367,10 @@ class TracebackException:
         ):
             for note in self.__notes__:
                 note = _safe_string(note, 'note')
-                yield from [indent + l + '\n' for l in note.split('\n')]
+                yield from _format_note(note, indent, theme)
         elif self.__notes__ is not None:
-            yield indent + "{}\n".format(_safe_string(self.__notes__, '__notes__', func=repr))
+            note = _safe_string(self.__notes__, '__notes__', func=repr)
+            yield from _format_note(note, indent, theme)
 
         if self.exceptions and show_group:
             for ex in self.exceptions:
@@ -1670,16 +1719,20 @@ def _check_for_nested_attribute(obj, wrong_name, attrs):
 
     Returns the first nested attribute suggestion found, or None.
     Limited to checking 20 attributes.
-    Only considers non-descriptor attributes to avoid executing arbitrary code.
+    Only considers non-descriptor outer attributes to avoid executing
+    arbitrary code. Checks nested attributes statically so descriptors such
+    as properties can still be suggested without invoking them.
     Skips lazy imports to avoid triggering module loading.
     """
+    from inspect import getattr_static
+
     # Check for nested attributes (only one level deep)
     attrs_to_check = [x for x in attrs if not x.startswith('_')][:20]  # Limit number of attributes to check
     for attr_name in attrs_to_check:
         with suppress(Exception):
             # Check if attr_name is a descriptor - if so, skip it
-            attr_from_class = getattr(type(obj), attr_name, None)
-            if attr_from_class is not None and hasattr(attr_from_class, '__get__'):
+            attr_from_class = getattr_static(type(obj), attr_name, _sentinel)
+            if attr_from_class is not _sentinel and hasattr(attr_from_class, '__get__'):
                 continue  # Skip descriptors to avoid executing arbitrary code
 
             # Skip lazy imports to avoid triggering module loading
@@ -1689,13 +1742,26 @@ def _check_for_nested_attribute(obj, wrong_name, attrs):
             # Safe to get the attribute since it's not a descriptor
             attr_obj = getattr(obj, attr_name)
 
-            # Check if the nested attribute exists and is not a descriptor
-            nested_attr_from_class = getattr(type(attr_obj), wrong_name, None)
+            if _is_lazy_import(attr_obj, wrong_name):
+                continue
 
-            if hasattr(attr_obj, wrong_name):
+            if getattr_static(attr_obj, wrong_name, _sentinel) is not _sentinel:
                 return f"{attr_name}.{wrong_name}"
 
     return None
+
+
+def _get_safe___dir__(obj):
+    # Use obj.__dir__() to avoid a TypeError when calling dir(obj).
+    # See gh-131001 and gh-139933.
+    # Also filters out lazy imports to avoid triggering module loading.
+    try:
+        d = obj.__dir__()
+    except TypeError:  # when obj is a class
+        d = type(obj).__dir__(obj)
+    return sorted(
+        x for x in d if isinstance(x, str) and not _is_lazy_import(obj, x)
+    )
 
 
 def _compute_suggestion_error(exc_value, tb, wrong_name):
@@ -1711,13 +1777,7 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
     if isinstance(exc_value, AttributeError):
         obj = exc_value.obj
         try:
-            try:
-                d = dir(obj)
-            except TypeError:  # Attributes are unsortable, e.g. int and str
-                d = list(obj.__class__.__dict__.keys()) + list(obj.__dict__.keys())
-            d = sorted([x for x in d if isinstance(x, str)])
-            # Filter out lazy imports to avoid triggering module loading
-            d = [x for x in d if not _is_lazy_import(obj, x)]
+            d = _get_safe___dir__(obj)
             hide_underscored = (wrong_name[:1] != '_')
             if hide_underscored and tb is not None:
                 while tb.tb_next is not None:
@@ -1744,13 +1804,7 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
     elif isinstance(exc_value, ImportError):
         try:
             mod = __import__(exc_value.name)
-            try:
-                d = dir(mod)
-            except TypeError:  # Attributes are unsortable, e.g. int and str
-                d = list(mod.__dict__.keys())
-            d = sorted([x for x in d if isinstance(x, str)])
-            # Filter out lazy imports to avoid triggering module loading
-            d = [x for x in d if not _is_lazy_import(mod, x)]
+            d = _get_safe___dir__(mod)
             if wrong_name[:1] != '_':
                 d = [x for x in d if x[:1] != '_']
         except Exception:
