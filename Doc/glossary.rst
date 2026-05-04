@@ -997,6 +997,7 @@ Glossary
       :class:`collections.OrderedDict` and :class:`collections.Counter`.
 
       See more details on implemented methods :ref:`there <collections-abstract-base-classes>`. 
+      
    meta path finder
       A :term:`finder` returned by a search of :data:`sys.meta_path`.  Meta path
       finders are related to, but different from :term:`path entry finders
