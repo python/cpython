@@ -148,6 +148,11 @@ class BinaryFormatTestBase(unittest.TestCase):
 
     def create_binary_file(self, samples, interval=1000, compression="none"):
         """Create a test binary file and track it for cleanup."""
+        filename, _ = self.write_binary_file(samples, interval, compression)
+        return filename
+
+    def write_binary_file(self, samples, interval=1000, compression="none"):
+        """Like create_binary_file but also returns the writer collector."""
         with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
             filename = f.name
         self.temp_files.append(filename)
@@ -158,7 +163,7 @@ class BinaryFormatTestBase(unittest.TestCase):
         for sample in samples:
             collector.collect(sample)
         collector.export(None)
-        return filename
+        return filename, collector
 
     def roundtrip(self, samples, interval=1000, compression="none"):
         """Write samples to binary and read back."""
@@ -804,6 +809,47 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
         with self.assertRaises((FileNotFoundError, OSError, ValueError)):
             with BinaryReader("/nonexistent/path/file.bin") as reader:
                 reader.replay_samples(RawCollector())
+
+    def test_new_thread_empty_stack(self):
+        """Empty stack roundtrips cleanly."""
+        samples = [
+            [
+                make_interpreter(
+                    0, [make_thread(99, [], status=THREAD_STATUS_UNKNOWN)]
+                )
+            ]
+        ]
+        collector, count = self.roundtrip(samples)
+        self.assertEqual(count, 1)
+        self.assert_samples_equal(samples, collector)
+
+    def test_new_thread_empty_stack_then_frames(self):
+        """Empty stack interleaved with normal stacks roundtrips clearly."""
+        samples = [
+            [make_interpreter(0, [make_thread(1, [make_frame("a.py", 1, "f")])])],
+            [make_interpreter(0, [make_thread(1, [make_frame("a.py", 1, "f")])])],
+            [
+                make_interpreter(
+                    0, [make_thread(99, [], status=THREAD_STATUS_UNKNOWN)]
+                )
+            ],
+            [make_interpreter(0, [make_thread(1, [make_frame("a.py", 1, "f")])])],
+        ]
+        collector, count = self.roundtrip(samples)
+        self.assertEqual(count, 4)
+        self.assert_samples_equal(samples, collector)
+
+    def test_writer_total_samples_after_finalize_matches_reader(self):
+        """BinaryWriter.total_samples after finalize() matches the reader's count."""
+        samples = [
+            [make_interpreter(0, [make_thread(1, [make_frame("a.py", 1, "f")])])]
+        ] * 5
+        filename, writer_collector = self.write_binary_file(samples)
+        reader_collector = RawCollector()
+        with BinaryReader(filename) as reader:
+            replayed = reader.replay_samples(reader_collector)
+        self.assertEqual(writer_collector.total_samples, len(samples))
+        self.assertEqual(writer_collector.total_samples, replayed)
 
 
 class TestBinaryEncodings(BinaryFormatTestBase):
