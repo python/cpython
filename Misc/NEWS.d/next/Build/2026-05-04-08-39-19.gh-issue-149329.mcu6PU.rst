@@ -1,0 +1,1 @@
+Updated bundled version of OpenSSL on iOS and Android to 3.5.6.
