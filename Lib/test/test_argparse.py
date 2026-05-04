@@ -7705,12 +7705,14 @@ class TestColorized(TestCase):
     def test_backtick_markup_in_argument_help(self):
         parser = argparse.ArgumentParser(prog="PROG", color=True)
         parser.add_argument("--foo", help="set the `foo` value")
+        parser.add_argument("--bar", help="set the ``bar`` value")
 
         prog_extra = self.theme.prog_extra
         reset = self.theme.reset
 
         help_text = parser.format_help()
         self.assertIn(f"set the {prog_extra}foo{reset} value", help_text)
+        self.assertIn(f"set the {prog_extra}bar{reset} value", help_text)
         self.assertNotIn("`", help_text)
 
     def test_backtick_markup_in_argument_help_with_format(self):
