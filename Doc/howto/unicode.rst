@@ -352,6 +352,8 @@ If you don't include such a comment, the default encoding used will be UTF-8 as
 already mentioned.  See also :pep:`263` for more information.
 
 
+.. _unicode-properties:
+
 Unicode Properties
 ------------------
 

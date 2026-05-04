@@ -14,6 +14,11 @@ extern PyObject* _PyBytes_FormatEx(
     PyObject *args,
     int use_bytearray);
 
+/* Concatenate two bytes objects. Used as the sq_concat slot and by the
+ * specializing interpreter. Unlike PyBytes_Concat(), this returns a new
+ * reference rather than modifying its first argument in place. */
+extern PyObject* _PyBytes_Concat(PyObject *a, PyObject *b);
+
 extern PyObject* _PyBytes_FromHex(
     PyObject *string,
     int use_bytearray);
@@ -60,6 +65,14 @@ PyAPI_FUNC(void)
 _PyBytes_Repeat(char* dest, Py_ssize_t len_dest,
     const char* src, Py_ssize_t len_src);
 
+/* _PyBytesObject_SIZE gives the basic size of a bytes object; any memory allocation
+   for a bytes object of length n should request PyBytesObject_SIZE + n bytes.
+
+   Using _PyBytesObject_SIZE instead of sizeof(PyBytesObject) saves
+   3 or 7 bytes per bytes object allocation on a typical system.
+*/
+#define _PyBytesObject_SIZE (offsetof(PyBytesObject, ob_sval) + 1)
+
 /* --- PyBytesWriter ------------------------------------------------------ */
 
 struct PyBytesWriter {
@@ -72,6 +85,26 @@ struct PyBytesWriter {
 
 // Export for '_testcapi' shared extension
 PyAPI_FUNC(PyBytesWriter*) _PyBytesWriter_CreateByteArray(Py_ssize_t size);
+
+static inline Py_ssize_t
+_PyBytesWriter_GetSize(PyBytesWriter *writer)
+{
+    return writer->size;
+}
+
+static inline char*
+_PyBytesWriter_GetData(PyBytesWriter *writer)
+{
+    if (writer->obj == NULL) {
+        return writer->small_buffer;
+    }
+    else if (writer->use_bytearray) {
+        return PyByteArray_AS_STRING(writer->obj);
+    }
+    else {
+        return PyBytes_AS_STRING(writer->obj);
+    }
+}
 
 #ifdef __cplusplus
 }

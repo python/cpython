@@ -522,7 +522,7 @@ _random_Random_getrandbits_impl(RandomObject *self, uint64_t k)
         PyErr_NoMemory();
         return NULL;
     }
-    words = (k - 1u) / 32u + 1u;
+    words = (Py_ssize_t)((k - 1u) / 32u + 1u);
     wordarray = (uint32_t *)PyMem_Malloc(words * 4);
     if (wordarray == NULL) {
         PyErr_NoMemory();
@@ -643,6 +643,7 @@ _random_exec(PyObject *module)
 }
 
 static PyModuleDef_Slot _random_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, _random_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

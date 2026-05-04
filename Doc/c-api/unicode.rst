@@ -5,9 +5,6 @@
 Unicode Objects and Codecs
 --------------------------
 
-.. sectionauthor:: Marc-André Lemburg <mal@lemburg.com>
-.. sectionauthor:: Georg Brandl <georg@python.org>
-
 Unicode Objects
 ^^^^^^^^^^^^^^^
 
@@ -63,6 +60,27 @@ Python:
    that deal with Unicode objects take and return :c:type:`PyObject` pointers.
 
    .. versionadded:: 3.3
+
+
+   The structure of a particular object can be determined using the following
+   macros.
+   The macros cannot fail; their behavior is undefined if their argument
+   is not a Python Unicode object.
+
+   .. c:namespace:: NULL
+
+   .. c:macro:: PyUnicode_IS_COMPACT(o)
+
+      True if *o* uses the :c:struct:`PyCompactUnicodeObject` structure.
+
+      .. versionadded:: 3.3
+
+
+   .. c:macro:: PyUnicode_IS_COMPACT_ASCII(o)
+
+      True if *o* uses the :c:struct:`PyASCIIObject` structure.
+
+      .. versionadded:: 3.3
 
 
 The following APIs are C macros and static inlined functions for fast checks and
@@ -321,12 +339,22 @@ These APIs can be used to work with surrogates:
 
    Check if *ch* is a low surrogate (``0xDC00 <= ch <= 0xDFFF``).
 
+.. c:function:: Py_UCS4 Py_UNICODE_HIGH_SURROGATE(Py_UCS4 ch)
+
+    Return the high UTF-16 surrogate (``0xD800`` to ``0xDBFF``) for a Unicode
+    code point in the range ``[0x10000; 0x10FFFF]``.
+
+.. c:function:: Py_UCS4 Py_UNICODE_LOW_SURROGATE(Py_UCS4 ch)
+
+    Return the low UTF-16 surrogate (``0xDC00`` to ``0xDFFF``) for a Unicode
+    code point in the range ``[0x10000; 0x10FFFF]``.
+
 .. c:function:: Py_UCS4 Py_UNICODE_JOIN_SURROGATES(Py_UCS4 high, Py_UCS4 low)
 
    Join two surrogate code points and return a single :c:type:`Py_UCS4` value.
    *high* and *low* are respectively the leading and trailing surrogates in a
-   surrogate pair. *high* must be in the range [0xD800; 0xDBFF] and *low* must
-   be in the range [0xDC00; 0xDFFF].
+   surrogate pair. *high* must be in the range ``[0xD800; 0xDBFF]`` and *low* must
+   be in the range ``[0xDC00; 0xDFFF]``.
 
 
 Creating and accessing Unicode strings
@@ -1827,8 +1855,6 @@ object.
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
 
-   .. versionadded:: 3.14
-
 .. c:function:: int PyUnicodeWriter_WriteWideChar(PyUnicodeWriter *writer, const wchar_t *str, Py_ssize_t size)
 
    Write the wide string *str* into *writer*.
@@ -1839,7 +1865,7 @@ object.
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
 
-.. c:function:: int PyUnicodeWriter_WriteUCS4(PyUnicodeWriter *writer, Py_UCS4 *str, Py_ssize_t size)
+.. c:function:: int PyUnicodeWriter_WriteUCS4(PyUnicodeWriter *writer, const Py_UCS4 *str, Py_ssize_t size)
 
    Writer the UCS4 string *str* into *writer*.
 
@@ -1855,12 +1881,22 @@ object.
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
 
+   To write a :class:`str` subclass which overrides the :meth:`~object.__str__`
+   method, :c:func:`PyUnicode_FromObject` can be used to get the original
+   string.
+
 .. c:function:: int PyUnicodeWriter_WriteRepr(PyUnicodeWriter *writer, PyObject *obj)
 
    Call :c:func:`PyObject_Repr` on *obj* and write the output into *writer*.
 
+   If *obj* is ``NULL``, write the string ``"<NULL>"`` into *writer*.
+
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
+
+   .. versionchanged:: 3.14.4
+
+      Added support for ``NULL``.
 
 .. c:function:: int PyUnicodeWriter_WriteSubstring(PyUnicodeWriter *writer, PyObject *str, Py_ssize_t start, Py_ssize_t end)
 

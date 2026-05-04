@@ -1,2 +1,0 @@
-Allow assignment to :attr:`~type.__bases__` of direct subclasses of builtin
-classes.

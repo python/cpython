@@ -26,6 +26,8 @@ _PySSL_msg_callback(int write_p, int version, int content_type,
         return;
     }
 
+    PyObject *exc = PyErr_GetRaisedException();
+
     PyObject *ssl_socket;  /* ssl.SSLSocket or ssl.SSLObject */
     if (ssl_obj->owner)
         PyWeakref_GetRef(ssl_obj->owner, &ssl_socket);
@@ -73,12 +75,12 @@ _PySSL_msg_callback(int write_p, int version, int content_type,
         version, content_type, msg_type,
         buf, len
     );
-    if (res == NULL) {
-        ssl_obj->exc = PyErr_GetRaisedException();
-    } else {
-        Py_DECREF(res);
-    }
+    Py_XDECREF(res);
     Py_XDECREF(ssl_socket);
+
+    if (exc != NULL) {
+        _PyErr_ChainExceptions1(exc);
+    }
 
     PyGILState_Release(threadstate);
 }
@@ -122,16 +124,19 @@ _PySSL_keylog_callback(const SSL *ssl, const char *line)
 {
     PyGILState_STATE threadstate;
     PySSLSocket *ssl_obj = NULL;  /* ssl._SSLSocket, borrowed ref */
+    PyObject *exc;
     int res, e;
 
     threadstate = PyGILState_Ensure();
+
+    exc = PyErr_GetRaisedException();
 
     ssl_obj = (PySSLSocket *)SSL_get_app_data(ssl);
     assert(Py_IS_TYPE(ssl_obj, get_state_sock(ssl_obj)->PySSLSocket_Type));
     PyThread_type_lock lock = get_state_sock(ssl_obj)->keylog_lock;
     assert(lock != NULL);
     if (ssl_obj->ctx->keylog_bio == NULL) {
-        return;
+        goto done;
     }
     /*
      * The lock is neither released on exit nor on fork(). The lock is
@@ -153,7 +158,11 @@ _PySSL_keylog_callback(const SSL *ssl, const char *line)
         errno = e;
         PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError,
                                              ssl_obj->ctx->keylog_filename);
-        ssl_obj->exc = PyErr_GetRaisedException();
+    }
+
+done:
+    if (exc != NULL) {
+        _PyErr_ChainExceptions1(exc);
     }
     PyGILState_Release(threadstate);
 }

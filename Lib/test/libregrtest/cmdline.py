@@ -15,73 +15,73 @@ DESCRIPTION = """\
 Run Python regression tests.
 
 If no arguments or options are provided, finds all files matching
-the pattern "test_*" in the Lib/test subdirectory and runs
-them in alphabetical order (but see -M and -u, below, for exceptions).
+the pattern `test_*` in the `Lib/test` subdirectory and runs
+them in alphabetical order (but see `-M` and `-u`, below, for exceptions).
 
 For more rigorous testing, it is useful to use the following
 command line:
 
-python -E -Wd -m test [options] [test_name1 ...]
+`python -E -Wd -m test [options] [test_name1 ...]`
 """
 
 EPILOG = """\
 Additional option details:
 
--r randomizes test execution order. You can use --randseed=int to provide an
-int seed value for the randomizer. The randseed value will be used
+`-r` randomizes test execution order. You can use `--randseed=int` to provide an
+int seed value for the randomizer. The `randseed` value will be used
 to set seeds for all random usages in tests
-(including randomizing the tests order if -r is set).
+(including randomizing the tests order if `-r` is set).
 By default we always set random seed, but do not randomize test order.
 
--s On the first invocation of regrtest using -s, the first test file found
+`-s` On the first invocation of regrtest using `-s`, the first test file found
 or the first test file given on the command line is run, and the name of
-the next test is recorded in a file named pynexttest.  If run from the
-Python build directory, pynexttest is located in the 'build' subdirectory,
-otherwise it is located in tempfile.gettempdir().  On subsequent runs,
-the test in pynexttest is run, and the next test is written to pynexttest.
-When the last test has been run, pynexttest is deleted.  In this way it
+the next test is recorded in a file named `pynexttest`.  If run from the
+Python build directory, `pynexttest` is located in the 'build' subdirectory,
+otherwise it is located in `tempfile.gettempdir()`.  On subsequent runs,
+the test in `pynexttest` is run, and the next test is written to `pynexttest`.
+When the last test has been run, `pynexttest` is deleted.  In this way it
 is possible to single step through the test files.  This is useful when
 doing memory analysis on the Python interpreter, which process tends to
 consume too many resources to run the full regression test non-stop.
 
--S is used to resume running tests after an interrupted run.  It will
-maintain the order a standard run (i.e. it assumes -r is not used).
+`-S` is used to resume running tests after an interrupted run.  It will
+maintain the order a standard run (i.e. it assumes `-r` is not used).
 This is useful after the tests have prematurely stopped for some external
 reason and you want to resume the run from where you left off rather
-than starting from the beginning. Note: this is different from --prioritize.
+than starting from the beginning. Note: this is different from `--prioritize`.
 
---prioritize is used to influence the order of selected tests, such that
+`--prioritize` is used to influence the order of selected tests, such that
 the tests listed as an argument are executed first. This is especially
-useful when combined with -j and -r to pin the longest-running tests
-to start at the beginning of a test run. Pass --prioritize=test_a,test_b
-to make test_a run first, followed by test_b, and then the other tests.
-If test_a wasn't selected for execution by regular means, --prioritize will
+useful when combined with `-j` and `-r` to pin the longest-running tests
+to start at the beginning of a test run. Pass `--prioritize=test_a,test_b`
+to make `test_a` run first, followed by `test_b`, and then the other tests.
+If test_a wasn't selected for execution by regular means, `--prioritize` will
 not make it execute.
 
--f reads the names of tests from the file given as f's argument, one
+`-f` reads the names of tests from the file given as `f`'s argument, one
 or more test names per line.  Whitespace is ignored.  Blank lines and
-lines beginning with '#' are ignored.  This is especially useful for
+lines beginning with `#` are ignored.  This is especially useful for
 whittling down failures involving interactions among tests.
 
--L causes the leaks(1) command to be run just before exit if it exists.
-leaks(1) is available on Mac OS X and presumably on some other
+`-L` causes the leaks(1) command to be run just before exit if it exists.
+leaks(1) is available on macOS and presumably on some other
 FreeBSD-derived systems.
 
--R runs each test several times and examines sys.gettotalrefcount() to
+`-R` runs each test several times and examines `sys.gettotalrefcount()` to
 see if the test appears to be leaking references.  The argument should
-be of the form stab:run:fname where 'stab' is the number of times the
-test is run to let gettotalrefcount settle down, 'run' is the number
-of times further it is run and 'fname' is the name of the file the
-reports are written to.  These parameters all have defaults (5, 4 and
-"reflog.txt" respectively), and the minimal invocation is '-R :'.
+be of the form `stab:run:fname` where `stab` is the number of times the
+test is run to let gettotalrefcount settle down, `run` is the number
+of times further it is run and `fname` is the name of the file the
+reports are written to.  These parameters all have defaults (`5`, `4` and
+`"reflog.txt"` respectively), and the minimal invocation is `-R :`.
 
--M runs tests that require an exorbitant amount of memory. These tests
+`-M` runs tests that require an exorbitant amount of memory. These tests
 typically try to ascertain containers keep working when containing more than
 2 billion objects, which only works on 64-bit systems. There are also some
 tests that try to exhaust the address space of the process, which only makes
 sense on 32-bit systems with at least 2Gb of memory. The passed-in memlimit,
-which is a string in the form of '2.5Gb', determines how much memory the
-tests will limit themselves to (but they may go slightly over.) The number
+which is a string in the form of `'2.5Gb'`, determines how much memory the
+tests will limit themselves to (but they may go slightly over). The number
 shouldn't be more memory than the machine has (including swap memory). You
 should also keep in mind that swap memory is generally much, much slower
 than RAM, and setting memlimit to all available RAM or higher will heavily
@@ -90,7 +90,7 @@ limit of less than 2.5Gb, and many require more than 20Gb. Tests that expect
 to use more than memlimit memory will be skipped. The big-memory tests
 generally run very, very long.
 
--u is used to specify which special resource intensive tests to run,
+`-u` is used to specify which special resource intensive tests to run,
 such as those requiring large file support or network connectivity.
 The argument is a comma-separated list of words indicating the
 resources to test.  Currently only the following are defined:
@@ -130,16 +130,23 @@ resources to test.  Currently only the following are defined:
 
     tzdata -         Run tests that require timezone data.
 
-To enable all resources except one, use '-uall,-<resource>'.  For
-example, to run all the tests except for the gui tests, give the
-option '-uall,-gui'.
+    xpickle -   Test pickle and _pickle against Python 3.6, 3.7, 3.8
+                and 3.9 to test backwards compatibility. These tests
+                may take very long to complete.
 
---matchfile filters tests using a text file, one pattern per line.
+    wantobjects -    Allows to run Tkinter tests with the specified value of
+                     tkinter.wantobjects.
+
+To enable all resources except one, use `-uall,-<resource>`.  For
+example, to run all the tests except for the `gui` tests, give the
+option `-uall,-gui`.
+
+`--matchfile` filters tests using a text file, one pattern per line.
 Pattern examples:
 
-- test method: test_stat_attributes
-- test class: FileTests
-- test identifier: test_os.FileTests.test_stat_attributes
+- test method: `test_stat_attributes`
+- test class: `FileTests`
+- test identifier: `test_os.FileTests.test_stat_attributes`
 """
 
 
@@ -158,7 +165,7 @@ class Namespace(argparse.Namespace):
         self.randomize = False
         self.fromfile = None
         self.fail_env_changed = False
-        self.use_resources: list[str] = []
+        self.use_resources: dict[str, str | None] = {}
         self.trace = False
         self.coverdir = 'coverage'
         self.runleaks = False
@@ -305,7 +312,7 @@ def _create_parser():
     group.add_argument('-G', '--failfast', action='store_true',
                        help='fail as soon as a test fails (only with -v or -W)')
     group.add_argument('-u', '--use', metavar='RES1,RES2,...',
-                       action='append', type=resources_list,
+                       action='extend', type=resources_list,
                        help='specify which special resource intensive tests '
                             'to run.' + more_details)
     group.add_argument('-M', '--memlimit', metavar='LIMIT',
@@ -386,6 +393,8 @@ def _create_parser():
                        help='remove old test_python_* directories')
     group.add_argument('--bisect', action='store_true',
                        help='if some tests fail, run test.bisect_cmd on them')
+    group.add_argument('--pythoninfo', action='store_true',
+                       help="run python -m test.pythoninfo before tests")
     group.add_argument('--dont-add-python-opts', dest='_add_python_opts',
                        action='store_false',
                        help="internal option, don't use it")
@@ -410,11 +419,18 @@ def huntrleaks(string):
 
 
 def resources_list(string):
-    u = [x.lower() for x in string.split(',')]
-    for r in u:
+    u = []
+    for x in string.split(','):
+        r, eq, v = x.partition('=')
+        r = r.lower()
+        u.append((r, v if eq else None))
         if r == 'all' or r == 'none':
+            if eq:
+                raise argparse.ArgumentTypeError('invalid resource: ' + x)
             continue
         if r[0] == '-':
+            if eq:
+                raise argparse.ArgumentTypeError('invalid resource: ' + x)
             r = r[1:]
         if r not in RESOURCE_NAMES:
             raise argparse.ArgumentTypeError('invalid resource: ' + r)
@@ -482,14 +498,14 @@ def _parse_args(args, **kwargs):
         # Similar to: -u "all" --timeout=1200
         if ns.use is None:
             ns.use = []
-        ns.use.insert(0, ['all'])
+        ns.use[:0] = [('all', None)]
         if ns.timeout is None:
             ns.timeout = 1200  # 20 minutes
     elif ns.fast_ci:
         # Similar to: -u "all,-cpu" --timeout=600
         if ns.use is None:
             ns.use = []
-        ns.use.insert(0, ['all', '-cpu'])
+        ns.use[:0] = [('all', None), ('-cpu', None)]
         if ns.timeout is None:
             ns.timeout = 600  # 10 minutes
 
@@ -527,23 +543,17 @@ def _parse_args(args, **kwargs):
         if ns.timeout <= 0:
             ns.timeout = None
     if ns.use:
-        for a in ns.use:
-            for r in a:
-                if r == 'all':
-                    ns.use_resources[:] = ALL_RESOURCES
-                    continue
-                if r == 'none':
-                    del ns.use_resources[:]
-                    continue
-                remove = False
-                if r[0] == '-':
-                    remove = True
-                    r = r[1:]
-                if remove:
-                    if r in ns.use_resources:
-                        ns.use_resources.remove(r)
-                elif r not in ns.use_resources:
-                    ns.use_resources.append(r)
+        for r, v in ns.use:
+            if r == 'all':
+                for r in ALL_RESOURCES:
+                    ns.use_resources[r] = None
+            elif r == 'none':
+                ns.use_resources.clear()
+            elif r[0] == '-':
+                r = r[1:]
+                ns.use_resources.pop(r, None)
+            else:
+                ns.use_resources[r] = v
     if ns.random_seed is not None:
         ns.randomize = True
     if ns.no_randomize:

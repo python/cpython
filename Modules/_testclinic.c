@@ -63,7 +63,7 @@ pack_arguments_2pos_varpos(PyObject *a, PyObject *b,
                            PyObject * const *args, Py_ssize_t args_length)
 /*[clinic end generated code: output=267032f41bd039cc input=86ee3064b7853e86]*/
 {
-    PyObject *tuple = _PyTuple_FromArray(args, args_length);
+    PyObject *tuple = PyTuple_FromArray(args, args_length);
     if (tuple == NULL) {
         return NULL;
     }
@@ -334,14 +334,14 @@ int_converter
 
     a: int = 12
     b: int(accept={int}) = 34
-    c: int(accept={str}) = 45
+    c: int(accept={str}) = '-'
     /
 
 [clinic start generated code]*/
 
 static PyObject *
 int_converter_impl(PyObject *module, int a, int b, int c)
-/*[clinic end generated code: output=8e56b59be7d0c306 input=a1dbc6344853db7a]*/
+/*[clinic end generated code: output=8e56b59be7d0c306 input=9a306d4dc907e339]*/
 {
     RETURN_PACKED_ARGS(3, PyLong_FromLong, long, a, b, c);
 }
@@ -1174,7 +1174,7 @@ varpos_array_impl(PyObject *module, PyObject * const *args,
                   Py_ssize_t args_length)
 /*[clinic end generated code: output=a25f42f39c9b13ad input=97b8bdcf87e019c7]*/
 {
-    return _PyTuple_FromArray(args, args_length);
+    return PyTuple_FromArray(args, args_length);
 }
 
 
@@ -1365,6 +1365,7 @@ clone_f2_impl(PyObject *module, const char *path)
 class custom_t_converter(CConverter):
     type = 'custom_t'
     converter = 'custom_converter'
+    c_init_default = "<placeholder>"  # overridden in pre_render(()
 
     def pre_render(self):
         self.c_default = f'''{{
@@ -1372,7 +1373,7 @@ class custom_t_converter(CConverter):
         }}'''
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=b2fb801e99a06bf6]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=78fe84e5ecc0481b]*/
 
 
 /*[clinic input]
@@ -1610,7 +1611,7 @@ _testclinic_TestClass_varpos_array_no_fastcall_impl(PyTypeObject *type,
                                                     Py_ssize_t args_length)
 /*[clinic end generated code: output=27c9da663e942617 input=9ba5ae1f1eb58777]*/
 {
-    return _PyTuple_FromArray(args, args_length);
+    return PyTuple_FromArray(args, args_length);
 }
 
 

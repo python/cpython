@@ -1,2 +1,0 @@
-Raise :exc:`OverflowError` for ``(-1).to_bytes()`` for signed conversions
-when bytes count is zero.  Patch by Sergey B Kirpichev.

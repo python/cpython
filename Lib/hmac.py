@@ -171,6 +171,7 @@ class HMAC:
         # Call __new__ directly to avoid the expensive __init__.
         other = self.__class__.__new__(self.__class__)
         other.digest_size = self.digest_size
+        other.block_size = self.block_size
         if self._hmac:
             other._hmac = self._hmac.copy()
             other._inner = other._outer = None
