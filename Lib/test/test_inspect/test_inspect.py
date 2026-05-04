@@ -6540,10 +6540,16 @@ class TestModuleCLI(unittest.TestCase):
         self.assertEqual(lines, [self.BUILTIN_ERROR])
 
     def test_error_extension(self):
+        module_name = "_testcapi"
+        if module_name in sys.builtin_module_names:
+            # WASI test environment has even _testcapi as a builtin module
+            expected_error = self.BUILTIN_ERROR
+        else:
+            expected_error = self.NO_SOURCE_ERROR
         _, out, err = assert_python_failure('-m', 'inspect',
-                                            '_testcapi')
+                                            module_name)
         lines = err.decode().splitlines()
-        self.assertEqual(lines, [self.NO_SOURCE_ERROR])
+        self.assertEqual(lines, [expected_error])
 
     def test_error_data(self):
         _, out, err = assert_python_failure('-m', 'inspect',
@@ -6714,8 +6720,12 @@ class TestModuleCLI(unittest.TestCase):
         self.assertEqual(inspect.findsource(target)[1], details["lineno"])
 
     def test_get_cli_details_for_extension_module(self):
-        expected_error = self.NO_SOURCE_ERROR
         module_name = "_testcapi"
+        if module_name in sys.builtin_module_names:
+            # WASI test environment has even _testcapi as a builtin module
+            expected_error = self.BUILTIN_ERROR
+        else:
+            expected_error = self.NO_SOURCE_ERROR
         module = importlib.import_module(module_name)
         details = inspect._get_details_for_cli(module, module_name, module)
         self._check_details(module, details, {"loader"}, error=expected_error)
