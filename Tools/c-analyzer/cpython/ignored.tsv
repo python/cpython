@@ -352,6 +352,9 @@ Objects/typeobject.c	-	name_op	-
 Objects/typeobject.c	-	slotdefs	-
 # It initialized only once when main interpeter starts
 Objects/typeobject.c	-	slotdefs_dups	-
+Objects/typeobject.c    -   _Py_empty_mapping_methods   -
+Objects/typeobject.c    -   _Py_empty_number_methods    -
+Objects/typeobject.c    -   _Py_empty_sequence_methods  - 
 Objects/unicodeobject.c	-	stripfuncnames	-
 Objects/unicodeobject.c	-	utf7_category	-
 Objects/unicodeobject.c	unicode_decode_call_errorhandler_wchar	argparse	-
