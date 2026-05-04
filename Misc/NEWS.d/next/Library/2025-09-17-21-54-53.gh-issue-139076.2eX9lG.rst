@@ -1,3 +1,0 @@
-Fix a bug in the :mod:`pydoc` module that was hiding functions in a Python
-module if they were implemented in an extension module and the module did
-not have ``__all__``.

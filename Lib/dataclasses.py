@@ -1,13 +1,13 @@
-import re
 import sys
-import copy
 import types
-import inspect
 import keyword
 import itertools
 import annotationlib
 import abc
 from reprlib import recursive_repr
+lazy import copy
+lazy import inspect
+lazy import re
 
 
 __all__ = ['dataclass',
@@ -178,21 +178,16 @@ class _HAS_DEFAULT_FACTORY_CLASS:
         return '<factory>'
 _HAS_DEFAULT_FACTORY = _HAS_DEFAULT_FACTORY_CLASS()
 
-# A sentinel object to detect if a parameter is supplied or not.  Use
-# a class to give it a better repr.
-class _MISSING_TYPE:
-    pass
-MISSING = _MISSING_TYPE()
+# A sentinel object to detect if a parameter is supplied or not.
+MISSING = sentinel("MISSING")
 
 # A sentinel object to indicate that following fields are keyword-only by
-# default.  Use a class to give it a better repr.
-class _KW_ONLY_TYPE:
-    pass
-KW_ONLY = _KW_ONLY_TYPE()
+# default.
+KW_ONLY = sentinel("KW_ONLY")
 
 # Since most per-field metadata will be unused, create an empty
-# read-only proxy that can be shared among all fields.
-_EMPTY_METADATA = types.MappingProxyType({})
+# read-only dictionary that can be shared among all fields.
+_EMPTY_METADATA = frozendict()
 
 # Markers for the various kinds of fields and pseudo-fields.
 class _FIELD_BASE:
@@ -217,9 +212,8 @@ _PARAMS = '__dataclass_params__'
 _POST_INIT_NAME = '__post_init__'
 
 # String regex that string annotations for ClassVar or InitVar must match.
-# Allows "identifier.identifier[" or "identifier[".
-# https://bugs.python.org/issue33453 for details.
-_MODULE_IDENTIFIER_RE = re.compile(r'^(?:\s*(\w+)\s*\.)?\s*(\w+)')
+# This regular expression is compiled on demand so that 're' module can be imported lazily
+_MODULE_IDENTIFIER_RE = None
 
 # Atomic immutable types which don't require any recursive handling and for which deepcopy
 # returns the same object. We can provide a fast-path for these types in asdict and astuple.
@@ -441,9 +435,11 @@ class _FuncBuilder:
         self.locals = {}
         self.overwrite_errors = {}
         self.unconditional_adds = {}
+        self.method_annotations = {}
 
     def add_fn(self, name, args, body, *, locals=None, return_type=MISSING,
-               overwrite_error=False, unconditional_add=False, decorator=None):
+               overwrite_error=False, unconditional_add=False, decorator=None,
+               annotation_fields=None):
         if locals is not None:
             self.locals.update(locals)
 
@@ -464,16 +460,14 @@ class _FuncBuilder:
 
         self.names.append(name)
 
-        if return_type is not MISSING:
-            self.locals[f'__dataclass_{name}_return_type__'] = return_type
-            return_annotation = f'->__dataclass_{name}_return_type__'
-        else:
-            return_annotation = ''
+        if annotation_fields is not None:
+            self.method_annotations[name] = (annotation_fields, return_type)
+
         args = ','.join(args)
         body = '\n'.join(body)
 
         # Compute the text of the entire function, add it to the text we're generating.
-        self.src.append(f'{f' {decorator}\n' if decorator else ''} def {name}({args}){return_annotation}:\n{body}')
+        self.src.append(f'{f' {decorator}\n' if decorator else ''} def {name}({args}):\n{body}')
 
     def add_fns_to_class(self, cls):
         # The source to all of the functions we're generating.
@@ -509,6 +503,15 @@ class _FuncBuilder:
         # Now that we've generated the functions, assign them into cls.
         for name, fn in zip(self.names, fns):
             fn.__qualname__ = f"{cls.__qualname__}.{fn.__name__}"
+
+            try:
+                annotation_fields, return_type = self.method_annotations[name]
+            except KeyError:
+                pass
+            else:
+                annotate_fn = _make_annotate_function(cls, name, annotation_fields, return_type)
+                fn.__annotate__ = annotate_fn
+
             if self.unconditional_adds.get(name, False):
                 setattr(cls, name, fn)
             else:
@@ -522,6 +525,49 @@ class _FuncBuilder:
                         error_msg = f'{error_msg} {msg_extra}'
 
                     raise TypeError(error_msg)
+
+
+def _make_annotate_function(__class__, method_name, annotation_fields, return_type):
+    # Create an __annotate__ function for a dataclass
+    # Try to return annotations in the same format as they would be
+    # from a regular __init__ function
+
+    def __annotate__(format, /):
+        Format = annotationlib.Format
+        match format:
+            case Format.VALUE | Format.FORWARDREF | Format.STRING:
+                cls_annotations = {}
+                for base in reversed(__class__.__mro__):
+                    cls_annotations.update(
+                        annotationlib.get_annotations(base, format=format)
+                    )
+
+                new_annotations = {}
+                for k in annotation_fields:
+                    # gh-142214: The annotation may be missing in unusual dynamic cases.
+                    # If so, just skip it.
+                    try:
+                        new_annotations[k] = cls_annotations[k]
+                    except KeyError:
+                        pass
+
+                if return_type is not MISSING:
+                    if format == Format.STRING:
+                        new_annotations["return"] = annotationlib.type_repr(return_type)
+                    else:
+                        new_annotations["return"] = return_type
+
+                return new_annotations
+
+            case _:
+                raise NotImplementedError(format)
+
+    # This is a flag for _add_slots to know it needs to regenerate this method
+    # In order to remove references to the original class when it is replaced
+    __annotate__.__generated_by_dataclasses__ = True
+    __annotate__.__qualname__ = f"{__class__.__qualname__}.{method_name}.__annotate__"
+
+    return __annotate__
 
 
 def _field_assign(frozen, name, value, self_name):
@@ -612,7 +658,7 @@ def _init_param(f):
     elif f.default_factory is not MISSING:
         # There's a factory function.  Set a marker.
         default = '=__dataclass_HAS_DEFAULT_FACTORY__'
-    return f'{f.name}:__dataclass_type_{f.name}__{default}'
+    return f'{f.name}{default}'
 
 
 def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
@@ -635,11 +681,10 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
                 raise TypeError(f'non-default argument {f.name!r} '
                                 f'follows default argument {seen_default.name!r}')
 
-    locals = {**{f'__dataclass_type_{f.name}__': f.type for f in fields},
-              **{'__dataclass_HAS_DEFAULT_FACTORY__': _HAS_DEFAULT_FACTORY,
-                 '__dataclass_builtins_object__': object,
-                 }
-              }
+    annotation_fields = [f.name for f in fields if f.init]
+
+    locals = {'__dataclass_HAS_DEFAULT_FACTORY__': _HAS_DEFAULT_FACTORY,
+              '__dataclass_builtins_object__': object}
 
     body_lines = []
     for f in fields:
@@ -670,13 +715,14 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
                         [self_name] + _init_params,
                         body_lines,
                         locals=locals,
-                        return_type=None)
+                        return_type=None,
+                        annotation_fields=annotation_fields)
 
 
-def _frozen_get_del_attr(cls, fields, func_builder):
-    locals = {'cls': cls,
+def _frozen_set_del_attr(cls, fields, func_builder):
+    locals = {'__class__': cls,
               'FrozenInstanceError': FrozenInstanceError}
-    condition = 'type(self) is cls'
+    condition = 'type(self) is __class__'
     if fields:
         condition += ' or name in {' + ', '.join(repr(f.name) for f in fields) + '}'
 
@@ -684,14 +730,14 @@ def _frozen_get_del_attr(cls, fields, func_builder):
                         ('self', 'name', 'value'),
                         (f'  if {condition}:',
                           '   raise FrozenInstanceError(f"cannot assign to field {name!r}")',
-                         f'  super(cls, self).__setattr__(name, value)'),
+                         f'  super(__class__, self).__setattr__(name, value)'),
                         locals=locals,
                         overwrite_error=True)
     func_builder.add_fn('__delattr__',
                         ('self', 'name'),
                         (f'  if {condition}:',
                           '   raise FrozenInstanceError(f"cannot delete field {name!r}")',
-                         f'  super(cls, self).__delattr__(name)'),
+                         f'  super(__class__, self).__delattr__(name)'),
                         locals=locals,
                         overwrite_error=True)
 
@@ -711,22 +757,16 @@ def _is_kw_only(a_type, dataclasses):
     return a_type is dataclasses.KW_ONLY
 
 
-def _is_type(annotation, cls, a_module, a_type, is_type_predicate):
-    # Given a type annotation string, does it refer to a_type in
-    # a_module?  For example, when checking that annotation denotes a
-    # ClassVar, then a_module is typing, and a_type is
-    # typing.ClassVar.
+def _get_type_from_annotation(annotation, cls):
+    # Loosely parse a string annotation and return its type.
 
-    # It's possible to look up a_module given a_type, but it involves
-    # looking in sys.modules (again!), and seems like a waste since
-    # the caller already knows a_module.
+    # We can't perform a full type hint evaluation at the point where @dataclass
+    # was invoked because class's module is not fully initialized yet. So we resort
+    # to parsing string annotation using regexp, and extracting a type before
+    # the first square bracket.
 
     # - annotation is a string type annotation
     # - cls is the class that this annotation was found in
-    # - a_module is the module we want to match
-    # - a_type is the type in that module we want to match
-    # - is_type_predicate is a function called with (obj, a_module)
-    #   that determines if obj is of the desired type.
 
     # Since this test does not do a local namespace lookup (and
     # instead only a module (global) lookup), there are some things it
@@ -752,22 +792,26 @@ def _is_type(annotation, cls, a_module, a_type, is_type_predicate):
     # a eval() penalty for every single field of every dataclass
     # that's defined.  It was judged not worth it.
 
-    match = _MODULE_IDENTIFIER_RE.match(annotation)
-    if match:
-        ns = None
-        module_name = match.group(1)
-        if not module_name:
-            # No module name, assume the class's module did
-            # "from dataclasses import InitVar".
-            ns = sys.modules.get(cls.__module__).__dict__
-        else:
-            # Look up module_name in the class's module.
-            module = sys.modules.get(cls.__module__)
-            if module and module.__dict__.get(module_name) is a_module:
-                ns = sys.modules.get(a_type.__module__).__dict__
-        if ns and is_type_predicate(ns.get(match.group(2)), a_module):
-            return True
-    return False
+    # String regex that string annotations for ClassVar or InitVar must match.
+    # Allows "identifier.identifier[" or "identifier[".
+    # https://github.com/python/cpython/issues/77634 for details.
+    global _MODULE_IDENTIFIER_RE
+    if _MODULE_IDENTIFIER_RE is None:
+        _MODULE_IDENTIFIER_RE = re.compile(r'^\s*(\w+(?:\s*\.\s*\w+)*)')
+
+    match = _MODULE_IDENTIFIER_RE.prefixmatch(annotation)
+    if not match:
+        return None
+
+    # Note: _MODULE_IDENTIFIER_RE guarantees that path is non-empty
+    path = match[1].split(".")
+    root = sys.modules.get(cls.__module__)
+    for path_item in path:
+        root = getattr(root, path_item.strip(), None)
+        if root is None:
+            return None
+
+    return root
 
 
 def _get_field(cls, a_name, a_type, default_kw_only):
@@ -805,6 +849,10 @@ def _get_field(cls, a_name, a_type, default_kw_only):
     # is actually of the correct type.
 
     # For the complete discussion, see https://bugs.python.org/issue33453
+    if isinstance(a_type, str):
+        a_type_annotation = _get_type_from_annotation(a_type, cls)
+    else:
+        a_type_annotation = a_type
 
     # If typing has not been imported, then it's impossible for any
     # annotation to be a ClassVar.  So, only look for ClassVar if
@@ -812,10 +860,7 @@ def _get_field(cls, a_name, a_type, default_kw_only):
     # module).
     typing = sys.modules.get('typing')
     if typing:
-        if (_is_classvar(a_type, typing)
-            or (isinstance(f.type, str)
-                and _is_type(f.type, cls, typing, typing.ClassVar,
-                             _is_classvar))):
+        if _is_classvar(a_type_annotation, typing):
             f._field_type = _FIELD_CLASSVAR
 
     # If the type is InitVar, or if it's a matching string annotation,
@@ -824,10 +869,7 @@ def _get_field(cls, a_name, a_type, default_kw_only):
         # The module we're checking against is the module we're
         # currently in (dataclasses.py).
         dataclasses = sys.modules[__name__]
-        if (_is_initvar(a_type, dataclasses)
-            or (isinstance(f.type, str)
-                and _is_type(f.type, cls, dataclasses, dataclasses.InitVar,
-                             _is_initvar))):
+        if _is_initvar(a_type_annotation, dataclasses):
             f._field_type = _FIELD_INITVAR
 
     # Validations for individual fields.  This is delayed until now,
@@ -930,6 +972,28 @@ _hash_action = {(False, False, False, False): None,
 # See https://bugs.python.org/issue32929#msg312829 for an if-statement
 # version of this table.
 
+# A non-data descriptor to autogenerate class docstring
+# from the signature of its __init__ method on demand.
+# The primary reason is to be able to lazy import `inspect` module.
+class _AutoDocstring:
+
+    def __get__(self, _obj, cls):
+        try:
+            # In some cases fetching a signature is not possible.
+            # But, we surely should not fail in this case.
+            text_sig = str(inspect.signature(
+                 cls,
+                 annotation_format=annotationlib.Format.FORWARDREF,
+            )).replace(' -> None', '')
+        except TypeError, ValueError:
+            text_sig = ''
+
+        doc = cls.__name__ + text_sig
+        setattr(cls, '__doc__', doc)
+        return doc
+
+_auto_docstring = _AutoDocstring()
+
 
 def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                    match_args, kw_only, slots, weakref_slot):
@@ -998,10 +1062,11 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     dataclasses = sys.modules[__name__]
     for name, type in cls_annotations.items():
         # See if this is a marker to change the value of kw_only.
-        if (_is_kw_only(type, dataclasses)
-            or (isinstance(type, str)
-                and _is_type(type, cls, dataclasses, dataclasses.KW_ONLY,
-                             _is_kw_only))):
+        if isinstance(type, str):
+            a_type_annotation = _get_type_from_annotation(type, cls)
+        else:
+            a_type_annotation = type
+        if _is_kw_only(a_type_annotation, dataclasses):
             # Switch the default to kw_only=True, and ignore this
             # annotation: it's not a real field.
             if KW_ONLY_seen:
@@ -1147,7 +1212,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                             overwrite_error='Consider using functools.total_ordering')
 
     if frozen:
-        _frozen_get_del_attr(cls, field_list, func_builder)
+        _frozen_set_del_attr(cls, field_list, func_builder)
 
     # Decide if/how we're going to create a hash function.
     hash_action = _hash_action[bool(unsafe_hash),
@@ -1157,23 +1222,13 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     if hash_action:
         cls.__hash__ = hash_action(cls, field_list, func_builder)
 
-    # Generate the methods and add them to the class.  This needs to be done
-    # before the __doc__ logic below, since inspect will look at the __init__
-    # signature.
+    # Generate the methods and add them to the class.
     func_builder.add_fns_to_class(cls)
 
     if not getattr(cls, '__doc__'):
-        # Create a class doc-string.
-        try:
-            # In some cases fetching a signature is not possible.
-            # But, we surely should not fail in this case.
-            text_sig = str(inspect.signature(
-                cls,
-                annotation_format=annotationlib.Format.FORWARDREF,
-            )).replace(' -> None', '')
-        except (TypeError, ValueError):
-            text_sig = ''
-        cls.__doc__ = (cls.__name__ + text_sig)
+        # Create a class doc-string lazily via descriptor protocol
+        # to avoid importing `inspect` module.
+        cls.__doc__ = _auto_docstring
 
     if match_args:
         # I could probably compute this once.
@@ -1240,10 +1295,18 @@ def _update_func_cell_for__class__(f, oldcls, newcls):
         # This function doesn't reference __class__, so nothing to do.
         return False
     # Fix the cell to point to the new class, if it's already pointing
-    # at the old class.  I'm not convinced that the "is oldcls" test
-    # is needed, but other than performance can't hurt.
+    # at the old class.
     closure = f.__closure__[idx]
-    if closure.cell_contents is oldcls:
+
+    try:
+        contents = closure.cell_contents
+    except ValueError:
+        # Cell is empty
+        return False
+
+    # This check makes it so we avoid updating an incorrect cell if the
+    # class body contains a function that was defined in a different class.
+    if contents is oldcls:
         closure.cell_contents = newcls
         return True
     return False
@@ -1325,8 +1388,10 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
     # make an update, since all closures for a class will share a
     # given cell.
     for member in newcls.__dict__.values():
+
         # If this is a wrapped function, unwrap it.
-        member = inspect.unwrap(member)
+        if not isinstance(member, type) and hasattr(member, '__wrapped__'):
+            member = inspect.unwrap(member)
 
         if isinstance(member, types.FunctionType):
             if _update_func_cell_for__class__(member, cls, newcls):
@@ -1336,6 +1401,26 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
                 or _update_func_cell_for__class__(member.fset, cls, newcls)
                 or _update_func_cell_for__class__(member.fdel, cls, newcls)):
                 break
+
+    # Get new annotations to remove references to the original class
+    # in forward references
+    newcls_ann = annotationlib.get_annotations(
+        newcls, format=annotationlib.Format.FORWARDREF)
+
+    # Fix references in dataclass Fields
+    for f in getattr(newcls, _FIELDS).values():
+        try:
+            ann = newcls_ann[f.name]
+        except KeyError:
+            pass
+        else:
+            f.type = ann
+
+    # Fix the class reference in the __annotate__ method
+    init = newcls.__init__
+    if init_annotate := getattr(init, "__annotate__", None):
+        if getattr(init_annotate, "__generated_by_dataclasses__", False):
+            _update_func_cell_for__class__(init_annotate, cls, newcls)
 
     return newcls
 
@@ -1418,7 +1503,8 @@ def asdict(obj, *, dict_factory=dict):
     If given, 'dict_factory' will be used instead of built-in dict.
     The function applies recursively to field values that are
     dataclass instances. This will also look into built-in containers:
-    tuples, lists, and dicts. Other objects are copied with 'copy.deepcopy()'.
+    tuples, lists, dicts, and frozendicts. Other objects are copied
+    with 'copy.deepcopy()'.
     """
     if not _is_dataclass_instance(obj):
         raise TypeError("asdict() should be called on dataclass instances")
@@ -1474,7 +1560,7 @@ def _asdict_inner(obj, dict_factory):
             return obj_type(*[_asdict_inner(v, dict_factory) for v in obj])
         else:
             return obj_type(_asdict_inner(v, dict_factory) for v in obj)
-    elif issubclass(obj_type, dict):
+    elif issubclass(obj_type, (dict, frozendict)):
         if hasattr(obj_type, 'default_factory'):
             # obj is a defaultdict, which has a different constructor from
             # dict as it requires the default_factory as its first arg.
@@ -1509,7 +1595,8 @@ def astuple(obj, *, tuple_factory=tuple):
     If given, 'tuple_factory' will be used instead of built-in tuple.
     The function applies recursively to field values that are
     dataclass instances. This will also look into built-in containers:
-    tuples, lists, and dicts. Other objects are copied with 'copy.deepcopy()'.
+    tuples, lists, dicts, and frozendicts. Other objects are copied
+    with 'copy.deepcopy()'.
     """
 
     if not _is_dataclass_instance(obj):
@@ -1538,7 +1625,7 @@ def _astuple_inner(obj, tuple_factory):
         # generator (which is not true for namedtuples, handled
         # above).
         return type(obj)(_astuple_inner(v, tuple_factory) for v in obj)
-    elif isinstance(obj, dict):
+    elif isinstance(obj, (dict, frozendict)):
         obj_type = type(obj)
         if hasattr(obj_type, 'default_factory'):
             # obj is a defaultdict, which has a different constructor from

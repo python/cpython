@@ -8,7 +8,7 @@ import unittest
 
 import xml.dom.minidom
 
-from xml.dom.minidom import parse, Attr, Node, Document, parseString
+from xml.dom.minidom import parse, Attr, Node, Document, Element, parseString
 from xml.dom.minidom import getDOMImplementation
 from xml.parsers.expat import ExpatError
 
@@ -172,6 +172,49 @@ class MinidomTest(unittest.TestCase):
         self.assertEqual(dom.documentElement.childNodes[-1].nodeName, "#comment")
         self.assertEqual(dom.documentElement.childNodes[-1].data, "Hello")
         dom.unlink()
+
+    @support.requires_resource('cpu')
+    def testAppendChildNoQuadraticComplexity(self):
+        impl = getDOMImplementation()
+
+        def work(n):
+            doc = impl.createDocument(None, "some_tag", None)
+            element = doc.documentElement
+            total_calls = 0
+
+            # Count attribute accesses as a proxy for work done
+            def getattribute_counter(self, attr):
+                nonlocal total_calls
+                total_calls += 1
+                return object.__getattribute__(self, attr)
+
+            with support.swap_attr(Element, "__getattribute__", getattribute_counter):
+                for _ in range(n):
+                    child = doc.createElement("child")
+                    element.appendChild(child)
+                    element = child
+            return total_calls
+
+        # Doubling N should not ~quadruple the work.
+        w1 = work(1024)
+        w2 = work(2048)
+        w3 = work(4096)
+
+        self.assertGreater(w1, 0)
+        r1 = w2 / w1
+        r2 = w3 / w2
+        self.assertLess(
+            max(r1, r2), 3.2,
+            msg=f"Possible quadratic behavior: work={w1,w2,w3} ratios={r1,r2}"
+        )
+
+    def testSetAttributeNodeWithoutOwnerDocument(self):
+        # regression test for gh-142754
+        elem = Element("test")
+        attr = Attr("id")
+        attr.value = "test-id"
+        elem.setAttributeNode(attr)
+        self.assertEqual(elem.getAttribute("id"), "test-id")
 
     def testAppendChildFragment(self):
         dom, orig, c1, c2, c3, frag = self._create_fragment_test_nodes()

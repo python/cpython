@@ -74,7 +74,7 @@ zstd_contentsize_converter(PyObject *size, unsigned long long *p)
             if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
                 PyErr_Format(PyExc_ValueError,
                              "size argument should be a positive int less "
-                             "than %ull", ZSTD_CONTENTSIZE_ERROR);
+                             "than %llu", ZSTD_CONTENTSIZE_ERROR);
                 return 0;
             }
             return 0;
@@ -83,7 +83,7 @@ zstd_contentsize_converter(PyObject *size, unsigned long long *p)
             *p = ZSTD_CONTENTSIZE_ERROR;
             PyErr_Format(PyExc_ValueError,
                          "size argument should be a positive int less "
-                         "than %ull", ZSTD_CONTENTSIZE_ERROR);
+                         "than %llu", ZSTD_CONTENTSIZE_ERROR);
             return 0;
         }
         *p = pledged_size;
@@ -446,7 +446,7 @@ compress_lock_held(ZstdCompressor *self, Py_buffer *data,
     assert(PyMutex_IsLocked(&self->lock));
     ZSTD_inBuffer in;
     ZSTD_outBuffer out;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
     size_t zstd_ret;
     PyObject *ret;
 
@@ -527,7 +527,7 @@ compress_mt_continue_lock_held(ZstdCompressor *self, Py_buffer *data)
     assert(PyMutex_IsLocked(&self->lock));
     ZSTD_inBuffer in;
     ZSTD_outBuffer out;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
     size_t zstd_ret;
     PyObject *ret;
 

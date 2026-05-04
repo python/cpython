@@ -1,2 +1,0 @@
-Add :c:func:`PyTuple_FromArray` to create a :class:`tuple` from an array.
-Patch by Victor Stinner.

@@ -1,1 +1,0 @@
-Fix a crash when using threads inside of a subinterpreter.

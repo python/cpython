@@ -126,6 +126,7 @@ __all__ = [
     'cast',
     'clear_overloads',
     'dataclass_transform',
+    'disjoint_base',
     'evaluate_forward_ref',
     'final',
     'get_args',
@@ -139,7 +140,6 @@ __all__ = [
     'Never',
     'NewType',
     'no_type_check',
-    'no_type_check_decorator',
     'NoDefault',
     'NoExtraItems',
     'NoReturn',
@@ -156,6 +156,7 @@ __all__ = [
     'Text',
     'TYPE_CHECKING',
     'TypeAlias',
+    'TypeForm',
     'TypeGuard',
     'TypeIs',
     'TypeAliasType',
@@ -589,6 +590,13 @@ class _TypedCacheSpecialForm(_SpecialForm, _root=True):
         return self._getitem(self, *parameters)
 
 
+class _TypeFormForm(_SpecialForm, _root=True):
+    # TypeForm(X) is equivalent to X but indicates to the type checker
+    # that the object is a TypeForm.
+    def __call__(self, obj, /):
+        return obj
+
+
 class _AnyMeta(type):
     def __instancecheck__(self, obj):
         if self is Any:
@@ -896,6 +904,31 @@ def TypeGuard(self, parameters):
     return _GenericAlias(self, (item,))
 
 
+@_TypeFormForm
+def TypeForm(self, parameters):
+    """A special form representing the value that results from the evaluation
+    of a type expression.
+
+    This value encodes the information supplied in the type expression, and it
+    represents the type described by that type expression.
+
+    When used in a type expression, TypeForm describes a set of type form
+    objects. It accepts a single type argument, which must be a valid type
+    expression. ``TypeForm[T]`` describes the set of all type form objects that
+    represent the type T or types that are assignable to T.
+
+    Usage::
+
+        def cast[T](typ: TypeForm[T], value: Any) -> T: ...
+
+        reveal_type(cast(int, "x"))  # int
+
+    See PEP 747 for more information.
+    """
+    item = _type_check(parameters, f'{self} accepts only single type.')
+    return _GenericAlias(self, (item,))
+
+
 @_SpecialForm
 def TypeIs(self, parameters):
     """Special typing construct for marking user-defined type predicate functions.
@@ -1113,7 +1146,7 @@ def _paramspec_prepare_subst(self, alias, args):
     params = alias.__parameters__
     i = params.index(self)
     if i == len(args) and self.has_default():
-        args = [*args, self.__default__]
+        args = (*args, self.__default__)
     if i >= len(args):
         raise TypeError(f"Too few arguments for {alias}")
     # Special case where Z[[int, str, bool]] == Z[int, str, bool] in PEP 612.
@@ -1158,14 +1191,26 @@ def _generic_class_getitem(cls, args):
                 f"Parameters to {cls.__name__}[...] must all be unique")
     else:
         # Subscripting a regular Generic subclass.
-        for param in cls.__parameters__:
+        try:
+            parameters = cls.__parameters__
+        except AttributeError as e:
+            init_subclass = getattr(cls, '__init_subclass__', None)
+            if init_subclass not in {None, Generic.__init_subclass__}:
+                e.add_note(
+                    f"Note: this exception may have been caused by "
+                    f"{init_subclass.__qualname__!r} (or the "
+                    f"'__init_subclass__' method on a superclass) not "
+                    f"calling 'super().__init_subclass__()'"
+                )
+            raise
+        for param in parameters:
             prepare = getattr(param, '__typing_prepare_subst__', None)
             if prepare is not None:
                 args = prepare(cls, args)
         _check_generic_specialization(cls, args)
 
         new_args = []
-        for param, new_arg in zip(cls.__parameters__, args):
+        for param, new_arg in zip(parameters, args):
             if isinstance(param, TypeVarTuple):
                 new_args.extend(new_arg)
             else:
@@ -1337,10 +1382,11 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
     #     A = Callable[[], None]  # _CallableGenericAlias
     #     B = Callable[[T], None]  # _CallableGenericAlias
     #     C = B[int]  # _CallableGenericAlias
-    # * Parameterized `Final`, `ClassVar`, `TypeGuard`, and `TypeIs`:
+    # * Parameterized `Final`, `ClassVar`, `TypeForm`, `TypeGuard`, and `TypeIs`:
     #     # All _GenericAlias
     #     Final[int]
     #     ClassVar[float]
+    #     TypeForm[bytes]
     #     TypeGuard[bool]
     #     TypeIs[range]
 
@@ -1551,9 +1597,9 @@ class _SpecialGenericAlias(_NotIterable, _BaseGenericAlias, _root=True):
         self._nparams = nparams
         self._defaults = defaults
         if origin.__module__ == 'builtins':
-            self.__doc__ = f'A generic version of {origin.__qualname__}.'
+            self.__doc__ = f'Deprecated alias to {origin.__qualname__}.'
         else:
-            self.__doc__ = f'A generic version of {origin.__module__}.{origin.__qualname__}.'
+            self.__doc__ = f'Deprecated alias to {origin.__module__}.{origin.__qualname__}.'
 
     @_tp_cache
     def __getitem__(self, params):
@@ -1815,6 +1861,7 @@ class _TypingEllipsis:
 _TYPING_INTERNALS = frozenset({
     '__parameters__', '__orig_bases__',  '__orig_class__',
     '_is_protocol', '_is_runtime_protocol', '__protocol_attrs__',
+    '__typing_is_deprecated_inherited_runtime_protocol__',
     '__non_callable_proto_members__', '__type_params__',
 })
 
@@ -2004,6 +2051,16 @@ class _ProtocolMeta(ABCMeta):
                     "Instance and class checks can only be used with "
                     "@runtime_checkable protocols"
                 )
+            if getattr(cls, '__typing_is_deprecated_inherited_runtime_protocol__', False):
+                # See GH-132604.
+                import warnings
+                depr_message = (
+                    f"{cls!r} isn't explicitly decorated with @runtime_checkable but "
+                    "it is used in issubclass() or isinstance(). Instance and class "
+                    "checks can only be used with @runtime_checkable protocols. "
+                    "This will raise a TypeError in Python 3.20."
+                )
+                warnings.warn(depr_message, category=DeprecationWarning, stacklevel=2)
             if (
                 # this attribute is set by @runtime_checkable:
                 cls.__non_callable_proto_members__
@@ -2032,6 +2089,18 @@ class _ProtocolMeta(ABCMeta):
         ):
             raise TypeError("Instance and class checks can only be used with"
                             " @runtime_checkable protocols")
+
+        if getattr(cls, '__typing_is_deprecated_inherited_runtime_protocol__', False):
+            # See GH-132604.
+            import warnings
+
+            depr_message = (
+                f"{cls!r} isn't explicitly decorated with @runtime_checkable but "
+                "it is used in issubclass() or isinstance(). Instance and class "
+                "checks can only be used with @runtime_checkable protocols. "
+                "This will raise a TypeError in Python 3.20."
+            )
+            warnings.warn(depr_message, category=DeprecationWarning, stacklevel=2)
 
         if _abc_instancecheck(cls, instance):
             return True
@@ -2124,6 +2193,11 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
         # Determine if this is a protocol or a concrete subclass.
         if not cls.__dict__.get('_is_protocol', False):
             cls._is_protocol = any(b is Protocol for b in cls.__bases__)
+
+        # Mark inherited runtime checkability (deprecated). See GH-132604.
+        if cls._is_protocol and getattr(cls, '_is_runtime_protocol', False):
+            # This flag is set to False by @runtime_checkable.
+            cls.__typing_is_deprecated_inherited_runtime_protocol__ = True
 
         # Set (or override) the protocol subclass hook.
         if '__subclasshook__' not in cls.__dict__:
@@ -2271,6 +2345,9 @@ def runtime_checkable(cls):
         raise TypeError('@runtime_checkable can be only applied to protocol classes,'
                         ' got %r' % cls)
     cls._is_runtime_protocol = True
+    # See GH-132604.
+    if hasattr(cls, '__typing_is_deprecated_inherited_runtime_protocol__'):
+        cls.__typing_is_deprecated_inherited_runtime_protocol__ = False
     # PEP 544 prohibits using issubclass()
     # with protocols that have non-method members.
     # See gh-113320 for why we compute this attribute here,
@@ -2409,8 +2486,12 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
         else:
             nsobj = obj
             # Find globalns for the unwrapped object.
+            seen = {id(nsobj)}
             while hasattr(nsobj, '__wrapped__'):
                 nsobj = nsobj.__wrapped__
+                if id(nsobj) in seen:
+                    raise ValueError(f'wrapper loop when unwrapping {obj!r}')
+                seen.add(id(nsobj))
             globalns = getattr(nsobj, '__globals__', {})
         if localns is None:
             localns = globalns
@@ -2611,23 +2692,6 @@ def no_type_check(arg):
     return arg
 
 
-def no_type_check_decorator(decorator):
-    """Decorator to give another decorator the @no_type_check effect.
-
-    This wraps the decorator with something that wraps the decorated
-    function in @no_type_check.
-    """
-    import warnings
-    warnings._deprecated("typing.no_type_check_decorator", remove=(3, 15))
-    @functools.wraps(decorator)
-    def wrapped_decorator(*args, **kwds):
-        func = decorator(*args, **kwds)
-        func = no_type_check(func)
-        return func
-
-    return wrapped_decorator
-
-
 def _overload_dummy(*args, **kwds):
     """Helper for @overload to raise when called."""
     raise NotImplementedError(
@@ -2733,6 +2797,29 @@ def final(f):
         # read-only property, TypeError if it's a builtin class.
         pass
     return f
+
+
+def disjoint_base(cls):
+    """This decorator marks a class as a disjoint base.
+
+    Child classes of a disjoint base cannot inherit from other disjoint bases that are
+    not parent or child classes of the disjoint base.
+
+    For example:
+
+        @disjoint_base
+        class Disjoint1: pass
+
+        @disjoint_base
+        class Disjoint2: pass
+
+        class Disjoint3(Disjoint1, Disjoint2): pass  # Type checker error
+
+    Type checkers can use knowledge of disjoint bases to detect unreachable code
+    and determine when two types can overlap.
+    """
+    cls.__disjoint_base__ = True
+    return cls
 
 
 # Some unconstrained type variables.  These were initially used by the container types.
@@ -3050,8 +3137,7 @@ def NamedTuple(typename, fields, /):
     """
     types = {n: _type_check(t, f"field {n} annotation must be a type")
              for n, t in fields}
-    field_names = [n for n, _ in fields]
-    nt = _make_nmtuple(typename, field_names, _make_eager_annotate(types), module=_caller())
+    nt = _make_nmtuple(typename, types, _make_eager_annotate(types), module=_caller())
     nt.__orig_bases__ = (NamedTuple,)
     return nt
 
@@ -3064,31 +3150,7 @@ def _namedtuple_mro_entries(bases):
 NamedTuple.__mro_entries__ = _namedtuple_mro_entries
 
 
-class _SingletonMeta(type):
-    def __setattr__(cls, attr, value):
-        # TypeError is consistent with the behavior of NoneType
-        raise TypeError(
-                f"cannot set {attr!r} attribute of immutable type {cls.__name__!r}"
-                )
-
-
-class _NoExtraItemsType(metaclass=_SingletonMeta):
-    """The type of the NoExtraItems singleton."""
-
-    __slots__ = ()
-
-    def __new__(cls):
-        return globals().get("NoExtraItems") or object.__new__(cls)
-
-    def __repr__(self):
-        return 'typing.NoExtraItems'
-
-    def __reduce__(self):
-        return 'NoExtraItems'
-
-NoExtraItems = _NoExtraItemsType()
-del _NoExtraItemsType
-del _SingletonMeta
+NoExtraItems = sentinel("NoExtraItems")
 
 
 def _get_typeddict_qualifiers(annotation_type):
@@ -3530,7 +3592,7 @@ class IO(Generic[AnyStr]):
         pass
 
     @abstractmethod
-    def read(self, n: int = -1) -> AnyStr:
+    def read(self, n: int = -1, /) -> AnyStr:
         pass
 
     @abstractmethod
@@ -3538,15 +3600,15 @@ class IO(Generic[AnyStr]):
         pass
 
     @abstractmethod
-    def readline(self, limit: int = -1) -> AnyStr:
+    def readline(self, limit: int = -1, /) -> AnyStr:
         pass
 
     @abstractmethod
-    def readlines(self, hint: int = -1) -> list[AnyStr]:
+    def readlines(self, hint: int = -1, /) -> list[AnyStr]:
         pass
 
     @abstractmethod
-    def seek(self, offset: int, whence: int = 0) -> int:
+    def seek(self, offset: int, whence: int = 0, /) -> int:
         pass
 
     @abstractmethod
@@ -3558,7 +3620,7 @@ class IO(Generic[AnyStr]):
         pass
 
     @abstractmethod
-    def truncate(self, size: int | None = None) -> int:
+    def truncate(self, size: int | None = None, /) -> int:
         pass
 
     @abstractmethod
@@ -3566,11 +3628,11 @@ class IO(Generic[AnyStr]):
         pass
 
     @abstractmethod
-    def write(self, s: AnyStr) -> int:
+    def write(self, s: AnyStr, /) -> int:
         pass
 
     @abstractmethod
-    def writelines(self, lines: list[AnyStr]) -> None:
+    def writelines(self, lines: list[AnyStr], /) -> None:
         pass
 
     @abstractmethod
@@ -3578,7 +3640,7 @@ class IO(Generic[AnyStr]):
         pass
 
     @abstractmethod
-    def __exit__(self, type, value, traceback) -> None:
+    def __exit__(self, type, value, traceback, /) -> None:
         pass
 
 
@@ -3588,7 +3650,7 @@ class BinaryIO(IO[bytes]):
     __slots__ = ()
 
     @abstractmethod
-    def write(self, s: bytes | bytearray) -> int:
+    def write(self, s: bytes | bytearray, /) -> int:
         pass
 
     @abstractmethod

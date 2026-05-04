@@ -125,6 +125,7 @@ class IOTest:
             self.assertRaises(exc, fp.readline)
         with self.open(os_helper.TESTFN, "wb", buffering=0) as fp:
             self.assertRaises(exc, fp.read)
+            self.assertRaises(exc, fp.readall)
             self.assertRaises(exc, fp.readline)
         with self.open(os_helper.TESTFN, "rb", buffering=0) as fp:
             self.assertRaises(exc, fp.write, b"blah")
@@ -592,6 +593,41 @@ class IOTest:
         self.assertEqual(rawio.read(2), None)
         self.assertEqual(rawio.read(2), b"")
 
+    def test_RawIOBase_read_bounds_checking(self):
+        # Make sure a `.readinto` call which returns a value outside
+        # (0, len(buffer)) raises.
+        class Misbehaved(self.io.RawIOBase):
+            def __init__(self, readinto_return) -> None:
+                self._readinto_return = readinto_return
+            def readinto(self, b):
+                return self._readinto_return
+
+        with self.assertRaises(ValueError) as cm:
+            Misbehaved(2).read(1)
+        self.assertEqual(str(cm.exception), "readinto returned 2 outside buffer size 1")
+        for bad_size in (2147483647, sys.maxsize, -1, -1000):
+            with self.assertRaises(ValueError):
+                Misbehaved(bad_size).read()
+
+    def test_RawIOBase_read_gh60107(self):
+        # gh-60107: Ensure a "Raw I/O" which keeps a reference to the
+        # mutable memory doesn't allow making a mutable bytes.
+        class RawIOKeepsReference(self.MockRawIOWithoutRead):
+            def __init__(self, *args, **kwargs):
+                self.buf = None
+                super().__init__(*args, **kwargs)
+
+            def readinto(self, buf):
+                # buf is the bytearray so keeping a reference to it doesn't keep
+                # the memory alive; a memoryview does.
+                self.buf = memoryview(buf)
+                buf[0:4] = self._read_stack.pop()
+                return 3
+
+        with self.assertRaises(BufferError):
+            rawio = RawIOKeepsReference([b"1234"])
+            rawio.read(4)
+
     def test_types_have_dict(self):
         test = (
             self.IOBase(),
@@ -960,8 +996,8 @@ class MiscIOTest:
 
         f = self.open(os_helper.TESTFN, "w+", encoding="utf-8")
         self.assertEqual(f.mode,            "w+")
-        self.assertEqual(f.buffer.mode,     "rb+") # Does it really matter?
-        self.assertEqual(f.buffer.raw.mode, "rb+")
+        self.assertEqual(f.buffer.mode,     "wb+")
+        self.assertEqual(f.buffer.raw.mode, "wb+")
 
         g = self.open(f.fileno(), "wb", closefd=False)
         self.assertEqual(g.mode,     "wb")

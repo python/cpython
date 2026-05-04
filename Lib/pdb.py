@@ -97,11 +97,15 @@ import linecache
 import selectors
 import threading
 import _colorize
-import _pyrepl.utils
 
 from contextlib import ExitStack, closing, contextmanager
 from types import CodeType
 from warnings import deprecated
+
+try:
+    import _pyrepl.utils
+except ModuleNotFoundError:
+    _pyrepl = None
 
 
 class Restart(Exception):
@@ -130,7 +134,7 @@ def find_first_executable_line(code):
     return code.co_firstlineno
 
 def find_function(funcname, filename):
-    cre = re.compile(r'def\s+%s(\s*\[.+\])?\s*[(]' % re.escape(funcname))
+    cre = re.compile(r'(?:async\s+)?def\s+%s(\s*\[.+\])?\s*[(]' % re.escape(funcname))
     try:
         fp = tokenize.open(filename)
     except OSError:
@@ -183,19 +187,37 @@ class _ExecutableTarget:
 
 class _ScriptTarget(_ExecutableTarget):
     def __init__(self, target):
-        self._target = os.path.realpath(target)
+        self._check(target)
+        self._target = self._safe_realpath(target)
 
-        if not os.path.exists(self._target):
-            print(f'Error: {target} does not exist')
-            sys.exit(1)
-        if os.path.isdir(self._target):
-            print(f'Error: {target} is a directory')
-            sys.exit(1)
-
-        # If safe_path(-P) is not set, sys.path[0] is the directory
+        # If PYTHONSAFEPATH (-P) is not set, sys.path[0] is the directory
         # of pdb, and we should replace it with the directory of the script
         if not sys.flags.safe_path:
             sys.path[0] = os.path.dirname(self._target)
+
+    @staticmethod
+    def _check(target):
+        """
+        Check that target is plausibly a script.
+        """
+        if not os.path.exists(target):
+            print(f'Error: {target} does not exist')
+            sys.exit(1)
+        if os.path.isdir(target):
+            print(f'Error: {target} is a directory')
+            sys.exit(1)
+
+    @staticmethod
+    def _safe_realpath(path):
+        """
+        Return the canonical path (realpath) if it is accessible from the userspace.
+        Otherwise (for example, if the path is a symlink to an anonymous pipe),
+        return the original path.
+
+        See GH-142315.
+        """
+        realpath = os.path.realpath(path)
+        return realpath if os.path.exists(realpath) else path
 
     def __repr__(self):
         return self._target
@@ -296,12 +318,34 @@ class _ZipTarget(_ExecutableTarget):
 
 
 class _PdbInteractiveConsole(code.InteractiveConsole):
-    def __init__(self, ns, message):
+    def __init__(self, ns=None, message=None):
         self._message = message
         super().__init__(locals=ns, local_exit=True)
 
     def write(self, data):
-        self._message(data, end='')
+        if self._message is not None:
+            self._message(data, end='')
+        else:
+            super().write(data)
+
+    def more_lines(self, text):
+        # Generic Python multi-line completeness heuristic.
+        # Strips pyrepl's trailing auto-indent before compiling.
+        # This should be functionally identical to simple_interact._more_lines
+        src = text.rstrip(" \t")
+        n = len(src)
+        if n > 0 and text[n-1] == '\n':
+            text = src
+        try:
+            code_obj = self.compile(text, "<stdin>", "single")
+        except (OverflowError, SyntaxError, ValueError):
+            lines = text.splitlines(keepends=True)
+            if len(lines) == 1:
+                return False
+            last = lines[-1]
+            return ((last.startswith((" ", "\t")) or last.strip() != "")
+                    and not last.endswith("\n"))
+        return code_obj is None
 
 
 # Interaction prompt line will separate file and call info from code
@@ -330,6 +374,96 @@ def get_default_backend():
     return _default_backend
 
 
+def _pyrepl_available():
+    """return whether pdb should use _pyrepl for input"""
+    if os.getenv("PYTHON_BASIC_REPL"):
+        CAN_USE_PYREPL = False
+    else:
+        try:
+            from _pyrepl.main import CAN_USE_PYREPL
+        except ModuleNotFoundError:
+            CAN_USE_PYREPL = False
+    return CAN_USE_PYREPL
+
+
+class PdbPyReplInput:
+    def __init__(self, pdb_instance, stdin, stdout, prompt):
+        import _pyrepl.readline
+
+        self.pdb_instance = pdb_instance
+        self.prompt = prompt
+        self.console = _PdbInteractiveConsole()
+        if not (os.isatty(stdin.fileno())):
+            raise ValueError("stdin is not a TTY")
+        self.readline_wrapper = _pyrepl.readline._ReadlineWrapper(
+            f_in=stdin.fileno(),
+            f_out=stdout.fileno(),
+            config=_pyrepl.readline.ReadlineConfig(
+                completer_delims=frozenset(' \t\n`@#%^&*()=+[{]}\\|;:\'",<>?')
+            )
+        )
+
+    def readline(self):
+
+        def more_lines(text):
+            if text.strip() == "\x1a":
+                # Ctrl + Z raises EOFError to quit pdb
+                # This is similarly handled in simple_interact.py
+                raise EOFError
+            cmd, _, line = self.pdb_instance.parseline(text)
+            if not line or not cmd:
+                return False
+            func = getattr(self.pdb_instance, 'do_' + cmd, None)
+            if func is not None:
+                return False
+            return self.console.more_lines(text)
+
+        try:
+            pyrepl_completer = self.readline_wrapper.get_completer()
+            self.readline_wrapper.set_completer(self.complete)
+            multiline = (
+                self.readline_wrapper.multiline_input(
+                    more_lines,
+                    self.prompt,
+                    '... ' + ' ' * (len(self.prompt) - 4)
+                ) + '\n'
+            )
+            return multiline
+        except EOFError:
+            return 'EOF'
+        finally:
+            self.readline_wrapper.set_completer(pyrepl_completer)
+
+    def complete(self, text, state):
+        """
+        This function is very similar to cmd.Cmd.complete.
+        However, cmd.Cmd.complete assumes that we use readline module, but
+        pyrepl does not use it.
+        """
+        if state == 0:
+            origline = self.readline_wrapper.get_line_buffer()
+            line = origline.lstrip()
+            stripped = len(origline) - len(line)
+            begidx = self.readline_wrapper.get_begidx() - stripped
+            endidx = self.readline_wrapper.get_endidx() - stripped
+            if begidx > 0:
+                cmd, args, foo = self.pdb_instance.parseline(line)
+                if not cmd:
+                    compfunc = self.pdb_instance.completedefault
+                else:
+                    try:
+                        compfunc = getattr(self.pdb_instance, 'complete_' + cmd)
+                    except AttributeError:
+                        compfunc = self.pdb_instance.completedefault
+            else:
+                compfunc = self.pdb_instance.completenames
+            self.completion_matches = compfunc(text, line, begidx, endidx)
+        try:
+            return self.completion_matches[state]
+        except IndexError:
+            return None
+
+
 class Pdb(bdb.Bdb, cmd.Cmd):
     _previous_sigint_handler = None
 
@@ -346,8 +480,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         bdb.Bdb.__init__(self, skip=skip, backend=backend if backend else get_default_backend())
         cmd.Cmd.__init__(self, completekey, stdin, stdout)
         sys.audit("pdb.Pdb")
-        if stdout:
-            self.use_rawinput = 0
+        if stdin is not None and stdin is not sys.stdin:
+            self.use_rawinput = False
         self.prompt = '(Pdb) '
         self.aliases = {}
         self.displaying = {}
@@ -364,6 +498,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except ImportError:
             pass
 
+        self.pyrepl_input = None
+        if _pyrepl_available():
+            try:
+                self.pyrepl_input = PdbPyReplInput(self, self.stdin, self.stdout, self.prompt)
+            except Exception:
+                pass
         self.allow_kbdint = False
         self.nosigint = nosigint
         # Consider these characters as part of the command so when the users type
@@ -373,16 +513,21 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # Read ~/.pdbrc and ./.pdbrc
         self.rcLines = []
         if readrc:
+            home_rcfile = os.path.expanduser("~/.pdbrc")
+            local_rcfile = os.path.abspath(".pdbrc")
+
             try:
-                with open(os.path.expanduser('~/.pdbrc'), encoding='utf-8') as rcFile:
-                    self.rcLines.extend(rcFile)
+                with open(home_rcfile, encoding='utf-8') as rcfile:
+                    self.rcLines.extend(rcfile)
             except OSError:
                 pass
-            try:
-                with open(".pdbrc", encoding='utf-8') as rcFile:
-                    self.rcLines.extend(rcFile)
-            except OSError:
-                pass
+
+            if local_rcfile != home_rcfile:
+                try:
+                    with open(local_rcfile, encoding='utf-8') as rcfile:
+                        self.rcLines.extend(rcfile)
+                except OSError:
+                    pass
 
         self.commands = {} # associates a command list to breakpoint numbers
         self.commands_defining = False # True while in the process of defining
@@ -397,6 +542,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self._chained_exception_index = 0
 
         self._current_task = None
+
+        self.lineno = None
+        self.stack = []
+        self.curindex = 0
+        self.curframe = None
+        self._user_requested_quit = False
 
     def set_trace(self, frame=None, *, commands=None):
         Pdb._last_pdb_instance = self
@@ -474,7 +625,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.lineno = None
         self.stack = []
         self.curindex = 0
-        if hasattr(self, 'curframe') and self.curframe:
+        if self.curframe:
             self.curframe.f_globals.pop('__pdb_convenience_variables', None)
         self.curframe = None
         self.tb_lineno.clear()
@@ -591,6 +742,31 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.message('%s%s' % (prefix, self._format_exc(exc_value)))
         self.interaction(frame, exc_traceback)
 
+    @contextmanager
+    def _replace_attribute(self, attrs):
+        original_attrs = {}
+        for attr, value in attrs.items():
+            original_attrs[attr] = getattr(self, attr)
+            setattr(self, attr, value)
+        try:
+            yield
+        finally:
+            for attr, value in original_attrs.items():
+                setattr(self, attr, value)
+
+    @contextmanager
+    def _maybe_use_pyrepl_as_stdin(self):
+        if self.pyrepl_input is None:
+            yield
+            return
+
+        with self._replace_attribute({
+            'stdin': self.pyrepl_input,
+            'use_rawinput': False,
+            'prompt': '',
+        }):
+            yield
+
     # General interaction function
     def _cmdloop(self):
         while True:
@@ -598,7 +774,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 # keyboard interrupts allow for an easy way to cancel
                 # the current command, so allow them during interactive input
                 self.allow_kbdint = True
-                self.cmdloop()
+                with self._maybe_use_pyrepl_as_stdin():
+                    self.cmdloop()
                 self.allow_kbdint = False
                 break
             except KeyboardInterrupt:
@@ -648,7 +825,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def _get_tb_and_exceptions(self, tb_or_exc):
         """
-        Given a tracecack or an exception, return a tuple of chained exceptions
+        Given a traceback or an exception, return a tuple of chained exceptions
         and current traceback to inspect.
 
         This will deal with selecting the right ``__cause__`` or ``__context__``
@@ -859,7 +1036,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         locals.update(pdb_eval["write_back"])
         eval_result = pdb_eval["result"]
         if eval_result is not None:
-            print(repr(eval_result))
+            self.message(repr(eval_result))
 
         return True
 
@@ -1068,7 +1245,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         return False
 
     def _colorize_code(self, code):
-        if self.colorize:
+        if self.colorize and _pyrepl:
             colors = list(_pyrepl.utils.gen_colors(code))
             chars, _ = _pyrepl.utils.disp_str(code, colors=colors, force_color=True)
             code = "".join(chars)
@@ -1291,7 +1468,14 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         reached.
         """
         if not arg:
-            bnum = len(bdb.Breakpoint.bpbynumber) - 1
+            for bp in reversed(bdb.Breakpoint.bpbynumber):
+                if bp is None:
+                    continue
+                bnum = bp.number
+                break
+            else:
+                self.error('cannot set commands: no existing breakpoint')
+                return
         else:
             try:
                 bnum = int(arg)
@@ -1481,7 +1665,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             f = self.lookupmodule(parts[0])
             if f:
                 fname = f
-            item = parts[1]
+                item = parts[1]
+            else:
+                return failed
         answer = find_function(item, self.canonic(fname))
         return answer or failed
 
@@ -1493,7 +1679,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """
         # this method should be callable before starting debugging, so default
         # to "no globals" if there is no current frame
-        frame = getattr(self, 'curframe', None)
+        frame = self.curframe
         if module_globals is None:
             module_globals = frame.f_globals if frame else None
         line = linecache.getline(filename, lineno, module_globals)
@@ -2322,10 +2508,21 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         contains all the (global and local) names found in the current scope.
         """
         ns = {**self.curframe.f_globals, **self.curframe.f_locals}
-        with self._enable_rlcompleter(ns):
-            console = _PdbInteractiveConsole(ns, message=self.message)
-            console.interact(banner="*pdb interact start*",
-                             exitmsg="*exit from pdb interact command*")
+        console = _PdbInteractiveConsole(ns, message=self.message)
+        banner = "*pdb interact start*"
+        exitmsg = "*exit from pdb interact command*"
+        if self.pyrepl_input is not None:
+            from _pyrepl.simple_interact import run_multiline_interactive_console
+            self.message(banner)
+            try:
+                run_multiline_interactive_console(console)
+            except SystemExit:
+                pass
+            self.message(exitmsg)
+        else:
+            with self._enable_rlcompleter(ns):
+                console.interact(banner=banner,
+                                 exitmsg=exitmsg)
 
     def do_alias(self, arg):
         """alias [name [command]]
@@ -2423,7 +2620,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except KeyboardInterrupt:
             pass
 
-    def print_stack_entry(self, frame_lineno, prompt_prefix=line_prefix):
+    def print_stack_entry(self, frame_lineno, prompt_prefix=None):
+        if prompt_prefix is None:
+            prompt_prefix = line_prefix
         frame, lineno = frame_lineno
         if frame is self.curframe:
             prefix = '> '
@@ -3514,18 +3713,18 @@ def help():
     pydoc.pager(__doc__)
 
 _usage = """\
-Debug the Python program given by pyfile. Alternatively,
+Debug the Python program given by `pyfile`. Alternatively,
 an executable module or package to debug can be specified using
-the -m switch. You can also attach to a running Python process
-using the -p option with its PID.
+the `-m` switch. You can also attach to a running Python process
+using the `-p` option with its PID.
 
-Initial commands are read from .pdbrc files in your home directory
+Initial commands are read from `.pdbrc` files in your home directory
 and in the current directory, if they exist.  Commands supplied with
--c are executed after commands from .pdbrc files.
+`-c` are executed after commands from `.pdbrc` files.
 
-To let the script run until an exception occurs, use "-c continue".
+To let the script run until an exception occurs, use `-c continue`.
 To let the script run up to a given line X in the debugged file, use
-"-c 'until X'"."""
+`-c 'until X'`."""
 
 
 def exit_with_permission_help_text():
@@ -3542,7 +3741,15 @@ def exit_with_permission_help_text():
     sys.exit(1)
 
 
-def main():
+def parse_args():
+    # We want pdb to be as intuitive as possible to users, so we need to do some
+    # heuristic parsing to deal with ambiguity.
+    # For example:
+    # "python -m pdb -m foo -p 1" should pass "-p 1" to "foo".
+    # "python -m pdb foo.py -m bar" should pass "-m bar" to "foo.py".
+    # "python -m pdb -m foo -m bar" should pass "-m bar" to "foo".
+    # This require some customized parsing logic to find the actual debug target.
+
     import argparse
 
     parser = argparse.ArgumentParser(
@@ -3553,58 +3760,63 @@ def main():
         color=True,
     )
 
-    # We need to maunally get the script from args, because the first positional
-    # arguments could be either the script we need to debug, or the argument
-    # to the -m module
+    # Get all the commands out first. For backwards compatibility, we allow
+    # -c commands to be after the target.
     parser.add_argument('-c', '--command', action='append', default=[], metavar='command', dest='commands',
                         help='pdb commands to execute as if given in a .pdbrc file')
-    parser.add_argument('-m', metavar='module', dest='module')
-    parser.add_argument('-p', '--pid', type=int, help="attach to the specified PID", default=None)
-
-    if len(sys.argv) == 1:
-        # If no arguments were given (python -m pdb), print the whole help message.
-        # Without this check, argparse would only complain about missing required arguments.
-        parser.print_help()
-        sys.exit(2)
 
     opts, args = parser.parse_known_args()
 
-    if opts.pid:
-        # If attaching to a remote pid, unrecognized arguments are not allowed.
-        # This will raise an error if there are extra unrecognized arguments.
-        opts = parser.parse_args()
-        if opts.module:
-            parser.error("argument -m: not allowed with argument --pid")
+    if not args:
+        # If no arguments were given (python -m pdb), print the whole help message.
+        # Without this check, argparse would only complain about missing required arguments.
+        # We need to add the arguments definitions here to get a proper help message.
+        parser.add_argument('-m', metavar='module', dest='module')
+        parser.add_argument('-p', '--pid', type=int, help="attach to the specified PID", default=None)
+        parser.print_help()
+        sys.exit(2)
+    elif args[0] == '-p' or args[0] == '--pid':
+        # Attach to a pid
+        parser.add_argument('-p', '--pid', type=int, help="attach to the specified PID", default=None)
+        opts, args = parser.parse_known_args()
+        if args:
+            # For --pid, any extra arguments are invalid.
+            parser.error(f"unrecognized arguments: {' '.join(args)}")
+    elif args[0] == '-m':
+        # Debug a module, we only need the first -m module argument.
+        # The rest is passed to the module itself.
+        parser.add_argument('-m', metavar='module', dest='module')
+        opt_module = parser.parse_args(args[:2])
+        opts.module = opt_module.module
+        args = args[2:]
+    elif args[0].startswith('-'):
+        # Invalid argument before the script name.
+        invalid_args = list(itertools.takewhile(lambda a: a.startswith('-'), args))
+        parser.error(f"unrecognized arguments: {' '.join(invalid_args)}")
+
+    # Otherwise it's debugging a script and we already parsed all -c commands.
+
+    return opts, args
+
+def main():
+    opts, args = parse_args()
+
+    if getattr(opts, 'pid', None) is not None:
         try:
             attach(opts.pid, opts.commands)
-        except PermissionError as e:
+        except RuntimeError:
+            print(
+                f"Cannot attach to pid {opts.pid}, please make sure that the process exists "
+                "and is using the same Python version."
+            )
+            sys.exit(1)
+        except PermissionError:
             exit_with_permission_help_text()
         return
-    elif opts.module:
-        # If a module is being debugged, we consider the arguments after "-m module" to
-        # be potential arguments to the module itself. We need to parse the arguments
-        # before "-m" to check if there is any invalid argument.
-        # e.g. "python -m pdb -m foo --spam" means passing "--spam" to "foo"
-        #      "python -m pdb --spam -m foo" means passing "--spam" to "pdb" and is invalid
-        idx = sys.argv.index('-m')
-        args_to_pdb = sys.argv[1:idx]
-        # This will raise an error if there are invalid arguments
-        parser.parse_args(args_to_pdb)
-    else:
-        # If a script is being debugged, then pdb expects the script name as the first argument.
-        # Anything before the script is considered an argument to pdb itself, which would
-        # be invalid because it's not parsed by argparse.
-        invalid_args = list(itertools.takewhile(lambda a: a.startswith('-'), args))
-        if invalid_args:
-            parser.error(f"unrecognized arguments: {' '.join(invalid_args)}")
-            sys.exit(2)
-
-    if opts.module:
+    elif getattr(opts, 'module', None) is not None:
         file = opts.module
         target = _ModuleTarget(file)
     else:
-        if not args:
-            parser.error("no module or script to run")
         file = args.pop(0)
         if file.endswith('.pyz'):
             target = _ZipTarget(file)

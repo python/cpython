@@ -255,14 +255,14 @@ impl_definition block
         cls: Class | None = None
 
         for idx, field in enumerate(fields):
+            fullname = ".".join(fields[:idx + 1])
             if not isinstance(parent, Class):
-                if field in parent.modules:
-                    parent = module = parent.modules[field]
+                if fullname in parent.modules:
+                    parent = module = parent.modules[fullname]
                     continue
             if field in parent.classes:
                 parent = cls = parent.classes[field]
             else:
-                fullname = ".".join(fields[idx:])
                 fail(f"Parent class or module {fullname!r} does not exist.")
 
         return module, cls

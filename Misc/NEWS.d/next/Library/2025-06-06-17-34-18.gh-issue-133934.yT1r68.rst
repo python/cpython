@@ -1,1 +1,0 @@
-Improve :mod:`sqlite3` CLI's ``.help`` message.

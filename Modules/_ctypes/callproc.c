@@ -641,9 +641,9 @@ union result {
     double d;
     float f;
     void *p;
-    double D[2];
-    float F[2];
-    long double G[2];
+    double Zd[2];
+    float Zf[2];
+    long double Zg[2];
 };
 
 struct argument {
@@ -1990,8 +1990,32 @@ buffer_info(PyObject *self, PyObject *arg)
 }
 
 
+static PyObject *
+_ctypes_getattr(PyObject *Py_UNUSED(self), PyObject *args)
+{
+    PyObject *name;
+    if (!PyArg_UnpackTuple(args, "__getattr__", 1, 1, &name)) {
+        return NULL;
+    }
+
+    if (PyUnicode_Check(name) && PyUnicode_EqualToUTF8(name, "__version__")) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "'__version__' is deprecated and slated for "
+                         "removal in Python 3.20",
+                         1) < 0) {
+            return NULL;
+        }
+        return PyUnicode_FromString("1.1.0");  // Do not change
+    }
+
+    PyErr_Format(PyExc_AttributeError,
+                 "module '_ctypes' has no attribute %R", name);
+    return NULL;
+}
+
 
 PyMethodDef _ctypes_module_methods[] = {
+    {"__getattr__", _ctypes_getattr, METH_VARARGS},
     {"get_errno", get_errno, METH_NOARGS},
     {"set_errno", set_errno, METH_VARARGS},
     {"_unpickle", unpickle, METH_VARARGS },

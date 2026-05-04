@@ -1,2 +1,0 @@
-Added ``supports_isolated_interpreters`` field to
-:data:`sys.implementation`.

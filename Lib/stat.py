@@ -166,9 +166,14 @@ def filemode(mode):
     perm = []
     for index, table in enumerate(_filemode_table):
         for bit, char in table:
-            if mode & bit == bit:
-                perm.append(char)
-                break
+            if index == 0:
+                if S_IFMT(mode) == bit:
+                    perm.append(char)
+                    break
+            else:
+                if mode & bit == bit:
+                    perm.append(char)
+                    break
         else:
             if index == 0:
                 # Unknown filetype
@@ -198,6 +203,21 @@ FILE_ATTRIBUTE_SPARSE_FILE = 512
 FILE_ATTRIBUTE_SYSTEM = 4
 FILE_ATTRIBUTE_TEMPORARY = 256
 FILE_ATTRIBUTE_VIRTUAL = 65536
+
+
+# Linux STATX_ATTR constants for interpreting os.statx()'s
+# "stx_attributes" and "stx_attributes_mask" members
+
+STATX_ATTR_COMPRESSED = 0x00000004
+STATX_ATTR_IMMUTABLE = 0x00000010
+STATX_ATTR_APPEND = 0x00000020
+STATX_ATTR_NODUMP = 0x00000040
+STATX_ATTR_ENCRYPTED = 0x00000800
+STATX_ATTR_AUTOMOUNT = 0x00001000
+STATX_ATTR_MOUNT_ROOT = 0x00002000
+STATX_ATTR_VERITY = 0x00100000
+STATX_ATTR_DAX = 0x00200000
+STATX_ATTR_WRITE_ATOMIC = 0x00400000
 
 
 # If available, use C implementation

@@ -4,13 +4,11 @@
 .. module:: ipaddress
    :synopsis: IPv4/IPv6 manipulation library.
 
-.. moduleauthor:: Peter Moody
-
 **Source code:** :source:`Lib/ipaddress.py`
 
 --------------
 
-:mod:`ipaddress` provides the capabilities to create, manipulate and
+:mod:`!ipaddress` provides the capabilities to create, manipulate and
 operate on IPv4 and IPv6 addresses and networks.
 
 The functions and classes in this module make it straightforward to handle
@@ -34,7 +32,7 @@ This is the full module API reference—for an overview and introduction, see
 Convenience factory functions
 -----------------------------
 
-The :mod:`ipaddress` module provides factory functions to conveniently create
+The :mod:`!ipaddress` module provides factory functions to conveniently create
 IP addresses, networks and interfaces:
 
 .. function:: ip_address(address)
@@ -369,9 +367,9 @@ write code that handles both IP versions correctly.  Address objects are
 
    .. attribute:: ipv4_mapped
 
-      For addresses that appear to be IPv4 mapped addresses (starting with
-      ``::FFFF/96``), this property will report the embedded IPv4 address.
-      For any other address, this property will be ``None``.
+      For addresses that appear to be IPv4 mapped addresses in the range
+      ``::FFFF:0:0/96`` as defined by :RFC:`4291`, this property reports the
+      embedded IPv4 address. For any other address, this property will be ``None``.
 
    .. attribute:: scope_id
 
@@ -1027,7 +1025,7 @@ The module also provides the following module level functions:
      IPv4Address('192.0.2.0') <= IPv4Network('192.0.2.0/24')
 
    doesn't make sense.  There are some times however, where you may wish to
-   have :mod:`ipaddress` sort these anyway.  If you need to do this, you can use
+   have :mod:`!ipaddress` sort these anyway.  If you need to do this, you can use
    this function as the *key* argument to :func:`sorted`.
 
    *obj* is either a network or address object.

@@ -1,1 +1,0 @@
-Lazy import :mod:`rlcompleter` in :mod:`pdb` to avoid deadlock in subprocess.

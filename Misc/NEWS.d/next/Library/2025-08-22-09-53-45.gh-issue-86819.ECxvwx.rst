@@ -1,1 +1,0 @@
-:mod:`socket`: Add missing constants for ISO-TP sockets.
