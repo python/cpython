@@ -671,8 +671,8 @@ Other language changes
   (Contributed by James Hilton-Balfe in :gh:`128335`.)
 
 * The class :class:`memoryview` now supports the :c:expr:`float complex` and
-  :c:expr:`double complex` C types: formatting characters ``'F'``/``'Zf'``
-  and ``'D'``/``'Zd'`` respectively.
+  :c:expr:`double complex` C types: formatting characters ``'Zf'`` and ``'Zd'``
+  respectively.
   (Contributed by Victor Stinner in :gh:`146151` and :gh:`148675`.)
 
 * Allow the *count* argument of :meth:`bytes.replace` to be a keyword.
@@ -724,7 +724,7 @@ array
 -----
 
 * Support the :c:expr:`float complex` and :c:expr:`double complex` C types:
-  formatting characters ``'F'``/``'Zf'`` and ``'D'``/``'Zd'`` respectively.
+  formatting characters ``'Zf'`` and ``'Zd'`` respectively.
   (Contributed by Victor Stinner in :gh:`146151` and :gh:`148675`.)
 
 * Support half-floats (16-bit IEEE 754 binary interchange format): formatting
