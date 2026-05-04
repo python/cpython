@@ -50,13 +50,13 @@ typedef struct _PySlotIterator_state {
     _PySlot_KIND slot_struct_kind;
 } _PySlotIterator_state;
 
-#define SEEN_ENTRY_BITS (8 * sizeof(unsigned int))
+#define _PySlot_SEEN_ENTRY_BITS (8 * sizeof(unsigned int))
 
 /* State for a slots iterator */
 typedef struct {
     _PySlotIterator_state *state;
     _PySlotIterator_state states[_PySlot_MAX_NESTING];
-    unsigned int seen[_Py_slot_COUNT / SEEN_ENTRY_BITS + 1];
+    unsigned int seen[_Py_slot_COUNT / _PySlot_SEEN_ENTRY_BITS + 1];
     _PySlot_KIND kind;
     uint8_t recursion_level;
     bool is_at_end :1;
