@@ -704,9 +704,9 @@ Other language changes
   (Contributed by James Hilton-Balfe in :gh:`128335`.)
 
 * The class :class:`memoryview` now supports the :c:expr:`float complex` and
-  :c:expr:`double complex` C types: formatting characters ``'F'`` and ``'D'``
-  respectively.
-  (Contributed by Sergey B Kirpichev in :gh:`146151`.)
+  :c:expr:`double complex` C types: formatting characters ``'F'``/``'Zf'``
+  and ``'D'``/``'Zd'`` respectively.
+  (Contributed by Victor Stinner in :gh:`146151` and :gh:`148675`.)
 
 * Allow the *count* argument of :meth:`bytes.replace` to be a keyword.
   (Contributed by Stan Ulbrych in :gh:`147856`.)
@@ -757,12 +757,16 @@ array
 -----
 
 * Support the :c:expr:`float complex` and :c:expr:`double complex` C types:
-  formatting characters ``'F'`` and ``'D'`` respectively.
-  (Contributed by Sergey B Kirpichev in :gh:`146151`.)
+  formatting characters ``'F'``/``'Zf'`` and ``'D'``/``'Zd'`` respectively.
+  (Contributed by Victor Stinner in :gh:`146151` and :gh:`148675`.)
 
 * Support half-floats (16-bit IEEE 754 binary interchange format): formatting
   character ``'e'``.
   (Contributed by Sergey B Kirpichev in :gh:`146238`.)
+
+* The :data:`array.typecodes` type changed from :class:`str` to :class:`tuple`
+  to support type codes longer than 1 character (``Zf`` and ``Zd``).
+  (Contributed by Victor Stinner in :gh:`148675`.)
 
 
 ast
@@ -1774,6 +1778,12 @@ ctypes
   which has been deprecated since Python 3.13.
   (Contributed by Bénédikt Tran in :gh:`133866`.)
 
+* Change the :py:attr:`~ctypes._SimpleCData._type_` of
+  :class:`~ctypes.c_float_complex`, :class:`~ctypes.c_double_complex` and
+  :class:`~ctypes.c_longdouble_complex` from ``F``, ``D`` and ``G`` to ``Zf``,
+  ``Zd`` and ``Zg`` for compatibility with numpy.
+  (Contributed by Victor Stinner in :gh:`148675`.)
+
 
 datetime
 --------
@@ -2082,6 +2092,10 @@ New features
   * :c:func:`PyFrozenDict_New`
 
   (Contributed by Victor Stinner in :gh:`141510`.)
+
+* Add :c:func:`PyObject_CallFinalizerFromDealloc` function to the limited C
+  API.
+  (Contributed by Victor Stinner in :gh:`146063`.)
 
 * Add :c:func:`PySys_GetAttr`, :c:func:`PySys_GetAttrString`,
   :c:func:`PySys_GetOptionalAttr`, and :c:func:`PySys_GetOptionalAttrString`

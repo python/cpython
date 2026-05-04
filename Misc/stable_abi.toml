@@ -2691,7 +2691,6 @@
     added = '3.15'
 
 # PEP 757 import/export API.
-
 [function.PyLong_GetNativeLayout]
     added = '3.15'
 [function.PyLong_Export]
@@ -2745,3 +2744,6 @@
 [struct.PyThreadStateToken]
     added = '3.15'
     struct_abi_kind = 'opaque'
+
+[function.PyObject_CallFinalizerFromDealloc]
+    added = '3.15'
