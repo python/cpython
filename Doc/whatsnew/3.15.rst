@@ -879,6 +879,15 @@ contextlib
   (Contributed by Alex Grönholm & Gregory P. Smith in :gh:`125862`.)
 
 
+ctypes
+------
+
+* Change the ``format`` field of exported buffers from ``F``, ``D`` and ``G``
+  to ``Zf``, ``Zd`` and ``Zg``, respectively, for compatibility with
+  the :pep:`3118` and NumPy.
+  (Contributed by Sergey B Kirpichev in :gh:`149344`.)
+
+
 dataclasses
 -----------
 
