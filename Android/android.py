@@ -216,7 +216,7 @@ def unpack_deps(host, prefix_dir, cache_dir):
     for name_ver in [
         "bzip2-1.0.8-3",
         "libffi-3.4.4-3",
-        "openssl-3.0.20-0",
+        "openssl-3.5.6-0",
         "sqlite-3.50.4-0",
         "xz-5.4.6-1",
         "zstd-1.5.7-2"
