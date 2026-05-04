@@ -1,5 +1,5 @@
-This is Python version 3.14.4
-=============================
+This is Python version 3.14.5 release candidate 1
+=================================================
 
 .. image:: https://github.com/python/cpython/actions/workflows/build.yml/badge.svg?branch=main&event=push
    :alt: CPython build status on GitHub Actions

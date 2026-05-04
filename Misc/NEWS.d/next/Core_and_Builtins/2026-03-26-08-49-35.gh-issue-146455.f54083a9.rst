@@ -1,1 +1,0 @@
-Fix O(N²) compile-time regression in constant folding after it was moved from AST to CFG optimizer.
