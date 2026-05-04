@@ -366,7 +366,8 @@ instantiation, of which this module provides three different variants:
          delays, it now always returns the IP address.
 
 
-.. class:: SimpleHTTPRequestHandler(request, client_address, server, directory=None)
+.. class:: SimpleHTTPRequestHandler(request, client_address, server, \
+                                    *, directory=None, extra_response_headers=None)
 
    This class serves files from the directory *directory* and below,
    or the current directory if *directory* is not provided, directly
@@ -377,6 +378,9 @@ instantiation, of which this module provides three different variants:
 
    .. versionchanged:: 3.9
       The *directory* parameter accepts a :term:`path-like object`.
+
+   .. versionchanged:: next
+      Added *extra_response_headers* parameter.
 
    A lot of the work, such as parsing the request, is done by the base class
    :class:`BaseHTTPRequestHandler`.  This class implements the :func:`do_GET`
@@ -390,6 +394,14 @@ instantiation, of which this module provides three different variants:
       This will be ``"SimpleHTTP/" + __version__``, where ``__version__`` is
       defined at the module level.
 
+   .. attribute:: default_content_type
+
+      Specifies the Content-Type header value sent when the MIME type
+      cannot be guessed from the file extension of the requested URL.
+      By default, it is set to ``'application/octet-stream'``.
+
+      .. versionadded:: next
+
    .. attribute:: extensions_map
 
       A dictionary mapping suffixes into MIME types, contains custom overrides
@@ -399,6 +411,15 @@ instantiation, of which this module provides three different variants:
       .. versionchanged:: 3.9
          This dictionary is no longer filled with the default system mappings,
          but only contains overrides.
+
+   .. attribute:: extra_response_headers
+
+      A sequence of ``(name, value)`` pairs containing user-defined extra HTTP
+      response headers to add to each successful HTTP status 200 response. These
+      headers are not included in other status code responses.
+
+      Headers that the server sends automatically such as ``Content-Type``
+      will not be overwritten by :attr:`!extra_response_headers`.
 
    The :class:`SimpleHTTPRequestHandler` class defines the following methods:
 
@@ -431,6 +452,9 @@ instantiation, of which this module provides three different variants:
       A ``'Content-type:'`` header with the guessed content type is output,
       followed by a ``'Content-Length:'`` header with the file's size and a
       ``'Last-Modified:'`` header with the file's modification time.
+
+      The instance attribute :attr:`extra_response_headers` is a sequence of
+      ``(name, value)`` pairs containing user-defined extra response headers.
 
       Then follows a blank line signifying the end of the headers, and then the
       contents of the file are output.
@@ -528,6 +552,18 @@ The following options are accepted:
 
    .. versionadded:: 3.11
 
+.. option:: --content-type <content_type>
+
+   Specifies the default Content-Type HTTP header used when the MIME type
+   cannot be guessed from the URL's file extension. By default, the server
+   uses ``'application/octet-stream'``:
+
+   .. code-block:: bash
+
+      python -m http.server --content-type text/html
+
+   .. versionadded:: next
+
 .. option:: --tls-cert
 
    Specifies a TLS certificate chain for HTTPS connections:
@@ -560,6 +596,15 @@ The following options are accepted:
    This option requires ``--tls-cert`` to be specified.
 
    .. versionadded:: 3.14
+
+.. option:: -H, --header <header> <value>
+
+   Specify an additional extra HTTP Response Header to send on successful HTTP
+   200 responses. Can be used multiple times to send additional custom response
+   headers. Headers that are sent automatically by the server (for instance
+   Content-Type) will not be overwritten by the server.
+
+   .. versionadded:: next
 
 
 .. _http.server-security:

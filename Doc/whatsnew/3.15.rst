@@ -69,6 +69,8 @@ Summary -- Release highlights
   <whatsnew315-lazy-imports>`
 * :pep:`814`: :ref:`Add frozendict built-in type
   <whatsnew315-frozendict>`
+* :pep:`661`: :ref:`Add sentinel built-in type
+  <whatsnew315-sentinel>`
 * :pep:`799`: :ref:`A dedicated profiling package for organizing Python
   profiling tools <whatsnew315-profiling-package>`
 * :pep:`799`: :ref:`Tachyon: High frequency statistical sampling profiler
@@ -84,10 +86,12 @@ Summary -- Release highlights
 * :pep:`782`: :ref:`A new PyBytesWriter C API to create a Python bytes object
   <whatsnew315-pybyteswriter>`
 * :pep:`803`: :ref:`Stable ABI for Free-Threaded Builds <whatsnew315-abi3t>`
+* :pep:`831`: :ref:`Frame pointers everywhere <whatsnew315-frame-pointers>`
 * :ref:`The JIT compiler has been significantly upgraded <whatsnew315-jit>`
 * :ref:`Improved error messages <whatsnew315-improved-error-messages>`
 * :ref:`The official Windows 64-bit binaries now use the tail-calling interpreter
   <whatsnew315-windows-tail-calling-interpreter>`
+* :pep:`829`: Package Startup Configuration Files
 
 New features
 ============
@@ -184,6 +188,18 @@ function, class body, or ``try``/``except``/``finally`` block raises a
 (``lazy from module import *`` and ``lazy from __future__ import ...`` both
 raise :exc:`SyntaxError`).
 
+For code that cannot use the ``lazy`` keyword directly (for example, when
+supporting Python versions older than 3.15 while still using lazy
+imports on 3.15+), a module can define
+:attr:`~module.__lazy_modules__` as a container of fully qualified module
+name strings.  Regular ``import`` statements for those modules are then treated
+as lazy, with the same semantics as the ``lazy`` keyword::
+
+   __lazy_modules__ = ["json", "pathlib"]
+
+   import json     # lazy
+   import os       # still eager
+
 .. seealso:: :pep:`810` for the full specification and rationale.
 
 (Contributed by Pablo Galindo Salgado and Dino Viehland in :gh:`142349`.)
@@ -235,6 +251,20 @@ to accept also other mapping types such as :class:`~types.MappingProxyType`.
 (Contributed by Victor Stinner and Donghee Na in :gh:`141510`.)
 
 
+.. _whatsnew315-sentinel:
+
+:pep:`661`: Add sentinel built-in type
+--------------------------------------
+
+A new :class:`sentinel` type is added to the :mod:`builtins` module for
+creating unique sentinel values with a concise representation.  Sentinel
+objects preserve identity when copied, support use in type expressions with
+the ``|`` operator, and can be pickled when they are importable by module and
+name.
+
+(PEP by Tal Einat; contributed by Jelle Zijlstra in :gh:`148829`.)
+
+
 .. _whatsnew315-profiling-package:
 
 :pep:`799`: A dedicated profiling package
@@ -260,7 +290,7 @@ The :mod:`profile` module is deprecated and will be removed in Python 3.17.
 Tachyon: High frequency statistical sampling profiler
 -----------------------------------------------------
 
-.. image:: ../library/tachyon-logo.png
+.. image:: ../../Lib/profiling/sampling/_assets/tachyon-logo.png
    :alt: Tachyon profiler logo
    :align: center
    :width: 200px
@@ -292,6 +322,9 @@ Key features include:
   * Profile running processes by PID (``attach``) - attach to already-running applications
   * Run and profile scripts directly (``run``) - profile from the very start of execution
   * Execute and profile modules (``run -m``) - profile packages run as ``python -m module``
+  * Capture a one-shot snapshot of a running process (``dump``) - print a
+    traceback-style stack of every thread (or all asyncio tasks with
+    ``--async-aware``). Useful for investigating hung processes.
 
 * **Multiple profiling modes**: Choose what to measure based on your performance investigation:
 
@@ -638,9 +671,9 @@ Other language changes
   (Contributed by James Hilton-Balfe in :gh:`128335`.)
 
 * The class :class:`memoryview` now supports the :c:expr:`float complex` and
-  :c:expr:`double complex` C types: formatting characters ``'F'`` and ``'D'``
+  :c:expr:`double complex` C types: formatting characters ``'Zf'`` and ``'Zd'``
   respectively.
-  (Contributed by Sergey B Kirpichev in :gh:`146151`.)
+  (Contributed by Victor Stinner in :gh:`146151` and :gh:`148675`.)
 
 * Allow the *count* argument of :meth:`bytes.replace` to be a keyword.
   (Contributed by Stan Ulbrych in :gh:`147856`.)
@@ -648,6 +681,13 @@ Other language changes
 * Unary plus is now accepted in :keyword:`match` literal patterns, mirroring
   the existing support for unary minus.
   (Contributed by Bartosz Sławecki in :gh:`145239`.)
+
+* The import system now acquires per-module locks in hierarchical order
+  (parent packages before their submodules). This fixes a long-standing
+  deadlock where one thread importing ``pkg.sub`` and another importing
+  ``pkg.sub.mod`` could each block the other when ``pkg/sub/__init__.py``
+  imports ``pkg.sub.mod``.
+  (Contributed by Gregory P. Smith in :gh:`83065`.)
 
 
 New modules
@@ -684,12 +724,41 @@ array
 -----
 
 * Support the :c:expr:`float complex` and :c:expr:`double complex` C types:
-  formatting characters ``'F'`` and ``'D'`` respectively.
-  (Contributed by Sergey B Kirpichev in :gh:`146151`.)
+  formatting characters ``'Zf'`` and ``'Zd'`` respectively.
+  (Contributed by Victor Stinner in :gh:`146151` and :gh:`148675`.)
 
 * Support half-floats (16-bit IEEE 754 binary interchange format): formatting
   character ``'e'``.
   (Contributed by Sergey B Kirpichev in :gh:`146238`.)
+
+* The :data:`array.typecodes` type changed from :class:`str` to :class:`tuple`
+  to support type codes longer than 1 character (``Zf`` and ``Zd``).
+  (Contributed by Victor Stinner in :gh:`148675`.)
+
+
+ast
+---
+
+* Add *color* parameter to :func:`~ast.dump`.
+  If ``True``, the returned string is syntax highlighted using ANSI escape
+  sequences.
+  If ``False`` (the default), colored output is always disabled.
+  (Contributed by Stan Ulbrych in :gh:`148981`.)
+
+* The :ref:`command-line <ast-cli>` output is now syntax highlighted by default.
+  This can be :ref:`controlled using environment variables <using-on-controlling-color>`.
+  (Contributed by Stan Ulbrych in :gh:`148981`.)
+
+
+asyncio
+-------
+
+* Added :meth:`TaskGroup.cancel <asyncio.TaskGroup.cancel>` to allow early
+  termination of a task group, for instance, when the goal of the tasks has
+  been achieved or their services are no longer needed.
+  Previously this would involve unintuitive boilerplate such as an extra task
+  raising a custom exception which is then suppressed as it exits the task group.
+  (Contributed by John Belmonte in :gh:`127214`.)
 
 
 base64
@@ -716,6 +785,15 @@ base64
   :func:`~base64.b64decode`, :func:`~base64.b85decode`, and
   :func:`~base64.z85decode`.
   (Contributed by Serhiy Storchaka in :gh:`144001` and :gh:`146431`.)
+
+* Added the *canonical* parameter in
+  :func:`~base64.b32decode`, :func:`~base64.b32hexdecode`,
+  :func:`~base64.b64decode`, :func:`~base64.urlsafe_b64decode`,
+  :func:`~base64.a85decode`, :func:`~base64.b85decode`, and
+  :func:`~base64.z85decode`,
+  to reject encodings with non-zero padding bits or other non-canonical
+  forms.
+  (Contributed by Gregory P. Smith in :gh:`146311`.)
 
 
 binascii
@@ -750,17 +828,26 @@ binascii
   :func:`~binascii.unhexlify`, and :func:`~binascii.a2b_base64`.
   (Contributed by Serhiy Storchaka in :gh:`144001` and :gh:`146431`.)
 
+* Added the *canonical* parameter in :func:`~binascii.a2b_base64`,
+  to reject encodings with non-zero padding bits.
+  (Contributed by Gregory P. Smith in :gh:`146311`.)
+
 
 calendar
 --------
 
-* Calendar pages generated by the :class:`calendar.HTMLCalendar` class now support
-  dark mode and have been migrated to the HTML5 standard for improved accessibility.
-  (Contributed by Jiahao Li and Hugo van Kemenade in :gh:`137634`.)
+* :mod:`calendar`'s :ref:`command-line <calendar-cli>` text output has more
+  color. This can be controlled with :ref:`environment variables
+  <using-on-controlling-color>`.
+  (Contributed by Hugo van Kemenade in :gh:`148352`.)
 
 * The :mod:`calendar`'s :ref:`command-line <calendar-cli>` HTML output now
   accepts the year-month option: ``python -m calendar -t html 2009 06``.
   (Contributed by Pål Grønås Drange in :gh:`140212`.)
+
+* Calendar pages generated by the :class:`calendar.HTMLCalendar` class now support
+  dark mode and have been migrated to the HTML5 standard for improved accessibility.
+  (Contributed by Jiahao Li and Hugo van Kemenade in :gh:`137634`.)
 
 
 collections
@@ -790,6 +877,15 @@ contextlib
   :class:`~contextlib.ExitStack` and :class:`contextlib.AsyncExitStack`, for
   consistency with the :keyword:`with` and :keyword:`async with` statements.
   (Contributed by Serhiy Storchaka in :gh:`144386`.)
+
+* :class:`~contextlib.ContextDecorator` and
+  :class:`~contextlib.AsyncContextDecorator` (and therefore
+  :func:`~contextlib.contextmanager` and :func:`~contextlib.asynccontextmanager`
+  used as decorators) now detect generator functions, coroutine functions, and
+  asynchronous generator functions and keep the context manager open across
+  iteration or await.  Previously the context manager exited as soon as the
+  generator or coroutine object was created.
+  (Contributed by Alex Grönholm & Gregory P. Smith in :gh:`125862`.)
 
 
 dataclasses
@@ -821,6 +917,25 @@ difflib
 * Improved the styling of HTML diff pages generated by the :class:`difflib.HtmlDiff`
   class, and migrated the output to the HTML5 standard.
   (Contributed by Jiahao Li in :gh:`134580`.)
+
+
+faulthandler
+------------
+
+* Added the *max_threads* parameter in :func:`faulthandler.enable`,
+  :func:`faulthandler.dump_traceback`, :func:`faulthandler.dump_traceback_later`,
+  and :func:`faulthandler.register`.
+  (Contributed by Eric Froemling in :gh:`149085`.)
+
+
+email
+-----
+
+* Email generators now raise an error when an :class:`.EmailMessage` cannot be
+  accurately flattened due to a non-ASCII email address (mailbox) in an address
+  header. Options for supporting Email Address Internationalization (EAI) are
+  discussed in :attr:`.EmailPolicy.utf8`.
+  (Contributed by R David Murray and Mike Edmunds in :gh:`122540`.)
 
 
 functools
@@ -856,13 +971,6 @@ http.client
   (Contributed by Alexander Enrique Urieles Nieto in :gh:`131724`.)
 
 
-http.cookies
-------------
-
-* Allow '``"``' double quotes in cookie values.
-  (Contributed by Nick Burns and Senthil Kumaran in :gh:`92936`.)
-
-
 http.server
 -----------
 
@@ -872,6 +980,21 @@ http.server
   This can be controlled with :ref:`environment variables
   <using-on-controlling-color>`.
   (Contributed by Hugo van Kemenade in :gh:`146292`.)
+
+* Added :attr:`~http.server.SimpleHTTPRequestHandler.default_content_type`
+  and the :option:`--content-type <http.server --content-type>` command-line
+  option to allow customizing the default ``Content-Type`` header
+  for files with unknown extensions.
+  (Contributed by John Comeau and Hugo van Kemenade in :gh:`113471`.)
+
+* Add a new ``extra_response_headers`` keyword argument to
+  :class:`~http.server.SimpleHTTPRequestHandler` to support custom headers in
+  HTTP responses.
+  (Contributed by Anton I. Sipos in :gh:`135057`.)
+
+* Add a ``-H/--header`` option to the :program:`python -m http.server`
+  command-line interface to support custom headers in HTTP responses.
+  (Contributed by Anton I. Sipos in :gh:`135057`.)
 
 
 inspect
@@ -964,11 +1087,27 @@ os.path
   (Contributed by Petr Viktorin for :cve:`2025-4517`.)
 
 
+pdb
+---
+
+* Use the new interactive shell as the default input shell for :mod:`pdb`.
+  (Contributed by Tian Gao in :gh:`145379`.)
+
+
 pickle
 ------
 
 * Add support for pickling private methods and nested classes.
   (Contributed by Zackery Spytz and Serhiy Storchaka in :gh:`77188`.)
+
+
+pickletools
+-----------
+
+* The output of the :mod:`pickletools` command-line interface is colored by
+  default. This can be controlled with
+  :ref:`environment variables <using-on-controlling-color>`.
+  (Contributed by Hugo van Kemenade in :gh:`149026`.)
 
 
 pprint
@@ -1162,6 +1301,16 @@ tarfile
   (Contributed by Christoph Walcher in :gh:`57911`.)
 
 
+threading
+---------
+
+* Added :class:`~threading.serialize_iterator`,
+  :func:`~threading.synchronized_iterator`,
+  and :func:`~threading.concurrent_tee` to support concurrent access to
+  generators and iterators.
+  (Contributed by Raymond Hettinger in :gh:`124397`.)
+
+
 timeit
 ------
 
@@ -1203,6 +1352,15 @@ tkinter
   and :attr:`!detail` for ``Enter``, ``Leave``, ``FocusIn``, ``FocusOut``,
   and ``ConfigureRequest`` events.
   (Contributed by Matthias Kievernagel and Serhiy Storchaka in :gh:`47655`.)
+
+
+tokenize
+--------
+
+* The output of the :mod:`tokenize` :ref:`command-line interface
+  <tokenize-cli>` is colored by default. This can be controlled with
+  :ref:`environment variables <using-on-controlling-color>`.
+  (Contributed by Hugo van Kemenade in :gh:`148991`.)
 
 
 .. _whatsnew315-tomllib-1-1-0:
@@ -1335,9 +1493,15 @@ unicodedata
 unittest
 --------
 
-* :func:`unittest.TestCase.assertLogs` will now accept a formatter
+* :meth:`unittest.TestCase.assertLogs` will now accept a formatter
   to control how messages are formatted.
   (Contributed by Garry Cairns in :gh:`134567`.)
+
+* :meth:`unittest.TestCase.assertWarns` and
+  :meth:`unittest.TestCase.assertWarnsRegex` no longer swallow warnings that
+  do not match the specified category or regex.
+  Nested context managers are now supported.
+  (Contributed by Serhiy Storchaka in :gh:`143231`.)
 
 
 urllib.parse
@@ -1464,11 +1628,11 @@ Upgraded JIT compiler
 
 Results from the `pyperformance <https://github.com/python/pyperformance>`__
 benchmark suite report
-`6-7% <https://www.doesjitgobrrr.com/run/2026-04-01>`__
+`8-9% <https://www.doesjitgobrrr.com/run/2026-04-29>`__
 geometric mean performance improvement for the JIT over the standard CPython
 interpreter built with all optimizations enabled on x86-64 Linux. On AArch64
 macOS, the JIT has a
-`12-13% <https://www.doesjitgobrrr.com/run/2026-04-01>`__
+`12-13% <https://www.doesjitgobrrr.com/run/2026-04-29>`__
 speedup over the :ref:`tail calling interpreter <whatsnew314-tail-call-interpreter>`
 with all optimizations enabled. The speedups for JIT
 builds versus no JIT builds range from roughly 15% slowdown to over
@@ -1556,6 +1720,16 @@ This was made possible by a refactoring of JIT data structures.
 Removed
 ========
 
+ast
+---
+
+* The constructors of :ref:`AST nodes <ast_nodes>` now raise a :exc:`TypeError`
+  when a required argument is omitted or when a keyword argument that does not
+  map to a field on the AST node is passed. These cases had previously raised a
+  :exc:`DeprecationWarning` since Python 3.13.
+  (Contributed by Brian Schubert and Jelle Zijlstra in :gh:`137600` and :gh:`105858`.)
+
+
 collections.abc
 ---------------
 
@@ -1570,6 +1744,12 @@ ctypes
 * Removed the undocumented function :func:`!ctypes.SetPointerType`,
   which has been deprecated since Python 3.13.
   (Contributed by Bénédikt Tran in :gh:`133866`.)
+
+* Change the :py:attr:`~ctypes._SimpleCData._type_` of
+  :class:`~ctypes.c_float_complex`, :class:`~ctypes.c_double_complex` and
+  :class:`~ctypes.c_longdouble_complex` from ``F``, ``D`` and ``G`` to ``Zf``,
+  ``Zd`` and ``Zg`` for compatibility with numpy.
+  (Contributed by Victor Stinner in :gh:`148675`.)
 
 
 datetime
@@ -1646,6 +1826,14 @@ threading
   (Contributed by Bénédikt Tran in :gh:`134087`.)
 
 
+types
+-----
+
+* Removed deprecated in :pep:`626` since Python 3.12
+  :attr:`!codeobject.co_lnotab` from :class:`types.CodeType`.
+  (Contributed by Nikita Sobolev in :gh:`134690`.)
+
+
 typing
 ------
 
@@ -1691,6 +1879,13 @@ Deprecated
 
 New deprecations
 ----------------
+
+* :mod:`ast`
+
+  * Creating instances of abstract AST nodes (such as :class:`ast.AST`
+    or :class:`!ast.expr`) is deprecated and will raise an error in Python 3.20.
+
+    (Contributed by Brian Schubert in :gh:`116021`.)
 
 * :mod:`base64`:
 
@@ -1739,6 +1934,16 @@ New deprecations
     a positional argument for maximum backwards compatibility.
 
     (Contributed by Bénédikt Tran in :gh:`134978`.)
+
+
+* :mod:`http.cookies`:
+
+  * :meth:`Morsel.js_output <http.cookies.Morsel.js_output>` and
+    :meth:`BaseCookie.js_output <http.cookies.BaseCookie.js_output>` are
+    deprecated and will be removed in Python 3.19. Use
+    :meth:`Morsel.output <http.cookies.Morsel.output>` or
+    :meth:`BaseCookie.output <http.cookies.BaseCookie.output>` instead.
+    (Contributed by kishorhange111 in :gh:`148849`.)
 
 
 * :mod:`re`:
@@ -1855,6 +2060,10 @@ New features
 
   (Contributed by Victor Stinner in :gh:`141510`.)
 
+* Add :c:func:`PyObject_CallFinalizerFromDealloc` function to the limited C
+  API.
+  (Contributed by Victor Stinner in :gh:`146063`.)
+
 * Add :c:func:`PySys_GetAttr`, :c:func:`PySys_GetAttrString`,
   :c:func:`PySys_GetOptionalAttr`, and :c:func:`PySys_GetOptionalAttrString`
   functions as replacements for :c:func:`PySys_GetObject`.
@@ -1888,6 +2097,11 @@ New features
   * :c:func:`PyBytesWriter_WriteBytes`
 
   (Contributed by Victor Stinner in :gh:`129813`.)
+
+* :c:type:`PyCriticalSection` and related functions are added to the Stable
+  ABI.
+
+  (Contributed in :gh:`149227`.)
 
 * Add a new :c:func:`PyImport_CreateModuleFromInitfunc` C-API for creating
   a module from a *spec* and *initfunc*.
@@ -2119,6 +2333,16 @@ Build changes
   and :option:`-X dev <-X>` is passed to the Python or Python is built in :ref:`debug mode <debug-build>`.
   (Contributed by Donghee Na in :gh:`141770`.)
 
+.. _whatsnew315-frame-pointers:
+
+* CPython is now built with frame pointers enabled by default
+  (:pep:`831`). Pass :option:`--without-frame-pointers` to opt out.
+  Authors of C extensions and native libraries built with custom build
+  systems should add ``-fno-omit-frame-pointer`` and
+  ``-mno-omit-leaf-frame-pointer`` to their own ``CFLAGS`` to keep the
+  unwind chain intact.
+  (Contributed by Pablo Galindo Salgado and Savannah Ostrowski in :gh:`149201`.)
+
 .. _whatsnew315-windows-tail-calling-interpreter:
 
 * 64-bit builds using Visual Studio 2026 (MSVC 18) may now use the new
@@ -2181,3 +2405,11 @@ that may require changes to your code.
   with argument ``altchars=b'-_'`` (this works with older Python versions)
   to make padding required.
   (Contributed by Serhiy Storchaka in :gh:`73613`.)
+
+* Since :meth:`unittest.TestCase.assertWarns` and
+  :meth:`unittest.TestCase.assertWarnsRegex` no longer swallow warnings that
+  do not match the specified category or regex, your tests may start leaking
+  some warnings that were previously masked.
+  Use warning filters to silence them or additional :meth:`!assertWarns*`
+  to catch and check them.
+  (Contributed by Serhiy Storchaka in :gh:`143231`.)

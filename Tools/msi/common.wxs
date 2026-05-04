@@ -77,6 +77,12 @@
     <!-- Top-level directories -->
     <Fragment>
         <DirectoryRef Id="InstallDirectory">
+            <Directory Id="abi3t_compat" Name="abi3t-compat" />
+        </DirectoryRef>
+    </Fragment>
+
+    <Fragment>
+        <DirectoryRef Id="InstallDirectory">
             <Directory Id="DLLs" Name="DLLs">
                 <Directory Id="Catalogs" />
             </Directory>

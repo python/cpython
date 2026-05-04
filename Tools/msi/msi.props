@@ -122,6 +122,30 @@
         <LinkerBindInputPaths Include="$(PGOBuildPath);$(BuildPath)">
             <BindName></BindName>
         </LinkerBindInputPaths>
+        <!--
+        This looks repetitive, but we need to make sure that we override any
+        environment variable that changes the paths for free-threading so that
+        the binds are correct. Otherwise, we'd rely on defaults.
+        -->
+        <LinkerBindInputPaths Include="$(BuildPath32)" Condition="$(Platform) == 'x86'">
+            <BindName>build</BindName>
+        </LinkerBindInputPaths>
+        <LinkerBindInputPaths Include="$(BuildPath64)" Condition="$(Platform) == 'x64'">
+            <BindName>build</BindName>
+        </LinkerBindInputPaths>
+        <LinkerBindInputPaths Include="$(BuildPathARM64)" Condition="$(Platform) == 'ARM64'">
+            <BindName>build</BindName>
+        </LinkerBindInputPaths>
+        <LinkerBindInputPaths Include="$(BuildPath32t)" Condition="$(Platform) == 'x86'">
+            <BindName>build_t</BindName>
+        </LinkerBindInputPaths>
+        <LinkerBindInputPaths Include="$(BuildPath64t)" Condition="$(Platform) == 'x64'">
+            <BindName>build_t</BindName>
+        </LinkerBindInputPaths>
+        <LinkerBindInputPaths Include="$(BuildPathARM64t)" Condition="$(Platform) == 'ARM64'">
+            <BindName>build_t</BindName>
+        </LinkerBindInputPaths>
+
         <LinkerBindInputPaths Include="$(PySourcePath)">
             <BindName>src</BindName>
         </LinkerBindInputPaths>
@@ -131,6 +155,7 @@
         <LinkerBindInputPaths Include="$(CRTRedist)">
             <BindName>redist</BindName>
         </LinkerBindInputPaths>
+
         <LinkerBindInputPaths Include="$(BuildPath32)">
             <BindName>build32</BindName>
         </LinkerBindInputPaths>
@@ -139,6 +164,15 @@
         </LinkerBindInputPaths>
         <LinkerBindInputPaths Include="$(BuildPathARM64)">
             <BindName>buildarm64</BindName>
+        </LinkerBindInputPaths>
+        <LinkerBindInputPaths Include="$(BuildPath32t)">
+            <BindName>build32t</BindName>
+        </LinkerBindInputPaths>
+        <LinkerBindInputPaths Include="$(BuildPath64t)">
+            <BindName>build64t</BindName>
+        </LinkerBindInputPaths>
+        <LinkerBindInputPaths Include="$(BuildPathARM64t)">
+            <BindName>buildarm64t</BindName>
         </LinkerBindInputPaths>
     </ItemGroup>
 
