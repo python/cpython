@@ -3485,9 +3485,9 @@ PyInterpreterView_FromMain(void)
     return view;
 }
 
-static const uint8_t _no_tstate_sentinel = 0;
+static const PyThreadStateToken *_no_tstate_sentinel = &_no_tstate_sentinel;
 
-#define NO_TSTATE_SENTINEL ((PyThreadStateToken *)&_no_tstate_sentinel)
+#define NO_TSTATE_SENTINEL ((PyThreadStateToken *)_no_tstate_sentinel)
 
 PyThreadStateToken *
 PyThreadState_Ensure(PyInterpreterGuard *guard)
@@ -3537,7 +3537,7 @@ PyThreadState_EnsureFromView(PyInterpreterView *view)
         return NULL;
     }
 
-    PyThreadStateToken *result = (PyThreadStateToken*)PyThreadState_Ensure(guard);
+    PyThreadStateToken *result = (PyThreadStateToken *)PyThreadState_Ensure(guard);
     if (result == NULL) {
         PyInterpreterGuard_Close(guard);
         return NULL;
@@ -3549,7 +3549,8 @@ PyThreadState_EnsureFromView(PyInterpreterView *view)
     if (tstate->ensure.owned_guard != NULL) {
         assert(tstate->ensure.owned_guard->interp == guard->interp);
         PyInterpreterGuard_Close(guard);
-    } else {
+    }
+    else {
         assert(tstate->ensure.owned_guard == NULL);
         tstate->ensure.owned_guard = guard;
     }
@@ -3576,7 +3577,7 @@ PyThreadState_Release(PyThreadStateToken *token)
         to_restore = NULL;
     }
     else {
-        to_restore = (PyThreadState*)token;
+        to_restore = (PyThreadState *)token;
     }
 
     PyInterpreterGuard *owned_guard = tstate->ensure.owned_guard;
