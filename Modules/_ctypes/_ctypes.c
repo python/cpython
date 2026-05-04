@@ -267,41 +267,40 @@ _PyDict_GetItemProxy(PyObject *dict, PyObject *key, PyObject **presult)
   later on.
  */
 static char *
-_ctypes_alloc_format_string_for_type(char code, int big_endian)
+_ctypes_alloc_format_string_for_type(const char *code, int big_endian)
 {
-    char *result;
-    char pep_code = '\0';
+    const char *pep_code = NULL;
 
-    switch (code) {
+    switch (code[0]) {
 #if SIZEOF_INT == 2
-    case 'i': pep_code = 'h'; break;
-    case 'I': pep_code = 'H'; break;
+    case 'i': pep_code = "h"; break;
+    case 'I': pep_code = "H"; break;
 #elif SIZEOF_INT == 4
-    case 'i': pep_code = 'i'; break;
-    case 'I': pep_code = 'I'; break;
+    case 'i': pep_code = "i"; break;
+    case 'I': pep_code = "I"; break;
 #elif SIZEOF_INT == 8
-    case 'i': pep_code = 'q'; break;
-    case 'I': pep_code = 'Q'; break;
+    case 'i': pep_code = "q"; break;
+    case 'I': pep_code = "Q"; break;
 #else
 # error SIZEOF_INT has an unexpected value
 #endif /* SIZEOF_INT */
 #if SIZEOF_LONG == 4
-    case 'l': pep_code = 'l'; break;
-    case 'L': pep_code = 'L'; break;
+    case 'l': pep_code = "l"; break;
+    case 'L': pep_code = "L"; break;
 #elif SIZEOF_LONG == 8
-    case 'l': pep_code = 'q'; break;
-    case 'L': pep_code = 'Q'; break;
+    case 'l': pep_code = "q"; break;
+    case 'L': pep_code = "Q"; break;
 #else
 # error SIZEOF_LONG has an unexpected value
 #endif /* SIZEOF_LONG */
 #if SIZEOF__BOOL == 1
-    case '?': pep_code = '?'; break;
+    case '?': pep_code = "?"; break;
 #elif SIZEOF__BOOL == 2
-    case '?': pep_code = 'H'; break;
+    case '?': pep_code = "H"; break;
 #elif SIZEOF__BOOL == 4
-    case '?': pep_code = 'L'; break;
+    case '?': pep_code = "L"; break;
 #elif SIZEOF__BOOL == 8
-    case '?': pep_code = 'Q'; break;
+    case '?': pep_code = "Q"; break;
 #else
 # error SIZEOF__BOOL has an unexpected value
 #endif /* SIZEOF__BOOL */
@@ -311,15 +310,14 @@ _ctypes_alloc_format_string_for_type(char code, int big_endian)
         break;
     }
 
-    result = PyMem_Malloc(3);
+    char *result = PyMem_Malloc(1 + strlen(pep_code) + 1);
     if (result == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
 
     result[0] = big_endian ? '>' : '<';
-    result[1] = pep_code;
-    result[2] = '\0';
+    strcpy(result + 1, pep_code);
     return result;
 }
 
@@ -2347,7 +2345,6 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *proto;
     const char *proto_str;
-    Py_ssize_t proto_len;
     PyMethodDef *ml;
     struct fielddesc *fmt;
 
@@ -2365,7 +2362,7 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
         return -1;
     }
     if (PyUnicode_Check(proto)) {
-        proto_str = PyUnicode_AsUTF8AndSize(proto, &proto_len);
+        proto_str = PyUnicode_AsUTF8(proto);
         if (!proto_str)
             goto error;
     } else {
@@ -2373,19 +2370,23 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
             "class must define a '_type_' string attribute");
         goto error;
     }
-    if (proto_len != 1) {
-        PyErr_SetString(PyExc_ValueError,
-                        "class must define a '_type_' attribute "
-                        "which must be a string of length 1");
-        goto error;
-    }
     fmt = _ctypes_get_fielddesc(proto_str);
     if (!fmt) {
-        PyErr_Format(PyExc_AttributeError,
-                     "class must define a '_type_' attribute which must be\n"
-                     "a single character string containing one of the\n"
-                     "supported types: '%s'.",
-                     _ctypes_get_simple_type_chars());
+        const char *complex_formats = _ctypes_get_complex_type_formats();
+        if (complex_formats) {
+            PyErr_Format(PyExc_AttributeError,
+                         "class must define a '_type_' attribute which must be\n"
+                         "one of these characters: '%s',\n"
+                         "or one of these strings: %s.",
+                         _ctypes_get_simple_type_chars(),
+                         complex_formats);
+        }
+        else {
+            PyErr_Format(PyExc_AttributeError,
+                         "class must define a '_type_' attribute which must be\n"
+                         "one of these characters: '%s'.\n",
+                         _ctypes_get_simple_type_chars());
+        }
         goto error;
     }
 
@@ -2403,9 +2404,9 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
     stginfo->setfunc = fmt->setfunc;
     stginfo->getfunc = fmt->getfunc;
 #ifdef WORDS_BIGENDIAN
-    stginfo->format = _ctypes_alloc_format_string_for_type(proto_str[0], 1);
+    stginfo->format = _ctypes_alloc_format_string_for_type(proto_str, 1);
 #else
-    stginfo->format = _ctypes_alloc_format_string_for_type(proto_str[0], 0);
+    stginfo->format = _ctypes_alloc_format_string_for_type(proto_str, 0);
 #endif
     if (stginfo->format == NULL) {
         Py_DECREF(proto);
@@ -2432,9 +2433,15 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
             ml = c_char_p_methods;
             stginfo->flags |= TYPEFLAG_ISPOINTER;
             break;
-        case 'Z': /* c_wchar_p */
-            ml = c_wchar_p_methods;
-            stginfo->flags |= TYPEFLAG_ISPOINTER;
+        case 'Z':
+            if (proto_str[1] == '\0') {
+                /* "Z": c_wchar_p */
+                ml = c_wchar_p_methods;
+                stginfo->flags |= TYPEFLAG_ISPOINTER;
+            }
+            else {
+                ml = NULL;
+            }
             break;
         case 'P': /* c_void_p */
             ml = c_void_p_methods;

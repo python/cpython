@@ -1833,8 +1833,15 @@ from the command line.
 
 By default, accepts the name of a module and prints the source of that
 module. A class or function within the module can be printed instead by
-appended a colon and the qualified name of the target object.
+appending a colon and the qualified name of the target object.
 
 .. option:: --details
 
    Print information about the specified object rather than the source code
+
+.. versionchanged:: next
+
+   The ``--details`` option now supports basic introspection for modules
+   without available source code and indicates when modules are frozen.
+   It also indicates when the given target reference is not the canonical
+   name of the referenced object.
