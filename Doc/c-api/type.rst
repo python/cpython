@@ -536,6 +536,11 @@ Slot values may not be ``NULL``, except for the following:
    using :c:data:`Py_tp_vectorcall`.  See the field's documentation
    for details.
 
+.. versionchanged:: 3.15
+   The :c:data:`Py_tp_bases` slot may be set to a single type object,
+   making it equivalent to the :c:data:`Py_tp_base` slot.
+   Previously, a tuple of types was required.
+
 The following slots correspond to fields in the underlying type structure,
 but need extra remarks for use as slots:
 
