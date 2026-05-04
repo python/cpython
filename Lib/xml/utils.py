@@ -1,10 +1,10 @@
-lazy import re
+lazy import re as _re
 
 
 def is_valid_name(name):
     """Test whether a string is a valid element or attribute name."""
     # https://www.w3.org/TR/xml/#NT-Name
-    return re.fullmatch(
+    return _re.fullmatch(
         # NameStartChar
         '['
             ':A-Z_a-z'
