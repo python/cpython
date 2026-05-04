@@ -3487,7 +3487,7 @@ PyInterpreterView_FromMain(void)
 
 static const PyThreadStateToken *_no_tstate_sentinel = (const PyThreadStateToken *)&_no_tstate_sentinel;
 
-#define NO_TSTATE_SENTINEL (_no_tstate_sentinel)
+#define NO_TSTATE_SENTINEL ((PyThreadStateToken *)_no_tstate_sentinel)
 
 PyThreadStateToken *
 PyThreadState_Ensure(PyInterpreterGuard *guard)
@@ -3521,10 +3521,9 @@ PyThreadState_Ensure(PyInterpreterGuard *guard)
 
     if (attached_tstate != NULL) {
         return (PyThreadStateToken*)PyThreadState_Swap(fresh_tstate);
-    } else {
-        _PyThreadState_Attach(fresh_tstate);
     }
 
+    _PyThreadState_Attach(fresh_tstate);
     return NO_TSTATE_SENTINEL;
 }
 
