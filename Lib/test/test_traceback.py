@@ -40,7 +40,7 @@ test_code.co_positions = lambda _: iter([(6, 6, 0, 0)])
 test_frame = namedtuple('frame', ['f_code', 'f_globals', 'f_locals'])
 test_tb = namedtuple('tb', ['tb_frame', 'tb_lineno', 'tb_next', 'tb_lasti'])
 
-color_overrides = {"reset": "z", "filename": "fn", "error_highlight": "E", "note": "n"}
+color_overrides = {"reset": "z", "filename": "fn", "error_highlight": "E", "note": "n", "exception_target": "Y"}
 colors = {
     color_overrides.get(k, k[0].lower()): v
     for k, v in _colorize.default_theme.traceback.items()
@@ -248,13 +248,13 @@ class TracebackCases(unittest.TestCase):
             def __str__(self):
                 1/0
         err = traceback.format_exception_only(X, X())
-        self.assertEqual(len(err), 1)
+        self.assertEqual(len(err), 10)
         str_value = '<exception str() failed>'
         if X.__module__ in ('__main__', 'builtins'):
             str_name = X.__qualname__
         else:
             str_name = '.'.join([X.__module__, X.__qualname__])
-        self.assertEqual(err[0], "%s: %s\n" % (str_name, str_value))
+        self.assertIn("%s: %s\n" % (str_name, str_value), err[0])
 
     def test_format_exception_group_without_show_group(self):
         eg = ExceptionGroup('A', [ValueError('B')])
@@ -2550,7 +2550,10 @@ class BaseExceptionReportingTests:
 
         e.__notes__ = Unprintable()
         err_msg = '<__notes__ repr() failed>'
-        self.assertEqual(self.get_report(e), vanilla + err_msg + '\n')
+        ignore_msg = "Exception ignored in __notes__ repr():"
+        msg = self.get_report(e)
+        self.assertIn(vanilla + err_msg + '\n', msg)
+        self.assertIn(ignore_msg, msg)
 
         # non-string item in the __notes__ sequence
         e.__notes__  = [BadThing(), 'Final Note']
@@ -2560,7 +2563,9 @@ class BaseExceptionReportingTests:
         # unprintable, non-string item in the __notes__ sequence
         e.__notes__  = [Unprintable(), 'Final Note']
         err_msg = '<note str() failed>'
-        self.assertEqual(self.get_report(e), vanilla + err_msg + '\nFinal Note\n')
+        msg = self.get_report(e)
+        self.assertIn(vanilla + err_msg + '\nFinal Note\n', msg)
+        self.assertIn("Exception ignored in note str():", msg)
 
         e.__notes__  = "please do not explode me"
         err_msg = "'please do not explode me'"
@@ -2670,7 +2675,9 @@ class BaseExceptionReportingTests:
         err = self.get_report(X())
         str_value = '<exception str() failed>'
         str_name = '.'.join([X.__module__, X.__qualname__])
-        self.assertEqual(MODULE_PREFIX + err, f"{str_name}: {str_value}\n")
+        ignore_sentence = "Exception ignored in exception str():"
+        self.assertIn(f"{str_name}: {str_value}\n", MODULE_PREFIX + err)
+        self.assertIn(ignore_sentence, err)
 
 
     # #### Exception Groups ####
@@ -4335,8 +4342,14 @@ class GetattrSuggestionTests(BaseSuggestionTests):
                 raise AttributeError(23)
 
         for cls in [A, B, C]:
-            actual = self.get_suggestion(cls(), 'bluch')
-            self.assertIn("blech", actual)
+            try:
+                getattr(cls(), "bluch")
+            except AttributeError:
+                msg = traceback.format_exc()
+                self.assertIn("blech", msg)
+            # actual = self.get_suggestion(cls(), 'bluch')
+            # self.assertIn("blech", actual)
+            # The above using is changed because it will get the warning in the ignore exception
 
 
 class DelattrSuggestionTests(BaseSuggestionTests):
@@ -5332,7 +5345,7 @@ class TestColorizedTraceback(unittest.TestCase):
                 e, capture_locals=True
             )
         actual = "".join(exc.format(colorize=True))
-        def expected(t, m, fn, l, f, E, e, z, n):
+        def expected(t, m, fn, l, f, E, e, z, n, Y):
             return "".join(
                 [
                     f'  File {fn}"<string>"{z}, line {l}1{z}\n',
@@ -5358,7 +5371,7 @@ class TestColorizedTraceback(unittest.TestCase):
             actual = tbstderr.getvalue().splitlines()
 
         lno_foo = foo.__code__.co_firstlineno
-        def expected(t, m, fn, l, f, E, e, z, n):
+        def expected(t, m, fn, l, f, E, e, z, n, Y):
             return [
                 'Traceback (most recent call last):',
                 f'  File {fn}"{__file__}"{z}, '
@@ -5391,7 +5404,7 @@ class TestColorizedTraceback(unittest.TestCase):
 
         lno_foo = foo.__code__.co_firstlineno
         actual = "".join(exc.format(colorize=True)).splitlines()
-        def expected(t, m, fn, l, f, E, e, z, n):
+        def expected(t, m, fn, l, f, E, e, z, n, Y):
             return [
                 f"  + Exception Group Traceback (most recent call last):",
                 f'  |   File {fn}"{__file__}"{z}, line {l}{lno_foo+9}{z}, in {f}test_colorized_traceback_from_exception_group{z}',

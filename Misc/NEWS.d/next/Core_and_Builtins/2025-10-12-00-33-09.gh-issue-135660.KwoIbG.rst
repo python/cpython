@@ -1,0 +1,1 @@
+Print the exception as warning (ignore) when handle a transmitted anomalies
