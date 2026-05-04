@@ -24,6 +24,10 @@ import os
 import time
 from typing import TYPE_CHECKING
 
+lazy import subprocess
+lazy import tempfile
+lazy from pathlib import Path
+
 # Categories of actions:
 #  killing
 #  yanking
@@ -519,3 +523,44 @@ class perform_bracketed_paste(Command):
             s=time.time() - start,
         )
         self.reader.insert(data.replace(done, ""))
+
+
+class edit_in_editor(EditCommand):
+    def do(self) -> None:
+        r = self.reader
+
+        editor = os.environ.get("VISUAL") or os.environ.get("EDITOR")
+        if not editor:
+            editor = "vi" if os.name != "nt" else "notepad"
+
+        with tempfile.NamedTemporaryFile(mode="w+", suffix=".py", delete=False, encoding="utf-8") as f:
+            tmp_path = Path(f.name)
+            f.write("".join(r.buffer))
+            f.flush()
+
+        try:
+            with r.suspend():
+                cmd = editor.split() + [str(tmp_path)]
+                try:
+                    subprocess.call(cmd)
+                except FileNotFoundError:
+                    r.error(f"Editor not found: {editor}")
+                    return
+                except Exception as e:
+                    r.error(f"Failed to run editor: {e}")
+                    return
+
+            try:
+                new_text = tmp_path.read_text(encoding="utf-8").rstrip("\n")
+                r.buffer.clear()
+                r.buffer.extend(new_text)
+                r.pos = len(r.buffer)
+                r.invalidate_full()
+                r.console.repaint()
+            except Exception as e:
+                r.error(f"Failed to read edited file: {e}")
+        finally:
+            try:
+                tmp_path.unlink(missing_ok=True)
+            except Exception:
+                pass

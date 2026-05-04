@@ -104,6 +104,7 @@ default_keymap: Keymap = tuple(
         (r"\C-u", "unix-line-discard"),
         (r"\C-w", "unix-word-rubout"),
         (r"\C-x\C-u", "upcase-region"),
+        (r"\C-x\C-e", "edit-in-editor"),
         (r"\C-y", "yank"),
         *(() if sys.platform == "win32" else ((r"\C-z", "suspend"), )),
         (r"\M-b", "backward-word"),
