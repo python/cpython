@@ -151,6 +151,8 @@ static char *GetPythonImport (HINSTANCE hModule)
    to this python DLL is loaded, not a python3.dll that might be on the path
    by chance.
    Return whether the DLL was found.
+   On free-threaded builds, PY3_DLLNAME is undefined and this is a no-op.
+   _Py_CheckPython3t will check for python3t.dll in that case.
 */
 extern HMODULE PyWin_DLLhModule;
 static int
@@ -210,8 +212,6 @@ _Py_CheckPython3(void)
  * check is a bit more complicated on that version as we need to try loading
  * from a subdirectory first in case the adjacent python3t.dll is meant for
  * python315t.dll (and we are python315.dll).
- * ABI3T_DLLNAME is undefined for free-threaded builds, and so this function is
- * a no-op (we assume that _Py_CheckPython3 has already been called).
  */
 static int
 _Py_CheckPython3t(void)
@@ -219,7 +219,10 @@ _Py_CheckPython3t(void)
 #ifndef ABI3T_DLLNAME
     return 1;
 #else
-#if PY_MAJOR_VERSION==3 && PY_MINOR_VERSION==15
+#if defined(PY3_DLLNAME) && PY_MAJOR_VERSION==3 && PY_MINOR_VERSION==15
+    /* GIL-enabled builds of 3.15 might have a python3t.dll adjacent that is for
+       a free-threaded build. So we first check in a subdirectory in that case.
+       If it's not there, we'll look adjacent. */
     #define ABI3T_COMPAT_DLLNAME L"abi3t-compat\\" ABI3T_DLLNAME L".dll"
 #endif
     static int python3t_checked = 0;
