@@ -249,11 +249,6 @@ struct _gc_runtime_state {
     /* The number of live objects. */
     Py_ssize_t heap_size;
 
-    /* dummy members to preserve other offsets */
-    Py_ssize_t dummy1; /* was work_to_do */
-    int dummy2; /* was visited_space */
-    int dummy3; /* was phase */
-
     /* This is the number of objects that survived the last full
        collection. It approximates the number of long lived objects
        tracked by the GC.
