@@ -1565,7 +1565,7 @@ _remote_debugging_BinaryWriter_finalize_impl(BinaryWriterObject *self)
         return NULL;
     }
 
-    /* Save total_samples before finalizing */
+    /* Preserve total_samples before destroying the writer */
     self->cached_total_samples = self->writer->total_samples;
 
     binary_writer_destroy(self->writer);
