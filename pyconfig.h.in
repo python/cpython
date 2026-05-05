@@ -2073,7 +2073,8 @@
 /* Define if you want to use tail-calling interpreters in CPython. */
 #undef _Py_TAIL_CALL_INTERP
 
-/* Define if frame unwinding via pointers is expected to work */
+/* Define to 1 if frame unwinding via pointers is expected to work, 0 if not
+   */
 #undef _Py_WITH_FRAME_POINTERS
 
 /* Define to force use of thread-safe errno, h_errno, and other functions */
