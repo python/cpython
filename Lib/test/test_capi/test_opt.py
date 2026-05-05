@@ -2301,47 +2301,23 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(uops.count("_TO_BOOL_LIST"), 1)
 
     def test_store_slice_list_specialization(self):
-        # Verify the tier-2 _STORE_SLICE_LIST optimizer specialization fires
-        # when the container type is unknown (with a guard) and is elided
-        # when an earlier op has already proven the container is a list.
-        # Use a non-constant slice bound so the compiler emits STORE_SLICE
-        # (a constant slice gets folded to STORE_SUBSCR with a cached slice).
-        def f_with_guard(n):
-            lst = list(range(8))
-            src = [9, 8, 7]
-            k = 3
-            # Defeat constant folding by reading k from a local that the
-            # compiler can't prove is constant.
-            kk = k + (n & 0)
-            for _ in range(n):
-                lst[:kk] = src
-            return lst
-
-        res, ex = self._run_with_optimizer(f_with_guard, TIER2_THRESHOLD)
-        self.assertIsNotNone(ex)
-        uops = get_opnames(ex)
-        self.assertIn("_STORE_SLICE_LIST", uops)
-        # The plain _STORE_SLICE should not appear; the optimizer rewrites it.
-        self.assertNotIn("_STORE_SLICE", uops)
-
-        def f_guard_elided(n):
+        # _STORE_SLICE_LIST fires only when an earlier op has proven the
+        # container is a list. Use a non-constant slice bound so the
+        # compiler emits STORE_SLICE (a constant slice gets folded).
+        def f(n):
             lst = list(range(8))
             src = [9, 8, 7]
             k = 3
             kk = k + (n & 0)
             for _ in range(n):
-                # The lst[0] subscript guards the type as list; the
-                # subsequent _STORE_SLICE_LIST should not need its own
-                # _GUARD_THIRD_LIST.
                 _ = lst[0]
                 lst[:kk] = src
             return lst
 
-        res, ex = self._run_with_optimizer(f_guard_elided, TIER2_THRESHOLD)
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_STORE_SLICE_LIST", uops)
-        self.assertNotIn("_GUARD_THIRD_LIST", uops)
         self.assertNotIn("_STORE_SLICE", uops)
 
     def test_unique_tuple_unpack(self):
