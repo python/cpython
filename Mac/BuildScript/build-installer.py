@@ -264,10 +264,10 @@ def library_recipes():
             tk_patches = ['backport_gh71383_fix.patch', 'tk868_on_10_8_10_9.patch', 'backport_gh110950_fix.patch']
 
         else:
-            tcl_tk_ver='8.6.17'
-            tcl_checksum='a3903371efcce8a405c5c245d029e9f6850258a60fa3761c4d58995610949b31'
+            tcl_tk_ver='9.0.3'
+            tcl_checksum='2537ba0c86112c8c953f7c09d33f134dd45c0fb3a71f2d7f7691fd301d2c33a6'
 
-            tk_checksum='e4982df6f969c08bf9dd858a6891059b4a3f50dc6c87c10abadbbe2fc4838946'
+            tk_checksum='bf344efadb618babb7933f69275620f72454d1c8220130da93e3f7feb0efbf9b'
             tk_patches = []
 
 
