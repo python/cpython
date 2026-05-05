@@ -463,6 +463,47 @@ gc_visit_heaps(PyInterpreterState *interp, mi_block_visit_fun *visitor,
     return err;
 }
 
+// Visitor for _PyGC_GetMimallocAllocatedBytes(): called once per heap area
+// when visit_blocks=false.  Sums area->used * area->block_size.
+static bool
+mimalloc_used_area_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
+                           void *block, size_t block_size, void *arg)
+{
+    if (block == NULL) {
+        *(Py_ssize_t *)arg += (Py_ssize_t)(area->used * area->block_size);
+    }
+    return true;
+}
+
+// Return the total bytes in use across all mimalloc heaps for all threads in
+// the interpreter, plus the per-interp abandoned pool.
+Py_ssize_t
+_PyGC_GetMimallocAllocatedBytes(PyInterpreterState *interp)
+{
+    Py_ssize_t total = 0;
+    _PyEval_StopTheWorld(interp);
+    HEAD_LOCK(&_PyRuntime);
+    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
+        struct _mimalloc_thread_state *m =
+            &((_PyThreadStateImpl *)p)->mimalloc;
+        if (!_Py_atomic_load_int(&m->initialized)) {
+            continue;
+        }
+        for (int h = 0; h < _Py_MIMALLOC_HEAP_COUNT; h++) {
+            mi_heap_visit_blocks(&m->heaps[h], false,
+                                 mimalloc_used_area_visitor, &total);
+        }
+    }
+    mi_abandoned_pool_t *pool = &interp->mimalloc.abandoned_pool;
+    for (uint8_t tag = 0; tag < _Py_MIMALLOC_HEAP_COUNT; tag++) {
+        _mi_abandoned_pool_visit_blocks(pool, tag, false,
+                                        mimalloc_used_area_visitor, &total);
+    }
+    HEAD_UNLOCK(&_PyRuntime);
+    _PyEval_StartTheWorld(interp);
+    return total;
+}
+
 static inline void
 gc_visit_stackref(_PyStackRef stackref)
 {

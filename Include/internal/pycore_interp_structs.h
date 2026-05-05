@@ -268,9 +268,6 @@ struct _gc_runtime_state {
        Adjusted after each collection based on the fraction of objects found to
        be trash. */
     int adaptive_threshold;
-
-    /* Mutex held for gc_should_collect_mem_usage(). */
-    PyMutex mutex;
 #else
     PyGC_Head *generation0;
 #endif

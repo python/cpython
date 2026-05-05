@@ -19,6 +19,7 @@ Data members:
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_SetAsyncGenFinalizer()
 #include "pycore_frame.h"         // _PyInterpreterFrame
+#include "pycore_gc.h"            // _PyGC_GetMimallocAllocatedBytes()
 #include "pycore_import.h"        // _PyImport_SetDLOpenFlags()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_interpframe.h"   // _PyFrame_GetFirstComplete()
@@ -2060,6 +2061,32 @@ sys_getallocatedblocks_impl(PyObject *module)
     return _Py_GetGlobalAllocatedBlocks();
 }
 
+PyDoc_STRVAR(sys__get_mimalloc_allocated_bytes__doc__,
+"_get_mimalloc_allocated_bytes($module, /)\n"
+"--\n"
+"\n"
+"Return total bytes allocated across all mimalloc heaps in this interpreter.\n"
+"\n"
+"Free-threaded build only.  Stops the world while reading per-thread heap\n"
+"structures.  Intended for benchmarking: the OS RSS does not reliably reflect\n"
+"Python's live memory because mimalloc retains freed pages.\n"
+"Raises NotImplementedError on the GIL-enabled build.");
+
+static PyObject *
+sys__get_mimalloc_allocated_bytes(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+#ifdef Py_GIL_DISABLED
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    Py_ssize_t total = _PyGC_GetMimallocAllocatedBytes(interp);
+    return PyLong_FromSsize_t(total);
+#else
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "sys._get_mimalloc_allocated_bytes() is only available "
+                    "on the free-threaded build");
+    return NULL;
+#endif
+}
+
 /*[clinic input]
 sys.getunicodeinternedsize -> Py_ssize_t
 
@@ -2927,6 +2954,8 @@ static PyMethodDef sys_methods[] = {
     SYS_GETDEFAULTENCODING_METHODDEF
     SYS_GETDLOPENFLAGS_METHODDEF
     SYS_GETALLOCATEDBLOCKS_METHODDEF
+    {"_get_mimalloc_allocated_bytes", sys__get_mimalloc_allocated_bytes,
+     METH_NOARGS, sys__get_mimalloc_allocated_bytes__doc__},
     SYS_GETUNICODEINTERNEDSIZE_METHODDEF
     SYS_GETFILESYSTEMENCODING_METHODDEF
     SYS_GETFILESYSTEMENCODEERRORS_METHODDEF
