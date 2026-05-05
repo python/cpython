@@ -2563,7 +2563,7 @@ AS_VAR_IF([ac_cv_gcc_compat], [yes], [
     if test -n "$frame_pointer_cflags" && test "x$with_frame_pointers" != xno; then
       BASECFLAGS="$frame_pointer_cflags $BASECFLAGS"
       AC_DEFINE([_Py_WITH_FRAME_POINTERS], [1],
-                [Define if frame unwinding via pointers is expected to work])
+                [Define to 1 if frame unwinding via pointers is expected to work, 0 if not])
     fi
 
     CFLAGS_NODIST="$CFLAGS_NODIST -std=c11"
