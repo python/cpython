@@ -35,7 +35,7 @@ _RECORD_SLOT_KIND_OVERRIDES: dict[str, str] = {
 }
 
 
-class RecordValueEmitter(Emitter):
+class RecordEmitter(Emitter):
     def __init__(self, out: CWriter, target: str, incref: str):
         super().__init__(out, {})
         self._replacers["RECORD_VALUE"] = self.record_value
@@ -158,7 +158,7 @@ def generate_record_transform_function(uop: Uop, out: CWriter) -> None:
         if var.used:
             declare_variable(var, out)
     out.emit(f"{input_name} = PyStackRef_FromPyObjectBorrow(recorded_value);\n")
-    emitter = RecordValueEmitter(out, "transformed_value", "Py_XINCREF")
+    emitter = RecordEmitter(out, "transformed_value", "Py_XINCREF")
     emitter.emit_tokens(uop, Storage(Stack(), [], [], 0, False), None, False)
     out.start_line()
     out.emit("Py_DECREF(recorded_value);\n")
@@ -176,7 +176,7 @@ def generate_recorder_functions(filenames: list[str], analysis: Analysis, out: C
 """
     )
     args = "_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value"
-    emitter = RecordValueEmitter(out, "*recorded_value", "Py_INCREF")
+    emitter = RecordEmitter(out, "*recorded_value", "Py_INCREF")
     nop = analysis.instructions["NOP"]
     for uop in analysis.uops.values():
         if not uop.properties.records_value:
