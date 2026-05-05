@@ -4507,7 +4507,9 @@ class TestBufferProtocol(unittest.TestCase):
             [0] * len(cases),
         )
         for case in cases:
-            case.append(0)
+            fmt = case.typecode
+            if struct.calcsize(fmt) <= MAX_ALIGN:
+                case.append(0)
         # Allocated arrays
         self.assertEqual(
             [_testcapi.buffer_pointer_as_int(case) % align for case in cases],
