@@ -10432,7 +10432,7 @@ printf "%s\n" "$ax_cv_check_cflags__Werror__mbackchain" >&6; }
 if test "x$ax_cv_check_cflags__Werror__mbackchain" = xyes
 then :
 
-          frame_pointer_cflags="$frame_pointer_cflags -mbackchain"
+                    frame_pointer_cflags="-mbackchain"
 
 else case e in #(
   e) : ;;
@@ -10451,6 +10451,9 @@ fi
 
     if test -n "$frame_pointer_cflags" && test "x$with_frame_pointers" != xno; then
       BASECFLAGS="$frame_pointer_cflags $BASECFLAGS"
+
+printf "%s\n" "#define _Py_WITH_FRAME_POINTERS 1" >>confdefs.h
+
     fi
 
     CFLAGS_NODIST="$CFLAGS_NODIST -std=c11"

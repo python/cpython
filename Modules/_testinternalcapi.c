@@ -3234,6 +3234,12 @@ module_exec(PyObject *module)
         return 1;
     }
 
+#ifdef _Py_WITH_FRAME_POINTERS
+    if (PyModule_AddIntMacro(module, _Py_WITH_FRAME_POINTERS) < 0) {
+        return 1;
+    }
+#endif
+
     return 0;
 }
 
