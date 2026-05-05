@@ -87,8 +87,9 @@ Summary -- Release highlights
 * :pep:`800`: Disjoint bases in the type system
 * :pep:`782`: :ref:`A new PyBytesWriter C API to create a Python bytes object
   <whatsnew315-pybyteswriter>`
-* :pep:`803`: :ref:`Stable ABI for Free-Threaded Builds <whatsnew315-abi3t>`
-* :pep:`820`: :ref:`PySlot: Unified slot system for the C API <whatsnew315-pyslot>`
+* :pep:`803`, :pep:`820 <820>`, :pep:`793 <793>`:
+  :ref:`Stable ABI for Free-Threaded Builds <whatsnew315-abi3t>` and
+  related C API
 * :ref:`The JIT compiler has been significantly upgraded <whatsnew315-jit>`
 * :ref:`Improved error messages <whatsnew315-improved-error-messages>`
 * :ref:`The official Windows 64-bit binaries now use the tail-calling interpreter
@@ -453,7 +454,7 @@ agen() for x in a)``.
 
 .. _whatsnew315-abi3t:
 
-:pep:`803`: ``abi3t`` -- Stable ABI for Free-Threaded Builds
+:pep:`803` -- Stable ABI for Free-Threaded Builds
 ------------------------------------------------------------
 
 C extensions that target the :ref:`Stable ABI <stable-abi>` can now be
@@ -469,7 +470,12 @@ specifically:
   part of the instance struct; and
 - Switching from a ``PyInit_`` function to a new export hook,
   :c:func:`PyModExport_* <PyModExport_modulename>`, introduced for this
-  purpose in :pep:`793`.
+  purpose in :pep:`793`, with a new :c:type:`PySlot` structure
+  introduced in :pep:`820`.
+
+The reference documentation for these features is complete, but currently
+aimed at early adopters.
+A migration guide is planned for an upcoming beta release.
 
 Note that Stable ABI does not offer all the functionality that CPython
 has to offer.
@@ -2199,6 +2205,11 @@ New features
 * Add :c:func:`PyTuple_FromArray` to create a :class:`tuple` from an array.
   (Contributed by Victor Stinner in :gh:`111489`.)
 
+* Add a new module export hook,
+  :c:func:`PyModExport_* <PyModExport_modulename>`.
+
+  (Contributed by Petr Viktorin in :pep:`793` and :gh:`140550`.)
+
 * Add functions that are guaranteed to be safe for use in
   :c:member:`~PyTypeObject.tp_traverse` handlers:
   :c:func:`PyObject_GetTypeData_DuringGC`,
@@ -2213,8 +2224,6 @@ New features
 * Add :c:func:`PyObject_Dump` to dump an object to ``stderr``.
   It should only be used for debugging.
   (Contributed by Victor Stinner in :gh:`141070`.)
-
-.. _whatsnew315-pyslot:
 
 * Implement :pep:`820`: ``PySlot`` -- Unified slot system for the C API.
   See :ref:`capi-slots` for documentation.
