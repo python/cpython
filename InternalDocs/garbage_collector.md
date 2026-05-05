@@ -458,6 +458,124 @@ in the total number of objects (the effect of which can be summarized thusly:
 grows, but we do fewer and fewer of them").
 
 
+Adaptive collection threshold (free-threaded build)
+===================================================
+
+> [!NOTE]
+> This section applies only to the free-threaded build.  The default
+> (GIL) build uses the generational thresholds described above.
+
+The free-threaded GC is non-generational: every collection scans the entire
+heap.  It therefore needs a different mechanism than `threshold0` /
+`threshold1` to decide when to run.  Instead, it maintains an *adaptive*
+trigger that scales with the size of the live heap and adjusts itself based
+on how much trash recent collections actually found.  The logic lives in
+`update_adaptive_threshold()` in `Python/gc_free_threading.c`, which is
+called after each collection that fired because the threshold was reached
+(`reason == _Py_GC_REASON_HEAP`).  Manual `gc.collect()` calls and shutdown
+collections do not update the adaptive state — they aren't representative of
+the steady-state trash rate.
+
+Every allocation increments `young.count`.  A collection is considered when
+`count` exceeds `gcstate->adaptive_threshold` (subject to the quadratic
+guard below).  The job of `update_adaptive_threshold()` is to choose a good
+value for `adaptive_threshold` for the *next* pass.
+
+The cost model
+--------------
+
+A free-threaded GC pass is dominated by the mark-alive walk over the
+mimalloc GC heap, whose cost is roughly `O(L)` where `L` is the count of
+*surviving* live objects (this is what `long_lived_total` records — by the
+time `update_adaptive_threshold()` runs it has already been decremented for
+the unreachable objects identified this pass).  If `T` is the number of
+allocations between passes, the amortized GC cost per allocation is
+proportional to `L / T`.  To keep amortized cost roughly linear in total
+allocations as the program grows, `T` should scale with `L`.  This gives an
+upper bound:
+
+    T_max = L / GC_THRESHOLD_MAX_DIVISOR
+
+`T_max` alone is wrong, however: a program churning short-lived cycles
+wants GC to run often, not just once per heap doubling.  We also have a
+user-configured pivot — the value of `gc.set_threshold()`, called `base`
+below — and a derived lower bound:
+
+    T_min = base / GC_THRESHOLD_MIN_DIVISOR
+
+The adaptive threshold lives in `[T_min, T_max]`, and `update_adaptive_threshold()`
+chooses where in that range to sit based on recent trash productivity.
+
+Trash ratio and hyperbolic decay
+--------------------------------
+
+After a threshold-triggered collection we know two numbers: how many
+objects the pass collected, `C`, and the survivor count `L` (so the
+pre-collection heap size was `N = L + C`).  The trash ratio
+
+    r = C / L
+
+measures trash freed per surviving live object — equivalently, how many
+extra walk units the next pass would do as a multiple of the walk units
+already paid for in survivors.  A high ratio means the pass paid for
+itself; a low ratio means the walk was largely wasted.  We use `C/L`
+rather than `C/N` because (a) `L` is what the *next* pass will walk, not
+`N`, and (b) `C/L` is unbounded above (as `C` approaches `N`, `L` shrinks
+toward zero and `r` grows without bound), which lets the curve drive the
+threshold all the way to its floor in genuinely high-trash regimes.
+
+We map `r` to a target threshold via a hyperbolic decay:
+
+    target = T_min + (T_max - T_min) / (1 + K * r)
+
+with `K = GC_THRESHOLD_DECAY_K`.  At `r = 0` (no trash) the target equals
+`T_max`; as `r` grows the target decays smoothly toward the asymptote
+`T_min`.  In the implementation this is rearranged to keep the math in
+integers:
+
+    target = T_min + (T_max - T_min) * L / (L + K * C)
+
+`L` and `C` are scaled down (right-shifted) ahead of the multiply if `L`
+exceeds 2^30, since only the ratio matters.  If a pass somehow collects
+everything (`L == 0`), the rearranged form would have a zero denominator;
+in that case we fall back to `T_max`.
+
+The new threshold is set directly to the computed target — there is no
+EMA or weighted step.  Software workloads can change abruptly (a program
+may go from zero cyclic trash to millions per second and back within
+seconds), and in that regime the most recent pass is a better predictor
+of the next than a long-history average.
+
+Tunables
+--------
+
+Three compile-time `#define`s in `Python/gc_free_threading.c` control the
+shape of the curve.  All three are `#ifndef`-guarded so a build can
+override them with `-DGC_THRESHOLD_*=value`:
+
+| Macro | Default | Meaning |
+|---|---|---|
+| `GC_THRESHOLD_MAX_DIVISOR` | 2 | `T_max = L / N`.  Larger N collects less often on big heaps. |
+| `GC_THRESHOLD_DECAY_K` | 8 | Decay rate of the hyperbolic curve.  Larger K reaches `T_min` faster. |
+| `GC_THRESHOLD_MIN_DIVISOR` | 1 | `T_min = base / N`.  N=1 makes the user's `gc.set_threshold` value a hard minimum interval between collections. |
+
+If `T_max` (i.e. `L / GC_THRESHOLD_MAX_DIVISOR`) falls below `base`, it is
+clamped up to `base`: on a small heap the curve runs over `[T_min, base]`
+rather than over `[T_min, L/N]` — which would otherwise collapse below
+`base` for tiny heaps.
+
+Quadratic-behavior guard
+------------------------
+
+Even if `count` exceeds `adaptive_threshold`, GC will not actually fire
+unless `count >= long_lived_total / 4` (see `gc_should_collect()`).  This
+pre-existing guard prevents pathological behavior on heaps that are
+growing in pure-non-trash regions: it gives `T` a second floor proportional
+to the live heap so that no matter how aggressively the adaptive math
+pushes the threshold down, we never collect so often that GC cost
+dominates allocation cost.
+
+
 Optimization: excluding reachable objects
 =========================================
 

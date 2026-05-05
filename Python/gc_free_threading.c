@@ -463,47 +463,6 @@ gc_visit_heaps(PyInterpreterState *interp, mi_block_visit_fun *visitor,
     return err;
 }
 
-// Visitor for _PyGC_GetMimallocAllocatedBytes(): called once per heap area
-// when visit_blocks=false.  Sums area->used * area->block_size.
-static bool
-mimalloc_used_area_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
-                           void *block, size_t block_size, void *arg)
-{
-    if (block == NULL) {
-        *(Py_ssize_t *)arg += (Py_ssize_t)(area->used * area->block_size);
-    }
-    return true;
-}
-
-// Return the total bytes in use across all mimalloc heaps for all threads in
-// the interpreter, plus the per-interp abandoned pool.
-Py_ssize_t
-_PyGC_GetMimallocAllocatedBytes(PyInterpreterState *interp)
-{
-    Py_ssize_t total = 0;
-    _PyEval_StopTheWorld(interp);
-    HEAD_LOCK(&_PyRuntime);
-    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
-        struct _mimalloc_thread_state *m =
-            &((_PyThreadStateImpl *)p)->mimalloc;
-        if (!_Py_atomic_load_int(&m->initialized)) {
-            continue;
-        }
-        for (int h = 0; h < _Py_MIMALLOC_HEAP_COUNT; h++) {
-            mi_heap_visit_blocks(&m->heaps[h], false,
-                                 mimalloc_used_area_visitor, &total);
-        }
-    }
-    mi_abandoned_pool_t *pool = &interp->mimalloc.abandoned_pool;
-    for (uint8_t tag = 0; tag < _Py_MIMALLOC_HEAP_COUNT; tag++) {
-        _mi_abandoned_pool_visit_blocks(pool, tag, false,
-                                        mimalloc_used_area_visitor, &total);
-    }
-    HEAD_UNLOCK(&_PyRuntime);
-    _PyEval_StartTheWorld(interp);
-    return total;
-}
-
 static inline void
 gc_visit_stackref(_PyStackRef stackref)
 {
@@ -2142,30 +2101,13 @@ record_deallocation(PyThreadState *tstate)
 }
 
 // Update the adaptive threshold for the next collection based on how
-// much trash this pass found relative to the cost of the pass.
+// much trash this pass found relative to the cost of the pass.  See
+// InternalDocs/garbage_collector.md for additional explaination of this
+// calculation.
 static void
 update_adaptive_threshold(GCState *gcstate, long long collected,
                           long long live)
 {
-    // The GC cost is dominated by the mark-alive walk, which is O(objects in
-    // the mimalloc GC heap) -- that's exactly what long_lived_total counts
-    // (including untracked and frozen objects in the heap).  By the time we
-    // are called it has already been decremented for the objects this pass
-    // identified as unreachable, so it is the survivor count L (= N - C in
-    // pre-collection terms).  The productive ratio is collected/live = C/L,
-    // i.e. trash freed per surviving live object; equivalently C/(N-C).  This
-    // is unbounded above: as a pass approaches collecting everything, L
-    // shrinks toward zero and the ratio grows without bound, which is what we
-    // want -- a 99%-trash pass should drive the threshold to its floor.  A
-    // high ratio means we should collect sooner; a low ratio means GC work
-    // was largely wasted and we can afford to wait longer.  We map the ratio
-    // through a hyperbolic decay to a target in [min, max_threshold]: target
-    // = min + (max - min) * live / (live + K * collected) where max_threshold
-    // scales with long_lived_total so that amortized GC cost stays linear
-    // in total allocations on large heaps, and min_threshold = base /
-    // GC_THRESHOLD_MIN_DIVISOR acts as the curve's lower asymptote and hard
-    // floor.  The default MIN_DIVISOR=1 makes the user's gc.set_threshold
-    // value a true minimum interval between collections.
     int base = gcstate->young.threshold;
     if (base <= 0) {
         return;
@@ -2206,11 +2148,6 @@ update_adaptive_threshold(GCState *gcstate, long long collected,
     else if (adaptive > max_threshold) {
         adaptive = (int)max_threshold;
     }
-    // The new threshold is set directly to the computed target -- no
-    // smoothing.  Software workloads can change abruptly (a program may go
-    // from zero cyclic trash to millions/sec and back within seconds), and in
-    // that regime the most recent pass is a better predictor of the next pass
-    // than a moving average.
     gcstate->adaptive_threshold = adaptive;
 }
 

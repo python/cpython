@@ -133,10 +133,12 @@ The :mod:`!gc` module provides the following functions:
    With the third generation, things are a bit more complicated,
    see `Collecting the oldest generation <https://github.com/python/cpython/blob/ff0ef0a54bef26fc507fbf9b7a6009eb7d3f17f5/InternalDocs/garbage_collector.md#collecting-the-oldest-generation>`_ for more information.
 
-   In the free-threaded build, the increase in process memory usage is also
-   checked before running the collector.  If the memory usage has not increased
-   by 10% since the last collection and the net number of object allocations
-   has not exceeded 40 times *threshold0*, the collection is not run.
+   In the free-threaded build, the effective collection threshold is adapted
+   based on how much cyclic trash the last collection found.  If few trash
+   cycles were found, the threshold is adjusted higher, up to half the count
+   of live objects.  If many were found, the threshold is adjusted lower, down
+   to a minimum of *threshold0*.  Setting *threshold1* to zero disables this
+   adaptation and causes *threshold0* to be used directly.
 
    See `Garbage collector design <https://github.com/python/cpython/blob/3.15/InternalDocs/garbage_collector.md>`_ for more information.
 
