@@ -331,6 +331,8 @@ NANVIX_TEST_LIST: list[str] = [
     "test_plistlib",
     # #600 — lxml built-in smoke test
     "test_nanvix_lxml",
+    # #526 — _lzma stdlib enablement
+    "test_lzma",
 ]
 
 # Default batch size for regrtest VM invocations.
