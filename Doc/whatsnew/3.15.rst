@@ -999,15 +999,6 @@ difflib
   (Contributed by Jiahao Li in :gh:`134580`.)
 
 
-faulthandler
-------------
-
-* Added the *max_threads* parameter in :func:`faulthandler.enable`,
-  :func:`faulthandler.dump_traceback`, :func:`faulthandler.dump_traceback_later`,
-  and :func:`faulthandler.register`.
-  (Contributed by Eric Froemling in :gh:`149085`.)
-
-
 email
 -----
 
@@ -1016,6 +1007,15 @@ email
   header. Options for supporting Email Address Internationalization (EAI) are
   discussed in :attr:`.EmailPolicy.utf8`.
   (Contributed by R David Murray and Mike Edmunds in :gh:`122540`.)
+
+
+faulthandler
+------------
+
+* Added the *max_threads* parameter in :func:`faulthandler.enable`,
+  :func:`faulthandler.dump_traceback`, :func:`faulthandler.dump_traceback_later`,
+  and :func:`faulthandler.register`.
+  (Contributed by Eric Froemling in :gh:`149085`.)
 
 
 functools
