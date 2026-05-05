@@ -159,6 +159,54 @@ def _download_release_as_cache(
 # ---------------------------------------------------------------------------
 
 
+def _manual_install(
+    repo_root: Path,
+    staging: Path,
+    install_prefix: str,
+) -> None:
+    """Create a minimal install tree without invoking make.
+
+    Used when the Makefile was configured inside Docker and cannot be
+    used natively.  Copies the Python binary and standard library from
+    the source/build tree into the staging directory.
+    """
+    # install_prefix is e.g. "/sysroot" — strip leading slash for relative path.
+    prefix_rel = install_prefix.lstrip("/")
+    sysroot_dir = staging / prefix_rel
+    bin_dir = sysroot_dir / "bin"
+    lib_dir = sysroot_dir / "lib" / config.PYTHON_LIB_DIR
+
+    bin_dir.mkdir(parents=True, exist_ok=True)
+    lib_dir.mkdir(parents=True, exist_ok=True)
+
+    # Copy the built python binary.
+    python_bin = repo_root / f"python{config.EXE}"
+    if python_bin.is_file():
+        shutil.copy2(python_bin, bin_dir / config.python_binary())
+
+    # Copy the standard library from Lib/.
+    lib_src = repo_root / "Lib"
+    if lib_src.is_dir():
+        shutil.copytree(lib_src, lib_dir, dirs_exist_ok=True)
+
+    # Copy sysconfigdata from the build directory.
+    scdata_name = f"{config.SYSCONFIGDATA_NAME}.py"
+    pybuilddir_file = repo_root / "pybuilddir.txt"
+    if pybuilddir_file.is_file():
+        bdir = repo_root / pybuilddir_file.read_text().strip()
+        scdata_src = bdir / scdata_name
+        if scdata_src.is_file():
+            shutil.copy2(scdata_src, lib_dir / scdata_name)
+
+    # Copy libpython archive (needed by some install validation).
+    libpython = repo_root / f"libpython{config.PYTHON_VERSION}.a"
+    lib_parent = sysroot_dir / "lib"
+    if libpython.is_file():
+        shutil.copy2(libpython, lib_parent / libpython.name)
+
+    print(f"  Manual install complete ({sysroot_dir})")
+
+
 def stage(
     sysroot: str | Path,
     toolchain: str | Path,
@@ -219,34 +267,57 @@ def stage(
             or shutil.which(str(build_python_path)) is not None
         )
 
+        # Detect if ./configure was run inside Docker (paths like
+        # /mnt/sysroot baked into Makefile).  A native rebuild would
+        # fail because those paths don't exist on the host.
+        docker_configured = False
+        makefile = repo_root / "Makefile"
+        if makefile.is_file() and not docker:
+            try:
+                header = makefile.read_text(encoding="utf-8", errors="replace")[:8192]
+                docker_configured = config.DOCKER_SYSROOT_PATH in header
+            except OSError:
+                pass
+
         can_skip_rebuild = (
             python_binary.is_file()
             and configured_marker.is_file()
             and pybuilddir.is_file()
-            and not build_python_available
+            and (not build_python_available or docker_configured)
         )
 
         if can_skip_rebuild:
+            skip_reason = (
+                "Docker-configured Makefile (native rebuild would fail)"
+                if docker_configured and build_python_available
+                else "BUILD_PYTHON is unavailable"
+            )
             print(
                 f"  Skipping rebuild ({python_binary.name} already exists"
-                " and BUILD_PYTHON is unavailable)"
+                f" — {skip_reason})"
             )
-            # Install into staging, skipping the outer build prereq
-            # and stubbing PYTHON_FOR_BUILD for the inner make.
-            build_mod.install(
-                sysroot,
-                toolchain,
-                repo_root,
-                staging,
-                platform=platform,
-                process_mode=process_mode,
-                memory_size=memory_size,
-                install_prefix=install_prefix,
-                release=release,
-                run_fn=run_fn,
-                extra_make_flags=["-o", "build", "PYTHON_FOR_BUILD=:"],
-                docker=docker,
-            )
+            if docker_configured and build_python_available:
+                # Cannot run make install natively when configure used
+                # Docker paths and the native toolchain would trigger a
+                # rebuild — do a manual install instead.
+                _manual_install(repo_root, staging, install_prefix)
+            else:
+                # Install into staging, skipping the outer build prereq
+                # and stubbing PYTHON_FOR_BUILD for the inner make.
+                build_mod.install(
+                    sysroot,
+                    toolchain,
+                    repo_root,
+                    staging,
+                    platform=platform,
+                    process_mode=process_mode,
+                    memory_size=memory_size,
+                    install_prefix=install_prefix,
+                    release=release,
+                    run_fn=run_fn,
+                    extra_make_flags=["-o", "build", "PYTHON_FOR_BUILD=:"],
+                    docker=docker,
+                )
         else:
             build_mod.build(
                 sysroot,
