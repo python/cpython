@@ -6174,10 +6174,10 @@ class TestSubnamespace(TestCase):
         parser = argparse.ArgumentParser()
         action = parser.add_subparsers(required=False, dest="action")
 
-        parser_add = action.add_parser("add", subnamespace="add")
+        parser_add = action.add_parser("add", subnamespace=True)
         parser_add.add_argument("--to")
 
-        parser_remove = action.add_parser("remove", subnamespace="remove")
+        parser_remove = action.add_parser("remove", subnamespace=True)
         parser_remove.add_argument("--from")
 
         # a root parser should not have 'subnamespace' attribute,
@@ -6189,8 +6189,8 @@ class TestSubnamespace(TestCase):
         # that was set when calling `action.add_parser()`
         self.assertHasAttr(parser_add, "subnamespace")
 
-        # 'subnamespace' attribute is a string
-        self.assertIsInstance(parser_add.subnamespace, str)
+        # 'subnamespace' attribute is a bool
+        self.assertIsInstance(parser_add.subnamespace, bool)
 
         # check nesting of Namspaces works
         args = parser.parse_args(["add"])
@@ -6207,36 +6207,30 @@ class TestSubnamespace(TestCase):
         self.assertEqual(args, argparse.Namespace(action=None))
 
     def test_double_subnamespace(self):
-        def add_address_args_inet(parser):
-            parser.add_argument("address")
-            parser.add_argument("port", type=int)
-            parser.add_argument("--use-proxy", action="store_true")
+        inet = argparse.ArgumentParser(add_help=False)
+        inet.add_argument("address")
+        inet.add_argument("port", type=int)
+        inet.add_argument("--use-proxy", action="store_true")
 
-        def add_address_args_unix(parser):
-            parser.add_argument("path")
+        unix = argparse.ArgumentParser(add_help=False)
+        unix.add_argument("path")
 
-        parser = argparse.ArgumentParser()
+        parser = argparse.ArgumentParser(prog="my-socat")
         parser.add_argument("--key-file")
         action = parser.add_subparsers(required=True, dest="action")
 
-        parser_bind = action.add_parser("bind", subnamespace="bind")
+        parser_bind = action.add_parser("bind", subnamespace=True)
         parser_bind.add_argument("--fork", action="store_true")
         bind_family = parser_bind.add_subparsers(required=True, dest="family")
 
-        parser_bind_inet = bind_family.add_parser("inet", subnamespace="inet")
-        add_address_args_inet(parser_bind_inet)
+        parser_bind_inet = bind_family.add_parser("inet", subnamespace=True, parents=[inet])
+        parser_bind_unix = bind_family.add_parser("unix", subnamespace=True, parents=[unix])
 
-        parser_bind_unix = bind_family.add_parser("unix", subnamespace="unix")
-        add_address_args_unix(parser_bind_unix)
-
-        parser_connect = action.add_parser("connect", subnamespace="connect")
+        parser_connect = action.add_parser("connect", subnamespace=True)
         connect_family = parser_connect.add_subparsers(required=True, dest="family")
 
-        parser_connect_inet = connect_family.add_parser("inet", subnamespace="inet")
-        add_address_args_inet(parser_connect_inet)
-
-        parser_connect_unix = connect_family.add_parser("unix", subnamespace="unix")
-        add_address_args_unix(parser_connect_unix)
+        parser_connect_inet = connect_family.add_parser("inet", subnamespace=True, parents=[inet])
+        parser_connect_unix = connect_family.add_parser("unix", subnamespace=True, parents=[unix])
 
         # check doubly-nested Namespaces work
         # we assume if this test passes that we don't need to write
@@ -6268,13 +6262,13 @@ class TestSubnamespace(TestCase):
         parser = argparse.ArgumentParser()
         action = parser.add_subparsers(required=True, dest="action")
 
-        parser_add = action.add_parser("add", subnamespace="add")
+        parser_add = action.add_parser("add", subnamespace=True)
         spec = parser_add.add_subparsers(required=True, dest="spec")
 
-        parser_add_country = spec.add_parser("country", subnamespace=None)
+        parser_add_country = spec.add_parser("country", subnamespace=False)
         parser_add_country.add_argument("country_name")
 
-        parser_add_color = spec.add_parser("color", subnamespace="color")
+        parser_add_color = spec.add_parser("color", subnamespace=True)
         parser_add_color.add_argument("name")
 
         # test that non-subnamespace parser arguments get parented to
@@ -6313,21 +6307,21 @@ class TestSubnamespace(TestCase):
 
         choice = parser.add_subparsers(required=True, dest="choice")
 
-        parser_0 = choice.add_parser("0", subnamespace="0",
+        parser_0 = choice.add_parser("0", subnamespace=True,
                                      help="number 0 menu item")
 
-        parser_1 = choice.add_parser("1", subnamespace="1",
+        parser_1 = choice.add_parser("1", subnamespace=True,
                                      help="number 1 menu item")
 
-        parser_True = choice.add_parser("True", subnamespace="True",
+        parser_True = choice.add_parser("True", subnamespace=True,
                                         help="limited edition 'True' meal")
         parser_True.add_argument("--deluxe", "-d", action="store_true")
 
         parser_double_cheeseburger = choice.add_parser("double-cheeseburger",
-                                                       subnamespace="double-cheeseburger")
+                                                       subnamespace=True)
 
         parser_chicken_nuggets = choice.add_parser("chicken-nuggets",
-                                                   subnamespace="chicken-nuggets")
+                                                   subnamespace=True)
         parser_chicken_nuggets.add_argument("-f", help="with fries",
                                             action="store_true")
 

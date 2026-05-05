@@ -1317,7 +1317,7 @@ class _SubParsersAction(Action):
             help=help,
             metavar=metavar)
 
-    def add_parser(self, name, *, deprecated=False, subnamespace=None, **kwargs):
+    def add_parser(self, name, *, deprecated=False, subnamespace=False, **kwargs):
         # set prog from the existing prefix
         if kwargs.get('prog') is None:
             kwargs['prog'] = '%s %s' % (self._prog_prefix, name)
@@ -1348,10 +1348,10 @@ class _SubParsersAction(Action):
             parser._check_help(choice_action)
         self._name_parser_map[name] = parser
 
-        # add the subnamespace attribute to the parser if specified
-        # for nested namespaces
-        if subnamespace is not None:
-            setattr(parser, 'subnamespace', subnamespace)
+        # set the subnamespace attribute on the parser to determine
+        # whether parsed arguments should be stored in their own
+        # nested namespace or added to the parent parser's namespace
+        setattr(parser, 'subnamespace', subnamespace)
 
         # make parser available under aliases also
         for alias in aliases:
@@ -1396,13 +1396,18 @@ class _SubParsersAction(Action):
         # namespace for the relevant parts.
         subnamespace, arg_strings = subparser.parse_known_args(arg_strings, None)
 
-        # If a subnamespace name has been specified for the subparser
-        # then store the subparser's namespace within the parent namespace
-        # using that name. Otherwise update the parent namespace with the
-        # values from the subnamespace.
-        subnamespace_name = getattr(subparser, 'subnamespace', None)
-        if subnamespace_name is not None:
-            subnamespace_name = subnamespace_name.replace('-', '_')
+        # If the subparser's 'subnamespace' attribute is ``True``
+        # then store the subparser's parsed arguments contained in
+        # their own namespace, nested within the parent namespace.
+        # The attribute name in the parent namespace at which the
+        # subparser's subnamespace is stored is the subparser's name,
+        # specified when using '.add_parser()', but with '-' replaced with '_'
+        # similar to how options are stored.
+        #
+        # Otherwise if 'subnamespace' is ``False`` then update
+        # the parent namespace with the values from the subnamespace.
+        if subparser.subnamespace:
+            subnamespace_name = parser_name.replace('-', '_')
             setattr(namespace, subnamespace_name, subnamespace)
         else:
             for key, value in vars(subnamespace).items():
