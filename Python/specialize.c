@@ -2213,15 +2213,6 @@ shift_guard(PyObject *lhs, PyObject *rhs)
     return (is_compactlong(lhs) && is_compactnonnegativelong(rhs) && (_PyLong_CompactValue((PyLongObject *)rhs) <= 16) );
 }
 
-#define BITWISE_LONGS_ACTION_STWODIGITS(NAME, OP) \
-    static PyObject * \
-    (NAME)(PyObject *lhs, PyObject *rhs) \
-    { \
-        stwodigits rhs_val = (stwodigits)_PyLong_CompactValue((PyLongObject *)rhs); \
-        stwodigits lhs_val = (stwodigits) _PyLong_CompactValue((PyLongObject *)lhs); \
-        return PyLong_FromLongLong(lhs_val OP rhs_val); \
-    }
-
 #define BITWISE_LONGS_ACTION(NAME, OP) \
     static PyObject * \
     (NAME)(PyObject *lhs, PyObject *rhs) \
@@ -2233,10 +2224,21 @@ shift_guard(PyObject *lhs, PyObject *rhs)
 BITWISE_LONGS_ACTION(compactlongs_or, |)
 BITWISE_LONGS_ACTION(compactlongs_and, &)
 BITWISE_LONGS_ACTION(compactlongs_xor, ^)
-BITWISE_LONGS_ACTION_STWODIGITS(compactlongs_lshift, <<)
 BITWISE_LONGS_ACTION(compactlongs_rshift, >>)
-#undef BITWISE_LONGS_ACTION_STWODIGITS
 #undef BITWISE_LONGS_ACTION
+
+static PyObject *
+compactlongs_lshift(PyObject *lhs, PyObject *rhs)
+{
+    // Left-shifting a negative signed value is undefined behavior in C, so
+    // perform the shift in unsigned arithmetic and reinterpret. The guard
+    // limits rhs_val to [0, 16] and compact long magnitudes fit comfortably
+    // in stwodigits with that headroom, so no overflow occurs.
+    Py_ssize_t rhs_val = _PyLong_CompactValue((PyLongObject *)rhs);
+    Py_ssize_t lhs_val = _PyLong_CompactValue((PyLongObject *)lhs);
+    stwodigits result = (stwodigits)((unsigned long long)lhs_val << rhs_val);
+    return PyLong_FromLongLong(result);
+}
 
 /* float-long */
 
