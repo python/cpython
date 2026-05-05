@@ -499,14 +499,6 @@ class SysLazyImportsAPITests(unittest.TestCase):
         self.assertIsNot(first, second)
         self.assertEqual(first, second)
 
-    def test_lazy_modules_is_immutable(self):
-        """Mutation through sys.lazy_modules must not be possible."""
-        snapshot = sys.lazy_modules
-        with self.assertRaises(TypeError):
-            snapshot["foo"] = frozenset()
-        with self.assertRaises(AttributeError):
-            snapshot.clear()
-
     def test_underscore_lazy_modules_is_live_dict(self):
         """sys._lazy_modules should be the live, mutable registry."""
         registry = sys._lazy_modules

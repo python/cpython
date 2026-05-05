@@ -1,5 +1,4 @@
 :data:`sys.lazy_modules` is now a read-only :class:`frozendict` mapping
 each module's fully qualified name to the :class:`frozenset` of its
 lazily-imported submodule names, instead of a live mutable :class:`dict`
-of :class:`set` objects. User code can no longer mutate the lazy import
-registry through this attribute.
+of :class:`set` objects.
