@@ -1493,13 +1493,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    ``lazy import json``) is represented by an empty :class:`frozenset`.
 
    A fresh snapshot is constructed on every attribute access, so the mapping
-   reflects the state of lazy imports at the time of access.  The snapshot is
-   immutable; modifications must go through :func:`set_lazy_imports`.
+   reflects the state of lazy imports at the time of access.
 
-   The live, mutable registry is available as the private :data:`sys._lazy_modules`
-   for internal use.
-
-   See also :func:`set_lazy_imports`, :func:`get_lazy_imports`, and :pep:`810`.
+   See also :pep:`810`.
 
    .. versionadded:: 3.15
 
