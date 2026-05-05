@@ -2689,9 +2689,30 @@
     added = '3.15'
 [function.PyType_GetModuleByToken_DuringGC]
     added = '3.15'
+[function.PyCriticalSection_Begin]
+    added = '3.15'
+[function.PyCriticalSection_End]
+    added = '3.15'
+[struct.PyCriticalSection]
+    added = '3.15'
+    struct_abi_kind = 'full-abi'
+[macro.Py_BEGIN_CRITICAL_SECTION]
+    added = '3.15'
+[macro.Py_END_CRITICAL_SECTION]
+    added = '3.15'
+[function.PyCriticalSection2_Begin]
+    added = '3.15'
+[function.PyCriticalSection2_End]
+    added = '3.15'
+[struct.PyCriticalSection2]
+    added = '3.15'
+    struct_abi_kind = 'full-abi'
+[macro.Py_BEGIN_CRITICAL_SECTION2]
+    added = '3.15'
+[macro.Py_END_CRITICAL_SECTION2]
+    added = '3.15'
 
 # PEP 757 import/export API.
-
 [function.PyLong_GetNativeLayout]
     added = '3.15'
 [function.PyLong_Export]
@@ -2715,3 +2736,6 @@
     # Note: The `_reserved` member of this struct is for interal use only.
     # (The definition of 'full-abi' was clarified when this entry was added.)
     struct_abi_kind = 'full-abi'
+
+[function.PyObject_CallFinalizerFromDealloc]
+    added = '3.15'

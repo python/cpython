@@ -43,7 +43,7 @@
     <PySourcePath Condition="'$(PySourcePath)' == ''">$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)\..\))</PySourcePath>
     <PySourcePath Condition="!HasTrailingSlash($(PySourcePath))">$(PySourcePath)\</PySourcePath>
 
-    <!-- Directory where build outputs are put -->
+    <!-- Directories where build outputs are put -->
     <BuildPath32 Condition="'$(Py_OutDir)' == ''">$(PySourcePath)PCbuild\win32\</BuildPath32>
     <BuildPath32 Condition="'$(Py_OutDir)' != ''">$(Py_OutDir)\win32\</BuildPath32>
     <BuildPath64 Condition="'$(Py_OutDir)' == ''">$(PySourcePath)PCbuild\amd64\</BuildPath64>
@@ -52,11 +52,34 @@
     <BuildPathArm32 Condition="'$(Py_OutDir)' != ''">$(Py_OutDir)\arm32\</BuildPathArm32>
     <BuildPathArm64 Condition="'$(Py_OutDir)' == ''">$(PySourcePath)PCbuild\arm64\</BuildPathArm64>
     <BuildPathArm64 Condition="'$(Py_OutDir)' != ''">$(Py_OutDir)\arm64\</BuildPathArm64>
+    <BuildPath32t Condition="'$(Py_OutDir)' == ''">$(PySourcePath)PCbuild\win32t\</BuildPath32t>
+    <BuildPath32t Condition="'$(Py_OutDir)' != ''">$(Py_OutDir)\win32t\</BuildPath32t>
+    <BuildPath64t Condition="'$(Py_OutDir)' == ''">$(PySourcePath)PCbuild\amd64t\</BuildPath64t>
+    <BuildPath64t Condition="'$(Py_OutDir)' != ''">$(Py_OutDir)\amd64t\</BuildPath64t>
+    <BuildPathArm32t Condition="'$(Py_OutDir)' == ''">$(PySourcePath)PCbuild\arm32t\</BuildPathArm32t>
+    <BuildPathArm32t Condition="'$(Py_OutDir)' != ''">$(Py_OutDir)\arm32t\</BuildPathArm32t>
+    <BuildPathArm64t Condition="'$(Py_OutDir)' == ''">$(PySourcePath)PCbuild\arm64t\</BuildPathArm64t>
+    <BuildPathArm64t Condition="'$(Py_OutDir)' != ''">$(Py_OutDir)\arm64t\</BuildPathArm64t>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$(DisableGil) != 'true'">
     <BuildPath Condition="'$(ArchName)' == 'win32'">$(BuildPath32)</BuildPath>
     <BuildPath Condition="'$(ArchName)' == 'amd64'">$(BuildPath64)</BuildPath>
     <BuildPath Condition="'$(ArchName)' == 'arm32'">$(BuildPathArm32)</BuildPath>
     <BuildPath Condition="'$(ArchName)' == 'arm64'">$(BuildPathArm64)</BuildPath>
     <BuildPath Condition="'$(BuildPath)' == ''">$(PySourcePath)PCbuild\$(ArchName)\</BuildPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$(DisableGil) == 'true'">
+    <!-- Directory where build outputs are put -->
+    <BuildPath Condition="'$(ArchName)' == 'win32'">$(BuildPath32t)</BuildPath>
+    <BuildPath Condition="'$(ArchName)' == 'amd64'">$(BuildPath64t)</BuildPath>
+    <BuildPath Condition="'$(ArchName)' == 'arm32'">$(BuildPathArm32t)</BuildPath>
+    <BuildPath Condition="'$(ArchName)' == 'arm64'">$(BuildPathArm64t)</BuildPath>
+    <BuildPath Condition="'$(BuildPath)' == ''">$(PySourcePath)PCbuild\$(ArchName)t\</BuildPath>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <BuildPath Condition="!HasTrailingSlash($(BuildPath))">$(BuildPath)\</BuildPath>
     <BuildPath Condition="$(Configuration) == 'PGInstrument'">$(BuildPath)instrumented\</BuildPath>
 
@@ -232,18 +255,17 @@
     <Field3Value Condition="$(UseTestMarker) == 'true'">$([msbuild]::Add($(Field3Value), 9000))</Field3Value>
 
     <!-- Name and full path of the resulting python.exe binary -->
-    <PyExeName Condition="$(DisableGil) == 'true'">python$(MajorVersionNumber).$(MinorVersionNumber)t</PyExeName>
     <PyExeName Condition="$(PyExeName) == ''">python</PyExeName>
     <PythonExe Condition="'$(PythonExe)' == ''">$(BuildPath)$(PyExeName)$(PyDebugExt).exe</PythonExe>
-    <PyWExeName Condition="$(DisableGil) == 'true'">pythonw$(MajorVersionNumber).$(MinorVersionNumber)t</PyWExeName>
     <PyWExeName Condition="$(PyWExeName) == ''">pythonw</PyWExeName>
 
     <!-- The name of the resulting pythonXY.dll (without the extension) -->
     <PyDllName Condition="$(DisableGil) == 'true'">python$(MajorVersionNumber)$(MinorVersionNumber)t$(PyDebugExt)</PyDllName>
     <PyDllName Condition="$(PyDllName) == ''">python$(MajorVersionNumber)$(MinorVersionNumber)$(PyDebugExt)</PyDllName>
+
     <!-- The name of the resulting pythonX.dll (without the extension) -->
-    <Py3DllName Condition="$(DisableGil) == 'true'">python3t</Py3DllName>
     <Py3DllName Condition="$(Py3DllName) == ''">python3</Py3DllName>
+    <Abi3tDllName Condition="$(Abi3tDllName) == ''">python3t</Abi3tDllName>
 
     <!-- The version and platform tag to include in .pyd filenames -->
     <PydTag Condition="$(ArchName) == 'win32'">.cp$(MajorVersionNumber)$(MinorVersionNumber)-win32</PydTag>
