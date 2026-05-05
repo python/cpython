@@ -218,6 +218,7 @@ _DISTCLEAN_EXCLUDES: list[str] = [
     ".nanvix/package.py",
     ".nanvix/run-regrtest.py",
     ".nanvix/run-tests.py",
+    ".nanvix/venv",
     "z",
     "z.sh",
     "z.ps1",
@@ -229,6 +230,13 @@ def distclean(repo_root: Path) -> None:
     clean(repo_root)
     if config.IS_WINDOWS:
         docker_mod.clean_volume(repo_root)
+    # Remove the venv separately — on Windows, git clean cannot delete
+    # python.exe while the current interpreter (running from the venv) holds
+    # a lock on it.  Use shutil which retries internally and gives a clearer
+    # error than git's interactive "Should I try again?" prompt.
+    venv_dir = repo_root / ".nanvix" / "venv"
+    if venv_dir.exists():
+        shutil.rmtree(venv_dir)
     cmd = ["git", "clean", "-fdx"]
     for exc in _DISTCLEAN_EXCLUDES:
         cmd.extend(["-e", exc])
