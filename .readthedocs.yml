@@ -20,7 +20,7 @@ build:
       # directory or RTD configuration, or if we can't cleanly merge the base
       # branch.
       - |
-        set -eEuxo pipefail;
+        set -eEux;
         if [ "$READTHEDOCS_VERSION_TYPE" = "external" ];
         then
           base_branch=main;
