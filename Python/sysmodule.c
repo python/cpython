@@ -2928,7 +2928,7 @@ sys_getattr(PyObject *self, PyObject *args)
 
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
-    {"__getattr__", sys_getattr, METH_VARARGS},
+    {"__getattr__", sys_getattr, METH_VARARGS, "Module __getattr__"},
     SYS_ADDAUDITHOOK_METHODDEF
     SYS_AUDIT_METHODDEF
     {"breakpointhook", _PyCFunction_CAST(sys_breakpointhook),
