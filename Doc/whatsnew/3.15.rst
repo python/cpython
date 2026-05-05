@@ -1005,15 +1005,6 @@ difflib
   (Contributed by Jiahao Li in :gh:`134580`.)
 
 
-faulthandler
-------------
-
-* Added the *max_threads* parameter in :func:`faulthandler.enable`,
-  :func:`faulthandler.dump_traceback`, :func:`faulthandler.dump_traceback_later`,
-  and :func:`faulthandler.register`.
-  (Contributed by Eric Froemling in :gh:`149085`.)
-
-
 email
 -----
 
@@ -1022,6 +1013,15 @@ email
   header. Options for supporting Email Address Internationalization (EAI) are
   discussed in :attr:`.EmailPolicy.utf8`.
   (Contributed by R David Murray and Mike Edmunds in :gh:`122540`.)
+
+
+faulthandler
+------------
+
+* Added the *max_threads* parameter in :func:`faulthandler.enable`,
+  :func:`faulthandler.dump_traceback`, :func:`faulthandler.dump_traceback_later`,
+  and :func:`faulthandler.register`.
+  (Contributed by Eric Froemling in :gh:`149085`.)
 
 
 functools
@@ -1034,6 +1034,17 @@ functools
 * :func:`~functools.singledispatchmethod` now dispatches on the second argument
   if it wraps a regular method and is called as a class attribute.
   (Contributed by Bartosz Sławecki in :gh:`143535`.)
+
+
+gc
+--
+
+* Python 3.14.0-3.14.4 shipped with a new incremental garbage collector.
+  However, due to a number of `reports
+  <https://github.com/python/cpython/issues/142516>`__
+  of significant memory pressure in production environments,
+  it has been reverted back to the generational GC from 3.13.
+  This is the GC now used in Python 3.14.5 and later and Python 3.15.
 
 
 hashlib
@@ -1199,12 +1210,11 @@ pickletools
 pprint
 ------
 
-* Add an *expand* keyword argument for :func:`pprint.pprint`,
-  :func:`pprint.pformat`, :func:`pprint.pp`. If true, the output will be
-  formatted similar to pretty-printed :func:`json.dumps` when
-  *indent* is supplied.
+* :mod:`pprint` now uses modern defaults: ``indent=4, width=88``,
+  and the default ``compact=False`` output is now formatted similar to
+  pretty-printed :func:`json.dumps`.
   (Contributed by Stefan Todoran, Semyon Moroz and Hugo van Kemenade in
-  :gh:`112632`.)
+  :gh:`112632` and :gh:`149189`.)
 
 * Add t-string support to :mod:`pprint`.
   (Contributed by Loïc Simon and Hugo van Kemenade in :gh:`134551`.)
@@ -1651,6 +1661,14 @@ wave
   as required for non-PCM WAVE formats.
 
 (Contributed by Lionel Koenig and Michiel W. Beijen in :gh:`60729`.)
+
+
+xml
+---
+
+* Add the :func:`xml.is_valid_name` function, which allows to check
+  whether a string can be used as an element or attribute name in XML.
+  (Contributed by Serhiy Storchaka in :gh:`139489`.)
 
 
 xml.parsers.expat

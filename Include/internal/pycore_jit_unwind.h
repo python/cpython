@@ -10,9 +10,15 @@
 
 #if defined(_Py_JIT) && defined(__linux__) && defined(__ELF__)
 #  define PY_HAVE_JIT_GDB_UNWIND
+#  if defined(HAVE_EXECINFO_H) && defined(HAVE_BACKTRACE) && \
+          defined(HAVE_LIBGCC_EH_FRAME_REGISTRATION)
+#    define PY_HAVE_JIT_GNU_BACKTRACE_UNWIND
+#  endif
 #endif
 
-#if defined(PY_HAVE_PERF_TRAMPOLINE) || defined(PY_HAVE_JIT_GDB_UNWIND)
+#if defined(PY_HAVE_PERF_TRAMPOLINE) \
+    || defined(PY_HAVE_JIT_GDB_UNWIND) \
+    || defined(PY_HAVE_JIT_GNU_BACKTRACE_UNWIND)
 
 #if defined(PY_HAVE_JIT_GDB_UNWIND)
 extern PyMutex _Py_jit_debug_mutex;
@@ -63,6 +69,13 @@ void *_PyJitUnwind_GdbRegisterCode(const void *code_addr,
 
 void _PyJitUnwind_GdbUnregisterCode(void *handle);
 
-#endif  // defined(PY_HAVE_PERF_TRAMPOLINE) || defined(PY_HAVE_JIT_GDB_UNWIND)
+#if defined(PY_HAVE_JIT_GNU_BACKTRACE_UNWIND)
+void *_PyJitUnwind_GnuBacktraceRegisterCode(const void *code_addr,
+                                            size_t code_size);
+
+void _PyJitUnwind_GnuBacktraceUnregisterCode(void *handle);
+#endif
+
+#endif  // JIT unwind support
 
 #endif  // Py_INTERNAL_JIT_UNWIND_H

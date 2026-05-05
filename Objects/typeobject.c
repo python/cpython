@@ -6940,6 +6940,33 @@ type_dealloc(PyObject *self)
     // Assert this is a heap-allocated type object
     _PyObject_ASSERT((PyObject *)type, type->tp_flags & Py_TPFLAGS_HEAPTYPE);
 
+    // Notify type watchers before teardown.  The type object is still fully
+    // intact at this point (dict, bases, mro, name are all valid), so
+    // callbacks can safely inspect it.
+    if (type->tp_watched) {
+        _PyObject_ResurrectStart(self);
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        int bits = type->tp_watched;
+        int i = 0;
+        while (bits) {
+            assert(i < TYPE_MAX_WATCHERS);
+            if (bits & 1) {
+                PyType_WatchCallback cb = interp->type_watchers[i];
+                if (cb && (cb(type) < 0)) {
+                    PyErr_FormatUnraisable(
+                        "Exception ignored in type watcher callback #%d "
+                        "for %R",
+                        i, type);
+                }
+            }
+            i++;
+            bits >>= 1;
+        }
+        if (_PyObject_ResurrectEnd(self)) {
+            return;     // callback resurrected the object
+        }
+    }
+
     _PyObject_GC_UNTRACK(type);
     type_dealloc_common(type);
 

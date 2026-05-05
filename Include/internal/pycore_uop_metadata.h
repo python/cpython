@@ -168,6 +168,11 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GET_ANEXT] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_GET_AWAITABLE] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_SEND_GEN_FRAME] = HAS_ARG_FLAG | HAS_EXIT_FLAG,
+    [_GUARD_TOS_IS_NONE] = HAS_EXIT_FLAG,
+    [_GUARD_NOS_NOT_NULL] = HAS_EXIT_FLAG,
+    [_SEND_VIRTUAL_TIER_TWO] = HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG,
+    [_GUARD_3OS_ASYNC_GEN_ASEND] = HAS_EXIT_FLAG,
+    [_SEND_ASYNC_GEN_TIER_TWO] = HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_YIELD_VALUE] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG | HAS_NEEDS_GUARD_IP_FLAG,
     [_POP_EXCEPT] = HAS_ESCAPES_FLAG,
     [_LOAD_COMMON_CONSTANT] = HAS_ARG_FLAG,
@@ -265,6 +270,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GUARD_TYPE_ITER] = HAS_EXIT_FLAG,
     [_ITER_NEXT_INLINE] = HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_NOS_ITER_VIRTUAL] = HAS_EXIT_FLAG,
+    [_GUARD_TOS_NOT_NULL] = HAS_EXIT_FLAG,
     [_FOR_ITER_VIRTUAL_TIER_TWO] = HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_ITER_CHECK_LIST] = HAS_EXIT_FLAG,
     [_GUARD_NOT_EXHAUSTED_LIST] = HAS_EXIT_FLAG,
@@ -310,7 +316,6 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_INIT_CALL_PY_EXACT_ARGS] = HAS_ARG_FLAG | HAS_PURE_FLAG,
     [_PUSH_FRAME] = HAS_SYNC_SP_FLAG | HAS_NEEDS_GUARD_IP_FLAG,
     [_GUARD_NOS_NULL] = HAS_EXIT_FLAG,
-    [_GUARD_NOS_NOT_NULL] = HAS_EXIT_FLAG,
     [_GUARD_THIRD_NULL] = HAS_EXIT_FLAG,
     [_GUARD_CALLABLE_TYPE_1] = HAS_EXIT_FLAG,
     [_CALL_TYPE_1] = HAS_ARG_FLAG,
@@ -1641,6 +1646,51 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { 3, 3, _SEND_GEN_FRAME_r33 },
         },
     },
+    [_GUARD_TOS_IS_NONE] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 1, 0, _GUARD_TOS_IS_NONE_r01 },
+            { 1, 1, _GUARD_TOS_IS_NONE_r11 },
+            { 2, 2, _GUARD_TOS_IS_NONE_r22 },
+            { 3, 3, _GUARD_TOS_IS_NONE_r33 },
+        },
+    },
+    [_GUARD_NOS_NOT_NULL] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 2, 0, _GUARD_NOS_NOT_NULL_r02 },
+            { 2, 1, _GUARD_NOS_NOT_NULL_r12 },
+            { 2, 2, _GUARD_NOS_NOT_NULL_r22 },
+            { 3, 3, _GUARD_NOS_NOT_NULL_r33 },
+        },
+    },
+    [_SEND_VIRTUAL_TIER_TWO] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 3, 0, _SEND_VIRTUAL_TIER_TWO_r03 },
+            { 3, 1, _SEND_VIRTUAL_TIER_TWO_r13 },
+            { 3, 2, _SEND_VIRTUAL_TIER_TWO_r23 },
+            { 3, 3, _SEND_VIRTUAL_TIER_TWO_r33 },
+        },
+    },
+    [_GUARD_3OS_ASYNC_GEN_ASEND] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 3, 0, _GUARD_3OS_ASYNC_GEN_ASEND_r03 },
+            { 3, 1, _GUARD_3OS_ASYNC_GEN_ASEND_r13 },
+            { 3, 2, _GUARD_3OS_ASYNC_GEN_ASEND_r23 },
+            { 3, 3, _GUARD_3OS_ASYNC_GEN_ASEND_r33 },
+        },
+    },
+    [_SEND_ASYNC_GEN_TIER_TWO] = {
+        .best = { 3, 3, 3, 3 },
+        .entries = {
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { 3, 3, _SEND_ASYNC_GEN_TIER_TWO_r33 },
+        },
+    },
     [_YIELD_VALUE] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
@@ -2514,6 +2564,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { 3, 3, _GUARD_NOS_ITER_VIRTUAL_r33 },
         },
     },
+    [_GUARD_TOS_NOT_NULL] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 1, 0, _GUARD_TOS_NOT_NULL_r01 },
+            { 1, 1, _GUARD_TOS_NOT_NULL_r11 },
+            { 2, 2, _GUARD_TOS_NOT_NULL_r22 },
+            { 3, 3, _GUARD_TOS_NOT_NULL_r33 },
+        },
+    },
     [_FOR_ITER_VIRTUAL_TIER_TWO] = {
         .best = { 2, 2, 2, 2 },
         .entries = {
@@ -2917,15 +2976,6 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { 2, 1, _GUARD_NOS_NULL_r12 },
             { 2, 2, _GUARD_NOS_NULL_r22 },
             { 3, 3, _GUARD_NOS_NULL_r33 },
-        },
-    },
-    [_GUARD_NOS_NOT_NULL] = {
-        .best = { 0, 1, 2, 3 },
-        .entries = {
-            { 2, 0, _GUARD_NOS_NOT_NULL_r02 },
-            { 2, 1, _GUARD_NOS_NOT_NULL_r12 },
-            { 2, 2, _GUARD_NOS_NOT_NULL_r22 },
-            { 3, 3, _GUARD_NOS_NOT_NULL_r33 },
         },
     },
     [_GUARD_THIRD_NULL] = {
@@ -4252,6 +4302,23 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_GET_ANEXT_r12] = _GET_ANEXT,
     [_GET_AWAITABLE_r11] = _GET_AWAITABLE,
     [_SEND_GEN_FRAME_r33] = _SEND_GEN_FRAME,
+    [_GUARD_TOS_IS_NONE_r01] = _GUARD_TOS_IS_NONE,
+    [_GUARD_TOS_IS_NONE_r11] = _GUARD_TOS_IS_NONE,
+    [_GUARD_TOS_IS_NONE_r22] = _GUARD_TOS_IS_NONE,
+    [_GUARD_TOS_IS_NONE_r33] = _GUARD_TOS_IS_NONE,
+    [_GUARD_NOS_NOT_NULL_r02] = _GUARD_NOS_NOT_NULL,
+    [_GUARD_NOS_NOT_NULL_r12] = _GUARD_NOS_NOT_NULL,
+    [_GUARD_NOS_NOT_NULL_r22] = _GUARD_NOS_NOT_NULL,
+    [_GUARD_NOS_NOT_NULL_r33] = _GUARD_NOS_NOT_NULL,
+    [_SEND_VIRTUAL_TIER_TWO_r03] = _SEND_VIRTUAL_TIER_TWO,
+    [_SEND_VIRTUAL_TIER_TWO_r13] = _SEND_VIRTUAL_TIER_TWO,
+    [_SEND_VIRTUAL_TIER_TWO_r23] = _SEND_VIRTUAL_TIER_TWO,
+    [_SEND_VIRTUAL_TIER_TWO_r33] = _SEND_VIRTUAL_TIER_TWO,
+    [_GUARD_3OS_ASYNC_GEN_ASEND_r03] = _GUARD_3OS_ASYNC_GEN_ASEND,
+    [_GUARD_3OS_ASYNC_GEN_ASEND_r13] = _GUARD_3OS_ASYNC_GEN_ASEND,
+    [_GUARD_3OS_ASYNC_GEN_ASEND_r23] = _GUARD_3OS_ASYNC_GEN_ASEND,
+    [_GUARD_3OS_ASYNC_GEN_ASEND_r33] = _GUARD_3OS_ASYNC_GEN_ASEND,
+    [_SEND_ASYNC_GEN_TIER_TWO_r33] = _SEND_ASYNC_GEN_TIER_TWO,
     [_YIELD_VALUE_r11] = _YIELD_VALUE,
     [_POP_EXCEPT_r10] = _POP_EXCEPT,
     [_LOAD_COMMON_CONSTANT_r01] = _LOAD_COMMON_CONSTANT,
@@ -4427,6 +4494,10 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_GUARD_NOS_ITER_VIRTUAL_r12] = _GUARD_NOS_ITER_VIRTUAL,
     [_GUARD_NOS_ITER_VIRTUAL_r22] = _GUARD_NOS_ITER_VIRTUAL,
     [_GUARD_NOS_ITER_VIRTUAL_r33] = _GUARD_NOS_ITER_VIRTUAL,
+    [_GUARD_TOS_NOT_NULL_r01] = _GUARD_TOS_NOT_NULL,
+    [_GUARD_TOS_NOT_NULL_r11] = _GUARD_TOS_NOT_NULL,
+    [_GUARD_TOS_NOT_NULL_r22] = _GUARD_TOS_NOT_NULL,
+    [_GUARD_TOS_NOT_NULL_r33] = _GUARD_TOS_NOT_NULL,
     [_FOR_ITER_VIRTUAL_TIER_TWO_r23] = _FOR_ITER_VIRTUAL_TIER_TWO,
     [_ITER_CHECK_LIST_r02] = _ITER_CHECK_LIST,
     [_ITER_CHECK_LIST_r12] = _ITER_CHECK_LIST,
@@ -4525,10 +4596,6 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_GUARD_NOS_NULL_r12] = _GUARD_NOS_NULL,
     [_GUARD_NOS_NULL_r22] = _GUARD_NOS_NULL,
     [_GUARD_NOS_NULL_r33] = _GUARD_NOS_NULL,
-    [_GUARD_NOS_NOT_NULL_r02] = _GUARD_NOS_NOT_NULL,
-    [_GUARD_NOS_NOT_NULL_r12] = _GUARD_NOS_NOT_NULL,
-    [_GUARD_NOS_NOT_NULL_r22] = _GUARD_NOS_NOT_NULL,
-    [_GUARD_NOS_NOT_NULL_r33] = _GUARD_NOS_NOT_NULL,
     [_GUARD_THIRD_NULL_r03] = _GUARD_THIRD_NULL,
     [_GUARD_THIRD_NULL_r13] = _GUARD_THIRD_NULL,
     [_GUARD_THIRD_NULL_r23] = _GUARD_THIRD_NULL,
@@ -5206,6 +5273,11 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_GET_ITER_TRAD_r12] = "_GET_ITER_TRAD_r12",
     [_GET_LEN] = "_GET_LEN",
     [_GET_LEN_r12] = "_GET_LEN_r12",
+    [_GUARD_3OS_ASYNC_GEN_ASEND] = "_GUARD_3OS_ASYNC_GEN_ASEND",
+    [_GUARD_3OS_ASYNC_GEN_ASEND_r03] = "_GUARD_3OS_ASYNC_GEN_ASEND_r03",
+    [_GUARD_3OS_ASYNC_GEN_ASEND_r13] = "_GUARD_3OS_ASYNC_GEN_ASEND_r13",
+    [_GUARD_3OS_ASYNC_GEN_ASEND_r23] = "_GUARD_3OS_ASYNC_GEN_ASEND_r23",
+    [_GUARD_3OS_ASYNC_GEN_ASEND_r33] = "_GUARD_3OS_ASYNC_GEN_ASEND_r33",
     [_GUARD_BINARY_OP_EXTEND] = "_GUARD_BINARY_OP_EXTEND",
     [_GUARD_BINARY_OP_EXTEND_r22] = "_GUARD_BINARY_OP_EXTEND_r22",
     [_GUARD_BINARY_OP_EXTEND_LHS] = "_GUARD_BINARY_OP_EXTEND_LHS",
@@ -5531,11 +5603,21 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_GUARD_TOS_INT_r11] = "_GUARD_TOS_INT_r11",
     [_GUARD_TOS_INT_r22] = "_GUARD_TOS_INT_r22",
     [_GUARD_TOS_INT_r33] = "_GUARD_TOS_INT_r33",
+    [_GUARD_TOS_IS_NONE] = "_GUARD_TOS_IS_NONE",
+    [_GUARD_TOS_IS_NONE_r01] = "_GUARD_TOS_IS_NONE_r01",
+    [_GUARD_TOS_IS_NONE_r11] = "_GUARD_TOS_IS_NONE_r11",
+    [_GUARD_TOS_IS_NONE_r22] = "_GUARD_TOS_IS_NONE_r22",
+    [_GUARD_TOS_IS_NONE_r33] = "_GUARD_TOS_IS_NONE_r33",
     [_GUARD_TOS_LIST] = "_GUARD_TOS_LIST",
     [_GUARD_TOS_LIST_r01] = "_GUARD_TOS_LIST_r01",
     [_GUARD_TOS_LIST_r11] = "_GUARD_TOS_LIST_r11",
     [_GUARD_TOS_LIST_r22] = "_GUARD_TOS_LIST_r22",
     [_GUARD_TOS_LIST_r33] = "_GUARD_TOS_LIST_r33",
+    [_GUARD_TOS_NOT_NULL] = "_GUARD_TOS_NOT_NULL",
+    [_GUARD_TOS_NOT_NULL_r01] = "_GUARD_TOS_NOT_NULL_r01",
+    [_GUARD_TOS_NOT_NULL_r11] = "_GUARD_TOS_NOT_NULL_r11",
+    [_GUARD_TOS_NOT_NULL_r22] = "_GUARD_TOS_NOT_NULL_r22",
+    [_GUARD_TOS_NOT_NULL_r33] = "_GUARD_TOS_NOT_NULL_r33",
     [_GUARD_TOS_OVERFLOWED] = "_GUARD_TOS_OVERFLOWED",
     [_GUARD_TOS_OVERFLOWED_r01] = "_GUARD_TOS_OVERFLOWED_r01",
     [_GUARD_TOS_OVERFLOWED_r11] = "_GUARD_TOS_OVERFLOWED_r11",
@@ -5952,8 +6034,15 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_SAVE_RETURN_OFFSET_r11] = "_SAVE_RETURN_OFFSET_r11",
     [_SAVE_RETURN_OFFSET_r22] = "_SAVE_RETURN_OFFSET_r22",
     [_SAVE_RETURN_OFFSET_r33] = "_SAVE_RETURN_OFFSET_r33",
+    [_SEND_ASYNC_GEN_TIER_TWO] = "_SEND_ASYNC_GEN_TIER_TWO",
+    [_SEND_ASYNC_GEN_TIER_TWO_r33] = "_SEND_ASYNC_GEN_TIER_TWO_r33",
     [_SEND_GEN_FRAME] = "_SEND_GEN_FRAME",
     [_SEND_GEN_FRAME_r33] = "_SEND_GEN_FRAME_r33",
+    [_SEND_VIRTUAL_TIER_TWO] = "_SEND_VIRTUAL_TIER_TWO",
+    [_SEND_VIRTUAL_TIER_TWO_r03] = "_SEND_VIRTUAL_TIER_TWO_r03",
+    [_SEND_VIRTUAL_TIER_TWO_r13] = "_SEND_VIRTUAL_TIER_TWO_r13",
+    [_SEND_VIRTUAL_TIER_TWO_r23] = "_SEND_VIRTUAL_TIER_TWO_r23",
+    [_SEND_VIRTUAL_TIER_TWO_r33] = "_SEND_VIRTUAL_TIER_TWO_r33",
     [_SETUP_ANNOTATIONS] = "_SETUP_ANNOTATIONS",
     [_SETUP_ANNOTATIONS_r00] = "_SETUP_ANNOTATIONS_r00",
     [_SET_ADD] = "_SET_ADD",
@@ -6401,6 +6490,16 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _SEND_GEN_FRAME:
             return 1;
+        case _GUARD_TOS_IS_NONE:
+            return 0;
+        case _GUARD_NOS_NOT_NULL:
+            return 0;
+        case _SEND_VIRTUAL_TIER_TWO:
+            return 1;
+        case _GUARD_3OS_ASYNC_GEN_ASEND:
+            return 0;
+        case _SEND_ASYNC_GEN_TIER_TWO:
+            return 3;
         case _YIELD_VALUE:
             return 1;
         case _POP_EXCEPT:
@@ -6595,6 +6694,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _GUARD_NOS_ITER_VIRTUAL:
             return 0;
+        case _GUARD_TOS_NOT_NULL:
+            return 0;
         case _FOR_ITER_VIRTUAL_TIER_TWO:
             return 0;
         case _ITER_CHECK_LIST:
@@ -6684,8 +6785,6 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _PUSH_FRAME:
             return 1;
         case _GUARD_NOS_NULL:
-            return 0;
-        case _GUARD_NOS_NOT_NULL:
             return 0;
         case _GUARD_THIRD_NULL:
             return 0;

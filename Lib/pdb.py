@@ -402,6 +402,7 @@ class PdbPyReplInput:
                 completer_delims=frozenset(' \t\n`@#%^&*()=+[{]}\\|;:\'",<>?')
             )
         )
+        self.readline_wrapper.get_reader().gen_colors = self.gen_colors
 
     def readline(self):
 
@@ -462,6 +463,26 @@ class PdbPyReplInput:
             return self.completion_matches[state]
         except IndexError:
             return None
+
+    def gen_colors(self, buffer):
+        from _pyrepl.utils import ColorSpan, Span
+
+        if not buffer.strip():
+            return
+
+        leading_spaces = len(buffer) - len(buffer.lstrip())
+        leading_text = buffer.split()[0]
+        if hasattr(self.pdb_instance, 'do_' + leading_text):
+            yield ColorSpan(
+                Span(leading_spaces, leading_spaces + len(leading_text) - 1),
+                "soft_keyword"
+            )
+            # Redact the command text with spaces so there will be no duplicated
+            # color span generated for it later.
+            redact_length = leading_spaces + len(leading_text)
+            buffer = ' ' * redact_length + buffer[redact_length:]
+
+        yield from _pyrepl.utils.gen_colors(buffer)
 
 
 class Pdb(bdb.Bdb, cmd.Cmd):

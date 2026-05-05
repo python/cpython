@@ -655,6 +655,7 @@
     <ClCompile Include="..\Python\instruction_sequence.c" />
     <ClCompile Include="..\Python\instrumentation.c" />
     <ClCompile Include="..\Python\jit.c" />
+    <ClCompile Include="..\Python\jit_publish.c" />
     <ClCompile Include="..\Python\legacy_tracing.c" />
     <ClCompile Include="..\Python\lock.c" />
     <ClCompile Include="..\Python\marshal.c" />

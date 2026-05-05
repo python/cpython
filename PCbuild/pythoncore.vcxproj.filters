@@ -1493,6 +1493,9 @@
     <ClCompile Include="..\Python\jit.c">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\jit_publish.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\legacy_tracing.c">
       <Filter>Source Files</Filter>
     </ClCompile>

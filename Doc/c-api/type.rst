@@ -110,10 +110,15 @@ Type Objects
    :c:func:`!_PyType_Lookup` is not called on *type* between the modifications;
    this is an implementation detail and subject to change.)
 
+   The callback is also invoked when a watched heap type is deallocated.
+
    An extension should never call ``PyType_Watch`` with a *watcher_id* that was
    not returned to it by a previous call to :c:func:`PyType_AddWatcher`.
 
    .. versionadded:: 3.12
+
+   .. versionchanged:: 3.15
+      The callback is now also invoked when a watched heap type is deallocated.
 
 
 .. c:function:: int PyType_Unwatch(int watcher_id, PyObject *type)
@@ -138,7 +143,16 @@ Type Objects
    called on *type* or any type in its MRO; violating this rule could cause
    infinite recursion.
 
+   The callback may be called during type deallocation. In this case, the type
+   object is temporarily resurrected (its reference count is at least 1) and all
+   its attributes are still valid. However, the callback should not store new
+   strong references to the type, as this would resurrect the object and prevent
+   its deallocation.
+
    .. versionadded:: 3.12
+
+   .. versionchanged:: 3.15
+      The callback may now be called during deallocation of a watched heap type.
 
 
 .. c:function:: int PyType_HasFeature(PyTypeObject *o, int feature)

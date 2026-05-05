@@ -47,6 +47,9 @@
 #if defined(HAVE_DLADDR) && !defined(__wasi__)
 #  include <dlfcn.h>
 #endif
+#if defined(HAVE_EXECINFO_H)
+#  include <execinfo.h>
+#endif
 #ifdef MS_WINDOWS
 #  include <windows.h>
 #  include <intrin.h>
@@ -58,6 +61,7 @@
 
 
 static const uintptr_t min_frame_pointer_addr = 0x1000;
+#define MAX_UNWIND_FRAMES 200
 
 
 static PyObject *
@@ -328,7 +332,6 @@ get_jit_backend(PyObject *self, PyObject *Py_UNUSED(args))
 static PyObject *
 manual_unwind_from_fp(uintptr_t *frame_pointer)
 {
-    Py_ssize_t max_depth = 200;
     int stack_grows_down = _Py_STACK_GROWS_DOWN;
 
     if (frame_pointer == NULL) {
@@ -340,13 +343,19 @@ manual_unwind_from_fp(uintptr_t *frame_pointer)
         return NULL;
     }
 
-    for (Py_ssize_t depth = 0;
-         depth < max_depth && frame_pointer != NULL;
-         depth++)
-    {
+    Py_ssize_t depth = 0;
+    while (frame_pointer != NULL) {
         uintptr_t fp_addr = (uintptr_t)frame_pointer;
         if ((fp_addr % sizeof(uintptr_t)) != 0) {
             break;
+        }
+        if (depth >= MAX_UNWIND_FRAMES) {
+            Py_DECREF(result);
+            PyErr_Format(
+                PyExc_RuntimeError,
+                "manual frame pointer unwind returned more than %d frames",
+                MAX_UNWIND_FRAMES);
+            return NULL;
         }
         uintptr_t return_addr = frame_pointer[1];
 
@@ -361,6 +370,7 @@ manual_unwind_from_fp(uintptr_t *frame_pointer)
             return NULL;
         }
         Py_DECREF(addr_obj);
+        depth++;
 
         uintptr_t *next_fp = (uintptr_t *)frame_pointer[0];
         // Stop if the frame pointer is extremely low.
@@ -383,6 +393,49 @@ manual_unwind_from_fp(uintptr_t *frame_pointer)
 
     return result;
 }
+
+#if defined(HAVE_EXECINFO_H) && defined(HAVE_BACKTRACE)
+static PyObject *
+gnu_backtrace_unwind(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    void *addresses[MAX_UNWIND_FRAMES + 1];
+    int frame_count = backtrace(addresses, (int)Py_ARRAY_LENGTH(addresses));
+    if (frame_count < 0) {
+        PyErr_SetString(PyExc_RuntimeError, "backtrace() failed");
+        return NULL;
+    }
+    if (frame_count > MAX_UNWIND_FRAMES) {
+        PyErr_Format(
+            PyExc_RuntimeError,
+            "backtrace() returned more than %d frames",
+            MAX_UNWIND_FRAMES);
+        return NULL;
+    }
+
+    PyObject *result = PyList_New(frame_count);
+    if (result == NULL) {
+        return NULL;
+    }
+    for (int i = 0; i < frame_count; i++) {
+        PyObject *addr_obj = PyLong_FromUnsignedLongLong((uintptr_t)addresses[i]);
+        if (addr_obj == NULL) {
+            Py_DECREF(result);
+            return NULL;
+        }
+        PyList_SET_ITEM(result, i, addr_obj);
+    }
+    return result;
+}
+#else
+static PyObject *
+gnu_backtrace_unwind(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyErr_SetString(PyExc_RuntimeError,
+                    "gnu_backtrace_unwind is not supported on this platform");
+    return NULL;
+}
+#endif
+
 #if defined(__GNUC__) || defined(__clang__)
 static PyObject *
 manual_frame_pointer_unwind(PyObject *self, PyObject *args)
@@ -2914,6 +2967,7 @@ static PyMethodDef module_functions[] = {
     {"classify_stack_addresses", classify_stack_addresses, METH_VARARGS},
     {"get_jit_code_ranges", get_jit_code_ranges, METH_NOARGS},
     {"get_jit_backend", get_jit_backend, METH_NOARGS},
+    {"gnu_backtrace_unwind", gnu_backtrace_unwind, METH_NOARGS},
     {"manual_frame_pointer_unwind", manual_frame_pointer_unwind, METH_NOARGS},
     {"test_bswap", test_bswap, METH_NOARGS},
     {"test_popcount", test_popcount, METH_NOARGS},
