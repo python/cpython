@@ -218,7 +218,7 @@ For example::
    PyInterpreterGuard *guard = thread_data->guard;
 
    // Create a new thread state for the interpreter.
-   PyThreadState *tstate = PyThreadState_Ensure(guard);
+   PyThreadStateToken *token = PyThreadState_Ensure(guard);
    if (tstate == NULL) {
       PyInterpreterGuard_Close(guard);
       return;
@@ -234,17 +234,10 @@ For example::
    PyInterpreterGuard_Close(guard);
 
 
-Some notes about this:
-
-1. In the above code, ``tstate`` is the *previously* attached thread state, not
-   the one that was just created! In some cases, ``PyThreadState_Ensure`` might
-   return an internal pointer, so it is **not** safe to treat ``tstate`` as a
-   valid thread state (that is, do not pass ``tstate`` to a function other than
-   ``PyThreadState_Release``).
-2. Calling ``PyThreadState_Ensure`` might not always create a new thread state,
-   and calling ``PyThreadState_Release`` might not always detach it. These
-   functions may reuse an existing attached thread state, or may re-attach a
-   thread state that was previously attached for the current thread.
+Keep in mind that calling ``PyThreadState_Ensure`` might not always create a new
+thread state, and calling ``PyThreadState_Release`` might not always detach it.
+These functions may reuse an existing attached thread state, or may re-attach
+a thread state that was previously attached for the current thread.
 
 .. seealso::
    :pep:`788`
