@@ -509,9 +509,9 @@ trying to attach to it.
 
 There are now several new suites of APIs to circumvent these problems:
 
-* :ref:`Interpreter guards <interpreter-views>`, which prevent an interpreter
+* :ref:`Interpreter guards <interpreter-guards>`, which prevent an interpreter
   from finalizing.
-* :ref:`Interpreter views <interpreter-guards>`, which allow thread-safe access
+* :ref:`Interpreter views <interpreter-views>`, which allow thread-safe access
   to an interpreter that may be concurrently finalizing or deleted.
 * :ref:`New APIs <c-api-attach-detach>` to automatically attach and detach
   thread states that come with built-in protection against finalization.
