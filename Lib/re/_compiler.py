@@ -280,8 +280,11 @@ def _optimize_charset(charset, iscased=None, fixup=None, fixes=None):
                         if not hascased:
                             hascased = any(map(iscased, r))
                     else:
-                        for i in r:
-                            charmap[i] = 1
+                        end = av[1] + 1
+                        if end > len(charmap):
+                            # Trigger the IndexError growth path below.
+                            raise IndexError
+                        charmap[av[0]:end] = b'\x01' * (end - av[0])
                 elif op is NEGATE:
                     out.append((op, av))
                 elif op is CATEGORY and tail and (CATEGORY, CH_NEGATE[av]) in tail:
