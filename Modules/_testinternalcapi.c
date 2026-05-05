@@ -3105,7 +3105,9 @@ test_thread_state_release_with_destructor(PyObject *self, PyObject *unused)
         return PyErr_NoMemory();
     }
 
+    Py_BEGIN_ALLOW_THREADS
     PyThread_join_thread(handle);
+    Py_END_ALLOW_THREADS
     Py_RETURN_NONE;
 }
 
