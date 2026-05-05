@@ -2240,6 +2240,7 @@ interp_has_threads(PyInterpreterState *interp)
     HEAD_LOCK(interp->runtime);
     _Py_FOR_EACH_TSTATE_UNLOCKED(interp, tstate) {
         if (tstate->_whence == _PyThreadState_WHENCE_THREADING) {
+            HEAD_UNLOCK(interp->runtime);
             return 1;
         }
     }
@@ -2366,12 +2367,15 @@ make_pre_finalization_calls(PyThreadState *tstate, int subinterpreters)
         int should_continue = (interp_has_threads(interp)
                               || interp_has_atexit_callbacks(interp)
                               || interp_has_pending_calls(interp)
-                              || has_subinterpreters
-                              || _Py_atomic_compare_exchange_uintptr(&interp->finalization_guards,
-                                                                      &guards_expected,
-                                                                      _PyInterpreterGuard_GUARDS_NOT_ALLOWED) == 0);
+                              || has_subinterpreters);
         if (!should_continue) {
-            break;
+            // We only want to prevent new guards once we're sure that we
+            // won't be running another pre-finalization cycle.
+            if (_Py_atomic_compare_exchange_uintptr(&interp->finalization_guards,
+                                                &guards_expected,
+                                                _PyInterpreterGuard_GUARDS_NOT_ALLOWED) == 1) {
+                break;
+            }
         }
         // Temporarily let other threads execute
         _PyThreadState_Detach(tstate);
