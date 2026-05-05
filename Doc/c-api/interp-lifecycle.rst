@@ -763,14 +763,14 @@ deleted. This can be done using interpreter views.
 
    On success, this function returns a view to the main
    interpreter; on failure, it returns ``NULL`` without an exception set.
-   Failure indicates that the process is out of memory or that the main
-   interpreter has finalized (or never existed).
+   Failure indicates that the process is out of memory.
 
-   Using this function in extension libraries is strongly discouraged, because
-   it typically compromises the library's subinterpreter support. It exists
-   for exceptional cases where there is no other option (such as when a native
-   threading library doesn't provide a ``void *arg`` parameter that could be
-   used to store a ``PyInterpreterGuard`` or ``PyInterpreterView`` pointer).
+   Use this function when an interpreter pointer or view cannot be supplied
+   by the caller, such as when a native threading library does not provide a
+   ``void *arg`` parameter that could carry a :c:type:`PyInterpreterGuard` or
+   :c:type:`PyInterpreterView`. In code that supports subinterpreters, prefer
+   :c:func:`PyInterpreterView_FromCurrent` so the guard tracks the calling
+   interpreter rather than the main one.
 
    The caller does not need to hold an :term:`attached thread state`.
 
