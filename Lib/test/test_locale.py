@@ -15,7 +15,8 @@ class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         extra = ["localeconv", "strcoll", "strxfrm", "getencoding",
                  "Error"]
-        support.check__all__(self, locale, extra=extra)
+        not_exported = ["locale_encoding_alias", "locale_alias", "windows_locale"]
+        support.check__all__(self, locale, extra=extra, not_exported=not_exported)
 
 class LazyImportTest(unittest.TestCase):
     @cpython_only
