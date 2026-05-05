@@ -9,12 +9,8 @@
 #if defined(PY_HAVE_JIT_GDB_UNWIND) \
     || defined(PY_HAVE_JIT_GNU_BACKTRACE_UNWIND)
 struct _PyJitCodeRegistration {
-#  if defined(PY_HAVE_JIT_GDB_UNWIND)
     void *gdb_handle;
-#  endif
-#  if defined(PY_HAVE_JIT_GNU_BACKTRACE_UNWIND)
     void *gnu_backtrace_handle;
-#  endif
 };
 #endif
 
