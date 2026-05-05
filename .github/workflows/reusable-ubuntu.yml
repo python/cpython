@@ -35,7 +35,7 @@ jobs:
     runs-on: ${{ inputs.os }}
     timeout-minutes: 60
     env:
-      OPENSSL_VER: 3.5.5
+      OPENSSL_VER: 3.5.6
       PYTHONSTRICTEXTENSIONBUILD: 1
       TERM: linux
     steps:

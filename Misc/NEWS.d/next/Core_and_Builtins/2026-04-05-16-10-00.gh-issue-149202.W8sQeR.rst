@@ -1,0 +1,4 @@
+Enable frame pointers by default for GCC-compatible CPython builds, including
+``-mno-omit-leaf-frame-pointer`` when the compiler supports it, so profilers
+and debuggers can unwind native interpreter frames more reliably. Users can pass
+``--without-frame-pointers`` to opt out.
