@@ -1,0 +1,6 @@
+The ``inspect`` module CLI now reports as much information as it has
+available for non-source modules when ``--details`` is specified, and
+provides an error message rather than a traceback when ``--details`` is
+omitted. It also reports improved information when the given target location
+is not the target's defining location and when the given target is a data
+value rather than a class or function definition.

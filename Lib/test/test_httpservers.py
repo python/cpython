@@ -576,12 +576,12 @@ class SimpleHTTPServerTestCase(BaseTestCase):
     def tearDown(self):
         try:
             os.chdir(self.cwd)
-            try:
-                shutil.rmtree(self.tempdir)
-            except:
-                pass
         finally:
             super().tearDown()
+        try:
+            shutil.rmtree(self.tempdir)
+        except:
+            pass
 
     def check_status_and_reason(self, response, status, data=None):
         def close_conn():
@@ -607,6 +607,15 @@ class SimpleHTTPServerTestCase(BaseTestCase):
 
         reader.close()
         return body
+
+    def check_status_and_headers(self, response, status, headers=None):
+        # Drain the body so the server-side handler can close the file
+        # before tearDown removes the tempdir (matters on Windows).
+        response.read()
+        self.assertEqual(response.status, status)
+        if headers:
+            for name, value in headers.items():
+                self.assertEqual(response.getheader(name), value)
 
     def check_list_dir_dirname(self, dirname, quotedname=None):
         fullpath = os.path.join(self.tempdir, dirname)
@@ -912,9 +921,10 @@ class SimpleHTTPServerTestCase(BaseTestCase):
             ('X-Test2', 'test2'),
         ]):
             response = self.request(self.base_url + '/')
-            self.assertEqual(response.status, 200)
-            self.assertEqual(response.getheader("X-Test1"), 'test1')
-            self.assertEqual(response.getheader("X-Test2"), 'test2')
+            self.check_status_and_headers(response, HTTPStatus.OK, {
+                "X-Test1": "test1",
+                "X-Test2": "test2",
+            })
 
     def test_extra_response_headers_get_file(self):
         with mock.patch.object(self.request_handler, 'extra_response_headers', [
@@ -926,18 +936,19 @@ class SimpleHTTPServerTestCase(BaseTestCase):
             with open(os.path.join(self.tempdir_name, 'index.html'), 'wb') as f:
                 f.write(data)
             response = self.request(self.base_url + '/')
-            self.assertEqual(response.status, 200)
-            self.assertEqual(response.getheader("Set-Cookie"),
-                                                'test1=value1, test2=value2')
-            self.assertEqual(response.getheader("X-Test1"), 'value3')
+            self.check_status_and_headers(response, HTTPStatus.OK, {
+                "Set-Cookie": "test1=value1, test2=value2",
+                "X-Test1": "value3",
+            })
 
     def test_extra_response_headers_missing_on_404(self):
         with mock.patch.object(self.request_handler, 'extra_response_headers', [
             ('X-Test1', 'value'),
         ]):
             response = self.request(self.base_url + '/missing.html')
-            self.assertEqual(response.status, 404)
-            self.assertEqual(response.getheader("X-Test1"), None)
+            self.check_status_and_headers(response, HTTPStatus.NOT_FOUND, {
+                "X-Test1": None,
+            })
 
     def test_extra_response_headers_dont_overwrite_default_headers(self):
         with mock.patch.object(self.request_handler, 'extra_response_headers', [
@@ -949,21 +960,21 @@ class SimpleHTTPServerTestCase(BaseTestCase):
             # But cookies in the extra_allowed_duplicate_headers are allowed,
             # including Set-Cookie
             response = self.request(self.base_url + '/')
-            self.assertEqual(response.status, 200)
+            self.check_status_and_headers(response, HTTPStatus.OK, {
+                "Set-Cookie": "test=allowed",
+            })
             self.assertNotEqual(response.getheader("Content-Type"), 'test/not_allowed')
             self.assertNotEqual(response.getheader("Server"), 'not_allowed')
-            self.assertEqual(response.getheader("Set-Cookie"), 'test=allowed')
 
     def test_multiple_requests_dont_duplicate_extra_response_headers(self):
         with mock.patch.object(self.request_handler, 'extra_response_headers', [
             ('x-test', 'test-value'),
         ]):
-            response = self.request(self.base_url + '/')
-            self.assertEqual(response.status, 200)
-            self.assertEqual(response.getheader("x-test"), 'test-value')
-            response = self.request(self.base_url + '/')
-            self.assertEqual(response.status, 200)
-            self.assertEqual(response.getheader("x-test"), 'test-value')
+            for _ in range(2):
+                response = self.request(self.base_url + '/')
+                self.check_status_and_headers(response, HTTPStatus.OK, {
+                    "x-test": "test-value",
+                })
 
 
 class SocketlessRequestHandler(SimpleHTTPRequestHandler):
