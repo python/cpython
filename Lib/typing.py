@@ -28,6 +28,7 @@ import operator
 import sys
 import types
 from types import GenericAlias
+lazy import annotationlib as _lazy_annotationlib
 
 from _typing import (
     _idfunc,
@@ -162,15 +163,6 @@ __all__ = [
     'TypeAliasType',
     'Unpack',
 ]
-
-class _LazyAnnotationLib:
-    def __getattr__(self, attr):
-        global _lazy_annotationlib
-        import annotationlib
-        _lazy_annotationlib = annotationlib
-        return getattr(annotationlib, attr)
-
-_lazy_annotationlib = _LazyAnnotationLib()
 
 
 def _type_convert(arg, module=None, *, allow_special_forms=False, owner=None):
