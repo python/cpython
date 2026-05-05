@@ -1,1 +1,0 @@
-Frozenset objects with immutable elements are no longer tracked by the garbage collector.

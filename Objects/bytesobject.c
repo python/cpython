@@ -1536,9 +1536,9 @@ bytes_length(PyObject *self)
     return Py_SIZE(a);
 }
 
-/* This is also used by PyBytes_Concat() */
-static PyObject *
-bytes_concat(PyObject *a, PyObject *b)
+/* This is also used by PyBytes_Concat() and the specializing interpreter. */
+PyObject *
+_PyBytes_Concat(PyObject *a, PyObject *b)
 {
     Py_buffer va, vb;
     PyObject *result = NULL;
@@ -1804,7 +1804,7 @@ bytes_buffer_getbuffer(PyObject *op, Py_buffer *view, int flags)
 
 static PySequenceMethods bytes_as_sequence = {
     bytes_length,       /*sq_length*/
-    bytes_concat,       /*sq_concat*/
+    _PyBytes_Concat,       /*sq_concat*/
     bytes_repeat,       /*sq_repeat*/
     bytes_item,         /*sq_item*/
     0,                  /*sq_slice*/
@@ -2403,26 +2403,25 @@ bytes_maketrans_impl(Py_buffer *frm, Py_buffer *to)
 
 
 /*[clinic input]
-@permit_long_docstring_body
 bytes.replace
 
     old: Py_buffer
     new: Py_buffer
+    /
     count: Py_ssize_t = -1
         Maximum number of occurrences to replace.
         -1 (the default value) means replace all occurrences.
-    /
 
 Return a copy with all occurrences of substring old replaced by new.
 
-If the optional argument count is given, only the first count occurrences are
-replaced.
+If count is given, only the first count occurrences are replaced.
+If count is not specified or -1, then all occurrences are replaced.
 [clinic start generated code]*/
 
 static PyObject *
 bytes_replace_impl(PyBytesObject *self, Py_buffer *old, Py_buffer *new,
                    Py_ssize_t count)
-/*[clinic end generated code: output=994fa588b6b9c104 input=8b99a9ab32bc06a2]*/
+/*[clinic end generated code: output=994fa588b6b9c104 input=cdf3cf8639297745]*/
 {
     return stringlib_replace((PyObject *)self,
                              (const char *)old->buf, old->len,
@@ -2744,7 +2743,7 @@ bytes.hex
 
     sep: object = NULL
         An optional single character or byte to separate hex bytes.
-    bytes_per_sep: int = 1
+    bytes_per_sep: Py_ssize_t = 1
         How many bytes between separators.  Positive values count from the
         right, negative values count from the left.
 
@@ -2763,8 +2762,8 @@ Example:
 [clinic start generated code]*/
 
 static PyObject *
-bytes_hex_impl(PyBytesObject *self, PyObject *sep, int bytes_per_sep)
-/*[clinic end generated code: output=1f134da504064139 input=1a21282b1f1ae595]*/
+bytes_hex_impl(PyBytesObject *self, PyObject *sep, Py_ssize_t bytes_per_sep)
+/*[clinic end generated code: output=588821f02cb9d8f5 input=bd8eceb755d8230f]*/
 {
     const char *argbuf = PyBytes_AS_STRING(self);
     Py_ssize_t arglen = PyBytes_GET_SIZE(self);
@@ -3206,6 +3205,18 @@ Construct an immutable array of bytes from:\n\
 
 static PyObject *bytes_iter(PyObject *seq);
 
+
+static _PyObjectIndexPair
+bytes_iteritem(PyObject *obj, Py_ssize_t index)
+{
+    PyBytesObject *a = _PyBytes_CAST(obj);
+    if (index >= Py_SIZE(a)) {
+        return (_PyObjectIndexPair) { .object = NULL, .index = index };
+    }
+    PyObject *l = _PyLong_FromUnsignedChar((unsigned char)a->ob_sval[index]);
+    return (_PyObjectIndexPair) { .object = l, .index = index + 1 };
+}
+
 PyTypeObject PyBytes_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "bytes",
@@ -3249,6 +3260,7 @@ PyTypeObject PyBytes_Type = {
     bytes_new,                                  /* tp_new */
     PyObject_Free,                              /* tp_free */
     .tp_version_tag = _Py_TYPE_VERSION_BYTES,
+    ._tp_iteritem = bytes_iteritem,
 };
 
 void
@@ -3295,7 +3307,7 @@ PyBytes_Concat(PyObject **pv, PyObject *w)
     else {
         /* Multiple references, need to create new object */
         PyObject *v;
-        v = bytes_concat(*pv, w);
+        v = _PyBytes_Concat(*pv, w);
         Py_SETREF(*pv, v);
     }
 }

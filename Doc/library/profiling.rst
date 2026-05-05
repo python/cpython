@@ -2,9 +2,9 @@
 
 .. _profiling-module:
 
-***************************************
-:mod:`profiling` --- Python profilers
-***************************************
+**************************************
+:mod:`!profiling` --- Python profilers
+**************************************
 
 .. module:: profiling
    :synopsis: Python profiling tools for performance analysis.
@@ -31,7 +31,7 @@ performance bottlenecks and guide optimization efforts. Python provides two
 fundamentally different approaches to collecting this information: statistical
 sampling and deterministic tracing.
 
-The :mod:`profiling` package organizes Python's built-in profiling tools under
+The :mod:`!profiling` package organizes Python's built-in profiling tools under
 a single namespace. It contains two submodules, each implementing a different
 profiling methodology:
 

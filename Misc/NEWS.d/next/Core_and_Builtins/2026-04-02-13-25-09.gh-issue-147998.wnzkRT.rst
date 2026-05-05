@@ -1,0 +1,3 @@
+Fixed a memory leak in interpreter helper calls so cleanup works when an
+operation falls across interpreter boundaries. Patch by Maurycy
+Pawłowski-Wieroński.

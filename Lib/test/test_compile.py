@@ -249,8 +249,8 @@ class TestSpecifics(unittest.TestCase):
             d = -281474976710656  # 1 << 48
             e = +4611686018427387904  # 1 << 62
             f = -4611686018427387904  # 1 << 62
-            g = +9223372036854775807  # 1 << 63 - 1
-            h = -9223372036854775807  # 1 << 63 - 1
+            g = +9223372036854775807  # (1 << 63) - 1
+            h = -9223372036854775807  # (1 << 63) - 1
 
             for variable in self.test_32_63_bit_values.__code__.co_consts:
                 if variable is not None:
@@ -2458,8 +2458,8 @@ class TestSourcePositions(unittest.TestCase):
                 for i, pos in enumerate(positions):
                     with self.subTest(i=i, pos=pos):
                         start_line, end_line, start_col, end_col = pos
-                        if i == 0 and start_col == end_col == 0:
-                            # ignore the RESUME in the beginning
+                        if i <= 1:
+                            # ignore the RESUME and CACHE in the beginning
                             continue
                         self.assertEqual(start_line, 1)
                         self.assertEqual(end_line, 1)
@@ -2485,12 +2485,13 @@ class TestSourcePositions(unittest.TestCase):
             start_line, end_line, _, _ = instr.positions
             self.assertEqual(start_line, end_line)
 
-        # Expect four `LOAD_CONST None` instructions:
+        # Expect four `None`-loading instructions:
         # three for the no-exception __exit__ call, and one for the return.
         # They should all have the locations of the context manager ('xyz').
 
         load_none = [instr for instr in dis.get_instructions(f) if
-                     instr.opname == 'LOAD_CONST' and instr.argval is None]
+                     instr.opname in ('LOAD_CONST', 'LOAD_COMMON_CONSTANT')
+                     and instr.argval is None]
         return_value = [instr for instr in dis.get_instructions(f) if
                         instr.opname == 'RETURN_VALUE']
 

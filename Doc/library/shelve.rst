@@ -51,7 +51,7 @@ lots of shared  sub-objects.  The keys are ordinary strings.
    :term:`bytes-like object`; the *protocol* value may be ignored by the
    serializer.
 
-   The *deserializer* argument must be callable which takes a serialized object
+   The *deserializer* argument must be a callable which takes a serialized object
    given as a :class:`bytes` object and returns the corresponding object.
 
    A :exc:`ShelveError` is raised if *serializer* is given but *deserializer*
@@ -85,7 +85,7 @@ lots of shared  sub-objects.  The keys are ordinary strings.
    to load a shelf from an untrusted source.  Like with pickle, loading a shelf
    can execute arbitrary code.
 
-Shelf objects support most of methods and operations supported by dictionaries
+Shelf objects support most of the methods and operations supported by dictionaries
 (except copying, constructors and operators ``|`` and ``|=``).  This eases the
 transition from dictionary based scripts to those requiring persistent storage.
 

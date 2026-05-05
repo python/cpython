@@ -1,4 +1,0 @@
-:mod:`importlib.metadata`: Use :meth:`str.lower` and :meth:`str.replace` to
-further improve performance of
-:meth:`!importlib.metadata.Prepared.normalize`. Patch by Hugo van Kemenade
-and Henry Schreiner.

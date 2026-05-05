@@ -1,1 +1,0 @@
-Optimise ``_GUARD_TOS_SLICE`` in the JIT.

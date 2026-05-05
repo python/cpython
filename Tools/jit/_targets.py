@@ -12,6 +12,7 @@ import tempfile
 import typing
 import shlex
 
+import _dwarf
 import _llvm
 import _optimizers
 import _schema
@@ -37,6 +38,27 @@ _R = typing.TypeVar(
 )
 
 
+_ELF_UNWIND_AARCH64 = _dwarf.ELFUnwindConfig(
+    frame_pointer="W29",
+    return_address="W30",
+    register_numbers={
+        "W29": 29,
+        "W30": 30,
+    },
+    call_instruction_prefixes=("blr ",),
+)
+
+_ELF_UNWIND_X86_64 = _dwarf.ELFUnwindConfig(
+    frame_pointer="RBP",
+    return_address="RIP",
+    register_numbers={
+        "RBP": 6,
+        "RIP": 16,
+    },
+    call_instruction_prefixes=("callq ", "call "),
+)
+
+
 @dataclasses.dataclass
 class _Target(typing.Generic[_S, _R]):
     triple: str
@@ -51,9 +73,18 @@ class _Target(typing.Generic[_S, _R]):
     debug: bool = False
     verbose: bool = False
     cflags: str = ""
+    frame_pointers: bool = False
+    unwind: _dwarf.ELFUnwindConfig | None = None
     llvm_version: str = _llvm._LLVM_VERSION
+    llvm_tools_install_dir: str | None = None
     known_symbols: dict[str, int] = dataclasses.field(default_factory=dict)
     pyconfig_dir: pathlib.Path = pathlib.Path.cwd().resolve()
+
+    def _compile_args(self) -> list[str]:
+        return list(self.args)
+
+    def _shim_compile_args(self) -> list[str]:
+        return []
 
     def _get_nop(self) -> bytes:
         if re.fullmatch(r"aarch64-.*", self.triple):
@@ -80,11 +111,41 @@ class _Target(typing.Generic[_S, _R]):
                 hasher.update(pathlib.Path(dirpath, filename).read_bytes())
         return hasher.hexdigest()
 
+    def _write_generated_header(
+        self,
+        output: pathlib.Path,
+        *,
+        digest: str,
+        comment: str,
+        lines: typing.Iterable[str],
+    ) -> None:
+        output_new = output.with_name(f"{output.name}.new")
+        try:
+            with output_new.open("w") as file:
+                file.write(digest)
+                if comment:
+                    file.write(f"// {comment}\n")
+                file.write("\n")
+                for line in lines:
+                    file.write(f"{line}\n")
+            try:
+                output_new.replace(output)
+            except FileNotFoundError:
+                # another process probably already moved the file
+                if not output.is_file():
+                    raise
+        finally:
+            output_new.unlink(missing_ok=True)
+
     async def _parse(self, path: pathlib.Path) -> _stencils.StencilGroup:
         group = _stencils.StencilGroup()
         args = ["--disassemble", "--reloc", f"{path}"]
         output = await _llvm.maybe_run(
-            "llvm-objdump", args, echo=self.verbose, llvm_version=self.llvm_version
+            "llvm-objdump",
+            args,
+            echo=self.verbose,
+            llvm_version=self.llvm_version,
+            llvm_tools_install_dir=self.llvm_tools_install_dir,
         )
         if output is not None:
             # Make sure that full paths don't leak out (for reproducibility):
@@ -104,7 +165,11 @@ class _Target(typing.Generic[_S, _R]):
             f"{path}",
         ]
         output = await _llvm.run(
-            "llvm-readobj", args, echo=self.verbose, llvm_version=self.llvm_version
+            "llvm-readobj",
+            args,
+            echo=self.verbose,
+            llvm_version=self.llvm_version,
+            llvm_tools_install_dir=self.llvm_tools_install_dir,
         )
         # --elf-output-style=JSON is only *slightly* broken on Mach-O...
         output = output.replace("PrivateExtern\n", "\n")
@@ -129,12 +194,8 @@ class _Target(typing.Generic[_S, _R]):
     ) -> _stencils.Hole:
         raise NotImplementedError(type(self))
 
-    async def _compile(
-        self, opname: str, c: pathlib.Path, tempdir: pathlib.Path
-    ) -> _stencils.StencilGroup:
-        s = tempdir / f"{opname}.s"
-        o = tempdir / f"{opname}.o"
-        args_s = [
+    def _base_clang_args(self, opname: str, tempdir: pathlib.Path) -> list[str]:
+        return [
             f"--target={self.triple}",
             "-DPy_BUILD_CORE_MODULE",
             "-D_DEBUG" if self.debug else "-DNDEBUG",
@@ -157,41 +218,92 @@ class _Target(typing.Generic[_S, _R]):
             # generates better code than -O2 (and -O2 usually generates better
             # code than -O3). As a nice benefit, it uses less memory too:
             "-Os",
-            "-S",
             # Shorten full absolute file paths in the generated code (like the
             # __FILE__ macro and assert failure messages) for reproducibility:
             f"-ffile-prefix-map={CPYTHON}=.",
             f"-ffile-prefix-map={tempdir}=.",
-            # This debug info isn't necessary, and bloats out the JIT'ed code.
-            # We *may* be able to re-enable this, process it, and JIT it for a
-            # nicer debugging experience... but that needs a lot more research:
-            "-fno-asynchronous-unwind-tables",
             # Don't call built-in functions that we can't find or patch:
             "-fno-builtin",
             # Don't call stack-smashing canaries that we can't find or patch:
             "-fno-stack-protector",
             "-std=c11",
+        ]
+
+    async def _build_stencil_group(
+        self, opname: str, c: pathlib.Path, tempdir: pathlib.Path
+    ) -> _stencils.StencilGroup:
+        s = tempdir / f"{opname}.s"
+        o = tempdir / f"{opname}.o"
+        args_s = self._base_clang_args(opname, tempdir)
+        args_s += [
+            "-S",
+            # Stencils do not need unwind info, and the optimizer does not
+            # preserve .cfi_* directives correctly. On Darwin,
+            # -fno-asynchronous-unwind-tables alone still leaves synchronous
+            # unwind directives in the assembly, so disable both forms here.
+            "-fno-unwind-tables",
+            "-fno-asynchronous-unwind-tables",
             "-o",
             f"{s}",
             f"{c}",
-            *self.args,
-            # Allow user-provided CFLAGS to override any defaults
-            *shlex.split(self.cflags),
         ]
+        if self.frame_pointers:
+            args_s += ["-Xclang", "-mframe-pointer=reserved"]
+        args_s += self._compile_args()
+        # Allow user-provided CFLAGS to override any defaults
+        args_s += shlex.split(self.cflags)
         await _llvm.run(
-            "clang", args_s, echo=self.verbose, llvm_version=self.llvm_version
+            "clang",
+            args_s,
+            echo=self.verbose,
+            llvm_version=self.llvm_version,
+            llvm_tools_install_dir=self.llvm_tools_install_dir,
         )
         self.optimizer(
             s,
             label_prefix=self.label_prefix,
             symbol_prefix=self.symbol_prefix,
             re_global=self.re_global,
+            frame_pointers=self.frame_pointers,
         ).run()
         args_o = [f"--target={self.triple}", "-c", "-o", f"{o}", f"{s}"]
         await _llvm.run(
-            "clang", args_o, echo=self.verbose, llvm_version=self.llvm_version
+            "clang",
+            args_o,
+            echo=self.verbose,
+            llvm_version=self.llvm_version,
+            llvm_tools_install_dir=self.llvm_tools_install_dir,
         )
         return await self._parse(o)
+
+    async def _build_shim_object(self, output: pathlib.Path) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            work = pathlib.Path(tempdir).resolve()
+            args_o = self._base_clang_args("shim", work)
+            args_o += self._shim_compile_args()
+            args_o += [
+                "-c",
+                # The shim is a real function in the final binary, so
+                # keep unwind info for debuggers and stack walkers.
+                "-fasynchronous-unwind-tables",
+            ]
+            if self.frame_pointers:
+                args_o += ["-Xclang", "-mframe-pointer=all"]
+            args_o += self._compile_args()
+            args_o += shlex.split(self.cflags)
+            args_o += ["-o", f"{output}", f"{TOOLS_JIT / 'shim.c'}"]
+            await _llvm.run(
+                "clang",
+                args_o,
+                echo=self.verbose,
+                llvm_version=self.llvm_version,
+                llvm_tools_install_dir=self.llvm_tools_install_dir,
+            )
+
+    async def _get_shim_unwind_info(
+        self, output: pathlib.Path
+    ) -> _dwarf.UnwindInfo | None:
+        return None
 
     async def _build_stencils(self) -> dict[str, _stencils.StencilGroup]:
         generated_cases = PYTHON_EXECUTOR_CASES_C_H.read_text()
@@ -201,11 +313,12 @@ class _Target(typing.Generic[_S, _R]):
             )
         )
         tasks = []
+        # If you need to see the generated assembly files,
+        # uncomment line below (and comment out line below that)
+        #   with tempfile.TemporaryDirectory("-stencils-assembly", delete=False) as tempdir:
         with tempfile.TemporaryDirectory() as tempdir:
             work = pathlib.Path(tempdir).resolve()
             async with asyncio.TaskGroup() as group:
-                coro = self._compile("shim", TOOLS_JIT / "shim.c", work)
-                tasks.append(group.create_task(coro, name="shim"))
                 template = TOOLS_JIT_TEMPLATE_C.read_text()
                 for case, opname in cases_and_opnames:
                     # Write out a copy of the template with *only* this case
@@ -215,7 +328,7 @@ class _Target(typing.Generic[_S, _R]):
                     # all of the other cases):
                     c = work / f"{opname}.c"
                     c.write_text(template.replace("CASE", case))
-                    coro = self._compile(opname, c, work)
+                    coro = self._build_stencil_group(opname, c, work)
                     tasks.append(group.create_task(coro, name=opname))
         stencil_groups = {task.get_name(): task.result() for task in tasks}
         for stencil_group in stencil_groups.values():
@@ -229,8 +342,10 @@ class _Target(typing.Generic[_S, _R]):
         comment: str = "",
         force: bool = False,
         jit_stencils: pathlib.Path,
+        jit_shim_object: pathlib.Path,
+        jit_unwind_info: pathlib.Path,
     ) -> None:
-        """Build jit_stencils.h in the given directory."""
+        """Build jit_stencils.h and the shim object in the given directory."""
         jit_stencils.parent.mkdir(parents=True, exist_ok=True)
         if not self.stable:
             warning = f"JIT support for {self.triple} is still experimental!"
@@ -240,35 +355,47 @@ class _Target(typing.Generic[_S, _R]):
             outline = "=" * len(warning)
             print("\n".join(["", outline, warning, request, outline, ""]))
         digest = f"// {self._compute_digest()}\n"
+        # The generated headers include the input digest as their first line.
+        # If every generated artifact is current, skip the expensive rebuild.
         if (
             not force
             and jit_stencils.exists()
             and jit_stencils.read_text().startswith(digest)
+            and jit_shim_object.exists()
+            and jit_unwind_info.exists()
+            and jit_unwind_info.read_text().startswith(digest)
         ):
             return
+        # Build the shim first so its compiled DWARF CFI can be used to derive
+        # the unwind rules emitted into jit_unwind_info-<triple>.h.
+        ASYNCIO_RUNNER.run(self._build_shim_object(jit_shim_object))
+        unwind_info = ASYNCIO_RUNNER.run(self._get_shim_unwind_info(jit_shim_object))
+        self._write_generated_header(
+            jit_unwind_info,
+            digest=digest,
+            comment=comment,
+            lines=_writer.dump_unwind_info(unwind_info),
+        )
+        # Build the uop stencils after the shim metadata has been emitted.
         stencil_groups = ASYNCIO_RUNNER.run(self._build_stencils())
-        jit_stencils_new = jit_stencils.parent / "jit_stencils.h.new"
-        try:
-            with jit_stencils_new.open("w") as file:
-                file.write(digest)
-                if comment:
-                    file.write(f"// {comment}\n")
-                file.write("\n")
-                for line in _writer.dump(stencil_groups, self.known_symbols):
-                    file.write(f"{line}\n")
-            try:
-                jit_stencils_new.replace(jit_stencils)
-            except FileNotFoundError:
-                # another process probably already moved the file
-                if not jit_stencils.is_file():
-                    raise
-        finally:
-            jit_stencils_new.unlink(missing_ok=True)
+        self._write_generated_header(
+            jit_stencils,
+            digest=digest,
+            comment=comment,
+            lines=_writer.dump(stencil_groups, self.known_symbols),
+        )
 
 
 class _COFF(
     _Target[_schema.COFFSection, _schema.COFFRelocation]
 ):  # pylint: disable = too-few-public-methods
+    def _shim_compile_args(self) -> list[str]:
+        # The shim is part of pythoncore, not a shared extension.
+        # On Windows, Py_BUILD_CORE_MODULE makes public APIs import from
+        # pythonXY.lib, which creates a self-dependency when linking
+        # pythoncore.dll. Build the shim with builtin/core semantics.
+        return ["-UPy_BUILD_CORE_MODULE", "-DPy_BUILD_CORE_BUILTIN"]
+
     def _handle_section(
         self, section: _schema.COFFSection, group: _stencils.StencilGroup
     ) -> None:
@@ -369,6 +496,10 @@ class _COFF64(_COFF):
     symbol_prefix = ""
     re_global = re.compile(r'\s*\.def\s+(?P<label>[\w."$?@]+);')
 
+    def _compile_args(self) -> list[str]:
+        runtime = "-fms-runtime-lib=dll_dbg" if self.debug else "-fms-runtime-lib=dll"
+        return [runtime, *self.args]
+
 
 class _ELF(
     _Target[_schema.ELFSection, _schema.ELFRelocation]
@@ -376,6 +507,19 @@ class _ELF(
     label_prefix = ".L"
     symbol_prefix = ""
     re_global = re.compile(r'\s*\.globl\s+(?P<label>[\w."$?@]+)(\s+.*)?')
+
+    async def _get_shim_unwind_info(
+        self, output: pathlib.Path
+    ) -> _dwarf.UnwindInfo | None:
+        assert self.unwind is not None
+        return await _dwarf.ELFUnwindInfo(
+            self.triple,
+            config=self.unwind,
+            verbose=self.verbose,
+            llvm_version=self.llvm_version,
+            llvm_tools_install_dir=self.llvm_tools_install_dir,
+            llvm_run=_llvm.run,
+        ).extract(output)
 
     def _handle_section(
         self, section: _schema.ELFSection, group: _stencils.StencilGroup
@@ -580,21 +724,29 @@ def get_target(host: str) -> _COFF32 | _COFF64 | _ELF | _MachO:
     elif re.fullmatch(r"aarch64-pc-windows-msvc", host):
         host = "aarch64-pc-windows-msvc"
         condition = "defined(_M_ARM64)"
-        args = ["-fms-runtime-lib=dll"]
         optimizer = _optimizers.OptimizerAArch64
-        target = _COFF64(host, condition, args=args, optimizer=optimizer)
+        target = _COFF64(host, condition, optimizer=optimizer)
     elif re.fullmatch(r"aarch64-.*-linux-gnu", host):
         host = "aarch64-unknown-linux-gnu"
         condition = "defined(__aarch64__) && defined(__linux__)"
         # -mno-outline-atomics: Keep intrinsics from being emitted.
-        args = ["-fpic", "-mno-outline-atomics", "-fno-plt"]
+        args = ["-fpic", "-mno-outline-atomics"]
         optimizer = _optimizers.OptimizerAArch64
-        target = _ELF(host, condition, args=args, optimizer=optimizer)
+        target = _ELF(
+            host,
+            condition,
+            args=args,
+            optimizer=optimizer,
+            frame_pointers=True,
+            unwind=_ELF_UNWIND_AARCH64,
+        )
     elif re.fullmatch(r"i686-pc-windows-msvc", host):
         host = "i686-pc-windows-msvc"
         condition = "defined(_M_IX86)"
         # -Wno-ignored-attributes: __attribute__((preserve_none)) is not supported here.
-        args = ["-DPy_NO_ENABLE_SHARED", "-Wno-ignored-attributes"]
+        # -mno-sse: Use x87 FPU instead of SSE for float math. The COFF32
+        # stencil converter cannot handle _xmm register references.
+        args = ["-DPy_NO_ENABLE_SHARED", "-Wno-ignored-attributes", "-mno-sse"]
         optimizer = _optimizers.OptimizerX86
         target = _COFF32(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"x86_64-apple-darwin.*", host):
@@ -605,15 +757,21 @@ def get_target(host: str) -> _COFF32 | _COFF64 | _ELF | _MachO:
     elif re.fullmatch(r"x86_64-pc-windows-msvc", host):
         host = "x86_64-pc-windows-msvc"
         condition = "defined(_M_X64)"
-        args = ["-fms-runtime-lib=dll"]
         optimizer = _optimizers.OptimizerX86
-        target = _COFF64(host, condition, args=args, optimizer=optimizer)
+        target = _COFF64(host, condition, optimizer=optimizer)
     elif re.fullmatch(r"x86_64-.*-linux-gnu", host):
         host = "x86_64-unknown-linux-gnu"
         condition = "defined(__x86_64__) && defined(__linux__)"
         args = ["-fno-pic", "-mcmodel=medium", "-mlarge-data-threshold=0", "-fno-plt"]
         optimizer = _optimizers.OptimizerX86
-        target = _ELF(host, condition, args=args, optimizer=optimizer)
+        target = _ELF(
+            host,
+            condition,
+            args=args,
+            optimizer=optimizer,
+            frame_pointers=True,
+            unwind=_ELF_UNWIND_X86_64,
+        )
     else:
         raise ValueError(host)
     return target

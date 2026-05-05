@@ -1,0 +1,2 @@
+Fixed a use-after-free in :mod:`json` encoder when a ``default`` callback
+mutates the dictionary being serialized.

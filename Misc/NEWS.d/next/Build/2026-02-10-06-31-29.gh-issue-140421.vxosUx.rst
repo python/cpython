@@ -1,1 +1,0 @@
-Disable the perf trampoline on older macOS versions where it cannot be built.

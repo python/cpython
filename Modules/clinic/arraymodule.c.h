@@ -335,8 +335,9 @@ PyDoc_STRVAR(array_array_byteswap__doc__,
 "\n"
 "Byteswap all items of the array.\n"
 "\n"
-"If the items in the array are not 1, 2, 4, or 8 bytes in size, RuntimeError is\n"
-"raised.");
+"If the items in the array are not 1, 2, 4, 8 or 16 bytes in size, RuntimeError\n"
+"is raised.  Note, that for complex types the order of\n"
+"components (the real part, followed by imaginary part) is preserved.");
 
 #define ARRAY_ARRAY_BYTESWAP_METHODDEF    \
     {"byteswap", (PyCFunction)array_array_byteswap, METH_NOARGS, array_array_byteswap__doc__},
@@ -650,7 +651,7 @@ PyDoc_STRVAR(array__array_reconstructor__doc__,
 
 static PyObject *
 array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
-                                int typecode,
+                                const char *typecode,
                                 enum machine_format_code mformat_code,
                                 PyObject *items);
 
@@ -659,7 +660,7 @@ array__array_reconstructor(PyObject *module, PyObject *const *args, Py_ssize_t n
 {
     PyObject *return_value = NULL;
     PyTypeObject *arraytype;
-    int typecode;
+    const char *typecode;
     enum machine_format_code mformat_code;
     PyObject *items;
 
@@ -668,17 +669,18 @@ array__array_reconstructor(PyObject *module, PyObject *const *args, Py_ssize_t n
     }
     arraytype = (PyTypeObject *)args[0];
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("_array_reconstructor", "argument 2", "a unicode character", args[1]);
+        _PyArg_BadArgument("_array_reconstructor", "argument 2", "str", args[1]);
         goto exit;
     }
-    if (PyUnicode_GET_LENGTH(args[1]) != 1) {
-        PyErr_Format(PyExc_TypeError,
-            "_array_reconstructor(): argument 2 must be a unicode character, "
-            "not a string of length %zd",
-            PyUnicode_GET_LENGTH(args[1]));
+    Py_ssize_t typecode_length;
+    typecode = PyUnicode_AsUTF8AndSize(args[1], &typecode_length);
+    if (typecode == NULL) {
         goto exit;
     }
-    typecode = PyUnicode_READ_CHAR(args[1], 0);
+    if (strlen(typecode) != (size_t)typecode_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
     mformat_code = PyLong_AsInt(args[2]);
     if (mformat_code == -1 && PyErr_Occurred()) {
         goto exit;
@@ -778,4 +780,4 @@ array_arrayiterator___setstate__(PyObject *self, PyObject *state)
 
     return return_value;
 }
-/*[clinic end generated code: output=c993c3598085840e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8699475b51151247 input=a9049054013a1b77]*/

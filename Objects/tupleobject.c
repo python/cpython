@@ -202,8 +202,54 @@ PyTuple_Pack(Py_ssize_t n, ...)
     return (PyObject *)result;
 }
 
+PyObject *
+_PyTuple_FromPair(PyObject *first, PyObject *second)
+{
+    assert(first != NULL);
+    assert(second != NULL);
+
+    return _PyTuple_FromPairSteal(Py_NewRef(first), Py_NewRef(second));
+}
+
+PyObject *
+_PyTuple_FromPairSteal(PyObject *first, PyObject *second)
+{
+    assert(first != NULL);
+    assert(second != NULL);
+
+    PyTupleObject *op = tuple_alloc(2);
+    if (op == NULL) {
+        Py_DECREF(first);
+        Py_DECREF(second);
+        return NULL;
+    }
+    PyObject **items = op->ob_item;
+    items[0] = first;
+    items[1] = second;
+    if (maybe_tracked(first) || maybe_tracked(second)) {
+        _PyObject_GC_TRACK(op);
+    }
+    return (PyObject *)op;
+}
 
 /* Methods */
+
+/*
+ Free of a tuple where all contents have been stolen and
+ is now untracked by GC. This operation is thus non-escaping.
+ */
+void
+_PyStolenTuple_Free(PyObject *obj)
+{
+    assert(PyTuple_CheckExact(obj));
+    PyTupleObject *op = _PyTuple_CAST(obj);
+    assert(Py_SIZE(op) != 0);
+    assert(!_PyObject_GC_IS_TRACKED(obj));
+    // This will abort on the empty singleton (if there is one).
+    if (!maybe_freelist_push(op)) {
+        PyTuple_Type.tp_free((PyObject *)op);
+    }
+}
 
 static void
 tuple_dealloc(PyObject *self)
@@ -473,6 +519,25 @@ tuple_slice(PyTupleObject *a, Py_ssize_t ilow,
 }
 
 PyObject *
+_PyTuple_BinarySlice(PyObject *container, PyObject *start, PyObject *stop)
+{
+    assert(PyTuple_CheckExact(container));
+    Py_ssize_t len = Py_SIZE(container);
+    Py_ssize_t istart, istop;
+    if (!_PyEval_UnpackIndices(start, stop, len, &istart, &istop)) {
+        return NULL;
+    }
+    if (istart == 0 && istop == len) {
+        return Py_NewRef(container);
+    }
+    if (istop < istart) {
+        istop = istart;
+    }
+    return PyTuple_FromArray(((PyTupleObject *)container)->ob_item + istart,
+                             istop - istart);
+}
+
+PyObject *
 PyTuple_GetSlice(PyObject *op, Py_ssize_t i, Py_ssize_t j)
 {
     if (op == NULL || !PyTuple_Check(op)) {
@@ -482,8 +547,8 @@ PyTuple_GetSlice(PyObject *op, Py_ssize_t i, Py_ssize_t j)
     return tuple_slice((PyTupleObject *)op, i, j);
 }
 
-static PyObject *
-tuple_concat(PyObject *aa, PyObject *bb)
+PyObject *
+_PyTuple_Concat(PyObject *aa, PyObject *bb)
 {
     PyTupleObject *a = _PyTuple_CAST(aa);
     if (Py_SIZE(a) == 0 && PyTuple_CheckExact(bb)) {
@@ -799,7 +864,7 @@ tuple_subtype_new(PyTypeObject *type, PyObject *iterable)
 
 static PySequenceMethods tuple_as_sequence = {
     tuple_length,                               /* sq_length */
-    tuple_concat,                               /* sq_concat */
+    _PyTuple_Concat,                            /* sq_concat */
     tuple_repeat,                               /* sq_repeat */
     tuple_item,                                 /* sq_item */
     0,                                          /* sq_slice */
@@ -807,6 +872,17 @@ static PySequenceMethods tuple_as_sequence = {
     0,                                          /* sq_ass_slice */
     tuple_contains,                             /* sq_contains */
 };
+
+static _PyObjectIndexPair
+tuple_iteritem(PyObject *obj, Py_ssize_t index)
+{
+    if (index >= PyTuple_GET_SIZE(obj)) {
+        return (_PyObjectIndexPair) { .object = NULL, .index = index };
+    }
+    PyObject *result = PyTuple_GET_ITEM(obj, index);
+    Py_INCREF(result);
+    return (_PyObjectIndexPair) { .object = result, .index = index + 1 };
+}
 
 static PyObject*
 tuple_subscript(PyObject *op, PyObject* item)
@@ -935,6 +1011,7 @@ PyTypeObject PyTuple_Type = {
     PyObject_GC_Del,                            /* tp_free */
     .tp_vectorcall = tuple_vectorcall,
     .tp_version_tag = _Py_TYPE_VERSION_TUPLE,
+    ._tp_iteritem = tuple_iteritem,
 };
 
 /* The following function breaks the notion that tuples are immutable:
@@ -1209,6 +1286,6 @@ _PyTuple_DebugMallocStats(FILE *out)
         PyOS_snprintf(buf, sizeof(buf),
                       "free %d-sized PyTupleObject", len);
         _PyDebugAllocatorStats(out, buf, _Py_FREELIST_SIZE(tuples[i]),
-                               _PyObject_VAR_SIZE(&PyTuple_Type, len));
+                               _PyType_PreHeaderSize(&PyTuple_Type) + _PyObject_VAR_SIZE(&PyTuple_Type, len));
     }
 }

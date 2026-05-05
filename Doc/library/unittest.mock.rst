@@ -4,7 +4,6 @@
 .. module:: unittest.mock
    :synopsis: Mock object library.
 
-.. moduleauthor:: Michael Foord <michael@python.org>
 .. currentmodule:: unittest.mock
 
 .. versionadded:: 3.3
@@ -2348,10 +2347,12 @@ chained call:
     <MagicMock name='mock().method().other()()' id='...'>
     >>> kall = call(1).method(arg='foo').other('bar')(2.0)
     >>> kall.call_list()
-    [call(1),
-     call().method(arg='foo'),
-     call().method().other('bar'),
-     call().method().other()(2.0)]
+    [
+        call(1),
+        call().method(arg='foo'),
+        call().method().other('bar'),
+        call().method().other()(2.0),
+    ]
     >>> m.mock_calls == kall.call_list()
     True
 

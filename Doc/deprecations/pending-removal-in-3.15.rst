@@ -54,13 +54,13 @@ Pending removal in Python 3.15
 
   * :func:`~threading.RLock` will take no arguments in Python 3.15.
     Passing any arguments has been deprecated since Python 3.14,
-    as the  Python version does not permit any arguments,
+    as the Python version does not permit any arguments,
     but the C version allows any number of positional or keyword arguments,
     ignoring every argument.
 
 * :mod:`types`:
 
-  * :class:`types.CodeType`: Accessing :attr:`~codeobject.co_lnotab` was
+  * :class:`types.CodeType`: Accessing :attr:`!codeobject.co_lnotab` was
     deprecated in :pep:`626`
     since 3.10 and was planned to be removed in 3.12,
     but it only got a proper :exc:`DeprecationWarning` in 3.12.

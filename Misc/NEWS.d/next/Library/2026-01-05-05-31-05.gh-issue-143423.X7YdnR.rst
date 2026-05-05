@@ -1,1 +1,0 @@
-Fix free-threaded build detection in the sampling profiler when Py_GIL_DISABLED is set to 0.

@@ -1,0 +1,2 @@
+Remove ``F`` and ``D`` formats from :mod:`array` and :class:`memoryview`.
+Patch by Victor Stinner.
