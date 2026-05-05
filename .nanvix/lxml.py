@@ -58,4 +58,26 @@ def stage_lxml_runtime(repo_root: Path, sysroot: Path) -> None:
     if dst.exists():
         shutil.rmtree(dst)
     shutil.copytree(lxml_src, dst)
+
+    # Ensure the etree.py shim explicitly exports names that are not in
+    # lxml.etree.__all__ but are expected by downstream packages (e.g.
+    # openpyxl imports xmlfile).  The star-import only picks up names
+    # listed in __all__; xmlfile/htmlfile are cdef classes omitted from
+    # that list.
+    _write_etree_shim(dst / "etree.py")
+
     print(f"[lxml] Staged {lxml_src} -> {dst}")
+
+
+# The content of the etree.py shim that bridges the built-in _lxml_etree
+# C extension to the expected lxml.etree import path.
+_ETREE_SHIM = """\
+from _lxml_etree import *
+from _lxml_etree import _Element, _ElementTree, _Comment, _ProcessingInstruction, ElementBase, QName, _Attrib
+from _lxml_etree import xmlfile, htmlfile
+"""
+
+
+def _write_etree_shim(path: Path) -> None:
+    """Write (or overwrite) the lxml/etree.py shim with correct exports."""
+    path.write_text(_ETREE_SHIM, encoding="utf-8")

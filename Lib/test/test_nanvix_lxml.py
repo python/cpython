@@ -37,6 +37,17 @@ class NanvixLxmlTests(unittest.TestCase):
         self.assertEqual(len(results), 2)
         self.assertEqual(results[0].text, "1")
 
+    def test_xmlfile_available(self):
+        # xmlfile must be importable from lxml.etree for openpyxl compat.
+        from lxml.etree import xmlfile
+
+        self.assertTrue(callable(xmlfile))
+
+    def test_htmlfile_available(self):
+        from lxml.etree import htmlfile
+
+        self.assertTrue(callable(htmlfile))
+
 
 if __name__ == "__main__":
     unittest.main()
