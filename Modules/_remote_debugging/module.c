@@ -1544,14 +1544,6 @@ _remote_debugging_BinaryWriter_write_sample_impl(BinaryWriterObject *self,
     Py_RETURN_NONE;
 }
 
-/*[clinic input]
-_remote_debugging.BinaryWriter.finalize
-
-Finalize and close the binary file.
-
-Writes string/frame tables, footer, and updates header.
-[clinic start generated code]*/
-
 /* Finalize the writer, cache total_samples, and destroy it.
  *
  * The cache assignment must happen AFTER binary_writer_finalize(): finalize
@@ -1569,6 +1561,14 @@ binary_writer_finalize_and_cache(BinaryWriterObject *self)
     self->writer = NULL;
     return 0;
 }
+
+/*[clinic input]
+_remote_debugging.BinaryWriter.finalize
+
+Finalize and close the binary file.
+
+Writes string/frame tables, footer, and updates header.
+[clinic start generated code]*/
 
 static PyObject *
 _remote_debugging_BinaryWriter_finalize_impl(BinaryWriterObject *self)
