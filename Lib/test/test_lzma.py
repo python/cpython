@@ -22,6 +22,7 @@ class CompressorDecompressorTestCase(unittest.TestCase):
 
     # Test error cases.
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_simple_bad_args(self):
         self.assertRaises(TypeError, LZMACompressor, [])
         self.assertRaises(TypeError, LZMACompressor, format=3.45)
@@ -275,24 +276,28 @@ class CompressorDecompressorTestCase(unittest.TestCase):
 
     # Test that LZMACompressor->LZMADecompressor preserves the input data.
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_roundtrip_xz(self):
         lzc = LZMACompressor()
         cdata = lzc.compress(INPUT) + lzc.flush()
         lzd = LZMADecompressor()
         self._test_decompressor(lzd, cdata, lzma.CHECK_CRC64)
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_roundtrip_alone(self):
         lzc = LZMACompressor(lzma.FORMAT_ALONE)
         cdata = lzc.compress(INPUT) + lzc.flush()
         lzd = LZMADecompressor()
         self._test_decompressor(lzd, cdata, lzma.CHECK_NONE)
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_roundtrip_raw(self):
         lzc = LZMACompressor(lzma.FORMAT_RAW, filters=FILTERS_RAW_4)
         cdata = lzc.compress(INPUT) + lzc.flush()
         lzd = LZMADecompressor(lzma.FORMAT_RAW, filters=FILTERS_RAW_4)
         self._test_decompressor(lzd, cdata, lzma.CHECK_NONE)
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_roundtrip_raw_empty(self):
         lzc = LZMACompressor(lzma.FORMAT_RAW, filters=FILTERS_RAW_4)
         cdata = lzc.compress(INPUT)
@@ -303,6 +308,7 @@ class CompressorDecompressorTestCase(unittest.TestCase):
         lzd = LZMADecompressor(lzma.FORMAT_RAW, filters=FILTERS_RAW_4)
         self._test_decompressor(lzd, cdata, lzma.CHECK_NONE)
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_roundtrip_chunks(self):
         lzc = LZMACompressor()
         cdata = []
@@ -313,6 +319,7 @@ class CompressorDecompressorTestCase(unittest.TestCase):
         lzd = LZMADecompressor()
         self._test_decompressor(lzd, cdata, lzma.CHECK_CRC64)
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_roundtrip_empty_chunks(self):
         lzc = LZMACompressor()
         cdata = []
@@ -337,6 +344,7 @@ class CompressorDecompressorTestCase(unittest.TestCase):
 
     @support.skip_if_pgo_task
     @bigmemtest(size=_4G + 100, memuse=2)
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_compressor_bigmem(self, size):
         lzc = LZMACompressor()
         cdata = lzc.compress(b"x" * size) + lzc.flush()
@@ -349,6 +357,7 @@ class CompressorDecompressorTestCase(unittest.TestCase):
 
     @support.skip_if_pgo_task
     @bigmemtest(size=_4G + 100, memuse=3)
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_decompressor_bigmem(self, size):
         lzd = LZMADecompressor()
         blocksize = min(10 * 1024 * 1024, size)
@@ -363,6 +372,7 @@ class CompressorDecompressorTestCase(unittest.TestCase):
 
     # Pickling raises an exception; there's no way to serialize an lzma_stream.
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_pickle(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             with self.assertRaises(TypeError):
@@ -388,6 +398,7 @@ class CompressDecompressFunctionTestCase(unittest.TestCase):
 
     # Test error cases:
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_bad_args(self):
         self.assertRaises(TypeError, lzma.compress)
         self.assertRaises(TypeError, lzma.compress, [])
@@ -485,6 +496,7 @@ class CompressDecompressFunctionTestCase(unittest.TestCase):
 
     # Test that compress()->decompress() preserves the input data.
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_roundtrip(self):
         cdata = lzma.compress(INPUT)
         ddata = lzma.decompress(cdata)
@@ -536,6 +548,7 @@ class TempFile:
 
 class FileTestCase(unittest.TestCase):
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_init(self):
         with LZMAFile(BytesIO(COMPRESSED_XZ)) as f:
             pass
@@ -546,6 +559,7 @@ class FileTestCase(unittest.TestCase):
         with LZMAFile(BytesIO(), "a") as f:
             pass
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_init_with_PathLike_filename(self):
         filename = FakePath(TESTFN)
         with TempFile(filename, COMPRESSED_XZ):
@@ -556,6 +570,7 @@ class FileTestCase(unittest.TestCase):
             with LZMAFile(filename) as f:
                 self.assertEqual(f.read(), INPUT * 2)
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_init_with_filename(self):
         with TempFile(TESTFN, COMPRESSED_XZ):
             with LZMAFile(TESTFN) as f:
@@ -565,6 +580,7 @@ class FileTestCase(unittest.TestCase):
             with LZMAFile(TESTFN, "a") as f:
                 pass
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_init_mode(self):
         with TempFile(TESTFN):
             with LZMAFile(TESTFN, "r"):
@@ -580,6 +596,7 @@ class FileTestCase(unittest.TestCase):
             with LZMAFile(TESTFN, "ab"):
                 pass
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_init_with_x_mode(self):
         self.addCleanup(unlink, TESTFN)
         for mode in ("x", "xb"):
@@ -692,6 +709,7 @@ class FileTestCase(unittest.TestCase):
             # Try closing an already-closed LZMAFile.
             f.close()
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_closed(self):
         f = LZMAFile(BytesIO(COMPRESSED_XZ))
         try:
@@ -725,6 +743,7 @@ class FileTestCase(unittest.TestCase):
                 f.close()
         self.assertRaises(ValueError, f.fileno)
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_seekable(self):
         f = LZMAFile(BytesIO(COMPRESSED_XZ))
         try:
@@ -751,6 +770,7 @@ class FileTestCase(unittest.TestCase):
             f.close()
         self.assertRaises(ValueError, f.seekable)
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_readable(self):
         f = LZMAFile(BytesIO(COMPRESSED_XZ))
         try:
@@ -768,6 +788,7 @@ class FileTestCase(unittest.TestCase):
             f.close()
         self.assertRaises(ValueError, f.readable)
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_writable(self):
         f = LZMAFile(BytesIO(COMPRESSED_XZ))
         try:
@@ -832,6 +853,7 @@ class FileTestCase(unittest.TestCase):
                 chunks.append(result)
             self.assertEqual(b"".join(chunks), INPUT)
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_read_multistream(self):
         with LZMAFile(BytesIO(COMPRESSED_XZ * 5)) as f:
             self.assertEqual(f.read(), INPUT * 5)
@@ -936,6 +958,7 @@ class FileTestCase(unittest.TestCase):
             with LZMAFile(BytesIO(truncated[:i])) as f:
                 self.assertRaises(EOFError, f.read, 1)
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_read_bad_args(self):
         f = LZMAFile(BytesIO(COMPRESSED_XZ))
         f.close()
@@ -977,6 +1000,7 @@ class FileTestCase(unittest.TestCase):
             self.assertEqual(b"".join(blocks), INPUT * 5)
             self.assertEqual(f.read1(), b"")
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_read1_bad_args(self):
         f = LZMAFile(BytesIO(COMPRESSED_XZ))
         f.close()
@@ -998,6 +1022,7 @@ class FileTestCase(unittest.TestCase):
             self.assertTrue(INPUT.startswith(result))
             self.assertEqual(f.read(), INPUT)
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_peek_bad_args(self):
         with LZMAFile(BytesIO(), "w") as f:
             self.assertRaises(ValueError, f.peek)
@@ -1030,6 +1055,7 @@ class FileTestCase(unittest.TestCase):
         with LZMAFile(BytesIO(COMPRESSED_XZ)) as f:
             self.assertListEqual(f.readlines(), lines)
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_decompress_limited(self):
         """Decompressed data buffering should be limited"""
         bomb = lzma.compress(b'\0' * int(2e6), preset=6)
@@ -1041,6 +1067,7 @@ class FileTestCase(unittest.TestCase):
         self.assertLessEqual(decomp._buffer.raw.tell(), max_decomp,
             "Excessive amount of data was decompressed")
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_write(self):
         with BytesIO() as dst:
             with LZMAFile(dst, "w") as f:
@@ -1065,6 +1092,7 @@ class FileTestCase(unittest.TestCase):
                                      filters=FILTERS_RAW_2)
             self.assertEqual(dst.getvalue(), expected)
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_write_10(self):
         with BytesIO() as dst:
             with LZMAFile(dst, "w") as f:
@@ -1073,6 +1101,7 @@ class FileTestCase(unittest.TestCase):
             expected = lzma.compress(INPUT)
             self.assertEqual(dst.getvalue(), expected)
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_write_append(self):
         part1 = INPUT[:1024]
         part2 = INPUT[1024:1536]
@@ -1087,6 +1116,7 @@ class FileTestCase(unittest.TestCase):
                 f.write(part3)
             self.assertEqual(dst.getvalue(), expected)
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_write_to_file(self):
         try:
             with LZMAFile(TESTFN, "w") as f:
@@ -1108,6 +1138,7 @@ class FileTestCase(unittest.TestCase):
         finally:
             unlink(TESTFN)
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_write_to_file_with_bytes_filename(self):
         bytes_filename = os.fsencode(TESTFN)
         try:
@@ -1119,6 +1150,7 @@ class FileTestCase(unittest.TestCase):
         finally:
             unlink(TESTFN)
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_write_to_fileobj(self):
         try:
             with open(TESTFN, "wb") as raw:
@@ -1141,6 +1173,7 @@ class FileTestCase(unittest.TestCase):
         finally:
             unlink(TESTFN)
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_write_to_fileobj_with_int_name(self):
         try:
             fd = os.open(TESTFN, os.O_WRONLY | os.O_CREAT | os.O_TRUNC)
@@ -1164,6 +1197,7 @@ class FileTestCase(unittest.TestCase):
         finally:
             unlink(TESTFN)
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_write_append_to_file(self):
         part1 = INPUT[:1024]
         part2 = INPUT[1024:1536]
@@ -1181,6 +1215,7 @@ class FileTestCase(unittest.TestCase):
         finally:
             unlink(TESTFN)
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_write_bad_args(self):
         f = LZMAFile(BytesIO(), "w")
         f.close()
@@ -1192,6 +1227,7 @@ class FileTestCase(unittest.TestCase):
             self.assertRaises(TypeError, f.write, "text")
             self.assertRaises(TypeError, f.write, 789)
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_writelines(self):
         with BytesIO(INPUT) as f:
             lines = f.readlines()
@@ -1251,6 +1287,7 @@ class FileTestCase(unittest.TestCase):
             self.assertEqual(f.tell(), 0)
             self.assertEqual(f.read(), INPUT)
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_seek_bad_args(self):
         f = LZMAFile(BytesIO(COMPRESSED_XZ))
         f.close()
@@ -1264,6 +1301,7 @@ class FileTestCase(unittest.TestCase):
             self.assertRaises(TypeError, f.seek, None)
             self.assertRaises(TypeError, f.seek, b"derp")
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_tell(self):
         with LZMAFile(BytesIO(COMPRESSED_XZ)) as f:
             pos = 0
@@ -1315,6 +1353,7 @@ class FileTestCase(unittest.TestCase):
         self.assertTrue(d2.eof)
         self.assertEqual(out1 + out2, entire)
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_issue44439(self):
         q = array.array('Q', [1, 2, 3, 4, 5])
         LENGTH = len(q) * q.itemsize
@@ -1326,6 +1365,7 @@ class FileTestCase(unittest.TestCase):
 
 class OpenTestCase(unittest.TestCase):
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_binary_modes(self):
         with lzma.open(BytesIO(COMPRESSED_XZ), "rb") as f:
             self.assertEqual(f.read(), INPUT)
@@ -1339,6 +1379,7 @@ class OpenTestCase(unittest.TestCase):
             file_data = lzma.decompress(bio.getvalue())
             self.assertEqual(file_data, INPUT * 2)
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_text_modes(self):
         uncompressed = INPUT.decode("ascii")
         uncompressed_raw = uncompressed.replace("\n", os.linesep)
@@ -1354,6 +1395,7 @@ class OpenTestCase(unittest.TestCase):
             file_data = lzma.decompress(bio.getvalue()).decode("ascii")
             self.assertEqual(file_data, uncompressed_raw * 2)
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_filename(self):
         with TempFile(TESTFN):
             with lzma.open(TESTFN, "wb") as f:
@@ -1368,6 +1410,7 @@ class OpenTestCase(unittest.TestCase):
             with lzma.open(TESTFN, "rb") as f:
                 self.assertEqual(f.read(), INPUT * 2)
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_with_pathlike_filename(self):
         filename = FakePath(TESTFN)
         with TempFile(filename):
@@ -1392,6 +1435,7 @@ class OpenTestCase(unittest.TestCase):
         with self.assertRaises(ValueError):
             lzma.open(TESTFN, "rb", newline="\n")
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_format_and_filters(self):
         # Test non-default format and filter chain.
         options = {"format": lzma.FORMAT_RAW, "filters": FILTERS_RAW_1}
@@ -1403,6 +1447,7 @@ class OpenTestCase(unittest.TestCase):
             file_data = lzma.decompress(bio.getvalue(), **options)
             self.assertEqual(file_data, INPUT)
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_encoding(self):
         # Test non-default encoding.
         uncompressed = INPUT.decode("ascii")
@@ -1416,12 +1461,14 @@ class OpenTestCase(unittest.TestCase):
             with lzma.open(bio, "rt", encoding="utf-16-le") as f:
                 self.assertEqual(f.read(), uncompressed)
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_encoding_error_handler(self):
         # Test with non-default encoding error handler.
         with BytesIO(lzma.compress(b"foo\xffbar")) as bio:
             with lzma.open(bio, "rt", encoding="ascii", errors="ignore") as f:
                 self.assertEqual(f.read(), "foobar")
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_newline(self):
         # Test with explicit newline (universal newline mode disabled).
         text = INPUT.decode("ascii")
@@ -1432,6 +1479,7 @@ class OpenTestCase(unittest.TestCase):
             with lzma.open(bio, "rt", encoding="ascii", newline="\r") as f:
                 self.assertEqual(f.readlines(), [text])
 
+    @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_x_mode(self):
         self.addCleanup(unlink, TESTFN)
         for mode in ("x", "xb", "xt"):
