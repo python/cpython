@@ -1706,9 +1706,13 @@ def _check_instance(obj, attr):
 
 
 def _check_class(klass, attr):
+    last_meta = None
     for entry in _static_getmro(klass):
-        if _shadowed_dict(type(entry)) is _sentinel and attr in entry.__dict__:
-            return entry.__dict__[attr]
+        meta = type(entry)
+        if meta is last_meta or _shadowed_dict(meta) is _sentinel:
+            last_meta = meta
+            if attr in entry.__dict__:
+                return entry.__dict__[attr]
     return _sentinel
 
 
