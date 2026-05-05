@@ -10,6 +10,12 @@ Configure Python
 Build Requirements
 ==================
 
+.. seealso::
+
+   For step-by-step instructions on installing dependencies and building
+   CPython, refer to the `Python Developer's Guide
+   <https://devguide.python.org/getting-started/setup-building/>`_.
+
 To build CPython, you will need:
 
 * A `C11 <https://en.cppreference.com/w/c/11>`_ compiler. `Optional C11
