@@ -666,7 +666,7 @@ def main(args=None):
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('infile', nargs='?', default='-',
-                        help='the file to parse; defaults to stdin')
+                        help='the file to parse; defaults to `stdin`')
     parser.add_argument('-m', '--mode', default='exec',
                         choices=('exec', 'single', 'eval', 'func_type'),
                         help='specify what kind of code must be parsed')
@@ -679,8 +679,8 @@ def main(args=None):
                         help='indentation of nodes (number of spaces)')
     parser.add_argument('--feature-version',
                         type=str, default=None, metavar='VERSION',
-                        help='Python version in the format 3.x '
-                             '(for example, 3.10)')
+                        help='Python version in the format `3.x` '
+                             '(for example, `3.10`)')
     parser.add_argument('-O', '--optimize',
                         type=int, default=-1, metavar='LEVEL',
                         help='optimization level for parser')

@@ -217,7 +217,7 @@ def _uninstall_helper(*, verbosity=0):
 
 def _main(argv=None):
     import argparse
-    parser = argparse.ArgumentParser(color=True)
+    parser = argparse.ArgumentParser()
     parser.add_argument(
         "--version",
         action="version",
