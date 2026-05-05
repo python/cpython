@@ -2910,20 +2910,25 @@ sys_get_lazy_imports_impl(PyObject *module)
 }
 
 static PyObject *
-sys_getattr(PyObject *self, PyObject *name)
+sys_getattr(PyObject *self, PyObject *args)
 {
+    PyObject *name;
+    if (!PyArg_UnpackTuple(args, "__getattr__", 1, 1, &name)) {
+        return NULL;
+    }
+
     if (PyUnicode_Check(name) && PyUnicode_EqualToUTF8(name, "lazy_modules")) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
         return _PyImport_GetLazyModulesSnapshot(interp);
     }
-    PyErr_Format(PyExc_AttributeError,
-                 "module 'sys' has no attribute %R", name);
+
+    PyErr_Format(PyExc_AttributeError, "module 'sys' has no attribute %R", name);
     return NULL;
 }
 
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
-    {"__getattr__", sys_getattr, METH_O, NULL},
+    {"__getattr__", sys_getattr, METH_VARARGS},
     SYS_ADDAUDITHOOK_METHODDEF
     SYS_AUDIT_METHODDEF
     {"breakpointhook", _PyCFunction_CAST(sys_breakpointhook),
