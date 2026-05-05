@@ -1,0 +1,1 @@
+Fix vectorcall support in :class:`types.GenericAlias` when the underlying type does not support the vectorcall protocol. Fix possible leaks in :class:`types.GenericAlias` and :class:`types.UnionType` in case of memory error.

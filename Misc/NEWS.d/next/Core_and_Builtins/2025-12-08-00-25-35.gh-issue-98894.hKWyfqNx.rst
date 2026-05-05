@@ -1,0 +1,2 @@
+Restore ``function__entry`` and ``function__return`` DTrace/SystemTap probes
+that were broken since Python 3.11.

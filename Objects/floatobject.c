@@ -16,6 +16,7 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_stackref.h"      // PyStackRef_AsPyObjectBorrow()
 #include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 
 #include <float.h>                // DBL_MAX
 #include <stdlib.h>               // strtol()
@@ -68,8 +69,6 @@ static PyStructSequence_Field floatinfo_fields[] = {
     {"radix",           "FLT_RADIX -- radix of exponent"},
     {"rounds",          "FLT_ROUNDS -- rounding mode used for arithmetic "
                     "operations"},
-    {"iec_60559",   "test if implementation supports the IEC 60559 "
-                    "floating-point standard"},
     {0}
 };
 
@@ -77,7 +76,7 @@ static PyStructSequence_Desc floatinfo_desc = {
     "sys.float_info",           /* name */
     floatinfo__doc__,           /* doc */
     floatinfo_fields,           /* fields */
-    12
+    11
 };
 
 PyObject *
@@ -115,11 +114,6 @@ PyFloat_GetInfo(void)
     SetDblFlag(DBL_EPSILON);
     SetIntFlag(FLT_RADIX);
     SetIntFlag(FLT_ROUNDS);
-#ifdef __STDC_IEC_559__
-    SetFlag(PyBool_FromLong(1));
-#else
-    SetFlag(PyBool_FromLong(0));
-#endif
 #undef SetIntFlag
 #undef SetDblFlag
 #undef SetFlag
@@ -1546,8 +1540,9 @@ float_as_integer_ratio_impl(PyObject *self)
         if (denominator == NULL)
             goto error;
     }
+    Py_DECREF(py_exponent);
 
-    result_pair = PyTuple_Pack(2, numerator, denominator);
+    return _PyTuple_FromPairSteal(numerator, denominator);
 
 error:
     Py_XDECREF(py_exponent);

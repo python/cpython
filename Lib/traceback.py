@@ -1,9 +1,11 @@
 """Extract, format and print information about Python stack traces."""
 
 import collections.abc
+import functools
 import itertools
 import linecache
 import os
+import re
 import sys
 import textwrap
 import types
@@ -684,12 +686,12 @@ class StackSummary(list):
                         colorized_line_parts = []
                         colorized_carets_parts = []
 
-                        for color, group in itertools.groupby(itertools.zip_longest(line, carets, fillvalue=""), key=lambda x: x[1]):
+                        for color, group in itertools.groupby(_zip_display_width(line, carets), key=lambda x: x[1]):
                             caret_group = list(group)
-                            if color == "^":
+                            if "^" in color:
                                 colorized_line_parts.append(theme.error_highlight + "".join(char for char, _ in caret_group) + theme.reset)
                                 colorized_carets_parts.append(theme.error_highlight + "".join(caret for _, caret in caret_group) + theme.reset)
-                            elif color == "~":
+                            elif "~" in color:
                                 colorized_line_parts.append(theme.error_range + "".join(char for char, _ in caret_group) + theme.reset)
                                 colorized_carets_parts.append(theme.error_range + "".join(caret for _, caret in caret_group) + theme.reset)
                             else:
@@ -971,7 +973,54 @@ def _extract_caret_anchors_from_line_segment(segment):
 
     return None
 
-_WIDE_CHAR_SPECIFIERS = "WF"
+
+def _zip_display_width(line, carets):
+    carets = iter(carets)
+    if line.isascii() and '\x1a' not in line:
+        for char in line:
+            yield char, next(carets, "")
+        return
+
+    import unicodedata
+    for char in unicodedata.iter_graphemes(line):
+        char = str(char)
+        char_width = _display_width(char)
+        yield char, "".join(itertools.islice(carets, char_width))
+
+
+@functools.cache
+def _str_width(c: str) -> int:
+    # copied from _pyrepl.utils to fix gh-130273
+
+    if ord(c) < 128:
+        return 1
+    import unicodedata
+    # gh-139246 for zero-width joiner and combining characters
+    if unicodedata.combining(c):
+        return 0
+    category = unicodedata.category(c)
+    if category == "Cf" and c != "\u00ad":
+        return 0
+    w = unicodedata.east_asian_width(c)
+    if w in ("N", "Na", "H", "A"):
+        return 1
+    return 2
+
+
+_ANSI_ESCAPE_SEQUENCE = re.compile(r"\x1b\[[ -@]*[A-~]")
+
+
+def _wlen(s: str) -> int:
+    # copied from _pyrepl.utils to fix gh-130273
+
+    if len(s) == 1 and s != "\x1a":
+        return _str_width(s)
+    length = sum(_str_width(i) for i in s)
+    # remove lengths of any escape sequences
+    sequence = _ANSI_ESCAPE_SEQUENCE.findall(s)
+    ctrl_z_cnt = s.count("\x1a")
+    return length - sum(len(i) for i in sequence) + ctrl_z_cnt
+
 
 def _display_width(line, offset=None):
     """Calculate the extra amount of width space the given source
@@ -979,18 +1028,9 @@ def _display_width(line, offset=None):
     width output device. Supports wide unicode characters and emojis."""
 
     if offset is None:
-        offset = len(line)
+        return _wlen(line)
 
-    # Fast track for ASCII-only strings
-    if line.isascii():
-        return offset
-
-    import unicodedata
-
-    return sum(
-        2 if unicodedata.east_asian_width(char) in _WIDE_CHAR_SPECIFIERS else 1
-        for char in line[:offset]
-    )
+    return _wlen(line[:offset])
 
 
 def _format_note(note, indent, theme):
@@ -1147,12 +1187,20 @@ class TracebackException:
         elif exc_type and issubclass(exc_type, AttributeError) and \
                 getattr(exc_value, "name", None) is not None:
             wrong_name = getattr(exc_value, "name", None)
-            suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
-            if suggestion:
-                if suggestion.isascii():
-                    self._str += f". Did you mean '.{suggestion}' instead of '.{wrong_name}'?"
-                else:
-                    self._str += f". Did you mean '.{suggestion}' ({suggestion!a}) instead of '.{wrong_name}' ({wrong_name!a})?"
+            # Check cross-language/wrong-type hints first (more specific),
+            # then fall back to Levenshtein distance suggestions.
+            hint = None
+            if hasattr(exc_value, 'obj'):
+                hint = _get_cross_language_hint(exc_value.obj, wrong_name)
+            if hint:
+                self._str += f". {hint}"
+            else:
+                suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
+                if suggestion:
+                    if suggestion.isascii():
+                        self._str += f". Did you mean '.{suggestion}' instead of '.{wrong_name}'?"
+                    else:
+                        self._str += f". Did you mean '.{suggestion}' ({suggestion!a}) instead of '.{wrong_name}' ({wrong_name!a})?"
         elif exc_type and issubclass(exc_type, NameError) and \
                 getattr(exc_value, "name", None) is not None:
             wrong_name = getattr(exc_value, "name", None)
@@ -1649,6 +1697,62 @@ _MAX_STRING_SIZE = 40
 _MOVE_COST = 2
 _CASE_COST = 1
 
+# Cross-language method suggestions for builtin types.
+# Consulted as a fallback when Levenshtein-based suggestions find no match.
+#
+# Inclusion criteria:
+#
+#   1. Must have evidence of real cross-language confusion (Stack Overflow
+#      traffic, bug reports in production repos, developer survey data).
+#   2. Must not be catchable by Levenshtein distance (too different from
+#      the correct Python method name).
+#
+# Each entry maps a wrong method name to a list of (type, suggestion, is_raw)
+# tuples. The lookup checks isinstance() so subclasses are also matched.
+# If is_raw is False, the suggestion is wrapped in "Did you mean '.X'?".
+# If is_raw is True, the suggestion is rendered as-is.
+#
+# See https://github.com/python/cpython/issues/146406.
+_CROSS_LANGUAGE_HINTS = frozendict({
+    # list -- JavaScript/Ruby equivalents
+    "push": ((list, "append", False),),
+    "concat": ((list, "extend", False),),
+    # list -- Java/C# equivalents
+    "addAll": ((list, "extend", False),),
+    "contains": ((list, "Use 'x in list'.", True),),
+    # list -- wrong-type suggestion (user expected a set)
+    "add": ((list, "Did you mean to use a 'set' object?", True),
+            (frozenset, "Did you mean to use a 'set' object?", True)),
+    # str -- JavaScript equivalents
+    "toUpperCase": ((str, "upper", False),),
+    "toLowerCase": ((str, "lower", False),),
+    "trimStart": ((str, "lstrip", False),),
+    "trimEnd": ((str, "rstrip", False),),
+    # dict -- Java/JavaScript equivalents
+    "keySet": ((dict, "keys", False),),
+    "entrySet": ((dict, "items", False),),
+    "entries": ((dict, "items", False),),
+    "putAll": ((dict, "update", False),),
+    "put": ((dict, "Use d[k] = v.", True),),
+    # tuple -- mutable method on immutable type (user expected a list)
+    "append": ((tuple, "Did you mean to use a 'list' object?", True),),
+    "extend": ((tuple, "Did you mean to use a 'list' object?", True),),
+    "insert": ((tuple, "Did you mean to use a 'list' object?", True),),
+    "remove": ((tuple, "Did you mean to use a 'list' object?", True),
+               (frozenset, "Did you mean to use a 'set' object?", True)),
+    # frozenset -- mutable method on immutable type (user expected a set)
+    "discard": ((frozenset, "Did you mean to use a 'set' object?", True),),
+    # frozendict -- mutable method on immutable type (user expected a dict)
+    "update": ((frozenset, "Did you mean to use a 'set' object?", True),
+               (frozendict, "Did you mean to use a 'dict' object?", True)),
+    # float -- bitwise operators belong to int
+    "__or__": ((float, "Did you mean to use an 'int' object? Bitwise operators are not supported by 'float'.", True),),
+    "__and__": ((float, "Did you mean to use an 'int' object? Bitwise operators are not supported by 'float'.", True),),
+    "__xor__": ((float, "Did you mean to use an 'int' object? Bitwise operators are not supported by 'float'.", True),),
+    "__lshift__": ((float, "Did you mean to use an 'int' object? Bitwise operators are not supported by 'float'.", True),),
+    "__rshift__": ((float, "Did you mean to use an 'int' object? Bitwise operators are not supported by 'float'.", True),),
+})
+
 
 def _substitution_cost(ch_a, ch_b):
     if ch_a == ch_b:
@@ -1708,6 +1812,24 @@ def _check_for_nested_attribute(obj, wrong_name, attrs):
             if getattr_static(attr_obj, wrong_name, _sentinel) is not _sentinel:
                 return f"{attr_name}.{wrong_name}"
 
+    return None
+
+
+def _get_cross_language_hint(obj, wrong_name):
+    """Check if wrong_name is a common method name from another language,
+    a mutable method on an immutable type, or a method tried on None.
+
+    Uses isinstance() so subclasses of builtin types also get hints.
+    Returns a formatted hint string, or None.
+    """
+    entries = _CROSS_LANGUAGE_HINTS.get(wrong_name)
+    if entries is None:
+        return None
+    for check_type, hint, is_raw in entries:
+        if isinstance(obj, check_type):
+            if is_raw:
+                return hint
+            return f"Did you mean '.{hint}'?"
     return None
 
 

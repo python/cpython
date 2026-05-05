@@ -1,0 +1,2 @@
+Fix data races between :c:func:`PyDict_Watch` / :c:func:`PyDict_Unwatch`
+and concurrent dict mutation in the :term:`free-threaded build`.

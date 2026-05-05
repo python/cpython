@@ -1,3 +1,0 @@
-Optimize float arithmetic in the JIT by mutating uniquely-referenced
-operands in place, avoiding allocation of a new float object. Speeds up
-the pyperformance ``nbody`` benchmark by ~19%.
