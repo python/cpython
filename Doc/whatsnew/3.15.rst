@@ -1030,6 +1030,17 @@ functools
   (Contributed by Bartosz Sławecki in :gh:`143535`.)
 
 
+gc
+--
+
+* Python 3.14.0-3.14.4 shipped with a new incremental garbage collector.
+  However, due to a number of `reports
+  <https://github.com/python/cpython/issues/142516>`__
+  of significant memory pressure in production environments,
+  it has been reverted back to the generational GC from 3.13.
+  This is the GC now used in Python 3.14.5 and later and Python 3.15.
+
+
 hashlib
 -------
 
