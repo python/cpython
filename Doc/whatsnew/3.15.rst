@@ -267,6 +267,8 @@ name.
 
 (PEP by Tal Einat; contributed by Jelle Zijlstra in :gh:`148829`.)
 
+.. seealso:: :pep:`661` for further details.
+
 
 .. _whatsnew315-profiling-package:
 
@@ -405,11 +407,11 @@ embedding applications, and native libraries.
    single native component built without frame pointers can break stack
    unwinding for the whole Python process.
 
-.. seealso:: :pep:`831` for further details.
-
 (Contributed by Pablo Galindo Salgado and Savannah Ostrowski in
 :gh:`149201`; PEP 831 written by Pablo Galindo Salgado, Ken Jin, and
 Savannah Ostrowski.)
+
+.. seealso:: :pep:`831` for further details.
 
 
 .. _whatsnew315-unpacking-in-comprehensions:
@@ -491,6 +493,8 @@ If this is the case for your tool, compile for ``cp315t`` separately.
 If not using a build tool -- or when writing such a tool -- you can select
 ``abi3t`` by setting the macro :c:macro:`!Py_TARGET_ABI3T` as discussed
 in :ref:`abi3-compiling`.
+
+.. seealso:: :pep:`803` for further details.
 
 
 .. _whatsnew315-improved-error-messages:
