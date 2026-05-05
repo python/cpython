@@ -782,8 +782,6 @@ static const struct arraydescr descriptors[] = {
     {"e", sizeof(short), e_getitem, e_setitem, NULL, 0, 0},
     {"f", sizeof(float), f_getitem, f_setitem, NULL, 0, 0},
     {"d", sizeof(double), d_getitem, d_setitem, NULL, 0, 0},
-    {"F", 2*sizeof(float), cf_getitem, cf_setitem, NULL, 0, 0},
-    {"D", 2*sizeof(double), cd_getitem, cd_setitem, NULL, 0, 0},
     {"Zf", 2*sizeof(float), cf_getitem, cf_setitem, NULL, 0, 0},
     {"Zd", 2*sizeof(double), cd_getitem, cd_setitem, NULL, 0, 0},
     {NULL, 0, 0, 0, 0, 0, 0} /* Sentinel */
@@ -1612,9 +1610,7 @@ array_array_byteswap_impl(arrayobject *self)
         }
         break;
     case 8:
-        if (strcmp(self->ob_descr->typecode, "F") != 0
-            && strcmp(self->ob_descr->typecode, "Zf") != 0)
-        {
+        if (strcmp(self->ob_descr->typecode, "Zf") != 0) {
             for (p = self->ob_item, i = Py_SIZE(self); --i >= 0; p += 8) {
                 char p0 = p[0];
                 char p1 = p[1];
@@ -1648,8 +1644,7 @@ array_array_byteswap_impl(arrayobject *self)
         }
         break;
     case 16:
-        assert(strcmp(self->ob_descr->typecode, "D") == 0
-               || strcmp(self->ob_descr->typecode, "Zd") == 0);
+        assert(strcmp(self->ob_descr->typecode, "Zd") == 0);
         for (p = self->ob_item, i = Py_SIZE(self); --i >= 0; p += 8) {
             char t0 = p[0];
             char t1 = p[1];
@@ -2158,14 +2153,6 @@ typecode_to_mformat_code(const char *typecode)
 
     case 'd':
         return _PY_FLOAT_BIG_ENDIAN ? IEEE_754_DOUBLE_BE : IEEE_754_DOUBLE_LE;
-
-    case 'F':
-        return _PY_FLOAT_BIG_ENDIAN ? \
-            IEEE_754_FLOAT_COMPLEX_BE : IEEE_754_FLOAT_COMPLEX_LE;
-
-    case 'D':
-        return _PY_FLOAT_BIG_ENDIAN ? \
-            IEEE_754_DOUBLE_COMPLEX_BE : IEEE_754_DOUBLE_COMPLEX_LE;
 
     case 'Z': {
         switch (typecode[1]) {
@@ -3167,7 +3154,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
     Py_XDECREF(it);
     PyErr_SetString(PyExc_ValueError,
-        "bad typecode (must be b, B, u, w, h, H, i, I, l, L, q, Q, e, f, d, F, D, Zf or Zd)");
+        "bad typecode (must be b, B, u, w, h, H, i, I, l, L, q, Q, e, f, d, Zf or Zd)");
     return NULL;
 }
 
@@ -3205,8 +3192,6 @@ The following type codes are defined:\n\
     'e'         16-bit IEEE floats 2\n\
     'f'         floating-point     4\n\
     'd'         floating-point     8\n\
-    'F'         float complex      8\n\
-    'D'         double complex     16\n\
     'Zf'        float complex      8\n\
     'Zd'        double complex     16\n\
 \n\

@@ -99,6 +99,10 @@ _testcext_exec(PyObject *module)
     obj = NULL;
     Py_CLEAR(obj);
 
+    // Test that Py_BEGIN_CRITICAL_SECTION is available
+    Py_BEGIN_CRITICAL_SECTION(module);
+    Py_END_CRITICAL_SECTION();
+
     return 0;
 }
 

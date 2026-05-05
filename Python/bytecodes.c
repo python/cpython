@@ -1568,6 +1568,7 @@ dummy_func(
             DEAD(retval);
             SAVE_STACK();
             assert(STACK_LEVEL() == 0);
+            DTRACE_FUNCTION_RETURN();
             _Py_LeaveRecursiveCallPy(tstate);
             // GH-99729: We need to unlink the frame *before* clearing it:
             _PyInterpreterFrame *dying = frame;
@@ -1760,6 +1761,7 @@ dummy_func(
             _PyStackRef temp = retval;
             DEAD(retval);
             SAVE_STACK();
+            DTRACE_FUNCTION_RETURN();
             tstate->exc_info = gen->gi_exc_state.previous_item;
             gen->gi_exc_state.previous_item = NULL;
             _Py_LeaveRecursiveCallPy(tstate);
@@ -1770,13 +1772,12 @@ dummy_func(
             FT_ATOMIC_STORE_INT8_RELEASE(gen->gi_frame_state, FRAME_SUSPENDED + oparg);
             /* We don't know which of these is relevant here, so keep them equal */
             assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
-            #if TIER_ONE
-            assert(frame->instr_ptr->op.code == INSTRUMENTED_LINE ||
-                   frame->instr_ptr->op.code == INSTRUMENTED_INSTRUCTION ||
-                   _PyOpcode_Deopt[frame->instr_ptr->op.code] == SEND ||
-                   _PyOpcode_Deopt[frame->instr_ptr->op.code] == FOR_ITER ||
-                   _PyOpcode_Deopt[frame->instr_ptr->op.code] == INTERPRETER_EXIT ||
-                   _PyOpcode_Deopt[frame->instr_ptr->op.code] == ENTER_EXECUTOR);
+            #if TIER_ONE && defined(Py_DEBUG)
+            if (!PyStackRef_IsNone(frame->f_executable)) {
+                int i = frame->instr_ptr - _PyFrame_GetBytecode(frame);
+                int opcode = _Py_GetBaseCodeUnit(_PyFrame_GetCode(frame), i).op.code;
+                assert(opcode == SEND || opcode == FOR_ITER);
+            }
             #endif
             RELOAD_STACK();
             LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
@@ -3757,7 +3758,7 @@ dummy_func(
             next = item;
         }
 
-        macro(FOR_ITER) = _SPECIALIZE_FOR_ITER + _FOR_ITER;
+        macro(FOR_ITER) = _SPECIALIZE_FOR_ITER + _RECORD_NOS_TYPE + _FOR_ITER;
 
         op(_FOR_ITER_TIER_TWO, (iter, null_or_index -- iter, null_or_index, next)) {
             _PyStackRef item = _PyForIter_VirtualIteratorNext(tstate, frame, iter, &null_or_index);
@@ -3770,6 +3771,31 @@ dummy_func(
                 EXIT_IF(true);
             }
             next = item;
+        }
+
+        tier2 op(_GUARD_TYPE_ITER, (expected_type/4, iter, null_or_index -- iter, null_or_index)) {
+            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+            EXIT_IF(Py_TYPE(iter_o) != (PyTypeObject *)expected_type);
+        }
+
+        tier2 op(_ITER_NEXT_INLINE, (iternext_fn/4, iter, null_or_index -- iter, null_or_index, next)) {
+            assert(sizeof(iternextfunc) == sizeof(uintptr_t));
+            volatile iternextfunc iternext_v = (iternextfunc)iternext_fn;
+            PyObject *item = iternext_v(PyStackRef_AsPyObjectBorrow(iter));
+            if (item == NULL) {
+                if (_PyErr_Occurred(tstate)) {
+                    if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
+                        _PyEval_MonitorRaise(tstate, frame, frame->instr_ptr);
+                        _PyErr_Clear(tstate);
+                    }
+                    else {
+                        ERROR_NO_POP();
+                    }
+                }
+                EXIT_IF(true);
+            }
+            STAT_INC(FOR_ITER, hit);
+            next = PyStackRef_FromPyObjectSteal(item);
         }
 
         op(_GUARD_NOS_ITER_VIRTUAL, (iter, null_or_index -- iter, null_or_index)) {
@@ -4545,6 +4571,7 @@ dummy_func(
             tstate->py_recursion_remaining--;
             LOAD_SP();
             LOAD_IP(0);
+            DTRACE_FUNCTION_ENTRY();
             LLTRACE_RESUME_FRAME();
         }
 
@@ -6446,6 +6473,12 @@ dummy_func(
 
         spilled label(exit_unwind) {
             assert(_PyErr_Occurred(tstate));
+            DTRACE_FUNCTION_RETURN();
+            goto exit_unwind_notrace;
+        }
+
+        spilled label(exit_unwind_notrace) {
+            assert(_PyErr_Occurred(tstate));
             _Py_LeaveRecursiveCallPy(tstate);
             assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
             // GH-99729: We need to unlink the frame *before* clearing it:
@@ -6477,8 +6510,9 @@ dummy_func(
         spilled label(start_frame) {
             int too_deep = _Py_EnterRecursivePy(tstate);
             if (too_deep) {
-                goto exit_unwind;
+                goto exit_unwind_notrace;
             }
+            DTRACE_FUNCTION_ENTRY();
             next_instr = frame->instr_ptr;
         #ifdef Py_DEBUG
             int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS());
@@ -6577,6 +6611,7 @@ dummy_func(
  error:
  exception_unwind:
  exit_unwind:
+ exit_unwind_notrace:
  handle_eval_breaker:
  resume_frame:
  start_frame:

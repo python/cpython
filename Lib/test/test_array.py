@@ -33,7 +33,7 @@ class ArraySubclassWithKwargs(array.array):
 
 typecodes = (
     'u', 'w', 'b', 'B', 'h', 'H', 'i', 'I', 'l', 'L',
-    'f', 'd', 'q', 'Q', 'F', 'D', 'e', 'Zf', 'Zd')
+    'f', 'd', 'q', 'Q', 'e', 'Zf', 'Zd')
 
 
 class MiscTest(unittest.TestCase):
@@ -210,14 +210,6 @@ class ArrayReconstructorTest(unittest.TestCase):
              [9006104071832581.0, float('inf'), float('-inf'), -0.0]),
             (['d'], IEEE_754_DOUBLE_BE, '>dddd',
              [9006104071832581.0, float('inf'), float('-inf'), -0.0]),
-            (['F'], IEEE_754_FLOAT_COMPLEX_LE, '<FFFF',
-             [16711938.0j, float('inf'), complex('1-infj'), -0.0]),
-            (['F'], IEEE_754_FLOAT_COMPLEX_BE, '>FFFF',
-             [16711938.0j, float('inf'), complex('1-infj'), -0.0]),
-            (['D'], IEEE_754_DOUBLE_COMPLEX_LE, '<DDDD',
-             [9006104071832581.0j, float('inf'), complex('1-infj'), -0.0]),
-            (['D'], IEEE_754_DOUBLE_COMPLEX_BE, '>DDDD',
-             [9006104071832581.0j, float('inf'), complex('1-infj'), -0.0]),
             (['Zf'], IEEE_754_FLOAT_COMPLEX_LE, '<ZfZfZfZf',
              [16711938.0j, float('inf'), complex('1-infj'), -0.0]),
             (['Zf'], IEEE_754_FLOAT_COMPLEX_BE, '>ZfZfZfZf',
@@ -1645,18 +1637,10 @@ class DoubleTest(FPTest, unittest.TestCase):
 
 
 class ComplexFloatTest(CFPTest, unittest.TestCase):
-    typecode = 'F'
-    minitemsize = 8
-
-class ComplexDoubleTest(CFPTest, unittest.TestCase):
-    typecode = 'D'
-    minitemsize = 16
-
-class ComplexZfFloatTest(CFPTest, unittest.TestCase):
     typecode = 'Zf'
     minitemsize = 8
 
-class ComplexZdDoubleTest(CFPTest, unittest.TestCase):
+class ComplexDoubleTest(CFPTest, unittest.TestCase):
     typecode = 'Zd'
     minitemsize = 16
 

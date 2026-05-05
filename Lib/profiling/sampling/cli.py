@@ -20,6 +20,7 @@ from .pstats_collector import PstatsCollector
 from .stack_collector import CollapsedStackCollector, FlamegraphCollector, DiffFlamegraphCollector
 from .heatmap_collector import HeatmapCollector
 from .gecko_collector import GeckoCollector
+from .jsonl_collector import JsonlCollector
 from .binary_collector import BinaryCollector
 from .binary_reader import BinaryReader
 from .constants import (
@@ -101,6 +102,7 @@ FORMAT_EXTENSIONS = {
     "diff_flamegraph": "html",
     "gecko": "json",
     "heatmap": "html",
+    "jsonl": "jsonl",
     "binary": "bin",
 }
 
@@ -111,6 +113,7 @@ COLLECTOR_MAP = {
     "diff_flamegraph": DiffFlamegraphCollector,
     "gecko": GeckoCollector,
     "heatmap": HeatmapCollector,
+    "jsonl": JsonlCollector,
     "binary": BinaryCollector,
 }
 
@@ -389,13 +392,13 @@ def _add_sampling_options(parser):
     sampling_group.add_argument(
         "--native",
         action="store_true",
-        help='Include artificial "<native>" frames to denote calls to non-Python code',
+        help='Include artificial `<native>` frames to denote calls to non-Python code',
     )
     sampling_group.add_argument(
         "--no-gc",
         action="store_false",
         dest="gc",
-        help='Don\'t include artificial "<GC>" frames to denote active garbage collection',
+        help='Don\'t include artificial `<GC>` frames to denote active garbage collection',
     )
     sampling_group.add_argument(
         "--opcodes",
@@ -432,14 +435,14 @@ def _add_mode_options(parser):
         help="Sampling mode: wall (all samples), cpu (only samples when thread is on CPU), "
         "gil (only samples when thread holds the GIL), "
         "exception (only samples when thread has an active exception). "
-        "Incompatible with --async-aware",
+        "Incompatible with `--async-aware`",
     )
     mode_group.add_argument(
         "--async-mode",
         choices=["running", "all"],
         default="running",
         help='Async profiling mode: "running" (only running task) '
-        'or "all" (all tasks including waiting). Requires --async-aware',
+        'or "all" (all tasks including waiting). Requires `--async-aware`',
     )
 
 
@@ -486,7 +489,14 @@ def _add_format_options(parser, include_compression=True, include_binary=True):
         "--diff-flamegraph",
         metavar="BASELINE",
         action=DiffFlamegraphAction,
-        help="Generate differential flamegraph comparing current profile to BASELINE binary file",
+        help="Generate differential flamegraph comparing current profile to `BASELINE` binary file",
+    )
+    format_group.add_argument(
+        "--jsonl",
+        action="store_const",
+        const="jsonl",
+        dest="format",
+        help="Generate newline-delimited JSON (JSONL) for programmatic consumers",
     )
     if include_binary:
         format_group.add_argument(
@@ -494,7 +504,7 @@ def _add_format_options(parser, include_compression=True, include_binary=True):
             action="store_const",
             const="binary",
             dest="format",
-            help="Generate high-performance binary format (use 'replay' command to convert)",
+            help="Generate high-performance binary format (use `replay` command to convert)",
         )
     parser.set_defaults(format="pstats", diff_baseline=None)
 
@@ -510,14 +520,14 @@ def _add_format_options(parser, include_compression=True, include_binary=True):
         "-o",
         "--output",
         dest="outfile",
-        help="Output path (default: stdout for pstats text; with -o, pstats is binary). "
-        "Auto-generated for other formats. For heatmap: directory name (default: heatmap_PID)",
+        help="Output path (default: `stdout` for `pstats` text; with `-o`, `pstats` is binary). "
+        "Auto-generated for other formats. For heatmap: directory name (default: `heatmap_PID`)",
     )
     output_group.add_argument(
         "--browser",
         action="store_true",
         help="Automatically open HTML output (flamegraph, heatmap) in browser. "
-        "When using --subprocesses, only the main process opens the browser",
+        "When using `--subprocesses`, only the main process opens the browser",
     )
 
 
@@ -564,13 +574,13 @@ def _add_dump_options(parser):
     dump_group.add_argument(
         "--native",
         action="store_true",
-        help='Include artificial "<native>" frames to denote calls to non-Python code',
+        help='Include artificial `<native>` frames to denote calls to non-Python code',
     )
     dump_group.add_argument(
         "--no-gc",
         action="store_false",
         dest="gc",
-        help='Don\'t include artificial "<GC>" frames to denote active garbage collection',
+        help='Don\'t include artificial `<GC>` frames to denote active garbage collection',
     )
     dump_group.add_argument(
         "--opcodes",
@@ -588,7 +598,7 @@ def _add_dump_options(parser):
         default=argparse.SUPPRESS,
         help='Async stack mode: "running" (only running task) '
         'or "all" (all tasks including waiting, default for dump). '
-        "Requires --async-aware",
+        "Requires `--async-aware`",
     )
     dump_group.add_argument(
         "--blocking",
@@ -611,15 +621,18 @@ def _sort_to_mode(sort_choice):
     return sort_map.get(sort_choice, SORT_MODE_NSAMPLES)
 
 def _create_collector(format_type, sample_interval_usec, skip_idle, opcodes=False,
-                      output_file=None, compression='auto', diff_baseline=None):
+                      mode=None, output_file=None, compression='auto',
+                      diff_baseline=None):
     """Create the appropriate collector based on format type.
 
     Args:
-        format_type: The output format ('pstats', 'collapsed', 'flamegraph', 'gecko', 'heatmap', 'binary', 'diff_flamegraph')
+        format_type: The output format ('pstats', 'collapsed', 'flamegraph',
+                    'gecko', 'heatmap', 'jsonl', 'binary', 'diff_flamegraph')
         sample_interval_usec: Sampling interval in microseconds
         skip_idle: Whether to skip idle samples
         opcodes: Whether to collect opcode information (only used by gecko format
                  for creating interval markers in Firefox Profiler)
+        mode: Profiling mode for collectors that expose it in metadata
         output_file: Output file path (required for binary format)
         compression: Compression type for binary format ('auto', 'zstd', 'none')
         diff_baseline: Path to baseline binary file for differential flamegraph
@@ -654,6 +667,11 @@ def _create_collector(format_type, sample_interval_usec, skip_idle, opcodes=Fals
     if format_type == "gecko":
         skip_idle = False
         return collector_class(sample_interval_usec, skip_idle=skip_idle, opcodes=opcodes)
+
+    if format_type == "jsonl":
+        return collector_class(
+            sample_interval_usec, skip_idle=skip_idle, mode=mode
+        )
 
     return collector_class(sample_interval_usec, skip_idle=skip_idle)
 
@@ -998,7 +1016,7 @@ Examples:
         "-m",
         "--module",
         action="store_true",
-        help="Run target as a module (like python -m)",
+        help="Run target as a module (like `python -m`)",
     )
     run_parser.add_argument(
         "target",
@@ -1142,7 +1160,7 @@ def _handle_attach(args):
 
     # Create the appropriate collector
     collector = _create_collector(
-        args.format, args.sample_interval_usec, skip_idle, args.opcodes,
+        args.format, args.sample_interval_usec, skip_idle, args.opcodes, mode,
         output_file=output_file,
         compression=getattr(args, 'compression', 'auto'),
         diff_baseline=args.diff_baseline
@@ -1249,7 +1267,7 @@ def _handle_run(args):
 
     # Create the appropriate collector
     collector = _create_collector(
-        args.format, args.sample_interval_usec, skip_idle, args.opcodes,
+        args.format, args.sample_interval_usec, skip_idle, args.opcodes, mode,
         output_file=output_file,
         compression=getattr(args, 'compression', 'auto'),
         diff_baseline=args.diff_baseline

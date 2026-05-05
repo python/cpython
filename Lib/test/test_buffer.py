@@ -67,7 +67,7 @@ NATIVE = {
     'h':0, 'H':0, 'i':0, 'I':0,
     'l':0, 'L':0, 'n':0, 'N':0,
     'e':0, 'f':0, 'd':0, 'P':0,
-    'F':0, 'D':0, 'Zf':0, 'Zd':0,
+    'Zf':0, 'Zd':0,
 }
 
 # NumPy does not have 'n' or 'N':
@@ -94,8 +94,6 @@ STANDARD = {
     'q':(-(1<<63), 1<<63), 'Q':(0, 1<<64),
     'e':(-65519, 65520),   'f':(-(1<<63), 1<<63),
     'd':(-(1<<1023), 1<<1023),
-    'F':(-(1<<63), 1<<63),
-    'D':(-(1<<1023), 1<<1023),
     'Zf':(-(1<<63), 1<<63),
     'Zd':(-(1<<1023), 1<<1023),
 }
@@ -112,9 +110,9 @@ def native_type_range(fmt):
         lh = (-(1<<63), 1<<63)
     elif fmt == 'd':
         lh = (-(1<<1023), 1<<1023)
-    elif fmt in ('F', 'Zf'):
+    elif fmt == 'Zf':
         lh = (-(1<<63), 1<<63)
-    elif fmt in ('D', 'Zd'):
+    elif fmt == 'Zd':
         lh = (-(1<<1023), 1<<1023)
     else:
         for exp in (128, 127, 64, 63, 32, 31, 16, 15, 8, 7):
@@ -184,7 +182,7 @@ def randrange_fmt(mode, char, obj):
     if char in 'efd':
         x = struct.pack(char, x)
         x = struct.unpack(char, x)[0]
-    if char in ('F', 'D', 'Zf', 'Zd'):
+    if char in ('Zf', 'Zd'):
         y = randrange(*fmtdict[mode][char])
         x = complex(x, y)
         x = struct.pack(char, x)
@@ -3055,7 +3053,7 @@ class TestBufferProtocol(unittest.TestCase):
                 continue
             m2 = m1.cast(fmt)
             lo, hi = _range
-            if fmt in ("d", "f", "D", "F", "Zd", "Zf"):
+            if fmt in ("d", "f", "Zd", "Zf"):
                 lo, hi = -2**1024, 2**1024
             if fmt != 'P': # PyLong_AsVoidPtr() accepts negative numbers
                 self.assertRaises(ValueError, m2.__setitem__, 0, lo-1)

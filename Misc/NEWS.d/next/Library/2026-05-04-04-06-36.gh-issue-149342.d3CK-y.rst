@@ -1,0 +1,6 @@
+Fix :mod:`!_remote_debugging` binary writing so that sampling a thread
+whose Python frame stack is empty (for example while it is in a C call or
+mid-syscall) no longer raises ``RuntimeError("Invalid stack encoding
+type")``, and so that ``BinaryWriter.total_samples`` after :meth:`!finalize`
+or context-manager exit includes samples flushed from the RLE buffer.
+Patch by Maurycy Pawłowski-Wieroński.
