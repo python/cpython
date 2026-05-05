@@ -1716,8 +1716,9 @@ Subcommands
    :meth:`!add_subparsers` method.  The :meth:`!add_subparsers` method is normally
    called with no arguments and returns a special action object.  This object
    has a single method, :meth:`~_SubParsersAction.add_parser`, which takes a
-   command name and any :class:`!ArgumentParser` constructor arguments, and
-   returns an :class:`!ArgumentParser` object that can be modified as usual.
+   command name, optional deprecated_ and subnamespace_ flags, any
+   :class:`!ArgumentParser` constructor arguments, and returns an
+   :class:`!ArgumentParser` object that can be modified as usual.
 
    Description of parameters:
 
@@ -1775,7 +1776,9 @@ Subcommands
    command line (and not any other subparsers).  So in the example above, when
    the ``a`` command is specified, only the ``foo`` and ``bar`` attributes are
    present, and when the ``b`` command is specified, only the ``foo`` and
-   ``baz`` attributes are present.
+   ``baz`` attributes are present.  If one wishes to store the the subparser's
+   attributes separate from the main parser's attributes, see the subnamespace_
+   option of :meth:`~_SubParsersAction.add_parser`.
 
    Similarly, when a help message is requested from a subparser, only the help
    for that particular parser will be printed.  The help message will not
@@ -1896,7 +1899,8 @@ Subcommands
 
 
 .. method:: _SubParsersAction.add_parser(name, *, help=None, aliases=None, \
-                                         deprecated=False, **kwargs)
+                                         deprecated=False, subnamespace=False, \
+                                         **kwargs)
 
    Create and return a new :class:`ArgumentParser` object for the
    subcommand *name*.
@@ -1925,11 +1929,72 @@ Subcommands
       chicken.py: warning: command 'fly' is deprecated
       Namespace()
 
+   .. _subnamespace:
+
+   The *subnamespace* flag, if ``True``, tells the parent parser to
+   store the subparser's parsed arguments contained in
+   their own :class:`Namespace`, nested within the parent's :class:`!Namespace`.
+   The attribute name in the parent's namespace at which the
+   subparser's subnamespace is stored is the subparser's *name*,
+   but with underscores ``_`` replacing hyphens ``-``
+   similar to dest_ in :meth:`ArgumentParser.add_argument`.
+
+   This is useful for receiving parsed arguments hierarchically, mirroring the
+   hierarchical relation between a parser and its subparsers. For example::
+
+      >>> inet = argparse.ArgumentParser(add_help=False)
+      >>> inet.add_argument("address")
+      >>> inet.add_argument("port", type=int)
+      >>>
+      >>> unix = argparse.ArgumentParser(add_help=False)
+      >>> unix.add_argument("path")
+      >>>
+      >>> parser = argparse.ArgumentParser(prog='my-socat')
+      >>> action = parser.add_subparsers(required=True, dest="action")
+      >>>
+      >>> parser_bind = action.add_parser("bind", subnamespace=True)
+      >>> parser_bind.add_argument("--fork", action="store_true")
+      >>> bind_family = parser_bind.add_subparsers(required=True, dest="family")
+      >>>
+      >>> parser_bind_inet = bind_family.add_parser("inet", subnamespace=True, parents=[inet])
+      >>> parser_bind_unix = bind_family.add_parser("unix", subnamespace=True, parents=[unix])
+      >>>
+      >>> parser_connect = action.add_parser("connect", subnamespace=True)
+      >>> connect_family = parser_connect.add_subparsers(required=True, dest="family")
+      >>>
+      >>> parser_connect_inet = connect_family.add_parser("inet", subnamespace=True, parents=[inet])
+      >>> parser_connect_unix = connect_family.add_parser("unix", subnamespace=True, parents=[unix])
+      >>>
+      >>> args = parser.parse_args(["bind", "unix", "/foo/bar/socket"])
+      >>> args
+      Namespace(action='bind', bind=Namespace(fork=False, family='unix', unix=Namespace(path='/foo/bar/socket')))
+
+   This is also very useful when one has arguments in subparsers whose
+   ``dest`` conflict with those of the parent parser's arguments, and one
+   wishes to faithfully distinguish between the two. For example::
+
+      >>> parser = argparse.ArgumentParser(prog='restaurant.py')
+      >>> parser.add_argument('-f', help='fast-tracked order', action='store_true')
+      >>> meals = parser.add_subparsers(dest='meal')
+      >>>
+      >>> parser_nuggets = meals.add_parser('chicken-nuggets', subnamespace=True)
+      >>> parser_nuggets.add_argument('-f', help='with fries', action='store_true')
+      >>>
+      >>> parser_salad = meals.add_parser('caesar-salad', subnamespace=True)
+      >>> parser_salad.add_argument('-f', help='fresh', action='store_true')
+      >>>
+      >>> args = parser.parse_args(['chicken-nuggets', '-f'])
+      >>> args
+      Namespace(f=False, meal='chicken-nuggets', chicken_nuggets=Namespace(f=True))
+
    All other keyword arguments are passed directly to the
    :class:`!ArgumentParser` constructor.
 
    .. versionadded:: 3.13
       Added the *deprecated* parameter.
+
+   .. versionadded:: next
+      Added the *subnamespace* parameter.
 
 
 FileType objects
