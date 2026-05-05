@@ -92,19 +92,21 @@ def get_family_record_names(
             slot_index[kind] = len(records)
             records.append(source)
         elif records[existing] != source:
-            raise ValueError(
-                f"Family {family.name} has incompatible recorders for "
-                f"slot {kind}: {records[existing]} and {source}"
-            )
+            if raw not in record_slot_keys:
+                raise ValueError(
+                    f"Family {family.name} has incompatible recorders for "
+                    f"slot {kind}: {records[existing]} and {source}, "
+                    f"and no raw recorder {raw} exists to use as a base."
+                )
+            records[existing] = raw
 
     for member in family.members:
         for name in instruction_records[member.name]:
             add(name)
-    # Family head supplies any slots no member exercises.
+    # Family head supplies any slots no member exercises, and may also
+    # conflict with members (resolved via the raw recorder above).
     for name in instruction_records[family.name]:
-        if record_slot_keys[name] not in slot_index:
-            slot_index[record_slot_keys[name]] = len(records)
-            records.append(name)
+        add(name)
     return records
 
 
@@ -285,13 +287,13 @@ def generate_record_transform_dispatcher(
         "_PyOpcode_RecordTransformValue(int uop, PyObject *value)\n"
         "{\n"
     )
-    out.emit("    switch (uop) {\n")
+    out.emit("switch (uop) {\n")
     for name in transform_names:
-        out.emit(f"        case {name}:\n")
-        out.emit(f"            return _PyOpcode_RecordTransform{name[7:]}(value);\n")
-    out.emit("        default:\n")
-    out.emit("            return value;\n")
-    out.emit("    }\n")
+        out.emit(f"case {name}:\n")
+        out.emit(f"    return _PyOpcode_RecordTransform{name[7:]}(value);\n")
+    out.emit("default:\n")
+    out.emit("    return value;\n")
+    out.emit("}\n")
     out.emit("}\n")
 
 
