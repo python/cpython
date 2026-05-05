@@ -2555,7 +2555,8 @@ AS_VAR_IF([ac_cv_gcc_compat], [yes], [
       ])
       AS_CASE([$host_cpu], [s390*], [
         AX_CHECK_COMPILE_FLAG([-mbackchain], [
-          frame_pointer_cflags="$frame_pointer_cflags -mbackchain"
+          dnl Do not use no-omit-frame-pointer; see gh-149362
+          frame_pointer_cflags="-mbackchain"
         ], [], [-Werror])
       ])
     ], [], [-Werror])
