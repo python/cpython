@@ -485,14 +485,14 @@ class SysLazyImportsAPITests(unittest.TestCase):
         self.assertIs(sys.get_lazy_imports_filter(), my_filter)
 
     def test_lazy_modules_attribute_is_frozendict(self):
-        """sys.lazy_modules should be a frozendict snapshot."""
+        """sys.lazy_modules should be an immutable frozendict mapping."""
         snapshot = sys.lazy_modules
         self.assertIsInstance(snapshot, frozendict)
         for value in snapshot.values():
             self.assertIsInstance(value, frozenset)
 
-    def test_lazy_modules_returns_fresh_snapshot(self):
-        """Each access of sys.lazy_modules should return a fresh snapshot."""
+    def test_lazy_modules_returns_fresh_mapping(self):
+        """Each access of sys.lazy_modules should return a fresh mapping."""
         first = sys.lazy_modules
         second = sys.lazy_modules
         # Snapshots are independent objects, even though they may compare equal.
@@ -995,7 +995,7 @@ class SysLazyModulesTrackingTests(unittest.TestCase):
 
     def test_lazy_modules_is_per_interpreter(self):
         """Each interpreter should have independent sys.lazy_modules."""
-        # Basic test that sys.lazy_modules exists and is an immutable snapshot.
+        # Basic test that sys.lazy_modules exists and is an immutable mapping.
         self.assertIsInstance(sys.lazy_modules, frozendict)
 
     def test_lazy_module_without_children_is_tracked(self):

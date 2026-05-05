@@ -2909,17 +2909,6 @@ sys_get_lazy_imports_impl(PyObject *module)
     }
 }
 
-PyDoc_STRVAR(sys_getattr_doc,
-"__getattr__($module, name, /)\n"
-"--\n"
-"\n"
-"Module-level fallback attribute access for sys.\n"
-"\n"
-"Used to expose dynamic, snapshot-style attributes such as\n"
-"``sys.lazy_modules``, which is rebuilt on each access as a\n"
-"``frozendict[str, frozenset[str]]`` snapshot of the live lazy import\n"
-"registry exposed (undocumented) as ``sys._lazy_modules``.");
-
 static PyObject *
 sys_getattr(PyObject *self, PyObject *name)
 {
@@ -2939,7 +2928,7 @@ sys_getattr(PyObject *self, PyObject *name)
 
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
-    {"__getattr__", sys_getattr, METH_O, sys_getattr_doc},
+    {"__getattr__", sys_getattr, METH_O, NULL},
     SYS_ADDAUDITHOOK_METHODDEF
     SYS_AUDIT_METHODDEF
     {"breakpointhook", _PyCFunction_CAST(sys_breakpointhook),
@@ -4383,10 +4372,9 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
     }
 
     // The live lazy import registry is exposed (undocumented) as
-    // ``sys._lazy_modules``. ``sys.lazy_modules`` is exposed via
-    // ``sys.__getattr__`` as a frozendict snapshot rebuilt on each access
-    // (see ``sys_getattr``).
-    PyObject *lazy_modules = _PyImport_InitLazyModules(interp);
+    // ``sys._lazy_modules``. The public ``sys.lazy_modules`` is built on
+    // each access by ``sys.__getattr__`` (see ``sys_getattr``).
+    PyObject *lazy_modules = _PyImport_InitLazyModules(interp); // borrowed reference
     if (lazy_modules == NULL) {
         goto error;
     }

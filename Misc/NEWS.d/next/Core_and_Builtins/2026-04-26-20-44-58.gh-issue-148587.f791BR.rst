@@ -1,6 +1,5 @@
-:data:`sys.lazy_modules` is now an immutable :class:`frozendict` snapshot of
-the lazy import registry, with :class:`frozenset` values, instead of a live
-mutable :class:`dict` of :class:`set` objects. Each access of
-``sys.lazy_modules`` returns a fresh snapshot built via
-:meth:`sys.__getattr__`. The live registry remains available (undocumented)
-as ``sys._lazy_modules``.
+:data:`sys.lazy_modules` is now a read-only :class:`frozendict` mapping
+each module's fully qualified name to the :class:`frozenset` of its
+lazily-imported submodule names, instead of a live mutable :class:`dict`
+of :class:`set` objects. User code can no longer mutate the lazy import
+registry through this attribute.
