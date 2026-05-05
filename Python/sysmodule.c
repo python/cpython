@@ -2926,8 +2926,26 @@ sys_getattr(PyObject *self, PyObject *args)
     return NULL;
 }
 
+static PyObject *
+sys_dir(PyObject *self, PyObject *args)
+{
+    PyObject *names = PyMapping_Keys(((PyModuleObject *)self)->md_dict);
+    if (names == NULL) {
+        return NULL;
+    }
+    PyObject *lazy = PyUnicode_FromString("lazy_modules");
+    int err = lazy ? PyList_Append(names, lazy) : -1;
+    Py_XDECREF(lazy);
+    if (err < 0) {
+        Py_DECREF(names);
+        return NULL;
+    }
+    return names;
+}
+
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
+    {"__dir__", sys_dir, METH_NOARGS, "Module __dir__"},
     {"__getattr__", sys_getattr, METH_VARARGS, "Module __getattr__"},
     SYS_ADDAUDITHOOK_METHODDEF
     SYS_AUDIT_METHODDEF
