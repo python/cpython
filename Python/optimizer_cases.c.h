@@ -1311,6 +1311,59 @@
         }
 
         case _STORE_SLICE: {
+            JitOptRef stop;
+            JitOptRef start;
+            JitOptRef container;
+            JitOptRef v;
+            stop = stack_pointer[-1];
+            start = stack_pointer[-2];
+            container = stack_pointer[-3];
+            v = stack_pointer[-4];
+            (void)v;
+            (void)start;
+            (void)stop;
+            if (sym_matches_type(container, &PyList_Type)) {
+                REPLACE_OP(this_instr, _STORE_SLICE_LIST, 0, 0);
+            }
+            else {
+                PyTypeObject *tp = sym_get_type(container);
+                if (tp == NULL) {
+                    ADD_OP(_GUARD_THIRD_LIST, 0, 0);
+                    sym_set_type(container, &PyList_Type);
+                    ADD_OP(_STORE_SLICE_LIST, this_instr->oparg, 0);
+                }
+            }
+            CHECK_STACK_BOUNDS(-4);
+            stack_pointer += -4;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _GUARD_THIRD_LIST: {
+            JitOptRef list_st;
+            list_st = stack_pointer[-3];
+            if (sym_matches_type(list_st, &PyList_Type)) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                sym_set_type(list_st, &PyList_Type);
+            }
+            break;
+        }
+
+        case _STORE_SLICE_LIST: {
+            JitOptRef stop;
+            JitOptRef start;
+            JitOptRef list_st;
+            JitOptRef v;
+            stop = stack_pointer[-1];
+            start = stack_pointer[-2];
+            list_st = stack_pointer[-3];
+            v = stack_pointer[-4];
+            (void)v;
+            (void)start;
+            (void)stop;
+            assert(sym_matches_type(list_st, &PyList_Type));
             CHECK_STACK_BOUNDS(-4);
             stack_pointer += -4;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);

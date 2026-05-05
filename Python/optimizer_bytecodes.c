@@ -183,6 +183,49 @@ dummy_func(void) {
         ss = sub_st;
     }
 
+    op(_STORE_SLICE, (v, container, start, stop -- )) {
+        (void)v;
+        (void)start;
+        (void)stop;
+        // If we know container is an exact list, dispatch to the
+        // tier-2 list specialization. Emit a runtime guard only when
+        // the type isn't already proven; the guard updates the symbol
+        // so subsequent passes can elide further checks.
+        //
+        // NOTE: Once we call ADD_OP, the optimizer's auto-emit of
+        // this_instr is suppressed, so we must explicitly ADD_OP the
+        // replacement instruction in that branch.
+        if (sym_matches_type(container, &PyList_Type)) {
+            REPLACE_OP(this_instr, _STORE_SLICE_LIST, 0, 0);
+        }
+        else {
+            PyTypeObject *tp = sym_get_type(container);
+            if (tp == NULL) {
+                // Insert a guard before this op and rewrite to the list path.
+                ADD_OP(_GUARD_THIRD_LIST, 0, 0);
+                sym_set_type(container, &PyList_Type);
+                ADD_OP(_STORE_SLICE_LIST, this_instr->oparg, 0);
+            }
+            // tp known but not list: leave _STORE_SLICE alone.
+        }
+    }
+
+    op(_GUARD_THIRD_LIST, (list_st, unused1, unused2 -- list_st, unused1, unused2)) {
+        if (sym_matches_type(list_st, &PyList_Type)) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        else {
+            sym_set_type(list_st, &PyList_Type);
+        }
+    }
+
+    op(_STORE_SLICE_LIST, (v, list_st, start, stop -- )) {
+        (void)v;
+        (void)start;
+        (void)stop;
+        assert(sym_matches_type(list_st, &PyList_Type));
+    }
+
     op(_STORE_ATTR_SLOT, (index/1, value, owner -- o)) {
         (void)index;
         (void)value;

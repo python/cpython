@@ -740,6 +740,22 @@ _PyList_BinarySlice(PyObject *container, PyObject *start, PyObject *stop)
     return ret;
 }
 
+/* Tier-2 _STORE_SLICE_LIST fast path: equivalent to
+ * ``container[start:stop] = value`` but avoids constructing a slice object.
+ * Used by the JIT optimizer's _STORE_SLICE_LIST specialization when the
+ * LHS container is known to be an exact list. */
+static int list_ass_slice_with_indices(PyListObject *a, PyObject *start,
+                                       PyObject *stop, PyObject *v);
+
+int
+_PyList_StoreSlice(PyObject *container, PyObject *start, PyObject *stop,
+                   PyObject *value)
+{
+    assert(PyList_CheckExact(container));
+    return list_ass_slice_with_indices((PyListObject *)container,
+                                       start, stop, value);
+}
+
 PyObject *
 PyList_GetSlice(PyObject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
 {
@@ -1075,6 +1091,55 @@ PyList_SetSlice(PyObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
         return -1;
     }
     return list_ass_slice((PyListObject *)a, ilow, ihigh, v);
+}
+
+/* Like list_ass_slice but the start/stop indices are PyObjects that follow
+ * the slice protocol (None or any indexable; negative values resolved to
+ * positive).  Mirrors list_ass_slice's aliasing/locking behavior so the
+ * adjusted indices and the assignment are observed atomically. */
+static int
+list_ass_slice_with_indices(PyListObject *a, PyObject *start, PyObject *stop,
+                            PyObject *v)
+{
+    Py_ssize_t istart = 0;
+    Py_ssize_t istop = PY_SSIZE_T_MAX;
+    /* Unpack the index values before acquiring the lock, since
+     * _PyEval_SliceIndex may call __index__ which could execute
+     * arbitrary Python code. */
+    if (!_PyEval_SliceIndex(start, &istart)) {
+        return -1;
+    }
+    if (!_PyEval_SliceIndex(stop, &istop)) {
+        return -1;
+    }
+    int ret;
+    if (a == (PyListObject *)v) {
+        Py_BEGIN_CRITICAL_SECTION(a);
+        Py_ssize_t n = PyList_GET_SIZE(a);
+        PySlice_AdjustIndices(n, &istart, &istop, 1);
+        PyObject *copy = list_slice_lock_held(a, 0, n);
+        if (copy == NULL) {
+            ret = -1;
+        }
+        else {
+            ret = list_ass_slice_lock_held(a, istart, istop, copy);
+            Py_DECREF(copy);
+        }
+        Py_END_CRITICAL_SECTION();
+    }
+    else if (v != NULL && PyList_CheckExact(v)) {
+        Py_BEGIN_CRITICAL_SECTION2(a, v);
+        PySlice_AdjustIndices(PyList_GET_SIZE(a), &istart, &istop, 1);
+        ret = list_ass_slice_lock_held(a, istart, istop, v);
+        Py_END_CRITICAL_SECTION2();
+    }
+    else {
+        Py_BEGIN_CRITICAL_SECTION(a);
+        PySlice_AdjustIndices(PyList_GET_SIZE(a), &istart, &istop, 1);
+        ret = list_ass_slice_lock_held(a, istart, istop, v);
+        Py_END_CRITICAL_SECTION();
+    }
+    return ret;
 }
 
 static int

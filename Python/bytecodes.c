@@ -1129,6 +1129,29 @@ dummy_func(
             ERROR_IF(err);
         }
 
+        // Tier-2 only: guard for STORE_SLICE specialization. The list
+        // container sits at stack[-3] (below start/stop), so neither
+        // _GUARD_TOS_LIST nor _GUARD_NOS_LIST works.
+        tier2 op(_GUARD_THIRD_LIST, (list_st, unused, unused -- list_st, unused, unused)) {
+            PyObject *o = PyStackRef_AsPyObjectBorrow(list_st);
+            EXIT_IF(!PyList_CheckExact(o));
+        }
+
+        // Tier-2 specialization for STORE_SLICE on exact lists: avoids the
+        // slice-object allocation and dispatches straight into a list-only
+        // assignment helper. Emitted by the optimizer when the container
+        // is known (or guarded) to be a list. Tier 2 only.
+        tier2 op(_STORE_SLICE_LIST, (v, list_st, start, stop -- )) {
+            PyObject *list_o = PyStackRef_AsPyObjectBorrow(list_st);
+            PyObject *start_o = PyStackRef_AsPyObjectBorrow(start);
+            PyObject *stop_o = PyStackRef_AsPyObjectBorrow(stop);
+            PyObject *v_o = PyStackRef_AsPyObjectBorrow(v);
+            assert(PyList_CheckExact(list_o));
+            int err = _PyList_StoreSlice(list_o, start_o, stop_o, v_o);
+            DECREF_INPUTS();
+            ERROR_IF(err);
+        }
+
         macro(STORE_SLICE) = _SPECIALIZE_STORE_SLICE + _STORE_SLICE;
 
         macro(BINARY_OP_SUBSCR_LIST_INT) =
