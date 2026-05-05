@@ -2236,13 +2236,13 @@ interp_has_threads(PyInterpreterState *interp)
         return 0;
     }
 
-    // We don't have to worry about locking this because the
-    // world is stopped.
+    HEAD_LOCK(interp->runtime);
     _Py_FOR_EACH_TSTATE_UNLOCKED(interp, tstate) {
         if (tstate->_whence == _PyThreadState_WHENCE_THREADING) {
             return 1;
         }
     }
+    HEAD_UNLOCK(interp->runtime);
 
     return 0;
 }
@@ -2313,6 +2313,8 @@ make_pre_finalization_calls(PyThreadState *tstate, int subinterpreters)
              */
             finalize_subinterpreters();
         }
+
+
 
         /* Stop the world to prevent other threads from creating threads or
          * atexit callbacks. On the default build, this is simply locked by
