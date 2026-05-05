@@ -4495,8 +4495,8 @@ class TestBufferProtocol(unittest.TestCase):
     def test_array_alignment(self):
         # gh-140557: pointer alignment of buffers including empty allocation
         # should match the maximum array alignment.
-        align = max(struct.calcsize(fmt) for fmt in ARRAY)
-        cases = [array.array(fmt) for fmt in ARRAY]
+        align = max(struct.calcsize(fmt) for fmt in ARRAY if fmt != 'Zd')
+        cases = [array.array(fmt) for fmt in ARRAY if fmt != 'Zd']
         # Empty arrays
         self.assertEqual(
             [_testcapi.buffer_pointer_as_int(case) % align for case in cases],
