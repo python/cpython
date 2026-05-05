@@ -370,15 +370,19 @@ in both C and ``libffi``, the following complex types are available:
    * - :class:`c_float_complex`
      - :c:expr:`float complex`
      - :py:class:`complex`
-     - ``'F'``
+     - ``'Zf'``
    * - :class:`c_double_complex`
      - :c:expr:`double complex`
      - :py:class:`complex`
-     - ``'D'``
+     - ``'Zd'``
    * - :class:`c_longdouble_complex`
      - :c:expr:`long double complex`
      - :py:class:`complex`
-     - ``'G'``
+     - ``'Zg'``
+
+.. versionchanged:: next
+   The :py:attr:`~_SimpleCData._type_` types ``F``, ``D`` and ``G`` have been
+   replaced with ``Zf``, ``Zd`` and ``Zg``.
 
 
 All these types can be created by calling them with an optional initializer of

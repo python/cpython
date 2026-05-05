@@ -618,7 +618,10 @@
     <ClCompile Include="..\Python\critical_section.c" />
     <ClCompile Include="..\Python\crossinterp.c" />
     <ClCompile Include="..\Python\dynamic_annotations.c" />
-    <ClCompile Include="..\Python\dynload_win.c" />
+    <ClCompile Include="..\Python\dynload_win.c">
+      <PreprocessorDefinitions Condition="$(DisableGil) != 'true'">PY3_DLLNAME=L"$(Py3DllName)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ABI3T_DLLNAME=L"$(Abi3tDllName)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
     <ClCompile Include="..\Python\errors.c" />
     <ClCompile Include="..\Python\fileutils.c" />
     <ClCompile Include="..\Python\flowgraph.c" />

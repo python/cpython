@@ -779,6 +779,7 @@
                 tstate->py_recursion_remaining--;
                 LOAD_SP();
                 LOAD_IP(0);
+                DTRACE_FUNCTION_ENTRY();
                 LLTRACE_RESUME_FRAME();
             }
             DISPATCH();
@@ -2005,6 +2006,7 @@
                 tstate->py_recursion_remaining--;
                 LOAD_SP();
                 LOAD_IP(0);
+                DTRACE_FUNCTION_ENTRY();
                 LLTRACE_RESUME_FRAME();
             }
             DISPATCH();
@@ -2148,6 +2150,7 @@
                 tstate->py_recursion_remaining--;
                 LOAD_SP();
                 LOAD_IP(0);
+                DTRACE_FUNCTION_ENTRY();
                 LLTRACE_RESUME_FRAME();
             }
             DISPATCH();
@@ -2276,6 +2279,7 @@
                 tstate->py_recursion_remaining--;
                 LOAD_SP();
                 LOAD_IP(0);
+                DTRACE_FUNCTION_ENTRY();
                 LLTRACE_RESUME_FRAME();
             }
             DISPATCH();
@@ -2871,6 +2875,7 @@
                 tstate->py_recursion_remaining--;
                 LOAD_SP();
                 LOAD_IP(0);
+                DTRACE_FUNCTION_ENTRY();
                 LLTRACE_RESUME_FRAME();
             }
             DISPATCH();
@@ -3465,6 +3470,7 @@
                 tstate->py_recursion_remaining--;
                 LOAD_SP();
                 LOAD_IP(0);
+                DTRACE_FUNCTION_ENTRY();
                 LLTRACE_RESUME_FRAME();
             }
             DISPATCH();
@@ -3652,6 +3658,7 @@
                 tstate->py_recursion_remaining--;
                 LOAD_SP();
                 LOAD_IP(0);
+                DTRACE_FUNCTION_ENTRY();
                 LLTRACE_RESUME_FRAME();
             }
             DISPATCH();
@@ -4489,6 +4496,7 @@
                 tstate->py_recursion_remaining--;
                 LOAD_SP();
                 LOAD_IP(0);
+                DTRACE_FUNCTION_ENTRY();
                 LLTRACE_RESUME_FRAME();
             }
             DISPATCH();
@@ -4589,6 +4597,7 @@
                 tstate->py_recursion_remaining--;
                 LOAD_SP();
                 LOAD_IP(0);
+                DTRACE_FUNCTION_ENTRY();
                 LLTRACE_RESUME_FRAME();
             }
             DISPATCH();
@@ -6174,6 +6183,7 @@
                 tstate->py_recursion_remaining--;
                 LOAD_SP();
                 LOAD_IP(0);
+                DTRACE_FUNCTION_ENTRY();
                 LLTRACE_RESUME_FRAME();
             }
             DISPATCH();
@@ -7865,6 +7875,7 @@
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 assert(STACK_LEVEL() == 0);
+                DTRACE_FUNCTION_RETURN();
                 _Py_LeaveRecursiveCallPy(tstate);
                 _PyInterpreterFrame *dying = frame;
                 frame = tstate->current_frame = dying->previous;
@@ -7890,6 +7901,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_YIELD_VALUE);
+            opcode = INSTRUMENTED_YIELD_VALUE;
             _PyStackRef val;
             _PyStackRef value;
             _PyStackRef retval;
@@ -7926,6 +7938,7 @@
                 stack_pointer += -1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
+                DTRACE_FUNCTION_RETURN();
                 tstate->exc_info = gen->gi_exc_state.previous_item;
                 gen->gi_exc_state.previous_item = NULL;
                 _Py_LeaveRecursiveCallPy(tstate);
@@ -7935,13 +7948,12 @@
                 ((_PyThreadStateImpl *)tstate)->generator_return_kind = GENERATOR_YIELD;
                 FT_ATOMIC_STORE_INT8_RELEASE(gen->gi_frame_state, FRAME_SUSPENDED + oparg);
                 assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
-                #if TIER_ONE
-                assert(frame->instr_ptr->op.code == INSTRUMENTED_LINE ||
-                  frame->instr_ptr->op.code == INSTRUMENTED_INSTRUCTION ||
-                  _PyOpcode_Deopt[frame->instr_ptr->op.code] == SEND ||
-                  _PyOpcode_Deopt[frame->instr_ptr->op.code] == FOR_ITER ||
-                  _PyOpcode_Deopt[frame->instr_ptr->op.code] == INTERPRETER_EXIT ||
-                  _PyOpcode_Deopt[frame->instr_ptr->op.code] == ENTER_EXECUTOR);
+                #if TIER_ONE && defined(Py_DEBUG)
+                if (!PyStackRef_IsNone(frame->f_executable)) {
+                    int i = frame->instr_ptr - _PyFrame_GetBytecode(frame);
+                    int opcode = _Py_GetBaseCodeUnit(_PyFrame_GetCode(frame), i).op.code;
+                    assert(opcode == SEND || opcode == FOR_ITER);
+                }
                 #endif
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
@@ -8533,6 +8545,7 @@
                 tstate->py_recursion_remaining--;
                 LOAD_SP();
                 LOAD_IP(0);
+                DTRACE_FUNCTION_ENTRY();
                 LLTRACE_RESUME_FRAME();
             }
             DISPATCH();
@@ -9069,6 +9082,7 @@
                 tstate->py_recursion_remaining--;
                 LOAD_SP();
                 LOAD_IP(0);
+                DTRACE_FUNCTION_ENTRY();
                 LLTRACE_RESUME_FRAME();
             }
             DISPATCH();
@@ -11050,6 +11064,7 @@
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 assert(STACK_LEVEL() == 0);
+                DTRACE_FUNCTION_RETURN();
                 _Py_LeaveRecursiveCallPy(tstate);
                 _PyInterpreterFrame *dying = frame;
                 frame = tstate->current_frame = dying->previous;
@@ -11247,6 +11262,7 @@
                 tstate->py_recursion_remaining--;
                 LOAD_SP();
                 LOAD_IP(0);
+                DTRACE_FUNCTION_ENTRY();
                 LLTRACE_RESUME_FRAME();
             }
             DISPATCH();
@@ -12913,6 +12929,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(YIELD_VALUE);
+            opcode = YIELD_VALUE;
             _PyStackRef value;
             _PyStackRef retval;
             // _MAKE_HEAP_SAFE
@@ -12932,6 +12949,7 @@
                 stack_pointer += -1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
+                DTRACE_FUNCTION_RETURN();
                 tstate->exc_info = gen->gi_exc_state.previous_item;
                 gen->gi_exc_state.previous_item = NULL;
                 _Py_LeaveRecursiveCallPy(tstate);
@@ -12941,13 +12959,12 @@
                 ((_PyThreadStateImpl *)tstate)->generator_return_kind = GENERATOR_YIELD;
                 FT_ATOMIC_STORE_INT8_RELEASE(gen->gi_frame_state, FRAME_SUSPENDED + oparg);
                 assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
-                #if TIER_ONE
-                assert(frame->instr_ptr->op.code == INSTRUMENTED_LINE ||
-                  frame->instr_ptr->op.code == INSTRUMENTED_INSTRUCTION ||
-                  _PyOpcode_Deopt[frame->instr_ptr->op.code] == SEND ||
-                  _PyOpcode_Deopt[frame->instr_ptr->op.code] == FOR_ITER ||
-                  _PyOpcode_Deopt[frame->instr_ptr->op.code] == INTERPRETER_EXIT ||
-                  _PyOpcode_Deopt[frame->instr_ptr->op.code] == ENTER_EXECUTOR);
+                #if TIER_ONE && defined(Py_DEBUG)
+                if (!PyStackRef_IsNone(frame->f_executable)) {
+                    int i = frame->instr_ptr - _PyFrame_GetBytecode(frame);
+                    int opcode = _Py_GetBaseCodeUnit(_PyFrame_GetCode(frame), i).op.code;
+                    assert(opcode == SEND || opcode == FOR_ITER);
+                }
                 #endif
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
@@ -13081,6 +13098,13 @@ JUMP_TO_LABEL(error);
         LABEL(exit_unwind)
         {
             assert(_PyErr_Occurred(tstate));
+            DTRACE_FUNCTION_RETURN();
+            JUMP_TO_LABEL(exit_unwind_notrace);
+        }
+
+        LABEL(exit_unwind_notrace)
+        {
+            assert(_PyErr_Occurred(tstate));
             _Py_LeaveRecursiveCallPy(tstate);
             assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
             _PyInterpreterFrame *dying = frame;
@@ -13111,8 +13135,9 @@ JUMP_TO_LABEL(error);
         {
             int too_deep = _Py_EnterRecursivePy(tstate);
             if (too_deep) {
-                JUMP_TO_LABEL(exit_unwind);
+                JUMP_TO_LABEL(exit_unwind_notrace);
             }
+            DTRACE_FUNCTION_ENTRY();
             next_instr = frame->instr_ptr;
             #ifdef Py_DEBUG
             int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS());

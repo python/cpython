@@ -508,6 +508,7 @@ is_for_iter_test[MAX_UOP_ID + 1] = {
     [_GUARD_NOT_EXHAUSTED_LIST] = 1,
     [_GUARD_NOT_EXHAUSTED_TUPLE] = 1,
     [_FOR_ITER_TIER_TWO] = 1,
+    [_ITER_NEXT_INLINE] = 1,
 };
 
 static const uint16_t

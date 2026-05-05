@@ -3351,22 +3351,113 @@ class BufferFlags(enum.IntFlag):
     WRITE = 0x200
 
 
+def _get_details_for_cli(module, nominal_target, resolved_target):
+    # Determine if the given module name is an alias for another module,
+    # or if it is reexporting a name that is actually defined elsewhere
+    resolved_module = getmodule(resolved_target)
+    if resolved_module is not None and resolved_module is not module:
+        # Referenced target indicates it was defined somewhere else,
+        # so report the details of that module rather than the lookup module
+        module = resolved_module
+    reported_module_name = module.__name__
+    # Ensure the reported source file reflects the actual defining location
+    try:
+        source_file = getsourcefile(resolved_target)
+    except Exception:
+        try:
+            source_file = getsourcefile(module)
+        except Exception:
+            source_file = None
+    # Determine if the nominal target location is its defining location
+    if resolved_target is module:
+        reported_target = reported_module_name
+    else:
+        reported_qualname = getattr(resolved_target, "__qualname__", None)
+        if not reported_qualname:
+            reported_qualname = nominal_target.partition(":")[2]
+        reported_target = f"{reported_module_name}:{reported_qualname}"
+        # Special case for looking up functions in frozen modules
+        if source_file == f"<frozen {reported_module_name}>":
+            source_file = module.__file__
+    # Populate the actual details to be reported
+    details = {
+        "target": reported_target,
+        "origin": module.__spec__.origin,
+        "cached": module.__spec__.cached,
+        "source": source_file,
+    }
+    if reported_target != nominal_target:
+        details["alias"] = nominal_target
+    error = None
+    if not source_file:
+        if module.__name__ in sys.builtin_module_names:
+            error = "No source code available for builtin module"
+        else:
+            error = "No source code available for defining module"
+    if resolved_target is module:
+        details["loader"] = repr(module.__spec__.loader)
+        if hasattr(module, '__path__'):
+            details["submodule_paths"] = str(module.__path__)
+    elif source_file:
+            try:
+                __, lineno = findsource(resolved_target)
+            except Exception:
+                error = "Failed to retrieve source code for given target"
+            else:
+                details["lineno"] = lineno
+    if error:
+        details["error"] = error
+    return details
+
+def _render_details_for_cli(details):
+    resolved_target = details["target"]
+    alias = details.get("alias")
+    if alias:
+        rendered_target = f'{resolved_target} (looked up as "{alias}")'
+    else:
+        rendered_target = resolved_target
+    lines = [
+        f'Target: {rendered_target}',
+        f'Origin: {details["origin"]}',
+        f'Source: {details["source"]}',
+        f'Cached: {details["cached"]}',
+    ]
+    loader = details.get("loader")
+    if loader:
+        lines.append(f'Loader: {loader}')
+        submodule_paths = details.get("submodule_paths")
+        if submodule_paths:
+            lines.append(f'Submodule search paths: {submodule_paths}')
+    else:
+        error = details.get("error")
+        if error:
+            # The error is only informational when retrieving object details
+            lines.append(error)
+        else:
+            lines.append(f'Line: {details["lineno"]}')
+
+    lines.append("")
+    return "\n".join(lines)
+
+
 def _main():
     """ Logic for inspecting an object given at command line """
     import argparse
     import importlib
 
-    parser = argparse.ArgumentParser(color=True)
+    parser = argparse.ArgumentParser()
     parser.add_argument(
         'object',
          help="The object to be analysed. "
-              "It supports the 'module:qualname' syntax")
+              "It supports the `module:qualname` syntax")
     parser.add_argument(
         '-d', '--details', action='store_true',
         help='Display info about the module rather than its source code')
 
     args = parser.parse_args()
 
+    # We don't use `pkgutil.resolve_name` here because we want to obtain
+    # references to both the module *and* the fully resolved target object
     target = args.object
     mod_name, has_attrs, attrs = target.partition(":")
     try:
@@ -3384,29 +3475,16 @@ def _main():
         for part in parts:
             obj = getattr(obj, part)
 
-    if module.__name__ in sys.builtin_module_names:
-        print("Can't get info for builtin modules.", file=sys.stderr)
-        sys.exit(1)
-
+    details = _get_details_for_cli(module, target, obj)
     if args.details:
-        print(f'Target: {target}')
-        print(f'Origin: {getsourcefile(module)}')
-        print(f'Cached: {module.__spec__.cached}')
-        if obj is module:
-            print(f'Loader: {module.__loader__!r}')
-            if hasattr(module, '__path__'):
-                print(f'Submodule search path: {module.__path__}')
-        else:
-            try:
-                __, lineno = findsource(obj)
-            except Exception:
-                pass
-            else:
-                print(f'Line: {lineno}')
-
-        print()
+        print(_render_details_for_cli(details))
     else:
-        print(getsource(obj))
+        # Attempt to render target source details
+        error = details.get("error")
+        if error:
+            sys.exit(error)
+        else:
+            print(getsource(obj))
 
 
 if __name__ == "__main__":
