@@ -18,6 +18,17 @@ lzma = import_module("lzma")
 from lzma import LZMACompressor, LZMADecompressor, LZMAError, LZMAFile
 
 
+# The NSKIP019 ``@unittest.skipIf(support.is_nanvix, ...)`` decorators sprinkled
+# below were derived from per-method-per-VM characterization recorded in
+# ``.vault/tasks/test-lzma-enablement/failure-characterization.md``. The reason
+# string ("lzma preset>=3 exceeds Nanvix heap") looks surprising on bad-args,
+# pickle, and state-only methods because the allocation that OOMs is the
+# ``LZMACompressor()`` constructed in ``setUp`` / fixture before the test body
+# runs -- not anything the test itself does. The decorator on
+# ``FileTestCase.test_read_multistream`` is the lone cascade-induced exception;
+# it is annotated inline at the decorator site.
+
+
 class CompressorDecompressorTestCase(unittest.TestCase):
 
     # Test error cases.
@@ -853,6 +864,9 @@ class FileTestCase(unittest.TestCase):
                 chunks.append(result)
             self.assertEqual(b"".join(chunks), INPUT)
 
+    # cascade-induced; passes in isolation, see failure-characterization.md
+    # §2.3 (Cascade-vs-real verdict). Decorated for batch-ordering resilience
+    # because it OOMs only when batched alongside test_re / test_plistlib.
     @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_read_multistream(self):
         with LZMAFile(BytesIO(COMPRESSED_XZ * 5)) as f:
