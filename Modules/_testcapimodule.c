@@ -2866,6 +2866,29 @@ test_soft_deprecated_macros(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_thread_state_ensure_detachment(PyObject *self, PyObject *unused)
+{
+    PyThreadState *before = PyThreadState_Get();
+    assert(before != NULL);
+
+    PyInterpreterGuard *guard = PyInterpreterGuard_FromCurrent();
+    assert(guard != NULL);
+
+    PyThreadStateToken *token = PyThreadState_Ensure(guard);
+    assert(token != NULL);
+    /* Ensure took the fast path; tstate is unchanged. */
+    assert(PyThreadState_Get() == before);
+
+    PyThreadState_Release(token);
+
+    PyThreadState *after = PyThreadState_GetUnchecked();
+    assert(after != NULL);
+
+    PyInterpreterGuard_Close(guard);
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -2969,6 +2992,7 @@ static PyMethodDef TestMethods[] = {
     {"test_thread_state_ensure_crossinterp", test_thread_state_ensure_crossinterp, METH_NOARGS},
     {"test_interp_view_after_shutdown", test_interp_view_after_shutdown, METH_NOARGS},
     {"test_thread_state_ensure_view", test_thread_state_ensure_view, METH_NOARGS},
+    {"test_thread_state_ensure_detachment", test_thread_state_ensure_detachment, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
