@@ -1391,7 +1391,6 @@ Tracebacks
    error if the function is unable to get the current Python thread state.
 
    This function will return ``NULL`` on success, or an error message on error.
-   It will also write this error message to *fd*.
 
    This function is meant to debug debug situations such as segfaults, fatal
    errors, and similar. It calls :c:func:`PyUnstable_DumpTraceback` for each

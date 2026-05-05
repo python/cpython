@@ -1258,14 +1258,6 @@ write_thread_id(int fd, PyThreadState *tstate, int is_current)
     PUTS(fd, " (most recent call first):\n");
 }
 
-/* Write an error string and also return it at the same time. */
-static const char*
-dump_error(int fd, const char *msg)
-{
-    PUTS(fd, msg);
-    return msg;
-}
-
 /* Dump the traceback of all Python threads into fd. Use write() to write the
    traceback and retry if write() is interrupted by a signal (failed with
    EINTR), but don't call the Python signal handler.
@@ -1297,7 +1289,7 @@ PyUnstable_DumpTracebackThreads(int fd, PyInterpreterState *interp,
     }
 
     if (current_tstate != NULL && tstate_is_freed(current_tstate)) {
-        return dump_error(fd, "tstate is freed");
+        return "tstate is freed";
     }
 
     if (interp == NULL) {
@@ -1305,7 +1297,7 @@ PyUnstable_DumpTracebackThreads(int fd, PyInterpreterState *interp,
             interp = _PyGILState_GetInterpreterStateUnsafe();
             if (interp == NULL) {
                 /* We need the interpreter state to get Python threads */
-                return dump_error(fd, "unable to get the interpreter state");
+                return "unable to get the interpreter state";
             }
         }
         else {
@@ -1315,13 +1307,13 @@ PyUnstable_DumpTracebackThreads(int fd, PyInterpreterState *interp,
     assert(interp != NULL);
 
     if (interp_is_freed(interp)) {
-        return dump_error(fd, "interp is freed");
+        return "interp is freed";
     }
 
     /* Get the current interpreter from the current thread */
     PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
     if (tstate == NULL)
-        return dump_error(fd, "unable to get the thread head state");
+        return "unable to get the thread head state";
 
     /* Dump the traceback of each thread */
     Py_ssize_t nthreads = 0;
