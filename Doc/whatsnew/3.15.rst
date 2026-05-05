@@ -89,7 +89,7 @@ Summary -- Release highlights
 * :pep:`782`: :ref:`A new PyBytesWriter C API to create a Python bytes object
   <whatsnew315-pybyteswriter>`
 * :pep:`803`, :pep:`820 <820>`, :pep:`793 <793>`:
-  :ref:`Stable ABI for Free-Threaded Builds <whatsnew315-abi3t>` and
+  :ref:`Stable ABI for free-threaded builds <whatsnew315-abi3t>` and
   related C API
 * :ref:`The JIT compiler has been significantly upgraded <whatsnew315-jit>`
 * :ref:`Improved error messages <whatsnew315-improved-error-messages>`
