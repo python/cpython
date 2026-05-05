@@ -2922,12 +2922,13 @@ sys_getattr(PyObject *self, PyObject *args)
         return _PyImport_GetLazyModulesSnapshot(interp);
     }
 
-    PyErr_Format(PyExc_AttributeError, "module 'sys' has no attribute %R", name);
+    PyErr_Format(PyExc_AttributeError,
+                 "module 'sys' has no attribute %R", name);
     return NULL;
 }
 
 static PyObject *
-sys_dir(PyObject *self, PyObject *args)
+sys_dir(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *names = PyMapping_Keys(((PyModuleObject *)self)->md_dict);
     if (names == NULL) {
