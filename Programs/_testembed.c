@@ -2801,6 +2801,81 @@ test_thread_state_ensure_from_view(void)
     return 0;
 }
 
+#define NUM_THREADS 4
+
+static void
+stress_func(void *arg)
+{
+    PyInterpreterGuard *guard = (PyInterpreterGuard *)arg;
+
+    for (int i = 0; i < 1000; ++i) {
+        assert(guard != NULL);
+        PyThreadStateToken *token = PyThreadState_Ensure(guard);
+        assert(token != NULL);
+
+        PyGILState_STATE gstate = PyGILState_Ensure();
+
+        PyInterpreterView *view = PyInterpreterView_FromCurrent();
+        assert(view != NULL);
+
+        PyThreadStateToken *token2 = PyThreadState_EnsureFromView(view);
+        assert(token2 != NULL);
+        PyThreadState_Release(token2);
+
+        PyGILState_Release(gstate);
+
+        PyThreadState_Release(token);
+
+        PyInterpreterGuard_Close(guard);
+
+        _Py_yield();
+
+        guard = PyInterpreterGuard_FromView(view);
+        PyInterpreterView_Close(view);
+
+        if (guard == NULL) {
+            // The interpreter is shutting down. Bail out now.
+            return;
+        }
+    }
+
+    PyInterpreterGuard_Close(guard);
+}
+
+static int
+test_concurrent_finalization_stress(void)
+{
+    for (int j = 0; j < 50; ++j) {
+        _testembed_initialize();
+        PyThread_handle_t handles[NUM_THREADS];
+        PyThread_ident_t idents[NUM_THREADS];
+        PyInterpreterGuard *guards[NUM_THREADS];
+
+        for (int i = 0; i < NUM_THREADS; ++i) {
+            guards[i] = PyInterpreterGuard_FromCurrent();
+            assert(guards[i] != NULL);
+            if (PyThread_start_joinable_thread(stress_func, guards[i], &idents[i], &handles[i]) < 0) {
+                for (int x = 0; x < i; ++x) {
+                    PyInterpreterGuard_Close(guards[x]);
+                    PyThread_detach_thread(handles[x]);
+                }
+                return -1;
+            }
+        }
+
+        _Py_yield();
+        Py_Finalize();
+
+        for (int i = 0; i < NUM_THREADS; ++i) {
+            PyThread_join_thread(handles[i]);
+        }
+    }
+
+    return 0;
+}
+
+#undef NUM_THREADS
+
 /* *********************************************************
  * List of test cases and the function that implements it.
  *
@@ -2898,6 +2973,7 @@ static struct TestCase TestCases[] = {
     {"test_thread_state_ensure", test_thread_state_ensure},
     {"test_main_interpreter_view", test_main_interpreter_view},
     {"test_thread_state_ensure_from_view", test_thread_state_ensure_from_view},
+    {"test_concurrent_finalization_stress", test_concurrent_finalization_stress},
     {NULL, NULL}
 };
 

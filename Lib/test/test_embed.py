@@ -2005,6 +2005,9 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_thread_state_ensure_from_view(self):
         self.run_embedded_interpreter("test_thread_state_ensure_from_view")
 
+    def test_concurrent_finalization_stress(self):
+        self.run_embedded_interpreter("test_concurrent_finalization_stress")
+
 
 class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_unicode_id_init(self):
