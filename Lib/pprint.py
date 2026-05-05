@@ -145,7 +145,13 @@ def _colorize_output(text):
         # (for example, from a custom __repr__),
         # return as-is to avoid breaking their color.
         return text
-    colors = list(gen_colors(text))
+    # Skip coloring inside <...> reprs (for example, <built-in function print>),
+    # they're placeholders, not Python source.
+    skip = [m.span() for m in re.finditer(r"<[^<>\n]*>", text)]
+    colors = [
+        c for c in gen_colors(text)
+        if not any(start <= c.span.start < end for start, end in skip)
+    ]
     chars, _ = disp_str(text, colors=colors, force_color=True, escape=False)
     return "".join(chars)
 

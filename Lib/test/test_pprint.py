@@ -269,6 +269,24 @@ class QueryTestCase(unittest.TestCase):
         expected = "{'a': \x1b[31mred\x1b[0m, 'b': 42, 'c': 'hello'}\n"
         self.assertEqual(result, expected)
 
+    def test_color_skips_placeholder_reprs(self):
+        """<...> reprs are non-literal placeholders, not Python source,
+        so their contents must not be tokenized and colored."""
+        recursive = [1, "two", None]
+        recursive.append(recursive)
+
+        with unittest.mock.patch.dict(
+            "os.environ", {"FORCE_COLOR": "1", "NO_COLOR": ""}
+        ):
+            stream = io.StringIO()
+            pprint.pprint(recursive, stream=stream, color=True)
+            result = stream.getvalue()
+
+        self.assertIn("\x1b[", result)  # surrounding output is still colored
+        match = re.search(r"<[^<>\n]*>", result)
+        self.assertIsNotNone(match)
+        self.assertNotIn("\x1b[", match.group(0))
+
     def test_basic(self):
         # Verify .isrecursive() and .isreadable() w/o recursion
         pp = pprint.PrettyPrinter()
