@@ -389,13 +389,13 @@ def _add_sampling_options(parser):
     sampling_group.add_argument(
         "--native",
         action="store_true",
-        help='Include artificial "<native>" frames to denote calls to non-Python code',
+        help='Include artificial `<native>` frames to denote calls to non-Python code',
     )
     sampling_group.add_argument(
         "--no-gc",
         action="store_false",
         dest="gc",
-        help='Don\'t include artificial "<GC>" frames to denote active garbage collection',
+        help='Don\'t include artificial `<GC>` frames to denote active garbage collection',
     )
     sampling_group.add_argument(
         "--opcodes",
@@ -432,14 +432,14 @@ def _add_mode_options(parser):
         help="Sampling mode: wall (all samples), cpu (only samples when thread is on CPU), "
         "gil (only samples when thread holds the GIL), "
         "exception (only samples when thread has an active exception). "
-        "Incompatible with --async-aware",
+        "Incompatible with `--async-aware`",
     )
     mode_group.add_argument(
         "--async-mode",
         choices=["running", "all"],
         default="running",
         help='Async profiling mode: "running" (only running task) '
-        'or "all" (all tasks including waiting). Requires --async-aware',
+        'or "all" (all tasks including waiting). Requires `--async-aware`',
     )
 
 
@@ -486,7 +486,7 @@ def _add_format_options(parser, include_compression=True, include_binary=True):
         "--diff-flamegraph",
         metavar="BASELINE",
         action=DiffFlamegraphAction,
-        help="Generate differential flamegraph comparing current profile to BASELINE binary file",
+        help="Generate differential flamegraph comparing current profile to `BASELINE` binary file",
     )
     if include_binary:
         format_group.add_argument(
@@ -494,7 +494,7 @@ def _add_format_options(parser, include_compression=True, include_binary=True):
             action="store_const",
             const="binary",
             dest="format",
-            help="Generate high-performance binary format (use 'replay' command to convert)",
+            help="Generate high-performance binary format (use `replay` command to convert)",
         )
     parser.set_defaults(format="pstats", diff_baseline=None)
 
@@ -510,14 +510,14 @@ def _add_format_options(parser, include_compression=True, include_binary=True):
         "-o",
         "--output",
         dest="outfile",
-        help="Output path (default: stdout for pstats text; with -o, pstats is binary). "
-        "Auto-generated for other formats. For heatmap: directory name (default: heatmap_PID)",
+        help="Output path (default: `stdout` for `pstats` text; with `-o`, `pstats` is binary). "
+        "Auto-generated for other formats. For heatmap: directory name (default: `heatmap_PID`)",
     )
     output_group.add_argument(
         "--browser",
         action="store_true",
         help="Automatically open HTML output (flamegraph, heatmap) in browser. "
-        "When using --subprocesses, only the main process opens the browser",
+        "When using `--subprocesses`, only the main process opens the browser",
     )
 
 
@@ -564,13 +564,13 @@ def _add_dump_options(parser):
     dump_group.add_argument(
         "--native",
         action="store_true",
-        help='Include artificial "<native>" frames to denote calls to non-Python code',
+        help='Include artificial `<native>` frames to denote calls to non-Python code',
     )
     dump_group.add_argument(
         "--no-gc",
         action="store_false",
         dest="gc",
-        help='Don\'t include artificial "<GC>" frames to denote active garbage collection',
+        help='Don\'t include artificial `<GC>` frames to denote active garbage collection',
     )
     dump_group.add_argument(
         "--opcodes",
@@ -588,7 +588,7 @@ def _add_dump_options(parser):
         default=argparse.SUPPRESS,
         help='Async stack mode: "running" (only running task) '
         'or "all" (all tasks including waiting, default for dump). '
-        "Requires --async-aware",
+        "Requires `--async-aware`",
     )
     dump_group.add_argument(
         "--blocking",
@@ -998,7 +998,7 @@ Examples:
         "-m",
         "--module",
         action="store_true",
-        help="Run target as a module (like python -m)",
+        help="Run target as a module (like `python -m`)",
     )
     run_parser.add_argument(
         "target",

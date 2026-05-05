@@ -1081,7 +1081,7 @@ def _main(args=None):
     import argparse
     import contextlib
 
-    parser = argparse.ArgumentParser(color=True)
+    parser = argparse.ArgumentParser()
     parser.add_argument('-b', '--bind', metavar='ADDRESS',
                         help='bind to this address '
                              '(default: all interfaces)')

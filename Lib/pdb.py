@@ -3757,13 +3757,12 @@ def parse_args():
         description=_usage,
         formatter_class=argparse.RawDescriptionHelpFormatter,
         allow_abbrev=False,
-        color=True,
     )
 
     # Get all the commands out first. For backwards compatibility, we allow
     # -c commands to be after the target.
     parser.add_argument('-c', '--command', action='append', default=[], metavar='command', dest='commands',
-                        help='pdb commands to execute as if given in a .pdbrc file')
+                        help='pdb commands to execute as if given in a `.pdbrc` file')
 
     opts, args = parser.parse_known_args()
 
