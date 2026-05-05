@@ -2710,7 +2710,7 @@ do_tstate_ensure(void *arg)
     PyThreadState_Release(tokens[1]);
     PyThreadState_Release(tokens[0]);
     PyInterpreterGuard_Close(guard);
-    data->done = 1;
+    _Py_atomic_store_int(&data->done, 1);
 }
 
 static int
@@ -2731,7 +2731,7 @@ test_thread_state_ensure(void)
     // have to worry about the interpreter shutting down before
     // we finalize.
     Py_Finalize();
-    assert(data.done == 1);
+    assert(_Py_atomic_load_int(&data.done) == 1);
     PyThread_join_thread(handle);
     return 0;
 }
@@ -2774,7 +2774,7 @@ do_tstate_ensure_from_view(void *arg)
     _PyEvent_Notify(&data->event);
     int res = PyRun_SimpleString(THREAD_CODE);
     assert(res == 0);
-    data->done = 1;
+    _Py_atomic_store_int(&data->done, 1);
     PyThreadState_Release(token);
 }
 
@@ -2796,7 +2796,7 @@ test_thread_state_ensure_from_view(void)
 
     PyEvent_Wait(&data.event);
     Py_Finalize();
-    assert(data.done == 1);
+    assert(_Py_atomic_load_int(&data.done) == 1);
     PyThread_join_thread(handle);
     return 0;
 }
