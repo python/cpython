@@ -2732,6 +2732,7 @@ test_thread_state_ensure(void)
     // we finalize.
     Py_Finalize();
     assert(data.done == 1);
+    PyThread_join_thread(handle);
     return 0;
 }
 
@@ -2796,6 +2797,7 @@ test_thread_state_ensure_from_view(void)
     PyEvent_Wait(&data.event);
     Py_Finalize();
     assert(data.done == 1);
+    PyThread_join_thread(handle);
     return 0;
 }
 
