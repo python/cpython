@@ -135,14 +135,18 @@ Xxo_state_from_type(PyTypeObject *type)
 }
 
 // Structure for data needed by the XxoObject type.
+// Since the object may be shared across threads, access to the fields
+// usually needs to be synchronized (using Py_BEGIN_CRITICAL_SECTION).
 typedef struct {
-    PyObject            *x_attr;           /* Attributes dictionary.
-                                            * May be NULL, which acts as an
-                                            * empty dict.
-                                            */
-    char                x_buffer[BUFSIZE]; /* buffer for Py_buffer */
-    Py_ssize_t          x_exports;         /* how many buffer are exported */
-    PyThread_type_lock  x_lock;            /* Lock for thread safety */
+    PyObject   *x_attr;           /* Attributes dictionary.
+                                   * May be NULL, which acts as an
+                                   * empty dict.
+                                   */
+    Py_ssize_t x_exports;         /* how many buffers are exported */
+    char       x_buffer[BUFSIZE]; /* buffer for Py_buffer (for simplicity,
+                                   * this is constant, so does not need
+                                   * synchronization)
+                                   */
 } XxoObject_Data;
 
 // Get the `XxoObject_Data` structure for a given instance of our type.
@@ -200,16 +204,11 @@ Xxo_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     // Initialize the C members on the instance.
     // This is only included for the sake of example. The default alloc
     // function zeroes instance memory; we don't need to do it again.
+    // Note that we during initialization (and finalization), we hold the only
+    // reference to the object, so we don't need to synchronize with
+    // other threads.
     XxoObject_Data *xxo_data = Xxo_get_data(self);
     if (xxo_data == NULL) {
-        Py_DECREF(self);
-        return NULL;
-    }
-
-    // Set up a per-instance lock for thread safety.
-    xxo_data->x_lock = PyThread_allocate_lock();
-    if (xxo_data->x_lock == NULL) {
-        PyErr_SetString(PyExc_SystemError, "could not allocate lock");
         Py_DECREF(self);
         return NULL;
     }
@@ -276,14 +275,6 @@ Xxo_dealloc(PyObject *self)
     PyObject_GC_UnTrack(self);
     Xxo_finalize(self);
 
-    // Free x_lock. This is not a Python object so it cannot
-    // form reference cycles, so it's only handled here, not in
-    // the traverse, clear and finalize handlers.
-    XxoObject_Data *data = Xxo_get_data(self);
-    if (data && data->x_lock) {
-        PyThread_free_lock(data->x_lock);
-    }
-
     PyTypeObject *tp = Py_TYPE(self);
     freefunc free = PyType_GetSlot(tp, Py_tp_free);
     free(self);
@@ -306,8 +297,14 @@ Xxo_getattro(PyObject *self, PyObject *name)
     if (data == NULL) {
         return 0;
     }
-    if (data->x_attr != NULL) {
-        PyObject *v = PyDict_GetItemWithError(data->x_attr, name);
+
+    PyObject *x_attr;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    x_attr = data->x_attr;
+    Py_END_CRITICAL_SECTION();
+
+    if (x_attr != NULL) {
+        PyObject *v = PyDict_GetItemWithError(x_attr, name);
         if (v != NULL) {
             return Py_NewRef(v);
         }
@@ -336,24 +333,23 @@ Xxo_setattro(PyObject *self, PyObject *name, PyObject *v)
     }
 
     // If the attribute dict is not created yet, make one.
-    // This needs to be protected by a lock to avoid another thread
+    // This needs to be protected by a critical section to avoid another thread
     // creating a duplicate dict.
-    PyThread_acquire_lock(data->x_lock, 1);
-    if (data->x_attr == NULL) {
+    PyObject *x_attr;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    x_attr = data->x_attr;
+    if (x_attr == NULL) {
         // prepare the attribute dict
-        data->x_attr = PyDict_New();
-        PyThread_release_lock(data->x_lock);
-        if (data->x_attr == NULL) {
-            return -1;
-        }
+        data->x_attr = x_attr = PyDict_New();
     }
-    else {
-        PyThread_release_lock(data->x_lock);
+    Py_END_CRITICAL_SECTION();
+    if (x_attr == NULL) {
+        return -1;
     }
 
     if (v == NULL) {
         // delete an attribute
-        int rv = PyDict_DelItem(data->x_attr, name);
+        int rv = PyDict_DelItem(x_attr, name);
         if (rv < 0 && PyErr_ExceptionMatches(PyExc_KeyError)) {
             PyErr_SetString(PyExc_AttributeError,
                 "delete non-existing Xxo attribute");
@@ -363,7 +359,7 @@ Xxo_setattro(PyObject *self, PyObject *name, PyObject *v)
     }
     else {
         // set an attribute
-        return PyDict_SetItem(data->x_attr, name, v);
+        return PyDict_SetItem(x_attr, name, v);
     }
 }
 
@@ -421,7 +417,9 @@ Xxo_getbuffer(PyObject *self, Py_buffer *view, int flags)
                                (void *)data->x_buffer, BUFSIZE,
                                0, flags);
     if (res == 0) {
+        Py_BEGIN_CRITICAL_SECTION(self);
         data->x_exports++;
+        Py_END_CRITICAL_SECTION();
     }
     return res;
 }
@@ -433,7 +431,9 @@ Xxo_releasebuffer(PyObject *self, Py_buffer *Py_UNUSED(view))
     if (data == NULL) {
         return;
     }
+    Py_BEGIN_CRITICAL_SECTION(self);
     data->x_exports--;
+    Py_END_CRITICAL_SECTION();
 }
 
 static PyObject *
@@ -443,7 +443,13 @@ Xxo_get_x_exports(PyObject *self, void *Py_UNUSED(closure))
     if (data == NULL) {
         return NULL;
     }
-    return PyLong_FromSsize_t(data->x_exports);
+    Py_ssize_t result;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = data->x_exports;
+    Py_END_CRITICAL_SECTION();
+
+    return PyLong_FromSsize_t(result);
 }
 
 /* Xxo type definition */
@@ -629,40 +635,40 @@ xx_free(void *module)
 // Information that CPython uses to prevent loading incompatible extenstions
 PyABIInfo_VAR(abi_info);
 
-static PyModuleDef_Slot xx_slots[] = {
+static PySlot xx_slots[] = {
     /* Basic metadata */
-    {Py_mod_name, "xxlimited"},
-    {Py_mod_doc, (void*)module_doc},
-    {Py_mod_abi, &abi_info},
+    PySlot_STATIC_DATA(Py_mod_name, "xxlimited"),
+    PySlot_STATIC_DATA(Py_mod_doc, (void*)module_doc),
+    PySlot_DATA(Py_mod_abi, &abi_info),
 
     /* The method table */
-    {Py_mod_methods, xx_methods},
+    PySlot_STATIC_DATA(Py_mod_methods, xx_methods),
 
     /* exec function to initialize the module (called as part of import
      * after the object was added to sys.modules)
      */
-    {Py_mod_exec, xx_modexec},
+    PySlot_FUNC(Py_mod_exec, xx_modexec),
 
     /* Module state and associated functions */
-    {Py_mod_state_size, (void*)sizeof(xx_state)},
-    {Py_mod_state_traverse, xx_traverse},
-    {Py_mod_state_clear, xx_clear},
-    {Py_mod_state_free, xx_free},
+    PySlot_SIZE(Py_mod_state_size, (void*)sizeof(xx_state)),
+    PySlot_FUNC(Py_mod_state_traverse, xx_traverse),
+    PySlot_FUNC(Py_mod_state_clear, xx_clear),
+    PySlot_FUNC(Py_mod_state_free, xx_free),
 
     /* Signal that this module supports being loaded in multiple interpreters
      * with separate GILs (global interpreter locks).
      * See "Isolating Extension Modules" on how to prepare a module for this:
      *   https://docs.python.org/3/howto/isolating-extensions.html
      */
-    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    PySlot_DATA(Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED),
 
     /* Signal that this module does not rely on the GIL for its own needs.
      * Without this slot, free-threaded builds of CPython will enable
      * the GIL when this module is loaded.
      */
-    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    PySlot_DATA(Py_mod_gil, Py_MOD_GIL_NOT_USED),
 
-    {0, NULL}
+    PySlot_END
 };
 
 
