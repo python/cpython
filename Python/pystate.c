@@ -3484,7 +3484,7 @@ PyThreadState_Ensure(PyInterpreterGuard *guard)
     if (attached_tstate != NULL && attached_tstate->interp == interp) {
         /* Yay! We already have an attached thread state that matches. */
         ++attached_tstate->ensure.counter;
-        return NO_TSTATE_SENTINEL;
+        return attached_tstate;
     }
 
     PyThreadState *detached_gilstate = gilstate_get();
@@ -3570,6 +3570,12 @@ PyThreadState_Release(PyThreadStateToken *token)
         ++tstate->ensure.counter;
         PyThreadState_Clear(tstate);
         --tstate->ensure.counter;
+    }
+
+    // This is usually done by PyThreadState_Clear(), but we need to do it
+    // manually if we don't own the thread state.
+    if (owned_guard != NULL) {
+        tstate->ensure.owned_guard = NULL;
     }
 
     PyThreadState *check_tstate = PyThreadState_Swap(to_restore);

@@ -2935,6 +2935,56 @@ test_thread_state_release_with_destructor(void)
     return 0;
 }
 
+static int
+test_thread_state_ensure_from_view_interp_switch(void)
+{
+    _testembed_initialize();
+
+    /* The main tstate is already attached and was NOT created by
+     * PyThreadState_Ensure, so delete_on_release == 0. */
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(interp != NULL);
+    PyInterpreterView *view = PyInterpreterView_FromCurrent();
+    assert(view != NULL);
+
+    /* First Ensure/Release pair on this pre-existing tstate. */
+    assert(_PyThreadState_GET() != NULL);
+    PyThreadStateToken *t1 = PyThreadState_EnsureFromView(view);
+    assert(t1 != NULL);
+    assert(_PyInterpreterState_GuardCountdown(interp) == 1);
+    PyThreadState_Release(t1);
+    assert(_PyInterpreterState_GuardCountdown(interp) == 0);
+    assert(_PyThreadState_GET() != NULL);
+
+    /* tstate->ensure.owned_guard now points at the freed guard. */
+
+    /* Re-attach: Bug B detaches us as a side effect (separate repro). */
+    PyThreadState *save = PyThreadState_Swap(NULL);
+
+    PyThreadStateToken *t2 = PyThreadState_EnsureFromView(view);
+    assert(_PyInterpreterState_GuardCountdown(interp) == 1);
+    assert(t2 != NULL);
+    PyThreadState_Release(t2);
+    assert(_PyInterpreterState_GuardCountdown(interp) == 0);
+    assert(_PyThreadState_GET() == NULL);
+
+    PyThreadState_Swap(save);
+
+    /* In a release build (no assertion) the second Ensure silently
+     * skipped storing its guard and Release decremented the global
+     * counter from 0, wrapping it to GUARDS_NOT_ALLOWED.  All future
+     * guard acquisitions then fail: */
+    PyInterpreterGuard *g = PyInterpreterGuard_FromCurrent();
+    assert(g != NULL);
+    assert(_PyInterpreterState_GuardCountdown(interp) == 1);
+    PyInterpreterGuard_Close(g);
+    assert(_PyInterpreterState_GuardCountdown(interp) == 0);
+
+    PyInterpreterView_Close(view);
+    Py_Finalize();
+    return 0;
+}
+
 /* *********************************************************
  * List of test cases and the function that implements it.
  *
@@ -3034,6 +3084,7 @@ static struct TestCase TestCases[] = {
     {"test_thread_state_ensure_from_view", test_thread_state_ensure_from_view},
     {"test_concurrent_finalization_stress", test_concurrent_finalization_stress},
     {"test_thread_state_release_with_destructor", test_thread_state_release_with_destructor},
+    {"test_thread_state_ensure_from_view_interp_switch", test_thread_state_ensure_from_view_interp_switch},
     {NULL, NULL}
 };
 
