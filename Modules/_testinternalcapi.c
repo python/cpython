@@ -3237,6 +3237,7 @@ static PyMethodDef module_functions[] = {
     {"test_interp_guard_countdown", test_interp_guard_countdown, METH_NOARGS},
     {"test_interp_view_countdown", test_interp_view_countdown, METH_NOARGS},
     {"test_thread_state_ensure_from_view_interp_switch", test_thread_state_ensure_from_view_interp_switch, METH_NOARGS},
+    {"test_thread_state_release_with_destructor", test_thread_state_release_with_destructor, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
