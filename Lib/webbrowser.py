@@ -734,7 +734,7 @@ if sys.platform == "ios":
 def parse_args(arg_list: list[str] | None):
     import argparse
     parser = argparse.ArgumentParser(
-        description="Open URL in a web browser.", color=True,
+        description="Open URL in a web browser.",
     )
     parser.add_argument("url", help="URL to open")
 

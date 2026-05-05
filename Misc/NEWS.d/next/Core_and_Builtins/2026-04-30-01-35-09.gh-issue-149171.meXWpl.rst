@@ -1,0 +1,2 @@
+Allow assignment to the ``__module__`` attribute of
+:class:`typing.TypeAliasType` instances.

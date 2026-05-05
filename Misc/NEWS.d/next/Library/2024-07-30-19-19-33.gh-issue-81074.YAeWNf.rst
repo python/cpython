@@ -1,0 +1,8 @@
+The :mod:`email` module no longer treats email addresses with non-ASCII
+characters as defects when parsing a Unicode string or in the ``addr_spec``
+parameter to :class:`email.headerregistry.Address`. :rfc:`5322` permits such
+addresses, and they were already supported when parsing bytes and in the Address
+``username`` parameter.
+
+The (undocumented) :exc:`!email.errors.NonASCIILocalPartDefect` is no longer
+used and should be considered deprecated.

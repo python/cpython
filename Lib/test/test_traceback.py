@@ -4565,6 +4565,95 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
         actual = self.get_suggestion(Outer(), 'target')
         self.assertIn("'.normal.target'", actual)
 
+    @force_not_colorized
+    def test_cross_language(self):
+        cases = [
+            # (type, attr, hint_attr)
+            (list, 'push', 'append'),
+            (list, 'concat', 'extend'),
+            (list, 'addAll', 'extend'),
+            (str, 'toUpperCase', 'upper'),
+            (str, 'toLowerCase', 'lower'),
+            (str, 'trimStart', 'lstrip'),
+            (str, 'trimEnd', 'rstrip'),
+            (dict, 'keySet', 'keys'),
+            (dict, 'entrySet', 'items'),
+            (dict, 'entries', 'items'),
+            (dict, 'putAll', 'update'),
+        ]
+        for test_type, attr, hint_attr in cases:
+            with self.subTest(type=test_type.__name__, attr=attr):
+                obj = test_type()
+                actual = self.get_suggestion(obj, attr)
+                self.assertEndsWith(actual, f"Did you mean '.{hint_attr}'?")
+
+        cases = [
+            # (type, attr, hint)
+            (list, 'contains', "Use 'x in list'."),
+            (list, 'add', "Did you mean to use a 'set' object?"),
+            (dict, 'put', "Use d[k] = v."),
+        ]
+        for test_type, attr, expected in cases:
+            with self.subTest(type=test_type, attr=attr):
+                obj = test_type()
+                actual = self.get_suggestion(obj, attr)
+                self.assertEndsWith(actual, expected)
+
+    @force_not_colorized
+    def test_cross_language_levenshtein_fallback(self):
+        # When no cross-language entry exists, Levenshtein still works
+        # (e.g., trim->strip is not in the table but Levenshtein catches it)
+        actual = self.get_suggestion('', 'trim')
+        self.assertIn("strip", actual)
+
+    @force_not_colorized
+    def test_cross_language_no_hint_for_unknown_attr(self):
+        actual = self.get_suggestion([], 'completely_unknown_method')
+        self.assertNotIn("Did you mean", actual)
+
+    @force_not_colorized
+    def test_cross_language_works_for_subclasses(self):
+        # isinstance() check means subclasses also get hints
+        class MyList(list):
+            pass
+        actual = self.get_suggestion(MyList(), 'push')
+        self.assertEndsWith(actual, "Did you mean '.append'?")
+
+        class MyDict(dict):
+            pass
+        actual = self.get_suggestion(MyDict(), 'keySet')
+        self.assertEndsWith(actual, "Did you mean '.keys'?")
+
+    @force_not_colorized
+    def test_cross_language_mutable_on_immutable(self):
+        # Mutable method on immutable type suggests the mutable counterpart
+        cases = [
+            (tuple, 'append', "Did you mean to use a 'list' object?"),
+            (tuple, 'extend', "Did you mean to use a 'list' object?"),
+            (tuple, 'insert', "Did you mean to use a 'list' object?"),
+            (tuple, 'remove', "Did you mean to use a 'list' object?"),
+            (frozenset, 'add', "Did you mean to use a 'set' object?"),
+            (frozenset, 'discard', "Did you mean to use a 'set' object?"),
+            (frozenset, 'remove', "Did you mean to use a 'set' object?"),
+            (frozenset, 'update', "Did you mean to use a 'set' object?"),
+            (frozendict, 'update', "Did you mean to use a 'dict' object?"),
+        ]
+        for test_type, attr, expected in cases:
+            with self.subTest(type=test_type.__name__, attr=attr):
+                obj = test_type()
+                actual = self.get_suggestion(obj, attr)
+                self.assertEndsWith(actual, expected)
+
+    @force_not_colorized
+    def test_cross_language_float_bitwise(self):
+        # Bitwise operators on float suggest using int
+        cases = ['__or__', '__and__', '__xor__', '__lshift__', '__rshift__']
+        for attr in cases:
+            with self.subTest(attr=attr):
+                actual = self.get_suggestion(1.0, attr)
+                self.assertIn("'int'", actual)
+                self.assertIn("Bitwise operators", actual)
+
     def make_module(self, code):
         tmpdir = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, tmpdir)

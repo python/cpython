@@ -1,0 +1,4 @@
+:func:`unittest.TestCase.assertWarns` and
+:func:`unittest.TestCase.assertWarnsRegex` no longer swallow warnings that
+do not match the specified category or regex.
+Nested context managers are now supported.

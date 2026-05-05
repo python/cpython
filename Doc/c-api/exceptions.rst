@@ -818,13 +818,15 @@ Exception Classes
 
 .. c:macro:: PyException_HEAD
 
-   This is a :term:`soft deprecated` macro including the base fields for an
+   This is a macro including the base fields for an
    exception object.
 
    This was included in Python's C API by mistake and is not designed for use
    in extensions. For creating custom exception objects, use
    :c:func:`PyErr_NewException` or otherwise create a class inheriting from
    :c:data:`PyExc_BaseException`.
+
+   .. soft-deprecated:: 3.15
 
 
 Exception Objects
