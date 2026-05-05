@@ -533,7 +533,9 @@ class open_input_in_editor(EditCommand):
         if not editor:
             editor = "vi" if os.name != "nt" else "notepad"
 
-        with tempfile.NamedTemporaryFile(mode="w+", suffix=".py", delete=False, encoding="utf-8") as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w+", suffix=".py", delete=False, encoding="utf-8"
+        ) as f:
             tmp_path = Path(f.name)
             f.write("".join(r.buffer))
             f.flush()
