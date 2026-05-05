@@ -2912,12 +2912,7 @@ sys_get_lazy_imports_impl(PyObject *module)
 static PyObject *
 sys_getattr(PyObject *self, PyObject *name)
 {
-    if (!PyUnicode_Check(name)) {
-        PyErr_Format(PyExc_TypeError,
-                     "attribute name must be string, not '%T'", name);
-        return NULL;
-    }
-    if (_PyUnicode_EqualToASCIIString(name, "lazy_modules")) {
+    if (PyUnicode_Check(name) && PyUnicode_EqualToUTF8(name, "lazy_modules")) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
         return _PyImport_GetLazyModulesSnapshot(interp);
     }
