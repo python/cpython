@@ -2381,11 +2381,9 @@ make_pre_finalization_calls(PyThreadState *tstate, int subinterpreters)
                 break;
             }
         }
-        // Temporarily let other threads execute
-        _PyThreadState_Detach(tstate);
+
         _PyEval_StartTheWorldAll(interp->runtime);
         PyMutex_Unlock(&interp->ceval.pending.mutex);
-        _PyThreadState_Attach(tstate);
     }
     assert(PyMutex_IsLocked(&interp->ceval.pending.mutex));
     assert(_Py_atomic_load_uintptr(&interp->finalization_guards) == _PyInterpreterGuard_GUARDS_NOT_ALLOWED);
