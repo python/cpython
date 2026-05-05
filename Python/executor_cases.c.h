@@ -12015,8 +12015,7 @@
             PyObject *descr = (PyObject *)CURRENT_OPERAND0_64();
             PyTypeObject *descr_type = Py_TYPE(descr);
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-            if ((descr_type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0
-                    && descr_type != (PyTypeObject *)owner_o) {
+            if (descr_type != (PyTypeObject *)owner_o) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache0 = owner;
                 SET_CURRENT_CACHED_VALUES(1);
