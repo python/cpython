@@ -2022,6 +2022,7 @@ class TestArchives(BaseTest, unittest.TestCase):
 
     @support.requires_lzma()
     @unittest.skipIf(AIX and not _maxdataOK(), "AIX MAXDATA must be 0x20000000 or larger")
+    @unittest.skipIf(support.is_nanvix_standalone, "NSKIP019: LZMACompressor exceeds 32 MB heap")
     def test_unpack_archive_xztar(self):
         self.check_unpack_tarball('xztar')
 

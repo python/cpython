@@ -24,6 +24,11 @@ import json
 import os
 import shutil
 import sys
+
+# ---------------------------------------------------------------------------
+# Local modules (loaded via importlib since .nanvix/ is not a valid package name)
+# ---------------------------------------------------------------------------
+import sys as _sys
 import tarfile
 import tempfile
 import urllib.error
@@ -38,12 +43,6 @@ from nanvix_zutil import (
     log,
     suffix_dep,
 )
-
-# ---------------------------------------------------------------------------
-# Local modules (loaded via importlib since .nanvix/ is not a valid package name)
-# ---------------------------------------------------------------------------
-
-import sys as _sys
 
 _sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _loader import load_sibling
@@ -95,6 +94,7 @@ _DEP_EXPECTED_LIBS: dict[str, list[str]] = {
     "libxml2": ["libxml2.a"],
     "libxslt": ["libxslt.a", "libexslt.a"],
     "lxml": ["liblxml_etree.a", "liblxml_elementpath.a"],
+    "xz": ["liblzma.a"],
 }
 
 

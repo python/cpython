@@ -88,6 +88,8 @@ class Bz2Test:
     taropen = tarfile.TarFile.bz2open
 
 @support.requires_lzma()
+@unittest.skipIf(support.is_nanvix_standalone,
+                 "NSKIP019: LZMACompressor (xz preset 6) exceeds 32 MB heap")
 class LzmaTest:
     tarname = xzname
     suffix = 'xz'
@@ -4209,7 +4211,11 @@ def setUpModule():
         data = fobj.read()
 
     # Create compressed tarfiles.
-    for c in GzipTest, Bz2Test, LzmaTest:
+    classes = (GzipTest, Bz2Test, LzmaTest)
+    if support.is_nanvix_standalone:
+        # NSKIP019: LZMACompressor (xz preset 6) exceeds 32 MB heap
+        classes = (GzipTest, Bz2Test)
+    for c in classes:
         if c.open:
             os_helper.unlink(c.tarname)
             testtarnames.append(c.tarname)
