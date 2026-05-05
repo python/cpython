@@ -1210,12 +1210,11 @@ pickletools
 pprint
 ------
 
-* Add an *expand* keyword argument for :func:`pprint.pprint`,
-  :func:`pprint.pformat`, :func:`pprint.pp`. If true, the output will be
-  formatted similar to pretty-printed :func:`json.dumps` when
-  *indent* is supplied.
+* :mod:`pprint` now uses modern defaults: ``indent=4, width=88``,
+  and the default ``compact=False`` output is now formatted similar to
+  pretty-printed :func:`json.dumps`.
   (Contributed by Stefan Todoran, Semyon Moroz and Hugo van Kemenade in
-  :gh:`112632`.)
+  :gh:`112632` and :gh:`149189`.)
 
 * Add t-string support to :mod:`pprint`.
   (Contributed by Loïc Simon and Hugo van Kemenade in :gh:`134551`.)
