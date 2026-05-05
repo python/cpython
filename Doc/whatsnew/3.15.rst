@@ -835,6 +835,12 @@ argparse
   double backticks (RST inline-literal style).
   (Contributed by Hugo van Kemenade in :gh:`149375`.)
 
+* Added ``subnamespace`` keyword-only flag to
+  :meth:`argparse._SubParsersAction.add_parser` to allow nested
+  :class:`argparse.Namespace`\ s, which correspond with the hierarchical
+  nature of subparsers. By default ``subnamespace`` is ``False`` for
+  backwards compatibility.
+
 
 array
 -----
