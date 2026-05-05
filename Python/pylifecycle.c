@@ -2225,28 +2225,35 @@ resolve_final_tstate(_PyRuntimeState *runtime)
 #endif
 
 static int
-interp_has_threads(PyInterpreterState *interp)
+interp_has_threads_locked(PyInterpreterState *interp)
 {
     /* This needs to check for non-daemon threads only, otherwise we get stuck
      * in an infinite loop. */
-    assert(interp != NULL);
-    ASSERT_WORLD_STOPPED(interp);
+    ASSERT_HEAD_IS_LOCKED(interp->runtime);
     assert(interp->threads.head != NULL);
     if (interp->threads.head->next == NULL) {
         // No other threads active, easy way out.
         return 0;
     }
 
-    HEAD_LOCK(interp->runtime);
     _Py_FOR_EACH_TSTATE_UNLOCKED(interp, tstate) {
         if (tstate->_whence == _PyThreadState_WHENCE_THREADING) {
-            HEAD_UNLOCK(interp->runtime);
             return 1;
         }
     }
-    HEAD_UNLOCK(interp->runtime);
 
     return 0;
+}
+
+static int
+interp_has_threads(PyInterpreterState *interp)
+{
+    assert(interp != NULL);
+    ASSERT_WORLD_STOPPED(interp);
+    HEAD_LOCK(interp->runtime);
+    int res = interp_has_threads_locked(interp);
+    HEAD_UNLOCK(interp->runtime);
+    return res;
 }
 
 static int
