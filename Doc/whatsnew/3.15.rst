@@ -76,7 +76,7 @@ Summary -- Release highlights
 * :pep:`799`: :ref:`Tachyon: High frequency statistical sampling profiler
   <whatsnew315-sampling-profiler>`
 * :pep:`831`: :ref:`Frame pointers are enabled by default for improved
-  system-level observability <whatsnew315-pep831>`
+  system-level observability <whatsnew315-frame-pointers>`
 * :pep:`798`: :ref:`Unpacking in comprehensions
   <whatsnew315-unpacking-in-comprehensions>`
 * :pep:`686`: :ref:`Python now uses UTF-8 as the default encoding
@@ -379,7 +379,7 @@ available output formats, profiling modes, and configuration options.
 (Contributed by Pablo Galindo and László Kiss Kollár in :gh:`135953` and :gh:`138122`.)
 
 
-.. _whatsnew315-pep831:
+.. _whatsnew315-frame-pointers:
 
 :pep:`831`: Frame pointers enabled by default
 ---------------------------------------------
