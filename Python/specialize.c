@@ -2761,6 +2761,14 @@ _Py_Specialize_Send(_PyStackRef receiver_st, _Py_CODEUNIT *instr)
         specialize(instr, SEND_GEN);
         return;
     }
+    if (tp->_tp_iteritem != NULL) {
+        specialize(instr, SEND_VIRTUAL);
+        return;
+    }
+    if (tp == &_PyAsyncGenASend_Type) {
+        specialize(instr, SEND_ASYNC_GEN);
+        return;
+    }
     SPECIALIZATION_FAIL(SEND,
                         _PySpecialization_ClassifyIterator(receiver));
 failure:

@@ -2701,7 +2701,32 @@ dummy_func(void) {
         stack_pointer = sym_set_stack_depth((int)this_instr->operand1, stack_pointer);
     }
 
+    op(_GUARD_TOS_NOT_NULL, (null_or_index -- null_or_index)) {
+        if (sym_is_not_null(null_or_index)) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        else {
+            sym_set_non_null(null_or_index);
+        }
+    }
 
+    op(_GUARD_3OS_ASYNC_GEN_ASEND, (iter, null_or_index, value -- iter, null_or_index, value)) {
+        if (sym_matches_type(iter, &_PyAsyncGenASend_Type)) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        else {
+            sym_set_type(iter, &_PyAsyncGenASend_Type);
+        }
+    }
+
+    op(_GET_ANEXT, (aiter -- aiter, awaitable)) {
+        if (sym_matches_type(aiter, &PyAsyncGen_Type)) {
+            awaitable = sym_new_type(ctx, &_PyAsyncGenASend_Type);
+        }
+        else {
+            awaitable = sym_new_not_null(ctx);
+        }
+    }
 
 // END BYTECODES //
 

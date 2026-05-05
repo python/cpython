@@ -81,13 +81,16 @@ Summary -- Release highlights
   <whatsnew315-unpacking-in-comprehensions>`
 * :pep:`686`: :ref:`Python now uses UTF-8 as the default encoding
   <whatsnew315-utf8-default>`
-* :pep:`728`: ``TypedDict`` with typed extra items
+* :pep:`728`: :ref:`TypedDict with typed extra items <whatsnew315-typeddict>`
 * :pep:`747`: :ref:`Annotating type forms with TypeForm
   <whatsnew315-typeform>`
 * :pep:`800`: Disjoint bases in the type system
 * :pep:`782`: :ref:`A new PyBytesWriter C API to create a Python bytes object
   <whatsnew315-pybyteswriter>`
 * :pep:`803`: :ref:`Stable ABI for Free-Threaded Builds <whatsnew315-abi3t>`
+* :pep:`803`, :pep:`820 <820>`, :pep:`793 <793>`:
+  :ref:`Stable ABI for Free-Threaded Builds <whatsnew315-abi3t>` and
+  related C API
 * :pep:`788`: :ref:`Protection against finalization in the C API <whatsnew315-c-api-interpreter-finalization>`
 * :ref:`The JIT compiler has been significantly upgraded <whatsnew315-jit>`
 * :ref:`Improved error messages <whatsnew315-improved-error-messages>`
@@ -453,7 +456,7 @@ agen() for x in a)``.
 
 .. _whatsnew315-abi3t:
 
-:pep:`803`: ``abi3t`` -- Stable ABI for Free-Threaded Builds
+:pep:`803` -- Stable ABI for Free-Threaded Builds
 ------------------------------------------------------------
 
 C extensions that target the :ref:`Stable ABI <stable-abi>` can now be
@@ -469,7 +472,12 @@ specifically:
   part of the instance struct; and
 - Switching from a ``PyInit_`` function to a new export hook,
   :c:func:`PyModExport_* <PyModExport_modulename>`, introduced for this
-  purpose in :pep:`793`.
+  purpose in :pep:`793`, with a new :c:type:`PySlot` structure
+  introduced in :pep:`820`.
+
+The reference documentation for these features is complete, but currently
+aimed at early adopters.
+A migration guide is planned for an upcoming beta release.
 
 Note that Stable ABI does not offer all the functionality that CPython
 has to offer.
@@ -1031,15 +1039,6 @@ difflib
   (Contributed by Jiahao Li in :gh:`134580`.)
 
 
-faulthandler
-------------
-
-* Added the *max_threads* parameter in :func:`faulthandler.enable`,
-  :func:`faulthandler.dump_traceback`, :func:`faulthandler.dump_traceback_later`,
-  and :func:`faulthandler.register`.
-  (Contributed by Eric Froemling in :gh:`149085`.)
-
-
 email
 -----
 
@@ -1048,6 +1047,15 @@ email
   header. Options for supporting Email Address Internationalization (EAI) are
   discussed in :attr:`.EmailPolicy.utf8`.
   (Contributed by R David Murray and Mike Edmunds in :gh:`122540`.)
+
+
+faulthandler
+------------
+
+* Added the *max_threads* parameter in :func:`faulthandler.enable`,
+  :func:`faulthandler.dump_traceback`, :func:`faulthandler.dump_traceback_later`,
+  and :func:`faulthandler.register`.
+  (Contributed by Eric Froemling in :gh:`149085`.)
 
 
 functools
@@ -1060,6 +1068,17 @@ functools
 * :func:`~functools.singledispatchmethod` now dispatches on the second argument
   if it wraps a regular method and is called as a class attribute.
   (Contributed by Bartosz Sławecki in :gh:`143535`.)
+
+
+gc
+--
+
+* Python 3.14.0-3.14.4 shipped with a new incremental garbage collector.
+  However, due to a number of `reports
+  <https://github.com/python/cpython/issues/142516>`__
+  of significant memory pressure in production environments,
+  it has been reverted back to the generational GC from 3.13.
+  This is the GC now used in Python 3.14.5 and later and Python 3.15.
 
 
 hashlib
@@ -1225,12 +1244,11 @@ pickletools
 pprint
 ------
 
-* Add an *expand* keyword argument for :func:`pprint.pprint`,
-  :func:`pprint.pformat`, :func:`pprint.pp`. If true, the output will be
-  formatted similar to pretty-printed :func:`json.dumps` when
-  *indent* is supplied.
+* :mod:`pprint` now uses modern defaults: ``indent=4, width=88``,
+  and the default ``compact=False`` output is now formatted similar to
+  pretty-printed :func:`json.dumps`.
   (Contributed by Stefan Todoran, Semyon Moroz and Hugo van Kemenade in
-  :gh:`112632`.)
+  :gh:`112632` and :gh:`149189`.)
 
 * Add t-string support to :mod:`pprint`.
   (Contributed by Loïc Simon and Hugo van Kemenade in :gh:`134551`.)
@@ -1554,6 +1572,15 @@ typing
 
   (Contributed by Jelle Zijlstra in :gh:`145033`.)
 
+.. _whatsnew315-typeddict:
+
+* :pep:`728`: Add support in :class:`~typing.TypedDict` for the *closed*
+  and *extra_items* class arguments. A closed :class:`~typing.TypedDict`
+  does not allow extra keys beyond those specified in the class body, while
+  a :class:`~typing.TypedDict` with ``extra_items`` allows arbitrary extra
+  items where the values are of the specified type. (Contributed by Angela
+  Liss in :gh:`137840`.)
+
 * Code like ``class ExtraTypeVars(P1[S], Protocol[T, T2]): ...`` now raises
   a :exc:`TypeError`, because ``S`` is not listed in ``Protocol`` parameters.
   (Contributed by Nikita Sobolev in :gh:`137191`.)
@@ -1668,6 +1695,14 @@ wave
   as required for non-PCM WAVE formats.
 
 (Contributed by Lionel Koenig and Michiel W. Beijen in :gh:`60729`.)
+
+
+xml
+---
+
+* Add the :func:`xml.is_valid_name` function, which allows to check
+  whether a string can be used as an element or attribute name in XML.
+  (Contributed by Serhiy Storchaka in :gh:`139489`.)
 
 
 xml.parsers.expat
@@ -2222,6 +2257,11 @@ New features
 * Add :c:func:`PyTuple_FromArray` to create a :class:`tuple` from an array.
   (Contributed by Victor Stinner in :gh:`111489`.)
 
+* Add a new module export hook,
+  :c:func:`PyModExport_* <PyModExport_modulename>`.
+
+  (Contributed by Petr Viktorin in :pep:`793` and :gh:`140550`.)
+
 * Add functions that are guaranteed to be safe for use in
   :c:member:`~PyTypeObject.tp_traverse` handlers:
   :c:func:`PyObject_GetTypeData_DuringGC`,
@@ -2236,6 +2276,41 @@ New features
 * Add :c:func:`PyObject_Dump` to dump an object to ``stderr``.
   It should only be used for debugging.
   (Contributed by Victor Stinner in :gh:`141070`.)
+
+* Implement :pep:`820`: ``PySlot`` -- Unified slot system for the C API.
+  See :ref:`capi-slots` for documentation.
+
+  This adds:
+
+  * The :c:type:`PySlot` struct;
+  * the :c:func:`PyType_FromSlots` function;
+  * new slot IDs: :c:macro:`Py_slot_end`, :c:macro:`Py_slot_invalid`;
+    :c:macro:`Py_slot_subslots`, :c:macro:`Py_tp_slots`
+    :c:macro:`Py_mod_slots`;
+    :c:macro:`Py_tp_name`, :c:macro:`Py_tp_basicsize`,
+    :c:macro:`Py_tp_extra_basicsize`, :c:macro:`Py_tp_itemsize`,
+    :c:macro:`Py_tp_flags`, :c:macro:`Py_tp_metaclass`,
+    :c:macro:`Py_tp_module`, :c:macro:`Py_tp_flags`;
+  * convenience macros: :c:macro:`PySlot_DATA`, :c:macro:`PySlot_FUNC`,
+    :c:macro:`PySlot_SIZE` :c:macro:`PySlot_INT64`, :c:macro:`PySlot_UINT64`,
+    :c:macro:`PySlot_STATIC_DATA`, :c:macro:`PySlot_END`,
+    :c:macro:`PySlot_PTR`, :c:macro:`PySlot_PTR_STATIC`.
+
+  The :c:func:`PyModule_FromSlotsAndSpec` function and
+  ``PyModExport`` :ref:`module export hook <extension-export-hook>` also
+  use the new :c:type:`!PySlot` struct.
+
+  These following functions are :term:`soft deprecated`:
+
+  * :c:func:`PyType_FromSpec`
+  * :c:func:`PyType_FromSpecWithBases`
+  * :c:func:`PyType_FromModuleAndSpec`
+  * :c:func:`PyType_FromMetaclass`
+  * :c:func:`PyModule_FromDefAndSpec`
+  * :c:func:`PyModule_FromDefAndSpec2`
+  * :c:func:`PyModule_ExecDef`
+
+  (Contributed by Petr Viktorin in :gh:`149044`.)
 
 * Add :c:func:`PyUnstable_ThreadState_SetStackProtection` and
   :c:func:`PyUnstable_ThreadState_ResetStackProtection` functions to set
