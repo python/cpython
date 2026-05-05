@@ -2335,7 +2335,7 @@ make_pre_finalization_calls(PyThreadState *tstate, int subinterpreters)
                     int fatal = PyErr_ExceptionMatches(PyExc_KeyboardInterrupt);
                     PyErr_FormatUnraisable("Exception ignored while waiting on finalization guards");
                     if (fatal) {
-                        fputs("Interrupted while waiting on finalization guards", stderr);
+                        fputs("Interrupted while waiting on finalization guards\n", stderr);
                         exit(1);
                     }
                 }
