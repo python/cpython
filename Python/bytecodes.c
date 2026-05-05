@@ -1770,7 +1770,7 @@ dummy_func(
             assert(PyStackRef_IsNone(none));
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             Py_ssize_t index = PyStackRef_UntagInt(null_or_index);
-            _PyObjectIndexPair next_index = Py_TYPE(ITER)->_tp_iteritem(iter_o, index);
+            _PyObjectIndexPair next_index = CALL_TP_ITERITEM_NO_ESCAPE(iter_o, index);
             PyObject *next_o = next_index.object;
             index = next_index.index;
             if (next_o == NULL) {
