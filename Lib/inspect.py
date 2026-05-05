@@ -1740,6 +1740,9 @@ def _shadowed_dict(klass):
     # destroyed, and the dynamically created classes happen to be the only
     # objects that hold strong references to other objects that take up a
     # significant amount of memory.
+    # Fast path: `type` is the dominant caller; result is always _sentinel.
+    if klass is type:
+        return _sentinel
     return _shadowed_dict_from_weakref_mro_tuple(
         *[make_weakref(entry) for entry in _static_getmro(klass)]
     )
