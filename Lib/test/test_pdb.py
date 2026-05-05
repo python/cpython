@@ -4981,6 +4981,29 @@ class PdbTestColorize(unittest.TestCase):
         p.set_trace(commands=['w', 'c'])
         self.assertIn("\x1b", output.getvalue())
 
+    @unittest.skipIf(not pdb._pyrepl_available(), "pyrepl is not available")
+    def test_gen_colors(self):
+        p = pdb.Pdb()
+        gen_colors = p.pyrepl_input.gen_colors
+
+        test_cases = [
+            ("longlist", [((0, 7), "soft_keyword")]),
+            ("!longlist", [((0, 0), "op")]),
+            ("list", [((0, 3), "soft_keyword")]),
+            ("list(", [((0, 3), "builtin"), ((4, 4), "op")]),
+            ("a = 1", [
+                ((0, 0), "soft_keyword"),
+                ((2, 2), "op"),
+                ((4, 4), "number"),
+            ])
+        ]
+
+        for buffer, expected in test_cases:
+            for color_span, ((start, end), tag) in zip(gen_colors(buffer), expected, strict=True):
+                self.assertEqual(color_span.span.start, start)
+                self.assertEqual(color_span.span.end, end)
+                self.assertEqual(color_span.tag, tag)
+
 
 @support.force_not_colorized_test_class
 @support.requires_subprocess()

@@ -34,11 +34,11 @@ iterate_threads(
 
     if (0 > _Py_RemoteDebug_PagedReadRemoteMemory(
                 &unwinder->handle,
-                unwinder->interpreter_addr + (uintptr_t)unwinder->debug_offsets.interpreter_state.threads_main,
+                unwinder->interpreter_addr + (uintptr_t)unwinder->debug_offsets.interpreter_state.threads_head,
                 sizeof(void*),
                 &thread_state_addr))
     {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read main thread state");
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read threads head");
         return -1;
     }
 

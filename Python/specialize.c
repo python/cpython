@@ -1595,7 +1595,9 @@ _Py_Specialize_StoreSubscr(_PyStackRef container_st, _PyStackRef sub_st, _Py_COD
             return;
         }
     }
-    if (container_type == &PyDict_Type) {
+    if (container_type->tp_as_mapping != NULL &&
+        container_type->tp_as_mapping->mp_ass_subscript == _PyDict_StoreSubscript)
+    {
         specialize(instr, STORE_SUBSCR_DICT);
         return;
     }
@@ -2430,7 +2432,9 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
                     }
                 }
             }
-            if (PyAnyDict_CheckExact(lhs)) {
+            if (Py_TYPE(lhs)->tp_as_mapping != NULL &&
+                Py_TYPE(lhs)->tp_as_mapping->mp_subscript == _PyDict_Subscript)
+            {
                 specialize(instr, BINARY_OP_SUBSCR_DICT);
                 return;
             }
@@ -2756,6 +2760,14 @@ _Py_Specialize_Send(_PyStackRef receiver_st, _Py_CODEUNIT *instr)
             goto failure;
         }
         specialize(instr, SEND_GEN);
+        return;
+    }
+    if (tp->_tp_iteritem != NULL) {
+        specialize(instr, SEND_VIRTUAL);
+        return;
+    }
+    if (tp == &_PyAsyncGenASend_Type) {
+        specialize(instr, SEND_ASYNC_GEN);
         return;
     }
     SPECIALIZATION_FAIL(SEND,
