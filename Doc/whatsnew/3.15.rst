@@ -81,6 +81,7 @@ Summary -- Release highlights
   <whatsnew315-unpacking-in-comprehensions>`
 * :pep:`686`: :ref:`Python now uses UTF-8 as the default encoding
   <whatsnew315-utf8-default>`
+* :pep:`829`: Package startup configuration files
 * :pep:`728`: :ref:`TypedDict with typed extra items <whatsnew315-typeddict>`
 * :pep:`747`: :ref:`Annotating type forms with TypeForm
   <whatsnew315-typeform>`
@@ -94,7 +95,6 @@ Summary -- Release highlights
 * :ref:`Improved error messages <whatsnew315-improved-error-messages>`
 * :ref:`The official Windows 64-bit binaries now use the tail-calling interpreter
   <whatsnew315-windows-tail-calling-interpreter>`
-* :pep:`829`: Package Startup Configuration Files
 
 New features
 ============
