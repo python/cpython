@@ -3567,7 +3567,9 @@ PyThreadState_Release(PyThreadStateToken *token)
     PyInterpreterGuard *owned_guard = tstate->ensure.owned_guard;
     assert(tstate->ensure.delete_on_release == 1 || tstate->ensure.delete_on_release == 0);
     if (tstate->ensure.delete_on_release) {
+        ++tstate->ensure.counter;
         PyThreadState_Clear(tstate);
+        --tstate->ensure.counter;
     }
 
     PyThreadState *check_tstate = PyThreadState_Swap(to_restore);
