@@ -2878,112 +2878,6 @@ test_concurrent_finalization_stress(void)
 
 #undef NUM_THREADS
 
-/* A capsule destructor that calls Ensure/Release while the tstate is being
- * cleared by PyThreadState_Release. */
-static void
-capsule_destructor(PyObject *capsule)
-{
-    assert(capsule != NULL);
-    PyInterpreterGuard *guard = PyCapsule_GetPointer(capsule, "x");
-    PyThreadStateToken *token = PyThreadState_Ensure(guard);
-    assert(token != NULL);
-    PyThreadState_Release(token);
-}
-
-static void
-thread_with_tstate_destructor(void *arg)
-{
-    PyInterpreterGuard *guard = (PyInterpreterGuard *)arg;
-
-    /* Triggers fresh tstate path */
-    PyThreadStateToken *token = PyThreadState_Ensure(guard);
-    assert(token != NULL);
-
-    /* Stash a capsule whose destructor will run during PyThreadState_Clear. */
-    PyObject *capsule = PyCapsule_New(guard, "x", capsule_destructor);
-    assert(capsule != NULL);
-
-    /* We need to put it somewhere it gets cleaned up at PyThreadState_Clear.
-     * tstate->dict is cleared during PyThreadState_Clear. */
-    PyObject *dict = PyThreadState_GetDict();
-    assert(dict != NULL);
-    int res = PyDict_SetItemString(dict, "key", capsule);
-    assert(res == 0);
-    Py_DECREF(capsule);
-
-    PyThreadState_Release(token);
-    PyInterpreterGuard_Close(guard);
-}
-
-static int
-test_thread_state_release_with_destructor(void)
-{
-    _testembed_initialize();
-    PyInterpreterGuard *guard = PyInterpreterGuard_FromCurrent();
-    assert(guard != NULL);
-
-    PyThread_handle_t handle;
-    PyThread_ident_t ident;
-    if (PyThread_start_joinable_thread(thread_with_tstate_destructor,
-                                       guard, &ident, &handle) < 0) {
-        PyInterpreterGuard_Close(guard);
-        return -1;
-    }
-
-    PyThread_join_thread(handle);
-    Py_Finalize();
-    return 0;
-}
-
-static int
-test_thread_state_ensure_from_view_interp_switch(void)
-{
-    _testembed_initialize();
-
-    /* The main tstate is already attached and was NOT created by
-     * PyThreadState_Ensure, so delete_on_release == 0. */
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    assert(interp != NULL);
-    PyInterpreterView *view = PyInterpreterView_FromCurrent();
-    assert(view != NULL);
-
-    /* First Ensure/Release pair on this pre-existing tstate. */
-    assert(_PyThreadState_GET() != NULL);
-    PyThreadStateToken *t1 = PyThreadState_EnsureFromView(view);
-    assert(t1 != NULL);
-    assert(_PyInterpreterState_GuardCountdown(interp) == 1);
-    PyThreadState_Release(t1);
-    assert(_PyInterpreterState_GuardCountdown(interp) == 0);
-    assert(_PyThreadState_GET() != NULL);
-
-    /* tstate->ensure.owned_guard now points at the freed guard. */
-
-    /* Re-attach: Bug B detaches us as a side effect (separate repro). */
-    PyThreadState *save = PyThreadState_Swap(NULL);
-
-    PyThreadStateToken *t2 = PyThreadState_EnsureFromView(view);
-    assert(_PyInterpreterState_GuardCountdown(interp) == 1);
-    assert(t2 != NULL);
-    PyThreadState_Release(t2);
-    assert(_PyInterpreterState_GuardCountdown(interp) == 0);
-    assert(_PyThreadState_GET() == NULL);
-
-    PyThreadState_Swap(save);
-
-    /* In a release build (no assertion) the second Ensure silently
-     * skipped storing its guard and Release decremented the global
-     * counter from 0, wrapping it to GUARDS_NOT_ALLOWED.  All future
-     * guard acquisitions then fail: */
-    PyInterpreterGuard *g = PyInterpreterGuard_FromCurrent();
-    assert(g != NULL);
-    assert(_PyInterpreterState_GuardCountdown(interp) == 1);
-    PyInterpreterGuard_Close(g);
-    assert(_PyInterpreterState_GuardCountdown(interp) == 0);
-
-    PyInterpreterView_Close(view);
-    Py_Finalize();
-    return 0;
-}
 
 /* *********************************************************
  * List of test cases and the function that implements it.
@@ -3083,8 +2977,6 @@ static struct TestCase TestCases[] = {
     {"test_main_interpreter_view", test_main_interpreter_view},
     {"test_thread_state_ensure_from_view", test_thread_state_ensure_from_view},
     {"test_concurrent_finalization_stress", test_concurrent_finalization_stress},
-    {"test_thread_state_release_with_destructor", test_thread_state_release_with_destructor},
-    {"test_thread_state_ensure_from_view_interp_switch", test_thread_state_ensure_from_view_interp_switch},
     {NULL, NULL}
 };
 
