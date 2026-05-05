@@ -2289,6 +2289,7 @@ make_pre_finalization_calls(PyThreadState *tstate, int subinterpreters)
 {
     assert(tstate != NULL);
     PyInterpreterState *interp = tstate->interp;
+    assert(_Py_atomic_load_uintptr(&interp->finalization_guards) != _PyInterpreterGuard_GUARDS_NOT_ALLOWED);
     /* Each of these functions can start one another, e.g. a pending call
      * could start a thread or vice versa. To ensure that we properly clean
      * call everything, we run these in a loop until none of them run anything. */

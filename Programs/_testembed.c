@@ -10,6 +10,7 @@
 #include "pycore_runtime.h"       // _PyRuntime
 #include "pycore_lock.h"          // PyEvent
 #include "pycore_pythread.h"      // PyThread_start_joinable_thread()
+#include "pycore_pystate.h"       // _PyInterpreterState_GuardCountdown
 #include "pycore_import.h"        // _PyImport_FrozenBootstrap
 #include <inttypes.h>
 #include <stdio.h>
@@ -2717,6 +2718,7 @@ static int
 test_thread_state_ensure(void)
 {
     _testembed_initialize();
+    assert(_PyInterpreterState_GuardCountdown(_PyInterpreterState_GET()) == 0);
     PyThread_handle_t handle;
     PyThread_ident_t ident;
     PyInterpreterGuard *guard = PyInterpreterGuard_FromCurrent();
@@ -2746,6 +2748,7 @@ test_main_interpreter_view(void)
     assert(PyThreadState_EnsureFromView(view) == NULL);
 
     _testembed_initialize();
+    assert(_PyInterpreterState_GuardCountdown(_PyInterpreterState_GET()) == 0);
     // Main interpreter is initialized and ready at this point.
 
     PyInterpreterGuard *guard = PyInterpreterGuard_FromView(view);
@@ -2782,6 +2785,7 @@ static int
 test_thread_state_ensure_from_view(void)
 {
     _testembed_initialize();
+    assert(_PyInterpreterState_GuardCountdown(_PyInterpreterState_GET()) == 0);
     PyThread_handle_t handle;
     PyThread_ident_t ident;
     PyInterpreterView *view = PyInterpreterView_FromCurrent();
@@ -2847,6 +2851,7 @@ test_concurrent_finalization_stress(void)
 {
     for (int j = 0; j < 50; ++j) {
         _testembed_initialize();
+        assert(_PyInterpreterState_GuardCountdown(_PyInterpreterState_GET()) == 0);
         PyThread_handle_t handles[NUM_THREADS];
         PyThread_ident_t idents[NUM_THREADS];
         PyInterpreterGuard *guards[NUM_THREADS];
