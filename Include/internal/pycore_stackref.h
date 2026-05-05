@@ -73,10 +73,13 @@ static const _PyStackRef PyStackRef_ERROR = { .index = (1 << Py_TAGGED_SHIFT) };
 #define PyStackRef_None ((_PyStackRef){ .index = (2 << Py_TAGGED_SHIFT) } )
 #define _Py_STACKREF_FALSE_INDEX (3 << Py_TAGGED_SHIFT)
 #define _Py_STACKREF_TRUE_INDEX (4 << Py_TAGGED_SHIFT)
+/* Tier-2 transient bit values (gh-149238). */
+#define _Py_STACKREF_BIT_0_INDEX (5 << Py_TAGGED_SHIFT)
+#define _Py_STACKREF_BIT_1_INDEX (6 << Py_TAGGED_SHIFT)
 #define PyStackRef_False ((_PyStackRef){ .index = _Py_STACKREF_FALSE_INDEX })
 #define PyStackRef_True ((_PyStackRef){ .index = _Py_STACKREF_TRUE_INDEX })
 
-#define INITIAL_STACKREF_INDEX (5 << Py_TAGGED_SHIFT)
+#define INITIAL_STACKREF_INDEX (7 << Py_TAGGED_SHIFT)
 
 #define PyStackRef_ZERO_BITS PyStackRef_NULL
 

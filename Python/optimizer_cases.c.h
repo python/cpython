@@ -345,23 +345,17 @@
             break;
         }
 
-        case _TO_BOOL_INT: {
+        case _TO_BOOL_BIT_INT: {
             JitOptRef value;
-            JitOptRef res;
-            JitOptRef v;
+            JitOptRef bit;
             value = stack_pointer[-1];
-            int already_bool = optimize_to_bool(this_instr, ctx, value, &res,
-                _NOP, _SWAP);
+            int already_bool = optimize_to_bool(this_instr, ctx, value, &bit,
+                _POP_TOP, _NOP);
             if (!already_bool) {
                 sym_set_type(value, &PyLong_Type);
-                res = sym_new_truthiness(ctx, value, true);
+                bit = sym_new_truthiness(ctx, value, true);
             }
-            v = value;
-            CHECK_STACK_BOUNDS(1);
-            stack_pointer[-1] = res;
-            stack_pointer[0] = v;
-            stack_pointer += 1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            stack_pointer[-1] = bit;
             break;
         }
 
@@ -461,22 +455,16 @@
             break;
         }
 
-        case _TO_BOOL_STR: {
+        case _TO_BOOL_BIT_STR: {
             JitOptRef value;
-            JitOptRef res;
-            JitOptRef v;
+            JitOptRef bit;
             value = stack_pointer[-1];
-            int already_bool = optimize_to_bool(this_instr, ctx, value, &res,
-                _NOP, _SWAP);
-            v = value;
+            int already_bool = optimize_to_bool(this_instr, ctx, value, &bit,
+                _POP_TOP, _NOP);
             if (!already_bool) {
-                res = sym_new_truthiness(ctx, value, true);
+                bit = sym_new_truthiness(ctx, value, true);
             }
-            CHECK_STACK_BOUNDS(1);
-            stack_pointer[-1] = res;
-            stack_pointer[0] = v;
-            stack_pointer += 1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            stack_pointer[-1] = bit;
             break;
         }
 
@@ -5398,6 +5386,11 @@
                 assert(value != NULL);
                 eliminate_pop_guard(this_instr, ctx, value != Py_True);
             }
+            else if (uop_buffer_length(&ctx->out_buffer) > 0 &&
+                 uop_buffer_last(&ctx->out_buffer)->opcode == _BIT_TO_BOOL) {
+                REPLACE_OP(uop_buffer_last(&ctx->out_buffer), _NOP, 0, 0);
+                ADD_OP(_GUARD_IS_TRUE_BIT_POP, 0, 0);
+            }
             else {
                 int bit = get_test_bit_for_bools();
                 if (bit) {
@@ -5423,6 +5416,11 @@
                 assert(value != NULL);
                 eliminate_pop_guard(this_instr, ctx, value != Py_False);
             }
+            else if (uop_buffer_length(&ctx->out_buffer) > 0 &&
+                 uop_buffer_last(&ctx->out_buffer)->opcode == _BIT_TO_BOOL) {
+                REPLACE_OP(uop_buffer_last(&ctx->out_buffer), _NOP, 0, 0);
+                ADD_OP(_GUARD_IS_FALSE_BIT_POP, 0, 0);
+            }
             else {
                 int bit = get_test_bit_for_bools();
                 if (bit) {
@@ -5447,6 +5445,37 @@
         }
 
         case _GUARD_BIT_IS_UNSET_POP: {
+            CHECK_STACK_BOUNDS(-1);
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BIT_TO_BOOL: {
+            JitOptRef bit;
+            JitOptRef res;
+            bit = stack_pointer[-1];
+            if (sym_is_const(ctx, bit) &&
+                (sym_get_const(ctx, bit) == Py_True ||
+                    sym_get_const(ctx, bit) == Py_False)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+                res = bit;
+            }
+            else {
+                res = sym_new_truthiness(ctx, bit, true);
+            }
+            stack_pointer[-1] = res;
+            break;
+        }
+
+        case _GUARD_IS_TRUE_BIT_POP: {
+            CHECK_STACK_BOUNDS(-1);
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _GUARD_IS_FALSE_BIT_POP: {
             CHECK_STACK_BOUNDS(-1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);

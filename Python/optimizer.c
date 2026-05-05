@@ -1399,7 +1399,11 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
             int exit_depth = get_cached_entries_for_side_exit(inst);
             assert(_PyUop_Caching[base_exit_op].entries[exit_depth].opcode > 0);
             int16_t exit_op = _PyUop_Caching[base_exit_op].entries[exit_depth].opcode;
-            bool is_control_flow = (base_opcode == _GUARD_IS_FALSE_POP || base_opcode == _GUARD_IS_TRUE_POP || is_for_iter_test[base_opcode]);
+            bool is_control_flow = (base_opcode == _GUARD_IS_FALSE_POP ||
+                                    base_opcode == _GUARD_IS_TRUE_POP ||
+                                    base_opcode == _GUARD_IS_FALSE_BIT_POP ||
+                                    base_opcode == _GUARD_IS_TRUE_BIT_POP ||
+                                    is_for_iter_test[base_opcode]);
             if (jump_target != current_jump_target || current_exit_op != exit_op) {
                 make_exit(&buffer[next_spare], exit_op, jump_target, is_control_flow);
                 current_exit_op = exit_op;

@@ -2142,8 +2142,14 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         # Only one guard remains:
-        self.assertEqual(uops.count(self.guard_is_false), 1)
-        self.assertEqual(uops.count(self.guard_is_true), 0)
+        self.assertEqual(
+            uops.count(self.guard_is_false) + uops.count("_GUARD_IS_FALSE_BIT_POP"),
+            1,
+        )
+        self.assertEqual(
+            uops.count(self.guard_is_true) + uops.count("_GUARD_IS_TRUE_BIT_POP"),
+            0,
+        )
         # But all of the appends we care about are still there:
         self.assertEqual(uops.count("_CALL_LIST_APPEND"), len("ABCDEFG"))
 
@@ -2175,8 +2181,14 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         # Only one guard remains:
-        self.assertEqual(uops.count(self.guard_is_false), 1)
-        self.assertEqual(uops.count(self.guard_is_true), 0)
+        self.assertEqual(
+            uops.count(self.guard_is_false) + uops.count("_GUARD_IS_FALSE_BIT_POP"),
+            1,
+        )
+        self.assertEqual(
+            uops.count(self.guard_is_true) + uops.count("_GUARD_IS_TRUE_BIT_POP"),
+            0,
+        )
         # But all of the appends we care about are still there:
         self.assertEqual(uops.count("_CALL_LIST_APPEND"), len("ABCDEFG"))
 
@@ -2382,7 +2394,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, 0)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_TO_BOOL_STR", uops)
+        self.assertIn("_TO_BOOL_BIT_STR", uops)
         self.assertNotIn("_GUARD_TOS_UNICODE", uops)
 
     def test_remove_guard_for_known_type_dict(self):
@@ -3025,7 +3037,7 @@ class TestUopsOptimization(unittest.TestCase):
             x = 0
             for _ in range(n):
                 y = str('foo')  # string argument
-                if y:           # _TO_BOOL_STR + _GUARD_IS_TRUE_POP are removed
+                if y:           # _TO_BOOL_BIT_STR + _GUARD_IS_TRUE_POP are removed
                     x += 1
             return x
 
@@ -3034,7 +3046,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_CALL_STR_1", uops)
-        self.assertNotIn("_TO_BOOL_STR", uops)
+        self.assertNotIn("_TO_BOOL_BIT_STR", uops)
         self.assertNotIn(self.guard_is_true, uops)
 
     def test_call_tuple_1(self):
@@ -4828,9 +4840,25 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, 0)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_TO_BOOL_STR", uops)
+        self.assertIn("_TO_BOOL_BIT_STR", uops)
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 3)
         self.assertIn("_POP_TOP_NOP", uops)
+
+    def test_to_bool_str_branch_fused_to_bit_guard(self):
+        def testfunc(n):
+            s = "x"
+            for _ in range(n):
+                if s:
+                    pass
+
+        testfunc(TIER2_THRESHOLD)
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_TO_BOOL_BIT_STR", uops)
+        self.assertIn("_GUARD_IS_TRUE_BIT_POP", uops)
+        self.assertNotIn("_BIT_TO_BOOL", uops)
+        self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
 
     def test_to_bool_int(self):
         def f(n):
@@ -4845,9 +4873,25 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, 0)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_TO_BOOL_INT", uops)
+        self.assertIn("_TO_BOOL_BIT_INT", uops)
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 3)
         self.assertIn("_POP_TOP_NOP", uops)
+
+    def test_to_bool_int_branch_fused_to_bit_guard(self):
+        def testfunc(n):
+            x = 1
+            for _ in range(n):
+                if x:
+                    pass
+
+        testfunc(TIER2_THRESHOLD)
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_TO_BOOL_BIT_INT", uops)
+        self.assertIn("_GUARD_IS_TRUE_BIT_POP", uops)
+        self.assertNotIn("_BIT_TO_BOOL", uops)
+        self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
 
     def test_to_bool_list(self):
         def f(n):
@@ -4864,6 +4908,74 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_TO_BOOL_LIST", uops)
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 3)
         self.assertIn("_POP_TOP_NOP", uops)
+
+    def test_converted_to_bool_specs_eliminate_bit_to_bool(self):
+        cases = [
+            ("int", lambda: 1),
+            ("str", lambda: "x"),
+        ]
+        for name, factory in cases:
+            with self.subTest(name=name):
+                v = factory()
+
+                def testfunc(n, v=v):
+                    for _ in range(n):
+                        if v:
+                            pass
+
+                testfunc(TIER2_THRESHOLD)
+                ex = get_first_executor(testfunc)
+                self.assertIsNotNone(ex, f"no executor formed for {name}")
+                uops = get_opnames(ex)
+                self.assertNotIn("_BIT_TO_BOOL", uops,
+                                 f"_BIT_TO_BOOL survived for {name}")
+                self.assertNotIn("_GUARD_IS_TRUE_POP", uops,
+                                 f"_GUARD_IS_TRUE_POP survived for {name}")
+
+    def test_to_bool_int_branch_fused_to_bit_guard_false(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                if x:
+                    pass
+
+        testfunc(TIER2_THRESHOLD)
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_TO_BOOL_BIT_INT", uops)
+        self.assertIn("_GUARD_IS_FALSE_BIT_POP", uops)
+        self.assertNotIn("_BIT_TO_BOOL", uops)
+        self.assertNotIn("_GUARD_IS_FALSE_POP", uops)
+
+    def test_to_bool_str_branch_fused_to_bit_guard_false(self):
+        def testfunc(n):
+            s = ""
+            for _ in range(n):
+                if s:
+                    pass
+
+        testfunc(TIER2_THRESHOLD)
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_TO_BOOL_BIT_STR", uops)
+        self.assertIn("_GUARD_IS_FALSE_BIT_POP", uops)
+        self.assertNotIn("_BIT_TO_BOOL", uops)
+        self.assertNotIn("_GUARD_IS_FALSE_POP", uops)
+
+    def test_to_bool_const_truthiness_does_not_misfeed_bit_to_bool(self):
+        def testfunc(n):
+            for _ in range(n):
+                x = "abc"
+                if x:
+                    pass
+
+        testfunc(TIER2_THRESHOLD)
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_BIT_TO_BOOL", uops)
 
     def test_to_bool_always_true(self):
         def testfunc(n):

@@ -521,10 +521,11 @@ static int
 test_bit_set_in_true(int bit) {
 #ifdef Py_STACKREF_DEBUG
     uintptr_t true_bits = _Py_STACKREF_TRUE_INDEX;
+    assert((true_bits ^ _Py_STACKREF_FALSE_INDEX) & (uintptr_t)(1 << bit));
 #else
     uintptr_t true_bits = (uintptr_t)&_Py_TrueStruct;
+    assert((true_bits ^ (uintptr_t)&_Py_FalseStruct) & (uintptr_t)(1 << bit));
 #endif
-    assert((true_bits ^ ((uintptr_t)&_Py_FalseStruct)) & (uintptr_t)(1 << bit));
     return true_bits & (uintptr_t)(1 << bit);
 }
 
@@ -740,6 +741,33 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
             case _EXIT_TRACE:
             default:
             {
+                // Catches `_BIT_TO_BOOL + _GUARD_BIT_IS_*_POP` across `op_skip` ops.
+                if ((opcode == _GUARD_BIT_IS_SET_POP ||
+                     opcode == _GUARD_BIT_IS_UNSET_POP) && pc > 0) {
+                    int last_pc = pc - 1;
+                    while (last_pc >= 0 && op_skip[buffer[last_pc].opcode]) {
+                        last_pc--;
+                    }
+                    if (last_pc >= 0 && buffer[last_pc].opcode == _BIT_TO_BOOL) {
+#ifdef Py_STACKREF_DEBUG
+                        uintptr_t false_bits = _Py_STACKREF_FALSE_INDEX;
+                        uintptr_t true_bits = _Py_STACKREF_TRUE_INDEX;
+#else
+                        uintptr_t false_bits = (uintptr_t)&_Py_FalseStruct;
+                        uintptr_t true_bits = (uintptr_t)&_Py_TrueStruct;
+#endif
+                        uintptr_t mask = (uintptr_t)1 << buffer[pc].oparg;
+                        if ((true_bits ^ false_bits) & mask) {
+                            int guard_set = (opcode == _GUARD_BIT_IS_SET_POP);
+                            int true_set = (true_bits & mask) != 0;
+                            buffer[last_pc].opcode = _NOP;
+                            opcode = buffer[pc].opcode = (guard_set == true_set)
+                                ? _GUARD_IS_TRUE_BIT_POP : _GUARD_IS_FALSE_BIT_POP;
+                            buffer[pc].oparg = 0;
+                            buffer[pc].operand0 = 0;
+                        }
+                    }
+                }
                 // Cancel out pushes and pops, repeatedly. So:
                 //     _LOAD_FAST + _POP_TOP + _POP_TOP + _LOAD_CONST_INLINE_BORROW + _POP_TOP
                 // ...becomes:
