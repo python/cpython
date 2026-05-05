@@ -2225,10 +2225,11 @@ resolve_final_tstate(_PyRuntimeState *runtime)
 #endif
 
 static int
-interp_has_threads_locked(PyInterpreterState *interp)
+interp_has_threads(PyInterpreterState *interp)
 {
     /* This needs to check for non-daemon threads only, otherwise we get stuck
      * in an infinite loop. */
+    assert(interp != NULL);
     ASSERT_HEAD_IS_LOCKED(interp->runtime);
     assert(interp->threads.head != NULL);
     if (interp->threads.head->next == NULL) {
@@ -2243,17 +2244,6 @@ interp_has_threads_locked(PyInterpreterState *interp)
     }
 
     return 0;
-}
-
-static int
-interp_has_threads(PyInterpreterState *interp)
-{
-    assert(interp != NULL);
-    ASSERT_WORLD_STOPPED(interp);
-    HEAD_LOCK(interp->runtime);
-    int res = interp_has_threads_locked(interp);
-    HEAD_UNLOCK(interp->runtime);
-    return res;
 }
 
 static int
@@ -2278,9 +2268,7 @@ static int
 runtime_has_subinterpreters(_PyRuntimeState *runtime)
 {
     assert(runtime != NULL);
-    HEAD_LOCK(runtime);
     PyInterpreterState *interp = runtime->interpreters.head;
-    HEAD_UNLOCK(runtime);
     return interp->next != NULL;
 }
 
@@ -2359,11 +2347,10 @@ make_pre_finalization_calls(PyThreadState *tstate, int subinterpreters)
          * the GIL. For pending calls, we acquire the dedicated mutex, because
          * Py_AddPendingCall() can be called without an attached thread state.
          */
-
         PyMutex_Lock(&interp->ceval.pending.mutex);
-        // XXX Why does _PyThreadState_DeleteList() rely on all interpreters
-        // being stopped?
         _PyEval_StopTheWorldAll(interp->runtime);
+
+        HEAD_LOCK(interp->runtime);
         int has_subinterpreters = subinterpreters
                                     ? runtime_has_subinterpreters(interp->runtime)
                                     : 0;
@@ -2372,6 +2359,8 @@ make_pre_finalization_calls(PyThreadState *tstate, int subinterpreters)
                               || interp_has_atexit_callbacks(interp)
                               || interp_has_pending_calls(interp)
                               || has_subinterpreters);
+        HEAD_UNLOCK(interp->runtime);
+
         if (!should_continue) {
             // We only want to prevent new guards once we're sure that we
             // won't be running another pre-finalization cycle.
