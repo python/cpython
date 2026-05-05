@@ -8373,7 +8373,8 @@
                 PyObject *descr = read_obj(&this_instr[6].cache);
                 PyTypeObject *descr_type = Py_TYPE(descr);
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-                if (descr_type != (PyTypeObject *)owner_o) {
+                if ((descr_type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0
+                    && descr_type != (PyTypeObject *)owner_o) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
                     JUMP_TO_PREDICTED(LOAD_ATTR);
@@ -8448,7 +8449,8 @@
                 PyObject *descr = read_obj(&this_instr[6].cache);
                 PyTypeObject *descr_type = Py_TYPE(descr);
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-                if (descr_type != (PyTypeObject *)owner_o) {
+                if ((descr_type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0
+                    && descr_type != (PyTypeObject *)owner_o) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
                     JUMP_TO_PREDICTED(LOAD_ATTR);
