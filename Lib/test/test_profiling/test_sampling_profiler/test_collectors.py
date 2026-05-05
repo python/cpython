@@ -17,6 +17,7 @@ try:
         FlamegraphCollector,
     )
     from profiling.sampling.gecko_collector import GeckoCollector
+    from profiling.sampling.heatmap_collector import _TemplateLoader
     from profiling.sampling.collector import extract_lineno, normalize_location
     from profiling.sampling.opcode_utils import get_opcode_info, format_opcode
     from profiling.sampling.constants import (
@@ -80,6 +81,18 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertEqual(frame.filename, long_filename)
         self.assertEqual(frame.location.lineno, 999999)
         self.assertEqual(frame.funcname, long_funcname)
+
+    def test_heatmap_navigation_restarts_line_highlight(self):
+        """Test heatmap navigation can replay target line highlights."""
+        loader = _TemplateLoader()
+
+        self.assertIn(".code-line:target", loader.file_css)
+        self.assertIn("function restartLineHighlight(target)", loader.file_js)
+        self.assertIn("target.style.animation = 'none'", loader.file_js)
+        self.assertIn("void target.offsetWidth", loader.file_js)
+        self.assertIn("url.href === window.location.href", loader.file_js)
+        self.assertIn("navigateToLine(JSON.parse(navData).link)", loader.file_js)
+        self.assertIn("navigateToLine(linkData.link)", loader.file_js)
 
     def test_pstats_collector_with_extreme_intervals_and_empty_data(self):
         """Test PstatsCollector handles zero/large intervals, empty frames, None thread IDs, and duplicate frames."""
