@@ -1,0 +1,3 @@
+Specialize ``BINARY_OP`` for concatenation of lists and tuples, and
+propagate the result type through ``_BINARY_OP_EXTEND`` in the tier 2
+optimizer so that follow-up type guards can be eliminated.

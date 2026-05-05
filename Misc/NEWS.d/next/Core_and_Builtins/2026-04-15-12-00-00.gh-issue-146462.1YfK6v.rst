@@ -1,0 +1,3 @@
+Added ``PyTypeObject.tp_basicsize``, ``PyTypeObject.tp_dictoffset``, and
+``PyHeapTypeObject.ht_cached_keys`` offsets to :c:type:`!_Py_DebugOffsets` to
+support version-independent read-only dict introspection tools.

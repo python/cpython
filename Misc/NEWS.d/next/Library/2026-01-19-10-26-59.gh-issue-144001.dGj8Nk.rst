@@ -1,2 +1,0 @@
-Added the *ignorechars* parameter in :func:`binascii.a2b_base64` and
-:func:`base64.b64decode`.

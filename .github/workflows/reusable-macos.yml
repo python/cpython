@@ -12,6 +12,9 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: read
+
 env:
   FORCE_COLOR: 1
 
@@ -28,14 +31,14 @@ jobs:
       PYTHONSTRICTEXTENSIONBUILD: 1
       TERM: linux
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         persist-credentials: false
     - name: Runner image version
       run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
     - name: Install Homebrew dependencies
       run: |
-        brew install pkg-config openssl@3.0 xz gdbm tcl-tk@9 make
+        brew install pkg-config openssl@3.5 xz gdbm tcl-tk@9 make
         # Because alternate versions are not symlinked into place by default:
         brew link --overwrite tcl-tk@9
     - name: Configure CPython
@@ -50,7 +53,7 @@ jobs:
           --enable-safety \
           ${{ inputs.free-threading && '--disable-gil' || '' }} \
           --prefix=/opt/python-dev \
-          --with-openssl="$(brew --prefix openssl@3.0)"
+          --with-openssl="$(brew --prefix openssl@3.5)"
     - name: Build CPython
       if : ${{ inputs.free-threading || inputs.os != 'macos-15-intel' }}
       run: gmake -j8

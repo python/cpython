@@ -4,11 +4,6 @@
 .. module:: heapq
    :synopsis: Heap queue algorithm (a.k.a. priority queue).
 
-.. moduleauthor:: Kevin O'Connor
-.. sectionauthor:: Guido van Rossum <guido@python.org>
-.. sectionauthor:: François Pinard
-.. sectionauthor:: Raymond Hettinger
-
 **Source code:** :source:`Lib/heapq.py`
 
 --------------

@@ -1,2 +1,0 @@
-Fix a inconsistency issue in :meth:`~io.RawIOBase.write` that leads to
-unexpected buffer overwrite by deduplicating the buffer exports.

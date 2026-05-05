@@ -34,11 +34,11 @@ iterate_threads(
 
     if (0 > _Py_RemoteDebug_PagedReadRemoteMemory(
                 &unwinder->handle,
-                unwinder->interpreter_addr + (uintptr_t)unwinder->debug_offsets.interpreter_state.threads_main,
+                unwinder->interpreter_addr + (uintptr_t)unwinder->debug_offsets.interpreter_state.threads_head,
                 sizeof(void*),
                 &thread_state_addr))
     {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read main thread state");
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read threads head");
         return -1;
     }
 
@@ -157,11 +157,11 @@ find_running_frame(
 int
 get_thread_status(RemoteUnwinderObject *unwinder, uint64_t tid, uint64_t pthread_id) {
 #if defined(__APPLE__) && TARGET_OS_OSX
-   if (unwinder->thread_id_offset == 0) {
+   if (!unwinder->thread_id_offset_initialized) {
         uint64_t *tids = (uint64_t *)PyMem_Malloc(MAX_NATIVE_THREADS * sizeof(uint64_t));
         if (!tids) {
-            PyErr_NoMemory();
-            return -1;
+            // Non-fatal: thread status is best-effort
+            return THREAD_STATE_UNKNOWN;
         }
         int n = proc_pidinfo(unwinder->handle.pid, PROC_PIDLISTTHREADS, 0, tids, MAX_NATIVE_THREADS * sizeof(uint64_t)) / sizeof(uint64_t);
         if (n <= 0) {
@@ -176,6 +176,7 @@ get_thread_status(RemoteUnwinderObject *unwinder, uint64_t tid, uint64_t pthread
             }
         }
         unwinder->thread_id_offset = min_offset;
+        unwinder->thread_id_offset_initialized = 1;
         PyMem_Free(tids);
     }
     struct proc_threadinfo ti;
@@ -191,7 +192,7 @@ get_thread_status(RemoteUnwinderObject *unwinder, uint64_t tid, uint64_t pthread
     char stat_path[256];
     char buffer[2048] = "";
 
-    snprintf(stat_path, sizeof(stat_path), "/proc/%d/task/%lu/stat", unwinder->handle.pid, tid);
+    snprintf(stat_path, sizeof(stat_path), "/proc/%d/task/%" PRIu64 "/stat", unwinder->handle.pid, tid);
 
     int fd = open(stat_path, O_RDONLY);
     if (fd == -1) {
@@ -239,20 +240,21 @@ get_thread_status(RemoteUnwinderObject *unwinder, uint64_t tid, uint64_t pthread
         unwinder->win_process_buffer_size = n;
         PVOID new_buffer = PyMem_Realloc(unwinder->win_process_buffer, n);
         if (!new_buffer) {
-            return -1;
+            // Match Linux/macOS: degrade gracefully on alloc failure
+            return THREAD_STATE_UNKNOWN;
         }
         unwinder->win_process_buffer = new_buffer;
         return get_thread_status(unwinder, tid, pthread_id);
     }
     if (status != STATUS_SUCCESS) {
-        return -1;
+        return THREAD_STATE_UNKNOWN;
     }
 
     SYSTEM_PROCESS_INFORMATION *pi = (SYSTEM_PROCESS_INFORMATION *)unwinder->win_process_buffer;
     while ((ULONG)(ULONG_PTR)pi->UniqueProcessId != unwinder->handle.pid) {
         if (pi->NextEntryOffset == 0) {
-            // We didn't find the process
-            return -1;
+            // Process not found (may have exited)
+            return THREAD_STATE_UNKNOWN;
         }
         pi = (SYSTEM_PROCESS_INFORMATION *)(((BYTE *)pi) + pi->NextEntryOffset);
     }
@@ -264,7 +266,8 @@ get_thread_status(RemoteUnwinderObject *unwinder, uint64_t tid, uint64_t pthread
         }
     }
 
-    return -1;
+    // Thread not found (may have exited)
+    return THREAD_STATE_UNKNOWN;
 #else
     return THREAD_STATE_UNKNOWN;
 #endif
@@ -291,7 +294,8 @@ unwind_stack_for_thread(
     RemoteUnwinderObject *unwinder,
     uintptr_t *current_tstate,
     uintptr_t gil_holder_tstate,
-    uintptr_t gc_frame
+    uintptr_t gc_frame,
+    uintptr_t main_thread_tstate
 ) {
     PyObject *frame_info = NULL;
     PyObject *thread_id = NULL;
@@ -309,19 +313,6 @@ unwind_stack_for_thread(
     STATS_ADD(unwinder, memory_bytes_read, unwinder->debug_offsets.thread_state.size);
 
     long tid = GET_MEMBER(long, ts, unwinder->debug_offsets.thread_state.native_thread_id);
-
-    // Read GC collecting state from the interpreter (before any skip checks)
-    uintptr_t interp_addr = GET_MEMBER(uintptr_t, ts, unwinder->debug_offsets.thread_state.interp);
-
-    // Read the GC runtime state from the interpreter state
-    uintptr_t gc_addr = interp_addr + unwinder->debug_offsets.interpreter_state.gc;
-    char gc_state[SIZEOF_GC_RUNTIME_STATE];
-    if (_Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, gc_addr, unwinder->debug_offsets.gc.size, gc_state) < 0) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read GC state");
-        goto error;
-    }
-    STATS_INC(unwinder, memory_reads);
-    STATS_ADD(unwinder, memory_bytes_read, unwinder->debug_offsets.gc.size);
 
     // Calculate thread status using flags (always)
     int status_flags = 0;
@@ -384,15 +375,19 @@ unwind_stack_for_thread(
     long pthread_id = GET_MEMBER(long, ts, unwinder->debug_offsets.thread_state.thread_id);
 
     // Optimization: only check CPU status if needed by mode because it's expensive
-    int cpu_status = -1;
+    int cpu_status = THREAD_STATE_UNKNOWN;
     if (unwinder->mode == PROFILING_MODE_CPU || unwinder->mode == PROFILING_MODE_ALL) {
         cpu_status = get_thread_status(unwinder, tid, pthread_id);
     }
 
-    if (cpu_status == -1) {
+    if (cpu_status == THREAD_STATE_UNKNOWN) {
         status_flags |= THREAD_STATUS_UNKNOWN;
     } else if (cpu_status == THREAD_STATE_RUNNING) {
         status_flags |= THREAD_STATUS_ON_CPU;
+    }
+
+    if (*current_tstate == main_thread_tstate) {
+        status_flags |= THREAD_STATUS_MAIN_THREAD;
     }
 
     // Check if we should skip this thread based on mode
