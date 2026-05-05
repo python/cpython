@@ -68,9 +68,6 @@ class TestRecursion:
             self.fail("didn't raise ValueError on default recursion")
 
 
-    # NSKIP015 https://github.com/nanvix/cpython/issues/483
-    @unittest.skipIf(support.is_nanvix,
-                     "NSKIP015: OOM — test allocation exceeds available heap")
     def test_highly_nested_objects_decoding(self):
         # test that loading highly-nested objects doesn't segfault when C
         # accelerations are used. See #12017
@@ -84,9 +81,6 @@ class TestRecursion:
             with support.infinite_recursion():
                 self.loads('[' * 100000 + '1' + ']' * 100000)
 
-    # NSKIP015 https://github.com/nanvix/cpython/issues/483
-    @unittest.skipIf(support.is_nanvix,
-                     "NSKIP015: OOM — test allocation exceeds available heap")
     def test_highly_nested_objects_encoding(self):
         # See #12051
         l, d = [], {}
@@ -99,9 +93,6 @@ class TestRecursion:
             with support.infinite_recursion():
                 self.dumps(d)
 
-    # NSKIP015 https://github.com/nanvix/cpython/issues/483
-    @unittest.skipIf(support.is_nanvix,
-                     "NSKIP015: OOM — test allocation exceeds available heap")
     def test_endless_recursion(self):
         # See #12051
         class EndlessJSONEncoder(self.json.JSONEncoder):

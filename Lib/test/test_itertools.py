@@ -1,6 +1,6 @@
 # NSKIP019 https://github.com/nanvix/cpython/issues/487
 # Module is excluded from standalone mode (32 MB heap too small).  Remaining
-# skips in non-standalone modes are NSKIP001 (pickle) and NSKIP015 (tee OOM).
+# skips in non-standalone modes are NSKIP001 (pickle).
 
 import doctest
 import unittest
@@ -1741,8 +1741,6 @@ class TestBasicOps(unittest.TestCase):
         script_helper.assert_python_ok("-c", script)
 
     # Issue 13454: Crash when deleting backward iterator from tee()
-    # NSKIP015 https://github.com/nanvix/cpython/issues/483
-    @unittest.skipIf(support.is_nanvix, "NSKIP015: OOM — test allocation exceeds available heap")
     def test_tee_del_backward(self):
         forward, backward = tee(repeat(None, 20000000))
         try:
