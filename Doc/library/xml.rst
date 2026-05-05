@@ -57,6 +57,18 @@ This module also defines utility functions.
    ..versionadded:: next
 
 
+.. function:: is_valid_text(data)
+
+   Return ``True`` if the string is a sequence of legal XML 1.0 characters,
+   ``False`` otherwise.
+
+   Almost all characters are permitted in XML 1.0 document, except C0 control
+   characters (excluding TAB, CR and LF), surrogate characters and special
+   Unicode characters U+FFFE and U+FFFF.
+
+   ..versionadded:: next
+
+
 .. _xml-security:
 .. _xml-vulnerabilities:
 

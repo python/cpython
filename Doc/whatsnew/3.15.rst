@@ -1660,6 +1660,10 @@ xml
   whether a string can be used as an element or attribute name in XML.
   (Contributed by Serhiy Storchaka in :gh:`139489`.)
 
+* Add the :func:`xml.is_valid_text` function, which allows to check
+  whether a string can be used in the XML document.
+  (Contributed by Serhiy Storchaka in :gh:`139489`.)
+
 
 xml.parsers.expat
 -----------------
