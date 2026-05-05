@@ -1,8 +1,3 @@
-from test.support import is_nanvix
-import unittest
-if is_nanvix:
-    raise unittest.SkipTest("NSKIP046: _lzma C extension N/A on Nanvix (configure.ac:7287)")
-
 import _compression
 import array
 from io import BytesIO, UnsupportedOperation, DEFAULT_BUFFER_SIZE
@@ -11,6 +6,7 @@ import pickle
 import random
 import sys
 from test import support
+import unittest
 
 from test.support import _4G, bigmemtest
 from test.support.import_helper import import_module
