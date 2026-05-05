@@ -701,6 +701,10 @@
 /* Define to 1 if you have the 'dld' library (-ldld). */
 #undef HAVE_LIBDLD
 
+/* Define to 1 if libgcc __register_frame and __deregister_frame are linkable.
+   */
+#undef HAVE_LIBGCC_EH_FRAME_REGISTRATION
+
 /* Define to 1 if you have the 'ieee' library (-lieee). */
 #undef HAVE_LIBIEEE
 

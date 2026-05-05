@@ -41,6 +41,21 @@ The XML handling submodules are:
 * :mod:`xml.sax`: SAX2 base classes and convenience functions
 * :mod:`xml.parsers.expat`: the Expat parser binding
 
+This module also defines utility functions.
+
+.. function:: is_valid_name(name)
+
+   Return ``True`` if the string is a valid element or attribute name,
+   ``False`` otherwise.
+
+   Almost all characters are permitted in names, except control characters and
+   those which either are or reasonably could be used as delimiters.
+   Characters like ":", "-", ".", "_", and "·" are permitted, but "<", "/",
+   "!", "?", and "=" are forbidden.
+   The name cannot start with a digit or a character like "-", ".", and "·".
+
+   ..versionadded:: next
+
 
 .. _xml-security:
 .. _xml-vulnerabilities:
