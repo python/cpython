@@ -2348,12 +2348,8 @@ make_pre_finalization_calls(PyThreadState *tstate, int subinterpreters)
                 }
                 assert(!PyErr_Occurred());
             }
-            else if (ret == Py_PARK_AGAIN) {
-                continue;
-            }
             else {
-                assert(ret == Py_PARK_TIMEOUT);
-                Py_UNREACHABLE();
+                assert(ret == Py_PARK_AGAIN);
             }
         }
 
