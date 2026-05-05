@@ -143,7 +143,7 @@ MEMORYVIEW = NATIVE.copy()
 # Format codes supported by array.array
 ARRAY = NATIVE.copy()
 for k in NATIVE:
-    if not k in "bBhHiIlLefd":
+    if not k in list("bBhHiIlLefd") + ['Zf', 'Zd']:
         del ARRAY[k]
 
 BYTEFMT = NATIVE.copy()
