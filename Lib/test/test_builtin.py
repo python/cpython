@@ -2132,7 +2132,9 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
     def test_vars(self):
         self.assertEqual(set(vars()), set(dir()))
-        self.assertEqual(set(vars(sys)), set(dir(sys)))
+        # sys.lazy_modules is a virtual attribute served by sys.__getattr__,
+        # so it appears in dir() but not in vars().
+        self.assertEqual(set(vars(sys)) | {'lazy_modules'}, set(dir(sys)))
         self.assertEqual(self.get_vars_f0(), {})
         self.assertEqual(self.get_vars_f2(), {'a': 1, 'b': 2})
         self.assertRaises(TypeError, vars, 42, 42)

@@ -6179,6 +6179,9 @@ class TestSignatureDefinitions(unittest.TestCase):
         no_signature = {'getsizeof', 'set_asyncgen_hooks'}
         no_signature |= {name for name in ['getobjects']
                          if hasattr(sys, name)}
+        # sys.__dir__ and sys.__getattr__ are plain METH_NOARGS/METH_VARARGS
+        # builtins without Argument Clinic text signatures.
+        no_signature |= {'__dir__', '__getattr__'}
         self._test_module_has_signatures(sys, no_signature)
 
     def test_abc_module_has_signatures(self):

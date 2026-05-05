@@ -1483,6 +1483,27 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    They hold the legacy representation of ``sys.last_exc``, as returned
    from :func:`exc_info` above.
 
+
+.. data:: lazy_modules
+
+   A read-only :class:`frozendict` snapshot of the lazy import registry for the
+   current interpreter.  Each key is a module name string; the corresponding
+   value is a :class:`frozenset` of the child attribute names that were
+   registered as lazy imports from that module.  A top-level lazy import (e.g.
+   ``lazy import json``) is represented by an empty :class:`frozenset`.
+
+   A fresh snapshot is constructed on every attribute access, so the mapping
+   reflects the state of lazy imports at the time of access.  The snapshot is
+   immutable; modifications must go through :func:`set_lazy_imports`.
+
+   The live, mutable registry is available as the private :data:`sys._lazy_modules`
+   for internal use.
+
+   See also :func:`set_lazy_imports`, :func:`get_lazy_imports`, and :pep:`810`.
+
+   .. versionadded:: 3.15
+
+
 .. data:: maxsize
 
    An integer giving the maximum value a variable of type :c:type:`Py_ssize_t` can
