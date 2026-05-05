@@ -1317,12 +1317,10 @@ class _SubParsersAction(Action):
             help=help,
             metavar=metavar)
 
-    def add_parser(self, name, *, deprecated=False, **kwargs):
+    def add_parser(self, name, *, deprecated=False, subnamespace=None, **kwargs):
         # set prog from the existing prefix
         if kwargs.get('prog') is None:
             kwargs['prog'] = '%s %s' % (self._prog_prefix, name)
-
-        subnamespace_name = kwargs.pop('subnamespace', None)
 
         # set color
         if kwargs.get('color') is None:
@@ -1352,8 +1350,8 @@ class _SubParsersAction(Action):
 
         # add the subnamespace attribute to the parser if specified
         # for nested namespaces
-        if subnamespace_name is not None:
-            setattr(parser, 'subnamespace', subnamespace_name)
+        if subnamespace is not None:
+            setattr(parser, 'subnamespace', subnamespace)
 
         # make parser available under aliases also
         for alias in aliases:
