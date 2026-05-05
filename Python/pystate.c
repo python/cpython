@@ -3381,8 +3381,12 @@ PyInterpreterGuard_Close(PyInterpreterGuard *guard)
     assert(interp != NULL);
 
     assert(_Py_atomic_load_uintptr(&interp->finalization_guards) != _PyInterpreterGuard_GUARDS_NOT_ALLOWED);
-    _Py_atomic_add_uintptr(&interp->finalization_guards, -1);
+    uintptr_t old_value = _Py_atomic_add_uintptr(&interp->finalization_guards, -1);
+    if (old_value == 1) {
+        _PyParkingLot_UnparkAll(&interp->finalization_guards);
+    }
 
+    assert(old_value > 0);
     PyMem_RawFree(guard);
 }
 

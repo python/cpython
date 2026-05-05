@@ -19,6 +19,7 @@
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
 #include "pycore_obmalloc.h"      // _PyMem_init_obmalloc()
 #include "pycore_optimizer.h"     // _Py_Executors_InvalidateAll
+#include "pycore_parking_lot.h"   // _PyParkingLot
 #include "pycore_pathconfig.h"    // _PyPathConfig_UpdateGlobal()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pylifecycle.h"   // _PyErr_Print()
@@ -2314,7 +2315,39 @@ make_pre_finalization_calls(PyThreadState *tstate, int subinterpreters)
             finalize_subinterpreters();
         }
 
+        // This is used as a throttle to prevent constant spinning while
+        // on finalization guards.
+        for (;;) {
+            uintptr_t num_guards = _Py_atomic_load_uintptr(&interp->finalization_guards);
+            if (num_guards == 0) {
+                break;
+            }
 
+            int ret = _PyParkingLot_Park(&interp->finalization_guards,
+                                         &num_guards, sizeof(num_guards), -1,
+                                         NULL, /*detach=*/1);
+            if (ret == Py_PARK_OK) {
+                break;
+            }
+            else if (ret == Py_PARK_INTR) {
+                if (PyErr_CheckSignals() < 0) {
+                    int fatal = PyErr_ExceptionMatches(PyExc_KeyboardInterrupt);
+                    PyErr_FormatUnraisable("Exception ignored while waiting on finalization guards");
+                    if (fatal) {
+                        fputs("Interrupted while waiting on finalization guards", stderr);
+                        exit(1);
+                    }
+                }
+                assert(!PyErr_Occurred());
+            }
+            else if (ret == Py_PARK_AGAIN) {
+                continue;
+            }
+            else {
+                assert(ret == Py_PARK_TIMEOUT);
+                Py_UNREACHABLE();
+            }
+        }
 
         /* Stop the world to prevent other threads from creating threads or
          * atexit callbacks. On the default build, this is simply locked by
@@ -2329,13 +2362,13 @@ make_pre_finalization_calls(PyThreadState *tstate, int subinterpreters)
         int has_subinterpreters = subinterpreters
                                     ? runtime_has_subinterpreters(interp->runtime)
                                     : 0;
-        uintptr_t finalization_guards_expected = 0;
+        uintptr_t guards_expected = 0;
         int should_continue = (interp_has_threads(interp)
                               || interp_has_atexit_callbacks(interp)
                               || interp_has_pending_calls(interp)
                               || has_subinterpreters
                               || _Py_atomic_compare_exchange_uintptr(&interp->finalization_guards,
-                                                                      &finalization_guards_expected,
+                                                                      &guards_expected,
                                                                       _PyInterpreterGuard_GUARDS_NOT_ALLOWED) == 0);
         if (!should_continue) {
             break;
