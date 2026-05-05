@@ -1,6 +1,7 @@
 """Tests for sampling profiler CLI argument parsing and functionality."""
 
 import io
+import json
 import os
 import subprocess
 import sys
@@ -21,9 +22,19 @@ from test.support import (
     requires_remote_subprocess_debugging,
 )
 
-from profiling.sampling.cli import main
-from profiling.sampling.constants import PROFILING_MODE_ALL, PROFILING_MODE_WALL
+from profiling.sampling.cli import (
+    FORMAT_EXTENSIONS,
+    _create_collector,
+    _generate_output_filename,
+    main,
+)
+from profiling.sampling.constants import (
+    PROFILING_MODE_ALL,
+    PROFILING_MODE_CPU,
+    PROFILING_MODE_WALL,
+)
 from profiling.sampling.errors import SamplingScriptNotFoundError, SamplingModuleNotFoundError, SamplingUnknownProcessError
+from profiling.sampling.jsonl_collector import JsonlCollector
 
 class TestSampleProfilerCLI(unittest.TestCase):
     def _setup_sync_mocks(self, mock_socket, mock_popen):
@@ -912,3 +923,65 @@ class TestSampleProfilerCLI(unittest.TestCase):
             str(cm.exception),
             "Error: Unsupported format version 2",
         )
+
+    def test_cli_jsonl_format_mutually_exclusive_with_pstats(self):
+        """--jsonl and --pstats cannot be combined (mutually exclusive group)."""
+        with (
+            mock.patch(
+                "sys.argv",
+                [
+                    "profiling.sampling.cli",
+                    "attach",
+                    "12345",
+                    "--jsonl",
+                    "--pstats",
+                ],
+            ),
+            mock.patch("sys.stderr", io.StringIO()),
+        ):
+            with self.assertRaises(SystemExit):
+                main()
+
+    def test_cli_jsonl_extension_in_format_extensions(self):
+        """FORMAT_EXTENSIONS maps 'jsonl' -> 'jsonl' so default filenames work."""
+        self.assertEqual(FORMAT_EXTENSIONS["jsonl"], "jsonl")
+        self.assertEqual(_generate_output_filename("jsonl", 12345), "jsonl_12345.jsonl")
+
+    def test_cli_jsonl_create_collector_propagates_mode(self):
+        """_create_collector('jsonl', ..., mode=X) lands X in the meta record."""
+        collector = _create_collector(
+            "jsonl",
+            sample_interval_usec=1000,
+            skip_idle=False,
+            mode=PROFILING_MODE_CPU,
+        )
+        self.assertIsInstance(collector, JsonlCollector)
+
+        with tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False) as f:
+            jsonl_path = f.name
+        self.addCleanup(os.unlink, jsonl_path)
+        collector.export(jsonl_path)
+        with open(jsonl_path, "r", encoding="utf-8") as f:
+            records = [json.loads(line) for line in f]
+        meta = next(r for r in records if r["type"] == "meta")
+        self.assertEqual(meta["mode"], "cpu")
+
+    def test_cli_jsonl_rejects_opcodes_combination(self):
+        """--opcodes is incompatible with --jsonl per opcodes_compatible_formats."""
+        test_args = [
+            "profiling.sampling.cli",
+            "attach",
+            "12345",
+            "--jsonl",
+            "--opcodes",
+        ]
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("sys.stderr", io.StringIO()) as mock_stderr,
+            mock.patch("profiling.sampling.cli.sample"),
+            self.assertRaises(SystemExit) as cm,
+        ):
+            main()
+
+        self.assertEqual(cm.exception.code, 2)
+        self.assertIn("--opcodes", mock_stderr.getvalue())

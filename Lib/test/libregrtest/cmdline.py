@@ -245,7 +245,7 @@ def _create_parser():
                             'buildbot workers')
     group.add_argument('--timeout', metavar='TIMEOUT',
                         help='dump the traceback and exit if a test takes '
-                             'more than TIMEOUT seconds; disabled if TIMEOUT '
+                             'more than `TIMEOUT` seconds; disabled if `TIMEOUT` '
                              'is negative or equals to zero')
     group.add_argument('--wait', action='store_true',
                        help='wait for user input, e.g., allow a debugger '
@@ -261,11 +261,11 @@ def _create_parser():
 
     group = parser.add_argument_group('Verbosity')
     group.add_argument('-v', '--verbose', action='count',
-                       help='run tests in verbose mode with output to stdout')
+                       help='run tests in verbose mode with output to `stdout`')
     group.add_argument('-w', '--rerun', action='store_true',
                        help='re-run failed tests in verbose mode')
     group.add_argument('--verbose2', action='store_true', dest='rerun',
-                       help='deprecated alias to --rerun')
+                       help='deprecated alias to `--rerun`')
     group.add_argument('-W', '--verbose3', action='store_true',
                        help='display test output on failure')
     group.add_argument('-q', '--quiet', action='store_true',
@@ -295,22 +295,22 @@ def _create_parser():
                             more_details)
     group.add_argument('-m', '--match', metavar='PAT',
                        dest='match_tests', action=FilterAction, const=True,
-                       help='match test cases and methods with glob pattern PAT')
+                       help='match test cases and methods with glob pattern `PAT`')
     group.add_argument('-i', '--ignore', metavar='PAT',
                        dest='match_tests', action=FilterAction, const=False,
-                       help='ignore test cases and methods with glob pattern PAT')
+                       help='ignore test cases and methods with glob pattern `PAT`')
     group.add_argument('--matchfile', metavar='FILENAME',
                        dest='match_tests',
                        action=FromFileFilterAction, const=True,
-                       help='similar to --match but get patterns from a '
+                       help='similar to `--match` but get patterns from a '
                             'text file, one pattern per line')
     group.add_argument('--ignorefile', metavar='FILENAME',
                        dest='match_tests',
                        action=FromFileFilterAction, const=False,
-                       help='similar to --matchfile but it receives patterns '
+                       help='similar to `--matchfile` but it receives patterns '
                             'from text file to ignore')
     group.add_argument('-G', '--failfast', action='store_true',
-                       help='fail as soon as a test fails (only with -v or -W)')
+                       help='fail as soon as a test fails (only with `-v` or `-W`)')
     group.add_argument('-u', '--use', metavar='RES1,RES2,...',
                        action='extend', type=resources_list,
                        help='specify which special resource intensive tests '
@@ -325,7 +325,7 @@ def _create_parser():
 
     group = parser.add_argument_group('Special runs')
     group.add_argument('-L', '--runleaks', action='store_true',
-                       help='run the leaks(1) command just before exit.' +
+                       help='run the `leaks(1)` command just before exit.' +
                             more_details)
     group.add_argument('-R', '--huntrleaks', metavar='RUNCOUNTS',
                        type=huntrleaks,
@@ -333,20 +333,20 @@ def _create_parser():
                             'very slow).' + more_details)
     group.add_argument('-j', '--multiprocess', metavar='PROCESSES',
                        dest='use_mp', type=int,
-                       help='run PROCESSES processes at once')
+                       help='run `PROCESSES` processes at once')
     group.add_argument('--single-process', action='store_true',
                        dest='single_process',
                        help='always run all tests sequentially in '
-                            'a single process, ignore -jN option, '
+                            'a single process, ignore `-jN` option, '
                             'and failed tests are also rerun sequentially '
                             'in the same process')
     group.add_argument('--parallel-threads', metavar='PARALLEL_THREADS',
                        type=int,
-                       help='run copies of each test in PARALLEL_THREADS at '
+                       help='run copies of each test in `PARALLEL_THREADS` at '
                             'once')
     group.add_argument('-T', '--coverage', action='store_true',
                        dest='trace',
-                       help='turn on code coverage tracing using the trace '
+                       help='turn on code coverage tracing using the `trace` '
                             'module')
     group.add_argument('-D', '--coverdir', metavar='DIR',
                        type=relative_filename,
@@ -356,18 +356,18 @@ def _create_parser():
                        help='put coverage files alongside modules')
     group.add_argument('-t', '--threshold', metavar='THRESHOLD',
                        type=int,
-                       help='call gc.set_threshold(THRESHOLD)')
+                       help='call `gc.set_threshold(THRESHOLD)`')
     group.add_argument('-n', '--nowindows', action='store_true',
                        help='suppress error message boxes on Windows')
     group.add_argument('-F', '--forever', action='store_true',
                        help='run the specified tests in a loop, until an '
-                            'error happens; imply --failfast')
+                            'error happens; imply `--failfast`')
     group.add_argument('--list-tests', action='store_true',
                        help="only write the name of tests that will be run, "
                             "don't execute them")
     group.add_argument('--list-cases', action='store_true',
-                       help='only write the name of test cases that will be run'
-                            ' , don\'t execute them')
+                       help='only write the name of test cases that will be run, '
+                            'don\'t execute them')
     group.add_argument('-P', '--pgo', dest='pgo', action='store_true',
                        help='enable Profile Guided Optimization (PGO) training')
     group.add_argument('--pgo-extended', action='store_true',
@@ -390,11 +390,11 @@ def _create_parser():
     group.add_argument('--tempdir', metavar='PATH',
                        help='override the working directory for the test run')
     group.add_argument('--cleanup', action='store_true',
-                       help='remove old test_python_* directories')
+                       help='remove old `test_python_*` directories')
     group.add_argument('--bisect', action='store_true',
-                       help='if some tests fail, run test.bisect_cmd on them')
+                       help='if some tests fail, run `test.bisect_cmd` on them')
     group.add_argument('--pythoninfo', action='store_true',
-                       help="run python -m test.pythoninfo before tests")
+                       help="run `python -m test.pythoninfo` before tests")
     group.add_argument('--dont-add-python-opts', dest='_add_python_opts',
                        action='store_false',
                        help="internal option, don't use it")

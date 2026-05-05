@@ -922,7 +922,7 @@ def main(args=None):
         "-t", "--type",
         default="text",
         choices=("text", "html"),
-        help="output type (text or html)"
+        help="output type (`text` or `html`)"
     )
     parser.add_argument(
         "-f", "--first-weekday",

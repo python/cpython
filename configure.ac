@@ -99,7 +99,7 @@ AC_SUBST([BASECPPFLAGS])
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     # If we're building out-of-tree, we need to make sure the following
     # resources get picked up before their $srcdir counterparts.
-    #   Objects/ -> typeslots.inc
+    #   Objects/ -> slots_generated.c
     #   Include/ -> Python.h
     # (A side effect of this is that these resources will automatically be
     #  regenerated when building out-of-tree, regardless of whether or not
@@ -3826,6 +3826,24 @@ AC_CHECK_HEADERS([execinfo.h link.h dlfcn.h], [
     # dladdr1 requires -ldl
     ac_cv_require_ldl=yes
   ])
+])
+
+dnl for JIT GNU backtrace unwind registration
+AC_CACHE_CHECK([for libgcc frame registration functions],
+  [ac_cv_have_libgcc_eh_frame_registration],
+  [AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+void __register_frame(const void *);
+void __deregister_frame(const void *);
+]], [[
+__register_frame(0);
+__deregister_frame(0);
+]])],
+    [ac_cv_have_libgcc_eh_frame_registration=yes],
+    [ac_cv_have_libgcc_eh_frame_registration=no])
+  ])
+AS_VAR_IF([ac_cv_have_libgcc_eh_frame_registration], [yes], [
+  AC_DEFINE([HAVE_LIBGCC_EH_FRAME_REGISTRATION], [1],
+    [Define to 1 if libgcc __register_frame and __deregister_frame are linkable.])
 ])
 
 dnl only add -ldl to LDFLAGS if it isn't already part of LIBS (GH-133081)

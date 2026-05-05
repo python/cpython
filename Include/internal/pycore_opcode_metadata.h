@@ -438,7 +438,11 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
             return 1;
         case SEND:
             return 3;
+        case SEND_ASYNC_GEN:
+            return 3;
         case SEND_GEN:
+            return 3;
+        case SEND_VIRTUAL:
             return 3;
         case SETUP_ANNOTATIONS:
             return 0;
@@ -935,8 +939,12 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
             return 1;
         case SEND:
             return 3;
+        case SEND_ASYNC_GEN:
+            return 3;
         case SEND_GEN:
             return 2;
+        case SEND_VIRTUAL:
+            return 3;
         case SETUP_ANNOTATIONS:
             return 0;
         case SETUP_CLEANUP:
@@ -1298,7 +1306,9 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[267] = {
     [RETURN_GENERATOR] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG | HAS_NEEDS_GUARD_IP_FLAG },
     [RETURN_VALUE] = { true, INSTR_FMT_IX, HAS_ESCAPES_FLAG | HAS_NEEDS_GUARD_IP_FLAG },
     [SEND] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG | HAS_SYNC_SP_FLAG | HAS_NEEDS_GUARD_IP_FLAG },
+    [SEND_ASYNC_GEN] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG | HAS_UNPREDICTABLE_JUMP_FLAG },
     [SEND_GEN] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_EXIT_FLAG | HAS_SYNC_SP_FLAG | HAS_NEEDS_GUARD_IP_FLAG | HAS_RECORDS_VALUE_FLAG },
+    [SEND_VIRTUAL] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG | HAS_UNPREDICTABLE_JUMP_FLAG },
     [SETUP_ANNOTATIONS] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [SET_ADD] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [SET_FUNCTION_ATTRIBUTE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
@@ -1443,7 +1453,7 @@ _PyOpcode_macro_expansion[256] = {
     [FOR_ITER_LIST] = { .nuops = 3, .uops = { { _ITER_CHECK_LIST, OPARG_SIMPLE, 1 }, { _ITER_JUMP_LIST, OPARG_REPLACED, 1 }, { _ITER_NEXT_LIST, OPARG_REPLACED, 1 } } },
     [FOR_ITER_RANGE] = { .nuops = 3, .uops = { { _ITER_CHECK_RANGE, OPARG_SIMPLE, 1 }, { _ITER_JUMP_RANGE, OPARG_REPLACED, 1 }, { _ITER_NEXT_RANGE, OPARG_SIMPLE, 1 } } },
     [FOR_ITER_TUPLE] = { .nuops = 3, .uops = { { _ITER_CHECK_TUPLE, OPARG_SIMPLE, 1 }, { _ITER_JUMP_TUPLE, OPARG_REPLACED, 1 }, { _ITER_NEXT_TUPLE, OPARG_SIMPLE, 1 } } },
-    [FOR_ITER_VIRTUAL] = { .nuops = 2, .uops = { { _GUARD_NOS_ITER_VIRTUAL, OPARG_SIMPLE, 1 }, { _FOR_ITER_VIRTUAL, OPARG_REPLACED, 1 } } },
+    [FOR_ITER_VIRTUAL] = { .nuops = 2, .uops = { { _GUARD_TOS_NOT_NULL, OPARG_SIMPLE, 1 }, { _FOR_ITER_VIRTUAL, OPARG_REPLACED, 1 } } },
     [GET_AITER] = { .nuops = 1, .uops = { { _GET_AITER, OPARG_SIMPLE, 0 } } },
     [GET_ANEXT] = { .nuops = 1, .uops = { { _GET_ANEXT, OPARG_SIMPLE, 0 } } },
     [GET_AWAITABLE] = { .nuops = 1, .uops = { { _GET_AWAITABLE, OPARG_SIMPLE, 0 } } },
@@ -1514,7 +1524,9 @@ _PyOpcode_macro_expansion[256] = {
     [RESUME_CHECK] = { .nuops = 1, .uops = { { _RESUME_CHECK, OPARG_SIMPLE, 1 } } },
     [RETURN_GENERATOR] = { .nuops = 1, .uops = { { _RETURN_GENERATOR, OPARG_SIMPLE, 0 } } },
     [RETURN_VALUE] = { .nuops = 2, .uops = { { _MAKE_HEAP_SAFE, OPARG_SIMPLE, 0 }, { _RETURN_VALUE, OPARG_SIMPLE, 0 } } },
+    [SEND_ASYNC_GEN] = { .nuops = 2, .uops = { { _GUARD_3OS_ASYNC_GEN_ASEND, OPARG_SIMPLE, 1 }, { _SEND_ASYNC_GEN, OPARG_REPLACED, 1 } } },
     [SEND_GEN] = { .nuops = 4, .uops = { { _RECORD_3OS_GEN_FUNC, OPARG_SIMPLE, 1 }, { _CHECK_PEP_523, OPARG_SIMPLE, 1 }, { _SEND_GEN_FRAME, OPARG_SIMPLE, 1 }, { _PUSH_FRAME, OPARG_SIMPLE, 1 } } },
+    [SEND_VIRTUAL] = { .nuops = 3, .uops = { { _GUARD_TOS_IS_NONE, OPARG_SIMPLE, 1 }, { _GUARD_NOS_NOT_NULL, OPARG_SIMPLE, 1 }, { _SEND_VIRTUAL, OPARG_REPLACED, 1 } } },
     [SETUP_ANNOTATIONS] = { .nuops = 1, .uops = { { _SETUP_ANNOTATIONS, OPARG_SIMPLE, 0 } } },
     [SET_ADD] = { .nuops = 1, .uops = { { _SET_ADD, OPARG_SIMPLE, 0 } } },
     [SET_FUNCTION_ATTRIBUTE] = { .nuops = 1, .uops = { { _SET_FUNCTION_ATTRIBUTE, OPARG_SIMPLE, 0 } } },
@@ -1758,7 +1770,9 @@ const char *_PyOpcode_OpName[267] = {
     [RETURN_GENERATOR] = "RETURN_GENERATOR",
     [RETURN_VALUE] = "RETURN_VALUE",
     [SEND] = "SEND",
+    [SEND_ASYNC_GEN] = "SEND_ASYNC_GEN",
     [SEND_GEN] = "SEND_GEN",
+    [SEND_VIRTUAL] = "SEND_VIRTUAL",
     [SETUP_ANNOTATIONS] = "SETUP_ANNOTATIONS",
     [SETUP_CLEANUP] = "SETUP_CLEANUP",
     [SETUP_FINALLY] = "SETUP_FINALLY",
@@ -1810,6 +1824,7 @@ const uint8_t _PyOpcode_Caches[256] = {
     [TO_BOOL] = 3,
     [STORE_SUBSCR] = 1,
     [SEND] = 1,
+    [FOR_ITER] = 1,
     [UNPACK_SEQUENCE] = 1,
     [STORE_ATTR] = 4,
     [LOAD_GLOBAL] = 4,
@@ -1823,7 +1838,6 @@ const uint8_t _PyOpcode_Caches[256] = {
     [POP_JUMP_IF_NONE] = 1,
     [POP_JUMP_IF_NOT_NONE] = 1,
     [GET_ITER] = 1,
-    [FOR_ITER] = 1,
     [CALL] = 3,
     [CALL_KW] = 3,
     [CALL_FUNCTION_EX] = 1,
@@ -1842,8 +1856,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [125] = 125,
     [126] = 126,
     [127] = 127,
-    [217] = 217,
-    [218] = 218,
     [219] = 219,
     [220] = 220,
     [221] = 221,
@@ -2052,7 +2064,9 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [RETURN_GENERATOR] = RETURN_GENERATOR,
     [RETURN_VALUE] = RETURN_VALUE,
     [SEND] = SEND,
+    [SEND_ASYNC_GEN] = SEND,
     [SEND_GEN] = SEND,
+    [SEND_VIRTUAL] = SEND,
     [SETUP_ANNOTATIONS] = SETUP_ANNOTATIONS,
     [SET_ADD] = SET_ADD,
     [SET_FUNCTION_ATTRIBUTE] = SET_FUNCTION_ATTRIBUTE,
@@ -2103,8 +2117,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
     case 125: \
     case 126: \
     case 127: \
-    case 217: \
-    case 218: \
     case 219: \
     case 220: \
     case 221: \
