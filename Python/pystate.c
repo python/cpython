@@ -3570,15 +3570,15 @@ PyThreadState_Release(PyThreadStateToken *token)
         PyThreadState_Clear(tstate);
     }
 
+    if (owned_guard != NULL) {
+        PyInterpreterGuard_Close(owned_guard);
+    }
+
     PyThreadState *check_tstate = PyThreadState_Swap(to_restore);
     (void)check_tstate;
     assert(check_tstate == tstate);
 
     if (tstate->ensure.delete_on_release) {
         PyThreadState_Delete(tstate);
-    }
-
-    if (owned_guard != NULL) {
-        PyInterpreterGuard_Close(owned_guard);
     }
 }
