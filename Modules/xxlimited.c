@@ -672,8 +672,8 @@ static PySlot xx_slots[] = {
 };
 
 
-/* Export function for the module. *Must* be called PyInit_xx; usually it is
- * the only non-`static` object in a module definition.
+/* Export function for the module. *Must* be called PyModExport_xx; usually
+ * it is the only non-`static` object in a module definition.
  */
 
 PyMODEXPORT_FUNC
