@@ -290,33 +290,43 @@ _PyImport_GetLazyModulesSnapshot(PyInterpreterState *interp)
         return PyFrozenDict_New(NULL);
     }
 
-    PyObject *tmp = PyDict_New();
-    if (tmp == NULL) {
-        return NULL;
-    }
-
+    PyObject *tmp = NULL;
     int err = 0;
+
     Py_BEGIN_CRITICAL_SECTION(lazy_modules);
-    Py_ssize_t pos = 0;
-    PyObject *key, *value;
-    while (PyDict_Next(lazy_modules, &pos, &key, &value)) {
-        PyObject *frozen = PyFrozenSet_New(value);
-        if (frozen == NULL) {
+    Py_ssize_t size = PyDict_GET_SIZE(lazy_modules);
+    if (size > 0) {
+        tmp = _PyDict_NewPresized(size);
+        if (tmp == NULL) {
             err = -1;
-            break;
         }
-        if (PyDict_SetItem(tmp, key, frozen) < 0) {
-            Py_DECREF(frozen);
-            err = -1;
-            break;
+        else {
+            Py_ssize_t pos = 0;
+            PyObject *key, *value;
+            while (PyDict_Next(lazy_modules, &pos, &key, &value)) {
+                PyObject *frozen = PyFrozenSet_New(value);
+                if (frozen == NULL) {
+                    err = -1;
+                    break;
+                }
+                if (PyDict_SetItem(tmp, key, frozen) < 0) {
+                    Py_DECREF(frozen);
+                    err = -1;
+                    break;
+                }
+                Py_DECREF(frozen);
+            }
         }
-        Py_DECREF(frozen);
     }
     Py_END_CRITICAL_SECTION();
 
     if (err < 0) {
-        Py_DECREF(tmp);
+        Py_XDECREF(tmp);
         return NULL;
+    }
+    if (tmp == NULL) {
+        // Registry is empty.
+        return PyFrozenDict_New(NULL);
     }
 
     PyObject *snapshot = PyFrozenDict_New(tmp);
