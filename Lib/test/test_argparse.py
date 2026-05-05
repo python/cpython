@@ -6164,6 +6164,217 @@ class TestNamespace(TestCase):
         self.assertIs(ns.__ne__(None), NotImplemented)
 
 
+# ==================
+# Subnamespace tests
+# ==================
+
+class TestSubnamespace(TestCase):
+
+    def test_single_subnamespace(self):
+        parser = argparse.ArgumentParser()
+        action = parser.add_subparsers(required=False, dest="action")
+
+        parser_add = action.add_parser("add", subnamespace="add")
+        parser_add.add_argument("--to")
+
+        parser_remove = action.add_parser("remove", subnamespace="remove")
+        parser_remove.add_argument("--from")
+
+        # a root parser should not have 'subnamespace' attribute,
+        # as that attribute should only be set when using
+        # `_SubParsersAction.add_parser()`
+        self.assertNotHasAttr(parser, "subnamespace")
+
+        # check subparser has 'subnamespace' attribute,
+        # that was set when calling `action.add_parser()`
+        self.assertHasAttr(parser_add, "subnamespace")
+
+        # 'subnamespace' attribute is a string
+        self.assertIsInstance(parser_add.subnamespace, str)
+
+        # check nesting of Namspaces works
+        args = parser.parse_args(["add"])
+        self.assertEqual(args, argparse.Namespace(
+            action="add", add=argparse.Namespace(
+            to=None
+        )))
+
+        # test accessing of subnamespaces and args via `x.y` works
+        self.assertEqual(args.add.to, None)
+
+        # check 'required=False' allows no subnamespaces to be created
+        args = parser.parse_args([])
+        self.assertEqual(args, argparse.Namespace(action=None))
+
+    def test_double_subnamespace(self):
+        def add_address_args_inet(parser):
+            parser.add_argument("address")
+            parser.add_argument("port", type=int)
+            parser.add_argument("--use-proxy", action="store_true")
+
+        def add_address_args_unix(parser):
+            parser.add_argument("path")
+
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--key-file")
+        action = parser.add_subparsers(required=True, dest="action")
+
+        parser_bind = action.add_parser("bind", subnamespace="bind")
+        parser_bind.add_argument("--fork", action="store_true")
+        bind_family = parser_bind.add_subparsers(required=True, dest="family")
+
+        parser_bind_inet = bind_family.add_parser("inet", subnamespace="inet")
+        add_address_args_inet(parser_bind_inet)
+
+        parser_bind_unix = bind_family.add_parser("unix", subnamespace="unix")
+        add_address_args_unix(parser_bind_unix)
+
+        parser_connect = action.add_parser("connect", subnamespace="connect")
+        connect_family = parser_connect.add_subparsers(required=True, dest="family")
+
+        parser_connect_inet = connect_family.add_parser("inet", subnamespace="inet")
+        add_address_args_inet(parser_connect_inet)
+
+        parser_connect_unix = connect_family.add_parser("unix", subnamespace="unix")
+        add_address_args_unix(parser_connect_unix)
+
+        # check doubly-nested Namespaces work
+        # we assume if this test passes that we don't need to write
+        # redundant triply-nested etc Namespaces tests
+        args = parser.parse_args(["bind", "unix", "/foo/bar/socket"])
+        self.assertEqual(args, argparse.Namespace(
+            key_file=None,
+            action="bind", bind=argparse.Namespace(
+            fork=False,
+            family="unix", unix=argparse.Namespace(
+            path="/foo/bar/socket"
+        ))))
+
+        # we test with nested args with '-' in their name
+        # '--key-file' -> 'key_file' and '--use-proxy' -> 'use_proxy'
+        args = parser.parse_args(["--key-file", "/etc/key", "connect",
+                                  "inet", "127.0.0.1", "8000"])
+        self.assertEqual(args, argparse.Namespace(
+            key_file="/etc/key",
+            action="connect", connect=argparse.Namespace(
+            family="inet", inet=argparse.Namespace(
+            address="127.0.0.1", port=8000, use_proxy=False
+        ))))
+
+        # test accessing of nested args works when they have '_' in them
+        self.assertEqual(args.connect.inet.use_proxy, False)
+
+    def test_mixed_some_subnamespace_some_not(self):
+        parser = argparse.ArgumentParser()
+        action = parser.add_subparsers(required=True, dest="action")
+
+        parser_add = action.add_parser("add", subnamespace="add")
+        spec = parser_add.add_subparsers(required=True, dest="spec")
+
+        parser_add_country = spec.add_parser("country", subnamespace=None)
+        parser_add_country.add_argument("country_name")
+
+        parser_add_color = spec.add_parser("color", subnamespace="color")
+        parser_add_color.add_argument("name")
+
+        # test that non-subnamespace parser arguments get parented to
+        # their parent Namespace, not the root Namespace
+        # ie make sure 'country_name' gets put under the 'add' Namespace
+        # not the root Namespace
+        args = parser.parse_args(["add", "country", "france"])
+        self.assertEqual(args, argparse.Namespace(
+            action="add", add=argparse.Namespace(
+            spec="country", country_name="france"
+        )))
+
+        # test accessing of double subnamespaces works
+        # with non-subnamespace args
+        self.assertEqual(args.add.country_name, "france")
+
+        # contrast above example with this one, where 'name' is
+        # parented under the 'add.color' Namespace
+        args = parser.parse_args(["add", "color", "blue"])
+        self.assertEqual(args, argparse.Namespace(
+            action="add", add=argparse.Namespace(
+            spec="color", color=argparse.Namespace(
+            name="blue"
+        ))))
+
+        # test accessing of double subnamespaces works,
+        # in particular check that we're not just getting a proxy
+        # or some descriptor chicanery; args genuinely are stored
+        # hierarchically
+        self.assertIsInstance(args.add.color, argparse.Namespace)
+        self.assertEqual(args.add.color.name, "blue")
+
+    def test_exotic_subnamespace_names(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument("-f", help="fast-tracked order", action="store_true")
+
+        choice = parser.add_subparsers(required=True, dest="choice")
+
+        parser_0 = choice.add_parser("0", subnamespace="0",
+                                     help="number 0 menu item")
+
+        parser_1 = choice.add_parser("1", subnamespace="1",
+                                     help="number 1 menu item")
+
+        parser_True = choice.add_parser("True", subnamespace="True",
+                                        help="limited edition 'True' meal")
+        parser_True.add_argument("--deluxe", "-d", action="store_true")
+
+        parser_double_cheeseburger = choice.add_parser("double-cheeseburger",
+                                                       subnamespace="double-cheeseburger")
+
+        parser_chicken_nuggets = choice.add_parser("chicken-nuggets",
+                                                   subnamespace="chicken-nuggets")
+        parser_chicken_nuggets.add_argument("-f", help="with fries",
+                                            action="store_true")
+
+        # test to observe '-' being replaced with '_' in
+        # subnamespace attribute name
+        args = parser.parse_args(["double-cheeseburger"])
+        self.assertNotHasAttr(args, "double-cheeseburger")
+        self.assertHasAttr(args, "double_cheeseburger")
+        self.assertEqual(args, argparse.Namespace(
+            f=False,
+            choice="double-cheeseburger", double_cheeseburger=argparse.Namespace()
+        ))
+
+        # test to observe two different `f` flags with different values
+        # something which is not possible without subnamespaces,
+        # and a key reason of why we're interested in subnamespaces
+        args = parser.parse_args(["chicken-nuggets", "-f"])
+        self.assertEqual(args, argparse.Namespace(
+            f=False,
+            choice="chicken-nuggets", chicken_nuggets=argparse.Namespace(
+            f=True,
+        )))
+
+        # test to check that the order in which the `-f` flags appear
+        # doesn't lead to a last-write-wins situation; the `f`s are
+        # genuinely being parsed individually and are not overwriting
+        # each other in the `_SubParsersAction.__call__` stage
+        args = parser.parse_args(["-f", "chicken-nuggets"])
+        self.assertEqual(args, argparse.Namespace(
+            f=True,
+            choice="chicken-nuggets", chicken_nuggets=argparse.Namespace(
+            f=False,
+        )))
+
+        # check that subnamespaces that aren't accessible by `x.y` notation
+        # are still accessible via getattr
+        args = parser.parse_args(["0"])
+        self.assertHasAttr(args, "0")
+        self.assertEqual(getattr(args, "0"), argparse.Namespace())
+
+        # check that subparsers whose name are a Python keyword
+        # are acceptable and their subnamespaces are correctly stored
+        args = parser.parse_args(["True"])
+        self.assertHasAttr(args, "True")
+        self.assertEqual(getattr(args, "True"), argparse.Namespace(deluxe=False))
+
+
 # ===================
 # File encoding tests
 # ===================
