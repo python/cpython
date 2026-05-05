@@ -755,7 +755,7 @@ deleted. This can be done using interpreter views.
    .. versionadded:: next
 
 
-.. c:function:: PyInterpreterView *PyInterpreterView_FromMain()
+.. c:function:: PyInterpreterView *PyInterpreterView_FromMain(void)
 
    Create a view for the main interpreter (the first and default
    interpreter in a Python process; see
