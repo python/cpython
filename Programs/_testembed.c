@@ -2832,8 +2832,6 @@ stress_func(void *arg)
 
         PyInterpreterGuard_Close(guard);
 
-        _Py_yield();
-
         guard = PyInterpreterGuard_FromView(view);
         PyInterpreterView_Close(view);
 
@@ -2868,7 +2866,6 @@ test_concurrent_finalization_stress(void)
             }
         }
 
-        _Py_yield();
         Py_Finalize();
 
         for (int i = 0; i < NUM_THREADS; ++i) {

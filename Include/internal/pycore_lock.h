@@ -72,7 +72,7 @@ extern int _PyMutex_TryUnlock(PyMutex *m);
 
 // Yield the processor to other threads (e.g., sched_yield).
 // Exported for _testembed.
-PyAPI_FUNC(void) _Py_yield(void);
+extern void _Py_yield(void);
 
 
 // PyEvent is a one-time event notification
