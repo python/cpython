@@ -3280,9 +3280,8 @@ typedef struct {
 } ManagedDictObject;
 
 int ManagedDict_traverse(PyObject *self, visitproc visit, void *arg) {
-    PyObject_VisitManagedDict(self, visit, arg);
     Py_VISIT(Py_TYPE(self));
-    return 0;
+    return PyObject_VisitManagedDict(self, visit, arg);
 }
 
 int ManagedDict_clear(PyObject *self) {

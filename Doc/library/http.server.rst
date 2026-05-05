@@ -99,7 +99,7 @@ instantiation, of which this module provides three different variants:
 
    This class is used to handle the HTTP requests that arrive at the server.  By
    itself, it cannot respond to any actual HTTP requests; it must be subclassed
-   to handle each request method (e.g. GET or POST).
+   to handle each request method (for example, ``'GET'`` or ``'POST'``).
    :class:`BaseHTTPRequestHandler` provides a number of class and instance
    variables, and methods for use by subclasses.
 
@@ -241,7 +241,7 @@ instantiation, of which this module provides three different variants:
       request header it responds back with a ``100 Continue`` followed by ``200
       OK`` headers.
       This method can be overridden to raise an error if the server does not
-      want the client to continue.  For e.g. server can choose to send ``417
+      want the client to continue.  For example, the server can choose to send ``417
       Expectation Failed`` as a response header and ``return False``.
 
       .. versionadded:: 3.2
@@ -366,7 +366,8 @@ instantiation, of which this module provides three different variants:
          delays, it now always returns the IP address.
 
 
-.. class:: SimpleHTTPRequestHandler(request, client_address, server, directory=None)
+.. class:: SimpleHTTPRequestHandler(request, client_address, server, \
+                                    *, directory=None, extra_response_headers=None)
 
    This class serves files from the directory *directory* and below,
    or the current directory if *directory* is not provided, directly
@@ -377,6 +378,9 @@ instantiation, of which this module provides three different variants:
 
    .. versionchanged:: 3.9
       The *directory* parameter accepts a :term:`path-like object`.
+
+   .. versionchanged:: next
+      Added *extra_response_headers* parameter.
 
    A lot of the work, such as parsing the request, is done by the base class
    :class:`BaseHTTPRequestHandler`.  This class implements the :func:`do_GET`
@@ -390,6 +394,14 @@ instantiation, of which this module provides three different variants:
       This will be ``"SimpleHTTP/" + __version__``, where ``__version__`` is
       defined at the module level.
 
+   .. attribute:: default_content_type
+
+      Specifies the Content-Type header value sent when the MIME type
+      cannot be guessed from the file extension of the requested URL.
+      By default, it is set to ``'application/octet-stream'``.
+
+      .. versionadded:: next
+
    .. attribute:: extensions_map
 
       A dictionary mapping suffixes into MIME types, contains custom overrides
@@ -399,6 +411,15 @@ instantiation, of which this module provides three different variants:
       .. versionchanged:: 3.9
          This dictionary is no longer filled with the default system mappings,
          but only contains overrides.
+
+   .. attribute:: extra_response_headers
+
+      A sequence of ``(name, value)`` pairs containing user-defined extra HTTP
+      response headers to add to each successful HTTP status 200 response. These
+      headers are not included in other status code responses.
+
+      Headers that the server sends automatically such as ``Content-Type``
+      will not be overwritten by :attr:`!extra_response_headers`.
 
    The :class:`SimpleHTTPRequestHandler` class defines the following methods:
 
@@ -431,6 +452,9 @@ instantiation, of which this module provides three different variants:
       A ``'Content-type:'`` header with the guessed content type is output,
       followed by a ``'Content-Length:'`` header with the file's size and a
       ``'Last-Modified:'`` header with the file's modification time.
+
+      The instance attribute :attr:`extra_response_headers` is a sequence of
+      ``(name, value)`` pairs containing user-defined extra response headers.
 
       Then follows a blank line signifying the end of the headers, and then the
       contents of the file are output.
@@ -469,7 +493,9 @@ Command-line interface
 
 :mod:`!http.server` can also be invoked directly using the :option:`-m`
 switch of the interpreter.  The following example illustrates how to serve
-files relative to the current directory::
+files relative to the current directory:
+
+.. code-block:: bash
 
    python -m http.server [OPTIONS] [port]
 
@@ -480,7 +506,9 @@ The following options are accepted:
 .. option:: port
 
    The server listens to port 8000 by default. The default can be overridden
-   by passing the desired port number as an argument::
+   by passing the desired port number as an argument:
+
+   .. code-block:: bash
 
       python -m http.server 9000
 
@@ -489,7 +517,9 @@ The following options are accepted:
    Specifies a specific address to which it should bind. Both IPv4 and IPv6
    addresses are supported. By default, the server binds itself to all
    interfaces. For example, the following command causes the server to bind
-   to localhost only::
+   to localhost only:
+
+   .. code-block:: bash
 
       python -m http.server --bind 127.0.0.1
 
@@ -502,7 +532,9 @@ The following options are accepted:
 
    Specifies a directory to which it should serve the files. By default,
    the server uses the current directory. For example, the following command
-   uses a specific directory::
+   uses a specific directory:
+
+   .. code-block:: bash
 
       python -m http.server --directory /tmp/
 
@@ -512,15 +544,31 @@ The following options are accepted:
 
    Specifies the HTTP version to which the server is conformant. By default,
    the server is conformant to HTTP/1.0. For example, the following command
-   runs an HTTP/1.1 conformant server::
+   runs an HTTP/1.1 conformant server:
+
+   .. code-block:: bash
 
       python -m http.server --protocol HTTP/1.1
 
    .. versionadded:: 3.11
 
+.. option:: --content-type <content_type>
+
+   Specifies the default Content-Type HTTP header used when the MIME type
+   cannot be guessed from the URL's file extension. By default, the server
+   uses ``'application/octet-stream'``:
+
+   .. code-block:: bash
+
+      python -m http.server --content-type text/html
+
+   .. versionadded:: next
+
 .. option:: --tls-cert
 
-   Specifies a TLS certificate chain for HTTPS connections::
+   Specifies a TLS certificate chain for HTTPS connections:
+
+   .. code-block:: bash
 
       python -m http.server --tls-cert fullchain.pem
 
@@ -536,16 +584,27 @@ The following options are accepted:
 
 .. option:: --tls-password-file
 
-   Specifies the password file for password-protected private keys::
+   Specifies the password file for password-protected private keys:
+
+   .. code-block:: bash
 
       python -m http.server \
              --tls-cert cert.pem \
              --tls-key key.pem \
              --tls-password-file password.txt
 
-   This option requires `--tls-cert`` to be specified.
+   This option requires ``--tls-cert`` to be specified.
 
    .. versionadded:: 3.14
+
+.. option:: -H, --header <header> <value>
+
+   Specify an additional extra HTTP Response Header to send on successful HTTP
+   200 responses. Can be used multiple times to send additional custom response
+   headers. Headers that are sent automatically by the server (for instance
+   Content-Type) will not be overwritten by the server.
+
+   .. versionadded:: next
 
 
 .. _http.server-security:
@@ -561,7 +620,7 @@ to be served.
 
 Methods :meth:`BaseHTTPRequestHandler.send_header` and
 :meth:`BaseHTTPRequestHandler.send_response_only` assume sanitized input
-and does not perform input validation such as checking for the presence of CRLF
+and do not perform input validation such as checking for the presence of CRLF
 sequences. Untrusted input may result in HTTP Header injection attacks.
 
 Earlier versions of Python did not scrub control characters from the

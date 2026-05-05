@@ -33,7 +33,6 @@ except ImportError:
 def _mock_console_init(self, f_in=0, f_out=1, term="", encoding="utf-8"):
     """Mock __init__ to avoid real Windows API calls in headless environments."""
     super(WindowsConsole, self).__init__(f_in, f_out, term, encoding)
-    self.screen = []
     self.width = 80
     self.height = 25
     self._WindowsConsole__offset = 0
@@ -307,7 +306,8 @@ class WindowsConsoleTests(TestCase):
                 call(self.move_left(5)),
                 call(self.move_up()),
                 call(b"def f():"),
-                call(self.move_left(3)),
+                call(self.move_left(8)),
+                call(self.move_right(5)),
                 call(self.move_down()),
             ]
         )

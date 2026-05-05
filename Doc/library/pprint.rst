@@ -17,7 +17,7 @@ objects which are not representable as Python literals.
 
 The formatted representation keeps objects on a single line if it can, and
 breaks them onto multiple lines if they don't fit within the allowed width,
-adjustable by the *width* parameter defaulting to 80 characters.
+adjustable by the *width* parameter defaulting to 88 characters.
 
 .. versionchanged:: 3.9
    Added support for pretty-printing :class:`types.SimpleNamespace`.
@@ -30,9 +30,8 @@ adjustable by the *width* parameter defaulting to 80 characters.
 Functions
 ---------
 
-.. function:: pp(object, stream=None, indent=1, width=80, depth=None, *, \
-                 compact=False, expand=False, sort_dicts=False, \
-                 underscore_numbers=False)
+.. function:: pp(object, stream=None, indent=4, width=88, depth=None, *, \
+                 compact=False, sort_dicts=False, underscore_numbers=False)
 
    Prints the formatted representation of *object*, followed by a newline.
    This function may be used in the interactive interpreter
@@ -67,16 +66,11 @@ Functions
    :param bool compact:
       Control the way long :term:`sequences <sequence>` are formatted.
       If ``False`` (the default),
-      each item of a sequence will be formatted on a separate line,
-      otherwise as many items as will fit within the *width*
-      will be formatted on each output line.
-      Incompatible with *expand*.
-
-   :param bool expand:
-      If ``True``,
       opening parentheses and brackets will be followed by a newline and the
       following content will be indented by one level, similar to
-      pretty-printed JSON. Incompatible with *compact*.
+      pretty-printed JSON.
+      If ``True``, as many items as will fit within the *width*
+      will be formatted on each output line.
 
    :param bool sort_dicts:
       If ``True``, dictionaries will be formatted with
@@ -91,32 +85,25 @@ Functions
    >>> import pprint
    >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
    >>> stuff.insert(0, stuff)
-   >>> pprint.pp(stuff)
-   [<Recursion on list with id=...>,
-    'spam',
-    'eggs',
-    'lumberjack',
-    'knights',
-    'ni']
+   >>> pprint.pp(stuff, width=100)
+   [<Recursion on list with id=...>, 'spam', 'eggs', 'lumberjack', 'knights', 'ni']
 
    .. versionadded:: 3.8
 
 
-.. function:: pprint(object, stream=None, indent=1, width=80, depth=None, *, \
-                     compact=False, expand=False, sort_dicts=True, \
-                     underscore_numbers=False)
+.. function:: pprint(object, stream=None, indent=4, width=88, depth=None, *, \
+                     compact=False, sort_dicts=True, underscore_numbers=False)
 
    Alias for :func:`~pprint.pp` with *sort_dicts* set to ``True`` by default,
    which would automatically sort the dictionaries' keys,
    you might want to use :func:`~pprint.pp` instead where it is ``False`` by default.
 
 
-.. function:: pformat(object, indent=1, width=80, depth=None, *, \
-                      compact=False, expand=False, sort_dicts=True, \
-                      underscore_numbers=False)
+.. function:: pformat(object, indent=4, width=88, depth=None, *, \
+                      compact=False, sort_dicts=True, underscore_numbers=False)
 
    Return the formatted representation of *object* as a string.  *indent*,
-   *width*, *depth*, *compact*, *expand*, *sort_dicts* and *underscore_numbers* are
+   *width*, *depth*, *compact*, *sort_dicts* and *underscore_numbers* are
    passed to the :class:`PrettyPrinter` constructor as formatting parameters
    and their meanings are as described in the documentation above.
 
@@ -154,13 +141,13 @@ Functions
 
 .. _prettyprinter-objects:
 
-PrettyPrinter Objects
+PrettyPrinter objects
 ---------------------
 
 .. index:: single: ...; placeholder
 
-.. class:: PrettyPrinter(indent=1, width=80, depth=None, stream=None, *, \
-                         compact=False, expand=False, sort_dicts=True, \
+.. class:: PrettyPrinter(indent=4, width=88, depth=None, stream=None, *, \
+                         compact=False, sort_dicts=True, \
                          underscore_numbers=False)
 
    Construct a :class:`PrettyPrinter` instance.
@@ -171,21 +158,23 @@ PrettyPrinter Objects
    >>> import pprint
    >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
    >>> stuff.insert(0, stuff[:])
-   >>> pp = pprint.PrettyPrinter(indent=4)
+   >>> pp = pprint.PrettyPrinter()
    >>> pp.pprint(stuff)
-   [   ['spam', 'eggs', 'lumberjack', 'knights', 'ni'],
+   [
+       ['spam', 'eggs', 'lumberjack', 'knights', 'ni'],
        'spam',
        'eggs',
        'lumberjack',
        'knights',
-       'ni']
-   >>> pp = pprint.PrettyPrinter(width=41, compact=True)
+       'ni',
+   ]
+   >>> pp = pprint.PrettyPrinter(indent=1, width=41, compact=True)
    >>> pp.pprint(stuff)
    [['spam', 'eggs', 'lumberjack',
      'knights', 'ni'],
     'spam', 'eggs', 'lumberjack', 'knights',
     'ni']
-   >>> pp = pprint.PrettyPrinter(width=41, expand=True, indent=3)
+   >>> pp = pprint.PrettyPrinter(width=41, indent=3)
    >>> pp.pprint(stuff)
    [
       [
@@ -220,8 +209,12 @@ PrettyPrinter Objects
    .. versionchanged:: 3.11
       No longer attempts to write to :data:`!sys.stdout` if it is ``None``.
 
-   .. versionchanged:: 3.15
-      Added the *expand* parameter.
+   .. versionchanged:: next
+      Changed default *indent* from 1 to 4
+      and default *width* from 80 to 88.
+      The default ``compact=False`` layout is now similar to
+      pretty-printed JSON, with opening parentheses and brackets
+      followed by a newline and the contents indented by one level.
 
 
 :class:`PrettyPrinter` instances have the following methods:
@@ -298,219 +291,144 @@ let's fetch information about a project from `PyPI <https://pypi.org>`_::
 In its basic form, :func:`~pprint.pp` shows the whole object::
 
    >>> pprint.pp(project_info)
-   {'author': 'The Python Packaging Authority',
-    'author_email': 'pypa-dev@googlegroups.com',
-    'bugtrack_url': None,
-    'classifiers': ['Development Status :: 3 - Alpha',
-                    'Intended Audience :: Developers',
-                    'License :: OSI Approved :: MIT License',
-                    'Programming Language :: Python :: 2',
-                    'Programming Language :: Python :: 2.6',
-                    'Programming Language :: Python :: 2.7',
-                    'Programming Language :: Python :: 3',
-                    'Programming Language :: Python :: 3.2',
-                    'Programming Language :: Python :: 3.3',
-                    'Programming Language :: Python :: 3.4',
-                    'Topic :: Software Development :: Build Tools'],
-    'description': 'A sample Python project\n'
-                   '=======================\n'
-                   '\n'
-                   'This is the description file for the project.\n'
-                   '\n'
-                   'The file should use UTF-8 encoding and be written using '
-                   'ReStructured Text. It\n'
-                   'will be used to generate the project webpage on PyPI, and '
-                   'should be written for\n'
-                   'that purpose.\n'
-                   '\n'
-                   'Typical contents for this file would include an overview of '
-                   'the project, basic\n'
-                   'usage examples, etc. Generally, including the project '
-                   'changelog in here is not\n'
-                   'a good idea, although a simple "What\'s New" section for the '
-                   'most recent version\n'
-                   'may be appropriate.',
-    'description_content_type': None,
-    'docs_url': None,
-    'download_url': 'UNKNOWN',
-    'downloads': {'last_day': -1, 'last_month': -1, 'last_week': -1},
-    'home_page': 'https://github.com/pypa/sampleproject',
-    'keywords': 'sample setuptools development',
-    'license': 'MIT',
-    'maintainer': None,
-    'maintainer_email': None,
-    'name': 'sampleproject',
-    'package_url': 'https://pypi.org/project/sampleproject/',
-    'platform': 'UNKNOWN',
-    'project_url': 'https://pypi.org/project/sampleproject/',
-    'project_urls': {'Download': 'UNKNOWN',
-                     'Homepage': 'https://github.com/pypa/sampleproject'},
-    'release_url': 'https://pypi.org/project/sampleproject/1.2.0/',
-    'requires_dist': None,
-    'requires_python': None,
-    'summary': 'A sample Python project',
-    'version': '1.2.0'}
+   {
+       'author': 'The Python Packaging Authority',
+       'author_email': 'pypa-dev@googlegroups.com',
+       'bugtrack_url': None,
+       'classifiers': [
+           'Development Status :: 3 - Alpha',
+           'Intended Audience :: Developers',
+           'License :: OSI Approved :: MIT License',
+           'Programming Language :: Python :: 2',
+           'Programming Language :: Python :: 2.6',
+           'Programming Language :: Python :: 2.7',
+           'Programming Language :: Python :: 3',
+           'Programming Language :: Python :: 3.2',
+           'Programming Language :: Python :: 3.3',
+           'Programming Language :: Python :: 3.4',
+           'Topic :: Software Development :: Build Tools',
+       ],
+       'description': 'A sample Python project\n'
+       '=======================\n'
+       '\n'
+       'This is the description file for the project.\n'
+       '\n'
+       'The file should use UTF-8 encoding and be written using ReStructured Text. It\n'
+       'will be used to generate the project webpage on PyPI, and should be written for\n'
+       'that purpose.\n'
+       '\n'
+       'Typical contents for this file would include an overview of the project, basic\n'
+       'usage examples, etc. Generally, including the project changelog in here is not\n'
+       'a good idea, although a simple "What\'s New" section for the most recent version\n'
+       'may be appropriate.',
+       'description_content_type': None,
+       'docs_url': None,
+       'download_url': 'UNKNOWN',
+       'downloads': {'last_day': -1, 'last_month': -1, 'last_week': -1},
+       'home_page': 'https://github.com/pypa/sampleproject',
+       'keywords': 'sample setuptools development',
+       'license': 'MIT',
+       'maintainer': None,
+       'maintainer_email': None,
+       'name': 'sampleproject',
+       'package_url': 'https://pypi.org/project/sampleproject/',
+       'platform': 'UNKNOWN',
+       'project_url': 'https://pypi.org/project/sampleproject/',
+       'project_urls': {'Download': 'UNKNOWN', 'Homepage': 'https://github.com/pypa/sampleproject'},
+       'release_url': 'https://pypi.org/project/sampleproject/1.2.0/',
+       'requires_dist': None,
+       'requires_python': None,
+       'summary': 'A sample Python project',
+       'version': '1.2.0',
+   }
 
 The result can be limited to a certain *depth* (ellipsis is used for deeper
 contents)::
 
    >>> pprint.pp(project_info, depth=1)
-   {'author': 'The Python Packaging Authority',
-    'author_email': 'pypa-dev@googlegroups.com',
-    'bugtrack_url': None,
-    'classifiers': [...],
-    'description': 'A sample Python project\n'
-                   '=======================\n'
-                   '\n'
-                   'This is the description file for the project.\n'
-                   '\n'
-                   'The file should use UTF-8 encoding and be written using '
-                   'ReStructured Text. It\n'
-                   'will be used to generate the project webpage on PyPI, and '
-                   'should be written for\n'
-                   'that purpose.\n'
-                   '\n'
-                   'Typical contents for this file would include an overview of '
-                   'the project, basic\n'
-                   'usage examples, etc. Generally, including the project '
-                   'changelog in here is not\n'
-                   'a good idea, although a simple "What\'s New" section for the '
-                   'most recent version\n'
-                   'may be appropriate.',
-    'description_content_type': None,
-    'docs_url': None,
-    'download_url': 'UNKNOWN',
-    'downloads': {...},
-    'home_page': 'https://github.com/pypa/sampleproject',
-    'keywords': 'sample setuptools development',
-    'license': 'MIT',
-    'maintainer': None,
-    'maintainer_email': None,
-    'name': 'sampleproject',
-    'package_url': 'https://pypi.org/project/sampleproject/',
-    'platform': 'UNKNOWN',
-    'project_url': 'https://pypi.org/project/sampleproject/',
-    'project_urls': {...},
-    'release_url': 'https://pypi.org/project/sampleproject/1.2.0/',
-    'requires_dist': None,
-    'requires_python': None,
-    'summary': 'A sample Python project',
-    'version': '1.2.0'}
+   {
+       'author': 'The Python Packaging Authority',
+       'author_email': 'pypa-dev@googlegroups.com',
+       'bugtrack_url': None,
+       'classifiers': [...],
+       'description': 'A sample Python project\n'
+       '=======================\n'
+       '\n'
+       'This is the description file for the project.\n'
+       '\n'
+       'The file should use UTF-8 encoding and be written using ReStructured Text. It\n'
+       'will be used to generate the project webpage on PyPI, and should be written for\n'
+       'that purpose.\n'
+       '\n'
+       'Typical contents for this file would include an overview of the project, basic\n'
+       'usage examples, etc. Generally, including the project changelog in here is not\n'
+       'a good idea, although a simple "What\'s New" section for the most recent version\n'
+       'may be appropriate.',
+       'description_content_type': None,
+       'docs_url': None,
+       'download_url': 'UNKNOWN',
+       'downloads': {...},
+       'home_page': 'https://github.com/pypa/sampleproject',
+       'keywords': 'sample setuptools development',
+       'license': 'MIT',
+       'maintainer': None,
+       'maintainer_email': None,
+       'name': 'sampleproject',
+       'package_url': 'https://pypi.org/project/sampleproject/',
+       'platform': 'UNKNOWN',
+       'project_url': 'https://pypi.org/project/sampleproject/',
+       'project_urls': {...},
+       'release_url': 'https://pypi.org/project/sampleproject/1.2.0/',
+       'requires_dist': None,
+       'requires_python': None,
+       'summary': 'A sample Python project',
+       'version': '1.2.0',
+   }
 
 Additionally, maximum character *width* can be suggested. If a long object
 cannot be split, the specified width will be exceeded::
 
    >>> pprint.pp(project_info, depth=1, width=60)
-   {'author': 'The Python Packaging Authority',
-    'author_email': 'pypa-dev@googlegroups.com',
-    'bugtrack_url': None,
-    'classifiers': [...],
-    'description': 'A sample Python project\n'
-                   '=======================\n'
-                   '\n'
-                   'This is the description file for the '
-                   'project.\n'
-                   '\n'
-                   'The file should use UTF-8 encoding and be '
-                   'written using ReStructured Text. It\n'
-                   'will be used to generate the project '
-                   'webpage on PyPI, and should be written '
-                   'for\n'
-                   'that purpose.\n'
-                   '\n'
-                   'Typical contents for this file would '
-                   'include an overview of the project, '
-                   'basic\n'
-                   'usage examples, etc. Generally, including '
-                   'the project changelog in here is not\n'
-                   'a good idea, although a simple "What\'s '
-                   'New" section for the most recent version\n'
-                   'may be appropriate.',
-    'description_content_type': None,
-    'docs_url': None,
-    'download_url': 'UNKNOWN',
-    'downloads': {...},
-    'home_page': 'https://github.com/pypa/sampleproject',
-    'keywords': 'sample setuptools development',
-    'license': 'MIT',
-    'maintainer': None,
-    'maintainer_email': None,
-    'name': 'sampleproject',
-    'package_url': 'https://pypi.org/project/sampleproject/',
-    'platform': 'UNKNOWN',
-    'project_url': 'https://pypi.org/project/sampleproject/',
-    'project_urls': {...},
-    'release_url': 'https://pypi.org/project/sampleproject/1.2.0/',
-    'requires_dist': None,
-    'requires_python': None,
-    'summary': 'A sample Python project',
-    'version': '1.2.0'}
-
-Lastly, we can format like pretty-printed JSON with the *expand* parameter.
-Best results are achieved with a higher *indent* value::
-
-   >>> pprint.pp(project_info, indent=4, expand=True)
    {
-      'author': 'The Python Packaging Authority',
-      'author_email': 'pypa-dev@googlegroups.com',
-      'bugtrack_url': None,
-      'classifiers': [
-         'Development Status :: 3 - Alpha',
-         'Intended Audience :: Developers',
-         'License :: OSI Approved :: MIT License',
-         'Programming Language :: Python :: 2',
-         'Programming Language :: Python :: 2.6',
-         'Programming Language :: Python :: 2.7',
-         'Programming Language :: Python :: 3',
-         'Programming Language :: Python :: 3.2',
-         'Programming Language :: Python :: 3.3',
-         'Programming Language :: Python :: 3.4',
-         'Topic :: Software Development :: Build Tools',
-      ],
-      'description': 'A sample Python project\n'
-      '=======================\n'
-      '\n'
-      'This is the description file for the project.\n'
-      '\n'
-      'The file should use UTF-8 encoding and be written using ReStructured '
-      'Text. It\n'
-      'will be used to generate the project webpage on PyPI, and should be '
-      'written for\n'
-      'that purpose.\n'
-      '\n'
-      'Typical contents for this file would include an overview of the project, '
-      'basic\n'
-      'usage examples, etc. Generally, including the project changelog in here '
-      'is not\n'
-      'a good idea, although a simple "What\'s New" section for the most recent '
-      'version\n'
-      'may be appropriate.',
-      'description_content_type': None,
-      'docs_url': None,
-      'download_url': 'UNKNOWN',
-      'downloads': {'last_day': -1, 'last_month': -1, 'last_week': -1},
-      'dynamic': None,
-      'home_page': 'https://github.com/pypa/sampleproject',
-      'keywords': 'sample setuptools development',
-      'license': 'MIT',
-      'license_expression': None,
-      'license_files': None,
-      'maintainer': None,
-      'maintainer_email': None,
-      'name': 'sampleproject',
-      'package_url': 'https://pypi.org/project/sampleproject/',
-      'platform': 'UNKNOWN',
-      'project_url': 'https://pypi.org/project/sampleproject/',
-      'project_urls': {
-         'Download': 'UNKNOWN',
-         'Homepage': 'https://github.com/pypa/sampleproject',
-      },
-      'provides_extra': None,
-      'release_url': 'https://pypi.org/project/sampleproject/1.2.0/',
-      'requires_dist': None,
-      'requires_python': None,
-      'summary': 'A sample Python project',
-      'version': '1.2.0',
-      'yanked': False,
-      'yanked_reason': None,
+       'author': 'The Python Packaging Authority',
+       'author_email': 'pypa-dev@googlegroups.com',
+       'bugtrack_url': None,
+       'classifiers': [...],
+       'description': 'A sample Python project\n'
+       '=======================\n'
+       '\n'
+       'This is the description file for the project.\n'
+       '\n'
+       'The file should use UTF-8 encoding and be written '
+       'using ReStructured Text. It\n'
+       'will be used to generate the project webpage on PyPI, '
+       'and should be written for\n'
+       'that purpose.\n'
+       '\n'
+       'Typical contents for this file would include an '
+       'overview of the project, basic\n'
+       'usage examples, etc. Generally, including the project '
+       'changelog in here is not\n'
+       'a good idea, although a simple "What\'s New" section '
+       'for the most recent version\n'
+       'may be appropriate.',
+       'description_content_type': None,
+       'docs_url': None,
+       'download_url': 'UNKNOWN',
+       'downloads': {...},
+       'home_page': 'https://github.com/pypa/sampleproject',
+       'keywords': 'sample setuptools development',
+       'license': 'MIT',
+       'maintainer': None,
+       'maintainer_email': None,
+       'name': 'sampleproject',
+       'package_url': 'https://pypi.org/project/sampleproject/',
+       'platform': 'UNKNOWN',
+       'project_url': 'https://pypi.org/project/sampleproject/',
+       'project_urls': {...},
+       'release_url': 'https://pypi.org/project/sampleproject/1.2.0/',
+       'requires_dist': None,
+       'requires_python': None,
+       'summary': 'A sample Python project',
+       'version': '1.2.0',
    }

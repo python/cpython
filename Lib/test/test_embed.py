@@ -1930,6 +1930,12 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_init_in_background_thread")
         self.assertEqual(err, "")
 
+    def test_isinitialized_false_during_site_import(self):
+        # gh-146302: Py_IsInitialized() must not return true during site import.
+        out, err = self.run_embedded_interpreter(
+            "test_isinitialized_false_during_site_import")
+        self.assertEqual(err, "")
+
 
 class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_open_code_hook(self):
