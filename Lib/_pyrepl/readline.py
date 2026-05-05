@@ -171,12 +171,15 @@ class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
 
     def get_module_completions(self) -> tuple[list[str], CompletionAction | None] | None:
         line = stripcolor(self.get_line())
-        result = self.config.module_completer.get_completions(line)
+        colorize_completions = self.config.colorize_completions
+        result = self.config.module_completer.get_completions(
+            line, include_values=bool(colorize_completions)
+        )
         if result is None:
             return None
         names, values, action = result
-        if self.config.colorize_completions:
-            names = self.config.colorize_completions(names, values)
+        if colorize_completions:
+            names = colorize_completions(names, values)
         return names, action
 
     def get_trimmed_history(self, maxlength: int) -> list[str]:
