@@ -3452,7 +3452,7 @@ PyInterpreterGuard_FromView(PyInterpreterView *view)
         return NULL;
     }
 
-    assert(guard == NULL || guard->interp != NULL);
+    assert(guard->interp != NULL);
     return guard;
 }
 
