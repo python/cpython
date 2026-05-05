@@ -621,7 +621,6 @@ def main(args=None):
                                             'activate it, e.g. by '
                                             'sourcing an activate script '
                                             'in its bin directory.',
-                                     color=True,
                                      )
     parser.add_argument('dirs', metavar='ENV_DIR', nargs='+',
                         help='A directory to create the environment in.')

@@ -3445,11 +3445,11 @@ def _main():
     import argparse
     import importlib
 
-    parser = argparse.ArgumentParser(color=True)
+    parser = argparse.ArgumentParser()
     parser.add_argument(
         'object',
          help="The object to be analysed. "
-              "It supports the 'module:qualname' syntax")
+              "It supports the `module:qualname` syntax")
     parser.add_argument(
         '-d', '--details', action='store_true',
         help='Display info about the module rather than its source code')
