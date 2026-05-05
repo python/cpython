@@ -525,7 +525,7 @@ class perform_bracketed_paste(Command):
         self.reader.insert(data.replace(done, ""))
 
 
-class edit_in_editor(EditCommand):
+class open_input_in_editor(EditCommand):
     def do(self) -> None:
         r = self.reader
 
