@@ -236,9 +236,7 @@ def distclean(repo_root: Path) -> None:
     # error than git's interactive "Should I try again?" prompt.
     venv_dir = repo_root / ".nanvix" / "venv"
     if venv_dir.exists():
-        import shutil
-
-        shutil.rmtree(venv_dir, ignore_errors=True)
+        shutil.rmtree(venv_dir)
     cmd = ["git", "clean", "-fdx"]
     for exc in _DISTCLEAN_EXCLUDES:
         cmd.extend(["-e", exc])
