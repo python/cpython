@@ -19,14 +19,16 @@ from lzma import LZMACompressor, LZMADecompressor, LZMAError, LZMAFile
 
 
 # The NSKIP019 ``@unittest.skipIf(support.is_nanvix, ...)`` decorators sprinkled
-# below were derived from per-method-per-VM characterization recorded in
-# ``.vault/tasks/test-lzma-enablement/failure-characterization.md``. The reason
-# string ("lzma preset>=3 exceeds Nanvix heap") looks surprising on bad-args,
-# pickle, and state-only methods because the allocation that OOMs is the
-# ``LZMACompressor()`` constructed in ``setUp`` / fixture before the test body
-# runs -- not anything the test itself does. The decorator on
-# ``FileTestCase.test_read_multistream`` is the lone cascade-induced exception;
-# it is annotated inline at the decorator site.
+# below cover methods in the affected classes that construct an
+# ``LZMACompressor`` (or call ``lzma.compress(...)``) at the default
+# ``preset=6`` -- whether in ``setUp``, a class fixture, or inline in the test
+# body -- which exceeds Nanvix's heap budget. The reason string ("lzma
+# preset>=3 exceeds Nanvix heap") therefore looks surprising on bad-args,
+# pickle, and state-only methods even though the OOM is real: the offending
+# allocation is the compressor instantiation, not anything subsequent. The
+# decorator on ``FileTestCase.test_read_multistream`` is the lone
+# cascade-induced exception; it is annotated inline at the decorator site. See
+# PR #607 for the per-method-per-VM characterization that produced this list.
 
 
 class CompressorDecompressorTestCase(unittest.TestCase):
@@ -864,9 +866,9 @@ class FileTestCase(unittest.TestCase):
                 chunks.append(result)
             self.assertEqual(b"".join(chunks), INPUT)
 
-    # cascade-induced; passes in isolation, see failure-characterization.md
-    # §2.3 (Cascade-vs-real verdict). Decorated for batch-ordering resilience
-    # because it OOMs only when batched alongside test_re / test_plistlib.
+    # cascade-induced; passes in isolation. Decorated for batch-ordering
+    # resilience because it OOMs only when batched alongside test_re /
+    # test_plistlib.
     @unittest.skipIf(support.is_nanvix, "NSKIP019: lzma preset>=3 exceeds Nanvix heap")
     def test_read_multistream(self):
         with LZMAFile(BytesIO(COMPRESSED_XZ * 5)) as f:
