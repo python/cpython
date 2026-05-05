@@ -3322,7 +3322,7 @@ Py_ssize_t
 _PyInterpreterState_GuardCountdown(PyInterpreterState *interp)
 {
     assert(interp != NULL);
-    Py_ssize_t count = _Py_atomic_load_uintptr_relaxed(&interp->finalization_guards);
+    Py_ssize_t count = _Py_atomic_load_uintptr(&interp->finalization_guards);
     assert(count >= 0);
     return count;
 }
@@ -3346,7 +3346,11 @@ try_acquire_interp_guard(PyInterpreterState *interp, PyInterpreterGuard *guard)
         if (expected == _PyInterpreterGuard_GUARDS_NOT_ALLOWED) {
             return -1;
         }
-    } while (_Py_atomic_compare_exchange_uintptr(&interp->finalization_guards, &expected, expected + 1) == 0);
+    } while (_Py_atomic_compare_exchange_uintptr(&interp->finalization_guards,
+                                                 &expected,
+                                                 expected + 1) == 0);
+    assert(_Py_atomic_load_uintptr(&interp->finalization_guards) > 0);
+    assert(_Py_atomic_load_uintptr(&interp->finalization_guards) != _PyInterpreterGuard_GUARDS_NOT_ALLOWED);
 
     guard->interp = interp;
     return 0;
@@ -3501,7 +3505,7 @@ PyThreadState_Ensure(PyInterpreterGuard *guard)
     fresh_tstate->ensure.delete_on_release = 1;
 
     if (attached_tstate != NULL) {
-        return (PyThreadStateToken*)PyThreadState_Swap(fresh_tstate);
+        return (PyThreadStateToken *)PyThreadState_Swap(fresh_tstate);
     }
 
     _PyThreadState_Attach(fresh_tstate);
@@ -3570,11 +3574,11 @@ PyThreadState_Release(PyThreadStateToken *token)
     (void)check_tstate;
     assert(check_tstate == tstate);
 
-    if (owned_guard != NULL) {
-        PyInterpreterGuard_Close(owned_guard);
-    }
-
     if (tstate->ensure.delete_on_release) {
         PyThreadState_Delete(tstate);
+    }
+
+    if (owned_guard != NULL) {
+        PyInterpreterGuard_Close(owned_guard);
     }
 }
