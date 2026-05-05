@@ -1580,6 +1580,7 @@ extern "C" {
     INIT_ID(alias), \
     INIT_ID(align), \
     INIT_ID(all), \
+    INIT_ID(all_interpreters), \
     INIT_ID(all_threads), \
     INIT_ID(allow_code), \
     INIT_ID(alphabet), \

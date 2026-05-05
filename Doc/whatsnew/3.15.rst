@@ -75,22 +75,26 @@ Summary -- Release highlights
   profiling tools <whatsnew315-profiling-package>`
 * :pep:`799`: :ref:`Tachyon: High frequency statistical sampling profiler
   <whatsnew315-sampling-profiler>`
+* :pep:`831`: :ref:`Frame pointers are enabled by default for improved
+  system-level observability <whatsnew315-pep831>`
 * :pep:`798`: :ref:`Unpacking in comprehensions
   <whatsnew315-unpacking-in-comprehensions>`
 * :pep:`686`: :ref:`Python now uses UTF-8 as the default encoding
   <whatsnew315-utf8-default>`
-* :pep:`728`: ``TypedDict`` with typed extra items
+* :pep:`728`: :ref:`TypedDict with typed extra items <whatsnew315-typeddict>`
 * :pep:`747`: :ref:`Annotating type forms with TypeForm
   <whatsnew315-typeform>`
 * :pep:`800`: Disjoint bases in the type system
 * :pep:`782`: :ref:`A new PyBytesWriter C API to create a Python bytes object
   <whatsnew315-pybyteswriter>`
-* :pep:`803`: :ref:`Stable ABI for Free-Threaded Builds <whatsnew315-abi3t>`
-* :pep:`831`: :ref:`Frame pointers everywhere <whatsnew315-frame-pointers>`
+* :pep:`803`, :pep:`820 <820>`, :pep:`793 <793>`:
+  :ref:`Stable ABI for Free-Threaded Builds <whatsnew315-abi3t>` and
+  related C API
 * :ref:`The JIT compiler has been significantly upgraded <whatsnew315-jit>`
 * :ref:`Improved error messages <whatsnew315-improved-error-messages>`
 * :ref:`The official Windows 64-bit binaries now use the tail-calling interpreter
   <whatsnew315-windows-tail-calling-interpreter>`
+* :pep:`829`: Package Startup Configuration Files
 
 New features
 ============
@@ -321,6 +325,9 @@ Key features include:
   * Profile running processes by PID (``attach``) - attach to already-running applications
   * Run and profile scripts directly (``run``) - profile from the very start of execution
   * Execute and profile modules (``run -m``) - profile packages run as ``python -m module``
+  * Capture a one-shot snapshot of a running process (``dump``) - print a
+    traceback-style stack of every thread (or all asyncio tasks with
+    ``--async-aware``). Useful for investigating hung processes.
 
 * **Multiple profiling modes**: Choose what to measure based on your performance investigation:
 
@@ -372,6 +379,39 @@ available output formats, profiling modes, and configuration options.
 (Contributed by Pablo Galindo and László Kiss Kollár in :gh:`135953` and :gh:`138122`.)
 
 
+.. _whatsnew315-pep831:
+
+:pep:`831`: Frame pointers enabled by default
+---------------------------------------------
+
+CPython is now built with frame pointers by default on platforms that support
+them.  This uses the compiler flags ``-fno-omit-frame-pointer`` and
+``-mno-omit-leaf-frame-pointer``, making native stack unwinding faster and
+more reliable for system profilers, debuggers, crash analysis tools, and
+eBPF-based observability tools.
+
+The flags are exposed through :mod:`sysconfig`, so extension modules built by
+tools that consume Python's build configuration inherit frame pointers by
+default.  This propagation is intentional: mixed Python/native profiling needs
+an unbroken frame-pointer chain through the interpreter, extension modules,
+embedding applications, and native libraries.
+
+.. important::
+
+   Third-party build backends and native build systems should preserve these
+   flags when they consume Python's :mod:`sysconfig` values.  Build systems
+   that compile C, C++, Rust, or other native code without inheriting Python's
+   compiler flags should enable equivalent frame-pointer flags themselves.  A
+   single native component built without frame pointers can break stack
+   unwinding for the whole Python process.
+
+.. seealso:: :pep:`831` for further details.
+
+(Contributed by Pablo Galindo Salgado and Savannah Ostrowski in
+:gh:`149201`; PEP 831 written by Pablo Galindo Salgado, Ken Jin, and
+Savannah Ostrowski.)
+
+
 .. _whatsnew315-unpacking-in-comprehensions:
 
 :pep:`798`: Unpacking in Comprehensions
@@ -414,7 +454,7 @@ agen() for x in a)``.
 
 .. _whatsnew315-abi3t:
 
-:pep:`803`: ``abi3t`` -- Stable ABI for Free-Threaded Builds
+:pep:`803` -- Stable ABI for Free-Threaded Builds
 ------------------------------------------------------------
 
 C extensions that target the :ref:`Stable ABI <stable-abi>` can now be
@@ -430,7 +470,12 @@ specifically:
   part of the instance struct; and
 - Switching from a ``PyInit_`` function to a new export hook,
   :c:func:`PyModExport_* <PyModExport_modulename>`, introduced for this
-  purpose in :pep:`793`.
+  purpose in :pep:`793`, with a new :c:type:`PySlot` structure
+  introduced in :pep:`820`.
+
+The reference documentation for these features is complete, but currently
+aimed at early adopters.
+A migration guide is planned for an upcoming beta release.
 
 Note that Stable ABI does not offer all the functionality that CPython
 has to offer.
@@ -487,6 +532,47 @@ Improved error messages
          print(container.area)
                ^^^^^^^^^^^^^^
      AttributeError: 'Container' object has no attribute 'area'. Did you mean '.inner.area' instead of '.area'?
+
+* When an :exc:`AttributeError` on a builtin type has no close match via
+  Levenshtein distance, the error message now checks a static table of common
+  method names from other languages (JavaScript, Java, Ruby, C#) and suggests
+  the Python equivalent:
+
+  .. doctest::
+
+     >>> [1, 2, 3].push(4)  # doctest: +ELLIPSIS
+     Traceback (most recent call last):
+     ...
+     AttributeError: 'list' object has no attribute 'push'. Did you mean '.append'?
+
+     >>> 'hello'.toUpperCase()  # doctest: +ELLIPSIS
+     Traceback (most recent call last):
+     ...
+     AttributeError: 'str' object has no attribute 'toUpperCase'. Did you mean '.upper'?
+
+  When the Python equivalent is a language construct rather than a method,
+  the hint describes the construct directly:
+
+  .. doctest::
+
+     >>> {}.put("a", 1)  # doctest: +ELLIPSIS
+     Traceback (most recent call last):
+     ...
+     AttributeError: 'dict' object has no attribute 'put'. Use d[k] = v.
+
+  When a mutable method is called on an immutable type, the hint suggests
+  the mutable counterpart:
+
+  .. doctest::
+
+     >>> (1, 2, 3).append(4)  # doctest: +ELLIPSIS
+     Traceback (most recent call last):
+     ...
+     AttributeError: 'tuple' object has no attribute 'append'. Did you mean to use a 'list' object?
+
+  These hints also work for subclasses of builtin types.
+
+  (Contributed by Matt Van Horn in :gh:`146406`.)
 
 * The interpreter now tries to provide a suggestion when
   :func:`delattr` fails due to a missing attribute.
@@ -667,9 +753,9 @@ Other language changes
   (Contributed by James Hilton-Balfe in :gh:`128335`.)
 
 * The class :class:`memoryview` now supports the :c:expr:`float complex` and
-  :c:expr:`double complex` C types: formatting characters ``'F'`` and ``'D'``
+  :c:expr:`double complex` C types: formatting characters ``'Zf'`` and ``'Zd'``
   respectively.
-  (Contributed by Sergey B Kirpichev in :gh:`146151`.)
+  (Contributed by Victor Stinner in :gh:`146151` and :gh:`148675`.)
 
 * Allow the *count* argument of :meth:`bytes.replace` to be a keyword.
   (Contributed by Stan Ulbrych in :gh:`147856`.)
@@ -711,21 +797,29 @@ argparse
   default to ``True``. This enables suggestions for mistyped arguments by default.
   (Contributed by Jakob Schluse in :gh:`140450`.)
 
-* Added backtick markup support in description and epilog text to highlight
-  inline code when color output is enabled.
+* Added backtick markup support in :class:`~argparse.ArgumentParser` description
+  and epilog text to highlight inline code when color output is enabled.
   (Contributed by Savannah Ostrowski in :gh:`142390`.)
+
+* Extended backtick markup to argument ``help`` text and added support for
+  double backticks (RST inline-literal style).
+  (Contributed by Hugo van Kemenade in :gh:`149375`.)
 
 
 array
 -----
 
 * Support the :c:expr:`float complex` and :c:expr:`double complex` C types:
-  formatting characters ``'F'`` and ``'D'`` respectively.
-  (Contributed by Sergey B Kirpichev in :gh:`146151`.)
+  formatting characters ``'Zf'`` and ``'Zd'`` respectively.
+  (Contributed by Victor Stinner in :gh:`146151` and :gh:`148675`.)
 
 * Support half-floats (16-bit IEEE 754 binary interchange format): formatting
   character ``'e'``.
   (Contributed by Sergey B Kirpichev in :gh:`146238`.)
+
+* The :data:`array.typecodes` type changed from :class:`str` to :class:`tuple`
+  to support type codes longer than 1 character (``Zf`` and ``Zd``).
+  (Contributed by Victor Stinner in :gh:`148675`.)
 
 
 ast
@@ -828,13 +922,18 @@ binascii
 calendar
 --------
 
-* Calendar pages generated by the :class:`calendar.HTMLCalendar` class now support
-  dark mode and have been migrated to the HTML5 standard for improved accessibility.
-  (Contributed by Jiahao Li and Hugo van Kemenade in :gh:`137634`.)
+* :mod:`calendar`'s :ref:`command-line <calendar-cli>` text output has more
+  color. This can be controlled with :ref:`environment variables
+  <using-on-controlling-color>`.
+  (Contributed by Hugo van Kemenade in :gh:`148352`.)
 
 * The :mod:`calendar`'s :ref:`command-line <calendar-cli>` HTML output now
   accepts the year-month option: ``python -m calendar -t html 2009 06``.
   (Contributed by Pål Grønås Drange in :gh:`140212`.)
+
+* Calendar pages generated by the :class:`calendar.HTMLCalendar` class now support
+  dark mode and have been migrated to the HTML5 standard for improved accessibility.
+  (Contributed by Jiahao Li and Hugo van Kemenade in :gh:`137634`.)
 
 
 collections
@@ -974,6 +1073,15 @@ http.server
   for files with unknown extensions.
   (Contributed by John Comeau and Hugo van Kemenade in :gh:`113471`.)
 
+* Add a new ``extra_response_headers`` keyword argument to
+  :class:`~http.server.SimpleHTTPRequestHandler` to support custom headers in
+  HTTP responses.
+  (Contributed by Anton I. Sipos in :gh:`135057`.)
+
+* Add a ``-H/--header`` option to the :program:`python -m http.server`
+  command-line interface to support custom headers in HTTP responses.
+  (Contributed by Anton I. Sipos in :gh:`135057`.)
+
 
 inspect
 -------
@@ -1023,7 +1131,7 @@ mimetypes
   (Contributed by Benedikt Johannes, Charlie Lin, Foolbar, Gil Forcada and
   John Franey
   in :gh:`144217`, :gh:`145720`, :gh:`140937`, :gh:`139959`, :gh:`145698`,
-  :gh:`145718` and :gh:`144213`.)
+  :gh:`145718`, :gh:`145918`, and :gh:`144213`.)
 * Rename ``application/x-texinfo`` to ``application/texinfo``.
   (Contributed by Charlie Lin in :gh:`140165`.)
 * Changed the MIME type for ``.ai`` files to ``application/pdf``.
@@ -1420,6 +1528,15 @@ typing
 
   (Contributed by Jelle Zijlstra in :gh:`145033`.)
 
+.. _whatsnew315-typeddict:
+
+* :pep:`728`: Add support in :class:`~typing.TypedDict` for the *closed*
+  and *extra_items* class arguments. A closed :class:`~typing.TypedDict`
+  does not allow extra keys beyond those specified in the class body, while
+  a :class:`~typing.TypedDict` with ``extra_items`` allows arbitrary extra
+  items where the values are of the specified type. (Contributed by Angela
+  Liss in :gh:`137840`.)
+
 * Code like ``class ExtraTypeVars(P1[S], Protocol[T, T2]): ...`` now raises
   a :exc:`TypeError`, because ``S`` is not listed in ``Protocol`` parameters.
   (Contributed by Nikita Sobolev in :gh:`137191`.)
@@ -1471,9 +1588,15 @@ unicodedata
 unittest
 --------
 
-* :func:`unittest.TestCase.assertLogs` will now accept a formatter
+* :meth:`unittest.TestCase.assertLogs` will now accept a formatter
   to control how messages are formatted.
   (Contributed by Garry Cairns in :gh:`134567`.)
+
+* :meth:`unittest.TestCase.assertWarns` and
+  :meth:`unittest.TestCase.assertWarnsRegex` no longer swallow warnings that
+  do not match the specified category or regex.
+  Nested context managers are now supported.
+  (Contributed by Serhiy Storchaka in :gh:`143231`.)
 
 
 urllib.parse
@@ -1717,6 +1840,12 @@ ctypes
   which has been deprecated since Python 3.13.
   (Contributed by Bénédikt Tran in :gh:`133866`.)
 
+* Change the :py:attr:`~ctypes._SimpleCData._type_` of
+  :class:`~ctypes.c_float_complex`, :class:`~ctypes.c_double_complex` and
+  :class:`~ctypes.c_longdouble_complex` from ``F``, ``D`` and ``G`` to ``Zf``,
+  ``Zd`` and ``Zg`` for compatibility with numpy.
+  (Contributed by Victor Stinner in :gh:`148675`.)
+
 
 datetime
 --------
@@ -1846,6 +1975,13 @@ Deprecated
 New deprecations
 ----------------
 
+* :mod:`ast`
+
+  * Creating instances of abstract AST nodes (such as :class:`ast.AST`
+    or :class:`!ast.expr`) is deprecated and will raise an error in Python 3.20.
+
+    (Contributed by Brian Schubert in :gh:`116021`.)
+
 * :mod:`base64`:
 
   * Accepting the ``+`` and ``/`` characters with an alternative alphabet in
@@ -1893,6 +2029,16 @@ New deprecations
     a positional argument for maximum backwards compatibility.
 
     (Contributed by Bénédikt Tran in :gh:`134978`.)
+
+
+* :mod:`http.cookies`:
+
+  * :meth:`Morsel.js_output <http.cookies.Morsel.js_output>` and
+    :meth:`BaseCookie.js_output <http.cookies.BaseCookie.js_output>` are
+    deprecated and will be removed in Python 3.19. Use
+    :meth:`Morsel.output <http.cookies.Morsel.output>` or
+    :meth:`BaseCookie.output <http.cookies.BaseCookie.output>` instead.
+    (Contributed by kishorhange111 in :gh:`148849`.)
 
 
 * :mod:`re`:
@@ -2009,6 +2155,10 @@ New features
 
   (Contributed by Victor Stinner in :gh:`141510`.)
 
+* Add :c:func:`PyObject_CallFinalizerFromDealloc` function to the limited C
+  API.
+  (Contributed by Victor Stinner in :gh:`146063`.)
+
 * Add :c:func:`PySys_GetAttr`, :c:func:`PySys_GetAttrString`,
   :c:func:`PySys_GetOptionalAttr`, and :c:func:`PySys_GetOptionalAttrString`
   functions as replacements for :c:func:`PySys_GetObject`.
@@ -2043,12 +2193,22 @@ New features
 
   (Contributed by Victor Stinner in :gh:`129813`.)
 
+* :c:type:`PyCriticalSection` and related functions are added to the Stable
+  ABI.
+
+  (Contributed in :gh:`149227`.)
+
 * Add a new :c:func:`PyImport_CreateModuleFromInitfunc` C-API for creating
   a module from a *spec* and *initfunc*.
   (Contributed by Itamar Oren in :gh:`116146`.)
 
 * Add :c:func:`PyTuple_FromArray` to create a :class:`tuple` from an array.
   (Contributed by Victor Stinner in :gh:`111489`.)
+
+* Add a new module export hook,
+  :c:func:`PyModExport_* <PyModExport_modulename>`.
+
+  (Contributed by Petr Viktorin in :pep:`793` and :gh:`140550`.)
 
 * Add functions that are guaranteed to be safe for use in
   :c:member:`~PyTypeObject.tp_traverse` handlers:
@@ -2064,6 +2224,41 @@ New features
 * Add :c:func:`PyObject_Dump` to dump an object to ``stderr``.
   It should only be used for debugging.
   (Contributed by Victor Stinner in :gh:`141070`.)
+
+* Implement :pep:`820`: ``PySlot`` -- Unified slot system for the C API.
+  See :ref:`capi-slots` for documentation.
+
+  This adds:
+
+  * The :c:type:`PySlot` struct;
+  * the :c:func:`PyType_FromSlots` function;
+  * new slot IDs: :c:macro:`Py_slot_end`, :c:macro:`Py_slot_invalid`;
+    :c:macro:`Py_slot_subslots`, :c:macro:`Py_tp_slots`
+    :c:macro:`Py_mod_slots`;
+    :c:macro:`Py_tp_name`, :c:macro:`Py_tp_basicsize`,
+    :c:macro:`Py_tp_extra_basicsize`, :c:macro:`Py_tp_itemsize`,
+    :c:macro:`Py_tp_flags`, :c:macro:`Py_tp_metaclass`,
+    :c:macro:`Py_tp_module`, :c:macro:`Py_tp_flags`;
+  * convenience macros: :c:macro:`PySlot_DATA`, :c:macro:`PySlot_FUNC`,
+    :c:macro:`PySlot_SIZE` :c:macro:`PySlot_INT64`, :c:macro:`PySlot_UINT64`,
+    :c:macro:`PySlot_STATIC_DATA`, :c:macro:`PySlot_END`,
+    :c:macro:`PySlot_PTR`, :c:macro:`PySlot_PTR_STATIC`.
+
+  The :c:func:`PyModule_FromSlotsAndSpec` function and
+  ``PyModExport`` :ref:`module export hook <extension-export-hook>` also
+  use the new :c:type:`!PySlot` struct.
+
+  These following functions are :term:`soft deprecated`:
+
+  * :c:func:`PyType_FromSpec`
+  * :c:func:`PyType_FromSpecWithBases`
+  * :c:func:`PyType_FromModuleAndSpec`
+  * :c:func:`PyType_FromMetaclass`
+  * :c:func:`PyModule_FromDefAndSpec`
+  * :c:func:`PyModule_FromDefAndSpec2`
+  * :c:func:`PyModule_ExecDef`
+
+  (Contributed by Petr Viktorin in :gh:`149044`.)
 
 * Add :c:func:`PyUnstable_ThreadState_SetStackProtection` and
   :c:func:`PyUnstable_ThreadState_ResetStackProtection` functions to set
@@ -2273,16 +2468,6 @@ Build changes
   and :option:`-X dev <-X>` is passed to the Python or Python is built in :ref:`debug mode <debug-build>`.
   (Contributed by Donghee Na in :gh:`141770`.)
 
-.. _whatsnew315-frame-pointers:
-
-* CPython is now built with frame pointers enabled by default
-  (:pep:`831`). Pass :option:`--without-frame-pointers` to opt out.
-  Authors of C extensions and native libraries built with custom build
-  systems should add ``-fno-omit-frame-pointer`` and
-  ``-mno-omit-leaf-frame-pointer`` to their own ``CFLAGS`` to keep the
-  unwind chain intact.
-  (Contributed by Pablo Galindo Salgado and Savannah Ostrowski in :gh:`149201`.)
-
 .. _whatsnew315-windows-tail-calling-interpreter:
 
 * 64-bit builds using Visual Studio 2026 (MSVC 18) may now use the new
@@ -2345,3 +2530,11 @@ that may require changes to your code.
   with argument ``altchars=b'-_'`` (this works with older Python versions)
   to make padding required.
   (Contributed by Serhiy Storchaka in :gh:`73613`.)
+
+* Since :meth:`unittest.TestCase.assertWarns` and
+  :meth:`unittest.TestCase.assertWarnsRegex` no longer swallow warnings that
+  do not match the specified category or regex, your tests may start leaking
+  some warnings that were previously masked.
+  Use warning filters to silence them or additional :meth:`!assertWarns*`
+  to catch and check them.
+  (Contributed by Serhiy Storchaka in :gh:`143231`.)

@@ -1983,8 +1983,12 @@ static PyObject *
 typealias_module(PyObject *self, void *Py_UNUSED(closure))
 {
     typealiasobject *ta = typealiasobject_CAST(self);
-    if (ta->module != NULL) {
-        return Py_NewRef(ta->module);
+    PyObject *module;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    module = Py_XNewRef(ta->module);
+    Py_END_CRITICAL_SECTION();
+    if (module != NULL) {
+        return module;
     }
     if (ta->compute_value != NULL) {
         PyObject* mod = PyFunction_GetModule(ta->compute_value);
@@ -1998,12 +2002,25 @@ typealias_module(PyObject *self, void *Py_UNUSED(closure))
     Py_RETURN_NONE;
 }
 
+static int
+typealias_set_module(PyObject *self, PyObject *value, void *Py_UNUSED(closure))
+{
+    PyObject *old;
+    typealiasobject *ta = typealiasobject_CAST(self);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    old = ta->module;
+    ta->module = Py_XNewRef(value);
+    Py_END_CRITICAL_SECTION();
+    Py_XDECREF(old);
+    return 0;
+}
+
 static PyGetSetDef typealias_getset[] = {
     {"__parameters__", typealias_parameters, NULL, NULL, NULL},
     {"__type_params__", typealias_type_params, NULL, NULL, NULL},
     {"__value__", typealias_value, NULL, NULL, NULL},
     {"evaluate_value", typealias_evaluate_value, NULL, NULL, NULL},
-    {"__module__", typealias_module, NULL, NULL, NULL},
+    {"__module__", typealias_module, typealias_set_module, NULL, NULL},
     {0}
 };
 
@@ -2203,7 +2220,9 @@ type checkers.\n\
 At runtime, Alias is an instance of TypeAliasType. The __name__\n\
 attribute holds the name of the type alias. The value of the type alias\n\
 is stored in the __value__ attribute. It is evaluated lazily, so the\n\
-value is computed only if the attribute is accessed.\n\
+value is computed only if the attribute is accessed. The __module__\n\
+attribute holds the name of the module in which the type alias was\n\
+defined; it can be assigned to.\n\
 \n\
 Type aliases can also be generic::\n\
 \n\
