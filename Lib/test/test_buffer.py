@@ -50,6 +50,7 @@ except ImportError:
 
 try:
     import _testcapi
+    import _testlimitedcapi
 except ImportError:
     _testcapi = None
 
@@ -4495,8 +4496,11 @@ class TestBufferProtocol(unittest.TestCase):
     def test_array_alignment(self):
         # gh-140557: pointer alignment of buffers including empty allocation
         # should match the maximum array alignment.
-        align = max(struct.calcsize(fmt) for fmt in ARRAY if fmt != 'Zd')
-        cases = [array.array(fmt) for fmt in ARRAY if fmt != 'Zd']
+        MAX_ALIGN = _testlimitedcapi.ALIGNOF_MAX_ALIGN_T
+        align = max(struct.calcsize(fmt) for fmt in ARRAY
+                    if struct.calcsize(fmt) <= MAX_ALIGN)
+        cases = [array.array(fmt) for fmt in ARRAY
+                 if struct.calcsize(fmt) <= MAX_ALIGN]
         # Empty arrays
         self.assertEqual(
             [_testcapi.buffer_pointer_as_int(case) % align for case in cases],
