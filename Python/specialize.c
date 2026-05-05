@@ -2278,12 +2278,20 @@ static _PyBinaryOpSpecializationDescr binaryop_extend_descrs[] = {
     {NB_SUBTRACT, float_compactlong_guard, float_compactlong_subtract, &PyFloat_Type, 1, NULL, NULL},
     {NB_TRUE_DIVIDE, nonzero_float_compactlong_guard, float_compactlong_true_div, &PyFloat_Type, 1, NULL, NULL},
     {NB_MULTIPLY, float_compactlong_guard, float_compactlong_multiply, &PyFloat_Type, 1, NULL, NULL},
+    {NB_INPLACE_ADD, float_compactlong_guard, float_compactlong_add, &PyFloat_Type, 1, NULL, NULL},
+    {NB_INPLACE_SUBTRACT, float_compactlong_guard, float_compactlong_subtract, &PyFloat_Type, 1, NULL, NULL},
+    {NB_INPLACE_TRUE_DIVIDE, nonzero_float_compactlong_guard, float_compactlong_true_div, &PyFloat_Type, 1, NULL, NULL},
+    {NB_INPLACE_MULTIPLY, float_compactlong_guard, float_compactlong_multiply, &PyFloat_Type, 1, NULL, NULL},
 
     /* long-float arithmetic: guards also check NaN and compactness. */
     {NB_ADD, compactlong_float_guard, compactlong_float_add, &PyFloat_Type, 1, NULL, NULL},
     {NB_SUBTRACT, compactlong_float_guard, compactlong_float_subtract, &PyFloat_Type, 1, NULL, NULL},
     {NB_TRUE_DIVIDE, nonzero_compactlong_float_guard, compactlong_float_true_div, &PyFloat_Type, 1, NULL, NULL},
     {NB_MULTIPLY, compactlong_float_guard, compactlong_float_multiply, &PyFloat_Type, 1, NULL, NULL},
+    {NB_INPLACE_ADD, compactlong_float_guard, compactlong_float_add, &PyFloat_Type, 1, NULL, NULL},
+    {NB_INPLACE_SUBTRACT, compactlong_float_guard, compactlong_float_subtract, &PyFloat_Type, 1, NULL, NULL},
+    {NB_INPLACE_TRUE_DIVIDE, nonzero_compactlong_float_guard, compactlong_float_true_div, &PyFloat_Type, 1, NULL, NULL},
+    {NB_INPLACE_MULTIPLY, compactlong_float_guard, compactlong_float_multiply, &PyFloat_Type, 1, NULL, NULL},
 
     /* list-list concatenation: _PyList_Concat always allocates a new list */
     {NB_ADD, NULL, _PyList_Concat, &PyList_Type, 1, &PyList_Type, &PyList_Type},
