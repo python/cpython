@@ -2951,7 +2951,7 @@ __test__ = {"_TestClass": _TestClass,
 def _test():
     import argparse
 
-    parser = argparse.ArgumentParser(description="doctest runner", color=True)
+    parser = argparse.ArgumentParser(description="doctest runner")
     parser.add_argument('-v', '--verbose', action='store_true', default=False,
                         help='print very verbose output for all tests')
     parser.add_argument('-o', '--option', action='append',
@@ -2961,8 +2961,8 @@ def _test():
                               ' than once to apply multiple options'))
     parser.add_argument('-f', '--fail-fast', action='store_true',
                         help=('stop running tests after first failure (this'
-                              ' is a shorthand for -o FAIL_FAST, and is'
-                              ' in addition to any other -o options)'))
+                              ' is a shorthand for `-o FAIL_FAST`, and is'
+                              ' in addition to any other `-o` options)'))
     parser.add_argument('file', nargs='+',
                         help='file containing the tests to run')
     args = parser.parse_args()

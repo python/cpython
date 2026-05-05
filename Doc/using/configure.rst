@@ -780,6 +780,24 @@ also be used to improve performance.
 
    .. versionadded:: 3.14
 
+.. option:: --without-frame-pointers
+
+   Disable frame pointers, which are enabled by default (see :pep:`831`).
+
+   By default, the build appends ``-fno-omit-frame-pointer`` (and
+   ``-mno-omit-leaf-frame-pointer`` when the compiler supports it) to
+   ``BASECFLAGS`` so profilers, debuggers, and system tracing tools
+   (``perf``, ``eBPF``, ``dtrace``, ``gdb``) can walk the C call stack
+   without DWARF metadata. The flags propagate to third-party C
+   extensions through :mod:`sysconfig`. On compilers that do not
+   understand them, the build silently skips them.
+
+   Downstream packagers and authors of native libraries built with
+   custom build systems should set the same flags so the unwind chain
+   stays unbroken across all native frames.
+
+   .. versionadded:: 3.15
+
 .. option:: --without-mimalloc
 
    Disable the fast :ref:`mimalloc <mimalloc>` allocator

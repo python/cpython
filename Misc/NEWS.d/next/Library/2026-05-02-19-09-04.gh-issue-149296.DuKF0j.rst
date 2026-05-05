@@ -1,0 +1,4 @@
+Add a ``dump`` subcommand to :mod:`profiling.sampling` that prints a single
+traceback-style snapshot of a running process's Python stack, including
+per-thread status, source line highlighting, optional bytecode opcode names,
+and async-aware task reconstruction. Patch by Pablo Galindo.
