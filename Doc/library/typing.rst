@@ -2792,6 +2792,37 @@ types.
           y: int
           z: int
 
+   By default, a ``TypedDict`` is open, meaning that it may contain additional keys
+   at runtime beyond those defined in the class body. The *closed* class argument can
+   be used to control this; if ``closed=True``, the ``TypedDict`` cannot contain additional keys.
+
+   ::
+
+      class ClosedPoint(TypedDict, closed=True):
+          x: int
+          y: int
+
+      class ClosedPoint3D(ClosedPoint):  # type checker error: cannot add keys to a closed TypedDict
+          z: int
+
+   Setting ``closed=False`` explicitly requests the default open behavior. If the argument is not
+   passed, this state is inherited from the parent class.
+
+   In addition to being open or closed, a ``TypedDict`` can also be configured to have extra items.
+   If the *extra_items* class argument is set to a type, the ``TypedDict`` can contain arbitrary
+   additional keys, but the values of those keys must be of the specified type.
+
+   ::
+
+      class ExtraItemsPoint(TypedDict, extra_items=int):
+          x: int
+          y: int
+
+      point: ExtraItemsPoint = {'x': 1, 'y': 2, 'anything': 3}  # OK
+
+   The *extra_items* argument is also inherited through subclassing. It is unset
+   by default, and it may not be used together with the *closed* argument.
+
    A ``TypedDict`` cannot inherit from a non-\ ``TypedDict`` class,
    except for :class:`Generic`. For example::
 
@@ -2825,8 +2856,8 @@ types.
           group: list[T]
 
    A ``TypedDict`` can be introspected via annotations dicts
-   (see :ref:`annotations-howto` for more information on annotations best practices),
-   :attr:`__total__`, :attr:`__required_keys__`, and :attr:`__optional_keys__`.
+   (see :ref:`annotations-howto` for more information on annotations best practices)
+   and the following attributes:
 
    .. attribute:: __total__
 
@@ -2896,8 +2927,6 @@ types.
          ``__required_keys__`` and ``__optional_keys__`` rely on may not work
          properly, and the values of the attributes may be incorrect.
 
-   Support for :data:`ReadOnly` is reflected in the following attributes:
-
    .. attribute:: __readonly_keys__
 
       A :class:`frozenset` containing the names of all read-only keys. Keys
@@ -2911,6 +2940,14 @@ types.
       are mutable if they do not carry the :data:`ReadOnly` qualifier.
 
       .. versionadded:: 3.13
+
+   .. attribute:: __closed__
+
+      The value of the *closed* class argument. It can be ``True``, ``False``, or :data:`None`.
+
+   .. attribute:: __extra_items__
+
+      The value of the *extra_items* class argument. It can be a valid type or :data:`NoExtraItems`.
 
    See the `TypedDict <https://typing.python.org/en/latest/spec/typeddict.html#typeddict>`_ section in the typing documentation for more examples and detailed rules.
 
@@ -2931,7 +2968,10 @@ types.
       Removed support for the keyword-argument method of creating ``TypedDict``\ s.
 
    .. versionchanged:: 3.13
-      Support for the :data:`ReadOnly` qualifier was added.
+      Support for the :data:`ReadOnly` qualifier was added. See :pep:`705`.
+
+   .. versionchanged:: next
+      Support for the *closed* and *extra_items* class arguments was added. See :pep:`728`.
 
 
 Protocols
@@ -3678,6 +3718,21 @@ Introspection helpers
       True
 
    .. versionadded:: 3.13
+
+.. data:: NoExtraItems
+
+   A :class:`sentinel` object used to indicate that a :class:`TypedDict`
+   does not have the *extra_items* class argument.
+
+   .. doctest::
+
+      >>> from typing import TypedDict, NoExtraItems
+      >>> class Point(TypedDict):
+      ...     x: int
+      ...     y: int
+      ...
+      >>> Point.__extra_items__ is NoExtraItems
+      True
 
 Constant
 --------

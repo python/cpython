@@ -20,13 +20,16 @@ def normalize_location(location):
     """Normalize location to a 4-tuple format.
 
     Args:
-        location: tuple (lineno, end_lineno, col_offset, end_col_offset) or None
+        location: tuple (lineno, end_lineno, col_offset, end_col_offset),
+            an integer line number, or None
 
     Returns:
         tuple: (lineno, end_lineno, col_offset, end_col_offset)
     """
     if location is None:
         return DEFAULT_LOCATION
+    if isinstance(location, int):
+        return (location, location, -1, -1)
     return location
 
 
@@ -34,13 +37,16 @@ def extract_lineno(location):
     """Extract lineno from location.
 
     Args:
-        location: tuple (lineno, end_lineno, col_offset, end_col_offset) or None
+        location: tuple (lineno, end_lineno, col_offset, end_col_offset),
+            an integer line number, or None
 
     Returns:
         int: The line number (0 for synthetic frames)
     """
     if location is None:
         return 0
+    if isinstance(location, int):
+        return location
     return location[0]
 
 def _is_internal_frame(frame):
