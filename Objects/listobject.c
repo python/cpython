@@ -747,7 +747,7 @@ int
 _PyList_StoreSlice(PyObject *a, PyObject *start, PyObject *stop, PyObject *v)
 {
     assert(PyList_CheckExact(a));
-    Py_ssize_t istart, istop;
+    Py_ssize_t istart = 0, istop = PY_SSIZE_T_MAX;
     if (!_PyEval_SliceIndex(start, &istart)) {
         return -1;
     }

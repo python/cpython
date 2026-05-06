@@ -922,7 +922,7 @@ _PyByteArray_StoreSlice(PyObject *op, PyObject *start, PyObject *stop,
     assert(PyByteArray_CheckExact(op));
     assert(value != NULL);
     PyByteArrayObject *self = _PyByteArray_CAST(op);
-    Py_ssize_t istart, istop;
+    Py_ssize_t istart = 0, istop = PY_SSIZE_T_MAX;
     if (!_PyEval_SliceIndex(start, &istart)) {
         return -1;
     }
