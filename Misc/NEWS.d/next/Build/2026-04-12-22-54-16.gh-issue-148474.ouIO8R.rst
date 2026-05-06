@@ -1,0 +1,1 @@
+Fixed compilation of :file:`Python/pystrhex.c` with older clang versions.

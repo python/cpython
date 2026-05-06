@@ -242,7 +242,6 @@ _Py_make_parameters(PyObject *args)
                     len += needed;
                     if (_PyTuple_Resize(&parameters, len) < 0) {
                         Py_DECREF(subparams);
-                        Py_DECREF(parameters);
                         Py_XDECREF(tuple_args);
                         return NULL;
                     }
@@ -299,6 +298,8 @@ subs_tvars(PyObject *obj, PyObject *params,
                                     &PyTuple_GET_ITEM(arg, 0),
                                     PyTuple_GET_SIZE(arg));
                     if (j < 0) {
+                        Py_DECREF(subparams);
+                        Py_DECREF(subargs);
                         return NULL;
                     }
                     continue;
@@ -455,6 +456,7 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
     if (is_args_list) {
         args = tuple_args = PySequence_Tuple(args);
         if (args == NULL) {
+            Py_DECREF(item);
             return NULL;
         }
     }
@@ -647,7 +649,7 @@ ga_vectorcall(PyObject *self, PyObject *const *args,
               size_t nargsf, PyObject *kwnames)
 {
     gaobject *alias = (gaobject *) self;
-    PyObject *obj = PyVectorcall_Function(alias->origin)(alias->origin, args, nargsf, kwnames);
+    PyObject *obj = PyObject_Vectorcall(alias->origin, args, nargsf, kwnames);
     return set_orig_class(obj, self);
 }
 

@@ -4,10 +4,6 @@
 .. module:: codecs
    :synopsis: Encode and decode data and streams.
 
-.. moduleauthor:: Marc-André Lemburg <mal@lemburg.com>
-.. sectionauthor:: Marc-André Lemburg <mal@lemburg.com>
-.. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
-
 **Source code:** :source:`Lib/codecs.py`
 
 .. index::
@@ -1616,7 +1612,6 @@ This module implements the following exception:
 
 .. module:: encodings.idna
    :synopsis: Internationalized Domain Names implementation
-.. moduleauthor:: Martin v. Löwis
 
 This module implements :rfc:`3490` (Internationalized Domain Names in
 Applications) and :rfc:`3492` (Nameprep: A Stringprep Profile for
@@ -1700,7 +1695,6 @@ This module implements the ANSI codepage (CP_ACP).
 
 .. module:: encodings.utf_8_sig
    :synopsis: UTF-8 codec with BOM signature
-.. moduleauthor:: Walter Dörwald
 
 This module implements a variant of the UTF-8 codec. On encoding, a UTF-8 encoded
 BOM will be prepended to the UTF-8 encoded bytes. For the stateful encoder this

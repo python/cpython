@@ -1,0 +1,2 @@
+The interpreter help (such as ``python --help``) is now in color. Patch by
+Hugo van Kemenade.

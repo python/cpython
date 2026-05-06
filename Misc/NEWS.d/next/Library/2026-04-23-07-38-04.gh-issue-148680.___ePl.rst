@@ -1,0 +1,1 @@
+``ForwardRef`` objects that contain internal names to represent known objects now show the ``type_repr`` of the known object rather than the internal ``__annotationlib_name_x__`` name when evaluated as strings.

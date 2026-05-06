@@ -4,9 +4,6 @@
 .. module:: hashlib
    :synopsis: Secure hash and message digest algorithms.
 
-.. moduleauthor:: Gregory P. Smith <greg@krypto.org>
-.. sectionauthor:: Gregory P. Smith <greg@krypto.org>
-
 **Source code:** :source:`Lib/hashlib.py`
 
 .. index::
@@ -378,8 +375,6 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
 
 BLAKE2
 ------
-
-.. sectionauthor:: Dmitry Chestnykh
 
 .. index::
    single: blake2b, blake2s

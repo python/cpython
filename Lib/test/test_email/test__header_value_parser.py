@@ -1235,17 +1235,6 @@ class TestParser(TestParserMixin, TestEmailBase):
             '@example.com')
         self.assertEqual(local_part.local_part, r'\example\\ example')
 
-    def test_get_local_part_unicode_defect(self):
-        # Currently this only happens when parsing unicode, not when parsing
-        # stuff that was originally binary.
-        local_part = self._test_get_x(parser.get_local_part,
-            'exámple@example.com',
-            'exámple',
-            'exámple',
-            [errors.NonASCIILocalPartDefect],
-            '@example.com')
-        self.assertEqual(local_part.local_part, 'exámple')
-
     # get_dtext
 
     def test_get_dtext_only(self):
@@ -2617,7 +2606,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             '')
         self.assertEqual(address_list.token_type, 'address-list')
         self.assertEqual(len(address_list.mailboxes), 1)
-        self.assertEqual(len(address_list.all_mailboxes), 3)
+        self.assertEqual(len(address_list.all_mailboxes), 4)
         self.assertEqual([str(x) for x in address_list.all_mailboxes],
                          [str(x) for x in address_list.addresses])
         self.assertEqual(address_list.mailboxes[0].domain, 'example.com')
@@ -2626,11 +2615,13 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(address_list.addresses[1].token_type, 'address')
         self.assertEqual(len(address_list.addresses[0].mailboxes), 1)
         self.assertEqual(len(address_list.addresses[1].mailboxes), 0)
-        self.assertEqual(len(address_list.addresses[1].mailboxes), 0)
+        self.assertEqual(len(address_list.addresses[2].mailboxes), 0)
+        self.assertEqual(len(address_list.addresses[3].mailboxes), 0)
         self.assertEqual(
             address_list.addresses[1].all_mailboxes[0].local_part, 'Foo x')
+        self.assertEqual(address_list.addresses[2].all_mailboxes[0].value, '[]')
         self.assertEqual(
-            address_list.addresses[2].all_mailboxes[0].display_name,
+            address_list.addresses[3].all_mailboxes[0].display_name,
                 "Nobody Is. Special")
 
     def test_get_address_list_group_empty(self):
@@ -2694,6 +2685,14 @@ class TestParser(TestParserMixin, TestEmailBase):
                          'y')
         self.assertEqual(str(address_list.addresses[1]),
                          str(address_list.mailboxes[2]))
+
+    def test_get_address_list_trailing_garbage(self):
+        address_list = self._test_get_x(parser.get_address_list,
+            'unlisted-recipients:; (no To-header on input)',
+            'unlisted-recipients:; (no To-header on input)',
+            'unlisted-recipients:; ',
+            [errors.InvalidHeaderDefect]*2 + [errors.ObsoleteHeaderDefect],
+            '')
 
     def test_invalid_content_disposition(self):
         content_disp = self._test_parse_x(
@@ -3364,10 +3363,12 @@ class TestFolding(TestEmailBase):
         self._test(token, expected, policy=policy)
 
     def test_encoded_word_with_undecodable_bytes(self):
-        self._test(parser.get_address_list(
-            ' =?utf-8?Q?=E5=AE=A2=E6=88=B6=E6=AD=A3=E8=A6=8F=E4=BA=A4=E7?='
+        self._test(
+            parser.get_address_list(
+                ' =?utf-8?Q?=E5=AE=A2=E6=88=B6=E6=AD=A3=E8=A6=8F=E4=BA=A4=E7?='
+                ' <xyz@abc.com>'
                 )[0],
-            ' =?unknown-8bit?b?5a6i5oi25q2j6KaP5Lqk5w==?=\n',
+            ' =?unknown-8bit?b?5a6i5oi25q2j6KaP5Lqk5w==?= <xyz@abc.com>\n',
             )
 
 

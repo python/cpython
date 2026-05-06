@@ -3476,6 +3476,11 @@ static struct PyModuleDef _tkintermodule = {
 PyMODINIT_FUNC
 PyInit__tkinter(void)
 {
+    PyABIInfo_VAR(abi_info);
+    if (PyABIInfo_Check(&abi_info, "_tkinter") < 0) {
+        return NULL;
+    }
+
     PyObject *m, *uexe, *cexe;
 
     tcl_lock = PyThread_allocate_lock();

@@ -1,0 +1,1 @@
+Use ``Py_GCC_ATTRIBUTE(unused)`` for stop_tracing label.

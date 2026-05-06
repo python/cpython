@@ -1,0 +1,4 @@
+The ``profiling.sampling`` module now supports JSONL output format via
+``--jsonl``. Each run emits a newline-delimited JSON file that is
+sequentially parseable by external tools, scripts, and programmatic
+consumers. Patch by Maurycy Pawłowski-Wieroński.
