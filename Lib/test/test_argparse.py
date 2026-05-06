@@ -7861,6 +7861,14 @@ class TestColorized(TestCase):
         self.assertIn(output, calls)
         self.assertNotIn('\x1b[', output.getvalue())
 
+    def test_fake_color_theme_matches_real(self):
+        from argparse import _colorless_theme
+        _colorize_nocolor = _colorize.get_theme(force_no_color=True).argparse
+        for k in _colorize_nocolor:
+            self.assertEqual(
+                getattr(_colorless_theme, k), getattr(_colorize_nocolor, k)
+            )
+
 
 class TestModule(unittest.TestCase):
     def test_deprecated__version__(self):
