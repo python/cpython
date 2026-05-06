@@ -910,9 +910,6 @@ class TestBinaryPlistlib(unittest.TestCase):
         b = plistlib.loads(plistlib.dumps(a, fmt=plistlib.FMT_BINARY))
         self.assertIs(b['x'], b)
 
-    # NSKIP015 https://github.com/nanvix/cpython/issues/483
-    @unittest.skipIf(support.is_nanvix,
-                     "NSKIP015: OOM — test allocation exceeds available heap")
     def test_deep_nesting(self):
         tests = [50, 100_000] if support.is_wasi else [50, 600, 100_000]
         for N in tests:
