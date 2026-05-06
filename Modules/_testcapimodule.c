@@ -3068,7 +3068,7 @@ static PyMethodDef TestMethods[] = {
     {"create_managed_weakref_nogc_type",
         create_managed_weakref_nogc_type, METH_NOARGS},
     {"test_soft_deprecated_macros", test_soft_deprecated_macros, METH_NOARGS},
-    {"test_interpreter_lock", test_interpreter_guards, METH_NOARGS},
+    {"test_interpreter_guards", test_interpreter_guards, METH_NOARGS},
     {"test_thread_state_ensure_nested", test_thread_state_ensure_nested, METH_NOARGS},
     {"test_thread_state_ensure_crossinterp", test_thread_state_ensure_crossinterp, METH_NOARGS},
     {"test_interp_view_after_shutdown", test_interp_view_after_shutdown, METH_NOARGS},
