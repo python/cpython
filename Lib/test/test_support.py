@@ -578,6 +578,8 @@ class TestSupport(unittest.TestCase):
             ['-X', 'lazy_imports=all'],
             ['-X', 'no_debug_ranges'],
             ['-X', 'showrefcount'],
+            ['-X', 'traceback_timestamps'],
+            ['-X', 'traceback_timestamps=ns'],
             ['-X', 'tracemalloc'],
             ['-X', 'tracemalloc=3'],
             ['-X', 'warn_default_encoding'],

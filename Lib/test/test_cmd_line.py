@@ -84,8 +84,9 @@ class CmdLineTest(unittest.TestCase):
     def test_help_xoptions(self):
         out = self.verify_valid_flag('--help-xoptions')
         self.assertIn(b'-X dev', out)
+        sort_key = lambda k: k.replace(b'_', b'').replace(b'-', b'').lower()
         options = re.findall(rb'^-X (\w+)', out, re.MULTILINE)
-        self.assertEqual(options, sorted(options),
+        self.assertEqual(options, sorted(options, key=sort_key),
                          "options should be sorted alphabetically")
 
     @support.cpython_only

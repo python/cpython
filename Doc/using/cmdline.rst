@@ -713,6 +713,15 @@ Miscellaneous options
 
      .. versionadded:: 3.15
 
+   * :samp:`-X traceback_timestamps=[ns|iso|0|1]` enables or configures timestamp
+     display in exception tracebacks. When enabled, each exception's traceback
+     will include a timestamp showing when the exception occurred. The format
+     options are: ``ns`` (seconds since the epoch with nanosecond resolution),
+     ``iso`` (ISO-8601 formatted UTC time), ``0`` (disable timestamps),
+     and ``1`` (equivalent to ``ns``). See also :envvar:`PYTHON_TRACEBACK_TIMESTAMPS`.
+
+     .. versionadded:: next
+
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
 
@@ -1424,6 +1433,31 @@ conflict.
    See also the :option:`-X lazy_imports <-X>` command-line option.
 
    .. versionadded:: 3.15
+
+.. envvar:: PYTHON_TRACEBACK_TIMESTAMPS
+
+   If this variable is set to one of the following values, tracebacks printed
+   by the runtime will be annotated with the timestamp of each exception.  The
+   values control the format of the timestamp:
+
+   * ``ns`` or ``1``: Prints UTC seconds since the epoch with nanosecond
+     resolution.
+   * ``iso``: Prints an ISO-8601 formatted UTC time with microsecond resolution.
+   * ``0``: Explicitly disables timestamps.
+
+   When unset, timestamps are disabled by default. The time is not recorded on
+   the :exc:`StopIteration` family of exceptions for performance reasons as those
+   are used for control flow rather than errors. If set to empty or invalid values,
+   this feature remains disabled when using the environment variable.
+
+   Note that the command line option :option:`-X` ``traceback_timestamps`` takes
+   precedence over this environment variable when both are specified.
+
+   Formatting of the timestamps only happens at printing time.  The ``iso``
+   format may be slower due to the complexity of the code involved but is much
+   more readable.
+
+   .. versionadded:: next
 
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~

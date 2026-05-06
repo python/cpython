@@ -668,7 +668,7 @@ def test_pdb_pp_repr_exc():
     >>> def test_function():
     ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
 
-    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE +IGNORE_EXCEPTION_TIMESTAMPS
     ...     'p obj',
     ...     'pp obj',
     ...     'continue',
@@ -872,7 +872,7 @@ def test_pdb_display_command():
     ...     a = 3
     ...     a = 4
 
-    >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS +IGNORE_EXCEPTION_TIMESTAMPS
     ...     's',
     ...     'display +',
     ...     'display',
@@ -1190,7 +1190,7 @@ def test_convenience_variables():
     >>> def test_function():
     ...     util_function()
 
-    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE +IGNORE_EXCEPTION_TIMESTAMPS
     ...     'step',             # Step to try statement
     ...     '$_frame.f_lineno', # Check frame convenience variable
     ...     '$ _frame',         # This should be a syntax error
@@ -1689,7 +1689,7 @@ def test_post_mortem():
     ...     test_function_2()
     ...     print('Not reached.')
 
-    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE +IGNORE_EXCEPTION_TIMESTAMPS
     ...     'step',      # step to test_function_2() line
     ...     'next',      # step over exception-raising call
     ...     'bt',        # get a backtrace
@@ -2201,7 +2201,7 @@ if not SKIP_CORO_TESTS:
             > <doctest test.test_pdb.test_pdb_await_support[2]>(4)main()
             -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
             (Pdb) await non_exist()
-            *** NameError: name 'non_exist' is not defined
+            *** NameError: name 'non_exist' is not defined...
             > <doctest test.test_pdb.test_pdb_await_support[2]>(4)main()
             -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
             (Pdb) s
@@ -2807,7 +2807,7 @@ def test_pdb_closure():
     ...     g = 3
     ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
 
-    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE +IGNORE_EXCEPTION_TIMESTAMPS
     ...     'k',
     ...     'g',
     ...     'y = y',
@@ -3121,7 +3121,7 @@ def test_pdb_issue_gh_101673():
     ...    a = 1
     ...    import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
 
-    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE +IGNORE_EXCEPTION_TIMESTAMPS
     ...     '!a = 2',
     ...     'll',
     ...     'p a',
@@ -3444,7 +3444,7 @@ def test_pdb_issue_gh_65052():
 
     >>> def test_function():
     ...     A()
-    >>> with PdbTestInput([  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE +IGNORE_EXCEPTION_TIMESTAMPS
     ...     's',
     ...     's',
     ...     'retval',
@@ -4454,7 +4454,11 @@ def bœr():
             'debug doesnotexist',
             'c',
         ])
-        stdout, _ = self.run_pdb_script('pass', commands + '\n')
+        stdout, _ = self.run_pdb_script(
+            'pass',
+            commands + '\n',
+            extra_env={'PYTHON_TRACEBACK_TIMESTAMPS':'0'},
+        )
 
         self.assertEqual(stdout.splitlines()[1:], [
             '-> pass',

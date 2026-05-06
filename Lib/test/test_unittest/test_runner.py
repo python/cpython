@@ -4,6 +4,7 @@ import sys
 import pickle
 import subprocess
 from test import support
+import traceback
 
 import unittest
 from unittest.case import _Outcome
@@ -436,7 +437,7 @@ class TestClassCleanup(unittest.TestCase):
                 ordering.append('tearDownClass')
 
         result = runTests(TestableTest)
-        self.assertEqual(result.errors[0][1].splitlines()[-1],
+        self.assertEqual(get_exception(0, result),
                          f'{CustomErrorRepr}: CleanUpExc')
         self.assertEqual(ordering,
                          ['setUpClass', 'setUp', 'cleanup_exc',
@@ -459,7 +460,7 @@ class TestClassCleanup(unittest.TestCase):
                 ordering.append('tearDownClass')
 
         result = runTests(TestableTest)
-        self.assertEqual(result.errors[0][1].splitlines()[-1],
+        self.assertEqual(get_exception(0, result),
                          f'{CustomErrorRepr}: CleanUpExc')
         self.assertEqual(ordering,
                          ['setUpClass', 'setUp', 'test', 'cleanup_good',
@@ -488,7 +489,7 @@ class TestClassCleanup(unittest.TestCase):
                 ordering.append('tearDownClass')
 
         result = runTests(TestableTest)
-        self.assertEqual(result.errors[0][1].splitlines()[-1],
+        self.assertEqual(get_exception(0, result),
                          f'{CustomErrorRepr}: CleanUpExc')
         self.assertEqual(ordering,
                          ['setUpClass', 'setUp', 'test',
@@ -498,9 +499,9 @@ class TestClassCleanup(unittest.TestCase):
         class_blow_up = True
         method_blow_up = False
         result = runTests(TestableTest)
-        self.assertEqual(result.errors[0][1].splitlines()[-1],
+        self.assertEqual(get_exception(0, result),
                          f'{CustomErrorRepr}: ClassExc')
-        self.assertEqual(result.errors[1][1].splitlines()[-1],
+        self.assertEqual(get_exception(1, result),
                          f'{CustomErrorRepr}: CleanUpExc')
         self.assertEqual(ordering,
                          ['setUpClass', 'cleanup_exc'])
@@ -509,9 +510,9 @@ class TestClassCleanup(unittest.TestCase):
         class_blow_up = False
         method_blow_up = True
         result = runTests(TestableTest)
-        self.assertEqual(result.errors[0][1].splitlines()[-1],
+        self.assertEqual(get_exception(0, result),
                          f'{CustomErrorRepr}: MethodExc')
-        self.assertEqual(result.errors[1][1].splitlines()[-1],
+        self.assertEqual(get_exception(1, result),
                          f'{CustomErrorRepr}: CleanUpExc')
         self.assertEqual(ordering,
                          ['setUpClass', 'setUp', 'tearDownClass',
@@ -532,7 +533,7 @@ class TestClassCleanup(unittest.TestCase):
                 raise CustomError('TearDownExc')
 
         result = runTests(TestableTest)
-        self.assertEqual(result.errors[0][1].splitlines()[-1],
+        self.assertEqual(get_exception(0, result),
                          f'{CustomErrorRepr}: TearDownExc')
         self.assertEqual(ordering,
                          ['setUpClass', 'test', 'tearDownClass', 'cleanup_good'])
@@ -602,6 +603,11 @@ class TestClassCleanup(unittest.TestCase):
         runner.run(suite)
 
         self.assertIn("\nNO TESTS RAN\n", runner.stream.getvalue())
+
+
+def get_exception(index, result):
+    exception_str = result.errors[index][1].splitlines()[-1]
+    return traceback.strip_exc_timestamps(exception_str)
 
 
 @support.force_not_colorized_test_class
@@ -734,7 +740,7 @@ class TestModuleCleanUp(ExceptionIsLikeMixin, unittest.TestCase):
         sys.modules['Module'] = Module
         result = runTests(TestableTest)
         self.assertEqual(ordering, ['setUpModule', 'cleanup_good'])
-        self.assertEqual(result.errors[0][1].splitlines()[-1],
+        self.assertEqual(get_exception(0, result),
                          f'{CustomErrorRepr}: setUpModule Exc')
 
         ordering = []
@@ -870,7 +876,7 @@ class TestModuleCleanUp(ExceptionIsLikeMixin, unittest.TestCase):
         TestableTest.__module__ = 'Module'
         sys.modules['Module'] = Module
         result = runTests(TestableTest)
-        self.assertEqual(result.errors[0][1].splitlines()[-1],
+        self.assertEqual(get_exception(0, result),
                          f'{CustomErrorRepr}: CleanUpExc')
         self.assertEqual(ordering, ['setUpModule', 'setUpClass', 'test',
                                     'tearDownClass', 'tearDownModule',
@@ -1035,7 +1041,7 @@ class TestModuleCleanUp(ExceptionIsLikeMixin, unittest.TestCase):
         sys.modules['Module'] = Module
 
         result = runTests(TestableTest)
-        self.assertEqual(result.errors[0][1].splitlines()[-1],
+        self.assertEqual(get_exception(0, result),
                          f'{CustomErrorRepr}: CleanUpExc')
         self.assertEqual(ordering,
                          ['setUpModule', 'setUpClass', 'test', 'tearDownClass',
@@ -1065,7 +1071,7 @@ class TestModuleCleanUp(ExceptionIsLikeMixin, unittest.TestCase):
         sys.modules['Module'] = Module
 
         result = runTests(TestableTest)
-        self.assertEqual(result.errors[0][1].splitlines()[-1],
+        self.assertEqual(get_exception(0, result),
                          f'{CustomErrorRepr}: CleanUpExc')
         self.assertEqual(ordering,
                          ['setUpModule', 'setUp', 'test', 'tearDown',
@@ -1107,7 +1113,7 @@ class TestModuleCleanUp(ExceptionIsLikeMixin, unittest.TestCase):
         sys.modules['Module'] = Module
 
         result = runTests(TestableTest)
-        self.assertEqual(result.errors[0][1].splitlines()[-1],
+        self.assertEqual(get_exception(0, result),
                          f'{CustomErrorRepr}: CleanUpExc')
         self.assertEqual(ordering,
                          ['setUpModule', 'setUpClass', 'setUp', 'test',
@@ -1119,9 +1125,9 @@ class TestModuleCleanUp(ExceptionIsLikeMixin, unittest.TestCase):
         class_blow_up = False
         method_blow_up = False
         result = runTests(TestableTest)
-        self.assertEqual(result.errors[0][1].splitlines()[-1],
+        self.assertEqual(get_exception(0, result),
                          f'{CustomErrorRepr}: ModuleExc')
-        self.assertEqual(result.errors[1][1].splitlines()[-1],
+        self.assertEqual(get_exception(1, result),
                          f'{CustomErrorRepr}: CleanUpExc')
         self.assertEqual(ordering, ['setUpModule', 'cleanup_exc'])
 
@@ -1130,9 +1136,9 @@ class TestModuleCleanUp(ExceptionIsLikeMixin, unittest.TestCase):
         class_blow_up = True
         method_blow_up = False
         result = runTests(TestableTest)
-        self.assertEqual(result.errors[0][1].splitlines()[-1],
+        self.assertEqual(get_exception(0, result),
                          f'{CustomErrorRepr}: ClassExc')
-        self.assertEqual(result.errors[1][1].splitlines()[-1],
+        self.assertEqual(get_exception(1, result),
                          f'{CustomErrorRepr}: CleanUpExc')
         self.assertEqual(ordering, ['setUpModule', 'setUpClass',
                                     'tearDownModule', 'cleanup_exc'])
@@ -1142,9 +1148,9 @@ class TestModuleCleanUp(ExceptionIsLikeMixin, unittest.TestCase):
         class_blow_up = False
         method_blow_up = True
         result = runTests(TestableTest)
-        self.assertEqual(result.errors[0][1].splitlines()[-1],
+        self.assertEqual(get_exception(0, result),
                          f'{CustomErrorRepr}: MethodExc')
-        self.assertEqual(result.errors[1][1].splitlines()[-1],
+        self.assertEqual(get_exception(1, result),
                          f'{CustomErrorRepr}: CleanUpExc')
         self.assertEqual(ordering, ['setUpModule', 'setUpClass', 'setUp',
                                     'tearDownClass', 'tearDownModule',
