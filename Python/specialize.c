@@ -2193,6 +2193,70 @@ BITWISE_LONGS_ACTION(compactlongs_and, &)
 BITWISE_LONGS_ACTION(compactlongs_xor, ^)
 #undef BITWISE_LONGS_ACTION
 
+/* bytes subscripting */
+
+static inline int
+bytes_compactlong_guard(PyObject *lhs, PyObject *rhs)
+{
+    if (!PyBytes_CheckExact(lhs) || !is_compactlong(rhs)) {
+        return 0;
+    }
+    Py_ssize_t index = _PyLong_CompactValue((PyLongObject *)rhs);
+    Py_ssize_t size = PyBytes_GET_SIZE(lhs);
+    if (index < 0) {
+        index += size;
+    }
+    return 0 <= index && index < size;
+}
+
+static PyObject *
+bytes_compactlong_subscr(PyObject *lhs, PyObject *rhs)
+{
+    Py_ssize_t index = _PyLong_CompactValue((PyLongObject *)rhs);
+    Py_ssize_t size = PyBytes_GET_SIZE(lhs);
+    if (index < 0) {
+        index += size;
+    }
+    unsigned char value = (unsigned char)PyBytes_AS_STRING(lhs)[index];
+    return _PyLong_FromUnsignedChar(value);
+}
+
+static PyObject *
+bytes_slice_subscr(PyObject *lhs, PyObject *rhs)
+{
+    assert(PyBytes_CheckExact(lhs));
+    assert(PySlice_Check(rhs));
+
+    Py_ssize_t start, stop, step;
+    if (PySlice_Unpack(rhs, &start, &stop, &step) < 0) {
+        return NULL;
+    }
+    Py_ssize_t size = PyBytes_GET_SIZE(lhs);
+    Py_ssize_t slicelength = PySlice_AdjustIndices(size, &start, &stop, step);
+    if (slicelength <= 0) {
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+    }
+    if (start == 0 && step == 1 && slicelength == size) {
+        return Py_NewRef(lhs);
+    }
+    if (step == 1) {
+        return PyBytes_FromStringAndSize(
+            PyBytes_AS_STRING(lhs) + start,
+            slicelength);
+    }
+
+    const char *source_buf = PyBytes_AS_STRING(lhs);
+    PyObject *result = PyBytes_FromStringAndSize(NULL, slicelength);
+    if (result == NULL) {
+        return NULL;
+    }
+    char *result_buf = PyBytes_AS_STRING(result);
+    for (Py_ssize_t cur = start, i = 0; i < slicelength; cur += step, i++) {
+        result_buf[i] = source_buf[cur];
+    }
+    return result;
+}
+
 /* float-long */
 
 static inline int
@@ -2272,6 +2336,13 @@ static _PyBinaryOpSpecializationDescr binaryop_extend_descrs[] = {
     {NB_INPLACE_OR, compactlongs_guard, compactlongs_or, &PyLong_Type, 1, NULL, NULL},
     {NB_INPLACE_AND, compactlongs_guard, compactlongs_and, &PyLong_Type, 1, NULL, NULL},
     {NB_INPLACE_XOR, compactlongs_guard, compactlongs_xor, &PyLong_Type, 1, NULL, NULL},
+
+    /* bytes[int]: guard includes bounds checks so the generic opcode still
+       raises IndexError for out-of-range indexes. */
+    {NB_SUBSCR, bytes_compactlong_guard, bytes_compactlong_subscr, &PyLong_Type, 1, NULL, NULL},
+    /* bytes[slice]: may return the original bytes object or the empty bytes
+       singleton, so the result is not guaranteed to be unique. */
+    {NB_SUBSCR, NULL, bytes_slice_subscr, &PyBytes_Type, 0, &PyBytes_Type, &PySlice_Type},
 
     /* float-long arithmetic: guards also check NaN and compactness. */
     {NB_ADD, float_compactlong_guard, float_compactlong_add, &PyFloat_Type, 1, NULL, NULL},

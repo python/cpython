@@ -1439,6 +1439,21 @@ class TestSpecializer(TestBase):
         self.assert_specialized(binary_op_add_extend_sequences, "BINARY_OP_EXTEND")
         self.assert_no_opcode(binary_op_add_extend_sequences, "BINARY_OP")
 
+        def binary_op_extend_bytes():
+            b1 = b"foo"
+            b2 = b"bar"
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                bytes_sum = b1 + b2
+                self.assertEqual(bytes_sum, b"foobar")
+                bytes_repeat = b1 * 2
+                self.assertEqual(bytes_repeat, b"foofoo")
+                bytes_repeat = 2 * b1
+                self.assertEqual(bytes_repeat, b"foofoo")
+
+        binary_op_extend_bytes()
+        self.assert_specialized(binary_op_extend_bytes, "BINARY_OP_EXTEND")
+        self.assert_no_opcode(binary_op_extend_bytes, "BINARY_OP")
+
         def binary_op_zero_division():
             def compactlong_lhs(arg):
                 42 / arg
@@ -1952,6 +1967,29 @@ class TestSpecializer(TestBase):
         binary_subscr_str_int_non_compact()
         self.assert_specialized(binary_subscr_str_int_non_compact, "BINARY_OP_SUBSCR_USTR_INT")
         self.assert_no_opcode(binary_subscr_str_int_non_compact, "BINARY_OP_SUBSCR_STR_INT")
+
+        def binary_subscr_bytes_int():
+            a = b"foobar"
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                for idx, expected in enumerate(a):
+                    self.assertEqual(a[idx], expected)
+                self.assertEqual(a[-1], ord("r"))
+
+        binary_subscr_bytes_int()
+        self.assert_specialized(binary_subscr_bytes_int, "BINARY_OP_EXTEND")
+        self.assert_no_opcode(binary_subscr_bytes_int, "BINARY_OP")
+
+        def binary_subscr_bytes_slice():
+            a = b"foobar"
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                self.assertEqual(a[1:4], b"oob")
+                self.assertEqual(a[::-1], b"raboof")
+                self.assertEqual(a[:], a)
+                self.assertEqual(a[10:20], b"")
+
+        binary_subscr_bytes_slice()
+        self.assert_specialized(binary_subscr_bytes_slice, "BINARY_OP_EXTEND")
+        self.assert_no_opcode(binary_subscr_bytes_slice, "BINARY_OP")
 
         def binary_subscr_getitems():
             class C:
