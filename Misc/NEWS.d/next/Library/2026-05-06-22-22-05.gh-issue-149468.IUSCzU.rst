@@ -1,0 +1,3 @@
+Add the *validate* option to :mod:`xml.etree.ElementTree` serialization
+functions, which allows to validate the element or element tree before
+serialization.

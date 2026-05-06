@@ -1813,6 +1813,17 @@ xml
   (Contributed by Serhiy Storchaka in :gh:`139489`.)
 
 
+xml.etree.ElementTree
+---------------------
+
+* Add the *validate* option to functions
+  :func:`~xml.etree.ElementTree.tostring`,
+  :func:`~xml.etree.ElementTree.tostringlist`, and the
+  :meth:`Element.write <xml.etree.ElementTree.ElementTree.write>` method,
+  which allows to validate the element or element tree before serialization.
+  (Contributed by Serhiy Storchaka in :gh:`xxxxxx`.)
+
+
 xml.parsers.expat
 -----------------
 

@@ -99,6 +99,7 @@ import contextlib
 import weakref
 
 from . import ElementPath
+from .. import is_valid_name, is_valid_text
 
 
 class ParseError(SyntaxError):
@@ -689,6 +690,7 @@ class ElementTree:
               xml_declaration=None,
               default_namespace=None,
               method=None, *,
+              validate=False,
               short_empty_elements=True):
         """Write element tree to a file as XML.
 
@@ -705,6 +707,8 @@ class ElementTree:
           *default_namespace* -- sets the default XML namespace (for "xmlns")
 
           *method* -- either "xml" (default), "html, "text", or "c14n"
+
+          *validate* -- if true, validate the content
 
           *short_empty_elements* -- controls the formatting of elements
                                     that contain no content. If True (default)
@@ -737,6 +741,7 @@ class ElementTree:
                 qnames, namespaces = _namespaces(self._root, default_namespace)
                 serialize = _serialize[method]
                 serialize(write, self._root, qnames, namespaces,
+                          validate=validate,
                           short_empty_elements=short_empty_elements)
 
     def write_c14n(self, file):
@@ -857,23 +862,39 @@ def _namespaces(elem, default_namespace=None):
             add_qname(text.text)
     return qnames, namespaces
 
-def _serialize_xml(write, elem, qnames, namespaces,
-                   short_empty_elements, **kwargs):
+def _serialize_xml(write, elem, qnames, namespaces, *,
+                   validate, short_empty_elements, **kwargs):
     tag = elem.tag
     text = elem.text
     if tag is Comment:
+        if validate:
+            if '--' in text or text.endswith('-'):
+                raise ValueError('invalid comment')
         write("<!--%s-->" % text)
     elif tag is ProcessingInstruction:
+        if validate:
+            m = re.search('[ \t\r\n]', text)
+            if m is not None:
+                target = text[:m.start()]
+            else:
+                target = text
+            if (not is_valid_name(target) or target.lower() == 'xml'
+                    or '?>' in text or not is_valid_text(text)):
+                raise ValueError('invalid processing instruction')
         write("<?%s?>" % text)
     else:
         tag = qnames[tag]
         if tag is None:
             if text:
-                write(_escape_cdata(text))
+                write(_escape_cdata(text, validate))
             for e in elem:
                 _serialize_xml(write, e, qnames, None,
+                               validate=validate,
                                short_empty_elements=short_empty_elements)
         else:
+            if validate:
+                if not is_valid_name(tag):
+                    raise ValueError('invalid element name')
             write("<" + tag)
             items = list(elem.items())
             if items or namespaces:
@@ -882,30 +903,40 @@ def _serialize_xml(write, elem, qnames, namespaces,
                                        key=lambda x: x[1]):  # sort on prefix
                         if k:
                             k = ":" + k
+                            if validate:
+                                if not is_valid_name(k):
+                                    raise ValueError('invalid namespace name')
                         write(" xmlns%s=\"%s\"" % (
                             k,
-                            _escape_attrib(v)
+                            _escape_attrib(v, validate)
                             ))
                 for k, v in items:
                     if isinstance(k, QName):
                         k = k.text
+                    if validate:
+                        if not is_valid_name(qnames[k]):
+                            raise ValueError('invalid attribute name')
                     if isinstance(v, QName):
                         v = qnames[v.text]
+                        if validate:
+                            if not is_valid_name(v):
+                                raise ValueError('invalid attribute value')
                     else:
-                        v = _escape_attrib(v)
+                        v = _escape_attrib(v, validate)
                     write(" %s=\"%s\"" % (qnames[k], v))
             if text or len(elem) or not short_empty_elements:
                 write(">")
                 if text:
-                    write(_escape_cdata(text))
+                    write(_escape_cdata(text, validate))
                 for e in elem:
                     _serialize_xml(write, e, qnames, None,
+                                   validate=validate,
                                    short_empty_elements=short_empty_elements)
                 write("</" + tag + ">")
             else:
                 write(" />")
     if elem.tail:
-        write(_escape_cdata(elem.tail))
+        write(_escape_cdata(elem.tail, validate))
 
 _CDATA_CONTENT_ELEMENTS = {"script", "style", "xmp", "iframe", "noembed",
                            "noframes", "plaintext"}
@@ -914,21 +945,34 @@ HTML_EMPTY = {"area", "base", "basefont", "br", "col", "embed", "frame", "hr",
               "img", "input", "isindex", "link", "meta", "param", "source",
               "track", "wbr", "plaintext"}
 
-def _serialize_html(write, elem, qnames, namespaces, **kwargs):
+def _serialize_html(write, elem, qnames, namespaces, *, validate=True, **kwargs):
     tag = elem.tag
     text = elem.text
     if tag is Comment:
+        if validate:
+            if (re.prefixmatch('-?>', text) or re.search('--!?>', text)
+                    or '\0' in text):
+                raise ValueError('invalid comment')
         write("<!--%s-->" % text)
     elif tag is ProcessingInstruction:
+        if validate:
+            if '>' in text or '\0' in text:
+                raise ValueError('invalid processing instruction')
         write("<?%s?>" % text)
     else:
         tag = qnames[tag]
         if tag is None:
             if text:
+                if validate:
+                    if '\0' in text:
+                        raise ValueError('invalid characters')
                 write(_escape_cdata(text))
             for e in elem:
-                _serialize_html(write, e, qnames, None)
+                _serialize_html(write, e, qnames, None, validate=validate)
         else:
+            if validate:
+                if not re.fullmatch('[A-Za-z][^\0\t\n\r\f />]*+', tag):
+                    raise ValueError('invalid element name')
             write("<" + tag)
             items = list(elem.items())
             if items or namespaces:
@@ -937,6 +981,12 @@ def _serialize_html(write, elem, qnames, namespaces, **kwargs):
                                        key=lambda x: x[1]):  # sort on prefix
                         if k:
                             k = ":" + k
+                        if validate:
+                            if not re.fullmatch('[^\0\t\n\r\f />=]++', k):
+                                raise ValueError('invalid attribute name')
+                        if validate:
+                            if '\0' in v:
+                                raise ValueError('invalid characters')
                         write(" xmlns%s=\"%s\"" % (
                             k,
                             _escape_attrib(v)
@@ -945,26 +995,49 @@ def _serialize_html(write, elem, qnames, namespaces, **kwargs):
                     if isinstance(k, QName):
                         k = k.text
                     k = qnames[k]
+                    if validate:
+                        if not re.fullmatch('[^\0\t\n\r\f />][^\0\t\n\r\f />=]*+', k):
+                            raise ValueError('invalid attribute name')
                     if v is None:
-                        write(" %s" % k)
+                        write(" %s" % (k,))
                     else:
                         if isinstance(v, QName):
                             v = qnames[v.text]
+                            if validate:
+                                if '\0' in v or '"' in v or '&' in v:
+                                    raise ValueError('invalid attribute value')
                         else:
+                            if validate:
+                                if '\0' in v:
+                                    raise ValueError('invalid attribute value')
                             v = _escape_attrib_html(v)
                         write(" %s=\"%s\"" % (k, v))
             write(">")
             ltag = tag.lower()
             if text:
+                if validate:
+                    if '\0' in text:
+                        raise ValueError('invalid characters')
                 if ltag in _CDATA_CONTENT_ELEMENTS:
+                    if validate:
+                        if (ltag != "plaintext"
+                            and re.search(r'</%s(?=[\t\n\r\f />])' % ltag,
+                                          text, re.IGNORECASE|re.ASCII)):
+                            raise ValueError('invalid %s content' % ltag)
                     write(text)
                 else:
                     write(_escape_cdata(text))
+            if validate:
+                if ltag in _CDATA_CONTENT_ELEMENTS and len(elem):
+                    raise ValueError('subelements in %s element' % ltag)
             for e in elem:
-                _serialize_html(write, e, qnames, None)
+                _serialize_html(write, e, qnames, None, validate=validate)
             if ltag not in HTML_EMPTY:
                 write("</" + tag + ">")
     if elem.tail:
+        if validate:
+            if '\0' in elem.tail:
+                raise ValueError('invalid characters')
         write(_escape_cdata(elem.tail))
 
 def _serialize_text(write, elem):
@@ -1021,9 +1094,12 @@ def _raise_serialization_error(text):
         "cannot serialize %r (type %s)" % (text, type(text).__name__)
         )
 
-def _escape_cdata(text):
+def _escape_cdata(text, validate=False):
     # escape character data
     try:
+        if validate:
+            if not is_valid_text(text):
+                raise ValueError('invalid characters')
         # it's worth avoiding do-nothing calls for strings that are
         # shorter than 500 characters, or so.  assume that's, by far,
         # the most common case in most applications.
@@ -1037,9 +1113,12 @@ def _escape_cdata(text):
     except (TypeError, AttributeError):
         _raise_serialization_error(text)
 
-def _escape_attrib(text):
+def _escape_attrib(text, validate=False):
     # escape attribute value
     try:
+        if validate:
+            if not is_valid_text(text):
+                raise ValueError('invalid attribute value')
         if "&" in text:
             text = text.replace("&", "&amp;")
         if "<" in text:
@@ -1082,7 +1161,7 @@ def _escape_attrib_html(text):
 
 def tostring(element, encoding=None, method=None, *,
              xml_declaration=None, default_namespace=None,
-             short_empty_elements=True):
+             validate=False, short_empty_elements=True):
     """Generate string representation of XML element.
 
     All subelements are included.  If encoding is "unicode", a string
@@ -1101,6 +1180,7 @@ def tostring(element, encoding=None, method=None, *,
                                xml_declaration=xml_declaration,
                                default_namespace=default_namespace,
                                method=method,
+                               validate=validate,
                                short_empty_elements=short_empty_elements)
     return stream.getvalue()
 
@@ -1123,13 +1203,14 @@ class _ListDataStream(io.BufferedIOBase):
 
 def tostringlist(element, encoding=None, method=None, *,
                  xml_declaration=None, default_namespace=None,
-                 short_empty_elements=True):
+                 validate=False, short_empty_elements=True):
     lst = []
     stream = _ListDataStream(lst)
     ElementTree(element).write(stream, encoding,
                                xml_declaration=xml_declaration,
                                default_namespace=default_namespace,
                                method=method,
+                               validate=validate,
                                short_empty_elements=short_empty_elements)
     return lst
 
