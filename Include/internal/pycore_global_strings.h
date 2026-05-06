@@ -305,6 +305,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(alias)
         STRUCT_FOR_ID(align)
         STRUCT_FOR_ID(all)
+        STRUCT_FOR_ID(all_interpreters)
         STRUCT_FOR_ID(all_threads)
         STRUCT_FOR_ID(allow_code)
         STRUCT_FOR_ID(alphabet)

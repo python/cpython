@@ -99,7 +99,7 @@ AC_SUBST([BASECPPFLAGS])
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     # If we're building out-of-tree, we need to make sure the following
     # resources get picked up before their $srcdir counterparts.
-    #   Objects/ -> typeslots.inc
+    #   Objects/ -> slots_generated.c
     #   Include/ -> Python.h
     # (A side effect of this is that these resources will automatically be
     #  regenerated when building out-of-tree, regardless of whether or not
@@ -2406,7 +2406,7 @@ AS_CASE([$ac_sys_system],
     dnl Include file system support
     AS_VAR_APPEND([LINKFORSHARED], [" -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY,ERRNO_CODES"])
-    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,_PyGILState_GetThisThreadState,__Py_DumpTraceback,__PyEM_EMSCRIPTEN_TRAMPOLINE_OFFSET"])
+    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,_PyGILState_GetThisThreadState,__PyEM_EMSCRIPTEN_TRAMPOLINE_OFFSET"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sSTACK_SIZE=5MB"])
     dnl Avoid bugs in JS fallback string decoding path
     AS_VAR_APPEND([LINKFORSHARED], [" -sTEXTDECODER=2"])
@@ -2529,7 +2529,44 @@ then
   AX_CHECK_COMPILE_FLAG([-D_FORTIFY_SOURCE=3], [CFLAGS_NODIST="$CFLAGS_NODIST -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3"], [AC_MSG_WARN([-D_FORTIFY_SOURCE=3 not supported])], [-Werror])
 fi
 
+AC_MSG_CHECKING([whether to build with frame pointers])
+AC_ARG_WITH([frame-pointers],
+  [AS_HELP_STRING([--without-frame-pointers],
+                  [build without frame pointers (default is no)])],
+  [],
+  [with_frame_pointers=yes])
+AC_MSG_RESULT([$with_frame_pointers])
+
 AS_VAR_IF([ac_cv_gcc_compat], [yes], [
+    dnl Keep frame pointers in CPython, stdlib objects, and third-party
+    dnl extensions built against this Python (BASECFLAGS propagates via
+    dnl sysconfig) so native profilers can unwind interpreter frames and
+    dnl generated trampolines without DWARF.
+    frame_pointer_cflags=
+    AX_CHECK_COMPILE_FLAG([-fno-omit-frame-pointer], [
+      frame_pointer_cflags="-fno-omit-frame-pointer"
+      AX_CHECK_COMPILE_FLAG([-mno-omit-leaf-frame-pointer], [
+        frame_pointer_cflags="$frame_pointer_cflags -mno-omit-leaf-frame-pointer"
+      ], [], [-Werror])
+      AS_CASE([$host_cpu], [arm|armv*], [
+        AX_CHECK_COMPILE_FLAG([-marm], [
+          frame_pointer_cflags="$frame_pointer_cflags -marm"
+        ], [], [-Werror])
+      ])
+      AS_CASE([$host_cpu], [s390*], [
+        AX_CHECK_COMPILE_FLAG([-mbackchain], [
+          dnl Do not use no-omit-frame-pointer; see gh-149362
+          frame_pointer_cflags="-mbackchain"
+        ], [], [-Werror])
+      ])
+    ], [], [-Werror])
+    if test -n "$frame_pointer_cflags" && test "x$with_frame_pointers" != xno; then
+      BASECFLAGS="$frame_pointer_cflags $BASECFLAGS"
+      AC_DEFINE([_Py_WITH_FRAME_POINTERS], [1],
+                [Define to 1 if frame unwinding via pointers is expected
+                 to work, 0 if not. Leave undefined if unknown.])
+    fi
+
     CFLAGS_NODIST="$CFLAGS_NODIST -std=c11"
 
     PY_CHECK_CC_WARNING([enable], [extra], [if we can add -Wextra])
@@ -3788,11 +3825,6 @@ AC_MSG_RESULT([$perf_trampoline])
 AS_VAR_IF([perf_trampoline], [yes], [
   AC_DEFINE([PY_HAVE_PERF_TRAMPOLINE], [1], [Define to 1 if you have the perf trampoline.])
   PERF_TRAMPOLINE_OBJ=Python/asm_trampoline.o
-
-  dnl perf needs frame pointers for unwinding, include compiler option in debug builds
-  AS_VAR_IF([Py_DEBUG], [true], [
-    AS_VAR_APPEND([BASECFLAGS], [" -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer"])
-  ])
 ])
 AC_SUBST([PERF_TRAMPOLINE_OBJ])
 
@@ -3808,6 +3840,24 @@ AC_CHECK_HEADERS([execinfo.h link.h dlfcn.h], [
     # dladdr1 requires -ldl
     ac_cv_require_ldl=yes
   ])
+])
+
+dnl for JIT GNU backtrace unwind registration
+AC_CACHE_CHECK([for libgcc frame registration functions],
+  [ac_cv_have_libgcc_eh_frame_registration],
+  [AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+void __register_frame(const void *);
+void __deregister_frame(const void *);
+]], [[
+__register_frame(0);
+__deregister_frame(0);
+]])],
+    [ac_cv_have_libgcc_eh_frame_registration=yes],
+    [ac_cv_have_libgcc_eh_frame_registration=no])
+  ])
+AS_VAR_IF([ac_cv_have_libgcc_eh_frame_registration], [yes], [
+  AC_DEFINE([HAVE_LIBGCC_EH_FRAME_REGISTRATION], [1],
+    [Define to 1 if libgcc __register_frame and __deregister_frame are linkable.])
 ])
 
 dnl only add -ldl to LDFLAGS if it isn't already part of LIBS (GH-133081)

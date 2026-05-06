@@ -1,0 +1,5 @@
+:c:type:`PyType_WatchCallback` callbacks registered via
+:c:func:`PyType_AddWatcher` are now also invoked when a watched heap type is
+deallocated. Previously, type watchers were only notified of modifications,
+which could cause stale references when a type was freed and its address was
+reused.
