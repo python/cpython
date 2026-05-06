@@ -789,7 +789,7 @@ also be used to improve performance.
 
    - ``-fno-omit-frame-pointer`` and/or ``-mno-omit-leaf-frame-pointer``
      are added when the compiler supports them,
-   - ``-marm`` is added on 32-bit ARM when supported,
+   - ``-marm`` and/or ``-mno-thumb`` is added on 32-bit ARM when supported,
    - on s390x platforms, when supported, ``-mbackchain`` is added *instead*
      of the above frame pointer flags
 

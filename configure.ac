@@ -2549,8 +2549,12 @@ AS_VAR_IF([ac_cv_gcc_compat], [yes], [
         frame_pointer_cflags="$frame_pointer_cflags -mno-omit-leaf-frame-pointer"
       ], [], [-Werror])
       AS_CASE([$host_cpu], [arm|armv*], [
+        dnl GCC uses "-marm"; clang uses "-mno-thumb"
         AX_CHECK_COMPILE_FLAG([-marm], [
           frame_pointer_cflags="$frame_pointer_cflags -marm"
+        ], [], [-Werror])
+        AX_CHECK_COMPILE_FLAG([-mno-thumb], [
+          frame_pointer_cflags="$frame_pointer_cflags -mno-thumb"
         ], [], [-Werror])
       ])
       AS_CASE([$host_cpu], [s390*], [
