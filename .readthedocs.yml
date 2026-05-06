@@ -24,10 +24,10 @@ build:
         if [ "$READTHEDOCS_VERSION_TYPE" = "external" ];
         then
           base_branch=main;
-          git fetch --depth=50 origin $base_branch:origin/$base_branch;
+          git fetch --depth=50 origin $base_branch:origin-$base_branch;
           for attempt in $(seq 10);
           do
-            if ! git merge-base HEAD origin/$base_branch;
+            if ! git merge-base HEAD origin-$base_branch;
             then
               git fetch --deepen=50 origin $base_branch;
             else
