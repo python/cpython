@@ -50,7 +50,6 @@ except ImportError:
 
 try:
     import _testcapi
-    import _testlimitedcapi
 except ImportError:
     _testcapi = None
 
@@ -144,7 +143,7 @@ MEMORYVIEW = NATIVE.copy()
 # Format codes supported by array.array
 ARRAY = NATIVE.copy()
 for k in NATIVE:
-    if not k in list("bBhHiIlLefd") + ['Zf', 'Zd']:
+    if k not in list("bBhHiIlLefd") + ['Zf', 'Zd']:
         del ARRAY[k]
 
 BYTEFMT = NATIVE.copy()
@@ -4497,19 +4496,17 @@ class TestBufferProtocol(unittest.TestCase):
         # gh-140557: pointer alignment of buffers including empty allocation
         # should match the maximum array alignment.
         MAX_ALIGN = _testlimitedcapi.ALIGNOF_MAX_ALIGN_T
-        align = max(struct.calcsize(fmt) for fmt in ARRAY
-                    if struct.calcsize(fmt) <= MAX_ALIGN)
-        cases = [array.array(fmt) for fmt in ARRAY
-                 if struct.calcsize(fmt) <= MAX_ALIGN]
+        formats = [fmt for fmt in ARRAY
+                   if struct.calcsize(fmt) <= struct.calcsize('P')]
+        align = max(struct.calcsize(fmt) for fmt in formats)
+        cases = [array.array(fmt) for fmt in formats]
         # Empty arrays
         self.assertEqual(
             [_testcapi.buffer_pointer_as_int(case) % align for case in cases],
             [0] * len(cases),
         )
         for case in cases:
-            fmt = case.typecode
-            if struct.calcsize(fmt) <= MAX_ALIGN:
-                case.append(0)
+            case.append(0)
         # Allocated arrays
         self.assertEqual(
             [_testcapi.buffer_pointer_as_int(case) % align for case in cases],
