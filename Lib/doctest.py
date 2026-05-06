@@ -106,8 +106,8 @@ import types
 import unittest
 from io import StringIO, TextIOWrapper, BytesIO
 from collections import namedtuple
-import _colorize  # Used in doctests
-from _colorize import ANSIColors, can_colorize
+lazy import _colorize  # Used in doctests
+lazy from _colorize import ANSIColors, can_colorize
 
 
 class TestResults(namedtuple('TestResults', 'failed attempted')):

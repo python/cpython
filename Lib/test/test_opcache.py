@@ -1419,6 +1419,30 @@ class TestSpecializer(TestBase):
                 self.assertEqual(c, 2.0)
                 c = b / a
                 self.assertEqual(c, 0.5)
+                c = a
+                c += b
+                self.assertEqual(c, 9.0)
+                c = b
+                c += a
+                self.assertEqual(c, 9.0)
+                c = a
+                c -= b
+                self.assertEqual(c, 3.0)
+                c = b
+                c -= a
+                self.assertEqual(c, -3.0)
+                c = a
+                c *= b
+                self.assertEqual(c, 18.0)
+                c = b
+                c *= a
+                self.assertEqual(c, 18.0)
+                c = a
+                c /= b
+                self.assertEqual(c, 2.0)
+                c = b
+                c /= a
+                self.assertEqual(c, 0.5)
 
         binary_op_add_extend()
         self.assert_specialized(binary_op_add_extend, "BINARY_OP_EXTEND")

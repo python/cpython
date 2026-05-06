@@ -23,3 +23,15 @@ def is_valid_name(name):
             '\uF900-\uFDCF\uFDF0-\uFFFD\U00010000-\U000EFFFF'
         ']*+',
         name) is not None
+
+# https://www.w3.org/TR/xml/#charsets
+_ILLEGAL_XML_CHAR = (
+    '['
+        '\x00-\x08\x0B\x0C\x0E-\x1F'    # C0 controls except TAB, CR and LF
+        '\uD800-\uDFFF'                 # the surrogate blocks
+        '\uFFFE\uFFFF'                  # special Unicode characters
+    ']')
+
+def is_valid_text(data):
+    """Test whether a string is a sequence of legal XML 1.0 characters."""
+    return _re.search(_ILLEGAL_XML_CHAR, data) is None
