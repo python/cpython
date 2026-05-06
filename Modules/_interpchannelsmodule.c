@@ -1644,14 +1644,16 @@ _channels_list_all(_channels *channels, int64_t *count)
     if (ids == NULL) {
         goto done;
     }
-    _channelref *ref = channels->head;
-    for (int64_t i=0; ref != NULL; ref = ref->next, i++) {
-        ids[i] = (struct channel_id_and_info){
-            .id = ref->cid,
-            .defaults = ref->chan->defaults,
-        };
+    int64_t i = 0;
+    for (_channelref *ref = channels->head; ref != NULL; ref = ref->next) {
+        if (ref->chan != NULL) {
+            ids[i++] = (struct channel_id_and_info){
+                .id = ref->cid,
+                .defaults = ref->chan->defaults,
+            };
+        }
     }
-    *count = channels->numopen;
+    *count = i;
 
     cids = ids;
 done:
@@ -3603,6 +3605,7 @@ error:
 }
 
 static struct PyModuleDef_Slot module_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

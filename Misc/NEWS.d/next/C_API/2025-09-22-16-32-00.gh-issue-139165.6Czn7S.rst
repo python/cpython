@@ -1,2 +1,0 @@
-Expose the functions :c:func:`Py_SIZE`, :c:func:`Py_IS_TYPE` and
-:c:func:`Py_SET_SIZE` in the Stable ABI.

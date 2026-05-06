@@ -1,2 +1,0 @@
-Fix typing ``'q'`` at the help of the interactive tachyon profiler exiting
-the profiler.

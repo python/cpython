@@ -11,19 +11,20 @@ import sysconfig
 import time
 import _colorize
 
-from ..collector import Collector
+from ..collector import Collector, extract_lineno
 from ..constants import (
     THREAD_STATUS_HAS_GIL,
     THREAD_STATUS_ON_CPU,
     THREAD_STATUS_UNKNOWN,
     THREAD_STATUS_GIL_REQUESTED,
+    THREAD_STATUS_HAS_EXCEPTION,
     PROFILING_MODE_CPU,
     PROFILING_MODE_GIL,
     PROFILING_MODE_WALL,
 )
 from .constants import (
     MICROSECONDS_PER_SECOND,
-    DISPLAY_UPDATE_INTERVAL,
+    DISPLAY_UPDATE_INTERVAL_SEC,
     MIN_TERMINAL_WIDTH,
     MIN_TERMINAL_HEIGHT,
     HEADER_LINES,
@@ -32,6 +33,9 @@ from .constants import (
     FINISHED_BANNER_EXTRA_LINES,
     DEFAULT_SORT_BY,
     DEFAULT_DISPLAY_LIMIT,
+    COLOR_PAIR_SAMPLES,
+    COLOR_PAIR_FILE,
+    COLOR_PAIR_FUNC,
     COLOR_PAIR_HEADER_BG,
     COLOR_PAIR_CYAN,
     COLOR_PAIR_YELLOW,
@@ -41,7 +45,7 @@ from .constants import (
     COLOR_PAIR_SORTED_HEADER,
 )
 from .display import CursesDisplay
-from .widgets import HeaderWidget, TableWidget, FooterWidget, HelpWidget
+from .widgets import HeaderWidget, TableWidget, FooterWidget, HelpWidget, OpcodePanel
 from .trend_tracker import TrendTracker
 
 
@@ -61,11 +65,17 @@ class ThreadData:
     on_cpu: int = 0
     gil_requested: int = 0
     unknown: int = 0
+    has_exception: int = 0
     total: int = 0  # Total status samples for this thread
 
     # Sample counts
     sample_count: int = 0
     gc_frame_samples: int = 0
+
+    # Opcode statistics: {location: {opcode: count}}
+    opcode_stats: dict = field(default_factory=lambda: collections.defaultdict(
+        lambda: collections.defaultdict(int)
+    ))
 
     def increment_status_flag(self, status_flags):
         """Update status counts based on status bit flags."""
@@ -77,6 +87,8 @@ class ThreadData:
             self.gil_requested += 1
         if status_flags & THREAD_STATUS_UNKNOWN:
             self.unknown += 1
+        if status_flags & THREAD_STATUS_HAS_EXCEPTION:
+            self.has_exception += 1
         self.total += 1
 
     def as_status_dict(self):
@@ -86,6 +98,7 @@ class ThreadData:
             "on_cpu": self.on_cpu,
             "gil_requested": self.gil_requested,
             "unknown": self.unknown,
+            "has_exception": self.has_exception,
             "total": self.total,
         }
 
@@ -103,6 +116,8 @@ class LiveStatsCollector(Collector):
         pid=None,
         display=None,
         mode=None,
+        opcodes=False,
+        async_aware=None,
     ):
         """
         Initialize the live stats collector.
@@ -115,6 +130,8 @@ class LiveStatsCollector(Collector):
             pid: Process ID being profiled
             display: DisplayInterface implementation (None means curses will be used)
             mode: Profiling mode ('cpu', 'gil', etc.) - affects what stats are shown
+            opcodes: Whether to show opcode panel (requires --opcodes flag)
+            async_aware: Async tracing mode - None (sync only), "all" or "running"
         """
         self.result = collections.defaultdict(
             lambda: dict(total_rec_calls=0, direct_calls=0, cumulative_calls=0)
@@ -133,6 +150,9 @@ class LiveStatsCollector(Collector):
         self.running = True
         self.pid = pid
         self.mode = mode  # Profiling mode
+        self.async_aware = async_aware  # Async tracing mode
+        # Pre-select frame iterator method to avoid per-call dispatch overhead
+        self._get_frame_iterator = self._get_async_frame_iterator if async_aware else self._get_sync_frame_iterator
         self._saved_stdout = None
         self._saved_stderr = None
         self._devnull = None
@@ -140,7 +160,7 @@ class LiveStatsCollector(Collector):
         self.max_sample_rate = 0  # Track maximum sample rate seen
         self.successful_samples = 0  # Track samples that captured frames
         self.failed_samples = 0  # Track samples that failed to capture frames
-        self.display_update_interval = DISPLAY_UPDATE_INTERVAL  # Instance variable for display refresh rate
+        self.display_update_interval_sec = DISPLAY_UPDATE_INTERVAL_SEC  # Instance variable for display refresh rate
 
         # Thread status statistics (bit flags)
         self.thread_status_counts = {
@@ -148,9 +168,16 @@ class LiveStatsCollector(Collector):
             "on_cpu": 0,
             "gil_requested": 0,
             "unknown": 0,
+            "has_exception": 0,
             "total": 0,  # Total thread count across all samples
         }
         self.gc_frame_samples = 0  # Track samples with GC frames
+
+        # Opcode statistics: {location: {opcode: count}}
+        self.opcode_stats = collections.defaultdict(lambda: collections.defaultdict(int))
+        self.show_opcodes = opcodes  # Show opcode panel when --opcodes flag is passed
+        self.selected_row = 0  # Currently selected row in table for opcode view
+        self.scroll_offset = 0  # Scroll offset for table when in opcode mode
 
         # Interactive controls state
         self.paused = False  # Pause UI updates (profiling continues)
@@ -178,6 +205,7 @@ class LiveStatsCollector(Collector):
         self.table_widget = None
         self.footer_widget = None
         self.help_widget = None
+        self.opcode_panel = None
 
         # Color mode
         self._can_colorize = _colorize.can_colorize()
@@ -185,10 +213,15 @@ class LiveStatsCollector(Collector):
         # Trend tracking (initialized after colors are set up)
         self._trend_tracker = None
 
+        self._seen_locations = set()
+
     @property
     def elapsed_time(self):
         """Get the elapsed time, frozen when finished."""
         if self.finished and self.finish_timestamp is not None:
+            # Handle case where process exited before any samples were collected
+            if self.start_time is None:
+                return 0
             return self.finish_timestamp - self.start_time
         return time.perf_counter() - self.start_time if self.start_time else 0
 
@@ -280,106 +313,96 @@ class LiveStatsCollector(Collector):
 
         # Get per-thread data if tracking per-thread
         thread_data = self._get_or_create_thread_data(thread_id) if thread_id is not None else None
+        self._seen_locations.clear()
 
         # Process each frame in the stack to track cumulative calls
+        # frame.location is (lineno, end_lineno, col_offset, end_col_offset), int, or None
         for frame in frames:
-            location = (frame.filename, frame.lineno, frame.funcname)
-            self.result[location]["cumulative_calls"] += 1
-            if thread_data:
-                thread_data.result[location]["cumulative_calls"] += 1
+            lineno = extract_lineno(frame.location)
+            location = (frame.filename, lineno, frame.funcname)
+            if location not in self._seen_locations:
+                self._seen_locations.add(location)
+                self.result[location]["cumulative_calls"] += 1
+                if thread_data:
+                    thread_data.result[location]["cumulative_calls"] += 1
 
         # The top frame gets counted as an inline call (directly executing)
-        top_location = (frames[0].filename, frames[0].lineno, frames[0].funcname)
+        top_frame = frames[0]
+        top_lineno = extract_lineno(top_frame.location)
+        top_location = (top_frame.filename, top_lineno, top_frame.funcname)
         self.result[top_location]["direct_calls"] += 1
         if thread_data:
             thread_data.result[top_location]["direct_calls"] += 1
+
+        # Track opcode for top frame (the actively executing instruction)
+        opcode = getattr(top_frame, 'opcode', None)
+        if opcode is not None:
+            self.opcode_stats[top_location][opcode] += 1
+            if thread_data:
+                thread_data.opcode_stats[top_location][opcode] += 1
+
+    def _get_sync_frame_iterator(self, stack_frames):
+        """Iterator for sync frames."""
+        return self._iter_all_frames(stack_frames, skip_idle=self.skip_idle)
+
+    def _get_async_frame_iterator(self, stack_frames):
+        """Iterator for async frames, yielding (frames, thread_id) tuples."""
+        for frames, thread_id, task_id in self._iter_async_frames(stack_frames):
+            yield frames, thread_id
 
     def collect_failed_sample(self):
         self.failed_samples += 1
         self.total_samples += 1
 
-    def collect(self, stack_frames):
+    def collect(self, stack_frames, timestamp_us=None):
         """Collect and display profiling data."""
         if self.start_time is None:
             self.start_time = time.perf_counter()
             self._last_display_update = self.start_time
 
-        # Thread status counts for this sample
-        temp_status_counts = {
-            "has_gil": 0,
-            "on_cpu": 0,
-            "gil_requested": 0,
-            "unknown": 0,
-            "total": 0,
-        }
         has_gc_frame = False
 
-        # Always collect data, even when paused
-        # Track thread status flags and GC frames
-        for interpreter_info in stack_frames:
-            threads = getattr(interpreter_info, "threads", [])
-            for thread_info in threads:
-                temp_status_counts["total"] += 1
+        # Collect thread status stats (only available in sync mode)
+        if not self.async_aware:
+            status_counts, sample_has_gc, per_thread_stats = self._collect_thread_status_stats(stack_frames)
+            for key, count in status_counts.items():
+                self.thread_status_counts[key] += count
+            if sample_has_gc:
+                has_gc_frame = True
 
-                # Track thread status using bit flags
-                status_flags = getattr(thread_info, "status", 0)
-                thread_id = getattr(thread_info, "thread_id", None)
+            for thread_id, stats in per_thread_stats.items():
+                thread_data = self._get_or_create_thread_data(thread_id)
+                thread_data.has_gil += stats.get("has_gil", 0)
+                thread_data.on_cpu += stats.get("on_cpu", 0)
+                thread_data.gil_requested += stats.get("gil_requested", 0)
+                thread_data.unknown += stats.get("unknown", 0)
+                thread_data.has_exception += stats.get("has_exception", 0)
+                thread_data.total += stats.get("total", 0)
+                if stats.get("gc_samples", 0):
+                    thread_data.gc_frame_samples += stats["gc_samples"]
 
-                # Update aggregated counts
-                if status_flags & THREAD_STATUS_HAS_GIL:
-                    temp_status_counts["has_gil"] += 1
-                if status_flags & THREAD_STATUS_ON_CPU:
-                    temp_status_counts["on_cpu"] += 1
-                if status_flags & THREAD_STATUS_GIL_REQUESTED:
-                    temp_status_counts["gil_requested"] += 1
-                if status_flags & THREAD_STATUS_UNKNOWN:
-                    temp_status_counts["unknown"] += 1
+        # Process frames using pre-selected iterator
+        frames_processed = False
+        for frames, thread_id in self._get_frame_iterator(stack_frames):
+            if not frames:
+                continue
 
-                # Update per-thread status counts
-                if thread_id is not None:
-                    thread_data = self._get_or_create_thread_data(thread_id)
-                    thread_data.increment_status_flag(status_flags)
+            self.process_frames(frames, thread_id=thread_id)
+            frames_processed = True
 
-                # Process frames (respecting skip_idle)
-                if self.skip_idle:
-                    has_gil = bool(status_flags & THREAD_STATUS_HAS_GIL)
-                    on_cpu = bool(status_flags & THREAD_STATUS_ON_CPU)
-                    if not (has_gil or on_cpu):
-                        continue
+            # Track thread IDs
+            if thread_id is not None and thread_id not in self.thread_ids:
+                self.thread_ids.append(thread_id)
 
-                frames = getattr(thread_info, "frame_info", None)
-                if frames:
-                    self.process_frames(frames, thread_id=thread_id)
-
-                    # Track thread IDs only for threads that actually have samples
-                    if (
-                        thread_id is not None
-                        and thread_id not in self.thread_ids
-                    ):
-                        self.thread_ids.append(thread_id)
-
-                    # Increment per-thread sample count and check for GC frames
-                    thread_has_gc_frame = False
-                    for frame in frames:
-                        funcname = getattr(frame, "funcname", "")
-                        if "<GC>" in funcname or "gc_collect" in funcname:
-                            has_gc_frame = True
-                            thread_has_gc_frame = True
-                            break
-
-                    if thread_id is not None:
-                        thread_data = self._get_or_create_thread_data(thread_id)
-                        thread_data.sample_count += 1
-                        if thread_has_gc_frame:
-                            thread_data.gc_frame_samples += 1
-
-        # Update cumulative thread status counts
-        for key, count in temp_status_counts.items():
-            self.thread_status_counts[key] += count
+            if thread_id is not None:
+                thread_data = self._get_or_create_thread_data(thread_id)
+                thread_data.sample_count += 1
 
         if has_gc_frame:
             self.gc_frame_samples += 1
 
+        # Count as successful - the sample worked even if no frames matched the filter
+        # (e.g., in --mode exception when no thread has an active exception)
         self.successful_samples += 1
         self.total_samples += 1
 
@@ -393,7 +416,7 @@ class LiveStatsCollector(Collector):
             if (
                 self._last_display_update is None
                 or (current_time - self._last_display_update)
-                >= self.display_update_interval
+                >= self.display_update_interval_sec
             ):
                 self._update_display()
                 self._last_display_update = current_time
@@ -431,6 +454,7 @@ class LiveStatsCollector(Collector):
             self.table_widget = TableWidget(self.display, colors, self)
             self.footer_widget = FooterWidget(self.display, colors, self)
             self.help_widget = HelpWidget(self.display, colors)
+            self.opcode_panel = OpcodePanel(self.display, colors, self)
 
     def _render_display_sections(
         self, height, width, elapsed, stats_list, colors
@@ -450,6 +474,12 @@ class LiveStatsCollector(Collector):
             line = self.table_widget.render(
                 line, width, height=height, stats_list=stats_list
             )
+
+            # Render opcode panel if enabled
+            if self.show_opcodes:
+                line = self.opcode_panel.render(
+                    line, width, height=height, stats_list=stats_list
+                )
 
         except curses.error:
             pass
@@ -525,79 +555,61 @@ class LiveStatsCollector(Collector):
 
     def _setup_colors(self):
         """Set up color pairs and return color attributes."""
-
         A_BOLD = self.display.get_attr("A_BOLD")
         A_REVERSE = self.display.get_attr("A_REVERSE")
         A_UNDERLINE = self.display.get_attr("A_UNDERLINE")
         A_NORMAL = self.display.get_attr("A_NORMAL")
 
-        # Check both curses color support and _colorize.can_colorize()
         if self.display.has_colors() and self._can_colorize:
             with contextlib.suppress(Exception):
-                # Color constants (using curses values for compatibility)
-                COLOR_CYAN = 6
-                COLOR_GREEN = 2
-                COLOR_YELLOW = 3
-                COLOR_BLACK = 0
-                COLOR_MAGENTA = 5
-                COLOR_RED = 1
+                theme = _colorize.get_theme(force_color=True).live_profiler
+                default_bg = -1
 
-                # Initialize all color pairs used throughout the UI
+                self.display.init_color_pair(COLOR_PAIR_SAMPLES, theme.samples_fg, default_bg)
+                self.display.init_color_pair(COLOR_PAIR_FILE, theme.file_fg, default_bg)
+                self.display.init_color_pair(COLOR_PAIR_FUNC, theme.func_fg, default_bg)
+
+                # Normal header background color pair
                 self.display.init_color_pair(
-                    1, COLOR_CYAN, -1
-                )  # Data colors for stats rows
-                self.display.init_color_pair(2, COLOR_GREEN, -1)
-                self.display.init_color_pair(3, COLOR_YELLOW, -1)
-                self.display.init_color_pair(
-                    COLOR_PAIR_HEADER_BG, COLOR_BLACK, COLOR_GREEN
+                    COLOR_PAIR_HEADER_BG,
+                    theme.normal_header_fg,
+                    theme.normal_header_bg,
                 )
+
+                self.display.init_color_pair(COLOR_PAIR_CYAN, theme.pid_fg, default_bg)
+                self.display.init_color_pair(COLOR_PAIR_YELLOW, theme.time_fg, default_bg)
+                self.display.init_color_pair(COLOR_PAIR_GREEN, theme.uptime_fg, default_bg)
+                self.display.init_color_pair(COLOR_PAIR_MAGENTA, theme.interval_fg, default_bg)
+                self.display.init_color_pair(COLOR_PAIR_RED, theme.off_gil_fg, default_bg)
                 self.display.init_color_pair(
-                    COLOR_PAIR_CYAN, COLOR_CYAN, COLOR_BLACK
+                    COLOR_PAIR_SORTED_HEADER,
+                    theme.sorted_header_fg,
+                    theme.sorted_header_bg,
                 )
-                self.display.init_color_pair(
-                    COLOR_PAIR_YELLOW, COLOR_YELLOW, COLOR_BLACK
-                )
-                self.display.init_color_pair(
-                    COLOR_PAIR_GREEN, COLOR_GREEN, COLOR_BLACK
-                )
-                self.display.init_color_pair(
-                    COLOR_PAIR_MAGENTA, COLOR_MAGENTA, COLOR_BLACK
-                )
-                self.display.init_color_pair(
-                    COLOR_PAIR_RED, COLOR_RED, COLOR_BLACK
-                )
-                self.display.init_color_pair(
-                    COLOR_PAIR_SORTED_HEADER, COLOR_BLACK, COLOR_YELLOW
-                )
+
+                TREND_UP_PAIR = 11
+                TREND_DOWN_PAIR = 12
+                self.display.init_color_pair(TREND_UP_PAIR, theme.trend_up_fg, default_bg)
+                self.display.init_color_pair(TREND_DOWN_PAIR, theme.trend_down_fg, default_bg)
 
                 return {
-                    "header": self.display.get_color_pair(COLOR_PAIR_HEADER_BG)
-                    | A_BOLD,
-                    "cyan": self.display.get_color_pair(COLOR_PAIR_CYAN)
-                    | A_BOLD,
-                    "yellow": self.display.get_color_pair(COLOR_PAIR_YELLOW)
-                    | A_BOLD,
-                    "green": self.display.get_color_pair(COLOR_PAIR_GREEN)
-                    | A_BOLD,
-                    "magenta": self.display.get_color_pair(COLOR_PAIR_MAGENTA)
-                    | A_BOLD,
-                    "red": self.display.get_color_pair(COLOR_PAIR_RED)
-                    | A_BOLD,
-                    "sorted_header": self.display.get_color_pair(
-                        COLOR_PAIR_SORTED_HEADER
-                    )
-                    | A_BOLD,
-                    "normal_header": A_REVERSE | A_BOLD,
-                    "color_samples": self.display.get_color_pair(1),
-                    "color_file": self.display.get_color_pair(2),
-                    "color_func": self.display.get_color_pair(3),
-                    # Trend colors (stock-like indicators)
-                    "trend_up": self.display.get_color_pair(COLOR_PAIR_GREEN) | A_BOLD,
-                    "trend_down": self.display.get_color_pair(COLOR_PAIR_RED) | A_BOLD,
+                    "header": self.display.get_color_pair(COLOR_PAIR_HEADER_BG) | A_BOLD,
+                    "cyan": self.display.get_color_pair(COLOR_PAIR_CYAN) | A_BOLD,
+                    "yellow": self.display.get_color_pair(COLOR_PAIR_YELLOW) | A_BOLD,
+                    "green": self.display.get_color_pair(COLOR_PAIR_GREEN) | A_BOLD,
+                    "magenta": self.display.get_color_pair(COLOR_PAIR_MAGENTA) | A_BOLD,
+                    "red": self.display.get_color_pair(COLOR_PAIR_RED) | A_BOLD,
+                    "sorted_header": self.display.get_color_pair(COLOR_PAIR_SORTED_HEADER) | A_BOLD,
+                    "normal_header": self.display.get_color_pair(COLOR_PAIR_HEADER_BG) | A_BOLD,
+                    "color_samples": self.display.get_color_pair(COLOR_PAIR_SAMPLES),
+                    "color_file": self.display.get_color_pair(COLOR_PAIR_FILE),
+                    "color_func": self.display.get_color_pair(COLOR_PAIR_FUNC),
+                    "trend_up": self.display.get_color_pair(TREND_UP_PAIR) | A_BOLD,
+                    "trend_down": self.display.get_color_pair(TREND_DOWN_PAIR) | A_BOLD,
                     "trend_stable": A_NORMAL,
                 }
 
-        # Fallback to non-color attributes
+        # Fallback for no-color mode
         return {
             "header": A_REVERSE | A_BOLD,
             "cyan": A_BOLD,
@@ -610,7 +622,6 @@ class LiveStatsCollector(Collector):
             "color_samples": A_NORMAL,
             "color_file": A_NORMAL,
             "color_func": A_NORMAL,
-            # Trend colors (fallback to bold/normal for monochrome)
             "trend_up": A_BOLD,
             "trend_down": A_BOLD,
             "trend_stable": A_NORMAL,
@@ -644,9 +655,11 @@ class LiveStatsCollector(Collector):
             total_time = direct_calls * self.sample_interval_sec
             cumulative_time = cumulative_calls * self.sample_interval_sec
 
-            # Calculate sample percentages
-            sample_pct = (direct_calls / self.total_samples * 100) if self.total_samples > 0 else 0
-            cumul_pct = (cumulative_calls / self.total_samples * 100) if self.total_samples > 0 else 0
+            # Calculate sample percentages using successful_samples as denominator
+            # This ensures percentages are relative to samples that actually had data,
+            # not all sampling attempts (important for filtered modes like --mode exception)
+            sample_pct = (direct_calls / self.successful_samples * 100) if self.successful_samples > 0 else 0
+            cumul_pct = (cumulative_calls / self.successful_samples * 100) if self.successful_samples > 0 else 0
 
             # Calculate trends for all columns using TrendTracker
             trends = {}
@@ -669,7 +682,9 @@ class LiveStatsCollector(Collector):
                     "cumulative_calls": cumulative_calls,
                     "total_time": total_time,
                     "cumulative_time": cumulative_time,
-                    "trends": trends,  # Dictionary of trends for all columns
+                    "sample_pct": sample_pct,
+                    "cumul_pct": cumul_pct,
+                    "trends": trends,
                 }
             )
 
@@ -681,21 +696,9 @@ class LiveStatsCollector(Collector):
         elif self.sort_by == "cumtime":
             stats_list.sort(key=lambda x: x["cumulative_time"], reverse=True)
         elif self.sort_by == "sample_pct":
-            stats_list.sort(
-                key=lambda x: (x["direct_calls"] / self.total_samples * 100)
-                if self.total_samples > 0
-                else 0,
-                reverse=True,
-            )
+            stats_list.sort(key=lambda x: x["sample_pct"], reverse=True)
         elif self.sort_by == "cumul_pct":
-            stats_list.sort(
-                key=lambda x: (
-                    x["cumulative_calls"] / self.total_samples * 100
-                )
-                if self.total_samples > 0
-                else 0,
-                reverse=True,
-            )
+            stats_list.sort(key=lambda x: x["cumul_pct"], reverse=True)
 
         return stats_list
 
@@ -715,6 +718,7 @@ class LiveStatsCollector(Collector):
             "on_cpu": 0,
             "gil_requested": 0,
             "unknown": 0,
+            "has_exception": 0,
             "total": 0,
         }
         self.gc_frame_samples = 0
@@ -742,6 +746,88 @@ class LiveStatsCollector(Collector):
         """Update display after input when program is finished."""
         if self.finished and had_input and self.display is not None:
             self._update_display()
+
+    def _get_visible_rows_info(self):
+        """Calculate visible rows and stats list for opcode navigation."""
+        stats_list = self.build_stats_list()
+        if self.display:
+            height, _ = self.display.get_dimensions()
+            extra_header = FINISHED_BANNER_EXTRA_LINES if self.finished else 0
+            max_stats = max(0, height - HEADER_LINES - extra_header - FOOTER_LINES - SAFETY_MARGIN)
+            stats_list = stats_list[:max_stats]
+            visible_rows = max(1, height - 8 - 2 - 12)
+        else:
+            visible_rows = self.limit
+        total_rows = len(stats_list)
+        return stats_list, visible_rows, total_rows
+
+    def _move_selection_down(self):
+        """Move selection down in opcode mode with scrolling."""
+        if not self.show_opcodes:
+            return
+
+        stats_list, visible_rows, total_rows = self._get_visible_rows_info()
+        if total_rows == 0:
+            return
+
+        # Max scroll is when last item is at bottom
+        max_scroll = max(0, total_rows - visible_rows)
+        # Current absolute position
+        abs_pos = self.scroll_offset + self.selected_row
+
+        # Only move if not at the last item
+        if abs_pos < total_rows - 1:
+            # Try to move selection within visible area first
+            if self.selected_row < visible_rows - 1:
+                self.selected_row += 1
+            elif self.scroll_offset < max_scroll:
+                # Scroll down
+                self.scroll_offset += 1
+
+        # Clamp to valid range
+        self.scroll_offset = min(self.scroll_offset, max_scroll)
+        max_selected = min(visible_rows - 1, total_rows - self.scroll_offset - 1)
+        self.selected_row = min(self.selected_row, max(0, max_selected))
+
+    def _move_selection_up(self):
+        """Move selection up in opcode mode with scrolling."""
+        if not self.show_opcodes:
+            return
+
+        if self.selected_row > 0:
+            self.selected_row -= 1
+        elif self.scroll_offset > 0:
+            self.scroll_offset -= 1
+
+        # Clamp to valid range based on actual stats_list
+        stats_list, visible_rows, total_rows = self._get_visible_rows_info()
+        if total_rows > 0:
+            max_scroll = max(0, total_rows - visible_rows)
+            self.scroll_offset = min(self.scroll_offset, max_scroll)
+            max_selected = min(visible_rows - 1, total_rows - self.scroll_offset - 1)
+            self.selected_row = min(self.selected_row, max(0, max_selected))
+
+    def _navigate_to_previous_thread(self):
+        """Navigate to previous thread in PER_THREAD mode, or switch from ALL to PER_THREAD."""
+        if len(self.thread_ids) > 0:
+            if self.view_mode == "ALL":
+                self.view_mode = "PER_THREAD"
+                self.current_thread_index = len(self.thread_ids) - 1
+            else:
+                self.current_thread_index = (
+                    self.current_thread_index - 1
+                ) % len(self.thread_ids)
+
+    def _navigate_to_next_thread(self):
+        """Navigate to next thread in PER_THREAD mode, or switch from ALL to PER_THREAD."""
+        if len(self.thread_ids) > 0:
+            if self.view_mode == "ALL":
+                self.view_mode = "PER_THREAD"
+                self.current_thread_index = 0
+            else:
+                self.current_thread_index = (
+                    self.current_thread_index + 1
+                ) % len(self.thread_ids)
 
     def _show_terminal_too_small(self, height, width):
         """Display a message when terminal is too small."""
@@ -830,8 +916,6 @@ class LiveStatsCollector(Collector):
 
     def _handle_input(self):
         """Handle keyboard input (non-blocking)."""
-        from . import constants
-
         self.display.set_nodelay(True)
         ch = self.display.get_input()
 
@@ -888,14 +972,14 @@ class LiveStatsCollector(Collector):
 
         elif ch == ord("+") or ch == ord("="):
             # Decrease update interval (faster refresh)
-            self.display_update_interval = max(
-                0.05, self.display_update_interval - 0.05
+            self.display_update_interval_sec = max(
+                0.05, self.display_update_interval_sec - 0.05
             )  # Min 20Hz
 
         elif ch == ord("-") or ch == ord("_"):
             # Increase update interval (slower refresh)
-            self.display_update_interval = min(
-                1.0, self.display_update_interval + 0.05
+            self.display_update_interval_sec = min(
+                1.0, self.display_update_interval_sec + 0.05
             )  # Max 1Hz
 
         elif ch == ord("c") or ch == ord("C"):
@@ -920,27 +1004,37 @@ class LiveStatsCollector(Collector):
             if self._trend_tracker is not None:
                 self._trend_tracker.toggle()
 
-        elif ch == curses.KEY_LEFT or ch == curses.KEY_UP:
-            # Navigate to previous thread in PER_THREAD mode, or switch from ALL to PER_THREAD
-            if len(self.thread_ids) > 0:
-                if self.view_mode == "ALL":
-                    self.view_mode = "PER_THREAD"
-                    self.current_thread_index = 0
-                else:
-                    self.current_thread_index = (
-                        self.current_thread_index - 1
-                    ) % len(self.thread_ids)
+        elif ch == ord("j") or ch == ord("J"):
+            # Move selection down in opcode mode (with scrolling)
+            self._move_selection_down()
 
-        elif ch == curses.KEY_RIGHT or ch == curses.KEY_DOWN:
-            # Navigate to next thread in PER_THREAD mode, or switch from ALL to PER_THREAD
-            if len(self.thread_ids) > 0:
-                if self.view_mode == "ALL":
-                    self.view_mode = "PER_THREAD"
-                    self.current_thread_index = 0
-                else:
-                    self.current_thread_index = (
-                        self.current_thread_index + 1
-                    ) % len(self.thread_ids)
+        elif ch == ord("k") or ch == ord("K"):
+            # Move selection up in opcode mode (with scrolling)
+            self._move_selection_up()
+
+        elif ch == curses.KEY_UP:
+            # Move selection up (same as 'k') when in opcode mode
+            if self.show_opcodes:
+                self._move_selection_up()
+            else:
+                # Navigate to previous thread (same as KEY_LEFT)
+                self._navigate_to_previous_thread()
+
+        elif ch == curses.KEY_DOWN:
+            # Move selection down (same as 'j') when in opcode mode
+            if self.show_opcodes:
+                self._move_selection_down()
+            else:
+                # Navigate to next thread (same as KEY_RIGHT)
+                self._navigate_to_next_thread()
+
+        elif ch == curses.KEY_LEFT:
+            # Navigate to previous thread
+            self._navigate_to_previous_thread()
+
+        elif ch == curses.KEY_RIGHT:
+            # Navigate to next thread
+            self._navigate_to_next_thread()
 
         # Update display if input was processed while finished
         self._handle_finished_input_update(ch != -1)

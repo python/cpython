@@ -23,6 +23,14 @@ Pending removal in Python 3.19
     Prefer passing the initial data as a positional argument for maximum
     backwards compatibility.
 
+* :mod:`http.cookies`:
+
+  * :meth:`http.cookies.Morsel.js_output` is deprecated and will be
+    removed in Python 3.19.
+
+  * :meth:`http.cookies.BaseCookie.js_output` is deprecated and will be
+    removed in Python 3.19.
+
 * :mod:`imaplib`:
 
   * Altering :attr:`IMAP4.file <imaplib.IMAP4.file>` is now deprecated

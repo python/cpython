@@ -559,15 +559,17 @@ class SequenceMatcher:
         >>> b[23:28] = []      # Make a deletion
         >>> b[30] += 'y'       # Make another replacement
         >>> pprint(list(SequenceMatcher(None,a,b).get_grouped_opcodes()))
-        [[('equal', 5, 8, 5, 8), ('insert', 8, 8, 8, 9), ('equal', 8, 11, 9, 12)],
-         [('equal', 16, 19, 17, 20),
-          ('replace', 19, 20, 20, 21),
-          ('equal', 20, 22, 21, 23),
-          ('delete', 22, 27, 23, 23),
-          ('equal', 27, 30, 23, 26)],
-         [('equal', 31, 34, 27, 30),
-          ('replace', 34, 35, 30, 31),
-          ('equal', 35, 38, 31, 34)]]
+        [
+            [('equal', 5, 8, 5, 8), ('insert', 8, 8, 8, 9), ('equal', 8, 11, 9, 12)],
+            [
+                ('equal', 16, 19, 17, 20),
+                ('replace', 19, 20, 20, 21),
+                ('equal', 20, 22, 21, 23),
+                ('delete', 22, 27, 23, 23),
+                ('equal', 27, 30, 23, 26),
+            ],
+            [('equal', 31, 34, 27, 30), ('replace', 34, 35, 30, 31), ('equal', 35, 38, 31, 34)],
+        ]
         """
 
         codes = self.get_opcodes()
@@ -638,15 +640,15 @@ class SequenceMatcher:
         # avail[x] is the number of times x appears in 'b' less the
         # number of times we've seen it in 'a' so far ... kinda
         avail = {}
-        availhas, matches = avail.__contains__, 0
+        matches = 0
         for elt in self.a:
-            if availhas(elt):
+            if elt in avail:
                 numb = avail[elt]
             else:
                 numb = fullbcount.get(elt, 0)
             avail[elt] = numb - 1
             if numb > 0:
-                matches = matches + 1
+                matches += 1
         return _calculate_ratio(matches, len(self.a) + len(self.b))
 
     def real_quick_ratio(self):
@@ -702,10 +704,12 @@ def get_close_matches(word, possibilities, n=3, cutoff=0.6):
     s.set_seq2(word)
     for x in possibilities:
         s.set_seq1(x)
-        if s.real_quick_ratio() >= cutoff and \
-           s.quick_ratio() >= cutoff and \
-           s.ratio() >= cutoff:
-            result.append((s.ratio(), x))
+        if s.real_quick_ratio() < cutoff or s.quick_ratio() < cutoff:
+            continue
+
+        ratio = s.ratio()
+        if ratio >= cutoff:
+            result.append((ratio, x))
 
     # Move the best scorers to head of list
     result = _nlargest(n, result)
@@ -782,16 +786,18 @@ class Differ:
 
     >>> from pprint import pprint as _pprint
     >>> _pprint(result)
-    ['    1. Beautiful is better than ugly.\n',
-     '-   2. Explicit is better than implicit.\n',
-     '-   3. Simple is better than complex.\n',
-     '+   3.   Simple is better than complex.\n',
-     '?     ++\n',
-     '-   4. Complex is better than complicated.\n',
-     '?            ^                     ---- ^\n',
-     '+   4. Complicated is better than complex.\n',
-     '?           ++++ ^                      ^\n',
-     '+   5. Flat is better than nested.\n']
+    [
+        '    1. Beautiful is better than ugly.\n',
+        '-   2. Explicit is better than implicit.\n',
+        '-   3. Simple is better than complex.\n',
+        '+   3.   Simple is better than complex.\n',
+        '?     ++\n',
+        '-   4. Complex is better than complicated.\n',
+        '?            ^                     ---- ^\n',
+        '+   4. Complicated is better than complex.\n',
+        '?           ++++ ^                      ^\n',
+        '+   5. Flat is better than nested.\n',
+    ]
 
     As a single multi-line string it looks like this:
 
@@ -940,10 +946,12 @@ class Differ:
                 cruncher.set_seq1(a[i])
                 # Ordering by cheapest to most expensive ratio is very
                 # valuable, most often getting out early.
-                if (crqr() > best_ratio
-                      and cqr() > best_ratio
-                      and cr() > best_ratio):
-                    best_i, best_j, best_ratio = i, j, cr()
+                if crqr() <= best_ratio or cqr() <= best_ratio:
+                    continue
+
+                ratio = cr()
+                if ratio > best_ratio:
+                    best_i, best_j, best_ratio = i, j, ratio
 
             if best_i is None:
                 # found nothing to synch on yet - move to next j

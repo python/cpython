@@ -1,0 +1,2 @@
+:mod:`xml.parsers.expat`: add an exception note when a custom Expat handler
+return value cannot be properly interpreted. Patch by Bénédikt Tran.

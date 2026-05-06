@@ -1,0 +1,4 @@
+Fix bug where :func:`@dataclass <dataclasses.dataclass>`
+wouldn't detect ``ClassVar`` fields
+if ``ClassVar`` was re-exported from a module
+other than :mod:`typing`.
