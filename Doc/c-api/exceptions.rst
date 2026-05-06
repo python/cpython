@@ -818,13 +818,15 @@ Exception Classes
 
 .. c:macro:: PyException_HEAD
 
-   This is a :term:`soft deprecated` macro including the base fields for an
+   This is a macro including the base fields for an
    exception object.
 
    This was included in Python's C API by mistake and is not designed for use
    in extensions. For creating custom exception objects, use
    :c:func:`PyErr_NewException` or otherwise create a class inheriting from
    :c:data:`PyExc_BaseException`.
+
+   .. soft-deprecated:: 3.15
 
 
 Exception Objects
@@ -1346,3 +1348,67 @@ Tracebacks
 
    This function returns ``0`` on success, and returns ``-1`` with an
    exception set on failure.
+
+.. c:function:: const char* PyUnstable_DumpTraceback(int fd, PyThreadState *tstate)
+
+   Write a trace of the Python stack in *tstate* into the file *fd*.  The format
+   looks like::
+
+      Traceback (most recent call first):
+        File "xxx", line xxx in <xxx>
+        File "xxx", line xxx in <xxx>
+        ...
+        File "xxx", line xxx in <xxx>
+
+   This function is meant to debug situations such as segfaults, fatal errors,
+   and similar. The file and function names it outputs are encoded to ASCII with
+   backslashreplace and truncated to 500 characters. It writes only the first
+   100 frames; further frames are truncated with the line ``...``.
+
+   This function will return ``NULL`` on success, or an error message on error.
+
+   This function is intended for use in crash scenarios such as signal handlers
+   for SIGSEGV, where the interpreter may be in an inconsistent state. Given
+   that it reads interpreter data structures that may be partially modified, the
+   function might produce incomplete output or it may even crash itself.
+
+   The caller does not need to hold an :term:`attached thread state`, nor does
+   *tstate* need to be attached.
+
+   .. versionadded:: next
+
+.. c:function:: const char* PyUnstable_DumpTracebackThreads(int fd, PyInterpreterState *interp, PyThreadState *current_tstate, Py_ssize_t max_threads)
+
+   Write the traces of all Python threads in *interp* into the file *fd*.
+
+   If *interp* is ``NULL`` then this function will try to identify the current
+   interpreter using thread-specific storage. If it cannot, it will return an
+   error.
+
+   If *current_tstate* is not ``NULL`` then it will be used to identify what the
+   current thread is in the written output. If it is ``NULL`` then this function
+   will identify the current thread using thread-specific storage. It is not an
+   error if the function is unable to get the current Python thread state.
+
+   This function will return ``NULL`` on success, or an error message on error.
+
+   This function is meant to debug debug situations such as segfaults, fatal
+   errors, and similar. It calls :c:func:`PyUnstable_DumpTraceback` for each
+   thread. It only writes the tracebacks of the first *max_threads* threads,
+   further output is truncated with the line ``...``. If *max_threads* is 0, the
+   function will use a default value of 100 for the argument.
+
+   This function is intended for use in crash scenarios such as signal handlers
+   for SIGSEGV, where the interpreter may be in an inconsistent state. Given
+   that it reads interpreter data structures that may be partially modified, the
+   function might produce incomplete output or it may even crash itself.
+
+   The caller does not need to hold an :term:`attached thread state`, nor does
+   *current_tstate* need to be attached.
+
+   .. warning::
+      On the :term:`free-threaded build`, this function is not thread-safe. If
+      another thread deletes its :term:`thread state` while this function is being
+      called, the process will likely crash.
+
+   .. versionadded:: next

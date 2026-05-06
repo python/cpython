@@ -194,7 +194,7 @@ support.
       The :mod:`importlib.resources` module provides structured access to
       module resources.
 
-.. function:: resolve_name(name)
+.. function:: resolve_name(name, *, strict=False)
 
    Resolve a name to an object.
 
@@ -208,6 +208,7 @@ support.
 
    * ``W(.W)*``
    * ``W(.W)*:(W(.W)*)?``
+   * ``W(.W)*:(W(.W)*)``
 
    The first form is intended for backward compatibility only. It assumes that
    some part of the dotted name is a package, and the rest is an object
@@ -222,6 +223,11 @@ support.
    hierarchy within that package. Only one import is needed in this form. If
    it ends with the colon, then a module object is returned.
 
+   The first two forms are accepted when ``strict=False`` (the default).
+
+   The third form requires both the module name and callable, separated by
+   a colon. Only this form is accepted when ``strict=True``.
+
    The function will return an object (which might be a module), or raise one
    of the following exceptions:
 
@@ -233,3 +239,7 @@ support.
    hierarchy within the imported package to get to the desired object.
 
    .. versionadded:: 3.9
+
+   .. versionchanged:: 3.15
+
+      The optional keyword-only ``strict`` flag was added.

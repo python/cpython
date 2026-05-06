@@ -1,0 +1,6 @@
+Fix memoization of in-band :class:`~pickle.PickleBuffer` in the Python
+implementation of :mod:`pickle`. Previously, identical
+:class:`!PickleBuffer`\ s did not preserve identity, and empty writable
+:class:`!PickleBuffer` memoized an empty bytearray object in place of
+``b''``, so the following references to ``b''`` were unpickled as an empty
+bytearray object.

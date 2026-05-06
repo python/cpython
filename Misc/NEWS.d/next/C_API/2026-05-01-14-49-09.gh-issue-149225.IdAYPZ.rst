@@ -1,0 +1,2 @@
+:c:type:`PyCriticalSection` and related functions are added to the Stable
+ABI.

@@ -587,10 +587,10 @@ have been standardized in C11 (or previous standards).
 
 .. c:macro:: Py_MEMCPY(dest, src, n)
 
-   This is a :term:`soft deprecated` alias to :c:func:`!memcpy`.
-   Use :c:func:`!memcpy` directly instead.
+   This is an alias to :c:func:`!memcpy`.
 
    .. soft-deprecated:: 3.14
+      Use :c:func:`!memcpy` directly instead.
 
 .. c:macro:: Py_UNICODE_SIZE
 
@@ -611,8 +611,7 @@ have been standardized in C11 (or previous standards).
 
 .. c:macro:: Py_VA_COPY
 
-   This is a :term:`soft deprecated` alias to the C99-standard ``va_copy``
-   function.
+   This is an alias to the C99-standard ``va_copy`` function.
 
    Historically, this would use a compiler-specific method to copy a ``va_list``.
 

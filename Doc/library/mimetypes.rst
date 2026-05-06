@@ -55,7 +55,7 @@ the information :func:`init` sets up.
       Added support for *url* being a :term:`path-like object`.
 
    .. soft-deprecated:: 3.13
-      Passing a file path instead of URL is :term:`soft deprecated`.
+      Passing a file path instead of URL.
       Use :func:`guess_file_type` for this.
 
 
