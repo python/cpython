@@ -1865,7 +1865,6 @@ PyThreadState_Clear(PyThreadState *tstate)
 #endif
 
     tstate->_status.cleared = 1;
-    tstate->ensure.owned_guard = NULL;
 
     // XXX Call _PyThreadStateSwap(runtime, NULL) here if "current".
     // XXX Do it as early in the function as possible.
@@ -3575,10 +3574,7 @@ PyThreadState_Release(PyThreadStateToken *token)
         PyThreadState_Clear(tstate);
         --tstate->ensure.counter;
     }
-
-    // This is usually done by PyThreadState_Clear(), but we need to do it
-    // manually if we don't own the thread state.
-    if (owned_guard != NULL) {
+    else if (owned_guard != NULL) {
         tstate->ensure.owned_guard = NULL;
     }
 
