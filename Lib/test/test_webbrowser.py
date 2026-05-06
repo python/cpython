@@ -526,6 +526,22 @@ class ImportTest(unittest.TestCase):
             webbrowser = import_helper.import_fresh_module('webbrowser')
             self.assertEqual(webbrowser.get().name, sys.executable)
 
+    @unittest.skipIf(
+        is_apple_mobile,
+        "Apple mobile doesn't allow modifying browser with environment"
+    )
+    def test_environment_firefox_channels_mocked_return_mozilla(self):
+        """Test with mocked shutil.which that firefox channels yield Mozilla controller."""
+        firefox_channels = ["firefox-aurora", "firefox-nightly", "firefox-beta"]
+        for channel in firefox_channels:
+            with self.subTest(channel=channel):
+                with mock.patch("shutil.which") as mock_which:
+                    mock_which.side_effect = lambda exe: exe == channel
+                    with os_helper.EnvironmentVarGuard() as env:
+                        env["BROWSER"] = channel
+                        webbrowser = import_helper.import_fresh_module('webbrowser')
+                        controller = webbrowser.get()
+                        self.assertIsInstance(controller, webbrowser.Mozilla)
 
 @force_not_colorized_test_class
 class CliTest(unittest.TestCase):

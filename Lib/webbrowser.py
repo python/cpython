@@ -583,6 +583,10 @@ def register_standard_browsers():
                         _tryorder.insert(0, cmdline.lower())
                         continue
 
+            if cmdline.startswith("firefox-") and shutil.which(cmdline):
+                register(cmdline, None, Mozilla(cmdline), preferred=True)
+                continue
+
             if cmdline != '':
                 cmd = _synthesize(cmdline, preferred=True)
                 if cmd[1] is None:

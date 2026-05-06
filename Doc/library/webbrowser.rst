@@ -152,13 +152,15 @@ for the controller classes, all defined in this module.
 +------------------------+-----------------------------------------+-------+
 | ``'firefox'``          | ``Mozilla('mozilla')``                  |       |
 +------------------------+-----------------------------------------+-------+
+| ``'firefox-*'``        | ``Mozilla('mozilla')``                  | \(1)  |
++------------------------+-----------------------------------------+-------+
 | ``'epiphany'``         | ``Epiphany('epiphany')``                |       |
 +------------------------+-----------------------------------------+-------+
-| ``'kfmclient'``        | ``Konqueror()``                         | \(1)  |
+| ``'kfmclient'``        | ``Konqueror()``                         | \(2)  |
 +------------------------+-----------------------------------------+-------+
-| ``'konqueror'``        | ``Konqueror()``                         | \(1)  |
+| ``'konqueror'``        | ``Konqueror()``                         | \(2)  |
 +------------------------+-----------------------------------------+-------+
-| ``'kfm'``              | ``Konqueror()``                         | \(1)  |
+| ``'kfm'``              | ``Konqueror()``                         | \(2)  |
 +------------------------+-----------------------------------------+-------+
 | ``'opera'``            | ``Opera()``                             |       |
 +------------------------+-----------------------------------------+-------+
@@ -170,11 +172,11 @@ for the controller classes, all defined in this module.
 +------------------------+-----------------------------------------+-------+
 | ``'w3m'``              | ``GenericBrowser('w3m')``               |       |
 +------------------------+-----------------------------------------+-------+
-| ``'windows-default'``  | ``WindowsDefault``                      | \(2)  |
+| ``'windows-default'``  | ``WindowsDefault``                      | \(3)  |
 +------------------------+-----------------------------------------+-------+
-| ``'macosx'``           | ``MacOSXOSAScript('default')``          | \(3)  |
+| ``'macosx'``           | ``MacOSXOSAScript('default')``          | \(4)  |
 +------------------------+-----------------------------------------+-------+
-| ``'safari'``           | ``MacOSXOSAScript('safari')``           | \(3)  |
+| ``'safari'``           | ``MacOSXOSAScript('safari')``           | \(4)  |
 +------------------------+-----------------------------------------+-------+
 | ``'google-chrome'``    | ``Chrome('google-chrome')``             |       |
 +------------------------+-----------------------------------------+-------+
@@ -184,25 +186,30 @@ for the controller classes, all defined in this module.
 +------------------------+-----------------------------------------+-------+
 | ``'chromium-browser'`` | ``Chromium('chromium-browser')``        |       |
 +------------------------+-----------------------------------------+-------+
-| ``'iosbrowser'``       | ``IOSBrowser``                          | \(4)  |
+| ``'iosbrowser'``       | ``IOSBrowser``                          | \(5)  |
 +------------------------+-----------------------------------------+-------+
+
 
 Notes:
 
 (1)
+   firefox-* are Firefox channels, such as firefox-dev, firefox-aurora,
+   firefox-beta, firefox-nightly, etc.
+
+(2)
    "Konqueror" is the file manager for the KDE desktop environment for Unix, and
    only makes sense to use if KDE is running.  Some way of reliably detecting KDE
    would be nice; the :envvar:`!KDEDIR` variable is not sufficient.  Note also that
    the name "kfm" is used even when using the :program:`konqueror` command with KDE
    2 --- the implementation selects the best strategy for running Konqueror.
 
-(2)
+(3)
    Only on Windows platforms.
 
-(3)
+(4)
    Only on macOS.
 
-(4)
+(5)
    Only on iOS.
 
 .. versionadded:: 3.2
@@ -220,6 +227,11 @@ Notes:
 
 .. versionchanged:: 3.13
    Support for iOS has been added.
+
+.. versionchanged:: 3.15
+   Support for firefox-* has been added, which includes Firefox
+   channels such as firefox-dev, firefox-aurora, firefox-beta,
+   firefox-nightly, etc.
 
 Here are some simple examples::
 
