@@ -1,29 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist SYSTEM "file://localhost/System/Library/DTDs/PropertyList.dtd">
-<plist version="0.9">
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
 <dict>
-	<key>CFBundleDevelopmentRegion</key>
-	<string>English</string>
-	<key>CFBundleExecutable</key>
-	<string>Python</string>
-	<key>CFBundleGetInfoString</key>
-	<string>Python Runtime and Library</string>
-	<key>CFBundleIdentifier</key>
-	<string>@PYTHONFRAMEWORKIDENTIFIER@</string>
-	<key>CFBundleInfoDictionaryVersion</key>
-	<string>6.0</string>
 	<key>CFBundleName</key>
 	<string>Python</string>
-	<key>CFBundlePackageType</key>
-	<string>FMWK</string>
-	<key>CFBundleShortVersionString</key>
-	<string>%VERSION%</string>
-	<key>CFBundleLongVersionString</key>
-	<string>%VERSION%, (c) 2001-2024 Python Software Foundation.</string>
-	<key>CFBundleSignature</key>
-	<string>????</string>
+	<key>CFBundleIdentifier</key>
+	<string>@PYTHONFRAMEWORKIDENTIFIER@</string>
 	<key>CFBundleVersion</key>
 	<string>%VERSION%</string>
+	<key>CFBundlePackageType</key>
+	<string>FMWK</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleExecutable</key>
+	<string>Python</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleShortVersionString</key>
+	<string>%VERSION%</string>
+	<key>CFBundleSupportedPlatforms</key>
+	<array>
+		<string>MacOSX</string>
+	</array>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright © 2001 Python Software Foundation. All rights reserved.</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
 	<key>CFBundleAllowMixedLocalizations</key>
 	<true/>
 </dict>
