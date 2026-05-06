@@ -16,18 +16,19 @@ def run_in_threads(targets):
         thread.join()
 
 
+class Spam:
+    __slots__ = [
+        "eggs",
+    ]
+
+    def __init__(self, initial_value):
+        self.eggs = initial_value
+
+
 @threading_helper.requires_working_threading()
 class TestSlots(TestCase):
 
     def test_object(self):
-        class Spam:
-            __slots__ = [
-                "eggs",
-            ]
-
-            def __init__(self, initial_value):
-                self.eggs = initial_value
-
         spam = Spam(0)
         iters = 20_000
 
@@ -42,6 +43,24 @@ class TestSlots(TestCase):
                 assert 0 <= eggs <= iters
 
         run_in_threads([writer, reader, reader, reader])
+
+    def test_del_object_is_atomic(self):
+        # Testing whether the implementation of `del slots_object.attribute`
+        # removes the attribute atomically, thus avoiding non-sequentially-
+        # consistent behaviors.
+        # https://github.com/python/cpython/issues/146270
+        def deleter(spam, successes):
+            try:
+                del spam.eggs
+                successes.append(True)
+            except AttributeError:
+                successes.append(False)
+
+        for _ in range(10):
+            spam = Spam(0)
+            successes = []
+            threading_helper.run_concurrently(deleter, nthreads=4, args=(spam, successes))
+            self.assertEqual(sum(successes), 1)
 
     def test_T_BOOL(self):
         spam_old = _testcapi._test_structmembersType_OldAPI()

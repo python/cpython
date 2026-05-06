@@ -1,0 +1,2 @@
+Fix an out-of-bounds read of one byte in :func:`binascii.a2b_uu`. Raise
+:exc:`binascii.Error`, instead of reading past the buffer end.

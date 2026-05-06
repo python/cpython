@@ -1,0 +1,2 @@
+An intermittent timing error when running SSL tests on iOS has been
+resolved.

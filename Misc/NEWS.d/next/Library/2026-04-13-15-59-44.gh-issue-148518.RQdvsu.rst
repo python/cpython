@@ -1,0 +1,4 @@
+If an email containing an address header that ended in an open double quote
+was parsed with a non-``compat32`` policy, accessing the ``username`` attribute
+of the mailbox accessed through that header object would result in an
+``IndexError``. It now correctly returns an empty string as the result.

@@ -1,0 +1,3 @@
+Fixed string table and sample record bounds checks in :mod:`!_remote_debugging`
+when decoding certain ``.pyb`` inputs on 32-bit builds. Patch by Maurycy
+Pawłowski-Wieroński.

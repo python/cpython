@@ -1,0 +1,7 @@
+:mod:`pprint` now uses modern defaults: ``indent=4`` and ``width=88``,
+and the default ``compact=False`` output is now formatted similar to
+pretty-printed :func:`json.dumps`, with opening parentheses and brackets
+followed by a newline and the contents indented by one level. The
+*expand* parameter, added in 3.15.0a8, has been removed; ``compact=False``
+(the default) now produces the former ``expand=True`` layout.
+Patch by Hugo van Kemenade.

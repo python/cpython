@@ -9,6 +9,9 @@
 
 #include "../../Python/ceval_macros.h"
 
+#undef IS_PEP523_HOOKED
+#define IS_PEP523_HOOKED(tstate) (tstate->interp->eval_frame != NULL && !tstate->interp->eval_frame_allow_specialization)
+
 int Test_EvalFrame_Resumes, Test_EvalFrame_Loads;
 
 #ifdef _Py_TIER2

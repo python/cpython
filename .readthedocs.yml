@@ -12,23 +12,47 @@ build:
   tools:
     python: "3"
 
-  commands:
-    # https://docs.readthedocs.io/en/stable/build-customization.html#cancel-build-based-on-a-condition
-    #
-    # Cancel building pull requests when there aren't changes in the Doc directory.
-    #
-    # If there are no changes (git diff exits with 0) we force the command to return with 183.
-    # This is a special exit code on Read the Docs that will cancel the build immediately.
-    - |
-      if [ "$READTHEDOCS_VERSION_TYPE" = "external" ] && [ "$(git diff --quiet origin/main -- Doc/ .readthedocs.yml; echo $?)" -eq 0 ];
-      then
-        echo "No changes to Doc/ - exiting the build.";
-        exit 183;
-      fi
-
-    - asdf plugin add uv
-    - asdf install uv latest
-    - asdf global uv latest
-    - make -C Doc venv html
-    - mkdir _readthedocs
-    - mv Doc/build/html _readthedocs/html
+  jobs:
+    post_checkout:
+      # https://docs.readthedocs.com/platform/stable/guides/build/skip-build.html#skip-builds-based-on-conditions
+      #
+      # Cancel building pull requests when there aren't changes in the Doc
+      # directory or RTD configuration, or if we can't cleanly merge the base
+      # branch.
+      - |
+        set -eEux;
+        if [ "$READTHEDOCS_VERSION_TYPE" = "external" ];
+        then
+          base_branch=main;
+          git fetch --depth=50 origin $base_branch:origin-$base_branch;
+          for attempt in $(seq 10);
+          do
+            if ! git merge-base HEAD origin-$base_branch;
+            then
+              git fetch --deepen=50 origin $base_branch;
+            else
+              break;
+            fi;
+          done;
+          if ! git -c "user.name=rtd" -c "user.email=no-reply@readthedocs.org" merge --no-stat --no-edit origin-$base_branch;
+          then
+            echo "Unsuccessful merge with '$base_branch' branch, skipping the build";
+            exit 183;
+          fi;
+          if git diff --exit-code --stat origin-$base_branch -- Doc/ .readthedocs.yml;
+          then
+            echo "No changes to Doc/ - skipping the build.";
+            exit 183;
+          fi;
+        fi;
+    create_environment:
+      - echo "Skipping default environment creation"
+    install:
+      - asdf plugin add uv
+      - asdf install uv latest
+      - asdf global uv latest
+    build:
+      html:
+        - make -C Doc venv html
+        - mkdir -p "$READTHEDOCS_OUTPUT"
+        - mv Doc/build/html "$READTHEDOCS_OUTPUT/"

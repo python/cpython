@@ -124,7 +124,7 @@ extern void _Py_ext_module_loader_result_apply_error(
 
 /* The module init function. */
 typedef PyObject *(*PyModInitFunction)(void);
-typedef PyModuleDef_Slot *(*PyModExportFunction)(void);
+typedef PySlot *(*PyModExportFunction)(void);
 #ifdef HAVE_DYNAMIC_LOADING
 extern int _PyImport_GetModuleExportHooks(
     struct _Py_ext_module_loader_info *info,

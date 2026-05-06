@@ -1924,7 +1924,7 @@ correctly using identity tests:
 
    .. code-block:: python
 
-      _sentinel = object()
+      _sentinel = sentinel('_sentinel')
 
       def pop(self, key, default=_sentinel):
           if key in self:

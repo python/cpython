@@ -11,9 +11,9 @@
 .. note::
 
     :mod:`!sys.monitoring` is a namespace within the :mod:`sys` module,
-    not an independent module, so there is no need to
-    ``import sys.monitoring``, simply ``import sys`` and then use
-    ``sys.monitoring``.
+    not an independent module, and ``import sys.monitoring`` would fail
+    with a :exc:`ModuleNotFoundError`. Instead, simply ``import sys``
+    and then use ``sys.monitoring``.
 
 
 This namespace provides access to the functions and constants necessary to
@@ -180,8 +180,8 @@ Local events
 ''''''''''''
 
 Local events are associated with normal execution of the program and happen
-at clearly defined locations. All local events can be disabled.
-The local events are:
+at clearly defined locations. All local events can be disabled
+per location. The local events are:
 
 * :monitoring-event:`PY_START`
 * :monitoring-event:`PY_RESUME`
@@ -205,6 +205,8 @@ Using :monitoring-event:`BRANCH_LEFT` and :monitoring-event:`BRANCH_RIGHT`
 events will give much better performance as they can be disabled
 independently.
 
+.. _monitoring-ancillary-events:
+
 Ancillary events
 ''''''''''''''''
 
@@ -226,7 +228,7 @@ Other events
 ''''''''''''
 
 Other events are not necessarily tied to a specific location in the
-program and cannot be individually disabled via :data:`DISABLE`.
+program and cannot be individually disabled per location.
 
 The other events that can be monitored are:
 
@@ -234,6 +236,12 @@ The other events that can be monitored are:
 * :monitoring-event:`PY_UNWIND`
 * :monitoring-event:`RAISE`
 * :monitoring-event:`EXCEPTION_HANDLED`
+* :monitoring-event:`RERAISE`
+
+.. versionchanged:: 3.15
+   Other events can now be turned on and disabled on a per code object
+   basis. Returning :data:`DISABLE` from a callback disables the event
+   for the entire code object (for the current tool).
 
 
 The STOP_ITERATION event
@@ -247,8 +255,7 @@ raise an exception unless it would be visible to other code.
 
 To allow tools to monitor for real exceptions without slowing down generators
 and coroutines, the :monitoring-event:`STOP_ITERATION` event is provided.
-:monitoring-event:`STOP_ITERATION` can be locally disabled, unlike
-:monitoring-event:`RAISE`.
+:monitoring-event:`STOP_ITERATION` can be locally disabled.
 
 Note that the :monitoring-event:`STOP_ITERATION` event and the
 :monitoring-event:`RAISE` event for a :exc:`StopIteration` exception are
@@ -314,15 +321,14 @@ location by returning :data:`sys.monitoring.DISABLE` from a callback function.
 This does not change which events are set, or any other code locations for the
 same event.
 
-Disabling events for specific locations is very important for high
-performance monitoring. For example, a program can be run under a
-debugger with no overhead if the debugger disables all monitoring
-except for a few breakpoints.
+:ref:`Other events <monitoring-event-global>` can be disabled on a per code
+object basis by returning :data:`sys.monitoring.DISABLE` from a callback
+function. This disables the event for the entire code object (for the current
+tool).
 
-If :data:`DISABLE` is returned by a callback for a
-:ref:`global event <monitoring-event-global>`, :exc:`ValueError` will be raised
-by the interpreter in a non-specific location (that is, no traceback will be
-provided).
+Disabling events for specific locations is very important for high performance
+monitoring. For example, a program can be run under a debugger with no overhead
+if the debugger disables all monitoring except for a few breakpoints.
 
 .. function:: restart_events() -> None
 

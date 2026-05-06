@@ -109,6 +109,7 @@
     <ClCompile Include="..\Modules\_testlimitedcapi\object.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\pyos.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\set.c" />
+    <ClCompile Include="..\Modules\_testlimitedcapi\slots.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\sys.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\threadstate.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\tuple.c" />
@@ -127,6 +128,10 @@
     </ProjectReference>
     <ProjectReference Include="python3dll.vcxproj">
       <Project>{885d4898-d08d-4091-9c40-c700cfe3fc5a}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="python3tdll.vcxproj">
+      <Project>{947BB5F5-6025-4A4F-8182-1B175469F8D2}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>

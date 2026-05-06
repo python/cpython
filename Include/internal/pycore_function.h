@@ -27,7 +27,8 @@ _PyFunction_IsVersionValid(uint32_t version)
     return version >= FUNC_VERSION_FIRST_VALID;
 }
 
-extern uint32_t _PyFunction_GetVersionForCurrentState(PyFunctionObject *func);
+// Exported for external JIT support
+PyAPI_FUNC(uint32_t) _PyFunction_GetVersionForCurrentState(PyFunctionObject *func);
 PyAPI_FUNC(void) _PyFunction_SetVersion(PyFunctionObject *func, uint32_t version);
 void _PyFunction_ClearCodeByVersion(uint32_t version);
 

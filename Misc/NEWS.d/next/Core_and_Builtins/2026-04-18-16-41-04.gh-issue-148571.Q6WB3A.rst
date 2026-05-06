@@ -1,0 +1,1 @@
+Fix a crash in the JIT optimizer when specialized opcode families inherited incompatible recorded operand layouts.

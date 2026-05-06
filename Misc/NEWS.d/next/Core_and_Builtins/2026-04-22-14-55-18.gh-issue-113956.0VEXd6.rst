@@ -1,0 +1,4 @@
+Fix a data race in :func:`sys.intern` in the free-threaded build when
+interning a string owned by another thread. An interned copy owned by the
+current thread is used instead when it is not safe to immortalize the
+original.

@@ -1,0 +1,2 @@
+Add backticks for colour to regrtest and pdb's help description. Patch by
+Hugo van Kemenade.

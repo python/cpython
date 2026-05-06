@@ -145,10 +145,15 @@ def compile_c_extension(
         str(MOD_DIR.parent.parent.parent / "Parser" / "lexer"),
         str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer"),
     ]
+    library_dirs: list[str] = []
     if sys.platform == "win32":
         # HACK: The location of pyconfig.h has moved within our build, and
         # setuptools hasn't updated for it yet. So add the path manually for now
-        include_dirs.append(pathlib.Path(sysconfig.get_config_h_filename()).parent)
+        include_dirs.append(str(pathlib.Path(sysconfig.get_config_h_filename()).parent))
+        if sysconfig.is_python_build():
+            # HACK: Our output directory for free-threaded builds has moved, and so
+            # tests running in-tree require our sys.executable directory for libs
+            library_dirs.append(str(pathlib.Path(sys.executable).parent))
     extension = Extension(
         extension_name,
         sources=[generated_source_path],
@@ -161,6 +166,7 @@ def compile_c_extension(
     fixup_build_ext(cmd)
     cmd.build_lib = str(source_file_path.parent)
     cmd.include_dirs = include_dirs
+    cmd.library_dirs = library_dirs
     if build_dir:
         cmd.build_temp = build_dir
     cmd.ensure_finalized()

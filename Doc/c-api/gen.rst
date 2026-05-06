@@ -90,7 +90,9 @@ Deprecated API
 
 .. c:macro:: PyAsyncGenASend_CheckExact(op)
 
-   This is a :term:`soft deprecated` API that was included in Python's C API
+   This is an API that was included in Python's C API
    by mistake.
 
    It is solely here for completeness; do not use this API.
+
+   .. soft-deprecated:: 3.14

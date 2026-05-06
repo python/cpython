@@ -1,0 +1,4 @@
+Fix :mod:`!_remote_debugging` misreading non-ASCII Unicode strings (Latin-1,
+BMP and non-BMP) from a remote process. Filenames and function names that
+contain non-ASCII characters are now reported correctly in stack traces, the
+sampling profiler, and :mod:`asyncio` task introspection.

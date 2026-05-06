@@ -111,6 +111,7 @@ _zstd_set_d_parameters(ZstdDecompressor *self, PyObject *options)
         int key_v = PyLong_AsInt(key);
         Py_DECREF(key);
         if (key_v == -1 && PyErr_Occurred()) {
+            Py_DECREF(value);
             return -1;
         }
 

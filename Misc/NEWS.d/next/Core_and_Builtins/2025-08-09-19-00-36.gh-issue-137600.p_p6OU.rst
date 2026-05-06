@@ -1,0 +1,4 @@
+:mod:`ast`: The constructors of AST nodes now raise a :exc:`TypeError` when
+a required argument is omitted or when a keyword argument that does not map to
+a field on the AST node is passed. These cases had previously raised a
+:exc:`DeprecationWarning` since Python 3.13. Patch by Brian Schubert.

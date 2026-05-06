@@ -1,0 +1,3 @@
+Add :class:`!MacOS` to :mod:`webbrowser` for macOS, which opens URLs via
+``/usr/bin/open`` instead of piping AppleScript to ``osascript``.
+Deprecate :class:`!MacOSXOSAScript` in favour of :class:`!MacOS`.

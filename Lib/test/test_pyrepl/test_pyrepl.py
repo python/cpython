@@ -36,6 +36,7 @@ from .support import (
     multiline_input,
     code_to_events,
 )
+from _colorize import ANSIColors, get_theme
 from _pyrepl.console import Event
 from _pyrepl.completing_reader import stripcolor
 from _pyrepl._module_completer import (
@@ -43,7 +44,7 @@ from _pyrepl._module_completer import (
     ModuleCompleter,
     HARDCODED_SUBMODULES,
 )
-from _pyrepl.fancycompleter import Completer as FancyCompleter
+from _pyrepl.fancycompleter import Completer as FancyCompleter, colorize_matches
 import _pyrepl.readline as pyrepl_readline
 from _pyrepl.readline import (
     ReadlineAlikeReader,
@@ -1102,6 +1103,8 @@ class TestPyReplReadlineSetup(TestCase):
         class FakeFancyCompleter:
             def __init__(self, namespace):
                 self.namespace = namespace
+                self.use_colors = Mock()
+                self.theme = Mock()
 
             def complete(self, text, state):
                 return None
@@ -1704,7 +1707,7 @@ class TestPyReplModuleCompleter(TestCase):
                         result = completer.get_completions(code)
                         self.assertEqual(result is None, expected is None)
                         if result:
-                            compl, act = result
+                            compl, _values, act = result
                             self.assertEqual(compl, expected[0])
                             self.assertEqual(act is None, expected[1] is None)
                             if act:
@@ -1715,6 +1718,50 @@ class TestPyReplModuleCompleter(TestCase):
 
                         new_imports = sys.modules.keys() - _imported
                         self.assertSetEqual(new_imports, expected_imports)
+
+    def test_colorize_import_completions(self) -> None:
+        theme = get_theme()
+        type_color = theme.fancycompleter.type
+        module_color = theme.fancycompleter.module
+        R = ANSIColors.RESET
+
+        colorize = lambda names, values: colorize_matches(names, values, theme)
+        config = ReadlineConfig(colorize_completions=colorize)
+        reader = ReadlineAlikeReader(
+            console=FakeConsole(events=[]),
+            config=config,
+        )
+
+        # "from collections import de" -> defaultdict (type) and deque (type)
+        reader.buffer = list("from collections import de")
+        reader.pos = len(reader.buffer)
+        names, action = reader.get_module_completions()
+        self.assertEqual(names, [
+            f"{type_color}defaultdict{R}",
+            f"{type_color}deque{R}",
+        ])
+        self.assertIsNone(action)
+
+        # "from importlib.m" has submodule completions colored as modules
+        reader.buffer = list("from importlib.m")
+        reader.pos = len(reader.buffer)
+        names, action = reader.get_module_completions()
+        self.assertEqual(names, [
+            f"{module_color}importlib.machinery{R}",
+            f"{module_color}importlib.metadata{R}",
+        ])
+        self.assertIsNone(action)
+
+        # Make sure attributes take precedence over submodules when both exist
+        # Here we're using `unittest.main` which happens to be both a module and an attribute
+        reader.buffer = list("from unittest import m")
+        reader.pos = len(reader.buffer)
+        names, action = reader.get_module_completions()
+        self.assertEqual(names, [
+            f"{type_color}main{R}",  # Ensure that `main` is colored as an attribute (class in this case)
+            f"{module_color}mock{R}",
+        ])
+        self.assertIsNone(action)
 
 
 # Audit hook used to check for stdlib modules import side-effects

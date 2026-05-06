@@ -71,8 +71,10 @@ static const _PyStackRef PyStackRef_NULL = { .index = 0 };
 static const _PyStackRef PyStackRef_ERROR = { .index = (1 << Py_TAGGED_SHIFT) };
 
 #define PyStackRef_None ((_PyStackRef){ .index = (2 << Py_TAGGED_SHIFT) } )
-#define PyStackRef_False ((_PyStackRef){ .index = (3 << Py_TAGGED_SHIFT) })
-#define PyStackRef_True ((_PyStackRef){ .index = (4 << Py_TAGGED_SHIFT) })
+#define _Py_STACKREF_FALSE_INDEX (3 << Py_TAGGED_SHIFT)
+#define _Py_STACKREF_TRUE_INDEX (4 << Py_TAGGED_SHIFT)
+#define PyStackRef_False ((_PyStackRef){ .index = _Py_STACKREF_FALSE_INDEX })
+#define PyStackRef_True ((_PyStackRef){ .index = _Py_STACKREF_TRUE_INDEX })
 
 #define INITIAL_STACKREF_INDEX (5 << Py_TAGGED_SHIFT)
 
@@ -844,6 +846,18 @@ _Py_TryXGetStackRef(PyObject **src, _PyStackRef *out)
                 return vret;                                            \
         }                                                               \
     } while (0)
+
+static inline void
+_PyStackRef_CloseStack(_PyStackRef *arguments, int total_args)
+{
+    // arguments is a pointer into the GC visible stack,
+    // so we must NULL out values as we clear them.
+    for (int i = total_args-1; i >= 0; i--) {
+        _PyStackRef tmp = arguments[i];
+        arguments[i] = PyStackRef_NULL;
+        PyStackRef_CLOSE(tmp);
+    }
+}
 
 #ifdef __cplusplus
 }

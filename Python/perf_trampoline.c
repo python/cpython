@@ -243,7 +243,7 @@ perf_trampoline_code_watcher(PyCodeEvent event, PyCodeObject *co)
 
 static void
 perf_map_write_entry(void *state, const void *code_addr,
-                         unsigned int code_size, PyCodeObject *co)
+                         size_t code_size, PyCodeObject *co)
 {
     const char *entry = "";
     if (co->co_qualname != NULL) {

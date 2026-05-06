@@ -140,7 +140,8 @@ The :mod:`!glob` module defines the following functions:
 .. function:: translate(pathname, *, recursive=False, include_hidden=False, seps=None)
 
    Convert the given path specification to a regular expression for use with
-   :func:`re.match`. The path specification can contain shell-style wildcards.
+   :func:`re.prefixmatch`. The path specification can contain shell-style
+   wildcards.
 
    For example:
 
@@ -150,7 +151,7 @@ The :mod:`!glob` module defines the following functions:
       >>> regex
       '(?s:(?:.+/)?[^/]*\\.txt)\\z'
       >>> reobj = re.compile(regex)
-      >>> reobj.match('foo/bar/baz.txt')
+      >>> reobj.prefixmatch('foo/bar/baz.txt')
       <re.Match object; span=(0, 15), match='foo/bar/baz.txt'>
 
    Path separators and segments are meaningful to this function, unlike

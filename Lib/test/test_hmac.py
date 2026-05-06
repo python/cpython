@@ -24,6 +24,7 @@ import random
 import unittest
 import warnings
 from _operator import _compare_digest as operator_compare_digest
+from test import support
 from test.support import _4G, bigmemtest
 from test.support import check_disallow_instantiation
 from test.support import hashlib_helper, import_helper
@@ -1023,6 +1024,13 @@ class OpenSSLConstructorTestCase(ThroughOpenSSLAPIMixin,
                 self.assert_raises_unknown_digestmod(),
             ):
                 self.hmac_digest(b'key', b'msg', value)
+
+    @support.subTests("xof_name", ("shake_128", "shake_256"))
+    def test_hmac_new_xof_digestmod(self, xof_name):
+        # gh-145200: XOF digests (SHAKE) are not supported by HMAC.
+        # Verify that the error path does not leak the EVP_MAC_CTX.
+        with self.assertRaises(_hashlib.UnsupportedDigestmodError):
+            self.hmac_new(b'key', digestmod=xof_name)
 
 
 class BuiltinConstructorTestCase(ThroughBuiltinAPIMixin,

@@ -3,10 +3,52 @@
 #
 #                        All Rights Reserved
 """Colorful tab completion for Python prompt"""
+from __future__ import annotations
+
 from _colorize import ANSIColors, get_colors, get_theme
 import rlcompleter
 import keyword
 import types
+
+TYPE_CHECKING = False
+
+if TYPE_CHECKING:
+    from typing import Any
+    from _colorize import Theme
+
+
+def safe_getattr(obj, name):
+    # Mirror rlcompleter's safeguards so completion does not
+    # call properties or reify lazy module attributes.
+    if isinstance(getattr(type(obj), name, None), property):
+        return None
+    if (isinstance(obj, types.ModuleType)
+        and isinstance(obj.__dict__.get(name), types.LazyImportType)
+    ):
+        return obj.__dict__.get(name)
+    return getattr(obj, name, None)
+
+
+def colorize_matches(names: list[str], values: list[Any], theme: Theme) -> list[str]:
+    return [
+        _color_for_obj(name, obj, theme)
+        for name, obj in zip(names, values)
+    ]
+
+def _color_for_obj(name: str, value: Any, theme: Theme) -> str:
+    t = type(value)
+    color = _color_by_type(t, theme)
+    return f"{color}{name}{ANSIColors.RESET}"
+
+
+def _color_by_type(t, theme):
+    typename = t.__name__
+    # this is needed e.g. to turn method-wrapper into method_wrapper,
+    # because if we want _colorize.FancyCompleter to be "dataclassable"
+    # our keys need to be valid identifiers.
+    typename = typename.replace('-', '_').replace('.', '_')
+    return getattr(theme.fancycompleter, typename, ANSIColors.RESET)
+
 
 class Completer(rlcompleter.Completer):
     """
@@ -143,21 +185,7 @@ class Completer(rlcompleter.Completer):
                     word[:n] == attr
                     and not (noprefix and word[:n+1] == noprefix)
                 ):
-                    # Mirror rlcompleter's safeguards so completion does not
-                    # call properties or reify lazy module attributes.
-                    if isinstance(getattr(type(thisobject), word, None), property):
-                        value = None
-                    elif (
-                        isinstance(thisobject, types.ModuleType)
-                        and isinstance(
-                            thisobject.__dict__.get(word),
-                            types.LazyImportType,
-                        )
-                    ):
-                        value = thisobject.__dict__.get(word)
-                    else:
-                        value = getattr(thisobject, word, None)
-
+                    value = safe_getattr(thisobject, word)
                     names.append(word)
                     values.append(value)
             if names or not noprefix:
@@ -170,23 +198,7 @@ class Completer(rlcompleter.Completer):
         return expr, attr, names, values
 
     def colorize_matches(self, names, values):
-        return [
-            self._color_for_obj(name, obj)
-            for name, obj in zip(names, values)
-        ]
-
-    def _color_for_obj(self, name, value):
-        t = type(value)
-        color = self._color_by_type(t)
-        return f"{color}{name}{ANSIColors.RESET}"
-
-    def _color_by_type(self, t):
-        typename = t.__name__
-        # this is needed e.g. to turn method-wrapper into method_wrapper,
-        # because if we want _colorize.FancyCompleter to be "dataclassable"
-        # our keys need to be valid identifiers.
-        typename = typename.replace('-', '_').replace('.', '_')
-        return getattr(self.theme.fancycompleter, typename, ANSIColors.RESET)
+        return colorize_matches(names, values, self.theme)
 
 
 def commonprefix(names):

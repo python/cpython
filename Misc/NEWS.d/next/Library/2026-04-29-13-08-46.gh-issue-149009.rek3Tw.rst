@@ -1,0 +1,3 @@
+Validate that :mod:`profiling.sampling` binary profiles do not contain more
+unique (thread, interpreter) pairs than declared in the header. Patch by
+Maurycy Pawłowski-Wieroński.

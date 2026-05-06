@@ -1,0 +1,4 @@
+Fix a deadlock in :mod:`multiprocessing`'s resource tracker
+where the parent process could hang indefinitely in :func:`os.waitpid`
+during interpreter shutdown if a child created via :func:`os.fork` still
+held the resource tracker's pipe open.

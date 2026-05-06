@@ -1,0 +1,2 @@
+Add backtick markup support in :mod:`argparse` option help text to highlight
+inline code when color output is enabled. Patch by Hugo van Kemenade.

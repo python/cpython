@@ -39,10 +39,11 @@ Glossary
       ABCs with the :mod:`abc` module.
 
    annotate function
-      A function that can be called to retrieve the :term:`annotations <annotation>`
-      of an object. This function is accessible as the :attr:`~object.__annotate__`
-      attribute of functions, classes, and modules. Annotate functions are a
-      subset of :term:`evaluate functions <evaluate function>`.
+      A callable that can be called to retrieve the :term:`annotations <annotation>` of
+      an object. Annotate functions are usually :term:`functions <function>`,
+      automatically generated as the :attr:`~object.__annotate__` attribute of functions,
+      classes, and modules. Annotate functions are a subset of
+      :term:`evaluate functions <evaluate function>`.
 
    annotation
       A label associated with a variable, a class

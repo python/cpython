@@ -1,0 +1,2 @@
+Avoid possible broken macOS framework install names when DESTDIR is
+specified during builds.

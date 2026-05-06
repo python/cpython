@@ -1,0 +1,4 @@
+Windows free-threaded builds now output to a different default path with
+default filenames, for example, ``PCbuild/amd64t/python.exe`` rather than
+``PCbuild/amd64/python3.15t.exe``. The ``PC/layout`` script has been updated
+to ensure compatibility of generated layouts.

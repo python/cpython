@@ -1,0 +1,6 @@
+Cross-language method suggestions are now shown for :exc:`AttributeError` on
+builtin types and their subclasses.
+For example, ``[].push()`` suggests ``append``,
+``(1,2).append(3)`` suggests using a ``list``,
+``None.keys()`` suggests expecting a ``dict``,
+and ``1.0.__or__`` suggests using an ``int``.

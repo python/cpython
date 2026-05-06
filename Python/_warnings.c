@@ -716,7 +716,7 @@ static int
 call_show_warning(PyThreadState *tstate, PyObject *category,
                   PyObject *text, PyObject *message,
                   PyObject *filename, int lineno, PyObject *lineno_obj,
-                  PyObject *sourceline, PyObject *source)
+                  PyObject *sourceline, PyObject *source, PyObject *module)
 {
     PyObject *show_fn, *msg, *res, *warnmsg_cls = NULL;
     PyInterpreterState *interp = tstate->interp;
@@ -747,7 +747,8 @@ call_show_warning(PyThreadState *tstate, PyObject *category,
     }
 
     msg = PyObject_CallFunctionObjArgs(warnmsg_cls, message, category,
-            filename, lineno_obj, Py_None, Py_None, source,
+            filename, lineno_obj, Py_None, Py_None,
+            source ? source : Py_None, module,
             NULL);
     Py_DECREF(warnmsg_cls);
     if (msg == NULL)
@@ -878,7 +879,7 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
         goto return_none;
     if (rc == 0) {
         if (call_show_warning(tstate, category, text, message, filename,
-                              lineno, lineno_obj, sourceline, source) < 0)
+                              lineno, lineno_obj, sourceline, source, module) < 0)
             goto cleanup;
     }
     else /* if (rc == -1) */

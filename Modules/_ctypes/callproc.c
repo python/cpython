@@ -641,9 +641,9 @@ union result {
     double d;
     float f;
     void *p;
-    double D[2];
-    float F[2];
-    long double G[2];
+    double Zd[2];
+    float Zf[2];
+    long double Zg[2];
 };
 
 struct argument {

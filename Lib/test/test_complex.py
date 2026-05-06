@@ -504,17 +504,25 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         with self.assertWarnsRegex(DeprecationWarning,
                 "argument 'imag' must be a real number, not complex"):
             check(complex(0.0, 4.25j), -4.25, 0.0)
-        with self.assertWarnsRegex(DeprecationWarning,
-                "argument 'real' must be a real number, not complex"):
+        with (self.assertWarnsRegex(DeprecationWarning,
+                "argument 'real' must be a real number, not complex"),
+              self.assertWarnsRegex(DeprecationWarning,
+                "argument 'imag' must be a real number, not complex")):
             check(complex(4.25+0j, 0j), 4.25, 0.0)
-        with self.assertWarnsRegex(DeprecationWarning,
-                "argument 'real' must be a real number, not complex"):
+        with (self.assertWarnsRegex(DeprecationWarning,
+                "argument 'real' must be a real number, not complex"),
+              self.assertWarnsRegex(DeprecationWarning,
+                "argument 'imag' must be a real number, not complex")):
             check(complex(4.25j, 0j), 0.0, 4.25)
-        with self.assertWarnsRegex(DeprecationWarning,
-                "argument 'real' must be a real number, not complex"):
+        with (self.assertWarnsRegex(DeprecationWarning,
+                "argument 'real' must be a real number, not complex"),
+              self.assertWarnsRegex(DeprecationWarning,
+                "argument 'imag' must be a real number, not complex")):
             check(complex(0j, 4.25+0j), 0.0, 4.25)
-        with self.assertWarnsRegex(DeprecationWarning,
-                "argument 'real' must be a real number, not complex"):
+        with (self.assertWarnsRegex(DeprecationWarning,
+                "argument 'real' must be a real number, not complex"),
+              self.assertWarnsRegex(DeprecationWarning,
+                "argument 'imag' must be a real number, not complex")):
             check(complex(0j, 4.25j), -4.25, 0.0)
 
         check(complex(real=4.25), 4.25, 0.0)

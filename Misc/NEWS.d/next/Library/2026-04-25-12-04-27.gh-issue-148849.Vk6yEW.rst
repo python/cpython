@@ -1,0 +1,4 @@
+Deprecate :meth:`http.cookies.Morsel.js_output` and
+:meth:`http.cookies.BaseCookie.js_output`, which will be removed in
+Python 3.19. Use :meth:`http.cookies.Morsel.output` or
+:meth:`http.cookies.BaseCookie.output` instead.

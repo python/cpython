@@ -1,0 +1,2 @@
+Removed deprecated in :pep:`626` since Python 3.12
+:attr:`!codeobject.co_lnotab` from :class:`types.CodeType`.

@@ -84,11 +84,6 @@ there is no :c:type:`PyObject` -- for example, when working with a C type that
 does not extend or wrap :c:type:`PyObject` but still needs to call into the C
 API in a manner that might lead to deadlocks.
 
-The functions and structs used by the macros are exposed for cases
-where C macros are not available. They should only be used as in the
-given macro expansions. Note that the sizes and contents of the structures may
-change in future Python versions.
-
 .. note::
 
    Operations that need to lock two objects at once must use
@@ -114,12 +109,15 @@ section API avoids potential deadlocks due to reentrancy and lock ordering
 by allowing the runtime to temporarily suspend the critical section if the
 code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
 
+.. _critical-section-macros:
+
 .. c:macro:: Py_BEGIN_CRITICAL_SECTION(op)
 
    Acquires the per-object lock for the object *op* and begins a
    critical section.
 
-   In the free-threaded build, this macro expands to::
+   In the free-threaded build, and when building for the
+   :ref:`Stable ABI <stable-abi>`, this macro expands to::
 
       {
           PyCriticalSection _py_cs;
@@ -150,7 +148,8 @@ code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
 
    Ends the critical section and releases the per-object lock.
 
-   In the free-threaded build, this macro expands to::
+   In the free-threaded build, and when building for the
+   :ref:`Stable ABI <stable-abi>`, this macro expands to::
 
           PyCriticalSection_End(&_py_cs);
       }
@@ -179,7 +178,8 @@ code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
 
    Locks the mutexes *m1* and *m2* and begins a critical section.
 
-   In the free-threaded build, this macro expands to::
+   In the free-threaded build, and when building for the
+   :ref:`Stable ABI <stable-abi>`, this macro expands to::
 
      {
           PyCriticalSection2 _py_cs2;
@@ -196,7 +196,8 @@ code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
 
    Ends the critical section and releases the per-object locks.
 
-   In the free-threaded build, this macro expands to::
+   In the free-threaded build, and when building for the
+   :ref:`Stable ABI <stable-abi>`, this macro expands to::
 
           PyCriticalSection2_End(&_py_cs2);
       }
@@ -204,6 +205,48 @@ code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
    In the default build, this macro expands to ``}``.
 
    .. versionadded:: 3.13
+
+Low-level critical section API
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The following functions and structs are exposed for cases where C macros
+are not available.
+
+.. c:function:: void PyCriticalSection_Begin(PyCriticalSection *c, PyObject *op)
+                void PyCriticalSection_End(PyCriticalSection *c)
+                void PyCriticalSection2_Begin(PyCriticalSection2 *c, PyObject *a, PyObject *b)
+                void PyCriticalSection2_End(PyCriticalSection2 *c);
+
+   To be used only as in the macro expansions
+   listed :ref:`earlier in this section <critical-section-macros>`.
+
+   In non-:term:`free-threaded <free threading>` builds of CPython, these
+   functions do nothing.
+
+   .. versionadded:: 3.13
+
+.. c:type:: PyCriticalSection
+            PyCriticalSection2
+
+   To be used only as in the macro expansions
+   listed :ref:`earlier in this section <critical-section-macros>`.
+   Note that the contents of the structures are private and their meaning may
+   change in future Python versions.
+
+   .. versionadded:: 3.13
+
+.. c:function:: void PyCriticalSection_BeginMutex(PyCriticalSection *c, PyMutex *m);
+                void PyCriticalSection2_BeginMutex(PyCriticalSection2 *c, PyMutex *m1, PyMutex *m2);
+
+   .. (These need to be in a separate section without a Stable ABI anotation.)
+
+   To be used only as in the macro expansions
+   listed :ref:`earlier in this section <critical-section-macros>`.
+
+   In non-:term:`free-threaded <free threading>` builds of CPython, these
+   functions do nothing.
+
+   .. versionadded:: 3.14
 
 
 Legacy locking APIs

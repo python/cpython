@@ -582,15 +582,19 @@ class WarnTests(BaseTest):
                 # ``Warning() != Warning()``.
                 self.assertEqual(str(w[-1].message), str(UserWarning(ob)))
 
-    def test_filename(self):
+    def test_filename_module(self):
         with warnings_state(self.module):
             with self.module.catch_warnings(record=True) as w:
                 warning_tests.inner("spam1")
                 self.assertEqual(os.path.basename(w[-1].filename),
                                     "stacklevel.py")
+                self.assertEqual(w[-1].module,
+                                 "test.test_warnings.data.stacklevel")
                 warning_tests.outer("spam2")
                 self.assertEqual(os.path.basename(w[-1].filename),
                                     "stacklevel.py")
+                self.assertEqual(w[-1].module,
+                                 "test.test_warnings.data.stacklevel")
 
     def test_stacklevel(self):
         # Test stacklevel argument
@@ -600,23 +604,32 @@ class WarnTests(BaseTest):
                 warning_tests.inner("spam3", stacklevel=1)
                 self.assertEqual(os.path.basename(w[-1].filename),
                                     "stacklevel.py")
+                self.assertEqual(w[-1].module,
+                                 "test.test_warnings.data.stacklevel")
                 warning_tests.outer("spam4", stacklevel=1)
                 self.assertEqual(os.path.basename(w[-1].filename),
                                     "stacklevel.py")
+                self.assertEqual(w[-1].module,
+                                 "test.test_warnings.data.stacklevel")
 
                 warning_tests.inner("spam5", stacklevel=2)
                 self.assertEqual(os.path.basename(w[-1].filename),
                                     "__init__.py")
+                self.assertEqual(w[-1].module, __name__)
                 warning_tests.outer("spam6", stacklevel=2)
                 self.assertEqual(os.path.basename(w[-1].filename),
                                     "stacklevel.py")
+                self.assertEqual(w[-1].module,
+                                 "test.test_warnings.data.stacklevel")
                 warning_tests.outer("spam6.5", stacklevel=3)
                 self.assertEqual(os.path.basename(w[-1].filename),
                                     "__init__.py")
+                self.assertEqual(w[-1].module, __name__)
 
                 warning_tests.inner("spam7", stacklevel=9999)
                 self.assertEqual(os.path.basename(w[-1].filename),
                                     "<sys>")
+                self.assertEqual(w[-1].module, "sys")
 
     def test_stacklevel_import(self):
         # Issue #24305: With stacklevel=2, module-level warnings should work.
@@ -627,6 +640,7 @@ class WarnTests(BaseTest):
                 import test.test_warnings.data.import_warning  # noqa: F401
                 self.assertEqual(len(w), 1)
                 self.assertEqual(w[0].filename, __file__)
+                self.assertEqual(w[0].module, __name__)
 
     def test_skip_file_prefixes(self):
         with warnings_state(self.module):
@@ -638,20 +652,27 @@ class WarnTests(BaseTest):
                         "inner_api", stacklevel=2,
                         warnings_module=warning_tests.warnings)
                 self.assertEqual(w[-1].filename, __file__)
+                self.assertEqual(w[-1].module, __name__)
                 warning_tests.package("package api", stacklevel=2)
                 self.assertEqual(w[-1].filename, __file__)
+                self.assertEqual(w[-1].module, __name__)
                 self.assertEqual(w[-2].filename, w[-1].filename)
+                self.assertEqual(w[-2].module, w[-1].module)
                 # Low stacklevels are overridden to 2 behavior.
                 warning_tests.package("package api 1", stacklevel=1)
                 self.assertEqual(w[-1].filename, __file__)
+                self.assertEqual(w[-1].module, __name__)
                 warning_tests.package("package api 0", stacklevel=0)
                 self.assertEqual(w[-1].filename, __file__)
+                self.assertEqual(w[-1].module, __name__)
                 warning_tests.package("package api -99", stacklevel=-99)
                 self.assertEqual(w[-1].filename, __file__)
+                self.assertEqual(w[-1].module, __name__)
 
                 # The stacklevel still goes up out of the package.
                 warning_tests.package("prefix02", stacklevel=3)
                 self.assertIn("unittest", w[-1].filename)
+                self.assertStartsWith(w[-1].module, "unittest")
 
     def test_skip_file_prefixes_file_path(self):
         # see: gh-126209
@@ -662,6 +683,8 @@ class WarnTests(BaseTest):
 
             self.assertEqual(len(w), 1)
             self.assertNotEqual(w[-1].filename, skipped)
+            self.assertEqual(w[-1].filename, __file__)
+            self.assertEqual(w[-1].module, __name__)
 
     def test_skip_file_prefixes_type_errors(self):
         with warnings_state(self.module):
@@ -673,7 +696,7 @@ class WarnTests(BaseTest):
             with self.assertRaises(TypeError):
                 warn("msg", skip_file_prefixes="a sequence of strs")
 
-    def test_exec_filename(self):
+    def test_exec_filename_module(self):
         filename = "<warnings-test>"
         codeobj = compile(("import warnings\n"
                            "warnings.warn('hello', UserWarning)"),
@@ -682,6 +705,12 @@ class WarnTests(BaseTest):
             self.module.simplefilter("always", category=UserWarning)
             exec(codeobj)
         self.assertEqual(w[0].filename, filename)
+        self.assertEqual(w[0].module, __name__)
+        with self.module.catch_warnings(record=True) as w:
+            self.module.simplefilter("always", category=UserWarning)
+            exec(codeobj, {})
+        self.assertEqual(w[0].filename, filename)
+        self.assertEqual(w[0].module, '<string>')
 
     def test_warn_explicit_non_ascii_filename(self):
         with self.module.catch_warnings(record=True) as w:

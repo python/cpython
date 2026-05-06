@@ -1,0 +1,2 @@
+Block Apple Clang from being used to build the JIT as it ships without
+required LLVM tools.

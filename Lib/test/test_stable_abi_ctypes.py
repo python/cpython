@@ -134,6 +134,10 @@ SYMBOL_NAMES = (
     "PyComplex_ImagAsDouble",
     "PyComplex_RealAsDouble",
     "PyComplex_Type",
+    "PyCriticalSection2_Begin",
+    "PyCriticalSection2_End",
+    "PyCriticalSection_Begin",
+    "PyCriticalSection_End",
     "PyDescr_NewClassMethod",
     "PyDescr_NewGetSet",
     "PyDescr_NewMember",
@@ -552,6 +556,7 @@ SYMBOL_NAMES = (
     "PyObject_AsWriteBuffer",
     "PyObject_Bytes",
     "PyObject_Call",
+    "PyObject_CallFinalizerFromDealloc",
     "PyObject_CallFunction",
     "PyObject_CallFunctionObjArgs",
     "PyObject_CallMethod",
@@ -738,6 +743,7 @@ SYMBOL_NAMES = (
     "PyType_Freeze",
     "PyType_FromMetaclass",
     "PyType_FromModuleAndSpec",
+    "PyType_FromSlots",
     "PyType_FromSpec",
     "PyType_FromSpecWithBases",
     "PyType_GenericAlloc",
@@ -1017,15 +1023,19 @@ if feature_macros['USE_STACKCHECK']:
         'PyOS_CheckStack',
     )
 
-EXPECTED_FEATURE_MACROS = set(['HAVE_FORK',
- 'MS_WINDOWS',
- 'PY_HAVE_THREAD_NATIVE_ID',
- 'Py_REF_DEBUG',
- 'Py_TRACE_REFS',
- 'USE_STACKCHECK'])
-WINDOWS_FEATURE_MACROS = {'HAVE_FORK': False,
- 'MS_WINDOWS': True,
- 'PY_HAVE_THREAD_NATIVE_ID': True,
- 'Py_REF_DEBUG': 'maybe',
- 'Py_TRACE_REFS': 'maybe',
- 'USE_STACKCHECK': 'maybe'}
+EXPECTED_FEATURE_MACROS = set([
+    'HAVE_FORK',
+    'MS_WINDOWS',
+    'PY_HAVE_THREAD_NATIVE_ID',
+    'Py_REF_DEBUG',
+    'Py_TRACE_REFS',
+    'USE_STACKCHECK',
+])
+WINDOWS_FEATURE_MACROS = {
+    'HAVE_FORK': False,
+    'MS_WINDOWS': True,
+    'PY_HAVE_THREAD_NATIVE_ID': True,
+    'Py_REF_DEBUG': 'maybe',
+    'Py_TRACE_REFS': 'maybe',
+    'USE_STACKCHECK': 'maybe',
+}

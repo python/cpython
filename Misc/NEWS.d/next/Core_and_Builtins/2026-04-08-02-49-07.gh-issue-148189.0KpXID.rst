@@ -1,0 +1,1 @@
+Repaired undercount of bytes in type-specific free lists reported by sys._debugmallocstats(). For types that participate in cyclic garbage collection, it was missing two pointers used by GC.

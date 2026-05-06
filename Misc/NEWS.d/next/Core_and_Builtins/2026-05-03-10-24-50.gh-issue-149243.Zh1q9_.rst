@@ -1,0 +1,1 @@
+Check for recursion limits in ``CALL_ALLOC_AND_ENTER_INIT`` opcode.

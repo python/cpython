@@ -1,0 +1,5 @@
+Fix a race in :c:type:`!_PyRawMutex` on the free-threaded build where a
+``Py_PARK_INTR`` return from ``_PySemaphore_Wait`` could let the waiter
+destroy its semaphore before the unlocking thread's
+``_PySemaphore_Wakeup`` completed, causing a fatal ``ReleaseSemaphore``
+error.

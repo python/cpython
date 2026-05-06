@@ -1,0 +1,4 @@
+:mod:`ctypes`: Change the :py:attr:`~ctypes._SimpleCData._type_` of
+:class:`~ctypes.c_float_complex`, :class:`~ctypes.c_double_complex` and
+:class:`~ctypes.c_longdouble_complex` from ``F``, ``D`` and ``G`` to ``Zf``,
+``Zd`` and ``Zg`` for compatibility with numpy. Patch by Victor Stinner.

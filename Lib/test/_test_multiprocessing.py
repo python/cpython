@@ -6321,8 +6321,9 @@ class TestResourceTracker(unittest.TestCase):
     def _is_resource_tracker_reused(conn, pid):
         from multiprocessing.resource_tracker import _resource_tracker
         _resource_tracker.ensure_running()
-        # The pid should be None in the child process, expect for the fork
-        # context. It should not be a new value.
+        # The pid should be None in the child (the at-fork handler clears
+        # it for fork; spawn/forkserver children never had it set).  It
+        # should not be a new value.
         reused = _resource_tracker._pid in (None, pid)
         reused &= _resource_tracker._check_alive()
         conn.send(reused)
@@ -6407,6 +6408,183 @@ class TestResourceTracker(unittest.TestCase):
         finally:
             # restore sigmask to what it was before executing test
             signal.pthread_sigmask(signal.SIG_SETMASK, orig_sigmask)
+
+    @only_run_in_forkserver_testsuite("avoids redundant testing.")
+    def test_resource_tracker_fork_deadlock(self):
+        # gh-146313: ResourceTracker.__del__ used to deadlock if a forked
+        # child still held the pipe's write end open when the parent
+        # exited, because the parent would block in waitpid() waiting for
+        # the tracker to exit, but the tracker would never see EOF.
+        cmd = '''if 1:
+            import os, signal
+            from multiprocessing.resource_tracker import ensure_running
+            ensure_running()
+            if os.fork() == 0:
+                signal.pause()
+                os._exit(0)
+            # parent falls through and exits, triggering __del__
+        '''
+        proc = subprocess.Popen([sys.executable, '-c', cmd],
+                                start_new_session=True)
+        try:
+            try:
+                proc.wait(timeout=support.SHORT_TIMEOUT)
+            except subprocess.TimeoutExpired:
+                self.fail(
+                    "Parent process deadlocked in ResourceTracker.__del__"
+                )
+            self.assertEqual(proc.returncode, 0)
+        finally:
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            proc.wait()
+
+    @only_run_in_forkserver_testsuite("avoids redundant testing.")
+    def test_resource_tracker_mp_fork_reuse_and_prompt_reap(self):
+        # gh-146313 / gh-80849: A child started via multiprocessing.Process
+        # with the 'fork' start method should reuse the parent's resource
+        # tracker (the at-fork handler preserves the inherited pipe fd),
+        # *and* the parent should be able to reap the tracker promptly
+        # after joining the child, without hitting the waitpid timeout.
+        cmd = textwrap.dedent('''
+            import multiprocessing as mp
+            from multiprocessing.resource_tracker import _resource_tracker
+
+            def child(conn):
+                # Prove we can talk to the parent's tracker by registering
+                # and unregistering a dummy resource over the inherited fd.
+                # If the fd were closed, ensure_running would launch a new
+                # tracker and _pid would be non-None.
+                _resource_tracker.register("x", "dummy")
+                _resource_tracker.unregister("x", "dummy")
+                conn.send((_resource_tracker._fd is not None,
+                           _resource_tracker._pid is None,
+                           _resource_tracker._check_alive()))
+
+            if __name__ == "__main__":
+                mp.set_start_method("fork")
+                _resource_tracker.ensure_running()
+                r, w = mp.Pipe(duplex=False)
+                p = mp.Process(target=child, args=(w,))
+                p.start()
+                child_has_fd, child_pid_none, child_alive = r.recv()
+                p.join()
+                w.close(); r.close()
+
+                # Now simulate __del__: the child has exited and released
+                # its fd copy, so the tracker should see EOF and exit
+                # promptly -- no timeout.
+                _resource_tracker._stop(wait_timeout=5.0)
+                print(child_has_fd, child_pid_none, child_alive,
+                      _resource_tracker._waitpid_timed_out,
+                      _resource_tracker._exitcode)
+        ''')
+        rc, out, err = script_helper.assert_python_ok('-c', cmd)
+        parts = out.decode().split()
+        self.assertEqual(parts, ['True', 'True', 'True', 'False', '0'],
+            f"unexpected: {parts!r} stderr={err!r}")
+
+    @only_run_in_forkserver_testsuite("avoids redundant testing.")
+    def test_resource_tracker_raw_fork_prompt_reap(self):
+        # gh-146313: After a raw os.fork() the at-fork handler closes the
+        # child's inherited fd, so the parent can reap the tracker
+        # immediately -- even while the child is still alive -- rather
+        # than waiting out the 1s timeout.
+        cmd = textwrap.dedent('''
+            import os, signal
+            from multiprocessing.resource_tracker import _resource_tracker
+
+            _resource_tracker.ensure_running()
+            r, w = os.pipe()
+            pid = os.fork()
+            if pid == 0:
+                os.close(r)
+                # Report whether our fd was closed by the at-fork handler.
+                os.write(w, b"1" if _resource_tracker._fd is None else b"0")
+                os.close(w)
+                signal.pause()  # stay alive so parent's reap is meaningful
+                os._exit(0)
+            os.close(w)
+            child_fd_closed = os.read(r, 1) == b"1"
+            os.close(r)
+
+            # Child is still alive and paused.  Because it closed its fd
+            # copy, our close below is the last one and the tracker exits.
+            _resource_tracker._stop(wait_timeout=5.0)
+
+            os.kill(pid, signal.SIGKILL)
+            os.waitpid(pid, 0)
+            print(child_fd_closed,
+                  _resource_tracker._waitpid_timed_out,
+                  _resource_tracker._exitcode)
+        ''')
+        rc, out, err = script_helper.assert_python_ok('-c', cmd)
+        parts = out.decode().split()
+        self.assertEqual(parts, ['True', 'False', '0'],
+            f"unexpected: {parts!r} stderr={err!r}")
+
+    @only_run_in_forkserver_testsuite("avoids redundant testing.")
+    def test_resource_tracker_lock_reinit_after_fork(self):
+        # gh-146313: If a parent thread held the tracker's lock at fork
+        # time, the child would inherit the held lock and deadlock on
+        # its next ensure_running().  The at-fork handler reinits it.
+        cmd = textwrap.dedent('''
+            import os, threading
+            from multiprocessing.resource_tracker import _resource_tracker
+
+            held = threading.Event()
+            release = threading.Event()
+            def hold():
+                with _resource_tracker._lock:
+                    held.set()
+                    release.wait()
+            t = threading.Thread(target=hold)
+            t.start()
+            held.wait()
+
+            pid = os.fork()
+            if pid == 0:
+                ok = _resource_tracker._lock.acquire(timeout=5.0)
+                os._exit(0 if ok else 1)
+
+            release.set()
+            t.join()
+            _, status = os.waitpid(pid, 0)
+            print(os.waitstatus_to_exitcode(status))
+        ''')
+        rc, out, err = script_helper.assert_python_ok(
+            '-W', 'ignore::DeprecationWarning', '-c', cmd)
+        self.assertEqual(out.strip(), b'0',
+            f"child failed to acquire lock: stderr={err!r}")
+
+    @only_run_in_forkserver_testsuite("avoids redundant testing.")
+    def test_resource_tracker_safety_net_timeout(self):
+        # gh-146313: When an mp.Process(fork) child holds the preserved
+        # fd and the parent calls _stop() without joining (simulating
+        # abnormal shutdown), the safety-net timeout should fire rather
+        # than deadlocking.
+        cmd = textwrap.dedent('''
+            import multiprocessing as mp
+            import signal
+            from multiprocessing.resource_tracker import _resource_tracker
+
+            if __name__ == "__main__":
+                mp.set_start_method("fork")
+                _resource_tracker.ensure_running()
+                p = mp.Process(target=signal.pause)
+                p.start()
+                # Stop WITHOUT joining -- child still holds preserved fd
+                _resource_tracker._stop(wait_timeout=0.5)
+                print(_resource_tracker._waitpid_timed_out)
+                p.terminate()
+                p.join()
+        ''')
+        rc, out, err = script_helper.assert_python_ok('-c', cmd)
+        self.assertEqual(out.strip(), b'True',
+            f"safety-net timeout did not fire: stderr={err!r}")
+
 
 class TestSimpleQueue(unittest.TestCase):
 

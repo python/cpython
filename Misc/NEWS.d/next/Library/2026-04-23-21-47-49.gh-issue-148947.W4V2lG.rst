@@ -1,0 +1,2 @@
+Fix crash in :deco:`dataclasses.dataclass` with ``slots=True`` that occurred
+when a function found within the class had an empty ``__class__`` cell.

@@ -637,7 +637,7 @@ class ArrayMemoryviewTest(unittest.TestCase,
                 check_equal(m, True)
 
         # Test complex formats
-        for complex_format in 'FD':
+        for complex_format in ('Zf', 'Zd'):
             with self.subTest(format=complex_format):
                 data = struct.pack(complex_format * 3, 1.0, 2.0, float('nan'))
                 m = memoryview(data).cast(complex_format)
@@ -647,6 +647,28 @@ class ArrayMemoryviewTest(unittest.TestCase,
                 data = struct.pack(complex_format * 3, 1.0, 2.0, 3.0)
                 m = memoryview(data).cast(complex_format)
                 check_equal(m, True)
+
+    def test_boolean_format(self):
+        # Test '?' format (keep all the checks below for UBSan)
+        # See github.com/python/cpython/issues/148390.
+
+        # m1a and m1b are equivalent to [False, True, False]
+        m1a = memoryview(b'\0\2\0').cast('?')
+        self.assertEqual(m1a.tolist(), [False, True, False])
+        m1b = memoryview(b'\0\4\0').cast('?')
+        self.assertEqual(m1b.tolist(), [False, True, False])
+        self.assertEqual(m1a, m1b)
+
+        # m2a and m2b are equivalent to [True, True, True]
+        m2a = memoryview(b'\1\3\5').cast('?')
+        self.assertEqual(m2a.tolist(), [True, True, True])
+        m2b = memoryview(b'\2\4\6').cast('?')
+        self.assertEqual(m2b.tolist(), [True, True, True])
+        self.assertEqual(m2a, m2b)
+
+        allbytes = bytes(range(256))
+        allbytes = memoryview(allbytes).cast('?')
+        self.assertEqual(allbytes.tolist(), [False] + [True] * 255)
 
 
 class BytesMemorySliceTest(unittest.TestCase,
@@ -697,8 +719,8 @@ class OtherTest(unittest.TestCase):
     def test_complex_types(self):
         float_complex_data = struct.pack('FFF', 0.0, -1.5j, 1+2j)
         double_complex_data = struct.pack('DDD', 0.0, -1.5j, 1+2j)
-        float_complex_view = memoryview(float_complex_data).cast('F')
-        double_complex_view = memoryview(double_complex_data).cast('D')
+        float_complex_view = memoryview(float_complex_data).cast('Zf')
+        double_complex_view = memoryview(double_complex_data).cast('Zd')
         self.assertEqual(float_complex_view.nbytes * 2, double_complex_view.nbytes)
         self.assertListEqual(float_complex_view.tolist(), double_complex_view.tolist())
 

@@ -31,6 +31,7 @@ typedef struct _PyUOpInstruction{
     uint64_t operand0;  // A cache entry
     uint64_t operand1;
 #ifdef Py_STATS
+    int32_t fitness;
     uint64_t execution_count;
 #endif
 } _PyUOpInstruction;

@@ -664,15 +664,14 @@ def decompress(data):
 def main():
     from argparse import ArgumentParser
     parser = ArgumentParser(description=
-        "A simple command line interface for the gzip module: act like gzip, "
+        "A simple command line interface for the `gzip` module: act like `gzip`, "
         "but do not delete the input file.",
-        color=True,
     )
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--fast', action='store_true', help='compress faster')
     group.add_argument('--best', action='store_true', help='compress better')
     group.add_argument("-d", "--decompress", action="store_true",
-                        help="act like gunzip instead of gzip")
+                        help="act like `gunzip` instead of `gzip`")
 
     parser.add_argument("args", nargs="*", default=["-"], metavar='file')
     args = parser.parse_args()

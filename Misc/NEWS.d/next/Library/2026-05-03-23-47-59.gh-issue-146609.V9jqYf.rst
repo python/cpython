@@ -1,0 +1,1 @@
+Use :mod:`argparse` for colour help :mod:`timeit` CLI. Patch by Hugo van Kemenade.

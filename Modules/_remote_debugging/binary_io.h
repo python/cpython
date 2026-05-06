@@ -65,6 +65,32 @@ extern "C" {
 static_assert(FILE_HEADER_SIZE <= FILE_HEADER_PLACEHOLDER_SIZE,
               "FILE_HEADER_SIZE exceeds FILE_HEADER_PLACEHOLDER_SIZE");
 
+/* Sample header field offsets and sizes */
+#define SMP_OFF_THREAD_ID        0
+#define SMP_SIZE_THREAD_ID       sizeof(uint64_t)
+#define SMP_OFF_INTERPRETER_ID   (SMP_OFF_THREAD_ID + SMP_SIZE_THREAD_ID)
+#define SMP_SIZE_INTERPRETER_ID  sizeof(uint32_t)
+#define SMP_OFF_ENCODING         (SMP_OFF_INTERPRETER_ID + SMP_SIZE_INTERPRETER_ID)
+#define SMP_SIZE_ENCODING        sizeof(uint8_t)
+#define SAMPLE_HEADER_FIXED_SIZE (SMP_OFF_ENCODING + SMP_SIZE_ENCODING)
+
+static_assert(SAMPLE_HEADER_FIXED_SIZE == 13,
+             "SAMPLE_HEADER_FIXED_SIZE must remain 13");
+
+/* Footer field offsets and sizes */
+#define FTR_OFF_STRINGS       0
+#define FTR_SIZE_STRINGS      sizeof(uint32_t)
+#define FTR_OFF_FRAMES        (FTR_OFF_STRINGS + FTR_SIZE_STRINGS)
+#define FTR_SIZE_FRAMES       sizeof(uint32_t)
+#define FTR_OFF_FILE_SIZE     (FTR_OFF_FRAMES + FTR_SIZE_FRAMES)
+#define FTR_SIZE_FILE_SIZE    sizeof(uint64_t)
+#define FTR_OFF_CHECKSUM      (FTR_OFF_FILE_SIZE + FTR_SIZE_FILE_SIZE)
+#define FTR_SIZE_CHECKSUM     (2 * sizeof(uint64_t))
+#define FILE_FOOTER_SIZE      (FTR_OFF_CHECKSUM + FTR_SIZE_CHECKSUM)
+
+static_assert(FILE_FOOTER_SIZE == 32,
+             "FILE_FOOTER_SIZE must remain 32");
+
 /* Buffer sizes: 512KB balances syscall amortization against memory use,
  * and aligns well with filesystem block sizes and zstd dictionary windows */
 #define WRITE_BUFFER_SIZE       (512 * 1024)

@@ -1,0 +1,1 @@
+Add optional ``mtime`` argument to :func:`tarfile.open`, for setting the ``mtime`` header field in ``.tar.gz`` archives.

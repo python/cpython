@@ -1903,7 +1903,7 @@ class OtherTests(unittest.TestCase):
                 zip_info = zf.getinfo("test_no_source_date_epoch.txt")
                 current_time = time.localtime()[:6]
                 for z_time, c_time in zip(zip_info.date_time, current_time):
-                    self.assertAlmostEqual(z_time, c_time, delta=1)
+                    self.assertAlmostEqual(z_time, c_time, delta=2)
 
     def test_close(self):
         """Check that the zipfile is closed after the 'with' block."""

@@ -9,7 +9,7 @@ import site
 import sys
 import sysconfig
 import time
-import _colorize
+lazy import _colorize
 
 from ..collector import Collector, extract_lineno
 from ..constants import (

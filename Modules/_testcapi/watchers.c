@@ -212,13 +212,32 @@ type_modified_callback_error(PyTypeObject *type)
     return -1;
 }
 
+static int
+type_modified_callback_name(PyTypeObject *type)
+{
+    assert(PyList_Check(g_type_modified_events));
+    PyObject *name = PyUnicode_FromString(type->tp_name);
+    if (name == NULL) {
+        return -1;
+    }
+    if (PyList_Append(g_type_modified_events, name) < 0) {
+        Py_DECREF(name);
+        return -1;
+    }
+    Py_DECREF(name);
+    return 0;
+}
+
 static PyObject *
 add_type_watcher(PyObject *self, PyObject *kind)
 {
     int watcher_id;
     assert(PyLong_Check(kind));
     long kind_l = PyLong_AsLong(kind);
-    if (kind_l == 2) {
+    if (kind_l == 3) {
+        watcher_id = PyType_AddWatcher(type_modified_callback_name);
+    }
+    else if (kind_l == 2) {
         watcher_id = PyType_AddWatcher(type_modified_callback_wrap);
     }
     else if (kind_l == 1) {

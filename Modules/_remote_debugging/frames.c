@@ -148,7 +148,9 @@ find_frame_in_chunks(StackChunkList *chunks, uintptr_t remote_ptr)
         uintptr_t base = chunks->chunks[i].remote_addr + offsetof(_PyStackChunk, data);
         size_t payload = chunks->chunks[i].size - offsetof(_PyStackChunk, data);
 
-        if (remote_ptr >= base && remote_ptr < base + payload) {
+        if (payload >= SIZEOF_INTERP_FRAME &&
+                remote_ptr >= base &&
+                remote_ptr <= base + payload - SIZEOF_INTERP_FRAME) {
             return (char *)chunks->chunks[i].local_copy + (remote_ptr - chunks->chunks[i].remote_addr);
         }
     }

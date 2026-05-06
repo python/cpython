@@ -1,0 +1,1 @@
+Fix :mod:`pdb` to accept standard -- end of options separator. Reported by haampie. Patched by Shrey Naithani.

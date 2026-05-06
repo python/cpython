@@ -1,0 +1,2 @@
+Fix infinite loop in :func:`typing.get_type_hints` when ``__wrapped__``
+forms a cycle. Patch by Shamil Abdulaev.

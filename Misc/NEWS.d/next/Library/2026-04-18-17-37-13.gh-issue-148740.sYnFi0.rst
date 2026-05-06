@@ -1,0 +1,2 @@
+Fix usage for :mod:`uuid` command-line interface to support a custom namespace be
+provided for uuid3 and uuid5.

@@ -1,5 +1,6 @@
 import enum
 import os
+import pickle
 import sys
 import textwrap
 import unittest
@@ -61,6 +62,27 @@ class GetConstantTest(unittest.TestCase):
 
     def test_get_constant_borrowed(self):
         self.check_get_constant(_testlimitedcapi.get_constant_borrowed)
+
+
+class SentinelTest(unittest.TestCase):
+
+    def test_pysentinel_new(self):
+        marker = _testcapi.pysentinel_new("CAPI_SENTINEL", __name__)
+        self.assertIs(type(marker), sentinel)
+        self.assertTrue(_testcapi.pysentinel_check(marker))
+        self.assertFalse(_testcapi.pysentinel_check(object()))
+        self.assertEqual(marker.__name__, "CAPI_SENTINEL")
+        self.assertEqual(marker.__module__, __name__)
+        self.assertEqual(repr(marker), "CAPI_SENTINEL")
+
+        no_module = _testcapi.pysentinel_new("NO_MODULE")
+        self.assertIs(type(no_module), sentinel)
+        self.assertEqual(no_module.__name__, "NO_MODULE")
+        self.assertIs(no_module.__module__, None)
+
+        globals()["CAPI_SENTINEL"] = marker
+        self.addCleanup(globals().pop, "CAPI_SENTINEL", None)
+        self.assertIs(pickle.loads(pickle.dumps(marker)), marker)
 
 
 class PrintTest(unittest.TestCase):

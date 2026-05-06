@@ -1,0 +1,7 @@
+Fix a deadlock that could occur when one thread is importing a submodule
+(for example ``import pkg.sub.mod``) while another thread is importing one
+of its parent packages (for example ``import pkg.sub``) and that parent's
+``__init__.py`` itself imports the submodule. The import system now
+acquires module locks in hierarchical (parent-before-child) order so the
+two threads serialise instead of raising
+``_DeadlockError``.

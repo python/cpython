@@ -1,0 +1,1 @@
+Add support for unwinding JIT frames using GDB. Patch by Diego Russo and Pablo Galindo.

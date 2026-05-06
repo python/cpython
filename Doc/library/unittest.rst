@@ -1095,6 +1095,13 @@ Test cases
          self.assertIn('myfile.py', cm.filename)
          self.assertEqual(320, cm.lineno)
 
+      The context managers can be nested to test that multiple different
+      warnings are emitted::
+
+         with (self.assertWarns(SomeWarning),
+               self.assertWarns(OtherWarning)):
+             do_something()
+
       This method works regardless of the warning filters in place when it
       is called.
 
@@ -1103,6 +1110,10 @@ Test cases
       .. versionchanged:: 3.3
          Added the *msg* keyword argument when used as a context manager.
 
+      .. versionchanged:: next
+         Warnings that do not match the specified category are no longer
+         swallowed.
+         Nested context managers are now supported.
 
    .. method:: assertWarnsRegex(warning, regex, callable, *args, **kwds)
                assertWarnsRegex(warning, regex, *, msg=None)
@@ -1121,10 +1132,22 @@ Test cases
          with self.assertWarnsRegex(RuntimeWarning, 'unsafe frobnicating'):
              frobnicate('/etc/passwd')
 
+      The context managers can be nested to test that multiple different
+      warnings are emitted::
+
+         with (self.assertWarns(SomeWarning, regex1),
+               self.assertWarns(OtherWarning, regex2)):
+             do_something()
+
       .. versionadded:: 3.2
 
       .. versionchanged:: 3.3
          Added the *msg* keyword argument when used as a context manager.
+
+      .. versionchanged:: next
+         Warnings that do not match the specified category or regex are
+         no longer swallowed.
+         Nested context managers are now supported.
 
    .. method:: assertLogs(logger=None, level=None, formatter=None)
 
@@ -1223,9 +1246,9 @@ Test cases
    | :meth:`assertNotRegex(s, r)           | ``not r.search(s)``            | 3.2          |
    | <TestCase.assertNotRegex>`            |                                |              |
    +---------------------------------------+--------------------------------+--------------+
-   | :meth:`assertCountEqual(a, b)         | *a* and *b* have the same      | 3.2          |
-   | <TestCase.assertCountEqual>`          | elements in the same number,   |              |
-   |                                       | regardless of their order.     |              |
+   | :meth:`assertCountEqual(a, b)         | *a* contains the same elements | 3.2          |
+   | <TestCase.assertCountEqual>`          | as *b*, regardless of their    |              |
+   |                                       | order.                         |              |
    +---------------------------------------+--------------------------------+--------------+
    | :meth:`assertStartsWith(a, b)         | ``a.startswith(b)``            | 3.14         |
    | <TestCase.assertStartsWith>`          |                                |              |

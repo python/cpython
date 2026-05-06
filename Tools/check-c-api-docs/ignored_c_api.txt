@@ -18,8 +18,6 @@ Py_HasFileSystemDefaultEncoding
 Py_UTF8Mode
 # pyhash.h
 Py_HASH_EXTERNAL
-# modsupport.h
-PyABIInfo_FREETHREADING_AGNOSTIC
 # object.h
 Py_INVALID_SIZE
 # pyexpat.h

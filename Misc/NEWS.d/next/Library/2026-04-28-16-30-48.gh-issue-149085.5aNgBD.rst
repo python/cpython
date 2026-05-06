@@ -1,0 +1,3 @@
+Add a *max_threads* keyword argument to :func:`faulthandler.dump_traceback`,
+:func:`faulthandler.dump_traceback_later`, :func:`faulthandler.enable`, and
+:func:`faulthandler.register`.

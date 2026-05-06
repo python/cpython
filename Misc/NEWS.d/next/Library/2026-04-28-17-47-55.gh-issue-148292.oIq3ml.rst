@@ -1,0 +1,7 @@
+:mod:`ssl`: Update :class:`ssl.SSLSocket` and :class:`ssl.SSLObject` for
+OpenSSL 4. The classes now remember if they get a :exc:`ssl.SSLEOFError`. In this
+case, following :meth:`~ssl.SSLSocket.read`, :meth:`!sendfile`,
+:meth:`~ssl.SSLSocket.write`, and :meth:`~ssl.SSLSocket.do_handshake` calls
+raise :exc:`ssl.SSLEOFError` without calling the underlying OpenSSL function.
+Thanks to that, :class:`ssl.SSLSocket` behaves the same on all OpenSSL versions
+on EOF.  Patch by Victor Stinner.

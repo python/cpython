@@ -1,0 +1,4 @@
+Fix a PATH-injection vulnerability in :mod:`webbrowser` on macOS where
+``osascript`` was invoked without an absolute path. The new :class:`!MacOS`
+class uses ``/usr/bin/open`` directly, eliminating the dependency on
+``osascript`` entirely.

@@ -953,10 +953,24 @@ when a module is imported) will still emit the syntax warning.
 (Contributed by Irit Katriel in :gh:`130080`.)
 
 
+.. _incremental-garbage-collection:
 .. _whatsnew314-incremental-gc:
 
-Incremental garbage collection
-------------------------------
+Garbage collection
+------------------
+
+**From Python 3.14.5 onwards:**
+
+The garbage collector (GC) has changed in Python 3.14.5.
+
+Python 3.14.0-3.14.4 shipped with a new incremental GC.
+However, due to a number of `reports
+<https://github.com/python/cpython/issues/142516>`__
+of significant memory pressure in production environments,
+it has been reverted back to the generational GC from 3.13.
+This is the GC now used in Python 3.14.5 and later.
+
+**Previously in Python 3.14.0-3.14.4:**
 
 The cycle garbage collector is now incremental.
 This means that maximum pause times are reduced
@@ -2203,7 +2217,18 @@ difflib
 gc
 --
 
-* The new :ref:`incremental garbage collector <whatsnew314-incremental-gc>`
+* **From Python 3.14.5 onwards:**
+
+  Python 3.14.0-3.14.4 shipped with a new incremental garbage collector.
+  However, due to a number of `reports
+  <https://github.com/python/cpython/issues/142516>`__
+  of significant memory pressure in production environments,
+  it has been reverted back to the generational GC from 3.13.
+  This is the GC now used in Python 3.14.5 and later.
+
+* **Previously in Python 3.14.0-3.14.4:**
+
+  The new :ref:`incremental garbage collector <whatsnew314-incremental-gc>`
   means that maximum pause times are reduced
   by an order of magnitude or more for larger heaps.
 
@@ -3447,3 +3472,17 @@ Changes in the C API
   functions on Python 3.13 and older.
 
 .. _pythoncapi-compat project: https://github.com/python/pythoncapi-compat/
+
+
+Notable changes in 3.14.5
+=========================
+
+gc
+--
+
+* The incremental garbage collector shipped in Python 3.14.0-3.14.4 has been
+  reverted back to the generational garbage collector from 3.13,
+  due to a number of `reports
+  <https://github.com/python/cpython/issues/142516>`__
+  of significant memory pressure in production environments.
+  See :ref:`whatsnew314-incremental-gc` for details.

@@ -1,0 +1,3 @@
+``email.generator.Generator._make_boundary`` could fail to detect a duplicate
+boundary string if linesep was not \n. It now correctly detects boundary
+strings when linesep is \r\n as well.

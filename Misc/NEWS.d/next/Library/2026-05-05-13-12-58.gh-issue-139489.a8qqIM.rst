@@ -1,0 +1,2 @@
+Add the :func:`xml.is_valid_text` function, which allows to check whether
+a string can be used in the XML document.

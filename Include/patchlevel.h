@@ -61,32 +61,4 @@
 #define PYTHON_ABI_VERSION 3
 #define PYTHON_ABI_STRING "3"
 
-
-/* Stable ABI for free-threaded builds (introduced in PEP 803)
-   is enabled by one of:
-     - Py_TARGET_ABI3T, or
-     - Py_LIMITED_API and Py_GIL_DISABLED.
-   "Output" macros to be used internally:
-     - Py_LIMITED_API (defines the subset of API we expose)
-     - _Py_OPAQUE_PYOBJECT (additionally hides what's ABI-incompatible between
-       free-threaded & GIL)
-     (Don't use Py_TARGET_ABI3T directly: it's currently only used to set these
-      2 macros. It's also available for users' convenience.)
- */
-#if defined(Py_LIMITED_API) && defined(Py_GIL_DISABLED) \
-    && !defined(Py_TARGET_ABI3T)
-#  define Py_TARGET_ABI3T Py_LIMITED_API
-#endif
-#if defined(Py_TARGET_ABI3T)
-#  define _Py_OPAQUE_PYOBJECT
-#  if !defined(Py_LIMITED_API)
-#    define Py_LIMITED_API Py_TARGET_ABI3T
-#  elif Py_LIMITED_API > Py_TARGET_ABI3T
-     // if both are defined, use the *lower* version,
-     // i.e. maximum compatibility
-#    undef Py_LIMITED_API
-#    define Py_LIMITED_API Py_TARGET_ABI3T
-#  endif
-#endif
-
 #endif //_Py_PATCHLEVEL_H

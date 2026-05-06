@@ -1,0 +1,2 @@
+:mod:`bz2`, :mod:`compression.zstd`, :mod:`lzma`, :mod:`zlib`: Fix a double
+free on memory allocation failure. Patch by Victor Stinner.

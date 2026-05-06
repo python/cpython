@@ -1,13 +1,16 @@
 """Tests for sampling profiler core functionality."""
 
+import contextlib
 import io
 import re
+import types
 from unittest import mock
 import unittest
 
 try:
     import _remote_debugging  # noqa: F401
-    from profiling.sampling.sample import SampleProfiler
+    from profiling.sampling.constants import PROFILING_MODE_ALL, PROFILING_MODE_WALL
+    from profiling.sampling.sample import SampleProfiler, dump_stack
     from profiling.sampling.pstats_collector import PstatsCollector
 except ImportError:
     raise unittest.SkipTest(
@@ -62,6 +65,92 @@ class TestSampleProfiler(unittest.TestCase):
             self.assertEqual(profiler.pid, 54321)
             self.assertEqual(profiler.sample_interval_usec, 5000)
             self.assertEqual(profiler.all_threads, True)
+
+    @staticmethod
+    @contextlib.contextmanager
+    def _patched_unwinder():
+        """Yield a namespace exposing the mock unwinder ``instance`` and ``cls``."""
+        instance = mock.MagicMock()
+        with mock.patch(
+            "_remote_debugging.RemoteUnwinder", return_value=instance
+        ) as cls:
+            yield types.SimpleNamespace(instance=instance, cls=cls)
+
+    def test_dump_stack_uses_single_unwinder_snapshot(self):
+        stack_frames = [mock.sentinel.stack_frames]
+        with self._patched_unwinder() as u:
+            u.instance.get_stack_trace.return_value = stack_frames
+            result = dump_stack(12345)
+
+        self.assertIs(result, stack_frames)
+        self.assertEqual(u.cls.call_args.kwargs["mode"], PROFILING_MODE_ALL)
+        u.instance.get_stack_trace.assert_called_once_with()
+
+    def test_dump_stack_returns_empty_async_snapshot(self):
+        with self._patched_unwinder() as u:
+            u.instance.get_async_stack_trace.return_value = []
+            result = dump_stack(12345, async_aware="running")
+
+        self.assertEqual(result, [])
+        u.instance.get_async_stack_trace.assert_called_once_with()
+        u.instance.get_stack_trace.assert_not_called()
+
+    def test_dump_stack_async_all_uses_all_awaited_by(self):
+        stack_frames = [mock.sentinel.awaited_info]
+        with self._patched_unwinder() as u:
+            u.instance.get_all_awaited_by.return_value = stack_frames
+            result = dump_stack(12345, async_aware="all")
+
+        self.assertIs(result, stack_frames)
+        u.instance.get_all_awaited_by.assert_called_once_with()
+        u.instance.get_stack_trace.assert_not_called()
+        u.instance.get_async_stack_trace.assert_not_called()
+
+    def test_dump_stack_passes_unwinder_options(self):
+        with self._patched_unwinder() as u:
+            u.instance.get_stack_trace.return_value = []
+            dump_stack(
+                12345,
+                all_threads=True,
+                native=True,
+                gc=False,
+                opcodes=True,
+            )
+
+        call_kwargs = u.cls.call_args.kwargs
+        self.assertTrue(call_kwargs["all_threads"])
+        self.assertEqual(call_kwargs["mode"], PROFILING_MODE_ALL)
+        self.assertTrue(call_kwargs["native"])
+        self.assertFalse(call_kwargs["gc"])
+        self.assertTrue(call_kwargs["opcodes"])
+        self.assertFalse(call_kwargs["skip_non_matching_threads"])
+        self.assertTrue(call_kwargs["cache_frames"])
+
+    def test_dump_stack_wall_mode_skips_non_matching_threads(self):
+        with self._patched_unwinder() as u:
+            u.instance.get_stack_trace.return_value = []
+            dump_stack(12345, mode=PROFILING_MODE_WALL)
+
+        self.assertTrue(u.cls.call_args.kwargs["skip_non_matching_threads"])
+
+    def test_dump_stack_blocking_pauses_and_resumes_threads(self):
+        stack_frames = [mock.sentinel.stack_frames]
+        with self._patched_unwinder() as u:
+            u.instance.get_stack_trace.return_value = stack_frames
+            result = dump_stack(12345, blocking=True)
+
+        self.assertIs(result, stack_frames)
+        u.instance.pause_threads.assert_called_once_with()
+        u.instance.resume_threads.assert_called_once_with()
+
+    def test_dump_stack_blocking_resumes_threads_after_failure(self):
+        with self._patched_unwinder() as u:
+            u.instance.get_stack_trace.side_effect = RuntimeError("boom")
+            with self.assertRaises(RuntimeError):
+                dump_stack(12345, blocking=True)
+
+        u.instance.pause_threads.assert_called_once_with()
+        u.instance.resume_threads.assert_called_once_with()
 
     def test_sample_profiler_sample_method_timing(self):
         """Test that the sample method respects duration and handles timing correctly."""

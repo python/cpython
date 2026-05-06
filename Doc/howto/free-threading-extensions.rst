@@ -416,11 +416,9 @@ C API extensions need to be built specifically for the free-threaded build.
 The wheels, shared libraries, and binaries are indicated by a ``t`` suffix.
 
 * `pypa/manylinux <https://github.com/pypa/manylinux>`_ supports the
-  free-threaded build, with the ``t`` suffix, such as ``python3.13t``.
-* `pypa/cibuildwheel <https://github.com/pypa/cibuildwheel>`_ supports the
-  free-threaded build on Python 3.13 and 3.14. On Python 3.14, free-threaded
-  wheels will be built by default. On Python 3.13, you will need to set
-  `CIBW_ENABLE to cpython-freethreading <https://cibuildwheel.pypa.io/en/stable/options/#enable>`_.
+  free-threaded build, with the ``t`` suffix, such as ``python3.14t``.
+* `pypa/cibuildwheel <https://github.com/pypa/cibuildwheel>`_ supports
+  building wheels for the free-threaded build of Python 3.14 and newer.
 
 Limited C API and Stable ABI
 ............................

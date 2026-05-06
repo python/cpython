@@ -41,7 +41,10 @@ _intrinsic_2_descs = _opcode.get_intrinsic2_descs()
 _special_method_names = _opcode.get_special_method_names()
 _common_constants = [builtins.AssertionError, builtins.NotImplementedError,
                      builtins.tuple, builtins.all, builtins.any, builtins.list,
-                     builtins.set]
+                     builtins.set,
+                     # Append-only — must match CONSTANT_* in
+                     # Include/internal/pycore_opcode_utils.h.
+                     None, "", True, False, -1]
 _nb_ops = _opcode.get_nb_ops()
 
 hascompare = [opmap["COMPARE_OP"]]
@@ -67,6 +70,9 @@ _cache_format = frozendict(
         counter=1,
     ),
     FOR_ITER=frozendict(
+        counter=1,
+    ),
+    GET_ITER=frozendict(
         counter=1,
     ),
     LOAD_SUPER_ATTR=frozendict(

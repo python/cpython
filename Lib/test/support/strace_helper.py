@@ -74,7 +74,7 @@ class StraceResult:
 def _filter_memory_call(call):
     # mmap can operate on a fd or "MAP_ANONYMOUS" which gives a block of memory.
     # Ignore "MAP_ANONYMOUS + the "MAP_ANON" alias.
-    if call.syscall == "mmap" and "MAP_ANON" in call.args[3]:
+    if call.syscall in ("mmap", "mmap2") and "MAP_ANON" in call.args[3]:
         return True
 
     if call.syscall in ("munmap", "mprotect"):
