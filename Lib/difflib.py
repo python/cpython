@@ -559,15 +559,17 @@ class SequenceMatcher:
         >>> b[23:28] = []      # Make a deletion
         >>> b[30] += 'y'       # Make another replacement
         >>> pprint(list(SequenceMatcher(None,a,b).get_grouped_opcodes()))
-        [[('equal', 5, 8, 5, 8), ('insert', 8, 8, 8, 9), ('equal', 8, 11, 9, 12)],
-         [('equal', 16, 19, 17, 20),
-          ('replace', 19, 20, 20, 21),
-          ('equal', 20, 22, 21, 23),
-          ('delete', 22, 27, 23, 23),
-          ('equal', 27, 30, 23, 26)],
-         [('equal', 31, 34, 27, 30),
-          ('replace', 34, 35, 30, 31),
-          ('equal', 35, 38, 31, 34)]]
+        [
+            [('equal', 5, 8, 5, 8), ('insert', 8, 8, 8, 9), ('equal', 8, 11, 9, 12)],
+            [
+                ('equal', 16, 19, 17, 20),
+                ('replace', 19, 20, 20, 21),
+                ('equal', 20, 22, 21, 23),
+                ('delete', 22, 27, 23, 23),
+                ('equal', 27, 30, 23, 26),
+            ],
+            [('equal', 31, 34, 27, 30), ('replace', 34, 35, 30, 31), ('equal', 35, 38, 31, 34)],
+        ]
         """
 
         codes = self.get_opcodes()
@@ -784,16 +786,18 @@ class Differ:
 
     >>> from pprint import pprint as _pprint
     >>> _pprint(result)
-    ['    1. Beautiful is better than ugly.\n',
-     '-   2. Explicit is better than implicit.\n',
-     '-   3. Simple is better than complex.\n',
-     '+   3.   Simple is better than complex.\n',
-     '?     ++\n',
-     '-   4. Complex is better than complicated.\n',
-     '?            ^                     ---- ^\n',
-     '+   4. Complicated is better than complex.\n',
-     '?           ++++ ^                      ^\n',
-     '+   5. Flat is better than nested.\n']
+    [
+        '    1. Beautiful is better than ugly.\n',
+        '-   2. Explicit is better than implicit.\n',
+        '-   3. Simple is better than complex.\n',
+        '+   3.   Simple is better than complex.\n',
+        '?     ++\n',
+        '-   4. Complex is better than complicated.\n',
+        '?            ^                     ---- ^\n',
+        '+   4. Complicated is better than complex.\n',
+        '?           ++++ ^                      ^\n',
+        '+   5. Flat is better than nested.\n',
+    ]
 
     As a single multi-line string it looks like this:
 
