@@ -8720,10 +8720,11 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
     /* This won't inherit indirect slots (from tp_as_number etc.)
        if type doesn't provide the space. */
 
-    if (type->tp_as_number != NULL && base->tp_as_number != NULL) {
+    if (type->tp_as_number != NULL && base->tp_as_number != NULL
+        && base->tp_as_number != &_Py_empty_number_methods) {
         basebase = base->tp_base;
-        // basebase is NULL when base is 'object' (tp_base == NULL).
-        if (basebase == NULL || basebase->tp_as_number == NULL)
+        if (basebase->tp_as_number == NULL
+            || basebase->tp_as_number == &_Py_empty_number_methods)
             basebase = NULL;
         COPYNUM(nb_add);
         COPYNUM(nb_subtract);
@@ -8771,10 +8772,11 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
         COPYASYNC(am_anext);
     }
 
-    if (type->tp_as_sequence != NULL && base->tp_as_sequence != NULL) {
+    if (type->tp_as_sequence != NULL && base->tp_as_sequence != NULL
+        && base->tp_as_sequence != &_Py_empty_sequence_methods) {
         basebase = base->tp_base;
-        // basebase is NULL when base is 'object' (tp_base == NULL).
-        if (basebase == NULL || basebase->tp_as_sequence == NULL)
+        if (basebase->tp_as_sequence == NULL
+            || basebase->tp_as_sequence == &_Py_empty_sequence_methods)
             basebase = NULL;
         COPYSEQ(sq_length);
         COPYSEQ(sq_concat);
@@ -8786,10 +8788,11 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
         COPYSEQ(sq_inplace_repeat);
     }
 
-    if (type->tp_as_mapping != NULL && base->tp_as_mapping != NULL) {
+    if (type->tp_as_mapping != NULL && base->tp_as_mapping != NULL
+        && base->tp_as_mapping != &_Py_empty_mapping_methods) {
         basebase = base->tp_base;
-        // basebase is NULL when base is 'object' (tp_base == NULL).
-        if (basebase == NULL || basebase->tp_as_mapping == NULL)
+        if (basebase->tp_as_mapping == NULL
+            || basebase->tp_as_mapping == &_Py_empty_mapping_methods)
             basebase = NULL;
         COPYMAP(mp_length);
         COPYMAP(mp_subscript);
@@ -9162,9 +9165,9 @@ type_ready_mro(PyTypeObject *type, int initial)
 }
 
 
-static const PyNumberMethods _Py_empty_number_methods = {0};
-static const PySequenceMethods _Py_empty_sequence_methods = {0};
-static const PyMappingMethods _Py_empty_mapping_methods = {0};
+const PyNumberMethods _Py_empty_number_methods = {0};
+const PySequenceMethods _Py_empty_sequence_methods = {0};
+const PyMappingMethods _Py_empty_mapping_methods = {0};
 
 // For static types, inherit tp_as_xxx structures from the base class
 // if it's NULL.

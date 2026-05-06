@@ -2818,15 +2818,15 @@ static int
 check_type_always_true(PyTypeObject *ty)
 {
     PyNumberMethods *nb = ty->tp_as_number;
-    if (nb && nb->nb_bool) {
+    if (nb->nb_bool) {
         return SPEC_FAIL_TO_BOOL_NUMBER;
     }
     PyMappingMethods *mp = ty->tp_as_mapping;
-    if (mp && mp->mp_length) {
+    if (mp->mp_length) {
         return SPEC_FAIL_TO_BOOL_MAPPING;
     }
     PySequenceMethods *sq = ty->tp_as_sequence;
-    if (sq && sq->sq_length) {
+    if (sq->sq_length) {
       return SPEC_FAIL_TO_BOOL_SEQUENCE;
     }
     return 0;

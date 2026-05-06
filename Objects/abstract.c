@@ -247,7 +247,7 @@ PyObject_SetItem(PyObject *o, PyObject *key, PyObject *value)
         return res;
     }
 
-    {
+    if (Py_TYPE(o)->tp_as_sequence != &_Py_empty_sequence_methods) {
         if (_PyIndex_Check(key)) {
             Py_ssize_t key_value;
             key_value = PyNumber_AsSsize_t(key, PyExc_IndexError);
@@ -281,7 +281,7 @@ PyObject_DelItem(PyObject *o, PyObject *key)
         return res;
     }
 
-    {
+    if (Py_TYPE(o)->tp_as_sequence != &_Py_empty_sequence_methods) {
         if (_PyIndex_Check(key)) {
             Py_ssize_t key_value;
             key_value = PyNumber_AsSsize_t(key, PyExc_IndexError);
@@ -1316,16 +1316,20 @@ PyNumber_InPlaceMultiply(PyObject *v, PyObject *w)
         PySequenceMethods *mv = Py_TYPE(v)->tp_as_sequence;
         PySequenceMethods *mw = Py_TYPE(w)->tp_as_sequence;
         Py_DECREF(result);
-        f = mv->sq_inplace_repeat;
-        if (f == NULL)
-            f = mv->sq_repeat;
-        if (f != NULL)
-            return sequence_repeat(f, v, w);
-        /* Note that the right hand operand should not be
-         * mutated in this case so sq_inplace_repeat is not
-         * used. */
-        if (mw->sq_repeat)
-            return sequence_repeat(mw->sq_repeat, w, v);
+        if (mv != (PySequenceMethods *)&_Py_empty_sequence_methods) {
+            f = mv->sq_inplace_repeat;
+            if (f == NULL)
+                f = mv->sq_repeat;
+            if (f != NULL)
+                return sequence_repeat(f, v, w);
+        }
+        else if (mw != (PySequenceMethods *)&_Py_empty_sequence_methods) {
+            /* Note that the right hand operand should not be
+             * mutated in this case so sq_inplace_repeat is not
+             * used. */
+            if (mw->sq_repeat)
+                return sequence_repeat(mw->sq_repeat, w, v);
+        }
         result = binop_type_error(v, w, "*=");
     }
     return result;

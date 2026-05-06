@@ -285,6 +285,10 @@ Py_ssize_t _Py_ExplicitMergeRefcount(PyObject *op, Py_ssize_t extra);
 extern int _PyType_CheckConsistency(PyTypeObject *type);
 extern int _PyDict_CheckConsistency(PyObject *mp, int check_content);
 
+extern const PyNumberMethods _Py_empty_number_methods;
+extern const PySequenceMethods _Py_empty_sequence_methods;
+extern const PyMappingMethods _Py_empty_mapping_methods;
+
 // Fast inlined version of PyType_HasFeature()
 static inline int
 _PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
