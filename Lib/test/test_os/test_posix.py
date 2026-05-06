@@ -1623,7 +1623,7 @@ class PosixTester(unittest.TestCase):
         dupfd = os.pidfd_getfd(pidfd, fd, 0)
         self.addCleanup(os.close, dupfd)
 
-        self.assertFalse(os.get_inheritable(dupfd))
+        self.assertFalse(os.get_inheritable(dupfd))     # PEP 446
         self.assertEqual(os.fstat(fd), os.fstat(dupfd))
 
     @os_helper.skip_unless_hardlink
