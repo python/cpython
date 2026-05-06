@@ -17,8 +17,7 @@
     <tcltkDir Condition="$(tcltkDir) == ''">$(ExternalsDir)tcltk-$(TclVersion)\$(ArchName)\</tcltkDir>
     <tcltkSuffix Condition="'$(TclMajorVersion)' == '8'">t</tcltkSuffix>
     <tkPrefix Condition="'$(TclMajorVersion)' == '9'">tcl9</tkPrefix>
-    <tclWin32Exe Condition="$(Platform) == 'Win32'">$(tcltkDir)\bin\tclsh$(TclMajorVersion)$(TclMinorVersion)$(tcltkSuffix).exe</tclWin32Exe>
-    <tclWin32Exe Condition="$(Platform) != 'Win32'">$(tcltkDir)\..\win32\bin\tclsh$(TclMajorVersion)$(TclMinorVersion)$(tcltkSuffix).exe</tclWin32Exe>
+    <TclshNativeFlag Condition="$(Platform) != 'Win32'">TCLSH_NATIVE="$(tcltkDir)\..\win32\bin\tclsh$(TclMajorVersion)$(TclMinorVersion)$(tcltkSuffix).exe"</TclshNativeFlag>
     <tclExternalTommath Condition="$(TclMajorVersion) == '9'">TCL_WITH_EXTERNAL_TOMMATH;</tclExternalTommath>
 
     <!--<TclDebugExt Condition="'$(Configuration)' == 'Debug'">g</TclDebugExt>-->

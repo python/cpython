@@ -1753,11 +1753,29 @@ wave
 (Contributed by Lionel Koenig and Michiel W. Beijen in :gh:`60729`.)
 
 
+webbrowser
+----------
+
+* On macOS, the new :class:`!webbrowser.MacOS` class opens URLs via
+  :program:`/usr/bin/open` instead of constructing and executing AppleScript
+  via :program:`osascript`. The default browser is detected from the
+  LaunchServices preferences file using :mod:`plistlib`, with
+  :class:`!com.apple.Safari` as the fallback on fresh installations.
+  For non-HTTP(S) URLs, :program:`open -b <bundle-id>` is used to route the
+  URL through a browser rather than the OS file handler, preventing
+  file injection attacks.
+  (Contributed by Jeff Lyon in :gh:`137586`.)
+
+
 xml
 ---
 
 * Add the :func:`xml.is_valid_name` function to check
   whether a string can be used as an element or attribute name in XML.
+  (Contributed by Serhiy Storchaka in :gh:`139489`.)
+
+* Add the :func:`xml.is_valid_text` function, which allows to check
+  whether a string can be used in the XML document.
   (Contributed by Serhiy Storchaka in :gh:`139489`.)
 
 
@@ -2149,6 +2167,13 @@ New deprecations
     (Contributed by kishorhange111 in :gh:`148849`.)
 
 
+* :mod:`imaplib`:
+
+  * Altering :attr:`IMAP4.file <imaplib.IMAP4.file>` is now deprecated
+    and slated for removal in Python 3.19. This property is now unused
+    and changing its value does *not* explicitly close the current file.
+
+
 * :mod:`re`:
 
   * :func:`re.match` and :meth:`re.Pattern.match` are now
@@ -2191,6 +2216,12 @@ New deprecations
     :func:`issubclass`, but warnings were not previously emitted if it was
     merely imported or accessed from the :mod:`!typing` module.
 
+
+* :mod:`webbrowser`:
+
+  * :class:`!webbrowser.MacOSXOSAScript` is deprecated in favour of
+    :class:`!webbrowser.MacOS` and scheduled for removal in Python 3.17.
+    (Contributed by Jeff Lyon in :gh:`137586`.)
 
 * ``__version__``
 
@@ -2381,6 +2412,11 @@ New features
   Python 3.14.
   (Contributed by Victor Stinner in :gh:`142417`.)
 
+* Add :c:func:`PyUnstable_DumpTraceback` and
+  :c:func:`PyUnstable_DumpTracebackThreads` functions to output Python
+  stacktraces.
+  (Contributed by Alex Malyshev in :gh:`145559`.)
+
 Changed C APIs
 --------------
 
@@ -2567,6 +2603,19 @@ Build changes
   Annotations are visible in ``/proc/<pid>/maps`` if the kernel supports the feature
   and :option:`-X dev <-X>` is passed to the Python or Python is built in :ref:`debug mode <debug-build>`.
   (Contributed by Donghee Na in :gh:`141770`.)
+
+.. _whatsnew315-frame-pointers:
+
+* CPython is now built with frame pointers enabled by default
+  (:pep:`831`). Pass :option:`--without-frame-pointers` to opt out.
+
+  Authors of C extensions and native libraries built with custom build
+  systems should ensure the unwind chain is intact.
+  This is usually done by adding ``-fno-omit-frame-pointer`` and
+  similar flags to ``CFLAGS``. See :option:`--without-frame-pointers`
+  documentation for the specific flags Python uses.
+
+  (Contributed by Pablo Galindo Salgado and Savannah Ostrowski in :gh:`149201`.)
 
 .. _whatsnew315-windows-tail-calling-interpreter:
 
