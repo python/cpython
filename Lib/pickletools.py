@@ -2899,7 +2899,7 @@ def _main(args=None):
         help='preserve memo between disassemblies')
     parser.add_argument(
         '-l', '--indentlevel', default=4, type=int,
-        help='the number of blanks by which to indent a new MARK level')
+        help='the number of blanks by which to indent a new `MARK` level')
     parser.add_argument(
         '-a', '--annotate',  action='store_true',
         help='annotate each line with a short opcode description')
