@@ -31,7 +31,8 @@ tracebacks:
 * Each string is limited to 500 characters.
 * Only the filename, the function name and the line number are
   displayed. (no source code)
-* It is limited to 100 frames and 100 threads.
+* It is limited to 100 frames per thread, and 100 threads
+  (configurable via *max_threads*).
 * The order is reversed: the most recent call is shown first.
 
 By default, the Python traceback is written to :data:`sys.stderr`. To see
@@ -55,15 +56,19 @@ at Python startup.
 Dumping the traceback
 ---------------------
 
-.. function:: dump_traceback(file=sys.stderr, all_threads=True)
+.. function:: dump_traceback(file=sys.stderr, all_threads=True, *, max_threads=100)
 
    Dump the tracebacks of all threads into *file*. If *all_threads* is
-   ``False``, dump only the current thread.
+   ``False``, dump only the current thread. *max_threads* caps the number
+   of threads dumped.
 
    .. seealso:: :func:`traceback.print_tb`, which can be used to print a traceback object.
 
    .. versionchanged:: 3.5
       Added support for passing file descriptor to this function.
+
+   .. versionchanged:: next
+      Added the *max_threads* keyword argument.
 
 
 Dumping the C stack
@@ -100,7 +105,7 @@ instead of the stack, even if the operating system supports dumping stacks.
 Fault handler state
 -------------------
 
-.. function:: enable(file=sys.stderr, all_threads=True, c_stack=True)
+.. function:: enable(file=sys.stderr, all_threads=True, c_stack=True, *, max_threads=100)
 
    Enable the fault handler: install handlers for the :const:`~signal.SIGSEGV`,
    :const:`~signal.SIGFPE`, :const:`~signal.SIGABRT`, :const:`~signal.SIGBUS`
@@ -115,6 +120,8 @@ Fault handler state
    If *c_stack* is ``True``, then the C stack trace is printed after the Python
    traceback, unless the system does not support it. See :func:`dump_c_stack` for
    more information on compatibility.
+
+   *max_threads* caps the number of threads dumped when a fatal signal fires.
 
    .. versionchanged:: 3.5
       Added support for passing file descriptor to this function.
@@ -133,6 +140,9 @@ Fault handler state
    .. versionchanged:: 3.14
       The dump now displays the C stack trace if *c_stack* is true.
 
+   .. versionchanged:: next
+      Added the *max_threads* keyword argument.
+
 .. function:: disable()
 
    Disable the fault handler: uninstall the signal handlers installed by
@@ -146,7 +156,7 @@ Fault handler state
 Dumping the tracebacks after a timeout
 --------------------------------------
 
-.. function:: dump_traceback_later(timeout, repeat=False, file=sys.stderr, exit=False)
+.. function:: dump_traceback_later(timeout, repeat=False, file=sys.stderr, exit=False, *, max_threads=100)
 
    Dump the tracebacks of all threads, after a timeout of *timeout* seconds, or
    every *timeout* seconds if *repeat* is ``True``.  If *exit* is ``True``, call
@@ -154,7 +164,7 @@ Dumping the tracebacks after a timeout
    :c:func:`!_exit` exits the process immediately, which means it doesn't do any
    cleanup like flushing file buffers.) If the function is called twice, the new
    call replaces previous parameters and resets the timeout. The timer has a
-   sub-second resolution.
+   sub-second resolution. *max_threads* caps the number of threads dumped.
 
    The *file* must be kept open until the traceback is dumped or
    :func:`cancel_dump_traceback_later` is called: see :ref:`issue with file
@@ -168,6 +178,9 @@ Dumping the tracebacks after a timeout
    .. versionchanged:: 3.7
       This function is now always available.
 
+   .. versionchanged:: next
+      Added the *max_threads* keyword argument.
+
 .. function:: cancel_dump_traceback_later()
 
    Cancel the last call to :func:`dump_traceback_later`.
@@ -176,11 +189,12 @@ Dumping the tracebacks after a timeout
 Dumping the traceback on a user signal
 --------------------------------------
 
-.. function:: register(signum, file=sys.stderr, all_threads=True, chain=False)
+.. function:: register(signum, file=sys.stderr, all_threads=True, chain=False, *, max_threads=100)
 
    Register a user signal: install a handler for the *signum* signal to dump
    the traceback of all threads, or of the current thread if *all_threads* is
    ``False``, into *file*. Call the previous handler if chain is ``True``.
+   *max_threads* caps the number of threads dumped.
 
    The *file* must be kept open until the signal is unregistered by
    :func:`unregister`: see :ref:`issue with file descriptors <faulthandler-fd>`.
@@ -189,6 +203,9 @@ Dumping the traceback on a user signal
 
    .. versionchanged:: 3.5
       Added support for passing file descriptor to this function.
+
+   .. versionchanged:: next
+      Added the *max_threads* keyword argument.
 
 .. function:: unregister(signum)
 

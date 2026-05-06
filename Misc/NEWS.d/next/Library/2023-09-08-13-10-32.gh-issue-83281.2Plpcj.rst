@@ -1,0 +1,2 @@
+:mod:`email`: improve handling trailing garbage in address lists to avoid throwing
+AttributeError in certain edge cases
