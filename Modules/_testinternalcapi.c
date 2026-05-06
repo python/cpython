@@ -3066,64 +3066,6 @@ test_thread_state_ensure_from_view_interp_switch(PyObject *self, PyObject *unuse
     Py_RETURN_NONE;
 }
 
-/* A capsule destructor that calls Ensure/Release while the tstate is being
- * cleared by PyThreadState_Release. */
-static void
-capsule_destructor(PyObject *capsule)
-{
-    assert(capsule != NULL);
-    PyInterpreterGuard *guard = PyCapsule_GetPointer(capsule, "x");
-    PyThreadStateToken *token = PyThreadState_Ensure(guard);
-    assert(token != NULL);
-    PyThreadState_Release(token);
-}
-
-static void
-thread_with_tstate_destructor(void *arg)
-{
-    PyInterpreterGuard *guard = (PyInterpreterGuard *)arg;
-
-    /* Triggers fresh tstate path */
-    PyThreadStateToken *token = PyThreadState_Ensure(guard);
-    assert(token != NULL);
-
-    /* Stash a capsule whose destructor will run during PyThreadState_Clear. */
-    PyObject *capsule = PyCapsule_New(guard, "x", capsule_destructor);
-    assert(capsule != NULL);
-
-    /* We need to put it somewhere it gets cleaned up at PyThreadState_Clear.
-     * tstate->dict is cleared during PyThreadState_Clear. */
-    PyObject *dict = PyThreadState_GetDict();
-    assert(dict != NULL);
-    int res = PyDict_SetItemString(dict, "key", capsule);
-    assert(res == 0);
-    Py_DECREF(capsule);
-
-    PyThreadState_Release(token);
-    PyInterpreterGuard_Close(guard);
-}
-
-static PyObject *
-test_thread_state_release_with_destructor(PyObject *self, PyObject *unused)
-{
-    PyInterpreterGuard *guard = PyInterpreterGuard_FromCurrent();
-    assert(guard != NULL);
-
-    PyThread_handle_t handle;
-    PyThread_ident_t ident;
-    if (PyThread_start_joinable_thread(thread_with_tstate_destructor,
-                                       guard, &ident, &handle) < 0) {
-        PyInterpreterGuard_Close(guard);
-        return PyErr_NoMemory();
-    }
-
-    Py_BEGIN_ALLOW_THREADS
-    PyThread_join_thread(handle);
-    Py_END_ALLOW_THREADS
-    Py_RETURN_NONE;
-}
-
-
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_eval_frame_stats", get_eval_frame_stats, METH_NOARGS, NULL},
@@ -3251,7 +3193,6 @@ static PyMethodDef module_functions[] = {
     {"test_interp_guard_countdown", test_interp_guard_countdown, METH_NOARGS},
     {"test_interp_view_countdown", test_interp_view_countdown, METH_NOARGS},
     {"test_thread_state_ensure_from_view_interp_switch", test_thread_state_ensure_from_view_interp_switch, METH_NOARGS},
-    {"test_thread_state_release_with_destructor", test_thread_state_release_with_destructor, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

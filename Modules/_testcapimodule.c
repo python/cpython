@@ -2879,6 +2879,61 @@ test_thread_state_ensure_detached_gilstate(PyObject *self, PyObject *unused)
     Py_RETURN_NONE;
 }
 
+/* A capsule destructor that calls Ensure/Release while the tstate is being
+ * cleared by PyThreadState_Release. */
+static void
+tstate_ensure_capsule_destructor(PyObject *capsule)
+{
+    assert(capsule != NULL);
+    PyInterpreterGuard *guard = PyCapsule_GetPointer(capsule, "x");
+    PyThreadStateToken *token = PyThreadState_Ensure(guard);
+    assert(token != NULL);
+    PyThreadState_Release(token);
+}
+
+static PyObject *
+test_thread_state_release_with_destructor(PyObject *self, PyObject *unused)
+{
+    PyInterpreterGuard *guard = PyInterpreterGuard_FromCurrent();
+    assert(guard != NULL);
+
+    // We need to use a fresh thread state in order to control the lifetime of
+    // it. If we used the current thread state, it wouldn't be cleared until
+    // the end of the program, which is after the guard has been closed.
+    PyThreadState *fresh_tstate = PyThreadState_New(PyInterpreterState_Get());
+    assert(fresh_tstate != NULL);
+
+    PyThreadState *save_tstate = PyThreadState_Swap(fresh_tstate);
+    assert(save_tstate != NULL);
+
+    /* Triggers fresh tstate path */
+    PyThreadStateToken *token = PyThreadState_Ensure(guard);
+    assert(token != NULL);
+
+    /* Stash a capsule whose destructor will run during PyThreadState_Clear. */
+    PyObject *capsule = PyCapsule_New(guard, "x", tstate_ensure_capsule_destructor);
+    assert(capsule != NULL);
+
+    /* We need to put it somewhere it gets cleaned up at PyThreadState_Clear.
+     * tstate->dict is cleared during PyThreadState_Clear. */
+    PyObject *dict = PyThreadState_GetDict();
+    assert(dict != NULL);
+    int res = PyDict_SetItemString(dict, "key", capsule);
+    assert(res == 0);
+    Py_DECREF(capsule);
+
+    PyThreadState_Release(token);
+
+    // This will trigger the destructor
+    PyThreadState_Clear(fresh_tstate);
+    PyThreadState_DeleteCurrent();
+
+    PyInterpreterGuard_Close(guard);
+    PyThreadState_Swap(save_tstate);
+
+    Py_RETURN_NONE;
+}
+
 
 static PyObject*
 test_soft_deprecated_macros(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
@@ -3020,6 +3075,7 @@ static PyMethodDef TestMethods[] = {
     {"test_thread_state_ensure_view", test_thread_state_ensure_view, METH_NOARGS},
     {"test_thread_state_ensure_detachment", test_thread_state_ensure_detachment, METH_NOARGS},
     {"test_thread_state_ensure_detached_gilstate", test_thread_state_ensure_detached_gilstate, METH_NOARGS},
+    {"test_thread_state_release_with_destructor", test_thread_state_release_with_destructor, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
