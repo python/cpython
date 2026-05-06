@@ -10,7 +10,6 @@ import rlcompleter
 import keyword
 import types
 
-
 TYPE_CHECKING = False
 
 if TYPE_CHECKING:
