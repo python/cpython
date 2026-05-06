@@ -109,7 +109,7 @@ class TestLazyImports(unittest.TestCase):
 
     def test_add_subparser(self):
         add_subparser = textwrap.dedent(
-            f"""
+            """
             parser = argparse.ArgumentParser()
             parser.add_subparsers(dest='command', required=False)
             """
