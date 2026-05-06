@@ -457,14 +457,14 @@ agen() for x in a)``.
 :pep:`829`: Package startup configuration files
 -----------------------------------------------
 
-Loaded by the :mod:`site` module when ``-S`` is not given, :file:`.pth` files
+Loaded by the :mod:`site` module when ``-S`` is not given, :ref:`.pth files <site-pth-files>`
 can contain lines that both extend :data:`sys.path` and execute arbitrary code
 when the line starts with ``import`` (followed by a space or tab).  The latter
 functionality can be problematic, since it is difficult to know exactly what
 gets executed when Python starts up.
 
 As a step towards improving the ability to audit pre-start executable code,
-Python 3.15 introduces :file:`.start` files which contain entry point
+Python 3.15 introduces :ref:`.start files <site-start-files>` which contain entry point
 specifications of the form ``pkg.mod:callable`` where ``pkg.mod`` is the
 import path to the given callable.  When Python starts up, the callable is
 located and called with no arguments.
