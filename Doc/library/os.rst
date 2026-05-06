@@ -5073,7 +5073,7 @@ written in Python, such as a mail server's external command delivery program.
    See the :manpage:`pidfd_getfd(2)` man page for more details.
 
    .. availability:: Linux >= 5.6, Android >= :func:`build-time <sys.getandroidapilevel>` API level 31
-   .. versionadded:: 3.15
+   .. versionadded:: next
 
 .. function:: plock(op, /)
 
