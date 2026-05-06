@@ -34,12 +34,12 @@ build:
               break;
             fi;
           done;
-          if ! git -c "user.name=rtd" -c "user.email=no-reply@readthedocs.org" merge --no-stat --no-edit origin/$base_branch;
+          if ! git -c "user.name=rtd" -c "user.email=no-reply@readthedocs.org" merge --no-stat --no-edit origin-$base_branch;
           then
             echo "Unsuccessful merge with '$base_branch' branch, skipping the build";
             exit 183;
           fi;
-          if git diff --exit-code --stat origin/$base_branch -- Doc/ .readthedocs.yml;
+          if git diff --exit-code --stat origin-$base_branch -- Doc/ .readthedocs.yml;
           then
             echo "No changes to Doc/ - skipping the build.";
             exit 183;
