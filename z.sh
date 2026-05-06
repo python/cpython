@@ -7,7 +7,7 @@
 
 set -euo pipefail
 
-PINNED_VERSION="0.7.43"
+PINNED_VERSION="0.7.44"
 RAW_ZUTIL_VERSION="${NANVIX_ZUTIL_VERSION:-$PINNED_VERSION}"
 ZUTIL_VERSION="${RAW_ZUTIL_VERSION#v}"
 REPO_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -P)"
@@ -106,5 +106,17 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# On Windows (Git Bash / MSYS2) the venv's python.exe is locked while it runs,
+# so the Python distclean command cannot delete it.  Run without exec so the
+# shell can remove the venv after the interpreter exits.
+if [[ "${ARGS[0]:-}" == "distclean" ]]; then
+    "$BIN" "${ARGS[@]}"
+    EC=$?
+    if [ -d "$VENV" ]; then
+        rm -rf "$VENV" 2>/dev/null || true
+    fi
+    exit $EC
+fi
 
 exec "$BIN" "${ARGS[@]}"

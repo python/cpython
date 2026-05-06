@@ -15,7 +15,7 @@ $zutilVersion = if ($env:NANVIX_ZUTIL_VERSION) {
     $env:NANVIX_ZUTIL_VERSION
 }
 else {
-    "0.7.43"
+    "0.7.44"
 }
 $zutilVersion = $zutilVersion -replace "^v", ""
 
@@ -155,4 +155,14 @@ if ($bin -eq $venvZutil) {
 else {
     & $bin @filteredArray
 }
-exit $LASTEXITCODE
+
+$ec = $LASTEXITCODE
+
+# On Windows the venv's python.exe is locked while it runs, so the Python
+# distclean command cannot delete it.  Now that the interpreter has exited the
+# lock is released and the shell can safely remove the venv directory.
+if ($filteredArray -and $filteredArray[0] -eq "distclean" -and (Test-Path $venvDir)) {
+    Remove-Item $venvDir -Recurse -Force -ErrorAction SilentlyContinue
+}
+
+exit $ec
