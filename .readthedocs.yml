@@ -24,22 +24,22 @@ build:
         if [ "$READTHEDOCS_VERSION_TYPE" = "external" ];
         then
           base_branch=3.14;
-          git fetch --depth=50 origin $base_branch:origin/$base_branch;
+          git fetch --depth=50 origin $base_branch:origin-$base_branch;
           for attempt in $(seq 10);
           do
-            if ! git merge-base HEAD origin/$base_branch;
+            if ! git merge-base HEAD origin-$base_branch;
             then
               git fetch --deepen=50 origin $base_branch;
             else
               break;
             fi;
           done;
-          if ! git -c "user.name=rtd" -c "user.email=no-reply@readthedocs.org" merge --no-stat --no-edit origin/$base_branch;
+          if ! git -c "user.name=rtd" -c "user.email=no-reply@readthedocs.org" merge --no-stat --no-edit origin-$base_branch;
           then
             echo "Unsuccessful merge with '$base_branch' branch, skipping the build";
             exit 183;
           fi;
-          if git diff --exit-code --stat origin/$base_branch -- Doc/ .readthedocs.yml;
+          if git diff --exit-code --stat origin-$base_branch -- Doc/ .readthedocs.yml;
           then
             echo "No changes to Doc/ - skipping the build.";
             exit 183;
