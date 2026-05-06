@@ -495,6 +495,182 @@ _remote_debugging_RemoteUnwinder_resume_threads(PyObject *self, PyObject *Py_UNU
     return return_value;
 }
 
+PyDoc_STRVAR(_remote_debugging_GCMonitor___init____doc__,
+"GCMonitor(pid, *, debug=False)\n"
+"--\n"
+"\n"
+"Initialize a new GCMonitor object for monitoring GC events from remote process.\n"
+"\n"
+"Args:\n"
+"    pid: Process ID of the target Python process to monitor\n"
+"    debug: If True, chain exceptions to explain the sequence of events that\n"
+"           lead to the exception.\n"
+"\n"
+"The GCMonitor provides functionality to read GC statistics from a running\n"
+"Python process.\n"
+"\n"
+"Raises:\n"
+"    PermissionError: If access to the target process is denied\n"
+"    OSError: If unable to attach to the target process or access its memory\n"
+"    RuntimeError: If unable to read debug information from the target process");
+
+static int
+_remote_debugging_GCMonitor___init___impl(GCMonitorObject *self, int pid,
+                                          int debug);
+
+static int
+_remote_debugging_GCMonitor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    int return_value = -1;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(pid), &_Py_ID(debug), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"pid", "debug", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "GCMonitor",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
+    int pid;
+    int debug = 0;
+
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    pid = PyLong_AsInt(fastargs[0]);
+    if (pid == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    debug = PyObject_IsTrue(fastargs[1]);
+    if (debug < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = _remote_debugging_GCMonitor___init___impl((GCMonitorObject *)self, pid, debug);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_remote_debugging_GCMonitor_get_gc_stats__doc__,
+"get_gc_stats($self, /, all_interpreters=False)\n"
+"--\n"
+"\n"
+"Get garbage collector statistics from external Python process.\n"
+"\n"
+"  all_interpreters\n"
+"    If True, return GC statistics from all interpreters.\n"
+"    If False, return only from main interpreter.\n"
+"\n"
+"Returns a list of GCStatsInfo objects with GC statistics data.\n"
+"\n"
+"Returns:\n"
+"    list of GCStatsInfo: A list of stats samples containing:\n"
+"        - gen: GC generation number.\n"
+"        - iid: Interpreter ID.\n"
+"        - ts_start: Raw timestamp at collection start.\n"
+"        - ts_stop: Raw timestamp at collection stop.\n"
+"        - collections: Total number of collections.\n"
+"        - collected: Total number of collected objects.\n"
+"        - uncollectable: Total number of uncollectable objects.\n"
+"        - candidates: Total objects considered and traversed.\n"
+"        - heap_size: number of live objects.\n"
+"        - duration: Total collection time, in seconds.\n"
+"\n"
+"Raises:\n"
+"    RuntimeError: If the target process cannot be inspected or if its\n"
+"        debug offsets or GC stats layout are incompatible.");
+
+#define _REMOTE_DEBUGGING_GCMONITOR_GET_GC_STATS_METHODDEF    \
+    {"get_gc_stats", _PyCFunction_CAST(_remote_debugging_GCMonitor_get_gc_stats), METH_FASTCALL|METH_KEYWORDS, _remote_debugging_GCMonitor_get_gc_stats__doc__},
+
+static PyObject *
+_remote_debugging_GCMonitor_get_gc_stats_impl(GCMonitorObject *self,
+                                              int all_interpreters);
+
+static PyObject *
+_remote_debugging_GCMonitor_get_gc_stats(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(all_interpreters), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"all_interpreters", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "get_gc_stats",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    int all_interpreters = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    all_interpreters = PyObject_IsTrue(args[0]);
+    if (all_interpreters < 0) {
+        goto exit;
+    }
+skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _remote_debugging_GCMonitor_get_gc_stats_impl((GCMonitorObject *)self, all_interpreters);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_remote_debugging_BinaryWriter___init____doc__,
 "BinaryWriter(filename, sample_interval_us, start_time_us, *,\n"
 "             compression=0)\n"
@@ -1296,4 +1472,96 @@ _remote_debugging_is_python_process(PyObject *module, PyObject *const *args, Py_
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=34f50b18f317b9b6 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_remote_debugging_get_gc_stats__doc__,
+"get_gc_stats($module, /, pid, *, all_interpreters=False)\n"
+"--\n"
+"\n"
+"Get garbage collector statistics from external Python process.\n"
+"\n"
+"  all_interpreters\n"
+"    If True, return GC statistics from all interpreters.\n"
+"    If False, return only from main interpreter.\n"
+"\n"
+"Returns:\n"
+"    list of GCStatsInfo: A list of stats samples containing:\n"
+"        - gen: GC generation number.\n"
+"        - iid: Interpreter ID.\n"
+"        - ts_start: Raw timestamp at collection start.\n"
+"        - ts_stop: Raw timestamp at collection stop.\n"
+"        - collections: Total number of collections.\n"
+"        - collected: Total number of collected objects.\n"
+"        - uncollectable: Total number of uncollectable objects.\n"
+"        - candidates: Total objects considered and traversed.\n"
+"        - duration: Total collection time, in seconds.\n"
+"\n"
+"Raises:\n"
+"    RuntimeError: If the target process cannot be inspected or if its\n"
+"        debug offsets or GC stats layout are incompatible.");
+
+#define _REMOTE_DEBUGGING_GET_GC_STATS_METHODDEF    \
+    {"get_gc_stats", _PyCFunction_CAST(_remote_debugging_get_gc_stats), METH_FASTCALL|METH_KEYWORDS, _remote_debugging_get_gc_stats__doc__},
+
+static PyObject *
+_remote_debugging_get_gc_stats_impl(PyObject *module, int pid,
+                                    int all_interpreters);
+
+static PyObject *
+_remote_debugging_get_gc_stats(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(pid), &_Py_ID(all_interpreters), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"pid", "all_interpreters", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "get_gc_stats",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    int pid;
+    int all_interpreters = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    pid = PyLong_AsInt(args[0]);
+    if (pid == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    all_interpreters = PyObject_IsTrue(args[1]);
+    if (all_interpreters < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = _remote_debugging_get_gc_stats_impl(module, pid, all_interpreters);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=36674f4cb8a653f3 input=a9049054013a1b77]*/
