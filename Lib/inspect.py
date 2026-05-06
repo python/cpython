@@ -1254,17 +1254,19 @@ def getargs(co):
 FullArgSpec = namedtuple('FullArgSpec',
     'args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations')
 
-def getfullargspec(func):
+def getfullargspec(func, *, annotation_format=Format.VALUE):
     """Get the names and default values of a callable object's parameters.
 
-    A tuple of seven things is returned:
-    (args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations).
+    A FullArgSpec namedtuple is returned, which has the following attributes:
     'args' is a list of the parameter names.
     'varargs' and 'varkw' are the names of the * and ** parameters or None.
     'defaults' is an n-tuple of the default values of the last n parameters.
     'kwonlyargs' is a list of keyword-only parameter names.
     'kwonlydefaults' is a dictionary mapping names from kwonlyargs to defaults.
     'annotations' is a dictionary mapping parameter names to annotations.
+
+    The *annotation_format* parameter controls the format of the annotations.
+    See the annotationlib documentation for details.
 
     Notable differences from inspect.signature():
       - the "self" parameter is always reported, even for bound methods
@@ -1291,7 +1293,8 @@ def getfullargspec(func):
                                        follow_wrapper_chains=False,
                                        skip_bound_arg=False,
                                        sigcls=Signature,
-                                       eval_str=False)
+                                       eval_str=False,
+                                       annotation_format=annotation_format)
     except Exception as ex:
         # Most of the times 'signature' will raise ValueError.
         # But, it can also raise AttributeError, and, maybe something
