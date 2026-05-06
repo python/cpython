@@ -2359,7 +2359,6 @@ make_pre_finalization_calls(PyThreadState *tstate, int subinterpreters)
                               || interp_has_atexit_callbacks(interp)
                               || interp_has_pending_calls(interp)
                               || has_subinterpreters);
-        HEAD_UNLOCK(interp->runtime);
 
         if (!should_continue) {
             // We only want to prevent new guards once we're sure that we
@@ -2367,10 +2366,11 @@ make_pre_finalization_calls(PyThreadState *tstate, int subinterpreters)
             if (_Py_atomic_compare_exchange_uintptr(&interp->finalization_guards,
                                                     &guards_expected,
                                                     _PyInterpreterGuard_GUARDS_NOT_ALLOWED) == 1) {
+                HEAD_UNLOCK(interp->runtime);
                 break;
             }
         }
-
+        HEAD_UNLOCK(interp->runtime);
         _PyEval_StartTheWorldAll(interp->runtime);
         PyMutex_Unlock(&interp->ceval.pending.mutex);
     }
