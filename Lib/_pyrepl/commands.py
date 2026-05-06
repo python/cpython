@@ -542,7 +542,7 @@ class open_input_in_editor(EditCommand):
 
         try:
             with r.suspend():
-                cmd = editor.split() + [str(tmp_path)]
+                cmd = [*editor.split(), str(tmp_path)]
                 try:
                     subprocess.call(cmd)
                 except FileNotFoundError:
