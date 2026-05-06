@@ -5062,6 +5062,18 @@ written in Python, such as a mail server's external command delivery program.
    .. availability:: Linux >= 5.10
    .. versionadded:: 3.12
 
+.. function:: pidfd_getfd(pidfd, targetfd, flags=0)
+
+   Duplicate *targetfd* from the process referred to by the process file
+   descriptor *pidfd*, into the calling process.  The returned file descriptor
+   is :ref:`non-inheritable<fd_inheritance>`.
+
+   *flags* is reserved, and currently must be `0`.
+
+   See the :manpage:`pidfd_getfd(2)` man page for more details.
+
+   .. availability:: Linux >= 5.3, Android >= :func:`build-time <sys.getandroidapilevel>` API level 31
+   .. versionadded:: 3.15
 
 .. function:: plock(op, /)
 
