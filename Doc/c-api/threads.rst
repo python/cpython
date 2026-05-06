@@ -219,7 +219,7 @@ For example::
 
    // Create a new thread state for the interpreter.
    PyThreadStateToken *token = PyThreadState_Ensure(guard);
-   if (tstate == NULL) {
+   if (token == NULL) {
       PyInterpreterGuard_Close(guard);
       return;
    }
@@ -228,9 +228,9 @@ For example::
    result = CallSomeFunction();
    // Evaluate result or handle exceptions.
 
-   // Release the thread state. No calsl to the C API are allowed beyond this
+   // Release the thread state. No calls to the C API are allowed beyond this
    // point.
-   PyThreadState_Release(tstate);
+   PyThreadState_Release(token);
    PyInterpreterGuard_Close(guard);
 
 
@@ -339,7 +339,7 @@ Attaching/detaching thread states
 
 .. c:type:: PyThreadStateToken
 
-   An opaque token retreived from a :c:func:`PyThreadState_Ensure` call
+   An opaque token retrieved from a :c:func:`PyThreadState_Ensure` call
    and passed to a corresponding :c:func:`PyThreadState_Release` call.
 
 
