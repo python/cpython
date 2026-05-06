@@ -1,0 +1,6 @@
+Revert the process size based deferral of garbage collection (GH-133464).
+The performance issue this change resolves is also fixed by GH-142562.  This
+approach has the problem that process size as seen by the OS (e.g. the
+resident size or RSS) does not immediately decrease after cyclic garbage is
+freed since mimalloc defers returning memory of the OS.  This change applies
+to the free-threaded GC only.
