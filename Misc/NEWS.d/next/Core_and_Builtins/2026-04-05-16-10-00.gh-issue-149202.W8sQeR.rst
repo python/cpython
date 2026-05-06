@@ -1,5 +1,5 @@
 Enable frame pointers by default for GCC-compatible CPython builds, including
-``-mno-omit-leaf-frame-pointer``, ``-marm`` on 32-bit ARM, and ``-mbackchain``
-on s390 platforms when the compiler supports them, so profilers and debuggers
+``-mno-omit-leaf-frame-pointer``, ``-marm`` on 32-bit ARM, and/or ``-mbackchain``
+on s390x platforms when the compiler supports them, so profilers and debuggers
 can unwind native interpreter frames more reliably. Users can pass
-``--without-frame-pointers`` to opt out.
+:option:`--without-frame-pointers` to ``./configure`` to opt out.
