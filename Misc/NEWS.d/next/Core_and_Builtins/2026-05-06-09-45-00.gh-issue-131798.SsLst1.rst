@@ -1,0 +1,1 @@
+Specialize ``STORE_SLICE`` in the tier 2 optimizer for exact lists.
