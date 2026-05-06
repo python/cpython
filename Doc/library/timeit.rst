@@ -19,7 +19,7 @@ See also Tim Peters' introduction to the "Algorithms" chapter in the second
 edition of *Python Cookbook*, published by O'Reilly.
 
 
-Basic Examples
+Basic examples
 --------------
 
 The following example shows how the :ref:`timeit-command-line-interface`
@@ -56,7 +56,7 @@ repetitions only when the command-line interface is used.  In the
 
 .. _python-interface:
 
-Python Interface
+Python interface
 ----------------
 
 The module defines three convenience functions and a public class:
@@ -206,7 +206,7 @@ The module defines three convenience functions and a public class:
 
 .. _timeit-command-line-interface:
 
-Command-Line Interface
+Command-line interface
 ----------------------
 
 When called as a program from the command line, the following form is used::
@@ -279,6 +279,9 @@ most cases.  You can use :func:`time.process_time` to measure CPU time.
    baseline overhead can be measured by invoking the program without arguments,
    and it might differ between Python versions.
 
+.. versionadded:: next
+   Output is in color by default and can be
+   :ref:`controlled using environment variables <using-on-controlling-color>`.
 
 .. _timeit-examples:
 

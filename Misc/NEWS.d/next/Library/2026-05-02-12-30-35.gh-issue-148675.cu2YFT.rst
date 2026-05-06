@@ -1,0 +1,3 @@
+The :data:`array.typecodes` type changed from :class:`str` to :class:`tuple`
+to support type codes longer than 1 character (``Zf`` and ``Zd``). Patch by
+Victor Stinner.

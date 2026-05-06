@@ -29,7 +29,7 @@
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_stats.h"         // _PyStats_InterpInit()
 #include "pycore_sysmodule.h"     // _PySys_ClearAttrString()
-#include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
+#include "pycore_traceback.h"     // PyUnstable_TracebackThreads()
 #include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()
 #include "pycore_typevarobject.h" // _Py_clear_generic_types()
@@ -879,13 +879,19 @@ pycore_init_builtins(PyThreadState *tstate)
 
     interp->common_consts[CONSTANT_ASSERTIONERROR] = PyExc_AssertionError;
     interp->common_consts[CONSTANT_NOTIMPLEMENTEDERROR] = PyExc_NotImplementedError;
-    interp->common_consts[CONSTANT_BUILTIN_TUPLE] = (PyObject*)&PyTuple_Type;
+    interp->common_consts[CONSTANT_BUILTIN_TUPLE] = (PyObject *)&PyTuple_Type;
     interp->common_consts[CONSTANT_BUILTIN_ALL] = all;
     interp->common_consts[CONSTANT_BUILTIN_ANY] = any;
-    interp->common_consts[CONSTANT_BUILTIN_LIST] = (PyObject*)&PyList_Type;
-    interp->common_consts[CONSTANT_BUILTIN_SET] = (PyObject*)&PySet_Type;
-
-    for (int i=0; i < NUM_COMMON_CONSTANTS; i++) {
+    interp->common_consts[CONSTANT_BUILTIN_LIST] = (PyObject *)&PyList_Type;
+    interp->common_consts[CONSTANT_BUILTIN_SET] = (PyObject *)&PySet_Type;
+    interp->common_consts[CONSTANT_NONE] = Py_None;
+    interp->common_consts[CONSTANT_EMPTY_STR] =
+        Py_GetConstantBorrowed(Py_CONSTANT_EMPTY_STR);
+    interp->common_consts[CONSTANT_TRUE] = Py_True;
+    interp->common_consts[CONSTANT_FALSE] = Py_False;
+    interp->common_consts[CONSTANT_MINUS_ONE] =
+        (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS - 1];
+    for (int i = 0; i < NUM_COMMON_CONSTANTS; i++) {
         assert(interp->common_consts[i] != NULL);
     }
 
@@ -3342,9 +3348,9 @@ _Py_FatalError_DumpTracebacks(int fd, PyInterpreterState *interp,
 
     /* display the current Python stack */
 #ifndef Py_GIL_DISABLED
-    _Py_DumpTracebackThreads(fd, interp, tstate, 0);
+    PyUnstable_DumpTracebackThreads(fd, interp, tstate, 0);
 #else
-    _Py_DumpTraceback(fd, tstate);
+    PyUnstable_DumpTraceback(fd, tstate);
 #endif
 }
 
