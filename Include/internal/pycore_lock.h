@@ -71,7 +71,6 @@ PyMutex_LockFlags(PyMutex *m, _PyLockFlags flags)
 extern int _PyMutex_TryUnlock(PyMutex *m);
 
 // Yield the processor to other threads (e.g., sched_yield).
-// Exported for _testembed.
 extern void _Py_yield(void);
 
 
