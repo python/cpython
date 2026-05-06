@@ -5524,6 +5524,24 @@ class TestUopsOptimization(unittest.TestCase):
         # _POP_TOP_NOP is a sign the optimizer ran and didn't hit bottom.
         self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
 
+    def test_send_virtual(self):
+
+        def send_list(n):
+            yield from list(range(n))
+        def testfunc(n):
+            for _ in send_list(n):
+                pass
+
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            # Ensure SEND is specialized to SEND_VIRTUAL
+            send_list(10)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD*2)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_FOR_ITER_GEN_FRAME", uops)
+        self.assertIn("_SEND_VIRTUAL_TIER_TWO", uops)
+
     def test_binary_op_subscr_init_frame(self):
         class B:
             def __getitem__(self, other):

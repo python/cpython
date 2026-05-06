@@ -640,3 +640,6 @@ gen_try_set_executing(PyGenObject *gen)
             (PyLongObject *)PyStackRef_AsPyObjectBorrow(left),           \
             (PyLongObject *)PyStackRef_AsPyObjectBorrow(right));         \
     }
+
+#define CALL_TP_ITERITEM_NO_ESCAPE(ITER, INDEX) \
+    Py_TYPE(ITER)->_tp_iteritem((ITER), (INDEX))
