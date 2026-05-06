@@ -251,21 +251,32 @@ static void initconfig_free_config(const PyConfig *config);
 /* --- Command line options --------------------------------------- */
 
 /*
- * Short color macros for help text (matching Lib/_colorize.py Argparse theme).
- * These expand to ANSI escape strings so C string concatenation embeds the
- * codes directly in the help literals.  When color is disabled at runtime,
- * fprint_color() strips the escape sequences before printing.
+ * Help text markup (matching Lib/_colorize.py Argparse theme).
+ *
+ * Color spans, #X{...}  where "}" resets to default color:
+ *   #b{...}  label              bold yellow
+ *   #B{...}  summary label      yellow
+ *   #E{...}  env var (primary)  bold cyan
+ *   #e{...}  env var reference  cyan
+ *   #h{...}  heading            bold blue
+ *   #L{...}  long option        bold cyan
+ *   #s{...}  short option       bold green
+ *   #S{...}  summary short opt  green
+ *
+ * Runtime substitutions (no "{" follows):
+ *   #P  program name (bold magenta)
+ *   #D  path separator (DELIM)
+ *   #H  PYTHONHOMEHELP default search path
+ *
+ * fprint_help() walks the string, expanding color codes only when colorize=1
+ * and substituting runtime values regardless.
  */
-#define ENVVAR(s)            "\x1b[1;36m" s RESET  // env var: bold cyan
-#define ENVVAR_REF(s)        "\x1b[36m"   s RESET  // env var reference: cyan
-#define HEADING(s)           "\x1b[1;34m" s RESET  // heading: bold blue
-#define LABEL(s)             "\x1b[1;33m" s RESET  // label: bold yellow
-#define LONGOPT(s)           "\x1b[1;36m" s RESET  // long option: bold cyan
-#define PROGRAM_BEGIN        "\x1b[1;35m"          // program name: bold magenta
-#define RESET                "\x1b[0m"
-#define SHORTOPT(s)          "\x1b[1;32m" s RESET  // short option: bold green
-#define SHORTOPT_SUMMARY(s)  "\x1b[32m"   s RESET  // summary short option: green
-#define SUMMARY_LABEL(s)     "\x1b[33m"   s RESET  // summary label: yellow
+
+#if defined(MS_WINDOWS)
+#  define PYTHONHOMEHELP "<prefix>\\python{major}{minor}"
+#else
+#  define PYTHONHOMEHELP "<prefix>/lib/pythonX.X"
+#endif
 
 /* Determine if we can emit ANSI color codes on the given stream.
  * Logic mirrors Lib/_colorize.py:can_colorize(). */
@@ -309,247 +320,269 @@ _Py_can_colorize(FILE *f)
     return isatty(fileno(f));
 }
 
-/* Print text, stripping ANSI escape sequences when colorize is 0.
- * When colorize is 1, text is printed as-is (escape codes already embedded). */
+/* Walk help text, expanding markup:
+ *   #X{...}  color span (only emitted when colorize=1; '}' resets).
+ *   #X       runtime substitution (program name, DELIM, PYTHONHOMEHELP).
+ * See the markup table above the macro/comment block. */
 static void
-fprint_color(FILE *f, const char *text, int colorize)
+fprint_help(FILE *f, const char *text, int colorize, const wchar_t *program)
 {
-    if (colorize) {
-        fputs(text, f);
-        return;
-    }
-    const char *p = text;
-    while (*p) {
-        if (p[0] == '\x1b' && p[1] == '[') {
-            /* Skip until 'm' (end of SGR sequence) */
-            p += 2;
-            while (*p && *p != 'm') {
-                p++;
+    for (const char *p = text; *p; ) {
+        if (*p == '#' && p[1]) {
+            char code = p[1];
+            if (p[2] == '{') {
+                /* Color span open */
+                const char *seq = NULL;
+                switch (code) {
+                case 'h': seq = "\x1b[1;34m"; break;  // heading
+                case 'E': seq = "\x1b[1;36m"; break;  // env var primary
+                case 'e': seq = "\x1b[36m";   break;  // env var reference
+                case 'L': seq = "\x1b[1;36m"; break;  // long option
+                case 'b': seq = "\x1b[1;33m"; break;  // label
+                case 'B': seq = "\x1b[33m";   break;  // summary label
+                case 's': seq = "\x1b[1;32m"; break;  // short option
+                case 'S': seq = "\x1b[32m";   break;  // summary short option
+                }
+                if (colorize && seq) fputs(seq, f);
+                p += 3;  // skip "#X{"
+                continue;
             }
-            if (*p == 'm') {
-                p++;
+            /* Runtime substitution */
+            switch (code) {
+            case 'P':  // program name with bold magenta
+                if (colorize) fputs("\x1b[1;35m", f);
+                if (program) fprintf(f, "%ls", program);
+                if (colorize) fputs("\x1b[0m", f);
+                break;
+            case 'D':
+                fputc((char)DELIM, f);
+                break;
+            case 'H':
+                fputs(PYTHONHOMEHELP, f);
+                break;
+            default:  // unknown: emit literally
+                fputc('#', f);
+                fputc(code, f);
+                break;
             }
+            p += 2;  // skip "#X"
+            continue;
         }
-        else {
-            fputc(*p, f);
+        if (*p == '}') {
+            if (colorize) fputs("\x1b[0m", f);
             p++;
+            continue;
         }
+        fputc(*p++, f);
     }
 }
 
-/* Short usage message, split around the program name */
-static const char usage_pre[] = HEADING("usage:") " " PROGRAM_BEGIN;
-static const char usage_post[] =
-RESET " [" SHORTOPT_SUMMARY("option") "] " SHORTOPT_SUMMARY("...") " "
-"[" SHORTOPT_SUMMARY("-c") " " SUMMARY_LABEL("cmd") " | " SHORTOPT_SUMMARY("-m") " " SUMMARY_LABEL("mod")
-" | " SHORTOPT_SUMMARY("file") " | " SHORTOPT_SUMMARY("-") "] "
-"[" SHORTOPT_SUMMARY("arg") "] " SHORTOPT_SUMMARY("...") "\n";
+/* Short usage message */
+static const char usage_line[] =
+"#h{usage:} #P [#S{option}] #S{...} "
+"[#S{-c} #B{cmd} | #S{-m} #B{mod} | #S{file} | #S{-}] "
+"[#S{arg}] #S{...}\n"
+;
 
 /* Long help message */
 /* Lines sorted by option name; keep in sync with usage_envvars* below */
 static const char usage_help[] =
-HEADING("Options (and corresponding environment variables):") "\n"
-SHORTOPT("-b") "     : issue warnings about converting bytes/bytearray to str and comparing\n"
-"         bytes/bytearray with str or bytes with int. (" SHORTOPT_SUMMARY("-bb") ": issue errors)\n"
+"#h{Options (and corresponding environment variables):}\n"
+"#s{-b}     : issue warnings about converting bytes/bytearray to str and comparing\n"
+"         bytes/bytearray with str or bytes with int. (#S{-bb}: issue errors)\n"
 "         deprecated since 3.15 and will become no-op in 3.17.\n"
-SHORTOPT("-B") "     : don't write .pyc files on import; also " ENVVAR_REF("PYTHONDONTWRITEBYTECODE") SUMMARY_LABEL("=x") "\n"
-SHORTOPT("-c") " " LABEL("cmd") " : program passed in as string (terminates option list)\n"
-SHORTOPT("-d") "     : turn on parser debugging output (for experts only, only works on\n"
-"         debug builds); also " ENVVAR_REF("PYTHONDEBUG") SUMMARY_LABEL("=x") "\n"
-SHORTOPT("-E") "     : ignore " ENVVAR_REF("PYTHON*") " environment variables (such as " ENVVAR_REF("PYTHONPATH") ")\n"
-SHORTOPT("-h") "     : print this help message and exit (also " SHORTOPT_SUMMARY("-?") " or " ENVVAR_REF("--help") ")\n"
-SHORTOPT("-i") "     : inspect interactively after running script; forces a prompt even\n"
-"         if stdin does not appear to be a terminal; also " ENVVAR_REF("PYTHONINSPECT") SUMMARY_LABEL("=x") "\n"
-SHORTOPT("-I") "     : isolate Python from the user's environment (implies " SHORTOPT_SUMMARY("-E") ", " SHORTOPT_SUMMARY("-P") " and " SHORTOPT_SUMMARY("-s") ")\n"
-SHORTOPT("-m") " " LABEL("mod") " : run library module as a script (terminates option list)\n"
-SHORTOPT("-O") "     : remove assert and __debug__-dependent statements; add .opt-1 before\n"
-"         .pyc extension; also " ENVVAR_REF("PYTHONOPTIMIZE") SUMMARY_LABEL("=x") "\n"
-SHORTOPT("-OO") "    : do " SHORTOPT_SUMMARY("-O") " changes and also discard docstrings; add .opt-2 before\n"
+"#s{-B}     : don't write .pyc files on import; also #e{PYTHONDONTWRITEBYTECODE}#B{=x}\n"
+"#s{-c} #b{cmd} : program passed in as string (terminates option list)\n"
+"#s{-d}     : turn on parser debugging output (for experts only, only works on\n"
+"         debug builds); also #e{PYTHONDEBUG}#B{=x}\n"
+"#s{-E}     : ignore #e{PYTHON*} environment variables (such as #e{PYTHONPATH})\n"
+"#s{-h}     : print this help message and exit (also #S{-?} or #e{--help})\n"
+"#s{-i}     : inspect interactively after running script; forces a prompt even\n"
+"         if stdin does not appear to be a terminal; also #e{PYTHONINSPECT}#B{=x}\n"
+"#s{-I}     : isolate Python from the user's environment (implies #S{-E}, #S{-P} and #S{-s})\n"
+"#s{-m} #b{mod} : run library module as a script (terminates option list)\n"
+"#s{-O}     : remove assert and __debug__-dependent statements; add .opt-1 before\n"
+"         .pyc extension; also #e{PYTHONOPTIMIZE}#B{=x}\n"
+"#s{-OO}    : do #S{-O} changes and also discard docstrings; add .opt-2 before\n"
 "         .pyc extension\n"
-SHORTOPT("-P") "     : don't prepend a potentially unsafe path to sys.path; also\n"
-"         " ENVVAR_REF("PYTHONSAFEPATH") "\n"
-SHORTOPT("-q") "     : don't print version and copyright messages on interactive startup\n"
-SHORTOPT("-s") "     : don't add user site directory to sys.path; also " ENVVAR_REF("PYTHONNOUSERSITE") SUMMARY_LABEL("=x") "\n"
-SHORTOPT("-S") "     : don't imply 'import site' on initialization\n"
-SHORTOPT("-u") "     : force the stdout and stderr streams to be unbuffered;\n"
-"         this option has no effect on stdin; also " ENVVAR_REF("PYTHONUNBUFFERED") SUMMARY_LABEL("=x") "\n"
-SHORTOPT("-v") "     : verbose (trace import statements); also " ENVVAR_REF("PYTHONVERBOSE") SUMMARY_LABEL("=x") "\n"
+"#s{-P}     : don't prepend a potentially unsafe path to sys.path; also\n"
+"         #e{PYTHONSAFEPATH}\n"
+"#s{-q}     : don't print version and copyright messages on interactive startup\n"
+"#s{-s}     : don't add user site directory to sys.path; also #e{PYTHONNOUSERSITE}#B{=x}\n"
+"#s{-S}     : don't imply 'import site' on initialization\n"
+"#s{-u}     : force the stdout and stderr streams to be unbuffered;\n"
+"         this option has no effect on stdin; also #e{PYTHONUNBUFFERED}#B{=x}\n"
+"#s{-v}     : verbose (trace import statements); also #e{PYTHONVERBOSE}#B{=x}\n"
 "         can be supplied multiple times to increase verbosity\n"
-SHORTOPT("-V") "     : print the Python version number and exit (also " ENVVAR_REF("--version") ")\n"
+"#s{-V}     : print the Python version number and exit (also #e{--version})\n"
 "         when given twice, print more information about the build\n"
-SHORTOPT("-W") " " LABEL("arg") " : warning control; " SUMMARY_LABEL("arg") " is action:message:category:module:lineno\n"
-"         also " ENVVAR_REF("PYTHONWARNINGS") SUMMARY_LABEL("=arg") "\n"
-SHORTOPT("-x") "     : skip first line of source, allowing use of non-Unix forms of #!cmd\n"
-SHORTOPT("-X") " " LABEL("opt") " : set implementation-specific option\n"
-LONGOPT("--check-hash-based-pycs") " " LABEL("always|default|never") ":\n"
+"#s{-W} #b{arg} : warning control; #B{arg} is action:message:category:module:lineno\n"
+"         also #e{PYTHONWARNINGS}#B{=arg}\n"
+"#s{-x}     : skip first line of source, allowing use of non-Unix forms of #!cmd\n"
+"#s{-X} #b{opt} : set implementation-specific option\n"
+"#L{--check-hash-based-pycs} #b{always|default|never}:\n"
 "         control how Python invalidates hash-based .pyc files\n"
-LONGOPT("--help-env") ": print help about Python environment variables and exit\n"
-LONGOPT("--help-xoptions") ": print help about implementation-specific " SHORTOPT_SUMMARY("-X") " options and exit\n"
-LONGOPT("--help-all") ": print complete help information and exit\n"
+"#L{--help-env}: print help about Python environment variables and exit\n"
+"#L{--help-xoptions}: print help about implementation-specific #S{-X} options and exit\n"
+"#L{--help-all}: print complete help information and exit\n"
 "\n"
-HEADING("Arguments:") "\n"
-SHORTOPT("file") "   : program read from script file\n"
-SHORTOPT("-") "      : program read from stdin (default; interactive mode if a tty)\n"
-SHORTOPT("arg") " " LABEL("...") ": arguments passed to program in sys.argv[1:]\n"
+"#h{Arguments:}\n"
+"#s{file}   : program read from script file\n"
+"#s{-}      : program read from stdin (default; interactive mode if a tty)\n"
+"#s{arg} #b{...}: arguments passed to program in sys.argv[1:]\n"
 ;
 
 static const char usage_xoptions[] =
-HEADING("The following implementation-specific options are available:") "\n"
-SHORTOPT("-X") " " LONGOPT("context_aware_warnings") LABEL("=[0|1]") ": if true (" SUMMARY_LABEL("1") ") then the warnings module will\n"
-"         use a context variables; if false (" SUMMARY_LABEL("0") ") then the warnings module will\n"
+"#h{The following implementation-specific options are available:}\n"
+"#s{-X} #L{context_aware_warnings}#b{=[0|1]}: if true (#B{1}) then the warnings module will\n"
+"         use a context variables; if false (#B{0}) then the warnings module will\n"
 "         use module globals, which is not concurrent-safe; set to true for\n"
 "         free-threaded builds and false otherwise; also\n"
-"         " ENVVAR_REF("PYTHON_CONTEXT_AWARE_WARNINGS") "\n"
-SHORTOPT("-X") " " LONGOPT("cpu_count") LABEL("=N") ": override the return value of os.cpu_count();\n"
-"         " SHORTOPT_SUMMARY("-X") " " ENVVAR_REF("cpu_count") SUMMARY_LABEL("=default") " cancels overriding; also " ENVVAR_REF("PYTHON_CPU_COUNT") "\n"
-SHORTOPT("-X") " " LONGOPT("dev") " : enable Python Development Mode; also " ENVVAR_REF("PYTHONDEVMODE") "\n"
-SHORTOPT("-X") " " LONGOPT("disable-remote-debug") ": disable remote debugging; also " ENVVAR_REF("PYTHON_DISABLE_REMOTE_DEBUG") "\n"
-SHORTOPT("-X") " " LONGOPT("faulthandler") ": dump the Python traceback on fatal errors;\n"
-"         also " ENVVAR_REF("PYTHONFAULTHANDLER") "\n"
-SHORTOPT("-X") " " LONGOPT("frozen_modules") LABEL("=[on|off]") ": whether to use frozen modules; the default is \"" SUMMARY_LABEL("on") "\"\n"
-"         for installed Python and \"" SUMMARY_LABEL("off") "\" for a local build;\n"
-"         also " ENVVAR_REF("PYTHON_FROZEN_MODULES") "\n"
+"         #e{PYTHON_CONTEXT_AWARE_WARNINGS}\n"
+"#s{-X} #L{cpu_count}#b{=N}: override the return value of os.cpu_count();\n"
+"         #S{-X} #e{cpu_count}#B{=default} cancels overriding; also #e{PYTHON_CPU_COUNT}\n"
+"#s{-X} #L{dev} : enable Python Development Mode; also #e{PYTHONDEVMODE}\n"
+"#s{-X} #L{disable-remote-debug}: disable remote debugging; also #e{PYTHON_DISABLE_REMOTE_DEBUG}\n"
+"#s{-X} #L{faulthandler}: dump the Python traceback on fatal errors;\n"
+"         also #e{PYTHONFAULTHANDLER}\n"
+"#s{-X} #L{frozen_modules}#b{=[on|off]}: whether to use frozen modules; the default is \"#B{on}\"\n"
+"         for installed Python and \"#B{off}\" for a local build;\n"
+"         also #e{PYTHON_FROZEN_MODULES}\n"
 #ifdef Py_GIL_DISABLED
-SHORTOPT("-X") " " LONGOPT("gil") LABEL("=[0|1]") ": enable (" SUMMARY_LABEL("1") ") or disable (" SUMMARY_LABEL("0") ") the GIL; also " ENVVAR_REF("PYTHON_GIL") "\n"
+"#s{-X} #L{gil}#b{=[0|1]}: enable (#B{1}) or disable (#B{0}) the GIL; also #e{PYTHON_GIL}\n"
 #endif
-SHORTOPT("-X") " " LONGOPT("importtime") LABEL("[=2]") ": show how long each import takes; use " SHORTOPT_SUMMARY("-X") " " ENVVAR_REF("importtime") SUMMARY_LABEL("=2") " to\n"
-"         log imports of already-loaded modules; also " ENVVAR_REF("PYTHONPROFILEIMPORTTIME") "\n"
-SHORTOPT("-X") " " LONGOPT("int_max_str_digits") LABEL("=N") ": limit the size of int<->str conversions;\n"
-"         0 disables the limit; also " ENVVAR_REF("PYTHONINTMAXSTRDIGITS") "\n"
-SHORTOPT("-X") " " LONGOPT("lazy_imports") LABEL("=[all|none|normal]") ": control global lazy imports;\n"
-"         default is " SUMMARY_LABEL("normal") "; also " ENVVAR_REF("PYTHON_LAZY_IMPORTS") "\n"
-SHORTOPT("-X") " " LONGOPT("no_debug_ranges") ": don't include extra location information in code objects;\n"
-"         also " ENVVAR_REF("PYTHONNODEBUGRANGES") "\n"
-SHORTOPT("-X") " " LONGOPT("pathconfig_warnings") LABEL("=[0|1]") ": if true (" SUMMARY_LABEL("1") ") then path configuration is allowed\n"
-"         to log warnings into stderr; if false (" SUMMARY_LABEL("0") ") suppress these warnings;\n"
-"         set to true by default; also " ENVVAR_REF("PYTHON_PATHCONFIG_WARNINGS") "\n"
-SHORTOPT("-X") " " LONGOPT("perf") ": support the Linux \"perf\" profiler; also " ENVVAR_REF("PYTHONPERFSUPPORT") SUMMARY_LABEL("=1") "\n"
-SHORTOPT("-X") " " LONGOPT("perf_jit") ": support the Linux \"perf\" profiler with DWARF support;\n"
-"         also " ENVVAR_REF("PYTHON_PERF_JIT_SUPPORT") SUMMARY_LABEL("=1") "\n"
+"#s{-X} #L{importtime}#b{[=2]}: show how long each import takes; use #S{-X} #e{importtime}#B{=2} to\n"
+"         log imports of already-loaded modules; also #e{PYTHONPROFILEIMPORTTIME}\n"
+"#s{-X} #L{int_max_str_digits}#b{=N}: limit the size of int<->str conversions;\n"
+"         0 disables the limit; also #e{PYTHONINTMAXSTRDIGITS}\n"
+"#s{-X} #L{lazy_imports}#b{=[all|none|normal]}: control global lazy imports;\n"
+"         default is #B{normal}; also #e{PYTHON_LAZY_IMPORTS}\n"
+"#s{-X} #L{no_debug_ranges}: don't include extra location information in code objects;\n"
+"         also #e{PYTHONNODEBUGRANGES}\n"
+"#s{-X} #L{pathconfig_warnings}#b{=[0|1]}: if true (#B{1}) then path configuration is allowed\n"
+"         to log warnings into stderr; if false (#B{0}) suppress these warnings;\n"
+"         set to true by default; also #e{PYTHON_PATHCONFIG_WARNINGS}\n"
+"#s{-X} #L{perf}: support the Linux \"perf\" profiler; also #e{PYTHONPERFSUPPORT}#B{=1}\n"
+"#s{-X} #L{perf_jit}: support the Linux \"perf\" profiler with DWARF support;\n"
+"         also #e{PYTHON_PERF_JIT_SUPPORT}#B{=1}\n"
 #ifdef Py_DEBUG
-SHORTOPT("-X") " " LONGOPT("presite") LABEL("=MOD") ": import this module before site; also " ENVVAR_REF("PYTHON_PRESITE") "\n"
+"#s{-X} #L{presite}#b{=MOD}: import this module before site; also #e{PYTHON_PRESITE}\n"
 #endif
-SHORTOPT("-X") " " LONGOPT("pycache_prefix") LABEL("=PATH") ": write .pyc files to a parallel tree instead of to the\n"
-"         code tree; also " ENVVAR_REF("PYTHONPYCACHEPREFIX") "\n"
+"#s{-X} #L{pycache_prefix}#b{=PATH}: write .pyc files to a parallel tree instead of to the\n"
+"         code tree; also #e{PYTHONPYCACHEPREFIX}\n"
 #ifdef Py_STATS
-SHORTOPT("-X") " " LONGOPT("pystats") ": enable pystats collection at startup; also " ENVVAR_REF("PYTHONSTATS") "\n"
+"#s{-X} #L{pystats}: enable pystats collection at startup; also #e{PYTHONSTATS}\n"
 #endif
-SHORTOPT("-X") " " LONGOPT("showrefcount") ": output the total reference count and number of used\n"
+"#s{-X} #L{showrefcount}: output the total reference count and number of used\n"
 "         memory blocks when the program finishes or after each statement in\n"
 "         the interactive interpreter; only works on debug builds\n"
-SHORTOPT("-X") " " LONGOPT("thread_inherit_context") LABEL("=[0|1]") ": enable (" SUMMARY_LABEL("1") ") or disable (" SUMMARY_LABEL("0") ") threads inheriting\n"
+"#s{-X} #L{thread_inherit_context}#b{=[0|1]}: enable (#B{1}) or disable (#B{0}) threads inheriting\n"
 "         context vars by default; enabled by default in the free-threaded\n"
-"         build and disabled otherwise; also " ENVVAR_REF("PYTHON_THREAD_INHERIT_CONTEXT") "\n"
+"         build and disabled otherwise; also #e{PYTHON_THREAD_INHERIT_CONTEXT}\n"
 #ifdef Py_GIL_DISABLED
-SHORTOPT("-X") " " LONGOPT("tlbc") LABEL("=[0|1]") ": enable (" SUMMARY_LABEL("1") ") or disable (" SUMMARY_LABEL("0") ") thread-local bytecode. Also\n"
-"         " ENVVAR_REF("PYTHON_TLBC") "\n"
+"#s{-X} #L{tlbc}#b{=[0|1]}: enable (#B{1}) or disable (#B{0}) thread-local bytecode. Also\n"
+"         #e{PYTHON_TLBC}\n"
 #endif
-SHORTOPT("-X") " " LONGOPT("tracemalloc") LABEL("[=N]") ": trace Python memory allocations; N sets a traceback limit\n"
-"         of " SUMMARY_LABEL("N") " frames (default: " SUMMARY_LABEL("1") "); also " ENVVAR_REF("PYTHONTRACEMALLOC") SUMMARY_LABEL("=N") "\n"
-SHORTOPT("-X") " " LONGOPT("utf8") LABEL("[=0|1]") ": enable (" SUMMARY_LABEL("1") ") or disable (" SUMMARY_LABEL("0") ") UTF-8 mode; also " ENVVAR_REF("PYTHONUTF8") "\n"
-SHORTOPT("-X") " " LONGOPT("warn_default_encoding") ": enable opt-in EncodingWarning for 'encoding=None';\n"
-"         also " ENVVAR_REF("PYTHONWARNDEFAULTENCODING") "\n"
+"#s{-X} #L{tracemalloc}#b{[=N]}: trace Python memory allocations; N sets a traceback limit\n"
+"         of #B{N} frames (default: #B{1}); also #e{PYTHONTRACEMALLOC}#B{=N}\n"
+"#s{-X} #L{utf8}#b{[=0|1]}: enable (#B{1}) or disable (#B{0}) UTF-8 mode; also #e{PYTHONUTF8}\n"
+"#s{-X} #L{warn_default_encoding}: enable opt-in EncodingWarning for 'encoding=None';\n"
+"         also #e{PYTHONWARNDEFAULTENCODING}\n"
 ;
 
 /* Envvars that don't have equivalent command-line options are listed first */
 static const char usage_envvars[] =
-HEADING("Environment variables that change behavior:") "\n"
-ENVVAR("PYTHONASYNCIODEBUG") ": enable asyncio debug mode\n"
-ENVVAR("PYTHON_BASIC_REPL") ": use the traditional parser-based REPL\n"
-ENVVAR("PYTHONBREAKPOINT") ": if this variable is set to " SUMMARY_LABEL("0") ", it disables the default\n"
+"#h{Environment variables that change behavior:}\n"
+"#E{PYTHONASYNCIODEBUG}: enable asyncio debug mode\n"
+"#E{PYTHON_BASIC_REPL}: use the traditional parser-based REPL\n"
+"#E{PYTHONBREAKPOINT}: if this variable is set to #B{0}, it disables the default\n"
 "                  debugger.  It can be set to the callable of your debugger of\n"
 "                  choice.\n"
-ENVVAR("PYTHONCASEOK") "    : ignore case in 'import' statements (Windows)\n"
-ENVVAR("PYTHONCOERCECLOCALE") ": if this variable is set to " SUMMARY_LABEL("0") ", it disables the locale\n"
-"                  coercion behavior.  Use " ENVVAR_REF("PYTHONCOERCECLOCALE") SUMMARY_LABEL("=warn") " to request\n"
+"#E{PYTHONCASEOK}    : ignore case in 'import' statements (Windows)\n"
+"#E{PYTHONCOERCECLOCALE}: if this variable is set to #B{0}, it disables the locale\n"
+"                  coercion behavior.  Use #e{PYTHONCOERCECLOCALE}#B{=warn} to request\n"
 "                  display of locale coercion and locale compatibility warnings\n"
 "                  on stderr.\n"
-ENVVAR("PYTHON_COLORS") "   : if this variable is set to " SUMMARY_LABEL("1") ", the interpreter will colorize\n"
-"                  various kinds of output.  Setting it to " SUMMARY_LABEL("0") " deactivates\n"
+"#E{PYTHON_COLORS}   : if this variable is set to #B{1}, the interpreter will colorize\n"
+"                  various kinds of output.  Setting it to #B{0} deactivates\n"
 "                  this behavior.\n"
 #ifdef Py_TRACE_REFS
-ENVVAR("PYTHONDUMPREFS") "  : dump objects and reference counts still alive after shutdown\n"
-ENVVAR("PYTHONDUMPREFSFILE") ": dump objects and reference counts to the specified file\n"
+"#E{PYTHONDUMPREFS}  : dump objects and reference counts still alive after shutdown\n"
+"#E{PYTHONDUMPREFSFILE}: dump objects and reference counts to the specified file\n"
 #endif
 #ifdef __APPLE__
-ENVVAR("PYTHONEXECUTABLE") ": set sys.argv[0] to this value (macOS only)\n"
+"#E{PYTHONEXECUTABLE}: set sys.argv[0] to this value (macOS only)\n"
 #endif
-ENVVAR("PYTHONHASHSEED") "  : if this variable is set to 'random', a random value is used\n"
+"#E{PYTHONHASHSEED}  : if this variable is set to 'random', a random value is used\n"
 "                  to seed the hashes of str and bytes objects.  It can also be\n"
 "                  set to an integer in the range [0,4294967295] to get hash\n"
 "                  values with a predictable seed.\n"
-ENVVAR("PYTHON_HISTORY") "  : the location of a .python_history file.\n"
-ENVVAR("PYTHONHOME") "      : alternate <prefix> directory (or <prefix>%lc<exec_prefix>).\n"
-"                  The default module search path uses %s.\n"
-ENVVAR("PYTHONIOENCODING") ": encoding[:errors] used for stdin/stdout/stderr\n"
+"#E{PYTHON_HISTORY}  : the location of a .python_history file.\n"
+"#E{PYTHONHOME}      : alternate <prefix> directory (or <prefix>#D<exec_prefix>).\n"
+"                  The default module search path uses #H.\n"
+"#E{PYTHONIOENCODING}: encoding[:errors] used for stdin/stdout/stderr\n"
 #ifdef MS_WINDOWS
-ENVVAR("PYTHONLEGACYWINDOWSFSENCODING") ": use legacy \"mbcs\" encoding for file system\n"
-ENVVAR("PYTHONLEGACYWINDOWSSTDIO") ": use legacy Windows stdio\n"
+"#E{PYTHONLEGACYWINDOWSFSENCODING}: use legacy \"mbcs\" encoding for file system\n"
+"#E{PYTHONLEGACYWINDOWSSTDIO}: use legacy Windows stdio\n"
 #endif
-ENVVAR("PYTHONMALLOC") "    : set the Python memory allocators and/or install debug hooks\n"
-"                  on Python memory allocators.  Use " ENVVAR_REF("PYTHONMALLOC") SUMMARY_LABEL("=debug") " to\n"
+"#E{PYTHONMALLOC}    : set the Python memory allocators and/or install debug hooks\n"
+"                  on Python memory allocators.  Use #e{PYTHONMALLOC}#B{=debug} to\n"
 "                  install debug hooks.\n"
-ENVVAR("PYTHONMALLOCSTATS") ": print memory allocator statistics\n"
-ENVVAR("PYTHONPATH") "      : '%lc'-separated list of directories prefixed to the\n"
+"#E{PYTHONMALLOCSTATS}: print memory allocator statistics\n"
+"#E{PYTHONPATH}      : '#D'-separated list of directories prefixed to the\n"
 "                  default module search path.  The result is sys.path.\n"
-ENVVAR("PYTHONPLATLIBDIR") ": override sys.platlibdir\n"
-ENVVAR("PYTHONSTARTUP") "   : file executed on interactive startup (no default)\n"
-ENVVAR("PYTHONUSERBASE") "  : defines the user base directory (site.USER_BASE)\n"
+"#E{PYTHONPLATLIBDIR}: override sys.platlibdir\n"
+"#E{PYTHONSTARTUP}   : file executed on interactive startup (no default)\n"
+"#E{PYTHONUSERBASE}  : defines the user base directory (site.USER_BASE)\n"
 "\n"
-HEADING("These variables have equivalent command-line options (see ") ENVVAR_REF("--help") " for details):" "\n"
-ENVVAR("PYTHON_CONTEXT_AWARE_WARNINGS") ": if true (" SUMMARY_LABEL("1") "), enable thread-safe warnings\n"
-"                  module behaviour (" SHORTOPT_SUMMARY("-X") " " ENVVAR_REF("context_aware_warnings") ")\n"
-ENVVAR("PYTHON_CPU_COUNT") ": override the return value of os.cpu_count() (" SHORTOPT_SUMMARY("-X") " " ENVVAR_REF("cpu_count") ")\n"
-ENVVAR("PYTHONDEBUG") "     : enable parser debug mode (" SHORTOPT_SUMMARY("-d") ")\n"
-ENVVAR("PYTHONDEVMODE") "   : enable Python Development Mode (" SHORTOPT_SUMMARY("-X") " " ENVVAR_REF("dev") ")\n"
-ENVVAR("PYTHONDONTWRITEBYTECODE") ": don't write .pyc files (" SHORTOPT_SUMMARY("-B") ")\n"
-ENVVAR("PYTHONFAULTHANDLER") ": dump the Python traceback on fatal errors (" SHORTOPT_SUMMARY("-X") " " ENVVAR_REF("faulthandler") ")\n"
-ENVVAR("PYTHON_FROZEN_MODULES") ": whether to use frozen modules; the default is \"" SUMMARY_LABEL("on") "\"\n"
-"                  for installed Python and \"" SUMMARY_LABEL("off") "\" for a local build\n"
-"                  (" SHORTOPT_SUMMARY("-X") " " ENVVAR_REF("frozen_modules") ")\n"
+"#h{These variables have equivalent command-line options (see }#e{--help} for details):\n"
+"#E{PYTHON_CONTEXT_AWARE_WARNINGS}: if true (#B{1}), enable thread-safe warnings\n"
+"                  module behaviour (#S{-X} #e{context_aware_warnings})\n"
+"#E{PYTHON_CPU_COUNT}: override the return value of os.cpu_count() (#S{-X} #e{cpu_count})\n"
+"#E{PYTHONDEBUG}     : enable parser debug mode (#S{-d})\n"
+"#E{PYTHONDEVMODE}   : enable Python Development Mode (#S{-X} #e{dev})\n"
+"#E{PYTHONDONTWRITEBYTECODE}: don't write .pyc files (#S{-B})\n"
+"#E{PYTHONFAULTHANDLER}: dump the Python traceback on fatal errors (#S{-X} #e{faulthandler})\n"
+"#E{PYTHON_FROZEN_MODULES}: whether to use frozen modules; the default is \"#B{on}\"\n"
+"                  for installed Python and \"#B{off}\" for a local build\n"
+"                  (#S{-X} #e{frozen_modules})\n"
 #ifdef Py_GIL_DISABLED
-ENVVAR("PYTHON_GIL") "      : when set to " SUMMARY_LABEL("0") ", disables the GIL (" SHORTOPT_SUMMARY("-X") " " ENVVAR_REF("gil") ")\n"
+"#E{PYTHON_GIL}      : when set to #B{0}, disables the GIL (#S{-X} #e{gil})\n"
 #endif
-ENVVAR("PYTHONINSPECT") "   : inspect interactively after running script (" SHORTOPT_SUMMARY("-i") ")\n"
-ENVVAR("PYTHONINTMAXSTRDIGITS") ": limit the size of int<->str conversions;\n"
-"                  0 disables the limit (" SHORTOPT_SUMMARY("-X") " " ENVVAR_REF("int_max_str_digits") SUMMARY_LABEL("=N") ")\n"
-ENVVAR("PYTHON_LAZY_IMPORTS") ": control global lazy imports (" SHORTOPT_SUMMARY("-X") " " ENVVAR_REF("lazy_imports") ")\n"
-ENVVAR("PYTHONNODEBUGRANGES") ": don't include extra location information in code objects\n"
-"                  (" SHORTOPT_SUMMARY("-X") " " ENVVAR_REF("no_debug_ranges") ")\n"
-ENVVAR("PYTHONNOUSERSITE") ": disable user site directory (" SHORTOPT_SUMMARY("-s") ")\n"
-ENVVAR("PYTHONOPTIMIZE") "  : enable level 1 optimizations (" SHORTOPT_SUMMARY("-O") ")\n"
-ENVVAR("PYTHON_PERF_JIT_SUPPORT") ": enable Linux \"perf\" profiler support with JIT\n"
-"                  (" SHORTOPT_SUMMARY("-X") " " ENVVAR_REF("perf_jit") ")\n"
-ENVVAR("PYTHONPERFSUPPORT") ": support the Linux \"perf\" profiler (" SHORTOPT_SUMMARY("-X") " " ENVVAR_REF("perf") ")\n"
+"#E{PYTHONINSPECT}   : inspect interactively after running script (#S{-i})\n"
+"#E{PYTHONINTMAXSTRDIGITS}: limit the size of int<->str conversions;\n"
+"                  0 disables the limit (#S{-X} #e{int_max_str_digits}#B{=N})\n"
+"#E{PYTHON_LAZY_IMPORTS}: control global lazy imports (#S{-X} #e{lazy_imports})\n"
+"#E{PYTHONNODEBUGRANGES}: don't include extra location information in code objects\n"
+"                  (#S{-X} #e{no_debug_ranges})\n"
+"#E{PYTHONNOUSERSITE}: disable user site directory (#S{-s})\n"
+"#E{PYTHONOPTIMIZE}  : enable level 1 optimizations (#S{-O})\n"
+"#E{PYTHON_PERF_JIT_SUPPORT}: enable Linux \"perf\" profiler support with JIT\n"
+"                  (#S{-X} #e{perf_jit})\n"
+"#E{PYTHONPERFSUPPORT}: support the Linux \"perf\" profiler (#S{-X} #e{perf})\n"
 #ifdef Py_DEBUG
-ENVVAR("PYTHON_PRESITE") ": import this module before site (" SHORTOPT_SUMMARY("-X") " " ENVVAR_REF("presite") ")\n"
+"#E{PYTHON_PRESITE}: import this module before site (#S{-X} #e{presite})\n"
 #endif
-ENVVAR("PYTHONPROFILEIMPORTTIME") ": show how long each import takes (" SHORTOPT_SUMMARY("-X") " " ENVVAR_REF("importtime") ")\n"
-ENVVAR("PYTHONPYCACHEPREFIX") ": root directory for bytecode cache (pyc) files\n"
-"                  (" SHORTOPT_SUMMARY("-X") " " ENVVAR_REF("pycache_prefix") ")\n"
-ENVVAR("PYTHONSAFEPATH") "  : don't prepend a potentially unsafe path to sys.path.\n"
+"#E{PYTHONPROFILEIMPORTTIME}: show how long each import takes (#S{-X} #e{importtime})\n"
+"#E{PYTHONPYCACHEPREFIX}: root directory for bytecode cache (pyc) files\n"
+"                  (#S{-X} #e{pycache_prefix})\n"
+"#E{PYTHONSAFEPATH}  : don't prepend a potentially unsafe path to sys.path.\n"
 #ifdef Py_STATS
-ENVVAR("PYTHONSTATS") "     : turns on statistics gathering (" SHORTOPT_SUMMARY("-X") " " ENVVAR_REF("pystats") ")\n"
+"#E{PYTHONSTATS}     : turns on statistics gathering (#S{-X} #e{pystats})\n"
 #endif
-ENVVAR("PYTHON_THREAD_INHERIT_CONTEXT") ": if true (" SUMMARY_LABEL("1") "), threads inherit context vars\n"
-"                  (" SHORTOPT_SUMMARY("-X") " " ENVVAR_REF("thread_inherit_context") ")\n"
+"#E{PYTHON_THREAD_INHERIT_CONTEXT}: if true (#B{1}), threads inherit context vars\n"
+"                  (#S{-X} #e{thread_inherit_context})\n"
 #ifdef Py_GIL_DISABLED
-ENVVAR("PYTHON_TLBC") "     : when set to " SUMMARY_LABEL("0") ", disables thread-local bytecode (" SHORTOPT_SUMMARY("-X") " " ENVVAR_REF("tlbc") ")\n"
+"#E{PYTHON_TLBC}     : when set to #B{0}, disables thread-local bytecode (#S{-X} #e{tlbc})\n"
 #endif
-ENVVAR("PYTHONTRACEMALLOC") ": trace Python memory allocations (" SHORTOPT_SUMMARY("-X") " " ENVVAR_REF("tracemalloc") ")\n"
-ENVVAR("PYTHONUNBUFFERED") ": disable stdout/stderr buffering (" SHORTOPT_SUMMARY("-u") ")\n"
-ENVVAR("PYTHONUTF8") "      : control the UTF-8 mode (" SHORTOPT_SUMMARY("-X") " " ENVVAR_REF("utf8") ")\n"
-ENVVAR("PYTHONVERBOSE") "   : trace import statements (" SHORTOPT_SUMMARY("-v") ")\n"
-ENVVAR("PYTHONWARNDEFAULTENCODING") ": enable opt-in EncodingWarning for 'encoding=None'\n"
-"                  (" SHORTOPT_SUMMARY("-X") " " ENVVAR_REF("warn_default_encoding") ")\n"
-ENVVAR("PYTHONWARNINGS") "  : warning control (" SHORTOPT_SUMMARY("-W") ")\n"
+"#E{PYTHONTRACEMALLOC}: trace Python memory allocations (#S{-X} #e{tracemalloc})\n"
+"#E{PYTHONUNBUFFERED}: disable stdout/stderr buffering (#S{-u})\n"
+"#E{PYTHONUTF8}      : control the UTF-8 mode (#S{-X} #e{utf8})\n"
+"#E{PYTHONVERBOSE}   : trace import statements (#S{-v})\n"
+"#E{PYTHONWARNDEFAULTENCODING}: enable opt-in EncodingWarning for 'encoding=None'\n"
+"                  (#S{-X} #e{warn_default_encoding})\n"
+"#E{PYTHONWARNINGS}  : warning control (#S{-W})\n"
 ;
-
-#if defined(MS_WINDOWS)
-#  define PYTHONHOMEHELP "<prefix>\\python{major}{minor}"
-#else
-#  define PYTHONHOMEHELP "<prefix>/lib/pythonX.X"
-#endif
 
 
 /* --- Global configuration variables ----------------------------- */
@@ -3020,14 +3053,12 @@ config_usage(int error, const wchar_t* program)
     FILE *f = error ? stderr : stdout;
     int colorize = _Py_can_colorize(f);
 
-    fprint_color(f, usage_pre, colorize);
-    fprintf(f, "%ls", program);
-    fprint_color(f, usage_post, colorize);
+    fprint_help(f, usage_line, colorize, program);
     if (error) {
         fprintf(f, "Try `python -h' for more information.\n");
     }
     else {
-        fprint_color(f, usage_help, colorize);
+        fprint_help(f, usage_help, colorize, NULL);
     }
 }
 
@@ -3035,28 +3066,14 @@ static void
 config_envvars_usage(void)
 {
     int colorize = _Py_can_colorize(stdout);
-    /* Format the string first (it contains %lc and %s specifiers),
-     * then strip ANSI escapes if color is disabled. */
-    int needed = snprintf(NULL, 0, usage_envvars,
-                          (wint_t)DELIM, PYTHONHOMEHELP, (wint_t)DELIM);
-    if (needed > 0) {
-        char *buf = (char *)PyMem_RawMalloc((size_t)needed + 1);
-        if (buf) {
-            snprintf(buf, (size_t)needed + 1, usage_envvars,
-                     (wint_t)DELIM, PYTHONHOMEHELP, (wint_t)DELIM);
-            fprint_color(stdout, buf, colorize);
-            PyMem_RawFree(buf);
-            return;
-        }
-    }
-    fprint_color(stdout, usage_envvars, colorize);
+    fprint_help(stdout, usage_envvars, colorize, NULL);
 }
 
 static void
 config_xoptions_usage(void)
 {
     int colorize = _Py_can_colorize(stdout);
-    fprint_color(stdout, usage_xoptions, colorize);
+    fprint_help(stdout, usage_xoptions, colorize, NULL);
 }
 
 static void
