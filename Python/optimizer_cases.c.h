@@ -351,7 +351,10 @@
             value = stack_pointer[-1];
             int already_bool = optimize_to_bool(this_instr, ctx, value, &bit,
                 _POP_TOP, _NOP);
-            if (!already_bool) {
+            if (already_bool) {
+                ADD_OP(_BOOL_TO_BIT, 0, 0);
+            }
+            else {
                 sym_set_type(value, &PyLong_Type);
                 bit = sym_new_truthiness(ctx, value, true);
             }
@@ -461,7 +464,10 @@
             value = stack_pointer[-1];
             int already_bool = optimize_to_bool(this_instr, ctx, value, &bit,
                 _POP_TOP, _NOP);
-            if (!already_bool) {
+            if (already_bool) {
+                ADD_OP(_BOOL_TO_BIT, 0, 0);
+            }
+            else {
                 bit = sym_new_truthiness(ctx, value, true);
             }
             stack_pointer[-1] = bit;
@@ -5512,9 +5518,9 @@
             JitOptRef bit;
             JitOptRef res;
             bit = stack_pointer[-1];
-            if (sym_is_const(ctx, bit) &&
-                (sym_get_const(ctx, bit) == Py_True ||
-                    sym_get_const(ctx, bit) == Py_False)) {
+            if (uop_buffer_length(&ctx->out_buffer) > 0 &&
+                uop_buffer_last(&ctx->out_buffer)->opcode == _BOOL_TO_BIT) {
+                REPLACE_OP(uop_buffer_last(&ctx->out_buffer), _NOP, 0, 0);
                 REPLACE_OP(this_instr, _NOP, 0, 0);
                 res = bit;
             }
@@ -5522,6 +5528,15 @@
                 res = sym_new_truthiness(ctx, bit, true);
             }
             stack_pointer[-1] = res;
+            break;
+        }
+
+        case _BOOL_TO_BIT: {
+            JitOptRef value;
+            JitOptRef bit;
+            value = stack_pointer[-1];
+            bit = sym_new_truthiness(ctx, value, true);
+            stack_pointer[-1] = bit;
             break;
         }
 

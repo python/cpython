@@ -12435,24 +12435,20 @@
                 PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
                 int truthy = _PyLong_IsZero((PyLongObject *)value_o) ? 0 : 1;
                 PyStackRef_CLOSE_SPECIALIZED(value, _PyLong_ExactDealloc);
-                #ifdef Py_STACKREF_DEBUG
-                bit = (_PyStackRef){ .index = truthy ? _Py_STACKREF_BIT_1_INDEX
-                : _Py_STACKREF_BIT_0_INDEX };
-                #else
-                bit = (_PyStackRef){ .bits = (uintptr_t)truthy };
-                #endif
+                stack_pointer += -1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                bit = PyStackRef_WrapBit(truthy);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             // _BIT_TO_BOOL
             {
-                #ifdef Py_STACKREF_DEBUG
-                assert(bit.index == _Py_STACKREF_BIT_0_INDEX ||
-                  bit.index == _Py_STACKREF_BIT_1_INDEX);
-                int b = (bit.index == _Py_STACKREF_BIT_1_INDEX);
-                #else
-                assert(bit.bits == 0 || bit.bits == 1);
-                int b = (int)bit.bits;
-                #endif
-
+                stack_pointer[0] = bit;
+                stack_pointer += 1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                int b = PyStackRef_UnwrapBit(bit);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
                 res = b ? PyStackRef_True : PyStackRef_False;
             }
             stack_pointer[-1] = res;
@@ -12565,24 +12561,20 @@
                 PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
                 int truthy = value_o == &_Py_STR(empty) ? 0 : 1;
                 PyStackRef_CLOSE_SPECIALIZED(value, _PyUnicode_ExactDealloc);
-                #ifdef Py_STACKREF_DEBUG
-                bit = (_PyStackRef){ .index = truthy ? _Py_STACKREF_BIT_1_INDEX
-                : _Py_STACKREF_BIT_0_INDEX };
-                #else
-                bit = (_PyStackRef){ .bits = (uintptr_t)truthy };
-                #endif
+                stack_pointer += -1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                bit = PyStackRef_WrapBit(truthy);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             // _BIT_TO_BOOL
             {
-                #ifdef Py_STACKREF_DEBUG
-                assert(bit.index == _Py_STACKREF_BIT_0_INDEX ||
-                  bit.index == _Py_STACKREF_BIT_1_INDEX);
-                int b = (bit.index == _Py_STACKREF_BIT_1_INDEX);
-                #else
-                assert(bit.bits == 0 || bit.bits == 1);
-                int b = (int)bit.bits;
-                #endif
-
+                stack_pointer[0] = bit;
+                stack_pointer += 1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                int b = PyStackRef_UnwrapBit(bit);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
                 res = b ? PyStackRef_True : PyStackRef_False;
             }
             stack_pointer[-1] = res;
