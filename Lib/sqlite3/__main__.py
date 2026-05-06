@@ -10,12 +10,12 @@ import sys
 from argparse import ArgumentParser
 from code import InteractiveConsole
 from textwrap import dedent
-lazy from _colorize import get_theme, theme_no_color
+from _colorize import get_theme, theme_no_color
 
 from ._completer import completer
 
 
-def execute(c, sql, suppress_errors=True, theme=None):
+def execute(c, sql, suppress_errors=True, theme=theme_no_color):
     """Helper that wraps execution of SQL code.
 
     This is used both by the REPL and by direct execution from the CLI.
@@ -23,8 +23,6 @@ def execute(c, sql, suppress_errors=True, theme=None):
     'c' may be a cursor or a connection.
     'sql' is the SQL string to execute.
     """
-    if theme is None:
-        theme = theme_no_color
 
     try:
         for row in c.execute(sql):
