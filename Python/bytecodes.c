@@ -1140,17 +1140,6 @@ dummy_func(
             ERROR_IF(err);
         }
 
-        tier2 op(_STORE_SLICE_BYTEARRAY, (v, ba_st, start, stop -- )) {
-            PyObject *ba_o = PyStackRef_AsPyObjectBorrow(ba_st);
-            PyObject *start_o = PyStackRef_AsPyObjectBorrow(start);
-            PyObject *stop_o = PyStackRef_AsPyObjectBorrow(stop);
-            PyObject *v_o = PyStackRef_AsPyObjectBorrow(v);
-            assert(PyByteArray_CheckExact(ba_o));
-            int err = _PyByteArray_StoreSlice(ba_o, start_o, stop_o, v_o);
-            DECREF_INPUTS();
-            ERROR_IF(err);
-        }
-
         macro(STORE_SLICE) = _SPECIALIZE_STORE_SLICE + _STORE_SLICE;
 
         macro(BINARY_OP_SUBSCR_LIST_INT) =

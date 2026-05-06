@@ -2316,9 +2316,11 @@ class TestUopsOptimization(unittest.TestCase):
 
         res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
+        self.assertEqual(res, [9, 8, 7, 3, 4, 5, 6, 7])
         uops = get_opnames(ex)
         self.assertIn("_STORE_SLICE_LIST", uops)
         self.assertNotIn("_STORE_SLICE", uops)
+
 
     def test_unique_tuple_unpack(self):
         def f(n):

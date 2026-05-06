@@ -6907,63 +6907,6 @@
             break;
         }
 
-        case _STORE_SLICE_BYTEARRAY_r30: {
-            CHECK_CURRENT_CACHED_VALUES(3);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            _PyStackRef stop;
-            _PyStackRef start;
-            _PyStackRef ba_st;
-            _PyStackRef v;
-            _PyStackRef _stack_item_0 = _tos_cache0;
-            _PyStackRef _stack_item_1 = _tos_cache1;
-            _PyStackRef _stack_item_2 = _tos_cache2;
-            stop = _stack_item_2;
-            start = _stack_item_1;
-            ba_st = _stack_item_0;
-            v = stack_pointer[-1];
-            PyObject *ba_o = PyStackRef_AsPyObjectBorrow(ba_st);
-            PyObject *start_o = PyStackRef_AsPyObjectBorrow(start);
-            PyObject *stop_o = PyStackRef_AsPyObjectBorrow(stop);
-            PyObject *v_o = PyStackRef_AsPyObjectBorrow(v);
-            assert(PyByteArray_CheckExact(ba_o));
-            stack_pointer[0] = ba_st;
-            stack_pointer[1] = start;
-            stack_pointer[2] = stop;
-            stack_pointer += 3;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            int err = _PyByteArray_StoreSlice(ba_o, start_o, stop_o, v_o);
-            _PyStackRef tmp = stop;
-            stop = PyStackRef_NULL;
-            stack_pointer[-1] = stop;
-            PyStackRef_CLOSE(tmp);
-            tmp = start;
-            start = PyStackRef_NULL;
-            stack_pointer[-2] = start;
-            PyStackRef_CLOSE(tmp);
-            tmp = ba_st;
-            ba_st = PyStackRef_NULL;
-            stack_pointer[-3] = ba_st;
-            PyStackRef_CLOSE(tmp);
-            tmp = v;
-            v = PyStackRef_NULL;
-            stack_pointer[-4] = v;
-            PyStackRef_CLOSE(tmp);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            stack_pointer += -4;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            if (err) {
-                SET_CURRENT_CACHED_VALUES(0);
-                JUMP_TO_ERROR();
-            }
-            _tos_cache0 = PyStackRef_ZERO_BITS;
-            _tos_cache1 = PyStackRef_ZERO_BITS;
-            _tos_cache2 = PyStackRef_ZERO_BITS;
-            SET_CURRENT_CACHED_VALUES(0);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            break;
-        }
-
         case _BINARY_OP_SUBSCR_LIST_INT_r23: {
             CHECK_CURRENT_CACHED_VALUES(2);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());

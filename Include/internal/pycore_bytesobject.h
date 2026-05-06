@@ -19,9 +19,6 @@ extern PyObject* _PyBytes_FormatEx(
  * reference rather than modifying its first argument in place. */
 extern PyObject* _PyBytes_Concat(PyObject *a, PyObject *b);
 
-extern int _PyByteArray_StoreSlice(PyObject *container, PyObject *start,
-                                   PyObject *stop, PyObject *value);
-
 extern PyObject* _PyBytes_FromHex(
     PyObject *string,
     int use_bytearray);
