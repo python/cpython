@@ -4,6 +4,7 @@
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_backoff.h"
+#include "pycore_bytesobject.h"   // _PyByteArray_StoreSlice()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_cell.h"          // PyCell_GetRef()
 #include "pycore_ceval.h"         // SPECIAL___ENTER__

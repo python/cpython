@@ -1325,6 +1325,9 @@
             if (sym_matches_type(container, &PyList_Type)) {
                 REPLACE_OP(this_instr, _STORE_SLICE_LIST, 0, 0);
             }
+            else if (sym_matches_type(container, &PyByteArray_Type)) {
+                REPLACE_OP(this_instr, _STORE_SLICE_BYTEARRAY, 0, 0);
+            }
             CHECK_STACK_BOUNDS(-4);
             stack_pointer += -4;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -1344,6 +1347,25 @@
             (void)start;
             (void)stop;
             assert(sym_matches_type(list_st, &PyList_Type));
+            CHECK_STACK_BOUNDS(-4);
+            stack_pointer += -4;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _STORE_SLICE_BYTEARRAY: {
+            JitOptRef stop;
+            JitOptRef start;
+            JitOptRef ba_st;
+            JitOptRef v;
+            stop = stack_pointer[-1];
+            start = stack_pointer[-2];
+            ba_st = stack_pointer[-3];
+            v = stack_pointer[-4];
+            (void)v;
+            (void)start;
+            (void)stop;
+            assert(sym_matches_type(ba_st, &PyByteArray_Type));
             CHECK_STACK_BOUNDS(-4);
             stack_pointer += -4;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);

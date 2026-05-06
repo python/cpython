@@ -725,65 +725,12 @@ bytearray_setitem(PyObject *op, Py_ssize_t i, PyObject *value)
 }
 
 static int
-bytearray_ass_subscript_lock_held(PyObject *op, PyObject *index, PyObject *values)
+bytearray_ass_slice_lock_held(PyByteArrayObject *self,
+                              Py_ssize_t start, Py_ssize_t stop,
+                              Py_ssize_t step, Py_ssize_t slicelen,
+                              PyObject *values)
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
-    PyByteArrayObject *self = _PyByteArray_CAST(op);
-    Py_ssize_t start, stop, step, slicelen;
-    // Do not store a reference to the internal buffer since
-    // index.__index__() or _getbytevalue() may alter 'self'.
-    // See https://github.com/python/cpython/issues/91153.
-
-    if (_PyIndex_Check(index)) {
-        Py_ssize_t i = PyNumber_AsSsize_t(index, PyExc_IndexError);
-
-        if (i == -1 && PyErr_Occurred()) {
-            return -1;
-        }
-
-        int ival = -1;
-
-        // GH-91153: We need to do this *before* the size check, in case values
-        // has a nasty __index__ method that changes the size of the bytearray:
-        if (values && !_getbytevalue(values, &ival)) {
-            return -1;
-        }
-
-        if (i < 0) {
-            i += PyByteArray_GET_SIZE(self);
-        }
-
-        if (i < 0 || i >= Py_SIZE(self)) {
-            PyErr_SetString(PyExc_IndexError, "bytearray index out of range");
-            return -1;
-        }
-
-        if (values == NULL) {
-            /* Fall through to slice assignment */
-            start = i;
-            stop = i + 1;
-            step = 1;
-            slicelen = 1;
-        }
-        else {
-            assert(0 <= ival && ival < 256);
-            PyByteArray_AS_STRING(self)[i] = (char)ival;
-            return 0;
-        }
-    }
-    else if (PySlice_Check(index)) {
-        if (PySlice_Unpack(index, &start, &stop, &step) < 0) {
-            return -1;
-        }
-        slicelen = PySlice_AdjustIndices(PyByteArray_GET_SIZE(self), &start,
-                                         &stop, step);
-    }
-    else {
-        PyErr_Format(PyExc_TypeError,
-                     "bytearray indices must be integers or slices, not %.200s",
-                      Py_TYPE(index)->tp_name);
-        return -1;
-    }
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
 
     char *bytes;
     Py_ssize_t needed;
@@ -803,7 +750,8 @@ bytearray_ass_subscript_lock_held(PyObject *op, PyObject *index, PyObject *value
         values = PyByteArray_FromObject(values);
         if (values == NULL)
             return -1;
-        err = bytearray_ass_subscript_lock_held((PyObject*)self, index, values);
+        err = bytearray_ass_slice_lock_held(self, start, stop, step, slicelen,
+                                            values);
         Py_DECREF(values);
         return err;
     }
@@ -886,6 +834,71 @@ bytearray_ass_subscript_lock_held(PyObject *op, PyObject *index, PyObject *value
 }
 
 static int
+bytearray_ass_subscript_lock_held(PyObject *op, PyObject *index, PyObject *values)
+{
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
+    PyByteArrayObject *self = _PyByteArray_CAST(op);
+    Py_ssize_t start, stop, step, slicelen;
+    // Do not store a reference to the internal buffer since
+    // index.__index__() or _getbytevalue() may alter 'self'.
+    // See https://github.com/python/cpython/issues/91153.
+
+    if (_PyIndex_Check(index)) {
+        Py_ssize_t i = PyNumber_AsSsize_t(index, PyExc_IndexError);
+
+        if (i == -1 && PyErr_Occurred()) {
+            return -1;
+        }
+
+        int ival = -1;
+
+        // GH-91153: We need to do this *before* the size check, in case values
+        // has a nasty __index__ method that changes the size of the bytearray:
+        if (values && !_getbytevalue(values, &ival)) {
+            return -1;
+        }
+
+        if (i < 0) {
+            i += PyByteArray_GET_SIZE(self);
+        }
+
+        if (i < 0 || i >= Py_SIZE(self)) {
+            PyErr_SetString(PyExc_IndexError, "bytearray index out of range");
+            return -1;
+        }
+
+        if (values == NULL) {
+            /* Fall through to slice assignment */
+            start = i;
+            stop = i + 1;
+            step = 1;
+            slicelen = 1;
+        }
+        else {
+            assert(0 <= ival && ival < 256);
+            PyByteArray_AS_STRING(self)[i] = (char)ival;
+            return 0;
+        }
+    }
+    else if (PySlice_Check(index)) {
+        if (PySlice_Unpack(index, &start, &stop, &step) < 0) {
+            return -1;
+        }
+        slicelen = PySlice_AdjustIndices(PyByteArray_GET_SIZE(self), &start,
+                                         &stop, step);
+    }
+    else {
+        PyErr_Format(PyExc_TypeError,
+                     "bytearray indices must be integers or slices, not %.200s",
+                      Py_TYPE(index)->tp_name);
+        return -1;
+    }
+
+    return bytearray_ass_slice_lock_held(self, start, stop, step, slicelen,
+                                         values);
+}
+
+static int
 bytearray_ass_subscript(PyObject *op, PyObject *index, PyObject *values)
 {
     int ret;
@@ -897,6 +910,40 @@ bytearray_ass_subscript(PyObject *op, PyObject *index, PyObject *values)
     else {
         Py_BEGIN_CRITICAL_SECTION(op);
         ret = bytearray_ass_subscript_lock_held(op, index, values);
+        Py_END_CRITICAL_SECTION();
+    }
+    return ret;
+}
+
+int
+_PyByteArray_StoreSlice(PyObject *op, PyObject *start, PyObject *stop,
+                        PyObject *value)
+{
+    assert(PyByteArray_CheckExact(op));
+    assert(value != NULL);
+    PyByteArrayObject *self = _PyByteArray_CAST(op);
+    Py_ssize_t istart, istop;
+    if (!_PyEval_SliceIndex(start, &istart)) {
+        return -1;
+    }
+    if (!_PyEval_SliceIndex(stop, &istop)) {
+        return -1;
+    }
+    int ret;
+    if (PyByteArray_Check(value)) {
+        Py_BEGIN_CRITICAL_SECTION2(self, value);
+        Py_ssize_t slicelen = PySlice_AdjustIndices(Py_SIZE(self), &istart,
+                                                    &istop, 1);
+        ret = bytearray_ass_slice_lock_held(self, istart, istop, 1, slicelen,
+                                            value);
+        Py_END_CRITICAL_SECTION2();
+    }
+    else {
+        Py_BEGIN_CRITICAL_SECTION(self);
+        Py_ssize_t slicelen = PySlice_AdjustIndices(Py_SIZE(self), &istart,
+                                                    &istop, 1);
+        ret = bytearray_ass_slice_lock_held(self, istart, istop, 1, slicelen,
+                                            value);
         Py_END_CRITICAL_SECTION();
     }
     return ret;

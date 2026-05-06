@@ -190,6 +190,9 @@ dummy_func(void) {
         if (sym_matches_type(container, &PyList_Type)) {
             REPLACE_OP(this_instr, _STORE_SLICE_LIST, 0, 0);
         }
+        else if (sym_matches_type(container, &PyByteArray_Type)) {
+            REPLACE_OP(this_instr, _STORE_SLICE_BYTEARRAY, 0, 0);
+        }
     }
 
     op(_STORE_SLICE_LIST, (v, list_st, start, stop -- )) {
@@ -197,6 +200,13 @@ dummy_func(void) {
         (void)start;
         (void)stop;
         assert(sym_matches_type(list_st, &PyList_Type));
+    }
+
+    op(_STORE_SLICE_BYTEARRAY, (v, ba_st, start, stop -- )) {
+        (void)v;
+        (void)start;
+        (void)stop;
+        assert(sym_matches_type(ba_st, &PyByteArray_Type));
     }
 
     op(_STORE_ATTR_SLOT, (index/1, value, owner -- o)) {
