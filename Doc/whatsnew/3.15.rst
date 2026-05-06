@@ -658,6 +658,8 @@ Other language changes
 
   (Contributed by Adam Turner in :gh:`133711`; PEP 686 written by Inada Naoki.)
 
+  .. _whatsnew315-color-interpreter-help:
+
 * The interpreter help (such as ``python --help``) is now in color.
   This can be controlled by :ref:`environment variables
   <using-on-controlling-color>`.
@@ -679,11 +681,12 @@ Other language changes
   :ref:`http.server <whatsnew315-color-http.server>`,
   :ref:`pickletools <whatsnew315-color-pickletools>`,
   :ref:`PyREPL tab completion <whatsnew315-pyrepl-completion>`,
+  :ref:`python --help <whatsnew315-color-interpreter-help>`,
   :ref:`sqlite3 <whatsnew315-color-sqlite3>`,
   :ref:`timeit <whatsnew315-color-timeit>`,
   :ref:`tokenize <whatsnew315-color-tokenize>`,
   :ref:`unraisable exceptions <whatsnew315-color-exceptions>` and
-  stdlib (ast, compileall, doctest, gzip, inspect, json.tool, pdb,
+  :term:`stdlib` (ast, compileall, doctest, gzip, inspect, json.tool, pdb,
   profiling.sampling, random, regrtest, sqlite3, timeit, tokenize, trace,
   unittest, uuid, zipapp, zipfile) CLI help.
 
@@ -836,7 +839,7 @@ Default interactive shell
 * Tab completions are now colored by object kind, based on
   :pypi:`fancycompleter`.
   Set :envvar:`PYTHON_BASIC_COMPLETER` to fall back to :mod:`rlcompleter`.
-  This can also be controlled by :ref:`environment variables
+  Color can also be controlled by :ref:`environment variables
   <using-on-controlling-color>`.
   (Contributed by Antonio Cuni and Pablo Galindo in :gh:`130472`.)
 
