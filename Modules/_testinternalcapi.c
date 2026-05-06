@@ -2947,8 +2947,18 @@ test_threadstate_set_stack_protection(PyObject *self, PyObject *Py_UNUSED(args))
 static PyObject *
 test_interp_guard_countdown(PyObject *self, PyObject *unused)
 {
+    PyThreadState *save_tstate = PyThreadState_Swap(NULL);
+
+    // This test assumes that the interpreter has no guards active.
+    // While this is currently true for the main interpreter as of writing,
+    // this won't necessarily be true in the future. For the sake of
+    // maintainance, we create a new interpreter to be sure that there aren't
+    // any other guards.
+    PyThreadState *interp_tstate = Py_NewInterpreter();
+    assert(interp_tstate != NULL);
     PyInterpreterState *interp = PyInterpreterState_Get();
     assert(_PyInterpreterState_GuardCountdown(interp) == 0);
+
     PyInterpreterGuard *guards[NUM_GUARDS];
     for (int i = 0; i < NUM_GUARDS; ++i) {
         guards[i] = PyInterpreterGuard_FromCurrent();
@@ -2961,6 +2971,8 @@ test_interp_guard_countdown(PyObject *self, PyObject *unused)
         assert(_PyInterpreterState_GuardCountdown(interp) == (NUM_GUARDS - i - 1));
     }
 
+    Py_EndInterpreter(interp_tstate);
+    PyThreadState_Swap(save_tstate);
     Py_RETURN_NONE;
 }
 

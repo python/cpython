@@ -2830,6 +2830,55 @@ test_thread_state_ensure_view(PyObject *self, PyObject *unused)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_thread_state_ensure_detachment(PyObject *self, PyObject *unused)
+{
+    PyThreadState *before = PyThreadState_Get();
+    assert(before != NULL);
+
+    PyInterpreterGuard *guard = PyInterpreterGuard_FromCurrent();
+    assert(guard != NULL);
+
+    PyThreadStateToken *token = PyThreadState_Ensure(guard);
+    assert(token != NULL);
+    /* Ensure took the fast path; tstate is unchanged. */
+    assert(PyThreadState_Get() == before);
+
+    PyThreadState_Release(token);
+
+    PyThreadState *after = PyThreadState_GetUnchecked();
+    assert(after != NULL);
+
+    PyInterpreterGuard_Close(guard);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+test_thread_state_ensure_detached_gilstate(PyObject *self, PyObject *unused)
+{
+    PyInterpreterGuard *guard = PyInterpreterGuard_FromCurrent();
+    PyThreadState *gilstate = PyGILState_GetThisThreadState();
+
+    PyThreadStateToken *token1 = PyThreadState_Ensure(guard);
+    assert(PyThreadState_Get() == gilstate);
+
+    Py_BEGIN_ALLOW_THREADS
+    assert(PyThreadState_GetUnchecked() == NULL);
+    PyThreadStateToken *token2 = PyThreadState_Ensure(guard);
+    assert(PyThreadState_Get() == gilstate);
+    PyThreadState_Release(token2);
+    assert(PyThreadState_GetUnchecked() == NULL);
+    Py_END_ALLOW_THREADS
+    assert(PyThreadState_Get() == gilstate);
+
+    PyThreadState_Release(token1);
+    assert(PyThreadState_Get() == gilstate);
+
+    PyInterpreterGuard_Close(guard);
+
+    Py_RETURN_NONE;
+}
+
 
 static PyObject*
 test_soft_deprecated_macros(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
@@ -2863,29 +2912,6 @@ test_soft_deprecated_macros(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args)
     #else
         Py_BUILD_ASSERT(sizeof(wchar_t) < 4);
     #endif
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-test_thread_state_ensure_detachment(PyObject *self, PyObject *unused)
-{
-    PyThreadState *before = PyThreadState_Get();
-    assert(before != NULL);
-
-    PyInterpreterGuard *guard = PyInterpreterGuard_FromCurrent();
-    assert(guard != NULL);
-
-    PyThreadStateToken *token = PyThreadState_Ensure(guard);
-    assert(token != NULL);
-    /* Ensure took the fast path; tstate is unchanged. */
-    assert(PyThreadState_Get() == before);
-
-    PyThreadState_Release(token);
-
-    PyThreadState *after = PyThreadState_GetUnchecked();
-    assert(after != NULL);
-
-    PyInterpreterGuard_Close(guard);
     Py_RETURN_NONE;
 }
 
@@ -2993,6 +3019,7 @@ static PyMethodDef TestMethods[] = {
     {"test_interp_view_after_shutdown", test_interp_view_after_shutdown, METH_NOARGS},
     {"test_thread_state_ensure_view", test_thread_state_ensure_view, METH_NOARGS},
     {"test_thread_state_ensure_detachment", test_thread_state_ensure_detachment, METH_NOARGS},
+    {"test_thread_state_ensure_detached_gilstate", test_thread_state_ensure_detached_gilstate, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

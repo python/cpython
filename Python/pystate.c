@@ -3471,8 +3471,10 @@ PyInterpreterView_FromMain(void)
 }
 
 static const PyThreadStateToken *_no_tstate_sentinel = (const PyThreadStateToken *)&_no_tstate_sentinel;
-
 #define NO_TSTATE_SENTINEL ((PyThreadStateToken *)_no_tstate_sentinel)
+
+static const PyThreadStateToken *_detached_sentinel = (const PyThreadStateToken *)&_detached_sentinel;
+#define DETACHED_TSTATE_SENTINEL ((PyThreadStateToken *)_detached_sentinel)
 
 PyThreadStateToken *
 PyThreadState_Ensure(PyInterpreterGuard *guard)
@@ -3493,7 +3495,7 @@ PyThreadState_Ensure(PyInterpreterGuard *guard)
         assert(attached_tstate == NULL);
         ++detached_gilstate->ensure.counter;
         _PyThreadState_Attach(detached_gilstate);
-        return NO_TSTATE_SENTINEL;
+        return DETACHED_TSTATE_SENTINEL;
     }
 
     PyThreadState *fresh_tstate = _PyThreadState_NewBound(interp,
@@ -3553,11 +3555,16 @@ PyThreadState_Release(PyThreadStateToken *token)
     }
 
     if (remaining != 0) {
+        // If the corresponding PyThreadState_Ensure() call used a detached
+        // thread state, we want to detach it again.
+        if (token == DETACHED_TSTATE_SENTINEL) {
+            PyThreadState_Swap(NULL);
+        }
         return;
     }
 
     PyThreadState *to_restore;
-    if (token == NO_TSTATE_SENTINEL) {
+    if (token == NO_TSTATE_SENTINEL || token == DETACHED_TSTATE_SENTINEL) {
         to_restore = NULL;
     }
     else {
