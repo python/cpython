@@ -230,13 +230,13 @@ def distclean(repo_root: Path) -> None:
     clean(repo_root)
     if config.IS_WINDOWS:
         docker_mod.clean_volume(repo_root)
-    # Remove the venv separately — on Windows, git clean cannot delete
-    # python.exe while the current interpreter (running from the venv) holds
-    # a lock on it.  Use shutil which retries internally and gives a clearer
-    # error than git's interactive "Should I try again?" prompt.
+    # On Windows, the venv's python.exe is locked by the running interpreter.
+    # The shell wrapper (z.ps1 / z.sh) removes the venv *after* Python exits
+    # and the lock is released.  Here we only attempt removal as best-effort;
+    # PermissionError on the locked exe is expected and harmless.
     venv_dir = repo_root / ".nanvix" / "venv"
     if venv_dir.exists():
-        shutil.rmtree(venv_dir)
+        shutil.rmtree(venv_dir, ignore_errors=config.IS_WINDOWS)
     cmd = ["git", "clean", "-fdx"]
     for exc in _DISTCLEAN_EXCLUDES:
         cmd.extend(["-e", exc])
