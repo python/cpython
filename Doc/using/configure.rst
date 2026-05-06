@@ -788,10 +788,10 @@ also be used to improve performance.
    pointers to ``BASECFLAGS``:
 
    - ``-fno-omit-frame-pointer`` and/or ``-mno-omit-leaf-frame-pointer``
-     are added when the compiler supports them,
+     are added when the compiler supports them.
    - ``-marm`` is added on 32-bit ARM when supported,
-   - on s390x platforms, when supported, ``-mbackchain`` is added *instead*
-     of the above frame pointer flags
+   - on s390x platforms, when supported, ``-mbackchain`` is added *instead*.
+     of the above frame pointer flags.
 
    Frame pointers enable profilers, debuggers, and system tracing tools
    (``perf``, ``eBPF``, ``dtrace``, ``gdb``) to walk the C call stack
