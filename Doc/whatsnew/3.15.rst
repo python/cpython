@@ -76,7 +76,7 @@ Summary -- Release highlights
 * :pep:`799`: :ref:`Tachyon: High frequency statistical sampling profiler
   <whatsnew315-sampling-profiler>`
 * :pep:`831`: :ref:`Frame pointers are enabled by default for improved
-  system-level observability <whatsnew315-pep831>`
+  system-level observability <whatsnew315-frame-pointers>`
 * :pep:`798`: :ref:`Unpacking in comprehensions
   <whatsnew315-unpacking-in-comprehensions>`
 * :pep:`686`: :ref:`Python now uses UTF-8 as the default encoding
@@ -89,12 +89,14 @@ Summary -- Release highlights
 * :pep:`782`: :ref:`A new PyBytesWriter C API to create a Python bytes object
   <whatsnew315-pybyteswriter>`
 * :pep:`803`, :pep:`820 <820>`, :pep:`793 <793>`:
-  :ref:`Stable ABI for Free-Threaded Builds <whatsnew315-abi3t>` and
+  :ref:`Stable ABI for free-threaded builds <whatsnew315-abi3t>` and
   related C API
 * :ref:`The JIT compiler has been significantly upgraded <whatsnew315-jit>`
-* :ref:`Improved error messages <whatsnew315-improved-error-messages>`
 * :ref:`The official Windows 64-bit binaries now use the tail-calling interpreter
   <whatsnew315-windows-tail-calling-interpreter>`
+* :ref:`Improved error messages <whatsnew315-improved-error-messages>`
+* :ref:`More color <whatsnew315-more-color>`
+
 
 New features
 ============
@@ -267,6 +269,8 @@ name.
 
 (PEP by Tal Einat; contributed by Jelle Zijlstra in :gh:`148829`.)
 
+.. seealso:: :pep:`661` for further details.
+
 
 .. _whatsnew315-profiling-package:
 
@@ -379,7 +383,7 @@ available output formats, profiling modes, and configuration options.
 (Contributed by Pablo Galindo and László Kiss Kollár in :gh:`135953` and :gh:`138122`.)
 
 
-.. _whatsnew315-pep831:
+.. _whatsnew315-frame-pointers:
 
 :pep:`831`: Frame pointers enabled by default
 ---------------------------------------------
@@ -405,16 +409,16 @@ embedding applications, and native libraries.
    single native component built without frame pointers can break stack
    unwinding for the whole Python process.
 
-.. seealso:: :pep:`831` for further details.
-
 (Contributed by Pablo Galindo Salgado and Savannah Ostrowski in
 :gh:`149201`; PEP 831 written by Pablo Galindo Salgado, Ken Jin, and
 Savannah Ostrowski.)
 
+.. seealso:: :pep:`831` for further details.
+
 
 .. _whatsnew315-unpacking-in-comprehensions:
 
-:pep:`798`: Unpacking in Comprehensions
+:pep:`798`: Unpacking in comprehensions
 ---------------------------------------
 
 List, set, and dictionary comprehensions, as well as generator expressions, now
@@ -479,8 +483,8 @@ are ignored.  There is no change to :data:`sys.path` extension lines in
 
 .. _whatsnew315-abi3t:
 
-:pep:`803` -- Stable ABI for Free-Threaded Builds
-------------------------------------------------------------
+:pep:`803` -- Stable ABI for free-threaded builds
+-------------------------------------------------
 
 C extensions that target the :ref:`Stable ABI <stable-abi>` can now be
 compiled for the new *Stable ABI for Free-Threaded Builds* (also known
@@ -516,6 +520,8 @@ If this is the case for your tool, compile for ``cp315t`` separately.
 If not using a build tool -- or when writing such a tool -- you can select
 ``abi3t`` by setting the macro :c:macro:`!Py_TARGET_ABI3T` as discussed
 in :ref:`abi3-compiling`.
+
+.. seealso:: :pep:`803` for further details.
 
 
 .. _whatsnew315-improved-error-messages:
@@ -652,14 +658,37 @@ Other language changes
 
   (Contributed by Adam Turner in :gh:`133711`; PEP 686 written by Inada Naoki.)
 
+  .. _whatsnew315-color-interpreter-help:
+
 * The interpreter help (such as ``python --help``) is now in color.
   This can be controlled by :ref:`environment variables
   <using-on-controlling-color>`.
   (Contributed by Hugo van Kemenade in :gh:`148766`.)
 
+  .. _whatsnew315-color-exceptions:
+
 * Unraisable exceptions are now highlighted with color by default. This can be
   controlled by :ref:`environment variables <using-on-controlling-color>`.
   (Contributed by Peter Bierma in :gh:`134170`.)
+
+  .. _whatsnew315-more-color:
+
+* More color in
+  :ref:`argparse <whatsnew315-color-argparse>`,
+  :ref:`ast <whatsnew315-color-ast>`,
+  :ref:`calendar <whatsnew315-color-calendar>`,
+  :ref:`difflib <whatsnew315-color-difflib>`,
+  :ref:`http.server <whatsnew315-color-http.server>`,
+  :ref:`pickletools <whatsnew315-color-pickletools>`,
+  :ref:`PyREPL tab completion <whatsnew315-pyrepl-completion>`,
+  :ref:`python --help <whatsnew315-color-interpreter-help>`,
+  :ref:`sqlite3 <whatsnew315-color-sqlite3>`,
+  :ref:`timeit <whatsnew315-color-timeit>`,
+  :ref:`tokenize <whatsnew315-color-tokenize>`,
+  :ref:`unraisable exceptions <whatsnew315-color-exceptions>` and
+  :term:`stdlib` (ast, compileall, doctest, gzip, inspect, json.tool, pdb,
+  profiling.sampling, random, regrtest, sqlite3, timeit, tokenize, trace,
+  unittest, uuid, zipapp, zipfile) CLI help.
 
 * The :meth:`~object.__repr__` of :class:`ImportError` and :class:`ModuleNotFoundError`
   now shows "name" and "path" as ``name=<name>`` and ``path=<path>`` if they were given
@@ -802,6 +831,19 @@ Other language changes
   (Contributed by Gregory P. Smith in :gh:`83065`.)
 
 
+Default interactive shell
+=========================
+
+.. _whatsnew315-pyrepl-completion:
+
+* Tab completions are now colored by object kind, based on
+  :pypi:`fancycompleter`.
+  Set :envvar:`PYTHON_BASIC_COMPLETER` to fall back to :mod:`rlcompleter`.
+  Color can also be controlled by :ref:`environment variables
+  <using-on-controlling-color>`.
+  (Contributed by Antonio Cuni and Pablo Galindo in :gh:`130472`.)
+
+
 New modules
 ===========
 
@@ -819,13 +861,15 @@ Improved modules
 argparse
 --------
 
-* The :class:`~argparse.BooleanOptionalAction` action supports now single-dash
+* The :class:`~argparse.BooleanOptionalAction` action now supports single-dash
   long options and alternate prefix characters.
   (Contributed by Serhiy Storchaka in :gh:`138525`.)
 
 * Changed the *suggest_on_error* parameter of :class:`argparse.ArgumentParser` to
   default to ``True``. This enables suggestions for mistyped arguments by default.
   (Contributed by Jakob Schluse in :gh:`140450`.)
+
+  .. _whatsnew315-color-argparse:
 
 * Added backtick markup support in :class:`~argparse.ArgumentParser` description
   and epilog text to highlight inline code when color output is enabled.
@@ -854,6 +898,8 @@ array
 
 ast
 ---
+
+  .. _whatsnew315-color-ast:
 
 * Add *color* parameter to :func:`~ast.dump`.
   If ``True``, the returned string is syntax highlighted using ANSI escape
@@ -952,6 +998,8 @@ binascii
 calendar
 --------
 
+  .. _whatsnew315-color-calendar:
+
 * :mod:`calendar`'s :ref:`command-line <calendar-cli>` text output has more
   color. This can be controlled with :ref:`environment variables
   <using-on-controlling-color>`.
@@ -1015,7 +1063,7 @@ dbm
 ---
 
 * Added new :meth:`!reorganize` methods to :mod:`dbm.dumb` and :mod:`dbm.sqlite3`
-  which allow to recover unused free space previously occupied by deleted entries.
+  to recover unused free space previously occupied by deleted entries.
   (Contributed by Andrea Oliveri in :gh:`134004`.)
 
 
@@ -1101,6 +1149,8 @@ http.client
 http.server
 -----------
 
+  .. _whatsnew315-color-http.server:
+
 * The logging of :mod:`~http.server.BaseHTTPRequestHandler`,
   as used by the :ref:`command-line interface <http-server-cli>`,
   is colored by default.
@@ -1130,6 +1180,7 @@ inspect
 * Add parameters *inherit_class_doc* and *fallback_to_class_doc*
   for :func:`~inspect.getdoc`.
   (Contributed by Serhiy Storchaka in :gh:`132686`.)
+
 
 json
 ----
@@ -1231,6 +1282,8 @@ pickle
 pickletools
 -----------
 
+  .. _whatsnew315-color-pickletools:
+
 * The output of the :mod:`pickletools` command-line interface is colored by
   default. This can be controlled with
   :ref:`environment variables <using-on-controlling-color>`.
@@ -1298,6 +1351,8 @@ sqlite3
 
   * SQL keyword completion on <tab>.
     (Contributed by Long Tan in :gh:`133393`.)
+
+  .. _whatsnew315-color-sqlite3:
 
   * Prompts, error messages, and help text are now colored.
     This is enabled by default, see :ref:`using-on-controlling-color` for
@@ -1422,7 +1477,7 @@ tarfile
   (Contributed by Matt Prodani and Petr Viktorin in :gh:`112887`
   and :cve:`2025-4435`.)
 * :func:`~tarfile.TarFile.extract` and :func:`~tarfile.TarFile.extractall`
-  now replace slashes by backslashes in symlink targets on Windows to prevent
+  now replace slashes with backslashes in symlink targets on Windows to prevent
   creation of corrupted links.
   (Contributed by Christoph Walcher in :gh:`57911`.)
 
@@ -1440,10 +1495,13 @@ threading
 timeit
 ------
 
+  .. _whatsnew315-color-timeit:
+
 * The output of the :mod:`timeit` command-line interface is colored by default.
   This can be controlled with
   :ref:`environment variables <using-on-controlling-color>`.
   (Contributed by Hugo van Kemenade in :gh:`146609`.)
+
 * The command-line interface now colorizes error tracebacks
   by default. This can be controlled with
   :ref:`environment variables <using-on-controlling-color>`.
@@ -1482,6 +1540,8 @@ tkinter
 
 tokenize
 --------
+
+  .. _whatsnew315-color-tokenize:
 
 * The output of the :mod:`tokenize` :ref:`command-line interface
   <tokenize-cli>` is colored by default. This can be controlled with
@@ -1583,7 +1643,7 @@ typing
 
 * Code like ``class B2(A[T2], Protocol[T1, T2]): ...`` now correctly handles
   type parameters order: it is ``(T1, T2)``, not ``(T2, T1)``
-  as it was incorrectly inferred in runtime before.
+  as it was incorrectly inferred at runtime before.
   (Contributed by Nikita Sobolev in :gh:`137191`.)
 
 * :pep:`800`: Add :deco:`typing.disjoint_base`, a new decorator marking a class
@@ -1646,8 +1706,8 @@ urllib.parse
   :func:`~urllib.parse.urlparse` and :func:`~urllib.parse.urldefrag` functions.
   Add the *keep_empty* parameter to :func:`~urllib.parse.urlunsplit` and
   :func:`~urllib.parse.urlunparse` functions.
-  This allows to distinguish between empty and not defined URI components
-  and preserve empty components.
+  This allows distinguishing between empty and undefined URI components
+  and preserving empty components.
   (Contributed by Serhiy Storchaka in :gh:`67041`.)
 
 
@@ -1655,7 +1715,7 @@ venv
 ----
 
 * On POSIX platforms, platlib directories will be created if needed when
-  creating virtual environments, instead of using ``lib64 -> lib`` symlink.
+  creating virtual environments, instead of using a ``lib64 -> lib`` symlink.
   This means purelib and platlib of virtual environments no longer share the
   same ``lib`` directory on platforms where :data:`sys.platlibdir` is not
   equal to ``lib``.
@@ -1710,7 +1770,7 @@ webbrowser
 xml
 ---
 
-* Add the :func:`xml.is_valid_name` function, which allows to check
+* Add the :func:`xml.is_valid_name` function to check
   whether a string can be used as an element or attribute name in XML.
   (Contributed by Serhiy Storchaka in :gh:`139489`.)
 
@@ -1854,7 +1914,7 @@ reduces the cost of most operations in Python.
 Reiden Ong, Noam Cohen, Tomas Roun, PuQing, Cajetan Rodrigues, and Sacul in :gh:`134584`.)
 
 By tracking unique references to objects, the JIT optimizer can now eliminate
-reference count updates and perform inplace operations on ints and floats.
+reference count updates and perform in-place operations on ints and floats.
 (Contributed by Reiden Ong, and Pieter Eendebak in :gh:`143414` and :gh:`146306`.)
 
 The JIT optimizer now supports significantly more operations than in 3.14.
@@ -2136,10 +2196,10 @@ New deprecations
 
 * :mod:`struct`:
 
-  * Calling the ``Struct.__new__()`` without required argument now is
-    deprecated and will be removed in Python 3.20.  Calling
-    :meth:`~object.__init__` method on initialized :class:`~struct.Struct`
-    objects is deprecated and will be removed in Python 3.20.
+  * Calling ``Struct.__new__()`` without a required argument is now
+    deprecated and will be removed in Python 3.20.  Calling the
+    :meth:`~object.__init__` method on an initialized :class:`~struct.Struct`
+    object is deprecated and will be removed in Python 3.20.
 
     (Contributed by Sergey B Kirpichev and Serhiy Storchaka in :gh:`143715`.)
 
@@ -2248,8 +2308,8 @@ New features
   (Contributed by Petr Viktorin in :gh:`131510`.)
 
 * Add API for checking an extension module's ABI compatibility:
-  :c:data:`Py_mod_abi`, :c:func:`PyABIInfo_Check`, :c:macro:`PyABIInfo_VAR`
-  and :c:data:`Py_mod_abi`.
+  :c:data:`Py_mod_abi`, :c:func:`PyABIInfo_Check`,
+  and :c:macro:`PyABIInfo_VAR`.
   (Contributed by Petr Viktorin in :gh:`137210`.)
 
 .. _whatsnew315-pybyteswriter:
@@ -2312,14 +2372,14 @@ New features
   * The :c:type:`PySlot` struct;
   * the :c:func:`PyType_FromSlots` function;
   * new slot IDs: :c:macro:`Py_slot_end`, :c:macro:`Py_slot_invalid`;
-    :c:macro:`Py_slot_subslots`, :c:macro:`Py_tp_slots`
+    :c:macro:`Py_slot_subslots`, :c:macro:`Py_tp_slots`,
     :c:macro:`Py_mod_slots`;
     :c:macro:`Py_tp_name`, :c:macro:`Py_tp_basicsize`,
     :c:macro:`Py_tp_extra_basicsize`, :c:macro:`Py_tp_itemsize`,
     :c:macro:`Py_tp_flags`, :c:macro:`Py_tp_metaclass`,
-    :c:macro:`Py_tp_module`, :c:macro:`Py_tp_flags`;
+    :c:macro:`Py_tp_module`;
   * convenience macros: :c:macro:`PySlot_DATA`, :c:macro:`PySlot_FUNC`,
-    :c:macro:`PySlot_SIZE` :c:macro:`PySlot_INT64`, :c:macro:`PySlot_UINT64`,
+    :c:macro:`PySlot_SIZE`, :c:macro:`PySlot_INT64`, :c:macro:`PySlot_UINT64`,
     :c:macro:`PySlot_STATIC_DATA`, :c:macro:`PySlot_END`,
     :c:macro:`PySlot_PTR`, :c:macro:`PySlot_PTR_STATIC`.
 
@@ -2368,14 +2428,6 @@ Changed C APIs
   for ``NULL`` should be updated to call :c:macro:`PyDateTime_IMPORT` instead.
   (Contributed by Kumar Aditya in :gh:`141563`.)
 
-Porting to Python 3.15
-----------------------
-
-* Private functions promoted to public C APIs:
-
-  The |pythoncapi_compat_project| can be used to get most of these new
-  functions on Python 3.14 and older.
-
 
 Removed C APIs
 --------------
@@ -2385,12 +2437,12 @@ Removed C APIs
   * :c:func:`!PyUnicode_AsDecodedObject`:
     Use :c:func:`PyCodec_Decode` instead.
   * :c:func:`!PyUnicode_AsDecodedUnicode`:
-    Use :c:func:`PyCodec_Decode` instead; Note that some codecs (for example, "base64")
+    Use :c:func:`PyCodec_Decode` instead; note that some codecs (for example, "base64")
     may return a type other than :class:`str`, such as :class:`bytes`.
   * :c:func:`!PyUnicode_AsEncodedObject`:
     Use :c:func:`PyCodec_Encode` instead.
   * :c:func:`!PyUnicode_AsEncodedUnicode`:
-    Use :c:func:`PyCodec_Encode` instead; Note that some codecs (for example, "base64")
+    Use :c:func:`PyCodec_Encode` instead; note that some codecs (for example, "base64")
     may return a type other than :class:`bytes`, such as :class:`str`.
 
   (Contributed by Stan Ulbrych in :gh:`133612`.)
@@ -2551,8 +2603,6 @@ Build changes
   Annotations are visible in ``/proc/<pid>/maps`` if the kernel supports the feature
   and :option:`-X dev <-X>` is passed to the Python or Python is built in :ref:`debug mode <debug-build>`.
   (Contributed by Donghee Na in :gh:`141770`.)
-
-.. _whatsnew315-frame-pointers:
 
 * CPython is now built with frame pointers enabled by default
   (:pep:`831`). Pass :option:`--without-frame-pointers` to opt out.
