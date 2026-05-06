@@ -122,6 +122,23 @@ class TestLazyImports(unittest.TestCase):
             additional_code=add_subparser,
         )
 
+    def test_parse_args(self):
+        example_parser = textwrap.dedent(
+            """
+            parser = argparse.ArgumentParser(prog='PROG')
+            parser.add_argument('-f', '--foo')
+            parser.add_argument('bar')
+            parser.parse_args(['BAR'])
+            parser.parse_args(['BAR', '--foo', 'FOO'])
+            """
+        )
+        imported_modules = {"shutil"}
+        import_helper.ensure_lazy_imports(
+            "argparse",
+            self.LAZY_IMPORTS - imported_modules,
+            additional_code=example_parser
+        )
+
 
 class TestArgumentParserPickleable(unittest.TestCase):
 
