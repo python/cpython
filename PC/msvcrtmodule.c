@@ -62,8 +62,11 @@ class byte_char_return_converter(CReturnConverter):
     type = 'int'
 
     def render(self, function, data):
+        self.declare(data)
+        self.err_occurred_if("_return_value == EOF", data)
         data.declarations.append('char s[1];')
-        data.return_value = 's[0]'
+        data.return_conversion.append(
+            's[0] = (char)_return_value;\n')
         data.return_conversion.append(
             'return_value = PyBytes_FromStringAndSize(s, 1);\n')
 
@@ -72,10 +75,11 @@ class wchar_t_return_converter(CReturnConverter):
 
     def render(self, function, data):
         self.declare(data)
+        self.err_occurred_if("_return_value == WEOF", data)
         data.return_conversion.append(
             'return_value = PyUnicode_FromOrdinal(_return_value);\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=ff031be44ab3250d]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=4da08376e54a1a4d]*/
 
 /*[clinic input]
 module msvcrt
@@ -252,6 +256,9 @@ msvcrt_getch_impl(PyObject *module)
     Py_BEGIN_ALLOW_THREADS
     ch = _getch();
     Py_END_ALLOW_THREADS
+    if (ch == EOF) {
+        PyErr_SetFromWindowsErr(0);
+    }
     return ch;
 }
 
@@ -272,6 +279,9 @@ msvcrt_getwch_impl(PyObject *module)
     Py_BEGIN_ALLOW_THREADS
     ch = _getwch();
     Py_END_ALLOW_THREADS
+    if (ch == WEOF) {
+        PyErr_SetFromWindowsErr(0);
+    }
     return ch;
 }
 
@@ -292,6 +302,9 @@ msvcrt_getche_impl(PyObject *module)
     Py_BEGIN_ALLOW_THREADS
     ch = _getche();
     Py_END_ALLOW_THREADS
+    if (ch == EOF) {
+        PyErr_SetFromWindowsErr(0);
+    }
     return ch;
 }
 
@@ -312,6 +325,9 @@ msvcrt_getwche_impl(PyObject *module)
     Py_BEGIN_ALLOW_THREADS
     ch = _getwche();
     Py_END_ALLOW_THREADS
+    if (ch == WEOF) {
+        PyErr_SetFromWindowsErr(0);
+    }
     return ch;
 }
 

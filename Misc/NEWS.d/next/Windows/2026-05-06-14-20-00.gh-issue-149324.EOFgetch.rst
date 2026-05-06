@@ -1,0 +1,3 @@
+Fix :func:`msvcrt.getch`, :func:`msvcrt.getche`, :func:`msvcrt.getwch`, and
+:func:`msvcrt.getwche` to raise :exc:`OSError` instead of returning the CRT
+EOF sentinel when no console is attached.
