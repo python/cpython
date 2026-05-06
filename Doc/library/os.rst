@@ -5066,9 +5066,9 @@ written in Python, such as a mail server's external command delivery program.
 
    Duplicate *targetfd* from the process referred to by the process file
    descriptor *pidfd*, into the calling process.  The returned file descriptor
-   is :ref:`non-inheritable<fd_inheritance>`.
+   is :ref:`non-inheritable <fd_inheritance>`.
 
-   *flags* is reserved, and currently must be `0`.
+   *flags* is reserved, and currently must be ``0``.
 
    See the :manpage:`pidfd_getfd(2)` man page for more details.
 
