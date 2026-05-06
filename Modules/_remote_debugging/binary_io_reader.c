@@ -23,14 +23,10 @@
  * ============================================================================ */
 
 /* File structure sizes */
-#define FILE_FOOTER_SIZE 32
 #define MIN_DECOMPRESS_BUFFER_SIZE (64 * 1024)  /* Minimum decompression buffer */
 
 /* Progress callback frequency */
 #define PROGRESS_CALLBACK_INTERVAL 1000
-
-/* Maximum decompression size limit (1GB) */
-#define MAX_DECOMPRESS_SIZE (1ULL << 30)
 
 /* ============================================================================
  * BINARY READER IMPLEMENTATION
@@ -47,8 +43,8 @@ reader_parse_header(BinaryReader *reader, const uint8_t *data, size_t file_size)
     /* Use memcpy to avoid strict aliasing violations and unaligned access */
     uint32_t magic;
     uint32_t version;
-    memcpy(&magic, &data[0], sizeof(magic));
-    memcpy(&version, &data[4], sizeof(version));
+    memcpy(&magic, &data[HDR_OFF_MAGIC], HDR_SIZE_MAGIC);
+    memcpy(&version, &data[HDR_OFF_VERSION], HDR_SIZE_VERSION);
 
     /* Detect endianness from magic number */
     if (magic == BINARY_FORMAT_MAGIC) {
@@ -119,8 +115,8 @@ reader_parse_footer(BinaryReader *reader, const uint8_t *data, size_t file_size)
     const uint8_t *footer = data + file_size - FILE_FOOTER_SIZE;
     /* Use memcpy to avoid strict aliasing violations */
     uint32_t strings_count, frames_count;
-    memcpy(&strings_count, &footer[0], sizeof(strings_count));
-    memcpy(&frames_count, &footer[4], sizeof(frames_count));
+    memcpy(&strings_count, &footer[FTR_OFF_STRINGS], FTR_SIZE_STRINGS);
+    memcpy(&frames_count, &footer[FTR_OFF_FRAMES], FTR_SIZE_FRAMES);
 
     reader->strings_count = SWAP32_IF(reader->needs_swap, strings_count);
     reader->frames_count = SWAP32_IF(reader->needs_swap, frames_count);
@@ -563,6 +559,14 @@ reader_get_or_create_thread_state(BinaryReader *reader, uint64_t thread_id,
         }
     }
 
+    if (reader->thread_state_count >= reader->thread_count) {
+        PyErr_Format(PyExc_ValueError,
+            "Invalid thread count: sample data contains more unique threads than declared in header "
+            "(declared %u, found at least %zu)",
+            reader->thread_count, reader->thread_state_count + 1);
+        return NULL;
+    }
+
     if (!reader->thread_states) {
         reader->thread_state_capacity = 16;
         reader->thread_states = PyMem_Calloc(reader->thread_state_capacity, sizeof(ReaderThreadState));
@@ -785,9 +789,9 @@ build_frame_list(RemoteDebuggingState *state, BinaryReader *reader,
         if (frame->lineno != LOCATION_NOT_AVAILABLE) {
             location = Py_BuildValue("(iiii)",
                 frame->lineno,
-                frame->end_lineno != LOCATION_NOT_AVAILABLE ? frame->end_lineno : frame->lineno,
-                frame->column != LOCATION_NOT_AVAILABLE ? frame->column : 0,
-                frame->end_column != LOCATION_NOT_AVAILABLE ? frame->end_column : 0);
+                frame->end_lineno,
+                frame->column,
+                frame->end_column);
             if (!location) {
                 Py_DECREF(frame_info);
                 goto error;
@@ -984,11 +988,11 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
         /* Use memcpy to avoid strict aliasing violations, then byte-swap if needed */
         uint64_t thread_id_raw;
         uint32_t interpreter_id_raw;
-        memcpy(&thread_id_raw, &reader->sample_data[offset], sizeof(thread_id_raw));
-        offset += 8;
+        memcpy(&thread_id_raw, &reader->sample_data[offset], SMP_SIZE_THREAD_ID);
+        offset += SMP_SIZE_THREAD_ID;
 
-        memcpy(&interpreter_id_raw, &reader->sample_data[offset], sizeof(interpreter_id_raw));
-        offset += 4;
+        memcpy(&interpreter_id_raw, &reader->sample_data[offset], SMP_SIZE_INTERPRETER_ID);
+        offset += SMP_SIZE_INTERPRETER_ID;
 
         uint64_t thread_id = SWAP64_IF(reader->needs_swap, thread_id_raw);
         uint32_t interpreter_id = SWAP32_IF(reader->needs_swap, interpreter_id_raw);

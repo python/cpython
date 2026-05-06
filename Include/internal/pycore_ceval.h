@@ -94,7 +94,7 @@ typedef struct {
     void* (*init_state)(void);
     // Callback to register every trampoline being created
     void (*write_state)(void* state, const void *code_addr,
-                        unsigned int code_size, PyCodeObject* code);
+                        size_t code_size, PyCodeObject* code);
     // Callback to free the trampoline state
     int (*free_state)(void* state);
 } _PyPerf_Callbacks;
@@ -108,6 +108,10 @@ extern PyStatus _PyPerfTrampoline_AfterFork_Child(void);
 #ifdef PY_HAVE_PERF_TRAMPOLINE
 extern _PyPerf_Callbacks _Py_perfmap_callbacks;
 extern _PyPerf_Callbacks _Py_perfmap_jit_callbacks;
+extern void _PyPerfJit_WriteNamedCode(const void *code_addr,
+                                      size_t code_size,
+                                      const char *entry,
+                                      const char *filename);
 #endif
 
 static inline PyObject*

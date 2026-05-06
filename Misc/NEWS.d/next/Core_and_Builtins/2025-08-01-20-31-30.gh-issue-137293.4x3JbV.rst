@@ -1,0 +1,1 @@
+Fix :exc:`SystemError` when searching ELF Files in :func:`sys.remote_exec`.
