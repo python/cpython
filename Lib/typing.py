@@ -28,6 +28,7 @@ import operator
 import sys
 import types
 from types import GenericAlias
+lazy import annotationlib
 
 from _typing import (
     _idfunc,
@@ -163,15 +164,6 @@ __all__ = [
     'Unpack',
 ]
 
-class _LazyAnnotationLib:
-    def __getattr__(self, attr):
-        global _lazy_annotationlib
-        import annotationlib
-        _lazy_annotationlib = annotationlib
-        return getattr(annotationlib, attr)
-
-_lazy_annotationlib = _LazyAnnotationLib()
-
 
 def _type_convert(arg, module=None, *, allow_special_forms=False, owner=None):
     """For converting None to type(None), and strings to ForwardRef."""
@@ -255,7 +247,7 @@ def _type_repr(obj):
     if isinstance(obj, tuple):
         # Special case for `repr` of types with `ParamSpec`:
         return '[' + ', '.join(_type_repr(t) for t in obj) + ']'
-    return _lazy_annotationlib.type_repr(obj)
+    return annotationlib.type_repr(obj)
 
 
 def _collect_type_parameters(
@@ -463,7 +455,7 @@ def _eval_type(t, globalns, localns, type_params, *, recursive_guard=frozenset()
     recursive_guard is used to prevent infinite recursion with a recursive
     ForwardRef.
     """
-    if isinstance(t, _lazy_annotationlib.ForwardRef):
+    if isinstance(t, annotationlib.ForwardRef):
         # If the forward_ref has __forward_module__ set, evaluate() infers the globals
         # from the module, and it will probably pick better than the globals we have here.
         # We do this only for calls from get_type_hints() (which opts in through the
@@ -1004,7 +996,7 @@ def _make_forward_ref(code, *, parent_fwdref=None, **kwargs):
             kwargs['module'] = parent_fwdref.__forward_module__
         if parent_fwdref.__owner__ is not None:
             kwargs['owner'] = parent_fwdref.__owner__
-    forward_ref = _lazy_annotationlib.ForwardRef(code, **kwargs)
+    forward_ref = annotationlib.ForwardRef(code, **kwargs)
     # For compatibility, eagerly compile the forwardref's code.
     forward_ref.__forward_code__
     return forward_ref
@@ -1039,18 +1031,18 @@ def evaluate_forward_ref(
     VALUE.
 
     """
-    if format == _lazy_annotationlib.Format.STRING:
+    if format == annotationlib.Format.STRING:
         return forward_ref.__forward_arg__
     if forward_ref.__forward_arg__ in _recursive_guard:
         return forward_ref
 
     if format is None:
-        format = _lazy_annotationlib.Format.VALUE
+        format = annotationlib.Format.VALUE
     value = forward_ref.evaluate(globals=globals, locals=locals,
                                  type_params=type_params, owner=owner, format=format)
 
-    if (isinstance(value, _lazy_annotationlib.ForwardRef)
-            and format == _lazy_annotationlib.Format.FORWARDREF):
+    if (isinstance(value, annotationlib.ForwardRef)
+            and format == annotationlib.Format.FORWARDREF):
         return value
 
     if isinstance(value, str):
@@ -1891,8 +1883,8 @@ def _get_protocol_attrs(cls):
             annotations = base.__annotations__
         except Exception:
             # Only go through annotationlib to handle deferred annotations if we need to
-            annotations = _lazy_annotationlib.get_annotations(
-                base, format=_lazy_annotationlib.Format.FORWARDREF
+            annotations = annotationlib.get_annotations(
+                base, format=annotationlib.Format.FORWARDREF
             )
         for attr in (*base.__dict__, *annotations):
             if not attr.startswith('_abc_') and attr not in EXCLUDED_ATTRIBUTES:
@@ -2140,8 +2132,8 @@ def _proto_hook(cls, other):
                 try:
                     annos = base.__annotations__
                 except Exception:
-                    annos = _lazy_annotationlib.get_annotations(
-                        base, format=_lazy_annotationlib.Format.FORWARDREF
+                    annos = annotationlib.get_annotations(
+                        base, format=annotationlib.Format.FORWARDREF
                     )
                 if attr in annos:
                     break
@@ -2428,14 +2420,14 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
     """
     if getattr(obj, '__no_type_check__', None):
         return {}
-    Format = _lazy_annotationlib.Format
+    Format = annotationlib.Format
     if format is None:
         format = Format.VALUE
     # Classes require a special treatment.
     if isinstance(obj, type):
         hints = {}
         for base in reversed(obj.__mro__):
-            ann = _lazy_annotationlib.get_annotations(base, format=format)
+            ann = annotationlib.get_annotations(base, format=format)
             if format == Format.STRING:
                 hints.update(ann)
                 continue
@@ -2468,7 +2460,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
         else:
             return {k: _strip_annotations(t) for k, t in hints.items()}
 
-    hints = _lazy_annotationlib.get_annotations(obj, format=format)
+    hints = annotationlib.get_annotations(obj, format=format)
     if (
         not hints
         and not isinstance(obj, types.ModuleType)
@@ -3020,10 +3012,10 @@ def _make_eager_annotate(types):
                      for key, val in types.items()}
     def annotate(format):
         match format:
-            case _lazy_annotationlib.Format.VALUE | _lazy_annotationlib.Format.FORWARDREF:
+            case annotationlib.Format.VALUE | annotationlib.Format.FORWARDREF:
                 return checked_types
-            case _lazy_annotationlib.Format.STRING:
-                return _lazy_annotationlib.annotations_to_string(types)
+            case annotationlib.Format.STRING:
+                return annotationlib.annotations_to_string(types)
             case _:
                 raise NotImplementedError(format)
     return annotate
@@ -3053,9 +3045,9 @@ class NamedTupleMeta(type):
             types = ns["__annotations__"]
             field_names = list(types)
             annotate = _make_eager_annotate(types)
-        elif (original_annotate := _lazy_annotationlib.get_annotate_from_class_namespace(ns)) is not None:
-            types = _lazy_annotationlib.call_annotate_function(
-                original_annotate, _lazy_annotationlib.Format.FORWARDREF)
+        elif (original_annotate := annotationlib.get_annotate_from_class_namespace(ns)) is not None:
+            types = annotationlib.call_annotate_function(
+                original_annotate, annotationlib.Format.FORWARDREF)
             field_names = list(types)
 
             # For backward compatibility, type-check all the types at creation time
@@ -3063,9 +3055,9 @@ class NamedTupleMeta(type):
                 _type_check(typ, "field annotation must be a type")
 
             def annotate(format):
-                annos = _lazy_annotationlib.call_annotate_function(
+                annos = annotationlib.call_annotate_function(
                     original_annotate, format)
-                if format != _lazy_annotationlib.Format.STRING:
+                if format != annotationlib.Format.STRING:
                     return {key: _type_check(val, f"field {key} annotation must be a type")
                             for key, val in annos.items()}
                 return annos
@@ -3207,9 +3199,9 @@ class _TypedDictMeta(type):
         if ns_annotations is not None:
             own_annotate = None
             own_annotations = ns_annotations
-        elif (own_annotate := _lazy_annotationlib.get_annotate_from_class_namespace(ns)) is not None:
-            own_annotations = _lazy_annotationlib.call_annotate_function(
-                own_annotate, _lazy_annotationlib.Format.FORWARDREF, owner=tp_dict
+        elif (own_annotate := annotationlib.get_annotate_from_class_namespace(ns)) is not None:
+            own_annotations = annotationlib.call_annotate_function(
+                own_annotate, annotationlib.Format.FORWARDREF, owner=tp_dict
             )
         else:
             own_annotate = None
@@ -3276,20 +3268,20 @@ class _TypedDictMeta(type):
                 base_annotate = base.__annotate__
                 if base_annotate is None:
                     continue
-                base_annos = _lazy_annotationlib.call_annotate_function(
+                base_annos = annotationlib.call_annotate_function(
                     base_annotate, format, owner=base)
                 annos.update(base_annos)
             if own_annotate is not None:
-                own = _lazy_annotationlib.call_annotate_function(
+                own = annotationlib.call_annotate_function(
                     own_annotate, format, owner=tp_dict)
-                if format != _lazy_annotationlib.Format.STRING:
+                if format != annotationlib.Format.STRING:
                     own = {
                         n: _type_check(tp, msg, module=tp_dict.__module__)
                         for n, tp in own.items()
                     }
-            elif format == _lazy_annotationlib.Format.STRING:
-                own = _lazy_annotationlib.annotations_to_string(own_annotations)
-            elif format in (_lazy_annotationlib.Format.FORWARDREF, _lazy_annotationlib.Format.VALUE):
+            elif format == annotationlib.Format.STRING:
+                own = annotationlib.annotations_to_string(own_annotations)
+            elif format in (annotationlib.Format.FORWARDREF, annotationlib.Format.VALUE):
                 own = own_checked_annotations
             else:
                 raise NotImplementedError(format)
@@ -3886,7 +3878,7 @@ def __getattr__(attr):
     are only created on-demand here.
     """
     if attr == "ForwardRef":
-        obj = _lazy_annotationlib.ForwardRef
+        obj = annotationlib.ForwardRef
     elif attr in {"Pattern", "Match"}:
         import re
         obj = _alias(getattr(re, attr), 1)
