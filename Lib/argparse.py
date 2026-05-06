@@ -2847,7 +2847,9 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # Return cached formatter for read-only validation operations
         # (_expand_help and _format_args). Avoids repeated slow _set_color calls.
         if self._cached_formatter is None:
-            self._cached_formatter = self._get_formatter()
+            formatter = self.formatter_class(prog=self.prog)
+            formatter._set_color(False)
+            self._cached_formatter = formatter
         return self._cached_formatter
 
     # =====================
