@@ -19,8 +19,13 @@ def pickle(ob_type, pickle_function, constructor_ob=None):
     if constructor_ob is not None:
         constructor(constructor_ob)
 
-def constructor(object):
-    if not callable(object):
+def constructor(obj):
+    """Register a constructor function for unpickling.
+
+    The constructor function should be callable and will be called
+    with the saved state to reconstruct an object during unpickling.
+    """
+    if not callable(obj):
         raise TypeError("constructors must be callable")
 
 # Example: provide pickling support for complex numbers.
