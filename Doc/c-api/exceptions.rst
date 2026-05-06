@@ -1355,10 +1355,10 @@ Tracebacks
    looks like::
 
       Traceback (most recent call first):
-            File "xxx", line xxx in <xxx>
-            File "xxx", line xxx in <xxx>
-            ...
-            File "xxx", line xxx in <xxx>
+        File "xxx", line xxx in <xxx>
+        File "xxx", line xxx in <xxx>
+        ...
+        File "xxx", line xxx in <xxx>
 
    This function is meant to debug situations such as segfaults, fatal errors,
    and similar. The file and function names it outputs are encoded to ASCII with
