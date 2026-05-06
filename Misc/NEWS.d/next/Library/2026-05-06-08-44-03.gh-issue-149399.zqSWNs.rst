@@ -1,0 +1,4 @@
+Change :meth:`__rep__` of :class:`multiprocessing.Event`
+and add a :meth:`__repr__` in the :class:`multioprocessing.Barrier`
+in order to be consistent with the other synchronization primitives
+of :mod:`multiprocessing` module.
