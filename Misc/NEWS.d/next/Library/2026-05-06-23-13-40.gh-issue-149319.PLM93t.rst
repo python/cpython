@@ -1,0 +1,1 @@
+Made the asyncio REPL omit the execution of ``PYTHONSTARTUP`` and consideration of ``PYTHON_BASIC_REPL`` when ``python -E`` is used. Contributed by Jonathan Dung.
