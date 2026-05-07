@@ -284,7 +284,7 @@ platform-dependent.
 .. versionchanged:: 3.14
    Added support for the ``'F'`` and ``'D'`` formats.
 
-.. versionchanged:: next
+.. versionchanged:: 3.15
    Added support for the ``'Zf'`` and ``'Zd'`` formats.
 
 .. seealso::

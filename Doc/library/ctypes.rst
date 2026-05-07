@@ -380,7 +380,7 @@ in both C and ``libffi``, the following complex types are available:
      - :py:class:`complex`
      - ``'Zg'``
 
-.. versionchanged:: next
+.. versionchanged:: 3.15
    The :py:attr:`~_SimpleCData._type_` types ``F``, ``D`` and ``G`` have been
    replaced with ``Zf``, ``Zd`` and ``Zg``.
 

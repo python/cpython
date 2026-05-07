@@ -279,7 +279,7 @@ most cases.  You can use :func:`time.process_time` to measure CPU time.
    baseline overhead can be measured by invoking the program without arguments,
    and it might differ between Python versions.
 
-.. versionadded:: next
+.. versionadded:: 3.15
    Output is in color by default and can be
    :ref:`controlled using environment variables <using-on-controlling-color>`.
 

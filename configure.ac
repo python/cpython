@@ -10,7 +10,7 @@ dnl to regenerate the configure script.
 dnl
 
 # Set VERSION so we only need to edit in one place (i.e., here)
-m4_define([PYTHON_VERSION], [3.15])
+m4_define([PYTHON_VERSION], [3.16])
 
 AC_PREREQ([2.72])
 
@@ -205,7 +205,7 @@ AC_SUBST([FREEZE_MODULE_DEPS])
 AC_SUBST([PYTHON_FOR_BUILD_DEPS])
 
 AC_CHECK_PROGS([PYTHON_FOR_REGEN],
-  [python$PACKAGE_VERSION python3.15 python3.14 python3.13 python3.12 python3.11 python3.10 python3 python],
+  [python$PACKAGE_VERSION python3.16 python3.15 python3.14 python3.13 python3.12 python3.11 python3.10 python3 python],
   [python3])
 AC_SUBST([PYTHON_FOR_REGEN])
 
@@ -2549,9 +2549,16 @@ AS_VAR_IF([ac_cv_gcc_compat], [yes], [
         frame_pointer_cflags="$frame_pointer_cflags -mno-omit-leaf-frame-pointer"
       ], [], [-Werror])
       AS_CASE([$host_cpu], [arm|armv*], [
+        dnl GCC uses "-marm"; clang uses "-mno-thumb"
         AX_CHECK_COMPILE_FLAG([-marm], [
           frame_pointer_cflags="$frame_pointer_cflags -marm"
         ], [], [-Werror])
+        AX_CHECK_COMPILE_FLAG([-mno-thumb], [
+          frame_pointer_cflags="$frame_pointer_cflags -mno-thumb"
+        ], [], [-Werror])
+      ])
+      AS_CASE([$host_cpu], [powerpc64le], [
+        frame_pointer_cflags=""
       ])
       AS_CASE([$host_cpu], [s390*], [
         AX_CHECK_COMPILE_FLAG([-mbackchain], [

@@ -789,14 +789,15 @@ also be used to improve performance.
 
    - ``-fno-omit-frame-pointer`` and/or ``-mno-omit-leaf-frame-pointer``
      are added when the compiler supports them.
-   - ``-marm`` is added on 32-bit ARM when supported,
+   - ``-marm`` and/or ``-mno-thumb`` is added on 32-bit ARM when supported,
    - on s390x platforms, when supported, ``-mbackchain`` is added *instead*.
      of the above frame pointer flags.
+   - on ppc64le platforms, no compiler flags is needed since the power ABI
+     requires that compilers maintain a back chain by default.
 
    Frame pointers enable profilers, debuggers, and system tracing tools
    (``perf``, ``eBPF``, ``dtrace``, ``gdb``) to walk the C call stack
-   without DWARF metadata.
-   The flags propagate to third-party C
+   without DWARF metadata. The flags propagate to third-party C
    extensions through :mod:`sysconfig`. On compilers that do not
    understand them, the build silently skips them.
 
@@ -1051,7 +1052,7 @@ Linker options
    The default (when ``-enable-shared`` is used) is to link the Python
    interpreter against the built shared library.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 Libraries options
