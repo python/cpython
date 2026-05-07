@@ -410,7 +410,7 @@ Initializing and finalizing the interpreter
    (zero) if not.  After :c:func:`Py_FinalizeEx` is called, this returns false until
    :c:func:`Py_Initialize` is called again.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       This function no longer returns true until initialization has fully
       completed, including import of the :mod:`site` module.  Previously it
       could return true while :c:func:`Py_Initialize` was still running.
@@ -631,7 +631,7 @@ it possible to avoid these issues by temporarily preventing finalization:
    automatically after all guards are released: it requires an explicit
    :c:func:`Py_EndInterpreter` call.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. c:function:: PyInterpreterGuard *PyInterpreterGuard_FromCurrent(void)
@@ -671,7 +671,7 @@ it possible to avoid these issues by temporarily preventing finalization:
 
    The caller must hold an :term:`attached thread state`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. c:function:: PyInterpreterGuard *PyInterpreterGuard_FromView(PyInterpreterView *view)
@@ -688,7 +688,7 @@ it possible to avoid these issues by temporarily preventing finalization:
 
    The caller does not need to hold an :term:`attached thread state`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. c:function:: void PyInterpreterGuard_Close(PyInterpreterGuard *guard)
@@ -705,7 +705,7 @@ it possible to avoid these issues by temporarily preventing finalization:
    This function cannot fail, and the caller doesn't need to hold an
    :term:`attached thread state`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. _interpreter-views:
@@ -723,7 +723,7 @@ deleted. This can be done using interpreter views.
    This is a thread-safe way to access an interpreter that may have be
    finalizing or already destroyed.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. c:function:: PyInterpreterView *PyInterpreterView_FromCurrent(void)
@@ -738,7 +738,7 @@ deleted. This can be done using interpreter views.
 
    The caller must hold an :term:`attached thread state`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. c:function:: void PyInterpreterView_Close(PyInterpreterView *view)
@@ -752,7 +752,7 @@ deleted. This can be done using interpreter views.
    This function cannot fail, and the caller doesn't need to hold an
    :term:`attached thread state`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. c:function:: PyInterpreterView *PyInterpreterView_FromMain(void)
@@ -774,7 +774,7 @@ deleted. This can be done using interpreter views.
 
    The caller does not need to hold an :term:`attached thread state`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 Process-wide parameters
