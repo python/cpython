@@ -7,6 +7,7 @@
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_traceback.h"     // _Py_DisplaySourceLine()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 
 #include <stdbool.h>
@@ -634,7 +635,7 @@ update_registry(PyInterpreterState *interp, PyObject *registry, PyObject *text,
     if (add_zero)
         altkey = PyTuple_Pack(3, text, category, _PyLong_GetZero());
     else
-        altkey = PyTuple_Pack(2, text, category);
+        altkey = _PyTuple_FromPair(text, category);
 
     rc = already_warned(interp, registry, altkey, 1);
     Py_XDECREF(altkey);
@@ -715,7 +716,7 @@ static int
 call_show_warning(PyThreadState *tstate, PyObject *category,
                   PyObject *text, PyObject *message,
                   PyObject *filename, int lineno, PyObject *lineno_obj,
-                  PyObject *sourceline, PyObject *source)
+                  PyObject *sourceline, PyObject *source, PyObject *module)
 {
     PyObject *show_fn, *msg, *res, *warnmsg_cls = NULL;
     PyInterpreterState *interp = tstate->interp;
@@ -746,7 +747,8 @@ call_show_warning(PyThreadState *tstate, PyObject *category,
     }
 
     msg = PyObject_CallFunctionObjArgs(warnmsg_cls, message, category,
-            filename, lineno_obj, Py_None, Py_None, source,
+            filename, lineno_obj, Py_None, Py_None,
+            source ? source : Py_None, module,
             NULL);
     Py_DECREF(warnmsg_cls);
     if (msg == NULL)
@@ -877,7 +879,7 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
         goto return_none;
     if (rc == 0) {
         if (call_show_warning(tstate, category, text, message, filename,
-                              lineno, lineno_obj, sourceline, source) < 0)
+                              lineno, lineno_obj, sourceline, source, module) < 0)
             goto cleanup;
     }
     else /* if (rc == -1) */
@@ -1045,7 +1047,7 @@ setup_context(Py_ssize_t stack_level,
 
     /* Setup registry. */
     assert(globals != NULL);
-    assert(PyDict_Check(globals));
+    assert(PyAnyDict_Check(globals));
     int rc = PyDict_GetItemRef(globals, &_Py_ID(__warningregistry__),
                                registry);
     if (rc < 0) {
@@ -1269,10 +1271,11 @@ warnings_warn_explicit_impl(PyObject *module, PyObject *message,
     }
 
     if (module_globals && module_globals != Py_None) {
-        if (!PyDict_Check(module_globals)) {
+        if (!PyAnyDict_Check(module_globals)) {
             PyErr_Format(PyExc_TypeError,
-                         "module_globals must be a dict, not '%.200s'",
-                         Py_TYPE(module_globals)->tp_name);
+                         "module_globals must be a dict or a frozendict, "
+                         "not %T",
+                         module_globals);
             return NULL;
         }
 
@@ -1624,6 +1627,7 @@ warnings_module_exec(PyObject *module)
 
 
 static PyModuleDef_Slot warnings_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, warnings_module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

@@ -2,6 +2,7 @@
 #include "Python.h"
 #include "pycore_interpframe.h"   // _PyInterpreterFrame
 #include "pycore_object.h"        // _PyObject_GC_TRACK/UNTRACK, PyAnnotateFormat
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_typevarobject.h"
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 #include "pycore_unionobject.h"   // _Py_union_type_or, _Py_union_from_tuple
@@ -35,8 +36,12 @@ typedef struct {
 typedef struct {
     PyObject_HEAD
     PyObject *name;
+    PyObject *bound;
     PyObject *default_value;
     PyObject *evaluate_default;
+    bool covariant;
+    bool contravariant;
+    bool infer_variance;
 } typevartupleobject;
 
 typedef struct {
@@ -373,7 +378,7 @@ type_check(PyObject *arg, const char *msg)
 static PyObject *
 make_union(PyObject *self, PyObject *other)
 {
-    PyObject *args = PyTuple_Pack(2, self, other);
+    PyObject *args = _PyTuple_FromPair(self, other);
     if (args == NULL) {
         return NULL;
     }
@@ -499,8 +504,7 @@ typevar_traverse(PyObject *self, visitproc visit, void *arg)
     Py_VISIT(tv->evaluate_constraints);
     Py_VISIT(tv->default_value);
     Py_VISIT(tv->evaluate_default);
-    PyObject_VisitManagedDict(self, visit, arg);
-    return 0;
+    return PyObject_VisitManagedDict(self, visit, arg);
 }
 
 static int
@@ -817,7 +821,7 @@ typevar_typing_prepare_subst_impl(typevarobject *self, PyObject *alias,
     }
     Py_DECREF(params);
     PyErr_Format(PyExc_TypeError,
-                 "Too few arguments for %S; actual %d, expected at least %d",
+                 "Too few arguments for %S; actual %zd, expected at least %zd",
                  alias, args_len, i + 1);
     return NULL;
 }
@@ -1194,8 +1198,7 @@ paramspec_traverse(PyObject *self, visitproc visit, void *arg)
     Py_VISIT(ps->bound);
     Py_VISIT(ps->default_value);
     Py_VISIT(ps->evaluate_default);
-    PyObject_VisitManagedDict(self, visit, arg);
-    return 0;
+    return PyObject_VisitManagedDict(self, visit, arg);
 }
 
 static int
@@ -1525,6 +1528,7 @@ typevartuple_dealloc(PyObject *self)
     typevartupleobject *tvt = typevartupleobject_CAST(self);
 
     Py_XDECREF(tvt->name);
+    Py_XDECREF(tvt->bound);
     Py_XDECREF(tvt->default_value);
     Py_XDECREF(tvt->evaluate_default);
     PyObject_ClearManagedDict(self);
@@ -1556,16 +1560,28 @@ static PyObject *
 typevartuple_repr(PyObject *self)
 {
     typevartupleobject *tvt = typevartupleobject_CAST(self);
-    return Py_NewRef(tvt->name);
+
+    if (tvt->infer_variance) {
+        return Py_NewRef(tvt->name);
+    }
+
+    char variance = tvt->covariant ? '+' : tvt->contravariant ? '-' : '~';
+    return PyUnicode_FromFormat("%c%U", variance, tvt->name);
 }
 
 static PyMemberDef typevartuple_members[] = {
     {"__name__", _Py_T_OBJECT, offsetof(typevartupleobject, name), Py_READONLY},
+    {"__bound__", _Py_T_OBJECT, offsetof(typevartupleobject, bound), Py_READONLY},
+    {"__covariant__", Py_T_BOOL, offsetof(typevartupleobject, covariant), Py_READONLY},
+    {"__contravariant__", Py_T_BOOL, offsetof(typevartupleobject, contravariant), Py_READONLY},
+    {"__infer_variance__", Py_T_BOOL, offsetof(typevartupleobject, infer_variance), Py_READONLY},
     {0}
 };
 
 static typevartupleobject *
-typevartuple_alloc(PyObject *name, PyObject *module, PyObject *default_value)
+typevartuple_alloc(PyObject *name, PyObject *bound, PyObject *default_value,
+                   bool covariant, bool contravariant, bool infer_variance,
+                   PyObject *module)
 {
     PyTypeObject *tp = _PyInterpreterState_GET()->cached_objects.typevartuple_type;
     typevartupleobject *tvt = PyObject_GC_New(typevartupleobject, tp);
@@ -1573,6 +1589,10 @@ typevartuple_alloc(PyObject *name, PyObject *module, PyObject *default_value)
         return NULL;
     }
     tvt->name = Py_NewRef(name);
+    tvt->bound = Py_XNewRef(bound);
+    tvt->covariant = covariant;
+    tvt->contravariant = contravariant;
+    tvt->infer_variance = infer_variance;
     tvt->default_value = Py_XNewRef(default_value);
     tvt->evaluate_default = NULL;
     _PyObject_GC_TRACK(tvt);
@@ -1591,21 +1611,46 @@ typevartuple.__new__
 
     name: object(subclass_of="&PyUnicode_Type")
     *
+    bound: object = None
+    covariant: bool = False
+    contravariant: bool = False
+    infer_variance: bool = False
     default as default_value: object(c_default="&_Py_NoDefaultStruct") = typing.NoDefault
 
 Create a new TypeVarTuple with the given name.
 [clinic start generated code]*/
 
 static PyObject *
-typevartuple_impl(PyTypeObject *type, PyObject *name,
+typevartuple_impl(PyTypeObject *type, PyObject *name, PyObject *bound,
+                  int covariant, int contravariant, int infer_variance,
                   PyObject *default_value)
-/*[clinic end generated code: output=9d6b76dfe95aae51 input=e149739929a866d0]*/
+/*[clinic end generated code: output=40bc9ca10f64e392 input=56e28c725a8da40b]*/
 {
-    PyObject *module = caller();
-    if (module == NULL) {
+    if (covariant && contravariant) {
+        PyErr_SetString(PyExc_ValueError, "Bivariant types are not supported.");
         return NULL;
     }
-    PyObject *result = (PyObject *)typevartuple_alloc(name, module, default_value);
+    if (infer_variance && (covariant || contravariant)) {
+        PyErr_SetString(PyExc_ValueError, "Variance cannot be specified with infer_variance.");
+        return NULL;
+    }
+    if (Py_IsNone(bound)) {
+        bound = NULL;
+    }
+    if (bound != NULL) {
+        bound = type_check(bound, "Bound must be a type.");
+        if (bound == NULL) {
+            return NULL;
+        }
+    }
+    PyObject *module = caller();
+    if (module == NULL) {
+        Py_XDECREF(bound);
+        return NULL;
+    }
+    PyObject *result = (PyObject *)typevartuple_alloc(
+        name, bound, default_value, covariant, contravariant, infer_variance, module);
+    Py_XDECREF(bound);
     Py_DECREF(module);
     return result;
 }
@@ -1689,10 +1734,10 @@ typevartuple_traverse(PyObject *self, visitproc visit, void *arg)
     Py_VISIT(Py_TYPE(self));
     typevartupleobject *tvt = typevartupleobject_CAST(self);
     Py_VISIT(tvt->name);
+    Py_VISIT(tvt->bound);
     Py_VISIT(tvt->default_value);
     Py_VISIT(tvt->evaluate_default);
-    PyObject_VisitManagedDict(self, visit, arg);
-    return 0;
+    return PyObject_VisitManagedDict(self, visit, arg);
 }
 
 static int
@@ -1700,6 +1745,7 @@ typevartuple_clear(PyObject *self)
 {
     typevartupleobject *tvt = typevartupleobject_CAST(self);
     Py_CLEAR(tvt->name);
+    Py_CLEAR(tvt->bound);
     Py_CLEAR(tvt->default_value);
     Py_CLEAR(tvt->evaluate_default);
     PyObject_ClearManagedDict(self);
@@ -1831,7 +1877,7 @@ PyObject *
 _Py_make_typevartuple(PyThreadState *Py_UNUSED(ignored), PyObject *v)
 {
     assert(PyUnicode_Check(v));
-    return (PyObject *)typevartuple_alloc(v, NULL, NULL);
+    return (PyObject *)typevartuple_alloc(v, NULL, NULL, false, false, true, NULL);
 }
 
 static PyObject *
@@ -1937,8 +1983,12 @@ static PyObject *
 typealias_module(PyObject *self, void *Py_UNUSED(closure))
 {
     typealiasobject *ta = typealiasobject_CAST(self);
-    if (ta->module != NULL) {
-        return Py_NewRef(ta->module);
+    PyObject *module;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    module = Py_XNewRef(ta->module);
+    Py_END_CRITICAL_SECTION();
+    if (module != NULL) {
+        return module;
     }
     if (ta->compute_value != NULL) {
         PyObject* mod = PyFunction_GetModule(ta->compute_value);
@@ -1952,12 +2002,25 @@ typealias_module(PyObject *self, void *Py_UNUSED(closure))
     Py_RETURN_NONE;
 }
 
+static int
+typealias_set_module(PyObject *self, PyObject *value, void *Py_UNUSED(closure))
+{
+    PyObject *old;
+    typealiasobject *ta = typealiasobject_CAST(self);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    old = ta->module;
+    ta->module = Py_XNewRef(value);
+    Py_END_CRITICAL_SECTION();
+    Py_XDECREF(old);
+    return 0;
+}
+
 static PyGetSetDef typealias_getset[] = {
     {"__parameters__", typealias_parameters, NULL, NULL, NULL},
     {"__type_params__", typealias_type_params, NULL, NULL, NULL},
     {"__value__", typealias_value, NULL, NULL, NULL},
     {"evaluate_value", typealias_evaluate_value, NULL, NULL, NULL},
-    {"__module__", typealias_module, NULL, NULL, NULL},
+    {"__module__", typealias_module, typealias_set_module, NULL, NULL},
     {0}
 };
 
@@ -2157,7 +2220,9 @@ type checkers.\n\
 At runtime, Alias is an instance of TypeAliasType. The __name__\n\
 attribute holds the name of the type alias. The value of the type alias\n\
 is stored in the __value__ attribute. It is evaluated lazily, so the\n\
-value is computed only if the attribute is accessed.\n\
+value is computed only if the attribute is accessed. The __module__\n\
+attribute holds the name of the module in which the type alias was\n\
+defined; it can be assigned to.\n\
 \n\
 Type aliases can also be generic::\n\
 \n\
@@ -2305,13 +2370,12 @@ generic_class_getitem(PyObject *cls, PyObject *args, PyObject *kwargs)
 PyObject *
 _Py_subscript_generic(PyThreadState* unused, PyObject *params)
 {
-    params = unpack_typevartuples(params);
-
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->cached_objects.generic_type == NULL) {
         PyErr_SetString(PyExc_SystemError, "Cannot find Generic type");
         return NULL;
     }
+    params = unpack_typevartuples(params);
     PyObject *args[2] = {(PyObject *)interp->cached_objects.generic_type, params};
     PyObject *result = call_typing_func_object("_GenericAlias", args, 2);
     Py_DECREF(params);

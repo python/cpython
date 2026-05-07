@@ -2,7 +2,6 @@
 ==================================
 
 .. module:: grp
-   :platform: Unix
    :synopsis: The group database (getgrnam() and friends).
 
 --------------

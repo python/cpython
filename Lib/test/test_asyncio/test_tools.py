@@ -2,13 +2,27 @@ import unittest
 
 from asyncio import tools
 
-from collections import namedtuple
+import _remote_debugging
 
-LocationInfo = namedtuple('LocationInfo', ['lineno', 'end_lineno', 'col_offset', 'end_col_offset'], defaults=[None]*4)
-FrameInfo = namedtuple('FrameInfo', ['funcname', 'filename', 'location'])
-CoroInfo = namedtuple('CoroInfo', ['call_stack', 'task_name'])
-TaskInfo = namedtuple('TaskInfo', ['task_id', 'task_name', 'coroutine_stack', 'awaited_by'])
-AwaitedInfo = namedtuple('AwaitedInfo', ['thread_id', 'awaited_by'])
+
+def LocationInfo(lineno, end_lineno=None, col_offset=None, end_col_offset=None):
+    return _remote_debugging.LocationInfo((lineno, end_lineno, col_offset, end_col_offset))
+
+
+def FrameInfo(funcname, filename, location, opcode=None):
+    return _remote_debugging.FrameInfo((filename, location, funcname, opcode))
+
+
+def CoroInfo(call_stack, task_name):
+    return _remote_debugging.CoroInfo((call_stack, task_name))
+
+
+def TaskInfo(task_id, task_name, coroutine_stack, awaited_by):
+    return _remote_debugging.TaskInfo((task_id, task_name, coroutine_stack, awaited_by))
+
+
+def AwaitedInfo(thread_id, awaited_by):
+    return _remote_debugging.AwaitedInfo((thread_id, awaited_by))
 
 
 # mock output of get_all_awaited_by function.

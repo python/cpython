@@ -1,0 +1,2 @@
+Accept a function name in :option:`-X presite <-X>` command line option and
+:envvar:`PYTHON_PRESITE` environment variable. Patch by Victor Stinner.

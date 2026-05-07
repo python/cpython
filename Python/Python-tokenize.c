@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "errcode.h"
 #include "internal/pycore_critical_section.h"   // Py_BEGIN_CRITICAL_SECTION
+#include "internal/pycore_tuple.h"              // _PyTuple_FromPair
 #include "../Parser/lexer/state.h"
 #include "../Parser/lexer/lexer.h"
 #include "../Parser/tokenizer/tokenizer.h"
@@ -164,7 +165,7 @@ _tokenizer_error(tokenizeriterobject *it)
         goto exit;
     }
 
-    value = PyTuple_Pack(2, errstr, tmp);
+    value = _PyTuple_FromPair(errstr, tmp);
     if (!value) {
         result = -1;
         goto exit;
@@ -399,6 +400,7 @@ static PyMethodDef tokenize_methods[] = {
 };
 
 static PyModuleDef_Slot tokenizemodule_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, tokenizemodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

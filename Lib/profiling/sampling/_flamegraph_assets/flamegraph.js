@@ -6,6 +6,7 @@ let normalData = null;
 let invertedData = null;
 let currentThreadFilter = 'all';
 let isInverted = false;
+let useModuleNames = true;
 
 // Heat colors are now defined in CSS variables (--heat-1 through --heat-8)
 // and automatically switch with theme changes - no JS color arrays needed!
@@ -40,42 +41,91 @@ function getOpcodeInfo(opcode) {
 // String Resolution
 // ============================================================================
 
-function resolveString(index) {
+function resolveString(index, table = stringTable) {
   if (index === null || index === undefined) {
     return null;
   }
-  if (typeof index === 'number' && index >= 0 && index < stringTable.length) {
-    return stringTable[index];
+  if (typeof index === 'number' && index >= 0 && index < table.length) {
+    return table[index];
   }
   return String(index);
 }
 
-function resolveStringIndices(node) {
+function resolveStringIndices(node, table) {
   if (!node) return node;
 
   const resolved = { ...node };
 
   if (typeof resolved.name === 'number') {
-    resolved.name = resolveString(resolved.name);
+    resolved.name = resolveString(resolved.name, table);
   }
   if (typeof resolved.filename === 'number') {
-    resolved.filename = resolveString(resolved.filename);
+    resolved.filename = resolveString(resolved.filename, table);
   }
   if (typeof resolved.funcname === 'number') {
-    resolved.funcname = resolveString(resolved.funcname);
+    resolved.funcname = resolveString(resolved.funcname, table);
+  }
+  if (typeof resolved.module === 'number') {
+    resolved.module = resolveString(resolved.module, table);
+  }
+  if (typeof resolved.label === 'number') {
+    resolved.label = resolveString(resolved.label, table);
   }
 
   if (Array.isArray(resolved.source)) {
     resolved.source = resolved.source.map(index =>
-      typeof index === 'number' ? resolveString(index) : index
+      typeof index === 'number' ? resolveString(index, table) : index
     );
   }
 
   if (Array.isArray(resolved.children)) {
-    resolved.children = resolved.children.map(child => resolveStringIndices(child));
+    resolved.children = resolved.children.map(child => resolveStringIndices(child, table));
   }
 
   return resolved;
+}
+
+// Escape HTML special characters
+function escapeHtml(str) {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+// Get display path based on user preference (module or full path)
+function getDisplayName(moduleName, filename) {
+  if (useModuleNames) {
+    return moduleName || filename;
+  }
+  return filename;
+}
+
+function selectFlamegraphData() {
+  const baseData = isShowingElided ? elidedFlamegraphData : normalData;
+
+  if (!isInverted) {
+    return baseData;
+  }
+
+  if (isShowingElided) {
+    if (!invertedElidedData) {
+      invertedElidedData = generateInvertedFlamegraph(baseData);
+    }
+    return invertedElidedData;
+  }
+
+  if (!invertedData) {
+    invertedData = generateInvertedFlamegraph(baseData);
+  }
+  return invertedData;
+}
+
+function updateFlamegraphView() {
+  const selectedData = selectFlamegraphData();
+  const selectedThreadId = currentThreadFilter !== 'all' ? parseInt(currentThreadFilter, 10) : null;
+  const filteredData = selectedThreadId !== null ? filterDataByThread(selectedData, selectedThreadId) : selectedData;
+  const tooltip = createPythonTooltip(filteredData);
+  const chart = createFlamegraph(tooltip, filteredData.value, filteredData);
+  renderFlamegraph(chart, filteredData);
+  populateThreadStats(selectedData, selectedThreadId);
 }
 
 // ============================================================================
@@ -83,25 +133,11 @@ function resolveStringIndices(node) {
 // ============================================================================
 
 function toggleTheme() {
-  const html = document.documentElement;
-  const current = html.getAttribute('data-theme') || 'light';
-  const next = current === 'light' ? 'dark' : 'light';
-  html.setAttribute('data-theme', next);
-  localStorage.setItem('flamegraph-theme', next);
-
-  // Update theme button icon
-  const btn = document.getElementById('theme-btn');
-  if (btn) {
-    btn.querySelector('.icon-moon').style.display = next === 'dark' ? 'none' : '';
-    btn.querySelector('.icon-sun').style.display = next === 'dark' ? '' : 'none';
-  }
+  toggleAndSaveTheme();
 
   // Re-render flamegraph with new theme colors
   if (window.flamegraphData && normalData) {
-    const currentData = isInverted ? invertedData : normalData;
-    const tooltip = createPythonTooltip(currentData);
-    const chart = createFlamegraph(tooltip, currentData.value);
-    renderFlamegraph(chart, window.flamegraphData);
+    updateFlamegraphView();
   }
 }
 
@@ -154,17 +190,9 @@ function toggleSection(sectionId) {
   }
 }
 
+// Restore theme from localStorage, or use browser preference
 function restoreUIState() {
-  // Restore theme
-  const savedTheme = localStorage.getItem('flamegraph-theme');
-  if (savedTheme) {
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    const btn = document.getElementById('theme-btn');
-    if (btn) {
-      btn.querySelector('.icon-moon').style.display = savedTheme === 'dark' ? 'none' : '';
-      btn.querySelector('.icon-sun').style.display = savedTheme === 'dark' ? '' : 'none';
-    }
-  }
+  applyTheme(getPreferredTheme());
 
   // Restore sidebar state
   const savedSidebar = localStorage.getItem('flamegraph-sidebar');
@@ -220,6 +248,7 @@ function setupLogos() {
 function updateStatusBar(nodeData, rootValue) {
   const funcname = resolveString(nodeData.funcname) || resolveString(nodeData.name) || "--";
   const filename = resolveString(nodeData.filename) || "";
+  const moduleName = resolveString(nodeData.module) || "";
   const lineno = nodeData.lineno;
   const timeMs = (nodeData.value / 1000).toFixed(2);
   const percent = rootValue > 0 ? ((nodeData.value / rootValue) * 100).toFixed(1) : "0.0";
@@ -241,8 +270,8 @@ function updateStatusBar(nodeData, rootValue) {
 
   const fileEl = document.getElementById('status-file');
   if (fileEl && filename && filename !== "~") {
-    const basename = filename.split('/').pop();
-    fileEl.textContent = lineno ? `${basename}:${lineno}` : basename;
+    const displayName = getDisplayName(moduleName, filename);
+    fileEl.textContent = lineno ? `${displayName}:${lineno}` : displayName;
   }
 
   const funcEl = document.getElementById('status-func');
@@ -284,6 +313,8 @@ function createPythonTooltip(data) {
     }
 
     const timeMs = (d.data.value / 1000).toFixed(2);
+    const selfSamples = d.data.self || 0;
+    const selfMs = (selfSamples / 1000).toFixed(2);
     const percentage = ((d.data.value / data.value) * 100).toFixed(2);
     const calls = d.data.calls || 0;
     const childCount = d.children ? d.children.length : 0;
@@ -291,6 +322,8 @@ function createPythonTooltip(data) {
 
     const funcname = resolveString(d.data.funcname) || resolveString(d.data.name);
     const filename = resolveString(d.data.filename) || "";
+    const moduleName = resolveString(d.data.module) || "";
+    const displayName = escapeHtml(useModuleNames ? (moduleName || filename) : filename);
     const isSpecialFrame = filename === "~";
 
     // Build source section
@@ -299,7 +332,7 @@ function createPythonTooltip(data) {
       const sourceLines = source
         .map((line) => {
           const isCurrent = line.startsWith("→");
-          const escaped = line.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+          const escaped = escapeHtml(line);
           return `<div class="tooltip-source-line${isCurrent ? ' current' : ''}">${escaped}</div>`;
         })
         .join("");
@@ -359,7 +392,35 @@ function createPythonTooltip(data) {
     }
 
     const fileLocationHTML = isSpecialFrame ? "" : `
-      <div class="tooltip-location">${filename}${d.data.lineno ? ":" + d.data.lineno : ""}</div>`;
+      <div class="tooltip-location">${displayName}${d.data.lineno ? ":" + d.data.lineno : ""}</div>`;
+
+    // Differential stats section
+    let diffSection = "";
+    if (d.data.diff !== undefined && d.data.baseline !== undefined) {
+      const baselineSelf = (d.data.baseline / 1000).toFixed(2);
+      const currentSelf = ((d.data.self_time || 0) / 1000).toFixed(2);
+      const diffMs = (d.data.diff / 1000).toFixed(2);
+      const diffPct = d.data.diff_pct;
+      const sign = d.data.diff >= 0 ? "+" : "";
+      const diffClass = d.data.diff > 0 ? "regression" : (d.data.diff < 0 ? "improvement" : "neutral");
+
+      diffSection = `
+        <div class="tooltip-diff">
+          <div class="tooltip-diff-title">Self-Time Comparison:</div>
+          <div class="tooltip-diff-row">
+            <span class="tooltip-stat-label">Baseline Self:</span>
+            <span class="tooltip-stat-value">${baselineSelf} ms</span>
+          </div>
+          <div class="tooltip-diff-row">
+            <span class="tooltip-stat-label">Current Self:</span>
+            <span class="tooltip-stat-value">${currentSelf} ms</span>
+          </div>
+          <div class="tooltip-diff-row ${diffClass}">
+            <span class="tooltip-stat-label">Difference:</span>
+            <span class="tooltip-stat-value">${sign}${diffMs} ms (${sign}${diffPct.toFixed(1)}%)</span>
+          </div>
+        </div>`;
+    }
 
     const tooltipHTML = `
       <div class="tooltip-header">
@@ -367,8 +428,13 @@ function createPythonTooltip(data) {
         ${fileLocationHTML}
       </div>
       <div class="tooltip-stats">
-        <span class="tooltip-stat-label">Execution Time:</span>
+        <span class="tooltip-stat-label">Total Time:</span>
         <span class="tooltip-stat-value">${timeMs} ms</span>
+
+        ${selfSamples > 0 ? `
+          <span class="tooltip-stat-label">Self Time:</span>
+          <span class="tooltip-stat-value">${selfMs} ms</span>
+        ` : ''}
 
         <span class="tooltip-stat-label">Percentage:</span>
         <span class="tooltip-stat-value accent">${percentage}%</span>
@@ -383,6 +449,7 @@ function createPythonTooltip(data) {
           <span class="tooltip-stat-value">${childCount}</span>
         ` : ''}
       </div>
+      ${diffSection}
       ${sourceSection}
       ${opcodeSection}
       <div class="tooltip-hint">
@@ -477,10 +544,63 @@ function getHeatColors() {
   return colors;
 }
 
-function createFlamegraph(tooltip, rootValue) {
+function getDiffColors() {
+  const style = getComputedStyle(document.documentElement);
+  return {
+    elided: style.getPropertyValue('--diff-elided').trim(),
+    new: style.getPropertyValue('--diff-new').trim(),
+    neutral: style.getPropertyValue('--diff-neutral').trim(),
+    regressionDeep: style.getPropertyValue('--diff-regression-deep').trim(),
+    regressionMedium: style.getPropertyValue('--diff-regression-medium').trim(),
+    regressionLight: style.getPropertyValue('--diff-regression-light').trim(),
+    regressionVerylight: style.getPropertyValue('--diff-regression-verylight').trim(),
+    improvementDeep: style.getPropertyValue('--diff-improvement-deep').trim(),
+    improvementMedium: style.getPropertyValue('--diff-improvement-medium').trim(),
+    improvementLight: style.getPropertyValue('--diff-improvement-light').trim(),
+    improvementVerylight: style.getPropertyValue('--diff-improvement-verylight').trim(),
+  };
+}
+
+function getDiffColorForNode(node, diffColors) {
+  if (isShowingElided) {
+    return diffColors.elided;
+  }
+
+  const diff_pct = node.data.diff_pct || 0;
+  const diff_samples = node.data.diff || 0;
+  const self_time = node.data.self_time || 0;
+
+  if (diff_pct === 100 && self_time > 0 && Math.abs(diff_samples - self_time) < 0.1) {
+    return diffColors.new;
+  }
+
+  // Neutral zone: small percentage change
+  if (Math.abs(diff_pct) < 15) {
+    return diffColors.neutral;
+  }
+
+  // Regression (red scale)
+  if (diff_pct > 0) {
+    if (diff_pct >= 100) return diffColors.regressionDeep;
+    if (diff_pct > 50) return diffColors.regressionMedium;
+    if (diff_pct > 30) return diffColors.regressionLight;
+    return diffColors.regressionVerylight;
+  }
+
+  // Improvement (blue scale)
+  if (diff_pct <= -100) return diffColors.improvementDeep;
+  if (diff_pct < -50) return diffColors.improvementMedium;
+  if (diff_pct < -30) return diffColors.improvementLight;
+  return diffColors.improvementVerylight;
+}
+
+function createFlamegraph(tooltip, rootValue, data) {
   const chartArea = document.querySelector('.chart-area');
   const width = chartArea ? chartArea.clientWidth - 32 : window.innerWidth - 320;
   const heatColors = getHeatColors();
+
+  const isDifferential = data && data.stats && data.stats.is_differential;
+  const diffColors = isDifferential ? getDiffColors() : null;
 
   let chart = flamegraph()
     .width(width)
@@ -489,9 +609,13 @@ function createFlamegraph(tooltip, rootValue) {
     .minFrameSize(1)
     .tooltip(tooltip)
     .inverted(true)
+    .getName(d => resolveString(useModuleNames ? d.data.label : d.data.name) || resolveString(d.data.name) || '')
     .setColorMapper(function (d) {
-      // Root node should be transparent
       if (d.depth === 0) return 'transparent';
+
+      if (isDifferential) {
+        return getDiffColorForNode(d, diffColors);
+      }
 
       const percentage = d.data.value / rootValue;
       const level = getHeatLevel(percentage);
@@ -528,25 +652,25 @@ function updateSearchHighlight(searchTerm, searchInput) {
         const name = resolveString(d.data.name) || "";
         const funcname = resolveString(d.data.funcname) || "";
         const filename = resolveString(d.data.filename) || "";
+        const moduleName = resolveString(d.data.module) || "";
+        const displayName = getDisplayName(moduleName, filename);
         const lineno = d.data.lineno;
         const term = searchTerm.toLowerCase();
 
-        // Check if search term looks like file:line pattern
+        // Check if search term looks like path:line pattern
         const fileLineMatch = term.match(/^(.+):(\d+)$/);
         let matches = false;
 
         if (fileLineMatch) {
-          // Exact file:line matching
           const searchFile = fileLineMatch[1];
           const searchLine = parseInt(fileLineMatch[2], 10);
-          const basename = filename.split('/').pop().toLowerCase();
-          matches = basename.includes(searchFile) && lineno === searchLine;
+          matches = displayName.toLowerCase().includes(searchFile) && lineno === searchLine;
         } else {
           // Regular substring search
           matches =
             name.toLowerCase().includes(term) ||
             funcname.toLowerCase().includes(term) ||
-            filename.toLowerCase().includes(term);
+            displayName.toLowerCase().includes(term);
         }
 
         if (matches) {
@@ -877,6 +1001,37 @@ function populateProfileSummary(data) {
 }
 
 // ============================================================================
+// Elided Stacks (Differential)
+// ============================================================================
+
+let elidedFlamegraphData = null;
+let invertedElidedData = null;
+let isShowingElided = false;
+
+function setupElidedToggle(data) {
+  const stats = data.stats || {};
+  const elidedCount = stats.elided_count || 0;
+  const elidedFlamegraph = stats.elided_flamegraph;
+
+  if (!elidedCount || !elidedFlamegraph) {
+    return;
+  }
+
+  elidedFlamegraphData = resolveStringIndices(elidedFlamegraph, elidedFlamegraph.strings);
+
+  const toggleElided = document.getElementById('toggle-elided');
+  if (toggleElided) {
+    toggleElided.style.display = 'flex';
+
+    toggleElided.onclick = function() {
+      isShowingElided = !isShowingElided;
+      updateToggleUI('toggle-elided', isShowingElided);
+      updateFlamegraphView();
+    };
+  }
+}
+
+// ============================================================================
 // Hotspot Stats
 // ============================================================================
 
@@ -886,6 +1041,9 @@ function populateStats(data) {
 
   // Populate thread statistics if available
   populateThreadStats(data);
+
+  // Setup elided stacks toggle if this is a differential flamegraph
+  setupElidedToggle(data);
 
   // For hotspots: use normal (non-inverted) tree structure, but respect thread filtering.
   // In inverted view, the tree structure changes but the hottest functions remain the same.
@@ -913,6 +1071,7 @@ function populateStats(data) {
 
     let filename = resolveString(node.filename);
     let funcname = resolveString(node.funcname);
+    let moduleName = resolveString(node.module);
 
     if (!filename || !funcname) {
       const nameStr = resolveString(node.name);
@@ -927,13 +1086,10 @@ function populateStats(data) {
 
     filename = filename || 'unknown';
     funcname = funcname || 'unknown';
+    moduleName = moduleName || 'unknown';
 
     if (filename !== 'unknown' && funcname !== 'unknown' && node.value > 0) {
-      let childrenValue = 0;
-      if (node.children) {
-        childrenValue = node.children.reduce((sum, child) => sum + child.value, 0);
-      }
-      const directSamples = Math.max(0, node.value - childrenValue);
+      const directSamples = node.self || 0;
 
       const funcKey = `${filename}:${node.lineno || '?'}:${funcname}`;
 
@@ -943,12 +1099,14 @@ function populateStats(data) {
         existing.directPercent = (existing.directSamples / totalSamples) * 100;
         if (directSamples > existing.maxSingleSamples) {
           existing.filename = filename;
+          existing.module = moduleName;
           existing.lineno = node.lineno || '?';
           existing.maxSingleSamples = directSamples;
         }
       } else {
         functionMap.set(funcKey, {
           filename: filename,
+          module: moduleName,
           lineno: node.lineno || '?',
           funcname: funcname,
           directSamples,
@@ -983,6 +1141,7 @@ function populateStats(data) {
       const h = hotSpots[i];
       const filename = h.filename || 'unknown';
       const lineno = h.lineno ?? '?';
+      const moduleName = h.module || 'unknown';
       const isSpecialFrame = filename === '~' && (lineno === 0 || lineno === '?');
 
       let funcDisplay = h.funcname || 'unknown';
@@ -993,8 +1152,8 @@ function populateStats(data) {
         if (isSpecialFrame) {
           fileEl.textContent = '--';
         } else {
-          const basename = filename !== 'unknown' ? filename.split('/').pop() : 'unknown';
-          fileEl.textContent = `${basename}:${lineno}`;
+          const displayName = getDisplayName(moduleName, filename);
+          fileEl.textContent = `${displayName}:${lineno}`;
         }
       }
       if (percentEl) percentEl.textContent = `${h.directPercent.toFixed(1)}%`;
@@ -1010,8 +1169,11 @@ function populateStats(data) {
     if (card) {
       if (i < hotSpots.length && hotSpots[i]) {
         const h = hotSpots[i];
-        const basename = h.filename !== 'unknown' ? h.filename.split('/').pop() : '';
-        const searchTerm = basename && h.lineno !== '?' ? `${basename}:${h.lineno}` : h.funcname;
+        const moduleName = h.module || 'unknown';
+        const filename = h.filename || 'unknown';
+        const displayName = getDisplayName(moduleName, filename);
+        const hasValidLocation = displayName !== 'unknown' && h.lineno !== '?';
+        const searchTerm = hasValidLocation ? `${displayName}:${h.lineno}` : h.funcname;
         card.dataset.searchterm = searchTerm;
         card.onclick = () => searchForHotspot(searchTerm);
         card.style.cursor = 'pointer';
@@ -1059,28 +1221,8 @@ function filterByThread() {
 
   const selectedThread = threadFilter.value;
   currentThreadFilter = selectedThread;
-  const baseData = isInverted ? invertedData : normalData;
 
-  let filteredData;
-  let selectedThreadId = null;
-
-  if (selectedThread === 'all') {
-    filteredData = baseData;
-  } else {
-    selectedThreadId = parseInt(selectedThread, 10);
-    filteredData = filterDataByThread(baseData, selectedThreadId);
-
-    if (filteredData.strings) {
-      stringTable = filteredData.strings;
-      filteredData = resolveStringIndices(filteredData);
-    }
-  }
-
-  const tooltip = createPythonTooltip(filteredData);
-  const chart = createFlamegraph(tooltip, filteredData.value);
-  renderFlamegraph(chart, filteredData);
-
-  populateThreadStats(baseData, selectedThreadId);
+  updateFlamegraphView();
 }
 
 function filterDataByThread(data, threadId) {
@@ -1157,54 +1299,90 @@ function getInvertNodeKey(node) {
   return `${node.filename || '~'}|${node.lineno || 0}|${node.funcname || node.name}`;
 }
 
-function accumulateInvertedNode(parent, stackFrame, leaf) {
+function accumulateInvertedNode(parent, stackFrame, leaf, isDifferential) {
   const key = getInvertNodeKey(stackFrame);
 
   if (!parent.children[key]) {
-    parent.children[key] = {
+    const newNode = {
       name: stackFrame.name,
+      label: stackFrame.label,
       value: 0,
+      self: 0,
       children: {},
       filename: stackFrame.filename,
+      module: stackFrame.module,
       lineno: stackFrame.lineno,
       funcname: stackFrame.funcname,
       source: stackFrame.source,
+      opcodes: null,
       threads: new Set()
     };
+
+    if (isDifferential) {
+      newNode.baseline = 0;
+      newNode.baseline_total = 0;
+      newNode.self_time = 0;
+      newNode.diff = 0;
+      newNode.diff_pct = 0;
+    }
+
+    parent.children[key] = newNode;
   }
 
   const node = parent.children[key];
   node.value += leaf.value;
+  node.self += stackFrame.self || 0;
   if (leaf.threads) {
     leaf.threads.forEach(t => node.threads.add(t));
+  }
+  if (stackFrame.opcodes) {
+    if (!node.opcodes) {
+      node.opcodes = { ...stackFrame.opcodes };
+    } else {
+      for (const [op, count] of Object.entries(stackFrame.opcodes)) {
+        node.opcodes[op] = (node.opcodes[op] || 0) + count;
+      }
+    }
+  }
+
+  if (isDifferential) {
+    node.baseline += stackFrame.baseline || 0;
+    node.baseline_total += stackFrame.baseline_total || 0;
+    node.self_time += stackFrame.self_time || 0;
+    node.diff += stackFrame.diff || 0;
+
+    if (node.baseline > 0) {
+      node.diff_pct = (node.diff / node.baseline) * 100.0;
+    } else if (node.self_time > 0) {
+      node.diff_pct = 100.0;
+    }
   }
 
   return node;
 }
 
-function processLeaf(invertedRoot, path, leafNode) {
+function processLeaf(invertedRoot, path, leafNode, isDifferential) {
   if (!path || path.length === 0) {
     return;
   }
 
-  let invertedParent = accumulateInvertedNode(invertedRoot, leafNode, leafNode);
+  let invertedParent = accumulateInvertedNode(invertedRoot, leafNode, leafNode, isDifferential);
 
   // Walk backwards through the call stack
   for (let i = path.length - 2; i >= 0; i--) {
-    invertedParent = accumulateInvertedNode(invertedParent, path[i], leafNode);
+    invertedParent = accumulateInvertedNode(invertedParent, path[i], leafNode, isDifferential);
   }
 }
 
-function traverseInvert(path, currentNode, invertedRoot) {
-  const children = currentNode.children || [];
-  const childThreads = new Set(children.flatMap(c => c.threads || []));
-  const selfThreads = (currentNode.threads || []).filter(t => !childThreads.has(t));
+function traverseInvert(path, currentNode, invertedRoot, isDifferential) {
+  const selfValue = currentNode.self || 0;
 
-  if (selfThreads.length > 0) {
-    processLeaf(invertedRoot, path, { ...currentNode, threads: selfThreads });
+  if (selfValue > 0) {
+    processLeaf(invertedRoot, path, { ...currentNode, value: selfValue }, isDifferential);
   }
 
-  children.forEach(child => traverseInvert(path.concat([child]), child, invertedRoot));
+  const children = currentNode.children || [];
+  children.forEach(child => traverseInvert(path.concat([child]), child, invertedRoot, isDifferential));
 }
 
 function convertInvertDictToArray(node) {
@@ -1222,8 +1400,11 @@ function convertInvertDictToArray(node) {
 }
 
 function generateInvertedFlamegraph(data) {
+  const isDifferential = data && data.stats && data.stats.is_differential;
+
   const invertedRoot = {
     name: data.name,
+    label: data.label,
     value: data.value,
     children: {},
     stats: data.stats,
@@ -1233,50 +1414,25 @@ function generateInvertedFlamegraph(data) {
   const children = data.children || [];
   if (children.length === 0) {
     // Single-frame tree: the root is its own leaf
-    processLeaf(invertedRoot, [data], data);
+    processLeaf(invertedRoot, [data], data, isDifferential);
   } else {
-    children.forEach(child => traverseInvert([child], child, invertedRoot));
+    children.forEach(child => traverseInvert([child], child, invertedRoot, isDifferential));
   }
 
   convertInvertDictToArray(invertedRoot);
   return invertedRoot;
 }
 
-function updateToggleUI(toggleId, isOn) {
-  const toggle = document.getElementById(toggleId);
-  if (toggle) {
-    const track = toggle.querySelector('.toggle-track');
-    const labels = toggle.querySelectorAll('.toggle-label');
-    if (isOn) {
-      track.classList.add('on');
-      labels[0].classList.remove('active');
-      labels[1].classList.add('active');
-    } else {
-      track.classList.remove('on');
-      labels[0].classList.add('active');
-      labels[1].classList.remove('active');
-    }
-  }
-}
-
 function toggleInvert() {
   isInverted = !isInverted;
   updateToggleUI('toggle-invert', isInverted);
+  updateFlamegraphView();
+}
 
-  // Build inverted data on first use
-  if (isInverted && !invertedData) {
-    invertedData = generateInvertedFlamegraph(normalData);
-  }
-
-  let dataToRender = isInverted ? invertedData : normalData;
-
-  if (currentThreadFilter !== 'all') {
-    dataToRender = filterDataByThread(dataToRender, parseInt(currentThreadFilter));
-  }
-
-  const tooltip = createPythonTooltip(dataToRender);
-  const chart = createFlamegraph(tooltip, dataToRender.value);
-  renderFlamegraph(chart, dataToRender);
+function togglePathDisplay() {
+  useModuleNames = !useModuleNames;
+  updateToggleUI('toggle-path-display', useModuleNames);
+  updateFlamegraphView();
 }
 
 // ============================================================================
@@ -1290,7 +1446,7 @@ function initFlamegraph() {
 
   if (EMBEDDED_DATA.strings) {
     stringTable = EMBEDDED_DATA.strings;
-    normalData = resolveStringIndices(EMBEDDED_DATA);
+    normalData = resolveStringIndices(EMBEDDED_DATA, EMBEDDED_DATA.strings);
   } else {
     normalData = EMBEDDED_DATA;
   }
@@ -1303,8 +1459,20 @@ function initFlamegraph() {
 
   initThreadFilter(normalData);
 
+  // Toggle legend based on differential mode
+  const isDifferential = normalData && normalData.stats && normalData.stats.is_differential;
+  const heatmapLegend = document.getElementById('heatmap-legend-section');
+  const diffLegend = document.getElementById('diff-legend-section');
+  if (isDifferential) {
+    if (heatmapLegend) heatmapLegend.style.display = 'none';
+    if (diffLegend) diffLegend.style.display = 'block';
+  } else {
+    if (heatmapLegend) heatmapLegend.style.display = 'block';
+    if (diffLegend) diffLegend.style.display = 'none';
+  }
+
   const tooltip = createPythonTooltip(normalData);
-  const chart = createFlamegraph(tooltip, normalData.value);
+  const chart = createFlamegraph(tooltip, normalData.value, normalData);
   renderFlamegraph(chart, normalData);
   initSearchHandlers();
   initSidebarResize();
@@ -1313,6 +1481,11 @@ function initFlamegraph() {
   const toggleInvertBtn = document.getElementById('toggle-invert');
   if (toggleInvertBtn) {
     toggleInvertBtn.addEventListener('click', toggleInvert);
+  }
+
+  const togglePathDisplayBtn = document.getElementById('toggle-path-display');
+  if (togglePathDisplayBtn) {
+    togglePathDisplayBtn.addEventListener('click', togglePathDisplay);
   }
 }
 

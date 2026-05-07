@@ -1,0 +1,1 @@
+Fix incorrect REPL height and width tracking on console window resize on Windows.
