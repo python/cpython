@@ -2042,14 +2042,14 @@ dummy_func(void) {
             PyObject *descr = _PyType_Lookup(type, name);
             if (descr != NULL && (Py_TYPE(descr)->tp_flags & Py_TPFLAGS_METHOD_DESCRIPTOR)) {
                 /* LOAD_SPECIAL expands to _RECORD_TOS_TYPE + _INSERT_NULL +
-                 * _LOAD_SPECIAL. Emit _GUARD_TYPE_VERSION before _INSERT_NULL
-                 * so deopt sees the original stack shape. */
-                assert(uop_buffer_last(&ctx->out_buffer)->opcode == _INSERT_NULL);
-                assert(uop_buffer_last(&ctx->out_buffer)->target == this_instr->target);
-                _PyUOpInstruction insert_null = *uop_buffer_last(&ctx->out_buffer);
-                ctx->out_buffer.next--;
-                ADD_OP(_GUARD_TYPE_VERSION, 0, type->tp_version_tag);
-                *(ctx->out_buffer.next++) = insert_null;
+                 * _LOAD_SPECIAL. Insert _GUARD_TYPE_VERSION before the
+                 * already-emitted _INSERT_NULL so deopt sees the original
+                 * stack shape.*/
+                _PyUOpInstruction *insert_null = uop_buffer_last(&ctx->out_buffer);
+                assert(insert_null->opcode == _INSERT_NULL);
+                assert(insert_null->target == this_instr->target);
+                REPLACE_OP(insert_null, _GUARD_TYPE_VERSION, 0, type->tp_version_tag);
+                ADD_OP(_INSERT_NULL, 0, 0);
 
                 bool immortal = _Py_IsImmortal(descr) || (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE);
                 ADD_OP(immortal ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE,
