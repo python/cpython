@@ -1143,7 +1143,7 @@ class DefaultCookiePolicy(CookiePolicy):
         return True
 
     def return_ok_expires(self, cookie, request):
-        if cookie.is_expired(self._now):
+        if cookie.is_expired():
             _debug("   cookie expired")
             return False
         return True
