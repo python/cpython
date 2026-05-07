@@ -133,50 +133,60 @@ if sys.platform == 'darwin':
     class _MacOSXSemaphore(SemLock):
         """Dedicated class used only to workaround the missing
         function 'sem_getvalue', when interpreter runs on MacOSX.
-        Add a shared counter for each [Bounded]Semaphore in order
-        to handle internal counter when acquire and release operations
-        are called.
+        Add two shared counters for each [Bounded]Semaphore in order
+        to calculate the internal value of the semaphore,
+        when acquire and release operations are called.
         """
 
         def __init__(self, kind, value, maxvalue, *, ctx):
             if not isinstance(self, Semaphore):
                 raise TypeError("_MacOSXSemaphore can only be used "
                                 "as base class of Semaphore class")
-            self._count = ctx.Value('h', value)
+            self._rlock = ctx.RLock()
+            self._count = ctx.Value('h', value, lock=self._rlock)
+            self._pending_acquires = ctx.Value('h', 0, lock=self._rlock)
             super().__init__(kind, value, maxvalue, ctx=ctx)
 
         def acquire(self, blocking=True, timeout=None):
+            with self._rlock:
+                self._pending_acquires.value += 1
             if self._semlock.acquire(blocking, timeout):
-                with self._count:
+                with self._rlock:
+                    self._pending_acquires.value -= 1
                     self._count.value -= 1
                 return True
+            with self._rlock:
+                self._pending_acquires.value -= 1
             return False
 
         def release(self):
             if isinstance(self, BoundedSemaphore):
-                with self._count:
-                    if self._count.value + 1 > self._semlock.maxvalue:
-                        raise ValueError(f"Cannot exceed initial value of"\
-                                        f" {self._semlock.maxvalue!a}")
-            with self._count:
+                with self._rlock:
+                    if self.get_value() + 1 > self._semlock.maxvalue:
+                        raise ValueError(f"semaphore released too many times")
+            with self._rlock:
                 self._count.value += 1
                 self._semlock.release()
 
         def get_value(self):
-            return self._count.value
+            with self._rlock:
+                val = self._count.value - self._pending_acquires.value
+                return val if val > 0 else 0
 
         def _make_methods(self):
             # Do not call the `Semlock._make_methods` method,
-            # as this breaks the reference to the local
+            # because that breaks the reference to the local
             # `acquire` and `release` methods.
             pass
 
         def __setstate__(self, state):
-            self._count, state = state[-1], state[:-1]
+            self._count, self._pending_acquires, self._rlock, state \
+                = state[-3], state[-2], state[-1], state[:-3]
             super().__setstate__(state)
 
         def __getstate__(self) -> tuple:
-            return super().__getstate__() + (self._count,)
+            return super().__getstate__() \
+                + (self._count, self._pending_acquires, self._rlock)
 
 
     _SemClass = _MacOSXSemaphore
