@@ -56,6 +56,12 @@ def _frame_pointers_expected(machine):
             if sys.maxsize < 2**32:
                 return None
             return True
+        if machine == "ppc64le":
+            # The power ABI specification requires that compilers maintain a
+            # back chain by default, so unwinding already works without a
+            # dedicated frame pointer.
+            # https://openpowerfoundation.org/specifications/64bitelfabi/
+            return True
         if machine == "x86_64":
             final_opt = ""
             for opt in cflags.split():

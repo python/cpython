@@ -792,6 +792,8 @@ also be used to improve performance.
    - ``-marm`` and/or ``-mno-thumb`` is added on 32-bit ARM when supported,
    - on s390x platforms, when supported, ``-mbackchain`` is added *instead*.
      of the above frame pointer flags.
+   - on ppc64le platforms, no compiler flags is needed since the power ABI
+     requires that compilers maintain a back chain by default.
 
    Frame pointers enable profilers, debuggers, and system tracing tools
    (``perf``, ``eBPF``, ``dtrace``, ``gdb``) to walk the C call stack
