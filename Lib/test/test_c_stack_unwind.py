@@ -1,3 +1,12 @@
+"""Test in-process C stack unwinders against Python and JIT frames.
+
+The tests build a recursive Python call stack, ask each _testinternalcapi
+unwinder for return addresses, and classify those addresses as Python, JIT, or
+other frames. The backends include CPython's manual stack-chain unwinder and
+GNU backtrace(), so this module is about in-process C stack unwinding rather
+than a single unwind mechanism. GDB integration tests live in test_gdb.
+"""
+
 import json
 import os
 import platform
@@ -20,7 +29,7 @@ if not support.has_subprocess_support:
 STACK_DEPTH = 10
 
 
-def _frame_pointers_expected(machine):
+def _manual_unwind_expected(machine):
     _Py_WITH_FRAME_POINTERS = getattr(
         _testinternalcapi,
         "_Py_WITH_FRAME_POINTERS",
@@ -195,7 +204,7 @@ def _annotate_unwind_after_executor_free(unwinder_name="gnu_backtrace_unwind"):
 
 def _run_unwind_helper(helper_name, unwinder_name, **env):
     code = (
-        f"from test.test_frame_pointer_unwind import {helper_name}; "
+        f"from test.test_c_stack_unwind import {helper_name}; "
         f"print({helper_name}({unwinder_name!r}));"
     )
     run_env = os.environ.copy()
@@ -235,15 +244,17 @@ def _unwind_after_executor_free_result(unwinder_name, **env):
 
 @support.requires_gil_enabled("test requires the GIL enabled")
 @unittest.skipIf(support.is_wasi, "test not supported on WASI")
-class FramePointerUnwindTests(unittest.TestCase):
+class ManualStackUnwindTests(unittest.TestCase):
 
     def setUp(self):
         super().setUp()
 
         machine = platform.machine().lower()
-        expected = _frame_pointers_expected(machine)
+        expected = _manual_unwind_expected(machine)
         if expected is None:
-            self.skipTest(f"unsupported architecture for frame pointer check: {machine}")
+            self.skipTest(
+                f"unsupported architecture for manual stack unwind check: {machine}"
+            )
         if expected == "crash":
             self.skipTest(f"test does crash on {machine}")
 
@@ -251,12 +262,14 @@ class FramePointerUnwindTests(unittest.TestCase):
             _testinternalcapi.manual_frame_pointer_unwind()
         except RuntimeError as exc:
             if "not supported" in str(exc):
-                self.skipTest("manual frame pointer unwinding not supported on this platform")
+                self.skipTest(
+                    "manual stack unwinding not supported on this platform"
+                )
             raise
         self.machine = machine
-        self.frame_pointers_expected = expected
+        self.manual_unwind_expected = expected
 
-    def test_manual_unwind_respects_frame_pointers(self):
+    def test_manual_unwind_finds_expected_frames(self):
         jit_available = hasattr(sys, "_jit") and sys._jit.is_available()
         envs = [({"PYTHON_JIT": "0"}, False)]
         if jit_available:
@@ -268,7 +281,7 @@ class FramePointerUnwindTests(unittest.TestCase):
                 jit_frames = result["jit_frames"]
                 python_frames = result.get("python_frames", 0)
                 jit_backend = result.get("jit_backend")
-                if self.frame_pointers_expected:
+                if self.manual_unwind_expected:
                     self.assertGreaterEqual(
                         python_frames,
                         STACK_DEPTH,
