@@ -1110,7 +1110,7 @@ Test cases
       .. versionchanged:: 3.3
          Added the *msg* keyword argument when used as a context manager.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.15
          Warnings that do not match the specified category are no longer
          swallowed.
          Nested context managers are now supported.
@@ -1144,7 +1144,7 @@ Test cases
       .. versionchanged:: 3.3
          Added the *msg* keyword argument when used as a context manager.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.15
          Warnings that do not match the specified category or regex are
          no longer swallowed.
          Nested context managers are now supported.

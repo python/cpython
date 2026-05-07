@@ -345,7 +345,7 @@ Refer to the documentation of the individual functions for more information.
 
    .. versionadded:: 3.4
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *canonical* parameter.
       Single-character final groups are now always rejected as encoding
       violations.

@@ -30,7 +30,7 @@ explicitly marked with :c:macro:`PySlot_STATIC`.
 Except when documented otherwise, multiple slots with the same ID
 (:c:member:`~PySlot.sl_id`) may not occur in a single slots array.
 
-.. versionadded:: next
+.. versionadded:: 3.15
 
    Slot arrays generalize an earlier way of defining objects:
    using :c:type:`PyType_Spec` with :c:type:`PyType_Slot` for types, and
@@ -125,7 +125,7 @@ Entries of the slots array use the following structure:
          Note that the "optionality" only applies to unknown slot IDs.
          This flag does not make Python skip invalid values of known slots.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 Convenience macros
@@ -169,7 +169,7 @@ Convenience macros
       #define PySlot_STATIC_DATA(NAME, VALUE) \
          {.sl_id=NAME, .sl_flags=PySlot_STATIC, .sl_ptr=(VALUE)}
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. c:macro:: PySlot_END
 
@@ -179,7 +179,7 @@ Convenience macros
 
       #define PySlot_END {0}
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. c:macro:: PySlot_PTR(name, value)
              PySlot_PTR_STATIC(name, value)
@@ -197,7 +197,7 @@ Convenience macros
       #define PySlot_PTR_STATIC(NAME, VALUE) \
          {NAME, PySlot_INTPTR|Py_SLOT_STATIC, {0}, {(void*)(VALUE)}}
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. _pyslot-common-ids:
 
@@ -211,7 +211,7 @@ The following slot IDs may be used in both type and module definitions.
    Marks the end of a slots array.
    Defined as zero.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. c:macro:: Py_slot_subslots
 
@@ -226,7 +226,7 @@ The following slot IDs may be used in both type and module definitions.
    Slot nesting depth is limited to 5 levels.
    This restriction may be lifted in the future.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. c:macro:: Py_slot_invalid
 
@@ -237,4 +237,4 @@ The following slot IDs may be used in both type and module definitions.
    no effect.
    Without the flag, processing a slot with this ID will fail.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15

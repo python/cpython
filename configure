@@ -10437,6 +10437,14 @@ fi
      ;;
 esac
       case $host_cpu in #(
+  powerpc64le) :
+
+        frame_pointer_cflags=""
+       ;; #(
+  *) :
+     ;;
+esac
+      case $host_cpu in #(
   s390*) :
 
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mbackchain" >&5
