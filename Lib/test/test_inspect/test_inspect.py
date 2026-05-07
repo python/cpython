@@ -173,6 +173,15 @@ class custom_descriptor:
         return self.func.__get__(instance, owner)
 
 
+class TestImportTime(unittest.TestCase):
+
+    @cpython_only
+    def test_lazy_import(self):
+        import_helper.ensure_lazy_imports(
+            "inspect", {"re", "tokenize"}
+        )
+
+
 class TestPredicates(IsTestBase):
 
     def test_excluding_predicates(self):
@@ -1346,9 +1355,10 @@ class TestClassesAndFunctions(unittest.TestCase):
                                     varkw_e=None, defaults_e=None,
                                     posonlyargs_e=[], kwonlyargs_e=[],
                                     kwonlydefaults_e=None,
-                                    ann_e={}):
+                                    ann_e={},
+                                    annotation_format=Format.VALUE):
         args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, ann = \
-            inspect.getfullargspec(routine)
+            inspect.getfullargspec(routine, annotation_format=annotation_format)
         self.assertEqual(args, args_e)
         self.assertEqual(varargs, varargs_e)
         self.assertEqual(varkw, varkw_e)
@@ -1380,6 +1390,19 @@ class TestClassesAndFunctions(unittest.TestCase):
                                      defaults_e=(1,2,3),
                                      kwonlyargs_e=['e', 'f'],
                                      kwonlydefaults_e={'e': 4, 'f': 5})
+
+    def get_getfullargspec_with_undefined_names_in_annotations(self):
+        def my_func(a: undefined_name):
+            pass
+
+        with self.assertRaises(NameError):
+            inspect.getfullargspec(my_func)
+
+        self.assertFullArgSpecEquals(my_func, ['a'], ann_e={'a': 'undefined_name'},
+                                     annotation_format=Format.STRING)
+
+        arg_spec = inspect.getfullargspec(my_func, annotation_format=Format.FORWARDREF)
+        self.assertIsInstance(arg_spec.annotations['a'], ForwardRef)
 
     def test_argspec_api_ignores_wrapped(self):
         # Issue 20684: low level introspection API must ignore __wrapped__
@@ -6484,8 +6507,19 @@ class TestUnwrap(unittest.TestCase):
         self.assertIs(inspect.unwrap(staticmethod(classmethod)), classmethod)
         self.assertIs(inspect.unwrap(classmethod(staticmethod)), staticmethod)
 
+def _clean_object_ids(text):
+    # Helper to handle "<obj at 0x...>" details in CLI output checks
+    import re
+    detect = r"object at 0x([0-9A-Fa-f]+)>"
+    replace = "object at 0x...>"
+    return re.sub(detect, replace, text)
 
-class TestMain(unittest.TestCase):
+class TestModuleCLI(unittest.TestCase):
+
+    BUILTIN_ERROR = "No source code available for builtin module"
+    NO_SOURCE_ERROR = "No source code available for defining module"
+    NO_SOURCE_TARGET_ERROR = "Failed to retrieve source code for given target"
+
     def test_only_source(self):
         module = importlib.import_module('unittest')
         rc, out, err = assert_python_ok('-m', 'inspect',
@@ -6513,26 +6547,222 @@ class TestMain(unittest.TestCase):
                          inspect.getsource(ThreadPoolExecutor).splitlines())
         self.assertEqual(err, b'')
 
-    def test_builtins(self):
+    def test_error_builtins(self):
         _, out, err = assert_python_failure('-m', 'inspect',
                                             'sys')
         lines = err.decode().splitlines()
-        self.assertEqual(lines, ["Can't get info for builtin modules."])
+        self.assertEqual(lines, [self.BUILTIN_ERROR])
 
-    def test_details(self):
-        module = importlib.import_module('unittest')
+    def test_error_extension(self):
+        module_name = "_testcapi"
+        if module_name in sys.builtin_module_names:
+            # WASI test environment has even _testcapi as a builtin module
+            expected_error = self.BUILTIN_ERROR
+        else:
+            expected_error = self.NO_SOURCE_ERROR
+        _, out, err = assert_python_failure('-m', 'inspect',
+                                            module_name)
+        lines = err.decode().splitlines()
+        self.assertEqual(lines, [expected_error])
+
+    def test_error_data(self):
+        _, out, err = assert_python_failure('-m', 'inspect',
+                                            'importlib.machinery:SOURCE_SUFFIXES')
+        lines = err.decode().splitlines()
+        self.assertEqual(lines, [self.NO_SOURCE_TARGET_ERROR])
+
+    def test_details_option_with_package(self):
+        module_name = 'unittest'
+        module = importlib.import_module(module_name)
         args = support.optim_args_from_interpreter_flags()
         rc, out, err = assert_python_ok(*args, '-m', 'inspect',
-                                        'unittest', '--details')
-        output = out.decode()
-        # Just a quick safety check on the output
-        self.assertIn(module.__spec__.name, output)
-        self.assertIn(module.__name__, output)
-        self.assertIn(module.__spec__.origin, output)
-        self.assertIn(module.__file__, output)
-        if module.__spec__.cached:
-            self.assertIn(module.__spec__.cached, output)
+                                        module_name, '--details')
+        # Full rendering check on the expected output
+        expected_lines = [
+            f"Target: {module.__name__}",  # No aliasing
+            f"Origin: {module.__spec__.origin}",
+            f"Source: {module.__file__}",
+            f"Cached: {module.__spec__.cached}",  # None is still displayed
+            f"Loader: {_clean_object_ids(repr(module.__spec__.loader))}",
+            f"Submodule search paths: {module.__path__}",
+            "",
+        ]
+        output_lines = _clean_object_ids(out.decode()).splitlines()
+        self.assertEqual(output_lines, expected_lines)
         self.assertEqual(err, b'')
+
+    def test_details_option_with_builtin_module(self):
+        # Also an end-to-end test of non-package lookups
+        module_name = 'sys'
+        module = importlib.import_module(module_name)
+        args = support.optim_args_from_interpreter_flags()
+        rc, out, err = assert_python_ok(*args, '-m', 'inspect',
+                                        module_name, '--details')
+        # Full rendering check on the expected output
+        # No error is reported when just fetching the module details
+        expected_lines = [
+            f"Target: {module.__name__}",  # No aliasing
+            f"Origin: {module.__spec__.origin}",
+            "Source: None",
+            "Cached: None",
+            f"Loader: {_clean_object_ids(repr(module.__spec__.loader))}",
+            "",
+        ]
+        output_lines = _clean_object_ids(out.decode()).splitlines()
+        self.assertEqual(output_lines, expected_lines)
+        self.assertEqual(err, b'')
+
+    def test_details_option_with_data_target(self):
+        # Also an end-to-end test of non-module lookups without aliasing
+        module_name = 'importlib.machinery'
+        cli_target = f"{module_name}:SOURCE_SUFFIXES"
+        module = importlib.import_module(module_name)
+        args = support.optim_args_from_interpreter_flags()
+        rc, out, err = assert_python_ok(*args, '-m', 'inspect',
+                                        cli_target, '--details')
+        # Full rendering check on the expected output
+        # The error is only informational when reading source details
+        expected_lines = [
+            f"Target: {cli_target}",  # No aliasing
+            f"Origin: {module.__spec__.origin}",
+            f"Source: {module.__file__}",
+            f"Cached: {module.__spec__.cached}",  # None is still displayed
+            self.NO_SOURCE_TARGET_ERROR,
+            "",
+        ]
+        output_lines = out.decode().splitlines()
+        self.assertEqual(output_lines, expected_lines)
+        self.assertEqual(err, b'')
+
+    @unittest.skipIf(not os.path.exists(os.path.__file__), "Needs frozen source file")
+    def test_details_option_with_aliased_target(self):
+        # Also an end-to-end test of successful non-module lookups
+        module = importlib.import_module("os.path")
+        target = module.join
+        cli_target = "os:path.join"  # Defining module is os.path, not os
+        defining_target = f"{target.__module__}:{target.__qualname__}"
+
+        args = support.optim_args_from_interpreter_flags()
+        rc, out, err = assert_python_ok(*args, '-m', 'inspect',
+                                        cli_target, '--details')
+        # Full rendering check on the expected output
+        expected_lines = [
+            f'Target: {defining_target} (looked up as "{cli_target}")',
+            f"Origin: {module.__spec__.origin}",
+            f"Source: {module.__file__}",
+            f"Cached: {module.__spec__.cached}",  # None is still displayed
+            f"Line: {inspect.findsource(target)[1]}",
+            "",
+        ]
+        output_lines = out.decode().splitlines()
+        self.assertEqual(output_lines, expected_lines)
+        self.assertEqual(err, b'')
+
+    def _check_details(self, module, details, other_expected_keys=(), *, alias=None, error=None):
+        expected_keys = {"target", "origin", "source", "cached"}
+        if other_expected_keys:
+            expected_keys |= other_expected_keys
+        if alias is not None:
+            expected_keys.add("alias")
+        if error is not None:
+            expected_keys.add("error")
+        self.assertEqual(set(details.keys()), expected_keys)
+        self.assertEqual(module.__spec__.origin, details["origin"])
+        try:
+            expected_source = inspect.getsourcefile(module)
+        except Exception:
+            expected_source = None
+        if expected_source and expected_source.startswith("<frozen"):
+            # Check special case for frozen modules
+            expected_source = module.__file__
+        self.assertEqual(expected_source, details["source"])
+        self.assertEqual(module.__spec__.cached, details["cached"])
+        if "loader" in other_expected_keys:
+            self.assertEqual(repr(module.__spec__.loader), details["loader"])
+        if "submodule_paths" in other_expected_keys:
+            self.assertEqual(repr(module.__path__), details["submodule_paths"])
+        if alias is not None:
+            self.assertEqual(details["alias"], alias)
+            self.assertNotEqual(details["target"], alias)
+        if error is not None:
+            self.assertEqual(details["error"], error)
+
+    def test_get_cli_details_for_source_module(self):
+        module_name = "inspect"
+        module = importlib.import_module(module_name)
+        details = inspect._get_details_for_cli(module, module_name, module)
+        self._check_details(module, details, {"loader"})
+        target = module.signature
+        nominal_target = f"{module_name}:{target.__qualname__}"
+        details = inspect._get_details_for_cli(module, nominal_target, target)
+        self._check_details(module, details, {"lineno"})
+        self.assertEqual(inspect.findsource(target)[1], details["lineno"])
+
+    def test_get_cli_details_for_source_package(self):
+        module_name = "importlib"
+        module = importlib.import_module(module_name)
+        details = inspect._get_details_for_cli(module, module_name, module)
+        self._check_details(module, details, {"loader", "submodule_paths"})
+        target = module.import_module  # Assumes this is not re-exported
+        nominal_target = f"{module_name}:{target.__qualname__}"
+        details = inspect._get_details_for_cli(module, nominal_target, target)
+        self._check_details(module, details, {"lineno"})
+        self.assertEqual(inspect.findsource(target)[1], details["lineno"])
+
+    def test_get_cli_details_for_builtin_module(self):
+        expected_error = self.BUILTIN_ERROR
+        module_name = "sys"
+        module = importlib.import_module(module_name)
+        details = inspect._get_details_for_cli(module, module_name, module)
+        self._check_details(module, details, {"loader"}, error=expected_error)
+        target = module.exit
+        nominal_target = f"{module_name}:{target.__qualname__}"
+        details = inspect._get_details_for_cli(module, nominal_target, target)
+        self._check_details(module, details, error=expected_error)
+
+    def test_get_cli_details_for_frozen_module(self):
+        # Source is actually available for this frozen module, as
+        # __file__ refers to the location of importlib._bootstrap
+        module_name = "_frozen_importlib"
+        module = importlib.import_module(module_name)
+        details = inspect._get_details_for_cli(module, module_name, module)
+        self._check_details(module, details, {"loader"}, alias=module_name)
+        target = module.__import__
+        nominal_target = f"{module_name}:{target.__qualname__}"
+        details = inspect._get_details_for_cli(module, nominal_target, target)
+        self._check_details(module, details, {"lineno"}, alias=nominal_target)
+        self.assertEqual(inspect.findsource(target)[1], details["lineno"])
+
+    def test_get_cli_details_for_extension_module(self):
+        module_name = "_testcapi"
+        if module_name in sys.builtin_module_names:
+            # WASI test environment has even _testcapi as a builtin module
+            expected_error = self.BUILTIN_ERROR
+        else:
+            expected_error = self.NO_SOURCE_ERROR
+        module = importlib.import_module(module_name)
+        details = inspect._get_details_for_cli(module, module_name, module)
+        self._check_details(module, details, {"loader"}, error=expected_error)
+        target = module.fatal_error
+        nominal_target = f"{module_name}:{target.__qualname__}"
+        details = inspect._get_details_for_cli(module, nominal_target, target)
+        self._check_details(module, details, error=expected_error)
+
+    @unittest.skipIf(not os.path.exists(os.path.__file__), "Needs frozen source file")
+    def test_get_cli_details_for_aliased_module(self):
+        # os.path is an alias for a platform dependent implementation module
+        # Test is skipped if the source file is missing (as the output changes),
+        # which may happen if running the test suite after deployment.
+        module_name = "os.path"
+        module = importlib.import_module(module_name)
+        details = inspect._get_details_for_cli(module, module_name, module)
+        self._check_details(module, details, {"loader"}, alias=module_name)
+        nominal_module = importlib.import_module("os")
+        nominal_target = "os:path.join"
+        target = module.join
+        details = inspect._get_details_for_cli(nominal_module, nominal_target, target)
+        self._check_details(module, details, {"lineno"}, alias=nominal_target)
+        self.assertEqual(inspect.findsource(target)[1], details["lineno"])
 
 
 class TestReload(unittest.TestCase):
@@ -6624,8 +6854,6 @@ class TestRepl(unittest.TestCase):
 
         expected = "The source is: <<<def f():\n    print(0)\n    return 1 + 2\n>>>"
         self.assertIn(expected, output)
-
-
 
 
 if __name__ == "__main__":

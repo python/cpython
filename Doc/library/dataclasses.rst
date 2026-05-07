@@ -330,7 +330,7 @@ Module contents
    :attr:`!C.t` will be ``20``, and the class attributes :attr:`!C.x` and
    :attr:`!C.y` will not be set.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       If *metadata* is ``None``, use an empty :class:`frozendict`, instead
       of a :func:`~types.MappingProxyType` of an empty :class:`dict`.
 
@@ -371,8 +371,8 @@ Module contents
    Converts the dataclass *obj* to a dict (by using the
    factory function *dict_factory*).  Each dataclass is converted
    to a dict of its fields, as ``name: value`` pairs.  dataclasses, dicts,
-   lists, and tuples are recursed into.  Other objects are copied with
-   :func:`copy.deepcopy`.
+   frozendicts, lists, and tuples are recursed into.  Other objects are copied
+   with :func:`copy.deepcopy`.
 
    Example of using :func:`!asdict` on nested dataclasses::
 
@@ -402,8 +402,8 @@ Module contents
 
    Converts the dataclass *obj* to a tuple (by using the
    factory function *tuple_factory*).  Each dataclass is converted
-   to a tuple of its field values.  dataclasses, dicts, lists, and
-   tuples are recursed into. Other objects are copied with
+   to a tuple of its field values.  dataclasses, dicts, frozendicts, lists,
+   and tuples are recursed into. Other objects are copied with
    :func:`copy.deepcopy`.
 
    Continuing from the previous example::

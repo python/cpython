@@ -1040,10 +1040,11 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
         PyErr_SetString(PyExc_TypeError, "locals must be a mapping");
         return NULL;
     }
-    if (globals != Py_None && !PyDict_Check(globals)) {
+    if (globals != Py_None && !PyAnyDict_Check(globals)) {
         PyErr_SetString(PyExc_TypeError, PyMapping_Check(globals) ?
-            "globals must be a real dict; try eval(expr, {}, mapping)"
-            : "globals must be a dict");
+            "globals must be a real dict or a frozendict; "
+            "try eval(expr, {}, mapping)"
+            : "globals must be a dict or a frozendict");
         return NULL;
     }
 
@@ -1197,9 +1198,10 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
         locals = Py_NewRef(globals);
     }
 
-    if (!PyDict_Check(globals)) {
-        PyErr_Format(PyExc_TypeError, "exec() globals must be a dict, not %.100s",
-                     Py_TYPE(globals)->tp_name);
+    if (!PyAnyDict_Check(globals)) {
+        PyErr_Format(PyExc_TypeError,
+                     "exec() globals must be a dict or a frozendict, not %T",
+                     globals);
         goto error;
     }
     if (!PyMapping_Check(locals)) {
@@ -1605,7 +1607,7 @@ check:
         // ValueError: map() argument 3 is shorter than arguments 1-2
         const char* plural = i == 1 ? " " : "s 1-";
         PyErr_Format(PyExc_ValueError,
-                     "map() argument %d is shorter than argument%s%d",
+                     "map() argument %zd is shorter than argument%s%zd",
                      i + 1, plural, i);
         goto exit_no_result;
     }
@@ -1616,7 +1618,7 @@ check:
             Py_DECREF(val);
             const char* plural = i == 1 ? " " : "s 1-";
             PyErr_Format(PyExc_ValueError,
-                         "map() argument %d is longer than argument%s%d",
+                         "map() argument %zd is longer than argument%s%zd",
                          i + 1, plural, i);
             goto exit_no_result;
         }
@@ -1838,15 +1840,17 @@ hash as builtin_hash
     obj: object
     /
 
-Return the hash value for the given object.
+Return the integer hash value for the given object.
 
-Two objects that compare equal must also have the same hash value, but the
-reverse is not necessarily true.
+Two objects that compare equal must also have the same hash value, but
+the reverse is not necessarily true.  Hash values may differ between
+Python processes.  Not all objects are hashable; calling hash() on an
+unhashable object raises TypeError.
 [clinic start generated code]*/
 
 static PyObject *
 builtin_hash(PyObject *module, PyObject *obj)
-/*[clinic end generated code: output=237668e9d7688db7 input=58c48be822bf9c54]*/
+/*[clinic end generated code: output=237668e9d7688db7 input=70a242ff65f6717c]*/
 {
     Py_hash_t x;
 
@@ -3305,7 +3309,7 @@ check:
         // ValueError: zip() argument 3 is shorter than arguments 1-2
         const char* plural = i == 1 ? " " : "s 1-";
         return PyErr_Format(PyExc_ValueError,
-                            "zip() argument %d is shorter than argument%s%d",
+                            "zip() argument %zd is shorter than argument%s%zd",
                             i + 1, plural, i);
     }
     for (i = 1; i < tuplesize; i++) {
@@ -3315,7 +3319,7 @@ check:
             Py_DECREF(item);
             const char* plural = i == 1 ? " " : "s 1-";
             return PyErr_Format(PyExc_ValueError,
-                                "zip() argument %d is longer than argument%s%d",
+                                "zip() argument %zd is longer than argument%s%zd",
                                 i + 1, plural, i);
         }
         if (PyErr_Occurred()) {
@@ -3339,7 +3343,7 @@ zip_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (lz->strict) {
         return PyTuple_Pack(3, Py_TYPE(lz), lz->ittuple, Py_True);
     }
-    return PyTuple_Pack(2, Py_TYPE(lz), lz->ittuple);
+    return _PyTuple_FromPair((PyObject *)Py_TYPE(lz), lz->ittuple);
 }
 
 static PyObject *
@@ -3551,6 +3555,7 @@ _PyBuiltin_Init(PyInterpreterState *interp)
     SETBUILTIN("object",                &PyBaseObject_Type);
     SETBUILTIN("range",                 &PyRange_Type);
     SETBUILTIN("reversed",              &PyReversed_Type);
+    SETBUILTIN("sentinel",              &PySentinel_Type);
     SETBUILTIN("set",                   &PySet_Type);
     SETBUILTIN("slice",                 &PySlice_Type);
     SETBUILTIN("staticmethod",          &PyStaticMethod_Type);

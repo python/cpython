@@ -12,7 +12,9 @@ from http.client import HTTPException
 import sys
 import unicodedata
 import unittest
+import weakref
 from test.support import (
+    gc_collect,
     open_urlresource,
     requires_resource,
     script_helper,
@@ -1337,6 +1339,28 @@ class GraphemeBreakTest(unittest.TestCase):
                     self.assertEqual(list(map(str, result)), chunks[i:], comment)
                     self.assertEqual([x.start for x in result], breaks[i:-1], comment)
                     self.assertEqual([x.end for x in result], breaks[i+1:], comment)
+
+    def test_reference_loops(self):
+        # Test that reference loops involving GraphemeBreakIterator or
+        # Segment can be broken by the garbage collector.
+        class S(str):
+            pass
+
+        s = S('abc')
+        s.ref = unicodedata.iter_graphemes(s)
+        wr = weakref.ref(s)
+        del s
+        self.assertIsNotNone(wr())
+        gc_collect()
+        self.assertIsNone(wr())
+
+        s = S('abc')
+        s.ref = next(unicodedata.iter_graphemes(s))
+        wr = weakref.ref(s)
+        del s
+        self.assertIsNotNone(wr())
+        gc_collect()
+        self.assertIsNone(wr())
 
 
 if __name__ == "__main__":

@@ -13,7 +13,7 @@ extern "C" {
 
 struct _Py_dict_state {
     uint32_t next_keys_version;
-    PyMutex watcher_mutex;        // Protects the watchers array (free-threaded builds)
+    PyMutex watcher_mutex;          // Protects the watchers array (free-threaded builds)
     _PyOnceFlag watcher_setup_once; // One-time optimizer watcher setup
     PyDict_WatchCallback watchers[DICT_MAX_WATCHERS];
 };

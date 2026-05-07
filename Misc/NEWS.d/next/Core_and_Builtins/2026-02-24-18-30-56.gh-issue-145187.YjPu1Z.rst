@@ -1,2 +1,0 @@
-Fix compiler assertion fail when a type parameter bound contains an invalid
-expression in a conditional block.

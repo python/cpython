@@ -32,10 +32,6 @@
 /* The Android API level. */
 #undef ANDROID_API_LEVEL
 
-/* Define if C doubles are 64-bit IEEE 754 binary format, stored in ARM
-   mixed-endian order (byte order 45670123) */
-#undef DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754
-
 /* Define if C doubles are 64-bit IEEE 754 binary format, stored with the most
    significant byte first */
 #undef DOUBLE_IS_BIG_ENDIAN_IEEE754
@@ -704,6 +700,10 @@
 
 /* Define to 1 if you have the 'dld' library (-ldld). */
 #undef HAVE_LIBDLD
+
+/* Define to 1 if libgcc __register_frame and __deregister_frame are linkable.
+   */
+#undef HAVE_LIBGCC_EH_FRAME_REGISTRATION
 
 /* Define to 1 if you have the 'ieee' library (-lieee). */
 #undef HAVE_LIBIEEE
@@ -2072,6 +2072,10 @@
 
 /* Define if you want to use tail-calling interpreters in CPython. */
 #undef _Py_TAIL_CALL_INTERP
+
+/* Define to 1 if frame unwinding via pointers is expected to work, 0 if not.
+   Leave undefined if unknown. */
+#undef _Py_WITH_FRAME_POINTERS
 
 /* Define to force use of thread-safe errno, h_errno, and other functions */
 #undef _REENTRANT

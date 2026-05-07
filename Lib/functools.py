@@ -170,7 +170,7 @@ def _lt_from_ge(self, other):
         return op_result
     return not op_result
 
-_convert = {
+_convert = frozendict({
     '__lt__': [('__gt__', _gt_from_lt),
                ('__le__', _le_from_lt),
                ('__ge__', _ge_from_lt)],
@@ -183,7 +183,7 @@ _convert = {
     '__ge__': [('__le__', _le_from_ge),
                ('__gt__', _gt_from_ge),
                ('__lt__', _lt_from_ge)]
-}
+})
 
 def total_ordering(cls):
     """Class decorator that fills in missing ordering methods"""

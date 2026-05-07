@@ -2,8 +2,9 @@
 
 import os as _os
 import sys as _sys
-import sysconfig as _sysconfig
 import types as _types
+
+lazy import sysconfig as _sysconfig
 
 from _ctypes import Union, Structure, Array
 from _ctypes import _Pointer
@@ -205,13 +206,13 @@ if sizeof(c_longdouble) == sizeof(c_double):
 
 try:
     class c_double_complex(_SimpleCData):
-        _type_ = "D"
+        _type_ = "Zd"
     _check_size(c_double_complex)
     class c_float_complex(_SimpleCData):
-        _type_ = "F"
+        _type_ = "Zf"
     _check_size(c_float_complex)
     class c_longdouble_complex(_SimpleCData):
-        _type_ = "G"
+        _type_ = "Zg"
 except AttributeError:
     pass
 

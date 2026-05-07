@@ -9,11 +9,56 @@ extern "C" {
 #endif
 
 #include "pycore_typedefs.h"      // _PyInterpreterFrame
+#include "pycore_jit_publish.h"
 #include "pycore_uop.h"           // _PyUOpInstruction
 #include "pycore_uop_ids.h"
 #include "pycore_stackref.h"      // _PyStackRef
 #include "pycore_optimizer_types.h"
 #include <stdbool.h>
+
+/* Fitness controls how long a trace can grow.
+ * Starts at FITNESS_INITIAL, then decreases from per-bytecode buffer usage
+ * plus branch/frame heuristics. The trace stops when fitness drops below the
+ * current exit_quality.
+ *
+ * Design targets for the constants below:
+ * 1. Reaching the abstract frame-depth limit should drop fitness below
+ *    EXIT_QUALITY_SPECIALIZABLE.
+ * 2. A backward edge should leave budget for roughly N_BACKWARD_SLACK more
+ *    bytecodes, assuming AVG_SLOTS_PER_INSTRUCTION.
+ * 3. Roughly seven balanced branches should reduce fitness to
+ *    EXIT_QUALITY_DEFAULT after per-slot costs.
+ * 4. A push followed by a matching return is net-zero on frame-specific
+ *    fitness, excluding per-slot costs.
+ */
+#define MAX_TARGET_LENGTH          (UOP_MAX_TRACE_LENGTH / 2)
+#define OPTIMIZER_EFFECTIVENESS    2
+#define FITNESS_INITIAL            (MAX_TARGET_LENGTH * OPTIMIZER_EFFECTIVENESS)
+
+/* Exit quality thresholds: trace stops when fitness < exit_quality.
+ * Higher = trace is more willing to stop here. */
+#define EXIT_QUALITY_CLOSE_LOOP      (FITNESS_INITIAL - AVG_SLOTS_PER_INSTRUCTION*4)
+#define EXIT_QUALITY_ENTER_EXECUTOR  (FITNESS_INITIAL * 1 / 8)
+#define EXIT_QUALITY_DEFAULT         (FITNESS_INITIAL / 40)
+#define EXIT_QUALITY_SPECIALIZABLE   (FITNESS_INITIAL / 80)
+
+/* Estimated buffer slots per bytecode, used only to derive heuristics.
+ * Runtime charging uses trace-buffer capacity consumed for each bytecode. */
+#define AVG_SLOTS_PER_INSTRUCTION  6
+
+/* Heuristic backward-edge exit quality: leave room for about 1 unroll and
+ * N_BACKWARD_SLACK more bytecodes before reaching EXIT_QUALITY_CLOSE_LOOP,
+ * based on AVG_SLOTS_PER_INSTRUCTION. */
+#define N_BACKWARD_SLACK           10
+#define EXIT_QUALITY_BACKWARD_EDGE (EXIT_QUALITY_CLOSE_LOOP / 2 - N_BACKWARD_SLACK * AVG_SLOTS_PER_INSTRUCTION)
+
+/* Penalty for a balanced branch.
+ * It is sized so repeated balanced branches can drive a trace toward
+ * EXIT_QUALITY_DEFAULT, while compute_branch_penalty() keeps any single branch
+ * from dominating the budget.
+ */
+#define FITNESS_BRANCH_BALANCED    ((FITNESS_INITIAL - EXIT_QUALITY_DEFAULT - \
+                                        (MAX_TARGET_LENGTH / 14 * AVG_SLOTS_PER_INSTRUCTION)) / (14))
 
 
 typedef struct _PyJitUopBuffer {
@@ -91,17 +136,20 @@ typedef struct _PyJitTracerInitialState {
     _Py_CODEUNIT *jump_backward_instr;
 } _PyJitTracerInitialState;
 
+#define MAX_RECORDED_VALUES 3
 typedef struct _PyJitTracerPreviousState {
     int instr_oparg;
     int instr_stacklevel;
     _Py_CODEUNIT *instr;
     PyCodeObject *instr_code; // Strong
     struct _PyInterpreterFrame *instr_frame;
-    PyObject *recorded_value; // Strong, may be NULL
+    PyObject *recorded_values[MAX_RECORDED_VALUES]; // Strong, may be NULL
+    int recorded_count;
 } _PyJitTracerPreviousState;
 
 typedef struct _PyJitTracerTranslatorState {
-    int jump_backward_seen;
+    int32_t fitness;              // Current trace fitness, starts high, decrements
+    int frame_depth;              // Current inline depth (0 = root frame)
 } _PyJitTracerTranslatorState;
 
 typedef struct _PyJitTracerState {
@@ -128,8 +176,8 @@ typedef struct {
     bool cold;
     uint8_t pending_deletion;
     int32_t index;           // Index of ENTER_EXECUTOR (if code isn't NULL, below).
-    _PyBloomFilter bloom;
-    _PyExecutorLinkListNode links;
+    int32_t bloom_array_idx;        // Index in interp->executor_blooms/executor_ptrs.
+    _PyExecutorLinkListNode links;  // Used by deletion list.
     PyCodeObject *code;  // Weak (NULL if no corresponding ENTER_EXECUTOR).
 } _PyVMData;
 
@@ -151,17 +199,95 @@ typedef struct _PyExecutorObject {
     uint32_t code_size;
     size_t jit_size;
     void *jit_code;
+    _PyJitCodeRegistration *jit_registration;
     _PyExitData exits[1];
 } _PyExecutorObject;
 
 // Export for '_opcode' shared extension (JIT compiler).
 PyAPI_FUNC(_PyExecutorObject*) _Py_GetExecutor(PyCodeObject *code, int offset);
 
-void _Py_ExecutorInit(_PyExecutorObject *, const _PyBloomFilter *);
+int _Py_ExecutorInit(_PyExecutorObject *, const _PyBloomFilter *);
 void _Py_ExecutorDetach(_PyExecutorObject *);
-void _Py_BloomFilter_Init(_PyBloomFilter *);
-void _Py_BloomFilter_Add(_PyBloomFilter *bloom, void *obj);
 PyAPI_FUNC(void) _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj);
+
+/* We use a bloomfilter with k = 6, m = 256
+ * The choice of k and the following constants
+ * could do with a more rigorous analysis,
+ * but here is a simple analysis:
+ *
+ * We want to keep the false positive rate low.
+ * For n = 5 (a trace depends on 5 objects),
+ * we expect 30 bits set, giving a false positive
+ * rate of (30/256)**6 == 2.5e-6 which is plenty
+ * good enough.
+ *
+ * However with n = 10 we expect 60 bits set (worst case),
+ * giving a false positive of (60/256)**6 == 0.0001
+ *
+ * We choose k = 6, rather than a higher number as
+ * it means the false positive rate grows slower for high n.
+ *
+ * n = 5, k = 6 => fp = 2.6e-6
+ * n = 5, k = 8 => fp = 3.5e-7
+ * n = 10, k = 6 => fp = 1.6e-4
+ * n = 10, k = 8 => fp = 0.9e-4
+ * n = 15, k = 6 => fp = 0.18%
+ * n = 15, k = 8 => fp = 0.23%
+ * n = 20, k = 6 => fp = 1.1%
+ * n = 20, k = 8 => fp = 2.3%
+ *
+ * The above analysis assumes perfect hash functions,
+ * but those don't exist, so the real false positive
+ * rates may be worse.
+ */
+
+#define _Py_BLOOM_FILTER_K 6
+#define _Py_BLOOM_FILTER_SEED 20221211
+
+static inline uint64_t
+address_to_hash(void *ptr) {
+    assert(ptr != NULL);
+    uint64_t uhash = _Py_BLOOM_FILTER_SEED;
+    uintptr_t addr = (uintptr_t)ptr;
+    for (int i = 0; i < SIZEOF_VOID_P; i++) {
+        uhash ^= addr & 255;
+        uhash *= (uint64_t)PyHASH_MULTIPLIER;
+        addr >>= 8;
+    }
+    return uhash;
+}
+
+static inline void
+_Py_BloomFilter_Init(_PyBloomFilter *bloom)
+{
+    for (int i = 0; i < _Py_BLOOM_FILTER_WORDS; i++) {
+        bloom->bits[i] = 0;
+    }
+}
+
+static inline void
+_Py_BloomFilter_Add(_PyBloomFilter *bloom, void *ptr)
+{
+    uint64_t hash = address_to_hash(ptr);
+    assert(_Py_BLOOM_FILTER_K <= 8);
+    for (int i = 0; i < _Py_BLOOM_FILTER_K; i++) {
+        uint8_t bits = hash & 255;
+        bloom->bits[bits >> _Py_BLOOM_FILTER_WORD_SHIFT] |=
+            (_Py_bloom_filter_word_t)1 << (bits & (_Py_BLOOM_FILTER_BITS_PER_WORD - 1));
+        hash >>= 8;
+    }
+}
+
+static inline bool
+bloom_filter_may_contain(const _PyBloomFilter *bloom, const _PyBloomFilter *hashes)
+{
+    for (int i = 0; i < _Py_BLOOM_FILTER_WORDS; i++) {
+        if ((bloom->bits[i] & hashes->bits[i]) != hashes->bits[i]) {
+            return false;
+        }
+    }
+    return true;
+}
 
 #define _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS 3
 #define _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS 6
@@ -213,8 +339,12 @@ static inline uint16_t uop_get_error_target(const _PyUOpInstruction *inst)
 
 
 #define REF_IS_BORROWED 1
-#define REF_IS_INVALID  2
+#define REF_IS_UNIQUE   2
+#define REF_IS_INVALID  3
 #define REF_TAG_BITS    3
+
+#define REF_GET_TAG(x)   ((uintptr_t)(x) & (REF_TAG_BITS))
+#define REF_CLEAR_TAG(x) ((uintptr_t)(x) & (~REF_TAG_BITS))
 
 #define JIT_BITS_TO_PTR_MASKED(REF) ((JitOptSymbol *)(((REF).bits) & (~REF_TAG_BITS)))
 
@@ -236,13 +366,34 @@ PyJitRef_Wrap(JitOptSymbol *sym)
 static inline JitOptRef
 PyJitRef_WrapInvalid(void *ptr)
 {
-    return (JitOptRef){.bits=(uintptr_t)ptr | REF_IS_INVALID};
+    return (JitOptRef){.bits = REF_CLEAR_TAG((uintptr_t)ptr) | REF_IS_INVALID};
 }
 
 static inline bool
 PyJitRef_IsInvalid(JitOptRef ref)
 {
-    return (ref.bits & REF_IS_INVALID) == REF_IS_INVALID;
+    return REF_GET_TAG(ref.bits) == REF_IS_INVALID;
+}
+
+static inline JitOptRef
+PyJitRef_MakeUnique(JitOptRef ref)
+{
+    return (JitOptRef){ REF_CLEAR_TAG(ref.bits) | REF_IS_UNIQUE };
+}
+
+static inline bool
+PyJitRef_IsUnique(JitOptRef ref)
+{
+    return REF_GET_TAG(ref.bits) == REF_IS_UNIQUE;
+}
+
+static inline JitOptRef
+PyJitRef_StripBorrowInfo(JitOptRef ref)
+{
+    if (PyJitRef_IsUnique(ref)) {
+        return ref;
+    }
+    return (JitOptRef){ .bits = REF_CLEAR_TAG(ref.bits) };
 }
 
 static inline JitOptRef
@@ -252,9 +403,18 @@ PyJitRef_StripReferenceInfo(JitOptRef ref)
 }
 
 static inline JitOptRef
+PyJitRef_RemoveUnique(JitOptRef ref)
+{
+    if (PyJitRef_IsUnique(ref)) {
+        ref = PyJitRef_StripReferenceInfo(ref);
+    }
+    return ref;
+}
+
+static inline JitOptRef
 PyJitRef_Borrow(JitOptRef ref)
 {
-    return (JitOptRef){ .bits = ref.bits | REF_IS_BORROWED };
+    return (JitOptRef){ .bits = REF_CLEAR_TAG(ref.bits) | REF_IS_BORROWED };
 }
 
 static const JitOptRef PyJitRef_NULL = {.bits = REF_IS_BORROWED};
@@ -268,7 +428,7 @@ PyJitRef_IsNull(JitOptRef ref)
 static inline int
 PyJitRef_IsBorrowed(JitOptRef ref)
 {
-    return (ref.bits & REF_IS_BORROWED) == REF_IS_BORROWED;
+    return REF_GET_TAG(ref.bits) == REF_IS_BORROWED;
 }
 
 extern bool _Py_uop_sym_is_null(JitOptRef sym);
@@ -283,11 +443,13 @@ extern JitOptRef _Py_uop_sym_new_type(
 extern JitOptRef _Py_uop_sym_new_const(JitOptContext *ctx, PyObject *const_val);
 extern JitOptRef _Py_uop_sym_new_const_steal(JitOptContext *ctx, PyObject *const_val);
 bool _Py_uop_sym_is_safe_const(JitOptContext *ctx, JitOptRef sym);
+bool _Py_uop_sym_is_not_container(JitOptRef sym);
 _PyStackRef _Py_uop_sym_get_const_as_stackref(JitOptContext *ctx, JitOptRef sym);
 extern JitOptRef _Py_uop_sym_new_null(JitOptContext *ctx);
 extern bool _Py_uop_sym_has_type(JitOptRef sym);
 extern bool _Py_uop_sym_matches_type(JitOptRef sym, PyTypeObject *typ);
 extern bool _Py_uop_sym_matches_type_version(JitOptRef sym, unsigned int version);
+extern unsigned int _Py_uop_sym_get_type_version(JitOptRef sym);
 extern void _Py_uop_sym_set_null(JitOptContext *ctx, JitOptRef sym);
 extern void _Py_uop_sym_set_non_null(JitOptContext *ctx, JitOptRef sym);
 extern void _Py_uop_sym_set_type(JitOptContext *ctx, JitOptRef sym, PyTypeObject *typ);
@@ -310,6 +472,7 @@ extern void _Py_uop_sym_set_recorded_type(JitOptContext *ctx, JitOptRef sym, PyT
 extern void _Py_uop_sym_set_recorded_gen_func(JitOptContext *ctx, JitOptRef ref, PyFunctionObject *value);
 extern PyCodeObject *_Py_uop_sym_get_probable_func_code(JitOptRef sym);
 extern PyObject *_Py_uop_sym_get_probable_value(JitOptRef sym);
+extern PyTypeObject *_Py_uop_sym_get_probable_type(JitOptRef sym);
 extern JitOptRef *_Py_uop_sym_set_stack_depth(JitOptContext *ctx, int stack_depth, JitOptRef *current_sp);
 
 extern void _Py_uop_abstractcontext_init(JitOptContext *ctx, _PyBloomFilter *dependencies);
@@ -360,13 +523,34 @@ _PyJit_TryInitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame,
     int oparg, _PyExecutorObject *current_executor);
 
 PyAPI_FUNC(void) _PyJit_FinalizeTracing(PyThreadState *tstate, int err);
+PyAPI_FUNC(bool) _PyJit_EnterExecutorShouldStopTracing(int og_opcode);
+
 void _PyPrintExecutor(_PyExecutorObject *executor, const _PyUOpInstruction *marker);
 void _PyJit_TracerFree(_PyThreadStateImpl *_tstate);
 
 #ifdef _Py_TIER2
 typedef void (*_Py_RecordFuncPtr)(_PyInterpreterFrame *frame, _PyStackRef *stackpointer, int oparg, PyObject **recorded_value);
 PyAPI_DATA(const _Py_RecordFuncPtr) _PyOpcode_RecordFunctions[];
-PyAPI_DATA(const uint8_t) _PyOpcode_RecordFunctionIndices[256];
+
+typedef struct {
+    uint8_t count;
+    uint8_t indices[MAX_RECORDED_VALUES];
+} _PyOpcodeRecordEntry;
+
+typedef struct {
+    uint8_t count;
+    uint8_t transform_mask;
+    uint8_t slots[MAX_RECORDED_VALUES];
+} _PyOpcodeRecordSlotMap;
+
+PyAPI_DATA(const _PyOpcodeRecordEntry) _PyOpcode_RecordEntries[256];
+PyAPI_DATA(const _PyOpcodeRecordSlotMap) _PyOpcode_RecordSlotMaps[256];
+
+/* Convert a family-recorded value to the form a recorder uop expects.
+ * If no transform is needed, return the input value unchanged.
+ * Takes ownership of `value` and returns a new strong reference or NULL.
+ */
+PyAPI_FUNC(PyObject *) _PyOpcode_RecordTransformValue(int uop, PyObject *value);
 #endif
 
 #ifdef __cplusplus

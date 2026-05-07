@@ -16,7 +16,6 @@ import os
 import sys
 import socket
 import struct
-import tempfile
 import time
 
 
@@ -77,7 +76,11 @@ def arbitrary_address(family):
     if family == 'AF_INET':
         return ('localhost', 0)
     elif family == 'AF_UNIX':
-        return tempfile.mktemp(prefix='sock-', dir=util.get_temp_dir())
+        # NOTE: util.get_temp_dir() is a 0o700 per-process directory. A
+        # mktemp-style ToC vs ToU concern is not important; bind() surfaces
+        # the extremely unlikely collision as EADDRINUSE.
+        return os.path.join(util.get_temp_dir(),
+                            f'sock-{os.urandom(6).hex()}')
     elif family == 'AF_PIPE':
         return (r'\\.\pipe\pyc-%d-%d-%s' %
                 (os.getpid(), next(_mmap_counter), os.urandom(8).hex()))
@@ -1085,14 +1088,22 @@ if sys.platform == 'win32':
 
         Returns list of those objects in object_list which are ready/readable.
         '''
+        object_list = list(object_list)
+
+        if not object_list:
+            if timeout is None:
+                while True:
+                    time.sleep(1e6)
+            elif timeout > 0:
+                time.sleep(timeout)
+            return []
+
         if timeout is None:
             timeout = INFINITE
         elif timeout < 0:
             timeout = 0
         else:
             timeout = int(timeout * 1000 + 0.5)
-
-        object_list = list(object_list)
         waithandle_to_obj = {}
         ov_list = []
         ready_objects = set()

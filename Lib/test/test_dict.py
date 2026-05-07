@@ -1569,6 +1569,26 @@ class DictTest(unittest.TestCase):
                 self.assertEqual(d.get(key3_3), 44)
                 self.assertGreaterEqual(eq_count, 1)
 
+    def test_overwrite_managed_dict(self):
+        # GH-130327: Overwriting an object's managed dictionary with another object's
+        # skipped traversal in favor of inline values, causing the GC to believe that
+        # the __dict__ wasn't reachable.
+        import gc
+
+        class Shenanigans:
+            pass
+
+        to_be_deleted = Shenanigans()
+        to_be_deleted.attr = "whatever"
+        holds_reference = Shenanigans()
+        holds_reference.__dict__ = to_be_deleted.__dict__
+        holds_reference.ref = {"circular": to_be_deleted, "data": 42}
+
+        del to_be_deleted
+        gc.collect()
+        self.assertEqual(holds_reference.ref['data'], 42)
+        self.assertEqual(holds_reference.attr, "whatever")
+
     def test_unhashable_key(self):
         d = {'a': 1}
         key = [1, 2, 3]
@@ -1680,6 +1700,69 @@ class DictTest(unittest.TestCase):
         self.assertEqual(len(d), len(items), d)
         self.assertEqual(d, dict(items))
 
+    def test_clear_reentrant_embedded(self):
+        # gh-130555: dict.clear() must be safe when values are embedded
+        # in an object and a destructor mutates the dict.
+        class MyObj: pass
+        class ClearOnDelete:
+            def __del__(self):
+                nonlocal x
+                del x
+
+        x = MyObj()
+        x.a = ClearOnDelete()
+
+        d = x.__dict__
+        d.clear()
+
+    def test_clear_reentrant_cycle(self):
+        # gh-130555: dict.clear() must be safe for embedded dicts when the
+        # object is part of a reference cycle and the last reference to the
+        # dict is via the cycle.
+        class MyObj: pass
+        obj = MyObj()
+        obj.f = obj
+        obj.attr = "attr"
+
+        d = obj.__dict__
+        del obj
+
+        d.clear()
+
+    def test_clear_reentrant_force_combined(self):
+        # gh-130555: dict.clear() must be safe when a destructor forces the
+        # dict from embedded/split to combined (setting ma_values to NULL).
+        class MyObj: pass
+        class ForceConvert:
+            def __del__(self):
+                d[1] = "trigger"
+
+        x = MyObj()
+        x.a = ForceConvert()
+        x.b = "other"
+
+        d = x.__dict__
+        d.clear()
+
+    def test_clear_reentrant_delete(self):
+        # gh-130555: dict.clear() must be safe when a destructor deletes
+        # a key from the same embedded dict.
+        class MyObj: pass
+        class DelKey:
+            def __del__(self):
+                try:
+                    del d['b']
+                except KeyError:
+                    pass
+
+        x = MyObj()
+        x.a = DelKey()
+        x.b = "value_b"
+        x.c = "value_c"
+
+        d = x.__dict__
+        d.clear()
+
 
 class CAPITest(unittest.TestCase):
 
@@ -1746,6 +1829,13 @@ class FrozenDictTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             dict.__init__(d, x=1)
 
+        # Avoid copy if it's frozendict type
+        d2 = frozendict(d)
+        self.assertIs(d2, d)
+        d2 = FrozenDict(d)
+        self.assertIsNot(d2, d)
+        self.assertEqual(d2, d)
+
     def test_copy(self):
         d = frozendict(x=1, y=2)
         d2 = d.copy()
@@ -1765,10 +1855,18 @@ class FrozenDictTests(unittest.TestCase):
                          frozendict({'x': 1, 'y': 2}))
         self.assertEqual(frozendict(x=1, y=2) | frozendict(y=5),
                          frozendict({'x': 1, 'y': 5}))
+        self.assertEqual(FrozenDict(x=1, y=2) | FrozenDict(y=5),
+                         frozendict({'x': 1, 'y': 5}))
+
         fd = frozendict(x=1, y=2)
         self.assertIs(fd | frozendict(), fd)
         self.assertIs(fd | {}, fd)
         self.assertIs(frozendict() | fd, fd)
+
+        fd = FrozenDict(x=1, y=2)
+        self.assertEqual(fd | frozendict(), fd)
+        self.assertEqual(fd | {}, fd)
+        self.assertEqual(frozendict() | fd, fd)
 
     def test_update(self):
         # test "a |= b" operator
@@ -1779,6 +1877,11 @@ class FrozenDictTests(unittest.TestCase):
         self.assertIsNot(copy, d)
         self.assertEqual(d, frozendict({'x': 1, 'y': 2}))
         self.assertEqual(copy, frozendict({'x': 1}))
+
+    def test_items_xor(self):
+        # test "a ^ b" operator on items views
+        res = frozendict(a=1, b=2).items() ^ frozendict(b=2, c=3).items()
+        self.assertEqual(res, {('a', 1), ('c', 3)})
 
     def test_repr(self):
         d = frozendict()
