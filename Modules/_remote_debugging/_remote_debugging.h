@@ -120,9 +120,10 @@ typedef enum _WIN32_THREADSTATE {
  * MACROS AND CONSTANTS
  * ============================================================================ */
 
-#define GET_MEMBER(type, obj, offset) (*(type*)((char*)(obj) + (offset)))
+#define GET_MEMBER(type, obj, offset) \
+    (*(const type *)memcpy(&(type){0}, (const char *)(obj) + (offset), sizeof(type)))
 #define CLEAR_PTR_TAG(ptr) (((uintptr_t)(ptr) & ~Py_TAG_BITS))
-#define GET_MEMBER_NO_TAG(type, obj, offset) (type)(CLEAR_PTR_TAG(*(type*)((char*)(obj) + (offset))))
+#define GET_MEMBER_NO_TAG(type, obj, offset) (type)(CLEAR_PTR_TAG(GET_MEMBER(type, obj, offset)))
 
 /* Size macros for opaque buffers */
 #define SIZEOF_BYTES_OBJ sizeof(PyBytesObject)
@@ -172,6 +173,7 @@ typedef enum _WIN32_THREADSTATE {
 #define THREAD_STATUS_UNKNOWN             (1 << 2)
 #define THREAD_STATUS_GIL_REQUESTED       (1 << 3)
 #define THREAD_STATUS_HAS_EXCEPTION       (1 << 4)
+#define THREAD_STATUS_MAIN_THREAD         (1 << 5)
 
 /* Exception cause macro */
 #define set_exception_cause(unwinder, exc_type, message)                              \
@@ -258,8 +260,10 @@ typedef struct {
     PyTypeObject *ThreadInfo_Type;
     PyTypeObject *InterpreterInfo_Type;
     PyTypeObject *AwaitedInfo_Type;
+    PyTypeObject *GCStatsInfo_Type;
     PyTypeObject *BinaryWriter_Type;
     PyTypeObject *BinaryReader_Type;
+    PyTypeObject *GCMonitor_Type;
 } RemoteDebuggingState;
 
 enum _ThreadState {
@@ -307,6 +311,7 @@ typedef struct {
 #endif
 #ifdef __APPLE__
     uint64_t thread_id_offset;
+    int thread_id_offset_initialized;
 #endif
 #ifdef MS_WINDOWS
     PVOID win_process_buffer;
@@ -343,6 +348,13 @@ typedef struct {
     size_t count;
 } StackChunkList;
 
+typedef struct {
+    proc_handle_t handle;
+    uintptr_t runtime_start_address;
+    struct _Py_DebugOffsets debug_offsets;
+    int debug;
+} RuntimeOffsets;
+
 /*
  * Context for frame chain traversal operations.
  */
@@ -373,6 +385,13 @@ typedef struct {
     int32_t tlbc_index;             // Thread-local bytecode index (free-threading)
 } CodeObjectContext;
 
+typedef struct {
+    PyObject_HEAD
+    RuntimeOffsets offsets;
+} GCMonitorObject;
+
+#define GCMonitor_CAST(op) ((GCMonitorObject *)(op))
+
 /* Function pointer types for iteration callbacks */
 typedef int (*thread_processor_func)(
     RemoteUnwinderObject *unwinder,
@@ -387,6 +406,14 @@ typedef int (*set_entry_processor_func)(
     void *context
 );
 
+typedef int (*interpreter_processor_func)(
+    RuntimeOffsets *offsets,
+    uintptr_t interpreter_state_addr,
+    int64_t iid,
+    void *context
+);
+
+
 /* ============================================================================
  * STRUCTSEQ DESCRIPTORS (extern declarations)
  * ============================================================================ */
@@ -398,6 +425,7 @@ extern PyStructSequence_Desc CoroInfo_desc;
 extern PyStructSequence_Desc ThreadInfo_desc;
 extern PyStructSequence_Desc InterpreterInfo_desc;
 extern PyStructSequence_Desc AwaitedInfo_desc;
+extern PyStructSequence_Desc GCStatsInfo_desc;
 
 /* ============================================================================
  * UTILITY FUNCTION DECLARATIONS
@@ -415,6 +443,7 @@ extern void cached_code_metadata_destroy(void *ptr);
 /* Validation */
 extern int is_prerelease_version(uint64_t version);
 extern int validate_debug_offsets(struct _Py_DebugOffsets *debug_offsets);
+#define PY_REMOTE_DEBUG_INVALID_ASYNC_DEBUG_OFFSETS (-2)
 
 /* ============================================================================
  * MEMORY READING FUNCTION DECLARATIONS
@@ -575,13 +604,25 @@ extern PyObject* unwind_stack_for_thread(
     RemoteUnwinderObject *unwinder,
     uintptr_t *current_tstate,
     uintptr_t gil_holder_tstate,
-    uintptr_t gc_frame
+    uintptr_t gc_frame,
+    uintptr_t main_thread_tstate
 );
 
 /* Thread stopping functions (for blocking mode) */
 extern void _Py_RemoteDebug_InitThreadsState(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_ThreadsState *st);
 extern int _Py_RemoteDebug_StopAllThreads(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_ThreadsState *st);
 extern void _Py_RemoteDebug_ResumeAllThreads(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_ThreadsState *st);
+
+/* ============================================================================
+ * INTERPRETER FUNCTION DECLARATIONS
+ * ============================================================================ */
+
+extern int
+iterate_interpreters(
+    RuntimeOffsets *offsets,
+    interpreter_processor_func processor,
+    void *context
+);
 
 /* ============================================================================
  * ASYNCIO FUNCTION DECLARATIONS
