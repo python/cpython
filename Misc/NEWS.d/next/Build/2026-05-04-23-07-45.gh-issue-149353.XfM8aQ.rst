@@ -1,0 +1,2 @@
+Avoid unnecessary JIT-related rebuilds during ``make install`` after
+``--enable-optimizations`` builds.

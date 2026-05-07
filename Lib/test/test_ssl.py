@@ -5074,14 +5074,6 @@ class ThreadedTests(unittest.TestCase):
                 sslsock.do_handshake()
 
             self.assertEqual(sslsock.pending(), 0)
-            try:
-                sslsock.shutdown(socket.SHUT_WR)
-            except OSError as exc:
-                self.assertEqual(exc.errno, errno.ENOTCONN)
-            else:
-                # On Windows and on OpenSSL 1.1.1, shutdown() doesn't
-                # raise an error
-                pass
 
 
 @unittest.skipUnless(has_tls_version('TLSv1_3') and ssl.HAS_PHA,

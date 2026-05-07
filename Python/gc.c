@@ -1405,13 +1405,13 @@ add_stats(GCState *gcstate, int gen, struct gc_generation_stats *stats)
     memcpy(cur_stats, prev_stats, sizeof(struct gc_generation_stats));
 
     cur_stats->ts_start = stats->ts_start;
-
     cur_stats->collections += 1;
     cur_stats->collected += stats->collected;
     cur_stats->uncollectable += stats->uncollectable;
     cur_stats->candidates += stats->candidates;
 
     cur_stats->duration += stats->duration;
+    cur_stats->heap_size = stats->heap_size;
     /* Publish ts_stop last so remote readers do not select a partially
        updated stats record as the latest collection. */
     cur_stats->ts_stop = stats->ts_stop;
@@ -1471,6 +1471,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         invoke_gc_callback(tstate, "start", generation, &stats);
     }
 
+    stats.heap_size = gcstate->heap_size;
     // ignore error: don't interrupt the GC if reading the clock fails
     (void)PyTime_PerfCounterRaw(&stats.ts_start);
     if (gcstate->debug & _PyGC_DEBUG_STATS) {
@@ -2097,6 +2098,8 @@ PyObject_GC_Del(void *op)
     PyGC_Head *g = AS_GC(op);
     if (_PyObject_GC_IS_TRACKED(op)) {
         gc_list_remove(g);
+        GCState *gcstate = get_gc_state();
+        gcstate->heap_size--;
 #ifdef Py_DEBUG
         PyObject *exc = PyErr_GetRaisedException();
         if (PyErr_WarnExplicitFormat(PyExc_ResourceWarning, "gc", 0,

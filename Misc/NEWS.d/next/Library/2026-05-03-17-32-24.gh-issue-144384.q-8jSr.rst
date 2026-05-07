@@ -1,0 +1,1 @@
+Lazily import :mod:`!_colorize`. Patch by Hugo van Kemenade.

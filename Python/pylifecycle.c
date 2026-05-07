@@ -19,6 +19,7 @@
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
 #include "pycore_obmalloc.h"      // _PyMem_init_obmalloc()
 #include "pycore_optimizer.h"     // _Py_Executors_InvalidateAll
+#include "pycore_parking_lot.h"   // _PyParkingLot
 #include "pycore_pathconfig.h"    // _PyPathConfig_UpdateGlobal()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pylifecycle.h"   // _PyErr_Print()
@@ -29,7 +30,7 @@
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_stats.h"         // _PyStats_InterpInit()
 #include "pycore_sysmodule.h"     // _PySys_ClearAttrString()
-#include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
+#include "pycore_traceback.h"     // PyUnstable_TracebackThreads()
 #include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()
 #include "pycore_typevarobject.h" // _Py_clear_generic_types()
@@ -2229,15 +2230,13 @@ interp_has_threads(PyInterpreterState *interp)
     /* This needs to check for non-daemon threads only, otherwise we get stuck
      * in an infinite loop. */
     assert(interp != NULL);
-    ASSERT_WORLD_STOPPED(interp);
+    ASSERT_HEAD_IS_LOCKED(interp->runtime);
     assert(interp->threads.head != NULL);
     if (interp->threads.head->next == NULL) {
         // No other threads active, easy way out.
         return 0;
     }
 
-    // We don't have to worry about locking this because the
-    // world is stopped.
     _Py_FOR_EACH_TSTATE_UNLOCKED(interp, tstate) {
         if (tstate->_whence == _PyThreadState_WHENCE_THREADING) {
             return 1;
@@ -2269,9 +2268,7 @@ static int
 runtime_has_subinterpreters(_PyRuntimeState *runtime)
 {
     assert(runtime != NULL);
-    HEAD_LOCK(runtime);
     PyInterpreterState *interp = runtime->interpreters.head;
-    HEAD_UNLOCK(runtime);
     return interp->next != NULL;
 }
 
@@ -2280,6 +2277,7 @@ make_pre_finalization_calls(PyThreadState *tstate, int subinterpreters)
 {
     assert(tstate != NULL);
     PyInterpreterState *interp = tstate->interp;
+    assert(_Py_atomic_load_uintptr(&interp->finalization_guards) != _PyInterpreterGuard_GUARDS_NOT_ALLOWED);
     /* Each of these functions can start one another, e.g. a pending call
      * could start a thread or vice versa. To ensure that we properly clean
      * call everything, we run these in a loop until none of them run anything. */
@@ -2306,41 +2304,78 @@ make_pre_finalization_calls(PyThreadState *tstate, int subinterpreters)
 
         if (subinterpreters) {
             /* Clean up any lingering subinterpreters.
-
-            Two preconditions need to be met here:
-
-                - This has to happen before _PyRuntimeState_SetFinalizing is
-                called, or else threads might get prematurely blocked.
-                - The world must not be stopped, as finalizers can run.
-            */
+             * Two preconditions need to be met here:
+             * 1. This has to happen before _PyRuntimeState_SetFinalizing is
+             *    called, or else threads might get prematurely blocked.
+             * 2. The world must not be stopped, as finalizers can run.
+             */
             finalize_subinterpreters();
         }
 
+        // This is used as a throttle to prevent constant spinning while
+        // on finalization guards.
+        for (;;) {
+            uintptr_t num_guards = _Py_atomic_load_uintptr(&interp->finalization_guards);
+            if (num_guards == 0) {
+                break;
+            }
+
+            int ret = _PyParkingLot_Park(&interp->finalization_guards,
+                                         &num_guards, sizeof(num_guards), -1,
+                                         NULL, /*detach=*/1);
+            if (ret == Py_PARK_OK) {
+                break;
+            }
+            else if (ret == Py_PARK_INTR) {
+                if (PyErr_CheckSignals() < 0) {
+                    int fatal = PyErr_ExceptionMatches(PyExc_KeyboardInterrupt);
+                    PyErr_FormatUnraisable("Exception ignored while waiting on finalization guards");
+                    if (fatal) {
+                        fputs("Interrupted while waiting on finalization guards\n", stderr);
+                        exit(1);
+                    }
+                }
+                assert(!PyErr_Occurred());
+            }
+            else {
+                assert(ret == Py_PARK_AGAIN);
+            }
+        }
 
         /* Stop the world to prevent other threads from creating threads or
          * atexit callbacks. On the default build, this is simply locked by
          * the GIL. For pending calls, we acquire the dedicated mutex, because
          * Py_AddPendingCall() can be called without an attached thread state.
          */
-
         PyMutex_Lock(&interp->ceval.pending.mutex);
-        // XXX Why does _PyThreadState_DeleteList() rely on all interpreters
-        // being stopped?
         _PyEval_StopTheWorldAll(interp->runtime);
+
+        HEAD_LOCK(interp->runtime);
         int has_subinterpreters = subinterpreters
                                     ? runtime_has_subinterpreters(interp->runtime)
                                     : 0;
+        uintptr_t guards_expected = 0;
         int should_continue = (interp_has_threads(interp)
                               || interp_has_atexit_callbacks(interp)
                               || interp_has_pending_calls(interp)
                               || has_subinterpreters);
+
         if (!should_continue) {
-            break;
+            // We only want to prevent new guards once we're sure that we
+            // won't be running another pre-finalization cycle.
+            if (_Py_atomic_compare_exchange_uintptr(&interp->finalization_guards,
+                                                    &guards_expected,
+                                                    _PyInterpreterGuard_GUARDS_NOT_ALLOWED) == 1) {
+                HEAD_UNLOCK(interp->runtime);
+                break;
+            }
         }
+        HEAD_UNLOCK(interp->runtime);
         _PyEval_StartTheWorldAll(interp->runtime);
         PyMutex_Unlock(&interp->ceval.pending.mutex);
     }
     assert(PyMutex_IsLocked(&interp->ceval.pending.mutex));
+    assert(_Py_atomic_load_uintptr(&interp->finalization_guards) == _PyInterpreterGuard_GUARDS_NOT_ALLOWED);
     ASSERT_WORLD_STOPPED(interp);
 }
 
@@ -3348,9 +3383,9 @@ _Py_FatalError_DumpTracebacks(int fd, PyInterpreterState *interp,
 
     /* display the current Python stack */
 #ifndef Py_GIL_DISABLED
-    _Py_DumpTracebackThreads(fd, interp, tstate, 0);
+    PyUnstable_DumpTracebackThreads(fd, interp, tstate, 0);
 #else
-    _Py_DumpTraceback(fd, tstate);
+    PyUnstable_DumpTraceback(fd, tstate);
 #endif
 }
 

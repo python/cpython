@@ -1355,9 +1355,10 @@ class TestClassesAndFunctions(unittest.TestCase):
                                     varkw_e=None, defaults_e=None,
                                     posonlyargs_e=[], kwonlyargs_e=[],
                                     kwonlydefaults_e=None,
-                                    ann_e={}):
+                                    ann_e={},
+                                    annotation_format=Format.VALUE):
         args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, ann = \
-            inspect.getfullargspec(routine)
+            inspect.getfullargspec(routine, annotation_format=annotation_format)
         self.assertEqual(args, args_e)
         self.assertEqual(varargs, varargs_e)
         self.assertEqual(varkw, varkw_e)
@@ -1389,6 +1390,19 @@ class TestClassesAndFunctions(unittest.TestCase):
                                      defaults_e=(1,2,3),
                                      kwonlyargs_e=['e', 'f'],
                                      kwonlydefaults_e={'e': 4, 'f': 5})
+
+    def get_getfullargspec_with_undefined_names_in_annotations(self):
+        def my_func(a: undefined_name):
+            pass
+
+        with self.assertRaises(NameError):
+            inspect.getfullargspec(my_func)
+
+        self.assertFullArgSpecEquals(my_func, ['a'], ann_e={'a': 'undefined_name'},
+                                     annotation_format=Format.STRING)
+
+        arg_spec = inspect.getfullargspec(my_func, annotation_format=Format.FORWARDREF)
+        self.assertIsInstance(arg_spec.annotations['a'], ForwardRef)
 
     def test_argspec_api_ignores_wrapped(self):
         # Issue 20684: low level introspection API must ignore __wrapped__
