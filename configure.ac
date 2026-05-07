@@ -2406,7 +2406,7 @@ AS_CASE([$ac_sys_system],
     dnl Include file system support
     AS_VAR_APPEND([LINKFORSHARED], [" -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY,ERRNO_CODES"])
-    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,_PyGILState_GetThisThreadState,__Py_DumpTraceback,__PyEM_EMSCRIPTEN_TRAMPOLINE_OFFSET"])
+    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,_PyGILState_GetThisThreadState,__PyEM_EMSCRIPTEN_TRAMPOLINE_OFFSET"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sSTACK_SIZE=5MB"])
     dnl Avoid bugs in JS fallback string decoding path
     AS_VAR_APPEND([LINKFORSHARED], [" -sTEXTDECODER=2"])
@@ -2548,9 +2548,30 @@ AS_VAR_IF([ac_cv_gcc_compat], [yes], [
       AX_CHECK_COMPILE_FLAG([-mno-omit-leaf-frame-pointer], [
         frame_pointer_cflags="$frame_pointer_cflags -mno-omit-leaf-frame-pointer"
       ], [], [-Werror])
+      AS_CASE([$host_cpu], [arm|armv*], [
+        dnl GCC uses "-marm"; clang uses "-mno-thumb"
+        AX_CHECK_COMPILE_FLAG([-marm], [
+          frame_pointer_cflags="$frame_pointer_cflags -marm"
+        ], [], [-Werror])
+        AX_CHECK_COMPILE_FLAG([-mno-thumb], [
+          frame_pointer_cflags="$frame_pointer_cflags -mno-thumb"
+        ], [], [-Werror])
+      ])
+      AS_CASE([$host_cpu], [powerpc64le], [
+        frame_pointer_cflags=""
+      ])
+      AS_CASE([$host_cpu], [s390*], [
+        AX_CHECK_COMPILE_FLAG([-mbackchain], [
+          dnl Do not use no-omit-frame-pointer; see gh-149362
+          frame_pointer_cflags="-mbackchain"
+        ], [], [-Werror])
+      ])
     ], [], [-Werror])
     if test -n "$frame_pointer_cflags" && test "x$with_frame_pointers" != xno; then
       BASECFLAGS="$frame_pointer_cflags $BASECFLAGS"
+      AC_DEFINE([_Py_WITH_FRAME_POINTERS], [1],
+                [Define to 1 if frame unwinding via pointers is expected
+                 to work, 0 if not. Leave undefined if unknown.])
     fi
 
     CFLAGS_NODIST="$CFLAGS_NODIST -std=c11"

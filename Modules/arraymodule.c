@@ -33,7 +33,7 @@ static struct PyModuleDef arraymodule;
  * functions aren't visible yet.
  */
 struct arraydescr {
-    const char *typecode;
+    char typecode[3];  // big enough to store "Zd\0"
     int itemsize;
     PyObject * (*getitem)(struct arrayobject *, Py_ssize_t);
     int (*setitem)(struct arrayobject *, Py_ssize_t, PyObject *);
@@ -784,7 +784,7 @@ static const struct arraydescr descriptors[] = {
     {"d", sizeof(double), d_getitem, d_setitem, NULL, 0, 0},
     {"Zf", 2*sizeof(float), cf_getitem, cf_setitem, NULL, 0, 0},
     {"Zd", 2*sizeof(double), cd_getitem, cd_setitem, NULL, 0, 0},
-    {NULL, 0, 0, 0, 0, 0, 0} /* Sentinel */
+    {"", 0, 0, 0, 0, 0, 0} /* Sentinel */
 };
 
 /****************************************************************************
@@ -2298,12 +2298,12 @@ array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
             arraytype->tp_name, state->ArrayType->tp_name);
         return NULL;
     }
-    for (descr = descriptors; descr->typecode != NULL; descr++) {
+    for (descr = descriptors; descr->typecode[0] != 0; descr++) {
         if (strcmp(descr->typecode, typecode) == 0) {
             break;
         }
     }
-    if (descr->typecode == NULL) {
+    if (descr->typecode[0] == 0) {
         PyErr_SetString(PyExc_ValueError,
                         "second argument must be a valid type code");
         return NULL;
@@ -2500,7 +2500,7 @@ array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
          *
          * XXX: Is it possible to write a unit test for this?
          */
-        for (descr = descriptors; descr->typecode != NULL; descr++) {
+        for (descr = descriptors; descr->typecode[0] != 0; descr++) {
             if (descr->is_integer_type &&
                 (size_t)descr->itemsize == mf_descr.size &&
                 descr->is_signed == mf_descr.is_signed)
@@ -3047,7 +3047,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         */
         initial = NULL;
     }
-    for (descr = descriptors; descr->typecode != NULL; descr++) {
+    for (descr = descriptors; descr->typecode[0] != 0; descr++) {
         if (strcmp(descr->typecode, s) == 0) {
             PyObject *a;
             Py_ssize_t len;
@@ -3531,7 +3531,7 @@ array_modexec(PyObject *m)
     if (typecodes == NULL) {
         return -1;
     }
-    for (descr = descriptors; descr->typecode != NULL; descr++) {
+    for (descr = descriptors; descr->typecode[0] != 0; descr++) {
         PyObject *typecode = PyUnicode_DecodeASCII(descr->typecode, strlen(descr->typecode), NULL);
         if (typecode == NULL) {
             Py_DECREF(typecodes);

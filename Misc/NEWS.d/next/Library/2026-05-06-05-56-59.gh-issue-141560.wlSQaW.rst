@@ -1,0 +1,1 @@
+Add an *annotation_format* parameter to :func:`inspect.getfullargspec`.

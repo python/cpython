@@ -21,6 +21,16 @@ STACK_DEPTH = 10
 
 
 def _frame_pointers_expected(machine):
+    _Py_WITH_FRAME_POINTERS = getattr(
+        _testinternalcapi,
+        "_Py_WITH_FRAME_POINTERS",
+        -1,
+    )
+    if _Py_WITH_FRAME_POINTERS > 0:
+        return True
+    if _Py_WITH_FRAME_POINTERS == 0:
+        return False
+
     cflags = " ".join(
         value for value in (
             sysconfig.get_config_var("PY_CORE_CFLAGS"),
@@ -45,6 +55,12 @@ def _frame_pointers_expected(machine):
             # 32-bit Linux is not supported
             if sys.maxsize < 2**32:
                 return None
+            return True
+        if machine == "ppc64le":
+            # The power ABI specification requires that compilers maintain a
+            # back chain by default, so unwinding already works without a
+            # dedicated frame pointer.
+            # https://openpowerfoundation.org/specifications/64bitelfabi/
             return True
         if machine == "x86_64":
             final_opt = ""

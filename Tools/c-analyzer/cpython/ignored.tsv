@@ -785,3 +785,4 @@ Objects/dictobject.c	-	PyFrozenDict_Type	-
 
 ## False positives
 Python/specialize.c	-	_Py_InitCleanup	-
+Python/pystate.c	-	_no_tstate_sentinel	-

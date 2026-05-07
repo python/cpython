@@ -1189,7 +1189,7 @@ Classes and functions
    times.
 
 
-.. function:: getfullargspec(func)
+.. function:: getfullargspec(func, *, annotation_format=Format.VALUE)
 
    Get the names and default values of a Python function's parameters.  A
    :term:`named tuple` is returned:
@@ -1219,6 +1219,14 @@ Classes and functions
    APIs. This function is retained primarily for use in code that needs to
    maintain compatibility with the Python 2 ``inspect`` module API.
 
+   A member of the
+   :class:`annotationlib.Format` enum can be passed to the
+   *annotation_format* parameter to control the format of the returned
+   annotations. For example, use
+   ``annotation_format=annotationlib.Format.STRING`` to return annotations in string
+   format. Note that with the default ``VALUE`` format, creation of some argspecs
+   may raise an exception.
+
    .. versionchanged:: 3.4
       This function is now based on :func:`signature`, but still ignores
       ``__wrapped__`` attributes and includes the already bound first
@@ -1235,6 +1243,9 @@ Classes and functions
       Python only explicitly guaranteed that it preserved the declaration
       order of keyword-only parameters as of version 3.7, although in practice
       this order had always been preserved in Python 3.
+
+   .. versionchanged:: next
+      The *annotation_format* parameter was added.
 
 
 .. function:: getargvalues(frame)

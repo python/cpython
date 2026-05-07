@@ -1,0 +1,3 @@
+For Python macOS framework builds, update Info.plist files to be more
+compliant with current Apple guidelines. Original patch contributed by
+Martinus Verburg.
