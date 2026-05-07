@@ -585,6 +585,7 @@ xx_modexec(PyObject *m)
         return -1;
     }
     if (PyModule_AddType(m, Str_Type) < 0) {
+        Py_DECREF(Str_Type);
         return -1;
     }
     Py_DECREF(Str_Type);
@@ -638,7 +639,7 @@ PyABIInfo_VAR(abi_info);
 static PySlot xx_slots[] = {
     /* Basic metadata */
     PySlot_STATIC_DATA(Py_mod_name, "xxlimited"),
-    PySlot_STATIC_DATA(Py_mod_doc, (void*)module_doc),
+    PySlot_STATIC_DATA(Py_mod_doc, module_doc),
     PySlot_DATA(Py_mod_abi, &abi_info),
 
     /* The method table */
@@ -650,7 +651,7 @@ static PySlot xx_slots[] = {
     PySlot_FUNC(Py_mod_exec, xx_modexec),
 
     /* Module state and associated functions */
-    PySlot_SIZE(Py_mod_state_size, (void*)sizeof(xx_state)),
+    PySlot_SIZE(Py_mod_state_size, sizeof(xx_state)),
     PySlot_FUNC(Py_mod_state_traverse, xx_traverse),
     PySlot_FUNC(Py_mod_state_clear, xx_clear),
     PySlot_FUNC(Py_mod_state_free, xx_free),
