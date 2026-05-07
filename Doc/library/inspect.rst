@@ -1244,7 +1244,7 @@ Classes and functions
       order of keyword-only parameters as of version 3.7, although in practice
       this order had always been preserved in Python 3.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       The *annotation_format* parameter was added.
 
 
@@ -1850,7 +1850,7 @@ appending a colon and the qualified name of the target object.
 
    Print information about the specified object rather than the source code
 
-.. versionchanged:: next
+.. versionchanged:: 3.15
 
    The ``--details`` option now supports basic introspection for modules
    without available source code and indicates when modules are frozen.

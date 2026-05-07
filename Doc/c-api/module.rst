@@ -795,7 +795,7 @@ remove it.
    :c:macro:`Py_slot_subslots`, except it specifies an array of
    :c:type:`PyModuleDef_Slot` structures.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. _moduledef-dynamic:
 

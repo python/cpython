@@ -1,1 +1,0 @@
-Defer the import of ``_colorize`` in ``argparse`` until needed for coloring output.

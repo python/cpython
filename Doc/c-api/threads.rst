@@ -296,7 +296,7 @@ Attaching/detaching thread states
       Otherwise, if both of the above cases fail, a new thread state is created
       for *guard*. It is then attached and marked as owned by ``PyThreadState_Ensure``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. c:function:: PyThreadStateToken *PyThreadState_EnsureFromView(PyInterpreterView *view)
@@ -308,7 +308,7 @@ Attaching/detaching thread states
    be implicitly guarded. The guard will be released upon the corresponding
    :c:func:`PyThreadState_Release` call.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. c:function:: void PyThreadState_Release(PyThreadStateToken *token)
@@ -335,7 +335,7 @@ Attaching/detaching thread states
       attached thread state will be deallocated and deleted upon the internal counter
       reaching zero. Otherwise, nothing happens when the counter reaches zero.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. c:type:: PyThreadStateToken
 
