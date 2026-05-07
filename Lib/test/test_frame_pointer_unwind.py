@@ -21,6 +21,16 @@ STACK_DEPTH = 10
 
 
 def _frame_pointers_expected(machine):
+    _Py_WITH_FRAME_POINTERS = getattr(
+        _testinternalcapi,
+        "_Py_WITH_FRAME_POINTERS",
+        -1,
+    )
+    if _Py_WITH_FRAME_POINTERS > 0:
+        return True
+    if _Py_WITH_FRAME_POINTERS == 0:
+        return False
+
     cflags = " ".join(
         value for value in (
             sysconfig.get_config_var("PY_CORE_CFLAGS"),

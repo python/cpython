@@ -834,6 +834,8 @@ struct _Py_unique_id_pool {
 
 typedef _Py_CODEUNIT *(*_PyJitEntryFuncPtr)(struct _PyExecutorObject *exec, _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate);
 
+#define _PyInterpreterGuard_GUARDS_NOT_ALLOWED UINTPTR_MAX
+
 /* PyInterpreterState holds the global state for one of the runtime's
    interpreters.  Typically the initial (main) interpreter is the only one.
 
@@ -1059,6 +1061,11 @@ struct _is {
     PyMutex pystats_mutex;
 #endif
 #endif
+
+    // The number of remaining finalization guards.
+    // If this is _PyInterpreterGuard_GUARDS_NOT_ALLOWED, then finalization
+    // guards can no longer be created.
+    uintptr_t finalization_guards;
 
     /* the initial PyInterpreterState.threads.head */
     _PyThreadStateImpl _initial_thread;

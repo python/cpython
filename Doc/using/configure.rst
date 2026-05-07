@@ -784,11 +784,19 @@ also be used to improve performance.
 
    Disable frame pointers, which are enabled by default (see :pep:`831`).
 
-   By default, the build appends ``-fno-omit-frame-pointer`` (and
-   ``-mno-omit-leaf-frame-pointer`` when the compiler supports it) to
-   ``BASECFLAGS`` so profilers, debuggers, and system tracing tools
-   (``perf``, ``eBPF``, ``dtrace``, ``gdb``) can walk the C call stack
-   without DWARF metadata. The flags propagate to third-party C
+   By default, the build appends flags to generate frame or backchain
+   pointers to ``BASECFLAGS``:
+
+   - ``-fno-omit-frame-pointer`` and/or ``-mno-omit-leaf-frame-pointer``
+     are added when the compiler supports them.
+   - ``-marm`` is added on 32-bit ARM when supported,
+   - on s390x platforms, when supported, ``-mbackchain`` is added *instead*.
+     of the above frame pointer flags.
+
+   Frame pointers enable profilers, debuggers, and system tracing tools
+   (``perf``, ``eBPF``, ``dtrace``, ``gdb``) to walk the C call stack
+   without DWARF metadata.
+   The flags propagate to third-party C
    extensions through :mod:`sysconfig`. On compilers that do not
    understand them, the build silently skips them.
 
