@@ -221,8 +221,10 @@ def wasi_sdk(context):
     """Find the path to the WASI SDK."""
     if wasi_sdk_path := context.wasi_sdk_path:
         if not wasi_sdk_path.exists():
-            raise ValueError("WASI SDK not found at "
-                             f"{os.fsdecode(wasi_sdk_path)!r} (via --wasi-sdk)")
+            raise ValueError(
+                "WASI SDK not found at "
+                f"{os.fsdecode(wasi_sdk_path)!r} (via --wasi-sdk)"
+            )
         return wasi_sdk_path
 
     with (HERE / "config.toml").open("rb") as file:
@@ -271,12 +273,12 @@ def wasi_sdk(context):
             )
     elif not wasi_sdk_path:
         raise ValueError(
-                f"WASI SDK {wasi_sdk_version} not found; "
-                "download from "
-                "https://github.com/WebAssembly/wasi-sdk and install in "
-                f"{os.fsdecode(opt_path)!r} or specify the SDK via "
-                "$WASI_SDK_PATH or --wasi-sdk"
-            )
+            f"WASI SDK {wasi_sdk_version} not found; "
+            "download from "
+            "https://github.com/WebAssembly/wasi-sdk and install in "
+            f"{os.fsdecode(opt_path)!r} or specify the SDK via "
+            "$WASI_SDK_PATH or --wasi-sdk"
+        )
 
     # Cache the result.
     context.wasi_sdk_path = wasi_sdk_path
