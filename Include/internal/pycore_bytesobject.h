@@ -19,6 +19,13 @@ extern PyObject* _PyBytes_FormatEx(
  * reference rather than modifying its first argument in place. */
 extern PyObject* _PyBytes_Concat(PyObject *a, PyObject *b);
 
+extern int _PyBytes_OffsetFromIndex(
+    PyObject *op,
+    Py_ssize_t index,
+    Py_ssize_t *offset);
+
+extern PyObject* _PyBytes_SubscriptIndex(PyObject *op, Py_ssize_t index);
+
 extern PyObject* _PyBytes_FromHex(
     PyObject *string,
     int use_bytearray);

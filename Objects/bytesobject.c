@@ -1728,6 +1728,34 @@ bytes_hash(PyObject *self)
     return hash;
 }
 
+int
+_PyBytes_OffsetFromIndex(PyObject *op, Py_ssize_t index, Py_ssize_t *offset)
+{
+    PyBytesObject *self = _PyBytes_CAST(op);
+    Py_ssize_t size = PyBytes_GET_SIZE(self);
+    if (index < 0) {
+        index += size;
+    }
+    if (index < 0 || index >= size) {
+        return 0;
+    }
+    *offset = index;
+    return 1;
+}
+
+PyObject *
+_PyBytes_SubscriptIndex(PyObject *op, Py_ssize_t index)
+{
+    PyBytesObject *self = _PyBytes_CAST(op);
+    Py_ssize_t offset;
+    if (!_PyBytes_OffsetFromIndex(op, index, &offset)) {
+        PyErr_SetString(PyExc_IndexError,
+                        "index out of range");
+        return NULL;
+    }
+    return _PyLong_FromUnsignedChar((unsigned char)self->ob_sval[offset]);
+}
+
 static PyObject*
 bytes_subscript(PyObject *op, PyObject* item)
 {
@@ -1736,14 +1764,7 @@ bytes_subscript(PyObject *op, PyObject* item)
         Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
         if (i == -1 && PyErr_Occurred())
             return NULL;
-        if (i < 0)
-            i += PyBytes_GET_SIZE(self);
-        if (i < 0 || i >= PyBytes_GET_SIZE(self)) {
-            PyErr_SetString(PyExc_IndexError,
-                            "index out of range");
-            return NULL;
-        }
-        return _PyLong_FromUnsignedChar((unsigned char)self->ob_sval[i]);
+        return _PyBytes_SubscriptIndex(op, i);
     }
     else if (PySlice_Check(item)) {
         Py_ssize_t start, stop, step, slicelength, i;

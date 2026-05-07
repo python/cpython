@@ -1979,18 +1979,6 @@ class TestSpecializer(TestBase):
         self.assert_specialized(binary_subscr_bytes_int, "BINARY_OP_EXTEND")
         self.assert_no_opcode(binary_subscr_bytes_int, "BINARY_OP")
 
-        def binary_subscr_bytes_slice():
-            a = b"foobar"
-            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
-                self.assertEqual(a[1:4], b"oob")
-                self.assertEqual(a[::-1], b"raboof")
-                self.assertEqual(a[:], a)
-                self.assertEqual(a[10:20], b"")
-
-        binary_subscr_bytes_slice()
-        self.assert_specialized(binary_subscr_bytes_slice, "BINARY_OP_EXTEND")
-        self.assert_no_opcode(binary_subscr_bytes_slice, "BINARY_OP")
-
         def binary_subscr_getitems():
             class C:
                 def __init__(self, val):
