@@ -1278,7 +1278,13 @@ class ElementTreeTest(unittest.TestCase):
               {'': 'http://www.w3.org/2001/XMLSchema',
                'ns': 'http://www.w3.org/2001/XMLSchema'})
 
-    def test_processinginstruction(self):
+    def test_comment_serialization(self):
+        comm = ET.Comment('<spam> & ham')
+        self.assertEqual(ET.tostring(comm), b'<!--<spam> & ham-->')
+        self.assertEqual(ET.tostring(comm, method='html'), b'<!--<spam> & ham-->')
+        self.assertEqual(ET.tostring(comm, method='text'), b'<spam> & ham')
+
+    def test_processinginstruction_serialization(self):
         # Test ProcessingInstruction directly
 
         self.assertEqual(ET.tostring(ET.ProcessingInstruction('test', 'instruction')),
@@ -1293,6 +1299,21 @@ class ElementTreeTest(unittest.TestCase):
         self.assertEqual(ET.tostring(ET.PI('test', '<testing&>\xe3'), 'latin-1'),
                 b"<?xml version='1.0' encoding='latin-1'?>\n"
                 b"<?test <testing&>\xe3?>")
+        self.assertEqual(ET.tostring(ET.PI('test', 'ham & eggs < spam'), method='html'),
+                b'<?test ham & eggs < spam?>')
+
+    def test_empty_attribute_serialization(self):
+        elem = ET.Element('tag', attrib={'attr': None})
+        self.assertRaises(TypeError, ET.tostring, elem)
+        self.assertEqual(ET.tostring(elem, method='html'), b'<tag attr></tag>')
+
+    @support.subTests('tag', ("script", "style", "xmp", "iframe", "noembed", "noframes"))
+    def test_html_cdata_elems_serialization(self, tag):
+        tag = tag.title()
+        elem = ET.Element(tag)
+        elem.text = '<spam>&ham'
+        self.assertEqual(ET.tostring(elem, method='html'),
+                         ('<%s><spam>&ham</%s>' % (tag, tag)).encode())
 
     def test_html_empty_elems_serialization(self):
         # issue 15970
@@ -1307,6 +1328,12 @@ class ElementTreeTest(unittest.TestCase):
                 serialized = serialize(ET.XML('<%s></%s>' % (elem,elem)),
                                        method='html')
                 self.assertEqual(serialized, expected)
+
+    def test_html_plaintext_serialization(self):
+        elem = ET.Element('PlainText')
+        elem.text = '<spam>&ham'
+        self.assertEqual(ET.tostring(elem, method='html'),
+                         b'<PlainText><spam>&ham')
 
     def test_dump_attribute_order(self):
         # See BPO 34160
