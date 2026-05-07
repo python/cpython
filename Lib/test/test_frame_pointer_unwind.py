@@ -89,6 +89,21 @@ def _frame_pointers_expected(machine):
     return None
 
 
+def _gnu_backtrace_requires_unwind_tables(machine):
+    if not (sys.maxsize < 2**32 and machine.startswith("arm")):
+        return False
+
+    cflags = " ".join(
+        value for value in (
+            sysconfig.get_config_var("PY_CFLAGS"),
+            sysconfig.get_config_var("PY_CORE_CFLAGS"),
+            sysconfig.get_config_var("CFLAGS"),
+        )
+        if value
+    )
+    return "-funwind-tables" not in cflags.split()
+
+
 def _build_stack_and_unwind(unwinder):
     import operator
 
@@ -295,6 +310,10 @@ class FramePointerUnwindTests(unittest.TestCase):
 @support.requires_gil_enabled("test requires the GIL enabled")
 @unittest.skipIf(support.is_wasi, "test not supported on WASI")
 @unittest.skipUnless(sys.platform == "linux", "GNU backtrace unwinding test requires Linux")
+@unittest.skipIf(
+    _gnu_backtrace_requires_unwind_tables(platform.machine().lower()),
+    "GNU backtrace unwinding on Arm 32-bit requires -funwind-tables",
+)
 class GnuBacktraceUnwindTests(unittest.TestCase):
 
     def setUp(self):
