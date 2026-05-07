@@ -1,6 +1,7 @@
 import json
 import os
 import platform
+import shlex
 import subprocess
 import sys
 import sysconfig
@@ -89,19 +90,76 @@ def _frame_pointers_expected(machine):
     return None
 
 
-def _gnu_backtrace_requires_unwind_tables(machine):
-    if not (sys.maxsize < 2**32 and machine.startswith("arm")):
+def _is_arm32_build():
+    if sys.maxsize >= 2**32:
         return False
 
-    cflags = " ".join(
+    abi = " ".join(
         value for value in (
-            sysconfig.get_config_var("PY_CFLAGS"),
-            sysconfig.get_config_var("PY_CORE_CFLAGS"),
-            sysconfig.get_config_var("CFLAGS"),
+            sysconfig.get_config_var("MULTIARCH"),
+            sysconfig.get_config_var("HOST_GNU_TYPE"),
+            sysconfig.get_config_var("SOABI"),
         )
         if value
+    ).lower()
+    return "arm" in abi
+
+
+def _cflags_have_unwind_tables(cflags):
+    unwind_tables = False
+    asynchronous_unwind_tables = False
+    exceptions = False
+
+    try:
+        options = shlex.split(cflags)
+    except ValueError:
+        options = cflags.split()
+
+    for option in options:
+        if option == "-funwind-tables":
+            unwind_tables = True
+        elif option == "-fno-unwind-tables":
+            unwind_tables = False
+        elif option == "-fasynchronous-unwind-tables":
+            asynchronous_unwind_tables = True
+        elif option == "-fno-asynchronous-unwind-tables":
+            asynchronous_unwind_tables = False
+        elif option == "-fexceptions":
+            exceptions = True
+        elif option == "-fno-exceptions":
+            exceptions = False
+
+    return unwind_tables or asynchronous_unwind_tables or exceptions
+
+
+def _build_has_unwind_tables():
+    cflags = [
+        value for value in (
+            sysconfig.get_config_var("PY_CORE_CFLAGS"),
+            sysconfig.get_config_var("PY_STDMODULE_CFLAGS"),
+        )
+        if value
+    ]
+    if not cflags:
+        cflags = [
+            value for value in (
+                sysconfig.get_config_var("PY_CFLAGS"),
+                sysconfig.get_config_var("CFLAGS"),
+            )
+            if value
+        ]
+
+    return (
+        bool(cflags)
+        and all(_cflags_have_unwind_tables(value) for value in cflags)
     )
-    return "-funwind-tables" not in cflags.split()
+
+
+def _gnu_backtrace_requires_unwind_tables():
+    if not _is_arm32_build():
+        return False
+
+    return not _build_has_unwind_tables()
 
 
 def _build_stack_and_unwind(unwinder):
@@ -311,8 +369,8 @@ class FramePointerUnwindTests(unittest.TestCase):
 @unittest.skipIf(support.is_wasi, "test not supported on WASI")
 @unittest.skipUnless(sys.platform == "linux", "GNU backtrace unwinding test requires Linux")
 @unittest.skipIf(
-    _gnu_backtrace_requires_unwind_tables(platform.machine().lower()),
-    "GNU backtrace unwinding on Arm 32-bit requires -funwind-tables",
+    _gnu_backtrace_requires_unwind_tables(),
+    "GNU backtrace unwinding on Arm 32-bit requires unwind tables",
 )
 class GnuBacktraceUnwindTests(unittest.TestCase):
 
