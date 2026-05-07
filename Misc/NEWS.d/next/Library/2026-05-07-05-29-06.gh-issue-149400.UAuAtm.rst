@@ -1,0 +1,1 @@
+Expose :class:`~multiprocessing.synchronize.Barrier` in ``multiprocessing.synchronize.__all__``.
