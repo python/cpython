@@ -2707,7 +2707,7 @@ PyAPI_FUNC(int) PyUnstable_PerfMapState_Init(void) {
 
 PyAPI_FUNC(int) PyUnstable_WritePerfMapEntry(
     const void *code_addr,
-    unsigned int code_size,
+    size_t code_size,
     const char *entry_name
 ) {
 #ifndef MS_WINDOWS
@@ -2718,7 +2718,7 @@ PyAPI_FUNC(int) PyUnstable_WritePerfMapEntry(
         }
     }
     PyThread_acquire_lock(perf_map_state.map_lock, 1);
-    fprintf(perf_map_state.perf_map, "%" PRIxPTR " %x %s\n", (uintptr_t) code_addr, code_size, entry_name);
+    fprintf(perf_map_state.perf_map, "%" PRIxPTR " %zx %s\n", (uintptr_t) code_addr, code_size, entry_name);
     fflush(perf_map_state.perf_map);
     PyThread_release_lock(perf_map_state.map_lock);
 #endif
