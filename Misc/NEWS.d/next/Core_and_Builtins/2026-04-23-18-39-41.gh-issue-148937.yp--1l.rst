@@ -1,0 +1,3 @@
+Fix a bug in the free-threaded GC that caused collections to be deferred too
+long.  This would result in excess memory usage since cyclic trash was not
+freed quickly enough.

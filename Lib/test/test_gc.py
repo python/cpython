@@ -1271,8 +1271,58 @@ class GCTests(unittest.TestCase):
         assert_python_ok("-c", code_inside_function)
 
 
-    @unittest.skipUnless(Py_GIL_DISABLED, "requires free-threaded GC")
-    @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
+
+@unittest.skipUnless(Py_GIL_DISABLED, "requires free-threaded GC")
+@unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
+class FreeThreadingTests(unittest.TestCase):
+    # Tests that are specific to the free-threading GC.
+
+    def test_gc_heap_bytes_large_allocs(self):
+        # The free-threaded GC threshold uses _PyGC_GetHeapBytes(), which
+        # sums mimalloc's full_page_bytes counters.  Large/huge pages
+        # (>MI_MEDIUM_OBJ_SIZE_MAX, MI_BIN_HUGE) get eagerly promoted to
+        # MI_BIN_FULL by `_mi_malloc_generic` -- without that, mimalloc
+        # would never count these pages, and a cycle holding a large
+        # buffer would not register as memory pressure.
+        gc.collect()
+        baseline = _testinternalcapi.get_gc_heap_bytes()
+        size = 1 << 20  # 1 MiB
+        k = 5
+        data = [bytearray(size) for _ in range(k)]
+        after_alloc = _testinternalcapi.get_gc_heap_bytes()
+        # All k pages should be counted.  Page size rounds up the request,
+        # so the increase should be at least k * size.
+        self.assertGreaterEqual(after_alloc - baseline, k * size)
+        del data
+        gc.collect()
+        after_free = _testinternalcapi.get_gc_heap_bytes()
+        # Freeing the lone block in each huge page un-fulls it.  Allow some
+        # slop for unrelated allocations triggered by gc.collect().
+        self.assertLess(abs(after_free - baseline), size)
+
+    def test_gc_heap_bytes_many_small_allocs(self):
+        # Filling small pages should also bump the counter.  Small/medium
+        # transitions are lazy (only when a page actually becomes full), so
+        # use enough allocations to fill many pages.
+        gc.collect()
+        baseline = _testinternalcapi.get_gc_heap_bytes()
+        n = 100_000
+        objs = [bytes(4) for i in range(n)]
+        after_alloc = _testinternalcapi.get_gc_heap_bytes()
+        print('small after alloc', baseline, after_alloc)
+        self.assertGreater(after_alloc - baseline, 1 << 20)
+        del objs
+        gc.collect()
+        after_free = _testinternalcapi.get_gc_heap_bytes()
+        print('small after free', baseline, after_free)
+        # Should drop substantially once the pages empty out.
+        self.assertLess(after_free - baseline, (after_alloc - baseline) // 2)
+
+    def test_gc_heap_bytes_nonneg(self):
+        # Counter is intptr_t and only increases or decreases via paired
+        # hooks; it must never go negative.
+        self.assertGreaterEqual(_testinternalcapi.get_gc_heap_bytes(), 0)
+
     def test_tuple_untrack_counts(self):
         # This ensures that the free-threaded GC is counting untracked tuples
         # in the "long_lived_total" count.  This is required to avoid

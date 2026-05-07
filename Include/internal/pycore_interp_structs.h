@@ -264,11 +264,11 @@ struct _gc_runtime_state {
     /* True if gc.freeze() has been used. */
     int freeze_active;
 
-    /* Memory usage of the process (RSS + swap) after last GC. */
-    Py_ssize_t last_mem;
+    /* Estimate of the number of bytes used by mimalloc after last GC. */
+    Py_ssize_t last_heap_bytes;
 
     /* This accumulates the new object count whenever collection is deferred
-       due to the RSS increase condition not being meet.  Reset on collection. */
+       due to memory usage not increasing enough.  Reset on collection. */
     Py_ssize_t deferred_count;
 
     /* Mutex held for gc_should_collect_mem_usage(). */

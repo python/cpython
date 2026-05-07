@@ -36,6 +36,11 @@ typedef enum {
 #  define MI_TSAN 1
 #endif
 
+#ifdef Py_GIL_DISABLED
+// Track full-page byte totals on each mi_heap_t and mi_abandoned_pool_t.
+#  define MI_FULL_PAGE_BYTES 1
+#endif
+
 #ifdef __cplusplus
 extern "C++" {
 #endif
