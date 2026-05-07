@@ -1,0 +1,1 @@
+Fix the memory sanitizer false positive in :func:`os.getrandom`.

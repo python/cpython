@@ -463,6 +463,17 @@ General Options
 
    ``pkg-config`` options.
 
+.. option:: --disable-epoll
+
+   Build without ``epoll``, meaning that :py:func:`select.epoll` will not be
+   present even if the system provides an
+   :manpage:`epoll_create <epoll_create(2)>` function.
+   This may be used on systems where :manpage:`!epoll_create` or
+   :manpage:`epoll_create1 <epoll_create1(2)>` is available
+   but incompatible with Linux semantics.
+
+   .. versionadded:: 3.15
+
 
 C compiler options
 ------------------
@@ -769,6 +780,33 @@ also be used to improve performance.
 
    .. versionadded:: 3.14
 
+.. option:: --without-frame-pointers
+
+   Disable frame pointers, which are enabled by default (see :pep:`831`).
+
+   By default, the build appends flags to generate frame or backchain
+   pointers to ``BASECFLAGS``:
+
+   - ``-fno-omit-frame-pointer`` and/or ``-mno-omit-leaf-frame-pointer``
+     are added when the compiler supports them.
+   - ``-marm`` and/or ``-mno-thumb`` is added on 32-bit ARM when supported,
+   - on s390x platforms, when supported, ``-mbackchain`` is added *instead*.
+     of the above frame pointer flags.
+   - on ppc64le platforms, no compiler flags is needed since the power ABI
+     requires that compilers maintain a back chain by default.
+
+   Frame pointers enable profilers, debuggers, and system tracing tools
+   (``perf``, ``eBPF``, ``dtrace``, ``gdb``) to walk the C call stack
+   without DWARF metadata. The flags propagate to third-party C
+   extensions through :mod:`sysconfig`. On compilers that do not
+   understand them, the build silently skips them.
+
+   Downstream packagers and authors of native libraries built with
+   custom build systems should set the same flags so the unwind chain
+   stays unbroken across all native frames.
+
+   .. versionadded:: 3.15
+
 .. option:: --without-mimalloc
 
    Disable the fast :ref:`mimalloc <mimalloc>` allocator
@@ -895,9 +933,11 @@ See also the :ref:`Python Development Mode <devmode>` and the
 :option:`--with-trace-refs` configure option.
 
 .. versionchanged:: 3.8
-   Release builds and debug builds are now ABI compatible: defining the
+   Release builds are now ABI compatible with debug builds: defining the
    ``Py_DEBUG`` macro no longer implies the ``Py_TRACE_REFS`` macro (see the
-   :option:`--with-trace-refs` option).
+   :option:`--with-trace-refs` option). However, debug builds still expose
+   more symbols than release builds and code built against a debug build is not
+   necessarily compatible with a release build.
 
 
 Debug options
@@ -998,6 +1038,21 @@ Linker options
    (built and enabled by default).
 
    .. versionadded:: 3.10
+
+.. option:: --enable-static-libpython-for-interpreter
+
+   Do not link the Python interpreter binary (``python3``) against the
+   shared Python library; instead, statically link the interpreter
+   against ``libpython`` as if ``--enable-shared`` had not been used,
+   but continue to build the shared ``libpython`` (for use by other
+   programs).
+
+   This option does nothing if ``--enable-shared`` is not used.
+
+   The default (when ``-enable-shared`` is used) is to link the Python
+   interpreter against the built shared library.
+
+   .. versionadded:: next
 
 
 Libraries options
@@ -1560,6 +1615,12 @@ Compiler flags
    Strict or non-strict aliasing flags used to compile ``Python/dtoa.c``.
 
    .. versionadded:: 3.7
+
+.. envvar:: CFLAGS_CEVAL
+
+   Flags used to compile ``Python/ceval.c``.
+
+   .. versionadded:: 3.14.5
 
 .. envvar:: CCSHARED
 

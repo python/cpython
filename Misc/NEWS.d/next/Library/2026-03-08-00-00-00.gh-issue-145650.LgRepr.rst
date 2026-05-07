@@ -1,3 +1,0 @@
-Add :meth:`~object.__repr__` support to :class:`logging.Formatter` and
-:class:`logging.Filter`, showing the format string and filter name
-respectively.

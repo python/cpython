@@ -28,7 +28,7 @@ type can be determined by checking the ``exact_type`` property on the
    **undefined** when providing invalid Python code and it can change at any
    point.
 
-Tokenizing Input
+Tokenizing input
 ----------------
 
 The primary entry point is a :term:`generator`:
@@ -146,7 +146,7 @@ function it uses to do this is available:
 
 .. _tokenize-cli:
 
-Command-Line Usage
+Command-line usage
 ------------------
 
 .. versionadded:: 3.3
@@ -173,8 +173,12 @@ The following options are accepted:
 If :file:`filename.py` is specified its contents are tokenized to stdout.
 Otherwise, tokenization is performed on stdin.
 
+.. versionadded:: next
+   Output is in color by default and can be
+   :ref:`controlled using environment variables <using-on-controlling-color>`.
+
 Examples
-------------------
+--------
 
 Example of a script rewriter that transforms float literals into Decimal
 objects::
@@ -227,7 +231,7 @@ Example of tokenizing from the command line.  The script::
 
 will be tokenized to the following output where the first column is the range
 of the line/column coordinates where the token is found, the second column is
-the name of the token, and the final column is the value of the token (if any)
+the name of the token, and the final column is the value of the token (if any):
 
 .. code-block:: shell-session
 

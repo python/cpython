@@ -19,7 +19,7 @@ See also Tim Peters' introduction to the "Algorithms" chapter in the second
 edition of *Python Cookbook*, published by O'Reilly.
 
 
-Basic Examples
+Basic examples
 --------------
 
 The following example shows how the :ref:`timeit-command-line-interface`
@@ -56,7 +56,7 @@ repetitions only when the command-line interface is used.  In the
 
 .. _python-interface:
 
-Python Interface
+Python interface
 ----------------
 
 The module defines three convenience functions and a public class:
@@ -143,20 +143,23 @@ The module defines three convenience functions and a public class:
             timeit.Timer('for i in range(10): oct(i)', 'gc.enable()').timeit()
 
 
-   .. method:: Timer.autorange(callback=None)
+   .. method:: Timer.autorange(callback=None, target_time=None)
 
       Automatically determine how many times to call :meth:`.timeit`.
 
       This is a convenience function that calls :meth:`.timeit` repeatedly
-      so that the total time >= 0.2 second, returning the eventual
+      so that the total time >= *Timer.target_time* seconds, returning the eventual
       (number of loops, time taken for that number of loops). It calls
       :meth:`.timeit` with increasing numbers from the sequence 1, 2, 5,
-      10, 20, 50, ... until the time taken is at least 0.2 seconds.
+      10, 20, 50, ... until the time taken is at least *target_time* seconds.
 
       If *callback* is given and is not ``None``, it will be called after
       each trial with two arguments: ``callback(number, time_taken)``.
 
       .. versionadded:: 3.6
+
+      .. versionchanged:: 3.15
+         The optional *target_time* parameter was added.
 
 
    .. method:: Timer.repeat(repeat=5, number=1000000)
@@ -203,7 +206,7 @@ The module defines three convenience functions and a public class:
 
 .. _timeit-command-line-interface:
 
-Command-Line Interface
+Command-line interface
 ----------------------
 
 When called as a program from the command line, the following form is used::
@@ -239,6 +242,13 @@ Where the following options are understood:
 
    .. versionadded:: 3.5
 
+.. option:: -t, --target-time=T
+
+   if :option:`--number` is 0, the code will run until it takes at
+   least this many seconds (default: 0.2)
+
+   .. versionadded:: 3.15
+
 .. option:: -v, --verbose
 
    print raw timing results; repeat for more digits precision
@@ -254,7 +264,7 @@ similarly.
 
 If :option:`-n` is not given, a suitable number of loops is calculated by trying
 increasing numbers from the sequence 1, 2, 5, 10, 20, 50, ... until the total
-time is at least 0.2 seconds.
+time is at least :option:`--target-time` seconds (default: 0.2).
 
 :func:`default_timer` measurements can be affected by other programs running on
 the same machine, so the best thing to do when accurate timing is necessary is
@@ -269,6 +279,9 @@ most cases.  You can use :func:`time.process_time` to measure CPU time.
    baseline overhead can be measured by invoking the program without arguments,
    and it might differ between Python versions.
 
+.. versionadded:: next
+   Output is in color by default and can be
+   :ref:`controlled using environment variables <using-on-controlling-color>`.
 
 .. _timeit-examples:
 

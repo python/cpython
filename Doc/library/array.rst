@@ -42,13 +42,15 @@ defined:
 +-----------+--------------------+-------------------+-----------------------+-------+
 | ``'Q'``   | unsigned long long | int               | 8                     |       |
 +-----------+--------------------+-------------------+-----------------------+-------+
+| ``'e'``   | _Float16           | float             | 2                     | \(3)  |
++-----------+--------------------+-------------------+-----------------------+-------+
 | ``'f'``   | float              | float             | 4                     |       |
 +-----------+--------------------+-------------------+-----------------------+-------+
 | ``'d'``   | double             | float             | 8                     |       |
 +-----------+--------------------+-------------------+-----------------------+-------+
-| ``'F'``   | float complex      | complex           | 8                     | \(3)  |
+| ``'Zf'``  | float complex      | complex           | 8                     | \(4)  |
 +-----------+--------------------+-------------------+-----------------------+-------+
-| ``'D'``   | double complex     | complex           | 16                    | \(3)  |
+| ``'Zd'``  | double complex     | complex           | 16                    | \(4)  |
 +-----------+--------------------+-------------------+-----------------------+-------+
 
 
@@ -69,7 +71,16 @@ Notes:
    .. versionadded:: 3.13
 
 (3)
-   Complex types (``F`` and ``D``) are available unconditionally,
+   The IEEE 754 binary16 "half precision" type was introduced in the 2008
+   revision of the `IEEE 754 standard <ieee 754 standard_>`_.
+   This type is not widely supported by C compilers.  It's available
+   as :c:expr:`_Float16` type, if the compiler supports the Annex H
+   of the C23 standard.
+
+   .. versionadded:: 3.15
+
+(4)
+   Complex types (``Zf`` and ``Zd``) are available unconditionally,
    regardless on support for complex types (the Annex G of the C11 standard)
    by the C compiler.
    As specified in the C11 standard, each complex type is represented by a
@@ -94,7 +105,10 @@ The module defines the following item:
 
 .. data:: typecodes
 
-   A string with all available type codes.
+   A tuple with all available type codes.
+
+   .. versionchanged:: next
+      The type changed from :class:`str` to :class:`tuple`.
 
 
 The module defines the following type:
@@ -304,3 +318,5 @@ Examples::
 
    `NumPy <https://numpy.org/>`_
       The NumPy package defines another array type.
+
+.. _ieee 754 standard: https://en.wikipedia.org/wiki/IEEE_754-2008_revision

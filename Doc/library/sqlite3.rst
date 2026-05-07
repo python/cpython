@@ -55,7 +55,7 @@ This document includes four main sections:
       PEP written by Marc-André Lemburg.
 
 
-.. We use the following practises for SQL code:
+.. We use the following practices for SQL code:
    - UPPERCASE for keywords
    - snake_case for schema
    - single quotes for string literals
