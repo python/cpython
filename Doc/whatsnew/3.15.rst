@@ -798,7 +798,7 @@ Other language changes
               n = buffer.find(b'\n')
               data = bytes(buffer[:n + 1])
               del buffer[:n + 1]
-              assert data == b'abc'
+              assert data == b'abc\n'
               assert buffer == bytearray(b'def')
 
         - .. code:: python
