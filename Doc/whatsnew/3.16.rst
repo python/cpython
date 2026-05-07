@@ -106,15 +106,12 @@ module_name
 Removed
 =======
 
-module_name
------------
+sysconfig
+---------
 
-* :mod:`sysconfig`:
-
-  * The :func:`!sysconfig.expand_makefile_vars` function
-    which has been deprecated since Python 3.14.
-    Use the ``vars`` argument of :func:`sysconfig.get_paths` instead.
-
+* The :func:`!sysconfig.expand_makefile_vars` function
+which has been deprecated since Python 3.14.
+Use the ``vars`` argument of :func:`sysconfig.get_paths` instead.
 
 .. Add removals above alphabetically, not here at the end.
 
