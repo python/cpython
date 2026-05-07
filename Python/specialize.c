@@ -2122,65 +2122,23 @@ is_compactlong(PyObject *v)
            _PyLong_IsCompact((PyLongObject *)v);
 }
 
-static PyObject *
-str_int_multiply(PyObject *lhs, PyObject *rhs)
-{
-    Py_ssize_t count = PyLong_AsSsize_t(rhs);
-    if (count == -1 && PyErr_Occurred()) {
-        return NULL;
+#define SEQ_INT_MULTIPLY_ACTION(NAME, REPEAT, SEQ, COUNT) \
+    static PyObject * \
+    (NAME)(PyObject *lhs, PyObject *rhs) \
+    { \
+        Py_ssize_t count = PyLong_AsSsize_t(COUNT); \
+        if (count == -1 && PyErr_Occurred()) { \
+            return NULL; \
+        } \
+        return REPEAT(SEQ, count); \
     }
-    return _PyUnicode_Repeat(lhs, count);
-}
-
-static PyObject *
-int_str_multiply(PyObject *lhs, PyObject *rhs)
-{
-    Py_ssize_t count = PyLong_AsSsize_t(lhs);
-    if (count == -1 && PyErr_Occurred()) {
-        return NULL;
-    }
-    return _PyUnicode_Repeat(rhs, count);
-}
-
-static PyObject *
-bytes_int_multiply(PyObject *lhs, PyObject *rhs)
-{
-    Py_ssize_t count = PyLong_AsSsize_t(rhs);
-    if (count == -1 && PyErr_Occurred()) {
-        return NULL;
-    }
-    return _PyBytes_Repeat(lhs, count);
-}
-
-static PyObject *
-int_bytes_multiply(PyObject *lhs, PyObject *rhs)
-{
-    Py_ssize_t count = PyLong_AsSsize_t(lhs);
-    if (count == -1 && PyErr_Occurred()) {
-        return NULL;
-    }
-    return _PyBytes_Repeat(rhs, count);
-}
-
-static PyObject *
-tuple_int_multiply(PyObject *lhs, PyObject *rhs)
-{
-    Py_ssize_t count = PyLong_AsSsize_t(rhs);
-    if (count == -1 && PyErr_Occurred()) {
-        return NULL;
-    }
-    return _PyTuple_Repeat(lhs, count);
-}
-
-static PyObject *
-int_tuple_multiply(PyObject *lhs, PyObject *rhs)
-{
-    Py_ssize_t count = PyLong_AsSsize_t(lhs);
-    if (count == -1 && PyErr_Occurred()) {
-        return NULL;
-    }
-    return _PyTuple_Repeat(rhs, count);
-}
+SEQ_INT_MULTIPLY_ACTION(str_int_multiply,   _PyUnicode_Repeat, lhs, rhs)
+SEQ_INT_MULTIPLY_ACTION(int_str_multiply,   _PyUnicode_Repeat, rhs, lhs)
+SEQ_INT_MULTIPLY_ACTION(bytes_int_multiply, _PyBytes_Repeat,   lhs, rhs)
+SEQ_INT_MULTIPLY_ACTION(int_bytes_multiply, _PyBytes_Repeat,   rhs, lhs)
+SEQ_INT_MULTIPLY_ACTION(tuple_int_multiply, _PyTuple_Repeat,   lhs, rhs)
+SEQ_INT_MULTIPLY_ACTION(int_tuple_multiply, _PyTuple_Repeat,   rhs, lhs)
+#undef SEQ_INT_MULTIPLY_ACTION
 
 static int
 compactlongs_guard(PyObject *lhs, PyObject *rhs)
