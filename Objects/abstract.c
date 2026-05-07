@@ -229,7 +229,7 @@ _PyMapping_GetOptionalItem2(PyObject *obj, PyObject *key, int *err)
 {
     PyObject* result;
     *err = PyMapping_GetOptionalItem(obj, key, &result);
-    return result;
+    return result;;
 }
 
 int
