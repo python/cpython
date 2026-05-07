@@ -31,7 +31,8 @@ Functions
 ---------
 
 .. function:: pp(object, stream=None, indent=4, width=88, depth=None, *, \
-                 compact=False, sort_dicts=False, underscore_numbers=False)
+                 color=True, compact=False, sort_dicts=False, \
+                 underscore_numbers=False)
 
    Prints the formatted representation of *object*, followed by a newline.
    This function may be used in the interactive interpreter
@@ -63,6 +64,12 @@ Functions
       on the depth of the objects being formatted.
    :type depth: int | None
 
+   :param bool color:
+      If ``True`` (the default), output will be syntax highlighted using ANSI
+      escape sequences, if the *stream* and :ref:`environment variables
+      <using-on-controlling-color>` permit.
+      If ``False``, colored output is always disabled.
+
    :param bool compact:
       Control the way long :term:`sequences <sequence>` are formatted.
       If ``False`` (the default),
@@ -90,13 +97,20 @@ Functions
 
    .. versionadded:: 3.8
 
+   .. versionchanged:: next
+      Added the *color* parameter.
+
 
 .. function:: pprint(object, stream=None, indent=4, width=88, depth=None, *, \
-                     compact=False, sort_dicts=True, underscore_numbers=False)
+                     color=True, compact=False, sort_dicts=True, \
+                     underscore_numbers=False)
 
    Alias for :func:`~pprint.pp` with *sort_dicts* set to ``True`` by default,
    which would automatically sort the dictionaries' keys,
    you might want to use :func:`~pprint.pp` instead where it is ``False`` by default.
+
+   .. versionchanged:: next
+      Added the *color* parameter.
 
 
 .. function:: pformat(object, indent=4, width=88, depth=None, *, \
@@ -147,7 +161,7 @@ PrettyPrinter objects
 .. index:: single: ...; placeholder
 
 .. class:: PrettyPrinter(indent=4, width=88, depth=None, stream=None, *, \
-                         compact=False, sort_dicts=True, \
+                         color=True, compact=False, sort_dicts=True, \
                          underscore_numbers=False)
 
    Construct a :class:`PrettyPrinter` instance.
@@ -210,6 +224,7 @@ PrettyPrinter objects
       No longer attempts to write to :data:`!sys.stdout` if it is ``None``.
 
    .. versionchanged:: next
+      Added the *color* parameter.
       Changed default *indent* from 1 to 4
       and default *width* from 80 to 88.
       The default ``compact=False`` layout is now similar to

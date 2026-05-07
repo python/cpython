@@ -1,6 +1,12 @@
 from unittest import TestCase
 
-from _pyrepl.utils import str_width, wlen, prev_next_window, gen_colors
+from _pyrepl.utils import (
+    disp_str,
+    gen_colors,
+    prev_next_window,
+    str_width,
+    wlen,
+)
 
 
 class TestUtils(TestCase):
@@ -135,3 +141,12 @@ class TestUtils(TestCase):
                     span_text = code[color.span.start:color.span.end + 1]
                     actual_highlights.append((span_text, color.tag))
                 self.assertEqual(actual_highlights, expected_highlights)
+
+    def test_disp_str_escape(self):
+        # default: control chars become caret notation
+        chars, _ = disp_str("a\nb\tc\x1bd")
+        self.assertEqual("".join(chars), "a^Jb^Ic^[d")
+
+        # escape=False: control chars pass through verbatim
+        chars, _ = disp_str("a\nb\tc\x1bd", escape=False)
+        self.assertEqual("".join(chars), "a\nb\tc\x1bd")
