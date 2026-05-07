@@ -1,0 +1,2 @@
+Fix reentrant processing of site startup files when a ``.pth`` import line
+calls :func:`site.addsitedir`.

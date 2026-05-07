@@ -1297,6 +1297,29 @@ def startup():
         import epmod
         self.assertFalse(epmod.called)
 
+    def test_exec_imports_allows_reentrant_addsitedir(self):
+        nested = os.path.join(self.sitedir, 'nested')
+        nestedlib = os.path.join(nested, 'nestedlib')
+        os.mkdir(nested)
+        os.mkdir(nestedlib)
+        with open(os.path.join(nested, 'nested.pth'), 'w',
+                  encoding='utf-8') as f:
+            f.write("nestedlib\n")
+        with open(os.path.join(nestedlib, 'nestedmod.py'), 'w',
+                  encoding='utf-8') as f:
+            f.write("value = 42\n")
+        self.addCleanup(sys.modules.pop, 'nestedmod', None)
+
+        outer_pth = os.path.join(self.sitedir, 'outer.pth')
+        site._pending_importexecs[outer_pth] = [
+            f"import site; site.addsitedir({nested!r}); import nestedmod"
+        ]
+
+        site.process_startup_files()
+
+        self.assertIn(nestedlib, sys.path)
+        self.assertEqual(sys.modules['nestedmod'].value, 42)
+
     # --- _extend_syspath tests ---
 
     def test_extend_syspath_existing_dir(self):

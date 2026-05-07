@@ -163,6 +163,13 @@ _pending_syspaths = {}
 _pending_importexecs = {}
 
 
+def _take_pending(mapping):
+    """Return the pending data and clear it before running startup code."""
+    pending = mapping.copy()
+    mapping.clear()
+    return pending
+
+
 def _read_pthstart_file(sitedir, name, suffix):
     """Parse a .start or .pth file and return (lines, filename).
 
@@ -280,11 +287,14 @@ def _read_start_file(sitedir, name):
         entrypoints.append(line)
 
 
-def _extend_syspath():
+def _extend_syspath(pending_syspaths=None):
     # We've already filtered out duplicates, either in the existing sys.path
     # or in all the .pth files we've seen.  We've also abspath/normpath'd all
     # the entries, so all that's left to do is to ensure that the path exists.
-    for filename, dirs in _pending_syspaths.items():
+    if pending_syspaths is None:
+        pending_syspaths = _pending_syspaths
+
+    for filename, dirs in pending_syspaths.items():
         for dir_ in dirs:
             if os.path.exists(dir_):
                 _trace(f"Extending sys.path with {dir_} from {filename}")
@@ -295,16 +305,21 @@ def _extend_syspath():
                     f"skipping sys.path append")
 
 
-def _exec_imports():
+def _exec_imports(pending_importexecs=None, pending_entrypoints=None):
     # For all the `import` lines we've seen in .pth files, exec() them in
     # order.  However, if they come from a file with a matching .start, then
     # we ignore these import lines.  For the ones we do process, print a
     # warning but only when -v was given.
-    for filename, imports in _pending_importexecs.items():
+    if pending_importexecs is None:
+        pending_importexecs = _pending_importexecs
+    if pending_entrypoints is None:
+        pending_entrypoints = _pending_entrypoints
+
+    for filename, imports in pending_importexecs.items():
         name, dot, pth = filename.rpartition(".")
         assert dot == "." and pth == "pth", f"Bad startup filename: {filename}"
 
-        if f"{name}.start" in _pending_entrypoints:
+        if f"{name}.start" in pending_entrypoints:
             # Skip import lines in favor of entry points.
             continue
 
@@ -322,7 +337,7 @@ def _exec_imports():
                     f"Error in import line from {filename}: {line}", exc)
 
 
-def _execute_start_entrypoints():
+def _execute_start_entrypoints(pending_entrypoints=None):
     """Execute all accumulated .start file entry points.
 
     Called after all site-packages directories have been processed so that
@@ -330,7 +345,10 @@ def _execute_start_entrypoints():
     pkgutil.resolve_name(strict=True) which both validates the strict
     pkg.mod:callable form and resolves the entry point in one step.
     """
-    for filename, entrypoints in _pending_entrypoints.items():
+    if pending_entrypoints is None:
+        pending_entrypoints = _pending_entrypoints
+
+    for filename, entrypoints in pending_entrypoints.items():
         for entrypoint in entrypoints:
             try:
                 _trace(f"Executing entry point: {entrypoint} from {filename}")
@@ -355,12 +373,15 @@ def _execute_start_entrypoints():
 
 def process_startup_files():
     """Flush all pending sys.path and entry points."""
-    _extend_syspath()
-    _exec_imports()
-    _execute_start_entrypoints()
-    _pending_syspaths.clear()
-    _pending_importexecs.clear()
-    _pending_entrypoints.clear()
+    # Startup code may call addsitedir(), so remove this batch from the
+    # globals before executing any import lines or entry points.
+    pending_syspaths = _take_pending(_pending_syspaths)
+    pending_importexecs = _take_pending(_pending_importexecs)
+    pending_entrypoints = _take_pending(_pending_entrypoints)
+
+    _extend_syspath(pending_syspaths)
+    _exec_imports(pending_importexecs, pending_entrypoints)
+    _execute_start_entrypoints(pending_entrypoints)
 
 
 def addpackage(sitedir, name, known_paths):
