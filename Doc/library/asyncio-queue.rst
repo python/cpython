@@ -15,8 +15,8 @@ asyncio queues are designed to be similar to classes of the
 they are designed to be used specifically in async/await code.
 
 Note that methods of asyncio queues don't have a *timeout* parameter;
-use :func:`asyncio.wait_for` function to do queue operations with a
-timeout.
+use :func:`asyncio.wait_for` function to perform queue operations with a
+timeouts.
 
 See also the `Examples`_ section below.
 
@@ -55,7 +55,8 @@ Queue
       Return ``True`` if there are :attr:`maxsize` items in the queue.
 
       If the queue was initialized with ``maxsize=0`` (the default),
-      then :meth:`full` never returns ``True``.
+      or a negative :attr:`maxsize:, then :meth:`full` never returns
+      ``True``.
 
    .. method:: get()
       :async:
@@ -109,7 +110,7 @@ Queue
       Currently blocked callers of :meth:`~Queue.put` will be unblocked
       and will raise :exc:`QueueShutDown` in the formerly awaiting task.
 
-      If *immediate* is false (the default), the queue can be wound
+      If *immediate* is ``False`` (the default), the queue can be wound
       down normally with :meth:`~Queue.get` calls to extract tasks
       that have already been loaded.
 
@@ -119,17 +120,17 @@ Queue
       Once the queue is empty, future calls to :meth:`~Queue.get` will
       raise :exc:`QueueShutDown`.
 
-      If *immediate* is true, the queue is terminated immediately.
+      If *immediate* is ``True``, the queue is terminated immediately.
       The queue is drained to be completely empty and the count
       of unfinished tasks is reduced by the number of tasks drained.
-      If unfinished tasks is zero, callers of :meth:`~Queue.join`
-      are unblocked.  Also, blocked callers of :meth:`~Queue.get`
-      are unblocked and will raise :exc:`QueueShutDown` because the
+      If the count reaches zero, callers of :meth:`~Queue.join` are
+      unblocked.  Also, blocked callers of :meth:`~Queue.get` are
+      unblocked and will raise :exc:`QueueShutDown` because the
       queue is empty.
 
-      Use caution when using :meth:`~Queue.join` with *immediate* set
-      to true. This unblocks the join even when no work has been done
-      on the tasks, violating the usual invariant for joining a queue.
+      Exercise caution when using :meth:`~Queue.join` in the above case.
+      The join may be unblocked even when no work has been done on the
+      tasks, violating the usual invariant for joining a queue.
 
       .. versionadded:: 3.13
 
