@@ -19,7 +19,7 @@ Debug Mode
 ==========
 
 By default asyncio runs in production mode.  In order to ease
-the development asyncio has a *debug mode*.
+development, asyncio has a *debug mode*.
 
 There are several ways to enable asyncio debug mode:
 
@@ -31,11 +31,11 @@ There are several ways to enable asyncio debug mode:
 
 * Calling :meth:`loop.set_debug`.
 
-In addition to enabling the debug mode, consider also:
+In addition to enabling debug mode, consider also:
 
 * setting the log level of the :ref:`asyncio logger <asyncio-logger>` to
-  :py:const:`logging.DEBUG`, for example the following snippet of code
-  can be run at startup of the application::
+  :py:const:`logging.DEBUG`, such as by running the following snippet of
+  code at startup of the application::
 
     logging.basicConfig(level=logging.DEBUG)
 
@@ -44,7 +44,7 @@ In addition to enabling the debug mode, consider also:
   using the :option:`-W` ``default`` command line option.
 
 
-When the debug mode is enabled:
+When debug mode is enabled:
 
 * Many non-threadsafe asyncio APIs (such as :meth:`loop.call_soon` and
   :meth:`loop.call_at` methods) raise an exception if they are called
@@ -95,7 +95,7 @@ To schedule a coroutine object from a different OS thread, the
      # Wait for the result:
      result = future.result()
 
-To handle signals the event loop must be
+To handle signals, the event loop must be
 run in the main thread.
 
 The :meth:`loop.run_in_executor` method can be used with a
@@ -126,10 +126,9 @@ all concurrent asyncio Tasks and IO operations would be delayed
 by 1 second.
 
 An executor can be used to run a task in a different thread,
-including in a different interpreter, or even in
-a different process to avoid blocking the OS thread with the
-event loop.  See the :meth:`loop.run_in_executor` method for more
-details.
+a different interpreter, or even a different process to avoid
+blocking the OS thread with the event loop.  See the
+:meth:`loop.run_in_executor` method for more details.
 
 
 .. _asyncio-logger:
@@ -260,13 +259,12 @@ This section outlines essential best practices that can save you hours of debugg
 Close asynchronous generators explicitly
 ----------------------------------------
 
-It is recommended to manually close the
+It is recommended to manually close an
 :term:`asynchronous generator <asynchronous generator iterator>`. If a generator
 exits early - for example, due to an exception raised in the body of
 an ``async for`` loop - its asynchronous cleanup code may run in an
 unexpected context. This can occur after the tasks it depends on have completed,
-or during the event loop shutdown when the async-generator's garbage collection
-hook is called.
+or during the event loop shutdown when the its garbage collection hook is called.
 
 To avoid this, explicitly close the generator by calling its
 :meth:`~agen.aclose` method, or use the :func:`contextlib.aclosing`
@@ -423,8 +421,7 @@ Avoid concurrent iteration and closure of the same generator
 
 Async generators may be reentered while another
 :meth:`~agen.__anext__` / :meth:`~agen.athrow` / :meth:`~agen.aclose` call is in
-progress. This may lead to an inconsistent state of the async generator and can
-cause errors.
+progress. This may lead to inconsistent state and can cause errors.
 
 Let's consider the following example::
 
