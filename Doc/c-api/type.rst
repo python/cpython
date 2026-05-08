@@ -575,7 +575,7 @@ but need extra remarks for use as slots:
       array, so that if processing of a later slots fails, error messages
       can include the name.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. c:macro:: Py_tp_basicsize
 
@@ -591,7 +591,7 @@ but need extra remarks for use as slots:
    Use :c:member:`PyTypeObject.tp_basicsize` instead if needed, but be aware
    that a type's size is often considered an implementation detail.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. c:macro:: Py_tp_extra_basicsize
 
@@ -620,7 +620,7 @@ but need extra remarks for use as slots:
 
    This slot may not be used with :c:func:`PyType_GetSlot`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. c:macro:: Py_tp_itemsize
 
@@ -652,7 +652,7 @@ but need extra remarks for use as slots:
 
    This slot may not be used with :c:func:`PyType_GetSlot`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. c:macro:: Py_tp_flags
 
@@ -668,7 +668,7 @@ but need extra remarks for use as slots:
    This slot may not be used with :c:func:`PyType_GetSlot`.
    Use :c:func:`PyType_GetFlags` instead.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 The following slots do not correspond to public fields in the
 underlying structures:
@@ -691,7 +691,7 @@ underlying structures:
    This slot may not be used with :c:func:`PyType_GetSlot`.
    Use :c:func:`Py_TYPE` on the type object instead.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. c:macro:: Py_tp_module
 
@@ -711,7 +711,7 @@ underlying structures:
    This slot may not be used with :c:func:`PyType_GetSlot`.
    Use :c:func:`PyType_GetModule` instead.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. c:macro:: Py_tp_token
 
@@ -760,7 +760,7 @@ underlying structures:
    :c:macro:`Py_slot_subslots`, except it specifies an array of
    :c:type:`PyType_Slot` structures.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 Soft-deprecated API

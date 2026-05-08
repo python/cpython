@@ -482,7 +482,7 @@ Functions and classes provided:
 
    .. versionadded:: 3.2
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Decorating a generator function, coroutine function, or asynchronous
       generator function now keeps the context manager open across iteration
       or await.  Previously the context manager exited as soon as the
@@ -538,7 +538,7 @@ Functions and classes provided:
 
    .. versionadded:: 3.10
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Decorating an asynchronous generator function now keeps the context
       manager open across iteration.  Previously the context manager exited
       as soon as the generator object was created.  Synchronous functions

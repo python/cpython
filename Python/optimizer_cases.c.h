@@ -3706,7 +3706,8 @@
                 type = sym_get_probable_type(iter);
                 definite = false;
             }
-            if (type != NULL && type != &PyGen_Type && type->tp_iternext != NULL) {
+            if (type != NULL && type != &PyGen_Type && type->tp_iternext != NULL
+                && !_PyType_HasSlotTpIternext(type)) {
                 PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
                 _Py_BloomFilter_Add(dependencies, type);
                 if (!definite) {

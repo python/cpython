@@ -1903,6 +1903,7 @@ The major upgrades to the JIT are:
 * New tracing frontend
 * Basic register allocation in the JIT
 * More JIT optimizations
+* GDB and GNU ``backtrace()`` unwinding support
 * Better machine code generation
 
 .. rubric:: LLVM 21 build-time dependency
@@ -1953,6 +1954,17 @@ reference count updates and perform in-place operations on ints and floats.
 
 The JIT optimizer now supports significantly more operations than in 3.14.
 (Contributed by Kumar Aditya, Ken Jin, Jiahao Li, and Sacul in :gh:`131798`.)
+
+.. rubric:: GDB and GNU ``backtrace()`` unwinding support
+
+The JIT compiler now publishes unwind information for generated machine code to the
+GDB interface on supported Linux ELF platforms. When libgcc frame
+registration is available, the same unwind information is also registered for
+GNU ``backtrace()`` stack walkers. This allows native debuggers, crash
+handlers, and diagnostic tools using these mechanisms to unwind through JIT
+frames instead of stopping at generated code.
+(Contributed by Diego Russo and Pablo Galindo Salgado in :gh:`146071` and
+:gh:`149104`.)
 
 .. rubric:: Better machine code generation
 
