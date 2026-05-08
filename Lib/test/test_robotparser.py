@@ -787,6 +787,7 @@ class NetworkTestCase(unittest.TestCase):
         with socket_helper.transient_internet(cls.base_url):
             cls.parser = urllib.robotparser.RobotFileParser(cls.robots_txt)
             cls.parser.read()
+        urllib.request.urlcleanup()
 
     def url(self, path):
         return '{}{}{}'.format(
