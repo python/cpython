@@ -381,7 +381,7 @@ and reliable way to wait for all tasks in the group to finish.
       * pass the task group instance or bound :meth:`cancel` method to some other task *before*
         opening the task group, allowing remote cancellation
 
-      .. versionadded:: next
+      .. versionadded:: 3.15
 
 Example::
 

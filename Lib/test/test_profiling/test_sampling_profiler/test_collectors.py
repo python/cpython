@@ -16,6 +16,7 @@ try:
         CollapsedStackCollector,
         FlamegraphCollector,
     )
+    from profiling.sampling.jsonl_collector import JsonlCollector
     from profiling.sampling.gecko_collector import GeckoCollector
     from profiling.sampling.collector import extract_lineno, normalize_location
     from profiling.sampling.opcode_utils import get_opcode_info, format_opcode
@@ -38,7 +39,7 @@ except ImportError:
 from test.support import captured_stdout, captured_stderr
 
 from .mocks import MockFrameInfo, MockThreadInfo, MockInterpreterInfo, LocationInfo, make_diff_collector_with_mock_baseline
-from .helpers import close_and_unlink
+from .helpers import close_and_unlink, jsonl_tables
 
 
 def resolve_name(node, strings):
@@ -1669,6 +1670,393 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertAlmostEqual(cold_node["diff"], -1.0)
         self.assertAlmostEqual(cold_node["diff_pct"], -50.0)
 
+    def test_jsonl_collector_export_exact_output(self):
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
+
+        collector = JsonlCollector(1000)
+        collector.run_id = "run-123"
+
+        test_frames1 = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("file.py", 10, "func1"),
+                            MockFrameInfo("file.py", 20, "func2"),
+                        ],
+                    )
+                ],
+            )
+        ]
+        test_frames2 = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("file.py", 10, "func1"),
+                            MockFrameInfo("file.py", 20, "func2"),
+                        ],
+                    )
+                ],
+            )
+        ]  # Same stack
+        test_frames3 = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1, [MockFrameInfo("other.py", 5, "other_func")]
+                    )
+                ],
+            )
+        ]
+
+        collector.collect(test_frames1)
+        collector.collect(test_frames2)
+        collector.collect(test_frames3)
+
+        collector.export(jsonl_out.name)
+
+        with open(jsonl_out.name, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        self.assertEqual(
+            content,
+            (
+                '{"type":"meta","v":0,"run_id":"run-123","sample_interval_usec":1000}\n'
+                '{"type":"string_table","v":0,"run_id":"run-123","strings":[{"str_id":0,"value":"func1"},{"str_id":1,"value":"file.py"},{"str_id":2,"value":"func2"},{"str_id":3,"value":"other_func"},{"str_id":4,"value":"other.py"}]}\n'
+                '{"type":"frame_table","v":0,"run_id":"run-123","frames":[{"frame_id":0,"path_str_id":1,"func_str_id":0,"line":10,"end_line":10},{"frame_id":1,"path_str_id":1,"func_str_id":2,"line":20,"end_line":20},{"frame_id":2,"path_str_id":4,"func_str_id":3,"line":5,"end_line":5}]}\n'
+                '{"type":"agg","v":0,"run_id":"run-123","kind":"frame","scope":"final","samples_total":3,"entries":[{"frame_id":0,"self":2,"cumulative":2},{"frame_id":1,"self":0,"cumulative":2},{"frame_id":2,"self":1,"cumulative":1}]}\n'
+                '{"type":"end","v":0,"run_id":"run-123","samples_total":3}\n'
+            ),
+        )
+
+    def test_jsonl_collector_export_includes_mode_in_meta(self):
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
+
+        collector = JsonlCollector(1000, mode=PROFILING_MODE_CPU)
+        collector.collect(
+            [
+                MockInterpreterInfo(
+                    0,
+                    [
+                        MockThreadInfo(
+                            1, [MockFrameInfo("file.py", 10, "func")]
+                        )
+                    ],
+                )
+            ]
+        )
+        collector.export(jsonl_out.name)
+
+        with open(jsonl_out.name, "r", encoding="utf-8") as f:
+            records = [json.loads(line) for line in f]
+
+        meta_record = next(
+            record for record in records if record["type"] == "meta"
+        )
+        self.assertEqual(meta_record["mode"], "cpu")
+
+    def test_jsonl_collector_export_empty_profile(self):
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
+
+        collector = JsonlCollector(1000)
+        collector.run_id = "run-123"
+        collector.export(jsonl_out.name)
+
+        with open(jsonl_out.name, "r", encoding="utf-8") as f:
+            records = [json.loads(line) for line in f]
+
+        self.assertEqual(
+            [record["type"] for record in records], ["meta", "end"]
+        )
+        self.assertEqual(records[0]["sample_interval_usec"], 1000)
+        self.assertEqual(records[0]["run_id"], "run-123")
+        self.assertEqual(records[1]["samples_total"], 0)
+        self.assertEqual(records[1]["run_id"], "run-123")
+
+    def test_jsonl_collector_recursive_frames_counted_once_per_sample(self):
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
+
+        collector = JsonlCollector(1000)
+        collector.collect(
+            [
+                MockInterpreterInfo(
+                    0,
+                    [
+                        MockThreadInfo(
+                            1,
+                            [
+                                MockFrameInfo(
+                                    "recursive.py", 10, "recursive_func"
+                                ),
+                                MockFrameInfo(
+                                    "recursive.py", 10, "recursive_func"
+                                ),
+                                MockFrameInfo(
+                                    "recursive.py", 10, "recursive_func"
+                                ),
+                            ],
+                        )
+                    ],
+                )
+            ]
+        )
+        collector.export(jsonl_out.name)
+
+        with open(jsonl_out.name, "r", encoding="utf-8") as f:
+            records = [json.loads(line) for line in f]
+
+        _, _, frame_defs, agg_record, end_record = jsonl_tables(records)
+        self.assertEqual(len(frame_defs), 1)
+        self.assertEqual(
+            agg_record["entries"],
+            [
+                {
+                    "frame_id": frame_defs[0]["frame_id"],
+                    "self": 1,
+                    "cumulative": 1,
+                }
+            ],
+        )
+        self.assertEqual(agg_record["samples_total"], 1)
+        self.assertEqual(end_record["samples_total"], 1)
+
+    def test_jsonl_collector_skip_idle_filters_threads(self):
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
+
+        active_status = THREAD_STATUS_HAS_GIL | THREAD_STATUS_ON_CPU
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [MockFrameInfo("active1.py", 10, "active_func1")],
+                        status=active_status,
+                    ),
+                    MockThreadInfo(
+                        2,
+                        [MockFrameInfo("idle.py", 20, "idle_func")],
+                        status=0,
+                    ),
+                    MockThreadInfo(
+                        3,
+                        [MockFrameInfo("active2.py", 30, "active_func2")],
+                        status=active_status,
+                    ),
+                ],
+            )
+        ]
+
+        def export_summary(skip_idle):
+            collector = JsonlCollector(1000, skip_idle=skip_idle)
+            collector.collect(frames)
+            collector.export(jsonl_out.name)
+
+            with open(jsonl_out.name, "r", encoding="utf-8") as f:
+                records = [json.loads(line) for line in f]
+
+            _, str_defs, frame_defs, agg_record, _ = jsonl_tables(records)
+            paths = {str_defs[item["path_str_id"]] for item in frame_defs}
+            funcs = {str_defs[item["func_str_id"]] for item in frame_defs}
+            return paths, funcs, agg_record["samples_total"]
+
+        paths, funcs, samples_total = export_summary(skip_idle=True)
+        self.assertEqual(paths, {"active1.py", "active2.py"})
+        self.assertEqual(funcs, {"active_func1", "active_func2"})
+        self.assertEqual(samples_total, 2)
+
+        paths, funcs, samples_total = export_summary(skip_idle=False)
+        self.assertEqual(paths, {"active1.py", "idle.py", "active2.py"})
+        self.assertEqual(funcs, {"active_func1", "idle_func", "active_func2"})
+        self.assertEqual(samples_total, 3)
+
+    def test_jsonl_collector_splits_large_exports_into_chunks(self):
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
+
+        collector = JsonlCollector(1000)
+
+        for i in range(257):
+            collector.collect(
+                [
+                    MockInterpreterInfo(
+                        0,
+                        [
+                            MockThreadInfo(
+                                1,
+                                [
+                                    MockFrameInfo(
+                                        f"file{i}.py", i + 1, f"func{i}"
+                                    )
+                                ],
+                            )
+                        ],
+                    )
+                ]
+            )
+
+        collector.export(jsonl_out.name)
+
+        with open(jsonl_out.name, "r", encoding="utf-8") as f:
+            records = [json.loads(line) for line in f]
+
+        run_ids = {record["run_id"] for record in records}
+        self.assertEqual(len(run_ids), 1)
+        self.assertRegex(next(iter(run_ids)), r"^[0-9a-f]{32}$")
+
+        _, str_defs, frame_defs, agg_record, end_record = jsonl_tables(
+            records
+        )
+        str_chunks = [
+            record for record in records if record["type"] == "string_table"
+        ]
+        frame_chunks = [
+            record for record in records if record["type"] == "frame_table"
+        ]
+        agg_chunks = [record for record in records if record["type"] == "agg"]
+
+        self.assertEqual(
+            [len(record["strings"]) for record in str_chunks],
+            [256, 256, 2],
+        )
+        self.assertEqual(
+            [len(record["frames"]) for record in frame_chunks], [256, 1]
+        )
+        self.assertEqual(
+            [len(record["entries"]) for record in agg_chunks], [256, 1]
+        )
+        self.assertEqual(len(str_defs), 514)
+        self.assertEqual(len(frame_defs), 257)
+        self.assertEqual(agg_record["samples_total"], 257)
+        self.assertEqual(end_record["samples_total"], 257)
+
+    def test_jsonl_collector_respects_weight_for_rle_batched_samples(self):
+        """weight>1 (from binary replay RLE) is honored in self/cumulative."""
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
+
+        collector = JsonlCollector(1000)
+        leaf = MockFrameInfo("file.py", 10, "leaf")
+        non_leaf = MockFrameInfo("file.py", 20, "non_leaf")
+
+        collector.process_frames([leaf, non_leaf], _thread_id=1, weight=5)
+        collector.export(jsonl_out.name)
+
+        with open(jsonl_out.name, "r", encoding="utf-8") as f:
+            records = [json.loads(line) for line in f]
+
+        _, str_defs, frame_defs, agg, end = jsonl_tables(records)
+        self.assertEqual(end["samples_total"], 5)
+        self.assertEqual(agg["samples_total"], 5)
+        self.assertEqual(
+            {str_defs[fd["func_str_id"]]: fd["frame_id"] for fd in frame_defs},
+            {"leaf": 0, "non_leaf": 1},
+        )
+        self.assertEqual(agg["entries"], [
+            {"frame_id": 0, "self": 5, "cumulative": 5},
+            {"frame_id": 1, "self": 0, "cumulative": 5},
+        ])
+
+    def test_jsonl_collector_recursion_with_weight(self):
+        """Recursion dedup respects weight, not occurrence count."""
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
+
+        collector = JsonlCollector(1000)
+        recursive = MockFrameInfo("rec.py", 10, "f")
+
+        collector.process_frames([recursive] * 3, _thread_id=1, weight=3)
+        collector.export(jsonl_out.name)
+
+        with open(jsonl_out.name, "r", encoding="utf-8") as f:
+            records = [json.loads(line) for line in f]
+
+        _, _, frame_defs, agg, _ = jsonl_tables(records)
+        self.assertEqual(len(frame_defs), 1)
+        self.assertEqual(agg["entries"], [
+            {"frame_id": 0, "self": 3, "cumulative": 3},
+        ])
+
+    def test_jsonl_collector_emits_col_and_end_col_when_present(self):
+        """All four location fields are emitted when col/end_col are >= 0."""
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
+
+        collector = JsonlCollector(1000)
+        frame = MockFrameInfo("test.py", 0, "f")
+        frame.location = LocationInfo(42, 45, 4, 12)
+        frames = [
+            MockInterpreterInfo(
+                0, [MockThreadInfo(1, [frame], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+        collector.collect(frames)
+        collector.export(jsonl_out.name)
+
+        with open(jsonl_out.name, "r", encoding="utf-8") as f:
+            records = [json.loads(line) for line in f]
+
+        _, str_defs, frame_defs, _, _ = jsonl_tables(records)
+        self.assertEqual(frame_defs, [
+            {
+                "frame_id": 0,
+                "path_str_id": 1,
+                "func_str_id": 0,
+                "line": 42,
+                "end_line": 45,
+                "col": 4,
+                "end_col": 12,
+            },
+        ])
+        self.assertEqual(str_defs, {0: "f", 1: "test.py"})
+
+    def test_jsonl_collector_partial_location_elision(self):
+        """Negative col/end_col/end_line fields are individually elided."""
+        # _get_or_create_frame_id interns funcname before filename, so
+        # func_str_id=0 ("f") and path_str_id=1 ("test.py").
+        common = {"frame_id": 0, "path_str_id": 1, "func_str_id": 0}
+        cases = [
+            (LocationInfo(42, 45, -1, 12),
+             {**common, "line": 42, "end_line": 45, "end_col": 12}),
+            (LocationInfo(42, 45, 4, -1),
+             {**common, "line": 42, "end_line": 45, "col": 4}),
+            (LocationInfo(42, 0, 4, 8),
+             {**common, "line": 42, "col": 4, "end_col": 8}),
+        ]
+        for loc, expected_frame_def in cases:
+            with self.subTest(location=loc):
+                jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+                self.addCleanup(close_and_unlink, jsonl_out)
+
+                collector = JsonlCollector(1000)
+                frame = MockFrameInfo("test.py", 0, "f")
+                frame.location = loc
+                frames = [
+                    MockInterpreterInfo(
+                        0,
+                        [MockThreadInfo(1, [frame], status=THREAD_STATUS_HAS_GIL)],
+                    )
+                ]
+                collector.collect(frames)
+                collector.export(jsonl_out.name)
+
+                with open(jsonl_out.name, "r", encoding="utf-8") as f:
+                    records = [json.loads(line) for line in f]
+
+                _, _, frame_defs, _, _ = jsonl_tables(records)
+                self.assertEqual(frame_defs, [expected_frame_def])
+
 
 class TestRecursiveFunctionHandling(unittest.TestCase):
     """Tests for correct handling of recursive functions in cumulative stats."""
@@ -1878,6 +2266,20 @@ class TestLocationHelpers(unittest.TestCase):
         """Test extracting lineno from None (synthetic frames)."""
         self.assertEqual(extract_lineno(None), 0)
 
+    def test_extract_lineno_from_int(self):
+        """Test extracting lineno from a bare integer line number.
+
+        Mirrors normalize_location's int contract so callers like the
+        collapsed/flamegraph collectors do not crash on a bare-int location.
+        """
+        self.assertEqual(extract_lineno(42), 42)
+        self.assertEqual(extract_lineno(0), 0)
+
+    def test_normalize_location_with_int(self):
+        """Test normalize_location expands a legacy integer line number."""
+        result = normalize_location(42)
+        self.assertEqual(result, (42, 42, -1, -1))
+
     def test_normalize_location_with_location_info(self):
         """Test normalize_location passes through LocationInfo."""
         loc = LocationInfo(10, 15, 0, 5)
@@ -2067,6 +2469,85 @@ class TestLocationInCollectors(unittest.TestCase):
 
         # Verify function name is in string table
         self.assertIn("handle_request", string_array)
+
+    def test_jsonl_collector_with_location_info(self):
+        """Test JsonlCollector handles LocationInfo properly."""
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
+
+        collector = JsonlCollector(sample_interval_usec=1000)
+
+        # Frame with LocationInfo
+        frame = MockFrameInfo("test.py", 42, "my_function")
+        frames = [
+            MockInterpreterInfo(
+                0, [MockThreadInfo(1, [frame], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+        collector.collect(frames)
+
+        collector.export(jsonl_out.name)
+
+        with open(jsonl_out.name, "r", encoding="utf-8") as f:
+            records = [json.loads(line) for line in f]
+
+        meta, str_defs, frame_defs, agg, end = jsonl_tables(records)
+        self.assertEqual(meta["sample_interval_usec"], 1000)
+        self.assertEqual(agg["samples_total"], 1)
+        self.assertEqual(end["samples_total"], 1)
+        self.assertEqual(len(frame_defs), 1)
+        self.assertEqual(str_defs[frame_defs[0]["path_str_id"]], "test.py")
+        self.assertEqual(str_defs[frame_defs[0]["func_str_id"]], "my_function")
+        self.assertEqual(
+            frame_defs[0],
+            {
+                "frame_id": 0,
+                "path_str_id": frame_defs[0]["path_str_id"],
+                "func_str_id": frame_defs[0]["func_str_id"],
+                "line": 42,
+                "end_line": 42,
+            },
+        )
+
+    def test_jsonl_collector_with_none_location(self):
+        """Test JsonlCollector handles None location (synthetic frames)."""
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
+
+        collector = JsonlCollector(sample_interval_usec=1000)
+
+        # Create frame with None location (like GC frame)
+        frame = MockFrameInfo("~", 0, "<GC>")
+        frame.location = None  # Synthetic frame has no location
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [frame], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+        collector.collect(frames)
+
+        collector.export(jsonl_out.name)
+
+        with open(jsonl_out.name, "r", encoding="utf-8") as f:
+            records = [json.loads(line) for line in f]
+
+        meta, str_defs, frame_defs, agg, end = jsonl_tables(records)
+        self.assertEqual(meta["sample_interval_usec"], 1000)
+        self.assertEqual(agg["samples_total"], 1)
+        self.assertEqual(end["samples_total"], 1)
+        self.assertEqual(len(frame_defs), 1)
+        self.assertEqual(str_defs[frame_defs[0]["path_str_id"]], "~")
+        self.assertEqual(str_defs[frame_defs[0]["func_str_id"]], "<GC>")
+        self.assertEqual(
+            frame_defs[0],
+            {
+                "frame_id": 0,
+                "path_str_id": frame_defs[0]["path_str_id"],
+                "func_str_id": frame_defs[0]["func_str_id"],
+                "line": 0,
+            },
+        )
 
 
 class TestOpcodeHandling(unittest.TestCase):
@@ -2288,6 +2769,28 @@ class TestCollectorFrameFormat(unittest.TestCase):
         # Should have recorded 3 functions
         self.assertEqual(thread["funcTable"]["length"], 3)
 
+    def test_jsonl_collector_frame_format(self):
+        """Test JsonlCollector with 4-element frame format."""
+        collector = JsonlCollector(sample_interval_usec=1000)
+        collector.collect(self._make_sample_frames())
+
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            self.addClassCleanup(close_and_unlink, f)
+            collector.export(f.name)
+
+        with open(f.name, "r", encoding="utf-8") as fp:
+            records = [json.loads(line) for line in fp]
+
+        _, str_defs, frame_defs, _, _ = jsonl_tables(records)
+
+        self.assertEqual(len(frame_defs), 3)
+
+        paths = {str_defs[item["path_str_id"]] for item in frame_defs}
+        funcs = {str_defs[item["func_str_id"]] for item in frame_defs}
+
+        self.assertEqual(paths, {"app.py", "utils.py", "lib.py"})
+        self.assertEqual(funcs, {"main", "helper", "process"})
+
 
 class TestInternalFrameFiltering(unittest.TestCase):
     """Tests for filtering internal profiler frames from output."""
@@ -2415,3 +2918,42 @@ class TestInternalFrameFiltering(unittest.TestCase):
         for (call_tree, _), _ in collector.stack_counter.items():
             for filename, _, _ in call_tree:
                 self.assertNotIn("_sync_coordinator", filename)
+
+    def test_jsonl_collector_filters_internal_frames(self):
+        """Test that JsonlCollector filters out internal frames."""
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
+
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("app.py", 50, "run"),
+                            MockFrameInfo("/lib/_sync_coordinator.py", 100, "main"),
+                            MockFrameInfo("<frozen runpy>", 87, "_run_code"),
+                        ],
+                        status=THREAD_STATUS_HAS_GIL,
+                    )
+                ],
+            )
+        ]
+
+        collector = JsonlCollector(sample_interval_usec=1000)
+        collector.collect(frames)
+        collector.export(jsonl_out.name)
+
+        with open(jsonl_out.name, "r", encoding="utf-8") as f:
+            records = [json.loads(line) for line in f]
+
+        _, str_defs, frame_defs, _, _ = jsonl_tables(records)
+
+        paths = {str_defs[item["path_str_id"]] for item in frame_defs}
+
+        self.assertIn("app.py", paths)
+        self.assertIn("<frozen runpy>", paths)
+
+        for path in paths:
+            self.assertNotIn("_sync_coordinator", path)

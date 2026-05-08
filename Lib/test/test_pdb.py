@@ -4718,6 +4718,27 @@ def bœr():
             ]))
             self.assertIn('break in bar', stdout)
 
+    def test_end_of_options_separator(self):
+        # gh-148615: Test parsing when '--' separator is used
+        script = "import sys; print(f'ARGS: {sys.argv[1:]}')"
+        with open(os_helper.TESTFN, 'w', encoding='utf-8') as f:
+            f.write(script)
+        stdout, _ = self._run_pdb(['--', os_helper.TESTFN, '-foo'], 'c\nq')
+        self.assertIn("ARGS: ['-foo']", stdout)
+        stdout, _ = self._run_pdb(['-c', 'continue', '--', os_helper.TESTFN, '-c', 'foo'], 'q')
+        self.assertIn("ARGS: ['-c', 'foo']", stdout)
+        stdout, stderr = self._run_pdb(['--'], 'q', expected_returncode=2)
+        self.assertIn("missing script or module to run", stderr)
+        stdout, stderr = self._run_pdb(['-x', '--', os_helper.TESTFN], 'q', expected_returncode=2)
+        self.assertIn("unrecognized arguments: -x", stderr)
+        stdout, _ = self._run_pdb([os_helper.TESTFN, '--', 'arg'], 'c\nq')
+        self.assertIn("ARGS: ['--', 'arg']", stdout)
+        with os_helper.temp_cwd():
+            with open('mymod.py', 'w', encoding='utf-8') as f:
+                f.write(script)
+            stdout, _ = self._run_pdb(['-m', 'mymod', '--', 'arg'], 'c\nq')
+            self.assertIn("ARGS: ['--', 'arg']", stdout)
+
     @unittest.skipIf(SKIP_CORO_TESTS, "Coroutine tests are skipped")
     def test_async_break(self):
         script = """
@@ -4980,6 +5001,29 @@ class PdbTestColorize(unittest.TestCase):
         p = pdb.Pdb(stdout=output, colorize=True)
         p.set_trace(commands=['w', 'c'])
         self.assertIn("\x1b", output.getvalue())
+
+    @unittest.skipIf(not pdb._pyrepl_available(), "pyrepl is not available")
+    def test_gen_colors(self):
+        p = pdb.Pdb()
+        gen_colors = p.pyrepl_input.gen_colors
+
+        test_cases = [
+            ("longlist", [((0, 7), "soft_keyword")]),
+            ("!longlist", [((0, 0), "op")]),
+            ("list", [((0, 3), "soft_keyword")]),
+            ("list(", [((0, 3), "builtin"), ((4, 4), "op")]),
+            ("a = 1", [
+                ((0, 0), "soft_keyword"),
+                ((2, 2), "op"),
+                ((4, 4), "number"),
+            ])
+        ]
+
+        for buffer, expected in test_cases:
+            for color_span, ((start, end), tag) in zip(gen_colors(buffer), expected, strict=True):
+                self.assertEqual(color_span.span.start, start)
+                self.assertEqual(color_span.span.end, end)
+                self.assertEqual(color_span.tag, tag)
 
 
 @support.force_not_colorized_test_class

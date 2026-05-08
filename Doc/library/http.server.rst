@@ -379,7 +379,7 @@ instantiation, of which this module provides three different variants:
    .. versionchanged:: 3.9
       The *directory* parameter accepts a :term:`path-like object`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added *extra_response_headers* parameter.
 
    A lot of the work, such as parsing the request, is done by the base class
@@ -400,7 +400,7 @@ instantiation, of which this module provides three different variants:
       cannot be guessed from the file extension of the requested URL.
       By default, it is set to ``'application/octet-stream'``.
 
-      .. versionadded:: next
+      .. versionadded:: 3.15
 
    .. attribute:: extensions_map
 
@@ -562,7 +562,7 @@ The following options are accepted:
 
       python -m http.server --content-type text/html
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. option:: --tls-cert
 
@@ -604,7 +604,7 @@ The following options are accepted:
    headers. Headers that are sent automatically by the server (for instance
    Content-Type) will not be overwritten by the server.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. _http.server-security:
