@@ -303,7 +303,7 @@ unwind_stack_for_thread(
     StackChunkList chunks = {0};
 
     char ts[SIZEOF_THREAD_STATE];
-    int bytes_read = _Py_RemoteDebug_PagedReadRemoteMemory(
+    int bytes_read = _Py_RemoteDebug_ReadRemoteMemory(
         &unwinder->handle, *current_tstate, (size_t)unwinder->debug_offsets.thread_state.size, ts);
     if (bytes_read < 0) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read thread state");

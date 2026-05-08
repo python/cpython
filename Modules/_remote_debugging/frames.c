@@ -197,7 +197,7 @@ parse_frame_object(
     char frame[SIZEOF_INTERP_FRAME];
     *address_of_code_object = 0;
 
-    Py_ssize_t bytes_read = _Py_RemoteDebug_PagedReadRemoteMemory(
+    Py_ssize_t bytes_read = _Py_RemoteDebug_ReadRemoteMemory(
         &unwinder->handle,
         address,
         SIZEOF_INTERP_FRAME,
