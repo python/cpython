@@ -28,7 +28,7 @@ Queue
    A first in, first out (FIFO) queue.
 
    If *maxsize* is less than or equal to zero, the queue size is
-   infinite.  If it is an integer greater than ``0``, then
+   infinite. If it is an integer greater than ``0``, then
    ``await put()`` blocks when the queue reaches *maxsize*
    until an item is removed by :meth:`get`.
 
@@ -54,8 +54,8 @@ Queue
 
       Return ``True`` if there are :attr:`maxsize` items in the queue.
 
-      If the queue was initialized with ``maxsize=0`` (the default),
-      or a negative :attr:`maxsize:, then :meth:`full` never returns
+      If the queue was initialized with ``maxsize=0`` (the default)
+      or a negative ``maxsize``, then :meth:`full` never returns
       ``True``.
 
    .. method:: get()
