@@ -106,6 +106,12 @@ module_name
 Removed
 =======
 
+symtable
+--------
+
+* The :meth:`!symtable.Class.get_methods` method
+  which has been deprecated since Python 3.14.
+
 sysconfig
 ---------
 
