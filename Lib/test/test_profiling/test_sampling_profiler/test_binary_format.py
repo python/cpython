@@ -1,7 +1,9 @@
 """Tests for binary format round-trip functionality."""
 
+import json
 import os
 import random
+import struct
 import tempfile
 import unittest
 from collections import defaultdict
@@ -18,15 +20,19 @@ try:
         THREAD_STATUS_UNKNOWN,
         THREAD_STATUS_GIL_REQUESTED,
         THREAD_STATUS_HAS_EXCEPTION,
+        THREAD_STATUS_MAIN_THREAD,
     )
     from profiling.sampling.binary_collector import BinaryCollector
-    from profiling.sampling.binary_reader import BinaryReader
+    from profiling.sampling.binary_reader import BinaryReader, convert_binary_to_format
+    from profiling.sampling.gecko_collector import GeckoCollector
 
     ZSTD_AVAILABLE = _remote_debugging.zstd_available()
 except ImportError:
     raise unittest.SkipTest(
         "Test only runs when _remote_debugging is available"
     )
+
+from .helpers import jsonl_tables
 
 
 def make_frame(filename, lineno, funcname, end_lineno=None, column=None,
@@ -146,6 +152,11 @@ class BinaryFormatTestBase(unittest.TestCase):
 
     def create_binary_file(self, samples, interval=1000, compression="none"):
         """Create a test binary file and track it for cleanup."""
+        filename, _ = self.write_binary_file(samples, interval, compression)
+        return filename
+
+    def write_binary_file(self, samples, interval=1000, compression="none"):
+        """Like create_binary_file but also returns the writer collector."""
         with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
             filename = f.name
         self.temp_files.append(filename)
@@ -156,7 +167,7 @@ class BinaryFormatTestBase(unittest.TestCase):
         for sample in samples:
             collector.collect(sample)
         collector.export(None)
-        return filename
+        return filename, collector
 
     def roundtrip(self, samples, interval=1000, compression="none"):
         """Write samples to binary and read back."""
@@ -318,6 +329,7 @@ class TestBinaryRoundTrip(BinaryFormatTestBase):
             THREAD_STATUS_UNKNOWN,
             THREAD_STATUS_GIL_REQUESTED,
             THREAD_STATUS_HAS_EXCEPTION,
+            THREAD_STATUS_MAIN_THREAD,
             THREAD_STATUS_HAS_GIL | THREAD_STATUS_ON_CPU,
             THREAD_STATUS_HAS_GIL | THREAD_STATUS_HAS_EXCEPTION,
             THREAD_STATUS_HAS_GIL
@@ -341,6 +353,35 @@ class TestBinaryRoundTrip(BinaryFormatTestBase):
         collector, count = self.roundtrip(samples)
         self.assertEqual(count, len(statuses))
         self.assert_samples_equal(samples, collector)
+
+    def test_binary_replay_preserves_main_thread_for_gecko(self):
+        """Binary replay preserves main thread identity for GeckoCollector."""
+        samples = [
+            [
+                make_interpreter(
+                    0,
+                    [
+                        make_thread(
+                            1,
+                            [make_frame("main.py", 10, "main")],
+                            THREAD_STATUS_MAIN_THREAD,
+                        ),
+                        make_thread(2, [make_frame("worker.py", 20, "worker")]),
+                    ],
+                )
+            ]
+        ]
+        filename = self.create_binary_file(samples)
+        collector = GeckoCollector(1000)
+
+        with BinaryReader(filename) as reader:
+            count = reader.replay_samples(collector)
+
+        self.assertEqual(count, 2)
+        profile = collector._build_profile()
+        threads = {thread["tid"]: thread for thread in profile["threads"]}
+        self.assertTrue(threads[1]["isMainThread"])
+        self.assertFalse(threads[2]["isMainThread"])
 
     def test_multiple_threads_per_sample(self):
         """Multiple threads in one sample roundtrip exactly."""
@@ -773,6 +814,162 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
             with BinaryReader("/nonexistent/path/file.bin") as reader:
                 reader.replay_samples(RawCollector())
 
+    def test_writer_handles_empty_stack_first_sample(self):
+        """BinaryWriter.write_sample tolerates an empty stack on a fresh thread.
+
+        Regression test for the C-level RLE bug in process_thread_sample: a
+        freshly-created ThreadEntry has prev_stack_depth == 0, so an empty
+        curr_stack compares as STACK_REPEAT against the zero-initialized
+        previous stack. Before the fix, this fell through the
+        `&& !is_new_thread` guard into write_sample_with_encoding, which had
+        no handler for STACK_REPEAT and raised
+        RuntimeError("Invalid stack encoding type"). Goes through
+        BinaryWriter.write_sample directly so the test cannot be masked by
+        any Python-level filtering.
+        """
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+            filename = f.name
+        self.temp_files.append(filename)
+
+        writer = _remote_debugging.BinaryWriter(filename, 1000, 0, compression=0)
+        empty_sample = [
+            make_interpreter(
+                0, [make_thread(99, [], status=THREAD_STATUS_UNKNOWN)]
+            )
+        ]
+        # First sample for a fresh thread has empty frame_info — the exact
+        # scenario that exposes the bug.
+        writer.write_sample(empty_sample, 1000)
+        writer.write_sample(empty_sample, 2000)
+        # Mix in a real sample to exercise the transition out of the
+        # empty-stack RLE buffer.
+        real_sample = [
+            make_interpreter(0, [make_thread(1, [make_frame("a.py", 1, "f")])])
+        ]
+        writer.write_sample(real_sample, 3000)
+        writer.finalize()
+
+        reader_collector = RawCollector()
+        with BinaryReader(filename) as reader:
+            count = reader.replay_samples(reader_collector)
+        # Empty-stack samples are recorded as STACK_REPEAT records with
+        # depth-0 stacks; the file must replay all three samples.
+        self.assertEqual(count, 3)
+
+    def test_writer_handles_mixed_empty_and_real_first_sample(self):
+        """First sample with one empty + one real thread roundtrips through C."""
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+            filename = f.name
+        self.temp_files.append(filename)
+
+        writer = _remote_debugging.BinaryWriter(filename, 1000, 0, compression=0)
+        sample = [
+            make_interpreter(
+                0,
+                [
+                    make_thread(1, [make_frame("a.py", 1, "f")]),
+                    make_thread(99, [], status=THREAD_STATUS_UNKNOWN),
+                ],
+            )
+        ]
+        # Two samples so RLE state is exercised.
+        writer.write_sample(sample, 1000)
+        writer.write_sample(sample, 2000)
+        writer.finalize()
+
+        # Replay must succeed without raising RuntimeError, and the real
+        # thread's frames must round-trip.
+        reader_collector = RawCollector()
+        with BinaryReader(filename) as reader:
+            reader.replay_samples(reader_collector)
+        self.assertIn((0, 1), reader_collector.by_thread)
+        self.assertEqual(len(reader_collector.by_thread[(0, 1)]), 2)
+
+    def test_writer_total_samples_after_finalize_matches_reader(self):
+        """BinaryWriter.total_samples after finalize() matches the reader's count."""
+        # Five IDENTICAL samples force every sample beyond the first into the
+        # per-thread RLE buffer. Regression for the cached_total_samples
+        # ordering bug: capturing the cache BEFORE binary_writer_finalize()
+        # missed the buffered samples that flush_pending_rle() counts. Keep
+        # the samples identical to preserve coverage. See gh-149342.
+        samples = [
+            [make_interpreter(0, [make_thread(1, [make_frame("a.py", 1, "f")])])]
+        ] * 5
+        filename, writer_collector = self.write_binary_file(samples)
+        reader_collector = RawCollector()
+        with BinaryReader(filename) as reader:
+            replayed = reader.replay_samples(reader_collector)
+        self.assertEqual(writer_collector.total_samples, len(samples))
+        self.assertEqual(writer_collector.total_samples, replayed)
+
+    def test_writer_total_samples_after_context_manager_matches_reader(self):
+        """total_samples after `with BinaryWriter(...)` matches the reader's count.
+
+        Regression for the asymmetry between finalize() and __exit__ in
+        module.c: __exit__ also calls binary_writer_finalize and must
+        preserve cached_total_samples like finalize() does, otherwise the
+        getter returns 0 once self->writer is NULL.
+        """
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+            filename = f.name
+        self.temp_files.append(filename)
+
+        sample = [
+            make_interpreter(0, [make_thread(1, [make_frame("a.py", 1, "f")])])
+        ]
+        with _remote_debugging.BinaryWriter(filename, 1000, 0, compression=0) as w:
+            for i in range(5):
+                w.write_sample(sample, i * 1000)
+        self.assertEqual(w.total_samples, 5)
+
+        reader_collector = RawCollector()
+        with BinaryReader(filename) as reader:
+            self.assertEqual(reader.replay_samples(reader_collector), 5)
+
+    def test_writer_total_samples_after_close_returns_zero(self):
+        """close() discards data; total_samples reflects no cached count."""
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+            filename = f.name
+        self.temp_files.append(filename)
+
+        w = _remote_debugging.BinaryWriter(filename, 1000, 0, compression=0)
+        sample = [
+            make_interpreter(0, [make_thread(1, [make_frame("a.py", 1, "f")])])
+        ]
+        for i in range(5):
+            w.write_sample(sample, i * 1000)
+        w.close()
+        self.assertEqual(w.total_samples, 0)
+
+
+class TestBinaryFormatValidation(BinaryFormatTestBase):
+    """Tests for malformed binary files."""
+
+    HDR_OFF_THREADS = 32
+
+    def test_replay_rejects_more_threads_than_declared(self):
+        """Replay rejects files with more unique threads than the header declares."""
+        threads = [
+            make_thread(1, [make_frame("t1.py", 10, "t1")]),
+            make_thread(2, [make_frame("t2.py", 20, "t2")]),
+        ]
+        samples = [[make_interpreter(0, threads)]]
+        filename = self.create_binary_file(samples, compression="none")
+
+        with open(filename, "r+b") as raw:
+            raw.seek(self.HDR_OFF_THREADS)
+            raw.write(struct.pack("=I", 1))
+
+        with BinaryReader(filename) as reader:
+            self.assertEqual(reader.get_info()["thread_count"], 1)
+            with self.assertRaises(ValueError) as cm:
+                reader.replay_samples(RawCollector())
+            self.assertEqual(
+                str(cm.exception),
+                "Invalid thread count: sample data contains more unique "
+                "threads than declared in header (declared 1, found at least 2)",
+            )
+
 
 class TestBinaryEncodings(BinaryFormatTestBase):
     """Tests specifically targeting different stack encodings."""
@@ -1177,6 +1374,71 @@ class TestTimestampPreservation(BinaryFormatTestBase):
 
         self.assertEqual(count, 50)
         self.assertEqual(ts_collector.all_timestamps, expected_timestamps)
+
+
+class TestBinaryReplayToJsonl(BinaryFormatTestBase):
+    """Tests for binary -> JSONL replay via convert_binary_to_format."""
+
+    def _replay_to_jsonl(self, samples, interval=1000):
+        bin_path = self.create_binary_file(samples, interval=interval)
+        with tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False) as f:
+            jsonl_path = f.name
+        self.temp_files.append(jsonl_path)
+
+        convert_binary_to_format(bin_path, jsonl_path, "jsonl")
+
+        with open(jsonl_path, "r", encoding="utf-8") as f:
+            return [json.loads(line) for line in f]
+
+    def test_binary_replay_to_jsonl_basic(self):
+        """Replay a small .bin to JSONL: meta/end shape, samples_total, run_id."""
+        frame = make_frame("hot.py", 99, "hot_func")
+        samples = [
+            [make_interpreter(0, [make_thread(1, [frame])])]
+            for _ in range(5)
+        ]
+        records = self._replay_to_jsonl(samples, interval=2000)
+        meta, _, frame_defs, _, end = jsonl_tables(records)
+
+        self.assertEqual(meta["sample_interval_usec"], 2000)
+        self.assertEqual(end["samples_total"], 5)
+
+        run_ids = {r["run_id"] for r in records}
+        self.assertEqual(len(run_ids), 1)
+        self.assertRegex(next(iter(run_ids)), r"^[0-9a-f]{32}$")
+
+        self.assertEqual(len(frame_defs), 1)
+        self.assertEqual(frame_defs[0]["line"], 99)
+
+    def test_binary_replay_to_jsonl_rle_weight_propagation(self):
+        """RLE-batched identical samples land as a single agg entry with the right total."""
+        frame = make_frame("rle.py", 42, "rle_func")
+        samples = [
+            [make_interpreter(0, [make_thread(1, [frame])])]
+            for _ in range(50)
+        ]
+        records = self._replay_to_jsonl(samples)
+        _, _, _, agg, end = jsonl_tables(records)
+
+        self.assertEqual(end["samples_total"], 50)
+        self.assertEqual(agg["entries"], [
+            {"frame_id": 0, "self": 50, "cumulative": 50},
+        ])
+
+    def test_binary_replay_to_jsonl_omits_unavailable_columns(self):
+        """Columns the binary recorder did not capture are omitted, not 0."""
+        # make_frame defaults column/end_column to 0; pass column=-1 / end_column=-1
+        # so the binary side records LOCATION_NOT_AVAILABLE.
+        frame = make_frame("nocol.py", 7, "no_col", column=-1, end_column=-1)
+        samples = [[make_interpreter(0, [make_thread(1, [frame])])]]
+        records = self._replay_to_jsonl(samples)
+        _, _, frame_defs, _, _ = jsonl_tables(records)
+
+        self.assertEqual(len(frame_defs), 1)
+        fd = frame_defs[0]
+        self.assertEqual(fd["line"], 7)
+        self.assertNotIn("col", fd)
+        self.assertNotIn("end_col", fd)
 
 
 if __name__ == "__main__":

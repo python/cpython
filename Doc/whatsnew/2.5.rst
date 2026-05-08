@@ -1313,10 +1313,10 @@ complete list of changes, or look through the SVN logs for all the details.
   by Josh Spoerri. It uses the same format characters as :func:`time.strptime` and
   :func:`time.strftime`::
 
-     from datetime import datetime
+     import datetime as dt
 
-     ts = datetime.strptime('10:13:15 2006-03-07',
-                            '%H:%M:%S %Y-%m-%d')
+     ts = dt.datetime.strptime('10:13:15 2006-03-07',
+                               '%H:%M:%S %Y-%m-%d')
 
 * The :meth:`SequenceMatcher.get_matching_blocks` method in the :mod:`difflib`
   module now guarantees to return a minimal list of blocks describing matching

@@ -60,6 +60,7 @@ SPECIAL_CASING = "SpecialCasing%s.txt"
 CASE_FOLDING = "CaseFolding%s.txt"
 GRAPHEME_CLUSTER_BREAK = "auxiliary/GraphemeBreakProperty%s.txt"
 EMOJI_DATA = "emoji/emoji-data%s.txt"
+BLOCKS = "Blocks%s.txt"
 
 # Private Use Areas -- in planes 1, 15, 16
 PUA_1 = range(0xE000, 0xF900)
@@ -391,6 +392,34 @@ def makeunicodedata(unicode, trace):
             fprint('    "%s",' % name)
         fprint("    NULL")
         fprint("};")
+
+        # Generate block tables
+        names = []
+        name_to_index = {}
+        blocks = []
+        for start, end, name in unicode.blocks:
+            if name not in name_to_index:
+                name_to_index[name] = len(names)
+                names.append(name)
+            blocks.append((start, end, name_to_index[name]))
+
+        fprint("static const char * const _PyUnicode_BlockNames[] = {")
+        for name in names:
+            fprint('    "%s",' % name)
+        fprint("};")
+
+        fprint("typedef struct {")
+        fprint("    Py_UCS4 start;")
+        fprint("    Py_UCS4 end;")
+        fprint("    unsigned short name;")
+        fprint("} _PyUnicode_Block;")
+
+        fprint("static const _PyUnicode_Block _PyUnicode_Blocks[] = {")
+        for start, end, name in blocks:
+            fprint("    {0x%04X, 0x%04X, %d}," % (start, end, name))
+        fprint("};")
+        fprint(f"#define BLOCK_COUNT {len(blocks)}")
+        fprint()
 
         fprint("static const char *decomp_prefix[] = {")
         for name in decomp_prefix:
@@ -1205,6 +1234,13 @@ class UnicodeData:
                     ext_picts[char] = True
             self.ext_picts = ext_picts
 
+            # See https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/#G64189
+            self.blocks = []
+            for record in UcdFile(BLOCKS, version).records():
+                start_end, name = record
+                start, end = [int(c, 16) for c in start_end.split('..')]
+                self.blocks.append((start, end, name))
+            self.blocks.sort()
 
     def uselatin1(self):
         # restrict character range to ISO Latin 1

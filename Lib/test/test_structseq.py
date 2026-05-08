@@ -1,4 +1,5 @@
 import copy
+import gc
 import os
 import pickle
 import re
@@ -355,6 +356,14 @@ class StructSeqTest(unittest.TestCase):
             type(t).refcyle = t
         """))
 
+    def test_replace_gc_tracked(self):
+        # Verify that __replace__ results are properly GC-tracked
+        time_struct = time.gmtime(0)
+        lst = []
+        replaced_struct = time_struct.__replace__(tm_year=lst)
+        lst.append(replaced_struct)
+
+        self.assertTrue(gc.is_tracked(replaced_struct))
 
 if __name__ == "__main__":
     unittest.main()

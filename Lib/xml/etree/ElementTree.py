@@ -164,9 +164,9 @@ class Element:
 
     """
 
-    def __init__(self, tag, attrib={}, **extra):
-        if not isinstance(attrib, dict):
-            raise TypeError("attrib must be dict, not %s" % (
+    def __init__(self, tag, /, attrib={}, **extra):
+        if not isinstance(attrib, (dict, frozendict)):
+            raise TypeError("attrib must be dict or frozendict, not %s" % (
                 attrib.__class__.__name__,))
         self.tag = tag
         self.attrib = {**attrib, **extra}
@@ -416,7 +416,7 @@ class Element:
                 yield t
 
 
-def SubElement(parent, tag, attrib={}, **extra):
+def SubElement(parent, tag, /, attrib={}, **extra):
     """Subelement factory which creates an element instance, and appends it
     to an existing parent.
 

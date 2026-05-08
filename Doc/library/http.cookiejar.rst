@@ -4,9 +4,6 @@
 .. module:: http.cookiejar
    :synopsis: Classes for automatic handling of HTTP cookies.
 
-.. moduleauthor:: John J. Lee <jjl@pobox.com>
-.. sectionauthor:: John J. Lee <jjl@pobox.com>
-
 **Source code:** :source:`Lib/http/cookiejar.py`
 
 --------------
