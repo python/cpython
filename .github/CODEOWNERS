@@ -315,7 +315,7 @@ Lib/concurrent/futures/interpreter.py  @ericsnowcurrently
 **/*-ios*                     @freakboy3742
 
 # WebAssembly
-Tools/wasm/config.site-wasm32-emscripten  @freakboy3742
+/Platforms/emscripten         @freakboy3742
 /Tools/wasm/README.md         @brettcannon @freakboy3742
 /Tools/wasm/wasi-env          @brettcannon
 /Tools/wasm/wasi_build.py     @brettcannon
