@@ -2059,7 +2059,7 @@ import_run_modexport(PyThreadState *tstate, PyModExportFunction ex0,
     /* This is like import_run_extension, but avoids interpreter switching
      * and code for for single-phase modules.
      */
-    PyModuleDef_Slot *slots = ex0();
+    PySlot *slots = ex0();
     if (!slots) {
         if (!PyErr_Occurred()) {
             PyErr_Format(
