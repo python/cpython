@@ -598,7 +598,8 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_ITER_NEXT_INLINE", uops)
+        self.assertIn("_FOR_ITER_TIER_TWO", uops)
+        self.assertNotIn("_ITER_NEXT_INLINE", uops)
 
 
 @requires_specialization
