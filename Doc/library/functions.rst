@@ -1881,7 +1881,7 @@ are always available.  They are listed here in alphabetical order.
 
       The name of the module where the sentinel was created.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. class:: slice(stop, /)

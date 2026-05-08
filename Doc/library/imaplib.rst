@@ -702,7 +702,7 @@ The following attributes are defined on instances of :class:`IMAP4`:
    interface. The caller is responsible to ensure that the current file is
    closed before changing it.
 
-   .. deprecated-removed:: next 3.19
+   .. deprecated-removed:: 3.15 3.19
 
 
 .. _imap4-example:
