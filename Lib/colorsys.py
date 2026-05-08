@@ -181,7 +181,7 @@ def rgb_to_hsv(r, g, b):
     else:
         h = 4.0+gc-rc
     h = (h/6.0) % 1.0
-    
+
     if h < 0.0:
         h = 0.0
     if s < 0.0:
