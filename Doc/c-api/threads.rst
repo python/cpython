@@ -46,7 +46,7 @@ thread state is typically analogous with holding the GIL, except on
 free-threaded builds.  On builds with the GIL enabled, attaching a thread state
 will block until the GIL can be acquired. However, even on builds with the GIL
 disabled, it is still required to have an attached thread state, as the interpreter
-needs to keep track of which threads may access Python objects.
+needs to keep track of threads which may access Python objects.
 
 .. note::
 
