@@ -1669,30 +1669,48 @@ def get_bare_quoted_string(value, start):
         )
     return bare_quoted_string, start
 
-def get_comment(value):
+@_deprecate_old_api
+def get_comment(value, start):
     """comment = "(" *([FWS] ccontent) [FWS] ")"
-       ccontent = ctext / quoted-pair / comment
+       ccontent = ctext / quoted-pair / encoded_word / comment
 
-    We handle nested comments here, and quoted-pair in our qp-ctext routine.
+    If start does not point to an open parenthesis, raise an error.  Otherwise
+    return a (possibly empty) Comment that incorporates all characters up to
+    the corresponding close parenthesis (or the end of the value if there is no
+    corresponding close parenthesis) and the index to the character after that
+    closing parenthesis (or the len of input), unquoting any quoted printables,
+    and decoding any encoded words.  The Comment should be a nested token list
+    structure containing any nested comments. The Comment should not contain
+    any ValueTerminals for the parentheses, but when stringified the
+    parentheses should be added, whether the trailing parenthesis was present
+    or not.  If the trailing parenthesis is not present register a defect.
+
+    Register defects if there are any non-printable or invalid characters in
+    the non-whitespace tokens.
+
     """
-    if not value or value[0] != '(':
+    vlen = len(value)
+    if start >= vlen or value[start] != '(':
         raise errors.HeaderParseError(
-            "expected '(' but found '{}'".format(value))
+            f"expected '(' but found {value[start:]!r}"
+            )
     comment = Comment()
-    value = value[1:]
-    while value and value[0] != ")":
-        if value[0] in WSP:
-            token, value = get_fws(value)
-        elif value[0] == '(':
-            token, value = get_comment(value)
+    start += 1
+    while start < vlen:
+        if (c := value[start]) == ")":
+            break
+        elif c == '(':
+            token, start = get_comment(value, start)
+            comment.append(token)
         else:
-            token, value = get_qp_ctext(value)
-        comment.append(token)
-    if not value:
-        comment.defects.append(errors.InvalidHeaderDefect(
-            "end of header inside comment"))
-        return comment, value
-    return comment, value[1:]
+            tl, start = get_ccontent_sequence(value, start)
+            comment.extend(tl)
+    else:
+        comment.defects.append(
+            errors.InvalidHeaderDefect("end of header inside comment"),
+            )
+        return comment, start
+    return comment, start + 1
 
 def get_cfws(value):
     """CFWS = (1*([FWS] comment) [FWS]) / FWS

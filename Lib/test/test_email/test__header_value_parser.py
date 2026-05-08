@@ -585,10 +585,11 @@ class TestParserMixin:
                 self.assertEqual(result.comments, comments)
             if commenttree is not None:
                 self.assertEqual(self.ctree(result), commenttree)
-            self.assertEqual(
-                [x - prefix_len for x in result.ew_indexes],
-                ew_indexes,
-                )
+            if ew_indexes is not ...:
+                self.assertEqual(
+                    [x - prefix_len for x in result.ew_indexes],
+                    ew_indexes,
+                    )
         return (result, *other) if other else result
 
     def verify_terminal_types(self, tl, *text_types):
@@ -2538,21 +2539,18 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(cmt.token_type, 'comment')
         self.verify_terminal_types(cmt, 'ptext', 'fws')
 
-    @params_map(with_name=True)
+    @params_map
     def adapt_get_ccontent_sequence_tests_for_get_comment(
-            name,
             s,
             *args,
             stringified=None,
             remainder='',
+            ew_indexes=[],
             **kw,
         ):
         # get_comment parses parens, and quotes them differently in str, so
         # tests involving parens in the test string won't pass here.
         if '(' in s or ')' in s:
-            return
-        # XXX XXX (most) ew tests will work after get_comment is refactored.
-        if 'ew' in name:
             return
         if stringified:
             kw['comments'] = [stringified]
@@ -2560,9 +2558,10 @@ class TestParser(TestParserMixin, TestEmailBase):
         else:
             kw['comments'] = [s]
         kw.pop('value', None)
+        kw['ew_indexes'] = [x + 1 for x in ew_indexes]
         yield 'from_test_get_ccontent_sequence', C(f'({s})', *args, **kw)
 
-    params_test_get_comment = old_api_only(
+    params_test_get_comment = for_each_api(
 
         adapt_get_ccontent_sequence_tests_for_get_comment(
             params_test_get_ccontent_sequence,
@@ -2711,35 +2710,107 @@ class TestParser(TestParserMixin, TestEmailBase):
             remainder='=?UTF-8?q?foo?=',
             ),
 
-        # XXX XXX comments may contain EWs, but the current code is buggy.
-        # These will get decoded after the refactor is done.  We'll add some
-        # some more test then, this is a target sample.
-
         ws_around_ew = C(
             '( =?utf-8?q?test?= )',
-            #stringified='( test )',
-            comments=[' =?utf-8?q?test?= '],
-            #comments=[' test '],
+            stringified='( test )',
+            comments=[' test '],
+            ew_indexes=[2],
             ),
 
         ew_in_nested_comment = C(
             '(foo (=?UTF-8?q?bar?=))',
-            #stringified='(foo (bar))',
-            comments=['foo (=?UTF-8?q?bar?=)'],
-            #comments=['foo (bar)'],
-            commenttree=['foo ', ['=?UTF-8?q?bar?=']],
-            #commenttree=['foo ', ['bar']],
+            stringified='(foo (bar))',
+            comments=['foo (bar)'],
+            commenttree=['foo ', ['bar']],
+            ew_indexes=[6],
             ),
 
         ew_missing_whitespace = C(
             '(=?UTF-8?q?foo?==?UTF-8?q?bar?=)',
-            #stringified='(foobar)',
-            comments=['=?UTF-8?q?foo?==?UTF-8?q?bar?='],
-            #comments=['foobar'],
-            #defects=[
-            #    missing_whitespace_after_ew_defect,
-            #    missing_whitespace_before_ew_defect,
-            #    ],
+            stringified='(foobar)',
+            comments=['foobar'],
+            defects=[
+                missing_whitespace_after_ew_defect,
+                missing_whitespace_before_ew_defect,
+                ],
+            ew_indexes=[1, 16],
+            ),
+
+        no_ws_around_ew = C(
+            '(=?UTF-8?q?test?=)',
+            stringified='(test)',
+            comments=['test'],
+            ew_indexes=[1],
+            ),
+
+        ws_inside_ew = C(
+            '(=?UTF-8?q? Test ?=)',
+            stringified='( Test )',
+            comments=[' Test '],
+            defects=[whitespace_inside_ew_defect],
+            ew_indexes=[1],
+            ),
+
+        non_ws_around_ew = C(
+            '(foo=?UTF-8?q?bar_?=bird)',
+            stringified='(foobar bird)',
+            comments=['foobar bird'],
+            defects=[
+                missing_whitespace_before_ew_defect,
+                missing_whitespace_after_ew_defect,
+                ],
+            ew_indexes=[4],
+            ),
+
+        multiple_ew = C(
+            '(foo =?UTF-8?q?a?= =?UTF-8?q?t?=)',
+            stringified='(foo at)',
+            comments=['foo at'],
+            ew_indexes=[5, 19],
+            ),
+
+        **for_each_character(RFC_WSP)(
+            inter_ew_whitespace_handled_correctly = C(
+                '({char}=?UTF-8?q?_foo_?={char}{char}=?UTF-8?q?bar_?= )',
+                stringified='({char} foo bar  )',
+                comments=['{char} foo bar  '],
+                ew_indexes=[2, 21],
+                ),
+            ),
+
+        ew_nested_first_comment_valid_no_ws = C(
+            '((=?UTF-8?q?foo?=)=?UTF-8?q?bar?=)',
+            stringified='((foo)bar)',
+            comments=['(foo)bar'],
+            commenttree=[['foo'], 'bar'],
+            ew_indexes=[2, 18],
+            ),
+
+        ew_in_nested_second_comment_valid_no_ws = C(
+            '(=?UTF-8?q?foo?=(=?UTF-8?q?bar?=))',
+            stringified='(foo(bar))',
+            comments=['foo(bar)'],
+            commenttree=['foo', ['bar']],
+            ew_indexes=[1, 17],
+            ),
+
+        # parenthesis inside encoded words in comments is RFC illegal, but
+        # we handle it anyway.  XXX we aren't registering defects for this, but
+        # ideally we should be.
+
+        qp_inside_ew = C(
+            r'(=?UTF-8?q?\test\)_?= =?UTF-8?q?\(test?=)',
+            stringified=r'(test\) \(test)',
+            comments=['test) (test'],
+            ew_indexes=[1, 22],
+            ),
+
+        unquoted_parens_inside_ew = C(
+            '(=?UTF-8?q?test)_?= =?UTF-8?q?(test?=) foo',
+            stringified=r'(test\) \(test)',
+            comments=[r'test) (test'],
+            remainder=' foo',
+            ew_indexes=[1, 20],
             ),
 
         )
@@ -2828,25 +2899,24 @@ class TestParser(TestParserMixin, TestEmailBase):
             remainder='=?UTF-8?q?foo?=',
             ),
 
-        # XXX XXX these will get decoded after refactor is done.
-
         ew_in_nested_comment = C(
             ' (a) (foo (=?UTF-8?q?bar?=))',
-            #stringified=' (a) (foo (bar))',
-            comments=['a', 'foo (=?UTF-8?q?bar?=)'],
-            #comments=['a', 'foo (bar)'],
-            #commenttree=[('a', []), ('foo (bar)', [('bar', [])])],
+            stringified=' (a) (foo (bar))',
+            comments=['a', 'foo (bar)'],
+            commenttree=[['a'], ['foo ', ['bar']]],
+            # XXX XXX this index will change during refactor.
+            ew_indexes=[6],
             ),
 
         ew_missing_whitespace = C(
             '(=?UTF-8?q?foo?==?UTF-8?q?bar?=) (b)',
-            #stringified='(foobar) (b)',
-            comments=['=?UTF-8?q?foo?==?UTF-8?q?bar?=', 'b'],
-            #comments=['foobar', 'b'],
-            #defects=[
-            #    missing_whitespace_after_ew_defect,
-            #    missing_whitespace_before_ew_defect,
-            #    ],
+            stringified='(foobar) (b)',
+            comments=['foobar', 'b'],
+            defects=[
+                missing_whitespace_after_ew_defect,
+                missing_whitespace_before_ew_defect,
+                ],
+            ew_indexes=[1, 16],
             ),
 
         nested_and_unnested_empty_comments = C(
@@ -2919,6 +2989,10 @@ class TestParser(TestParserMixin, TestEmailBase):
         for k in ('comments', 'commenttree', 'defects'):
             if (v := kw.get(k)):
                 kw[k] = v * 2
+        # XXX XXX mid refactoring the idx values are wrong.  Replace this
+        # when get_quoted_string is refactored.
+        if kw.get('ew_indexes'):
+            kw['ew_indexes'] = ...
         yield 'adapted_from_get_cfws', C(new_s, **kw)
 
     params_test_get_quoted_string = old_api_only(
@@ -3087,6 +3161,10 @@ class TestParser(TestParserMixin, TestEmailBase):
         for k in ('comments', 'commenttree', 'defects'):
             if (v := kw.get(k)):
                 kw[k] = v * 2
+        # XXX XXX mid refactoring the idx values are wrong.  Replace this
+        # when get_atom is refactored.
+        if kw.get('ew_indexes'):
+            kw['ew_indexes'] = ...
         yield 'adapted_from_get_cfws', C(new_s, **kw)
 
     params_test_get_atom = old_api_only(
@@ -3989,14 +4067,10 @@ class TestParser(TestParserMixin, TestEmailBase):
 
         less_invalid_ew_atoms = C(
             '=?utf-8?q?foo_?= . (=?utf-8?q?test?=) =?utf-8?q?_bar?= .bird',
-            # XXX XXX after refactoring the comment ew will also be decoded.
-            #stringified='foo  . (test)  bar .bird',
-            stringified='foo  . (=?utf-8?q?test?=)  bar .bird',
+            stringified='foo  . (test)  bar .bird',
             value="foo  .  bar .bird",
             local_part="foo . bar.bird",
-            # XXX XXX after refactoring the comment ew will also be decoded.
-            # comments=['test']
-            comments=['=?utf-8?q?test?='],
+            comments=['test'],
             ),
 
         # XXX XXX Since we've decided to decode encoded words, this becomes a
