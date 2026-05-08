@@ -1103,9 +1103,9 @@ def collect_info(info):
 
 
 def dump_info(info, file=None):
-    title = "Python debug information"
+    title = "Python build information"
     print(title)
-    print("=" * len(title))
+    print("#" * len(title))
     print()
 
     infos = info.get_infos()

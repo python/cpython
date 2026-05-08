@@ -110,6 +110,7 @@ cache_tlbc_array(RemoteUnwinderObject *unwinder, uintptr_t code_addr, uintptr_t 
     void *key = (void *)code_addr;
     if (_Py_hashtable_set(unwinder->tlbc_cache, key, entry) < 0) {
         tlbc_cache_entry_destroy(entry);
+        PyErr_NoMemory();
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to store TLBC entry in cache");
         return 0; // Cache error
     }
@@ -408,7 +409,14 @@ parse_code_object(RemoteUnwinderObject *unwinder,
         meta->addr_code_adaptive = real_address + (uintptr_t)unwinder->debug_offsets.code_object.co_code_adaptive;
 
         if (unwinder && unwinder->code_object_cache && _Py_hashtable_set(unwinder->code_object_cache, key, meta) < 0) {
+            // Ownership of func/file/linetable was transferred to meta,
+            // so NULL them before destroying meta to prevent double-free
+            // in the error label's Py_XDECREF calls.
+            func = NULL;
+            file = NULL;
+            linetable = NULL;
             cached_code_metadata_destroy(meta);
+            PyErr_NoMemory();
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to cache code metadata");
             goto error;
         }

@@ -1798,7 +1798,7 @@ class SizeofTest(unittest.TestCase):
         check((1,2,3), vsize('') + self.P + 3*self.P)
         # type
         # static type: PyTypeObject
-        fmt = 'P2nPI13Pl4Pn9Pn12PIPc'
+        fmt = 'P2nPI13Pl4Pn9Pn12PI2Pc'
         s = vsize(fmt)
         check(int, s)
         typeid = 'n' if support.Py_GIL_DISABLED else ''
@@ -1908,7 +1908,7 @@ class SizeofTest(unittest.TestCase):
         check = self.check_sizeof
         # _ast.AST
         import _ast
-        check(_ast.AST(), size('P'))
+        check(_ast.Module(), size('3P'))
         try:
             raise TypeError
         except TypeError as e:

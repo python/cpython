@@ -8,6 +8,7 @@
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_object_deferred.h" // _PyObject_SetDeferredRefcount()
+#include "pycore_optimizer.h"       // _Py_Executors_InvalidateDependency()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_stats.h"
@@ -63,6 +64,13 @@ handle_func_event(PyFunction_WatchEvent event, PyFunctionObject *func,
         case PyFunction_EVENT_MODIFY_DEFAULTS:
         case PyFunction_EVENT_MODIFY_KWDEFAULTS:
         case PyFunction_EVENT_MODIFY_QUALNAME:
+#if _Py_TIER2
+            // Note: we only invalidate JIT code if a function version changes.
+            // Not when the function is deallocated.
+            // Function deallocation occurs frequently (think: lambdas),
+            // so we want to minimize dependency invalidation there.
+            _Py_Executors_InvalidateDependency(interp, func, 1);
+#endif
             RARE_EVENT_INTERP_INC(interp, func_modification);
             break;
         default:
@@ -657,7 +665,7 @@ func_set_code(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
     if (nclosure != nfree) {
         PyErr_Format(PyExc_ValueError,
                      "%U() requires a code object with %zd free vars,"
-                     " not %zd",
+                     " not %d",
                      op->func_name,
                      nclosure, nfree);
         return -1;
@@ -1044,7 +1052,7 @@ func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
     nclosure = closure == Py_None ? 0 : PyTuple_GET_SIZE(closure);
     if (code->co_nfreevars != nclosure)
         return PyErr_Format(PyExc_ValueError,
-                            "%U requires closure of length %zd, not %zd",
+                            "%U requires closure of length %d, not %zd",
                             code->co_name, code->co_nfreevars, nclosure);
     if (nclosure) {
         Py_ssize_t i;
