@@ -1,0 +1,153 @@
+digraph stack_resize {
+    graph [
+        fontname="Monaco",
+        fontsize=16,
+        bgcolor="white",
+        compound=true,
+        newrank=true,
+        splines=false
+    ];
+
+    node [
+        fontname="Monaco",
+        fontsize=16,
+        shape=box,
+        style="rounded,filled",
+        color="#2563eb",
+        fillcolor="white",
+        penwidth=2,
+        fixedsize=true
+    ];
+
+    edge [
+        color="#111111",
+        fontname="Monaco",
+        penwidth=2,
+        arrowsize=0.75
+    ];
+
+    subgraph cluster_older_chunk {
+        label="older chunk";
+        labelloc=b;
+        fontcolor="#0f172a";
+        style="rounded,filled";
+        color="#334155";
+        fillcolor="#f1f5f9";
+        penwidth=2;
+        margin=24;
+
+        node [
+            color="#64748b",
+            width=2.5,
+        ];
+
+        old_frame_hidden [style="invis", label=""];
+        subgraph cluster_older_frames {
+            label="";
+            penwidth=0;
+            old_frame_1 [label="older frame"];
+            old_frame_2 [label="older frame"];
+            old_frame_3 [label="older frame"];
+        }
+        old_previous [
+            color="invis",
+            fillcolor="invis",
+            width=2.15,
+            height=0.58,
+            label="previous = NULL"
+        ];
+
+        old_frame_hidden:s -> old_frame_1:n [style="invis"];
+        old_frame_1:s -> old_frame_2:n;
+        old_frame_2:s -> old_frame_3:n;
+        old_frame_3:s -> old_previous:n [style="invis"];
+    }
+
+    subgraph cluster_newest_chunk {
+        label="newest chunk";
+        labelloc=b;
+        fontcolor="#0f172a";
+        style="rounded,filled";
+        color="#1e3a8a";
+        fillcolor="#eaf4ff";
+        penwidth=2;
+        margin=24;
+
+        top_frame [width=2.5, label="top frame"];
+        newer_frame_1 [width=2.5, label="newer frame"];
+        newer_frame_2 [width=2.5, label="newer frame"];
+
+        subgraph cluster_untouched_memory {
+            label="";
+            color="#f59e0b";
+            fillcolor="#ffec99";
+            style="filled,dashed";
+            penwidth=2;
+            margin=24;
+
+            node [
+                width=2.5,
+                height=0.5,
+            ];
+
+            untouched_memory_top [style="invis", label=""];
+            untouched_memory [
+                shape=plaintext,
+                style="",
+                fixedsize=false,
+                label="untouched memory\n(same size as\npreviously used)"
+            ];
+            untouched_memory_bottom [style="invis", label=""];
+        }
+
+        new_previous [
+            color="invis",
+            fillcolor="invis",
+            width=1.15,
+            height=0.58,
+            label="previous"
+        ];
+
+        top_frame:s -> newer_frame_1:n;
+        newer_frame_1:s -> newer_frame_2:n;
+        newer_frame_2:s -> untouched_memory_top:n [
+            lhead=cluster_untouched_memory,
+            style="invis",
+        ];
+        untouched_memory_bottom:s -> new_previous:n [
+            ltail=cluster_untouched_memory,
+            style="invis",
+        ];
+    }
+
+    stack_top_label [
+        shape=plaintext,
+        style="",
+        fixedsize=false,
+        label="stack_top",
+        fontcolor="#0f172a"
+    ];
+
+    { rank=same; old_frame_hidden; newer_frame_2; }
+    { rank=same; old_frame_1; untouched_memory_top; }
+    { rank=same; old_frame_2; untouched_memory; }
+    { rank=same; old_frame_3; untouched_memory_bottom; }
+    { rank=same; old_previous; new_previous; }
+    { rank=same; top_frame; stack_top_label; }
+
+    top_frame -> stack_top_label [style=invis, weight=100, constraint=false];
+    old_frame_1 -> newer_frame_2 [style=invis, weight=100, constraint=false];
+
+    newer_frame_2:w -> old_frame_1:e [
+        constraint=false,
+        taillabel="frame chain can cross\nstack chunks",
+        labeldistance=15,
+    ];
+    stack_top_label:w -> top_frame:e [
+        constraint=false
+    ];
+    new_previous:w -> old_previous:e [
+        lhead=cluster_older_chunk,
+        constraint=false
+    ];
+}
