@@ -784,10 +784,10 @@ class NetworkTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         support.requires('network')
+        cls.addClassCleanup(urllib.request.urlcleanup)
         with socket_helper.transient_internet(cls.base_url):
             cls.parser = urllib.robotparser.RobotFileParser(cls.robots_txt)
             cls.parser.read()
-        urllib.request.urlcleanup()
 
     def url(self, path):
         return '{}{}{}'.format(
