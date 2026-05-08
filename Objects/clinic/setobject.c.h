@@ -2,7 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 
 PyDoc_STRVAR(set_pop__doc__,
 "pop($self, /)\n"
@@ -19,9 +19,15 @@ static PyObject *
 set_pop_impl(PySetObject *so);
 
 static PyObject *
-set_pop(PySetObject *so, PyObject *Py_UNUSED(ignored))
+set_pop(PyObject *so, PyObject *Py_UNUSED(ignored))
 {
-    return set_pop_impl(so);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(so);
+    return_value = set_pop_impl((PySetObject *)so);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(set_update__doc__,
@@ -34,28 +40,20 @@ PyDoc_STRVAR(set_update__doc__,
     {"update", _PyCFunction_CAST(set_update), METH_FASTCALL, set_update__doc__},
 
 static PyObject *
-set_update_impl(PySetObject *so, PyObject *args);
+set_update_impl(PySetObject *so, PyObject * const *others,
+                Py_ssize_t others_length);
 
 static PyObject *
-set_update(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
+set_update(PyObject *so, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *__clinic_args = NULL;
+    PyObject * const *others;
+    Py_ssize_t others_length;
 
-    if (!_PyArg_CheckPositional("update", nargs, 0, PY_SSIZE_T_MAX)) {
-        goto exit;
-    }
-    __clinic_args = PyTuple_New(nargs - 0);
-    if (!__clinic_args) {
-        goto exit;
-    }
-    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
-        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
-    }
-    return_value = set_update_impl(so, __clinic_args);
+    others = args;
+    others_length = nargs;
+    return_value = set_update_impl((PySetObject *)so, others, others_length);
 
-exit:
-    Py_XDECREF(__clinic_args);
     return return_value;
 }
 
@@ -72,9 +70,15 @@ static PyObject *
 set_copy_impl(PySetObject *so);
 
 static PyObject *
-set_copy(PySetObject *so, PyObject *Py_UNUSED(ignored))
+set_copy(PyObject *so, PyObject *Py_UNUSED(ignored))
 {
-    return set_copy_impl(so);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(so);
+    return_value = set_copy_impl((PySetObject *)so);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(frozenset_copy__doc__,
@@ -90,9 +94,15 @@ static PyObject *
 frozenset_copy_impl(PySetObject *so);
 
 static PyObject *
-frozenset_copy(PySetObject *so, PyObject *Py_UNUSED(ignored))
+frozenset_copy(PyObject *so, PyObject *Py_UNUSED(ignored))
 {
-    return frozenset_copy_impl(so);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(so);
+    return_value = frozenset_copy_impl((PySetObject *)so);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(set_clear__doc__,
@@ -108,9 +118,15 @@ static PyObject *
 set_clear_impl(PySetObject *so);
 
 static PyObject *
-set_clear(PySetObject *so, PyObject *Py_UNUSED(ignored))
+set_clear(PyObject *so, PyObject *Py_UNUSED(ignored))
 {
-    return set_clear_impl(so);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(so);
+    return_value = set_clear_impl((PySetObject *)so);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(set_union__doc__,
@@ -123,28 +139,20 @@ PyDoc_STRVAR(set_union__doc__,
     {"union", _PyCFunction_CAST(set_union), METH_FASTCALL, set_union__doc__},
 
 static PyObject *
-set_union_impl(PySetObject *so, PyObject *args);
+set_union_impl(PySetObject *so, PyObject * const *others,
+               Py_ssize_t others_length);
 
 static PyObject *
-set_union(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
+set_union(PyObject *so, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *__clinic_args = NULL;
+    PyObject * const *others;
+    Py_ssize_t others_length;
 
-    if (!_PyArg_CheckPositional("union", nargs, 0, PY_SSIZE_T_MAX)) {
-        goto exit;
-    }
-    __clinic_args = PyTuple_New(nargs - 0);
-    if (!__clinic_args) {
-        goto exit;
-    }
-    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
-        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
-    }
-    return_value = set_union_impl(so, __clinic_args);
+    others = args;
+    others_length = nargs;
+    return_value = set_union_impl((PySetObject *)so, others, others_length);
 
-exit:
-    Py_XDECREF(__clinic_args);
     return return_value;
 }
 
@@ -158,28 +166,20 @@ PyDoc_STRVAR(set_intersection_multi__doc__,
     {"intersection", _PyCFunction_CAST(set_intersection_multi), METH_FASTCALL, set_intersection_multi__doc__},
 
 static PyObject *
-set_intersection_multi_impl(PySetObject *so, PyObject *args);
+set_intersection_multi_impl(PySetObject *so, PyObject * const *others,
+                            Py_ssize_t others_length);
 
 static PyObject *
-set_intersection_multi(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
+set_intersection_multi(PyObject *so, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *__clinic_args = NULL;
+    PyObject * const *others;
+    Py_ssize_t others_length;
 
-    if (!_PyArg_CheckPositional("intersection", nargs, 0, PY_SSIZE_T_MAX)) {
-        goto exit;
-    }
-    __clinic_args = PyTuple_New(nargs - 0);
-    if (!__clinic_args) {
-        goto exit;
-    }
-    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
-        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
-    }
-    return_value = set_intersection_multi_impl(so, __clinic_args);
+    others = args;
+    others_length = nargs;
+    return_value = set_intersection_multi_impl((PySetObject *)so, others, others_length);
 
-exit:
-    Py_XDECREF(__clinic_args);
     return return_value;
 }
 
@@ -193,28 +193,20 @@ PyDoc_STRVAR(set_intersection_update_multi__doc__,
     {"intersection_update", _PyCFunction_CAST(set_intersection_update_multi), METH_FASTCALL, set_intersection_update_multi__doc__},
 
 static PyObject *
-set_intersection_update_multi_impl(PySetObject *so, PyObject *args);
+set_intersection_update_multi_impl(PySetObject *so, PyObject * const *others,
+                                   Py_ssize_t others_length);
 
 static PyObject *
-set_intersection_update_multi(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
+set_intersection_update_multi(PyObject *so, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *__clinic_args = NULL;
+    PyObject * const *others;
+    Py_ssize_t others_length;
 
-    if (!_PyArg_CheckPositional("intersection_update", nargs, 0, PY_SSIZE_T_MAX)) {
-        goto exit;
-    }
-    __clinic_args = PyTuple_New(nargs - 0);
-    if (!__clinic_args) {
-        goto exit;
-    }
-    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
-        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
-    }
-    return_value = set_intersection_update_multi_impl(so, __clinic_args);
+    others = args;
+    others_length = nargs;
+    return_value = set_intersection_update_multi_impl((PySetObject *)so, others, others_length);
 
-exit:
-    Py_XDECREF(__clinic_args);
     return return_value;
 }
 
@@ -227,6 +219,21 @@ PyDoc_STRVAR(set_isdisjoint__doc__,
 #define SET_ISDISJOINT_METHODDEF    \
     {"isdisjoint", (PyCFunction)set_isdisjoint, METH_O, set_isdisjoint__doc__},
 
+static PyObject *
+set_isdisjoint_impl(PySetObject *so, PyObject *other);
+
+static PyObject *
+set_isdisjoint(PyObject *so, PyObject *other)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION2(so, other);
+    return_value = set_isdisjoint_impl((PySetObject *)so, other);
+    Py_END_CRITICAL_SECTION2();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(set_difference_update__doc__,
 "difference_update($self, /, *others)\n"
 "--\n"
@@ -237,28 +244,20 @@ PyDoc_STRVAR(set_difference_update__doc__,
     {"difference_update", _PyCFunction_CAST(set_difference_update), METH_FASTCALL, set_difference_update__doc__},
 
 static PyObject *
-set_difference_update_impl(PySetObject *so, PyObject *args);
+set_difference_update_impl(PySetObject *so, PyObject * const *others,
+                           Py_ssize_t others_length);
 
 static PyObject *
-set_difference_update(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
+set_difference_update(PyObject *so, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *__clinic_args = NULL;
+    PyObject * const *others;
+    Py_ssize_t others_length;
 
-    if (!_PyArg_CheckPositional("difference_update", nargs, 0, PY_SSIZE_T_MAX)) {
-        goto exit;
-    }
-    __clinic_args = PyTuple_New(nargs - 0);
-    if (!__clinic_args) {
-        goto exit;
-    }
-    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
-        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
-    }
-    return_value = set_difference_update_impl(so, __clinic_args);
+    others = args;
+    others_length = nargs;
+    return_value = set_difference_update_impl((PySetObject *)so, others, others_length);
 
-exit:
-    Py_XDECREF(__clinic_args);
     return return_value;
 }
 
@@ -272,28 +271,20 @@ PyDoc_STRVAR(set_difference_multi__doc__,
     {"difference", _PyCFunction_CAST(set_difference_multi), METH_FASTCALL, set_difference_multi__doc__},
 
 static PyObject *
-set_difference_multi_impl(PySetObject *so, PyObject *args);
+set_difference_multi_impl(PySetObject *so, PyObject * const *others,
+                          Py_ssize_t others_length);
 
 static PyObject *
-set_difference_multi(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
+set_difference_multi(PyObject *so, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *__clinic_args = NULL;
+    PyObject * const *others;
+    Py_ssize_t others_length;
 
-    if (!_PyArg_CheckPositional("difference", nargs, 0, PY_SSIZE_T_MAX)) {
-        goto exit;
-    }
-    __clinic_args = PyTuple_New(nargs - 0);
-    if (!__clinic_args) {
-        goto exit;
-    }
-    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
-        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
-    }
-    return_value = set_difference_multi_impl(so, __clinic_args);
+    others = args;
+    others_length = nargs;
+    return_value = set_difference_multi_impl((PySetObject *)so, others, others_length);
 
-exit:
-    Py_XDECREF(__clinic_args);
     return return_value;
 }
 
@@ -306,6 +297,19 @@ PyDoc_STRVAR(set_symmetric_difference_update__doc__,
 #define SET_SYMMETRIC_DIFFERENCE_UPDATE_METHODDEF    \
     {"symmetric_difference_update", (PyCFunction)set_symmetric_difference_update, METH_O, set_symmetric_difference_update__doc__},
 
+static PyObject *
+set_symmetric_difference_update_impl(PySetObject *so, PyObject *other);
+
+static PyObject *
+set_symmetric_difference_update(PyObject *so, PyObject *other)
+{
+    PyObject *return_value = NULL;
+
+    return_value = set_symmetric_difference_update_impl((PySetObject *)so, other);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(set_symmetric_difference__doc__,
 "symmetric_difference($self, other, /)\n"
 "--\n"
@@ -314,6 +318,21 @@ PyDoc_STRVAR(set_symmetric_difference__doc__,
 
 #define SET_SYMMETRIC_DIFFERENCE_METHODDEF    \
     {"symmetric_difference", (PyCFunction)set_symmetric_difference, METH_O, set_symmetric_difference__doc__},
+
+static PyObject *
+set_symmetric_difference_impl(PySetObject *so, PyObject *other);
+
+static PyObject *
+set_symmetric_difference(PyObject *so, PyObject *other)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION2(so, other);
+    return_value = set_symmetric_difference_impl((PySetObject *)so, other);
+    Py_END_CRITICAL_SECTION2();
+
+    return return_value;
+}
 
 PyDoc_STRVAR(set_issubset__doc__,
 "issubset($self, other, /)\n"
@@ -324,6 +343,21 @@ PyDoc_STRVAR(set_issubset__doc__,
 #define SET_ISSUBSET_METHODDEF    \
     {"issubset", (PyCFunction)set_issubset, METH_O, set_issubset__doc__},
 
+static PyObject *
+set_issubset_impl(PySetObject *so, PyObject *other);
+
+static PyObject *
+set_issubset(PyObject *so, PyObject *other)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION2(so, other);
+    return_value = set_issubset_impl((PySetObject *)so, other);
+    Py_END_CRITICAL_SECTION2();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(set_issuperset__doc__,
 "issuperset($self, other, /)\n"
 "--\n"
@@ -332,6 +366,21 @@ PyDoc_STRVAR(set_issuperset__doc__,
 
 #define SET_ISSUPERSET_METHODDEF    \
     {"issuperset", (PyCFunction)set_issuperset, METH_O, set_issuperset__doc__},
+
+static PyObject *
+set_issuperset_impl(PySetObject *so, PyObject *other);
+
+static PyObject *
+set_issuperset(PyObject *so, PyObject *other)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION2(so, other);
+    return_value = set_issuperset_impl((PySetObject *)so, other);
+    Py_END_CRITICAL_SECTION2();
+
+    return return_value;
+}
 
 PyDoc_STRVAR(set_add__doc__,
 "add($self, object, /)\n"
@@ -344,6 +393,21 @@ PyDoc_STRVAR(set_add__doc__,
 #define SET_ADD_METHODDEF    \
     {"add", (PyCFunction)set_add, METH_O, set_add__doc__},
 
+static PyObject *
+set_add_impl(PySetObject *so, PyObject *key);
+
+static PyObject *
+set_add(PyObject *so, PyObject *key)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(so);
+    return_value = set_add_impl((PySetObject *)so, key);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(set___contains____doc__,
 "__contains__($self, object, /)\n"
 "--\n"
@@ -352,6 +416,41 @@ PyDoc_STRVAR(set___contains____doc__,
 
 #define SET___CONTAINS___METHODDEF    \
     {"__contains__", (PyCFunction)set___contains__, METH_O|METH_COEXIST, set___contains____doc__},
+
+static PyObject *
+set___contains___impl(PySetObject *so, PyObject *key);
+
+static PyObject *
+set___contains__(PyObject *so, PyObject *key)
+{
+    PyObject *return_value = NULL;
+
+    return_value = set___contains___impl((PySetObject *)so, key);
+
+    return return_value;
+}
+
+PyDoc_STRVAR(frozenset___contains____doc__,
+"__contains__($self, object, /)\n"
+"--\n"
+"\n"
+"x.__contains__(y) <==> y in x.");
+
+#define FROZENSET___CONTAINS___METHODDEF    \
+    {"__contains__", (PyCFunction)frozenset___contains__, METH_O|METH_COEXIST, frozenset___contains____doc__},
+
+static PyObject *
+frozenset___contains___impl(PySetObject *so, PyObject *key);
+
+static PyObject *
+frozenset___contains__(PyObject *so, PyObject *key)
+{
+    PyObject *return_value = NULL;
+
+    return_value = frozenset___contains___impl((PySetObject *)so, key);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(set_remove__doc__,
 "remove($self, object, /)\n"
@@ -364,6 +463,21 @@ PyDoc_STRVAR(set_remove__doc__,
 #define SET_REMOVE_METHODDEF    \
     {"remove", (PyCFunction)set_remove, METH_O, set_remove__doc__},
 
+static PyObject *
+set_remove_impl(PySetObject *so, PyObject *key);
+
+static PyObject *
+set_remove(PyObject *so, PyObject *key)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(so);
+    return_value = set_remove_impl((PySetObject *)so, key);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(set_discard__doc__,
 "discard($self, object, /)\n"
 "--\n"
@@ -375,6 +489,21 @@ PyDoc_STRVAR(set_discard__doc__,
 
 #define SET_DISCARD_METHODDEF    \
     {"discard", (PyCFunction)set_discard, METH_O, set_discard__doc__},
+
+static PyObject *
+set_discard_impl(PySetObject *so, PyObject *key);
+
+static PyObject *
+set_discard(PyObject *so, PyObject *key)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(so);
+    return_value = set_discard_impl((PySetObject *)so, key);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
 
 PyDoc_STRVAR(set___reduce____doc__,
 "__reduce__($self, /)\n"
@@ -389,9 +518,15 @@ static PyObject *
 set___reduce___impl(PySetObject *so);
 
 static PyObject *
-set___reduce__(PySetObject *so, PyObject *Py_UNUSED(ignored))
+set___reduce__(PyObject *so, PyObject *Py_UNUSED(ignored))
 {
-    return set___reduce___impl(so);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(so);
+    return_value = set___reduce___impl((PySetObject *)so);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(set___sizeof____doc__,
@@ -407,8 +542,14 @@ static PyObject *
 set___sizeof___impl(PySetObject *so);
 
 static PyObject *
-set___sizeof__(PySetObject *so, PyObject *Py_UNUSED(ignored))
+set___sizeof__(PyObject *so, PyObject *Py_UNUSED(ignored))
 {
-    return set___sizeof___impl(so);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(so);
+    return_value = set___sizeof___impl((PySetObject *)so);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
-/*[clinic end generated code: output=34a30591148da884 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5800c0bf136a5a0a input=a9049054013a1b77]*/

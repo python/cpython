@@ -51,9 +51,6 @@ PyAPI_FUNC(PyObject *) PyImport_AddModuleRef(
 PyAPI_FUNC(PyObject *) PyImport_ImportModule(
     const char *name            /* UTF-8 encoded string */
     );
-Py_DEPRECATED(3.13) PyAPI_FUNC(PyObject *) PyImport_ImportModuleNoBlock(
-    const char *name            /* UTF-8 encoded string */
-    );
 PyAPI_FUNC(PyObject *) PyImport_ImportModuleLevel(
     const char *name,           /* UTF-8 encoded string */
     PyObject *globals,
@@ -90,6 +87,20 @@ PyAPI_FUNC(int) PyImport_AppendInittab(
     const char *name,           /* ASCII encoded string */
     PyObject* (*initfunc)(void)
     );
+
+typedef enum {
+    PyImport_LAZY_NORMAL,
+    PyImport_LAZY_ALL,
+    PyImport_LAZY_NONE
+} PyImport_LazyImportsMode;
+
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(int) PyImport_SetLazyImportsMode(PyImport_LazyImportsMode mode);
+PyAPI_FUNC(int) PyImport_SetLazyImportsFilter(PyObject *filter);
+
+PyAPI_FUNC(PyImport_LazyImportsMode) PyImport_GetLazyImportsMode(void);
+PyAPI_FUNC(PyObject *) PyImport_GetLazyImportsFilter(void);
+#endif
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_IMPORT_H

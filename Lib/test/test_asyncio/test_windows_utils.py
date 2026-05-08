@@ -16,7 +16,7 @@ from test import support
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio.events._set_event_loop_policy(None)
 
 
 class PipeTests(unittest.TestCase):
@@ -121,12 +121,32 @@ class PopenTests(unittest.TestCase):
         self.assertGreater(len(out), 0)
         self.assertGreater(len(err), 0)
         # allow for partial reads...
-        self.assertTrue(msg.upper().rstrip().startswith(out))
-        self.assertTrue(b"stderr".startswith(err))
+        self.assertStartsWith(msg.upper().rstrip(), out)
+        self.assertStartsWith(b"stderr", err)
 
         # The context manager calls wait() and closes resources
         with p:
             pass
+
+
+class OverlappedRefleakTests(unittest.TestCase):
+
+    def test_wsasendto_failure(self):
+        ov = _overlapped.Overlapped()
+        buf = bytearray(4096)
+        with self.assertRaises(OSError):
+            ov.WSASendTo(0x1234, buf, 0, ("127.0.0.1", 1))
+
+    def test_wsarecvfrom_failure(self):
+        ov = _overlapped.Overlapped()
+        with self.assertRaises(OSError):
+            ov.WSARecvFrom(0x1234, 1024, 0)
+
+    def test_wsarecvfrominto_failure(self):
+        ov = _overlapped.Overlapped()
+        buf = bytearray(4096)
+        with self.assertRaises(OSError):
+            ov.WSARecvFromInto(0x1234, buf, len(buf), 0)
 
 
 if __name__ == '__main__':

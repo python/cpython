@@ -2,7 +2,7 @@
   What's New In Python 3.4
 ****************************
 
-:Author: R. David Murray <rdmurray@bitdance.com> (Editor)
+:Author: \R. David Murray <rdmurray@bitdance.com> (Editor)
 
 .. Rules for maintenance:
 
@@ -122,7 +122,7 @@ Significantly improved library modules:
   on Unix <whatsnew-multiprocessing-no-fork>` (:issue:`8713`).
 * :mod:`email` has a new submodule, :mod:`~email.contentmanager`, and
   a new :mod:`~email.message.Message` subclass
-  (:class:`~email.contentmanager.EmailMessage`) that :ref:`simplify MIME
+  (:class:`~email.message.EmailMessage`) that :ref:`simplify MIME
   handling <whatsnew_email_contentmanager>` (:issue:`18891`).
 * The :mod:`inspect` and :mod:`pydoc` modules are now capable of
   correct introspection of a much wider variety of callable objects,
@@ -154,7 +154,7 @@ Security improvements:
   <whatsnew34-sslcontext>`.
 * All modules in the standard library that support SSL now support server
   certificate verification, including hostname matching
-  (:func:`ssl.match_hostname`) and CRLs (Certificate Revocation lists, see
+  (:func:`!ssl.match_hostname`) and CRLs (Certificate Revocation lists, see
   :func:`ssl.SSLContext.load_verify_locations`).
 
 CPython implementation improvements:
@@ -215,12 +215,11 @@ automatic ``PATH`` modifications to have ``pip`` available from the command
 line by default, otherwise it can still be accessed through the Python
 launcher for Windows as ``py -m pip``.
 
-As `discussed in the PEP`__, platform packagers may choose not to install
+As :pep:`discussed in the PEP <0453#recommendations-for-downstream-distributors>`
+platform packagers may choose not to install
 these commands by default, as long as, when invoked, they provide clear and
 simple directions on how to install them on that platform (usually using
 the system package manager).
-
-__ https://peps.python.org/pep-0453/#recommendations-for-downstream-distributors
 
 .. note::
 
@@ -740,7 +739,7 @@ these new components.
 In addition, a new application-friendly class :class:`~dis.Bytecode` provides
 an object-oriented API for inspecting bytecode in both in human-readable form
 and for iterating over instructions.  The :class:`~dis.Bytecode` constructor
-takes the same arguments that :func:`~dis.get_instruction` does (plus an
+takes the same arguments that :func:`~dis.get_instructions` does (plus an
 optional *current_offset*), and the resulting object can be iterated to produce
 :class:`~dis.Instruction` objects.  But it also has a :mod:`~dis.Bytecode.dis`
 method, equivalent to calling :mod:`~dis.dis` on the constructor argument, but
@@ -872,7 +871,7 @@ multiple implementations of an operation that allows it to work with
       PEP written and implemented by Łukasz Langa.
 
 :func:`~functools.total_ordering` now supports a return value of
-:const:`NotImplemented` from the underlying comparison function.  (Contributed
+:data:`NotImplemented` from the underlying comparison function.  (Contributed
 by Katie Miller in :issue:`10042`.)
 
 A pure-python version of the :func:`~functools.partial` function is now in the
@@ -959,8 +958,9 @@ http
 optional additional *explain* parameter which can be used to provide an
 extended error description, overriding the hardcoded default if there is one.
 This extended error description will be formatted using the
-:attr:`~http.server.HTTP.error_message_format` attribute and sent as the body
-of the error response.  (Contributed by Karl Cow in :issue:`12921`.)
+:attr:`~http.server.BaseHTTPRequestHandler.error_message_format` attribute
+and sent as the body of the error response.
+(Contributed by Karl Cow in :issue:`12921`.)
 
 The :mod:`http.server` :ref:`command line interface <http-server-cli>` now has
 a ``-b/--bind`` option that causes the server to listen on a specific address.
@@ -995,7 +995,7 @@ The :func:`~importlib.reload` function has been moved from :mod:`!imp` to
 :mod:`importlib` as part of the :mod:`!imp` module deprecation.  (Contributed by
 Berker Peksag in :issue:`18193`.)
 
-:mod:`importlib.util` now has a :data:`~importlib.util.MAGIC_NUMBER` attribute
+:mod:`importlib.util` now has a :const:`~importlib.util.MAGIC_NUMBER` attribute
 providing access to the bytecode version number.  This replaces the
 :func:`!get_magic` function in the deprecated :mod:`!imp` module.
 (Contributed by Brett Cannon in :issue:`18192`.)
@@ -1039,7 +1039,7 @@ As part of the implementation of the new :mod:`enum` module, the
 metaclasses.  (Contributed by Ethan Furman in :issue:`18929` and
 :issue:`19030`.)
 
-:func:`~inspect.getfullargspec` and :func:`~inspect.getargspec`
+:func:`~inspect.getfullargspec` and :func:`!getargspec`
 now use the :func:`~inspect.signature` API. This allows them to
 support a much broader range of callables, including those with
 ``__signature__`` attributes, those with metadata provided by argument
@@ -1222,7 +1222,7 @@ pickle
 :mod:`pickle` now supports (but does not use by default) a new pickle protocol,
 protocol 4.  This new protocol addresses a number of issues that were present
 in previous protocols, such as the serialization of nested classes, very large
-strings and containers, and classes whose :meth:`__new__` method takes
+strings and containers, and classes whose :meth:`~object.__new__` method takes
 keyword-only arguments.  It also provides some efficiency improvements.
 
 .. seealso::
@@ -1300,7 +1300,7 @@ affect the behaviour of :func:`help`.
 re
 --
 
-New :func:`~re.fullmatch` function and :meth:`.regex.fullmatch` method anchor
+New :func:`~re.fullmatch` function and :meth:`.Pattern.fullmatch` method anchor
 the pattern at both ends of the string to match.  This provides a way to be
 explicit about the goal of the match, which avoids a class of subtle bugs where
 ``$`` characters get lost during code changes or the addition of alternatives
@@ -1495,7 +1495,7 @@ The dictionary returned by :meth:`.SSLSocket.getpeercert` contains additional
 stat
 ----
 
-The :mod:`stat` module is now backed by a C implementation in :mod:`_stat`. A C
+The :mod:`stat` module is now backed by a C implementation in :mod:`!_stat`. A C
 implementation is required as most of the values aren't standardized and
 are platform-dependent.  (Contributed by Christian Heimes in :issue:`11016`.)
 
@@ -1520,7 +1520,7 @@ subprocess
 be used to provide the contents of ``stdin`` for the command that is run.
 (Contributed by Zack Weinberg in :issue:`16624`.)
 
-:func:`~subprocess.getstatus` and :func:`~subprocess.getstatusoutput` now
+:func:`~subprocess.getoutput` and :func:`~subprocess.getstatusoutput` now
 work on Windows.  This change was actually inadvertently made in 3.3.4.
 (Contributed by Tim Golden in :issue:`10197`.)
 
@@ -1536,7 +1536,7 @@ plain tuple.  (Contributed by Claudiu Popa in :issue:`18901`.)
 called automatically at the end of the block.  (Contributed by Serhiy Storchaka
 in :issue:`18878`.)
 
-:meth:`.AU_write.setsampwidth` now supports 24 bit samples, thus adding
+:meth:`!AU_write.setsampwidth` now supports 24 bit samples, thus adding
 support for writing 24 sample using the module.  (Contributed by
 Serhiy Storchaka in :issue:`19261`.)
 
@@ -1616,7 +1616,7 @@ A new :func:`~types.DynamicClassAttribute` descriptor provides a way to define
 an attribute that acts normally when looked up through an instance object, but
 which is routed to the *class* ``__getattr__`` when looked up through the
 class.  This allows one to have properties active on a class, and have virtual
-attributes on the class with the same name (see :mod:`Enum` for an example).
+attributes on the class with the same name (see :mod:`enum` for an example).
 (Contributed by Ethan Furman in :issue:`19030`.)
 
 
@@ -1710,7 +1710,7 @@ matching calls, which means an argument can now be matched by either position
 or name, instead of only by position.  (Contributed by Antoine Pitrou in
 :issue:`17015`.)
 
-:func:`~mock.mock_open` objects now have ``readline`` and ``readlines``
+:func:`~unittest.mock.mock_open` objects now have ``readline`` and ``readlines``
 methods.  (Contributed by Toshio Kuratomi in :issue:`17467`.)
 
 
@@ -1730,8 +1730,8 @@ installed in the virtual environment.  (Contributed by Nick Coghlan in
 wave
 ----
 
-The :meth:`~wave.getparams` method now returns a namedtuple rather than a
-plain tuple.  (Contributed by Claudiu Popa in :issue:`17487`.)
+The :meth:`~wave.Wave_read.getparams` method now returns a namedtuple rather
+than a plain tuple.  (Contributed by Claudiu Popa in :issue:`17487`.)
 
 :meth:`wave.open` now supports the context management protocol.  (Contributed
 by Claudiu Popa in :issue:`17616`.)
@@ -1789,7 +1789,7 @@ example, this could be used to exclude test files from the archive.
 (Contributed by Christian Tismer in :issue:`19274`.)
 
 The *allowZip64* parameter to :class:`~zipfile.ZipFile` and
-:class:`~zipfile.PyZipfile` is now ``True`` by default.  (Contributed by
+:class:`~zipfile.PyZipFile` is now ``True`` by default.  (Contributed by
 William Mallard in :issue:`17201`.)
 
 
@@ -1818,7 +1818,7 @@ PEP 442: Safe Object Finalization
 ---------------------------------
 
 :pep:`442` removes the current limitations and quirks of object finalization
-in CPython. With it, objects with :meth:`__del__` methods, as well as
+in CPython. With it, objects with :meth:`~object.__del__` methods, as well as
 generators with :keyword:`finally` clauses, can be finalized when they are
 part of a reference cycle.
 
@@ -1963,11 +1963,11 @@ Other Improvements
   <https://devguide.python.org/coverage/#measuring-coverage-of-c-code-with-gcov-and-lcov>`_
   will build python, run the test suite, and generate an HTML coverage report
   for the C codebase using ``gcov`` and `lcov
-  <https://ltp.sourceforge.net/coverage/lcov.php>`_.
+  <https://github.com/linux-test-project/lcov>`_.
 
 * The ``-R`` option to the :ref:`python regression test suite <regrtest>` now
   also checks for memory allocation leaks, using
-  :func:`sys.getallocatedblocks()`.  (Contributed by Antoine Pitrou in
+  :func:`sys.getallocatedblocks`.  (Contributed by Antoine Pitrou in
   :issue:`13390`.)
 
 * ``python -m`` now works with namespace packages.
@@ -1980,7 +1980,7 @@ Other Improvements
   now works correctly (previously it silently returned the first python
   module in the file).  (Contributed by Václav Šmilauer in :issue:`16421`.)
 
-* A new opcode, :opcode:`LOAD_CLASSDEREF`, has been added to fix a bug in the
+* A new opcode, :opcode:`!LOAD_CLASSDEREF`, has been added to fix a bug in the
   loading of free variables in class bodies that could be triggered by certain
   uses of :ref:`__prepare__ <prepare>`.  (Contributed by Benjamin Peterson in
   :issue:`17853`.)
@@ -2044,7 +2044,7 @@ Significant Optimizations
   strings is now significantly faster.  (Contributed by Victor Stinner and
   Antoine Pitrou in :issue:`15596`.)
 
-* A performance issue in :meth:`io.FileIO.readall` has been solved.  This
+* A performance issue in :meth:`!io.FileIO.readall` has been solved.  This
   particularly affects Windows, and significantly speeds up the case of piping
   significant amounts of data through :mod:`subprocess`.  (Contributed
   by Richard Oudkerk in :issue:`15758`.)
@@ -2086,10 +2086,10 @@ Deprecations in the Python API
   :meth:`!importlib.abc.PathEntryFinder.find_loader` and
   :meth:`!find_module` are replaced by
   :meth:`importlib.abc.PathEntryFinder.find_spec`; all of the :samp:`{xxx}Loader` ABC
-  ``load_module`` methods (:meth:`!importlib.abc.Loader.load_module`,
-  :meth:`!importlib.abc.InspectLoader.load_module`,
-  :meth:`!importlib.abc.FileLoader.load_module`,
-  :meth:`!importlib.abc.SourceLoader.load_module`) should no longer be
+  ``load_module`` methods (``importlib.abc.Loader.load_module``,
+  ``importlib.abc.InspectLoader.load_module``,
+  ``importlib.abc.FileLoader.load_module``,
+  ``importlib.abc.SourceLoader.load_module``) should no longer be
   implemented, instead loaders should implement an
   ``exec_module`` method
   (:meth:`importlib.abc.Loader.exec_module`,
@@ -2104,7 +2104,7 @@ Deprecations in the Python API
 * The :mod:`!imp` module is pending deprecation. To keep compatibility with
   Python 2/3 code bases, the module's removal is currently not scheduled.
 
-* The :mod:`formatter` module is pending deprecation and is slated for removal
+* The :mod:`!formatter` module is pending deprecation and is slated for removal
   in Python 3.6.
 
 * ``MD5`` as the default *digestmod* for the :func:`hmac.new` function is
@@ -2121,11 +2121,11 @@ Deprecations in the Python API
 
 * The *strict* argument of :class:`~html.parser.HTMLParser` is deprecated.
 
-* The :mod:`plistlib` :func:`~plistlib.readPlist`,
-  :func:`~plistlib.writePlist`, :func:`~plistlib.readPlistFromBytes`, and
-  :func:`~plistlib.writePlistToBytes` functions are deprecated in favor of the
+* The :mod:`plistlib` :func:`!readPlist`,
+  :func:`!writePlist`, :func:`!readPlistFromBytes`, and
+  :func:`!writePlistToBytes` functions are deprecated in favor of the
   corresponding new functions :func:`~plistlib.load`, :func:`~plistlib.dump`,
-  :func:`~plistlib.loads`, and :func:`~plistlib.dumps`.  :func:`~plistlib.Data`
+  :func:`~plistlib.loads`, and :func:`~plistlib.dumps`.  :func:`!Data`
   is deprecated in favor of just using the :class:`bytes` constructor.
 
 * The :mod:`sysconfig` key ``SO`` is deprecated, it has been replaced by
@@ -2213,8 +2213,8 @@ removed:
   that do not have a __format__ method that handles it.  See :issue:`7994` for
   background.
 
-* :meth:`difflib.SequenceMatcher.isbjunk` and
-  :meth:`difflib.SequenceMatcher.isbpopular` were deprecated in 3.2, and have
+* :meth:`!difflib.SequenceMatcher.isbjunk` and
+  :meth:`!difflib.SequenceMatcher.isbpopular` were deprecated in 3.2, and have
   now been removed: use ``x in sm.bjunk`` and
   ``x in sm.bpopular``, where *sm* is a :class:`~difflib.SequenceMatcher` object
   (:issue:`13248`).
@@ -2272,7 +2272,8 @@ Changes in the Python API
   :func:`super` and falling through all the way to the ABCs. For compatibility,
   catch both :exc:`NotImplementedError` or the appropriate exception as needed.
 
-* The module type now initializes the :attr:`__package__` and :attr:`__loader__`
+* The module type now initializes the :attr:`~module.__package__` and
+  :attr:`~module.__loader__`
   attributes to ``None`` by default. To determine if these attributes were set
   in a backwards-compatible fashion, use e.g.
   ``getattr(module, '__loader__', None) is not None``.  (:issue:`17115`.)
@@ -2280,7 +2281,7 @@ Changes in the Python API
 * :meth:`!importlib.util.module_for_loader` now sets ``__loader__`` and
   ``__package__`` unconditionally to properly support reloading. If this is not
   desired then you will need to set these attributes manually. You can use
-  :func:`importlib.util.module_to_load` for module management.
+  :func:`!importlib.util.module_to_load` for module management.
 
 * Import now resets relevant attributes (e.g. ``__name__``, ``__loader__``,
   ``__package__``, ``__file__``, ``__cached__``) unconditionally when reloading.
@@ -2413,7 +2414,7 @@ Changes in the Python API
   formal public interface the naming has been made consistent (:issue:`18532`).
 
 * Because :mod:`unittest.TestSuite` now drops references to tests after they
-  are run, test harnesses that re-use a :class:`~unittest.TestSuite` to re-run
+  are run, test harnesses that reuse a :class:`~unittest.TestSuite` to re-run
   a set of tests may fail.   Test suites should not be re-used in this fashion
   since it means state is retained between test runs, breaking the test
   isolation that :mod:`unittest` is designed to provide.  However, if the lack
@@ -2428,7 +2429,7 @@ Changes in the Python API
   disallowed command forms didn't make any sense and are unlikely to be in use.
 
 * The :func:`re.split`, :func:`re.findall`, and :func:`re.sub` functions, and
-  the :meth:`~re.match.group` and :meth:`~re.match.groups` methods of
+  the :meth:`~re.Match.group` and :meth:`~re.Match.groups` methods of
   ``match`` objects now always return a *bytes* object when the string
   to be matched is a :term:`bytes-like object`.  Previously the return type
   matched the input type, so if your code was depending on the return value

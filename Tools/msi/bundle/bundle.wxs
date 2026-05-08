@@ -28,10 +28,11 @@
 
     <Variable Name="InstallAllUsers" Value="0" bal:Overridable="yes" />
     <?if "$(var.PyTestExt)"="" ?>
-    <Variable Name="InstallLauncherAllUsers" Value="0" bal:Overridable="yes" />
+    <Variable Name="InstallLauncherAllUsers" Value="-1" bal:Overridable="yes" />
     <?else ?>
-    <Variable Name="InstallLauncherAllUsers" Value="0" />
+    <Variable Name="InstallLauncherAllUsers" Value="-1" />
     <?endif ?>
+
     <Variable Name="TargetDir" Value="" bal:Overridable="yes" />
     <?if $(var.Platform)~="x64" ?>
     <Variable Name="DefaultAllUsersTargetDir" Value="[ProgramFiles64Folder]Python[WinVerNoDot]" bal:Overridable="yes" />
@@ -91,10 +92,11 @@
     <?endif ?>
 
     <Variable Name="LauncherOnly" Value="0" bal:Overridable="yes" />
+    <Variable Name="BlockedLauncher" Value="0" />
     <Variable Name="DetectedLauncher" Value="0" />
     <Variable Name="DetectedOldLauncher" Value="0" />
 
-    <Variable Name="AssociateFiles" Value="1" bal:Overridable="yes" />
+    <Variable Name="AssociateFiles" Value="-1" bal:Overridable="yes" />
     <Variable Name="Shortcuts" Value="1" bal:Overridable="yes" />
     <Variable Name="PrependPath" Value="0" bal:Overridable="yes" />
     <Variable Name="AppendPath" Value="0" bal:Overridable="yes" />
@@ -104,11 +106,11 @@
     <Variable Name="SimpleInstallDescription" Value="" bal:Overridable="yes" />
 
     <Chain ParallelCache="yes">
+      <PackageGroupRef Id="core" />
+      <PackageGroupRef Id="exe" />
       <?if $(var.Platform)!="ARM64" ?>
       <PackageGroupRef Id="crt" />
       <?endif ?>
-      <PackageGroupRef Id="core" />
-      <PackageGroupRef Id="exe" />
       <PackageGroupRef Id="dev" />
       <PackageGroupRef Id="lib" />
       <?if $(var.IncludeFreethreaded)~="true" ?>

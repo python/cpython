@@ -8,6 +8,7 @@ from unittest import mock
 
 import os
 import io
+import ftplib
 import socket
 import array
 import sys
@@ -15,15 +16,17 @@ import tempfile
 import subprocess
 
 import urllib.request
-# The proxy bypass method imported below has logic specific to the OSX
-# proxy config data structure but is testable on all platforms.
+# The proxy bypass method imported below has logic specific to the
+# corresponding system but is testable on all platforms.
 from urllib.request import (Request, OpenerDirector, HTTPBasicAuthHandler,
                             HTTPPasswordMgrWithPriorAuth, _parse_proxy,
+                            _proxy_bypass_winreg_override,
                             _proxy_bypass_macosx_sysconf,
                             AbstractDigestAuthHandler)
-from urllib.parse import urlparse
+from urllib.parse import urlsplit
 import urllib.error
 import http.client
+
 
 support.requires_working_socket(module=True)
 
@@ -41,10 +44,6 @@ class TrivialTests(unittest.TestCase):
             context = {}
             exec('from urllib.%s import *' % module, context)
             del context['__builtins__']
-            if module == 'request' and os.name == 'nt':
-                u, p = context.pop('url2pathname'), context.pop('pathname2url')
-                self.assertEqual(u.__module__, 'nturl2path')
-                self.assertEqual(p.__module__, 'nturl2path')
             for k, v in context.items():
                 self.assertEqual(v.__module__, 'urllib.%s' % module,
                     "%r is exposed in 'urllib.%s' but defined in %r" %
@@ -578,6 +577,23 @@ class OpenerDirectorTests(unittest.TestCase):
         self.assertRaises(TypeError,
                           OpenerDirector().add_handler, NonHandler())
 
+    def test_no_protocol_methods(self):
+        # test the case that methods starts with handler type without the protocol
+        # like open*() or _open*().
+        # These methods should be ignored
+
+        o = OpenerDirector()
+        meth_spec = [
+            ["open"],
+            ["_open"],
+            ["error"]
+        ]
+
+        add_ordered_mock_handlers(o, meth_spec)
+
+        self.assertEqual(len(o.handle_open), 0)
+        self.assertEqual(len(o.handle_error), 0)
+
     def test_badly_named_methods(self):
         # test work-around for three methods that accidentally follow the
         # naming conventions for handler methods
@@ -715,18 +731,6 @@ class OpenerDirectorTests(unittest.TestCase):
                     self.assertIsInstance(args[1], MockResponse)
 
 
-def sanepathname2url(path):
-    try:
-        path.encode("utf-8")
-    except UnicodeEncodeError:
-        raise unittest.SkipTest("path is not encodable to utf8")
-    urlpath = urllib.request.pathname2url(path)
-    if os.name == "nt" and urlpath.startswith("///"):
-        urlpath = urlpath[2:]
-    # XXX don't ask me about the mac...
-    return urlpath
-
-
 class HandlerTests(unittest.TestCase):
 
     def test_ftp(self):
@@ -753,7 +757,6 @@ class HandlerTests(unittest.TestCase):
                 self.ftpwrapper = MockFTPWrapper(self.data)
                 return self.ftpwrapper
 
-        import ftplib
         data = "rheum rhaponicum"
         h = NullFTPHandler(data)
         h.parent = MockOpener()
@@ -776,7 +779,7 @@ class HandlerTests(unittest.TestCase):
              ["foo", "bar"], "", None),
             ("ftp://localhost/baz.gif;type=a",
              "localhost", ftplib.FTP_PORT, "", "", "A",
-             [], "baz.gif", None),  # XXX really this should guess image/gif
+             [], "baz.gif", "image/gif"),
             ]:
             req = Request(url)
             req.timeout = None
@@ -792,6 +795,29 @@ class HandlerTests(unittest.TestCase):
             headers = r.info()
             self.assertEqual(headers.get("Content-type"), mimetype)
             self.assertEqual(int(headers["Content-length"]), len(data))
+            r.close()
+
+    @support.requires_resource("network")
+    def test_ftp_error(self):
+        class ErrorFTPHandler(urllib.request.FTPHandler):
+            def __init__(self, exception):
+                self._exception = exception
+
+            def connect_ftp(self, user, passwd, host, port, dirs,
+                            timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
+                raise self._exception
+
+        exception = ftplib.error_perm(
+            "500 OOPS: cannot change directory:/nonexistent")
+        h = ErrorFTPHandler(exception)
+        urlopen = urllib.request.build_opener(h).open
+        try:
+            urlopen("ftp://www.pythontest.net/")
+        except urllib.error.URLError as raised:
+            self.assertEqual(raised.reason,
+                             f"ftp error: {exception.args[0]}")
+        else:
+            self.fail("Did not raise ftplib exception")
 
     def test_file(self):
         import email.utils
@@ -799,19 +825,22 @@ class HandlerTests(unittest.TestCase):
         o = h.parent = MockOpener()
 
         TESTFN = os_helper.TESTFN
-        urlpath = sanepathname2url(os.path.abspath(TESTFN))
         towrite = b"hello, world\n"
+        canonurl = urllib.request.pathname2url(os.path.abspath(TESTFN), add_scheme=True)
+        parsed = urlsplit(canonurl)
+        if parsed.netloc:
+            raise unittest.SkipTest("non-local working directory")
         urls = [
-            "file://localhost%s" % urlpath,
-            "file://%s" % urlpath,
-            "file://%s%s" % (socket.gethostbyname('localhost'), urlpath),
+            canonurl,
+            parsed._replace(netloc='localhost').geturl(),
+            parsed._replace(netloc=socket.gethostbyname('localhost')).geturl(),
             ]
         try:
             localaddr = socket.gethostbyname(socket.gethostname())
         except socket.gaierror:
             localaddr = ''
         if localaddr:
-            urls.append("file://%s%s" % (localaddr, urlpath))
+            urls.append(parsed._replace(netloc=localaddr).geturl())
 
         for url in urls:
             f = open(TESTFN, "wb")
@@ -836,10 +865,10 @@ class HandlerTests(unittest.TestCase):
             self.assertEqual(headers["Content-type"], "text/plain")
             self.assertEqual(headers["Content-length"], "13")
             self.assertEqual(headers["Last-modified"], modified)
-            self.assertEqual(respurl, url)
+            self.assertEqual(respurl, canonurl)
 
         for url in [
-            "file://localhost:80%s" % urlpath,
+            parsed._replace(netloc='localhost:80').geturl(),
             "file:///file_does_not_exist.txt",
             "file://not-a-local-host.com//dir/file.txt",
             "file://%s:80%s/%s" % (socket.gethostbyname('localhost'),
@@ -1137,13 +1166,13 @@ class HandlerTests(unittest.TestCase):
         r = Request('http://example.com')
         for url in urls:
             r.full_url = url
-            parsed = urlparse(url)
+            parsed = urlsplit(url)
 
             self.assertEqual(r.get_full_url(), url)
             # full_url setter uses splittag to split into components.
             # splittag sets the fragment as None while urlparse sets it to ''
             self.assertEqual(r.fragment or '', parsed.fragment)
-            self.assertEqual(urlparse(r.get_full_url()).query, parsed.query)
+            self.assertEqual(urlsplit(r.get_full_url()).query, parsed.query)
 
     def test_full_url_deleter(self):
         r = Request('http://www.example.com')
@@ -1181,15 +1210,15 @@ class HandlerTests(unittest.TestCase):
         r = MockResponse(200, "OK", {}, "", url)
         newr = h.http_response(req, r)
         self.assertIs(r, newr)
-        self.assertFalse(hasattr(o, "proto"))  # o.error not called
+        self.assertNotHasAttr(o, "proto")  # o.error not called
         r = MockResponse(202, "Accepted", {}, "", url)
         newr = h.http_response(req, r)
         self.assertIs(r, newr)
-        self.assertFalse(hasattr(o, "proto"))  # o.error not called
+        self.assertNotHasAttr(o, "proto")  # o.error not called
         r = MockResponse(206, "Partial content", {}, "", url)
         newr = h.http_response(req, r)
         self.assertIs(r, newr)
-        self.assertFalse(hasattr(o, "proto"))  # o.error not called
+        self.assertNotHasAttr(o, "proto")  # o.error not called
         # anything else calls o.error (and MockOpener returns None, here)
         r = MockResponse(502, "Bad gateway", {}, "", url)
         self.assertIsNone(h.http_response(req, r))
@@ -1232,10 +1261,11 @@ class HandlerTests(unittest.TestCase):
                 try:
                     method(req, MockFile(), code, "Blah",
                            MockHeaders({"location": to_url}))
-                except urllib.error.HTTPError:
+                except urllib.error.HTTPError as err:
                     # 307 and 308 in response to POST require user OK
                     self.assertIn(code, (307, 308))
                     self.assertIsNotNone(data)
+                    err.close()
                 self.assertEqual(o.req.get_full_url(), to_url)
                 try:
                     self.assertEqual(o.req.get_method(), "GET")
@@ -1271,9 +1301,10 @@ class HandlerTests(unittest.TestCase):
             while 1:
                 redirect(h, req, "http://example.com/")
                 count = count + 1
-        except urllib.error.HTTPError:
+        except urllib.error.HTTPError as err:
             # don't stop until max_repeats, because cookies may introduce state
             self.assertEqual(count, urllib.request.HTTPRedirectHandler.max_repeats)
+            err.close()
 
         # detect endless non-repeating chain of redirects
         req = Request(from_url, origin_req_host="example.com")
@@ -1283,9 +1314,10 @@ class HandlerTests(unittest.TestCase):
             while 1:
                 redirect(h, req, "http://example.com/%d" % count)
                 count = count + 1
-        except urllib.error.HTTPError:
+        except urllib.error.HTTPError as err:
             self.assertEqual(count,
                              urllib.request.HTTPRedirectHandler.max_redirections)
+            err.close()
 
     def test_invalid_redirect(self):
         from_url = "http://example.com/a.html"
@@ -1299,9 +1331,11 @@ class HandlerTests(unittest.TestCase):
 
         for scheme in invalid_schemes:
             invalid_url = scheme + '://' + schemeless_url
-            self.assertRaises(urllib.error.HTTPError, h.http_error_302,
+            with self.assertRaises(urllib.error.HTTPError) as cm:
+                h.http_error_302(
                     req, MockFile(), 302, "Security Loophole",
                     MockHeaders({"location": invalid_url}))
+            cm.exception.close()
 
         for scheme in valid_schemes:
             valid_url = scheme + '://' + schemeless_url
@@ -1399,7 +1433,16 @@ class HandlerTests(unittest.TestCase):
                 response = opener.open('http://example.com/')
                 expected = b'GET ' + result + b' '
                 request = handler.last_buf
-                self.assertTrue(request.startswith(expected), repr(request))
+                self.assertStartsWith(request, expected)
+
+    def test_redirect_head_request(self):
+        from_url = "http://example.com/a.html"
+        to_url = "http://example.com/b.html"
+        h = urllib.request.HTTPRedirectHandler()
+        req = Request(from_url, method="HEAD")
+        fp = MockFile()
+        new_req = h.redirect_request(req, fp, 302, "Found", {}, to_url)
+        self.assertEqual(new_req.get_method(), "HEAD")
 
     def test_proxy(self):
         u = "proxy.example.com:3128"
@@ -1420,7 +1463,8 @@ class HandlerTests(unittest.TestCase):
                              [tup[0:2] for tup in o.calls])
 
     def test_proxy_no_proxy(self):
-        os.environ['no_proxy'] = 'python.org'
+        env = self.enterContext(os_helper.EnvironmentVarGuard())
+        env['no_proxy'] = 'python.org'
         o = OpenerDirector()
         ph = urllib.request.ProxyHandler(dict(http="proxy.example.com"))
         o.add_handler(ph)
@@ -1432,10 +1476,10 @@ class HandlerTests(unittest.TestCase):
         self.assertEqual(req.host, "www.python.org")
         o.open(req)
         self.assertEqual(req.host, "www.python.org")
-        del os.environ['no_proxy']
 
     def test_proxy_no_proxy_all(self):
-        os.environ['no_proxy'] = '*'
+        env = self.enterContext(os_helper.EnvironmentVarGuard())
+        env['no_proxy'] = '*'
         o = OpenerDirector()
         ph = urllib.request.ProxyHandler(dict(http="proxy.example.com"))
         o.add_handler(ph)
@@ -1443,7 +1487,6 @@ class HandlerTests(unittest.TestCase):
         self.assertEqual(req.host, "www.python.org")
         o.open(req)
         self.assertEqual(req.host, "www.python.org")
-        del os.environ['no_proxy']
 
     def test_proxy_https(self):
         o = OpenerDirector()
@@ -1484,6 +1527,30 @@ class HandlerTests(unittest.TestCase):
         self.assertIsNotNone(req._tunnel_host)
         self.assertEqual(req.host, "proxy.example.com:3128")
         self.assertEqual(req.get_header("Proxy-authorization"), "FooBar")
+
+    @unittest.skipUnless(os.name == "nt", "only relevant for Windows")
+    def test_winreg_proxy_bypass(self):
+        proxy_override = "www.example.com;*.example.net; 192.168.0.1"
+        proxy_bypass = _proxy_bypass_winreg_override
+        for host in ("www.example.com", "www.example.net", "192.168.0.1"):
+            self.assertTrue(proxy_bypass(host, proxy_override),
+                            "expected bypass of %s to be true" % host)
+
+        for host in ("example.com", "www.example.org", "example.net",
+                     "192.168.0.2"):
+            self.assertFalse(proxy_bypass(host, proxy_override),
+                             "expected bypass of %s to be False" % host)
+
+        # check intranet address bypass
+        proxy_override = "example.com; <local>"
+        self.assertTrue(proxy_bypass("example.com", proxy_override),
+                        "expected bypass of %s to be true" % host)
+        self.assertFalse(proxy_bypass("example.net", proxy_override),
+                         "expected bypass of %s to be False" % host)
+        for host in ("test", "localhost"):
+            self.assertTrue(proxy_bypass(host, proxy_override),
+                            "expect <local> to bypass intranet address '%s'"
+                            % host)
 
     @unittest.skipUnless(sys.platform == 'darwin', "only relevant for OSX")
     def test_osx_proxy_bypass(self):
@@ -1856,19 +1923,21 @@ class MiscTests(unittest.TestCase):
         url = code = fp = None
         hdrs = 'Content-Length: 42'
         err = urllib.error.HTTPError(url, code, msg, hdrs, fp)
-        self.assertTrue(hasattr(err, 'reason'))
+        self.assertHasAttr(err, 'reason')
         self.assertEqual(err.reason, 'something bad happened')
-        self.assertTrue(hasattr(err, 'headers'))
+        self.assertHasAttr(err, 'headers')
         self.assertEqual(err.headers, 'Content-Length: 42')
         expected_errmsg = 'HTTP Error %s: %s' % (err.code, err.msg)
         self.assertEqual(str(err), expected_errmsg)
         expected_errmsg = '<HTTPError %s: %r>' % (err.code, err.msg)
         self.assertEqual(repr(err), expected_errmsg)
+        err.close()
 
     def test_gh_98778(self):
         x = urllib.error.HTTPError("url", 405, "METHOD NOT ALLOWED", None, None)
         self.assertEqual(getattr(x, "__notes__", ()), ())
         self.assertIsInstance(x.fp.read(), bytes)
+        x.close()
 
     def test_parse_proxy(self):
         parse_proxy_test_cases = [
@@ -1915,10 +1984,38 @@ class MiscTests(unittest.TestCase):
 
         self.assertRaises(ValueError, _parse_proxy, 'file:/ftp.example.com'),
 
-    def test_unsupported_algorithm(self):
-        handler = AbstractDigestAuthHandler()
+
+skip_libssl_fips_mode = unittest.skipIf(
+    support.is_libssl_fips_mode(),
+    "conservative skip due to OpenSSL FIPS mode possible algorithm nerfing",
+)
+
+
+class TestDigestAuthAlgorithms(unittest.TestCase):
+    def setUp(self):
+        self.handler = AbstractDigestAuthHandler()
+
+    @skip_libssl_fips_mode
+    def test_md5_algorithm(self):
+        H, KD = self.handler.get_algorithm_impls('MD5')
+        self.assertEqual(H("foo"), "acbd18db4cc2f85cedef654fccc4a4d8")
+        self.assertEqual(KD("foo", "bar"), "4e99e8c12de7e01535248d2bac85e732")
+
+    @skip_libssl_fips_mode
+    def test_sha_algorithm(self):
+        H, KD = self.handler.get_algorithm_impls('SHA')
+        self.assertEqual(H("foo"), "0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33")
+        self.assertEqual(KD("foo", "bar"), "54dcbe67d21d5eb39493d46d89ae1f412d3bd6de")
+
+    @skip_libssl_fips_mode
+    def test_sha256_algorithm(self):
+        H, KD = self.handler.get_algorithm_impls('SHA-256')
+        self.assertEqual(H("foo"), "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae")
+        self.assertEqual(KD("foo", "bar"), "a765a8beaa9d561d4c5cbed29d8f4e30870297fdfa9cb7d6e9848a95fec9f937")
+
+    def test_invalid_algorithm(self):
         with self.assertRaises(ValueError) as exc:
-            handler.get_algorithm_impls('invalid')
+            self.handler.get_algorithm_impls('invalid')
         self.assertEqual(
             str(exc.exception),
             "Unsupported digest authentication algorithm 'invalid'"
