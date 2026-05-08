@@ -114,6 +114,12 @@ annotationlib
   Use :meth:`annotationlib.ForwardRef.evaluate`
   or :func:`typing.evaluate_forward_ref` instead.
 
+functools
+---------
+
+* Calling the Python implementation of :func:`functools.reduce` with *function*
+  or *sequence* as keyword arguments has been deprecated since Python 3.14.
+
 sysconfig
 ---------
 
