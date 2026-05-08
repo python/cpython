@@ -944,14 +944,26 @@ class StartFileTests(unittest.TestCase):
             f.write(content)
         return basename
 
-    def _make_mod(self, contents, name='mod'):
-        """Write an importable <mod>.py, returning the module directory."""
+    def _make_mod(self, contents, name='mod', *, package=False, on_path=False):
+        """Write an importable module (or package), returning its parent dir."""
         extdir = os.path.join(self.sitedir, 'extdir')
-        os.mkdir(extdir)
-        modpath = os.path.join(extdir, f'{name}.py')
+        os.makedirs(extdir, exist_ok=True)
+
+        # Put the code in a package's dunder-init or flat module.
+        if package:
+            pkgdir = os.path.join(extdir, name)
+            os.mkdir(pkgdir)
+            modpath = os.path.join(pkgdir, '__init__.py')
+        else:
+            modpath = os.path.join(extdir, f'{name}.py')
+
         with open(modpath, 'w') as fp:
             fp.write(contents)
+
         self.addCleanup(sys.modules.pop, name, None)
+        if on_path:
+            # Don't worry, DirsOnSysPath() in setUp() will clean this up.
+            sys.path.insert(0, extdir)
         return extdir
 
     def _all_entrypoints(self):
@@ -1178,18 +1190,12 @@ class StartFileTests(unittest.TestCase):
 
     def test_execute_entrypoints_with_callable(self):
         # Entrypoint with callable is invoked.
-        mod_dir = os.path.join(self.sitedir, 'epmod')
-        os.mkdir(mod_dir)
-        init_file = os.path.join(mod_dir, '__init__.py')
-        with open(init_file, 'w') as f:
-            f.write("""\
+        self._make_mod("""\
 called = False
 def startup():
     global called
     called = True
-""")
-        sys.path.insert(0, self.sitedir)
-        self.addCleanup(sys.modules.pop, 'epmod', None)
+""", name='epmod', package=True, on_path=True)
         fullname = os.path.join(self.sitedir, 'epmod.start')
         site._pending_entrypoints[fullname] = ['epmod:startup']
         site._execute_start_entrypoints()
@@ -1228,16 +1234,10 @@ def startup():
 
     def test_execute_entrypoints_callable_error(self):
         # Callable that raises prints traceback but continues.
-        mod_dir = os.path.join(self.sitedir, 'badmod')
-        os.mkdir(mod_dir)
-        init_file = os.path.join(mod_dir, '__init__.py')
-        with open(init_file, 'w') as f:
-            f.write("""\
+        self._make_mod("""\
 def fail():
     raise RuntimeError("boom")
-""")
-        sys.path.insert(0, self.sitedir)
-        self.addCleanup(sys.modules.pop, 'badmod', None)
+""", name='badmod', package=True, on_path=True)
         fullname = os.path.join(self.sitedir, 'badmod.start')
         site._pending_entrypoints[fullname] = ['badmod:fail']
         with captured_stderr() as err:
@@ -1247,18 +1247,12 @@ def fail():
 
     def test_execute_entrypoints_duplicates_called_twice(self):
         # PEP 829: duplicate entry points execute multiple times.
-        mod_dir = os.path.join(self.sitedir, 'countmod')
-        os.mkdir(mod_dir)
-        init_file = os.path.join(mod_dir, '__init__.py')
-        with open(init_file, 'w') as f:
-            f.write("""\
+        self._make_mod("""\
 call_count = 0
 def bump():
     global call_count
     call_count += 1
-""")
-        sys.path.insert(0, self.sitedir)
-        self.addCleanup(sys.modules.pop, 'countmod', None)
+""", name='countmod', package=True, on_path=True)
         fullname = os.path.join(self.sitedir, 'countmod.start')
         site._pending_entrypoints[fullname] = [
             'countmod:bump', 'countmod:bump']
@@ -1289,18 +1283,12 @@ def bump():
     def test_exec_imports_suppressed_by_empty_matching_start(self):
         self._make_start("", name='foo')
         self._make_pth("import epmod; epmod.startup()", name='foo')
-        mod_dir = os.path.join(self.sitedir, 'epmod')
-        os.mkdir(mod_dir)
-        init_file = os.path.join(mod_dir, '__init__.py')
-        with open(init_file, 'w') as f:
-            f.write("""\
+        self._make_mod("""\
 called = False
 def startup():
     global called
     called = True
-""")
-        sys.path.insert(0, self.sitedir)
-        self.addCleanup(sys.modules.pop, 'epmod', None)
+""", name='epmod', package=True, on_path=True)
         site._read_pth_file(self.sitedir, 'foo.pth', set())
         site._read_start_file(self.sitedir, 'foo.start')
         site._exec_imports()
