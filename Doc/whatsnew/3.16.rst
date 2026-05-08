@@ -114,13 +114,18 @@ annotationlib
   Use :meth:`annotationlib.ForwardRef.evaluate`
   or :func:`typing.evaluate_forward_ref` instead.
 
+functools
+---------
+
+* Calling the Python implementation of :func:`functools.reduce` with *function*
+  or *sequence* as keyword arguments has been deprecated since Python 3.14.
+
 shutil
 ------
 
 * The :class:`!ExecError` exception which has been deprecated since Python 3.14.
   It has not been used by any function in :mod:`!shutil` since Python 3.4.
   (Contributed by Stan Ulbrych in :gh:`149567`.)
-
 
 sysconfig
 ---------
