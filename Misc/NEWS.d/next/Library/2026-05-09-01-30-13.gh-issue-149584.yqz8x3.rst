@@ -1,0 +1,2 @@
+Improve the performance of the Tachyon profiler by avoiding full page reads
+of remote process memory. Patch by Maurycy Pawłowski-Wieroński.
