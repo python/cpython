@@ -1,2 +1,1 @@
-Fix the not implemented ``get_value`` for :class:`multiprocessing.Semaphore` on MacOSX
-by adding a dedicated class in the ``synchronize.py`` file.
+Fix the unimplemented ``get_value`` method of the ``_multiprocessing.SemLock`` class on MacOSX by adding a specific inherited class between ``multiprocessing.SemLock`` and :class:`multiprocessing.Semahore`.
