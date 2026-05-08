@@ -7,7 +7,8 @@ This modules provides two functions for each color system ABC:
 
 All inputs and outputs are triples of floats in the range [0.0...1.0]
 (with the exception of I and Q, which covers a slightly larger range).
-Inputs outside the valid range may cause exceptions or invalid outputs.
+Inputs outside the valid range give invalid outputs, Hence the outputs
+are clipped by default.
 
 Supported color systems:
 RGB: Red, Green, Blue components
@@ -41,6 +42,19 @@ def rgb_to_yiq(r, g, b):
     y = 0.30*r + 0.59*g + 0.11*b
     i = 0.74*(r-y) - 0.27*(b-y)
     q = 0.48*(r-y) + 0.41*(b-y)
+
+    if y < 0.0:
+        y = 0.0
+    if i < -0.5957:
+        i = -0.5957
+    if q < -0.5226:
+        q = -0.5226
+    if y > 1.0:
+        y = 1.0
+    if i > 0.5957:
+        i = 0.5957
+    if q > 0.5226:
+        q = 0.5226
     return (y, i, q)
 
 def yiq_to_rgb(y, i, q):
@@ -94,6 +108,19 @@ def rgb_to_hls(r, g, b):
     else:
         h = 4.0+gc-rc
     h = (h/6.0) % 1.0
+
+    if h < 0.0:
+        h = 0.0
+    if l < 0.0:
+        l = 0.0
+    if s < 0.0:
+        s = 0.0
+    if h > 1.0:
+        h = 1.0
+    if l > 1.0:
+        l = 1.0
+    if s > 1.0:
+        s = 1.0
     return h, l, s
 
 def hls_to_rgb(h, l, s):
@@ -104,7 +131,21 @@ def hls_to_rgb(h, l, s):
     else:
         m2 = l+s-(l*s)
     m1 = 2.0*l - m2
-    return (_v(m1, m2, h+ONE_THIRD), _v(m1, m2, h), _v(m1, m2, h-ONE_THIRD))
+    r, g, b = _v(m1, m2, h+ONE_THIRD), _v(m1, m2, h), _v(m1, m2, h-ONE_THIRD)
+    
+    if r < 0.0:
+        r = 0.0
+    if g < 0.0:
+        g = 0.0
+    if b < 0.0:
+        b = 0.0
+    if r > 1.0:
+        r = 1.0
+    if g > 1.0:
+        g = 1.0
+    if b > 1.0:
+        b = 1.0
+    return (r,g,b)
 
 def _v(m1, m2, hue):
     hue = hue % 1.0
@@ -140,6 +181,19 @@ def rgb_to_hsv(r, g, b):
     else:
         h = 4.0+gc-rc
     h = (h/6.0) % 1.0
+    
+    if h < 0.0:
+        h = 0.0
+    if s < 0.0:
+        s = 0.0
+    if v < 0.0:
+        v = 0.0
+    if h > 1.0:
+        h = 1.0
+    if s > 1.0:
+        s = 1.0
+    if v > 1.0:
+        v = 1.0
     return h, s, v
 
 def hsv_to_rgb(h, s, v):
@@ -151,6 +205,23 @@ def hsv_to_rgb(h, s, v):
     q = v*(1.0 - s*f)
     t = v*(1.0 - s*(1.0-f))
     i = i%6
+
+    if v < 0.0:
+        v = 0.0
+    if t < 0.0:
+        t = 0.0
+    if p < 0.0:
+        p = 0.0
+    if q < 0.0:
+        q = 0.0
+    if v > 1.0:
+        v = 1.0
+    if t > 1.0:
+        t = 1.0
+    if p > 1.0:
+        p = 1.0
+    if q > 1.0:
+        q = 1.0
     if i == 0:
         return v, t, p
     if i == 1:
