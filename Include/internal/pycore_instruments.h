@@ -122,7 +122,7 @@ extern int
 _Py_Instrumentation_GetLine(PyCodeObject *code, _PyCoLineInstrumentationData *line_data, int index);
 
 static inline uint8_t
-_PyCode_GetOriginalOpcode(_PyCoLineInstrumentationData *line_data, int index)
+_PyCode_GetOriginalOpcode(_PyCoLineInstrumentationData *line_data, Py_ssize_t index)
 {
     return line_data->data[index*line_data->bytes_per_entry];
 }
