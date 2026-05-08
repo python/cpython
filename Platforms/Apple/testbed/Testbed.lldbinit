@@ -1,0 +1,4 @@
+process handle SIGINT -n true -p true -s false
+process handle SIGUSR1 -n true -p true -s false
+process handle SIGUSR2 -n true -p true -s false
+process handle SIGXFSZ -n true -p true -s false

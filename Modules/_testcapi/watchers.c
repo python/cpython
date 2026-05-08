@@ -212,13 +212,32 @@ type_modified_callback_error(PyTypeObject *type)
     return -1;
 }
 
+static int
+type_modified_callback_name(PyTypeObject *type)
+{
+    assert(PyList_Check(g_type_modified_events));
+    PyObject *name = PyUnicode_FromString(type->tp_name);
+    if (name == NULL) {
+        return -1;
+    }
+    if (PyList_Append(g_type_modified_events, name) < 0) {
+        Py_DECREF(name);
+        return -1;
+    }
+    Py_DECREF(name);
+    return 0;
+}
+
 static PyObject *
 add_type_watcher(PyObject *self, PyObject *kind)
 {
     int watcher_id;
     assert(PyLong_Check(kind));
     long kind_l = PyLong_AsLong(kind);
-    if (kind_l == 2) {
+    if (kind_l == 3) {
+        watcher_id = PyType_AddWatcher(type_modified_callback_name);
+    }
+    else if (kind_l == 2) {
         watcher_id = PyType_AddWatcher(type_modified_callback_wrap);
     }
     else if (kind_l == 1) {
@@ -364,7 +383,7 @@ add_code_watcher(PyObject *self, PyObject *which_watcher)
         watcher_id = PyCode_AddWatcher(error_code_event_handler);
     }
     else {
-        PyErr_Format(PyExc_ValueError, "invalid watcher %d", which_l);
+        PyErr_Format(PyExc_ValueError, "invalid watcher %ld", which_l);
         return NULL;
     }
     if (watcher_id < 0) {
@@ -673,7 +692,7 @@ add_context_watcher(PyObject *self, PyObject *which_watcher)
     assert(PyLong_Check(which_watcher));
     long which_l = PyLong_AsLong(which_watcher);
     if (which_l < 0 || which_l >= (long)Py_ARRAY_LENGTH(callbacks)) {
-        PyErr_Format(PyExc_ValueError, "invalid watcher %d", which_l);
+        PyErr_Format(PyExc_ValueError, "invalid watcher %ld", which_l);
         return NULL;
     }
     int watcher_id = PyContext_AddWatcher(callbacks[which_l]);

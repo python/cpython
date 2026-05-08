@@ -14,7 +14,7 @@ import time
 import unittest
 from test import support
 from test.support import (
-    is_apple, is_apple_mobile, os_helper, threading_helper
+    force_not_colorized, is_apple, is_apple_mobile, os_helper, threading_helper
 )
 from test.support.script_helper import assert_python_ok, spawn_python
 try:
@@ -353,6 +353,7 @@ class WakeupSignalTests(unittest.TestCase):
 
     @unittest.skipIf(_testcapi is None, 'need _testcapi')
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
+    @force_not_colorized
     def test_wakeup_write_error(self):
         # Issue #16105: write() errors in the C signal handler should not
         # pass silently.

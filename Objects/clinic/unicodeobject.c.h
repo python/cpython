@@ -918,8 +918,8 @@ PyDoc_STRVAR(unicode_replace__doc__,
 "    Maximum number of occurrences to replace.\n"
 "    -1 (the default value) means replace all occurrences.\n"
 "\n"
-"If the optional argument count is given, only the first count occurrences are\n"
-"replaced.");
+"If count is given, only the first count occurrences are replaced.\n"
+"If count is not specified or -1, then all occurrences are replaced.");
 
 #define UNICODE_REPLACE_METHODDEF    \
     {"replace", _PyCFunction_CAST(unicode_replace), METH_FASTCALL|METH_KEYWORDS, unicode_replace__doc__},
@@ -1908,4 +1908,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=238917fe66120bde input=a9049054013a1b77]*/
+/*[clinic end generated code: output=13eaf65699ea9fc9 input=a9049054013a1b77]*/
