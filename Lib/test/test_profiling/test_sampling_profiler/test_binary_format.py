@@ -838,8 +838,7 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
             _remote_debugging.BinaryReader(123)
 
     def test_invalid_path_error_preserves_pathlib(self):
-        """OSError from a missing pathlib.Path round-trips the path object
-        via PyErr_SetFromErrnoWithFilenameObject (Py_fopen contract)."""
+        """Missing path: OSError carries the original path object, not a string."""
         missing = pathlib.Path("/i/do/not/exist")
         with self.assertRaises(FileNotFoundError) as cm:
             _remote_debugging.BinaryReader(missing)
