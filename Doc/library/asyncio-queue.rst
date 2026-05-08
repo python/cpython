@@ -15,10 +15,10 @@ asyncio queues are designed to be similar to classes of the
 they are designed to be used specifically in async/await code.
 
 Note that methods of asyncio queues don't have a *timeout* parameter;
-use :func:`asyncio.wait_for` function to perform queue operations with a
+use :func:`asyncio.wait_for` function to perform queue operations with
 timeouts.
 
-See also the `Examples`_ section below.
+Also see the `Examples`_ section below.
 
 Queue
 =====
@@ -78,7 +78,7 @@ Queue
       Block until all items in the queue have been received and processed.
 
       The count of unfinished tasks goes up whenever an item is added
-      to the queue. The count goes down whenever a consumer coroutine calls
+      to the queue. The count goes down whenever a consumer calls
       :meth:`task_done` to indicate that the item was retrieved and all
       work on it is complete.  When the count of unfinished tasks drops
       to zero, :meth:`join` unblocks.
@@ -114,8 +114,9 @@ Queue
       down normally with :meth:`~Queue.get` calls to extract tasks
       that have already been loaded.
 
-      And if :meth:`~Queue.task_done` is called for each remaining task, a
-      pending :meth:`~Queue.join` will be unblocked normally.
+      In this case, if :meth:`~Queue.task_done` is called for each
+      remaining task, a pending :meth:`~Queue.join` will be unblocked
+      normally.
 
       Once the queue is empty, future calls to :meth:`~Queue.get` will
       raise :exc:`QueueShutDown`.
@@ -213,7 +214,7 @@ concurrent tasks::
            # Get a "work item" out of the queue.
            sleep_for = await queue.get()
 
-           # Sleep for the "sleep_for" seconds.
+           # Sleep "sleep_for" seconds.
            await asyncio.sleep(sleep_for)
 
            # Notify the queue that the "work item" has been processed.
