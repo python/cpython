@@ -891,7 +891,7 @@ Raises:
 
 static PyObject *
 _remote_debugging_RemoteUnwinder_get_stats_impl(RemoteUnwinderObject *self)
-/*[clinic end generated code: output=21e36477122be2a0 input=75fef4134c12a8c9]*/
+/*[clinic end generated code: output=21e36477122be2a0 input=0e3897ce0f5b9f81]*/
 {
     if (!self->collect_stats) {
         PyErr_SetString(PyExc_RuntimeError,
