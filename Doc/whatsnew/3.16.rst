@@ -106,6 +106,14 @@ module_name
 Removed
 =======
 
+annotationlib
+-------------
+
+* The :meth:`!annotationlib.ForwardRef._evaluate` method
+  which has been deprecated since Python 3.14.
+  Use :meth:`annotationlib.ForwardRef.evaluate`
+  or :func:`typing.evaluate_forward_ref` instead.
+
 sysconfig
 ---------
 
