@@ -387,9 +387,15 @@ def addsitedir(sitedir, known_paths=None, *, defer_processing_start_files=False)
     else:
         reset = False
     sitedir, sitedircase = makepath(sitedir)
-    if not sitedircase in known_paths:
-        sys.path.append(sitedir)        # Add path component
+
+    # If the normcase'd new sitedir isn't already known, append it to
+    # sys.path, keep a record of it, and process all .pth and .start files
+    # found in that directory.  If the new sitedir is known, be sure not
+    # to process all of those twice!  gh-75723
+    if sitedircase not in known_paths:
+        sys.path.append(sitedir)
         known_paths.add(sitedircase)
+
         try:
             names = os.listdir(sitedir)
         except OSError:
@@ -422,7 +428,7 @@ def addsitedir(sitedir, known_paths=None, *, defer_processing_start_files=False)
             process_startup_files()
 
     if reset:
-        known_paths = None
+        return None
 
     return known_paths
 
