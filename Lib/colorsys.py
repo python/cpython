@@ -132,7 +132,7 @@ def hls_to_rgb(h, l, s):
         m2 = l+s-(l*s)
     m1 = 2.0*l - m2
     r, g, b = _v(m1, m2, h+ONE_THIRD), _v(m1, m2, h), _v(m1, m2, h-ONE_THIRD)
-    
+
     if r < 0.0:
         r = 0.0
     if g < 0.0:
