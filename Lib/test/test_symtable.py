@@ -2,8 +2,6 @@
 Test the API of the symtable module.
 """
 
-import re
-import textwrap
 import symtable
 import warnings
 import unittest
