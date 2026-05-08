@@ -175,8 +175,8 @@ Lib/test/test__osx_support.py @python/macos-team
 Tools/wasm/README.md          @brettcannon @freakboy3742 @emmatyping
 
 # WebAssembly (Emscripten)
-Tools/wasm/config.site-wasm32-emscripten  @freakboy3742 @emmatyping
-Tools/wasm/emscripten                     @freakboy3742 @emmatyping
+Platforms/emscripten          @freakboy3742 @emmatyping
+Tools/wasm/emscripten         @freakboy3742 @emmatyping
 
 # WebAssembly (WASI)
 Platforms/WASI                @brettcannon @emmatyping @savannahostrowski
