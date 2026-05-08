@@ -5,3 +5,4 @@ c-api/allocation.html: deprecated-aliases
 c-api/file.html: deprecated-api
 
 library/asyncio-task.html: terminating-a-task-group
+library/symtable.html: symtable.Class.get_methods
