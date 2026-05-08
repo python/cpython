@@ -9,7 +9,7 @@ extern "C" {
 
 // PyBool_Type is declared by object.h
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03100000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 16)
 PyAPI_FUNC(int) PyBool_Check(PyObject *x);
 #endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x03100000
