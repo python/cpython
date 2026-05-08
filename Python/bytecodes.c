@@ -6297,6 +6297,16 @@ dummy_func(
             if (target->op.code == ENTER_EXECUTOR) {
                 PyCodeObject *code = _PyFrame_GetCode(frame);
                 executor = code->co_executors->executors[target->op.arg];
+                _PyExecutorObject *previous_executor = _PyExecutor_FromExit(exit);
+                if (!exit->is_control_flow) {
+                    int chain_depth = previous_executor->vm_data.chain_depth + 1;
+                    if (executor == previous_executor ||
+                        chain_depth % MAX_CHAIN_DEPTH == 0) {
+                        /* Avoid tier-2 self-link/wrap that bypasses the eval breaker. */
+                        _Py_set_eval_breaker_bit(tstate, _PY_EVAL_JIT_FORCE_TIER1_BIT);
+                        GOTO_TIER_ONE(target);
+                    }
+                }
                 Py_INCREF(executor);
                 assert(tstate->jit_exit == exit);
                 exit->executor = executor;
