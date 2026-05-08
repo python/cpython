@@ -3244,6 +3244,7 @@ class AbstractPickleTests:
             'BuiltinImporter': (3, 3),
             'str': (3, 4),  # not interoperable with Python < 3.4
             'frozendict': (3, 15),
+            'sentinel': (3, 15),
         }
         for t in builtins.__dict__.values():
             if isinstance(t, type) and not issubclass(t, BaseException):

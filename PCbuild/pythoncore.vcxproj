@@ -195,6 +195,7 @@
     <ClInclude Include="..\Include\cpython\pystats.h" />
     <ClInclude Include="..\Include\cpython\pythonrun.h" />
     <ClInclude Include="..\Include\cpython\pythread.h" />
+    <ClInclude Include="..\Include\cpython\sentinelobject.h" />
     <ClInclude Include="..\Include\cpython\setobject.h" />
     <ClInclude Include="..\Include\cpython\sliceobject.h" />
     <ClInclude Include="..\Include\cpython\structseq.h" />
@@ -561,6 +562,7 @@
     <ClCompile Include="..\Objects\odictobject.c" />
     <ClCompile Include="..\Objects\picklebufobject.c" />
     <ClCompile Include="..\Objects\rangeobject.c" />
+    <ClCompile Include="..\Objects\sentinelobject.c" />
     <ClCompile Include="..\Objects\setobject.c" />
     <ClCompile Include="..\Objects\sliceobject.c" />
     <ClCompile Include="..\Objects\structseq.c" />

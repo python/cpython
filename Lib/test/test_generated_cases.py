@@ -2074,18 +2074,32 @@ class TestRecorderTableGeneration(unittest.TestCase):
             pass
         super().tearDown()
 
-    def generate_tables(self, input: str) -> str:
-        import io
+    def analyze_input(self, input: str):
         with open(self.temp_input_filename, "w+") as f:
             f.write(parser.BEGIN_MARKER)
             f.write(input)
             f.write(parser.END_MARKER)
         with handle_stderr():
-            analysis = analyze_files([self.temp_input_filename])
+            return analyze_files([self.temp_input_filename])
+
+    def generate_tables(self, input: str) -> str:
+        import io
+        analysis = self.analyze_input(input)
         buf = io.StringIO()
         out = CWriter(buf, 0, False)
         record_function_generator.generate_recorder_tables(analysis, out)
         return buf.getvalue()
+
+    def get_slot_map_section(self, output: str) -> str:
+        return output.split(
+            "const _PyOpcodeRecordSlotMap _PyOpcode_RecordSlotMaps[256] = {\n",
+            1,
+        )[1].split("};\n\n", 1)[0]
+
+    def assert_slot_map_lines(self, output: str, *lines: str) -> None:
+        slot_map_section = self.get_slot_map_section(output)
+        for line in lines:
+            self.assertIn(line, slot_map_section)
 
     def test_single_recording_uop_generates_count(self):
         input = """
@@ -2145,6 +2159,173 @@ class TestRecorderTableGeneration(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "exceeds MAX_RECORDED_VALUES"):
             self.generate_tables(input)
 
+    def test_family_member_needs_transform_only_when_shape_changes(self):
+        input = """
+        tier2 op(_RECORD_TOS, (value -- value)) {
+            RECORD_VALUE(value);
+        }
+        tier2 op(_RECORD_TOS_TYPE, (value -- value)) {
+            RECORD_VALUE(Py_TYPE(value));
+        }
+        op(_DO_STUFF, (value -- res)) {
+            res = value;
+        }
+        macro(OP_RAW) = _RECORD_TOS + _DO_STUFF;
+        macro(OP_RAW_SPECIALIZED) = _RECORD_TOS_TYPE + _DO_STUFF;
+        family(OP_RAW, INLINE_CACHE_ENTRIES_OP_RAW) = { OP_RAW_SPECIALIZED };
+
+        macro(OP_TYPED) = _RECORD_TOS_TYPE + _DO_STUFF;
+        macro(OP_TYPED_SPECIALIZED) = _RECORD_TOS_TYPE + _DO_STUFF;
+        family(OP_TYPED, INLINE_CACHE_ENTRIES_OP_TYPED) = { OP_TYPED_SPECIALIZED };
+        """
+        output = self.generate_tables(input)
+        self.assert_slot_map_lines(
+            output,
+            "[OP_RAW] = {1, 1, {0}}",
+            "[OP_RAW_SPECIALIZED] = {1, 0, {0}}",
+            "[OP_TYPED] = {1, 0, {0}}",
+            "[OP_TYPED_SPECIALIZED] = {1, 0, {0}}",
+        )
+
+    def test_family_member_maps_positional_recorders_to_family_slots(self):
+        input = """
+        tier2 op(_RECORD_TOS, (sub -- sub)) {
+            RECORD_VALUE(sub);
+        }
+        tier2 op(_RECORD_NOS, (container, sub -- container, sub)) {
+            RECORD_VALUE(container);
+        }
+        op(_DO_STUFF, (container, sub -- res)) {
+            res = container;
+        }
+        macro(OP) = _RECORD_TOS + _RECORD_NOS + _DO_STUFF;
+        macro(OP_SPECIALIZED) = _RECORD_NOS + _DO_STUFF;
+        family(OP, INLINE_CACHE_ENTRIES_OP) = { OP_SPECIALIZED };
+        """
+        output = self.generate_tables(input)
+        self.assert_slot_map_lines(
+            output,
+            "[OP] = {2, 0, {1, 0}}",
+            "[OP_SPECIALIZED] = {1, 0, {0}}",
+        )
+
+    def test_family_member_maps_non_positional_recorders_by_stack_shape(self):
+        input = """
+        tier2 op(_RECORD_CALLABLE, (callable, self, args[oparg] -- callable, self, args[oparg])) {
+            RECORD_VALUE(callable);
+        }
+        tier2 op(_RECORD_BOUND_METHOD, (callable, self, args[oparg] -- callable, self, args[oparg])) {
+            RECORD_VALUE(callable);
+        }
+        op(_DO_STUFF, (callable, self, args[oparg] -- res)) {
+            res = callable;
+        }
+        macro(OP) = _RECORD_CALLABLE + _DO_STUFF;
+        macro(OP_SPECIALIZED) = _RECORD_BOUND_METHOD + _DO_STUFF;
+        family(OP, INLINE_CACHE_ENTRIES_OP) = { OP_SPECIALIZED };
+        """
+        output = self.generate_tables(input)
+        self.assert_slot_map_lines(
+            output,
+            "[OP] = {1, 1, {0}}",
+            "[OP_SPECIALIZED] = {1, 0, {0}}",
+        )
+
+    def test_family_head_records_union_of_member_recorders(self):
+        input = """
+        tier2 op(_RECORD_TOS, (value -- value)) {
+            RECORD_VALUE(value);
+        }
+        op(_DO_STUFF, (value -- res)) {
+            res = value;
+        }
+        macro(OP) = _DO_STUFF;
+        macro(OP_SPECIALIZED) = _RECORD_TOS + _DO_STUFF;
+        family(OP, INLINE_CACHE_ENTRIES_OP) = { OP_SPECIALIZED };
+        """
+        output = self.generate_tables(input)
+        self.assertIn("[OP] = {1, {_RECORD_TOS_INDEX}}", output)
+        self.assertIn("[OP_SPECIALIZED] = {1, {_RECORD_TOS_INDEX}}", output)
+        self.assert_slot_map_lines(output, "[OP_SPECIALIZED] = {1, 0, {0}}")
+
+    def test_family_detects_base_and_specialized_recording_difference(self):
+        input = """
+        tier2 op(_RECORD_TOS, (value -- value)) {
+            RECORD_VALUE(value);
+        }
+        tier2 op(_RECORD_TOS_TYPE, (value -- value)) {
+            RECORD_VALUE(Py_TYPE(value));
+        }
+        op(_DO_STUFF, (value -- res)) {
+            res = value;
+        }
+        macro(OP) = _RECORD_TOS + _DO_STUFF;
+        macro(OP_SPECIALIZED) = _RECORD_TOS_TYPE + _DO_STUFF;
+        family(OP, INLINE_CACHE_ENTRIES_OP) = { OP_SPECIALIZED };
+        """
+        analysis = self.analyze_input(input)
+        output = self.generate_tables(input)
+        self.assertEqual(
+            record_function_generator.get_instruction_record_names(
+                analysis.instructions["OP"]
+            ),
+            ["_RECORD_TOS"],
+        )
+        self.assertEqual(
+            record_function_generator.get_instruction_record_names(
+                analysis.instructions["OP_SPECIALIZED"]
+            ),
+            ["_RECORD_TOS_TYPE"],
+        )
+        self.assertIn("[OP] = {1, {_RECORD_TOS_TYPE_INDEX}}", output)
+        self.assertIn("[OP_SPECIALIZED] = {1, {_RECORD_TOS_TYPE_INDEX}}", output)
+        self.assert_slot_map_lines(
+            output,
+            "[OP] = {1, 1, {0}}",
+            "[OP_SPECIALIZED] = {1, 0, {0}}",
+        )
+
+    def test_family_head_falls_back_for_missing_member_slots(self):
+        input = """
+        tier2 op(_RECORD_TOS, (value -- value)) {
+            RECORD_VALUE(value);
+        }
+        op(_DO_STUFF, (value -- res)) {
+            res = value;
+        }
+        macro(OP) = _RECORD_TOS + _DO_STUFF;
+        macro(OP_SPECIALIZED) = _DO_STUFF;
+        family(OP, INLINE_CACHE_ENTRIES_OP) = { OP_SPECIALIZED };
+        """
+        output = self.generate_tables(input)
+        self.assertIn("[OP] = {1, {_RECORD_TOS_INDEX}}", output)
+        self.assertIn("[OP_SPECIALIZED] = {1, {_RECORD_TOS_INDEX}}", output)
+
+    def test_family_mixed_slots_only_transform_changed_recorders(self):
+        input = """
+        tier2 op(_RECORD_TOS_TYPE, (left, right -- left, right)) {
+            RECORD_VALUE(Py_TYPE(right));
+        }
+        tier2 op(_RECORD_NOS_TYPE, (left, right -- left, right)) {
+            RECORD_VALUE(Py_TYPE(left));
+        }
+        tier2 op(_RECORD_NOS, (left, right -- left, right)) {
+            RECORD_VALUE(left);
+        }
+        op(_DO_STUFF, (left, right -- res)) {
+            res = left;
+        }
+        macro(OP) = _RECORD_TOS_TYPE + _RECORD_NOS_TYPE + _DO_STUFF;
+        macro(OP_SPECIALIZED) = _RECORD_NOS + _DO_STUFF;
+        family(OP, INLINE_CACHE_ENTRIES_OP) = { OP_SPECIALIZED };
+        """
+        output = self.generate_tables(input)
+        self.assertIn("[OP] = {2, {_RECORD_NOS_INDEX, _RECORD_TOS_TYPE_INDEX}}", output)
+        self.assert_slot_map_lines(
+            output,
+            "[OP] = {2, 2, {1, 0}}",
+            "[OP_SPECIALIZED] = {1, 0, {0}}",
+        )
 
 class TestGeneratedAbstractCases(unittest.TestCase):
     def setUp(self) -> None:

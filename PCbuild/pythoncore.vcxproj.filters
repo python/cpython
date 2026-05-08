@@ -519,6 +519,9 @@
     <ClInclude Include="..\Include\cpython\pythread.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\sentinelobject.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\setobject.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
@@ -1272,6 +1275,9 @@
       <Filter>Objects</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\rangeobject.c">
+      <Filter>Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Objects\sentinelobject.c">
       <Filter>Objects</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\setobject.c">

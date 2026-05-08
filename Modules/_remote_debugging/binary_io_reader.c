@@ -258,7 +258,7 @@ reader_parse_string_table(BinaryReader *reader, const uint8_t *data, size_t file
             PyErr_SetString(PyExc_ValueError, "Malformed varint in string table");
             return -1;
         }
-        if (offset + str_len > file_size) {
+        if (offset > file_size || str_len > file_size - offset) {
             PyErr_SetString(PyExc_ValueError, "String table overflow");
             return -1;
         }
@@ -976,8 +976,8 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
     }
 
     while (offset < reader->sample_data_size) {
-        /* Read thread_id (8 bytes) + interpreter_id (4 bytes) */
-        if (offset + 13 > reader->sample_data_size) {
+        /* Read thread_id (8 bytes) + interpreter_id (4 bytes) + encoding byte */
+        if (reader->sample_data_size - offset < SAMPLE_HEADER_FIXED_SIZE) {
             break;  /* End of data */
         }
 

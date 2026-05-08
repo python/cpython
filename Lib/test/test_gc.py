@@ -7,7 +7,7 @@ from test.support import (verbose, refcount_test,
                           Py_GIL_DISABLED)
 from test.support.import_helper import import_module
 from test.support.os_helper import temp_dir, TESTFN, unlink
-from test.support.script_helper import assert_python_ok, make_script, run_test_script
+from test.support.script_helper import assert_python_ok, make_script
 from test.support import threading_helper, gc_threshold
 
 import gc
@@ -419,11 +419,19 @@ class GCTests(unittest.TestCase):
         # each call to collect(N)
         x = []
         gc.collect(0)
-        # x is now in the old gen
+        # x is now in gen 1
         a, b, c = gc.get_count()
-        # We don't check a since its exact values depends on
+        gc.collect(1)
+        # x is now in gen 2
+        d, e, f = gc.get_count()
+        gc.collect(2)
+        # x is now in gen 3
+        g, h, i = gc.get_count()
+        # We don't check a, d, g since their exact values depends on
         # internal implementation details of the interpreter.
         self.assertEqual((b, c), (1, 0))
+        self.assertEqual((e, f), (0, 1))
+        self.assertEqual((h, i), (0, 0))
 
     def test_trashcan(self):
         class Ouch:
@@ -907,9 +915,41 @@ class GCTests(unittest.TestCase):
         self.assertTrue(
                 any(l is element for element in gc.get_objects(generation=0))
         )
-        gc.collect()
+        self.assertFalse(
+                any(l is element for element in gc.get_objects(generation=1))
+        )
+        self.assertFalse(
+                any(l is element for element in gc.get_objects(generation=2))
+        )
+        gc.collect(generation=0)
         self.assertFalse(
                 any(l is element for element in gc.get_objects(generation=0))
+        )
+        self.assertTrue(
+                any(l is element for element in gc.get_objects(generation=1))
+        )
+        self.assertFalse(
+                any(l is element for element in gc.get_objects(generation=2))
+        )
+        gc.collect(generation=1)
+        self.assertFalse(
+                any(l is element for element in gc.get_objects(generation=0))
+        )
+        self.assertFalse(
+                any(l is element for element in gc.get_objects(generation=1))
+        )
+        self.assertTrue(
+                any(l is element for element in gc.get_objects(generation=2))
+        )
+        gc.collect(generation=2)
+        self.assertFalse(
+                any(l is element for element in gc.get_objects(generation=0))
+        )
+        self.assertFalse(
+                any(l is element for element in gc.get_objects(generation=1))
+        )
+        self.assertTrue(
+                any(l is element for element in gc.get_objects(generation=2))
         )
         del l
         gc.collect()
@@ -1249,17 +1289,6 @@ class GCTests(unittest.TestCase):
         self.assertTrue(new_count - count > (n // 2))
 
 
-class IncrementalGCTests(unittest.TestCase):
-    @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
-    @requires_gil_enabled("Free threading does not support incremental GC")
-    def test_incremental_gc_handles_fast_cycle_creation(self):
-        # Run this test in a fresh process.  The number of alive objects (which can
-        # be from unit tests run before this one) can influence how quickly cyclic
-        # garbage is found.
-        script = support.findfile("_test_gc_fast_cycles.py")
-        run_test_script(script)
-
-
 class GCCallbackTests(unittest.TestCase):
     def setUp(self):
         # Save gc state and disable it.
@@ -1514,8 +1543,8 @@ class GCTogglingTests(unittest.TestCase):
         assert not detector.gc_happened
         while not detector.gc_happened:
             i += 1
-            if i > 100000:
-                self.fail("gc didn't happen after 100000 iterations")
+            if i > 10000:
+                self.fail("gc didn't happen after 10000 iterations")
             self.assertEqual(len(ouch), 0)
             junk.append([])  # this will eventually trigger gc
 
@@ -1587,8 +1616,8 @@ class GCTogglingTests(unittest.TestCase):
             gc.collect()
         while not detector.gc_happened:
             i += 1
-            if i > 50000:
-                self.fail("gc didn't happen after 50000 iterations")
+            if i > 10000:
+                self.fail("gc didn't happen after 10000 iterations")
             self.assertEqual(len(ouch), 0)
             junk.append([])  # this will eventually trigger gc
 
@@ -1605,8 +1634,8 @@ class GCTogglingTests(unittest.TestCase):
         detector = GC_Detector()
         while not detector.gc_happened:
             i += 1
-            if i > 100000:
-                self.fail("gc didn't happen after 100000 iterations")
+            if i > 10000:
+                self.fail("gc didn't happen after 10000 iterations")
             junk.append([])  # this will eventually trigger gc
 
         try:
@@ -1616,11 +1645,11 @@ class GCTogglingTests(unittest.TestCase):
             detector = GC_Detector()
             while not detector.gc_happened:
                 i += 1
-                if i > 100000:
+                if i > 10000:
                     break
                 junk.append([])  # this may eventually trigger gc (if it is enabled)
 
-            self.assertEqual(i, 100001)
+            self.assertEqual(i, 10001)
         finally:
             gc.enable()
 

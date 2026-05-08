@@ -995,7 +995,7 @@ class TestCase(unittest.TestCase):
         self.assertNotIn('x', D.__dict__)
 
     def test_missing_repr(self):
-        self.assertIn('MISSING_TYPE object', repr(MISSING))
+        self.assertEqual(repr(MISSING), 'MISSING')
 
     def test_dont_include_other_annotations(self):
         @dataclass

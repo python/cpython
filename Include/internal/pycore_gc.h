@@ -118,21 +118,6 @@ static inline void _PyObject_GC_SET_SHARED(PyObject *op) {
 /* Bit 1 is set when the object is in generation which is GCed currently. */
 #define _PyGC_PREV_MASK_COLLECTING ((uintptr_t)2)
 
-/* Bit 0 in _gc_next is the old space bit.
- * It is set as follows:
- * Young: gcstate->visited_space
- * old[0]: 0
- * old[1]: 1
- * permanent: 0
- *
- * During a collection all objects handled should have the bit set to
- * gcstate->visited_space, as objects are moved from the young gen
- * and the increment into old[gcstate->visited_space].
- * When object are moved from the pending space, old[gcstate->visited_space^1]
- * into the increment, the old space bit is flipped.
-*/
-#define _PyGC_NEXT_MASK_OLD_SPACE_1    1
-
 #define _PyGC_PREV_SHIFT           2
 #define _PyGC_PREV_MASK            (((uintptr_t) -1) << _PyGC_PREV_SHIFT)
 
@@ -159,13 +144,11 @@ typedef enum {
 // Lowest bit of _gc_next is used for flags only in GC.
 // But it is always 0 for normal code.
 static inline PyGC_Head* _PyGCHead_NEXT(PyGC_Head *gc) {
-    uintptr_t next = gc->_gc_next & _PyGC_PREV_MASK;
+    uintptr_t next = gc->_gc_next;
     return (PyGC_Head*)next;
 }
 static inline void _PyGCHead_SET_NEXT(PyGC_Head *gc, PyGC_Head *next) {
-    uintptr_t unext = (uintptr_t)next;
-    assert((unext & ~_PyGC_PREV_MASK) == 0);
-    gc->_gc_next = (gc->_gc_next & ~_PyGC_PREV_MASK) | unext;
+    gc->_gc_next = (uintptr_t)next;
 }
 
 // Lowest two bits of _gc_prev is used for _PyGC_PREV_MASK_* flags.
@@ -207,10 +190,6 @@ static inline void _PyGC_CLEAR_FINALIZED(PyObject *op) {
 
 extern void _Py_ScheduleGC(PyThreadState *tstate);
 
-#ifndef Py_GIL_DISABLED
-extern void _Py_TriggerGC(struct _gc_runtime_state *gcstate);
-#endif
-
 
 /* Tell the GC to track this object.
  *
@@ -220,7 +199,7 @@ extern void _Py_TriggerGC(struct _gc_runtime_state *gcstate);
  * ob_traverse method.
  *
  * Internal note: interp->gc.generation0->_gc_prev doesn't have any bit flags
- * because it's not object header.  So we don't use _PyGCHead_PREV() and
+ * because it's not an object header. So we don't use _PyGCHead_PREV() and
  * _PyGCHead_SET_PREV() for it to avoid unnecessary bitwise operations.
  *
  * See also the public PyObject_GC_Track() function.
@@ -244,19 +223,12 @@ static inline void _PyObject_GC_TRACK(
                           "object is in generation which is garbage collected",
                           filename, lineno, __func__);
 
-    struct _gc_runtime_state *gcstate = &_PyInterpreterState_GET()->gc;
-    PyGC_Head *generation0 = &gcstate->young.head;
+    PyGC_Head *generation0 = _PyInterpreterState_GET()->gc.generation0;
     PyGC_Head *last = (PyGC_Head*)(generation0->_gc_prev);
     _PyGCHead_SET_NEXT(last, gc);
     _PyGCHead_SET_PREV(gc, last);
-    uintptr_t not_visited = 1 ^ gcstate->visited_space;
-    gc->_gc_next = ((uintptr_t)generation0) | not_visited;
+    _PyGCHead_SET_NEXT(gc, generation0);
     generation0->_gc_prev = (uintptr_t)gc;
-    gcstate->young.count++; /* number of tracked GC objects */
-    gcstate->heap_size++;
-    if (gcstate->young.count > gcstate->young.threshold) {
-        _Py_TriggerGC(gcstate);
-    }
 #endif
 }
 
@@ -291,11 +263,6 @@ static inline void _PyObject_GC_UNTRACK(
     _PyGCHead_SET_PREV(next, prev);
     gc->_gc_next = 0;
     gc->_gc_prev &= _PyGC_PREV_MASK_FINALIZED;
-    struct _gc_runtime_state *gcstate = &_PyInterpreterState_GET()->gc;
-    if (gcstate->young.count > 0) {
-        gcstate->young.count--;
-    }
-    gcstate->heap_size--;
 #endif
 }
 
