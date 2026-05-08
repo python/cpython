@@ -89,6 +89,21 @@ def _frame_pointers_expected(machine):
     return None
 
 
+def _is_arm32_build():
+    if sys.maxsize >= 2**32:
+        return False
+
+    abi = " ".join(
+        value for value in (
+            sysconfig.get_config_var("MULTIARCH"),
+            sysconfig.get_config_var("HOST_GNU_TYPE"),
+            sysconfig.get_config_var("SOABI"),
+        )
+        if value
+    ).lower()
+    return "arm" in abi
+
+
 def _build_stack_and_unwind(unwinder):
     import operator
 
@@ -295,6 +310,10 @@ class FramePointerUnwindTests(unittest.TestCase):
 @support.requires_gil_enabled("test requires the GIL enabled")
 @unittest.skipIf(support.is_wasi, "test not supported on WASI")
 @unittest.skipUnless(sys.platform == "linux", "GNU backtrace unwinding test requires Linux")
+@unittest.skipIf(
+    _is_arm32_build(),
+    "GNU backtrace unwinding skipped on Arm 32-bit",
+)
 class GnuBacktraceUnwindTests(unittest.TestCase):
 
     def setUp(self):
