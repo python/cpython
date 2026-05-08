@@ -2156,7 +2156,7 @@ codegen_for(compiler *c, stmt_ty s)
     USE_LABEL(c, cleanup);
     /* It is important for instrumentation that the `END_FOR` comes first.
     * Iteration over a generator will jump to the first of these instructions,
-    * but a non-generator will jump to a later instruction.
+    * but a non-generator will jump to the second instruction.
     */
     ADDOP(c, NO_LOCATION, END_FOR);
     ADDOP(c, NO_LOCATION, POP_ITER);
@@ -3959,6 +3959,14 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
         return 0;
     }
 
+    expr_ty generator_exp = asdl_seq_GET(args, 0);
+    PySTEntryObject *generator_entry = _PySymtable_Lookup(SYMTABLE(c), (void *)generator_exp);
+    if (generator_entry->ste_coroutine) {
+        Py_DECREF(generator_entry);
+        return 0;
+    }
+    Py_DECREF(generator_entry);
+
     location loc = LOC(func);
 
     int optimized = 0;
@@ -3998,7 +4006,6 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
         } else if (const_oparg == CONSTANT_BUILTIN_SET) {
             ADDOP_I(c, loc, BUILD_SET, 0);
         }
-        expr_ty generator_exp = asdl_seq_GET(args, 0);
         VISIT(c, expr, generator_exp);
 
         NEW_JUMP_TARGET_LABEL(c, loop);
