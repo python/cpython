@@ -22746,9 +22746,9 @@
             CHECK_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             PyObject *exit_p = (PyObject *)CURRENT_OPERAND0_64();
+            _Py_CODEUNIT *target = frame->instr_ptr;
             #if defined(Py_DEBUG) && !defined(_Py_JIT)
             _PyExitData *exit = (_PyExitData *)exit_p;
-            _Py_CODEUNIT *target = frame->instr_ptr;
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
             if (frame->lltrace >= 3) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -22761,8 +22761,12 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             #endif
+
+            if (target->op.code == RESUME_CHECK_JIT) {
+                target[1].counter = trigger_backoff_counter();
+            }
             SET_CURRENT_CACHED_VALUES(0);
-            GOTO_TIER_ONE(frame->instr_ptr);
+            GOTO_TIER_ONE(target);
         }
 
         case _DYNAMIC_EXIT_r10: {
@@ -22770,9 +22774,9 @@
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef _stack_item_0 = _tos_cache0;
             PyObject *exit_p = (PyObject *)CURRENT_OPERAND0_64();
+            _Py_CODEUNIT *target = frame->instr_ptr;
             #if defined(Py_DEBUG) && !defined(_Py_JIT)
             _PyExitData *exit = (_PyExitData *)exit_p;
-            _Py_CODEUNIT *target = frame->instr_ptr;
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
             if (frame->lltrace >= 3) {
                 stack_pointer[0] = _stack_item_0;
@@ -22789,11 +22793,15 @@
                 stack_pointer += -1;
             }
             #endif
+
+            if (target->op.code == RESUME_CHECK_JIT) {
+                target[1].counter = trigger_backoff_counter();
+            }
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer[0] = _stack_item_0;
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            GOTO_TIER_ONE(frame->instr_ptr);
+            GOTO_TIER_ONE(target);
         }
 
         case _DYNAMIC_EXIT_r20: {
@@ -22802,9 +22810,9 @@
             _PyStackRef _stack_item_0 = _tos_cache0;
             _PyStackRef _stack_item_1 = _tos_cache1;
             PyObject *exit_p = (PyObject *)CURRENT_OPERAND0_64();
+            _Py_CODEUNIT *target = frame->instr_ptr;
             #if defined(Py_DEBUG) && !defined(_Py_JIT)
             _PyExitData *exit = (_PyExitData *)exit_p;
-            _Py_CODEUNIT *target = frame->instr_ptr;
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
             if (frame->lltrace >= 3) {
                 stack_pointer[0] = _stack_item_0;
@@ -22822,12 +22830,16 @@
                 stack_pointer += -2;
             }
             #endif
+
+            if (target->op.code == RESUME_CHECK_JIT) {
+                target[1].counter = trigger_backoff_counter();
+            }
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer[0] = _stack_item_0;
             stack_pointer[1] = _stack_item_1;
             stack_pointer += 2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            GOTO_TIER_ONE(frame->instr_ptr);
+            GOTO_TIER_ONE(target);
         }
 
         case _DYNAMIC_EXIT_r30: {
@@ -22837,9 +22849,9 @@
             _PyStackRef _stack_item_1 = _tos_cache1;
             _PyStackRef _stack_item_2 = _tos_cache2;
             PyObject *exit_p = (PyObject *)CURRENT_OPERAND0_64();
+            _Py_CODEUNIT *target = frame->instr_ptr;
             #if defined(Py_DEBUG) && !defined(_Py_JIT)
             _PyExitData *exit = (_PyExitData *)exit_p;
-            _Py_CODEUNIT *target = frame->instr_ptr;
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
             if (frame->lltrace >= 3) {
                 stack_pointer[0] = _stack_item_0;
@@ -22858,13 +22870,17 @@
                 stack_pointer += -3;
             }
             #endif
+
+            if (target->op.code == RESUME_CHECK_JIT) {
+                target[1].counter = trigger_backoff_counter();
+            }
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer[0] = _stack_item_0;
             stack_pointer[1] = _stack_item_1;
             stack_pointer[2] = _stack_item_2;
             stack_pointer += 3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            GOTO_TIER_ONE(frame->instr_ptr);
+            GOTO_TIER_ONE(target);
         }
 
         case _CHECK_VALIDITY_r00: {
@@ -23685,6 +23701,9 @@
             CHECK_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _Py_CODEUNIT *target = frame->instr_ptr;
+            if (target->op.code == RESUME_CHECK_JIT) {
+                target[1].counter = trigger_backoff_counter();
+            }
             SET_CURRENT_CACHED_VALUES(0);
             GOTO_TIER_ONE(target);
         }

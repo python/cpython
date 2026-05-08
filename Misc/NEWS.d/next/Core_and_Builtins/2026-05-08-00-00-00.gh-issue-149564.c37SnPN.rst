@@ -1,0 +1,2 @@
+The JIT now traces ``exec()``-generated functions called from hot loops by
+propagating call-site hotness to callees via dynamic exits.

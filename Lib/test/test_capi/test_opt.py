@@ -6152,6 +6152,41 @@ class TestUopsOptimization(unittest.TestCase):
                 f1()
         """), PYTHON_JIT="1")
 
+    def test_dynamic_exit_boosts_resume(self):
+        # gh-149564: When a hot loop calls many distinct exec()-generated
+        # functions, _DYNAMIC_EXIT should boost the callee's RESUME counter
+        # so it gets traced sooner.
+        script_helper.assert_python_ok("-s", "-c", textwrap.dedent(f"""
+            import _opcode
+
+            ns = {{}}
+            for i in range(20):
+                exec(f"def fn_{{i}}(x): return x + {{i}}", ns)
+
+            fns = [ns[f'fn_{{i}}'] for i in range(20)]
+
+            # Hot loop calling many exec'd functions triggers dynamic exits
+            for _ in range({TIER2_THRESHOLD + 100}):
+                for fn in fns:
+                    fn(42)
+
+            # At least some callees should have gotten their own executors
+            # thanks to the counter boost on dynamic exit
+            count = 0
+            for fn in fns:
+                code = fn.__code__
+                co_code = code.co_code
+                for i in range(0, len(co_code), 2):
+                    try:
+                        _opcode.get_executor(code, i)
+                        count += 1
+                        break
+                    except ValueError:
+                        pass
+
+            assert count > 0, f"Expected at least one callee to get an executor, got {{count}}"
+        """), PYTHON_JIT="1")
+
 def global_identity(x):
     return x
 

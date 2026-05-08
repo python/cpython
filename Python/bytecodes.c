@@ -6190,9 +6190,9 @@ dummy_func(
         }
 
         tier2 op(_DYNAMIC_EXIT, (exit_p/4 --)) {
+            _Py_CODEUNIT *target = frame->instr_ptr;
     #if defined(Py_DEBUG) && !defined(_Py_JIT)
             _PyExitData *exit = (_PyExitData *)exit_p;
-            _Py_CODEUNIT *target = frame->instr_ptr;
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
             if (frame->lltrace >= 3) {
                 printf("DYNAMIC EXIT: [UOp ");
@@ -6203,9 +6203,13 @@ dummy_func(
                     _PyOpcode_OpName[target->op.code]);
             }
     #endif
-            // Disabled for now (gh-139109) as it slows down dynamic code tremendously.
-            // Compile and jump to the cold dynamic executors in the future.
-            GOTO_TIER_ONE(frame->instr_ptr);
+            // gh-149564: Propagate call-site hotness to callees.
+            // If we're landing on a callee's RESUME, boost its counter so it
+            // gets traced sooner (it was called from a hot trace).
+            if (target->op.code == RESUME_CHECK_JIT) {
+                target[1].counter = trigger_backoff_counter();
+            }
+            GOTO_TIER_ONE(target);
         }
 
         tier2 op(_CHECK_VALIDITY, (--)) {
@@ -6330,6 +6334,10 @@ dummy_func(
             SYNC_SP();
             // TODO (gh-139109): This should be similar to _COLD_EXIT in the future.
             _Py_CODEUNIT *target = frame->instr_ptr;
+            // gh-149564: Propagate call-site hotness to callees.
+            if (target->op.code == RESUME_CHECK_JIT) {
+                target[1].counter = trigger_backoff_counter();
+            }
             GOTO_TIER_ONE(target);
             Py_UNREACHABLE();
         }
