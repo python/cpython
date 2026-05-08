@@ -1,1 +1,1 @@
-Improve performance of :method:`inspect.getattr_static`.
+Improve performance of :meth:`inspect.getattr_static`.
