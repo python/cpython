@@ -1,0 +1,2 @@
+Remove deprecated ``'u'`` type code (:c:type:`wchar_t`) for the :mod:`array`
+module.

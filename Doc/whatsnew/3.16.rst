@@ -114,6 +114,12 @@ annotationlib
   Use :meth:`annotationlib.ForwardRef.evaluate`
   or :func:`typing.evaluate_forward_ref` instead.
 
+array
+-----
+
+* The ``'u'`` format code (:c:type:`wchar_t`) which has been deprecated in
+  documentation since Python 3.3 and at runtime since Python 3.13.
+
 sysconfig
 ---------
 
