@@ -112,7 +112,6 @@ Dependencies to build optional modules are:
 
 .. [1] If *libmpdec* is not available, the :mod:`decimal` module will use
    a pure-Python implementation.
-   See :option:`--with-system-libmpdec` for details.
 .. [2] See :option:`--with-readline` for choosing the backend for the
    :mod:`readline` module.
 .. [3] The :mod:`uuid` module uses ``_uuid`` to generate "safe" UUIDs.
