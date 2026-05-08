@@ -74,7 +74,7 @@ from operator import itemgetter
 from email import _encoded_words as _ew
 from email import errors
 from email import utils
-from functools import wraps
+from functools import partial, wraps
 
 #
 # Useful constants and functions
@@ -139,6 +139,7 @@ class TokenList(list):
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
         self.defects = []
+        self.ew_indexes = []
 
     def __str__(self):
         return ''.join(str(x) for x in self)
@@ -147,10 +148,22 @@ class TokenList(list):
         return '{}({})'.format(self.__class__.__name__,
                              super().__repr__())
 
+    def append(self, value):
+        super().append(value)
+        if hasattr(value, 'ew_indexes'):
+            self.ew_indexes += value.ew_indexes
+
+    def push(self, value):
+        super().insert(0, value)
+        if hasattr(value, 'ew_indexes'):
+            self.ew_indexes[:0] = value.ew_indexes
+
     def extend(self, value):
         super().extend(value)
         if hasattr(value, 'defects'):
             self.defects.extend(value.defects)
+        if hasattr(value, 'ew_indexes'):
+            self.ew_indexes += value.ew_indexes
 
     @property
     def value(self):
@@ -1291,7 +1304,7 @@ _ew_finder = re.compile(r'''
 _wsp_finder = re.compile(rf'[{_WSP}]+').search
 _non_wsp_re = _make_non_match_re(_WSP)
 @_deprecate_old_encoded_word_api
-def get_encoded_word(value, start, terminal_type):
+def get_encoded_word(value, start, terminal_type, *, decode_qp=False):
     """ encoded-word = "=?" charset "?" encoding "?" encoded-text "?="
 
     If something interpretable as an encoded word occurs starting at start,
@@ -1301,6 +1314,9 @@ def get_encoded_word(value, start, terminal_type):
     there is un-encoded whitespace inside the encoded word, and register
     defects for any any non-printable or invalid characters in the
     non-whitespace ValueTerminals.
+
+    If decode_qp is True, decode any quoted pairs in the payload of the encoded
+    word before decoding.
 
     If the characters starting at start are not interpretable as an encoded
     word such that it can be decoded from the content transfer encoding, return
@@ -1316,6 +1332,7 @@ def get_encoded_word(value, start, terminal_type):
     charset, lang = cslang or csnolang or '', lang or ''
     ew.charset = charset.strip()
     ew.lang = lang.strip()
+    encoded, _ = _qp_unquote(encoded) if decode_qp else (encoded, 0)
     try:
         text, defects = _ew._decode(ew.charset, cte, encoded)
     except KeyError:
@@ -1344,11 +1361,82 @@ def get_encoded_word(value, start, terminal_type):
         ew.append(t)
     return ew, ew_match.end()
 
-pre_ew_re = re.compile(rf'[^{_WSP + '='}]*')
-def content_getter(value):
-    tl = UnstructuredTokenList()
-    start, vlen = 0, len(value)
+# In theory encoded words should only appear in certain places.  In
+# practice they tend to appear any where "normal text" tokens appear.  This
+# outside-the-rfc-grammar function-generator provides the tools to handle that.
+_make_content_re = lambda s: re.compile(rf'[^{re.escape(s)}]*')
+_make_qp_content_re = lambda s: re.compile( rf"([^{re.escape(s)}\\]|\\.)*")
+_qp_finder = re.compile(r'\\(.)')
+_qp_unquote = lambda s: _qp_finder.subn(r'\1', s)
+def content_getter(
+        tl_class,
+        text_type,
+        end_chars='',
+        qp=False,
+    ):
+    """Return a function that can be used to parse up to certain end chars.
+
+    The returned function has the following contract:
+
+    new_function(value, start)
+
+    Return a token list containing decoded text tokens and WSP.
+
+    Process value from start until the first occurrence of any of the
+    characters in the iterable end_chars, breaking it up into whitespace and
+    non-whitespace tokens, and decoding encoded words wherever they are found
+    regardless of whitespace.  Return the resulting list of tokens in an
+    instance of tl_type and then index of whichever end_char was found first
+    (or the len of value if none were found).  Decoded encoded words should be
+    EncodedWord token lists, non-encoded word tokens should be of type
+    ValueTerminal with a token_type text_type, and whitespace tokens should be
+    WhiteSpaceTerminals or EWWhiteSpaceTerminals, as appropriate.
+
+    Encoded word detection should take precedence over end_chars detection: an
+    end_char inside an encoded word should be treated as part of the encoded
+    word content rather than ending the processing.
+
+    If qp is true, ignore end characters that are part of quoted pairs when
+    looking for the end of the parsable text, and unquote any quoted pairs in
+    the parsed text.
+
+    if an encoded word is found, set the `has_ew` attribute of the returned
+    token list to `True`.
+
+    """
+    end_chars = ''.join(list(end_chars))
+    if qp:
+        pre_ew_re = _make_qp_content_re(end_chars + _WSP + '=')
+        post_ew_re = _make_qp_content_re(end_chars + _WSP)
+    else:
+        pre_ew_re = _make_content_re(end_chars + _WSP + '=')
+        post_ew_re = _make_content_re(end_chars + _WSP)
+    return partial(
+        _get_content,
+        tl_class=tl_class,
+        text_type=text_type,
+        qp=qp,
+        end_chars=end_chars,
+        pre_ew_re=pre_ew_re,
+        post_ew_re=post_ew_re,
+        )
+
+def _get_content(
+        value,
+        start=0,
+        *,
+        tl_class,
+        text_type,
+        pre_ew_re,
+        post_ew_re,
+        end_chars,
+        qp,
+    ):
+    tl = tl_class()
+    vlen = len(value)
     while start < vlen:
+        if value[start] in end_chars:
+            break
         if value[start] in WSP:
             token, start = get_fws(value, start)
             tl.append(token)
@@ -1358,18 +1446,21 @@ def content_getter(value):
         end = m.end()
         if end < vlen:
             if value[end] == '=':
-                res = get_encoded_word(value, end, 'utext')
+                res = get_encoded_word(value, end, text_type, decode_qp=qp)
                 if res:
+                    # XXX save the index; some day the defects will use it
+                    tl.ew_indexes.append(end)
                     ew, end = res
                 else:
-                    m = _non_wsp_re.match(value, start)
+                    m = post_ew_re.match(value, start)
                     ew, end = None, m.end()
         text = m.group()
         # At this point we have text, an ew, or both; we can't have neither.
         if tl and tl[-1].token_type == 'encoded-word':
             tl.defects.append(_MissingWhitespaceAfterEWDefect)
         if text:
-            tl.append(_make_xtext(text, ValueTerminal, 'utext'))
+            text, _ = _qp_unquote(text) if qp else (text, 0)
+            tl.append(_make_xtext(text, ValueTerminal, text_type))
         if ew:
             if tl:
                 if tl[-1].token_type == 'fws':
@@ -1379,7 +1470,7 @@ def content_getter(value):
                     tl.defects.append(_MissingWhitespaceBeforeEWDefect)
             tl.append(ew)
         start = end
-    return tl
+    return tl, start
 
 pre_ew_re = re.compile(rf'[^{_WSP + '='}]*')
 def parse_unstructured(value):

@@ -19,6 +19,7 @@ from test.test_email.params import (
     add_label,
     as_value,
     C,
+    for_each_name,
     include_unless,
     only,
     params,
@@ -386,6 +387,33 @@ class TestTokenList(TestEmailBase):
         tl.extend(['fake', 'values'])
         self.assertEqual(tl.defects, defects)
 
+    for_each_method = for_each_name('append', 'extend', 'push')
+
+    @params(
+        for_each_method(
+            none_none = C([],       []          ),
+            one_none =  C([1],      []          ),
+            none_one =  C([],       [20]        ),
+            one_one =   C([1],      [20]        ),
+            two_two =   C([1, 20],  [27, 40]    ),
+            )
+        )
+    def test_ew_indexes(self, method, existing, new):
+        expected = new + existing if method == 'push' else existing + new
+        tl1 = parser.TokenList()
+        tl1.ew_indexes = list(existing)
+        tl2 = parser.TokenList(['fake', 'values'])
+        tl2.ew_indexes = list(new)
+        getattr(tl1, method)(tl2)
+        self.assertEqual(tl1.ew_indexes, expected)
+
+    @params(for_each_method(C([1, 20])))
+    def test_non_token_list_leaves_ew_indexes_unchanged(self, method, idxs):
+        tl1 = parser.TokenList()
+        tl1.ew_indexes = idxs
+        getattr(tl1, method)(['fake', parser.Terminal('values', 'fake')])
+        self.assertEqual(tl1.ew_indexes, idxs)
+
 
 class TestTokens(TestEmailBase):
 
@@ -438,6 +466,7 @@ class TestParserMixin:
             warnings=None,
             test_start=True,
             no_end=False,
+            ew_indexes=[],
             pprint=False,
             ):
         """Call method with callspec, make asserts, and return results of call.
@@ -492,11 +521,15 @@ class TestParserMixin:
         Assert that the defects attribute of the returned object matches
         defects.
 
+        Assert that the ew_indexes attribute of the returned object matches
+        ew_indexes.
+
         Return whatever the called method returned.
 
         """
         s, *args = callspec.args
         base = s[:-len(remainder)] if remainder else s
+        prefix_len = 0
         if test_start:
             # XXX I'm not at sure the overhead of this randomization is worth
             # it.  We do at least need to test having a prefix though...
@@ -552,6 +585,10 @@ class TestParserMixin:
                 self.assertEqual(result.comments, comments)
             if commenttree is not None:
                 self.assertEqual(self.ctree(result), commenttree)
+            self.assertEqual(
+                [x - prefix_len for x in result.ew_indexes],
+                ew_indexes,
+                )
         return (result, *other) if other else result
 
     def verify_terminal_types(self, tl, *text_types):
@@ -798,133 +835,6 @@ class TestParser(TestParserMixin, TestEmailBase):
         )
 
 
-    # _get_ptext_to_endchars
-
-    # As an internal method these tests are not API requirements; however, the
-    # behavior they check must be verified one way or another, so if the
-    # implementation changes there need to be equivalent tests.
-
-    @params
-    def test__get_ptext_to_endchars(self, s, endchars, has_qp=False, **kw):
-        ptext, had_qp = self._test_parse(
-            parser._get_ptext_to_endchars,
-            C(s, endchars),
-            test_start=False,
-            **kw,
-            )
-        self.assertEqual(had_qp, has_qp)
-
-    @params_map
-    def for_each_endchar_set(*args, **kw):
-        # The function is general, but these are the ones we actually use.
-        endchar_sets = dict(
-            quoted_string='"',
-            comment='()',
-            domain_literal='[]',
-            )
-        for name, endchars in endchar_sets.items():
-            yield name, C(*args, endchars=endchars, **kw)
-
-    @params_map
-    def for_each_endchar(*args, **kw):
-        return for_each_character(kw['endchars'])(C(*args, **kw)).items()
-
-    # This params_map is used on exactly one expression, which has to contain a
-    # list of characters with no repeats.
-    @params_map
-    def stops_at_first_endchar_found(s):
-        for i in range(len(s)):
-            endchars = ''.join(sample((r := s[i:]), len(r)))
-            ec = charname(s[i])
-            yield f'stops_at_first_endchar_found__string__{ec}', C(
-                s,
-                endchars=endchars,
-                remainder=r,
-                )
-            yield f'stops_at_first_endchar_found__set__{ec}', C(
-                s,
-                endchars=set(endchars),
-                remainder=r,
-                )
-
-    params_test__get_ptext_to_endchars = Params(
-
-        **for_each_endchar(
-            wsp_can_be_legal_endchars = C(
-                'foo{char}bar"',
-                endchars='()' + RFC_WSP,
-                remainder='{char}bar"',
-                ),
-            ),
-
-        **stops_at_first_endchar_found('(random?{})'),
-
-        **for_each_endchar_set(
-
-            one_word_no_wsp = C(
-                'foo',
-                ),
-
-            escaped_letter = C(
-                r'bar\s',
-                stringified='bars',
-                has_qp=True,
-                ),
-
-            escaped_escape_char = C(
-                r'foo\\bar',
-                stringified=r'foo\bar',
-                has_qp=True,
-                ),
-
-            any_printable_may_be_quoted = C(
-                ''.join(rf'\{c}' for c in RFC_PRINTABLES),
-                stringified=RFC_PRINTABLES,
-                has_qp=True,
-                ),
-
-            ),
-
-        **for_each_endchar(
-            for_each_endchar_set(
-
-                stops_at_endchar = C(
-                    'foo{char}bar"',
-                    remainder='{char}bar"',
-                    ),
-
-                quoted_endchar_no_actual_endchar = C(
-                    r'foo\{char}bar',
-                    stringified=r'foo{char}bar',
-                    has_qp=True,
-                    ),
-
-                quoted_endchar_before_actual_endchar = C(
-                    r'foo\{char}bar{char}',
-                    stringified='foo{char}bar',
-                    remainder='{char}',
-                    has_qp=True,
-                    ),
-
-                multiple_qp = C(
-                    r'\{char}\foo\\\{char}\a{char}',
-                    stringified=r'{char}foo\{char}a',
-                    remainder=r'{char}',
-                    has_qp=True,
-                    ),
-
-                no_qp_before_endchar_but_some_after = C(
-                    r'foo{char}a\b\a\r',
-                    remainder=r'{char}a\b\a\r',
-                    has_qp=False,
-                    ),
-
-                ),
-            ),
-
-        )
-
-
     # get_fws
 
     @params
@@ -1002,6 +912,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             # terminal_type='ttext',
             prefix=None,
             expect_none=False,
+            decode_qp=False,
             **kw,
             ):
         # XXX POSTDEP: delete from here...
@@ -1016,9 +927,10 @@ class TestParser(TestParserMixin, TestEmailBase):
         else:
             terminal_type = terminal_type or 'ttext'
             callspec = C(s, terminal_type)
+        callspec.kw['decode_qp'] = decode_qp
         # XXX POSTDEP: ...to here
         # XXX POSTDEP: uncomment the following line:
-        #callspec = C(s, terminal_type)
+        #callspec = C(s, terminal_type, decode_qp=decode_qp)
         ew = self._test_parse(parser.get_encoded_word, callspec, *args, **kw)
         if 'exception' in kw:
             return
@@ -1275,6 +1187,24 @@ class TestParser(TestParserMixin, TestEmailBase):
             terminal_type='test',
             ),
 
+        qp_true_no_qp = C(
+            r'=?us-ascii?q?test?=',
+            decode_qp=True,
+            stringified=r'test',
+            ),
+
+        qp_true_with_qp = C(
+            r'=?us-ascii?q?tes\t?=',
+            decode_qp=True,
+            stringified='test',
+            ),
+
+        qp_false_with_qp = C(
+            r'=?us-ascii?q?tes\t?=',
+            decode_qp=False,
+            stringified=r'tes\t',
+            ),
+
         )
 
 
@@ -1290,7 +1220,6 @@ class TestParser(TestParserMixin, TestEmailBase):
             text_type='ttext',
             end_chars='',
             qp=False,
-            ew_err=None,
             **kw,
             ):
         result = self._test_parse(
@@ -1299,7 +1228,6 @@ class TestParser(TestParserMixin, TestEmailBase):
                 text_type,
                 end_chars=end_chars,
                 qp=qp,
-                ew_err=ew_err,
                 ),
             C(s, start),
             *args,
@@ -1311,14 +1239,304 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertIsInstance(result, tl_class)
         self.verify_terminal_types(result, text_type, 'fws')
 
+    @params_map
+    def for_each_endchar_set(*args, **kw):
+        # The function is general, but these are the ones we actually use.
+        endchar_sets = dict(
+            quoted_string='"',
+            comment='()',
+            domain_literal='[]',
+            )
+        for name, endchars in endchar_sets.items():
+            yield name, C(*args, endchars=endchars, **kw)
+
+    @params_map
+    def for_each_endchar(*args, **kw):
+        return for_each_character(kw['endchars'])(C(*args, **kw)).items()
+
+    # This params_map is used on exactly one expression, which has to contain a
+    # list of characters with no repeats.
+    @params_map
+    def stops_at_first_endchar_found(s):
+        for i in range(len(s)):
+            endchars = ''.join(sample((r := s[i:]), len(r)))
+            ec = charname(s[i])
+            yield f'stops_at_first_endchar_found__string__{ec}', C(
+                s,
+                endchars=endchars,
+                remainder=r,
+                )
+            yield f'stops_at_first_endchar_found__set__{ec}', C(
+                s,
+                endchars=set(endchars),
+                remainder=r,
+                )
+
     params_test_content_getter = Params(
+
+        specified_tl_class = C(
+            'word',
+            stringified='"word"',
+            value='word',
+            tl_class=parser.BareQuotedString,
+            ),
+
+        text_type_ew = C(
+            'A test =?UTF-8?q?foo?= ',
+            stringified='A test foo ',
+            text_type='fake',
+            ew_indexes = [7],
+            ),
+
+        text_type_ew_missing_ws = C(
+            'Never=?utf8?q?_foo_bar_?=do this',
+            stringified='Never foo bar do this',
+            defects=[
+                missing_whitespace_before_ew_defect,
+                missing_whitespace_after_ew_defect,
+                ],
+            text_type='fake',
+            ew_indexes = [5],
+            ),
+
+        text_type_no_ew_unicode = C(
+            'A test Éric',
+            text_type='fake',
+            ),
+
+        **for_each_character(ALL_ASCII)(
+            char_after_end_char = C(
+                '" a test "{char}',
+                start=1,
+                end_chars='"',
+                stringified=' a test ',
+                remainder='"{char}',
+                ),
+            ),
+
+        start_in_middle_of_ew = C(
+            '=?UTF-8?q?foo?=',
+            start=3,
+            stringified='=?UTF-8?q?foo?='[3:],
+            ),
+
+        end_in_middle_of_ew = C(
+            'foo =?UTF-8?q?foo',
+            ),
+
+        end_char = C(
+            '"foo"',
+            start=1,
+            end_chars='"',
+            stringified='foo',
+            remainder='"',
+            ),
+
+        end_char_at_start = C(
+            '"foo"',
+            start=0,
+            end_chars='"',
+            stringified='',
+            remainder='"foo"',
+            ),
+
+        no_end_char = C(
+            'foo bar',
+            start=0,
+            end_chars='"',
+            stringified='foo bar',
+            ),
+
+        end_char_inside_ew = C(
+            '"quoted =?UTF-8?q?q"?=" not',
+            start=1,
+            end_chars='"',
+            stringified='quoted q"',
+            remainder='" not',
+            ew_indexes = [8],
+            ),
+
+        first_end_char_ends_parse = C(
+            "(a comment)bar",
+            start=1,
+            end_chars="()",
+            stringified="a comment",
+            remainder=')bar',
+            ),
+
+        second_end_char_ends_parse = C(
+            "(a comment(nested))",
+            start=1,
+            end_chars="()",
+            stringified="a comment",
+            remainder='(nested))',
+            ),
+
+        endchar_inside_ew_preserved = C(
+            r'"foo =?UTF-8?q?"bar?="',
+            start=1,
+            end_chars='"',
+            stringified='foo "bar',
+            remainder='"',
+            ew_indexes = [5],
+            ),
+
+        qp_decoded_with_qp_true = C(
+            r"\fo\o",
+            qp=True,
+            stringified="foo",
+            ),
+
+        qp_quoted_endchar_preserved_with_qp_true = C(
+            r'"foo\"bar"',
+            start=1,
+            end_chars='"',
+            qp=True,
+            stringified='foo"bar',
+            remainder='"',
+            ),
+
+        qp_quoted_endchar_inside_ew_preserved_and_unquoted_with_qp_true = C(
+            r'"\foo =?UTF-8?q?\"bar?="',
+            start=1,
+            end_chars='"',
+            qp=True,
+            stringified='foo "bar',
+            remainder='"',
+            ew_indexes = [6],
+            ),
+
+        qp_remains_quoted_if_qp_false = C(
+            r'"\foo\ =?UTF-8?q?\"bar?="',
+            start=1,
+            end_chars='"',
+            stringified=r'\foo\ \"bar',
+            qp=False,
+            remainder='"',
+            ew_indexes = [7],
+            ),
+
+        )
+
+
+    # _get_ptext_to_endchars
+
+    # These tests are also passed by the replacement function, content_getter.
+
+    @params
+    def test__get_ptext_to_endchars(self, s, endchars, has_qp=False, **kw):
+        ptext, had_qp = self._test_parse(
+            parser._get_ptext_to_endchars,
+            C(s, endchars),
+            test_start=False,
+            **kw,
+            )
+        self.assertEqual(had_qp, has_qp)
+
+    params_test__get_ptext_to_endchars = Params(
+
+        **for_each_endchar(
+            wsp_can_be_legal_endchars = C(
+                'foo{char}bar"',
+                endchars='()' + RFC_WSP,
+                remainder='{char}bar"',
+                ),
+            ),
+
+        **stops_at_first_endchar_found('(random?{})'),
+
+        **for_each_endchar_set(
+
+            one_word_no_wsp = C(
+                'foo',
+                ),
+
+            escaped_letter = C(
+                r'bar\s',
+                stringified='bars',
+                has_qp=True,
+                ),
+
+            escaped_escape_char = C(
+                r'foo\\bar',
+                stringified=r'foo\bar',
+                has_qp=True,
+                ),
+
+            any_printable_may_be_quoted = C(
+                ''.join(rf'\{c}' for c in RFC_PRINTABLES),
+                stringified=RFC_PRINTABLES,
+                has_qp=True,
+                ),
+
+            ),
+
+        **for_each_endchar(
+            for_each_endchar_set(
+
+                stops_at_endchar = C(
+                    'foo{char}bar"',
+                    remainder='{char}bar"',
+                    ),
+
+                quoted_endchar_no_actual_endchar = C(
+                    r'foo\{char}bar',
+                    stringified=r'foo{char}bar',
+                    has_qp=True,
+                    ),
+
+                quoted_endchar_before_actual_endchar = C(
+                    r'foo\{char}bar{char}',
+                    stringified='foo{char}bar',
+                    remainder='{char}',
+                    has_qp=True,
+                    ),
+
+                multiple_qp = C(
+                    r'\{char}\foo\\\{char}\a{char}',
+                    stringified=r'{char}foo\{char}a',
+                    remainder=r'{char}',
+                    has_qp=True,
+                    ),
+
+                no_qp_before_endchar_but_some_after = C(
+                    r'foo{char}a\b\a\r',
+                    remainder=r'{char}a\b\a\r',
+                    has_qp=False,
+                    ),
+
+                ),
+            ),
+
+        )
+
+    # As the replacement function for _get_ptext_to_endchars (among other
+    # things) content_getter needs to pass the _get_ptext_to_endchars tests,
+    # which test somewhat different scenarios than the other content_getter
+    # tests.
+    @params_map
+    def adapt_ptext_tests_for_content_getter(*args, **kw):
+        endchars = kw.pop('endchars')
+        if 'has_qp' in kw:
+            # has_qp is intended to test the return flag as to whether qp was
+            # present.  But content_getter doesn't return such a flag...that
+            # functionality will be handled via _qp_unquote directly.  So just
+            # set qp=True so the qp will be decoded like _get_ptext_to_endchars
+            # does so the tests pass.
+            kw['qp'] = kw.pop('has_qp')
+        yield '', C(*args, end_chars=endchars, **kw)
+
+    params_test_content_getter.update(
+        adapt_ptext_tests_for_content_getter(params_test__get_ptext_to_endchars)
         )
 
 
     # parse_unstructured
 
     @params
-    def test_parse_unstructured(self, s, *args, **kw):
+    # XXX XXX Ignore ew_indexes until after get_unstructured is refactored.
+    def test_parse_unstructured(self, s, *args, ew_indexes=None, **kw):
+        # We ignore kw_indexes, that's for content_getter.
         result = self._test_parse(
             parser.parse_unstructured,
             C(s),
@@ -1332,7 +1550,8 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     # XXX POSTDEP: delete from here...
     @params
-    def test_get_unstructured(self, s, *args, **kw):
+    # XXX XXX Ignore ew_indexes until after get_unstructured is refactored.
+    def test_get_unstructured(self, s, *args, ew_indexes=None, **kw):
         result = self._test_parse(
             parser.get_unstructured,
             C(s),
@@ -1364,6 +1583,10 @@ class TestParser(TestParserMixin, TestEmailBase):
             # or might contain something it would treat as a defect.  Either
             # way, parse_unstructured isn't expected to handle those parameters.
             return
+        if kw.pop('decode_qp', False):
+            # parse_unstructured does not unquote quoted printables, so skip
+            # the tests where they are decoded.
+            return
         if 'stringified' in kw:
             stringified = kw['stringified']
             kw['stringified'] = stringified + remainder
@@ -1388,7 +1611,8 @@ class TestParser(TestParserMixin, TestEmailBase):
     def add_unstructured_prefix_and_suffix(s, *args, **kw):
         # Make sure the reused parameters are correctly interpreted when
         # intermixed with other text by adding some text.
-        pad = lambda s: f'pre fix {s} suf fix'
+        prefix = 'pre fix '
+        pad = lambda s: f'{prefix}{s} suf fix'
         if not s:
             # null value is a special case, and we already have a test for it.
             return
@@ -1396,7 +1620,10 @@ class TestParser(TestParserMixin, TestEmailBase):
         kw = {n: (pad(v) if n in ('stringified', 'value') else v)
               for n, v in kw.items()
               }
-        yield '', C(s, *args, **kw)
+        ew_indexes, len_prefix = [], len(prefix)
+        if s != kw.get('stringified', s):
+            ew_indexes = [len_prefix]
+        yield '', C(s, *args, ew_indexes=ew_indexes, **kw)
 
     # XXX POSTDEP: remove 'params_test_get_unstructured' from next line.
     params_test_get_unstructured = params_test_parse_unstructured = Params(
@@ -1446,61 +1673,72 @@ class TestParser(TestParserMixin, TestEmailBase):
             '=?us-ascii?q?bar?=',
             stringified='bar',
             value='bar',
+            ew_indexes = [0],
             ),
 
         one_ew_trailing_ws = C(
             '=?us-ascii?q?bar?=  ',
             stringified='bar  ',
             value='bar ',
+            ew_indexes = [0],
             ),
 
         one_valid_ew_trailing_text = C(
             '=?us-ascii?q?bar?= bird',
             stringified='bar bird',
+            ew_indexes = [0],
             ),
 
         phrase_with_ew_in_middle_of_text = C(
             'foo =?us-ascii?q?bar?= bird',
             stringified='foo bar bird',
+            ew_indexes = [4],
             ),
 
         phrase_with_two_ew = C(
             'foo =?us-ascii?q?bar?= =?us-ascii?q?bird?=',
             stringified='foo barbird',
+            ew_indexes = [4, 23],
             ),
 
         phrase_with_two_ew_trailing_ws = C(
             'foo =?us-ascii?q?bar?= =?us-ascii?q?bird?=   ',
             stringified='foo barbird   ',
             value='foo barbird ',
+            ew_indexes = [4, 23],
             ),
 
         phrase_with_ew_with_leading_ws = C(
             '  =?us-ascii?q?bar?=',
             stringified='  bar',
             value=' bar',
+            ew_indexes = [2],
             ),
 
         phrase_with_two_ew_extra_ws = C(
             'foo =?us-ascii?q?bar?= \t  =?us-ascii?q?bird?=',
             stringified='foo barbird',
+            ew_indexes = [4, 26],
             ),
 
         two_ew_extra_ws_trailing_text = C(
             '=?us-ascii?q?test?=   =?us-ascii?q?foo?=  val',
             stringified='testfoo  val',
             value='testfoo val',
+            ew_indexes = [0, 22],
             ),
 
         ew_with_internal_ws = C(
             '=?iso-8859-1?q?hello=20world?=',
             stringified='hello world',
+            ew_indexes = [0],
             ),
 
         ew_with_internal_leading_ws = C(
             '   =?us-ascii?q?=20test?=   =?us-ascii?q?=20foo?=  val',
             stringified='    test foo  val',
             value='  test foo val',
+            ew_indexes = [3, 28],
             ),
 
         invalid_ew = C(
@@ -1523,6 +1761,7 @@ class TestParser(TestParserMixin, TestEmailBase):
                 undecodable_bytes_defect,
                 (undecodable_bytes_in_ew_defect, 'us-ascii'),
                 ],
+            ew_indexes = [0, 25],
             ),
 
 
@@ -1533,18 +1772,21 @@ class TestParser(TestParserMixin, TestEmailBase):
                 missing_whitespace_after_ew_defect,
                 missing_whitespace_before_ew_defect,
                 ],
+            ew_indexes = [0, 15],
             ),
 
         ew_without_leading_whitespace = C(
             'nowhitespace=?utf-8?q?somevalue?=',
             stringified='nowhitespacesomevalue',
             defects=[missing_whitespace_before_ew_defect],
+            ew_indexes = [12],
             ),
 
         ew_without_trailing_whitespace = C(
             '=?utf-8?q?somevalue?=nowhitespace',
             stringified='somevaluenowhitespace',
             defects=[missing_whitespace_after_ew_defect],
+            ew_indexes = [0],
             ),
 
         # bpo-37764
@@ -1552,6 +1794,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             '=?utf-8?q?somevalue?=aa',
             stringified='somevalueaa',
             defects=[missing_whitespace_after_ew_defect],
+            ew_indexes = [0],
             ),
 
         # Although this is technically invalid (unencoded =) we handle it anyway
@@ -1559,12 +1802,14 @@ class TestParser(TestParserMixin, TestEmailBase):
         invalid_ew2 = C(
             '=?utf-8?q?=somevalue?=',
             '=somevalue',
+            ew_indexes = [0],
             ),
 
         **for_each_character(RFC_PRINTABLES)(
             printable_around_and_between_ews = C(
                 '{char} =?utf-8?q?foo?= {char} =?utf-8?q?bar?= {char}',
                 stringified='{char} foo {char} bar {char}',
+                ew_indexes = [2, 20],
                 ),
             ),
 
@@ -1572,6 +1817,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             printable_inside_ews = C(
                 '=?utf-8?q?rock{char}?= =?utf-8?q?{char}hard_place?=',
                 stringified='rock{char}{char}hard place',
+                ew_indexes = [0, 18],
                 ),
             ),
 
@@ -1588,6 +1834,7 @@ class TestParser(TestParserMixin, TestEmailBase):
                 '=?utf-8?q?some{char}?= text',
                 stringified='some{char} text',
                 defects=[(nonprintable_defect, '{char}')],
+                ew_indexes = [0],
                 ),
             ),
 
@@ -1604,13 +1851,21 @@ class TestParser(TestParserMixin, TestEmailBase):
             'a =?invalid?q?=C3=89ric?= b',
             stringified='a \udcc3\udc89ric b',
             defects=[charset_defect('invalid'), undecodable_bytes_defect],
+            ew_indexes = [2],
             ),
 
         ew_start_chrome_before_real_ew = C(
             'z=?xx =?UTF-8?Q?foo?=',
             stringified='z=?xx foo',
+            ew_indexes = [6],
             ),
 
+        )
+
+    # content_getter and parse_unstructured must behave identically for all the
+    # data parse_unstructured handles.
+    params_test_content_getter__with_parse_unstructured_params = (
+        params_test_parse_unstructured
         )
 
 
