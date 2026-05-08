@@ -646,23 +646,23 @@ Disallow: /spam\
 )
 class BaseLocalNetworkTestCase:
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         # clear _opener global variable
-        self.addCleanup(urllib.request.urlcleanup)
+        cls.addClassCleanup(urllib.request.urlcleanup)
 
-        self.server = HTTPServer((socket_helper.HOST, 0), self.RobotHandler)
-        self.addCleanup(self.server.server_close)
+        cls.server = HTTPServer((socket_helper.HOST, 0), cls.RobotHandler)
+        cls.addClassCleanup(cls.server.server_close)
 
         t = threading.Thread(
             name='HTTPServer serving',
-            target=self.server.serve_forever,
+            target=cls.server.serve_forever,
             # Short poll interval to make the test finish quickly.
             # Time between requests is short enough that we won't wake
             # up spuriously too many times.
             kwargs={'poll_interval':0.01})
-        t.daemon = True  # In case this function raises.
-        self.enterContext(threading_helper.start_threads([t]))
-        self.addCleanup(self.server.shutdown)
+        cls.enterClassContext(threading_helper.start_threads([t]))
+        cls.addClassCleanup(cls.server.shutdown)
 
 
 SAMPLE_ROBOTS_TXT = b'''\
@@ -698,7 +698,6 @@ class LocalNetworkTestCase(BaseLocalNetworkTestCase, unittest.TestCase):
         self.assertTrue(parser.can_fetch(agent, url + '/utf8/'))
         self.assertFalse(parser.can_fetch(agent, url + '/utf8/\U0001f40d'))
         self.assertFalse(parser.can_fetch(agent, url + '/utf8/%F0%9F%90%8D'))
-        self.assertFalse(parser.can_fetch(agent, url + '/utf8/\U0001f40d'))
         self.assertTrue(parser.can_fetch(agent, url + '/non-utf8/'))
         self.assertFalse(parser.can_fetch(agent, url + '/non-utf8/%F0'))
         self.assertFalse(parser.can_fetch(agent, url + '/non-utf8/\U0001f40d'))
@@ -715,7 +714,6 @@ class HttpErrorsTestCase(BaseLocalNetworkTestCase, unittest.TestCase):
             pass
 
     def setUp(self):
-        super().setUp()
         # Make sure that a valid code is set in the test.
         self.server.return_code = None
 
