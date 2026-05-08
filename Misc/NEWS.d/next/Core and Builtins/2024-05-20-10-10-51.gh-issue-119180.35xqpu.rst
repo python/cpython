@@ -1,2 +1,0 @@
-Add an ``__annotate__`` attribute to functions, classes, and modules as part
-of :pep:`649`. Patch by Jelle Zijlstra.

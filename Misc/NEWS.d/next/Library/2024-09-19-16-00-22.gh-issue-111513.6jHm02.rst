@@ -1,1 +1,0 @@
-Improve the error message that may be raised by :meth:`datetime.date.fromtimestamp`.

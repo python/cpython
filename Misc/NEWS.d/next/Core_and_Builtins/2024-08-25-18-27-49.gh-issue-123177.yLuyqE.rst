@@ -1,2 +1,0 @@
-Fix a bug causing stray prompts to appear in the middle of wrapped lines in
-the new REPL.

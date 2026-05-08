@@ -1,7 +1,0 @@
-As part of :pep:`749`, add the following attributes for customizing
-evaluation of annotation scopes:
-
-* ``evaluate_value`` on :class:`typing.TypeAliasType`
-* ``evaluate_bound``, ``evaluate_constraints``, and ``evaluate_default`` on :class:`typing.TypeVar`
-* ``evaluate_default`` on :class:`typing.ParamSpec`
-* ``evaluate_default`` on :class:`typing.TypeVarTuple`

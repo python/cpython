@@ -9,8 +9,8 @@ import tempfile
 from subprocess import *
 
 startdate = "20180829142316Z"
-enddate_default = "20371028142316Z"
-days_default = "7000"
+enddate_default = "25251028142316Z"
+days_default = "140000"
 
 req_template = """
     [ default ]
@@ -139,7 +139,6 @@ def make_cert_key(cmdlineargs, hostname, sign=False, extra_san='',
             f.write(req)
         args = ['req', '-new', '-nodes', '-days', cmdlineargs.days,
                 '-newkey', key, '-keyout', key_file,
-                '-extensions', ext,
                 '-config', req_file]
         if sign:
             with tempfile.NamedTemporaryFile(delete=False) as f:
@@ -148,7 +147,7 @@ def make_cert_key(cmdlineargs, hostname, sign=False, extra_san='',
             args += ['-out', reqfile ]
 
         else:
-            args += ['-x509', '-out', cert_file ]
+            args += ['-extensions', ext, '-x509', '-out', cert_file ]
         check_call(['openssl'] + args)
 
         if sign:
@@ -265,6 +264,8 @@ if __name__ == '__main__':
     with open('keycert3.pem', 'w') as f:
         f.write(key)
         f.write(cert)
+
+    check_call(['openssl', 'x509', '-outform', 'pem', '-in', 'keycert3.pem', '-out', 'cert3.pem'])
 
     cert, key = make_cert_key(cmdlineargs, 'fakehostname', sign=True)
     with open('keycert4.pem', 'w') as f:

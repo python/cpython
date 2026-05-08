@@ -1,2 +1,0 @@
-Fixed memory leaks at interpreter shutdown in the free-threaded build, and
-also reporting of leaked memory blocks via :option:`-X showrefcount <-X>`.

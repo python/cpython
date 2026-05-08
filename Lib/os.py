@@ -10,7 +10,7 @@ This exports:
   - os.extsep is the extension separator (always '.')
   - os.altsep is the alternate pathname separator (None or '/')
   - os.pathsep is the component separator used in $PATH etc
-  - os.linesep is the line separator in text files ('\r' or '\n' or '\r\n')
+  - os.linesep is the line separator in text files ('\n' or '\r\n')
   - os.defpath is the default search path for executables
   - os.devnull is the file path of the null device ('/dev/null', etc.)
 
@@ -56,6 +56,11 @@ if 'posix' in _names:
     try:
         from posix import _exit
         __all__.append('_exit')
+    except ImportError:
+        pass
+    try:
+        from posix import _clearenv
+        __all__.append('_clearenv')
     except ImportError:
         pass
     import posixpath as path
@@ -118,6 +123,7 @@ if _exists("_have_functions"):
     _add("HAVE_FCHMODAT",   "chmod")
     _add("HAVE_FCHOWNAT",   "chown")
     _add("HAVE_FSTATAT",    "stat")
+    _add("HAVE_LSTAT",      "lstat")
     _add("HAVE_FUTIMESAT",  "utime")
     _add("HAVE_LINKAT",     "link")
     _add("HAVE_MKDIRAT",    "mkdir")
@@ -130,6 +136,8 @@ if _exists("_have_functions"):
     _add("HAVE_UNLINKAT",   "unlink")
     _add("HAVE_UNLINKAT",   "rmdir")
     _add("HAVE_UTIMENSAT",  "utime")
+    if _exists("statx"):
+        _set.add(statx)
     supports_dir_fd = _set
 
     _set = set()
@@ -151,6 +159,8 @@ if _exists("_have_functions"):
     _add("HAVE_FPATHCONF",  "pathconf")
     if _exists("statvfs") and _exists("fstatvfs"): # mac os x10.3
         _add("HAVE_FSTATVFS", "statvfs")
+    if _exists("statx"):
+        _set.add(statx)
     supports_fd = _set
 
     _set = set()
@@ -189,6 +199,8 @@ if _exists("_have_functions"):
     _add("HAVE_FSTATAT",    "stat")
     _add("HAVE_UTIMENSAT",  "utime")
     _add("MS_WINDOWS",      "stat")
+    if _exists("statx"):
+        _set.add(statx)
     supports_follow_symlinks = _set
 
     del _set
@@ -345,12 +357,12 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
 
     import os
     from os.path import join, getsize
-    for root, dirs, files in os.walk('python/Lib/email'):
+    for root, dirs, files in os.walk('python/Lib/xml'):
         print(root, "consumes ")
         print(sum(getsize(join(root, name)) for name in files), end=" ")
         print("bytes in", len(files), "non-directory files")
-        if 'CVS' in dirs:
-            dirs.remove('CVS')  # don't visit CVS directories
+        if '__pycache__' in dirs:
+            dirs.remove('__pycache__')  # don't visit __pycache__ directories
 
     """
     sys.audit("os.walk", top, topdown, onerror, followlinks)
@@ -416,14 +428,16 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
             # Yield before sub-directory traversal if going top down
             yield top, dirs, nondirs
             # Traverse into sub-directories
-            for dirname in reversed(dirs):
-                new_path = join(top, dirname)
-                # bpo-23605: os.path.islink() is used instead of caching
-                # entry.is_symlink() result during the loop on os.scandir() because
-                # the caller can replace the directory entry during the "yield"
-                # above.
-                if followlinks or not islink(new_path):
-                    stack.append(new_path)
+            if dirs:
+                prefix = join(top, top[:0])  # Add trailing slash
+                for dirname in reversed(dirs):
+                    new_path = prefix + dirname
+                    # bpo-23605: os.path.islink() is used instead of caching
+                    # entry.is_symlink() result during the loop on os.scandir() because
+                    # the caller can replace the directory entry during the "yield"
+                    # above.
+                    if followlinks or not islink(new_path):
+                        stack.append(new_path)
         else:
             # Yield after sub-directory traversal if going bottom up
             stack.append((top, dirs, nondirs))
@@ -460,13 +474,13 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
         Example:
 
         import os
-        for root, dirs, files, rootfd in os.fwalk('python/Lib/email'):
+        for root, dirs, files, rootfd in os.fwalk('python/Lib/xml'):
             print(root, "consumes", end="")
             print(sum(os.stat(name, dir_fd=rootfd).st_size for name in files),
                   end="")
             print("bytes in", len(files), "non-directory files")
-            if 'CVS' in dirs:
-                dirs.remove('CVS')  # don't visit CVS directories
+            if '__pycache__' in dirs:
+                dirs.remove('__pycache__')  # don't visit __pycache__ directories
         """
         sys.audit("os.fwalk", top, topdown, onerror, follow_symlinks, dir_fd)
         top = fspath(top)
@@ -765,16 +779,11 @@ class _Environ(MutableMapping):
         new.update(self)
         return new
 
-    if _exists("_create_environ"):
-        def refresh(self):
-            data = _create_environ()
-            if name == 'nt':
-                data = {self.encodekey(key): value
-                        for key, value in data.items()}
-
-            # modify in-place to keep os.environb in sync
+    if _exists("_clearenv"):
+        def clear(self):
+            _clearenv()
             self._data.clear()
-            self._data.update(data)
+
 
 def _create_environ_mapping():
     if name == 'nt':
@@ -809,6 +818,21 @@ def _create_environ_mapping():
 environ = _create_environ_mapping()
 del _create_environ_mapping
 
+
+if _exists("_create_environ"):
+    def reload_environ():
+        data = _create_environ()
+        if name == 'nt':
+            encodekey = environ.encodekey
+            data = {encodekey(key): value
+                    for key, value in data.items()}
+
+        # modify in-place to keep os.environb in sync
+        env_data = environ._data
+        env_data.clear()
+        env_data.update(data)
+
+    __all__.append("reload_environ")
 
 def getenv(key, default=None):
     """Get an environment variable, return None if it doesn't exist.

@@ -47,7 +47,7 @@
    when researching a change.
 
 This article explains the new features in Python 3.1, compared to 3.0.
-Python 3.1 was released on June 27, 2009.
+Python 3.1 was released on June 27, 2009.
 
 
 PEP 372: Ordered Dictionaries

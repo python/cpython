@@ -5,6 +5,7 @@ from tkinter import ttk
 from tkinter import TclError
 from test import support
 from test.support import requires
+from test.test_tkinter.support import setUpModule  # noqa: F401
 from test.test_tkinter.support import AbstractTkTest, get_tk_patchlevel
 
 requires('gui')
@@ -205,7 +206,8 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
         style = self.style
         with self.assertRaises(IndexError):
             style.element_create('plain.newelem', 'from')
-        with self.assertRaisesRegex(TclError, 'theme "spam" doesn\'t exist'):
+        with self.assertRaisesRegex(TclError,
+            'theme "spam" (does not|doesn\'t) exist'):
             style.element_create('plain.newelem', 'from', 'spam')
 
     def test_element_create_image(self):
