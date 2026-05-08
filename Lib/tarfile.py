@@ -828,16 +828,16 @@ def _get_filtered_attrs(member, dest_path, for_data=True):
         if member.islnk() or member.issym():
             if os.path.isabs(member.linkname):
                 raise AbsoluteLinkError(member)
+            if target_path == dest_path:
+                raise OutsideDestinationError(member, target_path)
             normalized = os.path.normpath(member.linkname)
             if normalized != member.linkname:
                 new_attrs['linkname'] = normalized
             if member.issym():
-                target_path = os.path.join(dest_path,
-                                           os.path.dirname(name),
-                                           member.linkname)
+                link_dir = os.path.dirname(name.rstrip('/' + os.sep))
+                target_path = os.path.join(dest_path, link_dir, normalized)
             else:
-                target_path = os.path.join(dest_path,
-                                           member.linkname)
+                target_path = os.path.join(dest_path, normalized)
             target_path = os.path.realpath(target_path,
                                            strict=os.path.ALLOW_MISSING)
             if os.path.commonpath([target_path, dest_path]) != dest_path:
