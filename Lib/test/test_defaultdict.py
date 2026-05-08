@@ -186,6 +186,13 @@ class TestDefaultDict(unittest.TestCase):
         with self.assertRaises(TypeError):
             i |= None
 
+        # frozendict
+        i_fd = i | frozendict(s)
+        self.assertIs(type(i_fd), defaultdict)
+        self.assertIs(i_fd.default_factory, int)
+        self.assertDictEqual(i_fd, {1: "one", 2: 2, 0: "zero"})
+        self.assertEqual(list(i_fd), [1, 2, 0])
+
     def test_factory_conflict_with_set_value(self):
         key = "conflict_test"
         count = 0
