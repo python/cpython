@@ -599,10 +599,14 @@ def _default_mime_types():
         '.ra'     : 'audio/x-pn-realaudio',
         '.wav'    : 'audio/vnd.wave',
         '.weba'   : 'audio/webm',
+        '.ttc'    : 'font/collection',
         '.otf'    : 'font/otf',
         '.ttf'    : 'font/ttf',
         '.woff'   : 'font/woff',
         '.woff2'  : 'font/woff2',
+        '.hjif'   : 'haptics/hjif',
+        '.hmpg'   : 'haptics/hmpg',
+        '.ivs'    : 'haptics/ivs',
         '.avif'   : 'image/avif',
         '.bmp'    : 'image/bmp',
         '.emf'    : 'image/emf',
@@ -708,7 +712,7 @@ def _parse_args(args):
     from argparse import ArgumentParser
 
     parser = ArgumentParser(
-        description='map filename extensions to MIME types', color=True
+        description='map filename extensions to MIME types',
     )
     parser.add_argument(
         '-e', '--extension',

@@ -1034,6 +1034,50 @@ class CommandLineAndEnvVarTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, f"stderr: {result.stderr}")
         self.assertIn("EAGER", result.stdout)
 
+    @support.requires_resource("cpu")
+    def test_cli_lazy_imports_modes_import_stdlib_modules(self):
+        """-X lazy_imports modes should import available stdlib modules."""
+        # Do not smoke-test modules with intentional import-time effects.
+        import_side_effect_modules = {"antigravity", "this"}
+        importable = []
+
+        for module in sorted(sys.stdlib_module_names):
+            if module in import_side_effect_modules:
+                continue
+
+            with self.subTest(module=module):
+                code = f"import {module}; print({module})"
+                baseline = subprocess.run(
+                    [sys.executable, "-I", "-c", code],
+                    capture_output=True,
+                    text=True,
+                    timeout=60,
+                )
+                if baseline.returncode:
+                    # sys.stdlib_module_names includes modules for other
+                    # platforms and optional extension modules not built here.
+                    continue
+                importable.append(module)
+
+                for mode in ("normal", "none"):
+                    with self.subTest(module=module, mode=mode):
+                        result = subprocess.run(
+                            [
+                                sys.executable,
+                                "-I",
+                                "-X",
+                                f"lazy_imports={mode}",
+                                "-c",
+                                code,
+                            ],
+                            capture_output=True,
+                            text=True,
+                            timeout=60,
+                        )
+                        self.assertEqual(result.returncode, 0, result.stderr)
+
+        self.assertGreater(len(importable), 100)
+
     def test_cli_lazy_imports_normal_respects_lazy_keyword_only(self):
         """-X lazy_imports=normal should respect lazy keyword only."""
         # Note: Use test modules instead of stdlib modules to avoid

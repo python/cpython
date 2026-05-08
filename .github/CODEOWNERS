@@ -156,7 +156,7 @@ Misc/libabigail.abignore      @encukou
 # ----------------------------------------------------------------------------
 
 # Android
-Android/                      @mhsmith @freakboy3742
+Platforms/Android/            @mhsmith @freakboy3742
 Doc/using/android.rst         @mhsmith @freakboy3742
 Lib/_android_support.py       @mhsmith @freakboy3742
 Lib/test/test_android.py      @mhsmith @freakboy3742
@@ -164,8 +164,7 @@ Lib/test/test_android.py      @mhsmith @freakboy3742
 # iOS
 Doc/using/ios.rst             @freakboy3742
 Lib/_ios_support.py           @freakboy3742
-Apple/                        @freakboy3742
-iOS/                          @freakboy3742
+Platforms/Apple/              @freakboy3742
 
 # macOS
 Mac/                          @python/macos-team
