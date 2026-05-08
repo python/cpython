@@ -639,7 +639,7 @@ PyABIInfo_VAR(abi_info);
 static PySlot xx_slots[] = {
     /* Basic metadata */
     PySlot_STATIC_DATA(Py_mod_name, "xxlimited"),
-    PySlot_STATIC_DATA(Py_mod_doc, module_doc),
+    PySlot_STATIC_DATA(Py_mod_doc, (void*)module_doc),
     PySlot_DATA(Py_mod_abi, &abi_info),
 
     /* The method table */
