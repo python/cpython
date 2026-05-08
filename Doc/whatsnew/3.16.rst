@@ -114,12 +114,21 @@ annotationlib
   Use :meth:`annotationlib.ForwardRef.evaluate`
   or :func:`typing.evaluate_forward_ref` instead.
 
+shutil
+------
+
+* The :class:`!ExecError` exception which has been deprecated since Python 3.14.
+  It has not been used by any function in :mod:`!shutil` since Python 3.4.
+  (Contributed by Stan Ulbrych in :gh:`149567`.)
+
+
 sysconfig
 ---------
 
 * The :func:`!sysconfig.expand_makefile_vars` function
   which has been deprecated since Python 3.14.
   Use the ``vars`` argument of :func:`sysconfig.get_paths` instead.
+  (Contributed by Stan Ulbrych in :gh:`149499`.)
 
 .. Add removals above alphabetically, not here at the end.
 
