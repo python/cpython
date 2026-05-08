@@ -123,7 +123,7 @@ functools
 shutil
 ------
 
-* The :class:`!ExecError` exception which has been deprecated since Python 3.14.
+* The :exc:`!ExecError` exception which has been deprecated since Python 3.14.
   It has not been used by any function in :mod:`!shutil` since Python 3.4.
   (Contributed by Stan Ulbrych in :gh:`149567`.)
 
