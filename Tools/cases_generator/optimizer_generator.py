@@ -258,8 +258,7 @@ class OptimizerEmitter(Emitter):
                     # usually for binary ops with passthrough references
                     2: [("_LOAD_CONST_INLINE_BORROW",
                          "0, (uintptr_t)result"),
-                        ("_SWAP", "3, 0"),
-                        ("_SWAP", "2, 0")],
+                        ("_RROT_3", "0, 0")],
                 },
             }
 
@@ -412,6 +411,7 @@ def write_uop(
                     args.append(input.name)
             out.emit(f'DEBUG_PRINTF({", ".join(args)});\n')
         if override:
+            idx = 0
             for cache in uop.caches:
                 if cache.name != "unused":
                     if cache.size == 4:
@@ -419,7 +419,8 @@ def write_uop(
                     else:
                         type = f"uint{cache.size*16}_t "
                         cast = f"uint{cache.size*16}_t"
-                    out.emit(f"{type}{cache.name} = ({cast})this_instr->operand0;\n")
+                    out.emit(f"{type}{cache.name} = ({cast})this_instr->operand{idx};\n")
+                    idx += 1
         if override:
             emitter = OptimizerEmitter(out, {}, uop, stack.copy())
             # No reference management of inputs needed.

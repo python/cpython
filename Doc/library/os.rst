@@ -5110,9 +5110,8 @@ written in Python, such as a mail server's external command delivery program.
       Use :class:`subprocess.Popen` or :func:`subprocess.run` to
       control options like encodings.
 
-   .. deprecated:: 3.14
-      The function is :term:`soft deprecated` and should no longer be used to
-      write new code. The :mod:`subprocess` module is recommended instead.
+   .. soft-deprecated:: 3.14
+      The :mod:`subprocess` module is recommended instead.
 
 
 .. function:: posix_spawn(path, argv, env, *, file_actions=None, \
@@ -5340,9 +5339,8 @@ written in Python, such as a mail server's external command delivery program.
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
-   .. deprecated:: 3.14
-      These functions are :term:`soft deprecated` and should no longer be used
-      to write new code. The :mod:`subprocess` module is recommended instead.
+   .. soft-deprecated:: 3.14
+      The :mod:`subprocess` module is recommended instead.
 
 
 .. data:: P_NOWAIT
