@@ -23,14 +23,6 @@ PyObject *PyBool_FromLong(long ok)
     return ok ? Py_True : Py_False;
 }
 
-#undef PyBool_Check
-
-int
-PyBool_Check(PyObject *x)
-{
-    return Py_IS_TYPE(x, &PyBool_Type);
-}
-
 /* We define bool_new to always return either Py_True or Py_False */
 
 static PyObject *
@@ -233,3 +225,8 @@ struct _longobject _Py_TrueStruct = {
         { 1 }
     }
 };
+
+// Implementations for the Stable ABI
+
+#undef PyBool_Check
+int PyBool_Check(PyObject *x) { return Py_IS_TYPE(x, &PyBool_Type); }
