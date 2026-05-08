@@ -1523,8 +1523,7 @@ class TestParser(TestParserMixin, TestEmailBase):
     # parse_unstructured
 
     @params
-    # XXX XXX Ignore ew_indexes until after get_unstructured is refactored.
-    def test_parse_unstructured(self, s, *args, ew_indexes=None, **kw):
+    def test_parse_unstructured(self, s, *args, **kw):
         # We ignore kw_indexes, that's for content_getter.
         result = self._test_parse(
             parser.parse_unstructured,
@@ -1539,8 +1538,7 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     # XXX POSTDEP: delete from here...
     @params
-    # XXX XXX Ignore ew_indexes until after get_unstructured is refactored.
-    def test_get_unstructured(self, s, *args, ew_indexes=None, **kw):
+    def test_get_unstructured(self, s, *args, **kw):
         result = self._test_parse(
             parser.get_unstructured,
             C(s),
