@@ -106,10 +106,21 @@ module_name
 Removed
 =======
 
-module_name
------------
+annotationlib
+-------------
 
-* TODO
+* The :meth:`!annotationlib.ForwardRef._evaluate` method
+  which has been deprecated since Python 3.14.
+  Use :meth:`annotationlib.ForwardRef.evaluate`
+  or :func:`typing.evaluate_forward_ref` instead.
+
+sysconfig
+---------
+
+* The :func:`!sysconfig.expand_makefile_vars` function
+  which has been deprecated since Python 3.14.
+  Use the ``vars`` argument of :func:`sysconfig.get_paths` instead.
+
 .. Add removals above alphabetically, not here at the end.
 
 
@@ -156,4 +167,3 @@ Deprecated C APIs
 
 Removed C APIs
 --------------
-
