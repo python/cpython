@@ -147,6 +147,7 @@ class TestArgumentParserCopiable(unittest.TestCase):
         parser.add_argument('bar', nargs='?', default='baz')
         return parser
 
+    @force_not_colorized
     def test_copiable(self):
         import copy
         parser = self._get_parser()
@@ -158,6 +159,12 @@ class TestArgumentParserCopiable(unittest.TestCase):
         self.assertEqual(ns2.foo, 42)
         self.assertEqual(ns2.bar, 'baz')
 
+        # Test shallow copy also gets new arguments
+        parser.add_argument("--extra")
+        ns3 = parser2.parse_args(["--extra", "bar"])
+        self.assertEqual(ns3.extra, "bar")
+
+    @force_not_colorized
     def test_deepcopiable(self):
         import copy
         parser = self._get_parser()
@@ -168,6 +175,11 @@ class TestArgumentParserCopiable(unittest.TestCase):
         ns2 = parser2.parse_args([])
         self.assertEqual(ns2.foo, 42)
         self.assertEqual(ns2.bar, 'baz')
+
+        # Test deep copy does not get new arguments
+        parser.add_argument("--extra")
+        with self.assertRaises(argparse.ArgumentError):
+            parser2.parse_args(["--extra", "bar"])
 
 
 class TestArgumentParserPickleable(unittest.TestCase):
