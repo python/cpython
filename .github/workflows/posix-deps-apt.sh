@@ -1,8 +1,4 @@
 #!/bin/sh
-
-# Workaround missing on ubuntu 24.04 libmpdec-dev
-sudo add-apt-repository ppa:ondrej/php
-
 apt-get update
 
 apt-get -yq --no-install-recommends install \
