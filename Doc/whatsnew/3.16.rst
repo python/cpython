@@ -114,6 +114,13 @@ annotationlib
   Use :meth:`annotationlib.ForwardRef.evaluate`
   or :func:`typing.evaluate_forward_ref` instead.
 
+asyncio
+-------
+
+* The :func:`!asyncio.iscoroutinefunction`
+  which has been deprecated since Python 3.14.
+  Use :func:`inspect.iscoroutinefunction` instead.
+
 functools
 ---------
 
