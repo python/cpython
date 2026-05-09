@@ -16519,19 +16519,6 @@ then :
   as_fn_append LIBMPDEC_CFLAGS " -DTEST_COVERAGE"
 fi
 
-if test "$have_ipa_pure_const_bug" = yes; then
-    # Some versions of gcc miscompile inline asm:
-    # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
-    # https://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
-    as_fn_append LIBMPDEC_CFLAGS " -fno-ipa-pure-const"
-fi
-
-if test "$have_glibc_memmove_bug" = yes; then
-    # _FORTIFY_SOURCE wrappers for memmove and bcopy are incorrect:
-    # https://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
-    as_fn_append LIBMPDEC_CFLAGS " -U_FORTIFY_SOURCE"
-fi
-
 
 
 # Check whether _decimal should use a coroutine-local or thread-local context
@@ -33837,7 +33824,10 @@ printf "%s\n" "$py_cv_module__curses_panel" >&6; }
 
 if test "$have_mpdec" = "no"
 then
-  py_cv_module__decimal=n/a
+
+
+    py_cv_module__decimal=n/a
+
 fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _decimal" >&5

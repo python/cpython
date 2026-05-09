@@ -4338,19 +4338,6 @@ AS_VAR_IF(
   [with_pydebug], [yes],
   [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DTEST_COVERAGE"])])
 
-if test "$have_ipa_pure_const_bug" = yes; then
-    # Some versions of gcc miscompile inline asm:
-    # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
-    # https://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
-    AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -fno-ipa-pure-const"])
-fi
-
-if test "$have_glibc_memmove_bug" = yes; then
-    # _FORTIFY_SOURCE wrappers for memmove and bcopy are incorrect:
-    # https://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
-    AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -U_FORTIFY_SOURCE"])
-fi
-
 AC_SUBST([LIBMPDEC_CFLAGS])
 
 # Check whether _decimal should use a coroutine-local or thread-local context
@@ -8295,7 +8282,7 @@ PY_STDLIB_MOD([_curses_panel],
 )
 if test "$have_mpdec" = "no"
 then
-  AS_VAR_SET([py_cv_module_]_decimal, [n/a])
+  PY_STDLIB_MOD_SET_NA([_decimal])
 fi
 PY_STDLIB_MOD([_decimal],
   [], [test "$have_mpdec" = "yes"],
