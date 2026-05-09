@@ -120,6 +120,13 @@ functools
 * Calling the Python implementation of :func:`functools.reduce` with *function*
   or *sequence* as keyword arguments has been deprecated since Python 3.14.
 
+logging
+-------
+
+* Support for custom logging handlers with the *strm* argument is deprecated
+  and scheduled for removal in Python 3.16. Define handlers with the *stream*
+  argument instead.
+
 symtable
 --------
 
