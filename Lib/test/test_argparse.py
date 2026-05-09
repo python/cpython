@@ -7894,14 +7894,13 @@ class TestColorized(TestCase):
     def test_fake_color_theme_matches_real(self):
         from argparse import _colorless_theme
         _colorize_nocolor = _colorize.get_theme(force_no_color=True).argparse
-        self.assertEqual(
-            _colorless_theme._COLOR_FIELDS,
-            set(_colorize_nocolor.__dataclass_fields__)
-        )
         for k in _colorize_nocolor:
             self.assertEqual(
                 getattr(_colorless_theme, k), getattr(_colorize_nocolor, k)
             )
+
+        with self.assertRaises(AttributeError):
+            _colorless_theme.__deepcopy__
 
 
 class TestModule(unittest.TestCase):

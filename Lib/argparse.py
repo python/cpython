@@ -159,20 +159,13 @@ def _identity(value):
 # ===============
 
 class _ColorlessTheme:
-    _COLOR_FIELDS = {
-        'usage', 'prog', 'prog_extra', 'heading', 'summary_long_option',
-        'summary_short_option', 'summary_label', 'summary_action',
-        'long_option', 'short_option', 'label', 'action', 'default',
-        'interpolated_value', 'reset', 'error', 'warning', 'message',
-    }
-
     # A 'fake' theme for no colors
     def __getattr__(self, name):
         # _colorize's no_color themes are just all empty strings
         # by directly using empty strings the import is avoided
-        if name in self._COLOR_FIELDS:
-            return ""
-        return super().__getattribute__(name)
+        if name.startswith("__") and name.endswith("__"):
+            raise AttributeError(name)
+        return ""
 
 _colorless_theme = _ColorlessTheme()
 
