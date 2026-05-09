@@ -172,7 +172,10 @@ class FrozenInstanceError(AttributeError): pass
 # A sentinel object for default values to signal that a default
 # factory will be used.  This is given a nice repr() which will appear
 # in the function signature of dataclasses' constructors.
-_HAS_DEFAULT_FACTORY = sentinel('<factory>')
+class _HAS_DEFAULT_FACTORY_CLASS:
+    def __repr__(self):
+        return '<factory>'
+_HAS_DEFAULT_FACTORY = _HAS_DEFAULT_FACTORY_CLASS()
 
 # A sentinel object to detect if a parameter is supplied or not.
 MISSING = sentinel("MISSING")
