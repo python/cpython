@@ -105,7 +105,7 @@ struct _ts {
 #  define _PyThreadState_WHENCE_INIT 1
 #  define _PyThreadState_WHENCE_FINI 2
 #  define _PyThreadState_WHENCE_THREADING 3
-#  define _PyThreadState_WHENCE_GILSTATE 4
+#  define _PyThreadState_WHENCE_C_API 4
 #  define _PyThreadState_WHENCE_EXEC 5
 #  define _PyThreadState_WHENCE_THREADING_DAEMON 6
 #endif
@@ -239,6 +239,20 @@ struct _ts {
     // structure and all share the same per-interpreter structure).
     PyStats *pystats;
 #endif
+
+    struct {
+        /* Number of nested PyThreadState_Ensure() calls on this thread state */
+        Py_ssize_t counter;
+
+        /* Should this thread state be deleted upon calling
+           PyThreadState_Release() (with the counter at 1)?
+
+           This is only true for thread states created by PyThreadState_Ensure() */
+        int delete_on_release;
+
+        /* The interpreter guard owned by PyThreadState_EnsureFromView(), if any. */
+        PyInterpreterGuard *owned_guard;
+    } ensure;
 };
 
 /* other API */

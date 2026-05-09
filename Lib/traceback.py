@@ -16,9 +16,9 @@ import tokenize
 import io
 import importlib.util
 import pathlib
-import _colorize
 
 from contextlib import suppress
+lazy import _colorize
 
 try:
     from _missing_stdlib_info import _MISSING_STDLIB_MODULE_MESSAGES
@@ -31,6 +31,36 @@ __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'print_last', 'print_stack', 'print_tb', 'clear_frames',
            'FrameSummary', 'StackSummary', 'TracebackException',
            'walk_stack', 'walk_tb', 'print_list']
+
+
+class _ShutdownTheme:
+    """Empty stand-in if `_colorize` cannot be imported during late shutdown."""
+    def __getattr__(self, _): return self
+    def __getitem__(self, _): return ""
+    def __format__(self, _): return ""
+    def __str__(self): return ""
+    def __add__(self, other): return other
+    __radd__ = __add__
+
+
+_shutdown_theme = _ShutdownTheme()
+
+
+def _safe_get_theme(*, force_color=False, force_no_color=False):
+    try:
+        return _colorize.get_theme(
+            force_color=force_color, force_no_color=force_no_color
+        )
+    except ImportError:
+        return _shutdown_theme
+
+
+def _safe_can_colorize(*, file=None):
+    try:
+        return _colorize.can_colorize(file=file)
+    except ImportError:
+        return False
+
 
 #
 # Formatting and printing lists of traceback lines.
@@ -147,7 +177,7 @@ BUILTIN_EXCEPTION_LIMIT = object()
 def _print_exception_bltin(exc, file=None, /):
     if file is None:
         file = sys.stderr if sys.stderr is not None else sys.__stderr__
-    colorize = _colorize.can_colorize(file=file)
+    colorize = _safe_can_colorize(file=file)
     return print_exception(exc, limit=BUILTIN_EXCEPTION_LIMIT, file=file, colorize=colorize)
 
 
@@ -195,9 +225,9 @@ def _format_final_exc_line(etype, value, *, insert_final_newline=True, colorize=
     valuestr = _safe_string(value, 'exception')
     end_char = "\n" if insert_final_newline else ""
     if colorize:
-        theme = _colorize.get_theme(force_color=True).traceback
+        theme = _safe_get_theme(force_color=True).traceback
     else:
-        theme = _colorize.get_theme(force_no_color=True).traceback
+        theme = _safe_get_theme(force_no_color=True).traceback
     if value is None or not valuestr:
         line = f"{theme.type}{etype}{theme.reset}{end_char}"
     else:
@@ -551,9 +581,9 @@ class StackSummary(list):
         if frame_summary.filename.startswith("<stdin-") and frame_summary.filename.endswith('>'):
             filename = "<stdin>"
         if colorize:
-            theme = _colorize.get_theme(force_color=True).traceback
+            theme = _safe_get_theme(force_color=True).traceback
         else:
-            theme = _colorize.get_theme(force_no_color=True).traceback
+            theme = _safe_get_theme(force_no_color=True).traceback
         row.append(
             '  File {}"{}"{}, line {}{}{}, in {}{}{}\n'.format(
                 theme.filename,
@@ -1183,12 +1213,20 @@ class TracebackException:
         elif exc_type and issubclass(exc_type, AttributeError) and \
                 getattr(exc_value, "name", None) is not None:
             wrong_name = getattr(exc_value, "name", None)
-            suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
-            if suggestion:
-                if suggestion.isascii():
-                    self._str += f". Did you mean '.{suggestion}' instead of '.{wrong_name}'?"
-                else:
-                    self._str += f". Did you mean '.{suggestion}' ({suggestion!a}) instead of '.{wrong_name}' ({wrong_name!a})?"
+            # Check cross-language/wrong-type hints first (more specific),
+            # then fall back to Levenshtein distance suggestions.
+            hint = None
+            if hasattr(exc_value, 'obj'):
+                hint = _get_cross_language_hint(exc_value.obj, wrong_name)
+            if hint:
+                self._str += f". {hint}"
+            else:
+                suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
+                if suggestion:
+                    if suggestion.isascii():
+                        self._str += f". Did you mean '.{suggestion}' instead of '.{wrong_name}'?"
+                    else:
+                        self._str += f". Did you mean '.{suggestion}' ({suggestion!a}) instead of '.{wrong_name}' ({wrong_name!a})?"
         elif exc_type and issubclass(exc_type, NameError) and \
                 getattr(exc_value, "name", None) is not None:
             wrong_name = getattr(exc_value, "name", None)
@@ -1332,9 +1370,9 @@ class TracebackException:
         """
         colorize = kwargs.get("colorize", False)
         if colorize:
-            theme = _colorize.get_theme(force_color=True).traceback
+            theme = _safe_get_theme(force_color=True).traceback
         else:
-            theme = _colorize.get_theme(force_no_color=True).traceback
+            theme = _safe_get_theme(force_no_color=True).traceback
 
         indent = 3 * _depth * ' '
         if not self._have_exc_type:
@@ -1482,9 +1520,9 @@ class TracebackException:
         # Show exactly where the problem was found.
         colorize = kwargs.get("colorize", False)
         if colorize:
-            theme = _colorize.get_theme(force_color=True).traceback
+            theme = _safe_get_theme(force_color=True).traceback
         else:
-            theme = _colorize.get_theme(force_no_color=True).traceback
+            theme = _safe_get_theme(force_no_color=True).traceback
         filename_suffix = ''
         if self.lineno is not None:
             yield '  File {}"{}"{}, line {}{}{}\n'.format(
@@ -1685,6 +1723,62 @@ _MAX_STRING_SIZE = 40
 _MOVE_COST = 2
 _CASE_COST = 1
 
+# Cross-language method suggestions for builtin types.
+# Consulted as a fallback when Levenshtein-based suggestions find no match.
+#
+# Inclusion criteria:
+#
+#   1. Must have evidence of real cross-language confusion (Stack Overflow
+#      traffic, bug reports in production repos, developer survey data).
+#   2. Must not be catchable by Levenshtein distance (too different from
+#      the correct Python method name).
+#
+# Each entry maps a wrong method name to a list of (type, suggestion, is_raw)
+# tuples. The lookup checks isinstance() so subclasses are also matched.
+# If is_raw is False, the suggestion is wrapped in "Did you mean '.X'?".
+# If is_raw is True, the suggestion is rendered as-is.
+#
+# See https://github.com/python/cpython/issues/146406.
+_CROSS_LANGUAGE_HINTS = frozendict({
+    # list -- JavaScript/Ruby equivalents
+    "push": ((list, "append", False),),
+    "concat": ((list, "extend", False),),
+    # list -- Java/C# equivalents
+    "addAll": ((list, "extend", False),),
+    "contains": ((list, "Use 'x in list'.", True),),
+    # list -- wrong-type suggestion (user expected a set)
+    "add": ((list, "Did you mean to use a 'set' object?", True),
+            (frozenset, "Did you mean to use a 'set' object?", True)),
+    # str -- JavaScript equivalents
+    "toUpperCase": ((str, "upper", False),),
+    "toLowerCase": ((str, "lower", False),),
+    "trimStart": ((str, "lstrip", False),),
+    "trimEnd": ((str, "rstrip", False),),
+    # dict -- Java/JavaScript equivalents
+    "keySet": ((dict, "keys", False),),
+    "entrySet": ((dict, "items", False),),
+    "entries": ((dict, "items", False),),
+    "putAll": ((dict, "update", False),),
+    "put": ((dict, "Use d[k] = v.", True),),
+    # tuple -- mutable method on immutable type (user expected a list)
+    "append": ((tuple, "Did you mean to use a 'list' object?", True),),
+    "extend": ((tuple, "Did you mean to use a 'list' object?", True),),
+    "insert": ((tuple, "Did you mean to use a 'list' object?", True),),
+    "remove": ((tuple, "Did you mean to use a 'list' object?", True),
+               (frozenset, "Did you mean to use a 'set' object?", True)),
+    # frozenset -- mutable method on immutable type (user expected a set)
+    "discard": ((frozenset, "Did you mean to use a 'set' object?", True),),
+    # frozendict -- mutable method on immutable type (user expected a dict)
+    "update": ((frozenset, "Did you mean to use a 'set' object?", True),
+               (frozendict, "Did you mean to use a 'dict' object?", True)),
+    # float -- bitwise operators belong to int
+    "__or__": ((float, "Did you mean to use an 'int' object? Bitwise operators are not supported by 'float'.", True),),
+    "__and__": ((float, "Did you mean to use an 'int' object? Bitwise operators are not supported by 'float'.", True),),
+    "__xor__": ((float, "Did you mean to use an 'int' object? Bitwise operators are not supported by 'float'.", True),),
+    "__lshift__": ((float, "Did you mean to use an 'int' object? Bitwise operators are not supported by 'float'.", True),),
+    "__rshift__": ((float, "Did you mean to use an 'int' object? Bitwise operators are not supported by 'float'.", True),),
+})
+
 
 def _substitution_cost(ch_a, ch_b):
     if ch_a == ch_b:
@@ -1744,6 +1838,24 @@ def _check_for_nested_attribute(obj, wrong_name, attrs):
             if getattr_static(attr_obj, wrong_name, _sentinel) is not _sentinel:
                 return f"{attr_name}.{wrong_name}"
 
+    return None
+
+
+def _get_cross_language_hint(obj, wrong_name):
+    """Check if wrong_name is a common method name from another language,
+    a mutable method on an immutable type, or a method tried on None.
+
+    Uses isinstance() so subclasses of builtin types also get hints.
+    Returns a formatted hint string, or None.
+    """
+    entries = _CROSS_LANGUAGE_HINTS.get(wrong_name)
+    if entries is None:
+        return None
+    for check_type, hint, is_raw in entries:
+        if isinstance(obj, check_type):
+            if is_raw:
+                return hint
+            return f"Did you mean '.{hint}'?"
     return None
 
 

@@ -280,7 +280,7 @@ extern CThunkObject *_ctypes_alloc_callback(ctypes_state *st,
                                            int flags);
 /* a table entry describing a predefined ctypes type */
 struct fielddesc {
-    char code;
+    const char *code;
     ffi_type *pffi_type; /* always statically allocated */
     SETFUNC setfunc;
     GETFUNC getfunc;
@@ -289,7 +289,8 @@ struct fielddesc {
 };
 
 // Get all single-character type codes (for use in error messages)
-extern char *_ctypes_get_simple_type_chars(void);
+extern const char* _ctypes_get_simple_type_chars(void);
+extern const char* _ctypes_get_complex_type_formats(void);
 
 typedef struct CFieldObject {
     PyObject_HEAD
