@@ -434,19 +434,6 @@ def _rebuild_generic_alias(alias: GenericAlias, args: tuple[object, ...]) -> Gen
     return t
 
 
-def _deprecation_warning_for_no_type_params_passed(funcname: str) -> None:
-    import warnings
-
-    depr_message = (
-        f"Failing to pass a value to the 'type_params' parameter "
-        f"of {funcname!r} is deprecated, as it leads to incorrect behaviour "
-        f"when calling {funcname} on a stringified annotation "
-        f"that references a PEP 695 type parameter. "
-        f"It will be disallowed in Python 3.15."
-    )
-    warnings.warn(depr_message, category=DeprecationWarning, stacklevel=3)
-
-
 def _eval_type(t, globalns, localns, type_params, *, recursive_guard=frozenset(),
                format=None, owner=None, parent_fwdref=None, prefer_fwd_module=False):
     """Evaluate all forward references in the given type t.

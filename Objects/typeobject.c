@@ -11079,6 +11079,12 @@ slot_tp_iternext(PyObject *self)
     return vectorcall_method(&_Py_ID(__next__), stack, 1);
 }
 
+int
+_PyType_HasSlotTpIternext(PyTypeObject *type)
+{
+    return type->tp_iternext == slot_tp_iternext;
+}
+
 static PyObject *
 slot_tp_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 {

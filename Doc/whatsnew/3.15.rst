@@ -411,8 +411,8 @@ embedding applications, and native libraries.
    unwinding for the whole Python process.
 
 (Contributed by Pablo Galindo Salgado and Savannah Ostrowski in
-:gh:`149201`; PEP 831 written by Pablo Galindo Salgado, Ken Jin, and
-Savannah Ostrowski.)
+:gh:`149201`; PEP 831 written by Pablo Galindo Salgado, Ken Jin,
+Savannah Ostrowski, and Diego Russo.)
 
 .. seealso:: :pep:`831` for further details.
 

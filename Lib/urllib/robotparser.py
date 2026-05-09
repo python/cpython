@@ -65,17 +65,9 @@ class RobotFileParser:
             f = urllib.request.urlopen(self.url)
         except urllib.error.HTTPError as err:
             if err.code in (401, 403):
-                # If access to robot.txt has the status Unauthorized/Forbidden,
-                # then most likely this applies to the entire site.
                 self.disallow_all = True
-            elif 400 <= err.code < 500:
-                # RFC 9309, Section 2.3.1.3: the crawler MAY access any
-                # resources on the server.
+            elif err.code >= 400 and err.code < 500:
                 self.allow_all = True
-            elif 500 <= err.code < 600:
-                # RFC 9309, Section 2.3.1.4: the crawler MUST assume
-                # complete disallow.
-                self.disallow_all = True
             err.close()
         else:
             raw = f.read()

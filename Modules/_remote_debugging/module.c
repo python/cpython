@@ -1476,7 +1476,7 @@ class _remote_debugging.BinaryWriter "BinaryWriterObject *" "&PyBinaryWriter_Typ
 /*[clinic input]
 @permit_long_docstring_body
 _remote_debugging.BinaryWriter.__init__
-    filename: str
+    filename: object
     sample_interval_us: unsigned_long_long
     start_time_us: unsigned_long_long
     *
@@ -1495,11 +1495,11 @@ Use as a context manager or call finalize() when done.
 
 static int
 _remote_debugging_BinaryWriter___init___impl(BinaryWriterObject *self,
-                                             const char *filename,
+                                             PyObject *filename,
                                              unsigned long long sample_interval_us,
                                              unsigned long long start_time_us,
                                              int compression)
-/*[clinic end generated code: output=014c0306f1bacf4b input=3bdf01c1cc2f5a1d]*/
+/*[clinic end generated code: output=00446656ea2e5986 input=b92f0c77ba4cd274]*/
 {
     if (self->writer) {
         binary_writer_destroy(self->writer);
@@ -1742,7 +1742,7 @@ class _remote_debugging.BinaryReader "BinaryReaderObject *" "&PyBinaryReader_Typ
 
 /*[clinic input]
 _remote_debugging.BinaryReader.__init__
-    filename: str
+    filename: object
 
 High-performance binary reader for profiling data.
 
@@ -1754,8 +1754,8 @@ Use as a context manager or call close() when done.
 
 static int
 _remote_debugging_BinaryReader___init___impl(BinaryReaderObject *self,
-                                             const char *filename)
-/*[clinic end generated code: output=9699226f7ae052bb input=4201f9cc500ef2f6]*/
+                                             PyObject *filename)
+/*[clinic end generated code: output=f04b33ee5c5e6dbf input=9d7cbe8b4f1a97c9]*/
 {
     if (self->reader) {
         binary_reader_close(self->reader);
