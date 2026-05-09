@@ -6154,8 +6154,8 @@ class TestUopsOptimization(unittest.TestCase):
 
     def test_dynamic_exit_boosts_resume(self):
         # gh-149564: When a hot loop calls many distinct exec()-generated
-        # functions, _DYNAMIC_EXIT should boost the callee's RESUME counter
-        # so it gets traced sooner.
+        # functions, _COLD_EXIT should boost the callee's RESUME counter
+        # so it gets traced sooner (propagate call-site hotness to callees).
         script_helper.assert_python_ok("-s", "-c", textwrap.dedent(f"""
             import _opcode
 

@@ -6308,6 +6308,24 @@ dummy_func(
             }
             else {
                 SYNC_SP();
+                // gh-149564: Propagate call-site hotness to callees.
+                // If exiting to a CALL instruction, boost the callee's RESUME
+                // counter so it gets traced sooner (called from a hot trace).
+                {
+                    uint8_t target_deopt = _PyOpcode_Deopt[target->op.code];
+                    if (target_deopt == CALL || target_deopt == CALL_KW) {
+                        int oparg = target->op.arg;
+                        _PyStackRef callable_ref = stack_pointer[-(oparg + 2)];
+                        PyObject *callable = PyStackRef_AsPyObjectBorrow(callable_ref);
+                        if (PyFunction_Check(callable)) {
+                            PyCodeObject *code = (PyCodeObject *)((PyFunctionObject *)callable)->func_code;
+                            _Py_CODEUNIT *resume_instr = _PyCode_CODE(code);
+                            if (resume_instr->op.code == RESUME_CHECK_JIT) {
+                                resume_instr[1].counter = trigger_backoff_counter();
+                            }
+                        }
+                    }
+                }
                 if (!backoff_counter_triggers(temperature)) {
                     exit->temperature = advance_backoff_counter(temperature);
                     GOTO_TIER_ONE(target);
