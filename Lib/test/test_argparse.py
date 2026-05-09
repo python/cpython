@@ -7900,7 +7900,7 @@ class TestColorized(TestCase):
             )
 
         with self.assertRaises(AttributeError):
-            _colorless_theme.__deepcopy__
+            _colorless_theme.__unknown_dunder__
 
 
 class TestModule(unittest.TestCase):
