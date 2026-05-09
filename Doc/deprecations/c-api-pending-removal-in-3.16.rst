@@ -11,8 +11,6 @@ Pending removal in Python 3.16
     Set :c:member:`PyConfig.program_name` instead.
   * :c:func:`!Py_SetPythonHome()`:
     Set :c:member:`PyConfig.home` instead.
-  * :c:func:`!PySys_ResetWarnOptions`:
-    Clear :data:`sys.warnoptions` and :data:`!warnings.filters` instead.
 
   The :c:func:`Py_InitializeFromConfig` API should be used with
   :c:type:`PyConfig` instead.
@@ -85,3 +83,5 @@ Pending removal in Python 3.16
   The :c:func:`Py_InitializeFromConfig` API should be used with
   :c:type:`PyConfig` to set these options. Or :c:func:`PyConfig_Get` can be
   used to get these options at runtime.
+
+* :c:type:`Py_UNICODE` which was deprecated by :pep:`393`.
