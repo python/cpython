@@ -3633,17 +3633,21 @@ Introspection helpers
 
    Determine if a type is a :class:`Protocol`.
 
-   For example::
+   For example:
+
+   .. testcode::
 
       class P(Protocol):
           def a(self) -> str: ...
           b: int
 
-      is_protocol(P)    # => True
-      is_protocol(int)  # => False
+      assert is_protocol(P)
+      assert not is_protocol(int)
 
    This function only returns true for ``Protocol`` classes, not for
-   :ref:`generic specializations <types-generic-aliases>` of them::
+   :ref:`generic aliases <types-genericalias>` of them:
+
+   .. testcode::
 
       class GenericP[T](Protocol):
           def a(self) -> T: ...
@@ -3673,7 +3677,9 @@ Introspection helpers
       assert not is_typeddict(TypedDict)
 
    This function only returns true for ``TypedDict`` classes, not for
-   :ref:`generic specializations <types-generic-aliases>` of them::
+   :ref:`generic aliases <types-genericalias>` of them:
+
+   .. testcode::
 
       class GenericFilm[T](TypedDict):
           title: str

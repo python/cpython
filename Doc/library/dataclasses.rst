@@ -498,7 +498,7 @@ Module contents
 .. function:: is_dataclass(obj)
 
    Return ``True`` if its parameter is a dataclass (including subclasses of a
-   dataclass, but not including :ref:`generic specializations <types-generic-aliases>`)
+   dataclass, but not including :ref:`generic aliases <types-genericalias>`)
    or an instance of one, otherwise return ``False``.
 
    If you need to know if a class is an instance of a dataclass (and
