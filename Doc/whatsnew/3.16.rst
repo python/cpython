@@ -120,6 +120,13 @@ functools
 * Calling the Python implementation of :func:`functools.reduce` with *function*
   or *sequence* as keyword arguments has been deprecated since Python 3.14.
 
+mimetypes
+---------
+
+* Passing an invalid *ext* (that is, an extension that is not empty and does not
+  start with a '.') to :meth:`mimetypes.MimeTypes.add_type` now raises a :exc:`ValueError`.
+  (Contributed by Daniel Watkins, Hugo van Kemenade, and Stan Ulbrych in :gh:`75223`.)
+
 symtable
 --------
 

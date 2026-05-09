@@ -307,10 +307,6 @@ than one MIME-type database; it provides an interface similar to the one of the
       When *strict* is ``True`` (the default), the mapping will be added to the
       official MIME types, otherwise to the non-standard ones.
 
-      .. deprecated-removed:: 3.14 3.16
-         Invalid, undotted extensions will raise a
-         :exc:`ValueError` in Python 3.16.
-
 
 .. _mimetypes-cli:
 

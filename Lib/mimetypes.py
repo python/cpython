@@ -91,14 +91,12 @@ class MimeTypes:
         types.
 
         Valid extensions are empty or start with a '.'.
-        Raise a ValueError for invalid extensions.
         """
         if ext and not ext.startswith('.'):
             raise ValueError("Extensions should start with a '.' or be empty")
 
         if not type:
             return
-
         self.types_map[strict][ext] = type
         exts = self.types_map_inv[strict].setdefault(type, [])
         if ext not in exts:

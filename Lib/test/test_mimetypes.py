@@ -4,7 +4,6 @@ import os
 import shlex
 import sys
 import unittest.mock
-import warnings
 
 from platform import win32_edition
 from test import support
@@ -378,22 +377,6 @@ class MimeTypesTestCase(unittest.TestCase):
             url="scheme:foo.html", strict=True), ("text/html", None))
         self.assertEqual(self.db.guess_all_extensions(
             type='image/jpeg', strict=True), ['.jpg', '.jpe', '.jpeg'])
-
-    def test_added_types_are_used(self):
-        mimetypes.add_type('testing/default-type', '')
-        mime_type, _ = mimetypes.guess_type('')
-        self.assertEqual(mime_type, 'testing/default-type')
-
-        mime_type, _ = mimetypes.guess_type('test.myext')
-        self.assertEqual(mime_type, None)
-
-        mimetypes.add_type('testing/type', '.myext')
-        mime_type, _ = mimetypes.guess_type('test.myext')
-        self.assertEqual(mime_type, 'testing/type')
-
-    def test_add_type_with_undotted_extension_deprecated(self):
-        with self.assertWarns(DeprecationWarning):
-            mimetypes.add_type("testing/type", "undotted")
 
     def test_added_types_are_used(self):
         mimetypes.add_type('testing/default-type', '')
