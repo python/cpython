@@ -74,7 +74,7 @@ There are two Stable ABIs:
   :term:`free-threaded <free-threaded build>` builds of CPython.
   It has stricter API limitations than ``abi3``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
       ``abi3t`` was added in :pep:`803`
 
@@ -170,7 +170,7 @@ both Stable ABIs.
    :term:`free-threaded builds <free-threaded build>` of CPython.
    See :ref:`above <abi3-compiling>` for common information.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 Both macros specify a target ABI; the different naming style is due to
 backwards compatibility.
