@@ -1962,11 +1962,11 @@ class TestParser(TestParserMixin, TestEmailBase):
             ew_indexes=[0, 19],
             ),
 
+        # XXX POSTDEP: delete from here...
+
         )
 
 
-    # XXX XXX add the POSTDEP comment after reorganizing the tests.
-    #
     # get_qp_ctext
 
     @params
@@ -1987,7 +1987,7 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertIsInstance(ptext, parser.Terminal)
         self.assertEqual(ptext.token_type, 'ptext')
 
-    params_test_get_qp_ctext = Params(
+    params_test_get_qp_ctext__wsp_cases = Params(
 
         two_words_gets_first = C(
             'foo de',
@@ -2008,6 +2008,12 @@ class TestParser(TestParserMixin, TestEmailBase):
             'foo  (',
             remainder='  (',
             ),
+
+        )
+
+    params_test_get_qp_ctext = Params(
+
+        # XXX POSTDEP: ...to here.
 
         value_ends_at_input_end = C(
             'foobar',
@@ -2091,17 +2097,14 @@ class TestParser(TestParserMixin, TestEmailBase):
 
         )
 
+    # XXX POSTDEP: delete from here...
+    # get_ccontent_sequence is handling a superset of what get_qp_ctext used to
+    # handle.  It should pass this subset of get_qp_ctext tests that don't
+    # involve whitespace.
     params_test_get_ccontent_sequence.update(
-
-        # get_ccontent_sequence is handling a superset of what get_qp_ctext
-        # used to handle.  It should pass the get_qp_ctext tests that don't
-        # involve whitespace, which get_qp_ctext stops at.
-        include_unless(
-            lambda n, *a, **k: 'wsp' in str(n) or 'two_words_gets_first' in n,
-            label='from_test_get_qp_ctext',
-            )(params_test_get_qp_ctext)
-
+        add_label('from_test_get_qp_ctext')(params_test_get_qp_ctext)
         )
+    # XXX POSDEP: ...to here.
 
 
     # get_qcontent
