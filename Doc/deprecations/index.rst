@@ -29,6 +29,7 @@ C API deprecations
 .. include:: c-api-pending-removal-in-future.rst
 
 .. _pending-removal-in-python-3-15:
+.. _c-api-pending-removal-in-3.15:
 
 Previous removals
 -----------------
