@@ -21,7 +21,6 @@ from asyncio import tasks
 from test.test_asyncio import utils as test_utils
 from test import support
 from test.support.script_helper import assert_python_ok
-from test.support.warnings_helper import ignore_warnings
 
 
 def tearDownModule():
