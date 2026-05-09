@@ -140,6 +140,36 @@ class TestLazyImports(unittest.TestCase):
         )
 
 
+class TestArgumentParserCopiable(unittest.TestCase):
+    def _get_parser(self):
+        parser = argparse.ArgumentParser(exit_on_error=False)
+        parser.add_argument('--foo', type=int, default=42)
+        parser.add_argument('bar', nargs='?', default='baz')
+        return parser
+
+    def test_copiable(self):
+        import copy
+        parser = self._get_parser()
+        parser2 = copy.copy(parser)
+        ns = parser2.parse_args(['--foo', '123', 'quux'])
+        self.assertEqual(ns.foo, 123)
+        self.assertEqual(ns.bar, 'quux')
+        ns2 = parser2.parse_args([])
+        self.assertEqual(ns2.foo, 42)
+        self.assertEqual(ns2.bar, 'baz')
+
+    def test_deepcopiable(self):
+        import copy
+        parser = self._get_parser()
+        parser2 = copy.deepcopy(parser)
+        ns = parser2.parse_args(['--foo', '123', 'quux'])
+        self.assertEqual(ns.foo, 123)
+        self.assertEqual(ns.bar, 'quux')
+        ns2 = parser2.parse_args([])
+        self.assertEqual(ns2.foo, 42)
+        self.assertEqual(ns2.bar, 'baz')
+
+
 class TestArgumentParserPickleable(unittest.TestCase):
 
     @force_not_colorized
