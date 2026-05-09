@@ -127,6 +127,12 @@ shutil
   It has not been used by any function in :mod:`!shutil` since Python 3.4.
   (Contributed by Stan Ulbrych in :gh:`149567`.)
 
+symtable
+--------
+
+* The :meth:`!symtable.Class.get_methods` method
+  which has been deprecated since Python 3.14.
+
 sysconfig
 ---------
 

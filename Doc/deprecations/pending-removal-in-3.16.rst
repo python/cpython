@@ -84,7 +84,7 @@ Pending removal in Python 3.16
 
 * :mod:`symtable`:
 
-  * The :meth:`Class.get_methods <symtable.Class.get_methods>` method
+  * The :meth:`!symtable.Class.get_methods` method
     has been deprecated since Python 3.14.
 
 * :mod:`sys`:

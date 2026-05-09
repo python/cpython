@@ -232,7 +232,7 @@ except ImportError:
 ### reduce() sequence to a single item
 ################################################################################
 
-_initial_missing = object()
+_initial_missing = sentinel('_initial_missing')
 
 def reduce(function, sequence, /, initial=_initial_missing):
     """
