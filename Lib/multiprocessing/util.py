@@ -170,8 +170,8 @@ _TMPSOCK_SUFFIXLEN = 12
 # including a leading path separator and the path separator between
 # the temporary subdirectory and the socket filename.
 _SUN_PATH_LEN_RESERVED = (
-    len(os.path) + _TMPPYMP_PREFIXLEN + _TMPPYMP_SUFFIXLEN +
-    len(os.path) + _TMPSOCK_PREFIXLEN + _TMPSOCK_SUFFIXLEN
+    len(os.path.sep) + _TMPPYMP_PREFIXLEN + _TMPPYMP_SUFFIXLEN +
+    len(os.path.sep) + _TMPSOCK_PREFIXLEN + _TMPSOCK_SUFFIXLEN
 )
 
 
