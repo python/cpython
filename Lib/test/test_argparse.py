@@ -7893,14 +7893,24 @@ class TestColorized(TestCase):
 
     def test_fake_color_theme_matches_real(self):
         from argparse import _colorless_theme
+
+        # Check the attributes match those of the 'real' theme
         _colorize_nocolor = _colorize.get_theme(force_no_color=True).argparse
         for k in _colorize_nocolor:
             self.assertEqual(
                 getattr(_colorless_theme, k), getattr(_colorize_nocolor, k)
             )
 
+    def test_fake_color_theme_raises(self):
+        from argparse import _colorless_theme
+
+        # Make sure the _colorless_theme doesn't return empty strings
+        # for magic methods or private attributes
         with self.assertRaises(AttributeError):
             _colorless_theme.__unknown_dunder__
+
+        with self.assertRaises(AttributeError):
+            _colorless_theme._private_attribute
 
 
 class TestModule(unittest.TestCase):
