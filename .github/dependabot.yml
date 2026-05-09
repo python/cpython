@@ -19,3 +19,10 @@ updates:
     labels:
       - "skip issue"
       - "skip news"
+  - package-ecosystem: "docker"
+    directory: "/.nanvix/docker"
+    schedule:
+      interval: "monthly"
+    labels:
+      - "skip issue"
+      - "skip news"
