@@ -101,9 +101,11 @@ gc_collect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(generation), },
     };
     #undef NUM_KEYWORDS
@@ -125,7 +127,8 @@ gc_collect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     int generation = NUM_GENERATIONS - 1;
     Py_ssize_t _return_value;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -312,23 +315,24 @@ PyDoc_STRVAR(gc_get_referrers__doc__,
     {"get_referrers", _PyCFunction_CAST(gc_get_referrers), METH_FASTCALL, gc_get_referrers__doc__},
 
 static PyObject *
-gc_get_referrers_impl(PyObject *module, Py_ssize_t nargs,
-                      PyObject *const *args);
+gc_get_referrers_impl(PyObject *module, PyObject *objs);
 
 static PyObject *
 gc_get_referrers(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_ssize_t nvararg = nargs - 0;
-    PyObject *const *__clinic_args = NULL;
+    PyObject *objs = NULL;
 
-    if (!_PyArg_CheckPositional("get_referrers", nargs, 0, PY_SSIZE_T_MAX)) {
+    objs = PyTuple_FromArray(args, nargs);
+    if (objs == NULL) {
         goto exit;
     }
-    __clinic_args = args + 0;
-    return_value = gc_get_referrers_impl(module, nvararg, __clinic_args);
+    return_value = gc_get_referrers_impl(module, objs);
 
 exit:
+    /* Cleanup for objs */
+    Py_XDECREF(objs);
+
     return return_value;
 }
 
@@ -342,23 +346,24 @@ PyDoc_STRVAR(gc_get_referents__doc__,
     {"get_referents", _PyCFunction_CAST(gc_get_referents), METH_FASTCALL, gc_get_referents__doc__},
 
 static PyObject *
-gc_get_referents_impl(PyObject *module, Py_ssize_t nargs,
-                      PyObject *const *args);
+gc_get_referents_impl(PyObject *module, PyObject *objs);
 
 static PyObject *
 gc_get_referents(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_ssize_t nvararg = nargs - 0;
-    PyObject *const *__clinic_args = NULL;
+    PyObject *objs = NULL;
 
-    if (!_PyArg_CheckPositional("get_referents", nargs, 0, PY_SSIZE_T_MAX)) {
+    objs = PyTuple_FromArray(args, nargs);
+    if (objs == NULL) {
         goto exit;
     }
-    __clinic_args = args + 0;
-    return_value = gc_get_referents_impl(module, nvararg, __clinic_args);
+    return_value = gc_get_referents_impl(module, objs);
 
 exit:
+    /* Cleanup for objs */
+    Py_XDECREF(objs);
+
     return return_value;
 }
 
@@ -390,9 +395,11 @@ gc_get_objects(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(generation), },
     };
     #undef NUM_KEYWORDS
@@ -413,7 +420,8 @@ gc_get_objects(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     Py_ssize_t generation = -1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -575,4 +583,4 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f488a0d4d6bd3687 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=19738854607938db input=a9049054013a1b77]*/

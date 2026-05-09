@@ -146,4 +146,4 @@ class IsolatedAssembleTests(AssemblerTestCase):
                                          L1 to L2 -> L2 [0]
                                          L2 to L3 -> L3 [1] lasti
                                     """)
-        self.assertTrue(output.getvalue().endswith(exc_table))
+        self.assertEndsWith(output.getvalue(), exc_table)

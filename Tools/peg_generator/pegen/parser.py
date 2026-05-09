@@ -5,7 +5,8 @@ import token
 import tokenize
 import traceback
 from abc import abstractmethod
-from typing import Any, Callable, ClassVar, Dict, Optional, Tuple, Type, TypeVar, cast
+from collections.abc import Callable
+from typing import Any, ClassVar, TypeVar, cast
 
 from pegen.tokenizer import Mark, Tokenizer, exact_token_types
 
@@ -74,12 +75,12 @@ def memoize(method: F) -> F:
 
 
 def memoize_left_rec(
-    method: Callable[["Parser"], Optional[T]]
-) -> Callable[["Parser"], Optional[T]]:
+    method: Callable[["Parser"], T | None]
+) -> Callable[["Parser"], T | None]:
     """Memoize a left-recursive symbol method."""
     method_name = method.__name__
 
-    def memoize_left_rec_wrapper(self: "Parser") -> Optional[T]:
+    def memoize_left_rec_wrapper(self: "Parser") -> T | None:
         mark = self._mark()
         key = mark, method_name, ()
         # Fast path: cache hit, and not verbose.
@@ -160,15 +161,15 @@ def memoize_left_rec(
 class Parser:
     """Parsing base class."""
 
-    KEYWORDS: ClassVar[Tuple[str, ...]]
+    KEYWORDS: ClassVar[tuple[str, ...]]
 
-    SOFT_KEYWORDS: ClassVar[Tuple[str, ...]]
+    SOFT_KEYWORDS: ClassVar[tuple[str, ...]]
 
     def __init__(self, tokenizer: Tokenizer, *, verbose: bool = False):
         self._tokenizer = tokenizer
         self._verbose = verbose
         self._level = 0
-        self._cache: Dict[Tuple[Mark, str, Tuple[Any, ...]], Tuple[Any, Mark]] = {}
+        self._cache: dict[tuple[Mark, str, tuple[Any, ...]], tuple[Any, Mark]] = {}
         # Integer tracking whether we are in a left recursive rule or not. Can be useful
         # for error reporting.
         self.in_recursive_rule = 0
@@ -185,29 +186,29 @@ class Parser:
         return f"{tok.start[0]}.{tok.start[1]}: {token.tok_name[tok.type]}:{tok.string!r}"
 
     @memoize
-    def name(self) -> Optional[tokenize.TokenInfo]:
+    def name(self) -> tokenize.TokenInfo | None:
         tok = self._tokenizer.peek()
         if tok.type == token.NAME and tok.string not in self.KEYWORDS:
             return self._tokenizer.getnext()
         return None
 
     @memoize
-    def number(self) -> Optional[tokenize.TokenInfo]:
+    def number(self) -> tokenize.TokenInfo | None:
         tok = self._tokenizer.peek()
         if tok.type == token.NUMBER:
             return self._tokenizer.getnext()
         return None
 
     @memoize
-    def string(self) -> Optional[tokenize.TokenInfo]:
+    def string(self) -> tokenize.TokenInfo | None:
         tok = self._tokenizer.peek()
         if tok.type == token.STRING:
             return self._tokenizer.getnext()
         return None
 
     @memoize
-    def fstring_start(self) -> Optional[tokenize.TokenInfo]:
-        FSTRING_START = getattr(token, "FSTRING_START")
+    def fstring_start(self) -> tokenize.TokenInfo | None:
+        FSTRING_START = getattr(token, "FSTRING_START", None)
         if not FSTRING_START:
             return None
         tok = self._tokenizer.peek()
@@ -216,8 +217,8 @@ class Parser:
         return None
 
     @memoize
-    def fstring_middle(self) -> Optional[tokenize.TokenInfo]:
-        FSTRING_MIDDLE = getattr(token, "FSTRING_MIDDLE")
+    def fstring_middle(self) -> tokenize.TokenInfo | None:
+        FSTRING_MIDDLE = getattr(token, "FSTRING_MIDDLE", None)
         if not FSTRING_MIDDLE:
             return None
         tok = self._tokenizer.peek()
@@ -226,8 +227,8 @@ class Parser:
         return None
 
     @memoize
-    def fstring_end(self) -> Optional[tokenize.TokenInfo]:
-        FSTRING_END = getattr(token, "FSTRING_END")
+    def fstring_end(self) -> tokenize.TokenInfo | None:
+        FSTRING_END = getattr(token, "FSTRING_END", None)
         if not FSTRING_END:
             return None
         tok = self._tokenizer.peek()
@@ -236,28 +237,28 @@ class Parser:
         return None
 
     @memoize
-    def op(self) -> Optional[tokenize.TokenInfo]:
+    def op(self) -> tokenize.TokenInfo | None:
         tok = self._tokenizer.peek()
         if tok.type == token.OP:
             return self._tokenizer.getnext()
         return None
 
     @memoize
-    def type_comment(self) -> Optional[tokenize.TokenInfo]:
+    def type_comment(self) -> tokenize.TokenInfo | None:
         tok = self._tokenizer.peek()
         if tok.type == token.TYPE_COMMENT:
             return self._tokenizer.getnext()
         return None
 
     @memoize
-    def soft_keyword(self) -> Optional[tokenize.TokenInfo]:
+    def soft_keyword(self) -> tokenize.TokenInfo | None:
         tok = self._tokenizer.peek()
         if tok.type == token.NAME and tok.string in self.SOFT_KEYWORDS:
             return self._tokenizer.getnext()
         return None
 
     @memoize
-    def expect(self, type: str) -> Optional[tokenize.TokenInfo]:
+    def expect(self, type: str) -> tokenize.TokenInfo | None:
         tok = self._tokenizer.peek()
         if tok.string == type:
             return self._tokenizer.getnext()
@@ -271,7 +272,7 @@ class Parser:
             return self._tokenizer.getnext()
         return None
 
-    def expect_forced(self, res: Any, expectation: str) -> Optional[tokenize.TokenInfo]:
+    def expect_forced(self, res: Any, expectation: str) -> tokenize.TokenInfo | None:
         if res is None:
             raise self.make_syntax_error(f"expected {expectation}")
         return res
@@ -293,7 +294,7 @@ class Parser:
         return SyntaxError(message, (filename, tok.start[0], 1 + tok.start[1], tok.line))
 
 
-def simple_parser_main(parser_class: Type[Parser]) -> None:
+def simple_parser_main(parser_class: type[Parser]) -> None:
     argparser = argparse.ArgumentParser()
     argparser.add_argument(
         "-v",
@@ -330,7 +331,7 @@ def simple_parser_main(parser_class: Type[Parser]) -> None:
                 endpos = 0
             else:
                 endpos = file.tell()
-        except IOError:
+        except OSError:
             endpos = 0
     finally:
         if file is not sys.stdin:

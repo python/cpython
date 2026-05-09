@@ -1,6 +1,7 @@
 "Test outwin, coverage 76%."
 
 from idlelib import outwin
+import platform
 import sys
 import unittest
 from test.support import requires
@@ -41,7 +42,7 @@ class OutputWindowTest(unittest.TestCase):
         self.assertFalse(w.ispythonsource(__file__))
 
     def test_window_title(self):
-        self.assertEqual(self.window.top.title(), 'Output')
+        self.assertEqual(self.window.top.title(), 'Output' + ' (%s)' % platform.python_version())
 
     def test_maybesave(self):
         w = self.window

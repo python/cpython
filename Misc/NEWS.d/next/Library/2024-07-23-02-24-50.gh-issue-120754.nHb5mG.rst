@@ -1,1 +1,0 @@
-Update unbounded ``read`` calls in :mod:`zipfile` to specify an explicit ``size`` putting a limit on how much data they may read. This also updates handling around ZIP max comment size to match the standard instead of reading comments that are one byte too long.

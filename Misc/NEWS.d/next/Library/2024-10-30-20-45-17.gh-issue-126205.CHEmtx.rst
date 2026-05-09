@@ -1,2 +1,0 @@
-Fix issue where :func:`urllib.request.pathname2url` generated URLs beginning
-with four slashes (rather than two) when given a Windows UNC path.

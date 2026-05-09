@@ -245,11 +245,10 @@ class Random(_random.Random):
     def _randbelow_with_getrandbits(self, n):
         "Return a random int in the range [0,n).  Defined for n > 0."
 
-        getrandbits = self.getrandbits
         k = n.bit_length()
-        r = getrandbits(k)  # 0 <= r < 2**k
+        r = self.getrandbits(k)  # 0 <= r < 2**k
         while r >= n:
-            r = getrandbits(k)
+            r = self.getrandbits(k)
         return r
 
     def _randbelow_without_getrandbits(self, n, maxsize=1<<BPF):
@@ -336,8 +335,11 @@ class Random(_random.Random):
     def randint(self, a, b):
         """Return random integer in range [a, b], including both end points.
         """
-
-        return self.randrange(a, b+1)
+        a = _index(a)
+        b = _index(b)
+        if b < a:
+            raise ValueError(f"empty range in randint({a}, {b})")
+        return a + self._randbelow(b - a + 1)
 
 
     ## -------------------- sequence methods  -------------------
@@ -421,11 +423,11 @@ class Random(_random.Random):
             cum_counts = list(_accumulate(counts))
             if len(cum_counts) != n:
                 raise ValueError('The number of counts does not match the population')
-            total = cum_counts.pop()
+            total = cum_counts.pop() if cum_counts else 0
             if not isinstance(total, int):
                 raise TypeError('Counts must be integers')
-            if total <= 0:
-                raise ValueError('Total of counts must be greater than zero')
+            if total < 0:
+                raise ValueError('Counts must be non-negative')
             selections = self.sample(range(total), k=k)
             bisect = _bisect
             return [population[bisect(cum_counts, s)] for s in selections]
@@ -792,12 +794,18 @@ class Random(_random.Random):
 
             sum(random() < p for i in range(n))
 
-        Returns an integer in the range:   0 <= X <= n
+        Returns an integer in the range:
+
+            0 <= X <= n
+
+        The integer is chosen with the probability:
+
+            P(X == k) = math.comb(n, k) * p ** k * (1 - p) ** (n - k)
 
         The mean (expected value) and variance of the random variable are:
 
             E[X] = n * p
-            Var[x] = n * p * (1 - p)
+            Var[X] = n * p * (1 - p)
 
         """
         # Error check inputs and handle edge cases
@@ -828,7 +836,11 @@ class Random(_random.Random):
             if not c:
                 return x
             while True:
-                y += _floor(_log2(random()) / c) + 1
+                try:
+                    y += _floor(_log2(random()) / c) + 1
+                except ValueError:
+                    # Reject case where random() returned 0.0
+                    continue
                 if y > n:
                     return x
                 x += 1
@@ -836,8 +848,8 @@ class Random(_random.Random):
         # BTRS: Transformed rejection with squeeze method by Wolfgang Hörmann
         # https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.47.8407&rep=rep1&type=pdf
         assert n*p >= 10.0 and p <= 0.5
-        setup_complete = False
 
+        setup_complete = False
         spq = _sqrt(n * p * (1.0 - p))  # Standard deviation of the distribution
         b = 1.15 + 2.53 * spq
         a = -0.0873 + 0.0248 * b + 0.01 * p
@@ -852,22 +864,23 @@ class Random(_random.Random):
             k = _floor((2.0 * a / us + b) * u + c)
             if k < 0 or k > n:
                 continue
+            v = random()
 
             # The early-out "squeeze" test substantially reduces
             # the number of acceptance condition evaluations.
-            v = random()
             if us >= 0.07 and v <= vr:
                 return k
 
-            # Acceptance-rejection test.
-            # Note, the original paper erroneously omits the call to log(v)
-            # when comparing to the log of the rescaled binomial distribution.
             if not setup_complete:
                 alpha = (2.83 + 5.1 / b) * spq
                 lpq = _log(p / (1.0 - p))
                 m = _floor((n + 1) * p)         # Mode of the distribution
                 h = _lgamma(m + 1) + _lgamma(n - m + 1)
                 setup_complete = True           # Only needs to be done once
+
+            # Acceptance-rejection test.
+            # Note, the original paper erroneously omits the call to log(v)
+            # when comparing to the log of the rescaled binomial distribution.
             v *= alpha / (a / (us * us) + b)
             if _log(v) <= h - _lgamma(k + 1) - _lgamma(n - k + 1) + (k - m) * lpq:
                 return k
@@ -1010,19 +1023,19 @@ def _parse_args(arg_list: list[str] | None):
         help="print a random choice")
     group.add_argument(
         "-i", "--integer", type=int, metavar="N",
-        help="print a random integer between 1 and N inclusive")
+        help="print a random integer between 1 and `N` inclusive")
     group.add_argument(
         "-f", "--float", type=float, metavar="N",
-        help="print a random floating-point number between 0 and N inclusive")
+        help="print a random floating-point number between 0 and `N` inclusive")
     group.add_argument(
         "--test", type=int, const=10_000, nargs="?",
         help=argparse.SUPPRESS)
     parser.add_argument("input", nargs="*",
                         help="""\
 if no options given, output depends on the input
-    string or multiple: same as --choice
-    integer: same as --integer
-    float: same as --float""")
+    string or multiple: same as `--choice`
+    integer: same as `--integer`
+    float: same as `--float`""")
     args = parser.parse_args(arg_list)
     return args, parser.format_help()
 

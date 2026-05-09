@@ -19,21 +19,25 @@
 
 from __future__ import annotations
 
-import _colorize  # type: ignore[import-not-found]
+import os
+import _colorize
 
 from abc import ABC, abstractmethod
 import ast
 import code
-from dataclasses import dataclass, field
-import os.path
+import linecache
+from dataclasses import dataclass
+import re
 import sys
+from typing import TYPE_CHECKING
 
-
-TYPE_CHECKING = False
+from .render import RenderedScreen
+from .trace import trace
 
 if TYPE_CHECKING:
-    from typing import IO
-    from typing import Callable
+    from typing import Callable, IO
+
+    from .types import CursorXY
 
 
 @dataclass
@@ -45,9 +49,17 @@ class Event:
 
 @dataclass
 class Console(ABC):
-    screen: list[str] = field(default_factory=list)
+    posxy: CursorXY = (0, 0)
     height: int = 25
     width: int = 80
+    _redraw_debug_palette: tuple[str, ...] = (
+        "\x1b[41m",
+        "\x1b[42m",
+        "\x1b[43m",
+        "\x1b[44m",
+        "\x1b[45m",
+        "\x1b[46m",
+    )
 
     def __init__(
         self,
@@ -68,8 +80,52 @@ class Console(ABC):
         else:
             self.output_fd = f_out.fileno()
 
+        self.posxy = (0, 0)
+        self.height = 25
+        self.width = 80
+        self._rendered_screen = RenderedScreen.empty()
+        self._redraw_visual_cycle = 0
+
+    @property
+    def screen(self) -> list[str]:
+        return list(self._rendered_screen.screen_lines)
+
+    def sync_rendered_screen(
+        self,
+        rendered_screen: RenderedScreen,
+        posxy: CursorXY | None = None,
+    ) -> None:
+        if posxy is None:
+            posxy = rendered_screen.cursor
+        self.posxy = posxy
+        self._rendered_screen = rendered_screen
+        trace(
+            "console.sync_rendered_screen lines={lines} cursor={cursor}",
+            lines=len(rendered_screen.composed_lines),
+            cursor=posxy,
+        )
+
+    def invalidate_render_state(self) -> None:
+        self._rendered_screen = RenderedScreen.empty()
+        trace("console.invalidate_render_state")
+
+    def begin_redraw_visualization(self) -> str | None:
+        if "PYREPL_VISUALIZE_REDRAWS" not in os.environ:
+            return None
+
+        palette = self._redraw_debug_palette
+        cycle = self._redraw_visual_cycle
+        style = palette[cycle % len(palette)]
+        self._redraw_visual_cycle = cycle + 1
+        trace(
+            "console.begin_redraw_visualization cycle={cycle} style={style!r}",
+            cycle=cycle,
+            style=style,
+        )
+        return style
+
     @abstractmethod
-    def refresh(self, screen: list[str], xy: tuple[int, int]) -> None: ...
+    def refresh(self, rendered_screen: RenderedScreen) -> None: ...
 
     @abstractmethod
     def prepare(self) -> None: ...
@@ -151,6 +207,8 @@ class Console(ABC):
 
 
 class InteractiveColoredConsole(code.InteractiveConsole):
+    STATEMENT_FAILED = object()
+
     def __init__(
         self,
         locals: dict[str, object] | None = None,
@@ -158,7 +216,7 @@ class InteractiveColoredConsole(code.InteractiveConsole):
         *,
         local_exit: bool = False,
     ) -> None:
-        super().__init__(locals=locals, filename=filename, local_exit=local_exit)  # type: ignore[call-arg]
+        super().__init__(locals=locals, filename=filename, local_exit=local_exit)
         self.can_colorize = _colorize.can_colorize()
 
     def showsyntaxerror(self, filename=None, **kwargs):
@@ -172,6 +230,16 @@ class InteractiveColoredConsole(code.InteractiveConsole):
                 limit=traceback.BUILTIN_EXCEPTION_LIMIT)
         self.write(''.join(lines))
 
+    def runcode(self, code):
+        try:
+            exec(code, self.locals)
+        except SystemExit:
+            raise
+        except BaseException:
+            self.showtraceback()
+            return self.STATEMENT_FAILED
+        return None
+
     def runsource(self, source, filename="<input>", symbol="single"):
         try:
             tree = self.compile.compiler(
@@ -181,7 +249,19 @@ class InteractiveColoredConsole(code.InteractiveConsole):
                 ast.PyCF_ONLY_AST,
                 incomplete_input=False,
             )
-        except (SyntaxError, OverflowError, ValueError):
+        except SyntaxError as e:
+            # If it looks like pip install was entered (a common beginner
+            # mistake), provide a hint to use the system command prompt.
+            if re.match(r"^\s*(pip3?|py(thon3?)? -m pip) install.*", source):
+                e.add_note(
+                    "The Python package manager (pip) can only be used"
+                    " outside of the Python REPL.\n"
+                    "Try the 'pip' command in a separate terminal or"
+                    " command prompt."
+                )
+            self.showsyntaxerror(filename, source=source)
+            return False
+        except (OverflowError, ValueError):
             self.showsyntaxerror(filename, source=source)
             return False
         if tree.body:
@@ -192,6 +272,7 @@ class InteractiveColoredConsole(code.InteractiveConsole):
             item = wrapper([stmt])
             try:
                 code = self.compile.compiler(item, filename, the_symbol)
+                linecache._register_code(code, source, filename)
             except SyntaxError as e:
                 if e.args[0] == "'await' outside function":
                     python = os.path.basename(sys.executable)
@@ -208,5 +289,7 @@ class InteractiveColoredConsole(code.InteractiveConsole):
             if code is None:
                 return True
 
-            self.runcode(code)
+            result = self.runcode(code)
+            if result is self.STATEMENT_FAILED:
+                break
         return False

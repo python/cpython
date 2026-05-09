@@ -3,6 +3,7 @@ from parsing import (  # noqa: F401
     Macro,
     Pseudo,
     Family,
+    LabelDef,
     Parser,
     Context,
     CacheEffect,
@@ -10,8 +11,18 @@ from parsing import (  # noqa: F401
     InputEffect,
     OpName,
     AstNode,
+    Stmt,
+    SimpleStmt,
+    IfStmt,
+    ForStmt,
+    WhileStmt,
+    BlockStmt,
+    MacroIfStmt,
 )
 
+import pprint
+
+CodeDef = InstDef | LabelDef
 
 def prettify_filename(filename: str) -> str:
     # Make filename more user-friendly and less platform-specific,
