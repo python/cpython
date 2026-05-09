@@ -9,6 +9,7 @@
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
+static PyObject *_initial_missing;
 
 #include "clinic/_functoolsmodule.c.h"
 /*[clinic input]
@@ -1066,7 +1067,7 @@ _functools.reduce
     function as func: object
     iterable as seq: object
     /
-    initial as result: object = NULL
+    initial as result: object(c_default="NULL") = _functools._initial_missing
 
 Apply a function of two arguments cumulatively to the items of an iterable, from left to right.
 
@@ -1081,7 +1082,7 @@ calculates ((((1 + 2) + 3) + 4) + 5).
 static PyObject *
 _functools_reduce_impl(PyObject *module, PyObject *func, PyObject *seq,
                        PyObject *result)
-/*[clinic end generated code: output=30d898fe1267c79d input=4ccfb74548ce5170]*/
+/*[clinic end generated code: output=30d898fe1267c79d input=7e5eaeb4f8a7a78d]*/
 {
     PyObject *args, *it;
 
@@ -1982,6 +1983,11 @@ _functools_exec(PyObject *module)
     // lru_list_elem is used only in _lru_cache_wrapper.
     // So we don't expose it in module namespace.
 
+    _initial_missing = PySentinel_New("_initial_missing", "_functools");
+    if (PyModule_Add(module, "_initial_missing", _initial_missing) < 0) {
+        Py_XDECREF(_initial_missing);
+        return -1;
+    }
     return 0;
 }
 
