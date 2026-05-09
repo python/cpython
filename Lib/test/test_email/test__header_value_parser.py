@@ -1965,6 +1965,8 @@ class TestParser(TestParserMixin, TestEmailBase):
         )
 
 
+    # XXX XXX add the POSTDEP comment after reorganizing the tests.
+    #
     # get_qp_ctext
 
     @params
@@ -1974,7 +1976,11 @@ class TestParser(TestParserMixin, TestEmailBase):
             C(s),
             *args,
             value=value,
-            warnings=...,
+            warnings=[
+                (DeprecationWarning, '.*deprecated.*get_ccontent_sequence'),
+                (DeprecationWarning, '.*ptext.*deprecated'),
+                (DeprecationWarning, '.*validate.*deprecated'),
+                ],
             test_start=False,
             **kw,
             )
@@ -1982,16 +1988,6 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(ptext.token_type, 'ptext')
 
     params_test_get_qp_ctext = Params(
-
-        value_ends_at_input_end = C(
-            'foobar',
-            ),
-
-        all_printables = C(
-            RFC_PRINTABLES.
-                replace('\\', r'\\').replace('(', r'\(').replace(')', r'\)'),
-            stringified=RFC_PRINTABLES,
-            ),
 
         two_words_gets_first = C(
             'foo de',
@@ -2003,14 +1999,29 @@ class TestParser(TestParserMixin, TestEmailBase):
             remainder=' \t\tde',
             ),
 
-        up_to_close_paren_only = C(
-            'foo)',
-            remainder=')',
-            ),
-
         wsp_before_close_paren_preserved = C(
             'foo  )',
             remainder='  )',
+            ),
+
+        wsp_before_open_paren_preserved = C(
+            'foo  (',
+            remainder='  (',
+            ),
+
+        value_ends_at_input_end = C(
+            'foobar',
+            ),
+
+        all_printables = C(
+            RFC_PRINTABLES.
+                replace('\\', r'\\').replace('(', r'\(').replace(')', r'\)'),
+            stringified=RFC_PRINTABLES,
+            ),
+
+        up_to_close_paren_only = C(
+            'foo)',
+            remainder=')',
             ),
 
         close_paren_mid_word = C(
@@ -2021,11 +2032,6 @@ class TestParser(TestParserMixin, TestEmailBase):
         up_to_open_paren_only = C(
             'foo(',
             remainder='(',
-            ),
-
-        wsp_before_open_paren_preserved = C(
-            'foo  (',
-            remainder='  (',
             ),
 
         open_paren_mid_word = C(
