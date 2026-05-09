@@ -3642,6 +3642,15 @@ Introspection helpers
       is_protocol(P)    # => True
       is_protocol(int)  # => False
 
+   This function only returns true for ``Protocol`` classes, not for
+   :ref:`generic specializations <types-generic-aliases>` of them::
+
+      class GenericP[T](Protocol):
+          def a(self) -> T: ...
+          b: int
+
+      assert not is_protocol(GenericP[int])
+
    .. versionadded:: 3.13
 
 .. function:: is_typeddict(tp)
@@ -3662,6 +3671,15 @@ Introspection helpers
       # TypedDict is a factory for creating typed dicts,
       # not a typed dict itself
       assert not is_typeddict(TypedDict)
+
+   This function only returns true for ``TypedDict`` classes, not for
+   :ref:`generic specializations <types-generic-aliases>` of them::
+
+      class GenericFilm[T](TypedDict):
+          title: str
+          year: T
+
+      assert not is_typeddict(GenericFilm[int])
 
    .. versionadded:: 3.10
 
