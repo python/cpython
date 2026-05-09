@@ -69,7 +69,7 @@ pip install nanvix-zutil
 
 ```bash
 # 1. Pull the Docker image
-docker pull nanvix/toolchain:latest-minimal
+docker pull ghcr.io/nanvix/toolchain-python:latest
 
 # 2. Download Nanvix sysroot
 curl -fsSL https://raw.githubusercontent.com/nanvix/nanvix/refs/heads/dev/scripts/get-nanvix.sh | bash -s -- nanvix-artifacts
@@ -150,7 +150,7 @@ The Makefile supports automatic Docker fallback when the native toolchain is not
 
 ```bash
 # Pull the Nanvix toolchain Docker image
-docker pull nanvix/toolchain:latest-minimal
+docker pull ghcr.io/nanvix/toolchain-python:latest
 
 # Build (Docker is used automatically if native toolchain is not found)
 make -f Makefile.nanvix CONFIG_NANVIX=y NANVIX_HOME=/path/to/nanvix/sysroot-debug
@@ -164,7 +164,7 @@ make -f Makefile.nanvix CONFIG_NANVIX=y NANVIX_HOME=/path/to/nanvix/sysroot-debu
 - If `NANVIX_TOOLCHAIN` points to a valid toolchain, it uses the native compiler
 - If the native toolchain is not found, it automatically uses Docker if available
 - Use `CONFIG_NANVIX_DOCKER=y` to force Docker usage even when native toolchain exists
-- Use `NANVIX_DOCKER_IMAGE` to specify a custom Docker image (default: `nanvix/toolchain:latest-minimal`)
+- Use `NANVIX_DOCKER_IMAGE` to specify a custom Docker image (default: `nanvix/toolchain:latest-minimal`; recommended: `ghcr.io/nanvix/toolchain-python:latest`)
 
 ### Building on Windows
 
@@ -173,7 +173,7 @@ On Windows, cross-compilation is performed entirely inside Docker:
 ```powershell
 # Prerequisites: Python 3, Make, and Docker Desktop must be installed and running.
 # Avoid GnuWin32 Make 3.81; prefer ezwinports Make 4.4.1 (winget install ezwinports.make).
-docker pull nanvix/toolchain:latest-minimal
+docker pull ghcr.io/nanvix/toolchain-python:latest
 
 .\z.ps1 setup
 .\z.ps1 build

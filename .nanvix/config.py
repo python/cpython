@@ -16,7 +16,7 @@ from pathlib import Path
 # Platform defaults
 # ---------------------------------------------------------------------------
 
-DOCKER_IMAGE = "nanvix/toolchain:latest-minimal"
+DOCKER_IMAGE = "ghcr.io/nanvix/toolchain-python:latest"
 DEFAULT_PLATFORM = "microvm"
 DEFAULT_PROCESS_MODE = "standalone"
 DEFAULT_MEMORY_SIZE = "256mb"
