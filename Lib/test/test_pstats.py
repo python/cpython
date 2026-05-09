@@ -155,7 +155,7 @@ class StatsTestCase(unittest.TestCase):
         class Test1:
             def pass_fn(self):
                 pass
-            
+
         class Test2:
             def pass_fn(self):
                 pass
