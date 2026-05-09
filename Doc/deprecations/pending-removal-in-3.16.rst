@@ -11,7 +11,7 @@ Pending removal in Python 3.16
   * Setting :attr:`~module.__package__` on a module while
     failing to set :attr:`__spec__.parent <importlib.machinery.ModuleSpec.parent>`
     is deprecated. In Python 3.16, :attr:`!__package__` will cease to be set or
-    take into consideration by the import system or standard library. (:gh:`97879`)
+    taken into consideration by the import system or standard library. (:gh:`97879`)
 
 * The bundled copy of ``libmpdec``.
 
