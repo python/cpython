@@ -223,7 +223,7 @@ class socket(_socket.socket):
     __slots__ = ["__weakref__", "_io_refs", "_closed"]
 
     def __init__(self, family=-1, type=-1, proto=-1, fileno=None):
-        # For user code address family and type values are IntEnum members, but
+        # For user code, address family and type values are IntEnum members, but
         # for the underlying _socket.socket they're just integers. The
         # constructor of _socket.socket converts the given argument to an
         # integer automatically.
