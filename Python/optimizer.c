@@ -651,6 +651,41 @@ compute_frame_penalty(uint16_t fitness_initial)
     return (int32_t)fitness_initial / (MAX_ABSTRACT_FRAME_DEPTH - 1) + 1;
 }
 
+/* Slots carved out from `trace->end` for side-exit, deopt, and error stubs
+ * that `prepare_for_execution()` may append. The base 2 covers `_DEOPT` and
+ * `_CHECK_VALIDITY`'s implicit deopt path.
+ */
+static inline int
+compute_tail_reservation(int opcode, bool needs_guard_ip)
+{
+    return 2
+         + !!OPCODE_HAS_EXIT(opcode)
+         + !!OPCODE_HAS_ERROR(opcode)
+         + !!OPCODE_HAS_DEOPT(opcode)
+         + needs_guard_ip;
+}
+
+/* Upper bound on the slots `add_to_trace()` may consume for this bytecode,
+ * including one spare slot for the runtime guard's emergency `_EXIT_TRACE`.
+ */
+static inline int
+compute_space_needed(int opcode, int nuops, bool needs_guard_ip,
+                     bool may_close_loop)
+{
+    // `_CHECK_VALIDITY` + optional `_SET_IP` + macro expansion.
+    int space_needed = 1 + !OPCODE_HAS_NO_SAVE_IP(opcode) + nuops;
+    if (needs_guard_ip) {
+        // `_RECORD_CODE`, guard_ip, guard_code_version, and another
+        // `_SET_IP` if this bytecode also closes the loop.
+        space_needed += 3 + may_close_loop;
+    }
+    // `_JUMP_TO_TOP` when this bytecode closes the loop.
+    space_needed += may_close_loop;
+    // Spare slot for emergency `_EXIT_TRACE`; also keeps remaining_space > 0.
+    space_needed += 1;
+    return space_needed;
+}
+
 static int
 is_terminator(const _PyUOpInstruction *uop)
 {
@@ -871,8 +906,22 @@ _PyJit_translate_single_bytecode_to_trace(
     // space this bytecode consumed, including reserved tail slots.
     int32_t remaining_before = uop_buffer_remaining_space(trace);
 
-    // One for possible _DEOPT, one because _CHECK_VALIDITY itself might _DEOPT
-    trace->end -= 2;
+    bool may_close_loop = tracer->initial_state.close_loop_instr == next_instr ||
+        tracer->initial_state.start_instr == next_instr;
+    int tail_reservation = compute_tail_reservation(opcode, needs_guard_ip);
+    int space_needed = compute_space_needed(
+        opcode, _PyOpcode_macro_expansion[opcode].nuops,
+        needs_guard_ip, may_close_loop);
+    if (remaining_before <= tail_reservation + space_needed) {
+        DPRINTF(2,
+                "Buffer full: %s(%d) remaining=%d, needed=%d\n",
+                _PyOpcode_OpName[opcode], oparg, remaining_before,
+                tail_reservation + space_needed);
+        ADD_TO_TRACE(_EXIT_TRACE, 0, 0, target);
+        goto done;
+    }
+
+    trace->end -= tail_reservation;
 
     const _PyOpcodeRecordSlotMap *record_slot_map = &_PyOpcode_RecordSlotMaps[opcode];
 
@@ -880,25 +929,7 @@ _PyJit_translate_single_bytecode_to_trace(
     assert(!_PyErr_Occurred(tstate));
 
 
-    if (OPCODE_HAS_EXIT(opcode)) {
-        // Make space for side exit
-        trace->end--;
-    }
-    if (OPCODE_HAS_ERROR(opcode)) {
-        // Make space for error stub
-        trace->end--;
-    }
-    if (OPCODE_HAS_DEOPT(opcode)) {
-        // Make space for side exit
-        trace->end--;
-    }
-
-    // _GUARD_IP leads to an exit.
-    trace->end -= needs_guard_ip;
-
 #if Py_DEBUG
-    const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
-    int space_needed = expansion->nuops + needs_guard_ip + 2 + (!OPCODE_HAS_NO_SAVE_IP(opcode));
     assert(uop_buffer_remaining_space(trace) > space_needed);
 #endif
 
@@ -1117,9 +1148,7 @@ _PyJit_translate_single_bytecode_to_trace(
         }
     }
     // Loop back to the start
-    int is_first_instr = tracer->initial_state.close_loop_instr == next_instr ||
-        tracer->initial_state.start_instr == next_instr;
-    if (is_first_instr && uop_buffer_length(trace) > CODE_SIZE_NO_PROGRESS) {
+    if (may_close_loop && uop_buffer_length(trace) > CODE_SIZE_NO_PROGRESS) {
         if (needs_guard_ip) {
             ADD_TO_TRACE(_SET_IP, 0, (uintptr_t)next_instr, 0);
         }
