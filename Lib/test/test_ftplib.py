@@ -1145,6 +1145,60 @@ class TestTimeouts(TestCase):
         ftp.close()
 
 
+class TestFtpcpSecurity(TestCase):
+    """ftpcp() must not trust the host a source server advertises in PASV.
+
+    A malicious source server can otherwise redirect the target server's
+    data connection to an arbitrary host:port (SSRF), so ftpcp() uses the
+    source server's actual peer address instead, the same as FTP.makepasv().
+    """
+
+    class _FakeSock:
+        def __init__(self, peer_host):
+            self._peer = (peer_host, 21)
+        def getpeername(self):
+            return self._peer
+
+    class _FakeSource:
+        trust_server_pasv_ipv4_address = False
+        def __init__(self, advertised_host, real_host):
+            self.sock = TestFtpcpSecurity._FakeSock(real_host)
+            self._advertised = advertised_host.replace('.', ',')
+        def voidcmd(self, cmd):
+            pass
+        def sendcmd(self, cmd):
+            if cmd == 'PASV':
+                return '227 Entering Passive Mode (%s,1,2).' % self._advertised
+            return '150 ok'
+        def voidresp(self):
+            pass
+
+    class _FakeTarget:
+        def __init__(self):
+            self.sendport_args = None
+        def voidcmd(self, cmd):
+            pass
+        def sendport(self, host, port):
+            self.sendport_args = (host, port)
+        def sendcmd(self, cmd):
+            return '150 ok'
+        def voidresp(self):
+            pass
+
+    def test_ftpcp_ignores_untrusted_pasv_host(self):
+        source = self._FakeSource('10.0.0.5', '198.51.100.7')
+        target = self._FakeTarget()
+        ftplib.ftpcp(source, 'a', target, 'b')
+        self.assertEqual(target.sendport_args, ('198.51.100.7', 258))
+
+    def test_ftpcp_trust_server_pasv_ipv4_address(self):
+        source = self._FakeSource('10.0.0.5', '198.51.100.7')
+        source.trust_server_pasv_ipv4_address = True
+        target = self._FakeTarget()
+        ftplib.ftpcp(source, 'a', target, 'b')
+        self.assertEqual(target.sendport_args, ('10.0.0.5', 258))
+
+
 class MiscTestCase(TestCase):
     def test__all__(self):
         not_exported = {
