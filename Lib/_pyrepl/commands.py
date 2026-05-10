@@ -558,7 +558,6 @@ class open_input_in_editor(EditCommand):
                 r.buffer.extend(new_text)
                 r.pos = len(r.buffer)
                 r.invalidate_full()
-                r.console.repaint()
             except Exception as e:
                 r.error(f"Failed to read edited file: {e}")
         finally:
