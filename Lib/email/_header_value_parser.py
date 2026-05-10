@@ -1142,6 +1142,7 @@ def _make_xtext(text, terminal_class, token_type):
             "Non-ASCII characters found in header token"))
     return vt
 
+@_deprecate('_get_xtext')
 def _validate_xtext(xtext):
     """If input token contains ASCII non-printables, register a defect."""
 
