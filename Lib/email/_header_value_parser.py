@@ -1117,13 +1117,30 @@ def _(func):
 _wsp_splitter = re.compile(r'([{}]+)'.format(''.join(WSP))).split
 _non_atom_end_matcher = re.compile(r"[^{}]+".format(
     re.escape(''.join(ATOM_ENDS)))).match
-_non_printable_finder = re.compile(r"[\x00-\x20\x7F]").findall
 _non_token_end_matcher = re.compile(r"[^{}]+".format(
     re.escape(''.join(TOKEN_ENDS)))).match
 _non_attribute_end_matcher = re.compile(r"[^{}]+".format(
     re.escape(''.join(ATTRIBUTE_ENDS)))).match
 _non_extended_attribute_end_matcher = re.compile(r"[^{}]+".format(
     re.escape(''.join(EXTENDED_ATTRIBUTE_ENDS)))).match
+
+# https://datatracker.ietf.org/doc/html/rfc5322#section-2.2 for non_printable.
+_non_printable_finder = re.compile(r"[\x00-\x20\x7F]").findall
+def _make_xtext(text, terminal_class, token_type):
+    """Return text wrapped in terminal_class of token_type, with defects if any.
+
+    If text contains non-printable ASCII or undecodable bytes, add those
+    defects to the returned terminal_class object.
+
+    """
+    vt = terminal_class(text, token_type=token_type)
+    non_printables = _non_printable_finder(text)
+    if non_printables:
+        vt.defects.append(errors.NonPrintableDefect(non_printables))
+    if utils._has_surrogates(text):
+        vt.defects.append(errors.UndecodableBytesDefect(
+            "Non-ASCII characters found in header token"))
+    return vt
 
 def _validate_xtext(xtext):
     """If input token contains ASCII non-printables, register a defect."""
