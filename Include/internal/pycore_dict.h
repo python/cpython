@@ -44,6 +44,10 @@ extern int _PyDict_Next(
 
 extern int _PyDict_HasOnlyStringKeys(PyObject *mp);
 
+PyAPI_FUNC(PyObject *) _PyDict_Subscript(PyObject *self, PyObject *key);
+PyAPI_FUNC(PyObject *) _PyDict_SubscriptKnownHash(PyObject *self, PyObject *key, Py_hash_t hash);
+PyAPI_FUNC(int) _PyDict_StoreSubscript(PyObject *self, PyObject *key, PyObject *value);
+
 // Export for '_ctypes' shared extension
 PyAPI_FUNC(Py_ssize_t) _PyDict_SizeOf(PyDictObject *);
 
