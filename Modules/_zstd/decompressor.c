@@ -101,7 +101,7 @@ _zstd_set_d_parameters(ZstdDecompressor *self, PyObject *options)
         /* Check key type */
         if (Py_TYPE(key) == mod_state->CParameter_type) {
             PyErr_SetString(PyExc_TypeError,
-                "compression options dictionary key must not be a "
+                "decompression options dictionary key must not be a "
                 "CompressionParameter attribute");
             return -1;
         }
@@ -111,6 +111,7 @@ _zstd_set_d_parameters(ZstdDecompressor *self, PyObject *options)
         int key_v = PyLong_AsInt(key);
         Py_DECREF(key);
         if (key_v == -1 && PyErr_Occurred()) {
+            Py_DECREF(value);
             return -1;
         }
 

@@ -4,8 +4,6 @@
 .. module:: tempfile
    :synopsis: Generate temporary files and directories.
 
-.. sectionauthor:: Zack Weinberg <zack@codesourcery.com>
-
 **Source code:** :source:`Lib/tempfile.py`
 
 .. index::
@@ -386,7 +384,7 @@ not surprise other unsuspecting code by changing global API behavior.
 Examples
 --------
 
-Here are some examples of typical usage of the :mod:`tempfile` module::
+Here are some examples of typical usage of the :mod:`!tempfile` module::
 
     >>> import tempfile
 

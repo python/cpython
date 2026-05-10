@@ -4,14 +4,11 @@
 .. module:: webbrowser
    :synopsis: Easy-to-use controller for web browsers.
 
-.. moduleauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
 **Source code:** :source:`Lib/webbrowser.py`
 
 --------------
 
-The :mod:`webbrowser` module provides a high-level interface to allow displaying
+The :mod:`!webbrowser` module provides a high-level interface to allow displaying
 web-based documents to users. Under most circumstances, simply calling the
 :func:`.open` function from this module will do the right thing.
 
@@ -46,7 +43,7 @@ On iOS, the :envvar:`BROWSER` environment variable, as well as any arguments
 controlling autoraise, browser preference, and new tab/window creation will be
 ignored. Web pages will *always* be opened in the user's preferred browser, in
 a new tab, with the browser being brought to the foreground. The use of the
-:mod:`webbrowser` module on iOS requires the :mod:`ctypes` module. If
+:mod:`!webbrowser` module on iOS requires the :mod:`ctypes` module. If
 :mod:`ctypes` isn't available, calls to :func:`.open` will fail.
 
 .. _webbrowser-cli:
@@ -175,13 +172,15 @@ for the controller classes, all defined in this module.
 +------------------------+-----------------------------------------+-------+
 | ``'windows-default'``  | ``WindowsDefault``                      | \(2)  |
 +------------------------+-----------------------------------------+-------+
-| ``'macosx'``           | ``MacOSXOSAScript('default')``          | \(3)  |
+| ``'macos'``            | ``MacOS('default')``                    | \(3)  |
 +------------------------+-----------------------------------------+-------+
-| ``'safari'``           | ``MacOSXOSAScript('safari')``           | \(3)  |
+| ``'safari'``           | ``MacOS('safari')``                     | \(3)  |
++------------------------+-----------------------------------------+-------+
+| ``'chrome'``           | ``MacOS('google chrome')``              | \(3)  |
++------------------------+-----------------------------------------+-------+
+| ``'firefox'``          | ``MacOS('firefox')``                    | \(3)  |
 +------------------------+-----------------------------------------+-------+
 | ``'google-chrome'``    | ``Chrome('google-chrome')``             |       |
-+------------------------+-----------------------------------------+-------+
-| ``'chrome'``           | ``Chrome('chrome')``                    |       |
 +------------------------+-----------------------------------------+-------+
 | ``'chromium'``         | ``Chromium('chromium')``                |       |
 +------------------------+-----------------------------------------+-------+
@@ -223,6 +222,17 @@ Notes:
 
 .. versionchanged:: 3.13
    Support for iOS has been added.
+
+.. versionadded:: 3.15
+   :class:`!MacOS` has been added as a replacement for :class:`!MacOSXOSAScript`,
+   opening browsers via :program:`/usr/bin/open` instead of :program:`osascript`.
+
+.. deprecated-removed:: 3.15 3.17
+   :class:`!MacOSXOSAScript` is deprecated in favour of :class:`!MacOS`.
+   Using :program:`/usr/bin/open` instead of :program:`osascript` is a
+   security and usability improvement: :program:`osascript` may be blocked
+   on managed systems due to its abuse potential as a general-purpose
+   scripting interpreter.
 
 Here are some simple examples::
 

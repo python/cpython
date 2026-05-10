@@ -15,6 +15,7 @@
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
 #include "pycore_time.h"          // _PyTime_FromSecondsObject()
+#include "pycore_tuple.h"         // _PyTuple_FromPairSteal
 
 #include <stdbool.h>
 #include <stddef.h>               // offsetof()
@@ -1075,9 +1076,7 @@ select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj)
             Py_XDECREF(num2);
             goto error;
         }
-        value = PyTuple_Pack(2, num1, num2);
-        Py_DECREF(num1);
-        Py_DECREF(num2);
+        value = _PyTuple_FromPairSteal(num1, num2);
         if (value == NULL)
             goto error;
         PyList_SET_ITEM(result_list, i, value);
@@ -1118,8 +1117,9 @@ static PyObject *
 select_devpoll_close_impl(devpollObject *self)
 /*[clinic end generated code: output=26b355bd6429f21b input=408fde21a377ccfb]*/
 {
-    errno = devpoll_internal_close(self);
-    if (errno < 0) {
+    int err = devpoll_internal_close(self);
+    if (err != 0) {
+        errno = err;
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
@@ -1446,8 +1446,9 @@ static PyObject *
 select_epoll_close_impl(pyEpoll_Object *self)
 /*[clinic end generated code: output=ee2144c446a1a435 input=f626a769192e1dbe]*/
 {
-    errno = pyepoll_internal_close(self);
-    if (errno < 0) {
+    int err = pyepoll_internal_close(self);
+    if (err != 0) {
+        errno = err;
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
@@ -2263,8 +2264,9 @@ static PyObject *
 select_kqueue_close_impl(kqueue_queue_Object *self)
 /*[clinic end generated code: output=d1c7df0b407a4bc1 input=6d763c858b17b690]*/
 {
-    errno = kqueue_queue_internal_close(self);
-    if (errno < 0) {
+    int err = kqueue_queue_internal_close(self);
+    if (err != 0) {
+        errno = err;
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
@@ -2909,6 +2911,7 @@ _select_exec(PyObject *m)
 }
 
 static PyModuleDef_Slot _select_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, _select_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

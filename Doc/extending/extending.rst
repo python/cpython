@@ -903,9 +903,6 @@ define this symbol).
 Providing a C API for an Extension Module
 =========================================
 
-.. sectionauthor:: Konrad Hinsen <hinsen@cnrs-orleans.fr>
-
-
 Many extension modules just provide new functions and types to be used from
 Python, but sometimes the code in an extension module can be useful for other
 extension modules. For example, an extension module could implement a type
