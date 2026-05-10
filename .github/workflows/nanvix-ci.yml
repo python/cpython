@@ -28,6 +28,7 @@ jobs:
     uses: nanvix/workflows/.github/workflows/nanvix-ci.yml@v1.15.0
     with:
       zutil-version: "v0.7.48"
+      docker-image: "ghcr.io/nanvix/toolchain-python:latest"
       platforms: '["microvm"]'
       memory-sizes: '["256mb"]'
       windows-matrix-exclude: '[]'
@@ -48,6 +49,7 @@ jobs:
     uses: nanvix/workflows/.github/workflows/nanvix-ci.yml@v1.15.0
     with:
       zutil-version: "v0.7.48"
+      docker-image: "ghcr.io/nanvix/toolchain-python:latest"
       platforms: '["microvm"]'
       memory-sizes: '["256mb"]'
       windows-matrix-exclude: '[]'
