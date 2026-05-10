@@ -139,9 +139,14 @@ sysconfig
 Deprecated
 ==========
 
-* module_name:
-  TODO
+* :mod:`abc`
 
+   * Soft-deprecated since Python 3.3 :class:`abc.abstractclassmethod`,
+     :class:`abc.abstractstaticmethod`, and :class:`abc.abstractproperty`
+     now raise a :exc:`DeprecationWarning`.
+     These classes will be removed in Python 3.18, instead
+     use :func:`abc.abstractmethod` with :dec:`classmethod`,
+     :dec:`staticmethod`, and :class:`property` respectively.
 
 .. Add deprecations above alphabetically, not here at the end.
 
