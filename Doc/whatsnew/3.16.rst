@@ -145,8 +145,8 @@ Deprecated
      :class:`abc.abstractstaticmethod`, and :class:`abc.abstractproperty`
      now raise a :exc:`DeprecationWarning`.
      These classes will be removed in Python 3.18, instead
-     use :func:`abc.abstractmethod` with :dec:`classmethod`,
-     :dec:`staticmethod`, and :class:`property` respectively.
+     use :func:`abc.abstractmethod` with :func:`classmethod`,
+     :func:`staticmethod`, and :class:`property` respectively.
 
 .. Add deprecations above alphabetically, not here at the end.
 
