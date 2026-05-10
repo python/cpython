@@ -1956,16 +1956,33 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         with self.assertRaises(TypeError):
             class SubSentinel(sentinel):
                 pass
+
+    def test_sentinel_attributes(self):
+        missing = sentinel("MISSING")
         with self.assertRaises(TypeError):
             sentinel.attribute = "value"
         with self.assertRaises(AttributeError):
-            missing.__name__ = "CHANGED"
+            missing.attribute = "value"
         with self.assertRaises(AttributeError):
-            missing.__module__ = "changed"
+            missing.__name__ = "CHANGED"
+        missing.__module__ = "changed"
+        self.assertEqual(missing.__module__, "changed")
         with self.assertRaises(AttributeError):
             del missing.__name__
+        del missing.__module__
         with self.assertRaises(AttributeError):
-            del missing.__module__
+            missing.__module__
+
+    def test_sentinel_repr(self):
+        with_repr = sentinel("WITH_REPR", repr="custom")
+        without_repr = sentinel("WITHOUT_REPR", repr=None)
+        self.assertEqual(repr(with_repr), "custom")
+        self.assertEqual(repr(without_repr), "WITHOUT_REPR")
+        self.assertEqual(str(with_repr), "custom")
+        self.assertEqual(str(without_repr), "WITHOUT_REPR")
+
+        with self.assertRaisesRegex(TypeError, "repr.*str or None"):
+            sentinel("BAD_REPR", repr=42)
 
     def test_sentinel_pickle(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):

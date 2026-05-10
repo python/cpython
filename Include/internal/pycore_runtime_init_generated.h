@@ -2029,6 +2029,7 @@ extern "C" {
     INIT_ID(repeat), \
     INIT_ID(repl), \
     INIT_ID(replace), \
+    INIT_ID(repr), \
     INIT_ID(reqrefs), \
     INIT_ID(require_ready), \
     INIT_ID(reserved), \
