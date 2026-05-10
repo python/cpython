@@ -543,35 +543,23 @@ try_full_cache_hit(
         return -1;
     }
 
-    Py_ssize_t cached_size = PyList_GET_SIZE(entry->frame_list);
-    PyObject *parent_slice = NULL;
-    if (cached_size > 1) {
-        parent_slice = PyList_GetSlice(entry->frame_list, 1, cached_size);
-        if (!parent_slice) {
-            Py_XDECREF(current_frame);
-            return -1;
-        }
-    }
-
     if (current_frame != NULL) {
         if (PyList_Append(ctx->frame_info, current_frame) < 0) {
             Py_DECREF(current_frame);
-            Py_XDECREF(parent_slice);
             return -1;
         }
         Py_DECREF(current_frame);
         STATS_ADD(unwinder, frames_read_from_memory, 1);
     }
 
-    if (parent_slice) {
-        Py_ssize_t cur_size = PyList_GET_SIZE(ctx->frame_info);
-        int result = PyList_SetSlice(ctx->frame_info, cur_size, cur_size, parent_slice);
-        Py_DECREF(parent_slice);
-        if (result < 0) {
+    Py_ssize_t cached_size = PyList_GET_SIZE(entry->frame_list);
+    for (Py_ssize_t i = 1; i < cached_size; i++) {
+        PyObject *cached_frame = PyList_GET_ITEM(entry->frame_list, i);
+        if (PyList_Append(ctx->frame_info, cached_frame) < 0) {
             return -1;
         }
-        STATS_ADD(unwinder, frames_read_from_cache, cached_size - 1);
     }
+    STATS_ADD(unwinder, frames_read_from_cache, cached_size > 1 ? cached_size - 1 : 0);
 
     STATS_INC(unwinder, frame_cache_hits);
     return 1;

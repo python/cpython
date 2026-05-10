@@ -215,6 +215,8 @@ typedef struct {
     PyObject *file_name;
     int first_lineno;
     PyObject *linetable;  // bytes
+    PyObject *last_frame_info;
+    ptrdiff_t last_addrq;
     uintptr_t addr_code_adaptive;
 } CachedCodeMetadata;
 
@@ -227,6 +229,7 @@ typedef struct {
     uintptr_t thread_state_addr;
     uintptr_t addrs[FRAME_CACHE_MAX_FRAMES];
     Py_ssize_t num_addrs;
+    PyObject *thread_id_obj;                 // owned reference, NULL if empty
     PyObject *frame_list;                    // owned reference, NULL if empty
 } FrameCacheEntry;
 

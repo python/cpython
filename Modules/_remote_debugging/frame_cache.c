@@ -30,6 +30,7 @@ frame_cache_cleanup(RemoteUnwinderObject *unwinder)
         return;
     }
     for (int i = 0; i < FRAME_CACHE_MAX_THREADS; i++) {
+        Py_CLEAR(unwinder->frame_cache[i].thread_id_obj);
         Py_CLEAR(unwinder->frame_cache[i].frame_list);
     }
     PyMem_Free(unwinder->frame_cache);
@@ -142,6 +143,7 @@ frame_cache_invalidate_stale(RemoteUnwinderObject *unwinder, PyObject *result)
         }
         if (!found) {
             // Clear this entry
+            Py_CLEAR(unwinder->frame_cache[i].thread_id_obj);
             Py_CLEAR(unwinder->frame_cache[i].frame_list);
             unwinder->frame_cache[i].thread_id = 0;
             unwinder->frame_cache[i].thread_state_addr = 0;
@@ -275,6 +277,12 @@ frame_cache_store(
     }
     entry->thread_id = thread_id;
     entry->thread_state_addr = thread_state_addr;
+    if (entry->thread_id_obj == NULL) {
+        entry->thread_id_obj = PyLong_FromUnsignedLongLong(thread_id);
+        if (entry->thread_id_obj == NULL) {
+            return -1;
+        }
+    }
     memcpy(entry->addrs, addrs, num_addrs * sizeof(uintptr_t));
     entry->num_addrs = num_addrs;
     assert(entry->num_addrs == num_addrs);

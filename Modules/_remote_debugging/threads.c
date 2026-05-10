@@ -546,10 +546,18 @@ unwind_stack_for_thread(
 
     *current_tstate = GET_MEMBER(uintptr_t, ts, unwinder->debug_offsets.thread_state.next);
 
-    thread_id = PyLong_FromLongLong(tid);
+    if (unwinder->cache_frames) {
+        FrameCacheEntry *entry = frame_cache_find(unwinder, (uint64_t)tid);
+        if (entry && entry->thread_id_obj) {
+            thread_id = Py_NewRef(entry->thread_id_obj);
+        }
+    }
     if (thread_id == NULL) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to create thread ID");
-        goto error;
+        thread_id = PyLong_FromLongLong(tid);
+        if (thread_id == NULL) {
+            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to create thread ID");
+            goto error;
+        }
     }
 
     RemoteDebuggingState *state = RemoteDebugging_GetStateFromObject((PyObject*)unwinder);

@@ -405,6 +405,8 @@ parse_code_object(RemoteUnwinderObject *unwinder,
         meta->func_name = func;
         meta->file_name = file;
         meta->linetable = linetable;
+        meta->last_frame_info = NULL;
+        meta->last_addrq = -1;
         meta->first_lineno = GET_MEMBER(int, code_object, unwinder->debug_offsets.code_object.firstlineno);
         meta->addr_code_adaptive = real_address + (uintptr_t)unwinder->debug_offsets.code_object.co_code_adaptive;
 
@@ -482,6 +484,12 @@ done_tlbc:
     addrq = (uint16_t *)ip - (uint16_t *)meta->addr_code_adaptive;
 #endif
     ;  // Empty statement to avoid C23 extension warning
+
+    if (!unwinder->opcodes && meta->last_frame_info != NULL && meta->last_addrq == addrq) {
+        *result = Py_NewRef(meta->last_frame_info);
+        return 0;
+    }
+
     LocationInfo info = {0};
     bool ok = parse_linetable(addrq, PyBytes_AS_STRING(meta->linetable),
                               PyBytes_GET_SIZE(meta->linetable),
@@ -527,6 +535,11 @@ done_tlbc:
     Py_XDECREF(opcode_obj);
     if (!tuple) {
         goto error;
+    }
+
+    if (!unwinder->opcodes) {
+        Py_XSETREF(meta->last_frame_info, Py_NewRef(tuple));
+        meta->last_addrq = addrq;
     }
 
     *result = tuple;
