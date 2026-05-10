@@ -224,6 +224,7 @@ typedef struct {
 
 typedef struct {
     uint64_t thread_id;                      // 0 = empty slot
+    uintptr_t thread_state_addr;
     uintptr_t addrs[FRAME_CACHE_MAX_FRAMES];
     Py_ssize_t num_addrs;
     PyObject *frame_list;                    // owned reference, NULL if empty
@@ -302,6 +303,7 @@ typedef struct {
     int cache_frames;
     int collect_stats;  // whether to collect statistics
     uint32_t stale_invalidation_counter;  // counter for throttling frame_cache_invalidate_stale
+    uintptr_t cached_tstate_addr;  // predicted first thread for batched reads
     RemoteDebuggingState *cached_state;
     FrameCacheEntry *frame_cache;  // preallocated array of FRAME_CACHE_MAX_THREADS entries
     UnwinderStats stats;  // statistics for performance analysis
@@ -361,11 +363,14 @@ typedef struct {
 typedef struct {
     /* Inputs */
     uintptr_t frame_addr;           // Starting frame address
+    uintptr_t thread_state_addr;    // Owning thread state address
     uintptr_t base_frame_addr;      // Sentinel at bottom (for validation)
     uintptr_t gc_frame;             // GC frame address (0 if not tracking)
     uintptr_t last_profiled_frame;  // Last cached frame (0 if no cache)
     StackChunkList *chunks;         // Pre-copied stack chunks
     int skip_first_frame;           // Skip frame_addr itself (continue from its caller)
+    const char *prefetched_frame;    // Optional already-read frame buffer
+    uintptr_t prefetched_frame_addr; // Remote address for prefetched_frame
 
     /* Outputs */
     PyObject *frame_info;           // List to append FrameInfo objects
@@ -548,6 +553,7 @@ extern int process_frame_chain(
 extern int frame_cache_init(RemoteUnwinderObject *unwinder);
 extern void frame_cache_cleanup(RemoteUnwinderObject *unwinder);
 extern FrameCacheEntry *frame_cache_find(RemoteUnwinderObject *unwinder, uint64_t thread_id);
+extern FrameCacheEntry *frame_cache_find_by_tstate(RemoteUnwinderObject *unwinder, uintptr_t tstate_addr);
 extern int clear_last_profiled_frames(RemoteUnwinderObject *unwinder);
 extern void frame_cache_invalidate_stale(RemoteUnwinderObject *unwinder, PyObject *result);
 extern int frame_cache_lookup_and_extend(
@@ -566,6 +572,7 @@ extern int frame_cache_store(
     PyObject *frame_list,
     const uintptr_t *addrs,
     Py_ssize_t num_addrs,
+    uintptr_t thread_state_addr,
     uintptr_t base_frame_addr,
     uintptr_t last_frame_visited);
 
@@ -605,7 +612,11 @@ extern PyObject* unwind_stack_for_thread(
     uintptr_t *current_tstate,
     uintptr_t gil_holder_tstate,
     uintptr_t gc_frame,
-    uintptr_t main_thread_tstate
+    uintptr_t main_thread_tstate,
+    const char *prefetched_tstate,
+    uintptr_t prefetched_tstate_addr,
+    const char *prefetched_frame,
+    uintptr_t prefetched_frame_addr
 );
 
 /* Thread stopping functions (for blocking mode) */

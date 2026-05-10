@@ -289,13 +289,44 @@ typedef struct {
     unsigned int :24;
 } _thread_status;
 
+static int
+read_thread_state_and_maybe_frame(
+    RemoteUnwinderObject *unwinder,
+    uintptr_t tstate_addr,
+    size_t tstate_size,
+    char *tstate_buffer,
+    uintptr_t predicted_frame_addr,
+    char *frame_buffer,
+    int *frame_read)
+{
+    *frame_read = 0;
+    if (predicted_frame_addr != 0) {
+        _Py_RemoteReadSegment segments[2] = {
+            {tstate_addr, tstate_buffer, tstate_size},
+            {predicted_frame_addr, frame_buffer, SIZEOF_INTERP_FRAME},
+        };
+        Py_ssize_t nread = _Py_RemoteDebug_BatchedReadRemoteMemory(
+            &unwinder->handle, segments, 2);
+        if (nread >= (Py_ssize_t)tstate_size) {
+            *frame_read = nread == (Py_ssize_t)(tstate_size + SIZEOF_INTERP_FRAME);
+            return 0;
+        }
+    }
+    return _Py_RemoteDebug_ReadRemoteMemory(
+        &unwinder->handle, tstate_addr, tstate_size, tstate_buffer);
+}
+
 PyObject*
 unwind_stack_for_thread(
     RemoteUnwinderObject *unwinder,
     uintptr_t *current_tstate,
     uintptr_t gil_holder_tstate,
     uintptr_t gc_frame,
-    uintptr_t main_thread_tstate
+    uintptr_t main_thread_tstate,
+    const char *prefetched_tstate,
+    uintptr_t prefetched_tstate_addr,
+    const char *prefetched_frame,
+    uintptr_t prefetched_frame_addr
 ) {
     PyObject *frame_info = NULL;
     PyObject *thread_id = NULL;
@@ -303,14 +334,57 @@ unwind_stack_for_thread(
     StackChunkList chunks = {0};
 
     char ts[SIZEOF_THREAD_STATE];
-    int bytes_read = _Py_RemoteDebug_ReadRemoteMemory(
-        &unwinder->handle, *current_tstate, (size_t)unwinder->debug_offsets.thread_state.size, ts);
-    if (bytes_read < 0) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read thread state");
-        goto error;
+    char local_prefetched_frame[SIZEOF_INTERP_FRAME];
+    const char *prefetched_frame_for_ctx = NULL;
+    int have_prefetched_frame = 0;
+    uintptr_t predicted_frame_addr = 0;
+    if (prefetched_tstate && prefetched_tstate_addr == *current_tstate) {
+        memcpy(ts, prefetched_tstate, (size_t)unwinder->debug_offsets.thread_state.size);
+        if (prefetched_frame && prefetched_frame_addr != 0) {
+            have_prefetched_frame = 1;
+            prefetched_frame_for_ctx = prefetched_frame;
+            predicted_frame_addr = prefetched_frame_addr;
+        }
+    }
+    else if (unwinder->cache_frames) {
+        FrameCacheEntry *entry = frame_cache_find_by_tstate(unwinder, *current_tstate);
+        if (entry && entry->num_addrs > 0) {
+            predicted_frame_addr = entry->addrs[0];
+        }
+
+        int bytes_read = read_thread_state_and_maybe_frame(
+            unwinder,
+            *current_tstate,
+            (size_t)unwinder->debug_offsets.thread_state.size,
+            ts,
+            predicted_frame_addr,
+            local_prefetched_frame,
+            &have_prefetched_frame);
+        if (bytes_read < 0) {
+            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read thread state");
+            goto error;
+        }
+        if (have_prefetched_frame) {
+            prefetched_frame_for_ctx = local_prefetched_frame;
+        }
+    }
+    else {
+        int bytes_read = _Py_RemoteDebug_ReadRemoteMemory(
+            &unwinder->handle,
+            *current_tstate,
+            (size_t)unwinder->debug_offsets.thread_state.size,
+            ts);
+        if (bytes_read < 0) {
+            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read thread state");
+            goto error;
+        }
     }
     STATS_INC(unwinder, memory_reads);
     STATS_ADD(unwinder, memory_bytes_read, unwinder->debug_offsets.thread_state.size);
+    if (have_prefetched_frame) {
+        STATS_INC(unwinder, memory_reads);
+        STATS_ADD(unwinder, memory_bytes_read, SIZEOF_INTERP_FRAME);
+    }
 
     long tid = GET_MEMBER(long, ts, unwinder->debug_offsets.thread_state.native_thread_id);
 
@@ -432,9 +506,12 @@ unwind_stack_for_thread(
     uintptr_t addrs[FRAME_CACHE_MAX_FRAMES];
     FrameWalkContext ctx = {
         .frame_addr = frame_addr,
+        .thread_state_addr = *current_tstate,
         .base_frame_addr = base_frame_addr,
         .gc_frame = gc_frame,
         .chunks = &chunks,
+        .prefetched_frame = have_prefetched_frame ? prefetched_frame_for_ctx : NULL,
+        .prefetched_frame_addr = predicted_frame_addr,
         .frame_info = frame_info,
         .frame_addrs = addrs,
         .num_addrs = 0,

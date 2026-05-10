@@ -1333,6 +1333,49 @@ fallback:
     return _Py_RemoteDebug_ReadRemoteMemory(handle, addr, size, out);
 }
 
+typedef struct {
+    uintptr_t remote_addr;
+    void *local_buf;
+    size_t size;
+} _Py_RemoteReadSegment;
+
+#define _PY_REMOTE_DEBUG_MAX_BATCHED_SEGMENTS 4
+
+// Batched read of multiple remote regions in a single syscall when supported.
+// Returns total bytes read (>= 0) on success, -1 if batched reads are
+// unavailable or the syscall failed. Callers compare the return value against
+// cumulative segment sizes to determine which segments were fully populated.
+UNUSED static Py_ssize_t
+_Py_RemoteDebug_BatchedReadRemoteMemory(
+    proc_handle_t *handle,
+    const _Py_RemoteReadSegment *segments,
+    int nsegs)
+{
+#if defined(__linux__) && HAVE_PROCESS_VM_READV
+    if (handle->memfd == -1
+        && nsegs > 0
+        && nsegs <= _PY_REMOTE_DEBUG_MAX_BATCHED_SEGMENTS) {
+        struct iovec local[_PY_REMOTE_DEBUG_MAX_BATCHED_SEGMENTS];
+        struct iovec remote[_PY_REMOTE_DEBUG_MAX_BATCHED_SEGMENTS];
+        for (int i = 0; i < nsegs; i++) {
+            local[i].iov_base = segments[i].local_buf;
+            local[i].iov_len = segments[i].size;
+            remote[i].iov_base = (void *)segments[i].remote_addr;
+            remote[i].iov_len = segments[i].size;
+        }
+        ssize_t nread = process_vm_readv(handle->pid, local, nsegs, remote, nsegs, 0);
+        if (nread >= 0) {
+            return (Py_ssize_t)nread;
+        }
+    }
+#else
+    (void)handle;
+    (void)segments;
+    (void)nsegs;
+#endif
+    return -1;
+}
+
 UNUSED static int
 _Py_RemoteDebug_ReadDebugOffsets(
     proc_handle_t *handle,

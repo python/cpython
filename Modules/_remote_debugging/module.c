@@ -360,6 +360,7 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
     self->cache_frames = cache_frames;
     self->collect_stats = stats;
     self->stale_invalidation_counter = 0;
+    self->cached_tstate_addr = 0;
     self->debug = debug;
     self->only_active_thread = only_active_thread;
     self->mode = mode;
@@ -473,6 +474,46 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
     return 0;
 }
 
+static int
+read_interp_state_and_maybe_thread_frame(
+    RemoteUnwinderObject *unwinder,
+    uintptr_t interpreter_addr,
+    char *interp_state_buffer,
+    uintptr_t predicted_tstate_addr,
+    char *tstate_buffer,
+    int *tstate_read,
+    uintptr_t predicted_frame_addr,
+    char *frame_buffer,
+    int *frame_read)
+{
+    *tstate_read = 0;
+    *frame_read = 0;
+    if (predicted_tstate_addr != 0) {
+        size_t tstate_size = (size_t)unwinder->debug_offsets.thread_state.size;
+        _Py_RemoteReadSegment segments[3] = {
+            {interpreter_addr, interp_state_buffer, INTERP_STATE_BUFFER_SIZE},
+            {predicted_tstate_addr, tstate_buffer, tstate_size},
+            {predicted_frame_addr, frame_buffer, SIZEOF_INTERP_FRAME},
+        };
+        int nsegs = predicted_frame_addr != 0 ? 3 : 2;
+        Py_ssize_t nread = _Py_RemoteDebug_BatchedReadRemoteMemory(
+            &unwinder->handle, segments, nsegs);
+        if (nread >= (Py_ssize_t)INTERP_STATE_BUFFER_SIZE) {
+            Py_ssize_t with_tstate = (Py_ssize_t)INTERP_STATE_BUFFER_SIZE
+                + (Py_ssize_t)tstate_size;
+            *tstate_read = nread >= with_tstate;
+            *frame_read = nsegs == 3
+                && nread == with_tstate + (Py_ssize_t)SIZEOF_INTERP_FRAME;
+            return 0;
+        }
+    }
+    return _Py_RemoteDebug_ReadRemoteMemory(
+        &unwinder->handle,
+        interpreter_addr,
+        INTERP_STATE_BUFFER_SIZE,
+        interp_state_buffer);
+}
+
 /*[clinic input]
 @permit_long_docstring_body
 @critical_section
@@ -537,11 +578,29 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
     while (current_interpreter != 0) {
         // Read interpreter state to get the interpreter ID
         char interp_state_buffer[INTERP_STATE_BUFFER_SIZE];
-        if (_Py_RemoteDebug_ReadRemoteMemory(
-                &self->handle,
+        char prefetched_tstate[SIZEOF_THREAD_STATE];
+        char prefetched_frame[SIZEOF_INTERP_FRAME];
+        int have_prefetched_tstate = 0;
+        int have_prefetched_frame = 0;
+        uintptr_t predicted_tstate_addr = self->cache_frames ? self->cached_tstate_addr : 0;
+        uintptr_t predicted_frame_addr = 0;
+        if (predicted_tstate_addr != 0) {
+            FrameCacheEntry *entry = frame_cache_find_by_tstate(self, predicted_tstate_addr);
+            if (entry && entry->num_addrs > 0) {
+                predicted_frame_addr = entry->addrs[0];
+            }
+        }
+
+        if (read_interp_state_and_maybe_thread_frame(
+                self,
                 current_interpreter,
-                INTERP_STATE_BUFFER_SIZE,
-                interp_state_buffer) < 0) {
+                interp_state_buffer,
+                predicted_tstate_addr,
+                prefetched_tstate,
+                &have_prefetched_tstate,
+                predicted_frame_addr,
+                prefetched_frame,
+                &have_prefetched_frame) < 0) {
             set_exception_cause(self, PyExc_RuntimeError, "Failed to read interpreter state buffer");
             Py_CLEAR(result);
             goto exit;
@@ -611,6 +670,9 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
             // Target specific thread (only process first interpreter)
             current_tstate = self->tstate_addr;
         }
+        if (current_tstate != 0) {
+            self->cached_tstate_addr = current_tstate;
+        }
 
         // Acquire main thread state information
         uintptr_t main_thread_tstate = GET_MEMBER(uintptr_t, interp_state_buffer,
@@ -621,7 +683,11 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
             PyObject* frame_info = unwind_stack_for_thread(self, &current_tstate,
                                                            gil_holder_tstate,
                                                            gc_frame,
-                                                           main_thread_tstate);
+                                                           main_thread_tstate,
+                                                           have_prefetched_tstate ? prefetched_tstate : NULL,
+                                                           predicted_tstate_addr,
+                                                           have_prefetched_frame ? prefetched_frame : NULL,
+                                                           predicted_frame_addr);
             if (!frame_info) {
                 // Check if this was an intentional skip due to mode-based filtering
                 if ((self->mode == PROFILING_MODE_CPU || self->mode == PROFILING_MODE_GIL ||
