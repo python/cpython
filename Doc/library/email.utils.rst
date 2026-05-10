@@ -88,7 +88,7 @@ of the new API.
 
 .. function:: getaddresses(fieldvalues, *, strict=True)
 
-   This method returns a list of 2-tuples of the form returned by :meth:`parseaddr`.
+   This method returns a list of 2-tuples of the form returned by :func:`parseaddr`.
    *fieldvalues* is a sequence of header field values as might be returned by
    :meth:`Message.get_all() <email.message.Message.get_all>`.
 
