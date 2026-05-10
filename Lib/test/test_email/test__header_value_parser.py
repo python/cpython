@@ -668,6 +668,8 @@ class TestParser(TestParserMixin, TestEmailBase):
 
         token_type = C('foo', token_type='bar'),
 
+        # XXX POSTDEP: delete from here...
+
         )
 
 
@@ -680,6 +682,8 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertDefectsMatch(vt.defects, defects)
 
     params_test__validate_xtext = Params(
+
+        # XXX POSTDEP: ...to here
 
         valid = C('foo'),
 
@@ -715,11 +719,13 @@ class TestParser(TestParserMixin, TestEmailBase):
 
         )
 
+    # XXX POSTDEP: delete from here...
     params_test__make_xtext.update(
         add_label('from_test_validate_xtext')(
             for_each_terminal_type(params_test__validate_xtext),
             ),
         )
+    # XXX POSTDEP: ...to here.
 
 
     # _get_ptext_to_endchars
