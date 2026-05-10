@@ -633,11 +633,45 @@ class TestParser(TestParserMixin, TestEmailBase):
         )
 
 
-    # _validate_xtext
+    # _make_xtext
 
-    # As an internal method these tests are not API requirements; however, the
-    # behavior they check must be verified one way or another, so if the
-    # implementation changes there need to be equivalent tests.
+    @params
+    def test__make_xtext(
+            self,
+            s,
+            terminal_class=parser.ValueTerminal,
+            token_type='test',
+            **kw,
+        ):
+        vt = self._test_parse(
+            parser._make_xtext,
+            C(s, terminal_class, token_type),
+            stringified=('' if terminal_class.__name__.startswith('EW')
+                            else None),
+            value=' ' if terminal_class.__name__.startswith('White') else None,
+            test_start=False,
+            **kw,
+            )
+        self.assertEqual(vt.token_type, token_type)
+
+    @params_map
+    def for_each_terminal_type(*args, **kw):
+        vt_types = (
+            parser.ValueTerminal,
+            parser.WhiteSpaceTerminal,
+            parser.EWWhiteSpaceTerminal,
+            )
+        for vt_type in vt_types:
+            yield vt_type.__name__, C(*args, **kw, terminal_class=vt_type)
+
+    params_test__make_xtext = for_each_terminal_type(
+
+        token_type = C('foo', token_type='bar'),
+
+        )
+
+
+    # _validate_xtext
 
     @params
     def test__validate_xtext(self, s, defects=[]):
@@ -679,6 +713,12 @@ class TestParser(TestParserMixin, TestEmailBase):
                 ),
             ),
 
+        )
+
+    params_test__make_xtext.update(
+        add_label('from_test_validate_xtext')(
+            for_each_terminal_type(params_test__validate_xtext),
+            ),
         )
 
 
