@@ -537,7 +537,7 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
     while (current_interpreter != 0) {
         // Read interpreter state to get the interpreter ID
         char interp_state_buffer[INTERP_STATE_BUFFER_SIZE];
-        if (_Py_RemoteDebug_PagedReadRemoteMemory(
+        if (_Py_RemoteDebug_ReadRemoteMemory(
                 &self->handle,
                 current_interpreter,
                 INTERP_STATE_BUFFER_SIZE,
