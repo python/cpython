@@ -594,8 +594,8 @@ _PyTuple_Concat(PyObject *aa, PyObject *bb)
     return (PyObject *)np;
 }
 
-static PyObject *
-tuple_repeat(PyObject *self, Py_ssize_t n)
+PyObject *
+_PyTuple_Repeat(PyObject *self, Py_ssize_t n)
 {
     PyTupleObject *a = _PyTuple_CAST(self);
     const Py_ssize_t input_size = Py_SIZE(a);
@@ -865,7 +865,7 @@ tuple_subtype_new(PyTypeObject *type, PyObject *iterable)
 static PySequenceMethods tuple_as_sequence = {
     tuple_length,                               /* sq_length */
     _PyTuple_Concat,                            /* sq_concat */
-    tuple_repeat,                               /* sq_repeat */
+    _PyTuple_Repeat,                            /* sq_repeat */
     tuple_item,                                 /* sq_item */
     0,                                          /* sq_slice */
     0,                                          /* sq_ass_item */
@@ -1286,6 +1286,6 @@ _PyTuple_DebugMallocStats(FILE *out)
         PyOS_snprintf(buf, sizeof(buf),
                       "free %d-sized PyTupleObject", len);
         _PyDebugAllocatorStats(out, buf, _Py_FREELIST_SIZE(tuples[i]),
-                               _PyObject_VAR_SIZE(&PyTuple_Type, len));
+                               _PyType_PreHeaderSize(&PyTuple_Type) + _PyObject_VAR_SIZE(&PyTuple_Type, len));
     }
 }

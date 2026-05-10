@@ -580,8 +580,13 @@ The :mod:`!calendar` module defines the following exceptions:
 
 .. exception:: IllegalMonthError(month)
 
-   A subclass of :exc:`ValueError`,
+   A subclass of :exc:`ValueError` and :exc:`IndexError`,
    raised when the given month number is outside of the range 1-12 (inclusive).
+
+   .. versionchanged:: 3.12
+      :exc:`IllegalMonthError` is now also a subclass of
+      :exc:`ValueError`. New code should avoid catching
+      :exc:`IndexError`.
 
    .. attribute:: month
 
@@ -749,6 +754,11 @@ The following options are accepted:
 
 .. versionchanged:: 3.14
    By default, today's date is highlighted in color and can be
+   :ref:`controlled using environment variables <using-on-controlling-color>`.
+
+.. versionchanged:: 3.15
+   By default, the month is now also highlighted in color, and
+   the days of the week are also in color. This behavior can be
    :ref:`controlled using environment variables <using-on-controlling-color>`.
 
 *HTML-mode options:*
