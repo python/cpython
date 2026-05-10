@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_typedefs.h"      // _PyInterpreterFrame
+#include "pycore_jit_publish.h"
 #include "pycore_uop.h"           // _PyUOpInstruction
 #include "pycore_uop_ids.h"
 #include "pycore_stackref.h"      // _PyStackRef
@@ -198,7 +199,7 @@ typedef struct _PyExecutorObject {
     uint32_t code_size;
     size_t jit_size;
     void *jit_code;
-    void *jit_gdb_handle;
+    _PyJitCodeRegistration *jit_registration;
     _PyExitData exits[1];
 } _PyExecutorObject;
 

@@ -10,14 +10,14 @@ Sentinel objects
    This instance of :c:type:`PyTypeObject` represents the Python
    :class:`sentinel` type.  This is the same object as :class:`sentinel`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. c:function:: int PySentinel_Check(PyObject *o)
 
    Return true if *o* is a :class:`sentinel` object.  The :class:`sentinel` type
    does not allow subclasses, so this check is exact.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. c:function:: PyObject* PySentinel_New(const char *name, const char *module_name)
 
@@ -32,4 +32,4 @@ Sentinel objects
    path matching *name*.  Pickle treats *name* as a global variable name
    in *module_name* (see :meth:`object.__reduce__`).
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
