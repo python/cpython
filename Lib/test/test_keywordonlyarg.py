@@ -170,7 +170,7 @@ class KeywordOnlyArgTestCase(unittest.TestCase):
                 pass
         self.assertEqual(str(err.exception), "name 'b' is not defined")
         with self.assertRaises(NameError) as err:
-            f = lambda v=a, x=b, *, y=c, z=d: None
+            g = lambda v=a, x=b, *, y=c, z=d: None
         self.assertEqual(str(err.exception), "name 'b' is not defined")
 
 

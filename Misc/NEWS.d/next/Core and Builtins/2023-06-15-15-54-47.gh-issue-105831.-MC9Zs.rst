@@ -1,3 +1,0 @@
-Fix an f-string bug, where using a debug expression (the ``=`` sign) that
-appears in the last line of a file results to the debug buffer that holds the
-expression text being one character too small.

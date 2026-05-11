@@ -1,1 +1,0 @@
-Add a number of standard external names to ``nitpick_ignore``.

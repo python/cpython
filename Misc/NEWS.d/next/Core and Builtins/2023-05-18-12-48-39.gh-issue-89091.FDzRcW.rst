@@ -1,1 +1,0 @@
-Raise :exc:`RuntimeWarning` for unawaited async generator methods like :meth:`~agen.asend`, :meth:`~agen.athrow` and :meth:`~agen.aclose`. Patch by Kumar Aditya.

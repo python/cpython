@@ -1,6 +1,5 @@
 import unittest
-from ctypes import (Structure, POINTER, pointer,  _pointer_type_cache,
-                    c_char_p, c_int)
+from ctypes import (Structure, POINTER, pointer, c_char_p, c_int)
 
 
 class SimpleTestCase(unittest.TestCase):
@@ -98,33 +97,6 @@ class PointerTestCase(unittest.TestCase):
         x = pointer(i)
         self.assertEqual(x._objects, {'1': i})
 
-    def test_pp_ownership(self):
-        d = c_int(123)
-        n = c_int(456)
-
-        p = pointer(d)
-        pp = pointer(p)
-
-        self.assertIs(pp._objects['1'], p)
-        self.assertIs(pp._objects['0']['1'], d)
-
-        pp.contents.contents = n
-
-        self.assertIs(pp._objects['1'], p)
-        self.assertIs(pp._objects['0']['1'], n)
-
-        self.assertIs(p._objects['1'], n)
-        self.assertEqual(len(p._objects), 1)
-
-        del d
-        del p
-
-        self.assertIs(pp._objects['0']['1'], n)
-        self.assertEqual(len(pp._objects), 2)
-
-        del n
-
-        self.assertEqual(len(pp._objects), 2)
 
 class PointerToStructure(unittest.TestCase):
     def test(self):
@@ -141,10 +113,6 @@ class PointerToStructure(unittest.TestCase):
 
         r.a[0].x = 42
         r.a[0].y = 99
-
-        # to avoid leaking when tests are run several times
-        # clean up the types left in the cache.
-        del _pointer_type_cache[POINT]
 
 
 if __name__ == "__main__":

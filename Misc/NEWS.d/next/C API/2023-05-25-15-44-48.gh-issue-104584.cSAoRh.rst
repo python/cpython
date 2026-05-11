@@ -1,2 +1,0 @@
-Add an unstable C API for hooking in an optimizer. This is mainly internal,
-but marked "unstable" to allow third-party experimentation.
