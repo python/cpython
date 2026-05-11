@@ -1352,18 +1352,6 @@ def get_atom(value):
     atom.append(token)
     if value and value[0] in CFWS_LEADER:
         token, value = get_cfws(value)
-        # Peek ahead to ignore linear-white-space between adjacent encoded-words.
-        if (
-            atom[-1].token_type == 'encoded-word'
-            and value.startswith('=?')
-            and all(ws.token_type == 'fws' for ws in token)  # not comments
-        ):
-            try:
-                get_encoded_word(value)
-            except errors.HeaderParseError:
-                pass
-            else:
-                token = EWWhiteSpaceTerminal(token, 'fws')
         atom.append(token)
     return atom, value
 
@@ -1473,6 +1461,16 @@ def get_phrase(value):
         else:
             try:
                 token, value = get_word(value)
+                if (token[0].token_type == 'encoded-word'
+                    and phrase
+                    and phrase[-1].token_type == 'atom'
+                    and len(phrase[-1]) > 1
+                    and phrase[-1][-2].token_type == 'encoded-word'
+                    and phrase[-1][-1].token_type == 'cfws'
+                    and not phrase[-1][-1].comments
+                ):
+                    # linear ws between ews needs special handing...
+                    phrase[-1][-1] = EWWhiteSpaceTerminal(phrase[-1], 'fws')
             except errors.HeaderParseError:
                 if value[0] in CFWS_LEADER:
                     token, value = get_cfws(value)

@@ -1061,9 +1061,8 @@ class TestParser(TestParserMixin, TestEmailBase):
             parser.get_phrase(' (foo) ')
 
     def test_get_phrase_adjacent_ew(self):
-        # In structured headers, the requirement to ignore linear-white-space
-        # between adjacent encoded-words is actually implemented by get_atom.
-        # But it's easier to see the results by testing get_phrase.
+        # "'linear-white-space' that separates a pair of adjacent
+        # 'encoded-word's is ignored" (rfc2047 section 6.2)
         self._test_get_x(parser.get_phrase, '=?ascii?q?Joi?= \t =?ascii?q?ned?=', 'Joined', 'Joined', [], '')
 
     def test_get_phrase_adjacent_ew_different_encodings(self):
