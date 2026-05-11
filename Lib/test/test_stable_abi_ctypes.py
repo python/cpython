@@ -77,6 +77,8 @@ SYMBOL_NAMES = (
     "PyBytesIter_Type",
     "PyBytes_AsString",
     "PyBytes_AsStringAndSize",
+    "PyBytes_Check",
+    "PyBytes_CheckExact",
     "PyBytes_Concat",
     "PyBytes_ConcatAndDel",
     "PyBytes_DecodeEscape",
