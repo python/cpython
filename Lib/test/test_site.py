@@ -1479,5 +1479,43 @@ mod:increment
         import mod
         self.assertEqual(mod._pth_count, 1)
 
+    # gh-149504
+    def test_reentrant_addsitedir_pth(self):
+        # An import line in a .pth file that calls site.addsitedir() must
+        # not crash or re-execute outer entries while the outer
+        # _exec_imports() is iterating _pending_importexecs.
+        overlay = self.enterContext(os_helper.temp_dir())
+        overlay_pth = os.path.join(overlay, 'overlay.pth')
+        pkgdir = self.enterContext(os_helper.temp_dir())
+        with open(overlay_pth, 'w', encoding='utf-8') as fp:
+            print(pkgdir, file=fp)
+        self._make_pth(f"import site; site.addsitedir({overlay!r})\n")
+        site.addsitedir(self.sitedir, set())
+        self.assertIn(overlay, sys.path)
+        self.assertIn(pkgdir, sys.path)
+
+    # gh-149504
+    def test_reentrant_addsitedir_start(self):
+        # As above, but the re-entry happens from a .start entry point
+        # instead of a .pth import line.  _execute_start_entrypoints()
+        # iterates _pending_entrypoints with the same pattern and is
+        # vulnerable to the same dictionary-changed-during-iteration bug.
+        overlay = self.enterContext(os_helper.temp_dir())
+        overlay_pth = os.path.join(overlay, 'overlay.pth')
+        pkgdir = self.enterContext(os_helper.temp_dir())
+        with open(overlay_pth, 'w', encoding='utf-8') as fp:
+            print(pkgdir, file=fp)
+        self._make_mod(f"""\
+import site
+def bootstrap():
+    site.addsitedir({overlay!r})
+""",
+            name='reenter_helper', on_path=True)
+        self._make_start("reenter_helper:bootstrap\n")
+        site.addsitedir(self.sitedir, set())
+        self.assertIn(overlay, sys.path)
+        self.assertIn(pkgdir, sys.path)
+
+
 if __name__ == "__main__":
     unittest.main()
