@@ -8,7 +8,7 @@
 
 --------------
 
-The :mod:`!curses.ascii` module supplies name constants for ASCII characters and
+The :mod:`!curses.ascii` module supplies named constants for ASCII characters and
 functions to test membership in various ASCII character classes.  The constants
 supplied are names for control characters as follows:
 
@@ -130,7 +130,7 @@ C library:
 
 .. function:: isgraph(c)
 
-   Checks for ASCII any printable character except space.
+   Checks for any printable ASCII character except space.
 
 
 .. function:: islower(c)
@@ -140,7 +140,7 @@ C library:
 
 .. function:: isprint(c)
 
-   Checks for any ASCII printable character including space.
+   Checks for any printable ASCII character including space.
 
 
 .. function:: ispunct(c)
@@ -151,7 +151,7 @@ C library:
 
 .. function:: isspace(c)
 
-   Checks for ASCII white-space characters; space, line feed, carriage return, form
+   Checks for whitespace ASCII characters; space, line feed, carriage return, form
    feed, horizontal tab, vertical tab.
 
 
@@ -214,8 +214,8 @@ it returns a string.
 
    Return a string representation of the ASCII character *c*.  If *c* is printable,
    this string is the character itself.  If the character is a control character
-   (0x00--0x1f) the string consists of a caret (``'^'``) followed by the
-   corresponding uppercase letter. If the character is an ASCII delete (0x7f) the
+   (0x00--0x1f), the string consists of a caret (``'^'``) followed by the
+   corresponding uppercase letter. If the character is an ASCII delete (0x7f), the
    string is ``'^?'``.  If the character has its meta bit (0x80) set, the meta bit
    is stripped, the preceding rules applied, and ``'!'`` prepended to the result.
 
