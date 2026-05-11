@@ -3896,7 +3896,11 @@
                 PyObject *name = _Py_SpecialMethods[oparg].name;
                 PyObject *descr = _PyType_Lookup(type, name);
                 if (descr != NULL && (Py_TYPE(descr)->tp_flags & Py_TPFLAGS_METHOD_DESCRIPTOR)) {
-                    ADD_OP(_GUARD_TYPE_VERSION, 0, type->tp_version_tag);
+                    _PyUOpInstruction *insert_null = uop_buffer_last(&ctx->out_buffer);
+                    assert(insert_null->opcode == _INSERT_NULL);
+                    assert(insert_null->target == this_instr->target);
+                    REPLACE_OP(insert_null, _GUARD_TYPE_VERSION, 0, type->tp_version_tag);
+                    ADD_OP(_INSERT_NULL, 0, 0);
                     bool immortal = _Py_IsImmortal(descr) || (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE);
                     ADD_OP(immortal ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE,
                         0, (uintptr_t)descr);
