@@ -52,7 +52,7 @@ from . import trsock
 from .log import logger
 
 
-__all__ = 'BaseEventLoop','Server',
+__all__ = 'BaseEventLoop','Server','crash_exception_handler'
 
 
 # Minimum number of _scheduled timer handles before cleanup of
@@ -418,6 +418,21 @@ class Server(events.AbstractServer):
         await waiter
 
 
+def crash_exception_handler(self, context):
+    exception = context.get("exception")
+    if exception is None:
+        message = context.get("message")
+        if message is None:
+            message = "Unhandled exception in event loop"
+        exception = RuntimeError(message)
+
+    if events._get_running_loop() is self:
+        self.crash(exception)
+        return
+
+    self.call_soon_threadsafe(self.crash, exception)
+
+
 class BaseEventLoop(events.AbstractEventLoop):
 
     def __init__(self):
@@ -451,6 +466,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._asyncgens_shutdown_called = False
         # Set to True when `loop.shutdown_default_executor` is called.
         self._executor_shutdown_called = False
+        self._exceptions = []
 
     def __repr__(self):
         return (
@@ -681,6 +697,14 @@ class BaseEventLoop(events.AbstractEventLoop):
             while True:
                 self._run_once()
                 if self._stopping:
+                    if self._exceptions:
+                        try:
+                            raise BaseExceptionGroup(
+                                "errors occured in asyncio callbacks",
+                                self._exceptions,
+                            )
+                        finally:
+                            self._exceptions = []
                     break
         finally:
             self._run_forever_cleanup()
@@ -722,6 +746,10 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise RuntimeError('Event loop stopped before Future completed.')
 
         return future.result()
+
+    def crash(self, exception):
+        self._exceptions.append(exception)
+        self.stop()
 
     def stop(self):
         """Stop running the event loop.
