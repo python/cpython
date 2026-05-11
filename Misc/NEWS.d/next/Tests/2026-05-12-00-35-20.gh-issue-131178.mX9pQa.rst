@@ -1,0 +1,2 @@
+Add subprocess-based tests for the :mod:`mimetypes` command-line interface,
+verifying output format and exit codes for known and unknown types.
