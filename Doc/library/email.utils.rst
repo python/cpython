@@ -72,7 +72,7 @@ of the new API.
 
 .. function:: formataddr(pair, charset='utf-8')
 
-   The inverse of :meth:`parseaddr`, this takes a 2-tuple of the form ``(realname,
+   The inverse of :func:`parseaddr`, this takes a 2-tuple of the form ``(realname,
    email_address)`` and returns the string value suitable for a :mailheader:`To` or
    :mailheader:`Cc` header.  If the first element of *pair* is false, then the
    second element is returned unmodified.
@@ -88,7 +88,7 @@ of the new API.
 
 .. function:: getaddresses(fieldvalues, *, strict=True)
 
-   This method returns a list of 2-tuples of the form returned by :func:`parseaddr`.
+   This function returns a list of 2-tuples of the form returned by :func:`parseaddr`.
    *fieldvalues* is a sequence of header field values as might be returned by
    :meth:`Message.get_all() <email.message.Message.get_all>`.
 
@@ -139,8 +139,9 @@ of the new API.
    ``datetime``, and if the date is conforming to the RFCs it will represent a
    time in UTC but with no indication of the actual source timezone of the
    message the date comes from.  If the input date has any other valid timezone
-   offset, the ``datetime`` will be an aware ``datetime`` with the
-   corresponding :class:`~datetime.timezone` :class:`~datetime.tzinfo`.
+   offset, the ``datetime`` will be an aware ``datetime`` whose corresponding
+   :attr:`~datetime.datetime.tzinfo` attribute is a :class:`~datetime.timezone`
+   object.
 
    .. versionadded:: 3.3
 
@@ -207,7 +208,7 @@ of the new API.
    3-tuple containing the character set,
    language, and value.  :func:`collapse_rfc2231_value` turns this into a unicode
    string.  Optional *errors* is passed to the *errors* argument of :class:`str`'s
-   :func:`~str.encode` method; it defaults to ``'replace'``.  Optional
+   :meth:`~str.encode` method; it defaults to ``'replace'``.  Optional
    *fallback_charset* specifies the character set to use if the one in the
    :rfc:`2231` header is not known by Python; it defaults to ``'us-ascii'``.
 
