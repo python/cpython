@@ -34,6 +34,7 @@ import builtins
 import inspect
 import keyword
 import re
+import types
 import __main__
 import warnings
 
