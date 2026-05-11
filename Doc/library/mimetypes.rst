@@ -381,7 +381,7 @@ interface:
    $ python -m mimetypes --extension text/javascript
    .js
 
-   $ # get a file extension by a rare MIME type (error goes to stderr)
+   $ # get a file extension by a rare MIME type
    $ python -m mimetypes --extension text/xul
    error: unknown type text/xul
 
@@ -389,14 +389,14 @@ interface:
    $ python -m mimetypes --extension --lenient text/xul
    .xul
 
-   $ # try to feed an unknown file extension (error goes to stderr)
+   $ # try to feed an unknown file extension
    $ python -m mimetypes filename.sh filename.nc filename.zzz filename.txt
    type: application/x-sh encoding: None
    type: application/x-netcdf encoding: None
    error: media type unknown for filename.zzz
    type: text/plain encoding: None
 
-   $ # try to feed an unknown MIME type (error goes to stderr)
+   $ # try to feed an unknown MIME type
    $ python -m mimetypes --extension audio/aac audio/opus audio/future audio/x-wav
    .aac
    .opus
