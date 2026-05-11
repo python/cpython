@@ -163,6 +163,8 @@ class _ColorlessTheme:
     def __getattr__(self, name):
         # _colorize's no_color themes are just all empty strings
         # by directly using empty strings the import is avoided
+        if name.startswith("_"):
+            raise AttributeError(name)
         return ""
 
 _colorless_theme = _ColorlessTheme()
