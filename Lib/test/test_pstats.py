@@ -1,6 +1,7 @@
 import unittest
 
 from test import support
+from test.support.import_helper import ensure_lazy_imports
 from io import StringIO
 from pstats import SortKey
 from enum import StrEnum, _test_simple_enum
@@ -9,6 +10,12 @@ import os
 import pstats
 import tempfile
 import cProfile
+
+class LazyImportTest(unittest.TestCase):
+    @support.cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("pstats", {"typing"})
+
 
 class AddCallersTestCase(unittest.TestCase):
     """Tests for pstats.add_callers helper."""

@@ -35,6 +35,7 @@ SET_FUNCTION_ATTRIBUTE = opmap['SET_FUNCTION_ATTRIBUTE']
 FUNCTION_ATTR_FLAGS = ('defaults', 'kwdefaults', 'annotations', 'closure', 'annotate')
 
 ENTER_EXECUTOR = opmap['ENTER_EXECUTOR']
+IMPORT_NAME = opmap['IMPORT_NAME']
 LOAD_GLOBAL = opmap['LOAD_GLOBAL']
 LOAD_SMALL_INT = opmap['LOAD_SMALL_INT']
 BINARY_OP = opmap['BINARY_OP']
@@ -48,10 +49,12 @@ CALL_INTRINSIC_2 = opmap['CALL_INTRINSIC_2']
 LOAD_COMMON_CONSTANT = opmap['LOAD_COMMON_CONSTANT']
 LOAD_SPECIAL = opmap['LOAD_SPECIAL']
 LOAD_FAST_LOAD_FAST = opmap['LOAD_FAST_LOAD_FAST']
+LOAD_FAST_BORROW_LOAD_FAST_BORROW = opmap['LOAD_FAST_BORROW_LOAD_FAST_BORROW']
 STORE_FAST_LOAD_FAST = opmap['STORE_FAST_LOAD_FAST']
 STORE_FAST_STORE_FAST = opmap['STORE_FAST_STORE_FAST']
 IS_OP = opmap['IS_OP']
 CONTAINS_OP = opmap['CONTAINS_OP']
+END_ASYNC_FOR = opmap['END_ASYNC_FOR']
 
 CACHE = opmap["CACHE"]
 
@@ -376,6 +379,14 @@ class Instruction(_Instruction):
                         entries (if any)
     """
 
+    @staticmethod
+    def make(
+        opname, arg, argval, argrepr, offset, start_offset, starts_line,
+        line_number, label=None, positions=None, cache_info=None
+    ):
+        return Instruction(opname, _all_opmap[opname], arg, argval, argrepr, offset,
+                           start_offset, starts_line, line_number, label, positions, cache_info)
+
     @property
     def oparg(self):
         """Alias for Instruction.arg."""
@@ -520,7 +531,6 @@ class Formatter:
         fields.append(instr.opname.ljust(_OPNAME_WIDTH))
         # Column: Opcode argument
         if instr.arg is not None:
-            arg = repr(instr.arg)
             # If opname is longer than _OPNAME_WIDTH, we allow it to overflow into
             # the space reserved for oparg. This results in fewer misaligned opargs
             # in the disassembly output.
@@ -591,14 +601,21 @@ class ArgResolver:
                     argval, argrepr = _get_name_info(arg//4, get_name)
                     if (arg & 1) and argrepr:
                         argrepr = f"{argrepr} + NULL|self"
+                elif deop == IMPORT_NAME:
+                    argval, argrepr = _get_name_info(arg//4, get_name)
+                    if (arg & 1) and argrepr:
+                        argrepr = f"{argrepr} + lazy"
+                    elif (arg & 2) and argrepr:
+                        argrepr = f"{argrepr} + eager"
                 else:
                     argval, argrepr = _get_name_info(arg, get_name)
             elif deop in hasjump or deop in hasexc:
                 argval = self.offset_from_jump_arg(op, arg, offset)
                 lbl = self.get_label_for_offset(argval)
                 assert lbl is not None
-                argrepr = f"to L{lbl}"
-            elif deop in (LOAD_FAST_LOAD_FAST, STORE_FAST_LOAD_FAST, STORE_FAST_STORE_FAST):
+                preposition = "from" if deop == END_ASYNC_FOR else "to"
+                argrepr = f"{preposition} L{lbl}"
+            elif deop in (LOAD_FAST_LOAD_FAST, LOAD_FAST_BORROW_LOAD_FAST_BORROW, STORE_FAST_LOAD_FAST, STORE_FAST_STORE_FAST):
                 arg1 = arg >> 4
                 arg2 = arg & 15
                 val1, argrepr1 = _get_name_info(arg1, self.varname_from_oparg)
@@ -626,6 +643,7 @@ class ArgResolver:
                 argrepr = _intrinsic_2_descs[arg]
             elif deop == LOAD_COMMON_CONSTANT:
                 obj = _common_constants[arg]
+                argval = obj
                 if isinstance(obj, type):
                     argrepr = obj.__name__
                 else:
@@ -675,10 +693,15 @@ def _get_const_value(op, arg, co_consts):
        Otherwise (if it is a LOAD_CONST and co_consts is not
        provided) returns the dis.UNKNOWN sentinel.
     """
-    assert op in hasconst or op == LOAD_SMALL_INT
+    assert op in hasconst or op == LOAD_SMALL_INT or op == LOAD_COMMON_CONSTANT
 
     if op == LOAD_SMALL_INT:
         return arg
+    if op == LOAD_COMMON_CONSTANT:
+        # Opargs 0-6 are callables; 7-11 are literal values.
+        if 7 <= arg <= 11:
+            return _common_constants[arg]
+        return UNKNOWN
     argval = UNKNOWN
     if co_consts is not None:
         argval = co_consts[arg]
@@ -737,7 +760,8 @@ def _parse_exception_table(code):
 
 def _is_backward_jump(op):
     return opname[op] in ('JUMP_BACKWARD',
-                          'JUMP_BACKWARD_NO_INTERRUPT')
+                          'JUMP_BACKWARD_NO_INTERRUPT',
+                          'END_ASYNC_FOR') # Not really a jump, but it has a "target"
 
 def _get_instructions_bytes(code, linestarts=None, line_offset=0, co_positions=None,
                             original_code=None, arg_resolver=None):
@@ -997,11 +1021,14 @@ def _find_imports(co):
         if op == IMPORT_NAME and i >= 2:
             from_op = opargs[i-1]
             level_op = opargs[i-2]
-            if (from_op[0] in hasconst and
-                (level_op[0] in hasconst or level_op[0] == LOAD_SMALL_INT)):
+            if ((from_op[0] in hasconst or from_op[0] == LOAD_COMMON_CONSTANT) and
+                (level_op[0] in hasconst or level_op[0] == LOAD_SMALL_INT or
+                 level_op[0] == LOAD_COMMON_CONSTANT)):
                 level = _get_const_value(level_op[0], level_op[1], consts)
                 fromlist = _get_const_value(from_op[0], from_op[1], consts)
-                yield (names[oparg], level, fromlist)
+                # IMPORT_NAME encodes lazy/eager flags in bits 0-1,
+                # name index in bits 2+.
+                yield (names[oparg >> 2], level, fromlist)
 
 def _find_store_names(co):
     """Find names of variables which are written in the code

@@ -149,13 +149,13 @@ PyDoc_STRVAR(_io_StringIO_truncate__doc__,
     {"truncate", _PyCFunction_CAST(_io_StringIO_truncate), METH_FASTCALL, _io_StringIO_truncate__doc__},
 
 static PyObject *
-_io_StringIO_truncate_impl(stringio *self, Py_ssize_t size);
+_io_StringIO_truncate_impl(stringio *self, PyObject *pos);
 
 static PyObject *
 _io_StringIO_truncate(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_ssize_t size = ((stringio *)self)->pos;
+    PyObject *pos = Py_None;
 
     if (!_PyArg_CheckPositional("truncate", nargs, 0, 1)) {
         goto exit;
@@ -163,12 +163,10 @@ _io_StringIO_truncate(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    if (!_Py_convert_optional_to_ssize_t(args[0], &size)) {
-        goto exit;
-    }
+    pos = args[0];
 skip_optional:
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _io_StringIO_truncate_impl((stringio *)self, size);
+    return_value = _io_StringIO_truncate_impl((stringio *)self, pos);
     Py_END_CRITICAL_SECTION();
 
 exit:
@@ -247,7 +245,7 @@ static PyObject *
 _io_StringIO_write_impl(stringio *self, PyObject *obj);
 
 static PyObject *
-_io_StringIO_write(stringio *self, PyObject *obj)
+_io_StringIO_write(PyObject *self, PyObject *obj)
 {
     PyObject *return_value = NULL;
 
@@ -310,9 +308,11 @@ _io_StringIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(initial_value), &_Py_ID(newline), },
     };
     #undef NUM_KEYWORDS
@@ -465,7 +465,7 @@ static PyObject *
 _io_StringIO___setstate___impl(stringio *self, PyObject *state);
 
 static PyObject *
-_io_StringIO___setstate__(stringio *self, PyObject *state)
+_io_StringIO___setstate__(PyObject *self, PyObject *state)
 {
     PyObject *return_value = NULL;
 
@@ -550,4 +550,4 @@ _io_StringIO_newlines_get(PyObject *self, void *Py_UNUSED(context))
 
     return return_value;
 }
-/*[clinic end generated code: output=7796e223e778a214 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bccc25ef8e6ce9ef input=a9049054013a1b77]*/

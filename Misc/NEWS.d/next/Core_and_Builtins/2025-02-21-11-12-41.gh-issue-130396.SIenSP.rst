@@ -1,3 +1,0 @@
-Use actual stack limits (from  :manpage:`pthread_getattr_np(3)`) for linux, and other
-systems with ``_GNU_SOURCE`` defined, when determining limits for C stack
-protection.

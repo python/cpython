@@ -1,8 +1,10 @@
 #include "Python.h"
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
-#include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_typeobject.h"    // _PyType_GetModuleState()
+#include "pycore_unicodeobject.h" // _PyUnicode_InternMortal()
 
 
 #include "clinic/_operator.c.h"
@@ -1192,7 +1194,7 @@ itemgetter_reduce(PyObject *op, PyObject *Py_UNUSED(dummy))
     itemgetterobject *ig = itemgetterobject_CAST(op);
     if (ig->nitems == 1)
         return Py_BuildValue("O(O)", Py_TYPE(ig), ig->item);
-    return PyTuple_Pack(2, Py_TYPE(ig), ig->item);
+    return _PyTuple_FromPair((PyObject *)Py_TYPE(ig), ig->item);
 }
 
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling");
@@ -1979,6 +1981,7 @@ operator_exec(PyObject *module)
 
 
 static struct PyModuleDef_Slot operator_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, operator_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

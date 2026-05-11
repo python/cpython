@@ -1,0 +1,21 @@
+#life_events_graph {
+  --svg-fgcolor: currentcolor;
+  --svg-bgcolor: transparent;
+}
+#life_events_graph a {
+  color: inherit;
+}
+#life_events_graph [stroke="black"] {
+  stroke: var(--svg-fgcolor);
+}
+#life_events_graph text,
+#life_events_graph [fill="black"] {
+  fill: var(--svg-fgcolor);
+}
+#life_events_graph [fill="white"] {
+  fill: var(--svg-bgcolor);
+}
+#life_events_graph [fill="none"] {
+  /* On links, setting fill will make the entire shape clickable */
+  fill: var(--svg-bgcolor);
+}

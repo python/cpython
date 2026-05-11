@@ -1,1 +1,0 @@
-Add optional ``l2_cid`` and ``l2_bdaddr_type`` fields to :mod:`socket` ``BTPROTO_L2CAP`` sockaddr tuple.
