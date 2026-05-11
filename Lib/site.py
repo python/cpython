@@ -164,7 +164,7 @@ def _init_pathinfo():
 # addsitedir() calls which use the default defer_processing_start_files=False
 # are self-contained: they create a per-call _StartupState, populate it from
 # the site directory's .pth/.start files, run process() on it, and then throw
-# the state it away.  This is implicit batching and in that case the
+# the state away.  This is implicit batching and in that case the
 # _startup_state global variable stays None.
 #
 # main() needs different semantics: it accumulates state across multiple
@@ -369,10 +369,10 @@ class _StartupState:
                     )
 
     def _exec_imports(self):
-        # For each `import` line we've seen in a .pth file, exec() it in order
-        # — unless the .pth has a matching .start file in this same batch, in
-        # which case PEP 829 says the import lines are suppressed in favor of
-        # the .start's entry points.
+        # For each `import` line we've seen in a .pth file, exec() it in
+        # order, unless the .pth has a matching .start file in this same
+        # batch.  In that case, PEP 829 says the import lines are
+        # suppressed in favor of the .start's entry points.
         for filename, imports in self._importexecs.items():
             # Given "/path/to/foo.pth", check whether "/path/to/foo.start" was
             # registered in this same batch.
@@ -446,7 +446,7 @@ def process_startup_files():
     *before* state.process() runs.  This way, if an exec'd import line
     or .start entry point itself calls site.addsitedir(), that call
     creates its own per-call _StartupState rather than mutating the dicts
-    being iterated here — see gh-149504.
+    being iterated here.  See gh-149504.
     """
     global _startup_state
     if _startup_state is None:
@@ -508,7 +508,7 @@ def addsitedir(sitedir, known_paths=None, *, defer_processing_start_files=False)
         # 1. A batch is already active (_startup_state is set, e.g.  because
         #    main() previously called us with
         #    defer_processing_start_files=True).  Participate in this batch by
-        #    sharing the same.  Don't flush the state since the batch's
+        #    sharing the same state.  Don't flush the state since the batch's
         #    eventual process_startup_files() will do that.
         #
         # 2. There is no active batch but the caller passed

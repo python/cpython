@@ -1606,9 +1606,9 @@ mod:increment
 
     # gh-149504
     def test_reentrant_addsitedir_pth(self):
-        # An import line in a .pth file that calls site.addsitedir() must
-        # not crash or re-execute outer entries while the outer
-        # _exec_imports() is iterating _pending_importexecs.
+        # An import line in a .pth file that calls site.addsitedir()
+        # must not crash or re-execute outer entries while the outer
+        # call is still processing its pending startup state.
         overlay = self.enterContext(os_helper.temp_dir())
         overlay_pth = os.path.join(overlay, 'overlay.pth')
         pkgdir = self.enterContext(os_helper.temp_dir())
@@ -1622,9 +1622,8 @@ mod:increment
     # gh-149504
     def test_reentrant_addsitedir_start(self):
         # As above, but the re-entry happens from a .start entry point
-        # instead of a .pth import line.  _execute_start_entrypoints()
-        # iterates _pending_entrypoints with the same pattern and is
-        # vulnerable to the same dictionary-changed-during-iteration bug.
+        # instead of a .pth import line.  The entry point execution
+        # phase is vulnerable to the same class of bug.
         overlay = self.enterContext(os_helper.temp_dir())
         overlay_pth = os.path.join(overlay, 'overlay.pth')
         pkgdir = self.enterContext(os_helper.temp_dir())

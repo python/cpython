@@ -1,2 +1,0 @@
-Fix reentrant calls to ``site.addsitedir()`` by using an accumulating state
-instance rather than module global dictionaries.
