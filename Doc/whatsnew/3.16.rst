@@ -106,10 +106,46 @@ module_name
 Removed
 =======
 
-module_name
------------
+annotationlib
+-------------
 
-* TODO
+* The :meth:`!annotationlib.ForwardRef._evaluate` method
+  which has been deprecated since Python 3.14.
+  Use :meth:`annotationlib.ForwardRef.evaluate`
+  or :func:`typing.evaluate_forward_ref` instead.
+
+functools
+---------
+
+* Calling the Python implementation of :func:`functools.reduce` with *function*
+  or *sequence* as keyword arguments has been deprecated since Python 3.14.
+
+logging
+-------
+
+* Support for custom logging handlers with the *strm* argument is deprecated
+  and scheduled for removal in Python 3.16. Define handlers with the *stream*
+  argument instead.
+
+symtable
+--------
+
+* The :meth:`!symtable.Class.get_methods` method
+  which has been deprecated since Python 3.14.
+
+sysconfig
+---------
+
+* The :func:`!sysconfig.expand_makefile_vars` function
+  which has been deprecated since Python 3.14.
+  Use the ``vars`` argument of :func:`sysconfig.get_paths` instead.
+
+tarfile
+-------
+
+* The undocumented and unused :attr:`!tarfile.TarFile.tarfile` attribute
+  has been deprecated since Python 3.13.
+
 .. Add removals above alphabetically, not here at the end.
 
 
@@ -156,4 +192,3 @@ Deprecated C APIs
 
 Removed C APIs
 --------------
-

@@ -598,7 +598,8 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_ITER_NEXT_INLINE", uops)
+        self.assertIn("_FOR_ITER_TIER_TWO", uops)
+        self.assertNotIn("_ITER_NEXT_INLINE", uops)
 
 
 @requires_specialization
@@ -6136,6 +6137,20 @@ class TestUopsOptimization(unittest.TestCase):
             for i in 0, 1, 0, 1:
                 C(0) if i else str(0)
         """))
+
+    def test_load_special_type_guard_deopt(self):
+        script_helper.assert_python_ok("-s", "-c", textwrap.dedent(f"""
+            def f1():
+                class Context:
+                    def __enter__(self): ...
+                    def __exit__(self, e, v, t): ...
+
+                with Context():
+                    pass
+
+            for _ in range({TIER2_THRESHOLD + 5}):
+                f1()
+        """), PYTHON_JIT="1")
 
 def global_identity(x):
     return x
