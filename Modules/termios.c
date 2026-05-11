@@ -500,19 +500,24 @@ termios_tcsetwinsize_impl(PyObject *module, int fd, PyObject *winsz)
     PyObject *tmp_item;
     long winsz_0, winsz_1;
     tmp_item = PySequence_GetItem(winsz, 0);
+    if (tmp_item == NULL) {
+        return NULL;
+    }
     winsz_0 = PyLong_AsLong(tmp_item);
+    Py_DECREF(tmp_item);
     if (winsz_0 == -1 && PyErr_Occurred()) {
-        Py_XDECREF(tmp_item);
         return NULL;
     }
-    Py_XDECREF(tmp_item);
     tmp_item = PySequence_GetItem(winsz, 1);
-    winsz_1 = PyLong_AsLong(tmp_item);
-    if (winsz_1 == -1 && PyErr_Occurred()) {
-        Py_XDECREF(tmp_item);
+    if (tmp_item == NULL) {
         return NULL;
     }
-    Py_XDECREF(tmp_item);
+    winsz_1 = PyLong_AsLong(tmp_item);
+    Py_DECREF(tmp_item);
+    if (winsz_1 == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+
 
     termiosmodulestate *state = PyModule_GetState(module);
 

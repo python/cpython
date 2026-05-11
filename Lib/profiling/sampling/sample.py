@@ -6,7 +6,7 @@ import sys
 import sysconfig
 import time
 from collections import deque
-from _colorize import ANSIColors
+lazy from _colorize import ANSIColors
 
 from .pstats_collector import PstatsCollector
 from .stack_collector import CollapsedStackCollector, FlamegraphCollector
@@ -42,6 +42,7 @@ except ImportError:
     LiveStatsCollector = None
 
 _FREE_THREADED_BUILD = sysconfig.get_config_var("Py_GIL_DISABLED") is not None
+
 # Minimum number of samples required before showing the TUI
 # If fewer samples are collected, we skip the TUI and just print a message
 MIN_SAMPLES_FOR_TUI = 200
@@ -57,6 +58,10 @@ class SampleProfiler:
         try:
             self.unwinder = self._new_unwinder(native, gc, opcodes, skip_non_matching_threads)
         except RuntimeError as err:
+            if os.name == "nt" and sys.executable.endswith("python.exe"):
+                raise SystemExit(
+                    "Running profiling.sampling from virtualenv on Windows platform is not supported"
+                ) from err
             raise SystemExit(err) from err
         # Track sample intervals and total sample count
         self.sample_intervals = deque(maxlen=100)
@@ -64,19 +69,35 @@ class SampleProfiler:
         self.realtime_stats = False
 
     def _new_unwinder(self, native, gc, opcodes, skip_non_matching_threads):
-        if _FREE_THREADED_BUILD:
-            unwinder = _remote_debugging.RemoteUnwinder(
-                self.pid, all_threads=self.all_threads, mode=self.mode, native=native, gc=gc,
-                opcodes=opcodes, skip_non_matching_threads=skip_non_matching_threads,
-                cache_frames=True, stats=self.collect_stats
-            )
+        kwargs = {}
+        if _FREE_THREADED_BUILD or self.all_threads:
+            kwargs['all_threads'] = self.all_threads
         else:
-            unwinder = _remote_debugging.RemoteUnwinder(
-                self.pid, only_active_thread=bool(self.all_threads), mode=self.mode, native=native, gc=gc,
-                opcodes=opcodes, skip_non_matching_threads=skip_non_matching_threads,
-                cache_frames=True, stats=self.collect_stats
-            )
-        return unwinder
+            kwargs['only_active_thread'] = bool(self.all_threads)
+
+        return _remote_debugging.RemoteUnwinder(
+            self.pid,
+            mode=self.mode,
+            native=native,
+            gc=gc,
+            opcodes=opcodes,
+            skip_non_matching_threads=skip_non_matching_threads,
+            cache_frames=True,
+            stats=self.collect_stats,
+            **kwargs
+        )
+
+    def _get_stack_trace(self, async_aware=None):
+        with _pause_threads(self.unwinder, self.blocking):
+            if async_aware == "all":
+                return self.unwinder.get_all_awaited_by()
+            if async_aware == "running":
+                return self.unwinder.get_async_stack_trace()
+            return self.unwinder.get_stack_trace()
+
+    def dump_stack(self, *, async_aware=None):
+        """Return a single stack snapshot from the target process."""
+        return self._get_stack_trace(async_aware=async_aware)
 
     def sample(self, collector, duration_sec=None, *, async_aware=False):
         sample_interval_sec = self.sample_interval_usec / 1_000_000
@@ -95,16 +116,16 @@ class SampleProfiler:
                     break
 
                 current_time = time.perf_counter()
-                if next_time < current_time:
+                if next_time > current_time:
+                    sleep_time = (next_time - current_time) * 0.9
+                    if sleep_time > 0.0001:
+                        time.sleep(sleep_time)
+                elif next_time < current_time:
                     try:
-                        with _pause_threads(self.unwinder, self.blocking):
-                            if async_aware == "all":
-                                stack_frames = self.unwinder.get_all_awaited_by()
-                            elif async_aware == "running":
-                                stack_frames = self.unwinder.get_async_stack_trace()
-                            else:
-                                stack_frames = self.unwinder.get_stack_trace()
-                            collector.collect(stack_frames)
+                        stack_frames = self._get_stack_trace(
+                            async_aware=async_aware
+                        )
+                        collector.collect(stack_frames)
                     except ProcessLookupError as e:
                         running_time_sec = current_time - start_time
                         break
@@ -155,7 +176,8 @@ class SampleProfiler:
         # Don't print stats for live mode (curses is handling display)
         is_live_mode = LiveStatsCollector is not None and isinstance(collector, LiveStatsCollector)
         if not is_live_mode:
-            print(f"Captured {num_samples:n} samples in {fmt(running_time_sec, 2)} seconds")
+            s = "" if num_samples == 1 else "s"
+            print(f"Captured {num_samples:n} sample{s} in {fmt(running_time_sec, 2)} seconds")
             print(f"Sample rate: {fmt(sample_rate, 2)} samples/sec")
             print(f"Error rate: {fmt(error_rate, 2)}")
 
@@ -424,6 +446,37 @@ def sample(
     profiler.sample(collector, duration_sec, async_aware=async_aware)
 
     return collector
+
+
+def dump_stack(
+    pid,
+    *,
+    all_threads=False,
+    mode=PROFILING_MODE_ALL,
+    async_aware=None,
+    native=False,
+    gc=True,
+    opcodes=False,
+    blocking=False,
+):
+    """Return a single stack snapshot from a process."""
+    if mode == PROFILING_MODE_ALL:
+        skip_non_matching_threads = False
+    else:
+        skip_non_matching_threads = True
+
+    profiler = SampleProfiler(
+        pid,
+        sample_interval_usec=1,
+        all_threads=all_threads,
+        mode=mode,
+        native=native,
+        gc=gc,
+        opcodes=opcodes,
+        skip_non_matching_threads=skip_non_matching_threads,
+        blocking=blocking,
+    )
+    return profiler.dump_stack(async_aware=async_aware)
 
 
 def sample_live(

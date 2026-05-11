@@ -519,20 +519,20 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(unicodedata_UCD_isxidstart__doc__,
-"isxidstart($self, chr, /)\n"
+PyDoc_STRVAR(unicodedata_isxidstart__doc__,
+"isxidstart($module, chr, /)\n"
 "--\n"
 "\n"
 "Return True if the character has the XID_Start property, else False.");
 
-#define UNICODEDATA_UCD_ISXIDSTART_METHODDEF    \
-    {"isxidstart", (PyCFunction)unicodedata_UCD_isxidstart, METH_O, unicodedata_UCD_isxidstart__doc__},
+#define UNICODEDATA_ISXIDSTART_METHODDEF    \
+    {"isxidstart", (PyCFunction)unicodedata_isxidstart, METH_O, unicodedata_isxidstart__doc__},
 
 static PyObject *
-unicodedata_UCD_isxidstart_impl(PyObject *self, int chr);
+unicodedata_isxidstart_impl(PyObject *module, int chr);
 
 static PyObject *
-unicodedata_UCD_isxidstart(PyObject *self, PyObject *arg)
+unicodedata_isxidstart(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int chr;
@@ -549,26 +549,26 @@ unicodedata_UCD_isxidstart(PyObject *self, PyObject *arg)
         goto exit;
     }
     chr = PyUnicode_READ_CHAR(arg, 0);
-    return_value = unicodedata_UCD_isxidstart_impl(self, chr);
+    return_value = unicodedata_isxidstart_impl(module, chr);
 
 exit:
     return return_value;
 }
 
-PyDoc_STRVAR(unicodedata_UCD_isxidcontinue__doc__,
-"isxidcontinue($self, chr, /)\n"
+PyDoc_STRVAR(unicodedata_isxidcontinue__doc__,
+"isxidcontinue($module, chr, /)\n"
 "--\n"
 "\n"
 "Return True if the character has the XID_Continue property, else False.");
 
-#define UNICODEDATA_UCD_ISXIDCONTINUE_METHODDEF    \
-    {"isxidcontinue", (PyCFunction)unicodedata_UCD_isxidcontinue, METH_O, unicodedata_UCD_isxidcontinue__doc__},
+#define UNICODEDATA_ISXIDCONTINUE_METHODDEF    \
+    {"isxidcontinue", (PyCFunction)unicodedata_isxidcontinue, METH_O, unicodedata_isxidcontinue__doc__},
 
 static PyObject *
-unicodedata_UCD_isxidcontinue_impl(PyObject *self, int chr);
+unicodedata_isxidcontinue_impl(PyObject *module, int chr);
 
 static PyObject *
-unicodedata_UCD_isxidcontinue(PyObject *self, PyObject *arg)
+unicodedata_isxidcontinue(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int chr;
@@ -585,7 +585,7 @@ unicodedata_UCD_isxidcontinue(PyObject *self, PyObject *arg)
         goto exit;
     }
     chr = PyUnicode_READ_CHAR(arg, 0);
-    return_value = unicodedata_UCD_isxidcontinue_impl(self, chr);
+    return_value = unicodedata_isxidcontinue_impl(module, chr);
 
 exit:
     return return_value;
@@ -686,6 +686,42 @@ unicodedata_iter_graphemes(PyObject *module, PyObject *const *args, Py_ssize_t n
     }
 skip_optional:
     return_value = unicodedata_iter_graphemes_impl(module, unistr, start, end);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(unicodedata_block__doc__,
+"block($module, chr, /)\n"
+"--\n"
+"\n"
+"Return block assigned to the character chr.");
+
+#define UNICODEDATA_BLOCK_METHODDEF    \
+    {"block", (PyCFunction)unicodedata_block, METH_O, unicodedata_block__doc__},
+
+static PyObject *
+unicodedata_block_impl(PyObject *module, int chr);
+
+static PyObject *
+unicodedata_block(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int chr;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("block", "argument", "a unicode character", arg);
+        goto exit;
+    }
+    if (PyUnicode_GET_LENGTH(arg) != 1) {
+        PyErr_Format(PyExc_TypeError,
+            "block(): argument must be a unicode character, "
+            "not a string of length %zd",
+            PyUnicode_GET_LENGTH(arg));
+        goto exit;
+    }
+    chr = PyUnicode_READ_CHAR(arg, 0);
+    return_value = unicodedata_block_impl(module, chr);
 
 exit:
     return return_value;
@@ -798,4 +834,4 @@ unicodedata_extended_pictographic(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6991246310e3f2aa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=482a87df218f07c1 input=a9049054013a1b77]*/

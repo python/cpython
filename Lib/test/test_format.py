@@ -57,10 +57,6 @@ def testcommon(formatstr, args, output=None, limit=None, overflowok=False):
     else:
         b_format = formatstr
     ba_format = bytearray(b_format)
-    b_args = []
-    if not isinstance(args, tuple):
-        args = (args, )
-    b_args = tuple(args)
     if output is None:
         b_output = ba_output = None
     else:
@@ -69,8 +65,8 @@ def testcommon(formatstr, args, output=None, limit=None, overflowok=False):
         else:
             b_output = output
         ba_output = bytearray(b_output)
-    testformat(b_format, b_args, b_output, limit, overflowok)
-    testformat(ba_format, b_args, ba_output, limit, overflowok)
+    testformat(b_format, args, b_output, limit, overflowok)
+    testformat(ba_format, args, ba_output, limit, overflowok)
 
 def test_exc(formatstr, args, exception, excmsg):
     try:
@@ -82,6 +78,7 @@ def test_exc(formatstr, args, exception, excmsg):
         else:
             if verbose: print('no')
             print('Unexpected ', exception, ':', repr(str(exc)))
+            raise
     except:
         if verbose: print('no')
         print('Unexpected exception')
@@ -92,6 +89,8 @@ def test_exc(formatstr, args, exception, excmsg):
 def test_exc_common(formatstr, args, exception, excmsg):
     # test str and bytes
     test_exc(formatstr, args, exception, excmsg)
+    if isinstance(args, dict):
+        args = {k.encode('ascii'): v for k, v in args.items()}
     test_exc(formatstr.encode('ascii'), args, exception, excmsg)
 
 class FormatTest(unittest.TestCase):
@@ -272,45 +271,154 @@ class FormatTest(unittest.TestCase):
 
         if verbose:
             print('Testing exceptions')
-        test_exc_common('%', (), ValueError, "incomplete format")
-        test_exc_common('% %s', 1, ValueError,
-                        "unsupported format character '%' (0x25) at index 2")
+        test_exc_common('abc %', (), ValueError, "stray % at position 4")
+        test_exc_common('abc % %s', 1, ValueError,
+                        "stray % at position 4 or unexpected format character '%' at position 6")
+        test_exc_common('abc %z', 1, ValueError,
+                        "unsupported format %z at position 4")
+        test_exc_common("abc %Id", 1, ValueError,
+                        "unsupported format %I at position 4")
+        test_exc_common("abc %'d", 1, ValueError,
+                        "stray % at position 4 or unexpected format character \"'\" at position 5")
+        test_exc_common("abc %1 d", 1, ValueError,
+                        "stray % at position 4 or unexpected format character ' ' at position 6")
+        test_exc_common('abc % (x)r', {}, ValueError,
+                        "stray % at position 4 or unexpected format character '(' at position 6")
+        test_exc_common('abc %((x)r', {}, ValueError,
+                        "stray % or incomplete format key at position 4")
+        test_exc_common('%r %r', 1, TypeError,
+                        "not enough arguments for format string (got 1)")
+        test_exc_common('%r %r', (1,), TypeError,
+                        "not enough arguments for format string (got 1)")
+        test_exc_common('%r', (), TypeError,
+                        "not enough arguments for format string (got 0)")
+        test_exc_common('abc %' + '9'*50 + 'r', 1, ValueError,
+                        "width too big at position 4")
+        test_exc_common('abc %.' + '9'*50 + 'r', 1, ValueError,
+                        "precision too big at position 4")
+        test_exc_common('%r %*r', 1, TypeError,
+                        "not enough arguments for format string (got 1)")
+        test_exc_common('%r %*r', (1,), TypeError,
+                        "not enough arguments for format string (got 1)")
+        test_exc_common('%*r', (1,), TypeError,
+                        "not enough arguments for format string (got 1)")
+        test_exc_common('%*r', (), TypeError,
+                        "not enough arguments for format string (got 0)")
+        test_exc_common('%r %.*r', 1, TypeError,
+                        "not enough arguments for format string (got 1)")
+        test_exc_common('%r %.*r', (1,), TypeError,
+                        "not enough arguments for format string (got 1)")
+        test_exc_common('%.*r', (1,), TypeError,
+                        "not enough arguments for format string (got 1)")
+        test_exc_common('%.*r', (), TypeError,
+                        "not enough arguments for format string (got 0)")
+        test_exc_common('%(x)r', 1, TypeError,
+                        "format requires a mapping, not int")
+        test_exc_common('%*r', 1, TypeError,
+                        "not enough arguments for format string (got 1)")
+        test_exc_common('%*r', 3.14, TypeError,
+                        "not enough arguments for format string (got 1)")
+        test_exc_common('%*r', (3.14, 1), TypeError,
+                        "format argument 1: * requires int, not float")
+        test_exc_common('%.*r', 1, TypeError,
+                        "not enough arguments for format string (got 1)")
+        test_exc_common('%.*r', 3.14, TypeError,
+                        "not enough arguments for format string (got 1)")
+        test_exc_common('%.*r', (3.14, 1), TypeError,
+                        "format argument 1: * requires int, not float")
+        test_exc_common('%*r', (2**1000, 1), OverflowError,
+                        "format argument 1: too big for width")
+        test_exc_common('%*r', (-2**1000, 1), OverflowError,
+                        "format argument 1: too big for width")
+        test_exc_common('%.*r', (2**1000, 1), OverflowError,
+                        "format argument 1: too big for precision")
+        test_exc_common('%.*r', (-2**1000, 1), OverflowError,
+                        "format argument 1: too big for precision")
         test_exc_common('%d', '1', TypeError,
-                        "%d format: a real number is required, not str")
+                        "format argument: %d requires a real number, not str")
         test_exc_common('%d', b'1', TypeError,
-                        "%d format: a real number is required, not bytes")
+                        "format argument: %d requires a real number, not bytes")
+        test_exc_common('%d', ('1',), TypeError,
+                        "format argument 1: %d requires a real number, not str")
         test_exc_common('%x', '1', TypeError,
-                        "%x format: an integer is required, not str")
+                        "format argument: %x requires an integer, not str")
         test_exc_common('%x', 3.14, TypeError,
-                        "%x format: an integer is required, not float")
+                        "format argument: %x requires an integer, not float")
+        test_exc_common('%x', ('1',), TypeError,
+                        "format argument 1: %x requires an integer, not str")
         test_exc_common('%i', '1', TypeError,
-                        "%i format: a real number is required, not str")
+                        "format argument: %i requires a real number, not str")
         test_exc_common('%i', b'1', TypeError,
-                        "%i format: a real number is required, not bytes")
+                        "format argument: %i requires a real number, not bytes")
+        test_exc_common('%g', '1', TypeError,
+                        "format argument: %g requires a real number, not str")
+        test_exc_common('%g', ('1',), TypeError,
+                        "format argument 1: %g requires a real number, not str")
 
     def test_str_format(self):
         testformat("%r", "\u0378", "'\\u0378'")  # non printable
         testformat("%a", "\u0378", "'\\u0378'")  # non printable
         testformat("%r", "\u0374", "'\u0374'")   # printable
         testformat("%a", "\u0374", "'\\u0374'")  # printable
+        testformat('%(x)r', {'x': 1}, '1')
 
         # Test exception for unknown format characters, etc.
         if verbose:
             print('Testing exceptions')
         test_exc('abc %b', 1, ValueError,
-                 "unsupported format character 'b' (0x62) at index 5")
-        #test_exc(unicode('abc %\u3000','raw-unicode-escape'), 1, ValueError,
-        #         "unsupported format character '?' (0x3000) at index 5")
-        test_exc('%g', '1', TypeError, "must be real number, not str")
+                 "unsupported format %b at position 4")
+        test_exc("abc %\nd", 1, ValueError,
+                 "stray % at position 4 or unexpected format character U+000A at position 5")
+        test_exc("abc %\x1fd", 1, ValueError,
+                 "stray % at position 4 or unexpected format character U+001F at position 5")
+        test_exc("abc %\x7fd", 1, ValueError,
+                 "stray % at position 4 or unexpected format character U+007F at position 5")
+        test_exc("abc %\x80d", 1, ValueError,
+                 "stray % at position 4 or unexpected format character U+0080 at position 5")
+        test_exc('abc %äd', 1, ValueError,
+                 "stray % at position 4 or unexpected format character 'ä' (U+00E4) at position 5")
+        test_exc('abc %€d', 1, ValueError,
+                 "stray % at position 4 or unexpected format character '€' (U+20AC) at position 5")
         test_exc('no format', '1', TypeError,
-                 "not all arguments converted during string formatting")
-        test_exc('%c', -1, OverflowError, "%c arg not in range(0x110000)")
+                 "not all arguments converted during string formatting (required 0, got 1)")
+        test_exc('%r', (1, 2), TypeError,
+                 "not all arguments converted during string formatting (required 1, got 2)")
+        test_exc('%(x)r %r', {'x': 1}, ValueError,
+                 "format requires a parenthesised mapping key at position 6")
+        test_exc('%(x)*r', {'x': 1}, ValueError,
+                 "* cannot be used with a parenthesised mapping key at position 0")
+        test_exc('%(x).*r', {'x': 1}, ValueError,
+                 "* cannot be used with a parenthesised mapping key at position 0")
+        test_exc('%(x)d', {'x': '1'}, TypeError,
+                 "format argument 'x': %d requires a real number, not str")
+        test_exc('%(x)x', {'x': '1'}, TypeError,
+                 "format argument 'x': %x requires an integer, not str")
+        test_exc('%(x)g', {'x': '1'}, TypeError,
+                 "format argument 'x': %g requires a real number, not str")
+        test_exc('%c', -1, OverflowError,
+                 "format argument: %c argument not in range(0x110000)")
+        test_exc('%c', (-1,), OverflowError,
+                 "format argument 1: %c argument not in range(0x110000)")
+        test_exc('%(x)c', {'x': -1}, OverflowError,
+                 "format argument 'x': %c argument not in range(0x110000)")
         test_exc('%c', sys.maxunicode+1, OverflowError,
-                 "%c arg not in range(0x110000)")
-        #test_exc('%c', 2**128, OverflowError, "%c arg not in range(0x110000)")
-        test_exc('%c', 3.14, TypeError, "%c requires an int or a unicode character, not float")
-        test_exc('%c', 'ab', TypeError, "%c requires an int or a unicode character, not a string of length 2")
-        test_exc('%c', b'x', TypeError, "%c requires an int or a unicode character, not bytes")
+                 "format argument: %c argument not in range(0x110000)")
+        test_exc('%c', 2**128, OverflowError,
+                 "format argument: %c argument not in range(0x110000)")
+        test_exc('%c', 3.14, TypeError,
+                 "format argument: %c requires an integer or a unicode character, not float")
+        test_exc('%c', (3.14,), TypeError,
+                 "format argument 1: %c requires an integer or a unicode character, not float")
+        test_exc('%(x)c', {'x': 3.14}, TypeError,
+                 "format argument 'x': %c requires an integer or a unicode character, not float")
+        test_exc('%c', 'ab', TypeError,
+                 "format argument: %c requires an integer or a unicode character, not a string of length 2")
+        test_exc('%c', ('ab',), TypeError,
+                 "format argument 1: %c requires an integer or a unicode character, not a string of length 2")
+        test_exc('%(x)c', {'x': 'ab'}, TypeError,
+                 "format argument 'x': %c requires an integer or a unicode character, not a string of length 2")
+        test_exc('%c', b'x', TypeError,
+                 "format argument: %c requires an integer or a unicode character, not bytes")
 
         if maxsize == 2**31-1:
             # crashes 2.2.1 and earlier:
@@ -355,36 +463,83 @@ class FormatTest(unittest.TestCase):
         testcommon(b"%r", b"ghi", b"b'ghi'")
         testcommon(b"%r", "jkl", b"'jkl'")
         testcommon(b"%r", "\u0544", b"'\\u0544'")
+        testcommon(b'%(x)r', {b'x': 1}, b'1')
 
         # Test exception for unknown format characters, etc.
         if verbose:
             print('Testing exceptions')
-        test_exc(b'%g', '1', TypeError, "float argument required, not str")
-        test_exc(b'%g', b'1', TypeError, "float argument required, not bytes")
+        test_exc(b"abc %\nd", 1, ValueError,
+                 "stray % at position 4 or unexpected format character with code 0x0a at position 5")
+        test_exc(b"abc %'d", 1, ValueError,
+                 "stray % at position 4 or unexpected format character \"'\" at position 5")
+        test_exc(b"abc %\x1fd", 1, ValueError,
+                 "stray % at position 4 or unexpected format character with code 0x1f at position 5")
+        test_exc(b"abc %\x7fd", 1, ValueError,
+                 "stray % at position 4 or unexpected format character with code 0x7f at position 5")
+        test_exc(b"abc %\x80d", 1, ValueError,
+                 "stray % at position 4 or unexpected format character with code 0x80 at position 5")
         test_exc(b'no format', 7, TypeError,
-                 "not all arguments converted during bytes formatting")
+                 "not all arguments converted during bytes formatting (required 0, got 1)")
         test_exc(b'no format', b'1', TypeError,
-                 "not all arguments converted during bytes formatting")
+                 "not all arguments converted during bytes formatting (required 0, got 1)")
         test_exc(b'no format', bytearray(b'1'), TypeError,
-                 "not all arguments converted during bytes formatting")
+                 "not all arguments converted during bytes formatting (required 0, got 1)")
+        test_exc(b'%r', (1, 2), TypeError,
+                 "not all arguments converted during bytes formatting (required 1, got 2)")
+        test_exc(b'%(x)r %r', {b'x': 1}, ValueError,
+                 "format requires a parenthesised mapping key at position 6")
+        test_exc(b'%(x)*r', {b'x': 1}, ValueError,
+                 "* cannot be used with a parenthesised mapping key at position 0")
+        test_exc(b'%(x).*r', {b'x': 1}, ValueError,
+                 "* cannot be used with a parenthesised mapping key at position 0")
+        test_exc(b'%(x)d', {b'x': '1'}, TypeError,
+                 "format argument b'x': %d requires a real number, not str")
+        test_exc(b'%(x)x', {b'x': '1'}, TypeError,
+                 "format argument b'x': %x requires an integer, not str")
+        test_exc(b'%(x)g', {b'x': '1'}, TypeError,
+                 "format argument b'x': %g requires a real number, not str")
         test_exc(b"%c", -1, OverflowError,
-                "%c arg not in range(256)")
+                "format argument: %c argument not in range(256)")
+        test_exc(b"%c", (-1,), OverflowError,
+                "format argument 1: %c argument not in range(256)")
+        test_exc(b"%(x)c", {b'x': -1}, OverflowError,
+                "format argument b'x': %c argument not in range(256)")
         test_exc(b"%c", 256, OverflowError,
-                "%c arg not in range(256)")
+                "format argument: %c argument not in range(256)")
         test_exc(b"%c", 2**128, OverflowError,
-                "%c arg not in range(256)")
+                "format argument: %c argument not in range(256)")
         test_exc(b"%c", b"Za", TypeError,
-                "%c requires an integer in range(256) or a single byte, not a bytes object of length 2")
+                "format argument: %c requires an integer in range(256) or a single byte, not a bytes object of length 2")
+        test_exc(b"%c", (b"Za",), TypeError,
+                "format argument 1: %c requires an integer in range(256) or a single byte, not a bytes object of length 2")
+        test_exc(b"%(x)c", {b'x': b"Za"}, TypeError,
+                "format argument b'x': %c requires an integer in range(256) or a single byte, not a bytes object of length 2")
+        test_exc(b"%c", bytearray(b"Za"), TypeError,
+                "format argument: %c requires an integer in range(256) or a single byte, not a bytearray object of length 2")
+        test_exc(b"%c", (bytearray(b"Za"),), TypeError,
+                "format argument 1: %c requires an integer in range(256) or a single byte, not a bytearray object of length 2")
+        test_exc(b"%(x)c", {b'x': bytearray(b"Za")}, TypeError,
+                "format argument b'x': %c requires an integer in range(256) or a single byte, not a bytearray object of length 2")
         test_exc(b"%c", "Y", TypeError,
-                "%c requires an integer in range(256) or a single byte, not str")
+                "format argument: %c requires an integer in range(256) or a single byte, not str")
         test_exc(b"%c", 3.14, TypeError,
-                "%c requires an integer in range(256) or a single byte, not float")
+                "format argument: %c requires an integer in range(256) or a single byte, not float")
+        test_exc(b"%c", (3.14,), TypeError,
+                "format argument 1: %c requires an integer in range(256) or a single byte, not float")
+        test_exc(b"%(x)c", {b'x': 3.14}, TypeError,
+                "format argument b'x': %c requires an integer in range(256) or a single byte, not float")
         test_exc(b"%b", "Xc", TypeError,
-                "%b requires a bytes-like object, "
-                 "or an object that implements __bytes__, not 'str'")
+                "format argument: %b requires a bytes-like object, "
+                 "or an object that implements __bytes__, not str")
+        test_exc(b"%b", ("Xc",), TypeError,
+                "format argument 1: %b requires a bytes-like object, "
+                 "or an object that implements __bytes__, not str")
+        test_exc(b"%(x)b", {b'x': "Xc"}, TypeError,
+                "format argument b'x': %b requires a bytes-like object, "
+                 "or an object that implements __bytes__, not str")
         test_exc(b"%s", "Wd", TypeError,
-                "%b requires a bytes-like object, "
-                 "or an object that implements __bytes__, not 'str'")
+                "format argument: %b requires a bytes-like object, "
+                 "or an object that implements __bytes__, not str")
 
         if maxsize == 2**31-1:
             # crashes 2.2.1 and earlier:
@@ -626,7 +781,7 @@ class FormatTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, error_msg):
             f"{'x':zs}"  # can't apply to string
 
-        error_msg = re.escape("unsupported format character 'z'")
+        error_msg = re.escape("unsupported format %z at position 0")
         with self.assertRaisesRegex(ValueError, error_msg):
             "%z.1f" % 0  # not allowed in old style string interpolation
         with self.assertRaisesRegex(ValueError, error_msg):
