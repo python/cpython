@@ -64,10 +64,10 @@
           pass
    */
 
-// Need limited C API version 3.13 for Py_mod_gil
+// Need limited C API version 3.14 for Py_tp_token
 #include "pyconfig.h"   // Py_GIL_DISABLED
 #ifndef Py_GIL_DISABLED
-#  define Py_LIMITED_API 0x030d0000
+#  define Py_LIMITED_API 0x030e0000
 #endif
 
 #include "Python.h"
@@ -96,8 +96,6 @@ typedef struct {
 } XxoObject;
 
 #define XxoObject_CAST(op)  ((XxoObject *)(op))
-// TODO: full support for type-checking was added in 3.14 (Py_tp_token)
-// #define XxoObject_Check(v)      Py_IS_TYPE(v, Xxo_Type)
 
 static XxoObject *
 newXxoObject(PyObject *module)
@@ -298,6 +296,7 @@ static PyGetSetDef Xxo_getsetlist[] = {
 
 
 static PyType_Slot Xxo_Type_slots[] = {
+    {Py_tp_token, Py_TP_USE_SPEC},
     {Py_tp_doc, (char *)Xxo_doc},
     {Py_tp_traverse, Xxo_traverse},
     {Py_tp_clear, Xxo_clear},
