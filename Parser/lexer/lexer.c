@@ -119,7 +119,6 @@ set_ftstring_expr(struct tok_state* tok, struct token *token, char c) {
     if (!(tok_mode->in_debug || tok_mode->string_kind == TSTRING) || token->metadata) {
         return 0;
     }
-    PyObject *res = NULL;
 
     Py_ssize_t expr_len = tok_mode->last_expr_size - tok_mode->last_expr_end;
     if (expr_len < 0) {
@@ -130,6 +129,8 @@ set_ftstring_expr(struct tok_state* tok, struct token *token, char c) {
            PyUnicode_DecodeUTF8. */
         return -1;
     }
+
+    PyObject *res = NULL;
 
     // Look for a # character outside of string literals
     int hash_detected = 0;
