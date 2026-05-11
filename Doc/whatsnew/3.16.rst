@@ -140,6 +140,12 @@ sysconfig
   which has been deprecated since Python 3.14.
   Use the ``vars`` argument of :func:`sysconfig.get_paths` instead.
 
+tarfile
+-------
+
+* The undocumented and unused :attr:`!tarfile.TarFile.tarfile` attribute
+  has been deprecated since Python 3.13.
+
 .. Add removals above alphabetically, not here at the end.
 
 
