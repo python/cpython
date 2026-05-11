@@ -6,8 +6,9 @@ import sys
 import unittest.mock
 from platform import win32_edition
 from test import support
-from test.support import cpython_only, force_not_colorized, os_helper
+from test.support import cpython_only, force_not_colorized, os_helper, requires_subprocess
 from test.support.import_helper import ensure_lazy_imports
+from test.support.script_helper import assert_python_ok, assert_python_failure
 
 try:
     import _winapi
@@ -506,6 +507,58 @@ class CommandLineTest(unittest.TestCase):
             with self.subTest(command=command):
                 result = "\n".join(mimetypes._main(shlex.split(command)))
                 self.assertEqual(result, expected)
+
+
+@requires_subprocess()
+class CommandLineSubprocessTest(unittest.TestCase):
+    def test_help(self):
+        rc, stdout, stderr = assert_python_ok('-m', 'mimetypes', '--help')
+        self.assertIn(b'mimetypes', stdout)
+        self.assertIn(b'--extension', stdout)
+        self.assertIn(b'--lenient', stdout)
+
+    def test_type_lookup(self):
+        rc, stdout, stderr = assert_python_ok('-m', 'mimetypes', 'foo.pdf')
+        self.assertIn(b'application/pdf', stdout)
+        self.assertEqual(stderr, b'')
+
+    def test_type_lookup_unknown(self):
+        rc, stdout, stderr = assert_python_failure('-m', 'mimetypes', 'foo.unknownext12345')
+        self.assertEqual(stdout, b'')
+        self.assertIn(b'error:', stderr)
+
+    def test_extension_flag(self):
+        rc, stdout, stderr = assert_python_ok('-m', 'mimetypes', '-e', 'image/jpeg')
+        self.assertIn(b'.jpg', stdout)
+        self.assertEqual(stderr, b'')
+
+    def test_extension_flag_unknown(self):
+        rc, stdout, stderr = assert_python_failure('-m', 'mimetypes', '-e', 'image/unknowntype12345')
+        self.assertEqual(stdout, b'')
+        self.assertIn(b'error:', stderr)
+
+    def test_lenient_flag(self):
+        rc, stdout, stderr = assert_python_ok('-m', 'mimetypes', '-e', '--lenient', 'text/xul')
+        self.assertIn(b'.xul', stdout)
+        self.assertEqual(stderr, b'')
+
+    def test_multiple_inputs(self):
+        rc, stdout, stderr = assert_python_ok('-m', 'mimetypes', 'foo.pdf', 'foo.png')
+        self.assertIn(b'application/pdf', stdout)
+        self.assertIn(b'image/png', stdout)
+        self.assertEqual(stderr, b'')
+
+    def test_multiple_inputs_with_error(self):
+        rc, stdout, stderr = assert_python_failure(
+            '-m', 'mimetypes', 'foo.pdf', 'foo.unknownext12345'
+        )
+        self.assertIn(b'application/pdf', stdout)
+        self.assertNotIn(b'error:', stdout)
+        self.assertIn(b'error:', stderr)
+
+    def test_unknown_flag(self):
+        rc, stdout, stderr = assert_python_failure('-m', 'mimetypes', '--unknown-flag')
+        self.assertNotEqual(rc, 0)
 
 
 if __name__ == "__main__":
