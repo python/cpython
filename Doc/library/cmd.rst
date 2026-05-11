@@ -31,8 +31,8 @@ interface.
    Note that other values are not treated this way, and might only work
    with a specific backend.
 
-   The optional arguments *stdin* and *stdout* specify the  input and output file
-   objects that the Cmd instance or subclass  instance will use for input and
+   The optional arguments *stdin* and *stdout* specify the input and output file
+   objects that the Cmd instance or subclass instance will use for input and
    output. If not specified, they will default to :data:`sys.stdin` and
    :data:`sys.stdout`.
 
@@ -283,7 +283,7 @@ immediate playback::
             'Return turtle to the home position:  HOME'
             home()
         def do_circle(self, arg):
-            'Draw circle with given radius an options extent and steps:  CIRCLE 50'
+            'Draw circle with given radius and optional extent and steps:  CIRCLE 50'
             circle(*parse(arg))
         def do_position(self, arg):
             'Print the current turtle position:  POSITION'
