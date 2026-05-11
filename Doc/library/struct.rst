@@ -111,7 +111,7 @@ Format Strings
 --------------
 
 Format strings describe the data layout when
-packing and unpacking data.  They are built up from :ref:`type codes<type-codes>`,
+packing and unpacking data.  They are built up from :ref:`type codes <type-codes>`,
 which specify the type of data being packed/unpacked.  In addition,
 special characters control the :ref:`byte order, size and alignment<struct-alignment>`.
 Each format string consists of an optional prefix character which
