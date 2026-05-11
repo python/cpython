@@ -1314,6 +1314,47 @@ def startup():
 
     # --- addsitedir integration tests ---
 
+    def test_addsitedir_pth_import_skipped_when_matching_start_exists(self):
+        # PEP 829: an empty .start file disables the matching .pth's import
+        # lines, even when the .start has no entry points of its own.
+        self._make_mod("flag = False\n", name='suppressed', on_path=True)
+        self._make_start("", name='foo')
+        self._make_pth(
+            "import suppressed; suppressed.flag = True\n",
+            name='foo')
+        site.addsitedir(self.sitedir, set())
+        import suppressed
+        self.assertFalse(
+            suppressed.flag,
+            "import line in foo.pth should be suppressed by foo.start")
+
+    def test_addsitedir_dotfile_start_entrypoint_not_executed(self):
+        # .start files starting with '.' are skipped, so their entry
+        # points must not run.
+        self._make_mod("""\
+called = False
+def hook():
+    global called
+    called = True
+""",
+                       name='dotted', on_path=True)
+        self._make_start("dotted:hook\n", name='.hidden')
+        site.addsitedir(self.sitedir, set())
+        import dotted
+        self.assertFalse(dotted.called)
+
+    def test_addsitedir_dedups_paths_across_pth_files(self):
+        # PEP 829: when multiple .pth files reference the same path within
+        # a single addsitedir() invocation, the path is appended to
+        # sys.path exactly once.
+        subdir = os.path.join(self.sitedir, 'shared')
+        os.mkdir(subdir)
+        self._make_pth("shared\n", name='a')
+        self._make_pth("shared\n", name='b')
+        before = sys.path.count(subdir)
+        site.addsitedir(self.sitedir, set())
+        self.assertEqual(sys.path.count(subdir), before + 1)
+
     def test_addsitedir_discovers_start_files(self):
         # addsitedir() should discover .start files and accumulate entries.
         self._make_start("os.path:join\n", name='foo')
@@ -1322,7 +1363,7 @@ def startup():
         fullname = os.path.join(self.sitedir, 'foo.start')
         self.assertIn('os.path:join', site._pending_entrypoints[fullname])
 
-    def test_addsitedir_start_suppresses_pth_imports(self):
+    def test_impl_exec_imports_skips_when_matching_start(self):
         # When foo.start exists, import lines in foo.pth are skipped
         # at flush time by _exec_imports().
         self._make_start("os.path:join\n", name='foo')
@@ -1377,7 +1418,7 @@ def startup():
         self.assertIn('os.path:join',
                       site._pending_entrypoints.get(start_fullname, []))
 
-    def test_addsitedir_dotfile_start_ignored(self):
+    def test_impl_addsitedir_skips_dotfile_start(self):
         # .start files starting with '.' are skipped.  Defer flushing so
         # the assertion against _pending_entrypoints is meaningful;
         # otherwise process_startup_files() would clear the dict
