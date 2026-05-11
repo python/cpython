@@ -54,7 +54,9 @@ files.
 The :mod:`!pickle` module differs from :mod:`marshal` in several significant ways:
 
 * :mod:`marshal` cannot be used to serialize user-defined classes and their
-  instances.  :mod:`!pickle` can save and restore class instances transparently.
+  instances.  :mod:`!pickle` can save and restore class instances transparently,
+  however the class definition must be importable and live in the same module as
+  when the object was pickled.
 
 * The :mod:`marshal` serialization format is not guaranteed to be portable
   across Python versions.  Because its primary job in life is to support
