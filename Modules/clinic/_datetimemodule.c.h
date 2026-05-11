@@ -371,7 +371,10 @@ PyDoc_STRVAR(datetime_date_strptime__doc__,
 "strptime($type, string, format, /)\n"
 "--\n"
 "\n"
-"Parse string according to the given date format (like time.strptime()).");
+"Parse string according to the given date format (like time.strptime()).\n"
+"\n"
+"For a list of supported format codes, see the documentation:\n"
+"    https://docs.python.org/3/library/datetime.html#format-codes");
 
 #define DATETIME_DATE_STRPTIME_METHODDEF    \
     {"strptime", _PyCFunction_CAST(datetime_date_strptime), METH_FASTCALL|METH_CLASS, datetime_date_strptime__doc__},
@@ -412,7 +415,10 @@ PyDoc_STRVAR(datetime_date_strftime__doc__,
 "\n"
 "Format using strftime().\n"
 "\n"
-"Example: \"%d/%m/%Y, %H:%M:%S\".");
+"Example: \"%d/%m/%Y, %H:%M:%S\".\n"
+"\n"
+"For a list of supported format codes, see the documentation:\n"
+"    https://docs.python.org/3/library/datetime.html#format-codes");
 
 #define DATETIME_DATE_STRFTIME_METHODDEF    \
     {"strftime", _PyCFunction_CAST(datetime_date_strftime), METH_FASTCALL|METH_KEYWORDS, datetime_date_strftime__doc__},
@@ -847,7 +853,10 @@ PyDoc_STRVAR(datetime_time_strptime__doc__,
 "strptime($type, string, format, /)\n"
 "--\n"
 "\n"
-"Parse string according to the given time format (like time.strptime()).");
+"Parse string according to the given time format (like time.strptime()).\n"
+"\n"
+"For a list of supported format codes, see the documentation:\n"
+"    https://docs.python.org/3/library/datetime.html#format-codes");
 
 #define DATETIME_TIME_STRPTIME_METHODDEF    \
     {"strptime", _PyCFunction_CAST(datetime_time_strptime), METH_FASTCALL|METH_CLASS, datetime_time_strptime__doc__},
@@ -970,7 +979,10 @@ PyDoc_STRVAR(datetime_time_strftime__doc__,
 "\n"
 "Format using strftime().\n"
 "\n"
-"The date part of the timestamp passed to underlying strftime should not be used.");
+"The date part of the timestamp passed to underlying strftime should not be used.\n"
+"\n"
+"For a list of supported format codes, see the documentation:\n"
+"    https://docs.python.org/3/library/datetime.html#format-codes");
 
 #define DATETIME_TIME_STRFTIME_METHODDEF    \
     {"strftime", _PyCFunction_CAST(datetime_time_strftime), METH_FASTCALL|METH_KEYWORDS, datetime_time_strftime__doc__},
@@ -1569,7 +1581,10 @@ PyDoc_STRVAR(datetime_datetime_strptime__doc__,
 "strptime($type, string, format, /)\n"
 "--\n"
 "\n"
-"Parse string according to the given date and time format (like time.strptime()).");
+"Parse string according to the given date and time format (like time.strptime()).\n"
+"\n"
+"For a list of supported format codes, see the documentation:\n"
+"    https://docs.python.org/3/library/datetime.html#format-codes");
 
 #define DATETIME_DATETIME_STRPTIME_METHODDEF    \
     {"strptime", _PyCFunction_CAST(datetime_datetime_strptime), METH_FASTCALL|METH_CLASS, datetime_datetime_strptime__doc__},
@@ -2075,4 +2090,4 @@ datetime_datetime___reduce__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return datetime_datetime___reduce___impl((PyDateTime_DateTime *)self);
 }
-/*[clinic end generated code: output=0b8403bc58982e60 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=69658acff6a43ac4 input=a9049054013a1b77]*/

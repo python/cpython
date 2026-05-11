@@ -1,7 +1,7 @@
 /* struct module -- pack values into and (out of) bytes objects */
 
 /* New version supporting byte order, alignment and size options,
-   character strings, and unsigned numbers */
+   byte strings, and unsigned numbers */
 
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
@@ -9,6 +9,7 @@
 
 #include "Python.h"
 #include "pycore_bytesobject.h"   // _PyBytesWriter
+#include "pycore_lock.h"          // _PyOnceFlag_CallOnce()
 #include "pycore_long.h"          // _PyLong_AsByteArray()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
@@ -44,7 +45,7 @@ static struct PyModuleDef _structmodule;
 
 /* The translation function for each format character is table driven */
 typedef struct _formatdef {
-    char format;
+    const char *format;
     Py_ssize_t size;
     Py_ssize_t alignment;
     PyObject* (*unpack)(_structmodulestate *, const char *,
@@ -69,6 +70,7 @@ typedef struct {
     formatcode *s_codes;
     PyObject *s_format;
     PyObject *weakreflist; /* List of weak references */
+    bool init_called;
 } PyStructObject;
 
 #define PyStructObject_CAST(op)     ((PyStructObject *)(op))
@@ -325,13 +327,13 @@ _range_error(_structmodulestate *state, const formatdef *f, int is_unsigned)
     assert(f->size >= 1 && f->size <= SIZEOF_SIZE_T);
     if (is_unsigned)
         PyErr_Format(state->StructError,
-            "'%c' format requires 0 <= number <= %zu",
+            "'%s' format requires 0 <= number <= %zu",
             f->format,
             ulargest);
     else {
         const Py_ssize_t largest = (Py_ssize_t)(ulargest >> 1);
         PyErr_Format(state->StructError,
-            "'%c' format requires %zd <= number <= %zd",
+            "'%s' format requires %zd <= number <= %zd",
             f->format,
             ~ largest,
             largest);
@@ -706,7 +708,7 @@ np_longlong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     if (get_longlong(state, v, &x) < 0) {
         if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
             PyErr_Format(state->StructError,
-                         "'%c' format requires %lld <= number <= %lld",
+                         "'%s' format requires %lld <= number <= %lld",
                          f->format,
                          LLONG_MIN,
                          LLONG_MAX);
@@ -724,7 +726,7 @@ np_ulonglong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f
     if (get_ulonglong(state, v, &x) < 0) {
         if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
             PyErr_Format(state->StructError,
-                         "'%c' format requires 0 <= number <= %llu",
+                         "'%s' format requires 0 <= number <= %llu",
                          f->format,
                          ULLONG_MAX);
         }
@@ -761,14 +763,13 @@ np_halffloat(_structmodulestate *state, char *p, PyObject *v, const formatdef *f
 static int
 np_float(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
-    float x = (float)PyFloat_AsDouble(v);
+    double x = PyFloat_AsDouble(v);
     if (x == -1 && PyErr_Occurred()) {
         PyErr_SetString(state->StructError,
                         "required argument is not a float");
         return -1;
     }
-    memcpy(p, &x, sizeof x);
-    return 0;
+    return PyFloat_Pack4(x, p, PY_LITTLE_ENDIAN);
 }
 
 static int
@@ -834,29 +835,31 @@ np_void_p(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 }
 
 static const formatdef native_table[] = {
-    {'x',       sizeof(char),   0,              NULL},
-    {'b',       sizeof(char),   0,              nu_byte,        np_byte},
-    {'B',       sizeof(char),   0,              nu_ubyte,       np_ubyte},
-    {'c',       sizeof(char),   0,              nu_char,        np_char},
-    {'s',       sizeof(char),   0,              NULL},
-    {'p',       sizeof(char),   0,              NULL},
-    {'h',       sizeof(short),  _Alignof(short),    nu_short,       np_short},
-    {'H',       sizeof(short),  _Alignof(short),    nu_ushort,      np_ushort},
-    {'i',       sizeof(int),    _Alignof(int),      nu_int,         np_int},
-    {'I',       sizeof(int),    _Alignof(int),      nu_uint,        np_uint},
-    {'l',       sizeof(long),   _Alignof(long),     nu_long,        np_long},
-    {'L',       sizeof(long),   _Alignof(long),     nu_ulong,       np_ulong},
-    {'n',       sizeof(size_t), _Alignof(size_t),   nu_ssize_t,     np_ssize_t},
-    {'N',       sizeof(size_t), _Alignof(size_t),   nu_size_t,      np_size_t},
-    {'q',       sizeof(long long), _Alignof(long long), nu_longlong, np_longlong},
-    {'Q',       sizeof(long long), _Alignof(long long), nu_ulonglong,np_ulonglong},
-    {'?',       sizeof(_Bool),      _Alignof(_Bool),     nu_bool,        np_bool},
-    {'e',       sizeof(short),  _Alignof(short),    nu_halffloat,   np_halffloat},
-    {'f',       sizeof(float),  _Alignof(float),    nu_float,       np_float},
-    {'d',       sizeof(double), _Alignof(double),   nu_double,      np_double},
-    {'F',       2*sizeof(float), _Alignof(float), nu_float_complex, np_float_complex},
-    {'D',       2*sizeof(double), _Alignof(double), nu_double_complex, np_double_complex},
-    {'P',       sizeof(void *), _Alignof(void *),   nu_void_p,      np_void_p},
+    {"x",       sizeof(char),   0,              NULL},
+    {"b",       sizeof(char),   0,              nu_byte,        np_byte},
+    {"B",       sizeof(char),   0,              nu_ubyte,       np_ubyte},
+    {"c",       sizeof(char),   0,              nu_char,        np_char},
+    {"s",       sizeof(char),   0,              NULL},
+    {"p",       sizeof(char),   0,              NULL},
+    {"h",       sizeof(short),  _Alignof(short),    nu_short,       np_short},
+    {"H",       sizeof(short),  _Alignof(short),    nu_ushort,      np_ushort},
+    {"i",       sizeof(int),    _Alignof(int),      nu_int,         np_int},
+    {"I",       sizeof(int),    _Alignof(int),      nu_uint,        np_uint},
+    {"l",       sizeof(long),   _Alignof(long),     nu_long,        np_long},
+    {"L",       sizeof(long),   _Alignof(long),     nu_ulong,       np_ulong},
+    {"n",       sizeof(size_t), _Alignof(size_t),   nu_ssize_t,     np_ssize_t},
+    {"N",       sizeof(size_t), _Alignof(size_t),   nu_size_t,      np_size_t},
+    {"q",       sizeof(long long), _Alignof(long long), nu_longlong, np_longlong},
+    {"Q",       sizeof(long long), _Alignof(long long), nu_ulonglong,np_ulonglong},
+    {"?",       sizeof(_Bool),      _Alignof(_Bool),     nu_bool,        np_bool},
+    {"e",       sizeof(short),  _Alignof(short),    nu_halffloat,   np_halffloat},
+    {"f",       sizeof(float),  _Alignof(float),    nu_float,       np_float},
+    {"d",       sizeof(double), _Alignof(double),   nu_double,      np_double},
+    {"F",       2*sizeof(float), _Alignof(float), nu_float_complex, np_float_complex},
+    {"D",       2*sizeof(double), _Alignof(double), nu_double_complex, np_double_complex},
+    {"Zf",      2*sizeof(float), _Alignof(float), nu_float_complex, np_float_complex},
+    {"Zd",      2*sizeof(double), _Alignof(double), nu_double_complex, np_double_complex},
+    {"P",       sizeof(void *), _Alignof(void *),   nu_void_p,      np_void_p},
     {0}
 };
 
@@ -1062,7 +1065,7 @@ bp_longlong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     Py_DECREF(v);
     if (res < 0) {
         PyErr_Format(state->StructError,
-                     "'%c' format requires %lld <= number <= %lld",
+                     "'%s' format requires %lld <= number <= %lld",
                      f->format,
                      LLONG_MIN,
                      LLONG_MAX);
@@ -1087,7 +1090,7 @@ bp_ulonglong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f
     Py_DECREF(v);
     if (res < 0) {
         PyErr_Format(state->StructError,
-                     "'%c' format requires 0 <= number <= %llu",
+                     "'%s' format requires 0 <= number <= %llu",
                      f->format,
                      ULLONG_MAX);
         return -1;
@@ -1167,26 +1170,28 @@ bp_bool(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 }
 
 static formatdef bigendian_table[] = {
-    {'x',       1,              0,              NULL},
-    {'b',       1,              0,              nu_byte,        np_byte},
-    {'B',       1,              0,              nu_ubyte,       np_ubyte},
-    {'c',       1,              0,              nu_char,        np_char},
-    {'s',       1,              0,              NULL},
-    {'p',       1,              0,              NULL},
-    {'h',       2,              0,              bu_short,       bp_int},
-    {'H',       2,              0,              bu_uint,        bp_uint},
-    {'i',       4,              0,              bu_int,         bp_int},
-    {'I',       4,              0,              bu_uint,        bp_uint},
-    {'l',       4,              0,              bu_int,         bp_int},
-    {'L',       4,              0,              bu_uint,        bp_uint},
-    {'q',       8,              0,              bu_longlong,    bp_longlong},
-    {'Q',       8,              0,              bu_ulonglong,   bp_ulonglong},
-    {'?',       1,              0,              bu_bool,        bp_bool},
-    {'e',       2,              0,              bu_halffloat,   bp_halffloat},
-    {'f',       4,              0,              bu_float,       bp_float},
-    {'d',       8,              0,              bu_double,      bp_double},
-    {'F',       8,              0,              bu_float_complex, bp_float_complex},
-    {'D',       16,             0,              bu_double_complex, bp_double_complex},
+    {"x",       1,              0,              NULL},
+    {"b",       1,              0,              nu_byte,        np_byte},
+    {"B",       1,              0,              nu_ubyte,       np_ubyte},
+    {"c",       1,              0,              nu_char,        np_char},
+    {"s",       1,              0,              NULL},
+    {"p",       1,              0,              NULL},
+    {"h",       2,              0,              bu_short,       bp_int},
+    {"H",       2,              0,              bu_uint,        bp_uint},
+    {"i",       4,              0,              bu_int,         bp_int},
+    {"I",       4,              0,              bu_uint,        bp_uint},
+    {"l",       4,              0,              bu_int,         bp_int},
+    {"L",       4,              0,              bu_uint,        bp_uint},
+    {"q",       8,              0,              bu_longlong,    bp_longlong},
+    {"Q",       8,              0,              bu_ulonglong,   bp_ulonglong},
+    {"?",       1,              0,              bu_bool,        bp_bool},
+    {"e",       2,              0,              bu_halffloat,   bp_halffloat},
+    {"f",       4,              0,              bu_float,       bp_float},
+    {"d",       8,              0,              bu_double,      bp_double},
+    {"F",       8,              0,              bu_float_complex, bp_float_complex},
+    {"D",       16,             0,              bu_double_complex, bp_double_complex},
+    {"Zf",      8,              0,              bu_float_complex, bp_float_complex},
+    {"Zd",      16,             0,              bu_double_complex, bp_double_complex},
     {0}
 };
 
@@ -1386,7 +1391,7 @@ lp_longlong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     Py_DECREF(v);
     if (res < 0) {
         PyErr_Format(state->StructError,
-                     "'%c' format requires %lld <= number <= %lld",
+                     "'%s' format requires %lld <= number <= %lld",
                      f->format,
                      LLONG_MIN,
                      LLONG_MAX);
@@ -1411,7 +1416,7 @@ lp_ulonglong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f
     Py_DECREF(v);
     if (res < 0) {
         PyErr_Format(state->StructError,
-                     "'%c' format requires 0 <= number <= %llu",
+                     "'%s' format requires 0 <= number <= %llu",
                      f->format,
                      ULLONG_MAX);
         return -1;
@@ -1481,29 +1486,75 @@ lp_double_complex(_structmodulestate *state, char *p, PyObject *v, const formatd
 }
 
 static formatdef lilendian_table[] = {
-    {'x',       1,              0,              NULL},
-    {'b',       1,              0,              nu_byte,        np_byte},
-    {'B',       1,              0,              nu_ubyte,       np_ubyte},
-    {'c',       1,              0,              nu_char,        np_char},
-    {'s',       1,              0,              NULL},
-    {'p',       1,              0,              NULL},
-    {'h',       2,              0,              lu_short,       lp_int},
-    {'H',       2,              0,              lu_uint,        lp_uint},
-    {'i',       4,              0,              lu_int,         lp_int},
-    {'I',       4,              0,              lu_uint,        lp_uint},
-    {'l',       4,              0,              lu_int,         lp_int},
-    {'L',       4,              0,              lu_uint,        lp_uint},
-    {'q',       8,              0,              lu_longlong,    lp_longlong},
-    {'Q',       8,              0,              lu_ulonglong,   lp_ulonglong},
-    {'?',       1,              0,              bu_bool,        bp_bool}, /* Std rep not endian dep,
+    {"x",       1,              0,              NULL},
+    {"b",       1,              0,              nu_byte,        np_byte},
+    {"B",       1,              0,              nu_ubyte,       np_ubyte},
+    {"c",       1,              0,              nu_char,        np_char},
+    {"s",       1,              0,              NULL},
+    {"p",       1,              0,              NULL},
+    {"h",       2,              0,              lu_short,       lp_int},
+    {"H",       2,              0,              lu_uint,        lp_uint},
+    {"i",       4,              0,              lu_int,         lp_int},
+    {"I",       4,              0,              lu_uint,        lp_uint},
+    {"l",       4,              0,              lu_int,         lp_int},
+    {"L",       4,              0,              lu_uint,        lp_uint},
+    {"q",       8,              0,              lu_longlong,    lp_longlong},
+    {"Q",       8,              0,              lu_ulonglong,   lp_ulonglong},
+    {"?",       1,              0,              bu_bool,        bp_bool}, /* Std rep not endian dep,
         but potentially different from native rep -- reuse bx_bool funcs. */
-    {'e',       2,              0,              lu_halffloat,   lp_halffloat},
-    {'f',       4,              0,              lu_float,       lp_float},
-    {'d',       8,              0,              lu_double,      lp_double},
-    {'F',       8,              0,              lu_float_complex, lp_float_complex},
-    {'D',       16,             0,              lu_double_complex, lp_double_complex},
+    {"e",       2,              0,              lu_halffloat,   lp_halffloat},
+    {"f",       4,              0,              lu_float,       lp_float},
+    {"d",       8,              0,              lu_double,      lp_double},
+    {"F",       8,              0,              lu_float_complex, lp_float_complex},
+    {"D",       16,             0,              lu_double_complex, lp_double_complex},
+    {"Zf",      8,              0,              lu_float_complex, lp_float_complex},
+    {"Zd",      16,             0,              lu_double_complex, lp_double_complex},
     {0}
 };
+
+/* Ensure endian table optimization happens exactly once across all interpreters */
+static _PyOnceFlag endian_tables_init_once = {0};
+
+static int
+init_endian_tables(void *Py_UNUSED(arg))
+{
+    const formatdef *native = native_table;
+    formatdef *other, *ptr;
+#if PY_LITTLE_ENDIAN
+    other = lilendian_table;
+#else
+    other = bigendian_table;
+#endif
+    /* Scan through the native table, find a matching
+        entry in the endian table and swap in the
+        native implementations whenever possible
+        (64-bit platforms may not have "standard" sizes) */
+    while (native->format != NULL && other->format != NULL) {
+        ptr = other;
+        while (ptr->format != NULL) {
+            if (strcmp(ptr->format, native->format) == 0) {
+                /* Match faster when formats are
+                    listed in the same order */
+                if (ptr == other)
+                    other++;
+                /* Only use the trick if the
+                    size matches */
+                if (ptr->size != native->size)
+                    break;
+                /* Skip _Bool, semantics are different for standard size */
+                if (strcmp(ptr->format, "?") == 0) {
+                    break;
+                }
+                ptr->pack = native->pack;
+                ptr->unpack = native->unpack;
+                break;
+            }
+            ptr++;
+        }
+        native++;
+    }
+    return 0;
+}
 
 
 static const formatdef *
@@ -1532,13 +1583,28 @@ whichtable(const char **pfmt)
 }
 
 
+static int
+format_equal(const formatdef *e, const char *s)
+{
+    const char *format = e->format;
+    size_t i = 0;
+    while (format[i] == s[i]) {
+        i++;
+        if (format[i] == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+
 /* Get the table entry for a format code */
 
 static const formatdef *
-getentry(_structmodulestate *state, int c, const formatdef *f)
+getentry(_structmodulestate *state, const char *s, const formatdef *f)
 {
-    for (; f->format != '\0'; f++) {
-        if (f->format == c) {
+    for (; f->format != NULL; f++) {
+        if (format_equal(f, s)) {
             return f;
         }
     }
@@ -1550,11 +1616,11 @@ getentry(_structmodulestate *state, int c, const formatdef *f)
 /* Align a size according to a format code.  Return -1 on overflow. */
 
 static Py_ssize_t
-align(Py_ssize_t size, char c, const formatdef *e)
+align(Py_ssize_t size, const char *s, const formatdef *e)
 {
     Py_ssize_t extra;
 
-    if (e->format == c) {
+    if (format_equal(e, s)) {
         if (e->alignment && size > 0) {
             extra = (e->alignment - 1) - (size - 1) % (e->alignment);
             if (extra > PY_SSIZE_T_MAX - size)
@@ -1572,11 +1638,11 @@ align(Py_ssize_t size, char c, const formatdef *e)
 /* calculate the size of a format string */
 
 static int
-prepare_s(PyStructObject *self)
+prepare_s(PyStructObject *self, PyObject *format)
 {
     const formatdef *f;
     const formatdef *e;
-    formatcode *codes;
+    formatcode *codes, *codes0;
 
     const char *s;
     const char *fmt;
@@ -1586,8 +1652,12 @@ prepare_s(PyStructObject *self)
 
     _structmodulestate *state = get_struct_state_structinst(self);
 
-    fmt = PyBytes_AS_STRING(self->s_format);
-    if (strlen(fmt) != (size_t)PyBytes_GET_SIZE(self->s_format)) {
+    if (!PyUnicode_IS_ASCII(format)) {
+        PyErr_SetString(PyExc_ValueError, "non-ASCII character in struct format");
+        return -1;
+    }
+    fmt = (const char *)PyUnicode_1BYTE_DATA(format);
+    if (strlen(fmt) != (size_t)PyUnicode_GET_LENGTH(format)) {
         PyErr_SetString(state->StructError,
                         "embedded null character");
         return -1;
@@ -1622,21 +1692,37 @@ prepare_s(PyStructObject *self)
         else
             num = 1;
 
-        e = getentry(state, c, f);
+        s--;
+        e = getentry(state, s, f);
         if (e == NULL)
             return -1;
 
         switch (c) {
             case 's': _Py_FALLTHROUGH;
-            case 'p': len++; ncodes++; break;
+            case 'p':
+                if (len == PY_SSIZE_T_MAX) {
+                    goto overflow;
+                }
+                len++;
+                ncodes++;
+                break;
             case 'x': break;
-            default: len += num; if (num) ncodes++; break;
+            default:
+                if (num > PY_SSIZE_T_MAX - len) {
+                    goto overflow;
+                }
+                len += num;
+                if (num) {
+                    ncodes++;
+                }
+                break;
         }
 
         itemsize = e->size;
-        size = align(size, c, e);
+        size = align(size, s, e);
         if (size == -1)
             goto overflow;
+        s += strlen(e->format);
 
         /* if (size + num * itemsize > PY_SSIZE_T_MAX) { ... } */
         if (num > (PY_SSIZE_T_MAX - size) / itemsize)
@@ -1650,18 +1736,12 @@ prepare_s(PyStructObject *self)
         return -1;
     }
 
-    self->s_size = size;
-    self->s_len = len;
     codes = PyMem_Malloc((ncodes + 1) * sizeof(formatcode));
     if (codes == NULL) {
         PyErr_NoMemory();
         return -1;
     }
-    /* Free any s_codes value left over from a previous initialization. */
-    if (self->s_codes != NULL)
-        PyMem_Free(self->s_codes);
-    self->s_codes = codes;
-
+    codes0 = codes;
     s = fmt;
     size = 0;
     while ((c = *s++) != '\0') {
@@ -1675,9 +1755,11 @@ prepare_s(PyStructObject *self)
         else
             num = 1;
 
-        e = getentry(state, c, f);
+        s--;
+        e = getentry(state, s, f);
+        size = align(size, s, e);
+        s += strlen(e->format);
 
-        size = align(size, c, e);
         if (c == 's' || c == 'p') {
             codes->offset = size;
             codes->size = num;
@@ -1701,6 +1783,14 @@ prepare_s(PyStructObject *self)
     codes->size = 0;
     codes->repeat = 0;
 
+    /* Free any s_codes value left over from a previous initialization. */
+    if (self->s_codes != NULL)
+        PyMem_Free(self->s_codes);
+    self->s_codes = codes0;
+    self->s_size = size;
+    self->s_len = len;
+    Py_XSETREF(self->s_format, Py_NewRef(format));
+
     return 0;
 
   overflow:
@@ -1709,24 +1799,155 @@ prepare_s(PyStructObject *self)
     return -1;
 }
 
+/* This should be moved to Struct_impl() when Struct___init__() and
+ * s_new() will be removed (see gh-143715 and gh-94532). */
+static int
+set_format(PyStructObject *self, PyObject *format)
+{
+    if (PyUnicode_Check(format)) {
+        format = PyUnicode_FromObject(format);
+    }
+    else if (PyBytes_Check(format)) {
+        format = PyUnicode_DecodeASCII(PyBytes_AS_STRING(format),
+                                       PyBytes_GET_SIZE(format), "surrogateescape");
+    }
+    else  {
+        PyErr_Format(PyExc_TypeError,
+                     "Struct() argument 1 must be a str or bytes object, "
+                     "not %T", format);
+        return -1;
+    }
+    if (format == NULL) {
+        return -1;
+    }
+    if (prepare_s(self, format)) {
+        Py_DECREF(format);
+        return -1;
+    }
+    Py_DECREF(format);
+    return 0;
+}
+
+/*[clinic input]
+@classmethod
+Struct.__new__
+
+   format: object
+
+Create a compiled struct object.
+
+Return a new Struct object which writes and reads binary data according
+to the format string.  See help(struct) for more on format strings.
+[clinic start generated code]*/
+
+static PyObject *
+Struct_impl(PyTypeObject *type, PyObject *format)
+/*[clinic end generated code: output=49468b044e334308 input=8381a9796f20f24e]*/
+{
+    PyStructObject *self = (PyStructObject *)type->tp_alloc(type, 0);
+    if (self == NULL) {
+        return NULL;
+    }
+    self->s_format = NULL;
+    self->s_codes = NULL;
+    self->s_size = -1;
+    self->s_len = -1;
+    self->init_called = false;
+    if (set_format(self, format) < 0) {
+        Py_DECREF(self);
+        return NULL;
+    }
+    return (PyObject *)self;
+}
+
+
+static int
+s_init(PyObject *self, PyObject *args, PyObject *kwargs);
+
 static PyObject *
 s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    PyObject *self;
-
-    assert(type != NULL);
-    allocfunc alloc_func = PyType_GetSlot(type, Py_tp_alloc);
-    assert(alloc_func != NULL);
-
-    self = alloc_func(type, 0);
-    if (self != NULL) {
-        PyStructObject *s = (PyStructObject*)self;
-        s->s_format = Py_NewRef(Py_None);
-        s->s_codes = NULL;
-        s->s_size = -1;
-        s->s_len = -1;
+    if (type->tp_new != s_new) {
+        /* Struct.__new__() was called explicitly in a subclass' __new__(). */
+        return Struct(type, args, kwds);
     }
-    return self;
+
+    PyObject *format = NULL;
+    if (PyTuple_GET_SIZE(args) == 1 && (kwds == NULL || PyDict_GET_SIZE(kwds) == 0)) {
+        format = Py_NewRef(PyTuple_GET_ITEM(args, 0));
+    }
+    else if (PyTuple_GET_SIZE(args) == 0 && kwds != NULL && PyDict_GET_SIZE(kwds) == 1) {
+        if (PyDict_GetItemStringRef(kwds, "format", &format) < 0) {
+            return NULL;
+        }
+    }
+    if (format == NULL && type->tp_init != s_init) {
+        Py_ssize_t nargs = PyTuple_GET_SIZE(args) + (kwds ? PyDict_GET_SIZE(kwds) : 0);
+        if (nargs > 1) {
+            if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                "Struct() takes at most 1 argument (%zd given)", nargs))
+            {
+                Py_XDECREF(format);
+                return NULL;
+            }
+        }
+        else {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Struct() missing required argument 'format' (pos 1)", 1))
+            {
+                Py_XDECREF(format);
+                return NULL;
+            }
+        }
+    }
+
+    PyStructObject *self = (PyStructObject *)type->tp_alloc(type, 0);
+    if (self == NULL) {
+        return NULL;
+    }
+    self->s_format = NULL;
+    self->s_codes = NULL;
+    self->s_size = -1;
+    self->s_len = -1;
+    self->init_called = false;
+    if (format && set_format(self, format) < 0) {
+        if (type->tp_init == s_init) {
+            /* No custom __init__() method, so __new__() should do
+             * all the work. */
+            Py_DECREF(format);
+            Py_DECREF(self);
+            return NULL;
+        }
+        PyObject *exc = PyErr_GetRaisedException();
+        Py_CLEAR(self->s_format);
+        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+            "Invalid 'format' argument for Struct.__new__(): %S", exc))
+        {
+            Py_DECREF(exc);
+            Py_DECREF(format);
+            Py_DECREF(self);
+            return NULL;
+        }
+        Py_DECREF(exc);
+    }
+    Py_XDECREF(format);
+    return (PyObject *)self;
+}
+
+static bool
+same_format(PyStructObject *s, PyObject *format)
+{
+    Py_ssize_t size = PyUnicode_GET_LENGTH(s->s_format);
+    const void *data = PyUnicode_1BYTE_DATA(s->s_format);
+    if (PyUnicode_Check(format) && PyUnicode_IS_ASCII(format)) {
+        return PyUnicode_GET_LENGTH(format) == size
+            && memcmp(PyUnicode_1BYTE_DATA(format), data, size) == 0;
+    }
+    if (PyBytes_Check(format)) {
+        return PyBytes_GET_SIZE(format) == size
+            && memcmp(PyBytes_AS_STRING(format), data, size) == 0;
+    }
+    return false;
 }
 
 /*[clinic input]
@@ -1736,40 +1957,50 @@ Struct.__init__
 
 Create a compiled struct object.
 
-Return a new Struct object which writes and reads binary data according to
-the format string.
-
-See help(struct) for more on format strings.
+Return a new Struct object which writes and reads binary data according
+to the format string.  See help(struct) for more on format strings.
 [clinic start generated code]*/
 
 static int
 Struct___init___impl(PyStructObject *self, PyObject *format)
-/*[clinic end generated code: output=b8e80862444e92d0 input=192a4575a3dde802]*/
+/*[clinic end generated code: output=b8e80862444e92d0 input=1af78a5f57d82cec]*/
 {
-    int ret = 0;
-
-    if (PyUnicode_Check(format)) {
-        format = PyUnicode_AsASCIIString(format);
-        if (format == NULL)
+    if (self->s_format == NULL) {
+        if (set_format(self, format) < 0) {
             return -1;
+        }
     }
-    else {
-        Py_INCREF(format);
+    else if (!same_format(self, format)) {
+        const char *msg = self->init_called
+            ? "Re-initialization of Struct by calling the __init__() method "
+              "will not work in future Python versions"
+            : "Different format arguments for __new__() and __init__() "
+              "methods of Struct";
+        if (PyErr_WarnEx(PyExc_FutureWarning, msg, 1)) {
+            return -1;
+        }
+        if (set_format(self, format) < 0) {
+            return -1;
+        }
     }
+    self->init_called = true;
+    return 0;
+}
 
-    if (!PyBytes_Check(format)) {
-        Py_DECREF(format);
-        PyErr_Format(PyExc_TypeError,
-                     "Struct() argument 1 must be a str or bytes object, "
-                     "not %.200s",
-                     _PyType_Name(Py_TYPE(format)));
-        return -1;
+static int
+s_init(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    if (!((PyStructObject *)self)->init_called
+            && Py_TYPE(self)->tp_init == s_init
+            && ((PyStructObject *)self)->s_format != NULL)
+    {
+        /* Struct.__init__() was called implicitly.
+         * __new__() already did all the work. */
+        ((PyStructObject *)self)->init_called = true;
+        return 0;
     }
-
-    Py_SETREF(self->s_format, format);
-
-    ret = prepare_s(self);
-    return ret;
+    /* Struct.__init__() was called explicitly. */
+    return Struct___init__(self, args, kwargs);
 }
 
 static int
@@ -1819,9 +2050,9 @@ s_unpack_internal(PyStructObject *soself, const char *startfrom,
         Py_ssize_t j = code->repeat;
         while (j--) {
             PyObject *v;
-            if (e->format == 's') {
+            if (strcmp(e->format, "s") == 0) {
                 v = PyBytes_FromStringAndSize(res, code->size);
-            } else if (e->format == 'p') {
+            } else if (strcmp(e->format, "p") == 0) {
                 Py_ssize_t n;
                 if (code->size == 0) {
                     n = 0;
@@ -1849,6 +2080,14 @@ fail:
     return NULL;
 }
 
+#define ENSURE_STRUCT_IS_READY(self)                             \
+    do {                                                         \
+        if (!(self)->s_codes) {                                  \
+            PyErr_SetString(PyExc_RuntimeError,                  \
+                            "Struct object is not initialized"); \
+            return NULL;                                         \
+        }                                                        \
+    } while (0);
 
 /*[clinic input]
 Struct.unpack
@@ -1858,18 +2097,17 @@ Struct.unpack
 
 Return a tuple containing unpacked values.
 
-Unpack according to the format string Struct.format. The buffer's size
-in bytes must be Struct.size.
-
-See help(struct) for more on format strings.
+Unpack according to the struct format string.  The buffer's
+size in bytes must be the struct size.  See help(struct) for more on
+format strings.
 [clinic start generated code]*/
 
 static PyObject *
 Struct_unpack_impl(PyStructObject *self, Py_buffer *buffer)
-/*[clinic end generated code: output=873a24faf02e848a input=3113f8e7038b2f6c]*/
+/*[clinic end generated code: output=873a24faf02e848a input=488843a57c47065a]*/
 {
     _structmodulestate *state = get_struct_state_structinst(self);
-    assert(self->s_codes != NULL);
+    ENSURE_STRUCT_IS_READY(self);
     if (buffer->len != self->s_size) {
         PyErr_Format(state->StructError,
                      "unpack requires a buffer of %zd bytes",
@@ -1887,21 +2125,19 @@ Struct.unpack_from
 
 Return a tuple containing unpacked values.
 
-Values are unpacked according to the format string Struct.format.
-
-The buffer's size in bytes, starting at position offset, must be
-at least Struct.size.
-
-See help(struct) for more on format strings.
+Values are unpacked according to the struct format string.  The
+buffer's size in bytes, starting at position offset, must be at
+least the struct size.  See help(struct) for more on format
+strings.
 [clinic start generated code]*/
 
 static PyObject *
 Struct_unpack_from_impl(PyStructObject *self, Py_buffer *buffer,
                         Py_ssize_t offset)
-/*[clinic end generated code: output=57fac875e0977316 input=cafd4851d473c894]*/
+/*[clinic end generated code: output=57fac875e0977316 input=57cfcf84c088faa4]*/
 {
     _structmodulestate *state = get_struct_state_structinst(self);
-    assert(self->s_codes != NULL);
+    ENSURE_STRUCT_IS_READY(self);
 
     if (offset < 0) {
         if (offset + self->s_size > 0) {
@@ -2042,19 +2278,17 @@ Struct.iter_unpack
 Return an iterator yielding tuples.
 
 Tuples are unpacked from the given bytes source, like a repeated
-invocation of unpack_from().
-
-Requires that the bytes length be a multiple of the struct size.
+invocation of unpack_from().  Requires that the bytes length be
+a multiple of the struct size.
 [clinic start generated code]*/
 
 static PyObject *
 Struct_iter_unpack_impl(PyStructObject *self, PyObject *buffer)
-/*[clinic end generated code: output=818f89ad4afa8d64 input=6d65b3f3107dbc99]*/
+/*[clinic end generated code: output=818f89ad4afa8d64 input=9555d2d29d1d9cd2]*/
 {
     _structmodulestate *state = get_struct_state_structinst(self);
     unpackiterobject *iter;
-
-    assert(self->s_codes != NULL);
+    ENSURE_STRUCT_IS_READY(self);
 
     if (self->s_size == 0) {
         PyErr_Format(state->StructError,
@@ -2089,13 +2323,13 @@ Struct_iter_unpack_impl(PyStructObject *self, PyObject *buffer)
  *
  * Takes a struct object, a tuple of arguments, and offset in that tuple of
  * argument for where to start processing the arguments for packing, and a
- * character buffer for writing the packed string.  The caller must insure
+ * character buffer for writing the packed data.  The caller must ensure
  * that the buffer may contain the required length for packing the arguments.
  * 0 is returned on success, 1 is returned if there is an error.
  *
  */
 static int
-s_pack_internal(PyStructObject *soself, PyObject *const *args, int offset,
+s_pack_internal(PyStructObject *soself, PyObject *const *args,
                 char* buf, _structmodulestate *state)
 {
     formatcode *code;
@@ -2104,14 +2338,14 @@ s_pack_internal(PyStructObject *soself, PyObject *const *args, int offset,
     Py_ssize_t i;
 
     memset(buf, '\0', soself->s_size);
-    i = offset;
+    i = 0;
     for (code = soself->s_codes; code->fmtdef != NULL; code++) {
         const formatdef *e = code->fmtdef;
         char *res = buf + code->offset;
         Py_ssize_t j = code->repeat;
         while (j--) {
             PyObject *v = args[i++];
-            if (e->format == 's') {
+            if (strcmp(e->format, "s") == 0) {
                 Py_ssize_t n;
                 int isstring;
                 const void *p;
@@ -2133,7 +2367,7 @@ s_pack_internal(PyStructObject *soself, PyObject *const *args, int offset,
                     n = code->size;
                 if (n > 0)
                     memcpy(res, p, n);
-            } else if (e->format == 'p') {
+            } else if (strcmp(e->format, "p") == 0) {
                 Py_ssize_t n;
                 int isstring;
                 const void *p;
@@ -2179,173 +2413,137 @@ s_pack_internal(PyStructObject *soself, PyObject *const *args, int offset,
 }
 
 
-PyDoc_STRVAR(s_pack__doc__,
-"S.pack(v1, v2, ...) -> bytes\n\
-\n\
-Return a bytes object containing values v1, v2, ... packed according\n\
-to the format string S.format.  See help(struct) for more on format\n\
-strings.");
+/*[clinic input]
+Struct.pack
+
+    *values: array
+
+Pack values and return the packed bytes.
+
+Return a bytes object containing the provided values packed
+according to the struct format string.  See help(struct) for more on
+format strings.
+[clinic start generated code]*/
 
 static PyObject *
-s_pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+Struct_pack_impl(PyStructObject *self, PyObject * const *values,
+                 Py_ssize_t values_length)
+/*[clinic end generated code: output=5766e18f596cae9e input=295f4b1a97747458]*/
 {
-    char *buf;
-    PyStructObject *soself;
     _structmodulestate *state = get_struct_state_structinst(self);
 
     /* Validate arguments. */
-    soself = PyStructObject_CAST(self);
-    assert(PyStruct_Check(self, state));
-    assert(soself->s_codes != NULL);
-    if (nargs != soself->s_len)
-    {
+    ENSURE_STRUCT_IS_READY(self);
+    if (values_length != self->s_len) {
         PyErr_Format(state->StructError,
-            "pack expected %zd items for packing (got %zd)", soself->s_len, nargs);
+                     "pack expected %zd items for packing (got %zd)",
+                     self->s_len, values_length);
         return NULL;
     }
 
-    /* Allocate a new string */
-    _PyBytesWriter writer;
-    _PyBytesWriter_Init(&writer);
-    buf = _PyBytesWriter_Alloc(&writer, soself->s_size);
-    if (buf == NULL) {
-        _PyBytesWriter_Dealloc(&writer);
+    PyBytesWriter *writer = PyBytesWriter_Create(self->s_size);
+    if (writer == NULL) {
         return NULL;
     }
+    char *buf = PyBytesWriter_GetData(writer);
 
     /* Call the guts */
-    if ( s_pack_internal(soself, args, 0, buf, state) != 0 ) {
-        _PyBytesWriter_Dealloc(&writer);
+    if (s_pack_internal(self, values, buf, state) != 0) {
+        PyBytesWriter_Discard(writer);
         return NULL;
     }
 
-    return _PyBytesWriter_Finish(&writer, buf + soself->s_size);
+    return PyBytesWriter_FinishWithSize(writer, self->s_size);
 }
 
-PyDoc_STRVAR(s_pack_into__doc__,
-"S.pack_into(buffer, offset, v1, v2, ...)\n\
-\n\
-Pack the values v1, v2, ... according to the format string S.format\n\
-and write the packed bytes into the writable buffer buf starting at\n\
-offset.  Note that the offset is a required argument.  See\n\
-help(struct) for more on format strings.");
+/*[clinic input]
+Struct.pack_into
+
+    buffer: Py_buffer(accept={rwbuffer})
+    offset: Py_ssize_t
+    /
+    *values: array
+
+Pack values and write the packed bytes into the buffer.
+
+Pack the provided values according to the struct format string
+and write the packed bytes into the writable buffer starting at
+offset.  Note that the offset is a required argument.  See
+help(struct) for more on format strings.
+[clinic start generated code]*/
 
 static PyObject *
-s_pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+Struct_pack_into_impl(PyStructObject *self, Py_buffer *buffer,
+                      Py_ssize_t offset, PyObject * const *values,
+                      Py_ssize_t values_length)
+/*[clinic end generated code: output=aa9d9a93f5f8f77b input=9d842a368ee14245]*/
 {
-    PyStructObject *soself;
-    Py_buffer buffer;
-    Py_ssize_t offset;
     _structmodulestate *state = get_struct_state_structinst(self);
 
-    /* Validate arguments.  +1 is for the first arg as buffer. */
-    soself = PyStructObject_CAST(self);
-    assert(PyStruct_Check(self, state));
-    assert(soself->s_codes != NULL);
-    if (nargs != (soself->s_len + 2))
-    {
-        if (nargs == 0) {
-            PyErr_Format(state->StructError,
-                        "pack_into expected buffer argument");
-        }
-        else if (nargs == 1) {
-            PyErr_Format(state->StructError,
-                        "pack_into expected offset argument");
-        }
-        else {
-            PyErr_Format(state->StructError,
-                        "pack_into expected %zd items for packing (got %zd)",
-                        soself->s_len, (nargs - 2));
-        }
-        return NULL;
-    }
-
-    /* Extract a writable memory buffer from the first argument */
-    if (!PyArg_Parse(args[0], "w*", &buffer))
-        return NULL;
-    assert(buffer.len >= 0);
-
-    /* Extract the offset from the first argument */
-    offset = PyNumber_AsSsize_t(args[1], PyExc_IndexError);
-    if (offset == -1 && PyErr_Occurred()) {
-        PyBuffer_Release(&buffer);
+    ENSURE_STRUCT_IS_READY(self);
+    if (values_length != self->s_len) {
+        PyErr_Format(state->StructError,
+                     "pack_into expected %zd items for packing (got %zd)",
+                     self->s_len, values_length);
         return NULL;
     }
 
     /* Support negative offsets. */
     if (offset < 0) {
          /* Check that negative offset is low enough to fit data */
-        if (offset + soself->s_size > 0) {
+        if (offset + self->s_size > 0) {
             PyErr_Format(state->StructError,
                          "no space to pack %zd bytes at offset %zd",
-                         soself->s_size,
+                         self->s_size,
                          offset);
-            PyBuffer_Release(&buffer);
             return NULL;
         }
 
         /* Check that negative offset is not crossing buffer boundary */
-        if (offset + buffer.len < 0) {
+        if (offset + buffer->len < 0) {
             PyErr_Format(state->StructError,
                          "offset %zd out of range for %zd-byte buffer",
                          offset,
-                         buffer.len);
-            PyBuffer_Release(&buffer);
+                         buffer->len);
             return NULL;
         }
 
-        offset += buffer.len;
+        offset += buffer->len;
     }
 
     /* Check boundaries */
-    if ((buffer.len - offset) < soself->s_size) {
+    if ((buffer->len - offset) < self->s_size) {
         assert(offset >= 0);
-        assert(soself->s_size >= 0);
+        assert(self->s_size >= 0);
 
         PyErr_Format(state->StructError,
                      "pack_into requires a buffer of at least %zu bytes for "
                      "packing %zd bytes at offset %zd "
                      "(actual buffer size is %zd)",
-                     (size_t)soself->s_size + (size_t)offset,
-                     soself->s_size,
+                     (size_t)self->s_size + (size_t)offset,
+                     self->s_size,
                      offset,
-                     buffer.len);
-        PyBuffer_Release(&buffer);
+                     buffer->len);
         return NULL;
     }
 
     /* Call the guts */
-    if (s_pack_internal(soself, args, 2, (char*)buffer.buf + offset, state) != 0) {
-        PyBuffer_Release(&buffer);
+    if (s_pack_internal(self, values, (char*)buffer->buf + offset, state) != 0) {
         return NULL;
     }
 
-    PyBuffer_Release(&buffer);
     Py_RETURN_NONE;
 }
 
-static PyObject *
-s_get_format(PyObject *op, void *Py_UNUSED(closure))
-{
-    PyStructObject *self = PyStructObject_CAST(op);
-    return PyUnicode_FromStringAndSize(PyBytes_AS_STRING(self->s_format),
-                                       PyBytes_GET_SIZE(self->s_format));
-}
+/*[clinic input]
+Struct.__sizeof__
+[clinic start generated code]*/
 
 static PyObject *
-s_get_size(PyObject *op, void *Py_UNUSED(closure))
+Struct___sizeof___impl(PyStructObject *self)
+/*[clinic end generated code: output=2d0d78900b4cdb4e input=faca5925c1f1ffd0]*/
 {
-    PyStructObject *self = PyStructObject_CAST(op);
-    return PyLong_FromSsize_t(self->s_size);
-}
-
-PyDoc_STRVAR(s_sizeof__doc__,
-"S.__sizeof__() -> size of S in memory, in bytes");
-
-static PyObject *
-s_sizeof(PyObject *op, PyObject *Py_UNUSED(dummy))
-{
-    PyStructObject *self = PyStructObject_CAST(op);
+    ENSURE_STRUCT_IS_READY(self);
     size_t size = _PyObject_SIZE(Py_TYPE(self)) + sizeof(formatcode);
     for (formatcode *code = self->s_codes; code->fmtdef != NULL; code++) {
         size += sizeof(formatcode);
@@ -2357,59 +2555,43 @@ static PyObject *
 s_repr(PyObject *op)
 {
     PyStructObject *self = PyStructObject_CAST(op);
-    PyObject* fmt = PyUnicode_FromStringAndSize(
-        PyBytes_AS_STRING(self->s_format), PyBytes_GET_SIZE(self->s_format));
-    if (fmt == NULL) {
-        return NULL;
-    }
-    PyObject* s = PyUnicode_FromFormat("%s(%R)", _PyType_Name(Py_TYPE(self)), fmt);
-    Py_DECREF(fmt);
-    return s;
+    ENSURE_STRUCT_IS_READY(self);
+    return PyUnicode_FromFormat("%s(%R)", _PyType_Name(Py_TYPE(self)), self->s_format);
 }
 
 /* List of functions */
 
 static struct PyMethodDef s_methods[] = {
     STRUCT_ITER_UNPACK_METHODDEF
-    {"pack",            _PyCFunction_CAST(s_pack), METH_FASTCALL, s_pack__doc__},
-    {"pack_into",       _PyCFunction_CAST(s_pack_into), METH_FASTCALL, s_pack_into__doc__},
+    STRUCT_PACK_METHODDEF
+    STRUCT_PACK_INTO_METHODDEF
     STRUCT_UNPACK_METHODDEF
     STRUCT_UNPACK_FROM_METHODDEF
-    {"__sizeof__",      s_sizeof, METH_NOARGS, s_sizeof__doc__},
+    STRUCT___SIZEOF___METHODDEF
     {NULL,       NULL}          /* sentinel */
 };
 
 static PyMemberDef s_members[] = {
     {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(PyStructObject, weakreflist), Py_READONLY},
+    {"format", Py_T_OBJECT_EX, offsetof(PyStructObject, s_format),
+        Py_READONLY, PyDoc_STR("struct format string")},
+    {"size", Py_T_PYSSIZET, offsetof(PyStructObject, s_size), Py_READONLY,
+        PyDoc_STR("struct size in bytes")},
     {NULL}  /* sentinel */
 };
-
-static PyGetSetDef s_getsetlist[] = {
-    {"format", s_get_format, NULL, PyDoc_STR("struct format string"), NULL},
-    {"size", s_get_size, NULL, PyDoc_STR("struct size in bytes"), NULL},
-    {NULL} /* sentinel */
-};
-
-PyDoc_STRVAR(s__doc__,
-"Struct(fmt) --> compiled struct object\n"
-"\n"
-);
 
 static PyType_Slot PyStructType_slots[] = {
     {Py_tp_dealloc, s_dealloc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_setattro, PyObject_GenericSetAttr},
     {Py_tp_repr, s_repr},
-    {Py_tp_doc, (void*)s__doc__},
+    {Py_tp_doc, (void*)Struct___init____doc__},
     {Py_tp_traverse, s_traverse},
     {Py_tp_clear, s_clear},
     {Py_tp_methods, s_methods},
     {Py_tp_members, s_members},
-    {Py_tp_getset, s_getsetlist},
-    {Py_tp_init, Struct___init__},
-    {Py_tp_alloc, PyType_GenericAlloc},
+    {Py_tp_init, s_init},
     {Py_tp_new, s_new},
-    {Py_tp_free, PyObject_GC_Del},
     {0, 0},
 };
 
@@ -2490,58 +2672,52 @@ calcsize_impl(PyObject *module, PyStructObject *s_object)
     return s_object->s_size;
 }
 
-PyDoc_STRVAR(pack_doc,
-"pack(format, v1, v2, ...) -> bytes\n\
-\n\
-Return a bytes object containing the values v1, v2, ... packed according\n\
-to the format string.  See help(struct) for more on format strings.");
+/*[clinic input]
+pack
+
+    format as s_object: cache_struct
+    /
+    *values: array
+
+Pack values and return the packed bytes.
+
+Return a bytes object containing the provided values packed according
+to the format string.  See help(struct) for more on format strings.
+[clinic start generated code]*/
 
 static PyObject *
-pack(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+pack_impl(PyObject *module, PyStructObject *s_object,
+          PyObject * const *values, Py_ssize_t values_length)
+/*[clinic end generated code: output=2f874191ddecdec0 input=8144972342391de1]*/
 {
-    PyObject *s_object = NULL;
-    PyObject *format, *result;
-
-    if (nargs == 0) {
-        PyErr_SetString(PyExc_TypeError, "missing format argument");
-        return NULL;
-    }
-    format = args[0];
-
-    if (!cache_struct_converter(module, format, (PyStructObject **)&s_object)) {
-        return NULL;
-    }
-    result = s_pack(s_object, args + 1, nargs - 1);
-    Py_DECREF(s_object);
-    return result;
+    return Struct_pack_impl(s_object, values, values_length);
 }
 
-PyDoc_STRVAR(pack_into_doc,
-"pack_into(format, buffer, offset, v1, v2, ...)\n\
-\n\
-Pack the values v1, v2, ... according to the format string and write\n\
-the packed bytes into the writable buffer buf starting at offset.  Note\n\
-that the offset is a required argument.  See help(struct) for more\n\
-on format strings.");
+/*[clinic input]
+pack_into
+
+    format as s_object: cache_struct
+    buffer: Py_buffer(accept={rwbuffer})
+    offset: Py_ssize_t
+    /
+    *values: array
+
+Pack values and write the packed bytes into the buffer.
+
+Pack the provided values according to the format string and write the
+packed bytes into the writable buffer starting at offset.  Note that the
+offset is a required argument.  See help(struct) for more on format
+strings.
+[clinic start generated code]*/
 
 static PyObject *
-pack_into(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+pack_into_impl(PyObject *module, PyStructObject *s_object, Py_buffer *buffer,
+               Py_ssize_t offset, PyObject * const *values,
+               Py_ssize_t values_length)
+/*[clinic end generated code: output=e8bf7d422b2088ef input=086867c0f5d8a8e4]*/
 {
-    PyObject *s_object = NULL;
-    PyObject *format, *result;
-
-    if (nargs == 0) {
-        PyErr_SetString(PyExc_TypeError, "missing format argument");
-        return NULL;
-    }
-    format = args[0];
-
-    if (!cache_struct_converter(module, format, (PyStructObject **)&s_object)) {
-        return NULL;
-    }
-    result = s_pack_into(s_object, args + 1, nargs - 1);
-    Py_DECREF(s_object);
-    return result;
+    return Struct_pack_into_impl(s_object, buffer, offset,
+                                 values, values_length);
 }
 
 /*[clinic input]
@@ -2553,14 +2729,13 @@ unpack
 
 Return a tuple containing values unpacked according to the format string.
 
-The buffer's size in bytes must be calcsize(format).
-
-See help(struct) for more on format strings.
+The buffer's size in bytes must be calcsize(format).  See help(struct)
+for more on format strings.
 [clinic start generated code]*/
 
 static PyObject *
 unpack_impl(PyObject *module, PyStructObject *s_object, Py_buffer *buffer)
-/*[clinic end generated code: output=48ddd4d88eca8551 input=05fa3b91678da727]*/
+/*[clinic end generated code: output=48ddd4d88eca8551 input=7df28c5d0b5b6f4e]*/
 {
     return Struct_unpack_impl(s_object, buffer);
 }
@@ -2575,15 +2750,14 @@ unpack_from
 
 Return a tuple containing values unpacked according to the format string.
 
-The buffer's size, minus offset, must be at least calcsize(format).
-
-See help(struct) for more on format strings.
+The buffer's size, minus offset, must be at least calcsize(format).  See
+help(struct) for more on format strings.
 [clinic start generated code]*/
 
 static PyObject *
 unpack_from_impl(PyObject *module, PyStructObject *s_object,
                  Py_buffer *buffer, Py_ssize_t offset)
-/*[clinic end generated code: output=1042631674c6e0d3 input=6e80a5398e985025]*/
+/*[clinic end generated code: output=1042631674c6e0d3 input=599262b23559f6c5]*/
 {
     return Struct_unpack_from_impl(s_object, buffer, offset);
 }
@@ -2597,26 +2771,25 @@ iter_unpack
 
 Return an iterator yielding tuples unpacked from the given bytes.
 
-The bytes are unpacked according to the format string, like
-a repeated invocation of unpack_from().
-
-Requires that the bytes length be a multiple of the format struct size.
+The bytes are unpacked according to the format string, like a repeated
+invocation of unpack_from().  Requires that the bytes length be
+a multiple of calcsize(format).
 [clinic start generated code]*/
 
 static PyObject *
 iter_unpack_impl(PyObject *module, PyStructObject *s_object,
                  PyObject *buffer)
-/*[clinic end generated code: output=0ae50e250d20e74d input=b214a58869a3c98d]*/
+/*[clinic end generated code: output=0ae50e250d20e74d input=ac5086c5c4ed68bb]*/
 {
-    return Struct_iter_unpack((PyObject*)s_object, buffer);
+    return Struct_iter_unpack_impl(s_object, buffer);
 }
 
 static struct PyMethodDef module_functions[] = {
     _CLEARCACHE_METHODDEF
     CALCSIZE_METHODDEF
     ITER_UNPACK_METHODDEF
-    {"pack",            _PyCFunction_CAST(pack), METH_FASTCALL,   pack_doc},
-    {"pack_into",       _PyCFunction_CAST(pack_into), METH_FASTCALL,   pack_into_doc},
+    PACK_METHODDEF
+    PACK_INTO_METHODDEF
     UNPACK_METHODDEF
     UNPACK_FROM_METHODDEF
     {NULL,       NULL}          /* sentinel */
@@ -2627,8 +2800,8 @@ static struct PyMethodDef module_functions[] = {
 
 PyDoc_STRVAR(module_doc,
 "Functions to convert between Python values and C structs.\n\
-Python bytes objects are used to hold the data representing the C struct\n\
-and also as format strings (explained below) to describe the layout of data\n\
+Python bytes objects are used to hold the data representing the C struct.\n\
+The format string (explained below) describes the layout of data\n\
 in the C struct.\n\
 \n\
 The optional first format char indicates byte order, size and alignment:\n\
@@ -2638,19 +2811,18 @@ The optional first format char indicates byte order, size and alignment:\n\
   >: big-endian, std. size & alignment\n\
   !: same as >\n\
 \n\
-The remaining chars indicate types of args and must match exactly;\n\
+The remaining characters indicate types of args and must match exactly;\n\
 these can be preceded by a decimal repeat count:\n\
-  x: pad byte (no data); c:char; b:signed byte; B:unsigned byte;\n\
-  ?: _Bool (requires C99; if not available, char is used instead)\n\
-  h:short; H:unsigned short; i:int; I:unsigned int;\n\
-  l:long; L:unsigned long; f:float; d:double; e:half-float.\n\
+  x: pad byte (no data); c: char; b: signed byte; B: unsigned byte;\n\
+  ?: _Bool; h: short; H: unsigned short; i: int; I: unsigned int;\n\
+  l: long; L: unsigned long; q: long long; Q: unsigned long long;\n\
+  f: float; d: double; e: half-float;\n\
+  F: float complex; D: double complex.\n\
 Special cases (preceding decimal count indicates length):\n\
-  s:string (array of char); p: pascal string (with count byte).\n\
+  s: byte string (array of char); p: Pascal string (with count byte).\n\
 Special cases (only available in native format):\n\
-  n:ssize_t; N:size_t;\n\
-  P:an integer type that is wide enough to hold a pointer.\n\
-Special case (not in native mode unless 'long long' in platform C):\n\
-  q:long long; Q:unsigned long long\n\
+  n: ssize_t; N: size_t;\n\
+  P: an integer type that is wide enough to hold a pointer.\n\
 Whitespace between formats is ignored.\n\
 \n\
 The variable struct.error is an exception raised on errors.\n");
@@ -2713,47 +2885,8 @@ _structmodule_exec(PyObject *m)
         return -1;
     }
 
-    /* Check endian and swap in faster functions */
-    {
-        const formatdef *native = native_table;
-        formatdef *other, *ptr;
-#if PY_LITTLE_ENDIAN
-        other = lilendian_table;
-#else
-        other = bigendian_table;
-#endif
-        /* Scan through the native table, find a matching
-           entry in the endian table and swap in the
-           native implementations whenever possible
-           (64-bit platforms may not have "standard" sizes) */
-        while (native->format != '\0' && other->format != '\0') {
-            ptr = other;
-            while (ptr->format != '\0') {
-                if (ptr->format == native->format) {
-                    /* Match faster when formats are
-                       listed in the same order */
-                    if (ptr == other)
-                        other++;
-                    /* Only use the trick if the
-                       size matches */
-                    if (ptr->size != native->size)
-                        break;
-                    /* Skip float and double, could be
-                       "unknown" float format */
-                    if (ptr->format == 'd' || ptr->format == 'f')
-                        break;
-                    /* Skip _Bool, semantics are different for standard size */
-                    if (ptr->format == '?')
-                        break;
-                    ptr->pack = native->pack;
-                    ptr->unpack = native->unpack;
-                    break;
-                }
-                ptr++;
-            }
-            native++;
-        }
-    }
+    /* init cannot fail */
+    (void)_PyOnceFlag_CallOnce(&endian_tables_init_once, init_endian_tables, NULL);
 
     /* Add some symbolic constants to the module */
     state->StructError = PyErr_NewException("struct.error", NULL, NULL);
@@ -2768,6 +2901,7 @@ _structmodule_exec(PyObject *m)
 }
 
 static PyModuleDef_Slot _structmodule_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, _structmodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

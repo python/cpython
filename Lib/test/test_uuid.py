@@ -13,7 +13,7 @@ from itertools import product
 from unittest import mock
 
 from test import support
-from test.support import import_helper
+from test.support import force_not_colorized_test_class, import_helper, warnings_helper
 from test.support.script_helper import assert_python_ok
 
 py_uuid = import_helper.import_fresh_module('uuid', blocked=['_uuid'])
@@ -590,6 +590,7 @@ class BaseTestUUID:
         # dependent on the underlying platform support.  At least it cannot be
         # unknown (unless I suppose the platform is buggy).
         self.assertNotEqual(u.is_safe, self.uuid.SafeUUID.unknown)
+        self.assertEqual(u.version, 1)
 
     @contextlib.contextmanager
     def mock_generate_time_safe(self, safe_value):
@@ -612,24 +613,28 @@ class BaseTestUUID:
         with self.mock_generate_time_safe(None):
             u = self.uuid.uuid1()
             self.assertEqual(u.is_safe, self.uuid.SafeUUID.unknown)
+            self.assertEqual(u.version, 1)
 
     @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
     def test_uuid1_is_safe(self):
         with self.mock_generate_time_safe(0):
             u = self.uuid.uuid1()
             self.assertEqual(u.is_safe, self.uuid.SafeUUID.safe)
+            self.assertEqual(u.version, 1)
 
     @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
     def test_uuid1_is_unsafe(self):
         with self.mock_generate_time_safe(-1):
             u = self.uuid.uuid1()
             self.assertEqual(u.is_safe, self.uuid.SafeUUID.unsafe)
+            self.assertEqual(u.version, 1)
 
     @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
     def test_uuid1_bogus_return_value(self):
         with self.mock_generate_time_safe(3):
             u = self.uuid.uuid1()
             self.assertEqual(u.is_safe, self.uuid.SafeUUID.unknown)
+            self.assertEqual(u.version, 1)
 
     def test_uuid1_time(self):
         with mock.patch.object(self.uuid, '_generate_time_safe', None), \
@@ -1112,6 +1117,7 @@ class BaseTestUUID:
         versions = {u.version for u in uuids}
         self.assertSetEqual(versions, {8})
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @support.requires_fork()
     def testIssue8621(self):
         # On at least some versions of OSX self.uuid.uuid4 generates
@@ -1176,6 +1182,47 @@ class CommandLineTestCases:
         self.assertEqual(cm.exception.code, 2)
         self.assertIn("error: Incorrect number of arguments", mock_err.getvalue())
 
+    @mock.patch.object(sys, "argv",
+                       ["", "-u", "uuid3", "-n", "@dns", "-N", "python.org"])
+    def test_cli_uuid3_outputted_with_valid_namespace_and_name(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            self.uuid.main()
+
+        output = stdout.getvalue().strip()
+        uuid_output = self.uuid.UUID(output)
+
+        # Output should be in the form of uuid3
+        self.assertEqual(output, str(uuid_output))
+        self.assertEqual(uuid_output.version, 3)
+
+    @mock.patch.object(sys, "argv",
+                       ["", "-u", "uuid3", "-n",
+                        "0d6a16cc-34a7-47d8-b660-214d0ae184d2",
+                        "-N", "some.user"])
+    def test_cli_uuid3_outputted_with_custom_namespace_and_name(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            self.uuid.main()
+
+        output = stdout.getvalue().strip()
+        uuid_output = self.uuid.UUID(output)
+
+        # Output should be in the form of uuid3
+        self.assertEqual(output, str(uuid_output))
+        self.assertEqual(uuid_output.version, 3)
+
+    @mock.patch.object(sys, "argv",
+                       ["", "-u", "uuid3", "-n", "any UUID", "-N", "python.org"])
+    @mock.patch('sys.stderr', new_callable=io.StringIO)
+    def test_cli_uuid3_with_invalid_namespace(self, mock_err):
+        with self.assertRaises(SystemExit) as cm:
+            self.uuid.main()
+        # Check that exception code is the same as argparse.ArgumentParser.error
+        self.assertEqual(cm.exception.code, 2)
+        self.assertIn("error: badly formed hexadecimal UUID string",
+                      mock_err.getvalue())
+
     @mock.patch.object(sys, "argv", [""])
     def test_cli_uuid4_outputted_with_no_args(self):
         stdout = io.StringIO()
@@ -1204,22 +1251,8 @@ class CommandLineTestCases:
             self.assertEqual(uuid_output.version, 4)
 
     @mock.patch.object(sys, "argv",
-                       ["", "-u", "uuid3", "-n", "@dns", "-N", "python.org"])
-    def test_cli_uuid3_ouputted_with_valid_namespace_and_name(self):
-        stdout = io.StringIO()
-        with contextlib.redirect_stdout(stdout):
-            self.uuid.main()
-
-        output = stdout.getvalue().strip()
-        uuid_output = self.uuid.UUID(output)
-
-        # Output should be in the form of uuid5
-        self.assertEqual(output, str(uuid_output))
-        self.assertEqual(uuid_output.version, 3)
-
-    @mock.patch.object(sys, "argv",
                        ["", "-u", "uuid5", "-n", "@dns", "-N", "python.org"])
-    def test_cli_uuid5_ouputted_with_valid_namespace_and_name(self):
+    def test_cli_uuid5_outputted_with_valid_namespace_and_name(self):
         stdout = io.StringIO()
         with contextlib.redirect_stdout(stdout):
             self.uuid.main()
@@ -1230,6 +1263,33 @@ class CommandLineTestCases:
         # Output should be in the form of uuid5
         self.assertEqual(output, str(uuid_output))
         self.assertEqual(uuid_output.version, 5)
+
+    @mock.patch.object(sys, "argv",
+                       ["", "-u", "uuid5", "-n",
+                        "0d6a16cc-34a7-47d8-b660-214d0ae184d2",
+                        "-N", "some.user"])
+    def test_cli_uuid5_ouputted_with_custom_namespace_and_name(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            self.uuid.main()
+
+        output = stdout.getvalue().strip()
+        uuid_output = self.uuid.UUID(output)
+
+        # Output should be in the form of uuid5
+        self.assertEqual(output, str(uuid_output))
+        self.assertEqual(uuid_output.version, 5)
+
+    @mock.patch.object(sys, "argv",
+                       ["", "-u", "uuid5", "-n", "any UUID", "-N", "python.org"])
+    @mock.patch('sys.stderr', new_callable=io.StringIO)
+    def test_cli_uuid5_with_invalid_namespace(self, mock_err):
+        with self.assertRaises(SystemExit) as cm:
+            self.uuid.main()
+        # Check that exception code is the same as argparse.ArgumentParser.error
+        self.assertEqual(cm.exception.code, 2)
+        self.assertIn("error: badly formed hexadecimal UUID string",
+                      mock_err.getvalue())
 
     @mock.patch.object(sys, "argv", ["", "-u", "uuid6"])
     def test_cli_uuid6(self):
@@ -1244,10 +1304,12 @@ class CommandLineTestCases:
         self.do_test_standalone_uuid(8)
 
 
+@force_not_colorized_test_class
 class TestUUIDWithoutExtModule(CommandLineTestCases, BaseTestUUID, unittest.TestCase):
     uuid = py_uuid
 
 
+@force_not_colorized_test_class
 @unittest.skipUnless(c_uuid, 'requires the C _uuid module')
 class TestUUIDWithExtModule(CommandLineTestCases, BaseTestUUID, unittest.TestCase):
     uuid = c_uuid

@@ -388,7 +388,7 @@ Add internal documentation explaining design of new (for 3.11) frame stack.
 .. bpo: 47197
 .. date: 2022-04-03-17-21-04
 .. nonce: Ji_c30
-.. section: Core and Builtins
+.. section: Library
 
 ctypes used to mishandle ``void`` return types, so that for instance a
 function declared like ``ctypes.CFUNCTYPE(None, ctypes.c_int)`` would be
@@ -500,7 +500,7 @@ at runtime where types are known at C compile time.
 .. bpo: 46045
 .. date: 2021-12-11-11-36-48
 .. nonce: sfThay
-.. section: Core and Builtins
+.. section: Build
 
 Do not use POSIX semaphores on NetBSD
 
@@ -664,7 +664,7 @@ for :func:`os.fcopyfile` available in macOs.
 .. nonce: l1p7CJ
 .. section: Library
 
-For :func:`@dataclass <dataclasses.dataclass>`, add *weakref_slot*.
+For :deco:`~dataclasses.dataclass`, add *weakref_slot*.
 The new parameter defaults to ``False``. If true, and if
 ``slots=True``, add a slot named ``"__weakref__"``, which will allow instances to be
 weakref'd. Contributed by Eric V. Smith

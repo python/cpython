@@ -44,7 +44,6 @@ from importlib.machinery import BuiltinImporter
 _loader = __loader__ if __loader__ is BuiltinImporter else type(__loader__)
 print('__loader__==%a' % _loader)
 print('__file__==%a' % __file__)
-print('__cached__==%a' % __cached__)
 print('__package__==%r' % __package__)
 # Check PEP 451 details
 import os.path
@@ -58,8 +57,6 @@ if __package__ is not None:
     assertEqual(__spec__.parent, __package__)
     assertIdentical(__spec__.submodule_search_locations, None)
     assertEqual(__spec__.origin, __file__)
-    if __spec__.cached is not None:
-        assertEqual(__spec__.cached, __cached__)
 # Check the sys module
 import sys
 assertIdentical(globals(), sys.modules[__name__].__dict__)
@@ -243,9 +240,8 @@ class CmdLineTest(unittest.TestCase):
     def test_script_compiled(self):
         with os_helper.temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, 'script')
-            py_compile.compile(script_name, doraise=True)
+            pyc_file = import_helper.make_legacy_pyc(script_name, allow_compile=True)
             os.remove(script_name)
-            pyc_file = import_helper.make_legacy_pyc(script_name)
             self._check_script(pyc_file, pyc_file,
                                pyc_file, script_dir, None,
                                importlib.machinery.SourcelessFileLoader)
@@ -260,9 +256,8 @@ class CmdLineTest(unittest.TestCase):
     def test_directory_compiled(self):
         with os_helper.temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, '__main__')
-            py_compile.compile(script_name, doraise=True)
+            pyc_file = import_helper.make_legacy_pyc(script_name, allow_compile=True)
             os.remove(script_name)
-            pyc_file = import_helper.make_legacy_pyc(script_name)
             self._check_script(script_dir, pyc_file, script_dir,
                                script_dir, '',
                                importlib.machinery.SourcelessFileLoader)
@@ -282,8 +277,8 @@ class CmdLineTest(unittest.TestCase):
     def test_zipfile_compiled_timestamp(self):
         with os_helper.temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, '__main__')
-            compiled_name = py_compile.compile(
-                script_name, doraise=True,
+            compiled_name = script_name + 'c'
+            py_compile.compile(script_name, compiled_name, doraise=True,
                 invalidation_mode=py_compile.PycInvalidationMode.TIMESTAMP)
             zip_name, run_name = make_zip_script(script_dir, 'test_zip', compiled_name)
             self._check_script(zip_name, run_name, zip_name, zip_name, '',
@@ -292,8 +287,8 @@ class CmdLineTest(unittest.TestCase):
     def test_zipfile_compiled_checked_hash(self):
         with os_helper.temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, '__main__')
-            compiled_name = py_compile.compile(
-                script_name, doraise=True,
+            compiled_name = script_name + 'c'
+            py_compile.compile(script_name, compiled_name, doraise=True,
                 invalidation_mode=py_compile.PycInvalidationMode.CHECKED_HASH)
             zip_name, run_name = make_zip_script(script_dir, 'test_zip', compiled_name)
             self._check_script(zip_name, run_name, zip_name, zip_name, '',
@@ -302,8 +297,8 @@ class CmdLineTest(unittest.TestCase):
     def test_zipfile_compiled_unchecked_hash(self):
         with os_helper.temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, '__main__')
-            compiled_name = py_compile.compile(
-                script_name, doraise=True,
+            compiled_name = script_name + 'c'
+            py_compile.compile(script_name, compiled_name, doraise=True,
                 invalidation_mode=py_compile.PycInvalidationMode.UNCHECKED_HASH)
             zip_name, run_name = make_zip_script(script_dir, 'test_zip', compiled_name)
             self._check_script(zip_name, run_name, zip_name, zip_name, '',
@@ -356,9 +351,8 @@ class CmdLineTest(unittest.TestCase):
             pkg_dir = os.path.join(script_dir, 'test_pkg')
             make_pkg(pkg_dir)
             script_name = _make_test_script(pkg_dir, '__main__')
-            compiled_name = py_compile.compile(script_name, doraise=True)
+            pyc_file = import_helper.make_legacy_pyc(script_name, allow_compile=True)
             os.remove(script_name)
-            pyc_file = import_helper.make_legacy_pyc(script_name)
             self._check_script(["-m", "test_pkg"], pyc_file,
                                pyc_file, script_dir, 'test_pkg',
                                importlib.machinery.SourcelessFileLoader,
@@ -810,6 +804,30 @@ class CmdLineTest(unittest.TestCase):
                 out, err = p.communicate()
                 self.assertEqual(out, b"12345678912345678912345\n")
 
+    def test_filter_syntax_warnings_by_module(self):
+        filename = support.findfile('test_import/data/syntax_warnings.py')
+        rc, out, err = assert_python_ok(
+            '-Werror',
+            '-Walways:::__main__',
+            '-Werror:::test.test_import.data.syntax_warnings',
+            '-Werror:::syntax_warnings',
+            filename)
+        self.assertEqual(err.count(b': SyntaxWarning: '), 6)
+
+    def test_zipfile_run_filter_syntax_warnings_by_module(self):
+        filename = support.findfile('test_import/data/syntax_warnings.py')
+        with open(filename, 'rb') as f:
+            source = f.read()
+        with os_helper.temp_dir() as script_dir:
+            zip_name, _ = make_zip_pkg(
+                script_dir, 'test_zip', 'test_pkg', '__main__', source)
+            rc, out, err = assert_python_ok(
+                '-Werror',
+                '-Walways:::__main__',
+                '-Werror:::test_pkg.__main__',
+                os.path.join(zip_name, 'test_pkg')
+            )
+            self.assertEqual(err.count(b': SyntaxWarning: '), 12)
 
 
 def tearDownModule():

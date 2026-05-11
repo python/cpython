@@ -1,6 +1,10 @@
-#ifndef Py_CPYTHON_LOCK_H
-#  error "this header file must not be included directly"
+#ifndef Py_LOCK_H
+#define Py_LOCK_H
+#ifndef Py_LIMITED_API
+#ifdef __cplusplus
+extern "C" {
 #endif
+
 
 #define _Py_UNLOCKED    0
 #define _Py_LOCKED      1
@@ -72,3 +76,10 @@ _PyMutex_IsLocked(PyMutex *m)
     return (_Py_atomic_load_uint8(&m->_bits) & _Py_LOCKED) != 0;
 }
 #define PyMutex_IsLocked _PyMutex_IsLocked
+
+
+#ifdef __cplusplus
+}
+#endif
+#endif  // !Py_LIMITED_API
+#endif  // !Py_LOCK_H

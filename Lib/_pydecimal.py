@@ -47,13 +47,16 @@ __all__ = [
     'HAVE_THREADS',
 
     # C version: compile time choice that enables the coroutine local context
-    'HAVE_CONTEXTVAR'
+    'HAVE_CONTEXTVAR',
+
+    # Highest version of the spec this module complies with
+    'SPEC_VERSION',
 ]
 
 __xname__ = __name__    # sys.modules lookup (--without-threads)
 __name__ = 'decimal'    # For pickling
-__version__ = '1.70'    # Highest version of the spec this complies with
-                        # See http://speleotrove.com/decimal/
+SPEC_VERSION = '1.70'   # Highest version of the spec this complies with
+                        # See https://speleotrove.com/decimal/decarith.html
 __libmpdec_version__ = "2.4.2" # compatible libmpdec version
 
 import math as _math
@@ -3340,7 +3343,10 @@ class Decimal(object):
         return opa, opb
 
     def logical_and(self, other, context=None):
-        """Applies an 'and' operation between self and other's digits."""
+        """Applies an 'and' operation between self and other's digits.
+
+        Both self and other must be logical numbers.
+        """
         if context is None:
             context = getcontext()
 
@@ -3357,14 +3363,20 @@ class Decimal(object):
         return _dec_from_triple(0, result.lstrip('0') or '0', 0)
 
     def logical_invert(self, context=None):
-        """Invert all its digits."""
+        """Invert all its digits.
+
+        The self must be logical number.
+        """
         if context is None:
             context = getcontext()
         return self.logical_xor(_dec_from_triple(0,'1'*context.prec,0),
                                 context)
 
     def logical_or(self, other, context=None):
-        """Applies an 'or' operation between self and other's digits."""
+        """Applies an 'or' operation between self and other's digits.
+
+        Both self and other must be logical numbers.
+        """
         if context is None:
             context = getcontext()
 
@@ -3381,7 +3393,10 @@ class Decimal(object):
         return _dec_from_triple(0, result.lstrip('0') or '0', 0)
 
     def logical_xor(self, other, context=None):
-        """Applies an 'xor' operation between self and other's digits."""
+        """Applies an 'xor' operation between self and other's digits.
+
+        Both self and other must be logical numbers.
+        """
         if context is None:
             context = getcontext()
 
@@ -6387,3 +6402,11 @@ _PyHASH_NAN = sys.hash_info.nan
 # _PyHASH_10INV is the inverse of 10 modulo the prime _PyHASH_MODULUS
 _PyHASH_10INV = pow(10, _PyHASH_MODULUS - 2, _PyHASH_MODULUS)
 del sys
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return SPEC_VERSION
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

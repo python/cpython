@@ -1235,17 +1235,6 @@ class TestParser(TestParserMixin, TestEmailBase):
             '@example.com')
         self.assertEqual(local_part.local_part, r'\example\\ example')
 
-    def test_get_local_part_unicode_defect(self):
-        # Currently this only happens when parsing unicode, not when parsing
-        # stuff that was originally binary.
-        local_part = self._test_get_x(parser.get_local_part,
-            'exámple@example.com',
-            'exámple',
-            'exámple',
-            [errors.NonASCIILocalPartDefect],
-            '@example.com')
-        self.assertEqual(local_part.local_part, 'exámple')
-
     # get_dtext
 
     def test_get_dtext_only(self):
@@ -2617,7 +2606,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             '')
         self.assertEqual(address_list.token_type, 'address-list')
         self.assertEqual(len(address_list.mailboxes), 1)
-        self.assertEqual(len(address_list.all_mailboxes), 3)
+        self.assertEqual(len(address_list.all_mailboxes), 4)
         self.assertEqual([str(x) for x in address_list.all_mailboxes],
                          [str(x) for x in address_list.addresses])
         self.assertEqual(address_list.mailboxes[0].domain, 'example.com')
@@ -2626,11 +2615,13 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(address_list.addresses[1].token_type, 'address')
         self.assertEqual(len(address_list.addresses[0].mailboxes), 1)
         self.assertEqual(len(address_list.addresses[1].mailboxes), 0)
-        self.assertEqual(len(address_list.addresses[1].mailboxes), 0)
+        self.assertEqual(len(address_list.addresses[2].mailboxes), 0)
+        self.assertEqual(len(address_list.addresses[3].mailboxes), 0)
         self.assertEqual(
             address_list.addresses[1].all_mailboxes[0].local_part, 'Foo x')
+        self.assertEqual(address_list.addresses[2].all_mailboxes[0].value, '[]')
         self.assertEqual(
-            address_list.addresses[2].all_mailboxes[0].display_name,
+            address_list.addresses[3].all_mailboxes[0].display_name,
                 "Nobody Is. Special")
 
     def test_get_address_list_group_empty(self):
@@ -2694,6 +2685,14 @@ class TestParser(TestParserMixin, TestEmailBase):
                          'y')
         self.assertEqual(str(address_list.addresses[1]),
                          str(address_list.mailboxes[2]))
+
+    def test_get_address_list_trailing_garbage(self):
+        address_list = self._test_get_x(parser.get_address_list,
+            'unlisted-recipients:; (no To-header on input)',
+            'unlisted-recipients:; (no To-header on input)',
+            'unlisted-recipients:; ',
+            [errors.InvalidHeaderDefect]*2 + [errors.ObsoleteHeaderDefect],
+            '')
 
     def test_invalid_content_disposition(self):
         content_disp = self._test_parse_x(
@@ -2866,6 +2865,81 @@ class TestParser(TestParserMixin, TestEmailBase):
             ""
         )
         self.assertEqual(msg_id.token_type, 'msg-id')
+
+    def test_parse_message_ids_valid(self):
+        message_ids = self._test_parse_x(
+            parser.parse_message_ids,
+            "<foo@bar> <bar@foo>",
+            "<foo@bar> <bar@foo>",
+            "<foo@bar> <bar@foo>",
+            [],
+            )
+        self.assertEqual(message_ids.token_type, 'message-id-list')
+
+    def test_parse_message_ids_empty(self):
+        message_ids = self._test_parse_x(
+            parser.parse_message_ids,
+            " ",
+            " ",
+            " ",
+            [errors.InvalidHeaderDefect],
+            )
+        self.assertEqual(message_ids.token_type, 'message-id-list')
+
+    def test_parse_message_ids_comment(self):
+        message_ids = self._test_parse_x(
+            parser.parse_message_ids,
+            "<foo@bar> (foo's message from \"bar\")",
+            "<foo@bar> (foo's message from \"bar\")",
+            "<foo@bar> ",
+            [],
+            )
+        self.assertEqual(message_ids.message_ids[0].value, '<foo@bar> ')
+        self.assertEqual(message_ids.token_type, 'message-id-list')
+
+    def test_parse_message_ids_no_sep(self):
+        message_ids = self._test_parse_x(
+            parser.parse_message_ids,
+            "<foo@bar><bar@foo>",
+            "<foo@bar><bar@foo>",
+            "<foo@bar><bar@foo>",
+            [],
+            )
+        self.assertEqual(message_ids.message_ids[0].value, '<foo@bar>')
+        self.assertEqual(message_ids.message_ids[1].value, '<bar@foo>')
+        self.assertEqual(message_ids.token_type, 'message-id-list')
+
+    def test_parse_message_ids_comma_sep(self):
+        message_ids = self._test_parse_x(
+            parser.parse_message_ids,
+            "<foo@bar>,<bar@foo>",
+            "<foo@bar> <bar@foo>",
+            "<foo@bar> <bar@foo>",
+            [errors.InvalidHeaderDefect],
+            )
+        self.assertEqual(message_ids.message_ids[0].value, '<foo@bar>')
+        self.assertEqual(message_ids.message_ids[1].value, '<bar@foo>')
+        self.assertEqual(message_ids.token_type, 'message-id-list')
+
+    def test_parse_message_ids_invalid_id(self):
+        message_ids = self._test_parse_x(
+            parser.parse_message_ids,
+            "<Date: Wed, 08 Jun 2002 09:78:58 +0600>",
+            "<Date: Wed, 08 Jun 2002 09:78:58 +0600>",
+            "<Date: Wed, 08 Jun 2002 09:78:58 +0600>",
+            [errors.InvalidHeaderDefect]*2,
+            )
+        self.assertEqual(message_ids.token_type, 'message-id-list')
+
+    def test_parse_message_ids_broken_ang(self):
+        message_ids = self._test_parse_x(
+            parser.parse_message_ids,
+            "<foo@bar> >bar@foo",
+            "<foo@bar> >bar@foo",
+            "<foo@bar> >bar@foo",
+            [errors.InvalidHeaderDefect]*1,
+            )
+        self.assertEqual(message_ids.token_type, 'message-id-list')
 
 
 
@@ -3219,6 +3293,29 @@ class TestFolding(TestEmailBase):
             with self.subTest(to=to):
                 self._test(parser.get_address_list(to)[0], folded, policy=policy)
 
+    def test_address_list_with_long_unwrapable_comment(self):
+        policy = self.policy.clone(max_line_length=40)
+        cases = [
+            # (to, folded)
+            ('(loremipsumdolorsitametconsecteturadipi)<spy@example.org>',
+             '(loremipsumdolorsitametconsecteturadipi)<spy@example.org>\n'),
+            ('<spy@example.org>(loremipsumdolorsitametconsecteturadipi)',
+             '<spy@example.org>(loremipsumdolorsitametconsecteturadipi)\n'),
+            ('(loremipsum dolorsitametconsecteturadipi)<spy@example.org>',
+             '(loremipsum dolorsitametconsecteturadipi)<spy@example.org>\n'),
+             ('<spy@example.org>(loremipsum dolorsitametconsecteturadipi)',
+             '<spy@example.org>(loremipsum\n dolorsitametconsecteturadipi)\n'),
+            ('(Escaped \\( \\) chars \\\\ in comments stay escaped)<spy@example.org>',
+             '(Escaped \\( \\) chars \\\\ in comments stay\n escaped)<spy@example.org>\n'),
+            ('((loremipsum)(loremipsum)(loremipsum)(loremipsum))<spy@example.org>',
+             '((loremipsum)(loremipsum)(loremipsum)(loremipsum))<spy@example.org>\n'),
+            ('((loremipsum)(loremipsum)(loremipsum) (loremipsum))<spy@example.org>',
+             '((loremipsum)(loremipsum)(loremipsum)\n (loremipsum))<spy@example.org>\n'),
+        ]
+        for (to, folded) in cases:
+            with self.subTest(to=to):
+                self._test(parser.get_address_list(to)[0], folded, policy=policy)
+
     # XXX Need tests with comments on various sides of a unicode token,
     # and with unicode tokens in the comments.  Spaces inside the quotes
     # currently don't do the right thing.
@@ -3254,6 +3351,26 @@ class TestFolding(TestEmailBase):
                 "_TEST_TEST_TEST_TEST_TEST;\n"
             " filename*1*=_TEST_TES.txt\n",
             )
+
+    def test_fold_unfoldable_element_stealing_whitespace(self):
+        # gh-142006: When an element is too long to fit on the current line
+        # the previous line's trailing whitespace should not trigger a double newline.
+        policy = self.policy.clone(max_line_length=10)
+        # The non-whitespace text needs to exactly fill the max_line_length (10).
+        text = ("a" * 9) + ", " + ("b" * 20)
+        expected = ("a" * 9) + ",\n " + ("b" * 20) + "\n"
+        token = parser.get_address_list(text)[0]
+        self._test(token, expected, policy=policy)
+
+    def test_encoded_word_with_undecodable_bytes(self):
+        self._test(
+            parser.get_address_list(
+                ' =?utf-8?Q?=E5=AE=A2=E6=88=B6=E6=AD=A3=E8=A6=8F=E4=BA=A4=E7?='
+                ' <xyz@abc.com>'
+                )[0],
+            ' =?unknown-8bit?b?5a6i5oi25q2j6KaP5Lqk5w==?= <xyz@abc.com>\n',
+            )
+
 
 if __name__ == '__main__':
     unittest.main()

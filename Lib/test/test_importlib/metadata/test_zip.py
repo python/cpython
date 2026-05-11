@@ -1,8 +1,12 @@
+import multiprocessing
+import os
 import sys
 import unittest
 
-from . import fixtures
+from test.support import requires_fork, warnings_helper
+
 from importlib.metadata import (
+    FastPath,
     PackageNotFoundError,
     distribution,
     distributions,
@@ -10,6 +14,8 @@ from importlib.metadata import (
     files,
     version,
 )
+
+from . import fixtures
 
 
 class TestZip(fixtures.ZipFixtures, unittest.TestCase):
@@ -45,6 +51,39 @@ class TestZip(fixtures.ZipFixtures, unittest.TestCase):
     def test_one_distribution(self):
         dists = list(distributions(path=sys.path[:1]))
         assert len(dists) == 1
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    @requires_fork()
+    @unittest.skipUnless(
+        hasattr(os, 'register_at_fork')
+        and 'fork' in multiprocessing.get_all_start_methods(),
+        'requires fork-based multiprocessing support',
+    )
+    def test_fastpath_cache_cleared_in_forked_child(self):
+        zip_path = sys.path[0]
+
+        FastPath(zip_path)
+        assert FastPath.__new__.cache_info().currsize >= 1
+
+        ctx = multiprocessing.get_context('fork')
+        parent_conn, child_conn = ctx.Pipe()
+
+        def child(conn, root):
+            try:
+                before = FastPath.__new__.cache_info().currsize
+                FastPath(root)
+                after = FastPath.__new__.cache_info().currsize
+                conn.send((before, after))
+            finally:
+                conn.close()
+
+        proc = ctx.Process(target=child, args=(child_conn, zip_path))
+        proc.start()
+        child_conn.close()
+        cache_sizes = parent_conn.recv()
+        proc.join()
+
+        self.assertEqual(cache_sizes, (0, 1))
 
 
 class TestEgg(TestZip):

@@ -48,14 +48,16 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
     #data['base_interpreter'] = sys._base_executable
     data['base_interpreter'] = os.path.join(
         sysconfig.get_path('scripts'),
-        'python' + sysconfig.get_config_var('VERSION'),
+        "python"
+        + sysconfig.get_config_var('LDVERSION')
+        + sysconfig.get_config_var('EXE'),
     )
     data['platform'] = sysconfig.get_platform()
 
     data['language']['version'] = sysconfig.get_python_version()
     data['language']['version_info'] = version_info_to_dict(sys.version_info)
 
-    data['implementation'] = vars(sys.implementation)
+    data['implementation'] = vars(sys.implementation).copy()
     data['implementation']['version'] = version_info_to_dict(sys.implementation.version)
     # Fix cross-compilation
     if '_multiarch' in data['implementation']:
@@ -104,7 +106,7 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
         data['abi']['extension_suffix'] = sysconfig.get_config_var('EXT_SUFFIX')
 
         # EXTENSION_SUFFIXES has been constant for a long time, and currently we
-        # don't have a better information source to find the  stable ABI suffix.
+        # don't have a better information source to find the stable ABI suffix.
         for suffix in importlib.machinery.EXTENSION_SUFFIXES:
             if suffix.startswith('.abi'):
                 data['abi']['stable_abi_suffix'] = suffix
@@ -133,31 +135,49 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
 def make_paths_relative(data: dict[str, Any], config_path: str | None = None) -> None:
     # Make base_prefix relative to the config_path directory
     if config_path:
-        data['base_prefix'] = os.path.relpath(data['base_prefix'], os.path.dirname(config_path))
+        data['base_prefix'] = relative_path(data['base_prefix'],
+                                            os.path.dirname(config_path))
+    base_prefix = data['base_prefix']
+
     # Update path values to make them relative to base_prefix
-    PATH_KEYS = [
+    PATH_KEYS = (
         'base_interpreter',
         'libpython.dynamic',
         'libpython.dynamic_stableabi',
         'libpython.static',
         'c_api.headers',
         'c_api.pkgconfig_path',
-    ]
+    )
     for entry in PATH_KEYS:
-        parent, _, child = entry.rpartition('.')
+        *parents, child = entry.split('.')
         # Get the key container object
         try:
             container = data
-            for part in parent.split('.'):
+            for part in parents:
                 container = container[part]
+            if child not in container:
+                raise KeyError(child)
             current_path = container[child]
         except KeyError:
             continue
         # Get the relative path
-        new_path = os.path.relpath(current_path, data['base_prefix'])
+        new_path = relative_path(current_path, base_prefix)
         # Join '.' so that the path is formated as './path' instead of 'path'
         new_path = os.path.join('.', new_path)
         container[child] = new_path
+
+
+def relative_path(path: str, base: str) -> str:
+    if os.name != 'nt':
+        return os.path.relpath(path, base)
+
+    # There are no relative paths between drives on Windows.
+    path_drv, _ = os.path.splitdrive(path)
+    base_drv, _ = os.path.splitdrive(base)
+    if path_drv.lower() == base_drv.lower():
+        return os.path.relpath(path, base)
+
+    return path
 
 
 def main() -> None:
@@ -186,8 +206,9 @@ def main() -> None:
         make_paths_relative(data, args.config_file_path)
 
     json_output = json.dumps(data, indent=2)
-    with open(args.location, 'w') as f:
-        print(json_output, file=f)
+    with open(args.location, 'w', encoding='utf-8') as f:
+        f.write(json_output)
+        f.write('\n')
 
 
 if __name__ == '__main__':

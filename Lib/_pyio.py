@@ -546,7 +546,7 @@ class IOBase(metaclass=abc.ABCMeta):
             res += b
             if res.endswith(b"\n"):
                 break
-        return bytes(res)
+        return res.take_bytes()
 
     def __iter__(self):
         self._checkClosed()
@@ -617,8 +617,10 @@ class RawIOBase(IOBase):
         n = self.readinto(b)
         if n is None:
             return None
+        if n < 0 or n > len(b):
+            raise ValueError(f"readinto returned {n} outside buffer size {len(b)}")
         del b[n:]
-        return bytes(b)
+        return b.take_bytes()
 
     def readall(self):
         """Read until EOF, using multiple read() call."""
@@ -626,7 +628,7 @@ class RawIOBase(IOBase):
         while data := self.read(DEFAULT_BUFFER_SIZE):
             res += data
         if res:
-            return bytes(res)
+            return res.take_bytes()
         else:
             # b'' or None
             return data
@@ -947,23 +949,24 @@ class BytesIO(BufferedIOBase):
         return self.read(size)
 
     def write(self, b):
-        if self.closed:
-            raise ValueError("write to closed file")
         if isinstance(b, str):
             raise TypeError("can't write str to binary stream")
         with memoryview(b) as view:
-            n = view.nbytes  # Size of any bytes-like object
-        if n == 0:
-            return 0
+            if self.closed:
+                raise ValueError("write to closed file")
 
-        with self._lock:
-            pos = self._pos
-            if pos > len(self._buffer):
-                # Pad buffer to pos with null bytes.
-                self._buffer.resize(pos)
-            self._buffer[pos:pos + n] = b
-            self._pos += n
-        return n
+            n = view.nbytes  # Size of any bytes-like object
+            if n == 0:
+                return 0
+
+            with self._lock:
+                pos = self._pos
+                if pos > len(self._buffer):
+                    # Pad buffer to pos with null bytes.
+                    self._buffer.resize(pos)
+                self._buffer[pos:pos + n] = view
+                self._pos += n
+            return n
 
     def seek(self, pos, whence=0):
         if self.closed:
@@ -1498,6 +1501,7 @@ class FileIO(RawIOBase):
     _writable = False
     _appending = False
     _seekable = None
+    _truncate = False
     _closefd = True
 
     def __init__(self, file, mode='r', closefd=True, opener=None):
@@ -1553,6 +1557,7 @@ class FileIO(RawIOBase):
             flags = 0
         elif 'w' in mode:
             self._writable = True
+            self._truncate = True
             flags = os.O_CREAT | os.O_TRUNC
         elif 'a' in mode:
             self._writable = True
@@ -1734,7 +1739,7 @@ class FileIO(RawIOBase):
         assert len(result) - bytes_read >= 1, \
             "os.readinto buffer size 0 will result in erroneous EOF / returns 0"
         result.resize(bytes_read)
-        return bytes(result)
+        return result.take_bytes()
 
     def readinto(self, buffer):
         """Same as RawIOBase.readinto()."""
@@ -1877,7 +1882,10 @@ class FileIO(RawIOBase):
                 return 'ab'
         elif self._readable:
             if self._writable:
-                return 'rb+'
+                if self._truncate:
+                    return 'wb+'
+                else:
+                    return 'rb+'
             else:
                 return 'rb'
         else:

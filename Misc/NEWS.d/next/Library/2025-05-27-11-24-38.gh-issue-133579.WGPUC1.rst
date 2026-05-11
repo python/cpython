@@ -1,7 +1,0 @@
-:mod:`curses`: Consistently report failures of curses C API calls in
-module-level methods by raising a :exc:`curses.error`. This affects
-:func:`~curses.assume_default_colors`, :func:`~curses.baudrate`,
-:func:`~curses.cbreak`, :func:`~curses.echo`, :func:`~curses.longname`,
-:func:`~curses.initscr`, :func:`~curses.nl`, :func:`~curses.raw`,
-:func:`~curses.termattrs`, :func:`~curses.termname` and :func:`~curses.unctrl`.
-Patch by Bénédikt Tran.

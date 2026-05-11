@@ -63,9 +63,9 @@ Pending removal in Python 3.16
 
 * :mod:`logging`:
 
-  Support for custom logging handlers with the *strm* argument is deprecated
-  and scheduled for removal in Python 3.16. Define handlers with the *stream*
-  argument instead. (Contributed by Mariusz Felisiak in :gh:`115032`.)
+  * Support for custom logging handlers with the *strm* argument is deprecated
+    and scheduled for removal in Python 3.16. Define handlers with the *stream*
+    argument instead. (Contributed by Mariusz Felisiak in :gh:`115032`.)
 
 * :mod:`mimetypes`:
 
@@ -84,7 +84,7 @@ Pending removal in Python 3.16
 
 * :mod:`symtable`:
 
-  * The :meth:`Class.get_methods <symtable.Class.get_methods>` method
+  * The :meth:`!symtable.Class.get_methods` method
     has been deprecated since Python 3.14.
 
 * :mod:`sys`:

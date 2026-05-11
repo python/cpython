@@ -1,4 +1,5 @@
 import _ast_unparse
+import _ast
 import ast
 import builtins
 import contextlib
@@ -13,6 +14,7 @@ import tempfile
 import textwrap
 import types
 import unittest
+import warnings
 import weakref
 from io import StringIO
 from pathlib import Path
@@ -24,7 +26,7 @@ except ImportError:
 
 from test import support
 from test.support import os_helper
-from test.support import skip_emscripten_stack_overflow, skip_wasi_stack_overflow
+from test.support import skip_emscripten_stack_overflow, skip_wasi_stack_overflow, skip_if_unlimited_stack_size
 from test.support.ast_helper import ASTTestMixin
 from test.support.import_helper import ensure_lazy_imports
 from test.test_ast.utils import to_tuple
@@ -84,7 +86,9 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(ast_node._fields, ast_node.__match_args__)
 
     def test_AST_objects(self):
-        x = ast.AST()
+        # Directly instantiating abstract node class AST is allowed (but deprecated)
+        with self.assertWarns(DeprecationWarning):
+            x = ast.AST()
         self.assertEqual(x._fields, ())
         x.foobar = 42
         self.assertEqual(x.foobar, 42)
@@ -93,7 +97,7 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(AttributeError):
             x.vararg
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(TypeError), self.assertWarns(DeprecationWarning):
             # "ast.AST constructor takes 0 positional arguments"
             ast.AST(2)
 
@@ -109,15 +113,21 @@ class AST_Tests(unittest.TestCase):
 
         msg = "type object 'ast.AST' has no attribute '_fields'"
         # Both examples used to crash:
-        with self.assertRaisesRegex(AttributeError, msg):
+        with (
+            self.assertRaisesRegex(AttributeError, msg),
+            self.assertWarns(DeprecationWarning),
+        ):
             ast.AST(arg1=123)
-        with self.assertRaisesRegex(AttributeError, msg):
+        with (
+            self.assertRaisesRegex(AttributeError, msg),
+            self.assertWarns(DeprecationWarning),
+        ):
             ast.AST()
 
-    def test_AST_garbage_collection(self):
+    def test_node_garbage_collection(self):
         class X:
             pass
-        a = ast.AST()
+        a = ast.Module()
         a.x = X()
         a.x.a = a
         ref = weakref.ref(a.x)
@@ -417,6 +427,17 @@ class AST_Tests(unittest.TestCase):
                 if isinstance(x, ast.AST):
                     self.assertIs(type(x._fields), tuple)
 
+    def test_dynamic_attr(self):
+        for name, item in ast.__dict__.items():
+            # constructor has a different signature
+            if name == 'Index':
+                continue
+            if self._is_ast_node(name, item):
+                x = self._construct_ast_class(item)
+                # Custom attribute assignment is allowed
+                x.foo = 5
+                self.assertEqual(x.foo, 5)
+
     def _construct_ast_class(self, cls):
         kwargs = {}
         for name, typ in cls.__annotations__.items():
@@ -427,7 +448,15 @@ class AST_Tests(unittest.TestCase):
             elif typ is object:
                 kwargs[name] = b'capybara'
             elif isinstance(typ, type) and issubclass(typ, ast.AST):
-                kwargs[name] = self._construct_ast_class(typ)
+                if _ast._is_abstract(typ):
+                    # Use an arbitrary concrete subclass
+                    concrete = next((sub for sub in typ.__subclasses__()
+                                     if not _ast._is_abstract(sub)), None)
+                    msg = f"abstract node class {typ} has no concrete subclasses"
+                    self.assertIsNotNone(concrete, msg)
+                else:
+                    concrete = typ
+                kwargs[name] = self._construct_ast_class(concrete)
         return cls(**kwargs)
 
     def test_arguments(self):
@@ -458,14 +487,9 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(x._fields, 666)
 
     def test_classattrs(self):
-        with self.assertWarns(DeprecationWarning):
-            x = ast.Constant()
+        x = ast.Constant(42)
         self.assertEqual(x._fields, ('value', 'kind'))
 
-        with self.assertRaises(AttributeError):
-            x.value
-
-        x = ast.Constant(42)
         self.assertEqual(x.value, 42)
 
         with self.assertRaises(AttributeError):
@@ -485,11 +509,8 @@ class AST_Tests(unittest.TestCase):
         self.assertRaises(TypeError, ast.Constant, 1, None, 2)
         self.assertRaises(TypeError, ast.Constant, 1, None, 2, lineno=0)
 
-        # Arbitrary keyword arguments are supported (but deprecated)
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(ast.Constant(1, foo='bar').foo, 'bar')
-
-        with self.assertRaisesRegex(TypeError, "Constant got multiple values for argument 'value'"):
+        msg = "ast.Constant got multiple values for argument 'value'"
+        with self.assertRaisesRegex(TypeError, re.escape(msg)):
             ast.Constant(1, value=2)
 
         self.assertEqual(ast.Constant(42).value, 42)
@@ -528,22 +549,23 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(x.body, body)
 
     def test_nodeclasses(self):
-        # Zero arguments constructor explicitly allowed (but deprecated)
-        with self.assertWarns(DeprecationWarning):
-            x = ast.BinOp()
-        self.assertEqual(x._fields, ('left', 'op', 'right'))
-
-        # Random attribute allowed too
-        x.foobarbaz = 5
-        self.assertEqual(x.foobarbaz, 5)
+        # Zero arguments constructor is not allowed
+        msg = "ast.BinOp.__init__ missing 3 required positional arguments: 'left', 'op', and 'right'"
+        self.assertRaisesRegex(TypeError, re.escape(msg), ast.BinOp)
 
         n1 = ast.Constant(1)
         n3 = ast.Constant(3)
         addop = ast.Add()
         x = ast.BinOp(n1, addop, n3)
+        self.assertEqual(x._fields, ('left', 'op', 'right'))
         self.assertEqual(x.left, n1)
         self.assertEqual(x.op, addop)
         self.assertEqual(x.right, n3)
+
+        # Arbitrary attributes are allowed
+        x.foobarbaz = 5
+        self.assertEqual(x.foobarbaz, 5)
+        self.assertEqual(x._fields, ('left', 'op', 'right'))
 
         x = ast.BinOp(1, 2, 3)
         self.assertEqual(x.left, 1)
@@ -568,10 +590,14 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(x.right, 3)
         self.assertEqual(x.lineno, 0)
 
-        # Random kwargs also allowed (but deprecated)
-        with self.assertWarns(DeprecationWarning):
-            x = ast.BinOp(1, 2, 3, foobarbaz=42)
-        self.assertEqual(x.foobarbaz, 42)
+        # Arbitrary keyword arguments are not allowed
+        msg = "ast.BinOp.__init__ got an unexpected keyword argument 'foobarbaz'"
+        with self.assertRaisesRegex(TypeError, re.escape(msg)):
+            ast.BinOp(1, 2, 3, foobarbaz=42)
+
+        # Directly instantiating abstract node types is allowed (but deprecated)
+        self.assertWarns(DeprecationWarning, ast.stmt)
+        self.assertWarns(DeprecationWarning, ast.expr_context)
 
     def test_no_fields(self):
         # this used to fail because Sub._fields was None
@@ -580,7 +606,10 @@ class AST_Tests(unittest.TestCase):
 
     def test_invalid_sum(self):
         pos = dict(lineno=2, col_offset=3)
-        m = ast.Module([ast.Expr(ast.expr(**pos), **pos)], [])
+        with self.assertWarns(DeprecationWarning):
+            # Creating instances of ast.expr is deprecated
+            e = ast.expr(**pos)
+        m = ast.Module([ast.Expr(e, **pos)], [])
         with self.assertRaises(TypeError) as cm:
             compile(m, "<test>", "exec")
         self.assertIn("but got expr()", str(cm.exception))
@@ -988,10 +1017,12 @@ class AST_Tests(unittest.TestCase):
         enum._test_simple_enum(_Precedence, _ast_unparse._Precedence)
 
     @support.cpython_only
+    @skip_if_unlimited_stack_size
     @skip_wasi_stack_overflow()
     @skip_emscripten_stack_overflow()
     def test_ast_recursion_limit(self):
-        crash_depth = 500_000
+        # Android test devices have less memory.
+        crash_depth = 100_000 if sys.platform == "android" else 500_000
         success_depth = 200
         if _testinternalcapi is not None:
             remaining = _testinternalcapi.get_c_recursion_remaining()
@@ -1057,61 +1088,6 @@ class AST_Tests(unittest.TestCase):
                                     r"Exceeds the limit \(\d+ digits\)"):
             repr(ast.Constant(value=eval(source)))
 
-    def test_pep_765_warnings(self):
-        srcs = [
-            textwrap.dedent("""
-                 def f():
-                     try:
-                         pass
-                     finally:
-                         return 42
-                 """),
-            textwrap.dedent("""
-                 for x in y:
-                     try:
-                         pass
-                     finally:
-                         break
-                 """),
-            textwrap.dedent("""
-                 for x in y:
-                     try:
-                         pass
-                     finally:
-                         continue
-                 """),
-        ]
-        for src in srcs:
-            with self.assertWarnsRegex(SyntaxWarning, 'finally'):
-                ast.parse(src)
-
-    def test_pep_765_no_warnings(self):
-        srcs = [
-            textwrap.dedent("""
-                 try:
-                     pass
-                 finally:
-                     def f():
-                         return 42
-                 """),
-            textwrap.dedent("""
-                 try:
-                     pass
-                 finally:
-                     for x in y:
-                         break
-                 """),
-            textwrap.dedent("""
-                 try:
-                     pass
-                 finally:
-                     for x in y:
-                         continue
-                 """),
-        ]
-        for src in srcs:
-            ast.parse(src)
-
     def test_tstring(self):
         # Test AST structure for simple t-string
         tree = ast.parse('t"Hello"')
@@ -1124,6 +1100,29 @@ class AST_Tests(unittest.TestCase):
         self.assertIsInstance(tree.body[0].value.values[0], ast.Constant)
         self.assertIsInstance(tree.body[0].value.values[1], ast.Interpolation)
 
+    def test_filter_syntax_warnings_by_module(self):
+        filename = support.findfile('test_import/data/syntax_warnings.py')
+        with open(filename, 'rb') as f:
+            source = f.read()
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=r'<unknown>\z')
+            ast.parse(source)
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10])
+        for wm in wlog:
+            self.assertEqual(wm.filename, '<unknown>')
+            self.assertIs(wm.category, SyntaxWarning)
+
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=r'package\.module\z')
+            warnings.filterwarnings('error', module=r'<unknown>')
+            ast.parse(source, filename, module='package.module')
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10])
+        for wm in wlog:
+            self.assertEqual(wm.filename, filename)
+            self.assertIs(wm.category, SyntaxWarning)
+
 
 class CopyTests(unittest.TestCase):
     """Test copying and pickling AST nodes."""
@@ -1132,13 +1131,18 @@ class CopyTests(unittest.TestCase):
     def iter_ast_classes():
         """Iterate over the (native) subclasses of ast.AST recursively.
 
-        This excludes the special class ast.Index since its constructor
-        returns an integer.
+        This excludes:
+          * abstract AST nodes
+          * the special class ast.Index, since its constructor returns
+            an integer.
         """
         def do(cls):
             if cls.__module__ != 'ast':
                 return
             if cls is ast.Index:
+                return
+            # Don't attempt to create instances of abstract AST nodes
+            if _ast._is_abstract(cls):
                 return
 
             yield cls
@@ -1157,6 +1161,7 @@ class CopyTests(unittest.TestCase):
                     ast2 = pickle.loads(pickle.dumps(tree, protocol))
                     self.assertEqual(to_tuple(ast2), to_tuple(tree))
 
+    @skip_if_unlimited_stack_size
     def test_copy_with_parents(self):
         # gh-120108
         code = """
@@ -1405,14 +1410,14 @@ class CopyTests(unittest.TestCase):
         self.assertRaises(AttributeError, getattr, repl, 'extra')
 
     def test_replace_reject_missing_field(self):
-        # case: warn if deleted field is not replaced
+        # case: raise if deleted field is not replaced
         node = ast.parse('x').body[0].value
         context = node.ctx
         del node.id
 
         self.assertRaises(AttributeError, getattr, node, 'id')
         self.assertIs(node.ctx, context)
-        msg = "Name.__replace__ missing 1 keyword argument: 'id'."
+        msg = "ast.Name.__init__ missing 1 required positional argument: 'id'"
         with self.assertRaisesRegex(TypeError, re.escape(msg)):
             copy.replace(node)
         # assert that there is no side-effect
@@ -1449,7 +1454,7 @@ class CopyTests(unittest.TestCase):
 
         # explicit rejection of known instance fields
         self.assertHasAttr(node, 'extra')
-        msg = "Name.__replace__ got an unexpected keyword argument 'extra'."
+        msg = "ast.Name.__init__ got an unexpected keyword argument 'extra'"
         with self.assertRaisesRegex(TypeError, re.escape(msg)):
             copy.replace(node, extra=1)
         # assert that there is no side-effect
@@ -1463,13 +1468,20 @@ class CopyTests(unittest.TestCase):
 
         # explicit rejection of unknown extra fields
         self.assertRaises(AttributeError, getattr, node, 'unknown')
-        msg = "Name.__replace__ got an unexpected keyword argument 'unknown'."
+        msg = "ast.Name.__init__ got an unexpected keyword argument 'unknown'"
         with self.assertRaisesRegex(TypeError, re.escape(msg)):
             copy.replace(node, unknown=1)
         # assert that there is no side-effect
         self.assertIs(node.id, 'x')
         self.assertIs(node.ctx, context)
         self.assertRaises(AttributeError, getattr, node, 'unknown')
+
+    def test_replace_non_str_kwarg(self):
+        node = ast.Name(id="x")
+        errmsg = "got an unexpected keyword argument <object object"
+        with self.assertRaisesRegex(TypeError, errmsg):
+            node.__replace__(**{object(): "y"})
+
 
 class ASTHelpers_Test(unittest.TestCase):
     maxDiff = None
@@ -1722,9 +1734,19 @@ Module(
 
         check_text(
             "import _ast as ast; from module import sub",
-            empty="Module(body=[Import(names=[alias(name='_ast', asname='ast')]), ImportFrom(module='module', names=[alias(name='sub')], level=0)])",
-            full="Module(body=[Import(names=[alias(name='_ast', asname='ast')]), ImportFrom(module='module', names=[alias(name='sub')], level=0)], type_ignores=[])",
+            empty="Module(body=[Import(names=[alias(name='_ast', asname='ast')], is_lazy=0), ImportFrom(module='module', names=[alias(name='sub')], level=0, is_lazy=0)])",
+            full="Module(body=[Import(names=[alias(name='_ast', asname='ast')], is_lazy=0), ImportFrom(module='module', names=[alias(name='sub')], level=0, is_lazy=0)], type_ignores=[])",
         )
+
+    def test_dump_with_color(self):
+        node = ast.parse("x = 1")
+        self.assertNotIn("\x1b[", ast.dump(node))
+        self.assertNotIn("\x1b[", ast.dump(node, color=False))
+        self.assertIn("\x1b[", ast.dump(node, color=True))
+
+        node = ast.Constant(value="\x1b[31m")
+        self.assertEqual(ast.dump(node), "Constant(value='\\x1b[31m')")
+        self.assertIn("'\\x1b[31m'", ast.dump(node, color=True))
 
     def test_copy_location(self):
         src = ast.parse('1 + 1', mode='eval')
@@ -2004,6 +2026,7 @@ Module(
         exec(code, ns)
         self.assertIn('sleep', ns)
 
+    @skip_if_unlimited_stack_size
     @skip_emscripten_stack_overflow()
     def test_recursion_direct(self):
         e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
@@ -2012,6 +2035,7 @@ Module(
             with support.infinite_recursion():
                 compile(ast.Expression(e), "<test>", "eval")
 
+    @skip_if_unlimited_stack_size
     @skip_emscripten_stack_overflow()
     def test_recursion_indirect(self):
         e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
@@ -2661,11 +2685,12 @@ class ConstantTests(unittest.TestCase):
 
     def get_load_const(self, tree):
         # Compile to bytecode, disassemble and get parameter of LOAD_CONST
-        # instructions
+        # and LOAD_COMMON_CONSTANT instructions
         co = compile(tree, '<string>', 'exec')
         consts = []
         for instr in dis.get_instructions(co):
-            if instr.opcode in dis.hasconst:
+            if instr.opcode in dis.hasconst or \
+                    instr.opname == 'LOAD_COMMON_CONSTANT':
                 consts.append(instr.argval)
         return consts
 
@@ -3088,8 +3113,8 @@ class EndPositionTests(unittest.TestCase):
 
 class NodeTransformerTests(ASTTestMixin, unittest.TestCase):
     def assertASTTransformation(self, transformer_class,
-                                initial_code, expected_code):
-        initial_ast = ast.parse(dedent(initial_code))
+                                code, expected_code):
+        initial_ast = ast.parse(dedent(code))
         expected_ast = ast.parse(dedent(expected_code))
 
         transformer = transformer_class()
@@ -3209,11 +3234,10 @@ class ASTConstructorTests(unittest.TestCase):
         args = ast.arguments()
         self.assertEqual(args.args, [])
         self.assertEqual(args.posonlyargs, [])
-        with self.assertWarnsRegex(DeprecationWarning,
-                                   r"FunctionDef\.__init__ missing 1 required positional argument: 'name'"):
-            node = ast.FunctionDef(args=args)
-        self.assertNotHasAttr(node, "name")
-        self.assertEqual(node.decorator_list, [])
+        msg = "ast.FunctionDef.__init__ missing 1 required positional argument: 'name'"
+        with self.assertRaisesRegex(TypeError, re.escape(msg)):
+            ast.FunctionDef(args=args)
+
         node = ast.FunctionDef(name='foo', args=args)
         self.assertEqual(node.name, 'foo')
         self.assertEqual(node.decorator_list, [])
@@ -3231,9 +3255,8 @@ class ASTConstructorTests(unittest.TestCase):
         self.assertEqual(name3.id, "x")
         self.assertIsInstance(name3.ctx, ast.Del)
 
-        with self.assertWarnsRegex(DeprecationWarning,
-                                   r"Name\.__init__ missing 1 required positional argument: 'id'"):
-            name3 = ast.Name()
+        msg = "ast.Name.__init__ missing 1 required positional argument: 'id'"
+        self.assertRaisesRegex(TypeError, re.escape(msg), ast.Name)
 
     def test_custom_subclass_with_no_fields(self):
         class NoInit(ast.AST):
@@ -3272,20 +3295,18 @@ class ASTConstructorTests(unittest.TestCase):
         self.assertEqual(obj.a, 1)
         self.assertEqual(obj.b, 2)
 
-        with self.assertWarnsRegex(DeprecationWarning,
-                                   r"MyAttrs.__init__ got an unexpected keyword argument 'c'."):
-            obj = MyAttrs(c=3)
+        msg = "MyAttrs.__init__ got an unexpected keyword argument 'c'"
+        with self.assertRaisesRegex(TypeError, re.escape(msg)):
+            MyAttrs(c=3)
 
     def test_fields_and_types_no_default(self):
         class FieldsAndTypesNoDefault(ast.AST):
             _fields = ('a',)
             _field_types = {'a': int}
 
-        with self.assertWarnsRegex(DeprecationWarning,
-                                   r"FieldsAndTypesNoDefault\.__init__ missing 1 required positional argument: 'a'\."):
-            obj = FieldsAndTypesNoDefault()
-        with self.assertRaises(AttributeError):
-            obj.a
+        msg = "FieldsAndTypesNoDefault.__init__ missing 1 required positional argument: 'a'"
+        self.assertRaisesRegex(TypeError, re.escape(msg), FieldsAndTypesNoDefault)
+
         obj = FieldsAndTypesNoDefault(a=1)
         self.assertEqual(obj.a, 1)
 
@@ -3296,17 +3317,20 @@ class ASTConstructorTests(unittest.TestCase):
             a: int | None = None
             b: int | None = None
 
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            r"Field 'b' is missing from MoreFieldsThanTypes\._field_types"
-        ):
-            obj = MoreFieldsThanTypes()
-        self.assertIs(obj.a, None)
-        self.assertIs(obj.b, None)
+        msg = r"Field 'b' is missing from .*\.MoreFieldsThanTypes\._field_types"
+        self.assertRaisesRegex(TypeError, msg, MoreFieldsThanTypes)
 
         obj = MoreFieldsThanTypes(a=1, b=2)
         self.assertEqual(obj.a, 1)
         self.assertEqual(obj.b, 2)
+
+    def test_malformed_fields_with_bytes(self):
+        class BadFields(ast.AST):
+            _fields = (b'\xff'*64,)
+            _field_types = {'a': int}
+
+        # This should not crash
+        self.assertRaisesRegex(TypeError, r"Field b'\\xff\\xff.*' .*", BadFields)
 
     def test_complete_field_types(self):
         class _AllFieldTypes(ast.AST):
@@ -3320,6 +3344,27 @@ class ASTConstructorTests(unittest.TestCase):
         obj = _AllFieldTypes()
         self.assertIs(obj.a, None)
         self.assertEqual(obj.b, [])
+
+    def test_non_str_kwarg(self):
+        warn_msg = "got an unexpected keyword argument <object object"
+        with (
+            self.assertRaises(TypeError),
+            self.assertWarnsRegex(DeprecationWarning, warn_msg),
+        ):
+            ast.Name(**{object(): 'y'})
+
+        class FakeStr:
+            def __init__(self, value):
+                self.value = value
+
+            def __hash__(self):
+                return hash(self.value)
+
+            def __eq__(self, other):
+                return isinstance(other, str) and self.value == other
+
+        with self.assertRaisesRegex(TypeError, "got multiple values for argument"):
+            ast.Name("x", **{FakeStr('id'): 'y'})
 
 
 @support.cpython_only
@@ -3404,6 +3449,7 @@ class ModuleStateTests(unittest.TestCase):
         self.assertEqual(res, 0)
 
 
+@support.force_not_colorized_test_class
 class CommandLineTests(unittest.TestCase):
     def setUp(self):
         self.filename = tempfile.mktemp()
