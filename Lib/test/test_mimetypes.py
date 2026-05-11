@@ -529,7 +529,7 @@ class CommandLineSubprocessTest(unittest.TestCase):
 
     def test_extension_flag(self):
         rc, stdout, stderr = assert_python_ok('-m', 'mimetypes', '-e', 'image/jpeg')
-        self.assertIn(b'.jpg', stdout)
+        self.assertEqual(stdout.strip(), b'.jpg')
         self.assertEqual(stderr, b'')
 
     def test_extension_flag_unknown(self):
@@ -558,7 +558,8 @@ class CommandLineSubprocessTest(unittest.TestCase):
 
     def test_unknown_flag(self):
         rc, stdout, stderr = assert_python_failure('-m', 'mimetypes', '--unknown-flag')
-        self.assertNotEqual(rc, 0)
+        self.assertEqual(stdout, b'')
+        self.assertIn(b'error', stderr)
 
 
 if __name__ == "__main__":
