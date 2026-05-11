@@ -3863,7 +3863,7 @@ __deregister_frame(0);
     [ac_cv_have_libgcc_eh_frame_registration=no])
   ])
 AS_VAR_IF([ac_cv_have_libgcc_eh_frame_registration], [yes], [
-  AC_DEFINE([HAVE_LIBGCC_EH_FRAME_REGISTRATION], [1],
+  AC_DEFINE([_Py_HAVE_LIBGCC_EH_FRAME_REGISTRATION], [1],
     [Define to 1 if libgcc __register_frame and __deregister_frame are linkable.])
 ])
 
@@ -5163,7 +5163,7 @@ AC_LINK_IFELSE([
 ])
 
 AS_VAR_IF([ac_cv_efficient_builtin_shufflevector], [yes], [
-    AC_DEFINE([HAVE_EFFICIENT_BUILTIN_SHUFFLEVECTOR], [1],
+    AC_DEFINE([_Py_HAVE_EFFICIENT_BUILTIN_SHUFFLEVECTOR], [1],
               [Define if compiler supports __builtin_shufflevector with 128-bit
                vectors AND the target architecture has native SIMD (not just API
                availability)])
@@ -5788,7 +5788,7 @@ AC_CHECK_DECLS([UT_NAMESIZE],
 # musl libc redefines struct prctl_mm_map and conflicts with linux/prctl.h
 AS_IF([test "$ac_cv_libc" != musl], [
 AC_CHECK_DECLS([PR_SET_VMA_ANON_NAME],
-              [AC_DEFINE([HAVE_PR_SET_VMA_ANON_NAME], [1],
+              [AC_DEFINE([_Py_HAVE_PR_SET_VMA_ANON_NAME], [1],
                          [Define if you have the 'PR_SET_VMA_ANON_NAME' constant.])],
               [],
               [@%:@include <linux/prctl.h>
