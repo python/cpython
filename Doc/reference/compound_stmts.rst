@@ -294,9 +294,8 @@ was translated to ::
 
 This means the exception must be assigned to a different name to be able to
 refer to it after the :keyword:`!except` clause.
-Exceptions are cleared because with the
-traceback attached to them, they form a reference cycle with the stack frame,
-keeping all locals in that frame alive until the next garbage collection occurs.
+Exceptions are cleared because their attached tracebacks form a reference cycle with the stack
+frame, keeping all locals in that frame alive until the next garbage collection occurs.
 
 .. index::
    pair: module; sys
@@ -341,7 +340,7 @@ can have either :keyword:`except` or :keyword:`!except*` clauses, but not both.
 The exception type for matching is mandatory in the case of :keyword:`!except*`,
 so ``except*:`` is a syntax error. The type is interpreted as in the case of
 :keyword:`!except`, but matching is performed on the exceptions contained in the
-group that is being handled. An :exc:`TypeError` is raised if a matching
+group that is being handled. A :exc:`TypeError` is raised if a matching
 type is a subclass of :exc:`!BaseExceptionGroup`, because that would have
 ambiguous semantics.
 
