@@ -2572,7 +2572,7 @@ Fundamental data types
 
    .. attribute:: _type_
 
-      Class attribute that contains an internal type code.
+      Class attribute that contains an internal type code, as a string.
       See :ref:`ctypes-fundamental-data-types` for a summary.
 
       Types marked \* in the summary may be (or always are) aliases of a
