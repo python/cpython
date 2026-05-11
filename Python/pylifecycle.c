@@ -892,6 +892,8 @@ pycore_init_builtins(PyThreadState *tstate)
     interp->common_consts[CONSTANT_FALSE] = Py_False;
     interp->common_consts[CONSTANT_MINUS_ONE] =
         (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS - 1];
+    interp->common_consts[CONSTANT_EMPTY_TUPLE] =
+        Py_GetConstantBorrowed(Py_CONSTANT_EMPTY_TUPLE);
     for (int i = 0; i < NUM_COMMON_CONSTANTS; i++) {
         assert(interp->common_consts[i] != NULL);
     }
