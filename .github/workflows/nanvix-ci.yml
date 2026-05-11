@@ -25,9 +25,9 @@ concurrency:
 jobs:
   ci:
     if: github.event_name != 'schedule' && github.event_name != 'workflow_dispatch'
-    uses: nanvix/workflows/.github/workflows/nanvix-ci.yml@v1.15.0
+    uses: nanvix/workflows/.github/workflows/nanvix-ci.yml@v2.0.0
     with:
-      zutil-version: "v0.7.48"
+      zutil-version: "v0.8.1"
       docker-image: "ghcr.io/nanvix/toolchain-python:latest"
       platforms: '["microvm"]'
       memory-sizes: '["256mb"]'
@@ -46,9 +46,9 @@ jobs:
       actions: write
       issues: write
       pull-requests: write
-    uses: nanvix/workflows/.github/workflows/nanvix-ci.yml@v1.15.0
+    uses: nanvix/workflows/.github/workflows/nanvix-ci.yml@v2.0.0
     with:
-      zutil-version: "v0.7.48"
+      zutil-version: "v0.8.1"
       docker-image: "ghcr.io/nanvix/toolchain-python:latest"
       platforms: '["microvm"]'
       memory-sizes: '["256mb"]'
@@ -62,7 +62,7 @@ jobs:
 
   # -------------------------------------------------------------------
   # Create a Windows zip release asset for MXC consumption.
-  # The reusable workflow creates a GitHub release with .tar.bz2 assets.
+  # The reusable workflow creates a GitHub release with .tar.gz assets.
   # This job downloads the standalone tarball from that release, extracts
   # python.elf + cpython-ramfs.img, packs them into a flat .zip, and
   # uploads it to the same release.
@@ -94,7 +94,7 @@ jobs:
           sleep 5
 
           # Download standalone tarballs (exclude buildroot variant)
-          gh release download "$RELEASE_TAG" --pattern "*standalone*.tar.bz2" --dir release-download || true
+          gh release download "$RELEASE_TAG" --pattern "*standalone*.tar.gz" --dir release-download || true
           ls -la release-download/
 
       - name: Create Windows zip
@@ -104,7 +104,7 @@ jobs:
           set -euo pipefail
 
           # Find the main standalone tarball (not buildroot)
-          TARBALL=$(find release-download -name "*standalone*.tar.bz2" ! -name "*buildroot*" | head -1)
+          TARBALL=$(find release-download -name "*standalone*.tar.gz" ! -name "*buildroot*" | head -1)
           if [[ -z "$TARBALL" ]]; then
             echo "::warning::No standalone tarball found (excluding buildroot)"
             ls release-download/ 2>/dev/null || true
@@ -113,7 +113,7 @@ jobs:
           echo "Using tarball: $TARBALL"
 
           mkdir -p extract windows-zip
-          tar -xjf "$TARBALL" -C extract
+          tar -xzf "$TARBALL" -C extract
 
           # Find the python binary — it's at bin/python.elf
           PYTHON_ELF=$(find extract -name "python.elf" -type f | head -1)
@@ -153,10 +153,10 @@ jobs:
             curl -fsSL https://raw.githubusercontent.com/nanvix/nanvix/refs/heads/dev/scripts/get-nanvix.sh \
               | bash -s -- --force nanvix-dl
             MKRAMFS=""
-            NVX_TAR=$(find nanvix-dl -name "nanvix-microvm-standalone-*.tar.bz2" | head -1)
+            NVX_TAR=$(find nanvix-dl -name "nanvix-microvm-standalone-*.tar.gz" | head -1)
             if [[ -n "$NVX_TAR" ]]; then
               mkdir -p nanvix-extract
-              tar -xjf "$NVX_TAR" -C nanvix-extract
+              tar -xzf "$NVX_TAR" -C nanvix-extract
               MKRAMFS=$(find nanvix-extract -name "mkramfs.elf" -type f | head -1)
             fi
 

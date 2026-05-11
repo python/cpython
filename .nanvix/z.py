@@ -276,13 +276,38 @@ class CPythonBuild(ZScript):
         if local_nanvix:
             local_nanvix = os.path.abspath(os.path.expanduser(local_nanvix))
 
+        # Dependencies are now shipped as .tar.gz; override the default
+        # artifact_pattern (which still targets .tar.bz2 in zutil <=0.8.1).
+        _gz = "{name}-{machine}-{mode}-{mem}.tar.gz"
+        for dep in self.manifest.dependencies:  # type: ignore[attr-defined]
+            dep.artifact_pattern = _gz  # type: ignore[attr-defined]
+
         used_fallback = False
         if local_nanvix and os.path.isdir(local_nanvix):
             self._setup_from_local_nanvix(local_nanvix)
         else:
-            # Base class handles: download sysroot, download Windows
-            # binaries (if on Windows), verify required files.
-            used_fallback = super().setup()
+            # Monkey-patch tarfile.open to auto-detect compression so that
+            # buildroot.install_dep (which hardcodes "r:bz2") can extract
+            # .tar.gz archives produced by newer dependency releases.
+            _orig_tarfile_open = tarfile.open
+
+            def _tarfile_open_auto(
+                name: object = None,
+                mode: str = "r",
+                *args: object,
+                **kwargs: object,
+            ) -> tarfile.TarFile:
+                if mode == "r:bz2":
+                    mode = "r:*"
+                return _orig_tarfile_open(name, mode, *args, **kwargs)  # type: ignore[arg-type]
+
+            tarfile.open = _tarfile_open_auto  # type: ignore[assignment]
+            try:
+                # Base class handles: download sysroot, download Windows
+                # binaries (if on Windows), verify required files.
+                used_fallback = super().setup()
+            finally:
+                tarfile.open = _orig_tarfile_open  # type: ignore[assignment]
 
         self._install_missing_deps()
 
