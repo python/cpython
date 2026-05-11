@@ -1810,11 +1810,11 @@ class BaseTaskTests:
         loop.call_later = call_later
         test_utils.run_briefly(loop)
 
-        self.assertFalse(handle._cancelled)
+        self.assertFalse(handle.cancelled())
 
         t.cancel()
         test_utils.run_briefly(loop)
-        self.assertTrue(handle._cancelled)
+        self.assertTrue(handle.cancelled())
 
     def test_task_cancel_sleeping_task(self):
 
