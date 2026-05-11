@@ -1,0 +1,2 @@
+Fix :exc:`MemoryError` in the t-string tokenizer when the opening ``{``
+and closing delimiter span different source lines.
