@@ -1,0 +1,1 @@
+Add tests for the :mod:`mimetypes` command-line interface.
