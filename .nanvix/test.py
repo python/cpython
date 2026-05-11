@@ -71,24 +71,27 @@ def _download_release_as_cache(
     tag = release["tag_name"]
     print(f"  Resolved cpython release: {tag}")
 
-    # Find a standalone tarball asset.
+    # Find a standalone tarball asset (.tar.gz preferred, .tar.bz2 fallback).
     asset_prefix = f"cpython-{platform}-{process_mode}-{memory_size}"
     asset_url = None
     asset_name = None
-    for a in release.get("assets", []):
-        name = a.get("name", "")
-        if (
-            name.startswith(asset_prefix)
-            and name.endswith(".tar.bz2")
-            and "buildroot" not in name
-        ):
-            asset_url = a["browser_download_url"]
-            asset_name = name
+    for ext in (".tar.gz", ".tar.bz2"):
+        for a in release.get("assets", []):
+            name = a.get("name", "")
+            if (
+                name.startswith(asset_prefix)
+                and name.endswith(ext)
+                and "buildroot" not in name
+            ):
+                asset_url = a["browser_download_url"]
+                asset_name = name
+                break
+        if asset_url:
             break
 
     if not asset_url:
         raise FileNotFoundError(
-            f"No cpython release asset matching '{asset_prefix}*.tar.bz2' "
+            f"No cpython release asset matching '{asset_prefix}*.tar.gz' or '*.tar.bz2' "
             f"in release {tag}. Available assets: "
             + ", ".join(a["name"] for a in release.get("assets", []))
         )
@@ -104,7 +107,7 @@ def _download_release_as_cache(
 
     # Extract into _install_cache with path-traversal protection.
     print(f"  Extracting to {cache_dir}...")
-    with tarfile.open(tarball, "r:bz2") as tf:
+    with tarfile.open(tarball, "r:*") as tf:
         base = cache_dir.resolve()
         for member in tf.getmembers():
             if member.issym() or member.islnk():

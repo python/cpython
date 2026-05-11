@@ -51,8 +51,8 @@ def package(
     """Package CPython release tarballs.
 
     Creates two tarballs in ``dist/``:
-    - ``cpython-<platform>-<mode>-<memory>.tar.bz2`` — runtime sysroot + binary + ramfs
-    - ``cpython-<platform>-<mode>-<memory>-buildroot.tar.bz2`` — build dependencies
+    - ``cpython-<platform>-<mode>-<memory>.tar.gz`` — runtime sysroot + binary + ramfs
+    - ``cpython-<platform>-<mode>-<memory>-buildroot.tar.gz`` — build dependencies
 
     Args:
         nanvix_home: Host-side path to the Nanvix sysroot for local
@@ -187,9 +187,9 @@ def package(
     dist_dir.mkdir(parents=True, exist_ok=True)
 
     # Sysroot tarball.
-    sysroot_tar = dist_dir / f"{artifact}.tar.bz2"
+    sysroot_tar = dist_dir / f"{artifact}.tar.gz"
     sysroot_runtime = ramfs_staging / "sysroot"
-    with tarfile.open(str(sysroot_tar), "w:bz2") as tf:
+    with tarfile.open(str(sysroot_tar), "w:gz") as tf:
         tf.add(str(sysroot_runtime), arcname="sysroot")
         if bin_dir.is_dir():
             tf.add(str(bin_dir), arcname="bin")
@@ -197,15 +197,15 @@ def package(
             tf.add(str(ramfs_img), arcname="cpython-ramfs.img")
 
     # Buildroot tarball.
-    buildroot_tar = dist_dir / f"{artifact}-buildroot.tar.bz2"
-    with tarfile.open(str(buildroot_tar), "w:bz2") as tf:
+    buildroot_tar = dist_dir / f"{artifact}-buildroot.tar.gz"
+    with tarfile.open(str(buildroot_tar), "w:gz") as tf:
         tf.add(str(buildroot_pkg), arcname="sysroot")
 
     # Cleanup staging.
     shutil.rmtree(release_staging)
 
     print("Release tarballs created in dist/")
-    for f in sorted(dist_dir.glob(f"{artifact}*.tar.bz2")):
+    for f in sorted(dist_dir.glob(f"{artifact}*.tar.gz")):
         size = f.stat().st_size
         print(f"  {f.name} ({size // 1024}K)")
 
@@ -227,8 +227,8 @@ def verify(
 
     print("Verifying release tarballs...")
 
-    sysroot_tar = dist_dir / f"{artifact}.tar.bz2"
-    buildroot_tar = dist_dir / f"{artifact}-buildroot.tar.bz2"
+    sysroot_tar = dist_dir / f"{artifact}.tar.gz"
+    buildroot_tar = dist_dir / f"{artifact}-buildroot.tar.gz"
 
     if not sysroot_tar.is_file():
         raise FileNotFoundError(f"Sysroot tarball not found: {sysroot_tar}")
@@ -236,9 +236,9 @@ def verify(
         raise FileNotFoundError(f"Buildroot tarball not found: {buildroot_tar}")
 
     # Verify integrity.
-    with tarfile.open(str(sysroot_tar), "r:bz2") as tf:
+    with tarfile.open(str(sysroot_tar), "r:gz") as tf:
         members = tf.getnames()
-    with tarfile.open(str(buildroot_tar), "r:bz2") as tf:
+    with tarfile.open(str(buildroot_tar), "r:gz") as tf:
         _ = tf.getnames()
 
     # Verify python.elf is present (exact path match).
