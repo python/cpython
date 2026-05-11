@@ -120,6 +120,13 @@ functools
 * Calling the Python implementation of :func:`functools.reduce` with *function*
   or *sequence* as keyword arguments has been deprecated since Python 3.14.
 
+logging
+-------
+
+* Support for custom logging handlers with the *strm* argument is deprecated
+  and scheduled for removal in Python 3.16. Define handlers with the *stream*
+  argument instead.
+
 shutil
 ------
 
@@ -140,6 +147,12 @@ sysconfig
   which has been deprecated since Python 3.14.
   Use the ``vars`` argument of :func:`sysconfig.get_paths` instead.
   (Contributed by Stan Ulbrych in :gh:`149499`.)
+
+tarfile
+-------
+
+* The undocumented and unused :attr:`!tarfile.TarFile.tarfile` attribute
+  has been deprecated since Python 3.13.
 
 .. Add removals above alphabetically, not here at the end.
 
