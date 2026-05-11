@@ -1965,7 +1965,7 @@ New Deprecations
 
 * :mod:`tarfile`:
 
-  * Deprecate the undocumented and unused :attr:`!TarFile.tarfile` attribute,
+  * Deprecate the undocumented and unused :attr:`!TarInfo.tarfile` attribute,
     to be removed in Python 3.16.
     (Contributed in :gh:`115256`.)
 

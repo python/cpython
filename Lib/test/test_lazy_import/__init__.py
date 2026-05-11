@@ -88,6 +88,26 @@ class LazyImportTests(unittest.TestCase):
         import test.test_lazy_import.data.basic_used
         self.assertIn("test.test_lazy_import.data.basic2", sys.modules)
 
+    @support.requires_subprocess()
+    def test_from_import_with_module_getattr(self):
+        """Lazy from import should respect module-level __getattr__."""
+        code = textwrap.dedent("""
+            lazy from test.test_lazy_import.data.module_with_getattr import dynamic_attr
+            assert dynamic_attr == "from_getattr"
+        """)
+        assert_python_ok("-c", code)
+
+    @support.requires_subprocess()
+    def test_from_import_with_imported_module_getattr(self):
+        """Lazy from import should not shadow an imported module's __getattr__."""
+        code = textwrap.dedent("""
+            import test.test_lazy_import.data.module_with_getattr as mod
+            lazy from test.test_lazy_import.data.module_with_getattr import dynamic_attr
+            assert dynamic_attr == "from_getattr"
+            assert mod.dynamic_attr == "from_getattr"
+        """)
+        assert_python_ok("-c", code)
+
 
 class GlobalLazyImportModeTests(unittest.TestCase):
     """Tests for sys.set_lazy_imports() global mode control."""
@@ -384,6 +404,17 @@ class PackageTests(unittest.TestCase):
         g = test.test_lazy_import.data.pkg.c.get_globals()
         self.assertEqual(type(g["x"]), int)
         self.assertEqual(type(g["b"]), types.LazyImportType)
+
+    @support.requires_subprocess()
+    def test_package_from_import_with_module_getattr(self):
+        """Lazy from import should respect a package's __getattr__."""
+        code = textwrap.dedent("""
+            import test.test_lazy_import.data.pkg as pkg
+            lazy from test.test_lazy_import.data.pkg import dynamic_attr
+            assert dynamic_attr == "from_getattr"
+            assert pkg.dynamic_attr == "from_getattr"
+        """)
+        assert_python_ok("-c", code)
 
 
 class DunderLazyImportTests(unittest.TestCase):
