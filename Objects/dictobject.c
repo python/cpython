@@ -940,7 +940,13 @@ new_frozendict(PyDictKeysObject *keys, PyDictValues *values,
                Py_ssize_t used, int free_values_on_failure)
 {
     PyDictObject *mp = PyObject_GC_New(PyDictObject, &PyFrozenDict_Type);
-    return new_dict_impl(mp, keys, values, used, free_values_on_failure);
+    PyObject *result = new_dict_impl(mp, keys, values, used, free_values_on_failure);
+    if (result != NULL) {
+        /* ma_hash must be -1 (sentinel for "not computed") since PyObject_GC_New
+           does not zero-initialize memory and new_dict_impl does not touch ma_hash. */
+        _PyFrozenDictObject_CAST(result)->ma_hash = -1;
+    }
+    return result;
 }
 
 static PyObject *
