@@ -17,7 +17,6 @@ document the API functions in detail.
    veryhigh.rst
    refcounting.rst
    exceptions.rst
-   traceback.rst
    extension-modules.rst
    utilities.rst
    abstract.rst
