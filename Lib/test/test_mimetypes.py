@@ -519,13 +519,13 @@ class CommandLineSubprocessTest(unittest.TestCase):
 
     def test_type_lookup(self):
         rc, stdout, stderr = assert_python_ok('-m', 'mimetypes', 'foo.pdf')
-        self.assertIn(b'application/pdf', stdout)
+        self.assertEqual(stdout.strip(), b'type: application/pdf encoding: None')
         self.assertEqual(stderr, b'')
 
     def test_type_lookup_unknown(self):
         rc, stdout, stderr = assert_python_failure('-m', 'mimetypes', 'foo.unknownext12345')
-        self.assertEqual(stdout, b'')
-        self.assertIn(b'error:', stderr)
+        self.assertEqual(stdout.strip(), b'error: media type unknown for foo.unknownext12345')
+        self.assertEqual(stderr, b'')
 
     def test_extension_flag(self):
         rc, stdout, stderr = assert_python_ok('-m', 'mimetypes', '-e', 'image/jpeg')
@@ -534,8 +534,8 @@ class CommandLineSubprocessTest(unittest.TestCase):
 
     def test_extension_flag_unknown(self):
         rc, stdout, stderr = assert_python_failure('-m', 'mimetypes', '-e', 'image/unknowntype12345')
-        self.assertEqual(stdout, b'')
-        self.assertIn(b'error:', stderr)
+        self.assertEqual(stdout.strip(), b'error: unknown type image/unknowntype12345')
+        self.assertEqual(stderr, b'')
 
     def test_lenient_flag(self):
         rc, stdout, stderr = assert_python_ok('-m', 'mimetypes', '-e', '--lenient', 'text/xul')
@@ -544,17 +544,17 @@ class CommandLineSubprocessTest(unittest.TestCase):
 
     def test_multiple_inputs(self):
         rc, stdout, stderr = assert_python_ok('-m', 'mimetypes', 'foo.pdf', 'foo.png')
-        self.assertIn(b'application/pdf', stdout)
-        self.assertIn(b'image/png', stdout)
+        self.assertIn(b'type: application/pdf encoding: None', stdout)
+        self.assertIn(b'type: image/png encoding: None', stdout)
         self.assertEqual(stderr, b'')
 
     def test_multiple_inputs_with_error(self):
         rc, stdout, stderr = assert_python_failure(
             '-m', 'mimetypes', 'foo.pdf', 'foo.unknownext12345'
         )
-        self.assertIn(b'application/pdf', stdout)
-        self.assertNotIn(b'error:', stdout)
-        self.assertIn(b'error:', stderr)
+        self.assertIn(b'type: application/pdf encoding: None', stdout)
+        self.assertIn(b'error: media type unknown for foo.unknownext12345', stdout)
+        self.assertEqual(stderr, b'')
 
     def test_unknown_flag(self):
         rc, stdout, stderr = assert_python_failure('-m', 'mimetypes', '--unknown-flag')

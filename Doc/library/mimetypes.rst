@@ -348,7 +348,7 @@ it converts file extensions to MIME types.
 
 For each ``type`` entry, the script writes a line into the standard output
 stream. If an unknown type occurs, it writes an error message into the
-standard error stream and exits with the return code ``1``.
+standard output stream and exits with the return code ``1``.
 
 
 .. mimetypes-cli-example:

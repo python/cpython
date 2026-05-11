@@ -756,11 +756,5 @@ if __name__ == '__main__':
     import sys
 
     results = _main()
-    has_error = False
-    for result in results:
-        if result.startswith("error: "):
-            print(result, file=sys.stderr, flush=True)
-            has_error = True
-        else:
-            print(result, flush=True)
-    sys.exit(has_error)
+    print("\n".join(results))
+    sys.exit(any(result.startswith("error: ") for result in results))

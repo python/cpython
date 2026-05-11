@@ -1,2 +1,0 @@
-Fix :mod:`mimetypes` CLI to write error messages to stderr instead of stdout,
-and update the documentation examples to reflect the correct behavior.
