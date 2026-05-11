@@ -170,7 +170,8 @@ extern PyObject* _PyErr_FormatFromCauseTstate(
     const char *format,
     ...);
 
-extern PyObject* _PyExc_CreateExceptionGroup(
+// Exported for external JIT support
+PyAPI_FUNC(PyObject *) _PyExc_CreateExceptionGroup(
     const char *msg,
     PyObject *excs);
 
@@ -181,7 +182,8 @@ extern PyObject* _PyExc_PrepReraiseStar(
 extern int _PyErr_CheckSignalsTstate(PyThreadState *tstate);
 
 extern void _Py_DumpExtensionModules(int fd, PyInterpreterState *interp);
-extern PyObject* _Py_CalculateSuggestions(PyObject *dir, PyObject *name);
+// Exported for external JIT support
+PyAPI_FUNC(PyObject *) _Py_CalculateSuggestions(PyObject *dir, PyObject *name);
 extern PyObject* _Py_Offer_Suggestions(PyObject* exception);
 
 // Export for '_testinternalcapi' shared extension
