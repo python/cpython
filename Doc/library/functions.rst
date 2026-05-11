@@ -1107,13 +1107,13 @@ are always available.  They are listed here in alphabetical order.
       *classinfo* can be a :ref:`types-union`.
 
 
-.. function:: issubclass(class, classinfo, /)
+.. function:: issubclass(cls, classinfo, /)
 
-   Return ``True`` if *class* is a subclass (direct, indirect, or :term:`virtual
+   Return ``True`` if *cls* is a subclass (direct, indirect, or :term:`virtual
    <abstract base class>`) of *classinfo*.  A
    class is considered a subclass of itself. *classinfo* may be a tuple of class
    objects (or recursively, other such tuples)
-   or a :ref:`types-union`, in which case return ``True`` if *class* is a
+   or a :ref:`types-union`, in which case return ``True`` if *cls* is a
    subclass of any entry in *classinfo*.  In any other case, a :exc:`TypeError`
    exception is raised.
 
@@ -1839,6 +1839,8 @@ are always available.  They are listed here in alphabetical order.
    Sentinel objects are truthy and compare equal only to themselves.  They are
    intended to be compared with the :keyword:`is` operator.
 
+   ``sentinel`` does not support subclassing.
+
    Shallow and deep copies of a sentinel object return the object itself.
 
    Sentinels are conventionally assigned to a variable with a matching name.
@@ -1879,7 +1881,7 @@ are always available.  They are listed here in alphabetical order.
 
       The name of the module where the sentinel was created.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. class:: slice(stop, /)

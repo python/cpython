@@ -14,11 +14,13 @@ import webbrowser
 from contextlib import nullcontext
 
 from .errors import SamplingUnknownProcessError, SamplingModuleNotFoundError, SamplingScriptNotFoundError
-from .sample import sample, sample_live, _is_process_running
+from .sample import sample, sample_live, dump_stack, _is_process_running
+from .dump import print_stack_dump
 from .pstats_collector import PstatsCollector
 from .stack_collector import CollapsedStackCollector, FlamegraphCollector, DiffFlamegraphCollector
 from .heatmap_collector import HeatmapCollector
 from .gecko_collector import GeckoCollector
+from .jsonl_collector import JsonlCollector
 from .binary_collector import BinaryCollector
 from .binary_reader import BinaryReader
 from .constants import (
@@ -72,6 +74,9 @@ Examples:
   # Attach to a running process
   `python -m profiling.sampling attach 1234`
 
+  # Dump a running process's current stack
+  `python -m profiling.sampling dump 1234`
+
   # Live interactive mode for a script
   `python -m profiling.sampling run --live script.py`
 
@@ -97,6 +102,7 @@ FORMAT_EXTENSIONS = {
     "diff_flamegraph": "html",
     "gecko": "json",
     "heatmap": "html",
+    "jsonl": "jsonl",
     "binary": "bin",
 }
 
@@ -107,6 +113,7 @@ COLLECTOR_MAP = {
     "diff_flamegraph": DiffFlamegraphCollector,
     "gecko": GeckoCollector,
     "heatmap": HeatmapCollector,
+    "jsonl": JsonlCollector,
     "binary": BinaryCollector,
 }
 
@@ -160,7 +167,9 @@ def _build_child_profiler_args(args):
         child_args.extend(["--mode", mode])
 
     # Format options (skip pstats as it's the default)
-    if args.format != "pstats":
+    if args.format == "diff_flamegraph":
+        child_args.extend(["--diff-flamegraph", args.diff_baseline])
+    elif args.format != "pstats":
         child_args.append(f"--{args.format}")
 
     return child_args
@@ -385,13 +394,13 @@ def _add_sampling_options(parser):
     sampling_group.add_argument(
         "--native",
         action="store_true",
-        help='Include artificial "<native>" frames to denote calls to non-Python code',
+        help='Include artificial `<native>` frames to denote calls to non-Python code',
     )
     sampling_group.add_argument(
         "--no-gc",
         action="store_false",
         dest="gc",
-        help='Don\'t include artificial "<GC>" frames to denote active garbage collection',
+        help='Don\'t include artificial `<GC>` frames to denote active garbage collection',
     )
     sampling_group.add_argument(
         "--opcodes",
@@ -428,14 +437,14 @@ def _add_mode_options(parser):
         help="Sampling mode: wall (all samples), cpu (only samples when thread is on CPU), "
         "gil (only samples when thread holds the GIL), "
         "exception (only samples when thread has an active exception). "
-        "Incompatible with --async-aware",
+        "Incompatible with `--async-aware`",
     )
     mode_group.add_argument(
         "--async-mode",
         choices=["running", "all"],
         default="running",
         help='Async profiling mode: "running" (only running task) '
-        'or "all" (all tasks including waiting). Requires --async-aware',
+        'or "all" (all tasks including waiting). Requires `--async-aware`',
     )
 
 
@@ -482,7 +491,14 @@ def _add_format_options(parser, include_compression=True, include_binary=True):
         "--diff-flamegraph",
         metavar="BASELINE",
         action=DiffFlamegraphAction,
-        help="Generate differential flamegraph comparing current profile to BASELINE binary file",
+        help="Generate differential flamegraph comparing current profile to `BASELINE` binary file",
+    )
+    format_group.add_argument(
+        "--jsonl",
+        action="store_const",
+        const="jsonl",
+        dest="format",
+        help="Generate newline-delimited JSON (JSONL) for programmatic consumers",
     )
     if include_binary:
         format_group.add_argument(
@@ -490,7 +506,7 @@ def _add_format_options(parser, include_compression=True, include_binary=True):
             action="store_const",
             const="binary",
             dest="format",
-            help="Generate high-performance binary format (use 'replay' command to convert)",
+            help="Generate high-performance binary format (use `replay` command to convert)",
         )
     parser.set_defaults(format="pstats", diff_baseline=None)
 
@@ -506,14 +522,14 @@ def _add_format_options(parser, include_compression=True, include_binary=True):
         "-o",
         "--output",
         dest="outfile",
-        help="Output path (default: stdout for pstats text; with -o, pstats is binary). "
-        "Auto-generated for other formats. For heatmap: directory name (default: heatmap_PID)",
+        help="Output path (default: `stdout` for `pstats` text; with `-o`, `pstats` is binary). "
+        "Auto-generated for other formats. For heatmap: directory name (default: `heatmap_PID`)",
     )
     output_group.add_argument(
         "--browser",
         action="store_true",
         help="Automatically open HTML output (flamegraph, heatmap) in browser. "
-        "When using --subprocesses, only the main process opens the browser",
+        "When using `--subprocesses`, only the main process opens the browser",
     )
 
 
@@ -548,6 +564,51 @@ def _add_pstats_options(parser):
     )
 
 
+def _add_dump_options(parser):
+    """Add one-shot stack dump options to a parser."""
+    dump_group = parser.add_argument_group("Dump options")
+    dump_group.add_argument(
+        "-a",
+        "--all-threads",
+        action="store_true",
+        help="Dump all threads in the process instead of just the main thread",
+    )
+    dump_group.add_argument(
+        "--native",
+        action="store_true",
+        help='Include artificial `<native>` frames to denote calls to non-Python code',
+    )
+    dump_group.add_argument(
+        "--no-gc",
+        action="store_false",
+        dest="gc",
+        help='Don\'t include artificial `<GC>` frames to denote active garbage collection',
+    )
+    dump_group.add_argument(
+        "--opcodes",
+        action="store_true",
+        help="Show bytecode opcode names when available.",
+    )
+    dump_group.add_argument(
+        "--async-aware",
+        action="store_true",
+        help="Enable async-aware stack reconstruction",
+    )
+    dump_group.add_argument(
+        "--async-mode",
+        choices=["running", "all"],
+        default=argparse.SUPPRESS,
+        help='Async stack mode: "running" (only running task) '
+        'or "all" (all tasks including waiting, default for dump). '
+        "Requires `--async-aware`",
+    )
+    dump_group.add_argument(
+        "--blocking",
+        action="store_true",
+        help="Stop all threads in target process before dumping the stack.",
+    )
+
+
 def _sort_to_mode(sort_choice):
     """Convert sort choice string to SORT_MODE constant."""
     sort_map = {
@@ -562,15 +623,18 @@ def _sort_to_mode(sort_choice):
     return sort_map.get(sort_choice, SORT_MODE_NSAMPLES)
 
 def _create_collector(format_type, sample_interval_usec, skip_idle, opcodes=False,
-                      output_file=None, compression='auto', diff_baseline=None):
+                      mode=None, output_file=None, compression='auto',
+                      diff_baseline=None):
     """Create the appropriate collector based on format type.
 
     Args:
-        format_type: The output format ('pstats', 'collapsed', 'flamegraph', 'gecko', 'heatmap', 'binary', 'diff_flamegraph')
+        format_type: The output format ('pstats', 'collapsed', 'flamegraph',
+                    'gecko', 'heatmap', 'jsonl', 'binary', 'diff_flamegraph')
         sample_interval_usec: Sampling interval in microseconds
         skip_idle: Whether to skip idle samples
         opcodes: Whether to collect opcode information (only used by gecko format
                  for creating interval markers in Firefox Profiler)
+        mode: Profiling mode for collectors that expose it in metadata
         output_file: Output file path (required for binary format)
         compression: Compression type for binary format ('auto', 'zstd', 'none')
         diff_baseline: Path to baseline binary file for differential flamegraph
@@ -605,6 +669,11 @@ def _create_collector(format_type, sample_interval_usec, skip_idle, opcodes=Fals
     if format_type == "gecko":
         skip_idle = False
         return collector_class(sample_interval_usec, skip_idle=skip_idle, opcodes=opcodes)
+
+    if format_type == "jsonl":
+        return collector_class(
+            sample_interval_usec, skip_idle=skip_idle, mode=mode
+        )
 
     return collector_class(sample_interval_usec, skip_idle=skip_idle)
 
@@ -785,18 +854,10 @@ def _validate_args(args, parser):
         args: Parsed command-line arguments
         parser: ArgumentParser instance for error reporting
     """
-    # Replay command has no special validation needed
-    if getattr(args, 'command', None) == "replay":
-        return
+    command = getattr(args, 'command', None)
 
-    # Warn about blocking mode with aggressive sampling intervals
-    if args.blocking and args.sample_interval_usec < 100:
-        print(
-            f"Warning: --blocking with a {args.sample_interval_usec} µs interval will stop all threads "
-            f"{1_000_000 // args.sample_interval_usec} times per second. "
-            "Consider using --sampling-rate 1khz or lower to reduce overhead.",
-            file=sys.stderr
-        )
+    if command == "replay":
+        return
 
     # Check if live mode is available
     if hasattr(args, 'live') and args.live and LiveStatsCollector is None:
@@ -817,9 +878,9 @@ def _validate_args(args, parser):
     # Async-aware mode is incompatible with --native, --no-gc, --mode, and --all-threads
     if getattr(args, 'async_aware', False):
         issues = []
-        if args.native:
+        if getattr(args, 'native', False):
             issues.append("--native")
-        if not args.gc:
+        if not getattr(args, 'gc', True):
             issues.append("--no-gc")
         if hasattr(args, 'mode') and args.mode != "wall":
             issues.append(f"--mode={args.mode}")
@@ -831,9 +892,26 @@ def _validate_args(args, parser):
                 "Async-aware profiling uses task-based stack reconstruction."
             )
 
-    # --async-mode requires --async-aware
-    if hasattr(args, 'async_mode') and args.async_mode != "running" and not getattr(args, 'async_aware', False):
-        parser.error("--async-mode requires --async-aware to be enabled.")
+    # --async-mode requires --async-aware when explicitly set
+    if not getattr(args, 'async_aware', False):
+        if command == "dump":
+            # dump uses SUPPRESS default, so attr only exists if user passed it
+            if hasattr(args, 'async_mode'):
+                parser.error("--async-mode requires --async-aware to be enabled.")
+        elif hasattr(args, 'async_mode') and args.async_mode != "running":
+            parser.error("--async-mode requires --async-aware to be enabled.")
+
+    if command == "dump":
+        return
+
+    # Warn about blocking mode with aggressive sampling intervals
+    if args.blocking and args.sample_interval_usec < 100:
+        print(
+            f"Warning: --blocking with a {args.sample_interval_usec} µs interval will stop all threads "
+            f"{1_000_000 // args.sample_interval_usec} times per second. "
+            "Consider using --sampling-rate 1khz or lower to reduce overhead.",
+            file=sys.stderr
+        )
 
     # Live mode is incompatible with format options
     if hasattr(args, 'live') and args.live:
@@ -940,7 +1018,7 @@ Examples:
         "-m",
         "--module",
         action="store_true",
-        help="Run target as a module (like python -m)",
+        help="Run target as a module (like `python -m`)",
     )
     run_parser.add_argument(
         "target",
@@ -990,6 +1068,27 @@ Examples:
     _add_format_options(attach_parser)
     _add_pstats_options(attach_parser)
 
+    # === DUMP COMMAND ===
+    dump_parser = subparsers.add_parser(
+        "dump",
+        help="Dump a running process's current stack",
+        formatter_class=CustomFormatter,
+        description="""Dump a running process's current Python stack
+
+Examples:
+  # Dump the main thread stack
+  `python -m profiling.sampling dump 1234`
+
+  # Dump all thread stacks
+  `python -m profiling.sampling dump -a 1234`""",
+    )
+    dump_parser.add_argument(
+        "pid",
+        type=int,
+        help="Process ID to dump",
+    )
+    _add_dump_options(dump_parser)
+
     # === REPLAY COMMAND ===
     replay_parser = subparsers.add_parser(
         "replay",
@@ -1024,6 +1123,7 @@ Examples:
     command_handlers = {
         "run": _handle_run,
         "attach": _handle_attach,
+        "dump": _handle_dump,
         "replay": _handle_replay,
     }
 
@@ -1062,7 +1162,7 @@ def _handle_attach(args):
 
     # Create the appropriate collector
     collector = _create_collector(
-        args.format, args.sample_interval_usec, skip_idle, args.opcodes,
+        args.format, args.sample_interval_usec, skip_idle, args.opcodes, mode,
         output_file=output_file,
         compression=getattr(args, 'compression', 'auto'),
         diff_baseline=args.diff_baseline
@@ -1083,6 +1183,34 @@ def _handle_attach(args):
             blocking=args.blocking,
         )
         _handle_output(collector, args, args.pid, mode)
+
+
+def _handle_dump(args):
+    if not _is_process_running(args.pid):
+        raise SamplingUnknownProcessError(args.pid)
+
+    # Async-aware reconstruction requires wall mode so every thread is sampled,
+    # not just those holding the GIL or on CPU.
+    mode = PROFILING_MODE_WALL if args.async_aware else PROFILING_MODE_ALL
+    async_mode = getattr(args, "async_mode", "all") if args.async_aware else None
+    try:
+        stack_frames = dump_stack(
+            args.pid,
+            all_threads=args.all_threads,
+            mode=mode,
+            async_aware=async_mode,
+            native=args.native,
+            gc=args.gc,
+            opcodes=args.opcodes,
+            blocking=args.blocking,
+        )
+    except ProcessLookupError:
+        sys.exit(
+            f"No stack dump collected - process {args.pid} exited before "
+            "its stack could be read."
+        )
+
+    print_stack_dump(stack_frames, pid=args.pid)
 
 
 def _handle_run(args):
@@ -1141,7 +1269,7 @@ def _handle_run(args):
 
     # Create the appropriate collector
     collector = _create_collector(
-        args.format, args.sample_interval_usec, skip_idle, args.opcodes,
+        args.format, args.sample_interval_usec, skip_idle, args.opcodes, mode,
         output_file=output_file,
         compression=getattr(args, 'compression', 'auto'),
         diff_baseline=args.diff_baseline

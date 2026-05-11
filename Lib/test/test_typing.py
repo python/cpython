@@ -11131,6 +11131,10 @@ class NoDefaultTests(BaseTestCase):
         with self.assertRaises(AttributeError):
             type(NoDefault).foo
 
+    def test_no_subclassing(self):
+        with self.assertRaises(TypeError):
+            class Test(type(NoDefault)): ...
+
 
 class AllTests(BaseTestCase):
     """Tests for __all__."""
