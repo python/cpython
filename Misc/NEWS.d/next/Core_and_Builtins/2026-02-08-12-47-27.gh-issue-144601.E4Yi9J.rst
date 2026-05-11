@@ -1,2 +1,0 @@
-Fix crash when importing a module whose ``PyInit`` function raises an
-exception from a subinterpreter.

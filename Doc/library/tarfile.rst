@@ -4,9 +4,6 @@
 .. module:: tarfile
    :synopsis: Read and write tar-format archive files.
 
-.. moduleauthor:: Lars Gustäbel <lars@gustaebel.de>
-.. sectionauthor:: Lars Gustäbel <lars@gustaebel.de>
-
 **Source code:** :source:`Lib/tarfile.py`
 
 --------------
@@ -144,6 +141,10 @@ Some facts and figures:
    *zstd_dict* can be passed to provide a :class:`~compression.zstd.ZstdDict`,
    a Zstandard dictionary used to improve compression of smaller amounts of
    data.
+
+   For modes ``'w:gz'`` and ``'w|gz'``, :func:`tarfile.open` accepts the
+   keyword argument *mtime* to create a gzip archive header with that mtime. By
+   default, the mtime is set to the time of creation of the archive.
 
    For special purposes, there is a second format for *mode*:
    ``'filemode|[compression]'``.  :func:`tarfile.open` will return a :class:`TarFile`

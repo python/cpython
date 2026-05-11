@@ -201,6 +201,44 @@ test_py_try_inc_ref(PyObject *self, PyObject *unused)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_py_set_immortal(PyObject *self, PyObject *unused)
+{
+    // the object is allocated on C stack as otherwise,
+    // it would trip the refleak checker when the object
+    // is made immortal and leak memory, for the same
+    // reason we cannot call PyObject_Init() on it.
+    PyObject object = {0};
+#ifdef Py_GIL_DISABLED
+    object.ob_tid = _Py_ThreadId();
+    object.ob_gc_bits = 0;
+    object.ob_ref_local = 1;
+    object.ob_ref_shared = 0;
+#else
+    object.ob_refcnt = 1;
+#endif
+    object.ob_type = &PyBaseObject_Type;
+
+    assert(!PyUnstable_IsImmortal(&object));
+    int rc = PyUnstable_SetImmortal(&object);
+    assert(rc == 1);
+    assert(PyUnstable_IsImmortal(&object));
+    Py_DECREF(&object);  // should not dealloc
+    assert(PyUnstable_IsImmortal(&object));
+
+    // Check already immortal object
+    rc = PyUnstable_SetImmortal(&object);
+    assert(rc == 0);
+
+    // Check unicode objects
+    PyObject *unicode = PyUnicode_FromString("test");
+    assert(!PyUnstable_IsImmortal(unicode));
+    rc = PyUnstable_SetImmortal(unicode);
+    assert(rc == 0);
+    assert(!PyUnstable_IsImmortal(unicode));
+    Py_DECREF(unicode);
+    Py_RETURN_NONE;
+}
 
 static PyObject *
 _test_incref(PyObject *ob)
@@ -517,6 +555,23 @@ pyobject_dump(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+pysentinel_new(PyObject *self, PyObject *args)
+{
+    const char *name;
+    const char *module_name = NULL;
+    if (!PyArg_ParseTuple(args, "s|s", &name, &module_name)) {
+        return NULL;
+    }
+    return PySentinel_New(name, module_name);
+}
+
+static PyObject *
+pysentinel_check(PyObject *self, PyObject *obj)
+{
+    return PyBool_FromLong(PySentinel_Check(obj));
+}
+
 
 static PyMethodDef test_methods[] = {
     {"call_pyobject_print", call_pyobject_print, METH_VARARGS},
@@ -528,6 +583,7 @@ static PyMethodDef test_methods[] = {
     {"pyobject_is_unique_temporary", pyobject_is_unique_temporary, METH_O},
     {"pyobject_is_unique_temporary_new_object", pyobject_is_unique_temporary_new_object, METH_NOARGS},
     {"test_py_try_inc_ref", test_py_try_inc_ref, METH_NOARGS},
+    {"test_py_set_immortal", test_py_set_immortal, METH_NOARGS},
     {"test_xincref_doesnt_leak",test_xincref_doesnt_leak,        METH_NOARGS},
     {"test_incref_doesnt_leak", test_incref_doesnt_leak,         METH_NOARGS},
     {"test_xdecref_doesnt_leak",test_xdecref_doesnt_leak,        METH_NOARGS},
@@ -546,6 +602,8 @@ static PyMethodDef test_methods[] = {
     {"clear_managed_dict", clear_managed_dict, METH_O, NULL},
     {"is_uniquely_referenced", is_uniquely_referenced, METH_O},
     {"pyobject_dump", pyobject_dump, METH_VARARGS},
+    {"pysentinel_new", pysentinel_new, METH_VARARGS},
+    {"pysentinel_check", pysentinel_check, METH_O},
     {NULL},
 };
 

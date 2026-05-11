@@ -87,7 +87,10 @@ static void
 MD5_dealloc(PyObject *op)
 {
     MD5object *ptr = _MD5object_CAST(op);
-    Hacl_Hash_MD5_free(ptr->hash_state);
+    if (ptr->hash_state != NULL) {
+        Hacl_Hash_MD5_free(ptr->hash_state);
+        ptr->hash_state = NULL;
+    }
     PyTypeObject *tp = Py_TYPE(op);
     PyObject_GC_UnTrack(ptr);
     PyObject_GC_Del(ptr);
@@ -362,6 +365,7 @@ md5_exec(PyObject *m)
 }
 
 static PyModuleDef_Slot _md5_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, md5_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

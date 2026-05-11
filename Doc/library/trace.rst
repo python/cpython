@@ -43,7 +43,7 @@ all Python modules imported during the execution into the current directory.
    Display the version of the module and exit.
 
 .. versionadded:: 3.8
-    Added ``--module`` option that allows to run an executable module.
+    Added ``--module`` option that allows running an executable module.
 
 Main options
 ^^^^^^^^^^^^

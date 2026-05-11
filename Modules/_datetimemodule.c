@@ -13,6 +13,7 @@
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_time.h"          // _PyTime_ObjectToTime_t()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_unicodeobject.h" // _PyUnicode_Copy()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_pyatomic_ft_wrappers.h"
@@ -2692,7 +2693,7 @@ delta_divmod(PyObject *left, PyObject *right)
         Py_DECREF(divmod);
         return NULL;
     }
-    result = PyTuple_Pack(2, PyTuple_GET_ITEM(divmod, 0), delta);
+    result = _PyTuple_FromPair(PyTuple_GET_ITEM(divmod, 0), delta);
     Py_DECREF(delta);
     Py_DECREF(divmod);
     return result;
@@ -3822,9 +3823,26 @@ iso_calendar_date_new_impl(PyTypeObject *type, int year, int week,
         return NULL;
     }
 
-    PyTuple_SET_ITEM(self, 0, PyLong_FromLong(year));
-    PyTuple_SET_ITEM(self, 1, PyLong_FromLong(week));
-    PyTuple_SET_ITEM(self, 2, PyLong_FromLong(weekday));
+    PyObject *year_object = PyLong_FromLong(year);
+    if (year_object == NULL) {
+        Py_DECREF(self);
+        return NULL;
+    }
+    PyTuple_SET_ITEM(self, 0, year_object);
+
+    PyObject *week_object = PyLong_FromLong(week);
+    if (week_object == NULL) {
+        Py_DECREF(self);
+        return NULL;
+    }
+    PyTuple_SET_ITEM(self, 1, week_object);
+
+    PyObject *weekday_object = PyLong_FromLong(weekday);
+    if (weekday_object == NULL) {
+        Py_DECREF(self);
+        return NULL;
+    }
+    PyTuple_SET_ITEM(self, 2, weekday_object);
 
     return (PyObject *)self;
 }
@@ -4479,7 +4497,7 @@ timezone_getinitargs(PyObject *op, PyObject *Py_UNUSED(dummy))
     PyDateTime_TimeZone *self = PyTimeZone_CAST(op);
     if (self->name == NULL)
         return PyTuple_Pack(1, self->offset);
-    return PyTuple_Pack(2, self->offset, self->name);
+    return _PyTuple_FromPair(self->offset, self->name);
 }
 
 static PyMethodDef timezone_methods[] = {
@@ -5230,7 +5248,7 @@ time_getstate(PyDateTime_Time *self, int proto)
         if (! HASTZINFO(self) || self->tzinfo == Py_None)
             result = PyTuple_Pack(1, basestate);
         else
-            result = PyTuple_Pack(2, basestate, self->tzinfo);
+            result = _PyTuple_FromPair(basestate, self->tzinfo);
         Py_DECREF(basestate);
     }
     return result;
@@ -6378,7 +6396,7 @@ datetime_str(PyObject *op)
 /*[clinic input]
 datetime.datetime.isoformat
 
-    sep: int(accept={str}, c_default="'T'", py_default="'T'") = ord('T')
+    sep: int(accept={str}) = 'T'
     timespec: str(c_default="NULL") = 'auto'
 
 Return the time formatted according to ISO.
@@ -6400,7 +6418,7 @@ terms of the time to include. Valid options are 'auto', 'hours',
 static PyObject *
 datetime_datetime_isoformat_impl(PyDateTime_DateTime *self, int sep,
                                  const char *timespec)
-/*[clinic end generated code: output=9b6ce1383189b0bf input=2fa2512172ccf5d5]*/
+/*[clinic end generated code: output=9b6ce1383189b0bf input=db935a57fa697c5e]*/
 {
     char buffer[100];
 
@@ -6891,9 +6909,9 @@ datetime_datetime_astimezone_impl(PyDateTime_DateTime *self,
         goto naive;
     }
     else if (!PyDelta_Check(offset)) {
+        PyErr_Format(PyExc_TypeError, "utcoffset() returned %T,"
+                     " expected timedelta or None", offset);
         Py_DECREF(offset);
-        PyErr_Format(PyExc_TypeError, "utcoffset() returned %.200s,"
-                     " expected timedelta or None", Py_TYPE(offset)->tp_name);
         return NULL;
     }
     /* result = self - offset */
@@ -7152,7 +7170,7 @@ datetime_getstate(PyDateTime_DateTime *self, int proto)
         if (! HASTZINFO(self) || self->tzinfo == Py_None)
             result = PyTuple_Pack(1, basestate);
         else
-            result = PyTuple_Pack(2, basestate, self->tzinfo);
+            result = _PyTuple_FromPair(basestate, self->tzinfo);
         Py_DECREF(basestate);
     }
     return result;
@@ -7639,7 +7657,7 @@ finally:
 }
 
 static PyModuleDef_Slot module_slots[] = {
-    _Py_INTERNAL_ABI_SLOT,
+    _Py_ABI_SLOT,
     {Py_mod_exec, _datetime_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

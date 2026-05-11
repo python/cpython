@@ -9,9 +9,6 @@
 .. module:: inspect
    :synopsis: Extract information and source code from live objects.
 
-.. moduleauthor:: Ka-Ping Yee <ping@lfw.org>
-.. sectionauthor:: Ka-Ping Yee <ping@lfw.org>
-
 **Source code:** :source:`Lib/inspect.py`
 
 --------------
@@ -198,10 +195,6 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 |                   | read more :ref:`here      |
 |                 |                   | <inspect-module-co-flags>`|
 +-----------------+-------------------+---------------------------+
-|                 | co_lnotab         | encoded mapping of line   |
-|                 |                   | numbers to bytecode       |
-|                 |                   | indices                   |
-+-----------------+-------------------+---------------------------+
 |                 | co_freevars       | tuple of names of free    |
 |                 |                   | variables (referenced via |
 |                 |                   | a function's closure)     |
@@ -360,7 +353,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
    Add ``f_generator`` attribute to frames.
 
-.. versionchanged:: next
+.. versionchanged:: 3.15
 
    Add ``gi_state`` attribute to generators, ``cr_state`` attribute to
    coroutines, and ``ag_state`` attribute to async generators.
@@ -1196,7 +1189,7 @@ Classes and functions
    times.
 
 
-.. function:: getfullargspec(func)
+.. function:: getfullargspec(func, *, annotation_format=Format.VALUE)
 
    Get the names and default values of a Python function's parameters.  A
    :term:`named tuple` is returned:
@@ -1226,6 +1219,14 @@ Classes and functions
    APIs. This function is retained primarily for use in code that needs to
    maintain compatibility with the Python 2 ``inspect`` module API.
 
+   A member of the
+   :class:`annotationlib.Format` enum can be passed to the
+   *annotation_format* parameter to control the format of the returned
+   annotations. For example, use
+   ``annotation_format=annotationlib.Format.STRING`` to return annotations in string
+   format. Note that with the default ``VALUE`` format, creation of some argspecs
+   may raise an exception.
+
    .. versionchanged:: 3.4
       This function is now based on :func:`signature`, but still ignores
       ``__wrapped__`` attributes and includes the already bound first
@@ -1242,6 +1243,9 @@ Classes and functions
       Python only explicitly guaranteed that it preserved the declaration
       order of keyword-only parameters as of version 3.7, although in practice
       this order had always been preserved in Python 3.
+
+   .. versionchanged:: 3.15
+      The *annotation_format* parameter was added.
 
 
 .. function:: getargvalues(frame)
@@ -1840,8 +1844,15 @@ from the command line.
 
 By default, accepts the name of a module and prints the source of that
 module. A class or function within the module can be printed instead by
-appended a colon and the qualified name of the target object.
+appending a colon and the qualified name of the target object.
 
 .. option:: --details
 
    Print information about the specified object rather than the source code
+
+.. versionchanged:: 3.15
+
+   The ``--details`` option now supports basic introspection for modules
+   without available source code and indicates when modules are frozen.
+   It also indicates when the given target reference is not the canonical
+   name of the referenced object.

@@ -781,6 +781,7 @@ search_linux_map_for_section(proc_handle_t *handle, const char* secname, const c
         }
 
         if (strstr(filename, substr)) {
+            PyErr_Clear();
             retval = search_elf_file_for_section(handle, secname, start, path);
             if (retval
                 && (validator == NULL || validator(handle, retval)))
@@ -1302,6 +1303,7 @@ _Py_RemoteDebug_PagedReadRemoteMemory(proc_handle_t *handle,
             if (entry->data == NULL) {
                 entry->data = PyMem_RawMalloc(page_size);
                 if (entry->data == NULL) {
+                    PyErr_NoMemory();
                     _set_debug_exception_cause(PyExc_MemoryError,
                         "Cannot allocate %zu bytes for page cache entry "
                         "during read from PID %d at address 0x%lx",
@@ -1311,7 +1313,7 @@ _Py_RemoteDebug_PagedReadRemoteMemory(proc_handle_t *handle,
             }
 
             if (_Py_RemoteDebug_ReadRemoteMemory(handle, page_base, page_size, entry->data) < 0) {
-                // Try to just copy the exact ammount as a fallback
+                // Try to just copy the exact amount as a fallback
                 PyErr_Clear();
                 goto fallback;
             }

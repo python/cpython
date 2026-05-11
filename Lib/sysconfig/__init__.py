@@ -665,12 +665,10 @@ def get_platform():
 
     For other non-POSIX platforms, currently just returns :data:`sys.platform`."""
     if os.name == 'nt':
-        if 'amd64' in sys.version.lower():
-            return 'win-amd64'
-        if '(arm)' in sys.version.lower():
-            return 'win-arm32'
-        if '(arm64)' in sys.version.lower():
-            return 'win-arm64'
+        import _sysconfig
+        platform = _sysconfig.get_platform()
+        if platform:
+            return platform
         return sys.platform
 
     if os.name != "posix" or not hasattr(os, 'uname'):
@@ -696,11 +694,19 @@ def get_platform():
         release = get_config_var("ANDROID_API_LEVEL")
 
         # Wheel tags use the ABI names from Android's own tools.
+        # When Python is running on 32-bit ARM Android on a 64-bit ARM kernel,
+        # 'os.uname().machine' is 'armv8l'. Such devices run the same userspace
+        # code as 'armv7l' devices.
+        # During the build process of the Android testbed when targeting 32-bit ARM,
+        # '_PYTHON_HOST_PLATFORM' is 'arm-linux-androideabi', so 'machine' becomes
+        # 'arm'.
         machine = {
-            "x86_64": "x86_64",
-            "i686": "x86",
             "aarch64": "arm64_v8a",
+            "arm": "armeabi_v7a",
             "armv7l": "armeabi_v7a",
+            "armv8l": "armeabi_v7a",
+            "i686": "x86",
+            "x86_64": "x86_64",
         }[machine]
     elif osname == "linux":
         # At least on Linux/Intel, 'machine' is the processor --
@@ -747,41 +753,3 @@ def get_python_version():
 
 def _get_python_version_abi():
     return _PY_VERSION_SHORT + get_config_var("abi_thread")
-
-
-def expand_makefile_vars(s, vars):
-    """Expand Makefile-style variables -- "${foo}" or "$(foo)" -- in
-    'string' according to 'vars' (a dictionary mapping variable names to
-    values).  Variables not present in 'vars' are silently expanded to the
-    empty string.  The variable values in 'vars' should not contain further
-    variable expansions; if 'vars' is the output of 'parse_makefile()',
-    you're fine.  Returns a variable-expanded version of 's'.
-    """
-
-    import warnings
-    warnings.warn(
-        'sysconfig.expand_makefile_vars is deprecated and will be removed in '
-        'Python 3.16. Use sysconfig.get_paths(vars=...) instead.',
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
-    import re
-
-    _findvar1_rx = r"\$\(([A-Za-z][A-Za-z0-9_]*)\)"
-    _findvar2_rx = r"\${([A-Za-z][A-Za-z0-9_]*)}"
-
-    # This algorithm does multiple expansion, so if vars['foo'] contains
-    # "${bar}", it will expand ${foo} to ${bar}, and then expand
-    # ${bar}... and so forth.  This is fine as long as 'vars' comes from
-    # 'parse_makefile()', which takes care of such expansions eagerly,
-    # according to make's variable expansion semantics.
-
-    while True:
-        m = re.search(_findvar1_rx, s) or re.search(_findvar2_rx, s)
-        if m:
-            (beg, end) = m.span()
-            s = s[0:beg] + vars.get(m.group(1)) + s[end:]
-        else:
-            break
-    return s
