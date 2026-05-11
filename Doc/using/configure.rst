@@ -780,6 +780,33 @@ also be used to improve performance.
 
    .. versionadded:: 3.14
 
+.. option:: --without-frame-pointers
+
+   Disable frame pointers, which are enabled by default (see :pep:`831`).
+
+   By default, the build appends flags to generate frame or backchain
+   pointers to ``BASECFLAGS``:
+
+   - ``-fno-omit-frame-pointer`` and/or ``-mno-omit-leaf-frame-pointer``
+     are added when the compiler supports them.
+   - ``-marm`` and/or ``-mno-thumb`` is added on 32-bit ARM when supported,
+   - on s390x platforms, when supported, ``-mbackchain`` is added *instead*.
+     of the above frame pointer flags.
+   - on ppc64le platforms, no compiler flags is needed since the power ABI
+     requires that compilers maintain a back chain by default.
+
+   Frame pointers enable profilers, debuggers, and system tracing tools
+   (``perf``, ``eBPF``, ``dtrace``, ``gdb``) to walk the C call stack
+   without DWARF metadata. The flags propagate to third-party C
+   extensions through :mod:`sysconfig`. On compilers that do not
+   understand them, the build silently skips them.
+
+   Downstream packagers and authors of native libraries built with
+   custom build systems should set the same flags so the unwind chain
+   stays unbroken across all native frames.
+
+   .. versionadded:: 3.15
+
 .. option:: --without-mimalloc
 
    Disable the fast :ref:`mimalloc <mimalloc>` allocator
@@ -1011,6 +1038,21 @@ Linker options
    (built and enabled by default).
 
    .. versionadded:: 3.10
+
+.. option:: --enable-static-libpython-for-interpreter
+
+   Do not link the Python interpreter binary (``python3``) against the
+   shared Python library; instead, statically link the interpreter
+   against ``libpython`` as if ``--enable-shared`` had not been used,
+   but continue to build the shared ``libpython`` (for use by other
+   programs).
+
+   This option does nothing if ``--enable-shared`` is not used.
+
+   The default (when ``-enable-shared`` is used) is to link the Python
+   interpreter against the built shared library.
+
+   .. versionadded:: 3.15
 
 
 Libraries options
@@ -1573,6 +1615,12 @@ Compiler flags
    Strict or non-strict aliasing flags used to compile ``Python/dtoa.c``.
 
    .. versionadded:: 3.7
+
+.. envvar:: CFLAGS_CEVAL
+
+   Flags used to compile ``Python/ceval.c``.
+
+   .. versionadded:: 3.14.5
 
 .. envvar:: CCSHARED
 

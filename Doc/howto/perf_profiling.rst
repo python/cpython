@@ -217,8 +217,9 @@ Example, using the :mod:`sys` APIs in file :file:`example.py`:
 How to obtain the best results
 ------------------------------
 
-For best results, Python should be compiled with
-``CFLAGS="-fno-omit-frame-pointer -mno-omit-leaf-frame-pointer"`` as this allows
+For best results, keep frame pointers enabled. On supported GCC-compatible
+toolchains, CPython builds itself with ``-fno-omit-frame-pointer`` and similar
+flags (see :option:`--without-frame-pointers` for details). These flags allow
 profilers to unwind using only the frame pointer and not on DWARF debug
 information. This is because as the code that is interposed to allow ``perf``
 support is dynamically generated it doesn't have any DWARF debugging information

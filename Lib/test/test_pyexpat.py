@@ -510,6 +510,34 @@ class HandlerExceptionTest(unittest.TestCase):
             self.assertIn('call_with_frame("StartElement"',
                           entries[1].line)
 
+    def test_invalid_NotStandalone(self):
+        parser = expat.ParserCreate()
+        parser.NotStandaloneHandler = mock.Mock(return_value="bad value")
+        parser.ElementDeclHandler = lambda _1, _2: None
+
+        payload = b"""\
+<!DOCTYPE quotations SYSTEM "quotations.dtd" [<!ELEMENT root ANY>]><root/>
+"""
+        with self.assertRaises(TypeError) as cm:
+            parser.Parse(payload, True)
+        parser.NotStandaloneHandler.assert_called_once()
+
+        notes = ["invalid 'NotStandalone' event handler return value"]
+        self.assertEqual(cm.exception.__notes__, notes)
+
+    def test_invalid_ExternalEntityRefHandler(self):
+        parser = expat.ParserCreate()
+        parser.UseForeignDTD()
+        parser.SetParamEntityParsing(expat.XML_PARAM_ENTITY_PARSING_ALWAYS)
+        parser.ExternalEntityRefHandler = mock.Mock(return_value=None)
+
+        with self.assertRaises(TypeError) as cm:
+            parser.Parse(b"<?xml version='1.0'?><element/>", True)
+        parser.ExternalEntityRefHandler.assert_called_once()
+
+        notes = ["invalid 'ExternalEntityRef' event handler return value"]
+        self.assertEqual(cm.exception.__notes__, notes)
+
 
 # Test Current* members:
 class PositionTest(unittest.TestCase):
@@ -683,6 +711,20 @@ class ChardataBufferTest(unittest.TestCase):
         self.assertEqual(parser.buffer_size, 1024)
         parser.Parse(xml2, True)
         self.assertEqual(self.n, 4)
+
+    @support.requires_resource('cpu')
+    @support.requires_resource('walltime')
+    @support.bigmemtest(size=2**31, memuse=4, dry_run=False)
+    def test_large_character_data_does_not_crash(self):
+        # See https://github.com/python/cpython/issues/148441
+        parser = expat.ParserCreate()
+        parser.buffer_text = True
+        parser.buffer_size = 2**31 - 1  # INT_MAX
+        N = 2049 * (1 << 20) - 3  # Character data greater than INT_MAX
+        self.assertGreater(N, parser.buffer_size)
+        parser.CharacterDataHandler = lambda text: None
+        xml_data = b"<r>" + b"A" * N + b"</r>"
+        self.assertEqual(parser.Parse(xml_data, True), 1)
 
 class ElementDeclHandlerTest(unittest.TestCase):
     def test_trigger_leak(self):
