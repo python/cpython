@@ -1,13 +1,20 @@
 import io
 import textwrap
 import unittest
+import random
+import sys
 from email import message_from_string, message_from_bytes
 from email.message import EmailMessage
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from email.generator import Generator, BytesGenerator
+import email.generator
 from email.headerregistry import Address
 from email import policy
 import email.errors
 from test.test_email import TestEmailBase, parameterize
+import test.support
+
 
 
 @parameterize
@@ -287,6 +294,36 @@ class TestGeneratorBase:
         g = self.genclass(s, policy=self.policy.clone(max_line_length=30))
         g.flatten(msg)
         self.assertEqual(s.getvalue(), self.typ(expected))
+
+    def _test_boundary_detection(self, linesep):
+        # Generate a boundary token in the same way as _make_boundary
+        token = random.randrange(sys.maxsize)
+
+        def _patch_random_randrange(*args, **kwargs):
+            return token
+
+        with test.support.swap_attr(
+            random, "randrange", _patch_random_randrange
+        ):
+            boundary = self.genclass._make_boundary(text=None)
+            boundary_in_part = (
+                "this goes before the boundary\n--"
+                + boundary
+                + "\nthis goes after\n"
+            )
+            msg = MIMEMultipart()
+            msg.attach(MIMEText(boundary_in_part))
+            self.genclass(self.ioclass()).flatten(msg, linesep=linesep)
+            # Generator checks the message content for the string it is about
+            # to use as a boundary ('token' in this test) and when it finds it
+            # in our attachment appends .0 to make the boundary it uses unique.
+            self.assertEqual(msg.get_boundary(), boundary + ".0")
+
+    def test_lf_boundary_detection(self):
+        self._test_boundary_detection("\n")
+
+    def test_crlf_boundary_detection(self):
+        self._test_boundary_detection("\r\n")
 
 
 class TestGenerator(TestGeneratorBase, TestEmailBase):

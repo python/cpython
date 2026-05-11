@@ -639,11 +639,11 @@ class LocalPart(TokenList):
         for tok in self[0] + [DOT]:
             if tok.token_type == 'cfws':
                 continue
-            if (last_is_tl and tok.token_type == 'dot' and
+            if (last_is_tl and tok.token_type == 'dot' and last and
                     last[-1].token_type == 'cfws'):
                 res[-1] = TokenList(last[:-1])
             is_tl = isinstance(tok, TokenList)
-            if (is_tl and last.token_type == 'dot' and
+            if (is_tl and last.token_type == 'dot' and tok and
                     tok[0].token_type == 'cfws'):
                 res.append(TokenList(tok[1:]))
             else:
@@ -1245,8 +1245,7 @@ def get_bare_quoted_string(value):
     bare_quoted_string = BareQuotedString()
     value = value[1:]
     if value and value[0] == '"':
-        token, value = get_qcontent(value)
-        bare_quoted_string.append(token)
+        return bare_quoted_string, value[1:]
     while value and value[0] != '"':
         if value[0] in WSP:
             token, value = get_fws(value)
@@ -2059,12 +2058,10 @@ def get_address_list(value):
                 address_list.defects.append(errors.InvalidHeaderDefect(
                     "invalid address in address-list"))
         if value and value[0] != ',':
-            # Crap after address; treat it as an invalid mailbox.
-            # The mailbox info will still be available.
-            mailbox = address_list[-1][0]
-            mailbox.token_type = 'invalid-mailbox'
+            # Crap after address: add it to the address list
+            # as an invalid mailbox
             token, value = get_invalid_mailbox(value, ',')
-            mailbox.extend(token)
+            address_list.append(Address([token]))
             address_list.defects.append(errors.InvalidHeaderDefect(
                 "invalid address in address-list"))
         if value:  # Must be a , at this point.

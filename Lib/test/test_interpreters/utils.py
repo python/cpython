@@ -1,5 +1,6 @@
 from collections import namedtuple
 import contextlib
+import errno
 import json
 import io
 import logging
@@ -55,7 +56,7 @@ def _close_file(file):
         else:
             os.close(file)
     except OSError as exc:
-        if exc.errno != 9:
+        if exc.errno != errno.EBADF:
             raise  # re-raise
         # It was closed already.
 

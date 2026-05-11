@@ -31,6 +31,12 @@ not** have to exist as physical files and directories on the file system:
 for example, a package and its resources can be imported from a zip file using
 :py:mod:`zipimport`.
 
+.. warning::
+
+   :mod:`importlib.resources` follows the same security model as the built-in
+   :func:`open` function. Passing untrusted inputs to the functions
+   in this module is unsafe.
+
 .. note::
 
    This module provides functionality similar to `pkg_resources
