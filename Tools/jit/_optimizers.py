@@ -65,6 +65,7 @@ _AARCH64_COND_CODES = {
 }
 # MyPy doesn't understand that a invariant variable can be initialized by a covariant value
 CUSTOM_AARCH64_BRANCH19: str | None = "CUSTOM_AARCH64_BRANCH19"
+CUSTOM_AARCH64_BRANCH26: str | None = "ARM64_RELOC_BRANCH26"
 
 _AARCH64_SHORT_BRANCHES = {
     "tbz": "tbnz",
@@ -216,6 +217,7 @@ class Optimizer:
     label_index: int = 0
     _cold_start: _Block | None = dataclasses.field(init=False, default=None)
     _jump_name = "<Not supported>"
+    _jump_reloc: typing.ClassVar[str | None] = None
 
     def __post_init__(self) -> None:
         # Split the code into a linked list of basic blocks. A basic block is an
@@ -363,12 +365,30 @@ class Optimizer:
         self.label_index += 1
         return label
 
+    def _make_symbol_label(self, name: str) -> str:
+        label = f"{self.symbol_prefix}{name}_{self.label_index}"
+        self.label_index += 1
+        return label
+
     def _ensure_label(self, block: _Block) -> str:
         if block.label is None:
             block.label = self._make_label()
             self._labels[block.label] = block
             block.noninstructions.insert(0, f"{block.label}:")
         return block.label
+
+    def _make_cold_target(self, block: _Block) -> str:
+        label = self._make_symbol_label("_JIT_COLD")
+        self._labels[label] = block
+        block.noninstructions.insert(0, f"{label}:")
+        return label
+
+    def _relocation_marker(self, reloc: str, block: _Block) -> Instruction:
+        target = self._make_cold_target(block).removeprefix(
+            self.symbol_prefix
+        )
+        label = f"{self.symbol_prefix}{reloc}_JIT_RELOCATION_{target}:"
+        return Instruction(InstructionKind.OTHER, "", label, None, None)
 
     def _make_jump(self, target: _Block, *, hot: bool) -> _Block:
         label = self._ensure_label(target)
@@ -755,6 +775,32 @@ class Optimizer:
         assert seen_continuation
         assert seen_cold_start
 
+    def _fixup_cross_section_branches(self) -> None:
+        layout_blocks = set(self._layout_blocks())
+        for block in self._layout_blocks():
+            target = block.target
+            if target is None or target not in layout_blocks:
+                continue
+            if self._same_layout_section(block, target):
+                continue
+            inst = block.instructions[-1]
+            if inst.kind == InstructionKind.LONG_BRANCH:
+                reloc = self._branches[inst.name][1]
+                if reloc is not None:
+                    block.instructions[-1] = self._relocation_marker(reloc, target)
+                    block.instructions.append(inst.update_target("0"))
+                    continue
+            elif inst.kind == InstructionKind.JUMP and self._jump_reloc is not None:
+                block.instructions[-1] = self._relocation_marker(
+                    self._jump_reloc, target
+                )
+                block.instructions.append(inst.update_target("0"))
+                continue
+            assert inst.kind is not InstructionKind.SHORT_BRANCH
+            block.instructions[-1] = inst.update_target(
+                self._make_cold_target(target)
+            )
+
     def _fixup_external_labels(self) -> None:
         if self._supports_external_relocations:
             # Nothing to fix up
@@ -803,6 +849,7 @@ class Optimizer:
             self._remove_redundant_jumps()
             self._remove_unreachable()
         self._fixup_external_labels()
+        self._fixup_cross_section_branches()
         self._fixup_constants()
         self._validate()
         self.path.write_text(self._body())
@@ -814,6 +861,7 @@ class OptimizerAArch64(Optimizer):  # pylint: disable = too-few-public-methods
     _branches = _AARCH64_BRANCHES
     _short_branches = _AARCH64_SHORT_BRANCHES
     _jump_name = "b"
+    _jump_reloc = CUSTOM_AARCH64_BRANCH26
     # Mach-O does not support the 19 bit branch locations needed for branch reordering
     _supports_external_relocations = False
     _branch_patterns = [name.replace(".", r"\.") for name in _AARCH64_BRANCHES]
