@@ -3192,11 +3192,8 @@ async def f():
         # gh-149183: t-string with '!' across two lines used to raise
         # MemoryError because last_expr_end > last_expr_size produced a
         # negative length that was cast to a huge size_t.
-        self.assertRaises(
-            tokenize.TokenError,
-            list,
-            tokenize.tokenize(BytesIO(b't"{!\n!x').readline),
-        )
+        readline = BytesIO(b't"{!\n!x').readline
+        self.assertRaises(tokenize.TokenError, list, tokenize.tokenize(readline))
 
     @support.skip_wasi_stack_overflow()
     def test_max_indent(self):
