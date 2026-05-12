@@ -30,6 +30,7 @@ extern "C" {
 #include "internal/pycore_llist.h"          // struct llist_node
 #include "internal/pycore_long.h"           // _PyLong_GetZero
 #include "internal/pycore_pyerrors.h"       // _PyErr_FormatFromCause
+#include "internal/pycore_pyhash.h"        // _Py_HashPointerRaw
 #include "internal/pycore_stackref.h"       // Py_TAG_BITS
 #include "../../Python/remote_debug.h"
 
@@ -270,16 +271,22 @@ typedef struct {
     uint64_t batched_read_segments_completed; // Segments completed by batched reads
 } UnwinderStats;
 
+#if defined(__GNUC__) || defined(__clang__)
+#  define REMOTE_DEBUG_UNLIKELY(value) __builtin_expect(!!(value), 0)
+#else
+#  define REMOTE_DEBUG_UNLIKELY(value) (value)
+#endif
+
 /* Stats tracking macros - no-op when stats collection is disabled */
 #define STATS_INC(unwinder, field) \
-    do { if ((unwinder)->collect_stats) (unwinder)->stats.field++; } while(0)
+    do { if (REMOTE_DEBUG_UNLIKELY((unwinder)->collect_stats)) (unwinder)->stats.field++; } while(0)
 
 #define STATS_ADD(unwinder, field, val) \
-    do { if ((unwinder)->collect_stats) (unwinder)->stats.field += (val); } while(0)
+    do { if (REMOTE_DEBUG_UNLIKELY((unwinder)->collect_stats)) (unwinder)->stats.field += (val); } while(0)
 
 #define STATS_BATCHED_READ(unwinder, requested, completed) \
     do { \
-        if ((unwinder)->collect_stats) { \
+        if (REMOTE_DEBUG_UNLIKELY((unwinder)->collect_stats)) { \
             (unwinder)->stats.batched_read_attempts++; \
             (unwinder)->stats.batched_read_segments_requested += (uint64_t)(requested); \
             (unwinder)->stats.batched_read_segments_completed += (uint64_t)(completed); \
@@ -291,31 +298,6 @@ typedef struct {
             } \
         } \
     } while(0)
-
-static inline int
-_Py_RemoteDebug_CountCompletedSegments(
-    const _Py_RemoteReadSegment *segments,
-    int nsegs,
-    Py_ssize_t nread)
-{
-    if (nread < 0) {
-        return 0;
-    }
-
-    int completed = 0;
-    Py_ssize_t bytes_needed = 0;
-    for (int i = 0; i < nsegs; i++) {
-        if (segments[i].size > (size_t)(PY_SSIZE_T_MAX - bytes_needed)) {
-            break;
-        }
-        bytes_needed += (Py_ssize_t)segments[i].size;
-        if (nread < bytes_needed) {
-            break;
-        }
-        completed++;
-    }
-    return completed;
-}
 
 typedef struct {
     PyTypeObject *RemoteDebugging_Type;
@@ -368,10 +350,12 @@ typedef struct {
     int cache_frames;
     int collect_stats;  // whether to collect statistics
     uint32_t stale_invalidation_counter;  // counter for throttling frame_cache_invalidate_stale
-    InterpreterThreadCacheEntry cached_tstates[INTERPRETER_THREAD_CACHE_SIZE];
+    uintptr_t cached_tstate_interpreter_addr;  // hot last-interpreter prediction
+    uintptr_t cached_tstate_addr;  // hot first-thread prediction
     RemoteDebuggingState *cached_state;
     FrameCacheEntry *frame_cache;  // preallocated array of FRAME_CACHE_MAX_THREADS entries
     UnwinderStats stats;  // statistics for performance analysis
+    InterpreterThreadCacheEntry cached_tstates[INTERPRETER_THREAD_CACHE_SIZE];
 #ifdef Py_GIL_DISABLED
     uint32_t tlbc_generation;
     _Py_hashtable_t *tlbc_cache;

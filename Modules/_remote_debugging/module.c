@@ -361,6 +361,8 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
     self->cache_frames = cache_frames;
     self->collect_stats = stats;
     self->stale_invalidation_counter = 0;
+    self->cached_tstate_interpreter_addr = 0;
+    self->cached_tstate_addr = 0;
     memset(self->cached_tstates, 0, sizeof(self->cached_tstates));
     self->debug = debug;
     self->only_active_thread = only_active_thread;
@@ -478,13 +480,10 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
 static size_t
 interpreter_thread_cache_index(uintptr_t interpreter_addr)
 {
-    // The interpreter ID lives in PyInterpreterState, which is the state we are
-    // trying to prefetch. At this point the cheap stable key is the remote
-    // interpreter address, so use it for a small direct-mapped prediction cache.
-    // The full address is stored in each entry and checked on lookup, so hash
-    // collisions are detected as misses; storing a colliding entry only replaces
-    // the previous prediction and cannot return the wrong thread state.
-    return ((interpreter_addr >> 4) ^ (interpreter_addr >> 12))
+    // Direct-mapped table indexed by the remote interpreter address. Each entry
+    // stores the full address and verifies it on lookup, so hash collisions
+    // degrade to misses and cannot return a wrong tstate.
+    return (size_t)_Py_HashPointerRaw((const void *)interpreter_addr)
         & (INTERPRETER_THREAD_CACHE_SIZE - 1);
 }
 
@@ -497,9 +496,15 @@ get_cached_tstate_for_interpreter(
         return 0;
     }
 
+    if (self->cached_tstate_interpreter_addr == interpreter_addr) {
+        return self->cached_tstate_addr;
+    }
+
     InterpreterThreadCacheEntry *entry =
         &self->cached_tstates[interpreter_thread_cache_index(interpreter_addr)];
     if (entry->interpreter_addr == interpreter_addr) {
+        self->cached_tstate_interpreter_addr = interpreter_addr;
+        self->cached_tstate_addr = entry->thread_state_addr;
         return entry->thread_state_addr;
     }
     return 0;
@@ -514,6 +519,9 @@ set_cached_tstate_for_interpreter(
     if (interpreter_addr == 0 || thread_state_addr == 0) {
         return;
     }
+
+    self->cached_tstate_interpreter_addr = interpreter_addr;
+    self->cached_tstate_addr = thread_state_addr;
 
     InterpreterThreadCacheEntry *entry =
         &self->cached_tstates[interpreter_thread_cache_index(interpreter_addr)];
@@ -584,8 +592,19 @@ read_interp_state_and_maybe_thread_frame(
         int nsegs = prefetch->frame_addr != 0 ? 3 : 2;
         Py_ssize_t nread = _Py_RemoteDebug_BatchedReadRemoteMemory(
             &unwinder->handle, segments, nsegs);
-        int completed = _Py_RemoteDebug_CountCompletedSegments(
-            segments, nsegs, nread);
+        int completed = 0;
+        if (nread >= (Py_ssize_t)INTERP_STATE_BUFFER_SIZE) {
+            completed = 1;
+            Py_ssize_t with_tstate = (Py_ssize_t)INTERP_STATE_BUFFER_SIZE
+                + (Py_ssize_t)tstate_size;
+            if (nread >= with_tstate) {
+                completed = 2;
+            }
+            if (nsegs == 3
+                    && nread == with_tstate + (Py_ssize_t)SIZEOF_INTERP_FRAME) {
+                completed = 3;
+            }
+        }
         STATS_BATCHED_READ(unwinder, nsegs, completed);
         if (completed >= 1) {
             if (completed >= 2) {

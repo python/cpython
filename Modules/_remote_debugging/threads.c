@@ -307,7 +307,13 @@ read_thread_state_and_maybe_frame(
         };
         Py_ssize_t nread = _Py_RemoteDebug_BatchedReadRemoteMemory(
             &unwinder->handle, segments, 2);
-        int completed = _Py_RemoteDebug_CountCompletedSegments(segments, 2, nread);
+        int completed = 0;
+        if (nread >= (Py_ssize_t)tstate_size) {
+            completed = 1;
+            if (nread == (Py_ssize_t)(tstate_size + SIZEOF_INTERP_FRAME)) {
+                completed = 2;
+            }
+        }
         STATS_BATCHED_READ(unwinder, 2, completed);
         if (completed >= 1) {
             *frame_read = completed == 2;
@@ -335,9 +341,9 @@ unwind_stack_for_thread(
     char ts[SIZEOF_THREAD_STATE];
     char local_prefetched_frame[SIZEOF_INTERP_FRAME];
     RemoteReadPrefetch ctx_prefetch = {0};
-    if (prefetch && prefetch->tstate && prefetch->tstate_addr == *current_tstate) {
+    if (prefetch->tstate && prefetch->tstate_addr == *current_tstate) {
         memcpy(ts, prefetch->tstate, (size_t)unwinder->debug_offsets.thread_state.size);
-        if (prefetch->frame && prefetch->frame_addr != 0) {
+        if (prefetch->frame) {
             ctx_prefetch.frame = prefetch->frame;
             ctx_prefetch.frame_addr = prefetch->frame_addr;
         }
