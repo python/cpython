@@ -70,8 +70,53 @@ def _run_pip(args, additional_paths=None):
     code = f"""
 import runpy
 import sys
+import os
+
+# Extract --executable from args if present to avoid "unknown option" error from pip
+# while still honoring the requested shebang.
+pip_args = {args}
+executable_path = None
+if "--executable" in pip_args:
+    try:
+        idx = pip_args.index("--executable")
+        executable_path = pip_args[idx + 1]
+        del pip_args[idx:idx + 2]
+    except (ValueError, IndexError):
+        pass
+
 sys.path = {additional_paths or []} + sys.path
-sys.argv[1:] = {args}
+
+if executable_path:
+    try:
+        import pip._internal.operations.install.wheel as w
+        from pip._vendor.distlib.scripts import ScriptMaker
+
+        def patched_fix_script(path):
+            with open(path, "rb") as script:
+                firstline = script.readline()
+                if not firstline.startswith(b"#!python"):
+                    return False
+                exename = executable_path.encode(sys.getfilesystemencoding())
+                firstline = b"#!" + exename + os.linesep.encode("ascii")
+                rest = script.read()
+            with open(path, "wb") as script:
+                script.write(firstline)
+                script.write(rest)
+            return True
+
+        w.fix_script = patched_fix_script
+
+        orig_init = ScriptMaker.__init__
+        def patched_init(self, *a, **kw):
+            orig_init(self, *a, **kw)
+            self.executable = executable_path
+        ScriptMaker.__init__ = patched_init
+    except ImportError:
+        # If pip internals changed, we might not be able to patch.
+        # But we still want to run pip.
+        pass
+
+sys.argv[1:] = pip_args
 runpy.run_module("pip", run_name="__main__", alter_sys=True)
 """
 
