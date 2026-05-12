@@ -47,6 +47,9 @@ _FREE_THREADED_BUILD = sysconfig.get_config_var("Py_GIL_DISABLED") is not None
 # If fewer samples are collected, we skip the TUI and just print a message
 MIN_SAMPLES_FOR_TUI = 200
 
+# Maximum number of consecutive identical samples to keep before flushing.
+MAX_PENDING_SAMPLES = 8192
+
 class SampleProfiler:
     def __init__(self, pid, sample_interval_usec, all_threads, *, mode=PROFILING_MODE_WALL, native=False, gc=True, opcodes=False, skip_non_matching_threads=True, collect_stats=False, blocking=False):
         self.pid = pid
@@ -146,6 +149,8 @@ class SampleProfiler:
                                 prev_stack = stack_frames
                             pending_count += 1
                             pending_timestamps.append(current_time_us)
+                            if pending_count >= MAX_PENDING_SAMPLES:
+                                flush_pending()
                         else:
                             collector.collect(stack_frames)
                     except ProcessLookupError as e:
