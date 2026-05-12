@@ -362,7 +362,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
 .. _sequence-matcher:
 
-SequenceMatcher Objects
+SequenceMatcher objects
 -----------------------
 
 The :class:`SequenceMatcher` class has this constructor:
@@ -590,7 +590,7 @@ are always at least as large as :meth:`~SequenceMatcher.ratio`:
 
 .. _sequencematcher-examples:
 
-SequenceMatcher Examples
+SequenceMatcher examples
 ------------------------
 
 This example compares two strings, considering blanks to be "junk":
@@ -641,7 +641,7 @@ If you want to know how to change the first sequence into the second, use
 
 .. _differ-objects:
 
-Differ Objects
+Differ objects
 --------------
 
 Note that :class:`Differ`\ -generated deltas make no claim to be **minimal**
@@ -690,7 +690,7 @@ The :class:`Differ` class has this constructor:
 
 .. _differ-examples:
 
-Differ Example
+Differ example
 --------------
 
 This example compares two texts. First we set up the texts, sequences of
@@ -728,16 +728,18 @@ Finally, we compare the two:
 
    >>> from pprint import pprint
    >>> pprint(result)
-   ['    1. Beautiful is better than ugly.\n',
-    '-   2. Explicit is better than implicit.\n',
-    '-   3. Simple is better than complex.\n',
-    '+   3.   Simple is better than complex.\n',
-    '?     ++\n',
-    '-   4. Complex is better than complicated.\n',
-    '?            ^                     ---- ^\n',
-    '+   4. Complicated is better than complex.\n',
-    '?           ++++ ^                      ^\n',
-    '+   5. Flat is better than nested.\n']
+   [
+       '    1. Beautiful is better than ugly.\n',
+       '-   2. Explicit is better than implicit.\n',
+       '-   3. Simple is better than complex.\n',
+       '+   3.   Simple is better than complex.\n',
+       '?     ++\n',
+       '-   4. Complex is better than complicated.\n',
+       '?            ^                     ---- ^\n',
+       '+   4. Complicated is better than complex.\n',
+       '?           ++++ ^                      ^\n',
+       '+   5. Flat is better than nested.\n',
+   ]
 
 As a single multi-line string it looks like this:
 

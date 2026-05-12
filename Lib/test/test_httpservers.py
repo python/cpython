@@ -28,10 +28,12 @@ import datetime
 import threading
 from unittest import mock
 from io import BytesIO, StringIO
+from _colorize import get_theme
 
 import unittest
 from test import support
 from test.support import (
+    force_not_colorized,
     is_apple, import_helper, os_helper, threading_helper
 )
 from test.support.script_helper import kill_python, spawn_python
@@ -480,6 +482,7 @@ class RequestHandlerLoggingTestCase(BaseTestCase):
         def do_ERROR(self):
             self.send_error(HTTPStatus.NOT_FOUND, 'File not found')
 
+    @force_not_colorized
     def test_get(self):
         self.con = http.client.HTTPConnection(self.HOST, self.PORT)
         self.con.connect()
@@ -490,6 +493,7 @@ class RequestHandlerLoggingTestCase(BaseTestCase):
 
         self.assertEndsWith(err.getvalue(), '"GET / HTTP/1.1" 200 -\n')
 
+    @force_not_colorized
     def test_err(self):
         self.con = http.client.HTTPConnection(self.HOST, self.PORT)
         self.con.connect()
@@ -503,8 +507,49 @@ class RequestHandlerLoggingTestCase(BaseTestCase):
         self.assertEndsWith(lines[1], '"ERROR / HTTP/1.1" 404 -')
 
 
+@support.force_colorized_test_class
+class RequestHandlerColorizedLoggingTestCase(RequestHandlerLoggingTestCase):
+
+    def test_get(self):
+        t = get_theme(force_color=True).http_server
+        self.con = http.client.HTTPConnection(self.HOST, self.PORT)
+        self.con.connect()
+
+        with support.captured_stderr() as err:
+            self.con.request("GET", "/")
+            self.con.getresponse()
+
+        output = err.getvalue()
+        self.assertIn(f"{t.path}/{t.reset}", output)
+        self.assertIn(f"{t.status_ok}200", output)
+        self.assertIn(t.reset, output)
+
+    def test_err(self):
+        t = get_theme(force_color=True).http_server
+        self.con = http.client.HTTPConnection(self.HOST, self.PORT)
+        self.con.connect()
+
+        with support.captured_stderr() as err:
+            self.con.request("ERROR", "/")
+            self.con.getresponse()
+
+        lines = err.getvalue().split("\n")
+        self.assertIn(
+            f"{t.error}code 404, message File not found{t.reset}", lines[0]
+        )
+        self.assertIn(f"{t.status_client_error}404", lines[1])
+
+
+class CustomHeaderSimpleHTTPRequestHandler(SimpleHTTPRequestHandler):
+    extra_response_headers = None
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('extra_response_headers', self.extra_response_headers)
+        super().__init__(*args, **kwargs)
+
+
 class SimpleHTTPServerTestCase(BaseTestCase):
-    class request_handler(NoLogRequestHandler, SimpleHTTPRequestHandler):
+    class request_handler(NoLogRequestHandler, CustomHeaderSimpleHTTPRequestHandler):
         pass
 
     def setUp(self):
@@ -531,12 +576,12 @@ class SimpleHTTPServerTestCase(BaseTestCase):
     def tearDown(self):
         try:
             os.chdir(self.cwd)
-            try:
-                shutil.rmtree(self.tempdir)
-            except:
-                pass
         finally:
             super().tearDown()
+        try:
+            shutil.rmtree(self.tempdir)
+        except:
+            pass
 
     def check_status_and_reason(self, response, status, data=None):
         def close_conn():
@@ -562,6 +607,15 @@ class SimpleHTTPServerTestCase(BaseTestCase):
 
         reader.close()
         return body
+
+    def check_status_and_headers(self, response, status, headers=None):
+        # Drain the body so the server-side handler can close the file
+        # before tearDown removes the tempdir (matters on Windows).
+        response.read()
+        self.assertEqual(response.status, status)
+        if headers:
+            for name, value in headers.items():
+                self.assertEqual(response.getheader(name), value)
 
     def check_list_dir_dirname(self, dirname, quotedname=None):
         fullpath = os.path.join(self.tempdir, dirname)
@@ -861,6 +915,67 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         self.assertEqual(response.getheader("Location"),
                          self.tempdir_name + "/?hi=1")
 
+    def test_extra_response_headers_list_dir(self):
+        with mock.patch.object(self.request_handler, 'extra_response_headers', [
+            ('X-Test1', 'test1'),
+            ('X-Test2', 'test2'),
+        ]):
+            response = self.request(self.base_url + '/')
+            self.check_status_and_headers(response, HTTPStatus.OK, {
+                "X-Test1": "test1",
+                "X-Test2": "test2",
+            })
+
+    def test_extra_response_headers_get_file(self):
+        with mock.patch.object(self.request_handler, 'extra_response_headers', [
+            ('Set-Cookie', 'test1=value1'),
+            ('Set-Cookie', 'test2=value2'),
+            ('X-Test1', 'value3'),
+        ]):
+            data = b"Dummy index file\r\n"
+            with open(os.path.join(self.tempdir_name, 'index.html'), 'wb') as f:
+                f.write(data)
+            response = self.request(self.base_url + '/')
+            self.check_status_and_headers(response, HTTPStatus.OK, {
+                "Set-Cookie": "test1=value1, test2=value2",
+                "X-Test1": "value3",
+            })
+
+    def test_extra_response_headers_missing_on_404(self):
+        with mock.patch.object(self.request_handler, 'extra_response_headers', [
+            ('X-Test1', 'value'),
+        ]):
+            response = self.request(self.base_url + '/missing.html')
+            self.check_status_and_headers(response, HTTPStatus.NOT_FOUND, {
+                "X-Test1": None,
+            })
+
+    def test_extra_response_headers_dont_overwrite_default_headers(self):
+        with mock.patch.object(self.request_handler, 'extra_response_headers', [
+            ('Content-Type', 'test/not_allowed'),
+            ('Server', 'not_allowed'),
+            ('Set-Cookie', 'test=allowed'),
+        ]):
+            # The Content-Type header should not be overwritten by the extra_response_headers
+            # But cookies in the extra_allowed_duplicate_headers are allowed,
+            # including Set-Cookie
+            response = self.request(self.base_url + '/')
+            self.check_status_and_headers(response, HTTPStatus.OK, {
+                "Set-Cookie": "test=allowed",
+            })
+            self.assertNotEqual(response.getheader("Content-Type"), 'test/not_allowed')
+            self.assertNotEqual(response.getheader("Server"), 'not_allowed')
+
+    def test_multiple_requests_dont_duplicate_extra_response_headers(self):
+        with mock.patch.object(self.request_handler, 'extra_response_headers', [
+            ('x-test', 'test-value'),
+        ]):
+            for _ in range(2):
+                response = self.request(self.base_url + '/')
+                self.check_status_and_headers(response, HTTPStatus.OK, {
+                    "x-test": "test-value",
+                })
+
 
 class SocketlessRequestHandler(SimpleHTTPRequestHandler):
     def __init__(self, directory=None):
@@ -935,6 +1050,7 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
         match = self.HTTPResponseMatch.search(response)
         self.assertIsNotNone(match)
 
+    @force_not_colorized
     def test_unprintable_not_logged(self):
         # We call the method from the class directly as our Socketless
         # Handler subclass overrode it... nice for everything BUT this test.
@@ -1341,6 +1457,7 @@ class CommandLineTestCase(unittest.TestCase):
         'protocol': default_protocol,
         'port': default_port,
         'bind': default_bind,
+        'content_type': 'application/octet-stream',
         'tls_cert': None,
         'tls_key': None,
         'tls_password': None,
@@ -1408,6 +1525,31 @@ class CommandLineTestCase(unittest.TestCase):
                     call_args = self.args | dict(protocol=protocol)
                     mock_func.assert_called_once_with(**call_args)
                     mock_func.reset_mock()
+
+    @mock.patch('http.server.test')
+    def test_content_type_flag(self, mock_func):
+        content_types = ['text/html', 'text/plain', 'application/json']
+        for content_type in content_types:
+            with self.subTest(content_type=content_type):
+                self.invoke_httpd('--content-type', content_type)
+                call_args = self.args | dict(content_type=content_type)
+                mock_func.assert_called_once_with(**call_args)
+                mock_func.reset_mock()
+
+    @mock.patch('http.server.test')
+    def test_header_flag(self, mock_func):
+        call_args = self.args
+        self.invoke_httpd('--header', 'h1', 'v1', '-H', 'h2', 'v2')
+        mock_func.assert_called_once_with(**call_args)
+        mock_func.reset_mock()
+
+    def test_extra_header_flag_too_few_args(self):
+        with self.assertRaises(SystemExit):
+            self.invoke_httpd('--header', 'h1')
+
+    def test_extra_header_flag_too_many_args(self):
+        with self.assertRaises(SystemExit):
+            self.invoke_httpd('--header', 'h1', 'v1', 'h2')
 
     @unittest.skipIf(ssl is None, "requires ssl")
     @mock.patch('http.server.test')
@@ -1491,6 +1633,30 @@ class CommandLineTestCase(unittest.TestCase):
             self.invoke_httpd('--unknown-flag', stdout=stdout, stderr=stderr)
         self.assertEqual(stdout.getvalue(), '')
         self.assertIn('error', stderr.getvalue())
+
+    @mock.patch('http.server.test')
+    def test_extra_response_headers_arg(self, mock_test):
+        # Call the main function with extra response headers cli args
+        server._main(
+            ['-H', 'Set-Cookie', 'k=v', '-H', 'Set-Cookie', 'k2=v2:v3 v4', '8080']
+        )
+        # Get the ServerClass (DualStackServerMixin subclass) that _main()
+        # passed to test(), and verify its finish_request passes
+        # extra_response_headers to the handler.
+        _, kwargs = mock_test.call_args
+        server_class = kwargs['ServerClass']
+
+        mock_handler_class = mock.MagicMock()
+        mock_server = mock.Mock()
+        mock_server.RequestHandlerClass = mock_handler_class
+        server_class.finish_request(mock_server, mock.Mock(), '127.0.0.1')
+        mock_handler_class.assert_called_once_with(
+            mock.ANY, mock.ANY, mock_server,
+            directory=mock.ANY,
+            extra_response_headers=[
+                ['Set-Cookie', 'k=v'], ['Set-Cookie', 'k2=v2:v3 v4']
+            ]
+        )
 
 
 class CommandLineRunTimeTestCase(unittest.TestCase):

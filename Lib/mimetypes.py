@@ -478,6 +478,7 @@ def _default_mime_types():
         '.js'     : 'text/javascript',
         '.mjs'    : 'text/javascript',
         '.dcm'    : 'application/dicom',
+        '.efi'    : 'application/efi',
         '.epub'   : 'application/epub+zip',
         '.gz'     : 'application/gzip',
         '.json'   : 'application/json',
@@ -510,9 +511,12 @@ def _default_mime_types():
         '.m3u8'   : 'application/vnd.apple.mpegurl',
         '.dll'    : 'application/vnd.microsoft.portable-executable',
         '.exe'    : 'application/vnd.microsoft.portable-executable',
+        '.cab'    : 'application/vnd.ms-cab-compressed',
         '.xls'    : 'application/vnd.ms-excel',
         '.xlb'    : 'application/vnd.ms-excel',
         '.eot'    : 'application/vnd.ms-fontobject',
+        '.chm'    : 'application/vnd.ms-htmlhelp',
+        '.thmx'   : 'application/vnd.ms-officetheme',
         '.ppt'    : 'application/vnd.ms-powerpoint',
         '.pot'    : 'application/vnd.ms-powerpoint',
         '.ppa'    : 'application/vnd.ms-powerpoint',
@@ -595,10 +599,14 @@ def _default_mime_types():
         '.ra'     : 'audio/x-pn-realaudio',
         '.wav'    : 'audio/vnd.wave',
         '.weba'   : 'audio/webm',
+        '.ttc'    : 'font/collection',
         '.otf'    : 'font/otf',
         '.ttf'    : 'font/ttf',
         '.woff'   : 'font/woff',
         '.woff2'  : 'font/woff2',
+        '.hjif'   : 'haptics/hjif',
+        '.hmpg'   : 'haptics/hmpg',
+        '.ivs'    : 'haptics/ivs',
         '.avif'   : 'image/avif',
         '.bmp'    : 'image/bmp',
         '.emf'    : 'image/emf',
@@ -704,7 +712,7 @@ def _parse_args(args):
     from argparse import ArgumentParser
 
     parser = ArgumentParser(
-        description='map filename extensions to MIME types', color=True
+        description='map filename extensions to MIME types',
     )
     parser.add_argument(
         '-e', '--extension',
