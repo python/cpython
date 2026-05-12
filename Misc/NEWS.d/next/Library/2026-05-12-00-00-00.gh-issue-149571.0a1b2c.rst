@@ -1,0 +1,1 @@
+Fix Element.itertext() so comment and processing instruction nodes yield text consistently in both the pure-Python and C implementations.
