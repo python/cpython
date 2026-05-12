@@ -796,6 +796,7 @@ def venv(known_paths):
     if candidate_conf:
         virtual_conf = candidate_conf
         system_site = "true"
+        version = None
         # Issue 25185: Use UTF-8, as that's what the venv module uses when
         # writing the file.
         with open(virtual_conf, encoding='utf-8') as f:
@@ -808,6 +809,28 @@ def venv(known_paths):
                         system_site = value.lower()
                     elif key == 'home':
                         sys._home = value
+                    elif key == 'version':
+                        version = value
+        
+        if version:
+            try:
+                major, minor = map(int, version.split(".")[:2])
+            except ValueError:
+                major, minor = None
+            
+            if (
+                major == sys.version_info.major
+                and minor is not None
+                and minor != sys.version_info.minor
+                and not hasattr(sys, "_venv_version_warning_emitted")
+            ):
+                _warn(
+                    f"This virtual environment was created for Python {major}.{minor}, "
+                    f"but the current interpreter is Python "
+                    f"{sys.version_info.major}.{sys.version_info.minor}. "
+                    "Consider running `python -m venv --upgrade` to update the environment.",
+                    RuntimeWarning,
+                )
 
         if sys.prefix != site_prefix:
             _warn(f'Unexpected value in sys.prefix, expected {site_prefix}, got {sys.prefix}', RuntimeWarning)
