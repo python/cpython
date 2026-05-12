@@ -127,6 +127,13 @@ logging
   and scheduled for removal in Python 3.16. Define handlers with the *stream*
   argument instead.
 
+mimetypes
+---------
+
+* Valid extensions start with a '.' or are empty for
+  :meth:`mimetypes.MimeTypes.add_type`.
+  Undotted extensions now raise a :exc:`ValueError`.
+
 symtable
 --------
 
