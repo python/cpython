@@ -16519,8 +16519,6 @@ then :
   as_fn_append LIBMPDEC_CFLAGS " -DTEST_COVERAGE"
 fi
 
-
-
 # Check whether _decimal should use a coroutine-local or thread-local context
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-decimal-contextvar" >&5
 printf %s "checking for --with-decimal-contextvar... " >&6; }
@@ -16541,6 +16539,7 @@ then
 printf "%s\n" "#define WITH_DECIMAL_CONTEXTVAR 1" >>confdefs.h
 
 fi
+
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_decimal_contextvar" >&5
 printf "%s\n" "$with_decimal_contextvar" >&6; }
 
@@ -33822,10 +33821,6 @@ fi
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__curses_panel" >&5
 printf "%s\n" "$py_cv_module__curses_panel" >&6; }
 
-if test "$have_mpdec" = "no"
-then
-  py_cv_module__decimal=missing
-fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _decimal" >&5
 printf %s "checking for stdlib extension module _decimal... " >&6; }

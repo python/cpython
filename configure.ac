@@ -4338,8 +4338,6 @@ AS_VAR_IF(
   [with_pydebug], [yes],
   [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DTEST_COVERAGE"])])
 
-AC_SUBST([LIBMPDEC_CFLAGS])
-
 # Check whether _decimal should use a coroutine-local or thread-local context
 AC_MSG_CHECKING([for --with-decimal-contextvar])
 AC_ARG_WITH(
@@ -4356,6 +4354,7 @@ then
     AC_DEFINE([WITH_DECIMAL_CONTEXTVAR], [1],
       [Define if you want build the _decimal module using a coroutine-local rather than a thread-local context])
 fi
+
 AC_MSG_RESULT([$with_decimal_contextvar])
 
 dnl detect sqlite3 from Emscripten emport
