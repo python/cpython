@@ -306,6 +306,7 @@ The functions present in this module differ in how they handle the following:
 * Whether to include and expect enclosing ``<~`` and ``~>`` markers
 * Whether to fold the input into multiple lines
 * The set of ASCII characters used for encoding
+* Compact encodings of sequences of spaces and null bytes
 * The encoding of zero-padding bytes applied to the input
 
 Refer to the documentation of the individual functions for more information.
@@ -331,8 +332,8 @@ Refer to the documentation of the individual functions for more information.
 
    *adobe* controls whether the encoded byte sequence is framed with
    ``<~`` and ``~>``, as in a PostScript base-85 string literal.  Note
-   that PDF streams *must not* use a leading ``<~``, but they *must* be
-   terminated with ``~>``.
+   that while ASCII85Decode streams in PDF documents *must* be
+   terminated with ``~>``, they *must not* use a leading ``<~``.
 
    .. versionadded:: 3.4
 
@@ -374,9 +375,9 @@ Refer to the documentation of the individual functions for more information.
 
    The input is padded with ``b'\0'`` so its length is a multiple of 4
    bytes before encoding.  If *pad* is true, all the resulting
-   characters are retained in the output, which will be a multiple of
-   5 bytes, and thus the length of the data may not be preserved on
-   decoding.
+   characters are retained in the output, which will always be a
+   multiple of 5 bytes, and thus the length of the data may not be
+   preserved on decoding.
 
    If *wrapcol* is non-zero, insert a newline (``b'\n'``) character
    after at most every *wrapcol* characters.
@@ -414,7 +415,7 @@ Refer to the documentation of the individual functions for more information.
 
    The input is padded with ``b'\0'`` so its length is a multiple of 4
    bytes before encoding.  If *pad* is true, all the resulting
-   characters are retained in the output, which will then be a
+   characters are retained in the output, which will always be a
    multiple of 5 bytes, as required by the ZeroMQ standard.
 
    If *wrapcol* is non-zero, insert a newline (``b'\n'``) character
@@ -517,20 +518,11 @@ recommended to review the security section for any code deployed to production.
       Section 5.2, "Base64 Content-Transfer-Encoding," provides the definition of the
       base64 encoding.
 
-   `Binary-to-text encoding <https://en.wikipedia.org/wiki/Binary-to-text_encoding>`_
-      This Wikipedia article describes the history of binary to text
-      encoding techniques including those implemented by this module.
-
    `ISO 32000-2 Portable document format - Part 2: PDF 2.0 <https://pdfa.org/resource/iso-32000-2/>`_
       Section 7.4.3, "ASCII85Decode Filter," provides the definition
       of the Ascii85 encoding used in PDF and PostScript, including
       the output character set and the details of data length preservation
       using zero-padding and partial output groups.
-
-   :rfc:`1924` - A Compact Representation of IPv6 Addresses
-      Section 4.2 details the character set used in base85 encoding. The question
-      of zero-padding is not mentioned, since IPV6 addresses by definition are a
-      multiple of four bytes.
 
    `ZeroMQ RFC 32/Z85 <https://rfc.zeromq.org/spec/32/>`_
       The "Formal Specification" section provides the character set used in Z85.
