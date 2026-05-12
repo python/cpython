@@ -452,7 +452,8 @@ class HeatmapCollector(StackTraceCollector):
                 next_lineno = extract_lineno(next_frame[1])
                 self._record_call_relationship(
                     (filename, lineno, funcname),
-                    (next_frame[0], next_lineno, next_frame[2])
+                    (next_frame[0], next_lineno, next_frame[2]),
+                    weight=weight,
                 )
 
     def _is_valid_frame(self, filename, lineno):
@@ -561,7 +562,7 @@ class HeatmapCollector(StackTraceCollector):
         result.sort(key=lambda x: (-x['samples'], x['opcode']))
         return result
 
-    def _record_call_relationship(self, callee_frame, caller_frame):
+    def _record_call_relationship(self, callee_frame, caller_frame, weight=1):
         """Record caller/callee relationship between adjacent frames."""
         callee_filename, callee_lineno, callee_funcname = callee_frame
         caller_filename, caller_lineno, caller_funcname = caller_frame
@@ -587,7 +588,7 @@ class HeatmapCollector(StackTraceCollector):
 
         # Count this call edge for path analysis
         edge_key = (caller_key, callee_key)
-        self.edge_samples[edge_key] += 1
+        self.edge_samples[edge_key] += weight
 
     def export(self, output_path):
         """Export heatmap data as HTML files in a directory.
