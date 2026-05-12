@@ -811,7 +811,7 @@ def venv(known_paths):
                         sys._home = value
                     elif key == 'version':
                         version = value
-        
+
         if version:
             try:
                 major, minor = map(int, version.split(".")[:2])
