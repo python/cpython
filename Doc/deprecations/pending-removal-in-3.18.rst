@@ -4,15 +4,6 @@ Pending removal in Python 3.18
 * No longer accept a boolean value when a file descriptor is expected.
   (Contributed by Serhiy Storchaka in :gh:`82626`.)
 
-* :mod:`abc`
-
-   * Soft-deprecated since Python 3.3 :class:`abc.abstractclassmethod`,
-     :class:`abc.abstractstaticmethod`, and :class:`abc.abstractproperty`
-     now raise a :exc:`DeprecationWarning`.
-     These classes will be removed in Python 3.21, instead
-     use :func:`abc.abstractmethod` with :func:`classmethod`,
-     :func:`staticmethod`, and :class:`property` respectively.
-
 * :mod:`decimal`:
 
   * The non-standard and undocumented :class:`~decimal.Decimal` format
