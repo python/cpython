@@ -19,7 +19,7 @@
 #   - liblzma (liblzma.a in NANVIX_HOME/lib)
 
 # Nanvix Docker image for cross-compilation
-NANVIX_DOCKER_IMAGE ?= nanvix/toolchain:latest-minimal
+NANVIX_DOCKER_IMAGE ?= ghcr.io/nanvix/toolchain-python:latest
 
 # Platform and deployment configuration
 PLATFORM ?= microvm
