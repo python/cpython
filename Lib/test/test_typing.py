@@ -6979,6 +6979,24 @@ class GetTypeHintTests(BaseTestCase):
         self.assertEqual(gth(ForRefExample.func), expects)
         self.assertEqual(gth(ForRefExample.nested), expects)
 
+    def test_get_type_hints_wrapped_cycle_self(self):
+        # gh-146553: __wrapped__ self-reference must raise ValueError,
+        # not loop forever.
+        def f(x: int) -> str: ...
+        f.__wrapped__ = f
+        with self.assertRaisesRegex(ValueError, 'wrapper loop'):
+            get_type_hints(f)
+
+    def test_get_type_hints_wrapped_cycle_mutual(self):
+        # gh-146553: mutual __wrapped__ cycle (a -> b -> a) must raise
+        # ValueError, not loop forever.
+        def a(): ...
+        def b(): ...
+        a.__wrapped__ = b
+        b.__wrapped__ = a
+        with self.assertRaisesRegex(ValueError, 'wrapper loop'):
+            get_type_hints(a)
+
     def test_get_type_hints_annotated(self):
         def foobar(x: List['X']): ...
         X = Annotated[int, (1, 10)]
@@ -10551,6 +10569,10 @@ class NoDefaultTests(BaseTestCase):
             type(NoDefault).foo = 3
         with self.assertRaises(AttributeError):
             type(NoDefault).foo
+
+    def test_no_subclassing(self):
+        with self.assertRaises(TypeError):
+            class Test(type(NoDefault)): ...
 
 
 class AllTests(BaseTestCase):
