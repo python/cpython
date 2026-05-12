@@ -7318,30 +7318,30 @@
       <parameter type-id='type-id-6' name='obj' filepath='Objects/dictobject.c' line='7485' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='PyDict_Watch' mangled-name='PyDict_Watch' filepath='Objects/dictobject.c' line='7711' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyDict_Watch'>
-      <parameter type-id='type-id-5' name='watcher_id' filepath='Objects/dictobject.c' line='7711' column='1'/>
-      <parameter type-id='type-id-6' name='dict' filepath='Objects/dictobject.c' line='7711' column='1'/>
+    <function-decl name='PyDict_Watch' mangled-name='PyDict_Watch' filepath='Objects/dictobject.c' line='7717' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyDict_Watch'>
+      <parameter type-id='type-id-5' name='watcher_id' filepath='Objects/dictobject.c' line='7717' column='1'/>
+      <parameter type-id='type-id-6' name='dict' filepath='Objects/dictobject.c' line='7717' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='PyDict_Unwatch' mangled-name='PyDict_Unwatch' filepath='Objects/dictobject.c' line='7726' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyDict_Unwatch'>
-      <parameter type-id='type-id-5' name='watcher_id' filepath='Objects/dictobject.c' line='7726' column='1'/>
-      <parameter type-id='type-id-6' name='dict' filepath='Objects/dictobject.c' line='7726' column='1'/>
+    <function-decl name='PyDict_Unwatch' mangled-name='PyDict_Unwatch' filepath='Objects/dictobject.c' line='7733' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyDict_Unwatch'>
+      <parameter type-id='type-id-5' name='watcher_id' filepath='Objects/dictobject.c' line='7733' column='1'/>
+      <parameter type-id='type-id-6' name='dict' filepath='Objects/dictobject.c' line='7733' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='PyDict_AddWatcher' mangled-name='PyDict_AddWatcher' filepath='Objects/dictobject.c' line='7741' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyDict_AddWatcher'>
-      <parameter type-id='type-id-399' name='callback' filepath='Objects/dictobject.c' line='7741' column='1'/>
+    <function-decl name='PyDict_AddWatcher' mangled-name='PyDict_AddWatcher' filepath='Objects/dictobject.c' line='7749' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyDict_AddWatcher'>
+      <parameter type-id='type-id-399' name='callback' filepath='Objects/dictobject.c' line='7749' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='PyDict_ClearWatcher' mangled-name='PyDict_ClearWatcher' filepath='Objects/dictobject.c' line='7758' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyDict_ClearWatcher'>
-      <parameter type-id='type-id-5' name='watcher_id' filepath='Objects/dictobject.c' line='7758' column='1'/>
+    <function-decl name='PyDict_ClearWatcher' mangled-name='PyDict_ClearWatcher' filepath='Objects/dictobject.c' line='7771' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyDict_ClearWatcher'>
+      <parameter type-id='type-id-5' name='watcher_id' filepath='Objects/dictobject.c' line='7771' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='_PyDict_SendEvent' mangled-name='_PyDict_SendEvent' filepath='Objects/dictobject.c' line='7781' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyDict_SendEvent'>
-      <parameter type-id='type-id-5' name='watcher_bits' filepath='Objects/dictobject.c' line='7781' column='1'/>
-      <parameter type-id='type-id-400' name='event' filepath='Objects/dictobject.c' line='7782' column='1'/>
-      <parameter type-id='type-id-16' name='mp' filepath='Objects/dictobject.c' line='7783' column='1'/>
-      <parameter type-id='type-id-6' name='key' filepath='Objects/dictobject.c' line='7784' column='1'/>
-      <parameter type-id='type-id-6' name='value' filepath='Objects/dictobject.c' line='7785' column='1'/>
+    <function-decl name='_PyDict_SendEvent' mangled-name='_PyDict_SendEvent' filepath='Objects/dictobject.c' line='7800' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyDict_SendEvent'>
+      <parameter type-id='type-id-5' name='watcher_bits' filepath='Objects/dictobject.c' line='7800' column='1'/>
+      <parameter type-id='type-id-400' name='event' filepath='Objects/dictobject.c' line='7801' column='1'/>
+      <parameter type-id='type-id-16' name='mp' filepath='Objects/dictobject.c' line='7802' column='1'/>
+      <parameter type-id='type-id-6' name='key' filepath='Objects/dictobject.c' line='7803' column='1'/>
+      <parameter type-id='type-id-6' name='value' filepath='Objects/dictobject.c' line='7804' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
     <function-type size-in-bits='64' id='type-id-401'>
@@ -17923,8 +17923,14 @@
       <data-member access='public' layout-offset-in-bits='0'>
         <var-decl name='next_keys_version' type-id='type-id-324' visibility='default' filepath='./Include/internal/pycore_dict_state.h' line='15' column='1'/>
       </data-member>
+      <data-member access='public' layout-offset-in-bits='32'>
+        <var-decl name='watcher_mutex' type-id='type-id-753' visibility='default' filepath='./Include/internal/pycore_dict_state.h' line='16' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='40'>
+        <var-decl name='watcher_setup_once' type-id='type-id-987' visibility='default' filepath='./Include/internal/pycore_dict_state.h' line='17' column='1'/>
+      </data-member>
       <data-member access='public' layout-offset-in-bits='64'>
-        <var-decl name='watchers' type-id='type-id-812' visibility='default' filepath='./Include/internal/pycore_dict_state.h' line='16' column='1'/>
+        <var-decl name='watchers' type-id='type-id-812' visibility='default' filepath='./Include/internal/pycore_dict_state.h' line='18' column='1'/>
       </data-member>
     </class-decl>
     <class-decl name='_Py_exc_state' size-in-bits='256' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_exceptions.h' line='22' column='1' id='type-id-1166'>
@@ -21077,318 +21083,318 @@
         <var-decl name='generation0' type-id='type-id-1255' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='264' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='_import_runtime_state' size-in-bits='320' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='282' column='1' id='type-id-1256'>
+    <class-decl name='_import_runtime_state' size-in-bits='320' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='289' column='1' id='type-id-1256'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='inittab' type-id='type-id-1257' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='284' column='1'/>
+        <var-decl name='inittab' type-id='type-id-1257' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='291' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='64'>
-        <var-decl name='last_module_index' type-id='type-id-7' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='289' column='1'/>
+        <var-decl name='last_module_index' type-id='type-id-7' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='296' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='128'>
-        <var-decl name='extensions' type-id='type-id-1258' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='300' column='1'/>
+        <var-decl name='extensions' type-id='type-id-1258' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='307' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='256'>
-        <var-decl name='pkgcontext' type-id='type-id-4' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='302' column='1'/>
+        <var-decl name='pkgcontext' type-id='type-id-4' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='309' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='__anonymous_struct__40' size-in-bits='128' is-struct='yes' is-anonymous='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='290' column='1' id='type-id-1258'>
+    <class-decl name='__anonymous_struct__40' size-in-bits='128' is-struct='yes' is-anonymous='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='297' column='1' id='type-id-1258'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='mutex' type-id='type-id-753' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='292' column='1'/>
+        <var-decl name='mutex' type-id='type-id-753' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='299' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='64'>
-        <var-decl name='hashtable' type-id='type-id-619' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='299' column='1'/>
+        <var-decl name='hashtable' type-id='type-id-619' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='306' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='_import_state' size-in-bits='768' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='305' column='1' id='type-id-1259'>
+    <class-decl name='_import_state' size-in-bits='768' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='312' column='1' id='type-id-1259'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='modules' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='307' column='1'/>
+        <var-decl name='modules' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='314' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='64'>
-        <var-decl name='modules_by_index' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='327' column='1'/>
+        <var-decl name='modules_by_index' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='334' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='128'>
-        <var-decl name='importlib' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='329' column='1'/>
+        <var-decl name='importlib' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='336' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='192'>
-        <var-decl name='override_frozen_modules' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='332' column='1'/>
+        <var-decl name='override_frozen_modules' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='339' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='224'>
-        <var-decl name='override_multi_interp_extensions_check' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='333' column='1'/>
+        <var-decl name='override_multi_interp_extensions_check' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='340' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='256'>
-        <var-decl name='dlopenflags' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='335' column='1'/>
+        <var-decl name='dlopenflags' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='342' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='320'>
-        <var-decl name='import_func' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='337' column='1'/>
+        <var-decl name='import_func' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='344' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='384'>
-        <var-decl name='lock' type-id='type-id-1260' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='339' column='1'/>
+        <var-decl name='lock' type-id='type-id-1260' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='346' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='576'>
-        <var-decl name='find_and_load' type-id='type-id-1261' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='345' column='1'/>
+        <var-decl name='find_and_load' type-id='type-id-1261' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='352' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='__anonymous_struct__841' size-in-bits='192' is-struct='yes' is-anonymous='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='341' column='1' id='type-id-1261'>
+    <class-decl name='__anonymous_struct__841' size-in-bits='192' is-struct='yes' is-anonymous='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='348' column='1' id='type-id-1261'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='import_level' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='342' column='1'/>
+        <var-decl name='import_level' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='349' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='64'>
-        <var-decl name='accumulated' type-id='type-id-37' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='343' column='1'/>
+        <var-decl name='accumulated' type-id='type-id-37' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='350' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='128'>
-        <var-decl name='header' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='344' column='1'/>
+        <var-decl name='header' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='351' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='_Py_long_state' size-in-bits='32' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='356' column='1' id='type-id-1262'>
+    <class-decl name='_Py_long_state' size-in-bits='32' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='363' column='1' id='type-id-1262'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='max_str_digits' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='357' column='1'/>
+        <var-decl name='max_str_digits' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='364' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='codecs_state' size-in-bits='256' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='360' column='1' id='type-id-1263'>
+    <class-decl name='codecs_state' size-in-bits='256' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='367' column='1' id='type-id-1263'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='search_path' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='362' column='1'/>
+        <var-decl name='search_path' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='369' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='64'>
-        <var-decl name='search_cache' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='366' column='1'/>
+        <var-decl name='search_cache' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='373' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='128'>
-        <var-decl name='error_registry' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='369' column='1'/>
+        <var-decl name='error_registry' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='376' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='192'>
-        <var-decl name='initialized' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='377' column='1'/>
+        <var-decl name='initialized' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='384' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='_stoptheworld_state' size-in-bits='192' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='382' column='1' id='type-id-1264'>
+    <class-decl name='_stoptheworld_state' size-in-bits='192' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='389' column='1' id='type-id-1264'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='mutex' type-id='type-id-753' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='383' column='1'/>
+        <var-decl name='mutex' type-id='type-id-753' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='390' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='8'>
-        <var-decl name='requested' type-id='type-id-346' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='387' column='1'/>
+        <var-decl name='requested' type-id='type-id-346' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='394' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='16'>
-        <var-decl name='world_stopped' type-id='type-id-346' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='388' column='1'/>
+        <var-decl name='world_stopped' type-id='type-id-346' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='395' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='24'>
-        <var-decl name='is_global' type-id='type-id-346' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='389' column='1'/>
+        <var-decl name='is_global' type-id='type-id-346' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='396' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='32'>
-        <var-decl name='stop_event' type-id='type-id-1265' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='391' column='1'/>
+        <var-decl name='stop_event' type-id='type-id-1265' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='398' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='64'>
-        <var-decl name='thread_countdown' type-id='type-id-7' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='392' column='1'/>
+        <var-decl name='thread_countdown' type-id='type-id-7' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='399' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='128'>
-        <var-decl name='requester' type-id='type-id-40' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='394' column='1'/>
+        <var-decl name='requester' type-id='type-id-40' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='401' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='_rare_events' size-in-bits='40' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='399' column='1' id='type-id-1266'>
+    <class-decl name='_rare_events' size-in-bits='40' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='406' column='1' id='type-id-1266'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='set_class' type-id='type-id-310' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='401' column='1'/>
+        <var-decl name='set_class' type-id='type-id-310' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='408' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='8'>
-        <var-decl name='set_bases' type-id='type-id-310' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='403' column='1'/>
+        <var-decl name='set_bases' type-id='type-id-310' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='410' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='16'>
-        <var-decl name='set_eval_frame_func' type-id='type-id-310' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='405' column='1'/>
+        <var-decl name='set_eval_frame_func' type-id='type-id-310' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='412' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='24'>
-        <var-decl name='builtin_dict' type-id='type-id-310' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='407' column='1'/>
+        <var-decl name='builtin_dict' type-id='type-id-310' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='414' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='32'>
-        <var-decl name='func_modification' type-id='type-id-310' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='409' column='1'/>
+        <var-decl name='func_modification' type-id='type-id-310' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='416' column='1'/>
       </data-member>
     </class-decl>
-    <typedef-decl name='_rare_events' type-id='type-id-1266' filepath='./Include/internal/pycore_interp_structs.h' line='410' column='1' id='type-id-1267'/>
-    <class-decl name='Bigint' size-in-bits='256' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='413' column='1' id='type-id-1268'>
+    <typedef-decl name='_rare_events' type-id='type-id-1266' filepath='./Include/internal/pycore_interp_structs.h' line='417' column='1' id='type-id-1267'/>
+    <class-decl name='Bigint' size-in-bits='256' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='420' column='1' id='type-id-1268'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='next' type-id='type-id-807' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='414' column='1'/>
+        <var-decl name='next' type-id='type-id-807' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='421' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='64'>
-        <var-decl name='k' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='415' column='1'/>
+        <var-decl name='k' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='422' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='96'>
-        <var-decl name='maxwds' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='415' column='1'/>
+        <var-decl name='maxwds' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='422' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='128'>
-        <var-decl name='sign' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='415' column='1'/>
+        <var-decl name='sign' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='422' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='160'>
-        <var-decl name='wds' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='415' column='1'/>
+        <var-decl name='wds' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='422' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='192'>
-        <var-decl name='x' type-id='type-id-907' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='416' column='1'/>
+        <var-decl name='x' type-id='type-id-907' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='423' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='_dtoa_state' size-in-bits='19520' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='439' column='1' id='type-id-1269'>
+    <class-decl name='_dtoa_state' size-in-bits='19520' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='446' column='1' id='type-id-1269'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='p5s' type-id='type-id-808' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='442' column='1'/>
+        <var-decl name='p5s' type-id='type-id-808' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='449' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='512'>
-        <var-decl name='freelist' type-id='type-id-808' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='444' column='1'/>
+        <var-decl name='freelist' type-id='type-id-808' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='451' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1024'>
-        <var-decl name='preallocated' type-id='type-id-875' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='445' column='1'/>
+        <var-decl name='preallocated' type-id='type-id-875' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='452' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='19456'>
-        <var-decl name='preallocated_next' type-id='type-id-189' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='446' column='1'/>
+        <var-decl name='preallocated_next' type-id='type-id-189' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='453' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='_py_code_state' size-in-bits='128' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='451' column='1' id='type-id-1270'>
+    <class-decl name='_py_code_state' size-in-bits='128' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='458' column='1' id='type-id-1270'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='mutex' type-id='type-id-753' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='452' column='1'/>
+        <var-decl name='mutex' type-id='type-id-753' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='459' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='64'>
-        <var-decl name='constants' type-id='type-id-619' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='454' column='1'/>
+        <var-decl name='constants' type-id='type-id-619' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='461' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='_func_version_cache_item' size-in-bits='128' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='459' column='1' id='type-id-838'>
+    <class-decl name='_func_version_cache_item' size-in-bits='128' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='466' column='1' id='type-id-838'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='func' type-id='type-id-313' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='460' column='1'/>
+        <var-decl name='func' type-id='type-id-313' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='467' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='64'>
-        <var-decl name='code' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='461' column='1'/>
+        <var-decl name='code' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='468' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='_py_func_state' size-in-bits='524352' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='464' column='1' id='type-id-1271'>
+    <class-decl name='_py_func_state' size-in-bits='524352' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='471' column='1' id='type-id-1271'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='next_version' type-id='type-id-324' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='470' column='1'/>
+        <var-decl name='next_version' type-id='type-id-324' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='477' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='64'>
-        <var-decl name='func_version_cache' type-id='type-id-839' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='475' column='1'/>
+        <var-decl name='func_version_cache' type-id='type-id-839' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='482' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='_types_runtime_state' size-in-bits='26944' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='491' column='1' id='type-id-1272'>
+    <class-decl name='_types_runtime_state' size-in-bits='26944' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='498' column='1' id='type-id-1272'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='next_version_tag' type-id='type-id-114' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='495' column='1'/>
+        <var-decl name='next_version_tag' type-id='type-id-114' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='502' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='64'>
-        <var-decl name='managed_static' type-id='type-id-1273' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='502' column='1'/>
+        <var-decl name='managed_static' type-id='type-id-1273' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='509' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='__anonymous_struct__54' size-in-bits='26880' is-struct='yes' is-anonymous='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='497' column='1' id='type-id-1273'>
+    <class-decl name='__anonymous_struct__54' size-in-bits='26880' is-struct='yes' is-anonymous='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='504' column='1' id='type-id-1273'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='types' type-id='type-id-832' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='501' column='1'/>
+        <var-decl name='types' type-id='type-id-832' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='508' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='__anonymous_struct__55' size-in-bits='128' is-struct='yes' is-anonymous='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='498' column='1' id='type-id-831'>
+    <class-decl name='__anonymous_struct__55' size-in-bits='128' is-struct='yes' is-anonymous='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='505' column='1' id='type-id-831'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='type' type-id='type-id-1' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='499' column='1'/>
+        <var-decl name='type' type-id='type-id-1' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='506' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='64'>
-        <var-decl name='interp_count' type-id='type-id-410' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='500' column='1'/>
+        <var-decl name='interp_count' type-id='type-id-410' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='507' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='type_cache_entry' size-in-bits='192' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='508' column='1' id='type-id-905'>
+    <class-decl name='type_cache_entry' size-in-bits='192' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='515' column='1' id='type-id-905'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='version' type-id='type-id-114' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='509' column='1'/>
+        <var-decl name='version' type-id='type-id-114' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='516' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='64'>
-        <var-decl name='name' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='513' column='1'/>
+        <var-decl name='name' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='520' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='128'>
-        <var-decl name='value' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='514' column='1'/>
+        <var-decl name='value' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='521' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='type_cache' size-in-bits='786432' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='519' column='1' id='type-id-1274'>
+    <class-decl name='type_cache' size-in-bits='786432' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='526' column='1' id='type-id-1274'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='hashtable' type-id='type-id-906' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='520' column='1'/>
+        <var-decl name='hashtable' type-id='type-id-906' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='527' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='managed_static_type_state' size-in-bits='384' is-struct='yes' naming-typedef-id='type-id-485' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='523' column='1' id='type-id-1275'>
+    <class-decl name='managed_static_type_state' size-in-bits='384' is-struct='yes' naming-typedef-id='type-id-485' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='530' column='1' id='type-id-1275'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='type' type-id='type-id-1' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='524' column='1'/>
+        <var-decl name='type' type-id='type-id-1' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='531' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='64'>
-        <var-decl name='isbuiltin' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='525' column='1'/>
+        <var-decl name='isbuiltin' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='532' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='96'>
-        <var-decl name='readying' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='526' column='1'/>
+        <var-decl name='readying' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='533' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='128'>
-        <var-decl name='ready' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='527' column='1'/>
+        <var-decl name='ready' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='534' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='192'>
-        <var-decl name='tp_dict' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='530' column='1'/>
+        <var-decl name='tp_dict' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='537' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='256'>
-        <var-decl name='tp_subclasses' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='531' column='1'/>
+        <var-decl name='tp_subclasses' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='538' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='320'>
-        <var-decl name='tp_weaklist' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='536' column='1'/>
+        <var-decl name='tp_weaklist' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='543' column='1'/>
       </data-member>
     </class-decl>
-    <typedef-decl name='managed_static_type_state' type-id='type-id-1275' filepath='./Include/internal/pycore_interp_structs.h' line='537' column='1' id='type-id-485'/>
-    <class-decl name='types_state' size-in-bits='1129536' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='541' column='1' id='type-id-1276'>
+    <typedef-decl name='managed_static_type_state' type-id='type-id-1275' filepath='./Include/internal/pycore_interp_structs.h' line='544' column='1' id='type-id-485'/>
+    <class-decl name='types_state' size-in-bits='1129536' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='548' column='1' id='type-id-1276'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='next_version_tag' type-id='type-id-114' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='545' column='1'/>
+        <var-decl name='next_version_tag' type-id='type-id-114' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='552' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='64'>
-        <var-decl name='type_cache' type-id='type-id-1274' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='547' column='1'/>
+        <var-decl name='type_cache' type-id='type-id-1274' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='554' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='786496'>
-        <var-decl name='builtins' type-id='type-id-1277' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='588' column='1'/>
+        <var-decl name='builtins' type-id='type-id-1277' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='595' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='863360'>
-        <var-decl name='for_extensions' type-id='type-id-1278' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='594' column='1'/>
+        <var-decl name='for_extensions' type-id='type-id-1278' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='601' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='867328'>
-        <var-decl name='mutex' type-id='type-id-753' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='595' column='1'/>
+        <var-decl name='mutex' type-id='type-id-753' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='602' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='867392'>
-        <var-decl name='type_version_cache' type-id='type-id-821' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='601' column='1'/>
+        <var-decl name='type_version_cache' type-id='type-id-821' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='608' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='__anonymous_struct__842' size-in-bits='76864' is-struct='yes' is-anonymous='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='585' column='1' id='type-id-1277'>
+    <class-decl name='__anonymous_struct__842' size-in-bits='76864' is-struct='yes' is-anonymous='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='592' column='1' id='type-id-1277'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='num_initialized' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='586' column='1'/>
+        <var-decl name='num_initialized' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='593' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='64'>
-        <var-decl name='initialized' type-id='type-id-894' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='587' column='1'/>
+        <var-decl name='initialized' type-id='type-id-894' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='594' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='__anonymous_struct__843' size-in-bits='3968' is-struct='yes' is-anonymous='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='590' column='1' id='type-id-1278'>
+    <class-decl name='__anonymous_struct__843' size-in-bits='3968' is-struct='yes' is-anonymous='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='597' column='1' id='type-id-1278'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='num_initialized' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='591' column='1'/>
+        <var-decl name='num_initialized' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='598' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='64'>
-        <var-decl name='next_index' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='592' column='1'/>
+        <var-decl name='next_index' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='599' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='128'>
-        <var-decl name='initialized' type-id='type-id-892' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='593' column='1'/>
+        <var-decl name='initialized' type-id='type-id-892' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='600' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='_warnings_runtime_state' size-in-bits='512' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='604' column='1' id='type-id-1279'>
+    <class-decl name='_warnings_runtime_state' size-in-bits='512' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='611' column='1' id='type-id-1279'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='filters' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='607' column='1'/>
+        <var-decl name='filters' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='614' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='64'>
-        <var-decl name='once_registry' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='608' column='1'/>
+        <var-decl name='once_registry' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='615' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='128'>
-        <var-decl name='default_action' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='609' column='1'/>
+        <var-decl name='default_action' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='616' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='192'>
-        <var-decl name='lock' type-id='type-id-1260' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='610' column='1'/>
+        <var-decl name='lock' type-id='type-id-1260' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='617' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='384'>
-        <var-decl name='filters_version' type-id='type-id-191' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='611' column='1'/>
+        <var-decl name='filters_version' type-id='type-id-191' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='618' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='448'>
-        <var-decl name='context' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='612' column='1'/>
+        <var-decl name='context' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='619' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='_Py_mem_interp_free_queue' size-in-bits='192' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='615' column='1' id='type-id-1280'>
+    <class-decl name='_Py_mem_interp_free_queue' size-in-bits='192' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='622' column='1' id='type-id-1280'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='has_work' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='616' column='1'/>
+        <var-decl name='has_work' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='623' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='32'>
-        <var-decl name='mutex' type-id='type-id-753' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='617' column='1'/>
+        <var-decl name='mutex' type-id='type-id-753' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='624' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='64'>
-        <var-decl name='head' type-id='type-id-1281' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='618' column='1'/>
+        <var-decl name='head' type-id='type-id-1281' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='625' column='1'/>
       </data-member>
     </class-decl>
-    <enum-decl name='_Py_error_handler' naming-typedef-id='type-id-615' filepath='./Include/internal/pycore_interp_structs.h' line='624' column='1' id='type-id-1282'>
+    <enum-decl name='_Py_error_handler' naming-typedef-id='type-id-615' filepath='./Include/internal/pycore_interp_structs.h' line='631' column='1' id='type-id-1282'>
       <underlying-type type-id='type-id-46'/>
       <enumerator name='_Py_ERROR_UNKNOWN' value='0'/>
       <enumerator name='_Py_ERROR_STRICT' value='1'/>
@@ -21400,385 +21406,385 @@
       <enumerator name='_Py_ERROR_XMLCHARREFREPLACE' value='7'/>
       <enumerator name='_Py_ERROR_OTHER' value='8'/>
     </enum-decl>
-    <typedef-decl name='_Py_error_handler' type-id='type-id-1282' filepath='./Include/internal/pycore_interp_structs.h' line='634' column='1' id='type-id-615'/>
-    <class-decl name='_Py_unicode_runtime_ids' size-in-bits='128' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='636' column='1' id='type-id-1283'>
+    <typedef-decl name='_Py_error_handler' type-id='type-id-1282' filepath='./Include/internal/pycore_interp_structs.h' line='641' column='1' id='type-id-615'/>
+    <class-decl name='_Py_unicode_runtime_ids' size-in-bits='128' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='643' column='1' id='type-id-1283'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='mutex' type-id='type-id-753' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='637' column='1'/>
+        <var-decl name='mutex' type-id='type-id-753' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='644' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='64'>
-        <var-decl name='next_index' type-id='type-id-7' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='640' column='1'/>
+        <var-decl name='next_index' type-id='type-id-7' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='647' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='_Py_unicode_runtime_state' size-in-bits='128' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='643' column='1' id='type-id-1284'>
+    <class-decl name='_Py_unicode_runtime_state' size-in-bits='128' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='650' column='1' id='type-id-1284'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='ids' type-id='type-id-1283' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='644' column='1'/>
+        <var-decl name='ids' type-id='type-id-1283' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='651' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='_Py_unicode_fs_codec' size-in-bits='256' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='649' column='1' id='type-id-1285'>
+    <class-decl name='_Py_unicode_fs_codec' size-in-bits='256' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='656' column='1' id='type-id-1285'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='encoding' type-id='type-id-27' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='650' column='1'/>
+        <var-decl name='encoding' type-id='type-id-27' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='657' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='64'>
-        <var-decl name='utf8' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='651' column='1'/>
+        <var-decl name='utf8' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='658' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='128'>
-        <var-decl name='errors' type-id='type-id-27' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='652' column='1'/>
+        <var-decl name='errors' type-id='type-id-27' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='659' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='192'>
-        <var-decl name='error_handler' type-id='type-id-615' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='653' column='1'/>
+        <var-decl name='error_handler' type-id='type-id-615' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='660' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='_Py_unicode_ids' size-in-bits='128' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='656' column='1' id='type-id-1286'>
+    <class-decl name='_Py_unicode_ids' size-in-bits='128' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='663' column='1' id='type-id-1286'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='size' type-id='type-id-7' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='657' column='1'/>
+        <var-decl name='size' type-id='type-id-7' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='664' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='64'>
-        <var-decl name='array' type-id='type-id-18' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='658' column='1'/>
+        <var-decl name='array' type-id='type-id-18' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='665' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='_Py_unicode_state' size-in-bits='448' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='663' column='1' id='type-id-1287'>
+    <class-decl name='_Py_unicode_state' size-in-bits='448' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='670' column='1' id='type-id-1287'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='fs_codec' type-id='type-id-1285' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='664' column='1'/>
+        <var-decl name='fs_codec' type-id='type-id-1285' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='671' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='256'>
-        <var-decl name='ucnhash_capi' type-id='type-id-1288' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='666' column='1'/>
+        <var-decl name='ucnhash_capi' type-id='type-id-1288' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='673' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='320'>
-        <var-decl name='ids' type-id='type-id-1286' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='669' column='1'/>
+        <var-decl name='ids' type-id='type-id-1286' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='676' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='callable_cache' size-in-bits='256' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='673' column='1' id='type-id-1289'>
+    <class-decl name='callable_cache' size-in-bits='256' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='680' column='1' id='type-id-1289'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='isinstance' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='674' column='1'/>
+        <var-decl name='isinstance' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='681' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='64'>
-        <var-decl name='len' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='675' column='1'/>
+        <var-decl name='len' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='682' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='128'>
-        <var-decl name='list_append' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='676' column='1'/>
+        <var-decl name='list_append' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='683' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='192'>
-        <var-decl name='object__getattribute__' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='677' column='1'/>
+        <var-decl name='object__getattribute__' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='684' column='1'/>
       </data-member>
     </class-decl>
-    <typedef-decl name='pytype_slotdef' type-id='type-id-383' filepath='./Include/internal/pycore_interp_structs.h' line='686' column='1' id='type-id-1290'/>
-    <class-decl name='_Py_interp_cached_objects' size-in-bits='1280' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='689' column='1' id='type-id-1291'>
+    <typedef-decl name='pytype_slotdef' type-id='type-id-383' filepath='./Include/internal/pycore_interp_structs.h' line='693' column='1' id='type-id-1290'/>
+    <class-decl name='_Py_interp_cached_objects' size-in-bits='1280' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='696' column='1' id='type-id-1291'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='interned_strings' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='693' column='1'/>
+        <var-decl name='interned_strings' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='700' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='64'>
-        <var-decl name='objreduce' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='696' column='1'/>
+        <var-decl name='objreduce' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='703' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='128'>
-        <var-decl name='type_slots_pname' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='697' column='1'/>
+        <var-decl name='type_slots_pname' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='704' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='192'>
-        <var-decl name='type_slots_ptrs' type-id='type-id-899' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='698' column='1'/>
+        <var-decl name='type_slots_ptrs' type-id='type-id-899' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='705' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='832'>
-        <var-decl name='generic_type' type-id='type-id-1' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='701' column='1'/>
+        <var-decl name='generic_type' type-id='type-id-1' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='708' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='896'>
-        <var-decl name='typevar_type' type-id='type-id-1' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='702' column='1'/>
+        <var-decl name='typevar_type' type-id='type-id-1' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='709' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='960'>
-        <var-decl name='typevartuple_type' type-id='type-id-1' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='703' column='1'/>
+        <var-decl name='typevartuple_type' type-id='type-id-1' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='710' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1024'>
-        <var-decl name='paramspec_type' type-id='type-id-1' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='704' column='1'/>
+        <var-decl name='paramspec_type' type-id='type-id-1' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='711' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1088'>
-        <var-decl name='paramspecargs_type' type-id='type-id-1' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='705' column='1'/>
+        <var-decl name='paramspecargs_type' type-id='type-id-1' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='712' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1152'>
-        <var-decl name='paramspeckwargs_type' type-id='type-id-1' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='706' column='1'/>
+        <var-decl name='paramspeckwargs_type' type-id='type-id-1' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='713' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1216'>
-        <var-decl name='constevaluator_type' type-id='type-id-1' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='707' column='1'/>
+        <var-decl name='constevaluator_type' type-id='type-id-1' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='714' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='_Py_interp_static_objects' size-in-bits='1088' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='710' column='1' id='type-id-1292'>
+    <class-decl name='_Py_interp_static_objects' size-in-bits='1088' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='717' column='1' id='type-id-1292'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='singletons' type-id='type-id-1293' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='717' column='1'/>
+        <var-decl name='singletons' type-id='type-id-1293' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='724' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='__anonymous_struct__844' size-in-bits='1088' is-struct='yes' is-anonymous='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='711' column='1' id='type-id-1293'>
+    <class-decl name='__anonymous_struct__844' size-in-bits='1088' is-struct='yes' is-anonymous='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='718' column='1' id='type-id-1293'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='_not_used' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='712' column='1'/>
+        <var-decl name='_not_used' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='719' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='64'>
-        <var-decl name='_hamt_empty_gc_not_used' type-id='type-id-1252' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='714' column='1'/>
+        <var-decl name='_hamt_empty_gc_not_used' type-id='type-id-1252' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='721' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='192'>
-        <var-decl name='hamt_empty' type-id='type-id-1294' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='715' column='1'/>
+        <var-decl name='hamt_empty' type-id='type-id-1294' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='722' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='512'>
-        <var-decl name='last_resort_memory_error' type-id='type-id-1035' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='716' column='1'/>
+        <var-decl name='last_resort_memory_error' type-id='type-id-1035' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='723' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='_is' size-in-bits='1806912' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='781' column='1' id='type-id-1295'>
+    <class-decl name='_is' size-in-bits='1806912' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='788' column='1' id='type-id-1295'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='ceval' type-id='type-id-1245' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='786' column='1'/>
+        <var-decl name='ceval' type-id='type-id-1245' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='793' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='58112'>
-        <var-decl name='_malloced' type-id='type-id-44' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='789' column='1'/>
+        <var-decl name='_malloced' type-id='type-id-44' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='796' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='58176'>
-        <var-decl name='next' type-id='type-id-42' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='791' column='1'/>
+        <var-decl name='next' type-id='type-id-42' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='798' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='58240'>
-        <var-decl name='id' type-id='type-id-410' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='793' column='1'/>
+        <var-decl name='id' type-id='type-id-410' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='800' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='58304'>
-        <var-decl name='id_refcount' type-id='type-id-7' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='794' column='1'/>
+        <var-decl name='id_refcount' type-id='type-id-7' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='801' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='58368'>
-        <var-decl name='requires_idref' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='795' column='1'/>
+        <var-decl name='requires_idref' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='802' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='58432'>
-        <var-decl name='_whence' type-id='type-id-191' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='797' column='1'/>
+        <var-decl name='_whence' type-id='type-id-191' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='804' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='58496'>
-        <var-decl name='_initialized' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='803' column='1'/>
+        <var-decl name='_initialized' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='810' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='58528'>
-        <var-decl name='_ready' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='805' column='1'/>
+        <var-decl name='_ready' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='812' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='58560'>
-        <var-decl name='finalizing' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='806' column='1'/>
+        <var-decl name='finalizing' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='813' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='58624'>
-        <var-decl name='last_restart_version' type-id='type-id-372' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='808' column='1'/>
+        <var-decl name='last_restart_version' type-id='type-id-372' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='815' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='58688'>
-        <var-decl name='threads' type-id='type-id-1296' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='823' column='1'/>
+        <var-decl name='threads' type-id='type-id-1296' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='830' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='59072'>
-        <var-decl name='runtime' type-id='type-id-180' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='828' column='1'/>
+        <var-decl name='runtime' type-id='type-id-180' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='835' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='59136'>
-        <var-decl name='_finalizing' type-id='type-id-40' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='835' column='1'/>
+        <var-decl name='_finalizing' type-id='type-id-40' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='842' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='59200'>
-        <var-decl name='_finalizing_id' type-id='type-id-2' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='837' column='1'/>
+        <var-decl name='_finalizing_id' type-id='type-id-2' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='844' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='59264'>
-        <var-decl name='gc' type-id='type-id-1254' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='839' column='1'/>
+        <var-decl name='gc' type-id='type-id-1254' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='846' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='61376'>
-        <var-decl name='sysdict' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='854' column='1'/>
+        <var-decl name='sysdict' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='861' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='61440'>
-        <var-decl name='builtins' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='857' column='1'/>
+        <var-decl name='builtins' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='864' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='61504'>
-        <var-decl name='imports' type-id='type-id-1259' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='859' column='1'/>
+        <var-decl name='imports' type-id='type-id-1259' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='866' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='62272'>
-        <var-decl name='_gil' type-id='type-id-1176' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='862' column='1'/>
+        <var-decl name='_gil' type-id='type-id-1176' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='869' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='63936'>
-        <var-decl name='_code_object_generation' type-id='type-id-120' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='864' column='1'/>
+        <var-decl name='_code_object_generation' type-id='type-id-120' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='871' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='64000'>
-        <var-decl name='codecs' type-id='type-id-1263' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='871' column='1'/>
+        <var-decl name='codecs' type-id='type-id-1263' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='878' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='64256'>
-        <var-decl name='config' type-id='type-id-274' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='873' column='1'/>
+        <var-decl name='config' type-id='type-id-274' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='880' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='67904'>
-        <var-decl name='feature_flags' type-id='type-id-2' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='874' column='1'/>
+        <var-decl name='feature_flags' type-id='type-id-2' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='881' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='67968'>
-        <var-decl name='dict' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='876' column='1'/>
+        <var-decl name='dict' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='883' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='68032'>
-        <var-decl name='sysdict_copy' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='878' column='1'/>
+        <var-decl name='sysdict_copy' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='885' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='68096'>
-        <var-decl name='builtins_copy' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='879' column='1'/>
+        <var-decl name='builtins_copy' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='886' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='68160'>
-        <var-decl name='eval_frame' type-id='type-id-1054' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='881' column='1'/>
+        <var-decl name='eval_frame' type-id='type-id-1054' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='888' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='68224'>
-        <var-decl name='func_watchers' type-id='type-id-813' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='883' column='1'/>
+        <var-decl name='func_watchers' type-id='type-id-813' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='890' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='68736'>
-        <var-decl name='active_func_watchers' type-id='type-id-310' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='885' column='1'/>
+        <var-decl name='active_func_watchers' type-id='type-id-310' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='892' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='68800'>
-        <var-decl name='co_extra_user_count' type-id='type-id-7' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='887' column='1'/>
+        <var-decl name='co_extra_user_count' type-id='type-id-7' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='894' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='68864'>
-        <var-decl name='co_extra_freefuncs' type-id='type-id-878' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='888' column='1'/>
+        <var-decl name='co_extra_freefuncs' type-id='type-id-878' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='895' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='85184'>
-        <var-decl name='xi' type-id='type-id-1135' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='891' column='1'/>
+        <var-decl name='xi' type-id='type-id-1135' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='898' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='85568'>
-        <var-decl name='before_forkers' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='894' column='1'/>
+        <var-decl name='before_forkers' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='901' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='85632'>
-        <var-decl name='after_forkers_parent' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='895' column='1'/>
+        <var-decl name='after_forkers_parent' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='902' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='85696'>
-        <var-decl name='after_forkers_child' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='896' column='1'/>
+        <var-decl name='after_forkers_child' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='903' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='85760'>
-        <var-decl name='warnings' type-id='type-id-1279' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='899' column='1'/>
+        <var-decl name='warnings' type-id='type-id-1279' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='906' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='86272'>
-        <var-decl name='atexit' type-id='type-id-1251' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='900' column='1'/>
+        <var-decl name='atexit' type-id='type-id-1251' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='907' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='86400'>
-        <var-decl name='stoptheworld' type-id='type-id-1264' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='901' column='1'/>
+        <var-decl name='stoptheworld' type-id='type-id-1264' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='908' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='86592'>
-        <var-decl name='qsbr' type-id='type-id-1297' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='902' column='1'/>
+        <var-decl name='qsbr' type-id='type-id-1297' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='909' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='87040'>
-        <var-decl name='asyncio_tasks_head' type-id='type-id-1281' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='914' column='1'/>
+        <var-decl name='asyncio_tasks_head' type-id='type-id-1281' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='921' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='87168'>
-        <var-decl name='asyncio_tasks_lock' type-id='type-id-753' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='917' column='1'/>
+        <var-decl name='asyncio_tasks_lock' type-id='type-id-753' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='924' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='87232'>
-        <var-decl name='obmalloc' type-id='type-id-1298' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='929' column='1'/>
+        <var-decl name='obmalloc' type-id='type-id-1298' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='936' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='87296'>
-        <var-decl name='audit_hooks' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='931' column='1'/>
+        <var-decl name='audit_hooks' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='938' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='87360'>
-        <var-decl name='type_watchers' type-id='type-id-823' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='932' column='1'/>
+        <var-decl name='type_watchers' type-id='type-id-823' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='939' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='87872'>
-        <var-decl name='code_watchers' type-id='type-id-809' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='933' column='1'/>
+        <var-decl name='code_watchers' type-id='type-id-809' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='940' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='88384'>
-        <var-decl name='context_watchers' type-id='type-id-811' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='934' column='1'/>
+        <var-decl name='context_watchers' type-id='type-id-811' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='941' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='88896'>
-        <var-decl name='active_code_watchers' type-id='type-id-310' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='936' column='1'/>
+        <var-decl name='active_code_watchers' type-id='type-id-310' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='943' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='88904'>
-        <var-decl name='active_context_watchers' type-id='type-id-310' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='937' column='1'/>
+        <var-decl name='active_context_watchers' type-id='type-id-310' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='944' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='88960'>
-        <var-decl name='object_state' type-id='type-id-1299' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='939' column='1'/>
+        <var-decl name='object_state' type-id='type-id-1299' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='946' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='94016'>
-        <var-decl name='unicode' type-id='type-id-1287' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='940' column='1'/>
+        <var-decl name='unicode' type-id='type-id-1287' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='947' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='94464'>
-        <var-decl name='long_state' type-id='type-id-1262' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='941' column='1'/>
+        <var-decl name='long_state' type-id='type-id-1262' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='948' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='94528'>
-        <var-decl name='dtoa' type-id='type-id-1269' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='942' column='1'/>
+        <var-decl name='dtoa' type-id='type-id-1269' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='949' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='114048'>
-        <var-decl name='func_state' type-id='type-id-1271' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='943' column='1'/>
+        <var-decl name='func_state' type-id='type-id-1271' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='950' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='638400'>
-        <var-decl name='code_state' type-id='type-id-1270' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='944' column='1'/>
+        <var-decl name='code_state' type-id='type-id-1270' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='951' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='638528'>
-        <var-decl name='dict_state' type-id='type-id-1165' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='946' column='1'/>
+        <var-decl name='dict_state' type-id='type-id-1165' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='953' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='639104'>
-        <var-decl name='exc_state' type-id='type-id-1166' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='947' column='1'/>
+        <var-decl name='exc_state' type-id='type-id-1166' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='954' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='639360'>
-        <var-decl name='mem_free_queue' type-id='type-id-1280' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='948' column='1'/>
+        <var-decl name='mem_free_queue' type-id='type-id-1280' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='955' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='639552'>
-        <var-decl name='ast' type-id='type-id-1116' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='950' column='1'/>
+        <var-decl name='ast' type-id='type-id-1116' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='957' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='655360'>
-        <var-decl name='types' type-id='type-id-1276' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='951' column='1'/>
+        <var-decl name='types' type-id='type-id-1276' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='958' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1784896'>
-        <var-decl name='callable_cache' type-id='type-id-1289' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='952' column='1'/>
+        <var-decl name='callable_cache' type-id='type-id-1289' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='959' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1785152'>
-        <var-decl name='common_consts' type-id='type-id-816' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='953' column='1'/>
+        <var-decl name='common_consts' type-id='type-id-816' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='960' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1785472'>
-        <var-decl name='jit' type-id='type-id-346' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='954' column='1'/>
+        <var-decl name='jit' type-id='type-id-346' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='961' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1785536'>
-        <var-decl name='executor_list_head' type-id='type-id-340' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='955' column='1'/>
+        <var-decl name='executor_list_head' type-id='type-id-340' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='962' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1785600'>
-        <var-decl name='executor_deletion_list_head' type-id='type-id-340' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='956' column='1'/>
+        <var-decl name='executor_deletion_list_head' type-id='type-id-340' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='963' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1785664'>
-        <var-decl name='executor_deletion_list_remaining_capacity' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='957' column='1'/>
+        <var-decl name='executor_deletion_list_remaining_capacity' type-id='type-id-5' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='964' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1785728'>
-        <var-decl name='trace_run_counter' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='958' column='1'/>
+        <var-decl name='trace_run_counter' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='965' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1785792'>
-        <var-decl name='rare_events' type-id='type-id-1267' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='959' column='1'/>
+        <var-decl name='rare_events' type-id='type-id-1267' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='966' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1785856'>
-        <var-decl name='builtins_dict_watcher' type-id='type-id-399' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='960' column='1'/>
+        <var-decl name='builtins_dict_watcher' type-id='type-id-399' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='967' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1785920'>
-        <var-decl name='monitors' type-id='type-id-1230' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='962' column='1'/>
+        <var-decl name='monitors' type-id='type-id-1230' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='969' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1786048'>
-        <var-decl name='sys_profile_once_flag' type-id='type-id-987' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='963' column='1'/>
+        <var-decl name='sys_profile_once_flag' type-id='type-id-987' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='970' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1786056'>
-        <var-decl name='sys_trace_once_flag' type-id='type-id-987' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='964' column='1'/>
+        <var-decl name='sys_trace_once_flag' type-id='type-id-987' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='971' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1786112'>
-        <var-decl name='sys_profiling_threads' type-id='type-id-7' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='965' column='1'/>
+        <var-decl name='sys_profiling_threads' type-id='type-id-7' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='972' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1786176'>
-        <var-decl name='sys_tracing_threads' type-id='type-id-7' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='966' column='1'/>
+        <var-decl name='sys_tracing_threads' type-id='type-id-7' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='973' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1786240'>
-        <var-decl name='monitoring_callables' type-id='type-id-819' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='967' column='1'/>
+        <var-decl name='monitoring_callables' type-id='type-id-819' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='974' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1795968'>
-        <var-decl name='monitoring_tool_names' type-id='type-id-818' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='968' column='1'/>
+        <var-decl name='monitoring_tool_names' type-id='type-id-818' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='975' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1796480'>
-        <var-decl name='monitoring_tool_versions' type-id='type-id-953' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='969' column='1'/>
+        <var-decl name='monitoring_tool_versions' type-id='type-id-953' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='976' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1796992'>
-        <var-decl name='cached_objects' type-id='type-id-1291' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='971' column='1'/>
+        <var-decl name='cached_objects' type-id='type-id-1291' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='978' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1798272'>
-        <var-decl name='static_objects' type-id='type-id-1292' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='972' column='1'/>
+        <var-decl name='static_objects' type-id='type-id-1292' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='979' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1799360'>
-        <var-decl name='_interactive_src_count' type-id='type-id-7' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='974' column='1'/>
+        <var-decl name='_interactive_src_count' type-id='type-id-7' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='981' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1799424'>
-        <var-decl name='_initial_thread' type-id='type-id-1300' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='985' column='1'/>
+        <var-decl name='_initial_thread' type-id='type-id-1300' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='992' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='pythreads' size-in-bits='384' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='809' column='1' id='type-id-1296'>
+    <class-decl name='pythreads' size-in-bits='384' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='816' column='1' id='type-id-1296'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='next_unique_id' type-id='type-id-120' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='810' column='1'/>
+        <var-decl name='next_unique_id' type-id='type-id-120' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='817' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='64'>
-        <var-decl name='head' type-id='type-id-40' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='812' column='1'/>
+        <var-decl name='head' type-id='type-id-40' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='819' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='128'>
-        <var-decl name='preallocated' type-id='type-id-1301' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='813' column='1'/>
+        <var-decl name='preallocated' type-id='type-id-1301' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='820' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='192'>
-        <var-decl name='main' type-id='type-id-40' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='815' column='1'/>
+        <var-decl name='main' type-id='type-id-40' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='822' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='256'>
-        <var-decl name='count' type-id='type-id-7' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='817' column='1'/>
+        <var-decl name='count' type-id='type-id-7' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='824' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='320'>
-        <var-decl name='stacksize' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='822' column='1'/>
+        <var-decl name='stacksize' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='829' column='1'/>
       </data-member>
     </class-decl>
     <class-decl name='_PyInterpreterFrame' size-in-bits='704' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interpframe_structs.h' line='30' column='1' id='type-id-425'>
@@ -25190,7 +25196,7 @@
       <parameter type-id='type-id-4'/>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='PyAnextAwaitable_New' filepath='Python/bltinmodule.c' line='1850' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='PyAnextAwaitable_New' filepath='Python/bltinmodule.c' line='1852' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-6'/>
       <parameter type-id='type-id-6'/>
       <return type-id='type-id-6'/>
@@ -30758,97 +30764,97 @@
     <function-decl name='_PyThreadState_GetCurrent' mangled-name='_PyThreadState_GetCurrent' filepath='Python/pystate.c' line='114' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyThreadState_GetCurrent'>
       <return type-id='type-id-40'/>
     </function-decl>
-    <function-decl name='PyInterpreterState_New' mangled-name='PyInterpreterState_New' filepath='Python/pystate.c' line='800' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyInterpreterState_New'>
+    <function-decl name='PyInterpreterState_New' mangled-name='PyInterpreterState_New' filepath='Python/pystate.c' line='801' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyInterpreterState_New'>
       <return type-id='type-id-42'/>
     </function-decl>
-    <function-decl name='PyInterpreterState_Clear' mangled-name='PyInterpreterState_Clear' filepath='Python/pystate.c' line='979' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyInterpreterState_Clear'>
-      <parameter type-id='type-id-42' name='interp' filepath='Python/pystate.c' line='979' column='1'/>
+    <function-decl name='PyInterpreterState_Clear' mangled-name='PyInterpreterState_Clear' filepath='Python/pystate.c' line='980' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyInterpreterState_Clear'>
+      <parameter type-id='type-id-42' name='interp' filepath='Python/pystate.c' line='980' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='_PyInterpreterState_GetWhence' mangled-name='_PyInterpreterState_GetWhence' filepath='Python/pystate.c' line='1205' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_GetWhence'>
-      <parameter type-id='type-id-42' name='interp' filepath='Python/pystate.c' line='1205' column='1'/>
+    <function-decl name='_PyInterpreterState_GetWhence' mangled-name='_PyInterpreterState_GetWhence' filepath='Python/pystate.c' line='1206' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_GetWhence'>
+      <parameter type-id='type-id-42' name='interp' filepath='Python/pystate.c' line='1206' column='1'/>
       <return type-id='type-id-191'/>
     </function-decl>
-    <function-decl name='_PyInterpreterState_ObjectToID' mangled-name='_PyInterpreterState_ObjectToID' filepath='Python/pystate.c' line='1278' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_ObjectToID'>
-      <parameter type-id='type-id-6' name='idobj' filepath='Python/pystate.c' line='1278' column='1'/>
+    <function-decl name='_PyInterpreterState_ObjectToID' mangled-name='_PyInterpreterState_ObjectToID' filepath='Python/pystate.c' line='1279' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_ObjectToID'>
+      <parameter type-id='type-id-6' name='idobj' filepath='Python/pystate.c' line='1279' column='1'/>
       <return type-id='type-id-410'/>
     </function-decl>
-    <function-decl name='_PyInterpreterState_GetIDObject' mangled-name='_PyInterpreterState_GetIDObject' filepath='Python/pystate.c' line='1322' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_GetIDObject'>
-      <parameter type-id='type-id-42' name='interp' filepath='Python/pystate.c' line='1322' column='1'/>
+    <function-decl name='_PyInterpreterState_GetIDObject' mangled-name='_PyInterpreterState_GetIDObject' filepath='Python/pystate.c' line='1323' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_GetIDObject'>
+      <parameter type-id='type-id-42' name='interp' filepath='Python/pystate.c' line='1323' column='1'/>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='_PyInterpreterState_IDIncref' mangled-name='_PyInterpreterState_IDIncref' filepath='Python/pystate.c' line='1335' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_IDIncref'>
-      <parameter type-id='type-id-42' name='interp' filepath='Python/pystate.c' line='1335' column='1'/>
+    <function-decl name='_PyInterpreterState_IDIncref' mangled-name='_PyInterpreterState_IDIncref' filepath='Python/pystate.c' line='1336' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_IDIncref'>
+      <parameter type-id='type-id-42' name='interp' filepath='Python/pystate.c' line='1336' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='_PyInterpreterState_IDDecref' mangled-name='_PyInterpreterState_IDDecref' filepath='Python/pystate.c' line='1342' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_IDDecref'>
-      <parameter type-id='type-id-42' name='interp' filepath='Python/pystate.c' line='1342' column='1'/>
+    <function-decl name='_PyInterpreterState_IDDecref' mangled-name='_PyInterpreterState_IDDecref' filepath='Python/pystate.c' line='1343' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_IDDecref'>
+      <parameter type-id='type-id-42' name='interp' filepath='Python/pystate.c' line='1343' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='_PyInterpreterState_RequiresIDRef' mangled-name='_PyInterpreterState_RequiresIDRef' filepath='Python/pystate.c' line='1360' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_RequiresIDRef'>
-      <parameter type-id='type-id-42' name='interp' filepath='Python/pystate.c' line='1360' column='1'/>
+    <function-decl name='_PyInterpreterState_RequiresIDRef' mangled-name='_PyInterpreterState_RequiresIDRef' filepath='Python/pystate.c' line='1361' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_RequiresIDRef'>
+      <parameter type-id='type-id-42' name='interp' filepath='Python/pystate.c' line='1361' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='_PyInterpreterState_RequireIDRef' mangled-name='_PyInterpreterState_RequireIDRef' filepath='Python/pystate.c' line='1366' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_RequireIDRef'>
-      <parameter type-id='type-id-42' name='interp' filepath='Python/pystate.c' line='1366' column='1'/>
-      <parameter type-id='type-id-5' name='required' filepath='Python/pystate.c' line='1366' column='1'/>
+    <function-decl name='_PyInterpreterState_RequireIDRef' mangled-name='_PyInterpreterState_RequireIDRef' filepath='Python/pystate.c' line='1367' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_RequireIDRef'>
+      <parameter type-id='type-id-42' name='interp' filepath='Python/pystate.c' line='1367' column='1'/>
+      <parameter type-id='type-id-5' name='required' filepath='Python/pystate.c' line='1367' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='_PyInterpreterState_LookUpIDObject' mangled-name='_PyInterpreterState_LookUpIDObject' filepath='Python/pystate.c' line='1433' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_LookUpIDObject'>
-      <parameter type-id='type-id-6' name='requested_id' filepath='Python/pystate.c' line='1433' column='1'/>
+    <function-decl name='_PyInterpreterState_LookUpIDObject' mangled-name='_PyInterpreterState_LookUpIDObject' filepath='Python/pystate.c' line='1434' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_LookUpIDObject'>
+      <parameter type-id='type-id-6' name='requested_id' filepath='Python/pystate.c' line='1434' column='1'/>
       <return type-id='type-id-42'/>
     </function-decl>
-    <function-decl name='_PyThreadState_Prealloc' mangled-name='_PyThreadState_Prealloc' filepath='Python/pystate.c' line='1694' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyThreadState_Prealloc'>
-      <parameter type-id='type-id-42' name='interp' filepath='Python/pystate.c' line='1694' column='1'/>
+    <function-decl name='_PyThreadState_Prealloc' mangled-name='_PyThreadState_Prealloc' filepath='Python/pystate.c' line='1695' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyThreadState_Prealloc'>
+      <parameter type-id='type-id-42' name='interp' filepath='Python/pystate.c' line='1695' column='1'/>
       <return type-id='type-id-40'/>
     </function-decl>
-    <function-decl name='_PyThreadState_Init' mangled-name='_PyThreadState_Init' filepath='Python/pystate.c' line='1702' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyThreadState_Init'>
-      <parameter type-id='type-id-40' name='tstate' filepath='Python/pystate.c' line='1702' column='1'/>
+    <function-decl name='_PyThreadState_Init' mangled-name='_PyThreadState_Init' filepath='Python/pystate.c' line='1703' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyThreadState_Init'>
+      <parameter type-id='type-id-40' name='tstate' filepath='Python/pystate.c' line='1703' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='PyThreadState_DeleteCurrent' mangled-name='PyThreadState_DeleteCurrent' filepath='Python/pystate.c' line='1966' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyThreadState_DeleteCurrent'>
+    <function-decl name='PyThreadState_DeleteCurrent' mangled-name='PyThreadState_DeleteCurrent' filepath='Python/pystate.c' line='1967' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyThreadState_DeleteCurrent'>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='_PyThreadState_GetDict' mangled-name='_PyThreadState_GetDict' filepath='Python/pystate.c' line='2052' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyThreadState_GetDict'>
-      <parameter type-id='type-id-40' name='tstate' filepath='Python/pystate.c' line='2052' column='1'/>
+    <function-decl name='_PyThreadState_GetDict' mangled-name='_PyThreadState_GetDict' filepath='Python/pystate.c' line='2053' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyThreadState_GetDict'>
+      <parameter type-id='type-id-40' name='tstate' filepath='Python/pystate.c' line='2053' column='1'/>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='PyThreadState_GetID' mangled-name='PyThreadState_GetID' filepath='Python/pystate.c' line='2101' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyThreadState_GetID'>
-      <parameter type-id='type-id-40' name='tstate' filepath='Python/pystate.c' line='2101' column='1'/>
+    <function-decl name='PyThreadState_GetID' mangled-name='PyThreadState_GetID' filepath='Python/pystate.c' line='2102' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyThreadState_GetID'>
+      <parameter type-id='type-id-40' name='tstate' filepath='Python/pystate.c' line='2102' column='1'/>
       <return type-id='type-id-120'/>
     </function-decl>
-    <function-decl name='PyThreadState_SetAsyncExc' mangled-name='PyThreadState_SetAsyncExc' filepath='Python/pystate.c' line='2501' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyThreadState_SetAsyncExc'>
-      <parameter type-id='type-id-2' name='id' filepath='Python/pystate.c' line='2501' column='1'/>
-      <parameter type-id='type-id-6' name='exc' filepath='Python/pystate.c' line='2501' column='1'/>
+    <function-decl name='PyThreadState_SetAsyncExc' mangled-name='PyThreadState_SetAsyncExc' filepath='Python/pystate.c' line='2502' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyThreadState_SetAsyncExc'>
+      <parameter type-id='type-id-2' name='id' filepath='Python/pystate.c' line='2502' column='1'/>
+      <parameter type-id='type-id-6' name='exc' filepath='Python/pystate.c' line='2502' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='PyThreadState_GetUnchecked' mangled-name='PyThreadState_GetUnchecked' filepath='Python/pystate.c' line='2543' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyThreadState_GetUnchecked'>
+    <function-decl name='PyThreadState_GetUnchecked' mangled-name='PyThreadState_GetUnchecked' filepath='Python/pystate.c' line='2544' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyThreadState_GetUnchecked'>
       <return type-id='type-id-40'/>
     </function-decl>
-    <function-decl name='PyInterpreterState_Main' mangled-name='PyInterpreterState_Main' filepath='Python/pystate.c' line='2621' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyInterpreterState_Main'>
+    <function-decl name='PyInterpreterState_Main' mangled-name='PyInterpreterState_Main' filepath='Python/pystate.c' line='2622' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyInterpreterState_Main'>
       <return type-id='type-id-42'/>
     </function-decl>
-    <function-decl name='PyInterpreterState_ThreadHead' mangled-name='PyInterpreterState_ThreadHead' filepath='Python/pystate.c' line='2632' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyInterpreterState_ThreadHead'>
-      <parameter type-id='type-id-42' name='interp' filepath='Python/pystate.c' line='2632' column='1'/>
+    <function-decl name='PyInterpreterState_ThreadHead' mangled-name='PyInterpreterState_ThreadHead' filepath='Python/pystate.c' line='2633' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyInterpreterState_ThreadHead'>
+      <parameter type-id='type-id-42' name='interp' filepath='Python/pystate.c' line='2633' column='1'/>
       <return type-id='type-id-40'/>
     </function-decl>
-    <function-decl name='PyThreadState_Next' mangled-name='PyThreadState_Next' filepath='Python/pystate.c' line='2637' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyThreadState_Next'>
-      <parameter type-id='type-id-40' name='tstate' filepath='Python/pystate.c' line='2637' column='1'/>
+    <function-decl name='PyThreadState_Next' mangled-name='PyThreadState_Next' filepath='Python/pystate.c' line='2638' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyThreadState_Next'>
+      <parameter type-id='type-id-40' name='tstate' filepath='Python/pystate.c' line='2638' column='1'/>
       <return type-id='type-id-40'/>
     </function-decl>
-    <function-decl name='_PyThread_CurrentFrames' mangled-name='_PyThread_CurrentFrames' filepath='Python/pystate.c' line='2652' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyThread_CurrentFrames'>
+    <function-decl name='_PyThread_CurrentFrames' mangled-name='_PyThread_CurrentFrames' filepath='Python/pystate.c' line='2653' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyThread_CurrentFrames'>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='PyGILState_Check' mangled-name='PyGILState_Check' filepath='Python/pystate.c' line='2849' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyGILState_Check'>
+    <function-decl name='PyGILState_Check' mangled-name='PyGILState_Check' filepath='Python/pystate.c' line='2850' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyGILState_Check'>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='_PyInterpreterState_GetEvalFrameFunc' mangled-name='_PyInterpreterState_GetEvalFrameFunc' filepath='Python/pystate.c' line='2975' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_GetEvalFrameFunc'>
-      <parameter type-id='type-id-42' name='interp' filepath='Python/pystate.c' line='2975' column='1'/>
+    <function-decl name='_PyInterpreterState_GetEvalFrameFunc' mangled-name='_PyInterpreterState_GetEvalFrameFunc' filepath='Python/pystate.c' line='2976' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_GetEvalFrameFunc'>
+      <parameter type-id='type-id-42' name='interp' filepath='Python/pystate.c' line='2976' column='1'/>
       <return type-id='type-id-1054'/>
     </function-decl>
-    <function-decl name='_PyInterpreterState_SetEvalFrameFunc' mangled-name='_PyInterpreterState_SetEvalFrameFunc' filepath='Python/pystate.c' line='2985' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_SetEvalFrameFunc'>
-      <parameter type-id='type-id-42' name='interp' filepath='Python/pystate.c' line='2985' column='1'/>
-      <parameter type-id='type-id-1054' name='eval_frame' filepath='Python/pystate.c' line='2986' column='1'/>
+    <function-decl name='_PyInterpreterState_SetEvalFrameFunc' mangled-name='_PyInterpreterState_SetEvalFrameFunc' filepath='Python/pystate.c' line='2986' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_SetEvalFrameFunc'>
+      <parameter type-id='type-id-42' name='interp' filepath='Python/pystate.c' line='2986' column='1'/>
+      <parameter type-id='type-id-1054' name='eval_frame' filepath='Python/pystate.c' line='2987' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
   </abi-instr>
