@@ -510,6 +510,34 @@ class HandlerExceptionTest(unittest.TestCase):
             self.assertIn('call_with_frame("StartElement"',
                           entries[1].line)
 
+    def test_invalid_NotStandalone(self):
+        parser = expat.ParserCreate()
+        parser.NotStandaloneHandler = mock.Mock(return_value="bad value")
+        parser.ElementDeclHandler = lambda _1, _2: None
+
+        payload = b"""\
+<!DOCTYPE quotations SYSTEM "quotations.dtd" [<!ELEMENT root ANY>]><root/>
+"""
+        with self.assertRaises(TypeError) as cm:
+            parser.Parse(payload, True)
+        parser.NotStandaloneHandler.assert_called_once()
+
+        notes = ["invalid 'NotStandalone' event handler return value"]
+        self.assertEqual(cm.exception.__notes__, notes)
+
+    def test_invalid_ExternalEntityRefHandler(self):
+        parser = expat.ParserCreate()
+        parser.UseForeignDTD()
+        parser.SetParamEntityParsing(expat.XML_PARAM_ENTITY_PARSING_ALWAYS)
+        parser.ExternalEntityRefHandler = mock.Mock(return_value=None)
+
+        with self.assertRaises(TypeError) as cm:
+            parser.Parse(b"<?xml version='1.0'?><element/>", True)
+        parser.ExternalEntityRefHandler.assert_called_once()
+
+        notes = ["invalid 'ExternalEntityRef' event handler return value"]
+        self.assertEqual(cm.exception.__notes__, notes)
+
 
 # Test Current* members:
 class PositionTest(unittest.TestCase):
@@ -684,6 +712,20 @@ class ChardataBufferTest(unittest.TestCase):
         parser.Parse(xml2, True)
         self.assertEqual(self.n, 4)
 
+    @support.requires_resource('cpu')
+    @support.requires_resource('walltime')
+    @support.bigmemtest(size=2**31, memuse=4, dry_run=False)
+    def test_large_character_data_does_not_crash(self):
+        # See https://github.com/python/cpython/issues/148441
+        parser = expat.ParserCreate()
+        parser.buffer_text = True
+        parser.buffer_size = 2**31 - 1  # INT_MAX
+        N = 2049 * (1 << 20) - 3  # Character data greater than INT_MAX
+        self.assertGreater(N, parser.buffer_size)
+        parser.CharacterDataHandler = lambda text: None
+        xml_data = b"<r>" + b"A" * N + b"</r>"
+        self.assertEqual(parser.Parse(xml_data, True), 1)
+
 class ElementDeclHandlerTest(unittest.TestCase):
     def test_trigger_leak(self):
         # Unfixed, this test would leak the memory of the so-called
@@ -700,6 +742,25 @@ class ElementDeclHandlerTest(unittest.TestCase):
         parser.NotStandaloneHandler = lambda: 1.234  # arbitrary float
         parser.ElementDeclHandler = lambda _1, _2: None
         self.assertRaises(TypeError, parser.Parse, data, True)
+
+    @support.skip_if_unlimited_stack_size
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
+    def test_deeply_nested_content_model(self):
+        # This should raise a RecursionError and not crash.
+        # See https://github.com/python/cpython/issues/145986.
+        N = 500_000
+        data = (
+            b'<!DOCTYPE root [\n<!ELEMENT root '
+            + b'(a, ' * N + b'a' + b')' * N
+            + b'>\n]>\n<root/>\n'
+        )
+
+        parser = expat.ParserCreate()
+        parser.ElementDeclHandler = lambda _1, _2: None
+        with support.infinite_recursion():
+            with self.assertRaises(RecursionError):
+                parser.Parse(data)
 
 class MalformedInputTest(unittest.TestCase):
     def test1(self):
@@ -822,6 +883,45 @@ class ParentParserLifetimeTest(unittest.TestCase):
         # while they are still being referenced by a related subparser.
         del parser
         del subparser
+
+
+class ExternalEntityParserCreateErrorTest(unittest.TestCase):
+    """ExternalEntityParserCreate error paths should not crash or leak
+    refcounts on the parent parser.
+
+    See https://github.com/python/cpython/issues/144984.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.testcapi = import_helper.import_module('_testcapi')
+
+    @unittest.skipIf(support.Py_TRACE_REFS,
+                     'Py_TRACE_REFS conflicts with testcapi.set_nomemory')
+    def test_error_path_no_crash(self):
+        # When an allocation inside ExternalEntityParserCreate fails,
+        # the partially-initialized subparser is deallocated.  This
+        # must not dereference NULL handlers or double-decrement the
+        # parent parser's refcount.
+        parser = expat.ParserCreate()
+        parser.buffer_text = True
+        rc_before = sys.getrefcount(parser)
+
+        # We avoid self.assertRaises(MemoryError) here because the
+        # context manager itself needs memory allocations that fail
+        # while the nomemory hook is active.
+        self.testcapi.set_nomemory(1, 10)
+        raised = False
+        try:
+            parser.ExternalEntityParserCreate(None)
+        except MemoryError:
+            raised = True
+        finally:
+            self.testcapi.remove_mem_hooks()
+        self.assertTrue(raised, "MemoryError not raised")
+
+        rc_after = sys.getrefcount(parser)
+        self.assertEqual(rc_after, rc_before)
 
 
 class ReparseDeferralTest(unittest.TestCase):
@@ -1069,7 +1169,9 @@ class ExpansionProtectionTest(AttackProtectionTestBase, unittest.TestCase):
         self.assertIsNotNone(parser.Parse(payload, True))
 
 
-@unittest.skipIf(expat.version_info < (2, 7, 2), "requires Expat >= 2.7.2")
+@unittest.skipIf(not hasattr(expat.XMLParserType,
+                             "SetAllocTrackerMaximumAmplification"),
+                 "requires Python compiled with Expat >= 2.7.2")
 class MemoryProtectionTest(AttackProtectionTestBase, unittest.TestCase):
 
     # NOTE: with the default Expat configuration, the billion laughs protection

@@ -160,6 +160,10 @@ pyshellext
     pyshellext.dll, the shell extension deployed with the launcher
 python3dll
     python3.dll, the PEP 384 Stable ABI dll
+    (not installed on free-threaded builds)
+python3tdll
+    python3t.dll, the PEP 803 free-threading Stable ABI dll
+    (built from the same source as python3.dll)
 xxlimited
     builds an example module that makes use of the PEP 384 Stable ABI,
     see Modules\xxlimited.c
@@ -218,7 +222,7 @@ _lzma
         https://tukaani.org/xz/
 
 _ssl
-    Python wrapper for version 3.0.15 of the OpenSSL secure sockets
+    Python wrapper for version 3.5 of the OpenSSL secure sockets
     library, which is itself downloaded from our binaries repository at
     https://github.com/python/cpython-bin-deps and built by openssl.vcxproj.
 

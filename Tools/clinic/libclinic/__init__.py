@@ -7,7 +7,9 @@ from .errors import (
 )
 from .formatting import (
     SIG_END_MARKER,
-    c_repr,
+    c_str_repr,
+    c_bytes_repr,
+    c_unichar_repr,
     docstring_for_c_string,
     format_escape,
     indent_all_lines,
@@ -26,7 +28,7 @@ from .identifiers import (
 from .utils import (
     FormatCounterFormatter,
     NULL,
-    Null,
+    NullType,
     Sentinels,
     VersionTuple,
     compute_checksum,
@@ -45,7 +47,9 @@ __all__ = [
 
     # Formatting helpers
     "SIG_END_MARKER",
-    "c_repr",
+    "c_str_repr",
+    "c_bytes_repr",
+    "c_unichar_repr",
     "docstring_for_c_string",
     "format_escape",
     "indent_all_lines",
@@ -64,7 +68,7 @@ __all__ = [
     # Utility functions
     "FormatCounterFormatter",
     "NULL",
-    "Null",
+    "NullType",
     "Sentinels",
     "VersionTuple",
     "compute_checksum",

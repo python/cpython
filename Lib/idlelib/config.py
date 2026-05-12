@@ -476,34 +476,58 @@ class IdleConf:
         Keybindings come from GetCurrentKeySet() active key dict,
         where previously used bindings are disabled.
         """
-        keysName = extensionName + '_cfgBindings'
-        activeKeys = self.GetCurrentKeySet()
-        extKeys = {}
-        if self.defaultCfg['extensions'].has_section(keysName):
-            eventNames = self.defaultCfg['extensions'].GetOptionList(keysName)
-            for eventName in eventNames:
-                event = '<<' + eventName + '>>'
-                binding = activeKeys[event]
-                extKeys[event] = binding
-        return extKeys
+        bindings_section = f'{extensionName}_cfgBindings'
+        current_keyset = self.GetCurrentKeySet()
+        extension_keys = {}
 
-    def __GetRawExtensionKeys(self,extensionName):
+        event_names = set()
+        if self.userCfg['extensions'].has_section(bindings_section):
+            event_names |= set(
+                self.userCfg['extensions'].GetOptionList(bindings_section)
+            )
+        if self.defaultCfg['extensions'].has_section(bindings_section):
+            event_names |= set(
+                self.defaultCfg['extensions'].GetOptionList(bindings_section)
+            )
+
+        for event_name in event_names:
+            event = f'<<{event_name}>>'
+            binding = current_keyset.get(event, None)
+            if binding is None:
+                continue
+            extension_keys[event] = binding
+        return extension_keys
+
+    def __GetRawExtensionKeys(self, extension_name):
         """Return dict {configurable extensionName event : keybinding list}.
 
         Events come from default config extension_cfgBindings section.
         Keybindings list come from the splitting of GetOption, which
         tries user config before default config.
         """
-        keysName = extensionName+'_cfgBindings'
-        extKeys = {}
-        if self.defaultCfg['extensions'].has_section(keysName):
-            eventNames = self.defaultCfg['extensions'].GetOptionList(keysName)
-            for eventName in eventNames:
-                binding = self.GetOption(
-                        'extensions', keysName, eventName, default='').split()
-                event = '<<' + eventName + '>>'
-                extKeys[event] = binding
-        return extKeys
+        bindings_section = f'{extension_name}_cfgBindings'
+        extension_keys = {}
+
+        event_names = set()
+        if self.userCfg['extensions'].has_section(bindings_section):
+            event_names |= set(
+                self.userCfg['extensions'].GetOptionList(bindings_section)
+            )
+        if self.defaultCfg['extensions'].has_section(bindings_section):
+            event_names |= set(
+                self.defaultCfg['extensions'].GetOptionList(bindings_section)
+            )
+
+        for event_name in event_names:
+            binding = self.GetOption(
+                'extensions',
+                bindings_section,
+                event_name,
+                default='',
+            ).split()
+            event = f'<<{event_name}>>'
+            extension_keys[event] = binding
+        return extension_keys
 
     def GetExtensionBindings(self, extensionName):
         """Return dict {extensionName event : active or defined keybinding}.
@@ -512,18 +536,30 @@ class IdleConf:
         configurable events (from default config) to GetOption splits,
         as in self.__GetRawExtensionKeys.
         """
-        bindsName = extensionName + '_bindings'
-        extBinds = self.GetExtensionKeys(extensionName)
-        #add the non-configurable bindings
-        if self.defaultCfg['extensions'].has_section(bindsName):
-            eventNames = self.defaultCfg['extensions'].GetOptionList(bindsName)
-            for eventName in eventNames:
-                binding = self.GetOption(
-                        'extensions', bindsName, eventName, default='').split()
-                event = '<<' + eventName + '>>'
-                extBinds[event] = binding
+        bindings_section = f'{extensionName}_bindings'
+        extension_keys = self.GetExtensionKeys(extensionName)
 
-        return extBinds
+        # add the non-configurable bindings
+        event_names = set()
+        if self.userCfg['extensions'].has_section(bindings_section):
+            event_names |= set(
+                self.userCfg['extensions'].GetOptionList(bindings_section)
+            )
+        if self.defaultCfg['extensions'].has_section(bindings_section):
+            event_names |= set(
+                self.defaultCfg['extensions'].GetOptionList(bindings_section)
+            )
+
+        for event_name in event_names:
+            binding = self.GetOption(
+                'extensions',
+                bindings_section,
+                event_name,
+                default=''
+            ).split()
+            event = f'<<{event_name}>>'
+            extension_keys[event] = binding
+        return extension_keys
 
     def GetKeyBinding(self, keySetName, eventStr):
         """Return the keybinding list for keySetName eventStr.

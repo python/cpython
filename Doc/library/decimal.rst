@@ -4,14 +4,6 @@
 .. module:: decimal
    :synopsis: Implementation of the General Decimal Arithmetic Specification.
 
-.. moduleauthor:: Eric Price <eprice at tjhsst.edu>
-.. moduleauthor:: Facundo Batista <facundo at taniquetil.com.ar>
-.. moduleauthor:: Raymond Hettinger <python at rcn.com>
-.. moduleauthor:: Aahz <aahz at pobox.com>
-.. moduleauthor:: Tim Peters <tim.one at comcast.net>
-.. moduleauthor:: Stefan Krah <skrah at bytereef.org>
-.. sectionauthor:: Raymond D. Hettinger <python at rcn.com>
-
 **Source code:** :source:`Lib/decimal.py`
 
 .. import modules for testing inline doctests with the Sphinx doctest builder

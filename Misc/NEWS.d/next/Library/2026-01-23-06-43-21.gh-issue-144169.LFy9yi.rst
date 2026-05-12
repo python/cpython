@@ -1,2 +1,0 @@
-Fix three crashes when non-string keyword arguments are supplied to objects
-in the :mod:`ast` module.
