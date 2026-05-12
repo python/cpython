@@ -492,6 +492,7 @@ def _read_until_null(fp):
         if not s:
             raise EOFError("Compressed file ended before the "
                            "end-of-stream marker was reached")
+        result.write(s)
         if s == b'\000':
             break
     return result.getvalue()
