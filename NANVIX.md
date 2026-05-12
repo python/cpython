@@ -164,7 +164,7 @@ make -f Makefile.nanvix CONFIG_NANVIX=y NANVIX_HOME=/path/to/nanvix/sysroot-debu
 - If `NANVIX_TOOLCHAIN` points to a valid toolchain, it uses the native compiler
 - If the native toolchain is not found, it automatically uses Docker if available
 - Use `CONFIG_NANVIX_DOCKER=y` to force Docker usage even when native toolchain exists
-- Use `NANVIX_DOCKER_IMAGE` to specify a custom Docker image (default: `nanvix/toolchain:latest-minimal`; recommended: `ghcr.io/nanvix/toolchain-python:latest`)
+- Use `NANVIX_DOCKER_IMAGE` to specify a custom Docker image (default: `ghcr.io/nanvix/toolchain-python:latest`)
 
 ### Building on Windows
 
