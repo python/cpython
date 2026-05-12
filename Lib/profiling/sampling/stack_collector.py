@@ -698,6 +698,8 @@ class DiffFlamegraphCollector(FlamegraphCollector):
         func_key = self._extract_func_key(node, self._baseline_collector._string_table)
         current_path = path + (func_key,) if func_key else path
 
+        baseline_self = 0
+        baseline_total = 0
         if func_key and current_path in baseline_stats:
             baseline_data = baseline_stats[current_path]
             baseline_self = baseline_data["self"] * scale

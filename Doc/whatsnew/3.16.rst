@@ -106,12 +106,60 @@ module_name
 Removed
 =======
 
+annotationlib
+-------------
+
+* The :meth:`!annotationlib.ForwardRef._evaluate` method
+  which has been deprecated since Python 3.14.
+  Use :meth:`annotationlib.ForwardRef.evaluate`
+  or :func:`typing.evaluate_forward_ref` instead.
+
+functools
+---------
+
+* Calling the Python implementation of :func:`functools.reduce` with *function*
+  or *sequence* as keyword arguments has been deprecated since Python 3.14.
+
+logging
+-------
+
+* Support for custom logging handlers with the *strm* argument is deprecated
+  and scheduled for removal in Python 3.16. Define handlers with the *stream*
+  argument instead.
+
+mimetypes
+---------
+
+* Valid extensions start with a '.' or are empty for
+  :meth:`mimetypes.MimeTypes.add_type`.
+  Undotted extensions now raise a :exc:`ValueError`.
+
+symtable
+--------
+
+* The :meth:`!symtable.Class.get_methods` method
+  which has been deprecated since Python 3.14.
+
+sys
+---
+
+* The :func:`!_enablelegacywindowsfsencoding` function
+  which has been deprecated since Python 3.13.
+  Use the :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment variable instead.
+  (Contributed by Stan Ulbrych in :gh:`149595`.)
+
 sysconfig
 ---------
 
 * The :func:`!sysconfig.expand_makefile_vars` function
   which has been deprecated since Python 3.14.
   Use the ``vars`` argument of :func:`sysconfig.get_paths` instead.
+
+tarfile
+-------
+
+* The undocumented and unused :attr:`!tarfile.TarFile.tarfile` attribute
+  has been deprecated since Python 3.13.
 
 .. Add removals above alphabetically, not here at the end.
 

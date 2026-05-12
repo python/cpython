@@ -2,6 +2,7 @@
 #include "pycore_long.h"
 #include "pycore_opcode_utils.h"
 #include "pycore_optimizer.h"
+#include "pycore_typeobject.h"
 #include "pycore_uops.h"
 #include "pycore_uop_ids.h"
 #include "internal/pycore_moduleobject.h"
@@ -1459,7 +1460,8 @@ dummy_func(void) {
             type = sym_get_probable_type(iter);
             definite = false;
         }
-        if (type != NULL && type != &PyGen_Type && type->tp_iternext != NULL) {
+        if (type != NULL && type != &PyGen_Type && type->tp_iternext != NULL
+            && !_PyType_HasSlotTpIternext(type)) {
             PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
             _Py_BloomFilter_Add(dependencies, type);
             if (!definite) {
@@ -2041,7 +2043,16 @@ dummy_func(void) {
             PyObject *name = _Py_SpecialMethods[oparg].name;
             PyObject *descr = _PyType_Lookup(type, name);
             if (descr != NULL && (Py_TYPE(descr)->tp_flags & Py_TPFLAGS_METHOD_DESCRIPTOR)) {
-                ADD_OP(_GUARD_TYPE_VERSION, 0, type->tp_version_tag);
+                /* LOAD_SPECIAL expands to _RECORD_TOS_TYPE + _INSERT_NULL +
+                 * _LOAD_SPECIAL. Insert _GUARD_TYPE_VERSION before the
+                 * already-emitted _INSERT_NULL so deopt sees the original
+                 * stack shape.*/
+                _PyUOpInstruction *insert_null = uop_buffer_last(&ctx->out_buffer);
+                assert(insert_null->opcode == _INSERT_NULL);
+                assert(insert_null->target == this_instr->target);
+                REPLACE_OP(insert_null, _GUARD_TYPE_VERSION, 0, type->tp_version_tag);
+                ADD_OP(_INSERT_NULL, 0, 0);
+
                 bool immortal = _Py_IsImmortal(descr) || (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE);
                 ADD_OP(immortal ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE,
                        0, (uintptr_t)descr);
