@@ -1903,15 +1903,10 @@ class FrozenDictTests(unittest.TestCase):
             hash(fd)
 
     def test_hash_pipe_operator(self):
-        # gh-149676: frozendict created via | must have the same hash as one
-        # created directly with the same contents (ma_hash must be initialised
-        # to -1 so that the hash is computed on first call, not left as garbage)
+        # gh-149676: Test hash(frozendict | frozendict)
         a = frozendict({"a": 1})
         b = frozendict({"b": 2})
-        c = frozendict({"a": 1, "b": 2})
-        c_union = a | b
-        self.assertEqual(c, c_union)
-        self.assertEqual(hash(c), hash(c_union))
+        self.assertEqual(hash(a | b), hash(frozendict({"a": 1, "b": 2})))
 
     def test_fromkeys(self):
         self.assertEqual(frozendict.fromkeys('abc'),
