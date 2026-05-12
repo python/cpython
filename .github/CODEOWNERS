@@ -586,10 +586,10 @@ Lib/test/test_string/test_templatelib.py  @lysnikolaou @AA-Turner
 **/*sysconfig*                @FFY00
 
 # SQLite 3
-Doc/library/sqlite3.rst       @berkerpeksag @erlend-aasland
-Lib/sqlite3/                  @berkerpeksag @erlend-aasland
-Lib/test/test_sqlite3/        @berkerpeksag @erlend-aasland
-Modules/_sqlite/              @berkerpeksag @erlend-aasland
+Doc/library/sqlite3.rst       @erlend-aasland
+Lib/sqlite3/                  @erlend-aasland
+Lib/test/test_sqlite3/        @erlend-aasland
+Modules/_sqlite/              @erlend-aasland
 
 # Subprocess
 Lib/subprocess.py             @gpshead
@@ -621,9 +621,6 @@ Modules/_typesmodule.c        @AA-Turner
 # Unittest
 Lib/unittest/mock.py             @cjw296
 Lib/test/test_unittest/testmock/ @cjw296
-
-# Urllib
-**/*robotparser*              @berkerpeksag
 
 # Venv
 **/*venv*                     @vsajip @FFY00
