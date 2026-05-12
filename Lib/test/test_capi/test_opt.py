@@ -6138,6 +6138,20 @@ class TestUopsOptimization(unittest.TestCase):
                 C(0) if i else str(0)
         """))
 
+    def test_load_special_type_guard_deopt(self):
+        script_helper.assert_python_ok("-s", "-c", textwrap.dedent(f"""
+            def f1():
+                class Context:
+                    def __enter__(self): ...
+                    def __exit__(self, e, v, t): ...
+
+                with Context():
+                    pass
+
+            for _ in range({TIER2_THRESHOLD + 5}):
+                f1()
+        """), PYTHON_JIT="1")
+
 def global_identity(x):
     return x
 

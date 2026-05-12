@@ -1,0 +1,3 @@
+Fix the binary writer in :mod:`profiling.sampling` not firing the audit
+(:pep:`578`) when creating the output file. The writer and the reader now
+accept any path-like object. Patch by Maurycy Pawłowski-Wieroński.
