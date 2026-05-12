@@ -1868,6 +1868,11 @@ class FrozenDictTests(unittest.TestCase):
         self.assertEqual(fd | {}, fd)
         self.assertEqual(frozendict() | fd, fd)
 
+        # gh-149676: Test hash(frozendict | frozendict)
+        a = frozendict({"a": 1})
+        b = frozendict({"b": 2})
+        self.assertEqual(hash(a | b), hash(frozendict({"a": 1, "b": 2})))
+
     def test_update(self):
         # test "a |= b" operator
         d = frozendict(x=1)
@@ -1901,12 +1906,6 @@ class FrozenDictTests(unittest.TestCase):
         fd = frozendict(x=[1], y=[2])
         with self.assertRaisesRegex(TypeError, "unhashable type: 'list'"):
             hash(fd)
-
-    def test_hash_pipe_operator(self):
-        # gh-149676: Test hash(frozendict | frozendict)
-        a = frozendict({"a": 1})
-        b = frozendict({"b": 2})
-        self.assertEqual(hash(a | b), hash(frozendict({"a": 1, "b": 2})))
 
     def test_fromkeys(self):
         self.assertEqual(frozendict.fromkeys('abc'),
