@@ -1007,13 +1007,16 @@ The module also provides the following module level functions:
 
    Return an iterator of the collapsed :class:`IPv4Network` or
    :class:`IPv6Network` objects.  *addresses* is an :term:`iterable` of
-   :class:`IPv4Network` or :class:`IPv6Network` objects.  A :exc:`TypeError` is
-   raised if *addresses* contains mixed version objects.
+   :class:`IPv4Address`, :class:`IPv6Address`, :class:`IPv4Network` or
+   :class:`IPv6Network` objects.
+   A :exc:`TypeError` is raised if *addresses* contains mixed version objects.
 
-   >>> [ipaddr for ipaddr in
-   ... ipaddress.collapse_addresses([ipaddress.IPv4Network('192.0.2.0/25'),
-   ... ipaddress.IPv4Network('192.0.2.128/25')])]
+   >>> list(ipaddress.collapse_addresses([ipaddress.IPv4Network('192.0.2.0/25'),
+   ... ipaddress.IPv4Network('192.0.2.128/25')]))
    [IPv4Network('192.0.2.0/24')]
+   >>> list(ipaddress.collapse_addresses([ipaddress.IPv4Address('192.0.2.0'),
+   ... ipaddress.IPv4Address('192.0.2.1'), ipaddress.IPv4Network('192.0.2.2/31')]))
+   [IPv4Network('192.0.2.0/30')]
 
 
 .. function:: get_mixed_type_key(obj)
