@@ -163,15 +163,18 @@ PyUnstable_InterpreterFrame_GetLineSafe(struct _PyInterpreterFrame *frame)
     if (code == NULL) {
         return -1;
     }
-    int addr = _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);
+    _Py_CODEUNIT *bytecode = _PyFrame_SafeGetBytecode(frame, code);
+    if (bytecode == NULL) {
+        return -1;
+    }
+    int addr = (int)(frame->instr_ptr - bytecode) * sizeof(_Py_CODEUNIT);
     return _PyCode_SafeAddr2Line(code, addr);
 }
 
 
-struct _PyInterpreterFrame * _Py_NO_SANITIZE_THREAD
-PyUnstable_ThreadState_GetInterpreterFrame(PyThreadState *tstate)
+static _PyInterpreterFrame * _Py_NO_SANITIZE_THREAD
+_first_complete_frame(_PyInterpreterFrame *frame)
 {
-    _PyInterpreterFrame *frame = tstate->current_frame;
     while (frame != NULL) {
         if (_PyMem_IsPtrFreed(frame)) {
             return NULL;
@@ -185,19 +188,15 @@ PyUnstable_ThreadState_GetInterpreterFrame(PyThreadState *tstate)
 }
 
 struct _PyInterpreterFrame * _Py_NO_SANITIZE_THREAD
+PyUnstable_ThreadState_GetInterpreterFrame(PyThreadState *tstate)
+{
+    return _first_complete_frame(tstate->current_frame);
+}
+
+struct _PyInterpreterFrame * _Py_NO_SANITIZE_THREAD
 PyUnstable_InterpreterFrame_GetNextComplete(struct _PyInterpreterFrame *frame)
 {
-    _PyInterpreterFrame *previous = frame->previous;
-    while (previous != NULL) {
-        if (_PyMem_IsPtrFreed(previous)) {
-            return NULL;
-        }
-        if (!_PyFrame_IsIncomplete(previous)) {
-            return previous;
-        }
-        previous = previous->previous;
-    }
-    return NULL;
+    return _first_complete_frame(frame->previous);
 }
 
 const PyTypeObject *const PyUnstable_ExecutableKinds[PyUnstable_EXECUTABLE_KINDS+1] = {
