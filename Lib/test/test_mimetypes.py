@@ -556,6 +556,7 @@ class CommandLineSubprocessTest(unittest.TestCase):
         self.assertIn(b'error: media type unknown for foo.unknownext12345', stdout)
         self.assertEqual(stderr, b'')
 
+    @force_not_colorized
     def test_unknown_flag(self):
         rc, stdout, stderr = assert_python_failure('-m', 'mimetypes', '--unknown-flag', 'foo.pdf')
         self.assertEqual(stdout, b'')
