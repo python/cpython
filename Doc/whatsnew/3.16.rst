@@ -140,6 +140,14 @@ symtable
 * The :meth:`!symtable.Class.get_methods` method
   which has been deprecated since Python 3.14.
 
+sys
+---
+
+* The :func:`!_enablelegacywindowsfsencoding` function
+  which has been deprecated since Python 3.13.
+  Use the :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment variable instead.
+  (Contributed by Stan Ulbrych in :gh:`149595`.)
+
 sysconfig
 ---------
 

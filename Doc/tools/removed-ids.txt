@@ -8,3 +8,4 @@ library/asyncio-task.html: terminating-a-task-group
 
 # Removed APIs
 library/symtable.html: symtable.Class.get_methods
+library/sys.html: sys._enablelegacywindowsfsencoding

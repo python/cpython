@@ -1154,9 +1154,6 @@ conflict.
    'replace', respectively.  Otherwise, the new defaults 'utf-8' and
    'surrogatepass' are used.
 
-   This may also be enabled at runtime with
-   :func:`sys._enablelegacywindowsfsencoding`.
-
    .. availability:: Windows.
 
    .. versionadded:: 3.6
