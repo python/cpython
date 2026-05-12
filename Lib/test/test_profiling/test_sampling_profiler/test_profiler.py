@@ -198,8 +198,12 @@ class TestSampleProfiler(unittest.TestCase):
             self.assertIn("samples", result)
 
             # Verify collector was called multiple times
-            self.assertGreaterEqual(mock_collector.collect.call_count, 5)
-            self.assertLessEqual(mock_collector.collect.call_count, 11)
+            total_weight = sum(
+                len(c.kwargs.get("timestamps_us") or [None])
+                for c in mock_collector.collect.call_args_list
+            )
+            self.assertGreaterEqual(total_weight, 5)
+            self.assertLessEqual(total_weight, 11)
 
     def test_sample_profiler_error_handling(self):
         """Test that the sample method handles errors gracefully."""
