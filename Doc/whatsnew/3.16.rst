@@ -129,7 +129,7 @@ symtable
 sys
 ---
 
-* The :func:`!sys._enablelegacywindowsfsencoding` function
+* The :func:`!_enablelegacywindowsfsencoding` function
   which has been deprecated since Python 3.13.
   Use the :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment variable instead.
   (Contributed by Stan Ulbrych in :gh:`149595`.)
