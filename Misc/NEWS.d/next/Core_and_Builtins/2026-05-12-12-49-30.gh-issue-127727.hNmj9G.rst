@@ -1,0 +1,3 @@
+Warn when running a virtual environment created for a different minor Python
+version than the current interpreter, and suggest using ``python -m venv
+--upgrade``.
