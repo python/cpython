@@ -900,7 +900,7 @@ free_values(PyDictValues *values, bool use_qsbr)
 static inline PyObject *
 new_dict_impl(PyDictObject *mp, PyDictKeysObject *keys,
               PyDictValues *values, Py_ssize_t used,
-              int free_values_on_failure)
+              int free_values_on_failure, int frozendict)
 {
     assert(keys != NULL);
     if (mp == NULL) {
@@ -915,6 +915,9 @@ new_dict_impl(PyDictObject *mp, PyDictKeysObject *keys,
     mp->ma_values = values;
     mp->ma_used = used;
     mp->_ma_watcher_tag = 0;
+    if (frozendict) {
+        ((PyFrozenDictObject *)mp)->ma_hash = -1;
+    }
     ASSERT_CONSISTENT(mp);
     _PyObject_GC_TRACK(mp);
     return (PyObject *)mp;
@@ -931,7 +934,7 @@ new_dict(PyDictKeysObject *keys, PyDictValues *values,
     }
     assert(mp == NULL || Py_IS_TYPE(mp, &PyDict_Type));
 
-    return new_dict_impl(mp, keys, values, used, free_values_on_failure);
+    return new_dict_impl(mp, keys, values, used, free_values_on_failure, 0);
 }
 
 /* Consumes a reference to the keys object */
@@ -940,7 +943,7 @@ new_frozendict(PyDictKeysObject *keys, PyDictValues *values,
                Py_ssize_t used, int free_values_on_failure)
 {
     PyDictObject *mp = PyObject_GC_New(PyDictObject, &PyFrozenDict_Type);
-    return new_dict_impl(mp, keys, values, used, free_values_on_failure);
+    return new_dict_impl(mp, keys, values, used, free_values_on_failure, 1);
 }
 
 static PyObject *
