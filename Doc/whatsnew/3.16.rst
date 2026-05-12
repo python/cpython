@@ -163,6 +163,14 @@ Deprecated
 
 .. Add deprecations above alphabetically, not here at the end.
 
+.. include:: ../deprecations/pending-removal-in-3.17.rst
+
+.. include:: ../deprecations/pending-removal-in-3.19.rst
+
+.. include:: ../deprecations/pending-removal-in-3.20.rst
+
+.. include:: ../deprecations/pending-removal-in-future.rst
+
 
 Porting to Python 3.16
 ======================
