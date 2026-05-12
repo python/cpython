@@ -303,11 +303,11 @@ defined by ZeroMQ and implemented here by :func:`z85encode`.
 
 The functions present in this module differ in how they handle the following:
 
-* Whether to include and expect enclosing ``<~`` and ``~>`` markers
-* Whether to fold the input into multiple lines
-* The set of ASCII characters used for encoding
-* Compact encodings of sequences of spaces and null bytes
-* The encoding of zero-padding bytes applied to the input
+* Whether to include and expect enclosing ``<~`` and ``~>`` markers.
+* Whether to fold the input into multiple lines.
+* The set of ASCII characters used for encoding.
+* Compact encodings of sequences of spaces and null bytes.
+* The encoding of zero-padding bytes applied to the input.
 
 Refer to the documentation of the individual functions for more information.
 
