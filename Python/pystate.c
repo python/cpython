@@ -3134,6 +3134,7 @@ void
 _PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame *frame)
 {
     assert(tstate->stack_chunk_list);
+    assert(frame != tstate->base_frame);
     PyObject **base = (PyObject **)_Py_ensure_frame_in_current_stack_chunk(tstate, (char *)frame);
     assert(ptr_in_chunk((char *)base, tstate->stack_chunk_list));
     assert(tstate->stack_top);

@@ -432,10 +432,19 @@ static inline uintptr_t
 get_offset_in_chunk_list(char *base, _PyStackChunk *stack_chunk_list)
 {
     assert(stack_chunk_list != NULL);
+    assert(stack_chunk_list->previous != NULL);
     assert(base != NULL);
-    _PyStackChunk *chunk = stack_chunk_list;
+    assert(!ptr_in_chunk(base, stack_chunk_list));
+    _PyStackChunk *chunk = stack_chunk_list->previous;
     do {
         if (ptr_in_chunk(base, chunk)) {
+            if (chunk != stack_chunk_list->previous) {
+                // at this point the previous stack chunk is no longer used
+                _PyStackChunk *prev = stack_chunk_list->previous;
+                assert(prev->previous != NULL);
+                stack_chunk_list->previous = prev->previous;
+                _PyObject_VirtualFree(prev, prev->size);
+            }
             return get_offset_in_chunk(base, chunk);
         }
         chunk = chunk->previous;
@@ -452,7 +461,7 @@ _Py_ensure_frame_in_current_stack_chunk(PyThreadState *tstate, char *frame)
     if (ptr_in_chunk(frame, tstate->stack_chunk_list)) {
         return frame;
     }
-    uintptr_t offset = get_offset_in_chunk_list(frame, tstate->stack_chunk_list->previous);
+    uintptr_t offset = get_offset_in_chunk_list(frame, tstate->stack_chunk_list);
     return ((char *)tstate->stack_chunk_list) + offset;
 }
 
