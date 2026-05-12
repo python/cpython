@@ -109,7 +109,7 @@ class SampleProfiler:
         last_sample_time = start_time
         realtime_update_interval = 1.0  # Update every second
         last_realtime_update = start_time
-        aggregating = getattr(collector, 'aggregating', False)
+        aggregating = getattr(collector, 'aggregating', False) is True
         prev_stack = None
         pending_count = 0
         pending_timestamps = [] if aggregating else None
@@ -118,15 +118,10 @@ class SampleProfiler:
             nonlocal pending_count, pending_timestamps
             if pending_count == 0:
                 return
-            count = pending_count
             pending_count = 0
-            if aggregating:
-                ts = pending_timestamps
-                pending_timestamps = []
-                collector.collect(prev_stack, timestamps_us=ts)
-            else:
-                for _ in range(count):
-                    collector.collect(prev_stack)
+            ts = pending_timestamps
+            pending_timestamps = []
+            collector.collect(prev_stack, timestamps_us=ts)
 
         try:
             while duration_sec is None or running_time_sec < duration_sec:
@@ -145,12 +140,14 @@ class SampleProfiler:
                         stack_frames = self._get_stack_trace(
                             async_aware=async_aware
                         )
-                        if stack_frames != prev_stack:
-                            flush_pending()
-                            prev_stack = stack_frames
-                        pending_count += 1
                         if aggregating:
+                            if stack_frames != prev_stack:
+                                flush_pending()
+                                prev_stack = stack_frames
+                            pending_count += 1
                             pending_timestamps.append(current_time_us)
+                        else:
+                            collector.collect(stack_frames)
                     except ProcessLookupError as e:
                         running_time_sec = current_time - start_time
                         break
