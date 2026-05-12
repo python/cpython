@@ -1057,7 +1057,8 @@ binascii.a2b_ascii85
     foldspaces: bool = False
         Allow 'y' as a short form encoding four spaces.
     adobe: bool = False
-        Expect data to be wrapped in '<~' and '~>' as in Adobe Ascii85.
+        Expect data to be terminated with '~>' as in Adobe Ascii85, and
+        optionally accept leading '<~'.
     ignorechars: Py_buffer = b''
         A byte string containing characters to ignore from the input.
     canonical: bool = False
@@ -1264,7 +1265,7 @@ binascii.b2a_ascii85
     wrapcol: size_t = 0
         Split result into lines of provided width.
     pad: bool = False
-        Pad input to a multiple of 4 before encoding.
+        Retain zero-padding bytes at end of output.
     adobe: bool = False
         Wrap result in '<~' and '~>' as in Adobe Ascii85.
 
@@ -1539,7 +1540,7 @@ binascii.b2a_base85
     /
     *
     pad: bool = False
-        Pad input to a multiple of 4 before encoding.
+        Retain zero-padding bytes at end of output.
     wrapcol: size_t = 0
     alphabet: Py_buffer(c_default="{NULL, NULL}") = BASE85_ALPHABET
 
