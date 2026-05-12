@@ -2054,10 +2054,11 @@ def _proxy_bypass_winreg_override(host, override):
     Internet settings proxy override registry value.
 
     An example of a proxy override value is:
-    "www.example.com;*.example.net; 192.168.0.1"
+    "www.example.com;*.example.net; 192.168.0.1; 192.168.0.0/16"
     """
     from fnmatch import fnmatch
 
+    host_ip = _ip_address_from_host(host)
     host, _ = _splitport(host)
     proxy_override = override.split(';')
     for test in proxy_override:
@@ -2066,6 +2067,8 @@ def _proxy_bypass_winreg_override(host, override):
         if test == '<local>':
             if '.' not in host:
                 return True
+        elif '/' in test and _is_ip_address_in_network(host_ip, test):
+            return True
         elif fnmatch(host, test):
             return True
     return False

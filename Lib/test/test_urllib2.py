@@ -1552,6 +1552,17 @@ class HandlerTests(unittest.TestCase):
                             "expect <local> to bypass intranet address '%s'"
                             % host)
 
+        # check IP CIDR bypass
+        proxy_override = "192.168.0.0/16; 2001:db8::/32"
+        for host in ("192.168.1.1", "192.168.1.1:443",
+                     "2001:db8::1", "[2001:db8::1]:443"):
+            self.assertTrue(proxy_bypass(host, proxy_override),
+                            "expected bypass of %s to be true" % host)
+
+        for host in ("192.169.1.1", "2001:db9::1"):
+            self.assertFalse(proxy_bypass(host, proxy_override),
+                             "expected bypass of %s to be False" % host)
+
     @unittest.skipUnless(sys.platform == 'darwin', "only relevant for OSX")
     def test_osx_proxy_bypass(self):
         bypass = {
