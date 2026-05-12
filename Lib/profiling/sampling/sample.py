@@ -113,7 +113,6 @@ class SampleProfiler:
         prev_stack = None
         pending_count = 0
         pending_timestamps = [] if aggregating else None
-        consecutive_identical = 0
 
         def flush_pending():
             nonlocal pending_count, pending_timestamps
@@ -146,9 +145,7 @@ class SampleProfiler:
                         stack_frames = self._get_stack_trace(
                             async_aware=async_aware
                         )
-                        if stack_frames == prev_stack:
-                            consecutive_identical += 1
-                        else:
+                        if stack_frames != prev_stack:
                             flush_pending()
                             prev_stack = stack_frames
                         pending_count += 1
@@ -210,9 +207,7 @@ class SampleProfiler:
         if not is_live_mode:
             s = "" if num_samples == 1 else "s"
             print(f"Captured {num_samples:n} sample{s} in {fmt(running_time_sec, 2)} seconds")
-            comparable_samples = max(1, num_samples - errors - 1)
-            print(f"Sample rate: {fmt(sample_rate, 2)} samples/sec "
-                  f"(consecutive identical: {consecutive_identical:n}/{comparable_samples:n})")
+            print(f"Sample rate: {fmt(sample_rate, 2)} samples/sec")
             print(f"Error rate: {fmt(error_rate, 2)}")
 
             # Print unwinder stats if stats collection is enabled
