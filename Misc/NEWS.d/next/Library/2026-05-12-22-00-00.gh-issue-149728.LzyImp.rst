@@ -1,7 +1,1 @@
-Fix a race in :mod:`importlib._bootstrap` where the fast path in
-``_find_and_load`` could return a module whose ``parent.child`` attribute had
-not yet been set. Under free-threaded CPython this caused packages using the
-lazy-submodule ``__getattr__`` pattern (e.g. NumPy) to recurse to
-:exc:`RecursionError` when multiple threads first-touched the same lazy
-submodule concurrently. ``spec._initializing`` is now kept ``True`` until
-after ``_find_and_load_unlocked`` has attached the module to its parent.
+fix race in importlib when importing module which defined getattr
