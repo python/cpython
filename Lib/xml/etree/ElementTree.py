@@ -403,9 +403,6 @@ class Element:
         order, returning all inner text.
 
         """
-        tag = self.tag
-        if not isinstance(tag, str) and tag is not None:
-            return
         t = self.text
         if t:
             yield t

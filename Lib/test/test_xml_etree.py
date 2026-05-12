@@ -1286,6 +1286,10 @@ class ElementTreeTest(unittest.TestCase):
         self.assertEqual(ET.tostring(ET.PI('test', 'instruction')),
                 b'<?test instruction?>')
 
+        self.assertEqual(list(ET.Comment('comment').itertext()), ['comment'])
+        self.assertEqual(list(ET.ProcessingInstruction('test', 'instruction').itertext()),
+            ['test instruction'])
+
         # Issue #2746
 
         self.assertEqual(ET.tostring(ET.PI('test', '<testing&>')),
