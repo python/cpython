@@ -11,12 +11,17 @@ extern "C" {
 
 #include "pycore_pystate.h"
 
-#if defined(HAVE_PR_SET_VMA_ANON_NAME) && defined(__linux__)
-#  include <linux/prctl.h>
-#  include <sys/prctl.h>
+#if defined(__linux__)
+
+#include <sys/prctl.h>
+
+#ifndef PR_SET_VMA
+#  define PR_SET_VMA 0x53564d41
+#endif
+#ifndef PR_SET_VMA_ANON_NAME
+#  define PR_SET_VMA_ANON_NAME 0
 #endif
 
-#if defined(HAVE_PR_SET_VMA_ANON_NAME) && defined(__linux__)
 static inline int
 _PyAnnotateMemoryMap(void *addr, size_t size, const char *name)
 {
@@ -33,12 +38,15 @@ _PyAnnotateMemoryMap(void *addr, size_t size, const char *name)
     }
     return 0;
 }
+
 #else
+
 static inline int
 _PyAnnotateMemoryMap(void *Py_UNUSED(addr), size_t Py_UNUSED(size), const char *Py_UNUSED(name))
 {
     return 0;
 }
+
 #endif
 
 #ifdef __cplusplus
