@@ -2896,12 +2896,12 @@ class TarFile(object):
             except Exception as e:
                 try:
                     import zlib
+                except ImportError:
+                    pass
+                else:
                     if isinstance(e, zlib.error):
                         raise ReadError(f'zlib error: {e}') from None
-                    else:
-                        raise e
-                except ImportError:
-                    raise e
+                raise
             break
 
         if tarinfo is not None:

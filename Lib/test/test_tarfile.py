@@ -829,6 +829,27 @@ class MiscReadTestBase(CommonReadTest):
             with self.assertRaises(tarfile.ReadError):
                 tarfile.open(self.tarname)
 
+    def test_next_preserves_exception_traceback(self):
+        class ExpectedError(Exception):
+            pass
+
+        class FailingFile(io.BytesIO):
+            def read(self, *args):
+                raise ExpectedError()
+
+        with self.assertRaises(ExpectedError) as cm:
+            tarfile.open(fileobj=FailingFile(), mode="r:")
+
+        next_frames = []
+        tb = cm.exception.__traceback__
+        while tb is not None:
+            code = tb.tb_frame.f_code
+            if (code.co_filename == tarfile.__file__
+                    and code.co_name == "next"):
+                next_frames.append(tb.tb_lineno)
+            tb = tb.tb_next
+        self.assertEqual(len(next_frames), 1)
+
     def test_next_on_empty_tarfile(self):
         fd = io.BytesIO()
         tf = tarfile.open(fileobj=fd, mode="w")
