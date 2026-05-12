@@ -1,2 +1,2 @@
-Add PySentinel_CheckExact() for exact type tests
-to accompany the existing PySentinel_Check().
+Add :c:func:`PySentinel_CheckExact` for exact :class:`sentinel` type tests
+to accompany the existing :c:func:`PySentinel_Check`.
