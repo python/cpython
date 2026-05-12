@@ -1958,7 +1958,7 @@ New Deprecations
 
 * :mod:`sys`:
 
-  * Deprecate the :func:`~sys._enablelegacywindowsfsencoding` function,
+  * Deprecate the :func:`!_enablelegacywindowsfsencoding` function,
     to be removed in Python 3.16.
     Use the :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment variable instead.
     (Contributed by Inada Naoki in :gh:`73427`.)

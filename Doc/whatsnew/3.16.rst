@@ -114,6 +114,13 @@ annotationlib
   Use :meth:`annotationlib.ForwardRef.evaluate`
   or :func:`typing.evaluate_forward_ref` instead.
 
+asyncio
+-------
+
+* The :func:`!asyncio.iscoroutinefunction`
+  which has been deprecated since Python 3.14.
+  Use :func:`inspect.iscoroutinefunction` instead.
+
 functools
 ---------
 
@@ -127,11 +134,26 @@ logging
   and scheduled for removal in Python 3.16. Define handlers with the *stream*
   argument instead.
 
+mimetypes
+---------
+
+* Valid extensions start with a '.' or are empty for
+  :meth:`mimetypes.MimeTypes.add_type`.
+  Undotted extensions now raise a :exc:`ValueError`.
+
 symtable
 --------
 
 * The :meth:`!symtable.Class.get_methods` method
   which has been deprecated since Python 3.14.
+
+sys
+---
+
+* The :func:`!_enablelegacywindowsfsencoding` function
+  which has been deprecated since Python 3.13.
+  Use the :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment variable instead.
+  (Contributed by Stan Ulbrych in :gh:`149595`.)
 
 sysconfig
 ---------
