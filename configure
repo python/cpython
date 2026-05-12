@@ -33824,10 +33824,7 @@ printf "%s\n" "$py_cv_module__curses_panel" >&6; }
 
 if test "$have_mpdec" = "no"
 then
-
-
-    py_cv_module__decimal=n/a
-
+  py_cv_module__decimal=missing
 fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _decimal" >&5

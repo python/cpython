@@ -8282,7 +8282,7 @@ PY_STDLIB_MOD([_curses_panel],
 )
 if test "$have_mpdec" = "no"
 then
-  PY_STDLIB_MOD_SET_NA([_decimal])
+  AS_VAR_SET([py_cv_module_]_decimal, [missing])
 fi
 PY_STDLIB_MOD([_decimal],
   [], [test "$have_mpdec" = "yes"],
