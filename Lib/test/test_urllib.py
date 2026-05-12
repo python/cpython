@@ -267,6 +267,17 @@ class ProxyTests(unittest.TestCase):
         self.assertFalse(bypass('2001:db8::1'))
         self.assertTrue(bypass('anotherdomain.com'))
 
+    def test_proxy_bypass_ip_address(self):
+        bypass = urllib.request.proxy_bypass_environment
+        self.env.set('NO_PROXY', '169.254.169.254')
+        self.assertTrue(bypass('169.254.169.254'))
+        self.assertTrue(bypass('169.254.169.254:1234'))
+        self.assertFalse(bypass('169.254.169:254'))
+        self.assertFalse(bypass('169.254.169.254.org'))
+        self.assertFalse(bypass('2001:db9::1'))
+        self.assertFalse(bypass('172.16.2.1'))
+        self.assertFalse(bypass('python.org'))
+
     def test_proxy_bypass_environment_always_match(self):
         bypass = urllib.request.proxy_bypass_environment
         self.env.set('NO_PROXY', '*')
