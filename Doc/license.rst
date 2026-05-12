@@ -959,8 +959,8 @@ on the cfuhash project::
 libmpdec
 --------
 
-The :mod:`!_decimal` C extension underlying the :mod:`decimal` module
-is built using an included copy of the libmpdec
+Previously, the :mod:`!_decimal` C extension underlying the :mod:`decimal` module
+was built using an included copy of the libmpdec
 library unless the build is configured ``--with-system-libmpdec``::
 
    Copyright (c) 2008-2020 Stefan Krah. All rights reserved.
