@@ -557,9 +557,9 @@ class CommandLineSubprocessTest(unittest.TestCase):
         self.assertEqual(stderr, b'')
 
     def test_unknown_flag(self):
-        rc, stdout, stderr = assert_python_failure('-m', 'mimetypes', '--unknown-flag')
+        rc, stdout, stderr = assert_python_failure('-m', 'mimetypes', '--unknown-flag', 'foo.pdf')
         self.assertEqual(stdout, b'')
-        self.assertIn(b'error', stderr)
+        self.assertIn(b'error: unrecognized arguments: --unknown-flag', stderr)
 
 
 if __name__ == "__main__":
