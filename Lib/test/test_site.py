@@ -196,8 +196,9 @@ class HelperFunctionsTests(unittest.TestCase):
         pth_file.cleanup(prep=True)
         with pth_file.create():
             # Pass defer_processing_start_files=True to prevent flushing.
-            site.addsitedir(pth_file.base_dir, set(),
-                            defer_processing_start_files=True)
+            site.addsitedir(
+                pth_file.base_dir, set(),
+                defer_processing_start_files=True)
             self.assertNotIn(pth_file.imported, sys.modules)
             site.process_startup_files()
             self.pth_file_tests(pth_file)
@@ -423,15 +424,14 @@ class PthFile:
 
         Used as a context manager: self.cleanup() is called on exit.
         """
-        FILE = open(self.file_path, 'w')
-        try:
-            print("#import @bad module name", file=FILE)
-            print("\n", file=FILE)
-            print("import %s" % self.imported, file=FILE)
-            print(self.good_dirname, file=FILE)
-            print(self.bad_dirname, file=FILE)
-        finally:
-            FILE.close()
+        with open(self.file_path, 'w') as fp:
+            print(f"""\
+#import @bad module name
+import {self.imported}
+{self.good_dirname}
+{self.bad_dirname}
+""", file=fp)
+
         os.mkdir(self.good_dir_path)
         try:
             yield self
@@ -944,6 +944,28 @@ class StartFileTests(unittest.TestCase):
             f.write(content)
         return basename
 
+    def _make_mod(self, contents, name='mod', *, package=False, on_path=False):
+        """Write an importable module (or package), returning its parent dir."""
+        extdir = os.path.join(self.sitedir, 'extdir')
+        os.makedirs(extdir, exist_ok=True)
+
+        # Put the code in a package's dunder-init or flat module.
+        if package:
+            pkgdir = os.path.join(extdir, name)
+            os.mkdir(pkgdir)
+            modpath = os.path.join(pkgdir, '__init__.py')
+        else:
+            modpath = os.path.join(extdir, f'{name}.py')
+
+        with open(modpath, 'w') as fp:
+            fp.write(contents)
+
+        self.addCleanup(sys.modules.pop, name, None)
+        if on_path:
+            # Don't worry, DirsOnSysPath() in setUp() will clean this up.
+            sys.path.insert(0, extdir)
+        return extdir
+
     def _all_entrypoints(self):
         """Flatten _pending_entrypoints dict into a list of (filename, entry) tuples."""
         result = []
@@ -1168,18 +1190,12 @@ class StartFileTests(unittest.TestCase):
 
     def test_execute_entrypoints_with_callable(self):
         # Entrypoint with callable is invoked.
-        mod_dir = os.path.join(self.sitedir, 'epmod')
-        os.mkdir(mod_dir)
-        init_file = os.path.join(mod_dir, '__init__.py')
-        with open(init_file, 'w') as f:
-            f.write("""\
+        self._make_mod("""\
 called = False
 def startup():
     global called
     called = True
-""")
-        sys.path.insert(0, self.sitedir)
-        self.addCleanup(sys.modules.pop, 'epmod', None)
+""", name='epmod', package=True, on_path=True)
         fullname = os.path.join(self.sitedir, 'epmod.start')
         site._pending_entrypoints[fullname] = ['epmod:startup']
         site._execute_start_entrypoints()
@@ -1218,16 +1234,10 @@ def startup():
 
     def test_execute_entrypoints_callable_error(self):
         # Callable that raises prints traceback but continues.
-        mod_dir = os.path.join(self.sitedir, 'badmod')
-        os.mkdir(mod_dir)
-        init_file = os.path.join(mod_dir, '__init__.py')
-        with open(init_file, 'w') as f:
-            f.write("""\
+        self._make_mod("""\
 def fail():
     raise RuntimeError("boom")
-""")
-        sys.path.insert(0, self.sitedir)
-        self.addCleanup(sys.modules.pop, 'badmod', None)
+""", name='badmod', package=True, on_path=True)
         fullname = os.path.join(self.sitedir, 'badmod.start')
         site._pending_entrypoints[fullname] = ['badmod:fail']
         with captured_stderr() as err:
@@ -1237,18 +1247,12 @@ def fail():
 
     def test_execute_entrypoints_duplicates_called_twice(self):
         # PEP 829: duplicate entry points execute multiple times.
-        mod_dir = os.path.join(self.sitedir, 'countmod')
-        os.mkdir(mod_dir)
-        init_file = os.path.join(mod_dir, '__init__.py')
-        with open(init_file, 'w') as f:
-            f.write("""\
+        self._make_mod("""\
 call_count = 0
 def bump():
     global call_count
     call_count += 1
-""")
-        sys.path.insert(0, self.sitedir)
-        self.addCleanup(sys.modules.pop, 'countmod', None)
+""", name='countmod', package=True, on_path=True)
         fullname = os.path.join(self.sitedir, 'countmod.start')
         site._pending_entrypoints[fullname] = [
             'countmod:bump', 'countmod:bump']
@@ -1279,18 +1283,12 @@ def bump():
     def test_exec_imports_suppressed_by_empty_matching_start(self):
         self._make_start("", name='foo')
         self._make_pth("import epmod; epmod.startup()", name='foo')
-        mod_dir = os.path.join(self.sitedir, 'epmod')
-        os.mkdir(mod_dir)
-        init_file = os.path.join(mod_dir, '__init__.py')
-        with open(init_file, 'w') as f:
-            f.write("""\
+        self._make_mod("""\
 called = False
 def startup():
     global called
     called = True
-""")
-        sys.path.insert(0, self.sitedir)
-        self.addCleanup(sys.modules.pop, 'epmod', None)
+""", name='epmod', package=True, on_path=True)
         site._read_pth_file(self.sitedir, 'foo.pth', set())
         site._read_start_file(self.sitedir, 'foo.start')
         site._exec_imports()
@@ -1420,18 +1418,12 @@ def startup():
         # point may live in a module reachable only via a .pth-extended
         # path.  If the flush phases were inverted, resolving the entry
         # point would fail with ModuleNotFoundError.
-        extdir = os.path.join(self.sitedir, 'extdir')
-        os.mkdir(extdir)
-        modpath = os.path.join(extdir, 'mod.py')
-        with open(modpath, 'w') as f:
-            f.write("""\
+        extdir = self._make_mod("""\
 called = False
 def hook():
     global called
     called = True
 """)
-        self.addCleanup(sys.modules.pop, 'mod', None)
-
         # extdir is not on sys.path; only the .pth file makes it so.
         self.assertNotIn(extdir, sys.path)
         self._make_pth("extdir\n", name='extlib')
@@ -1447,6 +1439,45 @@ def hook():
             "entry point did not run; .pth path was likely not applied "
             "before .start entry-point execution")
 
+    # --- bugs ---
+
+    # gh-75723
+    def test_addsitdir_idempotent_pth(self):
+        # Adding the same sitedir twice with a known_paths, should not
+        # process .pth files twice.
+        extdir = self._make_mod("""\
+_pth_count = 0
+""")
+        self._make_pth(f"""\
+{extdir}
+import mod; mod._pth_count += 1
+""")
+        dirs = set()
+        dirs = site.addsitedir(self.sitedir, dirs)
+        dirs = site.addsitedir(self.sitedir, dirs)
+        import mod
+        self.assertEqual(mod._pth_count, 1)
+
+    def test_addsitdir_idempotent_start(self):
+        # Adding the same sitedir twice with a known_paths, should not
+        # process .pth files twice.
+        extdir = self._make_mod("""\
+_pth_count = 0
+def increment():
+    global _pth_count
+    _pth_count += 1
+""")
+        self._make_pth(f"""\
+{extdir}
+""")
+        self._make_start("""\
+mod:increment
+""")
+        dirs = set()
+        dirs = site.addsitedir(self.sitedir, dirs)
+        dirs = site.addsitedir(self.sitedir, dirs)
+        import mod
+        self.assertEqual(mod._pth_count, 1)
 
 if __name__ == "__main__":
     unittest.main()
