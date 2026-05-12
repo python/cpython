@@ -513,34 +513,28 @@ def _read_gzip_header(fp):
     if method != 8:
         raise BadGzipFile('Unknown compression method')
 
-    # No flags. No need for further parsing. These headers are returned by
-    # gzip.compress or zlib.compress(..., wbits=31)
+    # Most common cases are no flags (gzip.compress, zlib.compress) or only
+    # FNAME set (GzipFile, gzip command line application). Exit early
+    # in those cases.
     if not flag:
         return last_mtime
-    # Most gzip files will have only FNAME set. For example: produced by gzip
-    # command line application or python's GzipFile.
     if flag == FNAME:
         _read_until_null(fp)
         return last_mtime
 
-    # Processing for more complex flags.
-    # Save header parts for FHCRC checking
+    # Processing for more complex flags. Save header parts for FHCRC checking.
     header = bytearray(magic + base_header)
-
     if flag & FEXTRA:
-        # Read the extra field, if present, save the fields for FHCRC checking.
         extra_len_bytes = _read_exact(fp, 2)
         extra_len, = struct.unpack("<H", extra_len_bytes)
         header += extra_len_bytes
         header += _read_exact(fp, extra_len)
-
     if flag & FNAME:
         header += _read_until_null(fp)
     if flag & FCOMMENT:
         header += _read_until_null(fp)
-
     if flag & FHCRC:
-        # Read the 16-bit header CRC and check it against the header.
+        # Header CRC is the last 16 bits of a crc32.
         header_crc, = struct.unpack("<H", _read_exact(fp, 2))
         true_crc = zlib.crc32(header) & 0xFFFF
         if header_crc != true_crc:
