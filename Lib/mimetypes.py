@@ -93,10 +93,7 @@ class MimeTypes:
         Valid extensions are empty or start with a '.'.
         """
         if ext and not ext.startswith('.'):
-            raise ValueError(
-                "Adding an extension without a leading dot "
-                f"{ext!r} is not supported"
-            )
+            raise ValueError(f"Extension {ext!r} must start with '.'")
 
         if not type:
             return

@@ -390,19 +390,10 @@ class MimeTypesTestCase(unittest.TestCase):
         self.assertEqual(mime_type, 'testing/type')
 
     def test_add_type_with_undotted_extension_not_supported(self):
-        msg = (
-            "Adding an extension without a leading dot "
-            "'undotted' is not supported"
-        )
-        with self.assertRaisesRegex(
-            ValueError,
-            msg,
-        ):
+        msg = "Extension 'undotted' must start with '.'"
+        with self.assertRaisesRegex(ValueError, msg):
             mimetypes.add_type("testing/type", "undotted")
-        with self.assertRaisesRegex(
-            ValueError,
-            msg,
-        ):
+        with self.assertRaisesRegex(ValueError, msg):
             mimetypes.add_type("", "undotted")
 
 

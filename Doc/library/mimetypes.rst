@@ -134,7 +134,7 @@ behavior of the module.
    When *strict* is ``True`` (the default), the mapping will be added to the
    official MIME types, otherwise to the non-standard ones.
 
-   .. versionchanged:: 3.14
+   .. deprecated:: 3.14
       *ext* values that do not start with ``'.'`` are deprecated.
 
    .. versionchanged:: next
