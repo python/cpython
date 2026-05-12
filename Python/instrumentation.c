@@ -635,7 +635,7 @@ sanity_check_instrumentation(PyCodeObject *code)
 
 /* Get the underlying code unit, stripping instrumentation and ENTER_EXECUTOR */
 _Py_CODEUNIT
-_Py_GetBaseCodeUnit(PyCodeObject *code, Py_ssize_t i)
+_Py_GetBaseCodeUnit(PyCodeObject *code, int i)
 {
     _Py_CODEUNIT *src_instr = _PyCode_CODE(code) + i;
     _Py_CODEUNIT inst = {

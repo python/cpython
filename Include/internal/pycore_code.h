@@ -540,7 +540,7 @@ typedef struct {
 PyAPI_FUNC(int) _Py_Instrument(PyCodeObject *co, PyInterpreterState *interp);
 
 // Export for '_testinternalcapi' shared extension
-PyAPI_FUNC(_Py_CODEUNIT) _Py_GetBaseCodeUnit(PyCodeObject *code, Py_ssize_t offset);
+PyAPI_FUNC(_Py_CODEUNIT) _Py_GetBaseCodeUnit(PyCodeObject *code, int offset);
 
 extern int _PyInstruction_GetLength(PyCodeObject *code, int offset);
 
