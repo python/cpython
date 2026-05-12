@@ -1586,6 +1586,18 @@ class HandlerTests(unittest.TestCase):
         self.assertFalse(_proxy_bypass_macosx_sysconf(host, bypass),
                         'expected bypass of %s to be False' % host)
 
+        # Check IPv6 CIDR ranges
+        bypass = {
+            'exclude_simple': False,
+            'exceptions': ['2001:db8::/32']
+        }
+        for host in ('2001:db8::1', '[2001:db8::1]:443'):
+            self.assertTrue(_proxy_bypass_macosx_sysconf(host, bypass),
+                            'expected bypass of %s to be True' % host)
+        host = '2001:db9::1'
+        self.assertFalse(_proxy_bypass_macosx_sysconf(host, bypass),
+                         'expected bypass of %s to be False' % host)
+
     def check_basic_auth(self, headers, realm):
         with self.subTest(realm=realm, headers=headers):
             opener = OpenerDirector()

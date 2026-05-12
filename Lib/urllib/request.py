@@ -1908,6 +1908,28 @@ def getproxies_environment():
                 proxies.pop(proxy_name, None)
     return proxies
 
+def _ip_address_from_host(host):
+    from ipaddress import ip_address
+
+    hostonly, port = _splitport(host)
+    for candidate in (hostonly, host):
+        candidate = candidate.strip('[]')
+        try:
+            return ip_address(candidate)
+        except ValueError:
+            pass
+    return None
+
+def _is_ip_address_in_network(ip_address, network):
+    if ip_address is None:
+        return False
+    from ipaddress import ip_network
+
+    try:
+        return ip_address in ip_network(network, strict=False)
+    except ValueError:
+        return False
+
 def proxy_bypass_environment(host, proxies=None):
     """Test if proxies should not be used for a particular host.
 
@@ -1945,22 +1967,10 @@ def proxy_bypass_environment(host, proxies=None):
             # check if the IP is within CIDR range
             if '/' in name:
                 if not checked_host_ip:
-                    from ipaddress import ip_address
-                    for candidate in (hostonly, host):
-                        candidate = candidate.strip('[]')
-                        try:
-                            host_ip = ip_address(candidate)
-                            break
-                        except ValueError:
-                            pass
+                    host_ip = _ip_address_from_host(host)
                     checked_host_ip = True
-                if host_ip is not None:
-                    from ipaddress import ip_network
-                    try:
-                        if host_ip in ip_network(name, strict=False):
-                            return True
-                    except ValueError:
-                        pass
+                if _is_ip_address_in_network(host_ip, name):
+                    return True
 
             # check if the host ends with any of the DNS suffixes
             name = '.' + name
@@ -1985,9 +1995,9 @@ def _proxy_bypass_macosx_sysconf(host, proxy_settings):
     }
     """
     from fnmatch import fnmatch
-    from ipaddress import AddressValueError, IPv4Address
 
     hostonly, port = _splitport(host)
+    host_ip = _ip_address_from_host(host)
 
     def ip2num(ipAddr):
         parts = ipAddr.split('.')
@@ -2002,14 +2012,15 @@ def _proxy_bypass_macosx_sysconf(host, proxy_settings):
             return True
 
     hostIP = None
-    try:
-        hostIP = int(IPv4Address(hostonly))
-    except AddressValueError:
-        pass
+    if host_ip is not None and host_ip.version == 4:
+        hostIP = int(host_ip)
 
     for value in proxy_settings.get('exceptions', ()):
         # Items in the list are strings like these: *.local, 169.254/16
         if not value: continue
+
+        if '/' in value and _is_ip_address_in_network(host_ip, value):
+            return True
 
         m = re.match(r"(\d+(?:\.\d+)*)(/\d+)?", value)
         if m is not None and hostIP is not None:
