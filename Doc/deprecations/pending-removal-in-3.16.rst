@@ -101,5 +101,5 @@ Pending removal in Python 3.16
 
 * :mod:`tarfile`:
 
-  * The undocumented and unused :attr:`!TarFile.tarfile` attribute
+  * The undocumented and unused :attr:`!TarInfo.tarfile` attribute
     has been deprecated since Python 3.13.

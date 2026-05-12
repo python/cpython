@@ -129,9 +129,17 @@ behavior of the module.
    Add a mapping from the MIME type *type* to the extension *ext*. When the
    extension is already known, the new type will replace the old one. When the type
    is already known the extension will be added to the list of known extensions.
+   Valid extensions are empty or start with a ``'.'``.
 
    When *strict* is ``True`` (the default), the mapping will be added to the
    official MIME types, otherwise to the non-standard ones.
+
+   .. deprecated:: 3.14
+      *ext* values that do not start with ``'.'`` are deprecated.
+
+   .. versionchanged:: next
+      *ext* now must start with ``'.'``. Otherwise :exc:`ValueError` is raised.
+
 
 
 .. data:: inited
