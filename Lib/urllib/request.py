@@ -1912,7 +1912,8 @@ def proxy_bypass_environment(host, proxies=None):
     """Test if proxies should not be used for a particular host.
 
     Checks the proxy dict for the value of no_proxy, which should
-    be a list of comma separated DNS suffixes, or '*' for all hosts.
+    be a list of comma separated DNS suffixes, IP address CIDR ranges,
+    or '*' for all hosts.
 
     """
     if proxies is None:
@@ -1928,14 +1929,40 @@ def proxy_bypass_environment(host, proxies=None):
     host = host.lower()
     # strip port off host
     hostonly, port = _splitport(host)
-    # check if the host ends with any of the DNS suffixes
+    host_ip = None
+    checked_host_ip = False
+    # for every entry in no_proxy...
     for name in no_proxy.split(','):
         name = name.strip()
         if name:
             name = name.lstrip('.')  # ignore leading dots
             name = name.lower()
+
+            # check for exact match
             if hostonly == name or host == name:
                 return True
+
+            # check if the IP is within CIDR range
+            if '/' in name:
+                if not checked_host_ip:
+                    from ipaddress import ip_address
+                    for candidate in (hostonly, host):
+                        candidate = candidate.strip('[]')
+                        try:
+                            host_ip = ip_address(candidate)
+                            break
+                        except ValueError:
+                            pass
+                    checked_host_ip = True
+                if host_ip is not None:
+                    from ipaddress import ip_network
+                    try:
+                        if host_ip in ip_network(name, strict=False):
+                            return True
+                    except ValueError:
+                        pass
+
+            # check if the host ends with any of the DNS suffixes
             name = '.' + name
             if hostonly.endswith(name) or host.endswith(name):
                 return True
