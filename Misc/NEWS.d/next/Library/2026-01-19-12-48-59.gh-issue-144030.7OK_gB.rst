@@ -1,3 +1,0 @@
-The Python implementation of :func:`functools.lru_cache` differed from the
-default C implementation in that it did not check that its argument is
-callable. This discrepancy is now fixed and both raise a :exc:`TypeError`.

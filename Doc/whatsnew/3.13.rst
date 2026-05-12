@@ -1958,14 +1958,14 @@ New Deprecations
 
 * :mod:`sys`:
 
-  * Deprecate the :func:`~sys._enablelegacywindowsfsencoding` function,
+  * Deprecate the :func:`!_enablelegacywindowsfsencoding` function,
     to be removed in Python 3.16.
     Use the :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment variable instead.
     (Contributed by Inada Naoki in :gh:`73427`.)
 
 * :mod:`tarfile`:
 
-  * Deprecate the undocumented and unused :attr:`!TarFile.tarfile` attribute,
+  * Deprecate the undocumented and unused :attr:`!TarInfo.tarfile` attribute,
     to be removed in Python 3.16.
     (Contributed in :gh:`115256`.)
 

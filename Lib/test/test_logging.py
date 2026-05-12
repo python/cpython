@@ -404,6 +404,20 @@ class BasicFilterTest(BaseTest):
         r = logging.makeLogRecord({'name': 'spam.eggs'})
         self.assertTrue(f.filter(r))
 
+    def test_filter_repr(self):
+        f = logging.Filter('myapp')
+        self.assertEqual(repr(f), '<Filter (myapp)>')
+
+    def test_filter_repr_empty(self):
+        f = logging.Filter()
+        self.assertEqual(repr(f), '<Filter ()>')
+
+    def test_filter_repr_subclass(self):
+        class MyFilter(logging.Filter):
+            pass
+        f = MyFilter('myapp')
+        self.assertEqual(repr(f), '<MyFilter (myapp)>')
+
 #
 #   First, we define our levels. There can be as many as you want - the only
 #     limitations are that they should be integers, the lowest should be > 0 and
@@ -3283,12 +3297,11 @@ class ConfigDictTest(BaseTest):
         }
     }
 
-    # Remove when deprecation ends.
-    class DeprecatedStrmHandler(logging.StreamHandler):
+    class StrmHandler(logging.StreamHandler):
         def __init__(self, strm=None):
             super().__init__(stream=strm)
 
-    config_custom_handler_with_deprecated_strm_arg = {
+    config_custom_handler_with_removed_strm_arg = {
         "version": 1,
         "formatters": {
             "form1": {
@@ -3297,7 +3310,7 @@ class ConfigDictTest(BaseTest):
         },
         "handlers": {
             "hand1": {
-                "class": DeprecatedStrmHandler,
+                "class": StrmHandler,
                 "formatter": "form1",
                 "level": "NOTSET",
                 "stream": "ext://sys.stdout",
@@ -3403,14 +3416,9 @@ class ConfigDictTest(BaseTest):
         self.test_config1_ok(config=self.config5)
         self.check_handler('hand1', CustomHandler)
 
-    def test_deprecation_warning_custom_handler_with_strm_arg(self):
-        msg = (
-            "Support for custom logging handlers with the 'strm' argument "
-            "is deprecated and scheduled for removal in Python 3.16. "
-            "Define handlers with the 'stream' argument instead."
-        )
-        with self.assertWarnsRegex(DeprecationWarning, msg):
-            self.test_config1_ok(config=self.config_custom_handler_with_deprecated_strm_arg)
+    def test_removed_strm_arg(self):
+        with self.assertRaisesRegex(ValueError, 'hand1'):
+            self.apply_config(self.config_custom_handler_with_removed_strm_arg)
 
     def test_config6_failure(self):
         self.assertRaises(Exception, self.apply_config, self.config6)
@@ -4913,6 +4921,20 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
                 self.assertAlmostEqual(created, (start_ns + offset_ns) / 1e9, places=6)
                 # After PR gh-102412, precision (places) increases from 3 to 7
                 self.assertAlmostEqual(relativeCreated, offset_ns / 1e6, places=7)
+
+    def test_formatter_repr(self):
+        f = logging.Formatter('%(message)s')
+        self.assertEqual(repr(f), '<Formatter (%(message)s)>')
+
+    def test_formatter_repr_default(self):
+        f = logging.Formatter()
+        self.assertEqual(repr(f), '<Formatter (%(message)s)>')
+
+    def test_formatter_repr_subclass(self):
+        class MyFormatter(logging.Formatter):
+            pass
+        f = MyFormatter('%(message)s')
+        self.assertEqual(repr(f), '<MyFormatter (%(message)s)>')
 
 
 class TestBufferingFormatter(logging.BufferingFormatter):
