@@ -332,9 +332,9 @@ process_frame_chain(
         {
             uintptr_t address_of_code_object = 0;
             int parse_result;
-            if (ctx->prefetched_frame && ctx->prefetched_frame_addr == frame_addr) {
+            if (ctx->prefetch.frame && ctx->prefetch.frame_addr == frame_addr) {
                 parse_result = parse_frame_buffer(
-                    unwinder, &frame, ctx->prefetched_frame,
+                    unwinder, &frame, ctx->prefetch.frame,
                     &address_of_code_object, &next_frame_addr);
             }
             else {
@@ -530,9 +530,9 @@ try_full_cache_hit(
     uintptr_t code_object_addr = 0;
     uintptr_t previous_frame = 0;
     int parse_result;
-    if (ctx->prefetched_frame && ctx->prefetched_frame_addr == ctx->frame_addr) {
+    if (ctx->prefetch.frame && ctx->prefetch.frame_addr == ctx->frame_addr) {
         parse_result = parse_frame_buffer(unwinder, &current_frame,
-                                          ctx->prefetched_frame,
+                                          ctx->prefetch.frame,
                                           &code_object_addr, &previous_frame);
     }
     else {

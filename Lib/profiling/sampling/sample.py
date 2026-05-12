@@ -296,6 +296,37 @@ class SampleProfiler:
         print(f"    Hits:             {code_hits:n} ({ANSIColors.GREEN}{fmt(code_hits_pct)}%{ANSIColors.RESET})")
         print(f"    Misses:           {code_misses:n} ({ANSIColors.RED}{fmt(code_misses_pct)}%{ANSIColors.RESET})")
 
+        # Batched remote read stats
+        batched_attempts = stats.get('batched_read_attempts', 0)
+        batched_successes = stats.get('batched_read_successes', 0)
+        batched_misses = stats.get('batched_read_misses', 0)
+        segments_requested = stats.get('batched_read_segments_requested', 0)
+        segments_completed = stats.get('batched_read_segments_completed', 0)
+        if batched_attempts > 0 or segments_requested > 0:
+            batched_success_rate = stats.get('batched_read_success_rate', 0.0)
+            batched_miss_rate = (
+                (batched_misses / batched_attempts * 100)
+                if batched_attempts > 0 else 0
+            )
+            segment_completion_rate = stats.get(
+                'batched_read_segment_completion_rate', 0.0
+            )
+
+            print(f"  {ANSIColors.CYAN}Batched Reads:{ANSIColors.RESET}")
+            print(f"    Attempts:         {batched_attempts:n}")
+            print(
+                f"    Successes:        {batched_successes:n} "
+                f"({ANSIColors.GREEN}{fmt(batched_success_rate)}%{ANSIColors.RESET})"
+            )
+            print(
+                f"    Misses:           {batched_misses:n} "
+                f"({ANSIColors.RED}{fmt(batched_miss_rate)}%{ANSIColors.RESET})"
+            )
+            print(
+                f"    Segments read:    {segments_completed:n}/{segments_requested:n} "
+                f"({ANSIColors.GREEN}{fmt(segment_completion_rate)}%{ANSIColors.RESET})"
+            )
+
         # Memory operations
         memory_reads = stats.get('memory_reads', 0)
         memory_bytes = stats.get('memory_bytes_read', 0)

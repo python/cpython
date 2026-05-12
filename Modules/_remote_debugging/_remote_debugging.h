@@ -233,6 +233,23 @@ typedef struct {
     PyObject *frame_list;                    // owned reference, NULL if empty
 } FrameCacheEntry;
 
+#define INTERPRETER_THREAD_CACHE_SIZE 32
+#if (INTERPRETER_THREAD_CACHE_SIZE & (INTERPRETER_THREAD_CACHE_SIZE - 1)) != 0
+#  error "INTERPRETER_THREAD_CACHE_SIZE must be a power of two"
+#endif
+
+typedef struct {
+    uintptr_t interpreter_addr;
+    uintptr_t thread_state_addr;
+} InterpreterThreadCacheEntry;
+
+typedef struct {
+    const char *tstate;
+    uintptr_t tstate_addr;
+    const char *frame;
+    uintptr_t frame_addr;
+} RemoteReadPrefetch;
+
 /* Statistics for profiling performance analysis */
 typedef struct {
     uint64_t total_samples;                  // Total number of get_stack_trace calls
@@ -246,6 +263,11 @@ typedef struct {
     uint64_t code_object_cache_hits;         // Code object cache hits
     uint64_t code_object_cache_misses;       // Code object cache misses
     uint64_t stale_cache_invalidations;      // Times stale entries were cleared
+    uint64_t batched_read_attempts;          // Batched remote-read attempts
+    uint64_t batched_read_successes;         // Attempts that read all requested segments
+    uint64_t batched_read_misses;            // Attempts that fell back or partially read
+    uint64_t batched_read_segments_requested; // Segments requested by batched reads
+    uint64_t batched_read_segments_completed; // Segments completed by batched reads
 } UnwinderStats;
 
 /* Stats tracking macros - no-op when stats collection is disabled */
@@ -254,6 +276,46 @@ typedef struct {
 
 #define STATS_ADD(unwinder, field, val) \
     do { if ((unwinder)->collect_stats) (unwinder)->stats.field += (val); } while(0)
+
+#define STATS_BATCHED_READ(unwinder, requested, completed) \
+    do { \
+        if ((unwinder)->collect_stats) { \
+            (unwinder)->stats.batched_read_attempts++; \
+            (unwinder)->stats.batched_read_segments_requested += (uint64_t)(requested); \
+            (unwinder)->stats.batched_read_segments_completed += (uint64_t)(completed); \
+            if ((completed) == (requested)) { \
+                (unwinder)->stats.batched_read_successes++; \
+            } \
+            else { \
+                (unwinder)->stats.batched_read_misses++; \
+            } \
+        } \
+    } while(0)
+
+static inline int
+_Py_RemoteDebug_CountCompletedSegments(
+    const _Py_RemoteReadSegment *segments,
+    int nsegs,
+    Py_ssize_t nread)
+{
+    if (nread < 0) {
+        return 0;
+    }
+
+    int completed = 0;
+    Py_ssize_t bytes_needed = 0;
+    for (int i = 0; i < nsegs; i++) {
+        if (segments[i].size > (size_t)(PY_SSIZE_T_MAX - bytes_needed)) {
+            break;
+        }
+        bytes_needed += (Py_ssize_t)segments[i].size;
+        if (nread < bytes_needed) {
+            break;
+        }
+        completed++;
+    }
+    return completed;
+}
 
 typedef struct {
     PyTypeObject *RemoteDebugging_Type;
@@ -306,7 +368,7 @@ typedef struct {
     int cache_frames;
     int collect_stats;  // whether to collect statistics
     uint32_t stale_invalidation_counter;  // counter for throttling frame_cache_invalidate_stale
-    uintptr_t cached_tstate_addr;  // predicted first thread for batched reads
+    InterpreterThreadCacheEntry cached_tstates[INTERPRETER_THREAD_CACHE_SIZE];
     RemoteDebuggingState *cached_state;
     FrameCacheEntry *frame_cache;  // preallocated array of FRAME_CACHE_MAX_THREADS entries
     UnwinderStats stats;  // statistics for performance analysis
@@ -372,8 +434,7 @@ typedef struct {
     uintptr_t last_profiled_frame;  // Last cached frame (0 if no cache)
     StackChunkList *chunks;         // Pre-copied stack chunks
     int skip_first_frame;           // Skip frame_addr itself (continue from its caller)
-    const char *prefetched_frame;    // Optional already-read frame buffer
-    uintptr_t prefetched_frame_addr; // Remote address for prefetched_frame
+    RemoteReadPrefetch prefetch;     // Optional already-read thread/frame buffers
 
     /* Outputs */
     PyObject *frame_info;           // List to append FrameInfo objects
@@ -616,10 +677,7 @@ extern PyObject* unwind_stack_for_thread(
     uintptr_t gil_holder_tstate,
     uintptr_t gc_frame,
     uintptr_t main_thread_tstate,
-    const char *prefetched_tstate,
-    uintptr_t prefetched_tstate_addr,
-    const char *prefetched_frame,
-    uintptr_t prefetched_frame_addr
+    const RemoteReadPrefetch *prefetch
 );
 
 /* Thread stopping functions (for blocking mode) */

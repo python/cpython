@@ -307,8 +307,10 @@ read_thread_state_and_maybe_frame(
         };
         Py_ssize_t nread = _Py_RemoteDebug_BatchedReadRemoteMemory(
             &unwinder->handle, segments, 2);
-        if (nread >= (Py_ssize_t)tstate_size) {
-            *frame_read = nread == (Py_ssize_t)(tstate_size + SIZEOF_INTERP_FRAME);
+        int completed = _Py_RemoteDebug_CountCompletedSegments(segments, 2, nread);
+        STATS_BATCHED_READ(unwinder, 2, completed);
+        if (completed >= 1) {
+            *frame_read = completed == 2;
             return 0;
         }
     }
@@ -323,10 +325,7 @@ unwind_stack_for_thread(
     uintptr_t gil_holder_tstate,
     uintptr_t gc_frame,
     uintptr_t main_thread_tstate,
-    const char *prefetched_tstate,
-    uintptr_t prefetched_tstate_addr,
-    const char *prefetched_frame,
-    uintptr_t prefetched_frame_addr
+    const RemoteReadPrefetch *prefetch
 ) {
     PyObject *frame_info = NULL;
     PyObject *thread_id = NULL;
@@ -335,18 +334,17 @@ unwind_stack_for_thread(
 
     char ts[SIZEOF_THREAD_STATE];
     char local_prefetched_frame[SIZEOF_INTERP_FRAME];
-    const char *prefetched_frame_for_ctx = NULL;
-    int have_prefetched_frame = 0;
-    uintptr_t predicted_frame_addr = 0;
-    if (prefetched_tstate && prefetched_tstate_addr == *current_tstate) {
-        memcpy(ts, prefetched_tstate, (size_t)unwinder->debug_offsets.thread_state.size);
-        if (prefetched_frame && prefetched_frame_addr != 0) {
-            have_prefetched_frame = 1;
-            prefetched_frame_for_ctx = prefetched_frame;
-            predicted_frame_addr = prefetched_frame_addr;
+    RemoteReadPrefetch ctx_prefetch = {0};
+    if (prefetch && prefetch->tstate && prefetch->tstate_addr == *current_tstate) {
+        memcpy(ts, prefetch->tstate, (size_t)unwinder->debug_offsets.thread_state.size);
+        if (prefetch->frame && prefetch->frame_addr != 0) {
+            ctx_prefetch.frame = prefetch->frame;
+            ctx_prefetch.frame_addr = prefetch->frame_addr;
         }
     }
     else if (unwinder->cache_frames) {
+        uintptr_t predicted_frame_addr = 0;
+        int have_prefetched_frame = 0;
         FrameCacheEntry *entry = frame_cache_find_by_tstate(unwinder, *current_tstate);
         if (entry && entry->num_addrs > 0) {
             predicted_frame_addr = entry->addrs[0];
@@ -365,7 +363,8 @@ unwind_stack_for_thread(
             goto error;
         }
         if (have_prefetched_frame) {
-            prefetched_frame_for_ctx = local_prefetched_frame;
+            ctx_prefetch.frame = local_prefetched_frame;
+            ctx_prefetch.frame_addr = predicted_frame_addr;
         }
     }
     else {
@@ -381,7 +380,7 @@ unwind_stack_for_thread(
     }
     STATS_INC(unwinder, memory_reads);
     STATS_ADD(unwinder, memory_bytes_read, unwinder->debug_offsets.thread_state.size);
-    if (have_prefetched_frame) {
+    if (ctx_prefetch.frame) {
         STATS_INC(unwinder, memory_reads);
         STATS_ADD(unwinder, memory_bytes_read, SIZEOF_INTERP_FRAME);
     }
@@ -510,8 +509,7 @@ unwind_stack_for_thread(
         .base_frame_addr = base_frame_addr,
         .gc_frame = gc_frame,
         .chunks = &chunks,
-        .prefetched_frame = have_prefetched_frame ? prefetched_frame_for_ctx : NULL,
-        .prefetched_frame_addr = predicted_frame_addr,
+        .prefetch = ctx_prefetch,
         .frame_info = frame_info,
         .frame_addrs = addrs,
         .num_addrs = 0,
