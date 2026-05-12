@@ -817,7 +817,6 @@ def venv(known_paths):
                 major, minor = map(int, version.split(".")[:2])
             except ValueError:
                 major, minor = None
-            
             if (
                 major == sys.version_info.major
                 and minor is not None
