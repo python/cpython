@@ -146,6 +146,14 @@ class RowFactoryTests(MemoryDatabaseMixin, unittest.TestCase):
         with self.assertRaises(IndexError):
             row[complex()]  # index must be int or string
 
+    def test_delete_connection_row_factory(self):
+        # gh-149738: deleting row_factory should not segfault
+        del self.con.row_factory
+        with self.assertRaises(sqlite.OperationalError):
+            self.con.execute("test")
+        cur = self.con.cursor()
+        self.assertIsNone(cur.row_factory)
+
     def test_sqlite_row_index_unicode(self):
         row = self.con.execute("select 1 as \xff").fetchone()
         self.assertEqual(row["\xff"], 1)
