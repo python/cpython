@@ -1482,8 +1482,9 @@ PyUnknownEncodingHandler(void *encodingHandlerData,
             if (is_multibyte != 0) {  // true or error
                 Py_DECREF(codec);
                 if (is_multibyte > 0) {  // true
-                    PyErr_SetString(PyExc_ValueError,
-                                    "multi-byte encodings are not supported");
+                    PyErr_Format(PyExc_ValueError,
+                                 "multi-byte encodings are not supported: '%s'",
+                                 name);
                 }
                 return XML_STATUS_ERROR;
             }
@@ -1499,8 +1500,9 @@ PyUnknownEncodingHandler(void *encodingHandlerData,
 
     if (PyUnicode_GET_LENGTH(u) != 256) {
         Py_DECREF(u);
-        PyErr_SetString(PyExc_ValueError,
-                        "multi-byte encodings are not supported");
+        PyErr_Format(PyExc_ValueError,
+                     "multi-byte encodings are not supported: '%s'",
+                     name);
         return XML_STATUS_ERROR;
     }
 
