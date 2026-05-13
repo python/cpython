@@ -16,7 +16,7 @@ try:
 except ImportError:
     ssl = None
 
-from unittest import TestCase, skipUnless
+from unittest import mock, TestCase, skipUnless
 from test import support
 from test.support import requires_subprocess
 from test.support import threading_helper
@@ -1153,50 +1153,30 @@ class TestFtpcpSecurity(TestCase):
     source server's actual peer address instead, the same as FTP.makepasv().
     """
 
-    class _FakeSock:
-        def __init__(self, peer_host):
-            self._peer = (peer_host, 21)
-        def getpeername(self):
-            return self._peer
-
-    class _FakeSource:
-        trust_server_pasv_ipv4_address = False
-        def __init__(self, advertised_host, real_host):
-            self.sock = TestFtpcpSecurity._FakeSock(real_host)
-            self._advertised = advertised_host.replace('.', ',')
-        def voidcmd(self, cmd):
-            pass
-        def sendcmd(self, cmd):
-            if cmd == 'PASV':
-                return '227 Entering Passive Mode (%s,1,2).' % self._advertised
-            return '150 ok'
-        def voidresp(self):
-            pass
-
-    class _FakeTarget:
-        def __init__(self):
-            self.sendport_args = None
-        def voidcmd(self, cmd):
-            pass
-        def sendport(self, host, port):
-            self.sendport_args = (host, port)
-        def sendcmd(self, cmd):
-            return '150 ok'
-        def voidresp(self):
-            pass
+    def _make_pair(self, *, advertised_host, real_host, trust=False):
+        source = mock.Mock(spec=ftplib.FTP)
+        source.trust_server_pasv_ipv4_address = trust
+        source.sock.getpeername.return_value = (real_host, 21)
+        # PASV replies give the host as comma-separated octets, not dotted.
+        advertised = advertised_host.replace('.', ',')
+        source.sendcmd.side_effect = lambda cmd: (
+            f'227 Entering Passive Mode ({advertised},1,2).'
+            if cmd == 'PASV' else '150 ok')
+        target = mock.Mock(spec=ftplib.FTP)
+        target.sendcmd.return_value = '150 ok'
+        return source, target
 
     def test_ftpcp_ignores_untrusted_pasv_host(self):
-        source = self._FakeSource('10.0.0.5', '198.51.100.7')
-        target = self._FakeTarget()
+        source, target = self._make_pair(advertised_host='10.0.0.5',
+                                         real_host='198.51.100.7')
         ftplib.ftpcp(source, 'a', target, 'b')
-        self.assertEqual(target.sendport_args, ('198.51.100.7', 258))
+        target.sendport.assert_called_once_with('198.51.100.7', 258)
 
     def test_ftpcp_trust_server_pasv_ipv4_address(self):
-        source = self._FakeSource('10.0.0.5', '198.51.100.7')
-        source.trust_server_pasv_ipv4_address = True
-        target = self._FakeTarget()
+        source, target = self._make_pair(advertised_host='10.0.0.5',
+                                         real_host='198.51.100.7', trust=True)
         ftplib.ftpcp(source, 'a', target, 'b')
-        self.assertEqual(target.sendport_args, ('10.0.0.5', 258))
+        target.sendport.assert_called_once_with('10.0.0.5', 258)
 
 
 class MiscTestCase(TestCase):
