@@ -19,7 +19,7 @@
 {%- else %}
       <h3>
         <a href="{{ pathto(root_doc)|e }}"
-           title="{{ docstitle|e }}">
+           title="{{ docstitle|striptags }}">
            {{ docstitle|e }}
         </a>
       </h3>
