@@ -16513,12 +16513,6 @@ printf "%s\n" "yes" >&6; }
         have_mpdec=yes
 fi
 
-# Disable forced inlining in debug builds, see GH-94847
-if test "x$with_pydebug" = xyes
-then :
-  as_fn_append LIBMPDEC_CFLAGS " -DTEST_COVERAGE"
-fi
-
 # Check whether _decimal should use a coroutine-local or thread-local context
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-decimal-contextvar" >&5
 printf %s "checking for --with-decimal-contextvar... " >&6; }

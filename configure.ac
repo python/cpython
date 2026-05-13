@@ -4333,11 +4333,6 @@ PKG_CHECK_MODULES([LIBMPDEC], [libmpdec >= 2.5.0], [have_mpdec=yes], [
   ])
 ])
 
-# Disable forced inlining in debug builds, see GH-94847
-AS_VAR_IF(
-  [with_pydebug], [yes],
-  [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DTEST_COVERAGE"])])
-
 # Check whether _decimal should use a coroutine-local or thread-local context
 AC_MSG_CHECKING([for --with-decimal-contextvar])
 AC_ARG_WITH(
