@@ -484,7 +484,7 @@ class GNUTranslations(NullTranslations):
                 tmsg = msgid2
         return tmsg
 
-# Path objects also implement Traversable, but they work with legacy APIs (str/PathLike).
+# Path objects also implement Traversable, but they work with legacy APIs.
 # Only return True for non-path Traversable objects that truly need the Traversable API.
 def _needs_traversable_api(file):
     if not isinstance(file, str | os.PathLike):
