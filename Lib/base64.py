@@ -327,9 +327,8 @@ def a85encode(b, *, foldspaces=False, wrapcol=0, pad=False, adobe=False):
     instead of 4 consecutive spaces (ASCII 0x20) as supported by 'btoa'. This
     feature is not supported by the standard encoding used in PDF.
 
-    wrapcol controls whether the output should have newline (b'\\n') characters
-    added to it. If this is non-zero, each output line will be at most this
-    many characters long, excluding the trailing newline.
+    If wrapcol is non-zero, insert a newline (b'\\n') character after at most
+    every wrapcol characters.
 
     pad controls whether zero-padding applied to the end of the input
     is fully retained in the output encoding, as done by btoa,
@@ -377,9 +376,10 @@ def a85decode(b, *, foldspaces=False, adobe=False, ignorechars=b' \t\n\r\v'):
     the leading <~ is not required, the input must end with ~>, or a
     ValueError is raised.
 
-    ignorechars should be a byte string containing characters to ignore from the
-    input. This should only contain whitespace characters, and by default
-    contains all whitespace characters in ASCII.
+    ignorechars should be a bytes-like object containing characters to
+    ignore from the input. This should only contain whitespace
+    characters, and by default contains all whitespace characters in
+    ASCII.
 
     The result is returned as a bytes object.
     """
