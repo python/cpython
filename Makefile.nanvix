@@ -104,9 +104,6 @@ ifdef CONFIG_NANVIX
     LIBCRYPTO := $(abspath $(NANVIX_HOME))/lib/libcrypto.a
     BUILD_PYTHON := $(NANVIX_TOOLCHAIN)/bin/python3
   endif
-
-  NANVIX_SYSROOT := $(SYSROOT_PATH)
-  export NANVIX_SYSROOT
 else
   ifneq ($(MAKECMDGOALS),clean)
     ifneq ($(MAKECMDGOALS),distclean)
