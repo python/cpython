@@ -291,6 +291,11 @@ Refer to the documentation of the individual functions for more information.
    Encode the :term:`bytes-like object` *s* using Z85 (as used in ZeroMQ)
    and return the encoded :class:`bytes`.
 
+   The `ZeroMQ specification <https://rfc.zeromq.org/spec/32/>`_
+   requires the length of Z85-encoded data to be a multiple of 5
+   bytes. To produce compliant data frames, you must pad the input
+   data to this function to a multiple of 4 bytes.
+
    .. versionadded:: 3.13
 
 
