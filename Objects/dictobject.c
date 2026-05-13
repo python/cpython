@@ -8222,17 +8222,23 @@ frozendict_repr(PyObject *self)
     return res;
 }
 
-// based on boost's old hash_combine
 static inline Py_uhash_t
 _combine_hashes(Py_uhash_t h1, Py_uhash_t h2)
 {
-    // 2^sizeof(Py_hash_t) / phi
 #if SIZEOF_PY_HASH_T == 8
+    // 2^sizeof(Py_hash_t) / phi
     const Py_uhash_t GOLDEN_C = 0x9e3779b97f4a7c15ULL;
+    h1 += GOLDEN_C;
+    h1 ^= h2;
+    h1 ^= (h1 << 13) + (h1 >> 3);
+    h1 ^= h1 >> 33;
 #else
     const Py_uhash_t GOLDEN_C = 0x9e3779b9UL;
+    h1 += GOLDEN_C;
+    h1 ^= h2;
+    h1 ^= (h1 << 6) + (h1 >> 2);
+    h1 ^= h1 >> 16;
 #endif
-    h1 ^= h2 + GOLDEN_C + (h1 << 6) + (h1 >> 2);
     return h1;
 }
 
