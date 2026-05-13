@@ -227,8 +227,7 @@ class ParseTest(unittest.TestCase):
             "Character data: '\xb5'",
             "End element: 'root'",
         ]
-        for operation, expected_operation in zip(operations, expected_operations):
-            self.assertEqual(operation, expected_operation)
+        self.assertEqual(operations, expected_operations)
 
     def test_parse_bytes(self):
         out = self.Outputter()
@@ -275,6 +274,79 @@ class ParseTest(unittest.TestCase):
             parser.ParseFile(file)
         self.assertEqual(expat.ErrorString(cm.exception.code),
                           expat.errors.XML_ERROR_FINISHED)
+
+    @support.subTests('encoding', [
+        'utf-8', 'utf-16', 'utf-16be', 'utf-16le',
+        'iso8859-1', 'iso8859-2', 'iso8859-3', 'iso8859-4', 'iso8859-5',
+        'iso8859-6', 'iso8859-7', 'iso8859-8', 'iso8859-9', 'iso8859-10',
+        'iso8859-13', 'iso8859-14', 'iso8859-15', 'iso8859-16',
+        'cp437', 'cp720', 'cp737', 'cp775', 'cp850', 'cp852',
+        'cp855', 'cp856', 'cp857', 'cp858', 'cp860', 'cp861', 'cp862',
+        'cp863', 'cp865', 'cp866', 'cp869', 'cp874', 'cp1006', 'cp1125',
+        'cp1250', 'cp1251', 'cp1252', 'cp1253', 'cp1254', 'cp1255',
+        'cp1256', 'cp1257', 'cp1258',
+        'mac-cyrillic', 'mac-greek', 'mac-iceland', 'mac-latin2',
+        'mac-roman', 'mac-turkish',
+        'koi8-r', 'koi8-t', 'koi8-u', 'kz1048', 'ptcp154',
+    ])
+    def test_supported_ecodings(self, encoding):
+        out = self.Outputter()
+        parser = expat.ParserCreate()
+        self._hookup_callbacks(parser, out)
+        c = 'éπя\u05d0\u060c€'.encode(encoding, 'ignore').decode(encoding)[0]
+        data = (f'<?xml version="1.0" encoding="{encoding}"?>\n'
+                f'<root>{c}</root>').encode(encoding)
+        parser.Parse(data, True)
+        self.assertEqual(out.out, [
+            ('XML declaration', ('1.0', encoding, -1)),
+            "Start element: 'root' {}",
+            f'Character data: {c!r}',
+            "End element: 'root'",
+        ])
+
+    @support.subTests('encoding', [
+        'UTF-8', 'utf-8', 'utf-16', 'utf-16le', 'utf-16be',
+        'koi8-u', 'cp1125', 'cp1251', 'iso8859-5', 'mac-cyrillic',
+    ])
+    def test_supported_ecodings2(self, encoding):
+        out = self.Outputter()
+        parser = expat.ParserCreate()
+        self._hookup_callbacks(parser, out)
+        data = (f'<?xml version="1.0" encoding="{encoding}"?>\n'
+                '<!-- коментар -->'
+                '<корінь атрибут="значення">зміст</корінь>').encode(encoding)
+        parser.Parse(data, True)
+        self.assertEqual(out.out, [
+            ('XML declaration', ('1.0', encoding, -1)),
+            "Comment: ' коментар '",
+            "Start element: 'корінь' {'атрибут': 'значення'}",
+            "Character data: 'зміст'",
+            "End element: 'корінь'",
+        ])
+
+    @support.subTests('encoding', [
+        'UTF-7',
+        "Big5-HKSCS", "Big5",
+        "cp932", "cp949", "cp950",
+        "EUC_JIS-2004", "EUC_JISX0213", "EUC-JP", "EUC-KR",
+        "GB18030", "GB2312", "GBK",
+        "ISO-2022-KR",
+        "johab",
+        "Shift_JIS", "Shift_JIS-2004", "Shift_JISX0213",
+    ])
+    def test_unsupportes_ecodings(self, encoding):
+        parser = expat.ParserCreate()
+        data = (f'<?xml version="1.0" encoding="{encoding}"?>\n'
+                '<root></root>').encode(encoding)
+        with self.assertRaises(ValueError):
+            parser.Parse(data, True)
+
+    def test_unknown_ecoding(self):
+        parser = expat.ParserCreate()
+        data = b'<?xml version="1.0" encoding="xyz"?>\n<root></root>'
+        with self.assertRaises(LookupError):
+            parser.Parse(data, True)
+
 
 class NamespaceSeparatorTest(unittest.TestCase):
     def test_legal(self):
