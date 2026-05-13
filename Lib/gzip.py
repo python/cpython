@@ -484,18 +484,14 @@ def _read_exact(fp, n):
     return data
 
 
-def _read_until_null(fp):
-    '''Read until the first encountered null byte in fp'''
-    result = io.BytesIO()
+def _read_until_null(fp, append_to):
+    '''Read until the first encountered null byte in fp.
+       Append to given byte array object'''
     while True:
         s = fp.read(1)
-        if not s:
-            raise EOFError("Compressed file ended before the "
-                           "end-of-stream marker was reached")
-        result.write(s)
-        if s == b'\000':
+        append_to += s
+        if not s or s == b'\000':
             break
-    return result.getvalue()
 
 
 def _read_gzip_header(fp):
@@ -535,9 +531,9 @@ def _read_gzip_header(fp):
         header += extra_len_bytes
         header += _read_exact(fp, extra_len)
     if flag & FNAME:
-        header += _read_until_null(fp)
+        _read_until_null(fp, append_to=header)
     if flag & FCOMMENT:
-        header += _read_until_null(fp)
+        _read_until_null(fp, append_to=header)
     if flag & FHCRC:
         # Header CRC is the last 16 bits of a crc32.
         header_crc, = struct.unpack("<H", _read_exact(fp, 2))
