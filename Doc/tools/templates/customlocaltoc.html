@@ -8,10 +8,10 @@
   <div>
     <div>
 {%- if parents %}
-{%- for parent in parents %}
+{%- for parent in parents[-4:] %}
       <h{{ loop.index0 + 3 }}>
-        <a href="{{ parent.link|e }}" 
-           title="{{ parent.title }}">
+        <a href="{{ parent.link|e }}"
+           title="{{ parent.title|striptags }}">
            {{ parent.title }}
         </a>
       </h{{ loop.index0 + 3 }}>
