@@ -4847,9 +4847,7 @@ type_new_set_attrs(const type_new_ctx *ctx, PyTypeObject *type)
     Py_ssize_t pos = 0;
     PyObject *key, *value;
     while (PyDict_Next(dict, &pos, &key, &value)) {
-        if (PyType_IS_GC(Py_TYPE(value)) && !_PyObject_HasDeferredRefcount(value) &&
-            (PyFunction_Check(value) || Py_TYPE(value)->tp_descr_get != NULL))
-        {
+        if (PyFunction_Check(value) || Py_TYPE(value)->tp_descr_get != NULL) {
             PyUnstable_Object_EnableDeferredRefcount(value);
         }
     }
@@ -6764,10 +6762,7 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
     // assigned to type objects.  This is important for `dataclass.__init__`,
     // which is generated dynamically, and for descriptor scaling on
     // free-threaded builds.
-    if (value != NULL &&
-        PyType_IS_GC(Py_TYPE(value)) &&
-        !_PyObject_HasDeferredRefcount(value) &&
-        (PyFunction_Check(value) || Py_TYPE(value)->tp_descr_get != NULL))
+    if (value != NULL && (PyFunction_Check(value) || Py_TYPE(value)->tp_descr_get != NULL))
     {
         PyUnstable_Object_EnableDeferredRefcount(value);
     }
