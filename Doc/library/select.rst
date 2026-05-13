@@ -300,7 +300,7 @@ Edge and level trigger polling (epoll) objects
 
    https://linux.die.net/man/4/epoll
 
-   *eventmask* parameter can be one of the following:
+   The *eventmask* is a bit mask using the following constants:
 
    +-------------------------+------------------------------------------------+
    | Constant                | Meaning                                        |
