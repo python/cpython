@@ -202,7 +202,7 @@ The module defines the following:
 
 .. _devpoll-objects:
 
-``/dev/poll`` Polling Objects
+``/dev/poll`` polling objects
 -----------------------------
 
 Solaris and derivatives have ``/dev/poll``. While :c:func:`!select` is
@@ -408,7 +408,7 @@ Edge and level trigger polling (epoll) objects
 
 .. _poll-objects:
 
-Polling Objects
+Polling objects
 ---------------
 
 The :c:func:`!poll` system call, supported on most Unix systems, provides better
@@ -501,7 +501,7 @@ linearly scanned again. :c:func:`!select` is *O*\ (*highest file descriptor*), w
 
 .. _kqueue-objects:
 
-Kqueue Objects
+Kqueue objects
 --------------
 
 .. method:: kqueue.close()
@@ -545,7 +545,7 @@ Kqueue Objects
 
 .. _kevent-objects:
 
-Kevent Objects
+Kevent objects
 --------------
 
 https://man.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
