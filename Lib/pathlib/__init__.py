@@ -12,12 +12,13 @@ import os
 import posixpath
 import sys
 from errno import *
-from glob import _StringGlobber, _no_recurse_symlinks
 from itertools import chain
 from stat import (
     S_IMODE, S_ISDIR, S_ISREG, S_ISLNK, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO,
 )
 from _collections_abc import Sequence
+lazy import shutil
+lazy from glob import _StringGlobber, _no_recurse_symlinks
 
 try:
     import pwd
@@ -988,6 +989,7 @@ class Path(PurePath):
     def write_bytes(self, data):
         """
         Open the file in bytes mode, write to it, and close the file.
+        Return the number of bytes written.
         """
         # type-check for the buffer interface before truncating the file
         view = memoryview(data)
@@ -997,6 +999,7 @@ class Path(PurePath):
     def write_text(self, data, encoding=None, errors=None, newline=None):
         """
         Open the file in text mode, write to it, and close the file.
+        Return the number of characters written.
         """
         # Call io.text_encoding() here to ensure any warning is raised at an
         # appropriate stack level.
@@ -1255,8 +1258,6 @@ class Path(PurePath):
         if self.is_symlink() or self.is_junction():
             self.unlink()
         elif self.is_dir():
-            # Lazy import to improve module import time
-            import shutil
             shutil.rmtree(self)
         else:
             self.unlink()

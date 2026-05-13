@@ -185,8 +185,8 @@ dealing with contradictions in ``make_bottom``.
 .. nonce: 6wDI6S
 .. section: Core and Builtins
 
-Ensure ``-X lazy_imports=none``` and ``PYTHON_LAZY_IMPORTS=none``` override
-``__lazy_modules__``. Patch by Hugo van Kemenade.
+Ensure ``-X lazy_imports=none`` and ``PYTHON_LAZY_IMPORTS=none`` override
+:attr:`~module.__lazy_modules__`. Patch by Hugo van Kemenade.
 
 ..
 

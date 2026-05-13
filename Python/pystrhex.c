@@ -36,7 +36,7 @@ _Py_hexlify_scalar(const unsigned char *src, Py_UCS1 *dst, Py_ssize_t len)
    adds a ton of complication. Who ever really hexes huge data?
    The 16-64 byte boosts align nicely with md5 - sha512 hexdigests.
 */
-#ifdef HAVE_EFFICIENT_BUILTIN_SHUFFLEVECTOR
+#ifdef _Py_HAVE_EFFICIENT_BUILTIN_SHUFFLEVECTOR
 
 /* 128-bit vector of 16 unsigned bytes */
 typedef unsigned char v16u8 __attribute__((vector_size(16)));
@@ -110,7 +110,7 @@ _Py_hexlify_simd(const unsigned char *src, Py_UCS1 *dst, Py_ssize_t len)
     _Py_hexlify_scalar(src + i, dst, len - i);
 }
 
-#endif /* HAVE_EFFICIENT_BUILTIN_SHUFFLEVECTOR */
+#endif /* _Py_HAVE_EFFICIENT_BUILTIN_SHUFFLEVECTOR */
 
 static PyObject *
 _Py_strhex_impl(const char* argbuf, Py_ssize_t arglen,
@@ -191,7 +191,7 @@ _Py_strhex_impl(const char* argbuf, Py_ssize_t arglen,
     unsigned char c;
 
     if (bytes_per_sep_group == 0) {
-#ifdef HAVE_EFFICIENT_BUILTIN_SHUFFLEVECTOR
+#ifdef _Py_HAVE_EFFICIENT_BUILTIN_SHUFFLEVECTOR
         if (arglen >= 16) {
             _Py_hexlify_simd((const unsigned char *)argbuf, retbuf, arglen);
         }
