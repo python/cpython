@@ -6765,8 +6765,8 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
     // which is generated dynamically, and for descriptor scaling on
     // free-threaded builds.
     if (value != NULL &&
-        !_PyObject_HasDeferredRefcount(value) &&
         PyType_IS_GC(Py_TYPE(value)) &&
+        !_PyObject_HasDeferredRefcount(value) &&
         (PyFunction_Check(value) || Py_TYPE(value)->tp_descr_get != NULL))
     {
         PyUnstable_Object_EnableDeferredRefcount(value);
