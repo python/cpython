@@ -394,7 +394,7 @@ In list, tuple and dictionary (but not set) displays, the series may be empty::
    >>> []  # empty list
    []
    >>> ()  # empty tuple
-   []
+   ()
    >>> {}  # empty dictionary
    {}
 
