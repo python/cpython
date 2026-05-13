@@ -1479,7 +1479,7 @@ PyUnknownEncodingHandler(void *encodingHandlerData,
         if (attr != NULL) {
             int is_single_byte = PyObject_IsTrue(attr);
             Py_DECREF(attr);
-            if (is_single_byte <= 0) {
+            if (is_single_byte <= 0) {  // error or false
                 Py_DECREF(codec);
                 if (is_single_byte == 0) {
                     PyErr_SetString(PyExc_ValueError,
