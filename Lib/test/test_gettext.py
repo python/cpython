@@ -1,3 +1,6 @@
+from collections.abc import Iterator
+from importlib.resources.abc import Traversable
+import io
 import os
 import base64
 import gettext
@@ -207,6 +210,73 @@ OiBucGx1cmFscz0yOyBwbHVyYWw9KG4gIT0gMSk7CiMtIy0jLSMtIyAgbWVzc2FnZXMucG8gKEVk
 WCBTdHVkaW8pICAjLSMtIy0jLSMKQ29udGVudC1UeXBlOiB0ZXh0L3BsYWluOyBjaGFyc2V0PVVU
 Ri04CgA=
 '''
+
+
+ROOT_VFS = {
+    "locale": {
+        "ga_IE": {"LC_MESSAGES": {"mofile.mo": GNU_MO_DATA}},
+        "es_ES": {"LC_MESSAGES": {"mofile.mo": GNU_MO_DATA}},
+    },
+}
+
+
+class MockTraversable(Traversable):
+    def __init__(self, path, vfs):
+        self.path = path
+        self.vfs = vfs
+
+    def __str__(self) -> str:
+        return self.path
+
+    @property
+    def name(self):
+        return self.path.split('/')[-1]
+
+    def joinpath(self, *args):
+        vfs = self.vfs
+        for name in args:
+            if vfs:
+                vfs = vfs.get(name)
+        return MockTraversable(self.path + "/" + "/".join(args), vfs)
+
+    def is_file(self):
+        return isinstance(self.vfs, bytes)
+
+    def open(self, mode='r', *args, **kwargs):
+        if "b" in mode:
+            return io.BytesIO(base64.decodebytes(self.vfs))
+        else:
+            return io.StringIO(base64.decodebytes(self.vfs).decode(encoding=kwargs.get('encoding', 'utf-8')))
+
+    def is_dir(self):
+        return isinstance(self.vfs, dict)
+
+    def iterdir(self) -> Iterator[Traversable]:
+        for name in self.vfs.keys():
+            yield self.joinpath(name)
+
+    def read_bytes(self) -> bytes:
+        with self.open('rb') as strm:
+            return strm.read()
+
+    def read_text(self, encoding) -> str:
+        with self.open(encoding=encoding) as strm:
+            return strm.read()
+
+    def __eq__(self, value: object) -> bool:
+        if not isinstance(value, MockTraversable):
+            return False
+        return self.path == value.path
+
+    def __lt__(self, other):
+        return self.path < other.path
+
+    def __gt__(self, other):
+        return self.path > other.path
+
+    def __hash__(self):
+        return hash(self.path)
+
 
 class GettextTestCase1(GettextBaseTest):
     def setUp(self):
@@ -926,6 +996,14 @@ class FindTestCase(unittest.TestCase):
                               languages=['ga_IE', 'ga_IE'], all=True)
         self.assertEqual(result, mo_file)
 
+    def test_find_with_traversable_directory(self):
+        traversable_dir = MockTraversable("/", ROOT_VFS)
+        result = gettext.find('mofile',
+                              localedir=traversable_dir.joinpath("locale"),
+                              languages=["ga_IE", "es_ES"], all=True)
+        self.assertEqual(sorted(result), sorted((traversable_dir.joinpath("locale", "ga_IE", "LC_MESSAGES", "mofile.mo"),
+                                                 traversable_dir.joinpath("locale", "es_ES", "LC_MESSAGES", "mofile.mo"))))
+
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
@@ -934,14 +1012,30 @@ class MiscTestCase(unittest.TestCase):
 
     @cpython_only
     def test_lazy_import(self):
-        ensure_lazy_imports("gettext", {"re", "warnings", "locale"})
+        ensure_lazy_imports("gettext", {"re", "warnings", "locale", "importlib.resources.abc"})
 
 
-class TranslationFallbackTestCase(unittest.TestCase):
+class TranslationTestCase(unittest.TestCase):
     def test_translation_fallback(self):
         with os_helper.temp_cwd() as tempdir:
             t = gettext.translation('gettext', localedir=tempdir, fallback=True)
             self.assertIsInstance(t, gettext.NullTranslations)
+
+    def test_translation_with_traversable_directory(self):
+        traversable_dir = MockTraversable("/", ROOT_VFS)
+        trans = gettext.translation('mofile', localedir=traversable_dir.joinpath(
+            "locale"), languages=["ga_IE", "es_ES"])
+        self.assertIsInstance(trans, gettext.GNUTranslations)
+
+
+class NeedsTraversableApiTestCase(unittest.TestCase):
+    def test_needs_traversable_api_function(self):
+        from pathlib import Path
+        from gettext import _needs_traversable_api
+
+        self.assertFalse(_needs_traversable_api("some/path"))
+        self.assertFalse(_needs_traversable_api(Path("some/path")))
+        self.assertFalse(_needs_traversable_api(Path("some/path")))
 
 
 if __name__ == '__main__':
