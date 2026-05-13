@@ -572,6 +572,12 @@ pysentinel_check(PyObject *self, PyObject *obj)
     return PyBool_FromLong(PySentinel_Check(obj));
 }
 
+static PyObject *
+pysentinel_checkexact(PyObject *self, PyObject *obj)
+{
+    return PyBool_FromLong(PySentinel_CheckExact(obj));
+}
+
 
 static PyMethodDef test_methods[] = {
     {"call_pyobject_print", call_pyobject_print, METH_VARARGS},
@@ -604,6 +610,7 @@ static PyMethodDef test_methods[] = {
     {"pyobject_dump", pyobject_dump, METH_VARARGS},
     {"pysentinel_new", pysentinel_new, METH_VARARGS},
     {"pysentinel_check", pysentinel_check, METH_O},
+    {"pysentinel_checkexact", pysentinel_checkexact, METH_O},
     {NULL},
 };
 
