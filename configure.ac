@@ -8047,6 +8047,7 @@ AS_CASE([$ac_sys_system],
       [termios],
       [xxlimited],
       [xxlimited_35],
+      [xxlimited_3_13],
     )
   ],
   [PY_STDLIB_MOD_SET_NA([_scproxy])]
@@ -8438,6 +8439,7 @@ dnl Limited API template modules.
 dnl Emscripten does not support shared libraries yet.
 PY_STDLIB_MOD([xxlimited], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 PY_STDLIB_MOD([xxlimited_35], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
+PY_STDLIB_MOD([xxlimited_3_13], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 
 # Determine JIT stencils header files based on target platform
 JIT_STENCILS_H=""
