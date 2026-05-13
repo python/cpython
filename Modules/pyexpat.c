@@ -1472,16 +1472,16 @@ PyUnknownEncodingHandler(void *encodingHandlerData,
     }
     if (!PyTuple_CheckExact(codec)) {
         PyObject *attr;
-        if (PyObject_GetOptionalAttrString(codec, "_is_single_byte", &attr) < 0) {
+        if (PyObject_GetOptionalAttrString(codec, "_is_multibyte", &attr) < 0) {
             Py_DECREF(codec);
             return XML_STATUS_ERROR;
         }
         if (attr != NULL) {
-            int is_single_byte = PyObject_IsTrue(attr);
+            int is_multibyte = PyObject_IsTrue(attr);
             Py_DECREF(attr);
-            if (is_single_byte <= 0) {  // error or false
+            if (is_multibyte != 0) {  // true or error
                 Py_DECREF(codec);
-                if (is_single_byte == 0) {
+                if (is_multibyte > 0) {  // true
                     PyErr_SetString(PyExc_ValueError,
                                     "multi-byte encodings are not supported");
                 }
