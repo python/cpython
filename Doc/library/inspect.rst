@@ -416,6 +416,9 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    Return ``True`` if the object is a class, whether built-in or created in Python
    code.
 
+   This function returns ``False`` for :ref:`generic aliases <types-genericalias>` of classes,
+   such as ``list[int]``.
+
 
 .. function:: ismethod(object)
 
