@@ -1800,6 +1800,25 @@ then
   AC_MSG_ERROR([--disable-gil cannot be used with --with-trace-refs])
 fi
 
+# Check for --enable-stackref-debug
+AC_MSG_CHECKING([for --enable-stackref-debug])
+AC_ARG_ENABLE([stackref-debug],
+  AS_HELP_STRING(
+    [--enable-stackref-debug],
+    [enable Py_STACKREF_DEBUG]
+  ),
+  [],
+  [enable_stackref_debug=no]
+)
+
+AC_MSG_RESULT([$enable_stackref_debug])
+
+if test "$enable_stackref_debug" = "yes"
+then
+  AC_DEFINE([Py_STACKREF_DEBUG], [1],
+            [Define if you want to enable stackref debugging])
+fi
+
 # Check for --enable-pystats
 AC_MSG_CHECKING([for --enable-pystats])
 AC_ARG_ENABLE([pystats],

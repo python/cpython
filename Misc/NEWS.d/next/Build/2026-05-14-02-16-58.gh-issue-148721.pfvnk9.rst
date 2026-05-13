@@ -1,0 +1,2 @@
+Add a ``./configure --enable-stackref-debug`` option to enable
+``Py_STACKREF_DEBUG`` on POSIX platforms.
