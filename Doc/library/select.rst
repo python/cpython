@@ -37,7 +37,7 @@ The module defines the following:
 
 .. function:: devpoll()
 
-   (Only supported on Solaris and derivatives.)  Returns a ``/dev/poll``
+   Returns a ``/dev/poll``
    polling object; see section :ref:`devpoll-objects` below for the
    methods supported by devpoll objects.
 
@@ -54,9 +54,11 @@ The module defines the following:
    .. versionchanged:: 3.4
       The new file descriptor is now non-inheritable.
 
+   .. availability:: Solaris and derivatives.
+
 .. function:: epoll(sizehint=-1, flags=0)
 
-   (Only supported on Linux 2.5.44 and newer.) Return an edge polling object,
+   Return an edge polling object,
    which can be used as Edge or Level Triggered interface for I/O
    events.
 
@@ -94,18 +96,24 @@ The module defines the following:
       When CPython is built, this function may be disabled using
       :option:`--disable-epoll`.
 
+   .. availability:: Linux 2.5.44 and newer.
+
 
 .. function:: poll()
 
-   (Not supported by all operating systems.)  Returns a polling object, which
+   Returns a polling object, which
    supports registering and unregistering file descriptors, and then polling them
    for I/O events; see section :ref:`poll-objects` below for the methods supported
    by polling objects.
 
+   Not supported by all operating systems.
+
+   .. availability:: Unix.
+
 
 .. function:: kqueue()
 
-   (Only supported on BSD.)  Returns a kernel queue object; see section
+   Returns a kernel queue object; see section
    :ref:`kqueue-objects` below for the methods supported by kqueue objects.
 
    The new file descriptor is :ref:`non-inheritable <fd_inheritance>`.
@@ -113,11 +121,15 @@ The module defines the following:
    .. versionchanged:: 3.4
       The new file descriptor is now non-inheritable.
 
+   .. availability:: BSD and macOS.
+
 
 .. function:: kevent(ident, filter=KQ_FILTER_READ, flags=KQ_EV_ADD, fflags=0, data=0, udata=0)
 
-   (Only supported on BSD.)  Returns a kernel event object; see section
+   Returns a kernel event object; see section
    :ref:`kevent-objects` below for the methods supported by kevent objects.
+
+   .. availability:: BSD and macOS.
 
 
 .. function:: select(rlist, wlist, xlist, timeout=None)
