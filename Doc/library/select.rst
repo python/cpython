@@ -106,8 +106,6 @@ The module defines the following:
    for I/O events; see section :ref:`poll-objects` below for the methods supported
    by polling objects.
 
-   Not supported by all operating systems.
-
    .. availability:: Unix.
 
 
@@ -202,7 +200,7 @@ The module defines the following:
 
 .. _devpoll-objects:
 
-``/dev/poll`` polling objects
+``/dev/poll`` Polling objects
 -----------------------------
 
 Solaris and derivatives have ``/dev/poll``. While :c:func:`!select` is
