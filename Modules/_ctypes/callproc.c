@@ -537,7 +537,7 @@ PyCArg_repr(PyObject *op)
 
     case 'q':
     case 'Q':
-        return PyUnicode_FromFormat("<cparam '%c' (%lld)>",
+        return PyUnicode_FromFormat("<cparam '%s' (%lld)>",
             self->tag, self->value.q);
     case 'd':
     case 'f': {
