@@ -5858,7 +5858,8 @@ type and the :class:`bytes` data type:
 
 ``GenericAlias`` objects are instances of the class
 :class:`types.GenericAlias`, which can also be used to create ``GenericAlias``
-objects directly.
+objects directly. Specializations of user-defined :ref:`generic classes <generic-classes>`
+may not be instances of :class:`types.GenericAlias`, but they provide similar functionality.
 
 .. describe:: T[X, Y, ...]
 
