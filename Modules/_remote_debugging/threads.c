@@ -338,11 +338,12 @@ unwind_stack_for_thread(
     PyObject *result = NULL;
     StackChunkList chunks = {0};
 
-    char ts[SIZEOF_THREAD_STATE];
+    char local_ts[SIZEOF_THREAD_STATE];
     char local_prefetched_frame[SIZEOF_INTERP_FRAME];
+    const char *ts;
     RemoteReadPrefetch ctx_prefetch = {0};
     if (prefetch->tstate && prefetch->tstate_addr == *current_tstate) {
-        memcpy(ts, prefetch->tstate, (size_t)unwinder->debug_offsets.thread_state.size);
+        ts = prefetch->tstate;
         if (prefetch->frame) {
             ctx_prefetch.frame = prefetch->frame;
             ctx_prefetch.frame_addr = prefetch->frame_addr;
@@ -356,33 +357,35 @@ unwind_stack_for_thread(
             predicted_frame_addr = entry->addrs[0];
         }
 
-        int bytes_read = read_thread_state_and_maybe_frame(
+        int rc = read_thread_state_and_maybe_frame(
             unwinder,
             *current_tstate,
             (size_t)unwinder->debug_offsets.thread_state.size,
-            ts,
+            local_ts,
             predicted_frame_addr,
             local_prefetched_frame,
             &have_prefetched_frame);
-        if (bytes_read < 0) {
+        if (rc < 0) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read thread state");
             goto error;
         }
+        ts = local_ts;
         if (have_prefetched_frame) {
             ctx_prefetch.frame = local_prefetched_frame;
             ctx_prefetch.frame_addr = predicted_frame_addr;
         }
     }
     else {
-        int bytes_read = _Py_RemoteDebug_ReadRemoteMemory(
+        int rc = _Py_RemoteDebug_ReadRemoteMemory(
             &unwinder->handle,
             *current_tstate,
             (size_t)unwinder->debug_offsets.thread_state.size,
-            ts);
-        if (bytes_read < 0) {
+            local_ts);
+        if (rc < 0) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read thread state");
             goto error;
         }
+        ts = local_ts;
     }
     STATS_INC(unwinder, memory_reads);
     STATS_ADD(unwinder, memory_bytes_read, unwinder->debug_offsets.thread_state.size);

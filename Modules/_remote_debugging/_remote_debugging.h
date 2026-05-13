@@ -244,6 +244,10 @@ typedef struct {
     uintptr_t thread_state_addr;
 } InterpreterThreadCacheEntry;
 
+// Carries already-read thread state and/or frame buffers across helpers so the
+// downstream callee can skip a remote read. Address fields are caller-supplied
+// inputs; buffer pointers (tstate, frame) are NULL unless a prior batched read
+// successfully populated them.
 typedef struct {
     const char *tstate;
     uintptr_t tstate_addr;
@@ -350,8 +354,10 @@ typedef struct {
     int cache_frames;
     int collect_stats;  // whether to collect statistics
     uint32_t stale_invalidation_counter;  // counter for throttling frame_cache_invalidate_stale
-    uintptr_t cached_tstate_interpreter_addr;  // hot last-interpreter prediction
-    uintptr_t cached_tstate_addr;  // hot first-thread prediction
+    // L1 single-entry shortcut over cached_tstates[]: most workloads sample one
+    // interpreter, so check this pair before hashing into the table below.
+    uintptr_t cached_tstate_interpreter_addr;
+    uintptr_t cached_tstate_addr;
     RemoteDebuggingState *cached_state;
     FrameCacheEntry *frame_cache;  // preallocated array of FRAME_CACHE_MAX_THREADS entries
     UnwinderStats stats;  // statistics for performance analysis

@@ -477,7 +477,7 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
     return 0;
 }
 
-static size_t
+static inline size_t
 interpreter_thread_cache_index(uintptr_t interpreter_addr)
 {
     // Direct-mapped table indexed by the remote interpreter address. Each entry
@@ -487,7 +487,7 @@ interpreter_thread_cache_index(uintptr_t interpreter_addr)
         & (INTERPRETER_THREAD_CACHE_SIZE - 1);
 }
 
-static uintptr_t
+static inline uintptr_t
 get_cached_tstate_for_interpreter(
     RemoteUnwinderObject *self,
     uintptr_t interpreter_addr)
@@ -510,7 +510,7 @@ get_cached_tstate_for_interpreter(
     return 0;
 }
 
-static void
+static inline void
 set_cached_tstate_for_interpreter(
     RemoteUnwinderObject *self,
     uintptr_t interpreter_addr,
@@ -759,7 +759,7 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
             // Target specific thread (only process first interpreter)
             current_tstate = self->tstate_addr;
         }
-        if (current_tstate != 0) {
+        if (current_tstate != 0 && self->cache_frames) {
             set_cached_tstate_for_interpreter(self, current_interpreter, current_tstate);
         }
 
