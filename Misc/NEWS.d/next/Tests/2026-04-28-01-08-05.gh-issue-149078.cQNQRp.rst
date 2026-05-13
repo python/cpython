@@ -1,0 +1,3 @@
+This change adds a _have_socket_udplite() helper that performs a runtime
+check by attempting to create a UDPLite socket, aligning its behavior with
+other optional protocols like RDS or AF_ALG.
