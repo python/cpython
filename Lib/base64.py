@@ -376,10 +376,9 @@ def a85decode(b, *, foldspaces=False, adobe=False, ignorechars=b' \t\n\r\v'):
     the leading <~ is not required, the input must end with ~>, or a
     ValueError is raised.
 
-    ignorechars should be a bytes-like object containing characters to
-    ignore from the input. This should only contain whitespace
-    characters, and by default contains all whitespace characters in
-    ASCII.
+    ignorechars should be a byte string containing characters to ignore from the
+    input. This should only contain whitespace characters, and by default
+    contains all whitespace characters in ASCII.
 
     The result is returned as a bytes object.
     """

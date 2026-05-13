@@ -257,9 +257,8 @@ Refer to the documentation of the individual functions for more information.
    present. While the leading ``<~`` is not required, the input must
    end with ``~>``, or a :exc:`ValueError` is raised.
 
-   *ignorechars* should be a :term:`bytes-like object` containing characters
-   to ignore from the input.
-   This should only contain whitespace characters, and by
+   *ignorechars* should be a byte string containing characters to ignore
+   from the input. This should only contain whitespace characters, and by
    default contains all whitespace characters in ASCII.
 
    .. versionadded:: 3.4
