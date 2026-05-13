@@ -487,6 +487,8 @@ class GNUTranslations(NullTranslations):
 
 # Locate a .mo file using the gettext strategy
 def find(domain, localedir=None, languages=None, all=False):
+    from importlib.resources.abc import Traversable
+
     # Get some reasonable defaults for arguments that were not supplied
     if localedir is None:
         localedir = _default_localedir
@@ -513,8 +515,13 @@ def find(domain, localedir=None, languages=None, all=False):
     for lang in nelangs:
         if lang == 'C':
             break
-        mofile = os.path.join(localedir, lang, 'LC_MESSAGES', '%s.mo' % domain)
-        if os.path.exists(mofile):
+        if isinstance(localedir, Traversable):
+            mofile = localedir.joinpath(lang, 'LC_MESSAGES', '%s.mo' % domain)
+            is_exists= mofile.is_file()
+        else:
+            mofile = os.path.join(localedir, lang, 'LC_MESSAGES', '%s.mo' % domain)
+            is_exists = os.path.exists(mofile)
+        if is_exists:
             if all:
                 result.append(mofile)
             else:
@@ -528,6 +535,8 @@ _translations = {}
 
 def translation(domain, localedir=None, languages=None,
                 class_=None, fallback=False):
+    from importlib.resources.abc import Traversable
+
     if class_ is None:
         class_ = GNUTranslations
     mofiles = find(domain, localedir, languages, all=True)
@@ -541,10 +550,10 @@ def translation(domain, localedir=None, languages=None,
     # once.
     result = None
     for mofile in mofiles:
-        key = (class_, os.path.abspath(mofile))
+        key = (class_, mofile if isinstance(mofile,Traversable) else os.path.abspath(mofile))
         t = _translations.get(key)
         if t is None:
-            with open(mofile, 'rb') as fp:
+            with (mofile.open('rb') if isinstance(mofile,Traversable) else open(mofile, 'rb')) as fp:
                 t = _translations.setdefault(key, class_(fp))
         # Copy the translation object to allow setting fallbacks and
         # output charset. All other instance data is shared with the
