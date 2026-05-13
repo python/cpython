@@ -4841,6 +4841,20 @@ type_new_set_attrs(const type_new_ctx *ctx, PyTypeObject *type)
     if (type_new_set_classdictcell(dict) < 0) {
         return -1;
     }
+
+#ifdef Py_GIL_DISABLED
+    // enable deferred reference counting on functions and descriptors
+    Py_ssize_t pos = 0;
+    PyObject *key, *value;
+    while (PyDict_Next(dict, &pos, &key, &value)) {
+        if (PyType_IS_GC(Py_TYPE(value)) && !_PyObject_HasDeferredRefcount(value) &&
+            (PyFunction_Check(value) || Py_TYPE(value)->tp_descr_get != NULL))
+        {
+            PyUnstable_Object_EnableDeferredRefcount(value);
+        }
+    }
+#endif
+
     return 0;
 }
 
@@ -6350,13 +6364,6 @@ _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef
 
     PyObject *res_obj = PyStackRef_AsPyObjectBorrow(*out);
 #if Py_GIL_DISABLED
-    // Optimistically enable deferred refcounting on descriptors
-    if (res_obj != NULL &&
-        PyType_IS_GC(Py_TYPE(res_obj)) &&
-        !_PyObject_HasDeferredRefcount(res_obj) &&
-        Py_TYPE(res_obj)->tp_descr_get != NULL) {
-        PyUnstable_Object_EnableDeferredRefcount(res_obj);
-    }
     update_cache_gil_disabled(entry, name, version_tag, res_obj);
 #else
     PyObject *old_value = update_cache(entry, name, version_tag, res_obj);
@@ -6753,12 +6760,14 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
     assert(!_PyType_HasFeature(metatype, Py_TPFLAGS_MANAGED_DICT));
 
 #ifdef Py_GIL_DISABLED
-    // gh-139103: Enable deferred refcounting for functions assigned
-    // to type objects.  This is important for `dataclass.__init__`,
-    // which is generated dynamically.
+    // gh-139103: Enable deferred refcounting for functions and descriptors
+    // assigned to type objects.  This is important for `dataclass.__init__`,
+    // which is generated dynamically, and for descriptor scaling on
+    // free-threaded builds.
     if (value != NULL &&
-        PyFunction_Check(value) &&
-        !_PyObject_HasDeferredRefcount(value))
+        !_PyObject_HasDeferredRefcount(value) &&
+        PyType_IS_GC(Py_TYPE(value)) &&
+        (PyFunction_Check(value) || Py_TYPE(value)->tp_descr_get != NULL))
     {
         PyUnstable_Object_EnableDeferredRefcount(value);
     }
