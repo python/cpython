@@ -1174,6 +1174,38 @@ _Py_ReachedRecursionLimit(PyThreadState *tstate)  {
 #define DONT_SLP_VECTORIZE
 #endif
 
+#ifdef WITH_DTRACE
+static void
+dtrace_function_entry(_PyInterpreterFrame *frame)
+{
+    const char *filename;
+    const char *funcname;
+    int lineno;
+
+    PyCodeObject *code = _PyFrame_GetCode(frame);
+    filename = PyUnicode_AsUTF8(code->co_filename);
+    funcname = PyUnicode_AsUTF8(code->co_name);
+    lineno = PyUnstable_InterpreterFrame_GetLine(frame);
+
+    PyDTrace_FUNCTION_ENTRY(filename, funcname, lineno);
+}
+
+static void
+dtrace_function_return(_PyInterpreterFrame *frame)
+{
+    const char *filename;
+    const char *funcname;
+    int lineno;
+
+    PyCodeObject *code = _PyFrame_GetCode(frame);
+    filename = PyUnicode_AsUTF8(code->co_filename);
+    funcname = PyUnicode_AsUTF8(code->co_name);
+    lineno = PyUnstable_InterpreterFrame_GetLine(frame);
+
+    PyDTrace_FUNCTION_RETURN(filename, funcname, lineno);
+}
+#endif
+
 PyObject* _Py_HOT_FUNCTION DONT_SLP_VECTORIZE
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
@@ -1305,7 +1337,7 @@ early_exit:
 }
 #ifdef _Py_TIER2
 #ifdef _Py_JIT
-_PyJitEntryFuncPtr _Py_jit_entry = _PyJIT;
+_PyJitEntryFuncPtr _Py_jit_entry = _PyJIT_Entry;
 #else
 _PyJitEntryFuncPtr _Py_jit_entry = _PyTier2Interpreter;
 #endif
@@ -3027,25 +3059,35 @@ error:
     return res;
 }
 
+static int
+is_lazy_import_module_level(void)
+{
+    _PyInterpreterFrame *frame = _PyEval_GetFrame();
+    return frame != NULL && frame->f_globals == frame->f_locals;
+}
+
 PyObject *
 _PyEval_LazyImportName(PyThreadState *tstate, PyObject *builtins,
                        PyObject *globals, PyObject *locals, PyObject *name,
                        PyObject *fromlist, PyObject *level, int lazy)
 {
     PyObject *res = NULL;
+    PyImport_LazyImportsMode mode = PyImport_GetLazyImportsMode();
     // Check if global policy overrides the local syntax
-    switch (PyImport_GetLazyImportsMode()) {
+    switch (mode) {
         case PyImport_LAZY_NONE:
             lazy = 0;
             break;
         case PyImport_LAZY_ALL:
-            lazy = 1;
+            if (!lazy) {
+                lazy = is_lazy_import_module_level();
+            }
             break;
         case PyImport_LAZY_NORMAL:
             break;
     }
 
-    if (!lazy && PyImport_GetLazyImportsMode() != PyImport_LAZY_NONE) {
+    if (!lazy && mode != PyImport_LAZY_NONE && is_lazy_import_module_level()) {
         // See if __lazy_modules__ forces this to be lazy.
         lazy = check_lazy_import_compatibility(tstate, globals, name, level);
         if (lazy < 0) {

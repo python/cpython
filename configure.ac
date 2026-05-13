@@ -10,7 +10,7 @@ dnl to regenerate the configure script.
 dnl
 
 # Set VERSION so we only need to edit in one place (i.e., here)
-m4_define([PYTHON_VERSION], [3.15])
+m4_define([PYTHON_VERSION], [3.16])
 
 AC_PREREQ([2.72])
 
@@ -99,7 +99,7 @@ AC_SUBST([BASECPPFLAGS])
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     # If we're building out-of-tree, we need to make sure the following
     # resources get picked up before their $srcdir counterparts.
-    #   Objects/ -> typeslots.inc
+    #   Objects/ -> slots_generated.c
     #   Include/ -> Python.h
     # (A side effect of this is that these resources will automatically be
     #  regenerated when building out-of-tree, regardless of whether or not
@@ -205,7 +205,7 @@ AC_SUBST([FREEZE_MODULE_DEPS])
 AC_SUBST([PYTHON_FOR_BUILD_DEPS])
 
 AC_CHECK_PROGS([PYTHON_FOR_REGEN],
-  [python$PACKAGE_VERSION python3.15 python3.14 python3.13 python3.12 python3.11 python3.10 python3 python],
+  [python$PACKAGE_VERSION python3.16 python3.15 python3.14 python3.13 python3.12 python3.11 python3.10 python3 python],
   [python3])
 AC_SUBST([PYTHON_FOR_REGEN])
 
@@ -2406,7 +2406,7 @@ AS_CASE([$ac_sys_system],
     dnl Include file system support
     AS_VAR_APPEND([LINKFORSHARED], [" -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY,ERRNO_CODES"])
-    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,_PyGILState_GetThisThreadState,__Py_DumpTraceback,__PyEM_EMSCRIPTEN_TRAMPOLINE_OFFSET"])
+    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,_PyGILState_GetThisThreadState,__PyEM_EMSCRIPTEN_TRAMPOLINE_OFFSET"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sSTACK_SIZE=5MB"])
     dnl Avoid bugs in JS fallback string decoding path
     AS_VAR_APPEND([LINKFORSHARED], [" -sTEXTDECODER=2"])
@@ -2529,7 +2529,51 @@ then
   AX_CHECK_COMPILE_FLAG([-D_FORTIFY_SOURCE=3], [CFLAGS_NODIST="$CFLAGS_NODIST -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3"], [AC_MSG_WARN([-D_FORTIFY_SOURCE=3 not supported])], [-Werror])
 fi
 
+AC_MSG_CHECKING([whether to build with frame pointers])
+AC_ARG_WITH([frame-pointers],
+  [AS_HELP_STRING([--without-frame-pointers],
+                  [build without frame pointers (default is no)])],
+  [],
+  [with_frame_pointers=yes])
+AC_MSG_RESULT([$with_frame_pointers])
+
 AS_VAR_IF([ac_cv_gcc_compat], [yes], [
+    dnl Keep frame pointers in CPython, stdlib objects, and third-party
+    dnl extensions built against this Python (BASECFLAGS propagates via
+    dnl sysconfig) so native profilers can unwind interpreter frames and
+    dnl generated trampolines without DWARF.
+    frame_pointer_cflags=
+    AX_CHECK_COMPILE_FLAG([-fno-omit-frame-pointer], [
+      frame_pointer_cflags="-fno-omit-frame-pointer"
+      AX_CHECK_COMPILE_FLAG([-mno-omit-leaf-frame-pointer], [
+        frame_pointer_cflags="$frame_pointer_cflags -mno-omit-leaf-frame-pointer"
+      ], [], [-Werror])
+      AS_CASE([$host_cpu], [arm|armv*], [
+        dnl GCC uses "-marm"; clang uses "-mno-thumb"
+        AX_CHECK_COMPILE_FLAG([-marm], [
+          frame_pointer_cflags="$frame_pointer_cflags -marm"
+        ], [], [-Werror])
+        AX_CHECK_COMPILE_FLAG([-mno-thumb], [
+          frame_pointer_cflags="$frame_pointer_cflags -mno-thumb"
+        ], [], [-Werror])
+      ])
+      AS_CASE([$host_cpu], [powerpc64le], [
+        frame_pointer_cflags=""
+      ])
+      AS_CASE([$host_cpu], [s390*], [
+        AX_CHECK_COMPILE_FLAG([-mbackchain], [
+          dnl Do not use no-omit-frame-pointer; see gh-149362
+          frame_pointer_cflags="-mbackchain"
+        ], [], [-Werror])
+      ])
+    ], [], [-Werror])
+    if test -n "$frame_pointer_cflags" && test "x$with_frame_pointers" != xno; then
+      BASECFLAGS="$frame_pointer_cflags $BASECFLAGS"
+      AC_DEFINE([_Py_WITH_FRAME_POINTERS], [1],
+                [Define to 1 if frame unwinding via pointers is expected
+                 to work, 0 if not. Leave undefined if unknown.])
+    fi
+
     CFLAGS_NODIST="$CFLAGS_NODIST -std=c11"
 
     PY_CHECK_CC_WARNING([enable], [extra], [if we can add -Wextra])
@@ -3788,11 +3832,6 @@ AC_MSG_RESULT([$perf_trampoline])
 AS_VAR_IF([perf_trampoline], [yes], [
   AC_DEFINE([PY_HAVE_PERF_TRAMPOLINE], [1], [Define to 1 if you have the perf trampoline.])
   PERF_TRAMPOLINE_OBJ=Python/asm_trampoline.o
-
-  dnl perf needs frame pointers for unwinding, include compiler option in debug builds
-  AS_VAR_IF([Py_DEBUG], [true], [
-    AS_VAR_APPEND([BASECFLAGS], [" -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer"])
-  ])
 ])
 AC_SUBST([PERF_TRAMPOLINE_OBJ])
 
@@ -3808,6 +3847,24 @@ AC_CHECK_HEADERS([execinfo.h link.h dlfcn.h], [
     # dladdr1 requires -ldl
     ac_cv_require_ldl=yes
   ])
+])
+
+dnl for JIT GNU backtrace unwind registration
+AC_CACHE_CHECK([for libgcc frame registration functions],
+  [ac_cv_have_libgcc_eh_frame_registration],
+  [AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+void __register_frame(const void *);
+void __deregister_frame(const void *);
+]], [[
+__register_frame(0);
+__deregister_frame(0);
+]])],
+    [ac_cv_have_libgcc_eh_frame_registration=yes],
+    [ac_cv_have_libgcc_eh_frame_registration=no])
+  ])
+AS_VAR_IF([ac_cv_have_libgcc_eh_frame_registration], [yes], [
+  AC_DEFINE([HAVE_LIBGCC_EH_FRAME_REGISTRATION], [1],
+    [Define to 1 if libgcc __register_frame and __deregister_frame are linkable.])
 ])
 
 dnl only add -ldl to LDFLAGS if it isn't already part of LIBS (GH-133081)
@@ -4253,35 +4310,9 @@ if test "$ac_cv_ffi_complex_double_supported" = "yes"; then
               [Defined if _Complex C type can be used with libffi.])
 fi
 
-# Check for use of the system libmpdec library
-AC_MSG_CHECKING([for --with-system-libmpdec])
-AC_DEFUN([USE_BUNDLED_LIBMPDEC],
-         [LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
-          LIBMPDEC_LIBS="-lm \$(LIBMPDEC_A)"
-          LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"
-          have_mpdec=yes
-          with_system_libmpdec=no])
-AC_ARG_WITH(
-  [system_libmpdec],
-  [AS_HELP_STRING(
-    [--with-system-libmpdec],
-    [build _decimal module using an installed mpdecimal library, see Doc/library/decimal.rst (default is yes)]
-  )],
-  [AS_IF([test "x$with_system_libmpdec" = xno],
-         [USE_BUNDLED_LIBMPDEC()])],
-  [with_system_libmpdec="yes"])
-AC_MSG_RESULT([$with_system_libmpdec])
-
-AS_VAR_IF(
-  [with_system_libmpdec], [yes],
-  [PKG_CHECK_MODULES(
-    [LIBMPDEC], [libmpdec >= 2.5.0], [],
-    [LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
-     LIBMPDEC_LIBS=${LIBMPDEC_LIBS-"-lmpdec -lm"}
-     LIBMPDEC_INTERNAL=])])
-
-AS_VAR_IF([with_system_libmpdec], [yes],
-  [WITH_SAVE_ENV([
+dnl Check for libmpdec >= 2.5.0
+PKG_CHECK_MODULES([LIBMPDEC], [libmpdec >= 2.5.0], [have_mpdec=yes], [
+  WITH_SAVE_ENV([
     CPPFLAGS="$CPPFLAGS $LIBMPDEC_CFLAGS"
     LIBS="$LIBS $LIBMPDEC_LIBS"
 
@@ -4294,7 +4325,13 @@ AS_VAR_IF([with_system_libmpdec], [yes],
       ], [const char *x = mpd_version();])],
       [have_mpdec=yes],
       [have_mpdec=no])
-  ])])
+
+    AS_VAR_IF([have_mpdec], [yes], [
+     LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
+     LIBMPDEC_LIBS=${LIBMPDEC_LIBS-"-lmpdec -lm"}
+    ])
+  ])
+])
 
 # Disable forced inlining in debug builds, see GH-94847
 AS_VAR_IF(
@@ -4319,70 +4356,6 @@ then
 fi
 
 AC_MSG_RESULT([$with_decimal_contextvar])
-
-AS_VAR_IF(
-  [with_system_libmpdec], [no],
-  [# Check for libmpdec machine flavor
-   AC_MSG_CHECKING([for decimal libmpdec machine])
-   AS_CASE([$ac_sys_system],
-     [Darwin*], [libmpdec_system=Darwin],
-     [SunOS*], [libmpdec_system=sunos],
-     [libmpdec_system=other]
-   )
-
-   libmpdec_machine=unknown
-   if test "$libmpdec_system" = Darwin; then
-       # universal here means: build libmpdec with the same arch options
-       # the python interpreter was built with
-       libmpdec_machine=universal
-   elif test $ac_cv_sizeof_size_t -eq 8; then
-       if test "$ac_cv_gcc_asm_for_x64" = yes; then
-           libmpdec_machine=x64
-       elif test "$ac_cv_type___uint128_t" = yes; then
-           libmpdec_machine=uint128
-       else
-           libmpdec_machine=ansi64
-       fi
-   elif test $ac_cv_sizeof_size_t -eq 4; then
-       if test "$ac_cv_gcc_asm_for_x87" = yes -a "$libmpdec_system" != sunos; then
-           AS_CASE([$ac_cv_cc_name],
-               [*gcc*],   [libmpdec_machine=ppro],
-               [*clang*], [libmpdec_machine=ppro],
-               [libmpdec_machine=ansi32]
-           )
-       else
-           libmpdec_machine=ansi32
-       fi
-   fi
-   AC_MSG_RESULT([$libmpdec_machine])
-
-   AS_CASE([$libmpdec_machine],
-     [x64],         [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_64=1 -DASM=1"])],
-     [uint128],     [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_64=1 -DANSI=1 -DHAVE_UINT128_T=1"])],
-     [ansi64],      [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_64=1 -DANSI=1"])],
-     [ppro],        [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_32=1 -DANSI=1 -DASM=1 -Wno-unknown-pragmas"])],
-     [ansi32],      [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_32=1 -DANSI=1"])],
-     [ansi-legacy], [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_32=1 -DANSI=1 -DLEGACY_COMPILER=1"])],
-     [universal],   [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DUNIVERSAL=1"])],
-     [AC_MSG_ERROR([_decimal: unsupported architecture])]
-   )])
-
-if test "$have_ipa_pure_const_bug" = yes; then
-    # Some versions of gcc miscompile inline asm:
-    # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
-    # https://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
-    AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -fno-ipa-pure-const"])
-fi
-
-if test "$have_glibc_memmove_bug" = yes; then
-    # _FORTIFY_SOURCE wrappers for memmove and bcopy are incorrect:
-    # https://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
-    AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -U_FORTIFY_SOURCE"])
-fi
-
-AC_SUBST([LIBMPDEC_CFLAGS])
-AC_SUBST([LIBMPDEC_INTERNAL])
-
 
 dnl detect sqlite3 from Emscripten emport
 PY_CHECK_EMSCRIPTEN_PORT([LIBSQLITE3], [-sUSE_SQLITE3])
@@ -7337,7 +7310,6 @@ SRCDIRS="\
   Modules \
   Modules/_ctypes \
   Modules/_decimal \
-  Modules/_decimal/libmpdec \
   Modules/_hacl \
   Modules/_io \
   Modules/_multiprocessing \
@@ -8311,11 +8283,7 @@ PY_STDLIB_MOD([_decimal],
   [], [test "$have_mpdec" = "yes"],
   [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LIBS])
 
-AS_VAR_IF([with_system_libmpdec], [no],
-          [AC_MSG_WARN([m4_normalize([
-     the bundled copy of libmpdec is scheduled for removal in Python 3.16;
-     consider using a system installed mpdecimal library.])])])
-AS_IF([test "$with_system_libmpdec" = "yes" && test "$have_mpdec" = "no"],
+AS_IF([test "$have_mpdec" = "no"],
       [AC_MSG_WARN([m4_normalize([
          no system libmpdec found; falling back to pure-Python version
          for the decimal module])])])

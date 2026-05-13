@@ -227,8 +227,7 @@ class ParseTest(unittest.TestCase):
             "Character data: '\xb5'",
             "End element: 'root'",
         ]
-        for operation, expected_operation in zip(operations, expected_operations, strict=True):
-            self.assertEqual(operation, expected_operation)
+        self.assertEqual(operations, expected_operations)
 
     def test_parse_bytes(self):
         out = self.Outputter()
@@ -788,6 +787,20 @@ class ChardataBufferTest(unittest.TestCase):
         self.assertEqual(parser.buffer_size, 1024)
         parser.Parse(xml2, True)
         self.assertEqual(self.n, 4)
+
+    @support.requires_resource('cpu')
+    @support.requires_resource('walltime')
+    @support.bigmemtest(size=2**31, memuse=4, dry_run=False)
+    def test_large_character_data_does_not_crash(self):
+        # See https://github.com/python/cpython/issues/148441
+        parser = expat.ParserCreate()
+        parser.buffer_text = True
+        parser.buffer_size = 2**31 - 1  # INT_MAX
+        N = 2049 * (1 << 20) - 3  # Character data greater than INT_MAX
+        self.assertGreater(N, parser.buffer_size)
+        parser.CharacterDataHandler = lambda text: None
+        xml_data = b"<r>" + b"A" * N + b"</r>"
+        self.assertEqual(parser.Parse(xml_data, True), 1)
 
 class ElementDeclHandlerTest(unittest.TestCase):
     def test_trigger_leak(self):
