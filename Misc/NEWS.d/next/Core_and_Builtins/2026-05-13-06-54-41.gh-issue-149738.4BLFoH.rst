@@ -1,0 +1,2 @@
+Fix a segmentation fault in :mod:`sqlite3` when ``row_factory`` is deleted
+and a query is executed afterward.
