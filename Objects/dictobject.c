@@ -8222,10 +8222,18 @@ frozendict_repr(PyObject *self)
     return res;
 }
 
-static Py_uhash_t
-_shuffle_bits(Py_uhash_t h)
+// based on boost's old hash_combine
+static inline Py_uhash_t
+_combine_hashes(Py_uhash_t h1, Py_uhash_t h2)
 {
-    return ((h ^ 89869747UL) ^ (h << 16)) * 3644798167UL;
+    // 2^sizeof(Py_hash_t) / phi
+#if SIZEOF_PY_HASH_T == 8
+    const Py_uhash_t GOLDEN_C = 0x9e3779b97f4a7c15ULL;
+#else
+    const Py_uhash_t GOLDEN_C = 0x9e3779b9UL;
+#endif
+    h1 ^= h2 + GOLDEN_C + (h1 << 6) + (h1 >> 2);
+    return h1;
 }
 
 // Code copied from frozenset_hash()
@@ -8239,7 +8247,7 @@ frozendict_hash(PyObject *op)
     }
 
     PyDictObject *mp = _PyAnyDict_CAST(op);
-    Py_uhash_t hash = 0;
+    Py_uhash_t hash = 0xfd1c74; // start at a different value from frozenset to avoid collision with empty frozenset
 
     PyObject *key, *value;  // borrowed refs
     Py_ssize_t pos = 0;
@@ -8248,13 +8256,11 @@ frozendict_hash(PyObject *op)
         if (key_hash == -1) {
             return -1;
         }
-        hash ^= _shuffle_bits(key_hash);
-
         Py_hash_t value_hash = PyObject_Hash(value);
         if (value_hash == -1) {
             return -1;
         }
-        hash ^= _shuffle_bits(value_hash);
+        hash ^= _combine_hashes(key_hash, value_hash);
     }
 
     /* Factor in the number of active entries */
