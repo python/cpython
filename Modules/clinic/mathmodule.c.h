@@ -199,7 +199,8 @@ PyDoc_STRVAR(math_frexp__doc__,
 "Return the mantissa and exponent of x, as pair (m, e).\n"
 "\n"
 "m is a float and e is an int, such that x = m * 2.**e.\n"
-"If x is 0, m and e are both 0.  Else 0.5 <= abs(m) < 1.0.");
+"If x is a finite nonzero number, then 0.5 <= abs(m) < 1.0.\n"
+"Else, e is zero and m is x.");
 
 #define MATH_FREXP_METHODDEF    \
     {"frexp", (PyCFunction)math_frexp, METH_O, math_frexp__doc__},
@@ -1163,4 +1164,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=23b2453ba77453e5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=054cb9ddf5d0fdc3 input=a9049054013a1b77]*/
