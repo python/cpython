@@ -219,6 +219,10 @@ process and user.
    :data:`os.environ`, and when one of the :meth:`~dict.pop` or
    :meth:`~dict.clear` methods is called.
 
+   .. audit-event:: os.unsetenv key os.unsetenv
+
+   .. audit-event:: os._clearenv "" os._clearenv
+
    .. seealso::
 
       The :func:`os.reload_environ` function.
