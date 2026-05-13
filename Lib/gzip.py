@@ -520,7 +520,11 @@ def _read_gzip_header(fp):
     if not flag:
         return last_mtime
     if flag == FNAME:
-        _read_until_null(fp)
+        # Read and discard a null-terminated string containing the filename
+        while True:
+            s = fp.read(1)
+            if not s or s==b'\000':
+                break
         return last_mtime
 
     # Processing for more complex flags. Save header parts for FHCRC checking.
