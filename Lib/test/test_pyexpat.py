@@ -334,7 +334,7 @@ class ParseTest(unittest.TestCase):
         "johab",
         "Shift_JIS", "Shift_JIS-2004", "Shift_JISX0213",
     ])
-    def test_unsupportes_encodings(self, encoding):
+    def test_unsupported_encodings(self, encoding):
         parser = expat.ParserCreate()
         data = (f'<?xml version="1.0" encoding="{encoding}"?>\n'
                 '<root></root>').encode(encoding)
