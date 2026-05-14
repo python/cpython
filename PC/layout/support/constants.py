@@ -76,6 +76,7 @@ def check_patchlevel_version(sources):
 
 
 VER_MAJOR, VER_MINOR, VER_MICRO, VER_FIELD4 = _unpack_hexversion()
+VER_HEXVERSION = (VER_MAJOR << 24) | (VER_MINOR << 16) | (VER_MICRO << 8) | (VER_FIELD4)
 VER_SUFFIX = _get_suffix(VER_FIELD4)
 VER_FIELD3 = VER_MICRO << 8 | VER_FIELD4
 VER_DOT = "{}.{}".format(VER_MAJOR, VER_MINOR)

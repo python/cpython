@@ -35,6 +35,7 @@ _TEMPLATE = {
             "releaselevel": _LEVELS.get(constants.VER_FIELD4 & 0xF0, "final"),
             "serial": constants.VER_FIELD4 & 0x0F,
         },
+        "hexversion": constants.VER_HEXVERSION,
     },
     "abi": {
         "flags": [],
@@ -42,7 +43,7 @@ _TEMPLATE = {
         "stable_abi_suffix": ".pyd",
     },
     "suffixes": {
-        "source": [".py"],
+        "source": [".py", ".pyw"],
         "bytecode": [".pyc"],
         "extensions": [".pyd"],
     },
