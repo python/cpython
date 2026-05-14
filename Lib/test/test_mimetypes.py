@@ -389,9 +389,12 @@ class MimeTypesTestCase(unittest.TestCase):
         mime_type, _ = mimetypes.guess_type('test.myext')
         self.assertEqual(mime_type, 'testing/type')
 
-    def test_add_type_with_undotted_extension_deprecated(self):
-        with self.assertWarns(DeprecationWarning):
+    def test_add_type_with_undotted_extension_not_supported(self):
+        msg = "Extension 'undotted' must start with '.'"
+        with self.assertRaisesRegex(ValueError, msg):
             mimetypes.add_type("testing/type", "undotted")
+        with self.assertRaisesRegex(ValueError, msg):
+            mimetypes.add_type("", "undotted")
 
 
 @unittest.skipUnless(sys.platform.startswith("win"), "Windows only")

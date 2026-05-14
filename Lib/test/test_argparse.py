@@ -140,6 +140,48 @@ class TestLazyImports(unittest.TestCase):
         )
 
 
+class TestArgumentParserCopiable(unittest.TestCase):
+    def _get_parser(self):
+        parser = argparse.ArgumentParser(exit_on_error=False)
+        parser.add_argument('--foo', type=int, default=42)
+        parser.add_argument('bar', nargs='?', default='baz')
+        return parser
+
+    @force_not_colorized
+    def test_copiable(self):
+        import copy
+        parser = self._get_parser()
+        parser2 = copy.copy(parser)
+        ns = parser2.parse_args(['--foo', '123', 'quux'])
+        self.assertEqual(ns.foo, 123)
+        self.assertEqual(ns.bar, 'quux')
+        ns2 = parser2.parse_args([])
+        self.assertEqual(ns2.foo, 42)
+        self.assertEqual(ns2.bar, 'baz')
+
+        # Test shallow copy also gets new arguments
+        parser.add_argument("--extra")
+        ns3 = parser2.parse_args(["--extra", "bar"])
+        self.assertEqual(ns3.extra, "bar")
+
+    @force_not_colorized
+    def test_deepcopiable(self):
+        import copy
+        parser = self._get_parser()
+        parser2 = copy.deepcopy(parser)
+        ns = parser2.parse_args(['--foo', '123', 'quux'])
+        self.assertEqual(ns.foo, 123)
+        self.assertEqual(ns.bar, 'quux')
+        ns2 = parser2.parse_args([])
+        self.assertEqual(ns2.foo, 42)
+        self.assertEqual(ns2.bar, 'baz')
+
+        # Test deep copy does not get new arguments
+        parser.add_argument("--extra")
+        with self.assertRaises(argparse.ArgumentError):
+            parser2.parse_args(["--extra", "bar"])
+
+
 class TestArgumentParserPickleable(unittest.TestCase):
 
     @force_not_colorized
@@ -7863,11 +7905,24 @@ class TestColorized(TestCase):
 
     def test_fake_color_theme_matches_real(self):
         from argparse import _colorless_theme
+
+        # Check the attributes match those of the 'real' theme
         _colorize_nocolor = _colorize.get_theme(force_no_color=True).argparse
         for k in _colorize_nocolor:
             self.assertEqual(
                 getattr(_colorless_theme, k), getattr(_colorize_nocolor, k)
             )
+
+    def test_fake_color_theme_raises(self):
+        from argparse import _colorless_theme
+
+        # Make sure the _colorless_theme doesn't return empty strings
+        # for magic methods or private attributes
+        with self.assertRaises(AttributeError):
+            _colorless_theme.__unknown_dunder__
+
+        with self.assertRaises(AttributeError):
+            _colorless_theme._private_attribute
 
 
 class TestModule(unittest.TestCase):

@@ -92,6 +92,12 @@ static const uintptr_t min_frame_pointer_addr = 0x1000;
 #  define FRAME_POINTER_NEXT_OFFSET 0
 #  define FRAME_POINTER_RETURN_OFFSET \
     (S390X_FRAME_RETURN_ADDRESS_OFFSET / (Py_ssize_t)sizeof(uintptr_t))
+#elif defined(__powerpc64__) || defined(__ppc64__)
+// ppc64le puts the return address at fp[2]; it saves the Condition Register
+// in fp[1]. See:
+// https://refspecs.linuxfoundation.org/ELF/ppc64/PPC-elf64abi-1.9.html#STACK
+#  define FRAME_POINTER_NEXT_OFFSET 0
+#  define FRAME_POINTER_RETURN_OFFSET 2
 #else
 #  define FRAME_POINTER_NEXT_OFFSET 0
 #  define FRAME_POINTER_RETURN_OFFSET 1
@@ -3059,6 +3065,69 @@ test_threadstate_set_stack_protection(PyObject *self, PyObject *Py_UNUSED(args))
     Py_RETURN_NONE;
 }
 
+#define NUM_GUARDS 100
+
+static PyObject *
+test_interp_guard_countdown(PyObject *self, PyObject *unused)
+{
+    PyThreadState *save_tstate = PyThreadState_Swap(NULL);
+
+    // This test assumes that the interpreter has no guards active.
+    // While this is currently true for the main interpreter as of writing,
+    // this won't necessarily be true in the future. For the sake of
+    // maintainance, we create a new interpreter to be sure that there aren't
+    // any other guards.
+    PyThreadState *interp_tstate = Py_NewInterpreter();
+    assert(interp_tstate != NULL);
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    assert(_PyInterpreterState_GuardCountdown(interp) == 0);
+
+    PyInterpreterGuard *guards[NUM_GUARDS];
+    for (int i = 0; i < NUM_GUARDS; ++i) {
+        guards[i] = PyInterpreterGuard_FromCurrent();
+        assert(guards[i] != 0);
+        assert(_PyInterpreterState_GuardCountdown(interp) == i + 1);
+    }
+
+    for (int i = 0; i < NUM_GUARDS; ++i) {
+        PyInterpreterGuard_Close(guards[i]);
+        assert(_PyInterpreterState_GuardCountdown(interp) == (NUM_GUARDS - i - 1));
+    }
+
+    Py_EndInterpreter(interp_tstate);
+    PyThreadState_Swap(save_tstate);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+test_interp_view_countdown(PyObject *self, PyObject *unused)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterView *view = PyInterpreterView_FromCurrent();
+    if (view == NULL) {
+        return NULL;
+    }
+    assert(_PyInterpreterState_GuardCountdown(interp) == 0);
+
+    PyInterpreterGuard *guards[NUM_GUARDS];
+
+    for (int i = 0; i < NUM_GUARDS; ++i) {
+        guards[i] = PyInterpreterGuard_FromView(view);
+        assert(guards[i] != 0);
+        assert(_PyInterpreterGuard_GetInterpreter(guards[i]) == interp);
+        assert(_PyInterpreterState_GuardCountdown(interp) == i + 1);
+    }
+
+    for (int i = 0; i < NUM_GUARDS; ++i) {
+        PyInterpreterGuard_Close(guards[i]);
+        assert(_PyInterpreterState_GuardCountdown(interp) == (NUM_GUARDS - i - 1));
+    }
+
+    PyInterpreterView_Close(view);
+    Py_RETURN_NONE;
+}
+
+#undef NUM_LOCKS
 
 static PyObject *
 _pyerr_setkeyerror(PyObject *self, PyObject *arg)
@@ -3073,6 +3142,52 @@ _pyerr_setkeyerror(PyObject *self, PyObject *arg)
     return NULL;
 }
 
+static PyObject *
+test_thread_state_ensure_from_view_interp_switch(PyObject *self, PyObject *unused)
+{
+    /* The main tstate is already attached and was NOT created by
+     * PyThreadState_Ensure, so delete_on_release == 0. */
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(interp != NULL);
+    PyInterpreterView *view = PyInterpreterView_FromCurrent();
+    assert(view != NULL);
+
+    /* First Ensure/Release pair on this pre-existing tstate. */
+    assert(_PyThreadState_GET() != NULL);
+    PyThreadStateToken *t1 = PyThreadState_EnsureFromView(view);
+    assert(t1 != NULL);
+    assert(_PyInterpreterState_GuardCountdown(interp) == 1);
+    PyThreadState_Release(t1);
+    assert(_PyInterpreterState_GuardCountdown(interp) == 0);
+    assert(_PyThreadState_GET() != NULL);
+
+    /* tstate->ensure.owned_guard now points at the freed guard. */
+
+    /* Re-attach: Bug B detaches us as a side effect (separate repro). */
+    PyThreadState *save = PyThreadState_Swap(NULL);
+
+    PyThreadStateToken *t2 = PyThreadState_EnsureFromView(view);
+    assert(_PyInterpreterState_GuardCountdown(interp) == 1);
+    assert(t2 != NULL);
+    PyThreadState_Release(t2);
+    assert(_PyInterpreterState_GuardCountdown(interp) == 0);
+    assert(_PyThreadState_GET() == NULL);
+
+    PyThreadState_Swap(save);
+
+    /* In a release build (no assertion) the second Ensure silently
+     * skipped storing its guard and Release decremented the global
+     * counter from 0, wrapping it to GUARDS_NOT_ALLOWED.  All future
+     * guard acquisitions then fail: */
+    PyInterpreterGuard *g = PyInterpreterGuard_FromCurrent();
+    assert(g != NULL);
+    assert(_PyInterpreterState_GuardCountdown(interp) == 1);
+    PyInterpreterGuard_Close(g);
+    assert(_PyInterpreterState_GuardCountdown(interp) == 0);
+
+    PyInterpreterView_Close(view);
+    Py_RETURN_NONE;
+}
 
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
@@ -3198,6 +3313,9 @@ static PyMethodDef module_functions[] = {
     {"test_threadstate_set_stack_protection",
      test_threadstate_set_stack_protection, METH_NOARGS},
     {"_pyerr_setkeyerror", _pyerr_setkeyerror, METH_O},
+    {"test_interp_guard_countdown", test_interp_guard_countdown, METH_NOARGS},
+    {"test_interp_view_countdown", test_interp_view_countdown, METH_NOARGS},
+    {"test_thread_state_ensure_from_view_interp_switch", test_thread_state_ensure_from_view_interp_switch, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

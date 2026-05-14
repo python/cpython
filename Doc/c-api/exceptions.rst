@@ -1375,7 +1375,7 @@ Tracebacks
    The caller does not need to hold an :term:`attached thread state`, nor does
    *tstate* need to be attached.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. c:function:: const char* PyUnstable_DumpTracebackThreads(int fd, PyInterpreterState *interp, PyThreadState *current_tstate, Py_ssize_t max_threads)
 
@@ -1411,4 +1411,4 @@ Tracebacks
       another thread deletes its :term:`thread state` while this function is being
       called, the process will likely crash.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15

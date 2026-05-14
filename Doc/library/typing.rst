@@ -2970,7 +2970,7 @@ types.
    .. versionchanged:: 3.13
       Support for the :data:`ReadOnly` qualifier was added. See :pep:`705`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Support for the *closed* and *extra_items* class arguments was added. See :pep:`728`.
 
 
@@ -3476,7 +3476,7 @@ Functions and decorators
    detail, and the exact set of standard library classes that are
    disjoint bases at runtime may change in future versions of Python.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. decorator:: type_check_only
 
@@ -3633,14 +3633,27 @@ Introspection helpers
 
    Determine if a type is a :class:`Protocol`.
 
-   For example::
+   For example:
+
+   .. testcode::
 
       class P(Protocol):
           def a(self) -> str: ...
           b: int
 
-      is_protocol(P)    # => True
-      is_protocol(int)  # => False
+      assert is_protocol(P)
+      assert not is_protocol(int)
+
+   This function only returns true for ``Protocol`` classes, not for
+   :ref:`generic aliases <types-genericalias>` of them:
+
+   .. testcode::
+
+      class GenericP[T](Protocol):
+          def a(self) -> T: ...
+          b: int
+
+      assert not is_protocol(GenericP[int])
 
    .. versionadded:: 3.13
 
@@ -3662,6 +3675,17 @@ Introspection helpers
       # TypedDict is a factory for creating typed dicts,
       # not a typed dict itself
       assert not is_typeddict(TypedDict)
+
+   This function only returns true for ``TypedDict`` classes, not for
+   :ref:`generic aliases <types-genericalias>` of them:
+
+   .. testcode::
+
+      class GenericFilm[T](TypedDict):
+          title: str
+          year: T
+
+      assert not is_typeddict(GenericFilm[int])
 
    .. versionadded:: 3.10
 

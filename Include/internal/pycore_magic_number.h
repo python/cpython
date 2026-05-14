@@ -297,9 +297,10 @@ Known values:
     Python 3.15a8 3664 (Fix __qualname__ for __annotate__ functions)
     Python 3.15a8 3665 (Add FOR_ITER_VIRTUAL and GET_ITER specializations)
     Python 3.15b1 3666 (Add SEND_VIRTUAL and SEND_ASYNC_GEN specializations)
+    Python 3.16a0 3700 (Initial version)
 
 
-    Python 3.16 will start with 3700
+    Python 3.17 will start with 3750
 
     Please don't copy-paste the same pre-release tag for new entries above!!!
     You should always use the *upcoming* tag. For example, if 3.12a6 came out
@@ -310,7 +311,7 @@ PC/launcher.c must also be updated.
 
 */
 
-#define PYC_MAGIC_NUMBER 3666
+#define PYC_MAGIC_NUMBER 3700
 /* This is equivalent to converting PYC_MAGIC_NUMBER to 2 bytes
    (little-endian) and then appending b'\r\n'. */
 #define PYC_MAGIC_NUMBER_TOKEN \

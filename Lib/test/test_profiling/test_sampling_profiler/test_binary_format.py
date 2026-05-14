@@ -2,6 +2,7 @@
 
 import json
 import os
+import pathlib
 import random
 import struct
 import tempfile
@@ -813,6 +814,35 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
         with self.assertRaises((FileNotFoundError, OSError, ValueError)):
             with BinaryReader("/nonexistent/path/file.bin") as reader:
                 reader.replay_samples(RawCollector())
+
+    def test_path_arguments_round_trip(self):
+        """Reader and writer accept str, bytes or os.PathLike."""
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+            filename = f.name
+        self.temp_files.append(filename)
+
+        for path_arg in (filename, os.fsencode(filename), pathlib.Path(filename)):
+            with self.subTest(path_type=type(path_arg).__name__):
+                writer = _remote_debugging.BinaryWriter(path_arg, 1000, 0)
+                writer.finalize()
+                reader = _remote_debugging.BinaryReader(path_arg)
+                info = reader.get_info()
+                reader.close()
+                self.assertEqual(info["sample_count"], 0)
+
+    def test_rejects_non_pathlike(self):
+        """Reader and writer raise TypeError on non-path-like filenames."""
+        with self.assertRaises(TypeError):
+            _remote_debugging.BinaryWriter(123, 1000, 0)
+        with self.assertRaises(TypeError):
+            _remote_debugging.BinaryReader(123)
+
+    def test_invalid_path_error_preserves_pathlib(self):
+        """Missing path: OSError carries the original path object, not a string."""
+        missing = pathlib.Path("/i/do/not/exist")
+        with self.assertRaises(FileNotFoundError) as cm:
+            _remote_debugging.BinaryReader(missing)
+        self.assertEqual(os.fspath(cm.exception.filename), os.fspath(missing))
 
     def test_writer_handles_empty_stack_first_sample(self):
         """BinaryWriter.write_sample tolerates an empty stack on a fresh thread.

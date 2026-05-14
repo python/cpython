@@ -112,7 +112,6 @@ Dependencies to build optional modules are:
 
 .. [1] If *libmpdec* is not available, the :mod:`decimal` module will use
    a pure-Python implementation.
-   See :option:`--with-system-libmpdec` for details.
 .. [2] See :option:`--with-readline` for choosing the backend for the
    :mod:`readline` module.
 .. [3] The :mod:`uuid` module uses ``_uuid`` to generate "safe" UUIDs.
@@ -553,11 +552,6 @@ Options for third-party dependencies
    C compiler and linker flags for ``libmpdec``, used by :mod:`decimal` module,
    overriding ``pkg-config``.
 
-   .. note::
-
-      These environment variables have no effect unless
-      :option:`--with-system-libmpdec` is specified.
-
 .. option:: LIBLZMA_CFLAGS
 .. option:: LIBLZMA_LIBS
 
@@ -789,14 +783,15 @@ also be used to improve performance.
 
    - ``-fno-omit-frame-pointer`` and/or ``-mno-omit-leaf-frame-pointer``
      are added when the compiler supports them.
-   - ``-marm`` is added on 32-bit ARM when supported,
+   - ``-marm`` and/or ``-mno-thumb`` is added on 32-bit ARM when supported,
    - on s390x platforms, when supported, ``-mbackchain`` is added *instead*.
      of the above frame pointer flags.
+   - on ppc64le platforms, no compiler flags is needed since the power ABI
+     requires that compilers maintain a back chain by default.
 
    Frame pointers enable profilers, debuggers, and system tracing tools
    (``perf``, ``eBPF``, ``dtrace``, ``gdb``) to walk the C call stack
-   without DWARF metadata.
-   The flags propagate to third-party C
+   without DWARF metadata. The flags propagate to third-party C
    extensions through :mod:`sysconfig`. On compilers that do not
    understand them, the build silently skips them.
 
@@ -1051,7 +1046,7 @@ Linker options
    The default (when ``-enable-shared`` is used) is to link the Python
    interpreter against the built shared library.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 Libraries options
@@ -1065,29 +1060,6 @@ Libraries options
 
    Build the :mod:`!pyexpat` module using an installed ``expat`` library
    (default is no).
-
-.. option:: --with-system-libmpdec
-
-   Build the ``_decimal`` extension module using an installed ``mpdecimal``
-   library, see the :mod:`decimal` module (default is yes).
-
-   .. versionadded:: 3.3
-
-   .. versionchanged:: 3.13
-      Default to using the installed ``mpdecimal`` library.
-
-   .. versionchanged:: 3.15
-
-      A bundled copy of the library will no longer be selected
-      implicitly if an installed ``mpdecimal`` library is not found.
-      In Python 3.15 only, it can still be selected explicitly using
-      ``--with-system-libmpdec=no`` or ``--without-system-libmpdec``.
-
-   .. deprecated-removed:: 3.13 3.16
-      A copy of the ``mpdecimal`` library sources will no longer be distributed
-      with Python 3.16.
-
-   .. seealso:: :option:`LIBMPDEC_CFLAGS` and :option:`LIBMPDEC_LIBS`.
 
 .. option:: --with-readline=readline|editline
 

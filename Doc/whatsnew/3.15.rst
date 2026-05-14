@@ -91,6 +91,7 @@ Summary -- Release highlights
 * :pep:`803`, :pep:`820 <820>`, :pep:`793 <793>`:
   :ref:`Stable ABI for free-threaded builds <whatsnew315-abi3t>` and
   related C API
+* :pep:`788`: :ref:`Protection against finalization in the C API <whatsnew315-c-api-interpreter-finalization>`
 * :ref:`The JIT compiler has been significantly upgraded <whatsnew315-jit>`
 * :ref:`The official Windows 64-bit binaries now use the tail-calling interpreter
   <whatsnew315-windows-tail-calling-interpreter>`
@@ -410,8 +411,8 @@ embedding applications, and native libraries.
    unwinding for the whole Python process.
 
 (Contributed by Pablo Galindo Salgado and Savannah Ostrowski in
-:gh:`149201`; PEP 831 written by Pablo Galindo Salgado, Ken Jin, and
-Savannah Ostrowski.)
+:gh:`149201`; PEP 831 written by Pablo Galindo Salgado, Ken Jin,
+Savannah Ostrowski, and Diego Russo.)
 
 .. seealso:: :pep:`831` for further details.
 
@@ -522,6 +523,39 @@ If not using a build tool -- or when writing such a tool -- you can select
 in :ref:`abi3-compiling`.
 
 .. seealso:: :pep:`803` for further details.
+
+
+.. _whatsnew315-c-api-interpreter-finalization:
+
+:pep:`788`: Protecting the C API from interpreter finalization
+--------------------------------------------------------------
+
+In the C API, :term:`interpreter finalization <interpreter shutdown>` can be
+problematic for many extensions, because :term:`attaching <attached thread
+state>` a thread state will permanently hang the thread, resulting in deadlocks
+and other spurious issues. Additionally, it has historically been impossible
+to safely check whether an interpreter is alive before using it, leading to crashes
+when a thread concurrently deletes an interpreter while another thread is
+trying to attach to it.
+
+There are now several new suites of APIs to circumvent these problems:
+
+* :ref:`Interpreter guards <interpreter-guards>`, which prevent an interpreter
+  from finalizing.
+* :ref:`Interpreter views <interpreter-views>`, which allow thread-safe access
+  to an interpreter that may be concurrently finalizing or deleted.
+* :ref:`New APIs <c-api-attach-detach>` to automatically attach and detach
+  thread states that come with built-in protection against finalization.
+
+In addition, APIs in the ``PyGILState`` family (most notably
+:c:func:`PyGILState_Ensure` and :c:func:`PyGILState_Release`) have been
+:term:`soft deprecated`. There is **no** plan to remove them, and existing
+code will continue to work, but there will be no new ``PyGILState`` APIs
+in future versions of Python.
+
+.. seealso:: :pep:`788` for further details.
+
+(Contributed by Peter Bierma in :gh:`149101`.)
 
 
 .. _whatsnew315-improved-error-messages:
@@ -764,7 +798,7 @@ Other language changes
               n = buffer.find(b'\n')
               data = bytes(buffer[:n + 1])
               del buffer[:n + 1]
-              assert data == b'abc'
+              assert data == b'abc\n'
               assert buffer == bytearray(b'def')
 
         - .. code:: python
@@ -1869,6 +1903,7 @@ The major upgrades to the JIT are:
 * New tracing frontend
 * Basic register allocation in the JIT
 * More JIT optimizations
+* GDB and GNU ``backtrace()`` unwinding support
 * Better machine code generation
 
 .. rubric:: LLVM 21 build-time dependency
@@ -1919,6 +1954,17 @@ reference count updates and perform in-place operations on ints and floats.
 
 The JIT optimizer now supports significantly more operations than in 3.14.
 (Contributed by Kumar Aditya, Ken Jin, Jiahao Li, and Sacul in :gh:`131798`.)
+
+.. rubric:: GDB and GNU ``backtrace()`` unwinding support
+
+The JIT compiler now publishes unwind information for generated machine code to the
+GDB interface on supported Linux ELF platforms. When libgcc frame
+registration is available, the same unwind information is also registered for
+GNU ``backtrace()`` stack walkers. This allows native debuggers, crash
+handlers, and diagnostic tools using these mechanisms to unwind through JIT
+frames instead of stopping at generated code.
+(Contributed by Diego Russo and Pablo Galindo Salgado in :gh:`146071` and
+:gh:`149104`.)
 
 .. rubric:: Better machine code generation
 
@@ -2580,7 +2626,7 @@ Build changes
 =============
 
 * Removed implicit fallback to the bundled copy of the ``libmpdec`` library.
-  Now this should be explicitly enabled with :option:`--with-system-libmpdec`
+  Now this should be explicitly enabled with :option:`!--with-system-libmpdec`
   set to ``no`` or with :option:`!--without-system-libmpdec`.
   (Contributed by Sergey B Kirpichev in :gh:`115119`.)
 

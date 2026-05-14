@@ -1266,6 +1266,8 @@ Reading and writing files
       >>> p.read_text()
       'Text file contents'
 
+   Return the number of characters written.
+
    An existing file of the same name is overwritten. The optional parameters
    have the same meaning as in :func:`open`.
 
@@ -1285,6 +1287,8 @@ Reading and writing files
       20
       >>> p.read_bytes()
       b'Binary file contents'
+
+   Return the number of bytes written.
 
    An existing file of the same name is overwritten.
 
