@@ -143,4 +143,35 @@ _random_Random_getrandbits(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7ce97b2194eecaf7 input=a9049054013a1b77]*/
+
+static int
+random_init_impl(RandomObject *self, PyObject *arg);
+
+static int
+random_init(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    int return_value = -1;
+    PyTypeObject *base_tp = (PyTypeObject *)_randomstate_type(Py_TYPE(self))->Random_Type;
+    PyObject *arg = NULL;
+
+    if ((Py_IS_TYPE(self, base_tp) ||
+         Py_TYPE(self)->tp_new == base_tp->tp_new) &&
+        !_PyArg_NoKeywords("Random", kwargs)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("Random", PyTuple_GET_SIZE(args), 0, 1)) {
+        goto exit;
+    }
+    if (PyTuple_GET_SIZE(args) < 1) {
+        goto skip_optional;
+    }
+    arg = PyTuple_GET_ITEM(args, 0);
+skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = random_init_impl((RandomObject *)self, arg);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=5d4c7afe866d5104 input=a9049054013a1b77]*/
