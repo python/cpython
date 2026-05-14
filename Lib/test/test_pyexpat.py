@@ -289,7 +289,7 @@ class ParseTest(unittest.TestCase):
         'mac-roman', 'mac-turkish',
         'koi8-r', 'koi8-t', 'koi8-u', 'kz1048', 'ptcp154',
     ])
-    def test_supported_ecodings(self, encoding):
+    def test_supported_encodings(self, encoding):
         out = self.Outputter()
         parser = expat.ParserCreate()
         self._hookup_callbacks(parser, out)
@@ -308,7 +308,7 @@ class ParseTest(unittest.TestCase):
         'UTF-8', 'utf-8', 'utf-16', 'utf-16le', 'utf-16be',
         'koi8-u', 'cp1125', 'cp1251', 'iso8859-5', 'mac-cyrillic',
     ])
-    def test_supported_ecodings2(self, encoding):
+    def test_supported_encodings2(self, encoding):
         out = self.Outputter()
         parser = expat.ParserCreate()
         self._hookup_callbacks(parser, out)
@@ -334,14 +334,54 @@ class ParseTest(unittest.TestCase):
         "johab",
         "Shift_JIS", "Shift_JIS-2004", "Shift_JISX0213",
     ])
-    def test_unsupportes_ecodings(self, encoding):
+    def test_unsupported_encodings(self, encoding):
         parser = expat.ParserCreate()
         data = (f'<?xml version="1.0" encoding="{encoding}"?>\n'
                 '<root></root>').encode(encoding)
         with self.assertRaises(ValueError):
             parser.Parse(data, True)
 
-    def test_unknown_ecoding(self):
+        parser = expat.ParserCreate()
+        data = (f'<?xml version="1.0" encoding="{encoding}"?>\n'
+                '<root></root>').encode()
+        with self.assertRaises(ValueError):
+            parser.Parse(data, True)
+
+    @support.subTests('encoding', [
+        'cp037', 'cp273', 'cp424', 'cp500', 'cp864', 'cp875',
+        'cp1026', 'cp1140',
+        'mac_arabic', 'mac_farsi',
+    ])
+    def test_incompatible_encodings(self, encoding):
+        parser = expat.ParserCreate()
+        data = (f'<?xml version="1.0" encoding="{encoding}"?>\n'
+                '<root></root>').encode(encoding)
+        with self.assertRaises(expat.ExpatError):
+            parser.Parse(data, True)
+
+        parser = expat.ParserCreate()
+        data = (f'<?xml version="1.0" encoding="{encoding}"?>\n'
+                '<root></root>').encode()
+        with self.assertRaisesRegex(expat.ExpatError, 'unknown encoding'):
+            parser.Parse(data, True)
+
+    @support.subTests('encoding', [
+        'hex_codec', 'rot_13',
+    ])
+    def test_non_text_encodings(self, encoding):
+        parser = expat.ParserCreate()
+        data = (f'<?xml version="1.0" encoding="{encoding}"?>\n'
+                '<root></root>').encode()
+        with self.assertRaises(LookupError):
+            parser.Parse(data, True)
+
+    def test_undefined_encoding(self):
+        parser = expat.ParserCreate()
+        data = b'<?xml version="1.0" encoding="undefined"?>\n<root></root>'
+        with self.assertRaises(UnicodeError):
+            parser.Parse(data, True)
+
+    def test_unknown_encoding(self):
         parser = expat.ParserCreate()
         data = b'<?xml version="1.0" encoding="xyz"?>\n<root></root>'
         with self.assertRaises(LookupError):
