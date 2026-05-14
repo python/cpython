@@ -638,6 +638,7 @@ class TestParser(TestParserMixin, TestEmailBase):
         start_and_charset_only =                    '=?UTF-8',
         missing_both_middle =                       '=?content?=',
         unknown_cte =                               '=?UTF-8?X?content?=',
+        invalid_base64_length =                     '=?utf-8?b?abcde?=',
         )
 
     params_test_get_encoded_word = old_api_only(
@@ -885,12 +886,12 @@ class TestParser(TestParserMixin, TestEmailBase):
             '')
 
     def test_get_unstructured_invalid_base64_length(self):
-        # bpo-27397: Return the encoded string since there's no way to decode.
+        # bpo-27397/gh-71584: there's no way to decode this.
         self._test_get_x(self._get_unst,
             '=?utf-8?b?abcde?=',
-            'abcde',
-            'abcde',
-            [errors.InvalidBase64LengthDefect],
+            '=?utf-8?b?abcde?=',
+            '=?utf-8?b?abcde?=',
+            [],
             '')
 
     def test_get_unstructured_no_whitespace_between_ews(self):
