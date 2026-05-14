@@ -989,6 +989,7 @@ class Path(PurePath):
     def write_bytes(self, data):
         """
         Open the file in bytes mode, write to it, and close the file.
+        Return the number of bytes written.
         """
         # type-check for the buffer interface before truncating the file
         view = memoryview(data)
@@ -998,6 +999,7 @@ class Path(PurePath):
     def write_text(self, data, encoding=None, errors=None, newline=None):
         """
         Open the file in text mode, write to it, and close the file.
+        Return the number of characters written.
         """
         # Call io.text_encoding() here to ensure any warning is raised at an
         # appropriate stack level.

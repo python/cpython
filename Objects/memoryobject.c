@@ -1806,7 +1806,7 @@ pylong_as_zu(PyObject *item)
         dest = x;                          \
     } while (0)
 
-/* Unpack a single item. 'fmt' can be any native format character in struct
+/* Unpack a single item. 'fmt' can be any native format in struct
    module syntax. This function is very sensitive to small changes. With this
    layout gcc automatically generates a fast jump table. */
 static inline PyObject *
@@ -1926,7 +1926,7 @@ err_format:
         memcpy(ptr, (char *)&x, sizeof x);   \
     } while (0)
 
-/* Pack a single item. 'fmt' can be any native format character in
+/* Pack a single item. 'fmt' can be any native format in
    struct module syntax. */
 static int
 pack_single(PyMemoryViewObject *self, char *ptr, PyObject *item, const char *fmt)

@@ -798,7 +798,7 @@ Other language changes
               n = buffer.find(b'\n')
               data = bytes(buffer[:n + 1])
               del buffer[:n + 1]
-              assert data == b'abc'
+              assert data == b'abc\n'
               assert buffer == bytearray(b'def')
 
         - .. code:: python
@@ -2626,7 +2626,7 @@ Build changes
 =============
 
 * Removed implicit fallback to the bundled copy of the ``libmpdec`` library.
-  Now this should be explicitly enabled with :option:`--with-system-libmpdec`
+  Now this should be explicitly enabled with :option:`!--with-system-libmpdec`
   set to ``no`` or with :option:`!--without-system-libmpdec`.
   (Contributed by Sergey B Kirpichev in :gh:`115119`.)
 
