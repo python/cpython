@@ -789,11 +789,12 @@ def _replay_with_reader(args, reader):
             args.outfile
             or _generate_output_filename(args.format, os.getpid())
         )
-        collector.export(filename)
+        export_ok = collector.export(filename)
 
         # Auto-open browser for HTML output if --browser flag is set
         if (
-            args.format in (
+            export_ok
+            and args.format in (
                 'flamegraph', 'diff_flamegraph', 'heatmap'
             )
             and getattr(args, 'browser', False)
@@ -840,10 +841,14 @@ def _handle_output(collector, args, pid, mode):
             filename = os.path.join(args.outfile, _generate_output_filename(args.format, pid))
         else:
             filename = args.outfile or _generate_output_filename(args.format, pid)
-        collector.export(filename)
+        export_ok = collector.export(filename)
 
         # Auto-open browser for HTML output if --browser flag is set
-        if args.format in ('flamegraph', 'diff_flamegraph', 'heatmap') and getattr(args, 'browser', False):
+        if (
+            export_ok
+            and args.format in ('flamegraph', 'diff_flamegraph', 'heatmap')
+            and getattr(args, 'browser', False)
+        ):
             _open_in_browser(filename)
 
 

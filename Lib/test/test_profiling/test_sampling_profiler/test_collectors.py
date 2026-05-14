@@ -502,9 +502,10 @@ class TestSampleProfilerComponents(unittest.TestCase):
 
         # Export flamegraph
         with captured_stdout(), captured_stderr():
-            collector.export(flamegraph_out.name)
+            export_ok = collector.export(flamegraph_out.name)
 
         # Verify file was created and contains valid data
+        self.assertTrue(export_ok)
         self.assertTrue(os.path.exists(flamegraph_out.name))
         self.assertGreater(os.path.getsize(flamegraph_out.name), 0)
 
@@ -522,6 +523,21 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertIn('"name":', content)
         self.assertIn('"value":', content)
         self.assertIn('"children":', content)
+
+    def test_flamegraph_collector_empty_export_fails(self):
+        """Test empty flamegraph export reports no output."""
+        flamegraph_out = tempfile.NamedTemporaryFile(
+            suffix=".html", delete=False
+        )
+        self.addCleanup(close_and_unlink, flamegraph_out)
+
+        collector = FlamegraphCollector(1000)
+
+        with captured_stdout(), captured_stderr():
+            export_ok = collector.export(flamegraph_out.name)
+
+        self.assertFalse(export_ok)
+        self.assertEqual(os.path.getsize(flamegraph_out.name), 0)
 
     def test_gecko_collector_basic(self):
         """Test basic GeckoCollector functionality."""
@@ -1552,8 +1568,9 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.addCleanup(close_and_unlink, flamegraph_out)
 
         with captured_stdout(), captured_stderr():
-            diff.export(flamegraph_out.name)
+            export_ok = diff.export(flamegraph_out.name)
 
+        self.assertTrue(export_ok)
         self.assertTrue(os.path.exists(flamegraph_out.name))
         self.assertGreater(os.path.getsize(flamegraph_out.name), 0)
 
