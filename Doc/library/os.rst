@@ -5062,7 +5062,7 @@ written in Python, such as a mail server's external command delivery program.
    .. availability:: Linux >= 5.10
    .. versionadded:: 3.12
 
-.. function:: pidfd_getfd(pidfd, targetfd, flags=0)
+.. function:: pidfd_getfd(pidfd, targetfd, *, flags=0)
 
    Duplicate *targetfd* from the process referred to by the process file
    descriptor *pidfd*, into the calling process.  The returned file descriptor

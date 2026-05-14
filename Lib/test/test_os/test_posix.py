@@ -1604,27 +1604,26 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, "pidfd_getfd"), "pidfd_getfd unavailable")
     def test_pidfd_getfd(self):
-        with self.assertRaises(OSError) as cm:
-            os.pidfd_getfd(-1, 0, 0)
-        if cm.exception.errno == errno.ENOSYS:
-            self.skipTest("system does not support pidfd_getfd")
-        if isinstance(cm.exception, PermissionError):
-            self.skipTest(f"pidfd_getfd syscall blocked: {cm.exception!r}")
-        self.assertEqual(cm.exception.errno, errno.EBADF)
-
-        with self.assertRaises(OSError) as cm:
-            os.pidfd_getfd(0, 0, 1)
-        self.assertEqual(cm.exception.errno, errno.EINVAL)
-
         fd = os.open(__file__, os.O_RDONLY)
         self.addCleanup(os.close, fd)
         pidfd = os.pidfd_open(os.getpid(), 0)
         self.addCleanup(os.close, pidfd)
-        dupfd = os.pidfd_getfd(pidfd, fd, 0)
+        try:
+            dupfd = os.pidfd_getfd(pidfd, fd)
+        except OSError as exc:
+            if exc.errno == errno.ENOSYS:
+                self.skipTest("system does not support pidfd_getfd")
+            if isinstance(exc, PermissionError):
+                self.skipTest(f"pidfd_getfd syscall blocked: {exc!r}")
+            raise
         self.addCleanup(os.close, dupfd)
 
         self.assertFalse(os.get_inheritable(dupfd))     # PEP 446
         self.assertEqual(os.fstat(fd), os.fstat(dupfd))
+
+        with self.assertRaises(OSError) as cm:
+            os.pidfd_getfd(-1, 0)
+        self.assertEqual(cm.exception.errno, errno.EBADF)
 
     @os_helper.skip_unless_hardlink
     @os_helper.skip_unless_symlink

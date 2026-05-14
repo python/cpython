@@ -10785,6 +10785,7 @@ os.pidfd_getfd
     A process file descriptor.
   targetfd: int
     The file descriptor to duplicate from the target process.
+  *
   flags: unsigned_int = 0
     Reserved, must be 0.
 
@@ -10794,7 +10795,7 @@ Duplicate a file descriptor from the process referred to by *pidfd*.
 static PyObject *
 os_pidfd_getfd_impl(PyObject *module, int pidfd, int targetfd,
                     unsigned int flags)
-/*[clinic end generated code: output=e1a1415a13c7137f input=86e7c68362697a84]*/
+/*[clinic end generated code: output=e1a1415a13c7137f input=ef6417fb10deb1cc]*/
 {
     int fd = syscall(__NR_pidfd_getfd, pidfd, targetfd, flags);
     if (fd < 0) {

@@ -6396,7 +6396,7 @@ exit:
 #if (defined(__linux__) && defined(__NR_pidfd_getfd) && !(defined(__ANDROID__) && __ANDROID_API__ < 31))
 
 PyDoc_STRVAR(os_pidfd_getfd__doc__,
-"pidfd_getfd($module, /, pidfd, targetfd, flags=0)\n"
+"pidfd_getfd($module, /, pidfd, targetfd, *, flags=0)\n"
 "--\n"
 "\n"
 "Duplicate a file descriptor from the process referred to by *pidfd*.\n"
@@ -6453,7 +6453,7 @@ os_pidfd_getfd(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     unsigned int flags = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -6466,12 +6466,12 @@ os_pidfd_getfd(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
         goto exit;
     }
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (!_PyLong_UnsignedInt_Converter(args[2], &flags)) {
         goto exit;
     }
-skip_optional_pos:
+skip_optional_kwonly:
     return_value = os_pidfd_getfd_impl(module, pidfd, targetfd, flags);
 
 exit:
@@ -13702,4 +13702,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=982474242e7f4ea0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c4cf19262e42e352 input=a9049054013a1b77]*/
