@@ -47,6 +47,9 @@ _FREE_THREADED_BUILD = sysconfig.get_config_var("Py_GIL_DISABLED") is not None
 # If fewer samples are collected, we skip the TUI and just print a message
 MIN_SAMPLES_FOR_TUI = 200
 
+# Maximum number of consecutive identical samples to keep before flushing.
+MAX_PENDING_SAMPLES = 8192
+
 class SampleProfiler:
     def __init__(self, pid, sample_interval_usec, all_threads, *, mode=PROFILING_MODE_WALL, native=False, gc=True, opcodes=False, skip_non_matching_threads=True, collect_stats=False, blocking=False):
         self.pid = pid
@@ -109,6 +112,20 @@ class SampleProfiler:
         last_sample_time = start_time
         realtime_update_interval = 1.0  # Update every second
         last_realtime_update = start_time
+        aggregating = getattr(collector, 'aggregating', False) is True
+        prev_stack = None
+        pending_count = 0
+        pending_timestamps = [] if aggregating else None
+
+        def flush_pending():
+            nonlocal pending_count, pending_timestamps
+            if pending_count == 0:
+                return
+            pending_count = 0
+            ts = pending_timestamps
+            pending_timestamps = []
+            collector.collect(prev_stack, timestamps_us=ts)
+
         try:
             while duration_sec is None or running_time_sec < duration_sec:
                 # Check if live collector wants to stop
@@ -116,6 +133,7 @@ class SampleProfiler:
                     break
 
                 current_time = time.perf_counter()
+                current_time_us = int(current_time * 1_000_000)
                 if next_time > current_time:
                     sleep_time = (next_time - current_time) * 0.9
                     if sleep_time > 0.0001:
@@ -125,13 +143,24 @@ class SampleProfiler:
                         stack_frames = self._get_stack_trace(
                             async_aware=async_aware
                         )
-                        collector.collect(stack_frames)
+                        if aggregating:
+                            if stack_frames != prev_stack:
+                                flush_pending()
+                                prev_stack = stack_frames
+                            pending_count += 1
+                            pending_timestamps.append(current_time_us)
+                            if pending_count >= MAX_PENDING_SAMPLES:
+                                flush_pending()
+                        else:
+                            collector.collect(stack_frames)
                     except ProcessLookupError as e:
                         running_time_sec = current_time - start_time
                         break
                     except (RuntimeError, UnicodeDecodeError, MemoryError, OSError):
+                        flush_pending()
                         collector.collect_failed_sample()
                         errors += 1
+                        prev_stack = None
                     except Exception as e:
                         if not _is_process_running(self.pid):
                             break
@@ -163,6 +192,8 @@ class SampleProfiler:
             interrupted = True
             running_time_sec = time.perf_counter() - start_time
             print("Interrupted by user.")
+        finally:
+            flush_pending()
 
         # Clear real-time stats line if it was being displayed
         if self.realtime_stats and len(self.sample_intervals) > 0:

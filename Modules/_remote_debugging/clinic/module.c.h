@@ -688,7 +688,7 @@ PyDoc_STRVAR(_remote_debugging_BinaryWriter___init____doc__,
 
 static int
 _remote_debugging_BinaryWriter___init___impl(BinaryWriterObject *self,
-                                             const char *filename,
+                                             PyObject *filename,
                                              unsigned long long sample_interval_us,
                                              unsigned long long start_time_us,
                                              int compression);
@@ -728,7 +728,7 @@ _remote_debugging_BinaryWriter___init__(PyObject *self, PyObject *args, PyObject
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 3;
-    const char *filename;
+    PyObject *filename;
     unsigned long long sample_interval_us;
     unsigned long long start_time_us;
     int compression = 0;
@@ -738,19 +738,7 @@ _remote_debugging_BinaryWriter___init__(PyObject *self, PyObject *args, PyObject
     if (!fastargs) {
         goto exit;
     }
-    if (!PyUnicode_Check(fastargs[0])) {
-        _PyArg_BadArgument("BinaryWriter", "argument 'filename'", "str", fastargs[0]);
-        goto exit;
-    }
-    Py_ssize_t filename_length;
-    filename = PyUnicode_AsUTF8AndSize(fastargs[0], &filename_length);
-    if (filename == NULL) {
-        goto exit;
-    }
-    if (strlen(filename) != (size_t)filename_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        goto exit;
-    }
+    filename = fastargs[0];
     if (!_PyLong_UnsignedLongLong_Converter(fastargs[1], &sample_interval_us)) {
         goto exit;
     }
@@ -1009,7 +997,7 @@ PyDoc_STRVAR(_remote_debugging_BinaryReader___init____doc__,
 
 static int
 _remote_debugging_BinaryReader___init___impl(BinaryReaderObject *self,
-                                             const char *filename);
+                                             PyObject *filename);
 
 static int
 _remote_debugging_BinaryReader___init__(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -1045,26 +1033,14 @@ _remote_debugging_BinaryReader___init__(PyObject *self, PyObject *args, PyObject
     PyObject *argsbuf[1];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    const char *filename;
+    PyObject *filename;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
-    if (!PyUnicode_Check(fastargs[0])) {
-        _PyArg_BadArgument("BinaryReader", "argument 'filename'", "str", fastargs[0]);
-        goto exit;
-    }
-    Py_ssize_t filename_length;
-    filename = PyUnicode_AsUTF8AndSize(fastargs[0], &filename_length);
-    if (filename == NULL) {
-        goto exit;
-    }
-    if (strlen(filename) != (size_t)filename_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        goto exit;
-    }
+    filename = fastargs[0];
     return_value = _remote_debugging_BinaryReader___init___impl((BinaryReaderObject *)self, filename);
 
 exit:
@@ -1564,4 +1540,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=36674f4cb8a653f3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5e2a29746a0c5d65 input=a9049054013a1b77]*/

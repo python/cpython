@@ -71,6 +71,8 @@ class SentinelTest(unittest.TestCase):
         self.assertIs(type(marker), sentinel)
         self.assertTrue(_testcapi.pysentinel_check(marker))
         self.assertFalse(_testcapi.pysentinel_check(object()))
+        self.assertTrue(_testcapi.pysentinel_checkexact(marker))
+        self.assertFalse(_testcapi.pysentinel_checkexact(object()))
         self.assertEqual(marker.__name__, "CAPI_SENTINEL")
         self.assertEqual(marker.__module__, __name__)
         self.assertEqual(repr(marker), "CAPI_SENTINEL")

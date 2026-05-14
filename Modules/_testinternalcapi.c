@@ -92,6 +92,12 @@ static const uintptr_t min_frame_pointer_addr = 0x1000;
 #  define FRAME_POINTER_NEXT_OFFSET 0
 #  define FRAME_POINTER_RETURN_OFFSET \
     (S390X_FRAME_RETURN_ADDRESS_OFFSET / (Py_ssize_t)sizeof(uintptr_t))
+#elif defined(__powerpc64__) || defined(__ppc64__)
+// ppc64le puts the return address at fp[2]; it saves the Condition Register
+// in fp[1]. See:
+// https://refspecs.linuxfoundation.org/ELF/ppc64/PPC-elf64abi-1.9.html#STACK
+#  define FRAME_POINTER_NEXT_OFFSET 0
+#  define FRAME_POINTER_RETURN_OFFSET 2
 #else
 #  define FRAME_POINTER_NEXT_OFFSET 0
 #  define FRAME_POINTER_RETURN_OFFSET 1
