@@ -941,7 +941,7 @@ class BytesIO(BufferedIOBase):
             newpos = min(len(self._buffer), self._pos + size)
             b = self._buffer[self._pos : newpos]
             self._pos = newpos
-            return bytes(b)
+            return b.take_bytes()
 
     def read1(self, size=-1):
         """This is the same as read.
