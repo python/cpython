@@ -48,11 +48,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "5343adc95840915b022b1d4524d0acb66b369ba2"
+          "checksumValue": "58101ef0951568acadd3117033bef084fea24cc1"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "1ec3bad08b6864c2c479e1fd941038c2dcd24c6d9a16400f4da54912d95aa321"
+          "checksumValue": "52d756026bf09befdb211c453e2009a646d6c6b519e6885e971b2550396619fb"
         }
       ],
       "fileName": "Modules/expat/expat.h"
@@ -174,11 +174,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "cb0af01558ec7b6474d2bd0c9386380c82618e8f"
+          "checksumValue": "1dad2ab196cdbe37572674c465bd9187fdbe4495"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "6745a6b8cdd7344d4bd8f27f605363ed746e57ff02d4ebce3eb1806579cd030f"
+          "checksumValue": "740137e670d2f3b7269364ffb6f60064e6560091850c5d6f2c3bb1b8ca6e3dd1"
         }
       ],
       "fileName": "Modules/expat/xmlparse.c"
@@ -1002,14 +1002,14 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "c7cec5f60ea3a42e7780781c6745255c19aa3dbfeeae58646b7132f88dc24780"
+          "checksumValue": "a52eb72108be160e190b5cafa5bba8663f1313f2013e26060d1c18e26e31067b"
         }
       ],
-      "downloadLocation": "https://github.com/libexpat/libexpat/releases/download/R_2_8_0/expat-2.8.0.tar.gz",
+      "downloadLocation": "https://github.com/libexpat/libexpat/releases/download/R_2_8_1/expat-2.8.1.tar.gz",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:libexpat_project:libexpat:2.8.0:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:libexpat_project:libexpat:2.8.1:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
@@ -1017,7 +1017,7 @@
       "name": "expat",
       "originator": "Organization: Expat development team",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "2.8.0"
+      "versionInfo": "2.8.1"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-hacl-star",

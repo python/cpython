@@ -4841,6 +4841,18 @@ type_new_set_attrs(const type_new_ctx *ctx, PyTypeObject *type)
     if (type_new_set_classdictcell(dict) < 0) {
         return -1;
     }
+
+#ifdef Py_GIL_DISABLED
+    // enable deferred reference counting on functions and descriptors
+    Py_ssize_t pos = 0;
+    PyObject *key, *value;
+    while (PyDict_Next(dict, &pos, &key, &value)) {
+        if (PyFunction_Check(value) || Py_TYPE(value)->tp_descr_get != NULL) {
+            PyUnstable_Object_EnableDeferredRefcount(value);
+        }
+    }
+#endif
+
     return 0;
 }
 
@@ -6746,12 +6758,11 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
     assert(!_PyType_HasFeature(metatype, Py_TPFLAGS_MANAGED_DICT));
 
 #ifdef Py_GIL_DISABLED
-    // gh-139103: Enable deferred refcounting for functions assigned
-    // to type objects.  This is important for `dataclass.__init__`,
-    // which is generated dynamically.
-    if (value != NULL &&
-        PyFunction_Check(value) &&
-        !_PyObject_HasDeferredRefcount(value))
+    // gh-139103: Enable deferred refcounting for functions and descriptors
+    // assigned to type objects.  This is important for `dataclass.__init__`,
+    // which is generated dynamically, and for descriptor scaling on
+    // free-threaded builds.
+    if (value != NULL && (PyFunction_Check(value) || Py_TYPE(value)->tp_descr_get != NULL))
     {
         PyUnstable_Object_EnableDeferredRefcount(value);
     }
@@ -11089,10 +11100,12 @@ static PyObject *
 slot_tp_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    PyObject *get;
-
-    get = _PyType_LookupRef(tp, &_Py_ID(__get__));
-    if (get == NULL) {
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyCStackRef cref;
+    _PyThreadState_PushCStackRef(tstate, &cref);
+    _PyType_LookupStackRefAndVersion(tp, &_Py_ID(__get__), &cref.ref);
+    if (PyStackRef_IsNull(cref.ref)) {
+        _PyThreadState_PopCStackRef(tstate, &cref);
 #ifndef Py_GIL_DISABLED
         /* Avoid further slowdowns */
         if (tp->tp_descr_get == slot_tp_descr_get)
@@ -11104,9 +11117,10 @@ slot_tp_descr_get(PyObject *self, PyObject *obj, PyObject *type)
         obj = Py_None;
     if (type == NULL)
         type = Py_None;
+    PyObject *get = PyStackRef_AsPyObjectBorrow(cref.ref);
     PyObject *stack[3] = {self, obj, type};
     PyObject *res = PyObject_Vectorcall(get, stack, 3, NULL);
-    Py_DECREF(get);
+    _PyThreadState_PopCStackRef(tstate, &cref);
     return res;
 }
 
