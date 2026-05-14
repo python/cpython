@@ -14,8 +14,20 @@ Sentinel objects
 
 .. c:function:: int PySentinel_Check(PyObject *o)
 
-   Return true if *o* is a :class:`sentinel` object.  The :class:`sentinel` type
-   does not allow subclasses, so this check is exact.
+   Return true if *o* is a :class:`sentinel` object or a subtype.
+   The :class:`sentinel` type does not currently allow subclasses,
+   so this check is exact.
+   Future Python versions may choose to allow subtyping.
+   This function always succeeds.
+
+   .. versionadded:: 3.15
+
+.. c:function:: int PySentinel_CheckExact(PyObject *o)
+
+   Return true if *o* is a :class:`sentinel` object, but not a subtype.
+   The :class:`sentinel` type does not currently allow subclasses.
+   Future Python versions may choose to allow subtyping.
+   This function always succeeds.
 
    .. versionadded:: 3.15
 

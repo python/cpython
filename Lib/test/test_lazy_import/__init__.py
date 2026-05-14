@@ -301,6 +301,15 @@ class SyntaxRestrictionTests(unittest.TestCase):
             f()
         self.assertIn("only allowed at module level", str(cm.exception))
 
+    def test_lazy_import_exec_in_class(self):
+        """lazy import via exec() inside a class should raise SyntaxError."""
+        # exec() inside a class body also has non-module-level locals.
+        with self.assertRaises(SyntaxError) as cm:
+            class C:
+                exec("lazy import json")
+
+        self.assertIn("only allowed at module level", str(cm.exception))
+
     @support.requires_subprocess()
     def test_lazy_import_exec_at_module_level(self):
         """lazy import via exec() at module level should work."""
@@ -351,6 +360,50 @@ class EagerImportInLazyModeTests(unittest.TestCase):
 
         f = test.test_lazy_import.data.eager_import_func.f
         self.assertEqual(type(f()), type(sys))
+
+    def test_exec_import_func(self):
+        """Implicit lazy imports via exec() inside functions should be eager."""
+        sys.set_lazy_imports("all")
+
+        def f():
+            exec("import test.test_lazy_import.data.basic2")
+
+        f()
+        self.assertIn("test.test_lazy_import.data.basic2", sys.modules)
+
+    def test_exec_import_func_with_lazy_modules(self):
+        """__lazy_modules__ should not make exec() imports lazy inside functions."""
+        globals()["__lazy_modules__"] = ["test.test_lazy_import.data.basic2"]
+        try:
+            def f():
+                exec("import test.test_lazy_import.data.basic2")
+
+            f()
+            self.assertIn("test.test_lazy_import.data.basic2", sys.modules)
+        finally:
+            del globals()["__lazy_modules__"]
+
+    def test_exec_import_class(self):
+        """Implicit lazy imports via exec() inside classes should be eager."""
+        sys.set_lazy_imports("all")
+
+        class C:
+            exec("import test.test_lazy_import.data.basic2")
+
+        self.assertIsNotNone(C)
+        self.assertIn("test.test_lazy_import.data.basic2", sys.modules)
+
+    def test_exec_import_class_with_lazy_modules(self):
+        """__lazy_modules__ should not make exec() imports lazy inside classes."""
+        globals()["__lazy_modules__"] = ["test.test_lazy_import.data.basic2"]
+        try:
+            class C:
+                exec("import test.test_lazy_import.data.basic2")
+
+            self.assertIsNotNone(C)
+            self.assertIn("test.test_lazy_import.data.basic2", sys.modules)
+        finally:
+            del globals()["__lazy_modules__"]
 
 
 class WithStatementTests(unittest.TestCase):
