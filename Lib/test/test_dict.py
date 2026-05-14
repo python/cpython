@@ -1912,7 +1912,7 @@ class FrozenDictTests(unittest.TestCase):
             frozendict({"a": "b", False: True, True: "c"}),
         ]
         hashes = {hash(fd) for fd in cases}
-        self.assertEqual(len(hashes), 5)
+        self.assertEqual(len(hashes), len(cases))
 
         fd = frozendict(x=[1], y=[2])
         with self.assertRaisesRegex(TypeError, "unhashable type: 'list'"):
