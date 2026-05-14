@@ -19,7 +19,7 @@ from ._re import (
 TYPE_CHECKING = False
 if TYPE_CHECKING:
     from collections.abc import Iterable
-    from typing import IO, Any
+    from typing import IO, Any, Final
 
     from ._types import Key, ParseFloat, Pos
 
