@@ -54,13 +54,11 @@ class BaseEventQueue:
         """
         return not self.events
 
-    def flush_buf(self) -> bytearray:
+    def flush_buf(self) -> bytes:
         """
         Flushes the buffer and returns its contents.
         """
-        old = self.buf
-        self.buf = bytearray()
-        return old
+        return self.buf.take_bytes()
 
     def insert(self, event: Event) -> None:
         """
@@ -87,7 +85,7 @@ class BaseEventQueue:
             if isinstance(k, dict):
                 self.keymap = k
             else:
-                self.insert(Event('key', k, bytes(self.flush_buf())))
+                self.insert(Event('key', k, self.flush_buf()))
                 self.keymap = self.compiled_keymap
 
         elif self.buf and self.buf[0] == 27:  # escape
@@ -102,9 +100,9 @@ class BaseEventQueue:
 
         else:
             try:
-                decoded = bytes(self.buf).decode(self.encoding)
+                decoded = self.buf.decode(self.encoding)
             except UnicodeError:
                 return
             else:
-                self.insert(Event('key', decoded, bytes(self.flush_buf())))
+                self.insert(Event('key', decoded, self.flush_buf()))
             self.keymap = self.compiled_keymap
