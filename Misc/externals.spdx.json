@@ -108,46 +108,46 @@
       "versionInfo": "3.50.4.0"
     },
     {
-      "SPDXID": "SPDXRef-PACKAGE-tcl-core",
+      "SPDXID": "SPDXRef-PACKAGE-tcl",
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "4c23f0dd3efcbe6f3a22c503a68d147617bb30c4f5290f1eb3eaacf0b460440b"
+          "checksumValue": "7a1d1f3a2b8f4484a9c2a027a157963c18f85a81785e85fcb5d1e3df6b6a4fd4"
         }
       ],
-      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/tcl-core-8.6.15.0.tar.gz",
+      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/tcl-9.0.3.0.tar.gz",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:tcl_tk:tcl_tk:8.6.15.0:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:tcl_tk:tcl_tk:9.0.3.0:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
       "licenseConcluded": "NOASSERTION",
-      "name": "tcl-core",
+      "name": "tcl",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "8.6.15.0"
+      "versionInfo": "9.0.3.0"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-tk",
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "0ae56d39bca92865f338529557a1e56d110594184b6dc5a91339c5675751e264"
+          "checksumValue": "54fb59df12c489c6264f5b7d3d7444b150d1e3d6561fd59cdb11483440cec000"
         }
       ],
-      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/tk-8.6.15.0.tar.gz",
+      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/tk-9.0.3.1.tar.gz",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:tcl_tk:tcl_tk:8.6.15.0:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:tcl_tk:tcl_tk:9.0.3.1:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
       "licenseConcluded": "NOASSERTION",
       "name": "tk",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "8.6.15.0"
+      "versionInfo": "9.0.3.1"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-xz",
