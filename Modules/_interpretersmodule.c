@@ -396,7 +396,6 @@ typedef struct _Py_shared_object_proxy {
 static PyTypeObject *
 _get_current_sharedobjectproxy_type(void);
 #define SharedObjectProxy_CAST(op) ((SharedObjectProxy *)op)
-#define SharedObjectProxy_OBJECT(op) FT_ATOMIC_LOAD_PTR_RELAXED(SharedObjectProxy_CAST(op)->object)
 
 typedef struct {
     PyThreadState *to_restore;
@@ -906,7 +905,7 @@ sharedobjectproxy_tp_call(PyObject *op, PyObject *args, PyObject *kwargs) {
         return NULL;
     }
 
-    PyObject *res = PyObject_Call(SharedObjectProxy_OBJECT(self),
+    PyObject *res = PyObject_Call(self->object,
                                   shared_args, shared_kwargs);
     Py_DECREF(shared_args);
     Py_XDECREF(shared_kwargs);
@@ -926,7 +925,7 @@ _sharedobjectproxy_no_arg(PyObject *op, unaryfunc call)
         return NULL;
     }
 
-    PyObject *result = call(SharedObjectProxy_OBJECT(op));
+    PyObject *result = call(self->object);
     return _sharedobjectproxy_wrap_result(self, result, &state);
 }
 
@@ -962,7 +961,7 @@ _sharedobjectproxy_single_share(PyObject *op, PyObject *other, binaryfunc call)
     if (shared_obj == NULL) {
         return NULL;
     }
-    PyObject *result = call(SharedObjectProxy_OBJECT(op), shared_obj);
+    PyObject *result = call(self->object, shared_obj);
     Py_DECREF(shared_obj);
     PyObject *ret = _sharedobjectproxy_wrap_result(self, result, &state);
     _sharedobjectproxy_finish_share(&shared_arg);
@@ -1027,7 +1026,7 @@ _sharedobjectproxy_double_share(PyObject *op, PyObject *first,
                                                second, &second_obj) < 0) {
         return NULL;
     }
-    PyObject *result = call(SharedObjectProxy_OBJECT(op), first_obj, second_obj);
+    PyObject *result = call(self->object, first_obj, second_obj);
     Py_DECREF(first_obj);
     Py_DECREF(second_obj);
     PyObject *ret = _sharedobjectproxy_wrap_result(self, result, &state);
@@ -1052,7 +1051,7 @@ _sharedobjectproxy_double_share_int(PyObject *op, PyObject *first,
                                                second, &second_obj) < 0) {
         return -1;
     }
-    int result = call(SharedObjectProxy_OBJECT(op), first_obj, second_obj);
+    int result = call(self->object, first_obj, second_obj);
     Py_DECREF(first_obj);
     Py_DECREF(second_obj);
     if (_sharedobjectproxy_exit(self, &state) < 0) {
@@ -1074,7 +1073,7 @@ _sharedobjectproxy_ssize_arg(PyObject *op, Py_ssize_t count, ssizeargfunc call)
     if (_sharedobjectproxy_enter(self, &state) < 0) {
         return NULL;
     }
-    PyObject *result = call(SharedObjectProxy_OBJECT(op), count);
+    PyObject *result = call(self->object, count);
     return _sharedobjectproxy_wrap_result(self, result, &state);
 }
 
@@ -1086,7 +1085,7 @@ _sharedobjectproxy_ssize_result(PyObject *op, lenfunc call)
     if (_sharedobjectproxy_enter(self, &state) < 0) {
         return -1;
     }
-    Py_ssize_t result = call(SharedObjectProxy_OBJECT(op));
+    Py_ssize_t result = call(self->object);
     if (_sharedobjectproxy_exit(self, &state) < 0) {
         return -1;
     }
@@ -1153,7 +1152,7 @@ sharedobjectproxy_tp_hash(PyObject *op)
         return -1;
     }
 
-    Py_hash_t result = PyObject_Hash(SharedObjectProxy_OBJECT(op));
+    Py_hash_t result = PyObject_Hash(self->object);
 
     if (_sharedobjectproxy_exit(self, &state) < 0) {
         return -1;
@@ -1225,7 +1224,7 @@ sharedobjectproxy_sq_ass_item(PyObject *op, Py_ssize_t index, PyObject *item)
         _sharedobjectproxy_finish_share(&shared_arg);
         return -1;
     }
-    int result = PySequence_SetItem(SharedObjectProxy_OBJECT(op), index, shared_obj);
+    int result = PySequence_SetItem(self->object, index, shared_obj);
     Py_DECREF(shared_obj);
     if (_sharedobjectproxy_exit(self, &state) < 0) {
         _sharedobjectproxy_finish_share(&shared_arg);
@@ -1249,7 +1248,7 @@ sharedobjectproxy_sq_contains(PyObject *op, PyObject *item)
         _sharedobjectproxy_finish_share(&shared_arg);
         return -1;
     }
-    int result = PySequence_Contains(SharedObjectProxy_OBJECT(op), shared_obj);
+    int result = PySequence_Contains(self->object, shared_obj);
     Py_DECREF(shared_obj);
     if (_sharedobjectproxy_exit(self, &state) < 0) {
         _sharedobjectproxy_finish_share(&shared_arg);
