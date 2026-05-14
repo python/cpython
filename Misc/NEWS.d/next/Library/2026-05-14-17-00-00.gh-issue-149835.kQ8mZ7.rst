@@ -1,0 +1,4 @@
+Fix :func:`shutil.move` so that the guard against moving a directory into
+itself is not bypassed when the destination contains a symlink component.
+:func:`!shutil._destinsrc` now resolves symlinks with :func:`os.path.realpath`
+instead of using :func:`os.path.abspath`.
