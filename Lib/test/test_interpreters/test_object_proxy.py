@@ -338,5 +338,28 @@ class SharedObjectProxyTests(TestBase):
         self.assertFalse(called)
         self.assertEqual(proxy.attr, 24)
 
+    def test_use_after_interp_deletion(self):
+        def test():
+            from concurrent import interpreters
+
+            class Test:
+                def __init__(self):
+                    self.attr = 42
+
+                def __str__(self):
+                    return "Alive"
+
+            return interpreters.share(Test())
+
+        interp = interpreters.create()
+        wrapped = interp.call(test)
+        self.assertEqual(str(wrapped), "Alive")
+        self.assertEqual(wrapped.attr, 42)
+        interp.close()
+        self.assertEqual(str(wrapped), "None")
+        with self.assertRaises(AttributeError):
+            wrapped.attr
+
+
 if __name__ == "__main__":
     unittest.main()
