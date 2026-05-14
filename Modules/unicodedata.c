@@ -586,22 +586,14 @@ canonical_ordering_sort_counting(int kind, void *data,
     Py_ssize_t counts[256] = {0};
     Py_ssize_t run_length = end - start;
     Py_ssize_t total = 0;
-    unsigned char min_combining = 255;
-    unsigned char max_combining = 0;
 
     for (Py_ssize_t i = start; i < end; i++) {
         Py_UCS4 code = PyUnicode_READ(kind, data, i);
         unsigned char combining = _getrecord_ex(code)->combining;
         counts[combining]++;
-        if (combining < min_combining) {
-            min_combining = combining;
-        }
-        if (combining > max_combining) {
-            max_combining = combining;
-        }
     }
 
-    for (Py_ssize_t i = min_combining; i <= max_combining; i++) {
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(counts); i++) {
         Py_ssize_t count = counts[i];
         counts[i] = total;
         total += count;
@@ -629,7 +621,7 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
     void *result_data;
     /* Longest decomposition in Unicode 3.2: U+FDFA */
     Py_UCS4 stack[20];
-    Py_ssize_t space, isize, length;
+    Py_ssize_t space, isize;
     int index, prefix, count, stackptr;
     unsigned char prev, cur;
     Py_UCS4 *sortbuf = NULL;
@@ -727,25 +719,24 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
 
     result_kind = PyUnicode_KIND(result);
     result_data = PyUnicode_DATA(result);
-    length = PyUnicode_GET_LENGTH(result);
 
     /* Sort each consecutive combining-character run canonically. */
     i = 0;
-    while (i < length) {
+    while (i < o) {
         Py_ssize_t run_length, run_start;
         int needs_sort = 0;
 
-        prev = _getrecord_ex(
-            PyUnicode_READ(result_kind, result_data, i))->combining;
+        Py_UCS4 ch = PyUnicode_READ(result_kind, result_data, i);
+        prev = _getrecord_ex(ch)->combining;
         if (prev == 0) {
             i++;
             continue;
         }
 
         run_start = i++;
-        while (i < length) {
-            cur = _getrecord_ex(
-                PyUnicode_READ(result_kind, result_data, i))->combining;
+        while (i < o) {
+            Py_UCS4 ch = PyUnicode_READ(result_kind, result_data, i);
+            cur = _getrecord_ex(ch)->combining;
             if (cur == 0) {
                 break;
             }
@@ -767,8 +758,9 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
         }
 
         if (run_length > sortbuflen) {
-            Py_UCS4 *new_sortbuf = PyMem_Realloc(sortbuf,
-                                                 run_length * sizeof(Py_UCS4));
+            Py_UCS4 *new_sortbuf = PyMem_Resize(sortbuf,
+                                                Py_UCS4,
+                                                run_length);
             if (new_sortbuf == NULL) {
                 PyErr_NoMemory();
                 PyMem_Free(sortbuf);

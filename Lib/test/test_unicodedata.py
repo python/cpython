@@ -617,7 +617,7 @@ class BaseUnicodeFunctionsTest:
         self.assertEqual(self.db.normalize('NFC', a), b)
 
     def test_long_combining_mark_run(self):
-        # GH-XXXXX: avoid quadratic canonical ordering.
+        # gh-149079: avoid quadratic canonical ordering.
         payload = "a" + ("\u0300\u0327" * 32)
         nfd = "a" + ("\u0327" * 32) + ("\u0300" * 32)
         nfc = "\u00e0" + ("\u0327" * 32) + ("\u0300" * 31)
@@ -628,7 +628,7 @@ class BaseUnicodeFunctionsTest:
         self.assertEqual(self.db.normalize("NFKC", payload), nfc)
 
     def test_combining_mark_run_fast_paths(self):
-        # GH-XXXXX: cover short runs and already-sorted long runs.
+        # gh-149079: cover short runs and already-sorted long runs.
         short_payload = "a" + ("\u0300\u0327" * 9) + "\u0300"
         short_nfd = "a" + ("\u0327" * 9) + ("\u0300" * 10)
         short_nfc = "\u00e0" + ("\u0327" * 9) + ("\u0300" * 9)
