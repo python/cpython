@@ -549,9 +549,13 @@ pydll = LibraryLoader(PyDLL)
 
 if _os.name == "nt":
     pythonapi = PyDLL("python dll", None, _sys.dllhandle)
-elif _sys.platform in ["android", "cygwin"]:
+elif _sys.platform in ["android"]:
     # These are Unix-like platforms which use a dynamically-linked libpython.
     pythonapi = PyDLL(_sysconfig.get_config_var("LDLIBRARY"))
+elif _sys.platform in ["cygwin"]:
+    # These platforms must load the DLL file from DLLLIBRARY
+    # and not the import library provided by LDLIBRARY.
+    pythonapi = PyDLL(_sysconfig.get_config_var("DLLLIBRARY"))
 else:
     pythonapi = PyDLL(None)
 
