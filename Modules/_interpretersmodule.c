@@ -19,6 +19,7 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_IsRunningMain()
 #include "pycore_runtime_structs.h"
 #include "pycore_pyatomic_ft_wrappers.h"
+#include "pycore_tuple.h"         // _PyTuple_FromPairSteal
 
 #include "marshal.h"              // PyMarshal_ReadObjectFromString()
 
@@ -1790,10 +1791,7 @@ get_summary(PyInterpreterState *interp)
         Py_DECREF(idobj);
         return NULL;
     }
-    PyObject *res = PyTuple_Pack(2, idobj, whenceobj);
-    Py_DECREF(idobj);
-    Py_DECREF(whenceobj);
-    return res;
+    return _PyTuple_FromPairSteal(idobj, whenceobj);
 }
 
 
@@ -2685,6 +2683,7 @@ error:
 }
 
 static struct PyModuleDef_Slot module_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

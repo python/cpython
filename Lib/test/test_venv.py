@@ -11,12 +11,12 @@ import os
 import os.path
 import pathlib
 import re
+import shlex
 import shutil
 import subprocess
 import sys
 import sysconfig
 import tempfile
-import shlex
 from test.support import (captured_stdout, captured_stderr,
                           skip_if_broken_multiprocessing_synchronize, verbose,
                           requires_subprocess, is_android, is_apple_mobile,
@@ -373,6 +373,16 @@ class BasicTest(BaseTest):
             with open(fn, 'wb') as f:
                 f.write(b'Still here?')
 
+    @unittest.skipUnless(hasattr(os, 'listxattr'), 'test requires os.listxattr')
+    def test_install_scripts_selinux(self):
+        """
+        gh-145417: Test that install_scripts does not copy SELinux context
+        when copying scripts.
+        """
+        with patch('os.listxattr') as listxattr_mock:
+            venv.create(self.env_dir)
+            listxattr_mock.assert_not_called()
+
     def test_overwrite_existing(self):
         """
         Test creating environment in an existing directory.
@@ -642,6 +652,26 @@ class BasicTest(BaseTest):
             f.write("set -euo pipefail\n"
                     f"source {activate}\n"
                     "deactivate\n")
+        out, err = check_output([bash, test_script])
+        self.assertEqual(out, "".encode())
+        self.assertEqual(err, "".encode())
+
+    # gh-149701: Test exit code is zero even when hashing is disabled
+    @unittest.skipIf(os.name == 'nt', 'not relevant on Windows')
+    def test_deactivate_with_strict_bash_opts_and_hashing_disabled(self):
+        bash = shutil.which("bash")
+        if bash is None:
+            self.skipTest("bash required for this test")
+        rmtree(self.env_dir)
+        builder = venv.EnvBuilder(clear=True)
+        builder.create(self.env_dir)
+        activate = os.path.join(self.env_dir, self.bindir, "activate")
+        test_script = os.path.join(self.env_dir, "test_hash_disabled.sh")
+        with open(test_script, "w") as f:
+            f.write("set -euo pipefail\n"
+                    "set +h\n"  # disable hashing
+                    f"source {activate}\n"
+                    "deactivate")
         out, err = check_output([bash, test_script])
         self.assertEqual(out, "".encode())
         self.assertEqual(err, "".encode())
