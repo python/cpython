@@ -265,7 +265,7 @@ it must be parenthesized. ::
        [x, x**2 for x in range(6)]
         ^^^^^^^
    SyntaxError: did you forget parentheses around the comprehension target?
-   >>> # flatten a list using a listcomp with two 'for'
+   >>> # flatten a list using a single listcomp with two 'for' clauses
    >>> vec = [[1,2,3], [4,5,6], [7,8,9]]
    >>> [num for elem in vec for num in elem]
    [1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -296,9 +296,12 @@ The following list comprehension will transpose rows and columns::
    >>> [[row[i] for row in matrix] for i in range(4)]
    [[1, 5, 9], [2, 6, 10], [3, 7, 11], [4, 8, 12]]
 
-As we saw in the previous section, the inner list comprehension is evaluated in
-the context of the :keyword:`for` that follows it, so this example is
-equivalent to::
+Unlike a list comprehension with multiple ``for`` clauses (as seen in
+the previous section), here the expression itself is a complete list
+comprehension — this is what makes it *nested*. The inner list
+comprehension ``[row[i] for row in matrix]`` is evaluated once for
+each value of ``i`` in the outer :keyword:`for`, so this example is
+equivalent to:
 
    >>> transposed = []
    >>> for i in range(4):
