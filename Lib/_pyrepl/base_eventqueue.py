@@ -58,7 +58,7 @@ class BaseEventQueue:
         """
         Flushes the buffer and returns its contents.
         """
-        return self.buf.take_bytes()
+        return self.buf.take_bytes()  # type: ignore[attr-defined, no-any-return]
 
     def insert(self, event: Event) -> None:
         """
