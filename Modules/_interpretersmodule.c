@@ -381,7 +381,7 @@ clear_module_state(module_state *state)
 
 typedef struct _Py_shared_object_proxy {
     PyObject_HEAD
-    PyInterpreterState *interp;
+    PyInterpreterView *interp_view;
     PyObject *object;
 #ifdef Py_GIL_DISABLED
     struct {
@@ -409,29 +409,43 @@ _sharedobjectproxy_enter(SharedObjectProxy *self, _PyXI_proxy_state *state)
     PyThreadState *tstate = _PyThreadState_GET();
     assert(self != NULL);
     assert(tstate != NULL);
-    if (tstate->interp == self->interp) {
+    PyInterpreterGuard *guard = PyInterpreterGuard_FromView(self->interp_view);
+    if (guard == NULL) {
+        // The interpreter is dead. Set the object to None and bail out.
+        state->to_restore = NULL;
+        state->for_call = NULL;
+        self->object = Py_None;
+        return 0;
+    }
+
+    PyInterpreterState *interp = guard->interp;
+
+    if (tstate->interp == interp) {
         // No need to switch; already in the correct interpreter
         state->to_restore = NULL;
         state->for_call = NULL;
+        PyInterpreterGuard_Close(guard);
         return 0;
     }
     state->to_restore = tstate;
-    PyThreadState *for_call = _PyThreadState_NewForExec(self->interp);
+    PyThreadState *for_call = _PyThreadState_NewForExec(interp);
     state->for_call = for_call;
     if (for_call == NULL) {
+        PyInterpreterGuard_Close(guard);
         PyErr_NoMemory();
         return -1;
     }
     _PyThreadState_Detach(tstate);
     _PyThreadState_Attach(state->for_call);
-    assert(_PyInterpreterState_GET() == self->interp);
+    PyInterpreterGuard_Close(guard);
+    assert(_PyInterpreterState_GET() == interp);
     return 0;
 }
 
 static int
 _sharedobjectproxy_exit(SharedObjectProxy *self, _PyXI_proxy_state *state)
 {
-    assert(_PyInterpreterState_GET() == self->interp);
+    //assert(_PyInterpreterState_GET() == self->interp);
     if (state->to_restore == NULL) {
         // Nothing to do. We were already in the correct interpreter.
         return PyErr_Occurred() == NULL ? 0 : -1;
@@ -470,7 +484,8 @@ sharedobjectproxy_alloc(PyTypeObject *type)
         return NULL;
     }
 
-    self->interp = _PyInterpreterState_GET();
+    //self->interp = _PyInterpreterState_GET();
+    self->interp_view = PyInterpreterView_FromCurrent();
 #ifndef NDEBUG
     self->object = NULL;
 #endif
@@ -502,7 +517,7 @@ sharedobjectproxy_new_impl(PyTypeObject *type, PyObject *obj)
 }
 
 PyObject *
-_sharedobjectproxy_create(PyObject *object, PyInterpreterState *owning_interp)
+_sharedobjectproxy_create(PyObject *object, PyInterpreterView *owning_interp)
 {
     assert(object != NULL);
     assert(owning_interp != NULL);
@@ -519,7 +534,7 @@ _sharedobjectproxy_create(PyObject *object, PyInterpreterState *owning_interp)
 
     assert(PyObject_GC_IsTracked((PyObject *)proxy));
     proxy->object = NULL;
-    proxy->interp = owning_interp;
+    proxy->interp_view = owning_interp;
 
     // We have to be in the correct interpreter to increment the object's
     // reference count.
@@ -561,11 +576,19 @@ static int
 sharedobjectproxy_traverse(PyObject *op, visitproc visit, void *arg)
 {
     SharedObjectProxy *self = SharedObjectProxy_CAST(op);
-    if (self->interp != _PyInterpreterState_GET()) {
-        // Don't traverse from another interpreter
+    PyInterpreterGuard *guard = PyInterpreterGuard_FromView(self->interp_view);
+    if (guard == NULL) {
+        // Interpreter is dead; nothing to do.
         return 0;
     }
 
+    if (guard->interp != _PyInterpreterState_GET()) {
+        // Don't traverse from another interpreter
+        PyInterpreterGuard_Close(guard);
+        return 0;
+    }
+
+    PyInterpreterGuard_Close(guard);
     Py_VISIT(self->object);
     return 0;
 }
@@ -588,7 +611,7 @@ sharedobjectproxy_dealloc(PyObject *op)
 typedef struct {
     _PyXIData_t *xidata;
     PyObject *object_to_wrap;
-    PyInterpreterState *owner;
+    PyInterpreterView *owner;
 } _PyXI_proxy_share;
 
 /* Use this in the calling interpreter. */
@@ -598,11 +621,16 @@ _sharedobjectproxy_init_share(_PyXI_proxy_share *share,
 {
     assert(op != NULL);
     assert(share != NULL);
-    _PyXIData_t *xidata = _PyXIData_New();
-    if (xidata == NULL) {
+    share->owner = PyInterpreterView_FromCurrent();
+    if (share->owner == NULL) {
         return -1;
     }
-    share->owner = _PyInterpreterState_GET();
+
+    _PyXIData_t *xidata = _PyXIData_New();
+    if (xidata == NULL) {
+        PyInterpreterView_Close(share->owner);
+        return -1;
+    }
 
     if (_PyObject_GetXIData(_PyThreadState_GET(), op,
                             _PyXIDATA_XIDATA_ONLY, xidata) < 0) {
@@ -1316,7 +1344,7 @@ static PyObject *
 sharedobjectproxy_xid(_PyXIData_t *data)
 {
     SharedObjectProxy *proxy = SharedObjectProxy_CAST(data->obj);
-    return _sharedobjectproxy_create(proxy->object, proxy->interp);
+    return _sharedobjectproxy_create(proxy->object, proxy->interp_view);
 }
 
 static void
@@ -2596,7 +2624,12 @@ _interpreters_share(PyObject *module, PyObject *op)
         return call_share_method_steal(tstate, share_method /* stolen */);
     }
 
-    return _sharedobjectproxy_create(op, _PyInterpreterState_GET());
+    PyInterpreterView *view = PyInterpreterView_FromCurrent();
+    if (view == NULL) {
+        return NULL;
+    }
+
+    return _sharedobjectproxy_create(op, view);
 }
 
 static PyMethodDef module_functions[] = {
