@@ -1438,14 +1438,14 @@ math.frexp
 
 Return the mantissa and exponent of x, as pair (m, e).
 
-m is a float and e is an int, such that x = m * 2.**e.
-If x is a finite nonzero number, then 0.5 <= abs(m) < 1.0.
-Else, e is zero and m is x.
+If x is a finite nonzero number, then m is a float with
+0.5 <= abs(m) < 1.0 and an integer e is such that
+x == m * 2.**e exactly.  Else, return (x, 0).
 [clinic start generated code]*/
 
 static PyObject *
 math_frexp_impl(PyObject *module, double x)
-/*[clinic end generated code: output=03e30d252a15ad4a input=49202d05c5d2c699]*/
+/*[clinic end generated code: output=03e30d252a15ad4a input=904718c4ea236def]*/
 {
     int i;
     /* deal with special cases directly, to sidestep platform
