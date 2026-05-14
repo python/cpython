@@ -12,6 +12,8 @@
     <TkMinorVersion>$([System.Version]::Parse($(TkVersion)).Minor)</TkMinorVersion>
     <TkPatchLevel>$([System.Version]::Parse($(TkVersion)).Build)</TkPatchLevel>
     <TkRevision>$([System.Version]::Parse($(TkVersion)).Revision)</TkRevision>
+    <!-- Back compat hack.  If you're here wondering about -core vs not, do us both a favor and just override the whole tclDir variable -->
+    <tclDir Condition="$(tclDir) == '' and $(TclMajorVersion) == '8'">$(ExternalsDir)tcl-core-$(TclVersion)\</tclDir>
     <tclDir Condition="$(tclDir) == ''">$(ExternalsDir)tcl-$(TclVersion)\</tclDir>
     <tkDir Condition="$(tkDir) == ''">$(ExternalsDir)tk-$(TkVersion)\</tkDir>
     <tcltkDir Condition="$(tcltkDir) == ''">$(ExternalsDir)tcltk-$(TclVersion)\$(ArchName)\</tcltkDir>
