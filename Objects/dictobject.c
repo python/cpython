@@ -2881,7 +2881,9 @@ delete_index_from_values(PyDictValues *values, Py_ssize_t ix)
     for (; i < size; i++) {
         array[i] = array[i+1] + 1;
     }
-    /* Zero the vacated slot to maintain a clean state. */
+    /* Zero the vacated slot.  This keeps every slot at or beyond
+       values->size equal to 0, which lets _STORE_ATTR_INSTANCE_VALUE skip
+       the array write for a subsequent sequential (delta==0) insert. */
     array[size] = 0;
     values->size = size;
 }
@@ -3049,6 +3051,11 @@ clear_embedded_values(PyDictValues *values, Py_ssize_t nentries)
         refs[i] = values->values[i];
         values->values[i] = NULL;
     }
+    /* Reset the insertion-order array as well: every slot at or beyond
+       values->size must stay 0 so that the sequential-store fast path in
+       _STORE_ATTR_INSTANCE_VALUE can skip the write.  Only [0, size) can be
+       non-zero here; [size, capacity) is already 0. */
+    memset(get_insertion_order_array(values), 0, values->size);
     values->size = 0;
     for (Py_ssize_t i = 0; i < nentries; i++) {
         Py_XDECREF(refs[i]);
@@ -7163,6 +7170,12 @@ _PyObject_InitInlineValues(PyObject *obj, PyTypeObject *tp)
     for (size_t i = 0; i < size; i++) {
         values->values[i] = NULL;
     }
+    /* Zero the insertion-order array.  Not all allocators zero the inline
+       values region (e.g. _PyObject_GC_New, used for TypeVar and friends,
+       does not -- only _PyType_AllocNoTrack memsets it), so initialise it
+       here.  The sequential-store fast path in _STORE_ATTR_INSTANCE_VALUE
+       relies on slots at or beyond values->size being 0. */
+    memset(get_insertion_order_array(values), 0, size);
     _PyObject_ManagedDictPointer(obj)->dict = NULL;
 }
 

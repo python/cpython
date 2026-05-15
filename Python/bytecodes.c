@@ -3159,8 +3159,16 @@ dummy_func(
             if (old_value == NULL) {
                 PyDictValues *values = _PyObject_InlineValues(owner_o);
                 Py_ssize_t index = value_ptr - values->values;
-                uint8_t delta = (uint8_t)(index - values->size);
-                _PyDictValues_AddToInsertionOrderDelta(values, delta);
+                if (index == values->size) {
+                    /* Sequential store (the common case in __init__): the
+                       insertion-order delta is 0 and that array slot is
+                       already 0, so only the size needs updating. */
+                    assert(get_insertion_order_array(values)[values->size] == 0);
+                    values->size++;
+                }
+                else {
+                    _PyDictValues_AddToInsertionOrder(values, index);
+                }
             }
             UNLOCK_OBJECT(owner_o);
             o = owner;
