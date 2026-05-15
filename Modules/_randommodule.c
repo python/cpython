@@ -551,18 +551,18 @@ _random_Random_getrandbits_impl(RandomObject *self, uint64_t k)
 
 /*[clinic input]
 @critical_section
-@text_signature "($self, /, *args, **kwargs)"
+@text_signature "($self, [seed])"
 _random.Random.__init__ as random_init
 
-    arg: object = NULL
+    seed: object = NULL
     /
 [clinic start generated code]*/
 
 static int
-random_init_impl(RandomObject *self, PyObject *arg)
-/*[clinic end generated code: output=823329df8669c8a7 input=3772473c67871d42]*/
+random_init_impl(RandomObject *self, PyObject *seed)
+/*[clinic end generated code: output=260734a3739c394f input=e516bf32e8a05e28]*/
 {
-    return random_seed(RandomObject_CAST(self), arg);
+    return random_seed(self, seed);
 }
 
 
