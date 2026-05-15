@@ -156,3 +156,8 @@ Python/frozen_modules/MANIFEST
 # Ignore ./python binary on Unix but still look into ./Python/ directory.
 /python
 !/Python/
+
+# Nanvix build artifacts.
+.nanvix/cpython-rootfs.img
+python.elf
+pyrightconfig.json
