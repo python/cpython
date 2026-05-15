@@ -1,4 +1,5 @@
     .text
+#ifdef __x86_64__
 #if defined(__APPLE__)
     .globl	__Py_trampoline_func_start
 __Py_trampoline_func_start:
@@ -41,3 +42,4 @@ _Py_trampoline_func_end:
     .align 8
 4:
 #endif
+#endif // __x86_64__

@@ -36,6 +36,7 @@
 #endif
 
     .text
+#if defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)
 #if defined(__APPLE__)
     .globl	__Py_trampoline_func_start
 __Py_trampoline_func_start:
@@ -73,3 +74,4 @@ _Py_trampoline_func_end:
     .long 0; /* padding for 8 byte alignment */
     .popsection; /* end the section */
 #endif
+#endif // __aarch64__ && __AARCH64EL__ && !__ILP32__
