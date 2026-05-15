@@ -3688,6 +3688,44 @@ PyConfig_SetWideStringList(PyConfig *config, PyWideStringList *list,
 }
 
 
+#ifdef __CYGWIN__
+// Cygwin strips ".exe" suffix from argv[0].
+// Add again the ".exe" suffix.
+static PyStatus
+config_argv0_add_exe(PyConfig *config)
+{
+    if (config->argv.length < 1) {
+        return _PyStatus_OK();
+    }
+    const wchar_t *argv0 = config->argv.items[0];
+    size_t len = wcslen(argv0);
+    if (len >= 5 && wcscmp(argv0 + len - 4, L".exe") == 0) {
+        return _PyStatus_OK();
+    }
+
+    wchar_t *exe = PyMem_RawMalloc((len + 4 + 1) * sizeof(wchar_t));
+    if (exe == NULL) {
+        return _PyStatus_NO_MEMORY();
+    }
+    wcscpy(exe, argv0);
+    wcscat(exe, L".exe");
+
+    FILE *fp = _Py_wfopen(exe, L"rb");
+    if (fp != NULL) {
+        fclose(fp);
+
+        PyMem_RawFree(config->argv.items[0]);
+        config->argv.items[0] = exe;
+    }
+    else {
+        PyMem_RawFree(exe);
+    }
+
+    return _PyStatus_OK();
+}
+#endif
+
+
 /* Read the configuration into PyConfig from:
 
    * Command line arguments
@@ -3706,6 +3744,13 @@ _PyConfig_Read(PyConfig *config, int compute_path_config)
     }
 
     config_get_global_vars(config);
+
+#ifdef __CYGWIN__
+    status = config_argv0_add_exe(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+#endif
 
     if (config->orig_argv.length == 0
         && !(config->argv.length == 1
