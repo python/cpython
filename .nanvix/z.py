@@ -7,6 +7,7 @@ Usage:
     ./z setup      # Download Nanvix sysroot and dependencies
     ./z build      # Cross-compile python.elf and libpython.a
     ./z test       # Run test suite (hello-world on nanvixd.elf)
+    ./z benchmark  # Run hello-world benchmark with release ramfs
     ./z release    # Package release tarballs (sysroot + buildroot)
     ./z clean      # Remove build artifacts
     ./z distclean  # Deep clean (build artifacts + untracked files)
@@ -256,11 +257,35 @@ class CPythonBuild(ZScript):
         sysroot, toolchain = self._get_host_paths()
         kwargs = self._build_kwargs()
 
+        nanvixd_extra = None
+
         test_mod.run_all(
             sysroot,
             toolchain,
             self.repo_root,
             **kwargs,
+            nanvixd_extra=nanvixd_extra,
+            run_fn=lambda *args, **kw: self.run(*args, **kw),  # type: ignore[arg-type]
+            docker=self.docker is not None,
+        )
+
+    def benchmark(self) -> None:
+        """Run hello-world benchmark with a release-style ramfs."""
+        self._overlay_local_nanvix()
+        sysroot, toolchain = self._get_host_paths()
+        kwargs = self._build_kwargs()
+
+        nanvixd_extra = None
+
+        # run_benchmark does not use 'release' — always stages a
+        # non-release build and applies release trimming itself.
+        bench_kwargs = {k: v for k, v in kwargs.items() if k != "release"}
+        test_mod.run_benchmark(
+            sysroot,
+            toolchain,
+            self.repo_root,
+            **bench_kwargs,
+            nanvixd_extra=nanvixd_extra,
             run_fn=lambda *args, **kw: self.run(*args, **kw),  # type: ignore[arg-type]
             docker=self.docker is not None,
         )
