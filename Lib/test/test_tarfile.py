@@ -3949,7 +3949,7 @@ class TestExtractionFilters(unittest.TestCase):
             # path fits in PATH_MAX, but it overflows when the final symlink
             # is expanded
             steps = "abcdefghijklmnop"
-            if sys.platform == 'win32':
+            if sys.platform in ('win32', 'cygwin'):
                 component = 'd' * 25
             elif 'PC_PATH_MAX' in os.pathconf_names:
                 max_path_len = os.pathconf(self.outerdir.parent, "PC_PATH_MAX")
@@ -3989,6 +3989,9 @@ class TestExtractionFilters(unittest.TestCase):
                                  check_flag=False)):
             if sys.platform == 'win32':
                 self.expect_exception((FileNotFoundError, FileExistsError))
+            elif sys.platform == 'cygwin':
+                exc = self.expect_exception(OSError)
+                self.assertEqual(exc.errno, errno.ELOOP)
             elif self.raised_exception:
                 # Cannot symlink/hardlink: tarfile falls back to getmember()
                 self.expect_exception(KeyError)
@@ -4010,7 +4013,8 @@ class TestExtractionFilters(unittest.TestCase):
                         # 206: ERROR_FILENAME_EXCED_RANGE
                         self.assertIn(exc.winerror, (3, 5, 206))
                     else:
-                        self.assertEqual(exc.errno, errno.ENAMETOOLONG)
+                        self.assertIn(exc.errno,
+                                      (errno.ENAMETOOLONG, errno.ELOOP))
 
     @symlink_test
     def test_parent_symlink2(self):
