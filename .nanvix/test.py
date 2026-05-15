@@ -829,16 +829,54 @@ def run_benchmark(
     run_fn: Any = None,
     docker: bool = False,
 ) -> None:
-    """Run a hello-world benchmark using a release-style ramfs.
+    """Run a hello-world benchmark.
 
-    Unlike :func:`run_all`, this builds the ramfs with the same trimming
-    applied during ``./z release`` (no test/ directory, no dev artifacts)
-    so that the image size and boot time reflect a production deployment.
+    In *standalone* mode the benchmark builds a ramfs with the same
+    trimming applied during ``./z release`` (no test/ directory, no dev
+    artifacts) so that the image size and boot time reflect a production
+    deployment.  Other process modes run without a ramfs and therefore
+    do not exercise the production image/boot path.
+
     No regression tests are executed.
     """
     nanvix_home = Path(sysroot)
     standalone = process_mode == "standalone"
 
+    try:
+        _run_benchmark_impl(
+            sysroot,
+            toolchain,
+            repo_root,
+            nanvix_home=nanvix_home,
+            standalone=standalone,
+            platform=platform,
+            process_mode=process_mode,
+            memory_size=memory_size,
+            install_prefix=install_prefix,
+            nanvixd_extra=nanvixd_extra,
+            run_fn=run_fn,
+            docker=docker,
+        )
+    finally:
+        cleanup(repo_root)
+
+
+def _run_benchmark_impl(
+    sysroot: str | Path,
+    toolchain: str | Path,
+    repo_root: Path,
+    *,
+    nanvix_home: Path,
+    standalone: bool,
+    platform: str,
+    process_mode: str,
+    memory_size: str,
+    install_prefix: str,
+    nanvixd_extra: list[str] | None = None,
+    run_fn: Any = None,
+    docker: bool = False,
+) -> None:
+    """Inner implementation of :func:`run_benchmark`."""
     # Stage (reuses cached build).
     staging = stage(
         sysroot,
@@ -882,6 +920,9 @@ def run_benchmark(
             ramfs_img,
             keep_tests=False,
         )
+
+        # Scratch directory is no longer needed.
+        shutil.rmtree(bench_cache, ignore_errors=True)
 
     # Run benchmark.
     print(f"Benchmark: Hello world ({process_mode})...")
