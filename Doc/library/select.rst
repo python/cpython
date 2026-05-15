@@ -200,7 +200,7 @@ The module defines the following:
 
 .. _devpoll-objects:
 
-``/dev/poll`` Polling objects
+``/dev/poll`` polling objects
 -----------------------------
 
 Solaris and derivatives have ``/dev/poll``. While :c:func:`!select` is
