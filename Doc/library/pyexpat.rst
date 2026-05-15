@@ -64,7 +64,7 @@ The :mod:`!xml.parsers.expat` module contains two functions:
 .. function:: ParserCreate(encoding=None, namespace_separator=None)
 
    Creates and returns a new :class:`xmlparser` object.   *encoding*, if specified,
-   must be a string naming the encoding  used by the XML data.
+   must be a string naming the encoding used by the XML data.
    Expat natively understands and processes UTF-8, UTF-16, UTF-16BE, UTF-16LE,
    ISO-8859-1, and US-ASCII.
    For other encodings (including aliases like Latin1 and ASCII) it falls back

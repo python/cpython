@@ -1,4 +1,4 @@
-Add support of multiple multi-byte encodings in the :mod:`XML parser
+Add support for multiple multi-byte encodings in the :mod:`XML parser
 <xml.parsers.expat>`: "cp932", "cp949", "cp950", "Big5","EUC-JP", "GB2312",
 "GBK", "johab", and "Shift_JIS". Add partial support (only BMP characters)
 for multi-byte encodings "Big5-HKSCS", "EUC_JIS-2004", "EUC_JISX0213",
