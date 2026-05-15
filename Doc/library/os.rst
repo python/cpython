@@ -219,6 +219,10 @@ process and user.
    :data:`os.environ`, and when one of the :meth:`~dict.pop` or
    :meth:`~dict.clear` methods is called.
 
+   If the ``clearenv()`` function is available, the :meth:`~dict.clear` method
+   uses it and emits a single ``os._clearenv`` audit event. Otherwise, it emits
+   an ``os.unsetenv`` event on each deleted variable.
+
    .. audit-event:: os.unsetenv key os.unsetenv
 
    .. audit-event:: os._clearenv "" os._clearenv
