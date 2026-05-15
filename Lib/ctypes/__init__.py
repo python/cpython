@@ -553,8 +553,6 @@ elif _sys.platform == "android":
     # These are Unix-like platforms which use a dynamically-linked libpython.
     pythonapi = PyDLL(_sysconfig.get_config_var("LDLIBRARY"))
 elif _sys.platform == "cygwin":
-    # These platforms must load the DLL file from DLLLIBRARY
-    # and not the import library provided by LDLIBRARY.
     pythonapi = PyDLL(_sysconfig.get_config_var("DLLLIBRARY"))
 else:
     pythonapi = PyDLL(None)
