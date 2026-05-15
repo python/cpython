@@ -496,20 +496,22 @@ def stage_ramfs(
 # ---------------------------------------------------------------------------
 
 
-def run_hello(
+def _run_nanvixd_script(
     staging: Path,
+    script_name: str,
     *,
     process_mode: str = config.DEFAULT_PROCESS_MODE,
     platform: str = config.DEFAULT_PLATFORM,
     nanvixd_extra: list[str] | None = None,
     ramfs_img: Path | None = None,
     nanvix_home: Path | None = None,
-) -> None:
-    """Run the hello-world test via nanvixd.
+    timeout: int = 120,
+    label: str = "script",
+) -> tuple[int, str, int]:
+    """Run a Python script on nanvixd and return (returncode, output, elapsed_ms).
 
-    Standalone mode uses ramfs + ``-bin-dir`` + the semicolon-delimited
-    environment variable syntax.  Multi-process and single-process modes
-    use direct host-filesystem access (no ramfs).
+    This is the low-level execution primitive shared by the hello-world
+    test and the benchmark.
     """
     sysroot = staging / "sysroot"
     resolved_extra: list[str] = (
@@ -534,8 +536,6 @@ def run_hello(
             if mkramfs_src.is_file():
                 shutil.copy2(mkramfs_src, sysroot / "bin" / mkramfs_name)
 
-    print(f"Test: Hello world ({process_mode})...")
-
     if standalone:
         # Standalone: semicolon-delimited env vars + ramfs.
         cmd = [
@@ -547,7 +547,7 @@ def run_hello(
             *resolved_extra,
             "--",
             python_bin,
-            f"-B ./test_hello.py;PYTHONHOME=/ PYTHONDONTWRITEBYTECODE=1"
+            f"-B ./{script_name};PYTHONHOME=/ PYTHONDONTWRITEBYTECODE=1"
             f" _PYTHON_SYSCONFIGDATA_NAME={config.SYSCONFIGDATA_NAME}",
         ]
     else:
@@ -557,7 +557,7 @@ def run_hello(
             *resolved_extra,
             "--",
             python_bin,
-            "./test_hello.py",
+            f"./{script_name}",
         ]
 
     start = time.monotonic()
@@ -567,20 +567,52 @@ def run_hello(
             stdin=subprocess.DEVNULL,
             capture_output=True,
             text=True,
-            timeout=120,
+            timeout=timeout,
             cwd=sysroot,
         )
     except subprocess.TimeoutExpired:
-        raise RuntimeError("Hello test timed out after 120s")
+        raise RuntimeError(f"{label} timed out after {timeout}s")
 
     elapsed_ms = int((time.monotonic() - start) * 1000)
     output = (result.stdout + "\n" + result.stderr).strip()
+    return result.returncode, output, elapsed_ms
+
+
+def run_hello(
+    staging: Path,
+    *,
+    process_mode: str = config.DEFAULT_PROCESS_MODE,
+    platform: str = config.DEFAULT_PLATFORM,
+    nanvixd_extra: list[str] | None = None,
+    ramfs_img: Path | None = None,
+    nanvix_home: Path | None = None,
+) -> None:
+    """Run the hello-world test via nanvixd.
+
+    Standalone mode uses ramfs + ``-bin-dir`` + the semicolon-delimited
+    environment variable syntax.  Multi-process and single-process modes
+    use direct host-filesystem access (no ramfs).
+    """
+    standalone = process_mode == "standalone"
+
+    print(f"Test: Hello world ({process_mode})...")
+
+    returncode, output, elapsed_ms = _run_nanvixd_script(
+        staging,
+        "test_hello.py",
+        process_mode=process_mode,
+        platform=platform,
+        nanvixd_extra=nanvixd_extra,
+        ramfs_img=ramfs_img,
+        nanvix_home=nanvix_home,
+        label="Hello test",
+    )
     print(f"  Execution time: {elapsed_ms} ms")
 
-    if result.returncode != 0:
-        print(f"  FAIL: Hello test exited with status {result.returncode}")
+    if returncode != 0:
+        print(f"  FAIL: Hello test exited with status {returncode}")
         print(output)
-        raise RuntimeError(f"Hello test exited with status {result.returncode}")
+        raise RuntimeError(f"Hello test exited with status {returncode}")
 
     # Validate output.
     found_hello = False
@@ -721,6 +753,7 @@ def run_all(
     release: bool = False,
     test_list: list[str] | None = None,
     batch_size: int = config.DEFAULT_TEST_BATCH_SIZE,
+    nanvixd_extra: list[str] | None = None,
     run_fn: Any = None,
     docker: bool = False,
 ) -> None:
@@ -754,6 +787,7 @@ def run_all(
         staging,
         process_mode=process_mode,
         platform=platform,
+        nanvixd_extra=nanvixd_extra,
         ramfs_img=ramfs_img,
         nanvix_home=nanvix_home,
     )
@@ -766,6 +800,7 @@ def run_all(
         platform=platform,
         test_list=test_list,
         batch_size=batch_size,
+        nanvixd_extra=nanvixd_extra,
         ramfs_img=ramfs_img,
         release=release,
     )
@@ -774,3 +809,103 @@ def run_all(
     cleanup(repo_root)
 
     print("\t\t*** CPython tests PASSED ***")
+
+
+# ---------------------------------------------------------------------------
+# Benchmark (hello-world only, release ramfs)
+# ---------------------------------------------------------------------------
+
+
+def run_benchmark(
+    sysroot: str | Path,
+    toolchain: str | Path,
+    repo_root: Path,
+    *,
+    platform: str = config.DEFAULT_PLATFORM,
+    process_mode: str = config.DEFAULT_PROCESS_MODE,
+    memory_size: str = config.DEFAULT_MEMORY_SIZE,
+    install_prefix: str = config.DEFAULT_INSTALL_PREFIX,
+    nanvixd_extra: list[str] | None = None,
+    run_fn: Any = None,
+    docker: bool = False,
+) -> None:
+    """Run a hello-world benchmark using a release-style ramfs.
+
+    Unlike :func:`run_all`, this builds the ramfs with the same trimming
+    applied during ``./z release`` (no test/ directory, no dev artifacts)
+    so that the image size and boot time reflect a production deployment.
+    No regression tests are executed.
+    """
+    nanvix_home = Path(sysroot)
+    standalone = process_mode == "standalone"
+
+    # Stage (reuses cached build).
+    staging = stage(
+        sysroot,
+        toolchain,
+        repo_root,
+        platform=platform,
+        process_mode=process_mode,
+        memory_size=memory_size,
+        install_prefix=install_prefix,
+        release=False,
+        run_fn=run_fn,
+        docker=docker,
+    )
+
+    # Write a minimal benchmark script.
+    bench_script = "bench_hello.py"
+    (staging / "sysroot" / bench_script).write_text(
+        "print('hello world')\n"
+    )
+
+    # Build ramfs with release trimming (keep_tests=False).
+    ramfs_img = None
+    if standalone:
+        ramfs_img = repo_root / ".nanvix" / "cpython-benchmark.img"
+        bench_cache = repo_root / ".nanvix" / "_benchmark_cache"
+
+        # Always rebuild to reflect the current sysroot.
+        if bench_cache.exists():
+            shutil.rmtree(bench_cache)
+        bench_cache.mkdir(parents=True)
+
+        sysroot_src = staging / "sysroot"
+        sysroot_dst = bench_cache / "sysroot"
+        shutil.copytree(sysroot_src, sysroot_dst)
+        (sysroot_dst / "tmp").mkdir(exist_ok=True)
+
+        # Release-style trim: no test/ dir, no dev artifacts.
+        ramfs_mod.trim_and_build(
+            bench_cache,
+            nanvix_home,
+            ramfs_img,
+            keep_tests=False,
+        )
+
+    # Run benchmark.
+    print(f"Benchmark: Hello world ({process_mode})...")
+
+    returncode, output, elapsed_ms = _run_nanvixd_script(
+        staging,
+        bench_script,
+        process_mode=process_mode,
+        platform=platform,
+        nanvixd_extra=nanvixd_extra,
+        ramfs_img=ramfs_img,
+        nanvix_home=nanvix_home,
+        label="Benchmark",
+    )
+    print(f"  Execution time: {elapsed_ms} ms")
+
+    if returncode != 0:
+        print(f"  FAIL: Benchmark exited with status {returncode}")
+        print(output)
+        raise RuntimeError(f"Benchmark exited with status {returncode}")
+
+    if "hello world" not in output:
+        print(f"  FAIL: expected 'hello world' in output")
+        print(output)
+        raise RuntimeError("Benchmark did not produce expected output")
+
+    print("  PASS")

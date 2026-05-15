@@ -159,5 +159,7 @@ Python/frozen_modules/MANIFEST
 
 # Nanvix build artifacts.
 .nanvix/cpython-rootfs.img
+.nanvix/cpython-benchmark.img
+Python/python
 python.elf
 pyrightconfig.json
