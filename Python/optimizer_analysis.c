@@ -629,6 +629,24 @@ optimize_uops(
 
         DUMP_UOP(ctx, "abs", (int)(this_instr - trace), this_instr, stack_pointer);
 
+        /* gh-138453: a freshly allocated object stops being statically
+         * tracked as soon as an escaping uop runs that could hand the object
+         * to code mutating its inline values.  Exemptions:
+         *  - the store uop and the alloc/init-frame plumbing have their own
+         *    optimizer cases that maintain the tracking state;
+         *  - _POP_TOP only decrefs a value, and while __init__ runs the
+         *    freshly allocated object is not reachable by any user code, so a
+         *    __del__ triggered there cannot touch it. */
+        if (ctx->fresh_alloc_sym != NULL &&
+            (_PyUop_Flags[opcode] & HAS_ESCAPES_FLAG) &&
+            opcode != _STORE_ATTR_INSTANCE_VALUE &&
+            opcode != _ALLOCATE_OBJECT &&
+            opcode != _CREATE_INIT_FRAME &&
+            opcode != _POP_TOP)
+        {
+            ctx->fresh_alloc_sym = NULL;
+        }
+
         _PyUOpInstruction *out_ptr = ctx->out_buffer.next;
 
         switch (opcode) {

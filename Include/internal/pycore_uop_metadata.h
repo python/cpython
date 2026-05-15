@@ -238,6 +238,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GUARD_DORV_NO_DICT] = HAS_EXIT_FLAG,
     [_STORE_ATTR_INSTANCE_VALUE] = HAS_ESCAPES_FLAG,
     [_LOCK_OBJECT] = HAS_DEOPT_FLAG,
+    [_STORE_ATTR_INSTANCE_VALUE_NO_ORDER] = HAS_ARG_FLAG,
     [_STORE_ATTR_WITH_HINT] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_ATTR_SLOT] = HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
     [_COMPARE_OP] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -2274,6 +2275,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { 1, 1, _LOCK_OBJECT_r11 },
             { 2, 2, _LOCK_OBJECT_r22 },
             { 3, 3, _LOCK_OBJECT_r33 },
+        },
+    },
+    [_STORE_ATTR_INSTANCE_VALUE_NO_ORDER] = {
+        .best = { 2, 2, 2, 2 },
+        .entries = {
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { 1, 2, _STORE_ATTR_INSTANCE_VALUE_NO_ORDER_r21 },
+            { -1, -1, -1 },
         },
     },
     [_STORE_ATTR_WITH_HINT] = {
@@ -4431,6 +4441,7 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_LOCK_OBJECT_r11] = _LOCK_OBJECT,
     [_LOCK_OBJECT_r22] = _LOCK_OBJECT,
     [_LOCK_OBJECT_r33] = _LOCK_OBJECT,
+    [_STORE_ATTR_INSTANCE_VALUE_NO_ORDER_r21] = _STORE_ATTR_INSTANCE_VALUE_NO_ORDER,
     [_STORE_ATTR_WITH_HINT_r21] = _STORE_ATTR_WITH_HINT,
     [_STORE_ATTR_SLOT_r21] = _STORE_ATTR_SLOT,
     [_COMPARE_OP_r21] = _COMPARE_OP,
@@ -6078,6 +6089,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_STORE_ATTR_r20] = "_STORE_ATTR_r20",
     [_STORE_ATTR_INSTANCE_VALUE] = "_STORE_ATTR_INSTANCE_VALUE",
     [_STORE_ATTR_INSTANCE_VALUE_r21] = "_STORE_ATTR_INSTANCE_VALUE_r21",
+    [_STORE_ATTR_INSTANCE_VALUE_NO_ORDER] = "_STORE_ATTR_INSTANCE_VALUE_NO_ORDER",
+    [_STORE_ATTR_INSTANCE_VALUE_NO_ORDER_r21] = "_STORE_ATTR_INSTANCE_VALUE_NO_ORDER_r21",
     [_STORE_ATTR_SLOT] = "_STORE_ATTR_SLOT",
     [_STORE_ATTR_SLOT_r21] = "_STORE_ATTR_SLOT_r21",
     [_STORE_ATTR_WITH_HINT] = "_STORE_ATTR_WITH_HINT",
@@ -6630,6 +6643,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 2;
         case _LOCK_OBJECT:
             return 0;
+        case _STORE_ATTR_INSTANCE_VALUE_NO_ORDER:
+            return 2;
         case _STORE_ATTR_WITH_HINT:
             return 2;
         case _STORE_ATTR_SLOT:

@@ -95,6 +95,18 @@ typedef struct _JitOptContext {
     JitOptRef stack_array[ABSTRACT_INTERP_STACK_SIZE];
     _PyJitUopBuffer out_buffer;
     _PyBloomFilter *dependencies;
+
+    /* gh-138453: static tracking of a freshly allocated object's inline
+     * values->size, used to specialise _STORE_ATTR_INSTANCE_VALUE.
+     * fresh_alloc_pending_type is set by _CHECK_OBJECT and consumed by the
+     * immediately following _ALLOCATE_OBJECT.  fresh_alloc_sym is the symbol
+     * of the object being tracked (NULL when not tracking); fresh_alloc_count
+     * is the number of sequential stores proven so far; fresh_alloc_next_offset
+     * is the byte offset of the next expected inline value slot. */
+    PyTypeObject *fresh_alloc_pending_type;
+    JitOptSymbol *fresh_alloc_sym;
+    int fresh_alloc_count;
+    uint32_t fresh_alloc_next_offset;
 } JitOptContext;
 
 

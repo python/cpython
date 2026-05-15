@@ -3180,6 +3180,32 @@ dummy_func(
             DEOPT_IF(!LOCK_OBJECT(PyStackRef_AsPyObjectBorrow(value)));
         }
 
+        /* Tier-2 only variant of _STORE_ATTR_INSTANCE_VALUE, emitted by the
+           JIT optimizer when it has statically proven that this is the
+           `oparg`-th sequential store to a freshly allocated object.  In
+           that case the insertion-order delta is 0 (the array slot is
+           already zero), the slot is still NULL, and values->size simply
+           becomes oparg -- so all the insertion-order bookkeeping collapses
+           to a single store.  See gh-138453. */
+        tier2 op(_STORE_ATTR_INSTANCE_VALUE_NO_ORDER, (offset/1, value, owner -- o)) {
+            PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
+
+            STAT_INC(STORE_ATTR, hit);
+            assert(_PyObject_GetManagedDict(owner_o) == NULL);
+            PyObject **value_ptr = (PyObject**)(((char *)owner_o) + offset);
+            assert(*value_ptr == NULL);
+            FT_ATOMIC_STORE_PTR_RELEASE(*value_ptr, PyStackRef_AsPyObjectSteal(value));
+            PyDictValues *values = _PyObject_InlineValues(owner_o);
+            assert(oparg >= 1 && oparg <= SHARED_KEYS_MAX_SIZE);
+            assert(values->size == oparg - 1);
+            assert((Py_ssize_t)(value_ptr - values->values) == oparg - 1);
+            assert(get_insertion_order_array(values)[oparg - 1] == 0);
+            values->size = (uint8_t)oparg;
+            UNLOCK_OBJECT(owner_o);
+            o = owner;
+            DEAD(owner);
+        }
+
         macro(STORE_ATTR_INSTANCE_VALUE) =
             unused/1 +
             _RECORD_TOS_TYPE +

@@ -161,8 +161,25 @@ dummy_func(void) {
     }
 
     op(_STORE_ATTR_INSTANCE_VALUE, (offset/1, value, owner -- o)) {
-        (void)offset;
         (void)value;
+        // gh-138453: if this is the next sequential store to the object we
+        // are tracking, the insertion-order delta is statically 0 and
+        // values->size simply becomes the store count.  Replace the uop with
+        // _STORE_ATTR_INSTANCE_VALUE_NO_ORDER, carrying that count in oparg.
+        if (ctx->fresh_alloc_sym != NULL &&
+            ctx->fresh_alloc_sym == PyJitRef_Unwrap(owner) &&
+            ctx->fresh_alloc_count < SHARED_KEYS_MAX_SIZE &&
+            (uint32_t)offset == ctx->fresh_alloc_next_offset)
+        {
+            ctx->fresh_alloc_count++;
+            ctx->fresh_alloc_next_offset += (uint32_t)sizeof(PyObject *);
+            REPLACE_OP(this_instr, _STORE_ATTR_INSTANCE_VALUE_NO_ORDER,
+                       ctx->fresh_alloc_count, this_instr->operand0);
+        }
+        else {
+            // Non-sequential or unrelated store: stop tracking.
+            ctx->fresh_alloc_sym = NULL;
+        }
         o = owner;
     }
 
@@ -1321,14 +1338,33 @@ dummy_func(void) {
             assert(PyFunction_Check(init));
             callable = sym_new_const(ctx, init);
             watch_type((PyTypeObject *)callable_o, dependencies);
+            // gh-138453: hand the guarded type to the following
+            // _ALLOCATE_OBJECT so it can statically track values->size.
+            ctx->fresh_alloc_pending_type = (PyTypeObject *)callable_o;
         }
         else {
             callable = sym_new_not_null(ctx);
+            ctx->fresh_alloc_pending_type = NULL;
         }
     }
 
     op(_ALLOCATE_OBJECT, (callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
         self_or_null = sym_new_not_null(ctx);
+        // gh-138453: start tracking the freshly allocated object so a run of
+        // sequential _STORE_ATTR_INSTANCE_VALUE stores can be specialised.
+        PyTypeObject *tp = ctx->fresh_alloc_pending_type;
+        ctx->fresh_alloc_pending_type = NULL;
+        ctx->fresh_alloc_sym = NULL;
+        if (tp != NULL && (tp->tp_flags & Py_TPFLAGS_INLINE_VALUES)) {
+            uint64_t base = (uint64_t)tp->tp_basicsize + offsetof(PyDictValues, values);
+            // The store offset is encoded in a 16-bit operand; if the inline
+            // values do not fit there no store will ever match -- skip then.
+            if (base <= UINT16_MAX) {
+                ctx->fresh_alloc_sym = PyJitRef_Unwrap(self_or_null);
+                ctx->fresh_alloc_count = 0;
+                ctx->fresh_alloc_next_offset = (uint32_t)base;
+            }
+        }
     }
 
     op(_CREATE_INIT_FRAME, (init, self, args[oparg] -- init_frame)) {

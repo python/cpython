@@ -1494,6 +1494,12 @@ _Py_uop_abstractcontext_init(JitOptContext *ctx, _PyBloomFilter *dependencies)
     ctx->contradiction = false;
     ctx->builtins_watched = false;
     ctx->dependencies = dependencies;
+
+    // gh-138453: insertion-order static tracking starts out inactive.
+    ctx->fresh_alloc_pending_type = NULL;
+    ctx->fresh_alloc_sym = NULL;
+    ctx->fresh_alloc_count = 0;
+    ctx->fresh_alloc_next_offset = 0;
 }
 
 int

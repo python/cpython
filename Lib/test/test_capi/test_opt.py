@@ -4798,6 +4798,58 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_STORE_ATTR_SLOT", uops)
         self.assertIn("_POP_TOP_NOP", uops)
 
+    def test_store_attr_instance_value_no_order(self):
+        # gh-138453: sequential stores to a freshly allocated object are
+        # specialised to _STORE_ATTR_INSTANCE_VALUE_NO_ORDER, which skips the
+        # insertion-order bookkeeping.
+        class Point:
+            def __init__(self, x, y, z):
+                self.x = x
+                self.y = y
+                self.z = z
+
+        def testfunc(n):
+            last = None
+            for i in range(n):
+                last = Point(i, i + 1, i + 2)
+            return last
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        last = res
+        # The optimisation must not disturb attribute values or order.
+        self.assertEqual((last.x, last.y, last.z),
+                         (TIER2_THRESHOLD - 1, TIER2_THRESHOLD, TIER2_THRESHOLD + 1))
+        self.assertEqual(list(last.__dict__), ["x", "y", "z"])
+        uops = get_opnames(ex)
+        self.assertIn("_STORE_ATTR_INSTANCE_VALUE_NO_ORDER", uops)
+        # All three sequential stores should be specialised.
+        self.assertNotIn("_STORE_ATTR_INSTANCE_VALUE", uops)
+
+    def test_store_attr_instance_value_no_order_reassign(self):
+        # A store that is not the next sequential slot (here a reassignment)
+        # must keep the plain _STORE_ATTR_INSTANCE_VALUE uop, which still
+        # maintains the insertion-order array correctly.
+        class Reassign:
+            def __init__(self):
+                self.a = 0
+                self.b = 0
+                self.a = 1
+
+        def testfunc(n):
+            last = None
+            for _ in range(n):
+                last = Reassign()
+            return last
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        self.assertEqual(list(res.__dict__.items()), [("a", 1), ("b", 0)])
+        uops = get_opnames(ex)
+        # The first two stores are specialised, the reassignment is not.
+        self.assertIn("_STORE_ATTR_INSTANCE_VALUE_NO_ORDER", uops)
+        self.assertIn("_STORE_ATTR_INSTANCE_VALUE", uops)
+
     def test_store_subscr_dict(self):
         def testfunc(n):
             d = {}
