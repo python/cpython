@@ -67,6 +67,25 @@ class memoryview "PyMemoryViewObject *" "&PyMemoryView_Type"
      releasebufferprocs must NOT decrement view.obj.
 */
 
+static inline void
+exports_increment(PyMemoryViewObject *self)
+{
+    #ifdef Py_GIL_DISABLED
+        _Py_atomic_add_ssize(&self->exports, 1);
+    #else
+        self->exports++;
+    #endif
+}
+
+static inline void
+exports_decrement(PyMemoryViewObject *self)
+{
+    #ifdef Py_GIL_DISABLED
+        _Py_atomic_add_ssize(&self->exports, -1);
+    #else
+        self->exports--;
+    #endif
+}
 
 static inline _PyManagedBufferObject *
 mbuf_alloc(void)
@@ -1629,11 +1648,7 @@ memory_getbuf(PyObject *_self, Py_buffer *view, int flags)
 
 
     view->obj = Py_NewRef(self);
-#ifdef Py_GIL_DISABLED
-    _Py_atomic_add_ssize(&self->exports, 1);
-#else
-    self->exports++;
-#endif
+    exports_increment(self);
 
     return 0;
 }
@@ -1642,11 +1657,7 @@ static void
 memory_releasebuf(PyObject *_self, Py_buffer *view)
 {
     PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
-#ifdef Py_GIL_DISABLED
-    _Py_atomic_add_ssize(&self->exports, -1);
-#else
-    self->exports--;
-#endif
+    exports_decrement(self);
     return;
     /* PyBuffer_Release() decrements view->obj after this function returns. */
 }
@@ -2434,9 +2445,9 @@ memoryview_hex_impl(PyMemoryViewObject *self, PyObject *sep,
         // Prevent 'self' from being freed if computing len(sep) mutates 'self'
         // in _Py_strhex_with_sep().
         // See: https://github.com/python/cpython/issues/143195.
-        self->exports++;
+        exports_increment(self);
         PyObject *ret = _Py_strhex_with_sep(src->buf, src->len, sep, bytes_per_sep);
-        self->exports--;
+        exports_decrement(self);
         return ret;
     }
 
@@ -3363,9 +3374,9 @@ memory_hash(PyObject *_self)
         if (view->obj != NULL) {
             // Prevent 'self' from being freed when computing the item's hash.
             // See https://github.com/python/cpython/issues/142664.
-            self->exports++;
+            exports_increment(self);
             Py_hash_t h = PyObject_Hash(view->obj);
-            self->exports--;
+            exports_decrement(self);
             if (h == -1) {
                 /* Keep the original error message */
                 return -1;
