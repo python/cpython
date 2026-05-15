@@ -1,8 +1,10 @@
 brew "gdbm"
+brew "mpdecimal"
 brew "openssl@3.0"
 brew "pkg-config"
 brew "tcl-tk@8"
 brew "xz"
+brew "zstd"
 
 brew "bzip2" if OS.linux?
 brew "expat" if OS.linux?
