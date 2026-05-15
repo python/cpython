@@ -12,7 +12,7 @@
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interpframe.h"   // _PyThreadState_HasStackSpace()
-#include "pycore_object.h"        // _PyType_InitCache()
+#include "pycore_object.h"        // _PyObject_GC_New()
 #include "pycore_obmalloc.h"      // _PyMem_obmalloc_state_on_heap()
 #include "pycore_optimizer.h"     // JIT_CLEANUP_THRESHOLD
 #include "pycore_parking_lot.h"   // _PyParkingLot_AfterFork()
@@ -572,7 +572,6 @@ init_interpreter(PyInterpreterState *interp,
     _PyEval_InitState(interp);
     _PyGC_InitState(&interp->gc);
     PyConfig_InitPythonConfig(&interp->config);
-    _PyType_InitCache(interp);
 #ifdef Py_GIL_DISABLED
     _Py_brc_init_state(interp);
 #endif

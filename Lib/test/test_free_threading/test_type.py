@@ -84,6 +84,24 @@ class TestType(TestCase):
 
         self.run_one(writer_func, reader_func)
 
+    def test_attr_cache_mortal(self):
+        class C:
+            x = object()
+
+        class D(C):
+            pass
+
+        def writer_func():
+            for _ in range(3000):
+                C.x = object()
+
+        def reader_func():
+            for _ in range(3000):
+                C.x
+                D.x
+
+        self.run_one(writer_func, reader_func)
+
     def test___class___modification(self):
         loops = 200
 
