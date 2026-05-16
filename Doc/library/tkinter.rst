@@ -1007,9 +1007,9 @@ Tk allows you to register and unregister a callback function which will be
 called from the Tk mainloop when I/O is possible on a file descriptor.
 Only one handler may be registered per file descriptor. Example code::
 
-   import tkinter
-   widget = tkinter.Tk()
-   mask = tkinter.READABLE | tkinter.WRITABLE
+   import tkinter as tk
+   widget = tk.Tk()
+   mask = tk.READABLE | tk.WRITABLE
    widget.tk.createfilehandler(file, mask, callback)
    ...
    widget.tk.deletefilehandler(file)

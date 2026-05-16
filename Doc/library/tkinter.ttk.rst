@@ -1290,9 +1290,9 @@ option. If you don't know the class name of a widget, use the method
       some padding and a different background color::
 
          from tkinter import ttk
-         import tkinter
+         import tkinter as tk
 
-         root = tkinter.Tk()
+         root = tk.Tk()
 
          ttk.Style().configure("TButton", padding=6, relief="flat",
             background="#ccc")
