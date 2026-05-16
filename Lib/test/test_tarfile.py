@@ -3205,7 +3205,11 @@ def root_is_uid_gid_0():
         import pwd, grp
     except ImportError:
         return False
-    if pwd.getpwuid(0)[0] != 'root':
+    try:
+        if pwd.getpwuid(0)[0] != 'root':
+            return False
+    except KeyError:
+        # On Cygwin, there is no root user (uid 0)
         return False
     if grp.getgrgid(0)[0] != 'root':
         return False
@@ -3985,6 +3989,9 @@ class TestExtractionFilters(unittest.TestCase):
                                  check_flag=False)):
             if sys.platform == 'win32':
                 self.expect_exception((FileNotFoundError, FileExistsError))
+            elif sys.platform == 'cygwin':
+                exc = self.expect_exception(OSError)
+                self.assertEqual(exc.errno, errno.ELOOP)
             elif self.raised_exception:
                 # Cannot symlink/hardlink: tarfile falls back to getmember()
                 self.expect_exception(KeyError)
@@ -4006,7 +4013,8 @@ class TestExtractionFilters(unittest.TestCase):
                         # 206: ERROR_FILENAME_EXCED_RANGE
                         self.assertIn(exc.winerror, (3, 5, 206))
                     else:
-                        self.assertEqual(exc.errno, errno.ENAMETOOLONG)
+                        self.assertIn(exc.errno,
+                                      (errno.ENAMETOOLONG, errno.ELOOP))
 
     @symlink_test
     def test_parent_symlink2(self):
