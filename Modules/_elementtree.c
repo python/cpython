@@ -572,7 +572,7 @@ element_add_subelement(elementtreestate *st, ElementObject *self,
 LOCAL(PyObject*)
 element_get_attrib(ElementObject* self)
 {
-    /* return borrowed reference to attrib dictionary */
+    /* return new reference to attrib dictionary */
     /* note: this function assumes that the extra section exists */
 
     PyObject *res = NULL;
@@ -1800,9 +1800,12 @@ _elementtree_Element_set_impl(ElementObject *self, PyObject *key,
     if (!attrib)
         return NULL;
 
-    if (PyDict_SetItem(attrib, key, value) < 0)
+    if (PyDict_SetItem(attrib, key, value) < 0) {
+        Py_DECREF(attrib);
         return NULL;
+    }
 
+    Py_DECREF(attrib);
     Py_RETURN_NONE;
 }
 
@@ -2113,12 +2116,16 @@ element_attrib_getter(PyObject *op, void *closure)
 {
     PyObject *res;
     ElementObject *self = _Element_CAST(op);
+    Py_BEGIN_CRITICAL_SECTION(self);
     if (!self->extra) {
         if (create_extra(self, NULL) < 0)
-            return NULL;
+            goto end;
     }
     res = element_get_attrib(self);
-    return Py_XNewRef(res);
+
+  end:
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 /* macro for setter validation */
