@@ -177,7 +177,7 @@ def main():
     import argparse
 
     description = 'A simple command-line interface for py_compile module.'
-    parser = argparse.ArgumentParser(description=description, color=True)
+    parser = argparse.ArgumentParser(description=description)
     parser.add_argument(
         '-q', '--quiet',
         action='store_true',
