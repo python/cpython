@@ -4841,6 +4841,18 @@ type_new_set_attrs(const type_new_ctx *ctx, PyTypeObject *type)
     if (type_new_set_classdictcell(dict) < 0) {
         return -1;
     }
+
+#ifdef Py_GIL_DISABLED
+    // enable deferred reference counting on functions and descriptors
+    Py_ssize_t pos = 0;
+    PyObject *key, *value;
+    while (PyDict_Next(dict, &pos, &key, &value)) {
+        if (PyFunction_Check(value) || Py_TYPE(value)->tp_descr_get != NULL) {
+            PyUnstable_Object_EnableDeferredRefcount(value);
+        }
+    }
+#endif
+
     return 0;
 }
 
@@ -6746,12 +6758,11 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
     assert(!_PyType_HasFeature(metatype, Py_TPFLAGS_MANAGED_DICT));
 
 #ifdef Py_GIL_DISABLED
-    // gh-139103: Enable deferred refcounting for functions assigned
-    // to type objects.  This is important for `dataclass.__init__`,
-    // which is generated dynamically.
-    if (value != NULL &&
-        PyFunction_Check(value) &&
-        !_PyObject_HasDeferredRefcount(value))
+    // gh-139103: Enable deferred refcounting for functions and descriptors
+    // assigned to type objects.  This is important for `dataclass.__init__`,
+    // which is generated dynamically, and for descriptor scaling on
+    // free-threaded builds.
+    if (value != NULL && (PyFunction_Check(value) || Py_TYPE(value)->tp_descr_get != NULL))
     {
         PyUnstable_Object_EnableDeferredRefcount(value);
     }
@@ -6939,6 +6950,33 @@ type_dealloc(PyObject *self)
 
     // Assert this is a heap-allocated type object
     _PyObject_ASSERT((PyObject *)type, type->tp_flags & Py_TPFLAGS_HEAPTYPE);
+
+    // Notify type watchers before teardown.  The type object is still fully
+    // intact at this point (dict, bases, mro, name are all valid), so
+    // callbacks can safely inspect it.
+    if (type->tp_watched) {
+        _PyObject_ResurrectStart(self);
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        int bits = type->tp_watched;
+        int i = 0;
+        while (bits) {
+            assert(i < TYPE_MAX_WATCHERS);
+            if (bits & 1) {
+                PyType_WatchCallback cb = interp->type_watchers[i];
+                if (cb && (cb(type) < 0)) {
+                    PyErr_FormatUnraisable(
+                        "Exception ignored in type watcher callback #%d "
+                        "for %R",
+                        i, type);
+                }
+            }
+            i++;
+            bits >>= 1;
+        }
+        if (_PyObject_ResurrectEnd(self)) {
+            return;     // callback resurrected the object
+        }
+    }
 
     _PyObject_GC_UNTRACK(type);
     type_dealloc_common(type);
@@ -11052,14 +11090,22 @@ slot_tp_iternext(PyObject *self)
     return vectorcall_method(&_Py_ID(__next__), stack, 1);
 }
 
+int
+_PyType_HasSlotTpIternext(PyTypeObject *type)
+{
+    return type->tp_iternext == slot_tp_iternext;
+}
+
 static PyObject *
 slot_tp_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    PyObject *get;
-
-    get = _PyType_LookupRef(tp, &_Py_ID(__get__));
-    if (get == NULL) {
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyCStackRef cref;
+    _PyThreadState_PushCStackRef(tstate, &cref);
+    _PyType_LookupStackRefAndVersion(tp, &_Py_ID(__get__), &cref.ref);
+    if (PyStackRef_IsNull(cref.ref)) {
+        _PyThreadState_PopCStackRef(tstate, &cref);
 #ifndef Py_GIL_DISABLED
         /* Avoid further slowdowns */
         if (tp->tp_descr_get == slot_tp_descr_get)
@@ -11071,9 +11117,10 @@ slot_tp_descr_get(PyObject *self, PyObject *obj, PyObject *type)
         obj = Py_None;
     if (type == NULL)
         type = Py_None;
+    PyObject *get = PyStackRef_AsPyObjectBorrow(cref.ref);
     PyObject *stack[3] = {self, obj, type};
     PyObject *res = PyObject_Vectorcall(get, stack, 3, NULL);
-    Py_DECREF(get);
+    _PyThreadState_PopCStackRef(tstate, &cref);
     return res;
 }
 

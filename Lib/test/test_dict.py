@@ -1868,6 +1868,11 @@ class FrozenDictTests(unittest.TestCase):
         self.assertEqual(fd | {}, fd)
         self.assertEqual(frozendict() | fd, fd)
 
+        # gh-149676: Test hash(frozendict | frozendict)
+        a = frozendict({"a": 1})
+        b = frozendict({"b": 2})
+        self.assertEqual(hash(a | b), hash(frozendict({"a": 1, "b": 2})))
+
     def test_update(self):
         # test "a |= b" operator
         d = frozendict(x=1)

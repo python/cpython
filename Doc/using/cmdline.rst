@@ -662,7 +662,7 @@ Miscellaneous options
      initialization. Python needs to be :ref:`built in debug mode <debug-build>`
      for this option to exist.  See also :envvar:`PYTHON_PRESITE`.
 
-     .. versionchanged:: next
+     .. versionchanged:: 3.15
         Accept also ``module:func`` entry point format.
 
      .. versionadded:: 3.13
@@ -1154,9 +1154,6 @@ conflict.
    'replace', respectively.  Otherwise, the new defaults 'utf-8' and
    'surrogatepass' are used.
 
-   This may also be enabled at runtime with
-   :func:`sys._enablelegacywindowsfsencoding`.
-
    .. availability:: Windows.
 
    .. versionadded:: 3.6
@@ -1462,7 +1459,7 @@ Debug-mode variables
 
    Needs Python configured with the :option:`--with-pydebug` build option.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Accept also ``module:func`` entry point format.
 
    .. versionadded:: 3.13

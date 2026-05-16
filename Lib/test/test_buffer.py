@@ -143,7 +143,7 @@ MEMORYVIEW = NATIVE.copy()
 # Format codes supported by array.array
 ARRAY = NATIVE.copy()
 for k in NATIVE:
-    if not k in "bBhHiIlLfd":
+    if k not in list("bBhHiIlLefd") + ['Zf', 'Zd']:
         del ARRAY[k]
 
 BYTEFMT = NATIVE.copy()
@@ -4495,8 +4495,10 @@ class TestBufferProtocol(unittest.TestCase):
     def test_array_alignment(self):
         # gh-140557: pointer alignment of buffers including empty allocation
         # should match the maximum array alignment.
-        align = max(struct.calcsize(fmt) for fmt in ARRAY)
-        cases = [array.array(fmt) for fmt in ARRAY]
+        formats = [fmt for fmt in ARRAY
+                   if struct.calcsize(fmt) <= struct.calcsize('P')]
+        align = max(struct.calcsize(fmt) for fmt in formats)
+        cases = [array.array(fmt) for fmt in formats]
         # Empty arrays
         self.assertEqual(
             [_testcapi.buffer_pointer_as_int(case) % align for case in cases],

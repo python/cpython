@@ -598,7 +598,8 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_ITER_NEXT_INLINE", uops)
+        self.assertIn("_FOR_ITER_TIER_TWO", uops)
+        self.assertNotIn("_ITER_NEXT_INLINE", uops)
 
 
 @requires_specialization
@@ -5524,6 +5525,24 @@ class TestUopsOptimization(unittest.TestCase):
         # _POP_TOP_NOP is a sign the optimizer ran and didn't hit bottom.
         self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
 
+    def test_send_virtual(self):
+
+        def send_list(n):
+            yield from list(range(n))
+        def testfunc(n):
+            for _ in send_list(n):
+                pass
+
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            # Ensure SEND is specialized to SEND_VIRTUAL
+            send_list(10)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD*2)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_FOR_ITER_GEN_FRAME", uops)
+        self.assertIn("_SEND_VIRTUAL_TIER_TWO", uops)
+
     def test_binary_op_subscr_init_frame(self):
         class B:
             def __getitem__(self, other):
@@ -6118,6 +6137,20 @@ class TestUopsOptimization(unittest.TestCase):
             for i in 0, 1, 0, 1:
                 C(0) if i else str(0)
         """))
+
+    def test_load_special_type_guard_deopt(self):
+        script_helper.assert_python_ok("-s", "-c", textwrap.dedent(f"""
+            def f1():
+                class Context:
+                    def __enter__(self): ...
+                    def __exit__(self, e, v, t): ...
+
+                with Context():
+                    pass
+
+            for _ in range({TIER2_THRESHOLD + 5}):
+                f1()
+        """), PYTHON_JIT="1")
 
 def global_identity(x):
     return x

@@ -1860,8 +1860,15 @@
         }
 
         case _GET_ANEXT: {
+            JitOptRef aiter;
             JitOptRef awaitable;
-            awaitable = sym_new_not_null(ctx);
+            aiter = stack_pointer[-1];
+            if (sym_matches_type(aiter, &PyAsyncGen_Type)) {
+                awaitable = sym_new_type(ctx, &_PyAsyncGenASend_Type);
+            }
+            else {
+                awaitable = sym_new_not_null(ctx);
+            }
             CHECK_STACK_BOUNDS(1);
             stack_pointer[0] = awaitable;
             stack_pointer += 1;
@@ -1875,8 +1882,6 @@
             stack_pointer[-1] = iter;
             break;
         }
-
-        /* _SEND is not a viable micro-op for tier 2 */
 
         case _SEND_GEN_FRAME: {
             JitOptRef v;
@@ -1893,6 +1898,58 @@
             new_frame->stack_pointer++;
             gen_frame = PyJitRef_WrapInvalid(new_frame);
             stack_pointer[-1] = gen_frame;
+            break;
+        }
+
+        case _GUARD_TOS_IS_NONE: {
+            break;
+        }
+
+        case _GUARD_NOS_NOT_NULL: {
+            JitOptRef nos;
+            nos = stack_pointer[-2];
+            if (sym_is_not_null(nos)) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                sym_set_non_null(nos);
+            }
+            break;
+        }
+
+        /* _SEND_VIRTUAL is not a viable micro-op for tier 2 */
+
+        case _SEND_VIRTUAL_TIER_TWO: {
+            JitOptRef next;
+            next = sym_new_not_null(ctx);
+            stack_pointer[-1] = next;
+            break;
+        }
+
+        case _GUARD_3OS_ASYNC_GEN_ASEND: {
+            JitOptRef iter;
+            iter = stack_pointer[-3];
+            if (sym_matches_type(iter, &_PyAsyncGenASend_Type)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            else {
+                sym_set_type(iter, &_PyAsyncGenASend_Type);
+            }
+            break;
+        }
+
+        /* _SEND_ASYNC_GEN is not a viable micro-op for tier 2 */
+
+        case _SEND_ASYNC_GEN_TIER_TWO: {
+            JitOptRef asend;
+            JitOptRef null_out;
+            JitOptRef retval;
+            asend = sym_new_not_null(ctx);
+            null_out = sym_new_not_null(ctx);
+            retval = sym_new_not_null(ctx);
+            stack_pointer[-3] = asend;
+            stack_pointer[-2] = null_out;
+            stack_pointer[-1] = retval;
             break;
         }
 
@@ -3649,7 +3706,8 @@
                 type = sym_get_probable_type(iter);
                 definite = false;
             }
-            if (type != NULL && type != &PyGen_Type && type->tp_iternext != NULL) {
+            if (type != NULL && type != &PyGen_Type && type->tp_iternext != NULL
+                && !_PyType_HasSlotTpIternext(type)) {
                 PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
                 _Py_BloomFilter_Add(dependencies, type);
                 if (!definite) {
@@ -3684,6 +3742,18 @@
         }
 
         case _GUARD_NOS_ITER_VIRTUAL: {
+            break;
+        }
+
+        case _GUARD_TOS_NOT_NULL: {
+            JitOptRef null_or_index;
+            null_or_index = stack_pointer[-1];
+            if (sym_is_not_null(null_or_index)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            else {
+                sym_set_non_null(null_or_index);
+            }
             break;
         }
 
@@ -3826,7 +3896,11 @@
                 PyObject *name = _Py_SpecialMethods[oparg].name;
                 PyObject *descr = _PyType_Lookup(type, name);
                 if (descr != NULL && (Py_TYPE(descr)->tp_flags & Py_TPFLAGS_METHOD_DESCRIPTOR)) {
-                    ADD_OP(_GUARD_TYPE_VERSION, 0, type->tp_version_tag);
+                    _PyUOpInstruction *insert_null = uop_buffer_last(&ctx->out_buffer);
+                    assert(insert_null->opcode == _INSERT_NULL);
+                    assert(insert_null->target == this_instr->target);
+                    REPLACE_OP(insert_null, _GUARD_TYPE_VERSION, 0, type->tp_version_tag);
+                    ADD_OP(_INSERT_NULL, 0, 0);
                     bool immortal = _Py_IsImmortal(descr) || (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE);
                     ADD_OP(immortal ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE,
                         0, (uintptr_t)descr);
@@ -4207,18 +4281,6 @@
             }
             else {
                 sym_set_null(null);
-            }
-            break;
-        }
-
-        case _GUARD_NOS_NOT_NULL: {
-            JitOptRef nos;
-            nos = stack_pointer[-2];
-            if (sym_is_not_null(nos)) {
-                ADD_OP(_NOP, 0, 0);
-            }
-            else {
-                sym_set_non_null(nos);
             }
             break;
         }

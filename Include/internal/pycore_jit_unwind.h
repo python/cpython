@@ -11,7 +11,7 @@
 #if defined(_Py_JIT) && defined(__linux__) && defined(__ELF__)
 #  define PY_HAVE_JIT_GDB_UNWIND
 #  if defined(HAVE_EXECINFO_H) && defined(HAVE_BACKTRACE) && \
-          defined(HAVE_LIBGCC_EH_FRAME_REGISTRATION)
+          defined(_Py_HAVE_LIBGCC_EH_FRAME_REGISTRATION)
 #    define PY_HAVE_JIT_GNU_BACKTRACE_UNWIND
 #  endif
 #endif

@@ -500,6 +500,8 @@ _PyUOp_Replacements[MAX_UOP_ID + 1] = {
     [_ITER_NEXT_LIST] = _ITER_NEXT_LIST_TIER_TWO,
     [_CHECK_PERIODIC_AT_END] = _TIER2_RESUME_CHECK,
     [_LOAD_BYTECODE] = _NOP,
+    [_SEND_VIRTUAL] = _SEND_VIRTUAL_TIER_TWO,
+    [_SEND_ASYNC_GEN] = _SEND_ASYNC_GEN_TIER_TWO,
 };
 
 static const uint8_t
@@ -1000,8 +1002,14 @@ _PyJit_translate_single_bytecode_to_trace(
                         else {
                             int extended_arg = orig_oparg > 255;
                             uint32_t jump_target = next_inst + orig_oparg + extended_arg;
-                            assert(_Py_GetBaseCodeUnit(old_code, jump_target).op.code == END_FOR);
-                            assert(_Py_GetBaseCodeUnit(old_code, jump_target+1).op.code == POP_ITER);
+                            /* Jump must be to an "END" either END_FOR or END_SEND */
+                            assert((
+                                    _Py_GetBaseCodeUnit(old_code, jump_target).op.code == END_FOR &&
+                                    _Py_GetBaseCodeUnit(old_code, jump_target+1).op.code == POP_ITER
+                                )
+                                ||
+                                _Py_GetBaseCodeUnit(old_code, jump_target).op.code == END_SEND
+                            );
                             if (is_for_iter_test[uop]) {
                                 target = jump_target + 1;
                             }

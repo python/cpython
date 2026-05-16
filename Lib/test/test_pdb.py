@@ -4718,6 +4718,27 @@ def bœr():
             ]))
             self.assertIn('break in bar', stdout)
 
+    def test_end_of_options_separator(self):
+        # gh-148615: Test parsing when '--' separator is used
+        script = "import sys; print(f'ARGS: {sys.argv[1:]}')"
+        with open(os_helper.TESTFN, 'w', encoding='utf-8') as f:
+            f.write(script)
+        stdout, _ = self._run_pdb(['--', os_helper.TESTFN, '-foo'], 'c\nq')
+        self.assertIn("ARGS: ['-foo']", stdout)
+        stdout, _ = self._run_pdb(['-c', 'continue', '--', os_helper.TESTFN, '-c', 'foo'], 'q')
+        self.assertIn("ARGS: ['-c', 'foo']", stdout)
+        stdout, stderr = self._run_pdb(['--'], 'q', expected_returncode=2)
+        self.assertIn("missing script or module to run", stderr)
+        stdout, stderr = self._run_pdb(['-x', '--', os_helper.TESTFN], 'q', expected_returncode=2)
+        self.assertIn("unrecognized arguments: -x", stderr)
+        stdout, _ = self._run_pdb([os_helper.TESTFN, '--', 'arg'], 'c\nq')
+        self.assertIn("ARGS: ['--', 'arg']", stdout)
+        with os_helper.temp_cwd():
+            with open('mymod.py', 'w', encoding='utf-8') as f:
+                f.write(script)
+            stdout, _ = self._run_pdb(['-m', 'mymod', '--', 'arg'], 'c\nq')
+            self.assertIn("ARGS: ['--', 'arg']", stdout)
+
     @unittest.skipIf(SKIP_CORO_TESTS, "Coroutine tests are skipped")
     def test_async_break(self):
         script = """
