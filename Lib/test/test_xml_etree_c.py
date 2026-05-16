@@ -262,7 +262,7 @@ class SizeofTest(unittest.TestCase):
 @threading_helper.requires_working_threading()
 class TestElementTreeFreeThreading(unittest.TestCase):
     def test_element_extra_race(self):
-        """Race len(), .attrib, and .clear() to verify fix for gh-149861."""
+        #Race len(), .attrib, and .clear() to verify fix for gh-149861.
         root = cET.Element('root')
         children = [cET.Element(f'child-{i}') for i in range(5)]
 
@@ -270,14 +270,12 @@ class TestElementTreeFreeThreading(unittest.TestCase):
 
         def reader_task():
             while not stop_event.is_set():
-                # Test element_length
                 len(root)
-                # Test element_get_attrib
                 try:
                     _ = root.attrib
                 except AttributeError:
                     # In a race where clear() just ran, this is expected
-                    # because of the PyErr_SetString we added in C.
+                    # because of the PyErr_SetString is added in C.
                     pass
 
         def writer_task():
@@ -287,7 +285,6 @@ class TestElementTreeFreeThreading(unittest.TestCase):
                 # Test clear_extra
                 root.clear()
 
-        # Create a mix of readers and writers
         threads = []
         for _ in range(4):
             threads.append(threading.Thread(target=reader_task))
@@ -295,9 +292,6 @@ class TestElementTreeFreeThreading(unittest.TestCase):
             threads.append(threading.Thread(target=writer_task))
 
         with threading_helper.start_threads(threads):
-            # Stress the race for a short duration.
-            # In CI, 0.5 to 1.0 seconds is usually enough to catch races
-            # without slowing down the test suite too much.
             import time
             time.sleep(1.0)
             stop_event.set()
