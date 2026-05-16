@@ -576,7 +576,8 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         else:
             expected = (42, 3.14, '', 'any string')
         self.checkParam(widget, 'values', (42, 3.14, '', 'any string'),
-                        expected='42 3.14 {} {any string}')
+                        expected=expected)
+
         self.checkParam(widget, 'values', '')
 
     def test_configure_wrap(self):

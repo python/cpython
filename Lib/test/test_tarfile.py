@@ -3682,6 +3682,39 @@ class TestExtractionFilters(unittest.TestCase):
     # The destination for the extraction, within `outerdir`
     destdir = outerdir / 'dest'
 
+    @classmethod
+    def setUpClass(cls):
+        # Posix and Windows have different pathname resolution:
+        # either symlink or a '..' component resolve first.
+        # Let's see which we are on.
+        if os_helper.can_symlink():
+            testpath = os.path.join(TEMPDIR, 'resolution_test')
+            os.mkdir(testpath)
+
+            # testpath/current links to `.` which is all of:
+            #   - `testpath`
+            #   - `testpath/current`
+            #   - `testpath/current/current`
+            #   - etc.
+            os.symlink('.', os.path.join(testpath, 'current'))
+
+            # we'll test where `testpath/current/../file` ends up
+            with open(os.path.join(testpath, 'current', '..', 'file'), 'w'):
+                pass
+
+            if os.path.exists(os.path.join(testpath, 'file')):
+                # Windows collapses 'current\..' to '.' first, leaving
+                # 'testpath\file'
+                cls.dotdot_resolves_early = True
+            elif os.path.exists(os.path.join(testpath, '..', 'file')):
+                # Posix resolves 'current' to '.' first, leaving
+                # 'testpath/../file'
+                cls.dotdot_resolves_early = False
+            else:
+                raise AssertionError('Could not determine link resolution')
+        else:
+            cls.dotdot_resolves_early = False
+
     @contextmanager
     def check_context(self, tar, filter, *, check_flag=True):
         """Extracts `tar` to `self.destdir` and allows checking the result
@@ -3853,10 +3886,19 @@ class TestExtractionFilters(unittest.TestCase):
                     + "which is outside the destination")
 
             with self.check_context(arc.open(), 'data'):
-                self.expect_exception(
-                    tarfile.LinkOutsideDestinationError,
-                    """'parent' would link to ['"].*outerdir['"], """
-                    + "which is outside the destination")
+                if self.dotdot_resolves_early:
+                    # 'current/../..' normalises to '..', which is rejected.
+                    self.expect_exception(
+                        tarfile.LinkOutsideDestinationError,
+                        """'parent' would link to ['"].*outerdir['"], """
+                        + "which is outside the destination")
+                else:
+                    # 'current/..' normalises to '.'; the rewritten link is
+                    # created and 'parent/evil' lands harmlessly inside the
+                    # destination.
+                    self.expect_file('current', symlink_to='.')
+                    self.expect_file('parent', symlink_to='.')
+                    self.expect_file('evil')
 
         else:
             # No symlink support. The symlinks are ignored.
@@ -3946,35 +3988,6 @@ class TestExtractionFilters(unittest.TestCase):
         # Test interplaying symlinks
         # Inspired by 'dirsymlink2b' in jwilk/traversal-archives
 
-        # Posix and Windows have different pathname resolution:
-        # either symlink or a '..' component resolve first.
-        # Let's see which we are on.
-        if os_helper.can_symlink():
-            testpath = os.path.join(TEMPDIR, 'resolution_test')
-            os.mkdir(testpath)
-
-            # testpath/current links to `.` which is all of:
-            #   - `testpath`
-            #   - `testpath/current`
-            #   - `testpath/current/current`
-            #   - etc.
-            os.symlink('.', os.path.join(testpath, 'current'))
-
-            # we'll test where `testpath/current/../file` ends up
-            with open(os.path.join(testpath, 'current', '..', 'file'), 'w'):
-                pass
-
-            if os.path.exists(os.path.join(testpath, 'file')):
-                # Windows collapses 'current\..' to '.' first, leaving
-                # 'testpath\file'
-                dotdot_resolves_early = True
-            elif os.path.exists(os.path.join(testpath, '..', 'file')):
-                # Posix resolves 'current' to '.' first, leaving
-                # 'testpath/../file'
-                dotdot_resolves_early = False
-            else:
-                raise AssertionError('Could not determine link resolution')
-
         with ArchiveMaker() as arc:
 
             # `current` links to `.` which is both the destination directory
@@ -4010,7 +4023,7 @@ class TestExtractionFilters(unittest.TestCase):
 
         with self.check_context(arc.open(), 'data'):
             if os_helper.can_symlink():
-                if dotdot_resolves_early:
+                if self.dotdot_resolves_early:
                     # Fail when extracting a file outside destination
                     self.expect_exception(
                             tarfile.OutsideDestinationError,
@@ -4129,6 +4142,76 @@ class TestExtractionFilters(unittest.TestCase):
                     "'tmp/../../moo' would be extracted to "
                     + """['"].*moo['"], which is outside the """
                     + "destination")
+
+    @symlink_test
+    @os_helper.skip_unless_symlink
+    def test_normpath_realpath_mismatch(self):
+        # The link-target check must validate the value that will actually
+        # be written to disk (the normalised linkname), not the original.
+        # Here 'a' is a symlink to a deep nonexistent path, so realpath()
+        # of 'a/../../...' stays inside the destination while normpath()
+        # collapses 'a/..' lexically and escapes.
+        depth = len(self.destdir.parts) + 5
+        deep = '/'.join(f'p{i}' for i in range(depth))
+        sneaky = 'a/' + '../' * depth + 'flag'
+        for kind in 'symlink_to', 'hardlink_to':
+            with self.subTest(kind):
+                with ArchiveMaker() as arc:
+                    arc.add('a', symlink_to=deep)
+                    arc.add('escape', **{kind: sneaky})
+                with self.check_context(arc.open(), 'data'):
+                    self.expect_exception(
+                        tarfile.LinkOutsideDestinationError)
+
+    @symlink_test
+    @os_helper.skip_unless_symlink
+    def test_symlink_trailing_slash(self):
+        # A trailing slash on a symlink member's name must not cause the
+        # link target to be resolved relative to the wrong directory.
+        with ArchiveMaker() as arc:
+            t = tarfile.TarInfo('x/')
+            t.type = tarfile.SYMTYPE
+            t.linkname = '..'
+            arc.tar_w.addfile(t)
+            arc.add('x/escaped', content='hi')
+
+        with self.check_context(arc.open(), 'data'):
+            self.expect_exception(tarfile.LinkOutsideDestinationError)
+
+    @symlink_test
+    @os_helper.skip_unless_symlink
+    def test_link_at_destination(self):
+        # A link member whose name resolves to the destination directory
+        # itself must be rejected: otherwise the destination is replaced
+        # by a symlink and later members can be redirected through it.
+        for name in '', '.', './':
+            with ArchiveMaker() as arc:
+                t = tarfile.TarInfo(name)
+                t.type = tarfile.SYMTYPE
+                t.linkname = '.'
+                arc.tar_w.addfile(t)
+
+            with self.check_context(arc.open(), 'data'):
+                self.expect_exception(tarfile.OutsideDestinationError)
+
+    @symlink_test
+    @os_helper.skip_unless_symlink
+    def test_empty_name_symlink_chain(self):
+        # Regression test for a chain of empty-named symlinks that
+        # incrementally redirects the destination outwards.
+        with ArchiveMaker() as arc:
+            for name, target in [('', ''), ('a/', '..'),
+                                 ('', 'dummy'), ('', 'a'),
+                                 ('b/', '..'),
+                                 ('', 'dummy'), ('', 'a/b')]:
+                t = tarfile.TarInfo(name)
+                t.type = tarfile.SYMTYPE
+                t.linkname = target
+                arc.tar_w.addfile(t)
+            arc.add('escaped', content='hi')
+
+        with self.check_context(arc.open(), 'data'):
+            self.expect_exception(tarfile.FilterError)
 
     @symlink_test
     def test_deep_symlink(self):

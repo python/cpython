@@ -18,6 +18,7 @@
 #include "pycore_opcode_metadata.h"
 #include "pycore_opcode_utils.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_*
 #include "pycore_uop_metadata.h"
 #include "pycore_long.h"
 #include "pycore_interpframe.h"  // _PyFrame_GetCode
@@ -62,7 +63,7 @@ static void
 increment_mutations(PyObject* dict) {
     assert(PyDict_CheckExact(dict));
     PyDictObject *d = (PyDictObject *)dict;
-    FT_ATOMIC_ADD_UINT64(d->_ma_watcher_tag, (1 << DICT_MAX_WATCHERS));
+    FT_ATOMIC_ADD_UINT64(d->_ma_watcher_tag, 1ULL << DICT_MAX_WATCHERS);
 }
 
 /* The first two dict watcher IDs are reserved for CPython,
@@ -88,6 +89,17 @@ type_watcher_callback(PyTypeObject* type)
 {
     _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), type, 1);
     PyType_Unwatch(TYPE_WATCHER_ID, (PyObject *)type);
+    return 0;
+}
+
+static int
+_setup_optimizer_watchers(void *Py_UNUSED(arg))
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    FT_ATOMIC_STORE_PTR_RELEASE(
+        interp->dict_state.watchers[GLOBALS_WATCHER_ID],
+        globals_watcher_callback);
+    interp->type_watchers[TYPE_WATCHER_ID] = type_watcher_callback;
     return 0;
 }
 
@@ -172,12 +184,8 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
     uint32_t builtins_watched = 0;
     uint32_t globals_watched = 0;
     uint32_t prechecked_function_version = 0;
-    if (interp->dict_state.watchers[GLOBALS_WATCHER_ID] == NULL) {
-        interp->dict_state.watchers[GLOBALS_WATCHER_ID] = globals_watcher_callback;
-    }
-    if (interp->type_watchers[TYPE_WATCHER_ID] == NULL) {
-        interp->type_watchers[TYPE_WATCHER_ID] = type_watcher_callback;
-    }
+    _PyOnceFlag_CallOnce(&interp->dict_state.watcher_setup_once,
+                         _setup_optimizer_watchers, NULL);
     for (int pc = 0; pc < buffer_size; pc++) {
         _PyUOpInstruction *inst = &buffer[pc];
         int opcode = inst->opcode;

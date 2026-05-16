@@ -2678,7 +2678,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
         if value not in choices:
             args = {'value': str(value),
-                    'choices': ', '.join(map(str, action.choices))}
+                    'choices': ', '.join(repr(str(choice)) for choice in action.choices)}
             msg = _('invalid choice: %(value)r (choose from %(choices)s)')
 
             if self.suggest_on_error and isinstance(value, str):
