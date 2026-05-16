@@ -1454,7 +1454,7 @@ class GeneralModuleTests(unittest.TestCase):
         assertInvalid('1:2:3:4:5:6:')
         assertInvalid('1:2:3:4:5:6:7:8:0')
         # bpo-29972: inet_pton() doesn't fail on AIX
-        if not AIX:
+        if not AIX and sys.platform != 'cygwin':
             assertInvalid('1:2:3:4:5:6:7:8:')
 
         self.assertEqual(b'\x00' * 12 + b'\xfe\x2a\x17\x40',
@@ -2001,7 +2001,8 @@ class GeneralModuleTests(unittest.TestCase):
         self.assertEqual(socket.getfqdn(), socket.getfqdn("::"))
 
     @unittest.skipUnless(socket_helper.IPV6_ENABLED, 'IPv6 required for this test.')
-    @unittest.skipIf(sys.platform == 'win32', 'does not work on Windows')
+    @unittest.skipIf(sys.platform in ('win32', 'cygwin'),
+                     'does not work on Windows')
     @unittest.skipIf(AIX, 'Symbolic scope id does not work')
     @unittest.skipUnless(hasattr(socket, 'if_nameindex'), "test needs socket.if_nameindex()")
     @support.skip_android_selinux('if_nameindex')
@@ -2035,7 +2036,7 @@ class GeneralModuleTests(unittest.TestCase):
         self.assertEqual(sockaddr, ('ff02::1de:c0:face:8d', 1234, 0, ifindex))
 
     @unittest.skipUnless(socket_helper.IPV6_ENABLED, 'IPv6 required for this test.')
-    @unittest.skipIf(sys.platform == 'win32', 'does not work on Windows')
+    @unittest.skipIf(sys.platform in ('win32', 'cygwin'), 'does not work on Windows')
     @unittest.skipIf(AIX, 'Symbolic scope id does not work')
     @unittest.skipUnless(hasattr(socket, 'if_nameindex'), "test needs socket.if_nameindex()")
     @support.skip_android_selinux('if_nameindex')
