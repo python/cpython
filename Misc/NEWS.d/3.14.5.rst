@@ -1,0 +1,122 @@
+.. date: 2026-04-06-13-55-00
+.. gh-issue: 148178
+.. nonce: Rs7kLm
+.. release date: 2026-05-10
+.. section: Security
+
+Hardened :mod:`!_remote_debugging` by validating remote debug offset tables
+before using them to size memory reads or interpret remote layouts.
+
+..
+
+.. date: 2026-04-20-15-25-55
+.. gh-issue: 146270
+.. nonce: qZYfyc
+.. section: Core and Builtins
+
+Fix a sequential consistency bug in ``structmember.c``.
+
+..
+
+.. date: 2025-08-01-20-31-30
+.. gh-issue: 137293
+.. nonce: 4x3JbV
+.. section: Core and Builtins
+
+Fix :exc:`SystemError` when searching ELF Files in :func:`sys.remote_exec`.
+
+..
+
+.. date: 2026-05-07-21-58-17
+.. gh-issue: 149388
+.. nonce: DDBPeA
+.. section: Library
+
+Make :class:`!asyncio.windows_utils.PipeHandle` closing idempotent.
+
+..
+
+.. date: 2026-05-04-19-28-48
+.. gh-issue: 149377
+.. nonce: WNlc8Y
+.. section: Library
+
+Update bundled pip to 26.1.1
+
+..
+
+.. date: 2026-04-25-14-11-24
+.. gh-issue: 138907
+.. nonce: u21Wnh
+.. section: Library
+
+Support :rfc:`9309` in :mod:`urllib.robotparser`.
+
+..
+
+.. date: 2026-04-15-16-08-12
+.. gh-issue: 148615
+.. nonce: Uvx50R
+.. section: Library
+
+Fix :mod:`pdb` to accept standard -- end of options separator. Reported by
+haampie. Patched by Shrey Naithani.
+
+..
+
+.. date: 2026-02-19-04-40-57
+.. gh-issue: 130750
+.. nonce: 0hW52O
+.. section: Library
+
+Restore quoting of choices in :mod:`argparse` error messages for improved
+clarity and consistency with documentation.
+
+..
+
+.. date: 2025-12-06-08-48-26
+.. gh-issue: 141449
+.. nonce: hQvNW_
+.. section: Library
+
+Improve tests and documentation for non-function callables as
+:term:`annotate functions <annotate function>`.
+
+..
+
+.. date: 2026-05-05-18-49-44
+.. gh-issue: 149425
+.. nonce: QnQL8j
+.. section: Tests
+
+Increase time delta in
+``test.test_zipfile.test_core.OtherTests.test_write_without_source_date_epoch``
+
+..
+
+.. date: 2026-05-05-17-08-36
+.. gh-issue: 145736
+.. nonce: JYdLx4
+.. section: Tests
+
+Fix test_tkinter test_configure_values test case backport miss for Tk 9.
+
+..
+
+.. date: 2026-05-06-18-23-36
+.. gh-issue: 142295
+.. nonce: O9RmZH
+.. section: macOS
+
+For Python macOS framework builds, update Info.plist files to be more
+compliant with current Apple guidelines. Original patch contributed by
+Martinus Verburg.
+
+..
+
+.. date: 2026-05-05-18-42-59
+.. gh-issue: 124111
+.. nonce: WmQG7S
+.. section: macOS
+
+Update macOS installer to use Tcl/Tk 9.0.3.
