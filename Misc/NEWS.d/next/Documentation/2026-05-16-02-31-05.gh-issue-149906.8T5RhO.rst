@@ -1,0 +1,9 @@
+Technical Documentation: Extended Python/README and convert to Markdown
+* Updated the Python/ directory README to provide more context on the compiler and runtime execution logic.
+* Converted the file to README.md to support hyperlinking to the Python DevGuide and internal documentation.
+* Added relative links to the InternalDocs directory.
+
+
+<!-- gh-issue-number: gh-149906 -->
+* Issue: gh-149906
+<!-- /gh-issue-number -->
