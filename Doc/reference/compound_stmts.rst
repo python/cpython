@@ -742,7 +742,7 @@ block is selected.
 
 .. _irrefutable_case:
 
-Irrefutable Case Blocks
+Irrefutable case blocks
 -----------------------
 
 .. index:: irrefutable case block, case block
@@ -804,7 +804,7 @@ the underlying implementation.  Furthermore, they do not cover all valid forms.
 
 .. _or-patterns:
 
-OR Patterns
+OR patterns
 ^^^^^^^^^^^
 
 An OR pattern is two or more patterns separated by vertical
@@ -825,7 +825,7 @@ match ``P2``, succeeding immediately if any succeeds, failing otherwise.
 
 .. _as-patterns:
 
-AS Patterns
+AS patterns
 ^^^^^^^^^^^
 
 An AS pattern matches an OR pattern on the left of the :keyword:`as`
@@ -844,7 +844,7 @@ set ``NAME = <subject>``.
 
 .. _literal-patterns:
 
-Literal Patterns
+Literal patterns
 ^^^^^^^^^^^^^^^^
 
 A literal pattern corresponds to most
@@ -874,7 +874,7 @@ the singletons ``None``, ``True`` and ``False``, the :keyword:`is` operator is u
 
 .. _capture-patterns:
 
-Capture Patterns
+Capture patterns
 ^^^^^^^^^^^^^^^^
 
 A capture pattern binds the subject value to a name.
@@ -899,7 +899,7 @@ In simple terms ``NAME`` will always succeed and it will set ``NAME = <subject>`
 
 .. _wildcard-patterns:
 
-Wildcard Patterns
+Wildcard patterns
 ^^^^^^^^^^^^^^^^^
 
 A wildcard pattern always succeeds (matches anything)
@@ -916,7 +916,7 @@ In simple terms, ``_`` will always succeed.
 
 .. _value-patterns:
 
-Value Patterns
+Value patterns
 ^^^^^^^^^^^^^^
 
 A value pattern represents a named value in Python.
@@ -943,7 +943,7 @@ In simple terms ``NAME1.NAME2`` will succeed only if ``<subject> == NAME1.NAME2`
 
 .. _group-patterns:
 
-Group Patterns
+Group patterns
 ^^^^^^^^^^^^^^
 
 A group pattern allows users to add parentheses around patterns to
@@ -957,7 +957,7 @@ In simple terms ``(P)`` has the same effect as ``P``.
 
 .. _sequence-patterns:
 
-Sequence Patterns
+Sequence patterns
 ^^^^^^^^^^^^^^^^^
 
 A sequence pattern contains several subpatterns to be matched against sequence elements.
@@ -1039,7 +1039,7 @@ happens:
 
 .. _mapping-patterns:
 
-Mapping Patterns
+Mapping patterns
 ^^^^^^^^^^^^^^^^
 
 A mapping pattern contains one or more key-value patterns.  The syntax is
@@ -1089,7 +1089,7 @@ happens:
 
 .. _class-patterns:
 
-Class Patterns
+Class patterns
 ^^^^^^^^^^^^^^
 
 A class pattern represents a class and its positional and keyword arguments
