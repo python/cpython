@@ -929,6 +929,7 @@ def collect_windows(info_add):
         IsUserAnAdmin.argtypes = ()
         info_add('windows.is_admin', IsUserAnAdmin())
 
+    wmic_encoding = None
     try:
         import _winapi
     except ImportError:
@@ -941,7 +942,9 @@ def collect_windows(info_add):
             pass
 
         call_func(info_add, 'windows.ansi_code_page', _winapi, 'GetACP')
-        call_func(info_add, 'windows.oem_code_page', _winapi, 'GetOEMCP')
+        oem_code_page = _winapi.GetOEMCP()
+        info_add('windows.oem_code_page', oem_code_page)
+        wmic_encoding = f"cp{oem_code_page}"
 
     # windows.version_caption: "wmic os get Caption,Version /value" command
     import subprocess
@@ -951,7 +954,7 @@ def collect_windows(info_add):
         proc = subprocess.Popen(["wmic", "os", "get", "Caption,Version", "/value"],
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
-                                encoding="oem",
+                                encoding=wmic_encoding,
                                 text=True)
         output, stderr = proc.communicate()
         if proc.returncode:
