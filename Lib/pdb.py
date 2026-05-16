@@ -2251,7 +2251,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     do_a = do_args
 
     def do_retval(self, arg):
-        """retval
+        """rv | retval
 
         Print the return value for the last return of a function.
         """
