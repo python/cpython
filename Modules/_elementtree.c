@@ -271,19 +271,31 @@ typedef struct {
 LOCAL(int)
 create_extra(ElementObject* self, PyObject* attrib)
 {
-    self->extra = PyMem_Malloc(sizeof(ElementObjectExtra));
-    if (!self->extra) {
+    int res;
+    Py_BEGIN_CRITICAL_SECTION(self);
+
+    if (self->extra != NULL) {
+        res = 0;
+        goto end;
+    }
+    ElementObjectExtra* extra = PyMem_Malloc(sizeof(ElementObjectExtra));
+    if (!extra) {
         PyErr_NoMemory();
-        return -1;
+        res = -1;
+        goto end;
     }
 
-    self->extra->attrib = Py_XNewRef(attrib);
+    extra->attrib = Py_XNewRef(attrib);
 
-    self->extra->length = 0;
-    self->extra->allocated = STATIC_CHILDREN;
-    self->extra->children = self->extra->_children;
+    extra->length = 0;
+    extra->allocated = STATIC_CHILDREN;
+    extra->children = extra->_children;
+    self->extra = extra;
+    res = 0;
 
-    return 0;
+  end:
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 LOCAL(void)
@@ -297,7 +309,7 @@ dealloc_extra(ElementObjectExtra *extra)
     Py_XDECREF(extra->attrib);
 
     for (i = 0; i < extra->length; i++)
-        Py_DECREF(extra->children[i]);
+        Py_XDECREF(extra->children[i]);
 
     if (extra->children != extra->_children) {
         PyMem_Free(extra->children);
@@ -311,15 +323,16 @@ clear_extra(ElementObject* self)
 {
     ElementObjectExtra *myextra;
 
-    if (!self->extra)
-        return;
+    Py_BEGIN_CRITICAL_SECTION(self);
 
     /* Avoid DECREFs calling into this code again (cycles, etc.)
     */
     myextra = self->extra;
     self->extra = NULL;
-
-    dealloc_extra(myextra);
+    Py_END_CRITICAL_SECTION();
+    if (myextra) {
+        dealloc_extra(myextra);
+    }
 }
 
 /* Convenience internal function to create new Element objects with the given
@@ -544,6 +557,7 @@ element_add_subelement(elementtreestate *st, ElementObject *self,
         return -1;
     }
 
+    Py_BEGIN_CRITICAL_SECTION(self);
     if (element_resize(self, 1) < 0)
         return -1;
 
@@ -551,6 +565,7 @@ element_add_subelement(elementtreestate *st, ElementObject *self,
 
     self->extra->length++;
 
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -560,13 +575,24 @@ element_get_attrib(ElementObject* self)
     /* return borrowed reference to attrib dictionary */
     /* note: this function assumes that the extra section exists */
 
-    PyObject* res = self->extra->attrib;
+    PyObject *res = NULL;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    if (self->extra == NULL) {
+        PyErr_SetString(PyExc_AttributeError, "extra section does not exist");
+        goto end;
+    }
+    res = self->extra->attrib;
 
     if (!res) {
         /* create missing dictionary */
-        res = self->extra->attrib = PyDict_New();
+        res = PyDict_New();
+        if (res) {
+            self->extra->attrib = res;
+        }
     }
-
+    Py_XINCREF(res);
+  end:
+    Py_END_CRITICAL_SECTION();
     return res;
 }
 
@@ -667,6 +693,7 @@ element_gc_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(JOIN_OBJ(self->text));
     Py_VISIT(JOIN_OBJ(self->tail));
 
+    Py_BEGIN_CRITICAL_SECTION(self);
     if (self->extra) {
         Py_ssize_t i;
         Py_VISIT(self->extra->attrib);
@@ -674,6 +701,7 @@ element_gc_traverse(PyObject *op, visitproc visit, void *arg)
         for (i = 0; i < self->extra->length; ++i)
             Py_VISIT(self->extra->children[i]);
     }
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -681,6 +709,7 @@ static int
 element_gc_clear(PyObject *op)
 {
     ElementObject *self = _Element_CAST(op);
+    Py_BEGIN_CRITICAL_SECTION(self);
     Py_CLEAR(self->tag);
     _clear_joined_ptr(&self->text);
     _clear_joined_ptr(&self->tail);
@@ -689,6 +718,7 @@ element_gc_clear(PyObject *op)
      * so fully deallocate it.
     */
     clear_extra(self);
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -1625,10 +1655,14 @@ static Py_ssize_t
 element_length(PyObject *op)
 {
     ElementObject *self = _Element_CAST(op);
-    if (!self->extra)
-        return 0;
+    Py_ssize_t res = 0;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    if (self->extra) {
+        res = self->extra->length;
+    }
+    Py_END_CRITICAL_SECTION();
 
-    return self->extra->length;
+    return res;
 }
 
 /*[clinic input]
