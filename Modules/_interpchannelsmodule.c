@@ -2595,6 +2595,7 @@ _channelid_from_xid(_PyXIData_t *data)
     assert(mod != Py_None);
     module_state *state = get_module_state(mod);
     if (state == NULL) {
+        Py_DECREF(mod);
         return NULL;
     }
 
