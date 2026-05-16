@@ -68,6 +68,7 @@ typedef struct {
     PyObject *str_write;
     PyObject *str___dict__;
     PyObject *str_iter;
+    PyObject *typecodes;
 } array_state;
 
 static array_state *
@@ -3153,8 +3154,18 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
     }
     Py_XDECREF(it);
-    PyErr_SetString(PyExc_ValueError,
-        "bad typecode (must be b, B, u, w, h, H, i, I, l, L, q, Q, e, f, d, Zf or Zd)");
+
+    PyObject *sep = PyUnicode_FromString(", ");
+    if (sep == NULL) {
+        return NULL;
+    }
+    PyObject *msg = PyObject_CallMethod(sep, "join", "(O)", state->typecodes);
+    Py_DECREF(sep);
+    if (msg == NULL) {
+        return NULL;
+    }
+    PyErr_Format(PyExc_ValueError, "bad typecode (must be: %S)", msg);
+    Py_DECREF(msg);
     return NULL;
 }
 
@@ -3439,6 +3450,7 @@ array_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->ArrayType);
     Py_VISIT(state->ArrayIterType);
     Py_VISIT(state->array_reconstructor);
+    Py_VISIT(state->typecodes);
     return 0;
 }
 
@@ -3453,6 +3465,7 @@ array_clear(PyObject *module)
     Py_CLEAR(state->str_write);
     Py_CLEAR(state->str___dict__);
     Py_CLEAR(state->str_iter);
+    Py_CLEAR(state->typecodes);
     return 0;
 }
 
@@ -3549,6 +3562,7 @@ array_modexec(PyObject *m)
     if (tuple == NULL) {
         return -1;
     }
+    state->typecodes = Py_NewRef(tuple);
     if (PyModule_Add(m, "typecodes", tuple) < 0) {
         return -1;
     }
