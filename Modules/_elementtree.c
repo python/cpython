@@ -293,7 +293,7 @@ create_extra(ElementObject* self, PyObject* attrib)
     self->extra = extra;
     res = 0;
 
-  end:
+  end: ;
     Py_END_CRITICAL_SECTION();
     return res;
 }
@@ -591,7 +591,7 @@ element_get_attrib(ElementObject* self)
         }
     }
     Py_XINCREF(res);
-  end:
+  end: ;
     Py_END_CRITICAL_SECTION();
     return res;
 }
@@ -2114,7 +2114,7 @@ element_tail_getter(PyObject *op, void *closure)
 static PyObject*
 element_attrib_getter(PyObject *op, void *closure)
 {
-    PyObject *res;
+    PyObject *res = NULL;
     ElementObject *self = _Element_CAST(op);
     Py_BEGIN_CRITICAL_SECTION(self);
     if (!self->extra) {
@@ -2123,7 +2123,7 @@ element_attrib_getter(PyObject *op, void *closure)
     }
     res = element_get_attrib(self);
 
-  end:
+  end: ;
     Py_END_CRITICAL_SECTION();
     return res;
 }
