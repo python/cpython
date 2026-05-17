@@ -2586,6 +2586,7 @@ static PyObject *
 _channelid_from_xid(_PyXIData_t *data)
 {
     struct _channelid_xid *xid = (struct _channelid_xid *)_PyXIData_DATA(data);
+    PyObject *cidobj = NULL;
 
     // It might not be imported yet, so we can't use _get_current_module().
     PyObject *mod = PyImport_ImportModule(MODULE_NAME_STR);
@@ -2595,11 +2596,10 @@ _channelid_from_xid(_PyXIData_t *data)
     assert(mod != Py_None);
     module_state *state = get_module_state(mod);
     if (state == NULL) {
-        return NULL;
+        goto done;
     }
 
     // Note that we do not preserve the "resolve" flag.
-    PyObject *cidobj = NULL;
     int err = newchannelid(state->ChannelIDType, xid->cid, xid->end,
                            _global_channels(), 0, 0,
                            (channelid **)&cidobj);
