@@ -63,18 +63,26 @@ The :mod:`!xml.parsers.expat` module contains two functions:
 
 .. function:: ParserCreate(encoding=None, namespace_separator=None)
 
-   Creates and returns a new :class:`xmlparser` object.   *encoding*, if specified,
-   must be a string naming the encoding used by the XML data.
-   Expat natively understands and processes UTF-8, UTF-16, UTF-16BE, UTF-16LE,
-   ISO-8859-1, and US-ASCII.
-   For other encodings (including aliases like Latin1 and ASCII) it falls back
-   to Python.
-   It supports most of 8-bit encodings and many multi-byte encodings like
-   Shift_JIS, although only BMP characters (``U+0000-U+FFFF``) are supported
-   with non-native encodings (this restriction is also applied to aliases
-   like UTF8).
-   If *encoding* [1]_ is given it will override the implicit or explicit
-   encoding of the document and the restrictions mentioned above will not apply.
+   Creates and returns a new :class:`xmlparser` object.
+   *encoding* [1]_, if specified, must be a string naming the encoding
+   used by the XML data.
+   If it is given it will override the implicit or explicit encoding
+   of the document.
+
+   .. impl-detail::
+
+      Expat natively understands and processes UTF-8, UTF-16, UTF-16BE,
+      UTF-16LE, ISO-8859-1, and US-ASCII.
+      For other encodings (including aliases like Latin1 and ASCII) it
+      falls back to Python.
+      It supports most of 8-bit encodings and many multi-byte encodings
+      like Shift_JIS, although only BMP characters (``U+0000-U+FFFF``)
+      are supported with non-native encodings (this restriction is also
+      applied to aliases like UTF8).
+      These restrictions only apply if *encoding* is not given.
+
+      .. versionchanged:: next
+         Added support for multi-byte encodings.
 
    .. _xmlparser-non-root:
 
@@ -118,9 +126,6 @@ The :mod:`!xml.parsers.expat` module contains two functions:
    the :class:`xmlparser` instance returned can only be used to parse a single
    XML document.  Call ``ParserCreate`` for each document to provide unique
    parser instances.
-
-   .. versionchanged:: next
-      Added support for multi-byte encodings.
 
 .. seealso::
 
