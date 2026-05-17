@@ -3309,6 +3309,7 @@ datetime_date_today_impl(PyTypeObject *type)
     if (time == NULL) {
         return NULL;
     }
+
     /* Note well: since today() is a class method, it may not call
      * date.fromtimestamp, e.g., it may call datetime.fromtimestamp.
      */
