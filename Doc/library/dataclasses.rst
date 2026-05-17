@@ -60,9 +60,8 @@ Module contents
    The ``@dataclass`` decorator will add various "dunder" methods to
    the class, described below.  If any of the added methods already
    exist in the class, the behavior depends on the parameter, as documented
-   below. By default the decorator returns the same class that it is called on
-   without creating a new class. However, if the ``slots=True`` parameter is used,
-   a new class is generated and returned instead.
+   below. Except when ``slots=True``, the decorator returns the same class
+   that it is called on without creating a new class.
 
    If ``@dataclass`` is used just as a simple decorator with no parameters,
    it acts as if it has the default values documented in this
