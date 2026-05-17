@@ -15,7 +15,7 @@ Identifying the Free-Threaded Limited API Build in C
 ====================================================
 
 Define :c:macro:`!Py_TARGET_ABI3T` to the lowest Python version your extension supports,
-either in the form of `Py_PACK_VERSION(3.15)` or its direct hex value (such as ``0x30f0000`` for 3.15).
+either in the form of :c:macro:`Py_PACK_VERSION(3.15)` or its direct hex value (such as ``0x30f0000`` for 3.15).
 You can use it to enable code that only runs under the free-threaded build::
 
     #ifdef Py_TARGET_ABI3T
