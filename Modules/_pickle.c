@@ -3455,7 +3455,7 @@ batch_dict(PickleState *state, PicklerObject *self, PyObject *iter, PyObject *or
  * concurrent mutation from invalidating PyDict_Next() iteration state.
  */
 static int
-batch_dict_exact(PickleState *state, PicklerObject *self, PyObject *obj)
+batch_dict_exact_impl(PickleState *state, PicklerObject *self, PyObject *obj)
 {
     PyObject *key = NULL, *value = NULL;
     int i;
@@ -3544,6 +3544,18 @@ error:
     Py_XDECREF(key);
     Py_XDECREF(value);
     return -1;
+}
+
+/* gh-146452: Wrap the dict iteration in a critical section to prevent
+   concurrent mutation from invalidating PyDict_Next() iteration state. */
+static int
+batch_dict_exact(PickleState *state, PicklerObject *self, PyObject *obj)
+{
+    int ret;
+    Py_BEGIN_CRITICAL_SECTION(obj);
+    ret = batch_dict_exact_impl(state, self, obj);
+    Py_END_CRITICAL_SECTION();
+    return ret;
 }
 
 static int
