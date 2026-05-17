@@ -14,29 +14,22 @@ to adapt C API extensions to support free threading.
 Identifying the Free-Threaded Limited API Build in C
 ====================================================
 
-The CPython C API exposes the :c:macro:`!Py_LIMITED_API` macro: in the free-threaded stable ABI
-build it's defined to ``1``, and in the regular build it's not defined.
+Define :c:macro:`!Py_TARGET_ABI3T` to the lowest Python version your extension supports,
+either in the form of `Py_PACK_VERSION(3.15)` or its direct hex value (such as ``0x30f0000`` for 3.15).
 You can use it to enable code that only runs under the free-threaded build::
 
     #ifdef Py_TARGET_ABI3T
     /* code that only runs in the free-threaded stable ABI build */
     #endif
 
-If you wish to build youe extension with both ``abi3`` (Stable ABI with GIL) and ``abi3t`` (no-GIL stable ABI) tags,
-do one of the following:
-
-- define both :c:macro:`!Py_LIMITED_API` and :c:macro:`!Py_TARGET_ABI3T`, or
-- define only :c:macro:`!Py_LIMITED_API` and:
-
-  - on Windows, define :c:macro:`!Py_GIL_DISABLED`;
-  - on other systems, use the headers of free-threaded build of Python.
-
 ``PyObject`` and ``PyVarObject`` opaqueness
 ===========================================
 
-Accessing any member of ``PyObject`` directly is now prohibited, like the non-GIL
-stable ABI. For instance, prefer ``Py_TYPE()`` and ``Py_SET_TYPE()`` over ``ob_type``,
+Accessing any member of ``PyObject`` directly is now prohibited, unlike the GIL
+stable ABI, where accessing such members are merely discouraged.
+For instance, prefer ``Py_TYPE()`` and ``Py_SET_TYPE()`` over ``ob_type``,
 ``Py_REFCNT``, ``Py_IncRef()`` and ``Py_DecRef()`` over ``ob_refcnt``, etc.
+Also, embedding :c:macro:`PyObject_HEAD` within a struct is impossible.
 
 Similarly, members of ``PyVarObject`` are not visible. If you need any object of such type
 to be passed as a ``PyObject`` parameter to any API function, cast it directly as ``PyObject``.
@@ -105,7 +98,7 @@ Critical Sections
 
 .. _critical-sections:
 
-Replacements:
+Equivalent functions:
 
 +-------------------------------------------+---------------------------------------+
 | Macro functions                           | C API functions                       |
