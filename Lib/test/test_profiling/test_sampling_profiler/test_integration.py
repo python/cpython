@@ -5,9 +5,11 @@ import io
 import marshal
 import os
 import shutil
+import socket
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from unittest import mock
 
@@ -32,6 +34,7 @@ from test.support import (
 from .helpers import (
     test_subprocess,
     close_and_unlink,
+    _cleanup_process,
 )
 from .mocks import MockFrameInfo, MockThreadInfo, MockInterpreterInfo
 
@@ -953,3 +956,63 @@ class TestDeepGeneratorFrameCache(unittest.TestCase):
             f"missing the entry point function 'run_forever'. This indicates "
             f"incomplete stacks are being returned, likely due to frame cache "
             f"storing partial stack traces.")
+
+
+@requires_remote_subprocess_debugging()
+@unittest.skipIf(
+    sys.platform == "darwin" and os.geteuid() != 0,
+    "macOS profiling requires elevated permissions",
+)
+class TestControlSocketIntegration(unittest.TestCase):
+    """End-to-end tests for the --control socket via a real profiler subprocess."""
+
+    def _send_recv(self, client, request, expected_reply):
+        client.sendall(request)
+        self.assertEqual(client.recv(4096), expected_reply)
+
+    def test_control_socket_disable_enable_quit_cycle(self):
+        """Drive disable/enable/quit through a real ControlServer subprocess."""
+        script = '''
+import time
+_test_sock.sendall(b"working")
+for _ in range(200):
+    sum(i * i for i in range(50_000))
+    time.sleep(0.05)
+'''
+        with test_subprocess(script, wait_for_working=True) as target:
+            tmpdir = tempfile.mkdtemp()
+            self.addCleanup(shutil.rmtree, tmpdir, ignore_errors=True)
+            socket_path = os.path.join(tmpdir, "tachyon.sock")
+
+            profiler = subprocess.Popen(
+                [sys.executable, "-m", "profiling.sampling", "attach",
+                 "--control", f"unix:{socket_path}",
+                 "-d", "30",
+                 str(target.process.pid)],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            self.addCleanup(_cleanup_process, profiler)
+
+            deadline = time.monotonic() + SHORT_TIMEOUT
+            while time.monotonic() < deadline:
+                if os.path.exists(socket_path):
+                    break
+                time.sleep(0.05)
+            else:
+                self.fail("profiler did not create the control socket")
+
+            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+                client.settimeout(SHORT_TIMEOUT)
+                client.connect(socket_path)
+                self._send_recv(client, b"disable\n", b"ok\n")
+                time.sleep(0.2)
+                self._send_recv(client, b"enable\n", b"ok\n")
+                self._send_recv(client, b"quit\n", b"ok\n")
+
+            stdout, stderr = profiler.communicate(timeout=SHORT_TIMEOUT)
+            self.assertEqual(
+                profiler.returncode, 0,
+                msg=f"stdout={stdout!r} stderr={stderr!r}",
+            )
+            self.assertFalse(os.path.exists(socket_path))
