@@ -1037,7 +1037,7 @@ def kde(data, h, kernel='normal', *, cumulative=False):
     if not n:
         raise StatisticsError('Empty data sequence')
 
-    if not isinstance(data[0], (int, float)):
+    if not all(isinstance(x,(int,float)) for x in data):
         raise TypeError('Data sequence must contain ints or floats')
 
     if h <= 0.0:
@@ -1114,7 +1114,7 @@ def kde_random(data, h, kernel='normal', *, seed=None):
     if not n:
         raise StatisticsError('Empty data sequence')
 
-    if not isinstance(data[0], (int, float)):
+    if not all(isinstance(x,(int,float)) for x in data):
         raise TypeError('Data sequence must contain ints or floats')
 
     if h <= 0.0:
