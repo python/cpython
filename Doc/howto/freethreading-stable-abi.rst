@@ -61,18 +61,19 @@ Extensions that use :ref:`multi-phase initialization <multi-phase-initialization
 :c:data:`Py_mod_gil` slot in the module definition.
 If your extension supports older versions of CPython,
 you should guard the slot with a :c:data:`Py_GIL_DISABLED` check.
+Additionally, prefer :c:type:`PySlot` over :c:type:`PyModuleDef_Slot`.
 
 ::
 
-    static struct PyModuleDef_Slot module_slots[] = {
+    static PySlot module_slots[] = {
         ...
     #ifdef Py_GIL_DISABLED
-        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+        PySlot_STATIC_DATA(Py_mod_gil, Py_MOD_GIL_NOT_USED),
     #endif
-        {0, NULL}
+        PySlot_END
     };
 
-Additionally, using ``PyABIInfo_VAR`` and ``Py_mod_abi`` is recommended so that an
+Furthermore, using ``PyABIInfo_VAR`` and ``Py_mod_abi`` is recommended so that an
 extension module loaded for an incompatible interpreter will trigger an exception, rather than
 fail with a crash.
 
@@ -82,12 +83,12 @@ fail with a crash.
    PyABIInfo_VAR(abi_info);
    #endif Py_GIL_DISABLED
 
-   static PyModuleDef_Slot mymodule_slots[] = {
+   static PySlot mymodule_slots[] = {
       ...
    #ifdef PY_VERSION_HEX >= 0x030F0000
-      {Py_mod_abi, &abi_info},
+      PySlot_STATIC_DATA(Py_mod_abi, &abi_info),
    #endif
-      {0, NULL}
+      PySlot_END
    };
 
 Single-Phase Initialization
