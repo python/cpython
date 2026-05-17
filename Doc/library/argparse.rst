@@ -637,24 +637,21 @@ are set.
 
 .. versionadded:: 3.14
 
-To highlight inline code in your description or epilog text, you can use
-backticks::
+To highlight inline code in your description, epilog, or argument ``help``
+text, you can use single or double backticks::
 
    >>> parser = argparse.ArgumentParser(
    ...     formatter_class=argparse.RawDescriptionHelpFormatter,
+   ...     description='Run ``python -m myapp`` to start.',
    ...     epilog='''Examples:
    ...   `python -m myapp --verbose`
-   ...   `python -m myapp --config settings.json`
+   ...   ``python -m myapp --config settings.json``
    ... ''')
+   >>> parser.add_argument('--foo', help='set the `foo` value')
 
 When colors are enabled, the text inside backticks will be displayed in a
 distinct color to help examples stand out. When colors are disabled, backticks
 are preserved as-is, which is readable in plain text.
-
-.. note::
-
-   Backtick markup only applies to description and epilog text. It does not
-   apply to individual argument ``help`` strings.
 
 .. versionadded:: 3.15
 
@@ -1118,7 +1115,15 @@ User defined functions can be used as well:
 
 The :func:`bool` function is not recommended as a type converter.  All it does
 is convert empty strings to ``False`` and non-empty strings to ``True``.
-This is usually not what is desired.
+This is usually not what is desired::
+
+   >>> parser = argparse.ArgumentParser()
+   >>> _ = parser.add_argument('--verbose', type=bool)
+   >>> parser.parse_args(['--verbose', 'False'])
+   Namespace(verbose=True)
+
+See :class:`BooleanOptionalAction` or ``action='store_true'`` for common
+alternatives.
 
 In general, the ``type`` keyword is a convenience that should only be used for
 simple conversions that can only raise one of the three supported exceptions.
@@ -1962,7 +1967,7 @@ FileType objects
       run and then use the :keyword:`with`-statement to manage the files.
 
    .. versionchanged:: 3.4
-      Added the *encodings* and *errors* parameters.
+      Added the *encoding* and *errors* parameters.
 
    .. deprecated:: 3.14
 
@@ -2023,6 +2028,9 @@ Argument groups
 
    Note that any arguments not in your user-defined groups will end up back
    in the usual "positional arguments" and "optional arguments" sections.
+
+   Within each argument group, arguments are displayed in help output in the
+   order in which they are added.
 
    .. deprecated-removed:: 3.11 3.14
       Calling :meth:`add_argument_group` on an argument group now raises an

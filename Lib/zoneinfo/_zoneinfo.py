@@ -338,7 +338,7 @@ class ZoneInfo(tzinfo):
             if not isdsts[comp_idx]:
                 dstoff = utcoff - utcoffsets[comp_idx]
 
-            if not dstoff and idx < (typecnt - 1):
+            if not dstoff and idx < (typecnt - 1) and i + 1 < len(trans_idx):
                 comp_idx = trans_idx[i + 1]
 
                 # If the following transition is also DST and we couldn't

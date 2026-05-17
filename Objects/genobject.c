@@ -496,7 +496,7 @@ gen_close(PyObject *self, PyObject *args)
     }
 
     if (is_resume(frame->instr_ptr)) {
-        bool no_unwind_tools = _PyEval_NoToolsForUnwind(_PyThreadState_GET());
+        bool no_unwind_tools = _PyEval_NoToolsForUnwind(_PyThreadState_GET(), frame);
         /* We can safely ignore the outermost try block
          * as it is automatically generated to handle
          * StopIteration. */
@@ -1110,9 +1110,6 @@ make_gen(PyTypeObject *type, PyFunctionObject *func)
     return (PyObject *)gen;
 }
 
-static PyObject *
-compute_cr_origin(int origin_depth, _PyInterpreterFrame *current_frame);
-
 PyObject *
 _Py_MakeCoro(PyFunctionObject *func)
 {
@@ -1150,7 +1147,7 @@ _Py_MakeCoro(PyFunctionObject *func)
         assert(frame);
         assert(_PyFrame_IsIncomplete(frame));
         frame = _PyFrame_GetFirstComplete(frame->previous);
-        PyObject *cr_origin = compute_cr_origin(origin_depth, frame);
+        PyObject *cr_origin = _PyCoro_ComputeOrigin(origin_depth, frame);
         ((PyCoroObject *)coro)->cr_origin_or_finalizer = cr_origin;
         if (!cr_origin) {
             Py_DECREF(coro);
@@ -1535,8 +1532,8 @@ PyTypeObject _PyCoroWrapper_Type = {
     0,                                          /* tp_free */
 };
 
-static PyObject *
-compute_cr_origin(int origin_depth, _PyInterpreterFrame *current_frame)
+PyObject *
+_PyCoro_ComputeOrigin(int origin_depth, _PyInterpreterFrame *current_frame)
 {
     _PyInterpreterFrame *frame = current_frame;
     /* First count how many frames we have */
@@ -1581,7 +1578,7 @@ PyCoro_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
     if (origin_depth == 0) {
         ((PyCoroObject *)coro)->cr_origin_or_finalizer = NULL;
     } else {
-        PyObject *cr_origin = compute_cr_origin(origin_depth, _PyEval_GetFrame());
+        PyObject *cr_origin = _PyCoro_ComputeOrigin(origin_depth, _PyEval_GetFrame());
         ((PyCoroObject *)coro)->cr_origin_or_finalizer = cr_origin;
         if (!cr_origin) {
             Py_DECREF(coro);
@@ -2005,6 +2002,19 @@ async_gen_asend_send(PyObject *self, PyObject *arg)
     return result;
 }
 
+PySendResult
+_PyAsyncGenASend_Send(PyObject *iter, PyObject *arg, PyObject **result)
+{
+    *result = async_gen_asend_send(iter, arg);
+    if (*result != NULL) {
+        return PYGEN_NEXT;
+    }
+    if (_PyGen_FetchStopIterationValue(result) == 0) {
+        return PYGEN_RETURN;
+    }
+    return PYGEN_ERROR;
+}
+
 
 static PyObject *
 async_gen_asend_iternext(PyObject *ags)
@@ -2093,10 +2103,8 @@ static PyMethodDef async_gen_asend_methods[] = {
 
 
 static PyAsyncMethods async_gen_asend_as_async = {
-    PyObject_SelfIter,                          /* am_await */
-    0,                                          /* am_aiter */
-    0,                                          /* am_anext */
-    0,                                          /* am_send  */
+    .am_await = PyObject_SelfIter,
+    .am_send = _PyAsyncGenASend_Send,
 };
 
 

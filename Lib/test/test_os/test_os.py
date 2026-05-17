@@ -33,6 +33,8 @@ from test import support
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import infinite_recursion
+from test.support import requires_root_user
+from test.support import requires_non_root_user
 from test.support import warnings_helper
 from platform import win32_is_iot
 from .utils import create_file
@@ -66,10 +68,6 @@ from test.support.script_helper import assert_python_ok
 from test.support import unix_shell
 from test.support.os_helper import FakePath
 
-
-root_in_posix = False
-if hasattr(os, 'geteuid'):
-    root_in_posix = (os.geteuid() == 0)
 
 # Detect whether we're on a Linux system that uses the (now outdated
 # and unmaintained) linuxthreads threading library.  There's an issue
@@ -1869,7 +1867,9 @@ class WalkTests(unittest.TestCase):
 
         walk_it = self.walk(self.tmp1_path, follow_symlinks=True)
         if self.is_fwalk:
-            self.assertRaises(NotADirectoryError, next, walk_it)
+            with self.assertRaises(OSError) as cm:
+                next(walk_it)
+            self.assertIn(cm.exception.errno, (errno.ENOTDIR, errno.EINVAL))
         self.assertRaises(StopIteration, next, walk_it)
 
     @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
@@ -2257,8 +2257,8 @@ class ChownFileTests(unittest.TestCase):
         gid = os.stat(os_helper.TESTFN).st_gid
         self.assertEqual(gid, gid_2)
 
-    @unittest.skipUnless(root_in_posix and len(all_users) > 1,
-                         "test needs root privilege and more than one user")
+    @requires_root_user
+    @unittest.skipUnless(len(all_users) > 1, "test needs more than one user")
     def test_chown_with_root(self):
         uid_1, uid_2 = all_users[:2]
         gid = os.stat(os_helper.TESTFN).st_gid
@@ -2269,8 +2269,10 @@ class ChownFileTests(unittest.TestCase):
         uid = os.stat(os_helper.TESTFN).st_uid
         self.assertEqual(uid, uid_2)
 
-    @unittest.skipUnless(not root_in_posix and len(all_users) > 1,
-                         "test needs non-root account and more than one user")
+    @requires_non_root_user
+    @unittest.skipUnless(len(all_users) > 1, "test needs and more than one user")
+    @unittest.skipIf(sys.platform == 'cygwin',
+                         'chown() can set any uid on Cygwin')
     def test_chown_without_permission(self):
         uid_1, uid_2 = all_users[:2]
         gid = os.stat(os_helper.TESTFN).st_gid
@@ -4053,10 +4055,11 @@ class TimerfdTests(unittest.TestCase):
         initial_expiration = 0.1
         os.timerfd_settime(fd, initial=initial_expiration, interval=0)
 
-        # read() raises OSError with errno is EAGAIN for non-blocking timer.
-        with self.assertRaises(OSError) as ctx:
-            self.read_count_signaled(fd)
-        self.assertEqual(ctx.exception.errno, errno.EAGAIN)
+        if sys.platform != 'cygwin':
+            # read() raises OSError with errno is EAGAIN for non-blocking timer.
+            with self.assertRaises(OSError) as ctx:
+                self.read_count_signaled(fd)
+            self.assertEqual(ctx.exception.errno, errno.EAGAIN)
 
         # Wait more than 0.1 seconds
         time.sleep(initial_expiration + 0.1)
@@ -4237,12 +4240,19 @@ class TimerfdTests(unittest.TestCase):
 
         # 2nd call
         next_expiration_ns, interval_ns2 = os.timerfd_settime_ns(fd, initial=initial_expiration_ns, interval=interval_ns)
-        self.assertEqual(interval_ns2, interval_ns)
+        CYGWIN = (sys.platform == 'cygwin')
+        if not CYGWIN:
+            self.assertEqual(interval_ns2, interval_ns)
+        else:
+            self.assertEqual(interval_ns2, 0)
         self.assertEqual(next_expiration_ns, initial_expiration_ns)
 
         # timerfd_gettime
         next_expiration_ns, interval_ns2 = os.timerfd_gettime_ns(fd)
-        self.assertEqual(interval_ns2, interval_ns)
+        if not CYGWIN:
+            self.assertEqual(interval_ns2, interval_ns)
+        else:
+            self.assertEqual(interval_ns2, 0)
         self.assertLessEqual(next_expiration_ns, initial_expiration_ns)
 
         self.assertAlmostEqual(next_expiration_ns, initial_expiration_ns, delta=limit_error)

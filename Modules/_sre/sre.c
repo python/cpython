@@ -43,6 +43,7 @@ static const char copyright[] =
 #include "pycore_dict.h"             // _PyDict_Next()
 #include "pycore_long.h"             // _PyLong_GetZero()
 #include "pycore_moduleobject.h"     // _PyModule_GetState()
+#include "pycore_tuple.h"            // _PyTuple_FromPairSteal
 #include "pycore_unicodeobject.h"    // _PyUnicode_Copy
 #include "pycore_weakref.h"          // FT_CLEAR_WEAKREFS()
 
@@ -2572,28 +2573,17 @@ _sre_SRE_Match_end_impl(MatchObject *self, PyObject *group)
 LOCAL(PyObject*)
 _pair(Py_ssize_t i1, Py_ssize_t i2)
 {
-    PyObject* pair;
-    PyObject* item;
-
-    pair = PyTuple_New(2);
-    if (!pair)
+    PyObject* item1 = PyLong_FromSsize_t(i1);
+    if (!item1) {
         return NULL;
+    }
+    PyObject* item2 = PyLong_FromSsize_t(i2);
+    if(!item2) {
+        Py_DECREF(item1);
+        return NULL;
+    }
 
-    item = PyLong_FromSsize_t(i1);
-    if (!item)
-        goto error;
-    PyTuple_SET_ITEM(pair, 0, item);
-
-    item = PyLong_FromSsize_t(i2);
-    if (!item)
-        goto error;
-    PyTuple_SET_ITEM(pair, 1, item);
-
-    return pair;
-
-  error:
-    Py_DECREF(pair);
-    return NULL;
+    return _PyTuple_FromPairSteal(item1, item2);
 }
 
 /*[clinic input]
