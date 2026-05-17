@@ -1,7 +1,7 @@
 """Base classes for server/gateway implementations"""
 
 from .util import FileWrapper, guess_scheme, is_hop_by_hop
-from .headers import Headers
+from .headers import Headers, _name_disallowed_re
 
 import sys, os, time
 
@@ -237,6 +237,8 @@ class BaseHandler:
         self.status = status
         self.headers = self.headers_class(headers)
         status = self._convert_string_type(status, "Status")
+        if _name_disallowed_re.search(status):
+            raise ValueError("Control characters are not allowed in status")
         assert len(status)>=4,"Status must be at least 4 characters"
         assert status[:3].isdigit(), "Status message must begin w/3-digit code"
         assert status[3]==" ", "Status message must have a space after code"
