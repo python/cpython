@@ -6179,9 +6179,11 @@ class TestSignatureDefinitions(unittest.TestCase):
         no_signature = {'getsizeof', 'set_asyncgen_hooks'}
         no_signature |= {name for name in ['getobjects']
                          if hasattr(sys, name)}
-        # sys.__dir__ and sys.__getattr__ are plain METH_NOARGS/METH_VARARGS
-        # builtins without Argument Clinic text signatures.
-        no_signature |= {'__dir__', '__getattr__'}
+        # sys.__getattr__ is METH_VARARGS without an Argument Clinic signature.
+        # sys.__dir__ is METH_NOARGS; METH_NOARGS always produces '($self, /)'
+        # via signature_from_flags(), not None, so it must not be in no_signature.
+        # __dir__ is non-public so it is not checked in the supported loop either.
+        no_signature |= {'__getattr__'}
         self._test_module_has_signatures(sys, no_signature)
 
     def test_abc_module_has_signatures(self):
