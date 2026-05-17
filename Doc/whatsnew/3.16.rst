@@ -141,6 +141,13 @@ mimetypes
   :meth:`mimetypes.MimeTypes.add_type`.
   Undotted extensions now raise a :exc:`ValueError`.
 
+shutil
+------
+
+* The :exc:`!ExecError` exception which has been deprecated since Python 3.14.
+  It has not been used by any function in :mod:`!shutil` since Python 3.4.
+  (Contributed by Stan Ulbrych in :gh:`149567`.)
+
 symtable
 --------
 
@@ -161,6 +168,7 @@ sysconfig
 * The :func:`!sysconfig.expand_makefile_vars` function
   which has been deprecated since Python 3.14.
   Use the ``vars`` argument of :func:`sysconfig.get_paths` instead.
+  (Contributed by Stan Ulbrych in :gh:`149499`.)
 
 tarfile
 -------

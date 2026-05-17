@@ -7783,7 +7783,7 @@ printf "%s\n" "#define Py_ENABLE_SHARED 1" >>confdefs.h
     CYGWIN*)
       LDLIBRARY='libpython$(LDVERSION).dll.a'
       BLDLIBRARY='-L. -lpython$(LDVERSION)'
-      DLLLIBRARY='libpython$(LDVERSION).dll'
+      DLLLIBRARY='cygpython$(LDVERSION).dll'
       ;;
     SunOS*)
       LDLIBRARY='libpython$(LDVERSION).so'
@@ -31754,6 +31754,7 @@ case "$ac_sys_system" in
   iOS) _PYTHREAD_NAME_MAXLEN=63;;
   FreeBSD*) _PYTHREAD_NAME_MAXLEN=19;; # gh-131268
   OpenBSD*) _PYTHREAD_NAME_MAXLEN=23;; # gh-131268
+  CYGWIN*) _PYTHREAD_NAME_MAXLEN=16;;
   *) _PYTHREAD_NAME_MAXLEN=;;
 esac
 if test -n "$_PYTHREAD_NAME_MAXLEN"; then

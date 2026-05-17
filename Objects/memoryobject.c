@@ -1629,11 +1629,7 @@ memory_getbuf(PyObject *_self, Py_buffer *view, int flags)
 
 
     view->obj = Py_NewRef(self);
-#ifdef Py_GIL_DISABLED
-    _Py_atomic_add_ssize(&self->exports, 1);
-#else
-    self->exports++;
-#endif
+    FT_ATOMIC_ADD_SSIZE(self->exports, 1);
 
     return 0;
 }
@@ -1642,11 +1638,7 @@ static void
 memory_releasebuf(PyObject *_self, Py_buffer *view)
 {
     PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
-#ifdef Py_GIL_DISABLED
-    _Py_atomic_add_ssize(&self->exports, -1);
-#else
-    self->exports--;
-#endif
+    FT_ATOMIC_ADD_SSIZE(self->exports, -1);
     return;
     /* PyBuffer_Release() decrements view->obj after this function returns. */
 }
@@ -2434,9 +2426,9 @@ memoryview_hex_impl(PyMemoryViewObject *self, PyObject *sep,
         // Prevent 'self' from being freed if computing len(sep) mutates 'self'
         // in _Py_strhex_with_sep().
         // See: https://github.com/python/cpython/issues/143195.
-        self->exports++;
+        FT_ATOMIC_ADD_SSIZE(self->exports, 1);
         PyObject *ret = _Py_strhex_with_sep(src->buf, src->len, sep, bytes_per_sep);
-        self->exports--;
+        FT_ATOMIC_ADD_SSIZE(self->exports, -1);
         return ret;
     }
 
@@ -3363,9 +3355,9 @@ memory_hash(PyObject *_self)
         if (view->obj != NULL) {
             // Prevent 'self' from being freed when computing the item's hash.
             // See https://github.com/python/cpython/issues/142664.
-            self->exports++;
+            FT_ATOMIC_ADD_SSIZE(self->exports, 1);
             Py_hash_t h = PyObject_Hash(view->obj);
-            self->exports--;
+            FT_ATOMIC_ADD_SSIZE(self->exports, -1);
             if (h == -1) {
                 /* Keep the original error message */
                 return -1;
