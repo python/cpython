@@ -1,0 +1,1 @@
+WIthin ``Modules/_elementtree.c``, improve thread-safety in ElementObjects within ``element_ass_subscr``
