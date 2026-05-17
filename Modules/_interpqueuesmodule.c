@@ -1363,6 +1363,7 @@ _queueobj_from_xid(_PyXIData_t *data)
     if (mod == NULL) {
         mod = PyImport_ImportModule(MODULE_NAME_STR);
         if (mod == NULL) {
+            Py_DECREF(qidobj);
             return NULL;
         }
     }
