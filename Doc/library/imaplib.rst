@@ -120,11 +120,11 @@ The second subclass allows for connections created by a child process:
 The following utility functions are defined:
 
 
-.. function:: Internaldate2tuple(datestr)
+.. function:: Internaldate2tuple(resp)
 
-   Parse an IMAP4 ``INTERNALDATE`` string and return corresponding local
-   time.  The return value is a :class:`time.struct_time` tuple or
-   ``None`` if the string has wrong format.
+   Parse a :term:`bytes-like object` containing an IMAP4 ``INTERNALDATE``
+   response and return the corresponding local time.  The return value is a
+   :class:`time.struct_time` tuple or ``None`` if the input has wrong format.
 
 .. function:: Int2AP(num)
 
@@ -132,9 +132,11 @@ The following utility functions are defined:
    [``A`` .. ``P``].
 
 
-.. function:: ParseFlags(flagstr)
+.. function:: ParseFlags(resp)
 
-   Converts an IMAP4 ``FLAGS`` response to a tuple of individual flags.
+   Converts a :term:`bytes-like object` containing an IMAP4 ``FLAGS`` response
+   to a tuple of individual flags as :class:`bytes`.  The return value is an
+   empty tuple if the input has wrong format.
 
 
 .. function:: Time2Internaldate(date_time)
@@ -729,4 +731,3 @@ retrieves and prints all messages::
        print('Message %s\n%s\n' % (num, data[0][1]))
    M.close()
    M.logout()
-
