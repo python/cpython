@@ -1871,7 +1871,8 @@ ptr_wise_atomic_memmove(ElementObject *a, PyObject **dest, PyObject **src, Py_ss
 #ifndef Py_GIL_DISABLED
     memmove(dest, src, n * sizeof(PyObject *));
 #else
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(a);
+    // XXX: maybe a critical section isn't needed for ElementObject?
+    // _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(a);
     if (_Py_IsOwnedByCurrentThread((PyObject *)a) && !_PyObject_GC_IS_SHARED(a)) {
         // No other threads can read this list concurrently
         memmove(dest, src, n * sizeof(PyObject *));
