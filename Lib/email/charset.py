@@ -121,8 +121,6 @@ ALIASES = {
     'kz1048': 'kz-1048',
     'mac-roman': 'macintosh',
 
-    # latin-1 and iso-8859-1 are different codecs in Python.
-    'latin-1': 'iso-8859-1',
     # CP949 is not registered in IANA. KS_C_5601-1987 is not the same,
     # but the closest registered option.
     'cp949': 'ks_c_5601-1987',
