@@ -125,8 +125,6 @@ class SampleProfiler:
         pending_timestamps = [] if aggregating else None
 
         control = control_server.control if control_server is not None else None
-        if control is not None:
-            control.sample_interval_usec = self.sample_interval_usec
 
         def flush_pending():
             nonlocal pending_count, pending_timestamps

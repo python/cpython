@@ -436,29 +436,10 @@ class TestSampleProfiler(unittest.TestCase):
     @staticmethod
     def _fake_control_server(*, enabled=True, running=True):
         """Build a minimal control_server stub for sample() integration."""
-        control = types.SimpleNamespace(
-            enabled=enabled, running=running, sample_interval_usec=0,
-        )
+        control = types.SimpleNamespace(enabled=enabled, running=running)
         server = mock.MagicMock()
         server.control = control
         return server
-
-    def test_sample_passes_interval_to_control_server(self):
-        """Test that sample() copies its interval into control.sample_interval_usec."""
-        control_server = self._fake_control_server(running=False)
-        with self._patched_unwinder() as u:
-            u.instance.get_stack_trace.return_value = []
-            profiler = SampleProfiler(
-                pid=12345, sample_interval_usec=4242, all_threads=False
-            )
-            with io.StringIO() as output:
-                with mock.patch("sys.stdout", output):
-                    profiler.sample(
-                        mock.MagicMock(),
-                        duration_sec=10,
-                        control_server=control_server,
-                    )
-        self.assertEqual(control_server.control.sample_interval_usec, 4242)
 
     def test_sample_polls_control_server_periodically(self):
         """Test that sample() drives control_server.poll() during the loop."""
@@ -523,9 +504,7 @@ class TestSampleProfiler(unittest.TestCase):
 
     def test_sample_resumes_after_re_enable(self):
         """Test that sampling resumes when control flips from disabled to enabled."""
-        control = types.SimpleNamespace(
-            enabled=False, running=True, sample_interval_usec=0,
-        )
+        control = types.SimpleNamespace(enabled=False, running=True)
         control_server = mock.MagicMock()
         control_server.control = control
 
@@ -556,9 +535,7 @@ class TestSampleProfiler(unittest.TestCase):
 
     def test_sample_rate_reflects_enabled_time(self):
         """Test that Sample rate divides by enabled time, not wall time."""
-        control = types.SimpleNamespace(
-            enabled=False, running=True, sample_interval_usec=0,
-        )
+        control = types.SimpleNamespace(enabled=False, running=True)
         control_server = mock.MagicMock()
         control_server.control = control
 

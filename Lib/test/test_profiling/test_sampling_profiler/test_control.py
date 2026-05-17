@@ -110,13 +110,12 @@ class ControlServerTests(unittest.TestCase):
                     self.assertEqual(server.control.enabled, expected_enabled)
 
     def test_dispatch_status_format(self):
-        """status reply exposes enabled and rate_usec."""
+        """status reply exposes the enabled flag."""
         server = self.start_server()
-        server.control.sample_interval_usec = 1000
         client = self.connect()
         self.assertEqual(
             self.request(server, client, b"status\n"),
-            b"ok enabled=True rate_usec=1000\n",
+            b"ok enabled=True\n",
         )
 
     def test_dispatch_quit_sets_running_and_closes(self):
@@ -163,8 +162,11 @@ class ControlServerTests(unittest.TestCase):
     def test_cli_rejects_control_with_subprocesses(self):
         """--control and --subprocesses are mutually exclusive."""
         argv = [
-            "profiling.sampling.cli", "attach",
-            "--subprocesses", "--control", "unix:/tmp/x.sock",
+            "profiling.sampling.cli",
+            "attach",
+            "--subprocesses",
+            "--control",
+            "unix:/tmp/x.sock",
             "123",
         ]
         with (
@@ -181,8 +183,11 @@ class ControlServerTests(unittest.TestCase):
     def test_cli_rejects_bad_uri(self):
         """An unsupported control URI scheme is rejected during validation."""
         argv = [
-            "profiling.sampling.cli", "attach",
-            "--control", "fifo:/tmp/x", "123",
+            "profiling.sampling.cli",
+            "attach",
+            "--control",
+            "fifo:/tmp/x",
+            "123",
         ]
         with (
             mock.patch("sys.argv", argv),

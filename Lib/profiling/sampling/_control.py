@@ -12,7 +12,6 @@ class ProfilerControl:
     def __init__(self):
         self.enabled = True
         self.running = True
-        self.sample_interval_usec = 0
 
 
 def parse_control_uri(uri, *, allowed_schemes=("unix",)):
@@ -188,10 +187,7 @@ class ControlServer:
             case "ping":
                 reply = "ok\n"
             case "status":
-                reply = (
-                    f"ok enabled={self.control.enabled} "
-                    f"rate_usec={self.control.sample_interval_usec}\n"
-                )
+                reply = f"ok enabled={self.control.enabled}\n"
             case "quit":
                 self.control.running = False
                 conn.close_after_write = True
