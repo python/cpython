@@ -261,7 +261,7 @@ class SizeofTest(unittest.TestCase):
 @unittest.skipUnless(cET, 'requires _elementtree')
 @threading_helper.requires_working_threading()
 class TestElementTreeFreeThreading(unittest.TestCase):
-    def test_element_extra_race(self):
+    def test_element_concurrent_clear_and_access(self):
         #Race len(), .attrib, and .clear() to verify fix for gh-149861.
         root = cET.Element('root')
         children = [cET.Element(f'child-{i}') for i in range(5)]
