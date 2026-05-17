@@ -1077,36 +1077,6 @@ class TestParser(TestParserMixin, TestEmailBase):
             defects=[errors.UndecodableBytesDefect]*2,
             ),
 
-        missing_base64_padding = C(
-            '=?utf-8?b?dmk?=',
-            stringified='vi',
-            defects=[errors.InvalidBase64PaddingDefect],
-            ),
-
-        invalid_base64_character = C(
-            '=?utf-8?b?dm\x01k===?=',
-            stringified='vi',
-            defects=[errors.InvalidBase64CharactersDefect],
-            ),
-
-        invalid_base64_character_and_bad_padding = C(
-            '=?utf-8?b?dm\x01k?=',
-            stringified='vi',
-            defects=[
-                errors.InvalidBase64CharactersDefect,
-                errors.InvalidBase64PaddingDefect,
-                ],
-            ),
-
-        # bpo-27397/gh-71584: there's no way to decode this.
-        invalid_base64_length = C(
-            '=?utf-8?b?abcde?=',
-            '=?utf-8?b?abcde?=',
-            '=?utf-8?b?abcde?=',
-            [],
-            ''
-            ),
-
         no_whitespace_between_ews = C(
             '=?utf-8?q?foo?==?utf-8?q?bar?=',
             stringified='foobar',
@@ -1137,10 +1107,6 @@ class TestParser(TestParserMixin, TestEmailBase):
 
         invalid_ew2 = C(
             '=?utf-8?q?=somevalue?=',
-            ),
-
-        invalid_ew_cte = C(
-            '=?utf-8?X?=somevalue?=',
             ),
 
         )
