@@ -1,7 +1,6 @@
 """Command-line interface for the sampling profiler."""
 
 import argparse
-import contextlib
 import importlib.util
 import locale
 import os
@@ -12,7 +11,7 @@ import subprocess
 import sys
 import time
 import webbrowser
-from contextlib import nullcontext
+from contextlib import ExitStack, nullcontext
 
 from .errors import (
     SamplingUnknownProcessError,
@@ -1202,7 +1201,7 @@ def _handle_attach(args):
     )
 
     server = None
-    with contextlib.ExitStack() as stack:
+    with ExitStack() as stack:
         if args.control:
             server = ControlServer(args.control)
             try:
@@ -1319,7 +1318,7 @@ def _handle_run(args):
     )
 
     server = None
-    with contextlib.ExitStack() as stack:
+    with ExitStack() as stack:
         stack.enter_context(_get_child_monitor_context(args, process.pid))
 
         def _terminate_main_subprocess():
@@ -1380,7 +1379,7 @@ def _handle_live_attach(args, pid):
 
     # Sample in live mode
     server = None
-    with contextlib.ExitStack() as stack:
+    with ExitStack() as stack:
         if args.control:
             server = ControlServer(args.control)
             try:
@@ -1438,7 +1437,7 @@ def _handle_live_run(args):
     # Profile the subprocess in live mode
     server = None
     try:
-        with contextlib.ExitStack() as stack:
+        with ExitStack() as stack:
             if args.control:
                 server = ControlServer(args.control)
                 try:
