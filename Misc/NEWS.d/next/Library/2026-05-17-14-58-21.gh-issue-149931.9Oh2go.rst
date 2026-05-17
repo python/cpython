@@ -1,0 +1,2 @@
+Fix memory leaks in :func:`time.strftime` and :mod:`!_remote_debugging` when
+memory reallocation fails.
