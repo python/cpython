@@ -634,11 +634,11 @@ def test_errors_in_keys():
       ...
     AttributeError: some error
 
-    >>> exc = TypeError('some error')
+    >>> exc = KeyError('some error')
     >>> f(**D())
     Traceback (most recent call last):
       ...
-    TypeError: some error
+    KeyError: 'some error'
     """
 
 def test_errors_in_keys_next():
@@ -666,11 +666,11 @@ def test_errors_in_keys_next():
       ...
     AttributeError: some error
 
-    >>> exc = TypeError('some error')
+    >>> exc = KeyError('some error')
     >>> f(**D())
     Traceback (most recent call last):
       ...
-    TypeError: some error
+    KeyError: 'some error'
     """
 
 def test_errors_in_getitem():
@@ -694,11 +694,11 @@ def test_errors_in_getitem():
       ...
     AttributeError: some error
 
-    >>> exc = TypeError('some error')
+    >>> exc = KeyError('some error')
     >>> f(**D())
     Traceback (most recent call last):
       ...
-    TypeError: some error
+    KeyError: 'some error'
     """
 
 import doctest

@@ -1,2 +1,0 @@
-The clean target for the Apple/iOS XCframework build script is now more
-selective when targeting a single architecture.

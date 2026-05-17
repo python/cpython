@@ -1,2 +1,0 @@
-The :mod:`ensurepip` module no longer looks for ``pip-*.whl`` wheel packages
-in the current directory.
