@@ -1355,6 +1355,7 @@ _queueobj_from_xid(_PyCrossInterpreterData *data)
         // XXX import it?
         PyErr_SetString(PyExc_RuntimeError,
                         MODULE_NAME_STR " module not imported yet");
+        Py_DECREF(qidobj);
         return NULL;
     }
 
