@@ -61,7 +61,7 @@
     NSURL *appUrl;
     static NSString *extensions[] = { @"py", @"pyw", @"pyc", NULL};
     NSString **ext_p;
-    int i;
+    NSInteger i;
 
     if ([[NSUserDefaults standardUserDefaults] boolForKey: @"SkipFileBindingTest"])
         return;
