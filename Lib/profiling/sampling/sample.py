@@ -149,6 +149,7 @@ class SampleProfiler:
                 if control_server is not None and current_time >= next_control_poll:
                     control_server.poll(timeout=0)
                     next_control_poll = current_time + 0.001
+                # Check if live collector or runtime control wants to stop
                 if not getattr(control, 'running', True) or not getattr(collector, 'running', True):
                     break
                 enabled = getattr(control, 'enabled', True)
