@@ -176,7 +176,7 @@ Standard Annex #44, `"Unicode Character Database"
       >>> unicodedata.block('S')
       'Basic Latin'
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: mirrored(chr, /)

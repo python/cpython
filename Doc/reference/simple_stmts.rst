@@ -761,8 +761,9 @@ The basic import statement (no :keyword:`from` clause) is executed in two
 steps:
 
 #. find a module, loading and initializing it if necessary
-#. define a name or names in the local namespace for the scope where
-   the :keyword:`import` statement occurs.
+#. define a name or names in the current namespace for the scope where
+   the :keyword:`import` statement occurs, just as an assignment statement
+   would (including :keyword:`global` and :keyword:`nonlocal` semantics).
 
 When the statement contains multiple clauses (separated by
 commas) the two steps are carried out separately for each clause, just
@@ -807,7 +808,7 @@ The :keyword:`from` form uses a slightly more complex process:
    #. if not, attempt to import a submodule with that name and then
       check the imported module again for that attribute
    #. if the attribute is not found, :exc:`ImportError` is raised.
-   #. otherwise, a reference to that value is stored in the local namespace,
+   #. otherwise, a reference to that value is stored in the current namespace,
       using the name in the :keyword:`!as` clause if it is present,
       otherwise using the attribute name
 
@@ -918,7 +919,57 @@ used, not at the import statement itself.
 
 See :pep:`810` for the full specification of lazy imports.
 
-.. versionadded:: next
+.. versionadded:: 3.15
+
+.. _lazy-modules-compat:
+
+Compatibility via ``__lazy_modules__``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. index::
+   single: __lazy_modules__
+
+As an alternative to using the :keyword:`lazy` keyword, a module can opt
+into lazy loading for specific imports by defining a module-level
+:attr:`~module.__lazy_modules__` variable.  When present, it must be a
+container of fully qualified module name strings.  Any regular (non-``lazy``)
+:keyword:`import` statement at module scope whose target appears in
+:attr:`!__lazy_modules__` is treated as a lazy import, exactly as if the
+:keyword:`lazy` keyword had been used.
+
+This provides a way to enable lazy loading for specific dependencies without
+changing individual ``import`` statements. This is useful when supporting
+Python versions older than 3.15 while using lazy imports in 3.15+::
+
+   __lazy_modules__ = ["json", "pathlib"]
+
+   import json     # loaded lazily (name is in __lazy_modules__)
+   import os       # loaded eagerly (name not in __lazy_modules__)
+
+   import pathlib  # loaded lazily
+
+Relative imports are resolved to their absolute name before the lookup, so
+:attr:`!__lazy_modules__` must always contain fully qualified module names.
+
+For ``from``-style imports, the relevant name is the module following
+``from``, not the names of its members::
+
+   # In mypackage/mymodule.py
+   __lazy_modules__ = ["mypackage", "mypackage.sub.utils"]
+
+   from . import helper         # loaded lazily: . resolves to mypackage
+   from .sub.utils import func  # loaded lazily: .sub.utils resolves to mypackage.sub.utils
+   import json                  # loaded eagerly (not in __lazy_modules__)
+
+Imports inside functions, class bodies, or
+:keyword:`try`/:keyword:`except`/:keyword:`finally` blocks are always eager,
+regardless of :attr:`!__lazy_modules__`.
+
+Setting ``-X lazy_imports=none`` (or the :envvar:`PYTHON_LAZY_IMPORTS`
+environment variable to ``none``) overrides :attr:`!__lazy_modules__` and
+forces all imports to be eager.
+
+.. versionadded:: 3.15
 
 .. _future:
 
