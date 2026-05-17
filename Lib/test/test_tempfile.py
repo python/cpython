@@ -510,7 +510,7 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
                     "child process caught fatal signal %d" % -retval)
         self.assertFalse(retval > 0, "child process reports failure %d"%retval)
 
-    @unittest.skipUnless(has_textmode, "text mode not available")
+    @unittest.skipUnless(sys.platform != "cygwin" and has_textmode, "text mode not available")
     def test_textmode(self):
         # _mkstemp_inner can create files in text mode
 
