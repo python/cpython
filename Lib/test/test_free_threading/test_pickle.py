@@ -37,13 +37,8 @@ class TestPickleFreeThreading(unittest.TestCase):
             threads.append(threading.Thread(target=dumper))
         threads.append(threading.Thread(target=mutator))
 
-        for t in threads:
-            t.start()
-        for t in threads:
-            t.join()
-
-        # If we get here without a segfault, the test passed.
-
+        with threading_helper.start_threads(threads):
+            pass
 
 if __name__ == "__main__":
     unittest.main()
