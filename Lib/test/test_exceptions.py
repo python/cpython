@@ -1836,6 +1836,11 @@ class ExceptionTests(unittest.TestCase):
             except:
                 next(i)
                 next(i)
+    
+    def test_OSError_errno_error_message(self):
+        #from PR 14988
+        with self.assertRaisesRegex(OSError, "[Errno 2 (ENOENT)] No such file or directory: '__non-existent__'"):
+            open('__non-existent__')
 
     @unittest.skipUnless(__debug__, "Won't work if __debug__ is False")
     def test_assert_shadowing(self):
