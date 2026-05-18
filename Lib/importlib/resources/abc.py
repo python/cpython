@@ -2,23 +2,21 @@ import abc
 import itertools
 import os
 import pathlib
+from collections.abc import Iterable, Iterator
 from typing import (
     Any,
     BinaryIO,
-    Iterable,
-    Iterator,
     Literal,
     NoReturn,
     Optional,
     Protocol,
     Text,
     TextIO,
-    Union,
     overload,
     runtime_checkable,
 )
 
-StrPath = Union[str, os.PathLike[str]]
+StrPath = str | os.PathLike[str]
 
 __all__ = ["ResourceReader", "Traversable", "TraversableResources"]
 
@@ -151,9 +149,7 @@ class Traversable(Protocol):
     def open(self, mode: Literal['rb'], *args: Any, **kwargs: Any) -> BinaryIO: ...
 
     @abc.abstractmethod
-    def open(
-        self, mode: str = 'r', *args: Any, **kwargs: Any
-    ) -> Union[TextIO, BinaryIO]:
+    def open(self, mode: str = 'r', *args: Any, **kwargs: Any) -> TextIO | BinaryIO:
         """
         mode may be 'r' or 'rb' to open as text or binary. Return a handle
         suitable for reading (same as pathlib.Path.open).

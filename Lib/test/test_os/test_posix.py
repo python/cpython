@@ -142,8 +142,8 @@ class PosixTester(unittest.TestCase):
         self.assertRaises(TypeError, posix.initgroups, "foo", 3, object())
 
         # If a non-privileged user invokes it, it should fail with OSError
-        # EPERM.
-        if os.getuid() != 0:
+        # EPERM. On Cygwin, initgroups(name, 13) does not fail.
+        if os.getuid() != 0 and sys.platform != 'cygwin':
             try:
                 name = pwd.getpwuid(posix.getuid()).pw_name
             except KeyError:
@@ -597,7 +597,9 @@ class PosixTester(unittest.TestCase):
             posix.sysconf(1.23)
 
         arg_max = posix.sysconf("SC_ARG_MAX")
-        self.assertGreater(arg_max, 0)
+        # SC_ARG_MAX is -1 on Cygwin
+        if sys.platform != 'cygwin':
+            self.assertGreater(arg_max, 0)
         self.assertEqual(
             posix.sysconf(posix.sysconf_names["SC_ARG_MAX"]), arg_max)
 
@@ -1943,6 +1945,14 @@ class _PosixSpawnMixin:
         # directories in the $PATH that are not accessible.
         except (FileNotFoundError, PermissionError) as exc:
             self.assertEqual(exc.filename, no_such_executable)
+
+            # On Cygwin, os.posix_spawn() creates a child process even if the
+            # executable doesn't exist. We have to reap this process.
+            if sys.platform == 'cygwin':
+                for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+                    pid, status = os.waitpid(-1, os.WNOHANG)
+                    if pid != 0:
+                        break
         else:
             pid2, status = os.waitpid(pid, 0)
             self.assertEqual(pid2, pid)
