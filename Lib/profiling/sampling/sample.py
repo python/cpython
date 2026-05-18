@@ -135,14 +135,6 @@ class SampleProfiler:
             pending_timestamps = []
             collector.collect(prev_stack, timestamps_us=ts)
 
-        def wait(timeout):
-            if not timeout:
-                return
-            if control_server is not None:
-                control_server.poll(timeout=timeout)
-                return
-            time.sleep(timeout)
-
         try:
             while duration_sec is None or running_time_sec < duration_sec:
                 current_time = time.perf_counter()
@@ -158,7 +150,7 @@ class SampleProfiler:
                     if enabled_since is not None:
                         enabled_time_sec += current_time - enabled_since
                         enabled_since = None
-                    wait(sample_interval_sec)
+                    time.sleep(sample_interval_sec)
                     running_time_sec = time.perf_counter() - start_time
                     continue
 
@@ -172,7 +164,7 @@ class SampleProfiler:
                 if next_time > current_time:
                     sleep_time = (next_time - current_time) * 0.9
                     if sleep_time > 0.0001:
-                        wait(sleep_time)
+                        time.sleep(sleep_time)
                 elif next_time < current_time:
                     try:
                         stack_frames = self._get_stack_trace(
