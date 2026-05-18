@@ -371,6 +371,75 @@ class TestUops(unittest.TestCase):
         # look for indirect evidence: the += operator
         self.assertIn("_BINARY_OP_ADD_INT", uops)
 
+    def test_get_iter_list(self):
+        l = list(range(10))
+        def testfunc(n):
+            total = 0
+            while n:
+                n -= 1
+                total += n
+                for i in l:
+                    break
+            return total
+
+        total = testfunc(TIER2_THRESHOLD)
+        self.assertEqual(total, sum(range(TIER2_THRESHOLD)))
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_PUSH_TAGGED_ZERO", uops)
+        self.assertNotIn("_GET_ITER", uops)
+        self.assertNotIn("_GET_ITER_TRAD", uops)
+        self.assertNotIn("_GET_ITER_VIRTUAL", uops)
+        self.assertNotIn("_GET_ITER_SELF", uops)
+
+    def test_get_iter_gen(self):
+        def gen():
+            while True:
+                yield 1
+
+        def testfunc(n):
+            total = 0
+            while n:
+                n -= 1
+                total += n
+                for i in gen():
+                    break
+            return total
+
+        total = testfunc(TIER2_THRESHOLD)
+        self.assertEqual(total, sum(range(TIER2_THRESHOLD)))
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_PUSH_NULL", uops)
+        self.assertNotIn("_GET_ITER", uops)
+        self.assertNotIn("_GET_ITER_TRAD", uops)
+        self.assertNotIn("_GET_ITER_VIRTUAL", uops)
+        self.assertNotIn("_GET_ITER_SELF", uops)
+
+    def test_get_iter_trad(self):
+        d = {v:v for v in range(10)}
+        def testfunc(n):
+            total = 0
+            while n:
+                n -= 1
+                total += n
+                for i in d:
+                    break
+            return total
+
+        total = testfunc(TIER2_THRESHOLD)
+        self.assertEqual(total, sum(range(TIER2_THRESHOLD)))
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_GET_ITER_TRAD", uops)
+        self.assertNotIn("_GET_ITER", uops)
+        self.assertNotIn("_GET_ITER_VIRTUAL", uops)
+        self.assertNotIn("_GET_ITER_SELF", uops)
+
+
     def test_for_iter_range(self):
         def testfunc(n):
             total = 0
@@ -530,6 +599,7 @@ class TestUops(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_FOR_ITER_TIER_TWO", uops)
+        self.assertNotIn("_ITER_NEXT_INLINE", uops)
 
 
 @requires_specialization
@@ -1358,9 +1428,13 @@ class TestUopsOptimization(unittest.TestCase):
             for _ in gen(n):
                 pass
         testfunc(TIER2_THRESHOLD * 2)
+        # The generator may be inlined into testfunc's trace,
+        # so check whichever executor contains _YIELD_VALUE.
         gen_ex = get_first_executor(gen)
-        self.assertIsNotNone(gen_ex)
-        uops = get_opnames(gen_ex)
+        testfunc_ex = get_first_executor(testfunc)
+        ex = gen_ex or testfunc_ex
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
         self.assertNotIn("_MAKE_HEAP_SAFE", uops)
         self.assertIn("_YIELD_VALUE", uops)
 
@@ -1388,7 +1462,132 @@ class TestUopsOptimization(unittest.TestCase):
         res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertEqual(res, TIER2_THRESHOLD * (TIER2_THRESHOLD - 1) // 2)
         self.assertIsNotNone(ex)
-        self.assertIn("_FOR_ITER_TIER_TWO", get_opnames(ex))
+        self.assertIn("_ITER_NEXT_INLINE", get_opnames(ex))
+
+    def test_for_iter_direct_dict_items(self):
+        def testfunc(n):
+            d = {i: i * 2 for i in range(10)}
+            total = 0
+            for _ in range(n):
+                for k, v in d.items():
+                    total += k + v
+            return total
+
+        expected = 0
+        d = {i: i * 2 for i in range(10)}
+        for _ in range(TIER2_THRESHOLD):
+            for k, v in d.items():
+                expected += k + v
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, expected)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_ITER_NEXT_INLINE", uops)
+        self.assertNotIn("_FOR_ITER_TIER_TWO", uops)
+
+    def test_for_iter_direct_dict_keys(self):
+        def testfunc(n):
+            d = {i: i for i in range(10)}
+            total = 0
+            for _ in range(n):
+                for k in d.keys():
+                    total += k
+            return total
+
+        expected = TIER2_THRESHOLD * sum(range(10))
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, expected)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_ITER_NEXT_INLINE", uops)
+        self.assertNotIn("_FOR_ITER_TIER_TWO", uops)
+
+    def test_for_iter_direct_dict_values(self):
+        def testfunc(n):
+            d = {i: i * 3 for i in range(10)}
+            total = 0
+            for _ in range(n):
+                for v in d.values():
+                    total += v
+            return total
+
+        expected = TIER2_THRESHOLD * sum(i * 3 for i in range(10))
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, expected)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_ITER_NEXT_INLINE", uops)
+        self.assertNotIn("_FOR_ITER_TIER_TWO", uops)
+
+    def test_for_iter_direct_set(self):
+        def testfunc(n):
+            s = set(range(10))
+            total = 0
+            for _ in range(n):
+                for x in s:
+                    total += x
+            return total
+
+        expected = TIER2_THRESHOLD * sum(range(10))
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, expected)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_ITER_NEXT_INLINE", uops)
+        self.assertNotIn("_FOR_ITER_TIER_TWO", uops)
+
+    def test_for_iter_direct_reversed(self):
+        def testfunc(n):
+            lst = list(range(10))
+            total = 0
+            for _ in range(n):
+                for x in reversed(lst):
+                    total += x
+            return total
+
+        expected = TIER2_THRESHOLD * sum(range(10))
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, expected)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_ITER_NEXT_INLINE", uops)
+        self.assertNotIn("_FOR_ITER_TIER_TWO", uops)
+
+    def test_for_iter_direct_enumerate(self):
+        def testfunc(n):
+            lst = list(range(10))
+            total = 0
+            for _ in range(n):
+                for i, x in enumerate(lst):
+                    total += i + x
+            return total
+
+        expected = TIER2_THRESHOLD * sum(i + x for i, x in enumerate(range(10)))
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, expected)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_ITER_NEXT_INLINE", uops)
+        self.assertNotIn("_FOR_ITER_TIER_TWO", uops)
+
+    def test_for_iter_direct_zip(self):
+        def testfunc(n):
+            a = list(range(10))
+            b = list(range(10, 20))
+            total = 0
+            for _ in range(n):
+                for x, y in zip(a, b):
+                    total += x + y
+            return total
+
+        expected = TIER2_THRESHOLD * sum(x + y for x, y in zip(range(10), range(10, 20)))
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, expected)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_ITER_NEXT_INLINE", uops)
+        self.assertNotIn("_FOR_ITER_TIER_TWO", uops)
 
     def test_modified_local_is_seen_by_optimized_code(self):
         l = sys._getframe().f_locals
@@ -2200,9 +2399,48 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertEqual(uops.count("_GUARD_NOS_DICT"), 0)
-        self.assertEqual(uops.count("_STORE_SUBSCR_DICT_KNOWN_HASH"), 1)
+        self.assertEqual(uops.count("_GUARD_NOS_DICT_SUBSCRIPT"), 0)
+        self.assertEqual(uops.count("_GUARD_NOS_DICT_STORE_SUBSCRIPT"), 0)
         self.assertEqual(uops.count("_BINARY_OP_SUBSCR_DICT_KNOWN_HASH"), 1)
+
+    def test_dict_subclass_subscr(self):
+        import collections
+
+        def f(n):
+            x = 0
+            d = collections.defaultdict(int)
+            for _ in range(n):
+                d["key"] = 1
+                x += d["key"]
+            return x
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertEqual(uops.count("_BINARY_OP_SUBSCR_DICT_KNOWN_HASH"), 1)
+        self.assertEqual(uops.count("_STORE_SUBSCR_DICT_KNOWN_HASH"), 1)
+        self.assertEqual(uops.count("_GUARD_NOS_DICT_SUBSCRIPT"), 0)
+        self.assertEqual(uops.count("_GUARD_NOS_DICT_STORE_SUBSCRIPT"), 0)
+        self.assertEqual(uops.count("_GUARD_TYPE"), 1)
+
+    def test_dict_subclass_subscr_with_override(self):
+        class MyDict(dict):
+            def __getitem__(self, key):
+                return 42
+
+        def f(n):
+            d = MyDict()
+            x = 0
+            for _ in range(n):
+                x += d["anything"]
+            return x
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, 42 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertEqual(uops.count("_BINARY_OP_SUBSCR_INIT_CALL"), 1)
 
     def test_remove_guard_for_known_type_list(self):
         def f(n):
@@ -2526,6 +2764,23 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_BINARY_OP_SUBSCR_DICT_KNOWN_HASH", uops)
         self.assertNotIn("_BINARY_OP_SUBSCR_DICT", uops)
 
+    def test_binary_op_subscr_defaultdict_known_hash(self):
+        # str, int, bytes, float, complex, tuple and any python object which has generic hash
+        import collections
+
+        def testfunc(n):
+            x = 0
+            d = collections.defaultdict(lambda: 1)
+            for _ in range(n):
+                x += d['a'] + d[1] + d[b'b'] + d[(1, 2)] + d[_GENERIC_KEY] + d[1.5] + d[1+2j]
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 7 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_SUBSCR_DICT_KNOWN_HASH", uops)
+        self.assertNotIn("_BINARY_OP_SUBSCR_DICT", uops)
 
     def test_binary_op_subscr_constant_frozendict_known_hash(self):
         def testfunc(n):
@@ -2545,6 +2800,28 @@ class TestUopsOptimization(unittest.TestCase):
         # str, int, bytes, float, complex, tuple and any python object which has generic hash
         def testfunc(n):
             d = {'a': 0, 1: 0, b'b': 0, (1, 2): 0, _GENERIC_KEY: 0, 1.5: 0, 1+2j: 0}
+            for _ in range(n):
+                d['a'] += 1
+                d[1] += 2
+                d[b'b'] += 3
+                d[(1, 2)] += 4
+                d[_GENERIC_KEY] += 5
+                d[1.5] += 6
+                d[1+2j] += 7
+            return d['a'] + d[1] + d[b'b'] + d[(1, 2)] + d[_GENERIC_KEY] + d[1.5] + d[1+2j]
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 28 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_STORE_SUBSCR_DICT_KNOWN_HASH", uops)
+        self.assertNotIn("_STORE_SUBSCR_DICT", uops)
+
+    def test_store_subscr_defaultdict_known_hash(self):
+        import collections
+
+        def testfunc(n):
+            d = collections.defaultdict(lambda: 0)
             for _ in range(n):
                 d['a'] += 1
                 d[1] += 2
@@ -2642,6 +2919,9 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         # When the result of type(...) is known, _CALL_TYPE_1 is decomposed.
         self.assertNotIn("_CALL_TYPE_1", uops)
+        # _CALL_TYPE_1 produces 2 _POP_TOP_NOP (callable and null)
+        # type(42) is int produces 4 _POP_TOP_NOP
+        self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 6)
 
     def test_call_type_1_result_is_const(self):
         def testfunc(n):
@@ -2874,7 +3154,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertNotIn("_CHECK_IS_NOT_PY_CALLABLE_KW", uops)
 
-    def test_call_len_string(self):
+    def test_call_len_string_frozen_set_dict(self):
         def testfunc(n):
             for _ in range(n):
                 _ = len("abc")
@@ -2882,12 +3162,14 @@ class TestUopsOptimization(unittest.TestCase):
                 _ = len(d)
                 _ = len(b"def")
                 _ = len(b"")
+                _ = len(FROZEN_SET_CONST)
+                _ = len(FROZEN_DICT_CONST)
 
         _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_CALL_LEN", uops)
-        self.assertEqual(count_ops(ex, "_SHUFFLE_3_LOAD_CONST_INLINE_BORROW"), 4)
+        self.assertGreaterEqual(count_ops(ex, "_LOAD_CONST_INLINE_BORROW"), 10)
 
     def test_call_len_known_length_small_int(self):
         # Make sure that len(t) is optimized for a tuple of length 5.
@@ -3370,6 +3652,27 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_BUILD_LIST", uops)
         self.assertNotIn("_LOAD_COMMON_CONSTANT", uops)
 
+    def test_load_common_constant_new_literals(self):
+        def testfunc(n):
+            x = None
+            s = ""
+            t = True
+            f = False
+            m = -1
+            for _ in range(n):
+                x = None
+                s = ""
+                t = True
+                f = False
+                m = -1
+            return x, s, t, f, m
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, (None, "", True, False, -1))
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_LOAD_COMMON_CONSTANT", uops)
+        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
+
     def test_load_small_int(self):
         def testfunc(n):
             x = 0
@@ -3453,6 +3756,10 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         uops = get_opnames(ex)
         self.assertNotIn("_LOAD_SPECIAL", uops)
+        # __enter__/__exit__ produce 2 _POP_TOP_NOP
+        # x += 1 produces 2 _POP_TOP_NOP
+        # __exit__()'s None return produces 1 _POP_TOP_NOP
+        self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 5)
 
     def test_store_fast_refcount_elimination(self):
         def foo(x):
@@ -3838,6 +4145,38 @@ class TestUopsOptimization(unittest.TestCase):
         res, ex = self._run_with_optimizer(testfunc, (2.0, 3.0, Fraction(4), TIER2_THRESHOLD))
         expected = TIER2_THRESHOLD * (5.0 / Fraction(4))
         self.assertAlmostEqual(res, float(expected))
+
+    def test_float_truediv_partial_float_no_stack_underflow(self):
+        # gh-149049: a speculative _GUARD_*_FLOAT for a partially-float
+        # truediv/remainder must not drop the original _BINARY_OP.
+        def truediv(args):
+            n, = args
+            nan = float("nan")
+            def victim(a=0, b=nan, c=2):
+                return (a + b) / c
+            for _ in range(n):
+                victim()
+
+        def remainder(args):
+            n, = args
+            nan = float("nan")
+            def victim(a=0, b=nan, c=2):
+                return (a + b) % c
+            for _ in range(n):
+                victim()
+
+        for testfunc in (truediv, remainder):
+            with self.subTest(op=testfunc.__name__):
+                # Iterations must be high enough that the buggy trace
+                # is not only built but executed (where it underflows).
+                _, ex = self._run_with_optimizer(
+                    testfunc, (TIER2_THRESHOLD * 10,))
+                self.assertIsNotNone(ex)
+                uops = get_opnames(ex)
+                self.assertTrue(
+                    "_GUARD_TOS_FLOAT" in uops or "_GUARD_NOS_FLOAT" in uops,
+                    uops,
+                )
 
     def test_int_add_inplace_unique_lhs(self):
         # a * b produces a unique compact int; adding c reuses it in place
@@ -4259,6 +4598,118 @@ class TestUopsOptimization(unittest.TestCase):
         # NOS guard on the multiply is eliminated because _BINARY_OP_EXTEND
         # propagates PyFloat_Type.
         self.assertNotIn("_GUARD_NOS_FLOAT", uops)
+
+    def test_binary_op_extend_list_concat_type_propagation(self):
+        # list + list is specialized via BINARY_OP_EXTEND. The tier 2 optimizer
+        # should learn that the result is a list and eliminate subsequent
+        # list-type guards.
+        def testfunc(n):
+            a = [1, 2]
+            b = [3, 4]
+            x = True
+            for _ in range(n):
+                c = a + b
+                if c[0]:
+                    x = False
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, False)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_EXTEND", uops)
+        # The c[0] subscript emits _GUARD_NOS_LIST before _BINARY_OP_SUBSCR_LIST_INT;
+        # since _BINARY_OP_EXTEND now propagates PyList_Type, that guard is gone.
+        self.assertIn("_BINARY_OP_SUBSCR_LIST_INT", uops)
+        self.assertNotIn("_GUARD_NOS_LIST", uops)
+
+    def test_binary_op_extend_tuple_concat_type_propagation(self):
+        # tuple + tuple is specialized via BINARY_OP_EXTEND. The tier 2 optimizer
+        # should learn the result is a tuple and eliminate subsequent tuple guards.
+        def testfunc(n):
+            t1 = (1, 2)
+            t2 = (3, 4)
+            for _ in range(n):
+                a, b, c, d = t1 + t2
+            return a + b + c + d
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 10)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_EXTEND", uops)
+        self.assertIn("_UNPACK_SEQUENCE_TUPLE", uops)
+        self.assertNotIn("_GUARD_TOS_TUPLE", uops)
+
+    def test_binary_op_extend_guard_elimination(self):
+        # When both operands have known types (e.g., from a prior
+        # _BINARY_OP_EXTEND result), the _GUARD_BINARY_OP_EXTEND
+        # should be eliminated.
+        def testfunc(n):
+            a = [1, 2]
+            b = [3, 4]
+            total = 0
+            for _ in range(n):
+                c = a + b    # first: guard stays, result type = list
+                d = c + c    # second: both operands are list -> guard eliminated
+                total += d[0]
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        # Both list additions use _BINARY_OP_EXTEND
+        self.assertEqual(uops.count("_BINARY_OP_EXTEND"), 2)
+        # But the second guard is eliminated because both operands
+        # are known to be lists from the first _BINARY_OP_EXTEND.
+        self.assertEqual(uops.count("_GUARD_BINARY_OP_EXTEND"), 1)
+
+    def test_binary_op_extend_partial_guard_lhs_known(self):
+        # When the lhs type is already known (from a prior _BINARY_OP_EXTEND
+        # result) but the rhs type is not, the optimizer should emit
+        # _GUARD_BINARY_OP_EXTEND_RHS (checking only the rhs) instead of
+        # the full _GUARD_BINARY_OP_EXTEND.
+        def testfunc(n):
+            a = [1, 2]
+            b = [3, 4]
+            total = 0
+            for _ in range(n):
+                c = a + b    # result type is list (known)
+                d = c + b    # lhs (c) is known list, rhs (b) is not -> _GUARD_BINARY_OP_EXTEND_RHS
+                total += d[0]
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_EXTEND", uops)
+        self.assertIn("_GUARD_BINARY_OP_EXTEND_RHS", uops)
+        self.assertNotIn("_GUARD_BINARY_OP_EXTEND_LHS", uops)
+
+    def test_binary_op_extend_partial_guard_rhs_known(self):
+        # When the rhs type is already known (from a prior _BINARY_OP_EXTEND
+        # result) but the lhs type is not, the optimizer should emit
+        # _GUARD_BINARY_OP_EXTEND_LHS (checking only the lhs) instead of
+        # the full _GUARD_BINARY_OP_EXTEND.
+        def testfunc(n):
+            a = [1, 2]
+            b = [3, 4]
+            total = 0
+            for _ in range(n):
+                c = a + b    # result type is list (known)
+                d = b + c    # rhs (c) is known list, lhs (b) is not -> _GUARD_BINARY_OP_EXTEND_LHS
+                total += d[2]
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_EXTEND", uops)
+        self.assertIn("_GUARD_BINARY_OP_EXTEND_LHS", uops)
+        self.assertNotIn("_GUARD_BINARY_OP_EXTEND_RHS", uops)
 
     def test_unary_invert_long_type(self):
         def testfunc(n):
@@ -5076,6 +5527,24 @@ class TestUopsOptimization(unittest.TestCase):
         # _POP_TOP_NOP is a sign the optimizer ran and didn't hit bottom.
         self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
 
+    def test_send_virtual(self):
+
+        def send_list(n):
+            yield from list(range(n))
+        def testfunc(n):
+            for _ in send_list(n):
+                pass
+
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            # Ensure SEND is specialized to SEND_VIRTUAL
+            send_list(10)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD*2)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_FOR_ITER_GEN_FRAME", uops)
+        self.assertIn("_SEND_VIRTUAL_TIER_TWO", uops)
+
     def test_binary_op_subscr_init_frame(self):
         class B:
             def __getitem__(self, other):
@@ -5657,6 +6126,33 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_LOAD_SUPER_ATTR_METHOD", uops)
         self.assertEqual(uops.count("_GUARD_NOS_TYPE_VERSION"), 2)
 
+    def test_settrace_then_polymorphic_call_does_not_crash(self):
+        script_helper.assert_python_ok("-c", textwrap.dedent("""
+            import sys
+            sys.settrace(lambda *_: None)
+            sys.settrace(None)
+
+            class C:
+                def __init__(self, x):
+                    pass
+
+            for i in 0, 1, 0, 1:
+                C(0) if i else str(0)
+        """))
+
+    def test_load_special_type_guard_deopt(self):
+        script_helper.assert_python_ok("-s", "-c", textwrap.dedent(f"""
+            def f1():
+                class Context:
+                    def __enter__(self): ...
+                    def __exit__(self, e, v, t): ...
+
+                with Context():
+                    pass
+
+            for _ in range({TIER2_THRESHOLD + 5}):
+                f1()
+        """), PYTHON_JIT="1")
 
 def global_identity(x):
     return x

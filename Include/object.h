@@ -306,6 +306,11 @@ typedef Py_hash_t (*hashfunc)(PyObject *);
 typedef PyObject *(*richcmpfunc) (PyObject *, PyObject *, int);
 typedef PyObject *(*getiterfunc) (PyObject *);
 typedef PyObject *(*iternextfunc) (PyObject *);
+typedef struct {
+    PyObject *object;
+    Py_ssize_t index;
+} _PyObjectIndexPair;
+typedef _PyObjectIndexPair (*_Py_iteritemfunc) (PyObject *, Py_ssize_t index);
 typedef PyObject *(*descrgetfunc) (PyObject *, PyObject *, PyObject *);
 typedef int (*descrsetfunc) (PyObject *, PyObject *, PyObject *);
 typedef int (*initproc)(PyObject *, PyObject *, PyObject *);
@@ -358,6 +363,9 @@ PyAPI_FUNC(Py_ssize_t) PyType_GetTypeDataSize(PyTypeObject *cls);
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030E0000
 PyAPI_FUNC(int) PyType_GetBaseByToken(PyTypeObject *, void *, PyTypeObject **);
 #define Py_TP_USE_SPEC NULL
+#endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 15)
+PyAPI_FUNC(PyObject *) PyType_FromSlots(struct PySlot *slots);
 #endif
 
 /* Generic type check */
@@ -777,6 +785,7 @@ PyAPI_FUNC(int) PyType_Freeze(PyTypeObject *type);
 #endif
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 15)
+PyAPI_FUNC(int) PyObject_CallFinalizerFromDealloc(PyObject *);
 PyAPI_FUNC(PyObject *) PyType_GetModuleByToken(PyTypeObject *type,
                                                const void *token);
 PyAPI_FUNC(void *) PyObject_GetTypeData_DuringGC(PyObject *obj,

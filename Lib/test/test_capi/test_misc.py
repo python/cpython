@@ -923,8 +923,8 @@ class CAPITest(unittest.TestCase):
 
     def test_tp_bases_slot_none(self):
         self.assertRaisesRegex(
-            SystemError,
-            "Py_tp_bases is not a tuple",
+            TypeError,
+            "metaclass conflict",
             _testcapi.create_heapctype_with_none_bases_slot
         )
 
@@ -1055,13 +1055,13 @@ class TestHeapTypeRelative(unittest.TestCase):
     def test_heaptype_relative_members_errors(self):
         with self.assertRaisesRegex(
                 SystemError,
-                r"With Py_RELATIVE_OFFSET, basicsize must be negative"):
+                r"With Py_RELATIVE_OFFSET, basicsize must be extended"):
             _testlimitedcapi.make_heaptype_with_member(0, 1234, 0, True)
         with self.assertRaisesRegex(
-                SystemError, r"Member offset out of range \(0\.\.-basicsize\)"):
+                SystemError, r"Member offset out of range \(0\.\.extra_basicsize\)"):
             _testlimitedcapi.make_heaptype_with_member(0, -8, 1234, True)
         with self.assertRaisesRegex(
-                SystemError, r"Member offset out of range \(0\.\.-basicsize\)"):
+                SystemError, r"Member offset must not be negative"):
             _testlimitedcapi.make_heaptype_with_member(0, -8, -1, True)
 
         Sub = _testlimitedcapi.make_heaptype_with_member(0, -8, 0, True)
@@ -1078,7 +1078,7 @@ class TestHeapTypeRelative(unittest.TestCase):
             with self.subTest(member_name=member_name):
                 with self.assertRaisesRegex(
                         SystemError,
-                        r"With Py_RELATIVE_OFFSET, basicsize must be negative."):
+                        r"With Py_RELATIVE_OFFSET, basicsize must be extended"):
                     _testlimitedcapi.make_heaptype_with_member(
                         basicsize=sys.getsizeof(object()) + 100,
                         add_relative_flag=True,
@@ -1089,12 +1089,23 @@ class TestHeapTypeRelative(unittest.TestCase):
                         )
                 with self.assertRaisesRegex(
                         SystemError,
-                        r"Member offset out of range \(0\.\.-basicsize\)"):
+                        r"Member offset must not be negative"):
                     _testlimitedcapi.make_heaptype_with_member(
                         basicsize=-8,
                         add_relative_flag=True,
                         member_name=member_name,
                         member_offset=-1,
+                        member_type=_testlimitedcapi.Py_T_PYSSIZET,
+                        member_flags=_testlimitedcapi.Py_READONLY,
+                        )
+                with self.assertRaisesRegex(
+                        SystemError,
+                        r"Member offset out of range \(0\.\.extra_basicsize\)"):
+                    _testlimitedcapi.make_heaptype_with_member(
+                        basicsize=-8,
+                        add_relative_flag=True,
+                        member_name=member_name,
+                        member_offset=1234,
                         member_type=_testlimitedcapi.Py_T_PYSSIZET,
                         member_flags=_testlimitedcapi.Py_READONLY,
                         )
@@ -2868,6 +2879,88 @@ class Test_Pep523API(unittest.TestCase):
             list(outer())
         names = ["func", "outer", "outer", "inner", "inner", "outer", "inner"]
         self.do_test(func, names)
+
+
+class Test_Pep523AllowSpecialization(unittest.TestCase):
+    """Tests for _PyInterpreterState_SetEvalFrameFunc with
+    allow_specialization=1."""
+
+    def test_is_specialization_enabled_default(self):
+        # With no custom eval frame, specialization should be enabled
+        self.assertTrue(_testinternalcapi.is_specialization_enabled())
+
+    def test_is_specialization_enabled_with_eval_frame(self):
+        # Setting eval frame with allow_specialization=0 disables specialization
+        try:
+            _testinternalcapi.set_eval_frame_record([])
+            self.assertFalse(_testinternalcapi.is_specialization_enabled())
+        finally:
+            _testinternalcapi.set_eval_frame_default()
+
+    def test_is_specialization_enabled_after_restore(self):
+        # Restoring the default eval frame re-enables specialization
+        try:
+            _testinternalcapi.set_eval_frame_record([])
+            self.assertFalse(_testinternalcapi.is_specialization_enabled())
+        finally:
+            _testinternalcapi.set_eval_frame_default()
+        self.assertTrue(_testinternalcapi.is_specialization_enabled())
+
+    def test_is_specialization_enabled_with_allow(self):
+        # Setting eval frame with allow_specialization=1 keeps it enabled
+        try:
+            _testinternalcapi.set_eval_frame_interp([])
+            self.assertTrue(_testinternalcapi.is_specialization_enabled())
+        finally:
+            _testinternalcapi.set_eval_frame_default()
+
+    def test_allow_specialization_call(self):
+        def func():
+            pass
+
+        def func_outer():
+            func()
+
+        actual_calls = []
+        try:
+            _testinternalcapi.set_eval_frame_interp(
+                actual_calls)
+            for i in range(SUFFICIENT_TO_DEOPT_AND_SPECIALIZE * 2):
+                func_outer()
+        finally:
+            _testinternalcapi.set_eval_frame_default()
+
+        # With specialization enabled, calls to inner() will dispatch
+        # through the installed frame evaluator
+        self.assertEqual(actual_calls.count("func"), 0)
+
+        # But the normal interpreter loop still shouldn't be inlining things
+        self.assertNotEqual(actual_calls.count("func_outer"), 0)
+
+    def test_no_specialization_call(self):
+        # Without allow_specialization, ALL calls go through the eval frame.
+        # This is the existing PEP 523 behavior.
+        def inner(x=42):
+            pass
+        def func():
+            inner()
+
+        # Pre-specialize
+        for _ in range(SUFFICIENT_TO_DEOPT_AND_SPECIALIZE):
+            func()
+
+        actual_calls = []
+        try:
+            _testinternalcapi.set_eval_frame_record(actual_calls)
+            for _ in range(SUFFICIENT_TO_DEOPT_AND_SPECIALIZE):
+                func()
+        finally:
+            _testinternalcapi.set_eval_frame_default()
+
+        # Without allow_specialization, every call including inner() goes
+        # through the eval frame
+        expected = ["func", "inner"] * SUFFICIENT_TO_DEOPT_AND_SPECIALIZE
+        self.assertEqual(actual_calls, expected)
 
 
 @unittest.skipUnless(support.Py_GIL_DISABLED, 'need Py_GIL_DISABLED')
