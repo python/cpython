@@ -1,0 +1,2 @@
+Preserve non-ASCII filenames encoded not in UTF-8 when appending to
+:class:`zipfile.ZipFile`.

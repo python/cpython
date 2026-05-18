@@ -515,7 +515,7 @@ class ZipInfo:
         result.append('>')
         return ''.join(result)
 
-    def FileHeader(self, zip64=None):
+    def FileHeader(self, zip64=None, metadata_encoding=None):
         """Return the per-file header as a bytes object.
 
         When the optional zip64 arg is None rather than a bool, we will
@@ -557,7 +557,7 @@ class ZipInfo:
 
         self.extract_version = max(min_version, self.extract_version)
         self.create_version = max(min_version, self.create_version)
-        filename, flag_bits = self._encodeFilenameFlags()
+        filename, flag_bits = self._encodeFilenameFlags(metadata_encoding)
         header = struct.pack(structFileHeader, stringFileHeader,
                              self.extract_version, self.reserved, flag_bits,
                              self.compress_type, dostime, dosdate, CRC,
@@ -565,9 +565,11 @@ class ZipInfo:
                              len(filename), len(extra))
         return header + filename + extra
 
-    def _encodeFilenameFlags(self):
+    def _encodeFilenameFlags(self, encoding):
+        if not encoding or self.flag_bits & _MASK_UTF_FILENAME:
+            encoding = 'ascii'
         try:
-            return self.filename.encode('ascii'), self.flag_bits
+            return self.filename.encode(encoding), self.flag_bits & ~_MASK_UTF_FILENAME
         except UnicodeEncodeError:
             return self.filename.encode('utf-8'), self.flag_bits | _MASK_UTF_FILENAME
 
@@ -1370,7 +1372,7 @@ class _ZipWriteFile(io.BufferedIOBase):
                 # Preserve current position in file
                 self._zipfile.start_dir = self._fileobj.tell()
                 self._fileobj.seek(self._zinfo.header_offset)
-                self._fileobj.write(self._zinfo.FileHeader(self._zip64))
+                self._fileobj.write(self._zinfo.FileHeader(self._zip64, self._zipfile.metadata_encoding))
                 self._fileobj.seek(self._zipfile.start_dir)
 
             # Successfully written: Add file to our caches
@@ -1571,6 +1573,8 @@ class ZipFile:
             else:
                 # Historical ZIP filename encoding
                 filename = filename.decode(self.metadata_encoding or 'cp437')
+                if not self.metadata_encoding and not filename.isascii():
+                    self.metadata_encoding = "cp437"
             # Create ZipInfo instance to store file information
             x = ZipInfo(filename)
             x.extra = fp.read(centdir[_CD_EXTRA_FIELD_LENGTH])
@@ -1808,7 +1812,7 @@ class ZipFile:
         zinfo.compress_size = 0
         zinfo.CRC = 0
 
-        zinfo.flag_bits = 0x00
+        zinfo.flag_bits = _MASK_UTF_FILENAME
         if zinfo.compress_type == ZIP_LZMA:
             # Compressed data includes an end-of-stream (EOS) marker
             zinfo.flag_bits |= _MASK_COMPRESS_OPTION_1
@@ -1830,7 +1834,7 @@ class ZipFile:
         self._writecheck(zinfo)
         self._didModify = True
 
-        self.fp.write(zinfo.FileHeader(zip64))
+        self.fp.write(zinfo.FileHeader(zip64, self.metadata_encoding))
 
         self._writing = True
         return _ZipWriteFile(self, zinfo, zip64)
@@ -2062,7 +2066,7 @@ class ZipFile:
 
             self.filelist.append(zinfo)
             self.NameToInfo[zinfo.filename] = zinfo
-            self.fp.write(zinfo.FileHeader(False))
+            self.fp.write(zinfo.FileHeader(False, self.metadata_encoding))
             self.start_dir = self.fp.tell()
 
     def __del__(self):
@@ -2133,7 +2137,7 @@ class ZipFile:
 
             extract_version = max(min_version, zinfo.extract_version)
             create_version = max(min_version, zinfo.create_version)
-            filename, flag_bits = zinfo._encodeFilenameFlags()
+            filename, flag_bits = zinfo._encodeFilenameFlags(self.metadata_encoding)
             centdir = struct.pack(structCentralDir,
                                   stringCentralDir, create_version,
                                   zinfo.create_system, extract_version, zinfo.reserved,
