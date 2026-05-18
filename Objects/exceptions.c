@@ -2339,6 +2339,33 @@ OSError_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 static PyObject *
+OSError_format_errno(PyObject *myerrno)
+{
+    if (myerrno == NULL) {
+        return Py_NewRef(Py_None);
+    }
+    if (!PyLong_Check(myerrno)) {
+        return PyObject_Str(myerrno);
+    }
+    long err = PyLong_AsLong(myerrno);
+    if (err == -1 && PyErr_Occurred()) {
+        PyErr_Clear();
+        return PyObject_Str(myerrno);
+    }
+
+    const char *name = NULL;
+#define add_errcode(n, code, comment) \
+    if ((code) == err) { name = (n); } // search over the errornames
+#include "errnonames.h"
+#undef add_errcode
+
+    if (name != NULL) {
+        return PyUnicode_FromFormat("%S (%s)", myerrno, name);
+    }
+    return PyObject_Str(myerrno);
+}
+
+static PyObject *
 OSError_str(PyObject *op)
 {
     PyOSErrorObject *self = PyOSErrorObject_CAST(op);
