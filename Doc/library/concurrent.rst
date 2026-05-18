@@ -1,6 +1,7 @@
 The :mod:`!concurrent` package
 ==============================
 
-Currently, there is only one module in this package:
+This package contains the following modules:
 
 * :mod:`concurrent.futures` -- Launching parallel tasks
+* :mod:`concurrent.interpreters` -- Multiple interpreters in the same process

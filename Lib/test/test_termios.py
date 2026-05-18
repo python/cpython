@@ -290,8 +290,8 @@ class TestModule(unittest.TestCase):
                 self.assertGreaterEqual(value, 0)
 
     def test_exception(self):
-        self.assertTrue(issubclass(termios.error, Exception))
-        self.assertFalse(issubclass(termios.error, OSError))
+        self.assertIsSubclass(termios.error, Exception)
+        self.assertNotIsSubclass(termios.error, OSError)
 
 
 if __name__ == '__main__':

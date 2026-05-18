@@ -7,10 +7,10 @@
 #include "pycore_genobject.h"     // _PyAsyncGenValueWrapperNew
 #include "pycore_interpframe.h"   // _PyFrame_GetLocals()
 #include "pycore_intrinsics.h"    // INTRINSIC_PRINT
+#include "pycore_list.h"          // _PyList_AsTupleAndClear()
+#include "pycore_object.h"        // _PyObject_IsUniquelyReferenced()
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_runtime.h"       // _Py_ID()
-#include "pycore_sysmodule.h"     // _PySys_GetRequiredAttr()
-#include "pycore_tuple.h"         // _PyTuple_FromArray()
 #include "pycore_typevarobject.h" // _Py_make_typevar()
 #include "pycore_unicodeobject.h" // _PyUnicode_FromASCII()
 
@@ -27,7 +27,7 @@ no_intrinsic1(PyThreadState* tstate, PyObject *unused)
 static PyObject *
 print_expr(PyThreadState* Py_UNUSED(ignored), PyObject *value)
 {
-    PyObject *hook = _PySys_GetRequiredAttr(&_Py_ID(displayhook));
+    PyObject *hook = PySys_GetAttr(&_Py_ID(displayhook));
     if (hook == NULL) {
         return NULL;
     }
@@ -192,8 +192,12 @@ unary_pos(PyThreadState* unused, PyObject *value)
 static PyObject *
 list_to_tuple(PyThreadState* unused, PyObject *v)
 {
-    assert(PyList_Check(v));
-    return _PyTuple_FromArray(((PyListObject *)v)->ob_item, Py_SIZE(v));
+    /* INTRINSIC_LIST_TO_TUPLE is only emitted by the compiler for a
+       freshly-built, uniquely-referenced temporary list, so steal its items
+       into the tuple instead of copying them. */
+    assert(PyList_CheckExact(v));
+    assert(_PyObject_IsUniquelyReferenced(v));
+    return _PyList_AsTupleAndClear((PyListObject *)v);
 }
 
 static PyObject *
