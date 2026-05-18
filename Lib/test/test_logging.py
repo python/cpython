@@ -4066,7 +4066,7 @@ class ConfigDictTest(BaseTest):
 
         import multiprocessing
 
-        if support.MS_WINDOWS:
+        if support.MS_WINDOWS or sys.platform == 'cygwin':
             start_methods = ['spawn']
         else:
             start_methods = ['spawn', 'fork', 'forkserver']
@@ -4085,7 +4085,7 @@ class ConfigDictTest(BaseTest):
                                            " assertions in multiprocessing")
     def test_config_queue_handler_multiprocessing_context(self):
         # regression test for gh-121723
-        if support.MS_WINDOWS:
+        if support.MS_WINDOWS or sys.platform == 'cygwin':
             start_methods = ['spawn']
         else:
             start_methods = ['spawn', 'fork', 'forkserver']

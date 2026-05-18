@@ -142,6 +142,7 @@ HAVE_GETVALUE = not getattr(_multiprocessing,
                             'HAVE_BROKEN_SEM_GETVALUE', False)
 
 WIN32 = (sys.platform == "win32")
+ALL_START_METHODS = multiprocessing.get_all_start_methods()
 
 def wait_for_handle(handle, timeout):
     if timeout is not None and timeout < 0.0:
@@ -239,6 +240,8 @@ class TestInternalDecorators(unittest.TestCase):
     """Logic within a test suite that could errantly skip tests? Test it!"""
 
     @support.requires_fork()
+    # Cygwin has fork() but lacks start method 'fork'
+    @unittest.skipUnless('fork' in ALL_START_METHODS, 'need fork start method')
     def test_only_run_in_spawn_testsuite(self):
         if multiprocessing.get_start_method() != "spawn":
             raise unittest.SkipTest("only run in test_multiprocessing_spawn.")
@@ -6104,7 +6107,7 @@ class TestStartMethod(unittest.TestCase):
     def test_get_all_start_methods(self):
         methods = multiprocessing.get_all_start_methods()
         self.assertIn('spawn', methods)
-        if sys.platform == 'win32':
+        if sys.platform in ('win32', 'cygwin'):
             self.assertEqual(methods, ['spawn'])
         elif sys.platform == 'darwin':
             self.assertEqual(methods[0], 'spawn')  # The default is first.
@@ -6138,7 +6141,7 @@ class TestStartMethod(unittest.TestCase):
             self.fail("failed spawning forkserver or grandchild")
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
-    @unittest.skipIf(sys.platform == "win32",
+    @unittest.skipIf(sys.platform in ("win32", "cygwin"),
                      "Only Spawn on windows so no risk of mixing")
     @only_run_in_spawn_testsuite("avoids redundant testing.")
     def test_mixed_startmethod(self):

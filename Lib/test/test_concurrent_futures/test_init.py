@@ -120,7 +120,8 @@ create_executor_tests(globals(), InitializerMixin)
 create_executor_tests(globals(), FailingInitializerMixin)
 
 
-@unittest.skipIf(sys.platform == "win32", "Resource Tracker doesn't run on Windows")
+@unittest.skipIf(sys.platform in ("win32", "cygwin"),
+                 "Resource Tracker doesn't run on Windows")
 class FailingInitializerResourcesTest(unittest.TestCase):
     """
     Source: https://github.com/python/cpython/issues/104090

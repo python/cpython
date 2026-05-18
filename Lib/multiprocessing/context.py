@@ -324,14 +324,15 @@ if sys.platform != 'win32':
                 raise ValueError('forkserver start method not available')
 
     _concrete_contexts = {
-        'fork': ForkContext(),
         'spawn': SpawnContext(),
-        'forkserver': ForkServerContext(),
     }
+    if sys.platform != 'cygwin':
+        _concrete_contexts['fork'] = ForkContext()
+        _concrete_contexts['forkserver'] = ForkServerContext()
     # bpo-33725: running arbitrary code after fork() is no longer reliable
     # on macOS since macOS 10.14 (Mojave). Use spawn by default instead.
     # gh-84559: We changed everyones default to a thread safeish one in 3.14.
-    if reduction.HAVE_SEND_HANDLE and sys.platform != 'darwin':
+    if reduction.HAVE_SEND_HANDLE and sys.platform not in ('darwin', 'cygwin'):
         _default_context = DefaultContext(_concrete_contexts['forkserver'])
     else:
         _default_context = DefaultContext(_concrete_contexts['spawn'])
