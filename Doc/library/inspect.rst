@@ -432,6 +432,8 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
       will return ``False`` in that case. See :ref:`instance-methods` in the
       language reference for details.
 
+      For static methods (:deco:`staticmethod`), this will always return ``False``.
+
 
 .. function:: ispackage(object)
 
@@ -452,6 +454,8 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
       will return ``True`` in that case. See :ref:`instance-methods` in the
       language reference for details.
 
+      For static methods (:deco:`staticmethod`), this will always return ``True``.
+
 
 .. function:: isgeneratorfunction(object)
 
@@ -469,8 +473,11 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
       Accessing an instance method through the class (rather than an instance)
       returns a plain :term:`function`, not a bound method, so :func:`isgeneratorfunction`
-      will return ``True`` in that case. See :ref:`instance-methods` in the
-      language reference for details.
+      will return ``True`` if it is a generator function. See :ref:`instance-methods`
+      in the language reference for details.
+
+      For a static method (:deco:`staticmethod`), this will return ``True`` if it
+      is a generator function.
 
 .. function:: isgenerator(object)
 
@@ -502,8 +509,11 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
       Accessing an instance method through the class (rather than an instance)
       returns a plain :term:`function`, not a bound method, so :func:`iscoroutinefunction`
-      will return ``True`` in that case. See :ref:`instance-methods` in the
-      language reference for details.
+      will return ``True`` if it is a coroutine function. See :ref:`instance-methods`
+      in the language reference for details.
+
+      For a static method (:deco:`staticmethod`), this will return ``True`` if it
+      is a coroutine function.
 
 
 .. function:: markcoroutinefunction(func)
