@@ -5258,7 +5258,7 @@ _servername_callback(SSL *s, int *al, void *args)
 
 error:
     Py_XDECREF(ssl_socket);
-    Py_DECREF(sni_cb);
+    Py_XDECREF(sni_cb);
     *al = SSL_AD_INTERNAL_ERROR;
     ret = SSL_TLSEXT_ERR_ALERT_FATAL;
     PyGILState_Release(gstate);
