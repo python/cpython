@@ -2568,9 +2568,11 @@ features:
    If *exist_ok* is ``False`` (the default), a :exc:`FileExistsError` is
    raised if the target directory already exists.
 
-   If *parent_mode* is not ``None``, it will be used as the mode for any
-   newly-created, intermediate-level directories. Otherwise, intermediate
-   directories are created with the default permissions (respecting umask).
+   If *parent_mode* is not ``None``, it is used as the mode for any
+   newly-created, intermediate-level directories.  Like *mode*, it is
+   combined with the process's umask value; see :ref:`the mkdir()
+   description <mkdir_modebits>`.  Otherwise, intermediate directories are
+   created with the default mode, which is also subject to the umask.
 
    .. note::
 
@@ -2598,7 +2600,7 @@ features:
       The *mode* argument no longer affects the file permission bits of
       newly created intermediate-level directories.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
       The *parent_mode* parameter. To match the behavior from Python 3.6 and
       earlier (where *mode* was applied to all created directories), pass
       ``parent_mode=mode``.

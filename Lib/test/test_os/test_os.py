@@ -2128,21 +2128,24 @@ class MakedirTests(unittest.TestCase):
     def test_mode(self):
         # Note: in some cases, the umask might already be 2 in which case this
         # will pass even if os.umask is actually broken.
-        parent = os.path.join(os_helper.TESTFN, 'dir1')
-        path = os.path.join(parent, 'dir2')
         with os_helper.temp_umask(0o002):
-            os.makedirs(path, 0o705)
+            base = os_helper.TESTFN
+            parent = os.path.join(base, 'dir1')
+            path = os.path.join(parent, 'dir2')
+            os.makedirs(path, 0o555)
             self.assertTrue(os.path.exists(path))
             self.assertTrue(os.path.isdir(path))
             if os.name != 'nt':
-                # Leaf directory gets the specified mode
-                self.assertEqual(os.stat(path).st_mode & 0o777, 0o705)
-                # Parent directory uses default permissions (respecting umask)
+                self.assertEqual(os.stat(path).st_mode & 0o777, 0o555)
                 self.assertEqual(os.stat(parent).st_mode & 0o777, 0o775)
 
     @unittest.skipIf(
-        support.is_wasi,
-        "WASI's umask is a stub."
+        support.is_emscripten or support.is_wasi,
+        "umask is not implemented on Emscripten/WASI."
+    )
+    @unittest.skipIf(
+        sys.platform == "android",
+        "Android filesystem may not honor requested permissions."
     )
     def test_mode_with_parent_mode(self):
         # Test the parent_mode parameter
@@ -2160,8 +2163,12 @@ class MakedirTests(unittest.TestCase):
                 self.assertEqual(os.stat(parent).st_mode & 0o777, 0o750)
 
     @unittest.skipIf(
-        support.is_wasi,
-        "WASI's umask is a stub."
+        support.is_emscripten or support.is_wasi,
+        "umask is not implemented on Emscripten/WASI."
+    )
+    @unittest.skipIf(
+        sys.platform == "android",
+        "Android filesystem may not honor requested permissions."
     )
     def test_parent_mode_deep_hierarchy(self):
         # Test parent_mode with deep directory hierarchy
@@ -2179,8 +2186,12 @@ class MakedirTests(unittest.TestCase):
                 self.assertEqual(os.stat(base).st_mode & 0o777, 0o755)
 
     @unittest.skipIf(
-        support.is_wasi,
-        "WASI's umask is a stub."
+        support.is_emscripten or support.is_wasi,
+        "umask is not implemented on Emscripten/WASI."
+    )
+    @unittest.skipIf(
+        sys.platform == "android",
+        "Android filesystem may not honor requested permissions."
     )
     def test_parent_mode_same_as_mode(self):
         # Test emulating Python 3.6 behavior by setting parent_mode=mode
@@ -2193,6 +2204,28 @@ class MakedirTests(unittest.TestCase):
                 # Both directories should have the same mode
                 self.assertEqual(os.stat(path).st_mode & 0o777, 0o705)
                 self.assertEqual(os.stat(parent).st_mode & 0o777, 0o705)
+
+    @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "umask is not implemented on Emscripten/WASI."
+    )
+    @unittest.skipIf(
+        sys.platform == "android",
+        "Android filesystem may not honor requested permissions."
+    )
+    def test_parent_mode_combined_with_umask(self):
+        # parent_mode, like mode, is combined with the process umask; it does
+        # not bypass it.
+        parent = os.path.join(os_helper.TESTFN, 'dir1')
+        path = os.path.join(parent, 'dir2')
+        with os_helper.temp_umask(0o022):
+            os.makedirs(path, 0o777, parent_mode=0o777)
+            self.assertTrue(os.path.isdir(path))
+            if os.name != 'nt':
+                # 0o777 is masked down to 0o755 by the 0o022 umask, for both
+                # the leaf (mode) and the parent (parent_mode).
+                self.assertEqual(os.stat(path).st_mode & 0o777, 0o755)
+                self.assertEqual(os.stat(parent).st_mode & 0o777, 0o755)
 
     @unittest.skipIf(
         support.is_wasi,
@@ -2267,15 +2300,9 @@ class MakedirTests(unittest.TestCase):
         )
 
     def tearDown(self):
-        path = os.path.join(os_helper.TESTFN, 'dir1', 'dir2', 'dir3',
-                            'dir4', 'dir5', 'dir6')
-        # If the tests failed, the bottom-most directory ('../dir6')
-        # may not have been created, so we look for the outermost directory
-        # that exists.
-        while not os.path.exists(path) and path != os_helper.TESTFN:
-            path = os.path.dirname(path)
-
-        os.removedirs(path)
+        # Remove the whole tree regardless of which sub-directories a test
+        # created and regardless of their permission bits.
+        os_helper.rmtree(os_helper.TESTFN)
 
 
 @unittest.skipUnless(hasattr(os, "chown"), "requires os.chown()")

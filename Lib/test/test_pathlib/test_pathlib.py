@@ -2505,16 +2505,13 @@ class PathTest(PurePathTest):
         p = self.cls(self.base, 'umasktest', 'child')
         self.assertFalse(p.exists())
         if os.name != 'nt':
-            old_mask = os.umask(0o002)
-            try:
+            with os_helper.temp_umask(0o002):
                 p.mkdir(0o755, parents=True)
                 self.assertTrue(p.exists())
                 # Leaf directory gets the specified mode
                 self.assertEqual(p.stat().st_mode & 0o777, 0o755)
                 # Parent directory respects umask (0o777 & ~0o002 = 0o775)
                 self.assertEqual(p.parent.stat().st_mode & 0o777, 0o775)
-            finally:
-                os.umask(old_mask)
 
     @unittest.skipIf(
         is_emscripten or is_wasi,
@@ -2569,22 +2566,19 @@ class PathTest(PurePathTest):
         sys.platform == "android",
         "Android filesystem may not honor requested permissions."
     )
-    def test_mkdir_parent_mode_overrides_umask(self):
-        # Test that parent_mode overrides umask for parent directories
-        p = self.cls(self.base, 'overridetest', 'child')
+    def test_mkdir_parent_mode_combined_with_umask(self):
+        # parent_mode, like mode, is combined with the process umask; it does
+        # not bypass it.
+        p = self.cls(self.base, 'umaskPM', 'child')
         self.assertFalse(p.exists())
         if os.name != 'nt':
-            old_mask = os.umask(0o022)  # Restrictive umask
-            try:
-                # parent_mode should override umask for parents
-                p.mkdir(0o755, parents=True, parent_mode=0o700)
+            with os_helper.temp_umask(0o022):
+                p.mkdir(0o777, parents=True, parent_mode=0o777)
                 self.assertTrue(p.exists())
-                # Leaf directory gets the specified mode
+                # 0o777 is masked down to 0o755 by the 0o022 umask, for both
+                # the leaf (mode) and the parent (parent_mode).
                 self.assertEqual(p.stat().st_mode & 0o777, 0o755)
-                # Parent directory gets parent_mode, not affected by umask
-                self.assertEqual(p.parent.stat().st_mode & 0o777, 0o700)
-            finally:
-                os.umask(old_mask)
+                self.assertEqual(p.parent.stat().st_mode & 0o777, 0o755)
 
     @unittest.skipIf(
         is_emscripten or is_wasi,

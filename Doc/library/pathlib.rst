@@ -1530,10 +1530,11 @@ Creating files and directories
    as needed; they are created with the default permissions without taking
    *mode* into account (mimicking the POSIX ``mkdir -p`` command).
 
-   If *parent_mode* is not ``None``, it will be used as the mode for any
+   If *parent_mode* is not ``None``, it is used as the mode for any
    newly-created, intermediate-level directories when *parents* is true.
+   Like *mode*, it is combined with the process's ``umask`` value.
    Otherwise, intermediate directories are created with the default
-   permissions (respecting umask).
+   permissions (also subject to the umask).
 
    If *parents* is false (the default), a missing parent raises
    :exc:`FileNotFoundError`.
@@ -1548,7 +1549,7 @@ Creating files and directories
    .. versionchanged:: 3.5
       The *exist_ok* parameter was added.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
       The *parent_mode* parameter.
 
 
