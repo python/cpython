@@ -1,1 +1,1 @@
-Removed faulthandler traversal function to resolve double deref of singleton
+Fix crash when faulthandler is imported more than once.
