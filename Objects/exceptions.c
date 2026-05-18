@@ -2392,22 +2392,36 @@ OSError_str(PyObject *op)
                                     self->strerror ? self->strerror: Py_None);
 #endif
     if (self->filename) {
-        if (self->filename2) {
-            return PyUnicode_FromFormat("[Errno %S] %S: %R -> %R",
-                                        OR_NONE(self->myerrno),
-                                        OR_NONE(self->strerror),
-                                        self->filename,
-                                        self->filename2);
-        } else {
-            return PyUnicode_FromFormat("[Errno %S] %S: %R",
-                                        OR_NONE(self->myerrno),
-                                        OR_NONE(self->strerror),
-                                        self->filename);
+        PyObject *myerrno = OSError_format_errno(self->myerrno);
+        if (myerrno == NULL) {
+            return NULL;
         }
+        PyObject *res;
+        if (self->filename2) {
+            res = PyUnicode_FromFormat("[Errno %S] %S: %R -> %R",
+                                       myerrno,
+                                       OR_NONE(self->strerror),
+                                       self->filename,
+                                       self->filename2);
+        } else {
+            res = PyUnicode_FromFormat("[Errno %S] %S: %R",
+                                       myerrno,
+                                       OR_NONE(self->strerror),
+                                       self->filename);
+        }
+        Py_DECREF(myerrno);
+        return res;
     }
-    if (self->myerrno && self->strerror)
-        return PyUnicode_FromFormat("[Errno %S] %S",
-                                    self->myerrno, self->strerror);
+    if (self->myerrno && self->strerror) {
+        PyObject *myerrno = OSError_format_errno(self->myerrno);
+        if (myerrno == NULL) {
+            return NULL;
+        }
+        PyObject *res = PyUnicode_FromFormat("[Errno %S] %S",
+                                             myerrno, self->strerror);
+        Py_DECREF(myerrno);
+        return res;
+    }
     return BaseException_str(op);
 }
 
