@@ -9,14 +9,11 @@
 .. module:: inspect
    :synopsis: Extract information and source code from live objects.
 
-.. moduleauthor:: Ka-Ping Yee <ping@lfw.org>
-.. sectionauthor:: Ka-Ping Yee <ping@lfw.org>
-
 **Source code:** :source:`Lib/inspect.py`
 
 --------------
 
-The :mod:`inspect` module provides several useful functions to help get
+The :mod:`!inspect` module provides several useful functions to help get
 information about live objects such as modules, classes, methods, functions,
 tracebacks, frame objects, and code objects.  For example, it can help you
 examine the contents of a class, retrieve the source code of a method, extract
@@ -198,10 +195,6 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 |                   | read more :ref:`here      |
 |                 |                   | <inspect-module-co-flags>`|
 +-----------------+-------------------+---------------------------+
-|                 | co_lnotab         | encoded mapping of line   |
-|                 |                   | numbers to bytecode       |
-|                 |                   | indices                   |
-+-----------------+-------------------+---------------------------+
 |                 | co_freevars       | tuple of names of free    |
 |                 |                   | variables (referenced via |
 |                 |                   | a function's closure)     |
@@ -262,6 +255,12 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 |                   | ``yield from``, or        |
 |                 |                   | ``None``                  |
 +-----------------+-------------------+---------------------------+
+|                 | gi_state          | state of the generator,   |
+|                 |                   | one of ``GEN_CREATED``,   |
+|                 |                   | ``GEN_RUNNING``,          |
+|                 |                   | ``GEN_SUSPENDED``, or     |
+|                 |                   | ``GEN_CLOSED``            |
++-----------------+-------------------+---------------------------+
 | async generator | __name__          | name                      |
 +-----------------+-------------------+---------------------------+
 |                 | __qualname__      | qualified name            |
@@ -273,7 +272,17 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 +-----------------+-------------------+---------------------------+
 |                 | ag_running        | is the generator running? |
 +-----------------+-------------------+---------------------------+
+|                 | ag_suspended      | is the generator          |
+|                 |                   | suspended?                |
++-----------------+-------------------+---------------------------+
 |                 | ag_code           | code                      |
++-----------------+-------------------+---------------------------+
+|                 | ag_state          | state of the async        |
+|                 |                   | generator, one of         |
+|                 |                   | ``AGEN_CREATED``,         |
+|                 |                   | ``AGEN_RUNNING``,         |
+|                 |                   | ``AGEN_SUSPENDED``, or    |
+|                 |                   | ``AGEN_CLOSED``           |
 +-----------------+-------------------+---------------------------+
 | coroutine       | __name__          | name                      |
 +-----------------+-------------------+---------------------------+
@@ -286,11 +295,20 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 +-----------------+-------------------+---------------------------+
 |                 | cr_running        | is the coroutine running? |
 +-----------------+-------------------+---------------------------+
+|                 | cr_suspended      | is the coroutine          |
+|                 |                   | suspended?                |
++-----------------+-------------------+---------------------------+
 |                 | cr_code           | code                      |
 +-----------------+-------------------+---------------------------+
 |                 | cr_origin         | where coroutine was       |
 |                 |                   | created, or ``None``. See |
 |                 |                   | |coroutine-origin-link|   |
++-----------------+-------------------+---------------------------+
+|                 | cr_state          | state of the coroutine,   |
+|                 |                   | one of ``CORO_CREATED``,  |
+|                 |                   | ``CORO_RUNNING``,         |
+|                 |                   | ``CORO_SUSPENDED``, or    |
+|                 |                   | ``CORO_CLOSED``           |
 +-----------------+-------------------+---------------------------+
 | builtin         | __doc__           | documentation string      |
 +-----------------+-------------------+---------------------------+
@@ -319,9 +337,26 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
    Add ``__builtins__`` attribute to functions.
 
+.. versionchanged:: 3.11
+
+   Add ``gi_suspended`` attribute to generators.
+
+.. versionchanged:: 3.11
+
+   Add ``cr_suspended`` attribute to coroutines.
+
+.. versionchanged:: 3.12
+
+   Add ``ag_suspended`` attribute to async generators.
+
 .. versionchanged:: 3.14
 
    Add ``f_generator`` attribute to frames.
+
+.. versionchanged:: 3.15
+
+   Add ``gi_state`` attribute to generators, ``cr_state`` attribute to
+   coroutines, and ``ag_state`` attribute to async generators.
 
 .. function:: getmembers(object[, predicate])
 
@@ -380,6 +415,9 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
    Return ``True`` if the object is a class, whether built-in or created in Python
    code.
+
+   This function returns ``False`` for :ref:`generic aliases <types-genericalias>` of classes,
+   such as ``list[int]``.
 
 
 .. function:: ismethod(object)
@@ -506,7 +544,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
    .. versionchanged:: 3.13
       Functions wrapped in :func:`functools.partialmethod` now return ``True``
-      if the wrapped function is a :term:`coroutine function`.
+      if the wrapped function is a :term:`asynchronous generator` function.
 
 .. function:: isasyncgen(object)
 
@@ -619,16 +657,28 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 Retrieving source code
 ----------------------
 
-.. function:: getdoc(object)
+.. function:: getdoc(object, *, inherit_class_doc=True, fallback_to_class_doc=True)
 
    Get the documentation string for an object, cleaned up with :func:`cleandoc`.
-   If the documentation string for an object is not provided and the object is
-   a class, a method, a property or a descriptor, retrieve the documentation
-   string from the inheritance hierarchy.
+   If the documentation string for an object is not provided:
+
+   * if the object is a class and *inherit_class_doc* is true (by default),
+     retrieve the documentation string from the inheritance hierarchy;
+   * if the object is a method, a property or a descriptor, retrieve
+     the documentation string from the inheritance hierarchy;
+   * otherwise, if *fallback_to_class_doc* is true (by default), retrieve
+     the documentation string from the class of the object.
+
    Return ``None`` if the documentation string is invalid or missing.
 
    .. versionchanged:: 3.5
       Documentation strings are now inherited if not overridden.
+
+   .. versionchanged:: 3.15
+      Added parameters *inherit_class_doc* and *fallback_to_class_doc*.
+
+      Documentation strings on :class:`~functools.cached_property`
+      objects are now inherited if not overridden.
 
 
 .. function:: getcomments(object)
@@ -1142,7 +1192,7 @@ Classes and functions
    times.
 
 
-.. function:: getfullargspec(func)
+.. function:: getfullargspec(func, *, annotation_format=Format.VALUE)
 
    Get the names and default values of a Python function's parameters.  A
    :term:`named tuple` is returned:
@@ -1172,6 +1222,14 @@ Classes and functions
    APIs. This function is retained primarily for use in code that needs to
    maintain compatibility with the Python 2 ``inspect`` module API.
 
+   A member of the
+   :class:`annotationlib.Format` enum can be passed to the
+   *annotation_format* parameter to control the format of the returned
+   annotations. For example, use
+   ``annotation_format=annotationlib.Format.STRING`` to return annotations in string
+   format. Note that with the default ``VALUE`` format, creation of some argspecs
+   may raise an exception.
+
    .. versionchanged:: 3.4
       This function is now based on :func:`signature`, but still ignores
       ``__wrapped__`` attributes and includes the already bound first
@@ -1188,6 +1246,9 @@ Classes and functions
       Python only explicitly guaranteed that it preserved the declaration
       order of keyword-only parameters as of version 3.7, although in practice
       this order had always been preserved in Python 3.
+
+   .. versionchanged:: 3.15
+      The *annotation_format* parameter was added.
 
 
 .. function:: getargvalues(frame)
@@ -1737,7 +1798,7 @@ which is a bitmap of the following flags:
    The flags are specific to CPython, and may not be defined in other
    Python implementations.  Furthermore, the flags are an implementation
    detail, and can be removed or deprecated in future Python releases.
-   It's recommended to use public APIs from the :mod:`inspect` module
+   It's recommended to use public APIs from the :mod:`!inspect` module
    for any introspection needs.
 
 
@@ -1776,18 +1837,25 @@ Buffer flags
 
 .. _inspect-module-cli:
 
-Command Line Interface
+Command-line interface
 ----------------------
 
-The :mod:`inspect` module also provides a basic introspection capability
+The :mod:`!inspect` module also provides a basic introspection capability
 from the command line.
 
 .. program:: inspect
 
 By default, accepts the name of a module and prints the source of that
 module. A class or function within the module can be printed instead by
-appended a colon and the qualified name of the target object.
+appending a colon and the qualified name of the target object.
 
 .. option:: --details
 
    Print information about the specified object rather than the source code
+
+.. versionchanged:: 3.15
+
+   The ``--details`` option now supports basic introspection for modules
+   without available source code and indicates when modules are frozen.
+   It also indicates when the given target reference is not the canonical
+   name of the referenced object.

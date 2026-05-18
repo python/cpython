@@ -1,7 +1,7 @@
 .. _a-conceptual-overview-of-asyncio:
 
 ****************************************
-A Conceptual Overview of :mod:`!asyncio`
+A conceptual overview of :mod:`!asyncio`
 ****************************************
 
 This :ref:`HOWTO <how-tos>` article seeks to help you build a sturdy mental
@@ -37,15 +37,15 @@ In part 1, we'll cover the main, high-level building blocks of :mod:`!asyncio`:
 the event loop, coroutine functions, coroutine objects, tasks, and ``await``.
 
 ==========
-Event Loop
+Event loop
 ==========
 
 Everything in :mod:`!asyncio` happens relative to the event loop.
-It's the star of the show.
+It's the star of the show, but prefers to work behind the scenes, managing
+and coordinating resources.
 It's like an orchestra conductor.
-It's behind the scenes managing resources.
 Some power is explicitly granted to it, but a lot of its ability to get things
-done comes from the respect and cooperation of its worker bees.
+done comes from the respect and cooperation of its band members.
 
 In more technical terms, the event loop contains a collection of jobs to be run.
 Some jobs are added directly by you, and some indirectly by :mod:`!asyncio`.
@@ -59,7 +59,7 @@ This process repeats indefinitely, with the event loop cycling endlessly
 onwards.
 If there are no more jobs pending execution, the event loop is smart enough to
 rest and avoid needlessly wasting CPU cycles, and will come back when there's
-more work to be done.
+more work to be done, such as when I/O operations complete or timers expire.
 
 Effective execution relies on jobs sharing well and cooperating; a greedy job
 could hog control and leave the other jobs to starve, rendering the overall
@@ -170,14 +170,17 @@ Roughly speaking, :ref:`tasks <asyncio-task-obj>` are coroutines (not coroutine
 functions) tied to an event loop.
 A task also maintains a list of callback functions whose importance will become
 clear in a moment when we discuss :keyword:`await`.
-The recommended way to create tasks is via :func:`asyncio.create_task`.
 
 Creating a task automatically schedules it for execution (by adding a
 callback to run it in the event loop's to-do list, that is, collection of jobs).
+The recommended way to create tasks is via :func:`asyncio.create_task`.
 
-Since there's only one event loop (in each thread), :mod:`!asyncio` takes care of
-associating the task with the event loop for you. As such, there's no need
-to specify the event loop.
+:mod:`!asyncio` automatically associates tasks with the event loop for you.
+This automatic association was purposely designed into :mod:`!asyncio` for
+the sake of simplicity.
+Without it, you'd have to keep track of the event loop object and pass it to
+any coroutine function that wants to create tasks, adding redundant clutter
+to your code.
 
 ::
 
@@ -250,6 +253,10 @@ different ways::
 In a crucial way, the behavior of ``await`` depends on the type of object
 being awaited.
 
+^^^^^^^^^^^^^^
+Awaiting tasks
+^^^^^^^^^^^^^^
+
 Awaiting a task will cede control from the current task or coroutine to
 the event loop.
 In the process of relinquishing control, a few important things happen.
@@ -280,6 +287,10 @@ loop's to-do list to be resumed.
 This is a basic, yet reliable mental model.
 In practice, the control handoffs are slightly more complex, but not by much.
 In part 2, we'll walk through the details that make this possible.
+
+^^^^^^^^^^^^^^^^^^^
+Awaiting coroutines
+^^^^^^^^^^^^^^^^^^^
 
 **Unlike tasks, awaiting a coroutine does not hand control back to the event
 loop!**
@@ -347,8 +358,10 @@ The design intentionally trades off some conceptual clarity around usage of
 ``await`` for improved performance.
 Each time a task is awaited, control needs to be passed all the way up the
 call stack to the event loop.
-That might sound minor, but in a large program with many ``await`` statements and a deep
-call stack, that overhead can add up to a meaningful performance drag.
+Then, the event loop needs to manage its internal state and work through
+its processing logic to resume the next job.
+That might sound minor, but in a large program with many ``await``\ s, that
+overhead can add up to a non-negligible performance drag.
 
 ------------------------------------------------
 A conceptual overview part 2: the nuts and bolts
@@ -364,7 +377,8 @@ and how to make your own asynchronous operators.
 The inner workings of coroutines
 ================================
 
-:mod:`!asyncio` leverages four components to pass around control.
+:mod:`!asyncio` leverages four components of Python to pass
+around control.
 
 :meth:`coroutine.send(arg) <generator.send>` is the method used to start or
 resume a coroutine.
@@ -448,9 +462,9 @@ That might sound odd to you. You might be thinking:
    That causes the error: ``SyntaxError: yield from not allowed in a coroutine.``
    This was intentionally designed for the sake of simplicity -- mandating only
    one way of using coroutines.
+   Despite that, ``yield from`` and ``await`` effectively do the same thing.
    Initially ``yield`` was barred as well, but was re-accepted to allow for
    async generators.
-   Despite that, ``yield from`` and ``await`` effectively do the same thing.
 
 =======
 Futures

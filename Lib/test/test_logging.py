@@ -25,6 +25,7 @@ import logging.config
 
 import codecs
 import configparser
+import contextlib
 import copy
 import datetime
 import pathlib
@@ -402,6 +403,20 @@ class BasicFilterTest(BaseTest):
         f = logging.Filter()
         r = logging.makeLogRecord({'name': 'spam.eggs'})
         self.assertTrue(f.filter(r))
+
+    def test_filter_repr(self):
+        f = logging.Filter('myapp')
+        self.assertEqual(repr(f), '<Filter (myapp)>')
+
+    def test_filter_repr_empty(self):
+        f = logging.Filter()
+        self.assertEqual(repr(f), '<Filter ()>')
+
+    def test_filter_repr_subclass(self):
+        class MyFilter(logging.Filter):
+            pass
+        f = MyFilter('myapp')
+        self.assertEqual(repr(f), '<MyFilter (myapp)>')
 
 #
 #   First, we define our levels. There can be as many as you want - the only
@@ -3282,12 +3297,11 @@ class ConfigDictTest(BaseTest):
         }
     }
 
-    # Remove when deprecation ends.
-    class DeprecatedStrmHandler(logging.StreamHandler):
+    class StrmHandler(logging.StreamHandler):
         def __init__(self, strm=None):
             super().__init__(stream=strm)
 
-    config_custom_handler_with_deprecated_strm_arg = {
+    config_custom_handler_with_removed_strm_arg = {
         "version": 1,
         "formatters": {
             "form1": {
@@ -3296,7 +3310,7 @@ class ConfigDictTest(BaseTest):
         },
         "handlers": {
             "hand1": {
-                "class": DeprecatedStrmHandler,
+                "class": StrmHandler,
                 "formatter": "form1",
                 "level": "NOTSET",
                 "stream": "ext://sys.stdout",
@@ -3402,14 +3416,9 @@ class ConfigDictTest(BaseTest):
         self.test_config1_ok(config=self.config5)
         self.check_handler('hand1', CustomHandler)
 
-    def test_deprecation_warning_custom_handler_with_strm_arg(self):
-        msg = (
-            "Support for custom logging handlers with the 'strm' argument "
-            "is deprecated and scheduled for removal in Python 3.16. "
-            "Define handlers with the 'stream' argument instead."
-        )
-        with self.assertWarnsRegex(DeprecationWarning, msg):
-            self.test_config1_ok(config=self.config_custom_handler_with_deprecated_strm_arg)
+    def test_removed_strm_arg(self):
+        with self.assertRaisesRegex(ValueError, 'hand1'):
+            self.apply_config(self.config_custom_handler_with_removed_strm_arg)
 
     def test_config6_failure(self):
         self.assertRaises(Exception, self.apply_config, self.config6)
@@ -4913,6 +4922,20 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
                 # After PR gh-102412, precision (places) increases from 3 to 7
                 self.assertAlmostEqual(relativeCreated, offset_ns / 1e6, places=7)
 
+    def test_formatter_repr(self):
+        f = logging.Formatter('%(message)s')
+        self.assertEqual(repr(f), '<Formatter (%(message)s)>')
+
+    def test_formatter_repr_default(self):
+        f = logging.Formatter()
+        self.assertEqual(repr(f), '<Formatter (%(message)s)>')
+
+    def test_formatter_repr_subclass(self):
+        class MyFormatter(logging.Formatter):
+            pass
+        f = MyFormatter('%(message)s')
+        self.assertEqual(repr(f), '<MyFormatter (%(message)s)>')
+
 
 class TestBufferingFormatter(logging.BufferingFormatter):
     def formatHeader(self, records):
@@ -6369,6 +6392,32 @@ class RotatingFileHandlerTest(BaseFileTest):
         self.assertFalse(rh.shouldRollover(self.next_rec()))
         rh.close()
 
+    @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
+    def test_should_not_rollover_named_pipe(self):
+        # gh-143237 - test with non-seekable special file (named pipe)
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
+        try:
+            os.mkfifo(filename)
+        except PermissionError as e:
+            self.skipTest('os.mkfifo(): %s' % e)
+
+        data = 'not read'
+        def other_side():
+            nonlocal data
+            with open(filename, 'rb') as f:
+                data = f.read()
+
+        thread = threading.Thread(target=other_side)
+        with threading_helper.start_threads([thread]):
+            rh = logging.handlers.RotatingFileHandler(
+                    filename, encoding="utf-8", maxBytes=1)
+            with contextlib.closing(rh):
+                m = self.next_rec()
+                self.assertFalse(rh.shouldRollover(m))
+                rh.emit(m)
+        self.assertEqual(data.decode(), m.msg + os.linesep)
+
     def test_should_rollover(self):
         with open(self.fn, 'wb') as f:
             f.write(b'\n')
@@ -7221,8 +7270,8 @@ for when, exp in (('S', 1),
         setattr(TimedRotatingFileHandlerTest, name, test_compute_rollover)
 
 
-@unittest.skipUnless(win32evtlog, 'win32evtlog/win32evtlogutil/pywintypes required for this test.')
 class NTEventLogHandlerTest(BaseTest):
+    @unittest.skipUnless(win32evtlog, 'win32evtlog/win32evtlogutil/pywintypes required for this test.')
     def test_basic(self):
         logtype = 'Application'
         elh = win32evtlog.OpenEventLog(None, logtype)
@@ -7255,6 +7304,17 @@ class NTEventLogHandlerTest(BaseTest):
             break
         msg = 'Record not found in event log, went back %d records' % GO_BACK
         self.assertTrue(found, msg=msg)
+
+    @unittest.skipUnless(sys.platform == "win32", "Windows required for this test")
+    def test_without_pywin32(self):
+        h = logging.handlers.NTEventLogHandler('python_test')
+        self.addCleanup(h.close)
+
+        # Verify that the handler uses _winapi module
+        self.assertIsNotNone(h._winapi, "_winapi module should be available")
+
+        r = logging.makeLogRecord({'msg': 'Hello!'})
+        h.emit(r)
 
 
 class MiscTestCase(unittest.TestCase):

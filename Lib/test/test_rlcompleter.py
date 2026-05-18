@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import patch
 import builtins
+import types
 import rlcompleter
 from test.support import MISSING_C_DOCSTRINGS
 
@@ -135,6 +136,57 @@ class TestRlcompleter(unittest.TestCase):
         self.assertEqual(completer.complete('f.b', 0), 'f.bar')
         self.assertFalse(f.property_called)
 
+    def test_released_memoryview_completion_works(self):
+        mv = memoryview(b"abc")
+        mv.release()
+
+        self.assertIsInstance(type(mv).shape, types.GetSetDescriptorType)
+        self.assertIsInstance(type(mv).strides, types.GetSetDescriptorType)
+
+        completer = rlcompleter.Completer(dict(mv=mv))
+        matches = completer.attr_matches('mv.')
+
+        # These are getset descriptors on memoryview and should be completed
+        # without evaluating the released-memoryview getters.
+        self.assertIn('mv.shape', matches)
+        self.assertIn('mv.strides', matches)
+
+    def test_member_descriptor_not_evaluated(self):
+        class Foo:
+            __slots__ = ("boom",)
+            boom_accesses = 0
+
+            def __getattribute__(self, name):
+                if name == "boom":
+                    type(self).boom_accesses += 1
+                    raise RuntimeError("boom access should be skipped")
+                return super().__getattribute__(name)
+
+        self.assertIsInstance(Foo.boom, types.MemberDescriptorType)
+
+        completer = rlcompleter.Completer(dict(f=Foo()))
+        matches = completer.attr_matches('f.')
+        self.assertIn('f.boom', matches)
+        self.assertEqual(Foo.boom_accesses, 0)
+
+    def test_raising_descriptor_completion_works(self):
+        class ExplodingDescriptor:
+            def __init__(self):
+                self.instance_get_calls = 0
+
+            def __get__(self, obj, owner):
+                if obj is None:
+                    return self
+                self.instance_get_calls += 1
+                raise RuntimeError("descriptor getter exploded")
+
+        class Foo:
+            boom = ExplodingDescriptor()
+
+        completer = rlcompleter.Completer(dict(f=Foo()))
+        matches = completer.attr_matches('f.')
+        self.assertIn('f.boom', matches)
+        self.assertEqual(Foo.boom.instance_get_calls, 0)
 
     def test_uncreated_attr(self):
         # Attributes like properties and slots should be completed even when

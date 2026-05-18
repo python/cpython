@@ -194,18 +194,18 @@ write_bytes_lock_held(bytesio *self, PyObject *b)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
 
-    if (check_closed(self)) {
-        return -1;
-    }
-    if (check_exports(self)) {
-        return -1;
-    }
-
     Py_buffer buf;
+    Py_ssize_t len;
     if (PyObject_GetBuffer(b, &buf, PyBUF_CONTIG_RO) < 0) {
         return -1;
     }
-    Py_ssize_t len = buf.len;
+
+    if (check_closed(self) || check_exports(self)) {
+        len = -1;
+        goto done;
+    }
+
+    len = buf.len;
     if (len == 0) {
         goto done;
     }
@@ -436,6 +436,13 @@ read_bytes_lock_held(bytesio *self, Py_ssize_t size)
         return Py_NewRef(self->buf);
     }
 
+    /* gh-141311: Avoid undefined behavior when self->pos (limit PY_SSIZE_T_MAX)
+       is beyond the size of self->buf. Assert above validates size is always in
+       bounds. When self->pos is out of bounds calling code sets size to 0. */
+    if (size == 0) {
+        return PyBytes_FromStringAndSize(NULL, 0);
+    }
+
     output = PyBytes_AS_STRING(self->buf) + self->pos;
     self->pos += size;
     return PyBytes_FromStringAndSize(output, size);
@@ -609,11 +616,14 @@ _io_BytesIO_readinto_impl(bytesio *self, Py_buffer *buffer)
     n = self->string_size - self->pos;
     if (len > n) {
         len = n;
-        if (len < 0)
-            len = 0;
+        if (len < 0) {
+            /* gh-141311: Avoid undefined behavior when self->pos (limit
+               PY_SSIZE_T_MAX) points beyond the size of self->buf. */
+            return PyLong_FromSsize_t(0);
+        }
     }
 
-    assert(self->pos + len < PY_SSIZE_T_MAX);
+    assert(self->pos + len <= PY_SSIZE_T_MAX);
     assert(len >= 0);
     memcpy(buffer->buf, PyBytes_AS_STRING(self->buf) + self->pos, len);
     self->pos += len;
@@ -1156,7 +1166,7 @@ static PyType_Slot bytesio_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec bytesio_spec = {
+PyType_Spec _Py_bytesio_spec = {
     .name = "_io.BytesIO",
     .basicsize = sizeof(bytesio),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
@@ -1246,7 +1256,7 @@ static PyType_Slot bytesiobuf_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec bytesiobuf_spec = {
+PyType_Spec _Py_bytesiobuf_spec = {
     .name = "_io._BytesIOBuffer",
     .basicsize = sizeof(bytesiobuf),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |

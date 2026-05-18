@@ -126,6 +126,7 @@
     <ClCompile Include="..\Modules\_testcapi\gc.c" />
     <ClCompile Include="..\Modules\_testcapi\run.c" />
     <ClCompile Include="..\Modules\_testcapi\modsupport.c" />
+    <ClCompile Include="..\Modules\_testcapi\module.c" />
     <ClCompile Include="..\Modules\_testcapi\monitoring.c" />
     <ClCompile Include="..\Modules\_testcapi\config.c" />
     <ClCompile Include="..\Modules\_testcapi\import.c" />
@@ -143,6 +144,10 @@
     </ProjectReference>
     <ProjectReference Include="python3dll.vcxproj">
       <Project>{885d4898-d08d-4091-9c40-c700cfe3fc5a}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="python3tdll.vcxproj">
+      <Project>{947BB5F5-6025-4A4F-8182-1B175469F8D2}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
