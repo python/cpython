@@ -2748,7 +2748,7 @@ expression support in the :mod:`re` module).
    values are stripped.
 
    Whitespace characters are defined by :meth:`str.isspace`.
-   
+
    For example:
 
    .. doctest::
