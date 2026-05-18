@@ -1613,11 +1613,19 @@ class ContextTests(unittest.TestCase):
         # Replacing sni_callback while handshakes are in-flight must not
         # crash (use-after-free on the callback in free-threaded builds).
         client_ctx, server_ctx, hostname = testing_context()
-        server_ctx.sni_callback = lambda *a: None
+
+        def make_callback(n):
+            def sni_cb(_ssl_obj, _servername, _ctx):
+                if n == -1 and _servername == "":
+                    raise AssertionError("unreachable")
+                return None
+            return sni_cb
+
+        server_ctx.sni_callback = make_callback(0)
         done = threading.Event()
 
         def do_handshakes():
-            for _ in range(100):
+            while not done.is_set():
                 c_in = ssl.MemoryBIO()
                 c_out = ssl.MemoryBIO()
                 s_in = ssl.MemoryBIO()
@@ -1644,16 +1652,21 @@ class ContextTests(unittest.TestCase):
                         c_in.write(s_out.read())
 
         def toggle_callback():
+            i = 0
             while not done.is_set():
-                server_ctx.sni_callback = lambda *a: None
+                server_ctx.sni_callback = make_callback(i)
                 server_ctx.sni_callback = None
+                server_ctx.sni_callback = make_callback(-i)
+                i += 1
 
-        threads = [threading.Thread(target=do_handshakes) for _ in range(4)]
+        workers = max(4, (os.cpu_count() or 4) * 2)
+        threads = [threading.Thread(target=do_handshakes)
+                   for _ in range(workers)]
         threads.append(threading.Thread(target=toggle_callback))
 
         with threading_helper.catch_threading_exception() as cm:
-            with threading_helper.start_threads(threads, done.set):
-                pass
+            with threading_helper.start_threads(threads):
+                done.set()
             self.assertIsNone(cm.exc_value)
 
     def test_cert_store_stats(self):
