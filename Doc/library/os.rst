@@ -5062,6 +5062,18 @@ written in Python, such as a mail server's external command delivery program.
    .. availability:: Linux >= 5.10
    .. versionadded:: 3.12
 
+.. function:: pidfd_getfd(pidfd, targetfd, *, flags=0)
+
+   Duplicate *targetfd* from the process referred to by the process file
+   descriptor *pidfd*, into the calling process.  The returned file descriptor
+   is :ref:`non-inheritable <fd_inheritance>`.
+
+   *flags* is reserved, and currently must be ``0``.
+
+   See the :manpage:`pidfd_getfd(2)` man page for more details.
+
+   .. availability:: Linux >= 5.6, Android >= :func:`build-time <sys.getandroidapilevel>` API level 31
+   .. versionadded:: next
 
 .. function:: plock(op, /)
 
@@ -5110,9 +5122,8 @@ written in Python, such as a mail server's external command delivery program.
       Use :class:`subprocess.Popen` or :func:`subprocess.run` to
       control options like encodings.
 
-   .. deprecated:: 3.14
-      The function is :term:`soft deprecated` and should no longer be used to
-      write new code. The :mod:`subprocess` module is recommended instead.
+   .. soft-deprecated:: 3.14
+      The :mod:`subprocess` module is recommended instead.
 
 
 .. function:: posix_spawn(path, argv, env, *, file_actions=None, \
@@ -5340,9 +5351,8 @@ written in Python, such as a mail server's external command delivery program.
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
-   .. deprecated:: 3.14
-      These functions are :term:`soft deprecated` and should no longer be used
-      to write new code. The :mod:`subprocess` module is recommended instead.
+   .. soft-deprecated:: 3.14
+      The :mod:`subprocess` module is recommended instead.
 
 
 .. data:: P_NOWAIT
