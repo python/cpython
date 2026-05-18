@@ -1105,7 +1105,8 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         src_dir = os.path.join(base_dir, "src")
         os.makedirs(src_dir)
         create_file((src_dir, "somefilename"), "somecontent")
-        self._assert_are_the_same_file_is_raised(src_dir, src_dir)
+        with self._assert_are_the_same_file_is_raised():
+            shutil.copytree(src_dir, src_dir, dirs_exist_ok=True)
 
     @os_helper.skip_unless_symlink
     def test_copytree_to_backpointing_symlink_gives_sensible_error_message(self):
@@ -1118,11 +1119,13 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         some_file = os.path.join(src_dir, "somefilename")
         create_file(some_file, "somecontent")
         os.symlink(some_file, os.path.join(target_dir, "somefilename"))
-        self._assert_are_the_same_file_is_raised(src_dir, target_dir)
-
-    def _assert_are_the_same_file_is_raised(self, src_dir, target_dir):
-        with self.assertRaises(Error) as cm:
+        with self._assert_are_the_same_file_is_raised():
             shutil.copytree(src_dir, target_dir, dirs_exist_ok=True)
+
+    @contextlib.contextmanager
+    def _assert_are_the_same_file_is_raised(self):
+        with self.assertRaises(Error) as cm:
+            yield
 
         self.assertEqual(len(cm.exception.args[0]), 1)
         if sys.platform == "win32":
