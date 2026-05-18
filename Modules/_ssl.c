@@ -5308,13 +5308,10 @@ _ssl__SSLContext_sni_callback_set_impl(PySSLContext *self, PyObject *value)
                         "sni_callback cannot be set on TLS_CLIENT context");
         return -1;
     }
+    SSL_CTX_set_tlsext_servername_callback(self->ctx, NULL);
     Py_CLEAR(self->set_sni_cb);
-    if (value == Py_None) {
-        SSL_CTX_set_tlsext_servername_callback(self->ctx, NULL);
-    }
-    else {
+    if (value != Py_None) {
         if (!PyCallable_Check(value)) {
-            SSL_CTX_set_tlsext_servername_callback(self->ctx, NULL);
             PyErr_SetString(PyExc_TypeError,
                             "not a callable object");
             return -1;
