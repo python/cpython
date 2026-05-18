@@ -1,4 +1,4 @@
-Pending removal in Python 3.20
+Pending removal in Python 3.21
 ------------------------------
 
 * :mod:`ast`:
