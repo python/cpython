@@ -588,8 +588,11 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
       Accessing an instance method through the class (rather than an instance)
       returns a plain :term:`function`, not a bound method, so :func:`isasyncgenfunction`
-      will return ``True`` in that case. See :ref:`instance-methods` in the
-      language reference for details.
+      will return ``True`` if it is an asynchronous generator function. See
+      :ref:`instance-methods` in the language reference for details.
+
+      For a static method (:deco:`staticmethod`), this will return ``True`` if it
+      is an asynchronous generator function.
 
 .. function:: isasyncgen(object)
 
