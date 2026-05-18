@@ -450,12 +450,14 @@ unwind_stack_for_thread(
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to collect frames");
             goto error;
         }
-        // Update last_profiled_frame for next sample
-        uintptr_t lpf_addr =
-            *current_tstate + (uintptr_t)unwinder->debug_offsets.thread_state.last_profiled_frame;
-        if (_Py_RemoteDebug_WriteRemoteMemory(&unwinder->handle, lpf_addr,
-                                              sizeof(uintptr_t), &frame_addr) < 0) {
-            PyErr_Clear();  // Non-fatal
+        // Update last_profiled_frame for next sample if it changed
+        if (frame_addr != ctx.last_profiled_frame) {
+            uintptr_t lpf_addr =
+                *current_tstate + (uintptr_t)unwinder->debug_offsets.thread_state.last_profiled_frame;
+            if (_Py_RemoteDebug_WriteRemoteMemory(&unwinder->handle, lpf_addr,
+                                                  sizeof(uintptr_t), &frame_addr) < 0) {
+                PyErr_Clear();  // Non-fatal
+            }
         }
     } else {
         // No caching - process entire frame chain with base_frame validation

@@ -1110,7 +1110,7 @@ Test cases
       .. versionchanged:: 3.3
          Added the *msg* keyword argument when used as a context manager.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.15
          Warnings that do not match the specified category are no longer
          swallowed.
          Nested context managers are now supported.
@@ -1144,7 +1144,7 @@ Test cases
       .. versionchanged:: 3.3
          Added the *msg* keyword argument when used as a context manager.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.15
          Warnings that do not match the specified category or regex are
          no longer swallowed.
          Nested context managers are now supported.
@@ -1262,10 +1262,10 @@ Test cases
    | :meth:`assertNotEndsWith(a, b)        | ``not a.endswith(b)``          | 3.14         |
    | <TestCase.assertNotEndsWith>`         |                                |              |
    +---------------------------------------+--------------------------------+--------------+
-   | :meth:`assertHasAttr(a, b)            | ``hastattr(a, b)``             | 3.14         |
+   | :meth:`assertHasAttr(a, b)            | ``hasattr(a, b)``              | 3.14         |
    | <TestCase.assertHasAttr>`             |                                |              |
    +---------------------------------------+--------------------------------+--------------+
-   | :meth:`assertNotHasAttr(a, b)         | ``not hastattr(a, b)``         | 3.14         |
+   | :meth:`assertNotHasAttr(a, b)         | ``not hasattr(a, b)``          | 3.14         |
    | <TestCase.assertNotHasAttr>`          |                                |              |
    +---------------------------------------+--------------------------------+--------------+
 

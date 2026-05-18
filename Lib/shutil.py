@@ -1638,15 +1638,3 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
                 if _access_check(name, mode):
                     return name
     return None
-
-def __getattr__(name):
-    if name == "ExecError":
-        import warnings
-        warnings._deprecated(
-            "shutil.ExecError",
-            f"{warnings._DEPRECATED_MSG}; it "
-            "isn't raised by any shutil function.",
-            remove=(3, 16)
-        )
-        return RuntimeError
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

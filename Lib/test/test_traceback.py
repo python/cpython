@@ -23,7 +23,7 @@ from test.support import (Error, captured_output, cpython_only, ALWAYS_EQ,
                           requires_subprocess, os_helper)
 from test.support.os_helper import TESTFN, temp_dir, unlink
 from test.support.script_helper import assert_python_ok, assert_python_failure, make_script
-from test.support.import_helper import forget
+from test.support.import_helper import ensure_lazy_imports, forget
 from test.support import force_not_colorized, force_not_colorized_test_class
 
 import json
@@ -5630,6 +5630,12 @@ class TestLazyImportSuggestions(unittest.TestCase):
         rc, stdout, stderr = assert_python_failure('-c', code)
         self.assertIn(b"__name__", stderr)
         self.assertNotIn(b"BAR_MODULE_LOADED", stdout)
+
+
+class LazyImportTest(unittest.TestCase):
+    @support.cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("traceback", {"_colorize"})
 
 
 if __name__ == "__main__":

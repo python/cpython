@@ -209,7 +209,7 @@ PrettyPrinter objects
    .. versionchanged:: 3.11
       No longer attempts to write to :data:`!sys.stdout` if it is ``None``.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Changed default *indent* from 1 to 4
       and default *width* from 80 to 88.
       The default ``compact=False`` layout is now similar to
