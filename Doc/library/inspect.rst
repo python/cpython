@@ -460,24 +460,19 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
       See :ref:`typesmethods` for details.
 
 
-.. function:: ispackage(object)
-
-   Return ``True`` if the object is a :term:`package`.
-
-   .. versionadded:: 3.14
-
-
 .. function:: isfunction(object)
 
    Return ``True`` if the object is a Python function, which includes functions
    created by a :term:`lambda` expression.
 
-   .. note::
+   See the note for :func:`~inspect.ismethod` for an example.
 
-      Accessing an instance method through the instance (rather than the class)
-      returns a bound method, not a :term:`function`, so :func:`isfunction`
-      will return ``False`` in that case. See :ref:`instance-methods` in the
-      language reference for details.
+
+.. function:: ispackage(object)
+
+   Return ``True`` if the object is a :term:`package`.
+
+   .. versionadded:: 3.14
 
 
 .. function:: isgeneratorfunction(object)
