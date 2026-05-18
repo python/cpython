@@ -1625,6 +1625,11 @@ class PosixTester(unittest.TestCase):
             os.pidfd_getfd(-1, 0)
         self.assertEqual(cm.exception.errno, errno.EBADF)
 
+        with self.assertRaises(OSError) as cm:
+            bad_fd = os_helper.make_bad_fd()
+            os.pidfd_getfd(pidfd, bad_fd)
+        self.assertEqual(cm.exception.errno, errno.EBADF)
+
     @os_helper.skip_unless_hardlink
     @os_helper.skip_unless_symlink
     def test_link_follow_symlinks(self):
