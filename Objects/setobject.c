@@ -1546,7 +1546,7 @@ set_swap_bodies(PySetObject *a, PySetObject *b)
 }
 
 PyObject *
-_PyFrozenSet_NewAndSteal(PyObject *set)
+_PySet_Freeze(PyObject *set)
 {
     assert(set != NULL);
     assert(PySet_CheckExact(set));

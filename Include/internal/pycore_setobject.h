@@ -36,7 +36,7 @@ extern void _PySet_ClearInternal(PySetObject *so);
 PyAPI_FUNC(int) _PySet_AddTakeRef(PySetObject *so, PyObject *key);
 
 PyObject *
-_PyFrozenSet_NewAndSteal(PyObject *set);
+_PySet_Freeze(PyObject *set);
 
 #ifdef __cplusplus
 }

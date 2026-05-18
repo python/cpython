@@ -9,7 +9,7 @@
 #include "pycore_intrinsics.h"    // INTRINSIC_PRINT
 #include "pycore_list.h"          // _PyList_AsTupleAndClear()
 #include "pycore_object.h"        // _PyObject_IsUniquelyReferenced()
-#include "pycore_setobject.h"     // _PyFrozenSet_NewAndSteal()
+#include "pycore_setobject.h"     // _PySet_Freeze()
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_typevarobject.h" // _Py_make_typevar()
@@ -213,7 +213,7 @@ make_frozenset(PyThreadState* Py_UNUSED(ignored), PyObject *set)
 {
     assert(PySet_CheckExact(set));
     assert(_PyObject_IsUniquelyReferenced(set));
-    return _PyFrozenSet_NewAndSteal(set);
+    return _PySet_Freeze(set);
 }
 
 
