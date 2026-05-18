@@ -426,10 +426,38 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
    .. note::
 
-      Accessing an instance method through the class (rather than an instance)
-      returns a plain :term:`function`, not a bound method, so :func:`ismethod`
-      will return ``False`` in that case. See :ref:`instance-methods` in the
-      language reference for details.
+      For example, given this class::
+      
+          >>> class Class:
+          ...    def say_hello(self):
+          ...        print('hello!')
+          >>>
+
+      A bound method (also known as an *instance method*) is created when
+      accessing ``say_hello`` (a :term:`function` defined in a
+      class namespace) through an instance of the class::
+
+          >>> instance = Class()
+
+          >>> instance.say_hello
+          <bound method Class.say_hello of <__main__.Class object ...>>
+          >>> ismethod(instance.say_hello)
+          True
+          >>> isfunction(instance.say_hello)
+          False
+
+      Accessing ``say_hello`` through the class will return the function itself.
+      For this function, :func:`ismethod` will return ``False``,
+      but :func:`isfunction` will return ``True``::
+
+          >>> Class.say_hello
+          <function Class.say_hello at 0x7f7503854a90>
+          >>> ismethod(Class.say_hello)
+          False
+          >>> isfunction(Class.say_hello)
+          True
+
+      See :ref:`typesmethods` for details.
 
 
 .. function:: ispackage(object)
