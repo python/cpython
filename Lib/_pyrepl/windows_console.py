@@ -17,8 +17,6 @@
 # CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-from __future__ import annotations
-
 import io
 import os
 import sys
@@ -38,7 +36,6 @@ from ctypes.wintypes import (
     SHORT,
 )
 from ctypes import Structure, POINTER, Union
-from typing import TYPE_CHECKING
 from .console import Event, Console
 from .render import (
     EMPTY_RENDER_LINE,
@@ -73,8 +70,7 @@ try:
 except ImportError:
     nt = None
 
-if TYPE_CHECKING:
-    from typing import IO
+lazy from typing import IO
 
 # Virtual-Key Codes: https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
 VK_MAP: dict[int, str] = {
