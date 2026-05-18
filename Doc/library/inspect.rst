@@ -425,10 +425,12 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
    Return ``True`` if the object is a bound method written in Python.
 
-   Note that accessing a method through the class (rather than an instance)
-   returns a plain :term:`function`, not a bound method, so :func:`ismethod`
-   will return ``False`` in that case.  See :ref:`instance-methods` in the
-   language reference for details.
+   .. note::
+
+      Accessing an instance method through the class (rather than an instance)
+      returns a plain :term:`function`, not a bound method, so :func:`ismethod`
+      will return ``False`` in that case. See :ref:`instance-methods` in the
+      language reference for details.
 
 
 .. function:: ispackage(object)
@@ -443,6 +445,13 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    Return ``True`` if the object is a Python function, which includes functions
    created by a :term:`lambda` expression.
 
+   .. note::
+
+      Accessing an instance method through the class (rather than an instance)
+      returns a plain :term:`function`, not a bound method, so :func:`isfunction`
+      will return ``True`` in that case. See :ref:`instance-methods` in the
+      language reference for details.
+
 
 .. function:: isgeneratorfunction(object)
 
@@ -455,6 +464,13 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    .. versionchanged:: 3.13
       Functions wrapped in :func:`functools.partialmethod` now return ``True``
       if the wrapped function is a Python generator function.
+
+   .. note::
+
+      Accessing an instance method through the class (rather than an instance)
+      returns a plain :term:`function`, not a bound method, so :func:`isgeneratorfunction`
+      will return ``True`` in that case. See :ref:`instance-methods` in the
+      language reference for details.
 
 .. function:: isgenerator(object)
 
@@ -481,6 +497,13 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    .. versionchanged:: 3.13
       Functions wrapped in :func:`functools.partialmethod` now return ``True``
       if the wrapped function is a :term:`coroutine function`.
+
+   .. note::
+
+      Accessing an instance method through the class (rather than an instance)
+      returns a plain :term:`function`, not a bound method, so :func:`iscoroutinefunction`
+      will return ``True`` in that case. See :ref:`instance-methods` in the
+      language reference for details.
 
 
 .. function:: markcoroutinefunction(func)
@@ -551,6 +574,13 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    .. versionchanged:: 3.13
       Functions wrapped in :func:`functools.partialmethod` now return ``True``
       if the wrapped function is a :term:`asynchronous generator` function.
+
+   .. note::
+
+      Accessing an instance method through the class (rather than an instance)
+      returns a plain :term:`function`, not a bound method, so :func:`isasyncgenfunction`
+      will return ``True`` in that case. See :ref:`instance-methods` in the
+      language reference for details.
 
 .. function:: isasyncgen(object)
 
