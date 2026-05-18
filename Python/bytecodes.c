@@ -603,8 +603,8 @@ dummy_func(
 
         tier2 op(_TO_BOOL_SIZED, (size_offset/1, value -- res)) {
             /* Covers any type whose truthiness is a Py_ssize_t size field at a
-               known offset: dict (ma_used), tuple/bytes/bytearray (ob_size),
-               set/frozenset (used). */
+               known offset: dict/frozendict (ma_used), tuple/bytes/bytearray
+               (ob_size), set/frozenset (used). */
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
             STAT_INC(TO_BOOL, hit);
             Py_ssize_t size = FT_ATOMIC_LOAD_SSIZE_RELAXED(

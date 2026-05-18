@@ -5086,6 +5086,16 @@ class TestUopsOptimization(unittest.TestCase):
         self._check_to_bool_recorded_type(
             inner, frozenset({1, 2, 3}), "_GUARD_TOS_FROZENSET")
 
+    def test_to_bool_frozendict(self):
+        def inner(v):
+            cnt = 0
+            for _ in range(TIER2_THRESHOLD):
+                if v:
+                    cnt += 1
+            return cnt
+        self._check_to_bool_recorded_type(
+            inner, frozendict({1: 1, 2: 2}), "_GUARD_TOS_FROZENDICT")
+
     def test_attr_promotion_failure(self):
         # We're not testing for any specific uops here, just
         # testing it doesn't crash.

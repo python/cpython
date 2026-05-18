@@ -665,6 +665,9 @@ dummy_func(void) {
                 if (probable == &PyDict_Type) {
                     guard_op = _GUARD_TOS_DICT;
                 }
+                else if (probable == &PyFrozenDict_Type) {
+                    guard_op = _GUARD_TOS_FROZENDICT;
+                }
                 else if (probable == &PyTuple_Type) {
                     guard_op = _GUARD_TOS_TUPLE;
                 }
@@ -688,7 +691,7 @@ dummy_func(void) {
                 }
             }
             uintptr_t size_offset = 0;
-            if (tp == &PyDict_Type) {
+            if (tp == &PyDict_Type || tp == &PyFrozenDict_Type) {
                 size_offset = offsetof(PyDictObject, ma_used);
             }
             else if (tp == &PyTuple_Type ||
