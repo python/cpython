@@ -10,6 +10,7 @@ import types
 import unittest
 import tempfile
 import os
+import contextlib
 
 from test import support
 from test.support.script_helper import assert_python_ok
@@ -441,10 +442,14 @@ class PackageTests(unittest.TestCase):
 
     def test_lazy_import_pkg(self):
         """lazy import of package submodule should load the package."""
-        import test.test_lazy_import.data.lazy_import_pkg
+        out = io.StringIO()
+
+        with contextlib.redirect_stdout(out):
+            import test.test_lazy_import.data.lazy_import_pkg
 
         self.assertIn("test.test_lazy_import.data.pkg", sys.modules)
         self.assertIn("test.test_lazy_import.data.pkg.bar", sys.modules)
+        self.assertIn("BAR_MODULE_LOADED", out.getvalue())
 
     def test_lazy_import_pkg_cross_import(self):
         """Cross-imports within package should preserve lazy imports."""
