@@ -147,7 +147,7 @@ The :mod:`!functools` module defines the following functions:
                return DataSet([value + shift for value in self._data])
 
    On instances, :func:`cached_method` behaves very similarly to :func:`cache`,
-   providing :func:`cache_info` and :func:`cache_clear`.
+   providing :func:`!cache_info` and :func:`!cache_clear`.
 
    The *cached_method* does not prevent all possible race conditions in
    multi-threaded usage. The function could run more than once on the

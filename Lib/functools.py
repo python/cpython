@@ -1236,7 +1236,7 @@ class _cached_method:
         return self._get_or_create_cached_func(instance)
 
     def _get_or_create_cached_func(self, instance):
-        # similar to singledispatch(), we want to defer use of weakref until/unless it
+        # similar to singledispatch(), defer use of weakref until/unless it
         # is needed
         import weakref
 
