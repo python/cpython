@@ -1,0 +1,1 @@
+Fix a race condition in ``pickle.dumps`` method in free-threaded mode.
