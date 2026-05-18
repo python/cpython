@@ -8,6 +8,8 @@
 An introduction to reference counting
 *************************************
 
+This chapter covers the basics of CPython's garbage collection scheme.
+
 What is reference counting?
 ===========================
 
@@ -71,7 +73,6 @@ To understand how this works in practice, let's go back to our ``system``
 function, taking note of ``PyObject *`` uses this time:
 
 .. code-block:: c
-
    :emphasize-lines: 1-2, 9
 
    static PyObject *
@@ -117,7 +118,6 @@ from it.
 To visualize:
 
 .. code-block:: c
-
    :emphasize-lines: 4-8, 10
 
    static PyObject *
@@ -155,7 +155,6 @@ For example, let's add a bug to ``spam_system`` where we release a borrowed
 reference:
 
 .. code-block:: c
-
    :emphasize-lines: 5
 
    static PyObject *
