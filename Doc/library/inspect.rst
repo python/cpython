@@ -427,7 +427,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    .. note::
 
       For example, given this class::
-      
+
           >>> class Class:
           ...    def say_hello(self):
           ...        print('hello!')
