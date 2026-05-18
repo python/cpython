@@ -1,1 +1,1 @@
-Remove deprecated and unused :attr:`!tarfile.Tarfile.tarfile` attribute.
+Remove deprecated and unused :attr:`!tarfile.TarInfo.tarfile` attribute.
