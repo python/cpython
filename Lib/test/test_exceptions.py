@@ -1838,7 +1838,7 @@ class ExceptionTests(unittest.TestCase):
             except:
                 next(i)
                 next(i)
-    
+
     def test_OSError_errno_error_message(self):
         #from PR 14988
         filename = '__non-existent__'
