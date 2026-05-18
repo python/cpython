@@ -524,9 +524,9 @@ The available integer presentation types are:
    | ``'n'`` | Number. This is the same as ``'d'``, except that it uses |
    |         | the current locale setting to insert the appropriate     |
    |         | digit group separators. Note that the default locale is  |
-   |         | not the system locale, and therefore, you must set, at a |
-   |         | minimum, the ``LC_NUMERIC`` category (see the            |
-   |         | :mod:`locale` module for more information).              |
+   |         | not the system locale. Depending on your use case, you   |
+   |         | may wish to set ``LC_NUMERIC`` (see the :mod:`locale`    |
+   |         | module for more information).                            |
    +---------+----------------------------------------------------------+
    | None    | The same as ``'d'``.                                     |
    +---------+----------------------------------------------------------+
@@ -613,9 +613,9 @@ The available presentation types for :class:`float` and
    |         | the current locale setting to insert the appropriate     |
    |         | digit group separators for the integral part of a        |
    |         | number. Note that the default locale is not the system   |
-   |         | locale, and therefore, you must set, at a minimum, the   |
-   |         | ``LC_NUMERIC`` category (see the :mod:`locale` module    |
-   |         | for more information).                                   |
+   |         | locale. Depending on your use case, you may wish to set  |
+   |         | ``LC_NUMERIC`` (see the :mod:`locale` module for more    |
+   |         | information).                                            |
    +---------+----------------------------------------------------------+
    | ``'%'`` | Percentage. Multiplies the number by 100 and displays    |
    |         | in fixed (``'f'``) format, followed by a percent sign.   |
