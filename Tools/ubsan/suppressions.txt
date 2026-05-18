@@ -9,9 +9,6 @@
 # Objects/object.c:97:5: runtime error: member access within null pointer of type 'PyThreadState' (aka 'struct _ts')
 null:Objects/object.c
 
-# Objects/memoryobject.c:3032:15: runtime error: load of value 2, which is not a valid value for type 'bool'
-bool:Objects/memoryobject.c
-
 # Modules/_ctypes/cfield.c:644:1: runtime error: left shift of 1 by 63 places cannot be represented in type 'int64_t' (aka 'long')
 shift-base:Modules/_ctypes/cfield.c
 

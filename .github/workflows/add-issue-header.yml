@@ -12,7 +12,8 @@ on:
       # Only ever run once
       - opened
 
-permissions: {}
+permissions:
+  contents: read
 
 jobs:
   add-header:

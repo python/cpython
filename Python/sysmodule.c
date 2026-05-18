@@ -34,6 +34,7 @@ Data members:
 #include "pycore_pymem.h"         // _PyMem_DefaultRawFree()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_pystats.h"       // _Py_PrintSpecializationStats()
+#include "pycore_runtime.h"       // _PyRuntimeState_Get*()
 #include "pycore_structseq.h"     // _PyStructSequence_InitBuiltinWithFlags()
 #include "pycore_sysmodule.h"     // export _PySys_GetSizeOf()
 #include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal()
@@ -471,7 +472,7 @@ PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
        PySys_AddAuditHook() can be called before Python is initialized. */
     _PyRuntimeState *runtime = &_PyRuntime;
     PyThreadState *tstate;
-    if (runtime->initialized) {
+    if (_PyRuntimeState_GetInitialized(runtime)) {
         tstate = _PyThreadState_GET();
     }
     else {
@@ -1789,36 +1790,6 @@ error:
 }
 
 #pragma warning(pop)
-
-/*[clinic input]
-sys._enablelegacywindowsfsencoding
-
-Changes the default filesystem encoding to mbcs:replace.
-
-This is done for consistency with earlier versions of Python. See PEP
-529 for more information.
-
-This is equivalent to defining the PYTHONLEGACYWINDOWSFSENCODING
-environment variable before launching Python.
-[clinic start generated code]*/
-
-static PyObject *
-sys__enablelegacywindowsfsencoding_impl(PyObject *module)
-/*[clinic end generated code: output=f5c3855b45e24fe9 input=2bfa931a20704492]*/
-{
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-        "sys._enablelegacywindowsfsencoding() is deprecated and will be "
-        "removed in Python 3.16. Use PYTHONLEGACYWINDOWSFSENCODING "
-        "instead.", 1))
-    {
-        return NULL;
-    }
-    if (_PyUnicode_EnableLegacyWindowsFSEncoding() < 0) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
 #endif /* MS_WINDOWS */
 
 #ifdef HAVE_DLOPEN
@@ -2706,7 +2677,7 @@ PyAPI_FUNC(int) PyUnstable_PerfMapState_Init(void) {
 
 PyAPI_FUNC(int) PyUnstable_WritePerfMapEntry(
     const void *code_addr,
-    unsigned int code_size,
+    size_t code_size,
     const char *entry_name
 ) {
 #ifndef MS_WINDOWS
@@ -2717,7 +2688,7 @@ PyAPI_FUNC(int) PyUnstable_WritePerfMapEntry(
         }
     }
     PyThread_acquire_lock(perf_map_state.map_lock, 1);
-    fprintf(perf_map_state.perf_map, "%" PRIxPTR " %x %s\n", (uintptr_t) code_addr, code_size, entry_name);
+    fprintf(perf_map_state.perf_map, "%" PRIxPTR " %zx %s\n", (uintptr_t) code_addr, code_size, entry_name);
     fflush(perf_map_state.perf_map);
     PyThread_release_lock(perf_map_state.map_lock);
 #endif
@@ -2940,7 +2911,6 @@ static PyMethodDef sys_methods[] = {
     SYS__GETFRAME_METHODDEF
     SYS__GETFRAMEMODULENAME_METHODDEF
     SYS_GETWINDOWSVERSION_METHODDEF
-    SYS__ENABLELEGACYWINDOWSFSENCODING_METHODDEF
     SYS__IS_IMMORTAL_METHODDEF
     SYS_INTERN_METHODDEF
     SYS__IS_INTERNED_METHODDEF
@@ -3435,13 +3405,6 @@ winver -- [Windows only] version number of the Python DLL\n\
 "
 )
 #endif /* MS_COREDLL */
-#ifdef MS_WINDOWS
-/* concatenating string here */
-PyDoc_STR(
-"_enablelegacywindowsfsencoding -- [Windows only]\n\
-"
-)
-#endif
 PyDoc_STR(
 "__stdin__ -- the original stdin; don't touch!\n\
 __stdout__ -- the original stdout; don't touch!\n\
