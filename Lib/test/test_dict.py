@@ -1918,6 +1918,20 @@ class FrozenDictTests(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "unhashable type: 'list'"):
             hash(fd)
 
+    @support.cpython_only
+    def test_hash_cpython(self):
+        # Check that hash(frozendict) implementation is:
+        # hash(frozenset(fd.items()))
+        for fd in (
+            frozendict(),
+            frozendict(x=1, y=2),
+            frozendict(y=2, x=1),
+            frozendict(a=False, b=True, c=True),
+            frozendict.fromkeys('abc'),
+        ):
+            with self.subTest(fd=fd):
+                self.assertEqual(hash(fd), hash(frozenset(fd.items())))
+
     def test_fromkeys(self):
         self.assertEqual(frozendict.fromkeys('abc'),
                          frozendict(a=None, b=None, c=None))
