@@ -892,7 +892,7 @@ pycore_init_builtins(PyThreadState *tstate)
     interp->common_consts[CONSTANT_FALSE] = Py_False;
     interp->common_consts[CONSTANT_MINUS_ONE] =
         (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS - 1];
-    interp->common_consts[CONSTANT_BUILTIN_FROZENSET] = (PyObject *)&PyFrozenDict_Type;
+    interp->common_consts[CONSTANT_BUILTIN_FROZENSET] = (PyObject *)&PyFrozenSet_Type;
     for (int i = 0; i < NUM_COMMON_CONSTANTS; i++) {
         assert(interp->common_consts[i] != NULL);
     }
