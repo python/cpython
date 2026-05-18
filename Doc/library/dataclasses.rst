@@ -435,8 +435,7 @@ Module contents
    By default, it is set to the module name of the caller.
 
    If *qualname* is defined, the :attr:`!__qualname__` attribute of the dataclass
-   is set to that value.
-   By default, it is set to the value passed to *cls_name*.
+   is set to that value. By default, it is set to the value passed to *cls_name*.
 
    The *decorator* parameter is a callable that will be used to create the dataclass.
    It should take the class object as a first argument and the same keyword arguments
@@ -468,6 +467,8 @@ Module contents
 
    .. versionadded:: 3.14
       Added the *decorator* parameter.
+   .. versionadded:: next
+      Added the *qualname* parameter.
 
 .. function:: replace(obj, /, **changes)
 
