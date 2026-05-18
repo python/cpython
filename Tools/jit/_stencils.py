@@ -1,5 +1,6 @@
 """Core data structures for compiled code templates."""
 
+import copy
 import dataclasses
 import enum
 import sys
@@ -148,6 +149,9 @@ _X86_GOT_RELOCATIONS = {
     "IMAGE_REL_AMD64_REL32",
 }
 
+_CROSS_SECTION_PREFIX = "_JIT_CROSS_SECTION_"
+_CROSS_SECTION_SUFFIX = "_JIT_CROSS_SECTION"
+
 @dataclasses.dataclass
 class Hole:
     """
@@ -170,8 +174,16 @@ class Hole:
     func: str = dataclasses.field(init=False)
     offset2: int = -1
     void: bool = False
-    # Convenience method:
-    replace = dataclasses.replace
+
+    def replace(self, **changes: typing.Any) -> typing.Self:
+        field_names = {field.name for field in dataclasses.fields(self)}
+        for name in changes:
+            if name not in field_names:
+                raise TypeError(f"unexpected field name: {name!r}")
+        result = copy.copy(self)
+        for name, value in changes.items():
+            setattr(result, name, value)
+        return result
 
     def __post_init__(self) -> None:
         self.func = _PATCH_FUNCS[self.kind]
@@ -295,6 +307,9 @@ class StencilGroup:
                         first = first_in_pair[index]
                         hole.fold(first)
 
+        self.split_code_at_cold_start()
+
+    def split_code_at_cold_start(self) -> None:
         cold_start = self.symbols.get("_JIT_COLD_START")
         if cold_start is None:
             return
@@ -330,6 +345,8 @@ class StencilGroup:
         """Fix up all GOT and internal relocations for this stencil group."""
         for stencil in self._code_stencils():
             for hole in stencil.holes.copy():
+                if self._resolve_cross_section_symbol(hole):
+                    continue
                 if (
                     hole.kind
                     in {"R_AARCH64_CALL26", "R_AARCH64_JUMP26", "ARM64_RELOC_BRANCH26"}
@@ -379,6 +396,8 @@ class StencilGroup:
         self.data.pad(8)
         for stencil in self._all_stencils():
             for hole in stencil.holes:
+                if self._resolve_cross_section_symbol(hole):
+                    continue
                 if hole.value is HoleValue.GOT:
                     assert hole.symbol is not None
                     if "_JIT_" in hole.symbol:
@@ -414,6 +433,29 @@ class StencilGroup:
         self.code.holes.sort(key=lambda hole: hole.offset)
         self.cold_code.holes.sort(key=lambda hole: hole.offset)
         self.data.holes.sort(key=lambda hole: hole.offset)
+
+    def _resolve_cross_section_symbol(self, hole: Hole) -> bool:
+        if hole.value is not HoleValue.ZERO or hole.symbol is None:
+            return False
+        symbol = hole.symbol
+        if not (
+            symbol.startswith(_CROSS_SECTION_PREFIX)
+            and symbol.endswith(_CROSS_SECTION_SUFFIX)
+        ):
+            return False
+        target = symbol.removeprefix(_CROSS_SECTION_PREFIX).removesuffix(
+            _CROSS_SECTION_SUFFIX
+        )
+        try:
+            value, addend = self.symbols[target]
+        except KeyError:
+            raise ValueError(
+                f"Missing cross-section relocation target {target}"
+            ) from None
+        hole.value = value
+        hole.addend += addend
+        hole.symbol = None
+        return True
 
     def _jit_symbol_table_lookup(self, symbol: str) -> int:
         return len(self.data.body) + self._jit_symbol_table.setdefault(

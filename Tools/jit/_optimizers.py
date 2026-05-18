@@ -383,8 +383,17 @@ class Optimizer:
         block.noninstructions.insert(0, f"{label}:")
         return label
 
+    def _make_cross_section_target(self, block: _Block) -> str:
+        real_target = self._make_cold_target(block).removeprefix(
+            self.symbol_prefix
+        )
+        return (
+            f"{self.symbol_prefix}_JIT_CROSS_SECTION_"
+            f"{real_target}_JIT_CROSS_SECTION"
+        )
+
     def _relocation_marker(self, reloc: str, block: _Block) -> Instruction:
-        target = self._make_cold_target(block).removeprefix(
+        target = self._make_cross_section_target(block).removeprefix(
             self.symbol_prefix
         )
         label = f"{self.symbol_prefix}{reloc}_JIT_RELOCATION_{target}:"
@@ -555,15 +564,25 @@ class Optimizer:
         cold_blocks = [
             block for layout_hot, unit in units if not layout_hot for block in unit
         ]
-        self._relink_blocks(
-            [
-                *hot_blocks,
-                continuation,
-                cold_start,
-                *cold_blocks,
-                *self._metadata_blocks(),
-            ]
-        )
+        blocks = [
+            *hot_blocks,
+            continuation,
+            cold_start,
+            *cold_blocks,
+            *self._metadata_blocks(),
+        ]
+        if self._root in blocks and blocks[0] is not self._root:
+            assert self._root.label is None
+            assert not self._root.instructions
+            assert self._root.target is None
+            assert self._root.fallthrough
+            blocks.remove(self._root)
+            blocks.insert(0, self._root)
+        self._relink_blocks(blocks)
+        linked_blocks = list(self._blocks())
+        assert linked_blocks[0] is self._root
+        assert continuation in linked_blocks
+        assert cold_start in linked_blocks
 
     def _blocks(self) -> typing.Generator[_Block, None, None]:
         block: _Block | None = self._root
@@ -798,7 +817,7 @@ class Optimizer:
                 continue
             assert inst.kind is not InstructionKind.SHORT_BRANCH
             block.instructions[-1] = inst.update_target(
-                self._make_cold_target(target)
+                self._make_cross_section_target(target)
             )
 
     def _fixup_external_labels(self) -> None:
