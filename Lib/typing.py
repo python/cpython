@@ -2687,7 +2687,7 @@ _overload_registry = defaultdict(functools.partial(defaultdict, dict))
 def overload(func):
     """Decorator for overloaded functions/methods.
 
-    In a stub file, place two or more stub definitions for the same
+    In a non-stub file, place two or more stub definitions for the same
     function in a row, each decorated with @overload, followed
     with an implementation.  The implementation should *not*
     be decorated with @overload::
@@ -2701,8 +2701,8 @@ def overload(func):
         def utf8(value):
             ...  # implementation goes here
 
-    In a stub file or in a Protocol definition, the implementation
-    should be omitted::
+    In a stub file or in an abstract method (for example, in a Protocol definition),
+    the implementation may be omitted::
 
         @overload
         def utf8(value: None) -> None: ...
@@ -2710,7 +2710,6 @@ def overload(func):
         def utf8(value: bytes) -> bytes: ...
         @overload
         def utf8(value: str) -> bytes: ...
-
 
     The overloads for a function can be retrieved at runtime using the
     get_overloads() function.
