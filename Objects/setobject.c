@@ -1416,7 +1416,19 @@ make_new_frozenset(PyTypeObject *type, PyObject *iterable)
         /* frozenset(f) is idempotent */
         return Py_NewRef(iterable);
     }
-    PyObject *obj = make_new_set(type, iterable);
+
+    // For cases like frozenset({1, 2, 3}), we can just steal the memory from
+    // the mutable set to avoid the copy.
+    PyObject *obj;
+    if (iterable != NULL
+        && PySet_CheckExact(iterable)
+        && PyUnstable_Object_IsUniqueReferencedTemporary(iterable)) {
+        return _PyFrozenSet_NewAndSteal(iterable);
+    }
+    else {
+        obj = make_new_set(type, iterable);
+    }
+
     if (obj != NULL) {
         _PyFrozenSet_MaybeUntrack(obj);
     }
@@ -1543,6 +1555,22 @@ set_swap_bodies(PySetObject *a, PySetObject *b)
     }
     FT_ATOMIC_STORE_PTR_RELEASE(a->table, a_table);
     FT_ATOMIC_STORE_PTR_RELEASE(b->table, b_table);
+}
+
+PyObject *
+_PyFrozenSet_NewAndSteal(PyObject *set)
+{
+    assert(set != NULL);
+    assert(PySet_CheckExact(set));
+    assert(_PyObject_IsUniquelyReferenced(set));
+    PyObject *frozenset = make_new_set(&PyFrozenSet_Type, NULL);
+    if (frozenset == NULL) {
+        return NULL;
+    }
+
+    set_swap_bodies((PySetObject *)set, (PySetObject *)frozenset);
+    _PyFrozenSet_MaybeUntrack(frozenset);
+    return frozenset;
 }
 
 /*[clinic input]
