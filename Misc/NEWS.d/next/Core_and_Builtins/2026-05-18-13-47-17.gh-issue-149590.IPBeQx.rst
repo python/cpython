@@ -1,0 +1,1 @@
+Removed faulthandler traversal function to resolve double deref of singleton
