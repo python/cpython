@@ -63,6 +63,8 @@ STACKWALK_DISABLED = 0
 
 
 class GeckoCollector(Collector):
+    aggregating = True
+
     def __init__(self, sample_interval_usec, *, skip_idle=False, opcodes=False):
         self.sample_interval_usec = sample_interval_usec
         self.skip_idle = skip_idle

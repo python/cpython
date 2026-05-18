@@ -654,10 +654,6 @@ class _socket.socket "PySocketSockObject *" "clinic_state()->sock_type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=2db2489bd2219fd8]*/
 
-#define clinic_state() (find_module_state_by_def(type))
-#include "clinic/socketmodule.c.h"
-#undef clinic_state
-
 /* XXX There's a problem here: *static* functions are not supposed to have
    a Py prefix (or use CapitalizedWords).  Later... */
 
@@ -687,6 +683,18 @@ class _socket.socket "PySocketSockObject *" "clinic_state()->sock_type"
  * little white lie. */
 #define IS_SELECTABLE(s) (_PyIsSelectable_fd((s)->sock_fd) || (s)->sock_timeout <= 0)
 #endif
+
+// SCM_RIGHTS, sendmsg(), recvmsg() and sethostname() don't work properly on
+// Cygwin: disable these features.
+#ifdef __CYGWIN__
+#  undef CMSG_LEN
+#  undef SCM_RIGHTS
+#  undef HAVE_SETHOSTNAME
+#endif
+
+#define clinic_state() (find_module_state_by_def(type))
+#include "clinic/socketmodule.c.h"
+#undef clinic_state
 
 static PyObject*
 select_error(void)

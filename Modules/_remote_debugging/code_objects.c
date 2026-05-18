@@ -432,7 +432,7 @@ parse_code_object(RemoteUnwinderObject *unwinder,
 
 #ifdef Py_GIL_DISABLED
     // Handle thread-local bytecode (TLBC) in free threading builds
-    if (ctx->tlbc_index == 0 || unwinder->debug_offsets.code_object.co_tlbc == 0 || unwinder == NULL) {
+    if (ctx->tlbc_index == 0 || unwinder == NULL || unwinder->debug_offsets.code_object.co_tlbc == 0) {
         // No TLBC or no unwinder - use main bytecode directly
         addrq = (uint16_t *)ip - (uint16_t *)meta->addr_code_adaptive;
         goto done_tlbc;

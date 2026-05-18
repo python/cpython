@@ -16,10 +16,21 @@
 #  endif
 #endif
 
-#if defined(PY_HAVE_PERF_TRAMPOLINE) || defined(PY_HAVE_JIT_GDB_UNWIND)
+#if defined(PY_HAVE_PERF_TRAMPOLINE) \
+    || defined(PY_HAVE_JIT_GDB_UNWIND) \
+    || defined(PY_HAVE_JIT_GNU_BACKTRACE_UNWIND)
 
 #if defined(PY_HAVE_JIT_GDB_UNWIND)
 #  include <elf.h>
+#endif
+#if defined(PY_HAVE_JIT_GNU_BACKTRACE_UNWIND)
+/*
+ * libgcc exposes frame registration entry points, but GCC's public headers
+ * on some distributions do not declare them even though the symbols are
+ * available in libgcc_s.
+ */
+void __register_frame(const void *);
+void __deregister_frame(const void *);
 #endif
 #include <stdio.h>
 #include <string.h>
@@ -49,6 +60,9 @@ enum {
     DWRF_CFA_offset_extended_sf = 0x11,   // Extended signed offset
     DWRF_CFA_advance_loc = 0x40,          // Advance location counter
     DWRF_CFA_offset = 0x80,               // Simple offset instruction
+#if defined(__aarch64__)
+    DWRF_CFA_AARCH64_negate_ra_state = 0x2d, // Toggle return address signing state
+#endif
     DWRF_CFA_restore = 0xc0               // Restore register
 };
 
@@ -551,6 +565,13 @@ static void elf_init_ehframe_perf(ELFObjectContext* ctx) {
         DWRF_UV(8);                           // New offset: SP + 8
 #elif defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)
         /* AArch64 calling convention unwinding rules */
+#if defined(__ARM_FEATURE_PAC_DEFAULT) || \
+    (defined(__ARM_FEATURE_BTI_DEFAULT) && __ARM_FEATURE_BTI_DEFAULT == 1)
+        DWRF_U8(DWRF_CFA_advance_loc | 1);        // Advance past SIGN_LR (4 bytes)
+#endif
+#if defined(__ARM_FEATURE_PAC_DEFAULT)
+        DWRF_U8(DWRF_CFA_AARCH64_negate_ra_state); // Saved LR is PAC-signed from here
+#endif
         DWRF_U8(DWRF_CFA_advance_loc | 1);        // Advance by 1 instruction (4 bytes)
         DWRF_U8(DWRF_CFA_def_cfa_offset);         // CFA = SP + 16
         DWRF_UV(16);                              // Stack pointer moved by 16 bytes
@@ -559,6 +580,9 @@ static void elf_init_ehframe_perf(ELFObjectContext* ctx) {
         DWRF_U8(DWRF_CFA_offset | DWRF_REG_RA);   // x30 (link register) saved
         DWRF_UV(1);                               // At CFA-8 (1 * 8 = 8 bytes from CFA)
         DWRF_U8(DWRF_CFA_advance_loc | 3);        // Advance by 3 instructions (12 bytes)
+#if defined(__ARM_FEATURE_PAC_DEFAULT)
+        DWRF_U8(DWRF_CFA_AARCH64_negate_ra_state); // LR is authenticated, no longer PAC-signed
+#endif
         DWRF_U8(DWRF_CFA_def_cfa_register);       // CFA = FP (x29) + 16
         DWRF_UV(DWRF_REG_FP);
         DWRF_U8(DWRF_CFA_restore | DWRF_REG_RA);  // Restore x30 - NO DWRF_UV() after this!
@@ -983,4 +1007,56 @@ _PyJitUnwind_GdbUnregisterCode(void *handle)
 #endif
 }
 
-#endif  // defined(PY_HAVE_PERF_TRAMPOLINE) || defined(PY_HAVE_JIT_GDB_UNWIND)
+#if defined(PY_HAVE_JIT_GNU_BACKTRACE_UNWIND)
+void *
+_PyJitUnwind_GnuBacktraceRegisterCode(const void *code_addr, size_t code_size)
+{
+    if (code_addr == NULL || code_size == 0) {
+        return NULL;
+    }
+
+    size_t eh_frame_size = _PyJitUnwind_EhFrameSize(1);
+    if (eh_frame_size == 0) {
+        return NULL;
+    }
+    size_t total_size = eh_frame_size + sizeof(uint32_t);
+    if (total_size < eh_frame_size) {
+        return NULL;
+    }
+
+    /*
+     * libgcc's __register_frame walks a .eh_frame section until it finds a
+     * zero-length terminator entry, so keep an extra zeroed word after the
+     * generated CIE/FDE pair.
+     *
+     * See GCC's libgcc/unwind-dw2-fde.c (__register_frame) and
+     * libgcc/unwind-dw2-fde.h (last_fde/next_fde):
+     * https://github.com/gcc-mirror/gcc/blob/master/libgcc/unwind-dw2-fde.c
+     * https://github.com/gcc-mirror/gcc/blob/master/libgcc/unwind-dw2-fde.h
+     */
+    uint8_t *eh_frame = PyMem_RawCalloc(1, total_size);
+    if (eh_frame == NULL) {
+        return NULL;
+    }
+    if (_PyJitUnwind_BuildEhFrame(
+            eh_frame, eh_frame_size, code_addr, code_size, 1) == 0) {
+        PyMem_RawFree(eh_frame);
+        return NULL;
+    }
+
+    __register_frame(eh_frame);
+    return eh_frame;
+}
+
+void
+_PyJitUnwind_GnuBacktraceUnregisterCode(void *handle)
+{
+    if (handle == NULL) {
+        return;
+    }
+    __deregister_frame(handle);
+    PyMem_RawFree(handle);
+}
+#endif  // defined(PY_HAVE_JIT_GNU_BACKTRACE_UNWIND)
+
+#endif  // JIT unwind support

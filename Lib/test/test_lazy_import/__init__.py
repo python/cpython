@@ -10,6 +10,7 @@ import types
 import unittest
 import tempfile
 import os
+import contextlib
 
 from test import support
 from test.support.script_helper import assert_python_ok
@@ -87,6 +88,26 @@ class LazyImportTests(unittest.TestCase):
         """Lazy import should load when accessed within the module."""
         import test.test_lazy_import.data.basic_used
         self.assertIn("test.test_lazy_import.data.basic2", sys.modules)
+
+    @support.requires_subprocess()
+    def test_from_import_with_module_getattr(self):
+        """Lazy from import should respect module-level __getattr__."""
+        code = textwrap.dedent("""
+            lazy from test.test_lazy_import.data.module_with_getattr import dynamic_attr
+            assert dynamic_attr == "from_getattr"
+        """)
+        assert_python_ok("-c", code)
+
+    @support.requires_subprocess()
+    def test_from_import_with_imported_module_getattr(self):
+        """Lazy from import should not shadow an imported module's __getattr__."""
+        code = textwrap.dedent("""
+            import test.test_lazy_import.data.module_with_getattr as mod
+            lazy from test.test_lazy_import.data.module_with_getattr import dynamic_attr
+            assert dynamic_attr == "from_getattr"
+            assert mod.dynamic_attr == "from_getattr"
+        """)
+        assert_python_ok("-c", code)
 
 
 class GlobalLazyImportModeTests(unittest.TestCase):
@@ -281,6 +302,15 @@ class SyntaxRestrictionTests(unittest.TestCase):
             f()
         self.assertIn("only allowed at module level", str(cm.exception))
 
+    def test_lazy_import_exec_in_class(self):
+        """lazy import via exec() inside a class should raise SyntaxError."""
+        # exec() inside a class body also has non-module-level locals.
+        with self.assertRaises(SyntaxError) as cm:
+            class C:
+                exec("lazy import json")
+
+        self.assertIn("only allowed at module level", str(cm.exception))
+
     @support.requires_subprocess()
     def test_lazy_import_exec_at_module_level(self):
         """lazy import via exec() at module level should work."""
@@ -332,6 +362,50 @@ class EagerImportInLazyModeTests(unittest.TestCase):
         f = test.test_lazy_import.data.eager_import_func.f
         self.assertEqual(type(f()), type(sys))
 
+    def test_exec_import_func(self):
+        """Implicit lazy imports via exec() inside functions should be eager."""
+        sys.set_lazy_imports("all")
+
+        def f():
+            exec("import test.test_lazy_import.data.basic2")
+
+        f()
+        self.assertIn("test.test_lazy_import.data.basic2", sys.modules)
+
+    def test_exec_import_func_with_lazy_modules(self):
+        """__lazy_modules__ should not make exec() imports lazy inside functions."""
+        globals()["__lazy_modules__"] = ["test.test_lazy_import.data.basic2"]
+        try:
+            def f():
+                exec("import test.test_lazy_import.data.basic2")
+
+            f()
+            self.assertIn("test.test_lazy_import.data.basic2", sys.modules)
+        finally:
+            del globals()["__lazy_modules__"]
+
+    def test_exec_import_class(self):
+        """Implicit lazy imports via exec() inside classes should be eager."""
+        sys.set_lazy_imports("all")
+
+        class C:
+            exec("import test.test_lazy_import.data.basic2")
+
+        self.assertIsNotNone(C)
+        self.assertIn("test.test_lazy_import.data.basic2", sys.modules)
+
+    def test_exec_import_class_with_lazy_modules(self):
+        """__lazy_modules__ should not make exec() imports lazy inside classes."""
+        globals()["__lazy_modules__"] = ["test.test_lazy_import.data.basic2"]
+        try:
+            class C:
+                exec("import test.test_lazy_import.data.basic2")
+
+            self.assertIsNotNone(C)
+            self.assertIn("test.test_lazy_import.data.basic2", sys.modules)
+        finally:
+            del globals()["__lazy_modules__"]
+
 
 class WithStatementTests(unittest.TestCase):
     """Tests for lazy imports in with statement context."""
@@ -368,10 +442,14 @@ class PackageTests(unittest.TestCase):
 
     def test_lazy_import_pkg(self):
         """lazy import of package submodule should load the package."""
-        import test.test_lazy_import.data.lazy_import_pkg
+        out = io.StringIO()
+
+        with contextlib.redirect_stdout(out):
+            import test.test_lazy_import.data.lazy_import_pkg
 
         self.assertIn("test.test_lazy_import.data.pkg", sys.modules)
         self.assertIn("test.test_lazy_import.data.pkg.bar", sys.modules)
+        self.assertIn("BAR_MODULE_LOADED", out.getvalue())
 
     def test_lazy_import_pkg_cross_import(self):
         """Cross-imports within package should preserve lazy imports."""
@@ -384,6 +462,17 @@ class PackageTests(unittest.TestCase):
         g = test.test_lazy_import.data.pkg.c.get_globals()
         self.assertEqual(type(g["x"]), int)
         self.assertEqual(type(g["b"]), types.LazyImportType)
+
+    @support.requires_subprocess()
+    def test_package_from_import_with_module_getattr(self):
+        """Lazy from import should respect a package's __getattr__."""
+        code = textwrap.dedent("""
+            import test.test_lazy_import.data.pkg as pkg
+            lazy from test.test_lazy_import.data.pkg import dynamic_attr
+            assert dynamic_attr == "from_getattr"
+            assert pkg.dynamic_attr == "from_getattr"
+        """)
+        assert_python_ok("-c", code)
 
 
 class DunderLazyImportTests(unittest.TestCase):
@@ -1033,6 +1122,50 @@ class CommandLineAndEnvVarTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, f"stderr: {result.stderr}")
         self.assertIn("EAGER", result.stdout)
+
+    @support.requires_resource("cpu")
+    def test_cli_lazy_imports_modes_import_stdlib_modules(self):
+        """-X lazy_imports modes should import available stdlib modules."""
+        # Do not smoke-test modules with intentional import-time effects.
+        import_side_effect_modules = {"antigravity", "this"}
+        importable = []
+
+        for module in sorted(sys.stdlib_module_names):
+            if module in import_side_effect_modules:
+                continue
+
+            with self.subTest(module=module):
+                code = f"import {module}; print({module})"
+                baseline = subprocess.run(
+                    [sys.executable, "-I", "-c", code],
+                    capture_output=True,
+                    text=True,
+                    timeout=60,
+                )
+                if baseline.returncode:
+                    # sys.stdlib_module_names includes modules for other
+                    # platforms and optional extension modules not built here.
+                    continue
+                importable.append(module)
+
+                for mode in ("normal", "none"):
+                    with self.subTest(module=module, mode=mode):
+                        result = subprocess.run(
+                            [
+                                sys.executable,
+                                "-I",
+                                "-X",
+                                f"lazy_imports={mode}",
+                                "-c",
+                                code,
+                            ],
+                            capture_output=True,
+                            text=True,
+                            timeout=60,
+                        )
+                        self.assertEqual(result.returncode, 0, result.stderr)
+
+        self.assertGreater(len(importable), 100)
 
     def test_cli_lazy_imports_normal_respects_lazy_keyword_only(self):
         """-X lazy_imports=normal should respect lazy keyword only."""

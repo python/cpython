@@ -39,6 +39,16 @@ Pending removal in Python 3.20
 
   (Contributed by Hugo van Kemenade and Stan Ulbrych in :gh:`76007`.)
 
+* Deprecations defined by :pep:`829`:
+
+  * Warnings are produced for ``import`` lines found in :file:`{name}.pth`
+    files.
+
+  * :file:`{name}.pth` files are no longer decoded in the locale encoding by
+    default.  They **MUST** be encoded in ``utf-8-sig``.
+
+  (Contributed by Barry Warsaw in :gh:`148641`.)
+
 * :mod:`ast`:
 
   * Creating instances of abstract AST nodes (such as :class:`ast.AST`

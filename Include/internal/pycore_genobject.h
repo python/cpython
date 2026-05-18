@@ -42,6 +42,8 @@ extern PyTypeObject _PyAsyncGenWrappedValue_Type;
 extern PyTypeObject _PyAsyncGenAThrow_Type;
 extern PyTypeObject _PyAsyncGenYieldFrom_Type;
 
+PyAPI_FUNC(PySendResult) _PyAsyncGenASend_Send(PyObject *iter, PyObject *arg, PyObject **result);
+
 #ifdef __cplusplus
 }
 #endif

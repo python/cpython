@@ -10777,6 +10777,35 @@ os_pidfd_open_impl(PyObject *module, pid_t pid, unsigned int flags)
 #endif
 
 
+#if defined(__linux__) && defined(__NR_pidfd_getfd) && \
+    !(defined(__ANDROID__) && __ANDROID_API__ < 31)
+/*[clinic input]
+os.pidfd_getfd
+  pidfd: int
+    A process file descriptor.
+  targetfd: int
+    The file descriptor to duplicate from the target process.
+  *
+  flags: unsigned_int = 0
+    Reserved, must be 0.
+
+Duplicate a file descriptor from the process referred to by *pidfd*.
+[clinic start generated code]*/
+
+static PyObject *
+os_pidfd_getfd_impl(PyObject *module, int pidfd, int targetfd,
+                    unsigned int flags)
+/*[clinic end generated code: output=e1a1415a13c7137f input=ef6417fb10deb1cc]*/
+{
+    int fd = syscall(__NR_pidfd_getfd, pidfd, targetfd, flags);
+    if (fd < 0) {
+        return posix_error();
+    }
+    return PyLong_FromLong(fd);
+}
+#endif
+
+
 #ifdef HAVE_SETNS
 /*[clinic input]
 os.setns
@@ -17606,6 +17635,7 @@ static PyMethodDef posix_methods[] = {
     OS_WAITID_METHODDEF
     OS_WAITPID_METHODDEF
     OS_PIDFD_OPEN_METHODDEF
+    OS_PIDFD_GETFD_METHODDEF
     OS_GETSID_METHODDEF
     OS_SETSID_METHODDEF
     OS_SETPGID_METHODDEF
