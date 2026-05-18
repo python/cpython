@@ -227,11 +227,17 @@ class _GeneratorContextManager(
                 # tell if we get the same exception back
                 value = typ()
             try:
-                # If the generator handles the exception thrown into it, the
-                # exception context reverts to the actual current exception
-                # context here. In order to make the context manager behave
-                # like a normal function we set the current exception context
-                # to what it was during the context manager's __enter__
+                # Throw the current exception into the generator so it can
+                # handle it.
+                # Once the generator handles the thrown exception, the
+                # exception context within it should revert back to what it was
+                # before its "yield" statement (ie. what it was in self.__enter__).
+                # However, since we're still currently handling the exception
+                # that we throw into the generator here, the exception context
+                # in the generator wouldn't change.
+                # To work around this, we forcefully set the current exception
+                # context to be what it was just before the generator's yield
+                # statement before throwing the current exception into it.
                 # (see gh-111676).
                 sys._set_exception(exc_context)
                 self.gen.throw(value)
