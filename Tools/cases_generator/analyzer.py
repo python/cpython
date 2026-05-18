@@ -616,6 +616,9 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_RefcountOnObject",
     "PyStackRef_TYPE",
     "PyStackRef_True",
+    "PyBytes_GET_SIZE",
+    "PyDict_GET_SIZE",
+    "PySet_GET_SIZE",
     "PyTuple_GET_ITEM",
     "PyTuple_GET_SIZE",
     "PyType_HasFeature",
@@ -717,6 +720,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_Py_GatherStats_GetIter",
     "_PyStolenTuple_Free",
     "PyObject_GC_UnTrack",
+    "_PyErr_ExceptionMatches",
 )
 
 

@@ -173,7 +173,7 @@ The following options are accepted:
 If :file:`filename.py` is specified its contents are tokenized to stdout.
 Otherwise, tokenization is performed on stdin.
 
-.. versionadded:: next
+.. versionadded:: 3.15
    Output is in color by default and can be
    :ref:`controlled using environment variables <using-on-controlling-color>`.
 
