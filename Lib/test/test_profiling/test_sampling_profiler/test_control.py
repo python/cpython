@@ -2,12 +2,12 @@
 
 import io
 import os
-import shutil
 import socket
-import tempfile
 import time
 import unittest
 from unittest import mock
+
+from test.support import SHORT_TIMEOUT, os_helper, socket_helper
 
 try:
     from profiling.sampling._control import (
@@ -15,7 +15,7 @@ try:
         _MAX_INBUF_BYTES,
         parse_control_uri,
     )
-    from profiling.sampling.cli import main
+    from profiling.sampling.cli import LiveStatsCollector, main
     from profiling.sampling.errors import ControlError, ControlURIError
 except ImportError:
     raise unittest.SkipTest(
@@ -23,13 +23,13 @@ except ImportError:
     )
 
 
+@socket_helper.skip_unless_bind_unix_socket
 class ControlServerTests(unittest.TestCase):
     """Tests for ControlServer protocol, lifecycle and CLI integration."""
 
     def setUp(self):
-        tmpdir = tempfile.mkdtemp()
-        self.addCleanup(shutil.rmtree, tmpdir, ignore_errors=True)
-        self.path = os.path.join(tmpdir, "control.sock")
+        self.path = socket_helper.create_unix_domain_name()
+        self.addCleanup(os_helper.unlink, self.path)
 
     def start_server(self):
         server = ControlServer(f"unix:{self.path}")
@@ -46,7 +46,7 @@ class ControlServerTests(unittest.TestCase):
 
     def request(self, server, client, command):
         client.sendall(command)
-        deadline = time.monotonic() + 1.0
+        deadline = time.monotonic() + SHORT_TIMEOUT
         while time.monotonic() < deadline:
             server.poll(timeout=0.05)
             try:
@@ -88,7 +88,7 @@ class ControlServerTests(unittest.TestCase):
     def test_start_fails_on_occupied_path(self):
         """start() raises ControlError when the path is already bound."""
         squatter = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        squatter.bind(self.path)
+        socket_helper.bind_unix_socket(squatter, self.path)
         self.addCleanup(squatter.close)
         with self.assertRaisesRegex(ControlError, "failed to start"):
             ControlServer(f"unix:{self.path}").start()
@@ -124,7 +124,7 @@ class ControlServerTests(unittest.TestCase):
         client = self.connect()
         self.assertEqual(self.request(server, client, b"quit\n"), b"ok\n")
         self.assertFalse(server.control.running)
-        deadline = time.monotonic() + 1.0
+        deadline = time.monotonic() + SHORT_TIMEOUT
         while time.monotonic() < deadline:
             server.poll(timeout=0.05)
             try:
@@ -142,7 +142,7 @@ class ControlServerTests(unittest.TestCase):
         client.connect(self.path)
         self.addCleanup(client.close)
         client.sendall(b"x" * (_MAX_INBUF_BYTES + 1))
-        deadline = time.monotonic() + 1.0
+        deadline = time.monotonic() + SHORT_TIMEOUT
         while time.monotonic() < deadline:
             server.poll(timeout=0.05)
             if not server._connections:
@@ -154,7 +154,7 @@ class ControlServerTests(unittest.TestCase):
         server = self.start_server()
         os.unlink(self.path)
         replacement = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        replacement.bind(self.path)
+        socket_helper.bind_unix_socket(replacement, self.path)
         self.addCleanup(replacement.close)
         server.stop()
         self.assertTrue(os.path.exists(self.path))
@@ -198,6 +198,8 @@ class ControlServerTests(unittest.TestCase):
         self.assertEqual(cm.exception.code, 2)
         self.assertIn("unsupported control URI scheme", stderr.getvalue())
 
+    @unittest.skipUnless(LiveStatsCollector is not None,
+                         "requires curses for --live")
     def test_cli_accepts_control_with_live(self):
         """--control and --live coexist after the mutex was dropped."""
         argv = [

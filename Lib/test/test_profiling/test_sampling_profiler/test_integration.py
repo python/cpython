@@ -9,6 +9,7 @@ import socket
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import unittest
 from unittest import mock
@@ -17,6 +18,7 @@ try:
     import _remote_debugging
     import profiling.sampling
     import profiling.sampling.sample
+    from profiling.sampling._control import ControlServer
     from profiling.sampling.pstats_collector import PstatsCollector
     from profiling.sampling.stack_collector import CollapsedStackCollector
     from profiling.sampling.sample import SampleProfiler, _is_process_running
@@ -29,12 +31,13 @@ except ImportError:
 from test.support import (
     requires_remote_subprocess_debugging,
     SHORT_TIMEOUT,
+    os_helper,
+    socket_helper,
 )
 
 from .helpers import (
     test_subprocess,
     close_and_unlink,
-    _cleanup_process,
 )
 from .mocks import MockFrameInfo, MockThreadInfo, MockInterpreterInfo
 
@@ -959,19 +962,20 @@ class TestDeepGeneratorFrameCache(unittest.TestCase):
 
 
 @requires_remote_subprocess_debugging()
+@socket_helper.skip_unless_bind_unix_socket
 @unittest.skipIf(
     sys.platform == "darwin" and os.geteuid() != 0,
     "macOS profiling requires elevated permissions",
 )
 class TestControlSocketIntegration(unittest.TestCase):
-    """End-to-end tests for the --control socket via a real profiler subprocess."""
+    """End-to-end tests for the --control socket via in-process sample()."""
 
     def _send_recv(self, client, request, expected_reply):
         client.sendall(request)
         self.assertEqual(client.recv(4096), expected_reply)
 
     def test_control_socket_disable_enable_quit_cycle(self):
-        """Drive disable/enable/quit through a real ControlServer subprocess."""
+        """Drive disable/enable/quit through a real ControlServer."""
         script = '''
 import time
 _test_sock.sendall(b"working")
@@ -980,27 +984,31 @@ for _ in range(200):
     time.sleep(0.05)
 '''
         with test_subprocess(script, wait_for_working=True) as target:
-            tmpdir = tempfile.mkdtemp()
-            self.addCleanup(shutil.rmtree, tmpdir, ignore_errors=True)
-            socket_path = os.path.join(tmpdir, "tachyon.sock")
+            socket_path = socket_helper.create_unix_domain_name()
+            self.addCleanup(os_helper.unlink, socket_path)
 
-            profiler = subprocess.Popen(
-                [sys.executable, "-m", "profiling.sampling", "attach",
-                 "--control", f"unix:{socket_path}",
-                 "-d", "30",
-                 str(target.process.pid)],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-            self.addCleanup(_cleanup_process, profiler)
+            server = ControlServer(f"unix:{socket_path}")
+            server.start()
+            self.addCleanup(server.stop)
 
-            deadline = time.monotonic() + SHORT_TIMEOUT
-            while time.monotonic() < deadline:
-                if os.path.exists(socket_path):
-                    break
-                time.sleep(0.05)
-            else:
-                self.fail("profiler did not create the control socket")
+            exception = [None]
+
+            collector = PstatsCollector(sample_interval_usec=1000, skip_idle=False)
+
+            def sample_worker():
+                try:
+                    with contextlib.redirect_stdout(io.StringIO()):
+                        profiling.sampling.sample.sample(
+                            target.process.pid,
+                            collector,
+                            duration_sec=SHORT_TIMEOUT,
+                            control_server=server,
+                        )
+                except Exception as exc:
+                    exception[0] = exc
+
+            thread = threading.Thread(target=sample_worker, daemon=True)
+            thread.start()
 
             with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
                 client.settimeout(SHORT_TIMEOUT)
@@ -1010,9 +1018,7 @@ for _ in range(200):
                 self._send_recv(client, b"enable\n", b"ok\n")
                 self._send_recv(client, b"quit\n", b"ok\n")
 
-            stdout, stderr = profiler.communicate(timeout=SHORT_TIMEOUT)
-            self.assertEqual(
-                profiler.returncode, 0,
-                msg=f"stdout={stdout!r} stderr={stderr!r}",
-            )
-            self.assertFalse(os.path.exists(socket_path))
+            thread.join(timeout=SHORT_TIMEOUT)
+            self.assertFalse(thread.is_alive(), "sample() did not exit on quit")
+            if exception[0] is not None:
+                raise exception[0]

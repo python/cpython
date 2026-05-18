@@ -210,7 +210,6 @@ class TestSampleProfiler(unittest.TestCase):
 
         stack_frames = [mock.sentinel.stack_frames]
         mock_collector = mock.MagicMock()
-        mock_collector.aggregating = False
 
         with self._patched_unwinder() as u:
             u.instance.get_stack_trace.return_value = stack_frames
@@ -445,7 +444,6 @@ class TestSampleProfiler(unittest.TestCase):
         """Test that sample() drives control_server.poll() during the loop."""
         control_server = self._fake_control_server()
         mock_collector = mock.MagicMock()
-        mock_collector.aggregating = False
         times = [1000.0 + i * 0.01 for i in range(60)]
         with self._patched_unwinder() as u:
             u.instance.get_stack_trace.return_value = []
@@ -466,7 +464,6 @@ class TestSampleProfiler(unittest.TestCase):
         """Test that sample() exits immediately when control.running is False."""
         control_server = self._fake_control_server(running=False)
         mock_collector = mock.MagicMock()
-        mock_collector.aggregating = False
         with self._patched_unwinder() as u:
             u.instance.get_stack_trace.return_value = []
             profiler = SampleProfiler(
@@ -485,7 +482,6 @@ class TestSampleProfiler(unittest.TestCase):
         """Test that disabled state stops sample collection."""
         control_server = self._fake_control_server(enabled=False)
         mock_collector = mock.MagicMock()
-        mock_collector.aggregating = False
         times = [1000.0 + i * 0.01 for i in range(60)]
         with self._patched_unwinder() as u:
             u.instance.get_stack_trace.return_value = []
@@ -514,7 +510,6 @@ class TestSampleProfiler(unittest.TestCase):
         control_server.poll.side_effect = poll_side_effect
 
         mock_collector = mock.MagicMock()
-        mock_collector.aggregating = False
         times = [1000.0 + i * 0.01 for i in range(80)]
         with self._patched_unwinder() as u:
             u.instance.get_stack_trace.return_value = [
@@ -545,7 +540,6 @@ class TestSampleProfiler(unittest.TestCase):
         control_server.poll.side_effect = poll_side_effect
 
         mock_collector = mock.MagicMock()
-        mock_collector.aggregating = False
         times = [1000.0 + i * 0.01 for i in range(120)]
         with self._patched_unwinder() as u:
             u.instance.get_stack_trace.return_value = [

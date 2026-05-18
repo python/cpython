@@ -225,9 +225,10 @@ class SampleProfiler:
                 running_time_sec = time.perf_counter() - start_time
         except KeyboardInterrupt:
             interrupted = True
-            running_time_sec = time.perf_counter() - start_time
+            now = time.perf_counter()
+            running_time_sec = now - start_time
             if enabled_since is not None:
-                enabled_time_sec += time.perf_counter() - enabled_since
+                enabled_time_sec += now - enabled_since
             print("Interrupted by user.")
         finally:
             flush_pending()

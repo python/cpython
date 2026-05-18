@@ -90,8 +90,6 @@ class ControlServer:
                 created_stat.st_dev,
             ):
                 os.unlink(self._path)
-        except FileNotFoundError:
-            pass
         except OSError:
             pass
 
