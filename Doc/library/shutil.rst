@@ -769,7 +769,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 .. exception:: ReadError
 
    This exception is raised when an archive cannot be read or is not recognized
-   as a supported archive format.  It is raised by :func:`unpack_archive`.
+   as a supported archive format. It is raised by :func:`unpack_archive`.
 
    .. versionadded:: 3.2
 
@@ -799,7 +799,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    This exception is raised when a registry operation with the archiving
    and unpacking registries fails, such as registering a duplicate archive
-   format extension.  It is raised by :func:`register_unpack_format`.
+   format extension. It is raised by :func:`register_unpack_format`.
 
    .. versionadded:: 3.2
 
