@@ -1,0 +1,2 @@
+Add :exc:`shutil.ReadError` and :exc:`shutil.RegistryError` to
+:data:`shutil.__all__` and document them.
