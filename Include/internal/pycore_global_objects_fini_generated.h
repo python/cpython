@@ -1990,6 +1990,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(person));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(pi_factory));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(pid));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(pidfd));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(pointer_bits));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(policy));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(pos));
@@ -2108,6 +2109,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(take_bytes));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(target));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(target_is_directory));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(targetfd));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(task));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(tb_frame));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(tb_lasti));
