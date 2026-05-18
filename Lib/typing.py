@@ -2377,7 +2377,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
                    *, format=None):
     """Return type hints for an object.
 
-    This is often the same as obj.__annotations__ and annotationlib.get_annotations(obj),
+    This is often the same as annotationlib.get_annotations(obj) or obj.__annotations__,
     but it handles forward references encoded as string literals and recursively replaces all
     'Annotated[T, ...]' with 'T' (unless 'include_extras=True').
 
