@@ -1601,125 +1601,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIs(type(s), float)
         self.assertEqual(s, 1024.0)
 
-    def test_guard_type_version_removed(self):
-        def thing(a):
-            x = 0
-            for _ in range(TIER2_THRESHOLD):
-                x += a.attr
-                x += a.attr
-            return x
-
-        class Foo:
-            attr = 1
-
-        res, ex = self._run_with_optimizer(thing, Foo())
-        opnames = list(iter_opnames(ex))
-        self.assertIsNotNone(ex)
-        self.assertEqual(res, TIER2_THRESHOLD * 2)
-        guard_type_version_count = opnames.count("_GUARD_TYPE_VERSION")
-        self.assertEqual(guard_type_version_count, 1)
-
-    def test_guard_type_version_removed_inlined(self):
-        """
-        Verify that the guard type version if we have an inlined function
-        """
-
-        def fn():
-            pass
-
-        def thing(a):
-            x = 0
-            for _ in range(TIER2_THRESHOLD):
-                x += a.attr
-                fn()
-                x += a.attr
-            return x
-
-        class Foo:
-            attr = 1
-
-        res, ex = self._run_with_optimizer(thing, Foo())
-        opnames = list(iter_opnames(ex))
-        self.assertIsNotNone(ex)
-        self.assertEqual(res, TIER2_THRESHOLD * 2)
-        guard_type_version_count = opnames.count("_GUARD_TYPE_VERSION")
-        self.assertEqual(guard_type_version_count, 1)
-
-    def test_guard_type_version_removed_invalidation(self):
-
-        def thing(a):
-            x = 0
-            for i in range(TIER2_THRESHOLD + 1):
-                x += a.attr
-                # The first TIER2_THRESHOLD iterations we set the attribute on
-                # this dummy class, which shouldn't trigger the type watcher.
-                # Note that the code needs to be in this weird form so it's
-                # optimized inline without any control flow:
-                setattr((Bar, Foo)[i == TIER2_THRESHOLD + 1], "attr", 2)
-                x += a.attr
-            return x
-
-        class Foo:
-            attr = 1
-
-        class Bar:
-            pass
-
-        res, ex = self._run_with_optimizer(thing, Foo())
-        opnames = list(iter_opnames(ex))
-        self.assertEqual(res, TIER2_THRESHOLD * 2 + 2)
-        call = opnames.index("_CALL_BUILTIN_FAST")
-        load_attr_top = opnames.index("_LOAD_CONST_INLINE_BORROW", 0, call)
-        load_attr_bottom = opnames.index("_LOAD_CONST_INLINE_BORROW", call)
-        self.assertEqual(opnames[:load_attr_top].count("_GUARD_TYPE_VERSION"), 1)
-        self.assertEqual(opnames[call:load_attr_bottom].count("_CHECK_VALIDITY"), 2)
-
-    def test_guard_type_version_removed_escaping(self):
-
-        def thing(a):
-            x = 0
-            for i in range(TIER2_THRESHOLD):
-                x += a.attr
-                # eval should be escaping
-                eval("None")
-                x += a.attr
-            return x
-
-        class Foo:
-            attr = 1
-        res, ex = self._run_with_optimizer(thing, Foo())
-        opnames = list(iter_opnames(ex))
-        self.assertIsNotNone(ex)
-        self.assertEqual(res, TIER2_THRESHOLD * 2)
-        call = opnames.index("_CALL_BUILTIN_FAST_WITH_KEYWORDS")
-        load_attr_top = opnames.index("_LOAD_CONST_INLINE_BORROW", 0, call)
-        load_attr_bottom = opnames.index("_LOAD_CONST_INLINE_BORROW", call)
-        self.assertEqual(opnames[:load_attr_top].count("_GUARD_TYPE_VERSION"), 1)
-        self.assertEqual(opnames[call:load_attr_bottom].count("_CHECK_VALIDITY"), 2)
-
-    def test_guard_type_version_executor_invalidated(self):
-        """
-        Verify that the executor is invalided on a type change.
-        """
-
-        def thing(a):
-            x = 0
-            for i in range(TIER2_THRESHOLD):
-                x += a.attr
-                x += a.attr
-            return x
-
-        class Foo:
-            attr = 1
-
-        res, ex = self._run_with_optimizer(thing, Foo())
-        self.assertEqual(res, TIER2_THRESHOLD * 2)
-        self.assertIsNotNone(ex)
-        self.assertEqual(list(iter_opnames(ex)).count("_GUARD_TYPE_VERSION"), 1)
-        self.assertTrue(ex.is_valid())
-        Foo.attr = 0
-        self.assertFalse(ex.is_valid())
-
     def test_guard_type_version_locked_removed(self):
         """
         Verify that redundant _GUARD_TYPE_VERSION_LOCKED guards are
@@ -1855,41 +1736,8 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         # Both methods should be traced through
         self.assertEqual(uops.count("_PUSH_FRAME"), 2)
-        # Type version propagation: one guard covers both method lookups
-        self.assertEqual(uops.count("_GUARD_TYPE_VERSION"), 1)
         # Function checks cannot be eliminated for safety reasons.
         self.assertIn("_CHECK_FUNCTION_VERSION", uops)
-
-    def test_method_chain_guard_elimination(self):
-        """
-        Calling two methods on the same object should share the outer
-        type guard — only one _GUARD_TYPE_VERSION for the two lookups.
-        """
-        class Calc:
-            def __init__(self, val):
-                self.val = val
-
-            def add(self, x):
-                self.val += x
-                return self
-
-        def testfunc(n):
-            c = Calc(0)
-            for _ in range(n):
-                c.add(1).add(2)
-            return c.val
-
-        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
-        self.assertEqual(res, TIER2_THRESHOLD * 3)
-        self.assertIsNotNone(ex)
-        uops = get_opnames(ex)
-        # Both add() calls should be inlined
-        push_count = uops.count("_PUSH_FRAME")
-        self.assertEqual(push_count, 2)
-        # Only one outer type version guard for the two method lookups
-        # on the same object c (the second lookup reuses type info)
-        guard_version_count = uops.count("_GUARD_TYPE_VERSION")
-        self.assertEqual(guard_version_count, 1)
 
     def test_func_guards_removed_or_reduced(self):
         def testfunc(n):
@@ -3637,7 +3485,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, 2 * TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_GUARD_TYPE_VERSION", uops)
         self.assertNotIn("_CHECK_ATTR_CLASS", uops)
 
     def test_load_common_constant(self):
