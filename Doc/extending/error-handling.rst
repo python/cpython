@@ -53,7 +53,15 @@ we can see this in action:
 
 
 ``spam_system`` returns a ``PyObject *``, so we indicate failure by returning
-``NULL``.  To expand on this, let's try to modify ``spam_system`` to raise an
+``NULL``.
+
+.. note::
+
+   Some functions in the C API return an ``int`` instead of a reference, so they
+   cannot use ``NULL`` for failure. These functions will usually return ``-1``
+   for failure, and ``0`` otherwise.
+
+To expand on this, let's try to modify ``spam_system`` to raise an
 exception if the result is non-zero:
 
 .. code-block:: c
