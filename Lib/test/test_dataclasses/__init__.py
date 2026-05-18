@@ -5293,9 +5293,11 @@ class TestKeywordArgs(unittest.TestCase):
         A = make_dataclass("A", ['a'], qualname='ClassA')
         self.assertEqual(A.__qualname__, 'ClassA')
 
-        B = make_dataclass("B", ['b'], qualname='ClassB')
-        self.assertEqual(B.__qualname__, 'ClassB')
+        B = make_dataclass("B", ['b'], qualname='module1.ClassB')
+        self.assertEqual(B.__qualname__, 'module1.ClassB')
 
+        C = make_dataclass("C", ['c'])
+        self.assertEqual(C.__qualname__, 'C')
 
 class TestZeroArgumentSuperWithSlots(unittest.TestCase):
     def test_zero_argument_super(self):
