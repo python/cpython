@@ -526,8 +526,8 @@ The available integer presentation types are:
    |         | the current locale setting to insert the appropriate     |
    |         | digit group separators. Note that the default locale is  |
    |         | not the system locale. Depending on your use case, you   |
-   |         | may wish to set :const:`~locale.LC_NUMERIC` using        |
-   |         | :func:`locale.setlocale` .                               |
+   |         | may wish to set :const:`~locale.LC_NUMERIC` with         |
+   |         | :func:`locale.setlocale` before using ``'n'``.           |
    +---------+----------------------------------------------------------+
    | None    | The same as ``'d'``.                                     |
    +---------+----------------------------------------------------------+
@@ -617,8 +617,8 @@ The available presentation types for :class:`float` and
    |         | digit group separators for the integral part of a        |
    |         | number. Note that the default locale is not the system   |
    |         | locale. Depending on your use case, you may wish to set  |
-   |         | :const:`~locale.LC_NUMERIC` using                        |
-   |         | :func:`locale.setlocale` .                               |
+   |         | :const:`~locale.LC_NUMERIC` with                         |
+   |         | :func:`locale.setlocale` before using ``'n'``.           |
    +---------+----------------------------------------------------------+
    | ``'%'`` | Percentage. Multiplies the number by 100 and displays    |
    |         | in fixed (``'f'``) format, followed by a percent sign.   |
