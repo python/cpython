@@ -1,0 +1,2 @@
+Don't change :class:`tarfile.TarInfo` type from ``AREGTYPE`` to ``DIRTYPE`` when parsing
+GNU long name or link headers.
