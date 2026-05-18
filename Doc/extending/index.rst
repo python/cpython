@@ -77,6 +77,7 @@ as part of this version of CPython.
 
 
 #. :ref:`first-extension-module`
+#. :ref:`reference-counting-intro`
 
 
 Guides for intermediate topics
