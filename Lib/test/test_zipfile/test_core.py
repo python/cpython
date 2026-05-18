@@ -1959,6 +1959,28 @@ class OtherTests(unittest.TestCase):
             self.assertEqual(zf.filelist[0].filename, "foo.txt")
             self.assertEqual(zf.filelist[1].filename, "\xf6.txt")
 
+    @requires_subprocess()
+    def test_add_comment_to_cp437_zip(self):
+        """GH-84353 follow-on regression test."""
+        import shutil
+        if subprocess.call(["unzip", "-v"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL):
+            self.skipTest("InfoZip unzip command not in PATH")
+        fname = findfile('cp437-local-header.zip', subdir='archivetestdata')
+        with temp_dir() as tmpdir:
+            test_zip = shutil.copy(fname, tmpdir)
+            with zipfile.ZipFile(test_zip, "a", metadata_encoding='cp437') as zipfp:
+                self.assertEqual(['«HOTDOG»'], zipfp.namelist())
+                zipfp.comment = b"bun"
+            # When the bug is present, test_zip is now corrupt.
+            # Its local header and central header differ.
+            with zipfile.ZipFile(test_zip, "r") as zipfp:
+                self.assertEqual(['«HOTDOG»'], zipfp.namelist())
+                # unzip -t validates local and central header consistency.
+                # TODO: Could we write our own code to check the same thing
+                # using zipfile internals?  External validation is nice.
+                unzip = subprocess.run(["unzip", "-t", test_zip], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                self.assertEqual(unzip.returncode, 0, msg=unzip.stdout.decode())
+
     def create_zipfile_with_extra_data(self, filename, extra_data_name):
         with zipfile.ZipFile(TESTFN, mode='w') as zf:
             filename_encoded = filename.encode("utf-8")
