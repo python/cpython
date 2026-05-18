@@ -370,15 +370,19 @@ in both C and ``libffi``, the following complex types are available:
    * - :class:`c_float_complex`
      - :c:expr:`float complex`
      - :py:class:`complex`
-     - ``'F'``
+     - ``'Zf'``
    * - :class:`c_double_complex`
      - :c:expr:`double complex`
      - :py:class:`complex`
-     - ``'D'``
+     - ``'Zd'``
    * - :class:`c_longdouble_complex`
      - :c:expr:`long double complex`
      - :py:class:`complex`
-     - ``'G'``
+     - ``'Zg'``
+
+.. versionchanged:: 3.15
+   The :py:attr:`~_SimpleCData._type_` types ``F``, ``D`` and ``G`` have been
+   replaced with ``Zf``, ``Zd`` and ``Zg``.
 
 
 All these types can be created by calling them with an optional initializer of
@@ -2568,8 +2572,7 @@ Fundamental data types
 
    .. attribute:: _type_
 
-      Class attribute that contains an internal type code, as a
-      single-character string.
+      Class attribute that contains an internal type code, as a string.
       See :ref:`ctypes-fundamental-data-types` for a summary.
 
       Types marked \* in the summary may be (or always are) aliases of a
@@ -2583,7 +2586,7 @@ Fundamental data types
 
       .. seealso::
 
-         The :mod:`array` and :ref:`struct <format-characters>` modules,
+         The :mod:`array` and :ref:`struct <type-codes>` modules,
          as well as third-party modules like `numpy <https://numpy.org/doc/stable/reference/arrays.interface.html#object.__array_interface__>`__,
          use similar -- but slightly different -- type codes.
 

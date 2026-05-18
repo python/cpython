@@ -10,6 +10,7 @@ import shutil
 import re
 import warnings
 import stat
+import time
 
 import unittest
 import unittest.mock
@@ -1828,6 +1829,19 @@ class GzipStreamWriteTest(GzipTest, StreamWriteTest):
         payload = pathlib.Path(tmpname).read_text(encoding='latin-1')
         assert os.path.dirname(tmpname) not in payload
 
+    def test_create_with_mtime(self):
+        tarfile.open(tmpname, self.mode, mtime=0).close()
+        with self.open(tmpname, 'r') as fobj:
+            fobj.read()
+            self.assertEqual(fobj.mtime, 0)
+
+    def test_create_without_mtime(self):
+        before = int(time.time())
+        tarfile.open(tmpname, self.mode).close()
+        after = int(time.time())
+        with self.open(tmpname, 'r') as fobj:
+            fobj.read()
+            self.assertTrue(before <= fobj.mtime <= after)
 
 class Bz2StreamWriteTest(Bz2Test, StreamWriteTest):
     decompressor = bz2.BZ2Decompressor if bz2 else None
@@ -2134,6 +2148,19 @@ class GzipCreateTest(GzipTest, CreateTest):
         with tarfile.open(tmpname, 'r:gz', compresslevel=1) as tobj:
             pass
 
+    def test_create_with_mtime(self):
+        tarfile.open(tmpname, self.mode, mtime=0).close()
+        with self.open(tmpname, 'rb') as fobj:
+            fobj.read()
+            self.assertEqual(fobj.mtime, 0)
+
+    def test_create_without_mtime(self):
+        before = int(time.time())
+        tarfile.open(tmpname, self.mode).close()
+        after = int(time.time())
+        with self.open(tmpname, 'r') as fobj:
+            fobj.read()
+            self.assertTrue(before <= fobj.mtime <= after)
 
 class Bz2CreateTest(Bz2Test, CreateTest):
 
@@ -3178,7 +3205,11 @@ def root_is_uid_gid_0():
         import pwd, grp
     except ImportError:
         return False
-    if pwd.getpwuid(0)[0] != 'root':
+    try:
+        if pwd.getpwuid(0)[0] != 'root':
+            return False
+    except KeyError:
+        # On Cygwin, there is no root user (uid 0)
         return False
     if grp.getgrgid(0)[0] != 'root':
         return False
@@ -3884,10 +3915,19 @@ class TestExtractionFilters(unittest.TestCase):
                     + "which is outside the destination")
 
             with self.check_context(arc.open(), 'data'):
-                self.expect_exception(
-                    tarfile.LinkOutsideDestinationError,
-                    """'parent' would link to ['"].*outerdir['"], """
-                    + "which is outside the destination")
+                if self.dotdot_resolves_early:
+                    # 'current/../..' normalises to '..', which is rejected.
+                    self.expect_exception(
+                        tarfile.LinkOutsideDestinationError,
+                        """'parent' would link to ['"].*outerdir['"], """
+                        + "which is outside the destination")
+                else:
+                    # 'current/..' normalises to '.'; the rewritten link is
+                    # created and 'parent/evil' lands harmlessly inside the
+                    # destination.
+                    self.expect_file('current', symlink_to='.')
+                    self.expect_file('parent', symlink_to='.')
+                    self.expect_file('evil')
 
         else:
             # No symlink support. The symlinks are ignored.
@@ -3949,6 +3989,9 @@ class TestExtractionFilters(unittest.TestCase):
                                  check_flag=False)):
             if sys.platform == 'win32':
                 self.expect_exception((FileNotFoundError, FileExistsError))
+            elif sys.platform == 'cygwin':
+                exc = self.expect_exception(OSError)
+                self.assertEqual(exc.errno, errno.ELOOP)
             elif self.raised_exception:
                 # Cannot symlink/hardlink: tarfile falls back to getmember()
                 self.expect_exception(KeyError)
@@ -3970,7 +4013,8 @@ class TestExtractionFilters(unittest.TestCase):
                         # 206: ERROR_FILENAME_EXCED_RANGE
                         self.assertIn(exc.winerror, (3, 5, 206))
                     else:
-                        self.assertEqual(exc.errno, errno.ENAMETOOLONG)
+                        self.assertIn(exc.errno,
+                                      (errno.ENAMETOOLONG, errno.ELOOP))
 
     @symlink_test
     def test_parent_symlink2(self):
@@ -4146,6 +4190,76 @@ class TestExtractionFilters(unittest.TestCase):
                     "'tmp/../../moo' would be extracted to "
                     + """['"].*moo['"], which is outside the """
                     + "destination")
+
+    @symlink_test
+    @os_helper.skip_unless_symlink
+    def test_normpath_realpath_mismatch(self):
+        # The link-target check must validate the value that will actually
+        # be written to disk (the normalised linkname), not the original.
+        # Here 'a' is a symlink to a deep nonexistent path, so realpath()
+        # of 'a/../../...' stays inside the destination while normpath()
+        # collapses 'a/..' lexically and escapes.
+        depth = len(self.destdir.parts) + 5
+        deep = '/'.join(f'p{i}' for i in range(depth))
+        sneaky = 'a/' + '../' * depth + 'flag'
+        for kind in 'symlink_to', 'hardlink_to':
+            with self.subTest(kind):
+                with ArchiveMaker() as arc:
+                    arc.add('a', symlink_to=deep)
+                    arc.add('escape', **{kind: sneaky})
+                with self.check_context(arc.open(), 'data'):
+                    self.expect_exception(
+                        tarfile.LinkOutsideDestinationError)
+
+    @symlink_test
+    @os_helper.skip_unless_symlink
+    def test_symlink_trailing_slash(self):
+        # A trailing slash on a symlink member's name must not cause the
+        # link target to be resolved relative to the wrong directory.
+        with ArchiveMaker() as arc:
+            t = tarfile.TarInfo('x/')
+            t.type = tarfile.SYMTYPE
+            t.linkname = '..'
+            arc.tar_w.addfile(t)
+            arc.add('x/escaped', content='hi')
+
+        with self.check_context(arc.open(), 'data'):
+            self.expect_exception(tarfile.LinkOutsideDestinationError)
+
+    @symlink_test
+    @os_helper.skip_unless_symlink
+    def test_link_at_destination(self):
+        # A link member whose name resolves to the destination directory
+        # itself must be rejected: otherwise the destination is replaced
+        # by a symlink and later members can be redirected through it.
+        for name in '', '.', './':
+            with ArchiveMaker() as arc:
+                t = tarfile.TarInfo(name)
+                t.type = tarfile.SYMTYPE
+                t.linkname = '.'
+                arc.tar_w.addfile(t)
+
+            with self.check_context(arc.open(), 'data'):
+                self.expect_exception(tarfile.OutsideDestinationError)
+
+    @symlink_test
+    @os_helper.skip_unless_symlink
+    def test_empty_name_symlink_chain(self):
+        # Regression test for a chain of empty-named symlinks that
+        # incrementally redirects the destination outwards.
+        with ArchiveMaker() as arc:
+            for name, target in [('', ''), ('a/', '..'),
+                                 ('', 'dummy'), ('', 'a'),
+                                 ('b/', '..'),
+                                 ('', 'dummy'), ('', 'a/b')]:
+                t = tarfile.TarInfo(name)
+                t.type = tarfile.SYMTYPE
+                t.linkname = target
+                arc.tar_w.addfile(t)
+            arc.add('escaped', content='hi')
+
+        with self.check_context(arc.open(), 'data'):
+            self.expect_exception(tarfile.FilterError)
 
     @symlink_test
     def test_deep_symlink(self):

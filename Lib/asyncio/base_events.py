@@ -31,6 +31,7 @@ import time
 import traceback
 import warnings
 import weakref
+import inspect
 
 try:
     import ssl
@@ -840,7 +841,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
     def _check_callback(self, callback, method):
         if (coroutines.iscoroutine(callback) or
-                coroutines._iscoroutinefunction(callback)):
+                inspect.iscoroutinefunction(callback)):
             raise TypeError(
                 f"coroutines cannot be used with {method}()")
         if not callable(callback):
