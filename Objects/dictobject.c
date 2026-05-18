@@ -8233,7 +8233,7 @@ _shuffle_bits(Py_uhash_t h)
 static Py_hash_t
 frozendict_pair_hash(Py_hash_t key_hash, PyObject *value)
 {
-    assert(key_hash != (Py_uhash_t)-1);
+    assert(key_hash != -1);
 
     const Py_ssize_t len = 2;
     Py_uhash_t acc = _PyTuple_HASH_XXPRIME_5;
