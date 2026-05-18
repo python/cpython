@@ -1,3 +1,0 @@
-Fix infinite recursion in :class:`collections.defaultdict` ``__repr__``
-when a ``defaultdict`` contains itself. Based on analysis by KowalskiThomas
-in :gh:`145492`.

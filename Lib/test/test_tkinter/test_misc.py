@@ -1,5 +1,7 @@
 import collections.abc
 import functools
+import platform
+import sys
 import unittest
 import tkinter
 from tkinter import TclError
@@ -578,12 +580,27 @@ class WmTest(AbstractTkTest, unittest.TestCase):
 
     def test_wm_iconbitmap(self):
         t = tkinter.Toplevel(self.root)
+        patchlevel = get_tk_patchlevel(t)
+
+        if (
+            t._windowingsystem == 'aqua'
+            and sys.platform == 'darwin'
+            and platform.machine() == 'x86_64'
+            and platform.mac_ver()[0].startswith('26.')
+            and (
+                patchlevel[:3] <= (8, 6, 17)
+                or (9, 0) <= patchlevel[:3] <= (9, 0, 3)
+            )
+        ):
+            # https://github.com/python/cpython/issues/146531
+            # Tk bug 4a2070f0d3a99aa412bc582d386d575ca2f37323
+            self.skipTest('wm iconbitmap hangs on macOS 26 Intel')
+
         self.assertEqual(t.wm_iconbitmap(), '')
         t.wm_iconbitmap('hourglass')
         bug = False
         if t._windowingsystem == 'aqua':
             # Tk bug 13ac26b35dc55f7c37f70b39d59d7ef3e63017c8.
-            patchlevel = get_tk_patchlevel(t)
             if patchlevel < (8, 6, 17) or (9, 0) <= patchlevel < (9, 0, 2):
                 bug = True
         if not bug:

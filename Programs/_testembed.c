@@ -10,6 +10,7 @@
 #include "pycore_runtime.h"       // _PyRuntime
 #include "pycore_lock.h"          // PyEvent
 #include "pycore_pythread.h"      // PyThread_start_joinable_thread()
+#include "pycore_pystate.h"       // _PyInterpreterState_GuardCountdown
 #include "pycore_import.h"        // _PyImport_FrozenBootstrap
 #include <inttypes.h>
 #include <stdio.h>
@@ -2000,6 +2001,8 @@ static int test_init_main(void)
     config._init_main = 0;
     init_from_config_clear(&config);
 
+    assert(Py_IsInitialized() == 0);
+
     /* sys.stdout don't exist yet: it is created by _Py_InitializeMain() */
     int res = PyRun_SimpleString(
         "import sys; "
@@ -2201,6 +2204,52 @@ static int test_init_in_background_thread(void)
         return -1;
     }
     return PyThread_join_thread(handle);
+}
+
+/* gh-146302: Py_IsInitialized() must not return true during site import. */
+static int _initialized_during_site_import = -1;  /* -1 = not observed */
+
+static int hook_check_initialized_on_site_import(
+    const char *event, PyObject *args, void *userData)
+{
+    if (strcmp(event, "import") == 0 && args != NULL) {
+        PyObject *name = PyTuple_GetItem(args, 0);
+        if (name != NULL && PyUnicode_Check(name)
+            && PyUnicode_CompareWithASCIIString(name, "site") == 0
+            && _initialized_during_site_import == -1)
+        {
+            _initialized_during_site_import = Py_IsInitialized();
+        }
+    }
+    return 0;
+}
+
+static int test_isinitialized_false_during_site_import(void)
+{
+    _initialized_during_site_import = -1;
+
+    /* Register audit hook before initialization */
+    PySys_AddAuditHook(hook_check_initialized_on_site_import, NULL);
+
+    _testembed_initialize();
+
+    if (_initialized_during_site_import == -1) {
+        error("audit hook never observed site import");
+        Py_Finalize();
+        return 1;
+    }
+    if (_initialized_during_site_import != 0) {
+        error("Py_IsInitialized() was true during site import");
+        Py_Finalize();
+        return 1;
+    }
+    if (!Py_IsInitialized()) {
+        error("Py_IsInitialized() was false after Py_Initialize()");
+        return 1;
+    }
+
+    Py_Finalize();
+    return 0;
 }
 
 
@@ -2622,6 +2671,214 @@ test_gilstate_after_finalization(void)
     return PyThread_detach_thread(handle);
 }
 
+
+const char *THREAD_CODE = \
+    "import time\n"
+    "time.sleep(0.2)\n"
+    "def fib(n):\n"
+    "  if n <= 1:\n"
+    "    return n\n"
+    "  else:\n"
+    "    return fib(n - 1) + fib(n - 2)\n"
+    "fib(10)";
+
+typedef struct {
+    void *argument;
+    int done;
+    PyEvent event;
+} ThreadData;
+
+static void
+do_tstate_ensure(void *arg)
+{
+    ThreadData *data = (ThreadData *)arg;
+    PyThreadStateToken *tokens[4];
+    PyInterpreterGuard *guard = data->argument;
+    tokens[0] = PyThreadState_Ensure(guard);
+    tokens[1] = PyThreadState_Ensure(guard);
+    tokens[2] = PyThreadState_Ensure(guard);
+    PyGILState_STATE gstate = PyGILState_Ensure();
+    tokens[3] = PyThreadState_Ensure(guard);
+    assert(tokens[0] != NULL);
+    assert(tokens[1] != NULL);
+    assert(tokens[2] != NULL);
+    assert(tokens[3] != NULL);
+    int res = PyRun_SimpleString(THREAD_CODE);
+    assert(res == 0);
+    PyThreadState_Release(tokens[3]);
+    PyGILState_Release(gstate);
+    PyThreadState_Release(tokens[2]);
+    PyThreadState_Release(tokens[1]);
+    PyThreadState_Release(tokens[0]);
+    PyInterpreterGuard_Close(guard);
+    _Py_atomic_store_int(&data->done, 1);
+}
+
+static int
+test_thread_state_ensure(void)
+{
+    _testembed_initialize();
+    assert(_PyInterpreterState_GuardCountdown(_PyInterpreterState_GET()) == 0);
+    PyThread_handle_t handle;
+    PyThread_ident_t ident;
+    PyInterpreterGuard *guard = PyInterpreterGuard_FromCurrent();
+    assert(guard != NULL);
+    ThreadData data = { guard };
+    if (PyThread_start_joinable_thread(do_tstate_ensure, &data,
+                                       &ident, &handle) < 0) {
+        PyInterpreterGuard_Close(guard);
+        return -1;
+    }
+    // We hold an interpreter guard, so we don't
+    // have to worry about the interpreter shutting down before
+    // we finalize.
+    Py_Finalize();
+    assert(_Py_atomic_load_int(&data.done) == 1);
+    PyThread_join_thread(handle);
+    return 0;
+}
+
+static int
+test_main_interpreter_view(void)
+{
+    PyInterpreterView *view = PyInterpreterView_FromMain();
+    assert(view != NULL);
+    // These should fail -- the main interpreter is not available yet.
+    assert(PyInterpreterGuard_FromView(view) == NULL);
+    assert(PyThreadState_EnsureFromView(view) == NULL);
+
+    _testembed_initialize();
+    assert(_PyInterpreterState_GuardCountdown(_PyInterpreterState_GET()) == 0);
+    // Main interpreter is initialized and ready at this point.
+
+    PyInterpreterGuard *guard = PyInterpreterGuard_FromView(view);
+    assert(guard != NULL);
+    PyInterpreterGuard_Close(guard);
+
+    Py_Finalize();
+
+    // We shouldn't be able to get locks for the interpreter now
+    guard = PyInterpreterGuard_FromView(view);
+    assert(guard == NULL);
+
+    PyInterpreterView_Close(view);
+
+    return 0;
+}
+
+static void
+do_tstate_ensure_from_view(void *arg)
+{
+    ThreadData *data = (ThreadData *)arg;
+    PyInterpreterView *view = data->argument;
+    assert(view != NULL);
+    PyThreadStateToken *token = PyThreadState_EnsureFromView(view);
+    assert(token != NULL);
+    _PyEvent_Notify(&data->event);
+    int res = PyRun_SimpleString(THREAD_CODE);
+    assert(res == 0);
+    _Py_atomic_store_int(&data->done, 1);
+    PyThreadState_Release(token);
+}
+
+static int
+test_thread_state_ensure_from_view(void)
+{
+    _testembed_initialize();
+    assert(_PyInterpreterState_GuardCountdown(_PyInterpreterState_GET()) == 0);
+    PyThread_handle_t handle;
+    PyThread_ident_t ident;
+    PyInterpreterView *view = PyInterpreterView_FromCurrent();
+    assert(view != NULL);
+
+    ThreadData data = { view };
+    if (PyThread_start_joinable_thread(do_tstate_ensure_from_view, &data,
+                                       &ident, &handle) < 0) {
+        PyInterpreterView_Close(view);
+        return -1;
+    }
+
+    PyEvent_Wait(&data.event);
+    Py_Finalize();
+    assert(_Py_atomic_load_int(&data.done) == 1);
+    PyThread_join_thread(handle);
+    return 0;
+}
+
+#define NUM_THREADS 4
+
+static void
+stress_func(void *arg)
+{
+    PyInterpreterGuard *guard = (PyInterpreterGuard *)arg;
+
+    for (int i = 0; i < 1000; ++i) {
+        assert(guard != NULL);
+        PyThreadStateToken *token = PyThreadState_Ensure(guard);
+        assert(token != NULL);
+
+        PyGILState_STATE gstate = PyGILState_Ensure();
+
+        PyInterpreterView *view = PyInterpreterView_FromCurrent();
+        assert(view != NULL);
+
+        PyThreadStateToken *token2 = PyThreadState_EnsureFromView(view);
+        assert(token2 != NULL);
+        PyThreadState_Release(token2);
+
+        PyGILState_Release(gstate);
+
+        PyThreadState_Release(token);
+
+        PyInterpreterGuard_Close(guard);
+
+        guard = PyInterpreterGuard_FromView(view);
+        PyInterpreterView_Close(view);
+
+        if (guard == NULL) {
+            // The interpreter is shutting down. Bail out now.
+            return;
+        }
+    }
+
+    PyInterpreterGuard_Close(guard);
+}
+
+static int
+test_concurrent_finalization_stress(void)
+{
+    for (int j = 0; j < 50; ++j) {
+        _testembed_initialize();
+        assert(_PyInterpreterState_GuardCountdown(_PyInterpreterState_GET()) == 0);
+        PyThread_handle_t handles[NUM_THREADS];
+        PyThread_ident_t idents[NUM_THREADS];
+        PyInterpreterGuard *guards[NUM_THREADS];
+
+        for (int i = 0; i < NUM_THREADS; ++i) {
+            guards[i] = PyInterpreterGuard_FromCurrent();
+            assert(guards[i] != NULL);
+            if (PyThread_start_joinable_thread(stress_func, guards[i], &idents[i], &handles[i]) < 0) {
+                for (int x = 0; x < i; ++x) {
+                    PyInterpreterGuard_Close(guards[x]);
+                    PyThread_detach_thread(handles[x]);
+                }
+                return -1;
+            }
+        }
+
+        Py_Finalize();
+
+        for (int i = 0; i < NUM_THREADS; ++i) {
+            PyThread_join_thread(handles[i]);
+        }
+    }
+
+    return 0;
+}
+
+#undef NUM_THREADS
+
+
 /* *********************************************************
  * List of test cases and the function that implements it.
  *
@@ -2693,6 +2950,7 @@ static struct TestCase TestCases[] = {
     {"test_init_use_frozen_modules", test_init_use_frozen_modules},
     {"test_init_main_interpreter_settings", test_init_main_interpreter_settings},
     {"test_init_in_background_thread", test_init_in_background_thread},
+    {"test_isinitialized_false_during_site_import", test_isinitialized_false_during_site_import},
 
     // Audit
     {"test_open_code_hook", test_open_code_hook},
@@ -2715,6 +2973,10 @@ static struct TestCase TestCases[] = {
     {"test_create_module_from_initfunc", test_create_module_from_initfunc},
     {"test_inittab_submodule_multiphase", test_inittab_submodule_multiphase},
     {"test_inittab_submodule_singlephase", test_inittab_submodule_singlephase},
+    {"test_thread_state_ensure", test_thread_state_ensure},
+    {"test_main_interpreter_view", test_main_interpreter_view},
+    {"test_thread_state_ensure_from_view", test_thread_state_ensure_from_view},
+    {"test_concurrent_finalization_stress", test_concurrent_finalization_stress},
     {NULL, NULL}
 };
 

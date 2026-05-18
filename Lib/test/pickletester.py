@@ -3100,6 +3100,51 @@ class AbstractPickleTests:
                         self.assertIsNot(b2a, b2b)
                         self.assert_is_copy(b2a, b2b)
 
+    def test_picklebuffer_memoization(self):
+        if self.py_version < (3, 8):
+            self.skipTest('not supported in Python < 3.8')
+        array_types = [bytes, bytearray]
+        for proto in range(5, pickle.HIGHEST_PROTOCOL + 1):
+            for array_type in array_types:
+                for s in b'', b'xyz', b'xyz'*100:
+                    with self.subTest(proto=proto, array_type=array_type, s=s, independent=False):
+                        b = pickle.PickleBuffer(array_type(s))
+                        p = self.dumps((b, b), proto)
+                        b1, b2 = self.loads(p)
+                        self.assertIs(b1, b2)
+
+                    with self.subTest(proto=proto, array_type=array_type, s=s, independent=True):
+                        b = array_type(s)
+                        b1a = pickle.PickleBuffer(b)
+                        b2a = pickle.PickleBuffer(b)
+                        p = self.dumps((b1a, b2a), proto)
+                        b1b, b2b = self.loads(p)
+                        if array_type is not bytes:
+                            self.assertIsNot(b1b, b2b)
+                        self.assert_is_copy(b1b, b)
+                        self.assert_is_copy(b2b, b)
+
+    def test_empty_picklebuffer_memoization(self):
+        # gh-148914: Empty writable PickleBuffer memoized an empty bytearray
+        # with the id of b'' (a singleton in CPython).
+        if self.py_version < (3, 8):
+            self.skipTest('not supported in Python < 3.8')
+        for proto in range(5, pickle.HIGHEST_PROTOCOL + 1):
+            for readonly in False, True:
+                with self.subTest(proto=proto, readonly=readonly):
+                    b = b''
+                    ba = bytearray()
+                    buf = pickle.PickleBuffer(b if readonly else ba)
+                    p = self.dumps((buf, b, ba), proto)
+                    buf, b, ba = self.loads(p)
+                    array_type = bytes if readonly else bytearray
+                    self.assertIsInstance(buf, array_type)
+                    self.assertIsInstance(b, bytes)
+                    self.assertIsInstance(ba, bytearray)
+                    self.assertEqual(buf, b'')
+                    self.assertEqual(b, b'')
+                    self.assertEqual(ba, b'')
+
     def test_ints(self):
         for proto in protocols:
             n = sys.maxsize
@@ -3244,6 +3289,7 @@ class AbstractPickleTests:
             'BuiltinImporter': (3, 3),
             'str': (3, 4),  # not interoperable with Python < 3.4
             'frozendict': (3, 15),
+            'sentinel': (3, 15),
         }
         for t in builtins.__dict__.values():
             if isinstance(t, type) and not issubclass(t, BaseException):
@@ -4555,13 +4601,12 @@ class AbstractPickleTests:
                     self.assertIn(expected, str(e))
 
     def fast_save_enter(self, create_data, minprotocol=0):
-        # gh-146059: Check that fast_save() is called when
+        # gh-146059: Check that fast_save_leave() is called when
         # fast_save_enter() is called.
         if not hasattr(self, "pickler"):
             self.skipTest("need Pickler class")
 
         data = [create_data(i) for i in range(FAST_NESTING_LIMIT * 2)]
-        data = {"key": data}
         protocols = range(minprotocol, pickle.HIGHEST_PROTOCOL + 1)
         for proto in protocols:
             with self.subTest(proto=proto):
@@ -4595,18 +4640,17 @@ class AbstractPickleTests:
     def test_fast_save_enter_dict(self):
         self.fast_save_enter(lambda i: {"key": i})
 
-    def deep_nested_struct(self, seed, create_nested,
+    def deep_nested_struct(self, create_nested,
                            minprotocol=0, compare_equal=True,
                            depth=FAST_NESTING_LIMIT * 2):
-        # gh-146059: Check that fast_save() is called when
+        # gh-146059: Check that fast_save_leave() is called when
         # fast_save_enter() is called.
         if not hasattr(self, "pickler"):
             self.skipTest("need Pickler class")
 
-        data = seed
+        data = None
         for i in range(depth):
             data = create_nested(data)
-        data = {"key": data}
         protocols = range(minprotocol, pickle.HIGHEST_PROTOCOL + 1)
         for proto in protocols:
             with self.subTest(proto=proto):
@@ -4622,29 +4666,27 @@ class AbstractPickleTests:
                     self.assertEqual(data2, data)
 
     def test_deep_nested_struct_tuple(self):
-        self.deep_nested_struct((1,), lambda data: (data,))
+        self.deep_nested_struct(lambda data: (data,))
 
     def test_deep_nested_struct_list(self):
-        self.deep_nested_struct([1], lambda data: [data])
+        self.deep_nested_struct(lambda data: [data])
 
     def test_deep_nested_struct_frozenset(self):
-        self.deep_nested_struct(frozenset((1,)),
-                                lambda data: frozenset((1, data)))
+        self.deep_nested_struct(lambda data: frozenset((1, data)))
 
     def test_deep_nested_struct_set(self):
-        self.deep_nested_struct({1}, lambda data: {K(data)},
+        self.deep_nested_struct(lambda data: {K(data)},
                                 depth=FAST_NESTING_LIMIT+1,
                                 compare_equal=False)
 
     def test_deep_nested_struct_frozendict(self):
         if self.py_version < (3, 15):
             self.skipTest('need frozendict')
-        self.deep_nested_struct(frozendict(x=1),
-                                lambda data: frozendict(x=data),
+        self.deep_nested_struct(lambda data: frozendict(x=data),
                                 minprotocol=2)
 
     def test_deep_nested_struct_dict(self):
-        self.deep_nested_struct({'x': 1}, lambda data: {'x': data})
+        self.deep_nested_struct(lambda data: {'x': data})
 
 
 class BigmemPickleTests:

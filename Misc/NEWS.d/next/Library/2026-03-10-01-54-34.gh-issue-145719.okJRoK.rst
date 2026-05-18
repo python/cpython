@@ -1,1 +1,0 @@
-Add ``application/efi`` MIME type to :mod:`mimetypes`.
