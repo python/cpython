@@ -17,6 +17,13 @@ This module provides an interface for parsing TOML 1.0.0 (Tom's Obvious Minimal
 Language, `https://toml.io <https://toml.io/en/>`_). This module does not
 support writing TOML.
 
+.. warning::
+
+   Be cautious when parsing data from untrusted sources.
+   A malicious TOML string may cause the decoder to consume considerable
+   CPU and memory resources.
+   Limiting the size of data to be parsed is recommended.
+
 .. seealso::
 
     The :pypi:`Tomli-W package <tomli-w>`

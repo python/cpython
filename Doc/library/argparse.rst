@@ -1828,7 +1828,7 @@ FileType objects
       Namespace(infile=<_io.TextIOWrapper name='<stdin>' encoding='UTF-8'>)
 
    .. versionchanged:: 3.4
-      Added the *encodings* and *errors* parameters.
+      Added the *encoding* and *errors* parameters.
 
 
 Argument groups
@@ -1887,6 +1887,9 @@ Argument groups
 
    Note that any arguments not in your user-defined groups will end up back
    in the usual "positional arguments" and "optional arguments" sections.
+
+   Within each argument group, arguments are displayed in help output in the
+   order in which they are added.
 
    .. versionchanged:: 3.11
     Calling :meth:`add_argument_group` on an argument group is deprecated.

@@ -1880,7 +1880,7 @@ successive matches::
 
     class Token(NamedTuple):
         type: str
-        value: str
+        value: int | float | str
         line: int
         column: int
 

@@ -8,7 +8,7 @@ plugins {
 
 val ANDROID_DIR = file("../..")
 val PYTHON_DIR = ANDROID_DIR.parentFile!!
-val PYTHON_CROSS_DIR = file("$PYTHON_DIR/cross-build")
+val PYTHON_CROSS_DIR = file(System.getenv("CROSS_BUILD_DIR") ?: "$PYTHON_DIR/cross-build")
 val inSourceTree = (
     ANDROID_DIR.name == "Android" && file("$PYTHON_DIR/pyconfig.h.in").exists()
 )
