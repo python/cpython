@@ -584,7 +584,10 @@ extern "C" {
 #endif
 
 #ifndef _Py_NO_SANITIZE_ADDRESS
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
 #  define _Py_NO_SANITIZE_ADDRESS
+#pragma GCC diagnostic pop
 #endif
 #ifndef _Py_NO_SANITIZE_THREAD
 #  define _Py_NO_SANITIZE_THREAD
