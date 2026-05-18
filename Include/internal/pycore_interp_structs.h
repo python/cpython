@@ -349,7 +349,14 @@ struct _import_state {
     int lazy_imports_mode;
     PyObject *lazy_imports_filter;
     PyObject *lazy_importing_modules;
+    // The set stored in sys.lazy_modules if values that have been
+    // lazily imported. This value is only for debugging/introspection
+    // purposes and is not used at runtime.
     PyObject *lazy_modules;
+    // Submodules that have been imported lazily from modules which have
+    // been imported lazily. When the module is imported we need to add
+    // a LazyImportObject which refers to the submodule on the module.
+    PyObject *lazy_pending_submodules;
 #ifdef Py_GIL_DISABLED
     PyMutex lazy_mutex;
 #endif
