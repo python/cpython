@@ -431,8 +431,6 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
       will return ``False`` in that case. See :ref:`instance-methods` in the
       language reference for details.
 
-      For static methods (:deco:`staticmethod`), this will always return ``False``.
-
 
 .. function:: ispackage(object)
 
@@ -449,16 +447,17 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    .. note::
 
       Accessing an instance method through the class (rather than an instance)
-      returns a plain :term:`function`, not a bound method, so :func:`isfunction`
-      will return ``True`` in that case. See :ref:`instance-methods` in the
+      returns a bound method, not a :term:`function`, so :func:`isfunction`
+      will return ``False`` in that case. See :ref:`instance-methods` in the
       language reference for details.
-
-      For static methods (:deco:`staticmethod`), this will always return ``True``.
 
 
 .. function:: isgeneratorfunction(object)
 
    Return ``True`` if the object is a Python generator function.
+
+   It also returns ``True`` for bound methods created from Python generator functions
+   (see :ref:`typesmethods` for more information).
 
    .. versionchanged:: 3.8
       Functions wrapped in :func:`functools.partial` now return ``True`` if the
@@ -468,15 +467,6 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
       Functions wrapped in :func:`functools.partialmethod` now return ``True``
       if the wrapped function is a Python generator function.
 
-   .. note::
-
-      Accessing an instance method through the class (rather than an instance)
-      returns a plain :term:`function`, not a bound method, so :func:`isgeneratorfunction`
-      will return ``True`` if it is a generator function. See :ref:`instance-methods`
-      in the language reference for details.
-
-      For a static method (:deco:`staticmethod`), this will return ``True`` if it
-      is a generator function.
 
 .. function:: isgenerator(object)
 
@@ -503,16 +493,6 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    .. versionchanged:: 3.13
       Functions wrapped in :func:`functools.partialmethod` now return ``True``
       if the wrapped function is a :term:`coroutine function`.
-
-   .. note::
-
-      Accessing an instance method through the class (rather than an instance)
-      returns a plain :term:`function`, not a bound method, so :func:`iscoroutinefunction`
-      will return ``True`` if it is a coroutine function. See :ref:`instance-methods`
-      in the language reference for details.
-
-      For a static method (:deco:`staticmethod`), this will return ``True`` if it
-      is a coroutine function.
 
 
 .. function:: markcoroutinefunction(func)
@@ -584,15 +564,6 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
       Functions wrapped in :func:`functools.partialmethod` now return ``True``
       if the wrapped function is a :term:`asynchronous generator` function.
 
-   .. note::
-
-      Accessing an instance method through the class (rather than an instance)
-      returns a plain :term:`function`, not a bound method, so :func:`isasyncgenfunction`
-      will return ``True`` if it is an asynchronous generator function. See
-      :ref:`instance-methods` in the language reference for details.
-
-      For a static method (:deco:`staticmethod`), this will return ``True`` if it
-      is an asynchronous generator function.
 
 .. function:: isasyncgen(object)
 
