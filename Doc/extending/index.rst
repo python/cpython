@@ -46,6 +46,8 @@ source file by including the header ``"Python.h"``.
    :hidden:
 
    first-extension-module.rst
+   reference-counting.rst
+   error-handling.rst
    extending.rst
    newtypes_tutorial.rst
    newtypes.rst
