@@ -434,7 +434,7 @@ Module contents
    of the dataclass is set to that value.
    By default, it is set to the module name of the caller.
 
-   If *qualname* is defined, the :attr:`!__qualname__` attribute of the dataclass
+   If *qualname* is defined, the :attr:`~type.__qualname__` attribute of the dataclass
    is set to that value. By default, it is set to the value passed to *cls_name*.
 
    The *decorator* parameter is a callable that will be used to create the dataclass.
