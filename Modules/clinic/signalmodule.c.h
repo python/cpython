@@ -600,7 +600,7 @@ PyDoc_STRVAR(signal_sigtimedwait__doc__,
 "\n"
 "Like sigwaitinfo(), but with a timeout.\n"
 "\n"
-"The timeout is specified in seconds, with floating-point numbers allowed.");
+"The timeout is specified in seconds, rounded up to nanoseconds.");
 
 #define SIGNAL_SIGTIMEDWAIT_METHODDEF    \
     {"sigtimedwait", _PyCFunction_CAST(signal_sigtimedwait), METH_FASTCALL, signal_sigtimedwait__doc__},
@@ -794,4 +794,4 @@ exit:
 #ifndef SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
     #define SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
 #endif /* !defined(SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF) */
-/*[clinic end generated code: output=37ae8ebeae4178fa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=42e20d118435d7fa input=a9049054013a1b77]*/

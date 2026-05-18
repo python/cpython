@@ -189,6 +189,11 @@ zlib_decompress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
             goto exit;
         }
         bufsize = ival;
+        if (bufsize < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "bufsize cannot be negative");
+            goto exit;
+        }
     }
 skip_optional_pos:
     return_value = zlib_decompress_impl(module, &data, wbits, bufsize);
@@ -205,7 +210,7 @@ exit:
 PyDoc_STRVAR(zlib_compressobj__doc__,
 "compressobj($module, /, level=Z_DEFAULT_COMPRESSION, method=DEFLATED,\n"
 "            wbits=MAX_WBITS, memLevel=DEF_MEM_LEVEL,\n"
-"            strategy=Z_DEFAULT_STRATEGY, zdict=None)\n"
+"            strategy=Z_DEFAULT_STRATEGY, zdict=<unrepresentable>)\n"
 "--\n"
 "\n"
 "Return a compressor object.\n"
@@ -567,6 +572,11 @@ zlib_Decompress_decompress(PyObject *self, PyTypeObject *cls, PyObject *const *a
             goto exit;
         }
         max_length = ival;
+        if (max_length < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "max_length cannot be negative");
+            goto exit;
+        }
     }
 skip_optional_pos:
     return_value = zlib_Decompress_decompress_impl((compobject *)self, cls, &data, max_length);
@@ -1392,4 +1402,4 @@ exit:
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=59184b81fea41d3d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=13627e14206d3552 input=a9049054013a1b77]*/

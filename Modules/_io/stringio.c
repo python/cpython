@@ -111,7 +111,7 @@ resize_buffer(stringio *self, size_t size)
         alloc = size + 1;
     }
 
-    if (alloc > PY_SIZE_MAX / sizeof(Py_UCS4))
+    if (alloc > SIZE_MAX / sizeof(Py_UCS4))
         goto overflow;
     new_buf = (Py_UCS4 *)PyMem_Realloc(self->buf, alloc * sizeof(Py_UCS4));
     if (new_buf == NULL) {
@@ -1094,7 +1094,7 @@ static PyType_Slot stringio_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec stringio_spec = {
+PyType_Spec _Py_stringio_spec = {
     .name = "_io.StringIO",
     .basicsize = sizeof(stringio),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
