@@ -472,10 +472,9 @@ of a number respectively. It can be one of the following:
 |         | this option is not supported.                            |
 +---------+----------------------------------------------------------+
 
-For a locale-aware separator, use the ``'n'`` presentation type instead.
-Note that the locale setting for numeric values must first be set using
-the :mod:`locale` module, for example,
-``locale.setlocale(locale.LC_NUMERIC, 'en_US')``.
+For a locale-aware separator, use the ``'n'``
+:ref:`float presentation type <n-format-float>` or
+:ref:`integer presentation type <n-format-integer>` instead.
 
 .. versionchanged:: 3.1
    Added the ``','`` option (see also :pep:`378`).
@@ -521,12 +520,14 @@ The available integer presentation types are:
    |         | In case ``'#'`` is specified, the prefix ``'0x'`` will   |
    |         | be upper-cased to ``'0X'`` as well.                      |
    +---------+----------------------------------------------------------+
-   | ``'n'`` | Number. This is the same as ``'d'``, except that it uses |
+   | ``'n'`` | .. _n-format-integer:                                    |
+   |         |                                                          |
+   |         | Number. This is the same as ``'d'``, except that it uses |
    |         | the current locale setting to insert the appropriate     |
    |         | digit group separators. Note that the default locale is  |
    |         | not the system locale. Depending on your use case, you   |
-   |         | may wish to set ``LC_NUMERIC`` (see the :mod:`locale`    |
-   |         | module for more information).                            |
+   |         | may wish to set :const:`~locale.LC_NUMERIC` using        |
+   |         | :func:`locale.setlocale` .                               |
    +---------+----------------------------------------------------------+
    | None    | The same as ``'d'``.                                     |
    +---------+----------------------------------------------------------+
@@ -609,13 +610,15 @@ The available presentation types for :class:`float` and
    |         | ``'E'`` if the number gets too large. The                |
    |         | representations of infinity and NaN are uppercased, too. |
    +---------+----------------------------------------------------------+
-   | ``'n'`` | Number. This is the same as ``'g'``, except that it uses |
+   | ``'n'`` | .. _n-format-float:                                      |
+   |         |                                                          |
+   |         | Number. This is the same as ``'g'``, except that it uses |
    |         | the current locale setting to insert the appropriate     |
    |         | digit group separators for the integral part of a        |
    |         | number. Note that the default locale is not the system   |
    |         | locale. Depending on your use case, you may wish to set  |
-   |         | ``LC_NUMERIC`` (see the :mod:`locale` module for more    |
-   |         | information).                                            |
+   |         | :const:`~locale.LC_NUMERIC` using                        |
+   |         | :func:`locale.setlocale` .                               |
    +---------+----------------------------------------------------------+
    | ``'%'`` | Percentage. Multiplies the number by 100 and displays    |
    |         | in fixed (``'f'``) format, followed by a percent sign.   |
