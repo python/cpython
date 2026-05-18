@@ -1147,7 +1147,7 @@ _PyEval_GetIter(_PyStackRef iterable, _PyStackRef *index_or_null, int yield_from
  * (prior to GCC 9, 40% performance drop), so we have to selectively disable
  * it.
  */
-#define DONT_SLP_VECTORIZE __attribute__((optimize ("no-tree-slp-vectorize")))
+#define DONT_SLP_VECTORIZE __attribute__((optimize ("no-tree-slp-vectorize", "no-omit-frame-pointer")))
 #else
 #define DONT_SLP_VECTORIZE
 #endif
