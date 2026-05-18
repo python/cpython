@@ -1202,7 +1202,7 @@ def _wrap_unbound_cached_method(ref, unbound_method, maxsize, typed):
     return wrapped
 
 
-class cached_method:
+class _cached_method:
     """
     A caching decorator for use on instance methods.
 
@@ -1215,34 +1215,30 @@ class cached_method:
     By default, this provides an infinite sized cache similar to functools.cache. Use
     *maxsize* and *typed* to set these attributes of the underlying LRU cache.
     """
-    def __init__(self, func=None, /, maxsize=None, typed=False):
-        self.func = None
-        self._maxsize = maxsize
-        self._typed = typed
+    def __init__(self, func, /, maxsize=None, typed=False):
         self._function_table = {}
         # we need a lock when initializing per-instance caches
         self._cache_init_lock = RLock()
 
-        if func is not None:
-            self.func = func
-            update_wrapper(self, func)
+        self._maxsize = maxsize
+        self._typed = typed
 
-    def __call__(self, func):
-        if self.func is not None:
-            raise TypeError(
-                "Each cached_method decorator can only apply to one function."
-            )
         self.func = func
         update_wrapper(self, func)
-        return self
+
+    def __call__(self, instance, *args, **kwargs):
+        cached_func = self._get_or_create_cached_func(instance)
+        return cached_func(*args, **kwargs)
 
     def __get__(self, instance, owner=None):
+        if instance is None:
+            return self
+        return self._get_or_create_cached_func(instance)
+
+    def _get_or_create_cached_func(self, instance):
         # similar to singledispatch(), we want to defer use of weakref until/unless it
         # is needed
         import weakref
-
-        if instance is None:
-            return self
 
         instance_id = id(instance)
 
@@ -1269,3 +1265,12 @@ class cached_method:
                     self._function_table[instance_id] = ref, cached_func
 
         return cached_func
+
+
+def cached_method(func=None, /, maxsize=None, typed=False):
+    if func is None:
+        def decorator(func):
+            return _cached_method(func, maxsize=maxsize, typed=typed)
+        return decorator
+    else:
+        return _cached_method(func, maxsize=maxsize, typed=typed)

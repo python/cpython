@@ -3843,21 +3843,31 @@ class TestCachedMethod(unittest.TestCase):
         self.assertEqual(one.add.cache_info(),
             self.module._CacheInfo(hits=0, misses=0, maxsize=None, currsize=0))
 
-    def test_reapplication_causes_type_error(self):
-        with self.assertRaisesRegex(
-            TypeError,
-            r"Each cached_method decorator can only apply to one function\.",
-        ):
-            decorator = py_functools.cached_method()
+    def test_reapplication_is_allowed(self):
+        decorator = py_functools.cached_method(maxsize=10)
 
-            class MyObject:
-                @decorator
-                def a(self):
-                    return None
+        class MyObject:
+            @decorator
+            def a(self):
+                return 1
 
-                @decorator
-                def b(self):
-                    return None
+            @decorator
+            def b(self):
+                return 2
+
+        x = MyObject()
+        self.assertEqual(x.a(), 1)
+        self.assertEqual(x.b(), 2)
+
+    def test_cached_method_under_property(self):
+        class MyObject:
+            @property
+            @py_functools.cached_method
+            def foo(self):
+                return 1
+
+        x = MyObject()
+        self.assertEqual(x.foo, 1)
 
 
 if __name__ == '__main__':
