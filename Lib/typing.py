@@ -2810,7 +2810,7 @@ T_co = TypeVar('T_co', covariant=True)  # Any type covariant containers.
 V_co = TypeVar('V_co', covariant=True)  # Any type covariant containers.
 VT_co = TypeVar('VT_co', covariant=True)  # Value type covariant containers.
 T_contra = TypeVar('T_contra', contravariant=True)  # Ditto contravariant.
-# Internal type variable used for Type[].
+# Internal type bound to class object types.
 CT_co = TypeVar('CT_co', covariant=True, bound=type)
 
 
@@ -3403,7 +3403,7 @@ def Required(self, parameters):
             year: int
 
         m = Movie(
-            title='The Matrix',  # typechecker error if key is omitted
+            title='The Matrix',  # type checker error if key is omitted
             year=1999,
         )
 
@@ -3425,7 +3425,7 @@ def NotRequired(self, parameters):
             year: NotRequired[int]
 
         m = Movie(
-            title='The Matrix',  # typechecker error if key is omitted
+            title='The Matrix',  # type checker error if key is omitted
             year=1999,
         )
     """
@@ -3445,7 +3445,7 @@ def ReadOnly(self, parameters):
 
         def mutate_movie(m: Movie) -> None:
             m["year"] = 1992  # allowed
-            m["title"] = "The Matrix"  # typechecker error
+            m["title"] = "The Matrix"  # type checker error
 
     There is no runtime checking for this property.
     """

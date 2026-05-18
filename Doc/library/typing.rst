@@ -1295,7 +1295,7 @@ These can be used as types in annotations. They all support subscription using
    :data:`ClassVar` is not a class itself, and cannot
    be used with :func:`isinstance` or :func:`issubclass`.
    :data:`ClassVar` does not change Python runtime behavior, but
-   it can be used by third-party type checkers. For example, a type checker
+   it can be used by static type checkers. For example, a type checker
    might flag the following code as an error::
 
       enterprise_d = Starship(3000)
@@ -1365,7 +1365,7 @@ These can be used as types in annotations. They all support subscription using
 
       def mutate_movie(m: Movie) -> None:
          m["year"] = 1999  # allowed
-         m["title"] = "The Matrix"  # typechecker error
+         m["title"] = "The Matrix"  # type checker error
 
    There is no runtime checking for this property.
 
@@ -2535,7 +2535,7 @@ types.
 
    Helper class to create low-overhead :ref:`distinct types <distinct>`.
 
-   A ``NewType`` is considered a distinct type by a typechecker. At runtime,
+   A ``NewType`` is considered a distinct type by a type checker. At runtime,
    however, calling a ``NewType`` returns its argument unchanged.
 
    Usage::
@@ -2898,7 +2898,7 @@ types.
 
       For backwards compatibility with Python 3.10 and below,
       it is also possible to use inheritance to declare both required and
-      non-required keys in the same ``TypedDict`` . This is done by declaring a
+      non-required keys in the same ``TypedDict``. This is done by declaring a
       ``TypedDict`` with one value for the ``total`` argument and then
       inheriting from it in another ``TypedDict`` with a different value for
       ``total``:
@@ -3763,7 +3763,7 @@ Constant
 
 .. data:: TYPE_CHECKING
 
-   A special constant that is assumed to be ``True`` by 3rd party static
+   A special constant that is assumed to be ``True`` by static
    type checkers. It's ``False`` at runtime.
 
    A module which is expensive to import, and which only contain types
