@@ -2322,16 +2322,9 @@ output pop
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=e7c7c42daced52b0]*/
 
 
-/*
- * Vectorcall exemplars.
- *
- * Each type exercises a different @vectorcall code-generation path.
- * There is one type per exemplar because tp_vectorcall is a single slot.
- */
+/* @vectorcall test types. One type per exemplar because tp_vectorcall is a single slot. */
 
-
-/* --- VcNew: @vectorcall on __new__, single pos-or-kw optional
- *     (general + kw fast-path, METHOD_NEW finale) --- */
+/* VcNew: __new__ with one optional positional-or-keyword arg */
 
 /*[clinic input]
 class _testclinic.VcNew "PyObject *" "&VcNew_Type"
@@ -2358,8 +2351,7 @@ static PyTypeObject VcNew_Type = {
 };
 
 
-/* --- VcInit: @vectorcall on __init__, pos-only + pos-or-kw optional
- *     (general + kw fast-path) --- */
+/* VcInit: __init__ with one required positional-only and one optional keyword arg */
 
 /*[clinic input]
 class _testclinic.VcInit "PyObject *" "&VcInit_Type"
@@ -2388,8 +2380,7 @@ static PyTypeObject VcInit_Type = {
 };
 
 
-/* --- VcNewExact: @vectorcall exact_only on __new__, pos-only required +
- *     pos-or-kw optional (general + kw fast-path + exact_only guard) --- */
+/* VcNewExact: __new__ with exact_only; subclasses fall back to tp_new */
 
 /*[clinic input]
 class _testclinic.VcNewExact "PyObject *" "&VcNewExact_Type"
@@ -2418,8 +2409,7 @@ static PyTypeObject VcNewExact_Type = {
 };
 
 
-/* --- VcNewZeroArg: @vectorcall zero_arg on __new__, pos-only optional +
- *     kw-only optional (general path, no kw fast-path + zero_arg) --- */
+/* VcNewZeroArg: __new__ with zero_arg; returns Py_None when called with no args */
 
 /*[clinic input]
 class _testclinic.VcNewZeroArg "PyObject *" "&VcNewZeroArg_Type"

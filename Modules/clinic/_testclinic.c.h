@@ -4602,7 +4602,6 @@ exit:
     return return_value;
 }
 
-
 static PyObject *
 vc_plain_new_impl(PyTypeObject *type, PyObject *a);
 
@@ -5130,4 +5129,4 @@ skip_optional_kwonly_vc:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=59b2d8034cc0b97f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a8d5b01f87544445 input=a9049054013a1b77]*/
