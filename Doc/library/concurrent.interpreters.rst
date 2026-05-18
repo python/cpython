@@ -165,7 +165,7 @@ managed way.
 
 With this in mind, the :mod:`!concurrent.interpreters` module provides
 a :class:`queue.Queue` implementation, available through
-:func:`create_queue`.
+:func:`create_queue`.  
 
 .. _interp-object-sharing:
 
@@ -228,6 +228,23 @@ This module defines the following functions:
 
    Initialize a new cross-interpreter queue and return a :class:`Queue`
    object for it.
+   Queues created using the function ``create_queue`` can be used to 
+   safely communicate between multiple interpreters. Since the interpreters 
+   are isolated and do not share variables or data directly, 
+   a queue provides a mechanism to exchange data between them.
+
+   Example::
+
+         from concurrent.interpreters import create_queue
+
+         q = create_queue()
+
+         # In one interpreter
+         q.put("Hello")
+
+         # In other interpreter
+         message = q.get()
+         print(message)
 
 
 Interpreter objects
