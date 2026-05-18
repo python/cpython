@@ -417,7 +417,7 @@ class vi_replace_execute(Command):
         if not pending_char or r.pos >= len(r.buffer):
             return
         r.buffer[r.pos] = pending_char
-        r.dirty = True
+        r.invalidate_buffer(r.pos)
 
 class vi_replace_cancel(Command):
     """Cancel pending replace operation."""
@@ -440,4 +440,4 @@ class vi_undo(Command):
         state = r.undo_stack.pop()
         r.buffer[:] = state.buffer_snapshot
         r.pos = state.pos_snapshot
-        r.dirty = True
+        r.invalidate_buffer(0)
