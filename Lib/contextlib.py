@@ -20,6 +20,12 @@ __all__ = ["asynccontextmanager", "contextmanager", "closing", "nullcontext",
            "chdir"]
 
 
+try:
+    from _contextlib import _setup_genmgr_ctx
+except ImportError:
+    _setup_genmgr_ctx = None
+
+
 class AbstractContextManager(abc.ABC):
 
     """An abstract base class for context managers."""
@@ -239,7 +245,8 @@ class _GeneratorContextManager(
                 # context to be what it was just before the generator's yield
                 # statement before throwing the current exception into it.
                 # (see gh-111676).
-                sys._set_exception(exc_context)
+                if _setup_genmgr_ctx is not None:
+                    _setup_genmgr_ctx(exc_context)
                 self.gen.throw(value)
             except StopIteration as exc:
                 # Suppress StopIteration *unless* it's the same exception that

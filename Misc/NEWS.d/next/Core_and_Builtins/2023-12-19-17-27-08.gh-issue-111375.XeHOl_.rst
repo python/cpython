@@ -1,2 +1,0 @@
-Add sys._set_exception() function that can set/clear the current exception
-context. Patch by Carey Metcalfe.
