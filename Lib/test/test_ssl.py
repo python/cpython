@@ -1909,6 +1909,7 @@ class SSLErrorTests(unittest.TestCase):
         self.assertEqual(cm.exception.library, 'PEM')
         regex = "(NO_START_LINE|UNSUPPORTED_PUBLIC_KEY_TYPE)"
         self.assertRegex(cm.exception.reason, regex)
+        self.assertTrue(len(cm.exception.error_queue >= 1))
         s = str(cm.exception)
         self.assertIn("NO_START_LINE", s)
 
@@ -4688,6 +4689,7 @@ class ThreadedTests(unittest.TestCase):
                                        chatty=False,
                                        sni_name='supermessage')
         self.assertEqual(cm.exception.reason, 'TLSV1_ALERT_ACCESS_DENIED')
+        self.assertTrue(len(cm.exception.error_queue >= 1))
 
     def test_sni_callback_raising(self):
         # Raising fails the connection with a TLS handshake failure alert.
@@ -4708,6 +4710,7 @@ class ThreadedTests(unittest.TestCase):
                      "|SSLV3_ALERT_HANDSHAKE_FAILURE"
                      "|NO_PRIVATE_VALUE)")
             self.assertRegex(cm.exception.reason, regex)
+            self.assertTrue(len(cm.exception.error_queue >= 1))
             self.assertEqual(catch.unraisable.exc_type, ZeroDivisionError)
 
     def test_sni_callback_wrong_return_type(self):
@@ -4727,6 +4730,7 @@ class ThreadedTests(unittest.TestCase):
 
 
             self.assertEqual(cm.exception.reason, 'TLSV1_ALERT_INTERNAL_ERROR')
+            self.assertTrue(len(cm.exception.error_queue >= 1))
             self.assertEqual(catch.unraisable.exc_type, TypeError)
 
     def test_shared_ciphers(self):
