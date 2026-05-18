@@ -631,12 +631,12 @@ if not hasattr(Tuple, 'dims'):
     def _dims_getter(self):
         """Deprecated. Use elts instead."""
         import warnings
-        warnings._deprecated(f"ast.Tuple.dims", remove=(3, 20))
+        warnings._deprecated(f"ast.Tuple.dims", remove=(3, 21))
         return self.elts
 
     def _dims_setter(self, value):
         import warnings
-        warnings._deprecated(f"ast.Tuple.dims", remove=(3, 20))
+        warnings._deprecated(f"ast.Tuple.dims", remove=(3, 21))
         self.elts = value
 
     Tuple.dims = property(_dims_getter, _dims_setter)
@@ -734,7 +734,7 @@ def __getattr__(attr):
     except KeyError:
         raise AttributeError(f"module 'ast' has no attribute {attr!r}") from None
     import warnings
-    warnings._deprecated(f"ast.{attr}", remove=(3, 20))
+    warnings._deprecated(f"ast.{attr}", remove=(3, 21))
     return val
 
 if __name__ == '__main__':
