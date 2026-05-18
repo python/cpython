@@ -8231,15 +8231,14 @@ _shuffle_bits(Py_uhash_t h)
 // Compute hash((key, value)).
 // Code copied from tuple_hash().
 static Py_hash_t
-frozendict_pair_hash(PyObject *key, PyObject *value)
+frozendict_pair_hash(Py_hash_t key_hash, PyObject *value)
 {
+    assert(key_hash != (Py_uhash_t)-1);
+
     const Py_ssize_t len = 2;
     Py_uhash_t acc = _PyTuple_HASH_XXPRIME_5;
 
-    Py_uhash_t lane = PyObject_Hash(key);
-    if (lane == (Py_uhash_t)-1) {
-        return -1;
-    }
+    Py_uhash_t lane = key_hash;
     acc += lane * _PyTuple_HASH_XXPRIME_2;
     acc = _PyTuple_HASH_XXROTATE(acc);
     acc *= _PyTuple_HASH_XXPRIME_1;
@@ -8275,10 +8274,11 @@ frozendict_hash(PyObject *op)
     PyDictObject *mp = _PyAnyDict_CAST(op);
     Py_uhash_t hash = 0;
 
-    PyObject *key, *value;  // borrowed refs
+    PyObject *value;  // borrowed ref
     Py_ssize_t pos = 0;
-    while (PyDict_Next(op, &pos, &key, &value)) {
-        Py_hash_t pair_hash = frozendict_pair_hash(key, value);
+    Py_hash_t key_hash;
+    while (_PyDict_Next(op, &pos, NULL, &value, &key_hash)) {
+        Py_hash_t pair_hash = frozendict_pair_hash(key_hash, value);
         if (pair_hash == -1) {
             return -1;
         }
