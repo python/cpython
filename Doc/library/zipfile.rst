@@ -412,8 +412,8 @@ ZipFile objects
 
       Never extract archives from untrusted sources without prior inspection.
       It is possible that files are created outside of *path*, e.g. members
-      that have absolute filenames starting with ``"/"`` or filenames with two
-      dots ``".."``.  This module attempts to prevent that.
+      that have absolute filenames or filenames with ".." components.
+      This module attempts to prevent that.
       See :meth:`extract` note.
 
    .. versionchanged:: 3.6
@@ -590,7 +590,7 @@ Path objects
       The :class:`Path` class does not sanitize filenames within the ZIP archive. Unlike
       the :meth:`ZipFile.extract` and :meth:`ZipFile.extractall` methods, it is the
       caller's responsibility to validate or sanitize filenames to prevent path traversal
-      vulnerabilities (e.g., filenames containing ".." or absolute paths). When handling
+      vulnerabilities (e.g., absolute paths or paths with ".." cmponents). When handling
       untrusted archives, consider resolving filenames using :func:`os.path.abspath`
       and checking against the target directory with :func:`os.path.commonpath`.
 
