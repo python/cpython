@@ -3750,16 +3750,13 @@ list_ass_subscript_lock_held(PyObject *_self, PyObject *item, PyObject *value)
                     lim = Py_SIZE(self) - cur - 1;
                 }
 
-                memmove(self->ob_item + cur - i,
-                    self->ob_item + cur + 1,
-                    lim * sizeof(PyObject *));
+                ptr_wise_atomic_memmove(self, self->ob_item + cur - i,
+                    self->ob_item + cur + 1, lim);
             }
             cur = start + (size_t)slicelength * step;
             if (cur < (size_t)Py_SIZE(self)) {
-                memmove(self->ob_item + cur - slicelength,
-                    self->ob_item + cur,
-                    (Py_SIZE(self) - cur) *
-                     sizeof(PyObject *));
+                ptr_wise_atomic_memmove(self, self->ob_item + cur - slicelength,
+                    self->ob_item + cur, Py_SIZE(self) - cur);
             }
 
             Py_SET_SIZE(self, Py_SIZE(self) - slicelength);
