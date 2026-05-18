@@ -8233,7 +8233,7 @@ _shuffle_bits(Py_uhash_t h)
 static Py_hash_t
 frozendict_pair_hash(PyObject *key, PyObject *value)
 {
-    Py_ssize_t len = 2;
+    const Py_ssize_t len = 2;
     Py_uhash_t acc = _PyTuple_HASH_XXPRIME_5;
 
     Py_uhash_t lane = PyObject_Hash(key);
