@@ -1803,6 +1803,28 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             spam_cm.__get__(None, list)
         self.assertEqual(str(cm.exception), expected_errmsg)
 
+    @support.cpython_only
+    def test_method_get_meth_method_invalid_type(self):
+        # gh-146615: method_get() for METH_METHOD descriptors used to pass
+        # Py_TYPE(type)->tp_name as the %V fallback instead of the separate
+        # %s argument, causing a missing argument for %s and a crash.
+        # Verify the error message is correct when __get__() is called with a
+        # non-type as the second argument.
+        #
+        # METH_METHOD|METH_FASTCALL|METH_KEYWORDS is the only flag combination
+        # that enters the affected branch in method_get().
+        import io
+
+        obj = io.StringIO()
+        descr = io.TextIOBase.read
+
+        with self.assertRaises(TypeError) as cm:
+            descr.__get__(obj, "not_a_type")
+        self.assertEqual(
+            str(cm.exception),
+            "descriptor 'read' needs a type, not 'str', as arg 2",
+        )
+
     def test_staticmethods(self):
         # Testing static methods...
         class C(object):
@@ -5360,6 +5382,31 @@ class ClassPropertiesAndMethods(unittest.TestCase):
 
         with self.assertRaisesRegex(NotImplementedError, "BAR"):
             B().foo
+
+    def test_gh146587(self):
+        # See https://github.com/python/cpython/issues/146587
+
+        class A:
+            def __radd__(self, other): ...
+
+        class B(tuple): ...
+
+        self.assertIsNone(() + A())
+        self.assertIsNone(B() + A())
+
+        from typing import NamedTuple
+
+        class T(NamedTuple):
+            x: int
+
+        class A:
+            def __init__(self, *args):
+                self.lst = list(args)
+            def __radd__(self, other):
+                return A(*self.lst, other)
+
+        self.assertEqual(((1,)+A()).lst, [(1,)])
+        self.assertEqual((T(x=1)+A()).lst, [T(x=1)])
 
 
 class DictProxyTests(unittest.TestCase):

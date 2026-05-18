@@ -170,7 +170,7 @@ def _lt_from_ge(self, other):
         return op_result
     return not op_result
 
-_convert = {
+_convert = frozendict({
     '__lt__': [('__gt__', _gt_from_lt),
                ('__le__', _le_from_lt),
                ('__ge__', _ge_from_lt)],
@@ -183,7 +183,7 @@ _convert = {
     '__ge__': [('__le__', _le_from_ge),
                ('__gt__', _gt_from_ge),
                ('__lt__', _lt_from_ge)]
-}
+})
 
 def total_ordering(cls):
     """Class decorator that fills in missing ordering methods"""
@@ -232,9 +232,9 @@ except ImportError:
 ### reduce() sequence to a single item
 ################################################################################
 
-_initial_missing = object()
+_initial_missing = sentinel('_initial_missing')
 
-def reduce(function, sequence, initial=_initial_missing):
+def reduce(function, sequence, /, initial=_initial_missing):
     """
     reduce(function, iterable, /[, initial]) -> value
 
@@ -263,6 +263,11 @@ def reduce(function, sequence, initial=_initial_missing):
         value = function(value, element)
 
     return value
+
+try:
+    from _functools import reduce
+except ImportError:
+    pass
 
 
 ################################################################################
@@ -1178,31 +1183,3 @@ class cached_property:
         return val
 
     __class_getitem__ = classmethod(GenericAlias)
-
-def _warn_python_reduce_kwargs(py_reduce):
-    @wraps(py_reduce)
-    def wrapper(*args, **kwargs):
-        if 'function' in kwargs or 'sequence' in kwargs:
-            import os
-            import warnings
-            warnings.warn(
-                'Calling functools.reduce with keyword arguments '
-                '"function" or "sequence" '
-                'is deprecated in Python 3.14 and will be '
-                'forbidden in Python 3.16.',
-                DeprecationWarning,
-                skip_file_prefixes=(os.path.dirname(__file__),))
-        return py_reduce(*args, **kwargs)
-    return wrapper
-
-reduce = _warn_python_reduce_kwargs(reduce)
-del _warn_python_reduce_kwargs
-
-# The import of the C accelerated version of reduce() has been moved
-# here due to gh-121676. In Python 3.16, _warn_python_reduce_kwargs()
-# should be removed and the import block should be moved back right
-# after the definition of reduce().
-try:
-    from _functools import reduce
-except ImportError:
-    pass

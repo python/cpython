@@ -926,6 +926,7 @@ Attribute assignment updates the module's namespace dictionary, e.g.,
    single: __doc__ (module attribute)
    single: __annotations__ (module attribute)
    single: __annotate__ (module attribute)
+   single: __lazy_modules__ (module attribute)
    pair: module; namespace
 
 .. _import-mod-attrs:
@@ -1120,6 +1121,20 @@ the following writable attributes:
    no annotations. See also: :attr:`~object.__annotate__` attributes.
 
    .. versionadded:: 3.14
+
+.. attribute:: module.__lazy_modules__
+
+   A container (an object implementing :meth:`~object.__contains__`) of fully
+   qualified module name strings.  When defined
+   at module scope, any regular :keyword:`import` statement in that module whose
+   target module name appears in this container is treated as a
+   :ref:`lazy import <lazy-imports>`, as if the :keyword:`lazy` keyword had
+   been used.  Imports inside functions, class bodies, or
+   :keyword:`try`/:keyword:`except`/:keyword:`finally` blocks are unaffected.
+
+   See :ref:`lazy-modules-compat` for details and examples.
+
+   .. versionadded:: 3.15
 
 Module dictionaries
 ^^^^^^^^^^^^^^^^^^^
@@ -1401,11 +1416,27 @@ also :func:`os.popen`, :func:`os.fdopen`, and the
 :meth:`~socket.socket.makefile` method of socket objects (and perhaps by
 other functions or methods provided by extension modules).
 
+File objects implement common methods, listed below, to simplify usage in
+generic code. They are expected to be :ref:`context-managers`.
+
 The objects ``sys.stdin``, ``sys.stdout`` and ``sys.stderr`` are
 initialized to file objects corresponding to the interpreter's standard
 input, output and error streams; they are all open in text mode and
 therefore follow the interface defined by the :class:`io.TextIOBase`
 abstract class.
+
+.. method:: file.read(size=-1, /)
+
+   Retrieve up to *size* data from the file. As a convenience if *size* is
+   unspecified or -1 retrieve all data available.
+
+.. method:: file.write(data, /)
+
+   Store *data* to the file.
+
+.. method:: file.close()
+
+   Flush any buffers and close the underlying file.
 
 
 Internal types
@@ -1445,7 +1476,6 @@ indirectly) to mutable objects.
    single: co_filename (code object attribute)
    single: co_firstlineno (code object attribute)
    single: co_flags (code object attribute)
-   single: co_lnotab (code object attribute)
    single: co_name (code object attribute)
    single: co_names (code object attribute)
    single: co_nlocals (code object attribute)
@@ -1517,14 +1547,6 @@ Special read-only attributes
 
    * - .. attribute:: codeobject.co_firstlineno
      - The line number of the first line of the function
-
-   * - .. attribute:: codeobject.co_lnotab
-     - A string encoding the mapping from :term:`bytecode` offsets to line
-       numbers. For details, see the source code of the interpreter.
-
-       .. deprecated:: 3.12
-          This attribute of code objects is deprecated, and may be removed in
-          Python 3.15.
 
    * - .. attribute:: codeobject.co_stacksize
      - The required stack size of the code object
@@ -3223,21 +3245,6 @@ through the object's keys; for sequences, it should iterate through the values.
    .. versionadded:: 3.4
 
 
-.. index:: pair: object; slice
-
-.. note::
-
-   Slicing is done exclusively with the following three methods.  A call like ::
-
-      a[1:2] = b
-
-   is translated to ::
-
-      a[slice(1, 2, None)] = b
-
-   and so forth.  Missing slice items are always filled in with ``None``.
-
-
 .. method:: object.__getitem__(self, subscript)
 
    Called to implement *subscription*, that is, ``self[subscript]``.
@@ -3259,6 +3266,22 @@ through the object's keys; for sequences, it should iterate through the values.
    If *subscript* has an inappropriate value, :meth:`!__getitem__`
    should raise an :exc:`LookupError` or one of its subclasses
    (:exc:`IndexError` for sequences; :exc:`KeyError` for mappings).
+
+   .. index:: pair: object; slice
+
+   .. note::
+
+      Slicing is handled by :meth:`!__getitem__`, :meth:`~object.__setitem__`,
+      and :meth:`~object.__delitem__`.
+      A call like ::
+
+         a[1:2] = b
+
+      is translated to ::
+
+         a[slice(1, 2, None)] = b
+
+      and so forth. Missing slice items are always filled in with ``None``.
 
    .. note::
 
@@ -3620,12 +3643,25 @@ implement the protocol in Python.
    provides a convenient way to interpret the flags. The method must return
    a :class:`memoryview` object.
 
+   **Thread safety:** In :term:`free-threaded <free threading>` Python,
+   implementations must manage any internal export counter using atomic
+   operations. The method must be safe to call concurrently from multiple
+   threads, and the returned buffer's underlying data must remain valid
+   until the corresponding :meth:`~object.__release_buffer__` call
+   completes. See :ref:`thread-safety-memoryview` for details.
+
 .. method:: object.__release_buffer__(self, buffer)
 
    Called when a buffer is no longer needed. The *buffer* argument is a
    :class:`memoryview` object that was previously returned by
    :meth:`~object.__buffer__`. The method must release any resources associated
    with the buffer. This method should return ``None``.
+
+   **Thread safety:** In :term:`free-threaded <free threading>` Python,
+   any export counter decrement must use atomic operations. Resource
+   cleanup must be thread-safe, as the final release may race with
+   concurrent releases from other threads.
+
    Buffer objects that do not need to perform any cleanup are not required
    to implement this method.
 

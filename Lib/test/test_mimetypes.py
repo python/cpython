@@ -232,6 +232,7 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("application/pdf", ".pdf"),
                 ("application/postscript", ".ps"),
                 ("application/rtf", ".rtf"),
+                ("application/sql", ".sql"),
                 ("application/texinfo", ".texi"),
                 ("application/toml", ".toml"),
                 ("application/vnd.apple.mpegurl", ".m3u"),
@@ -246,6 +247,7 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx"),
                 ("application/vnd.openxmlformats-officedocument.wordprocessingml.document", ".docx"),
                 ("application/vnd.rar", ".rar"),
+                ("application/vnd.sqlite3", ".sqlite3"),
                 ("application/x-7z-compressed", ".7z"),
                 ("application/x-debian-package", ".deb"),
                 ("application/x-httpd-php", ".php"),
@@ -387,9 +389,12 @@ class MimeTypesTestCase(unittest.TestCase):
         mime_type, _ = mimetypes.guess_type('test.myext')
         self.assertEqual(mime_type, 'testing/type')
 
-    def test_add_type_with_undotted_extension_deprecated(self):
-        with self.assertWarns(DeprecationWarning):
+    def test_add_type_with_undotted_extension_not_supported(self):
+        msg = "Extension 'undotted' must start with '.'"
+        with self.assertRaisesRegex(ValueError, msg):
             mimetypes.add_type("testing/type", "undotted")
+        with self.assertRaisesRegex(ValueError, msg):
+            mimetypes.add_type("", "undotted")
 
 
 @unittest.skipUnless(sys.platform.startswith("win"), "Windows only")

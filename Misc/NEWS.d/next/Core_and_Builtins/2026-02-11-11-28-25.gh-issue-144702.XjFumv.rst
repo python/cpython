@@ -1,2 +1,0 @@
-Clarify the error message raised when a class pattern is used to match on a
-non-class object.

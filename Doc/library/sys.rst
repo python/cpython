@@ -879,7 +879,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. versionchanged:: 3.6
       Windows is no longer guaranteed to return ``'mbcs'``. See :pep:`529`
-      and :func:`_enablelegacywindowsfsencoding` for more information.
+      for more information.
 
    .. versionchanged:: 3.7
       Return ``'utf-8'`` if the :ref:`Python UTF-8 Mode <utf8-mode>` is
@@ -924,7 +924,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    See also :func:`set_lazy_imports` and :pep:`810`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: get_lazy_imports_filter()
@@ -937,7 +937,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    :func:`set_lazy_imports_filter` for details on the filter function
    signature.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: getrefcount(object)
@@ -1770,7 +1770,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    See also :func:`get_lazy_imports` and :pep:`810`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: set_lazy_imports_filter(filter)
@@ -1788,7 +1788,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    Where:
 
    * *importing_module* is the name of the module doing the import
-   * *imported_module* is the name of the module being imported
+   * *imported_module* is the resolved name of the module being imported
+     (for example, ``lazy from .spam import eggs`` passes
+     ``package.spam``)
    * *fromlist* is the tuple of names being imported (for ``from ... import``
      statements), or ``None`` for regular imports
 
@@ -1800,7 +1802,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    See also :func:`get_lazy_imports_filter` and :pep:`810`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: setprofile(profilefunc)
@@ -2104,31 +2106,6 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    .. versionadded:: 3.14
       See :pep:`768` for more details.
 
-
-.. function:: _enablelegacywindowsfsencoding()
-
-   Changes the :term:`filesystem encoding and error handler` to 'mbcs' and
-   'replace' respectively, for consistency with versions of Python prior to
-   3.6.
-
-   This is equivalent to defining the :envvar:`PYTHONLEGACYWINDOWSFSENCODING`
-   environment variable before launching Python.
-
-   See also :func:`sys.getfilesystemencoding` and
-   :func:`sys.getfilesystemencodeerrors`.
-
-   .. availability:: Windows.
-
-   .. note::
-      Changing the filesystem encoding after Python startup is risky because
-      the old fsencoding or paths encoded by the old fsencoding may be cached
-      somewhere. Use :envvar:`PYTHONLEGACYWINDOWSFSENCODING` instead.
-
-   .. versionadded:: 3.6
-      See :pep:`529` for more details.
-
-   .. deprecated-removed:: 3.13 3.16
-      Use :envvar:`PYTHONLEGACYWINDOWSFSENCODING` instead.
 
 .. data:: stdin
           stdout

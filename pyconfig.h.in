@@ -32,10 +32,6 @@
 /* The Android API level. */
 #undef ANDROID_API_LEVEL
 
-/* Define if C doubles are 64-bit IEEE 754 binary format, stored in ARM
-   mixed-endian order (byte order 45670123) */
-#undef DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754
-
 /* Define if C doubles are 64-bit IEEE 754 binary format, stored with the most
    significant byte first */
 #undef DOUBLE_IS_BIG_ENDIAN_IEEE754
@@ -323,10 +319,6 @@
 
 /* Define to 1 if you have the <editline/readline.h> header file. */
 #undef HAVE_EDITLINE_READLINE_H
-
-/* Define if compiler supports __builtin_shufflevector with 128-bit vectors
-   AND the target architecture has native SIMD (not just API availability) */
-#undef HAVE_EFFICIENT_BUILTIN_SHUFFLEVECTOR
 
 /* Define to 1 if you have the <endian.h> header file. */
 #undef HAVE_ENDIAN_H
@@ -1006,9 +998,6 @@
 
 /* Define if your compiler supports function prototype */
 #undef HAVE_PROTOTYPES
-
-/* Define if you have the 'PR_SET_VMA_ANON_NAME' constant. */
-#undef HAVE_PR_SET_VMA_ANON_NAME
 
 /* Define to 1 if you have the 'pthread_condattr_setclock' function. */
 #undef HAVE_PTHREAD_CONDATTR_SETCLOCK
@@ -2067,11 +2056,26 @@
 /* HACL* library can compile SIMD256 implementations */
 #undef _Py_HACL_CAN_COMPILE_VEC256
 
+/* Define if compiler supports __builtin_shufflevector with 128-bit vectors
+   AND the target architecture has native SIMD (not just API availability) */
+#undef _Py_HAVE_EFFICIENT_BUILTIN_SHUFFLEVECTOR
+
+/* Define to 1 if libgcc __register_frame and __deregister_frame are linkable.
+   */
+#undef _Py_HAVE_LIBGCC_EH_FRAME_REGISTRATION
+
+/* Define if you have the 'PR_SET_VMA_ANON_NAME' constant. */
+#undef _Py_HAVE_PR_SET_VMA_ANON_NAME
+
 /* Define to 1 if the machine stack grows down (default); 0 if it grows up. */
 #undef _Py_STACK_GROWS_DOWN
 
 /* Define if you want to use tail-calling interpreters in CPython. */
 #undef _Py_TAIL_CALL_INTERP
+
+/* Define to 1 if frame unwinding via pointers is expected to work, 0 if not.
+   Leave undefined if unknown. */
+#undef _Py_WITH_FRAME_POINTERS
 
 /* Define to force use of thread-safe errno, h_errno, and other functions */
 #undef _REENTRANT
