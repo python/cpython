@@ -49,8 +49,8 @@ def _bytes_from_decode_data(s):
 def b64encode(s, altchars=None, *, padded=True, wrapcol=0):
     """Encode the bytes-like object s using Base64 and return a bytes object.
 
-    Optional altchars should be a byte string of length 2 which specifies an
-    alternative alphabet for the '+' and '/' characters.  This allows an
+    Optional altchars must be a bytes-like object of length 2 which specifies
+    an alternative alphabet for the '+' and '/' characters.  This allows an
     application to e.g. generate url or filesystem safe Base64 strings.
 
     If padded is false, omit padding in the output.
@@ -80,7 +80,7 @@ def b64decode(s, altchars=None, validate=_NOT_SPECIFIED,
     The result is returned as a bytes object.  A binascii.Error is raised if
     s is incorrectly padded.
 
-    If ignorechars is specified, it should be a byte string containing
+    If ignorechars is specified, it should be a bytes-like object containing
     characters to ignore from the input.  The default value of validate is
     True if ignorechars is specified, False otherwise.
 
@@ -140,12 +140,12 @@ def standard_b64encode(s):
     return b64encode(s)
 
 def standard_b64decode(s):
-    """Decode bytes encoded with the standard Base64 alphabet.
+    """Decode bytes-like object or ASCII string s using the standard Base64
+    alphabet.
 
-    Argument s is a bytes-like object or ASCII string to decode.  The result
-    is returned as a bytes object.  A binascii.Error is raised if the input
-    is incorrectly padded.  Characters that are not in the standard alphabet
-    are discarded prior to the padding check.
+    The result is returned as a bytes object.  A binascii.Error is raised if
+    the input is incorrectly padded.  Characters that are not in the standard
+    alphabet are discarded prior to the padding check.
     """
     return b64decode(s)
 
@@ -153,11 +153,11 @@ def standard_b64decode(s):
 _urlsafe_decode_translation = bytes.maketrans(b'-_', b'+/')
 
 def urlsafe_b64encode(s, *, padded=True):
-    """Encode bytes using the URL- and filesystem-safe Base64 alphabet.
+    """Encode bytes-like object s using the URL- and filesystem-safe Base64
+    alphabet.
 
-    Argument s is a bytes-like object to encode.  The result is returned as a
-    bytes object.  The alphabet uses '-' instead of '+' and '_' instead of
-    '/'.
+    The result is returned as a bytes object.  The alphabet uses '-' instead
+    of '+' and '_' instead of '/'.
 
     If padded is false, omit padding in the output.
     """
@@ -165,13 +165,13 @@ def urlsafe_b64encode(s, *, padded=True):
                                alphabet=binascii.URLSAFE_BASE64_ALPHABET)
 
 def urlsafe_b64decode(s, *, padded=False):
-    """Decode bytes using the URL- and filesystem-safe Base64 alphabet.
+    """Decode bytes-like object or ASCII string s using the URL- and
+    filesystem-safe Base64 alphabet.
 
-    Argument s is a bytes-like object or ASCII string to decode.  The result
-    is returned as a bytes object.  A binascii.Error is raised if the input
-    is incorrectly padded.  Characters that are not in the URL-safe base-64
-    alphabet, and are not a plus '+' or slash '/', are discarded prior to the
-    padding check.
+    The result is returned as a bytes object.  A binascii.Error is raised if
+    the input is incorrectly padded.  Characters that are not in the URL-safe
+    base-64 alphabet, and are not a plus '+' or slash '/', are discarded prior
+    to the padding check.
 
     If padded is false, padding in input is not required.
 
@@ -196,7 +196,7 @@ def urlsafe_b64decode(s, *, padded=False):
 
 # Base32 encoding/decoding must be done in Python
 _B32_ENCODE_DOCSTRING = '''
-Encode the bytes-like objects using {encoding} and return a bytes object.
+Encode the bytes-like object s using {encoding} and return a bytes object.
 
 If padded is false, omit padding in the output.
 
@@ -211,7 +211,7 @@ acceptable as input.  For security purposes, the default is False.
 
 If padded is false, padding in input is not required.
 
-ignorechars should be a byte string containing characters to ignore
+ignorechars should be a bytes-like object containing characters to ignore
 from the input.
 {extra_args}
 The result is returned as a bytes object.  A binascii.Error is raised if
@@ -290,7 +290,7 @@ def b16decode(s, casefold=False, *, ignorechars=b''):
     Optional casefold is a flag specifying whether a lowercase alphabet is
     acceptable as input.  For security purposes, the default is False.
 
-    ignorechars should be a byte string containing characters to ignore
+    ignorechars should be a bytes-like object containing characters to ignore
     from the input.
 
     The result is returned as a bytes object.  A binascii.Error is raised if
@@ -346,9 +346,9 @@ def a85decode(b, *, foldspaces=False, adobe=False, ignorechars=b' \t\n\r\v',
     the leading <~ is not required, the input must end with ~>, or a
     ValueError is raised.
 
-    ignorechars should be a byte string containing characters to ignore from the
-    input. This should only contain whitespace characters, and by default
-    contains all whitespace characters in ASCII.
+    ignorechars should be a bytes-like object containing characters to ignore
+    from the input. This should only contain whitespace characters, and by
+    default contains all whitespace characters in ASCII.
 
     If canonical is true, non-canonical encodings are rejected.
 
@@ -444,7 +444,7 @@ def _input_type_check(s):
 
 
 def encodebytes(s):
-    """Encode a bytestring into a bytes object containing multiple lines
+    """Encode a bytes-like object into a bytes object containing multiple lines
     of base-64 data."""
     _input_type_check(s)
     result = binascii.b2a_base64(s, wrapcol=MAXLINESIZE)
@@ -454,7 +454,7 @@ def encodebytes(s):
 
 
 def decodebytes(s):
-    """Decode a bytestring of base-64 data into a bytes object."""
+    """Decode a bytes-like object of base-64 data into a bytes object."""
     _input_type_check(s)
     return binascii.a2b_base64(s)
 
