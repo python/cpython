@@ -251,6 +251,11 @@ class CPythonBuild(ZScript):
             docker=self.docker is not None,
         )
 
+        # For standalone deployment mode, produce an initrd image
+        # containing the system daemons and the application binary.
+        if self.config.deployment_mode == "standalone":
+            self.make_initrd(f"python{config.EXE}")
+
     def test(self) -> None:
         """Run the CPython test suite (hello + regrtest)."""
         self._overlay_local_nanvix()
@@ -314,6 +319,10 @@ class CPythonBuild(ZScript):
     def clean(self) -> None:
         """Remove build artifacts."""
         build_mod.clean(self.repo_root)
+        # Remove initrd image generated for standalone mode.
+        initrd = self.repo_root / "python.img"
+        if initrd.exists():
+            initrd.unlink()
 
     def distclean(self) -> None:
         """Deep clean: remove all build artifacts, caches, and untracked files."""

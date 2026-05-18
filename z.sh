@@ -7,7 +7,7 @@
 
 set -euo pipefail
 
-PINNED_VERSION="0.8.5"
+PINNED_VERSION="0.9.0"
 RAW_ZUTIL_VERSION="${NANVIX_ZUTIL_VERSION:-$PINNED_VERSION}"
 ZUTIL_VERSION="${RAW_ZUTIL_VERSION#v}"
 REPO_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -P)"
@@ -31,7 +31,8 @@ ZUTIL_GLOBAL_VERSION="$(nanvix-zutil --version 2>/dev/null || true)"
 function bootstrap() {
     # Pin nanvix-zutil version for reproducible bootstrapping.
     # Override with NANVIX_ZUTIL_VERSION env var if needed.
-    echo "nanvix-zutil not found -- bootstrapping nanvix-zutil==${ZUTIL_VERSION}..." >&2
+    local reason="${1:-not found}"
+    echo "nanvix-zutil ${reason} -- bootstrapping nanvix-zutil==${ZUTIL_VERSION}..." >&2
 
     if ! command -v python3 &>/dev/null; then
         echo "Error: python3 not found. Install Python 3 and ensure python3 is on PATH." >&2
@@ -69,6 +70,8 @@ else
     BIN="nanvix-zutil"
     if [ "$ZUTIL_GLOBAL_VERSION" != "nanvix-zutil ${ZUTIL_VERSION}" ]; then
         echo "Warning: nanvix-zutil global install does not match expected version. Expected ${ZUTIL_VERSION}, found ${ZUTIL_GLOBAL_VERSION}." >&2
+        bootstrap "version mismatch"
+        BIN="$VENV_BIN"
     fi
 fi
 

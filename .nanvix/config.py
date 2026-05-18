@@ -464,6 +464,13 @@ def mkramfs_binary() -> str:
     return "mkramfs.elf"
 
 
+def mkimage_binary() -> str:
+    """Return the mkimage binary name for the current platform."""
+    if IS_WINDOWS:
+        return "mkimage.exe"
+    return "mkimage.elf"
+
+
 # Windows host-native binaries needed for local test execution.
 # These are downloaded from the Nanvix release page during setup.
 # kernel.elf is a *guest* binary (not .exe) — nanvixd loads it directly.

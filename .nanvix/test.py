@@ -36,6 +36,61 @@ ramfs_mod = load_sibling("ramfs", __file__)
 
 
 # ---------------------------------------------------------------------------
+# Initrd creation helper (standalone mode)
+# ---------------------------------------------------------------------------
+
+
+def _create_initrd(
+    bin_dir: Path,
+    app_path: Path,
+    app_args: list[str] | None = None,
+    output: Path | None = None,
+) -> Path:
+    """Create an initrd image bundling *app_path* with system daemons.
+
+    Mirrors :meth:`~nanvix_zutil.ZScript.make_initrd` for use in
+    standalone module-level functions that lack a ZScript instance.
+
+    Args:
+        bin_dir: Directory containing the system daemon ELFs and mkimage.
+        app_path: Absolute path to the application ELF binary.
+        app_args: Optional CLI arguments for the app entry.
+        output: Destination path for the image.  Defaults to
+            ``app_path.parent / "<stem>.img"``.
+
+    Returns:
+        Path to the generated image file.
+    """
+    app_stem = app_path.stem
+    if output is None:
+        output = app_path.parent / f"{app_stem}.img"
+
+    mkimage = bin_dir / config.mkimage_binary()
+
+    def _escape(arg: str) -> str:
+        return arg.replace(";", "\\;")
+
+    def _entry(elf: Path, argv0: str, extra: list[str] | None) -> str:
+        parts = [_escape(argv0)] + [_escape(a) for a in (extra or [])]
+        argv = " ".join(parts)
+        return f"{_escape(str(elf))};{argv}"
+
+    daemon_ext = ".exe" if config.IS_WINDOWS else ".elf"
+    cmd: list[str] = [
+        str(mkimage),
+        "-o",
+        str(output),
+        _entry(bin_dir / f"procd{daemon_ext}", "procd", None),
+        _entry(bin_dir / f"memd{daemon_ext}", "memd", None),
+        _entry(bin_dir / f"vfsd{daemon_ext}", "vfsd", None),
+        _entry(app_path, app_stem, app_args),
+    ]
+
+    subprocess.run(cmd, check=True, timeout=60)
+    return output
+
+
+# ---------------------------------------------------------------------------
 # Windows: download release artifacts as install cache
 # ---------------------------------------------------------------------------
 
@@ -536,19 +591,29 @@ def _run_nanvixd_script(
             if mkramfs_src.is_file():
                 shutil.copy2(mkramfs_src, sysroot / "bin" / mkramfs_name)
 
+    initrd_img: Path | None = None
     if standalone:
-        # Standalone: semicolon-delimited env vars + ramfs.
+        # Standalone: bundle python binary with system daemons into an
+        # initrd image.  The semicolons in app_args encode env vars that
+        # nanvixd extracts at boot.
+        bin_dir = sysroot / "bin"
+        app_path = sysroot / "bin" / config.python_binary()
+        app_args = [
+            "-B",
+            f"./{script_name};PYTHONHOME=/ PYTHONDONTWRITEBYTECODE=1"
+            f" _PYTHON_SYSCONFIGDATA_NAME={config.SYSCONFIGDATA_NAME}",
+        ]
+        initrd_img = _create_initrd(bin_dir, app_path, app_args=app_args)
+
         cmd = [
             nanvixd,
             "-bin-dir",
-            "./bin",
+            str(bin_dir),
             "-ramfs",
             str(ramfs_img),
             *resolved_extra,
             "--",
-            python_bin,
-            f"-B ./{script_name};PYTHONHOME=/ PYTHONDONTWRITEBYTECODE=1"
-            f" _PYTHON_SYSCONFIGDATA_NAME={config.SYSCONFIGDATA_NAME}",
+            str(initrd_img),
         ]
     else:
         # Direct mode: guest accesses host filesystem, no ramfs.
@@ -572,6 +637,9 @@ def _run_nanvixd_script(
         )
     except subprocess.TimeoutExpired:
         raise RuntimeError(f"{label} timed out after {timeout}s")
+    finally:
+        if initrd_img is not None and initrd_img.exists():
+            initrd_img.unlink()
 
     elapsed_ms = int((time.monotonic() - start) * 1000)
     output = (result.stdout + "\n" + result.stderr).strip()
@@ -679,14 +747,16 @@ def run_regrtest(
     env["NANVIX_PYTHON_BIN"] = f"./bin/{config.python_binary()}"
 
     if standalone:
-        # Standalone: ramfs + semicolon env syntax.
+        # Standalone: ramfs + initrd-based invocation.
         if ramfs_img is None:
             ramfs_img = repo_root / ".nanvix" / "cpython-rootfs.img"
-        extra_str = f"-bin-dir ./bin -ramfs {ramfs_img}"
+        bin_dir = sysroot / "bin"
+        extra_str = f"-bin-dir {bin_dir} -ramfs {ramfs_img}"
         if resolved_nanvixd_extra:
             extra_str += " " + " ".join(resolved_nanvixd_extra)
         env["NANVIXD_EXTRA_ARGS"] = extra_str
         env["NANVIX_STANDALONE"] = "1"
+        env["NANVIX_BIN_DIR"] = str(bin_dir)
         exclude_set = set(config.STANDALONE_EXCLUDE)
         test_list = [m for m in test_list if m not in exclude_set]
     else:

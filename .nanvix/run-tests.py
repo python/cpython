@@ -31,6 +31,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from pathlib import Path
 
 BATCH_SIZE = int(os.environ.get("NANVIX_TEST_BATCH_SIZE", "4"))
 STANDALONE = os.environ.get("NANVIX_STANDALONE", "") == "1"
@@ -42,6 +43,51 @@ SYSCONFIGDATA_NAME = os.environ.get(
     "NANVIX_SYSCONFIGDATA_NAME", "_sysconfigdata__nanvix_"
 )
 REGRTEST_TIMEOUT = os.environ.get("REGRTEST_TIMEOUT", "120")
+# Directory containing system daemon ELFs and mkimage (set by test.py).
+BIN_DIR = Path(os.environ.get("NANVIX_BIN_DIR", "./bin"))
+
+
+# ---------------------------------------------------------------------------
+# Initrd creation helper (standalone mode)
+# ---------------------------------------------------------------------------
+
+IS_WINDOWS = sys.platform == "win32"
+
+
+def _create_initrd(
+    bin_dir: Path,
+    app_path: Path,
+    app_args: list[str] | None = None,
+    output: Path | None = None,
+) -> Path:
+    """Create an initrd image bundling *app_path* with system daemons."""
+    app_stem = app_path.stem
+    if output is None:
+        output = app_path.parent / f"{app_stem}.img"
+
+    mkimage = bin_dir / ("mkimage.exe" if IS_WINDOWS else "mkimage.elf")
+
+    def _escape(arg: str) -> str:
+        return arg.replace(";", "\\;")
+
+    def _entry(elf: Path, argv0: str, extra: list[str] | None) -> str:
+        parts = [_escape(argv0)] + [_escape(a) for a in (extra or [])]
+        argv = " ".join(parts)
+        return f"{_escape(str(elf))};{argv}"
+
+    daemon_ext = ".exe" if IS_WINDOWS else ".elf"
+    cmd: list[str] = [
+        str(mkimage),
+        "-o",
+        str(output),
+        _entry(bin_dir / f"procd{daemon_ext}", "procd", None),
+        _entry(bin_dir / f"memd{daemon_ext}", "memd", None),
+        _entry(bin_dir / f"vfsd{daemon_ext}", "vfsd", None),
+        _entry(app_path, app_stem, app_args),
+    ]
+
+    subprocess.run(cmd, check=True, timeout=60)
+    return output
 
 
 def run_batch(
@@ -55,27 +101,38 @@ def run_batch(
     # don't collide in /tmp (the guest shares the host filesystem in direct
     # mode and the VM's entropy source may produce identical random seeds).
     batch_tmpdir = tempfile.mkdtemp(prefix=f"nanvix_batch{batch_num}_")
+    initrd_img: Path | None = None
 
     try:
         if STANDALONE:
-            # Standalone: all python args packed into one semicolon-delimited
-            # string.  nanvixd splits on spaces for argv and on semicolons
-            # for environment variables.
+            # Standalone: create an initrd image bundling python with
+            # system daemons.  The semicolons in app_args encode env vars
+            # that nanvixd extracts at boot.
             modules_str = " ".join(batch)
-            regrtest_args = f"-B -m test --timeout={REGRTEST_TIMEOUT} {modules_str}"
-            python_arg = (
-                f"{regrtest_args};PYTHONHOME=/ PYTHONDONTWRITEBYTECODE=1"
-                f" TMPDIR=/tmp"
-                f" NANVIX_STANDALONE=1"
-                f" _PYTHON_SYSCONFIGDATA_NAME={SYSCONFIGDATA_NAME}"
+            app_args = [
+                "-B",
+                (
+                    f"-m test --timeout={REGRTEST_TIMEOUT} {modules_str}"
+                    f";PYTHONHOME=/ PYTHONDONTWRITEBYTECODE=1"
+                    f" TMPDIR=/tmp"
+                    f" NANVIX_STANDALONE=1"
+                    f" _PYTHON_SYSCONFIGDATA_NAME={SYSCONFIGDATA_NAME}"
+                ),
+            ]
+
+            app_path = BIN_DIR / Path(PYTHON_BIN).name
+            initrd_img = _create_initrd(
+                BIN_DIR,
+                app_path,
+                app_args=app_args,
+                output=Path(f"batch{batch_num}.img"),
             )
 
             cmd = [
                 NANVIXD,
                 *nanvixd_extra,
                 "--",
-                PYTHON_BIN,
-                python_arg,
+                str(initrd_img),
             ]
         else:
             # Direct mode: separate argv elements, invoke run-regrtest.py
@@ -111,6 +168,8 @@ def run_batch(
         return batch_num, rc, batch
     finally:
         shutil.rmtree(batch_tmpdir, ignore_errors=True)
+        if initrd_img is not None and initrd_img.exists():
+            initrd_img.unlink()
 
 
 def main() -> int:

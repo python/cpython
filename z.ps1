@@ -15,7 +15,7 @@ $zutilVersion = if ($env:NANVIX_ZUTIL_VERSION) {
     $env:NANVIX_ZUTIL_VERSION
 }
 else {
-    "0.8.5"
+    "0.9.0"
 }
 $zutilVersion = $zutilVersion -replace "^v", ""
 
@@ -42,9 +42,10 @@ catch {
 }
 
 function Bootstrap {
+    param([string]$Reason = "not found")
     # Pin nanvix-zutil version for reproducible bootstrapping.
     # Override with NANVIX_ZUTIL_VERSION env var if needed.
-    Write-Information "nanvix-zutil not found -- bootstrapping nanvix-zutil==${zutilVersion}..." -InformationAction Continue
+    Write-Information "nanvix-zutil ${Reason} -- bootstrapping nanvix-zutil==${zutilVersion}..." -InformationAction Continue
 
     $wheelUrl = "https://github.com/nanvix/zutils/releases/download/v${zutilVersion}/nanvix_zutil-${zutilVersion}-py3-none-any.whl"
 
@@ -115,6 +116,11 @@ else {
     $bin = "nanvix-zutil"
     if ($zutilGlobalVersion -ne "nanvix-zutil ${zutilVersion}") {
         Write-Warning "nanvix-zutil global install does not match expected version. Expected ${zutilVersion}, found ${zutilGlobalVersion}."
+        Bootstrap "version mismatch"
+        if (-not (Test-Path $venvZutil)) {
+            throw "Bootstrap completed but $venvZutil not found."
+        }
+        $bin = $venvZutil
     }
 }
 
