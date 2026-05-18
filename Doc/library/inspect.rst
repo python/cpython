@@ -428,33 +428,32 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
       For example, given this class::
 
-          >>> class Class:
-          ...    def say_hello(self):
-          ...        print('hello!')
-          >>>
+          >>> class Greeter:
+          ...     def say_hello(self):
+          ...         print('hello!')
 
       A bound method (also known as an *instance method*) is created when
-      accessing ``say_hello`` (a :term:`function` defined in a
-      class namespace) through an instance of the class::
+      accessing ``say_hello`` (a :term:`function` defined in the
+      ``Greeter`` namespace) through an instance of the ``Greeter`` class::
 
-          >>> instance = Class()
+          >>> instance = Greeter()
 
           >>> instance.say_hello
-          <bound method Class.say_hello of <__main__.Class object ...>>
+          <bound method Greeter.say_hello of <__main__.Greeter object ...>>
           >>> ismethod(instance.say_hello)
           True
           >>> isfunction(instance.say_hello)
           False
 
-      Accessing ``say_hello`` through the class will return the function itself.
-      For this function, :func:`ismethod` will return ``False``,
-      but :func:`isfunction` will return ``True``::
+      Accessing ``say_hello`` through the ``Greeter`` class will return the
+      function itself. For this function, :func:`ismethod` will return
+      ``False``, but :func:`isfunction` will return ``True``::
 
-          >>> Class.say_hello
-          <function Class.say_hello at 0x7f7503854a90>
-          >>> ismethod(Class.say_hello)
+          >>> Greeter.say_hello
+          <function Greeter.say_hello at 0x7f7503854a90>
+          >>> ismethod(Greeter.say_hello)
           False
-          >>> isfunction(Class.say_hello)
+          >>> isfunction(Greeter.say_hello)
           True
 
       See :ref:`typesmethods` for details.
