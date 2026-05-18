@@ -1551,14 +1551,8 @@ _PyFrozenSet_NewAndSteal(PyObject *set)
     assert(set != NULL);
     assert(PySet_CheckExact(set));
     assert(_PyObject_IsUniquelyReferenced(set));
-    PyObject *frozenset = make_new_set(&PyFrozenSet_Type, NULL);
-    if (frozenset == NULL) {
-        return NULL;
-    }
-
-    set_swap_bodies((PySetObject *)set, (PySetObject *)frozenset);
-    _PyFrozenSet_MaybeUntrack(frozenset);
-    return frozenset;
+    set->ob_type = &PyFrozenSet_Type;
+    return Py_NewRef(set);
 }
 
 /*[clinic input]
