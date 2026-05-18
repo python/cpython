@@ -3962,26 +3962,26 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
 
     expr_ty arg_expr = asdl_seq_GET(args, 0);
 
+    if (_PyUnicode_EqualToASCIIString(func->v.Name.id, "frozenset")
+        && (arg_expr->kind == Set_kind || arg_expr->kind == SetComp_kind)) {
+        NEW_JUMP_TARGET_LABEL(c, skip_optimization);
+
+        ADDOP_I(c, loc, COPY, 1);
+        ADDOP_I(c, loc, LOAD_COMMON_CONSTANT, CONSTANT_BUILTIN_FROZENSET);
+        ADDOP_COMPARE(c, loc, Is);
+        ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, skip_optimization);
+        ADDOP(c, loc, POP_TOP);
+
+        VISIT(c, expr, arg_expr);
+        ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_BUILD_FROZENSET);
+
+        ADDOP_JUMP(c, loc, JUMP, end);
+
+        USE_LABEL(c, skip_optimization);
+        return 1;
+    }
+
     if (arg_expr->kind != GeneratorExp_kind) {
-        if (_PyUnicode_EqualToASCIIString(func->v.Name.id, "frozenset")
-            && (arg_expr->kind == Set_kind || arg_expr->kind == SetComp_kind)) {
-            NEW_JUMP_TARGET_LABEL(c, skip_optimization);
-
-            ADDOP_I(c, loc, COPY, 1);
-            ADDOP_I(c, loc, LOAD_COMMON_CONSTANT, CONSTANT_BUILTIN_FROZENSET);
-            ADDOP_COMPARE(c, loc, Is);
-            ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, skip_optimization);
-            ADDOP(c, loc, POP_TOP);
-
-            VISIT(c, expr, arg_expr);
-            ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_BUILD_FROZENSET);
-
-            ADDOP_JUMP(c, loc, JUMP, end);
-
-            USE_LABEL(c, skip_optimization);
-            return 1;
-        }
-
         return 0;
     }
 
