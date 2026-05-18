@@ -3960,8 +3960,11 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
 
     location loc = LOC(func);
 
-    if (asdl_seq_GET(args, 0)->kind != GeneratorExp_kind) {
-        if (_PyUnicode_EqualToASCIIString(func->v.Name.id, "frozenset")) {
+    expr_ty arg_expr = asdl_seq_GET(args, 0);
+
+    if (arg_expr->kind != GeneratorExp_kind) {
+        if (_PyUnicode_EqualToASCIIString(func->v.Name.id, "frozenset")
+            && (arg_expr->kind == Set_kind || arg_expr->kind == SetComp_kind)) {
             NEW_JUMP_TARGET_LABEL(c, skip_optimization);
 
             ADDOP_I(c, loc, COPY, 1);
@@ -3970,7 +3973,7 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
             ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, skip_optimization);
             ADDOP(c, loc, POP_TOP);
 
-            VISIT(c, expr, e->v.Call.args->elements[0]);
+            VISIT(c, expr, arg_expr);
             ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_BUILD_FROZENSET);
 
             ADDOP_JUMP(c, loc, JUMP, end);
@@ -3982,8 +3985,7 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
         return 0;
     }
 
-    expr_ty generator_exp = asdl_seq_GET(args, 0);
-    PySTEntryObject *generator_entry = _PySymtable_Lookup(SYMTABLE(c), (void *)generator_exp);
+    PySTEntryObject *generator_entry = _PySymtable_Lookup(SYMTABLE(c), (void *)arg_expr);
     if (generator_entry->ste_coroutine) {
         Py_DECREF(generator_entry);
         return 0;
@@ -4030,7 +4032,7 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
         } else if (const_oparg == CONSTANT_BUILTIN_SET || const_oparg == CONSTANT_BUILTIN_FROZENSET) {
             ADDOP_I(c, loc, BUILD_SET, 0);
         }
-        VISIT(c, expr, generator_exp);
+        VISIT(c, expr, arg_expr);
 
         NEW_JUMP_TARGET_LABEL(c, loop);
         NEW_JUMP_TARGET_LABEL(c, cleanup);
