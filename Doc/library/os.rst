@@ -234,6 +234,10 @@ process and user.
    .. versionchanged:: 3.9
       Updated to support :pep:`584`'s merge (``|``) and update (``|=``) operators.
 
+   .. versionchanged:: 3.15
+      The :meth:`~dict.clear` method can now emit an ``os._clearenv`` audit
+      event.
+
 
 .. data:: environb
 
