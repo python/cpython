@@ -3083,10 +3083,12 @@ clear_lock_held(PyObject *op)
         set_keys(mp, Py_EMPTY_KEYS);
         n = oldkeys->dk_nentries;
         for (i = 0; i < n; i++) {
-            Py_CLEAR(oldvalues->values[i]);
+            PyObject *tmp = oldvalues->values[i];
+            FT_ATOMIC_STORE_PTR_RELEASE(oldvalues->values[i], NULL);
+            Py_XDECREF(tmp);
         }
         free_values(oldvalues, IS_DICT_SHARED(mp));
-        dictkeys_decref(oldkeys, false);
+        dictkeys_decref(oldkeys, IS_DICT_SHARED(mp));
     }
     ASSERT_CONSISTENT(mp);
 }
