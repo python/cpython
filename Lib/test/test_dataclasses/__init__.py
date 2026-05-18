@@ -5289,6 +5289,13 @@ class TestKeywordArgs(unittest.TestCase):
         self.assertEqual(len(fs), 1)
         self.assertEqual(fs[0].name, 'x')
 
+    def test_makedataclass_with_qualname(self):
+        A = make_dataclass("A", ['a'], qualname='ClassA')
+        self.assertEqual(A.__qualname__, 'ClassA')
+
+        B = make_dataclass("B", ['b'], qualname='ClassB')
+        self.assertEqual(B.__qualname__, 'ClassB')
+
 
 class TestZeroArgumentSuperWithSlots(unittest.TestCase):
     def test_zero_argument_super(self):
