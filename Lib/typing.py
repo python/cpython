@@ -2689,7 +2689,7 @@ def overload(func):
 
     In a non-stub file, place two or more stub definitions for the same
     function in a row, each decorated with @overload, followed
-    with an implementation.  The implementation should *not*
+    by an implementation.  The implementation should *not*
     be decorated with @overload::
 
         @overload
