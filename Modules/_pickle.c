@@ -3179,7 +3179,7 @@ static int
 batch_list_exact(PickleState *state, PicklerObject *self, PyObject *obj)
 {
     PyObject *item = NULL;
-    Py_ssize_t this_batch, total;
+    Py_ssize_t this_batch, total, list_size;
 
     const char append_op = APPEND;
     const char appends_op = APPENDS;
@@ -3189,10 +3189,12 @@ batch_list_exact(PickleState *state, PicklerObject *self, PyObject *obj)
     assert(self->proto > 0);
     assert(PyList_CheckExact(obj));
 
+    list_size = PyList_GET_SIZE(obj);
+
     /* Write in batches of BATCHSIZE. */
     total = 0;
     do {
-        if (PyList_GET_SIZE(obj) - total == 1) {
+        if (list_size - total == 1) {
             item = PyList_GetItemRef(obj, total);
             if (item == NULL) {
                 _PyErr_FormatNote("when serializing %T item %zd", obj, total);
@@ -3229,8 +3231,14 @@ batch_list_exact(PickleState *state, PicklerObject *self, PyObject *obj)
         }
         if (_Pickler_Write(self, &appends_op, 1) < 0)
             return -1;
+        if (PyList_GET_SIZE(obj) != list_size) {
+            PyErr_Format(
+                PyExc_RuntimeError,
+                "list changed size during iteration");
+            return -1;
+        }
 
-    } while (total < PyList_GET_SIZE(obj));
+    } while (total < list_size);
 
     return 0;
 }
