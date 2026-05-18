@@ -446,7 +446,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
    .. note::
 
-      Accessing an instance method through the class (rather than an instance)
+      Accessing an instance method through the instance (rather than the class)
       returns a bound method, not a :term:`function`, so :func:`isfunction`
       will return ``False`` in that case. See :ref:`instance-methods` in the
       language reference for details.
@@ -466,7 +466,6 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    .. versionchanged:: 3.13
       Functions wrapped in :func:`functools.partialmethod` now return ``True``
       if the wrapped function is a Python generator function.
-
 
 .. function:: isgenerator(object)
 
@@ -563,7 +562,6 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    .. versionchanged:: 3.13
       Functions wrapped in :func:`functools.partialmethod` now return ``True``
       if the wrapped function is a :term:`asynchronous generator` function.
-
 
 .. function:: isasyncgen(object)
 
