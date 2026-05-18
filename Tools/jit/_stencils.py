@@ -62,6 +62,7 @@ _PATCH_FUNCS = {
     "ARM64_RELOC_PAGE21": "patch_aarch64_21r",
     "ARM64_RELOC_PAGEOFF12": "patch_aarch64_12",
     "ARM64_RELOC_UNSIGNED": "patch_64",
+    # custom aarch64, both darwin and linux:
     "CUSTOM_AARCH64_BRANCH19": "patch_aarch64_19r",
     "CUSTOM_AARCH64_CONST16a": "patch_aarch64_16a",
     "CUSTOM_AARCH64_CONST16b": "patch_aarch64_16b",
@@ -165,42 +166,30 @@ class Hole:
     custom_location: str = ""
     custom_value: str = ""
     func: str = dataclasses.field(init=False)
+    offset2: int = -1
+    void: bool = False
     # Convenience method:
     replace = dataclasses.replace
 
     def __post_init__(self) -> None:
         self.func = _PATCH_FUNCS[self.kind]
 
-    def fold(self, other: typing.Self, body: bytearray) -> typing.Self | None:
-        """Combine two holes into a single hole, if possible."""
-        instruction_a = int.from_bytes(
-            body[self.offset : self.offset + 4], byteorder=sys.byteorder
-        )
-        instruction_b = int.from_bytes(
-            body[other.offset : other.offset + 4], byteorder=sys.byteorder
-        )
-        reg_a = instruction_a & 0b11111
-        reg_b1 = instruction_b & 0b11111
-        reg_b2 = (instruction_b >> 5) & 0b11111
-
-        if (
-            self.offset + 4 == other.offset
-            and self.value == other.value
-            and self.symbol == other.symbol
-            and self.addend == other.addend
-            and self.func == "patch_aarch64_21rx"
-            and other.func == "patch_aarch64_12x"
-            and reg_a == reg_b1 == reg_b2
-        ):
-            # These can *only* be properly relaxed when they appear together and
-            # patch the same value:
-            folded = self.replace()
-            folded.func = "patch_aarch64_33rx"
-            return folded
-        return None
+    def fold(self, other: typing.Self) -> None:
+        """Combine two holes into a single hole."""
+        assert (
+            self.func == "patch_aarch64_12x" and other.func == "patch_aarch64_21rx"
+        ), (self.func, other.func)
+        assert self.value == other.value
+        assert self.symbol == other.symbol
+        assert self.addend == other.addend
+        self.func = "patch_aarch64_33rx"
+        self.offset2 = other.offset
+        other.void = True
 
     def as_c(self, where: str) -> str:
         """Dump this hole as a call to a patch_* function."""
+        if self.void:
+            return ""
         if self.custom_location:
             location = self.custom_location
         else:
@@ -222,6 +211,9 @@ class Hole:
                 value += f"{_signed(self.addend):#x}"
         if self.need_state:
             return f"{self.func}({location}, {value}, state);"
+        if self.offset2 >= 0:
+            first_location = f"{where} + {self.offset2:#x}"
+            return f"{self.func}({first_location}, {location}, {value});"
         return f"{self.func}({location}, {value});"
 
 
@@ -266,6 +258,10 @@ class StencilGroup:
     _got_entries: set[int] = dataclasses.field(default_factory=set, init=False)
 
     def convert_labels_to_relocations(self) -> None:
+        holes_by_offset: dict[int, Hole] = {}
+        first_in_pair: dict[str, Hole] = {}
+        for hole in self.code.holes:
+            holes_by_offset[hole.offset] = hole
         for name, hole_plus in self.symbols.items():
             if isinstance(name, str) and "_JIT_RELOCATION_" in name:
                 _, offset = hole_plus
@@ -275,6 +271,16 @@ class StencilGroup:
                     int(offset), typing.cast(_schema.HoleKind, reloc), value, symbol, 0
                 )
                 self.code.holes.append(hole)
+            elif isinstance(name, str) and "_JIT_PAIR_" in name:
+                _, offset = hole_plus
+                reloc, target, index = name.split("_JIT_PAIR_")
+                if offset in holes_by_offset:
+                    hole = holes_by_offset[offset]
+                    if "33a" in reloc:
+                        first_in_pair[index] = hole
+                    elif "33b" in reloc and index in first_in_pair:
+                        first = first_in_pair[index]
+                        hole.fold(first)
 
     def process_relocations(self, known_symbols: dict[str, int]) -> None:
         """Fix up all GOT and internal relocations for this stencil group."""

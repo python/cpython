@@ -1,2 +1,0 @@
-:mod:`sqlite3`: properly raise :exc:`MemoryError` instead of :exc:`SystemError`
-when a context callback fails to be allocated. Patch by Bénédikt Tran.

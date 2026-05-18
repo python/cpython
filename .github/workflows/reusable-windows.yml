@@ -17,6 +17,9 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: read
+
 env:
   FORCE_COLOR: 1
   IncludeUwp: >-

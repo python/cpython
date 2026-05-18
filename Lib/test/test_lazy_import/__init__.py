@@ -88,6 +88,26 @@ class LazyImportTests(unittest.TestCase):
         import test.test_lazy_import.data.basic_used
         self.assertIn("test.test_lazy_import.data.basic2", sys.modules)
 
+    @support.requires_subprocess()
+    def test_from_import_with_module_getattr(self):
+        """Lazy from import should respect module-level __getattr__."""
+        code = textwrap.dedent("""
+            lazy from test.test_lazy_import.data.module_with_getattr import dynamic_attr
+            assert dynamic_attr == "from_getattr"
+        """)
+        assert_python_ok("-c", code)
+
+    @support.requires_subprocess()
+    def test_from_import_with_imported_module_getattr(self):
+        """Lazy from import should not shadow an imported module's __getattr__."""
+        code = textwrap.dedent("""
+            import test.test_lazy_import.data.module_with_getattr as mod
+            lazy from test.test_lazy_import.data.module_with_getattr import dynamic_attr
+            assert dynamic_attr == "from_getattr"
+            assert mod.dynamic_attr == "from_getattr"
+        """)
+        assert_python_ok("-c", code)
+
 
 class GlobalLazyImportModeTests(unittest.TestCase):
     """Tests for sys.set_lazy_imports() global mode control."""
@@ -281,6 +301,15 @@ class SyntaxRestrictionTests(unittest.TestCase):
             f()
         self.assertIn("only allowed at module level", str(cm.exception))
 
+    def test_lazy_import_exec_in_class(self):
+        """lazy import via exec() inside a class should raise SyntaxError."""
+        # exec() inside a class body also has non-module-level locals.
+        with self.assertRaises(SyntaxError) as cm:
+            class C:
+                exec("lazy import json")
+
+        self.assertIn("only allowed at module level", str(cm.exception))
+
     @support.requires_subprocess()
     def test_lazy_import_exec_at_module_level(self):
         """lazy import via exec() at module level should work."""
@@ -331,6 +360,50 @@ class EagerImportInLazyModeTests(unittest.TestCase):
 
         f = test.test_lazy_import.data.eager_import_func.f
         self.assertEqual(type(f()), type(sys))
+
+    def test_exec_import_func(self):
+        """Implicit lazy imports via exec() inside functions should be eager."""
+        sys.set_lazy_imports("all")
+
+        def f():
+            exec("import test.test_lazy_import.data.basic2")
+
+        f()
+        self.assertIn("test.test_lazy_import.data.basic2", sys.modules)
+
+    def test_exec_import_func_with_lazy_modules(self):
+        """__lazy_modules__ should not make exec() imports lazy inside functions."""
+        globals()["__lazy_modules__"] = ["test.test_lazy_import.data.basic2"]
+        try:
+            def f():
+                exec("import test.test_lazy_import.data.basic2")
+
+            f()
+            self.assertIn("test.test_lazy_import.data.basic2", sys.modules)
+        finally:
+            del globals()["__lazy_modules__"]
+
+    def test_exec_import_class(self):
+        """Implicit lazy imports via exec() inside classes should be eager."""
+        sys.set_lazy_imports("all")
+
+        class C:
+            exec("import test.test_lazy_import.data.basic2")
+
+        self.assertIsNotNone(C)
+        self.assertIn("test.test_lazy_import.data.basic2", sys.modules)
+
+    def test_exec_import_class_with_lazy_modules(self):
+        """__lazy_modules__ should not make exec() imports lazy inside classes."""
+        globals()["__lazy_modules__"] = ["test.test_lazy_import.data.basic2"]
+        try:
+            class C:
+                exec("import test.test_lazy_import.data.basic2")
+
+            self.assertIsNotNone(C)
+            self.assertIn("test.test_lazy_import.data.basic2", sys.modules)
+        finally:
+            del globals()["__lazy_modules__"]
 
 
 class WithStatementTests(unittest.TestCase):
@@ -384,6 +457,17 @@ class PackageTests(unittest.TestCase):
         g = test.test_lazy_import.data.pkg.c.get_globals()
         self.assertEqual(type(g["x"]), int)
         self.assertEqual(type(g["b"]), types.LazyImportType)
+
+    @support.requires_subprocess()
+    def test_package_from_import_with_module_getattr(self):
+        """Lazy from import should respect a package's __getattr__."""
+        code = textwrap.dedent("""
+            import test.test_lazy_import.data.pkg as pkg
+            lazy from test.test_lazy_import.data.pkg import dynamic_attr
+            assert dynamic_attr == "from_getattr"
+            assert pkg.dynamic_attr == "from_getattr"
+        """)
+        assert_python_ok("-c", code)
 
 
 class DunderLazyImportTests(unittest.TestCase):
@@ -1034,6 +1118,50 @@ class CommandLineAndEnvVarTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, f"stderr: {result.stderr}")
         self.assertIn("EAGER", result.stdout)
 
+    @support.requires_resource("cpu")
+    def test_cli_lazy_imports_modes_import_stdlib_modules(self):
+        """-X lazy_imports modes should import available stdlib modules."""
+        # Do not smoke-test modules with intentional import-time effects.
+        import_side_effect_modules = {"antigravity", "this"}
+        importable = []
+
+        for module in sorted(sys.stdlib_module_names):
+            if module in import_side_effect_modules:
+                continue
+
+            with self.subTest(module=module):
+                code = f"import {module}; print({module})"
+                baseline = subprocess.run(
+                    [sys.executable, "-I", "-c", code],
+                    capture_output=True,
+                    text=True,
+                    timeout=60,
+                )
+                if baseline.returncode:
+                    # sys.stdlib_module_names includes modules for other
+                    # platforms and optional extension modules not built here.
+                    continue
+                importable.append(module)
+
+                for mode in ("normal", "none"):
+                    with self.subTest(module=module, mode=mode):
+                        result = subprocess.run(
+                            [
+                                sys.executable,
+                                "-I",
+                                "-X",
+                                f"lazy_imports={mode}",
+                                "-c",
+                                code,
+                            ],
+                            capture_output=True,
+                            text=True,
+                            timeout=60,
+                        )
+                        self.assertEqual(result.returncode, 0, result.stderr)
+
+        self.assertGreater(len(importable), 100)
+
     def test_cli_lazy_imports_normal_respects_lazy_keyword_only(self):
         """-X lazy_imports=normal should respect lazy keyword only."""
         # Note: Use test modules instead of stdlib modules to avoid
@@ -1205,6 +1333,36 @@ class FilterFunctionSignatureTests(unittest.TestCase):
         sys.set_lazy_imports_filter(None)
         sys.set_lazy_imports("normal")
 
+    def _run_subprocess_with_modules(self, code, files):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            for relpath, contents in files.items():
+                path = os.path.join(tmpdir, relpath)
+                os.makedirs(os.path.dirname(path), exist_ok=True)
+                with open(path, "w", encoding="utf-8") as file:
+                    file.write(textwrap.dedent(contents))
+
+            env = os.environ.copy()
+            env["PYTHONPATH"] = os.pathsep.join(
+                entry for entry in (tmpdir, env.get("PYTHONPATH")) if entry
+            )
+            env["PYTHON_LAZY_IMPORTS"] = "normal"
+
+            result = subprocess.run(
+                [sys.executable, "-c", textwrap.dedent(code)],
+                capture_output=True,
+                cwd=tmpdir,
+                env=env,
+                text=True,
+            )
+        return result
+
+    def _assert_subprocess_ok(self, code, files):
+        result = self._run_subprocess_with_modules(code, files)
+        self.assertEqual(
+            result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}"
+        )
+        return result
+
     def test_filter_receives_correct_arguments_for_import(self):
         """Filter should receive (importer, name, fromlist=None) for 'import x'."""
         code = textwrap.dedent("""
@@ -1289,6 +1447,159 @@ class FilterFunctionSignatureTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, f"stderr: {result.stderr}")
         self.assertIn("EAGER", result.stdout)
+
+    def test_filter_distinguishes_absolute_and_relative_from_imports(self):
+        """Relative imports should pass resolved module names to the filter."""
+        files = {
+            "target.py": """
+                VALUE = "absolute"
+            """,
+            "pkg/__init__.py": "",
+            "pkg/target.py": """
+                VALUE = "relative"
+            """,
+            "pkg/runner.py": """
+                import sys
+
+                seen = []
+
+                def my_filter(importer, name, fromlist):
+                    seen.append((importer, name, fromlist))
+                    return True
+
+                sys.set_lazy_imports_filter(my_filter)
+
+                lazy from target import VALUE as absolute_value
+                lazy from .target import VALUE as relative_value
+
+                assert seen == [
+                    (__name__, "target", ("VALUE",)),
+                    (__name__, "pkg.target", ("VALUE",)),
+                ], seen
+            """,
+        }
+
+        result = self._assert_subprocess_ok(
+            """
+            import pkg.runner
+            print("OK")
+            """,
+            files,
+        )
+        self.assertIn("OK", result.stdout)
+
+    def test_filter_receives_resolved_name_for_relative_package_import(self):
+        """'lazy from . import x' should report the resolved package name."""
+        files = {
+            "pkg/__init__.py": "",
+            "pkg/sibling.py": """
+                VALUE = 1
+            """,
+            "pkg/runner.py": """
+                import sys
+
+                seen = []
+
+                def my_filter(importer, name, fromlist):
+                    seen.append((importer, name, fromlist))
+                    return True
+
+                sys.set_lazy_imports_filter(my_filter)
+
+                lazy from . import sibling
+
+                assert seen == [
+                    (__name__, "pkg", ("sibling",)),
+                ], seen
+            """,
+        }
+
+        result = self._assert_subprocess_ok(
+            """
+            import pkg.runner
+            print("OK")
+            """,
+            files,
+        )
+        self.assertIn("OK", result.stdout)
+
+    def test_filter_receives_resolved_name_for_parent_relative_import(self):
+        """Parent relative imports should also use the resolved module name."""
+        files = {
+            "pkg/__init__.py": "",
+            "pkg/target.py": """
+                VALUE = 1
+            """,
+            "pkg/sub/__init__.py": "",
+            "pkg/sub/runner.py": """
+                import sys
+
+                seen = []
+
+                def my_filter(importer, name, fromlist):
+                    seen.append((importer, name, fromlist))
+                    return True
+
+                sys.set_lazy_imports_filter(my_filter)
+
+                lazy from ..target import VALUE
+
+                assert seen == [
+                    (__name__, "pkg.target", ("VALUE",)),
+                ], seen
+            """,
+        }
+
+        result = self._assert_subprocess_ok(
+            """
+            import pkg.sub.runner
+            print("OK")
+            """,
+            files,
+        )
+        self.assertIn("OK", result.stdout)
+
+    def test_filter_can_force_eager_only_for_resolved_relative_target(self):
+        """Resolved names should let filters treat relative and absolute imports differently."""
+        files = {
+            "target.py": """
+                VALUE = "absolute"
+            """,
+            "pkg/__init__.py": "",
+            "pkg/target.py": """
+                VALUE = "relative"
+            """,
+            "pkg/runner.py": """
+                import sys
+
+                def my_filter(importer, name, fromlist):
+                    return name != "pkg.target"
+
+                sys.set_lazy_imports_filter(my_filter)
+
+                lazy from target import VALUE as absolute_value
+                lazy from .target import VALUE as relative_value
+
+                assert "pkg.target" in sys.modules, sorted(
+                    name for name in sys.modules
+                    if name in {"target", "pkg.target"}
+                )
+                assert "target" not in sys.modules, sorted(
+                    name for name in sys.modules
+                    if name in {"target", "pkg.target"}
+                )
+                assert relative_value == "relative", relative_value
+            """,
+        }
+
+        result = self._assert_subprocess_ok(
+            """
+            import pkg.runner
+            print("OK")
+            """,
+            files,
+        )
+        self.assertIn("OK", result.stdout)
 
 
 class AdditionalSyntaxRestrictionTests(unittest.TestCase):

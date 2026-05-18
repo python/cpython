@@ -8,7 +8,6 @@ import os
 import platform
 import sys
 from test import support
-from test.support import warnings_helper
 from test.support import skip_if_buggy_ucrt_strfptime, run_with_locales
 from datetime import date as datetime_date
 
@@ -639,15 +638,11 @@ class StrptimeTests(unittest.TestCase):
         need_escaping = r".^$*+?{}\[]|)("
         self.assertTrue(_strptime._strptime_time(need_escaping, need_escaping))
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-70647
     def test_feb29_on_leap_year_without_year(self):
-        time.strptime("Feb 29", "%b %d")
-
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-70647
-    def test_mar1_comes_after_feb29_even_when_omitting_the_year(self):
-        self.assertLess(
-                time.strptime("Feb 29", "%b %d"),
-                time.strptime("Mar 1", "%b %d"))
+        with self.assertRaises(ValueError):
+            time.strptime("Feb 29", "%b %d")
+        with self.assertRaises(ValueError):
+            time.strptime("Mar 1", "%b %d")
 
     def test_strptime_F_format(self):
         test_date = "2025-10-26"

@@ -14,9 +14,70 @@
 # The function name must match the C domain identifier used in the documentation.
 
 # Synchronization primitives (Doc/c-api/synchronization.rst)
-PyMutex_Lock:shared:
-PyMutex_Unlock:shared:
+PyMutex_Lock:atomic:
+PyMutex_Unlock:atomic:
 PyMutex_IsLocked:atomic:
+
+
+# Dictionary objects (Doc/c-api/dict.rst)
+
+# Type checks - read ob_type pointer, always safe
+PyDict_Check:atomic:
+PyDict_CheckExact:atomic:
+
+# Creation - pure allocation, no shared state
+PyDict_New:atomic:
+
+# Lock-free lookups - use _Py_dict_lookup_threadsafe(), no locking.
+# Atomic with simple types.
+PyDict_Contains:shared:
+PyDict_ContainsString:atomic:
+PyDict_GetItemRef:shared:
+PyDict_GetItemStringRef:atomic:
+PyDict_Size:atomic:
+PyDict_GET_SIZE:atomic:
+
+# Borrowed-reference lookups - lock-free dict access but returned
+# borrowed reference is unsafe in free-threaded builds without
+# external synchronization
+PyDict_GetItem:compatible:
+PyDict_GetItemWithError:compatible:
+PyDict_GetItemString:compatible:
+PyDict_SetDefault:compatible:
+
+# Iteration - no locking; returns borrowed refs
+PyDict_Next:compatible:
+
+# Single-item mutations - protected by per-object critical section
+PyDict_SetItem:shared:
+PyDict_SetItemString:atomic:
+PyDict_DelItem:shared:
+PyDict_DelItemString:atomic:
+PyDict_SetDefaultRef:shared:
+PyDict_Pop:shared:
+PyDict_PopString:atomic:
+
+# Bulk reads - hold per-object lock for duration
+PyDict_Clear:atomic:
+PyDict_Copy:atomic:
+PyDict_Keys:atomic:
+PyDict_Values:atomic:
+PyDict_Items:atomic:
+
+# Merge/update - lock target dict; also lock source when it is a dict
+PyDict_Update:shared:
+PyDict_Merge:shared:
+PyDict_MergeFromSeq2:shared:
+
+# Watcher registration - no synchronization on interpreter state
+PyDict_AddWatcher:compatible:
+PyDict_ClearWatcher:compatible:
+
+# Per-dict watcher tags - non-atomic RMW on _ma_watcher_tag;
+# safe on distinct dicts only
+PyDict_Watch:distinct:
+PyDict_Unwatch:distinct:
+
 
 # List objects (Doc/c-api/list.rst)
 
@@ -125,6 +186,29 @@ PyByteArray_GET_SIZE:atomic:
 PyByteArray_AsString:compatible:
 PyByteArray_AS_STRING:compatible:
 
+# Creation - may iterate the iterable argument, calling arbitrary code.
+# Atomic for sets, frozensets, dicts, and frozendicts.
+PySet_New:shared:
+PyFrozenSet_New:shared:
+
+# Size - uses atomic load on free-threaded builds
+PySet_Size:atomic:
+PySet_GET_SIZE:atomic:
+
+# Contains - lock-free, atomic with simple types
+PySet_Contains:shared:
+
+# Mutations - hold per-object lock for duration
+# atomic with simple types
+PySet_Add:shared:
+PySet_Discard:shared:
+
+# Pop - hold per-object lock for duration
+PySet_Pop:atomic:
+
+# Clear - empties the set before clearing
+PySet_Clear:atomic:
+
 # Capsule objects (Doc/c-api/capsule.rst)
 
 # Type check - read ob_type pointer, always safe
@@ -153,3 +237,48 @@ PyCapsule_SetContext:distinct:
 # Import - looks up a capsule from a module attribute and
 # calls PyCapsule_GetPointer; may call arbitrary code
 PyCapsule_Import:compatible:
+
+# Tuple objects
+
+# Creation - pure allocation, no shared state
+PyTuple_New:atomic:
+PyTuple_FromArray:atomic:
+PyTuple_Pack:atomic:
+
+# Size - tuples are immutable so size never changes
+PyTuple_Size:atomic:
+PyTuple_GET_SIZE:atomic:
+
+# Borrowed-reference lookups - tuples are immutable so items
+# never change, however the tuple must be kept alive while using the borrowed reference
+PyTuple_GetItem:compatible:
+PyTuple_GET_ITEM:compatible:
+
+# Slice - creates a new tuple from an existing tuple
+PyTuple_GetSlice:atomic:
+
+# SetItem - only usable on tuples with refcount 1
+PyTuple_SetItem:compatible:
+PyTuple_SET_ITEM:compatible:
+
+# Resize - only usable on tuples with refcount 1
+_PyTuple_Resize:compatible:
+
+# Struct Sequence objects
+
+# Creation
+PyStructSequence_NewType:atomic:
+PyStructSequence_New:atomic:
+
+# Initialization - modifies the type object in place
+PyStructSequence_InitType:distinct:
+PyStructSequence_InitType2:distinct:
+
+# Borrowed-reference lookups - same as tuple items
+PyStructSequence_GetItem:compatible:
+PyStructSequence_GET_ITEM:compatible:
+
+# SetItem - only for filling in brand new instances
+PyStructSequence_SetItem:compatible:
+PyStructSequence_SET_ITEM:compatible:
+
