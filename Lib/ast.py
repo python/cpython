@@ -21,7 +21,7 @@ that work tightly with the python syntax (template engines for example).
 :license: Python License.
 """
 from _ast import *
-
+lazy import warnings
 
 def parse(source, filename='<unknown>', mode='exec', *,
           type_comments=False, feature_version=None, optimize=-1, module=None):
@@ -630,12 +630,10 @@ if not hasattr(Tuple, 'dims'):
 
     def _dims_getter(self):
         """Deprecated. Use elts instead."""
-        import warnings
         warnings._deprecated(f"ast.Tuple.dims", remove=(3, 21))
         return self.elts
 
     def _dims_setter(self, value):
-        import warnings
         warnings._deprecated(f"ast.Tuple.dims", remove=(3, 21))
         self.elts = value
 
@@ -733,7 +731,6 @@ def __getattr__(attr):
         val = _deprecated[attr]
     except KeyError:
         raise AttributeError(f"module 'ast' has no attribute {attr!r}") from None
-    import warnings
     warnings._deprecated(f"ast.{attr}", remove=(3, 21))
     return val
 
