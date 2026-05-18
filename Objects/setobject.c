@@ -1416,19 +1416,7 @@ make_new_frozenset(PyTypeObject *type, PyObject *iterable)
         /* frozenset(f) is idempotent */
         return Py_NewRef(iterable);
     }
-
-    // For cases like frozenset({1, 2, 3}), we can just steal the memory from
-    // the mutable set to avoid the copy.
-    PyObject *obj;
-    if (iterable != NULL
-        && PySet_CheckExact(iterable)
-        && PyUnstable_Object_IsUniqueReferencedTemporary(iterable)) {
-        return _PyFrozenSet_NewAndSteal(iterable);
-    }
-    else {
-        obj = make_new_set(type, iterable);
-    }
-
+    PyObject *obj = make_new_set(type, iterable);
     if (obj != NULL) {
         _PyFrozenSet_MaybeUntrack(obj);
     }

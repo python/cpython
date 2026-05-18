@@ -3953,9 +3953,32 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
 
     if (! (func->kind == Name_kind &&
            asdl_seq_LEN(args) == 1 &&
-           asdl_seq_LEN(kwds) == 0 &&
-           asdl_seq_GET(args, 0)->kind == GeneratorExp_kind))
+           asdl_seq_LEN(kwds) == 0))
     {
+        return 0;
+    }
+
+    location loc = LOC(func);
+
+    if (asdl_seq_GET(args, 0)->kind != GeneratorExp_kind) {
+        if (_PyUnicode_EqualToASCIIString(func->v.Name.id, "frozenset")) {
+            NEW_JUMP_TARGET_LABEL(c, skip_optimization);
+
+            ADDOP_I(c, loc, COPY, 1);
+            ADDOP_I(c, loc, LOAD_COMMON_CONSTANT, CONSTANT_BUILTIN_FROZENSET);
+            ADDOP_COMPARE(c, loc, Is);
+            ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, skip_optimization);
+            ADDOP(c, loc, POP_TOP);
+
+            VISIT(c, expr, e->v.Call.args->elements[0]);
+            ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_BUILD_FROZENSET);
+
+            ADDOP_JUMP(c, loc, JUMP, end);
+
+            USE_LABEL(c, skip_optimization);
+            return 1;
+        }
+
         return 0;
     }
 
@@ -3966,8 +3989,6 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
         return 0;
     }
     Py_DECREF(generator_entry);
-
-    location loc = LOC(func);
 
     int optimized = 0;
     NEW_JUMP_TARGET_LABEL(c, skip_optimization);
