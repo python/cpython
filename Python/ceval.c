@@ -3085,9 +3085,13 @@ _PyEval_LazyImportName(PyThreadState *tstate, PyObject *builtins,
 
     if (!lazy) {
         // See if __lazy_modules__ forces this to be lazy.
-        lazy = check_lazy_import_compatibility(tstate, globals, name, level);
-        if (lazy < 0) {
-            return NULL;
+        // __lazy_modules__ only applies at module level; exec() inside
+        // functions or classes should remain eager.
+        if (is_lazy_import_module_level()) {
+            lazy = check_lazy_import_compatibility(tstate, globals, name, level);
+            if (lazy < 0) {
+                return NULL;
+            }
         }
     }
 
