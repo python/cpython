@@ -31,7 +31,6 @@ _weakref _weakref.c
 
 # commonly used core modules
 _abc _abc.c
-_contextlib _contextlibmodule.c
 _functools _functoolsmodule.c
 _locale _localemodule.c
 _opcode _opcode.c

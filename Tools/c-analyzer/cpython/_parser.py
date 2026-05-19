@@ -189,7 +189,6 @@ MACROS = format_tsv_lines([
     ('Modules/_asynciomodule.c', 'Py_BUILD_CORE', '1'),
     ('Modules/_codecsmodule.c', 'Py_BUILD_CORE', '1'),
     ('Modules/_collectionsmodule.c', 'Py_BUILD_CORE', '1'),
-    ('Modules/_contextlibmodule.c', 'Py_BUILD_CORE', '1'),
     ('Modules/_ctypes/_ctypes.c', 'Py_BUILD_CORE', '1'),
     ('Modules/_ctypes/cfield.c', 'Py_BUILD_CORE', '1'),
     ('Modules/_cursesmodule.c', 'Py_BUILD_CORE', '1'),
