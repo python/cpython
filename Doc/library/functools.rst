@@ -123,6 +123,7 @@ The :mod:`!functools` module defines the following functions:
 
 
 .. decorator:: cached_method(func)
+               cached_method(maxsize=128, typed=False)
 
    Decorator to wrap a method with a bounded or unbounded cache.
 
