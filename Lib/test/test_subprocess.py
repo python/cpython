@@ -1130,6 +1130,39 @@ class ProcessTestCase(BaseTestCase):
             p.kill()
             p.wait()
 
+    def test_communicate_timeout_resume_partial_write(self):
+        """Resume writing input after a partial-write TimeoutExpired.
+
+        Exercises the _input_offset bookkeeping across the
+        _communicate_io_posix factoring: a first communicate() must time out
+        mid-write, and a subsequent communicate() must finish delivering the
+        remaining bytes so the child receives the full input intact.
+        """
+        # 1 MiB easily exceeds typical pipe buffers (~64 KiB) so writing
+        # blocks once the buffer fills before the child starts reading.
+        input_data = bytes(range(256)) * 4096  # 1 MiB, distinctive pattern
+        self.assertEqual(len(input_data), 1024 * 1024)
+
+        p = subprocess.Popen(
+            [sys.executable, "-c",
+             "import sys, time; "
+             "time.sleep(0.5); "
+             "sys.stdout.buffer.write(sys.stdin.buffer.read())"],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
+        try:
+            with self.assertRaises(subprocess.TimeoutExpired):
+                p.communicate(input_data, timeout=0.05)
+
+            # Resume: no new input, generous timeout to avoid CI flakes.
+            stdout, stderr = p.communicate(timeout=support.LONG_TIMEOUT)
+            self.assertEqual(len(stdout), len(input_data))
+            self.assertEqual(stdout, input_data)
+        finally:
+            p.kill()
+            p.wait()
+
     # Test for the fd leak reported in http://bugs.python.org/issue2791.
     def test_communicate_pipe_fd_leak(self):
         for stdin_pipe in (False, True):
