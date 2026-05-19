@@ -2592,6 +2592,8 @@ expression support in the :mod:`re` module).
    The *chars* argument is not a prefix or suffix; rather, all combinations of its
    values are stripped.
 
+   Whitespace characters are defined by :meth:`str.isspace`.
+
    For example:
 
    .. doctest::
