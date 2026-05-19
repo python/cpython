@@ -2612,6 +2612,8 @@ _asyncio_Task_cancel_impl(TaskObj *self, PyObject *msg)
         }
 
         if (is_true) {
+            Py_XINCREF(msg);
+            Py_XSETREF(self->task_cancel_msg, msg);
             Py_RETURN_TRUE;
         }
     }
@@ -3136,7 +3138,7 @@ task_step_impl(asyncio_state *state, TaskObj *task, PyObject *exc)
             /* transfer ownership */
             fut->fut_cancelled_exc = exc;
 
-            return future_cancel(state, fut, NULL);
+            return future_cancel(state, fut, fut->fut_cancel_msg);
         }
 
         /* Some other exception; pop it and call Task.set_exception() */

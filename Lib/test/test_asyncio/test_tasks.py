@@ -1861,6 +1861,25 @@ class BaseTaskTests:
         self.assertIsNone(task._fut_waiter)
         self.assertTrue(fut.cancelled())
 
+    def test_task_cancel_waiter_future_with_message(self):
+        fut = self.new_future(self.loop)
+
+        async def coro():
+            await fut
+
+        task = self.new_task(self.loop, coro())
+        test_utils.run_briefly(self.loop)
+        self.assertIs(task._fut_waiter, fut)
+
+        task.cancel('my message')
+        test_utils.run_briefly(self.loop)
+        with self.assertRaises(asyncio.CancelledError) as cm:
+            self.loop.run_until_complete(task)
+        self.assertEqual(cm.exception.args, ('my message',))
+        self.assertEqual(task._cancel_message, 'my message')
+        self.assertIsNone(task._fut_waiter)
+        self.assertTrue(fut.cancelled())
+
     def test_task_set_methods(self):
         async def notmuch():
             return 'ko'

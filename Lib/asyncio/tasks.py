@@ -216,6 +216,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
                 # Leave self._fut_waiter; it may be a Task that
                 # catches and ignores the cancellation so we may have
                 # to cancel it again later.
+                self._cancel_message = msg
                 return True
         # It must be the case that self.__step is already scheduled.
         self._must_cancel = True
@@ -299,7 +300,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         except exceptions.CancelledError as exc:
             # Save the original exception so we can chain it later.
             self._cancelled_exc = exc
-            super().cancel()  # I.e., Future.cancel(self).
+            super().cancel(msg=self._cancel_message)  # I.e., Future.cancel(self).
         except (KeyboardInterrupt, SystemExit) as exc:
             super().set_exception(exc)
             raise

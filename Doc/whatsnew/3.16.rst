@@ -123,6 +123,11 @@ asyncio
   which has been deprecated since Python 3.14.
   Use :func:`inspect.iscoroutinefunction` instead.
 
+* :meth:`asyncio.Task.cancel` now preserves its *msg* argument when a task is
+  cancelled while waiting on another future, so the message is retained when
+  the task later raises :exc:`asyncio.CancelledError`.
+  (Contributed by Prince Kumar in :gh:`NNNNN`.)
+
 functools
 ---------
 
