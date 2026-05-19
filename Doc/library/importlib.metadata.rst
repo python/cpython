@@ -105,6 +105,13 @@ You can also get a :ref:`distribution's version number <version>`, list its
    current Python environment.
 
 
+.. exception:: MetadataNotFound
+
+   Subclass of :class:`FileNotFoundError` raised when attempting to load metadata
+   from a distribution folder that is empty or otherwise does not contain a
+   metadata file.
+
+
 Functional API
 ==============
 
