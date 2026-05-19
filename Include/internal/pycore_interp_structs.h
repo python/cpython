@@ -353,9 +353,10 @@ struct _import_state {
     // lazily imported. This value is only for debugging/introspection
     // purposes and is not used by the runtime.
     PyObject *lazy_modules;
-    // Submodules that have been imported lazily from modules which have
-    // been imported lazily. When the module is imported we need to add
-    // a LazyImportObject which refers to the submodule on the module.
+    // A dict mapping package names to a set of submodule names that
+    // have been imported lazily from packages which have been imported
+    // lazily. When the package is reified we need to add a
+    // LazyImportObject which refers to the submodule on the module.
     PyObject *lazy_pending_submodules;
 #ifdef Py_GIL_DISABLED
     PyMutex lazy_mutex;
