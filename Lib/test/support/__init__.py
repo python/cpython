@@ -2564,6 +2564,9 @@ def requires_venv_with_pip():
     except ImportError:
         return unittest.skipIf(True, "venv: ensurepip requires zlib")
 
+    if not is_resource_enabled("network"):
+        return unittest.skipIf(True, "venv: ensurepip --upgrade requires network")
+
     # bpo-26610: pip/pep425tags.py requires ctypes.
     # gh-92820: setuptools/windows_support.py uses ctypes (setuptools 58.1).
     try:
