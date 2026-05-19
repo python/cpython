@@ -16,7 +16,7 @@ from libclinic import (
     fail, warn, unspecified, unknown, NULL)
 from libclinic.function import (
     Module, Class, Function, Parameter,
-    FunctionKind,
+    FunctionKind, VectorcallOptions,
     CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW,
     GETTER, SETTER)
 from libclinic.converter import (
@@ -302,8 +302,7 @@ class DSLParser:
         self.critical_section = False
         self.target_critical_section = []
         self.disable_fastcall = False
-        self.vectorcall = False
-        self.vectorcall_exact_only = False
+        self.vectorcall: VectorcallOptions | None = None
         self.permit_long_summary = False
         self.permit_long_docstring_body = False
 
@@ -469,18 +468,19 @@ class DSLParser:
         self.kind = STATIC_METHOD
 
     def at_vectorcall(self, *args: str) -> None:
-        if self.vectorcall:
+        if self.vectorcall is not None:
             fail("Called @vectorcall twice!")
-        self.vectorcall = True
+        exact_only = False
         for arg in args:
             if '=' in arg:
                 key = arg.split('=', 1)[0]
             else:
                 key = arg
             if key == 'exact_only':
-                self.vectorcall_exact_only = True
+                exact_only = True
             else:
                 fail(f"@vectorcall: unknown argument {key!r}")
+        self.vectorcall = VectorcallOptions(exact_only=exact_only)
 
     def at_coexist(self) -> None:
         if self.coexist:
@@ -745,7 +745,6 @@ class DSLParser:
             target_critical_section=self.target_critical_section,
             forced_text_signature=self.forced_text_signature,
             vectorcall=self.vectorcall,
-            vectorcall_exact_only=self.vectorcall_exact_only,
         )
         self.add_function(func)
 

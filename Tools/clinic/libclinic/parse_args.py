@@ -1229,7 +1229,7 @@ class ParseArgsCodeGen:
 
         # Exact type check (if vectorcall_exact_only)
         exact_check = ""
-        if func.vectorcall_exact_only and func.cls:
+        if func.vectorcall and func.vectorcall.exact_only and func.cls:
             type_obj = func.cls.type_object
             self.codegen.add_include('pycore_call.h',
                                      '_PyObject_MakeTpCall()')
