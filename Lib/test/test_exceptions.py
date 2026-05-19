@@ -1845,7 +1845,7 @@ class ExceptionTests(unittest.TestCase):
             open('__non-existent__')
         self.assertEqual(
             str(cm.exception),
-            f"[Errno 9 (ENOENT)] No such file or directory: '__non-existent__'",
+            f"[Errno 2 (ENOENT)] No such file or directory: '__non-existent__'",
         )
 
     @unittest.skipUnless(__debug__, "Won't work if __debug__ is False")
