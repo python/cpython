@@ -25,7 +25,7 @@ of Python objects.
 
    .. note::
 
-      On :term:`free threaded <free threading>` builds of Python, returning 1
+      On :term:`free-threaded builds <free-threaded build>` of Python, returning 1
       isn't sufficient to determine if it's safe to treat *o* as having no
       access by other threads. Use :c:func:`PyUnstable_Object_IsUniquelyReferenced`
       for that instead.
@@ -210,7 +210,7 @@ of Python objects.
 
         Py_SETREF(dst, src);
 
-   That arranges to set *dst* to *src* _before_ releasing the reference
+   That arranges to set *dst* to *src* *before* releasing the reference
    to the old value of *dst*, so that any code triggered as a side-effect
    of *dst* getting torn down no longer believes *dst* points
    to a valid object.

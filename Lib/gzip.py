@@ -30,7 +30,7 @@ READ_BUFFER_SIZE = 128 * 1024
 _WRITE_BUFFER_SIZE = 4 * io.DEFAULT_BUFFER_SIZE
 
 
-def open(filename, mode="rb", compresslevel=_COMPRESS_LEVEL_BEST,
+def open(filename, mode="rb", compresslevel=_COMPRESS_LEVEL_TRADEOFF,
          encoding=None, errors=None, newline=None):
     """Open a gzip-compressed file in binary or text mode.
 
@@ -158,7 +158,7 @@ class GzipFile(_streams.BaseStream):
     myfileobj = None
 
     def __init__(self, filename=None, mode=None,
-                 compresslevel=_COMPRESS_LEVEL_BEST, fileobj=None, mtime=None):
+                 compresslevel=_COMPRESS_LEVEL_TRADEOFF, fileobj=None, mtime=None):
         """Constructor for the GzipFile class.
 
         At least one of fileobj and filename must be given a
@@ -268,8 +268,6 @@ class GzipFile(_streams.BaseStream):
         self.name = filename
         self.crc = zlib.crc32(b"")
         self.size = 0
-        self.writebuf = []
-        self.bufsize = 0
         self.offset = 0  # Current file offset for seek(), tell(), etc
 
     def tell(self):
@@ -486,40 +484,73 @@ def _read_exact(fp, n):
     return data
 
 
+def _read_until_null(fp, crc=None):
+    '''Read until the first encountered null byte in fp.
+    If crc is not None, update and return the CRC.
+    '''
+    if crc is None:
+        while True:
+            s = fp.read(1)
+            if not s or s == b'\000':
+                break
+    else:
+        while True:
+            s = fp.read(1)
+            crc = zlib.crc32(s, crc)
+            if not s or s == b'\000':
+                break
+    return crc
+
+
 def _read_gzip_header(fp):
     '''Read a gzip header from `fp` and progress to the end of the header.
 
     Returns last mtime if header was present or None otherwise.
     '''
     magic = fp.read(2)
-    if magic == b'':
+    if not magic:
         return None
 
     if magic != b'\037\213':
         raise BadGzipFile('Not a gzipped file (%r)' % magic)
-
-    (method, flag, last_mtime) = struct.unpack("<BBIxx", _read_exact(fp, 8))
+    base_header = _read_exact(fp, 8)
+    (method, flag, last_mtime) = struct.unpack("<BBIxx", base_header)
     if method != 8:
         raise BadGzipFile('Unknown compression method')
 
-    if flag & FEXTRA:
-        # Read & discard the extra field, if present
-        extra_len, = struct.unpack("<H", _read_exact(fp, 2))
-        _read_exact(fp, extra_len)
-    if flag & FNAME:
+    # Most common cases are no flags (gzip.compress, zlib.compress) or only
+    # FNAME set (GzipFile, gzip command line application). Exit early
+    # in those cases.
+    if not flag:
+        return last_mtime
+    if flag == FNAME:
         # Read and discard a null-terminated string containing the filename
-        while True:
-            s = fp.read(1)
-            if not s or s==b'\000':
-                break
-    if flag & FCOMMENT:
-        # Read and discard a null-terminated string containing a comment
-        while True:
-            s = fp.read(1)
-            if not s or s==b'\000':
-                break
+        _read_until_null(fp)
+        return last_mtime
+
+    # Processing for more complex flags. Save header parts for FHCRC checking.
     if flag & FHCRC:
-        _read_exact(fp, 2)     # Read & discard the 16-bit header CRC
+        crc = zlib.crc32(magic + base_header)
+    else:
+        crc = None
+    if flag & FEXTRA:
+        extra_len_bytes = _read_exact(fp, 2)
+        extra_len, = struct.unpack("<H", extra_len_bytes)
+        extra = _read_exact(fp, extra_len)
+        if crc is not None:
+            crc = zlib.crc32(extra_len_bytes, crc)
+            crc = zlib.crc32(extra, crc)
+    if flag & FNAME:
+        crc = _read_until_null(fp, crc)
+    if flag & FCOMMENT:
+        crc = _read_until_null(fp, crc)
+    if crc is not None:
+        # Header CRC is the last 16 bits of a crc32.
+        header_crc, = struct.unpack("<H", _read_exact(fp, 2))
+        crc = crc & 0xFFFF
+        if header_crc != crc:
+            raise BadGzipFile(f"Corrupted gzip header. Checksums do not "
+                              f"match: {crc:04x} != {header_crc:04x}")
     return last_mtime
 
 
@@ -621,7 +652,7 @@ class _GzipReader(_streams.DecompressReader):
         self._new_member = True
 
 
-def compress(data, compresslevel=_COMPRESS_LEVEL_BEST, *, mtime=0):
+def compress(data, compresslevel=_COMPRESS_LEVEL_TRADEOFF, *, mtime=0):
     """Compress data in one shot and return the compressed string.
 
     compresslevel sets the compression level in range of 0-9.
@@ -666,15 +697,14 @@ def decompress(data):
 def main():
     from argparse import ArgumentParser
     parser = ArgumentParser(description=
-        "A simple command line interface for the gzip module: act like gzip, "
+        "A simple command line interface for the `gzip` module: act like `gzip`, "
         "but do not delete the input file.",
-        color=True,
     )
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--fast', action='store_true', help='compress faster')
     group.add_argument('--best', action='store_true', help='compress better')
     group.add_argument("-d", "--decompress", action="store_true",
-                        help="act like gunzip instead of gzip")
+                        help="act like `gunzip` instead of `gzip`")
 
     parser.add_argument("args", nargs="*", default=["-"], metavar='file')
     args = parser.parse_args()

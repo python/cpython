@@ -301,7 +301,7 @@ PyDoc_STRVAR(_curses_window_attron__doc__,
 "attron($self, attr, /)\n"
 "--\n"
 "\n"
-"Add attribute attr from the \"background\" set.");
+"Add attribute attr to the \"background\" set.");
 
 #define _CURSES_WINDOW_ATTRON_METHODDEF    \
     {"attron", (PyCFunction)_curses_window_attron, METH_O, _curses_window_attron__doc__},
@@ -733,23 +733,13 @@ PyDoc_STRVAR(_curses_window_getbkgd__doc__,
 #define _CURSES_WINDOW_GETBKGD_METHODDEF    \
     {"getbkgd", (PyCFunction)_curses_window_getbkgd, METH_NOARGS, _curses_window_getbkgd__doc__},
 
-static long
+static PyObject *
 _curses_window_getbkgd_impl(PyCursesWindowObject *self);
 
 static PyObject *
 _curses_window_getbkgd(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-    long _return_value;
-
-    _return_value = _curses_window_getbkgd_impl((PyCursesWindowObject *)self);
-    if ((_return_value == -1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyLong_FromLong(_return_value);
-
-exit:
-    return return_value;
+    return _curses_window_getbkgd_impl((PyCursesWindowObject *)self);
 }
 
 PyDoc_STRVAR(_curses_window_getch__doc__,
@@ -768,7 +758,7 @@ PyDoc_STRVAR(_curses_window_getch__doc__,
 #define _CURSES_WINDOW_GETCH_METHODDEF    \
     {"getch", (PyCFunction)_curses_window_getch, METH_VARARGS, _curses_window_getch__doc__},
 
-static int
+static PyObject *
 _curses_window_getch_impl(PyCursesWindowObject *self, int group_right_1,
                           int y, int x);
 
@@ -779,7 +769,6 @@ _curses_window_getch(PyObject *self, PyObject *args)
     int group_right_1 = 0;
     int y = 0;
     int x = 0;
-    int _return_value;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 0:
@@ -794,11 +783,7 @@ _curses_window_getch(PyObject *self, PyObject *args)
             PyErr_SetString(PyExc_TypeError, "_curses.window.getch requires 0 to 2 arguments");
             goto exit;
     }
-    _return_value = _curses_window_getch_impl((PyCursesWindowObject *)self, group_right_1, y, x);
-    if ((_return_value == -1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyLong_FromLong((long)_return_value);
+    return_value = _curses_window_getch_impl((PyCursesWindowObject *)self, group_right_1, y, x);
 
 exit:
     return return_value;
@@ -1055,7 +1040,7 @@ PyDoc_STRVAR(_curses_window_inch__doc__,
 #define _CURSES_WINDOW_INCH_METHODDEF    \
     {"inch", (PyCFunction)_curses_window_inch, METH_VARARGS, _curses_window_inch__doc__},
 
-static unsigned long
+static PyObject *
 _curses_window_inch_impl(PyCursesWindowObject *self, int group_right_1,
                          int y, int x);
 
@@ -1066,7 +1051,6 @@ _curses_window_inch(PyObject *self, PyObject *args)
     int group_right_1 = 0;
     int y = 0;
     int x = 0;
-    unsigned long _return_value;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 0:
@@ -1081,11 +1065,7 @@ _curses_window_inch(PyObject *self, PyObject *args)
             PyErr_SetString(PyExc_TypeError, "_curses.window.inch requires 0 to 2 arguments");
             goto exit;
     }
-    _return_value = _curses_window_inch_impl((PyCursesWindowObject *)self, group_right_1, y, x);
-    if ((_return_value == (unsigned long)-1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyLong_FromUnsignedLong(_return_value);
+    return_value = _curses_window_inch_impl((PyCursesWindowObject *)self, group_right_1, y, x);
 
 exit:
     return return_value;
@@ -2392,7 +2372,22 @@ _curses_ungetmouse(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("ungetmouse", "argument 5", "int", args[4]);
         goto exit;
     }
-    bstate = PyLong_AsUnsignedLongMask(args[4]);
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[4], &bstate, sizeof(unsigned long),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned long)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
+    }
     return_value = _curses_ungetmouse_impl(module, id, x, y, z, bstate);
 
 exit:
@@ -3158,7 +3153,22 @@ _curses_mousemask(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("mousemask", "argument", "int", arg);
         goto exit;
     }
-    newmask = PyLong_AsUnsignedLongMask(arg);
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(arg, &newmask, sizeof(unsigned long),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned long)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
+    }
     return_value = _curses_mousemask_impl(module, newmask);
 
 exit:
@@ -4440,4 +4450,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=42b2923d88c8d0f6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=135246e29163510c input=a9049054013a1b77]*/

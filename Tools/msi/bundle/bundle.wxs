@@ -106,11 +106,11 @@
     <Variable Name="SimpleInstallDescription" Value="" bal:Overridable="yes" />
 
     <Chain ParallelCache="yes">
+      <PackageGroupRef Id="core" />
+      <PackageGroupRef Id="exe" />
       <?if $(var.Platform)!="ARM64" ?>
       <PackageGroupRef Id="crt" />
       <?endif ?>
-      <PackageGroupRef Id="core" />
-      <PackageGroupRef Id="exe" />
       <PackageGroupRef Id="dev" />
       <PackageGroupRef Id="lib" />
       <?if $(var.IncludeFreethreaded)~="true" ?>

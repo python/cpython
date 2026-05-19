@@ -4,13 +4,11 @@
 .. module:: pyclbr
    :synopsis: Supports information extraction for a Python module browser.
 
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
 **Source code:** :source:`Lib/pyclbr.py`
 
 --------------
 
-The :mod:`pyclbr` module provides limited information about the
+The :mod:`!pyclbr` module provides limited information about the
 functions, classes, and methods defined in a Python-coded module.  The
 information is sufficient to implement a module browser.  The
 information is extracted from the Python source code rather than by

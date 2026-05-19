@@ -15,6 +15,18 @@ class BaseRobotTest:
     good = []
     bad = []
     site_maps = None
+    expected_output = None
+
+    def __init_subclass__(cls):
+        super().__init_subclass__()
+        # Remove tests that do nothing.
+        if issubclass(cls, unittest.TestCase):
+            if not cls.good:
+                cls.test_good_urls = None
+            if not cls.bad:
+                cls.test_bad_urls = None
+            if cls.expected_output is None:
+                cls.test_string_formatting = None
 
     def setUp(self):
         lines = io.StringIO(self.robots_txt).readlines()
@@ -42,6 +54,8 @@ class BaseRobotTest:
     def test_site_maps(self):
         self.assertEqual(self.parser.site_maps(), self.site_maps)
 
+    def test_string_formatting(self):
+        self.assertEqual(str(self.parser), self.expected_output)
 
 class UserAgentWildcardTest(BaseRobotTest, unittest.TestCase):
     robots_txt = """\
@@ -52,6 +66,56 @@ Disallow: /foo.html
     """
     good = ['/', '/test.html']
     bad = ['/cyberworld/map/index.html', '/tmp/xxx', '/foo.html']
+
+class SimpleExampleTest(BaseRobotTest, unittest.TestCase):
+    # Example from RFC 9309, section 5.1.
+    robots_txt = """\
+User-Agent: *
+Disallow: *.gif$
+Disallow: /example/
+Allow: /publications/
+
+User-Agent: foobot
+Disallow:/
+Allow:/example/page.html
+Allow:/example/allowed.gif
+
+User-Agent: barbot
+User-Agent: bazbot
+Disallow: /example/page.html
+
+User-Agent: quxbot
+    """
+    good = [
+        '/', '/publications/',
+        ('foobot', '/example/page.html'), ('foobot', '/example/allowed.gif'),
+        ('barbot', '/'), ('barbot', '/example/'),
+            ('barbot', '/example/allowed.gif'),
+            ('barbot', '/example/disallowed.gif'),
+            ('barbot', '/publications/'),
+            ('barbot', '/publications/allowed.gif'),
+        ('bazbot', '/'), ('bazbot', '/example/'),
+            ('bazbot', '/example/allowed.gif'),
+            ('bazbot', '/example/disallowed.gif'),
+            ('bazbot', '/publications/'),
+            ('bazbot', '/publications/allowed.gif'),
+        ('quxbot', '/'), ('quxbot', '/example/'),
+            ('quxbot', '/example/page.html'), ('quxbot', '/example/allowed.gif'),
+            ('quxbot', '/example/disallowed.gif'),
+            ('quxbot', '/publications/'),
+            ('quxbot', '/publications/allowed.gif'),
+        ]
+    bad = [
+        '/example/', '/example/page.html', '/example/allowed.gif',
+            '/example/disallowed.gif',
+            '/publications/allowed.gif',
+        ('foobot', '/'), ('foobot', '/example/'),
+            ('foobot', '/example/disallowed.gif'),
+            ('foobot', '/publications/'),
+            ('foobot', '/publications/allowed.gif'),
+        ('barbot', '/example/page.html'),
+        ('bazbot', '/example/page.html'),
+    ]
 
 
 class CrawlDelayAndCustomAgentTest(BaseRobotTest, unittest.TestCase):
@@ -94,7 +158,7 @@ class RejectAllRobotsTest(BaseRobotTest, unittest.TestCase):
 User-agent: *
 Disallow: /
     """
-    good = []
+    good = ['/robots.txt']
     bad = ['/cyberworld/map/index.html', '/', '/tmp/']
 
 
@@ -129,6 +193,7 @@ class BaseRequestRateTest(BaseRobotTest):
 class EmptyFileTest(BaseRequestRateTest, unittest.TestCase):
     robots_txt = ''
     good = ['/foo']
+    expected_output = ''
 
 
 class CrawlDelayAndRequestRateTest(BaseRequestRateTest, unittest.TestCase):
@@ -195,35 +260,209 @@ Request-rate: whale/banana
 
 
 class UserAgentOrderingTest(BaseRobotTest, unittest.TestCase):
-    # the order of User-agent should be correct. note
-    # that this file is incorrect because "Googlebot" is a
-    # substring of "Googlebot-Mobile"
+    # the order of User-agent should not matter
     robots_txt = """\
 User-agent: Googlebot
 Disallow: /
+Allow: /folder1/
 
 User-agent: Googlebot-Mobile
 Allow: /
+Disallow: /folder1/
     """
     agent = 'Googlebot'
     bad = ['/something.jpg']
+    good = ['/folder1/myfile.html']
 
 
 class UserAgentGoogleMobileTest(UserAgentOrderingTest):
-    agent = 'Googlebot-Mobile'
+    agent = 'Googlebot-mobile'
+    bad = ['/folder1/myfile.html']
+    good = ['/something.jpg']
 
 
-class GoogleURLOrderingTest(BaseRobotTest, unittest.TestCase):
-    # Google also got the order wrong. You need
-    # to specify the URLs from more specific to more general
+class LongestMatchTest(BaseRobotTest, unittest.TestCase):
+    # Based on example from RFC 9309, section 5.2.
     robots_txt = """\
-User-agent: Googlebot
-Allow: /folder1/myfile.html
-Disallow: /folder1/
+User-agent: *
+Allow: /example/page/
+Disallow: /example/page/disallowed.gif
+Allow: /example/
     """
-    agent = 'googlebot'
-    good = ['/folder1/myfile.html']
-    bad = ['/folder1/anotherfile.html']
+    good = ['/example/', '/example/page/']
+    bad = ['/example/page/disallowed.gif']
+
+
+class LongestMatchWildcardTest(BaseRobotTest, unittest.TestCase):
+    robots_txt = """\
+User-agent: *
+Allow: /example/page/
+Disallow: *.gif
+Allow: /example/
+    """
+    good = ['/example/', '/example/page/']
+    bad = ['/example/page/disallowed.gif', '/x.gif']
+
+
+class AllowWinsEqualMatchTest(BaseRobotTest, unittest.TestCase):
+    robots_txt = """\
+User-agent: *
+Disallow: /spam
+Allow: /spam
+Disallow: /spam
+    """
+    good = ['/spam', '/spam/']
+
+
+class AllowWinsEqualFullMatchTest(BaseRobotTest, unittest.TestCase):
+    robots_txt = """\
+User-agent: *
+Disallow: /spam
+Allow: /spam$
+Disallow: /spam
+Disallow: /eggs$
+Allow: /eggs
+Disallow: /eggs$
+    """
+    good = ['/spam', '/eggs', '/eggs/']
+    bad = ['/spam/']
+
+
+class AllowWinsEqualMatchWildcardTest(BaseRobotTest, unittest.TestCase):
+    robots_txt = """\
+User-agent: *
+Disallow: /spam
+Allow: *am
+Disallow: /spam
+Disallow: *gs
+Allow: /eggs
+Disallow: *gs
+    """
+    good = ['/spam', '/eggs', '/spam/', '/eggs/']
+
+
+class MergeGroupsTest(BaseRobotTest, unittest.TestCase):
+    robots_txt = """\
+User-agent: spambot
+Disallow: /some/path
+
+User-agent: spambot
+Disallow: /another/path
+    """
+    agent = 'spambot'
+    bad = ['/some/path', '/another/path']
+
+
+class UserAgentStartsGroupTest(BaseRobotTest, unittest.TestCase):
+    robots_txt = """\
+User-agent: spambot
+Disallow: /some/path
+User-agent: eggsbot
+Disallow: /another/path
+    """
+    good = [('spambot', '/'), ('spambot', '/another/path'),
+            ('eggsbot', '/'), ('eggsbot', '/some/path')]
+    bad = [('spambot', '/some/path'), ('eggsbot', '/another/path')]
+    expected_output = """\
+User-agent: spambot
+Disallow: /some/path
+
+User-agent: eggsbot
+Disallow: /another/path\
+"""
+
+class IgnoreEmptyLinesTest(BaseRobotTest, unittest.TestCase):
+    robots_txt = """\
+User-agent: spambot
+
+User-agent: eggsbot
+Disallow: /some/path
+
+Disallow: /another/path
+    """
+    good = [('spambot', '/'), ('eggsbot', '/')]
+    bad = [
+        ('spambot', '/some/path'), ('spambot', '/another/path'),
+        ('eggsbot', '/some/path'), ('eggsbot', '/another/path'),
+    ]
+    expected_output = """\
+User-agent: spambot
+User-agent: eggsbot
+Disallow: /some/path
+Disallow: /another/path\
+"""
+
+
+class IgnoreRulesWithoutUserAgentTest(BaseRobotTest, unittest.TestCase):
+    robots_txt = """\
+Disallow: /some/path
+
+User-agent: *
+Disallow: /another/path
+    """
+    good = ['/', '/some/path']
+    bad = ['/another/path']
+    expected_output = """\
+User-agent: *
+Disallow: /another/path\
+"""
+
+
+class EmptyGroupTest(BaseRobotTest, unittest.TestCase):
+    robots_txt = """\
+User-agent: *
+Disallow: /some/path
+
+User-agent: spambot
+    """
+    agent = 'spambot'
+    good = ['/', '/some/path']
+    expected_output = """\
+User-agent: *
+Disallow: /some/path
+
+User-agent: spambot
+Allow:\
+"""
+
+
+class WeirdPathTest(BaseRobotTest, unittest.TestCase):
+    robots_txt = f"""\
+User-agent: *
+Disallow: /a$$$
+Disallow: /b$z
+Disallow: /c***
+Disallow: /d***z
+Disallow: /e*$**$$
+Disallow: /f*$**$$z
+Disallow: /g$*$$**
+Disallow: /h$*$$**z
+    """
+    good = ['/ax', '/a$$', '/b', '/bz', '/b$z', '/d', '/f', '/fz',
+            '/f$$$z', '/fx$y$$z', '/gx', '/g$$$', '/g$x$$y', '/h', '/hz',
+            '/h$$$z', '/h$x$$yz']
+    bad = ['/a', '/c', '/cxy', '/dz', '/dxyz', '/dxzy', '/e', '/exy',
+           '/e$$', '/ex$y$', '/g']
+    expected_output = """\
+User-agent: *
+Disallow: /a$
+Disallow: /c*
+Disallow: /d*z
+Disallow: /e*$
+Disallow: /g$\
+"""
+
+
+class PathWithManyWildcardsTest(BaseRobotTest, unittest.TestCase):
+    # This test would take many years if use naive translation to regular
+    # expression (* -> .*).
+    N = 50
+    robots_txt = f"""\
+User-agent: *
+Disallow: /{'*a'*N}*b
+    """
+    good = ['/' + 'a'*N + 'a']
+    bad = ['/' + 'a'*N + 'b']
 
 
 class DisallowQueryStringTest(BaseRobotTest, unittest.TestCase):
@@ -231,33 +470,92 @@ class DisallowQueryStringTest(BaseRobotTest, unittest.TestCase):
     robots_txt = """\
 User-agent: *
 Disallow: /some/path?name=value
-    """
-    good = ['/some/path']
-    bad = ['/some/path?name=value']
-
-
-class UseFirstUserAgentWildcardTest(BaseRobotTest, unittest.TestCase):
-    # obey first * entry (#4108)
-    robots_txt = """\
-User-agent: *
-Disallow: /some/path
-
-User-agent: *
-Disallow: /another/path
-    """
-    good = ['/another/path']
-    bad = ['/some/path']
-
-
-class EmptyQueryStringTest(BaseRobotTest, unittest.TestCase):
-    # normalize the URL first (#17403)
-    robots_txt = """\
-User-agent: *
-Allow: /some/path?
 Disallow: /another/path?
+Disallow: /yet/one/path?name=value&more
     """
-    good = ['/some/path?']
-    bad = ['/another/path?']
+    good = ['/some/path', '/some/path?',
+            '/some/path%3Fname=value', '/some/path?name%3Dvalue',
+            '/another/path', '/another/path%3F',
+            '/yet/one/path?name=value%26more',
+            '/some/pathxname=value']
+    bad = ['/some/path?name=value'
+           '/another/path?', '/another/path?name=value',
+           '/yet/one/path?name=value&more']
+
+
+class PercentEncodingTest(BaseRobotTest, unittest.TestCase):
+    robots_txt = """\
+User-agent: *
+Disallow: /a1/Z-._~ # unreserved characters
+Disallow: /a2/%5A%2D%2E%5F%7E # percent-encoded unreserved characters
+Disallow: /u1/%F0%9F%90%8D # percent-encoded ASCII Unicode character
+Disallow: /u2/%f0%9f%90%8d
+Disallow: /u3/\U0001f40d # raw non-ASCII Unicode character
+Disallow: /v1/%F0 # percent-encoded non-ASCII octet
+Disallow: /v2/%f0
+Disallow: /v3/\udcf0 # raw non-ASCII octet
+Disallow: /p1%xy # raw percent
+Disallow: /p2%
+Disallow: /p3%25xy # percent-encoded percent
+Disallow: /p4%2525xy # double percent-encoded percent
+Disallow: /john%20smith # space
+Disallow: /john doe
+Disallow: /trailingspace%20
+Disallow: /question%3Fq=v # not query
+Disallow: /hash%23f # not fragment
+Disallow: /dollar%24
+Disallow: /asterisk%2A
+Disallow: /sub/dir
+Disallow: /slash%2F
+Disallow: /query/question?q=%3F
+Disallow: /query/raw/question?q=?
+Disallow: /query/eq?q%3Dv
+Disallow: /query/amp?q=v%26a
+"""
+    good = [
+        '/u1/%F0', '/u1/%f0',
+        '/u2/%F0', '/u2/%f0',
+        '/u3/%F0', '/u3/%f0',
+        '/p1%2525xy', '/p2%f0', '/p3%2525xy', '/p4%xy', '/p4%25xy',
+        '/question?q=v',
+        '/dollar', '/asterisk',
+        '/query/eq?q=v',
+        '/query/amp?q=v&a',
+    ]
+    bad = [
+        '/a1/Z-._~', '/a1/%5A%2D%2E%5F%7E',
+        '/a2/Z-._~', '/a2/%5A%2D%2E%5F%7E',
+        '/u1/%F0%9F%90%8D', '/u1/%f0%9f%90%8d', '/u1/\U0001f40d',
+        '/u2/%F0%9F%90%8D', '/u2/%f0%9f%90%8d', '/u2/\U0001f40d',
+        '/u3/%F0%9F%90%8D', '/u3/%f0%9f%90%8d', '/u3/\U0001f40d',
+        '/v1/%F0', '/v1/%f0', '/v1/\udcf0', '/v1/\U0001f40d',
+        '/v2/%F0', '/v2/%f0', '/v2/\udcf0', '/v2/\U0001f40d',
+        '/v3/%F0', '/v3/%f0', '/v3/\udcf0', '/v3/\U0001f40d',
+        '/p1%xy', '/p1%25xy',
+        '/p2%', '/p2%25', '/p2%2525', '/p2%xy',
+        '/p3%xy', '/p3%25xy',
+        '/p4%2525xy',
+        '/john%20smith', '/john smith',
+        '/john%20doe', '/john doe',
+        '/trailingspace%20', '/trailingspace ',
+        '/question%3Fq=v',
+        '/hash#f', '/hash%23f',
+        '/dollar$', '/dollar%24',
+        '/asterisk*', '/asterisk%2A',
+        '/sub/dir', '/sub%2Fdir',
+        '/slash%2F', '/slash/',
+        '/query/question?q=?', '/query/question?q=%3F',
+        '/query/raw/question?q=?', '/query/raw/question?q=%3F',
+        '/query/eq?q%3Dv',
+        '/query/amp?q=v%26a',
+    ]
+    # other reserved characters
+    for c in ":/#[]@!$&'()*+,;=":
+        robots_txt += f'Disallow: /raw{c}\nDisallow: /pc%{ord(c):02X}\n'
+        bad.append(f'/raw{c}')
+        bad.append(f'/raw%{ord(c):02X}')
+        bad.append(f'/pc{c}')
+        bad.append(f'/pc%{ord(c):02X}')
 
 
 class DefaultEntryTest(BaseRequestRateTest, unittest.TestCase):
@@ -286,64 +584,193 @@ Disallow: /some/path
     """
 
     expected_output = """\
-User-agent: cybermapper
-Disallow: /some/path
-
 User-agent: *
 Crawl-delay: 1
 Request-rate: 3/15
-Disallow: /cyberworld/map/\
+Disallow: /cyberworld/map/
+
+User-agent: cybermapper
+Disallow: /some/path\
 """
 
-    def test_string_formatting(self):
-        self.assertEqual(str(self.parser), self.expected_output)
 
+class ConstructedStringFormattingTest(unittest.TestCase):
+    def test_empty(self):
+        parser = urllib.robotparser.RobotFileParser()
+        self.assertEqual(str(parser), '')
 
-class RobotHandler(BaseHTTPRequestHandler):
+    def test_group_without_rules(self):
+        parser = urllib.robotparser.RobotFileParser()
+        entry = urllib.robotparser.Entry()
+        entry.useragents = ['spambot']
+        parser._add_entry(entry)
+        entry = urllib.robotparser.Entry()
+        entry.useragents = ['hambot']
+        entry.rulelines = [urllib.robotparser.RuleLine('/ham', False)]
+        parser._add_entry(entry)
+        entry = urllib.robotparser.Entry()
+        entry.useragents = ['eggsbot']
+        parser._add_entry(entry)
+        self.assertEqual(str(parser), """\
+User-agent: spambot
+Allow:
 
-    def do_GET(self):
-        self.send_error(403, "Forbidden access")
+User-agent: hambot
+Disallow: /ham
 
-    def log_message(self, format, *args):
-        pass
+User-agent: eggsbot
+Allow:\
+""")
+
+    def test_group_without_user_agent(self):
+        parser = urllib.robotparser.RobotFileParser()
+        entry = urllib.robotparser.Entry()
+        entry.rulelines = [urllib.robotparser.RuleLine('/ham', False)]
+        parser._add_entry(entry)
+        entry = urllib.robotparser.Entry()
+        entry.useragents = ['spambot']
+        entry.rulelines = [urllib.robotparser.RuleLine('/spam', False)]
+        parser._add_entry(entry)
+        entry = urllib.robotparser.Entry()
+        entry.rulelines = [urllib.robotparser.RuleLine('/eggs', False)]
+        parser._add_entry(entry)
+        self.assertEqual(str(parser), """\
+User-agent: spambot
+Disallow: /spam\
+""")
 
 
 @unittest.skipUnless(
     support.has_socket_support,
     "Socket server requires working socket."
 )
-class PasswordProtectedSiteTestCase(unittest.TestCase):
+class BaseLocalNetworkTestCase:
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         # clear _opener global variable
-        self.addCleanup(urllib.request.urlcleanup)
+        cls.addClassCleanup(urllib.request.urlcleanup)
 
-        self.server = HTTPServer((socket_helper.HOST, 0), RobotHandler)
+        cls.server = HTTPServer((socket_helper.HOST, 0), cls.RobotHandler)
+        cls.addClassCleanup(cls.server.server_close)
 
-        self.t = threading.Thread(
+        t = threading.Thread(
             name='HTTPServer serving',
-            target=self.server.serve_forever,
+            target=cls.server.serve_forever,
             # Short poll interval to make the test finish quickly.
             # Time between requests is short enough that we won't wake
             # up spuriously too many times.
             kwargs={'poll_interval':0.01})
-        self.t.daemon = True  # In case this function raises.
-        self.t.start()
+        cls.enterClassContext(threading_helper.start_threads([t]))
+        cls.addClassCleanup(cls.server.shutdown)
 
-    def tearDown(self):
-        self.server.shutdown()
-        self.t.join()
-        self.server.server_close()
 
-    @threading_helper.reap_threads
-    def testPasswordProtectedSite(self):
+SAMPLE_ROBOTS_TXT = b'''\
+User-agent: test_robotparser
+Disallow: /utf8/\xf0\x9f\x90\x8d
+Disallow: /non-utf8/\xf0
+Disallow: //[spam]/path
+'''
+
+
+class LocalNetworkTestCase(BaseLocalNetworkTestCase, unittest.TestCase):
+    class RobotHandler(BaseHTTPRequestHandler):
+
+        def do_GET(self):
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(SAMPLE_ROBOTS_TXT)
+
+        def log_message(self, format, *args):
+            pass
+
+    def testRead(self):
+        # Test that reading a weird robots.txt doesn't fail.
         addr = self.server.server_address
-        url = 'http://' + socket_helper.HOST + ':' + str(addr[1])
+        url = f'http://{socket_helper.HOST}:{addr[1]}'
+        robots_url = url + '/robots.txt'
+        parser = urllib.robotparser.RobotFileParser()
+        parser.set_url(robots_url)
+        parser.read()
+        # And it can even interpret the weird paths in some reasonable way.
+        agent = 'test_robotparser'
+        self.assertTrue(parser.can_fetch(agent, robots_url))
+        self.assertTrue(parser.can_fetch(agent, url + '/utf8/'))
+        self.assertFalse(parser.can_fetch(agent, url + '/utf8/\U0001f40d'))
+        self.assertFalse(parser.can_fetch(agent, url + '/utf8/%F0%9F%90%8D'))
+        self.assertTrue(parser.can_fetch(agent, url + '/non-utf8/'))
+        self.assertFalse(parser.can_fetch(agent, url + '/non-utf8/%F0'))
+        self.assertFalse(parser.can_fetch(agent, url + '/non-utf8/\U0001f40d'))
+        self.assertFalse(parser.can_fetch(agent, url + '/%2F[spam]/path'))
+
+
+class HttpErrorsTestCase(BaseLocalNetworkTestCase, unittest.TestCase):
+    class RobotHandler(BaseHTTPRequestHandler):
+
+        def do_GET(self):
+            self.send_error(self.server.return_code)
+
+        def log_message(self, format, *args):
+            pass
+
+    def setUp(self):
+        # Make sure that a valid code is set in the test.
+        self.server.return_code = None
+
+    def testUnauthorized(self):
+        self.server.return_code = 401
+        addr = self.server.server_address
+        url = f'http://{socket_helper.HOST}:{addr[1]}'
         robots_url = url + "/robots.txt"
         parser = urllib.robotparser.RobotFileParser()
         parser.set_url(url)
         parser.read()
         self.assertFalse(parser.can_fetch("*", robots_url))
+        self.assertFalse(parser.can_fetch("*", url + '/some/file.html'))
+
+    def testForbidden(self):
+        self.server.return_code = 403
+        addr = self.server.server_address
+        url = f'http://{socket_helper.HOST}:{addr[1]}'
+        robots_url = url + "/robots.txt"
+        parser = urllib.robotparser.RobotFileParser()
+        parser.set_url(url)
+        parser.read()
+        self.assertFalse(parser.can_fetch("*", robots_url))
+        self.assertFalse(parser.can_fetch("*", url + '/some/file.html'))
+
+    def testNotFound(self):
+        self.server.return_code = 404
+        addr = self.server.server_address
+        url = f'http://{socket_helper.HOST}:{addr[1]}'
+        robots_url = url + "/robots.txt"
+        parser = urllib.robotparser.RobotFileParser()
+        parser.set_url(url)
+        parser.read()
+        self.assertTrue(parser.can_fetch("*", robots_url))
+        self.assertTrue(parser.can_fetch("*", url + '/path/file.html'))
+
+    def testTeapot(self):
+        self.server.return_code = 418
+        addr = self.server.server_address
+        url = f'http://{socket_helper.HOST}:{addr[1]}'
+        robots_url = url + "/robots.txt"
+        parser = urllib.robotparser.RobotFileParser()
+        parser.set_url(url)
+        parser.read()
+        self.assertTrue(parser.can_fetch("*", robots_url))
+        self.assertTrue(parser.can_fetch("*", url + '/pot-1?milk-type=Cream'))
+
+    def testServiceUnavailable(self):
+        self.server.return_code = 503
+        addr = self.server.server_address
+        url = f'http://{socket_helper.HOST}:{addr[1]}'
+        robots_url = url + "/robots.txt"
+        parser = urllib.robotparser.RobotFileParser()
+        parser.set_url(url)
+        parser.read()
+        self.assertFalse(parser.can_fetch("*", robots_url))
+        self.assertFalse(parser.can_fetch("*", url + '/path/file.html'))
 
 
 @support.requires_working_socket()
@@ -355,6 +782,7 @@ class NetworkTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         support.requires('network')
+        cls.addClassCleanup(urllib.request.urlcleanup)
         with socket_helper.transient_internet(cls.base_url):
             cls.parser = urllib.robotparser.RobotFileParser(cls.robots_txt)
             cls.parser.read()
@@ -374,7 +802,7 @@ class NetworkTestCase(unittest.TestCase):
     def test_can_fetch(self):
         self.assertTrue(self.parser.can_fetch('*', self.url('elsewhere')))
         self.assertFalse(self.parser.can_fetch('Nutch', self.base_url))
-        self.assertFalse(self.parser.can_fetch('Nutch', self.url('brian')))
+        self.assertTrue(self.parser.can_fetch('Nutch', self.url('brian')))
         self.assertFalse(self.parser.can_fetch('Nutch', self.url('webstats')))
         self.assertFalse(self.parser.can_fetch('*', self.url('webstats')))
         self.assertTrue(self.parser.can_fetch('*', self.base_url))
