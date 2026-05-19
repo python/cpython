@@ -37,8 +37,8 @@ from tkinter import Toplevel, Text, Menu
 from tkinter.ttk import Frame, Menubutton, Scrollbar, Style
 from tkinter import font as tkfont
 
-from idlelib.config import idleConf
-from idlelib.colorizer import color_config
+lazy from idlelib.config import idleConf
+lazy from idlelib.colorizer import color_config
 
 ## About IDLE ##
 

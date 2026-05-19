@@ -1,12 +1,12 @@
 "Test searchengine, coverage 99%."
 
-from idlelib import searchengine as se
+lazy from idlelib import searchengine as se
 import unittest
 # from test.support import requires
 from tkinter import  BooleanVar, StringVar, TclError  # ,Tk, Text
 from tkinter import messagebox
-from idlelib.idle_test.mock_tk import Var, Mbox
-from idlelib.idle_test.mock_tk import Text as mockText
+lazy from idlelib.idle_test.mock_tk import Var, Mbox
+lazy from idlelib.idle_test.mock_tk import Text as mockText
 import re
 
 # With mock replacements, the module does not use any gui widgets.

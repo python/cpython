@@ -17,9 +17,9 @@ completion_kwds.sort()
 
 # Two types of completions; defined here for autocomplete_w import below.
 ATTRS, FILES = 0, 1
-from idlelib import autocomplete_w
-from idlelib.config import idleConf
-from idlelib.hyperparser import HyperParser
+lazy from idlelib import autocomplete_w
+lazy from idlelib.config import idleConf
+lazy from idlelib.hyperparser import HyperParser
 
 # Tuples passed to open_completions.
 #       EvalFunc, Complete, WantWin, Mode

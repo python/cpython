@@ -7,7 +7,7 @@
 __all__ = ['Parser', 'HeaderParser', 'BytesParser', 'BytesHeaderParser',
            'FeedParser', 'BytesFeedParser']
 
-from io import StringIO, TextIOWrapper
+lazy from io import StringIO, TextIOWrapper
 
 from email.feedparser import FeedParser, BytesFeedParser
 from email._policybase import compat32

@@ -23,18 +23,18 @@ from tkinter import colorchooser
 import tkinter.font as tkfont
 from tkinter import messagebox
 
-from idlelib.config import idleConf, ConfigChanges
-from idlelib.config_key import GetKeysWindow
-from idlelib.dynoption import DynOptionMenu
-from idlelib import macosx
-from idlelib.query import SectionName, HelpSource
-from idlelib.textview import view_text
-from idlelib.autocomplete import AutoComplete
-from idlelib.codecontext import CodeContext
-from idlelib.parenmatch import ParenMatch
-from idlelib.format import FormatParagraph
-from idlelib.squeezer import Squeezer
-from idlelib.textview import ScrollableTextFrame
+lazy from idlelib.config import idleConf, ConfigChanges
+lazy from idlelib.config_key import GetKeysWindow
+lazy from idlelib.dynoption import DynOptionMenu
+lazy from idlelib import macosx
+lazy from idlelib.query import SectionName, HelpSource
+lazy from idlelib.textview import view_text
+lazy from idlelib.autocomplete import AutoComplete
+lazy from idlelib.codecontext import CodeContext
+lazy from idlelib.parenmatch import ParenMatch
+lazy from idlelib.format import FormatParagraph
+lazy from idlelib.squeezer import Squeezer
+lazy from idlelib.textview import ScrollableTextFrame
 
 changes = ConfigChanges()
 # Reload changed options in the following classes.

@@ -6,8 +6,8 @@ import platform
 from tkinter import *
 from tkinter.ttk import Scrollbar
 
-from idlelib.autocomplete import FILES, ATTRS
-from idlelib.multicall import MC_SHIFT
+lazy from idlelib.autocomplete import FILES, ATTRS
+lazy from idlelib.multicall import MC_SHIFT
 
 HIDE_VIRTUAL_EVENT_NAME = "<<autocompletewindow-hide>>"
 HIDE_FOCUS_OUT_SEQUENCE = "<FocusOut>"

@@ -71,7 +71,7 @@ from _csv import Error, writer, reader, register_dialect, \
                  QUOTE_STRINGS, QUOTE_NOTNULL
 from _csv import Dialect as _Dialect
 
-from io import StringIO
+lazy from io import StringIO
 
 __all__ = ["QUOTE_MINIMAL", "QUOTE_ALL", "QUOTE_NONNUMERIC", "QUOTE_NONE",
            "QUOTE_STRINGS", "QUOTE_NOTNULL",

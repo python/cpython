@@ -1,11 +1,11 @@
 "Test stackviewer, coverage 63%."
 
-from idlelib import stackviewer
+lazy from idlelib import stackviewer
 import unittest
 from test.support import requires
 from tkinter import Tk
 
-from idlelib.tree import TreeNode, ScrolledCanvas
+lazy from idlelib.tree import TreeNode, ScrolledCanvas
 
 
 class StackBrowserTest(unittest.TestCase):

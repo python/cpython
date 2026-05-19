@@ -10,7 +10,7 @@ import _colorize
 
 from collections import deque
 from dataclasses import dataclass
-from io import StringIO
+lazy from io import StringIO
 from tokenize import TokenInfo as TI
 from typing import Iterable, Iterator, Match, NamedTuple, Self
 

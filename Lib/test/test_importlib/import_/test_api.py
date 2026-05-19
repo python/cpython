@@ -1,6 +1,6 @@
 from test.test_importlib import util
 
-from importlib import machinery
+lazy from importlib import machinery
 import sys
 import types
 import unittest

@@ -12,11 +12,11 @@ import os
 import pyclbr
 import sys
 
-from idlelib.config import idleConf
-from idlelib import pyshell
-from idlelib.tree import TreeNode, TreeItem, ScrolledCanvas
-from idlelib.util import py_extensions
-from idlelib.window import ListedToplevel
+lazy from idlelib.config import idleConf
+lazy from idlelib import pyshell
+lazy from idlelib.tree import TreeNode, TreeItem, ScrolledCanvas
+lazy from idlelib.util import py_extensions
+lazy from idlelib.window import ListedToplevel
 
 
 file_open = None  # Method...Item and Class...Item use this.

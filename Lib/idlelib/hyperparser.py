@@ -7,7 +7,7 @@ the structure of code.
 from keyword import iskeyword
 import string
 
-from idlelib import pyparse
+lazy from idlelib import pyparse
 
 # all ASCII chars that may be in an identifier
 _ASCII_ID_CHARS = frozenset(string.ascii_letters + string.digits + "_")

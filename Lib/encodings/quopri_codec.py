@@ -5,7 +5,7 @@ This codec de/encodes from bytes to bytes.
 
 import codecs
 import quopri
-from io import BytesIO
+lazy from io import BytesIO
 
 def quopri_encode(input, errors='strict'):
     assert errors == 'strict'

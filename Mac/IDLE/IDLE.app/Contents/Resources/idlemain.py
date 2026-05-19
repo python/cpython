@@ -68,6 +68,6 @@ for idx, value in enumerate(sys.argv):
         break
 
 # Now it is safe to import idlelib.
-from idlelib.pyshell import main
+lazy from idlelib.pyshell import main
 if __name__ == '__main__':
     main()

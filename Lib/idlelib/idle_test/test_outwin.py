@@ -1,13 +1,13 @@
 "Test outwin, coverage 76%."
 
-from idlelib import outwin
+lazy from idlelib import outwin
 import platform
 import sys
 import unittest
 from test.support import requires
 from tkinter import Tk, Text
-from idlelib.idle_test.mock_tk import Mbox_func
-from idlelib.idle_test.mock_idle import Func
+lazy from idlelib.idle_test.mock_tk import Mbox_func
+lazy from idlelib.idle_test.mock_idle import Func
 from unittest import mock
 
 

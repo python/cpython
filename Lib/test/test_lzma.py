@@ -1,5 +1,5 @@
 import array
-from io import BytesIO, UnsupportedOperation, DEFAULT_BUFFER_SIZE
+lazy from io import BytesIO, UnsupportedOperation, DEFAULT_BUFFER_SIZE
 import os
 import pickle
 import random

@@ -9,7 +9,7 @@
 import sys
 import os
 import unittest
-from io import StringIO
+lazy from io import StringIO
 
 from test.test_email import TestEmailBase
 

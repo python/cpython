@@ -11,8 +11,8 @@ import sys
 import textwrap
 import types
 
-from idlelib import calltip_w
-from idlelib.hyperparser import HyperParser
+lazy from idlelib import calltip_w
+lazy from idlelib.hyperparser import HyperParser
 
 
 class Calltip:

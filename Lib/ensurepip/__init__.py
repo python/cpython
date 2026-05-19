@@ -4,7 +4,7 @@ import sys
 import sysconfig
 import tempfile
 from contextlib import nullcontext
-from importlib import resources
+lazy from importlib import resources
 from pathlib import Path
 from shutil import copy2
 

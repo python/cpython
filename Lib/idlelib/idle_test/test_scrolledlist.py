@@ -1,6 +1,6 @@
 "Test scrolledlist, coverage 38%."
 
-from idlelib.scrolledlist import ScrolledList
+lazy from idlelib.scrolledlist import ScrolledList
 import unittest
 from test.support import requires
 requires('gui')

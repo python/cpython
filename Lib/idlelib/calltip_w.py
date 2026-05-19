@@ -5,7 +5,7 @@ Used by calltip.py.
 """
 from tkinter import Label, LEFT, SOLID, TclError
 
-from idlelib.tooltip import TooltipBase
+lazy from idlelib.tooltip import TooltipBase
 
 HIDE_EVENT = "<<calltipwindow-hide>>"
 HIDE_SEQUENCES = ("<Key-Escape>", "<FocusOut>")

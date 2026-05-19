@@ -104,7 +104,7 @@ import sys
 import traceback
 import types
 import unittest
-from io import StringIO, TextIOWrapper, BytesIO
+lazy from io import StringIO, TextIOWrapper, BytesIO
 from collections import namedtuple
 lazy import _colorize  # Used in doctests
 lazy from _colorize import ANSIColors, can_colorize

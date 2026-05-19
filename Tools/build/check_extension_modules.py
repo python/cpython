@@ -33,15 +33,15 @@ import sys
 import sysconfig
 import warnings
 from collections.abc import Iterable
-from importlib._bootstrap import (  # type: ignore[attr-defined]
+lazy from importlib._bootstrap import (  # type: ignore[attr-defined]
     _load as bootstrap_load,
 )
-from importlib.machinery import (
+lazy from importlib.machinery import (
     BuiltinImporter,
     ExtensionFileLoader,
     ModuleSpec,
 )
-from importlib.util import spec_from_file_location, spec_from_loader
+lazy from importlib.util import spec_from_file_location, spec_from_loader
 from typing import NamedTuple
 
 SRC_DIR = pathlib.Path(__file__).parent.parent.parent

@@ -16,7 +16,7 @@ import collections
 import zoneinfo
 from test import support
 from test.support import os_helper
-from io import BytesIO
+lazy from io import BytesIO
 
 from plistlib import UID
 

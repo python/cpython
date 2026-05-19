@@ -6,7 +6,7 @@ import unittest
 import os
 import warnings
 from difflib import unified_diff
-from io import StringIO
+lazy from io import StringIO
 from test.support.os_helper import TESTFN, unlink, temp_dir, change_cwd
 from contextlib import contextmanager, redirect_stdout
 

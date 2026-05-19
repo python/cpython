@@ -6,7 +6,7 @@ machinery = util.import_importlib('importlib.machinery')
 importlib_util = util.import_importlib('importlib.util')
 
 import importlib.util
-from importlib import _bootstrap_external
+lazy from importlib import _bootstrap_external
 import os
 import pathlib
 import string

@@ -1,7 +1,7 @@
 import contextlib
 from lexer import Token
 from typing import TextIO, Iterator
-from io import StringIO
+lazy from io import StringIO
 
 class CWriter:
     "A writer that understands tokens and how to format C code"

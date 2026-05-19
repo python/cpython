@@ -2,7 +2,7 @@ import unittest
 
 from test import support
 from test.support.import_helper import ensure_lazy_imports
-from io import StringIO
+lazy from io import StringIO
 from pstats import SortKey
 from enum import StrEnum, _test_simple_enum
 

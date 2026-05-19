@@ -8,7 +8,7 @@
 # changes to tokenize more like Posix shells by Vinay Sajip, July 2016.
 
 import sys
-from io import StringIO
+lazy from io import StringIO
 
 __all__ = ["shlex", "split", "quote", "join"]
 

@@ -1,4 +1,4 @@
-from io import StringIO
+lazy from io import StringIO
 from test.test_json import PyTest, CTest
 
 from test.support import bigmemtest, _1G

@@ -6,7 +6,7 @@ import threading
 import os
 import weakref
 from contextlib import contextmanager
-from inspect import CO_GENERATOR, CO_COROUTINE, CO_ASYNC_GENERATOR
+lazy from inspect import CO_GENERATOR, CO_COROUTINE, CO_ASYNC_GENERATOR
 
 __all__ = ["BdbQuit", "Bdb", "Breakpoint"]
 

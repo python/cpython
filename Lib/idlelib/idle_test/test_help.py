@@ -1,6 +1,6 @@
 "Test help, coverage 94%."
 
-from idlelib import help
+lazy from idlelib import help
 import unittest
 from test.support import requires
 requires('gui')

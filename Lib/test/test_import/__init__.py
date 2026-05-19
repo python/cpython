@@ -3,8 +3,8 @@ import errno
 import glob
 import json
 import importlib.util
-from importlib._bootstrap_external import _get_sourcefile
-from importlib.machinery import (
+lazy from importlib._bootstrap_external import _get_sourcefile
+lazy from importlib.machinery import (
     AppleFrameworkLoader,
     BuiltinImporter,
     ExtensionFileLoader,

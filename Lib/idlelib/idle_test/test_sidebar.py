@@ -8,16 +8,16 @@ import unittest.mock
 from test.support import requires, swap_attr
 from test import support
 import tkinter as tk
-from idlelib.idle_test.tkinter_testing_utils import run_in_tk_mainloop
+lazy from idlelib.idle_test.tkinter_testing_utils import run_in_tk_mainloop
 
-from idlelib.delegator import Delegator
-from idlelib.editor import fixwordbreaks
-from idlelib.percolator import Percolator
+lazy from idlelib.delegator import Delegator
+lazy from idlelib.editor import fixwordbreaks
+lazy from idlelib.percolator import Percolator
 import idlelib.pyshell
-from idlelib.pyshell import fix_x11_paste, PyShell, PyShellFileList
-from idlelib.run import fix_scaling
+lazy from idlelib.pyshell import fix_x11_paste, PyShell, PyShellFileList
+lazy from idlelib.run import fix_scaling
 import idlelib.sidebar
-from idlelib.sidebar import get_end_linenumber, get_lineno
+lazy from idlelib.sidebar import get_end_linenumber, get_lineno
 
 
 class Dummy_editwin:

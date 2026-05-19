@@ -1,6 +1,6 @@
 "Implement Idle Shell history mechanism with History class"
 
-from idlelib.config import idleConf
+lazy from idlelib.config import idleConf
 
 
 class History:

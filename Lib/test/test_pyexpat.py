@@ -10,7 +10,7 @@ import sysconfig
 import textwrap
 import unittest
 import traceback
-from io import BytesIO
+lazy from io import BytesIO
 from test import support
 from test.support import import_helper, os_helper
 from test.support import sortdict

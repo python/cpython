@@ -22,7 +22,7 @@ import urllib.parse
 import xml.etree
 import xml.etree.ElementTree
 import textwrap
-from io import StringIO
+lazy from io import StringIO
 from collections import namedtuple
 from urllib.request import urlopen, urlcleanup
 from test import support

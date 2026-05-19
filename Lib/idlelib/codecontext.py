@@ -17,7 +17,7 @@ from sys import maxsize as INFINITY
 from tkinter import Frame, Text, TclError
 from tkinter.constants import NSEW, SUNKEN
 
-from idlelib.config import idleConf
+lazy from idlelib.config import idleConf
 
 BLOCKOPENERS = {'class', 'def', 'if', 'elif', 'else', 'while', 'for',
                  'try', 'except', 'finally', 'with', 'async'}

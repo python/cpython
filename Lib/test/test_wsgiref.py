@@ -11,7 +11,7 @@ from wsgiref.validate import validator
 from wsgiref.simple_server import WSGIServer, WSGIRequestHandler
 from wsgiref.simple_server import make_server
 from http.client import HTTPConnection
-from io import StringIO, BytesIO, BufferedReader
+lazy from io import StringIO, BytesIO, BufferedReader
 from socketserver import BaseServer
 from platform import python_implementation
 

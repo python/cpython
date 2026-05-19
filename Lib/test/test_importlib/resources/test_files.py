@@ -6,7 +6,7 @@ import py_compile
 import textwrap
 import unittest
 import warnings
-from importlib.resources.abc import Traversable
+lazy from importlib.resources.abc import Traversable
 
 from test.support import import_helper, os_helper
 

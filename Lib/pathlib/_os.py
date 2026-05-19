@@ -3,7 +3,7 @@ Low-level OS functionality wrappers used by pathlib.
 """
 
 from errno import *
-from io import TextIOWrapper, text_encoding
+lazy from io import TextIOWrapper, text_encoding
 import os
 import sys
 try:

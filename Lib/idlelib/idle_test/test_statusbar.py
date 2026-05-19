@@ -1,6 +1,6 @@
 "Test statusbar, coverage 100%."
 
-from idlelib import statusbar
+lazy from idlelib import statusbar
 import unittest
 from test.support import requires
 from tkinter import Tk

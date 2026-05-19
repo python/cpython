@@ -2,8 +2,8 @@ import contextlib
 import importlib.resources as resources
 import pathlib
 import unittest
-from importlib.resources import abc
-from importlib.resources.abc import ResourceReader, TraversableResources
+lazy from importlib.resources import abc
+lazy from importlib.resources.abc import ResourceReader, TraversableResources
 
 from test.support import os_helper
 

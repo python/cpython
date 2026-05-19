@@ -1,4 +1,4 @@
-from idlelib import rpc
+lazy from idlelib import rpc
 
 def remote_object_tree_item(item):
     wrapper = WrappedObjectTreeItem(item)

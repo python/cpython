@@ -26,7 +26,7 @@ import re
 from email import errors
 from email._policybase import compat32
 from collections import deque
-from io import StringIO
+lazy from io import StringIO
 
 NLCRE = re.compile(r'\r\n|\r|\n')
 NLCRE_bol = re.compile(r'(\r\n|\r|\n)')

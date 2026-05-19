@@ -4,7 +4,7 @@
 import copy
 import sys
 import unittest
-from io import StringIO
+lazy from io import StringIO
 from tempfile import TemporaryFile
 import csv
 import gc

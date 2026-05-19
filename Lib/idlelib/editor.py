@@ -15,21 +15,21 @@ from tkinter.ttk import Scrollbar
 from tkinter import simpledialog
 from tkinter import messagebox
 
-from idlelib.config import idleConf
-from idlelib import configdialog
-from idlelib import grep
-from idlelib import help
-from idlelib import help_about
-from idlelib import macosx
-from idlelib.multicall import MultiCallCreator
-from idlelib import pyparse
-from idlelib import query
-from idlelib import replace
-from idlelib import search
-from idlelib.tree import wheel_event
-from idlelib.util import py_extensions
-from idlelib import window
-from idlelib.help import _get_dochome
+lazy from idlelib.config import idleConf
+lazy from idlelib import configdialog
+lazy from idlelib import grep
+lazy from idlelib import help
+lazy from idlelib import help_about
+lazy from idlelib import macosx
+lazy from idlelib.multicall import MultiCallCreator
+lazy from idlelib import pyparse
+lazy from idlelib import query
+lazy from idlelib import replace
+lazy from idlelib import search
+lazy from idlelib.tree import wheel_event
+lazy from idlelib.util import py_extensions
+lazy from idlelib import window
+lazy from idlelib.help import _get_dochome
 
 # The default tab setting for a Text widget, in average-width characters.
 TK_TABWIDTH_DEFAULT = 8

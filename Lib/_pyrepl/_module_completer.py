@@ -7,8 +7,8 @@ import re
 import sys
 import token
 import tokenize
-from importlib.machinery import FileFinder
-from io import StringIO
+lazy from importlib.machinery import FileFinder
+lazy from io import StringIO
 from contextlib import contextmanager
 from dataclasses import dataclass
 lazy from itertools import chain

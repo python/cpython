@@ -125,7 +125,7 @@ import selectors
 import os
 import sys
 import threading
-from io import BufferedIOBase
+lazy from io import BufferedIOBase
 from time import monotonic as time
 
 __all__ = ["BaseServer", "TCPServer", "UDPServer",

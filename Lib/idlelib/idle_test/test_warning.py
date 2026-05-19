@@ -5,8 +5,8 @@ This file could be expanded to include traceback overrides
 Revise if output destination changes (http://bugs.python.org/issue18318).
 Make sure warnings module is left unaltered (http://bugs.python.org/issue18081).
 '''
-from idlelib import run
-from idlelib import pyshell as shell
+lazy from idlelib import run
+lazy from idlelib import pyshell as shell
 import unittest
 from test.support import captured_stderr
 import warnings

@@ -1,10 +1,10 @@
 "Test redirector, coverage 100%."
 
-from idlelib.redirector import WidgetRedirector
+lazy from idlelib.redirector import WidgetRedirector
 import unittest
 from test.support import requires
 from tkinter import Tk, Text, TclError
-from idlelib.idle_test.mock_idle import Func
+lazy from idlelib.idle_test.mock_idle import Func
 
 
 class InitCloseTest(unittest.TestCase):

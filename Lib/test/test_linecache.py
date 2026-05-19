@@ -6,7 +6,7 @@ import os.path
 import tempfile
 import threading
 import tokenize
-from importlib.machinery import ModuleSpec
+lazy from importlib.machinery import ModuleSpec
 from test import support
 from test.support import os_helper
 from test.support import threading_helper

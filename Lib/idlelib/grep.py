@@ -10,8 +10,8 @@ import sys
 from tkinter import StringVar, BooleanVar
 from tkinter.ttk import Checkbutton  # Frame imported in ...Base
 
-from idlelib.searchbase import SearchDialogBase
-from idlelib import searchengine
+lazy from idlelib.searchbase import SearchDialogBase
+lazy from idlelib import searchengine
 
 # Importing OutputWindow here fails due to import loop
 # EditorWindow -> GrepDialog -> OutputWindow -> EditorWindow

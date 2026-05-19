@@ -1,6 +1,6 @@
 import importlib
-from importlib import abc
-from importlib import util
+lazy from importlib import abc
+lazy from importlib import util
 import sys
 import time
 import threading

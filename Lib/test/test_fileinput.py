@@ -21,7 +21,7 @@ try:
 except ImportError:
     gzip = None
 
-from io import BytesIO, StringIO
+lazy from io import BytesIO, StringIO
 from fileinput import FileInput, hook_encoded
 
 from test.support import verbose

@@ -19,7 +19,7 @@ import zipfile
 
 from asyncio.events import _set_event_loop_policy
 from contextlib import ExitStack, redirect_stdout
-from io import StringIO
+lazy from io import StringIO
 from test import support
 from test.support import has_socket_support, os_helper
 from test.support.import_helper import import_module

@@ -12,7 +12,7 @@ import re
 import copy
 import unittest
 
-from io import StringIO
+lazy from io import StringIO
 from test import support
 from test.support import cpython_only, os_helper
 from test.support.i18n_helper import TestTranslationsBase, update_translation_snapshots

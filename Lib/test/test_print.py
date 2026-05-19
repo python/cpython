@@ -1,6 +1,6 @@
 import unittest
 import sys
-from io import StringIO
+lazy from io import StringIO
 
 from test import support
 

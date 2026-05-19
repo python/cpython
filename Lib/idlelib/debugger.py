@@ -21,9 +21,9 @@ import os
 from tkinter import *
 from tkinter.ttk import Frame, Scrollbar
 
-from idlelib import macosx
-from idlelib.scrolledlist import ScrolledList
-from idlelib.window import ListedToplevel
+lazy from idlelib import macosx
+lazy from idlelib.scrolledlist import ScrolledList
+lazy from idlelib.window import ListedToplevel
 
 
 class Idb(bdb.Bdb):

@@ -19,7 +19,7 @@ import weakref
 import gc
 from weakref import proxy
 import contextlib
-from inspect import Signature
+lazy from inspect import Signature
 
 from test.support import ALWAYS_EQ
 from test.support import import_helper

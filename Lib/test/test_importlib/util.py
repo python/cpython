@@ -2,7 +2,7 @@ import builtins
 import contextlib
 import errno
 import functools
-from importlib import machinery, util, invalidate_caches
+lazy from importlib import machinery, util, invalidate_caches
 import marshal
 import os
 import os.path

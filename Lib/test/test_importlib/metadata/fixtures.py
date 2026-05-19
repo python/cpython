@@ -6,7 +6,7 @@ import pathlib
 import shutil
 import sys
 import textwrap
-from importlib import resources
+lazy from importlib import resources
 
 from test.support import import_helper
 from test.support import os_helper

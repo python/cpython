@@ -5,8 +5,8 @@ import os
 
 import tkinter as tk
 
-from idlelib.debugobj import ObjectTreeItem, make_objecttreeitem
-from idlelib.tree import TreeNode, TreeItem, ScrolledCanvas
+lazy from idlelib.debugobj import ObjectTreeItem, make_objecttreeitem
+lazy from idlelib.tree import TreeNode, TreeItem, ScrolledCanvas
 
 def StackBrowser(root, exc, flist=None, top=None):
     global sc, item, node  # For testing.

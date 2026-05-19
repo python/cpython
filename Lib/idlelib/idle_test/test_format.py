@@ -1,12 +1,12 @@
 "Test format, coverage 99%."
 
-from idlelib import format as ft
+lazy from idlelib import format as ft
 import unittest
 from unittest import mock
 from test.support import requires
 from tkinter import Tk, Text
-from idlelib.editor import EditorWindow
-from idlelib.idle_test.mock_idle import Editor as MockEditor
+lazy from idlelib.editor import EditorWindow
+lazy from idlelib.idle_test.mock_idle import Editor as MockEditor
 
 
 class Is_Get_Test(unittest.TestCase):

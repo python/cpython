@@ -5,7 +5,7 @@ import re
 
 from tkinter import messagebox
 
-from idlelib.editor import EditorWindow
+lazy from idlelib.editor import EditorWindow
 
 
 file_line_pats = [

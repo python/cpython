@@ -7,8 +7,8 @@ import re
 
 from tkinter import StringVar, TclError
 
-from idlelib.searchbase import SearchDialogBase
-from idlelib import searchengine
+lazy from idlelib.searchbase import SearchDialogBase
+lazy from idlelib import searchengine
 
 
 def replace(text, insert_tags=None):

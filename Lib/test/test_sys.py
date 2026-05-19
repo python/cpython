@@ -12,7 +12,7 @@ import subprocess
 import sys
 import sysconfig
 import test.support
-from io import StringIO
+lazy from io import StringIO
 from unittest import mock
 from test import support
 from test.support import os_helper

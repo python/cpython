@@ -7,9 +7,9 @@ import itertools
 
 import tkinter as tk
 from tkinter.font import Font
-from idlelib.config import idleConf
-from idlelib.delegator import Delegator
-from idlelib import macosx
+lazy from idlelib.config import idleConf
+lazy from idlelib.delegator import Delegator
+lazy from idlelib import macosx
 
 
 def get_lineno(text, index):

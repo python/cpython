@@ -6,7 +6,7 @@ from test.support.warnings_helper import check_warnings
 import unittest
 import sys
 import importlib
-from importlib.util import spec_from_file_location
+lazy from importlib.util import spec_from_file_location
 import pkgutil
 import os
 import os.path

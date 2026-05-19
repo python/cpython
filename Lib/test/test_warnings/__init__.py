@@ -4,7 +4,7 @@ import logging
 import os
 import importlib
 import inspect
-from io import StringIO
+lazy from io import StringIO
 import re
 import sys
 import textwrap

@@ -1,12 +1,12 @@
 "Test , coverage 17%."
 
-from idlelib import iomenu
+lazy from idlelib import iomenu
 import unittest
 from test.support import requires
 from tkinter import Tk
-from idlelib.editor import EditorWindow
-from idlelib import util
-from idlelib.idle_test.mock_idle import Func
+lazy from idlelib.editor import EditorWindow
+lazy from idlelib import util
+lazy from idlelib.idle_test.mock_idle import Func
 
 # Fail if either tokenize.open and t.detect_encoding does not exist.
 # These are used in loadfile and encode.

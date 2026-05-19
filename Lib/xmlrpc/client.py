@@ -137,7 +137,7 @@ import http.client
 import urllib.parse
 from xml.parsers import expat
 import errno
-from io import BytesIO
+lazy from io import BytesIO
 try:
     import gzip
 except ImportError:

@@ -16,7 +16,7 @@ from xml.sax.handler import (feature_namespaces, feature_external_ges,
                              LexicalHandler)
 from xml.sax.xmlreader import InputSource, AttributesImpl, AttributesNSImpl
 from xml import sax
-from io import BytesIO, StringIO
+lazy from io import BytesIO, StringIO
 import codecs
 import os.path
 import pyexpat

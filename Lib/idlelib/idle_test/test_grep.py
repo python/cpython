@@ -5,10 +5,10 @@ An exception raised in one method will fail callers.
 Otherwise, tests are mostly independent.
 Currently only test grep_it, coverage 51%.
 """
-from idlelib import grep
+lazy from idlelib import grep
 import unittest
 from test.support import captured_stdout
-from idlelib.idle_test.mock_tk import Var
+lazy from idlelib.idle_test.mock_tk import Var
 import os
 import re
 

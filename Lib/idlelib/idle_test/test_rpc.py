@@ -1,6 +1,6 @@
 "Test rpc, coverage 20%."
 
-from idlelib import rpc
+lazy from idlelib import rpc
 import unittest
 
 

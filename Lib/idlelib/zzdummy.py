@@ -4,7 +4,7 @@ See extend.txt for more details on creating an extension.
 See config-extension.def for configuring an extension.
 """
 
-from idlelib.config import idleConf
+lazy from idlelib.config import idleConf
 from functools import wraps
 
 

@@ -5,7 +5,7 @@ import unittest
 
 from test.support import requires_fork, warnings_helper
 
-from importlib.metadata import (
+lazy from importlib.metadata import (
     FastPath,
     PackageNotFoundError,
     distribution,

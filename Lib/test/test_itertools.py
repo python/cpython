@@ -3,7 +3,7 @@ import unittest
 import itertools
 from test import support
 from test.support import threading_helper, script_helper
-from itertools import *
+lazy from itertools import *
 import weakref
 from decimal import Decimal
 from fractions import Fraction

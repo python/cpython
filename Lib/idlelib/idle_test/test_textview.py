@@ -5,7 +5,7 @@ is a widget containing a widget, etcetera, all tests must be gui tests.
 Using mock Text would not change this.  Other mocks are used to retrieve
 information about calls.
 """
-from idlelib import textview as tv
+lazy from idlelib import textview as tv
 from test.support import requires
 requires('gui')
 
@@ -13,8 +13,8 @@ import os
 import unittest
 from tkinter import Tk, TclError, CHAR, NONE, WORD
 from tkinter.ttk import Button
-from idlelib.idle_test.mock_idle import Func
-from idlelib.idle_test.mock_tk import Mbox_func
+lazy from idlelib.idle_test.mock_idle import Func
+lazy from idlelib.idle_test.mock_tk import Mbox_func
 
 def setUpModule():
     global root

@@ -25,7 +25,7 @@ import warnings
 import weakref
 from contextlib import ExitStack
 from functools import partial
-from inspect import CO_COROUTINE
+lazy from inspect import CO_COROUTINE
 lazy from itertools import product
 from textwrap import dedent
 from types import AsyncGeneratorType, FunctionType, CellType

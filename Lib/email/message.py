@@ -9,7 +9,7 @@ __all__ = ['Message', 'EmailMessage']
 import binascii
 import re
 import quopri
-from io import BytesIO, StringIO
+lazy from io import BytesIO, StringIO
 
 # Intrapackage imports
 from email import utils

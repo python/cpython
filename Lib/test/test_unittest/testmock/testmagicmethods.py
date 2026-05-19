@@ -1,7 +1,7 @@
 import math
 import unittest
 import os
-from inspect import iscoroutinefunction
+lazy from inspect import iscoroutinefunction
 from unittest.mock import AsyncMock, Mock, MagicMock, _magics
 
 

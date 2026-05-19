@@ -62,7 +62,7 @@ import binascii
 import codecs
 import datetime
 import enum
-from io import BytesIO
+lazy from io import BytesIO
 import itertools
 import os
 import re

@@ -1,6 +1,6 @@
 "Test debugger_r, coverage 30%."
 
-from idlelib import debugger_r
+lazy from idlelib import debugger_r
 import unittest
 
 # Boilerplate likely to be needed for future test classes.

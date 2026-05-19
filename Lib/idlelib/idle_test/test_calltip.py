@@ -1,12 +1,12 @@
 "Test calltip, coverage 76%"
 
-from idlelib import calltip
+lazy from idlelib import calltip
 import unittest
 from unittest.mock import Mock
 import textwrap
 import types
 import re
-from idlelib.idle_test.mock_tk import Text
+lazy from idlelib.idle_test.mock_tk import Text
 from test.support import MISSING_C_DOCSTRINGS
 
 

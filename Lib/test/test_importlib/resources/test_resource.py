@@ -1,7 +1,7 @@
 import importlib.resources as resources
 import types
 import unittest
-from importlib import import_module
+lazy from importlib import import_module
 
 from . import util
 

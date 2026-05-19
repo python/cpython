@@ -4,7 +4,7 @@ import re
 import sys
 import types
 import pickle
-from importlib._bootstrap_external import NamespaceLoader
+lazy from importlib._bootstrap_external import NamespaceLoader
 from test import support
 from test.support import import_helper
 

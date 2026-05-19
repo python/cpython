@@ -9,7 +9,7 @@ except ImportError:
     from .stubs import fake_filesystem_unittest as ffs
 from test.support import os_helper
 
-from importlib.metadata import (
+lazy from importlib.metadata import (
     Distribution,
     EntryPoint,
     MetadataNotFound,

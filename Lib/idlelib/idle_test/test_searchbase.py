@@ -6,9 +6,9 @@ import unittest
 from test.support import requires
 from tkinter import Text, Tk, Toplevel
 from tkinter.ttk import Frame
-from idlelib import searchengine as se
-from idlelib import searchbase as sdb
-from idlelib.idle_test.mock_idle import Func
+lazy from idlelib import searchengine as se
+lazy from idlelib import searchbase as sdb
+lazy from idlelib.idle_test.mock_idle import Func
 ## from idlelib.idle_test.mock_tk import Var
 
 # The ## imports above & following could help make some tests gui-free.

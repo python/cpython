@@ -3,7 +3,7 @@
 Try to make tests pass with draft bdbx, which may replace bdb in 3.13+.
 """
 
-from idlelib import debugger
+lazy from idlelib import debugger
 from collections import namedtuple
 from textwrap import dedent
 from tkinter import Tk

@@ -1,6 +1,6 @@
 "Test tree. coverage 56%."
 
-from idlelib import tree
+lazy from idlelib import tree
 import unittest
 from test.support import requires
 requires('gui')

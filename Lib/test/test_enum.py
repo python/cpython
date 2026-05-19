@@ -15,7 +15,7 @@ from enum import Enum, EnumMeta, IntEnum, StrEnum, EnumType, Flag, IntFlag, uniq
 from enum import STRICT, CONFORM, EJECT, KEEP, _simple_enum, _test_simple_enum
 from enum import verify, UNIQUE, CONTINUOUS, NAMED_FLAGS, ReprEnum
 from enum import member, nonmember, _iter_bits_lsb, EnumDict
-from io import StringIO
+lazy from io import StringIO
 from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
 from test.support import ALWAYS_EQ, REPO_ROOT

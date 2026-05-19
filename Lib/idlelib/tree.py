@@ -19,8 +19,8 @@ import os
 from tkinter import *
 from tkinter.ttk import Frame, Scrollbar
 
-from idlelib.config import idleConf
-from idlelib import zoomheight
+lazy from idlelib.config import idleConf
+lazy from idlelib import zoomheight
 
 ICONDIR = "Icons"
 

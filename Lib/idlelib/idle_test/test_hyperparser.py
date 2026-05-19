@@ -1,10 +1,10 @@
 "Test hyperparser, coverage 98%."
 
-from idlelib.hyperparser import HyperParser
+lazy from idlelib.hyperparser import HyperParser
 import unittest
 from test.support import requires
 from tkinter import Tk, Text
-from idlelib.editor import EditorWindow
+lazy from idlelib.editor import EditorWindow
 
 class DummyEditwin:
     def __init__(self, text):

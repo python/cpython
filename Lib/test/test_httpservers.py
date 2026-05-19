@@ -27,7 +27,7 @@ import time
 import datetime
 import threading
 from unittest import mock
-from io import BytesIO, StringIO
+lazy from io import BytesIO, StringIO
 from _colorize import get_theme
 
 import unittest

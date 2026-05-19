@@ -8,7 +8,7 @@ the execution trace and injects it into the profiling visualization JS file.
 import json
 import re
 import sys
-from io import StringIO
+lazy from io import StringIO
 from pathlib import Path
 
 from sphinx.errors import ExtensionError

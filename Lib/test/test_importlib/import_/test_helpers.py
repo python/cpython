@@ -1,6 +1,6 @@
 """Tests for helper functions used by import.c ."""
 
-from importlib import _bootstrap_external, machinery
+lazy from importlib import _bootstrap_external, machinery
 import os.path
 from types import ModuleType, SimpleNamespace
 import unittest

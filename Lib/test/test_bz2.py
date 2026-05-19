@@ -4,7 +4,7 @@ from test.support import bigmemtest, _4G
 import array
 import unittest
 import io
-from io import BytesIO, DEFAULT_BUFFER_SIZE
+lazy from io import BytesIO, DEFAULT_BUFFER_SIZE
 import os
 import pickle
 import glob

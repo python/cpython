@@ -2,8 +2,8 @@ import importlib.machinery
 import os
 import sys
 
-from idlelib.browser import ModuleBrowser, ModuleBrowserTreeItem
-from idlelib.tree import TreeItem
+lazy from idlelib.browser import ModuleBrowser, ModuleBrowserTreeItem
+lazy from idlelib.tree import TreeItem
 
 
 class PathBrowser(ModuleBrowser):

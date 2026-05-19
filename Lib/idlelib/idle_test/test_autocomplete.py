@@ -9,8 +9,8 @@ import __main__
 
 import idlelib.autocomplete as ac
 import idlelib.autocomplete_w as acw
-from idlelib.idle_test.mock_idle import Func
-from idlelib.idle_test.mock_tk import Event
+lazy from idlelib.idle_test.mock_idle import Func
+lazy from idlelib.idle_test.mock_tk import Event
 
 
 class DummyEditwin:

@@ -6,8 +6,8 @@
 """
 from tkinter import TclError
 
-from idlelib import searchengine
-from idlelib.searchbase import SearchDialogBase
+lazy from idlelib import searchengine
+lazy from idlelib.searchbase import SearchDialogBase
 
 def _setup(text):
     """Return the new or existing singleton SearchDialog instance.

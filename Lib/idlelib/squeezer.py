@@ -19,10 +19,10 @@ import re
 import tkinter as tk
 from tkinter import messagebox
 
-from idlelib.config import idleConf
-from idlelib.textview import view_text
-from idlelib.tooltip import Hovertip
-from idlelib import macosx
+lazy from idlelib.config import idleConf
+lazy from idlelib.textview import view_text
+lazy from idlelib.tooltip import Hovertip
+lazy from idlelib import macosx
 
 
 def count_lines_with_wrapping(s, linewidth=80):

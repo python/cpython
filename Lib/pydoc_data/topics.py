@@ -12579,7 +12579,7 @@ only supports function attributes on user-defined functions. Function
 attributes on built-in functions may be supported in the future.
 
 Additional information about a function’s definition can be retrieved
-from its code object (accessible via the "__code__" attribute).
+lazy from its code object (accessible via the "__code__" attribute).
 
 
 Instance methods

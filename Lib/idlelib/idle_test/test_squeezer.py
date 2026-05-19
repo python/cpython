@@ -6,13 +6,13 @@ import unittest
 from unittest.mock import Mock, NonCallableMagicMock, patch, sentinel, ANY
 from test.support import requires
 
-from idlelib.config import idleConf
-from idlelib.percolator import Percolator
-from idlelib.squeezer import count_lines_with_wrapping, ExpandingButton, \
+lazy from idlelib.config import idleConf
+lazy from idlelib.percolator import Percolator
+lazy from idlelib.squeezer import count_lines_with_wrapping, ExpandingButton, \
     Squeezer
-from idlelib import macosx
-from idlelib.textview import view_text
-from idlelib.tooltip import Hovertip
+lazy from idlelib import macosx
+lazy from idlelib.textview import view_text
+lazy from idlelib.tooltip import Hovertip
 
 SENTINEL_VALUE = sentinel.SENTINEL_VALUE
 

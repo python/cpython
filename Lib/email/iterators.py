@@ -12,7 +12,7 @@ __all__ = [
     ]
 
 import sys
-from io import StringIO
+lazy from io import StringIO
 
 
 # This function will become a method of the Message class

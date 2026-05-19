@@ -7,7 +7,7 @@ import tempfile
 import token
 import tokenize
 import unittest
-from io import BytesIO, StringIO
+lazy from io import BytesIO, StringIO
 from textwrap import dedent
 from unittest import TestCase, mock
 from test import support

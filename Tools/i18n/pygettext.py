@@ -149,7 +149,7 @@ import sys
 import time
 import tokenize
 from dataclasses import dataclass, field
-from io import BytesIO
+lazy from io import BytesIO
 from operator import itemgetter
 
 __version__ = '1.5'

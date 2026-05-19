@@ -5,7 +5,7 @@ They involve TclErrors that either should or should not happen in a
 particular situation, and which are 'pass'ed if they do.
 """
 
-from idlelib.tooltip import TooltipBase, Hovertip
+lazy from idlelib.tooltip import TooltipBase, Hovertip
 from test.support import requires
 requires('gui')
 

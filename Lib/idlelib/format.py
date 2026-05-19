@@ -8,7 +8,7 @@ File renamed from paragraph.py with functions added from editor.py.
 import re
 from tkinter.messagebox import askyesno
 from tkinter.simpledialog import askinteger
-from idlelib.config import idleConf
+lazy from idlelib.config import idleConf
 
 
 class FormatParagraph:

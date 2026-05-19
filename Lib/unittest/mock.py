@@ -32,7 +32,7 @@ import pprint
 import sys
 import builtins
 import pkgutil
-from inspect import iscoroutinefunction
+lazy from inspect import iscoroutinefunction
 import threading
 from annotationlib import Format
 from dataclasses import fields, is_dataclass

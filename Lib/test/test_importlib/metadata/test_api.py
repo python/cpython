@@ -3,7 +3,7 @@ import re
 import textwrap
 import unittest
 
-from importlib.metadata import (
+lazy from importlib.metadata import (
     Distribution,
     PackageNotFoundError,
     Prepared,

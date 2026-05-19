@@ -9,7 +9,7 @@ from platform import python_version, architecture
 from tkinter import Toplevel, Frame, Label, Button, PhotoImage
 from tkinter import SUNKEN, TOP, BOTTOM, LEFT, X, BOTH, W, EW, NSEW, E
 
-from idlelib import textview
+lazy from idlelib import textview
 
 pyver = python_version()
 

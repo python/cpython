@@ -1,4 +1,4 @@
-from importlib import machinery
+lazy from importlib import machinery
 import unittest
 
 from test.test_importlib import util

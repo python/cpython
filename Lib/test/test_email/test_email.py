@@ -8,7 +8,7 @@ import base64
 import unittest
 import textwrap
 
-from io import StringIO, BytesIO
+lazy from io import StringIO, BytesIO
 lazy from itertools import chain
 from random import choice
 from threading import Thread

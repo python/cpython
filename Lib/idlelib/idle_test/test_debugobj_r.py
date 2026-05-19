@@ -1,6 +1,6 @@
 "Test debugobj_r, coverage 56%."
 
-from idlelib import debugobj_r
+lazy from idlelib import debugobj_r
 import unittest
 
 

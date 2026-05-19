@@ -64,7 +64,7 @@ TODO test these modules and classes:
 """
 
 import idlelib.pyshell  # Set Windows DPI awareness before Tk().
-from importlib import import_module
+lazy from importlib import import_module
 import textwrap
 import tkinter as tk
 from tkinter.ttk import Scrollbar

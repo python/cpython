@@ -10,7 +10,7 @@ import sys
 import unittest
 from http.client import HTTPException
 from test import support
-from io import BytesIO
+lazy from io import BytesIO
 
 class TestBase:
     encoding        = ''   # codec name

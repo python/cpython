@@ -18,13 +18,13 @@ import threading
 import warnings
 
 import idlelib  # testing
-from idlelib import autocomplete  # AutoComplete, fetch_encodings
-from idlelib import calltip  # Calltip
-from idlelib import debugger_r  # start_debugger
-from idlelib import debugobj_r  # remote_object_tree_item
-from idlelib import iomenu  # encoding
-from idlelib import rpc  # multiple objects
-from idlelib import stackviewer  # StackTreeItem
+lazy from idlelib import autocomplete  # AutoComplete, fetch_encodings
+lazy from idlelib import calltip  # Calltip
+lazy from idlelib import debugger_r  # start_debugger
+lazy from idlelib import debugobj_r  # remote_object_tree_item
+lazy from idlelib import iomenu  # encoding
+lazy from idlelib import rpc  # multiple objects
+lazy from idlelib import stackviewer  # StackTreeItem
 import __main__
 
 import tkinter  # Use tcl and, if startup fails, messagebox.

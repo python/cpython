@@ -9,7 +9,7 @@ modified by Jack Jansen and Fredrik Lundh.
 
 import codecs
 import binascii
-from io import BytesIO
+lazy from io import BytesIO
 
 ### Codec APIs
 

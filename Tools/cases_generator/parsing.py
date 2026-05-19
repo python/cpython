@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass, field
 from typing import NamedTuple, Callable, TypeVar, Literal, cast, Iterator
-from io import StringIO
+lazy from io import StringIO
 
 import lexer as lx
 from plexer import PLexer

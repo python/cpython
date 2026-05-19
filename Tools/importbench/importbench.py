@@ -6,7 +6,7 @@ thus has no external changes made to import-related attributes in sys.
 """
 from test.test_importlib import util
 import decimal
-from importlib.util import cache_from_source
+lazy from importlib.util import cache_from_source
 import importlib
 import importlib.machinery
 import json

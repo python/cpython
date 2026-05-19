@@ -16,11 +16,11 @@ import tokenize
 
 from tkinter import messagebox
 
-from idlelib.config import idleConf
-from idlelib import macosx
-from idlelib import pyshell
-from idlelib.query import CustomRun
-from idlelib import outwin
+lazy from idlelib.config import idleConf
+lazy from idlelib import macosx
+lazy from idlelib import pyshell
+lazy from idlelib.query import CustomRun
+lazy from idlelib import outwin
 
 indent_message = """Error: Inconsistent indentation detected!
 

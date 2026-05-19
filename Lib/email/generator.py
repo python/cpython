@@ -12,7 +12,7 @@ import time
 import random
 
 from copy import deepcopy
-from io import StringIO, BytesIO
+lazy from io import StringIO, BytesIO
 from email.utils import _has_surrogates
 from email.errors import HeaderWriteError
 

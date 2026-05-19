@@ -12,7 +12,7 @@ Protocols for supporting classes in pathlib.
 
 from abc import ABC, abstractmethod
 from glob import _GlobberBase
-from io import text_encoding
+lazy from io import text_encoding
 from pathlib._os import (vfsopen, vfspath, ensure_distinct_paths,
                          ensure_different_files, copyfileobj)
 from pathlib import PurePath, Path

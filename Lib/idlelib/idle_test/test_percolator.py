@@ -1,6 +1,6 @@
 "Test percolator, coverage 100%."
 
-from idlelib.percolator import Percolator, Delegator
+lazy from idlelib.percolator import Percolator, Delegator
 import unittest
 from test.support import requires
 requires('gui')

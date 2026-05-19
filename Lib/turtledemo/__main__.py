@@ -87,9 +87,9 @@ import sys
 import os
 
 from tkinter import *
-from idlelib.colorizer import ColorDelegator, color_config
-from idlelib.percolator import Percolator
-from idlelib.textview import view_text
+lazy from idlelib.colorizer import ColorDelegator, color_config
+lazy from idlelib.percolator import Percolator
+lazy from idlelib.textview import view_text
 import turtle
 from turtledemo import __doc__ as about_turtledemo
 

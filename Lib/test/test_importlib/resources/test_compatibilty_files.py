@@ -1,7 +1,7 @@
 import importlib.resources as resources
 import io
 import unittest
-from importlib.resources._adapters import (
+lazy from importlib.resources._adapters import (
     CompatibilityFiles,
     wrap_spec,
 )

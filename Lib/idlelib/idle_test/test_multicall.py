@@ -1,6 +1,6 @@
 "Test multicall, coverage 33%."
 
-from idlelib import multicall
+lazy from idlelib import multicall
 import unittest
 from test.support import requires
 from tkinter import Tk, Text

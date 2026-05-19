@@ -7,7 +7,7 @@ requires('gui')
 import tkinter as tk
 from tkinter import ttk
 import unittest
-from idlelib import pyshell
+lazy from idlelib import pyshell
 
 class PasteTest(unittest.TestCase):
     '''Test pasting into widgets that allow pasting.

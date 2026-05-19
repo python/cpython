@@ -16,7 +16,7 @@ import types
 import unittest
 import warnings
 import weakref
-from io import StringIO
+lazy from io import StringIO
 from pathlib import Path
 from textwrap import dedent
 try:

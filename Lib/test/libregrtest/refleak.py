@@ -1,7 +1,7 @@
 import os
 import sys
 import warnings
-from inspect import isabstract
+lazy from inspect import isabstract
 from typing import Any
 import linecache
 

@@ -1,6 +1,6 @@
 "Test filelist, coverage 19%."
 
-from idlelib import filelist
+lazy from idlelib import filelist
 import unittest
 from test.support import requires
 from tkinter import Tk

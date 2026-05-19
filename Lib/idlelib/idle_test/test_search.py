@@ -1,11 +1,11 @@
 "Test search, coverage 69%."
 
-from idlelib import search
+lazy from idlelib import search
 import unittest
 from test.support import requires
 requires('gui')
 from tkinter import Tk, Text, BooleanVar
-from idlelib import searchengine
+lazy from idlelib import searchengine
 
 # Does not currently test the event handler wrappers.
 # A usage test should simulate clicks and check highlighting.

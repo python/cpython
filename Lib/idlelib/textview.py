@@ -6,7 +6,7 @@ from tkinter import Toplevel, Text, TclError,\
 from tkinter.ttk import Frame, Scrollbar, Button
 from tkinter.messagebox import showerror
 
-from idlelib.colorizer import color_config
+lazy from idlelib.colorizer import color_config
 
 
 class AutoHideScrollbar(Scrollbar):

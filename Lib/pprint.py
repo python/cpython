@@ -37,7 +37,7 @@ saferepr()
 import collections as _collections
 import sys as _sys
 import types as _types
-from io import StringIO as _StringIO
+lazy from io import StringIO as _StringIO
 
 __all__ = ["pprint","pformat","isreadable","isrecursive","saferepr",
            "PrettyPrinter", "pp"]

@@ -1,6 +1,6 @@
 "Test debugobj, coverage 40%."
 
-from idlelib import debugobj
+lazy from idlelib import debugobj
 import unittest
 
 

@@ -3,8 +3,8 @@ import keyword
 import re
 import time
 
-from idlelib.config import idleConf
-from idlelib.delegator import Delegator
+lazy from idlelib.config import idleConf
+lazy from idlelib.delegator import Delegator
 
 DEBUG = False
 

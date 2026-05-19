@@ -31,18 +31,18 @@ import time
 import tokenize
 import warnings
 
-from idlelib.colorizer import ColorDelegator
-from idlelib.config import idleConf
-from idlelib.delegator import Delegator
-from idlelib import debugger
-from idlelib import debugger_r
-from idlelib.editor import EditorWindow, fixwordbreaks
-from idlelib.filelist import FileList
-from idlelib.outwin import OutputWindow
-from idlelib import replace
-from idlelib import rpc
-from idlelib.run import idle_formatwarning, StdInputFile, StdOutputFile
-from idlelib.undo import UndoDelegator
+lazy from idlelib.colorizer import ColorDelegator
+lazy from idlelib.config import idleConf
+lazy from idlelib.delegator import Delegator
+lazy from idlelib import debugger
+lazy from idlelib import debugger_r
+lazy from idlelib.editor import EditorWindow, fixwordbreaks
+lazy from idlelib.filelist import FileList
+lazy from idlelib.outwin import OutputWindow
+lazy from idlelib import replace
+lazy from idlelib import rpc
+lazy from idlelib.run import idle_formatwarning, StdInputFile, StdOutputFile
+lazy from idlelib.undo import UndoDelegator
 
 # Default for testing; defaults to True in main() for running.
 use_subprocess = False
