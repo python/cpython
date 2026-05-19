@@ -1,0 +1,2 @@
+Fix :meth:`tarfile.TarFile.zstopen` to close the zstd file object when
+opening the tar archive fails with a :exc:`BaseException`.
