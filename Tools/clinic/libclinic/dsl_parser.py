@@ -474,9 +474,9 @@ class DSLParser:
         self.vectorcall = True
         for arg in args:
             if '=' in arg:
-                key, value = arg.split('=', 1)
+                key = arg.split('=', 1)[0]
             else:
-                key, value = arg, ''
+                key = arg
             if key == 'exact_only':
                 self.vectorcall_exact_only = True
             else:
