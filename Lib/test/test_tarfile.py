@@ -1313,6 +1313,27 @@ class GNUReadTest(LongnameTest, ReadTest, unittest.TestCase):
         else:
             return False
 
+    def test_gnulong_dirname_strips_all_trailing_slashes(self):
+        # gh-149980: _proc_gnulong must normalize trailing slashes the same
+        # way _frombuf and _proc_builtin do (rstrip, not removesuffix), so
+        # a GNU long-name directory entry agrees with a short-name one.
+        long_name = "a" * 120 + "///"   # > 100 bytes => GNUTYPE_LONGNAME
+        short_name = "b" * 20 + "///"
+
+        buf = io.BytesIO()
+        with tarfile.open(fileobj=buf, mode="w",
+                          format=tarfile.GNU_FORMAT) as tar:
+            for name in (short_name, long_name):
+                info = tarfile.TarInfo(name=name)
+                info.type = tarfile.DIRTYPE
+                tar.addfile(info)
+
+        buf.seek(0)
+        with tarfile.open(fileobj=buf, mode="r") as tar:
+            names = [m.name for m in tar.getmembers()]
+
+        self.assertEqual(names, ["b" * 20, "a" * 120])
+
 
 class PaxReadTest(LongnameTest, ReadTest, unittest.TestCase):
 
