@@ -1214,7 +1214,8 @@ ConfigParser Objects
    .. method:: items(raw=False, vars=None)
                items(section, raw=False, vars=None)
 
-      When *section* is not given, return a list of *section_name*,
+      When *section* is not given, return a
+      :class:`~collections.abc.ItemsView` of *section_name*,
       *section_proxy* pairs, including DEFAULTSECT.
 
       Otherwise, return a list of *name*, *value* pairs for the options in the
