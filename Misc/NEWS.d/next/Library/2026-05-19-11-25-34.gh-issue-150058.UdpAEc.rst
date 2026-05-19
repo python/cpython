@@ -1,0 +1,2 @@
+Fix :class:`asyncio.Task` dropping the cancellation message passed to
+:meth:`~asyncio.Task.cancel` when a waiter future is present.

@@ -126,7 +126,7 @@ asyncio
 * :meth:`asyncio.Task.cancel` now preserves its *msg* argument when a task is
   cancelled while waiting on another future, so the message is retained when
   the task later raises :exc:`asyncio.CancelledError`.
-  (Contributed by Prince Kumar in :gh:`NNNNN`.)
+  (Contributed by Prince Kumar in :gh:`150058`.)
 
 functools
 ---------
