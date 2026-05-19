@@ -1283,22 +1283,11 @@ class ParseArgsCodeGen:
             }}
             """)
 
-        # Zero-arg shortcut: return a cached value when called with no args
-        zero_arg_shortcut = ""
-        if func.vectorcall_zero_arg:
-            zero_arg_shortcut = libclinic.normalize_snippet(f"""
-                if (nargs == 0 && kwnames == NULL) {{{{
-                    return {func.vectorcall_zero_arg};
-                }}}}
-            """, indent=4)
-
         # Assemble the full function
         lines = [prototype]
         lines.append(preamble)
         if exact_check:
             lines.append(exact_check)
-        if zero_arg_shortcut:
-            lines.append(zero_arg_shortcut)
         lines.extend(parsing_code)
         lines.append(finale)
 

@@ -304,7 +304,6 @@ class DSLParser:
         self.disable_fastcall = False
         self.vectorcall = False
         self.vectorcall_exact_only = False
-        self.vectorcall_zero_arg = ''
         self.permit_long_summary = False
         self.permit_long_docstring_body = False
 
@@ -480,10 +479,6 @@ class DSLParser:
                 key, value = arg, ''
             if key == 'exact_only':
                 self.vectorcall_exact_only = True
-            elif key == 'zero_arg':
-                if not value:
-                    fail("@vectorcall zero_arg requires a value")
-                self.vectorcall_zero_arg = value
             else:
                 fail(f"@vectorcall: unknown argument {key!r}")
 
@@ -751,7 +746,6 @@ class DSLParser:
             forced_text_signature=self.forced_text_signature,
             vectorcall=self.vectorcall,
             vectorcall_exact_only=self.vectorcall_exact_only,
-            vectorcall_zero_arg=self.vectorcall_zero_arg,
         )
         self.add_function(func)
 

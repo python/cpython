@@ -778,7 +778,7 @@ static PyObject *
 tuple_subtype_new(PyTypeObject *type, PyObject *iterable);
 
 /*[clinic input]
-@vectorcall zero_arg=(PyObject*)&_Py_SINGLETON(tuple_empty)
+@vectorcall
 @classmethod
 tuple.__new__ as tuple_new
     iterable: object(c_default="NULL") = ()
@@ -794,7 +794,7 @@ If the argument is a tuple, the return value is the same object.
 
 static PyObject *
 tuple_new_impl(PyTypeObject *type, PyObject *iterable)
-/*[clinic end generated code: output=4546d9f0d469bce7 input=fff66d7a13734d92]*/
+/*[clinic end generated code: output=4546d9f0d469bce7 input=8fdda913493ebe48]*/
 {
     if (type != &PyTuple_Type)
         return tuple_subtype_new(type, iterable);

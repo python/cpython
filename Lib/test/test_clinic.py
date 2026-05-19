@@ -2751,38 +2751,6 @@ class ClinicParserTest(TestCase):
         self.assertTrue(func.vectorcall)
         self.assertTrue(func.vectorcall_exact_only)
 
-    def test_vectorcall_zero_arg(self):
-        block = """
-            module m
-            class Foo "FooObject *" "Foo_Type"
-            @classmethod
-            @vectorcall zero_arg=_PyFoo_GetEmpty()
-            Foo.__new__
-                x: object = NULL
-                /
-        """
-        func = self.parse_function(block, signatures_in_block=3,
-                                   function_index=2)
-        self.assertTrue(func.vectorcall)
-        self.assertFalse(func.vectorcall_exact_only)
-        self.assertEqual(func.vectorcall_zero_arg, '_PyFoo_GetEmpty()')
-
-    def test_vectorcall_zero_arg_with_exact(self):
-        block = """
-            module m
-            class Foo "FooObject *" "Foo_Type"
-            @classmethod
-            @vectorcall exact_only zero_arg=get_cached()
-            Foo.__new__
-                x: object = NULL
-                /
-        """
-        func = self.parse_function(block, signatures_in_block=3,
-                                   function_index=2)
-        self.assertTrue(func.vectorcall)
-        self.assertTrue(func.vectorcall_exact_only)
-        self.assertEqual(func.vectorcall_zero_arg, 'get_cached()')
-
     def test_vectorcall_invalid_kwarg(self):
         err = "unknown argument"
         block = """
@@ -4474,21 +4442,6 @@ class VectorcallFunctionalTest(unittest.TestCase):
         obj = Sub(1)
         self.assertIsInstance(obj, Sub)
         self.assertIsInstance(obj, ac_tester.VcNewExact)
-
-    def test_vc_new_zeroarg_no_args(self):
-        # zero_arg returns Py_None when called with no arguments
-        result = ac_tester.VcNewZeroArg()
-        self.assertIs(result, None)
-
-    def test_vc_new_zeroarg_with_args(self):
-        self.assertIsInstance(ac_tester.VcNewZeroArg(1), ac_tester.VcNewZeroArg)
-        self.assertIsInstance(ac_tester.VcNewZeroArg(b=2), ac_tester.VcNewZeroArg)
-        self.assertIsInstance(ac_tester.VcNewZeroArg(1, b=2), ac_tester.VcNewZeroArg)
-
-    def test_vc_new_zeroarg_rejects_a_as_keyword(self):
-        # 'a' is positional-only
-        with self.assertRaises(TypeError):
-            ac_tester.VcNewZeroArg(a=1)
 
 
 class LimitedCAPIOutputTests(unittest.TestCase):

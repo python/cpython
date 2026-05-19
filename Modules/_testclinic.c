@@ -26,8 +26,6 @@ custom_converter(PyObject *obj, custom_t *val)
 static PyTypeObject VcNew_Type;
 static PyTypeObject VcInit_Type;
 static PyTypeObject VcNewExact_Type;
-static PyTypeObject VcNewZeroArg_Type;
-
 #include "clinic/_testclinic.c.h"
 
 
@@ -2409,35 +2407,6 @@ static PyTypeObject VcNewExact_Type = {
 };
 
 
-/* VcNewZeroArg: __new__ with zero_arg; returns Py_None when called with no args */
-
-/*[clinic input]
-class _testclinic.VcNewZeroArg "PyObject *" "&VcNewZeroArg_Type"
-@classmethod
-@vectorcall zero_arg=Py_NewRef(Py_None)
-_testclinic.VcNewZeroArg.__new__ as vc_zeroarg_new
-    a: object = None
-    /
-    *
-    b: object = None
-[clinic start generated code]*/
-
-static PyObject *
-vc_zeroarg_new_impl(PyTypeObject *type, PyObject *a, PyObject *b)
-/*[clinic end generated code: output=6425b64d61c6317a input=f3d3ba860fc40034]*/
-{
-    return type->tp_alloc(type, 0);
-}
-
-static PyTypeObject VcNewZeroArg_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "_testclinic.VcNewZeroArg",
-    .tp_basicsize = sizeof(PyObject),
-    .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_new = vc_zeroarg_new,
-    .tp_vectorcall = vc_zeroarg_vectorcall,
-};
-
 
 /*[clinic input]
 output push
@@ -2665,9 +2634,6 @@ PyInit__testclinic(void)
         goto error;
     }
     if (PyModule_AddType(m, &VcNewExact_Type) < 0) {
-        goto error;
-    }
-    if (PyModule_AddType(m, &VcNewZeroArg_Type) < 0) {
         goto error;
     }
     return m;
