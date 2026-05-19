@@ -2526,14 +2526,15 @@ class PathTest(PurePathTest):
         p = self.cls(self.base, 'newdirPM', 'subdirPM')
         self.assertFalse(p.exists())
         if os.name != 'nt':
-            # Specify different modes for parent and leaf directories
-            p.mkdir(0o755, parents=True, parent_mode=0o750)
-            self.assertTrue(p.exists())
-            self.assertTrue(p.is_dir())
-            # Leaf directory gets the mode parameter
-            self.assertEqual(p.stat().st_mode & 0o777, 0o755)
-            # Parent directory gets the parent_mode parameter
-            self.assertEqual(p.parent.stat().st_mode & 0o777, 0o750)
+            with os_helper.temp_umask(0o022):
+                # Specify different modes for parent and leaf directories
+                p.mkdir(0o755, parents=True, parent_mode=0o750)
+                self.assertTrue(p.exists())
+                self.assertTrue(p.is_dir())
+                # Leaf directory gets the mode parameter
+                self.assertEqual(p.stat().st_mode & 0o777, 0o755)
+                # Parent directory gets the parent_mode parameter
+                self.assertEqual(p.parent.stat().st_mode & 0o777, 0o750)
 
     @unittest.skipIf(
         is_emscripten or is_wasi,
@@ -2548,15 +2549,16 @@ class PathTest(PurePathTest):
         p = self.cls(self.base, 'level1PM', 'level2PM', 'level3PM')
         self.assertFalse(p.exists())
         if os.name != 'nt':
-            p.mkdir(0o755, parents=True, parent_mode=0o700)
-            self.assertTrue(p.exists())
-            # Check that all parent directories have parent_mode
-            level1 = self.cls(self.base, 'level1PM')
-            level2 = level1 / 'level2PM'
-            self.assertEqual(level1.stat().st_mode & 0o777, 0o700)
-            self.assertEqual(level2.stat().st_mode & 0o777, 0o700)
-            # Leaf directory has the regular mode
-            self.assertEqual(p.stat().st_mode & 0o777, 0o755)
+            with os_helper.temp_umask(0o022):
+                p.mkdir(0o755, parents=True, parent_mode=0o700)
+                self.assertTrue(p.exists())
+                # Check that all parent directories have parent_mode
+                level1 = self.cls(self.base, 'level1PM')
+                level2 = level1 / 'level2PM'
+                self.assertEqual(level1.stat().st_mode & 0o777, 0o700)
+                self.assertEqual(level2.stat().st_mode & 0o777, 0o700)
+                # Leaf directory has the regular mode
+                self.assertEqual(p.stat().st_mode & 0o777, 0o755)
 
     @unittest.skipIf(
         is_emscripten or is_wasi,
@@ -2593,11 +2595,12 @@ class PathTest(PurePathTest):
         p = self.cls(self.base, 'samedirPM', 'subdirPM')
         self.assertFalse(p.exists())
         if os.name != 'nt':
-            p.mkdir(0o705, parents=True, parent_mode=0o705)
-            self.assertTrue(p.exists())
-            # Both directories should have the same mode
-            self.assertEqual(p.stat().st_mode & 0o777, 0o705)
-            self.assertEqual(p.parent.stat().st_mode & 0o777, 0o705)
+            with os_helper.temp_umask(0o022):
+                p.mkdir(0o705, parents=True, parent_mode=0o705)
+                self.assertTrue(p.exists())
+                # Both directories should have the same mode
+                self.assertEqual(p.stat().st_mode & 0o777, 0o705)
+                self.assertEqual(p.parent.stat().st_mode & 0o777, 0o705)
 
     @needs_symlinks
     def test_symlink_to(self):
