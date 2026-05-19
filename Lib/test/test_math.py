@@ -514,6 +514,8 @@ class MathTests(unittest.TestCase):
         self.ftest('fabs(-1)', math.fabs(-1), 1)
         self.ftest('fabs(0)', math.fabs(0), 0)
         self.ftest('fabs(1)', math.fabs(1), 1)
+        self.assertEqual(math.fabs(INF),INF)
+        self.assertEqual(math.fabs(NINF),INF)
 
     def testFloor(self):
         self.assertRaises(TypeError, math.floor)
