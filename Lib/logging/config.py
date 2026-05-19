@@ -34,7 +34,7 @@ import queue
 import re
 import struct
 import threading
-import traceback
+lazy import traceback
 
 from socketserver import ThreadingTCPServer, StreamRequestHandler
 
