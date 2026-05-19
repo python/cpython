@@ -828,6 +828,7 @@ MODULE__IO_FALSE
 MODULE__IO_TRUE
 MODULE_BUILDTYPE
 _PYTHREAD_NAME_MAXLEN
+BUILD_DETAILS
 TEST_MODULES
 OPENSSL_LDFLAGS
 OPENSSL_LIBS
@@ -1154,6 +1155,7 @@ with_openssl_rpath
 with_ssl_default_suites
 with_builtin_hashlib_hashes
 enable_test_modules
+with_build_details_suffix
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1989,6 +1991,10 @@ Optional Packages:
   --with-builtin-hashlib-hashes=md5,sha1,sha2,sha3,blake2
                           builtin hash modules, md5, sha1, sha2, sha3 (with
                           shake), blake2
+  --with-build-details-suffix=
+                          rename build-details.json to permit multiple
+                          colocated Python installs; optionally specify a
+                          custom suffix (default: no)
 
 Some influential environment variables:
   PKG_CONFIG  path to pkg-config utility
@@ -31658,6 +31664,50 @@ fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $TEST_MODULES" >&5
 printf "%s\n" "$TEST_MODULES" >&6; }
+
+
+# Check for --with-build-details-suffix
+BUILD_DETAILS=build-details.json
+
+# Check whether --with-build-details-suffix was given.
+if test ${with_build_details_suffix+y}
+then :
+  withval=$with_build_details_suffix;
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-build-details-suffix" >&5
+printf %s "checking for --with-build-details-suffix... " >&6; }
+    if test "x$with_build_detials_suffix" = xno
+then :
+  as_fn_error $? "invalid --with-build-details-suffix option: expected custom suffix or \"yes\", not \"no\"" "$LINENO" 5
+
+fi
+    if test "x$with_build_details_suffix" = xyes
+then :
+
+        colocated_install=yes
+        threading_suffix=""
+        if [ "$ABI_THREAD" = "t" ]; then
+          threading_suffix=-free-threading
+        fi
+        debug_suffix=""
+        if [ "$Py_DEBUG" = "true" ]; then
+          debug_suffix=-debug
+        fi
+        BUILD_DETAILS=build-details.$MULTIARCH$threading_suffix$debug_suffix.json
+
+else case e in #(
+  e)
+        BUILD_DETAILS=build-details.$with_build_details_suffix.json
+
+     ;;
+esac
+fi
+
+
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_build_details_suffix" >&5
+printf "%s\n" "$with_build_details_suffix" >&6; }
+BUILD_DETAILS=$BUILD_DETAILS
 
 
 # gh-109054: Check if -latomic is needed to get <pyatomic.h> atomic functions.
