@@ -2851,6 +2851,14 @@ expression support in the :mod:`re` module).
       >>> 'abc123'.translate({ord('a'): 'X', ord('b'): 'Y', ord('c'): None})
       'XY123'
 
+   For example, removing vowels using :meth:`str.maketrans`:
+
+   .. doctest::
+
+      >>> table = str.maketrans('', '', 'aeiou')
+      >>> 'hello world'.translate(table)
+      'hll wrld'
+
    See also the :mod:`codecs` module for a more flexible approach to custom
    character mappings.
 
