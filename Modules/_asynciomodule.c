@@ -62,6 +62,7 @@ typedef struct TaskObj {
     unsigned task_must_cancel: 1;
     unsigned task_log_destroy_pending: 1;
     int task_num_cancels_requested;
+    PyObject *task_cancel_requested_at;  /* loop time of first cancel(), or Py_None */
     PyObject *task_fut_waiter;
     PyObject *task_coro;
     PyObject *task_name;
@@ -2342,6 +2343,7 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
     self->task_must_cancel = 0;
     self->task_log_destroy_pending = 1;
     self->task_num_cancels_requested = 0;
+    self->task_cancel_requested_at = Py_NewRef(Py_None);
     set_task_coro(self, coro);
 
     if (name == Py_None) {
@@ -2399,6 +2401,7 @@ TaskObj_clear(PyObject *op)
     clear_task_coro(task);
     Py_CLEAR(task->task_context);
     Py_CLEAR(task->task_name);
+    Py_CLEAR(task->task_cancel_requested_at);
     Py_CLEAR(task->task_fut_waiter);
     return 0;
 }
@@ -2411,6 +2414,7 @@ TaskObj_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(task->task_context);
     Py_VISIT(task->task_coro);
     Py_VISIT(task->task_name);
+    Py_VISIT(task->task_cancel_requested_at);
     Py_VISIT(task->task_fut_waiter);
     FutureObj *fut = (FutureObj *)task;
     Py_VISIT(fut->fut_loop);
@@ -2588,6 +2592,15 @@ _asyncio_Task_cancel_impl(TaskObj *self, PyObject *msg)
 
     self->task_num_cancels_requested += 1;
 
+    if (self->task_num_cancels_requested == 1) {
+        PyObject *t = PyObject_CallMethodNoArgs(
+            ((FutureObj *)self)->fut_loop, &_Py_ID(time));
+        if (t == NULL) {
+            return NULL;
+        }
+        Py_SETREF(self->task_cancel_requested_at, t);
+    }
+
     // These three lines are controversial.  See discussion starting at
     // https://github.com/python/cpython/pull/31394#issuecomment-1053545331
     // and corresponding code in tasks.py.
@@ -2638,6 +2651,20 @@ _asyncio_Task_cancelling_impl(TaskObj *self)
 /*[clinic end generated code]*/
 {
     return PyLong_FromLong(self->task_num_cancels_requested);
+}
+
+/*[clinic input]
+@critical_section
+_asyncio.Task.cancelling_since
+
+Return the loop time when cancel() was first called, or None.
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio_Task_cancelling_since_impl(TaskObj *self)
+/*[clinic end generated code: output=2670bb55581ab10e input=1f81f0a3b6e3da63]*/
+{
+    return Py_NewRef(self->task_cancel_requested_at);
 }
 
 /*[clinic input]
@@ -2918,6 +2945,7 @@ static PyMethodDef TaskType_methods[] = {
     _ASYNCIO_TASK_SET_EXCEPTION_METHODDEF
     _ASYNCIO_TASK_CANCEL_METHODDEF
     _ASYNCIO_TASK_CANCELLING_METHODDEF
+    _ASYNCIO_TASK_CANCELLING_SINCE_METHODDEF
     _ASYNCIO_TASK_UNCANCEL_METHODDEF
     _ASYNCIO_TASK_GET_STACK_METHODDEF
     _ASYNCIO_TASK_PRINT_STACK_METHODDEF

@@ -1221,6 +1221,30 @@ _asyncio_Task_cancelling(PyObject *self, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
+PyDoc_STRVAR(_asyncio_Task_cancelling_since__doc__,
+"cancelling_since($self, /)\n"
+"--\n"
+"\n"
+"Return the loop time when cancel() was first called, or None.");
+
+#define _ASYNCIO_TASK_CANCELLING_SINCE_METHODDEF    \
+    {"cancelling_since", (PyCFunction)_asyncio_Task_cancelling_since, METH_NOARGS, _asyncio_Task_cancelling_since__doc__},
+
+static PyObject *
+_asyncio_Task_cancelling_since_impl(TaskObj *self);
+
+static PyObject *
+_asyncio_Task_cancelling_since(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _asyncio_Task_cancelling_since_impl((TaskObj *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_asyncio_Task_uncancel__doc__,
 "uncancel($self, /)\n"
 "--\n"
@@ -2232,4 +2256,4 @@ _asyncio_future_discard_from_awaited_by(PyObject *module, PyObject *const *args,
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b69948ed810591d9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1e3738a5fe4c981d input=a9049054013a1b77]*/

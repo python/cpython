@@ -539,6 +539,56 @@ class BaseTaskTests:
         finally:
             loop.close()
 
+    def test_cancelling_since_none_before_cancel(self):
+        loop = asyncio.new_event_loop()
+
+        async def task():
+            await asyncio.sleep(10)
+
+        try:
+            t = self.new_task(loop, task())
+            self.assertIsNone(t.cancelling_since())
+            t.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                loop.run_until_complete(t)
+        finally:
+            loop.close()
+
+    def test_cancelling_since_is_float_after_cancel(self):
+        loop = asyncio.new_event_loop()
+
+        async def task():
+            await asyncio.sleep(10)
+
+        try:
+            t = self.new_task(loop, task())
+            t.cancel()
+            ts = t.cancelling_since()
+            self.assertIsInstance(ts, float)
+            self.assertGreater(ts, 0)
+            with self.assertRaises(asyncio.CancelledError):
+                loop.run_until_complete(t)
+        finally:
+            loop.close()
+
+    def test_cancelling_since_stable_across_multiple_cancels(self):
+        loop = asyncio.new_event_loop()
+
+        async def task():
+            await asyncio.sleep(10)
+
+        try:
+            t = self.new_task(loop, task())
+            t.cancel()
+            first = t.cancelling_since()
+            t.cancel()
+            t.cancel()
+            self.assertEqual(t.cancelling_since(), first)
+            with self.assertRaises(asyncio.CancelledError):
+                loop.run_until_complete(t)
+        finally:
+            loop.close()
+
     def test_uncancel_basic(self):
         loop = asyncio.new_event_loop()
 

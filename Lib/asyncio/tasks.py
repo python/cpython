@@ -98,6 +98,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             self._name = str(name)
 
         self._num_cancels_requested = 0
+        self._cancel_requested_at = None
         self._must_cancel = False
         self._fut_waiter = None
         self._coro = coro
@@ -206,6 +207,8 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         if self.done():
             return False
         self._num_cancels_requested += 1
+        if self._num_cancels_requested == 1:
+            self._cancel_requested_at = self._loop.time()
         # These two lines are controversial.  See discussion starting at
         # https://github.com/python/cpython/pull/31394#issuecomment-1053545331
         # Also remember that this is duplicated in _asynciomodule.c.
@@ -229,6 +232,9 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         and may be decremented using .uncancel().
         """
         return self._num_cancels_requested
+
+    def cancelling_since(self):
+        return self._cancel_requested_at
 
     def uncancel(self):
         """Decrement the task's count of cancellation requests.

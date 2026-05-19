@@ -1517,3 +1517,12 @@ Task object
       used by end-user code.  See :meth:`uncancel` for more details.
 
       .. versionadded:: 3.11
+
+   .. method:: cancelling_since()
+
+      Return the event loop time at which :meth:`cancel` was first called, or
+      ``None`` if cancellation has not been requested.
+
+      Repeated calls to :meth:`cancel` do not change the recorded time.
+
+      .. versionadded:: 3.16
