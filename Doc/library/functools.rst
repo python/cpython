@@ -134,7 +134,7 @@ The :mod:`!functools` module defines the following functions:
    a weakref and ensures that caches are cleared when instances are garbage collected.
 
    This is useful for expensive computations which are consistent with respect to
-   an instance, e.g., those which depend only on immutable attributes.
+   an instance, for example, those which depend only on immutable attributes.
 
    Example::
 
