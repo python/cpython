@@ -5316,9 +5316,7 @@ _ssl__SSLContext_sni_callback_set_impl(PySSLContext *self, PyObject *value)
         }
     }
     else {
-        Py_INCREF(value);
-        PyObject *old_cb = _Py_atomic_exchange_ptr(&self->set_sni_cb, value);
-        Py_XDECREF(old_cb);
+        Py_XSETREF(self->set_sni_cb, Py_NewRef(value));
         SSL_CTX_set_tlsext_servername_arg(self->ctx, self);
         SSL_CTX_set_tlsext_servername_callback(self->ctx, _servername_callback);
     }
