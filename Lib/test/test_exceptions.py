@@ -410,9 +410,7 @@ class ExceptionTests(unittest.TestCase):
             w = OSError(9, 'foo', 'bar')
             self.assertEqual(w.errno, 9)
             self.assertEqual(w.winerror, None)
-            self.assertEqual(
-                str(w), f"[Errno 9 ({errno.errorcode[9]})] foo: 'bar'"
-            )
+            self.assertEqual(str(w), f"[Errno 9 (EBADF)] foo: 'bar'")
             # ERROR_PATH_NOT_FOUND (win error 3) becomes ENOENT (2)
             w = OSError(0, 'foo', 'bar', 3)
             self.assertEqual(w.errno, 2)
