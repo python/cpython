@@ -152,6 +152,7 @@ _X86_GOT_RELOCATIONS = {
 _CROSS_SECTION_PREFIX = "_JIT_CROSS_SECTION_"
 _CROSS_SECTION_SUFFIX = "_JIT_CROSS_SECTION"
 
+
 @dataclasses.dataclass
 class Hole:
     """

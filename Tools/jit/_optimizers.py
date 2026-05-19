@@ -384,18 +384,14 @@ class Optimizer:
         return label
 
     def _make_cross_section_target(self, block: _Block) -> str:
-        real_target = self._make_cold_target(block).removeprefix(
-            self.symbol_prefix
-        )
+        real_target = self._make_cold_target(block).removeprefix(self.symbol_prefix)
         return (
             f"{self.symbol_prefix}_JIT_CROSS_SECTION_"
             f"{real_target}_JIT_CROSS_SECTION"
         )
 
     def _relocation_marker(self, reloc: str, block: _Block) -> Instruction:
-        target = self._make_cross_section_target(block).removeprefix(
-            self.symbol_prefix
-        )
+        target = self._make_cross_section_target(block).removeprefix(self.symbol_prefix)
         label = f"{self.symbol_prefix}{reloc}_JIT_RELOCATION_{target}:"
         return Instruction(InstructionKind.OTHER, "", label, None, None)
 
@@ -716,10 +712,7 @@ class Optimizer:
             if (
                 block.link
                 and target is block.link.resolve()
-                and (
-                    self._same_layout_section(block, target)
-                    or target is continuation
-                )
+                and (self._same_layout_section(block, target) or target is continuation)
             ):
                 block.target = None
                 block.fallthrough = True
