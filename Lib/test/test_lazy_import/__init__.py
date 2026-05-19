@@ -171,10 +171,18 @@ class LazyImportTests(LazyImportTestCase):
 class GlobalLazyImportModeTests(LazyImportTestCase):
     """Tests for sys.set_lazy_imports() global mode control."""
 
-    def test_global_off(self):
-        """Mode 'none' should disable lazy imports entirely."""
-        import test.test_lazy_import.data.global_off
-        self.assertIn("test.test_lazy_import.data.basic2", sys.modules)
+    def tearDown(self):
+        for key in list(sys.modules.keys()):
+            if key.startswith('test.test_lazy_import.data'):
+                del sys.modules[key]
+
+        sys.set_lazy_imports_filter(None)
+        sys.set_lazy_imports("normal")
+
+    def test_global_off_rejected(self):
+        """Mode 'none' is not supported."""
+        with self.assertRaises(ValueError):
+            sys.set_lazy_imports("none")
 
     def test_global_on(self):
         """Mode 'all' should make regular imports lazy."""
@@ -611,9 +619,6 @@ class SysLazyImportsAPITests(LazyImportTestCase):
 
         sys.set_lazy_imports("all")
         self.assertEqual(sys.get_lazy_imports(), "all")
-
-        sys.set_lazy_imports("none")
-        self.assertEqual(sys.get_lazy_imports(), "none")
 
     def test_get_lazy_imports_filter_default(self):
         """get_lazy_imports_filter should return None by default."""
@@ -1111,68 +1116,16 @@ class CommandLineAndEnvVarTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, f"stderr: {result.stderr}")
         self.assertIn("LAZY", result.stdout)
 
-    def test_cli_lazy_imports_none_forces_all_imports_eager(self):
-        """-X lazy_imports=none should force all imports to be eager."""
-        code = textwrap.dedent("""
-            import sys
-            # Even explicit lazy imports should be eager in 'none' mode
-            lazy import json
-            if 'json' in sys.modules:
-                print("EAGER")
-            else:
-                print("LAZY")
-        """)
+    def test_cli_lazy_imports_none_is_rejected(self):
+        """-X lazy_imports=none should be rejected."""
         result = subprocess.run(
-            [sys.executable, "-X", "lazy_imports=none", "-c", code],
+            [sys.executable, "-X", "lazy_imports=none", "-c", "pass"],
             capture_output=True,
             text=True
         )
-        self.assertEqual(result.returncode, 0, f"stderr: {result.stderr}")
-        self.assertIn("EAGER", result.stdout)
-
-    @support.requires_resource("cpu")
-    def test_cli_lazy_imports_modes_import_stdlib_modules(self):
-        """-X lazy_imports modes should import available stdlib modules."""
-        # Do not smoke-test modules with intentional import-time effects.
-        import_side_effect_modules = {"antigravity", "this"}
-        importable = []
-
-        for module in sorted(sys.stdlib_module_names):
-            if module in import_side_effect_modules:
-                continue
-
-            with self.subTest(module=module):
-                code = f"import {module}; print({module})"
-                baseline = subprocess.run(
-                    [sys.executable, "-I", "-c", code],
-                    capture_output=True,
-                    text=True,
-                    timeout=60,
-                )
-                if baseline.returncode:
-                    # sys.stdlib_module_names includes modules for other
-                    # platforms and optional extension modules not built here.
-                    continue
-                importable.append(module)
-
-                for mode in ("normal", "none"):
-                    with self.subTest(module=module, mode=mode):
-                        result = subprocess.run(
-                            [
-                                sys.executable,
-                                "-I",
-                                "-X",
-                                f"lazy_imports={mode}",
-                                "-c",
-                                code,
-                            ],
-                            capture_output=True,
-                            text=True,
-                            timeout=60,
-                        )
-                        self.assertEqual(result.returncode, 0, result.stderr)
-
-        self.assertGreater(len(importable), 100)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("-X lazy_imports: invalid value", result.stderr)
+        self.assertIn("expected 'all' or 'normal'", result.stderr)
 
     def test_cli_lazy_imports_normal_respects_lazy_keyword_only(self):
         """-X lazy_imports=normal should respect lazy keyword only."""
@@ -1221,77 +1174,27 @@ class CommandLineAndEnvVarTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, f"stderr: {result.stderr}")
         self.assertIn("LAZY", result.stdout)
 
-    def test_env_var_lazy_imports_none_disables_all_lazy(self):
-        """PYTHON_LAZY_IMPORTS=none should disable all lazy imports."""
-        code = textwrap.dedent("""
-            import sys
-            lazy import json
-            if 'json' in sys.modules:
-                print("EAGER")
-            else:
-                print("LAZY")
-        """)
+    def test_env_var_lazy_imports_none_is_rejected(self):
+        """PYTHON_LAZY_IMPORTS=none should be rejected."""
         import os
         env = os.environ.copy()
         env["PYTHON_LAZY_IMPORTS"] = "none"
         result = subprocess.run(
-            [sys.executable, "-c", code],
+            [sys.executable, "-c", "pass"],
             capture_output=True,
             text=True,
             env=env
         )
-        self.assertEqual(result.returncode, 0, f"stderr: {result.stderr}")
-        self.assertIn("EAGER", result.stdout)
-
-    def test_cli_lazy_imports_none_disables_dunder_lazy_modules(self):
-        """-X lazy_imports=none should override __lazy_modules__."""
-        code = textwrap.dedent("""
-            import sys
-            __lazy_modules__ = ["json"]
-            import json
-            if 'json' in sys.modules:
-                print("EAGER")
-            else:
-                print("LAZY")
-        """)
-        result = subprocess.run(
-            [sys.executable, "-X", "lazy_imports=none", "-c", code],
-            capture_output=True,
-            text=True,
-        )
-        self.assertEqual(result.returncode, 0, f"stderr: {result.stderr}")
-        self.assertIn("EAGER", result.stdout)
-
-    def test_env_var_lazy_imports_none_disables_dunder_lazy_modules(self):
-        """PYTHON_LAZY_IMPORTS=none should override __lazy_modules__."""
-        code = textwrap.dedent("""
-            import sys
-            __lazy_modules__ = ["json"]
-            import json
-            if 'json' in sys.modules:
-                print("EAGER")
-            else:
-                print("LAZY")
-        """)
-        import os
-
-        env = os.environ.copy()
-        env["PYTHON_LAZY_IMPORTS"] = "none"
-        result = subprocess.run(
-            [sys.executable, "-c", code],
-            capture_output=True,
-            text=True,
-            env=env,
-        )
-        self.assertEqual(result.returncode, 0, f"stderr: {result.stderr}")
-        self.assertIn("EAGER", result.stdout)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("PYTHON_LAZY_IMPORTS: invalid value", result.stderr)
+        self.assertIn("expected 'all' or 'normal'", result.stderr)
 
     def test_cli_overrides_env_var(self):
         """Command-line option should take precedence over environment variable."""
         # PEP 810: -X lazy_imports takes precedence over PYTHON_LAZY_IMPORTS
         code = textwrap.dedent("""
             import sys
-            lazy import json
+            import json
             if 'json' in sys.modules:
                 print("EAGER")
             else:
@@ -1299,23 +1202,23 @@ class CommandLineAndEnvVarTests(unittest.TestCase):
         """)
         import os
         env = os.environ.copy()
-        env["PYTHON_LAZY_IMPORTS"] = "all"  # env says all
+        env["PYTHON_LAZY_IMPORTS"] = "all"  # env says all imports are lazy
         result = subprocess.run(
-            [sys.executable, "-X", "lazy_imports=none", "-c", code],  # CLI says none
+            [sys.executable, "-X", "lazy_imports=normal", "-c", code],
             capture_output=True,
             text=True,
             env=env
         )
         self.assertEqual(result.returncode, 0, f"stderr: {result.stderr}")
-        # CLI should win - imports should be eager
+        # CLI should win, so a regular import should stay eager.
         self.assertIn("EAGER", result.stdout)
 
     def test_sys_set_lazy_imports_overrides_cli(self):
         """sys.set_lazy_imports() should take precedence over CLI option."""
         code = textwrap.dedent("""
             import sys
-            sys.set_lazy_imports("none")  # Override CLI
-            lazy import json
+            sys.set_lazy_imports("normal")  # Override CLI
+            import json
             if 'json' in sys.modules:
                 print("EAGER")
             else:
@@ -2037,9 +1940,10 @@ class LazyImportDisTests(unittest.TestCase):
 class LazyCApiTests(LazyImportTestCase):
     def test_set_matches_sys(self):
         self.assertEqual(_testcapi.PyImport_GetLazyImportsMode(), sys.get_lazy_imports())
-        for mode in ("normal", "all", "none"):
+        for mode in ("normal", "all"):
             _testcapi.PyImport_SetLazyImportsMode(mode)
             self.assertEqual(_testcapi.PyImport_GetLazyImportsMode(), sys.get_lazy_imports())
+        self.assertRaises(ValueError, _testcapi.PyImport_SetLazyImportsMode, "none")
 
     def test_filter_matches_sys(self):
         self.assertEqual(_testcapi.PyImport_GetLazyImportsFilter(), sys.get_lazy_imports_filter())
