@@ -21,7 +21,7 @@ from distutils.errors import DistutilsPlatformError
 from distutils.ccompiler import CCompiler
 from distutils import log
 
-from itertools import count
+lazy from itertools import count
 
 def _find_vc2015():
     try:

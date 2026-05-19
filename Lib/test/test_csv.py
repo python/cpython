@@ -12,7 +12,7 @@ import pickle
 from test import support
 from test.support import cpython_only, import_helper, check_disallow_instantiation
 from test.support.import_helper import ensure_lazy_imports
-from itertools import permutations
+lazy from itertools import permutations
 from textwrap import dedent
 from collections import OrderedDict
 

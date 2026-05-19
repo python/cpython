@@ -1,5 +1,5 @@
 from collections import defaultdict, deque
-from itertools import filterfalse
+lazy from itertools import filterfalse
 
 
 def unique_everseen(iterable, key=None):
@@ -99,7 +99,7 @@ class bucket:
     If you specify a *validator* function, selected buckets will instead be
     checked against it.
 
-        >>> from itertools import count
+        >>> lazy from itertools import count
         >>> it = count(1, 2)  # Infinite sequence of odd numbers
         >>> key = lambda x: x % 10  # Bucket by last digit
         >>> validator = lambda x: x in {1, 3, 5, 7, 9}  # Odd digits only

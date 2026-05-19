@@ -4,7 +4,7 @@ import builtins
 import collections
 import collections.abc
 import copy
-from itertools import permutations
+lazy from itertools import permutations
 import pickle
 from random import choice
 import re

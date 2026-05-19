@@ -1655,7 +1655,7 @@ all and thereby wasting memory.
 Thanks to itertools.tee, it is now clear "how to get the internal uses of
 m235 to share a single generator".
 
->>> from itertools import tee
+>>> lazy from itertools import tee
 >>> def m235():
 ...     def _m235():
 ...         yield 1

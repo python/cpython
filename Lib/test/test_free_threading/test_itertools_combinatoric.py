@@ -1,6 +1,6 @@
 import unittest
 from threading import Thread, Barrier
-from itertools import combinations, product
+lazy from itertools import combinations, product
 from test.support import threading_helper
 
 

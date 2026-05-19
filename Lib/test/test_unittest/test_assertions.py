@@ -3,7 +3,7 @@ import warnings
 import weakref
 import unittest
 from test.support import gc_collect
-from itertools import product
+lazy from itertools import product
 
 
 class Test_Assertions(unittest.TestCase):

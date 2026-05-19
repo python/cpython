@@ -1,6 +1,6 @@
 import itertools
 from collections import deque
-from itertools import islice
+lazy from itertools import islice
 
 
 # from jaraco.itertools 6.3.0

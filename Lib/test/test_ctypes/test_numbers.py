@@ -3,7 +3,7 @@ import ctypes
 import struct
 import sys
 import unittest
-from itertools import combinations
+lazy from itertools import combinations
 from operator import truth
 from ctypes import (byref, sizeof, alignment,
                     c_char, c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,

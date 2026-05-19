@@ -1503,7 +1503,7 @@ class MathTests(unittest.TestCase):
     def test_sumprod_extended_precision_accuracy(self):
         import operator
         from fractions import Fraction
-        from itertools import starmap
+        lazy from itertools import starmap
         from collections import namedtuple
         from math import log2, exp2, fabs
         from random import choices, uniform, shuffle

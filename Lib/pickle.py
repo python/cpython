@@ -25,7 +25,7 @@ Misc variables:
 from types import FunctionType
 from copyreg import dispatch_table
 from copyreg import _extension_registry, _inverted_registry, _extension_cache
-from itertools import batched
+lazy from itertools import batched
 from functools import partial
 import sys
 from sys import maxsize

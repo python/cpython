@@ -24,7 +24,7 @@ import weakref
 
 from contextlib import nullcontext
 from functools import partial
-from itertools import product, islice
+lazy from itertools import product, islice
 from test import support
 from test.support import os_helper
 from test.support import warnings_helper

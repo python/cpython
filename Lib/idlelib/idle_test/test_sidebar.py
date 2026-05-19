@@ -2,7 +2,7 @@
 from textwrap import dedent
 import sys
 
-from itertools import chain
+lazy from itertools import chain
 import unittest
 import unittest.mock
 from test.support import requires, swap_attr

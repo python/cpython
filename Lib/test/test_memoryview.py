@@ -15,7 +15,7 @@ import copy
 import pickle
 import struct
 
-from itertools import product
+lazy from itertools import product
 from test import support
 from test.support import import_helper, threading_helper
 

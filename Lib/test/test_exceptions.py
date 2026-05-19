@@ -8,7 +8,7 @@ import pickle
 import weakref
 import errno
 from codecs import BOM_UTF8
-from itertools import product
+lazy from itertools import product
 from textwrap import dedent
 
 from test.support import (captured_stderr, check_impl_detail,

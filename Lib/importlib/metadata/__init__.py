@@ -26,7 +26,7 @@ from collections.abc import Iterable, Mapping
 from contextlib import suppress
 from importlib import import_module
 from importlib.abc import MetaPathFinder
-from itertools import starmap
+lazy from itertools import starmap
 from typing import Any
 
 from . import _meta

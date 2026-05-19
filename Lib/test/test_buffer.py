@@ -18,7 +18,7 @@ import unittest
 from test import support
 from test.support import os_helper
 import inspect
-from itertools import permutations, product
+lazy from itertools import permutations, product
 from random import randrange, sample, choice
 import warnings
 import sys, array, io, os

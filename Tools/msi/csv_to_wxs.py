@@ -21,7 +21,7 @@ import re
 import sys
 
 from collections import defaultdict
-from itertools import chain, zip_longest
+lazy from itertools import chain, zip_longest
 from pathlib import PureWindowsPath
 from uuid import uuid1
 

@@ -4,7 +4,7 @@ import sys
 import unittest
 
 from asyncio import proactor_events
-from itertools import cycle, islice
+lazy from itertools import cycle, islice
 from unittest.mock import Mock
 from test.test_asyncio import utils as test_utils
 from test import support

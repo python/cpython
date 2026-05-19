@@ -56,7 +56,7 @@ import textwrap
 import importlib
 import linecache
 from contextlib import contextmanager
-from itertools import islice, repeat
+lazy from itertools import islice, repeat
 from test.support import import_helper
 from test.support import os_helper
 from test.support import patch_list

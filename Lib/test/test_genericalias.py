@@ -25,7 +25,7 @@ except ImportError:
 from difflib import SequenceMatcher
 from filecmp import dircmp
 from fileinput import FileInput
-from itertools import chain
+lazy from itertools import chain
 from http.cookies import Morsel
 try:
     from multiprocessing.managers import ValueProxy, DictProxy, ListProxy

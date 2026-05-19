@@ -71,7 +71,7 @@ schema change will bump the per-record ``"v"``.
 from collections import Counter
 import json
 import uuid
-from itertools import batched
+lazy from itertools import batched
 
 from .constants import PROFILING_MODE_NAMES
 from .collector import normalize_location

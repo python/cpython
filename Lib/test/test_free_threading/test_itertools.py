@@ -1,5 +1,5 @@
 import unittest
-from itertools import accumulate, batched, chain, combinations_with_replacement, cycle, permutations, zip_longest
+lazy from itertools import accumulate, batched, chain, combinations_with_replacement, cycle, permutations, zip_longest
 from test.support import threading_helper
 
 

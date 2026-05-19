@@ -9,7 +9,7 @@ import random
 import sys
 import unittest
 import weakref
-from itertools import product
+lazy from itertools import product
 from unittest import mock
 
 from test import support

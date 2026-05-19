@@ -26,7 +26,7 @@ import weakref
 from contextlib import ExitStack
 from functools import partial
 from inspect import CO_COROUTINE
-from itertools import product
+lazy from itertools import product
 from textwrap import dedent
 from types import AsyncGeneratorType, FunctionType, CellType
 from operator import neg

@@ -82,7 +82,7 @@ class IterFuncStop:
     def __next__(self):
         raise StopIteration
 
-from itertools import chain
+lazy from itertools import chain
 def itermulti(seqn):
     'Test multiple tiers of iterators'
     return chain(map(lambda x:x, iterfunc(IterGen(Sequence(seqn)))))

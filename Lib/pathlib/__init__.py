@@ -12,7 +12,7 @@ import os
 import posixpath
 import sys
 from errno import *
-from itertools import chain
+lazy from itertools import chain
 from stat import (
     S_IMODE, S_ISDIR, S_ISREG, S_ISLNK, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO,
 )

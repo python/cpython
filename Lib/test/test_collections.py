@@ -8,7 +8,7 @@ import inspect
 import operator
 import pickle
 from random import choice, randrange
-from itertools import product, chain, combinations
+lazy from itertools import product, chain, combinations
 import string
 import sys
 from test import support

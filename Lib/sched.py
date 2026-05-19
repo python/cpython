@@ -26,7 +26,7 @@ has another way to reference private data (besides global variables).
 import time
 import heapq
 from collections import namedtuple
-from itertools import count
+lazy from itertools import count
 import threading
 from time import monotonic as _time
 

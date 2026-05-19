@@ -1,5 +1,5 @@
 from collections import abc
-from itertools import combinations
+lazy from itertools import combinations
 import array
 import gc
 import math

@@ -721,7 +721,7 @@ if 0:
         exp = compute_powers(w, 1, limit, need_hi=need_hi)
         assert exp.keys() == need
 
-    from itertools import chain
+    lazy from itertools import chain
     for need_hi in (False, True):
         for limit in (0, 1, 10, 100, 1_000, 10_000, 100_000):
             for w in chain(range(1, 100_000),

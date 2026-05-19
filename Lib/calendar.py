@@ -9,7 +9,7 @@ import sys
 import datetime
 from enum import IntEnum, global_enum
 import locale as _locale
-from itertools import repeat
+lazy from itertools import repeat
 
 __all__ = ["IllegalMonthError", "IllegalWeekdayError", "setfirstweekday",
            "firstweekday", "isleap", "leapdays", "weekday", "monthrange",

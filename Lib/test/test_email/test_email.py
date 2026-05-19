@@ -9,7 +9,7 @@ import unittest
 import textwrap
 
 from io import StringIO, BytesIO
-from itertools import chain
+lazy from itertools import chain
 from random import choice
 from threading import Thread
 from unittest.mock import patch

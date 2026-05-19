@@ -1,7 +1,7 @@
 """Tools to analyze tasks running in asyncio programs."""
 
 from collections import defaultdict
-from itertools import count
+lazy from itertools import count
 from enum import Enum
 import sys
 from _remote_debugging import RemoteUnwinder, FrameInfo

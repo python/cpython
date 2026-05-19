@@ -1,7 +1,7 @@
 import ast
 import dis
 import gc
-from itertools import combinations, product
+lazy from itertools import combinations, product
 import opcode
 import sys
 import textwrap

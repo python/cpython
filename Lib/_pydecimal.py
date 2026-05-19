@@ -6279,7 +6279,7 @@ def _group_lengths(grouping):
     #   (2) nonempty list of positive integers + [0]
     #   (3) list of positive integers + [locale.CHAR_MAX], or
 
-    from itertools import chain, repeat
+    lazy from itertools import chain, repeat
     if not grouping:
         return []
     elif grouping[-1] == 0 and len(grouping) >= 2:

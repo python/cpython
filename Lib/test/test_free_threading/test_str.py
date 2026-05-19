@@ -2,7 +2,7 @@ import sys
 import threading
 import unittest
 
-from itertools import cycle
+lazy from itertools import cycle
 from threading import Barrier, Event, Thread
 from unittest import TestCase
 

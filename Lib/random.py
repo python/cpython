@@ -57,7 +57,7 @@ from math import lgamma as _lgamma, fabs as _fabs, log2 as _log2
 from os import urandom as _urandom
 from _collections_abc import Sequence as _Sequence
 from operator import index as _index
-from itertools import accumulate as _accumulate, repeat as _repeat
+lazy from itertools import accumulate as _accumulate, repeat as _repeat
 from bisect import bisect as _bisect
 import os as _os
 import _random

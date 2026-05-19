@@ -34,9 +34,9 @@ abc = _collections_abc
 
 lazy from copy import copy as _copy
 lazy from heapq import nlargest as _nlargest
-from itertools import chain as _chain
-from itertools import repeat as _repeat
-from itertools import starmap as _starmap
+lazy from itertools import chain as _chain
+lazy from itertools import repeat as _repeat
+lazy from itertools import starmap as _starmap
 from keyword import iskeyword as _iskeyword
 from operator import eq as _eq
 from operator import itemgetter as _itemgetter
