@@ -26,6 +26,7 @@
 #define OPENSSL_NO_DEPRECATED 1
 
 #include "Python.h"
+#include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_fileutils.h"     // _PyIsSelectable_fd()
 #include "pycore_long.h"          // _PyLong_UnsignedLongLong_Converter()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
@@ -4669,12 +4670,15 @@ _servername_callback(SSL *s, int *al, void *args)
     PyObject *result;
     /* The high-level ssl.SSLSocket object */
     PyObject *ssl_socket;
+    PyObject *sni_cb;
     const char *servername = SSL_get_servername(s, TLSEXT_NAMETYPE_host_name);
     PyGILState_STATE gstate = PyGILState_Ensure();
 
-    if (sslctx->set_sni_cb == NULL) {
-        /* remove race condition in this the call back while if removing the
-         * callback is in progress */
+    Py_BEGIN_CRITICAL_SECTION(sslctx);
+    sni_cb = Py_XNewRef(sslctx->set_sni_cb);
+    Py_END_CRITICAL_SECTION();
+
+    if (sni_cb == NULL) {
         PyGILState_Release(gstate);
         return SSL_TLSEXT_ERR_OK;
     }
@@ -4701,7 +4705,7 @@ _servername_callback(SSL *s, int *al, void *args)
         goto error;
 
     if (servername == NULL) {
-        result = PyObject_CallFunctionObjArgs(sslctx->set_sni_cb, ssl_socket,
+        result = PyObject_CallFunctionObjArgs(sni_cb, ssl_socket,
                                               Py_None, sslctx, NULL);
     }
     else {
@@ -4728,7 +4732,7 @@ _servername_callback(SSL *s, int *al, void *args)
         }
         Py_DECREF(servername_bytes);
         result = PyObject_CallFunctionObjArgs(
-            sslctx->set_sni_cb, ssl_socket, servername_str,
+            sni_cb, ssl_socket, servername_str,
             sslctx, NULL);
         Py_DECREF(servername_str);
     }
@@ -4738,7 +4742,7 @@ _servername_callback(SSL *s, int *al, void *args)
         PyErr_FormatUnraisable("Exception ignored "
                                "in ssl servername callback "
                                "while calling set SNI callback %R",
-                               sslctx->set_sni_cb);
+                               sni_cb);
         *al = SSL_AD_HANDSHAKE_FAILURE;
         ret = SSL_TLSEXT_ERR_ALERT_FATAL;
     }
@@ -4763,11 +4767,13 @@ _servername_callback(SSL *s, int *al, void *args)
         Py_DECREF(result);
     }
 
+    Py_DECREF(sni_cb);
     PyGILState_Release(gstate);
     return ret;
 
 error:
     Py_XDECREF(ssl_socket);
+    Py_XDECREF(sni_cb);
     *al = SSL_AD_INTERNAL_ERROR;
     ret = SSL_TLSEXT_ERR_ALERT_FATAL;
     PyGILState_Release(gstate);
@@ -4813,20 +4819,18 @@ _ssl__SSLContext_sni_callback_set_impl(PySSLContext *self, PyObject *value)
                         "sni_callback cannot be set on TLS_CLIENT context");
         return -1;
     }
-    Py_CLEAR(self->set_sni_cb);
-    if (value == Py_None) {
+    if (!PyCallable_Check(value)) {
         SSL_CTX_set_tlsext_servername_callback(self->ctx, NULL);
-    }
-    else {
-        if (!PyCallable_Check(value)) {
-            SSL_CTX_set_tlsext_servername_callback(self->ctx, NULL);
-            PyErr_SetString(PyExc_TypeError,
-                            "not a callable object");
+        Py_CLEAR(self->set_sni_cb);
+        if (value != Py_None) {
+            PyErr_SetString(PyExc_TypeError, "not a callable object");
             return -1;
         }
-        self->set_sni_cb = Py_NewRef(value);
-        SSL_CTX_set_tlsext_servername_callback(self->ctx, _servername_callback);
+    }
+    else {
+        Py_XSETREF(self->set_sni_cb, Py_NewRef(value));
         SSL_CTX_set_tlsext_servername_arg(self->ctx, self);
+        SSL_CTX_set_tlsext_servername_callback(self->ctx, _servername_callback);
     }
     return 0;
 }
