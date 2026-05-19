@@ -8,8 +8,8 @@
 
 import os
 import sys
-lazy from importlib import import_module
-lazy from importlib.util import find_spec
+from importlib import import_module
+from importlib.util import find_spec
 
 # Make our custom extensions available to Sphinx
 sys.path.append(os.path.abspath('tools/extensions'))
