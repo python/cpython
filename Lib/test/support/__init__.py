@@ -2273,10 +2273,10 @@ class _SMALLEST:
 
 SMALLEST = _SMALLEST()
 
-def maybe_get_event_loop_policy():
-    """Return the global event loop policy if one is set, else return None."""
+def maybe_get_event_loop():
+    """Return the event loop set for the current thread, else return None."""
     import asyncio.events
-    return asyncio.events._event_loop_policy
+    return asyncio.events._local._loop
 
 # Helpers for testing hashing.
 NHASHBITS = sys.hash_info.width # number of bits in hash() result
