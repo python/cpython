@@ -3039,6 +3039,45 @@ _PyCode_ConstantKey(PyObject *op)
         Py_DECREF(set);
         return key;
     }
+    else if (PyFrozenDict_CheckExact(op)) {
+        PyObject *dict = PyDict_New();
+        if (dict == NULL) {
+            return NULL;
+        }
+
+        Py_ssize_t pos = 0;
+        PyObject *k_obj, *v_obj;
+        while (PyDict_Next(op, &pos, &k_obj, &v_obj)) {
+            PyObject *k_key = _PyCode_ConstantKey(k_obj);
+            if (k_key == NULL) {
+                Py_DECREF(dict);
+                return NULL;
+            }
+            PyObject *v_key = _PyCode_ConstantKey(v_obj);
+            if (v_key == NULL) {
+                Py_DECREF(k_key);
+                Py_DECREF(dict);
+                return NULL;
+            }
+            int res = PyDict_SetItem(dict, k_key, v_key);
+            Py_DECREF(k_key);
+            Py_DECREF(v_key);
+            if (res < 0) {
+                Py_DECREF(dict);
+                return NULL;
+            }
+        }
+
+        PyObject *fdict = PyFrozenDict_New(dict);
+        Py_DECREF(dict);
+        if (fdict == NULL) {
+            return NULL;
+        }
+
+        key = _PyTuple_FromPair(fdict, op);
+        Py_DECREF(fdict);
+        return key;
+    }
     else if (PySlice_Check(op)) {
         PySliceObject *slice = (PySliceObject *)op;
         PyObject *start_key = NULL;
