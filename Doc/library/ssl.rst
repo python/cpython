@@ -268,7 +268,9 @@ Exceptions
       item of the list is the top of the queue. If :attr:`reason` is not enough
       to diagnose a problem, OpenSSL may report more detail through this queue.
       The format of the strings follows that of OpenSSL's
-      `ERR_error_string <https://docs.openssl.org/master/man3/ERR_error_string/>`_.
+      `ERR_error_string <https://docs.openssl.org/master/man3/ERR_error_string/>`_,
+      and may change between OpenSSL versions (i.e. do not rely on the exact
+      wording of these messages).
 
       .. versionadded:: 3.16
 
