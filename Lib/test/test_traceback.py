@@ -23,7 +23,7 @@ from test.support import (Error, captured_output, cpython_only, ALWAYS_EQ,
                           requires_subprocess, os_helper)
 from test.support.os_helper import TESTFN, temp_dir, unlink
 from test.support.script_helper import assert_python_ok, assert_python_failure, make_script
-from test.support.import_helper import forget
+from test.support.import_helper import ensure_lazy_imports, forget
 from test.support import force_not_colorized, force_not_colorized_test_class
 
 import json
@@ -1789,6 +1789,7 @@ class TracebackErrorLocationCaretTestBase:
             "    ~^~"
         ]
         self.assertEqual(result_lines, expected)
+
 
 class TestKeywordTypoSuggestions(unittest.TestCase):
     TYPO_CASES = [
@@ -4564,6 +4565,95 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
         actual = self.get_suggestion(Outer(), 'target')
         self.assertIn("'.normal.target'", actual)
 
+    @force_not_colorized
+    def test_cross_language(self):
+        cases = [
+            # (type, attr, hint_attr)
+            (list, 'push', 'append'),
+            (list, 'concat', 'extend'),
+            (list, 'addAll', 'extend'),
+            (str, 'toUpperCase', 'upper'),
+            (str, 'toLowerCase', 'lower'),
+            (str, 'trimStart', 'lstrip'),
+            (str, 'trimEnd', 'rstrip'),
+            (dict, 'keySet', 'keys'),
+            (dict, 'entrySet', 'items'),
+            (dict, 'entries', 'items'),
+            (dict, 'putAll', 'update'),
+        ]
+        for test_type, attr, hint_attr in cases:
+            with self.subTest(type=test_type.__name__, attr=attr):
+                obj = test_type()
+                actual = self.get_suggestion(obj, attr)
+                self.assertEndsWith(actual, f"Did you mean '.{hint_attr}'?")
+
+        cases = [
+            # (type, attr, hint)
+            (list, 'contains', "Use 'x in list'."),
+            (list, 'add', "Did you mean to use a 'set' object?"),
+            (dict, 'put', "Use d[k] = v."),
+        ]
+        for test_type, attr, expected in cases:
+            with self.subTest(type=test_type, attr=attr):
+                obj = test_type()
+                actual = self.get_suggestion(obj, attr)
+                self.assertEndsWith(actual, expected)
+
+    @force_not_colorized
+    def test_cross_language_levenshtein_fallback(self):
+        # When no cross-language entry exists, Levenshtein still works
+        # (e.g., trim->strip is not in the table but Levenshtein catches it)
+        actual = self.get_suggestion('', 'trim')
+        self.assertIn("strip", actual)
+
+    @force_not_colorized
+    def test_cross_language_no_hint_for_unknown_attr(self):
+        actual = self.get_suggestion([], 'completely_unknown_method')
+        self.assertNotIn("Did you mean", actual)
+
+    @force_not_colorized
+    def test_cross_language_works_for_subclasses(self):
+        # isinstance() check means subclasses also get hints
+        class MyList(list):
+            pass
+        actual = self.get_suggestion(MyList(), 'push')
+        self.assertEndsWith(actual, "Did you mean '.append'?")
+
+        class MyDict(dict):
+            pass
+        actual = self.get_suggestion(MyDict(), 'keySet')
+        self.assertEndsWith(actual, "Did you mean '.keys'?")
+
+    @force_not_colorized
+    def test_cross_language_mutable_on_immutable(self):
+        # Mutable method on immutable type suggests the mutable counterpart
+        cases = [
+            (tuple, 'append', "Did you mean to use a 'list' object?"),
+            (tuple, 'extend', "Did you mean to use a 'list' object?"),
+            (tuple, 'insert', "Did you mean to use a 'list' object?"),
+            (tuple, 'remove', "Did you mean to use a 'list' object?"),
+            (frozenset, 'add', "Did you mean to use a 'set' object?"),
+            (frozenset, 'discard', "Did you mean to use a 'set' object?"),
+            (frozenset, 'remove', "Did you mean to use a 'set' object?"),
+            (frozenset, 'update', "Did you mean to use a 'set' object?"),
+            (frozendict, 'update', "Did you mean to use a 'dict' object?"),
+        ]
+        for test_type, attr, expected in cases:
+            with self.subTest(type=test_type.__name__, attr=attr):
+                obj = test_type()
+                actual = self.get_suggestion(obj, attr)
+                self.assertEndsWith(actual, expected)
+
+    @force_not_colorized
+    def test_cross_language_float_bitwise(self):
+        # Bitwise operators on float suggest using int
+        cases = ['__or__', '__and__', '__xor__', '__lshift__', '__rshift__']
+        for attr in cases:
+            with self.subTest(attr=attr):
+                actual = self.get_suggestion(1.0, attr)
+                self.assertIn("'int'", actual)
+                self.assertIn("Bitwise operators", actual)
+
     def make_module(self, code):
         tmpdir = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, tmpdir)
@@ -5414,6 +5504,92 @@ class TestColorizedTraceback(unittest.TestCase):
         ]
         self.assertEqual(actual, expected(**colors))
 
+    def test_colorized_traceback_unicode(self):
+        try:
+            啊哈=1; 啊哈/0####
+        except Exception as e:
+            exc = traceback.TracebackException.from_exception(e)
+
+        actual = "".join(exc.format(colorize=True)).splitlines()
+        def expected(t, m, fn, l, f, E, e, z, n):
+            return [
+                f"    啊哈=1; {e}啊哈{z}{E}/{z}{e}0{z}####",
+                f"            {e}~~~~{z}{E}^{z}{e}~{z}",
+            ]
+        self.assertEqual(actual[2:4], expected(**colors))
+
+        try:
+            ééééé/0
+        except Exception as e:
+            exc = traceback.TracebackException.from_exception(e)
+
+        actual = "".join(exc.format(colorize=True)).splitlines()
+        def expected(t, m, fn, l, f, E, e, z, n):
+            return [
+                f"    {E}ééééé{z}/0",
+                f"    {E}^^^^^{z}",
+            ]
+        self.assertEqual(actual[2:4], expected(**colors))
+
+    def test_colorized_syntax_error_ascii_display_width(self):
+        """Caret alignment for ASCII edge cases handled by _wlen.
+
+        The old ASCII fast track in _display_width returned the raw character
+        offset for ASCII strings, which is wrong for CTRL-Z (display width 2)
+        and ANSI escape sequences (display width 0).
+        """
+        E = colors["E"]
+        z = colors["z"]
+        t = colors["t"]
+        m = colors["m"]
+        fn = colors["fn"]
+        l = colors["l"]
+
+        def _make_syntax_error(text, offset, end_offset):
+            err = SyntaxError("invalid syntax")
+            err.filename = "<string>"
+            err.lineno = 1
+            err.end_lineno = 1
+            err.text = text
+            err.offset = offset
+            err.end_offset = end_offset
+            return err
+
+        # CTRL-Z (\x1a) is ASCII but displayed as ^Z (2 columns).
+        # Verify caret aligns when CTRL-Z precedes the error.
+        err = _make_syntax_error("a\x1a$\n", offset=3, end_offset=4)
+        exc = traceback.TracebackException.from_exception(err)
+        actual = "".join(exc.format(colorize=True))
+        # 'a' (1 col) + '\x1a' (2 cols) = 3 cols before '$'
+        self.assertIn(
+            f'  File {fn}"<string>"{z}, line {l}1{z}\n'
+            f'    a\x1a{E}${z}\n'
+            f'    {" " * 3}{E}^{z}\n'
+            f'{t}SyntaxError{z}: {m}invalid syntax{z}\n',
+            actual,
+        )
+
+        # CTRL-Z in the highlighted (error) region counts as 2 columns.
+        err = _make_syntax_error("$\x1a\n", offset=1, end_offset=3)
+        exc = traceback.TracebackException.from_exception(err)
+        actual = "".join(exc.format(colorize=True))
+        # '$' (1 col) + '\x1a' (2 cols) = 3 columns of carets
+        self.assertIn(
+            f'    {E}$\x1a{z}\n'
+            f'    {E}{"^" * 3}{z}\n',
+            actual,
+        )
+
+        # ANSI escape sequences are ASCII but take 0 display columns.
+        err = _make_syntax_error("a\x1b[1mb$\n", offset=7, end_offset=8)
+        exc = traceback.TracebackException.from_exception(err)
+        actual = "".join(exc.format(colorize=True))
+        # 'a' (1 col) + '\x1b[1m' (0 cols) + 'b' (1 col) = 2 before '$'
+        self.assertIn(
+            f'    a\x1b[1mb{E}${z}\n'
+            f'    {" " * 2}{E}^{z}\n',
+            actual,
+        )
 
 class TestLazyImportSuggestions(unittest.TestCase):
     """Test that lazy imports are not reified when computing AttributeError suggestions."""
@@ -5454,6 +5630,12 @@ class TestLazyImportSuggestions(unittest.TestCase):
         rc, stdout, stderr = assert_python_failure('-c', code)
         self.assertIn(b"__name__", stderr)
         self.assertNotIn(b"BAR_MODULE_LOADED", stdout)
+
+
+class LazyImportTest(unittest.TestCase):
+    @support.cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("traceback", {"_colorize"})
 
 
 if __name__ == "__main__":

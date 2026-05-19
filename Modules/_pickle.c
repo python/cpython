@@ -21,6 +21,7 @@
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_symtable.h"      // _Py_Mangle()
 #include "pycore_sysmodule.h"     // _PySys_GetSizeOf()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 
 #include <stdlib.h>               // strtol()
@@ -3449,6 +3450,9 @@ batch_dict(PickleState *state, PicklerObject *self, PyObject *iter, PyObject *or
  * Returns 0 on success, -1 on error.
  *
  * Note that this currently doesn't work for protocol 0.
+
+ * gh-146452: Wrap the dict iteration in a critical sections to prevent
+ * concurrent mutation from invalidating PyDict_Next() iteration state.
  */
 static int
 batch_dict_exact(PickleState *state, PicklerObject *self, PyObject *obj)
@@ -3465,15 +3469,24 @@ batch_dict_exact(PickleState *state, PicklerObject *self, PyObject *obj)
     assert(self->proto > 0);
 
     dict_size = PyDict_GET_SIZE(obj);
-    assert(dict_size);
 
     /* Write in batches of BATCHSIZE. */
     Py_ssize_t total = 0;
     do {
         if (dict_size - total == 1) {
-            PyDict_Next(obj, &ppos, &key, &value);
-            Py_INCREF(key);
-            Py_INCREF(value);
+            int next;
+            Py_BEGIN_CRITICAL_SECTION(obj);
+            next = PyDict_Next(obj, &ppos, &key, &value);
+            if (next) {
+                Py_INCREF(key);
+                Py_INCREF(value);
+            }
+            Py_END_CRITICAL_SECTION();
+            if (!next) {
+                PyErr_SetString(PyExc_RuntimeError,
+                                "dictionary changed size during iteration");
+                goto error;
+            }
             if (save(state, self, key, 0) < 0) {
                 goto error;
             }
@@ -3491,9 +3504,18 @@ batch_dict_exact(PickleState *state, PicklerObject *self, PyObject *obj)
         i = 0;
         if (_Pickler_Write(self, &mark_op, 1) < 0)
             return -1;
-        while (PyDict_Next(obj, &ppos, &key, &value)) {
-            Py_INCREF(key);
-            Py_INCREF(value);
+        int next;
+        while (1) {
+            Py_BEGIN_CRITICAL_SECTION(obj);
+            next = PyDict_Next(obj, &ppos, &key, &value);
+            if (next) {
+                Py_INCREF(key);
+                Py_INCREF(value);
+            }
+            Py_END_CRITICAL_SECTION();
+            if (!next) {
+                break;
+            }
             if (save(state, self, key, 0) < 0) {
                 goto error;
             }
@@ -3671,15 +3693,12 @@ save_set(PickleState *state, PicklerObject *self, PyObject *obj)
 }
 
 static int
-save_frozenset(PickleState *state, PicklerObject *self, PyObject *obj)
+save_frozenset_impl(PickleState *state, PicklerObject *self, PyObject *obj)
 {
     PyObject *iter;
 
     const char mark_op = MARK;
     const char frozenset_op = FROZENSET;
-
-    if (self->fast && !fast_save_enter(self, obj))
-        return -1;
 
     if (self->proto < 4) {
         PyObject *items;
@@ -3752,12 +3771,25 @@ save_frozenset(PickleState *state, PicklerObject *self, PyObject *obj)
 }
 
 static int
+save_frozenset(PickleState *state, PicklerObject *self, PyObject *obj)
+{
+    if (self->fast && !fast_save_enter(self, obj)) {
+        return -1;
+    }
+    int status = save_frozenset_impl(state, self, obj);
+    if (self->fast && !fast_save_leave(self, obj)) {
+        return -1;
+    }
+    return status;
+}
+
+static int
 fix_imports(PickleState *st, PyObject **module_name, PyObject **global_name)
 {
     PyObject *key;
     PyObject *item;
 
-    key = PyTuple_Pack(2, *module_name, *global_name);
+    key = _PyTuple_FromPair(*module_name, *global_name);
     if (key == NULL)
         return -1;
     item = PyDict_GetItemWithError(st->name_mapping_3to2, key);
@@ -3863,7 +3895,7 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
         char pdata[5];
         Py_ssize_t n;
 
-        extension_key = PyTuple_Pack(2, module_name, global_name);
+        extension_key = _PyTuple_FromPair(module_name, global_name);
         if (extension_key == NULL) {
             goto error;
         }
@@ -5123,26 +5155,19 @@ static PyObject *
 _pickle_PicklerMemoProxy___reduce___impl(PicklerMemoProxyObject *self)
 /*[clinic end generated code: output=bebba1168863ab1d input=2f7c540e24b7aae4]*/
 {
-    PyObject *reduce_value, *dict_args;
+    PyObject *dict_args;
     PyObject *contents = _pickle_PicklerMemoProxy_copy_impl(self);
     if (contents == NULL)
         return NULL;
 
-    reduce_value = PyTuple_New(2);
-    if (reduce_value == NULL) {
-        Py_DECREF(contents);
-        return NULL;
-    }
     dict_args = PyTuple_New(1);
     if (dict_args == NULL) {
         Py_DECREF(contents);
-        Py_DECREF(reduce_value);
         return NULL;
     }
     PyTuple_SET_ITEM(dict_args, 0, contents);
-    PyTuple_SET_ITEM(reduce_value, 0, Py_NewRef(&PyDict_Type));
-    PyTuple_SET_ITEM(reduce_value, 1, dict_args);
-    return reduce_value;
+
+    return _PyTuple_FromPairSteal(Py_NewRef(&PyDict_Type), dict_args);
 }
 
 static PyMethodDef picklerproxy_methods[] = {
@@ -7300,7 +7325,7 @@ _pickle_Unpickler_find_class_impl(UnpicklerObject *self, PyTypeObject *cls,
 
         /* Check if the global (i.e., a function or a class) was renamed
            or moved to another module. */
-        key = PyTuple_Pack(2, module_name, global_name);
+        key = _PyTuple_FromPair(module_name, global_name);
         if (key == NULL)
             return NULL;
         item = PyDict_GetItemWithError(st->name_mapping_2to3, key);
@@ -7630,27 +7655,19 @@ static PyObject *
 _pickle_UnpicklerMemoProxy___reduce___impl(UnpicklerMemoProxyObject *self)
 /*[clinic end generated code: output=6da34ac048d94cca input=6920862413407199]*/
 {
-    PyObject *reduce_value;
     PyObject *constructor_args;
     PyObject *contents = _pickle_UnpicklerMemoProxy_copy_impl(self);
     if (contents == NULL)
         return NULL;
 
-    reduce_value = PyTuple_New(2);
-    if (reduce_value == NULL) {
-        Py_DECREF(contents);
-        return NULL;
-    }
     constructor_args = PyTuple_New(1);
     if (constructor_args == NULL) {
         Py_DECREF(contents);
-        Py_DECREF(reduce_value);
         return NULL;
     }
     PyTuple_SET_ITEM(constructor_args, 0, contents);
-    PyTuple_SET_ITEM(reduce_value, 0, Py_NewRef(&PyDict_Type));
-    PyTuple_SET_ITEM(reduce_value, 1, constructor_args);
-    return reduce_value;
+
+    return _PyTuple_FromPairSteal(Py_NewRef(&PyDict_Type), constructor_args);
 }
 
 static PyMethodDef unpicklerproxy_methods[] = {
@@ -8240,6 +8257,7 @@ _pickle_exec(PyObject *m)
 }
 
 static PyModuleDef_Slot pickle_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, _pickle_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

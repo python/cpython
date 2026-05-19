@@ -279,11 +279,51 @@ def staticmethod_call():
     for _ in range(1000 * WORK_SCALE):
         obj.my_staticmethod()
 
+
+class MyDescriptor:
+    def __get__(self, obj, objtype=None):
+        return 42
+
+    def __set__(self, obj, value):
+        pass
+
+class MyClassWithDescriptor:
+    attr = MyDescriptor()
+
+@register_benchmark
+def descriptor():
+    obj = MyClassWithDescriptor()
+    for _ in range(1000 * WORK_SCALE):
+        obj.attr
+
 @register_benchmark
 def deepcopy():
     x = {'list': [1, 2], 'tuple': (1, None)}
     for i in range(40 * WORK_SCALE):
         copy.deepcopy(x)
+
+@register_benchmark
+def setattr_non_interned():
+    prefix = "prefix"
+    obj = MyObject()
+    for _ in range(1000 * WORK_SCALE):
+        setattr(obj, f"{prefix}_a", None)
+        setattr(obj, f"{prefix}_b", None)
+        setattr(obj, f"{prefix}_c", None)
+
+
+from enum import Enum
+class MyEnum(Enum):
+    X = 1
+    Y = 2
+    Z = 3
+
+@register_benchmark
+def enum_attr():
+    for _ in range(1000 * WORK_SCALE):
+        MyEnum.X
+        MyEnum.Y
+        MyEnum.Z
 
 
 def bench_one_thread(func):

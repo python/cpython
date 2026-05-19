@@ -1669,6 +1669,7 @@ decompress(ZlibDecompressor *self, uint8_t *data,
     return result;
 
 error:
+    self->zst.next_in = NULL;
     Py_XDECREF(result);
     return NULL;
 }
@@ -2272,6 +2273,7 @@ zlib_exec(PyObject *mod)
 }
 
 static PyModuleDef_Slot zlib_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, zlib_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

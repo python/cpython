@@ -61,7 +61,9 @@ _PySemaphore_Init(_PySemaphore *sema)
         NULL    //  unnamed
     );
     if (!sema->platform_sem) {
-        Py_FatalError("parking_lot: CreateSemaphore failed");
+        _Py_FatalErrorFormat(__func__,
+            "parking_lot: CreateSemaphore failed (error: %u)",
+            GetLastError());
     }
 #elif defined(_Py_USE_SEMAPHORES)
     if (sem_init(&sema->platform_sem, /*pshared=*/0, /*value=*/0) < 0) {
@@ -141,8 +143,8 @@ _PySemaphore_Wait(_PySemaphore *sema, PyTime_t timeout)
     }
     else {
         _Py_FatalErrorFormat(__func__,
-            "unexpected error from semaphore: %u (error: %u)",
-            wait, GetLastError());
+            "unexpected error from semaphore: %u (error: %u, handle: %p)",
+            wait, GetLastError(), sema->platform_sem);
     }
 #elif defined(_Py_USE_SEMAPHORES)
     int err;
@@ -230,7 +232,9 @@ _PySemaphore_Wakeup(_PySemaphore *sema)
 {
 #if defined(MS_WINDOWS)
     if (!ReleaseSemaphore(sema->platform_sem, 1, NULL)) {
-        Py_FatalError("parking_lot: ReleaseSemaphore failed");
+        _Py_FatalErrorFormat(__func__,
+            "parking_lot: ReleaseSemaphore failed (error: %u, handle: %p)",
+            GetLastError(), sema->platform_sem);
     }
 #elif defined(_Py_USE_SEMAPHORES)
     int err = sem_post(&sema->platform_sem);
