@@ -176,6 +176,7 @@ extern void _PyDict_Clear_LockHeld(PyObject *op);
 
 #ifdef Py_GIL_DISABLED
 PyAPI_FUNC(void) _PyDict_EnsureSharedOnRead(PyDictObject *mp);
+extern void _PyFrozenDict_ClearInternal(PyObject *op);
 #endif
 
 // Export for '_elementtree' shared extension
