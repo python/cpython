@@ -242,6 +242,7 @@ typedef struct {
 typedef struct {
     uintptr_t interpreter_addr;
     uintptr_t thread_state_addr;
+    uint64_t code_object_generation;
 } InterpreterThreadCacheEntry;
 
 // Carries already-read thread state and/or frame buffers across helpers so the
@@ -288,7 +289,8 @@ typedef struct {
 #define STATS_ADD(unwinder, field, val) \
     do { if (REMOTE_DEBUG_UNLIKELY((unwinder)->collect_stats)) (unwinder)->stats.field += (val); } while(0)
 
-#define STATS_BATCHED_READ(unwinder, requested, completed) \
+#if HAVE_PROCESS_VM_READV
+#  define STATS_BATCHED_READ(unwinder, requested, completed) \
     do { \
         if (REMOTE_DEBUG_UNLIKELY((unwinder)->collect_stats)) { \
             (unwinder)->stats.batched_read_attempts++; \
@@ -302,6 +304,9 @@ typedef struct {
             } \
         } \
     } while(0)
+#else
+#  define STATS_BATCHED_READ(unwinder, requested, completed) ((void)0)
+#endif
 
 typedef struct {
     PyTypeObject *RemoteDebugging_Type;
@@ -342,7 +347,6 @@ typedef struct {
     struct _Py_AsyncioModuleDebugOffsets async_debug_offsets;
     uintptr_t interpreter_addr;
     uintptr_t tstate_addr;
-    uint64_t code_object_generation;
     _Py_hashtable_t *code_object_cache;
     int debug;
     int only_active_thread;
@@ -355,9 +359,11 @@ typedef struct {
     int collect_stats;  // whether to collect statistics
     uint32_t stale_invalidation_counter;  // counter for throttling frame_cache_invalidate_stale
     // L1 single-entry shortcut over cached_tstates[]: most workloads sample one
-    // interpreter, so check this pair before hashing into the table below.
+    // interpreter, so check these pairs before hashing into the table below.
     uintptr_t cached_tstate_interpreter_addr;
     uintptr_t cached_tstate_addr;
+    uintptr_t cached_generation_interpreter_addr;
+    uint64_t cached_code_object_generation;
     RemoteDebuggingState *cached_state;
     FrameCacheEntry *frame_cache;  // preallocated array of FRAME_CACHE_MAX_THREADS entries
     UnwinderStats stats;  // statistics for performance analysis

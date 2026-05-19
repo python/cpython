@@ -532,14 +532,34 @@ set_cached_tstate_for_interpreter(
 static void
 refresh_generation_caches_from_interp_state(
     RemoteUnwinderObject *self,
+    uintptr_t interpreter_addr,
     const char *interp_state_buffer)
 {
     uint64_t code_object_generation = GET_MEMBER(uint64_t, interp_state_buffer,
             self->debug_offsets.interpreter_state.code_object_generation);
 
-    if (code_object_generation != self->code_object_generation) {
-        self->code_object_generation = code_object_generation;
-        _Py_hashtable_clear(self->code_object_cache);
+    if (self->cached_generation_interpreter_addr == interpreter_addr) {
+        if (code_object_generation != self->cached_code_object_generation) {
+            self->cached_code_object_generation = code_object_generation;
+            _Py_hashtable_clear(self->code_object_cache);
+        }
+    }
+    else {
+        InterpreterThreadCacheEntry *entry =
+            &self->cached_tstates[interpreter_thread_cache_index(interpreter_addr)];
+        uint64_t prev_generation = 0;
+        if (entry->interpreter_addr == interpreter_addr) {
+            prev_generation = entry->code_object_generation;
+        }
+        else {
+            entry->interpreter_addr = interpreter_addr;
+        }
+        entry->code_object_generation = code_object_generation;
+        if (code_object_generation != prev_generation) {
+            _Py_hashtable_clear(self->code_object_cache);
+        }
+        self->cached_generation_interpreter_addr = interpreter_addr;
+        self->cached_code_object_generation = code_object_generation;
     }
 
 #ifdef Py_GIL_DISABLED
@@ -567,7 +587,7 @@ refresh_generation_caches_for_interpreter(
                             "Failed to read interpreter state buffer");
         return -1;
     }
-    refresh_generation_caches_from_interp_state(self, interp_state_buffer);
+    refresh_generation_caches_from_interp_state(self, interpreter_addr, interp_state_buffer);
     return 0;
 }
 
@@ -712,7 +732,7 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
             Py_CLEAR(result);
             goto exit;
         }
-        refresh_generation_caches_from_interp_state(self, interp_state_buffer);
+        refresh_generation_caches_from_interp_state(self, current_interpreter, interp_state_buffer);
 
         uintptr_t gc_frame = 0;
         if (self->gc) {
