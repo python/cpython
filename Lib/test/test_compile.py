@@ -842,6 +842,21 @@ class TestSpecifics(unittest.TestCase):
         )
         self.assertEqual(c.co_consts, (frozendict({0: frozendict({1: 2})}),))
 
+        # A tuple value inside a frozendict is merged with the same
+        # constant used elsewhere. Use a variable to ensure the two tuple
+        # objects are distinct before they are merged.
+        name = "not a name"
+        t_standalone = (name,)
+        m = ast.Interactive([
+            ast.Expr(ast.Constant(t_standalone)),
+            ast.Expr(ast.Constant(frozendict({0: (name,)}))),
+            ast.Expr(ast.Constant(frozendict({(name,): 0}))),
+        ])
+        ast.fix_missing_locations(m)
+        c = compile(m, "<test>", "single")
+        self.assertIs(c.co_consts[0], c.co_consts[1][0])
+        self.assertIs(c.co_consts[0], next(iter(c.co_consts[2])))
+
     # Merging equal co_linetable is not a strict requirement
     # for the Python semantics, it's a more an implementation detail.
     @support.cpython_only

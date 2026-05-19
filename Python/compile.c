@@ -332,7 +332,7 @@ compiler_set_qualname(compiler *c)
 }
 
 /* Merge const *o* and return constant key object.
- * If recursive, insert all elements if o is a tuple or frozen set.
+ * If recursive, insert all elements if o is a tuple, frozenset, or frozendict.
  */
 static PyObject*
 const_cache_insert(PyObject *const_cache, PyObject *o, bool recursive)
@@ -364,7 +364,7 @@ const_cache_insert(PyObject *const_cache, PyObject *o, bool recursive)
     }
 
     // We registered o in const_cache.
-    // When o is a tuple or frozenset, we want to merge its
+    // When o is a tuple, frozenset, or frozendict, we want to merge its
     // items too.
     if (PyTuple_CheckExact(o)) {
         Py_ssize_t len = PyTuple_GET_SIZE(o);
@@ -431,9 +431,80 @@ const_cache_insert(PyObject *const_cache, PyObject *o, bool recursive)
         }
 
         // Instead of rewriting o, we create new frozenset and embed in the
-        // key tuple.  Caller should get merged frozenset from the key tuple.
+        // key tuple. Caller should get merged frozenset from the key tuple.
         PyObject *new = PyFrozenSet_New(tuple);
         Py_DECREF(tuple);
+        if (new == NULL) {
+            Py_DECREF(key);
+            return NULL;
+        }
+        assert(PyTuple_GET_ITEM(key, 1) == o);
+        Py_DECREF(o);
+        PyTuple_SET_ITEM(key, 1, new);
+    }
+    else if (PyFrozenDict_CheckExact(o)) {
+        // *key* is tuple. And its first item is frozendict of
+        // constant keys.
+        // See _PyCode_ConstantKey() for detail.
+        assert(PyTuple_CheckExact(key));
+        assert(PyTuple_GET_SIZE(key) == 2);
+
+        if (PyDict_GET_SIZE(o) == 0) {  // empty frozendict should not be re-created.
+            return key;
+        }
+        PyObject *new_dict = PyDict_New();
+        if (new_dict == NULL) {
+            Py_DECREF(key);
+            return NULL;
+        }
+        Py_ssize_t pos = 0;
+        PyObject *k_obj, *v_obj;
+        while (PyDict_Next(o, &pos, &k_obj, &v_obj)) {
+            PyObject *k_result = const_cache_insert(const_cache, k_obj, recursive);
+            if (k_result == NULL) {
+                Py_DECREF(new_dict);
+                Py_DECREF(key);
+                return NULL;
+            }
+            PyObject *k_merged;
+            if (PyTuple_CheckExact(k_result)) {
+                k_merged = Py_NewRef(PyTuple_GET_ITEM(k_result, 1));
+                Py_DECREF(k_result);
+            }
+            else {
+                k_merged = k_result;
+            }
+
+            PyObject *v_result = const_cache_insert(const_cache, v_obj, recursive);
+            if (v_result == NULL) {
+                Py_DECREF(k_merged);
+                Py_DECREF(new_dict);
+                Py_DECREF(key);
+                return NULL;
+            }
+            PyObject *v_merged;
+            if (PyTuple_CheckExact(v_result)) {
+                v_merged = Py_NewRef(PyTuple_GET_ITEM(v_result, 1));
+                Py_DECREF(v_result);
+            }
+            else {
+                v_merged = v_result;
+            }
+
+            int res = PyDict_SetItem(new_dict, k_merged, v_merged);
+            Py_DECREF(k_merged);
+            Py_DECREF(v_merged);
+            if (res < 0) {
+                Py_DECREF(new_dict);
+                Py_DECREF(key);
+                return NULL;
+            }
+        }
+
+        // Instead of rewriting o, we create new frozendict and embed in
+        // the key tuple. Caller should get merged frozendict from the key tuple.
+        PyObject *new = PyFrozenDict_New(new_dict);
+        Py_DECREF(new_dict);
         if (new == NULL) {
             Py_DECREF(key);
             return NULL;
