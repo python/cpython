@@ -3910,8 +3910,8 @@ exit:
 
 PyDoc_STRVAR(os_posix_spawn__doc__,
 "posix_spawn($module, path, argv, env, /, *, file_actions=(),\n"
-"            setpgroup=<unrepresentable>, resetids=False, setsid=False,\n"
-"            setsigmask=(), setsigdef=(), scheduler=<unrepresentable>)\n"
+"            setpgroup=None, resetids=False, setsid=False,\n"
+"            setsigmask=(), setsigdef=(), scheduler=None)\n"
 "--\n"
 "\n"
 "Execute the program specified by path in a new process.\n"
@@ -4063,8 +4063,8 @@ exit:
 
 PyDoc_STRVAR(os_posix_spawnp__doc__,
 "posix_spawnp($module, path, argv, env, /, *, file_actions=(),\n"
-"             setpgroup=<unrepresentable>, resetids=False, setsid=False,\n"
-"             setsigmask=(), setsigdef=(), scheduler=<unrepresentable>)\n"
+"             setpgroup=None, resetids=False, setsid=False,\n"
+"             setsigmask=(), setsigdef=(), scheduler=None)\n"
 "--\n"
 "\n"
 "Execute the program specified by path in a new process.\n"
@@ -6392,6 +6392,93 @@ exit:
 }
 
 #endif /* (defined(__linux__) && defined(__NR_pidfd_open) && !(defined(__ANDROID__) && __ANDROID_API__ < 31)) */
+
+#if (defined(__linux__) && defined(__NR_pidfd_getfd) && !(defined(__ANDROID__) && __ANDROID_API__ < 31))
+
+PyDoc_STRVAR(os_pidfd_getfd__doc__,
+"pidfd_getfd($module, /, pidfd, targetfd, *, flags=0)\n"
+"--\n"
+"\n"
+"Duplicate a file descriptor from the process referred to by *pidfd*.\n"
+"\n"
+"  pidfd\n"
+"    A process file descriptor.\n"
+"  targetfd\n"
+"    The file descriptor to duplicate from the target process.\n"
+"  flags\n"
+"    Reserved, must be 0.");
+
+#define OS_PIDFD_GETFD_METHODDEF    \
+    {"pidfd_getfd", _PyCFunction_CAST(os_pidfd_getfd), METH_FASTCALL|METH_KEYWORDS, os_pidfd_getfd__doc__},
+
+static PyObject *
+os_pidfd_getfd_impl(PyObject *module, int pidfd, int targetfd,
+                    unsigned int flags);
+
+static PyObject *
+os_pidfd_getfd(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 3
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(pidfd), &_Py_ID(targetfd), &_Py_ID(flags), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"pidfd", "targetfd", "flags", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "pidfd_getfd",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
+    int pidfd;
+    int targetfd;
+    unsigned int flags = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    pidfd = PyLong_AsInt(args[0]);
+    if (pidfd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    targetfd = PyLong_AsInt(args[1]);
+    if (targetfd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (!_PyLong_UnsignedInt_Converter(args[2], &flags)) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = os_pidfd_getfd_impl(module, pidfd, targetfd, flags);
+
+exit:
+    return return_value;
+}
+
+#endif /* (defined(__linux__) && defined(__NR_pidfd_getfd) && !(defined(__ANDROID__) && __ANDROID_API__ < 31)) */
 
 #if defined(HAVE_SETNS)
 
@@ -9418,7 +9505,7 @@ exit:
 
 #endif /* (defined HAVE_TRUNCATE || defined MS_WINDOWS) */
 
-#if (defined(HAVE_POSIX_FALLOCATE) && !defined(POSIX_FADVISE_AIX_BUG) && !defined(__wasi__))
+#if (defined(HAVE_POSIX_FALLOCATE) && !defined(__wasi__))
 
 PyDoc_STRVAR(os_posix_fallocate__doc__,
 "posix_fallocate($module, fd, offset, length, /)\n"
@@ -9463,9 +9550,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_POSIX_FALLOCATE) && !defined(POSIX_FADVISE_AIX_BUG) && !defined(__wasi__)) */
+#endif /* (defined(HAVE_POSIX_FALLOCATE) && !defined(__wasi__)) */
 
-#if (defined(HAVE_POSIX_FADVISE) && !defined(POSIX_FADVISE_AIX_BUG))
+#if defined(HAVE_POSIX_FADVISE)
 
 PyDoc_STRVAR(os_posix_fadvise__doc__,
 "posix_fadvise($module, fd, offset, length, advice, /)\n"
@@ -9520,7 +9607,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_POSIX_FADVISE) && !defined(POSIX_FADVISE_AIX_BUG)) */
+#endif /* defined(HAVE_POSIX_FADVISE) */
 
 #if defined(MS_WINDOWS)
 
@@ -13296,6 +13383,10 @@ exit:
     #define OS_PIDFD_OPEN_METHODDEF
 #endif /* !defined(OS_PIDFD_OPEN_METHODDEF) */
 
+#ifndef OS_PIDFD_GETFD_METHODDEF
+    #define OS_PIDFD_GETFD_METHODDEF
+#endif /* !defined(OS_PIDFD_GETFD_METHODDEF) */
+
 #ifndef OS_SETNS_METHODDEF
     #define OS_SETNS_METHODDEF
 #endif /* !defined(OS_SETNS_METHODDEF) */
@@ -13611,4 +13702,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=5fd2aeb6ba9a5df8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c4cf19262e42e352 input=a9049054013a1b77]*/

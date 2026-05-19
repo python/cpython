@@ -430,7 +430,9 @@ _io_IncrementalNewlineDecoder_decode(PyObject *self, PyObject *const *args, Py_s
         goto exit;
     }
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io_IncrementalNewlineDecoder_decode_impl((nldecoder_object *)self, input, final);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -450,7 +452,13 @@ _io_IncrementalNewlineDecoder_getstate_impl(nldecoder_object *self);
 static PyObject *
 _io_IncrementalNewlineDecoder_getstate(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io_IncrementalNewlineDecoder_getstate_impl((nldecoder_object *)self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io_IncrementalNewlineDecoder_getstate_impl((nldecoder_object *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_io_IncrementalNewlineDecoder_setstate__doc__,
@@ -470,7 +478,9 @@ _io_IncrementalNewlineDecoder_setstate(PyObject *self, PyObject *state)
 {
     PyObject *return_value = NULL;
 
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io_IncrementalNewlineDecoder_setstate_impl((nldecoder_object *)self, state);
+    Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
@@ -489,7 +499,13 @@ _io_IncrementalNewlineDecoder_reset_impl(nldecoder_object *self);
 static PyObject *
 _io_IncrementalNewlineDecoder_reset(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io_IncrementalNewlineDecoder_reset_impl((nldecoder_object *)self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io_IncrementalNewlineDecoder_reset_impl((nldecoder_object *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_io_TextIOWrapper___init____doc__,
@@ -1312,4 +1328,4 @@ _io_TextIOWrapper__CHUNK_SIZE_set(PyObject *self, PyObject *value, void *Py_UNUS
 
     return return_value;
 }
-/*[clinic end generated code: output=30404271a1151056 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c38e6cd5ff4b7eea input=a9049054013a1b77]*/

@@ -332,6 +332,9 @@ Objects/complexobject.c	-	c_1	-
 Objects/exceptions.c	-	static_exceptions	-
 Objects/genobject.c	-	ASYNC_GEN_IGNORED_EXIT_MSG	-
 Objects/genobject.c	-	NON_INIT_CORO_MSG	-
+Objects/genobject.c	gen_getstate	state_strings	-
+Objects/genobject.c	cr_getstate	state_strings	-
+Objects/genobject.c	ag_getstate	state_strings	-
 Objects/longobject.c	-	_PyLong_DigitValue	-
 Objects/longobject.c	-	PyLong_LAYOUT	-
 Objects/object.c	-	_Py_SwappedOp	-
@@ -348,7 +351,7 @@ Objects/obmalloc.c	-	obmalloc_state_initialized	-
 Objects/typeobject.c	-	name_op	-
 Objects/typeobject.c	-	slotdefs	-
 # It initialized only once when main interpeter starts
-Objects/typeobject.c	-	slotdefs_name_counts	-
+Objects/typeobject.c	-	slotdefs_dups	-
 Objects/unicodeobject.c	-	stripfuncnames	-
 Objects/unicodeobject.c	-	utf7_category	-
 Objects/unicodeobject.c	unicode_decode_call_errorhandler_wchar	argparse	-
@@ -383,6 +386,8 @@ Python/intrinsics.c	-	_PyIntrinsics_UnaryFunctions	-
 Python/intrinsics.c	-	_PyIntrinsics_BinaryFunctions	-
 Python/lock.c	-	TIME_TO_BE_FAIR_NS	-
 Python/opcode_targets.h	-	opcode_targets	-
+Python/jit_unwind.c	-	__jit_debug_descriptor	-
+Python/jit_unwind.c	-	_Py_jit_debug_mutex	-
 Python/perf_trampoline.c	-	_Py_perfmap_callbacks	-
 Python/perf_jit_trampoline.c	-	_Py_perfmap_jit_callbacks	-
 Python/perf_jit_trampoline.c	-	perf_jit_map_state	-
@@ -457,10 +462,12 @@ Modules/_testcapi/exceptions.c	-	PyRecursingInfinitelyError_Type	-
 Modules/_testcapi/heaptype.c	-	_testcapimodule	-
 Modules/_testcapi/mem.c	-	FmData	-
 Modules/_testcapi/mem.c	-	FmHook	-
+Modules/_testcapi/module.c	module_from_def_nonstatic_nested	subslots	-
 Modules/_testcapi/object.c	-	MyObject_dealloc_called	-
 Modules/_testcapi/object.c	-	MyType	-
 Modules/_testcapi/structmember.c	-	test_structmembersType_OldAPI	-
 Modules/_testcapi/watchers.c	-	g_dict_watch_events	-
+Modules/_testcapi/watchers.c	-	g_dict_watch_once	-
 Modules/_testcapi/watchers.c	-	g_dict_watchers_installed	-
 Modules/_testcapi/watchers.c	-	g_type_modified_events	-
 Modules/_testcapi/watchers.c	-	g_type_watchers_installed	-
@@ -571,6 +578,7 @@ Modules/_testinternalcapi.c	-	Test_EvalFrame_Resumes	-
 Modules/_testinternalcapi.c	-	Test_EvalFrame_Loads	-
 Modules/_testinternalcapi/interpreter.c	-	Test_EvalFrame_Resumes	-
 Modules/_testinternalcapi/interpreter.c	-	Test_EvalFrame_Loads	-
+Modules/_testlimitedcapi/slots.c	-	TestMethods	-
 Modules/_testmultiphase.c	-	Example_Type_slots	-
 Modules/_testmultiphase.c	-	Example_Type_spec	-
 Modules/_testmultiphase.c	-	Example_methods	-
@@ -613,6 +621,13 @@ Modules/_testmultiphase.c	-	slots_exec_unreported_exception	-
 Modules/_testmultiphase.c	-	slots_nonmodule_with_exec_slots	-
 Modules/_testmultiphase.c	-	testexport_methods	-
 Modules/_testmultiphase.c	-	uninitialized_def	-
+Modules/_testmultiphase.c	PyModExport__test_from_modexport	slots	-
+Modules/_testmultiphase.c	PyModExport__test_from_modexport_gil_used	slots	-
+Modules/_testmultiphase.c	PyModExport__test_from_modexport_create_nonmodule	slots	-
+Modules/_testmultiphase.c	PyModExport__test_from_modexport_create_nonmodule_gil_used	slots	-
+Modules/_testmultiphase.c	PyModExport__test_from_modexport_smoke	slots	-
+Modules/_testmultiphase.c	-	modexport_empty_slots	-
+Modules/_testmultiphase.c	-	modexport_minimal_slots	-
 Modules/_testsinglephase.c	-	global_state	-
 Modules/_testsinglephase.c	-	static_module_circular	-
 Modules/_xxtestfuzz/_xxtestfuzz.c	-	_fuzzmodule	-
@@ -766,7 +781,9 @@ Modules/clinic/md5module.c.h	_md5_md5	_keywords	-
 Modules/clinic/grpmodule.c.h	grp_getgrgid	_keywords	-
 Modules/clinic/grpmodule.c.h	grp_getgrnam	_keywords	-
 Objects/object.c	-	constants	static PyObject*[]
+Objects/dictobject.c	-	PyFrozenDict_Type	-
 
 
 ## False positives
 Python/specialize.c	-	_Py_InitCleanup	-
+Python/pystate.c	-	_no_tstate_sentinel	-

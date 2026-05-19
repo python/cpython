@@ -82,12 +82,12 @@ The constants defined in this module are:
 
 .. _string-formatting:
 
-Custom String Formatting
+Custom string formatting
 ------------------------
 
 The built-in string class provides the ability to do complex variable
 substitutions and value formatting via the :meth:`~str.format` method described in
-:pep:`3101`.  The :class:`Formatter` class in the :mod:`string` module allows
+:pep:`3101`.  The :class:`Formatter` class in the :mod:`!string` module allows
 you to create and customize your own string formatting behaviors using the same
 implementation as the built-in :meth:`~str.format` method.
 
@@ -192,7 +192,7 @@ implementation as the built-in :meth:`~str.format` method.
 
 .. _formatstrings:
 
-Format String Syntax
+Format string syntax
 --------------------
 
 The :meth:`str.format` method and the :class:`Formatter` class share the same
@@ -304,7 +304,7 @@ See the :ref:`formatexamples` section for some examples.
 
 .. _formatspec:
 
-Format Specification Mini-Language
+Format specification mini-language
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 "Format specifications" are used within replacement fields contained within a
@@ -759,8 +759,8 @@ Expressing a percentage::
 
 Using type-specific formatting::
 
-   >>> import datetime
-   >>> d = datetime.datetime(2010, 7, 4, 12, 15, 58)
+   >>> import datetime as dt
+   >>> d = dt.datetime(2010, 7, 4, 12, 15, 58)
    >>> '{:%Y-%m-%d %H:%M:%S}'.format(d)
    '2010-07-04 12:15:58'
 
@@ -840,7 +840,7 @@ Template strings support ``$``-based substitutions, using the following rules:
 Any other appearance of ``$`` in the string will result in a :exc:`ValueError`
 being raised.
 
-The :mod:`string` module provides a :class:`Template` class that implements
+The :mod:`!string` module provides a :class:`Template` class that implements
 these rules.  The methods of :class:`Template` are:
 
 

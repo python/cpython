@@ -171,6 +171,47 @@ class TestPerfTrampoline(unittest.TestCase):
         self.assertNotIn(f"py::baz:{script}", child_perf_file_contents)
 
     @unittest.skipIf(support.check_bolt_optimized(), "fails on BOLT instrumented binaries")
+    def test_trampoline_works_after_fork_with_many_code_objects(self):
+        code = """if 1:
+                import gc, os, sys, signal
+
+                # Create many code objects so trampoline_refcount > 1
+                for i in range(50):
+                    exec(compile(f"def _dummy_{i}(): pass", f"<test{i}>", "exec"))
+
+                pid = os.fork()
+                if pid == 0:
+                    # Child: create and destroy new code objects,
+                    # then collect garbage. If the old code watcher
+                    # survived the fork, the double-decrement of
+                    # trampoline_refcount will cause a SIGSEGV.
+                    for i in range(50):
+                        exec(compile(f"def _child_{i}(): pass", f"<child{i}>", "exec"))
+                    gc.collect()
+                    os._exit(0)
+                else:
+                    _, status = os.waitpid(pid, 0)
+                    if os.WIFSIGNALED(status):
+                        print(f"FAIL: child killed by signal {os.WTERMSIG(status)}", file=sys.stderr)
+                        sys.exit(1)
+                    sys.exit(os.WEXITSTATUS(status))
+                """
+        with temp_dir() as script_dir:
+            script = make_script(script_dir, "perftest", code)
+            env = {**os.environ, "PYTHON_JIT": "0"}
+            with subprocess.Popen(
+                [sys.executable, "-Xperf", script],
+                text=True,
+                stderr=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                env=env,
+            ) as process:
+                stdout, stderr = process.communicate()
+
+        self.assertEqual(process.returncode, 0, stderr)
+        self.assertEqual(stderr, "")
+
+    @unittest.skipIf(support.check_bolt_optimized(), "fails on BOLT instrumented binaries")
     def test_sys_api(self):
         for define_eval_hook in (False, True):
             code = """if 1:

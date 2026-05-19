@@ -358,6 +358,9 @@ class EnvBuilder:
                 exe_t = f'3.{sys.version_info[1]}t'
                 python_exe = os.path.join(dirname, f'python{exe_t}{exe_d}.exe')
                 pythonw_exe = os.path.join(dirname, f'pythonw{exe_t}{exe_d}.exe')
+                if not os.path.isfile(python_exe):
+                    python_exe = os.path.join(dirname, f'python{exe_d}.exe')
+                    pythonw_exe = os.path.join(dirname, f'pythonw{exe_d}.exe')
                 link_sources = {
                     'python.exe': python_exe,
                     f'python{exe_d}.exe': python_exe,
@@ -581,7 +584,7 @@ class EnvBuilder:
                                    'may be binary: %s', srcfile, e)
                     continue
                 if new_data == data:
-                    shutil.copy2(srcfile, dstfile)
+                    shutil.copy(srcfile, dstfile)
                 else:
                     with open(dstfile, 'wb') as f:
                         f.write(new_data)
@@ -618,7 +621,6 @@ def main(args=None):
                                             'activate it, e.g. by '
                                             'sourcing an activate script '
                                             'in its bin directory.',
-                                     color=True,
                                      )
     parser.add_argument('dirs', metavar='ENV_DIR', nargs='+',
                         help='A directory to create the environment in.')

@@ -1,3 +1,0 @@
-Add support for parametrized resource ``wantobjects`` in regrtests,
-which allows to run Tkinter tests with the specified value of
-:data:`!tkinter.wantobjects`, for example ``-u wantobjects=0``.

@@ -1,1 +1,0 @@
-Renamed :c:func:`!PyUnstable_Object_Dump` to :c:func:`PyObject_Dump`.
