@@ -584,6 +584,10 @@ class IsCloseTests(test_math.IsCloseTests):
         self.assertIsNotClose(0.001-0.001j, 0.001+0.001j, abs_tol=1e-03)
 
     def test_complex_special(self):
+        self.assertIsClose(complex(INF, INF), complex(INF, INF))
+        self.assertIsClose(complex(-INF, -INF), complex(-INF, -INF))
+        self.assertIsNotClose(complex(NAN, NAN), complex(NAN, NAN))
+        self.assertIsNotClose(complex(INF, INF), complex(-INF, -INF))
         self.assertIsNotClose(INF, INF*1j)
         self.assertIsNotClose(INF*1j, INF)
         self.assertIsNotClose(INF, -INF)
