@@ -505,6 +505,11 @@ class Optimizer:
         self._insert_fallthrough_bridge(block, fallthrough)
 
     def _layout_units(self) -> list[tuple[bool, list[_Block]]]:
+        return self._layout_units_from(list(self._layout_blocks()))
+
+    def _layout_units_from(
+        self, blocks: list[_Block]
+    ) -> list[tuple[bool, list[_Block]]]:
         continuation = self._continuation()
         cold_start = self._cold_start_block()
         units: list[tuple[bool, list[_Block]]] = []
@@ -519,7 +524,7 @@ class Optimizer:
                 units.append((layout_hot, unit))
                 unit = []
 
-        for block in self._layout_blocks():
+        for block in blocks:
             if block is continuation or block is cold_start:
                 finish_unit()
                 continue
@@ -538,16 +543,23 @@ class Optimizer:
         if blocks:
             blocks[-1].link = None
 
-    def _partition_hot_cold_blocks(self) -> None:
-        # The entry point must remain in the hot layout, even when it can't
-        # reach _JIT_CONTINUE. The stencil parser expects _JIT_ENTRY at code
-        # offset 0.
-        entry_label = f"{self.symbol_prefix}_JIT_ENTRY"
-        for block in self._layout_blocks():
-            if block.label == entry_label:
-                block.layout_hot = True
+    def _split_at_entry(self) -> tuple[list[_Block], list[_Block]]:
+        entry = self._lookup_label(f"{self.symbol_prefix}_JIT_ENTRY")
+        layout_blocks = list(self._layout_blocks())
+        index = layout_blocks.index(entry)
+        return layout_blocks[:index], layout_blocks[index:]
 
-        for block in list(self._layout_blocks()):
+    def _partition_hot_cold_blocks(self) -> None:
+        # The entry point must remain first in the partitioned JIT body, even
+        # when it can't reach _JIT_CONTINUE. Blocks before _JIT_ENTRY are
+        # assembler prefix material; keep their original order before
+        # partitioning the JIT body.
+        prefix_blocks, body_blocks = self._split_at_entry()
+        for block in prefix_blocks:
+            block.layout_hot = True
+        body_blocks[0].layout_hot = True
+
+        for block in list(body_blocks):
             self._ensure_hot_fallthrough(block)
 
         continuation = self._continuation()
@@ -557,7 +569,10 @@ class Optimizer:
         cold_start.layout_hot = False
         cold_start.fallthrough = True
 
-        units = self._layout_units()
+        prefix_blocks, body_blocks = self._split_at_entry()
+        for block in prefix_blocks:
+            block.layout_hot = True
+        units = self._layout_units_from(body_blocks)
         hot_blocks = [
             block for layout_hot, unit in units if layout_hot for block in unit
         ]
@@ -565,19 +580,13 @@ class Optimizer:
             block for layout_hot, unit in units if not layout_hot for block in unit
         ]
         blocks = [
+            *prefix_blocks,
             *hot_blocks,
             continuation,
             cold_start,
             *cold_blocks,
             *self._metadata_blocks(),
         ]
-        if self._root in blocks and blocks[0] is not self._root:
-            assert self._root.label is None
-            assert not self._root.instructions
-            assert self._root.target is None
-            assert self._root.fallthrough
-            blocks.remove(self._root)
-            blocks.insert(0, self._root)
         self._relink_blocks(blocks)
         linked_blocks = list(self._blocks())
         assert linked_blocks[0] is self._root
@@ -762,25 +771,31 @@ class Optimizer:
     def _remove_unreachable(self) -> None:
         live = self._find_live_blocks()
         continuation = self._continuation()
+        entry = self._lookup_label(f"{self.symbol_prefix}_JIT_ENTRY")
         cont_or_cold_blocks = {continuation}
         if self._cold_start is not None:
             cont_or_cold_blocks.add(self._cold_start)
         # Keep only the original assembler tail. Cold code after _JIT_CONTINUE
         # is ordinary code and can be removed when unreachable.
         prev: _Block | None = None
-        block = self._root
+        block: _Block | None = self._root
+        seen_entry = False
         # We now walk the whole list, so keep explicit sentinel checks in place
         # of the old "stop at _JIT_CONTINUE" loop invariant.
         seen_continuation = False
         seen_cold_start = self._cold_start is None
         while block is not None:
+            preserve_prefix = not seen_entry
+            if block is entry:
+                seen_entry = True
             if block is continuation:
                 seen_continuation = True
             if block is self._cold_start:
                 seen_cold_start = True
             next = block.link
             if (
-                block not in live
+                not preserve_prefix
+                and block not in live
                 and block not in cont_or_cold_blocks
                 and not block.is_metadata
                 and prev is not None
