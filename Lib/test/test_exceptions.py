@@ -410,7 +410,7 @@ class ExceptionTests(unittest.TestCase):
             w = OSError(9, 'foo', 'bar')
             self.assertEqual(w.errno, 9)
             self.assertEqual(w.winerror, None)
-            self.assertEqual(str(w), f"[Errno 9 (EBADF)] foo: 'bar'")
+            self.assertEqual(str(w), "[Errno 9 (EBADF)] foo: 'bar'")
             # ERROR_PATH_NOT_FOUND (win error 3) becomes ENOENT (2)
             w = OSError(0, 'foo', 'bar', 3)
             self.assertEqual(w.errno, 2)
@@ -1838,12 +1838,13 @@ class ExceptionTests(unittest.TestCase):
                 next(i)
 
     def test_OSError_errno_error_message(self):
-        #from PR 14988
+        # From PR 14988.
         with self.assertRaises(OSError) as cm:
             open('__non-existent__')
         self.assertEqual(
             str(cm.exception),
-            f"[Errno 2 (ENOENT)] No such file or directory: '__non-existent__'",
+            f"[Errno {errno.ENOENT} (ENOENT)] "
+            "No such file or directory: '__non-existent__'",
         )
 
     @unittest.skipUnless(__debug__, "Won't work if __debug__ is False")
