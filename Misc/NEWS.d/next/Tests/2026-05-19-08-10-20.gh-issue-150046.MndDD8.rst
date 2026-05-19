@@ -1,0 +1,1 @@
+Avoid ``PYTHON*`` environment variables affecting regrtest's own tests.
