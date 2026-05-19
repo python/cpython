@@ -489,12 +489,13 @@ However, there are a few differences that should be taken into account:
   a fallback value.  Note however that the section-level ``get()`` methods are
   compatible both with the mapping protocol and the classic configparser API.
 
-* ``parser.items()`` is compatible with the mapping protocol (returns a list of
-  *section_name*, *section_proxy* pairs including the DEFAULTSECT).  However,
-  this method can also be invoked with arguments: ``parser.items(section, raw,
-  vars)``.  The latter call returns a list of *option*, *value* pairs for
-  a specified ``section``, with all interpolations expanded (unless
-  ``raw=True`` is provided).
+* ``parser.items()`` is compatible with the mapping protocol (when invoked
+  with no arguments, returns an :class:`~collections.abc.ItemsView` of
+  *section_name*, *section_proxy* pairs including the DEFAULTSECT).
+  However, this method can also be invoked with arguments:
+  ``parser.items(section, raw, vars)``.  The latter call returns a
+  :class:`list` of *option*, *value* pairs for a specified ``section``,
+  with all interpolations expanded (unless ``raw=True`` is provided).
 
 The mapping protocol is implemented on top of the existing legacy API so that
 subclasses overriding the original interface still should have mappings working
