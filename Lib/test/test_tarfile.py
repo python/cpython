@@ -1522,6 +1522,26 @@ class WriteTest(WriteTestBase, unittest.TestCase):
             os_helper.unlink(os.path.join(path, "2"))
             os_helper.rmdir(path)
 
+    def test_addfile_sets_offsets(self):
+        data = b"data"
+        with tarfile.open(tmpname, self.mode) as tar:
+            ti1 = tarfile.TarInfo("test1.txt")
+            ti1.size = len(data)
+            tar.addfile(ti1, io.BytesIO(data))
+
+            ti2 = tarfile.TarInfo("test2.txt")
+            ti2.size = len(data)
+            tar.addfile(ti2, io.BytesIO(data))
+
+            w_members = tar.getmembers()
+
+        with tarfile.open(tmpname, "r") as tar:
+            r_members = tar.getmembers()
+
+        for w, r in zip(w_members, r_members):
+            self.assertEqual(w.offset, r.offset)
+            self.assertEqual(w.offset_data, r.offset_data)
+
     def test_gettarinfo_pathlike_name(self):
         with tarfile.open(tmpname, self.mode) as tar:
             path = os.path.join(TEMPDIR, "file")

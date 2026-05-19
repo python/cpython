@@ -2378,13 +2378,14 @@ class TarFile(object):
 
         if fileobj is None and tarinfo.isreg() and tarinfo.size != 0:
             raise ValueError("fileobj not provided for non zero-size regular file")
-
         tarinfo = copy.copy(tarinfo)
-
+        tarinfo.offset = self.offset
         buf = tarinfo.tobuf(self.format, self.encoding, self.errors)
         self.fileobj.write(buf)
         self.offset += len(buf)
         bufsize=self.copybufsize
+
+        tarinfo.offset_data = self.offset
         # If there's data to follow, append it.
         if fileobj is not None:
             copyfileobj(fileobj, self.fileobj, tarinfo.size, bufsize=bufsize)
