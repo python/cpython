@@ -1127,13 +1127,13 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         with self.assertRaises(Error) as cm:
             yield
 
-        self.assertEqual(len(cm.exception.args[0]), 1)
+        errors = cm.exception.args[0]
+        self.assertEqual(len(errors), 1)
+        _, _, why = errors[0]
         if sys.platform == "win32":
-            self.assertIn(
-                "it is being used by another process", cm.exception.args[0][0][2]
-            )
+            self.assertIn("it is being used by another process", why)
         else:
-            self.assertIn("are the same file", cm.exception.args[0][0][2])
+            self.assertIn("are the same file", why)
 
 
 class TestCopy(BaseTest, unittest.TestCase):
