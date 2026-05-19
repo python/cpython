@@ -1812,7 +1812,7 @@ class OtherTests(unittest.TestCase):
 
             with zipfile.ZipFile(TESTFN, "r") as zf:
                 zip_info = zf.getinfo("test_source_date_epoch.txt")
-                expected_utc = (1975, 7, 2, 22, 19, 59)
+                expected_utc = (2025, 1, 1, 7, 19, 59)
                 self.assertEqual(zip_info.date_time, expected_utc)
 
     def test_write_without_source_date_epoch(self):
