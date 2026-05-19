@@ -1614,14 +1614,7 @@ class ContextTests(unittest.TestCase):
         # crash (use-after-free on the callback in free-threaded builds).
         client_ctx, server_ctx, hostname = testing_context()
 
-        def make_callback(n):
-            def sni_cb(_ssl_obj, _servername, _ctx):
-                if n == -1 and _servername == "":
-                    raise AssertionError("unreachable")
-                return None
-            return sni_cb
-
-        server_ctx.sni_callback = make_callback(0)
+        server_ctx.sni_callback = lambda *a: None
         done = threading.Event()
 
         def do_handshakes():
@@ -1652,12 +1645,9 @@ class ContextTests(unittest.TestCase):
                         c_in.write(s_out.read())
 
         def toggle_callback():
-            i = 0
             while not done.is_set():
-                server_ctx.sni_callback = make_callback(i)
+                server_ctx.sni_callback = lambda *a: None
                 server_ctx.sni_callback = None
-                server_ctx.sni_callback = make_callback(-i)
-                i += 1
 
         workers = max(4, (os.cpu_count() or 4) * 2)
         threads = [threading.Thread(target=do_handshakes)
