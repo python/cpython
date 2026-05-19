@@ -1841,14 +1841,11 @@ class ExceptionTests(unittest.TestCase):
 
     def test_OSError_errno_error_message(self):
         #from PR 14988
-        filename = '__non-existent__'
-        errmsg = os.strerror(errno.ENOENT)
-        errname = errno.errorcode[errno.ENOENT]
         with self.assertRaises(OSError) as cm:
-            open(filename)
+            open('__non-existent__')
         self.assertEqual(
             str(cm.exception),
-            f"[Errno {errno.ENOENT} ({errname})] {errmsg}: {filename!r}",
+            f"[Errno 9 (ENOENT)] No such file or directory: '__non-existent__'",
         )
 
     @unittest.skipUnless(__debug__, "Won't work if __debug__ is False")
