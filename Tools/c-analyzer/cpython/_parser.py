@@ -318,7 +318,7 @@ MAX_SIZES = {
     _abs('Modules/_remote_debugging/*.h'): (20_000, 1000),
     _abs('Modules/_testcapimodule.c'): (20_000, 400),
     _abs('Modules/expat/expat.h'): (10_000, 400),
-    _abs('Objects/errnonames.h'): (20_000, 500),
+    _abs('Objects/errnonames.h'): (25_000, 1000),
     _abs('Objects/stringlib/unicode_format.h'): (10_000, 400),
     _abs('Objects/typeobject.c'): (380_000, 13_000),
     _abs('Python/compile.c'): (20_000, 500),
