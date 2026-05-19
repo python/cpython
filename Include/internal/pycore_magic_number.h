@@ -298,6 +298,7 @@ Known values:
     Python 3.15a8 3665 (Add FOR_ITER_VIRTUAL and GET_ITER specializations)
     Python 3.15b1 3666 (Add SEND_VIRTUAL and SEND_ASYNC_GEN specializations)
     Python 3.16a0 3700 (Initial version)
+    Python 3.15a6 3701 (PEP 828: yield from for asyncgens)
 
 
     Python 3.17 will start with 3750
@@ -311,7 +312,7 @@ PC/launcher.c must also be updated.
 
 */
 
-#define PYC_MAGIC_NUMBER 3700
+#define PYC_MAGIC_NUMBER 3701
 /* This is equivalent to converting PYC_MAGIC_NUMBER to 2 bytes
    (little-endian) and then appending b'\r\n'. */
 #define PYC_MAGIC_NUMBER_TOKEN \

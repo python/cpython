@@ -511,6 +511,125 @@ codegen_add_yield_from(compiler *c, location loc, int await)
 }
 
 static int
+codegen_async_yield_from(compiler *c, location loc, expr_ty e)
+{
+    NEW_JUMP_TARGET_LABEL(c, send);
+    NEW_JUMP_TARGET_LABEL(c, exit);
+    NEW_JUMP_TARGET_LABEL(c, use_anext);
+    NEW_JUMP_TARGET_LABEL(c, got_coroutine);
+
+    VISIT(c, expr, e->v.AsyncYieldFrom.value);
+    // Stack: [value]
+
+    ADDOP_NAME(c, loc, LOAD_ATTR, &_Py_ID(__aiter__), names);
+    ADDOP(c, loc, PUSH_NULL);
+    ADDOP_I(c, loc, CALL, 0);
+    // Stack: [aiterator]
+
+    ADDOP_LOAD_CONST(c, loc, Py_None);
+    // Stack: [aiterator, None]
+
+    USE_LABEL(c, send);
+
+    // Stack: [aiterator, asend_value]
+    ADDOP_I(c, loc, COPY, 1);
+    // Stack: [aiterator, asend_value, asend_value]
+
+    ADDOP_LOAD_CONST(c, loc, Py_None);
+    // Stack: [aiterator, asend_value, asend_value, None]
+
+    ADDOP_I(c, loc, IS_OP, 0);
+    // Stack: [aiterator, asend_value, bool]
+
+    ADDOP_JUMP(c, loc, POP_JUMP_IF_TRUE, use_anext);
+
+    ADDOP_I(c, loc, COPY, 2);
+    // Stack: [aiterator, asend_value, aiterator]
+
+    ADDOP_NAME(c, loc, LOAD_ATTR, &_Py_ID(asend), names);
+    // Stack: [aiterator, asend_value, bound_method]
+
+    ADDOP_I(c, loc, SWAP, 2);
+    // Stack: [aiterator, bound_method, asend_value]
+
+    ADDOP(c, loc, PUSH_NULL);
+    // Stack: [aiterator, bound_method, asend_value, NULL]
+
+    ADDOP_I(c, loc, SWAP, 2);
+    // Stack: [aiterator, bound_method, NULL, send_value]
+
+    ADDOP_I(c, loc, CALL, 1);
+    // Stack: [aiterator, coroutine]
+
+    ADDOP_JUMP(c, loc, JUMP_NO_INTERRUPT, got_coroutine);
+
+    USE_LABEL(c, use_anext);
+    // Stack: [aiterator, asend_value]
+
+    ADDOP(c, loc, POP_TOP);
+    // Stack: [aiterator]
+
+    ADDOP_I(c, loc, COPY, 1);
+    // Stack: [aiterator, aiterator]
+
+    ADDOP_NAME(c, loc, LOAD_ATTR, &_Py_ID(__anext__), names);
+    ADDOP(c, loc, PUSH_NULL);
+    ADDOP_I(c, loc, CALL, 0);
+    // Stack: [aiterator, coroutine]
+
+    USE_LABEL(c, got_coroutine);
+    // Stack: [aiterator, coroutine]
+
+    // Virtual try/except for the StopAsyncIteration
+    ADDOP_JUMP(c, loc, SETUP_FINALLY, exit);
+
+    ADDOP(c, loc, PUSH_NULL);
+    ADDOP_LOAD_CONST(c, loc, Py_None);
+    // Stack: [aiterator, coroutine, NULL, None]
+
+    ADD_YIELD_FROM(c, loc, 1);
+    // Stack: [aiterator, asend_result]
+
+    ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_ASYNC_GEN_WRAP);
+    // Stack: [aiterator, wrapped_result]
+
+    // Generators expect the iterable at stack_top[-2], so we have to make an
+    // extra copy.
+    ADDOP_I(c, loc, COPY, 2);
+    // Stack: [aiterator, wrapped_result, aiterator]
+
+    ADDOP_I(c, loc, SWAP, 2);
+    // Stack: [aiterator, aiterator, wrapped_result]
+
+    ADDOP_I(c, loc, YIELD_VALUE, 1);
+    // Stack: [aiterator, aiterator, resumed_value]
+
+    ADDOP(c, NO_LOCATION, POP_BLOCK);
+
+    ADDOP_I(c, loc, SWAP, 2);
+    // Stack: [aiterator, resumed_value, aiterator]
+
+    ADDOP(c, loc, POP_TOP);
+    // Stack: [aiterator, resumed_value]
+
+    ADDOP_JUMP(c, loc, JUMP_NO_INTERRUPT, send);
+
+    USE_LABEL(c, exit);
+    // Stack: [aiterator, send_value, exc_value] (from SETUP_FINALLY)
+
+    ADDOP_I(c, loc, SWAP, 2);
+    // Stack: [aiterator, exc_value, send_value]
+
+    ADDOP(c, loc, POP_TOP);
+    // Stack: [aiterator, exc_value]
+
+    ADDOP(c, loc, CLEANUP_ASYNC_THROW);
+    // Stack: [result]
+
+    return SUCCESS;
+}
+
+static int
 codegen_pop_except_and_reraise(compiler *c, location loc)
 {
     /* Stack contents
@@ -2254,9 +2373,6 @@ codegen_return(compiler *c, stmt_ty s)
     PySTEntryObject *ste = SYMTABLE_ENTRY(c);
     if (!_PyST_IsFunctionLike(ste)) {
         return _PyCompile_Error(c, loc, "'return' outside function");
-    }
-    if (s->v.Return.value != NULL && ste->ste_coroutine && ste->ste_generator) {
-        return _PyCompile_Error(c, loc, "'return' with value in async generator");
     }
 
     if (preserve_tos) {
@@ -5437,14 +5553,21 @@ codegen_visit_expr(compiler *c, expr_ty e)
         if (!_PyST_IsFunctionLike(SYMTABLE_ENTRY(c))) {
             return _PyCompile_Error(c, loc, "'yield from' outside function");
         }
-        if (SCOPE_TYPE(c) == COMPILE_SCOPE_ASYNC_FUNCTION) {
-            return _PyCompile_Error(c, loc, "'yield from' inside async function");
-        }
+
         VISIT(c, expr, e->v.YieldFrom.value);
+        if (SCOPE_TYPE(c) == COMPILE_SCOPE_ASYNC_FUNCTION) {
+            ADDOP_I(c, loc, CALL_INTRINSIC_1, INSTRINSIC_ASYNC_GEN_WRAP_YIELD_FROM);
+        }
         ADDOP_I(c, loc, GET_ITER, GET_ITER_YIELD_FROM);
         ADDOP_LOAD_CONST(c, loc, Py_None);
         ADD_YIELD_FROM(c, loc, 0);
         break;
+    case AsyncYieldFrom_kind:
+        if (!_PyST_IsFunctionLike(SYMTABLE_ENTRY(c))) {
+            return _PyCompile_Error(c, loc, "'async yield from' outside function");
+        }
+
+        return codegen_async_yield_from(c, loc, e);
     case Await_kind:
         VISIT(c, expr, e->v.Await.value);
         ADDOP_I(c, loc, GET_AWAITABLE, 0);

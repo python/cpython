@@ -1970,6 +1970,23 @@ dummy_func(
             }
         }
 
+        inst(CLEANUP_ASYNC_THROW, (iter, exc_value_st -- value)) {
+            PyObject *exc_value = PyStackRef_AsPyObjectBorrow(exc_value_st);
+            assert(exc_value != NULL);
+            assert(PyExceptionInstance_Check(exc_value));
+
+            int matches = PyErr_GivenExceptionMatches(exc_value, PyExc_StopAsyncIteration);
+            if (matches) {
+                value = PyStackRef_FromPyObjectNew(((PyStopAsyncIterationObject *)exc_value)->value);
+                DECREF_INPUTS();
+            }
+            else {
+                _PyErr_SetRaisedException(tstate, Py_NewRef(exc_value));
+                monitor_reraise(tstate, frame, this_instr);
+                goto exception_unwind;
+            }
+        }
+
         inst(LOAD_COMMON_CONSTANT, ( -- value)) {
             // Keep in sync with _common_constants in opcode.py
             assert(oparg < NUM_COMMON_CONSTANTS);

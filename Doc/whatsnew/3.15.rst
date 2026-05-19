@@ -522,8 +522,6 @@ If not using a build tool -- or when writing such a tool -- you can select
 ``abi3t`` by setting the macro :c:macro:`!Py_TARGET_ABI3T` as discussed
 in :ref:`abi3-compiling`.
 
-.. seealso:: :pep:`803` for further details.
-
 
 .. _whatsnew315-c-api-interpreter-finalization:
 

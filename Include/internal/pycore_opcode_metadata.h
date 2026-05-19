@@ -156,6 +156,8 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
             return 2;
         case CHECK_EXC_MATCH:
             return 2;
+        case CLEANUP_ASYNC_THROW:
+            return 2;
         case CLEANUP_THROW:
             return 4;
         case COMPARE_OP:
@@ -657,6 +659,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
             return 2;
         case CHECK_EXC_MATCH:
             return 2;
+        case CLEANUP_ASYNC_THROW:
+            return 1;
         case CLEANUP_THROW:
             return 3;
         case COMPARE_OP:
@@ -1171,6 +1175,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[267] = {
     [CALL_TYPE_1] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_EXIT_FLAG | HAS_ESCAPES_FLAG },
     [CHECK_EG_MATCH] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [CHECK_EXC_MATCH] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
+    [CLEANUP_ASYNC_THROW] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [CLEANUP_THROW] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [COMPARE_OP] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [COMPARE_OP_FLOAT] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_EXIT_FLAG },
@@ -1629,6 +1634,7 @@ const char *_PyOpcode_OpName[267] = {
     [CALL_TYPE_1] = "CALL_TYPE_1",
     [CHECK_EG_MATCH] = "CHECK_EG_MATCH",
     [CHECK_EXC_MATCH] = "CHECK_EXC_MATCH",
+    [CLEANUP_ASYNC_THROW] = "CLEANUP_ASYNC_THROW",
     [CLEANUP_THROW] = "CLEANUP_THROW",
     [COMPARE_OP] = "COMPARE_OP",
     [COMPARE_OP_FLOAT] = "COMPARE_OP_FLOAT",
@@ -1848,7 +1854,6 @@ const uint8_t _PyOpcode_Caches[256] = {
 PyAPI_DATA(const uint8_t) _PyOpcode_Deopt[256];
 #ifdef NEED_OPCODE_METADATA
 const uint8_t _PyOpcode_Deopt[256] = {
-    [120] = 120,
     [121] = 121,
     [122] = 122,
     [123] = 123,
@@ -1929,6 +1934,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [CALL_TYPE_1] = CALL,
     [CHECK_EG_MATCH] = CHECK_EG_MATCH,
     [CHECK_EXC_MATCH] = CHECK_EXC_MATCH,
+    [CLEANUP_ASYNC_THROW] = CLEANUP_ASYNC_THROW,
     [CLEANUP_THROW] = CLEANUP_THROW,
     [COMPARE_OP] = COMPARE_OP,
     [COMPARE_OP_FLOAT] = COMPARE_OP,
@@ -2109,7 +2115,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
 #endif // NEED_OPCODE_METADATA
 
 #define EXTRA_CASES \
-    case 120: \
     case 121: \
     case 122: \
     case 123: \

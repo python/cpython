@@ -2616,6 +2616,7 @@ static PyTypeObject* static_types[_Py_NUM_MANAGED_PREINITIALIZED_TYPES] = {
     &_PyAsyncGenASend_Type,
     &_PyAsyncGenAThrow_Type,
     &_PyAsyncGenWrappedValue_Type,
+    &_PyAsyncGenYieldFrom_Type,
     &_PyBufferWrapper_Type,
     &_PyContextTokenMissing_Type,
     &_PyCoroWrapper_Type,
