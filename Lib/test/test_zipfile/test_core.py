@@ -1812,11 +1812,8 @@ class OtherTests(unittest.TestCase):
 
             with zipfile.ZipFile(TESTFN, "r") as zf:
                 zip_info = zf.getinfo("test_source_date_epoch.txt")
-                get_time = time.gmtime(int(os.environ['SOURCE_DATE_EPOCH']))[:6]
-                # Compare each element of the date_time tuple
-                # Allow for a 1-second difference
-                for z_time, g_time in zip(zip_info.date_time, get_time):
-                    self.assertAlmostEqual(z_time, g_time, delta=1)
+                expected_utc = (1975, 7, 2, 22, 19, 59)
+                self.assertEqual(zip_info.date_time, expected_utc)
 
     def test_write_without_source_date_epoch(self):
         with os_helper.EnvironmentVarGuard() as env:
