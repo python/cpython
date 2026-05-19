@@ -152,8 +152,9 @@ The :mod:`!functools` module defines the following functions:
    The *cached_method* does not prevent all possible race conditions in
    multi-threaded usage. The function could run more than once on the
    same instance, with the same inputs, with the latest run setting the cached
-   value. However, initialization of the cached method, which happens lazily on
-   first access, is itself threadsafe.
+   value. The per-instance cache is lazily initialized on first access (via the
+   descriptor protocol), so parallel access on a single instance can race to
+   initialize.
 
    This decorator requires that the each instance supports weak references.
    Some immutable types and slotted classes without ``__weakref__`` as one of

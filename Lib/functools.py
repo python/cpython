@@ -1217,8 +1217,6 @@ class _cached_method:
     """
     def __init__(self, func, /, maxsize=None, typed=False):
         self._function_table = {}
-        # we need a lock when initializing per-instance caches
-        self._cache_init_lock = RLock()
 
         self._maxsize = maxsize
         self._typed = typed
@@ -1242,27 +1240,19 @@ class _cached_method:
 
         instance_id = id(instance)
 
-        # first try to retrieve the cached func without locking (thus avoiding any
-        # unnecessary contention when there is a value), but then retry
-        # under a lock to actually provide safety such that two parallel threads won't
-        # construct distinct caches simultaneously
         try:
             ref, cached_func = self._function_table[instance_id]
         except KeyError:
-            with self._cache_init_lock:
-                try:
-                    ref, cached_func = self._function_table[instance_id]
-                except KeyError:
-                    ref = weakref.ref(
-                        instance,
-                        _cached_method_weakref_callback(
-                            self._function_table, instance_id
-                        ),
-                    )
-                    cached_func = _wrap_unbound_cached_method(
-                        ref, self.func, self._maxsize, self._typed
-                    )
-                    self._function_table[instance_id] = ref, cached_func
+            ref = weakref.ref(
+                instance,
+                _cached_method_weakref_callback(
+                    self._function_table, instance_id
+                ),
+            )
+            cached_func = _wrap_unbound_cached_method(
+                ref, self.func, self._maxsize, self._typed
+            )
+            self._function_table[instance_id] = ref, cached_func
 
         return cached_func
 
