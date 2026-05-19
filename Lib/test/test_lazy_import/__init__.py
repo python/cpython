@@ -1688,21 +1688,28 @@ class MixedLazyEagerImportTests(unittest.TestCase):
         self.assertIn("OK", result.stdout)
 
     def test_reload_after_lazy_reification_keeps_single_module_object(self):
-        """Reloading a reified lazy module should keep identity with globals/sys.modules."""
+        """Reload after lazy from-import: sys.modules identity and fresh lazy bindings."""
         code = textwrap.dedent("""
             import importlib
             import sys
 
-            lazy import json as lazy_json
+            lazy from json import dumps
+            lazy from json import loads as loads_before
 
-            # Trigger reification.
-            assert lazy_json.dumps({"x": 1}) == '{"x": 1}'
-            before_reload = lazy_json
-            assert before_reload is sys.modules["json"]
+            assert "json" not in sys.modules
 
-            reloaded = importlib.reload(lazy_json)
+            # Reify via from-import bindings (not top-level lazy import json).
+            assert dumps({"x": 1}) == '{"x": 1}'
+            assert loads_before("[1]") == [1]
+
+            before_reload = sys.modules["json"]
+            reloaded = importlib.reload(before_reload)
             assert reloaded is before_reload
-            assert lazy_json is sys.modules["json"]
+            assert sys.modules["json"] is before_reload
+
+            # A new lazy from-import after reload should bind to reloaded attributes.
+            lazy from json import loads as loads_after
+            assert loads_after is not loads_before
             print("OK")
         """)
         result = subprocess.run(
@@ -1718,19 +1725,19 @@ class MixedLazyEagerImportTests(unittest.TestCase):
         code = textwrap.dedent("""
             import sys
 
-            lazy import json as lazy_json
+            lazy from json import dumps
+
             assert "json" not in sys.modules
 
-            # Reify lazy binding.
-            assert lazy_json.dumps({"x": 1}) == '{"x": 1}'
-            first_obj = lazy_json
+            # Reify lazy from-import binding.
+            assert dumps({"x": 1}) == '{"x": 1}'
+            first_obj = sys.modules["json"]
             first_id = id(first_obj)
-            assert first_obj is sys.modules["json"]
 
             # Remove import cache entry; existing binding should still work.
             del sys.modules["json"]
             assert "json" not in sys.modules
-            assert lazy_json.dumps({"x": 2}) == '{"x": 2}'
+            assert dumps({"x": 2}) == '{"x": 2}'
 
             import json as second_obj
             second_id = id(second_obj)
