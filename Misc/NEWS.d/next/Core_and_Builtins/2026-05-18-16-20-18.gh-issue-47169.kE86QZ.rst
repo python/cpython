@@ -1,7 +1,1 @@
-OSError.__str__() now includes the symbolic name of the error code (e.g.
-[Errno 2] is now shown as [Errno 2 (ENOENT)]) alongside the numeric value.
-The errno definitions were moved from errnomodule.c to a header file in
-Objects/ so they are accessible to the exception machinery. A new
-OSError_format_errno function searches this header directly at error time to
-resolve the symbolic name and render the error output. The numeric value is
-preserved for backward compatibility.
+Include the symbolic error name in :exc:`OSError` exception string representations.
