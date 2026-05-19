@@ -129,7 +129,7 @@ class TestBase(unittest.TestCase):
             check("stability", x, s)
 
     def test_small_stability(self):
-        lazy from itertools import product
+        from itertools import product
         from operator import itemgetter
 
         # Exhaustively test stability across all lists of small lengths

@@ -3,7 +3,7 @@ import unittest
 import itertools
 from test import support
 from test.support import threading_helper, script_helper
-lazy from itertools import *
+from itertools import *
 import weakref
 from decimal import Decimal
 from fractions import Fraction
@@ -1514,7 +1514,7 @@ class TestBasicOps(unittest.TestCase):
 
     @support.cpython_only
     def test_immutable_types(self):
-        lazy from itertools import _grouper, _tee, _tee_dataobject
+        from itertools import _grouper, _tee, _tee_dataobject
         dataset = (
             accumulate,
             batched,

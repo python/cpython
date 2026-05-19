@@ -127,7 +127,7 @@ class TupleTest(seq_tests.CommonTest):
     # - https://bugs.python.org/issue942952
     # - https://bugs.python.org/issue34751
     def test_hash_optional(self):
-        lazy from itertools import product
+        from itertools import product
 
         if not RUN_ALL_HASH_TESTS:
             return
