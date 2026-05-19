@@ -1,9 +1,135 @@
+import re
 import string
 import unittest
 from email import _header_value_parser as parser
 from email import errors
 from email import policy
 from test.test_email import TestEmailBase, parameterize
+
+
+# ---> Defect Expectations
+
+undecodable_bytes_defect = (
+    errors.UndecodableBytesDefect,
+    'Non-ASCII characters found in header token',
+    )
+
+def undecodable_bytes_in_ew_defect(chars):
+    return (
+        errors.UndecodableBytesDefect,
+        f"Encoded word contains bytes not decodable using '{chars}' charset",
+        )
+
+def nonprintable_defect(chars):
+    return (
+        errors.NonPrintableDefect,
+        'the following ASCII non-printables found in header:'
+            f' {re.escape(repr(list(chars)))}',
+        )
+
+whitespace_inside_ew_defect = (
+    errors.InvalidHeaderDefect,
+    'whitespace inside encoded word',
+    )
+
+missing_whitespace_before_ew_defect = (
+    errors.InvalidHeaderDefect,
+    'missing whitespace before encoded word',
+    )
+
+missing_whitespace_after_ew_defect = (
+    errors.InvalidHeaderDefect,
+    'missing trailing whitespace after encoded-word',
+    )
+
+def charset_defect(chars):
+    return (
+        errors.CharsetError,
+        f"Unknown charset '{chars}' in encoded word; decoded as unknown bytes",
+        )
+
+invalid_base64_padding_defect = (
+    errors.InvalidBase64PaddingDefect,
+    '',
+    )
+
+invalid_base64_characters_defect = (
+    errors.InvalidBase64CharactersDefect,
+    '',
+    )
+
+invalid_base64_length_defect = (
+    errors.InvalidBase64LengthDefect,
+    '',
+    )
+
+end_inside_quoted_string_defect = (
+    errors.InvalidHeaderDefect,
+    'end of header inside quoted string',
+    )
+
+ew_inside_quoted_string_defect = (
+    errors.InvalidHeaderDefect,
+    'encoded word inside quoted string',
+    )
+
+end_inside_comment_defect = (
+    errors.InvalidHeaderDefect,
+    'end of header inside comment',
+    )
+
+period_in_phrase_obs_defect = (
+    errors.ObsoleteHeaderDefect,
+    "period in 'phrase'",
+    )
+
+comment_without_atom_in_phrase_obs_defect = (
+    errors.ObsoleteHeaderDefect,
+    'comment found without atom',
+    )
+
+non_word_phrase_start_defect = (
+    errors.InvalidHeaderDefect,
+    "phrase does not start with word",
+    )
+
+non_dot_atom_local_part_obs_defect = (
+    errors.ObsoleteHeaderDefect,
+    r'local-part is not a dot-atom \(contains CFWS\)',
+    )
+
+not_even_obs_local_part_defect = (
+    errors.InvalidHeaderDefect,
+    'local-part is not dot-atom, quoted-string, or obs-local-part',
+    )
+
+missing_dot_in_local_part_defect = (
+    errors.InvalidHeaderDefect,
+    "missing '.' between words",
+    )
+
+trailing_dot_in_local_part_defect = (
+    errors.InvalidHeaderDefect,
+    "invalid trailing '.' in local part",
+    )
+
+leading_dot_in_local_part_defect = (
+    errors.InvalidHeaderDefect,
+    "invalid leading '.' in local part",
+    )
+
+repeated_dot_in_local_part_defect = (
+    errors.InvalidHeaderDefect,
+    "invalid repeated '.'",
+    )
+
+misplaced_backslash_defect = (
+    errors.InvalidHeaderDefect,
+    r"'\\' character outside of quoted-string/ccontent",
+    )
+
+# ---> End Defect Expectations
+
 
 class TestTokens(TestEmailBase):
 
