@@ -2087,4 +2087,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=f0412644325e58c6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fb4fe1af274124e0 input=a9049054013a1b77]*/
