@@ -2277,7 +2277,7 @@ class ArgsTestCase(BaseTestCase):
 
         # Use directly subprocess to control the exact command line
         cmd = [sys.executable,
-               "-m", "test", option,
+               "-E", "-m", "test", option,
                f'--testdir={self.tmptestdir}',
                testname]
         proc = subprocess.run(cmd,
