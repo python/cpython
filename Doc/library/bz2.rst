@@ -4,11 +4,6 @@
 .. module:: bz2
    :synopsis: Interfaces for bzip2 compression and decompression.
 
-.. moduleauthor:: Gustavo Niemeyer <niemeyer@conectiva.com>
-.. moduleauthor:: Nadeem Vawda <nadeem.vawda@gmail.com>
-.. sectionauthor:: Gustavo Niemeyer <niemeyer@conectiva.com>
-.. sectionauthor:: Nadeem Vawda <nadeem.vawda@gmail.com>
-
 **Source code:** :source:`Lib/bz2.py`
 
 --------------
@@ -16,7 +11,7 @@
 This module provides a comprehensive interface for compressing and
 decompressing data using the bzip2 compression algorithm.
 
-The :mod:`bz2` module contains:
+The :mod:`!bz2` module contains:
 
 * The :func:`.open` function and :class:`BZ2File` class for reading and
   writing compressed files.
@@ -317,7 +312,7 @@ One-shot (de)compression
 Examples of usage
 -----------------
 
-Below are some examples of typical usage of the :mod:`bz2` module.
+Below are some examples of typical usage of the :mod:`!bz2` module.
 
 Using :func:`compress` and :func:`decompress` to demonstrate round-trip compression:
 

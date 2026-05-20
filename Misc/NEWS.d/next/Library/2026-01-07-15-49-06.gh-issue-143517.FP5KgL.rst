@@ -1,4 +1,0 @@
-:func:`annotationlib.get_annotations` no longer raises a :exc:`SyntaxError`
-when evaluating a stringified starred annotation that starts with one
-or more whitespace characters followed by a ``*``.
-Patch by Bartosz Sławecki.

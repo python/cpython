@@ -1,8 +1,11 @@
 """Tests for sampling profiler CLI argument parsing and functionality."""
 
 import io
+import json
+import os
 import subprocess
 import sys
+import tempfile
 import unittest
 from unittest import mock
 
@@ -13,10 +16,25 @@ except ImportError:
         "Test only runs when _remote_debugging is available"
     )
 
-from test.support import is_emscripten, requires_remote_subprocess_debugging
+from test.support import (
+    force_not_colorized,
+    is_emscripten,
+    requires_remote_subprocess_debugging,
+)
 
-from profiling.sampling.cli import main
+from profiling.sampling.cli import (
+    FORMAT_EXTENSIONS,
+    _create_collector,
+    _generate_output_filename,
+    main,
+)
+from profiling.sampling.constants import (
+    PROFILING_MODE_ALL,
+    PROFILING_MODE_CPU,
+    PROFILING_MODE_WALL,
+)
 from profiling.sampling.errors import SamplingScriptNotFoundError, SamplingModuleNotFoundError, SamplingUnknownProcessError
+from profiling.sampling.jsonl_collector import JsonlCollector
 
 class TestSampleProfilerCLI(unittest.TestCase):
     def _setup_sync_mocks(self, mock_socket, mock_popen):
@@ -522,6 +540,154 @@ class TestSampleProfilerCLI(unittest.TestCase):
 
             mock_sample.assert_called_once()
 
+    def _run_dump_cli(
+        self,
+        *cli_args,
+        dump_return=None,
+        dump_side_effect=None,
+        process_running=True,
+    ):
+        """Run main() for a `dump` invocation, returning (mock_dump, mock_print)."""
+        argv = ["profiling.sampling.cli", "dump", *cli_args]
+        dump_kwargs = {}
+        if dump_side_effect is not None:
+            dump_kwargs["side_effect"] = dump_side_effect
+        else:
+            dump_kwargs["return_value"] = [] if dump_return is None else dump_return
+        with (
+            mock.patch("sys.argv", argv),
+            mock.patch(
+                "profiling.sampling.cli._is_process_running",
+                return_value=process_running,
+            ),
+            mock.patch("profiling.sampling.cli.dump_stack", **dump_kwargs) as mock_dump_stack,
+            mock.patch("profiling.sampling.cli.print_stack_dump") as mock_print_stack_dump,
+        ):
+            main()
+        return mock_dump_stack, mock_print_stack_dump
+
+    def _run_dump_cli_expecting_exit(self, *cli_args, capture="stderr"):
+        """Run main() for a `dump` invocation expected to SystemExit, return (cm, captured_text)."""
+        argv = ["profiling.sampling.cli", "dump", *cli_args]
+        buf = io.StringIO()
+        stream = "sys.stderr" if capture == "stderr" else "sys.stdout"
+        with (
+            mock.patch("sys.argv", argv),
+            mock.patch(stream, buf),
+            self.assertRaises(SystemExit) as cm,
+        ):
+            main()
+        return cm, buf.getvalue()
+
+    def test_cli_dump_subcommand(self):
+        stack_frames = [mock.sentinel.stack_frames]
+        mock_dump_stack, mock_print_stack_dump = self._run_dump_cli(
+            "12345", dump_return=stack_frames
+        )
+
+        mock_dump_stack.assert_called_once()
+        self.assertEqual(mock_dump_stack.call_args.args, (12345,))
+        call_kwargs = mock_dump_stack.call_args.kwargs
+        self.assertFalse(call_kwargs["all_threads"])
+        self.assertIsNone(call_kwargs["async_aware"])
+        self.assertFalse(call_kwargs["native"])
+        self.assertTrue(call_kwargs["gc"])
+        self.assertFalse(call_kwargs["opcodes"])
+        self.assertFalse(call_kwargs["blocking"])
+        self.assertEqual(call_kwargs["mode"], PROFILING_MODE_ALL)
+        mock_print_stack_dump.assert_called_once_with(stack_frames, pid=12345)
+
+    def test_cli_dump_subcommand_options(self):
+        mock_dump_stack, _ = self._run_dump_cli(
+            "-a", "--native", "--no-gc", "--opcodes", "--blocking", "12345"
+        )
+
+        call_kwargs = mock_dump_stack.call_args.kwargs
+        self.assertTrue(call_kwargs["all_threads"])
+        self.assertTrue(call_kwargs["native"])
+        self.assertFalse(call_kwargs["gc"])
+        self.assertTrue(call_kwargs["opcodes"])
+        self.assertTrue(call_kwargs["blocking"])
+        self.assertEqual(call_kwargs["mode"], PROFILING_MODE_ALL)
+
+    def test_cli_dump_rejects_mode_option(self):
+        cm, stderr = self._run_dump_cli_expecting_exit("12345", "--mode", "cpu")
+        self.assertEqual(cm.exception.code, 2)
+        self.assertIn("unrecognized arguments: --mode", stderr)
+
+    def test_cli_dump_async_aware_defaults_to_all(self):
+        mock_dump_stack, _ = self._run_dump_cli("--async-aware", "12345")
+        call_kwargs = mock_dump_stack.call_args.kwargs
+        self.assertEqual(call_kwargs["async_aware"], "all")
+        self.assertEqual(call_kwargs["mode"], PROFILING_MODE_WALL)
+
+    def test_cli_dump_async_mode_all_is_forwarded(self):
+        mock_dump_stack, _ = self._run_dump_cli(
+            "--async-aware", "--async-mode", "all", "12345"
+        )
+        call_kwargs = mock_dump_stack.call_args.kwargs
+        self.assertEqual(call_kwargs["async_aware"], "all")
+        self.assertEqual(call_kwargs["mode"], PROFILING_MODE_WALL)
+
+    def test_cli_dump_async_mode_running_is_forwarded(self):
+        mock_dump_stack, _ = self._run_dump_cli(
+            "--async-aware", "--async-mode", "running", "12345"
+        )
+        call_kwargs = mock_dump_stack.call_args.kwargs
+        self.assertEqual(call_kwargs["async_aware"], "running")
+        self.assertEqual(call_kwargs["mode"], PROFILING_MODE_WALL)
+
+    def test_cli_dump_async_mode_requires_async_aware(self):
+        cm, stderr = self._run_dump_cli_expecting_exit(
+            "--async-mode", "running", "12345"
+        )
+        self.assertEqual(cm.exception.code, 2)
+        self.assertIn("--async-mode requires --async-aware", stderr)
+
+    def test_cli_dump_rejects_async_aware_with_all_threads(self):
+        cm, stderr = self._run_dump_cli_expecting_exit(
+            "--async-aware", "-a", "12345"
+        )
+        self.assertEqual(cm.exception.code, 2)
+        self.assertIn("--all-threads", stderr)
+        self.assertIn("incompatible with --async-aware", stderr)
+
+    def test_cli_dump_rejects_async_aware_with_native(self):
+        cm, stderr = self._run_dump_cli_expecting_exit(
+            "--async-aware", "--native", "12345"
+        )
+        self.assertEqual(cm.exception.code, 2)
+        self.assertIn("--native", stderr)
+        self.assertIn("incompatible with --async-aware", stderr)
+
+    def test_cli_dump_rejects_async_aware_with_no_gc(self):
+        cm, stderr = self._run_dump_cli_expecting_exit(
+            "--async-aware", "--no-gc", "12345"
+        )
+        self.assertEqual(cm.exception.code, 2)
+        self.assertIn("--no-gc", stderr)
+        self.assertIn("incompatible with --async-aware", stderr)
+
+    def test_cli_dump_unknown_process(self):
+        with self.assertRaises(SamplingUnknownProcessError):
+            self._run_dump_cli("12345", process_running=False)
+
+    def test_cli_dump_process_exits_before_snapshot(self):
+        with self.assertRaises(SystemExit) as cm:
+            self._run_dump_cli("12345", dump_side_effect=ProcessLookupError)
+        self.assertIn(
+            "No stack dump collected - process 12345 exited",
+            str(cm.exception.code),
+        )
+
+    @force_not_colorized
+    def test_cli_dump_help_lists_dump_options_without_mode(self):
+        cm, stdout = self._run_dump_cli_expecting_exit("--help", capture="stdout")
+        self.assertEqual(cm.exception.code, 0)
+        self.assertIn("--async-mode {running,all}", stdout)
+        self.assertIn("--opcodes", stdout)
+        self.assertNotIn("--mode {wall,cpu,gil,exception}", stdout)
+
     def test_sort_options(self):
         sort_options = [
             ("nsamples", 0),
@@ -722,3 +888,100 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 main()
 
             self.assertIn(fake_pid, str(cm.exception))
+
+    def test_cli_replay_rejects_non_binary_profile(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            profile = os.path.join(tempdir, "output.prof")
+            with open(profile, "wb") as file:
+                file.write(b"not a binary sampling profile")
+
+            with mock.patch("sys.argv", ["profiling.sampling.cli", "replay", profile]):
+                with self.assertRaises(SystemExit) as cm:
+                    main()
+
+        error = str(cm.exception)
+        self.assertIn("not a binary sampling profile", error)
+        self.assertIn("--binary", error)
+
+    def test_cli_replay_reader_errors_exit_cleanly(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            profile = os.path.join(tempdir, "output.bin")
+            with open(profile, "wb") as file:
+                file.write(b"HCAT" + (b"\0" * 60))
+
+            with (
+                mock.patch("sys.argv", ["profiling.sampling.cli", "replay", profile]),
+                mock.patch(
+                    "profiling.sampling.cli.BinaryReader",
+                    side_effect=ValueError("Unsupported format version 2"),
+                ),
+            ):
+                with self.assertRaises(SystemExit) as cm:
+                    main()
+
+        self.assertEqual(
+            str(cm.exception),
+            "Error: Unsupported format version 2",
+        )
+
+    def test_cli_jsonl_format_mutually_exclusive_with_pstats(self):
+        """--jsonl and --pstats cannot be combined (mutually exclusive group)."""
+        with (
+            mock.patch(
+                "sys.argv",
+                [
+                    "profiling.sampling.cli",
+                    "attach",
+                    "12345",
+                    "--jsonl",
+                    "--pstats",
+                ],
+            ),
+            mock.patch("sys.stderr", io.StringIO()),
+        ):
+            with self.assertRaises(SystemExit):
+                main()
+
+    def test_cli_jsonl_extension_in_format_extensions(self):
+        """FORMAT_EXTENSIONS maps 'jsonl' -> 'jsonl' so default filenames work."""
+        self.assertEqual(FORMAT_EXTENSIONS["jsonl"], "jsonl")
+        self.assertEqual(_generate_output_filename("jsonl", 12345), "jsonl_12345.jsonl")
+
+    def test_cli_jsonl_create_collector_propagates_mode(self):
+        """_create_collector('jsonl', ..., mode=X) lands X in the meta record."""
+        collector = _create_collector(
+            "jsonl",
+            sample_interval_usec=1000,
+            skip_idle=False,
+            mode=PROFILING_MODE_CPU,
+        )
+        self.assertIsInstance(collector, JsonlCollector)
+
+        with tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False) as f:
+            jsonl_path = f.name
+        self.addCleanup(os.unlink, jsonl_path)
+        collector.export(jsonl_path)
+        with open(jsonl_path, "r", encoding="utf-8") as f:
+            records = [json.loads(line) for line in f]
+        meta = next(r for r in records if r["type"] == "meta")
+        self.assertEqual(meta["mode"], "cpu")
+
+    def test_cli_jsonl_rejects_opcodes_combination(self):
+        """--opcodes is incompatible with --jsonl per opcodes_compatible_formats."""
+        test_args = [
+            "profiling.sampling.cli",
+            "attach",
+            "12345",
+            "--jsonl",
+            "--opcodes",
+        ]
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("sys.stderr", io.StringIO()) as mock_stderr,
+            mock.patch("profiling.sampling.cli.sample"),
+            self.assertRaises(SystemExit) as cm,
+        ):
+            main()
+
+        self.assertEqual(cm.exception.code, 2)
+        self.assertIn("--opcodes", mock_stderr.getvalue())

@@ -150,7 +150,8 @@ _IntEnum._convert_(
     source=_ssl)
 
 PROTOCOL_SSLv23 = _SSLMethod.PROTOCOL_SSLv23 = _SSLMethod.PROTOCOL_TLS
-_PROTOCOL_NAMES = {value: name for name, value in _SSLMethod.__members__.items()}
+_PROTOCOL_NAMES = frozendict({
+    value: name for name, value in _SSLMethod.__members__.items()})
 
 _SSLv2_IF_EXISTS = getattr(_SSLMethod, 'PROTOCOL_SSLv2', None)
 
@@ -1534,11 +1535,8 @@ def DER_cert_to_PEM_cert(der_cert_bytes):
     """Takes a certificate in binary DER format and returns the
     PEM version of it as a string."""
 
-    f = str(base64.standard_b64encode(der_cert_bytes), 'ASCII', 'strict')
-    ss = [PEM_HEADER]
-    ss += [f[i:i+64] for i in range(0, len(f), 64)]
-    ss.append(PEM_FOOTER + '\n')
-    return '\n'.join(ss)
+    f = str(base64.b64encode(der_cert_bytes, wrapcol=64), 'ASCII')
+    return f'{PEM_HEADER}\n{f}\n{PEM_FOOTER}\n'
 
 def PEM_cert_to_DER_cert(pem_cert_string):
     """Takes a certificate in ASCII PEM format and returns the

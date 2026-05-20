@@ -102,8 +102,10 @@ def _run_module_code(code, init_globals=None,
 
 # Helper to get the full name, spec and code for a module
 def _get_module_details(mod_name, error=ImportError):
+    # name= is only accepted by ImportError and its subclasses.
+    kwargs = {"name": mod_name} if issubclass(error, ImportError) else {}
     if mod_name.startswith("."):
-        raise error("Relative module names not supported")
+        raise error("Relative module names not supported", **kwargs)
     pkg_name, _, _ = mod_name.rpartition(".")
     if pkg_name:
         # Try importing the parent to avoid catching initialization errors
@@ -136,12 +138,13 @@ def _get_module_details(mod_name, error=ImportError):
         if mod_name.endswith(".py"):
             msg += (f". Try using '{mod_name[:-3]}' instead of "
                     f"'{mod_name}' as the module name.")
-        raise error(msg.format(mod_name, type(ex).__name__, ex)) from ex
+        raise error(msg.format(mod_name, type(ex).__name__, ex),
+                    **kwargs) from ex
     if spec is None:
-        raise error("No module named %s" % mod_name)
+        raise error("No module named %s" % mod_name, **kwargs)
     if spec.submodule_search_locations is not None:
         if mod_name == "__main__" or mod_name.endswith(".__main__"):
-            raise error("Cannot use package as __main__ module")
+            raise error("Cannot use package as __main__ module", **kwargs)
         try:
             pkg_main_name = mod_name + ".__main__"
             return _get_module_details(pkg_main_name, error)
@@ -149,17 +152,19 @@ def _get_module_details(mod_name, error=ImportError):
             if mod_name not in sys.modules:
                 raise  # No module loaded; being a package is irrelevant
             raise error(("%s; %r is a package and cannot " +
-                               "be directly executed") %(e, mod_name))
+                               "be directly executed") %(e, mod_name),
+                        **kwargs)
     loader = spec.loader
     if loader is None:
         raise error("%r is a namespace package and cannot be executed"
-                                                                 % mod_name)
+                                                                 % mod_name,
+                    **kwargs)
     try:
         code = loader.get_code(mod_name)
     except ImportError as e:
-        raise error(format(e)) from e
+        raise error(format(e), **kwargs) from e
     if code is None:
-        raise error("No code object available for %s" % mod_name)
+        raise error("No code object available for %s" % mod_name, **kwargs)
     return mod_name, spec, code
 
 class _Error(Exception):
@@ -232,6 +237,7 @@ def _get_main_module_details(error=ImportError):
     # Also moves the standard __main__ out of the way so that the
     # preexisting __loader__ entry doesn't cause issues
     main_name = "__main__"
+    kwargs = {"name": main_name} if issubclass(error, ImportError) else {}
     saved_main = sys.modules[main_name]
     del sys.modules[main_name]
     try:
@@ -239,7 +245,8 @@ def _get_main_module_details(error=ImportError):
     except ImportError as exc:
         if main_name in str(exc):
             raise error("can't find %r module in %r" %
-                              (main_name, sys.path[0])) from exc
+                              (main_name, sys.path[0]),
+                        **kwargs) from exc
         raise
     finally:
         sys.modules[main_name] = saved_main
