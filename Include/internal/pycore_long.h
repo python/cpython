@@ -217,6 +217,7 @@ _PyLong_BothAreCompact(const PyLongObject* a, const PyLongObject* b) {
 static inline bool
 _PyLong_IsZero(const PyLongObject *op)
 {
+    assert(op != NULL);
     return (op->long_value.lv_tag & SIGN_MASK) == SIGN_ZERO;
 }
 
