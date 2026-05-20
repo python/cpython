@@ -8,7 +8,7 @@
 #endif
 
 #include "Python.h"
-#include "pycore_bytesobject.h"   // _PyBytes_Repeat
+#include "pycore_bytesobject.h"   // _PyBytes_RepeatBuffer
 #include "pycore_call.h"          // _PyObject_CallMethod()
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_floatobject.h"   // _PY_FLOAT_BIG_ENDIAN
@@ -68,6 +68,7 @@ typedef struct {
     PyObject *str_write;
     PyObject *str___dict__;
     PyObject *str_iter;
+    PyObject *typecodes;
 } array_state;
 
 static array_state *
@@ -1147,7 +1148,7 @@ array_repeat(PyObject *op, Py_ssize_t n)
 
     const Py_ssize_t oldbytes = array_length * a->ob_descr->itemsize;
     const Py_ssize_t newbytes = oldbytes * n;
-    _PyBytes_Repeat(np->ob_item, newbytes, a->ob_item, oldbytes);
+    _PyBytes_RepeatBuffer(np->ob_item, newbytes, a->ob_item, oldbytes);
 
     return (PyObject *)np;
 }
@@ -1304,7 +1305,7 @@ array_inplace_repeat(PyObject *op, Py_ssize_t n)
         if (array_resize(self, n * array_size) == -1)
             return NULL;
 
-        _PyBytes_Repeat(self->ob_item, n*size, self->ob_item, size);
+        _PyBytes_RepeatBuffer(self->ob_item, n*size, self->ob_item, size);
     }
     return Py_NewRef(self);
 }
@@ -3153,8 +3154,18 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
     }
     Py_XDECREF(it);
-    PyErr_SetString(PyExc_ValueError,
-        "bad typecode (must be b, B, u, w, h, H, i, I, l, L, q, Q, e, f, d, Zf or Zd)");
+
+    PyObject *sep = PyUnicode_FromString(", ");
+    if (sep == NULL) {
+        return NULL;
+    }
+    PyObject *msg = PyObject_CallMethod(sep, "join", "(O)", state->typecodes);
+    Py_DECREF(sep);
+    if (msg == NULL) {
+        return NULL;
+    }
+    PyErr_Format(PyExc_ValueError, "bad typecode (must be: %S)", msg);
+    Py_DECREF(msg);
     return NULL;
 }
 
@@ -3439,6 +3450,7 @@ array_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->ArrayType);
     Py_VISIT(state->ArrayIterType);
     Py_VISIT(state->array_reconstructor);
+    Py_VISIT(state->typecodes);
     return 0;
 }
 
@@ -3453,6 +3465,7 @@ array_clear(PyObject *module)
     Py_CLEAR(state->str_write);
     Py_CLEAR(state->str___dict__);
     Py_CLEAR(state->str_iter);
+    Py_CLEAR(state->typecodes);
     return 0;
 }
 
@@ -3549,6 +3562,7 @@ array_modexec(PyObject *m)
     if (tuple == NULL) {
         return -1;
     }
+    state->typecodes = Py_NewRef(tuple);
     if (PyModule_Add(m, "typecodes", tuple) < 0) {
         return -1;
     }

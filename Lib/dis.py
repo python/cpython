@@ -698,8 +698,8 @@ def _get_const_value(op, arg, co_consts):
     if op == LOAD_SMALL_INT:
         return arg
     if op == LOAD_COMMON_CONSTANT:
-        # Opargs 0-6 are callables; 7-12 are literal values.
-        if 7 <= arg <= 12:
+        # Opargs 0-6 and 12 are callables; 7-11 and 13 are literal values.
+        if 7 <= arg <= 11 or arg == 13:
             return _common_constants[arg]
         return UNKNOWN
     argval = UNKNOWN
