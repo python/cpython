@@ -1,0 +1,1 @@
+Sped up reading :mod:`gzip` files with long embedded filename or comment.
