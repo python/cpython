@@ -484,14 +484,22 @@ def _read_exact(fp, n):
     return data
 
 
-def _read_until_null(fp, append_to):
+def _read_until_null(fp, crc=None):
     '''Read until the first encountered null byte in fp.
-       Append to given byte array object'''
-    while True:
-        s = fp.read(1)
-        append_to += s
-        if not s or s == b'\000':
-            break
+    If crc is not None, update and return the CRC.
+    '''
+    if crc is None:
+        while True:
+            s = fp.read(1)
+            if not s or s == b'\000':
+                break
+    else:
+        while True:
+            s = fp.read(1)
+            crc = zlib.crc32(s, crc)
+            if not s or s == b'\000':
+                break
+    return crc
 
 
 def _read_gzip_header(fp):
@@ -517,30 +525,32 @@ def _read_gzip_header(fp):
         return last_mtime
     if flag == FNAME:
         # Read and discard a null-terminated string containing the filename
-        while True:
-            s = fp.read(1)
-            if not s or s==b'\000':
-                break
+        _read_until_null(fp)
         return last_mtime
 
     # Processing for more complex flags. Save header parts for FHCRC checking.
-    header = bytearray(magic + base_header)
+    if flag & FHCRC:
+        crc = zlib.crc32(magic + base_header)
+    else:
+        crc = None
     if flag & FEXTRA:
         extra_len_bytes = _read_exact(fp, 2)
         extra_len, = struct.unpack("<H", extra_len_bytes)
-        header += extra_len_bytes
-        header += _read_exact(fp, extra_len)
+        extra = _read_exact(fp, extra_len)
+        if crc is not None:
+            crc = zlib.crc32(extra_len_bytes, crc)
+            crc = zlib.crc32(extra, crc)
     if flag & FNAME:
-        _read_until_null(fp, append_to=header)
+        crc = _read_until_null(fp, crc)
     if flag & FCOMMENT:
-        _read_until_null(fp, append_to=header)
-    if flag & FHCRC:
+        crc = _read_until_null(fp, crc)
+    if crc is not None:
         # Header CRC is the last 16 bits of a crc32.
         header_crc, = struct.unpack("<H", _read_exact(fp, 2))
-        true_crc = zlib.crc32(header) & 0xFFFF
-        if header_crc != true_crc:
+        crc = crc & 0xFFFF
+        if header_crc != crc:
             raise BadGzipFile(f"Corrupted gzip header. Checksums do not "
-                               f"match: {true_crc:04x} != {header_crc:04x}")
+                              f"match: {crc:04x} != {header_crc:04x}")
     return last_mtime
 
 
