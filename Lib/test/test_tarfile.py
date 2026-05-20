@@ -1065,20 +1065,37 @@ class LzmaDetectReadTest(LzmaTest, DetectReadTest):
 class ZstdDetectReadTest(ZstdTest, DetectReadTest):
     pass
 
+
 @support.requires_zstd()
 class ZstdOpenTest(unittest.TestCase):
     """
     See: https://github.com/python/cpython/issues/150077
     """
     def test_zstopen_closes_fileobj_on_base_exception(self):
-        fileobj = unittest.mock.Mock()
-        with unittest.mock.patch("compression.zstd.ZstdFile",
-                                 return_value=fileobj), \
-             unittest.mock.patch.object(tarfile.TarFile, "taropen",
-                                        side_effect=KeyboardInterrupt):
-            with self.assertRaises(KeyboardInterrupt):
-                tarfile.TarFile.zstopen("foo.tar.zst")
-        fileobj.close.assert_called_once()
+        path = os_helper.TESTFN + ".tar.zst"
+        self.addCleanup(os_helper.unlink, path)
+        with tarfile.open(path, "w:zst"):
+            pass
+
+        opened = []
+        real_ZstdFile = compression.zstd.ZstdFile
+
+        def tracking_ZstdFile(*args, **kwargs):
+            fileobj = real_ZstdFile(*args, **kwargs)
+            opened.append(fileobj)
+            return fileobj
+
+        with (
+            unittest.mock.patch("compression.zstd.ZstdFile", tracking_ZstdFile),
+            unittest.mock.patch.object(
+                tarfile.TarFile, "taropen", side_effect=KeyboardInterrupt),
+            self.assertRaises(KeyboardInterrupt),
+        ):
+            tarfile.TarFile.zstopen(path)
+
+        self.assertEqual(len(opened), 1)
+        self.assertTrue(opened[0].closed)
+
 
 class GzipBrokenHeaderCorrectException(GzipTest, unittest.TestCase):
     """
