@@ -1775,6 +1775,10 @@ _CROSS_LANGUAGE_HINTS = frozendict({
     # frozendict -- mutable method on immutable type (user expected a dict)
     "update": ((frozenset, "Did you mean to use a 'set' object?", True),
                (frozendict, "Did you mean to use a 'dict' object?", True)),
+    # clear() -- shared across immutable container types (user expected the mutable counterpart)
+    "clear": ((tuple, "Did you mean to use a 'list' object?", True),
+              (frozenset, "Did you mean to use a 'set' object?", True),
+              (frozendict, "Did you mean to use a 'dict' object?", True)),
     # float -- bitwise operators belong to int
     "__or__": ((float, "Did you mean to use an 'int' object? Bitwise operators are not supported by 'float'.", True),),
     "__and__": ((float, "Did you mean to use an 'int' object? Bitwise operators are not supported by 'float'.", True),),
