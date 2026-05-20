@@ -50,6 +50,13 @@ static void free_cache_delayed(struct type_cache *cache)
     if (cache == NULL || cache == &empty_cache) {
         return;
     }
+#ifndef Py_GIL_DISABLED
+    for (uint32_t i = 0; i < cache_size(cache); i++) {
+        if (cache->hashtable[i].name != NULL) {
+            Py_DECREF(cache->hashtable[i].name);
+        }
+    }
+#endif
     _PyMem_FreeDelayed(cache, cache_nbytes(cache));
 }
 
@@ -88,6 +95,7 @@ static inline void type_cache_insert(struct type_cache *cache, PyObject *name,
     uint32_t index = hash & cache->mask;
     for (;;) {
         if (cache->hashtable[index].name == NULL) {
+            Py_INCREF(name);
             FT_ATOMIC_STORE_PTR(cache->hashtable[index].value, value);
             FT_ATOMIC_STORE_PTR(cache->hashtable[index].name, name);
             cache->used++;
