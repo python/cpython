@@ -1078,7 +1078,7 @@ class ZstdOpenTest(unittest.TestCase):
             pass
 
         opened = []
-        real_ZstdFile = compression.zstd.ZstdFile
+        real_ZstdFile = zstd.ZstdFile
 
         def tracking_ZstdFile(*args, **kwargs):
             fileobj = real_ZstdFile(*args, **kwargs)
