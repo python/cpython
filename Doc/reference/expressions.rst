@@ -256,6 +256,9 @@ both their structure and the *identity* of the values match.
    Currently, each evaluation of a template string results in
    a different object.
 
+Other expressions which are not literals (such as calls,
+comprehensions, and attribute accesses) likewise make no guarantees
+about object identity across separate evaluations.
 
 .. _string-concatenation:
 
@@ -1977,9 +1980,22 @@ The operators :keyword:`in` and :keyword:`not in` test for membership.  ``x in
 s`` evaluates to ``True`` if *x* is a member of *s*, and ``False`` otherwise.
 ``x not in s`` returns the negation of ``x in s``.  All built-in sequences and
 set types support this as well as dictionary, for which :keyword:`!in` tests
-whether the dictionary has a given key. For container types such as list, tuple,
-set, frozenset, dict, or collections.deque, the expression ``x in y`` is equivalent
-to ``any(x is e or x == e for e in y)``.
+whether the dictionary has a given key. For sequence types such as list, tuple, or collections.deque,
+the expression ``x in y`` is equivalent to ``any(x is e or x == e for e in y)``.
+
+For hash-based container types such as set, frozenset, and dict,
+``x in y`` first hashes *x* to locate a candidate element *e*, then
+returns ``True`` if ``x is e or x == e``. This is equivalent to the
+sequence case under the assumption that equal objects have the same
+hash value.
+
+.. note::
+
+   The ``x is e`` check means that for objects where ``x != x``
+   (such as NaN) or where ``__eq__`` is state-dependent, membership
+   can succeed via identity even when equality fails. This behavior
+   is not guaranteed across implementations, as object identity for
+   repeated evaluations of non-literal expressions is unspecified.
 
 For the string and bytes types, ``x in y`` is ``True`` if and only if *x* is a
 substring of *y*.  An equivalent test is ``y.find(x) != -1``.  Empty strings are
