@@ -4049,7 +4049,7 @@ error:
 
         // Create a cause exception showing where the lazy import was declared.
         PyObject *msg = PyUnicode_FromFormat(
-            "deferred import of '%U' raised an exception during resolution",
+            "lazy import of '%U' raised an exception during resolution",
             import_name
         );
         Py_DECREF(import_name); // Done with import_name.
