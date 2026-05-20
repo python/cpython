@@ -470,16 +470,12 @@ class DSLParser:
     def at_vectorcall(self, *args: str) -> None:
         if self.vectorcall is not None:
             fail("Called @vectorcall twice!")
-        exact_only = False
-        for arg in args:
-            if '=' in arg:
-                key = arg.split('=', 1)[0]
-            else:
-                key = arg
-            if key == 'exact_only':
-                exact_only = True
-            else:
-                fail(f"@vectorcall: unknown argument {key!r}")
+        flags = list(args)
+        exact_only = 'exact_only' in flags
+        if exact_only:
+            flags.remove('exact_only')
+        if flags:
+            fail(f"@vectorcall: unknown argument {flags[0]!r}")
         self.vectorcall = VectorcallOptions(exact_only=exact_only)
 
     def at_coexist(self) -> None:
