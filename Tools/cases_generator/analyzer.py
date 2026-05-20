@@ -322,8 +322,7 @@ class Family:
     size: str
     members: list[Instruction]
 
-    @property
-    def member_record_names(self) -> tuple[str, ...]:
+    def get_member_record_names(self) -> tuple[str, ...]:
         seen: set[str] = set()
         names: list[str] = []
         for member in self.members:

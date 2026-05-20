@@ -77,7 +77,7 @@ def get_family_record_names(
     instruction_records: dict[str, list[str]],
     record_slot_keys: dict[str, str],
 ) -> list[str]:
-    family_record_names = set(family.member_record_names)
+    family_record_names = set(family.get_member_record_names())
     family_record_names.update(instruction_records[family.name])
     records: list[str] = []
     slot_index: dict[str, int] = {}
