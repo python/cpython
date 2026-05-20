@@ -345,14 +345,14 @@ the following constants:
    This may be different from the lzma library actually used at runtime, which
    is available as :const:`LZMA_RUNTIME_VERSION`.
 
-   .. versionadded:: 3.13
+   .. versionadded:: next
 
 
 .. data:: LZMA_RUNTIME_VERSION
 
    The version string of the lzma library actually loaded by the interpreter.
 
-   .. versionadded:: 3.13
+   .. versionadded:: next
 
 
 .. data:: lzma_version
@@ -367,14 +367,14 @@ the following constants:
    This may be different from the lzma library actually used at runtime, which
    is available as :const:`lzma_runtime_version`.
 
-   .. versionadded:: 3.13
+   .. versionadded:: next
 
 
 .. data:: lzma_runtime_version
 
    A named tuple containing the lzma library version actually loaded by the interpreter.
 
-   .. versionadded:: 3.13
+   .. versionadded:: next
 
 
 .. _filter-chain-specs:

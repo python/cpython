@@ -319,7 +319,7 @@ the following constants:
 
    The version string of the bzlib library.
 
-   .. versionadded:: 3.13
+   .. versionadded:: next
 
 
 .. data:: bzlib_version
@@ -329,7 +329,7 @@ the following constants:
    The components can also be accessed by name, so ``bz2.bzlib_version[0]``
    is equivalent to ``bz2.bzlib_version.major`` and so on.
 
-   .. versionadded:: 3.13
+   .. versionadded:: next
 
 
 .. _bz2-usage-examples:

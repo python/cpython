@@ -512,14 +512,14 @@ the following constants:
    This may be different from the zlib library actually used at runtime, which
    is available as :const:`zlib_runtime_version`.
 
-   .. versionadded:: 3.13
+   .. versionadded:: next
 
 
 .. data:: zlib_runtime_version
 
    A named tuple containing the zlib library version actually loaded by the interpreter.
 
-   .. versionadded:: 3.13
+   .. versionadded:: next
 
 
 .. seealso::
