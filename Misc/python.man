@@ -458,7 +458,7 @@ is an empty string; if
 is used,
 .I sys.argv[0]
 contains the string
-.RI ' \-c "' ."
+.RI ' \-c '.
 Note that options interpreted by the Python interpreter itself
 are not placed in
 .IR sys.argv .
