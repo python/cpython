@@ -63,11 +63,14 @@
        If the resource does not concretely exist on the file system,
        raise :exc:`FileNotFoundError`.
 
-    .. method:: is_resource(name)
+    .. method:: is_resource(path)
        :abstractmethod:
 
-       Returns ``True`` if the named *name* is considered a resource.
-       :exc:`FileNotFoundError` is raised if *name* does not exist.
+       Returns ``True`` if the named *path* is considered a resource.
+       :exc:`FileNotFoundError` is raised if *path* does not exist.
+
+       .. versionchanged:: 3.10
+          The argument *name* was renamed to *path*.
 
     .. method:: contents()
        :abstractmethod:

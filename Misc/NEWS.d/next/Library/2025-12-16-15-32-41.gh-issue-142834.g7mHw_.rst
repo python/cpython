@@ -1,1 +1,0 @@
-Change the :mod:`pdb` ``commands`` command to use the last available breakpoint instead of failing when the most recently created breakpoint was deleted.

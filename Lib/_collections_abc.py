@@ -823,6 +823,7 @@ class Mapping(Collection):
 
     __reversed__ = None
 
+Mapping.register(frozendict)
 Mapping.register(mappingproxy)
 Mapping.register(framelocalsproxy)
 

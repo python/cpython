@@ -886,7 +886,7 @@ class TestInterpreterPrepareMain(TestBase):
             with self.assertRaisesRegex(InterpreterError, 'unrecognized'):
                 interp.prepare_main({'spam': True})
             with self.assertRaisesRegex(ExecutionFailed, 'NameError'):
-                self.run_from_capi(interpid, 'assert spam is True')
+                self.run_from_capi(interpid, 'spam')
 
 
 class TestInterpreterExec(TestBase):

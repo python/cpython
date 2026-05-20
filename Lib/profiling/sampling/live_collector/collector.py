@@ -9,7 +9,7 @@ import site
 import sys
 import sysconfig
 import time
-import _colorize
+lazy import _colorize
 
 from ..collector import Collector, extract_lineno
 from ..constants import (
@@ -916,8 +916,6 @@ class LiveStatsCollector(Collector):
 
     def _handle_input(self):
         """Handle keyboard input (non-blocking)."""
-        from . import constants
-
         self.display.set_nodelay(True)
         ch = self.display.get_input()
 

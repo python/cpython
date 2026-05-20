@@ -18,7 +18,9 @@ from typing import Dict, List, Tuple
 from ._css_utils import get_combined_css
 from ._format_utils import fmt
 from .collector import normalize_location, extract_lineno
+from .opcode_utils import get_opcode_info, format_opcode
 from .stack_collector import StackTraceCollector
+from .module_utils import extract_module_name, get_python_path_info
 
 
 # ============================================================================
@@ -46,126 +48,6 @@ class TreeNode:
     samples: int = 0
     count: int = 0
     children: Dict[str, 'TreeNode'] = field(default_factory=dict)
-
-
-# ============================================================================
-# Module Path Analysis
-# ============================================================================
-
-def get_python_path_info():
-    """Get information about Python installation paths for module extraction.
-
-    Returns:
-        dict: Dictionary containing stdlib path, site-packages paths, and sys.path entries.
-    """
-    info = {
-        'stdlib': None,
-        'site_packages': [],
-        'sys_path': []
-    }
-
-    # Get standard library path from os module location
-    try:
-        if hasattr(os, '__file__') and os.__file__:
-            info['stdlib'] = Path(os.__file__).parent
-    except (AttributeError, OSError):
-        pass  # Silently continue if we can't determine stdlib path
-
-    # Get site-packages directories
-    site_packages = []
-    try:
-        site_packages.extend(Path(p) for p in site.getsitepackages())
-    except (AttributeError, OSError):
-        pass  # Continue without site packages if unavailable
-
-    # Get user site-packages
-    try:
-        user_site = site.getusersitepackages()
-        if user_site and Path(user_site).exists():
-            site_packages.append(Path(user_site))
-    except (AttributeError, OSError):
-        pass  # Continue without user site packages
-
-    info['site_packages'] = site_packages
-    info['sys_path'] = [Path(p) for p in sys.path if p]
-
-    return info
-
-
-def extract_module_name(filename, path_info):
-    """Extract Python module name and type from file path.
-
-    Args:
-        filename: Path to the Python file
-        path_info: Dictionary from get_python_path_info()
-
-    Returns:
-        tuple: (module_name, module_type) where module_type is one of:
-               'stdlib', 'site-packages', 'project', or 'other'
-    """
-    if not filename:
-        return ('unknown', 'other')
-
-    try:
-        file_path = Path(filename)
-    except (ValueError, OSError):
-        return (str(filename), 'other')
-
-    # Check if it's in stdlib
-    if path_info['stdlib'] and _is_subpath(file_path, path_info['stdlib']):
-        try:
-            rel_path = file_path.relative_to(path_info['stdlib'])
-            return (_path_to_module(rel_path), 'stdlib')
-        except ValueError:
-            pass
-
-    # Check site-packages
-    for site_pkg in path_info['site_packages']:
-        if _is_subpath(file_path, site_pkg):
-            try:
-                rel_path = file_path.relative_to(site_pkg)
-                return (_path_to_module(rel_path), 'site-packages')
-            except ValueError:
-                continue
-
-    # Check other sys.path entries (project files)
-    if not str(file_path).startswith(('<', '[')):  # Skip special files
-        for path_entry in path_info['sys_path']:
-            if _is_subpath(file_path, path_entry):
-                try:
-                    rel_path = file_path.relative_to(path_entry)
-                    return (_path_to_module(rel_path), 'project')
-                except ValueError:
-                    continue
-
-    # Fallback: just use the filename
-    return (_path_to_module(file_path), 'other')
-
-
-def _is_subpath(file_path, parent_path):
-    try:
-        file_path.relative_to(parent_path)
-        return True
-    except (ValueError, OSError):
-        return False
-
-
-def _path_to_module(path):
-    if isinstance(path, str):
-        path = Path(path)
-
-    # Remove .py extension
-    if path.suffix == '.py':
-        path = path.with_suffix('')
-
-    # Convert path separators to dots
-    parts = path.parts
-
-    # Handle __init__ files - they represent the package itself
-    if parts and parts[-1] == '__init__':
-        parts = parts[:-1]
-
-    return '.'.join(parts) if parts else path.stem
 
 
 # ============================================================================
@@ -203,7 +85,9 @@ class _TemplateLoader:
             self.file_css = css_content
 
             # Load JS
-            shared_js = (assets_dir / "heatmap_shared.js").read_text(encoding="utf-8")
+            base_js = (template_dir / "_shared_assets" / "base.js").read_text(encoding="utf-8")
+            heatmap_shared_js = (assets_dir / "heatmap_shared.js").read_text(encoding="utf-8")
+            shared_js = f"{base_js}\n{heatmap_shared_js}"
             self.index_js = f"{shared_js}\n{(assets_dir / 'heatmap_index.js').read_text(encoding='utf-8')}"
             self.file_js = f"{shared_js}\n{(assets_dir / 'heatmap.js').read_text(encoding='utf-8')}"
 
@@ -568,7 +452,8 @@ class HeatmapCollector(StackTraceCollector):
                 next_lineno = extract_lineno(next_frame[1])
                 self._record_call_relationship(
                     (filename, lineno, funcname),
-                    (next_frame[0], next_lineno, next_frame[2])
+                    (next_frame[0], next_lineno, next_frame[2]),
+                    weight=weight,
                 )
 
     def _is_valid_frame(self, filename, lineno):
@@ -642,8 +527,6 @@ class HeatmapCollector(StackTraceCollector):
         Returns:
             List of dicts with instruction info, sorted by samples descending
         """
-        from .opcode_utils import get_opcode_info, format_opcode
-
         key = (filename, lineno)
         opcode_data = self.line_opcodes.get(key, {})
 
@@ -679,7 +562,7 @@ class HeatmapCollector(StackTraceCollector):
         result.sort(key=lambda x: (-x['samples'], x['opcode']))
         return result
 
-    def _record_call_relationship(self, callee_frame, caller_frame):
+    def _record_call_relationship(self, callee_frame, caller_frame, weight=1):
         """Record caller/callee relationship between adjacent frames."""
         callee_filename, callee_lineno, callee_funcname = callee_frame
         caller_filename, caller_lineno, caller_funcname = caller_frame
@@ -705,7 +588,7 @@ class HeatmapCollector(StackTraceCollector):
 
         # Count this call edge for path analysis
         edge_key = (caller_key, callee_key)
-        self.edge_samples[edge_key] += 1
+        self.edge_samples[edge_key] += weight
 
     def export(self, output_path):
         """Export heatmap data as HTML files in a directory.
@@ -1046,8 +929,6 @@ class HeatmapCollector(StackTraceCollector):
         Simple: collect ranges with sample counts, assign each byte position to
         smallest covering range, then emit spans for contiguous runs with sample data.
         """
-        import html as html_module
-
         content = line_content.rstrip('\n')
         if not content:
             return ''
@@ -1070,7 +951,7 @@ class HeatmapCollector(StackTraceCollector):
                             range_data[key]['opcodes'].append(opname)
 
         if not range_data:
-            return html_module.escape(content)
+            return html.escape(content)
 
         # For each byte position, find the smallest covering range
         byte_to_range = {}
@@ -1098,7 +979,7 @@ class HeatmapCollector(StackTraceCollector):
         def flush_span():
             nonlocal span_chars, current_range
             if span_chars:
-                text = html_module.escape(''.join(span_chars))
+                text = html.escape(''.join(span_chars))
                 if current_range:
                     data = range_data.get(current_range, {'samples': 0, 'opcodes': []})
                     samples = data['samples']
@@ -1112,7 +993,7 @@ class HeatmapCollector(StackTraceCollector):
                                   f'data-samples="{samples}" '
                                   f'data-max-samples="{max_range_samples}" '
                                   f'data-pct="{pct}" '
-                                  f'data-opcodes="{html_module.escape(opcodes)}">{text}</span>')
+                                  f'data-opcodes="{html.escape(opcodes)}">{text}</span>')
                 else:
                     result.append(text)
                 span_chars = []

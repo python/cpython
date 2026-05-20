@@ -83,6 +83,11 @@ The :mod:`!glob` module defines the following functions:
       This function may return duplicate path names if *pathname*
       contains multiple "``**``" patterns and *recursive* is true.
 
+   .. note::
+      Any :exc:`OSError` exceptions raised from scanning the filesystem are
+      suppressed. This includes :exc:`PermissionError` when accessing
+      directories without read permission.
+
    .. versionchanged:: 3.5
       Support for recursive globs using "``**``".
 
@@ -105,6 +110,11 @@ The :mod:`!glob` module defines the following functions:
    .. note::
       This function may return duplicate path names if *pathname*
       contains multiple "``**``" patterns and *recursive* is true.
+
+   .. note::
+      Any :exc:`OSError` exceptions raised from scanning the filesystem are
+      suppressed. This includes :exc:`PermissionError` when accessing
+      directories without read permission.
 
    .. versionchanged:: 3.5
       Support for recursive globs using "``**``".
@@ -130,7 +140,8 @@ The :mod:`!glob` module defines the following functions:
 .. function:: translate(pathname, *, recursive=False, include_hidden=False, seps=None)
 
    Convert the given path specification to a regular expression for use with
-   :func:`re.match`. The path specification can contain shell-style wildcards.
+   :func:`re.prefixmatch`. The path specification can contain shell-style
+   wildcards.
 
    For example:
 
@@ -140,7 +151,7 @@ The :mod:`!glob` module defines the following functions:
       >>> regex
       '(?s:(?:.+/)?[^/]*\\.txt)\\z'
       >>> reobj = re.compile(regex)
-      >>> reobj.match('foo/bar/baz.txt')
+      >>> reobj.prefixmatch('foo/bar/baz.txt')
       <re.Match object; span=(0, 15), match='foo/bar/baz.txt'>
 
    Path separators and segments are meaningful to this function, unlike

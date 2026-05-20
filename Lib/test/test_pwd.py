@@ -103,9 +103,11 @@ class PwdTest(unittest.TestCase):
         self.assertNotIn(fakeuid, byuids)
         self.assertRaises(KeyError, pwd.getpwuid, fakeuid)
 
-        # -1 shouldn't be a valid uid because it has a special meaning in many
-        # uid-related functions
-        self.assertRaises(KeyError, pwd.getpwuid, -1)
+        # On Cygwin, getpwuid(-1) returns 'Unknown+User' user
+        if sys.platform != 'cygwin':
+            # -1 shouldn't be a valid uid because it has a special meaning in many
+            # uid-related functions
+            self.assertRaises(KeyError, pwd.getpwuid, -1)
         # should be out of uid_t range
         self.assertRaises(KeyError, pwd.getpwuid, 2**128)
         self.assertRaises(KeyError, pwd.getpwuid, -2**128)
