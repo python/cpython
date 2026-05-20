@@ -2425,6 +2425,54 @@ AS_CASE([$ac_sys_system],
   ]
 )
 
+dnl On Linux, check the thread stack size. musl (ex: Alpine Linux) uses
+dnl a default thread stack size of 128 kB, whereas the glibc uses 8 MiB.
+dnl Python needs at least 1 MiB.
+if test "$ac_sys_system" = "Linux" -a "$cross_compiling" = no; then
+    AC_CACHE_CHECK([for thread stack size], [ac_cv_thread_stack_size], [
+    cat > conftest.c <<EOF
+#include <pthread.h>
+
+int main()
+{
+    pthread_attr_t attrs;
+    size_t size;
+
+    int rc = pthread_attr_init(&attrs);
+    if (rc != 0) {
+        return 2;
+    }
+
+    rc = pthread_attr_getstacksize(&attrs, &size);
+    if (rc != 0) {
+        return 2;
+    }
+
+    if (size < 1024 * 1024) {
+        return 1;
+    }
+    return 0;
+}
+EOF
+
+    ac_cv_thread_stack_size=unknown
+    if $CC -pthread $CFLAGS conftest.c -o conftest &>/dev/null; then
+        ./conftest &>/dev/null
+        exitcode=$?
+        if test $exitcode -eq 1; then
+            ac_cv_thread_stack_size=1048576
+        elif test $exitcode -eq 0; then
+            ac_cv_thread_stack_size="default"
+        fi
+    fi
+    rm -f conftest.c conftest
+    ])
+
+    if test "$ac_cv_thread_stack_size" != "default" -a "$ac_cv_thread_stack_size" != "unknown"; then
+        LDFLAGS="$LDFLAGS -Wl,-z,stack-size=$ac_cv_thread_stack_size"
+    fi
+fi
+
 AS_CASE([$enable_wasm_dynamic_linking],
   [yes], [ac_cv_func_dlopen=yes],
   [no], [ac_cv_func_dlopen=no],
