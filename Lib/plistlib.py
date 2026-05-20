@@ -390,13 +390,13 @@ class _PlistWriter(_DumbXMLWriter):
             self.begin_element("dict")
             items = d.items()
             if self._skipkeys:
-                # skip keys that are not strings
-                # https://github.com/python/cpython/issues/145856
                 items = [(k, v) for k, v in items if isinstance(k, str)]
             if self._sort_keys:
                 items = sorted(items)
 
             for key, value in items:
+                if not isinstance(key, str):
+                    raise TypeError("keys must be strings")
                 self.simple_element("key", key)
                 self.write_value(value)
             self.end_element("dict")
@@ -719,13 +719,13 @@ class _BinaryPlistWriter (object):
             values = []
             items = value.items()
             if self._skipkeys:
-                # skip keys that are not strings
-                # https://github.com/python/cpython/issues/145856
                 items = [(k, v) for k, v in items if isinstance(k, str)]
             if self._sort_keys:
                 items = sorted(items)
 
             for k, v in items:
+                if not isinstance(k, str):
+                    raise TypeError("keys must be strings")
                 keys.append(k)
                 values.append(v)
 
@@ -840,14 +840,14 @@ class _BinaryPlistWriter (object):
 
             rootItems = value.items()
             if self._skipkeys:
-                # skip keys that are not strings
-                # https://github.com/python/cpython/issues/145856
                 rootItems = [(k, v) for k, v in rootItems
                              if isinstance(k, str)]
             if self._sort_keys:
                 rootItems = sorted(rootItems)
 
             for k, v in rootItems:
+                if not isinstance(k, str):
+                    raise TypeError("keys must be strings")
                 keyRefs.append(self._getrefnum(k))
                 valRefs.append(self._getrefnum(v))
 
