@@ -10,6 +10,9 @@
 
 import unittest
 
+from test.support import cpython_only
+from test.support.import_helper import ensure_lazy_imports
+
 from textwrap import TextWrapper, wrap, fill, dedent, indent, shorten
 
 
@@ -1131,6 +1134,13 @@ class ShortenTestCase(BaseTestCase):
 
     def test_first_word_too_long_but_placeholder_fits(self):
         self.check_shorten("Helloo", 5, "[...]")
+
+
+class LazyImportTest(unittest.TestCase):
+
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("textwrap", {"re"})
 
 
 if __name__ == '__main__':

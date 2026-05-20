@@ -5,7 +5,7 @@
 # Copyright (C) 2002 Python Software Foundation.
 # Written by Greg Ward <gward@python.net>
 
-import re
+lazy import re
 
 __all__ = ['TextWrapper', 'wrap', 'fill', 'dedent', 'indent', 'shorten']
 
@@ -65,49 +65,56 @@ class TextWrapper:
 
     unicode_whitespace_trans = dict.fromkeys(map(ord, _whitespace), ord(' '))
 
-    # This funky little regex is just the trick for splitting
-    # text up into word-wrappable chunks.  E.g.
-    #   "Hello there -- you goof-ball, use the -b option!"
-    # splits into
-    #   Hello/ /there/ /--/ /you/ /goof-/ball,/ /use/ /the/ /-b/ /option!
-    # (after stripping out empty strings).
-    word_punct = r'[\w!"\'&.,?]'
-    letter = r'[^\d\W]'
-    whitespace = r'[%s]' % re.escape(_whitespace)
-    nowhitespace = '[^' + whitespace[1:]
-    wordsep_re = re.compile(r'''
-        ( # any whitespace
-          %(ws)s+
-        | # em-dash between words
-          (?<=%(wp)s) -{2,} (?=\w)
-        | # word, possibly hyphenated
-          %(nws)s+? (?:
-            # hyphenated word
-              -(?: (?<=%(lt)s{2}-) | (?<=%(lt)s-%(lt)s-))
-              (?= %(lt)s -? %(lt)s)
-            | # end of word
-              (?=%(ws)s|\z)
-            | # em-dash
-              (?<=%(wp)s) (?=-{2,}\w)
-            )
-        )''' % {'wp': word_punct, 'lt': letter,
-                'ws': whitespace, 'nws': nowhitespace},
-        re.VERBOSE)
-    del word_punct, letter, nowhitespace
+    wordsep_re = None
+    wordsep_simple_re = None
+    sentence_end_re = None
 
-    # This less funky little regex just split on recognized spaces. E.g.
-    #   "Hello there -- you goof-ball, use the -b option!"
-    # splits into
-    #   Hello/ /there/ /--/ /you/ /goof-ball,/ /use/ /the/ /-b/ /option!/
-    wordsep_simple_re = re.compile(r'(%s+)' % whitespace)
-    del whitespace
+    @classmethod
+    def _compile_wordseps(cls):
+        """Compile word-separator regexes on first use."""
+        if cls.wordsep_re is not None:
+            return
+        # This funky little regex is just the trick for splitting
+        # text up into word-wrappable chunks.  E.g.
+        #   "Hello there -- you goof-ball, use the -b option!"
+        # splits into
+        #   Hello/ /there/ /--/ /you/ /goof-/ball,/ /use/ /the/ /-b/ /option!
+        # (after stripping out empty strings).
+        word_punct = r'[\w!"\'&.,?]'
+        letter = r'[^\d\W]'
+        whitespace = r'[%s]' % re.escape(_whitespace)
+        nowhitespace = '[^' + whitespace[1:]
+        cls.wordsep_re = re.compile(r'''
+            ( # any whitespace
+              %(ws)s+
+            | # em-dash between words
+              (?<=%(wp)s) -{2,} (?=\w)
+            | # word, possibly hyphenated
+              %(nws)s+? (?:
+                # hyphenated word
+                  -(?: (?<=%(lt)s{2}-) | (?<=%(lt)s-%(lt)s-))
+                  (?= %(lt)s -? %(lt)s)
+                | # end of word
+                  (?=%(ws)s|\z)
+                | # em-dash
+                  (?<=%(wp)s) (?=-{2,}\w)
+                )
+            )''' % {'wp': word_punct, 'lt': letter,
+                    'ws': whitespace, 'nws': nowhitespace},
+            re.VERBOSE)
 
-    # XXX this is not locale- or charset-aware -- string.lowercase
-    # is US-ASCII only (and therefore English-only)
-    sentence_end_re = re.compile(r'[a-z]'             # lowercase letter
-                                 r'[\.\!\?]'          # sentence-ending punct.
-                                 r'[\"\']?'           # optional end-of-quote
-                                 r'\z')               # end of chunk
+        # This less funky little regex just split on recognized spaces. E.g.
+        #   "Hello there -- you goof-ball, use the -b option!"
+        # splits into
+        #   Hello/ /there/ /--/ /you/ /goof-ball,/ /use/ /the/ /-b/ /option!/
+        cls.wordsep_simple_re = re.compile(r'(%s+)' % whitespace)
+
+        # XXX this is not locale- or charset-aware -- string.lowercase
+        # is US-ASCII only (and therefore English-only)
+        cls.sentence_end_re = re.compile(r'[a-z]'             # lowercase letter
+                                         r'[\.\!\?]'          # sentence-ending punct.
+                                         r'[\"\']?'           # optional end-of-quote
+                                         r'\z')               # end of chunk
 
     def __init__(self,
                  width=70,
@@ -135,6 +142,7 @@ class TextWrapper:
         self.tabsize = tabsize
         self.max_lines = max_lines
         self.placeholder = placeholder
+        self._compile_wordseps()
 
 
     # -- Private methods -----------------------------------------------
