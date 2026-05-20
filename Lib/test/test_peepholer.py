@@ -1127,8 +1127,8 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         def f(self):
             if x: pass
             self.x
-            from shutil import ExecError
-            print(ExecError)
+            from heapq import heapify_max
+            print(heapify_max)
         self.assertInBytecode(f, "LOAD_FAST_BORROW", "self")
 
 class DirectCfgOptimizerTests(CfgOptimizationTestCase):

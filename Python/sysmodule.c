@@ -1790,36 +1790,6 @@ error:
 }
 
 #pragma warning(pop)
-
-/*[clinic input]
-sys._enablelegacywindowsfsencoding
-
-Changes the default filesystem encoding to mbcs:replace.
-
-This is done for consistency with earlier versions of Python. See PEP
-529 for more information.
-
-This is equivalent to defining the PYTHONLEGACYWINDOWSFSENCODING
-environment variable before launching Python.
-[clinic start generated code]*/
-
-static PyObject *
-sys__enablelegacywindowsfsencoding_impl(PyObject *module)
-/*[clinic end generated code: output=f5c3855b45e24fe9 input=2bfa931a20704492]*/
-{
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-        "sys._enablelegacywindowsfsencoding() is deprecated and will be "
-        "removed in Python 3.16. Use PYTHONLEGACYWINDOWSFSENCODING "
-        "instead.", 1))
-    {
-        return NULL;
-    }
-    if (_PyUnicode_EnableLegacyWindowsFSEncoding() < 0) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
 #endif /* MS_WINDOWS */
 
 #ifdef HAVE_DLOPEN
@@ -2842,7 +2812,6 @@ Sets the global lazy imports mode.
 
 The mode parameter must be one of the following strings:
 - "all": All top-level imports become potentially lazy
-- "none": All lazy imports are suppressed (even explicitly marked ones)
 - "normal": Only explicitly marked imports (with 'lazy' keyword) are lazy
 
 In addition to the mode, lazy imports can be controlled via the filter
@@ -2852,12 +2821,12 @@ provided to sys.set_lazy_imports_filter
 
 static PyObject *
 sys_set_lazy_imports_impl(PyObject *module, PyObject *mode)
-/*[clinic end generated code: output=1ff34ba6c4feaf73 input=f04e70d8bf9fe4f6]*/
+/*[clinic end generated code: output=1ff34ba6c4feaf73 input=036c75a65f42cbc2]*/
 {
     PyImport_LazyImportsMode lazy_mode;
     if (!PyUnicode_Check(mode)) {
         PyErr_SetString(PyExc_TypeError,
-                        "mode must be a string: 'normal', 'all', or 'none'");
+                        "mode must be a string: 'normal' or 'all'");
         return NULL;
     }
     if (PyUnicode_CompareWithASCIIString(mode, "normal") == 0) {
@@ -2866,12 +2835,9 @@ sys_set_lazy_imports_impl(PyObject *module, PyObject *mode)
     else if (PyUnicode_CompareWithASCIIString(mode, "all") == 0) {
         lazy_mode = PyImport_LAZY_ALL;
     }
-    else if (PyUnicode_CompareWithASCIIString(mode, "none") == 0) {
-        lazy_mode = PyImport_LAZY_NONE;
-    }
     else {
         PyErr_SetString(PyExc_ValueError,
-                        "mode must be 'normal', 'all', or 'none'");
+                        "mode must be 'normal' or 'all'");
         return NULL;
     }
 
@@ -2887,22 +2853,19 @@ sys.get_lazy_imports
 Gets the global lazy imports mode.
 
 Returns "all" if all top level imports are potentially lazy.
-Returns "none" if all explicitly marked lazy imports are suppressed.
 Returns "normal" if only explicitly marked imports are lazy.
 
 [clinic start generated code]*/
 
 static PyObject *
 sys_get_lazy_imports_impl(PyObject *module)
-/*[clinic end generated code: output=4147dec48c51ae99 input=8cb574f1e4e3003c]*/
+/*[clinic end generated code: output=4147dec48c51ae99 input=6f8dd4f2c82893f2]*/
 {
     switch (PyImport_GetLazyImportsMode()) {
         case PyImport_LAZY_NORMAL:
             return PyUnicode_FromString("normal");
         case PyImport_LAZY_ALL:
             return PyUnicode_FromString("all");
-        case PyImport_LAZY_NONE:
-            return PyUnicode_FromString("none");
         default:
             PyErr_SetString(PyExc_RuntimeError, "unknown lazy imports mode");
             return NULL;
@@ -2941,7 +2904,6 @@ static PyMethodDef sys_methods[] = {
     SYS__GETFRAME_METHODDEF
     SYS__GETFRAMEMODULENAME_METHODDEF
     SYS_GETWINDOWSVERSION_METHODDEF
-    SYS__ENABLELEGACYWINDOWSFSENCODING_METHODDEF
     SYS__IS_IMMORTAL_METHODDEF
     SYS_INTERN_METHODDEF
     SYS__IS_INTERNED_METHODDEF
@@ -3436,13 +3398,6 @@ winver -- [Windows only] version number of the Python DLL\n\
 "
 )
 #endif /* MS_COREDLL */
-#ifdef MS_WINDOWS
-/* concatenating string here */
-PyDoc_STR(
-"_enablelegacywindowsfsencoding -- [Windows only]\n\
-"
-)
-#endif
 PyDoc_STR(
 "__stdin__ -- the original stdin; don't touch!\n\
 __stdout__ -- the original stdout; don't touch!\n\

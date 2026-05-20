@@ -263,16 +263,6 @@ struct _gc_runtime_state {
 #ifdef Py_GIL_DISABLED
     /* True if gc.freeze() has been used. */
     int freeze_active;
-
-    /* Memory usage of the process (RSS + swap) after last GC. */
-    Py_ssize_t last_mem;
-
-    /* This accumulates the new object count whenever collection is deferred
-       due to the RSS increase condition not being meet.  Reset on collection. */
-    Py_ssize_t deferred_count;
-
-    /* Mutex held for gc_should_collect_mem_usage(). */
-    PyMutex mutex;
 #else
     PyGC_Head *generation0;
 #endif
@@ -834,6 +824,8 @@ struct _Py_unique_id_pool {
 
 typedef _Py_CODEUNIT *(*_PyJitEntryFuncPtr)(struct _PyExecutorObject *exec, _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate);
 
+#define _PyInterpreterGuard_GUARDS_NOT_ALLOWED UINTPTR_MAX
+
 /* PyInterpreterState holds the global state for one of the runtime's
    interpreters.  Typically the initial (main) interpreter is the only one.
 
@@ -1059,6 +1051,11 @@ struct _is {
     PyMutex pystats_mutex;
 #endif
 #endif
+
+    // The number of remaining finalization guards.
+    // If this is _PyInterpreterGuard_GUARDS_NOT_ALLOWED, then finalization
+    // guards can no longer be created.
+    uintptr_t finalization_guards;
 
     /* the initial PyInterpreterState.threads.head */
     _PyThreadStateImpl _initial_thread;
