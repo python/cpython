@@ -7,7 +7,7 @@ import _interpreters
 # aliases:
 from _interpreters import (
     InterpreterError, InterpreterNotFoundError, NotShareableError,
-    is_shareable,
+    is_shareable, SharedObjectProxy, share
 )
 from ._queues import (
     create as create_queue,

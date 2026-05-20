@@ -135,13 +135,13 @@ _PyThreadState_IsAttached(PyThreadState *tstate)
 //
 // High-level code should generally call PyEval_RestoreThread() instead, which
 // calls this function.
-extern void _PyThreadState_Attach(PyThreadState *tstate);
+PyAPI_FUNC(void) _PyThreadState_Attach(PyThreadState *tstate);
 
 // Detaches the current thread from the interpreter.
 //
 // High-level code should generally call PyEval_SaveThread() instead, which
 // calls this function.
-extern void _PyThreadState_Detach(PyThreadState *tstate);
+PyAPI_FUNC(void) _PyThreadState_Detach(PyThreadState *tstate);
 
 // Detaches the current thread to the "suspended" state if a stop-the-world
 // pause is in progress.
@@ -230,6 +230,9 @@ PyAPI_FUNC(PyThreadState *) _PyThreadState_NewBound(
 extern PyThreadState * _PyThreadState_RemoveExcept(PyThreadState *tstate);
 extern void _PyThreadState_DeleteList(PyThreadState *list, int is_after_fork);
 extern void _PyThreadState_ClearMimallocHeaps(PyThreadState *tstate);
+
+// Export for '_interpreters' shared extension
+PyAPI_FUNC(PyThreadState *) _PyThreadState_NewForExec(PyInterpreterState *interp);
 
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(PyObject*) _PyThreadState_GetDict(PyThreadState *tstate);
