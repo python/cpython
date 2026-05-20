@@ -311,21 +311,21 @@ One-shot (de)compression
 Miscellaneous
 -------------
 
-Information about the version of the bzlib library in use is available through
-the following constants:
+Information about the version of the bzip2 compression library in use
+is available through the following constants:
 
 
 .. data:: BZLIB_VERSION
 
-   The version string of the bzlib library.
+   The version string of the bzip2 compression library.
 
    .. versionadded:: next
 
 
 .. data:: bzlib_version
 
-   A named tuple containing the three components of the bzlib library version:
-   *major*, *minor*, and *patch*.  All values are integers.
+   A named tuple containing the three components of the bzip2 compression
+   library version: *major*, *minor*, and *patch*.  All values are integers.
    The components can also be accessed by name, so ``bz2.bzlib_version[0]``
    is equivalent to ``bz2.bzlib_version.major`` and so on.
 
