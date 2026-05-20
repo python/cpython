@@ -1331,8 +1331,8 @@ get_const_value(int opcode, int oparg, PyObject *co_consts)
     }
     if (opcode == LOAD_COMMON_CONSTANT) {
         assert(oparg < NUM_COMMON_CONSTANTS);
-        return Py_NewRef(PyStackRef_AsPyObjectBorrow(
-            _PyInterpreterState_GET()->common_consts[oparg]));
+        return PyStackRef_AsPyObjectBorrow(
+            _PyInterpreterState_GET()->common_consts[oparg]);
     }
 
     if (constant == NULL) {
