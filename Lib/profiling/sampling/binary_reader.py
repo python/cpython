@@ -1,5 +1,12 @@
 """Thin Python wrapper around C binary reader for profiling data."""
 
+import _remote_debugging
+
+from .gecko_collector import GeckoCollector
+from .stack_collector import FlamegraphCollector, CollapsedStackCollector
+from .jsonl_collector import JsonlCollector
+from .pstats_collector import PstatsCollector
+
 
 class BinaryReader:
     """High-performance binary reader using C implementation.
@@ -23,7 +30,6 @@ class BinaryReader:
         self._reader = None
 
     def __enter__(self):
-        import _remote_debugging
         self._reader = _remote_debugging.BinaryReader(self.filename)
         return self
 
@@ -99,10 +105,6 @@ def convert_binary_to_format(input_file, output_file, output_format,
     Returns:
         int: Number of samples converted
     """
-    from .gecko_collector import GeckoCollector
-    from .stack_collector import FlamegraphCollector, CollapsedStackCollector
-    from .pstats_collector import PStatsCollector
-
     with BinaryReader(input_file) as reader:
         info = reader.get_info()
         interval = sample_interval_usec or info['sample_interval_us']
@@ -113,9 +115,11 @@ def convert_binary_to_format(input_file, output_file, output_format,
         elif output_format == 'collapsed':
             collector = CollapsedStackCollector(interval)
         elif output_format == 'pstats':
-            collector = PStatsCollector(interval)
+            collector = PstatsCollector(interval)
         elif output_format == 'gecko':
             collector = GeckoCollector(interval)
+        elif output_format == "jsonl":
+            collector = JsonlCollector(interval)
         else:
             raise ValueError(f"Unknown output format: {output_format}")
 

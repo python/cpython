@@ -18,6 +18,7 @@ try:
     from profiling.sampling.pstats_collector import PstatsCollector
     from profiling.sampling.stack_collector import CollapsedStackCollector
     from profiling.sampling.sample import SampleProfiler, _is_process_running
+    from profiling.sampling.cli import main
 except ImportError:
     raise unittest.SkipTest(
         "Test only runs when _remote_debugging is available"
@@ -547,7 +548,6 @@ do_work()
             io.StringIO() as captured_output,
             mock.patch("sys.stdout", captured_output),
         ):
-            from profiling.sampling.cli import main
             main()
 
             output = captured_output.getvalue()
@@ -585,7 +585,6 @@ do_work()
             # Change to temp directory so subprocess can find the module
             contextlib.chdir(tempdir.name),
         ):
-            from profiling.sampling.cli import main
             main()
 
             output = captured_output.getvalue()
@@ -714,8 +713,7 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
                 test_args = ["profiling.sampling.cli", "run", "--live"] + args + ["test.py"]
                 with mock.patch("sys.argv", test_args):
                     with self.assertRaises(SystemExit) as cm:
-                        from profiling.sampling.cli import main
-                        main()
+                                    main()
                     self.assertNotEqual(cm.exception.code, 0)
 
     def test_live_incompatible_with_multiple_pstats_options(self):
@@ -727,8 +725,7 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
 
         with mock.patch("sys.argv", test_args):
             with self.assertRaises(SystemExit) as cm:
-                from profiling.sampling.cli import main
-                main()
+                    main()
             self.assertNotEqual(cm.exception.code, 0)
 
     def test_live_incompatible_with_pstats_default_values(self):
@@ -738,8 +735,7 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
 
         with mock.patch("sys.argv", test_args):
             with self.assertRaises(SystemExit) as cm:
-                from profiling.sampling.cli import main
-                main()
+                    main()
             self.assertNotEqual(cm.exception.code, 0)
 
         # Test with --limit=15 (the default value)
@@ -747,8 +743,7 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
 
         with mock.patch("sys.argv", test_args):
             with self.assertRaises(SystemExit) as cm:
-                from profiling.sampling.cli import main
-                main()
+                    main()
             self.assertNotEqual(cm.exception.code, 0)
 
 

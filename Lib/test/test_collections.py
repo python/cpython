@@ -2423,6 +2423,8 @@ class TestCounter(unittest.TestCase):
 
     def test_le(self):
         self.assertTrue(Counter(a=3, b=2, c=0) <= Counter('ababa'))
+        self.assertTrue(Counter() <= Counter(c=1))
+        self.assertFalse(Counter() <= Counter(c=-1))
         self.assertFalse(Counter(a=3, b=2) <= Counter('babab'))
 
     def test_lt(self):
@@ -2431,6 +2433,8 @@ class TestCounter(unittest.TestCase):
 
     def test_ge(self):
         self.assertTrue(Counter(a=2, b=1, c=0) >= Counter('aab'))
+        self.assertTrue(Counter() >= Counter(c=-1))
+        self.assertFalse(Counter() >= Counter(c=1))
         self.assertFalse(Counter(a=3, b=2, c=0) >= Counter('aabd'))
 
     def test_gt(self):

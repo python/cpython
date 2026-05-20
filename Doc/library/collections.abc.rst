@@ -4,9 +4,6 @@
 .. module:: collections.abc
    :synopsis: Abstract base classes for containers
 
-.. moduleauthor:: Raymond Hettinger <python at rcn.com>
-.. sectionauthor:: Raymond Hettinger <python at rcn.com>
-
 .. versionadded:: 3.3
    Formerly, this module was part of the :mod:`collections` module.
 

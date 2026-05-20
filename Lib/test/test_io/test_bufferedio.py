@@ -10,7 +10,7 @@ import weakref
 from collections import deque, UserList
 from itertools import cycle, count
 from test import support
-from test.support import os_helper, threading_helper
+from test.support import check_sanitizer, os_helper, threading_helper
 from .utils import byteslike, CTestCase, PyTestCase
 
 
@@ -622,6 +622,25 @@ class CBufferedReaderTest(BufferedReaderTest, SizeofTest, CTestCase):
         with self.assertRaises(OSError) as cm:
             bufio.readline()
         self.assertIsInstance(cm.exception.__cause__, TypeError)
+
+    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
+    @unittest.skipIf(check_sanitizer(thread=True),
+                     'ThreadSanitizer aborts on huge allocations (exit code 66).')
+    def test_read1_error_does_not_cause_reentrant_failure(self):
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        with self.open(os_helper.TESTFN, "wb") as f:
+            f.write(b"hello")
+
+        with self.open(os_helper.TESTFN, "rb", buffering=0) as raw:
+            bufio = self.tp(raw, buffer_size=8)
+            # To request a size that is far too huge to ever be satisfied,
+            # so that the internal buffer allocation reliably fails with MemoryError.
+            huge = sys.maxsize // 2 + 1
+            with self.assertRaises(MemoryError):
+                bufio.read1(huge)
+
+            # Used to crash before gh-143689:
+            self.assertEqual(bufio.read1(1), b"h")
 
 
 class PyBufferedReaderTest(BufferedReaderTest, PyTestCase):
