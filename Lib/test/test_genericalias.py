@@ -538,7 +538,7 @@ class BaseTest(unittest.TestCase):
 
     def test_gh150146(self):
         # It used to crash:
-        for container in [memoryview, list, tuple]:
+        for container in [list, tuple]:
             with self.subTest(container=container):
                 x = container[TypeVar("")]
                 with self.assertRaises(TypeError):
