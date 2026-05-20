@@ -364,6 +364,7 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
     self->cached_tstate_interpreter_addr = 0;
     self->cached_tstate_addr = 0;
     memset(self->cached_tstates, 0, sizeof(self->cached_tstates));
+    memset(self->cached_generations, 0, sizeof(self->cached_generations));
     self->debug = debug;
     self->only_active_thread = only_active_thread;
     self->mode = mode;
@@ -482,7 +483,7 @@ interpreter_thread_cache_index(uintptr_t interpreter_addr)
 {
     // Direct-mapped table indexed by the remote interpreter address. Each entry
     // stores the full address and verifies it on lookup, so hash collisions
-    // degrade to misses and cannot return a wrong tstate.
+    // degrade to misses and cannot return a value from the wrong interpreter.
     return (size_t)_Py_HashPointerRaw((const void *)interpreter_addr)
         & (INTERPRETER_THREAD_CACHE_SIZE - 1);
 }
@@ -500,7 +501,7 @@ get_cached_tstate_for_interpreter(
         return self->cached_tstate_addr;
     }
 
-    InterpreterThreadCacheEntry *entry =
+    InterpreterTstateCacheEntry *entry =
         &self->cached_tstates[interpreter_thread_cache_index(interpreter_addr)];
     if (entry->interpreter_addr == interpreter_addr) {
         self->cached_tstate_interpreter_addr = interpreter_addr;
@@ -523,7 +524,7 @@ set_cached_tstate_for_interpreter(
     self->cached_tstate_interpreter_addr = interpreter_addr;
     self->cached_tstate_addr = thread_state_addr;
 
-    InterpreterThreadCacheEntry *entry =
+    InterpreterTstateCacheEntry *entry =
         &self->cached_tstates[interpreter_thread_cache_index(interpreter_addr)];
     entry->interpreter_addr = interpreter_addr;
     entry->thread_state_addr = thread_state_addr;
@@ -545,17 +546,17 @@ refresh_generation_caches_from_interp_state(
         }
     }
     else {
-        InterpreterThreadCacheEntry *entry =
-            &self->cached_tstates[interpreter_thread_cache_index(interpreter_addr)];
-        uint64_t prev_generation = 0;
-        if (entry->interpreter_addr == interpreter_addr) {
-            prev_generation = entry->code_object_generation;
-        }
-        else {
-            entry->interpreter_addr = interpreter_addr;
-        }
+        InterpreterGenerationCacheEntry *entry =
+            &self->cached_generations[interpreter_thread_cache_index(interpreter_addr)];
+        // A slot rebound from another interpreter must be treated as changed:
+        // the code_object_cache is global, so even if the new generation
+        // numerically matches what the previous occupant had, stale entries
+        // from that occupant could still be served.
+        int changed = entry->interpreter_addr != interpreter_addr
+                   || entry->code_object_generation != code_object_generation;
+        entry->interpreter_addr = interpreter_addr;
         entry->code_object_generation = code_object_generation;
-        if (code_object_generation != prev_generation) {
+        if (changed) {
             _Py_hashtable_clear(self->code_object_cache);
         }
         self->cached_generation_interpreter_addr = interpreter_addr;

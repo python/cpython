@@ -239,11 +239,17 @@ typedef struct {
 #  error "INTERPRETER_THREAD_CACHE_SIZE must be a power of two"
 #endif
 
+// The two per-interpreter L2 caches below are split into per-field tables so
+// that a writer rebinding one slot cannot leave stale data in a field owned by
+// the other when the slot is reused across interpreters.
 typedef struct {
     uintptr_t interpreter_addr;
     uintptr_t thread_state_addr;
+} InterpreterTstateCacheEntry;
+typedef struct {
+    uintptr_t interpreter_addr;
     uint64_t code_object_generation;
-} InterpreterThreadCacheEntry;
+} InterpreterGenerationCacheEntry;
 
 // Carries already-read thread state and/or frame buffers across helpers so the
 // downstream callee can skip a remote read. Address fields are caller-supplied
@@ -367,7 +373,8 @@ typedef struct {
     RemoteDebuggingState *cached_state;
     FrameCacheEntry *frame_cache;  // preallocated array of FRAME_CACHE_MAX_THREADS entries
     UnwinderStats stats;  // statistics for performance analysis
-    InterpreterThreadCacheEntry cached_tstates[INTERPRETER_THREAD_CACHE_SIZE];
+    InterpreterTstateCacheEntry cached_tstates[INTERPRETER_THREAD_CACHE_SIZE];
+    InterpreterGenerationCacheEntry cached_generations[INTERPRETER_THREAD_CACHE_SIZE];
 #ifdef Py_GIL_DISABLED
     uint32_t tlbc_generation;
     _Py_hashtable_t *tlbc_cache;
