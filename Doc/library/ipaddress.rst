@@ -1,16 +1,14 @@
-:mod:`ipaddress` --- IPv4/IPv6 manipulation library
-===================================================
+:mod:`!ipaddress` --- IPv4/IPv6 manipulation library
+====================================================
 
 .. module:: ipaddress
    :synopsis: IPv4/IPv6 manipulation library.
-
-.. moduleauthor:: Peter Moody
 
 **Source code:** :source:`Lib/ipaddress.py`
 
 --------------
 
-:mod:`ipaddress` provides the capabilities to create, manipulate and
+:mod:`!ipaddress` provides the capabilities to create, manipulate and
 operate on IPv4 and IPv6 addresses and networks.
 
 The functions and classes in this module make it straightforward to handle
@@ -34,7 +32,7 @@ This is the full module API reference—for an overview and introduction, see
 Convenience factory functions
 -----------------------------
 
-The :mod:`ipaddress` module provides factory functions to conveniently create
+The :mod:`!ipaddress` module provides factory functions to conveniently create
 IP addresses, networks and interfaces:
 
 .. function:: ip_address(address)
@@ -131,6 +129,10 @@ write code that handles both IP versions correctly.  Address objects are
 
       The appropriate version number: ``4`` for IPv4, ``6`` for IPv6.
 
+      .. versionchanged:: 3.14
+
+         Made available on the class.
+
    .. attribute:: max_prefixlen
 
       The total number of bits in the address representation for this
@@ -139,6 +141,10 @@ write code that handles both IP versions correctly.  Address objects are
       The prefix defines the number of leading bits in an  address that
       are compared to determine whether or not an address is part of a
       network.
+
+      .. versionchanged:: 3.14
+
+         Made available on the class.
 
    .. attribute:: compressed
    .. attribute:: exploded
@@ -232,7 +238,16 @@ write code that handles both IP versions correctly.  Address objects are
 
    .. attribute:: is_reserved
 
-      ``True`` if the address is otherwise IETF reserved.
+      ``True`` if the address is noted as reserved by the IETF.
+      For IPv4, this is only ``240.0.0.0/4``, the ``Reserved`` address block.
+      For IPv6, this is all addresses `allocated <iana-ipv6-address-space_>`__ as
+      ``Reserved by IETF`` for future use.
+
+      .. note:: For IPv4, ``is_reserved`` is not related to the address block value of the
+        ``Reserved-by-Protocol`` column in iana-ipv4-special-registry_.
+
+      .. caution:: For IPv6, ``fec0::/10`` a former Site-Local scoped address prefix is
+         currently excluded from that list (see :attr:`~IPv6Address.is_site_local` & :rfc:`3879`).
 
    .. attribute:: is_loopback
 
@@ -253,6 +268,7 @@ write code that handles both IP versions correctly.  Address objects are
 
 .. _iana-ipv4-special-registry: https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml
 .. _iana-ipv6-special-registry: https://www.iana.org/assignments/iana-ipv6-special-registry/iana-ipv6-special-registry.xhtml
+.. _iana-ipv6-address-space: https://www.iana.org/assignments/ipv6-address-space/ipv6-address-space.xhtml
 
 .. method:: IPv4Address.__format__(fmt)
 
@@ -334,13 +350,13 @@ write code that handles both IP versions correctly.  Address objects are
    .. attribute:: is_multicast
    .. attribute:: is_private
    .. attribute:: is_global
+
+      .. versionadded:: 3.4
+
    .. attribute:: is_unspecified
    .. attribute:: is_reserved
    .. attribute:: is_loopback
    .. attribute:: is_link_local
-
-      .. versionadded:: 3.4
-         is_global
 
    .. attribute:: is_site_local
 
@@ -351,9 +367,9 @@ write code that handles both IP versions correctly.  Address objects are
 
    .. attribute:: ipv4_mapped
 
-      For addresses that appear to be IPv4 mapped addresses (starting with
-      ``::FFFF/96``), this property will report the embedded IPv4 address.
-      For any other address, this property will be ``None``.
+      For addresses that appear to be IPv4 mapped addresses in the range
+      ``::FFFF:0:0/96`` as defined by :RFC:`4291`, this property reports the
+      embedded IPv4 address. For any other address, this property will be ``None``.
 
    .. attribute:: scope_id
 
@@ -504,7 +520,7 @@ dictionaries.
 
    4. A two-tuple of an address description and a netmask, where the address
       description is either a string, a 32-bits integer, a 4-bytes packed
-      integer, or an existing IPv4Address object; and the netmask is either
+      integer, or an existing :class:`IPv4Address` object; and the netmask is either
       an integer representing the prefix length (e.g. ``24``) or a string
       representing the prefix mask (e.g. ``255.255.255.0``).
 
@@ -725,7 +741,7 @@ dictionaries.
 
    4. A two-tuple of an address description and a netmask, where the address
       description is either a string, a 128-bits integer, a 16-bytes packed
-      integer, or an existing IPv6Address object; and the netmask is an
+      integer, or an existing :class:`IPv6Address` object; and the netmask is an
       integer representing the prefix length.
 
    An :exc:`AddressValueError` is raised if *address* is not a valid IPv6
@@ -781,7 +797,7 @@ dictionaries.
 
    .. attribute:: is_site_local
 
-      These attribute is true for the network as a whole if it is true
+      This attribute is true for the network as a whole if it is true
       for both the network address and the broadcast address.
 
 
@@ -990,7 +1006,7 @@ The module also provides the following module level functions:
 .. function:: collapse_addresses(addresses)
 
    Return an iterator of the collapsed :class:`IPv4Network` or
-   :class:`IPv6Network` objects.  *addresses* is an iterator of
+   :class:`IPv6Network` objects.  *addresses* is an :term:`iterable` of
    :class:`IPv4Network` or :class:`IPv6Network` objects.  A :exc:`TypeError` is
    raised if *addresses* contains mixed version objects.
 
@@ -1009,8 +1025,8 @@ The module also provides the following module level functions:
      IPv4Address('192.0.2.0') <= IPv4Network('192.0.2.0/24')
 
    doesn't make sense.  There are some times however, where you may wish to
-   have :mod:`ipaddress` sort these anyway.  If you need to do this, you can use
-   this function as the *key* argument to :func:`sorted()`.
+   have :mod:`!ipaddress` sort these anyway.  If you need to do this, you can use
+   this function as the *key* argument to :func:`sorted`.
 
    *obj* is either a network or address object.
 

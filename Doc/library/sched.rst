@@ -1,10 +1,8 @@
-:mod:`sched` --- Event scheduler
-================================
+:mod:`!sched` --- Event scheduler
+=================================
 
 .. module:: sched
    :synopsis: General purpose event scheduler.
-
-.. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 
 **Source code:** :source:`Lib/sched.py`
 
@@ -12,7 +10,7 @@
 
 --------------
 
-The :mod:`sched` module defines a class which implements a general purpose event
+The :mod:`!sched` module defines a class which implements a general purpose event
 scheduler:
 
 .. class:: scheduler(timefunc=time.monotonic, delayfunc=time.sleep)

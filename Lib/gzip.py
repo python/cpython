@@ -5,17 +5,22 @@ but random access is not allowed."""
 
 # based on Andrew Kuchling's minigzip.py distributed with the zlib module
 
-import struct, sys, time, os
-import zlib
 import builtins
 import io
-import _compression
+import os
+import struct
+import sys
+import time
+import weakref
+import zlib
+from compression._common import _streams
 
 __all__ = ["BadGzipFile", "GzipFile", "open", "compress", "decompress"]
 
 FTEXT, FHCRC, FEXTRA, FNAME, FCOMMENT = 1, 2, 4, 8, 16
 
-READ, WRITE = 1, 2
+READ = 'rb'
+WRITE = 'wb'
 
 _COMPRESS_LEVEL_FAST = 1
 _COMPRESS_LEVEL_TRADEOFF = 6
@@ -25,7 +30,7 @@ READ_BUFFER_SIZE = 128 * 1024
 _WRITE_BUFFER_SIZE = 4 * io.DEFAULT_BUFFER_SIZE
 
 
-def open(filename, mode="rb", compresslevel=_COMPRESS_LEVEL_BEST,
+def open(filename, mode="rb", compresslevel=_COMPRESS_LEVEL_TRADEOFF,
          encoding=None, errors=None, newline=None):
     """Open a gzip-compressed file in binary or text mode.
 
@@ -124,10 +129,13 @@ class BadGzipFile(OSError):
 class _WriteBufferStream(io.RawIOBase):
     """Minimal object to pass WriteBuffer flushes into GzipFile"""
     def __init__(self, gzip_file):
-        self.gzip_file = gzip_file
+        self.gzip_file = weakref.ref(gzip_file)
 
     def write(self, data):
-        return self.gzip_file._write_raw(data)
+        gzip_file = self.gzip_file()
+        if gzip_file is None:
+            raise RuntimeError("lost gzip_file")
+        return gzip_file._write_raw(data)
 
     def seekable(self):
         return False
@@ -136,7 +144,7 @@ class _WriteBufferStream(io.RawIOBase):
         return True
 
 
-class GzipFile(_compression.BaseStream):
+class GzipFile(_streams.BaseStream):
     """The GzipFile class simulates most of the methods of a file object with
     the exception of the truncate() method.
 
@@ -150,7 +158,7 @@ class GzipFile(_compression.BaseStream):
     myfileobj = None
 
     def __init__(self, filename=None, mode=None,
-                 compresslevel=_COMPRESS_LEVEL_BEST, fileobj=None, mtime=None):
+                 compresslevel=_COMPRESS_LEVEL_TRADEOFF, fileobj=None, mtime=None):
         """Constructor for the GzipFile class.
 
         At least one of fileobj and filename must be given a
@@ -185,55 +193,67 @@ class GzipFile(_compression.BaseStream):
 
         """
 
+        # Ensure attributes exist at __del__
+        self.mode = None
+        self.fileobj = None
+        self._buffer = None
+
         if mode and ('t' in mode or 'U' in mode):
             raise ValueError("Invalid mode: {!r}".format(mode))
         if mode and 'b' not in mode:
             mode += 'b'
-        if fileobj is None:
-            fileobj = self.myfileobj = builtins.open(filename, mode or 'rb')
-        if filename is None:
-            filename = getattr(fileobj, 'name', '')
-            if not isinstance(filename, (str, bytes)):
-                filename = ''
-        else:
-            filename = os.fspath(filename)
-        origmode = mode
-        if mode is None:
-            mode = getattr(fileobj, 'mode', 'rb')
+
+        try:
+            if fileobj is None:
+                fileobj = self.myfileobj = builtins.open(filename, mode or 'rb')
+            if filename is None:
+                filename = getattr(fileobj, 'name', '')
+                if not isinstance(filename, (str, bytes)):
+                    filename = ''
+            else:
+                filename = os.fspath(filename)
+            origmode = mode
+            if mode is None:
+                mode = getattr(fileobj, 'mode', 'rb')
 
 
-        if mode.startswith('r'):
-            self.mode = READ
-            raw = _GzipReader(fileobj)
-            self._buffer = io.BufferedReader(raw)
-            self.name = filename
+            if mode.startswith('r'):
+                self.mode = READ
+                raw = _GzipReader(fileobj)
+                self._buffer = io.BufferedReader(raw)
+                self.name = filename
 
-        elif mode.startswith(('w', 'a', 'x')):
-            if origmode is None:
-                import warnings
-                warnings.warn(
-                    "GzipFile was opened for writing, but this will "
-                    "change in future Python releases.  "
-                    "Specify the mode argument for opening it for writing.",
-                    FutureWarning, 2)
-            self.mode = WRITE
-            self._init_write(filename)
-            self.compress = zlib.compressobj(compresslevel,
-                                             zlib.DEFLATED,
-                                             -zlib.MAX_WBITS,
-                                             zlib.DEF_MEM_LEVEL,
-                                             0)
-            self._write_mtime = mtime
-            self._buffer_size = _WRITE_BUFFER_SIZE
-            self._buffer = io.BufferedWriter(_WriteBufferStream(self),
-                                             buffer_size=self._buffer_size)
-        else:
-            raise ValueError("Invalid mode: {!r}".format(mode))
+            elif mode.startswith(('w', 'a', 'x')):
+                if origmode is None:
+                    import warnings
+                    warnings.warn(
+                        "GzipFile was opened for writing, but this will "
+                        "change in future Python releases.  "
+                        "Specify the mode argument for opening it for writing.",
+                        FutureWarning, 2)
+                self.mode = WRITE
+                self._init_write(filename)
+                self.compress = zlib.compressobj(compresslevel,
+                                                 zlib.DEFLATED,
+                                                 -zlib.MAX_WBITS,
+                                                 zlib.DEF_MEM_LEVEL,
+                                                 0)
+                self._write_mtime = mtime
+                self._buffer_size = _WRITE_BUFFER_SIZE
+                self._buffer = io.BufferedWriter(_WriteBufferStream(self),
+                                                 buffer_size=self._buffer_size)
+            else:
+                raise ValueError("Invalid mode: {!r}".format(mode))
 
-        self.fileobj = fileobj
+            self.fileobj = fileobj
 
-        if self.mode == WRITE:
-            self._write_gzip_header(compresslevel)
+            if self.mode == WRITE:
+                self._write_gzip_header(compresslevel)
+        except:
+            # Avoid a ResourceWarning if the write fails,
+            # eg read-only file or KeyboardInterrupt
+            self._close()
+            raise
 
     @property
     def mtime(self):
@@ -248,8 +268,6 @@ class GzipFile(_compression.BaseStream):
         self.name = filename
         self.crc = zlib.crc32(b"")
         self.size = 0
-        self.writebuf = []
-        self.bufsize = 0
         self.offset = 0  # Current file offset for seek(), tell(), etc
 
     def tell(self):
@@ -317,11 +335,15 @@ class GzipFile(_compression.BaseStream):
 
         return length
 
-    def read(self, size=-1):
-        self._check_not_closed()
+    def _check_read(self, caller):
         if self.mode != READ:
             import errno
-            raise OSError(errno.EBADF, "read() on write-only GzipFile object")
+            msg = f"{caller}() on write-only GzipFile object"
+            raise OSError(errno.EBADF, msg)
+
+    def read(self, size=-1):
+        self._check_not_closed()
+        self._check_read("read")
         return self._buffer.read(size)
 
     def read1(self, size=-1):
@@ -329,19 +351,25 @@ class GzipFile(_compression.BaseStream):
 
         Reads up to a buffer's worth of data if size is negative."""
         self._check_not_closed()
-        if self.mode != READ:
-            import errno
-            raise OSError(errno.EBADF, "read1() on write-only GzipFile object")
+        self._check_read("read1")
 
         if size < 0:
             size = io.DEFAULT_BUFFER_SIZE
         return self._buffer.read1(size)
 
+    def readinto(self, b):
+        self._check_not_closed()
+        self._check_read("readinto")
+        return self._buffer.readinto(b)
+
+    def readinto1(self, b):
+        self._check_not_closed()
+        self._check_read("readinto1")
+        return self._buffer.readinto1(b)
+
     def peek(self, n):
         self._check_not_closed()
-        if self.mode != READ:
-            import errno
-            raise OSError(errno.EBADF, "peek() on write-only GzipFile object")
+        self._check_read("peek")
         return self._buffer.peek(n)
 
     @property
@@ -350,7 +378,9 @@ class GzipFile(_compression.BaseStream):
 
     def close(self):
         fileobj = self.fileobj
-        if fileobj is None or self._buffer.closed:
+        if fileobj is None:
+            return
+        if self._buffer is None or self._buffer.closed:
             return
         try:
             if self.mode == WRITE:
@@ -362,11 +392,14 @@ class GzipFile(_compression.BaseStream):
             elif self.mode == READ:
                 self._buffer.close()
         finally:
-            self.fileobj = None
-            myfileobj = self.myfileobj
-            if myfileobj:
-                self.myfileobj = None
-                myfileobj.close()
+            self._close()
+
+    def _close(self):
+        self.fileobj = None
+        myfileobj = self.myfileobj
+        if myfileobj is not None:
+            self.myfileobj = None
+            myfileobj.close()
 
     def flush(self,zlib_mode=zlib.Z_SYNC_FLUSH):
         self._check_not_closed()
@@ -427,6 +460,13 @@ class GzipFile(_compression.BaseStream):
         self._check_not_closed()
         return self._buffer.readline(size)
 
+    def __del__(self):
+        if self.mode == WRITE and not self.closed:
+            import warnings
+            warnings.warn("unclosed GzipFile",
+                          ResourceWarning, source=self, stacklevel=2)
+
+        super().__del__()
 
 def _read_exact(fp, n):
     '''Read exactly *n* bytes from `fp`
@@ -444,44 +484,77 @@ def _read_exact(fp, n):
     return data
 
 
+def _read_until_null(fp, crc=None):
+    '''Read until the first encountered null byte in fp.
+    If crc is not None, update and return the CRC.
+    '''
+    if crc is None:
+        while True:
+            s = fp.read(1)
+            if not s or s == b'\000':
+                break
+    else:
+        while True:
+            s = fp.read(1)
+            crc = zlib.crc32(s, crc)
+            if not s or s == b'\000':
+                break
+    return crc
+
+
 def _read_gzip_header(fp):
     '''Read a gzip header from `fp` and progress to the end of the header.
 
     Returns last mtime if header was present or None otherwise.
     '''
     magic = fp.read(2)
-    if magic == b'':
+    if not magic:
         return None
 
     if magic != b'\037\213':
         raise BadGzipFile('Not a gzipped file (%r)' % magic)
-
-    (method, flag, last_mtime) = struct.unpack("<BBIxx", _read_exact(fp, 8))
+    base_header = _read_exact(fp, 8)
+    (method, flag, last_mtime) = struct.unpack("<BBIxx", base_header)
     if method != 8:
         raise BadGzipFile('Unknown compression method')
 
-    if flag & FEXTRA:
-        # Read & discard the extra field, if present
-        extra_len, = struct.unpack("<H", _read_exact(fp, 2))
-        _read_exact(fp, extra_len)
-    if flag & FNAME:
+    # Most common cases are no flags (gzip.compress, zlib.compress) or only
+    # FNAME set (GzipFile, gzip command line application). Exit early
+    # in those cases.
+    if not flag:
+        return last_mtime
+    if flag == FNAME:
         # Read and discard a null-terminated string containing the filename
-        while True:
-            s = fp.read(1)
-            if not s or s==b'\000':
-                break
-    if flag & FCOMMENT:
-        # Read and discard a null-terminated string containing a comment
-        while True:
-            s = fp.read(1)
-            if not s or s==b'\000':
-                break
+        _read_until_null(fp)
+        return last_mtime
+
+    # Processing for more complex flags. Save header parts for FHCRC checking.
     if flag & FHCRC:
-        _read_exact(fp, 2)     # Read & discard the 16-bit header CRC
+        crc = zlib.crc32(magic + base_header)
+    else:
+        crc = None
+    if flag & FEXTRA:
+        extra_len_bytes = _read_exact(fp, 2)
+        extra_len, = struct.unpack("<H", extra_len_bytes)
+        extra = _read_exact(fp, extra_len)
+        if crc is not None:
+            crc = zlib.crc32(extra_len_bytes, crc)
+            crc = zlib.crc32(extra, crc)
+    if flag & FNAME:
+        crc = _read_until_null(fp, crc)
+    if flag & FCOMMENT:
+        crc = _read_until_null(fp, crc)
+    if crc is not None:
+        # Header CRC is the last 16 bits of a crc32.
+        header_crc, = struct.unpack("<H", _read_exact(fp, 2))
+        crc = crc & 0xFFFF
+        if header_crc != crc:
+            raise BadGzipFile(f"Corrupted gzip header. Checksums do not "
+                              f"match: {crc:04x} != {header_crc:04x}")
     return last_mtime
 
 
-class _GzipReader(_compression.DecompressReader):
+class _GzipReader(_streams.DecompressReader):
     def __init__(self, fp):
         super().__init__(_PaddedFile(fp), zlib._ZlibDecompressor,
                          wbits=-zlib.MAX_WBITS)
@@ -579,43 +652,21 @@ class _GzipReader(_compression.DecompressReader):
         self._new_member = True
 
 
-def _create_simple_gzip_header(compresslevel: int,
-                               mtime = None) -> bytes:
-    """
-    Write a simple gzip header with no extra fields.
-    :param compresslevel: Compresslevel used to determine the xfl bytes.
-    :param mtime: The mtime (must support conversion to a 32-bit integer).
-    :return: A bytes object representing the gzip header.
-    """
-    if mtime is None:
-        mtime = time.time()
-    if compresslevel == _COMPRESS_LEVEL_BEST:
-        xfl = 2
-    elif compresslevel == _COMPRESS_LEVEL_FAST:
-        xfl = 4
-    else:
-        xfl = 0
-    # Pack ID1 and ID2 magic bytes, method (8=deflate), header flags (no extra
-    # fields added to header), mtime, xfl and os (255 for unknown OS).
-    return struct.pack("<BBBBLBB", 0x1f, 0x8b, 8, 0, int(mtime), xfl, 255)
-
-
-def compress(data, compresslevel=_COMPRESS_LEVEL_BEST, *, mtime=None):
+def compress(data, compresslevel=_COMPRESS_LEVEL_TRADEOFF, *, mtime=0):
     """Compress data in one shot and return the compressed string.
 
     compresslevel sets the compression level in range of 0-9.
-    mtime can be used to set the modification time. The modification time is
-    set to the current time by default.
+    mtime can be used to set the modification time.
+    The modification time is set to 0 by default, for reproducibility.
     """
-    if mtime == 0:
-        # Use zlib as it creates the header with 0 mtime by default.
-        # This is faster and with less overhead.
-        return zlib.compress(data, level=compresslevel, wbits=31)
-    header = _create_simple_gzip_header(compresslevel, mtime)
-    trailer = struct.pack("<LL", zlib.crc32(data), (len(data) & 0xffffffff))
-    # Wbits=-15 creates a raw deflate block.
-    return (header + zlib.compress(data, level=compresslevel, wbits=-15) +
-            trailer)
+    # Wbits=31 automatically includes a gzip header and trailer.
+    gzip_data = zlib.compress(data, level=compresslevel, wbits=31)
+    if mtime is None:
+        mtime = time.time()
+    # Reuse gzip header created by zlib, replace mtime and OS byte for
+    # consistency.
+    header = struct.pack("<4sLBB", gzip_data, int(mtime), gzip_data[8], 255)
+    return header + gzip_data[10:]
 
 
 def decompress(data):
@@ -646,13 +697,14 @@ def decompress(data):
 def main():
     from argparse import ArgumentParser
     parser = ArgumentParser(description=
-        "A simple command line interface for the gzip module: act like gzip, "
-        "but do not delete the input file.")
+        "A simple command line interface for the `gzip` module: act like `gzip`, "
+        "but do not delete the input file.",
+    )
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--fast', action='store_true', help='compress faster')
     group.add_argument('--best', action='store_true', help='compress better')
     group.add_argument("-d", "--decompress", action="store_true",
-                        help="act like gunzip instead of gzip")
+                        help="act like `gunzip` instead of `gzip`")
 
     parser.add_argument("args", nargs="*", default=["-"], metavar='file')
     args = parser.parse_args()

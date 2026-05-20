@@ -46,7 +46,7 @@ class PullDOMTestCase(unittest.TestCase):
         items = pulldom.parseString(SMALL_SAMPLE)
         evt, node = next(items)
         # Just check the node is a Document:
-        self.assertTrue(hasattr(node, "createElement"))
+        self.assertHasAttr(node, "createElement")
         self.assertEqual(pulldom.START_DOCUMENT, evt)
         evt, node = next(items)
         self.assertEqual(pulldom.START_ELEMENT, evt)
@@ -192,7 +192,7 @@ class ThoroughTestCase(unittest.TestCase):
         evt, node = next(pd)
         self.assertEqual(pulldom.START_DOCUMENT, evt)
         # Just check the node is a Document:
-        self.assertTrue(hasattr(node, "createElement"))
+        self.assertHasAttr(node, "createElement")
 
         if before_root:
             evt, node = next(pd)

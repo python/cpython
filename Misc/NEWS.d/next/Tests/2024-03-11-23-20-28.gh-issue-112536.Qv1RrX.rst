@@ -1,2 +1,0 @@
-Add --tsan to test.regrtest for running TSAN tests in reasonable execution
-times. Patch by Donghee Na.

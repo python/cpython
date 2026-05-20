@@ -1,1 +1,0 @@
-Ensure ``INSTRUMENTED_CALL_FUNCTION_EX`` always emits :monitoring-event:`CALL`

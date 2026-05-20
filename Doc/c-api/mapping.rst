@@ -102,7 +102,7 @@ See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
 
    .. note::
 
-      Exceptions which occur when this calls :meth:`~object.__getitem__`
+      Exceptions which occur when this calls the :meth:`~object.__getitem__`
       method are silently ignored.
       For proper error handling, use :c:func:`PyMapping_HasKeyWithError`,
       :c:func:`PyMapping_GetOptionalItem` or :c:func:`PyObject_GetItem()` instead.
@@ -116,7 +116,7 @@ See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
 
    .. note::
 
-      Exceptions that occur when this calls :meth:`~object.__getitem__`
+      Exceptions that occur when this calls the :meth:`~object.__getitem__`
       method or while creating the temporary :class:`str`
       object are silently ignored.
       For proper error handling, use :c:func:`PyMapping_HasKeyStringWithError`,

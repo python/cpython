@@ -8,9 +8,7 @@ import zipfile
 
 from ._functools import compose
 from ._itertools import consume
-
 from ._support import import_or_skip
-
 
 big_o = import_or_skip('big_o')
 pytest = import_or_skip('pytest')
@@ -20,7 +18,7 @@ class TestComplexity(unittest.TestCase):
     @pytest.mark.flaky
     def test_implied_dirs_performance(self):
         best, others = big_o.big_o(
-            compose(consume, zipfile.CompleteDirs._implied_dirs),
+            compose(consume, zipfile._path.CompleteDirs._implied_dirs),
             lambda size: [
                 '/'.join(string.ascii_lowercase + str(n)) for n in range(size)
             ],

@@ -1,8 +1,8 @@
 /*  datetime.h
  */
 #ifndef Py_LIMITED_API
-#ifndef DATETIME_H
-#define DATETIME_H
+#ifndef Py_DATETIME_H
+#define Py_DATETIME_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -196,8 +196,23 @@ typedef struct {
 /* Define global variable for the C API and a macro for setting it. */
 static PyDateTime_CAPI *PyDateTimeAPI = NULL;
 
-#define PyDateTime_IMPORT \
-    PyDateTimeAPI = (PyDateTime_CAPI *)PyCapsule_Import(PyDateTime_CAPSULE_NAME, 0)
+static inline PyDateTime_CAPI *
+_PyDateTime_IMPORT(void) {
+    PyDateTime_CAPI *val = (PyDateTime_CAPI *)_Py_atomic_load_ptr(&PyDateTimeAPI);
+    if (val == NULL) {
+        PyDateTime_CAPI *capi = (PyDateTime_CAPI *)PyCapsule_Import(
+            PyDateTime_CAPSULE_NAME, 0);
+        if (capi != NULL) {
+            /* if the compare exchange fails then in that case
+               another thread would have initialized it */
+            _Py_atomic_compare_exchange_ptr(&PyDateTimeAPI, &val, (void *)capi);
+            return capi;
+        }
+    }
+    return val;
+}
+
+#define PyDateTime_IMPORT _PyDateTime_IMPORT()
 
 /* Macro for access to the UTC singleton */
 #define PyDateTime_TimeZone_UTC PyDateTimeAPI->TimeZone_UTC
@@ -263,5 +278,5 @@ static PyDateTime_CAPI *PyDateTimeAPI = NULL;
 #ifdef __cplusplus
 }
 #endif
-#endif
+#endif /* !Py_DATETIME_H */
 #endif /* !Py_LIMITED_API */

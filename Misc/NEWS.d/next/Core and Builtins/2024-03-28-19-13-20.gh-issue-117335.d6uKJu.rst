@@ -1,1 +1,0 @@
-Raise TypeError for non-sequences for :func:`ntpath.commonpath`.
