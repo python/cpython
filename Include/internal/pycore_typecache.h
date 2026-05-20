@@ -23,7 +23,7 @@ struct type_cache {
     uint32_t version_tag;
     uint32_t available;
     uint32_t used;
-    struct type_cache_entry hashtable[0];
+    struct type_cache_entry hashtable[1];
 };
 
 struct _PyTypeCacheLookupResult {
