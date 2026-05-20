@@ -892,6 +892,7 @@ pycore_init_builtins(PyThreadState *tstate)
     interp->common_consts[CONSTANT_FALSE] = Py_False;
     interp->common_consts[CONSTANT_MINUS_ONE] =
         (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS - 1];
+    interp->common_consts[CONSTANT_BUILTIN_FROZENSET] = (PyObject *)&PyFrozenSet_Type;
     for (int i = 0; i < NUM_COMMON_CONSTANTS; i++) {
         assert(interp->common_consts[i] != NULL);
     }
@@ -1486,15 +1487,11 @@ init_interp_main(PyThreadState *tstate)
 
     // Initialize lazy imports based on configuration. Do this after site
     // module is imported to avoid circular imports during startup.
-    if (config->lazy_imports != -1) {
-        PyImport_LazyImportsMode lazy_mode;
-        if (config->lazy_imports == 1) {
-            lazy_mode = PyImport_LAZY_ALL;
-        }
-        else {
-            lazy_mode = PyImport_LAZY_NONE;
-        }
-        if (PyImport_SetLazyImportsMode(lazy_mode) < 0) {
+    if (config->lazy_imports == 0) {
+        return _PyStatus_ERR("PyConfig.lazy_imports=0 is not supported");
+    }
+    if (config->lazy_imports == 1) {
+        if (PyImport_SetLazyImportsMode(PyImport_LAZY_ALL) < 0) {
             return _PyStatus_ERR("failed to set lazy imports mode");
         }
     }

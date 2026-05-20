@@ -698,7 +698,6 @@ class LocalNetworkTestCase(BaseLocalNetworkTestCase, unittest.TestCase):
         self.assertTrue(parser.can_fetch(agent, url + '/utf8/'))
         self.assertFalse(parser.can_fetch(agent, url + '/utf8/\U0001f40d'))
         self.assertFalse(parser.can_fetch(agent, url + '/utf8/%F0%9F%90%8D'))
-        self.assertFalse(parser.can_fetch(agent, url + '/utf8/\U0001f40d'))
         self.assertTrue(parser.can_fetch(agent, url + '/non-utf8/'))
         self.assertFalse(parser.can_fetch(agent, url + '/non-utf8/%F0'))
         self.assertFalse(parser.can_fetch(agent, url + '/non-utf8/\U0001f40d'))
@@ -718,10 +717,21 @@ class HttpErrorsTestCase(BaseLocalNetworkTestCase, unittest.TestCase):
         # Make sure that a valid code is set in the test.
         self.server.return_code = None
 
-    def testPasswordProtectedSite(self):
+    def testUnauthorized(self):
+        self.server.return_code = 401
+        addr = self.server.server_address
+        url = f'http://{socket_helper.HOST}:{addr[1]}'
+        robots_url = url + "/robots.txt"
+        parser = urllib.robotparser.RobotFileParser()
+        parser.set_url(url)
+        parser.read()
+        self.assertFalse(parser.can_fetch("*", robots_url))
+        self.assertFalse(parser.can_fetch("*", url + '/some/file.html'))
+
+    def testForbidden(self):
         self.server.return_code = 403
         addr = self.server.server_address
-        url = 'http://' + socket_helper.HOST + ':' + str(addr[1])
+        url = f'http://{socket_helper.HOST}:{addr[1]}'
         robots_url = url + "/robots.txt"
         parser = urllib.robotparser.RobotFileParser()
         parser.set_url(url)
@@ -772,6 +782,7 @@ class NetworkTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         support.requires('network')
+        cls.addClassCleanup(urllib.request.urlcleanup)
         with socket_helper.transient_internet(cls.base_url):
             cls.parser = urllib.robotparser.RobotFileParser(cls.robots_txt)
             cls.parser.read()
