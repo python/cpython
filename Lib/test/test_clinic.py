@@ -2720,7 +2720,7 @@ class ClinicParserTest(TestCase):
         func = self.parse_function(block, signatures_in_block=3,
                                    function_index=2)
         self.assertTrue(func.vectorcall)
-        self.assertFalse(func.vectorcall_exact_only)
+        self.assertFalse(func.vectorcall.exact_only)
 
     def test_vectorcall_on_new(self):
         block = """
@@ -2735,7 +2735,7 @@ class ClinicParserTest(TestCase):
         func = self.parse_function(block, signatures_in_block=3,
                                    function_index=2)
         self.assertTrue(func.vectorcall)
-        self.assertFalse(func.vectorcall_exact_only)
+        self.assertFalse(func.vectorcall.exact_only)
 
     def test_vectorcall_exact_only(self):
         block = """
@@ -2749,7 +2749,7 @@ class ClinicParserTest(TestCase):
         func = self.parse_function(block, signatures_in_block=3,
                                    function_index=2)
         self.assertTrue(func.vectorcall)
-        self.assertTrue(func.vectorcall_exact_only)
+        self.assertTrue(func.vectorcall.exact_only)
 
     def test_vectorcall_invalid_kwarg(self):
         err = "unknown argument"

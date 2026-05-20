@@ -1075,22 +1075,7 @@ class ParseArgsCodeGen:
         def emit(text: str, indent: int = 4) -> None:
             parser_code.append(snippet(text, indent=indent))
 
-        if no_params:
-            self.codegen.add_include('pycore_modsupport.h',
-                                     '_PyArg_NoKwnames()')
-            emit("""
-                if (!_PyArg_NoKwnames("{name}", kwnames)) {{
-                    goto exit;
-                }}
-                if (nargs != 0) {{
-                    PyErr_Format(PyExc_TypeError,
-                        "{name}() takes no arguments (%zd given)",
-                        nargs);
-                    goto exit;
-                }}
-                """)
-            return parser_code
-        elif all_pos_only:
+        if no_params or all_pos_only:
             self.codegen.add_include('pycore_modsupport.h',
                                      '_PyArg_NoKwnames()')
             emit("""
@@ -1099,21 +1084,30 @@ class ParseArgsCodeGen:
                 }}
                 """)
 
+            if no_params:
+                emit("""
+                    if (nargs != 0) {{
+                        PyErr_Format(PyExc_TypeError,
+                            "{name}() takes no arguments (%zd given)",
+                            nargs);
+                        goto exit;
+                    }}
+                    """)
+                return parser_code
+
             pos_code, success = self._generate_vc_pos_only_code()
             if not success:
                 for parameter in self.parameters:
                     parameter.converter.use_converter()
                 self.codegen.add_include('pycore_modsupport.h',
                                          '_PyArg_ParseStack()')
-                return [snippet("""
-                    if (!_PyArg_NoKwnames("{name}", kwnames)) {{
-                        goto exit;
-                    }}
+                emit("""
                     if (!_PyArg_ParseStack(args, nargs, "{format_units}:{name}",
                         {parse_arguments})) {{
                         goto exit;
                     }}
-                    """, indent=4)]
+                    """)
+                return parser_code
             parser_code.extend(pos_code)
             return parser_code
         else:
@@ -1203,23 +1197,16 @@ class ParseArgsCodeGen:
 
         return parser_code
 
-    def generate_vectorcall(self) -> str:
-        """Generate a vectorcall function for __init__ or __new__."""
-        func = self.func
+    def _vc_prototype(self) -> str:
         vc_basename = self._vc_basename()
-
-        # Generate argument parsing code (FASTCALL-style)
-        parsing_code = self._generate_vc_parsing_code()
-
-        # Build the function prototype
-        prototype = libclinic.normalize_snippet(f"""
+        return libclinic.normalize_snippet(f"""
             static PyObject *
             {vc_basename}(PyObject *type, PyObject *const *args,
                 size_t nargsf, PyObject *kwnames)
         """)
 
-        # Build the preamble
-        preamble = libclinic.normalize_snippet("""
+    def _vc_preamble(self) -> str:
+        return libclinic.normalize_snippet("""
             {{
                 PyObject *return_value = NULL;
                 Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
@@ -1227,23 +1214,23 @@ class ParseArgsCodeGen:
                 {initializers}
         """) + "\n"
 
-        # Exact type check (if vectorcall_exact_only)
-        exact_check = ""
-        if func.vectorcall and func.vectorcall.exact_only and func.cls:
-            type_obj = func.cls.type_object
-            self.codegen.add_include('pycore_call.h',
-                                     '_PyObject_MakeTpCall()')
-            exact_check = libclinic.normalize_snippet(f"""
-                if (_PyType_CAST(type) != {type_obj}) {{{{
-                    PyThreadState *tstate = _PyThreadState_GET();
-                    return _PyObject_MakeTpCall(tstate, type, args,
-                                                nargs, kwnames);
-                }}}}
-            """, indent=4)
+    def _vc_exact_check(self) -> str:
+        func = self.func
+        if not (func.vectorcall and func.vectorcall.exact_only and func.cls):
+            return ""
+        type_obj = func.cls.type_object
+        self.codegen.add_include('pycore_call.h', '_PyObject_MakeTpCall()')
+        return libclinic.normalize_snippet(f"""
+            if (_PyType_CAST(type) != {type_obj}) {{{{
+                PyThreadState *tstate = _PyThreadState_GET();
+                return _PyObject_MakeTpCall(tstate, type, args,
+                                            nargs, kwnames);
+            }}}}
+        """, indent=4)
 
-        # Build the finale (impl call + return)
-        if func.kind is METHOD_INIT:
-            finale = libclinic.normalize_snippet("""
+    def _vc_finale(self) -> str:
+        if self.func.kind is METHOD_INIT:
+            return libclinic.normalize_snippet("""
                 {modifications}
                 {lock}
                 {{
@@ -1269,7 +1256,7 @@ class ParseArgsCodeGen:
             """)
         else:
             # METHOD_NEW
-            finale = libclinic.normalize_snippet("""
+            return libclinic.normalize_snippet("""
                 {modifications}
                 {lock}
                 return_value = {c_basename}_impl({vc_impl_arguments});
@@ -1283,13 +1270,18 @@ class ParseArgsCodeGen:
             }}
             """)
 
-        # Assemble the full function
-        lines = [prototype]
-        lines.append(preamble)
+    def generate_vectorcall(self) -> str:
+        """Generate a vectorcall function for __init__ or __new__."""
+        parsing_code = self._generate_vc_parsing_code()
+
+        lines = [self._vc_prototype(), self._vc_preamble()]
+
+        exact_check = self._vc_exact_check()
         if exact_check:
             lines.append(exact_check)
+
         lines.extend(parsing_code)
-        lines.append(finale)
+        lines.append(self._vc_finale())
 
         code = libclinic.linear_format(
             "\n".join(lines),
