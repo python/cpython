@@ -70,6 +70,8 @@ class VersionTestCase(unittest.TestCase):
         # testing only the major versions avoids spurious failures.
         self.assertEqual(zlib.ZLIB_RUNTIME_VERSION[0], zlib.ZLIB_VERSION[0])
         self.assertEqual(zlib.zlib_runtime_version[0], zlib.zlib_version[0])
+        if hasattr(zlib, 'ZLIBNG_VERSION'):
+            self.assertEqual(zlib.zlibng_runtime_version[0], zlib.zlibng_version[0])
 
     def _test_zlib_version(self, v):
         self.assertIsInstance(v[:], tuple)
@@ -105,6 +107,23 @@ class VersionTestCase(unittest.TestCase):
         self._test_zlib_version(zlib.zlib_runtime_version)
         self.assertEqual(zlib.zlib_runtime_version,
                          _parse_version(zlib.ZLIB_RUNTIME_VERSION))
+
+    @unittest.skipUnless(hasattr(zlib, 'ZLIBNG_VERSION'), 'requires zlib-ng')
+    def test_zlibng_version(self):
+        if support.verbose:
+            print(f'ZLIB_VERSION = {zlib.ZLIBNG_VERSION}', flush=True)
+            print(f'zlib_version = {zlib.zlibng_version}', flush=True)
+        self._test_zlib_version(zlib.zlibng_version)
+        self.assertEqual(zlib.zlibng_version, _parse_version(zlib.ZLIBNG_VERSION))
+
+    @unittest.skipUnless(hasattr(zlib, 'ZLIBNG_VERSION'), 'requires zlib-ng')
+    def test_zlibng_runtime_version(self):
+        if support.verbose:
+            print(f'ZLIB_RUNTIME_VERSION = {zlib.ZLIBNG_RUNTIME_VERSION}', flush=True)
+            print(f'zlib_runtime_version = {zlib.zlibng_runtime_version}', flush=True)
+        self._test_zlib_version(zlib.zlibng_runtime_version)
+        self.assertEqual(zlib.zlibng_runtime_version,
+                         _parse_version(zlib.ZLIBNG_RUNTIME_VERSION))
 
 
 class ChecksumTestCase(unittest.TestCase):

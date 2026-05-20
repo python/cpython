@@ -2316,17 +2316,21 @@ zlib_exec(PyObject *mod)
                      PyUnicode_FromString(zlibVersion())) < 0) {
         return -1;
     }
-    PyTypeObject *version_type;
-    version_type = PyStructSequence_NewType(&zlib_version_desc);
-    if (version_type == NULL) {
-        return -1;
-    }
 #ifdef ZLIBNG_VERSION
     if (PyModule_Add(mod, "ZLIBNG_VERSION",
                      PyUnicode_FromString(ZLIBNG_VERSION)) < 0) {
         return -1;
     }
+    if (PyModule_Add(mod, "ZLIBNG_RUNTIME_VERSION",
+                     PyUnicode_FromString(zlibng_version())) < 0) {
+        return -1;
+    }
 #endif
+    PyTypeObject *version_type;
+    version_type = PyStructSequence_NewType(&zlib_version_desc);
+    if (version_type == NULL) {
+        return -1;
+    }
     if (PyModule_Add(mod, "zlib_version",
             make_zlib_version(version_type, ZLIB_VERSION)) < 0)
     {
@@ -2339,6 +2343,20 @@ zlib_exec(PyObject *mod)
         Py_DECREF(version_type);
         return -1;
     }
+#ifdef ZLIBNG_VERSION
+    if (PyModule_Add(mod, "zlibng_version",
+            make_zlib_version(version_type, ZLIBNG_VERSION)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    if (PyModule_Add(mod, "zlibng_runtime_version",
+            make_zlib_version(version_type, zlibng_version())) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+#endif
     Py_DECREF(version_type);
     return 0;
 }
