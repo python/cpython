@@ -620,35 +620,40 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(res.charset, charset)
         self.assertEqual(res.lang, lang)
 
-    params_test_get_encoded_word = old_api_only(
+    # This params_map will handle either single strings or C objects.
+    @params_map
+    def expect_get_encoded_word_raise(v, *args, **kw):
+        newspec = C(
+            v,
+            *args,
+            # "expected encoded word but found '...'"
+            exception=(errors.HeaderParseError, re.escape(v)),
+            test_start=False,
+            **kw,
+            )
+        yield 'oldapi', newspec
+
+    params_test_get_encoded_word__invalid_input = expect_get_encoded_word_raise(
 
         missing_start_raises = C(
             'abc',
-            # "expected encoded word but found abc"
-            exception=(errors.HeaderParseError, r'abc'),
             ),
 
         missing_end_raises = C(
             '=?abc',
-            exception=(errors.HeaderParseError, r'=?abc'),
             ),
 
         missing_middle_raises = C(
             '=?abc?=',
-            # "encoded word format invalid: '=?abc?='"
-            exception=(
-                errors.HeaderParseError,
-                rf'(?=.*invalid)(?=.*{re.escape("=?abc?=")})',
-                ),
             ),
 
         invalid_cte_raises = C(
             '=?utf-8?X?abc?=',
-            exception=(
-                errors.HeaderParseError,
-                rf'(?=.*invalid)(?=.*{re.escape("=?utf-8?X?abc?=")})',
-                ),
             ),
+
+        )
+
+    params_test_get_encoded_word = old_api_only(
 
         valid_ew = C(
             '=?us-ascii?q?this_is_a_test?=  bird',
