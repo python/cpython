@@ -55,15 +55,14 @@ from urllib.parse import SplitResult, ParseResult
 from unittest.case import _AssertRaisesContext
 from queue import Queue, SimpleQueue
 from weakref import WeakSet, ReferenceType, ref
-import typing
-from typing import Unpack
 try:
     from tkinter import Event
 except ImportError:
     Event = None
 from string.templatelib import Template, Interpolation
 
-from typing import TypeVar
+import typing
+from typing import TypeVar, Unpack
 T = TypeVar('T')
 K = TypeVar('K')
 V = TypeVar('V')
@@ -618,6 +617,14 @@ class BaseTest(unittest.TestCase):
         deeply_nested_specialized = deeply_nested[str, float]
         self.assertEqual(deeply_nested_specialized.__args__, ([str, [float], int], float))
         self.assertEqual(deeply_nested_specialized.__parameters__, ())
+
+    def test_gh150146(self):
+        # It used to crash:
+        for container in [memoryview, list, tuple]:
+            with self.subTest(container=container):
+                x = container[TypeVar("")]
+                with self.assertRaises(TypeError):
+                    x[*typing.Mapping[..., ...]]
 
 
 class TypeIterationTests(unittest.TestCase):
