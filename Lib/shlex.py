@@ -81,6 +81,9 @@ class shlex:
         self.infile = newfile
         self.instream = newstream
         self.lineno = 1
+        # Reset state so that a source pushed after EOF (when state is None)
+        # is still read.  Mirrors pop_source().
+        self.state = ' '
         if self.debug:
             if newfile is not None:
                 print('shlex: pushing to file %s' % (self.infile,))

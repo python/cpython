@@ -1,0 +1,4 @@
+Fix :class:`shlex.shlex` ignoring a source pushed via
+:meth:`~shlex.shlex.push_source` after the current input had reached EOF.
+:meth:`!push_source` now resets the internal lexer state, mirroring
+:meth:`~shlex.shlex.pop_source`.
