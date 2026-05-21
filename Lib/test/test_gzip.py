@@ -352,17 +352,13 @@ class TestGzip(BaseTest):
             self.assertEqual(fRead.mtime, mtime)
 
     def test_mtime_out_of_range(self):
-        # ValueError should be raised when mtime<0 or mtime>=2**32 and is
-        # explicitly specified
-        with self.assertRaises(ValueError):
-            with gzip.GzipFile(self.filename, 'w', mtime=-1) as fWrite:
-                pass
-        with self.assertRaises(ValueError):
-            with gzip.GzipFile(self.filename, 'w', mtime=2**32) as fWrite:
-                pass
+        for mtime in (-1, 2**32):
+            with gzip.GzipFile(self.filename, 'w', mtime=mtime) as fWrite:
+                fWrite.write(data1)
+            with gzip.GzipFile(self.filename) as fRead:
+                fRead.read()
+                self.assertEqual(fRead.mtime, 0)
 
-        # mtime should be set to 0 when time.time() is out of range and mtime is
-        # not explicitly given
         for mtime in (-1, 2**32):
             with mock.patch('time.time', return_value=float(mtime)):
                 with gzip.GzipFile(self.filename, 'w') as fWrite:
