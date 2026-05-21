@@ -1,0 +1,4 @@
+Fix two reference count leaks in :mod:`!hamt` on memory allocation failure
+paths inside ``hamt_node_bitmap_assoc`` and ``hamt_node_bitmap_without``.
+These leaks could occur if ``hamt_node_bitmap_clone`` failed after a
+recursive ``assoc``/``without`` call had already produced a new sub-node.
