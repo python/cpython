@@ -320,10 +320,6 @@
 /* Define to 1 if you have the <editline/readline.h> header file. */
 #undef HAVE_EDITLINE_READLINE_H
 
-/* Define if compiler supports __builtin_shufflevector with 128-bit vectors
-   AND the target architecture has native SIMD (not just API availability) */
-#undef HAVE_EFFICIENT_BUILTIN_SHUFFLEVECTOR
-
 /* Define to 1 if you have the <endian.h> header file. */
 #undef HAVE_ENDIAN_H
 
@@ -701,10 +697,6 @@
 /* Define to 1 if you have the 'dld' library (-ldld). */
 #undef HAVE_LIBDLD
 
-/* Define to 1 if libgcc __register_frame and __deregister_frame are linkable.
-   */
-#undef HAVE_LIBGCC_EH_FRAME_REGISTRATION
-
 /* Define to 1 if you have the 'ieee' library (-lieee). */
 #undef HAVE_LIBIEEE
 
@@ -1006,9 +998,6 @@
 
 /* Define if your compiler supports function prototype */
 #undef HAVE_PROTOTYPES
-
-/* Define if you have the 'PR_SET_VMA_ANON_NAME' constant. */
-#undef HAVE_PR_SET_VMA_ANON_NAME
 
 /* Define to 1 if you have the 'pthread_condattr_setclock' function. */
 #undef HAVE_PTHREAD_CONDATTR_SETCLOCK
@@ -2066,6 +2055,17 @@
 
 /* HACL* library can compile SIMD256 implementations */
 #undef _Py_HACL_CAN_COMPILE_VEC256
+
+/* Define if compiler supports __builtin_shufflevector with 128-bit vectors
+   AND the target architecture has native SIMD (not just API availability) */
+#undef _Py_HAVE_EFFICIENT_BUILTIN_SHUFFLEVECTOR
+
+/* Define to 1 if libgcc __register_frame and __deregister_frame are linkable.
+   */
+#undef _Py_HAVE_LIBGCC_EH_FRAME_REGISTRATION
+
+/* Define if you have the 'PR_SET_VMA_ANON_NAME' constant. */
+#undef _Py_HAVE_PR_SET_VMA_ANON_NAME
 
 /* Define to 1 if the machine stack grows down (default); 0 if it grows up. */
 #undef _Py_STACK_GROWS_DOWN

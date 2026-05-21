@@ -154,13 +154,37 @@ def _init_pathinfo():
     return d
 
 
-# Accumulated entry points from .start files across all site-packages
-# directories.  Execution is deferred until all paths in .pth files have been
-# appended to sys.path.  Map the .pth/.start file the data is found in to the
-# data.
-_pending_entrypoints = {}
-_pending_syspaths = {}
-_pending_importexecs = {}
+# PEP 829 implementation notes.
+#
+# Startup information (.pth and .start file information) can be processed in
+# implicit or explicit batches.  Implicit batches are handled by the site.py
+# machinery automatically, while explicit batches are driven by user code and
+# processed on boundaries defined by that code.
+#
+# addsitedir() calls which use the default defer_processing_start_files=False
+# are self-contained: they create a per-call _StartupState, populate it from
+# the site directory's .pth/.start files, run process() on it, and then throw
+# the state away.  This is implicit batching and in that case the
+# _startup_state global variable stays None.
+#
+# main() needs different semantics: it accumulates state across multiple
+# addsitedir() calls (user-site plus all global site-packages) so that
+# every sys.path extension is visible *before* any startup code (.pth
+# import lines and .start entry points) runs.  Callers opt into this by
+# passing defer_processing_start_files=True, which preserves the _StartupState
+# into the global _startup_state.  Subsequent addsitedir() calls (with
+# or without defer_processing_start_files=True) then write into that
+# same shared state, and a later process_startup_files() call flushes
+# all the state and resets the global to None.
+#
+# Here's the CRITICAL reentrancy invariant: process_startup_files() must clear
+# the global _startup_state *before* calling state.process(), so that any
+# reentrant site.addsitedir() calls reached from an exec'd .pth import line or
+# a .start entry point falls into the per-call branch and gets its own fresh
+# state.  Otherwise the recursive addsitedir() would mutate the very dicts
+# that the outer state.process() is iterating.  This is the bug reported in
+# gh-149504.
+_startup_state = None
 
 
 def _read_pthstart_file(sitedir, name, suffix):
@@ -194,13 +218,13 @@ def _read_pthstart_file(sitedir, name, suffix):
         return None, filename
 
     try:
-        # Accept BOM markers in .start and .pth files as we do in source files (Windows PowerShell
-        # 5.1 makes it hard to emit UTF-8 files without a BOM).
+        # Accept BOM markers in .start and .pth files as we do in source files
+        # (Windows PowerShell 5.1 makes it hard to emit UTF-8 files without a BOM).
         content = raw_content.decode("utf-8-sig")
     except UnicodeDecodeError:
         _trace(f"Cannot read {filename!r} as UTF-8.")
-        # For .pth files only, and then only until Python 3.20, fallback to locale encoding for
-        # backward compatibility.
+        # For .pth files only, and then only until Python 3.20, fall back to
+        # locale encoding for backward compatibility.
         _warn_future_us(
             ".pth files decoded to locale encoding as a fallback",
             remove=(3, 20)
@@ -214,153 +238,221 @@ def _read_pthstart_file(sitedir, name, suffix):
     return content.splitlines(), filename
 
 
-def _read_pth_file(sitedir, name, known_paths):
-    """Parse a .pth file, accumulating sys.path extensions and import lines.
+class _StartupState:
+    """Per-batch accumulator for .pth and .start file processing.
 
-    Errors on individual lines do not abort processing of the rest of the
-    file (PEP 829).
+    A _StartupState collects sys.path extensions, deprecated .pth import
+    lines, and .start entry points read from one or more site-packages
+    directories.  Calling process() applies them in PEP 829 order: paths
+    are added to sys.path first, then import lines from .pth files (skipping
+    any with a matching .start), then entry points from .start files.
+
+    State lives entirely on the instance; there is no module-level pending
+    state.  This is what makes the module reentrancy-safe: a site.addsitedir()
+    call reached recursively from an exec'd import line or a .start entry
+    point operates on a different _StartupState than the one being processed
+    by the outer call.
+
+    The internal data is intentionally private; the public methods
+    (read_pth_file, read_start_file, process) are the only supported write
+    APIs.
     """
-    lines, filename = _read_pthstart_file(sitedir, name, ".pth")
-    if lines is None:
-        return
+    __slots__ = ('_syspaths', '_importexecs', '_entrypoints')
 
-    for n, line in enumerate(lines, 1):
-        line = line.strip()
-        if not line or line.startswith("#"):
-            continue
+    def __init__(self):
+        # All three dicts map "<full path to .pth or .start file>" -> list
+        # of items collected from that file.  Mapping by filename lets us
+        # cross-reference a .pth and its matching .start (PEP 829 import
+        # suppression rule) and lets _print_error report the source file
+        # when an entry fails.
+        self._syspaths = {}
+        self._importexecs = {}
+        self._entrypoints = {}
 
-        # In Python 3.18 and 3.19, `import` lines are silently ignored.  In
-        # Python 3.20 and beyond, issue a warning when `import` lines in .pth
-        # files are detected.
-        if line.startswith(("import ", "import\t")):
-            _warn_future_us(
-                "import lines in .pth files are silently ignored",
-                remove=(3, 18)
-            )
-            _warn_future_us(
-                "import lines in .pth files are noisily ignored",
-                remove=(3, 20)
-            )
-            _pending_importexecs.setdefault(filename, []).append(line)
-            continue
+    def read_pth_file(self, sitedir, name, known_paths):
+        """Parse a .pth file, accumulating sys.path extensions and import lines.
 
-        try:
-            dir_, dircase = makepath(sitedir, line)
-        except Exception as exc:
-            _trace(f"Error in {filename!r}, line {n:d}: {line!r}", exc)
-            continue
+        Errors on individual lines do not abort processing of the rest of
+        the file (PEP 829).  ``known_paths`` is the per-batch dedup
+        ledger: any path already in it is skipped, and newly accepted
+        paths are added to it so that subsequent .pth files in the same
+        batch don't add them more than once.
+        """
+        lines, filename = _read_pthstart_file(sitedir, name, ".pth")
+        if lines is None:
+            return
 
-        if dircase in known_paths:
-            _trace(f"In {filename!r}, line {n:d}: "
-                   f"skipping duplicate sys.path entry: {dir_}")
-        else:
-            _pending_syspaths.setdefault(filename, []).append(dir_)
-            known_paths.add(dircase)
+        for n, line in enumerate(lines, 1):
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
 
+            # In Python 3.18 and 3.19, `import` lines are silently
+            # ignored.  In Python 3.20 and beyond, issue a warning when
+            # `import` lines in .pth files are detected.
+            if line.startswith(("import ", "import\t")):
+                _warn_future_us(
+                    "import lines in .pth files are silently ignored",
+                    remove=(3, 18),
+                )
+                _warn_future_us(
+                    "import lines in .pth files are noisily ignored",
+                    remove=(3, 20),
+                )
+                self._importexecs.setdefault(filename, []).append(line)
+                continue
 
-def _read_start_file(sitedir, name):
-    """Parse a .start file for a list of entry point strings."""
-    lines, filename = _read_pthstart_file(sitedir, name, ".start")
-    if lines is None:
-        return
+            try:
+                dir_, dircase = makepath(sitedir, line)
+            except Exception as exc:
+                _trace(f"Error in {filename!r}, line {n:d}: {line!r}", exc)
+                continue
 
-    # PEP 829: the *presence* of a matching .start file disables `import`
-    # line processing in the matched .pth file, regardless of whether the
-    # .start file produced any entry points.  Register the filename as a
-    # key now so an empty (or comment-only) .start file still suppresses.
-    entrypoints = _pending_entrypoints.setdefault(filename, [])
-
-    for n, line in enumerate(lines, 1):
-        line = line.strip()
-        if not line or line.startswith("#"):
-            continue
-        # Syntax validation is deferred to entry-point execution time,
-        # where pkgutil.resolve_name(strict=True) enforces the
-        # pkg.mod:callable form.
-        entrypoints.append(line)
-
-
-def _extend_syspath():
-    # We've already filtered out duplicates, either in the existing sys.path
-    # or in all the .pth files we've seen.  We've also abspath/normpath'd all
-    # the entries, so all that's left to do is to ensure that the path exists.
-    for filename, dirs in _pending_syspaths.items():
-        for dir_ in dirs:
-            if os.path.exists(dir_):
-                _trace(f"Extending sys.path with {dir_} from {filename}")
-                sys.path.append(dir_)
+            # PEP 829 dedup: skip paths already seen in this batch.  See
+            # _startup_state docstring above for batch lifetimes.
+            if dircase in known_paths:
+                _trace(
+                    f"In {filename!r}, line {n:d}: "
+                    f"skipping duplicate sys.path entry: {dir_}"
+                )
             else:
-                _print_error(
-                    f"In {filename}: {dir_} does not exist; "
-                    f"skipping sys.path append")
+                self._syspaths.setdefault(filename, []).append(dir_)
+                known_paths.add(dircase)
 
+    def read_start_file(self, sitedir, name):
+        """Parse a .start file for a list of entry point strings."""
+        lines, filename = _read_pthstart_file(sitedir, name, ".start")
+        if lines is None:
+            return
 
-def _exec_imports():
-    # For all the `import` lines we've seen in .pth files, exec() them in
-    # order.  However, if they come from a file with a matching .start, then
-    # we ignore these import lines.  For the ones we do process, print a
-    # warning but only when -v was given.
-    for filename, imports in _pending_importexecs.items():
-        name, dot, pth = filename.rpartition(".")
-        assert dot == "." and pth == "pth", f"Bad startup filename: {filename}"
+        # PEP 829: the *presence* of a matching .start file disables `import`
+        # line processing in the matched .pth file, regardless of whether this
+        # .start file contains any entry points.  Register the filename as a
+        # key now so an empty (or comment-only) .start file still suppresses.
+        entrypoints = self._entrypoints.setdefault(filename, [])
 
-        if f"{name}.start" in _pending_entrypoints:
-            # Skip import lines in favor of entry points.
-            continue
-
-        _trace(
-            f"import lines in {filename} are deprecated, "
-            f"use entry points in a {name}.start file instead."
-        )
-
-        for line in imports:
-            try:
-                _trace(f"Exec'ing from {filename}: {line}")
-                exec(line)
-            except Exception as exc:
-                _print_error(
-                    f"Error in import line from {filename}: {line}", exc)
-
-
-def _execute_start_entrypoints():
-    """Execute all accumulated .start file entry points.
-
-    Called after all site-packages directories have been processed so that
-    sys.path is fully populated before any entry point code runs.  Uses
-    pkgutil.resolve_name(strict=True) which both validates the strict
-    pkg.mod:callable form and resolves the entry point in one step.
-    """
-    for filename, entrypoints in _pending_entrypoints.items():
-        for entrypoint in entrypoints:
-            try:
-                _trace(f"Executing entry point: {entrypoint} from {filename}")
-                callable_ = pkgutil.resolve_name(entrypoint, strict=True)
-            except ValueError as exc:
-                _print_error(
-                    f"Invalid entry point syntax in {filename}: "
-                    f"{entrypoint!r}", exc)
+        for n, line in enumerate(lines, 1):
+            line = line.strip()
+            if not line or line.startswith("#"):
                 continue
-            except Exception as exc:
-                _print_error(
-                    f"Error resolving entry point {entrypoint} "
-                    f"from {filename}", exc)
+            # Syntax validation is deferred to entry point execution
+            # time, where pkgutil.resolve_name(strict=True) enforces the
+            # pkg.mod:callable form.
+            entrypoints.append(line)
+
+    def process(self):
+        """Apply accumulated state in PEP 829 order.
+
+        Phase order matters: all .pth path extensions are applied to
+        sys.path *before* any import line or .start entry point runs, so
+        that an entry point may live in a module reachable only via a
+        .pth-extended path.
+        """
+        self._extend_syspath()
+        self._exec_imports()
+        self._execute_start_entrypoints()
+
+    def _extend_syspath(self):
+        # Duplicates have already been filtered (in existing sys.path or
+        # across .pth files via known_paths), and entries are already
+        # abspath/normpath'd, so all that remains is to confirm the path
+        # exists.
+        for filename, dirs in self._syspaths.items():
+            for dir_ in dirs:
+                if os.path.exists(dir_):
+                    _trace(f"Extending sys.path with {dir_} from {filename}")
+                    sys.path.append(dir_)
+                else:
+                    _print_error(
+                        f"In {filename}: {dir_} does not exist; "
+                        f"skipping sys.path append"
+                    )
+
+    def _exec_imports(self):
+        # For each `import` line we've seen in a .pth file, exec() it in
+        # order, unless the .pth has a matching .start file in this same
+        # batch.  In that case, PEP 829 says the import lines are
+        # suppressed in favor of the .start's entry points.
+        for filename, imports in self._importexecs.items():
+            # Given "/path/to/foo.pth", check whether "/path/to/foo.start" was
+            # registered in this same batch.
+            name, dot, pth = filename.rpartition(".")
+            assert dot == "." and pth == "pth", (
+                f"Bad startup filename: {filename}"
+            )
+            if f"{name}.start" in self._entrypoints:
+                _trace(
+                    f"import lines in {filename} are suppressed "
+                    f"due to matching {name}.start file."
+                )
                 continue
-            try:
-                callable_()
-            except Exception as exc:
-                _print_error(
-                    f"Error in entry point {entrypoint} from {filename}",
-                    exc)
+
+            _trace(
+                f"import lines in {filename} are deprecated, "
+                f"use entry points in a {name}.start file instead."
+            )
+            for line in imports:
+                try:
+                    _trace(f"Exec'ing from {filename}: {line}")
+                    exec(line)
+                except Exception as exc:
+                    _print_error(
+                        f"Error in import line from {filename}: {line}",
+                        exc,
+                    )
+
+    def _execute_start_entrypoints(self):
+        # Resolve each entry point string to a callable via
+        # pkgutil.resolve_name(strict=True), which both validates the
+        # required pkg.mod:callable form and performs the import in one
+        # step, then call it with no arguments.
+        for filename, entrypoints in self._entrypoints.items():
+            for entrypoint in entrypoints:
+                try:
+                    _trace(
+                        f"Executing entry point: {entrypoint} from {filename}"
+                    )
+                    callable_ = pkgutil.resolve_name(entrypoint, strict=True)
+                except ValueError as exc:
+                    _print_error(
+                        f"Invalid entry point syntax in {filename}: "
+                        f"{entrypoint!r}",
+                        exc,
+                    )
+                except Exception as exc:
+                    _print_error(
+                        f"Error resolving entry point {entrypoint} "
+                        f"from {filename}",
+                        exc,
+                    )
+                else:
+                    try:
+                        callable_()
+                    except Exception as exc:
+                        _print_error(
+                            f"Error in entry point {entrypoint} from {filename}",
+                            exc,
+                        )
 
 
 def process_startup_files():
-    """Flush all pending sys.path and entry points."""
-    _extend_syspath()
-    _exec_imports()
-    _execute_start_entrypoints()
-    _pending_syspaths.clear()
-    _pending_importexecs.clear()
-    _pending_entrypoints.clear()
+    """Flush any pending startup-file state accumulated during a batch.
+
+    Used by main() (and any external caller that drove addsitedir() with
+    defer_processing_start_files=True) to apply the accumulated paths
+    and run the deferred import lines / entry points.
+
+    Reentrancy: the active batch state is detached from _startup_state
+    *before* state.process() runs.  This way, if an exec'd import line
+    or .start entry point itself calls site.addsitedir(), that call
+    creates its own per-call _StartupState rather than mutating the dicts
+    being iterated here.  See gh-149504.
+    """
+    global _startup_state
+    if _startup_state is None:
+        return
+    state, _startup_state = _startup_state, None
+    state.process()
 
 
 def addpackage(sitedir, name, known_paths):
@@ -370,16 +462,26 @@ def addpackage(sitedir, name, known_paths):
         reset = True
     else:
         reset = False
-    _read_pth_file(sitedir, name, known_paths)
-    process_startup_files()
-    if reset:
-        known_paths = None
-    return known_paths
+
+    # If a batch is already in progress (for example, main() is still
+    # accumulating sitedirs), participate in the batch by writing into the
+    # shared _startup_state and letting the eventual process_startup_files()
+    # flush it. Otherwise this is a standalone call, so create a unique
+    # per-call state, populate it, and process it before returning.
+    if _startup_state is None:
+        state = _StartupState()
+        state.read_pth_file(sitedir, name, known_paths)
+        state.process()
+    else:
+        _startup_state.read_pth_file(sitedir, name, known_paths)
+
+    return None if reset else known_paths
 
 
 def addsitedir(sitedir, known_paths=None, *, defer_processing_start_files=False):
     """Add 'sitedir' argument to sys.path if missing and handle startup
     files."""
+    global _startup_state
     _trace(f"Adding directory: {sitedir!r}")
     if known_paths is None:
         known_paths = _init_pathinfo()
@@ -391,7 +493,7 @@ def addsitedir(sitedir, known_paths=None, *, defer_processing_start_files=False)
     # If the normcase'd new sitedir isn't already known, append it to
     # sys.path, keep a record of it, and process all .pth and .start files
     # found in that directory.  If the new sitedir is known, be sure not
-    # to process all of those twice!  gh-75723
+    # to process all of those more than once!  gh-75723
     if sitedircase not in known_paths:
         sys.path.append(sitedir)
         known_paths.add(sitedircase)
@@ -399,7 +501,38 @@ def addsitedir(sitedir, known_paths=None, *, defer_processing_start_files=False)
         try:
             names = os.listdir(sitedir)
         except OSError:
-            return
+            return None if reset else known_paths
+
+        # Pick the _StartupState we'll write into.  There are three cases:
+        #
+        # 1. A batch is already active (_startup_state is set, e.g.  because
+        #    main() previously called us with
+        #    defer_processing_start_files=True).  Participate in this batch by
+        #    sharing the same state.  Don't flush the state since the batch's
+        #    eventual process_startup_files() will do that.
+        #
+        # 2. There is no active batch but the caller passed
+        #    defer_processing_start_files=True.  Preserve a fresh
+        #    _StartupState into the global _startup_state so that subsequent
+        #    addsitedir() calls participate in this batch, and so that the
+        #    caller's later process_startup_files() finds it.
+        #
+        # 3. This is a standalone call (there is no active batch and
+        #    defer_processing_start_files=False).  Create a unique per-call
+        #    state, populate it, process it, and then clear it.  Per-call
+        #    state is what makes reentrant addsitedir() safe; a recursive call
+        #    from inside process() lands here too and gets its own independent
+        #    state.
+
+        if _startup_state is not None:
+            state = _startup_state
+            flush_now = False
+        elif defer_processing_start_files:
+            state = _startup_state = _StartupState()
+            flush_now = False
+        else:
+            state = _StartupState()
+            flush_now = True
 
         # The following phases are defined by PEP 829.
         # Phases 1-3: Read .pth files, accumulating paths and import lines.
@@ -408,29 +541,22 @@ def addsitedir(sitedir, known_paths=None, *, defer_processing_start_files=False)
             if name.endswith(".pth") and not name.startswith(".")
         )
         for name in pth_names:
-            _read_pth_file(sitedir, name, known_paths)
+            state.read_pth_file(sitedir, name, known_paths)
 
         # Phases 6-7: Discover .start files and accumulate their entry points.
-        # Import lines from .pth files with a matching .start file are discarded
-        # at flush time by _exec_imports().
+        # Import lines from .pth files with a matching .start file are
+        # discarded at flush time by _StartupState._exec_imports().
         start_names = sorted(
             name for name in names
             if name.endswith(".start") and not name.startswith(".")
         )
         for name in start_names:
-            _read_start_file(sitedir, name)
+            state.read_start_file(sitedir, name)
 
-        # Generally, when addsitedir() is called explicitly, we'll want to process
-        # all the startup file data immediately.  However, when called through
-        # main(), we'll want to batch up all the startup file processing.  main()
-        # will set this flag to True to defer processing.
-        if not defer_processing_start_files:
-            process_startup_files()
+        if flush_now:
+            state.process()
 
-    if reset:
-        return None
-
-    return known_paths
+    return None if reset else known_paths
 
 
 def check_enableusersite():

@@ -900,7 +900,7 @@ free_values(PyDictValues *values, bool use_qsbr)
 static inline PyObject *
 new_dict_impl(PyDictObject *mp, PyDictKeysObject *keys,
               PyDictValues *values, Py_ssize_t used,
-              int free_values_on_failure)
+              int free_values_on_failure, int frozendict)
 {
     assert(keys != NULL);
     if (mp == NULL) {
@@ -915,6 +915,9 @@ new_dict_impl(PyDictObject *mp, PyDictKeysObject *keys,
     mp->ma_values = values;
     mp->ma_used = used;
     mp->_ma_watcher_tag = 0;
+    if (frozendict) {
+        ((PyFrozenDictObject *)mp)->ma_hash = -1;
+    }
     ASSERT_CONSISTENT(mp);
     _PyObject_GC_TRACK(mp);
     return (PyObject *)mp;
@@ -931,7 +934,7 @@ new_dict(PyDictKeysObject *keys, PyDictValues *values,
     }
     assert(mp == NULL || Py_IS_TYPE(mp, &PyDict_Type));
 
-    return new_dict_impl(mp, keys, values, used, free_values_on_failure);
+    return new_dict_impl(mp, keys, values, used, free_values_on_failure, 0);
 }
 
 /* Consumes a reference to the keys object */
@@ -940,7 +943,7 @@ new_frozendict(PyDictKeysObject *keys, PyDictValues *values,
                Py_ssize_t used, int free_values_on_failure)
 {
     PyDictObject *mp = PyObject_GC_New(PyDictObject, &PyFrozenDict_Type);
-    return new_dict_impl(mp, keys, values, used, free_values_on_failure);
+    return new_dict_impl(mp, keys, values, used, free_values_on_failure, 1);
 }
 
 static PyObject *
@@ -3080,10 +3083,12 @@ clear_lock_held(PyObject *op)
         set_keys(mp, Py_EMPTY_KEYS);
         n = oldkeys->dk_nentries;
         for (i = 0; i < n; i++) {
-            Py_CLEAR(oldvalues->values[i]);
+            PyObject *tmp = oldvalues->values[i];
+            FT_ATOMIC_STORE_PTR_RELEASE(oldvalues->values[i], NULL);
+            Py_XDECREF(tmp);
         }
         free_values(oldvalues, IS_DICT_SHARED(mp));
-        dictkeys_decref(oldkeys, false);
+        dictkeys_decref(oldkeys, IS_DICT_SHARED(mp));
     }
     ASSERT_CONSISTENT(mp);
 }
@@ -8225,6 +8230,39 @@ _shuffle_bits(Py_uhash_t h)
     return ((h ^ 89869747UL) ^ (h << 16)) * 3644798167UL;
 }
 
+// Compute hash((key, value)).
+// Code copied from tuple_hash().
+static Py_hash_t
+frozendict_pair_hash(Py_hash_t key_hash, PyObject *value)
+{
+    assert(key_hash != -1);
+
+    const Py_ssize_t len = 2;
+    Py_uhash_t acc = _PyTuple_HASH_XXPRIME_5;
+
+    Py_uhash_t lane = key_hash;
+    acc += lane * _PyTuple_HASH_XXPRIME_2;
+    acc = _PyTuple_HASH_XXROTATE(acc);
+    acc *= _PyTuple_HASH_XXPRIME_1;
+
+    lane = PyObject_Hash(value);
+    if (lane == (Py_uhash_t)-1) {
+        return -1;
+    }
+    acc += lane * _PyTuple_HASH_XXPRIME_2;
+    acc = _PyTuple_HASH_XXROTATE(acc);
+    acc *= _PyTuple_HASH_XXPRIME_1;
+
+    /* Add input length, mangled to keep the historical value of hash(()). */
+    acc += len ^ (_PyTuple_HASH_XXPRIME_5 ^ 3527539UL);
+
+    if (acc == (Py_uhash_t)-1) {
+        acc = 1546275796;
+    }
+    return acc;
+}
+
+
 // Code copied from frozenset_hash()
 static Py_hash_t
 frozendict_hash(PyObject *op)
@@ -8238,20 +8276,15 @@ frozendict_hash(PyObject *op)
     PyDictObject *mp = _PyAnyDict_CAST(op);
     Py_uhash_t hash = 0;
 
-    PyObject *key, *value;  // borrowed refs
+    PyObject *value;  // borrowed ref
     Py_ssize_t pos = 0;
-    while (PyDict_Next(op, &pos, &key, &value)) {
-        Py_hash_t key_hash = PyObject_Hash(key);
-        if (key_hash == -1) {
+    Py_hash_t key_hash;
+    while (_PyDict_Next(op, &pos, NULL, &value, &key_hash)) {
+        Py_hash_t pair_hash = frozendict_pair_hash(key_hash, value);
+        if (pair_hash == -1) {
             return -1;
         }
-        hash ^= _shuffle_bits(key_hash);
-
-        Py_hash_t value_hash = PyObject_Hash(value);
-        if (value_hash == -1) {
-            return -1;
-        }
-        hash ^= _shuffle_bits(value_hash);
+        hash ^= _shuffle_bits(pair_hash);
     }
 
     /* Factor in the number of active entries */
