@@ -1,8 +1,14 @@
-#include "Python.h"
+// Lock-free per type method cache implementation.
 
+// The cache is used for method and attribute lookups on type objects.
+// The stored names are always interned strings, and the
+// stored values are borrowed references to the corresponding method or attribute object.
+// For static types, the cache is stored on the per-interpreter managed_static_type_state,
+// and for heap types the cache is stored in the `PyTypeObject._tp_cache` field.
+
+#include "Python.h"
 #include "pycore_typecache.h"
 #include "pycore_interp.h"        // PyInterpreterState
-#include "pycore_object.h"        // _PyObject_XDecRefDelayed()
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_pyatomic_ft_wrappers.h"
@@ -18,7 +24,10 @@ static struct {
         .used = 0,
     },
 };
-
+// The empty cache is statically allocated and shared across all the types,
+// when a type is modified, the cache of type is set to the empty cache
+// and when a cache entry is inserted to the empty cache, a new cache is
+// allocated for the type and the entry is inserted to the new cache.
 #define empty_cache (empty_cache_storage.cache)
 
 static inline uint32_t cache_size(struct type_cache *cache)
@@ -95,7 +104,10 @@ static inline void type_cache_insert(struct type_cache *cache, PyObject *name,
     uint32_t index = hash & cache->mask;
     for (;;) {
         if (cache->hashtable[index].name == NULL) {
+#ifndef Py_GIL_DISABLED
+            // On free-threading, all interned strings are immortal.
             Py_INCREF(name);
+#endif
             FT_ATOMIC_STORE_PTR(cache->hashtable[index].value, value);
             FT_ATOMIC_STORE_PTR(cache->hashtable[index].name, name);
             cache->used++;
@@ -179,6 +191,7 @@ struct _PyTypeCacheLookupResult _PyTypeCache_Lookup(PyTypeObject *type, PyObject
         }
         index = (index + 1) & cache->mask;
     }
+    // to maintain consistency with find_name_in_mro and prevent stale cache reads
     uint32_t cache_version = FT_ATOMIC_LOAD_UINT_RELAXED(cache->version_tag);
     if (cache_version != FT_ATOMIC_LOAD_UINT_RELAXED(type->tp_version_tag)) {
         PyStackRef_XCLOSE(out_ref);
@@ -186,6 +199,7 @@ struct _PyTypeCacheLookupResult _PyTypeCache_Lookup(PyTypeObject *type, PyObject
     }
     return (struct _PyTypeCacheLookupResult){out_ref, 1, cache_version};
 }
+
 
 void _PyTypeCache_Invalidate(PyTypeObject *type) {
     struct type_cache *cache = get_cache(type);
