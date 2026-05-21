@@ -63,6 +63,46 @@
 static const uintptr_t min_frame_pointer_addr = 0x1000;
 #define MAX_UNWIND_FRAMES 200
 
+#ifdef __s390x__
+// Linux's s390 "Stack Frame Layout" table documents that z/Architecture
+// backchain frames start with the backchain at offset 0 and store "saved r14
+// of caller function" at offset 112.  The same document's register table
+// identifies r14 as the return-address register, so this backchain unwinder
+// reads the return address from fp + 112.
+// https://www.kernel.org/doc/html/v5.3/s390/debugging390.html#stack-frame-layout
+//
+// This is only for Linux s390x backchain frames.  The s390x ELF ABI does not
+// generally mandate where RA and FP are saved, or whether they are saved at all.
+// https://sourceware.org/binutils/docs/sframe-spec.html#s390x
+#  define S390X_FRAME_RETURN_ADDRESS_OFFSET 112
+#endif
+
+// The generic manual unwinder treats the frame pointer as a two-word record:
+// fp[0] is the previous frame pointer and fp[1] is the return address.  That is
+// not true for every architecture, even with frame pointers enabled, so these
+// offsets describe the actual slots used by each supported frame layout.
+#if defined(__arm__) && !defined(__thumb__) && !defined(__clang__)
+// GCC ARM mode keeps the caller's fp one word below fp and the saved LR at
+// fp[0], so the return address is not in the generic fp[1] slot.
+#  define FRAME_POINTER_NEXT_OFFSET (-1)
+#  define FRAME_POINTER_RETURN_OFFSET 0
+#elif defined(__s390x__)
+// s390x backchain frames keep the previous frame pointer at fp[0], but save the
+// return-address register in the ABI register save area rather than fp[1].
+#  define FRAME_POINTER_NEXT_OFFSET 0
+#  define FRAME_POINTER_RETURN_OFFSET \
+    (S390X_FRAME_RETURN_ADDRESS_OFFSET / (Py_ssize_t)sizeof(uintptr_t))
+#elif defined(__powerpc64__) || defined(__ppc64__)
+// ppc64le puts the return address at fp[2]; it saves the Condition Register
+// in fp[1]. See:
+// https://refspecs.linuxfoundation.org/ELF/ppc64/PPC-elf64abi-1.9.html#STACK
+#  define FRAME_POINTER_NEXT_OFFSET 0
+#  define FRAME_POINTER_RETURN_OFFSET 2
+#else
+#  define FRAME_POINTER_NEXT_OFFSET 0
+#  define FRAME_POINTER_RETURN_OFFSET 1
+#endif
+
 
 static PyObject *
 _get_current_module(void)
@@ -329,13 +369,94 @@ get_jit_backend(PyObject *self, PyObject *Py_UNUSED(args))
 #endif
 }
 
+static int
+stack_address_is_valid(uintptr_t addr, uintptr_t stack_min, uintptr_t stack_max)
+{
+    if (addr < min_frame_pointer_addr) {
+        return 0;
+    }
+    if (stack_min != 0 && (addr < stack_min || addr >= stack_max)) {
+        return 0;
+    }
+    return 1;
+}
+
+static int
+frame_pointer_slot_is_valid(uintptr_t *frame_pointer, Py_ssize_t offset,
+                            uintptr_t stack_min, uintptr_t stack_max)
+{
+    uintptr_t fp_addr = (uintptr_t)frame_pointer;
+    uintptr_t slot_addr;
+    uintptr_t delta = (uintptr_t)Py_ABS(offset) * sizeof(uintptr_t);
+    if (offset < 0) {
+        if (fp_addr < delta) {
+            return 0;
+        }
+        slot_addr = fp_addr - delta;
+    }
+    else {
+        if (fp_addr > UINTPTR_MAX - delta) {
+            return 0;
+        }
+        slot_addr = fp_addr + delta;
+    }
+    if (!stack_address_is_valid(slot_addr, stack_min, stack_max)) {
+        return 0;
+    }
+    if (stack_max != 0) {
+        if (slot_addr > UINTPTR_MAX - sizeof(uintptr_t)) {
+            return 0;
+        }
+        if (slot_addr + sizeof(uintptr_t) > stack_max) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+static int
+next_frame_pointer_is_valid(uintptr_t *frame_pointer, uintptr_t *next_fp,
+                            uintptr_t stack_min, uintptr_t stack_max)
+{
+    uintptr_t fp_addr = (uintptr_t)frame_pointer;
+    uintptr_t next_addr = (uintptr_t)next_fp;
+    if (!stack_address_is_valid(next_addr, stack_min, stack_max)) {
+        return 0;
+    }
+    if ((next_addr % sizeof(uintptr_t)) != 0) {
+        return 0;
+    }
+#if _Py_STACK_GROWS_DOWN
+    return next_addr > fp_addr;
+#else
+    return next_addr < fp_addr;
+#endif
+}
+
 static PyObject *
 manual_unwind_from_fp(uintptr_t *frame_pointer)
 {
-    int stack_grows_down = _Py_STACK_GROWS_DOWN;
+    uintptr_t stack_min = 0;
+    uintptr_t stack_max = 0;
+
+#ifdef __s390x__
+    Py_BUILD_ASSERT(S390X_FRAME_RETURN_ADDRESS_OFFSET % sizeof(uintptr_t) == 0);
+#endif
 
     if (frame_pointer == NULL) {
         return PyList_New(0);
+    }
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (tstate != NULL) {
+        _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+#if _Py_STACK_GROWS_DOWN
+        stack_min = tstate_impl->c_stack_hard_limit;
+        stack_max = tstate_impl->c_stack_top;
+#else
+        stack_min = tstate_impl->c_stack_top;
+        stack_max = tstate_impl->c_stack_hard_limit;
+#endif
     }
 
     PyObject *result = PyList_New(0);
@@ -357,7 +478,21 @@ manual_unwind_from_fp(uintptr_t *frame_pointer)
                 MAX_UNWIND_FRAMES);
             return NULL;
         }
-        uintptr_t return_addr = frame_pointer[1];
+        if (!stack_address_is_valid(fp_addr, stack_min, stack_max)) {
+            break;
+        }
+        if (!frame_pointer_slot_is_valid(frame_pointer,
+                                         FRAME_POINTER_NEXT_OFFSET,
+                                         stack_min, stack_max)) {
+            break;
+        }
+        if (!frame_pointer_slot_is_valid(frame_pointer,
+                                         FRAME_POINTER_RETURN_OFFSET,
+                                         stack_min, stack_max)) {
+            break;
+        }
+        uintptr_t *next_fp = (uintptr_t *)frame_pointer[FRAME_POINTER_NEXT_OFFSET];
+        uintptr_t return_addr = frame_pointer[FRAME_POINTER_RETURN_OFFSET];
 
         PyObject *addr_obj = PyLong_FromUnsignedLongLong(return_addr);
         if (addr_obj == NULL) {
@@ -372,21 +507,9 @@ manual_unwind_from_fp(uintptr_t *frame_pointer)
         Py_DECREF(addr_obj);
         depth++;
 
-        uintptr_t *next_fp = (uintptr_t *)frame_pointer[0];
-        // Stop if the frame pointer is extremely low.
-        if ((uintptr_t)next_fp < min_frame_pointer_addr) {
+        if (!next_frame_pointer_is_valid(frame_pointer, next_fp,
+                                         stack_min, stack_max)) {
             break;
-        }
-        uintptr_t next_addr = (uintptr_t)next_fp;
-        if (stack_grows_down) {
-            if (next_addr <= fp_addr) {
-                break;
-            }
-        }
-        else {
-            if (next_addr >= fp_addr) {
-                break;
-            }
         }
         frame_pointer = next_fp;
     }
@@ -2942,6 +3065,69 @@ test_threadstate_set_stack_protection(PyObject *self, PyObject *Py_UNUSED(args))
     Py_RETURN_NONE;
 }
 
+#define NUM_GUARDS 100
+
+static PyObject *
+test_interp_guard_countdown(PyObject *self, PyObject *unused)
+{
+    PyThreadState *save_tstate = PyThreadState_Swap(NULL);
+
+    // This test assumes that the interpreter has no guards active.
+    // While this is currently true for the main interpreter as of writing,
+    // this won't necessarily be true in the future. For the sake of
+    // maintainance, we create a new interpreter to be sure that there aren't
+    // any other guards.
+    PyThreadState *interp_tstate = Py_NewInterpreter();
+    assert(interp_tstate != NULL);
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    assert(_PyInterpreterState_GuardCountdown(interp) == 0);
+
+    PyInterpreterGuard *guards[NUM_GUARDS];
+    for (int i = 0; i < NUM_GUARDS; ++i) {
+        guards[i] = PyInterpreterGuard_FromCurrent();
+        assert(guards[i] != 0);
+        assert(_PyInterpreterState_GuardCountdown(interp) == i + 1);
+    }
+
+    for (int i = 0; i < NUM_GUARDS; ++i) {
+        PyInterpreterGuard_Close(guards[i]);
+        assert(_PyInterpreterState_GuardCountdown(interp) == (NUM_GUARDS - i - 1));
+    }
+
+    Py_EndInterpreter(interp_tstate);
+    PyThreadState_Swap(save_tstate);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+test_interp_view_countdown(PyObject *self, PyObject *unused)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterView *view = PyInterpreterView_FromCurrent();
+    if (view == NULL) {
+        return NULL;
+    }
+    assert(_PyInterpreterState_GuardCountdown(interp) == 0);
+
+    PyInterpreterGuard *guards[NUM_GUARDS];
+
+    for (int i = 0; i < NUM_GUARDS; ++i) {
+        guards[i] = PyInterpreterGuard_FromView(view);
+        assert(guards[i] != 0);
+        assert(_PyInterpreterGuard_GetInterpreter(guards[i]) == interp);
+        assert(_PyInterpreterState_GuardCountdown(interp) == i + 1);
+    }
+
+    for (int i = 0; i < NUM_GUARDS; ++i) {
+        PyInterpreterGuard_Close(guards[i]);
+        assert(_PyInterpreterState_GuardCountdown(interp) == (NUM_GUARDS - i - 1));
+    }
+
+    PyInterpreterView_Close(view);
+    Py_RETURN_NONE;
+}
+
+#undef NUM_LOCKS
 
 static PyObject *
 _pyerr_setkeyerror(PyObject *self, PyObject *arg)
@@ -2956,6 +3142,52 @@ _pyerr_setkeyerror(PyObject *self, PyObject *arg)
     return NULL;
 }
 
+static PyObject *
+test_thread_state_ensure_from_view_interp_switch(PyObject *self, PyObject *unused)
+{
+    /* The main tstate is already attached and was NOT created by
+     * PyThreadState_Ensure, so delete_on_release == 0. */
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(interp != NULL);
+    PyInterpreterView *view = PyInterpreterView_FromCurrent();
+    assert(view != NULL);
+
+    /* First Ensure/Release pair on this pre-existing tstate. */
+    assert(_PyThreadState_GET() != NULL);
+    PyThreadStateToken *t1 = PyThreadState_EnsureFromView(view);
+    assert(t1 != NULL);
+    assert(_PyInterpreterState_GuardCountdown(interp) == 1);
+    PyThreadState_Release(t1);
+    assert(_PyInterpreterState_GuardCountdown(interp) == 0);
+    assert(_PyThreadState_GET() != NULL);
+
+    /* tstate->ensure.owned_guard now points at the freed guard. */
+
+    /* Re-attach: Bug B detaches us as a side effect (separate repro). */
+    PyThreadState *save = PyThreadState_Swap(NULL);
+
+    PyThreadStateToken *t2 = PyThreadState_EnsureFromView(view);
+    assert(_PyInterpreterState_GuardCountdown(interp) == 1);
+    assert(t2 != NULL);
+    PyThreadState_Release(t2);
+    assert(_PyInterpreterState_GuardCountdown(interp) == 0);
+    assert(_PyThreadState_GET() == NULL);
+
+    PyThreadState_Swap(save);
+
+    /* In a release build (no assertion) the second Ensure silently
+     * skipped storing its guard and Release decremented the global
+     * counter from 0, wrapping it to GUARDS_NOT_ALLOWED.  All future
+     * guard acquisitions then fail: */
+    PyInterpreterGuard *g = PyInterpreterGuard_FromCurrent();
+    assert(g != NULL);
+    assert(_PyInterpreterState_GuardCountdown(interp) == 1);
+    PyInterpreterGuard_Close(g);
+    assert(_PyInterpreterState_GuardCountdown(interp) == 0);
+
+    PyInterpreterView_Close(view);
+    Py_RETURN_NONE;
+}
 
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
@@ -3081,6 +3313,9 @@ static PyMethodDef module_functions[] = {
     {"test_threadstate_set_stack_protection",
      test_threadstate_set_stack_protection, METH_NOARGS},
     {"_pyerr_setkeyerror", _pyerr_setkeyerror, METH_O},
+    {"test_interp_guard_countdown", test_interp_guard_countdown, METH_NOARGS},
+    {"test_interp_view_countdown", test_interp_view_countdown, METH_NOARGS},
+    {"test_thread_state_ensure_from_view_interp_switch", test_thread_state_ensure_from_view_interp_switch, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -3169,6 +3404,12 @@ module_exec(PyObject *module)
     if (PyModule_AddIntMacro(module, _PY_NSMALLPOSINTS) < 0) {
         return 1;
     }
+
+#ifdef _Py_WITH_FRAME_POINTERS
+    if (PyModule_AddIntMacro(module, _Py_WITH_FRAME_POINTERS) < 0) {
+        return 1;
+    }
+#endif
 
     return 0;
 }

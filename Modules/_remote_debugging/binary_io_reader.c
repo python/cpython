@@ -358,7 +358,7 @@ reader_parse_frame_table(BinaryReader *reader, const uint8_t *data, size_t file_
 }
 
 BinaryReader *
-binary_reader_open(const char *filename)
+binary_reader_open(PyObject *path)
 {
     BinaryReader *reader = PyMem_Calloc(1, sizeof(BinaryReader));
     if (!reader) {
@@ -367,28 +367,17 @@ binary_reader_open(const char *filename)
     }
 
 #if USE_MMAP
-    reader->fd = -1;  /* Explicit initialization for cleanup safety */
-#endif
-
-    reader->filename = PyMem_Malloc(strlen(filename) + 1);
-    if (!reader->filename) {
-        PyMem_Free(reader);
-        PyErr_NoMemory();
-        return NULL;
-    }
-    strcpy(reader->filename, filename);
-
-#if USE_MMAP
     /* Open with mmap on Unix */
-    reader->fd = open(filename, O_RDONLY);
-    if (reader->fd < 0) {
-        PyErr_SetFromErrnoWithFilename(PyExc_IOError, filename);
+    FILE *fp = Py_fopen(path, "rb");
+    if (!fp) {
         goto error;
     }
+    int fd = fileno(fp);
 
     struct stat st;
-    if (fstat(reader->fd, &st) < 0) {
+    if (fstat(fd, &st) < 0) {
         PyErr_SetFromErrno(PyExc_IOError);
+        Py_fclose(fp);
         goto error;
     }
     reader->mapped_size = st.st_size;
@@ -400,14 +389,15 @@ binary_reader_open(const char *filename)
      */
 #ifdef __linux__
     reader->mapped_data = mmap(NULL, reader->mapped_size, PROT_READ,
-                               MAP_PRIVATE | MAP_POPULATE, reader->fd, 0);
+                               MAP_PRIVATE | MAP_POPULATE, fd, 0);
 #else
     reader->mapped_data = mmap(NULL, reader->mapped_size, PROT_READ,
-                               MAP_PRIVATE, reader->fd, 0);
+                               MAP_PRIVATE, fd, 0);
 #endif
     if (reader->mapped_data == MAP_FAILED) {
         reader->mapped_data = NULL;
         PyErr_SetFromErrno(PyExc_IOError);
+        Py_fclose(fp);
         goto error;
     }
 
@@ -428,19 +418,20 @@ binary_reader_open(const char *filename)
 
     /* Add file descriptor-level hints for better kernel I/O scheduling */
 #if defined(__linux__) && defined(POSIX_FADV_SEQUENTIAL)
-    (void)posix_fadvise(reader->fd, 0, 0, POSIX_FADV_SEQUENTIAL);
+    (void)posix_fadvise(fd, 0, 0, POSIX_FADV_SEQUENTIAL);
     if (reader->mapped_size > (64 * 1024 * 1024)) {
-        (void)posix_fadvise(reader->fd, 0, 0, POSIX_FADV_WILLNEED);
+        (void)posix_fadvise(fd, 0, 0, POSIX_FADV_WILLNEED);
     }
 #endif
+
+    (void)Py_fclose(fp);
 
     uint8_t *data = reader->mapped_data;
     size_t file_size = reader->mapped_size;
 #else
     /* Use stdio on Windows */
-    reader->fp = fopen(filename, "rb");
+    reader->fp = Py_fopen(path, "rb");
     if (!reader->fp) {
-        PyErr_SetFromErrnoWithFilename(PyExc_IOError, filename);
         goto error;
     }
 
@@ -1263,8 +1254,6 @@ binary_reader_close(BinaryReader *reader)
         return;
     }
 
-    PyMem_Free(reader->filename);
-
 #if USE_MMAP
     if (reader->mapped_data) {
         munmap(reader->mapped_data, reader->mapped_size);
@@ -1274,13 +1263,9 @@ binary_reader_close(BinaryReader *reader)
     /* Clear sample_data which may point into the now-unmapped region */
     reader->sample_data = NULL;
     reader->sample_data_size = 0;
-    if (reader->fd >= 0) {
-        close(reader->fd);
-        reader->fd = -1;  /* Mark as closed */
-    }
 #else
     if (reader->fp) {
-        fclose(reader->fp);
+        Py_fclose(reader->fp);
         reader->fp = NULL;
     }
     if (reader->file_data) {

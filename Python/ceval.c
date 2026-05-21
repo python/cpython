@@ -3037,6 +3037,13 @@ error:
     return res;
 }
 
+static int
+is_lazy_import_module_level(void)
+{
+    _PyInterpreterFrame *frame = _PyEval_GetFrame();
+    return frame != NULL && frame->f_globals == frame->f_locals;
+}
+
 PyObject *
 _PyEval_LazyImportName(PyThreadState *tstate, PyObject *builtins,
                        PyObject *globals, PyObject *locals, PyObject *name,
@@ -3045,21 +3052,24 @@ _PyEval_LazyImportName(PyThreadState *tstate, PyObject *builtins,
     PyObject *res = NULL;
     // Check if global policy overrides the local syntax
     switch (PyImport_GetLazyImportsMode()) {
-        case PyImport_LAZY_NONE:
-            lazy = 0;
-            break;
         case PyImport_LAZY_ALL:
-            lazy = 1;
+            if (!lazy) {
+                lazy = is_lazy_import_module_level();
+            }
             break;
         case PyImport_LAZY_NORMAL:
             break;
     }
 
-    if (!lazy && PyImport_GetLazyImportsMode() != PyImport_LAZY_NONE) {
+    if (!lazy) {
         // See if __lazy_modules__ forces this to be lazy.
-        lazy = check_lazy_import_compatibility(tstate, globals, name, level);
-        if (lazy < 0) {
-            return NULL;
+        // __lazy_modules__ only applies at module level; exec() inside
+        // functions or classes should remain eager.
+        if (is_lazy_import_module_level()) {
+            lazy = check_lazy_import_compatibility(tstate, globals, name, level);
+            if (lazy < 0) {
+                return NULL;
+            }
         }
     }
 
