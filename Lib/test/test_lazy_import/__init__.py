@@ -99,6 +99,59 @@ class LazyImportTests(unittest.TestCase):
         assert_python_ok("-c", code)
 
     @support.requires_subprocess()
+    def test_from_import_with_module_getattr_raising(self):
+        """Lazy from import should respect module-level __getattr__."""
+        code = textwrap.dedent("""
+            lazy from test.test_lazy_import.data.module_with_getattr import raising_attr
+
+            try:
+                raising_attr
+            except ValueError as exc:
+                assert str(exc) == 'from_getattr', exc
+            else:
+                assert False, f'ValueError is not raised: {raising_attr}'
+        """)
+        assert_python_ok("-c", code)
+
+    @support.requires_subprocess()
+    def test_from_import_with_module_getattr_missing(self):
+        """Lazy from import should respect module-level __getattr__."""
+        for attr in ("missing_attr", "import_error_attr"):
+            with self.subTest(attr=attr):
+                code = textwrap.dedent(f"""
+                    lazy from test.test_lazy_import.data.module_with_getattr import {attr}
+
+                    try:
+                        {attr}
+                    except ImportError as exc:
+                        assert '{attr}' in str(exc), exc
+                        assert exc.__cause__ is not None
+                    else:
+                        assert False, ('ImportError is not raised', {attr})
+                """)
+                assert_python_ok("-c", code)
+
+    @support.requires_subprocess()
+    def test_from_import_with_module_getattr_warning(self):
+        """Lazy from import should respect module-level __getattr__."""
+        code = textwrap.dedent("""
+            import warnings
+
+            with warnings.catch_warnings(record=True) as log:
+                lazy from test.test_lazy_import.data.module_with_getattr import warning_attr
+
+            assert log == []
+
+            with warnings.catch_warnings(record=True) as log:
+                warning_attr
+            assert warning_attr == 'from_warning_attr', warning_attr
+            assert len(log) == 1, log
+            assert isinstance(log[0].message, UserWarning), log
+            assert str(log[0].message) == 'from_getattr', log
+        """)
+        assert_python_ok("-c", code)
+
+    @support.requires_subprocess()
     def test_from_import_with_imported_module_getattr(self):
         """Lazy from import should not shadow an imported module's __getattr__."""
         code = textwrap.dedent("""
@@ -462,6 +515,59 @@ class PackageTests(unittest.TestCase):
         g = test.test_lazy_import.data.pkg.c.get_globals()
         self.assertEqual(type(g["x"]), int)
         self.assertEqual(type(g["b"]), types.LazyImportType)
+
+    @support.requires_subprocess()
+    def test_package_from_import_with_module_getattr_raising(self):
+        """Lazy from import should respect a package's __getattr__."""
+        code = textwrap.dedent("""
+            lazy from test.test_lazy_import.data.pkg import raising_attr
+
+            try:
+                raising_attr
+            except ValueError as exc:
+                assert str(exc) == 'from_getattr', exc
+            else:
+                assert False, f'ValueError is not raised: {raising_attr}'
+        """)
+        assert_python_ok("-c", code)
+
+    @support.requires_subprocess()
+    def test_package_from_import_with_module_getattr_missing(self):
+        """Lazy from import should respect package's __getattr__."""
+        for attr in ("missing_attr", "import_error_attr"):
+            with self.subTest(attr=attr):
+                code = textwrap.dedent(f"""
+                    lazy from test.test_lazy_import.data.pkg import {attr}
+
+                    try:
+                        {attr}
+                    except ImportError as exc:
+                        assert '{attr}' in str(exc), exc
+                        assert exc.__cause__ is not None
+                    else:
+                        assert False, ('ImportError is not raised', {attr})
+                """)
+                assert_python_ok("-c", code)
+
+    @support.requires_subprocess()
+    def test_from_import_with_module_getattr_warning(self):
+        """Lazy from import should respect package's __getattr__."""
+        code = textwrap.dedent("""
+            import warnings
+
+            with warnings.catch_warnings(record=True) as log:
+                lazy from test.test_lazy_import.data.pkg import warning_attr
+
+            assert log == []
+
+            with warnings.catch_warnings(record=True) as log:
+                warning_attr
+            assert warning_attr == 'from_warning_attr', warning_attr
+            assert len(log) == 1, log
+            assert isinstance(log[0].message, UserWarning), log
+            assert str(log[0].message) == 'from_getattr', log
+        """)
+        assert_python_ok("-c", code)
 
     @support.requires_subprocess()
     def test_package_from_import_with_module_getattr(self):
