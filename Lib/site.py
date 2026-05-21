@@ -1004,7 +1004,6 @@ def main():
 
     orig_path = sys.path[:]
     removeduppaths()
-    known_paths = set()
     if orig_path != sys.path:
         # removeduppaths() might make sys.path absolute.
         # Fix __file__ of already imported modules too.
