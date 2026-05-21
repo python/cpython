@@ -1,0 +1,15 @@
+brew "gdbm"
+brew "mpdecimal"
+brew "openssl@3.5"
+brew "pkg-config"
+brew "tcl-tk@9"
+brew "xz"
+brew "zstd"
+
+brew "bzip2" if OS.linux?
+brew "expat" if OS.linux?
+brew "libedit" if OS.linux?
+brew "libffi" if OS.linux?
+brew "ncurses" if OS.linux?
+brew "unzip" if OS.linux?
+brew "zlib-ng-compat" if OS.linux?

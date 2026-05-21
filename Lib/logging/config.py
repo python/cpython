@@ -865,17 +865,7 @@ class DictConfigurator(BaseConfigurator):
             else:
                 factory = klass
         kwargs = {k: config[k] for k in config if (k != '.' and valid_ident(k))}
-        try:
-            result = factory(**kwargs)
-        except TypeError as te:
-            if "'stream'" not in str(te):
-                raise
-            #The argument name changed from strm to stream
-            #Retry with old name.
-            #This is so that code can be used with older Python versions
-            #(e.g. by Django)
-            kwargs['strm'] = kwargs.pop('stream')
-            result = factory(**kwargs)
+        result = factory(**kwargs)
         if formatter:
             result.setFormatter(formatter)
         if level is not None:
@@ -1007,7 +997,7 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
         """
 
         allow_reuse_address = True
-        allow_reuse_port = True
+        allow_reuse_port = False
 
         def __init__(self, host='localhost', port=DEFAULT_LOGGING_CONFIG_PORT,
                      handler=None, ready=None, verify=None):

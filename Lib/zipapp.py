@@ -134,7 +134,11 @@ def create_archive(source, target=None, interpreter=None, main=None,
     # Create the list of files to add to the archive now, in case
     # the target is being created in the source directory - we
     # don't want the target being added to itself
-    files_to_add = sorted(source.rglob('*'))
+    files_to_add = {}
+    for path in sorted(source.rglob('*')):
+        relative_path = path.relative_to(source)
+        if filter is None or filter(relative_path):
+            files_to_add[path] = relative_path
 
     # The target cannot be in the list of files to add. If it were, we'd
     # end up overwriting the source file and writing the archive into
@@ -159,10 +163,8 @@ def create_archive(source, target=None, interpreter=None, main=None,
         compression = (zipfile.ZIP_DEFLATED if compressed else
                        zipfile.ZIP_STORED)
         with zipfile.ZipFile(fd, 'w', compression=compression) as z:
-            for child in files_to_add:
-                arcname = child.relative_to(source)
-                if filter is None or filter(arcname):
-                    z.write(child, arcname.as_posix())
+            for path, relative_path in files_to_add.items():
+                z.write(path, relative_path.as_posix())
             if main_py:
                 z.writestr('__main__.py', main_py.encode('utf-8'))
 
@@ -188,13 +190,13 @@ def main(args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument('--output', '-o', default=None,
             help="The name of the output archive. "
-                 "Required if SOURCE is an archive.")
+                 "Required if `SOURCE` is an archive.")
     parser.add_argument('--python', '-p', default=None,
             help="The name of the Python interpreter to use "
                  "(default: no shebang line).")
     parser.add_argument('--main', '-m', default=None,
             help="The main function of the application "
-                 "(default: use an existing __main__.py).")
+                 "(default: use an existing `__main__.py`).")
     parser.add_argument('--compress', '-c', action='store_true',
             help="Compress files with the deflate method. "
                  "Files are stored uncompressed by default.")

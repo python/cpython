@@ -1,4 +1,0 @@
-Remove ``.. index::`` directives from the :mod:`uuid` module documentation. These directives
-previously created entries in the general index for :func:`~uuid.getnode` as well as the
-:func:`~uuid.uuid1`, :func:`~uuid.uuid3`, :func:`~uuid.uuid4`, :func:`~uuid.uuid5`, and
-:func:`~uuid.uuid8` constructor functions.

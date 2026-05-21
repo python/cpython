@@ -1,2 +1,0 @@
-The wheel tags supported by each macOS universal SDK option are now
-documented.

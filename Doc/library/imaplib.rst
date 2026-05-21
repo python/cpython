@@ -4,14 +4,6 @@
 .. module:: imaplib
    :synopsis: IMAP4 protocol client (requires sockets).
 
-.. moduleauthor:: Piers Lauder <piers@communitysolutions.com.au>
-.. sectionauthor:: Piers Lauder <piers@communitysolutions.com.au>
-.. revised by ESR, January 2000
-.. changes for IMAP4_SSL by Tino Lange <Tino.Lange@isg.de>, March 2002
-.. changes for IMAP4_stream by Piers Lauder <piers@communitysolutions.com.au>,
-   November 2002
-.. changes for IMAP4 IDLE by Forest <forestix@nom.one>, August 2024
-
 **Source code:** :source:`Lib/imaplib.py`
 
 .. index::
@@ -29,7 +21,7 @@ note that the ``STATUS`` command is not supported in IMAP4.
 
 .. include:: ../includes/wasm-notavail.rst
 
-Three classes are provided by the :mod:`imaplib` module, :class:`IMAP4` is the
+Three classes are provided by the :mod:`!imaplib` module, :class:`IMAP4` is the
 base class:
 
 
@@ -206,6 +198,11 @@ An :class:`IMAP4` instance has the following methods:
 .. method:: IMAP4.append(mailbox, flags, date_time, message)
 
    Append *message* to named mailbox.
+
+   *flags* may be ``None`` or a string of IMAP flag tokens.  Multiple
+   flags are separated by spaces, for example ``r'\Seen \Answered'``.
+   If *flags* is not already enclosed in parentheses, parentheses are
+   added automatically.
 
 
 .. method:: IMAP4.authenticate(mechanism, authobject)
@@ -412,6 +409,9 @@ An :class:`IMAP4` instance has the following methods:
    Force use of ``CRAM-MD5`` authentication when identifying the client to protect
    the password.  Will only work if the server ``CAPABILITY`` response includes the
    phrase ``AUTH=CRAM-MD5``.
+
+   .. versionchanged:: 3.15
+      An :exc:`IMAP4.error` is raised if MD5 support is not available.
 
 
 .. method:: IMAP4.logout()
@@ -698,6 +698,16 @@ The following attributes are defined on instances of :class:`IMAP4`:
    capability.
 
    .. versionadded:: 3.5
+
+
+.. property:: IMAP4.file
+
+   Internal :class:`~io.BufferedReader` associated with the underlying socket.
+   This property is documented for legacy purposes but not part of the public
+   interface. The caller is responsible to ensure that the current file is
+   closed before changing it.
+
+   .. deprecated-removed:: 3.15 3.19
 
 
 .. _imap4-example:

@@ -127,31 +127,31 @@ Trigonometric Functions
 >>> sin(INF)
 Traceback (most recent call last):
 ...
-ValueError: math domain error
+ValueError: expected a finite input, got inf
 >>> sin(NINF)
 Traceback (most recent call last):
 ...
-ValueError: math domain error
+ValueError: expected a finite input, got -inf
 >>> sin(NAN)
 nan
 >>> cos(INF)
 Traceback (most recent call last):
 ...
-ValueError: math domain error
+ValueError: expected a finite input, got inf
 >>> cos(NINF)
 Traceback (most recent call last):
 ...
-ValueError: math domain error
+ValueError: expected a finite input, got -inf
 >>> cos(NAN)
 nan
 >>> tan(INF)
 Traceback (most recent call last):
 ...
-ValueError: math domain error
+ValueError: expected a finite input, got inf
 >>> tan(NINF)
 Traceback (most recent call last):
 ...
-ValueError: math domain error
+ValueError: expected a finite input, got -inf
 >>> tan(NAN)
 nan
 
@@ -169,11 +169,11 @@ True
 >>> asin(INF), asin(NINF)
 Traceback (most recent call last):
 ...
-ValueError: math domain error
+ValueError: expected a number in range from -1 up to 1, got inf
 >>> acos(INF), acos(NINF)
 Traceback (most recent call last):
 ...
-ValueError: math domain error
+ValueError: expected a number in range from -1 up to 1, got inf
 >>> equal(atan(INF), PI/2), equal(atan(NINF), -PI/2)
 (True, True)
 

@@ -272,6 +272,8 @@ class ProfileHookTestCase(TestCaseBase):
         self.check_events(g, [(1, 'call', g_ident, None),
                               (2, 'call', f_ident, None),
                               (2, 'return', f_ident, 0),
+                              (2, 'call', f_ident, None),
+                              (2, 'return', f_ident, None),
                               (1, 'return', g_ident, None),
                               ], check_args=True)
 
@@ -507,6 +509,27 @@ class TestEdgeCases(unittest.TestCase):
              'call', 'return',
              'call', 'return',
              'c_return',
+             'c_call'
+            ]
+        )
+
+        # Test CALL_FUNCTION_EX
+        events = []
+        sys.setprofile(lambda frame, event, args: events.append(event))
+        # Not important, we only want to trigger INSTRUMENTED_CALL_KW
+        args = (1,)
+        m = B().f
+        m(*args, key=lambda x: 0)
+        sys.setprofile(None)
+        # The last c_call is the call to sys.setprofile
+        # INSTRUMENTED_CALL_FUNCTION_EX has different behavior than the other
+        # instrumented call bytecodes, it does not unpack the callable before
+        # calling it. This is probably not ideal because it's not consistent,
+        # but at least we get a consistent call stack (no unmatched c_call).
+        self.assertEqual(
+            events,
+            ['call', 'return',
+             'call', 'return',
              'c_call'
             ]
         )

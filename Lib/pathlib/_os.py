@@ -3,8 +3,7 @@ Low-level OS functionality wrappers used by pathlib.
 """
 
 from errno import *
-from stat import S_ISDIR, S_ISREG, S_ISLNK, S_IMODE
-import io
+from io import TextIOWrapper, text_encoding
 import os
 import sys
 try:
@@ -102,13 +101,13 @@ else:
 
 
 if _winapi and hasattr(_winapi, 'CopyFile2'):
-    def copyfile(source, target):
+    def copyfile2(source, target):
         """
         Copy from one file to another using CopyFile2 (Windows only).
         """
         _winapi.CopyFile2(source, target, 0)
 else:
-    copyfile = None
+    copyfile2 = None
 
 
 def copyfileobj(source_f, target_f):
@@ -166,102 +165,100 @@ def copyfileobj(source_f, target_f):
         write_target(buf)
 
 
-def magic_open(path, mode='r', buffering=-1, encoding=None, errors=None,
-               newline=None):
+def _open_reader(obj):
+    cls = type(obj)
+    try:
+        open_reader = cls.__open_reader__
+    except AttributeError:
+        cls_name = cls.__name__
+        raise TypeError(f"{cls_name} can't be opened for reading") from None
+    else:
+        return open_reader(obj)
+
+
+def _open_writer(obj, mode):
+    cls = type(obj)
+    try:
+        open_writer = cls.__open_writer__
+    except AttributeError:
+        cls_name = cls.__name__
+        raise TypeError(f"{cls_name} can't be opened for writing") from None
+    else:
+        return open_writer(obj, mode)
+
+
+def _open_updater(obj, mode):
+    cls = type(obj)
+    try:
+        open_updater = cls.__open_updater__
+    except AttributeError:
+        cls_name = cls.__name__
+        raise TypeError(f"{cls_name} can't be opened for updating") from None
+    else:
+        return open_updater(obj, mode)
+
+
+def vfsopen(obj, mode='r', buffering=-1, encoding=None, errors=None,
+            newline=None):
     """
     Open the file pointed to by this path and return a file object, as
     the built-in open() function does.
+
+    Unlike the built-in open() function, this function additionally accepts
+    'openable' objects, which are objects with any of these special methods:
+
+        __open_reader__()
+        __open_writer__(mode)
+        __open_updater__(mode)
+
+    '__open_reader__' is called for 'r' mode; '__open_writer__' for 'a', 'w'
+    and 'x' modes; and '__open_updater__' for 'r+' and 'w+' modes. If text
+    mode is requested, the result is wrapped in an io.TextIOWrapper object.
     """
+    if buffering != -1:
+        raise ValueError("buffer size can't be customized")
+    text = 'b' not in mode
+    if text:
+        # Call io.text_encoding() here to ensure any warning is raised at an
+        # appropriate stack level.
+        encoding = text_encoding(encoding)
     try:
-        return io.open(path, mode, buffering, encoding, errors, newline)
+        return open(obj, mode, buffering, encoding, errors, newline)
     except TypeError:
         pass
-    cls = type(path)
-    text = 'b' not in mode
+    if not text:
+        if encoding is not None:
+            raise ValueError("binary mode doesn't take an encoding argument")
+        if errors is not None:
+            raise ValueError("binary mode doesn't take an errors argument")
+        if newline is not None:
+            raise ValueError("binary mode doesn't take a newline argument")
     mode = ''.join(sorted(c for c in mode if c not in 'bt'))
-    if text:
-        try:
-            attr = getattr(cls, f'__open_{mode}__')
-        except AttributeError:
-            pass
-        else:
-            return attr(path, buffering, encoding, errors, newline)
-
-    try:
-        attr = getattr(cls, f'__open_{mode}b__')
-    except AttributeError:
-        pass
+    if mode == 'r':
+        stream = _open_reader(obj)
+    elif mode in ('a', 'w', 'x'):
+        stream = _open_writer(obj, mode)
+    elif mode in ('+r', '+w'):
+        stream = _open_updater(obj, mode[1])
     else:
-        stream = attr(path, buffering)
-        if text:
-            stream = io.TextIOWrapper(stream, encoding, errors, newline)
-        return stream
-
-    raise TypeError(f"{cls.__name__} can't be opened with mode {mode!r}")
+        raise ValueError(f'invalid mode: {mode}')
+    if text:
+        stream = TextIOWrapper(stream, encoding, errors, newline)
+    return stream
 
 
-class CopyWriter:
+def vfspath(obj):
     """
-    Class that implements the "write" part of copying between path objects. An
-    instance of this class is available from the WritablePath._copy_writer
-    property.
+    Return the string representation of a virtual path object.
     """
-    __slots__ = ('_path',)
-
-    def __init__(self, path):
-        self._path = path
-
-    def _copy_metadata(self, source, follow_symlinks=True):
-        """Copy metadata from the given path to our path."""
-        pass
-
-    def _create(self, source, follow_symlinks, dirs_exist_ok, preserve_metadata):
-        ensure_distinct_paths(source, self._path)
-        if not follow_symlinks and source.is_symlink():
-            self._create_symlink(source, preserve_metadata)
-        elif source.is_dir():
-            self._create_dir(source, follow_symlinks, dirs_exist_ok, preserve_metadata)
-        else:
-            self._create_file(source, preserve_metadata)
-        return self._path
-
-    def _create_dir(self, source, follow_symlinks, dirs_exist_ok, preserve_metadata):
-        """Copy the given directory to our path."""
-        children = list(source.iterdir())
-        self._path.mkdir(exist_ok=dirs_exist_ok)
-        for src in children:
-            dst = self._path.joinpath(src.name)
-            if not follow_symlinks and src.is_symlink():
-                dst._copy_writer._create_symlink(src, preserve_metadata)
-            elif src.is_dir():
-                dst._copy_writer._create_dir(src, follow_symlinks, dirs_exist_ok, preserve_metadata)
-            else:
-                dst._copy_writer._create_file(src, preserve_metadata)
-
-        if preserve_metadata:
-            self._copy_metadata(source)
-
-    def _create_file(self, source, preserve_metadata):
-        """Copy the given file to our path."""
-        ensure_different_files(source, self._path)
-        with magic_open(source, 'rb') as source_f:
-            try:
-                with magic_open(self._path, 'wb') as target_f:
-                    copyfileobj(source_f, target_f)
-            except IsADirectoryError as e:
-                if not self._path.exists():
-                    # Raise a less confusing exception.
-                    raise FileNotFoundError(
-                        f'Directory does not exist: {self._path}') from e
-                raise
-        if preserve_metadata:
-            self._copy_metadata(source)
-
-    def _create_symlink(self, source, preserve_metadata):
-        """Copy the given symbolic link to our path."""
-        self._path.symlink_to(source.readlink())
-        if preserve_metadata:
-            self._copy_metadata(source, follow_symlinks=False)
+    cls = type(obj)
+    try:
+        vfspath_method = cls.__vfspath__
+    except AttributeError:
+        cls_name = cls.__name__
+        raise TypeError(f"expected JoinablePath object, not {cls_name}") from None
+    else:
+        return vfspath_method(obj)
 
 
 def ensure_distinct_paths(source, target):
@@ -279,97 +276,9 @@ def ensure_distinct_paths(source, target):
         err = OSError(EINVAL, "Source path is a parent of target path")
     else:
         return
-    err.filename = str(source)
-    err.filename2 = str(target)
+    err.filename = vfspath(source)
+    err.filename2 = vfspath(target)
     raise err
-
-
-class LocalCopyWriter(CopyWriter):
-    """This object implements the "write" part of copying local paths. Don't
-    try to construct it yourself.
-    """
-    __slots__ = ()
-
-    def _copy_metadata(self, source, follow_symlinks=True):
-        """Copy metadata from the given path to our path."""
-        target = self._path
-        info = source.info
-
-        copy_times_ns = (
-            hasattr(info, '_access_time_ns') and
-            hasattr(info, '_mod_time_ns') and
-            (follow_symlinks or os.utime in os.supports_follow_symlinks))
-        if copy_times_ns:
-            t0 = info._access_time_ns(follow_symlinks=follow_symlinks)
-            t1 = info._mod_time_ns(follow_symlinks=follow_symlinks)
-            os.utime(target, ns=(t0, t1), follow_symlinks=follow_symlinks)
-
-        # We must copy extended attributes before the file is (potentially)
-        # chmod()'ed read-only, otherwise setxattr() will error with -EACCES.
-        copy_xattrs = (
-            hasattr(info, '_xattrs') and
-            hasattr(os, 'setxattr') and
-            (follow_symlinks or os.setxattr in os.supports_follow_symlinks))
-        if copy_xattrs:
-            xattrs = info._xattrs(follow_symlinks=follow_symlinks)
-            for attr, value in xattrs:
-                try:
-                    os.setxattr(target, attr, value, follow_symlinks=follow_symlinks)
-                except OSError as e:
-                    if e.errno not in (EPERM, ENOTSUP, ENODATA, EINVAL, EACCES):
-                        raise
-
-        copy_posix_permissions = (
-            hasattr(info, '_posix_permissions') and
-            (follow_symlinks or os.chmod in os.supports_follow_symlinks))
-        if copy_posix_permissions:
-            posix_permissions = info._posix_permissions(follow_symlinks=follow_symlinks)
-            try:
-                os.chmod(target, posix_permissions, follow_symlinks=follow_symlinks)
-            except NotImplementedError:
-                # if we got a NotImplementedError, it's because
-                #   * follow_symlinks=False,
-                #   * lchown() is unavailable, and
-                #   * either
-                #       * fchownat() is unavailable or
-                #       * fchownat() doesn't implement AT_SYMLINK_NOFOLLOW.
-                #         (it returned ENOSUP.)
-                # therefore we're out of options--we simply cannot chown the
-                # symlink.  give up, suppress the error.
-                # (which is what shutil always did in this circumstance.)
-                pass
-
-        copy_bsd_flags = (
-            hasattr(info, '_bsd_flags') and
-            hasattr(os, 'chflags') and
-            (follow_symlinks or os.chflags in os.supports_follow_symlinks))
-        if copy_bsd_flags:
-            bsd_flags = info._bsd_flags(follow_symlinks=follow_symlinks)
-            try:
-                os.chflags(target, bsd_flags, follow_symlinks=follow_symlinks)
-            except OSError as why:
-                if why.errno not in (EOPNOTSUPP, ENOTSUP):
-                    raise
-
-    if copyfile:
-        # Use fast OS routine for local file copying where available.
-        def _create_file(self, source, preserve_metadata):
-            """Copy the given file to the given target."""
-            try:
-                source = os.fspath(source)
-            except TypeError:
-                super()._create_file(source, preserve_metadata)
-            else:
-                copyfile(source, os.fspath(self._path))
-
-    if os.name == 'nt':
-        # Windows: symlink target might not exist yet if we're copying several
-        # files, so ensure we pass is_dir to os.symlink().
-        def _create_symlink(self, source, preserve_metadata):
-            """Copy the given symlink to the given target."""
-            self._path.symlink_to(source.readlink(), source.is_dir())
-            if preserve_metadata:
-                self._copy_metadata(source, follow_symlinks=False)
 
 
 def ensure_different_files(source, target):
@@ -389,225 +298,6 @@ def ensure_different_files(source, target):
         except (OSError, ValueError):
             return
     err = OSError(EINVAL, "Source and target are the same file")
-    err.filename = str(source)
-    err.filename2 = str(target)
+    err.filename = vfspath(source)
+    err.filename2 = vfspath(target)
     raise err
-
-
-class _PathInfoBase:
-    __slots__ = ('_path', '_stat_result', '_lstat_result')
-
-    def __init__(self, path):
-        self._path = str(path)
-
-    def __repr__(self):
-        path_type = "WindowsPath" if os.name == "nt" else "PosixPath"
-        return f"<{path_type}.info>"
-
-    def _stat(self, *, follow_symlinks=True, ignore_errors=False):
-        """Return the status as an os.stat_result, or None if stat() fails and
-        ignore_errors is true."""
-        if follow_symlinks:
-            try:
-                result = self._stat_result
-            except AttributeError:
-                pass
-            else:
-                if ignore_errors or result is not None:
-                    return result
-            try:
-                self._stat_result = os.stat(self._path)
-            except (OSError, ValueError):
-                self._stat_result = None
-                if not ignore_errors:
-                    raise
-            return self._stat_result
-        else:
-            try:
-                result = self._lstat_result
-            except AttributeError:
-                pass
-            else:
-                if ignore_errors or result is not None:
-                    return result
-            try:
-                self._lstat_result = os.lstat(self._path)
-            except (OSError, ValueError):
-                self._lstat_result = None
-                if not ignore_errors:
-                    raise
-            return self._lstat_result
-
-    def _posix_permissions(self, *, follow_symlinks=True):
-        """Return the POSIX file permissions."""
-        return S_IMODE(self._stat(follow_symlinks=follow_symlinks).st_mode)
-
-    def _file_id(self, *, follow_symlinks=True):
-        """Returns the identifier of the file."""
-        st = self._stat(follow_symlinks=follow_symlinks)
-        return st.st_dev, st.st_ino
-
-    def _access_time_ns(self, *, follow_symlinks=True):
-        """Return the access time in nanoseconds."""
-        return self._stat(follow_symlinks=follow_symlinks).st_atime_ns
-
-    def _mod_time_ns(self, *, follow_symlinks=True):
-        """Return the modify time in nanoseconds."""
-        return self._stat(follow_symlinks=follow_symlinks).st_mtime_ns
-
-    if hasattr(os.stat_result, 'st_flags'):
-        def _bsd_flags(self, *, follow_symlinks=True):
-            """Return the flags."""
-            return self._stat(follow_symlinks=follow_symlinks).st_flags
-
-    if hasattr(os, 'listxattr'):
-        def _xattrs(self, *, follow_symlinks=True):
-            """Return the xattrs as a list of (attr, value) pairs, or an empty
-            list if extended attributes aren't supported."""
-            try:
-                return [
-                    (attr, os.getxattr(self._path, attr, follow_symlinks=follow_symlinks))
-                    for attr in os.listxattr(self._path, follow_symlinks=follow_symlinks)]
-            except OSError as err:
-                if err.errno not in (EPERM, ENOTSUP, ENODATA, EINVAL, EACCES):
-                    raise
-                return []
-
-
-class _WindowsPathInfo(_PathInfoBase):
-    """Implementation of pathlib.types.PathInfo that provides status
-    information for Windows paths. Don't try to construct it yourself."""
-    __slots__ = ('_exists', '_is_dir', '_is_file', '_is_symlink')
-
-    def exists(self, *, follow_symlinks=True):
-        """Whether this path exists."""
-        if not follow_symlinks and self.is_symlink():
-            return True
-        try:
-            return self._exists
-        except AttributeError:
-            if os.path.exists(self._path):
-                self._exists = True
-                return True
-            else:
-                self._exists = self._is_dir = self._is_file = False
-                return False
-
-    def is_dir(self, *, follow_symlinks=True):
-        """Whether this path is a directory."""
-        if not follow_symlinks and self.is_symlink():
-            return False
-        try:
-            return self._is_dir
-        except AttributeError:
-            if os.path.isdir(self._path):
-                self._is_dir = self._exists = True
-                return True
-            else:
-                self._is_dir = False
-                return False
-
-    def is_file(self, *, follow_symlinks=True):
-        """Whether this path is a regular file."""
-        if not follow_symlinks and self.is_symlink():
-            return False
-        try:
-            return self._is_file
-        except AttributeError:
-            if os.path.isfile(self._path):
-                self._is_file = self._exists = True
-                return True
-            else:
-                self._is_file = False
-                return False
-
-    def is_symlink(self):
-        """Whether this path is a symbolic link."""
-        try:
-            return self._is_symlink
-        except AttributeError:
-            self._is_symlink = os.path.islink(self._path)
-            return self._is_symlink
-
-
-class _PosixPathInfo(_PathInfoBase):
-    """Implementation of pathlib.types.PathInfo that provides status
-    information for POSIX paths. Don't try to construct it yourself."""
-    __slots__ = ()
-
-    def exists(self, *, follow_symlinks=True):
-        """Whether this path exists."""
-        st = self._stat(follow_symlinks=follow_symlinks, ignore_errors=True)
-        if st is None:
-            return False
-        return True
-
-    def is_dir(self, *, follow_symlinks=True):
-        """Whether this path is a directory."""
-        st = self._stat(follow_symlinks=follow_symlinks, ignore_errors=True)
-        if st is None:
-            return False
-        return S_ISDIR(st.st_mode)
-
-    def is_file(self, *, follow_symlinks=True):
-        """Whether this path is a regular file."""
-        st = self._stat(follow_symlinks=follow_symlinks, ignore_errors=True)
-        if st is None:
-            return False
-        return S_ISREG(st.st_mode)
-
-    def is_symlink(self):
-        """Whether this path is a symbolic link."""
-        st = self._stat(follow_symlinks=False, ignore_errors=True)
-        if st is None:
-            return False
-        return S_ISLNK(st.st_mode)
-
-
-PathInfo = _WindowsPathInfo if os.name == 'nt' else _PosixPathInfo
-
-
-class DirEntryInfo(_PathInfoBase):
-    """Implementation of pathlib.types.PathInfo that provides status
-    information by querying a wrapped os.DirEntry object. Don't try to
-    construct it yourself."""
-    __slots__ = ('_entry',)
-
-    def __init__(self, entry):
-        super().__init__(entry.path)
-        self._entry = entry
-
-    def _stat(self, *, follow_symlinks=True, ignore_errors=False):
-        try:
-            return self._entry.stat(follow_symlinks=follow_symlinks)
-        except OSError:
-            if not ignore_errors:
-                raise
-            return None
-
-    def exists(self, *, follow_symlinks=True):
-        """Whether this path exists."""
-        if not follow_symlinks:
-            return True
-        return self._stat(ignore_errors=True) is not None
-
-    def is_dir(self, *, follow_symlinks=True):
-        """Whether this path is a directory."""
-        try:
-            return self._entry.is_dir(follow_symlinks=follow_symlinks)
-        except OSError:
-            return False
-
-    def is_file(self, *, follow_symlinks=True):
-        """Whether this path is a regular file."""
-        try:
-            return self._entry.is_file(follow_symlinks=follow_symlinks)
-        except OSError:
-            return False
-
-    def is_symlink(self):
-        """Whether this path is a symbolic link."""
-        try:
-            return self._entry.is_symlink()
-        except OSError:
-            return False

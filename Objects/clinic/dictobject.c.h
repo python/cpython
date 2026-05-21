@@ -18,7 +18,7 @@ static PyObject *
 dict_fromkeys_impl(PyTypeObject *type, PyObject *iterable, PyObject *value);
 
 static PyObject *
-dict_fromkeys(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs)
+dict_fromkeys(PyObject *type, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *iterable;
@@ -33,7 +33,7 @@ dict_fromkeys(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs)
     }
     value = args[1];
 skip_optional:
-    return_value = dict_fromkeys_impl(type, iterable, value);
+    return_value = dict_fromkeys_impl((PyTypeObject *)type, iterable, value);
 
 exit:
     return return_value;
@@ -65,6 +65,19 @@ PyDoc_STRVAR(dict___contains____doc__,
 
 #define DICT___CONTAINS___METHODDEF    \
     {"__contains__", (PyCFunction)dict___contains__, METH_O|METH_COEXIST, dict___contains____doc__},
+
+static PyObject *
+dict___contains___impl(PyDictObject *self, PyObject *key);
+
+static PyObject *
+dict___contains__(PyObject *self, PyObject *key)
+{
+    PyObject *return_value = NULL;
+
+    return_value = dict___contains___impl((PyDictObject *)self, key);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(dict_get__doc__,
 "get($self, key, default=None, /)\n"
@@ -310,4 +323,22 @@ dict_values(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return dict_values_impl((PyDictObject *)self);
 }
-/*[clinic end generated code: output=0f04bf0e7e6b130f input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(frozendict_copy__doc__,
+"copy($self, /)\n"
+"--\n"
+"\n"
+"Return a shallow copy of the frozendict.");
+
+#define FROZENDICT_COPY_METHODDEF    \
+    {"copy", (PyCFunction)frozendict_copy, METH_NOARGS, frozendict_copy__doc__},
+
+static PyObject *
+frozendict_copy_impl(PyFrozenDictObject *self);
+
+static PyObject *
+frozendict_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return frozendict_copy_impl((PyFrozenDictObject *)self);
+}
+/*[clinic end generated code: output=f4c88a3464928ae3 input=a9049054013a1b77]*/

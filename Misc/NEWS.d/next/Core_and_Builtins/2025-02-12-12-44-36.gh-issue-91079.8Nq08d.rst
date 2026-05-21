@@ -1,3 +1,0 @@
-Change C stack overflow protection to consider the amount of stack consumed,
-rather than a counter. This allows deeper recursion in many cases, but
-remains safe.
