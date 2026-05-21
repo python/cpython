@@ -2277,13 +2277,14 @@ class ArgsTestCase(BaseTestCase):
 
         # Use directly subprocess to control the exact command line
         cmd = [sys.executable,
-               "-E", "-m", "test", option,
+               "-m", "test", option,
                f'--testdir={self.tmptestdir}',
                testname]
         proc = subprocess.run(cmd,
                               stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT,
-                              text=True)
+                              text=True,
+                              env=support.make_clean_env())
         self.assertEqual(proc.returncode, 0, proc)
 
     def test_add_python_opts(self):
