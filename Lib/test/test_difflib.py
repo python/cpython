@@ -1,10 +1,33 @@
 import difflib
+import _pydifflib
 from test import support
 from test.support import findfile, force_colorized
 from test.support.import_helper import ensure_lazy_imports
 import unittest
 import doctest
 import sys
+
+
+# Tests below reference ``difflib.SequenceMatcher``.  By default that is the
+# C-accelerated subclass (when ``_difflib`` is available) or the pure-Python
+# class otherwise.  The mixin below temporarily swaps it to the pure-Python
+# class from ``_pydifflib`` so the same test suite covers both implementations
+# whenever the accelerator is built.
+_PySequenceMatcher = _pydifflib.SequenceMatcher
+_has_c_accelerator = difflib.SequenceMatcher is not _PySequenceMatcher
+
+
+class _PyImplMixin:
+    """Run a TestCase with ``difflib.SequenceMatcher`` patched to pure Python."""
+
+    def setUp(self):
+        super().setUp()
+        self._orig_SequenceMatcher = difflib.SequenceMatcher
+        difflib.SequenceMatcher = _PySequenceMatcher
+
+    def tearDown(self):
+        difflib.SequenceMatcher = self._orig_SequenceMatcher
+        super().tearDown()
 
 
 class TestWithAscii(unittest.TestCase):
@@ -201,6 +224,10 @@ class TestSFpatches(unittest.TestCase):
 
     def test_html_diff(self):
         # Check SF patch 914575 for generating HTML differences
+        # Reset the global ``HtmlDiff._default_prefix`` counter so that
+        # generated element IDs are stable when this test runs twice
+        # (e.g. once per implementation; see _PyImplMixin below).
+        difflib.HtmlDiff._default_prefix = 0
         f1a = ((patch914575_from1 + '123\n'*10)*3)
         t1a = (patch914575_to1 + '123\n'*10)*3
         f1b = '456\n'*10 + f1a
@@ -655,6 +682,32 @@ class LazyImportTest(unittest.TestCase):
 def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite(difflib))
     return tests
+
+
+# When the C accelerator is present, generate a parallel ``*_PurePython``
+# class for each TestCase above so the same tests run against the pure-Python
+# implementation as well.  Tests that probe import behaviour (LazyImportTest)
+# or are inherently implementation-specific are skipped.
+def _generate_pure_python_variants():
+    if not _has_c_accelerator:
+        return
+    skip = {"LazyImportTest"}
+    module = sys.modules[__name__]
+    for name in list(vars(module)):
+        cls = getattr(module, name)
+        if (isinstance(cls, type)
+                and issubclass(cls, unittest.TestCase)
+                and cls is not unittest.TestCase
+                and not name.endswith("_PurePython")
+                and name not in skip):
+            new_name = name + "_PurePython"
+            new_cls = type(new_name, (_PyImplMixin, cls), {})
+            setattr(module, new_name, new_cls)
+
+
+_generate_pure_python_variants()
+
+
 
 
 if __name__ == '__main__':
