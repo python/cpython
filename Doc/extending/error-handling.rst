@@ -15,7 +15,7 @@ The exception indicator
 =======================
 
 Python has a thread-local indicator for the state of the current exception.
-This indicator is just a ``PyObject *`` referencing an instance of
+This indicator is a ``PyObject *`` referencing an instance of
 :class:`BaseException`. You can think of this like the ``errno`` variable in C.
 
 If a C API function fails, it may set the exception indicator to a Python
