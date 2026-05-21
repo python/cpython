@@ -160,6 +160,83 @@ class AST_Tests(unittest.TestCase):
             self.assertRaises(TypeError, ast.parse, ast.Constant(42),
                               optimize=optval)
 
+    def test_parse_removes_single_null_container_unpack(self):
+        tests = [
+            ('[*()]', ast.List, []),
+            ('{*()}', ast.Set, []),
+            ('(*(),)', ast.Tuple, []),
+        ]
+
+        for source, node_type, expected_values in tests:
+            with self.subTest(source=source):
+                node = ast.parse(source, mode='eval').body
+                self.assertIsInstance(node, node_type)
+                self.assertEqual(
+                    [elt.value for elt in node.elts],
+                    expected_values,
+                )
+
+    def test_parse_removes_single_null_container_unpack_in_assignment(self):
+        tests = [
+            ('x = [*()]', ast.List, []),
+            ('x = {*()}', ast.Set, []),
+            ('x = *(),', ast.Tuple, []),
+            ('x = (*(),)', ast.Tuple, []),
+        ]
+
+        for source, node_type, expected_values in tests:
+            with self.subTest(source=source):
+                node = ast.parse(source).body[0]
+                self.assertIsInstance(node, ast.Assign)
+                self.assertIsInstance(node.value, node_type)
+                self.assertEqual(
+                    [elt.value for elt in node.value.elts],
+                    expected_values,
+                )
+
+    def test_parse_keeps_null_container_unpack_in_larger_literal(self):
+        tests = [
+            ('[*(), 2]', ast.List, 2),
+            ('{*(), 2}', ast.Set, 2),
+            ('(*(), 2)', ast.Tuple, 2),
+            ('[1, *(), 2]', ast.List, 3),
+            ('{1, *(), 2}', ast.Set, 3),
+            ('(1, *(), 2)', ast.Tuple, 3),
+            ('[*(), *()]', ast.List, 2),
+            ('{*(), *()}', ast.Set, 2),
+            ('(*(), *())', ast.Tuple, 2),
+        ]
+
+        for source, node_type, expected_len in tests:
+            with self.subTest(source=source):
+                node = ast.parse(source, mode='eval').body
+                self.assertIsInstance(node, node_type)
+                self.assertEqual(len(node.elts), expected_len)
+                self.assertTrue(any(isinstance(elt, ast.Starred) for elt in node.elts))
+
+    def test_parse_keeps_null_container_unpack_in_larger_assignment_value(self):
+        tests = [
+            ('x = [*(), 2]', ast.List, 2),
+            ('x = {*(), 2}', ast.Set, 2),
+            ('x = *(), 2', ast.Tuple, 2),
+            ('x = [1, *(), 2]', ast.List, 3),
+            ('x = {1, *(), 2}', ast.Set, 3),
+            ('x = 1, *(), 2', ast.Tuple, 3),
+            ('x = [*(), *()]', ast.List, 2),
+            ('x = {*(), *()}', ast.Set, 2),
+            ('x = *(), *()', ast.Tuple, 2),
+        ]
+
+        for source, node_type, expected_len in tests:
+            with self.subTest(source=source):
+                node = ast.parse(source).body[0]
+                self.assertIsInstance(node, ast.Assign)
+                self.assertIsInstance(node.value, node_type)
+                self.assertEqual(len(node.value.elts), expected_len)
+                self.assertTrue(
+                    any(isinstance(elt, ast.Starred) for elt in node.value.elts)
+                )
+
     def test_optimization_levels__debug__(self):
         cases = [(-1, '__debug__'), (0, '__debug__'), (1, False), (2, False)]
         for (optval, expected) in cases:
@@ -1529,80 +1606,6 @@ class ASTHelpers_Test(unittest.TestCase):
         a = ast.parse('foo(1 + 1)')
         b = compile('foo(1 + 1)', '<unknown>', 'exec', ast.PyCF_ONLY_AST)
         self.assertEqual(ast.dump(a), ast.dump(b))
-
-    def test_parse_elides_null_container_unpacks(self):
-        tests = [
-            ('[*()]', ast.List, []),
-            ('{*()}', ast.Set, []),
-            ('(*(),)', ast.Tuple, []),
-        ]
-
-        for source, node_type, expected_values in tests:
-            with self.subTest(source=source):
-                node = ast.parse(source, mode='eval').body
-                self.assertIsInstance(node, node_type)
-                self.assertEqual(
-                    [elt.value for elt in node.elts],
-                    expected_values,
-                )
-
-    def test_parse_elides_null_container_unpacks_in_assignment(self):
-        tests = [
-            ('x = [*()]', ast.List, []),
-            ('x = {*()}', ast.Set, []),
-            ('x = *(),', ast.Tuple, []),
-        ]
-
-        for source, node_type, expected_values in tests:
-            with self.subTest(source=source):
-                node = ast.parse(source).body[0]
-                self.assertIsInstance(node, ast.Assign)
-                self.assertIsInstance(node.value, node_type)
-                self.assertEqual(
-                    [elt.value for elt in node.value.elts],
-                    expected_values,
-                )
-
-    def test_parse_preserves_multiple_null_container_unpacks(self):
-        tests = [
-            ('[*(), 2]', ast.List),
-            ('{*(), 2}', ast.Set),
-            ('(*(), 2)', ast.Tuple),
-            ('[1, *(), 2]', ast.List),
-            ('{1, *(), 2}', ast.Set),
-            ('(1, *(), 2)', ast.Tuple),
-            ('[*(), *()]', ast.List),
-            ('{*(), *()}', ast.Set),
-            ('(*(), *())', ast.Tuple),
-        ]
-
-        for source, node_type in tests:
-            with self.subTest(source=source):
-                node = ast.parse(source, mode='eval').body
-                self.assertIsInstance(node, node_type)
-                self.assertTrue(any(isinstance(elt, ast.Starred) for elt in node.elts))
-
-    def test_parse_preserves_multiple_null_container_unpacks_in_assignment(self):
-        tests = [
-            ('x = [*(), 2]', ast.List),
-            ('x = {*(), 2}', ast.Set),
-            ('x = *(), 2', ast.Tuple),
-            ('x = [1, *(), 2]', ast.List),
-            ('x = {1, *(), 2}', ast.Set),
-            ('x = 1, *(), 2', ast.Tuple),
-            ('x = [*(), *()]', ast.List),
-            ('x = {*(), *()}', ast.Set),
-            ('x = *(), *()', ast.Tuple),
-        ]
-
-        for source, node_type in tests:
-            with self.subTest(source=source):
-                node = ast.parse(source).body[0]
-                self.assertIsInstance(node, ast.Assign)
-                self.assertIsInstance(node.value, node_type)
-                self.assertTrue(
-                    any(isinstance(elt, ast.Starred) for elt in node.value.elts)
-                )
 
     def test_parse_in_error(self):
         try:
