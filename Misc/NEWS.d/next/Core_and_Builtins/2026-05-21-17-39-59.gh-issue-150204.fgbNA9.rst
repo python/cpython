@@ -1,0 +1,3 @@
+ast.parse() now canonicalizes lone empty-tuple unpacks in container
+literals, improving AST round-tripping for cases such as the empty-set idiom
+``{*()}`` produced by ast.unparse().
