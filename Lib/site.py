@@ -490,13 +490,16 @@ def addsitedir(sitedir, known_paths=None, *, defer_processing_start_files=False)
         reset = False
     sitedir, sitedircase = makepath(sitedir)
 
-    # If the normcase'd new sitedir isn't already known, append it to
-    # sys.path, keep a record of it, and process all .pth and .start files
-    # found in that directory.  If the new sitedir is known, be sure not
-    # to process all of those more than once!  gh-75723
+    # If the normcase'd new sitedir isn't already known, record it to
+    # prevent re-processing, append it to sys.path (only if not already
+    # present), and process all .pth and .start files found in that
+    # directory.  Use a direct sys.path membership check for the append
+    # guard so that callers (like main()) can pass a fresh known_paths
+    # set while avoiding duplicate sys.path entries (gh-149819).
     if sitedircase not in known_paths:
-        sys.path.append(sitedir)
         known_paths.add(sitedircase)
+        if sitedir not in sys.path:
+            sys.path.append(sitedir)
 
         try:
             names = os.listdir(sitedir)
@@ -1000,13 +1003,13 @@ def main():
     global ENABLE_USER_SITE
 
     orig_path = sys.path[:]
-    known_paths = removeduppaths()
+    removeduppaths()
     if orig_path != sys.path:
         # removeduppaths() might make sys.path absolute.
         # Fix __file__ of already imported modules too.
         abs_paths()
 
-    known_paths = venv(known_paths)
+    known_paths = venv(known_paths=set())
     if ENABLE_USER_SITE is None:
         ENABLE_USER_SITE = check_enableusersite()
     known_paths = addusersitepackages(known_paths, defer_processing_start_files=True)
