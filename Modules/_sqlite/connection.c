@@ -533,7 +533,7 @@ static int
 connection_set_row_factory(pysqlite_Connection *self, PyObject *value, void *closure)
 {
     if (value == NULL) {
-        PyErr_SetString(PyExc_AttributeError, 
+        PyErr_SetString(PyExc_AttributeError,
                         "cannot delete row_factory attribute");
         return -1;
     }
@@ -551,7 +551,7 @@ static int
 connection_set_text_factory(pysqlite_Connection *self, PyObject *value, void *closure)
 {
     if (value == NULL) {
-        PyErr_SetString(PyExc_AttributeError, 
+        PyErr_SetString(PyExc_AttributeError,
                         "cannot delete text_factory attribute");
         return -1;
     }
@@ -2655,9 +2655,9 @@ static PyGetSetDef connection_getset[] = {
     {"in_transaction", pysqlite_connection_get_in_transaction, NULL},
     {"autocommit",  get_autocommit, set_autocommit},
     {"__text_signature__", get_sig, NULL},
-    {"row_factory", (getter)connection_get_row_factory, 
+    {"row_factory", (getter)connection_get_row_factory,
                     (setter)connection_set_row_factory},
-    {"text_factory", (getter)connection_get_text_factory, 
+    {"text_factory", (getter)connection_get_text_factory,
                      (setter)connection_set_text_factory},
     {NULL}
 };
