@@ -356,7 +356,6 @@ Modules/_testclinic.c	-	TestClass	-
 Modules/_testclinic.c	-	VcInit_Type	-
 Modules/_testclinic.c	-	VcNew_Type	-
 Modules/_testclinic.c	-	VcNewExact_Type	-
-Modules/_testclinic.c	-	VcNewZeroArg_Type	-
 
 
 ##################################
