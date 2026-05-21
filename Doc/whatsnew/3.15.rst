@@ -1207,6 +1207,19 @@ http.server
   (Contributed by Anton I. Sipos in :gh:`135057`.)
 
 
+importlib.metadata
+------------------
+
+* Previously, when accessing a distribution metadata directory not
+  containing a metadata file, ``metadata()`` and ``Distribution.metadata()``
+  would return an empty ``PackageMetadata`` object as if the file
+  was present but empty. Now, a ``MetadataNotFound`` exception is raised.
+  See `importlib_metadata#493 <https://github.com/python/importlib_metadata/issues/493>`_
+  for background and rationale and and :gh:`143387` for rationale on the
+  compatibility concerns.
+  (Contributed by Jason R. Coombs.)
+
+
 inspect
 -------
 
