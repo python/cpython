@@ -1010,7 +1010,7 @@ def main():
         # Fix __file__ of already imported modules too.
         abs_paths()
 
-    known_paths = venv(known_paths)
+    known_paths = venv(known_paths=set())
     if ENABLE_USER_SITE is None:
         ENABLE_USER_SITE = check_enableusersite()
     known_paths = addusersitepackages(known_paths, defer_processing_start_files=True)
