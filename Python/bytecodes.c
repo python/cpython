@@ -519,7 +519,7 @@ dummy_func(
         op(_TO_BOOL_BIT_INT, (value -- bit)) {
             STAT_INC(TO_BOOL, hit);
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            int truthy = _PyLong_IsZero((PyLongObject *)value_o) ? 0 : 1;
+            bool truthy = !_PyLong_IsZero((PyLongObject *)value_o);
             PyStackRef_CLOSE_SPECIALIZED(value, _PyLong_ExactDealloc);
             bit = PyStackRef_WrapBit(truthy);
         }
@@ -580,7 +580,7 @@ dummy_func(
         op(_TO_BOOL_BIT_STR, (value -- bit)) {
             STAT_INC(TO_BOOL, hit);
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            int truthy = value_o == &_Py_STR(empty) ? 0 : 1;
+            bool truthy = value_o != &_Py_STR(empty);
             PyStackRef_CLOSE_SPECIALIZED(value, _PyUnicode_ExactDealloc);
             bit = PyStackRef_WrapBit(truthy);
         }
@@ -6133,27 +6133,27 @@ dummy_func(
         }
 
         op (_BIT_TO_BOOL, (bit -- res)) {
-            int b = PyStackRef_UnwrapBit(bit);
+            bool b = PyStackRef_UnwrapBit(bit);
             DEAD(bit);
             res = b ? PyStackRef_True : PyStackRef_False;
         }
 
         op (_BOOL_TO_BIT, (value -- bit)) {
-            int b = (PyStackRef_AsPyObjectBorrow(value) == Py_True) ? 1 : 0;
+            bool b = PyStackRef_IsTrue(value);
             DEAD(value);
             bit = PyStackRef_WrapBit(b);
         }
 
         op (_GUARD_IS_TRUE_BIT_POP, (bit -- )) {
-            int b = PyStackRef_UnwrapBit(bit);
+            bool b = PyStackRef_UnwrapBit(bit);
             DEAD(bit);
-            AT_END_EXIT_IF(b == 0);
+            AT_END_EXIT_IF(!b);
         }
 
         op (_GUARD_IS_FALSE_BIT_POP, (bit -- )) {
-            int b = PyStackRef_UnwrapBit(bit);
+            bool b = PyStackRef_UnwrapBit(bit);
             DEAD(bit);
-            AT_END_EXIT_IF(b != 0);
+            AT_END_EXIT_IF(b);
         }
 
         op (_GUARD_IS_NONE_POP, (val -- )) {

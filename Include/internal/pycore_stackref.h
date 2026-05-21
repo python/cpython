@@ -80,18 +80,18 @@ static const _PyStackRef PyStackRef_ERROR = { .index = (1 << Py_TAGGED_SHIFT) };
 #define PyStackRef_True ((_PyStackRef){ .index = _Py_STACKREF_TRUE_INDEX })
 
 static inline _PyStackRef
-PyStackRef_WrapBit(int truthy)
+PyStackRef_WrapBit(bool truthy)
 {
     return (_PyStackRef){ .index = truthy ? _Py_STACKREF_BIT_1_INDEX
                                           : _Py_STACKREF_BIT_0_INDEX };
 }
 
-static inline int
+static inline bool
 PyStackRef_UnwrapBit(_PyStackRef bit)
 {
     assert(bit.index == _Py_STACKREF_BIT_0_INDEX ||
            bit.index == _Py_STACKREF_BIT_1_INDEX);
-    return (bit.index == _Py_STACKREF_BIT_1_INDEX) ? 1 : 0;
+    return bit.index == _Py_STACKREF_BIT_1_INDEX;
 }
 
 #define INITIAL_STACKREF_INDEX (7 << Py_TAGGED_SHIFT)
@@ -491,16 +491,16 @@ static const _PyStackRef PyStackRef_NULL = { .bits = PyStackRef_NULL_BITS };
 #define PyStackRef_None ((_PyStackRef){.bits = ((uintptr_t)&_Py_NoneStruct) | Py_TAG_REFCNT })
 
 static inline _PyStackRef
-PyStackRef_WrapBit(int truthy)
+PyStackRef_WrapBit(bool truthy)
 {
-    return (_PyStackRef){ .bits = (uintptr_t)(truthy ? 1 : 0) };
+    return (_PyStackRef){ .bits = (uintptr_t)truthy };
 }
 
-static inline int
+static inline bool
 PyStackRef_UnwrapBit(_PyStackRef bit)
 {
     assert(bit.bits == 0 || bit.bits == 1);
-    return (int)bit.bits;
+    return (bool)bit.bits;
 }
 
 #ifdef Py_GIL_DISABLED

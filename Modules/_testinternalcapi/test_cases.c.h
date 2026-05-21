@@ -12436,7 +12436,7 @@
             {
                 STAT_INC(TO_BOOL, hit);
                 PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-                int truthy = _PyLong_IsZero((PyLongObject *)value_o) ? 0 : 1;
+                bool truthy = !_PyLong_IsZero((PyLongObject *)value_o);
                 PyStackRef_CLOSE_SPECIALIZED(value, _PyLong_ExactDealloc);
                 stack_pointer += -1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -12450,7 +12450,7 @@
                 stack_pointer += 1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                int b = PyStackRef_UnwrapBit(bit);
+                bool b = PyStackRef_UnwrapBit(bit);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 res = b ? PyStackRef_True : PyStackRef_False;
             }
@@ -12562,7 +12562,7 @@
             {
                 STAT_INC(TO_BOOL, hit);
                 PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-                int truthy = value_o == &_Py_STR(empty) ? 0 : 1;
+                bool truthy = value_o != &_Py_STR(empty);
                 PyStackRef_CLOSE_SPECIALIZED(value, _PyUnicode_ExactDealloc);
                 stack_pointer += -1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -12576,7 +12576,7 @@
                 stack_pointer += 1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                int b = PyStackRef_UnwrapBit(bit);
+                bool b = PyStackRef_UnwrapBit(bit);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 res = b ? PyStackRef_True : PyStackRef_False;
             }

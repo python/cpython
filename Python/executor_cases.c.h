@@ -2922,7 +2922,7 @@
             value = _stack_item_0;
             STAT_INC(TO_BOOL, hit);
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            int truthy = _PyLong_IsZero((PyLongObject *)value_o) ? 0 : 1;
+            bool truthy = !_PyLong_IsZero((PyLongObject *)value_o);
             PyStackRef_CLOSE_SPECIALIZED(value, _PyLong_ExactDealloc);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             bit = PyStackRef_WrapBit(truthy);
@@ -3648,7 +3648,7 @@
             value = _stack_item_0;
             STAT_INC(TO_BOOL, hit);
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            int truthy = value_o == &_Py_STR(empty) ? 0 : 1;
+            bool truthy = value_o != &_Py_STR(empty);
             PyStackRef_CLOSE_SPECIALIZED(value, _PyUnicode_ExactDealloc);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             bit = PyStackRef_WrapBit(truthy);
@@ -22195,7 +22195,7 @@
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            int b = PyStackRef_UnwrapBit(bit);
+            bool b = PyStackRef_UnwrapBit(bit);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             res = b ? PyStackRef_True : PyStackRef_False;
             _tos_cache0 = res;
@@ -22215,7 +22215,7 @@
             _PyStackRef bit;
             _PyStackRef _stack_item_0 = _tos_cache0;
             value = _stack_item_0;
-            int b = (PyStackRef_AsPyObjectBorrow(value) == Py_True) ? 1 : 0;
+            bool b = PyStackRef_IsTrue(value);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             bit = PyStackRef_WrapBit(b);
             stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -22237,9 +22237,9 @@
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            int b = PyStackRef_UnwrapBit(bit);
+            bool b = PyStackRef_UnwrapBit(bit);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (b == 0) {
+            if (!b) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 stack_pointer += -1;
@@ -22266,9 +22266,9 @@
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            int b = PyStackRef_UnwrapBit(bit);
+            bool b = PyStackRef_UnwrapBit(bit);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (b != 0) {
+            if (b) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 stack_pointer += -1;
