@@ -330,7 +330,7 @@ class BasicTest(BaseTest):
             cfg_content = re.sub(r'version = \d+\.\d+', f'version = {new_version}', cfg_content)
 
         cfg_content += f'\nversion_info = {new_version}\n'
-        
+
         with open(cfg_path, 'w', encoding='utf-8') as f:
             f.write(cfg_content)
 
@@ -363,7 +363,7 @@ class BasicTest(BaseTest):
         # Add only version_info, don't modify version
         new_version = f"{sys.version_info.major}.{wrong_minor}"
         cfg_content += f'\nversion_info = {new_version}\n'
-        
+
         with open(cfg_path, 'w', encoding='utf-8') as f:
             f.write(cfg_content)
 
