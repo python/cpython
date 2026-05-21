@@ -41,31 +41,36 @@ static inline size_t cache_nbytes(struct type_cache *cache)
         + (size_t)cache_size(cache) * sizeof(struct type_cache_entry);
 }
 
-static struct type_cache *allocate_cache(uint32_t size)
+static struct type_cache *cache_allocate(uint32_t size)
 {
+    // size must be a power of two
     assert((size & (size - 1)) == 0);
     struct type_cache *cache = PyMem_Calloc(1, sizeof(struct type_cache) + size * sizeof(struct type_cache_entry));
     if (cache == NULL) {
         return NULL;
     }
     cache->mask = size - 1;
+    // load factor of 0.75
     cache->available = size - (size >> 2);
     cache->used = 0;
     return cache;
 }
 
-static void free_cache_delayed(struct type_cache *cache)
+static void cache_free_delayed(struct type_cache *cache)
 {
     if (cache == NULL || cache == &empty_cache) {
         return;
     }
 #ifndef Py_GIL_DISABLED
+    // On gil-enabled builds, the cache owns strong references to the interned strings,
+    // so we need to decref them before freeing the cache memory.
     for (uint32_t i = 0; i < cache_size(cache); i++) {
         if (cache->hashtable[i].name != NULL) {
             Py_DECREF(cache->hashtable[i].name);
         }
     }
 #endif
+    // Delay the freeing of old cache for concurrent lock-free readers
     _PyMem_FreeDelayed(cache, cache_nbytes(cache));
 }
 
@@ -81,12 +86,12 @@ static inline void **cache_slot(PyTypeObject *type)
     return &type->_tp_cache;
 }
 
-static inline struct type_cache *get_cache(PyTypeObject *type)
+static inline struct type_cache *cache_get(PyTypeObject *type)
 {
     return (struct type_cache *)FT_ATOMIC_LOAD_PTR(*cache_slot(type));
 }
 
-static inline void set_cache(PyTypeObject *type, struct type_cache *cache)
+static inline void cache_set(PyTypeObject *type, struct type_cache *cache)
 {
     FT_ATOMIC_STORE_PTR(*cache_slot(type), cache);
 }
@@ -96,7 +101,7 @@ void _PyTypeCache_InitType(PyTypeObject *type)
     *cache_slot(type) = &empty_cache;
 }
 
-static inline void type_cache_insert(struct type_cache *cache, PyObject *name,
+static inline void cache_insert(struct type_cache *cache, PyObject *name,
                                      PyObject *value)
 {
     Py_hash_t hash = PyUnstable_Unicode_GET_CACHED_HASH(name);
@@ -115,49 +120,55 @@ static inline void type_cache_insert(struct type_cache *cache, PyObject *name,
             return;
         }
         else if (cache->hashtable[index].name == name) {
+            /* someone else added the entry before us. */
             return;
         }
         index = (index + 1) & cache->mask;
     }
 }
 
-static inline int type_cache_resize(PyTypeObject *type, struct type_cache *cache)
+static inline int cache_resize(PyTypeObject *type, struct type_cache *cache)
 {
     uint32_t old_size = cache_size(cache);
     uint32_t new_size;
     if (cache->used == 0) {
+        // the cache is the empty cache, we need to allocate a new cache with the minimum size
         new_size = _Py_TYPECACHE_MINSIZE;
     }
     else {
+        // double the cache size when resizing
         new_size = old_size * 2;
     }
-    struct type_cache *new_cache = allocate_cache(new_size);
+    struct type_cache *new_cache = cache_allocate(new_size);
     if (new_cache == NULL) {
         return -1;
     }
     FT_ATOMIC_STORE_UINT_RELAXED(cache->version_tag, FT_ATOMIC_LOAD_UINT_RELAXED(type->tp_version_tag));
     for (uint32_t i = 0; i < old_size; i++) {
         if (cache->hashtable[i].name != NULL) {
-            type_cache_insert(new_cache, cache->hashtable[i].name,
+            cache_insert(new_cache, cache->hashtable[i].name,
                               cache->hashtable[i].value);
         }
     }
-    set_cache(type, new_cache);
-    free_cache_delayed(cache);
+    cache_set(type, new_cache);
+    cache_free_delayed(cache);
     return 0;
 }
 
 void _PyTypeCache_Insert(PyTypeObject *type, PyObject *name, PyObject *value)
 {
-    struct type_cache *cache = get_cache(type);
+    struct type_cache *cache = cache_get(type);
+    // If the cache is full, resize it before inserting the new entry.
+    // this also handles the case of empty cache where available is 0 but there are no entries.
     if (cache->available == 0) {
-        if (type_cache_resize(type, cache) == -1) {
+        if (cache_resize(type, cache) == -1) {
+            // out of memory, don't cache the value
             return;
         }
-        cache = get_cache(type);
+        cache = cache_get(type);
         assert(cache->available > 0);
     }
-    type_cache_insert(cache, name, value);
+    cache_insert(cache, name, value);
     FT_ATOMIC_STORE_UINT_RELAXED(cache->version_tag, FT_ATOMIC_LOAD_UINT_RELAXED(type->tp_version_tag));
 }
 
@@ -165,7 +176,7 @@ struct _PyTypeCacheLookupResult _PyTypeCache_Lookup(PyTypeObject *type, PyObject
 {
     assert(PyUnicode_CheckExact(name) && PyUnicode_CHECK_INTERNED(name));
     struct _PyTypeCacheLookupResult miss = {PyStackRef_NULL, 0, 0};
-    struct type_cache *cache = get_cache(type);
+    struct type_cache *cache = cache_get(type);
     if (cache == NULL) {
         return miss;
     }
@@ -202,7 +213,8 @@ struct _PyTypeCacheLookupResult _PyTypeCache_Lookup(PyTypeObject *type, PyObject
 
 
 void _PyTypeCache_Invalidate(PyTypeObject *type) {
-    struct type_cache *cache = get_cache(type);
-    set_cache(type, &empty_cache);
-    free_cache_delayed(cache);
+    struct type_cache *cache = cache_get(type);
+    // if the type was modified, the cache is set to the empty cache and the old cache is freed after a delay.
+    cache_set(type, &empty_cache);
+    cache_free_delayed(cache);
 }
