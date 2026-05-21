@@ -3182,7 +3182,7 @@
             PyTypeObject *type = sym_get_type(subject);
             if (type != NULL) {
                 int match = type->tp_flags & Py_TPFLAGS_MAPPING;
-                res = sym_new_const(ctx, match ? Py_True : Py_False);
+                REPLACE_OP(this_instr, _LOAD_COMMON_CONST, match? CONSTANT_TRUE : CONSTANT_FALSE, 0);
             }
             else {
                 res = sym_new_type(ctx, &PyBool_Type);
@@ -3201,7 +3201,7 @@
             PyTypeObject *type = sym_get_type(subject);
             if (type != NULL) {
                 int match = type->tp_flags & Py_TPFLAGS_SEQUENCE;
-                res = sym_new_const(ctx, match ? Py_True : Py_False);
+                REPLACE_OP(this_instr, _LOAD_COMMON_CONST, match? CONSTANT_TRUE : CONSTANT_FALSE, 0);
             }
             else {
                 res = sym_new_type(ctx, &PyBool_Type);
