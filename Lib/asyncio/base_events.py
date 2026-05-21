@@ -969,7 +969,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             f"and file {file!r} combination")
 
     async def _sock_sendfile_fallback(self, sock, file, offset, count):
-        if isinstance(offset, int):
+        if hasattr(file, 'seek'):
             file.seek(offset)
         blocksize = (
             min(count, constants.SENDFILE_FALLBACK_READBUFFER_SIZE)
@@ -1294,7 +1294,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             "sendfile syscall is not supported")
 
     async def _sendfile_fallback(self, transp, file, offset, count):
-        if isinstance(offset, int):
+        if hasattr(file, 'seek'):
             file.seek(offset)
         blocksize = min(count, 16384) if count else 16384
         buf = bytearray(blocksize)
