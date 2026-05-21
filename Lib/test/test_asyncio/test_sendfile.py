@@ -227,6 +227,7 @@ class SockSendfileMixin(SendfileBase):
 
         self.assertEqual(ret, 0)
         self.assertEqual(self.file.tell(), 0)
+
     def check_sock_sendfile_offset(self, data, offset, force_fallback=False):
         sock, proto = self.prepare_socksendfile()
         with tempfile.TemporaryFile() as f:
@@ -234,20 +235,17 @@ class SockSendfileMixin(SendfileBase):
             f.flush()
             self.assertEqual(f.tell(), len(data))
 
-        if force_fallback:
-            async def _sock_sendfile_fail(sock, file, offset, count):
-                raise asyncio.exceptions.SendfileNotAvailableError()
-            with support.swap_attr(self.loop, '_sock_sendfile_native', _sock_sendfile_fail):
+            if force_fallback:
+                async def _sock_sendfile_fail(sock, file, offset, count):
+                    raise asyncio.exceptions.SendfileNotAvailableError()
+                with support.swap_attr(self.loop, '_sock_sendfile_native', _sock_sendfile_fail):
+                    ret = self.run_loop(self.loop.sock_sendfile(sock, f, offset, None))
+            else:
                 ret = self.run_loop(self.loop.sock_sendfile(sock, f, offset, None))
-        else:
-            ret = self.run_loop(self.loop.sock_sendfile(sock, f, offset, None))
-
-        self.assertEqual(f.tell(), len(data))
-
-        sock.close()
-        self.run_loop(proto.wait_closed())
-
-        self.assertEqual(ret, len(data) - offset)
+            self.assertEqual(f.tell(), len(data))
+            sock.close()
+            self.run_loop(proto.wait_closed())
+            self.assertEqual(ret, len(data) - offset)
 
     def test_sock_sendfile_offset(self):
         data = b'abcdef'
@@ -255,6 +253,7 @@ class SockSendfileMixin(SendfileBase):
             for force_fallback in (False, True):
                 with self.subTest(offset=offset, force_fallback=force_fallback):
                     self.check_sock_sendfile_offset(data, offset, force_fallback)
+
     def test_sock_sendfile_mix_with_regular_send(self):
         buf = b"mix_regular_send" * (4 * 1024)  # 64 KiB
         sock, proto = self.prepare_socksendfile()
@@ -477,6 +476,7 @@ class SendfileMixin(SendfileBase):
         self.assertEqual(ret, len(self.DATA))
         self.assertEqual(srv_proto.nbytes, len(self.DATA))
         self.assertEqual(srv_proto.data, self.DATA)
+        self.assertEqual(self.file.tell(), len(self.DATA))
 
     # On Solaris, lowering SO_RCVBUF on a TCP connection after it has been
     # established has no effect. Due to its age, this bug affects both Oracle
