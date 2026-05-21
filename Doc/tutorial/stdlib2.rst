@@ -30,11 +30,22 @@ and indentation to more clearly reveal data structure::
    ...     'yellow'], 'blue']]]
    ...
    >>> pprint.pprint(t, width=30)
-   [[[['black', 'cyan'],
-      'white',
-      ['green', 'red']],
-     [['magenta', 'yellow'],
-      'blue']]]
+   [
+       [
+           [
+               ['black', 'cyan'],
+               'white',
+               ['green', 'red'],
+           ],
+           [
+               [
+                   'magenta',
+                   'yellow',
+               ],
+               'blue',
+           ],
+       ],
+   ]
 
 The :mod:`textwrap` module formats paragraphs of text to fit a given screen
 width::
@@ -278,7 +289,7 @@ applications include caching objects that are expensive to create::
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
        d['primary']                # entry was automatically removed
-     File "C:/python315/lib/weakref.py", line 46, in __getitem__
+     File "C:/python316/lib/weakref.py", line 46, in __getitem__
        o = self.data[key]()
    KeyError: 'primary'
 

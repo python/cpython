@@ -34,11 +34,11 @@ iterate_threads(
 
     if (0 > _Py_RemoteDebug_PagedReadRemoteMemory(
                 &unwinder->handle,
-                unwinder->interpreter_addr + (uintptr_t)unwinder->debug_offsets.interpreter_state.threads_main,
+                unwinder->interpreter_addr + (uintptr_t)unwinder->debug_offsets.interpreter_state.threads_head,
                 sizeof(void*),
                 &thread_state_addr))
     {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read main thread state");
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read threads head");
         return -1;
     }
 
@@ -289,28 +289,110 @@ typedef struct {
     unsigned int :24;
 } _thread_status;
 
+static int
+read_thread_state_and_maybe_frame(
+    RemoteUnwinderObject *unwinder,
+    uintptr_t tstate_addr,
+    size_t tstate_size,
+    char *tstate_buffer,
+    uintptr_t predicted_frame_addr,
+    char *frame_buffer,
+    int *frame_read)
+{
+    *frame_read = 0;
+    if (predicted_frame_addr != 0) {
+        _Py_RemoteReadSegment segments[2] = {
+            {tstate_addr, tstate_buffer, tstate_size},
+            {predicted_frame_addr, frame_buffer, SIZEOF_INTERP_FRAME},
+        };
+        Py_ssize_t nread = _Py_RemoteDebug_BatchedReadRemoteMemory(
+            &unwinder->handle, segments, 2);
+        int completed = 0;
+        if (nread >= (Py_ssize_t)tstate_size) {
+            completed = 1;
+            if (nread == (Py_ssize_t)(tstate_size + SIZEOF_INTERP_FRAME)) {
+                completed = 2;
+            }
+        }
+        STATS_BATCHED_READ(unwinder, 2, completed);
+        if (completed >= 1) {
+            *frame_read = completed == 2;
+            return 0;
+        }
+    }
+    return _Py_RemoteDebug_ReadRemoteMemory(
+        &unwinder->handle, tstate_addr, tstate_size, tstate_buffer);
+}
+
 PyObject*
 unwind_stack_for_thread(
     RemoteUnwinderObject *unwinder,
     uintptr_t *current_tstate,
     uintptr_t gil_holder_tstate,
     uintptr_t gc_frame,
-    uintptr_t main_thread_tstate
+    uintptr_t main_thread_tstate,
+    const RemoteReadPrefetch *prefetch
 ) {
     PyObject *frame_info = NULL;
     PyObject *thread_id = NULL;
     PyObject *result = NULL;
     StackChunkList chunks = {0};
 
-    char ts[SIZEOF_THREAD_STATE];
-    int bytes_read = _Py_RemoteDebug_PagedReadRemoteMemory(
-        &unwinder->handle, *current_tstate, (size_t)unwinder->debug_offsets.thread_state.size, ts);
-    if (bytes_read < 0) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read thread state");
-        goto error;
+    char local_ts[SIZEOF_THREAD_STATE];
+    char local_prefetched_frame[SIZEOF_INTERP_FRAME];
+    const char *ts;
+    RemoteReadPrefetch ctx_prefetch = {0};
+    if (prefetch->tstate && prefetch->tstate_addr == *current_tstate) {
+        ts = prefetch->tstate;
+        if (prefetch->frame) {
+            ctx_prefetch.frame = prefetch->frame;
+            ctx_prefetch.frame_addr = prefetch->frame_addr;
+        }
+    }
+    else if (unwinder->cache_frames) {
+        uintptr_t predicted_frame_addr = 0;
+        int have_prefetched_frame = 0;
+        FrameCacheEntry *entry = frame_cache_find_by_tstate(unwinder, *current_tstate);
+        if (entry && entry->num_addrs > 0) {
+            predicted_frame_addr = entry->addrs[0];
+        }
+
+        int rc = read_thread_state_and_maybe_frame(
+            unwinder,
+            *current_tstate,
+            (size_t)unwinder->debug_offsets.thread_state.size,
+            local_ts,
+            predicted_frame_addr,
+            local_prefetched_frame,
+            &have_prefetched_frame);
+        if (rc < 0) {
+            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read thread state");
+            goto error;
+        }
+        ts = local_ts;
+        if (have_prefetched_frame) {
+            ctx_prefetch.frame = local_prefetched_frame;
+            ctx_prefetch.frame_addr = predicted_frame_addr;
+        }
+    }
+    else {
+        int rc = _Py_RemoteDebug_ReadRemoteMemory(
+            &unwinder->handle,
+            *current_tstate,
+            (size_t)unwinder->debug_offsets.thread_state.size,
+            local_ts);
+        if (rc < 0) {
+            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read thread state");
+            goto error;
+        }
+        ts = local_ts;
     }
     STATS_INC(unwinder, memory_reads);
     STATS_ADD(unwinder, memory_bytes_read, unwinder->debug_offsets.thread_state.size);
+    if (ctx_prefetch.frame) {
+        STATS_INC(unwinder, memory_reads);
+        STATS_ADD(unwinder, memory_bytes_read, SIZEOF_INTERP_FRAME);
+    }
 
     long tid = GET_MEMBER(long, ts, unwinder->debug_offsets.thread_state.native_thread_id);
 
@@ -432,9 +514,11 @@ unwind_stack_for_thread(
     uintptr_t addrs[FRAME_CACHE_MAX_FRAMES];
     FrameWalkContext ctx = {
         .frame_addr = frame_addr,
+        .thread_state_addr = *current_tstate,
         .base_frame_addr = base_frame_addr,
         .gc_frame = gc_frame,
         .chunks = &chunks,
+        .prefetch = ctx_prefetch,
         .frame_info = frame_info,
         .frame_addrs = addrs,
         .num_addrs = 0,
@@ -450,12 +534,14 @@ unwind_stack_for_thread(
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to collect frames");
             goto error;
         }
-        // Update last_profiled_frame for next sample
-        uintptr_t lpf_addr =
-            *current_tstate + (uintptr_t)unwinder->debug_offsets.thread_state.last_profiled_frame;
-        if (_Py_RemoteDebug_WriteRemoteMemory(&unwinder->handle, lpf_addr,
-                                              sizeof(uintptr_t), &frame_addr) < 0) {
-            PyErr_Clear();  // Non-fatal
+        // Update last_profiled_frame for next sample if it changed
+        if (frame_addr != ctx.last_profiled_frame) {
+            uintptr_t lpf_addr =
+                *current_tstate + (uintptr_t)unwinder->debug_offsets.thread_state.last_profiled_frame;
+            if (_Py_RemoteDebug_WriteRemoteMemory(&unwinder->handle, lpf_addr,
+                                                  sizeof(uintptr_t), &frame_addr) < 0) {
+                PyErr_Clear();  // Non-fatal
+            }
         }
     } else {
         // No caching - process entire frame chain with base_frame validation
@@ -467,10 +553,18 @@ unwind_stack_for_thread(
 
     *current_tstate = GET_MEMBER(uintptr_t, ts, unwinder->debug_offsets.thread_state.next);
 
-    thread_id = PyLong_FromLongLong(tid);
+    if (unwinder->cache_frames) {
+        FrameCacheEntry *entry = frame_cache_find(unwinder, (uint64_t)tid);
+        if (entry && entry->thread_id_obj) {
+            thread_id = Py_NewRef(entry->thread_id_obj);
+        }
+    }
     if (thread_id == NULL) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to create thread ID");
-        goto error;
+        thread_id = PyLong_FromLongLong(tid);
+        if (thread_id == NULL) {
+            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to create thread ID");
+            goto error;
+        }
     }
 
     RemoteDebuggingState *state = RemoteDebugging_GetStateFromObject((PyObject*)unwinder);
