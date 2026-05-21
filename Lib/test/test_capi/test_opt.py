@@ -5710,7 +5710,6 @@ class TestUopsOptimization(unittest.TestCase):
         res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertEqual(res, TIER2_THRESHOLD)
         uops = get_opnames(ex)
-
         self.assertIn("_MATCH_CLASS", uops)
         self.assertEqual(count_ops(ex, "_POP_TOP_NOP"), 4)
 
@@ -5728,9 +5727,8 @@ class TestUopsOptimization(unittest.TestCase):
         res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertEqual(res, TIER2_THRESHOLD)
         uops = get_opnames(ex)
-
-        self.assertIn("_MATCH_MAPPING", uops)
-        self.assertNotIn("_GUARD_BIT_IS_SET_POP", uops)
+        self.assertNotIn("_MATCH_MAPPING", uops)
+        self.assertIn("_LOAD_COMMON_CONSTANT", uops)
 
     def test_match_sequence(self):
         def testfunc(n):
@@ -5745,9 +5743,8 @@ class TestUopsOptimization(unittest.TestCase):
         res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertEqual(res, TIER2_THRESHOLD)
         uops = get_opnames(ex)
-
-        self.assertIn("_MATCH_SEQUENCE", uops)
-        self.assertNotIn("_GUARD_BIT_IS_SET_POP", uops)
+        self.assertNotIn("_MATCH_SEQUENCE", uops)
+        self.assertIn("_LOAD_COMMON_CONSTANT", uops)
 
     def test_dict_update(self):
         def testfunc(n):
