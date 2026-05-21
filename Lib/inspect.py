@@ -2207,7 +2207,8 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
             except NameError:
                 raise ValueError
 
-        if isinstance(value, (str, int, float, bytes, bool, type(None))):
+        if isinstance(value, (str, int, float, bytes, bool, type(None),
+                              sentinel)):
             return ast.Constant(value)
         raise ValueError
 

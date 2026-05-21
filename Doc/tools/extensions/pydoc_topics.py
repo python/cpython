@@ -68,6 +68,7 @@ _PYDOC_TOPIC_LABELS: Sequence[str] = sorted({
     "in",
     "integers",
     "lambda",
+    "lazy",
     "lists",
     "naming",
     "nonlocal",
