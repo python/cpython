@@ -50,7 +50,6 @@ def sha256sum(data):
 TEMPDIR = os.path.abspath(os_helper.TESTFN) + "-tardir"
 tarextdir = TEMPDIR + '-extract-test'
 tarname = support.findfile("testtar.tar", subdir="archivetestdata")
-tgzname_with_comment_extra_data_in_header = support.findfile("tgz_with_comment_extra_data_in_header.tgz", subdir="archivetestdata")
 gzipname = os.path.join(TEMPDIR, "testtar.tar.gz")
 bz2name = os.path.join(TEMPDIR, "testtar.tar.bz2")
 xzname = os.path.join(TEMPDIR, "testtar.tar.xz")
@@ -894,10 +893,39 @@ class MiscReadTestBase(CommonReadTest):
                 self._assert_on_file_content(hardlink_filepath, sha256_regtype)
 
 
+class GzipReadTestBase:
+
+    def test_read_with_extra_field(self):
+        with open(self.tarname, 'rb') as f:
+            data = bytearray(f.read())
+        flags = data[3]
+        self.assertEqual(flags, 8)
+        data[3] = flags | 4
+        data[10:10] = b'\x05\x00extra'
+        with open(tmpname, 'wb') as f:
+            f.write(data)
+        print(self.mode)
+        with tarfile.open(tmpname, mode=self.mode):
+            pass
+
+    def test_read_with_file_comment(self):
+        with open(self.tarname, 'rb') as f:
+            data = bytearray(f.read())
+        flags = data[3]
+        self.assertEqual(flags, 8)
+        data[3] = flags | 16
+        i = data.index(0, 10) + 1
+        data[i:i] = b'comment\x00'
+        with open(tmpname, 'wb') as f:
+            f.write(data)
+        with tarfile.open(tmpname, mode=self.mode):
+            pass
+
+
 class MiscReadTest(MiscReadTestBase, unittest.TestCase):
     test_fail_comp = None
 
-class GzipMiscReadTest(GzipTest, MiscReadTestBase, unittest.TestCase):
+class GzipMiscReadTest(GzipTest, GzipReadTestBase, MiscReadTestBase, unittest.TestCase):
     pass
 
 class Bz2MiscReadTest(Bz2Test, MiscReadTestBase, unittest.TestCase):
@@ -971,13 +999,8 @@ class StreamReadTest(CommonReadTest, unittest.TestCase):
         finally:
             tar1.close()
 
-class GzipStreamReadTest(GzipTest, StreamReadTest):
-
-    @unittest.skipIf(zlib is None, "requires zlib")
-    def test_read_with_extra_header(self):
-        with tarfile.open(tgzname_with_comment_extra_data_in_header,
-                          mode="r|*") as _:
-            pass
+class GzipStreamReadTest(GzipTest, GzipReadTestBase, StreamReadTest):
+    pass
 
 class Bz2StreamReadTest(Bz2Test, StreamReadTest):
     pass
