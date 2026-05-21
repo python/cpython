@@ -80,7 +80,8 @@ extern "C" {
 #define CONSTANT_TRUE 9
 #define CONSTANT_FALSE 10
 #define CONSTANT_MINUS_ONE 11
-#define NUM_COMMON_CONSTANTS 12
+#define CONSTANT_BUILTIN_FROZENSET 12
+#define NUM_COMMON_CONSTANTS 13
 
 /* Values used in the oparg for RESUME */
 #define RESUME_AT_FUNC_START 0

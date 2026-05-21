@@ -2378,7 +2378,7 @@ dummy_func(void) {
         res = sym_new_type(ctx, &PyLong_Type);
         Py_ssize_t length = sym_tuple_length(arg);
 
-        // Not a tuple, check if it's a const string
+        // Not a tuple, check if it's another immutable const with known length
         if (length < 0 && sym_is_const(ctx, arg)) {
             PyObject *const_val = sym_get_const(ctx, arg);
             if (const_val != NULL) {
@@ -2387,6 +2387,12 @@ dummy_func(void) {
                 }
                 else if (PyBytes_CheckExact(const_val)) {
                     length = PyBytes_GET_SIZE(const_val);
+                }
+                else if (PyFrozenDict_CheckExact(const_val)) {
+                    length = PyDict_GET_SIZE(const_val);
+                }
+                else if (PyFrozenSet_CheckExact(const_val)) {
+                    length = PySet_GET_SIZE(const_val);
                 }
             }
         }

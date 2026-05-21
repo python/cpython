@@ -1545,6 +1545,16 @@ set_swap_bodies(PySetObject *a, PySetObject *b)
     FT_ATOMIC_STORE_PTR_RELEASE(b->table, b_table);
 }
 
+PyObject *
+_PySet_Freeze(PyObject *set)
+{
+    assert(set != NULL);
+    assert(PySet_CheckExact(set));
+    assert(_PyObject_IsUniquelyReferenced(set));
+    set->ob_type = &PyFrozenSet_Type;
+    return Py_NewRef(set);
+}
+
 /*[clinic input]
 @critical_section
 set.copy

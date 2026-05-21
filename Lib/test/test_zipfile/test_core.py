@@ -1886,11 +1886,8 @@ class OtherTests(unittest.TestCase):
 
             with zipfile.ZipFile(TESTFN, "r") as zf:
                 zip_info = zf.getinfo("test_source_date_epoch.txt")
-                get_time = time.localtime(int(os.environ['SOURCE_DATE_EPOCH']))[:6]
-                # Compare each element of the date_time tuple
-                # Allow for a 1-second difference
-                for z_time, g_time in zip(zip_info.date_time, get_time):
-                    self.assertAlmostEqual(z_time, g_time, delta=1)
+                expected_utc = (2025, 1, 1, 7, 19, 58)
+                self.assertEqual(zip_info.date_time, expected_utc)
 
     def test_write_without_source_date_epoch(self):
         with os_helper.EnvironmentVarGuard() as env:
@@ -1901,9 +1898,13 @@ class OtherTests(unittest.TestCase):
 
             with zipfile.ZipFile(TESTFN, "r") as zf:
                 zip_info = zf.getinfo("test_no_source_date_epoch.txt")
-                current_time = time.localtime()[:6]
-                for z_time, c_time in zip(zip_info.date_time, current_time):
-                    self.assertAlmostEqual(z_time, c_time, delta=2)
+                self.assertTimestampAlmostEqual(time.localtime(), zip_info.date_time, tolerance=2)
+
+    def assertTimestampAlmostEqual(self, time1, time2, tolerance):
+        import datetime
+        dt1 = datetime.datetime(*time1[:6])
+        dt2 = datetime.datetime(*time2[:6])
+        self.assertLessEqual((dt1 - dt2).total_seconds(), tolerance)
 
     def test_close(self):
         """Check that the zipfile is closed after the 'with' block."""

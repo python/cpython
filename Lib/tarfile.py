@@ -1425,7 +1425,7 @@ class TarInfo(object):
         # Remove redundant slashes from directories. This is to be consistent
         # with frombuf().
         if next.isdir():
-            next.name = next.name.removesuffix("/")
+            next.name = next.name.rstrip("/")
 
         return next
 
