@@ -167,6 +167,33 @@ has_starred(asdl_expr_seq *elts)
     return 0;
 }
 
+static int
+is_null_container_unpack(expr_ty elt)
+{
+    if (elt->kind != Starred_kind) {
+        return 0;
+    }
+    expr_ty value = elt->v.Starred.value;
+    return value->kind == Tuple_kind && asdl_seq_LEN(value->v.Tuple.elts) == 0;
+}
+
+static void
+remove_null_container_unpacks(asdl_expr_seq *elts)
+{
+    if (elts == NULL) {
+        return;
+    }
+    Py_ssize_t write = 0;
+    Py_ssize_t n = asdl_seq_LEN(elts);
+    for (Py_ssize_t read = 0; read < n; read++) {
+        expr_ty elt = asdl_seq_GET(elts, read);
+        if (!is_null_container_unpack(elt)) {
+            asdl_seq_SET(elts, write++, elt);
+        }
+    }
+    elts->size = write;
+}
+
 static expr_ty
 parse_literal(PyObject *fmt, Py_ssize_t *ppos, PyArena *arena)
 {
@@ -546,6 +573,7 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTPreprocessState *state)
         break;
     case Set_kind:
         CALL_SEQ(astfold_expr, expr, node_->v.Set.elts);
+        remove_null_container_unpacks(node_->v.Set.elts);
         break;
     case ListComp_kind:
         CALL(astfold_expr, expr_ty, node_->v.ListComp.elt);
@@ -615,9 +643,11 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTPreprocessState *state)
         break;
     case List_kind:
         CALL_SEQ(astfold_expr, expr, node_->v.List.elts);
+        remove_null_container_unpacks(node_->v.List.elts);
         break;
     case Tuple_kind:
         CALL_SEQ(astfold_expr, expr, node_->v.Tuple.elts);
+        remove_null_container_unpacks(node_->v.Tuple.elts);
         break;
     case Name_kind:
         if (state->syntax_check_only) {

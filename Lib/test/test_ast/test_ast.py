@@ -1530,6 +1530,25 @@ class ASTHelpers_Test(unittest.TestCase):
         b = compile('foo(1 + 1)', '<unknown>', 'exec', ast.PyCF_ONLY_AST)
         self.assertEqual(ast.dump(a), ast.dump(b))
 
+    def test_parse_elides_null_container_unpacks(self):
+        tests = [
+            ('[*()]', ast.List, []),
+            ('{*()}', ast.Set, []),
+            ('(*(),)', ast.Tuple, []),
+            ('[1, *(), 2]', ast.List, [1, 2]),
+            ('{1, *(), 2}', ast.Set, [1, 2]),
+            ('(1, *(), 2)', ast.Tuple, [1, 2]),
+        ]
+
+        for source, node_type, expected_values in tests:
+            with self.subTest(source=source):
+                node = ast.parse(source, mode='eval').body
+                self.assertIsInstance(node, node_type)
+                self.assertEqual(
+                    [elt.value for elt in node.elts],
+                    expected_values,
+                )
+
     def test_parse_in_error(self):
         try:
             1/0
