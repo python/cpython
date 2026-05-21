@@ -1,5 +1,4 @@
 .. _glossary:
-   :sorted:
 
 ********
 Glossary
@@ -8,6 +7,7 @@ Glossary
 .. if you add new entries, keep the alphabetical sorting!
 
 .. glossary::
+   :sorted:
 
    ``>>>``
       The default Python prompt of the :term:`interactive` shell.  Often
