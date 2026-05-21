@@ -55,7 +55,7 @@
 
 #define MAX_STRING_LENGTH 500
 #define MAX_FRAME_DEPTH 100
-#define MAX_NTHREADS 100
+#define DEFAULT_MAX_NTHREADS 100
 
 /* Function from Parser/tokenizer/file_tokenizer.c */
 extern char* _PyTokenizer_FindEncodingFilename(int, PyObject *);
@@ -1167,10 +1167,11 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
 
    The caller is responsible to call PyErr_CheckSignals() to call Python signal
    handlers if signals were received. */
-void
-_Py_DumpTraceback(int fd, PyThreadState *tstate)
+const char*
+PyUnstable_DumpTraceback(int fd, PyThreadState *tstate)
 {
     dump_traceback(fd, tstate, 1);
+    return NULL;
 }
 
 #if defined(HAVE_PTHREAD_GETNAME_NP) || defined(HAVE_PTHREAD_GET_NAME_NP)
@@ -1264,11 +1265,16 @@ write_thread_id(int fd, PyThreadState *tstate, int is_current)
    The caller is responsible to call PyErr_CheckSignals() to call Python signal
    handlers if signals were received. */
 const char* _Py_NO_SANITIZE_THREAD
-_Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
-                         PyThreadState *current_tstate)
+PyUnstable_DumpTracebackThreads(int fd, PyInterpreterState *interp,
+                                PyThreadState *current_tstate,
+                                Py_ssize_t max_threads)
 {
+    if (max_threads == 0) {
+        max_threads = DEFAULT_MAX_NTHREADS;
+    }
+
     if (current_tstate == NULL) {
-        /* _Py_DumpTracebackThreads() is called from signal handlers by
+        /* PyUnstable_DumpTracebackThreads() is called from signal handlers by
            faulthandler.
 
            SIGSEGV, SIGFPE, SIGABRT, SIGBUS and SIGILL are synchronous signals
@@ -1310,13 +1316,13 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
         return "unable to get the thread head state";
 
     /* Dump the traceback of each thread */
-    unsigned int nthreads = 0;
+    Py_ssize_t nthreads = 0;
     _Py_BEGIN_SUPPRESS_IPH
     do
     {
         if (nthreads != 0)
             PUTS(fd, "\n");
-        if (nthreads >= MAX_NTHREADS) {
+        if (nthreads >= max_threads) {
             PUTS(fd, "...\n");
             break;
         }

@@ -20,6 +20,7 @@
 #include "pycore_fileutils.h"     // _Py_closerange()
 #include "pycore_import.h"        // _PyImport_AcquireLock()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
+#include "pycore_jit_unwind.h"    // _Py_jit_debug_mutex
 #include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyObject_LookupSpecial()
@@ -757,6 +758,13 @@ PyOS_AfterFork_Child(void)
     if (_PyStatus_EXCEPTION(status)) {
         goto fatal_error;
     }
+
+#if defined(PY_HAVE_JIT_GDB_UNWIND)
+    // The child can inherit this mutex locked if another thread held it at
+    // fork(), but the child itself cannot be inside gdb_jit_register_code().
+    // Reinitialize it before any executor cleanup can unregister JIT code.
+    _Py_jit_debug_mutex = (PyMutex){0};
+#endif
 
     reset_remotedebug_data(tstate);
 
@@ -10769,6 +10777,35 @@ os_pidfd_open_impl(PyObject *module, pid_t pid, unsigned int flags)
 #endif
 
 
+#if defined(__linux__) && defined(__NR_pidfd_getfd) && \
+    !(defined(__ANDROID__) && __ANDROID_API__ < 31)
+/*[clinic input]
+os.pidfd_getfd
+  pidfd: int
+    A process file descriptor.
+  targetfd: int
+    The file descriptor to duplicate from the target process.
+  *
+  flags: unsigned_int = 0
+    Reserved, must be 0.
+
+Duplicate a file descriptor from the process referred to by *pidfd*.
+[clinic start generated code]*/
+
+static PyObject *
+os_pidfd_getfd_impl(PyObject *module, int pidfd, int targetfd,
+                    unsigned int flags)
+/*[clinic end generated code: output=e1a1415a13c7137f input=ef6417fb10deb1cc]*/
+{
+    int fd = syscall(__NR_pidfd_getfd, pidfd, targetfd, flags);
+    if (fd < 0) {
+        return posix_error();
+    }
+    return PyLong_FromLong(fd);
+}
+#endif
+
+
 #ifdef HAVE_SETNS
 /*[clinic input]
 os.setns
@@ -13655,6 +13692,10 @@ static PyObject *
 os__clearenv_impl(PyObject *module)
 /*[clinic end generated code: output=2d6705d62c014b51 input=47d2fa7f323c43ca]*/
 {
+    if (PySys_Audit("os._clearenv", NULL) < 0) {
+        return NULL;
+    }
+
     errno = 0;
     int err = clearenv();
     if (err) {
@@ -17195,6 +17236,8 @@ os_getrandom_impl(PyObject *module, Py_ssize_t size, int flags)
         goto error;
     }
 
+    _Py_MSAN_UNPOISON(data, size);
+
     return PyBytesWriter_FinishWithSize(writer, n);
 
 error:
@@ -17596,6 +17639,7 @@ static PyMethodDef posix_methods[] = {
     OS_WAITID_METHODDEF
     OS_WAITPID_METHODDEF
     OS_PIDFD_OPEN_METHODDEF
+    OS_PIDFD_GETFD_METHODDEF
     OS_GETSID_METHODDEF
     OS_SETSID_METHODDEF
     OS_SETPGID_METHODDEF

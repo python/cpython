@@ -443,7 +443,7 @@ _PyDict_DebugMallocStats(FILE *out)
 {
     _PyDebugAllocatorStats(out, "free PyDictObject",
                            _Py_FREELIST_SIZE(dicts),
-                           sizeof(PyDictObject));
+                           _PyType_PreHeaderSize(&PyDict_Type) + sizeof(PyDictObject));
     _PyDebugAllocatorStats(out, "free PyDictKeysObject",
                            _Py_FREELIST_SIZE(dictkeys),
                            sizeof(PyDictKeysObject));
@@ -900,7 +900,7 @@ free_values(PyDictValues *values, bool use_qsbr)
 static inline PyObject *
 new_dict_impl(PyDictObject *mp, PyDictKeysObject *keys,
               PyDictValues *values, Py_ssize_t used,
-              int free_values_on_failure)
+              int free_values_on_failure, int frozendict)
 {
     assert(keys != NULL);
     if (mp == NULL) {
@@ -915,6 +915,9 @@ new_dict_impl(PyDictObject *mp, PyDictKeysObject *keys,
     mp->ma_values = values;
     mp->ma_used = used;
     mp->_ma_watcher_tag = 0;
+    if (frozendict) {
+        ((PyFrozenDictObject *)mp)->ma_hash = -1;
+    }
     ASSERT_CONSISTENT(mp);
     _PyObject_GC_TRACK(mp);
     return (PyObject *)mp;
@@ -931,7 +934,7 @@ new_dict(PyDictKeysObject *keys, PyDictValues *values,
     }
     assert(mp == NULL || Py_IS_TYPE(mp, &PyDict_Type));
 
-    return new_dict_impl(mp, keys, values, used, free_values_on_failure);
+    return new_dict_impl(mp, keys, values, used, free_values_on_failure, 0);
 }
 
 /* Consumes a reference to the keys object */
@@ -940,7 +943,7 @@ new_frozendict(PyDictKeysObject *keys, PyDictValues *values,
                Py_ssize_t used, int free_values_on_failure)
 {
     PyDictObject *mp = PyObject_GC_New(PyDictObject, &PyFrozenDict_Type);
-    return new_dict_impl(mp, keys, values, used, free_values_on_failure);
+    return new_dict_impl(mp, keys, values, used, free_values_on_failure, 1);
 }
 
 static PyObject *
@@ -1910,8 +1913,8 @@ insert_split_key(PyDictKeysObject *keys, PyObject *key, Py_hash_t hash)
     return ix;
 }
 
-static void
-insert_split_value(PyDictObject *mp, PyObject *key, PyObject *value, Py_ssize_t ix)
+void
+_PyDict_InsertSplitValue(PyDictObject *mp, PyObject *key, PyObject *value, Py_ssize_t ix)
 {
     assert(can_modify_dict(mp));
     assert(PyUnicode_CheckExact(key));
@@ -1951,7 +1954,7 @@ insertdict(PyDictObject *mp,
     if (_PyDict_HasSplitTable(mp) && PyUnicode_CheckExact(key)) {
         ix = insert_split_key(mp->ma_keys, key, hash);
         if (ix != DKIX_EMPTY) {
-            insert_split_value(mp, key, value, ix);
+            _PyDict_InsertSplitValue(mp, key, value, ix);
             Py_DECREF(key);
             Py_DECREF(value);
             return 0;
@@ -3080,10 +3083,12 @@ clear_lock_held(PyObject *op)
         set_keys(mp, Py_EMPTY_KEYS);
         n = oldkeys->dk_nentries;
         for (i = 0; i < n; i++) {
-            Py_CLEAR(oldvalues->values[i]);
+            PyObject *tmp = oldvalues->values[i];
+            FT_ATOMIC_STORE_PTR_RELEASE(oldvalues->values[i], NULL);
+            Py_XDECREF(tmp);
         }
         free_values(oldvalues, IS_DICT_SHARED(mp));
-        dictkeys_decref(oldkeys, false);
+        dictkeys_decref(oldkeys, IS_DICT_SHARED(mp));
     }
     ASSERT_CONSISTENT(mp);
 }
@@ -3669,19 +3674,13 @@ frozendict_length(PyObject *self)
     return _PyAnyDict_CAST(self)->ma_used;
 }
 
-static PyObject *
-dict_subscript(PyObject *self, PyObject *key)
+PyObject *
+_PyDict_SubscriptKnownHash(PyObject *self, PyObject *key, Py_hash_t hash)
 {
     PyDictObject *mp = (PyDictObject *)self;
     Py_ssize_t ix;
-    Py_hash_t hash;
     PyObject *value;
 
-    hash = _PyObject_HashFast(key);
-    if (hash == -1) {
-        dict_unhashable_type(self, key);
-        return NULL;
-    }
     ix = _Py_dict_lookup_threadsafe(mp, key, hash, &value);
     if (ix == DKIX_ERROR)
         return NULL;
@@ -3705,8 +3704,19 @@ dict_subscript(PyObject *self, PyObject *key)
     return value;
 }
 
-static int
-dict_ass_sub(PyObject *mp, PyObject *v, PyObject *w)
+PyObject *
+_PyDict_Subscript(PyObject *self, PyObject *key)
+{
+    Py_hash_t hash = _PyObject_HashFast(key);
+    if (hash == -1) {
+        dict_unhashable_type(self, key);
+        return NULL;
+    }
+    return _PyDict_SubscriptKnownHash(self, key, hash);
+}
+
+int
+_PyDict_StoreSubscript(PyObject *mp, PyObject *v, PyObject *w)
 {
     if (w == NULL)
         return PyDict_DelItem(mp, v);
@@ -3716,8 +3726,8 @@ dict_ass_sub(PyObject *mp, PyObject *v, PyObject *w)
 
 static PyMappingMethods dict_as_mapping = {
     dict_length, /*mp_length*/
-    dict_subscript, /*mp_subscript*/
-    dict_ass_sub, /*mp_ass_subscript*/
+    _PyDict_Subscript, /*mp_subscript*/
+    _PyDict_StoreSubscript, /*mp_ass_subscript*/
 };
 
 static PyObject *
@@ -4714,7 +4724,7 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
             PyObject *value = mp->ma_values->values[ix];
             int already_present = value != NULL;
             if (!already_present) {
-                insert_split_value(mp, key, default_value, ix);
+                _PyDict_InsertSplitValue(mp, key, default_value, ix);
                 value = default_value;
             }
             if (result) {
@@ -5041,8 +5051,8 @@ dict___sizeof___impl(PyDictObject *self)
     return PyLong_FromSsize_t(_PyDict_SizeOf(self));
 }
 
-static PyObject *
-dict_or(PyObject *self, PyObject *other)
+PyObject *
+_PyDict_Or(PyObject *self, PyObject *other)
 {
     if (!PyAnyDict_Check(self) || !PyAnyDict_Check(other)) {
         Py_RETURN_NOTIMPLEMENTED;
@@ -5077,12 +5087,12 @@ frozendict_or(PyObject *self, PyObject *other)
         }
     }
 
-    return dict_or(self, other);
+    return _PyDict_Or(self, other);
 }
 
 
-static PyObject *
-dict_ior(PyObject *self, PyObject *other)
+PyObject *
+_PyDict_IOr(PyObject *self, PyObject *other)
 {
     if (dict_update_arg(self, other)) {
         return NULL;
@@ -5103,7 +5113,7 @@ In either case, this is followed by: for k in F:  D[k] = F[k]");
 
 static PyMethodDef mapp_methods[] = {
     DICT___CONTAINS___METHODDEF
-    {"__getitem__",     dict_subscript,                 METH_O | METH_COEXIST,
+    {"__getitem__",     _PyDict_Subscript,                 METH_O | METH_COEXIST,
      getitem__doc__},
     DICT___SIZEOF___METHODDEF
     DICT_GET_METHODDEF
@@ -5198,8 +5208,8 @@ static PySequenceMethods dict_as_sequence = {
 };
 
 static PyNumberMethods dict_as_number = {
-    .nb_or = dict_or,
-    .nb_inplace_or = dict_ior,
+    .nb_or = _PyDict_Or,
+    .nb_inplace_or = _PyDict_IOr,
 };
 
 static PyObject *
@@ -8010,12 +8020,18 @@ validate_watcher_id(PyInterpreterState *interp, int watcher_id)
         PyErr_Format(PyExc_ValueError, "Invalid dict watcher ID %d", watcher_id);
         return -1;
     }
-    if (!interp->dict_state.watchers[watcher_id]) {
+    PyDict_WatchCallback cb = FT_ATOMIC_LOAD_PTR_RELAXED(
+        interp->dict_state.watchers[watcher_id]);
+    if (cb == NULL) {
         PyErr_Format(PyExc_ValueError, "No dict watcher set for ID %d", watcher_id);
         return -1;
     }
     return 0;
 }
+
+// In free-threaded builds, Add/Clear serialize on watcher_mutex and publish
+// callbacks with release stores. SendEvent reads them lock-free using
+// acquire loads.
 
 int
 PyDict_Watch(int watcher_id, PyObject* dict)
@@ -8028,7 +8044,8 @@ PyDict_Watch(int watcher_id, PyObject* dict)
     if (validate_watcher_id(interp, watcher_id)) {
         return -1;
     }
-    ((PyDictObject*)dict)->_ma_watcher_tag |= (1LL << watcher_id);
+    FT_ATOMIC_OR_UINT64(((PyDictObject*)dict)->_ma_watcher_tag,
+                        1ULL << watcher_id);
     return 0;
 }
 
@@ -8043,36 +8060,48 @@ PyDict_Unwatch(int watcher_id, PyObject* dict)
     if (validate_watcher_id(interp, watcher_id)) {
         return -1;
     }
-    ((PyDictObject*)dict)->_ma_watcher_tag &= ~(1LL << watcher_id);
+    FT_ATOMIC_AND_UINT64(((PyDictObject*)dict)->_ma_watcher_tag,
+                         ~(1ULL << watcher_id));
     return 0;
 }
 
 int
 PyDict_AddWatcher(PyDict_WatchCallback callback)
 {
+    int watcher_id = -1;
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
+    FT_MUTEX_LOCK_FLAGS(&interp->dict_state.watcher_mutex,
+                        _Py_LOCK_DONT_DETACH);
     /* Some watchers are reserved for CPython, start at the first available one */
     for (int i = FIRST_AVAILABLE_WATCHER; i < DICT_MAX_WATCHERS; i++) {
         if (!interp->dict_state.watchers[i]) {
-            interp->dict_state.watchers[i] = callback;
-            return i;
+            FT_ATOMIC_STORE_PTR_RELEASE(interp->dict_state.watchers[i], callback);
+            watcher_id = i;
+            goto done;
         }
     }
-
     PyErr_SetString(PyExc_RuntimeError, "no more dict watcher IDs available");
-    return -1;
+done:
+    FT_MUTEX_UNLOCK(&interp->dict_state.watcher_mutex);
+    return watcher_id;
 }
 
 int
 PyDict_ClearWatcher(int watcher_id)
 {
+    int res = 0;
     PyInterpreterState *interp = _PyInterpreterState_GET();
+    FT_MUTEX_LOCK_FLAGS(&interp->dict_state.watcher_mutex,
+                        _Py_LOCK_DONT_DETACH);
     if (validate_watcher_id(interp, watcher_id)) {
-        return -1;
+        res = -1;
+        goto done;
     }
-    interp->dict_state.watchers[watcher_id] = NULL;
-    return 0;
+    FT_ATOMIC_STORE_PTR_RELEASE(interp->dict_state.watchers[watcher_id], NULL);
+done:
+    FT_MUTEX_UNLOCK(&interp->dict_state.watcher_mutex);
+    return res;
 }
 
 static const char *
@@ -8097,7 +8126,8 @@ _PyDict_SendEvent(int watcher_bits,
     PyInterpreterState *interp = _PyInterpreterState_GET();
     for (int i = 0; i < DICT_MAX_WATCHERS; i++) {
         if (watcher_bits & 1) {
-            PyDict_WatchCallback cb = interp->dict_state.watchers[i];
+            PyDict_WatchCallback cb = FT_ATOMIC_LOAD_PTR_ACQUIRE(
+                interp->dict_state.watchers[i]);
             if (cb && (cb(event, (PyObject*)mp, key, value) < 0)) {
                 // We don't want to resurrect the dict by potentially having an
                 // unraisablehook keep a reference to it, so we don't pass the
@@ -8153,12 +8183,12 @@ static PyNumberMethods frozendict_as_number = {
 
 static PyMappingMethods frozendict_as_mapping = {
     .mp_length = frozendict_length,
-    .mp_subscript = dict_subscript,
+    .mp_subscript = _PyDict_Subscript,
 };
 
 static PyMethodDef frozendict_methods[] = {
     DICT___CONTAINS___METHODDEF
-    {"__getitem__", dict_subscript, METH_O | METH_COEXIST, getitem__doc__},
+    {"__getitem__", _PyDict_Subscript, METH_O | METH_COEXIST, getitem__doc__},
     DICT___SIZEOF___METHODDEF
     DICT_GET_METHODDEF
     DICT_KEYS_METHODDEF
@@ -8200,6 +8230,39 @@ _shuffle_bits(Py_uhash_t h)
     return ((h ^ 89869747UL) ^ (h << 16)) * 3644798167UL;
 }
 
+// Compute hash((key, value)).
+// Code copied from tuple_hash().
+static Py_hash_t
+frozendict_pair_hash(Py_hash_t key_hash, PyObject *value)
+{
+    assert(key_hash != -1);
+
+    const Py_ssize_t len = 2;
+    Py_uhash_t acc = _PyTuple_HASH_XXPRIME_5;
+
+    Py_uhash_t lane = key_hash;
+    acc += lane * _PyTuple_HASH_XXPRIME_2;
+    acc = _PyTuple_HASH_XXROTATE(acc);
+    acc *= _PyTuple_HASH_XXPRIME_1;
+
+    lane = PyObject_Hash(value);
+    if (lane == (Py_uhash_t)-1) {
+        return -1;
+    }
+    acc += lane * _PyTuple_HASH_XXPRIME_2;
+    acc = _PyTuple_HASH_XXROTATE(acc);
+    acc *= _PyTuple_HASH_XXPRIME_1;
+
+    /* Add input length, mangled to keep the historical value of hash(()). */
+    acc += len ^ (_PyTuple_HASH_XXPRIME_5 ^ 3527539UL);
+
+    if (acc == (Py_uhash_t)-1) {
+        acc = 1546275796;
+    }
+    return acc;
+}
+
+
 // Code copied from frozenset_hash()
 static Py_hash_t
 frozendict_hash(PyObject *op)
@@ -8213,20 +8276,15 @@ frozendict_hash(PyObject *op)
     PyDictObject *mp = _PyAnyDict_CAST(op);
     Py_uhash_t hash = 0;
 
-    PyObject *key, *value;  // borrowed refs
+    PyObject *value;  // borrowed ref
     Py_ssize_t pos = 0;
-    while (PyDict_Next(op, &pos, &key, &value)) {
-        Py_hash_t key_hash = PyObject_Hash(key);
-        if (key_hash == -1) {
+    Py_hash_t key_hash;
+    while (_PyDict_Next(op, &pos, NULL, &value, &key_hash)) {
+        Py_hash_t pair_hash = frozendict_pair_hash(key_hash, value);
+        if (pair_hash == -1) {
             return -1;
         }
-        hash ^= _shuffle_bits(key_hash);
-
-        Py_hash_t value_hash = PyObject_Hash(value);
-        if (value_hash == -1) {
-            return -1;
-        }
-        hash ^= _shuffle_bits(value_hash);
+        hash ^= _shuffle_bits(pair_hash);
     }
 
     /* Factor in the number of active entries */

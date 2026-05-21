@@ -1,1 +1,0 @@
-The Android testbed can now be built for 32-bit ARM and x86 targets.

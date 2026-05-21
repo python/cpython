@@ -607,6 +607,11 @@ class BaseXYTestCase(unittest.TestCase):
         self.assertRaises(binascii.Error, base64.b32decode, b'M1O23456')
         self.assertRaises(binascii.Error, base64.b32decode, b'ML023456')
         self.assertRaises(binascii.Error, base64.b32decode, b'MI023456')
+        self.assertRaises(ValueError, base64.b32decode, b'', map01=b'')
+        self.assertRaises(ValueError, base64.b32decode, b'', map01=b'LI')
+        self.assertRaises(TypeError, base64.b32decode, b'', map01=0)
+        eq(base64.b32decode(b'MLO23456', map01=None), res_L)
+        self.assertRaises(binascii.Error, base64.b32decode, b'M1023456', map01=None)
 
         data = b'M1023456'
         data_str = data.decode('ascii')
