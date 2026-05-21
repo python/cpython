@@ -1577,12 +1577,14 @@ extern "C" {
     INIT_ID(adobe), \
     INIT_ID(after_in_child), \
     INIT_ID(after_in_parent), \
+    INIT_ID(ahi), \
     INIT_ID(alias), \
     INIT_ID(align), \
     INIT_ID(all), \
     INIT_ID(all_interpreters), \
     INIT_ID(all_threads), \
     INIT_ID(allow_code), \
+    INIT_ID(alo), \
     INIT_ID(alphabet), \
     INIT_ID(any), \
     INIT_ID(append), \
@@ -1597,13 +1599,16 @@ extern "C" {
     INIT_ID(athrow), \
     INIT_ID(attribute), \
     INIT_ID(autocommit), \
+    INIT_ID(autojunk), \
     INIT_ID(backtick), \
     INIT_ID(base), \
     INIT_ID(before), \
+    INIT_ID(bhi), \
     INIT_ID(big), \
     INIT_ID(binary_form), \
     INIT_ID(bit_offset), \
     INIT_ID(bit_size), \
+    INIT_ID(blo), \
     INIT_ID(block), \
     INIT_ID(blocking), \
     INIT_ID(bound), \
@@ -1848,6 +1853,7 @@ extern "C" {
     INIT_ID(is_struct), \
     INIT_ID(isatty), \
     INIT_ID(isinstance), \
+    INIT_ID(isjunk), \
     INIT_ID(isoformat), \
     INIT_ID(isolation_level), \
     INIT_ID(istext), \

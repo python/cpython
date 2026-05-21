@@ -1,0 +1,7 @@
+Add a C accelerator (``_difflib``) for :class:`difflib.SequenceMatcher`.
+Output is bit-identical to the pure-Python implementation; typical
+workloads run 5--15x faster, character-level diffs of long strings up to
+9x, and ``bytes`` diffs up to 15x.  The pure-Python reference
+implementation is preserved as :mod:`!_pydifflib` so alternative Python
+implementations have a self-contained fallback.
+Patch by Ben Hsing.

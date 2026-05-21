@@ -40,6 +40,15 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    complicated way on how many elements the sequences have in common; best case
    time is linear.
 
+   .. impl-detail::
+
+      On CPython, the :class:`SequenceMatcher` class is implemented in C for
+      speed.  The pure-Python reference implementation remains available as
+      :mod:`!_pydifflib` for alternative Python implementations.  Output is
+      bit-identical between the two implementations, including tie-breaks;
+      typical workloads run 5--25x faster than the pure-Python version, with
+      character/byte sequences seeing the largest gains.
+
    **Automatic junk heuristic:** :class:`SequenceMatcher` supports a heuristic that
    automatically treats certain sequence items as junk. The heuristic counts how many
    times each individual item appears in the sequence. If an item's duplicates (after
