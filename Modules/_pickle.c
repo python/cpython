@@ -2075,13 +2075,13 @@ whichmodule(PickleState *st, PyObject *global, PyObject *global_name, PyObject *
                 }
             }
             Py_END_CRITICAL_SECTION();
-            if (found_name != NULL) {
-                Py_DECREF(modules);
-                return found_name;
-            }
             if (error) {
                 Py_DECREF(modules);
                 return NULL;
+            }
+            if (found_name != NULL) {
+                Py_DECREF(modules);
+                return found_name;
             }
         }
         else {
