@@ -895,6 +895,8 @@ pycore_init_builtins(PyThreadState *tstate)
     common_objs[CONSTANT_MINUS_ONE] =
         (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS - 1];
     common_objs[CONSTANT_BUILTIN_FROZENSET] = (PyObject *)&PyFrozenSet_Type;
+    common_objs[CONSTANT_EMPTY_TUPLE] =
+        Py_GetConstantBorrowed(Py_CONSTANT_EMPTY_TUPLE);
     for (int i = 0; i < NUM_COMMON_CONSTANTS; i++) {
         assert(common_objs[i] != NULL);
         _Py_SetImmortal(common_objs[i]);

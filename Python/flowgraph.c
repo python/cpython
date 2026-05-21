@@ -1470,6 +1470,10 @@ maybe_instr_make_load_common_const(cfg_instr *instr, PyObject *newconst)
              && PyUnicode_GET_LENGTH(newconst) == 0) {
         oparg = CONSTANT_EMPTY_STR;
     }
+    else if (PyTuple_CheckExact(newconst)
+             && PyTuple_GET_SIZE(newconst) == 0) {
+        oparg = CONSTANT_EMPTY_TUPLE;
+    }
     else if (PyLong_CheckExact(newconst)) {
         int overflow;
         long val = PyLong_AsLongAndOverflow(newconst, &overflow);
