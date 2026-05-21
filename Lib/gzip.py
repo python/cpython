@@ -189,10 +189,9 @@ class GzipFile(_streams.BaseStream):
         The optional mtime argument is the timestamp requested by gzip. The time
         is in Unix format, i.e., seconds since 00:00:00 UTC, January 1, 1970.
         Set mtime to 0 to generate a compressed stream that does not depend on
-        creation time. If mtime is omitted or None, the current time is used;
-        however, if the current time is outside the range 00:00:00 UTC, January
-        1, 1970 through 06:28:15 UTC, February 7, 2106, then the value 0 is used
-        instead.
+        creation time. If mtime is omitted or None, the current time is used.
+        If the resulting mtime is outside the range 0 to 2**32-1, then the
+        value 0 is used instead.
 
         """
 
