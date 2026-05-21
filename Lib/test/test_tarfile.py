@@ -930,11 +930,6 @@ class StreamReadTest(CommonReadTest, unittest.TestCase):
                     if not buf:
                         break
 
-    @unittest.skipIf(zlib is None, "requires zlib")
-    def test_read_with_extra_header(self):
-        with tarfile.open(tgzname_with_comment_extra_data_in_header,
-                          mode="r|*") as _:
-            pass
     def test_fileobj_regular_file(self):
         tarinfo = self.tar.next() # get "regtype" (can't use getmember)
         with self.tar.extractfile(tarinfo) as fobj:
@@ -977,7 +972,12 @@ class StreamReadTest(CommonReadTest, unittest.TestCase):
             tar1.close()
 
 class GzipStreamReadTest(GzipTest, StreamReadTest):
-    pass
+
+    @unittest.skipIf(zlib is None, "requires zlib")
+    def test_read_with_extra_header(self):
+        with tarfile.open(tgzname_with_comment_extra_data_in_header,
+                          mode="r|*") as _:
+            pass
 
 class Bz2StreamReadTest(Bz2Test, StreamReadTest):
     pass
