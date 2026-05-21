@@ -2867,7 +2867,6 @@ _PyBytes_FromList(PyObject *x)
     Py_ssize_t i, size = PyList_GET_SIZE(x);
     Py_ssize_t value;
     char *str;
-    PyObject *item;
     _PyBytesWriter writer;
 
     _PyBytesWriter_Init(&writer);
