@@ -392,9 +392,14 @@ class UnparseTestCase(ASTTestCase):
         self.check_ast_roundtrip("{'a', 'b', 'c'}")
 
     def test_empty_set(self):
+        empty_set = ast.Set(elts=[])
         self.assertASTEqual(
-            ast.parse(ast.unparse(ast.Set(elts=[]))),
+            ast.parse(ast.unparse(empty_set)),
             ast.parse('{*()}')
+        )
+        self.assertASTEqual(
+            empty_set,
+            ast.parse('{*(),}', mode='eval').body
         )
 
     def test_set_comprehension(self):
