@@ -10,6 +10,7 @@ import struct
 import sys
 import unittest
 from subprocess import PIPE, Popen
+from test import support
 from test.support import catch_unraisable_exception
 from test.support import force_not_colorized_test_class, import_helper
 from test.support import os_helper
@@ -823,6 +824,47 @@ class TestGzip(BaseTest):
         self.assertEqual(str(err.exception),
                          f"Corrupted gzip header. Checksums do not "
                          f"match: {true_crc:04x} != {corrupted_crc:04x}")
+
+    def _test_long_header(self, flags):
+        with_crc = flags & 0x02
+        prefix = b'\x1f\x8b\x08' + bytes([flags]) + b'\x00\x00\x00\x00\x00\xff'
+        suffix = b'\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        with open(self.filename, 'wb') as f:
+            f.write(prefix)
+            if with_crc:
+                crc = zlib.crc32(prefix)
+            block = b'ABCDEFGHIJKLMNOP' * 2**16  # 1 MiB
+            for i in range(1024):
+                f.write(block)
+                if with_crc:
+                    crc = zlib.crc32(block, crc)
+            f.write(b'\x00')
+            if with_crc:
+                crc = zlib.crc32(b'\x00', crc)
+                f.write(struct.pack("<H", crc & 0xFFFF))
+            f.write(suffix)
+        with gzip.GzipFile(self.filename, 'rb') as f:
+            f.read(1)
+
+    @support.requires_resource('largefile')
+    @support.requires_resource('cpu')
+    def test_long_filename(self):
+        self._test_long_header(0x08)  # FNAME
+
+    @support.requires_resource('largefile')
+    @support.requires_resource('cpu')
+    def test_long_filename_with_crc(self):
+        self._test_long_header(0x0a)  # FNAME | FHCRC
+
+    @support.requires_resource('largefile')
+    @support.requires_resource('cpu')
+    def test_long_comment(self):
+        self._test_long_header(0x10)  # FCOMMENT
+
+    @support.requires_resource('largefile')
+    @support.requires_resource('cpu')
+    def test_long_comment_with_crc(self):
+        self._test_long_header(0x12)  # FCOMMENT | FHCRC
 
     def test_read_truncated(self):
         data = data1*50

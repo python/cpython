@@ -488,7 +488,21 @@ def _read_until_null(fp, crc=None):
     '''Read until the first encountered null byte in fp.
     If crc is not None, update and return the CRC.
     '''
-    if crc is None:
+    if isinstance(fp, _PaddedFile):
+        size = 1
+        while True:
+            s = fp.read(size)
+            if not s:
+                break
+            i = s.find(0) + 1
+            if crc is not None:
+                crc = zlib.crc32(s[:i] if i else s, crc)
+            if i:
+                fp.prepend(s[i:])
+                break
+            if size < 2**20:
+                size *= 2
+    elif crc is None:
         while True:
             s = fp.read(1)
             if not s or s == b'\000':
