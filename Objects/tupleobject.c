@@ -363,6 +363,9 @@ error:
    https://github.com/Cyan4973/xxHash/blob/master/doc/xxhash_spec.md
 
    The constants for the hash function are defined in pycore_tuple.h.
+
+   If you update this code, update also frozendict_pair_hash() which copied
+   this code.
 */
 
 static Py_hash_t

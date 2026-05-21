@@ -1,0 +1,2 @@
+Improve performance of :class:`frozenset` objects by avoiding copies during
+construction.
