@@ -1535,9 +1535,6 @@ class ASTHelpers_Test(unittest.TestCase):
             ('[*()]', ast.List, []),
             ('{*()}', ast.Set, []),
             ('(*(),)', ast.Tuple, []),
-            ('[*(), 2]', ast.List, [2]),
-            ('{*(), 2}', ast.Set, [2]),
-            ('(*(), 2)', ast.Tuple, [2]),
         ]
 
         for source, node_type, expected_values in tests:
@@ -1554,9 +1551,6 @@ class ASTHelpers_Test(unittest.TestCase):
             ('x = [*()]', ast.List, []),
             ('x = {*()}', ast.Set, []),
             ('x = *(),', ast.Tuple, []),
-            ('x = [*(), 2]', ast.List, [2]),
-            ('x = {*(), 2}', ast.Set, [2]),
-            ('x = *(), 2', ast.Tuple, [2]),
         ]
 
         for source, node_type, expected_values in tests:
@@ -1571,6 +1565,9 @@ class ASTHelpers_Test(unittest.TestCase):
 
     def test_parse_preserves_multiple_null_container_unpacks(self):
         tests = [
+            ('[*(), 2]', ast.List),
+            ('{*(), 2}', ast.Set),
+            ('(*(), 2)', ast.Tuple),
             ('[1, *(), 2]', ast.List),
             ('{1, *(), 2}', ast.Set),
             ('(1, *(), 2)', ast.Tuple),
@@ -1587,6 +1584,9 @@ class ASTHelpers_Test(unittest.TestCase):
 
     def test_parse_preserves_multiple_null_container_unpacks_in_assignment(self):
         tests = [
+            ('x = [*(), 2]', ast.List),
+            ('x = {*(), 2}', ast.Set),
+            ('x = *(), 2', ast.Tuple),
             ('x = [1, *(), 2]', ast.List),
             ('x = {1, *(), 2}', ast.Set),
             ('x = 1, *(), 2', ast.Tuple),
