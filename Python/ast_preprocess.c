@@ -180,13 +180,17 @@ is_null_container_unpack(expr_ty elt)
 static void
 remove_null_container_unpacks(asdl_expr_seq *elts)
 {
-    if (elts == NULL || asdl_seq_LEN(elts) != 1) {
+    if (elts == NULL || asdl_seq_LEN(elts) == 0) {
         return;
     }
     if (!is_null_container_unpack(asdl_seq_GET(elts, 0))) {
         return;
     }
-    elts->size = 0;
+    Py_ssize_t n = asdl_seq_LEN(elts);
+    for (Py_ssize_t i = 0; i < n - 1; i++) {
+        asdl_seq_SET(elts, i, asdl_seq_GET(elts, i + 1));
+    }
+    elts->size = n - 1;
 }
 
 static expr_ty

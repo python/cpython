@@ -1535,6 +1535,9 @@ class ASTHelpers_Test(unittest.TestCase):
             ('[*()]', ast.List, []),
             ('{*()}', ast.Set, []),
             ('(*(),)', ast.Tuple, []),
+            ('[*(), 2]', ast.List, [2]),
+            ('{*(), 2}', ast.Set, [2]),
+            ('(*(), 2)', ast.Tuple, [2]),
         ]
 
         for source, node_type, expected_values in tests:
