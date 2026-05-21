@@ -321,8 +321,6 @@ class StreamWriter:
         assert reader is None or isinstance(reader, StreamReader)
         self._reader = reader
         self._loop = loop
-        self._complete_fut = self._loop.create_future()
-        self._complete_fut.set_result(None)
 
     def __repr__(self):
         info = [self.__class__.__name__, f'transport={self._transport!r}']
