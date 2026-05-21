@@ -211,7 +211,7 @@ extern void _PyEval_DeactivateOpCache(void);
 static inline int _Py_ReachedRecursionLimit(PyThreadState *tstate)  {
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-     // Possible overflow if stack pointer is beyond the soft limit.
+    // Possible overflow if stack pointer is beyond the soft limit.
     // _Py_CheckRecursiveCall will check for corner cases and
     // report an error if there is an overflow.
 #if _Py_STACK_GROWS_DOWN
