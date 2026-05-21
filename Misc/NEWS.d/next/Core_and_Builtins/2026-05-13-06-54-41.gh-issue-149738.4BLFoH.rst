@@ -1,2 +1,2 @@
-Fix a segmentation fault in :mod:`sqlite3` when ``row_factory`` is deleted
-and a query is executed afterward.
+:mod:`sqlite3`: Disallow removing ``row_factory`` and ``text_factory`` attributes
+of a connection to prevent a crash on a query.
