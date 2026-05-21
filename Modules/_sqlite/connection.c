@@ -523,41 +523,6 @@ _sqlite3.Connection.cursor as pysqlite_connection_cursor
 
 Return a cursor for the connection.
 [clinic start generated code]*/
-static PyObject *
-connection_get_row_factory(pysqlite_Connection *self, void *closure)
-{
-    return Py_NewRef(self->row_factory);
-}
-
-static int
-connection_set_row_factory(pysqlite_Connection *self, PyObject *value, void *closure)
-{
-    if (value == NULL) {
-        PyErr_SetString(PyExc_AttributeError,
-                        "cannot delete row_factory attribute");
-        return -1;
-    }
-    Py_XSETREF(self->row_factory, Py_NewRef(value));
-    return 0;
-}
-
-static PyObject *
-connection_get_text_factory(pysqlite_Connection *self, void *closure)
-{
-    return Py_NewRef(self->text_factory);
-}
-
-static int
-connection_set_text_factory(pysqlite_Connection *self, PyObject *value, void *closure)
-{
-    if (value == NULL) {
-        PyErr_SetString(PyExc_AttributeError,
-                        "cannot delete text_factory attribute");
-        return -1;
-    }
-    Py_XSETREF(self->text_factory, Py_NewRef(value));
-    return 0;
-}
 
 static PyObject *
 pysqlite_connection_cursor_impl(pysqlite_Connection *self, PyObject *factory)
@@ -584,13 +549,50 @@ pysqlite_connection_cursor_impl(pysqlite_Connection *self, PyObject *factory)
         return NULL;
     }
 
-    if (cursor && self->row_factory && self->row_factory != Py_None) {
+    if (cursor && self->row_factory != Py_None) {
         Py_INCREF(self->row_factory);
         Py_XSETREF(((pysqlite_Cursor *)cursor)->row_factory, self->row_factory);
     }
 
     return cursor;
 }
+
+static PyObject *
+connection_get_row_factory(pysqlite_Connection *self, void *closure)
+{
+    return Py_NewRef(self->row_factory);
+}
+
+static int
+connection_set_row_factory(pysqlite_Connection *self, PyObject *value, void *closure)
+{
+    if (value == NULL) {
+        PyErr_SetString(PyExc_AttributeError, 
+                        "cannot delete row_factory attribute");
+        return -1;
+    }
+    Py_XSETREF(self->row_factory, Py_NewRef(value));
+    return 0;
+}
+
+static PyObject *
+connection_get_text_factory(pysqlite_Connection *self, void *closure)
+{
+    return Py_NewRef(self->text_factory);
+}
+
+static int
+connection_set_text_factory(pysqlite_Connection *self, PyObject *value, void *closure)
+{
+    if (value == NULL) {
+        PyErr_SetString(PyExc_AttributeError, 
+                        "cannot delete text_factory attribute");
+        return -1;
+    }
+    Py_XSETREF(self->text_factory, Py_NewRef(value));
+    return 0;
+}
+
 
 /*[clinic input]
 _sqlite3.Connection.blobopen as blobopen
@@ -2655,9 +2657,9 @@ static PyGetSetDef connection_getset[] = {
     {"in_transaction", pysqlite_connection_get_in_transaction, NULL},
     {"autocommit",  get_autocommit, set_autocommit},
     {"__text_signature__", get_sig, NULL},
-    {"row_factory", (getter)connection_get_row_factory,
+    {"row_factory", (getter)connection_get_row_factory, 
                     (setter)connection_set_row_factory},
-    {"text_factory", (getter)connection_get_text_factory,
+    {"text_factory", (getter)connection_get_text_factory, 
                      (setter)connection_set_text_factory},
     {NULL}
 };
