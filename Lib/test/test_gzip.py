@@ -356,7 +356,11 @@ class TestGzip(BaseTest):
             with gzip.GzipFile(self.filename, 'w', mtime=mtime) as fWrite:
                 fWrite.write(data1)
             with gzip.GzipFile(self.filename) as fRead:
-                fRead.read()
+                fRead.read(1)
+                self.assertEqual(fRead.mtime, 0)
+            datac = gzip.compress(data1, mtime=mtime)
+            with gzip.GzipFile(fileobj=io.BytesIO(datac)) as fRead:
+                fRead.read(1)
                 self.assertEqual(fRead.mtime, 0)
 
         for mtime in (-1, 2**32):
@@ -364,7 +368,7 @@ class TestGzip(BaseTest):
                 with gzip.GzipFile(self.filename, 'w') as fWrite:
                     fWrite.write(data1)
                 with gzip.GzipFile(self.filename) as fRead:
-                    fRead.read()
+                    fRead.read(1)
                     self.assertEqual(fRead.mtime, 0)
 
     def test_metadata(self):
