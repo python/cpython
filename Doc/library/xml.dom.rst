@@ -4,9 +4,6 @@
 .. module:: xml.dom
    :synopsis: Document Object Model API for Python.
 
-.. sectionauthor:: Paul Prescod <paul@prescod.net>
-.. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
-
 **Source code:** :source:`Lib/xml/dom/__init__.py`
 
 --------------
@@ -80,7 +77,7 @@ implementations are free to support the strict mapping from IDL).  See section
 Module Contents
 ---------------
 
-The :mod:`xml.dom` contains the following functions:
+The :mod:`!xml.dom` contains the following functions:
 
 
 .. function:: registerDOMImplementation(name, factory)
@@ -135,7 +132,7 @@ Some convenience constants are also provided:
    HyperText Markup Language <https://www.w3.org/TR/xhtml1/>`_ (section 3.1.1).
 
 
-In addition, :mod:`xml.dom` contains a base :class:`Node` class and the DOM
+In addition, :mod:`!xml.dom` contains a base :class:`Node` class and the DOM
 exception classes.  The :class:`Node` class provided by this module does not
 implement any of the methods or attributes defined by the DOM specification;
 concrete DOM implementations must provide those.  The :class:`Node` class
