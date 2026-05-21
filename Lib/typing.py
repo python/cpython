@@ -3922,7 +3922,15 @@ def __getattr__(attr):
     elif attr == "AnyStr":
         import warnings
 
-        warnings._deprecated("typing.AnyStr", remove=(3, 18))
+        warnings._deprecated(
+            "typing.AnyStr",
+            message=(
+                "{name!r} is deprecated and slated for removal "
+                "in Python {remove}. Use PEP-695 type parameters "
+                "with constraints instead"
+            ),
+            remove=(3, 18),
+        )
         AnyStr = globals()["AnyStr"] = TypeVar('AnyStr', bytes, str)
         return AnyStr
     else:
