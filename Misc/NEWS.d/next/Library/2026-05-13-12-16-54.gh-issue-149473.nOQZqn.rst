@@ -1,0 +1,2 @@
+Calling ``os.environ.clear()`` now emits ``os._clearenv`` auditing event.
+Patch by Victor Stinner.

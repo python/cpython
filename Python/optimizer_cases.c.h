@@ -4632,12 +4632,13 @@
                         length = PyUnicode_GET_LENGTH(const_val);
                     }
                     else if (PyBytes_CheckExact(const_val)) {
-                        CHECK_STACK_BOUNDS(-2);
-                        stack_pointer[-3] = res;
-                        stack_pointer += -2;
-                        ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                         length = PyBytes_GET_SIZE(const_val);
-                        stack_pointer += 2;
+                    }
+                    else if (PyFrozenDict_CheckExact(const_val)) {
+                        length = PyDict_GET_SIZE(const_val);
+                    }
+                    else if (PyFrozenSet_CheckExact(const_val)) {
+                        length = PySet_GET_SIZE(const_val);
                     }
                 }
             }

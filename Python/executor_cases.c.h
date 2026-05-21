@@ -9346,8 +9346,9 @@
             assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
             #if TIER_ONE && defined(Py_DEBUG)
             if (!PyStackRef_IsNone(frame->f_executable)) {
-                int i = frame->instr_ptr - _PyFrame_GetBytecode(frame);
-                int opcode = _Py_GetBaseCodeUnit(_PyFrame_GetCode(frame), i).op.code;
+                Py_ssize_t i = frame->instr_ptr - _PyFrame_GetBytecode(frame);
+                assert(i >= 0 && i <= INT_MAX);
+                int opcode = _Py_GetBaseCodeUnit(_PyFrame_GetCode(frame), (int)i).op.code;
                 assert(opcode == SEND || opcode == FOR_ITER);
             }
             #endif
