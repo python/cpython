@@ -12,6 +12,7 @@ import subprocess
 import sys
 import threading
 import warnings
+import inspect
 
 from . import base_events
 from . import base_subprocess
@@ -94,7 +95,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         Raise RuntimeError if there is a problem setting up the handler.
         """
         if (coroutines.iscoroutine(callback) or
-                coroutines._iscoroutinefunction(callback)):
+                inspect.iscoroutinefunction(callback)):
             raise TypeError("coroutines cannot be used "
                             "with add_signal_handler()")
         self._check_signal(sig)

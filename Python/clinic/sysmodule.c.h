@@ -761,34 +761,6 @@ sys_getwindowsversion(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(MS_WINDOWS) */
 
-#if defined(MS_WINDOWS)
-
-PyDoc_STRVAR(sys__enablelegacywindowsfsencoding__doc__,
-"_enablelegacywindowsfsencoding($module, /)\n"
-"--\n"
-"\n"
-"Changes the default filesystem encoding to mbcs:replace.\n"
-"\n"
-"This is done for consistency with earlier versions of Python. See PEP\n"
-"529 for more information.\n"
-"\n"
-"This is equivalent to defining the PYTHONLEGACYWINDOWSFSENCODING\n"
-"environment variable before launching Python.");
-
-#define SYS__ENABLELEGACYWINDOWSFSENCODING_METHODDEF    \
-    {"_enablelegacywindowsfsencoding", (PyCFunction)sys__enablelegacywindowsfsencoding, METH_NOARGS, sys__enablelegacywindowsfsencoding__doc__},
-
-static PyObject *
-sys__enablelegacywindowsfsencoding_impl(PyObject *module);
-
-static PyObject *
-sys__enablelegacywindowsfsencoding(PyObject *module, PyObject *Py_UNUSED(ignored))
-{
-    return sys__enablelegacywindowsfsencoding_impl(module);
-}
-
-#endif /* defined(MS_WINDOWS) */
-
 #if defined(HAVE_DLOPEN)
 
 PyDoc_STRVAR(sys_setdlopenflags__doc__,
@@ -1830,7 +1802,7 @@ PyDoc_STRVAR(sys_set_lazy_imports_filter__doc__,
 "would otherwise be enabled. Returns True if the import is still enabled\n"
 "or False to disable it. The callable is called with:\n"
 "\n"
-"(importing_module_name, imported_module_name, [fromlist])\n"
+"(importing_module_name, resolved_imported_module_name, [fromlist])\n"
 "\n"
 "Pass None to clear the filter.");
 
@@ -1914,7 +1886,6 @@ PyDoc_STRVAR(sys_set_lazy_imports__doc__,
 "\n"
 "The mode parameter must be one of the following strings:\n"
 "- \"all\": All top-level imports become potentially lazy\n"
-"- \"none\": All lazy imports are suppressed (even explicitly marked ones)\n"
 "- \"normal\": Only explicitly marked imports (with \'lazy\' keyword) are lazy\n"
 "\n"
 "In addition to the mode, lazy imports can be controlled via the filter\n"
@@ -1979,7 +1950,6 @@ PyDoc_STRVAR(sys_get_lazy_imports__doc__,
 "Gets the global lazy imports mode.\n"
 "\n"
 "Returns \"all\" if all top level imports are potentially lazy.\n"
-"Returns \"none\" if all explicitly marked lazy imports are suppressed.\n"
 "Returns \"normal\" if only explicitly marked imports are lazy.");
 
 #define SYS_GET_LAZY_IMPORTS_METHODDEF    \
@@ -2082,10 +2052,6 @@ exit:
     #define SYS_GETWINDOWSVERSION_METHODDEF
 #endif /* !defined(SYS_GETWINDOWSVERSION_METHODDEF) */
 
-#ifndef SYS__ENABLELEGACYWINDOWSFSENCODING_METHODDEF
-    #define SYS__ENABLELEGACYWINDOWSFSENCODING_METHODDEF
-#endif /* !defined(SYS__ENABLELEGACYWINDOWSFSENCODING_METHODDEF) */
-
 #ifndef SYS_SETDLOPENFLAGS_METHODDEF
     #define SYS_SETDLOPENFLAGS_METHODDEF
 #endif /* !defined(SYS_SETDLOPENFLAGS_METHODDEF) */
@@ -2121,4 +2087,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=adbadb629b98eabf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fb4fe1af274124e0 input=a9049054013a1b77]*/

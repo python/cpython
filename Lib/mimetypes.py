@@ -93,14 +93,7 @@ class MimeTypes:
         Valid extensions are empty or start with a '.'.
         """
         if ext and not ext.startswith('.'):
-            from warnings import _deprecated
-
-            _deprecated(
-                "Undotted extensions",
-                "Using undotted extensions is deprecated and "
-                "will raise a ValueError in Python {remove}",
-                remove=(3, 16),
-            )
+            raise ValueError(f"Extension {ext!r} must start with '.'")
 
         if not type:
             return
@@ -478,6 +471,7 @@ def _default_mime_types():
         '.js'     : 'text/javascript',
         '.mjs'    : 'text/javascript',
         '.dcm'    : 'application/dicom',
+        '.efi'    : 'application/efi',
         '.epub'   : 'application/epub+zip',
         '.gz'     : 'application/gzip',
         '.json'   : 'application/json',
@@ -598,10 +592,14 @@ def _default_mime_types():
         '.ra'     : 'audio/x-pn-realaudio',
         '.wav'    : 'audio/vnd.wave',
         '.weba'   : 'audio/webm',
+        '.ttc'    : 'font/collection',
         '.otf'    : 'font/otf',
         '.ttf'    : 'font/ttf',
         '.woff'   : 'font/woff',
         '.woff2'  : 'font/woff2',
+        '.hjif'   : 'haptics/hjif',
+        '.hmpg'   : 'haptics/hmpg',
+        '.ivs'    : 'haptics/ivs',
         '.avif'   : 'image/avif',
         '.bmp'    : 'image/bmp',
         '.emf'    : 'image/emf',
@@ -707,7 +705,7 @@ def _parse_args(args):
     from argparse import ArgumentParser
 
     parser = ArgumentParser(
-        description='map filename extensions to MIME types', color=True
+        description='map filename extensions to MIME types',
     )
     parser.add_argument(
         '-e', '--extension',

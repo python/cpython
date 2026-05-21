@@ -32,6 +32,17 @@ def _kill_python_and_exit_code(p):
     return data, returncode
 
 
+def presite_func():
+    print("presite func")
+
+class Namespace:
+    pass
+
+presite = Namespace()
+presite.attr = Namespace()
+presite.attr.func = presite_func
+
+
 class CmdLineTest(unittest.TestCase):
     def test_directories(self):
         assert_python_failure('.')
@@ -46,6 +57,7 @@ class CmdLineTest(unittest.TestCase):
         return out
 
     @support.cpython_only
+    @support.force_not_colorized
     def test_help(self):
         self.verify_valid_flag('-h')
         self.verify_valid_flag('-?')
@@ -57,6 +69,7 @@ class CmdLineTest(unittest.TestCase):
         self.assertLess(len(lines), 50)
 
     @support.cpython_only
+    @support.force_not_colorized
     def test_help_env(self):
         out = self.verify_valid_flag('--help-env')
         self.assertIn(b'PYTHONHOME', out)
@@ -70,6 +83,7 @@ class CmdLineTest(unittest.TestCase):
                              "env vars should be sorted alphabetically")
 
     @support.cpython_only
+    @support.force_not_colorized
     def test_help_xoptions(self):
         out = self.verify_valid_flag('--help-xoptions')
         self.assertIn(b'-X dev', out)
@@ -78,6 +92,7 @@ class CmdLineTest(unittest.TestCase):
                          "options should be sorted alphabetically")
 
     @support.cpython_only
+    @support.force_not_colorized
     def test_help_all(self):
         out = self.verify_valid_flag('--help-all')
         lines = out.splitlines()
@@ -88,6 +103,25 @@ class CmdLineTest(unittest.TestCase):
         # The first line contains the program name,
         # but the rest should be ASCII-only
         b''.join(lines[1:]).decode('ascii')
+
+    @support.cpython_only
+    @support.force_colorized
+    def test_help_colorized(self):
+        rc, out, err = assert_python_ok("--help", FORCE_COLOR="1")
+        # Check ANSI color codes are present
+        self.assertIn(b"\x1b[", out)
+        # Check that key text elements are still present
+        self.assertIn(b"usage:", out)
+        self.assertIn(b"-h", out)
+        self.assertIn(b"--help-all", out)
+        self.assertIn(b"cmd", out)
+        self.assertIn(b"Arguments:", out)
+
+    @support.cpython_only
+    @support.force_not_colorized
+    def test_help_not_colorized(self):
+        rc, out, err = assert_python_ok("--help")
+        self.assertNotIn(b"\x1b[", out)
 
     def test_optimize(self):
         self.verify_valid_flag('-O')
@@ -1052,6 +1086,7 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(proc.stdout.strip(), b'0')
 
     @support.cpython_only
+    @support.force_not_colorized
     def test_parsing_error(self):
         args = [sys.executable, '-I', '--unknown-option']
         proc = subprocess.run(args,
@@ -1265,6 +1300,17 @@ class CmdLineTest(unittest.TestCase):
         self.assertIn(b"PYTHON_TLBC=N: N is missing or invalid", err)
         rc, out, err = assert_python_failure(PYTHON_TLBC="2")
         self.assertIn(b"PYTHON_TLBC=N: N is missing or invalid", err)
+
+    @unittest.skipUnless(support.Py_DEBUG,
+                         '-X presite requires a Python debug build')
+    def test_presite(self):
+        entrypoint = "test.test_cmd_line:presite_func"
+        proc = assert_python_ok("-X", f"presite={entrypoint}", "-c", "pass")
+        self.assertEqual(proc.out.rstrip(), b"presite func")
+
+        entrypoint = "test.test_cmd_line:presite.attr.func"
+        proc = assert_python_ok("-X", f"presite={entrypoint}", "-c", "pass")
+        self.assertEqual(proc.out.rstrip(), b"presite func")
 
 
 @unittest.skipIf(interpreter_requires_environment(),

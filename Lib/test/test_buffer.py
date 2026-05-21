@@ -66,7 +66,8 @@ NATIVE = {
     '?':0, 'c':0, 'b':0, 'B':0,
     'h':0, 'H':0, 'i':0, 'I':0,
     'l':0, 'L':0, 'n':0, 'N':0,
-    'e':0, 'f':0, 'd':0, 'P':0
+    'e':0, 'f':0, 'd':0, 'P':0,
+    'Zf':0, 'Zd':0,
 }
 
 # NumPy does not have 'n' or 'N':
@@ -92,7 +93,9 @@ STANDARD = {
     'l':(-(1<<31), 1<<31), 'L':(0, 1<<32),
     'q':(-(1<<63), 1<<63), 'Q':(0, 1<<64),
     'e':(-65519, 65520),   'f':(-(1<<63), 1<<63),
-    'd':(-(1<<1023), 1<<1023)
+    'd':(-(1<<1023), 1<<1023),
+    'Zf':(-(1<<63), 1<<63),
+    'Zd':(-(1<<1023), 1<<1023),
 }
 
 def native_type_range(fmt):
@@ -106,6 +109,10 @@ def native_type_range(fmt):
     elif fmt == 'f':
         lh = (-(1<<63), 1<<63)
     elif fmt == 'd':
+        lh = (-(1<<1023), 1<<1023)
+    elif fmt == 'Zf':
+        lh = (-(1<<63), 1<<63)
+    elif fmt == 'Zd':
         lh = (-(1<<1023), 1<<1023)
     else:
         for exp in (128, 127, 64, 63, 32, 31, 16, 15, 8, 7):
@@ -136,7 +143,7 @@ MEMORYVIEW = NATIVE.copy()
 # Format codes supported by array.array
 ARRAY = NATIVE.copy()
 for k in NATIVE:
-    if not k in "bBhHiIlLfd":
+    if k not in list("bBhHiIlLefd") + ['Zf', 'Zd']:
         del ARRAY[k]
 
 BYTEFMT = NATIVE.copy()
@@ -175,13 +182,28 @@ def randrange_fmt(mode, char, obj):
     if char in 'efd':
         x = struct.pack(char, x)
         x = struct.unpack(char, x)[0]
+    if char in ('Zf', 'Zd'):
+        y = randrange(*fmtdict[mode][char])
+        x = complex(x, y)
+        x = struct.pack(char, x)
+        x = struct.unpack(char, x)[0]
     return x
+
+def split_format(fmt):
+    i = 0
+    while i < len(fmt):
+        if fmt[i] == 'Z':
+            n = 2
+        else:
+            n = 1
+        yield fmt[i:i + n]
+        i += n
 
 def gen_item(fmt, obj):
     """Return single random item."""
     mode, chars = fmt.split('#')
     x = []
-    for c in chars:
+    for c in split_format(chars):
         x.append(randrange_fmt(mode, c, obj))
     return x[0] if len(x) == 1 else tuple(x)
 
@@ -242,9 +264,7 @@ def is_byte_format(fmt):
 
 def is_memoryview_format(fmt):
     """format suitable for memoryview"""
-    x = len(fmt)
-    return ((x == 1 or (x == 2 and fmt[0] == '@')) and
-            fmt[x-1] in MEMORYVIEW)
+    return fmt.removeprefix('@') in MEMORYVIEW
 
 NON_BYTE_FORMAT = [c for c in fmtdict['@'] if not is_byte_format(c)]
 
@@ -636,14 +656,22 @@ def ndarray_from_structure(items, fmt, t, flags=0):
     return ndarray(items, shape=shape, strides=strides, format=fmt,
                    offset=offset, flags=ND_WRITABLE|flags)
 
+# Convert PEP 3118 formats to numpy dtypes
+FORMAT_TO_DTYPE = {
+    'Zf': 'F',
+    'Zd': 'D',
+}
+
 def numpy_array_from_structure(items, fmt, t):
     """Return numpy_array from the tuple returned by rand_structure()"""
     memlen, itemsize, ndim, shape, strides, offset = t
     buf = bytearray(memlen)
     for j, v in enumerate(items):
         struct.pack_into(fmt, buf, j*itemsize, v)
+    # Replace Zd/Zf formats with D/F dtypes
+    dtype = FORMAT_TO_DTYPE.get(fmt, fmt)
     return numpy_array(buffer=buf, shape=shape, strides=strides,
-                       dtype=fmt, offset=offset)
+                       dtype=dtype, offset=offset)
 
 
 # ======================================================================
@@ -3015,7 +3043,7 @@ class TestBufferProtocol(unittest.TestCase):
         m = memoryview(nd)
         self.assertRaises(TypeError, m.__setitem__, 0, 100)
 
-        ex = ndarray(list(range(120)), shape=[1,2,3,4,5], flags=ND_WRITABLE)
+        ex = ndarray(list(range(144)), shape=[1,2,3,4,6], flags=ND_WRITABLE)
         m1 = memoryview(ex)
 
         for fmt, _range in fmtdict['@'].items():
@@ -3025,7 +3053,7 @@ class TestBufferProtocol(unittest.TestCase):
                 continue
             m2 = m1.cast(fmt)
             lo, hi = _range
-            if fmt == 'd' or fmt == 'f':
+            if fmt in ("d", "f", "Zd", "Zf"):
                 lo, hi = -2**1024, 2**1024
             if fmt != 'P': # PyLong_AsVoidPtr() accepts negative numbers
                 self.assertRaises(ValueError, m2.__setitem__, 0, lo-1)
@@ -4467,8 +4495,10 @@ class TestBufferProtocol(unittest.TestCase):
     def test_array_alignment(self):
         # gh-140557: pointer alignment of buffers including empty allocation
         # should match the maximum array alignment.
-        align = max(struct.calcsize(fmt) for fmt in ARRAY)
-        cases = [array.array(fmt) for fmt in ARRAY]
+        formats = [fmt for fmt in ARRAY
+                   if struct.calcsize(fmt) <= struct.calcsize('P')]
+        align = max(struct.calcsize(fmt) for fmt in formats)
+        cases = [array.array(fmt) for fmt in formats]
         # Empty arrays
         self.assertEqual(
             [_testcapi.buffer_pointer_as_int(case) % align for case in cases],

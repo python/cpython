@@ -49,11 +49,12 @@ OPENSSL_OLD_VERSIONS = [
 ]
 
 OPENSSL_RECENT_VERSIONS = [
-    "3.0.19",
-    "3.3.6",
-    "3.4.4",
-    "3.5.5",
-    "3.6.1",
+    "3.0.20",
+    "3.3.7",
+    "3.4.5",
+    "3.5.6",
+    "3.6.2",
+    "4.0.0",
     # See make_ssl_data.py for notes on adding a new version.
 ]
 
@@ -429,9 +430,11 @@ class BuildOpenSSL(AbstractBuilder):
     def _post_install(self):
         if self.version.startswith("3."):
             self._post_install_3xx()
+        elif self.version.startswith("4."):
+            self._post_install_4xx()
 
     def _build_src(self, config_args=()):
-        if self.version.startswith("3."):
+        if self.version.startswith(("3.", "4.")):
             config_args += ("enable-fips",)
         super()._build_src(config_args)
 
@@ -446,6 +449,9 @@ class BuildOpenSSL(AbstractBuilder):
             # 3.0.0-beta2 uses lib64 on 64 bit platforms
             lib64 = self.lib_dir + "64"
             os.symlink(lib64, self.lib_dir)
+
+    def _post_install_4xx(self):
+        self._post_install_3xx()
 
     @property
     def short_version(self):
