@@ -117,6 +117,9 @@ COLLECTOR_MAP = {
     "binary": BinaryCollector,
 }
 
+BROWSER_COMPATIBLE_FORMATS = ("flamegraph", "diff_flamegraph", "heatmap")
+
+
 def _setup_child_monitor(args, parent_pid):
     # Build CLI args for child profilers (excluding --subprocesses to avoid recursion)
     child_cli_args = _build_child_profiler_args(args)
@@ -528,8 +531,12 @@ def _add_format_options(parser, include_compression=True, include_binary=True):
     output_group.add_argument(
         "--browser",
         action="store_true",
-        help="Automatically open HTML output (flamegraph, heatmap) in browser. "
-        "When using `--subprocesses`, only the main process opens the browser",
+        help=(
+            "Automatically open HTML output "
+            f"({', '.join('--' + f.replace('_', '-') for f in BROWSER_COMPATIBLE_FORMATS)}) "
+            "in browser. "
+            "When using `--subprocesses`, only the main process opens the browser"
+        ),
     )
 
 
@@ -794,9 +801,7 @@ def _replay_with_reader(args, reader):
         # Auto-open browser for HTML output if --browser flag is set
         if (
             export_ok
-            and args.format in (
-                'flamegraph', 'diff_flamegraph', 'heatmap'
-            )
+            and args.format in BROWSER_COMPATIBLE_FORMATS
             and getattr(args, 'browser', False)
         ):
             _open_in_browser(filename)
@@ -846,7 +851,7 @@ def _handle_output(collector, args, pid, mode):
         # Auto-open browser for HTML output if --browser flag is set
         if (
             export_ok
-            and args.format in ('flamegraph', 'diff_flamegraph', 'heatmap')
+            and args.format in BROWSER_COMPATIBLE_FORMATS
             and getattr(args, 'browser', False)
         ):
             _open_in_browser(filename)
