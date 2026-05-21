@@ -322,6 +322,16 @@ class Family:
     size: str
     members: list[Instruction]
 
+    def get_member_record_names(self) -> tuple[str, ...]:
+        seen: set[str] = set()
+        names: list[str] = []
+        for member in self.members:
+            for part in member.parts:
+                if part.properties.records_value and part.name not in seen:
+                    seen.add(part.name)
+                    names.append(part.name)
+        return tuple(names)
+
     def dump(self, indent: str) -> None:
         print(indent, self.name, "= ", ", ".join([m.name for m in self.members]))
 
