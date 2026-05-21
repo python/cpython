@@ -1535,9 +1535,6 @@ class ASTHelpers_Test(unittest.TestCase):
             ('[*()]', ast.List, []),
             ('{*()}', ast.Set, []),
             ('(*(),)', ast.Tuple, []),
-            ('[1, *(), 2]', ast.List, [1, 2]),
-            ('{1, *(), 2}', ast.Set, [1, 2]),
-            ('(1, *(), 2)', ast.Tuple, [1, 2]),
         ]
 
         for source, node_type, expected_values in tests:
@@ -1548,6 +1545,22 @@ class ASTHelpers_Test(unittest.TestCase):
                     [elt.value for elt in node.elts],
                     expected_values,
                 )
+
+    def test_parse_preserves_multiple_null_container_unpacks(self):
+        tests = [
+            ('[1, *(), 2]', ast.List),
+            ('{1, *(), 2}', ast.Set),
+            ('(1, *(), 2)', ast.Tuple),
+            ('[*(), *()]', ast.List),
+            ('{*(), *()}', ast.Set),
+            ('(*(), *())', ast.Tuple),
+        ]
+
+        for source, node_type in tests:
+            with self.subTest(source=source):
+                node = ast.parse(source, mode='eval').body
+                self.assertIsInstance(node, node_type)
+                self.assertTrue(any(isinstance(elt, ast.Starred) for elt in node.elts))
 
     def test_parse_in_error(self):
         try:
