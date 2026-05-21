@@ -1,5 +1,5 @@
 .. _glossary:
-    :sorted:
+   :sorted:
 
 ********
 Glossary
