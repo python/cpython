@@ -157,11 +157,10 @@ making it straightforward to diagnose and debug the failure.
 For cases where you want to enable lazy loading globally without modifying
 source code, Python provides the :option:`-X lazy_imports <-X>` command-line
 option and the :envvar:`PYTHON_LAZY_IMPORTS` environment variable. Both
-accept three values: ``all`` makes all imports lazy by default, ``none``
-disables lazy imports entirely (even explicit ``lazy`` statements become
-eager), and ``normal`` (the default) respects the ``lazy`` keyword in source
-code. The :func:`sys.set_lazy_imports` and :func:`sys.get_lazy_imports`
-functions allow changing and querying this mode at runtime.
+accept two values: ``all`` makes all imports lazy by default, and ``normal``
+(the default) respects the ``lazy`` keyword in source code. The
+:func:`sys.set_lazy_imports` and :func:`sys.get_lazy_imports` functions allow
+changing and querying this mode at runtime.
 
 For more selective control, :func:`sys.set_lazy_imports_filter` accepts a
 callable that determines whether a specific module should be loaded lazily.
@@ -1206,6 +1205,19 @@ http.server
 * Add a ``-H/--header`` option to the :program:`python -m http.server`
   command-line interface to support custom headers in HTTP responses.
   (Contributed by Anton I. Sipos in :gh:`135057`.)
+
+
+importlib.metadata
+------------------
+
+* Previously, when accessing a distribution metadata directory not
+  containing a metadata file, ``metadata()`` and ``Distribution.metadata()``
+  would return an empty ``PackageMetadata`` object as if the file
+  was present but empty. Now, a ``MetadataNotFound`` exception is raised.
+  See `importlib_metadata#493 <https://github.com/python/importlib_metadata/issues/493>`_
+  for background and rationale and and :gh:`143387` for rationale on the
+  compatibility concerns.
+  (Contributed by Jason R. Coombs.)
 
 
 inspect

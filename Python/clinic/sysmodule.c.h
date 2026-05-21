@@ -1886,7 +1886,6 @@ PyDoc_STRVAR(sys_set_lazy_imports__doc__,
 "\n"
 "The mode parameter must be one of the following strings:\n"
 "- \"all\": All top-level imports become potentially lazy\n"
-"- \"none\": All lazy imports are suppressed (even explicitly marked ones)\n"
 "- \"normal\": Only explicitly marked imports (with \'lazy\' keyword) are lazy\n"
 "\n"
 "In addition to the mode, lazy imports can be controlled via the filter\n"
@@ -1951,7 +1950,6 @@ PyDoc_STRVAR(sys_get_lazy_imports__doc__,
 "Gets the global lazy imports mode.\n"
 "\n"
 "Returns \"all\" if all top level imports are potentially lazy.\n"
-"Returns \"none\" if all explicitly marked lazy imports are suppressed.\n"
 "Returns \"normal\" if only explicitly marked imports are lazy.");
 
 #define SYS_GET_LAZY_IMPORTS_METHODDEF    \
@@ -2089,4 +2087,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=ba849b6e4b9f1ba3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fb4fe1af274124e0 input=a9049054013a1b77]*/
