@@ -1549,6 +1549,26 @@ class ASTHelpers_Test(unittest.TestCase):
                     expected_values,
                 )
 
+    def test_parse_elides_null_container_unpacks_in_assignment(self):
+        tests = [
+            ('x = [*()]', ast.List, []),
+            ('x = {*()}', ast.Set, []),
+            ('x = *(),', ast.Tuple, []),
+            ('x = [*(), 2]', ast.List, [2]),
+            ('x = {*(), 2}', ast.Set, [2]),
+            ('x = *(), 2', ast.Tuple, [2]),
+        ]
+
+        for source, node_type, expected_values in tests:
+            with self.subTest(source=source):
+                node = ast.parse(source).body[0]
+                self.assertIsInstance(node, ast.Assign)
+                self.assertIsInstance(node.value, node_type)
+                self.assertEqual(
+                    [elt.value for elt in node.value.elts],
+                    expected_values,
+                )
+
     def test_parse_preserves_multiple_null_container_unpacks(self):
         tests = [
             ('[1, *(), 2]', ast.List),
@@ -1564,6 +1584,25 @@ class ASTHelpers_Test(unittest.TestCase):
                 node = ast.parse(source, mode='eval').body
                 self.assertIsInstance(node, node_type)
                 self.assertTrue(any(isinstance(elt, ast.Starred) for elt in node.elts))
+
+    def test_parse_preserves_multiple_null_container_unpacks_in_assignment(self):
+        tests = [
+            ('x = [1, *(), 2]', ast.List),
+            ('x = {1, *(), 2}', ast.Set),
+            ('x = 1, *(), 2', ast.Tuple),
+            ('x = [*(), *()]', ast.List),
+            ('x = {*(), *()}', ast.Set),
+            ('x = *(), *()', ast.Tuple),
+        ]
+
+        for source, node_type in tests:
+            with self.subTest(source=source):
+                node = ast.parse(source).body[0]
+                self.assertIsInstance(node, ast.Assign)
+                self.assertIsInstance(node.value, node_type)
+                self.assertTrue(
+                    any(isinstance(elt, ast.Starred) for elt in node.value.elts)
+                )
 
     def test_parse_in_error(self):
         try:
