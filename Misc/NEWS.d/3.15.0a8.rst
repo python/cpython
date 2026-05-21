@@ -180,16 +180,6 @@ dealing with contradictions in ``make_bottom``.
 
 ..
 
-.. date: 2026-03-24-13-06-52
-.. gh-issue: 146369
-.. nonce: 6wDI6S
-.. section: Core and Builtins
-
-Ensure ``-X lazy_imports=none``` and ``PYTHON_LAZY_IMPORTS=none``` override
-``__lazy_modules__``. Patch by Hugo van Kemenade.
-
-..
-
 .. date: 2026-03-22-19-30-00
 .. gh-issue: 146308
 .. nonce: AxnRVA

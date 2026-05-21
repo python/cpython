@@ -555,6 +555,9 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: const char* PyTypeObject.tp_name
 
+   See :c:macro:`Py_tp_name` for the corresponding
+   :c:member:`Slot ID <PySlot.sl_id>`.
+
    Pointer to a NUL-terminated string containing the name of the type. For types
    that are accessible as module globals, the string should be the full module
    name, followed by a dot, followed by the type name; for built-in types, it
@@ -593,6 +596,10 @@ and :c:data:`PyType_Type` effectively act as defaults.)
               Py_ssize_t PyTypeObject.tp_itemsize
 
    These fields allow calculating the size in bytes of instances of the type.
+
+   See :c:macro:`Py_tp_basicsize`, :c:macro:`Py_tp_extra_basicsize` and
+   :c:macro:`Py_tp_itemsize` for the corresponding
+   :c:member:`Slot IDs <PySlot.sl_id>`.
 
    There are two kinds of types: types with fixed-length instances have a zero
    :c:member:`!tp_itemsize` field, types with variable-length instances have a non-zero
@@ -1133,6 +1140,9 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: unsigned long PyTypeObject.tp_flags
 
+   See :c:macro:`Py_tp_flags` for the corresponding
+   :c:member:`Slot ID <PySlot.sl_id>`.
+
    This field is a bit mask of various flags.  Some flags indicate variant
    semantics for certain situations; others are used to indicate that certain
    fields in the type object (or in the extension structures referenced via
@@ -1391,8 +1401,8 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
       .. versionchanged:: 3.9
 
-      Renamed to the current name, without the leading underscore.
-      The old provisional name is :term:`soft deprecated`.
+         Renamed to the current name, without the leading underscore.
+         The old provisional name is :term:`soft deprecated`.
 
       .. versionchanged:: 3.12
 
@@ -1501,10 +1511,12 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    .. c:macro:: Py_TPFLAGS_HAVE_VERSION_TAG
 
-      This is a :term:`soft deprecated` macro that does nothing.
+      This macro does nothing.
       Historically, this would indicate that the
       :c:member:`~PyTypeObject.tp_version_tag` field was available and
       initialized.
+
+      .. soft-deprecated:: 3.13
 
 
    .. c:macro:: Py_TPFLAGS_INLINE_VALUES

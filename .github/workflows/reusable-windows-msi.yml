@@ -8,7 +8,8 @@ on:
         required: true
         type: string
 
-permissions: {}
+permissions:
+  contents: read
 
 env:
   FORCE_COLOR: 1
