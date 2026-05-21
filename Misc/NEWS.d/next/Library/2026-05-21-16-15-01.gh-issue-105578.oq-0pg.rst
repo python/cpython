@@ -1,0 +1,2 @@
+Deprecate :data:`typing.AnyStr` type variable and raise a warning, when it
+is imported.
