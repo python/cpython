@@ -1,0 +1,1 @@
+Offset was not being honored in asyncio because conditional was checking if offset was truthy or falsey. However, if offset is 0 then it is deemed falsey even though 0 is acceptable number to file.seek to. I changed the conditional to use instance of ints to validate if the program should file.seek or not
