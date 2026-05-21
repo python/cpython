@@ -100,8 +100,9 @@ in the C API:
 In the ``spam_system`` function, ``self`` and ``arg`` are borrowed references
 (meaning we must not decrement their reference count), but ``result`` is a
 strong reference. ``result`` is returned, so the strong reference is given to
-the caller. This is also called "stealing" a reference (so, in the above
-example, the caller steals our strong reference to ``result``).
+the caller.
+The caller is now responsible for making sure :c:macro:`Py_DECREF` is called --
+either by calling it, or by delegating this responsibility.
 
 
 Reference counting patterns
