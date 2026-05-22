@@ -1,0 +1,3 @@
+Fix missing :exc:`MemoryError` in several out-of-memory error paths in
+:mod:`!_interpchannels`. Previously these paths could raise
+:exc:`SystemError` or trigger an assertion failure in debug builds.

@@ -1838,5 +1838,68 @@ class ExhaustiveChannelTests(TestBase):
             fix.clean_up()
 
 
+class InterpChannelsOOMTest(TestBase):
+    def test_create_no_memory(self):
+        _testcapi = import_helper.import_module('_testcapi')
+
+        raised_memoryerror = False
+        for start in range(1, 20):
+            with self.subTest(start=start):
+                cid = None
+                _testcapi.set_nomemory(start, start + 1)
+                try:
+                    try:
+                        cid = _channels.create(REPLACE)
+                    except MemoryError:
+                        raised_memoryerror = True
+                    except SystemError as exc:
+                        self.fail(
+                            f"missing MemoryError at start={start}: {exc}")
+                finally:
+                    _testcapi.remove_mem_hooks()
+                if cid is not None:
+                    _channels.destroy(cid)
+
+        self.assertTrue(
+            raised_memoryerror,
+            "_testcapi.set_nomemory did not trigger a MemoryError from "
+            "_channels.create() within start=1..20; widen range")
+
+    def test_close_nonempty_no_memory(self):
+        _testcapi = import_helper.import_module('_testcapi')
+
+        raised_memoryerror = False
+        for start in range(1, 30):
+            with self.subTest(start=start):
+                cid = _channels.create(REPLACE)
+                try:
+                    _channels.send(cid, b'spam', blocking=False)
+
+                    _testcapi.set_nomemory(start, start + 1)
+                    try:
+                        _channels.close(cid, send=True)
+                    except MemoryError:
+                        raised_memoryerror = True
+                    except SystemError as exc:
+                        self.fail(
+                            f"missing MemoryError at start={start}: {exc}")
+                    finally:
+                        _testcapi.remove_mem_hooks()
+                finally:
+                    try:
+                        _channels.close(cid, force=True)
+                    except Exception:
+                        pass
+                    try:
+                        _channels.destroy(cid)
+                    except Exception:
+                        pass
+
+        self.assertTrue(
+            raised_memoryerror,
+            "_testcapi.set_nomemory did not trigger a MemoryError from "
+            "_channel_set_closing within start=1..30; widen range")
+
+
 if __name__ == '__main__':
     unittest.main()
