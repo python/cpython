@@ -317,8 +317,7 @@ function createPythonTooltip(data) {
     const selfSamples = d.data.self || 0;
     const selfMs = (selfSamples / 1000).toFixed(2);
     const percentage = ((d.data.value / data.value) * 100).toFixed(2);
-    const relativePercentage = zoomedNodeValue && zoomedNodeValue !== data.value ?
-      (d.data.value / zoomedNodeValue * 100).toFixed(2) : undefined;
+    const relativePercentage = Math.min(100, ((d.data.value / (zoomedNodeValue ?? data.value)) * 100).toFixed(2));
     const calls = d.data.calls || 0;
     const childCount = d.children ? d.children.length : 0;
     const source = d.data.source;
@@ -442,7 +441,7 @@ function createPythonTooltip(data) {
         <span class="tooltip-stat-label">Percentage:</span>
         <span class="tooltip-stat-value accent">${percentage}%</span>
 
-        ${relativePercentage ? `
+        ${relativePercentage != percentage && relativePercentage != "100.00" ? `
           <span class="tooltip-stat-label">Relative Percentage:</span>
           <span class="tooltip-stat-value accent">${relativePercentage}%</span>
         ` : ''}
