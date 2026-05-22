@@ -317,7 +317,7 @@ function createPythonTooltip(data) {
     const selfSamples = d.data.self || 0;
     const selfMs = (selfSamples / 1000).toFixed(2);
     const percentage = ((d.data.value / data.value) * 100).toFixed(2);
-    const relativePercentage = Math.min(100, ((d.data.value / (zoomedNodeValue ?? data.value)) * 100).toFixed(2));
+    const relativePercentage = Math.min(100, ((d.data.value / (zoomedNodeValue ?? data.value)) * 100)).toFixed(2);
     const calls = d.data.calls || 0;
     const childCount = d.children ? d.children.length : 0;
     const source = d.data.source;
