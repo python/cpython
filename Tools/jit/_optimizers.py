@@ -65,7 +65,7 @@ _AARCH64_COND_CODES = {
 }
 # MyPy doesn't understand that a invariant variable can be initialized by a covariant value
 CUSTOM_AARCH64_BRANCH19: str | None = "CUSTOM_AARCH64_BRANCH19"
-CUSTOM_AARCH64_BRANCH26: str | None = "ARM64_RELOC_BRANCH26"
+ARM64_RELOC_BRANCH26: str | None = "ARM64_RELOC_BRANCH26"
 
 _AARCH64_SHORT_BRANCHES = {
     "tbz": "tbnz",
@@ -163,6 +163,13 @@ class _Block:
     def resolve(self) -> typing.Self:
         """Find the first non-empty block reachable from this one."""
         block = self
+        # Empty blocks are only transparent when control can fall through them:
+        #     .L1:
+        #     .L2:
+        #         mov x0, x1
+        # We set block.fallthrough to False for sentinels like _JIT_CONTINUE,
+        # which may be empty but still must not resolve through to
+        # _JIT_COLD_START.
         while block.link and not block.instructions and block.fallthrough:
             block = block.link
         return block
@@ -353,6 +360,7 @@ class Optimizer:
         return self._lookup_label(f"{self.label_prefix}_JIT_CONTINUE")
 
     def _cold_start_block(self) -> _Block:
+        """Create the marker block where the cold code section begins."""
         if self._cold_start is None:
             label = f"{self.symbol_prefix}_JIT_COLD_START"
             self._cold_start = self._lookup_label(label)
@@ -391,6 +399,7 @@ class Optimizer:
         )
 
     def _relocation_marker(self, reloc: str, block: _Block) -> Instruction:
+        """Create a marker symbol that _stencils.py converts to a relocation."""
         target = self._make_cross_section_target(block).removeprefix(self.symbol_prefix)
         label = f"{self.symbol_prefix}{reloc}_JIT_RELOCATION_{target}:"
         return Instruction(InstructionKind.OTHER, "", label, None, None)
@@ -414,6 +423,13 @@ class Optimizer:
         )
 
     def _effective_layout_hot(self, block: _Block) -> bool:
+        """Return the hot/cold section where a block should be emitted.
+
+        Empty label-only blocks inherit the layout of the block they resolve to.
+        Explicit layout_hot overrides are also respected, because a block can be
+        cold in the control-flow graph but still need to be emitted in the hot
+        section as a bridge.
+        """
         resolved = block.resolve()
         if resolved.layout_hot is not None:
             return resolved.layout_hot
@@ -506,6 +522,11 @@ class Optimizer:
     def _layout_units_from(
         self, blocks: list[_Block]
     ) -> list[tuple[bool, list[_Block]]]:
+        """Group adjacent blocks that must stay together during layout.
+
+        Label-only fallthrough blocks inherit the layout of the instruction
+        block they resolve to, so partitioning must move them as one unit.
+        """
         continuation = self._continuation()
         cold_start = self._cold_start_block()
         units: list[tuple[bool, list[_Block]]] = []
@@ -596,6 +617,7 @@ class Optimizer:
             block = block.link
 
     def _layout_blocks(self) -> typing.Generator[_Block, None, None]:
+        """Yield only blocks that participate in executable code layout."""
         for block in self._blocks():
             if not block.is_metadata:
                 yield block
@@ -802,7 +824,8 @@ class Optimizer:
         assert seen_continuation
         assert seen_cold_start
 
-    def _fixup_cross_section_branches(self) -> None:
+    def _insert_cross_section_branch_relocations(self) -> None:
+        """Insert relocation markers for branches crossing the hot/cold split."""
         layout_blocks = set(self._layout_blocks())
         for block in self._layout_blocks():
             target = block.target
@@ -876,7 +899,7 @@ class Optimizer:
             self._remove_redundant_jumps()
             self._remove_unreachable()
         self._fixup_external_labels()
-        self._fixup_cross_section_branches()
+        self._insert_cross_section_branch_relocations()
         self._fixup_constants()
         self._validate()
         self.path.write_text(self._body())
@@ -888,7 +911,7 @@ class OptimizerAArch64(Optimizer):  # pylint: disable = too-few-public-methods
     _branches = _AARCH64_BRANCHES
     _short_branches = _AARCH64_SHORT_BRANCHES
     _jump_name = "b"
-    _jump_reloc = CUSTOM_AARCH64_BRANCH26
+    _jump_reloc = ARM64_RELOC_BRANCH26
     # Mach-O does not support the 19 bit branch locations needed for branch reordering
     _supports_external_relocations = False
     _branch_patterns = [name.replace(".", r"\.") for name in _AARCH64_BRANCHES]

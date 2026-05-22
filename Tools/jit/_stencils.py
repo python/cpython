@@ -177,6 +177,7 @@ class Hole:
     void: bool = False
 
     def replace(self, **changes: typing.Any) -> typing.Self:
+        """Copy this hole without rerunning __post_init__ and resetting func."""
         field_names = {field.name for field in dataclasses.fields(self)}
         for name in changes:
             if name not in field_names:
@@ -346,6 +347,8 @@ class StencilGroup:
         """Fix up all GOT and internal relocations for this stencil group."""
         for stencil in self._code_stencils():
             for hole in stencil.holes.copy():
+                # Cross-section symbols are optimizer-generated internal
+                # targets; resolve them before external branch handling.
                 if self._resolve_cross_section_symbol(hole):
                     continue
                 if (
@@ -436,6 +439,7 @@ class StencilGroup:
         self.data.holes.sort(key=lambda hole: hole.offset)
 
     def _resolve_cross_section_symbol(self, hole: Hole) -> bool:
+        """Strip hot/cold target wrappers and rewrite holes to CODE/COLD_CODE."""
         if hole.value is not HoleValue.ZERO or hole.symbol is None:
             return False
         symbol = hole.symbol
