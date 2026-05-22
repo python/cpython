@@ -26,6 +26,7 @@ custom_converter(PyObject *obj, custom_t *val)
 static PyTypeObject VcNew_Type;
 static PyTypeObject VcInit_Type;
 static PyTypeObject VcNewExact_Type;
+static PyTypeObject VcKwOnly_Type;
 #include "clinic/_testclinic.c.h"
 
 
@@ -2407,6 +2408,38 @@ static PyTypeObject VcNewExact_Type = {
 };
 
 
+/* VcKwOnly: @vectorcall + keyword-only arg.
+ * Exercises the no-kwnames==NULL-fast-path branch of the vectorcall codegen:
+ * the vectorcall function delegates unconditionally to the helper because the
+ * keyword-only parameter rules out the positional-only fast path. */
+
+/*[clinic input]
+class _testclinic.VcKwOnly "PyObject *" "&VcKwOnly_Type"
+@classmethod
+@vectorcall
+_testclinic.VcKwOnly.__new__ as vc_kwonly_new
+    a: object
+    *
+    b: object = None
+[clinic start generated code]*/
+
+static PyObject *
+vc_kwonly_new_impl(PyTypeObject *type, PyObject *a, PyObject *b)
+/*[clinic end generated code: output=00417079caa234dc input=68c863b55575a9e1]*/
+{
+    return type->tp_alloc(type, 0);
+}
+
+static PyTypeObject VcKwOnly_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "_testclinic.VcKwOnly",
+    .tp_basicsize = sizeof(PyObject),
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_new = vc_kwonly_new,
+    .tp_vectorcall = vc_kwonly_vectorcall,
+};
+
+
 
 /*[clinic input]
 output push
@@ -2634,6 +2667,9 @@ PyInit__testclinic(void)
         goto error;
     }
     if (PyModule_AddType(m, &VcNewExact_Type) < 0) {
+        goto error;
+    }
+    if (PyModule_AddType(m, &VcKwOnly_Type) < 0) {
         goto error;
     }
     return m;

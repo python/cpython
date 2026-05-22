@@ -4932,4 +4932,86 @@ vc_fast_end:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9d74cc1d3fc45354 input=a9049054013a1b77]*/
+
+static PyObject *
+vc_kwonly_new_impl(PyTypeObject *type, PyObject *a, PyObject *b);
+
+static PyObject *
+vc_kwonly_new_parse_args(PyTypeObject *type, PyObject *const *args,
+    Py_ssize_t nargs, PyObject *kwargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"a", "b", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "VcKwOnly",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    PyObject * const *fastargs;
+    Py_ssize_t nkw = 0;
+    if (kwnames != NULL) {
+        nkw = PyTuple_GET_SIZE(kwnames);
+    }
+    else if (kwargs != NULL) {
+        nkw = PyDict_GET_SIZE(kwargs);
+    }
+    Py_ssize_t noptargs = nargs + nkw - 1;
+    PyObject *a;
+    PyObject *b = Py_None;
+
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    a = fastargs[0];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    b = fastargs[1];
+skip_optional_kwonly:
+    return_value = vc_kwonly_new_impl(type, a, b);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+vc_kwonly_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    return vc_kwonly_new_parse_args(type, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args), kwargs, NULL);
+}
+
+static PyObject *
+vc_kwonly_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+
+    return vc_kwonly_new_parse_args(_PyType_CAST(type), args,
+        nargs, NULL, kwnames);
+}
+/*[clinic end generated code: output=f50fc4e8fc5d3848 input=a9049054013a1b77]*/

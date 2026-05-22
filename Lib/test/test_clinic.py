@@ -4444,6 +4444,21 @@ class VectorcallFunctionalTest(unittest.TestCase):
         self.assertIsInstance(obj, Sub)
         self.assertIsInstance(obj, ac_tester.VcNewExact)
 
+    def test_vc_kwonly(self):
+        # keyword-only 'b': vectorcall has no kwnames==NULL fast path,
+        # so every call goes through the helper.
+        self.assertIsInstance(ac_tester.VcKwOnly(1), ac_tester.VcKwOnly)
+        self.assertIsInstance(ac_tester.VcKwOnly(1, b=2), ac_tester.VcKwOnly)
+        self.assertIsInstance(ac_tester.VcKwOnly(a=1, b=2), ac_tester.VcKwOnly)
+
+    def test_vc_kwonly_b_as_positional(self):
+        with self.assertRaises(TypeError):
+            ac_tester.VcKwOnly(1, 2)
+
+    def test_vc_kwonly_missing_required(self):
+        with self.assertRaises(TypeError):
+            ac_tester.VcKwOnly()
+
 
 class LimitedCAPIOutputTests(unittest.TestCase):
 

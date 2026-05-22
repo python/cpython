@@ -1206,7 +1206,14 @@ class ParseArgsCodeGen:
                 size_t nargsf, PyObject *kwnames)
         """)
 
-    def _vc_preamble(self) -> str:
+    def _vc_preamble(self, needs_finale: bool) -> str:
+        if not needs_finale:
+            # No fast path, no impl call: return_value and the per-arg
+            # locals are unused — emit only what the helper call needs.
+            return libclinic.normalize_snippet("""
+                {{
+                    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+            """) + "\n"
         return libclinic.normalize_snippet("""
             {{
                 PyObject *return_value = NULL;
@@ -1275,7 +1282,7 @@ class ParseArgsCodeGen:
         """Generate a vectorcall function for __init__ or __new__."""
         parsing_code, needs_finale = self._generate_vc_parsing_code()
 
-        lines = [self._vc_prototype(), self._vc_preamble()]
+        lines = [self._vc_prototype(), self._vc_preamble(needs_finale)]
 
         exact_check = self._vc_exact_check()
         if exact_check:
@@ -1288,7 +1295,7 @@ class ParseArgsCodeGen:
             # Slow path already returned via the helper call; close the
             # function so the impl-call finale would not be emitted as
             # dead code.
-            lines.append("}")
+            lines.append("}}")
 
         code = libclinic.linear_format(
             "\n".join(lines),
