@@ -698,6 +698,7 @@ get_process_memory_usage(PyObject *self, PyObject *args)
         return NULL;
     }
 
+    // Get WorkingSetSize from GetProcessMemoryInfo()
     HANDLE handle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, (DWORD)pid);
     if (handle == NULL) {
         return PyErr_SetFromWindowsErr(0);
@@ -710,8 +711,7 @@ get_process_memory_usage(PyObject *self, PyObject *args)
     }
     CloseHandle(handle);
 
-    size_t size = (pmc.WorkingSetSize + pmc.PagefileUsage);
-    return PyLong_FromSize_t(size);
+    return PyLong_FromSize_t(pmc.WorkingSetSize);
 }
 #endif
 
