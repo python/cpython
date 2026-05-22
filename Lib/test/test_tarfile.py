@@ -1485,6 +1485,29 @@ class WriteTest(WriteTestBase, unittest.TestCase):
 
     prefix = "w:"
 
+    def test_addfile_sets_offsets(self):
+        # gh-150075: addfile() must set offset and offset_data on the
+        # TarInfo stored in the archive so they match a subsequent read.
+        data = b"data"
+
+        with tarfile.open(tmpname, self.mode) as tar:
+            t1 = tarfile.TarInfo("test1.txt")
+            t1.size = len(data)
+            tar.addfile(t1, io.BytesIO(data))
+
+            t2 = tarfile.TarInfo("test2.txt")
+            t2.size = len(data)
+            tar.addfile(t2, io.BytesIO(data))
+
+            write_members = tar.getmembers()
+
+        with tarfile.open(tmpname) as tar:
+            read_members = tar.getmembers()
+
+        for w, r in zip(write_members, read_members):
+            self.assertEqual(w.offset, r.offset)
+            self.assertEqual(w.offset_data, r.offset_data)
+
     def test_100_char_name(self):
         # The name field in a tar header stores strings of at most 100 chars.
         # If a string is shorter than 100 chars it has to be padded with '\0',
