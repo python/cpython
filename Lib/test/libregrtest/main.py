@@ -397,7 +397,8 @@ class Regrtest:
         return get_process_memory_usage(os.getpid())
 
     def run_tests_sequentially(self, runtests: RunTests) -> None:
-        self.logger.get_mem_usage = self._get_mem_usage
+        if not self.pgo:
+            self.logger.get_mem_usage = self._get_mem_usage
         if self.coverage:
             tracer = trace.Trace(trace=False, count=True)
         else:
