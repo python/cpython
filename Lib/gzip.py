@@ -65,7 +65,8 @@ def open(filename, mode="rb", compresslevel=_COMPRESS_LEVEL_TRADEOFF,
     if isinstance(filename, (str, bytes, os.PathLike)):
         binary_file = GzipFile(filename, gz_mode, compresslevel, mtime=mtime)
     elif hasattr(filename, "read") or hasattr(filename, "write"):
-        binary_file = GzipFile(None, gz_mode, compresslevel, filename, mtime=mtime)
+        binary_file = GzipFile(None, gz_mode, compresslevel, filename,
+                               mtime=mtime)
     else:
         raise TypeError("filename must be a str or bytes object, or a file")
 

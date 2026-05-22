@@ -91,7 +91,7 @@ gzip
 ----
 
 * :func:`gzip.open` now accepts an optional argument ``mtime``
-  which is passed on to the init constructor of the GzipFile class.
+  which is passed on to the constructor of the :class:`~gzip.GzipFile` class.
   (Contributed by Marin Misur in :gh:`91372`.)
 
 os

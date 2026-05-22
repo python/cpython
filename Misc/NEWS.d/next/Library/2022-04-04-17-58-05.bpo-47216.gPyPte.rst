@@ -1,2 +1,2 @@
-Added a mtime option to gzip open().
-open() didn't have it, while init of class GzipFile has mtime as an optional argument.
+Added *mtime* option to :func:`gzip.open`, which will be passed
+to the constructor of :class:`~gzip.GzipFile`.
