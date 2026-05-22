@@ -14,7 +14,7 @@ What is reference counting?
 ===========================
 
 In CPython, objects are garbage collected through a scheme known as
-"reference counting". This means that all objects keeps count of the number
+"reference counting". This means that all objects keep count of the number
 of references to them.
 
 For example, take the following code:
