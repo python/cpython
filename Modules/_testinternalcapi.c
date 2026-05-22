@@ -1112,7 +1112,7 @@ static PyObject *
 set_eval_frame_default(PyObject *self, PyObject *Py_UNUSED(args))
 {
     module_state *state = get_module_state(self);
-    _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), _PyEval_EvalFrameDefault);
+    _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), NULL);
     Py_CLEAR(state->record_list);
     Py_RETURN_NONE;
 }
