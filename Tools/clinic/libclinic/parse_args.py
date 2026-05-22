@@ -5,7 +5,7 @@ import libclinic
 from libclinic import fail, warn
 from libclinic.function import (
     Function, Parameter,
-    GETTER, SETTER, METHOD_NEW, METHOD_INIT)
+    GETTER, SETTER, METHOD_INIT)
 from libclinic.converter import CConverter
 from libclinic.converters import (
     defining_class_converter, object_converter, self_converter)
@@ -99,20 +99,11 @@ def declare_parser(
 
 NO_VARARG: Final[str] = "PY_SSIZE_T_MAX"
 PARSER_PROTOTYPE_KEYWORD: Final[str] = libclinic.normalize_snippet("""
-    static PyObject *
-    {c_basename}({self_type}{self_name}, PyObject *args, PyObject *kwargs)
-""")
-PARSER_PROTOTYPE_KEYWORD___INIT__: Final[str] = libclinic.normalize_snippet("""
-    static int
+    static {return_type}
     {c_basename}({self_type}{self_name}, PyObject *args, PyObject *kwargs)
 """)
 PARSER_PROTOTYPE_KEYWORD_HELPER: Final[str] = libclinic.normalize_snippet("""
-    static PyObject *
-    {c_basename}_parse_args({self_type}{self_name}, PyObject *const *args,
-        Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
-""")
-PARSER_PROTOTYPE_KEYWORD___INIT___HELPER: Final[str] = libclinic.normalize_snippet("""
-    static int
+    static {return_type}
     {c_basename}_parse_args({self_type}{self_name}, PyObject *const *args,
         Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 """)
@@ -356,6 +347,10 @@ class ParseArgsCodeGen:
                 any(c.broken_limited_capi for c in self.converters)):
             warn(f"Function {self.func.full_name} cannot use limited C API")
             self.limited_capi = False
+
+    def _keyword_prototype(self, template: str) -> str:
+        return_type = "int" if self.func.kind is METHOD_INIT else "PyObject *"
+        return template.replace("{return_type}", return_type)
 
     def parser_body(
         self,
@@ -623,7 +618,7 @@ class ParseArgsCodeGen:
 
     def parse_var_keyword(self) -> None:
         self.flags = "METH_VARARGS|METH_KEYWORDS"
-        self.parser_prototype = PARSER_PROTOTYPE_KEYWORD
+        self.parser_prototype = self._keyword_prototype(PARSER_PROTOTYPE_KEYWORD)
         nargs = 'PyTuple_GET_SIZE(args)'
 
         parser_code = []
@@ -707,10 +702,7 @@ class ParseArgsCodeGen:
                 # calling conventions; both the tuple/dict entry point and
                 # the vectorcall entry point call this helper.
                 self.flags = "METH_VARARGS|METH_KEYWORDS"
-                if self.func.kind is METHOD_INIT:
-                    self.parser_prototype = PARSER_PROTOTYPE_KEYWORD___INIT___HELPER
-                else:
-                    self.parser_prototype = PARSER_PROTOTYPE_KEYWORD_HELPER
+                self.parser_prototype = self._keyword_prototype(PARSER_PROTOTYPE_KEYWORD_HELPER)
                 argsname = 'fastargs'
                 argname_fmt = 'fastargs[%d]'
                 self.declarations = declare_parser(self.func, codegen=self.codegen)
@@ -724,7 +716,7 @@ class ParseArgsCodeGen:
             else:
                 # positional-or-keyword arguments
                 self.flags = "METH_VARARGS|METH_KEYWORDS"
-                self.parser_prototype = PARSER_PROTOTYPE_KEYWORD
+                self.parser_prototype = self._keyword_prototype(PARSER_PROTOTYPE_KEYWORD)
                 argsname = 'fastargs'
                 argname_fmt = 'fastargs[%d]'
                 self.declarations = declare_parser(self.func, codegen=self.codegen)
@@ -826,7 +818,7 @@ class ParseArgsCodeGen:
                 # positional-or-keyword arguments
                 assert not self.fastcall
                 self.flags = "METH_VARARGS|METH_KEYWORDS"
-                self.parser_prototype = PARSER_PROTOTYPE_KEYWORD
+                self.parser_prototype = self._keyword_prototype(PARSER_PROTOTYPE_KEYWORD)
                 parser_code = [libclinic.normalize_snippet("""
                     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "{format_units}:{name}", _keywords,
                         {parse_arguments}))
@@ -886,11 +878,9 @@ class ParseArgsCodeGen:
     def handle_new_or_init(self) -> None:
         self.methoddef_define = ''
 
-        if self.func.kind is METHOD_NEW:
-            entry_prototype = PARSER_PROTOTYPE_KEYWORD
-        else:
+        if self.func.kind is METHOD_INIT:
             self.return_value_declaration = "int return_value = -1;"
-            entry_prototype = PARSER_PROTOTYPE_KEYWORD___INIT__
+        entry_prototype = self._keyword_prototype(PARSER_PROTOTYPE_KEYWORD)
 
         parses_keywords = 'METH_KEYWORDS' in self.flags
 
