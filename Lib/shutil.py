@@ -10,34 +10,29 @@ import stat
 import fnmatch
 import collections
 import errno
+import importlib
 
-try:
-    import zlib
-    del zlib
-    _ZLIB_SUPPORTED = True
-except ImportError:
-    _ZLIB_SUPPORTED = False
+def _compression_module_supported(module_name):
+    set_lazy_imports = getattr(sys, "set_lazy_imports", None)
+    try:
+        if set_lazy_imports is None:
+            importlib.import_module(module_name)
+            return True
 
-try:
-    import bz2
-    del bz2
-    _BZ2_SUPPORTED = True
-except ImportError:
-    _BZ2_SUPPORTED = False
+        lazy_imports_mode = sys.get_lazy_imports()
+        set_lazy_imports("normal")
+        importlib.import_module(module_name)
+    except ImportError:
+        return False
+    finally:
+        if set_lazy_imports is not None:
+            set_lazy_imports(lazy_imports_mode)
+    return True
 
-try:
-    import lzma
-    del lzma
-    _LZMA_SUPPORTED = True
-except ImportError:
-    _LZMA_SUPPORTED = False
-
-try:
-    from compression import zstd
-    del zstd
-    _ZSTD_SUPPORTED = True
-except ImportError:
-    _ZSTD_SUPPORTED = False
+_ZLIB_SUPPORTED = _compression_module_supported("zlib")
+_BZ2_SUPPORTED = _compression_module_supported("bz2")
+_LZMA_SUPPORTED = _compression_module_supported("lzma")
+_ZSTD_SUPPORTED = _compression_module_supported("compression.zstd")
 
 _WINDOWS = os.name == 'nt'
 posix = nt = None

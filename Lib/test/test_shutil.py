@@ -31,6 +31,7 @@ except ImportError:
 from test import support
 from test.support import os_helper
 from test.support.os_helper import TESTFN, FakePath
+from test.support.script_helper import assert_python_ok
 
 TESTFN2 = TESTFN + "2"
 TESTFN_SRC = TESTFN + "_SRC"
@@ -2176,6 +2177,27 @@ class TestArchives(BaseTest, unittest.TestCase):
     @support.requires_bz2()
     def test_unpack_archive_bztar(self):
         self.check_unpack_tarball('bztar')
+
+    @support.requires_subprocess()
+    def test_bz2_support_probe_is_eager_under_lazy_imports(self):
+        module_dir = self.mkdtemp()
+        create_file(
+            (module_dir, 'bz2.py'),
+            'import _bz2\n'
+            'SENTINEL = True\n',
+        )
+        create_file(
+            (module_dir, '_bz2.py'),
+            'raise ImportError("missing _bz2 backend")\n',
+        )
+        code = f"""
+import sys
+sys.path.insert(0, {module_dir!r})
+import shutil
+print(shutil._BZ2_SUPPORTED)
+"""
+        proc = assert_python_ok('-X', 'lazy_imports=all', '-S', '-c', code)
+        self.assertEqual(proc.out.strip(), b'False')
 
     @support.requires_zstd()
     def test_unpack_archive_zstdtar(self):

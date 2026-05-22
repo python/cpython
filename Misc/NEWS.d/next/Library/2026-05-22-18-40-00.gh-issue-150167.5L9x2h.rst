@@ -1,0 +1,4 @@
+Make :mod:`shutil` probe compression-module support eagerly even when Python is
+started with ``-X lazy_imports=all``. This fixes cases where
+``shutil._BZ2_SUPPORTED`` could be reported as ``True`` even though the
+underlying ``_bz2`` extension is unavailable.
