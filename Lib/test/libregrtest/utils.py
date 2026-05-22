@@ -752,3 +752,23 @@ def display_title(title):
     print(title)
     print("#" * len(title))
     print(flush=True)
+
+
+def get_process_memory_usage(pid: int) -> int | None:
+    try:
+        fp = open(f"/proc/{pid}/smaps", "rb")
+    except OSError:
+        return None
+
+    try:
+        total = 0
+        with fp:
+            for line in fp:
+                # Include both Private_Clean and Private_Dirty sections.
+                line = line.rstrip()
+                if line.startswith(b"Private_") and line.endswith(b'kB'):
+                    parts = line.split()
+                    total += int(parts[1]) * 1024
+        return total
+    except ProcessLookupError:
+        return None
