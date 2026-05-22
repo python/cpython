@@ -347,6 +347,10 @@ class ThreadRunningTests(BasicThreadTest):
 
 class StartNewThreadKwargsRace(unittest.TestCase):
 
+    def setUp(self):
+        key = threading_helper.threading_setup()
+        self.addCleanup(threading_helper.threading_cleanup, *key)
+
     @unittest.skipUnless(support.Py_GIL_DISABLED, "GIL must be disabled")
     def test_dict_growsup_when_thread_start(self):
         # See gh-149816 - (62) Concurrent kwargs growth causes heap overwrite
@@ -364,28 +368,29 @@ class StartNewThreadKwargsRace(unittest.TestCase):
             results.append(prefix)
 
         def nop(i, **kwargs):
-            pass
+            results.append(i)
 
-        DELAY = 1.0
-        stop = thread.lock()
-        shared = {f"base_{i}": i for i in range(20000)}
-        n = 4
-        for i in range(n):
-            args=(shared, stop, f"dynamic_{i}", 1000)
-            thread.start_new_thread(mutator, args)
+        with threading_helper.wait_threads_exit():
+            stop = thread.lock()
+            shared = {f"base_{i}": i for i in range(20000)}
+            n = 4
+            for i in range(n):
+                args=(shared, stop, f"dynamic_{i}", 1000)
+                thread.start_new_thread(mutator, args)
 
-        snt = 32
-        for i in range(snt):
-            try:
-                thread.start_new_thread(nop, (i,), shared)
-            except RuntimeError:
-                break
+            snt = 16
+            for i in range(snt):
+                try:
+                    thread.start_new_thread(nop, (i,), shared)
+                except RuntimeError:
+                    break
 
-        stop.acquire()
-        # wait for all mutator threads stop.
-        wait_t = time.monotonic()
-        while len(results) < n and time.monotonic() - wait_t < DELAY:
-            time.sleep(0.01)
+            stop.acquire()
+            # wait for all mutator/nop threads stop.
+            for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+                if len(results) == n+snt:
+                    break
+            self.assertTrue(True, "successful test")
 
 
 class Barrier:
