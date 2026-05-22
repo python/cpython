@@ -192,13 +192,6 @@ dummy_func(void) {
         }
     }
 
-    op(_STORE_SLICE_LIST, (v, list_st, start, stop -- )) {
-        (void)v;
-        (void)start;
-        (void)stop;
-        assert(sym_matches_type(list_st, &PyList_Type));
-    }
-
     op(_STORE_ATTR_SLOT, (index/1, value, owner -- o)) {
         (void)index;
         (void)value;
