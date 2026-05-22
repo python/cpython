@@ -16,7 +16,7 @@ import random
 import sys
 import unittest
 from test import support
-from test.support import import_helper, requires_IEEE_754
+from test.support import HAVE_DOUBLE_ROUNDING, import_helper, requires_IEEE_754
 
 from decimal import Decimal
 from fractions import Fraction
@@ -27,12 +27,6 @@ import statistics
 
 
 # === Helper functions and class ===
-
-# Test copied from Lib/test/test_math.py
-# detect evidence of double-rounding: fsum is not always correctly
-# rounded on machines that suffer from double rounding.
-x, y = 1e16, 2.9999 # use temporary values to defeat peephole optimizer
-HAVE_DOUBLE_ROUNDING = (x + y == 1e16 + 4)
 
 def sign(x):
     """Return -1.0 for negatives, including -0.0, otherwise +1.0."""

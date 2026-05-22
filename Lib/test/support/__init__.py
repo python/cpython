@@ -73,6 +73,7 @@ __all__ = [
     "run_no_yield_async_fn", "run_yielding_async_fn", "async_yield",
     "reset_code", "on_github_actions",
     "requires_root_user", "requires_non_root_user",
+    "HAVE_DOUBLE_ROUNDING",
     ]
 
 
@@ -523,6 +524,11 @@ SOCK_MAX_SIZE = 16 * 1024 * 1024 + 1
 requires_IEEE_754 = unittest.skipUnless(
     float.__getformat__("double").startswith("IEEE"),
     "test requires IEEE 754 doubles")
+
+# detect evidence of double-rounding: fsum is not always correctly
+# rounded on machines that suffer from double rounding.
+x, y = 1e16, 2.9999 # use temporary values to defeat peephole optimizer
+HAVE_DOUBLE_ROUNDING = (x + y == 1e16 + 4)
 
 def requires_zlib(reason='requires zlib'):
     try:

@@ -39,18 +39,13 @@ from test.support.os_helper import (EnvironmentVarGuard, TESTFN, unlink)
 from test.support.script_helper import assert_python_ok
 from test.support.testcase import ComplexesAreIdenticalMixin
 from test.support.warnings_helper import check_warnings
-from test.support import requires_IEEE_754
+from test.support import HAVE_DOUBLE_ROUNDING, requires_IEEE_754
 from unittest.mock import MagicMock, patch
 try:
     import pty, signal
 except ImportError:
     pty = signal = None
 
-
-# Detect evidence of double-rounding: sum() does not always
-# get improved accuracy on machines that suffer from double rounding.
-x, y = 1e16, 2.9999 # use temporary values to defeat peephole optimizer
-HAVE_DOUBLE_ROUNDING = (x + y == 1e16 + 4)
 
 # used as proof of globals being used
 A_GLOBAL_VALUE = 123

@@ -1,7 +1,7 @@
 # Python test set -- math module
 # XXXX Should not do tests around zero only
 
-from test.support import verbose, requires_IEEE_754
+from test.support import HAVE_DOUBLE_ROUNDING, verbose, requires_IEEE_754
 from test import support
 import unittest
 import fractions
@@ -22,11 +22,6 @@ INF = float('inf')
 NINF = float('-inf')
 FLOAT_MAX = sys.float_info.max
 FLOAT_MIN = sys.float_info.min
-
-# detect evidence of double-rounding: fsum is not always correctly
-# rounded on machines that suffer from double rounding.
-x, y = 1e16, 2.9999 # use temporary values to defeat peephole optimizer
-HAVE_DOUBLE_ROUNDING = (x + y == 1e16 + 4)
 
 # locate file with test values
 if __name__ == '__main__':
