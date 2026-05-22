@@ -1227,14 +1227,15 @@ class ParseArgsCodeGen:
         if self.func.kind is METHOD_INIT:
             return libclinic.normalize_snippet("""
                 {modifications}
-                {lock}
                 {{
                     PyObject *self = _PyType_CAST(type)->tp_alloc(
                         _PyType_CAST(type), 0);
                     if (self == NULL) {{
                         goto exit;
                     }}
-                    int _result = {c_basename}_impl({vc_impl_arguments});
+                    int _result;
+                    {lock}
+                    _result = {c_basename}_impl({vc_impl_arguments});
                     {unlock}
                     if (_result != 0) {{
                         Py_DECREF(self);

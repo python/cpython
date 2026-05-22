@@ -7,6 +7,7 @@ preserve
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_call.h"          // _PyObject_MakeTpCall()
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_long.h"          // _PyLong_UnsignedShort_Converter()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_runtime.h"       // _Py_ID()
@@ -4748,7 +4749,9 @@ vc_posorkw_init_parse_args(PyObject *self, PyObject *const *args,
     }
     b = fastargs[1];
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = vc_posorkw_init_impl(self, a, b);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -4806,7 +4809,10 @@ vc_fast_end:
         if (self == NULL) {
             goto exit;
         }
-        int _result = vc_posorkw_init_impl((PyObject *)self, a, b);
+        int _result;
+        Py_BEGIN_CRITICAL_SECTION(self);
+        _result = vc_posorkw_init_impl((PyObject *)self, a, b);
+        Py_END_CRITICAL_SECTION();
         if (_result != 0) {
             Py_DECREF(self);
             goto exit;
@@ -4998,4 +5004,4 @@ vc_kwonly_vectorcall(PyObject *type, PyObject *const *args,
         kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
         NULL, kwnames);
 }
-/*[clinic end generated code: output=e05b3fb47b594279 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=23aef355930eeb8f input=a9049054013a1b77]*/

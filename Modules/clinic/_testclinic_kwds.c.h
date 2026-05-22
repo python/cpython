@@ -7,6 +7,7 @@ preserve
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_call.h"          // _PyObject_MakeTpCall()
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_long.h"          // _PyLong_UnsignedShort_Converter()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_runtime.h"       // _Py_ID()
@@ -182,4 +183,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=937ae7c4a6176de1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f52d38b984314a55 input=a9049054013a1b77]*/
