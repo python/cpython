@@ -2808,7 +2808,7 @@ def adjust_int_max_str_digits(max_digits):
 
 def exceeds_recursion_limit():
     """For recursion tests, easily exceeds default recursion limit."""
-    return 150_000
+    return 300_000
 
 
 # Windows doesn't have os.uname() but it doesn't support s390x.
