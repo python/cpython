@@ -1332,18 +1332,6 @@
         }
 
         case _STORE_SLICE_LIST: {
-            JitOptRef stop;
-            JitOptRef start;
-            JitOptRef list_st;
-            JitOptRef v;
-            stop = stack_pointer[-1];
-            start = stack_pointer[-2];
-            list_st = stack_pointer[-3];
-            v = stack_pointer[-4];
-            (void)v;
-            (void)start;
-            (void)stop;
-            assert(sym_matches_type(list_st, &PyList_Type));
             CHECK_STACK_BOUNDS(-4);
             stack_pointer += -4;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
