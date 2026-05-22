@@ -1119,6 +1119,65 @@ class TestSpecifics(unittest.TestCase):
                 self.assertIn('LOAD_', opcodes[-2].opname)
                 self.assertEqual('RETURN_VALUE', opcodes[-1].opname)
 
+    def test_empty_set_unpack_literal_bytecode_optimization(self):
+        code = compile('{*()}', '<test>', 'eval')
+        instructions = [
+            (instruction.opname, instruction.argval)
+            for instruction in dis.get_instructions(code)
+        ]
+
+        self.assertEqual(
+            instructions,
+            [
+                ('RESUME', 0),
+                ('BUILD_SET', 0),
+                ('RETURN_VALUE', None),
+            ],
+        )
+
+    def test_empty_leading_tuple_unpack_list_and_tuple_bytecode_optimization(self):
+        cases = {
+            '[*()]': [
+                ('RESUME', 0),
+                ('BUILD_LIST', 0),
+                ('RETURN_VALUE', None),
+            ],
+            '[*(), 1]': [
+                ('RESUME', 0),
+                ('BUILD_LIST', 0),
+                ('LOAD_SMALL_INT', 1),
+                ('LIST_APPEND', 1),
+                ('RETURN_VALUE', None),
+            ],
+            '[1, *()]': [
+                ('RESUME', 0),
+                ('LOAD_SMALL_INT', 1),
+                ('BUILD_LIST', 1),
+                ('LOAD_COMMON_CONSTANT', ()),
+                ('LIST_EXTEND', 1),
+                ('RETURN_VALUE', None),
+            ],
+            '(*(),)': [
+                ('RESUME', 0),
+                ('LOAD_COMMON_CONSTANT', ()),
+                ('RETURN_VALUE', None),
+            ],
+            '(*(), 1)': [
+                ('RESUME', 0),
+                ('LOAD_CONST', (1,)),
+                ('RETURN_VALUE', None),
+            ],
+        }
+
+        for source, expected in cases.items():
+            with self.subTest(source=source):
+                code = compile(source, '<test>', 'eval')
+                instructions = [
+                    (instruction.opname, instruction.argval)
+                    for instruction in dis.get_instructions(code)
+                ]
+                self.assertEqual(instructions, expected)
+
     def test_imported_load_method(self):
         sources = [
             """\

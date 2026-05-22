@@ -1,0 +1,3 @@
+Optimize bytecode for leading null unpack idioms in set, tuple, and list
+literals. Removing redundant empty tuple unpack bytecode for cases such as
+the ``ast.unparse`` empty set representation ``{*()}``.

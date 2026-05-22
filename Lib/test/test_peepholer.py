@@ -1735,6 +1735,44 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         ]
         self.cfg_optimization_test(same, expected, consts=[None], expected_consts=[None])
 
+    def test_optimize_empty_set_unpack_idiom(self):
+        before = [
+            ('RESUME', 0, 0),
+            ('BUILD_SET', 0, 0),
+            ('BUILD_TUPLE', 0, 0),
+            ('SET_UPDATE', 1, 0),
+            ('POP_TOP', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('RESUME', 0, 0),
+            ('BUILD_SET', 0, 0),
+            ('POP_TOP', None, 0),
+            ('LOAD_COMMON_CONSTANT', 7, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[None], expected_consts=[None])
+
+    def test_optimize_empty_list_unpack_idiom(self):
+        before = [
+            ('RESUME', 0, 0),
+            ('BUILD_LIST', 0, 0),
+            ('BUILD_TUPLE', 0, 0),
+            ('LIST_EXTEND', 1, 0),
+            ('POP_TOP', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('RESUME', 0, 0),
+            ('BUILD_LIST', 0, 0),
+            ('POP_TOP', None, 0),
+            ('LOAD_COMMON_CONSTANT', 7, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[None], expected_consts=[None])
+
     def test_optimize_unary_not(self):
         # test folding
         before = [

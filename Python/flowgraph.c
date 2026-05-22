@@ -1742,6 +1742,43 @@ optimize_lists_and_sets(basicblock *bb, int i, int nextop,
     return SUCCESS;
 }
 
+/*
+Optimize lists and sets for:
+    1. Empty unpack idiom as first element `*()`:
+           Replace BUILD_SET 0, BUILD_TUPLE 0, SET_UPDATE 1 with BUILD_SET 0,
+           or BUILD_LIST 0, BUILD_TUPLE 0, LIST_EXTEND 1 with
+           BUILD_LIST 0.
+*/
+static int
+optimize_empty_first_unpack(basicblock *bb, int i, int build_opcode,
+                            int update_opcode)
+{
+    if (i < 0 || i + 2 >= bb->b_iused)
+    {
+        return SUCCESS;
+    }
+
+    cfg_instr *build = &bb->b_instr[i];
+    cfg_instr *empty = &bb->b_instr[i + 1];
+    cfg_instr *update = &bb->b_instr[i + 2];
+
+    if (build->i_opcode != build_opcode || build->i_oparg != 0) {
+        return SUCCESS;
+    }
+    if (empty->i_opcode != BUILD_TUPLE || empty->i_oparg != 0) {
+        return SUCCESS;
+    }
+    if (update->i_opcode != update_opcode || update->i_oparg != 1) {
+        return SUCCESS;
+    }
+
+    INSTR_SET_OP0(empty, NOP);
+    INSTR_SET_LOC(empty, NO_LOCATION);
+    INSTR_SET_OP0(update, NOP);
+    INSTR_SET_LOC(update, NO_LOCATION);
+    return SUCCESS;
+}
+
 /* Check whether the total number of items in the (possibly nested) collection obj exceeds
  * limit. Return a negative number if it does, and a non-negative number otherwise.
  * Used to avoid creating constants which are slow to hash.
@@ -2438,8 +2475,12 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts,
                 RETURN_IF_ERROR(fold_tuple_of_constants(bb, i, consts, const_cache, consts_index));
                 break;
             case BUILD_LIST:
+                RETURN_IF_ERROR(optimize_lists_and_sets(bb, i, nextop, consts, const_cache, consts_index));
+                RETURN_IF_ERROR(optimize_empty_first_unpack(bb, i, BUILD_LIST, LIST_EXTEND));
+                break;
             case BUILD_SET:
                 RETURN_IF_ERROR(optimize_lists_and_sets(bb, i, nextop, consts, const_cache, consts_index));
+                RETURN_IF_ERROR(optimize_empty_first_unpack(bb, i, BUILD_SET, SET_UPDATE));
                 break;
             case POP_JUMP_IF_NOT_NONE:
             case POP_JUMP_IF_NONE:
