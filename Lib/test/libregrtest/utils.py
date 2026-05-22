@@ -19,6 +19,10 @@ try:
     import _winapi
 except ImportError:
     _winapi = None
+try:
+    from _testcapi import get_process_memory_usage as _get_process_memory_usage
+except ImportError:
+    _get_process_memory_usage = None
 
 from test import support
 from test.support import os_helper
@@ -793,7 +797,9 @@ def _get_process_memory_usage_windows(pid: int) -> int | None:
     return mem_info['WorkingSetSize']
 
 
-if _winapi is not None:
+if _get_process_memory_usage is not None:
+    get_process_memory_usage = _get_process_memory_usage
+elif _winapi is not None:
     get_process_memory_usage = _get_process_memory_usage_windows
 elif sys.platform == 'linux':
     get_process_memory_usage = _get_process_memory_usage_linux
