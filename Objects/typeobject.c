@@ -4075,12 +4075,26 @@ subtype_getweakref(PyObject *obj, void *context)
     _PyObject_ASSERT((PyObject *)type,
                      ((type->tp_weaklistoffset + (Py_ssize_t)sizeof(PyObject *))
                       <= type->tp_basicsize));
+
+    /* In free-threaded builds, the weakref list head can be freed by another
+     * thread between our load of *weaklistptr and the Py_NewRef() call
+     * (use-after-free / heap corruption). Hold the weakref striped lock across
+     * the read+incref to prevent this. LOCK_WEAKREFS/UNLOCK_WEAKREFS are no-ops
+     * in GIL builds, so this has zero overhead in the traditional build. */
+    LOCK_WEAKREFS(obj);
     weaklistptr = (PyObject **)((char *)obj + type->tp_weaklistoffset);
     if (*weaklistptr == NULL)
-        result = Py_None;
-    else
+        result = Py_NewRef(Py_None);
+    else if (_Py_TryIncref(*weaklistptr)) {
         result = *weaklistptr;
-    return Py_NewRef(result);
+    }
+    else {
+        result = Py_NewRef(Py_None);
+    }
+
+    UNLOCK_WEAKREFS(obj);
+
+    return result;
 }
 
 /* getset definitions for common descriptors */
