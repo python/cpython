@@ -1,0 +1,4 @@
+Set a :exc:`MemoryError` via :c:func:`PyErr_NoMemory` when buffer allocation
+  fails in the tokenizer's ``_PyTokenizer_translate_newlines`` helper, so the
+  out-of-memory condition is propagated as a proper Python exception instead
+  of only being recorded in ``tok->done``.
