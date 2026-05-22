@@ -8,7 +8,7 @@
 #endif
 
 #include "Python.h"
-#include "pycore_bytesobject.h"   // _PyBytes_Repeat
+#include "pycore_bytesobject.h"   // _PyBytes_RepeatBuffer
 #include "pycore_call.h"          // _PyObject_CallMethod()
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_floatobject.h"   // _PY_FLOAT_BIG_ENDIAN
@@ -33,7 +33,7 @@ static struct PyModuleDef arraymodule;
  * functions aren't visible yet.
  */
 struct arraydescr {
-    const char *typecode;
+    char typecode[3];  // big enough to store "Zd\0"
     int itemsize;
     PyObject * (*getitem)(struct arrayobject *, Py_ssize_t);
     int (*setitem)(struct arrayobject *, Py_ssize_t, PyObject *);
@@ -68,6 +68,7 @@ typedef struct {
     PyObject *str_write;
     PyObject *str___dict__;
     PyObject *str_iter;
+    PyObject *typecodes;
 } array_state;
 
 static array_state *
@@ -784,7 +785,7 @@ static const struct arraydescr descriptors[] = {
     {"d", sizeof(double), d_getitem, d_setitem, NULL, 0, 0},
     {"Zf", 2*sizeof(float), cf_getitem, cf_setitem, NULL, 0, 0},
     {"Zd", 2*sizeof(double), cd_getitem, cd_setitem, NULL, 0, 0},
-    {NULL, 0, 0, 0, 0, 0, 0} /* Sentinel */
+    {"", 0, 0, 0, 0, 0, 0} /* Sentinel */
 };
 
 /****************************************************************************
@@ -1147,7 +1148,7 @@ array_repeat(PyObject *op, Py_ssize_t n)
 
     const Py_ssize_t oldbytes = array_length * a->ob_descr->itemsize;
     const Py_ssize_t newbytes = oldbytes * n;
-    _PyBytes_Repeat(np->ob_item, newbytes, a->ob_item, oldbytes);
+    _PyBytes_RepeatBuffer(np->ob_item, newbytes, a->ob_item, oldbytes);
 
     return (PyObject *)np;
 }
@@ -1304,7 +1305,7 @@ array_inplace_repeat(PyObject *op, Py_ssize_t n)
         if (array_resize(self, n * array_size) == -1)
             return NULL;
 
-        _PyBytes_Repeat(self->ob_item, n*size, self->ob_item, size);
+        _PyBytes_RepeatBuffer(self->ob_item, n*size, self->ob_item, size);
     }
     return Py_NewRef(self);
 }
@@ -2298,12 +2299,12 @@ array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
             arraytype->tp_name, state->ArrayType->tp_name);
         return NULL;
     }
-    for (descr = descriptors; descr->typecode != NULL; descr++) {
+    for (descr = descriptors; descr->typecode[0] != 0; descr++) {
         if (strcmp(descr->typecode, typecode) == 0) {
             break;
         }
     }
-    if (descr->typecode == NULL) {
+    if (descr->typecode[0] == 0) {
         PyErr_SetString(PyExc_ValueError,
                         "second argument must be a valid type code");
         return NULL;
@@ -2500,7 +2501,7 @@ array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
          *
          * XXX: Is it possible to write a unit test for this?
          */
-        for (descr = descriptors; descr->typecode != NULL; descr++) {
+        for (descr = descriptors; descr->typecode[0] != 0; descr++) {
             if (descr->is_integer_type &&
                 (size_t)descr->itemsize == mf_descr.size &&
                 descr->is_signed == mf_descr.is_signed)
@@ -3047,7 +3048,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         */
         initial = NULL;
     }
-    for (descr = descriptors; descr->typecode != NULL; descr++) {
+    for (descr = descriptors; descr->typecode[0] != 0; descr++) {
         if (strcmp(descr->typecode, s) == 0) {
             PyObject *a;
             Py_ssize_t len;
@@ -3153,8 +3154,18 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
     }
     Py_XDECREF(it);
-    PyErr_SetString(PyExc_ValueError,
-        "bad typecode (must be b, B, u, w, h, H, i, I, l, L, q, Q, e, f, d, Zf or Zd)");
+
+    PyObject *sep = PyUnicode_FromString(", ");
+    if (sep == NULL) {
+        return NULL;
+    }
+    PyObject *msg = PyObject_CallMethod(sep, "join", "(O)", state->typecodes);
+    Py_DECREF(sep);
+    if (msg == NULL) {
+        return NULL;
+    }
+    PyErr_Format(PyExc_ValueError, "bad typecode (must be: %S)", msg);
+    Py_DECREF(msg);
     return NULL;
 }
 
@@ -3439,6 +3450,7 @@ array_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->ArrayType);
     Py_VISIT(state->ArrayIterType);
     Py_VISIT(state->array_reconstructor);
+    Py_VISIT(state->typecodes);
     return 0;
 }
 
@@ -3453,6 +3465,7 @@ array_clear(PyObject *module)
     Py_CLEAR(state->str_write);
     Py_CLEAR(state->str___dict__);
     Py_CLEAR(state->str_iter);
+    Py_CLEAR(state->typecodes);
     return 0;
 }
 
@@ -3531,7 +3544,7 @@ array_modexec(PyObject *m)
     if (typecodes == NULL) {
         return -1;
     }
-    for (descr = descriptors; descr->typecode != NULL; descr++) {
+    for (descr = descriptors; descr->typecode[0] != 0; descr++) {
         PyObject *typecode = PyUnicode_DecodeASCII(descr->typecode, strlen(descr->typecode), NULL);
         if (typecode == NULL) {
             Py_DECREF(typecodes);
@@ -3549,6 +3562,7 @@ array_modexec(PyObject *m)
     if (tuple == NULL) {
         return -1;
     }
+    state->typecodes = Py_NewRef(tuple);
     if (PyModule_Add(m, "typecodes", tuple) < 0) {
         return -1;
     }

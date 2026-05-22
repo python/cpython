@@ -166,6 +166,7 @@ cached_code_metadata_destroy(void *ptr)
     Py_DECREF(meta->func_name);
     Py_DECREF(meta->file_name);
     Py_DECREF(meta->linetable);
+    Py_XDECREF(meta->last_frame_info);
     PyMem_RawFree(meta);
 }
 
@@ -360,6 +361,10 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
     self->cache_frames = cache_frames;
     self->collect_stats = stats;
     self->stale_invalidation_counter = 0;
+    self->cached_tstate_interpreter_addr = 0;
+    self->cached_tstate_addr = 0;
+    memset(self->cached_tstates, 0, sizeof(self->cached_tstates));
+    memset(self->cached_generations, 0, sizeof(self->cached_generations));
     self->debug = debug;
     self->only_active_thread = only_active_thread;
     self->mode = mode;
@@ -473,6 +478,172 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
     return 0;
 }
 
+static inline size_t
+interpreter_thread_cache_index(uintptr_t interpreter_addr)
+{
+    // Direct-mapped table indexed by the remote interpreter address. Each entry
+    // stores the full address and verifies it on lookup, so hash collisions
+    // degrade to misses and cannot return a value from the wrong interpreter.
+    return (size_t)_Py_HashPointerRaw((const void *)interpreter_addr)
+        & (INTERPRETER_THREAD_CACHE_SIZE - 1);
+}
+
+static inline uintptr_t
+get_cached_tstate_for_interpreter(
+    RemoteUnwinderObject *self,
+    uintptr_t interpreter_addr)
+{
+    if (interpreter_addr == 0) {
+        return 0;
+    }
+
+    if (self->cached_tstate_interpreter_addr == interpreter_addr) {
+        return self->cached_tstate_addr;
+    }
+
+    InterpreterTstateCacheEntry *entry =
+        &self->cached_tstates[interpreter_thread_cache_index(interpreter_addr)];
+    if (entry->interpreter_addr == interpreter_addr) {
+        self->cached_tstate_interpreter_addr = interpreter_addr;
+        self->cached_tstate_addr = entry->thread_state_addr;
+        return entry->thread_state_addr;
+    }
+    return 0;
+}
+
+static inline void
+set_cached_tstate_for_interpreter(
+    RemoteUnwinderObject *self,
+    uintptr_t interpreter_addr,
+    uintptr_t thread_state_addr)
+{
+    if (interpreter_addr == 0 || thread_state_addr == 0) {
+        return;
+    }
+
+    self->cached_tstate_interpreter_addr = interpreter_addr;
+    self->cached_tstate_addr = thread_state_addr;
+
+    InterpreterTstateCacheEntry *entry =
+        &self->cached_tstates[interpreter_thread_cache_index(interpreter_addr)];
+    entry->interpreter_addr = interpreter_addr;
+    entry->thread_state_addr = thread_state_addr;
+}
+
+static void
+refresh_generation_caches_from_interp_state(
+    RemoteUnwinderObject *self,
+    uintptr_t interpreter_addr,
+    const char *interp_state_buffer)
+{
+    uint64_t code_object_generation = GET_MEMBER(uint64_t, interp_state_buffer,
+            self->debug_offsets.interpreter_state.code_object_generation);
+
+    if (self->cached_generation_interpreter_addr == interpreter_addr) {
+        if (code_object_generation != self->cached_code_object_generation) {
+            self->cached_code_object_generation = code_object_generation;
+            _Py_hashtable_clear(self->code_object_cache);
+        }
+    }
+    else {
+        InterpreterGenerationCacheEntry *entry =
+            &self->cached_generations[interpreter_thread_cache_index(interpreter_addr)];
+        // A slot rebound from another interpreter must be treated as changed:
+        // the code_object_cache is global, so even if the new generation
+        // numerically matches what the previous occupant had, stale entries
+        // from that occupant could still be served.
+        int changed = entry->interpreter_addr != interpreter_addr
+                   || entry->code_object_generation != code_object_generation;
+        entry->interpreter_addr = interpreter_addr;
+        entry->code_object_generation = code_object_generation;
+        if (changed) {
+            _Py_hashtable_clear(self->code_object_cache);
+        }
+        self->cached_generation_interpreter_addr = interpreter_addr;
+        self->cached_code_object_generation = code_object_generation;
+    }
+
+#ifdef Py_GIL_DISABLED
+    uint32_t current_tlbc_generation = GET_MEMBER(uint32_t, interp_state_buffer,
+                                                  self->debug_offsets.interpreter_state.tlbc_generation);
+    if (current_tlbc_generation != self->tlbc_generation) {
+        self->tlbc_generation = current_tlbc_generation;
+        _Py_hashtable_clear(self->tlbc_cache);
+    }
+#endif
+}
+
+static int
+refresh_generation_caches_for_interpreter(
+    RemoteUnwinderObject *self,
+    uintptr_t interpreter_addr)
+{
+    char interp_state_buffer[INTERP_STATE_BUFFER_SIZE];
+    if (_Py_RemoteDebug_ReadRemoteMemory(
+            &self->handle,
+            interpreter_addr,
+            INTERP_STATE_BUFFER_SIZE,
+            interp_state_buffer) < 0) {
+        set_exception_cause(self, PyExc_RuntimeError,
+                            "Failed to read interpreter state buffer");
+        return -1;
+    }
+    refresh_generation_caches_from_interp_state(self, interpreter_addr, interp_state_buffer);
+    return 0;
+}
+
+static int
+read_interp_state_and_maybe_thread_frame(
+    RemoteUnwinderObject *unwinder,
+    uintptr_t interpreter_addr,
+    char *interp_state_buffer,
+    char *tstate_buffer,
+    char *frame_buffer,
+    RemoteReadPrefetch *prefetch)
+{
+    prefetch->tstate = NULL;
+    prefetch->frame = NULL;
+    if (prefetch->tstate_addr != 0) {
+        size_t tstate_size = (size_t)unwinder->debug_offsets.thread_state.size;
+        _Py_RemoteReadSegment segments[3] = {
+            {interpreter_addr, interp_state_buffer, INTERP_STATE_BUFFER_SIZE},
+            {prefetch->tstate_addr, tstate_buffer, tstate_size},
+            {prefetch->frame_addr, frame_buffer, SIZEOF_INTERP_FRAME},
+        };
+        int nsegs = prefetch->frame_addr != 0 ? 3 : 2;
+        Py_ssize_t nread = _Py_RemoteDebug_BatchedReadRemoteMemory(
+            &unwinder->handle, segments, nsegs);
+        int completed = 0;
+        if (nread >= (Py_ssize_t)INTERP_STATE_BUFFER_SIZE) {
+            completed = 1;
+            Py_ssize_t with_tstate = (Py_ssize_t)INTERP_STATE_BUFFER_SIZE
+                + (Py_ssize_t)tstate_size;
+            if (nread >= with_tstate) {
+                completed = 2;
+            }
+            if (nsegs == 3
+                    && nread == with_tstate + (Py_ssize_t)SIZEOF_INTERP_FRAME) {
+                completed = 3;
+            }
+        }
+        STATS_BATCHED_READ(unwinder, nsegs, completed);
+        if (completed >= 1) {
+            if (completed >= 2) {
+                prefetch->tstate = tstate_buffer;
+            }
+            if (completed >= 3) {
+                prefetch->frame = frame_buffer;
+            }
+            return 0;
+        }
+    }
+    return _Py_RemoteDebug_ReadRemoteMemory(
+        &unwinder->handle,
+        interpreter_addr,
+        INTERP_STATE_BUFFER_SIZE,
+        interp_state_buffer);
+}
+
 /*[clinic input]
 @permit_long_docstring_body
 @critical_section
@@ -537,15 +708,32 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
     while (current_interpreter != 0) {
         // Read interpreter state to get the interpreter ID
         char interp_state_buffer[INTERP_STATE_BUFFER_SIZE];
-        if (_Py_RemoteDebug_PagedReadRemoteMemory(
-                &self->handle,
+        char prefetched_tstate[SIZEOF_THREAD_STATE];
+        char prefetched_frame[SIZEOF_INTERP_FRAME];
+        RemoteReadPrefetch prefetch = {0};
+        if (self->cache_frames) {
+            prefetch.tstate_addr = get_cached_tstate_for_interpreter(
+                self, current_interpreter);
+        }
+        if (prefetch.tstate_addr != 0) {
+            FrameCacheEntry *entry = frame_cache_find_by_tstate(self, prefetch.tstate_addr);
+            if (entry && entry->num_addrs > 0) {
+                prefetch.frame_addr = entry->addrs[0];
+            }
+        }
+
+        if (read_interp_state_and_maybe_thread_frame(
+                self,
                 current_interpreter,
-                INTERP_STATE_BUFFER_SIZE,
-                interp_state_buffer) < 0) {
+                interp_state_buffer,
+                prefetched_tstate,
+                prefetched_frame,
+                &prefetch) < 0) {
             set_exception_cause(self, PyExc_RuntimeError, "Failed to read interpreter state buffer");
             Py_CLEAR(result);
             goto exit;
         }
+        refresh_generation_caches_from_interp_state(self, current_interpreter, interp_state_buffer);
 
         uintptr_t gc_frame = 0;
         if (self->gc) {
@@ -556,25 +744,6 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
 
         int64_t interpreter_id = GET_MEMBER(int64_t, interp_state_buffer,
                 self->debug_offsets.interpreter_state.id);
-
-        // Get code object generation from buffer
-        uint64_t code_object_generation = GET_MEMBER(uint64_t, interp_state_buffer,
-                self->debug_offsets.interpreter_state.code_object_generation);
-
-        if (code_object_generation != self->code_object_generation) {
-            self->code_object_generation = code_object_generation;
-            _Py_hashtable_clear(self->code_object_cache);
-        }
-
-#ifdef Py_GIL_DISABLED
-        // Check TLBC generation and invalidate cache if needed
-        uint32_t current_tlbc_generation = GET_MEMBER(uint32_t, interp_state_buffer,
-                                                      self->debug_offsets.interpreter_state.tlbc_generation);
-        if (current_tlbc_generation != self->tlbc_generation) {
-            self->tlbc_generation = current_tlbc_generation;
-            _Py_hashtable_clear(self->tlbc_cache);
-        }
-#endif
 
         // Create a list to hold threads for this interpreter
         PyObject *interpreter_threads = PyList_New(0);
@@ -611,6 +780,9 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
             // Target specific thread (only process first interpreter)
             current_tstate = self->tstate_addr;
         }
+        if (current_tstate != 0 && self->cache_frames) {
+            set_cached_tstate_for_interpreter(self, current_interpreter, current_tstate);
+        }
 
         // Acquire main thread state information
         uintptr_t main_thread_tstate = GET_MEMBER(uintptr_t, interp_state_buffer,
@@ -621,7 +793,8 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
             PyObject* frame_info = unwind_stack_for_thread(self, &current_tstate,
                                                            gil_holder_tstate,
                                                            gc_frame,
-                                                           main_thread_tstate);
+                                                           main_thread_tstate,
+                                                           &prefetch);
             if (!frame_info) {
                 // Check if this was an intentional skip due to mode-based filtering
                 if ((self->mode == PROFILING_MODE_CPU || self->mode == PROFILING_MODE_GIL ||
@@ -771,6 +944,9 @@ _remote_debugging_RemoteUnwinder_get_all_awaited_by_impl(RemoteUnwinderObject *s
     if (ensure_async_debug_offsets(self) < 0) {
         return NULL;
     }
+    if (refresh_generation_caches_for_interpreter(self, self->interpreter_addr) < 0) {
+        return NULL;
+    }
 
     PyObject *result = PyList_New(0);
     if (result == NULL) {
@@ -860,6 +1036,9 @@ _remote_debugging_RemoteUnwinder_get_async_stack_trace_impl(RemoteUnwinderObject
     if (ensure_async_debug_offsets(self) < 0) {
         return NULL;
     }
+    if (refresh_generation_caches_for_interpreter(self, self->interpreter_addr) < 0) {
+        return NULL;
+    }
 
     PyObject *result = PyList_New(0);
     if (result == NULL) {
@@ -904,8 +1083,15 @@ Returns:
         - code_object_cache_hits: Code object cache hits
         - code_object_cache_misses: Code object cache misses
         - stale_cache_invalidations: Times stale cache entries were cleared
+        - batched_read_attempts: Batched remote-read attempts
+        - batched_read_successes: Attempts that read all requested segments
+        - batched_read_misses: Attempts that fell back or partially read
+        - batched_read_segments_requested: Segments requested by batched reads
+        - batched_read_segments_completed: Segments completed by batched reads
         - frame_cache_hit_rate: Percentage of samples that hit the cache
         - code_object_cache_hit_rate: Percentage of code object lookups that hit cache
+        - batched_read_success_rate: Percentage of batched reads that completed all segments
+        - batched_read_segment_completion_rate: Percentage of requested segments read by batched reads
 
 Raises:
     RuntimeError: If stats collection was not enabled (stats=False)
@@ -913,7 +1099,7 @@ Raises:
 
 static PyObject *
 _remote_debugging_RemoteUnwinder_get_stats_impl(RemoteUnwinderObject *self)
-/*[clinic end generated code: output=21e36477122be2a0 input=75fef4134c12a8c9]*/
+/*[clinic end generated code: output=21e36477122be2a0 input=0392d62b278e9c35]*/
 {
     if (!self->collect_stats) {
         PyErr_SetString(PyExc_RuntimeError,
@@ -948,8 +1134,23 @@ _remote_debugging_RemoteUnwinder_get_stats_impl(RemoteUnwinderObject *self)
     ADD_STAT(code_object_cache_hits);
     ADD_STAT(code_object_cache_misses);
     ADD_STAT(stale_cache_invalidations);
+    ADD_STAT(batched_read_attempts);
+    ADD_STAT(batched_read_successes);
+    ADD_STAT(batched_read_misses);
+    ADD_STAT(batched_read_segments_requested);
+    ADD_STAT(batched_read_segments_completed);
 
 #undef ADD_STAT
+
+#define ADD_DERIVED_STAT(name, value) do { \
+    PyObject *val = PyFloat_FromDouble(value); \
+    if (!val || PyDict_SetItemString(result, name, val) < 0) { \
+        Py_XDECREF(val); \
+        Py_DECREF(result); \
+        return NULL; \
+    } \
+    Py_DECREF(val); \
+} while(0)
 
     // Calculate and add derived statistics
     // Hit rate is calculated as (hits + partial_hits) / total_cache_lookups
@@ -959,26 +1160,33 @@ _remote_debugging_RemoteUnwinder_get_stats_impl(RemoteUnwinderObject *self)
         frame_cache_hit_rate = 100.0 * (double)(self->stats.frame_cache_hits + self->stats.frame_cache_partial_hits)
                                / (double)total_cache_lookups;
     }
-    PyObject *hit_rate = PyFloat_FromDouble(frame_cache_hit_rate);
-    if (!hit_rate || PyDict_SetItemString(result, "frame_cache_hit_rate", hit_rate) < 0) {
-        Py_XDECREF(hit_rate);
-        Py_DECREF(result);
-        return NULL;
-    }
-    Py_DECREF(hit_rate);
+    ADD_DERIVED_STAT("frame_cache_hit_rate", frame_cache_hit_rate);
 
     double code_object_hit_rate = 0.0;
     uint64_t total_code_lookups = self->stats.code_object_cache_hits + self->stats.code_object_cache_misses;
     if (total_code_lookups > 0) {
         code_object_hit_rate = 100.0 * (double)self->stats.code_object_cache_hits / (double)total_code_lookups;
     }
-    PyObject *code_hit_rate = PyFloat_FromDouble(code_object_hit_rate);
-    if (!code_hit_rate || PyDict_SetItemString(result, "code_object_cache_hit_rate", code_hit_rate) < 0) {
-        Py_XDECREF(code_hit_rate);
-        Py_DECREF(result);
-        return NULL;
+    ADD_DERIVED_STAT("code_object_cache_hit_rate", code_object_hit_rate);
+
+    double batched_read_success_rate = 0.0;
+    if (self->stats.batched_read_attempts > 0) {
+        batched_read_success_rate =
+            100.0 * (double)self->stats.batched_read_successes
+            / (double)self->stats.batched_read_attempts;
     }
-    Py_DECREF(code_hit_rate);
+    ADD_DERIVED_STAT("batched_read_success_rate", batched_read_success_rate);
+
+    double batched_read_segment_completion_rate = 0.0;
+    if (self->stats.batched_read_segments_requested > 0) {
+        batched_read_segment_completion_rate =
+            100.0 * (double)self->stats.batched_read_segments_completed
+            / (double)self->stats.batched_read_segments_requested;
+    }
+    ADD_DERIVED_STAT("batched_read_segment_completion_rate",
+                     batched_read_segment_completion_rate);
+
+#undef ADD_DERIVED_STAT
 
     return result;
 }
@@ -1476,7 +1684,7 @@ class _remote_debugging.BinaryWriter "BinaryWriterObject *" "&PyBinaryWriter_Typ
 /*[clinic input]
 @permit_long_docstring_body
 _remote_debugging.BinaryWriter.__init__
-    filename: str
+    filename: object
     sample_interval_us: unsigned_long_long
     start_time_us: unsigned_long_long
     *
@@ -1495,11 +1703,11 @@ Use as a context manager or call finalize() when done.
 
 static int
 _remote_debugging_BinaryWriter___init___impl(BinaryWriterObject *self,
-                                             const char *filename,
+                                             PyObject *filename,
                                              unsigned long long sample_interval_us,
                                              unsigned long long start_time_us,
                                              int compression)
-/*[clinic end generated code: output=014c0306f1bacf4b input=3bdf01c1cc2f5a1d]*/
+/*[clinic end generated code: output=00446656ea2e5986 input=b92f0c77ba4cd274]*/
 {
     if (self->writer) {
         binary_writer_destroy(self->writer);
@@ -1742,7 +1950,7 @@ class _remote_debugging.BinaryReader "BinaryReaderObject *" "&PyBinaryReader_Typ
 
 /*[clinic input]
 _remote_debugging.BinaryReader.__init__
-    filename: str
+    filename: object
 
 High-performance binary reader for profiling data.
 
@@ -1754,8 +1962,8 @@ Use as a context manager or call close() when done.
 
 static int
 _remote_debugging_BinaryReader___init___impl(BinaryReaderObject *self,
-                                             const char *filename)
-/*[clinic end generated code: output=9699226f7ae052bb input=4201f9cc500ef2f6]*/
+                                             PyObject *filename)
+/*[clinic end generated code: output=f04b33ee5c5e6dbf input=9d7cbe8b4f1a97c9]*/
 {
     if (self->reader) {
         binary_reader_close(self->reader);

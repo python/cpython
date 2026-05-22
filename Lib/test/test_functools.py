@@ -1134,6 +1134,14 @@ class TestReduce:
         self.assertRaises(TypeError, self.reduce, add, [0, 1], initial="")
         self.assertEqual(self.reduce(42, "", initial="1"), "1") # func is never called with one item
 
+    def test_reduce_with_kwargs(self):
+        with self.assertRaises(TypeError):
+            self.reduce(function=lambda x, y: (x or 1) + y, sequence=[1, 2, 3, 4, 5])
+        with self.assertRaises(TypeError):
+            self.reduce(function=lambda x, y: x + y, sequence=[1, 2, 3, 4, 5], initial=1)
+        with self.assertRaises(TypeError):
+            self.reduce(lambda x, y: x + y, sequence=[1, 2, 3, 4, 5], initial=1)
+
 
 @unittest.skipUnless(c_functools, 'requires the C _functools module')
 class TestReduceC(TestReduce, unittest.TestCase):
@@ -1143,12 +1151,6 @@ class TestReduceC(TestReduce, unittest.TestCase):
 
 class TestReducePy(TestReduce, unittest.TestCase):
     reduce = staticmethod(py_functools.reduce)
-
-    def test_reduce_with_kwargs(self):
-        with self.assertWarns(DeprecationWarning):
-            self.reduce(function=lambda x, y: x + y, sequence=[1, 2, 3, 4, 5], initial=1)
-        with self.assertWarns(DeprecationWarning):
-            self.reduce(lambda x, y: x + y, sequence=[1, 2, 3, 4, 5], initial=1)
 
 
 class TestCmpToKey:

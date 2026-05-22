@@ -96,7 +96,7 @@ or tab) are executed with :func:`exec`.
    The :file:`.pth` files are now decoded by UTF-8 at first and then by the
    :term:`locale encoding` if it fails.
 
-.. versionchanged:: next
+.. versionchanged:: 3.15
 
    :file:`.pth` file lines starting with ``import`` are deprecated.  During
    the deprecation period, such lines are still executed (except in the case
@@ -110,7 +110,7 @@ or tab) are executed with :func:`exec`.
    file.  Each error is reported and the remaining lines continue to be
    processed.
 
-.. deprecated-removed:: next 3.20
+.. deprecated-removed:: 3.15 3.20
 
    Decoding :file:`{name}.pth` files in any encoding other than ``utf-8-sig``
    is deprecated in Python 3.15, and support for decoding from the locale
@@ -126,7 +126,7 @@ or tab) are executed with :func:`exec`.
 Startup entry points (:file:`.start` files)
 -------------------------------------------
 
-.. versionadded:: next
+.. versionadded:: 3.15
 
 A startup entry point file is a file whose name has the form
 :file:`{name}.start` and exists in one of the site-packages directories
@@ -371,7 +371,7 @@ Module contents
    startup data found in those files, so that you can process them explicitly
    (this is typically used by the :func:`main` function).
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
 
       Also processes :file:`.start` files.  See :ref:`site-start-files`.
       All :file:`.pth` and :file:`.start` files are now read and
