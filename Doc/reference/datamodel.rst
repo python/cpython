@@ -1073,9 +1073,8 @@ this approach.
 
 .. attribute:: module.__file__
 
-   :attr:`!__file__` is an optional attribute that
-   may or may not be set. Both attributes should be a :class:`str` when they
-   are available.
+   :attr:`!__file__` is an optional attribute that may or may not be set.
+   When it is set, it should be a :class:`str`.
 
    An optional attribute, :attr:`!__file__` indicates the pathname of the file
    from which the module was loaded (if loaded from a file), or the pathname of
@@ -1084,6 +1083,9 @@ this approach.
    modules that are statically linked into the interpreter, and the
    :ref:`import system <importsystem>` may opt to leave it unset if it
    has no semantic meaning (for example, a module loaded from a database).
+   For modules loaded from a file by the import system, it is usually an
+   absolute path. However, other loaders may set it to a different value, so
+   code that needs an absolute path should normalize it explicitly.
 
    .. deprecated-removed:: 3.13 3.15
       Setting ``__cached__`` on a module while failing to set
