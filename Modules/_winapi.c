@@ -3114,12 +3114,11 @@ _winapi_GetProcessMemoryInfo_impl(PyObject *module, HANDLE handle)
     do { \
         PyObject *obj = PyLong_FromSize_t(pmc.ATTR); \
         if (obj == NULL) { \
-            Py_DECREF(result); \
-            return NULL; \
+            goto error; \
         } \
         if (PyDict_SetItemString(result, #ATTR, obj) < 0) { \
             Py_DECREF(obj); \
-            return NULL; \
+            goto error; \
         } \
         Py_DECREF(obj); \
     } while (0)
@@ -3135,6 +3134,10 @@ _winapi_GetProcessMemoryInfo_impl(PyObject *module, HANDLE handle)
     ADD(PeakPagefileUsage);
 
     return result;
+
+error:
+    Py_DECREF(result);
+    return NULL;
 }
 
 
