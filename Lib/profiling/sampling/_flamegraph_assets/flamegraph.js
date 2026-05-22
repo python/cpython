@@ -7,6 +7,7 @@ let invertedData = null;
 let currentThreadFilter = 'all';
 let isInverted = false;
 let useModuleNames = true;
+let zoomedNodeValue = null;
 
 // Heat colors are now defined in CSS variables (--heat-1 through --heat-8)
 // and automatically switch with theme changes - no JS color arrays needed!
@@ -316,6 +317,7 @@ function createPythonTooltip(data) {
     const selfSamples = d.data.self || 0;
     const selfMs = (selfSamples / 1000).toFixed(2);
     const percentage = ((d.data.value / data.value) * 100).toFixed(2);
+    const relativePercentage = Math.max(100, ((d.data.value / (zoomedNodeValue ?? data.value)) * 100)).toFixed(2);
     const calls = d.data.calls || 0;
     const childCount = d.children ? d.children.length : 0;
     const source = d.data.source;
@@ -438,6 +440,11 @@ function createPythonTooltip(data) {
 
         <span class="tooltip-stat-label">Percentage:</span>
         <span class="tooltip-stat-value accent">${percentage}%</span>
+
+        ${relativePercentage !== percentage && relativePercentage !== "100.00" ? `
+          <span class="tooltip-stat-label">% of Selection:</span>
+          <span class="tooltip-stat-value accent">${relativePercentage}%</span>
+        ` : ''}
 
         ${calls > 0 ? `
           <span class="tooltip-stat-label">Function Calls:</span>
@@ -620,6 +627,9 @@ function createFlamegraph(tooltip, rootValue, data) {
       const percentage = d.data.value / rootValue;
       const level = getHeatLevel(percentage);
       return heatColors[level];
+    })
+    .onClick(function (d) {
+      zoomedNodeValue = d.data.value;
     });
 
   return chart;
@@ -1269,6 +1279,7 @@ function filterDataByThread(data, threadId) {
 
 function resetZoom() {
   if (window.flamegraphChart) {
+    zoomedNodeValue = null;
     window.flamegraphChart.resetZoom();
   }
 }
