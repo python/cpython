@@ -43,8 +43,10 @@ The module defines the following items:
    The *compresslevel* argument is an integer from 0 to 9, as for the
    :class:`GzipFile` constructor.
 
+   The keyword-only argument *mtime* represents a Unix timestamp.
+
    For binary mode, this function is equivalent to the :class:`GzipFile`
-   constructor: ``GzipFile(filename, mode, compresslevel)``. In this case, the
+   constructor: ``GzipFile(filename, mode, compresslevel, mtime)``. In this case, the
    *encoding*, *errors* and *newline* arguments must not be provided.
 
    For text mode, a :class:`GzipFile` object is created, and wrapped in an
@@ -65,6 +67,10 @@ The module defines the following items:
       The default compression level was reduced to 6 (down from 9).
       It is the default level used by most compression tools and a better
       tradeoff between speed and performance.
+
+   .. versionchanged:: 3.16
+      Added keyword-only argument *mtime* which is passed to the class
+      constructor of :class:`~gzip.GzipFile`.
 
 .. exception:: BadGzipFile
 
