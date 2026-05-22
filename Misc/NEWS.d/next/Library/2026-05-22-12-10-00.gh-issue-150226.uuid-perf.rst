@@ -1,0 +1,1 @@
+Speed up construction of :class:`uuid.UUID` from documented string formats.

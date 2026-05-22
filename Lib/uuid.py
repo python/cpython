@@ -213,8 +213,12 @@ class UUID:
         if int is not None:
             pass
         elif hex is not None:
-            hex = hex.replace('urn:', '').replace('uuid:', '')
+            original_hex = hex
+            hex = hex.removeprefix('urn:uuid:')
             hex = hex.strip('{}').replace('-', '')
+            if len(hex) != 32:
+                hex = original_hex.replace('urn:', '').replace('uuid:', '')
+                hex = hex.strip('{}').replace('-', '')
             if len(hex) != 32:
                 raise ValueError('badly formed hexadecimal UUID string')
             int = int_(hex, 16)
