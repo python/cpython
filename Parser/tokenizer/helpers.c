@@ -221,6 +221,7 @@ _PyTokenizer_translate_newlines(const char *s, int exec_input, int preserve_crlf
     buf = PyMem_Malloc(needed_length);
     if (buf == NULL) {
         tok->done = E_NOMEM;
+        PyErr_NoMemory();
         return NULL;
     }
     for (current = buf; *s; s++, current++) {
