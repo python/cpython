@@ -412,6 +412,9 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
                             self);
     }
     item = _unpack_args(item);
+    if (item == NULL) {
+        return NULL;
+    }
     for (Py_ssize_t i = 0; i < nparams; i++) {
         PyObject *param = PyTuple_GET_ITEM(parameters, i);
         PyObject *prepare, *tmp;

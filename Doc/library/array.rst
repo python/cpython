@@ -12,7 +12,7 @@ This module defines an object type which can compactly represent an array of
 basic values: characters, integers, floating-point numbers, complex numbers.  Arrays are mutable :term:`sequence`
 types and behave very much like lists, except that the type of objects stored in
 them is constrained.  The type is specified at object creation time by using a
-:dfn:`type code`, which is a single character.  The following type codes are
+:dfn:`type code`.  The following type codes are
 defined:
 
 +-----------+--------------------+-------------------+-----------------------+-------+
@@ -91,7 +91,7 @@ Notes:
 .. seealso::
 
    The :ref:`ctypes <ctypes-fundamental-data-types>` and
-   :ref:`struct <format-characters>` modules,
+   :ref:`struct <type-codes>` modules,
    as well as third-party modules like `numpy <https://numpy.org/doc/stable/reference/arrays.interface.html#object.__array_interface__>`__,
    use similar -- but slightly different -- type codes.
 

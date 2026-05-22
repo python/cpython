@@ -268,7 +268,10 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         def f_set():
             return set(2*x for x in [1,2,3])
 
-        funcs = [f_all, f_any, f_tuple, f_list, f_set]
+        def f_frozenset():
+            return frozenset(2*x for x in [1,2,3])
+
+        funcs = [f_all, f_any, f_tuple, f_list, f_set, f_frozenset]
 
         for f in funcs:
             # check that generator code object is not duplicated
@@ -278,35 +281,37 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
         # check the overriding the builtins works
 
-        global all, any, tuple, list, set
-        saved = all, any, tuple, list, set
+        global all, any, tuple, list, set, frozenset
+        saved = all, any, tuple, list, set, frozenset
         try:
             all = lambda x : "all"
             any = lambda x : "any"
             tuple = lambda x : "tuple"
             list = lambda x : "list"
             set = lambda x : "set"
+            frozenset = lambda x : "frozenset"
 
             overridden_outputs = [f() for f in funcs]
         finally:
-            all, any, tuple, list, set = saved
+            all, any, tuple, list, set, frozenset = saved
 
-        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple', 'list', 'set'])
+        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple', 'list', 'set', 'frozenset'])
         # Now repeat, overriding the builtins module as well
-        saved = all, any, tuple, list, set
+        saved = all, any, tuple, list, set, frozenset
         try:
             builtins.all = all = lambda x : "all"
             builtins.any = any = lambda x : "any"
             builtins.tuple = tuple = lambda x : "tuple"
             builtins.list = list = lambda x : "list"
             builtins.set = set = lambda x : "set"
+            builtins.frozenset = frozenset = lambda x : "frozenset"
 
             overridden_outputs = [f() for f in funcs]
         finally:
-            all, any, tuple, list, set = saved
-            builtins.all, builtins.any, builtins.tuple, builtins.list, builtins.set = saved
+            all, any, tuple, list, set, frozenset = saved
+            builtins.all, builtins.any, builtins.tuple, builtins.list, builtins.set, builtins.frozenset = saved
 
-        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple', 'list', 'set'])
+        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple', 'list', 'set', 'frozenset'])
 
     def test_builtin_call_async_genexpr_no_crash(self):
         async def f_all():
@@ -1956,16 +1961,33 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         with self.assertRaises(TypeError):
             class SubSentinel(sentinel):
                 pass
+
+    def test_sentinel_attributes(self):
+        missing = sentinel("MISSING")
         with self.assertRaises(TypeError):
             sentinel.attribute = "value"
         with self.assertRaises(AttributeError):
-            missing.__name__ = "CHANGED"
+            missing.attribute = "value"
         with self.assertRaises(AttributeError):
-            missing.__module__ = "changed"
+            missing.__name__ = "CHANGED"
+        missing.__module__ = "changed"
+        self.assertEqual(missing.__module__, "changed")
         with self.assertRaises(AttributeError):
             del missing.__name__
+        del missing.__module__
         with self.assertRaises(AttributeError):
-            del missing.__module__
+            missing.__module__
+
+    def test_sentinel_repr(self):
+        with_repr = sentinel("WITH_REPR", repr="custom")
+        without_repr = sentinel("WITHOUT_REPR", repr=None)
+        self.assertEqual(repr(with_repr), "custom")
+        self.assertEqual(repr(without_repr), "WITHOUT_REPR")
+        self.assertEqual(str(with_repr), "custom")
+        self.assertEqual(str(without_repr), "WITHOUT_REPR")
+
+        with self.assertRaisesRegex(TypeError, "repr.*str or None"):
+            sentinel("BAD_REPR", repr=42)
 
     def test_sentinel_pickle(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):

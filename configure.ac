@@ -1137,10 +1137,10 @@ preset_cxx="$CXX"
 if test -z "$CXX"
 then
         case "$ac_cv_cc_name" in
-        gcc)    AC_PATH_TOOL([CXX], [g++], [g++], [notfound]) ;;
-        cc)     AC_PATH_TOOL([CXX], [c++], [c++], [notfound]) ;;
-        clang)             AC_PATH_TOOL([CXX], [clang++], [clang++], [notfound]) ;;
-        icc)               AC_PATH_TOOL([CXX], [icpc], [icpc], [notfound]) ;;
+        gcc)    AC_PATH_TOOL([CXX], [g++], [notfound]) ;;
+        cc)     AC_PATH_TOOL([CXX], [c++], [notfound]) ;;
+        clang)             AC_PATH_TOOL([CXX], [clang++], [notfound]) ;;
+        icc)               AC_PATH_TOOL([CXX], [icpc], [notfound]) ;;
         esac
 	if test "$CXX" = "notfound"
 	then
@@ -1591,7 +1591,7 @@ if test $enable_shared = "yes"; then
     CYGWIN*)
       LDLIBRARY='libpython$(LDVERSION).dll.a'
       BLDLIBRARY='-L. -lpython$(LDVERSION)'
-      DLLLIBRARY='libpython$(LDVERSION).dll'
+      DLLLIBRARY='cygpython$(LDVERSION).dll'
       ;;
     SunOS*)
       LDLIBRARY='libpython$(LDVERSION).so'
@@ -2461,6 +2461,54 @@ AS_CASE([$ac_sys_system],
     AS_VAR_APPEND([LDFLAGS_NODIST], [" -z stack-size=16777216 -Wl,--stack-first -Wl,--initial-memory=41943040"])
   ]
 )
+
+dnl On Linux, check the thread stack size. musl (ex: Alpine Linux) uses
+dnl a default thread stack size of 128 kB, whereas the glibc uses 8 MiB.
+dnl Python needs at least 1 MiB.
+if test "$ac_sys_system" = "Linux" -a "$cross_compiling" = no; then
+    AC_CACHE_CHECK([for thread stack size], [ac_cv_thread_stack_size], [
+    cat > conftest.c <<EOF
+#include <pthread.h>
+
+int main()
+{
+    pthread_attr_t attrs;
+    size_t size;
+
+    int rc = pthread_attr_init(&attrs);
+    if (rc != 0) {
+        return 2;
+    }
+
+    rc = pthread_attr_getstacksize(&attrs, &size);
+    if (rc != 0) {
+        return 2;
+    }
+
+    if (size < 1024 * 1024) {
+        return 1;
+    }
+    return 0;
+}
+EOF
+
+    ac_cv_thread_stack_size=unknown
+    if $CC -pthread $CFLAGS conftest.c -o conftest &>/dev/null; then
+        ./conftest &>/dev/null
+        exitcode=$?
+        if test $exitcode -eq 1; then
+            ac_cv_thread_stack_size=1048576
+        elif test $exitcode -eq 0; then
+            ac_cv_thread_stack_size="default"
+        fi
+    fi
+    rm -f conftest.c conftest
+    ])
+
+    if test "$ac_cv_thread_stack_size" != "default" -a "$ac_cv_thread_stack_size" != "unknown"; then
+        LDFLAGS="$LDFLAGS -Wl,-z,stack-size=$ac_cv_thread_stack_size"
+    fi
+fi
 
 AS_CASE([$enable_wasm_dynamic_linking],
   [yes], [ac_cv_func_dlopen=yes],
@@ -3863,7 +3911,7 @@ __deregister_frame(0);
     [ac_cv_have_libgcc_eh_frame_registration=no])
   ])
 AS_VAR_IF([ac_cv_have_libgcc_eh_frame_registration], [yes], [
-  AC_DEFINE([HAVE_LIBGCC_EH_FRAME_REGISTRATION], [1],
+  AC_DEFINE([_Py_HAVE_LIBGCC_EH_FRAME_REGISTRATION], [1],
     [Define to 1 if libgcc __register_frame and __deregister_frame are linkable.])
 ])
 
@@ -4310,35 +4358,9 @@ if test "$ac_cv_ffi_complex_double_supported" = "yes"; then
               [Defined if _Complex C type can be used with libffi.])
 fi
 
-# Check for use of the system libmpdec library
-AC_MSG_CHECKING([for --with-system-libmpdec])
-AC_DEFUN([USE_BUNDLED_LIBMPDEC],
-         [LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
-          LIBMPDEC_LIBS="-lm \$(LIBMPDEC_A)"
-          LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"
-          have_mpdec=yes
-          with_system_libmpdec=no])
-AC_ARG_WITH(
-  [system_libmpdec],
-  [AS_HELP_STRING(
-    [--with-system-libmpdec],
-    [build _decimal module using an installed mpdecimal library, see Doc/library/decimal.rst (default is yes)]
-  )],
-  [AS_IF([test "x$with_system_libmpdec" = xno],
-         [USE_BUNDLED_LIBMPDEC()])],
-  [with_system_libmpdec="yes"])
-AC_MSG_RESULT([$with_system_libmpdec])
-
-AS_VAR_IF(
-  [with_system_libmpdec], [yes],
-  [PKG_CHECK_MODULES(
-    [LIBMPDEC], [libmpdec >= 2.5.0], [],
-    [LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
-     LIBMPDEC_LIBS=${LIBMPDEC_LIBS-"-lmpdec -lm"}
-     LIBMPDEC_INTERNAL=])])
-
-AS_VAR_IF([with_system_libmpdec], [yes],
-  [WITH_SAVE_ENV([
+dnl Check for libmpdec >= 2.5.0
+PKG_CHECK_MODULES([LIBMPDEC], [libmpdec >= 2.5.0], [have_mpdec=yes], [
+  WITH_SAVE_ENV([
     CPPFLAGS="$CPPFLAGS $LIBMPDEC_CFLAGS"
     LIBS="$LIBS $LIBMPDEC_LIBS"
 
@@ -4351,7 +4373,13 @@ AS_VAR_IF([with_system_libmpdec], [yes],
       ], [const char *x = mpd_version();])],
       [have_mpdec=yes],
       [have_mpdec=no])
-  ])])
+
+    AS_VAR_IF([have_mpdec], [yes], [
+     LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
+     LIBMPDEC_LIBS=${LIBMPDEC_LIBS-"-lmpdec -lm"}
+    ])
+  ])
+])
 
 # Disable forced inlining in debug builds, see GH-94847
 AS_VAR_IF(
@@ -4376,70 +4404,6 @@ then
 fi
 
 AC_MSG_RESULT([$with_decimal_contextvar])
-
-AS_VAR_IF(
-  [with_system_libmpdec], [no],
-  [# Check for libmpdec machine flavor
-   AC_MSG_CHECKING([for decimal libmpdec machine])
-   AS_CASE([$ac_sys_system],
-     [Darwin*], [libmpdec_system=Darwin],
-     [SunOS*], [libmpdec_system=sunos],
-     [libmpdec_system=other]
-   )
-
-   libmpdec_machine=unknown
-   if test "$libmpdec_system" = Darwin; then
-       # universal here means: build libmpdec with the same arch options
-       # the python interpreter was built with
-       libmpdec_machine=universal
-   elif test $ac_cv_sizeof_size_t -eq 8; then
-       if test "$ac_cv_gcc_asm_for_x64" = yes; then
-           libmpdec_machine=x64
-       elif test "$ac_cv_type___uint128_t" = yes; then
-           libmpdec_machine=uint128
-       else
-           libmpdec_machine=ansi64
-       fi
-   elif test $ac_cv_sizeof_size_t -eq 4; then
-       if test "$ac_cv_gcc_asm_for_x87" = yes -a "$libmpdec_system" != sunos; then
-           AS_CASE([$ac_cv_cc_name],
-               [*gcc*],   [libmpdec_machine=ppro],
-               [*clang*], [libmpdec_machine=ppro],
-               [libmpdec_machine=ansi32]
-           )
-       else
-           libmpdec_machine=ansi32
-       fi
-   fi
-   AC_MSG_RESULT([$libmpdec_machine])
-
-   AS_CASE([$libmpdec_machine],
-     [x64],         [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_64=1 -DASM=1"])],
-     [uint128],     [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_64=1 -DANSI=1 -DHAVE_UINT128_T=1"])],
-     [ansi64],      [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_64=1 -DANSI=1"])],
-     [ppro],        [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_32=1 -DANSI=1 -DASM=1 -Wno-unknown-pragmas"])],
-     [ansi32],      [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_32=1 -DANSI=1"])],
-     [ansi-legacy], [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_32=1 -DANSI=1 -DLEGACY_COMPILER=1"])],
-     [universal],   [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DUNIVERSAL=1"])],
-     [AC_MSG_ERROR([_decimal: unsupported architecture])]
-   )])
-
-if test "$have_ipa_pure_const_bug" = yes; then
-    # Some versions of gcc miscompile inline asm:
-    # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
-    # https://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
-    AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -fno-ipa-pure-const"])
-fi
-
-if test "$have_glibc_memmove_bug" = yes; then
-    # _FORTIFY_SOURCE wrappers for memmove and bcopy are incorrect:
-    # https://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
-    AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -U_FORTIFY_SOURCE"])
-fi
-
-AC_SUBST([LIBMPDEC_CFLAGS])
-AC_SUBST([LIBMPDEC_INTERNAL])
-
 
 dnl detect sqlite3 from Emscripten emport
 PY_CHECK_EMSCRIPTEN_PORT([LIBSQLITE3], [-sUSE_SQLITE3])
@@ -5163,7 +5127,7 @@ AC_LINK_IFELSE([
 ])
 
 AS_VAR_IF([ac_cv_efficient_builtin_shufflevector], [yes], [
-    AC_DEFINE([HAVE_EFFICIENT_BUILTIN_SHUFFLEVECTOR], [1],
+    AC_DEFINE([_Py_HAVE_EFFICIENT_BUILTIN_SHUFFLEVECTOR], [1],
               [Define if compiler supports __builtin_shufflevector with 128-bit
                vectors AND the target architecture has native SIMD (not just API
                availability)])
@@ -5788,7 +5752,7 @@ AC_CHECK_DECLS([UT_NAMESIZE],
 # musl libc redefines struct prctl_mm_map and conflicts with linux/prctl.h
 AS_IF([test "$ac_cv_libc" != musl], [
 AC_CHECK_DECLS([PR_SET_VMA_ANON_NAME],
-              [AC_DEFINE([HAVE_PR_SET_VMA_ANON_NAME], [1],
+              [AC_DEFINE([_Py_HAVE_PR_SET_VMA_ANON_NAME], [1],
                          [Define if you have the 'PR_SET_VMA_ANON_NAME' constant.])],
               [],
               [@%:@include <linux/prctl.h>
@@ -7394,7 +7358,6 @@ SRCDIRS="\
   Modules \
   Modules/_ctypes \
   Modules/_decimal \
-  Modules/_decimal/libmpdec \
   Modules/_hacl \
   Modules/_io \
   Modules/_multiprocessing \
@@ -7935,6 +7898,7 @@ case "$ac_sys_system" in
   iOS) _PYTHREAD_NAME_MAXLEN=63;;
   FreeBSD*) _PYTHREAD_NAME_MAXLEN=19;; # gh-131268
   OpenBSD*) _PYTHREAD_NAME_MAXLEN=23;; # gh-131268
+  CYGWIN*) _PYTHREAD_NAME_MAXLEN=16;;
   *) _PYTHREAD_NAME_MAXLEN=;;
 esac
 if test -n "$_PYTHREAD_NAME_MAXLEN"; then
@@ -8047,6 +8011,7 @@ AS_CASE([$ac_sys_system],
       [termios],
       [xxlimited],
       [xxlimited_35],
+      [xxlimited_3_13],
     )
   ],
   [PY_STDLIB_MOD_SET_NA([_scproxy])]
@@ -8368,11 +8333,7 @@ PY_STDLIB_MOD([_decimal],
   [], [test "$have_mpdec" = "yes"],
   [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LIBS])
 
-AS_VAR_IF([with_system_libmpdec], [no],
-          [AC_MSG_WARN([m4_normalize([
-     the bundled copy of libmpdec is scheduled for removal in Python 3.16;
-     consider using a system installed mpdecimal library.])])])
-AS_IF([test "$with_system_libmpdec" = "yes" && test "$have_mpdec" = "no"],
+AS_IF([test "$have_mpdec" = "no"],
       [AC_MSG_WARN([m4_normalize([
          no system libmpdec found; falling back to pure-Python version
          for the decimal module])])])
@@ -8438,6 +8399,7 @@ dnl Limited API template modules.
 dnl Emscripten does not support shared libraries yet.
 PY_STDLIB_MOD([xxlimited], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 PY_STDLIB_MOD([xxlimited_35], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
+PY_STDLIB_MOD([xxlimited_3_13], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 
 # Determine JIT stencils header files based on target platform
 JIT_STENCILS_H=""

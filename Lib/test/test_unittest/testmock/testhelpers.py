@@ -1162,7 +1162,9 @@ class TestCallList(unittest.TestCase):
         mock.foo.bar().baz('fish', cat='dog')
 
         expected = (
-            "[call(1, 2), call.foo(a=3), call.foo.bar(),"
+            "[call(1, 2),\n"
+            " call.foo(a=3),\n"
+            " call.foo.bar(),\n"
             " call.foo.bar().baz('fish', cat='dog')]"
         )
         self.assertEqual(str(mock.mock_calls), expected)

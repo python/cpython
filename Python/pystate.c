@@ -320,6 +320,7 @@ _Py_COMP_DIAG_POP
         &(runtime)->allocators.mutex, \
         &(runtime)->_main_interpreter.types.mutex, \
         &(runtime)->_main_interpreter.code_state.mutex, \
+        &(runtime)->_main_interpreter.dict_state.watcher_mutex, \
     }
 
 static void
@@ -633,7 +634,7 @@ init_interpreter(PyInterpreterState *interp,
     // Trace fitness configuration
     init_policy(&interp->opt_config.fitness_initial,
                 "PYTHON_JIT_FITNESS_INITIAL",
-                FITNESS_INITIAL, EXIT_QUALITY_CLOSE_LOOP, UOP_MAX_TRACE_LENGTH - 1);
+                FITNESS_INITIAL, EXIT_QUALITY_CLOSE_LOOP, FITNESS_INITIAL);
 
     interp->opt_config.specialization_enabled = !is_env_enabled("PYTHON_SPECIALIZATION_OFF");
     interp->opt_config.uops_optimize_enabled = !is_env_disabled("PYTHON_UOPS_OPTIMIZE");
