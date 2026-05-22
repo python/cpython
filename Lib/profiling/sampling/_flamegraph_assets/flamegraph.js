@@ -640,6 +640,7 @@ function renderFlamegraph(chart, data) {
   d3.select("#chart").datum(data).call(chart);
   window.flamegraphChart = chart;
   window.flamegraphData = data;
+  zoomedNodeValue = null;
   populateStats(data);
 }
 
