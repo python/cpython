@@ -13,6 +13,10 @@ import sysconfig
 import tempfile
 import textwrap
 from collections.abc import Callable
+try:
+    from _testcapi import get_process_memory_usage as _get_process_memory_usage
+except AttributeError:
+    _get_process_memory_usage = None
 
 from test import support
 from test.support import os_helper
@@ -756,8 +760,13 @@ def display_title(title):
 
 def get_process_memory_usage(pid: int) -> int | None:
     """
-    Read the private memory in bytes from /proc/pid/smaps.
+    Get process memory usage in bytes.
     """
+    if _get_process_memory_usage is not None:
+        return _get_process_memory_usage(pid)
+
+    # Linux implementation: read the private memory in bytes from
+    # /proc/pid/smaps.
     try:
         fp = open(f"/proc/{pid}/smaps", "rb")
     except OSError:

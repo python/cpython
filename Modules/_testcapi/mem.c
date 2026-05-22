@@ -1,5 +1,9 @@
 #include "parts.h"
 
+#ifdef MS_WINDOWS
+#  include <windows.h>
+#  include <psapi.h>              // GetProcessMemoryInfo()
+#endif
 #include <stddef.h>
 
 
@@ -684,6 +688,34 @@ error:
 }
 
 
+#ifdef MS_WINDOWS
+// Get process memory usage in bytes.
+static PyObject *
+get_process_memory_usage(PyObject *self, PyObject *args)
+{
+    int pid;
+    if (!PyArg_ParseTuple(args, "i", &pid)) {
+        return NULL;
+    }
+
+    HANDLE handle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, (DWORD)pid);
+    if (handle == NULL) {
+        return PyErr_SetFromWindowsErr(0);
+    }
+
+    PROCESS_MEMORY_COUNTERS pmc;
+    if (!GetProcessMemoryInfo(handle, &pmc, sizeof(pmc))) {
+        CloseHandle(handle);
+        return PyErr_SetFromWindowsErr(0);
+    }
+    CloseHandle(handle);
+
+    size_t size = (pmc.WorkingSetSize + pmc.PagefileUsage);
+    return PyLong_FromSize_t(size);
+}
+#endif
+
+
 static PyMethodDef test_methods[] = {
     {"pymem_api_misuse",              pymem_api_misuse,              METH_NOARGS},
     {"pymem_buffer_overflow",         pymem_buffer_overflow,         METH_NOARGS},
@@ -698,6 +730,9 @@ static PyMethodDef test_methods[] = {
     {"test_pymem_setrawallocators",   test_pymem_setrawallocators,   METH_NOARGS},
     {"test_pyobject_new",             test_pyobject_new,             METH_NOARGS},
     {"test_pyobject_setallocators",   test_pyobject_setallocators,   METH_NOARGS},
+#ifdef MS_WINDOWS
+    {"get_process_memory_usage",      get_process_memory_usage,      METH_VARARGS},
+#endif
 
     // Tracemalloc tests
     {"tracemalloc_track",             tracemalloc_track,             METH_VARARGS},
