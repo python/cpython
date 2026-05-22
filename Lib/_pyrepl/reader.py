@@ -38,12 +38,13 @@ from .content import (
 )
 from .layout import LayoutMap, LayoutResult, LayoutRow, WrappedRow, layout_content_lines
 from .render import RenderCell, RenderLine, RenderedScreen, ScreenOverlay
-from .utils import ANSI_ESCAPE_SEQUENCE, THEME, StyleRef, wlen, gen_colors
+from .utils import ANSI_ESCAPE_SEQUENCE, ColorSpan, THEME, StyleRef, wlen, gen_colors
 from .trace import trace
 
 
 # types
 Command = commands.Command
+from collections.abc import Callable, Iterator
 from .types import (
     Callback,
     CommandName,
@@ -304,6 +305,7 @@ class Reader:
     lxy: CursorXY = field(init=False)
     scheduled_commands: list[CommandName] = field(default_factory=list)
     can_colorize: bool = False
+    gen_colors: Callable[[str], Iterator[ColorSpan]] = gen_colors
     threading_hook: Callback | None = None
     invalidation: RefreshInvalidation = field(init=False)
 
@@ -534,7 +536,7 @@ class Reader:
         prompt_from_cache: bool,
     ) -> tuple[ContentLine, ...]:
         if self.can_colorize:
-            colors = list(gen_colors(self.get_unicode()))
+            colors = list(self.gen_colors(self.get_unicode()))
         else:
             colors = None
         trace("colors = {colors}", colors=colors)
