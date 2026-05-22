@@ -2335,7 +2335,7 @@ PyDoc_STRVAR(_winapi_GetProcessMemoryInfo__doc__,
 "GetProcessMemoryInfo($module, handle, /)\n"
 "--\n"
 "\n"
-"Return the memory usage of the given process handle.");
+"Return the memory usage of the given process handle as a dict.");
 
 #define _WINAPI_GETPROCESSMEMORYINFO_METHODDEF    \
     {"GetProcessMemoryInfo", (PyCFunction)_winapi_GetProcessMemoryInfo, METH_O, _winapi_GetProcessMemoryInfo__doc__},
@@ -2361,4 +2361,4 @@ exit:
 #ifndef _WINAPI_GETSHORTPATHNAME_METHODDEF
     #define _WINAPI_GETSHORTPATHNAME_METHODDEF
 #endif /* !defined(_WINAPI_GETSHORTPATHNAME_METHODDEF) */
-/*[clinic end generated code: output=1cd5bfa79a04faff input=a9049054013a1b77]*/
+/*[clinic end generated code: output=07dfd4bbacaed4a8 input=a9049054013a1b77]*/

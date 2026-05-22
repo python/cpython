@@ -3087,18 +3087,17 @@ _winapi_ReportEvent_impl(PyObject *module, HANDLE handle,
 }
 
 
-
 /*[clinic input]
 _winapi.GetProcessMemoryInfo
     handle: HANDLE
     /
 
-Return the memory usage of the given process handle.
+Return the memory usage of the given process handle as a dict.
 [clinic start generated code]*/
 
 static PyObject *
 _winapi_GetProcessMemoryInfo_impl(PyObject *module, HANDLE handle)
-/*[clinic end generated code: output=00a5d09732e84120 input=cfa669907cfbcecb]*/
+/*[clinic end generated code: output=00a5d09732e84120 input=5b90ad61cdc68d2a]*/
 {
     PROCESS_MEMORY_COUNTERS pmc;
     if (!GetProcessMemoryInfo(handle, &pmc, sizeof(pmc))) {
