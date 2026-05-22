@@ -453,7 +453,6 @@ class WorkerThread(threading.Thread):
                 break
 
     def get_mem_usage(self):
-        # Get "VmPeak" from /proc/<pid>/status
         popen = self._popen
         if popen is None:
             return

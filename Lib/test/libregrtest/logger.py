@@ -25,7 +25,7 @@ class Logger:
     def log(self, line: str = '') -> None:
         empty = not line
 
-        # add the peak memory usage: "mem: 1 GiB "
+        # Add the memory usage: "mem: 1 GiB "
         if self.get_mem_usage is not None:
             mem = self.get_mem_usage()
             if mem:
@@ -35,12 +35,12 @@ class Logger:
                 else:
                     line = f"mem: {mib:.1f} MiB {line}"
 
-        # add the system load prefix: "load avg: 1.80 "
+        # Add the system load prefix: "load avg: 1.80 "
         load_avg = self.get_load_avg()
         if load_avg is not None:
             line = f"load avg: {load_avg:.2f} {line}"
 
-        # add the timestamp prefix:  "0:01:05 "
+        # Add the timestamp prefix:  "0:01:05 "
         log_time = time.perf_counter() - self.start_time
 
         mins, secs = divmod(int(log_time), 60)

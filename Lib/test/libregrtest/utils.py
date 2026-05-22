@@ -755,6 +755,9 @@ def display_title(title):
 
 
 def get_process_memory_usage(pid: int) -> int | None:
+    """
+    Read the private memory in bytes from /proc/pid/smaps.
+    """
     try:
         fp = open(f"/proc/{pid}/smaps", "rb")
     except OSError:
