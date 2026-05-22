@@ -787,7 +787,7 @@ def _get_process_memory_usage_windows(pid: int) -> int | None:
     handle = _winapi.OpenProcess(_winapi.PROCESS_QUERY_LIMITED_INFORMATION,
                                  False, pid)
     try:
-       mem_info = _winapi.GetProcessMemoryInfo(handle)
+        mem_info = _winapi.GetProcessMemoryInfo(handle)
     finally:
         _winapi.CloseHandle(handle)
     return mem_info['WorkingSetSize']
