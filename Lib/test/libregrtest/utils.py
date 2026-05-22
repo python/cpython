@@ -14,9 +14,9 @@ import tempfile
 import textwrap
 from collections.abc import Callable
 try:
-    from _testcapi import get_process_memory_usage as _get_process_memory_usage
+    import _winapi
 except ImportError:
-    _get_process_memory_usage = None
+    _winapi = None
 
 from test import support
 from test.support import os_helper
@@ -758,13 +758,7 @@ def display_title(title):
     print(flush=True)
 
 
-def get_process_memory_usage(pid: int) -> int | None:
-    """
-    Get process memory usage in bytes.
-    """
-    if _get_process_memory_usage is not None:
-        return _get_process_memory_usage(pid)
-
+def _get_process_memory_usage_linux(pid: int) -> int | None:
     # Linux implementation: read the private memory in bytes from
     # /proc/pid/smaps.
     try:
@@ -783,4 +777,26 @@ def get_process_memory_usage(pid: int) -> int | None:
                     total += int(parts[1]) * 1024
         return total
     except ProcessLookupError:
+        return None
+
+
+def _get_process_memory_usage_windows(pid: int) -> int | None:
+    handle = _winapi.OpenProcess(_winapi.PROCESS_QUERY_LIMITED_INFORMATION,
+                                 False, pid)
+    try:
+       mem_info = _winapi.GetProcessMemoryInfo(handle)
+    finally:
+        _winapi.CloseHandle(handle)
+    return mem_info['WorkingSetSize']
+
+
+if _winapi is not None:
+    get_process_memory_usage = _get_process_memory_usage_windows
+elif sys.platform == 'linux':
+    get_process_memory_usage = _get_process_memory_usage_linux
+else:
+    def get_process_memory_usage(pid: int) -> int | None:
+        """
+        Get process memory usage in bytes.
+        """
         return None
