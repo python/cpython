@@ -2,6 +2,7 @@ from decimal import Decimal
 from fractions import Fraction
 import unittest
 from test import support
+from math.integer import isqrt_rem
 
 
 class IntSubclass(int):
@@ -248,6 +249,44 @@ class IntMathTests(unittest.TestCase):
         w = isqrt(v)
         self.assertEqual(w.bit_length(), size // 2 + 1)
         self.assertEqual(w.bit_count(), 1)
+
+    def test_isqrt_rem(self):
+        test_values = (
+            list(range(1000))
+            + list(range(10**6 - 1000, 10**6 + 1000))
+            + [2**e + i for e in range(60, 200) for i in range(-40, 40)]
+            + [3**9999, 10**5001]
+        )
+        for value in test_values:
+            with self.subTest(value=value):
+                root, rem = isqrt_rem(value)
+                self.assertIs(type(root), int)
+                self.assertLessEqual(root*root, value)
+                self.assertLess(value, (root+1)*(root+1))
+                self.assertIs(type(rem), int)
+                self.assertEqual(rem, value - root*root)
+
+        # Negative values
+        with self.assertRaises(ValueError):
+            isqrt_rem(-1)
+
+        # Integer-like things
+        self.assertEqual(isqrt_rem(True), (1, 0))
+        self.assertEqual(isqrt_rem(False), (0, 0))
+        self.assertEqual(isqrt_rem(MyIndexable(1729)), (41, 48))
+
+        with self.assertRaises(ValueError):
+            isqrt_rem(MyIndexable(-3))
+
+        # Non-integer-like things
+        bad_values = [
+            3.5, "a string", Decimal("3.5"), 3.5j,
+            100.0, -4.0,
+        ]
+        for value in bad_values:
+            with self.subTest(value=value):
+                with self.assertRaises(TypeError):
+                    isqrt_rem(value)
 
     def test_perm(self):
         perm = self.module.perm

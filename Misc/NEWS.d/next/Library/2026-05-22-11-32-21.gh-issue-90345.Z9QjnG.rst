@@ -1,0 +1,1 @@
+Add :func:`math.integer.isqrt_rem`.
