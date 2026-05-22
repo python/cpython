@@ -1218,6 +1218,15 @@ class Enum(metaclass=EnumType):
             else:
                 ve_exc = ValueError("%r is not a valid %s" % (value, cls.__qualname__))
                 if result is None and exc is None:
+                    # If `_missing_` has not been overridden, augment the
+                    # default error message with the list of valid values to
+                    # save users from having to inspect ``cls.__members__``.
+                    if cls._missing_.__func__ is Enum._missing_.__func__:
+                        valid_values = ", ".join(repr(m._value_) for m in cls)
+                        if valid_values:
+                            ve_exc = ValueError(
+                                "%r is not a valid %s. Valid values: %s"
+                                % (value, cls.__qualname__, valid_values))
                     raise ve_exc
                 elif exc is None:
                     exc = TypeError(
