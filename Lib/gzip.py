@@ -611,10 +611,10 @@ class _GzipReader(_streams.DecompressReader):
             # Read a chunk of data from the file
             if self._decompressor.needs_input:
                 buf = self._fp.read(READ_BUFFER_SIZE)
-                uncompress = self._decompressor.decompress(buf, size)
             else:
-                uncompress = self._decompressor.decompress(b"", size)
+                buf = b""
 
+            uncompress = self._decompressor.decompress(buf, size)
             if self._decompressor.unused_data != b"":
                 # Prepend the already read bytes to the fileobj so they can
                 # be seen by _read_eof() and _read_gzip_header()
