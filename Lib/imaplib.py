@@ -1,6 +1,6 @@
 """IMAP4 client.
 
-Based on RFC 2060.
+Based on RFC 2060 and updated for RFC 9051.
 
 Public class:           IMAP4
 Public variable:        Debug
@@ -40,7 +40,11 @@ CRLF = b'\r\n'
 Debug = 0
 IMAP4_PORT = 143
 IMAP4_SSL_PORT = 993
-AllowedVersions = ('IMAP4REV1', 'IMAP4')        # Most recent first
+AllowedVersions = ('IMAP4REV2', 'IMAP4REV1', 'IMAP4')        # Most recent first
+IMAP4REV2_BUILTIN_COMMANDS = (
+        'NAMESPACE', 'UNSELECT', 'UIDPLUS', 'ESEARCH', 'SEARCHRES',
+        'ENABLE', 'IDLE', 'SASL-IR', 'LIST-EXTENDED', 'LIST-STATUS',
+        'MOVE', 'LITERAL+')                                   # RFC 9051 Appendix E.2
 
 # Maximal line length when calling readline(). This is to prevent
 # reading arbitrary length lines. RFC 3501 and 2060 (IMAP 4rev1)
@@ -144,7 +148,7 @@ class IMAP4:
                       If timeout is not given or is None,
                       the global default socket timeout is used
 
-    All IMAP4rev1 commands are supported by methods of the same
+    All IMAP4rev2 and IMAP4rev1 commands are supported by methods of the same
     name (in lowercase).
 
     All arguments to commands are converted to strings, except for
@@ -198,6 +202,7 @@ class IMAP4:
         self.is_readonly = False        # READ-ONLY desired state
         self.tagnum = 0
         self._tls_established = False
+        self.PROTOCOL_VERSION = None
         self._mode_ascii()
         self._readbuf = []
 
@@ -260,13 +265,58 @@ class IMAP4:
             if self.debug >= 3:
                 self._mesg('CAPABILITIES: %r' % (self.capabilities,))
 
+        self._set_protocol_version()
+
+
+    def _set_protocol_version(self):
+
+        if self._should_use_rev1_mode_for_dual_support():
+            self._activate_rev1_mode()
+            return
+
         for version in AllowedVersions:
             if not version in self.capabilities:
                 continue
-            self.PROTOCOL_VERSION = version
+            if version == 'IMAP4REV2':
+                self._activate_rev2_mode()
+            else:
+                self.PROTOCOL_VERSION = version
             return
 
         raise self.error('server not IMAP4 compliant')
+
+    def _supports_rev2(self):
+        return 'IMAP4REV2' in self.capabilities
+
+    def _supports_dual_rev1_rev2(self):
+        return self._supports_rev2() and 'IMAP4REV1' in self.capabilities
+
+    def _is_using_rev2(self):
+        return self.PROTOCOL_VERSION == 'IMAP4REV2'
+
+    def _is_capability_available(self, capability):
+        capability = capability.upper()
+        if self._is_using_rev2() and capability in IMAP4REV2_BUILTIN_COMMANDS:
+            return True
+        return capability in self.capabilities
+
+    def _should_use_rev1_mode_for_dual_support(self):
+        return self._supports_dual_rev1_rev2()
+
+    def _activate_rev1_mode(self):
+        self.PROTOCOL_VERSION = 'IMAP4REV1'
+        self._mode_ascii()
+
+    def _activate_rev2_mode(self):
+        self.PROTOCOL_VERSION = 'IMAP4REV2'
+        self._mode_utf8()
+
+    def _handle_enable_success(self, capability):
+        capability = capability.upper()
+        if 'UTF8=ACCEPT' in capability:
+            self._mode_utf8()
+        if 'IMAP4REV2' in capability:
+            self._activate_rev2_mode()
 
 
     def __getattr__(self, attr):
@@ -603,11 +653,11 @@ class IMAP4:
 
         (typ, [data]) = <instance>.enable(capability)
         """
-        if 'ENABLE' not in self.capabilities:
+        if not self._is_capability_available('ENABLE'):
             raise IMAP4.error("Server does not support ENABLE")
         typ, data = self._simple_command('ENABLE', capability)
-        if typ == 'OK' and 'UTF8=ACCEPT' in capability.upper():
-            self._mode_utf8()
+        if typ == 'OK':
+            self._handle_enable_success(capability)
         return typ, data
 
     def expunge(self):
@@ -838,7 +888,7 @@ class IMAP4:
         """
         name = 'SEARCH'
         if charset:
-            if self.utf8_enabled:
+            if self.utf8_enabled and not self._is_using_rev2():
                 raise IMAP4.error("Non-None charset not valid in UTF8 mode")
             typ, dat = self._simple_command(name, 'CHARSET', charset, *criteria)
         else:
@@ -936,6 +986,7 @@ class IMAP4:
             self._imaplib_file = self.sock.makefile('rb')
             self._tls_established = True
             self._get_capabilities()
+            self._set_protocol_version()
         else:
             raise self.error("Couldn't establish TLS session")
         return self._untagged_response(typ, dat, name)
@@ -1439,7 +1490,7 @@ class Idler:
     """
 
     def __init__(self, imap, duration=None):
-        if 'IDLE' not in imap.capabilities:
+        if not imap._is_capability_available('IDLE'):
             raise imap.error("Server does not support IMAP4 IDLE")
         if duration is not None and not imap.sock:
             # IMAP4_stream pipes don't support timeouts

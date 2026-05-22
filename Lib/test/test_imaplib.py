@@ -116,6 +116,8 @@ class SimpleIMAPHandler(socketserver.StreamRequestHandler):
     timeout = support.LOOPBACK_TIMEOUT
     continuation = None
     capabilities = ''
+    welcome = 'IMAP4rev1'
+    protocol_capabilities = 'IMAP4rev1'
 
     def setup(self):
         super().setup()
@@ -136,9 +138,9 @@ class SimpleIMAPHandler(socketserver.StreamRequestHandler):
     def _send_tagged(self, tag, code, message):
         self._send_textline(' '.join((tag, code, message)))
 
-    def handle(self):
+    def  handle(self):
         # Send a welcome message.
-        self._send_textline('* OK IMAP4rev1')
+        self._send_textline(f'* OK {self.welcome}')
         while 1:
             # Gather up input until we receive a line terminator or we timeout.
             # Accumulate read(1) because it's simpler to handle the differences
@@ -179,9 +181,7 @@ class SimpleIMAPHandler(socketserver.StreamRequestHandler):
                 self._send_tagged(tag, 'BAD', cmd + ' unknown')
 
     def cmd_CAPABILITY(self, tag, args):
-        caps = ('IMAP4rev1 ' + self.capabilities
-                if self.capabilities
-                else 'IMAP4rev1')
+        caps = ' '.join(filter(None, (self.protocol_capabilities, self.capabilities)))
         self._send_textline('* CAPABILITY ' + caps)
         self._send_tagged(tag, 'OK', 'CAPABILITY completed')
 
@@ -211,6 +211,11 @@ class IdleCmdDenyHandler(SimpleIMAPHandler):
     capabilities = 'IDLE'
     def cmd_IDLE(self, tag, args):
         self._send_tagged(tag, 'NO', 'IDLE is not allowed at this time')
+
+
+class SimpleIMAPRev2Handler(SimpleIMAPHandler):
+    welcome = 'IMAP4rev2'
+    protocol_capabilities = 'IMAP4rev2'
 
 
 class IdleCmdHandler(SimpleIMAPHandler):
@@ -394,6 +399,53 @@ class NewIMAPTestsMixin:
             ['INBOX', 'UTF8',
              '(~{25}', ('%s\r\n' % msg_string).encode('utf-8'),
              b')\r\n' ])
+
+    def test_imap4rev2_enables_utf8_mode(self):
+        client, _ = self._setup(SimpleIMAPRev2Handler)
+        self.assertEqual(client.PROTOCOL_VERSION, 'IMAP4REV2')
+        self.assertTrue(client.utf8_enabled)
+        self.assertEqual(client._encoding, 'utf-8')
+
+
+    def test_imap4rev2_enable_works_without_ENABLE_capability(self):
+        class IMAP4Rev2EnableServer(SimpleIMAPRev2Handler):
+            capabilities = ''
+            def cmd_ENABLE(self, tag, args):
+                self.server.response = args
+                self._send_textline('* ENABLED ' + ' '.join(args))
+                self._send_tagged(tag, 'OK', 'ENABLE successful')
+        client, server = self._setup(IMAP4Rev2EnableServer)
+        typ, _ = client.login('user', 'pass')
+        self.assertEqual(typ, 'OK')
+        typ, _ = client.enable('CONDSTORE')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.response, ['CONDSTORE'])
+
+    def  test_imap4rev2_idle_works_without_IDLE_capability(self):
+        class IMAP4Rev2IdleServer(SimpleIMAPRev2Handler):
+            capabilities = ''
+            def cmd_IDLE(self, tag, args):
+                self._send_textline('+ idling')
+                r = yield
+                if r == b'DONE\r\n':
+                    self._send_tagged(tag, 'OK', 'IDLE completed')
+                else:
+                    self._send_tagged(tag, 'BAD', 'Expected DONE')
+        client, _ = self._setup(IMAP4Rev2IdleServer)
+        typ, _ = client.login('user', 'pass')
+        self.assertEqual(typ, 'OK')
+        with client.idle(duration=0.01):
+            pass
+
+    def test_dual_imap4rev1_imap4rev2_starts_in_rev1_mode(self):
+        class DualProtocolServer(SimpleIMAPHandler):
+            welcome = 'IMAP4rev2'
+            protocol_capabilities = 'IMAP4rev2 IMAP4rev1'
+
+        client, _ = self._setup(DualProtocolServer)
+        self.assertEqual(client.PROTOCOL_VERSION, 'IMAP4REV1')
+        self.assertFalse(client.utf8_enabled)
+        self.assertEqual(client._encoding, 'ascii')
 
     def test_search_disallows_charset_in_utf8_mode(self):
         class UTF8Server(SimpleIMAPHandler):
