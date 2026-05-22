@@ -1,3 +1,0 @@
-Document that passing ``mtime=0`` to :func:`tarfile.open` produces a
-gzip-compressed archive whose output does not depend on creation time, for
-reproducible output.
