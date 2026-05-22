@@ -754,6 +754,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(repeat)
         STRUCT_FOR_ID(repl)
         STRUCT_FOR_ID(replace)
+        STRUCT_FOR_ID(repr)
         STRUCT_FOR_ID(reqrefs)
         STRUCT_FOR_ID(require_ready)
         STRUCT_FOR_ID(reserved)
