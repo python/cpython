@@ -68,7 +68,7 @@ The module defines the following items:
       It is the default level used by most compression tools and a better
       tradeoff between speed and performance.
 
-   .. versionchanged:: 3.16
+   .. versionchanged:: next
       Added keyword-only argument *mtime* which is passed to the class
       constructor of :class:`~gzip.GzipFile`.
 
