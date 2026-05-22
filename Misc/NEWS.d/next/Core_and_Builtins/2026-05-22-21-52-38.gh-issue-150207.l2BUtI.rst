@@ -1,0 +1,1 @@
+fails in the tokenizer's ``_PyTokenizer_translate_newlines`` helper, so the out-of-memory condition is propagated as a proper Python exception instead of only being recorded in ``tok->done``.
