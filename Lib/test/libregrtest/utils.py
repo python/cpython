@@ -12,7 +12,9 @@ import sys
 import sysconfig
 import tempfile
 import textwrap
+import types
 from collections.abc import Callable
+_winapi: types.ModuleType | None
 try:
     import _winapi
 except ImportError:
@@ -781,6 +783,7 @@ def _get_process_memory_usage_linux(pid: int) -> int | None:
 
 
 def _get_process_memory_usage_windows(pid: int) -> int | None:
+    assert _winapi is not None  # to make mypy happy
     handle = _winapi.OpenProcess(_winapi.PROCESS_QUERY_LIMITED_INFORMATION,
                                  False, pid)
     try:
