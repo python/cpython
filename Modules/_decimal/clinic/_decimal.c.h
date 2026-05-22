@@ -2262,7 +2262,13 @@ PyDoc_STRVAR(_decimal_Decimal_fma__doc__,
 "self*other.\n"
 "\n"
 "    >>> Decimal(2).fma(3, 5)\n"
-"    Decimal(\'11\')");
+"    Decimal(\'11\')\n"
+"    >>> with localcontext(ExtendedContext):\n"
+"    ...     a, b, c = map(Decimal, [\'888565290\', \'1557.96930\',\n"
+"    ...                             \'-86087.7578\'])\n"
+"    ...     a.fma(b, c), a*b + c\n"
+"    ...\n"
+"    (Decimal(\'1.38435736E+12\'), Decimal(\'1.38435735E+12\'))");
 
 #define _DECIMAL_DECIMAL_FMA_METHODDEF    \
     {"fma", _PyCFunction_CAST(_decimal_Decimal_fma), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_fma__doc__},
@@ -6980,4 +6986,4 @@ exit:
 #ifndef _DECIMAL_CONTEXT_APPLY_METHODDEF
     #define _DECIMAL_CONTEXT_APPLY_METHODDEF
 #endif /* !defined(_DECIMAL_CONTEXT_APPLY_METHODDEF) */
-/*[clinic end generated code: output=b288181c82fdc9f1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3fb4ae83e095abfe input=a9049054013a1b77]*/
