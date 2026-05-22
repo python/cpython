@@ -8,6 +8,8 @@ from test.support import threading_helper
 @threading_helper.requires_working_threading()
 class TestPickleFreeThreading(unittest.TestCase):
 
+    @unittest.skip("gh-150257: pickle.dumps(dict) has a race condition "
+                   "causing an unfinite loop")
     def test_pickle_dumps_with_concurrent_dict_mutation(self):
         # gh-146452: Pickling a dict while another thread mutates it
         # used to segfault. batch_dict_exact() iterated dict items via
