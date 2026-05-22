@@ -3132,6 +3132,8 @@ _winapi_GetProcessMemoryInfo_impl(PyObject *module, HANDLE handle)
     ADD(PagefileUsage);
     ADD(PeakPagefileUsage);
 
+#undef ATTR
+
     return result;
 
 error:
