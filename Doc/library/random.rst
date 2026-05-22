@@ -1,5 +1,5 @@
-:mod:`random` --- Generate pseudo-random numbers
-================================================
+:mod:`!random` --- Generate pseudo-random numbers
+=================================================
 
 .. module:: random
    :synopsis: Generate pseudo-random numbers with various common distributions.
@@ -37,7 +37,7 @@ Class :class:`Random` can also be subclassed if you want to use a different
 basic generator of your own devising: see the documentation on that class for
 more details.
 
-The :mod:`random` module also provides the :class:`SystemRandom` class which
+The :mod:`!random` module also provides the :class:`SystemRandom` class which
 uses the system function :func:`os.urandom` to generate random numbers
 from sources provided by the operating system.
 
@@ -55,9 +55,15 @@ from sources provided by the operating system.
 
 
    `Complementary-Multiply-with-Carry recipe
-   <https://code.activestate.com/recipes/576707/>`_ for a compatible alternative
+   <https://code.activestate.com/recipes/576707-long-period-random-number-generator/>`_ for a compatible alternative
    random number generator with a long period and comparatively simple update
    operations.
+
+.. note::
+   The global random number generator and instances of :class:`Random` are thread-safe.
+   However, in the free-threaded build, concurrent calls to the global generator or
+   to the same instance of :class:`Random` may encounter contention and poor performance.
+   Consider using separate instances of :class:`Random` per thread instead.
 
 
 Bookkeeping functions
@@ -72,7 +78,7 @@ Bookkeeping functions
    instead of the system time (see the :func:`os.urandom` function for details
    on availability).
 
-   If *a* is an int, it is used directly.
+   If *a* is an int, its absolute value is used directly.
 
    With version 2 (the default), a :class:`str`, :class:`bytes`, or :class:`bytearray`
    object gets converted to an :class:`int` and all of its bits are used.
@@ -194,8 +200,8 @@ Functions for sequences
 
    For a given seed, the :func:`choices` function with equal weighting
    typically produces a different sequence than repeated calls to
-   :func:`choice`.  The algorithm used by :func:`choices` uses floating
-   point arithmetic for internal consistency and speed.  The algorithm used
+   :func:`choice`.  The algorithm used by :func:`choices` uses floating-point
+   arithmetic for internal consistency and speed.  The algorithm used
    by :func:`choice` defaults to integer arithmetic with repeated selections
    to avoid small biases from round-off error.
 
@@ -292,12 +298,12 @@ be found in any statistics text.
 
 .. function:: random()
 
-   Return the next random floating point number in the range ``0.0 <= X < 1.0``
+   Return the next random floating-point number in the range ``0.0 <= X < 1.0``
 
 
 .. function:: uniform(a, b)
 
-   Return a random floating point number *N* such that ``a <= N <= b`` for
+   Return a random floating-point number *N* such that ``a <= N <= b`` for
    ``a <= b`` and ``b <= N <= a`` for ``b < a``.
 
    The end-point value ``b`` may or may not be included in the range
@@ -307,7 +313,7 @@ be found in any statistics text.
 
 .. function:: triangular(low, high, mode)
 
-   Return a random floating point number *N* such that ``low <= N <= high`` and
+   Return a random floating-point number *N* such that ``low <= N <= high`` and
    with the specified *mode* between those bounds.  The *low* and *high* bounds
    default to zero and one.  The *mode* argument defaults to the midpoint
    between the bounds, giving a symmetric distribution.
@@ -404,7 +410,7 @@ Alternative Generator
 .. class:: Random([seed])
 
    Class that implements the default pseudo-random number generator used by the
-   :mod:`random` module.
+   :mod:`!random` module.
 
    .. versionchanged:: 3.11
       Formerly the *seed* could be any hashable object.  Now it is limited to:
@@ -440,6 +446,11 @@ Alternative Generator
 
       Override this method in subclasses to customise the
       :meth:`~random.getrandbits` behaviour of :class:`!Random` instances.
+
+   .. method:: Random.randbytes(n)
+
+      Override this method in subclasses to customise the
+      :meth:`~random.randbytes` behaviour of :class:`!Random` instances.
 
 
 .. class:: SystemRandom([seed])
@@ -619,14 +630,16 @@ Recipes
 -------
 
 These recipes show how to efficiently make random selections
-from the combinatoric iterators in the :mod:`itertools` module:
+from the combinatoric iterators in the :mod:`itertools` module
+or the :pypi:`more-itertools` project:
 
 .. testcode::
+
    import random
 
-   def random_product(*args, repeat=1):
-       "Random selection from itertools.product(*args, **kwds)"
-       pools = [tuple(pool) for pool in args] * repeat
+   def random_product(*iterables, repeat=1):
+       "Random selection from itertools.product(*iterables, repeat=repeat)"
+       pools = tuple(map(tuple, iterables)) * repeat
        return tuple(map(random.choice, pools))
 
    def random_permutation(iterable, r=None):
@@ -649,6 +662,91 @@ from the combinatoric iterators in the :mod:`itertools` module:
        n = len(pool)
        indices = sorted(random.choices(range(n), k=r))
        return tuple(pool[i] for i in indices)
+
+   def random_derangement(iterable):
+       "Choose a permutation where no element stays in its original position."
+       seq = tuple(iterable)
+       if len(seq) < 2:
+           if not seq:
+               return ()
+           raise IndexError('No derangments to choose from')
+       perm = list(range(len(seq)))
+       start = tuple(perm)
+       while True:
+           random.shuffle(perm)
+           if all(p != q for p, q in zip(start, perm)):
+               return tuple([seq[i] for i in perm])
+
+.. doctest::
+    :hide:
+
+    >>> import random
+
+
+    >>> random.seed(8675309)
+    >>> random_product('ABCDEFG', repeat=5)
+    ('D', 'B', 'E', 'F', 'E')
+
+
+    >>> random.seed(8675309)
+    >>> random_permutation('ABCDEFG')
+    ('D', 'B', 'E', 'C', 'G', 'A', 'F')
+    >>> random_permutation('ABCDEFG', 5)
+    ('A', 'G', 'D', 'C', 'B')
+
+
+    >>> random.seed(8675309)
+    >>> random_combination('ABCDEFG', 7)
+    ('A', 'B', 'C', 'D', 'E', 'F', 'G')
+    >>> random_combination('ABCDEFG', 6)
+    ('A', 'B', 'C', 'D', 'F', 'G')
+    >>> random_combination('ABCDEFG', 5)
+    ('A', 'B', 'C', 'E', 'F')
+    >>> random_combination('ABCDEFG', 4)
+    ('B', 'C', 'D', 'G')
+    >>> random_combination('ABCDEFG', 3)
+    ('B', 'E', 'G')
+    >>> random_combination('ABCDEFG', 2)
+    ('E', 'G')
+    >>> random_combination('ABCDEFG', 1)
+    ('C',)
+    >>> random_combination('ABCDEFG', 0)
+    ()
+
+
+    >>> random.seed(8675309)
+    >>> random_combination_with_replacement('ABCDEFG', 7)
+    ('B', 'C', 'D', 'E', 'E', 'E', 'G')
+    >>> random_combination_with_replacement('ABCDEFG', 3)
+    ('A', 'B', 'E')
+    >>> random_combination_with_replacement('ABCDEFG', 2)
+    ('A', 'G')
+    >>> random_combination_with_replacement('ABCDEFG', 1)
+    ('E',)
+    >>> random_combination_with_replacement('ABCDEFG', 0)
+    ()
+
+
+    >>> random.seed(8675309)
+    >>> random_derangement('')
+    ()
+    >>> random_derangement('A')
+    Traceback (most recent call last):
+    ...
+    IndexError: No derangments to choose from
+    >>> random_derangement('AB')
+    ('B', 'A')
+    >>> random_derangement('ABC')
+    ('C', 'A', 'B')
+    >>> random_derangement('ABCD')
+    ('B', 'A', 'D', 'C')
+    >>> random_derangement('ABCDE')
+    ('B', 'C', 'A', 'E', 'D')
+    >>> # Identical inputs treated as distinct
+    >>> identical = 20
+    >>> random_derangement((10, identical, 30, identical))
+    (20, 30, 10, 20)
+
 
 The default :func:`.random` returns multiples of 2⁻⁵³ in the range
 *0.0 ≤ x < 1.0*.  All such numbers are evenly spaced and are exactly
@@ -700,3 +798,83 @@ positive unnormalized float and is equal to ``math.ulp(0.0)``.)
    <https://allendowney.com/research/rand/downey07randfloat.pdf>`_ a
    paper by Allen B. Downey describing ways to generate more
    fine-grained floats than normally generated by :func:`.random`.
+
+.. _random-cli:
+
+Command-line usage
+------------------
+
+.. versionadded:: 3.13
+
+The :mod:`!random` module can be executed from the command line.
+
+.. code-block:: sh
+
+   python -m random [-h] [-c CHOICE [CHOICE ...] | -i N | -f N] [input ...]
+
+The following options are accepted:
+
+.. program:: random
+
+.. option:: -h, --help
+
+   Show the help message and exit.
+
+.. option:: -c CHOICE [CHOICE ...]
+            --choice CHOICE [CHOICE ...]
+
+   Print a random choice, using :meth:`choice`.
+
+.. option:: -i <N>
+            --integer <N>
+
+   Print a random integer between 1 and N inclusive, using :meth:`randint`.
+
+.. option:: -f <N>
+            --float <N>
+
+   Print a random floating-point number between 0 and N inclusive,
+   using :meth:`uniform`.
+
+If no options are given, the output depends on the input:
+
+* String or multiple: same as :option:`--choice`.
+* Integer: same as :option:`--integer`.
+* Float: same as :option:`--float`.
+
+.. _random-cli-example:
+
+Command-line example
+--------------------
+
+Here are some examples of the :mod:`!random` command-line interface:
+
+.. code-block:: console
+
+   $ # Choose one at random
+   $ python -m random egg bacon sausage spam "Lobster Thermidor aux crevettes with a Mornay sauce"
+   Lobster Thermidor aux crevettes with a Mornay sauce
+
+   $ # Random integer
+   $ python -m random 6
+   6
+
+   $ # Random floating-point number
+   $ python -m random 1.8
+   1.7080016272295635
+
+   $ # With explicit arguments
+   $ python  -m random --choice egg bacon sausage spam "Lobster Thermidor aux crevettes with a Mornay sauce"
+   egg
+
+   $ python -m random --integer 6
+   3
+
+   $ python -m random --float 1.8
+   1.5666339105010318
+
+   $ python -m random --integer 6
+   5
+
+   $ python -m random --float 6
+   3.1942323316565915

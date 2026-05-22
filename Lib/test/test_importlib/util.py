@@ -15,6 +15,9 @@ import sys
 import tempfile
 import types
 
+# gh-116303: Skip test module dependent tests if test modules are unavailable
+import_helper.import_module("_testmultiphase")
+
 
 BUILTINS = types.SimpleNamespace()
 BUILTINS.good_name = None
@@ -289,6 +292,9 @@ def writes_bytecode_files(fxn):
     tests that require it to be set to False."""
     if sys.dont_write_bytecode:
         return unittest.skip("relies on writing bytecode")(fxn)
+    if sys.implementation.cache_tag is None:
+        return unittest.skip("requires sys.implementation.cache_tag to not be None")(fxn)
+
     @functools.wraps(fxn)
     def wrapper(*args, **kwargs):
         original = sys.dont_write_bytecode

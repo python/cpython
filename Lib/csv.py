@@ -47,7 +47,7 @@ SETTINGS:
             field contains either the quotechar or the delimiter
         csv.QUOTE_ALL means that quotes are always placed around fields.
         csv.QUOTE_NONNUMERIC means that quotes are always placed around
-            fields which do not parse as integers or floating point
+            fields which do not parse as integers or floating-point
             numbers.
         csv.QUOTE_STRINGS means that quotes are always placed around
             fields which are strings.  Note that the Python value None
@@ -63,7 +63,6 @@ SETTINGS:
         written as two quotes
 """
 
-import re
 import types
 from _csv import Error, writer, reader, register_dialect, \
                  unregister_dialect, get_dialect, list_dialects, \
@@ -81,8 +80,6 @@ __all__ = ["QUOTE_MINIMAL", "QUOTE_ALL", "QUOTE_NONNUMERIC", "QUOTE_NONE",
            "register_dialect", "get_dialect", "list_dialects", "Sniffer",
            "unregister_dialect", "DictReader", "DictWriter",
            "unix_dialect"]
-
-__version__ = "1.0"
 
 
 class Dialect:
@@ -281,6 +278,7 @@ class Sniffer:
         If there is no quotechar the delimiter can't be determined
         this way.
         """
+        import re
 
         matches = []
         for restr in (r'(?P<delim>[^\w\n"\'])(?P<space> ?)(?P<quote>["\']).*?(?P=quote)(?P=delim)', # ,".*?",
@@ -364,31 +362,33 @@ class Sniffer:
         try and evaluate the smallest portion of the data possible, evaluating
         additional chunks as necessary.
         """
+        from collections import Counter, defaultdict
 
         data = list(filter(None, data.split('\n')))
-
-        ascii = [chr(c) for c in range(127)] # 7-bit ASCII
 
         # build frequency tables
         chunkLength = min(10, len(data))
         iteration = 0
-        charFrequency = {}
+        num_lines = 0
+        # {char -> {count_per_line -> num_lines_with_that_count}}
+        char_frequency = defaultdict(Counter)
         modes = {}
         delims = {}
         start, end = 0, chunkLength
         while start < len(data):
             iteration += 1
             for line in data[start:end]:
-                for char in ascii:
-                    metaFrequency = charFrequency.get(char, {})
-                    # must count even if frequency is 0
-                    freq = line.count(char)
-                    # value is the mode
-                    metaFrequency[freq] = metaFrequency.get(freq, 0) + 1
-                    charFrequency[char] = metaFrequency
+                num_lines += 1
+                for char, count in Counter(line).items():
+                    if char.isascii():
+                        char_frequency[char][count] += 1
 
-            for char in charFrequency.keys():
-                items = list(charFrequency[char].items())
+            for char, counts in char_frequency.items():
+                items = list(counts.items())
+                missed_lines = num_lines - sum(counts.values())
+                if missed_lines:
+                    # Store the number of lines 'char' was missing from.
+                    items.append((0, missed_lines))
                 if len(items) == 1 and items[0][0] == 0:
                     continue
                 # get the mode of the frequencies
@@ -511,3 +511,12 @@ class Sniffer:
                     hasHeader -= 1
 
         return hasHeader > 0
+
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return "1.0"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

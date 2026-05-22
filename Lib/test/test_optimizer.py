@@ -80,6 +80,8 @@ class TestRareEventCounters(unittest.TestCase):
 
 class TestOptimizerSymbols(unittest.TestCase):
 
+    @unittest.skipUnless(hasattr(_testinternalcapi, "uop_symbols_test"),
+                "requires _testinternalcapi.uop_symbols_test")
     def test_optimizer_symbols(self):
         _testinternalcapi.uop_symbols_test()
 

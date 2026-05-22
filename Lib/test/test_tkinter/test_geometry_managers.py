@@ -4,11 +4,17 @@ import tkinter
 from tkinter import TclError
 from test.support import requires
 
+from test.test_tkinter.support import setUpModule  # noqa: F401
 from test.test_tkinter.support import pixels_conv
 from test.test_tkinter.widget_tests import AbstractWidgetTest
 
 requires('gui')
 
+
+EXPECTED_FLOAT_ERRMSG = 'expected floating-point number but got "{}"'
+EXPECTED_FLOAT_OR_EMPTY_ERRMSG = 'expected floating-point number (or "" )?but got "{}"'
+EXPECTED_SCREEN_DISTANCE_ERRMSG = '(bad|expected) screen distance (but got )?"{}"'
+EXPECTED_SCREEN_DISTANCE_OR_EMPTY_ERRMSG = '(bad|expected) screen distance (or "" but got )?"{}"'
 
 class PackTest(AbstractWidgetTest, unittest.TestCase):
 
@@ -34,11 +40,11 @@ class PackTest(AbstractWidgetTest, unittest.TestCase):
         b.pack_configure(side='top')
         c.pack_configure(side='top')
         d.pack_configure(side='top')
-        self.assertEqual(pack.pack_slaves(), [a, b, c, d])
+        self.assertEqual(pack.pack_content(), [a, b, c, d])
         a.pack_configure(after=b)
-        self.assertEqual(pack.pack_slaves(), [b, a, c, d])
+        self.assertEqual(pack.pack_content(), [b, a, c, d])
         a.pack_configure(after=a)
-        self.assertEqual(pack.pack_slaves(), [b, a, c, d])
+        self.assertEqual(pack.pack_content(), [b, a, c, d])
 
     def test_pack_configure_anchor(self):
         pack, a, b, c, d = self.create2()
@@ -67,11 +73,11 @@ class PackTest(AbstractWidgetTest, unittest.TestCase):
         b.pack_configure(side='top')
         c.pack_configure(side='top')
         d.pack_configure(side='top')
-        self.assertEqual(pack.pack_slaves(), [a, b, c, d])
+        self.assertEqual(pack.pack_content(), [a, b, c, d])
         a.pack_configure(before=d)
-        self.assertEqual(pack.pack_slaves(), [b, c, a, d])
+        self.assertEqual(pack.pack_content(), [b, c, a, d])
         a.pack_configure(before=a)
-        self.assertEqual(pack.pack_slaves(), [b, c, a, d])
+        self.assertEqual(pack.pack_content(), [b, c, a, d])
 
     def test_pack_configure_expand(self):
         pack, a, b, c, d = self.create2()
@@ -104,10 +110,10 @@ class PackTest(AbstractWidgetTest, unittest.TestCase):
         c.pack_configure(side='top')
         d.pack_configure(side='top')
         a.pack_configure(in_=pack)
-        self.assertEqual(pack.pack_slaves(), [b, c, d, a])
+        self.assertEqual(pack.pack_content(), [b, c, d, a])
         a.pack_configure(in_=c)
-        self.assertEqual(pack.pack_slaves(), [b, c, d])
-        self.assertEqual(c.pack_slaves(), [a])
+        self.assertEqual(pack.pack_content(), [b, c, d])
+        self.assertEqual(c.pack_content(), [a])
         with self.assertRaisesRegex(
                 TclError, """can't pack "?%s"? inside itself""" % (a,)):
             a.pack_configure(in_=a)
@@ -217,11 +223,11 @@ class PackTest(AbstractWidgetTest, unittest.TestCase):
         a.pack_configure()
         b.pack_configure()
         c.pack_configure()
-        self.assertEqual(pack.pack_slaves(), [a, b, c])
+        self.assertEqual(pack.pack_content(), [a, b, c])
         b.pack_forget()
-        self.assertEqual(pack.pack_slaves(), [a, c])
+        self.assertEqual(pack.pack_content(), [a, c])
         b.pack_forget()
-        self.assertEqual(pack.pack_slaves(), [a, c])
+        self.assertEqual(pack.pack_content(), [a, c])
         d.pack_forget()
 
     def test_pack_info(self):
@@ -266,6 +272,14 @@ class PackTest(AbstractWidgetTest, unittest.TestCase):
         self.root.update()
         self.assertEqual(pack.winfo_reqwidth(), 20)
         self.assertEqual(pack.winfo_reqheight(), 40)
+
+    def test_pack_content(self):
+        pack, a, b, c, d = self.create2()
+        self.assertEqual(pack.pack_content(), [])
+        a.pack_configure()
+        self.assertEqual(pack.pack_content(), [a])
+        b.pack_configure()
+        self.assertEqual(pack.pack_content(), [a, b])
 
     def test_pack_slaves(self):
         pack, a, b, c, d = self.create2()
@@ -317,7 +331,8 @@ class PlaceTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(f2.place_info()['x'], '-10')
         self.root.update()
         self.assertEqual(f2.winfo_x(), 190)
-        with self.assertRaisesRegex(TclError, 'bad screen distance "spam"'):
+        with self.assertRaisesRegex(TclError,
+                EXPECTED_SCREEN_DISTANCE_ERRMSG.format('spam')):
             f2.place_configure(in_=f, x='spam')
 
     def test_place_configure_y(self):
@@ -334,7 +349,8 @@ class PlaceTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(f2.place_info()['y'], '-10')
         self.root.update()
         self.assertEqual(f2.winfo_y(), 110)
-        with self.assertRaisesRegex(TclError, 'bad screen distance "spam"'):
+        with self.assertRaisesRegex(TclError,
+                EXPECTED_SCREEN_DISTANCE_ERRMSG.format('spam')):
             f2.place_configure(in_=f, y='spam')
 
     def test_place_configure_relx(self):
@@ -351,8 +367,7 @@ class PlaceTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(f2.place_info()['relx'], '1')
         self.root.update()
         self.assertEqual(f2.winfo_x(), 200)
-        with self.assertRaisesRegex(TclError, 'expected floating-point number '
-                                    'but got "spam"'):
+        with self.assertRaisesRegex(TclError, EXPECTED_FLOAT_ERRMSG.format('spam')):
             f2.place_configure(in_=f, relx='spam')
 
     def test_place_configure_rely(self):
@@ -369,8 +384,7 @@ class PlaceTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(f2.place_info()['rely'], '1')
         self.root.update()
         self.assertEqual(f2.winfo_y(), 120)
-        with self.assertRaisesRegex(TclError, 'expected floating-point number '
-                                    'but got "spam"'):
+        with self.assertRaisesRegex(TclError, EXPECTED_FLOAT_ERRMSG.format('spam')):
             f2.place_configure(in_=f, rely='spam')
 
     def test_place_configure_anchor(self):
@@ -391,7 +405,8 @@ class PlaceTest(AbstractWidgetTest, unittest.TestCase):
         f2.place_configure(width='')
         self.root.update()
         self.assertEqual(f2.winfo_width(), 30)
-        with self.assertRaisesRegex(TclError, 'bad screen distance "abcd"'):
+        with self.assertRaisesRegex(TclError,
+                EXPECTED_SCREEN_DISTANCE_OR_EMPTY_ERRMSG.format('abcd')):
             f2.place_configure(width='abcd')
 
     def test_place_configure_height(self):
@@ -402,7 +417,8 @@ class PlaceTest(AbstractWidgetTest, unittest.TestCase):
         f2.place_configure(height='')
         self.root.update()
         self.assertEqual(f2.winfo_height(), 60)
-        with self.assertRaisesRegex(TclError, 'bad screen distance "abcd"'):
+        with self.assertRaisesRegex(TclError,
+                EXPECTED_SCREEN_DISTANCE_OR_EMPTY_ERRMSG.format('abcd')):
             f2.place_configure(height='abcd')
 
     def test_place_configure_relwidth(self):
@@ -413,8 +429,7 @@ class PlaceTest(AbstractWidgetTest, unittest.TestCase):
         f2.place_configure(relwidth='')
         self.root.update()
         self.assertEqual(f2.winfo_width(), 30)
-        with self.assertRaisesRegex(TclError, 'expected floating-point number '
-                                    'but got "abcd"'):
+        with self.assertRaisesRegex(TclError, EXPECTED_FLOAT_OR_EMPTY_ERRMSG.format('abcd')):
             f2.place_configure(relwidth='abcd')
 
     def test_place_configure_relheight(self):
@@ -425,8 +440,7 @@ class PlaceTest(AbstractWidgetTest, unittest.TestCase):
         f2.place_configure(relheight='')
         self.root.update()
         self.assertEqual(f2.winfo_height(), 60)
-        with self.assertRaisesRegex(TclError, 'expected floating-point number '
-                                    'but got "abcd"'):
+        with self.assertRaisesRegex(TclError, EXPECTED_FLOAT_OR_EMPTY_ERRMSG.format('abcd')):
             f2.place_configure(relheight='abcd')
 
     def test_place_configure_bordermode(self):
@@ -470,6 +484,15 @@ class PlaceTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(info['x'], '1')
         with self.assertRaises(TypeError):
             f2.place_info(0)
+
+    def test_place_content(self):
+        foo = tkinter.Frame(self.root)
+        bar = tkinter.Frame(self.root)
+        self.assertEqual(foo.place_content(), [])
+        bar.place_configure(in_=foo)
+        self.assertEqual(foo.place_content(), [bar])
+        with self.assertRaises(TypeError):
+            foo.place_content(0)
 
     def test_place_slaves(self):
         foo = tkinter.Frame(self.root)
@@ -629,7 +652,8 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(self.root.grid_columnconfigure(0, 'weight'), 4)
 
     def test_grid_columnconfigure_minsize(self):
-        with self.assertRaisesRegex(TclError, 'bad screen distance "foo"'):
+        with self.assertRaisesRegex(TclError,
+                EXPECTED_SCREEN_DISTANCE_ERRMSG.format('foo')):
             self.root.grid_columnconfigure(0, minsize='foo')
         self.root.grid_columnconfigure(0, minsize=10)
         self.assertEqual(self.root.grid_columnconfigure(0, 'minsize'), 10)
@@ -646,7 +670,8 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(self.root.grid_columnconfigure(0)['weight'], 3)
 
     def test_grid_columnconfigure_pad(self):
-        with self.assertRaisesRegex(TclError, 'bad screen distance "foo"'):
+        with self.assertRaisesRegex(TclError,
+                EXPECTED_SCREEN_DISTANCE_ERRMSG.format('foo')):
             self.root.grid_columnconfigure(0, pad='foo')
         with self.assertRaisesRegex(TclError, 'invalid arg "-pad": '
                                     'should be non-negative'):
@@ -683,7 +708,8 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(self.root.grid_rowconfigure(0, 'weight'), 4)
 
     def test_grid_rowconfigure_minsize(self):
-        with self.assertRaisesRegex(TclError, 'bad screen distance "foo"'):
+        with self.assertRaisesRegex(TclError,
+                EXPECTED_SCREEN_DISTANCE_ERRMSG.format('foo')):
             self.root.grid_rowconfigure(0, minsize='foo')
         self.root.grid_rowconfigure(0, minsize=10)
         self.assertEqual(self.root.grid_rowconfigure(0, 'minsize'), 10)
@@ -700,7 +726,8 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(self.root.grid_rowconfigure(0)['weight'], 3)
 
     def test_grid_rowconfigure_pad(self):
-        with self.assertRaisesRegex(TclError, 'bad screen distance "foo"'):
+        with self.assertRaisesRegex(TclError,
+                EXPECTED_SCREEN_DISTANCE_ERRMSG.format('foo')):
             self.root.grid_rowconfigure(0, pad='foo')
         with self.assertRaisesRegex(TclError, 'invalid arg "-pad": '
                                     'should be non-negative'):
@@ -719,10 +746,10 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
         c = tkinter.Button(self.root)
         b.grid_configure(row=2, column=2, rowspan=2, columnspan=2,
                          padx=3, pady=4, sticky='ns')
-        self.assertEqual(self.root.grid_slaves(), [b])
+        self.assertEqual(self.root.grid_content(), [b])
         b.grid_forget()
         c.grid_forget()
-        self.assertEqual(self.root.grid_slaves(), [])
+        self.assertEqual(self.root.grid_content(), [])
         self.assertEqual(b.grid_info(), {})
         b.grid_configure(row=0, column=0)
         info = b.grid_info()
@@ -739,10 +766,10 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
         c = tkinter.Button(self.root)
         b.grid_configure(row=2, column=2, rowspan=2, columnspan=2,
                          padx=3, pady=4, sticky='ns')
-        self.assertEqual(self.root.grid_slaves(), [b])
+        self.assertEqual(self.root.grid_content(), [b])
         b.grid_remove()
         c.grid_remove()
-        self.assertEqual(self.root.grid_slaves(), [])
+        self.assertEqual(self.root.grid_content(), [])
         self.assertEqual(b.grid_info(), {})
         b.grid_configure(row=0, column=0)
         info = b.grid_info()
@@ -818,9 +845,11 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
             self.root.grid_location(0)
         with self.assertRaises(TypeError):
             self.root.grid_location(0, 0, 0)
-        with self.assertRaisesRegex(TclError, 'bad screen distance "x"'):
+        with self.assertRaisesRegex(TclError,
+                EXPECTED_SCREEN_DISTANCE_ERRMSG.format('x')):
             self.root.grid_location('x', 'y')
-        with self.assertRaisesRegex(TclError, 'bad screen distance "y"'):
+        with self.assertRaisesRegex(TclError,
+                EXPECTED_SCREEN_DISTANCE_ERRMSG.format('y')):
             self.root.grid_location('1c', 'y')
         t = self.root
         # de-maximize
@@ -875,6 +904,23 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
         f.grid_configure(row=4, column=5)
         self.assertEqual(self.root.grid_size(), (6, 5))
 
+    def test_grid_content(self):
+        self.assertEqual(self.root.grid_content(), [])
+        a = tkinter.Label(self.root)
+        a.grid_configure(row=0, column=1)
+        b = tkinter.Label(self.root)
+        b.grid_configure(row=1, column=0)
+        c = tkinter.Label(self.root)
+        c.grid_configure(row=1, column=1)
+        d = tkinter.Label(self.root)
+        d.grid_configure(row=1, column=1)
+        self.assertEqual(self.root.grid_content(), [d, c, b, a])
+        self.assertEqual(self.root.grid_content(row=0), [a])
+        self.assertEqual(self.root.grid_content(row=1), [d, c, b])
+        self.assertEqual(self.root.grid_content(column=0), [b])
+        self.assertEqual(self.root.grid_content(column=1), [d, c, a])
+        self.assertEqual(self.root.grid_content(row=1, column=1), [d, c])
+
     def test_grid_slaves(self):
         self.assertEqual(self.root.grid_slaves(), [])
         a = tkinter.Label(self.root)
@@ -892,10 +938,6 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(self.root.grid_slaves(column=1), [d, c, a])
         self.assertEqual(self.root.grid_slaves(row=1, column=1), [d, c])
 
-
-tests_gui = (
-    PackTest, PlaceTest, GridTest,
-)
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,4 +1,0 @@
-Add :c:func:`PyType_GetFullyQualifiedName` function to get the type's fully
-qualified name. Equivalent to ``f"{type.__module__}.{type.__qualname__}"``, or
-``type.__qualname__`` if ``type.__module__`` is not a string or is equal to
-``"builtins"``. Patch by Victor Stinner.

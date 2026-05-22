@@ -1,2 +1,0 @@
-Fix regression in lazy loading of self-referential modules, introduced in
-gh-114781.

@@ -1,8 +1,7 @@
-:mod:`syslog` --- Unix syslog library routines
-==============================================
+:mod:`!syslog` --- Unix syslog library routines
+===============================================
 
 .. module:: syslog
-   :platform: Unix
    :synopsis: An interface to the Unix syslog library routines.
 
 --------------

@@ -4,12 +4,14 @@ import re
 import sys
 import types
 import pickle
+from importlib._bootstrap_external import NamespaceLoader
 from test import support
 from test.support import import_helper
 
 import unittest
 import unittest.mock
 import test.test_unittest
+from test.test_importlib import util as test_util
 
 
 class TestableTestProgram(unittest.TestProgram):
@@ -395,7 +397,7 @@ class TestDiscovery(unittest.TestCase):
         self.addCleanup(restore_isdir)
 
         _find_tests_args = []
-        def _find_tests(start_dir, pattern):
+        def _find_tests(start_dir, pattern, namespace=None):
             _find_tests_args.append((start_dir, pattern))
             return ['tests']
         loader._find_tests = _find_tests
@@ -406,9 +408,33 @@ class TestDiscovery(unittest.TestCase):
         top_level_dir = os.path.abspath('/foo/bar')
         start_dir = os.path.abspath('/foo/bar/baz')
         self.assertEqual(suite, "['tests']")
-        self.assertEqual(loader._top_level_dir, top_level_dir)
+        self.assertEqual(loader._top_level_dir, os.path.abspath('/foo'))
         self.assertEqual(_find_tests_args, [(start_dir, 'pattern')])
         self.assertIn(top_level_dir, sys.path)
+
+    def test_discover_should_not_persist_top_level_dir_between_calls(self):
+        original_isfile = os.path.isfile
+        original_isdir = os.path.isdir
+        original_sys_path = sys.path[:]
+        def restore():
+            os.path.isfile = original_isfile
+            os.path.isdir = original_isdir
+            sys.path[:] = original_sys_path
+        self.addCleanup(restore)
+
+        os.path.isfile = lambda path: True
+        os.path.isdir = lambda path: True
+        loader = unittest.TestLoader()
+        loader.suiteClass = str
+        dir = '/foo/bar'
+        top_level_dir = '/foo'
+
+        loader.discover(dir, top_level_dir=top_level_dir)
+        self.assertEqual(loader._top_level_dir, None)
+
+        loader._top_level_dir = dir2 = '/previous/dir'
+        loader.discover(dir, top_level_dir=top_level_dir)
+        self.assertEqual(loader._top_level_dir, dir2)
 
     def test_discover_start_dir_is_package_calls_package_load_tests(self):
         # This test verifies that the package load_tests in a package is indeed
@@ -791,7 +817,7 @@ class TestDiscovery(unittest.TestCase):
         expectedPath = os.path.abspath(os.path.dirname(test.test_unittest.__file__))
 
         self.wasRun = False
-        def _find_tests(start_dir, pattern):
+        def _find_tests(start_dir, pattern, namespace=None):
             self.wasRun = True
             self.assertEqual(start_dir, expectedPath)
             return tests
@@ -823,6 +849,54 @@ class TestDiscovery(unittest.TestCase):
         self.assertEqual(str(cm.exception),
                          'Can not use builtin modules '
                          'as dotted module names')
+
+    def test_discovery_from_dotted_namespace_packages(self):
+        loader = unittest.TestLoader()
+
+        package = types.ModuleType('package')
+        package.__name__ = "tests"
+        package.__path__ = ['/a', '/b']
+        package.__file__ = None
+        package.__spec__ = types.SimpleNamespace(
+            name=package.__name__,
+            loader=NamespaceLoader(package.__name__, package.__path__, None),
+            submodule_search_locations=['/a', '/b']
+        )
+
+        def _import(packagename, *args, **kwargs):
+            sys.modules[packagename] = package
+            return package
+
+        _find_tests_args = []
+        def _find_tests(start_dir, pattern, namespace=None):
+            _find_tests_args.append((start_dir, pattern))
+            return ['%s/tests' % start_dir]
+
+        loader._find_tests = _find_tests
+        loader.suiteClass = list
+
+        with unittest.mock.patch('builtins.__import__', _import):
+            # Since loader.discover() can modify sys.path, restore it when done.
+            with import_helper.DirsOnSysPath():
+                # Make sure to remove 'package' from sys.modules when done.
+                with test_util.uncache('package'):
+                    suite = loader.discover('package')
+
+        self.assertEqual(suite, ['/a/tests', '/b/tests'])
+
+    def test_discovery_start_dir_is_namespace(self):
+        """Subdirectory discovery not affected if start_dir is a namespace pkg."""
+        loader = unittest.TestLoader()
+        with (
+            import_helper.DirsOnSysPath(os.path.join(os.path.dirname(__file__))),
+            test_util.uncache('namespace_test_pkg')
+        ):
+            suite = loader.discover('namespace_test_pkg')
+        self.assertEqual(
+            {list(suite)[0]._tests[0].__module__ for suite in suite._tests if list(suite)},
+            # files under namespace_test_pkg.noop not discovered.
+            {'namespace_test_pkg.test_foo', 'namespace_test_pkg.bar.test_bar'},
+        )
 
     def test_discovery_failed_discovery(self):
         from test.test_importlib import util

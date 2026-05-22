@@ -63,6 +63,15 @@ typedef struct {
         .gil = PyInterpreterConfig_OWN_GIL, \
     }
 
+// gh-117649: The free-threaded build does not currently support single-phase
+// init extensions in subinterpreters. For now, we ensure that
+// `check_multi_interp_extensions` is always `1`, even in the legacy config.
+#ifdef Py_GIL_DISABLED
+#  define _PyInterpreterConfig_LEGACY_CHECK_MULTI_INTERP_EXTENSIONS 1
+#else
+#  define _PyInterpreterConfig_LEGACY_CHECK_MULTI_INTERP_EXTENSIONS 0
+#endif
+
 #define _PyInterpreterConfig_LEGACY_INIT \
     { \
         .use_main_obmalloc = 1, \
@@ -70,7 +79,7 @@ typedef struct {
         .allow_exec = 1, \
         .allow_threads = 1, \
         .allow_daemon_threads = 1, \
-        .check_multi_interp_extensions = 0, \
+        .check_multi_interp_extensions = _PyInterpreterConfig_LEGACY_CHECK_MULTI_INTERP_EXTENSIONS, \
         .gil = PyInterpreterConfig_SHARED_GIL, \
     }
 

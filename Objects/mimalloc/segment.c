@@ -718,7 +718,7 @@ static mi_page_t* mi_segment_span_allocate(mi_segment_t* segment, size_t slice_i
   // set slice back pointers for the first MI_MAX_SLICE_OFFSET entries
   size_t extra = slice_count-1;
   if (extra > MI_MAX_SLICE_OFFSET) extra = MI_MAX_SLICE_OFFSET;
-  if (slice_index + extra >= segment->slice_entries) extra = segment->slice_entries - slice_index - 1;  // huge objects may have more slices than avaiable entries in the segment->slices
+  if (slice_index + extra >= segment->slice_entries) extra = segment->slice_entries - slice_index - 1;  // huge objects may have more slices than available entries in the segment->slices
 
   mi_slice_t* slice_next = slice + 1;
   for (size_t i = 1; i <= extra; i++, slice_next++) {
@@ -814,6 +814,9 @@ static mi_segment_t* mi_segment_os_alloc( size_t required, size_t page_alignment
     const size_t extra = align_offset - info_size;
     // recalculate due to potential guard pages
     *psegment_slices = mi_segment_calculate_slices(required + extra, ppre_size, pinfo_slices);
+
+    // mi_page_t.slice_count type is uint32_t
+    if (*psegment_slices > (size_t)UINT32_MAX) return NULL;
   }
 
   const size_t segment_size = (*psegment_slices) * MI_SEGMENT_SLICE_SIZE;
@@ -864,6 +867,9 @@ static mi_segment_t* mi_segment_alloc(size_t required, size_t page_alignment, mi
   size_t info_slices;
   size_t pre_size;
   size_t segment_slices = mi_segment_calculate_slices(required, &pre_size, &info_slices);
+
+  // mi_page_t.slice_count type is uint32_t
+  if (segment_slices > (size_t)UINT32_MAX) return NULL;
 
   // Commit eagerly only if not the first N lazy segments (to reduce impact of many threads that allocate just a little)
   const bool eager_delay = (// !_mi_os_has_overcommit() &&             // never delay on overcommit systems
@@ -1280,6 +1286,7 @@ static bool mi_segment_check_free(mi_segment_t* segment, size_t slices_needed, s
         _mi_stat_decrease(&tld->stats->pages_abandoned, 1);
 #ifdef Py_GIL_DISABLED
         page->qsbr_goal = 0;
+        mi_assert_internal(page->qsbr_node.next == NULL);
 #endif
         segment->abandoned--;
         slice = mi_segment_page_clear(page, tld); // re-assign slice due to coalesce!
@@ -1355,6 +1362,7 @@ static mi_segment_t* mi_segment_reclaim(mi_segment_t* segment, mi_heap_t* heap, 
         // if everything free by now, free the page
 #ifdef Py_GIL_DISABLED
         page->qsbr_goal = 0;
+        mi_assert_internal(page->qsbr_node.next == NULL);
 #endif
         slice = mi_segment_page_clear(page, tld);   // set slice again due to coalesceing
       }

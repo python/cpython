@@ -229,7 +229,7 @@ messages should not. Here's how you can achieve this::
    # tell the handler to use this format
    console.setFormatter(formatter)
    # add the handler to the root logger
-   logging.getLogger('').addHandler(console)
+   logging.getLogger().addHandler(console)
 
    # Now, we can log to the root logger, or any other logger. First the root...
    logging.info('Jackdaws love my big sphinx of quartz.')
@@ -626,6 +626,19 @@ which, when run, will produce:
    of each message with the handler's level, and only passes a message to a
    handler if it's appropriate to do so.
 
+.. versionchanged:: 3.14
+   The :class:`QueueListener` can be started (and stopped) via the
+   :keyword:`with` statement. For example:
+
+   .. code-block:: python
+
+      with QueueListener(que, handler) as listener:
+          # The queue listener automatically starts
+          # when the 'with' block is entered.
+          pass
+      # The queue listener automatically stops once
+      # the 'with' block is exited.
+
 .. _network-logging:
 
 Sending and receiving logging events across a network
@@ -637,7 +650,7 @@ the receiving end. A simple way of doing this is attaching a
 
    import logging, logging.handlers
 
-   rootLogger = logging.getLogger('')
+   rootLogger = logging.getLogger()
    rootLogger.setLevel(logging.DEBUG)
    socketHandler = logging.handlers.SocketHandler('localhost',
                        logging.handlers.DEFAULT_TCP_LOGGING_PORT)
@@ -825,15 +838,28 @@ To test these files, do the following in a POSIX environment:
    which will lead to records being written to the log.
 
 #. Inspect the log files in the :file:`run` subdirectory. You should see the
-   most recent log lines in files matching the pattern :file:`app.log*`. They won't be in
-   any particular order, since they have been handled concurrently by different
-   worker processes in a non-deterministic way.
+   most recent log lines in files matching the pattern :file:`app.log*`. They
+   won't be in any particular order, since they have been handled concurrently
+   by different worker processes in a non-deterministic way.
 
 #. You can shut down the listener and the web application by running
    ``venv/bin/supervisorctl -c supervisor.conf shutdown``.
 
 You may need to tweak the configuration files in the unlikely event that the
 configured ports clash with something else in your test environment.
+
+The default configuration uses a TCP socket on port 9020. You can use a Unix
+Domain socket instead of a TCP socket by doing the following:
+
+#. In :file:`listener.json`, add a ``socket`` key with the path to the domain
+   socket you want to use. If this key is present, the listener listens on the
+   corresponding domain socket and not on a TCP socket (the ``port`` key is
+   ignored).
+
+#. In :file:`webapp.json`, change the socket handler configuration dictionary
+   so that the ``host`` value is the path to the domain socket, and set the
+   ``port`` value to ``null``.
+
 
 .. currentmodule:: logging
 
@@ -1267,11 +1293,8 @@ to adapt in your own applications.
 
 You could also write your own handler which uses the :class:`~multiprocessing.Lock`
 class from the :mod:`multiprocessing` module to serialize access to the
-file from your processes. The existing :class:`FileHandler` and subclasses do
-not make use of :mod:`multiprocessing` at present, though they may do so in the
-future. Note that at present, the :mod:`multiprocessing` module does not provide
-working lock functionality on all platforms (see
-https://bugs.python.org/issue3770).
+file from your processes. The stdlib :class:`FileHandler` and subclasses do
+not make use of :mod:`multiprocessing`.
 
 .. currentmodule:: logging.handlers
 
@@ -1526,10 +1549,10 @@ to this (remembering to first import :mod:`concurrent.futures`)::
         for i in range(10):
             executor.submit(worker_process, queue, worker_configurer)
 
-Deploying Web applications using Gunicorn and uWSGI
+Deploying web applications using Gunicorn and uWSGI
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When deploying Web applications using `Gunicorn <https://gunicorn.org/>`_ or `uWSGI
+When deploying web applications using `Gunicorn <https://gunicorn.org/>`_ or `uWSGI
 <https://uwsgi-docs.readthedocs.io/en/latest/>`_ (or similar), multiple worker
 processes are created to handle client requests. In such environments, avoid creating
 file-based handlers directly in your web application. Instead, use a
@@ -1540,9 +1563,6 @@ process. This can be set up using a process management tool such as Supervisor -
 
 Using file rotation
 -------------------
-
-.. sectionauthor:: Doug Hellmann, Vinay Sajip (changes)
-.. (see <https://pymotw.com/3/logging/>)
 
 Sometimes you want to let a log file grow to a certain size, then open a new
 file and log to that. You may want to keep a certain number of these files, and
@@ -1912,10 +1932,10 @@ Subclassing QueueHandler and QueueListener- a ``pynng`` example
 ---------------------------------------------------------------
 
 In a similar way to the above section, we can implement a listener and handler
-using `pynng <https://pypi.org/project/pynng/>`_, which is a Python binding to
+using :pypi:`pynng`, which is a Python binding to
 `NNG <https://nng.nanomsg.org/>`_, billed as a spiritual successor to ZeroMQ.
 The following snippets illustrate -- you can test them in an environment which has
-``pynng`` installed. Juat for variety, we present the listener first.
+``pynng`` installed. Just for variety, we present the listener first.
 
 
 Subclass ``QueueListener``
@@ -1923,6 +1943,7 @@ Subclass ``QueueListener``
 
 .. code-block:: python
 
+    # listener.py
     import json
     import logging
     import logging.handlers
@@ -1955,7 +1976,7 @@ Subclass ``QueueListener``
                     break
                 except pynng.Timeout:
                     pass
-                except pynng.Closed:  # sometimes hit when you hit Ctrl-C
+                except pynng.Closed:  # sometimes happens when you hit Ctrl-C
                     break
             if data is None:
                 return None
@@ -1988,6 +2009,7 @@ Subclass ``QueueHandler``
 
 .. code-block:: python
 
+    # sender.py
     import json
     import logging
     import logging.handlers
@@ -2015,9 +2037,10 @@ Subclass ``QueueHandler``
 
     logging.getLogger('pynng').propagate = False
     handler = NNGSocketHandler(DEFAULT_ADDR)
+    # Make sure the process ID is in the output
     logging.basicConfig(level=logging.DEBUG,
                         handlers=[logging.StreamHandler(), handler],
-                        format='%(levelname)-8s %(name)10s %(message)s')
+                        format='%(levelname)-8s %(name)10s %(process)6s %(message)s')
     levels = (logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR,
               logging.CRITICAL)
     logger_names = ('myapp', 'myapp.lib1', 'myapp.lib2')
@@ -2031,7 +2054,64 @@ Subclass ``QueueHandler``
         delay = random.random() * 2 + 0.5
         time.sleep(delay)
 
-You can run the above two snippets in separate command shells.
+You can run the above two snippets in separate command shells. If we run the
+listener in one shell and run the sender in two separate shells, we should see
+something like the following. In the first sender shell:
+
+.. code-block:: console
+
+    $ python sender.py
+    DEBUG         myapp    613 Message no.     1
+    WARNING  myapp.lib2    613 Message no.     2
+    CRITICAL myapp.lib2    613 Message no.     3
+    WARNING  myapp.lib2    613 Message no.     4
+    CRITICAL myapp.lib1    613 Message no.     5
+    DEBUG         myapp    613 Message no.     6
+    CRITICAL myapp.lib1    613 Message no.     7
+    INFO     myapp.lib1    613 Message no.     8
+    (and so on)
+
+In the second sender shell:
+
+.. code-block:: console
+
+    $ python sender.py
+    INFO     myapp.lib2    657 Message no.     1
+    CRITICAL myapp.lib2    657 Message no.     2
+    CRITICAL      myapp    657 Message no.     3
+    CRITICAL myapp.lib1    657 Message no.     4
+    INFO     myapp.lib1    657 Message no.     5
+    WARNING  myapp.lib2    657 Message no.     6
+    CRITICAL      myapp    657 Message no.     7
+    DEBUG    myapp.lib1    657 Message no.     8
+    (and so on)
+
+In the listener shell:
+
+.. code-block:: console
+
+    $ python listener.py
+    Press Ctrl-C to stop.
+    DEBUG         myapp    613 Message no.     1
+    WARNING  myapp.lib2    613 Message no.     2
+    INFO     myapp.lib2    657 Message no.     1
+    CRITICAL myapp.lib2    613 Message no.     3
+    CRITICAL myapp.lib2    657 Message no.     2
+    CRITICAL      myapp    657 Message no.     3
+    WARNING  myapp.lib2    613 Message no.     4
+    CRITICAL myapp.lib1    613 Message no.     5
+    CRITICAL myapp.lib1    657 Message no.     4
+    INFO     myapp.lib1    657 Message no.     5
+    DEBUG         myapp    613 Message no.     6
+    WARNING  myapp.lib2    657 Message no.     6
+    CRITICAL      myapp    657 Message no.     7
+    CRITICAL myapp.lib1    613 Message no.     7
+    INFO     myapp.lib1    613 Message no.     8
+    DEBUG    myapp.lib1    657 Message no.     8
+    (and so on)
+
+As you can see, the logging from the two sender processes is interleaved in the
+listener's output.
 
 
 An example dictionary-based configuration
@@ -2890,7 +2970,7 @@ When run, this produces a file with exactly two lines:
 .. code-block:: none
 
     28/01/2015 07:21:23|INFO|Sample message|
-    28/01/2015 07:21:23|ERROR|ZeroDivisionError: integer division or modulo by zero|'Traceback (most recent call last):\n  File "logtest7.py", line 30, in main\n    x = 1 / 0\nZeroDivisionError: integer division or modulo by zero'|
+    28/01/2015 07:21:23|ERROR|ZeroDivisionError: division by zero|'Traceback (most recent call last):\n  File "logtest7.py", line 30, in main\n    x = 1 / 0\nZeroDivisionError: division by zero'|
 
 While the above treatment is simplistic, it points the way to how exception
 information can be formatted to your liking. The :mod:`traceback` module may be
@@ -3515,9 +3595,8 @@ A Qt GUI for logging
 
 A question that comes up from time to time is about how to log to a GUI
 application. The `Qt <https://www.qt.io/>`_ framework is a popular
-cross-platform UI framework with Python bindings using `PySide2
-<https://pypi.org/project/PySide2/>`_ or `PyQt5
-<https://pypi.org/project/PyQt5/>`_ libraries.
+cross-platform UI framework with Python bindings using :pypi:`PySide2`
+or :pypi:`PyQt5` libraries.
 
 The following example shows how to log to a Qt GUI. This introduces a simple
 ``QtHandler`` class which takes a callable, which should be a slot in the main
@@ -3537,7 +3616,6 @@ detailed information.
 
 .. code-block:: python3
 
-    import datetime
     import logging
     import random
     import sys
@@ -3772,7 +3850,7 @@ Logging to syslog with RFC5424 support
 Although :rfc:`5424` dates from 2009, most syslog servers are configured by default to
 use the older :rfc:`3164`, which hails from 2001. When ``logging`` was added to Python
 in 2003, it supported the earlier (and only existing) protocol at the time. Since
-RFC5424 came out, as there has not been widespread deployment of it in syslog
+RFC 5424 came out, as there has not been widespread deployment of it in syslog
 servers, the :class:`~logging.handlers.SysLogHandler` functionality has not been
 updated.
 
@@ -3780,7 +3858,7 @@ RFC 5424 contains some useful features such as support for structured data, and 
 need to be able to log to a syslog server with support for it, you can do so with a
 subclassed handler which looks something like this::
 
-    import datetime
+    import datetime as dt
     import logging.handlers
     import re
     import socket
@@ -3798,8 +3876,8 @@ subclassed handler which looks something like this::
 
         def format(self, record):
             version = 1
-            asctime = datetime.datetime.fromtimestamp(record.created).isoformat()
-            m = self.tz_offset.match(time.strftime('%z'))
+            asctime = dt.datetime.fromtimestamp(record.created).isoformat()
+            m = self.tz_offset.prefixmatch(time.strftime('%z'))
             has_offset = False
             if m and time.timezone:
                 hrs, mins = m.groups()
@@ -3963,7 +4041,7 @@ As you can see, this output isn't ideal. That's because the underlying code
 which writes to ``sys.stderr`` makes multiple writes, each of which results in a
 separate logged line (for example, the last three lines above). To get around
 this problem, you need to buffer things and only output log lines when newlines
-are seen. Let's use a slghtly better implementation of ``LoggerWriter``:
+are seen. Let's use a slightly better implementation of ``LoggerWriter``:
 
 .. code-block:: python
 
@@ -3996,6 +4074,104 @@ lines. With this approach, you get better output:
     WARNING:demo:    1/0
     WARNING:demo:ZeroDivisionError: division by zero
 
+How to uniformly handle newlines in logging output
+--------------------------------------------------
+
+Usually, messages that are logged (say to console or file) consist of a single
+line of text. However, sometimes there is a need to handle messages with
+multiple lines - whether because a logging format string contains newlines, or
+logged data contains newlines. If you want to handle such messages uniformly, so
+that each line in the logged message appears uniformly formatted as if it was
+logged separately, you can do this using a handler mixin, as in the following
+snippet:
+
+.. code-block:: python
+
+    # Assume this is in a module mymixins.py
+    import copy
+
+    class MultilineMixin:
+        def emit(self, record):
+            s = record.getMessage()
+            if '\n' not in s:
+                super().emit(record)
+            else:
+                lines = s.splitlines()
+                rec = copy.copy(record)
+                rec.args = None
+                for line in lines:
+                    rec.msg = line
+                    super().emit(rec)
+
+You can use the mixin as in the following script:
+
+.. code-block:: python
+
+    import logging
+
+    from mymixins import MultilineMixin
+
+    logger = logging.getLogger(__name__)
+
+    class StreamHandler(MultilineMixin, logging.StreamHandler):
+        pass
+
+    if __name__ == '__main__':
+        logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)-9s %(message)s',
+                            handlers = [StreamHandler()])
+        logger.debug('Single line')
+        logger.debug('Multiple lines:\nfool me once ...')
+        logger.debug('Another single line')
+        logger.debug('Multiple lines:\n%s', 'fool me ...\ncan\'t get fooled again')
+
+The script, when run, prints something like:
+
+.. code-block:: text
+
+    2025-07-02 13:54:47,234 DEBUG     Single line
+    2025-07-02 13:54:47,234 DEBUG     Multiple lines:
+    2025-07-02 13:54:47,234 DEBUG     fool me once ...
+    2025-07-02 13:54:47,234 DEBUG     Another single line
+    2025-07-02 13:54:47,234 DEBUG     Multiple lines:
+    2025-07-02 13:54:47,234 DEBUG     fool me ...
+    2025-07-02 13:54:47,234 DEBUG     can't get fooled again
+
+If, on the other hand, you are concerned about `log injection
+<https://owasp.org/www-community/attacks/Log_Injection>`_, you can use a
+formatter which escapes newlines, as per the following example:
+
+.. code-block:: python
+
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    class EscapingFormatter(logging.Formatter):
+        def format(self, record):
+            s = super().format(record)
+            return s.replace('\n', r'\n')
+
+    if __name__ == '__main__':
+        h = logging.StreamHandler()
+        h.setFormatter(EscapingFormatter('%(asctime)s %(levelname)-9s %(message)s'))
+        logging.basicConfig(level=logging.DEBUG, handlers = [h])
+        logger.debug('Single line')
+        logger.debug('Multiple lines:\nfool me once ...')
+        logger.debug('Another single line')
+        logger.debug('Multiple lines:\n%s', 'fool me ...\ncan\'t get fooled again')
+
+You can, of course, use whatever escaping scheme makes the most sense for you.
+The script, when run, should produce output like this:
+
+.. code-block:: text
+
+    2025-07-09 06:47:33,783 DEBUG     Single line
+    2025-07-09 06:47:33,783 DEBUG     Multiple lines:\nfool me once ...
+    2025-07-09 06:47:33,783 DEBUG     Another single line
+    2025-07-09 06:47:33,783 DEBUG     Multiple lines:\nfool me ...\ncan't get fooled again
+
+Escaping behaviour can't be the stdlib default , as it would break backwards
+compatibility.
 
 .. patterns-to-avoid:
 

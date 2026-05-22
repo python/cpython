@@ -1,8 +1,7 @@
 # Implementation of marshal.loads() in pure Python
 
 import ast
-
-from typing import Any, Tuple
+from typing import Any
 
 
 class Type:
@@ -55,10 +54,10 @@ class Code:
     def __repr__(self) -> str:
         return f"Code(**{self.__dict__})"
 
-    co_localsplusnames: Tuple[str]
-    co_localspluskinds: Tuple[int]
+    co_localsplusnames: tuple[str, ...]
+    co_localspluskinds: tuple[int, ...]
 
-    def get_localsplus_names(self, select_kind: int) -> Tuple[str, ...]:
+    def get_localsplus_names(self, select_kind: int) -> tuple[str, ...]:
         varnames: list[str] = []
         for name, kind in zip(self.co_localsplusnames,
                               self.co_localspluskinds):
@@ -67,15 +66,15 @@ class Code:
         return tuple(varnames)
 
     @property
-    def co_varnames(self) -> Tuple[str, ...]:
+    def co_varnames(self) -> tuple[str, ...]:
         return self.get_localsplus_names(CO_FAST_LOCAL)
 
     @property
-    def co_cellvars(self) -> Tuple[str, ...]:
+    def co_cellvars(self) -> tuple[str, ...]:
         return self.get_localsplus_names(CO_FAST_CELL)
 
     @property
-    def co_freevars(self) -> Tuple[str, ...]:
+    def co_freevars(self) -> tuple[str, ...]:
         return self.get_localsplus_names(CO_FAST_FREE)
 
     @property
@@ -146,12 +145,12 @@ class Reader:
     def r_float_bin(self) -> float:
         buf = self.r_string(8)
         import struct  # Lazy import to avoid breaking UNIX build
-        return struct.unpack("d", buf)[0]
+        return struct.unpack("d", buf)[0]  # type: ignore[no-any-return]
 
     def r_float_str(self) -> float:
         n = self.r_byte()
         buf = self.r_string(n)
-        return ast.literal_eval(buf.decode("ascii"))
+        return ast.literal_eval(buf.decode("ascii"))  # type: ignore[no-any-return]
 
     def r_ref_reserve(self, flag: int) -> int:
         if flag:
@@ -307,15 +306,17 @@ def loads(data: bytes) -> Any:
     return r.r_object()
 
 
-def main():
+def main() -> None:
     # Test
-    import marshal, pprint
+    import marshal
+    import pprint
     sample = {'foo': {(42, "bar", 3.14)}}
     data = marshal.dumps(sample)
     retval = loads(data)
     assert retval == sample, retval
-    sample = main.__code__
-    data = marshal.dumps(sample)
+
+    sample2 = main.__code__
+    data = marshal.dumps(sample2)
     retval = loads(data)
     assert isinstance(retval, Code), retval
     pprint.pprint(retval.__dict__)
