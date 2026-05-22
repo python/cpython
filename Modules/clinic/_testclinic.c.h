@@ -4607,7 +4607,7 @@ vc_plain_new_impl(PyTypeObject *type, PyObject *a);
 
 static PyObject *
 vc_plain_new_parse_args(PyTypeObject *type, PyObject *const *args,
-    Py_ssize_t nargs, PyObject *kwargs, PyObject *kwnames)
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -4639,13 +4639,6 @@ vc_plain_new_parse_args(PyTypeObject *type, PyObject *const *args,
     #undef KWTUPLE
     PyObject *argsbuf[1];
     PyObject * const *fastargs;
-    Py_ssize_t nkw = 0;
-    if (kwnames != NULL) {
-        nkw = PyTuple_GET_SIZE(kwnames);
-    }
-    else if (kwargs != NULL) {
-        nkw = PyDict_GET_SIZE(kwargs);
-    }
     Py_ssize_t noptargs = nargs + nkw - 0;
     PyObject *a = Py_None;
 
@@ -4669,7 +4662,9 @@ static PyObject *
 vc_plain_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     return vc_plain_new_parse_args(type, _PyTuple_CAST(args)->ob_item,
-        PyTuple_GET_SIZE(args), kwargs, NULL);
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
 }
 
 static PyObject *
@@ -4691,8 +4686,9 @@ vc_plain_vectorcall(PyObject *type, PyObject *const *args,
     skip_optional_vc_fast:
         goto vc_fast_end;
     }
-    return vc_plain_new_parse_args(_PyType_CAST(type), args,
-        nargs, NULL, kwnames);
+    return vc_plain_new_parse_args(_PyType_CAST(type), args, nargs,
+        kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+        NULL, kwnames);
 vc_fast_end:
     return_value = vc_plain_new_impl(_PyType_CAST(type), a);
 
@@ -4705,7 +4701,7 @@ vc_posorkw_init_impl(PyObject *self, PyObject *a, PyObject *b);
 
 static int
 vc_posorkw_init_parse_args(PyObject *self, PyObject *const *args,
-    Py_ssize_t nargs, PyObject *kwargs, PyObject *kwnames)
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 {
     int return_value = -1;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -4737,13 +4733,6 @@ vc_posorkw_init_parse_args(PyObject *self, PyObject *const *args,
     #undef KWTUPLE
     PyObject *argsbuf[2];
     PyObject * const *fastargs;
-    Py_ssize_t nkw = 0;
-    if (kwnames != NULL) {
-        nkw = PyTuple_GET_SIZE(kwnames);
-    }
-    else if (kwargs != NULL) {
-        nkw = PyDict_GET_SIZE(kwargs);
-    }
     Py_ssize_t noptargs = nargs + nkw - 1;
     PyObject *a;
     PyObject *b = Py_None;
@@ -4769,7 +4758,9 @@ static int
 vc_posorkw_init(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     return vc_posorkw_init_parse_args(self, _PyTuple_CAST(args)->ob_item,
-        PyTuple_GET_SIZE(args), kwargs, NULL);
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
 }
 
 static PyObject *
@@ -4799,8 +4790,9 @@ vc_posorkw_vectorcall(PyObject *type, PyObject *const *args,
         if (self == NULL) {
             return NULL;
         }
-        int _result = vc_posorkw_init_parse_args(self,
-            args, nargs, NULL, kwnames);
+        int _result = vc_posorkw_init_parse_args(self, args, nargs,
+            kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+            NULL, kwnames);
         if (_result != 0) {
             Py_DECREF(self);
             return NULL;
@@ -4831,7 +4823,7 @@ vc_exact_new_impl(PyTypeObject *type, PyObject *a, PyObject *b);
 
 static PyObject *
 vc_exact_new_parse_args(PyTypeObject *type, PyObject *const *args,
-    Py_ssize_t nargs, PyObject *kwargs, PyObject *kwnames)
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -4863,13 +4855,6 @@ vc_exact_new_parse_args(PyTypeObject *type, PyObject *const *args,
     #undef KWTUPLE
     PyObject *argsbuf[2];
     PyObject * const *fastargs;
-    Py_ssize_t nkw = 0;
-    if (kwnames != NULL) {
-        nkw = PyTuple_GET_SIZE(kwnames);
-    }
-    else if (kwargs != NULL) {
-        nkw = PyDict_GET_SIZE(kwargs);
-    }
     Py_ssize_t noptargs = nargs + nkw - 1;
     PyObject *a;
     PyObject *b = Py_None;
@@ -4895,7 +4880,9 @@ static PyObject *
 vc_exact_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     return vc_exact_new_parse_args(type, _PyTuple_CAST(args)->ob_item,
-        PyTuple_GET_SIZE(args), kwargs, NULL);
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
 }
 
 static PyObject *
@@ -4924,8 +4911,9 @@ vc_exact_vectorcall(PyObject *type, PyObject *const *args,
     skip_optional_vc_fast:
         goto vc_fast_end;
     }
-    return vc_exact_new_parse_args(_PyType_CAST(type), args,
-        nargs, NULL, kwnames);
+    return vc_exact_new_parse_args(_PyType_CAST(type), args, nargs,
+        kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+        NULL, kwnames);
 vc_fast_end:
     return_value = vc_exact_new_impl(_PyType_CAST(type), a, b);
 
@@ -4938,7 +4926,7 @@ vc_kwonly_new_impl(PyTypeObject *type, PyObject *a, PyObject *b);
 
 static PyObject *
 vc_kwonly_new_parse_args(PyTypeObject *type, PyObject *const *args,
-    Py_ssize_t nargs, PyObject *kwargs, PyObject *kwnames)
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -4970,13 +4958,6 @@ vc_kwonly_new_parse_args(PyTypeObject *type, PyObject *const *args,
     #undef KWTUPLE
     PyObject *argsbuf[2];
     PyObject * const *fastargs;
-    Py_ssize_t nkw = 0;
-    if (kwnames != NULL) {
-        nkw = PyTuple_GET_SIZE(kwnames);
-    }
-    else if (kwargs != NULL) {
-        nkw = PyDict_GET_SIZE(kwargs);
-    }
     Py_ssize_t noptargs = nargs + nkw - 1;
     PyObject *a;
     PyObject *b = Py_None;
@@ -5002,7 +4983,9 @@ static PyObject *
 vc_kwonly_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     return vc_kwonly_new_parse_args(type, _PyTuple_CAST(args)->ob_item,
-        PyTuple_GET_SIZE(args), kwargs, NULL);
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
 }
 
 static PyObject *
@@ -5011,7 +4994,8 @@ vc_kwonly_vectorcall(PyObject *type, PyObject *const *args,
 {
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
 
-    return vc_kwonly_new_parse_args(_PyType_CAST(type), args,
-        nargs, NULL, kwnames);
+    return vc_kwonly_new_parse_args(_PyType_CAST(type), args, nargs,
+        kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+        NULL, kwnames);
 }
-/*[clinic end generated code: output=f50fc4e8fc5d3848 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e05b3fb47b594279 input=a9049054013a1b77]*/

@@ -109,12 +109,12 @@ PARSER_PROTOTYPE_KEYWORD___INIT__: Final[str] = libclinic.normalize_snippet("""
 PARSER_PROTOTYPE_KEYWORD_HELPER: Final[str] = libclinic.normalize_snippet("""
     static PyObject *
     {c_basename}_parse_args({self_type}{self_name}, PyObject *const *args,
-        Py_ssize_t nargs, PyObject *kwargs, PyObject *kwnames)
+        Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 """)
 PARSER_PROTOTYPE_KEYWORD___INIT___HELPER: Final[str] = libclinic.normalize_snippet("""
     static int
     {c_basename}_parse_args({self_type}{self_name}, PyObject *const *args,
-        Py_ssize_t nargs, PyObject *kwargs, PyObject *kwnames)
+        Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 """)
 PARSER_PROTOTYPE_VARARGS: Final[str] = libclinic.normalize_snippet("""
     static PyObject *
@@ -718,13 +718,6 @@ class ParseArgsCodeGen:
                 self.declarations += "\nPyObject * const *fastargs;"
                 if has_optional_kw:
                     self.declarations += (
-                        "\nPy_ssize_t nkw = 0;"
-                        "\nif (kwnames != NULL) {{"
-                        "\n    nkw = PyTuple_GET_SIZE(kwnames);"
-                        "\n}}"
-                        "\nelse if (kwargs != NULL) {{"
-                        "\n    nkw = PyDict_GET_SIZE(kwargs);"
-                        "\n}}"
                         "\nPy_ssize_t noptargs = %s + nkw - %d;"
                         % (nargs, self.min_pos + self.min_kw_only))
                 unpack_args = 'args, nargs, kwargs, kwnames'
@@ -912,7 +905,9 @@ class ParseArgsCodeGen:
                 '{{',
                 '    return {c_basename}_parse_args({self_name}, '
                     '_PyTuple_CAST(args)->ob_item,',
-                '        PyTuple_GET_SIZE(args), kwargs, NULL);',
+                '        PyTuple_GET_SIZE(args),',
+                '        kwargs ? PyDict_GET_SIZE(kwargs) : 0,',
+                '        kwargs, NULL);',
                 '}}',
             ])
             return
@@ -1178,8 +1173,9 @@ class ParseArgsCodeGen:
                     if (self == NULL) {{
                         return NULL;
                     }}
-                    int _result = {c_basename}_parse_args(self,
-                        args, nargs, NULL, kwnames);
+                    int _result = {c_basename}_parse_args(self, args, nargs,
+                        kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+                        NULL, kwnames);
                     if (_result != 0) {{
                         Py_DECREF(self);
                         return NULL;
@@ -1189,8 +1185,9 @@ class ParseArgsCodeGen:
                 """)
         else:
             emit("""
-                return {c_basename}_parse_args(_PyType_CAST(type), args,
-                    nargs, NULL, kwnames);
+                return {c_basename}_parse_args(_PyType_CAST(type), args, nargs,
+                    kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+                    NULL, kwnames);
                 """)
 
         if emitted_fast_path:
