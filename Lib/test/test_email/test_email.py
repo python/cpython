@@ -4995,15 +4995,8 @@ class TestCharset(unittest.TestCase):
         # Try the convert argument, where input codec != output codec
         c = Charset('euc-jp')
         # With apologies to Tokio Kikuchi ;)
-        # XXX FIXME
-##         try:
-##             eq('\x1b$B5FCO;~IW\x1b(B',
-##                c.body_encode('\xb5\xc6\xc3\xcf\xbb\xfe\xc9\xd7'))
-##             eq('\xb5\xc6\xc3\xcf\xbb\xfe\xc9\xd7',
-##                c.body_encode('\xb5\xc6\xc3\xcf\xbb\xfe\xc9\xd7', False))
-##         except LookupError:
-##             # We probably don't have the Japanese codecs installed
-##             pass
+        eq('\x1b$B5FCO;~IW\x1b(B',
+           c.body_encode('\u83ca\u5730\u6642\u592b'))
         # Testing SF bug #625509, which we have to fake, since there are no
         # built-in encodings where the header encoding is QP but the body
         # encoding is not.
