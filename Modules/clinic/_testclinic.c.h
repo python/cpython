@@ -4606,7 +4606,8 @@ static PyObject *
 vc_plain_new_impl(PyTypeObject *type, PyObject *a);
 
 static PyObject *
-vc_plain_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+vc_plain_new_parse_args(PyTypeObject *type, PyObject *const *args,
+    Py_ssize_t nargs, PyObject *kwargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -4638,11 +4639,17 @@ vc_plain_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #undef KWTUPLE
     PyObject *argsbuf[1];
     PyObject * const *fastargs;
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
+    Py_ssize_t nkw = 0;
+    if (kwnames != NULL) {
+        nkw = PyTuple_GET_SIZE(kwnames);
+    }
+    else if (kwargs != NULL) {
+        nkw = PyDict_GET_SIZE(kwargs);
+    }
+    Py_ssize_t noptargs = nargs + nkw - 0;
     PyObject *a = Py_None;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
@@ -4656,6 +4663,13 @@ skip_optional_pos:
 
 exit:
     return return_value;
+}
+
+static PyObject *
+vc_plain_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    return vc_plain_new_parse_args(type, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args), kwargs, NULL);
 }
 
 static PyObject *
@@ -4677,48 +4691,8 @@ vc_plain_vectorcall(PyObject *type, PyObject *const *args,
     skip_optional_vc_fast:
         goto vc_fast_end;
     }
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 1
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        Py_hash_t ob_hash;
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_hash = -1,
-        .ob_item = { _Py_LATIN1_CHR('a'), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"a", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "VcNew",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames,
-        &_parser,
-        /*minpos*/ 0, /*maxpos*/ 1,
-        /*minkw*/ 0,
-        /*varpos*/ 0, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    if (!noptargs) {
-        goto skip_optional_pos_vc;
-    }
-    a = args[0];
-skip_optional_pos_vc:
+    return vc_plain_new_parse_args(_PyType_CAST(type), args,
+        nargs, NULL, kwnames);
 vc_fast_end:
     return_value = vc_plain_new_impl(_PyType_CAST(type), a);
 
@@ -4730,7 +4704,8 @@ static int
 vc_posorkw_init_impl(PyObject *self, PyObject *a, PyObject *b);
 
 static int
-vc_posorkw_init(PyObject *self, PyObject *args, PyObject *kwargs)
+vc_posorkw_init_parse_args(PyObject *self, PyObject *const *args,
+    Py_ssize_t nargs, PyObject *kwargs, PyObject *kwnames)
 {
     int return_value = -1;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -4762,12 +4737,18 @@ vc_posorkw_init(PyObject *self, PyObject *args, PyObject *kwargs)
     #undef KWTUPLE
     PyObject *argsbuf[2];
     PyObject * const *fastargs;
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
+    Py_ssize_t nkw = 0;
+    if (kwnames != NULL) {
+        nkw = PyTuple_GET_SIZE(kwnames);
+    }
+    else if (kwargs != NULL) {
+        nkw = PyDict_GET_SIZE(kwargs);
+    }
+    Py_ssize_t noptargs = nargs + nkw - 1;
     PyObject *a;
     PyObject *b = Py_None;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
@@ -4782,6 +4763,13 @@ skip_optional_pos:
 
 exit:
     return return_value;
+}
+
+static int
+vc_posorkw_init(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    return vc_posorkw_init_parse_args(self, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args), kwargs, NULL);
 }
 
 static PyObject *
@@ -4805,49 +4793,20 @@ vc_posorkw_vectorcall(PyObject *type, PyObject *const *args,
     skip_optional_vc_fast:
         goto vc_fast_end;
     }
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 1
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        Py_hash_t ob_hash;
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_hash = -1,
-        .ob_item = { _Py_LATIN1_CHR('b'), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"", "b", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "VcInit",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames,
-        &_parser,
-        /*minpos*/ 1, /*maxpos*/ 2,
-        /*minkw*/ 0,
-        /*varpos*/ 0, argsbuf);
-    if (!args) {
-        goto exit;
+    {
+        PyObject *self = _PyType_CAST(type)->tp_alloc(
+            _PyType_CAST(type), 0);
+        if (self == NULL) {
+            return NULL;
+        }
+        int _result = vc_posorkw_init_parse_args(self,
+            args, nargs, NULL, kwnames);
+        if (_result != 0) {
+            Py_DECREF(self);
+            return NULL;
+        }
+        return self;
     }
-    a = args[0];
-    if (!noptargs) {
-        goto skip_optional_pos_vc;
-    }
-    b = args[1];
-skip_optional_pos_vc:
 vc_fast_end:
     {
         PyObject *self = _PyType_CAST(type)->tp_alloc(
@@ -4871,7 +4830,8 @@ static PyObject *
 vc_exact_new_impl(PyTypeObject *type, PyObject *a, PyObject *b);
 
 static PyObject *
-vc_exact_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+vc_exact_new_parse_args(PyTypeObject *type, PyObject *const *args,
+    Py_ssize_t nargs, PyObject *kwargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -4903,12 +4863,18 @@ vc_exact_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #undef KWTUPLE
     PyObject *argsbuf[2];
     PyObject * const *fastargs;
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
+    Py_ssize_t nkw = 0;
+    if (kwnames != NULL) {
+        nkw = PyTuple_GET_SIZE(kwnames);
+    }
+    else if (kwargs != NULL) {
+        nkw = PyDict_GET_SIZE(kwargs);
+    }
+    Py_ssize_t noptargs = nargs + nkw - 1;
     PyObject *a;
     PyObject *b = Py_None;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
@@ -4923,6 +4889,13 @@ skip_optional_pos:
 
 exit:
     return return_value;
+}
+
+static PyObject *
+vc_exact_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    return vc_exact_new_parse_args(type, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args), kwargs, NULL);
 }
 
 static PyObject *
@@ -4951,53 +4924,12 @@ vc_exact_vectorcall(PyObject *type, PyObject *const *args,
     skip_optional_vc_fast:
         goto vc_fast_end;
     }
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 1
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        Py_hash_t ob_hash;
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_hash = -1,
-        .ob_item = { _Py_LATIN1_CHR('b'), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"", "b", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "VcNewExact",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames,
-        &_parser,
-        /*minpos*/ 1, /*maxpos*/ 2,
-        /*minkw*/ 0,
-        /*varpos*/ 0, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    a = args[0];
-    if (!noptargs) {
-        goto skip_optional_pos_vc;
-    }
-    b = args[1];
-skip_optional_pos_vc:
+    return vc_exact_new_parse_args(_PyType_CAST(type), args,
+        nargs, NULL, kwnames);
 vc_fast_end:
     return_value = vc_exact_new_impl(_PyType_CAST(type), a, b);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=27755bae91a1cd92 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9d74cc1d3fc45354 input=a9049054013a1b77]*/

@@ -106,6 +106,16 @@ PARSER_PROTOTYPE_KEYWORD___INIT__: Final[str] = libclinic.normalize_snippet("""
     static int
     {c_basename}({self_type}{self_name}, PyObject *args, PyObject *kwargs)
 """)
+PARSER_PROTOTYPE_KEYWORD_HELPER: Final[str] = libclinic.normalize_snippet("""
+    static PyObject *
+    {c_basename}_parse_args({self_type}{self_name}, PyObject *const *args,
+        Py_ssize_t nargs, PyObject *kwargs, PyObject *kwnames)
+""")
+PARSER_PROTOTYPE_KEYWORD___INIT___HELPER: Final[str] = libclinic.normalize_snippet("""
+    static int
+    {c_basename}_parse_args({self_type}{self_name}, PyObject *const *args,
+        Py_ssize_t nargs, PyObject *kwargs, PyObject *kwnames)
+""")
 PARSER_PROTOTYPE_VARARGS: Final[str] = libclinic.normalize_snippet("""
     static PyObject *
     {c_basename}({self_type}{self_name}, PyObject *args)
@@ -229,6 +239,7 @@ class ParseArgsCodeGen:
     methoddef_define: str
     parser_prototype: str
     parser_definition: str
+    parser_helper_definition: str
     cpp_if: str
     cpp_endif: str
     methoddef_ifndef: str
@@ -691,6 +702,32 @@ class ParseArgsCodeGen:
                 if has_optional_kw:
                     self.declarations += "\nPy_ssize_t noptargs = %s + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - %d;" % (nargs, self.min_pos + self.min_kw_only)
                 unpack_args = 'args, nargs, NULL, kwnames'
+            elif self.func.vectorcall:
+                # tp_new / tp_init body emitted as a helper that takes both
+                # calling conventions; both the tuple/dict entry point and
+                # the vectorcall entry point call this helper.
+                self.flags = "METH_VARARGS|METH_KEYWORDS"
+                if self.func.kind is METHOD_INIT:
+                    self.parser_prototype = PARSER_PROTOTYPE_KEYWORD___INIT___HELPER
+                else:
+                    self.parser_prototype = PARSER_PROTOTYPE_KEYWORD_HELPER
+                argsname = 'fastargs'
+                argname_fmt = 'fastargs[%d]'
+                self.declarations = declare_parser(self.func, codegen=self.codegen)
+                self.declarations += "\nPyObject *argsbuf[%s];" % (len(self.converters) or 1)
+                self.declarations += "\nPyObject * const *fastargs;"
+                if has_optional_kw:
+                    self.declarations += (
+                        "\nPy_ssize_t nkw = 0;"
+                        "\nif (kwnames != NULL) {{"
+                        "\n    nkw = PyTuple_GET_SIZE(kwnames);"
+                        "\n}}"
+                        "\nelse if (kwargs != NULL) {{"
+                        "\n    nkw = PyDict_GET_SIZE(kwargs);"
+                        "\n}}"
+                        "\nPy_ssize_t noptargs = %s + nkw - %d;"
+                        % (nargs, self.min_pos + self.min_kw_only))
+                unpack_args = 'args, nargs, kwargs, kwnames'
             else:
                 # positional-or-keyword arguments
                 self.flags = "METH_VARARGS|METH_KEYWORDS"
@@ -724,18 +761,69 @@ class ParseArgsCodeGen:
                                                    fastcall=self.fastcall)
                 parser_code.append(code)
 
-            per_arg_code, success = self._generate_keyword_per_arg_parsing(
-                argname_fmt=argname_fmt,
-                has_optional_kw=has_optional_kw,
-                limited_capi=self.limited_capi,
-            )
-            if success:
-                parser_code.extend(per_arg_code)
-            else:
-                parser_code = []
-                use_parser_code = False
+            add_label: str | None = None
+            for i, p in enumerate(self.parameters):
+                if isinstance(p.converter, defining_class_converter):
+                    raise ValueError("defining_class should be the first "
+                                    "parameter (after clang)")
+                displayname = p.get_displayname(i+1)
+                parsearg = p.converter.parse_arg(argname_fmt % i, displayname, limited_capi=self.limited_capi)
+                if parsearg is None:
+                    parser_code = []
+                    use_parser_code = False
+                    break
+                if add_label and (i == self.pos_only or i == self.max_pos):
+                    parser_code.append("%s:" % add_label)
+                    add_label = None
+                if not p.is_optional():
+                    parser_code.append(libclinic.normalize_snippet(parsearg, indent=4))
+                elif i < self.pos_only:
+                    add_label = 'skip_optional_posonly'
+                    parser_code.append(libclinic.normalize_snippet("""
+                        if (nargs < %d) {{
+                            goto %s;
+                        }}
+                        """ % (i + 1, add_label), indent=4))
+                    if has_optional_kw:
+                        parser_code.append(libclinic.normalize_snippet("""
+                            noptargs--;
+                            """, indent=4))
+                    parser_code.append(libclinic.normalize_snippet(parsearg, indent=4))
+                else:
+                    if i < self.max_pos:
+                        label = 'skip_optional_pos'
+                        first_opt = max(self.min_pos, self.pos_only)
+                    else:
+                        label = 'skip_optional_kwonly'
+                        first_opt = self.max_pos + self.min_kw_only
+                    if i == first_opt:
+                        add_label = label
+                        parser_code.append(libclinic.normalize_snippet("""
+                            if (!noptargs) {{
+                                goto %s;
+                            }}
+                            """ % add_label, indent=4))
+                    if i + 1 == len(self.parameters):
+                        parser_code.append(libclinic.normalize_snippet(parsearg, indent=4))
+                    else:
+                        add_label = label
+                        parser_code.append(libclinic.normalize_snippet("""
+                            if (%s) {{
+                            """ % (argname_fmt % i), indent=4))
+                        parser_code.append(libclinic.normalize_snippet(parsearg, indent=8))
+                        parser_code.append(libclinic.normalize_snippet("""
+                                if (!--noptargs) {{
+                                    goto %s;
+                                }}
+                            }}
+                            """ % add_label, indent=4))
 
-        if not use_parser_code:
+        if use_parser_code:
+            if add_label:
+                parser_code.append("%s:" % add_label)
+            if self.varpos:
+                parser_code.append(libclinic.normalize_snippet(self._parse_vararg(), indent=4))
+        else:
             for parameter in self.parameters:
                 parameter.converter.use_converter()
 
@@ -806,14 +894,33 @@ class ParseArgsCodeGen:
         self.methoddef_define = ''
 
         if self.func.kind is METHOD_NEW:
-            self.parser_prototype = PARSER_PROTOTYPE_KEYWORD
+            entry_prototype = PARSER_PROTOTYPE_KEYWORD
         else:
             self.return_value_declaration = "int return_value = -1;"
-            self.parser_prototype = PARSER_PROTOTYPE_KEYWORD___INIT__
+            entry_prototype = PARSER_PROTOTYPE_KEYWORD___INIT__
+
+        parses_keywords = 'METH_KEYWORDS' in self.flags
+
+        if self.func.vectorcall and parses_keywords:
+            # parse_general emitted a helper body into parser_definition;
+            # move it to parser_helper_definition and replace
+            # parser_definition with a thin shim that calls the helper.
+            self.parser_helper_definition = self.parser_definition
+            self.parser_prototype = entry_prototype
+            self.parser_definition = '\n'.join([
+                entry_prototype,
+                '{{',
+                '    return {c_basename}_parse_args({self_name}, '
+                    '_PyTuple_CAST(args)->ob_item,',
+                '        PyTuple_GET_SIZE(args), kwargs, NULL);',
+                '}}',
+            ])
+            return
+
+        self.parser_prototype = entry_prototype
 
         fields: list[str] = list(self.parser_body_fields)
         parses_positional = 'METH_NOARGS' not in self.flags
-        parses_keywords = 'METH_KEYWORDS' in self.flags
         if parses_keywords:
             assert parses_positional
 
@@ -884,6 +991,9 @@ class ParseArgsCodeGen:
             self.impl_prototype += ";"
 
         self.parser_definition = self.parser_definition.replace("{return_value_declaration}", self.return_value_declaration)
+        if self.parser_helper_definition:
+            self.parser_helper_definition = self.parser_helper_definition.replace(
+                "{return_value_declaration}", self.return_value_declaration)
 
         compiler_warning = clang.compiler_deprecated_warning(self.func, self.parameters)
         if compiler_warning:
@@ -897,6 +1007,7 @@ class ParseArgsCodeGen:
             "methoddef_define" : self.methoddef_define,
             "parser_prototype" : self.parser_prototype,
             "parser_definition" : self.parser_definition,
+            "parser_helper_definition" : self.parser_helper_definition,
             "impl_definition" : self.impl_definition,
             "cpp_if" : self.cpp_if,
             "cpp_endif" : self.cpp_endif,
@@ -927,87 +1038,6 @@ class ParseArgsCodeGen:
                 name = name[:-len(suffix)]
                 break
         return f'{name}_vectorcall'
-
-    def _generate_keyword_per_arg_parsing(
-        self,
-        *,
-        argname_fmt: str,
-        has_optional_kw: bool,
-        label_suffix: str = '',
-        limited_capi: bool = False,
-    ) -> tuple[list[str], bool]:
-        """Generate per-argument parsing code for keyword-capable functions.
-
-        Shared between parse_general (FASTCALL|KEYWORDS) and vectorcall
-        keyword parsing. Returns (code_lines, success). success is False
-        when a converter doesn't support parse_arg.
-        """
-        code: list[str] = []
-
-        def emit(text: str, indent: int = 4) -> None:
-            code.append(libclinic.normalize_snippet(text, indent=indent))
-
-        add_label: str | None = None
-        for i, p in enumerate(self.parameters):
-            if isinstance(p.converter, defining_class_converter):
-                raise ValueError("defining_class should be the first "
-                                 "parameter (after clang)")
-            displayname = p.get_displayname(i + 1)
-            parsearg = p.converter.parse_arg(
-                argname_fmt % i, displayname, limited_capi=limited_capi)
-            if parsearg is None:
-                return [], False
-            if add_label and (i == self.pos_only or i == self.max_pos):
-                code.append("%s:" % add_label)
-                add_label = None
-            if not p.is_optional():
-                emit(parsearg)
-            elif i < self.pos_only:
-                add_label = f'skip_optional_posonly{label_suffix}'
-                emit("""
-                    if (nargs < %d) {{
-                        goto %s;
-                    }}
-                    """ % (i + 1, add_label))
-                if has_optional_kw:
-                    emit("""
-                        noptargs--;
-                        """)
-                emit(parsearg)
-            else:
-                if i < self.max_pos:
-                    label = f'skip_optional_pos{label_suffix}'
-                    first_opt = max(self.min_pos, self.pos_only)
-                else:
-                    label = f'skip_optional_kwonly{label_suffix}'
-                    first_opt = self.max_pos + self.min_kw_only
-                if i == first_opt:
-                    add_label = label
-                    emit("""
-                        if (!noptargs) {{
-                            goto %s;
-                        }}
-                        """ % add_label)
-                if i + 1 == len(self.parameters):
-                    emit(parsearg)
-                else:
-                    add_label = label
-                    emit("""
-                        if (%s) {{
-                        """ % (argname_fmt % i))
-                    emit(parsearg, indent=8)
-                    emit("""
-                            if (!--noptargs) {{
-                                goto %s;
-                            }}
-                        }}
-                        """ % add_label)
-
-        if add_label:
-            code.append("%s:" % add_label)
-        if self.varpos:
-            emit(self._parse_vararg())
-        return code, True
 
     def _generate_vc_pos_only_code(
         self,
@@ -1062,8 +1092,13 @@ class ParseArgsCodeGen:
 
         return code, True
 
-    def _generate_vc_parsing_code(self) -> list[str]:
-        """Generate FASTCALL-style argument parsing code for vectorcall."""
+    def _generate_vc_parsing_code(self) -> tuple[list[str], bool]:
+        """Generate FASTCALL-style argument parsing code for vectorcall.
+
+        Returns ``(parser_code, needs_finale)``.  When ``needs_finale`` is
+        False the parser code already returns from the function (the
+        impl-call finale would be unreachable and must not be emitted).
+        """
         no_params = (not self.parameters and not self.varpos
                      and not self.var_keyword)
         all_pos_only = (self.pos_only == len(self.parameters)
@@ -1093,7 +1128,7 @@ class ParseArgsCodeGen:
                         goto exit;
                     }}
                     """)
-                return parser_code
+                return parser_code, True
 
             pos_code, success = self._generate_vc_pos_only_code()
             if not success:
@@ -1107,95 +1142,61 @@ class ParseArgsCodeGen:
                         goto exit;
                     }}
                     """)
-                return parser_code
+                return parser_code, True
             parser_code.extend(pos_code)
-            return parser_code
+            return parser_code, True
+
+        # General case: has keyword args.  The slow (kwnames != NULL) path
+        # delegates to the {c_basename}_parse_args helper emitted by
+        # parse_general.  The kwnames == NULL fast path is kept inline so
+        # the no-kwargs hot path skips _PyArg_UnpackKeywords entirely and
+        # falls through to the impl-call finale via vc_fast_end.
+        has_kw_only = any(p.is_keyword_only() for p in self.parameters)
+        can_fast_path = (not has_kw_only and not self.varpos
+                         and not self.var_keyword)
+
+        emitted_fast_path = False
+        if can_fast_path:
+            fast_code, success = self._generate_vc_pos_only_code(
+                label_suffix='_fast', indent=8)
+            if success:
+                emitted_fast_path = True
+                emit("""
+                    if (kwnames == NULL) {{
+                    """)
+                parser_code.extend(fast_code)
+                emit("""
+                        goto vc_fast_end;
+                    }}
+                    """)
+
+        if self.func.kind is METHOD_INIT:
+            emit("""
+                {{
+                    PyObject *self = _PyType_CAST(type)->tp_alloc(
+                        _PyType_CAST(type), 0);
+                    if (self == NULL) {{
+                        return NULL;
+                    }}
+                    int _result = {c_basename}_parse_args(self,
+                        args, nargs, NULL, kwnames);
+                    if (_result != 0) {{
+                        Py_DECREF(self);
+                        return NULL;
+                    }}
+                    return self;
+                }}
+                """)
         else:
-            # General case: has keyword args. Use _PyArg_UnpackKeywords
-            # in FASTCALL style.
-
-            # Check if we can generate a kwnames==NULL fast path.
-            # This avoids the overhead of _PyArg_UnpackKeywords when
-            # only positional args are passed (the common case).
-            has_kw_only = any(p.is_keyword_only()
-                             for p in self.parameters)
-            can_fast_path = (not has_kw_only and not self.varpos
-                             and not self.var_keyword)
-
-            if can_fast_path:
-                fast_code, success = self._generate_vc_pos_only_code(
-                    label_suffix='_fast', indent=8)
-                if success:
-                    emit("""
-                        if (kwnames == NULL) {{
-                        """)
-                    parser_code.extend(fast_code)
-                    emit("""
-                            goto vc_fast_end;
-                        }}
-                        """)
-
-            self.codegen.add_include('pycore_modsupport.h',
-                                     '_PyArg_UnpackKeywords()')
-            vc_declarations = declare_parser(
-                self.func, codegen=self.codegen)
-            vc_declarations += ("\nPyObject *argsbuf[%s];"
-                                % (len(self.converters) or 1))
-
-            nargs_expr = 'nargs'
-            if self.varpos:
-                nargs_expr = (f'Py_MIN(nargs, {self.max_pos})'
-                              if self.max_pos else '0')
-
-            has_optional_kw = (
-                max(self.pos_only, self.min_pos) + self.min_kw_only
-                < len(self.converters)
-            )
-            if has_optional_kw:
-                vc_declarations += (
-                    "\nPy_ssize_t noptargs = %s + "
-                    "(kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - %d;"
-                    % (nargs_expr, self.min_pos + self.min_kw_only))
-
-            emit(vc_declarations)
-
-            emit(f"""
-                args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames,
-                    &_parser,
-                    /*minpos*/ {self.min_pos}, /*maxpos*/ {self.max_pos},
-                    /*minkw*/ {self.min_kw_only},
-                    /*varpos*/ {1 if self.varpos else 0}, argsbuf);
-                if (!args) {{{{
-                    goto exit;
-                }}}}
+            emit("""
+                return {c_basename}_parse_args(_PyType_CAST(type), args,
+                    nargs, NULL, kwnames);
                 """)
 
-            per_arg_code, success = self._generate_keyword_per_arg_parsing(
-                argname_fmt='args[%d]',
-                has_optional_kw=has_optional_kw,
-                label_suffix='_vc',
-            )
-            if not success:
-                for parameter in self.parameters:
-                    parameter.converter.use_converter()
-                self.codegen.add_include(
-                    'pycore_modsupport.h',
-                    '_PyArg_ParseStackAndKeywords()')
-                return [
-                    snippet(vc_declarations, indent=4),
-                    snippet("""
-                    if (!_PyArg_ParseStackAndKeywords(args, nargs,
-                            kwnames, &_parser{parse_arguments_comma}
-                        {parse_arguments})) {{
-                        goto exit;
-                    }}
-                    """, indent=4)]
-            parser_code.extend(per_arg_code)
-
-            if can_fast_path:
-                parser_code.append("vc_fast_end:")
-
-        return parser_code
+        if emitted_fast_path:
+            parser_code.append("vc_fast_end:")
+            return parser_code, True
+        return parser_code, False
 
     def _vc_prototype(self) -> str:
         vc_basename = self._vc_basename()
@@ -1272,7 +1273,7 @@ class ParseArgsCodeGen:
 
     def generate_vectorcall(self) -> str:
         """Generate a vectorcall function for __init__ or __new__."""
-        parsing_code = self._generate_vc_parsing_code()
+        parsing_code, needs_finale = self._generate_vc_parsing_code()
 
         lines = [self._vc_prototype(), self._vc_preamble()]
 
@@ -1281,7 +1282,13 @@ class ParseArgsCodeGen:
             lines.append(exact_check)
 
         lines.extend(parsing_code)
-        lines.append(self._vc_finale())
+        if needs_finale:
+            lines.append(self._vc_finale())
+        else:
+            # Slow path already returned via the helper call; close the
+            # function so the impl-call finale would not be emitted as
+            # dead code.
+            lines.append("}")
 
         code = libclinic.linear_format(
             "\n".join(lines),
@@ -1296,6 +1303,7 @@ class ParseArgsCodeGen:
         self.declarations = ""
         self.parser_prototype = ""
         self.parser_definition = ""
+        self.parser_helper_definition = ""
         self.impl_prototype = None
         self.impl_definition = IMPL_DEFINITION_PROTOTYPE
         self.vectorcall_definition = ""

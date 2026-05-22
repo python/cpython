@@ -625,6 +625,7 @@ class ClinicWholeFileTest(TestCase):
              - 'methoddef_define'
              - 'impl_prototype'
              - 'parser_prototype'
+             - 'parser_helper_definition'
              - 'parser_definition'
              - 'vectorcall_definition'
              - 'cpp_endif'
