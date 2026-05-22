@@ -15,7 +15,7 @@ import textwrap
 from collections.abc import Callable
 try:
     from _testcapi import get_process_memory_usage as _get_process_memory_usage
-except AttributeError:
+except ImportError:
     _get_process_memory_usage = None
 
 from test import support
