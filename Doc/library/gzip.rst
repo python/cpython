@@ -46,8 +46,9 @@ The module defines the following items:
    The keyword-only argument *mtime* represents a Unix timestamp.
 
    For binary mode, this function is equivalent to the :class:`GzipFile`
-   constructor: ``GzipFile(filename, mode, compresslevel, mtime)``. In this case, the
-   *encoding*, *errors* and *newline* arguments must not be provided.
+   constructor: ``GzipFile(filename, mode, compresslevel, mtime=mtime)``.
+   In this case, the *encoding*, *errors* and *newline* arguments must not
+   be provided.
 
    For text mode, a :class:`GzipFile` object is created, and wrapped in an
    :class:`io.TextIOWrapper` instance with the specified encoding, error
