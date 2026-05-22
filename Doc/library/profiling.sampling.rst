@@ -387,7 +387,7 @@ This requires one of:
 On Windows, the profiler requires administrative privileges or the
 ``SeDebugPrivilege`` privilege to read another process's memory.
 
-*Note*: Running `profiling.sampling` from a virtual environmnent on Windows platform is not supported. It should be run from the global Python installation.
+*Note*: Running ``profiling.sampling`` from a virtual environment on the Windows platform is not supported. It should be run from the global Python installation.
 
 
 Version compatibility
