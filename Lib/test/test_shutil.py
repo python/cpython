@@ -3580,8 +3580,6 @@ class PublicAPITests(unittest.TestCase):
         if hasattr(os, 'statvfs') or os.name == 'nt':
             target_api.append('disk_usage')
         self.assertEqual(set(shutil.__all__), set(target_api))
-        with self.assertWarns(DeprecationWarning):
-            from shutil import ExecError  # noqa: F401
 
 
 if __name__ == '__main__':
