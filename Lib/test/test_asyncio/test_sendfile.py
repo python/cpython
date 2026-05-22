@@ -228,6 +228,32 @@ class SockSendfileMixin(SendfileBase):
         self.assertEqual(ret, 0)
         self.assertEqual(self.file.tell(), 0)
 
+    def check_sock_sendfile_offset(self, data, offset, force_fallback=False):
+        sock, proto = self.prepare_socksendfile()
+        with tempfile.TemporaryFile() as f:
+            f.write(data)
+            f.flush()
+            self.assertEqual(f.tell(), len(data))
+
+            if force_fallback:
+                async def _sock_sendfile_fail(sock, file, offset, count):
+                    raise asyncio.exceptions.SendfileNotAvailableError()
+                with support.swap_attr(self.loop, '_sock_sendfile_native', _sock_sendfile_fail):
+                    ret = self.run_loop(self.loop.sock_sendfile(sock, f, offset, None))
+            else:
+                ret = self.run_loop(self.loop.sock_sendfile(sock, f, offset, None))
+            self.assertEqual(f.tell(), len(data))
+            sock.close()
+            self.run_loop(proto.wait_closed())
+            self.assertEqual(ret, len(data) - offset)
+
+    def test_sock_sendfile_offset(self):
+        data = b'abcdef'
+        for offset in (0, len(data) // 2, len(data)):
+            for force_fallback in (False, True):
+                with self.subTest(offset=offset, force_fallback=force_fallback):
+                    self.check_sock_sendfile_offset(data, offset, force_fallback)
+
     def test_sock_sendfile_mix_with_regular_send(self):
         buf = b"mix_regular_send" * (4 * 1024)  # 64 KiB
         sock, proto = self.prepare_socksendfile()
