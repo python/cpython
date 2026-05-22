@@ -10,7 +10,7 @@ import stat
 import sys
 # Import _thread instead of threading to reduce startup cost
 from _thread import allocate_lock as Lock
-if sys.platform in {'win32', 'cygwin'}:
+if sys.platform == 'win32':
     from msvcrt import setmode as _setmode
 else:
     _setmode = None
@@ -941,7 +941,7 @@ class BytesIO(BufferedIOBase):
             newpos = min(len(self._buffer), self._pos + size)
             b = self._buffer[self._pos : newpos]
             self._pos = newpos
-            return bytes(b)
+            return b.take_bytes()
 
     def read1(self, size=-1):
         """This is the same as read.
