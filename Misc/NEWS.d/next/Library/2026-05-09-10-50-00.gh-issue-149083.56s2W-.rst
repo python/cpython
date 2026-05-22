@@ -1,2 +1,0 @@
-The private ``_UNSPECIFIED`` sentinel in :mod:`urllib.parse` is now an
-instance of :class:`sentinel`.
