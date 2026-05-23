@@ -701,6 +701,16 @@ class StrptimeTests(unittest.TestCase):
                     time.strptime(f'{year}-01-01', '%Y-%m-%d'),
                 )
 
+    def test_strptime_C_d_format(self):
+        # verify %C provides a year directive, allowing days in format
+        for day_directive in ('%d', '%e'):
+            format_directive = f"%C-%m-{day_directive}"
+            with self.subTest(format_directive=format_directive):
+                self.assertEqual(
+                    time.strptime('20-05-22', format_directive),
+                    time.strptime(f'2000-05-22', '%Y-%m-%d'),
+                )
+
 class Strptime12AMPMTests(unittest.TestCase):
     """Test a _strptime regression in '%I %p' at 12 noon (12 PM)"""
 

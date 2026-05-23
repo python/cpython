@@ -471,7 +471,7 @@ class TimeRE(dict):
         def repl(m):
             directive = m.group()[1:] # exclude `%` symbol
             match directive:
-                case 'Y' | 'y' | 'G':
+                case 'Y' | 'y' | 'G' | 'C':
                     nonlocal year_in_format
                     year_in_format = True
                 case 'd':

@@ -2249,6 +2249,16 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                     self.theclass(int(y), 1, 1)
                 )
 
+    def test_strptime_C_d_format(self):
+        # verify %C provides a year directive, allowing days in format
+        for day_directive in ('%d', '%e'):
+            format_directive = f"%C-%m-{day_directive}"
+            with self.subTest(format_directive=format_directive):
+                self.assertEqual(
+                    self.theclass.strptime('20-05-22', format_directive),
+                    self.theclass(2000, 5, 22)
+                )
+
 #############################################################################
 # datetime tests
 
