@@ -2847,5 +2847,25 @@ class AtexitTests(unittest.TestCase):
                 err.decode())
 
 
+class ThreadHandleRegressionTest(unittest.TestCase):
+    def test_subclass_can_define_handle(self):
+        # gh-132578: Ensure third-party libraries overriding or defining
+        # a custom `_handle` attribute/method don't clash with CPython internal implementation details.
+        class CustomThread(threading.Thread):
+            def __init__(self):
+                super().__init__()
+                self._handle = "custom_third_party_handle_value"
+
+            def run(self):
+                pass
+
+        t = CustomThread()
+        t.start()
+        t.join()
+        
+        # Assert that our custom handle parameter was preserved and did not break the thread run lifecycle
+        self.assertEqual(t._handle, "custom_third_party_handle_value")
+
+
 if __name__ == "__main__":
     unittest.main()
