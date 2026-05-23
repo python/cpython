@@ -15,9 +15,10 @@
 
 This module defines three classes, :class:`IMAP4`, :class:`IMAP4_SSL` and
 :class:`IMAP4_stream`, which encapsulate a connection to an IMAP4 server and
-implement IMAP4rev1 and IMAP4rev2 client protocol features. It is backward
-compatible with IMAP4 (:rfc:`1730`) servers, but note that the ``STATUS``
-command is not supported in IMAP4.
+implement a large subset of the IMAP4rev1 client protocol as defined in
+:rfc:`2060` and adds support for IMAP4rev2 client protocol as defined in
+:rfc:`9051`.  It is backward compatible with IMAP4 (:rfc:`1730`) servers, but
+note that the ``STATUS`` command is not supported in IMAP4.
 
 .. include:: ../includes/wasm-notavail.rst
 

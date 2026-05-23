@@ -270,54 +270,36 @@ class IMAP4:
 
     def _set_protocol_version(self):
 
-        if self._should_use_rev1_mode_for_dual_support():
-            self._activate_rev1_mode()
+        if 'IMAP4REV2' in self.capabilities and 'IMAP4REV1' in self.capabilities:
+            self.PROTOCOL_VERSION = 'IMAP4REV1'
+            self._mode_ascii()
             return
 
         for version in AllowedVersions:
             if not version in self.capabilities:
                 continue
             if version == 'IMAP4REV2':
-                self._activate_rev2_mode()
+                self.PROTOCOL_VERSION = 'IMAP4REV2'
+                self._mode_utf8()
             else:
                 self.PROTOCOL_VERSION = version
             return
 
         raise self.error('server not IMAP4 compliant')
 
-    def _supports_rev2(self):
-        return 'IMAP4REV2' in self.capabilities
-
-    def _supports_dual_rev1_rev2(self):
-        return self._supports_rev2() and 'IMAP4REV1' in self.capabilities
-
-    def _is_using_rev2(self):
-        return self.PROTOCOL_VERSION == 'IMAP4REV2'
-
     def _is_capability_available(self, capability):
         capability = capability.upper()
-        if self._is_using_rev2() and capability in IMAP4REV2_BUILTIN_COMMANDS:
+        if self.PROTOCOL_VERSION == 'IMAP4REV2' and capability in IMAP4REV2_BUILTIN_COMMANDS:
             return True
         return capability in self.capabilities
-
-    def _should_use_rev1_mode_for_dual_support(self):
-        return self._supports_dual_rev1_rev2()
-
-    def _activate_rev1_mode(self):
-        self.PROTOCOL_VERSION = 'IMAP4REV1'
-        self._mode_ascii()
-
-    def _activate_rev2_mode(self):
-        self.PROTOCOL_VERSION = 'IMAP4REV2'
-        self._mode_utf8()
 
     def _handle_enable_success(self, capability):
         capability = capability.upper()
         if 'UTF8=ACCEPT' in capability:
             self._mode_utf8()
         if 'IMAP4REV2' in capability:
-            self._activate_rev2_mode()
-
+            self.PROTOCOL_VERSION = 'IMAP4REV2'
+            self._mode_utf8()
 
     def __getattr__(self, attr):
         #       Allow UPPERCASE variants of IMAP4 command methods.
@@ -888,7 +870,7 @@ class IMAP4:
         """
         name = 'SEARCH'
         if charset:
-            if self.utf8_enabled and not self._is_using_rev2():
+            if self.utf8_enabled and not self.PROTOCOL_VERSION == 'IMAP4REV2':
                 raise IMAP4.error("Non-None charset not valid in UTF8 mode")
             typ, dat = self._simple_command(name, 'CHARSET', charset, *criteria)
         else:

@@ -138,7 +138,7 @@ class SimpleIMAPHandler(socketserver.StreamRequestHandler):
     def _send_tagged(self, tag, code, message):
         self._send_textline(' '.join((tag, code, message)))
 
-    def  handle(self):
+    def handle(self):
         # Send a welcome message.
         self._send_textline(f'* OK {self.welcome}')
         while 1:
