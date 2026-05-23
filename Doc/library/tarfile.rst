@@ -155,7 +155,7 @@ Some facts and figures:
    *bufsize* specifies the blocksize and defaults to ``20 * 512`` bytes.
    Use this variant in combination with e.g. ``sys.stdin.buffer``, a socket
    :term:`file object` or a tape device.
-   However, such a :class:`TarFile` object is limited in that it does
+   However, such a :class:`TarFile` object is limited since it does
    not allow random access, see :ref:`tar-examples`.  The currently
    possible modes:
 
