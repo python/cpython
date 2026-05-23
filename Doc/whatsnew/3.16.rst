@@ -86,6 +86,13 @@ New modules
 Improved modules
 ================
 
+gzip
+----
+
+* :func:`gzip.open` now accepts an optional argument ``mtime``
+  which is passed on to the constructor of the :class:`~gzip.GzipFile` class.
+  (Contributed by Marin Misur in :gh:`91372`.)
+
 math.integer
 ------------
 
