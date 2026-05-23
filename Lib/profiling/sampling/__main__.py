@@ -46,6 +46,7 @@ system restrictions or missing privileges.
 """
 
 from .cli import main
+from .errors import SamplingUnknownProcessError, SamplingModuleNotFoundError, SamplingScriptNotFoundError
 
 def handle_permission_error():
     """Handle PermissionError by displaying appropriate error message."""
@@ -64,3 +65,9 @@ if __name__ == '__main__':
         main()
     except PermissionError:
         handle_permission_error()
+    except SamplingUnknownProcessError as err:
+        print(f"Tachyon cannot find the process: {err}", file=sys.stderr)
+        sys.exit(1)
+    except (SamplingModuleNotFoundError, SamplingScriptNotFoundError) as err:
+        print(f"Tachyon cannot find the target: {err}", file=sys.stderr)
+        sys.exit(1)

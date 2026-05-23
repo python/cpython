@@ -2,8 +2,6 @@
 # as tested on the CI via check-warnings.py in reusable-docs.yml.
 # Keep lines sorted lexicographically to help avoid merge conflicts.
 
-Doc/c-api/descriptor.rst
-Doc/c-api/float.rst
 Doc/c-api/init_config.rst
 Doc/c-api/intro.rst
 Doc/c-api/stable.rst
@@ -23,7 +21,6 @@ Doc/library/multiprocessing.rst
 Doc/library/optparse.rst
 Doc/library/os.rst
 Doc/library/pickletools.rst
-Doc/library/profile.rst
 Doc/library/pyexpat.rst
 Doc/library/select.rst
 Doc/library/socket.rst
