@@ -259,11 +259,12 @@ PyDoc_STRVAR(memoryview_tobytes__doc__,
 "\n"
 "Return the data in the buffer as a byte string.\n"
 "\n"
-"Order can be {\'C\', \'F\', \'A\'}. When order is \'C\' or \'F\', the data of the\n"
-"original array is converted to C or Fortran order. For contiguous views,\n"
-"\'A\' returns an exact copy of the physical memory. In particular, in-memory\n"
-"Fortran order is preserved. For non-contiguous views, the data is converted\n"
-"to C first. order=None is the same as order=\'C\'.");
+"Order can be {\'C\', \'F\', \'A\'}.  When order is \'C\' or \'F\', the data of\n"
+"the original array is converted to C or Fortran order.  For\n"
+"contiguous views, \'A\' returns an exact copy of the physical memory.\n"
+"In particular, in-memory Fortran order is preserved.  For\n"
+"non-contiguous views, the data is converted to C first.  order=None\n"
+"is the same as order=\'C\'.");
 
 #define MEMORYVIEW_TOBYTES_METHODDEF    \
     {"tobytes", _PyCFunction_CAST(memoryview_tobytes), METH_FASTCALL|METH_KEYWORDS, memoryview_tobytes__doc__},
@@ -348,8 +349,8 @@ PyDoc_STRVAR(memoryview_hex__doc__,
 "  sep\n"
 "    An optional single character or byte to separate hex bytes.\n"
 "  bytes_per_sep\n"
-"    How many bytes between separators.  Positive values count from the\n"
-"    right, negative values count from the left.\n"
+"    How many bytes between separators.  Positive values count from\n"
+"    the right, negative values count from the left.\n"
 "\n"
 "Example:\n"
 ">>> value = memoryview(b\'\\xb9\\x01\\xef\')\n"
@@ -505,4 +506,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=348b6ddb98a1f412 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3abf9c80cd49229a input=a9049054013a1b77]*/
