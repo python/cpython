@@ -2885,8 +2885,7 @@ PyDoc_STRVAR(bytearray_doc,
 "bytearray(iterable_of_ints) -> bytearray\n\
 bytearray(string, encoding[, errors]) -> bytearray\n\
 bytearray(bytes_or_buffer) -> mutable copy of bytes_or_buffer\n\
-bytearray(int) -> bytes array of size given by the parameter initialized\n\
-    with null bytes\n\
+bytearray(int) -> bytes array of size given by the parameter initialized with null bytes\n\
 bytearray() -> empty bytes array\n\
 \n\
 Construct a mutable bytearray object from:\n\
