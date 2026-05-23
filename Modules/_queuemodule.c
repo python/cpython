@@ -7,6 +7,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_parking_lot.h"
 #include "pycore_time.h"          // _PyTime_FromSecondsObject()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stdbool.h>
 #include <stddef.h>               // offsetof()
@@ -153,8 +154,6 @@ RingBuf_Get(RingBuf *buf)
 }
 
 // Returns 0 on success or -1 if the buffer failed to grow.
-//
-// Steals a reference to item.
 static int
 RingBuf_Put(RingBuf *buf, PyObject *item)
 {
@@ -167,7 +166,7 @@ RingBuf_Put(RingBuf *buf, PyObject *item)
             return -1;
         }
     }
-    buf->items[buf->put_idx] = item;
+    buf->items[buf->put_idx] = Py_NewRef(item);
     buf->put_idx = (buf->put_idx + 1) % buf->items_cap;
     buf->num_items++;
     return 0;
@@ -221,9 +220,7 @@ simplequeue_dealloc(PyObject *op)
 
     PyObject_GC_UnTrack(self);
     (void)simplequeue_clear(op);
-    if (self->weakreflist != NULL) {
-        PyObject_ClearWeakRefs(op);
-    }
+    FT_CLEAR_WEAKREFS(op, self->weakreflist);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -276,16 +273,13 @@ maybe_handoff_item(void *arg, void *park_arg, int has_more_waiters)
 {
     HandoffData *data = (HandoffData*)arg;
     PyObject **item = (PyObject**)park_arg;
-    if (item == NULL) {
-        // No threads were waiting
-        data->handed_off = false;
-    }
-    else {
-        // There was at least one waiting thread, hand off the item
-        *item = data->item;
-        data->handed_off = true;
-    }
     data->queue->has_threads_waiting = has_more_waiters;
+
+    data->handed_off = item != NULL;
+    if (data->handed_off) {
+        // There was at least one waiting thread, hand off the item
+        *item = Py_NewRef(data->item);
+    }
 }
 
 /*[clinic input]
@@ -307,20 +301,21 @@ _queue_SimpleQueue_put_impl(simplequeueobject *self, PyObject *item,
                             int block, PyObject *timeout)
 /*[clinic end generated code: output=4333136e88f90d8b input=a16dbb33363c0fa8]*/
 {
-    HandoffData data = {
-        .handed_off = 0,
-        .item = Py_NewRef(item),
-        .queue = self,
-    };
     if (self->has_threads_waiting) {
+        HandoffData data = {
+            .handed_off = 0,
+            .item = item,
+            .queue = self,
+        };
         // Try to hand the item off directly if there are threads waiting
         _PyParkingLot_Unpark(&self->has_threads_waiting,
                              maybe_handoff_item, &data);
-    }
-    if (!data.handed_off) {
-        if (RingBuf_Put(&self->buf, item) < 0) {
-            return NULL;
+        if (data.handed_off) {
+            Py_RETURN_NONE;
         }
+    }
+    if (RingBuf_Put(&self->buf, item) < 0) {
+        return NULL;
     }
     Py_RETURN_NONE;
 }
@@ -501,6 +496,22 @@ _queue_SimpleQueue_qsize_impl(simplequeueobject *self)
     return RingBuf_Len(&self->buf);
 }
 
+/*[clinic input]
+@critical_section
+_queue.SimpleQueue.__sizeof__ -> Py_ssize_t
+
+Returns size in memory, in bytes.
+[clinic start generated code]*/
+
+static Py_ssize_t
+_queue_SimpleQueue___sizeof___impl(simplequeueobject *self)
+/*[clinic end generated code: output=58ce4e3bbc078fd4 input=a3a7f05c9616598f]*/
+{
+    Py_ssize_t res = sizeof(simplequeueobject);
+    res += self->buf.items_cap * sizeof(PyObject *);
+    return res;
+}
+
 static int
 queue_traverse(PyObject *m, visitproc visit, void *arg)
 {
@@ -535,6 +546,7 @@ static PyMethodDef simplequeue_methods[] = {
     _QUEUE_SIMPLEQUEUE_PUT_METHODDEF
     _QUEUE_SIMPLEQUEUE_PUT_NOWAIT_METHODDEF
     _QUEUE_SIMPLEQUEUE_QSIZE_METHODDEF
+    _QUEUE_SIMPLEQUEUE___SIZEOF___METHODDEF
     {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL,           NULL}              /* sentinel */
@@ -600,6 +612,7 @@ queuemodule_exec(PyObject *module)
 }
 
 static PyModuleDef_Slot queuemodule_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, queuemodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

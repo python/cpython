@@ -23,8 +23,8 @@
  */
 
 
-#ifndef __internal_Hacl_HMAC_H
-#define __internal_Hacl_HMAC_H
+#ifndef internal_Hacl_HMAC_H
+#define internal_Hacl_HMAC_H
 
 #if defined(__cplusplus)
 extern "C" {
@@ -48,5 +48,5 @@ K___uint32_t_uint32_t;
 }
 #endif
 
-#define __internal_Hacl_HMAC_H_DEFINED
-#endif
+#define internal_Hacl_HMAC_H_DEFINED
+#endif /* internal_Hacl_HMAC_H */
