@@ -1137,10 +1137,10 @@ preset_cxx="$CXX"
 if test -z "$CXX"
 then
         case "$ac_cv_cc_name" in
-        gcc)    AC_PATH_TOOL([CXX], [g++], [g++], [notfound]) ;;
-        cc)     AC_PATH_TOOL([CXX], [c++], [c++], [notfound]) ;;
-        clang)             AC_PATH_TOOL([CXX], [clang++], [clang++], [notfound]) ;;
-        icc)               AC_PATH_TOOL([CXX], [icpc], [icpc], [notfound]) ;;
+        gcc)    AC_PATH_TOOL([CXX], [g++], [notfound]) ;;
+        cc)     AC_PATH_TOOL([CXX], [c++], [notfound]) ;;
+        clang)             AC_PATH_TOOL([CXX], [clang++], [notfound]) ;;
+        icc)               AC_PATH_TOOL([CXX], [icpc], [notfound]) ;;
         esac
 	if test "$CXX" = "notfound"
 	then
@@ -2461,6 +2461,54 @@ AS_CASE([$ac_sys_system],
     AS_VAR_APPEND([LDFLAGS_NODIST], [" -z stack-size=16777216 -Wl,--stack-first -Wl,--initial-memory=41943040"])
   ]
 )
+
+dnl On Linux, check the thread stack size. musl (ex: Alpine Linux) uses
+dnl a default thread stack size of 128 kB, whereas the glibc uses 8 MiB.
+dnl Python needs at least 1 MiB.
+if test "$ac_sys_system" = "Linux" -a "$cross_compiling" = no; then
+    AC_CACHE_CHECK([for thread stack size], [ac_cv_thread_stack_size], [
+    cat > conftest.c <<EOF
+#include <pthread.h>
+
+int main()
+{
+    pthread_attr_t attrs;
+    size_t size;
+
+    int rc = pthread_attr_init(&attrs);
+    if (rc != 0) {
+        return 2;
+    }
+
+    rc = pthread_attr_getstacksize(&attrs, &size);
+    if (rc != 0) {
+        return 2;
+    }
+
+    if (size < 1024 * 1024) {
+        return 1;
+    }
+    return 0;
+}
+EOF
+
+    ac_cv_thread_stack_size=unknown
+    if $CC -pthread $CFLAGS conftest.c -o conftest &>/dev/null; then
+        ./conftest &>/dev/null
+        exitcode=$?
+        if test $exitcode -eq 1; then
+            ac_cv_thread_stack_size=1048576
+        elif test $exitcode -eq 0; then
+            ac_cv_thread_stack_size="default"
+        fi
+    fi
+    rm -f conftest.c conftest
+    ])
+
+    if test "$ac_cv_thread_stack_size" != "default" -a "$ac_cv_thread_stack_size" != "unknown"; then
+        LDFLAGS="$LDFLAGS -Wl,-z,stack-size=$ac_cv_thread_stack_size"
+    fi
+fi
 
 AS_CASE([$enable_wasm_dynamic_linking],
   [yes], [ac_cv_func_dlopen=yes],
@@ -3818,12 +3866,30 @@ AC_MSG_RESULT([$SHLIBS])
 dnl perf trampoline is Linux and macOS specific and requires an arch-specific
 dnl trampoline in assembly.
 AC_MSG_CHECKING([perf trampoline])
+PERF_TRAMPOLINE_OBJ=""
 AS_CASE([$PLATFORM_TRIPLET],
-  [x86_64-linux-gnu], [perf_trampoline=yes],
-  [aarch64-linux-gnu], [perf_trampoline=yes],
+  [x86_64-linux-gnu], [perf_trampoline=yes
+                        PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_x86_64.o],
+  [aarch64-linux-gnu], [perf_trampoline=yes
+                         PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_aarch64.o],
   [darwin], [AS_CASE([$MACOSX_DEPLOYMENT_TARGET],
                 [[10.[0-9]|10.1[0-1]]], [perf_trampoline=no],
-                [perf_trampoline=yes]
+                [perf_trampoline=yes
+                 if test "${enable_universalsdk}" && test "$UNIVERSAL_ARCHS" = "universal2"; then
+                   PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_universal2.o
+                 else
+                   case "$host_cpu" in
+                     x86_64)
+                       PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_x86_64.o
+                       ;;
+                     aarch64|arm64)
+                       PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_aarch64.o
+                       ;;
+                     *)
+                       perf_trampoline=no
+                       ;;
+                   esac
+                 fi]
             )],
   [perf_trampoline=no]
 )
@@ -3831,7 +3897,6 @@ AC_MSG_RESULT([$perf_trampoline])
 
 AS_VAR_IF([perf_trampoline], [yes], [
   AC_DEFINE([PY_HAVE_PERF_TRAMPOLINE], [1], [Define to 1 if you have the perf trampoline.])
-  PERF_TRAMPOLINE_OBJ=Python/asm_trampoline.o
 ])
 AC_SUBST([PERF_TRAMPOLINE_OBJ])
 

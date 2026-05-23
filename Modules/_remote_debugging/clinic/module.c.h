@@ -411,8 +411,15 @@ PyDoc_STRVAR(_remote_debugging_RemoteUnwinder_get_stats__doc__,
 "        - code_object_cache_hits: Code object cache hits\n"
 "        - code_object_cache_misses: Code object cache misses\n"
 "        - stale_cache_invalidations: Times stale cache entries were cleared\n"
+"        - batched_read_attempts: Batched remote-read attempts\n"
+"        - batched_read_successes: Attempts that read all requested segments\n"
+"        - batched_read_misses: Attempts that fell back or partially read\n"
+"        - batched_read_segments_requested: Segments requested by batched reads\n"
+"        - batched_read_segments_completed: Segments completed by batched reads\n"
 "        - frame_cache_hit_rate: Percentage of samples that hit the cache\n"
 "        - code_object_cache_hit_rate: Percentage of code object lookups that hit cache\n"
+"        - batched_read_success_rate: Percentage of batched reads that completed all segments\n"
+"        - batched_read_segment_completion_rate: Percentage of requested segments read by batched reads\n"
 "\n"
 "Raises:\n"
 "    RuntimeError: If stats collection was not enabled (stats=False)");
@@ -1540,4 +1547,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5e2a29746a0c5d65 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=884914b100e9c90c input=a9049054013a1b77]*/
