@@ -468,9 +468,20 @@ _isqrt_rem(PyObject *n, PyObject **rem)
 
     if (a_too_large) {
         if (rem) {
-            Py_SETREF(b, PyNumber_Add(b, _PyLong_GetOne()));
-            Py_SETREF(b, PyNumber_Subtract(b, a));
-            Py_SETREF(b, PyNumber_Subtract(b, a));
+            PyObject *tmp = PyNumber_Add(b, _PyLong_GetOne());
+
+            if (tmp == NULL) {
+                Py_DECREF(b);
+                goto error;
+            }
+            Py_SETREF(b, tmp);
+            tmp = PyNumber_Add(a, a);
+            if (tmp == NULL) {
+                Py_DECREF(b);
+                goto error;
+            }
+            Py_SETREF(b, PyNumber_Subtract(b, tmp));
+            Py_DECREF(tmp);
         }
         Py_SETREF(a, PyNumber_Subtract(a, _PyLong_GetOne()));
     }
