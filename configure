@@ -8990,7 +8990,55 @@ case "$CC_BASENAME" in
         fi
         ;;
       *)
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fprofile-update=atomic" >&5
+        # Check for 32-bit x86 ISA
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for i686" >&5
+printf %s "checking for i686... " >&6; }
+if test ${ac_cv_i686+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+            cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+                    #ifdef __i386__
+                    #  error "i386"
+                    #endif
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_i686=no
+else $as_nop
+  ac_cv_i686=yes
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_i686" >&5
+printf "%s\n" "$ac_cv_i686" >&6; }
+
+        PGO_PROF_GEN_FLAG="-fprofile-generate"
+
+        # Use -fprofile-update=atomic to fix a random GCC internal error on PGO
+        # build (gh-145801) caused by corruption of profile data (.gcda files).
+        #
+        # gh-148535: On i686, using -fprofile-update=atomic makes the PGO build
+        # way slower (up to 47x slower). So far, the GCC internal error on PGO
+        # build was not seen on i686, so don't use this flag on i686.
+        if test "x$ac_cv_i686" = xno
+then :
+
+            { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fprofile-update=atomic" >&5
 printf %s "checking whether C compiler accepts -fprofile-update=atomic... " >&6; }
 if test ${ax_cv_check_cflags___fprofile_update_atomic+y}
 then :
@@ -9023,9 +9071,12 @@ fi
 printf "%s\n" "$ax_cv_check_cflags___fprofile_update_atomic" >&6; }
 if test "x$ax_cv_check_cflags___fprofile_update_atomic" = xyes
 then :
-  PGO_PROF_GEN_FLAG="-fprofile-generate -fprofile-update=atomic"
+  PGO_PROF_GEN_FLAG="$PGO_PROF_GEN_FLAG -fprofile-update=atomic"
 else $as_nop
-  PGO_PROF_GEN_FLAG="-fprofile-generate"
+  :
+fi
+
+
 fi
 
         PGO_PROF_USE_FLAG="-fprofile-use -fprofile-correction"

@@ -2592,6 +2592,8 @@ expression support in the :mod:`re` module).
    The *chars* argument is not a prefix or suffix; rather, all combinations of its
    values are stripped.
 
+   Whitespace characters are defined by :meth:`str.isspace`.
+
    For example:
 
    .. doctest::
@@ -5527,7 +5529,8 @@ type and the :class:`bytes` data type:
 
 ``GenericAlias`` objects are instances of the class
 :class:`types.GenericAlias`, which can also be used to create ``GenericAlias``
-objects directly.
+objects directly. Specializations of user-defined :ref:`generic classes <generic-classes>`
+may not be instances of :class:`types.GenericAlias`, but they provide similar functionality.
 
 .. describe:: T[X, Y, ...]
 

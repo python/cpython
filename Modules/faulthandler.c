@@ -1180,20 +1180,6 @@ faulthandler_stack_overflow(PyObject *self, PyObject *Py_UNUSED(ignored))
 #endif   /* defined(FAULTHANDLER_USE_ALT_STACK) && defined(HAVE_SIGACTION) */
 
 
-static int
-faulthandler_traverse(PyObject *module, visitproc visit, void *arg)
-{
-    Py_VISIT(thread.file);
-#ifdef FAULTHANDLER_USER
-    if (user_signals != NULL) {
-        for (size_t signum=0; signum < Py_NSIG; signum++)
-            Py_VISIT(user_signals[signum].file);
-    }
-#endif
-    Py_VISIT(fatal_error.file);
-    return 0;
-}
-
 #ifdef MS_WINDOWS
 static PyObject *
 faulthandler_raise_exception(PyObject *self, PyObject *args)
@@ -1322,7 +1308,6 @@ static struct PyModuleDef module_def = {
     .m_name = "faulthandler",
     .m_doc = module_doc,
     .m_methods = module_methods,
-    .m_traverse = faulthandler_traverse,
     .m_slots = faulthandler_slots
 };
 
