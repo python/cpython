@@ -301,9 +301,9 @@ class BasicTest(BaseTest):
                 self.assertEqual(out.strip(), expected, err)
         for attr, expected in (
             ('executable', self.envpy()),
-            # Usually compare to sys.executable, but if we're running in our own
-            # venv then we really need to compare to our base executable
-            ('_base_executable', sys._base_executable),
+            # Usually compare to sys.prefix, but if we're running in our own
+            # venv then we really need to compare to our base prefix
+            ('base_prefix', sys.base_prefix),
         ):
             with self.subTest(attr):
                 cmd[2] = f'import sys; print(sys.{attr})'
@@ -916,10 +916,10 @@ class BasicTest(BaseTest):
             exename = exename.replace("python", "pythonw")
         envpyw = os.path.join(self.env_dir, self.bindir, exename)
         try:
-            subprocess.check_call([envpyw, "-c", "import sys; "
-                "assert sys._base_executable.endswith('%s')" % exename])
+            subprocess.check_call([envpyw, "-c", "import fnmatch, sys; "
+                "assert fnmatch.fnmatch(sys._base_executable, '**/pythonw*.exe')"])
         except subprocess.CalledProcessError:
-            self.fail("venvwlauncher.exe did not run %s" % exename)
+            self.fail("venvwlauncher.exe did not run pythonw.exe")
 
 
 @requireVenvCreate

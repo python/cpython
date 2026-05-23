@@ -100,10 +100,10 @@ To show the individual process IDs involved, here is an expanded example::
 For an explanation of why the ``if __name__ == '__main__'`` part is
 necessary, see :ref:`multiprocessing-programming`.
 
-The arguments to :class:`Process` usually need to be unpickleable from within
-the child process. If you tried typing the above example directly into a REPL it
-could lead to an :exc:`AttributeError` in the child process trying to locate the
-*f* function in the ``__main__`` module.
+The arguments to :class:`Process` usually need to be picklable so they can be
+passed to the child process. If you tried typing the above example directly
+into a REPL it could lead to an :exc:`AttributeError` in the child process
+trying to locate the *f* function in the ``__main__`` module.
 
 
 .. _multiprocessing-start-methods:

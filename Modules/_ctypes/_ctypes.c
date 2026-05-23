@@ -708,7 +708,7 @@ StructUnionType_paramfunc(ctypes_state *st, CDataObject *self)
     }
     assert(stginfo); /* Cannot be NULL for structure/union instances */
 
-    parg->tag = 'V';
+    parg->tag = "V";
     parg->pffi_type = &stginfo->ffi_type_pointer;
     parg->value.p = ptr;
     parg->size = self->b_size;
@@ -1282,7 +1282,7 @@ PyCPointerType_paramfunc(ctypes_state *st, CDataObject *self)
     if (parg == NULL)
         return NULL;
 
-    parg->tag = 'P';
+    parg->tag = "P";
     parg->pffi_type = &ffi_type_pointer;
     parg->obj = Py_NewRef(self);
     parg->value.p = *(void **)self->b_ptr;
@@ -1703,7 +1703,7 @@ PyCArrayType_paramfunc(ctypes_state *st, CDataObject *self)
     PyCArgObject *p = PyCArgObject_new(st);
     if (p == NULL)
         return NULL;
-    p->tag = 'P';
+    p->tag = "P";
     p->pffi_type = &ffi_type_pointer;
     p->value.p = (char *)self->b_ptr;
     p->obj = Py_NewRef(self);
@@ -1909,7 +1909,7 @@ c_wchar_p_from_param_impl(PyObject *type, PyTypeObject *cls, PyObject *value)
         if (parg == NULL)
             return NULL;
         parg->pffi_type = &ffi_type_pointer;
-        parg->tag = 'Z';
+        parg->tag = "Z";
         parg->obj = fd->setfunc(&parg->value, value, 0);
         if (parg->obj == NULL) {
             Py_DECREF(parg);
@@ -1998,7 +1998,7 @@ c_char_p_from_param_impl(PyObject *type, PyTypeObject *cls, PyObject *value)
         if (parg == NULL)
             return NULL;
         parg->pffi_type = &ffi_type_pointer;
-        parg->tag = 'z';
+        parg->tag = "z";
         parg->obj = fd->setfunc(&parg->value, value, 0);
         if (parg->obj == NULL) {
             Py_DECREF(parg);
@@ -2092,7 +2092,7 @@ c_void_p_from_param_impl(PyObject *type, PyTypeObject *cls, PyObject *value)
         if (parg == NULL)
             return NULL;
         parg->pffi_type = &ffi_type_pointer;
-        parg->tag = 'P';
+        parg->tag = "P";
         parg->obj = fd->setfunc(&parg->value, value, sizeof(void*));
         if (parg->obj == NULL) {
             Py_DECREF(parg);
@@ -2110,7 +2110,7 @@ c_void_p_from_param_impl(PyObject *type, PyTypeObject *cls, PyObject *value)
         if (parg == NULL)
             return NULL;
         parg->pffi_type = &ffi_type_pointer;
-        parg->tag = 'z';
+        parg->tag = "z";
         parg->obj = fd->setfunc(&parg->value, value, 0);
         if (parg->obj == NULL) {
             Py_DECREF(parg);
@@ -2127,7 +2127,7 @@ c_void_p_from_param_impl(PyObject *type, PyTypeObject *cls, PyObject *value)
         if (parg == NULL)
             return NULL;
         parg->pffi_type = &ffi_type_pointer;
-        parg->tag = 'Z';
+        parg->tag = "Z";
         parg->obj = fd->setfunc(&parg->value, value, 0);
         if (parg->obj == NULL) {
             Py_DECREF(parg);
@@ -2152,7 +2152,7 @@ c_void_p_from_param_impl(PyObject *type, PyTypeObject *cls, PyObject *value)
     if (PyCArg_CheckExact(st, value)) {
         /* byref(c_xxx()) */
         PyCArgObject *a = (PyCArgObject *)value;
-        if (a->tag == 'P') {
+        if (strcmp(a->tag, "P") == 0) {
             return Py_NewRef(value);
         }
     }
@@ -2165,7 +2165,7 @@ c_void_p_from_param_impl(PyObject *type, PyTypeObject *cls, PyObject *value)
         if (parg == NULL)
             return NULL;
         parg->pffi_type = &ffi_type_pointer;
-        parg->tag = 'P';
+        parg->tag = "P";
         Py_INCREF(value);
         // Function pointers don't change their contents, no need to lock
         parg->value.p = *(void **)func->b_ptr;
@@ -2191,7 +2191,7 @@ c_void_p_from_param_impl(PyObject *type, PyTypeObject *cls, PyObject *value)
             if (parg == NULL)
                 return NULL;
             parg->pffi_type = &ffi_type_pointer;
-            parg->tag = 'Z';
+            parg->tag = "Z";
             parg->obj = Py_NewRef(value);
             /* Remember: b_ptr points to where the pointer is stored! */
             Py_BEGIN_CRITICAL_SECTION(value);
@@ -2332,7 +2332,8 @@ PyCSimpleType_paramfunc(ctypes_state *st, CDataObject *self)
     if (parg == NULL)
         return NULL;
 
-    parg->tag = fmt[0];
+    assert(strcmp(fd->code, fmt) == 0);
+    parg->tag = fd->code;
     parg->pffi_type = fd->pffi_type;
     parg->obj = Py_NewRef(self);
     memcpy(&parg->value, self->b_ptr, self->b_size);
@@ -2578,7 +2579,8 @@ PyCSimpleType_from_param_impl(PyObject *type, PyTypeObject *cls,
     if (parg == NULL)
         return NULL;
 
-    parg->tag = fmt[0];
+    assert(strcmp(fd->code, fmt) == 0);
+    parg->tag = fd->code;
     parg->pffi_type = fd->pffi_type;
     parg->obj = fd->setfunc(&parg->value, value, info->size);
     if (parg->obj)
@@ -2832,7 +2834,7 @@ PyCFuncPtrType_paramfunc(ctypes_state *st, CDataObject *self)
     if (parg == NULL)
         return NULL;
 
-    parg->tag = 'P';
+    parg->tag = "P";
     parg->pffi_type = &ffi_type_pointer;
     parg->obj = Py_NewRef(self);
     parg->value.p = *(void **)self->b_ptr;
@@ -4303,7 +4305,7 @@ _byref(ctypes_state *st, PyObject *obj)
         return NULL;
     }
 
-    parg->tag = 'P';
+    parg->tag = "P";
     parg->pffi_type = &ffi_type_pointer;
     parg->obj = obj;
     parg->value.p = ((CDataObject *)obj)->b_ptr;

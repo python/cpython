@@ -1137,10 +1137,10 @@ preset_cxx="$CXX"
 if test -z "$CXX"
 then
         case "$ac_cv_cc_name" in
-        gcc)    AC_PATH_TOOL([CXX], [g++], [g++], [notfound]) ;;
-        cc)     AC_PATH_TOOL([CXX], [c++], [c++], [notfound]) ;;
-        clang)             AC_PATH_TOOL([CXX], [clang++], [clang++], [notfound]) ;;
-        icc)               AC_PATH_TOOL([CXX], [icpc], [icpc], [notfound]) ;;
+        gcc)    AC_PATH_TOOL([CXX], [g++], [notfound]) ;;
+        cc)     AC_PATH_TOOL([CXX], [c++], [notfound]) ;;
+        clang)             AC_PATH_TOOL([CXX], [clang++], [notfound]) ;;
+        icc)               AC_PATH_TOOL([CXX], [icpc], [notfound]) ;;
         esac
 	if test "$CXX" = "notfound"
 	then
@@ -1591,7 +1591,7 @@ if test $enable_shared = "yes"; then
     CYGWIN*)
       LDLIBRARY='libpython$(LDVERSION).dll.a'
       BLDLIBRARY='-L. -lpython$(LDVERSION)'
-      DLLLIBRARY='libpython$(LDVERSION).dll'
+      DLLLIBRARY='cygpython$(LDVERSION).dll'
       ;;
     SunOS*)
       LDLIBRARY='libpython$(LDVERSION).so'
@@ -2480,6 +2480,54 @@ AS_CASE([$ac_sys_system],
     AS_VAR_APPEND([LDFLAGS_NODIST], [" -z stack-size=16777216 -Wl,--stack-first -Wl,--initial-memory=41943040"])
   ]
 )
+
+dnl On Linux, check the thread stack size. musl (ex: Alpine Linux) uses
+dnl a default thread stack size of 128 kB, whereas the glibc uses 8 MiB.
+dnl Python needs at least 1 MiB.
+if test "$ac_sys_system" = "Linux" -a "$cross_compiling" = no; then
+    AC_CACHE_CHECK([for thread stack size], [ac_cv_thread_stack_size], [
+    cat > conftest.c <<EOF
+#include <pthread.h>
+
+int main()
+{
+    pthread_attr_t attrs;
+    size_t size;
+
+    int rc = pthread_attr_init(&attrs);
+    if (rc != 0) {
+        return 2;
+    }
+
+    rc = pthread_attr_getstacksize(&attrs, &size);
+    if (rc != 0) {
+        return 2;
+    }
+
+    if (size < 1024 * 1024) {
+        return 1;
+    }
+    return 0;
+}
+EOF
+
+    ac_cv_thread_stack_size=unknown
+    if $CC -pthread $CFLAGS conftest.c -o conftest &>/dev/null; then
+        ./conftest &>/dev/null
+        exitcode=$?
+        if test $exitcode -eq 1; then
+            ac_cv_thread_stack_size=1048576
+        elif test $exitcode -eq 0; then
+            ac_cv_thread_stack_size="default"
+        fi
+    fi
+    rm -f conftest.c conftest
+    ])
+
+    if test "$ac_cv_thread_stack_size" != "default" -a "$ac_cv_thread_stack_size" != "unknown"; then
+        LDFLAGS="$LDFLAGS -Wl,-z,stack-size=$ac_cv_thread_stack_size"
+    fi
+fi
 
 AS_CASE([$enable_wasm_dynamic_linking],
   [yes], [ac_cv_func_dlopen=yes],
@@ -7869,6 +7917,7 @@ case "$ac_sys_system" in
   iOS) _PYTHREAD_NAME_MAXLEN=63;;
   FreeBSD*) _PYTHREAD_NAME_MAXLEN=19;; # gh-131268
   OpenBSD*) _PYTHREAD_NAME_MAXLEN=23;; # gh-131268
+  CYGWIN*) _PYTHREAD_NAME_MAXLEN=16;;
   *) _PYTHREAD_NAME_MAXLEN=;;
 esac
 if test -n "$_PYTHREAD_NAME_MAXLEN"; then
