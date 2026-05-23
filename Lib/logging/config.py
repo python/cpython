@@ -205,18 +205,17 @@ def _handle_existing_loggers(existing, child_loggers, disable_existing):
 
 def _discard_existing_logger(name, existing, existing_set, child_loggers):
     """Discard a configured logger and record its existing children."""
-    if name in existing_set:
-        prefixed = name + "."
-        i = bisect_left(existing, prefixed)
-        num_existing = len(existing)
-        while i < num_existing:
-            child = existing[i]
-            if not child.startswith(prefixed):
-                break
-            if child in existing_set:
-                child_loggers.add(child)
-            i += 1
-        existing_set.remove(name)
+    prefixed = name + "."
+    i = bisect_left(existing, prefixed)
+    num_existing = len(existing)
+    while i < num_existing:
+        child = existing[i]
+        if not child.startswith(prefixed):
+            break
+        if child in existing_set:
+            child_loggers[child] = None
+        i += 1
+    existing_set.remove(name)
 
 def _install_loggers(cp, handlers, disable_existing):
     """Create and install loggers"""
@@ -259,14 +258,15 @@ def _install_loggers(cp, handlers, disable_existing):
     existing_set = set(existing)
     #We'll keep the list of existing loggers
     #which are children of named loggers here...
-    child_loggers = set()
+    child_loggers = {}
     #now set up the new ones...
     for log in llist:
         section = cp["logger_%s" % log]
         qn = section["qualname"]
         propagate = section.getint("propagate", fallback=1)
         logger = logging.getLogger(qn)
-        _discard_existing_logger(qn, existing, existing_set, child_loggers)
+        if qn in existing_set:
+            _discard_existing_logger(qn, existing, existing_set, child_loggers)
         if "level" in section:
             level = section["level"]
             logger.setLevel(level)
@@ -655,12 +655,13 @@ class DictConfigurator(BaseConfigurator):
                 existing_set = set(existing)
                 #We'll keep the list of existing loggers
                 #which are children of named loggers here...
-                child_loggers = set()
+                child_loggers = {}
                 #now set up the new ones...
                 loggers = config.get('loggers', EMPTY_DICT)
                 for name in loggers:
-                    _discard_existing_logger(name, existing, existing_set,
-                                             child_loggers)
+                    if name in existing_set:
+                        _discard_existing_logger(name, existing, existing_set,
+                                                 child_loggers)
                     try:
                         self.configure_logger(name, loggers[name])
                     except Exception as e:
