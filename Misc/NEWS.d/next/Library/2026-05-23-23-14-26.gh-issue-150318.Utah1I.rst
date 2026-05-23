@@ -1,0 +1,1 @@
+Fix ``quantiles(method='exclusive')`` returning unsorted cut points for duplicate floats.
