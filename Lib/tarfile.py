@@ -401,7 +401,6 @@ class _Stream:
                 except ImportError:
                     raise CompressionError("compression.zstd module is not available") from None
                 if mode == "r":
-                    self.dbuf = b""
                     self.cmp = zstd.ZstdDecompressor()
                     self.exception = zstd.ZstdError
                 else:
