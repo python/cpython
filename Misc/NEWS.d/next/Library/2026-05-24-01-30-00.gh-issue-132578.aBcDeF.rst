@@ -1,0 +1,1 @@
+Add a regression test to ensure that custom user-defined subclasses of threading.Thread can safely define or override a custom _handle attribute without colliding with internal state-tracking implementations.

@@ -2862,7 +2862,7 @@ class ThreadHandleRegressionTest(unittest.TestCase):
         t = CustomThread()
         t.start()
         t.join()
-        
+
         # Assert that our custom handle parameter was preserved and did not break the thread run lifecycle
         self.assertEqual(t._handle, "custom_third_party_handle_value")
 
