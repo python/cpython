@@ -304,3 +304,21 @@ class TestSlots(TestCase):
                 spam_new.T_CHAR
 
         run_in_threads([writer, reader])
+
+    def test_T_OBJECT(self):
+        # _Py_T_OBJECT exercises PyMember_GetOne / PyMember_SetOne for
+        # the object case from concurrent threads.  Uses
+        # _testcapi.HeapCTypeWithDict which exposes its `dict` slot as a
+        # `_Py_T_OBJECT` member named `dictobj`.
+        obj = _testcapi.HeapCTypeWithDict()
+
+        def writer():
+            for i in range(1_000):
+                obj.dictobj = {"k": i}
+
+        def reader():
+            for _ in range(1_000):
+                v = obj.dictobj
+                assert v is None or isinstance(v, dict)
+
+        run_in_threads([writer, reader])

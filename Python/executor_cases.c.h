@@ -13066,18 +13066,15 @@
             value = _stack_item_0;
             uint16_t index = (uint16_t)CURRENT_OPERAND0_16();
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-            if (!LOCK_OBJECT(owner_o)) {
-                UOP_STAT_INC(uopcode, miss);
-                _tos_cache1 = owner;
-                _tos_cache0 = value;
-                SET_CURRENT_CACHED_VALUES(2);
-                JUMP_TO_JUMP_TARGET();
-            }
             char *addr = (char *)owner_o + index;
             STAT_INC(STORE_ATTR, hit);
+            #ifdef Py_GIL_DISABLED
+            PyObject *old_value = _Py_atomic_exchange_ptr(
+                (void **)addr, PyStackRef_AsPyObjectSteal(value));
+            #else
             PyObject *old_value = *(PyObject **)addr;
-            FT_ATOMIC_STORE_PTR_RELEASE(*(PyObject **)addr, PyStackRef_AsPyObjectSteal(value));
-            UNLOCK_OBJECT(owner_o);
+            *(PyObject **)addr = PyStackRef_AsPyObjectSteal(value);
+            #endif
             o = owner;
             stack_pointer[0] = o;
             stack_pointer += 1;

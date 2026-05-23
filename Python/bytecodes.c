@@ -3225,14 +3225,21 @@ dummy_func(
         op(_STORE_ATTR_SLOT, (index/1, value, owner -- o)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
 
-            DEOPT_IF(!LOCK_OBJECT(owner_o));
             char *addr = (char *)owner_o + index;
             STAT_INC(STORE_ATTR, hit);
+            // Atomic exchange of the slot pointer. Each concurrent writer
+            // observes a unique old value, so Py_XDECREF below cannot
+            // double-free. Concurrent readers (_LOAD_ATTR_SLOT,
+            // PyMember_GetOne) cope via _Py_TryIncrefCompare.
+#ifdef Py_GIL_DISABLED
+            PyObject *old_value = _Py_atomic_exchange_ptr(
+                (void **)addr, PyStackRef_AsPyObjectSteal(value));
+#else
             PyObject *old_value = *(PyObject **)addr;
-            FT_ATOMIC_STORE_PTR_RELEASE(*(PyObject **)addr, PyStackRef_AsPyObjectSteal(value));
-            UNLOCK_OBJECT(owner_o);
-            INPUTS_DEAD();
+            *(PyObject **)addr = PyStackRef_AsPyObjectSteal(value);
+#endif
             o = owner;
+            DEAD(owner);
             Py_XDECREF(old_value);
         }
 

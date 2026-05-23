@@ -97,36 +97,33 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
         break;
     }
     case _Py_T_OBJECT:
-        v = FT_ATOMIC_LOAD_PTR(*(PyObject **) addr);
-        if (v != NULL) {
 #ifdef Py_GIL_DISABLED
-            if (!_Py_TryIncrefCompare((PyObject **) addr, v)) {
-                Py_BEGIN_CRITICAL_SECTION((PyObject *) obj_addr);
-                v = FT_ATOMIC_LOAD_PTR(*(PyObject **) addr);
-                Py_XINCREF(v);
-                Py_END_CRITICAL_SECTION();
-            }
+        // _Py_XGetRef does an atomic load + try-incref loop, retrying when
+        // a concurrent writer (lock-free atomic exchange in _STORE_ATTR_SLOT
+        // and PyMember_SetOne) mutates the slot. The previous critical-
+        // section fallback assumed writers also took ob_mutex, which they no
+        // longer do, so a plain Py_XINCREF inside the CS could resurrect a
+        // refcount-0 (about-to-be-freed) object.
+        v = _Py_XGetRef((PyObject **)addr);
 #else
-            Py_INCREF(v);
+        v = *(PyObject **)addr;
+        Py_XINCREF(v);
 #endif
-        }
         if (v == NULL) {
-            v = Py_None;
+            v = Py_None;  // immortal, no incref needed
         }
         break;
     case Py_T_OBJECT_EX:
-        v = member_get_object(addr, obj_addr, l);
-#ifndef Py_GIL_DISABLED
-        Py_XINCREF(v);
-#else
-        if (v != NULL) {
-            if (!_Py_TryIncrefCompare((PyObject **) addr, v)) {
-                Py_BEGIN_CRITICAL_SECTION((PyObject *) obj_addr);
-                v = member_get_object(addr, obj_addr, l);
-                Py_XINCREF(v);
-                Py_END_CRITICAL_SECTION();
-            }
+#ifdef Py_GIL_DISABLED
+        v = _Py_XGetRef((PyObject **)addr);
+        if (v == NULL) {
+            PyErr_Format(PyExc_AttributeError,
+                         "'%T' object has no attribute '%s'",
+                         (PyObject *)obj_addr, l->name);
         }
+#else
+        v = member_get_object(addr, obj_addr, l);
+        Py_XINCREF(v);
 #endif
         break;
     case Py_T_LONGLONG:
@@ -320,11 +317,15 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         break;
     }
     case _Py_T_OBJECT:
-    case Py_T_OBJECT_EX:
-        Py_BEGIN_CRITICAL_SECTION(obj);
+    case Py_T_OBJECT_EX: {
+        // Lock-free atomic exchange; matches _STORE_ATTR_SLOT.
+        PyObject *new_v = Py_XNewRef(v);
+#ifdef Py_GIL_DISABLED
+        oldv = (PyObject *)_Py_atomic_exchange_ptr((void **)addr, new_v);
+#else
         oldv = *(PyObject **)addr;
-        FT_ATOMIC_STORE_PTR_RELEASE(*(PyObject **)addr, Py_XNewRef(v));
-        Py_END_CRITICAL_SECTION();
+        *(PyObject **)addr = new_v;
+#endif
         if (v == NULL && oldv == NULL && l->type == Py_T_OBJECT_EX) {
             // Raise an exception when attempting to delete an already deleted
             // attribute.
@@ -336,6 +337,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         }
         Py_XDECREF(oldv);
         break;
+    }
     case Py_T_CHAR: {
         const char *string;
         Py_ssize_t len;
