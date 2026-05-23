@@ -3450,9 +3450,6 @@ batch_dict(PickleState *state, PicklerObject *self, PyObject *iter, PyObject *or
  * Returns 0 on success, -1 on error.
  *
  * Note that this currently doesn't work for protocol 0.
-
- * gh-146452: Wrap the dict iteration in a critical sections to prevent
- * concurrent mutation from invalidating PyDict_Next() iteration state.
  */
 static int
 batch_dict_exact_impl(PickleState *state, PicklerObject *self, PyObject *obj)
@@ -3469,24 +3466,15 @@ batch_dict_exact_impl(PickleState *state, PicklerObject *self, PyObject *obj)
     assert(self->proto > 0);
 
     dict_size = PyDict_GET_SIZE(obj);
+    assert(dict_size);
 
     /* Write in batches of BATCHSIZE. */
     Py_ssize_t total = 0;
     do {
         if (dict_size - total == 1) {
-            int next;
-            Py_BEGIN_CRITICAL_SECTION(obj);
-            next = PyDict_Next(obj, &ppos, &key, &value);
-            if (next) {
-                Py_INCREF(key);
-                Py_INCREF(value);
-            }
-            Py_END_CRITICAL_SECTION();
-            if (!next) {
-                PyErr_SetString(PyExc_RuntimeError,
-                                "dictionary changed size during iteration");
-                goto error;
-            }
+            PyDict_Next(obj, &ppos, &key, &value);
+            Py_INCREF(key);
+            Py_INCREF(value);
             if (save(state, self, key, 0) < 0) {
                 goto error;
             }
@@ -3504,18 +3492,9 @@ batch_dict_exact_impl(PickleState *state, PicklerObject *self, PyObject *obj)
         i = 0;
         if (_Pickler_Write(self, &mark_op, 1) < 0)
             return -1;
-        int next;
-        while (1) {
-            Py_BEGIN_CRITICAL_SECTION(obj);
-            next = PyDict_Next(obj, &ppos, &key, &value);
-            if (next) {
-                Py_INCREF(key);
-                Py_INCREF(value);
-            }
-            Py_END_CRITICAL_SECTION();
-            if (!next) {
-                break;
-            }
+        while (PyDict_Next(obj, &ppos, &key, &value)) {
+            Py_INCREF(key);
+            Py_INCREF(value);
             if (save(state, self, key, 0) < 0) {
                 goto error;
             }
