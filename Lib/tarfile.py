@@ -542,26 +542,43 @@ class _Stream:
         c = 0
         t = []
         while c < size:
-            # Skip underlying buffer to avoid unaligned double buffering.
-            if self.buf:
-                buf = self.buf
-                self.buf = b""
-            elif self.comptype != "gz" and not self.cmp.needs_input:
-                buf = b""
-            else:
-                buf = self.fileobj.read(self.bufsize)
-                if not buf:
-                    break
-            try:
-                buf = self.cmp.decompress(buf, size - c)
-                if self.comptype == "gz":
+            if self.comptype == "gz":
+                # zlib interface is different than others.
+                # It returns data in unconsumed_tail.
+                if self.buf:
+                    cbuf = self.buf
+                    self.buf = b""
+                else:
+                    cbuf = self.fileobj.read(self.bufsize)
+                    if not cbuf:
+                        break
+
+                try:
+                    dbuf = self.cmp.decompress(cbuf, size - c)
                     self.buf = self.cmp.unconsumed_tail
-            except self.exception as e:
-                raise ReadError("invalid compressed data") from e
-            t.append(buf)
-            c += len(buf)
+                except self.exception as e:
+                    raise ReadError("invalid compressed data") from e
+            else:
+                # Other decompressors have needs_input.
+                # decompress() can buffer data internally.
+                if self.cmp.needs_input:
+                    cbuf = self.fileobj.read(self.bufsize)
+                    if not cbuf:
+                        break
+                else:
+                    cbuf = b""
+
+                try:
+                    dbuf = self.cmp.decompress(cbuf, size - c)
+                except self.exception as e:
+                    raise ReadError("invalid compressed data") from e
+
+            t.append(dbuf)
+            c += len(dbuf)
+
         t = b"".join(t)
         if len(t) > size:
+            # This would only happen if decompress() has a bug.
             raise ReadError("decompress() returned too much data")
         return t
 
