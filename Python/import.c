@@ -5003,18 +5003,18 @@ _imp_lock_held_impl(PyObject *module)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 _imp.acquire_lock
 
 Acquires the interpreter's import lock for the current thread.
 
-This lock should be used by import hooks to ensure thread-safety when importing
-modules. On platforms without threads, this function does nothing.
+This lock should be used by import hooks to ensure thread-safety when
+importing modules.  On platforms without threads, this function does
+nothing.
 [clinic start generated code]*/
 
 static PyObject *
 _imp_acquire_lock_impl(PyObject *module)
-/*[clinic end generated code: output=1aff58cb0ee1b026 input=e1a4ef049d34e7dd]*/
+/*[clinic end generated code: output=1aff58cb0ee1b026 input=60e9c1b4ab471ead]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     _PyImport_AcquireLock(interp);
@@ -5172,6 +5172,7 @@ _imp_init_frozen_impl(PyObject *module, PyObject *name)
 }
 
 /*[clinic input]
+@permit_long_summary
 _imp.find_frozen
 
     name: unicode
@@ -5192,7 +5193,7 @@ The returned info (a 2-tuple):
 
 static PyObject *
 _imp_find_frozen_impl(PyObject *module, PyObject *name, int withdata)
-/*[clinic end generated code: output=8c1c3c7f925397a5 input=22a8847c201542fd]*/
+/*[clinic end generated code: output=8c1c3c7f925397a5 input=30a7a50da49eca97]*/
 {
     struct frozen_info info;
     frozen_status status = find_frozen(name, &info);
@@ -5379,6 +5380,7 @@ _imp__override_frozen_modules_for_tests_impl(PyObject *module, int override)
 }
 
 /*[clinic input]
+@permit_long_summary
 _imp._override_multi_interp_extensions_check
 
     override: int
@@ -5392,7 +5394,7 @@ _imp._override_multi_interp_extensions_check
 static PyObject *
 _imp__override_multi_interp_extensions_check_impl(PyObject *module,
                                                   int override)
-/*[clinic end generated code: output=3ff043af52bbf280 input=e086a2ea181f92ae]*/
+/*[clinic end generated code: output=3ff043af52bbf280 input=24f23f8510a7f6e7]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (_Py_IsMainInterpreter(interp)) {
