@@ -1,5 +1,8 @@
-import os
+import contextlib
 import copy
+import io
+import itertools
+import os
 import pickle
 import platform
 import subprocess
@@ -8,7 +11,7 @@ import unittest
 from unittest import mock
 
 from test import support
-from test.support import os_helper
+from test.support import os_helper, warnings_helper
 
 try:
     # Some of the iOS tests need ctypes to operate.
@@ -129,6 +132,22 @@ class PlatformTest(unittest.TestCase):
         for aliased in (False, True):
             for terse in (False, True):
                 res = platform.platform(aliased, terse)
+
+    def test__platform(self):
+        for src, res in [
+            ('foo bar', 'foo_bar'),
+            (
+                '1/2\\3:4;5"6(7)8(7)6"5;4:3\\2/1',
+                '1-2-3-4-5-6-7-8-7-6-5-4-3-2-1'
+            ),
+            ('--', ''),
+            ('-f', '-f'),
+            ('-foo----', '-foo'),
+            ('--foo---', '-foo'),
+            ('---foo--', '-foo'),
+        ]:
+            with self.subTest(src=src):
+                self.assertEqual(platform._platform(src), res)
 
     def test_system(self):
         res = platform.system()
@@ -380,15 +399,6 @@ class PlatformTest(unittest.TestCase):
                 finally:
                     platform._uname_cache = None
 
-    def test_java_ver(self):
-        import re
-        msg = re.escape(
-            "'java_ver' is deprecated and slated for removal in Python 3.15"
-        )
-        with self.assertWarnsRegex(DeprecationWarning, msg):
-            res = platform.java_ver()
-        self.assertEqual(len(res), 4)
-
     @unittest.skipUnless(support.MS_WINDOWS, 'This test only makes sense on Windows')
     def test_win32_ver(self):
         release1, version1, csd1, ptype1 = 'a', 'b', 'c', 'd'
@@ -407,7 +417,7 @@ class PlatformTest(unittest.TestCase):
             for v in version.split('.'):
                 int(v)  # should not fail
         if csd:
-            self.assertTrue(csd.startswith('SP'), msg=csd)
+            self.assertStartsWith(csd, 'SP')
         if ptype:
             if os.cpu_count() > 1:
                 self.assertIn('Multiprocessor', ptype)
@@ -455,7 +465,7 @@ class PlatformTest(unittest.TestCase):
             else:
                 self.assertEqual(res[2], 'PowerPC')
 
-
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @unittest.skipUnless(sys.platform == 'darwin', "OSX only test")
     def test_mac_ver_with_fork(self):
         # Issue7895: platform.mac_ver() crashes when using fork without exec
@@ -522,8 +532,10 @@ class PlatformTest(unittest.TestCase):
             self.assertEqual(override.model, "Whiz")
             self.assertTrue(override.is_simulator)
 
-    @unittest.skipIf(support.is_emscripten, "Does not apply to Emscripten")
     def test_libc_ver(self):
+        if support.is_emscripten:
+            assert platform.libc_ver() == ("emscripten", "4.0.12")
+            return
         # check that libc_ver(executable) doesn't raise an exception
         if os.path.isdir(sys.executable) and \
            os.path.exists(sys.executable+'.exe'):
@@ -555,6 +567,10 @@ class PlatformTest(unittest.TestCase):
                 # musl uses semver, but we accept some variations anyway:
                 (b'/aports/main/musl/src/musl-12.5', ('musl', '12.5')),
                 (b'/aports/main/musl/src/musl-1.2.5.7', ('musl', '1.2.5.7')),
+                (b'libc.musl.so.1', ('musl', '1')),
+                (b'libc.musl-x86_64.so.1.2.5', ('musl', '1.2.5')),
+                (b'ld-musl.so.1', ('musl', '1')),
+                (b'ld-musl-x86_64.so.1.2.5', ('musl', '1.2.5')),
                 (b'', ('', '')),
             ):
                 with open(filename, 'wb') as fp:
@@ -573,6 +589,14 @@ class PlatformTest(unittest.TestCase):
                 (b'GLIBC_1.23.4\0GLIBC_1.9\0GLIBC_1.21\0', ('glibc', '1.23.4')),
                 (b'libc.so.2.4\0libc.so.9\0libc.so.23.1\0', ('libc', '23.1')),
                 (b'musl-1.4.1\0musl-2.1.1\0musl-2.0.1\0', ('musl', '2.1.1')),
+                (
+                    b'libc.musl-x86_64.so.1.4.1\0libc.musl-x86_64.so.2.1.1\0libc.musl-x86_64.so.2.0.1',
+                    ('musl', '2.1.1'),
+                ),
+                (
+                    b'ld-musl-x86_64.so.1.4.1\0ld-musl-x86_64.so.2.1.1\0ld-musl-x86_64.so.2.0.1',
+                    ('musl', '2.1.1'),
+                ),
                 (b'no match here, so defaults are used', ('test', '100.1.0')),
             ):
             with open(filename, 'wb') as f:
@@ -739,6 +763,68 @@ class PlatformTest(unittest.TestCase):
         }
         self.assertEqual(info, expected)
         self.assertEqual(len(info["SPECIALS"]), 5)
+
+
+class CommandLineTest(unittest.TestCase):
+    def setUp(self):
+        platform.invalidate_caches()
+        self.addCleanup(platform.invalidate_caches)
+
+    def invoke_platform(self, *flags):
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            platform._main(args=flags)
+        return output.getvalue()
+
+    @support.force_not_colorized
+    def test_unknown_flag(self):
+        output = io.StringIO()
+        with self.assertRaises(SystemExit):
+            # suppress argparse error message
+            with contextlib.redirect_stderr(output):
+                _ = self.invoke_platform('--unknown')
+        self.assertStartsWith(output.getvalue(), "usage: ")
+
+    def test_invocation(self):
+        flags = (
+            "--terse", "--nonaliased", "terse", "nonaliased"
+        )
+
+        for r in range(len(flags) + 1):
+            for combination in itertools.combinations(flags, r):
+                self.invoke_platform(*combination)
+
+    def test_arg_parsing(self):
+        # For backwards compatibility, the `aliased` and `terse` parameters are
+        # computed based on a combination of positional arguments and flags.
+        #
+        # Test that the arguments are correctly passed to the underlying
+        # `platform.platform()` call.
+        options = (
+            (["--nonaliased"], False, False),
+            (["nonaliased"], False, False),
+            (["--terse"], True, True),
+            (["terse"], True, True),
+            (["nonaliased", "terse"], False, True),
+            (["--nonaliased", "terse"], False, True),
+            (["--terse", "nonaliased"], False, True),
+        )
+
+        for flags, aliased, terse in options:
+            with self.subTest(flags=flags, aliased=aliased, terse=terse):
+                with mock.patch.object(platform, 'platform') as obj:
+                    self.invoke_platform(*flags)
+                    obj.assert_called_once_with(aliased, terse)
+
+    @support.force_not_colorized
+    def test_help(self):
+        output = io.StringIO()
+
+        with self.assertRaises(SystemExit):
+            with contextlib.redirect_stdout(output):
+                platform._main(args=["--help"])
+
+        self.assertStartsWith(output.getvalue(), "usage:")
 
 
 if __name__ == '__main__':

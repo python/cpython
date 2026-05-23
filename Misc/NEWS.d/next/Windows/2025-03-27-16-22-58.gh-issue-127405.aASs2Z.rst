@@ -1,1 +1,0 @@
-Add ``ABIFLAGS`` to :func:`sysconfig.get_config_vars` on Windows. Patch by Xuehai Pan.

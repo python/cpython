@@ -322,7 +322,7 @@ class CodeopTests(unittest.TestCase):
             dedent("""\
                 def foo(x,x):
                    pass
-            """), "duplicate argument 'x' in function definition")
+            """), "duplicate parameter 'x' in function definition")
 
 
 

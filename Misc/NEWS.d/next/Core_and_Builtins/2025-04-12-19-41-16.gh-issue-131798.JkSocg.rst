@@ -1,2 +1,0 @@
-Use ``sym_new_type`` instead of ``sym_new_not_null`` for _BUILD_LIST,
-_BUILD_SET, _BUILD_MAP

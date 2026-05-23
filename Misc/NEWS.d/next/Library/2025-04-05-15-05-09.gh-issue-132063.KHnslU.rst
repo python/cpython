@@ -1,2 +1,0 @@
-Prevent exceptions that evaluate as falsey (namely, when their ``__bool__`` method returns ``False`` or their ``__len__`` method returns 0)
-from being ignored by :class:`concurrent.futures.ProcessPoolExecutor` and :class:`concurrent.futures.ThreadPoolExecutor`.

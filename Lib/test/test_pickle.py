@@ -15,7 +15,8 @@ from textwrap import dedent
 import doctest
 import unittest
 from test import support
-from test.support import import_helper, os_helper
+from test.support import cpython_only, import_helper, os_helper
+from test.support.import_helper import ensure_lazy_imports
 
 from test.pickletester import AbstractHookTests
 from test.pickletester import AbstractUnpickleTests
@@ -36,6 +37,12 @@ except ImportError:
     has_c_implementation = False
 
 
+class LazyImportTest(unittest.TestCase):
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("pickle", {"re"})
+
+
 class PyPickleTests(AbstractPickleModuleTests, unittest.TestCase):
     dump = staticmethod(pickle._dump)
     dumps = staticmethod(pickle._dumps)
@@ -52,6 +59,8 @@ class PyUnpicklerTests(AbstractUnpickleTests, unittest.TestCase):
     truncated_errors = (pickle.UnpicklingError, EOFError,
                         AttributeError, ValueError,
                         struct.error, IndexError, ImportError)
+    truncated_data_error = (EOFError, '')
+    size_overflow_error = (pickle.UnpicklingError, 'exceeds')
 
     def loads(self, buf, **kwds):
         f = io.BytesIO(buf)
@@ -96,6 +105,8 @@ class InMemoryPickleTests(AbstractPickleTests, AbstractUnpickleTests,
     truncated_errors = (pickle.UnpicklingError, EOFError,
                         AttributeError, ValueError,
                         struct.error, IndexError, ImportError)
+    truncated_data_error = ((pickle.UnpicklingError, EOFError), '')
+    size_overflow_error = ((OverflowError, pickle.UnpicklingError), 'exceeds')
 
     def dumps(self, arg, protocol=None, **kwargs):
         return pickle.dumps(arg, protocol, **kwargs)
@@ -368,6 +379,8 @@ if has_c_implementation:
         unpickler = _pickle.Unpickler
         bad_stack_errors = (pickle.UnpicklingError,)
         truncated_errors = (pickle.UnpicklingError,)
+        truncated_data_error = (pickle.UnpicklingError, 'truncated')
+        size_overflow_error = (OverflowError, 'exceeds')
 
     class CPicklingErrorTests(PyPicklingErrorTests):
         pickler = _pickle.Pickler
@@ -405,6 +418,46 @@ if has_c_implementation:
             with self.assertRaises(ValueError):
                 unpickler.memo = {-1: None}
             unpickler.memo = {1: None}
+
+        def test_concurrent_pickler_dump(self):
+            f = io.BytesIO()
+            pickler = self.pickler_class(f)
+            class X:
+                def __reduce__(slf):
+                    self.assertRaises(RuntimeError, pickler.dump, 42)
+                    return list, ()
+            pickler.dump(X())  # should not crash
+            self.assertEqual(pickle.loads(f.getvalue()), [])
+
+        def test_concurrent_pickler_dump_and_init(self):
+            f = io.BytesIO()
+            pickler = self.pickler_class(f)
+            class X:
+                def __reduce__(slf):
+                    self.assertRaises(RuntimeError, pickler.__init__, f)
+                    return list, ()
+            pickler.dump([X()])  # should not fail
+            self.assertEqual(pickle.loads(f.getvalue()), [[]])
+
+        def test_concurrent_unpickler_load(self):
+            global reducer
+            def reducer():
+                self.assertRaises(RuntimeError, unpickler.load)
+                return 42
+            f = io.BytesIO(b'(c%b\nreducer\n(tRl.' % (__name__.encode(),))
+            unpickler = self.unpickler_class(f)
+            unpickled = unpickler.load()  # should not fail
+            self.assertEqual(unpickled, [42])
+
+        def test_concurrent_unpickler_load_and_init(self):
+            global reducer
+            def reducer():
+                self.assertRaises(RuntimeError, unpickler.__init__, f)
+                return 42
+            f = io.BytesIO(b'(c%b\nreducer\n(tRl.' % (__name__.encode(),))
+            unpickler = self.unpickler_class(f)
+            unpickled = unpickler.load()  # should not crash
+            self.assertEqual(unpickled, [42])
 
     class CDispatchTableTests(AbstractDispatchTableTests, unittest.TestCase):
         pickler_class = pickle.Pickler
@@ -454,7 +507,7 @@ if has_c_implementation:
         check_sizeof = support.check_sizeof
 
         def test_pickler(self):
-            basesize = support.calcobjsize('7P2n3i2n3i2P')
+            basesize = support.calcobjsize('7P2n3i2n4i2P')
             p = _pickle.Pickler(io.BytesIO())
             self.assertEqual(object.__sizeof__(p), basesize)
             MT_size = struct.calcsize('3nP0n')
@@ -471,7 +524,7 @@ if has_c_implementation:
                 0)  # Write buffer is cleared after every dump().
 
         def test_unpickler(self):
-            basesize = support.calcobjsize('2P2n2P 2P2n2i5P 2P3n8P2n2i')
+            basesize = support.calcobjsize('2P2n3P 2P2n2i5P 2P3n8P2n3i')
             unpickler = _pickle.Unpickler
             P = struct.calcsize('P')  # Size of memo table entry.
             n = struct.calcsize('n')  # Size of mark table entry.
@@ -604,10 +657,10 @@ class CompatPickleTests(unittest.TestCase):
             with self.subTest(((module3, name3), (module2, name2))):
                 if (module2, name2) == ('exceptions', 'OSError'):
                     attr = getattribute(module3, name3)
-                    self.assertTrue(issubclass(attr, OSError))
+                    self.assertIsSubclass(attr, OSError)
                 elif (module2, name2) == ('exceptions', 'ImportError'):
                     attr = getattribute(module3, name3)
-                    self.assertTrue(issubclass(attr, ImportError))
+                    self.assertIsSubclass(attr, ImportError)
                 else:
                     module, name = mapping(module2, name2)
                     if module3[:1] != '_':
@@ -745,6 +798,7 @@ class CommandLineTest(unittest.TestCase):
             expect = self.text_normalize(expect)
             self.assertListEqual(res.splitlines(), expect.splitlines())
 
+    @support.force_not_colorized
     def test_unknown_flag(self):
         stderr = io.StringIO()
         with self.assertRaises(SystemExit):

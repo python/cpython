@@ -227,6 +227,8 @@ class RunPyMixin:
             "PYLAUNCHER_LIMIT_TO_COMPANY": "",
             **{k.upper(): v for k, v in (env or {}).items()},
         }
+        if ini_dir := getattr(self, '_ini_dir', None):
+            env.setdefault("_PYLAUNCHER_INIDIR", ini_dir)
         if not argv:
             argv = [self.py_exe, *args]
         with subprocess.Popen(
@@ -262,11 +264,14 @@ class RunPyMixin:
         return data
 
     def py_ini(self, content):
-        local_appdata = os.environ.get("LOCALAPPDATA")
-        if not local_appdata:
-            raise unittest.SkipTest("LOCALAPPDATA environment variable is "
-                                    "missing or empty")
-        return PreservePyIni(Path(local_appdata) / "py.ini", content)
+        ini_dir = getattr(self, '_ini_dir', None)
+        if not ini_dir:
+            local_appdata = os.environ.get("LOCALAPPDATA")
+            if not local_appdata:
+                raise unittest.SkipTest("LOCALAPPDATA environment variable is "
+                                        "missing or empty")
+            ini_dir = local_appdata
+        return PreservePyIni(Path(ini_dir) / "py.ini", content)
 
     @contextlib.contextmanager
     def script(self, content, encoding="utf-8"):
@@ -302,6 +307,8 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
             p = subprocess.check_output("reg query HKCU\\Software\\Python /s")
             #print(p.decode('mbcs'))
 
+        cls._ini_dir = tempfile.mkdtemp()
+        cls.addClassCleanup(shutil.rmtree, cls._ini_dir, ignore_errors=True)
 
     @classmethod
     def tearDownClass(cls):
@@ -443,7 +450,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         except subprocess.CalledProcessError:
             raise unittest.SkipTest("requires at least one Python 3.x install")
         self.assertEqual("PythonCore", data["env.company"])
-        self.assertTrue(data["env.tag"].startswith("3."), data["env.tag"])
+        self.assertStartsWith(data["env.tag"], "3.")
 
     def test_search_major_3_32(self):
         try:
@@ -453,8 +460,8 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
                 raise unittest.SkipTest("requires at least one 32-bit Python 3.x install")
             raise
         self.assertEqual("PythonCore", data["env.company"])
-        self.assertTrue(data["env.tag"].startswith("3."), data["env.tag"])
-        self.assertTrue(data["env.tag"].endswith("-32"), data["env.tag"])
+        self.assertStartsWith(data["env.tag"], "3.")
+        self.assertEndsWith(data["env.tag"], "-32")
 
     def test_search_major_2(self):
         try:
@@ -463,7 +470,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
             if not is_installed("2.7"):
                 raise unittest.SkipTest("requires at least one Python 2.x install")
         self.assertEqual("PythonCore", data["env.company"])
-        self.assertTrue(data["env.tag"].startswith("2."), data["env.tag"])
+        self.assertStartsWith(data["env.tag"], "2.")
 
     def test_py_default(self):
         with self.py_ini(TEST_PY_DEFAULTS):

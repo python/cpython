@@ -1,2 +1,0 @@
-:func:`codecs.open` is now deprecated. Use :func:`open` instead. Contributed
-by Inada Naoki.

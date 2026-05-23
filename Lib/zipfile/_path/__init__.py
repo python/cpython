@@ -7,18 +7,18 @@ https://github.com/python/importlib_metadata/wiki/Development-Methodology
 for more detail.
 """
 
+import functools
 import io
-import posixpath
-import zipfile
 import itertools
-import contextlib
 import pathlib
+import posixpath
 import re
 import stat
 import sys
+import zipfile
 
+from ._functools import save_method_args
 from .glob import Translator
-
 
 __all__ = ['Path']
 
@@ -86,13 +86,12 @@ class InitializedState:
     Mix-in to save the initialization state for pickling.
     """
 
+    @save_method_args
     def __init__(self, *args, **kwargs):
-        self.__args = args
-        self.__kwargs = kwargs
         super().__init__(*args, **kwargs)
 
     def __getstate__(self):
-        return self.__args, self.__kwargs
+        return self._saved___init__.args, self._saved___init__.kwargs
 
     def __setstate__(self, state):
         args, kwargs = state
@@ -181,22 +180,27 @@ class FastLookup(CompleteDirs):
     """
 
     def namelist(self):
-        with contextlib.suppress(AttributeError):
-            return self.__names
-        self.__names = super().namelist()
-        return self.__names
+        return self._namelist
+
+    @functools.cached_property
+    def _namelist(self):
+        return super().namelist()
 
     def _name_set(self):
-        with contextlib.suppress(AttributeError):
-            return self.__lookup
-        self.__lookup = super()._name_set()
-        return self.__lookup
+        return self._name_set_prop
+
+    @functools.cached_property
+    def _name_set_prop(self):
+        return super()._name_set()
 
 
 def _extract_text_encoding(encoding=None, *args, **kwargs):
     # compute stack level so that the caller of the caller sees any warning.
     is_pypy = sys.implementation.name == 'pypy'
-    stack_level = 3 + is_pypy
+    # PyPy no longer special cased after 7.3.19 (or maybe 7.3.18)
+    # See jaraco/zipp#143
+    is_old_pypi = is_pypy and sys.pypy_version_info < (7, 3, 19)
+    stack_level = 3 + is_old_pypi
     return io.text_encoding(encoding, stack_level), args, kwargs
 
 
@@ -351,7 +355,7 @@ class Path:
         return io.TextIOWrapper(stream, encoding, *args, **kwargs)
 
     def _base(self):
-        return pathlib.PurePosixPath(self.at or self.root.filename)
+        return pathlib.PurePosixPath(self.at) if self.at else self.filename
 
     @property
     def name(self):

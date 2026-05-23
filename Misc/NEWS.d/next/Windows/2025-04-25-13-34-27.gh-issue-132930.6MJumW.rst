@@ -1,2 +1,0 @@
-Marks the installer for Windows as deprecated and updates documentation to
-cover the new Python install manager.

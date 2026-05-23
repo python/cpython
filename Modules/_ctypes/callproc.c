@@ -77,22 +77,14 @@ module _ctypes
 #include <mach-o/dyld.h>
 #endif
 
-#ifdef MS_WIN32
-#include <malloc.h>
-#endif
-
 #include <ffi.h>
 #include "ctypes.h"
-#ifdef HAVE_ALLOCA_H
-/* AIX needs alloca.h for alloca() */
-#include <alloca.h>
-#endif
 
 #ifdef _Py_MEMORY_SANITIZER
 #include <sanitizer/msan_interface.h>
 #endif
 
-#if defined(_DEBUG) || defined(__MINGW32__)
+#if defined(Py_DEBUG) || defined(__MINGW32__)
 /* Don't use structured exception handling on Windows if this is defined.
    MingW, AFAIK, doesn't support it.
 */
@@ -103,9 +95,6 @@ module _ctypes
 #include "pycore_global_objects.h"// _Py_ID()
 #include "pycore_traceback.h"     // _PyTraceback_Add()
 
-#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
-#include "../_complex.h"          // complex
-#endif
 #define clinic_state() (get_module_state(module))
 #include "clinic/callproc.c.h"
 #undef clinic_state
@@ -479,7 +468,7 @@ PyCArgObject_new(ctypes_state *st)
     if (p == NULL)
         return NULL;
     p->pffi_type = NULL;
-    p->tag = '\0';
+    p->tag = "";
     p->obj = NULL;
     memset(&p->value, 0, sizeof(p->value));
     PyObject_GC_Track(p);
@@ -523,45 +512,50 @@ static PyObject *
 PyCArg_repr(PyObject *op)
 {
     PyCArgObject *self = _PyCArgObject_CAST(op);
-    switch(self->tag) {
+
+    if (strlen(self->tag) != 1) {
+        goto generic;
+    }
+
+    switch(self->tag[0]) {
     case 'b':
     case 'B':
-        return PyUnicode_FromFormat("<cparam '%c' (%d)>",
+        return PyUnicode_FromFormat("<cparam '%s' (%d)>",
             self->tag, self->value.b);
     case 'h':
     case 'H':
-        return PyUnicode_FromFormat("<cparam '%c' (%d)>",
+        return PyUnicode_FromFormat("<cparam '%s' (%d)>",
             self->tag, self->value.h);
     case 'i':
     case 'I':
-        return PyUnicode_FromFormat("<cparam '%c' (%d)>",
+        return PyUnicode_FromFormat("<cparam '%s' (%d)>",
             self->tag, self->value.i);
     case 'l':
     case 'L':
-        return PyUnicode_FromFormat("<cparam '%c' (%ld)>",
+        return PyUnicode_FromFormat("<cparam '%s' (%ld)>",
             self->tag, self->value.l);
 
     case 'q':
     case 'Q':
-        return PyUnicode_FromFormat("<cparam '%c' (%lld)>",
+        return PyUnicode_FromFormat("<cparam '%s' (%lld)>",
             self->tag, self->value.q);
     case 'd':
     case 'f': {
-        PyObject *f = PyFloat_FromDouble((self->tag == 'f') ? self->value.f : self->value.d);
+        PyObject *f = PyFloat_FromDouble((strcmp(self->tag, "f") == 0) ? self->value.f : self->value.d);
         if (f == NULL) {
             return NULL;
         }
-        PyObject *result = PyUnicode_FromFormat("<cparam '%c' (%R)>", self->tag, f);
+        PyObject *result = PyUnicode_FromFormat("<cparam '%s' (%R)>", self->tag, f);
         Py_DECREF(f);
         return result;
     }
     case 'c':
         if (is_literal_char((unsigned char)self->value.c)) {
-            return PyUnicode_FromFormat("<cparam '%c' ('%c')>",
+            return PyUnicode_FromFormat("<cparam '%s' ('%c')>",
                 self->tag, self->value.c);
         }
         else {
-            return PyUnicode_FromFormat("<cparam '%c' ('\\x%02x')>",
+            return PyUnicode_FromFormat("<cparam '%s' ('\\x%02x')>",
                 self->tag, (unsigned char)self->value.c);
         }
 
@@ -572,20 +566,16 @@ PyCArg_repr(PyObject *op)
     case 'z':
     case 'Z':
     case 'P':
-        return PyUnicode_FromFormat("<cparam '%c' (%p)>",
+        return PyUnicode_FromFormat("<cparam '%s' (%p)>",
             self->tag, self->value.p);
-        break;
 
     default:
-        if (is_literal_char((unsigned char)self->tag)) {
-            return PyUnicode_FromFormat("<cparam '%c' at %p>",
-                (unsigned char)self->tag, (void *)self);
-        }
-        else {
-            return PyUnicode_FromFormat("<cparam 0x%02x at %p>",
-                (unsigned char)self->tag, (void *)self);
-        }
+        break;
     }
+
+generic:
+    return PyUnicode_FromFormat("<cparam '%s' at %p>",
+        self->tag, (void *)self);
 }
 
 static PyMemberDef PyCArgType_members[] = {
@@ -652,11 +642,9 @@ union result {
     double d;
     float f;
     void *p;
-#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
-    double complex D;
-    float complex F;
-    long double complex G;
-#endif
+    double Zd[2];
+    float Zf[2];
+    long double Zg[2];
 };
 
 struct argument {
@@ -1394,7 +1382,7 @@ static PyObject *format_error(PyObject *self, PyObject *args)
         code = GetLastError();
     lpMsgBuf = FormatError(code);
     if (lpMsgBuf) {
-        result = PyUnicode_FromWideChar(lpMsgBuf, wcslen(lpMsgBuf));
+        result = PyUnicode_FromWideChar(lpMsgBuf, -1);
         LocalFree(lpMsgBuf);
     } else {
         result = PyUnicode_FromString("<no description>");
@@ -1800,6 +1788,7 @@ align_func(PyObject *self, PyObject *obj)
 
 
 /*[clinic input]
+@permit_long_summary
 @critical_section obj
 _ctypes.byref
     obj: object(subclass_of="clinic_state()->PyCData_Type")
@@ -1811,7 +1800,7 @@ Return a pointer lookalike to a C instance, only usable as function argument.
 
 static PyObject *
 _ctypes_byref_impl(PyObject *module, PyObject *obj, Py_ssize_t offset)
-/*[clinic end generated code: output=60dec5ed520c71de input=6ec02d95d15fbd56]*/
+/*[clinic end generated code: output=60dec5ed520c71de input=870076149a2de427]*/
 {
     ctypes_state *st = get_module_state(module);
 
@@ -1819,7 +1808,7 @@ _ctypes_byref_impl(PyObject *module, PyObject *obj, Py_ssize_t offset)
     if (parg == NULL)
         return NULL;
 
-    parg->tag = 'P';
+    parg->tag = "P";
     parg->pffi_type = &ffi_type_pointer;
     parg->obj = Py_NewRef(obj);
     parg->value.p = (char *)((CDataObject *)obj)->b_ptr + offset;
@@ -1972,105 +1961,6 @@ error:
     return NULL;
 }
 
-/*[clinic input]
-_ctypes.POINTER as create_pointer_type
-
-    type as cls: object
-        A ctypes type.
-    /
-
-Create and return a new ctypes pointer type.
-
-Pointer types are cached and reused internally,
-so calling this function repeatedly is cheap.
-[clinic start generated code]*/
-
-static PyObject *
-create_pointer_type(PyObject *module, PyObject *cls)
-/*[clinic end generated code: output=98c3547ab6f4f40b input=3b81cff5ff9b9d5b]*/
-{
-    PyObject *result;
-    PyTypeObject *typ;
-    PyObject *key;
-
-    assert(module);
-    ctypes_state *st = get_module_state(module);
-    if (PyDict_GetItemRef(st->_ctypes_ptrtype_cache, cls, &result) != 0) {
-        // found or error
-        return result;
-    }
-    // not found
-    if (PyUnicode_CheckExact(cls)) {
-        PyObject *name = PyUnicode_FromFormat("LP_%U", cls);
-        result = PyObject_CallFunction((PyObject *)Py_TYPE(st->PyCPointer_Type),
-                                       "N(O){}",
-                                       name,
-                                       st->PyCPointer_Type);
-        if (result == NULL)
-            return result;
-        key = PyLong_FromVoidPtr(result);
-        if (key == NULL) {
-            Py_DECREF(result);
-            return NULL;
-        }
-    } else if (PyType_Check(cls)) {
-        typ = (PyTypeObject *)cls;
-        PyObject *name = PyUnicode_FromFormat("LP_%s", typ->tp_name);
-        result = PyObject_CallFunction((PyObject *)Py_TYPE(st->PyCPointer_Type),
-                                       "N(O){sO}",
-                                       name,
-                                       st->PyCPointer_Type,
-                                       "_type_", cls);
-        if (result == NULL)
-            return result;
-        key = Py_NewRef(cls);
-    } else {
-        PyErr_SetString(PyExc_TypeError, "must be a ctypes type");
-        return NULL;
-    }
-    if (PyDict_SetItem(st->_ctypes_ptrtype_cache, key, result) < 0) {
-        Py_DECREF(result);
-        Py_DECREF(key);
-        return NULL;
-    }
-    Py_DECREF(key);
-    return result;
-}
-
-/*[clinic input]
-_ctypes.pointer as create_pointer_inst
-
-    obj as arg: object
-    /
-
-Create a new pointer instance, pointing to 'obj'.
-
-The returned object is of the type POINTER(type(obj)). Note that if you
-just want to pass a pointer to an object to a foreign function call, you
-should use byref(obj) which is much faster.
-[clinic start generated code]*/
-
-static PyObject *
-create_pointer_inst(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=3b543bc9f0de2180 input=713685fdb4d9bc27]*/
-{
-    PyObject *result;
-    PyObject *typ;
-
-    ctypes_state *st = get_module_state(module);
-    if (PyDict_GetItemRef(st->_ctypes_ptrtype_cache, (PyObject *)Py_TYPE(arg), &typ) < 0) {
-        return NULL;
-    }
-    if (typ == NULL) {
-        typ = create_pointer_type(module, (PyObject *)Py_TYPE(arg));
-        if (typ == NULL)
-            return NULL;
-    }
-    result = PyObject_CallOneArg(typ, arg);
-    Py_DECREF(typ);
-    return result;
-}
-
 static PyObject *
 buffer_info(PyObject *self, PyObject *arg)
 {
@@ -2101,12 +1991,34 @@ buffer_info(PyObject *self, PyObject *arg)
 }
 
 
+static PyObject *
+_ctypes_getattr(PyObject *Py_UNUSED(self), PyObject *args)
+{
+    PyObject *name;
+    if (!PyArg_UnpackTuple(args, "__getattr__", 1, 1, &name)) {
+        return NULL;
+    }
+
+    if (PyUnicode_Check(name) && PyUnicode_EqualToUTF8(name, "__version__")) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "'__version__' is deprecated and slated for "
+                         "removal in Python 3.20",
+                         1) < 0) {
+            return NULL;
+        }
+        return PyUnicode_FromString("1.1.0");  // Do not change
+    }
+
+    PyErr_Format(PyExc_AttributeError,
+                 "module '_ctypes' has no attribute %R", name);
+    return NULL;
+}
+
 
 PyMethodDef _ctypes_module_methods[] = {
+    {"__getattr__", _ctypes_getattr, METH_VARARGS},
     {"get_errno", get_errno, METH_NOARGS},
     {"set_errno", set_errno, METH_VARARGS},
-    CREATE_POINTER_TYPE_METHODDEF
-    CREATE_POINTER_INST_METHODDEF
     {"_unpickle", unpickle, METH_VARARGS },
     {"buffer_info", buffer_info, METH_O, "Return buffer interface information"},
     _CTYPES_RESIZE_METHODDEF
