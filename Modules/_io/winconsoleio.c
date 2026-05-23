@@ -673,12 +673,13 @@ read_console_w(HANDLE handle, DWORD maxlen, DWORD *readlen) {
             maxlen += 1;
             Py_BLOCK_THREADS
             newbuf = (wchar_t*)PyMem_Realloc(buf, maxlen * sizeof(wchar_t));
-            Py_UNBLOCK_THREADS
             if (!newbuf) {
                 sig = -1;
                 PyErr_NoMemory();
+                Py_UNBLOCK_THREADS
                 break;
             }
+            Py_UNBLOCK_THREADS
             buf = newbuf;
             /* Only advance by n and not BUFSIZ in this case */
             off += n;
@@ -1253,7 +1254,7 @@ static PyType_Slot winconsoleio_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec winconsoleio_spec = {
+PyType_Spec _Py_winconsoleio_spec = {
     .name = "_io._WindowsConsoleIO",
     .basicsize = sizeof(winconsoleio),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |

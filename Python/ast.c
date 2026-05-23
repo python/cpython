@@ -305,8 +305,10 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
 #undef COMP
     case DictComp_kind:
         ret = validate_comprehension(exp->v.DictComp.generators) &&
-            validate_expr(exp->v.DictComp.key, Load) &&
-            validate_expr(exp->v.DictComp.value, Load);
+            validate_expr(exp->v.DictComp.key, Load);
+        if (ret && exp->v.DictComp.value != NULL){
+            ret = validate_expr(exp->v.DictComp.value, Load);
+        }
         break;
     case Yield_kind:
         ret = !exp->v.Yield.value || validate_expr(exp->v.Yield.value, Load);

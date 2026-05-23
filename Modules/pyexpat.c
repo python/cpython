@@ -3,6 +3,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_import.h"        // _PyImport_SetModule()
 #include "pycore_pyhash.h"        // _Py_HashSecret
 #include "pycore_traceback.h"     // _PyTraceback_Add()
@@ -392,7 +393,7 @@ my_CharacterDataHandler(void *userData, const XML_Char *data, int len)
     if (self->buffer == NULL)
         call_character_handler(self, data, len);
     else {
-        if ((self->buffer_used + len) > self->buffer_size) {
+        if (len > (self->buffer_size - self->buffer_used)) {
             if (flush_character_buffer(self) < 0)
                 return;
             /* handler might have changed; drop the rest on the floor
@@ -502,6 +503,28 @@ my_StartElementHandler(void *userData,
     }
 }
 
+static inline void
+invalid_expat_handler_rv(const char *name)
+{
+    PyObject *exc = PyErr_GetRaisedException();
+    assert(exc != NULL);
+    PyObject *note = PyUnicode_FromFormat("invalid '%s' event handler return value", name);
+    if (note == NULL) {
+        goto error;
+    }
+    int rc = _PyException_AddNote(exc, note);
+    Py_DECREF(note);
+    if (rc < 0) {
+        goto error;
+    };
+    goto done;
+
+error:
+    PyErr_Clear();
+done:
+    PyErr_SetRaisedException(exc);
+}
+
 #define RC_HANDLER(RETURN_TYPE, NAME, PARAMS,       \
                    INIT, PARSE_FORMAT, CONVERSION,  \
                    RETURN_VARIABLE, GETUSERDATA)    \
@@ -535,6 +558,9 @@ my_ ## NAME ## Handler PARAMS {                     \
     }                                               \
     CONVERSION                                      \
     Py_DECREF(rv);                                  \
+    if (PyErr_Occurred()) {                         \
+        invalid_expat_handler_rv(#NAME);            \
+    }                                               \
     return RETURN_VARIABLE;                         \
 }
 
@@ -607,6 +633,10 @@ static PyObject *
 conv_content_model(XML_Content * const model,
                    PyObject *(*conv_string)(void *))
 {
+    if (_Py_EnterRecursiveCall(" in conv_content_model")) {
+        return NULL;
+    }
+
     PyObject *result = NULL;
     PyObject *children = PyTuple_New(model->numchildren);
     int i;
@@ -618,7 +648,7 @@ conv_content_model(XML_Content * const model,
                                                  conv_string);
             if (child == NULL) {
                 Py_XDECREF(children);
-                return NULL;
+                goto done;
             }
             PyTuple_SET_ITEM(children, i, child);
         }
@@ -626,6 +656,8 @@ conv_content_model(XML_Content * const model,
                                model->type, model->quant,
                                conv_string, model->name, children);
     }
+done:
+    _Py_LeaveRecursiveCall();
     return result;
 }
 
@@ -1076,11 +1108,6 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
         return NULL;
     }
 
-    // The new subparser will make use of the parent XML_Parser inside of Expat.
-    // So we need to take subparsers into account with the reference counting
-    // of their parent parser.
-    Py_INCREF(self);
-
     new_parser->buffer_size = self->buffer_size;
     new_parser->buffer_used = 0;
     new_parser->buffer = NULL;
@@ -1090,7 +1117,10 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
     new_parser->ns_prefixes = self->ns_prefixes;
     new_parser->itself = XML_ExternalEntityParserCreate(self->itself, context,
                                                         encoding);
-    new_parser->parent = (PyObject *)self;
+    // The new subparser will make use of the parent XML_Parser inside of Expat.
+    // So we need to take subparsers into account with the reference counting
+    // of their parent parser.
+    new_parser->parent = Py_NewRef(self);
     new_parser->handlers = 0;
     new_parser->intern = Py_XNewRef(self->intern);
 
@@ -1098,13 +1128,11 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
         new_parser->buffer = PyMem_Malloc(new_parser->buffer_size);
         if (new_parser->buffer == NULL) {
             Py_DECREF(new_parser);
-            Py_DECREF(self);
             return PyErr_NoMemory();
         }
     }
     if (!new_parser->itself) {
         Py_DECREF(new_parser);
-        Py_DECREF(self);
         return PyErr_NoMemory();
     }
 
@@ -1118,7 +1146,6 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
     new_parser->handlers = PyMem_New(PyObject *, i);
     if (!new_parser->handlers) {
         Py_DECREF(new_parser);
-        Py_DECREF(self);
         return PyErr_NoMemory();
     }
     clear_handlers(new_parser, 1);
@@ -1506,7 +1533,10 @@ newxmlparseobject(pyexpat_state *state, const char *encoding,
         Py_DECREF(self);
         return NULL;
     }
-#if XML_COMBINED_VERSION >= 20100
+#if XML_COMBINED_VERSION >= 20800
+    /* This feature was added upstream in libexpat 2.8.0. */
+    XML_SetHashSalt16Bytes(self->itself, _Py_HashSecret.expat.hashsalt16);
+#elif XML_COMBINED_VERSION >= 20100
     /* This feature was added upstream in libexpat 2.1.0. */
     XML_SetHashSalt(self->itself,
                     (unsigned long)_Py_HashSecret.expat.hashsalt);
@@ -2400,6 +2430,11 @@ pyexpat_exec(PyObject *mod)
 #else
     capi->SetHashSalt = NULL;
 #endif
+#if XML_COMBINED_VERSION >= 20800
+    capi->SetHashSalt16Bytes = XML_SetHashSalt16Bytes;
+#else
+    capi->SetHashSalt16Bytes = NULL;
+#endif
 #if XML_COMBINED_VERSION >= 20600
     capi->SetReparseDeferralEnabled = XML_SetReparseDeferralEnabled;
 #else
@@ -2462,6 +2497,7 @@ pyexpat_free(void *module)
 }
 
 static PyModuleDef_Slot pyexpat_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, pyexpat_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
@@ -2489,6 +2525,9 @@ PyInit_pyexpat(void)
 static void
 clear_handlers(xmlparseobject *self, int initial)
 {
+    if (self->handlers == NULL) {
+        return;
+    }
     for (size_t i = 0; handler_info[i].name != NULL; i++) {
         if (initial) {
             self->handlers[i] = NULL;

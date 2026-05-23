@@ -10,7 +10,7 @@ import stat
 import sys
 # Import _thread instead of threading to reduce startup cost
 from _thread import allocate_lock as Lock
-if sys.platform in {'win32', 'cygwin'}:
+if sys.platform == 'win32':
     from msvcrt import setmode as _setmode
 else:
     _setmode = None
@@ -546,7 +546,7 @@ class IOBase(metaclass=abc.ABCMeta):
             res += b
             if res.endswith(b"\n"):
                 break
-        return bytes(res)
+        return res.take_bytes()
 
     def __iter__(self):
         self._checkClosed()
@@ -617,8 +617,10 @@ class RawIOBase(IOBase):
         n = self.readinto(b)
         if n is None:
             return None
+        if n < 0 or n > len(b):
+            raise ValueError(f"readinto returned {n} outside buffer size {len(b)}")
         del b[n:]
-        return bytes(b)
+        return b.take_bytes()
 
     def readall(self):
         """Read until EOF, using multiple read() call."""
@@ -626,7 +628,7 @@ class RawIOBase(IOBase):
         while data := self.read(DEFAULT_BUFFER_SIZE):
             res += data
         if res:
-            return bytes(res)
+            return res.take_bytes()
         else:
             # b'' or None
             return data
@@ -939,7 +941,7 @@ class BytesIO(BufferedIOBase):
             newpos = min(len(self._buffer), self._pos + size)
             b = self._buffer[self._pos : newpos]
             self._pos = newpos
-            return bytes(b)
+            return b.take_bytes()
 
     def read1(self, size=-1):
         """This is the same as read.
@@ -947,23 +949,24 @@ class BytesIO(BufferedIOBase):
         return self.read(size)
 
     def write(self, b):
-        if self.closed:
-            raise ValueError("write to closed file")
         if isinstance(b, str):
             raise TypeError("can't write str to binary stream")
         with memoryview(b) as view:
-            n = view.nbytes  # Size of any bytes-like object
-        if n == 0:
-            return 0
+            if self.closed:
+                raise ValueError("write to closed file")
 
-        with self._lock:
-            pos = self._pos
-            if pos > len(self._buffer):
-                # Pad buffer to pos with null bytes.
-                self._buffer.resize(pos)
-            self._buffer[pos:pos + n] = b
-            self._pos += n
-        return n
+            n = view.nbytes  # Size of any bytes-like object
+            if n == 0:
+                return 0
+
+            with self._lock:
+                pos = self._pos
+                if pos > len(self._buffer):
+                    # Pad buffer to pos with null bytes.
+                    self._buffer.resize(pos)
+                self._buffer[pos:pos + n] = view
+                self._pos += n
+            return n
 
     def seek(self, pos, whence=0):
         if self.closed:
@@ -1736,7 +1739,7 @@ class FileIO(RawIOBase):
         assert len(result) - bytes_read >= 1, \
             "os.readinto buffer size 0 will result in erroneous EOF / returns 0"
         result.resize(bytes_read)
-        return bytes(result)
+        return result.take_bytes()
 
     def readinto(self, buffer):
         """Same as RawIOBase.readinto()."""

@@ -5,6 +5,7 @@ import sys
 import unittest
 import unittest.mock
 import _colorize
+from test.support import cpython_only, import_helper
 from test.support.os_helper import EnvironmentVarGuard
 
 
@@ -20,6 +21,15 @@ def supports_virtual_terminal():
         return unittest.mock.patch("nt._supports_virtual_terminal", return_value=True)
     else:
         return contextlib.nullcontext()
+
+
+class TestImportTime(unittest.TestCase):
+
+    @cpython_only
+    def test_lazy_import(self):
+        import_helper.ensure_lazy_imports(
+            "_colorize", {"copy", "re", "inspect"}
+        )
 
 
 class TestTheme(unittest.TestCase):
@@ -161,6 +171,17 @@ class TestColorizeFunction(unittest.TestCase):
             with unittest.mock.patch("os.isatty", side_effect=ZeroDivisionError):
                 file = unittest.mock.MagicMock()
                 file.fileno.side_effect = io.UnsupportedOperation
+                file.isatty.return_value = True
+                self.assertEqual(_colorize.can_colorize(file=file), True)
+                file.isatty.return_value = False
+                self.assertEqual(_colorize.can_colorize(file=file), False)
+
+            # The documentation for file.fileno says:
+            # > An OSError is raised if the IO object does not use a file descriptor.
+            # gh-141570: Check OSError is caught and handled
+            with unittest.mock.patch("os.isatty", side_effect=ZeroDivisionError):
+                file = unittest.mock.MagicMock()
+                file.fileno.side_effect = OSError
                 file.isatty.return_value = True
                 self.assertEqual(_colorize.can_colorize(file=file), True)
                 file.isatty.return_value = False
