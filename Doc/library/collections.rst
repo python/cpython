@@ -485,6 +485,9 @@ or subtracting from an empty counter.
     where only the most recent activity is of interest.
 
 
+   deques are :ref:`generic <generics>` over the type of their contents.
+
+
     Deque objects support the following methods:
 
     .. method:: append(item, /)
@@ -738,6 +741,10 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
     attribute; it defaults to ``None``. All remaining arguments are treated the same
     as if they were passed to the :class:`dict` constructor, including keyword
     arguments.
+
+
+   defaultdicts are :ref:`generic <generics>` over two types, for the types of
+   keys and values, respectively.
 
 
     :class:`defaultdict` objects support the following method in addition to the

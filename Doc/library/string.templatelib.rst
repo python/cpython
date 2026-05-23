@@ -78,6 +78,9 @@ Types
       template.strings:  ('Ah! We do have ',              '.')
       template.values:   (                   'Camembert',    )
 
+   Templates are :ref:`generic <generics>` over the type of the values which
+   are interpolated.
+
    .. rubric:: Attributes
 
    .. attribute:: strings
@@ -244,6 +247,8 @@ Types
    ...         print(value, expression, conversion, format_spec, sep=' | ')
    ...
    3.0 | 1. + 2. | None | .2f
+
+   Interpolations are :ref:`generic <generics>` over the types of their values.
 
    .. rubric:: Attributes
 

@@ -1257,6 +1257,8 @@ Regular expression objects
 
    Compiled regular expression object returned by :func:`re.compile`.
 
+   Patterns are :ref:`generic <generics>` over the type of string they handle (str or bytes).
+
    .. versionchanged:: 3.9
       :py:class:`re.Pattern` supports ``[]`` to indicate a Unicode (str) or bytes pattern.
       See :ref:`types-genericalias`.
@@ -1418,6 +1420,9 @@ when there is no match, you can test whether there was a match with a simple
 .. class:: Match
 
    Match object returned by successful ``match``\ es and ``search``\ es.
+
+   Matches are :ref:`generic <generics>` over the type of string which was
+   matched (str or bytes).
 
    .. versionchanged:: 3.9
       :py:class:`re.Match` supports ``[]`` to indicate a Unicode (str) or bytes match.

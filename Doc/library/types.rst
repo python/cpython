@@ -386,6 +386,9 @@ Standard names are defined for the following types:
    entries, which means that when the mapping changes, the view reflects these
    changes.
 
+   MappingProxyTypes are :ref:`generic <generics>` over two types, for the keys
+   and values, respectively.
+
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.9
