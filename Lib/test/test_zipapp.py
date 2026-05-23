@@ -1,6 +1,7 @@
 """Test harness for the zipapp module."""
 
 import io
+import os
 import pathlib
 import stat
 import sys
@@ -365,6 +366,38 @@ class ZipAppTest(unittest.TestCase):
         target = self.tmpdir / 'source.pyz'
         zipapp.create_archive(str(source), str(target), interpreter='python')
         self.assertTrue(target.stat().st_mode & stat.S_IEXEC)
+
+    @unittest.skipIf(sys.platform == 'win32',
+                     'Windows does not support an executable bit')
+    @unittest.skipUnless(hasattr(os, 'umask'), 'test needs os.umask()')
+    @os_helper.skip_unless_working_chmod
+    def test_shebang_executable_bits_match_readable_bits(self):
+        source = self.tmpdir / 'source'
+        source.mkdir()
+        (source / '__main__.py').touch()
+        for umask, expected_mode in ((0o022, 0o755), (0o077, 0o700)):
+            with self.subTest(umask=umask):
+                target = self.tmpdir / f'source-{umask:o}.pyz'
+                with os_helper.temp_umask(umask):
+                    zipapp.create_archive(str(source), str(target), interpreter='python')
+                self.assertEqual(stat.S_IMODE(target.stat().st_mode), expected_mode)
+
+    @unittest.skipIf(sys.platform == 'win32',
+                     'Windows does not support an executable bit')
+    @unittest.skipUnless(hasattr(os, 'umask'), 'test needs os.umask()')
+    @os_helper.skip_unless_working_chmod
+    def test_copied_shebang_executable_bits_match_readable_bits(self):
+        source = self.tmpdir / 'source'
+        source.mkdir()
+        (source / '__main__.py').touch()
+        archive = self.tmpdir / 'source.pyz'
+        zipapp.create_archive(str(source), str(archive))
+        for umask, expected_mode in ((0o022, 0o755), (0o077, 0o700)):
+            with self.subTest(umask=umask):
+                target = self.tmpdir / f'target-{umask:o}.pyz'
+                with os_helper.temp_umask(umask):
+                    zipapp.create_archive(str(archive), str(target), interpreter='python')
+                self.assertEqual(stat.S_IMODE(target.stat().st_mode), expected_mode)
 
     @unittest.skipIf(sys.platform == 'win32',
                      'Windows does not support an executable bit')
