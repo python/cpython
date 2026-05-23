@@ -522,16 +522,14 @@ math_integer_isqrt_rem(PyObject *module, PyObject *n)
 {
     PyObject *rem = NULL;
     PyObject *root = _isqrt_rem(n, &rem);
+    PyObject *res = NULL;
 
     if (root && rem) {
-        PyObject *tup = PyTuple_Pack(2, root, rem);
-
-        Py_DECREF(root);
-        Py_DECREF(rem);
-        return tup;
+        res = PyTuple_Pack(2, root, rem);
     }
     Py_XDECREF(root);
     Py_XDECREF(rem);
+    return res;
     return NULL;
 }
 
