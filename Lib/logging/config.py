@@ -187,24 +187,18 @@ def _handle_existing_loggers(existing, child_loggers, disable_existing):
     what was intended by the user. Also, allow existing loggers to NOT be
     disabled if disable_existing is false.
     """
-    root = logging.root
-    cache_clear_needed = False
     for log in existing:
-        logger = root.manager.loggerDict[log]
+        logger = logging.root.manager.loggerDict[log]
         if log in child_loggers:
             if not isinstance(logger, logging.PlaceHolder):
-                # Equivalent to setLevel(NOTSET), but clear the cache once.
-                logger.level = logging.NOTSET
+                logger.setLevel(logging.NOTSET)
                 logger.handlers = []
                 logger.propagate = True
-                cache_clear_needed = True
         else:
             logger.disabled = disable_existing
-    if cache_clear_needed:
-        root.manager._clear_cache()
 
-def _discard_existing_logger(name, existing, existing_set, child_loggers):
-    """Discard a configured logger and record its existing children."""
+def _forget_existing_logger(name, existing, existing_set, child_loggers):
+    """Forget a configured logger and record its existing children."""
     prefixed = name + "."
     i = bisect_left(existing, prefixed)
     num_existing = len(existing)
@@ -266,7 +260,7 @@ def _install_loggers(cp, handlers, disable_existing):
         propagate = section.getint("propagate", fallback=1)
         logger = logging.getLogger(qn)
         if qn in existing_set:
-            _discard_existing_logger(qn, existing, existing_set, child_loggers)
+            _forget_existing_logger(qn, existing, existing_set, child_loggers)
         if "level" in section:
             level = section["level"]
             logger.setLevel(level)
@@ -660,8 +654,8 @@ class DictConfigurator(BaseConfigurator):
                 loggers = config.get('loggers', EMPTY_DICT)
                 for name in loggers:
                     if name in existing_set:
-                        _discard_existing_logger(name, existing, existing_set,
-                                                 child_loggers)
+                        _forget_existing_logger(name, existing, existing_set,
+                                                child_loggers)
                     try:
                         self.configure_logger(name, loggers[name])
                     except Exception as e:
