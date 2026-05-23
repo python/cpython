@@ -4176,6 +4176,8 @@ class ConfigDictTest(BaseTest):
     def test_disable_existing_loggers_preserves_children(self):
         parent = logging.getLogger('many')
         child = logging.getLogger('many.child')
+        child.setLevel(logging.CRITICAL)
+        self.assertFalse(child.isEnabledFor(logging.INFO))
         cousin = logging.getLogger('many-child')
         for i in range(20):
             logging.getLogger(f'many-sibling-{i}')
@@ -4191,6 +4193,8 @@ class ConfigDictTest(BaseTest):
 
         self.assertFalse(parent.disabled)
         self.assertFalse(child.disabled)
+        self.assertEqual(child.level, logging.NOTSET)
+        self.assertTrue(child.isEnabledFor(logging.INFO))
         self.assertTrue(cousin.disabled)
 
     def test_111615(self):
