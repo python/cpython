@@ -6080,7 +6080,11 @@ _PyType_SetFlagsRecursive(PyTypeObject *self, unsigned long mask, unsigned long 
        can reassign a version tag before the flag update. */
     type_lock_prevent_release();
     types_stop_world();
+    /* Make TYPE_LOCK visible while mutating tp_flags. */
+    type_lock_allow_release();
     set_flags_recursive(self, mask, flags);
+    /* Hide TYPE_LOCK again before restarting the world. */
+    type_lock_prevent_release();
     types_start_world();
     type_lock_allow_release();
     END_TYPE_LOCK();
