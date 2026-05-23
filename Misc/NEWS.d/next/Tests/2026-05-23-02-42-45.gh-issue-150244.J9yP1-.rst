@@ -1,0 +1,1 @@
+Fix ``test_create_subprocess_env_shell`` to properly quote the executable path on both Win32 and UNIX-like systems to properly handle spaces in the path.
