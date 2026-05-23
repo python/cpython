@@ -1710,6 +1710,7 @@ extern "C" {
     INIT_ID(digest_size), \
     INIT_ID(digestmod), \
     INIT_ID(dir_fd), \
+    INIT_ID(directonly), \
     INIT_ID(discard), \
     INIT_ID(dispatch_table), \
     INIT_ID(displayhook), \
@@ -1834,6 +1835,7 @@ extern "C" {
     INIT_ID(initial_value), \
     INIT_ID(initval), \
     INIT_ID(inner_size), \
+    INIT_ID(innocuous), \
     INIT_ID(input), \
     INIT_ID(insert_comments), \
     INIT_ID(insert_pis), \

@@ -363,6 +363,40 @@ class FunctionTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             self.con.create_function("deterministic", 0, int, True)
 
+    @unittest.skipIf(sqlite.sqlite_version_info < (3, 31, 0),
+                     "Requires SQLite 3.31.0 or higher")
+    def test_func_non_innocuous_in_trusted_env(self):
+        mock = Mock(return_value=None)
+        self.con.create_function("noninnocuous", 0, mock, innocuous=False)
+        self.con.execute("pragma trusted_schema = 0")
+        self.con.execute("create view notallowed as select noninnocuous() = noninnocuous()")
+        with self.assertRaises(sqlite.OperationalError) as cm:
+            self.con.execute("select * from notallowed")
+        self.assertEqual(str(cm.exception), 'unsafe use of noninnocuous()')
+
+    @unittest.skipIf(sqlite.sqlite_version_info < (3, 31, 0),
+                     "Requires SQLite 3.31.0 or higher")
+    def test_func_innocuous_in_trusted_env(self):
+        mock = Mock(return_value=None)
+        self.con.create_function("innocuous", 0, mock, innocuous=True)
+        self.con.execute("pragma trusted_schema = 0")
+        self.con.execute("create view allowed as select innocuous() = innocuous()")
+        self.con.execute("select * from allowed")
+        self.assertEqual(mock.call_count, 2)
+
+    @unittest.skipIf(sqlite.sqlite_version_info < (3, 31, 0),
+                     "Requires SQLite 3.31.0 or higher")
+    def test_func_direct_only(self):
+        mock = Mock(return_value=None)
+        self.con.create_function("directonly", 0, mock, directonly=True)
+        self.con.execute("pragma trusted_schema = 1")
+        self.con.execute("select directonly() = directonly()")
+        self.assertEqual(mock.call_count, 2)
+        self.con.execute("create view notallowed as select directonly() = directonly()")
+        with self.assertRaises(sqlite.OperationalError) as cm:
+            self.con.execute("select * from notallowed")
+        self.assertEqual(str(cm.exception), 'unsafe use of directonly()')
+
     def test_function_destructor_via_gc(self):
         # See bpo-44304: The destructor of the user function can
         # crash if is called without the GIL from the gc functions
@@ -479,6 +513,9 @@ class WindowFunctionTests(unittest.TestCase):
             from test order by x
         """
         self.con.create_window_function("sumint", 1, WindowSumInt)
+        if sqlite.sqlite_version_info >= (3, 31, 0):
+            self.con.create_window_function("sumintInnocuous", 1, WindowSumInt, innocuous=True)
+            self.con.create_window_function("sumintDirectOnly", 1, WindowSumInt, directonly=True)
 
     def tearDown(self):
         self.cur.close()
@@ -486,6 +523,34 @@ class WindowFunctionTests(unittest.TestCase):
 
     def test_win_sum_int(self):
         self.cur.execute(self.query % "sumint")
+        self.assertEqual(self.cur.fetchall(), self.expected)
+
+    @unittest.skipIf(sqlite.sqlite_version_info < (3, 31, 0),
+                "Requires SQLite 3.31.0 or newer")
+    def test_win_non_innocuous(self):
+        self.cur.execute("pragma trusted_schema = 0")
+        self.cur.execute("create view notallowed as " + self.query % "sumint")
+        with self.assertRaises(sqlite.OperationalError) as cm:
+            self.cur.execute("select * from notallowed")
+        self.assertEqual(str(cm.exception), 'unsafe use of sumint()')
+
+    @unittest.skipIf(sqlite.sqlite_version_info < (3, 31, 0),
+                     "Requires SQLite 3.31.0 or newer")
+    def test_win_innocuous(self):
+        self.cur.execute("pragma trusted_schema = 0")
+        self.cur.execute("create view allowed as " + self.query % "sumintInnocuous")
+        self.cur.execute("select * from allowed")
+        self.assertEqual(self.cur.fetchall(), self.expected)
+
+    @unittest.skipIf(sqlite.sqlite_version_info < (3, 31, 0),
+                     "Requires SQLite 3.31.0 or newer")
+    def test_win_directonly(self):
+        self.cur.execute("pragma trusted_schema = 1")
+        self.cur.execute("create view notallowed as " + self.query % "sumintDirectOnly")
+        with self.assertRaises(sqlite.OperationalError) as cm:
+            self.cur.execute("select * from notallowed")
+        self.assertEqual(str(cm.exception), 'unsafe use of sumintDirectOnly()')
+        self.cur.execute(self.query % "sumintDirectOnly")
         self.assertEqual(self.cur.fetchall(), self.expected)
 
     def test_win_error_on_create(self):
@@ -614,6 +679,9 @@ class AggregateTests(unittest.TestCase):
         self.con.create_aggregate("checkTypes", -1, AggrCheckTypes)
         self.con.create_aggregate("mysum", 1, AggrSum)
         self.con.create_aggregate("aggtxt", 1, AggrText)
+        if sqlite.sqlite_version_info >= (3, 31, 0):
+            self.con.create_aggregate("mysumInnocuous", 1, AggrSum, innocuous=True)
+            self.con.create_aggregate("mysumDirectOnly", 1, AggrSum, directonly=True)
 
     def tearDown(self):
         self.con.close()
@@ -702,6 +770,45 @@ class AggregateTests(unittest.TestCase):
         cur.execute("delete from test")
         cur.executemany("insert into test(i) values (?)", [(10,), (20,), (30,)])
         cur.execute("select mysum(i) from test")
+        val = cur.fetchone()[0]
+        self.assertEqual(val, 60)
+
+    @unittest.skipIf(sqlite.sqlite_version_info < (3, 31, 0),
+                     "Requires SQLite 3.31.0 or newer")
+    def test_aggr_non_innocuous(self):
+        cur = self.con.cursor()
+        cur.execute("pragma trusted_schema = 0")
+        cur.execute("delete from test")
+        cur.execute("insert into test(i) values (?)", (10,))
+        cur.execute("create view notallowed as select mysum(i) from test")
+        with self.assertRaises(sqlite.OperationalError) as cm:
+            cur.execute("select * from notallowed")
+        self.assertEqual(str(cm.exception), 'unsafe use of mysum()')
+
+    @unittest.skipIf(sqlite.sqlite_version_info < (3, 31, 0),
+                     "Requires SQLite 3.31.0 or newer")
+    def test_aggr_innocuous(self):
+        cur = self.con.cursor()
+        cur.execute("pragma trusted_schema = 0")
+        cur.execute("delete from test")
+        cur.executemany("insert into test(i) values (?)", [(10,), (20,), (30,)])
+        cur.execute("create view allowed as select mysumInnocuous(i) from test")
+        cur.execute("select * from allowed")
+        val = cur.fetchone()[0]
+        self.assertEqual(val, 60)
+
+    @unittest.skipIf(sqlite.sqlite_version_info < (3, 31, 0),
+                     "Requires SQLite 3.31.0 or newer")
+    def test_aggr_directonly(self):
+        cur = self.con.cursor()
+        cur.execute("pragma trusted_schema = 1")
+        cur.execute("delete from test")
+        cur.executemany("insert into test(i) values (?)", [(10,), (20,), (30,)])
+        cur.execute("create view notallowed as select mysumDirectOnly(i) from test")
+        with self.assertRaises(sqlite.OperationalError) as cm:
+            cur.execute("select * from notallowed")
+        self.assertEqual(str(cm.exception), 'unsafe use of mysumDirectOnly()')
+        cur.execute("select mysumDirectOnly(i) from test")
         val = cur.fetchone()[0]
         self.assertEqual(val, 60)
 

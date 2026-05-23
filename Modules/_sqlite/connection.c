@@ -1140,6 +1140,48 @@ check_num_params(pysqlite_Connection *self, const int n, const char *name)
     return 0;
 }
 
+static int
+apply_innocuous_flag_if_supported(pysqlite_Connection *self,
+                                  int *flags, int is_set)
+{
+    if (is_set) {
+#if SQLITE_VERSION_NUMBER < 3031000
+        PyErr_SetString(self->NotSupportedError,
+                        "innocuous=True requires SQLite 3.31.0 or higher");
+        return -1;
+#else
+        if (sqlite3_libversion_number() < 3031000) {
+            PyErr_SetString(self->NotSupportedError,
+                            "innocuous=True requires SQLite 3.31.0 or higher");
+            return -1;
+        }
+        *flags |= SQLITE_INNOCUOUS;
+#endif
+    }
+    return 0;
+}
+
+static int
+apply_directonly_flag_if_supported(pysqlite_Connection *self,
+                                   int *flags, int is_set)
+{
+    if (is_set) {
+#if SQLITE_VERSION_NUMBER < 3031000
+        PyErr_SetString(self->NotSupportedError,
+                        "directonly=True requires SQLite 3.31.0 or higher");
+        return -1;
+#else
+        if (sqlite3_libversion_number() < 3031000) {
+            PyErr_SetString(self->NotSupportedError,
+                            "directonly=True requires SQLite 3.31.0 or higher");
+            return -1;
+        }
+        *flags |= SQLITE_DIRECTONLY;
+#endif
+    }
+    return 0;
+}
+
 /*[clinic input]
 _sqlite3.Connection.create_function as pysqlite_connection_create_function
 
@@ -1150,6 +1192,8 @@ _sqlite3.Connection.create_function as pysqlite_connection_create_function
     /
     *
     deterministic: bool = False
+    innocuous: bool = False
+    directonly: bool = False
 
 Creates a new function.
 [clinic start generated code]*/
@@ -1158,8 +1202,9 @@ static PyObject *
 pysqlite_connection_create_function_impl(pysqlite_Connection *self,
                                          PyTypeObject *cls, const char *name,
                                          int narg, PyObject *func,
-                                         int deterministic)
-/*[clinic end generated code: output=8a811529287ad240 input=a896096ed5390ae1]*/
+                                         int deterministic, int innocuous,
+                                         int directonly)
+/*[clinic end generated code: output=f38fe8fd62fe1331 input=474f56fa8e971f7f]*/
 {
     int rc;
     int flags = SQLITE_UTF8;
@@ -1173,6 +1218,12 @@ pysqlite_connection_create_function_impl(pysqlite_Connection *self,
 
     if (deterministic) {
         flags |= SQLITE_DETERMINISTIC;
+    }
+    if (apply_innocuous_flag_if_supported(self, &flags, innocuous) < 0) {
+        return NULL;
+    }
+    if (apply_directonly_flag_if_supported(self, &flags, directonly) < 0) {
+        return NULL;
     }
     callback_context *ctx = create_callback_context(cls, func);
     if (ctx == NULL) {
@@ -1297,6 +1348,10 @@ _sqlite3.Connection.create_window_function as create_window_function
         A class with step(), finalize(), value(), and inverse() methods.
         Set to None to clear the window function.
     /
+    *
+    deterministic: bool = False
+    innocuous: bool = False
+    directonly: bool = False
 
 Creates or redefines an aggregate window function. Non-standard.
 [clinic start generated code]*/
@@ -1304,8 +1359,9 @@ Creates or redefines an aggregate window function. Non-standard.
 static PyObject *
 create_window_function_impl(pysqlite_Connection *self, PyTypeObject *cls,
                             const char *name, int num_params,
-                            PyObject *aggregate_class)
-/*[clinic end generated code: output=5332cd9464522235 input=46d57a54225b5228]*/
+                            PyObject *aggregate_class, int deterministic,
+                            int innocuous, int directonly)
+/*[clinic end generated code: output=9d3081a3b22b83d3 input=ac82d0db9fd8d774]*/
 {
     if (sqlite3_libversion_number() < 3025000) {
         PyErr_SetString(self->NotSupportedError,
@@ -1321,6 +1377,15 @@ create_window_function_impl(pysqlite_Connection *self, PyTypeObject *cls,
     }
 
     int flags = SQLITE_UTF8;
+    if (deterministic) {
+        flags |= SQLITE_DETERMINISTIC;
+    }
+    if (apply_innocuous_flag_if_supported(self, &flags, innocuous) < 0) {
+        return NULL;
+    }
+    if (apply_directonly_flag_if_supported(self, &flags, directonly) < 0) {
+        return NULL;
+    }
     int rc;
     if (Py_IsNone(aggregate_class)) {
         rc = sqlite3_create_window_function(self->db, name, num_params, flags,
@@ -1358,6 +1423,10 @@ _sqlite3.Connection.create_aggregate as pysqlite_connection_create_aggregate
     n_arg: int
     aggregate_class: object
     /
+    *
+    deterministic: bool = False
+    innocuous: bool = False
+    directonly: bool = False
 
 Creates a new aggregate.
 [clinic start generated code]*/
@@ -1366,8 +1435,10 @@ static PyObject *
 pysqlite_connection_create_aggregate_impl(pysqlite_Connection *self,
                                           PyTypeObject *cls,
                                           const char *name, int n_arg,
-                                          PyObject *aggregate_class)
-/*[clinic end generated code: output=1b02d0f0aec7ff96 input=aa2773f6a42f7e17]*/
+                                          PyObject *aggregate_class,
+                                          int deterministic, int innocuous,
+                                          int directonly)
+/*[clinic end generated code: output=9058dcf3da395d17 input=5e3bd0a8266575cd]*/
 {
     int rc;
 
@@ -1378,11 +1449,21 @@ pysqlite_connection_create_aggregate_impl(pysqlite_Connection *self,
         return NULL;
     }
 
+    int flags = SQLITE_UTF8;
+    if (deterministic) {
+        flags |= SQLITE_DETERMINISTIC;
+    }
+    if (apply_innocuous_flag_if_supported(self, &flags, innocuous) < 0) {
+        return NULL;
+    }
+    if (apply_directonly_flag_if_supported(self, &flags, directonly) < 0) {
+        return NULL;
+    }
     callback_context *ctx = create_callback_context(cls, aggregate_class);
     if (ctx == NULL) {
         return NULL;
     }
-    rc = sqlite3_create_function_v2(self->db, name, n_arg, SQLITE_UTF8, ctx,
+    rc = sqlite3_create_function_v2(self->db, name, n_arg, flags, ctx,
                                     0,
                                     &step_callback,
                                     &final_callback,
