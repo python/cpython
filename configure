@@ -14411,17 +14411,35 @@ printf "%s\n" "$SHLIBS" >&6; }
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking perf trampoline" >&5
 printf %s "checking perf trampoline... " >&6; }
+PERF_TRAMPOLINE_OBJ=""
 case $PLATFORM_TRIPLET in #(
   x86_64-linux-gnu) :
-    perf_trampoline=yes ;; #(
+    perf_trampoline=yes
+                        PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_x86_64.o ;; #(
   aarch64-linux-gnu) :
-    perf_trampoline=yes ;; #(
+    perf_trampoline=yes
+                         PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_aarch64.o ;; #(
   darwin) :
     case $MACOSX_DEPLOYMENT_TARGET in #(
   10.[0-9]|10.1[0-1]) :
     perf_trampoline=no ;; #(
   *) :
     perf_trampoline=yes
+                 if test "${enable_universalsdk}" && test "$UNIVERSAL_ARCHS" = "universal2"; then
+                   PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_universal2.o
+                 else
+                   case "$host_cpu" in
+                     x86_64)
+                       PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_x86_64.o
+                       ;;
+                     aarch64|arm64)
+                       PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_aarch64.o
+                       ;;
+                     *)
+                       perf_trampoline=no
+                       ;;
+                   esac
+                 fi
              ;;
 esac ;; #(
   *) :
@@ -14437,7 +14455,6 @@ then :
 
 printf "%s\n" "#define PY_HAVE_PERF_TRAMPOLINE 1" >>confdefs.h
 
-  PERF_TRAMPOLINE_OBJ=Python/asm_trampoline.o
 
 fi
 
