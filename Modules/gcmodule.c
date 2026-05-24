@@ -167,12 +167,12 @@ gc_set_threshold_impl(PyObject *module, int threshold0, int group_right_1,
         gcstate->generations[2].threshold = threshold2;
     }
 #else
-    _Py_atomic_exchange_int(&gcstate->young.threshold, threshold0);
+    _Py_atomic_store_int(&gcstate->young.threshold, threshold0);
     if (group_right_1) {
-        _Py_atomic_exchange_int(&gcstate->old[0].threshold, threshold1);
+        _Py_atomic_store_int(&gcstate->old[0].threshold, threshold1);
     }
     if (group_right_2) {
-        _Py_atomic_exchange_int(&gcstate->old[1].threshold, threshold2);
+        _Py_atomic_store_int(&gcstate->old[1].threshold, threshold2);
     }
 #endif
     Py_RETURN_NONE;

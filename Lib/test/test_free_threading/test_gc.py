@@ -1,7 +1,7 @@
 import unittest
 
 import threading
-from threading import Thread
+from threading import Barrier, Thread
 from unittest import TestCase
 import gc
 
@@ -93,6 +93,34 @@ class TestGC(TestCase):
         thread = Thread(target=evil)
         thread.start()
         thread.join()
+
+    def test_set_threshold(self):
+        # GH-148613: Setting the GC threshold from another thread could causes
+        # race between the `gc_should_collect` and `gc_set_threshold` functions.
+        NUM_THREADS = 8
+        NUM_ITERS = 100_000
+        barrier = Barrier(NUM_THREADS)
+
+        class CyclicReference:
+            def __init__(self):
+                self.r = self
+
+        def allocator():
+            barrier.wait()
+            for _ in range(NUM_ITERS):
+                CyclicReference()
+
+        def setter():
+            barrier.wait()
+            for i in range(NUM_ITERS):
+                gc.set_threshold(100 + (i % 100), 10 + (i % 10), 10 + (i % 10))
+
+        threads = [Thread(target=allocator) for _ in range(NUM_THREADS - 1)]
+        threads.append(Thread(target=setter))
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
 
 
 if __name__ == "__main__":

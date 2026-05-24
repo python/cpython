@@ -1665,7 +1665,7 @@ void
 _PyGC_InitState(GCState *gcstate)
 {
     // TODO: move to pycore_runtime_init.h once the incremental GC lands.
-    _Py_atomic_exchange_int(&gcstate->young.threshold, 2000);
+    gcstate->young.threshold = 2000;
 }
 
 
