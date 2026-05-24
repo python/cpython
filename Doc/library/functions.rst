@@ -1827,14 +1827,20 @@ are always available.  They are listed here in alphabetical order.
       :func:`setattr`.
 
 
-.. class:: sentinel(name, /)
+.. class:: sentinel(name, /, *, repr=None)
 
    Return a new unique sentinel object.  *name* must be a :class:`str`, and is
-   used as the returned object's representation::
+   used by default as the returned object's representation::
 
       >>> MISSING = sentinel("MISSING")
       >>> MISSING
       MISSING
+
+   The optional *repr* argument can be used to specify a different representation::
+
+      >>> MISSING = sentinel("MISSING", repr="<MISSING>")
+      >>> MISSING
+      <MISSING>
 
    Sentinel objects are truthy and compare equal only to themselves.  They are
    intended to be compared with the :keyword:`is` operator.
@@ -1879,7 +1885,7 @@ are always available.  They are listed here in alphabetical order.
 
    .. attribute:: __module__
 
-      The name of the module where the sentinel was created.
+      The name of the module where the sentinel was created. This attribute is writable.
 
    .. versionadded:: 3.15
 

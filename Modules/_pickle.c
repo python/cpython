@@ -3179,7 +3179,7 @@ static int
 batch_list_exact(PickleState *state, PicklerObject *self, PyObject *obj)
 {
     PyObject *item = NULL;
-    Py_ssize_t this_batch, total;
+    Py_ssize_t this_batch, total, list_size;
 
     const char append_op = APPEND;
     const char appends_op = APPENDS;
@@ -3188,14 +3188,18 @@ batch_list_exact(PickleState *state, PicklerObject *self, PyObject *obj)
     assert(obj != NULL);
     assert(self->proto > 0);
     assert(PyList_CheckExact(obj));
-    assert(PyList_GET_SIZE(obj));
+
+    list_size = PyList_GET_SIZE(obj);
 
     /* Write in batches of BATCHSIZE. */
     total = 0;
     do {
-        if (PyList_GET_SIZE(obj) - total == 1) {
-            item = PyList_GET_ITEM(obj, total);
-            Py_INCREF(item);
+        if (list_size - total == 1) {
+            item = PyList_GetItemRef(obj, total);
+            if (item == NULL) {
+                _PyErr_FormatNote("when serializing %T item %zd", obj, total);
+                return -1;
+            }
             int err = save(state, self, item, 0);
             Py_DECREF(item);
             if (err < 0) {
@@ -3210,8 +3214,11 @@ batch_list_exact(PickleState *state, PicklerObject *self, PyObject *obj)
         if (_Pickler_Write(self, &mark_op, 1) < 0)
             return -1;
         while (total < PyList_GET_SIZE(obj)) {
-            item = PyList_GET_ITEM(obj, total);
-            Py_INCREF(item);
+            item = PyList_GetItemRef(obj, total);
+            if (item == NULL) {
+                _PyErr_FormatNote("when serializing %T item %zd", obj, total);
+                return -1;
+            }
             int err = save(state, self, item, 0);
             Py_DECREF(item);
             if (err < 0) {
@@ -3224,8 +3231,14 @@ batch_list_exact(PickleState *state, PicklerObject *self, PyObject *obj)
         }
         if (_Pickler_Write(self, &appends_op, 1) < 0)
             return -1;
+        if (PyList_GET_SIZE(obj) != list_size) {
+            PyErr_Format(
+                PyExc_RuntimeError,
+                "list changed size during iteration");
+            return -1;
+        }
 
-    } while (total < PyList_GET_SIZE(obj));
+    } while (total < list_size);
 
     return 0;
 }
@@ -3450,12 +3463,9 @@ batch_dict(PickleState *state, PicklerObject *self, PyObject *iter, PyObject *or
  * Returns 0 on success, -1 on error.
  *
  * Note that this currently doesn't work for protocol 0.
-
- * gh-146452: Wrap the dict iteration in a critical sections to prevent
- * concurrent mutation from invalidating PyDict_Next() iteration state.
  */
 static int
-batch_dict_exact(PickleState *state, PicklerObject *self, PyObject *obj)
+batch_dict_exact_impl(PickleState *state, PicklerObject *self, PyObject *obj)
 {
     PyObject *key = NULL, *value = NULL;
     int i;
@@ -3469,24 +3479,15 @@ batch_dict_exact(PickleState *state, PicklerObject *self, PyObject *obj)
     assert(self->proto > 0);
 
     dict_size = PyDict_GET_SIZE(obj);
+    assert(dict_size);
 
     /* Write in batches of BATCHSIZE. */
     Py_ssize_t total = 0;
     do {
         if (dict_size - total == 1) {
-            int next;
-            Py_BEGIN_CRITICAL_SECTION(obj);
-            next = PyDict_Next(obj, &ppos, &key, &value);
-            if (next) {
-                Py_INCREF(key);
-                Py_INCREF(value);
-            }
-            Py_END_CRITICAL_SECTION();
-            if (!next) {
-                PyErr_SetString(PyExc_RuntimeError,
-                                "dictionary changed size during iteration");
-                goto error;
-            }
+            PyDict_Next(obj, &ppos, &key, &value);
+            Py_INCREF(key);
+            Py_INCREF(value);
             if (save(state, self, key, 0) < 0) {
                 goto error;
             }
@@ -3504,18 +3505,9 @@ batch_dict_exact(PickleState *state, PicklerObject *self, PyObject *obj)
         i = 0;
         if (_Pickler_Write(self, &mark_op, 1) < 0)
             return -1;
-        int next;
-        while (1) {
-            Py_BEGIN_CRITICAL_SECTION(obj);
-            next = PyDict_Next(obj, &ppos, &key, &value);
-            if (next) {
-                Py_INCREF(key);
-                Py_INCREF(value);
-            }
-            Py_END_CRITICAL_SECTION();
-            if (!next) {
-                break;
-            }
+        while (PyDict_Next(obj, &ppos, &key, &value)) {
+            Py_INCREF(key);
+            Py_INCREF(value);
             if (save(state, self, key, 0) < 0) {
                 goto error;
             }
@@ -3544,6 +3536,18 @@ error:
     Py_XDECREF(key);
     Py_XDECREF(value);
     return -1;
+}
+
+/* gh-146452: Wrap the dict iteration in a critical section to prevent
+   concurrent mutation from invalidating PyDict_Next() iteration state. */
+static int
+batch_dict_exact(PickleState *state, PicklerObject *self, PyObject *obj)
+{
+    int ret;
+    Py_BEGIN_CRITICAL_SECTION(obj);
+    ret = batch_dict_exact_impl(state, self, obj);
+    Py_END_CRITICAL_SECTION();
+    return ret;
 }
 
 static int
