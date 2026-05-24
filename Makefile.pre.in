@@ -795,7 +795,7 @@ check-clean-src:
 		echo "Building Python out of the source tree (in $(abs_builddir)) requires a clean source tree ($(abs_srcdir))" ; \
 		echo "Build artifacts such as .o files, executables, and Python/frozen_modules/*.h must not exist within $(srcdir)." ; \
 		echo "Try to run:" ; \
-		echo "  (cd \"$(srcdir)\" && make clean || git clean -fdx -e Doc/venv)" ; \
+		echo "  (cd \"$(srcdir)\" && make distclean || git clean -fdx -e Doc/venv)" ; \
 		exit 1; \
 	fi
 
@@ -3111,8 +3111,17 @@ config.status:	$(srcdir)/configure
 
 .PRECIOUS: config.status $(BUILDPYTHON) Makefile Makefile.pre
 
-Python/asm_trampoline.o: $(srcdir)/Python/asm_trampoline.S
+Python/asm_trampoline_x86_64.o: $(srcdir)/Python/asm_trampoline_x86_64.S
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
+
+Python/asm_trampoline_aarch64.o: $(srcdir)/Python/asm_trampoline_aarch64.S
+	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
+
+Python/asm_trampoline_riscv64.o: $(srcdir)/Python/asm_trampoline_riscv64.S
+	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
+
+Python/asm_trampoline_universal2.o: Python/asm_trampoline_aarch64.o Python/asm_trampoline_x86_64.o
+	lipo -create -output $@ Python/asm_trampoline_aarch64.o Python/asm_trampoline_x86_64.o
 
 Python/emscripten_trampoline_inner.wasm: $(srcdir)/Python/emscripten_trampoline_inner.c
 	# emcc has a path that ends with emsdk/upstream/emscripten/emcc, we're looking for emsdk/upstream/bin/clang.

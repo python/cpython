@@ -145,10 +145,7 @@ class Lock(_ContextManagerMixin, mixins._LoopBoundMixin):
         """Ensure that the first waiter will wake up."""
         if not self._waiters:
             return
-        try:
-            fut = next(iter(self._waiters))
-        except StopIteration:
-            return
+        fut = next(iter(self._waiters))
 
         # .done() means that the waiter is already set to wake up.
         if not fut.done():

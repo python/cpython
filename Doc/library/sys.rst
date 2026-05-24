@@ -919,8 +919,6 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    * ``"normal"``: Only imports explicitly marked with the ``lazy`` keyword
      are lazy
    * ``"all"``: All top-level imports are potentially lazy
-   * ``"none"``: All lazy imports are suppressed (even explicitly marked
-     ones)
 
    See also :func:`set_lazy_imports` and :pep:`810`.
 
@@ -1757,8 +1755,6 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    * ``"normal"``: Only imports explicitly marked with the ``lazy`` keyword
      are lazy
    * ``"all"``: All top-level imports become potentially lazy
-   * ``"none"``: All lazy imports are suppressed (even explicitly marked
-     ones)
 
    This function is intended for advanced users who need to control lazy
    imports across their entire application. Library developers should
