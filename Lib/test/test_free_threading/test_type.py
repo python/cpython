@@ -4,7 +4,7 @@ import unittest
 from concurrent.futures import ThreadPoolExecutor
 from threading import Thread
 from unittest import TestCase
-
+import sys
 from test.support import import_helper, threading_helper
 
 _testinternalcapi = import_helper.import_module("_testinternalcapi")
@@ -184,7 +184,7 @@ class TestType(TestCase):
         class C:
             pass
 
-        names = [f"attr_{i}" for i in range(
+        names = [sys.intern(f"attr_{i}") for i in range(
             _testinternalcapi._Py_TYPECACHE_MINSIZE * 4)]
         for name in names:
             setattr(C, name, name)

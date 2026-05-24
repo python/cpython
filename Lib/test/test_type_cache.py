@@ -1,5 +1,6 @@
 """ Tests for the internal type cache in CPython. """
 import dis
+import sys
 import unittest
 import warnings
 from test import support
@@ -310,9 +311,10 @@ class PerTypeLookupCacheTests(unittest.TestCase):
         # The cache for static types is stored on interpreter for isolation
         # between subinterpreters, test that cache works for them as well.
         self.type_cache_invalidate(int)
-        self.assertEqual(self.type_cache_lookup(int, "bit_length")[0], 0)
-        attr = int.bit_length
-        hit, value, _ = self.type_cache_lookup(int, "bit_length")
+        name = sys.intern("bit_length")
+        self.assertEqual(self.type_cache_lookup(int, name)[0], 0)
+        attr = getattr(int, name)
+        hit, value, _ = self.type_cache_lookup(int, name)
         self.assertEqual(hit, 1)
         self.assertIs(value, attr)
 
