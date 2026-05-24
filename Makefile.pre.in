@@ -3120,8 +3120,13 @@ Python/asm_trampoline_aarch64.o: $(srcdir)/Python/asm_trampoline_aarch64.S
 Python/asm_trampoline_riscv64.o: $(srcdir)/Python/asm_trampoline_riscv64.S
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
 
+# Extract the matching slice from each fat per-arch object before lipo -create,
+# which rejects two fat inputs that share architectures.
 Python/asm_trampoline_universal2.o: Python/asm_trampoline_aarch64.o Python/asm_trampoline_x86_64.o
-	lipo -create -output $@ Python/asm_trampoline_aarch64.o Python/asm_trampoline_x86_64.o
+	lipo -thin arm64  Python/asm_trampoline_aarch64.o -output $@.arm64
+	lipo -thin x86_64 Python/asm_trampoline_x86_64.o  -output $@.x86_64
+	lipo -create -output $@ $@.arm64 $@.x86_64
+	rm -f $@.arm64 $@.x86_64
 
 Python/emscripten_trampoline_inner.wasm: $(srcdir)/Python/emscripten_trampoline_inner.c
 	# emcc has a path that ends with emsdk/upstream/emscripten/emcc, we're looking for emsdk/upstream/bin/clang.

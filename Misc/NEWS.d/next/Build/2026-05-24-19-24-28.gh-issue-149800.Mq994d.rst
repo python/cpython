@@ -1,0 +1,3 @@
+Fix macOS universal2 build of the perf trampoline.  After the per-architecture
+split in :gh:`149800`, the ``arm64`` and ``x86_64`` trampoline objects were
+each compiled as fat Mach-O files, and ``lipo -create`` refused to merge them.
