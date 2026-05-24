@@ -147,11 +147,7 @@ Module-Level Functions
    :ref:`traceback object <traceback-objects>` *tb*.  It is useful
    for alternate formatting of stack traces.  The optional *limit* argument has
    the same meaning as for :func:`print_tb`.  A "pre-processed" stack trace
-   entry is a :class:`FrameSummary` object containing attributes
-   :attr:`~FrameSummary.filename`, :attr:`~FrameSummary.lineno`,
-   :attr:`~FrameSummary.name`, :attr:`~FrameSummary.line`,
-   :attr:`~FrameSummary.end_lineno`, :attr:`~FrameSummary.colno`, and
-   :attr:`~FrameSummary.end_colno` representing the
+   entry is a :class:`FrameSummary` object with attributes representing the
    information that is usually printed for a stack trace.
 
 

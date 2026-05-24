@@ -115,11 +115,10 @@ def extract_tb(tb, limit=None):
     This is useful for alternate formatting of stack traces.  If
     'limit' is omitted or None, all entries are extracted.  A
     pre-processed stack trace entry is a FrameSummary object
-    containing attributes filename, lineno, name, line, end_lineno,
-    colno, and end_colno representing the information that is
-    usually printed for a stack trace.  The line is a string with
+    representing the information that is usually printed for a
+    stack trace. The line attribute is a string with
     leading and trailing whitespace stripped; if the source is not
-    available it is None.
+    available the corresponding attribute is None.
     """
     return StackSummary._extract_from_extended_frame_gen(
         _walk_tb_with_full_positions(tb), limit=limit)
