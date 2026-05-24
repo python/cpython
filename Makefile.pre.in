@@ -3120,8 +3120,18 @@ Python/asm_trampoline_aarch64.o: $(srcdir)/Python/asm_trampoline_aarch64.S
 Python/asm_trampoline_riscv64.o: $(srcdir)/Python/asm_trampoline_riscv64.S
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
 
-Python/asm_trampoline_universal2.o: Python/asm_trampoline_aarch64.o Python/asm_trampoline_x86_64.o
-	lipo -create -output $@ Python/asm_trampoline_aarch64.o Python/asm_trampoline_x86_64.o
+# On macOS universal2 builds, $(PY_CORE_CFLAGS) contains "-arch arm64 -arch x86_64",
+# which would produce fat .o files containing both architectures for each .S input.
+# lipo -create then refuses to combine them because they share architectures.
+# Build each per-arch object with a single -arch flag before merging with lipo.
+Python/asm_trampoline_universal2.o: $(srcdir)/Python/asm_trampoline_aarch64.S $(srcdir)/Python/asm_trampoline_x86_64.S
+	$(CC) -c $(filter-out -arch arm64 x86_64,$(PY_CORE_CFLAGS)) -arch arm64 \
+		-o Python/asm_trampoline_arm64-apple-darwin.o $(srcdir)/Python/asm_trampoline_aarch64.S
+	$(CC) -c $(filter-out -arch arm64 x86_64,$(PY_CORE_CFLAGS)) -arch x86_64 \
+		-o Python/asm_trampoline_x86_64-apple-darwin.o $(srcdir)/Python/asm_trampoline_x86_64.S
+	lipo -create -output $@ \
+		Python/asm_trampoline_arm64-apple-darwin.o \
+		Python/asm_trampoline_x86_64-apple-darwin.o
 
 Python/emscripten_trampoline_inner.wasm: $(srcdir)/Python/emscripten_trampoline_inner.c
 	# emcc has a path that ends with emsdk/upstream/emscripten/emcc, we're looking for emsdk/upstream/bin/clang.
