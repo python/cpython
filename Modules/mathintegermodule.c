@@ -484,13 +484,17 @@ _isqrt_rem(PyObject *n, PyObject **rem)
             Py_DECREF(tmp);
         }
         Py_SETREF(a, PyNumber_Subtract(a, _PyLong_GetOne()));
+        if (a == NULL) {
+            Py_DECREF(b);
+            goto error;
+        }
     }
-    if (!rem) {
-        Py_DECREF(b);
-    }
-    else {
+    if (rem) {
         Py_SETREF(b, PyNumber_Subtract(n, b));
         *rem = b;
+    }
+    else {
+        Py_DECREF(b);
     }
     Py_DECREF(n);
     return a;
