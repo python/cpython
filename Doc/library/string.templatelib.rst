@@ -78,9 +78,6 @@ Types
       template.strings:  ('Ah! We do have ',              '.')
       template.values:   (                   'Camembert',    )
 
-   Templates are :ref:`generic <generics>` over the type of the values which
-   are interpolated.
-
    .. rubric:: Attributes
 
    .. attribute:: strings

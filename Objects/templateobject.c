@@ -376,7 +376,7 @@ static PyMethodDef template_methods[] = {
      // note that this is not supported in typeshed, and it is not clear if the
      // type for this is a simple TypeVar or a TypeVarTuple
      // for details, see: https://github.com/python/typeshed/issues/14878
-     PyDoc_STR("Templates are generic over the type of the values which are interpolated")},
+     PyDoc_STR("Template supports [] for generic usage")},
     {NULL, NULL},
 };
 
