@@ -48,7 +48,7 @@ PyDoc_STRVAR(_contextvars_Context_items__doc__,
 "\n"
 "Return all variables and their values in the context object.\n"
 "\n"
-"The result is returned as a list of 2-tuples (variable, value).");
+"The result is returned as an iterator of 2-tuples (variable, value).");
 
 #define _CONTEXTVARS_CONTEXT_ITEMS_METHODDEF    \
     {"items", (PyCFunction)_contextvars_Context_items, METH_NOARGS, _contextvars_Context_items__doc__},
@@ -66,7 +66,7 @@ PyDoc_STRVAR(_contextvars_Context_keys__doc__,
 "keys($self, /)\n"
 "--\n"
 "\n"
-"Return a list of all variables in the context object.");
+"Return an iterator of all variables in the context object.");
 
 #define _CONTEXTVARS_CONTEXT_KEYS_METHODDEF    \
     {"keys", (PyCFunction)_contextvars_Context_keys, METH_NOARGS, _contextvars_Context_keys__doc__},
@@ -84,7 +84,7 @@ PyDoc_STRVAR(_contextvars_Context_values__doc__,
 "values($self, /)\n"
 "--\n"
 "\n"
-"Return a list of all variables\' values in the context object.");
+"Return an iterator of all variables\' values in the context object.");
 
 #define _CONTEXTVARS_CONTEXT_VALUES_METHODDEF    \
     {"values", (PyCFunction)_contextvars_Context_values, METH_NOARGS, _contextvars_Context_values__doc__},
@@ -256,4 +256,4 @@ token_exit(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3a04b2fddf24c3e9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a6b96499985059cd input=a9049054013a1b77]*/
