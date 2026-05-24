@@ -35,8 +35,8 @@ struct _PyTypeCacheLookupResult {
 
 extern void _PyTypeCache_InitType(PyTypeObject *type);
 extern void _PyTypeCache_Insert(PyTypeObject *type, PyObject *name, PyObject *value);
-extern struct _PyTypeCacheLookupResult _PyTypeCache_Lookup(PyTypeObject *type, PyObject *name);
-extern void _PyTypeCache_Invalidate(PyTypeObject *type);
+PyAPI_FUNC(struct _PyTypeCacheLookupResult) _PyTypeCache_Lookup(PyTypeObject *type, PyObject *name);
+PyAPI_FUNC(void) _PyTypeCache_Invalidate(PyTypeObject *type);
 
 #ifdef __cplusplus
 }
