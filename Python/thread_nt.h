@@ -1,4 +1,5 @@
-#include "pycore_interp.h"    // _PyInterpreterState.threads.stacksize
+#include "pycore_interp.h"        // _PyInterpreterState.threads.stacksize
+#include "pycore_time.h"          // _PyTime_AsMicroseconds()
 
 /* This code implemented by Dag.Gruneau@elsa.preseco.comm.se */
 /* Fast NonRecursiveMutex support by Yakov Markovitch, markovitch@iso.ru */
@@ -76,17 +77,18 @@ EnterNonRecursiveMutex(PNRMUTEX mutex, DWORD milliseconds)
         }
     } else if (milliseconds != 0) {
         /* wait at least until the deadline */
-        _PyTime_t nanoseconds = _PyTime_FromNanoseconds((_PyTime_t)milliseconds * 1000000);
-        _PyTime_t deadline = _PyTime_Add(_PyTime_GetPerfCounter(), nanoseconds);
+        PyTime_t timeout = (PyTime_t)milliseconds * (1000 * 1000);
+        PyTime_t deadline = _PyDeadline_Init(timeout);
         while (mutex->locked) {
-            _PyTime_t microseconds = _PyTime_AsMicroseconds(nanoseconds,
-                                                            _PyTime_ROUND_TIMEOUT);
+            PyTime_t microseconds = _PyTime_AsMicroseconds(timeout,
+                                                           _PyTime_ROUND_TIMEOUT);
             if (PyCOND_TIMEDWAIT(&mutex->cv, &mutex->cs, microseconds) < 0) {
                 result = WAIT_FAILED;
                 break;
             }
-            nanoseconds = deadline - _PyTime_GetPerfCounter();
-            if (nanoseconds <= 0) {
+
+            timeout = _PyDeadline_Get(deadline);
+            if (timeout <= 0) {
                 break;
             }
         }
@@ -242,10 +244,6 @@ PyThread_detach_thread(PyThread_handle_t handle) {
     return (CloseHandle(hThread) == 0);
 }
 
-void
-PyThread_update_thread_after_fork(PyThread_ident_t* ident, PyThread_handle_t* handle) {
-}
-
 /*
  * Return the thread Id instead of a handle. The Id is said to uniquely identify the
  * thread in the system
@@ -291,100 +289,17 @@ PyThread_exit_thread(void)
     if (!initialized)
         exit(0);
     _endthreadex(0);
+    Py_UNREACHABLE();
 }
 
-/*
- * Lock support. It has to be implemented as semaphores.
- * I [Dag] tried to implement it with mutex but I could find a way to
- * tell whether a thread already own the lock or not.
- */
-PyThread_type_lock
-PyThread_allocate_lock(void)
+void _Py_NO_RETURN
+PyThread_hang_thread(void)
 {
-    PNRMUTEX mutex;
-
-    if (!initialized)
-        PyThread_init_thread();
-
-    mutex = AllocNonRecursiveMutex() ;
-
-    PyThread_type_lock aLock = (PyThread_type_lock) mutex;
-    assert(aLock);
-
-    return aLock;
-}
-
-void
-PyThread_free_lock(PyThread_type_lock aLock)
-{
-    FreeNonRecursiveMutex(aLock) ;
-}
-
-// WaitForSingleObject() accepts timeout in milliseconds in the range
-// [0; 0xFFFFFFFE] (DWORD type). INFINITE value (0xFFFFFFFF) means no
-// timeout. 0xFFFFFFFE milliseconds is around 49.7 days.
-const DWORD TIMEOUT_MS_MAX = 0xFFFFFFFE;
-
-/*
- * Return 1 on success if the lock was acquired
- *
- * and 0 if the lock was not acquired. This means a 0 is returned
- * if the lock has already been acquired by this thread!
- */
-PyLockStatus
-PyThread_acquire_lock_timed(PyThread_type_lock aLock,
-                            PY_TIMEOUT_T microseconds, int intr_flag)
-{
-    assert(aLock);
-
-    /* Fow now, intr_flag does nothing on Windows, and lock acquires are
-     * uninterruptible.  */
-    PyLockStatus success;
-    PY_TIMEOUT_T milliseconds;
-
-    if (microseconds >= 0) {
-        milliseconds = microseconds / 1000;
-        // Round milliseconds away from zero
-        if (microseconds % 1000 > 0) {
-            milliseconds++;
-        }
-        if (milliseconds > (PY_TIMEOUT_T)TIMEOUT_MS_MAX) {
-            // bpo-41710: PyThread_acquire_lock_timed() cannot report timeout
-            // overflow to the caller, so clamp the timeout to
-            // [0, TIMEOUT_MS_MAX] milliseconds.
-            //
-            // _thread.Lock.acquire() and _thread.RLock.acquire() raise an
-            // OverflowError if microseconds is greater than PY_TIMEOUT_MAX.
-            milliseconds = TIMEOUT_MS_MAX;
-        }
-        assert(milliseconds != INFINITE);
+    while (1) {
+        SleepEx(INFINITE, TRUE);
     }
-    else {
-        milliseconds = INFINITE;
-    }
-
-    if (EnterNonRecursiveMutex((PNRMUTEX)aLock,
-                               (DWORD)milliseconds) == WAIT_OBJECT_0) {
-        success = PY_LOCK_ACQUIRED;
-    }
-    else {
-        success = PY_LOCK_FAILURE;
-    }
-
-    return success;
-}
-int
-PyThread_acquire_lock(PyThread_type_lock aLock, int waitflag)
-{
-    return PyThread_acquire_lock_timed(aLock, waitflag ? -1 : 0, 0);
 }
 
-void
-PyThread_release_lock(PyThread_type_lock aLock)
-{
-    assert(aLock);
-    (void)LeaveNonRecursiveMutex((PNRMUTEX) aLock);
-}
 
 /* minimum/maximum thread stack sizes supported */
 #define THREAD_MIN_STACKSIZE    0x8000          /* 32 KiB */
@@ -444,16 +359,7 @@ PyThread_set_key_value(int key, void *value)
 void *
 PyThread_get_key_value(int key)
 {
-    /* because TLS is used in the Py_END_ALLOW_THREAD macro,
-     * it is necessary to preserve the windows error state, because
-     * it is assumed to be preserved across the call to the macro.
-     * Ideally, the macro should be fixed, but it is simpler to
-     * do it here.
-     */
-    DWORD error = GetLastError();
-    void *result = TlsGetValue(key);
-    SetLastError(error);
-    return result;
+    return TlsGetValue(key);
 }
 
 void
@@ -525,14 +431,10 @@ void *
 PyThread_tss_get(Py_tss_t *key)
 {
     assert(key != NULL);
-    /* because TSS is used in the Py_END_ALLOW_THREAD macro,
-     * it is necessary to preserve the windows error state, because
-     * it is assumed to be preserved across the call to the macro.
-     * Ideally, the macro should be fixed, but it is simpler to
-     * do it here.
-     */
-    DWORD error = GetLastError();
-    void *result = TlsGetValue(key->_key);
-    SetLastError(error);
-    return result;
+    int err = GetLastError();
+    void *r = TlsGetValue(key->_key);
+    if (r || !GetLastError()) {
+        SetLastError(err);
+    }
+    return r;
 }

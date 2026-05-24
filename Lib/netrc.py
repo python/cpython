@@ -7,6 +7,19 @@ import os, stat
 __all__ = ["netrc", "NetrcParseError"]
 
 
+def _can_security_check():
+    # On WASI, getuid() is indicated as a stub but it may also be missing.
+    return os.name == 'posix' and hasattr(os, 'getuid')
+
+
+def _getpwuid(uid):
+    try:
+        import pwd
+        return pwd.getpwuid(uid)[0]
+    except (ImportError, LookupError):
+        return f'uid {uid}'
+
+
 class NetrcParseError(Exception):
     """Exception raised on syntax errors in the .netrc file."""
     def __init__(self, msg, filename=None, lineno=None):
@@ -82,7 +95,7 @@ class netrc:
         while 1:
             # Look for a machine, default, or macdef top-level keyword
             saved_lineno = lexer.lineno
-            toplevel = tt = lexer.get_token()
+            tt = lexer.get_token()
             if not tt:
                 break
             elif tt[0] == '#':
@@ -139,29 +152,28 @@ class netrc:
                 else:
                     raise NetrcParseError("bad follower token %r" % tt,
                                           file, lexer.lineno)
-            self._security_check(fp, default_netrc, self.hosts[entryname][0])
 
-    def _security_check(self, fp, default_netrc, login):
-        if os.name == 'posix' and default_netrc and login != "anonymous":
-            prop = os.fstat(fp.fileno())
-            if prop.st_uid != os.getuid():
-                import pwd
-                try:
-                    fowner = pwd.getpwuid(prop.st_uid)[0]
-                except KeyError:
-                    fowner = 'uid %s' % prop.st_uid
-                try:
-                    user = pwd.getpwuid(os.getuid())[0]
-                except KeyError:
-                    user = 'uid %s' % os.getuid()
-                raise NetrcParseError(
-                    (f"~/.netrc file owner ({fowner}, {user}) does not match"
-                     " current user"))
-            if (prop.st_mode & (stat.S_IRWXG | stat.S_IRWXO)):
-                raise NetrcParseError(
-                    "~/.netrc access too permissive: access"
-                    " permissions must restrict access to only"
-                    " the owner")
+        if _can_security_check() and default_netrc:
+            for entry in self.hosts.values():
+                if entry[0] != "anonymous":
+                    # Raises on security issue; once passed once can exit.
+                    self._security_check(fp)
+                    return
+
+    def _security_check(self, fp):
+        prop = os.fstat(fp.fileno())
+        current_user_id = os.getuid()
+        if prop.st_uid != current_user_id:
+            fowner = _getpwuid(prop.st_uid)
+            user = _getpwuid(current_user_id)
+            raise NetrcParseError(
+                f"~/.netrc file owner ({fowner}) does not match"
+                f" current user ({user})")
+        if (prop.st_mode & (stat.S_IRWXG | stat.S_IRWXO)):
+            raise NetrcParseError(
+                "~/.netrc access too permissive: access"
+                " permissions must restrict access to only"
+                " the owner")
 
     def authenticators(self, host):
         """Return a (user, account, password) tuple for given host."""

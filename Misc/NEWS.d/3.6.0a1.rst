@@ -1113,9 +1113,9 @@ Fixed the comparison of plistlib.Data with other types.
 .. nonce: RMRMtM
 .. section: Library
 
-Fix an uninitialized variable in `ctypes.util`.
+Fix an uninitialized variable in ``ctypes.util``.
 The bug only occurs on SunOS when the ctypes implementation searches for the
-`crle` program.  Patch by Xiang Zhang.  Tested on SunOS by Kees Bos.
+``crle`` program.  Patch by Xiang Zhang.  Tested on SunOS by Kees Bos.
 
 ..
 
@@ -1401,7 +1401,7 @@ array is extended.
 .. section: Library
 
 doctest.DocFileTest and doctest.testfile() now support packages (module
-splitted into multiple directories) for the package parameter.
+split into multiple directories) for the package parameter.
 
 ..
 
@@ -1484,9 +1484,9 @@ on UNIX signals (SIGSEGV, SIGFPE, SIGABRT).
 .. nonce: RWN1jR
 .. section: Library
 
-Add C functions :c:func:`_PyTraceMalloc_Track` and
-:c:func:`_PyTraceMalloc_Untrack` to track memory blocks using the
-:mod:`tracemalloc` module. Add :c:func:`_PyTraceMalloc_GetTraceback` to get
+Add C functions :c:func:`!_PyTraceMalloc_Track` and
+:c:func:`!_PyTraceMalloc_Untrack` to track memory blocks using the
+:mod:`tracemalloc` module. Add :c:func:`!_PyTraceMalloc_GetTraceback` to get
 the traceback of an object.
 
 ..
@@ -3915,7 +3915,7 @@ Fix output of python-config --extension-suffix.
 .. nonce: yLO-r4
 .. section: Tools/Demos
 
-The pyvenv script has been deprecated in favour of `python3 -m venv`.
+The pyvenv script has been deprecated in favour of ``python3 -m venv``.
 
 ..
 

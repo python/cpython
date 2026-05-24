@@ -3,10 +3,15 @@ import logging
 import queue
 import time
 import unittest
+import sys
+import io
 from concurrent.futures._base import BrokenExecutor
+from concurrent.futures.process import _check_system_limits
+
 from logging.handlers import QueueHandler
 
 from test import support
+from test.support import warnings_helper
 
 from .util import ExecutorMixin, create_executor_tests, setup_module
 
@@ -16,6 +21,10 @@ INITIALIZER_STATUS = 'uninitialized'
 def init(x):
     global INITIALIZER_STATUS
     INITIALIZER_STATUS = x
+    # InterpreterPoolInitializerTest.test_initializer fails
+    # if we don't have a LOAD_GLOBAL.  (It could be any global.)
+    # We will address this separately.
+    INITIALIZER_STATUS
 
 def get_init_status():
     return INITIALIZER_STATUS
@@ -40,6 +49,7 @@ class InitializerMixin(ExecutorMixin):
                                     initargs=('initialized',))
         super().setUp()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_initializer(self):
         futures = [self.executor.submit(get_init_status)
                    for _ in range(self.worker_count)]
@@ -66,6 +76,7 @@ class FailingInitializerMixin(ExecutorMixin):
             self.executor_kwargs = dict(initializer=init_fail)
         super().setUp()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_initializer(self):
         with self._assert_logged('ValueError: error in initializer'):
             try:
@@ -107,6 +118,37 @@ class FailingInitializerMixin(ExecutorMixin):
 
 create_executor_tests(globals(), InitializerMixin)
 create_executor_tests(globals(), FailingInitializerMixin)
+
+
+@unittest.skipIf(sys.platform == "win32", "Resource Tracker doesn't run on Windows")
+class FailingInitializerResourcesTest(unittest.TestCase):
+    """
+    Source: https://github.com/python/cpython/issues/104090
+    """
+
+    def _test(self, test_class):
+        try:
+            _check_system_limits()
+        except NotImplementedError:
+            self.skipTest("ProcessPoolExecutor unavailable on this system")
+
+        runner = unittest.TextTestRunner(stream=io.StringIO())
+        runner.run(test_class('test_initializer'))
+
+        # GH-104090:
+        # Stop resource tracker manually now, so we can verify there are not leaked resources by checking
+        # the process exit code
+        from multiprocessing.resource_tracker import _resource_tracker
+        _resource_tracker._stop()
+
+        self.assertEqual(_resource_tracker._exitcode, 0)
+
+    def test_spawn(self):
+        self._test(ProcessPoolSpawnFailingInitializerTest)
+
+    @support.skip_if_sanitizer("TSAN doesn't support threads after fork", thread=True)
+    def test_forkserver(self):
+        self._test(ProcessPoolForkserverFailingInitializerTest)
 
 
 def setUpModule():

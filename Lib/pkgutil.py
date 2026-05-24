@@ -8,11 +8,12 @@ import importlib.machinery
 import os
 import os.path
 import sys
-from types import ModuleType
-import warnings
+
+lazy import re
+
 
 __all__ = [
-    'get_importer', 'iter_importers', 'get_loader', 'find_loader',
+    'get_importer', 'iter_importers',
     'walk_packages', 'iter_modules', 'get_data',
     'read_code', 'extend_path',
     'ModuleInfo',
@@ -263,59 +264,6 @@ def iter_importers(fullname=""):
         yield get_importer(item)
 
 
-def get_loader(module_or_name):
-    """Get a "loader" object for module_or_name
-
-    Returns None if the module cannot be found or imported.
-    If the named module is not already imported, its containing package
-    (if any) is imported, in order to establish the package __path__.
-    """
-    warnings._deprecated("pkgutil.get_loader",
-                         f"{warnings._DEPRECATED_MSG}; "
-                         "use importlib.util.find_spec() instead",
-                         remove=(3, 14))
-    if module_or_name in sys.modules:
-        module_or_name = sys.modules[module_or_name]
-        if module_or_name is None:
-            return None
-    if isinstance(module_or_name, ModuleType):
-        module = module_or_name
-        loader = getattr(module, '__loader__', None)
-        if loader is not None:
-            return loader
-        if getattr(module, '__spec__', None) is None:
-            return None
-        fullname = module.__name__
-    else:
-        fullname = module_or_name
-    return find_loader(fullname)
-
-
-def find_loader(fullname):
-    """Find a "loader" object for fullname
-
-    This is a backwards compatibility wrapper around
-    importlib.util.find_spec that converts most failures to ImportError
-    and only returns the loader rather than the full spec
-    """
-    warnings._deprecated("pkgutil.find_loader",
-                         f"{warnings._DEPRECATED_MSG}; "
-                         "use importlib.util.find_spec() instead",
-                         remove=(3, 14))
-    if fullname.startswith('.'):
-        msg = "Relative module name {!r} not supported".format(fullname)
-        raise ImportError(msg)
-    try:
-        spec = importlib.util.find_spec(fullname)
-    except (ImportError, AttributeError, TypeError, ValueError) as ex:
-        # This hack fixes an impedance mismatch between pkgutil and
-        # importlib, where the latter raises other errors for cases where
-        # pkgutil previously raised ImportError
-        msg = "Error while finding loader for {!r} ({}: {})"
-        raise ImportError(msg.format(fullname, type(ex), ex)) from ex
-    return spec.loader if spec is not None else None
-
-
 def extend_path(path, name):
     """Extend a package's path.
 
@@ -453,9 +401,10 @@ def get_data(package, resource):
     return loader.get_data(resource_name)
 
 
-_NAME_PATTERN = None
+_LENIENT_PATTERN = None
+_STRICT_PATTERN = None
 
-def resolve_name(name):
+def resolve_name(name, *, strict=False):
     """
     Resolve a name to an object.
 
@@ -465,6 +414,7 @@ def resolve_name(name):
 
     W(.W)*
     W(.W)*:(W(.W)*)?
+    W(.W)*:(W(.W)*)
 
     The first form is intended for backward compatibility only. It assumes that
     some part of the dotted name is a package, and the rest is an object
@@ -479,6 +429,11 @@ def resolve_name(name):
     hierarchy within that package. Only one import is needed in this form. If
     it ends with the colon, then a module object is returned.
 
+    The first two forms are accepted when `strict=False` (the default).
+
+    The third form requires both the module name and callable, separated by
+    a colon. Only this form is accepted when `strict=True`.
+
     The function will return an object (which might be a module), or raise one
     of the following exceptions:
 
@@ -487,18 +442,26 @@ def resolve_name(name):
     AttributeError - if a failure occurred when traversing the object hierarchy
                      within the imported package to get to the desired object.
     """
-    global _NAME_PATTERN
-    if _NAME_PATTERN is None:
-        # Lazy import to speedup Python startup time
-        import re
-        dotted_words = r'(?!\d)(\w+)(\.(?!\d)(\w+))*'
-        _NAME_PATTERN = re.compile(f'^(?P<pkg>{dotted_words})'
-                                   f'(?P<cln>:(?P<obj>{dotted_words})?)?$',
-                                   re.UNICODE)
+    global _LENIENT_PATTERN, _STRICT_PATTERN
+    dotted_words = r'(?!\d)(\w+)(\.(?!\d)(\w+))*'
+    if strict:
+        if _STRICT_PATTERN is None:
+            _STRICT_PATTERN = re.compile(
+                f'^(?P<pkg>{dotted_words})'
+                f'(?P<cln>:(?P<obj>{dotted_words}))$',
+                re.UNICODE)
+        pattern = _STRICT_PATTERN
+    else:
+        if _LENIENT_PATTERN is None:
+            _LENIENT_PATTERN = re.compile(
+                f'^(?P<pkg>{dotted_words})'
+                f'(?P<cln>:(?P<obj>{dotted_words})?)?$',
+                re.UNICODE)
+        pattern = _LENIENT_PATTERN
 
-    m = _NAME_PATTERN.match(name)
-    if not m:
+    if (m := pattern.match(name)) is None:
         raise ValueError(f'invalid format: {name!r}')
+
     gd = m.groupdict()
     if gd.get('cln'):
         # there is a colon - a one-step import is all that's needed

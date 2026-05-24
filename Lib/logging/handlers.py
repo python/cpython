@@ -23,11 +23,17 @@ Copyright (C) 2001-2021 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging.handlers' and log away!
 """
 
-import io, logging, socket, os, pickle, struct, time, re
-from stat import ST_DEV, ST_INO, ST_MTIME
-import queue
-import threading
 import copy
+import io
+import logging
+import os
+import pickle
+import queue
+import re
+import socket
+import struct
+import threading
+import time
 
 #
 # Some constants...
@@ -187,15 +193,22 @@ class RotatingFileHandler(BaseRotatingHandler):
         Basically, see if the supplied record would cause the file to exceed
         the size limit we have.
         """
-        # See bpo-45401: Never rollover anything other than regular files
-        if os.path.exists(self.baseFilename) and not os.path.isfile(self.baseFilename):
-            return False
         if self.stream is None:                 # delay was set...
             self.stream = self._open()
         if self.maxBytes > 0:                   # are we rolling over?
+            try:
+                pos = self.stream.tell()
+            except io.UnsupportedOperation:
+                # gh-143237: Never rollover a named pipe.
+                return False
+            if not pos:
+                # gh-116263: Never rollover an empty file
+                return False
             msg = "%s\n" % self.format(record)
-            self.stream.seek(0, 2)  #due to non-posix-compliant Windows feature
-            if self.stream.tell() + len(msg) >= self.maxBytes:
+            if pos + len(msg) >= self.maxBytes:
+                # See bpo-45401: Never rollover anything other than regular files
+                if os.path.exists(self.baseFilename) and not os.path.isfile(self.baseFilename):
+                    return False
                 return True
         return False
 
@@ -232,19 +245,19 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         if self.when == 'S':
             self.interval = 1 # one second
             self.suffix = "%Y-%m-%d_%H-%M-%S"
-            self.extMatch = r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}(\.\w+)?$"
+            extMatch = r"(?<!\d)\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}(?!\d)"
         elif self.when == 'M':
             self.interval = 60 # one minute
             self.suffix = "%Y-%m-%d_%H-%M"
-            self.extMatch = r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}(\.\w+)?$"
+            extMatch = r"(?<!\d)\d{4}-\d{2}-\d{2}_\d{2}-\d{2}(?!\d)"
         elif self.when == 'H':
             self.interval = 60 * 60 # one hour
             self.suffix = "%Y-%m-%d_%H"
-            self.extMatch = r"^\d{4}-\d{2}-\d{2}_\d{2}(\.\w+)?$"
+            extMatch = r"(?<!\d)\d{4}-\d{2}-\d{2}_\d{2}(?!\d)"
         elif self.when == 'D' or self.when == 'MIDNIGHT':
             self.interval = 60 * 60 * 24 # one day
             self.suffix = "%Y-%m-%d"
-            self.extMatch = r"^\d{4}-\d{2}-\d{2}(\.\w+)?$"
+            extMatch = r"(?<!\d)\d{4}-\d{2}-\d{2}(?!\d)"
         elif self.when.startswith('W'):
             self.interval = 60 * 60 * 24 * 7 # one week
             if len(self.when) != 2:
@@ -253,17 +266,23 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
                 raise ValueError("Invalid day specified for weekly rollover: %s" % self.when)
             self.dayOfWeek = int(self.when[1])
             self.suffix = "%Y-%m-%d"
-            self.extMatch = r"^\d{4}-\d{2}-\d{2}(\.\w+)?$"
+            extMatch = r"(?<!\d)\d{4}-\d{2}-\d{2}(?!\d)"
         else:
             raise ValueError("Invalid rollover interval specified: %s" % self.when)
 
-        self.extMatch = re.compile(self.extMatch, re.ASCII)
+        # extMatch is a pattern for matching a datetime suffix in a file name.
+        # After custom naming, it is no longer guaranteed to be separated by
+        # periods from other parts of the filename.  The lookup statements
+        # (?<!\d) and (?!\d) ensure that the datetime suffix (which itself
+        # starts and ends with digits) is not preceded or followed by digits.
+        # This reduces the number of false matches and improves performance.
+        self.extMatch = re.compile(extMatch, re.ASCII)
         self.interval = self.interval * interval # multiply by units requested
         # The following line added because the filename passed in could be a
         # path object (see Issue #27493), but self.baseFilename will be a string
         filename = self.baseFilename
         if os.path.exists(filename):
-            t = os.stat(filename)[ST_MTIME]
+            t = int(os.stat(filename).st_mtime)
         else:
             t = int(time.time())
         self.rolloverAt = self.computeRollover(t)
@@ -299,7 +318,7 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
 
             r = rotate_ts - ((currentHour * 60 + currentMinute) * 60 +
                 currentSecond)
-            if r < 0:
+            if r <= 0:
                 # Rotate time is before the current time (for example when
                 # self.rotateAt is 13:45 and it now 14:15), rotation is
                 # tomorrow.
@@ -328,17 +347,21 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
                         daysToWait = self.dayOfWeek - day
                     else:
                         daysToWait = 6 - day + self.dayOfWeek + 1
-                    newRolloverAt = result + (daysToWait * (60 * 60 * 24))
-                    if not self.utc:
-                        dstNow = t[-1]
-                        dstAtRollover = time.localtime(newRolloverAt)[-1]
-                        if dstNow != dstAtRollover:
-                            if not dstNow:  # DST kicks in before next rollover, so we need to deduct an hour
-                                addend = -3600
-                            else:           # DST bows out before next rollover, so we need to add an hour
-                                addend = 3600
-                            newRolloverAt += addend
-                    result = newRolloverAt
+                    result += daysToWait * _MIDNIGHT
+                result += self.interval - _MIDNIGHT * 7
+            else:
+                result += self.interval - _MIDNIGHT
+            if not self.utc:
+                dstNow = t[-1]
+                dstAtRollover = time.localtime(result)[-1]
+                if dstNow != dstAtRollover:
+                    if not dstNow:  # DST kicks in before next rollover, so we need to deduct an hour
+                        addend = -3600
+                        if not time.localtime(result-3600)[-1]:
+                            addend = 0
+                    else:           # DST bows out before next rollover, so we need to add an hour
+                        addend = 3600
+                    result += addend
         return result
 
     def shouldRollover(self, record):
@@ -369,32 +392,28 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         dirName, baseName = os.path.split(self.baseFilename)
         fileNames = os.listdir(dirName)
         result = []
-        # See bpo-44753: Don't use the extension when computing the prefix.
-        n, e = os.path.splitext(baseName)
-        prefix = n + '.'
-        plen = len(prefix)
-        for fileName in fileNames:
-            if self.namer is None:
-                # Our files will always start with baseName
-                if not fileName.startswith(baseName):
-                    continue
-            else:
-                # Our files could be just about anything after custom naming, but
-                # likely candidates are of the form
-                # foo.log.DATETIME_SUFFIX or foo.DATETIME_SUFFIX.log
-                if (not fileName.startswith(baseName) and fileName.endswith(e) and
-                    len(fileName) > (plen + 1) and not fileName[plen+1].isdigit()):
-                    continue
-
-            if fileName[:plen] == prefix:
-                suffix = fileName[plen:]
-                # See bpo-45628: The date/time suffix could be anywhere in the
-                # filename
-                parts = suffix.split('.')
-                for part in parts:
-                    if self.extMatch.match(part):
+        if self.namer is None:
+            prefix = baseName + '.'
+            plen = len(prefix)
+            for fileName in fileNames:
+                if fileName[:plen] == prefix:
+                    suffix = fileName[plen:]
+                    if self.extMatch.fullmatch(suffix):
+                        result.append(os.path.join(dirName, fileName))
+        else:
+            for fileName in fileNames:
+                # Our files could be just about anything after custom naming,
+                # but they should contain the datetime suffix.
+                # Try to find the datetime suffix in the file name and verify
+                # that the file name can be generated by this handler.
+                m = self.extMatch.search(fileName)
+                while m:
+                    dfn = self.namer(self.baseFilename + "." + m[0])
+                    if os.path.basename(dfn) == fileName:
                         result.append(os.path.join(dirName, fileName))
                         break
+                    m = self.extMatch.search(fileName, m.start() + 1)
+
         if len(result) < self.backupCount:
             result = []
         else:
@@ -410,17 +429,14 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         then we have to get a list of matching filenames, sort them and remove
         the one with the oldest suffix.
         """
-        if self.stream:
-            self.stream.close()
-            self.stream = None
         # get the time that this sequence started at and make it a TimeTuple
         currentTime = int(time.time())
-        dstNow = time.localtime(currentTime)[-1]
         t = self.rolloverAt - self.interval
         if self.utc:
             timeTuple = time.gmtime(t)
         else:
             timeTuple = time.localtime(t)
+            dstNow = time.localtime(currentTime)[-1]
             dstThen = timeTuple[-1]
             if dstNow != dstThen:
                 if dstNow:
@@ -431,26 +447,19 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         dfn = self.rotation_filename(self.baseFilename + "." +
                                      time.strftime(self.suffix, timeTuple))
         if os.path.exists(dfn):
-            os.remove(dfn)
+            # Already rolled over.
+            return
+
+        if self.stream:
+            self.stream.close()
+            self.stream = None
         self.rotate(self.baseFilename, dfn)
         if self.backupCount > 0:
             for s in self.getFilesToDelete():
                 os.remove(s)
         if not self.delay:
             self.stream = self._open()
-        newRolloverAt = self.computeRollover(currentTime)
-        while newRolloverAt <= currentTime:
-            newRolloverAt = newRolloverAt + self.interval
-        #If DST changes and midnight or weekly rollover, adjust for this.
-        if (self.when == 'MIDNIGHT' or self.when.startswith('W')) and not self.utc:
-            dstAtRollover = time.localtime(newRolloverAt)[-1]
-            if dstNow != dstAtRollover:
-                if not dstNow:  # DST kicks in before next rollover, so we need to deduct an hour
-                    addend = -3600
-                else:           # DST bows out before next rollover, so we need to add an hour
-                    addend = 3600
-                newRolloverAt += addend
-        self.rolloverAt = newRolloverAt
+        self.rolloverAt = self.computeRollover(currentTime)
 
 class WatchedFileHandler(logging.FileHandler):
     """
@@ -466,8 +475,7 @@ class WatchedFileHandler(logging.FileHandler):
     This handler is not appropriate for use under Windows, because
     under Windows open files cannot be moved or renamed - logging
     opens the files with exclusive locks - and so there is no need
-    for such a handler. Furthermore, ST_INO is not supported under
-    Windows; stat always returns zero for this value.
+    for such a handler.
 
     This handler is based on a suggestion and patch by Chad J.
     Schroeder.
@@ -483,9 +491,11 @@ class WatchedFileHandler(logging.FileHandler):
         self._statstream()
 
     def _statstream(self):
-        if self.stream:
-            sres = os.fstat(self.stream.fileno())
-            self.dev, self.ino = sres[ST_DEV], sres[ST_INO]
+        if self.stream is None:
+            return
+        sres = os.fstat(self.stream.fileno())
+        self.dev = sres.st_dev
+        self.ino = sres.st_ino
 
     def reopenIfNeeded(self):
         """
@@ -495,6 +505,9 @@ class WatchedFileHandler(logging.FileHandler):
         has, close the old stream and reopen the file to get the
         current stream.
         """
+        if self.stream is None:
+            return
+
         # Reduce the chance of race conditions by stat'ing by path only
         # once and then fstat'ing our new fd if we opened a new log stream.
         # See issue #14632: Thanks to John Mulligan for the problem report
@@ -502,18 +515,23 @@ class WatchedFileHandler(logging.FileHandler):
         try:
             # stat the file by path, checking for existence
             sres = os.stat(self.baseFilename)
+
+            # compare file system stat with that of our stream file handle
+            reopen = (sres.st_dev != self.dev or sres.st_ino != self.ino)
         except FileNotFoundError:
-            sres = None
-        # compare file system stat with that of our stream file handle
-        if not sres or sres[ST_DEV] != self.dev or sres[ST_INO] != self.ino:
-            if self.stream is not None:
-                # we have an open file handle, clean it up
-                self.stream.flush()
-                self.stream.close()
-                self.stream = None  # See Issue #21742: _open () might fail.
-                # open a new file handle and get new stat info from that fd
-                self.stream = self._open()
-                self._statstream()
+            reopen = True
+
+        if not reopen:
+            return
+
+        # we have an open file handle, clean it up
+        self.stream.flush()
+        self.stream.close()
+        self.stream = None  # See Issue #21742: _open () might fail.
+
+        # open a new file handle and get new stat info from that fd
+        self.stream = self._open()
+        self._statstream()
 
     def emit(self, record):
         """
@@ -841,7 +859,7 @@ class SysLogHandler(logging.Handler):
     }
 
     def __init__(self, address=('localhost', SYSLOG_UDP_PORT),
-                 facility=LOG_USER, socktype=None):
+                 facility=LOG_USER, socktype=None, timeout=None):
         """
         Initialize a handler.
 
@@ -858,6 +876,7 @@ class SysLogHandler(logging.Handler):
         self.address = address
         self.facility = facility
         self.socktype = socktype
+        self.timeout = timeout
         self.socket = None
         self.createSocket()
 
@@ -919,6 +938,8 @@ class SysLogHandler(logging.Handler):
                 err = sock = None
                 try:
                     sock = socket.socket(af, socktype, proto)
+                    if self.timeout:
+                        sock.settimeout(self.timeout)
                     if socktype == socket.SOCK_STREAM:
                         sock.connect(sa)
                     break
@@ -1026,7 +1047,8 @@ class SMTPHandler(logging.Handler):
         only be used when authentication credentials are supplied. The tuple
         will be either an empty tuple, or a single-value tuple with the name
         of a keyfile, or a 2-value tuple with the names of the keyfile and
-        certificate file. (This tuple is passed to the `starttls` method).
+        certificate file. (This tuple is passed to the
+        `ssl.SSLContext.load_cert_chain` method).
         A timeout in seconds can be specified for the SMTP connection (the
         default is one second).
         """
@@ -1079,8 +1101,23 @@ class SMTPHandler(logging.Handler):
             msg.set_content(self.format(record))
             if self.username:
                 if self.secure is not None:
+                    import ssl
+
+                    try:
+                        keyfile = self.secure[0]
+                    except IndexError:
+                        keyfile = None
+
+                    try:
+                        certfile = self.secure[1]
+                    except IndexError:
+                        certfile = None
+
+                    context = ssl._create_stdlib_context(
+                        certfile=certfile, keyfile=keyfile
+                    )
                     smtp.ehlo()
-                    smtp.starttls(*self.secure)
+                    smtp.starttls(context=context)
                     smtp.ehlo()
                 smtp.login(self.username, self.password)
             smtp.send_message(msg)
@@ -1092,7 +1129,7 @@ class NTEventLogHandler(logging.Handler):
     """
     A handler class which sends events to the NT Event Log. Adds a
     registry entry for the specified application name. If no dllname is
-    provided, win32service.pyd (which contains some basic message
+    provided and pywin32 installed, win32service.pyd (which contains some basic message
     placeholders) is used. Note that use of these placeholders will make
     your event logs big, as the entire message source is held in the log.
     If you want slimmer logs, you have to pass in the name of your own DLL
@@ -1100,38 +1137,46 @@ class NTEventLogHandler(logging.Handler):
     """
     def __init__(self, appname, dllname=None, logtype="Application"):
         logging.Handler.__init__(self)
-        try:
-            import win32evtlogutil, win32evtlog
-            self.appname = appname
-            self._welu = win32evtlogutil
-            if not dllname:
-                dllname = os.path.split(self._welu.__file__)
+        import _winapi
+        self._winapi = _winapi
+        self.appname = appname
+        if not dllname:
+            # backward compatibility
+            try:
+                import win32evtlogutil
+                dllname = os.path.split(win32evtlogutil.__file__)
                 dllname = os.path.split(dllname[0])
                 dllname = os.path.join(dllname[0], r'win32service.pyd')
-            self.dllname = dllname
-            self.logtype = logtype
-            # Administrative privileges are required to add a source to the registry.
-            # This may not be available for a user that just wants to add to an
-            # existing source - handle this specific case.
-            try:
-                self._welu.AddSourceToRegistry(appname, dllname, logtype)
-            except Exception as e:
-                # This will probably be a pywintypes.error. Only raise if it's not
-                # an "access denied" error, else let it pass
-                if getattr(e, 'winerror', None) != 5:  # not access denied
-                    raise
-            self.deftype = win32evtlog.EVENTLOG_ERROR_TYPE
-            self.typemap = {
-                logging.DEBUG   : win32evtlog.EVENTLOG_INFORMATION_TYPE,
-                logging.INFO    : win32evtlog.EVENTLOG_INFORMATION_TYPE,
-                logging.WARNING : win32evtlog.EVENTLOG_WARNING_TYPE,
-                logging.ERROR   : win32evtlog.EVENTLOG_ERROR_TYPE,
-                logging.CRITICAL: win32evtlog.EVENTLOG_ERROR_TYPE,
-         }
-        except ImportError:
-            print("The Python Win32 extensions for NT (service, event "\
-                        "logging) appear not to be available.")
-            self._welu = None
+            except ImportError:
+                pass
+        self.dllname = dllname
+        self.logtype = logtype
+        # Administrative privileges are required to add a source to the registry.
+        # This may not be available for a user that just wants to add to an
+        # existing source - handle this specific case.
+        try:
+            self._add_source_to_registry(appname, dllname, logtype)
+        except PermissionError:
+            pass
+        self.deftype = _winapi.EVENTLOG_ERROR_TYPE
+        self.typemap = {
+            logging.DEBUG: _winapi.EVENTLOG_INFORMATION_TYPE,
+            logging.INFO: _winapi.EVENTLOG_INFORMATION_TYPE,
+            logging.WARNING: _winapi.EVENTLOG_WARNING_TYPE,
+            logging.ERROR: _winapi.EVENTLOG_ERROR_TYPE,
+            logging.CRITICAL: _winapi.EVENTLOG_ERROR_TYPE,
+        }
+
+    @staticmethod
+    def _add_source_to_registry(appname, dllname, logtype):
+        import winreg
+
+        key_path = f"SYSTEM\\CurrentControlSet\\Services\\EventLog\\{logtype}\\{appname}"
+
+        with winreg.CreateKey(winreg.HKEY_LOCAL_MACHINE, key_path) as key:
+            if dllname:
+                winreg.SetValueEx(key, "EventMessageFile", 0, winreg.REG_EXPAND_SZ, dllname)
+            winreg.SetValueEx(key, "TypesSupported", 0, winreg.REG_DWORD, 7)  # All types are supported
 
     def getMessageID(self, record):
         """
@@ -1172,15 +1217,20 @@ class NTEventLogHandler(logging.Handler):
         Determine the message ID, event category and event type. Then
         log the message in the NT event log.
         """
-        if self._welu:
+        try:
+            id = self.getMessageID(record)
+            cat = self.getEventCategory(record)
+            type = self.getEventType(record)
+            msg = self.format(record)
+
+            # Get a handle to the event log
+            handle = self._winapi.RegisterEventSource(None, self.appname)
             try:
-                id = self.getMessageID(record)
-                cat = self.getEventCategory(record)
-                type = self.getEventType(record)
-                msg = self.format(record)
-                self._welu.ReportEvent(self.appname, id, cat, type, [msg])
-            except Exception:
-                self.handleError(record)
+                self._winapi.ReportEvent(handle, type, cat, id, msg)
+            finally:
+                self._winapi.DeregisterEventSource(handle)
+        except Exception:
+            self.handleError(record)
 
     def close(self):
         """
@@ -1499,6 +1549,19 @@ class QueueListener(object):
         self._thread = None
         self.respect_handler_level = respect_handler_level
 
+    def __enter__(self):
+        """
+        For use as a context manager. Starts the listener.
+        """
+        self.start()
+        return self
+
+    def __exit__(self, *args):
+        """
+        For use as a context manager. Stops the listener.
+        """
+        self.stop()
+
     def dequeue(self, block):
         """
         Dequeue a record and return it, optionally blocking.
@@ -1515,6 +1578,9 @@ class QueueListener(object):
         This starts up a background thread to monitor the queue for
         LogRecords to process.
         """
+        if self._thread is not None:
+            raise RuntimeError("Listener already started")
+
         self._thread = t = threading.Thread(target=self._monitor)
         t.daemon = True
         t.start()
@@ -1586,6 +1652,7 @@ class QueueListener(object):
         Note that if you don't call this before your application exits, there
         may be some records still left on the queue, which won't be processed.
         """
-        self.enqueue_sentinel()
-        self._thread.join()
-        self._thread = None
+        if self._thread:  # see gh-114706 - allow calling this more than once
+            self.enqueue_sentinel()
+            self._thread.join()
+            self._thread = None

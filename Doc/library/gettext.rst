@@ -1,17 +1,14 @@
-:mod:`gettext` --- Multilingual internationalization services
-=============================================================
+:mod:`!gettext` --- Multilingual internationalization services
+==============================================================
 
 .. module:: gettext
    :synopsis: Multilingual internationalization services.
-
-.. moduleauthor:: Barry A. Warsaw <barry@python.org>
-.. sectionauthor:: Barry A. Warsaw <barry@python.org>
 
 **Source code:** :source:`Lib/gettext.py`
 
 --------------
 
-The :mod:`gettext` module provides internationalization (I18N) and localization
+The :mod:`!gettext` module provides internationalization (I18N) and localization
 (L10N) services for your Python modules and applications. It supports both the
 GNU :program:`gettext` message catalog API and a higher level, class-based API that may
 be more appropriate for Python files.  The interface described below allows you
@@ -25,7 +22,7 @@ Some hints on localizing your Python modules and applications are also given.
 GNU :program:`gettext` API
 --------------------------
 
-The :mod:`gettext` module defines the following API, which is very similar to
+The :mod:`!gettext` module defines the following API, which is very similar to
 the GNU :program:`gettext` API.  If you use this API you will affect the
 translation of your entire application globally.  Often this is what you want if
 your application is monolingual, with the choice of language dependent on the
@@ -37,7 +34,7 @@ class-based API instead.
 .. function:: bindtextdomain(domain, localedir=None)
 
    Bind the *domain* to the locale directory *localedir*.  More concretely,
-   :mod:`gettext` will look for binary :file:`.mo` files for the given domain using
+   :mod:`!gettext` will look for binary :file:`.mo` files for the given domain using
    the path (on Unix): :file:`{localedir}/{language}/LC_MESSAGES/{domain}.mo`, where
    *language* is searched for in the environment variables :envvar:`LANGUAGE`,
    :envvar:`LC_ALL`, :envvar:`LC_MESSAGES`, and :envvar:`LANG` respectively.
@@ -114,7 +111,7 @@ Here's an example of typical usage for this API::
 Class-based API
 ---------------
 
-The class-based API of the :mod:`gettext` module gives you more flexibility and
+The class-based API of the :mod:`!gettext` module gives you more flexibility and
 greater convenience than the GNU :program:`gettext` API.  It is the recommended
 way of localizing your Python applications and modules.  :mod:`!gettext` defines
 a :class:`GNUTranslations` class which implements the parsing of GNU :file:`.mo` format
@@ -257,7 +254,7 @@ are the methods of :class:`!NullTranslations`:
 
    .. method:: info()
 
-      Return the "protected" :attr:`_info` variable, a dictionary containing
+      Return a dictionary containing
       the metadata found in the message catalog file.
 
 
@@ -296,9 +293,9 @@ are the methods of :class:`!NullTranslations`:
 The :class:`GNUTranslations` class
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :mod:`gettext` module provides one additional class derived from
+The :mod:`!gettext` module provides one additional class derived from
 :class:`NullTranslations`: :class:`GNUTranslations`.  This class overrides
-:meth:`_parse` to enable reading GNU :program:`gettext` format :file:`.mo` files
+:meth:`!_parse` to enable reading GNU :program:`gettext` format :file:`.mo` files
 in both big-endian and little-endian format.
 
 :class:`GNUTranslations` parses optional metadata out of the translation
@@ -306,7 +303,7 @@ catalog. It is convention with GNU :program:`gettext` to include metadata as
 the translation for the empty string. This metadata is in :rfc:`822`\ -style
 ``key: value`` pairs, and should contain the ``Project-Id-Version`` key.  If the
 key ``Content-Type`` is found, then the ``charset`` property is used to
-initialize the "protected" :attr:`_charset` instance variable, defaulting to
+initialize the "protected" :attr:`!_charset` instance variable, defaulting to
 ``None`` if not found.  If the charset encoding is specified, then all message
 ids and message strings read from the catalog are converted to Unicode using
 this encoding, else ASCII is assumed.
@@ -315,7 +312,7 @@ Since message ids are read as Unicode strings too, all ``*gettext()`` methods
 will assume message ids as Unicode strings, not byte strings.
 
 The entire set of key/value pairs are placed into a dictionary and set as the
-"protected" :attr:`_info` instance variable.
+"protected" :attr:`!_info` instance variable.
 
 If the :file:`.mo` file's magic number is invalid, the major version number is
 unexpected, or if other problems occur while reading the file, instantiating a
@@ -393,7 +390,7 @@ The Catalog constructor
 
 .. index:: single: GNOME
 
-GNOME uses a version of the :mod:`gettext` module by James Henstridge, but this
+GNOME uses a version of the :mod:`!gettext` module by James Henstridge, but this
 version has a slightly different API.  Its documented usage was::
 
    import gettext
@@ -425,7 +422,7 @@ take the following steps:
 
 #. create language-specific translations of the message catalogs
 
-#. use the :mod:`gettext` module so that message strings are properly translated
+#. use the :mod:`!gettext` module so that message strings are properly translated
 
 In order to prepare your code for I18N, you need to look at all the strings in
 your files.  Any string that needs to be translated should be marked by wrapping
@@ -473,10 +470,10 @@ supported natural language.  They send back the completed
 language-specific versions as a :file:`<language-name>.po` file that's
 compiled into a machine-readable :file:`.mo` binary catalog file using
 the :program:`msgfmt` program.  The :file:`.mo` files are used by the
-:mod:`gettext` module for the actual translation processing at
+:mod:`!gettext` module for the actual translation processing at
 run-time.
 
-How you use the :mod:`gettext` module in your code depends on whether you are
+How you use the :mod:`!gettext` module in your code depends on whether you are
 internationalizing a single module or your entire application. The next two
 sections will discuss each case.
 
@@ -636,9 +633,9 @@ implementations, and valuable experience to the creation of this module:
 
 .. rubric:: Footnotes
 
-.. [#] The default locale directory is system dependent; for example, on RedHat Linux
+.. [#] The default locale directory is system dependent; for example, on Red Hat Linux
    it is :file:`/usr/share/locale`, but on Solaris it is :file:`/usr/lib/locale`.
-   The :mod:`gettext` module does not try to support these system dependent
+   The :mod:`!gettext` module does not try to support these system dependent
    defaults; instead its default is :file:`{sys.base_prefix}/share/locale` (see
    :data:`sys.base_prefix`). For this reason, it is always best to call
    :func:`bindtextdomain` with an explicit absolute path at the start of your

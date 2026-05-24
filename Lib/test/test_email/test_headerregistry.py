@@ -8,6 +8,7 @@ from test.test_email import TestEmailBase, parameterize
 from email import headerregistry
 from email.headerregistry import Address, Group
 from test.support import ALWAYS_EQ
+from test.support import warnings_helper
 
 
 DITTO = object()
@@ -247,7 +248,15 @@ class TestContentTypeHeader(TestHeaderBase):
         decoded =  args[2] if l>2 and args[2] is not DITTO else source
         header = 'Content-Type:' + ' ' if source else ''
         folded = args[3] if l>3 else header + decoded + '\n'
-        h = self.make_header('Content-Type', source)
+        # Both rfc2231 test cases with utf-8%E2%80%9D raise warnings,
+        # clear encoding cache to ensure test isolation.
+        if 'utf-8%E2%80%9D' in source and 'ascii' not in source:
+            import encodings
+            encodings._cache.clear()
+            with warnings_helper.check_warnings(('', DeprecationWarning)):
+                h = self.make_header('Content-Type', source)
+        else:
+            h = self.make_header('Content-Type', source)
         self.assertEqual(h.content_type, content_type)
         self.assertEqual(h.maintype, maintype)
         self.assertEqual(h.subtype, subtype)
@@ -837,6 +846,11 @@ class TestContentTransferEncoding(TestHeaderBase):
             '7bit',
             [errors.InvalidHeaderDefect]),
 
+        'extra_space_after_cte': (
+            'base64 ',
+            'base64',
+            []),
+
     }
 
 
@@ -1237,11 +1251,31 @@ class TestAddressHeader(TestHeaderBase):
             'example.com',
             None),
 
-        }
+        'name_ending_with_dot_without_space':
+            ('John X.<jxd@example.com>',
+             [errors.ObsoleteHeaderDefect],
+             '"John X." <jxd@example.com>',
+             'John X.',
+             'jxd@example.com',
+             'jxd',
+             'example.com',
+             None),
+
+        'name_starting_with_dot':
+            ('. Doe <jxd@example.com>',
+             [errors.InvalidHeaderDefect, errors.ObsoleteHeaderDefect],
+             '". Doe" <jxd@example.com>',
+             '. Doe',
+             'jxd@example.com',
+             'jxd',
+             'example.com',
+             None),
 
         # XXX: Need many more examples, and in particular some with names in
         # trailing comments, which aren't currently handled.  comments in
         # general are not handled yet.
+
+        }
 
     def example_as_address(self, source, defects, decoded, display_name,
                            addr_spec, username, domain, comment):
@@ -1259,6 +1293,43 @@ class TestAddressHeader(TestHeaderBase):
         self.assertEqual(a.domain, domain)
         # XXX: we have no comment support yet.
         #self.assertEqual(a.comment, comment)
+
+    example_broken_header_params = {
+
+        'just_dquote':
+            ('"',
+             [errors.InvalidHeaderDefect]*2,
+             '<>',
+             '',
+             '<>',
+             '',
+             '',
+            ),
+
+        }
+
+    def example_broken_header_as_address(
+            self,
+            source,
+            defects,
+            decoded,
+            display_name,
+            addr_spec,
+            username,
+            domain,
+        ):
+        h = self.make_header('sender', source)
+        self.assertEqual(h, decoded)
+        self.assertDefectsEqual(h.defects, defects)
+        a = h.address
+        self.assertEqual(str(a), decoded)
+        self.assertEqual(len(h.groups), 1)
+        self.assertEqual([a], list(h.groups[0].addresses))
+        self.assertEqual([a], list(h.addresses))
+        self.assertEqual(a.display_name, display_name)
+        self.assertEqual(a.addr_spec, addr_spec)
+        self.assertEqual(a.username, username)
+        self.assertEqual(a.domain, domain)
 
     def example_as_group(self, source, defects, decoded, display_name,
                          addr_spec, username, domain, comment):
@@ -1472,17 +1543,19 @@ class TestAddressAndGroup(TestEmailBase):
         self.assertEqual(str(a), '"Sara J." <"bad name"@example.com>')
 
     def test_il8n(self):
-        a = Address('Éric', 'wok', 'exàmple.com')
+        a = Address('Éric', 'wők', 'exàmple.com')
         self.assertEqual(a.display_name, 'Éric')
-        self.assertEqual(a.username, 'wok')
+        self.assertEqual(a.username, 'wők')
         self.assertEqual(a.domain, 'exàmple.com')
-        self.assertEqual(a.addr_spec, 'wok@exàmple.com')
-        self.assertEqual(str(a), 'Éric <wok@exàmple.com>')
+        self.assertEqual(a.addr_spec, 'wők@exàmple.com')
+        self.assertEqual(str(a), 'Éric <wők@exàmple.com>')
 
-    # XXX: there is an API design issue that needs to be solved here.
-    #def test_non_ascii_username_raises(self):
-    #    with self.assertRaises(ValueError):
-    #        Address('foo', 'wők', 'example.com')
+    def test_i18n_in_addr_spec(self):
+        a = Address(addr_spec='wők@exàmple.com')
+        self.assertEqual(a.username, 'wők')
+        self.assertEqual(a.domain, 'exàmple.com')
+        self.assertEqual(a.addr_spec, 'wők@exàmple.com')
+        self.assertEqual(str(a), 'wők@exàmple.com')
 
     def test_crlf_in_constructor_args_raises(self):
         cases = (
@@ -1502,10 +1575,6 @@ class TestAddressAndGroup(TestEmailBase):
         for kwargs in cases:
             with self.subTest(kwargs=kwargs), self.assertRaisesRegex(ValueError, "invalid arguments"):
                 Address(**kwargs)
-
-    def test_non_ascii_username_in_addr_spec_raises(self):
-        with self.assertRaises(ValueError):
-            Address('foo', addr_spec='wők@example.com')
 
     def test_address_addr_spec_and_username_raises(self):
         with self.assertRaises(TypeError):
@@ -1628,7 +1697,7 @@ class TestFolding(TestHeaderBase):
                     'Lôrem ipsum dôlôr sit amet, cônsectetuer adipiscing. '
                     'Suspendisse pôtenti. Aliquam nibh. Suspendisse pôtenti.',
                     '=?utf-8?q?L=C3=B4rem_ipsum_d=C3=B4l=C3=B4r_sit_amet=2C_c'
-                    '=C3=B4nsectetuer?=\n =?utf-8?q?adipiscing=2E_Suspendisse'
+                    '=C3=B4nsectetuer?=\n =?utf-8?q?_adipiscing=2E_Suspendisse'
                     '_p=C3=B4tenti=2E_Aliquam_nibh=2E?=\n Suspendisse =?utf-8'
                     '?q?p=C3=B4tenti=2E?=',
                     ),
@@ -1677,7 +1746,7 @@ class TestFolding(TestHeaderBase):
             'singlewordthatwontfit')
         self.assertEqual(
             h.fold(policy=policy.default.clone(max_line_length=20)),
-            'Subject: \n'
+            'Subject:\n'
             ' =?utf-8?q?thisisa?=\n'
             ' =?utf-8?q?verylon?=\n'
             ' =?utf-8?q?glineco?=\n'
@@ -1693,7 +1762,7 @@ class TestFolding(TestHeaderBase):
             'singlewordthatwontfit plusanotherverylongwordthatwontfit')
         self.assertEqual(
             h.fold(policy=policy.default.clone(max_line_length=20)),
-            'Subject: \n'
+            'Subject:\n'
             ' =?utf-8?q?thisisa?=\n'
             ' =?utf-8?q?verylon?=\n'
             ' =?utf-8?q?glineco?=\n'
@@ -1786,6 +1855,19 @@ class TestFolding(TestHeaderBase):
         self.assertEqual(
             h.fold(policy=policy.default.clone(max_line_length=20)),
             'Message-ID:\n <ईमेलfromMessage@wők.com>\n')
+
+    def test_fold_references(self):
+        h = self.make_header(
+            'References',
+            '<referenceid1thatislongerthan@maxlinelength.com> '
+            '<referenceid2thatislongerthan@maxlinelength.com>'
+            )
+        self.assertEqual(
+            h.fold(policy=policy.default.clone(max_line_length=20)),
+            'References: '
+            '<referenceid1thatislongerthan@maxlinelength.com>\n'
+            ' <referenceid2thatislongerthan@maxlinelength.com>\n')
+
 
 if __name__ == '__main__':
     unittest.main()
