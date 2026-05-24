@@ -54,7 +54,11 @@ class TclTest(unittest.TestCase):
 
     def test_eval_surrogates_in_result(self):
         tcl = self.interp
-        self.assertEqual(tcl.eval(r'set a "<\ud83d\udcbb>"'), '<\U0001f4bb>')
+        result = tcl.eval(r'set a "<\ud83d\udcbb>"')
+        if sys.platform == 'win32' and tcl_version >= (9, 0):
+            self.assertEqual('<\ud83d\udcbb>', result)
+        else:
+            self.assertEqual('<\U0001f4bb>', result)
 
     def testEvalException(self):
         tcl = self.interp
@@ -289,7 +293,11 @@ class TclTest(unittest.TestCase):
             set b "<\\ud83d\\udcbb>"
             """)
         tcl.evalfile(filename)
-        self.assertEqual(tcl.eval('set b'), '<\U0001f4bb>')
+        result = tcl.eval('set b')
+        if sys.platform == 'win32' and tcl_version >= (9, 0):
+            self.assertEqual('<\ud83d\udcbb>', result)
+        else:
+            self.assertEqual('<\U0001f4bb>', result)
 
     def testEvalFileException(self):
         tcl = self.interp
@@ -817,6 +825,10 @@ class BigmemTclTest(unittest.TestCase):
 
 
 def setUpModule():
+    wantobjects = support.get_resource_value('wantobjects')
+    if wantobjects is not None:
+        unittest.enterModuleContext(
+            support.swap_attr(tkinter, 'wantobjects', int(wantobjects)))
     if support.verbose:
         tcl = Tcl()
         print('patchlevel =', tcl.call('info', 'patchlevel'), flush=True)

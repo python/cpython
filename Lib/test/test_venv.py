@@ -11,12 +11,12 @@ import os
 import os.path
 import pathlib
 import re
+import shlex
 import shutil
 import subprocess
 import sys
 import sysconfig
 import tempfile
-import shlex
 from test.support import (captured_stdout, captured_stderr,
                           skip_if_broken_multiprocessing_synchronize, verbose,
                           requires_subprocess, is_android, is_apple_mobile,
@@ -301,9 +301,9 @@ class BasicTest(BaseTest):
                 self.assertEqual(out.strip(), expected, err)
         for attr, expected in (
             ('executable', self.envpy()),
-            # Usually compare to sys.executable, but if we're running in our own
-            # venv then we really need to compare to our base executable
-            ('_base_executable', sys._base_executable),
+            # Usually compare to sys.prefix, but if we're running in our own
+            # venv then we really need to compare to our base prefix
+            ('base_prefix', sys.base_prefix),
         ):
             with self.subTest(attr):
                 cmd[2] = f'import sys; print(sys.{attr})'
@@ -372,6 +372,16 @@ class BasicTest(BaseTest):
             fn = os.path.join(d, filename)
             with open(fn, 'wb') as f:
                 f.write(b'Still here?')
+
+    @unittest.skipUnless(hasattr(os, 'listxattr'), 'test requires os.listxattr')
+    def test_install_scripts_selinux(self):
+        """
+        gh-145417: Test that install_scripts does not copy SELinux context
+        when copying scripts.
+        """
+        with patch('os.listxattr') as listxattr_mock:
+            venv.create(self.env_dir)
+            listxattr_mock.assert_not_called()
 
     def test_overwrite_existing(self):
         """
@@ -646,6 +656,26 @@ class BasicTest(BaseTest):
         self.assertEqual(out, "".encode())
         self.assertEqual(err, "".encode())
 
+    # gh-149701: Test exit code is zero even when hashing is disabled
+    @unittest.skipIf(os.name == 'nt', 'not relevant on Windows')
+    def test_deactivate_with_strict_bash_opts_and_hashing_disabled(self):
+        bash = shutil.which("bash")
+        if bash is None:
+            self.skipTest("bash required for this test")
+        rmtree(self.env_dir)
+        builder = venv.EnvBuilder(clear=True)
+        builder.create(self.env_dir)
+        activate = os.path.join(self.env_dir, self.bindir, "activate")
+        test_script = os.path.join(self.env_dir, "test_hash_disabled.sh")
+        with open(test_script, "w") as f:
+            f.write("set -euo pipefail\n"
+                    "set +h\n"  # disable hashing
+                    f"source {activate}\n"
+                    "deactivate")
+        out, err = check_output([bash, test_script])
+        self.assertEqual(out, "".encode())
+        self.assertEqual(err, "".encode())
+
 
     @unittest.skipUnless(sys.platform == 'darwin', 'only relevant on macOS')
     def test_macos_env(self):
@@ -886,10 +916,10 @@ class BasicTest(BaseTest):
             exename = exename.replace("python", "pythonw")
         envpyw = os.path.join(self.env_dir, self.bindir, exename)
         try:
-            subprocess.check_call([envpyw, "-c", "import sys; "
-                "assert sys._base_executable.endswith('%s')" % exename])
+            subprocess.check_call([envpyw, "-c", "import fnmatch, sys; "
+                "assert fnmatch.fnmatch(sys._base_executable, '**/pythonw*.exe')"])
         except subprocess.CalledProcessError:
-            self.fail("venvwlauncher.exe did not run %s" % exename)
+            self.fail("venvwlauncher.exe did not run pythonw.exe")
 
 
 @requireVenvCreate

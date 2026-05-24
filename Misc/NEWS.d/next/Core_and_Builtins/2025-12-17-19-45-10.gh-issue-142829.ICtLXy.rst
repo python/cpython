@@ -1,3 +1,0 @@
-Fix a use-after-free crash in :class:`contextvars.Context` comparison when a
-custom ``__eq__`` method modifies the context via
-:meth:`~contextvars.ContextVar.set`.

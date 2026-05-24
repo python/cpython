@@ -273,6 +273,7 @@ done:
 
 #if defined(__APPLE__) && TARGET_OS_OSX
 
+#include <libproc.h>
 #include <sys/proc_info.h>
 
 static int
@@ -283,7 +284,7 @@ get_child_pids_platform(pid_t target_pid, int recursive, pid_array_t *result)
     pid_t *ppids = NULL;
 
     /* Get count of all PIDs */
-    int n_pids = proc_listallpids(NULL, 0);
+    int n_pids = proc_listpids(PROC_ALL_PIDS, 0, NULL, 0);
     if (n_pids <= 0) {
         PyErr_SetString(PyExc_OSError, "Failed to get process count");
         goto done;
@@ -298,7 +299,7 @@ get_child_pids_platform(pid_t target_pid, int recursive, pid_array_t *result)
     }
 
     /* Get actual PIDs */
-    int actual = proc_listallpids(pid_list, buffer_size * sizeof(pid_t));
+    int actual = proc_listpids(PROC_ALL_PIDS, 0, pid_list, buffer_size * sizeof(pid_t));
     if (actual <= 0) {
         PyErr_SetString(PyExc_OSError, "Failed to list PIDs");
         goto done;

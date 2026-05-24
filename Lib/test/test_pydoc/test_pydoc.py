@@ -1006,6 +1006,8 @@ class PydocDocTest(unittest.TestCase):
         os = import_helper.import_fresh_module('os')
         expected = os.__doc__.splitlines()[0]
         filename = os.__spec__.cached
+        if not filename:
+            raise unittest.SkipTest('requires .pyc files')
         synopsis = pydoc.synopsis(filename)
 
         self.assertEqual(synopsis, expected)
@@ -1013,10 +1015,10 @@ class PydocDocTest(unittest.TestCase):
     def test_synopsis_sourceless_empty_doc(self):
         with os_helper.temp_cwd() as test_dir:
             init_path = os.path.join(test_dir, 'foomod42.py')
-            cached_path = importlib.util.cache_from_source(init_path)
+            cached_path = init_path + 'c'
             with open(init_path, 'w') as fobj:
                 fobj.write("foo = 1")
-            py_compile.compile(init_path)
+            py_compile.compile(init_path, cached_path)
             synopsis = pydoc.synopsis(init_path, {})
             self.assertIsNone(synopsis)
             synopsis_cached = pydoc.synopsis(cached_path, {})
@@ -2170,7 +2172,7 @@ class TestHelper(unittest.TestCase):
 
     def test_keywords(self):
         self.assertEqual(sorted(pydoc.Helper.keywords),
-                         sorted(keyword.kwlist))
+                         sorted(keyword.kwlist + ['lazy']))
 
     def test_interact_empty_line_continues(self):
         # gh-138568: test pressing Enter without input should continue in help session

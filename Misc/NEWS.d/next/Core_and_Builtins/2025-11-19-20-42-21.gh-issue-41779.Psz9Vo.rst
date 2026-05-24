@@ -1,3 +1,0 @@
-Allowed defining any :ref:`__slots__ <slots>` for a class derived from
-:class:`tuple` (including classes created by
-:func:`collections.namedtuple`).

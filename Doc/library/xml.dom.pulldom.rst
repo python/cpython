@@ -4,13 +4,11 @@
 .. module:: xml.dom.pulldom
    :synopsis: Support for building partial DOM trees from SAX events.
 
-.. moduleauthor:: Paul Prescod <paul@prescod.net>
-
 **Source code:** :source:`Lib/xml/dom/pulldom.py`
 
 --------------
 
-The :mod:`xml.dom.pulldom` module provides a "pull parser" which can also be
+The :mod:`!xml.dom.pulldom` module provides a "pull parser" which can also be
 asked to produce DOM-accessible fragments of the document where necessary. The
 basic concept involves pulling "events" from a stream of incoming XML and
 processing them. In contrast to SAX which also employs an event-driven

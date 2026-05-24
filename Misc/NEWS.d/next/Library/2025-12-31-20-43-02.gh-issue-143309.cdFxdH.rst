@@ -1,3 +1,0 @@
-Fix a crash in :func:`os.execve` on non-Windows platforms when
-given a custom environment mapping which is then mutated during
-parsing. Patch by Bénédikt Tran.
