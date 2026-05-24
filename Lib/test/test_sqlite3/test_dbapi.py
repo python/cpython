@@ -26,6 +26,7 @@ import os
 import sqlite3 as sqlite
 import subprocess
 import sys
+import tempfile
 import threading
 import unittest
 import urllib.parse
@@ -726,6 +727,39 @@ class OpenTests(unittest.TestCase):
     def test_database_keyword(self):
         with contextlib.closing(sqlite.connect(database=":memory:")) as cx:
             self.assertEqual(type(cx), sqlite.Connection)
+
+    # @hashbrowncipher skipped this test on mac, don't know why, rerunning to test it
+    def test_wal_preservation(self):
+        with tempfile.TemporaryDirectory() as dirname:
+            path = os.path.join(dirname, "db.sqlite")
+            with contextlib.closing(sqlite.connect(path)) as cx:
+                cx.file_control(sqlite.SQLITE_FCNTL_PERSIST_WAL, 1)
+                # Check that it was set successfully:
+                rc = cx.file_control(sqlite.SQLITE_FCNTL_PERSIST_WAL, -1)
+                assert rc == 1, f"cx.file_control(SQLITE_FCNTL_PERSIST_WAL) failed to set flag"
+
+                cu = cx.cursor()
+                result = cu.execute("PRAGMA journal_mode = WAL").fetchall()
+                assert result == [('wal',)], f"journal_mode could not be set to WAL, is {result}"
+                cu.execute("CREATE TABLE foo (id int)")
+                cu.execute("INSERT INTO foo (id) VALUES (1)")
+                self.assertTrue(os.path.exists(path + "-wal"))
+            self.assertTrue(os.path.exists(path + "-wal"))
+
+            with contextlib.closing(sqlite.connect(path)) as cx:
+                # Check that we can read the default value when we didn't set it explicitly:
+                rc = cx.file_control(sqlite.SQLITE_FCNTL_PERSIST_WAL, -1)
+                assert rc == 0, f"SQLITE_FCNTL_PERSIST_WAL should be 0 by default, not {rc}"
+
+                cu = cx.cursor()
+                self.assertTrue(os.path.exists(path + "-wal"))
+                cu.execute("INSERT INTO foo (id) VALUES (2)")
+            self.assertFalse(os.path.exists(path + "-wal"))
+
+    def test_file_control_raises(self):
+        with memory_database() as cx:
+            with self.assertRaises(sqlite.InternalError):
+                cx.file_control(sqlite.SQLITE_FCNTL_PERSIST_WAL, 1)
 
 
 class CursorTests(unittest.TestCase):
