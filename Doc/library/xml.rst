@@ -6,9 +6,6 @@ XML Processing Modules
 .. module:: xml
    :synopsis: Package containing XML processing modules
 
-.. sectionauthor:: Christian Heimes <christian@python.org>
-.. sectionauthor:: Georg Brandl <georg@python.org>
-
 **Source code:** :source:`Lib/xml/`
 
 --------------
@@ -20,7 +17,7 @@ Python's interfaces for processing XML are grouped in the ``xml`` package.
    If you need to parse untrusted or unauthenticated data, see
    :ref:`xml-security`.
 
-It is important to note that modules in the :mod:`xml` package require that
+It is important to note that modules in the :mod:`!xml` package require that
 there be at least one SAX-compliant XML parser available. The Expat parser is
 included with Python, so the :mod:`xml.parsers.expat` module will always be
 available.
@@ -43,6 +40,33 @@ The XML handling submodules are:
 
 * :mod:`xml.sax`: SAX2 base classes and convenience functions
 * :mod:`xml.parsers.expat`: the Expat parser binding
+
+This module also defines utility functions.
+
+.. function:: is_valid_name(name)
+
+   Return ``True`` if the string is a valid element or attribute name,
+   ``False`` otherwise.
+
+   Almost all characters are permitted in names, except control characters and
+   those which either are or reasonably could be used as delimiters.
+   Characters like ":", "-", ".", "_", and "·" are permitted, but "<", "/",
+   "!", "?", and "=" are forbidden.
+   The name cannot start with a digit or a character like "-", ".", and "·".
+
+   .. versionadded:: 3.15
+
+
+.. function:: is_valid_text(data)
+
+   Return ``True`` if the string is a sequence of legal XML 1.0 characters,
+   ``False`` otherwise.
+
+   Almost all characters are permitted in XML 1.0 documents, except C0 control
+   characters (excluding TAB, CR and LF), surrogate characters and special
+   Unicode characters U+FFFE and U+FFFF.
+
+   .. versionadded:: 3.15
 
 
 .. _xml-security:

@@ -39,6 +39,7 @@ class Properties:
     uses_opcode: bool
     needs_guard_ip: bool
     unpredictable_jump: bool
+    records_value: bool
     tier: int | None = None
     const_oparg: int = -1
     needs_prev: bool = False
@@ -83,6 +84,7 @@ class Properties:
             no_save_ip=all(p.no_save_ip for p in properties),
             needs_guard_ip=any(p.needs_guard_ip for p in properties),
             unpredictable_jump=any(p.unpredictable_jump for p in properties),
+            records_value=any(p.records_value for p in properties),
         )
 
     @property
@@ -113,6 +115,7 @@ SKIP_PROPERTIES = Properties(
     no_save_ip=False,
     needs_guard_ip=False,
     unpredictable_jump=False,
+    records_value=False,
 )
 
 
@@ -318,6 +321,16 @@ class Family:
     name: str
     size: str
     members: list[Instruction]
+
+    def get_member_record_names(self) -> tuple[str, ...]:
+        seen: set[str] = set()
+        names: list[str] = []
+        for member in self.members:
+            for part in member.parts:
+                if part.properties.records_value and part.name not in seen:
+                    seen.add(part.name)
+                    names.append(part.name)
+        return tuple(names)
 
     def dump(self, indent: str) -> None:
         print(indent, self.name, "= ", ", ".join([m.name for m in self.members]))
@@ -613,6 +626,9 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_RefcountOnObject",
     "PyStackRef_TYPE",
     "PyStackRef_True",
+    "PyBytes_GET_SIZE",
+    "PyDict_GET_SIZE",
+    "PySet_GET_SIZE",
     "PyTuple_GET_ITEM",
     "PyTuple_GET_SIZE",
     "PyType_HasFeature",
@@ -642,6 +658,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyFrame_StackPush",
     "_PyFunction_SetVersion",
     "_PyGen_GetGeneratorFromFrame",
+    "gen_try_set_executing",
     "_PyInterpreterState_GET",
     "_PyList_AppendTakeRef",
     "_PyList_ITEMS",
@@ -672,7 +689,6 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyUnicode_Equal",
     "_PyUnicode_JoinArray",
     "_Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY",
-    "_Py_DECREF_NO_DEALLOC",
     "_Py_ID",
     "_Py_IsImmortal",
     "_Py_IsOwnedByCurrentThread",
@@ -710,6 +726,11 @@ NON_ESCAPING_FUNCTIONS = (
     "_Py_set_eval_breaker_bit",
     "trigger_backoff_counter",
     "_PyThreadState_PopCStackRefSteal",
+    "doesnt_escape",
+    "_Py_GatherStats_GetIter",
+    "_PyStolenTuple_Free",
+    "PyObject_GC_UnTrack",
+    "_PyErr_ExceptionMatches",
 )
 
 
@@ -999,6 +1020,7 @@ def compute_properties(op: parser.CodeDef) -> Properties:
                        or variable_used(op, "LOAD_IP")
                        or variable_used(op, "DISPATCH_INLINED"),
         unpredictable_jump=unpredictable_jump,
+        records_value=variable_used(op, "RECORD_VALUE")
     )
 
 def expand(items: list[StackItem], oparg: int) -> list[StackItem]:
@@ -1124,6 +1146,7 @@ def add_macro(
     macro: parser.Macro, instructions: dict[str, Instruction], uops: dict[str, Uop]
 ) -> None:
     parts: list[Part] = []
+    seen_real_uop = False
     for part in macro.uops:
         match part:
             case parser.OpName():
@@ -1134,7 +1157,16 @@ def add_macro(
                         raise analysis_error(
                             f"No Uop named {part.name}", macro.tokens[0]
                         )
-                    parts.append(uops[part.name])
+                    uop = uops[part.name]
+                    if uop.properties.records_value:
+                        if seen_real_uop:
+                            raise analysis_error(
+                                f"Recording uop {part.name} must precede all "
+                                f"non-recording, non-specializing uops in macro",
+                                macro.tokens[0])
+                    elif "specializing" not in uop.annotations:
+                        seen_real_uop = True
+                    parts.append(uop)
             case parser.CacheEffect():
                 parts.append(Skip(part.size))
             case _:

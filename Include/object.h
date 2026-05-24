@@ -127,7 +127,7 @@ whose size is determined when the object is allocated.
 struct _object {
     _Py_ANONYMOUS union {
 #if SIZEOF_VOID_P > 4
-        PY_INT64_T ob_refcnt_full; /* This field is needed for efficient initialization with Clang on ARM */
+        int64_t ob_refcnt_full; /* This field is needed for efficient initialization with Clang on ARM */
         struct {
 #  if PY_BIG_ENDIAN
             uint16_t ob_flags;
@@ -185,85 +185,6 @@ typedef struct PyVarObject PyVarObject;
 // Test if the 'x' object is the 'y' object, the same as "x is y" in Python.
 PyAPI_FUNC(int) Py_Is(PyObject *x, PyObject *y);
 #define Py_Is(x, y) ((x) == (y))
-
-#if defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
-PyAPI_FUNC(uintptr_t) _Py_GetThreadLocal_Addr(void);
-
-static inline uintptr_t
-_Py_ThreadId(void)
-{
-    uintptr_t tid;
-#if defined(_MSC_VER) && defined(_M_X64)
-    tid = __readgsqword(48);
-#elif defined(_MSC_VER) && defined(_M_IX86)
-    tid = __readfsdword(24);
-#elif defined(_MSC_VER) && defined(_M_ARM64)
-    tid = __getReg(18);
-#elif defined(__MINGW32__) && defined(_M_X64)
-    tid = __readgsqword(48);
-#elif defined(__MINGW32__) && defined(_M_IX86)
-    tid = __readfsdword(24);
-#elif defined(__MINGW32__) && defined(_M_ARM64)
-    tid = __getReg(18);
-#elif defined(__i386__)
-    __asm__("movl %%gs:0, %0" : "=r" (tid));  // 32-bit always uses GS
-#elif defined(__MACH__) && defined(__x86_64__)
-    __asm__("movq %%gs:0, %0" : "=r" (tid));  // x86_64 macOSX uses GS
-#elif defined(__x86_64__)
-   __asm__("movq %%fs:0, %0" : "=r" (tid));  // x86_64 Linux, BSD uses FS
-#elif defined(__arm__) && __ARM_ARCH >= 7
-    __asm__ ("mrc p15, 0, %0, c13, c0, 3\nbic %0, %0, #3" : "=r" (tid));
-#elif defined(__aarch64__) && defined(__APPLE__)
-    __asm__ ("mrs %0, tpidrro_el0" : "=r" (tid));
-#elif defined(__aarch64__)
-    __asm__ ("mrs %0, tpidr_el0" : "=r" (tid));
-#elif defined(__powerpc64__)
-    #if defined(__clang__) && _Py__has_builtin(__builtin_thread_pointer)
-    tid = (uintptr_t)__builtin_thread_pointer();
-    #else
-    // r13 is reserved for use as system thread ID by the Power 64-bit ABI.
-    register uintptr_t tp __asm__ ("r13");
-    __asm__("" : "=r" (tp));
-    tid = tp;
-    #endif
-#elif defined(__powerpc__)
-    #if defined(__clang__) && _Py__has_builtin(__builtin_thread_pointer)
-    tid = (uintptr_t)__builtin_thread_pointer();
-    #else
-    // r2 is reserved for use as system thread ID by the Power 32-bit ABI.
-    register uintptr_t tp __asm__ ("r2");
-    __asm__ ("" : "=r" (tp));
-    tid = tp;
-    #endif
-#elif defined(__s390__) && defined(__GNUC__)
-    // Both GCC and Clang have supported __builtin_thread_pointer
-    // for s390 from long time ago.
-    tid = (uintptr_t)__builtin_thread_pointer();
-#elif defined(__riscv)
-    #if defined(__clang__) && _Py__has_builtin(__builtin_thread_pointer)
-    tid = (uintptr_t)__builtin_thread_pointer();
-    #else
-    // tp is Thread Pointer provided by the RISC-V ABI.
-    __asm__ ("mv %0, tp" : "=r" (tid));
-    #endif
-#else
-    // Fallback to a portable implementation if we do not have a faster
-    // platform-specific implementation.
-    tid = _Py_GetThreadLocal_Addr();
-#endif
-  return tid;
-}
-
-static inline Py_ALWAYS_INLINE int
-_Py_IsOwnedByCurrentThread(PyObject *ob)
-{
-#ifdef _Py_THREAD_SANITIZER
-    return _Py_atomic_load_uintptr_relaxed(&ob->ob_tid) == _Py_ThreadId();
-#else
-    return ob->ob_tid == _Py_ThreadId();
-#endif
-}
-#endif
 
 PyAPI_DATA(PyTypeObject) PyLong_Type;
 PyAPI_DATA(PyTypeObject) PyBool_Type;
@@ -385,6 +306,11 @@ typedef Py_hash_t (*hashfunc)(PyObject *);
 typedef PyObject *(*richcmpfunc) (PyObject *, PyObject *, int);
 typedef PyObject *(*getiterfunc) (PyObject *);
 typedef PyObject *(*iternextfunc) (PyObject *);
+typedef struct {
+    PyObject *object;
+    Py_ssize_t index;
+} _PyObjectIndexPair;
+typedef _PyObjectIndexPair (*_Py_iteritemfunc) (PyObject *, Py_ssize_t index);
 typedef PyObject *(*descrgetfunc) (PyObject *, PyObject *, PyObject *);
 typedef int (*descrsetfunc) (PyObject *, PyObject *, PyObject *);
 typedef int (*initproc)(PyObject *, PyObject *, PyObject *);
@@ -437,6 +363,9 @@ PyAPI_FUNC(Py_ssize_t) PyType_GetTypeDataSize(PyTypeObject *cls);
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030E0000
 PyAPI_FUNC(int) PyType_GetBaseByToken(PyTypeObject *, void *, PyTypeObject **);
 #define Py_TP_USE_SPEC NULL
+#endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 15)
+PyAPI_FUNC(PyObject *) PyType_FromSlots(struct PySlot *slots);
 #endif
 
 /* Generic type check */
@@ -652,8 +581,10 @@ given type object has a specified feature.
 #define _Py_IMMORTAL_FLAGS (1 << 0)
 #define _Py_LEGACY_ABI_CHECK_FLAG (1 << 1) /* see PyModuleDef_Init() */
 #define _Py_STATICALLY_ALLOCATED_FLAG (1 << 2)
-#if defined(Py_GIL_DISABLED) && defined(Py_DEBUG)
-#define _Py_TYPE_REVEALED_FLAG (1 << 3)
+#if !defined(Py_LIMITED_API)
+#  if defined(Py_GIL_DISABLED) && defined(Py_DEBUG)
+#    define _Py_TYPE_REVEALED_FLAG (1 << 3)
+#  endif
 #endif
 
 #define Py_CONSTANT_NONE 0
@@ -854,8 +785,17 @@ PyAPI_FUNC(int) PyType_Freeze(PyTypeObject *type);
 #endif
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 15)
+PyAPI_FUNC(int) PyObject_CallFinalizerFromDealloc(PyObject *);
 PyAPI_FUNC(PyObject *) PyType_GetModuleByToken(PyTypeObject *type,
                                                const void *token);
+PyAPI_FUNC(void *) PyObject_GetTypeData_DuringGC(PyObject *obj,
+                                                 PyTypeObject *cls);
+PyAPI_FUNC(void *) PyType_GetModuleState_DuringGC(PyTypeObject *);
+PyAPI_FUNC(int) PyType_GetBaseByToken_DuringGC(PyTypeObject *,
+                                               void *, PyTypeObject **);
+PyAPI_FUNC(PyObject *) PyType_GetModule_DuringGC(PyTypeObject *);
+PyAPI_FUNC(PyObject *) PyType_GetModuleByToken_DuringGC(PyTypeObject *type,
+                                                        const void *token);
 #endif
 
 #ifdef __cplusplus
