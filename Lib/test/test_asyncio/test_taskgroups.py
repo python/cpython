@@ -1149,10 +1149,9 @@ class BaseTestTaskGroup:
     async def test_taskgroup_cancel_before_create_task(self):
         async with asyncio.TaskGroup() as tg:
             tg.cancel()
-            # TODO: This behavior is not ideal.  We'd rather have no exception
-            #   raised, and the child task run until the first await.
-            with self.assertRaises(RuntimeError):
-                tg.create_task(asyncio.sleep(1))
+            t = tg.create_task(asyncio.sleep(1))
+            await asyncio.sleep(0)
+            self.assertTrue(t.cancelled())
 
     async def test_taskgroup_cancel_before_exception(self):
         async def raise_exc(parent_tg: asyncio.TaskGroup):

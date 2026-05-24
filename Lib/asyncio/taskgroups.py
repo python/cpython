@@ -30,6 +30,7 @@ class TaskGroup:
         self._entered = False
         self._exiting = False
         self._aborting = False
+        self._explicitly_cancelled = False
         self._loop = None
         self._parent_task = None
         self._parent_cancel_requested = False
@@ -196,7 +197,7 @@ class TaskGroup:
         if self._exiting and not self._tasks:
             coro.close()
             raise RuntimeError(f"TaskGroup {self!r} is finished")
-        if self._aborting:
+        if self._aborting and not self._explicitly_cancelled:
             coro.close()
             raise RuntimeError(f"TaskGroup {self!r} is shutting down")
         task = self._loop.create_task(coro, **kwargs)
@@ -209,6 +210,12 @@ class TaskGroup:
         # the current task too early. gh-128550, gh-128588
         self._tasks.add(task)
         task.add_done_callback(self._on_task_done)
+        if self._aborting and self._explicitly_cancelled:
+            def _cancel_later(task=task):
+                if not task.done():
+                    task.cancel()
+            self._loop.call_soon(_cancel_later)
+
         try:
             return task
         finally:
@@ -307,6 +314,7 @@ class TaskGroup:
         if self._exiting and not self._tasks:
             return
         if not self._aborting:
+            self._explicitly_cancelled = True
             self._abort()
             if self._parent_task and not self._parent_cancel_requested:
                 self._parent_cancel_requested = True
