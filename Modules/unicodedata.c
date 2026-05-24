@@ -1546,7 +1546,7 @@ capi_getcode(const char* name, int namelen, Py_UCS4* code,
 static PyObject *
 unicodedata_create_capi(void)
 {
-    // Static storage so cached pointers stay valid after unicodedata
+    // Statically allocated so that any cached pointers stay valid after unicodedata
     // is removed from sys.modules and the capsule is gc'd (gh-149449).
     static _PyUnicode_Name_CAPI capi = {
         .getname = capi_getucname,
