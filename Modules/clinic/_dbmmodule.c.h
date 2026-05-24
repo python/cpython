@@ -108,7 +108,7 @@ exit:
 }
 
 PyDoc_STRVAR(_dbm_dbm_setdefault__doc__,
-"setdefault($self, key, default=b\'\', /)\n"
+"setdefault($self, key, default, /)\n"
 "--\n"
 "\n"
 "Return the value for key if present, otherwise default.\n"
@@ -135,13 +135,13 @@ _dbm_dbm_setdefault(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
     static const char * const _keywords[] = {"", "", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .format = "s#|O:setdefault",
+        .format = "s#O:setdefault",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
     const char *key;
     Py_ssize_t key_length;
-    PyObject *default_value = NULL;
+    PyObject *default_value;
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &key, &key_length, &default_value)) {
@@ -246,4 +246,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=279511ea7cda38dd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4d9975add7da9d1b input=a9049054013a1b77]*/

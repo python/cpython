@@ -93,6 +93,22 @@ class AnyDBMTestCase:
         # setdefault() works as in the dict interface
         self.assertEqual(f.setdefault(b'xxx', b'foo'), b'foo')
         self.assertEqual(f[b'xxx'], b'foo')
+        self.assertEqual(f.setdefault(b'g', b'bar'), b"indented")
+        self.assertEqual(f[b'g'], b"indented")
+        self.assertNotEqual(f[b'g'], b'bar')
+        with self.assertRaises(TypeError):
+            f.setdefault(b'key_without_default')
+        with self.assertRaises(TypeError):
+            f.setdefault(b'g', b'value', b'extra')
+        if self.module.__name__ in ('dbm.dumb', 'dbm.gnu', 'dbm.ndbm'):
+            with self.assertRaises(TypeError):
+                f.setdefault(b'new_key', 123)
+                f.setdefault(b'g', 123)
+        if self.module.__name__ == "dbm.sqlite3":
+            f.setdefault(b'new_key', 123)
+            self.assertEqual(f[b'new_key'], b'123')
+            f.setdefault(b'g', 123)
+            self.assertNotEqual(f[b'g'], b'123')
         f.close()
 
     def test_anydbm_read(self):
@@ -105,6 +121,11 @@ class AnyDBMTestCase:
         self.assertIsNone(f.get(b'xxx'))
         with self.assertRaises(KeyError):
             f[b'xxx']
+        with self.assertRaises(dbm.error):
+            f.setdefault(b'readonly_key', b'readonly_value')
+        f.setdefault(b'a', b'foo')
+        self.assertEqual(f[b'a'], b'Python:')
+        self.assertNotEqual(f[b'a'], b'foo')
         f.close()
 
     def test_anydbm_keys(self):
@@ -124,7 +145,7 @@ class AnyDBMTestCase:
         self.assertIn(b'empty', f)
         self.assertEqual(f[b'empty'], b'')
         self.assertEqual(f.get(b'empty'), b'')
-        self.assertEqual(f.setdefault(b'empty'), b'')
+        self.assertEqual(f.setdefault(b'empty', b'x'), b'')
         f.close()
 
     def test_anydbm_access(self):
