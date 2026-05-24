@@ -3111,8 +3111,17 @@ config.status:	$(srcdir)/configure
 
 .PRECIOUS: config.status $(BUILDPYTHON) Makefile Makefile.pre
 
-Python/asm_trampoline.o: $(srcdir)/Python/asm_trampoline.S
+Python/asm_trampoline_x86_64.o: $(srcdir)/Python/asm_trampoline_x86_64.S
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
+
+Python/asm_trampoline_aarch64.o: $(srcdir)/Python/asm_trampoline_aarch64.S
+	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
+
+Python/asm_trampoline_riscv64.o: $(srcdir)/Python/asm_trampoline_riscv64.S
+	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
+
+Python/asm_trampoline_universal2.o: Python/asm_trampoline_aarch64.o Python/asm_trampoline_x86_64.o
+	lipo -create -output $@ Python/asm_trampoline_aarch64.o Python/asm_trampoline_x86_64.o
 
 Python/emscripten_trampoline_inner.wasm: $(srcdir)/Python/emscripten_trampoline_inner.c
 	# emcc has a path that ends with emsdk/upstream/emscripten/emcc, we're looking for emsdk/upstream/bin/clang.
