@@ -1441,13 +1441,13 @@ array.array.buffer_info
 
 Return a tuple (address, length) giving the current memory address and the length in items of the buffer used to hold array's contents.
 
-The length should be multiplied by the itemsize attribute to calculate
-the buffer length in bytes.
+The length should be multiplied by the itemsize attribute to
+calculate the buffer length in bytes.
 [clinic start generated code]*/
 
 static PyObject *
 array_array_buffer_info_impl(arrayobject *self)
-/*[clinic end generated code: output=9b2a4ec3ae7e98e7 input=a58bae5c6e1ac6a6]*/
+/*[clinic end generated code: output=9b2a4ec3ae7e98e7 input=f4d34398d5dfc856]*/
 {
     PyObject *retval = NULL, *v;
 
@@ -1493,13 +1493,13 @@ array.array.byteswap
 
 Byteswap all items of the array.
 
-If the items in the array are not 1, 2, 4, or 8 bytes in size, RuntimeError is
-raised.
+If the items in the array are not 1, 2, 4, or 8 bytes in size,
+RuntimeError is raised.
 [clinic start generated code]*/
 
 static PyObject *
 array_array_byteswap_impl(arrayobject *self)
-/*[clinic end generated code: output=5f8236cbdf0d90b5 input=6a85591b950a0186]*/
+/*[clinic end generated code: output=5f8236cbdf0d90b5 input=3005a63cc263b839]*/
 {
     char *p;
     Py_ssize_t i;
@@ -1843,14 +1843,14 @@ array.array.fromunicode
 
 Extends this array with data from the unicode string ustr.
 
-The array must be a unicode type array; otherwise a ValueError is raised.
-Use array.frombytes(ustr.encode(...)) to append Unicode data to an array of
-some other type.
+The array must be a unicode type array; otherwise a ValueError is
+raised.  Use array.frombytes(ustr.encode(...)) to append Unicode
+data to an array of some other type.
 [clinic start generated code]*/
 
 static PyObject *
 array_array_fromunicode_impl(arrayobject *self, PyObject *ustr)
-/*[clinic end generated code: output=24359f5e001a7f2b input=025db1fdade7a4ce]*/
+/*[clinic end generated code: output=24359f5e001a7f2b input=01fa592ec7b948b6]*/
 {
     int typecode = self->ob_descr->typecode;
     if (typecode != 'u' && typecode != 'w') {
@@ -1902,14 +1902,15 @@ array.array.tounicode
 
 Extends this array with data from the unicode string ustr.
 
-Convert the array to a unicode string.  The array must be a unicode type array;
-otherwise a ValueError is raised.  Use array.tobytes().decode() to obtain a
-unicode string from an array of some other type.
+Convert the array to a unicode string.  The array must be a unicode
+type array; otherwise a ValueError is raised.  Use
+array.tobytes().decode() to obtain a unicode string from an array of
+some other type.
 [clinic start generated code]*/
 
 static PyObject *
 array_array_tounicode_impl(arrayobject *self)
-/*[clinic end generated code: output=08e442378336e1ef input=127242eebe70b66d]*/
+/*[clinic end generated code: output=08e442378336e1ef input=d4d5f398aa71a2be]*/
 {
     int typecode = self->ob_descr->typecode;
     if (typecode != 'u' && typecode != 'w') {

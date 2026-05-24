@@ -14,8 +14,8 @@ PyDoc_STRVAR(datetime_date_fromtimestamp__doc__,
 "\n"
 "Create a date from a POSIX timestamp.\n"
 "\n"
-"The timestamp is a number, e.g. created via time.time(), that is interpreted\n"
-"as local time.");
+"The timestamp is a number, e.g. created via time.time(), that is\n"
+"interpreted as local time.");
 
 #define DATETIME_DATE_FROMTIMESTAMP_METHODDEF    \
     {"fromtimestamp", (PyCFunction)datetime_date_fromtimestamp, METH_O|METH_CLASS, datetime_date_fromtimestamp__doc__},
@@ -524,4 +524,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=809640e747529c72 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=847b941002d485a8 input=a9049054013a1b77]*/
