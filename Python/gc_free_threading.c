@@ -1665,7 +1665,7 @@ void
 _PyGC_InitState(GCState *gcstate)
 {
     // TODO: move to pycore_runtime_init.h once the incremental GC lands.
-    gcstate->young.threshold = 2000;
+    _Py_atomic_exchange_int(&gcstate->young.threshold, 2000);
 }
 
 
@@ -1996,12 +1996,12 @@ static bool
 gc_should_collect(GCState *gcstate)
 {
     int count = _Py_atomic_load_int_relaxed(&gcstate->young.count);
-    int threshold = gcstate->young.threshold;
+    int threshold = _Py_atomic_load_int_relaxed(&gcstate->young.threshold);
     int gc_enabled = _Py_atomic_load_int_relaxed(&gcstate->enabled);
     if (count <= threshold || threshold == 0 || !gc_enabled) {
         return false;
     }
-    if (gcstate->old[0].threshold == 0) {
+    if (_Py_atomic_load_int_relaxed(&gcstate->old[0].threshold) == 0) {
         // A few tests rely on immediate scheduling of the GC so we ignore the
         // extra conditions if generations[1].threshold is set to zero.
         return true;
