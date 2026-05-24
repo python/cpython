@@ -541,7 +541,6 @@ math_integer_isqrt_rem(PyObject *module, PyObject *n)
     Py_XDECREF(root);
     Py_XDECREF(rem);
     return res;
-    return NULL;
 }
 
 

@@ -280,7 +280,7 @@ class IntMathTests(unittest.TestCase):
 
         # Non-integer-like things
         bad_values = [
-            3.5, "a string", Decimal("3.5"), 3.5j,
+            3.5, "3.5", Decimal("3.5"), 3.5j,
             100.0, -4.0,
         ]
         for value in bad_values:
