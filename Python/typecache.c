@@ -155,18 +155,20 @@ cache_resize(PyTypeObject *type, struct type_cache *cache)
     if (new_cache == NULL) {
         return -1;
     }
-    FT_ATOMIC_STORE_UINT_RELAXED(cache->version_tag, FT_ATOMIC_LOAD_UINT_RELAXED(type->tp_version_tag));
     for (uint32_t i = 0; i < old_size; i++) {
         if (cache->hashtable[i].name != NULL) {
             cache_insert(new_cache, cache->hashtable[i].name,
                               cache->hashtable[i].value);
         }
     }
+    new_cache->version_tag = cache->version_tag;
     cache_set(type, new_cache);
     cache_free_delayed(cache);
     return 0;
 }
 
+// Insert a new entry to the type cache. If the cache is full, resize it before inserting the new entry.
+// The TYPE_LOCK should be held while calling this function.
 void
 _PyTypeCache_Insert(PyTypeObject *type, PyObject *name, PyObject *value)
 {
@@ -185,6 +187,10 @@ _PyTypeCache_Insert(PyTypeObject *type, PyObject *name, PyObject *value)
     FT_ATOMIC_STORE_UINT_RELAXED(cache->version_tag, FT_ATOMIC_LOAD_UINT_RELAXED(type->tp_version_tag));
 }
 
+
+// Lookup the given name in the type cache.
+// The cache is lock-free so it is possible that cache becomes stale during the lookup,
+// to prevent returning stale cache entry, the cache version is compared with the type version tag.
 struct _PyTypeCacheLookupResult
 _PyTypeCache_Lookup(PyTypeObject *type, PyObject *name)
 {
@@ -225,12 +231,13 @@ _PyTypeCache_Lookup(PyTypeObject *type, PyObject *name)
     return (struct _PyTypeCacheLookupResult){out_ref, 1, cache_version};
 }
 
-
+// Invalidate the type cache of the type.
+// The cache is set to the empty cache and the old cache is freed with QSBR.
+// The TYPE_LOCK should be held while calling this function.
 void
 _PyTypeCache_Invalidate(PyTypeObject *type)
 {
     struct type_cache *cache = cache_get(type);
-    // if the type was modified, the cache is set to the empty cache and the old cache is freed after a delay.
     cache_set(type, &empty_cache);
     cache_free_delayed(cache);
 }
