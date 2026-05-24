@@ -6837,7 +6837,6 @@ type_dealloc(PyObject *self)
     Py_XDECREF(type->tp_bases);
     Py_XDECREF(type->tp_mro);
     Py_XDECREF(type->tp_cache);
-    _PyTypeCache_Invalidate(type);
     clear_tp_subclasses(type);
 
     /* A type's tp_doc is heap allocated, unlike the tp_doc slots

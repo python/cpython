@@ -5,6 +5,8 @@
 
 #include "parts.h"
 
+#include "pycore_critical_section.h"
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_stackref.h"      // PyStackRef_AsPyObjectSteal()
 #include "pycore_typecache.h"     // _PyTypeCache_Lookup()
 
@@ -67,7 +69,9 @@ type_cache_invalidate(PyObject *Py_UNUSED(self), PyObject *type_obj)
     if (require_type(type_obj) < 0) {
         return NULL;
     }
+    Py_BEGIN_CRITICAL_SECTION_MUTEX(&_PyInterpreterState_GET()->types.mutex);
     _PyTypeCache_Invalidate((PyTypeObject *)type_obj);
+    Py_END_CRITICAL_SECTION();
     Py_RETURN_NONE;
 }
 
