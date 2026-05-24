@@ -1,6 +1,7 @@
 import atexit
 import os
 import signal
+import threading
 
 from . import util
 
@@ -13,6 +14,13 @@ __all__ = ['Popen']
 class Popen(object):
     method = 'fork'
 
+    # Lock to protect os.waitpid() calls from concurrent threads.
+    # Without this lock, a thread can reap a child process that
+    # another thread is also trying to wait on, causing the second
+    # thread's waitpid() to raise OSError(ECHILD) and leaving
+    # the Process.exitcode stuck at None. See gh-148318.
+    _waitpid_lock = threading.Lock()
+
     def __init__(self, process_obj):
         util._flush_std_streams()
         self.returncode = None
@@ -24,15 +32,20 @@ class Popen(object):
 
     def poll(self, flag=os.WNOHANG):
         if self.returncode is None:
-            try:
-                pid, sts = os.waitpid(self.pid, flag)
-            except OSError:
-                # Child process not yet created. See #1731717
-                # e.errno == errno.ECHILD == 10
-                return None
-            if pid == self.pid:
-                self.returncode = os.waitstatus_to_exitcode(sts)
-        return self.returncode
+            with self._waitpid_lock:
+                # Another thread may have set returncode while we
+                # waited for the lock.
+                if self.returncode is not None:
+                    return self.returncode
+                try:
+                    pid, sts = os.waitpid(self.pid, flag)
+                except OSError:
+                    # Child process not yet created. See #1731717
+                    # e.errno == errno.ECHILD == 10
+                    return None
+                if pid == self.pid:
+                    self.returncode = os.waitstatus_to_exitcode(sts)
+                    return self.returncode
 
     def wait(self, timeout=None):
         if self.returncode is None:
