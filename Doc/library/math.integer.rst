@@ -64,8 +64,9 @@ computed exactly and are integers.
 
 .. function:: isqrt_rem(n, /)
 
-    Return a pair of values (s,t) such that s=isqrt(n) and t=n-s*s.
-    The remainder *t* will be zero, if *n* is a perfect square.
+    For a nonnegative integer *n*, return the pair of integers ``(s, t)``
+    such that ``s = isqrt(n)`` and ``t = n - s*s``.
+    The remainder *t* is zero, if *n* is a perfect square.
 
 
 .. function:: lcm(*integers)
