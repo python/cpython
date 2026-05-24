@@ -115,14 +115,14 @@ class TestGC(TestCase):
             for i in range(NUM_ITERS):
                 gc.set_threshold(100 + (i % 100), 10 + (i % 10), 10 + (i % 10))
 
-        old_threshold = gc.get_threshold()
+        current_threshold = gc.get_threshold()
         try:
             threads = [Thread(target=allocator) for _ in range(NUM_THREADS - 1)]
             threads.append(Thread(target=setter))
             with threading_helper.start_threads(threads):
                 pass
         finally:
-            gc.set_threshold(*old_threshold)
+            gc.set_threshold(*current_threshold)
 
 
 if __name__ == "__main__":
