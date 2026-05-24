@@ -1503,32 +1503,17 @@ capi_getcode(const char* name, int namelen, Py_UCS4* code,
     return _check_alias_and_seq(code, with_named_seq);
 }
 
-static void
-unicodedata_destroy_capi(PyObject *capsule)
-{
-    void *capi = PyCapsule_GetPointer(capsule, PyUnicodeData_CAPSULE_NAME);
-    PyMem_Free(capi);
-}
-
 static PyObject *
 unicodedata_create_capi(void)
 {
-    _PyUnicode_Name_CAPI *capi = PyMem_Malloc(sizeof(_PyUnicode_Name_CAPI));
-    if (capi == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    capi->getname = capi_getucname;
-    capi->getcode = capi_getcode;
-
-    PyObject *capsule = PyCapsule_New(capi,
-                                      PyUnicodeData_CAPSULE_NAME,
-                                      unicodedata_destroy_capi);
-    if (capsule == NULL) {
-        PyMem_Free(capi);
-    }
-    return capsule;
-};
+    // Statically allocated so that any cached pointers stay valid after unicodedata
+    // is removed from sys.modules and the capsule is gc'd (gh-149449).
+    static _PyUnicode_Name_CAPI capi = {
+        .getname = capi_getucname,
+        .getcode = capi_getcode,
+    };
+    return PyCapsule_New(&capi, PyUnicodeData_CAPSULE_NAME, NULL);
+}
 
 
 /* -------------------------------------------------------------------- */
