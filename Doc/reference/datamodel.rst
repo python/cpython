@@ -926,6 +926,7 @@ Attribute assignment updates the module's namespace dictionary, e.g.,
    single: __doc__ (module attribute)
    single: __annotations__ (module attribute)
    single: __annotate__ (module attribute)
+   single: __lazy_modules__ (module attribute)
    pair: module; namespace
 
 .. _import-mod-attrs:
@@ -1120,6 +1121,20 @@ the following writable attributes:
    no annotations. See also: :attr:`~object.__annotate__` attributes.
 
    .. versionadded:: 3.14
+
+.. attribute:: module.__lazy_modules__
+
+   A container (an object implementing :meth:`~object.__contains__`) of fully
+   qualified module name strings.  When defined
+   at module scope, any regular :keyword:`import` statement in that module whose
+   target module name appears in this container is treated as a
+   :ref:`lazy import <lazy-imports>`, as if the :keyword:`lazy` keyword had
+   been used.  Imports inside functions, class bodies, or
+   :keyword:`try`/:keyword:`except`/:keyword:`finally` blocks are unaffected.
+
+   See :ref:`lazy-modules-compat` for details and examples.
+
+   .. versionadded:: 3.15
 
 Module dictionaries
 ^^^^^^^^^^^^^^^^^^^
@@ -1461,7 +1476,6 @@ indirectly) to mutable objects.
    single: co_filename (code object attribute)
    single: co_firstlineno (code object attribute)
    single: co_flags (code object attribute)
-   single: co_lnotab (code object attribute)
    single: co_name (code object attribute)
    single: co_names (code object attribute)
    single: co_nlocals (code object attribute)
@@ -1533,14 +1547,6 @@ Special read-only attributes
 
    * - .. attribute:: codeobject.co_firstlineno
      - The line number of the first line of the function
-
-   * - .. attribute:: codeobject.co_lnotab
-     - A string encoding the mapping from :term:`bytecode` offsets to line
-       numbers. For details, see the source code of the interpreter.
-
-       .. deprecated:: 3.12
-          This attribute of code objects is deprecated, and may be removed in
-          Python 3.15.
 
    * - .. attribute:: codeobject.co_stacksize
      - The required stack size of the code object
@@ -3637,12 +3643,25 @@ implement the protocol in Python.
    provides a convenient way to interpret the flags. The method must return
    a :class:`memoryview` object.
 
+   **Thread safety:** In :term:`free-threaded <free threading>` Python,
+   implementations must manage any internal export counter using atomic
+   operations. The method must be safe to call concurrently from multiple
+   threads, and the returned buffer's underlying data must remain valid
+   until the corresponding :meth:`~object.__release_buffer__` call
+   completes. See :ref:`thread-safety-memoryview` for details.
+
 .. method:: object.__release_buffer__(self, buffer)
 
    Called when a buffer is no longer needed. The *buffer* argument is a
    :class:`memoryview` object that was previously returned by
    :meth:`~object.__buffer__`. The method must release any resources associated
    with the buffer. This method should return ``None``.
+
+   **Thread safety:** In :term:`free-threaded <free threading>` Python,
+   any export counter decrement must use atomic operations. Resource
+   cleanup must be thread-safe, as the final release may race with
+   concurrent releases from other threads.
+
    Buffer objects that do not need to perform any cleanup are not required
    to implement this method.
 

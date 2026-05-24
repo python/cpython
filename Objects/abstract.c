@@ -624,7 +624,7 @@ done:
 }
 
 int
-PyBuffer_FromContiguous(const Py_buffer *view, const void *buf, Py_ssize_t len, char fort)
+PyBuffer_FromContiguous(const Py_buffer *view, const void *buf, Py_ssize_t len, char order)
 {
     int k;
     void (*addone)(int, Py_ssize_t *, const Py_ssize_t *);
@@ -636,7 +636,7 @@ PyBuffer_FromContiguous(const Py_buffer *view, const void *buf, Py_ssize_t len, 
         len = view->len;
     }
 
-    if (PyBuffer_IsContiguous(view, fort)) {
+    if (PyBuffer_IsContiguous(view, order)) {
         /* simplest copy is all that is needed */
         memcpy(view->buf, buf, len);
         return 0;
@@ -654,7 +654,7 @@ PyBuffer_FromContiguous(const Py_buffer *view, const void *buf, Py_ssize_t len, 
         indices[k] = 0;
     }
 
-    if (fort == 'F') {
+    if (order == 'F') {
         addone = _Py_add_one_to_index_F;
     }
     else {
@@ -749,13 +749,13 @@ int PyObject_CopyData(PyObject *dest, PyObject *src)
 void
 PyBuffer_FillContiguousStrides(int nd, Py_ssize_t *shape,
                                Py_ssize_t *strides, int itemsize,
-                               char fort)
+                               char order)
 {
     int k;
     Py_ssize_t sd;
 
     sd = itemsize;
-    if (fort == 'F') {
+    if (order == 'F') {
         for (k=0; k<nd; k++) {
             strides[k] = sd;
             sd *= shape[k];
@@ -2950,4 +2950,12 @@ PyIter_Send(PyObject *iter, PyObject *arg, PyObject **result)
         return PYGEN_RETURN;
     }
     return PYGEN_ERROR;
+}
+
+PySendResultPair
+_PyIter_Send(PyObject *iter, PyObject *arg)
+{
+    PySendResultPair pair;
+    pair.kind = PyIter_Send(iter, arg, &pair.object);
+    return pair;
 }

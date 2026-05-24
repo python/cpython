@@ -147,6 +147,7 @@ typedef struct {
     int memfd;
 #endif
     page_cache_entry_t pages[MAX_PAGES];
+    int page_cache_count;
     Py_ssize_t page_size;
 } proc_handle_t;
 
@@ -185,14 +186,16 @@ _Py_RemoteDebug_FreePageCache(proc_handle_t *handle)
         handle->pages[i].data = NULL;
         handle->pages[i].valid = 0;
     }
+    handle->page_cache_count = 0;
 }
 
 UNUSED static void
 _Py_RemoteDebug_ClearCache(proc_handle_t *handle)
 {
-    for (int i = 0; i < MAX_PAGES; i++) {
+    for (int i = 0; i < handle->page_cache_count; i++) {
         handle->pages[i].valid = 0;
     }
+    handle->page_cache_count = 0;
 }
 
 #if defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
@@ -222,6 +225,7 @@ _Py_RemoteDebug_InitProcHandle(proc_handle_t *handle, pid_t pid) {
     handle->memfd = -1;
 #endif
     handle->page_size = get_page_size();
+    handle->page_cache_count = 0;
     for (int i = 0; i < MAX_PAGES; i++) {
         handle->pages[i].data = NULL;
         handle->pages[i].valid = 0;
@@ -781,6 +785,7 @@ search_linux_map_for_section(proc_handle_t *handle, const char* secname, const c
         }
 
         if (strstr(filename, substr)) {
+            PyErr_Clear();
             retval = search_elf_file_for_section(handle, secname, start, path);
             if (retval
                 && (validator == NULL || validator(handle, retval)))
@@ -1286,8 +1291,9 @@ _Py_RemoteDebug_PagedReadRemoteMemory(proc_handle_t *handle,
         return _Py_RemoteDebug_ReadRemoteMemory(handle, addr, size, out);
     }
 
-    // Search for valid cached page
-    for (int i = 0; i < MAX_PAGES; i++) {
+    // Search only the pages used since the last clear. The cache is cleared
+    // between profiler samples, so entries are packed at the front.
+    for (int i = 0; i < handle->page_cache_count; i++) {
         page_cache_entry_t *entry = &handle->pages[i];
         if (entry->valid && entry->page_addr == page_base) {
             memcpy(out, entry->data + offset_in_page, size);
@@ -1295,38 +1301,79 @@ _Py_RemoteDebug_PagedReadRemoteMemory(proc_handle_t *handle,
         }
     }
 
-    // Find reusable slot
-    for (int i = 0; i < MAX_PAGES; i++) {
-        page_cache_entry_t *entry = &handle->pages[i];
-        if (!entry->valid) {
+    if (handle->page_cache_count < MAX_PAGES) {
+        page_cache_entry_t *entry = &handle->pages[handle->page_cache_count];
+        if (entry->data == NULL) {
+            entry->data = PyMem_RawMalloc(page_size);
             if (entry->data == NULL) {
-                entry->data = PyMem_RawMalloc(page_size);
-                if (entry->data == NULL) {
-                    PyErr_NoMemory();
-                    _set_debug_exception_cause(PyExc_MemoryError,
-                        "Cannot allocate %zu bytes for page cache entry "
-                        "during read from PID %d at address 0x%lx",
-                        page_size, handle->pid, addr);
-                    return -1;
-                }
+                PyErr_NoMemory();
+                _set_debug_exception_cause(PyExc_MemoryError,
+                    "Cannot allocate %zu bytes for page cache entry "
+                    "during read from PID %d at address 0x%lx",
+                    page_size, handle->pid, addr);
+                return -1;
             }
-
-            if (_Py_RemoteDebug_ReadRemoteMemory(handle, page_base, page_size, entry->data) < 0) {
-                // Try to just copy the exact amount as a fallback
-                PyErr_Clear();
-                goto fallback;
-            }
-
-            entry->page_addr = page_base;
-            entry->valid = 1;
-            memcpy(out, entry->data + offset_in_page, size);
-            return 0;
         }
+
+        if (_Py_RemoteDebug_ReadRemoteMemory(handle, page_base, page_size, entry->data) < 0) {
+            // Try to just copy the exact amount as a fallback
+            PyErr_Clear();
+            goto fallback;
+        }
+
+        entry->page_addr = page_base;
+        entry->valid = 1;
+        handle->page_cache_count++;
+        memcpy(out, entry->data + offset_in_page, size);
+        return 0;
     }
 
 fallback:
     // Cache full — fallback to uncached read
     return _Py_RemoteDebug_ReadRemoteMemory(handle, addr, size, out);
+}
+
+typedef struct {
+    uintptr_t remote_addr;
+    void *local_buf;
+    size_t size;
+} _Py_RemoteReadSegment;
+
+#define _PY_REMOTE_DEBUG_MAX_BATCHED_SEGMENTS 4
+
+// Batched read of multiple remote regions in a single syscall when supported.
+// Returns total bytes read (>= 0) on success, -1 if batched reads are
+// unavailable or the syscall failed. Callers compare the return value against
+// cumulative segment sizes to determine which segments were fully populated.
+UNUSED static Py_ssize_t
+_Py_RemoteDebug_BatchedReadRemoteMemory(
+    proc_handle_t *handle,
+    const _Py_RemoteReadSegment *segments,
+    int nsegs)
+{
+#if defined(__linux__) && HAVE_PROCESS_VM_READV
+    if (handle->memfd == -1
+        && nsegs > 0
+        && nsegs <= _PY_REMOTE_DEBUG_MAX_BATCHED_SEGMENTS) {
+        struct iovec local[_PY_REMOTE_DEBUG_MAX_BATCHED_SEGMENTS];
+        struct iovec remote[_PY_REMOTE_DEBUG_MAX_BATCHED_SEGMENTS];
+        for (int i = 0; i < nsegs; i++) {
+            local[i].iov_base = segments[i].local_buf;
+            local[i].iov_len = segments[i].size;
+            remote[i].iov_base = (void *)segments[i].remote_addr;
+            remote[i].iov_len = segments[i].size;
+        }
+        ssize_t nread = process_vm_readv(handle->pid, local, nsegs, remote, nsegs, 0);
+        if (nread >= 0) {
+            return (Py_ssize_t)nread;
+        }
+    }
+#else
+    (void)handle;
+    (void)segments;
+    (void)nsegs;
+#endif
+    return -1;
 }
 
 UNUSED static int

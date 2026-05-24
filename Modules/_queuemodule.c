@@ -154,8 +154,6 @@ RingBuf_Get(RingBuf *buf)
 }
 
 // Returns 0 on success or -1 if the buffer failed to grow.
-//
-// Steals a reference to item.
 static int
 RingBuf_Put(RingBuf *buf, PyObject *item)
 {
@@ -165,11 +163,10 @@ RingBuf_Put(RingBuf *buf, PyObject *item)
         // Buffer is full, grow it.
         if (resize_ringbuf(buf, buf->items_cap * 2) < 0) {
             PyErr_NoMemory();
-            Py_DECREF(item);
             return -1;
         }
     }
-    buf->items[buf->put_idx] = item;
+    buf->items[buf->put_idx] = Py_NewRef(item);
     buf->put_idx = (buf->put_idx + 1) % buf->items_cap;
     buf->num_items++;
     return 0;
@@ -276,16 +273,13 @@ maybe_handoff_item(void *arg, void *park_arg, int has_more_waiters)
 {
     HandoffData *data = (HandoffData*)arg;
     PyObject **item = (PyObject**)park_arg;
-    if (item == NULL) {
-        // No threads were waiting
-        data->handed_off = false;
-    }
-    else {
-        // There was at least one waiting thread, hand off the item
-        *item = data->item;
-        data->handed_off = true;
-    }
     data->queue->has_threads_waiting = has_more_waiters;
+
+    data->handed_off = item != NULL;
+    if (data->handed_off) {
+        // There was at least one waiting thread, hand off the item
+        *item = Py_NewRef(data->item);
+    }
 }
 
 /*[clinic input]
@@ -307,20 +301,21 @@ _queue_SimpleQueue_put_impl(simplequeueobject *self, PyObject *item,
                             int block, PyObject *timeout)
 /*[clinic end generated code: output=4333136e88f90d8b input=a16dbb33363c0fa8]*/
 {
-    HandoffData data = {
-        .handed_off = 0,
-        .item = Py_NewRef(item),
-        .queue = self,
-    };
     if (self->has_threads_waiting) {
+        HandoffData data = {
+            .handed_off = 0,
+            .item = item,
+            .queue = self,
+        };
         // Try to hand the item off directly if there are threads waiting
         _PyParkingLot_Unpark(&self->has_threads_waiting,
                              maybe_handoff_item, &data);
-    }
-    if (!data.handed_off) {
-        if (RingBuf_Put(&self->buf, item) < 0) {
-            return NULL;
+        if (data.handed_off) {
+            Py_RETURN_NONE;
         }
+    }
+    if (RingBuf_Put(&self->buf, item) < 0) {
+        return NULL;
     }
     Py_RETURN_NONE;
 }
@@ -617,6 +612,7 @@ queuemodule_exec(PyObject *module)
 }
 
 static PyModuleDef_Slot queuemodule_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, queuemodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

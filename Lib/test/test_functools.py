@@ -565,7 +565,19 @@ class TestPartial:
         g_partial = functools.partial(func, trigger, None, None, None, None, arg=None)
         self.assertEqual(repr(g_partial),"functools.partial(Function(old_function), EvilObject, None, None, None, None, arg=None)")
 
+    def test_str_subclass_error(self):
+        class BadStr(str):
+            def __eq__(self, other):
+                raise RuntimeError
+            def __hash__(self):
+                return str.__hash__(self)
 
+        def f(**kwargs):
+            return kwargs
+
+        p = functools.partial(f, poison="")
+        with self.assertRaises(RuntimeError):
+            result = p(**{BadStr("poison"): "new_value"})
 
 @unittest.skipUnless(c_functools, 'requires the C _functools module')
 class TestPartialC(TestPartial, unittest.TestCase):
@@ -1122,6 +1134,14 @@ class TestReduce:
         self.assertRaises(TypeError, self.reduce, add, [0, 1], initial="")
         self.assertEqual(self.reduce(42, "", initial="1"), "1") # func is never called with one item
 
+    def test_reduce_with_kwargs(self):
+        with self.assertRaises(TypeError):
+            self.reduce(function=lambda x, y: (x or 1) + y, sequence=[1, 2, 3, 4, 5])
+        with self.assertRaises(TypeError):
+            self.reduce(function=lambda x, y: x + y, sequence=[1, 2, 3, 4, 5], initial=1)
+        with self.assertRaises(TypeError):
+            self.reduce(lambda x, y: x + y, sequence=[1, 2, 3, 4, 5], initial=1)
+
 
 @unittest.skipUnless(c_functools, 'requires the C _functools module')
 class TestReduceC(TestReduce, unittest.TestCase):
@@ -1131,12 +1151,6 @@ class TestReduceC(TestReduce, unittest.TestCase):
 
 class TestReducePy(TestReduce, unittest.TestCase):
     reduce = staticmethod(py_functools.reduce)
-
-    def test_reduce_with_kwargs(self):
-        with self.assertWarns(DeprecationWarning):
-            self.reduce(function=lambda x, y: x + y, sequence=[1, 2, 3, 4, 5], initial=1)
-        with self.assertWarns(DeprecationWarning):
-            self.reduce(lambda x, y: x + y, sequence=[1, 2, 3, 4, 5], initial=1)
 
 
 class TestCmpToKey:
@@ -3345,6 +3359,21 @@ class TestSingleDispatch(unittest.TestCase):
         msg = 't requires at least 1 positional argument'
         with self.assertRaisesRegex(TypeError, msg):
             A().t(a=1)
+
+    def test_positional_only_argument(self):
+        @functools.singledispatch
+        def f(arg, /, extra):
+            return "base"
+        @f.register
+        def f_int(arg: int, /, extra: str):
+            return "int"
+        @f.register
+        def f_str(arg: str, /, extra: int):
+            return "str"
+
+        self.assertEqual(f(None, "extra"), "base")
+        self.assertEqual(f(1, "extra"), "int")
+        self.assertEqual(f("s", "extra"), "str")
 
     def test_union(self):
         @functools.singledispatch
