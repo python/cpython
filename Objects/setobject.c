@@ -2906,7 +2906,7 @@ static PyMethodDef frozenset_methods[] = {
     SET_SYMMETRIC_DIFFERENCE_METHODDEF
     SET_UNION_METHODDEF
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
-     PyDoc_STR("frozenets are generic over the type of their contents")},
+     PyDoc_STR("frozensets are generic over the type of their contents")},
     {NULL,              NULL}   /* sentinel */
 };
 
