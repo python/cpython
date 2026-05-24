@@ -3892,6 +3892,7 @@ PyDict_Items(PyObject *dict)
 }
 
 /*[clinic input]
+@permit_long_summary
 @classmethod
 dict.fromkeys
     iterable: object
@@ -3903,7 +3904,7 @@ Create a new dictionary with keys from iterable and values set to value.
 
 static PyObject *
 dict_fromkeys_impl(PyTypeObject *type, PyObject *iterable, PyObject *value)
-/*[clinic end generated code: output=8fb98e4b10384999 input=382ba4855d0f74c3]*/
+/*[clinic end generated code: output=8fb98e4b10384999 input=3903715eb48b287e]*/
 {
     return _PyDict_FromKeys((PyObject *)type, iterable, value);
 }
