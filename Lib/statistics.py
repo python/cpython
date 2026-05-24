@@ -1221,7 +1221,7 @@ def quantiles(data, *, n=4, method='exclusive'):
             # the interpolation formula which can be off by 1 ULP
             # due to floating-point rounding
             if (data[j - 1] == data[j]) or not delta:
-                interpolated = data[j - 1]
+                interpolated = float(data[j - 1])
             else:
                 interpolated = (data[j - 1] * (n - delta) + data[j] * delta) / n
             result.append(interpolated)
