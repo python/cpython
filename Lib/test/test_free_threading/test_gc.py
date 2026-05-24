@@ -95,7 +95,7 @@ class TestGC(TestCase):
         thread.join()
 
     def test_set_threshold(self):
-        # GH-148613: Setting the GC threshold from another thread could causes
+        # GH-148613: Setting the GC threshold from another thread could cause a
         # race between the `gc_should_collect` and `gc_set_threshold` functions.
         NUM_THREADS = 8
         NUM_ITERS = 100_000
@@ -115,12 +115,14 @@ class TestGC(TestCase):
             for i in range(NUM_ITERS):
                 gc.set_threshold(100 + (i % 100), 10 + (i % 10), 10 + (i % 10))
 
-        threads = [Thread(target=allocator) for _ in range(NUM_THREADS - 1)]
-        threads.append(Thread(target=setter))
-        for t in threads:
-            t.start()
-        for t in threads:
-            t.join()
+        old_threshold = gc.get_threshold()
+        try:
+            threads = [Thread(target=allocator) for _ in range(NUM_THREADS - 1)]
+            threads.append(Thread(target=setter))
+            with threading_helper.start_threads(threads):
+                pass
+        finally:
+            gc.set_threshold(*old_threshold)
 
 
 if __name__ == "__main__":
