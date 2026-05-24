@@ -65,8 +65,8 @@ def literal_eval(node_or_string):
     return _convert_literal(node_or_string)
 
 
-_type_None = type(None)
-_type_Ellipsis = type(...)
+_permitted_literal_types = (str, bytes, int, float, complex,
+                            bool, type(None), type(...))
 
 
 def _convert_literal(node, omit_validation=False):
@@ -76,8 +76,7 @@ def _convert_literal(node, omit_validation=False):
     if isinstance(node, Constant):
         if omit_validation:
             return node.value
-        if type(value := node.value) in (str, bytes, int, float, complex,
-                                         bool, _type_None, _type_Ellipsis):
+        if type(value := node.value) in _permitted_literal_types:
             return value
     if isinstance(node, Dict) and len(node.keys) == len(node.values):
         return dict(zip(
