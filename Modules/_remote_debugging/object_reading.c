@@ -6,6 +6,7 @@
  ******************************************************************************/
 
 #include "_remote_debugging.h"
+#include <limits.h>
 
 /* ============================================================================
  * MEMORY READING FUNCTIONS
@@ -296,19 +297,34 @@ read_py_long(
         }
     }
 
-    long long value = 0;
+    unsigned long limit = negative
+        ? (unsigned long)LONG_MAX + 1UL
+        : (unsigned long)LONG_MAX;
+    unsigned long value = 0;
 
-    // In theory this can overflow, but because of llvm/llvm-project#16778
-    // we can't use __builtin_mul_overflow because it fails to link with
-    // __muloti4 on aarch64. In practice this is fine because all we're
-    // testing here are task numbers that would fit in a single byte.
-    for (Py_ssize_t i = 0; i < size; ++i) {
-        long long factor = digits[i] * (1UL << (Py_ssize_t)(shift * i));
-        value += factor;
+    for (Py_ssize_t i = size; i-- > 0;) {
+        if (digits[i] >= PyLong_BASE) {
+            PyErr_Format(PyExc_RuntimeError,
+                "Invalid PyLong digit: %u (base %u)", digits[i], PyLong_BASE);
+            set_exception_cause(unwinder, PyExc_RuntimeError,
+                "Invalid PyLong digit (corrupted remote memory)");
+            goto error;
+        }
+        if (value > ((limit - (unsigned long)digits[i]) >> shift)) {
+            PyErr_SetString(PyExc_OverflowError,
+                "Remote PyLong value does not fit in C long");
+            set_exception_cause(unwinder, PyExc_OverflowError,
+                "Remote PyLong value is too large");
+            goto error;
+        }
+        value = (value << shift) | (unsigned long)digits[i];
     }
     PyMem_RawFree(digits);
     if (negative) {
-        value *= -1;
+        if (value == (unsigned long)LONG_MAX + 1UL) {
+            return LONG_MIN;
+        }
+        return -(long)value;
     }
     return (long)value;
 error:
