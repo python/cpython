@@ -8,7 +8,7 @@
 
 --------------
 
-There are a couple of useful utilities provided in the :mod:`email.utils`
+There are a couple of useful utilities provided in the :mod:`!email.utils`
 module:
 
 .. function:: localtime(dt=None)
