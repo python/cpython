@@ -234,12 +234,13 @@ _curses_panel.panel.hide
 
 Hide the panel.
 
-This does not delete the object, it just makes the window on screen invisible.
+This does not delete the object, it just makes the window on screen
+invisible.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_panel_panel_hide_impl(PyCursesPanelObject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=cc6ab7203cdc1450 input=1bfc741f473e6055]*/
+/*[clinic end generated code: output=cc6ab7203cdc1450 input=805065e45e6fc1cd]*/
 {
     _curses_panel_state *state = PyType_GetModuleState(cls);
     return PyCursesCheckERR(state, hide_panel(self->pan), "hide");
@@ -689,12 +690,13 @@ _curses_panel.update_panels
 
 Updates the virtual screen after changes in the panel stack.
 
-This does not call curses.doupdate(), so you'll have to do this yourself.
+This does not call curses.doupdate(), so you'll have to do this
+yourself.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_panel_update_panels_impl(PyObject *module)
-/*[clinic end generated code: output=2f3b4c2e03d90ded input=5299624c9a708621]*/
+/*[clinic end generated code: output=2f3b4c2e03d90ded input=0d0db79f05ec3ef4]*/
 {
     PyCursesInitialised;
     update_panels();
