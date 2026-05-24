@@ -166,7 +166,8 @@ exit:
 }
 
 PyDoc_STRVAR(_lzma_LZMADecompressor__doc__,
-"LZMADecompressor(format=FORMAT_AUTO, memlimit=None, filters=None)\n"
+"LZMADecompressor(format=FORMAT_AUTO, memlimit=None, filters=None, *,\n"
+"                 mt_options=None)\n"
 "--\n"
 "\n"
 "Create a decompressor object for decompressing data incrementally.\n"
@@ -185,12 +186,20 @@ PyDoc_STRVAR(_lzma_LZMADecompressor__doc__,
 "    not accepted with any other format.  When provided, this should be a\n"
 "    sequence of dicts, each indicating the ID and options for a single\n"
 "    filter.\n"
+"  mt_options\n"
+"    If provided should be a dict, in which case the threaded implementation\n"
+"    will be used.\n"
+"\n"
+"The MT (multi-threaded) decompressor is chosen instead of the default if the\n"
+"\'mt_options\' dictionary argument has been passed which supports additional\n"
+"settings. You have to specify FORMAT_XZ explicitly for this.\n"
 "\n"
 "For one-shot decompression, use the decompress() function instead.");
 
 static PyObject *
 _lzma_LZMADecompressor_impl(PyTypeObject *type, int format,
-                            PyObject *memlimit, PyObject *filters);
+                            PyObject *memlimit, PyObject *filters,
+                            PyObject *mtspec);
 
 static PyObject *
 _lzma_LZMADecompressor(PyTypeObject *type, PyObject *args, PyObject *kwargs)
@@ -198,7 +207,7 @@ _lzma_LZMADecompressor(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 3
+    #define NUM_KEYWORDS 4
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -207,7 +216,7 @@ _lzma_LZMADecompressor(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(format), &_Py_ID(memlimit), &_Py_ID(filters), },
+        .ob_item = { &_Py_ID(format), &_Py_ID(memlimit), &_Py_ID(filters), &_Py_ID(mt_options), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -216,20 +225,21 @@ _lzma_LZMADecompressor(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"format", "memlimit", "filters", NULL};
+    static const char * const _keywords[] = {"format", "memlimit", "filters", "mt_options", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "LZMADecompressor",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
+    PyObject *argsbuf[4];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
     int format = FORMAT_AUTO;
     PyObject *memlimit = Py_None;
     PyObject *filters = Py_None;
+    PyObject *mtspec = Py_None;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
             /*minpos*/ 0, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -254,9 +264,19 @@ _lzma_LZMADecompressor(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             goto skip_optional_pos;
         }
     }
-    filters = fastargs[2];
+    if (fastargs[2]) {
+        filters = fastargs[2];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
 skip_optional_pos:
-    return_value = _lzma_LZMADecompressor_impl(type, format, memlimit, filters);
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    mtspec = fastargs[3];
+skip_optional_kwonly:
+    return_value = _lzma_LZMADecompressor_impl(type, format, memlimit, filters, mtspec);
 
 exit:
     return return_value;
@@ -333,4 +353,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=6386084cb43d2533 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5f316bd2efcc6302 input=a9049054013a1b77]*/
