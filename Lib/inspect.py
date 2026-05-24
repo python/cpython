@@ -2209,7 +2209,7 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
 
         if isinstance(value, (str, int, float, bytes, bool, type(None),
                               sentinel)):
-            return ast.parse(s)
+            return ast.parse(s, mode='eval').body
         raise ValueError
 
     class RewriteSymbolics(ast.NodeTransformer):
@@ -2237,12 +2237,15 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
                 default_node = RewriteSymbolics().visit(default_node)
                 default_source = ast.unparse(default_node)
                 try:
-                    default = eval(default_source, module_dict)
-                except NameError:
+                    default = ast.literal_eval(default_source)
+                except ValueError:
                     try:
-                        default = eval(default_source, sys_module_dict)
+                        default = eval(default_source, module_dict)
                     except NameError:
-                        raise ValueError
+                        try:
+                            default = eval(default_source, sys_module_dict)
+                        except NameError:
+                            raise ValueError
             except ValueError as exc:
                 raise ValueError("{!r} builtin has invalid signature".format(obj)) from None
         parameters.append(Parameter(name, kind, default=default, annotation=empty))
