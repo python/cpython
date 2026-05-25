@@ -47,8 +47,10 @@ class EnvBuilder:
     """
 
     def __init__(self, system_site_packages=False, clear=False,
-                 symlinks=False, upgrade=False, with_pip=False, prompt=None,
+                 symlinks=None, upgrade=False, with_pip=False, prompt=None,
                  upgrade_deps=False, *, scm_ignore_files=frozenset()):
+        if symlinks is None:
+            symlinks = (sys.platform == 'cygwin')
         self.system_site_packages = system_site_packages
         self.clear = clear
         self.symlinks = symlinks
@@ -599,7 +601,7 @@ class EnvBuilder:
 
 
 def create(env_dir, system_site_packages=False, clear=False,
-           symlinks=False, with_pip=False, prompt=None, upgrade_deps=False,
+           symlinks=None, with_pip=False, prompt=None, upgrade_deps=False,
            *, scm_ignore_files=frozenset()):
     """Create a virtual environment in a directory."""
     builder = EnvBuilder(system_site_packages=system_site_packages,

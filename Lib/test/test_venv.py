@@ -146,7 +146,7 @@ class BasicTest(BaseTest):
         self.assertIn('home = %s' % path, data)
         self.assertIn('executable = %s' %
                       os.path.realpath(sys.executable), data)
-        copies = '' if os.name=='nt' else ' --copies'
+        copies = '' if os.name=='nt' or sys.platform == 'cygwin' else ' --copies'
         cmd = (f'command = {sys.executable} -m venv{copies} --without-pip '
                f'--without-scm-ignore-files {self.env_dir}')
         self.assertIn(cmd, data)
@@ -278,6 +278,8 @@ class BasicTest(BaseTest):
                              pathlib.Path(expected), prefix)
 
     @requireVenvCreate
+    @unittest.skipIf(sys.platform == 'cygwin',
+                     'venv only works using symlinks on Cygwin')
     def test_sysconfig(self):
         """
         Test that the sysconfig functions work in a virtual environment.
@@ -714,6 +716,11 @@ class BasicTest(BaseTest):
         os.mkdir(bindir)
         python_exe = os.path.basename(sys.executable)
         shutil.copy2(sys.executable, os.path.join(bindir, python_exe))
+        if sys.platform == 'cygwin':
+            exe_path = os.path.dirname(sys.executable)
+            libpython_dll = sysconfig.get_config_var('DLLLIBRARY')
+            shutil.copy2(os.path.join(exe_path, libpython_dll),
+                         os.path.join(bindir, libpython_dll))
         libdir = os.path.join(non_installed_dir, platlibdir, self.lib[1])
         os.makedirs(libdir)
         landmark = os.path.join(libdir, "os.py")
