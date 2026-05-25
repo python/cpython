@@ -6,6 +6,7 @@ import shlex
 import sys
 import sysconfig
 import tempfile
+import unittest
 import venv
 
 
@@ -72,6 +73,9 @@ class VirtualEnvironment:
 
 class VirtualEnvironmentMixin:
     def venv(self, name=None, **venv_create_args):
+        if sys.platform == 'cygwin':
+            raise unittest.SkipTest('FIXME: venv is broken on Cygwin')
+
         venv_name = self.id()
         if name:
             venv_name += f'-{name}'

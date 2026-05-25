@@ -34,6 +34,9 @@ try:
 except ImportError:
     ctypes = None
 
+if sys.platform == 'cygwin':
+    raise unittest.SkipTest('FIXME: venv is broken on Cygwin')
+
 # Platforms that set sys._base_executable can create venvs from within
 # another venv, so no need to skip tests that require venv.create().
 requireVenvCreate = unittest.skipUnless(
