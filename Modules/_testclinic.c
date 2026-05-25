@@ -334,14 +334,14 @@ int_converter
 
     a: int = 12
     b: int(accept={int}) = 34
-    c: int(accept={str}) = 45
+    c: int(accept={str}) = '-'
     /
 
 [clinic start generated code]*/
 
 static PyObject *
 int_converter_impl(PyObject *module, int a, int b, int c)
-/*[clinic end generated code: output=8e56b59be7d0c306 input=a1dbc6344853db7a]*/
+/*[clinic end generated code: output=8e56b59be7d0c306 input=9a306d4dc907e339]*/
 {
     RETURN_PACKED_ARGS(3, PyLong_FromLong, long, a, b, c);
 }
@@ -1365,6 +1365,7 @@ clone_f2_impl(PyObject *module, const char *path)
 class custom_t_converter(CConverter):
     type = 'custom_t'
     converter = 'custom_converter'
+    c_init_default = "<placeholder>"  # overridden in pre_render(()
 
     def pre_render(self):
         self.c_default = f'''{{
@@ -1372,7 +1373,7 @@ class custom_t_converter(CConverter):
         }}'''
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=b2fb801e99a06bf6]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=78fe84e5ecc0481b]*/
 
 
 /*[clinic input]

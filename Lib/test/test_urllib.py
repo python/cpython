@@ -10,6 +10,7 @@ import unittest
 from test import support
 from test.support import os_helper
 from test.support import socket_helper
+from test.support import control_characters_c0
 import os
 import socket
 try:
@@ -590,6 +591,13 @@ class urlopen_DataTests(unittest.TestCase):
         # missing padding character
         self.assertRaises(ValueError,urllib.request.urlopen,'data:;base64,Cg=')
 
+    def test_invalid_mediatype(self):
+        for c0 in control_characters_c0():
+            self.assertRaises(ValueError,urllib.request.urlopen,
+                              f'data:text/html;{c0},data')
+        for c0 in control_characters_c0():
+            self.assertRaises(ValueError,urllib.request.urlopen,
+                              f'data:text/html{c0};base64,ZGF0YQ==')
 
 class urlretrieve_FileTests(unittest.TestCase):
     """Test urllib.urlretrieve() on local files"""
@@ -727,7 +735,7 @@ class urlretrieve_FileTests(unittest.TestCase):
         self.assertEqual(report[0][2], 8193)
         self.assertEqual(report[0][1], 8192)
         self.assertEqual(report[1][1], 8192)
-        self.assertEqual(report[2][1], 1)  # last block only reads 1 byte
+        self.assertEqual(report[2][1], 8192)
 
 
 class urlretrieve_HttpTests(unittest.TestCase, FakeHTTPMixin):

@@ -1,15 +1,38 @@
 #!/usr/bin/env python3
 
 import argparse
+import functools
 import os
 import pathlib
 import platform
+import subprocess
 import sys
 import tarfile
 import time
 import urllib.error
 import urllib.request
 import zipfile
+
+
+@functools.cache
+def trigger_automatic_root_certificate_update(url: str, timeout: int = 30) -> None:
+    escaped_url = url.replace("'", "''")
+    try:
+        subprocess.run(
+            [
+                "powershell",
+                "-NoProfile",
+                "-Command",
+                f"Invoke-WebRequest -Uri '{escaped_url}'"
+                f" -UseBasicParsing -Method HEAD -MaximumRedirection 0"
+                f" -TimeoutSec {timeout}",
+            ],
+            check=True,
+            capture_output=True,
+            timeout=timeout + 5,
+        )
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
+        print(e)
 
 
 def retrieve_with_retries(download_location, output_path, reporthook,
@@ -25,6 +48,7 @@ def retrieve_with_retries(download_location, output_path, reporthook,
         except (urllib.error.URLError, ConnectionError) as ex:
             if attempt == max_retries:
                 raise OSError(f'Download from {download_location} failed.') from ex
+            trigger_automatic_root_certificate_update(download_location)
             time.sleep(2.25**attempt)
         else:
             return resp

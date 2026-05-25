@@ -1183,6 +1183,7 @@ class MmapTests(unittest.TestCase):
 
     @unittest.skipUnless(sys.platform == 'linux', 'Linux only')
     @support.requires_linux_version(5, 17, 0)
+    @unittest.skipIf(support.linked_to_musl(), "musl libc issue, gh-143632")
     def test_set_name(self):
         # Test setting name on anonymous mmap
         m = mmap.mmap(-1, PAGESIZE)
