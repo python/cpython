@@ -784,8 +784,11 @@ def _get_process_memory_usage_linux(pid: int) -> int | None:
 
 def _get_process_memory_usage_windows(pid: int) -> int | None:
     assert _winapi is not None  # to make mypy happy
-    handle = _winapi.OpenProcess(_winapi.PROCESS_QUERY_LIMITED_INFORMATION,
-                                 False, pid)
+    try:
+        handle = _winapi.OpenProcess(_winapi.PROCESS_QUERY_LIMITED_INFORMATION,
+                                     False, pid)
+    except OSError:
+        return None
     try:
         mem_info = _winapi.GetProcessMemoryInfo(handle)
     finally:
