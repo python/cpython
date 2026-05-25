@@ -496,7 +496,7 @@ subscript notation ``a[k]`` selects the item indexed by ``k`` from the mapping
 :keyword:`del` statements. The built-in function :func:`len` returns the number
 of items in a mapping.
 
-There are currently two intrinsic mapping types:
+There are two intrinsic mapping types:
 
 
 Dictionaries
