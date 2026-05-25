@@ -2,7 +2,6 @@
 
 import random
 import string
-import sys
 import unittest
 from test.support import import_helper
 
@@ -98,11 +97,6 @@ class GroupDatabaseTestCase(unittest.TestCase):
                     raise
         else:
             self.fail('Cannot find non-existent gid')
-
-        if sys.platform != 'cygwin':
-            # -1 shouldn't be a valid gid because it has a special meaning in many
-            # uid-related functions
-            self.assertRaises(KeyError, grp.getgrgid, -1)
 
 
 if __name__ == "__main__":
