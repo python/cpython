@@ -823,6 +823,8 @@ time_strftime1(time_char **outbuf, size_t *bufsize,
         time_char *tmp = (time_char *)PyMem_Realloc(*outbuf,
                                                     *bufsize*sizeof(time_char));
         if (tmp == NULL) {
+            PyMem_Free(*outbuf);
+            *outbuf = NULL;
             PyErr_NoMemory();
             return NULL;
         }
