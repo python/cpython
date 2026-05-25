@@ -1,0 +1,3 @@
+Fix missing null check on the result of :func:`!strdup` in
+:mod:`readline` module initialization, preventing a potential null pointer
+dereference on memory allocation failure.
