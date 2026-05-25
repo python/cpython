@@ -34499,6 +34499,15 @@ fi
 printf "%s\n" "$py_cv_module__hashlib" >&6; }
 
 
+case $ac_sys_system in #(
+  # On FreeBSD, _testcapi.get_process_memory_usage() calls kvm_openfiles()
+  # and so needs libkvm.
+  FreeBSD*) :
+    LIBKVM="-lkvm"
+ ;; #(
+  *) :
+     ;;
+esac
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testcapi" >&5
 printf %s "checking for stdlib extension module _testcapi... " >&6; }
@@ -34525,7 +34534,7 @@ fi
 then :
 
 
-    as_fn_append MODULE_BLOCK "MODULE__TESTCAPI_LDFLAGS=$LIBATOMIC$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__TESTCAPI_LDFLAGS=$LIBATOMIC $LIBKVM$as_nl"
 
 fi
    if test "$py_cv_module__testcapi" = yes; then
