@@ -323,30 +323,64 @@ _PyLong_FromSTwoDigits(stwodigits x)
 }
 
 static inline bool
-_PyLong_AsInt64(PyLongObject *v, int64_t *result)
+_Py_i64_add_overflow(int64_t a, int64_t b, int64_t *out)
 {
-    assert(PyLong_CheckExact((PyObject *)v));
-    if (_PyLong_IsCompact(v)) {
-        *result = _PyLong_CompactValue(v);
+    if ((b > 0 && a > INT64_MAX - b) || (b < 0 && a < INT64_MIN - b)) {
         return true;
     }
-    Py_ssize_t ndigits = _PyLong_DigitCount(v);
-    if (ndigits > 2) {
-        return false;
-    }
-    assert(ndigits == 2);
-    int sign = 1 - (v->long_value.lv_tag & SIGN_MASK);
-    uint64_t abs_val = (uint64_t)v->long_value.ob_digit[0]
-                     | ((uint64_t)v->long_value.ob_digit[1] << PyLong_SHIFT);
-    if (abs_val <= (uint64_t)INT64_MAX) {
-        *result = sign < 0 ? -(int64_t)abs_val : (int64_t)abs_val;
+    *out = a + b;
+    return false;
+}
+
+static inline bool
+_Py_i64_sub_overflow(int64_t a, int64_t b, int64_t *out)
+{
+    if ((b > 0 && a < INT64_MIN + b) || (b < 0 && a > INT64_MAX + b)) {
         return true;
     }
-    if (sign < 0 && abs_val == (uint64_t)INT64_MAX + 1) {
-        *result = INT64_MIN;
+    *out = a - b;
+    return false;
+}
+
+#if !defined(__SIZEOF_INT128__)
+static inline uint64_t
+_Py_uabs_i64(int64_t x)
+{
+    return x < 0 ? (uint64_t)(0 - (uint64_t)x) : (uint64_t)x;
+}
+#endif
+
+static inline bool
+_Py_i64_mul_overflow(int64_t a, int64_t b, int64_t *out)
+{
+#if defined(__SIZEOF_INT128__)
+    __int128 prod = (__int128)a * (__int128)b;
+    if (prod < INT64_MIN || prod > INT64_MAX) {
         return true;
+    }
+    *out = (int64_t)prod;
+    return false;
+#else
+    uint64_t ua = _Py_uabs_i64(a);
+    uint64_t ub = _Py_uabs_i64(b);
+    uint64_t limit = ((a < 0) ^ (b < 0)) ? (uint64_t)INT64_MAX + 1 : (uint64_t)INT64_MAX;
+    if (ua != 0 && ub > limit / ua) {
+        return true;
+    }
+    uint64_t uprod = ua * ub;
+    if ((a < 0) ^ (b < 0)) {
+        if (uprod == (uint64_t)INT64_MAX + 1) {
+            *out = INT64_MIN;
+        }
+        else {
+            *out = -(int64_t)uprod;
+        }
+    }
+    else {
+        *out = (int64_t)uprod;
     }
     return false;
+#endif
 }
 
 
@@ -3869,25 +3903,25 @@ _PyCompactLong_Add(PyLongObject *a, PyLongObject *b)
     if (_PyLong_BothAreCompact(a, b)) {
         stwodigits va = medium_value(a);
         stwodigits vb = medium_value(b);
-        stwodigits v;
-        if (__builtin_add_overflow(va, vb, &v)) {
+        int64_t v64;
+        if (_Py_i64_add_overflow((int64_t)va, (int64_t)vb, &v64)) {
             return PyStackRef_NULL;
         }
-        PyLongObject *result = _PyLong_FromSTwoDigits(v);
+        PyLongObject *result = _PyLong_FromSTwoDigits((stwodigits)v64);
         if (result == NULL) {
-            return PyStackRef_NULL;
+            return PyStackRef_ERROR;
         }
         return PyStackRef_FromPyObjectStealMortal((PyObject *)result);
     }
     int64_t va, vb;
-    if (_PyLong_AsInt64(a, &va) && _PyLong_AsInt64(b, &vb)) {
+    if (_PyLong_TryAsInt64Exact(a, &va) && _PyLong_TryAsInt64Exact(b, &vb)) {
         int64_t v;
-        if (__builtin_add_overflow(va, vb, &v)) {
+        if (_Py_i64_add_overflow(va, vb, &v)) {
             return PyStackRef_NULL;
         }
         PyLongObject *result = _PyLong_FromSTwoDigits(v);
         if (result == NULL) {
-            return PyStackRef_NULL;
+            return PyStackRef_ERROR;
         }
         return PyStackRef_FromPyObjectStealMortal((PyObject *)result);
     }
@@ -3937,25 +3971,25 @@ _PyCompactLong_Subtract(PyLongObject *a, PyLongObject *b)
     if (_PyLong_BothAreCompact(a, b)) {
         stwodigits va = medium_value(a);
         stwodigits vb = medium_value(b);
-        stwodigits v;
-        if (__builtin_sub_overflow(va, vb, &v)) {
+        int64_t v64;
+        if (_Py_i64_sub_overflow((int64_t)va, (int64_t)vb, &v64)) {
             return PyStackRef_NULL;
         }
-        PyLongObject *result = _PyLong_FromSTwoDigits(v);
+        PyLongObject *result = _PyLong_FromSTwoDigits((stwodigits)v64);
         if (result == NULL) {
-            return PyStackRef_NULL;
+            return PyStackRef_ERROR;
         }
         return PyStackRef_FromPyObjectStealMortal((PyObject *)result);
     }
     int64_t va, vb;
-    if (_PyLong_AsInt64(a, &va) && _PyLong_AsInt64(b, &vb)) {
+    if (_PyLong_TryAsInt64Exact(a, &va) && _PyLong_TryAsInt64Exact(b, &vb)) {
         int64_t v;
-        if (__builtin_sub_overflow(va, vb, &v)) {
+        if (_Py_i64_sub_overflow(va, vb, &v)) {
             return PyStackRef_NULL;
         }
         PyLongObject *result = _PyLong_FromSTwoDigits(v);
         if (result == NULL) {
-            return PyStackRef_NULL;
+            return PyStackRef_ERROR;
         }
         return PyStackRef_FromPyObjectStealMortal((PyObject *)result);
     }
@@ -4407,25 +4441,25 @@ _PyCompactLong_Multiply(PyLongObject *a, PyLongObject *b)
     if (_PyLong_BothAreCompact(a, b)) {
         stwodigits va = medium_value(a);
         stwodigits vb = medium_value(b);
-        stwodigits v;
-        if (__builtin_mul_overflow(va, vb, &v)) {
+        int64_t v64;
+        if (_Py_i64_mul_overflow((int64_t)va, (int64_t)vb, &v64)) {
             return PyStackRef_NULL;
         }
-        PyLongObject *result = _PyLong_FromSTwoDigits(v);
+        PyLongObject *result = _PyLong_FromSTwoDigits((stwodigits)v64);
         if (result == NULL) {
-            return PyStackRef_NULL;
+            return PyStackRef_ERROR;
         }
         return PyStackRef_FromPyObjectStealMortal((PyObject *)result);
     }
     int64_t va, vb;
-    if (_PyLong_AsInt64(a, &va) && _PyLong_AsInt64(b, &vb)) {
+    if (_PyLong_TryAsInt64Exact(a, &va) && _PyLong_TryAsInt64Exact(b, &vb)) {
         int64_t v;
-        if (__builtin_mul_overflow(va, vb, &v)) {
+        if (_Py_i64_mul_overflow(va, vb, &v)) {
             return PyStackRef_NULL;
         }
         PyLongObject *result = _PyLong_FromSTwoDigits(v);
         if (result == NULL) {
-            return PyStackRef_NULL;
+            return PyStackRef_ERROR;
         }
         return PyStackRef_FromPyObjectStealMortal((PyObject *)result);
     }

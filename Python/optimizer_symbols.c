@@ -272,7 +272,7 @@ _Py_uop_sym_is_safe_const(JitOptContext *ctx, JitOptRef sym)
     if (const_val == NULL) {
         return false;
     }
-    if (_PyLong_CheckExactAndCompact(const_val)) {
+    if (_PyLong_CheckExactAndMightFitInt64(const_val)) {
         return true;
     }
     PyTypeObject *typ = Py_TYPE(const_val);
@@ -566,7 +566,7 @@ _Py_uop_sym_set_const(JitOptContext *ctx, JitOptRef ref, PyObject *const_val)
             make_const(sym, const_val);
             return;
         case JIT_SYM_COMPACT_INT:
-            if (_PyLong_CheckExactAndCompact(const_val)) {
+            if (_PyLong_CheckExactAndMightFitInt64(const_val)) {
                 make_const(sym, const_val);
             }
             else {
@@ -970,7 +970,7 @@ _Py_uop_sym_is_compact_int(JitOptRef ref)
 {
     JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     if (sym->tag == JIT_SYM_KNOWN_VALUE_TAG) {
-        return (bool)_PyLong_CheckExactAndCompact(sym->value.value);
+        return (bool)_PyLong_CheckExactAndMightFitInt64(sym->value.value);
     }
     return sym->tag == JIT_SYM_COMPACT_INT;
 }
@@ -1008,7 +1008,7 @@ _Py_uop_sym_set_compact_int(JitOptContext *ctx, JitOptRef ref)
             }
             return;
         case JIT_SYM_KNOWN_VALUE_TAG:
-            if (!_PyLong_CheckExactAndCompact(sym->value.value)) {
+            if (!_PyLong_CheckExactAndMightFitInt64(sym->value.value)) {
                 Py_CLEAR(sym->value.value);
                 sym_set_bottom(ctx, sym);
             }
@@ -1954,7 +1954,7 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     TEST_PREDICATE(_Py_uop_sym_is_const(ctx, value) == true, "value is not constant");
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, value) == one_obj, "value is not 1");
 
-    val_big = PyNumber_Lshift(_PyLong_GetOne(), PyLong_FromLong(66));
+    val_big = PyNumber_Lshift(_PyLong_GetOne(), PyLong_FromLong(200));
     if (val_big == NULL) {
         goto fail;
     }
@@ -1963,7 +1963,7 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     JitOptRef ref_big = _Py_uop_sym_new_const(ctx, val_big);
     JitOptRef ref_int = _Py_uop_sym_new_compact_int(ctx);
     TEST_PREDICATE(_Py_uop_sym_is_compact_int(ref_42), "42 is not a compact int");
-    TEST_PREDICATE(!_Py_uop_sym_is_compact_int(ref_big), "(1 << 66) is a compact int");
+    TEST_PREDICATE(!_Py_uop_sym_is_compact_int(ref_big), "(1 << 200) is a compact int");
     TEST_PREDICATE(_Py_uop_sym_is_compact_int(ref_int), "compact int is not a compact int");
     TEST_PREDICATE(_Py_uop_sym_matches_type(ref_int, &PyLong_Type), "compact int is not an int");
 

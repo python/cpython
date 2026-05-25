@@ -634,24 +634,84 @@ dummy_func(
 
         op(_GUARD_NOS_INT, (left, unused -- left, unused)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-            EXIT_IF(!PyLong_CheckExact(left_o));
+            PyLongObject *left_l = (PyLongObject *)left_o;
+            int ok = PyLong_CheckExact(left_o);
+            if (ok && !_PyLong_IsCompact(left_l)) {
+                Py_ssize_t ndigits = _PyLong_DigitCount(left_l);
+                ok = (ndigits <= _PY_LONG_MAX_DIGITS_FOR_INT64);
+                if (ok && ndigits == _PY_LONG_MAX_DIGITS_FOR_INT64) {
+                    unsigned int shift = PyLong_SHIFT * (unsigned int)(ndigits - 1);
+                    uint64_t max_pos_top = (uint64_t)INT64_MAX >> shift;
+                    uint64_t max_neg_top = ((uint64_t)INT64_MAX + 1) >> shift;
+                    uint64_t max_top = ((left_l->long_value.lv_tag & SIGN_MASK) == SIGN_NEGATIVE)
+                        ? max_neg_top
+                        : max_pos_top;
+                    ok = (uint64_t)left_l->long_value.ob_digit[ndigits - 1] <= max_top;
+                }
+            }
+            EXIT_IF(!ok);
         }
 
         op(_GUARD_TOS_INT, (value -- value)) {
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            EXIT_IF(!PyLong_CheckExact(value_o));
+            PyLongObject *value_l = (PyLongObject *)value_o;
+            int ok = PyLong_CheckExact(value_o);
+            if (ok && !_PyLong_IsCompact(value_l)) {
+                Py_ssize_t ndigits = _PyLong_DigitCount(value_l);
+                ok = (ndigits <= _PY_LONG_MAX_DIGITS_FOR_INT64);
+                if (ok && ndigits == _PY_LONG_MAX_DIGITS_FOR_INT64) {
+                    unsigned int shift = PyLong_SHIFT * (unsigned int)(ndigits - 1);
+                    uint64_t max_pos_top = (uint64_t)INT64_MAX >> shift;
+                    uint64_t max_neg_top = ((uint64_t)INT64_MAX + 1) >> shift;
+                    uint64_t max_top = ((value_l->long_value.lv_tag & SIGN_MASK) == SIGN_NEGATIVE)
+                        ? max_neg_top
+                        : max_pos_top;
+                    ok = (uint64_t)value_l->long_value.ob_digit[ndigits - 1] <= max_top;
+                }
+            }
+            EXIT_IF(!ok);
         }
 
         op(_GUARD_NOS_OVERFLOWED, (left, unused -- left, unused)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             assert(Py_TYPE(left_o) == &PyLong_Type);
-            EXIT_IF(!_PyLong_IsCompact((PyLongObject *)left_o));
+            PyLongObject *left_l = (PyLongObject *)left_o;
+            int ok = _PyLong_IsCompact(left_l);
+            if (!ok) {
+                Py_ssize_t ndigits = _PyLong_DigitCount(left_l);
+                ok = (ndigits <= _PY_LONG_MAX_DIGITS_FOR_INT64);
+                if (ok && ndigits == _PY_LONG_MAX_DIGITS_FOR_INT64) {
+                    unsigned int shift = PyLong_SHIFT * (unsigned int)(ndigits - 1);
+                    uint64_t max_pos_top = (uint64_t)INT64_MAX >> shift;
+                    uint64_t max_neg_top = ((uint64_t)INT64_MAX + 1) >> shift;
+                    uint64_t max_top = ((left_l->long_value.lv_tag & SIGN_MASK) == SIGN_NEGATIVE)
+                        ? max_neg_top
+                        : max_pos_top;
+                    ok = (uint64_t)left_l->long_value.ob_digit[ndigits - 1] <= max_top;
+                }
+            }
+            EXIT_IF(!ok);
         }
 
         op(_GUARD_TOS_OVERFLOWED, (value -- value)) {
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
             assert(Py_TYPE(value_o) == &PyLong_Type);
-            EXIT_IF(!_PyLong_IsCompact((PyLongObject *)value_o));
+            PyLongObject *value_l = (PyLongObject *)value_o;
+            int ok = _PyLong_IsCompact(value_l);
+            if (!ok) {
+                Py_ssize_t ndigits = _PyLong_DigitCount(value_l);
+                ok = (ndigits <= _PY_LONG_MAX_DIGITS_FOR_INT64);
+                if (ok && ndigits == _PY_LONG_MAX_DIGITS_FOR_INT64) {
+                    unsigned int shift = PyLong_SHIFT * (unsigned int)(ndigits - 1);
+                    uint64_t max_pos_top = (uint64_t)INT64_MAX >> shift;
+                    uint64_t max_neg_top = ((uint64_t)INT64_MAX + 1) >> shift;
+                    uint64_t max_top = ((value_l->long_value.lv_tag & SIGN_MASK) == SIGN_NEGATIVE)
+                        ? max_neg_top
+                        : max_pos_top;
+                    ok = (uint64_t)value_l->long_value.ob_digit[ndigits - 1] <= max_top;
+                }
+            }
+            EXIT_IF(!ok);
         }
 
         pure op(_BINARY_OP_MULTIPLY_INT, (left, right -- res, l, r)) {
@@ -659,7 +719,6 @@ dummy_func(
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
             assert(PyLong_CheckExact(left_o));
             assert(PyLong_CheckExact(right_o));
-            assert(_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o));
 
             STAT_INC(BINARY_OP, hit);
             res = _PyCompactLong_Multiply((PyLongObject *)left_o, (PyLongObject *)right_o);
@@ -667,6 +726,7 @@ dummy_func(
             l = left;
             r = right;
             INPUTS_DEAD();
+            ERROR_IF(PyStackRef_IsError(res));
         }
 
         pure op(_BINARY_OP_ADD_INT, (left, right -- res, l, r)) {
@@ -681,6 +741,7 @@ dummy_func(
             l = left;
             r = right;
             INPUTS_DEAD();
+            ERROR_IF(PyStackRef_IsError(res));
         }
 
         pure op(_BINARY_OP_SUBTRACT_INT, (left, right -- res, l, r)) {
@@ -695,6 +756,7 @@ dummy_func(
             l = left;
             r = right;
             INPUTS_DEAD();
+            ERROR_IF(PyStackRef_IsError(res));
         }
 
         macro(BINARY_OP_MULTIPLY_INT) =
@@ -716,6 +778,7 @@ dummy_func(
             l = left;
             r = right;
             INPUTS_DEAD();
+            ERROR_IF(PyStackRef_IsError(_int_inplace_res));
         }
 
         tier2 op(_BINARY_OP_SUBTRACT_INT_INPLACE, (left, right -- res, l, r)) {
@@ -725,6 +788,7 @@ dummy_func(
             l = left;
             r = right;
             INPUTS_DEAD();
+            ERROR_IF(PyStackRef_IsError(_int_inplace_res));
         }
 
         tier2 op(_BINARY_OP_MULTIPLY_INT_INPLACE, (left, right -- res, l, r)) {
@@ -734,6 +798,7 @@ dummy_func(
             l = left;
             r = right;
             INPUTS_DEAD();
+            ERROR_IF(PyStackRef_IsError(_int_inplace_res));
         }
 
         tier2 op(_BINARY_OP_ADD_INT_INPLACE_RIGHT, (left, right -- res, l, r)) {
@@ -743,6 +808,7 @@ dummy_func(
             l = left;
             r = right;
             INPUTS_DEAD();
+            ERROR_IF(PyStackRef_IsError(_int_inplace_res));
         }
 
         tier2 op(_BINARY_OP_SUBTRACT_INT_INPLACE_RIGHT, (left, right -- res, l, r)) {
@@ -752,6 +818,7 @@ dummy_func(
             l = left;
             r = right;
             INPUTS_DEAD();
+            ERROR_IF(PyStackRef_IsError(_int_inplace_res));
         }
 
         tier2 op(_BINARY_OP_MULTIPLY_INT_INPLACE_RIGHT, (left, right -- res, l, r)) {
@@ -761,6 +828,7 @@ dummy_func(
             l = left;
             r = right;
             INPUTS_DEAD();
+            ERROR_IF(PyStackRef_IsError(_int_inplace_res));
         }
 
         op(_GUARD_NOS_FLOAT, (left, unused -- left, unused)) {
