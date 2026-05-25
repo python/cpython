@@ -706,8 +706,8 @@ error:
 }
 
 
-#if TARGET_OS_OSX
-// Return RSS via proc_pidinfo(PROC_PIDTASKINFO).pti_resident_size.
+#if TARGET_OS_OSX || defined(__FreeBSD__)
+// Return RSS only. Per-process swap usage isn't readily available
 static PyObject*
 get_process_memory_usage(PyObject *self, PyObject *args)
 {
@@ -715,7 +715,8 @@ get_process_memory_usage(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "i", &pid)) {
         return NULL;
     }
-
+#if TARGET_OS_OSX
+    // macOS: proc_pidinfo(PROC_PIDTASKINFO).pti_resident_size
     struct proc_taskinfo pti;
     int ret = proc_pidinfo(pid, PROC_PIDTASKINFO, 0, &pti, sizeof(pti));
     if (ret <= 0) {
@@ -728,20 +729,8 @@ get_process_memory_usage(PyObject *self, PyObject *args)
     }
 
     return PyLong_FromUnsignedLongLong(pti.pti_resident_size);
-}
-#endif
-
-
-#ifdef __FreeBSD__
-// Return RSS only. Per-process swap usage isn't readily available
-static PyObject*
-get_process_memory_usage(PyObject *self, PyObject *args)
-{
-    int pid;
-    if (!PyArg_ParseTuple(args, "i", &pid)) {
-        return NULL;
-    }
-
+#else
+    // FreeBSD: kvm_getprocs(KERN_PROC_PID) and ki_rssize * page_size
     long page_size = sysconf(_SC_PAGESIZE);
     if (page_size <= 0) {
         return PyErr_SetFromErrno(PyExc_OSError);
@@ -779,6 +768,7 @@ get_process_memory_usage(PyObject *self, PyObject *args)
 error:
     kvm_close(kd);
     return NULL;
+#endif
 }
 #endif
 
