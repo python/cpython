@@ -4,10 +4,9 @@
 
 #ifdef __FreeBSD__
 #  include <fcntl.h>              // O_RDONLY
-#  include <kvm.h>
+#  include <kvm.h>                // kvm_openfiles()
 #  include <limits.h>             // _POSIX2_LINE_MAX
-#  include <sys/sysctl.h>
-#  include <sys/types.h>
+#  include <sys/sysctl.h>         // KERN_PROC_PID
 #  include <sys/user.h>           // kinfo_proc definition
 #  include <unistd.h>             // sysconf()
 #endif
