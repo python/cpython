@@ -1935,6 +1935,21 @@ except ImportError:
 def _main(args=None):
     import argparse
     import pprint
+
+    _SAFE_BUILTINS = frozenset({
+        'range', 'complex', 'set', 'frozenset', 'slice',
+        'list', 'tuple', 'dict', 'int', 'float', 'bool',
+        'bytes', 'bytearray', 'str', 'NoneType',
+    })
+
+    class _SafeUnpickler(_Unpickler):
+        def find_class(self, module, name):
+            if module == 'builtins' and name in _SAFE_BUILTINS:
+                return super().find_class(module, name)
+            raise UnpicklingError(
+                f"Global '{module}.{name}' is forbidden in CLI mode"
+            )
+
     parser = argparse.ArgumentParser(
         description='display contents of the pickle files',
     )
@@ -1944,10 +1959,10 @@ def _main(args=None):
     args = parser.parse_args(args)
     for fn in args.pickle_file:
         if fn == '-':
-            obj = load(sys.stdin.buffer)
+            obj = _SafeUnpickler(sys.stdin.buffer).load()
         else:
             with open(fn, 'rb') as f:
-                obj = load(f)
+                obj = _SafeUnpickler(f).load()
         pprint.pprint(obj)
 
 
