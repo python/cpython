@@ -2,7 +2,6 @@
 #define SEMAPHORE_MACOSX_H
 
 #include <unistd.h>     // sysconf(SC_PAGESIZE)
-#include <sys/mman.h>   // shm_open, shm_unlink
 
 /*
 Structures and constants in shared memory
@@ -12,18 +11,21 @@ Structures and constants in shared memory
 #define SIZE_MUTEX_NAME (SIZE_SEM_NAME<<1)  /* "/mp-xxxxxxxx" (12) + "-gh125828" */
 
 typedef struct {
-    int n_semlocks;     // Current number of semaphores. Starts 0.
-    int n_slots;        // Current slots in the counter array.
-    int size_shm;       // Size of allocated shared memory (this and N counters).
+    int n_semlocks;      // Current number of semaphores. Starts 0.
+    int n_slots;         // Current slots in the counter array.
+    int size_shm;        // Size of allocated shared memory (this and N counters).
+    int sizeof_counter;  // Size of CounterObject.
 } HeaderObject;
 
 typedef struct {
     char sem_name[SIZE_SEM_NAME];   // Name of semaphore.
     short internal_value;           // Internal value of semaphore, update on each acquire/release.
     short pending_acquires;         // Threads in sem_wait not yet decremented internal_value.
-    short unlink;                   // Indicate if this semaphore is alreday unlink.
-#ifdef PyDEBUG
+    short unlink;                   // Indicate if already unlink.
+#ifdef Py_REF_DEBUG
     time_t ctimestamp;              // Created timestamp (debug log).
+#else
+    #pragma unused(ctimestamp);
 #endif
 } CounterObject;
 
