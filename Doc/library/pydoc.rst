@@ -17,6 +17,11 @@ The :mod:`!pydoc` module automatically generates documentation from Python
 modules.  The documentation can be presented as pages of text on the console,
 served to a web browser, or saved to HTML files.
 
+.. warning::
+
+    The :mod:`!pydoc` HTTP server is intended for local use during
+    development and is not suitable for production use.
+
 For modules, classes, functions and methods, the displayed documentation is
 derived from the docstring (i.e. the :attr:`~definition.__doc__` attribute) of the object,
 and recursively of its documentable members.  If there is no docstring,
