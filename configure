@@ -31747,7 +31747,7 @@ then :
   withval=$with_build_details_suffix;
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-build-details-suffix" >&5
 printf %s "checking for --with-build-details-suffix... " >&6; }
-    if test "x$with_build_detials_suffix" = xno
+    if test "x$with_build_details_suffix" = xno
 then :
   as_fn_error $? "invalid --with-build-details-suffix option: expected custom suffix or \"yes\", not \"no\"" "$LINENO" 5
 
