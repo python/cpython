@@ -1403,6 +1403,9 @@ application).
    Many other operations also produce lists, including the :func:`sorted`
    built-in.
 
+
+   lists are `generic <generics>` over the types of their contents.
+
    Lists implement all of the :ref:`common <typesseq-common>` and
    :ref:`mutable <typesseq-mutable>` sequence operations. Lists also provide the
    following additional method:
@@ -1493,6 +1496,12 @@ homogeneous data is needed (such as allowing storage in a :class:`set` or
 
    Tuples implement all of the :ref:`common <typesseq-common>` sequence
    operations.
+
+   Tuples are `generic <generics>` over the types of their contents.
+   The type arguments to a tuple should match the types and arity of the contents.
+   For example, use ``tuple[int, str]`` for a pair whose first element is an int and second element is a string.
+   Tuples also support the form ``tuple[T, ...]`` to indicate an arbitrary length tuple of elements of type T.
+
 
 For heterogeneous collections of data where access by name is clearer than
 access by index, :func:`collections.namedtuple` may be a more appropriate
@@ -4663,6 +4672,10 @@ copying.
       >>> hash(v[::-2]) == hash(b'abcefg'[::-2])
       True
 
+
+   memoryviews are `generic <generics>` over the type of their contents, as
+   retrieved by indexing.
+
    .. versionchanged:: 3.3
       One-dimensional memoryviews can now be sliced.
       One-dimensional memoryviews with formats 'B', 'b' or 'c' are now :term:`hashable`.
@@ -5279,6 +5292,9 @@ Note, the *elem* argument to the :meth:`~object.__contains__`,
 :meth:`~set.discard` methods may be a set.  To support searching for an equivalent
 frozenset, a temporary one is created from *elem*.
 
+
+Sets and frozensets are `generic <generics>` over the type of their contents.
+
 .. seealso::
 
    For detailed information on thread-safety guarantees for :class:`set`
@@ -5381,6 +5397,9 @@ can be used interchangeably to index the same dictionary entry.
    .. versionchanged:: 3.7
       Dictionary order is guaranteed to be insertion order.  This behavior was
       an implementation detail of CPython from 3.6.
+
+   Dictionaries are :ref:`generic <generics>` over two types, for the types of
+   keys and values, respectively.
 
    These are the operations that dictionaries support (and therefore, custom
    mapping types should support too):
@@ -5718,6 +5737,10 @@ Frozen dictionaries
 
    :class:`!frozendict` is not a :class:`!dict` subclass but inherits directly
    from ``object``.
+
+   Like dictionaries, frozendicts are :ref:`generic <generics>` over two types,
+   for the types of keys and values, respectively.
+
 
    .. versionadded:: 3.15
 
