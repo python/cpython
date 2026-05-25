@@ -1,4 +1,3 @@
-from test import support
 from test.support import os_helper, import_helper
 from test.test_importlib import util
 
