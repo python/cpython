@@ -1,8 +1,5 @@
 """Memory watchdog: periodically read the memory usage of the main test process
 and print it out, until terminated."""
-# stdin should refer to the process' /proc/<PID>/statm: we don't pass the
-# process' PID to avoid a race condition in case of - unlikely - PID recycling.
-# If the process crashes, reading from the /proc entry will fail with ESRCH.
 
 
 import sys
@@ -28,7 +25,7 @@ def watchdog(pid):
 
 def main():
     if len(sys.argv) != 2:
-        print("usage: python {sys.argv[0]) pid")
+        print(f"usage: python {sys.argv[0]} pid")
         sys.exit(1)
     pid = int(sys.argv[1])
 
