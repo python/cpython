@@ -1,1 +1,0 @@
-Fix a reference leak of the offset argument in C API monitoring event calls.
