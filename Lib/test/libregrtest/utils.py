@@ -798,14 +798,16 @@ def _get_process_memory_usage_windows(pid: int) -> int | None:
 
 
 if _get_process_memory_usage is not None:
-    get_process_memory_usage = _get_process_memory_usage
+    def get_process_memory_usage(pid: int) -> int | None:
+        try:
+            return _get_process_memory_usage(pid)
+        except ProcessLookupError:
+            return None
 elif _winapi is not None:
     get_process_memory_usage = _get_process_memory_usage_windows
 elif sys.platform == 'linux':
     get_process_memory_usage = _get_process_memory_usage_linux
 else:
     def get_process_memory_usage(pid: int) -> int | None:
-        """
-        Get process memory usage in bytes.
-        """
         return None
+get_process_memory_usage.__doc__ = "Get process memory usage in bytes."
