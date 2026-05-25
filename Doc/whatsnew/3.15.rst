@@ -1848,6 +1848,14 @@ xml.parsers.expat
   .. _billion laughs: https://en.wikipedia.org/wiki/Billion_laughs_attack
 
 
+zipfile
+-------
+
+* :class:`zipfile.ZipFile` now accepts the keyword-only arguments *zipinfo_class*
+  and *zipextfile_class* to make it easier to subclass and extend.
+  (Contributed by Adi Roiban in :gh:`81719`.)
+
+
 zlib
 ----
 
