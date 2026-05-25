@@ -411,6 +411,9 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
         return -1;
     }
     if (async_debug_result < 0) {
+        if (_Py_RemoteDebug_HasPermissionError()) {
+            return -1;
+        }
         PyErr_Clear();
         memset(&self->async_debug_offsets, 0, sizeof(self->async_debug_offsets));
         self->async_debug_offsets_available = 0;
