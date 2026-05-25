@@ -7850,7 +7850,7 @@ AC_ARG_WITH([build-details-suffix],
   [
     AC_MSG_CHECKING([for --with-build-details-suffix])
     AS_VAR_IF(
-      [with_build_detials_suffix], [no],
+      [with_build_details_suffix], [no],
       [AC_MSG_ERROR([invalid --with-build-details-suffix option: expected custom suffix or "yes", not "no"])]
     )
     AS_VAR_IF(
