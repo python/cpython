@@ -1404,7 +1404,7 @@ application).
    built-in.
 
 
-   lists are `generic <generics>` over the types of their contents.
+   Lists are :ref:`generic <generics>` over the types of their contents.
 
    Lists implement all of the :ref:`common <typesseq-common>` and
    :ref:`mutable <typesseq-mutable>` sequence operations. Lists also provide the
@@ -1497,7 +1497,7 @@ homogeneous data is needed (such as allowing storage in a :class:`set` or
    Tuples implement all of the :ref:`common <typesseq-common>` sequence
    operations.
 
-   Tuples are `generic <generics>` over the types of their contents.
+   Tuples are :ref:`generic <generics>` over the types of their contents.
    The type arguments to a tuple should match the types and arity of the contents.
    For example, use ``tuple[int, str]`` for a pair whose first element is an int and second element is a string.
    Tuples also support the form ``tuple[T, ...]`` to indicate an arbitrary length tuple of elements of type T.
@@ -4673,7 +4673,7 @@ copying.
       True
 
 
-   memoryviews are `generic <generics>` over the type of their contents, as
+   memoryviews are :ref:`generic <generics>` over the type of their contents, as
    retrieved by indexing.
 
    .. versionchanged:: 3.3
@@ -5293,7 +5293,7 @@ Note, the *elem* argument to the :meth:`~object.__contains__`,
 frozenset, a temporary one is created from *elem*.
 
 
-Sets and frozensets are `generic <generics>` over the type of their contents.
+Sets and frozensets are :ref:`generic <generics>` over the type of their contents.
 
 .. seealso::
 
