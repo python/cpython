@@ -1053,6 +1053,9 @@ class SSLSocket(socket):
                     # the non-blocking dance regardless. Our raise when any data
                     # is found means consuming the data is harmless.
                     notconn_pre_handshake_data = self.recv(1)
+                except BlockingIOError:
+                    # On Cygwin, recv(1) fails with BlockingIOError
+                    notconn_pre_handshake_data = b''
                 except OSError as e:
                     # EINVAL occurs for recv(1) on non-connected on unix sockets.
                     if e.errno not in (errno.ENOTCONN, errno.EINVAL):
