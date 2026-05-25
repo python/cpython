@@ -798,12 +798,9 @@ def _get_process_memory_usage_windows(pid: int) -> int | None:
 
 
 if _get_process_memory_usage is not None:
-    _testcapi_get_process_memory_usage = _get_process_memory_usage
-
     def get_process_memory_usage(pid: int) -> int | None:
-        # Worker may exit before we query its memory.
         try:
-            return _testcapi_get_process_memory_usage(pid)
+            return _get_process_memory_usage(pid)
         except ProcessLookupError:
             return None
 elif _winapi is not None:
@@ -812,7 +809,5 @@ elif sys.platform == 'linux':
     get_process_memory_usage = _get_process_memory_usage_linux
 else:
     def get_process_memory_usage(pid: int) -> int | None:
-        """
-        Get process memory usage in bytes.
-        """
         return None
+get_process_memory_usage.__doc__ = "Get process memory usage in bytes."

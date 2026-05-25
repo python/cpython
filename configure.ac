@@ -7840,6 +7840,40 @@ AC_ARG_ENABLE([test-modules],
 AC_MSG_RESULT([$TEST_MODULES])
 AC_SUBST([TEST_MODULES])
 
+# Check for --with-build-details-suffix
+BUILD_DETAILS=build-details.json
+AC_ARG_WITH([build-details-suffix],
+  [AS_HELP_STRING(
+    [--with-build-details-suffix=],
+    [rename build-details.json to permit multiple colocated Python installs; optionally specify a custom suffix (default: no)]
+  )],
+  [
+    AC_MSG_CHECKING([for --with-build-details-suffix])
+    AS_VAR_IF(
+      [with_build_detials_suffix], [no],
+      [AC_MSG_ERROR([invalid --with-build-details-suffix option: expected custom suffix or "yes", not "no"])]
+    )
+    AS_VAR_IF(
+      [with_build_details_suffix], [yes], [
+        colocated_install=yes
+        threading_suffix=""
+        if [[ "$ABI_THREAD" = "t" ]]; then
+          threading_suffix=-free-threading
+        fi
+        debug_suffix=""
+        if [[ "$Py_DEBUG" = "true" ]]; then
+          debug_suffix=-debug
+        fi
+        BUILD_DETAILS=build-details.$MULTIARCH$threading_suffix$debug_suffix.json
+      ], [
+        BUILD_DETAILS=build-details.$with_build_details_suffix.json
+      ]
+    )
+  ]
+)
+AC_MSG_RESULT([$with_build_details_suffix])
+AC_SUBST([BUILD_DETAILS], [$BUILD_DETAILS])
+
 # gh-109054: Check if -latomic is needed to get <pyatomic.h> atomic functions.
 # On Linux aarch64, GCC may require programs and libraries to be linked
 # explicitly to libatomic. Call _Py_atomic_or_uint64() which may require
@@ -8394,10 +8428,15 @@ PY_STDLIB_MOD([_hashlib], [], [test "$ac_cv_working_openssl_hashlib" = yes],
   [$OPENSSL_INCLUDES], [$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS])
 
 dnl test modules
+AS_CASE([$ac_sys_system],
+  # On FreeBSD, _testcapi.get_process_memory_usage() calls kvm_openfiles()
+  # and so needs libkvm.
+  [FreeBSD*], [LIBKVM="-lkvm"]
+)
 PY_STDLIB_MOD([_testcapi],
     [test "$TEST_MODULES" = yes],
     dnl Modules/_testcapi needs -latomic for 32bit AIX build
-    [], [], [$LIBATOMIC])
+    [], [], [$LIBATOMIC $LIBKVM])
 PY_STDLIB_MOD([_testclinic], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testclinic_limited], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testlimitedcapi], [test "$TEST_MODULES" = yes])

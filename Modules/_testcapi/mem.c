@@ -15,6 +15,15 @@
 #  endif
 #endif
 
+#ifdef __FreeBSD__
+#  include <fcntl.h>              // O_RDONLY
+#  include <kvm.h>                // kvm_openfiles()
+#  include <limits.h>             // _POSIX2_LINE_MAX
+#  include <sys/sysctl.h>         // KERN_PROC_PID
+#  include <sys/user.h>           // kinfo_proc definition
+#  include <unistd.h>             // sysconf()
+#endif
+
 
 typedef struct {
     PyMemAllocatorEx alloc;
@@ -723,6 +732,57 @@ get_process_memory_usage(PyObject *self, PyObject *args)
 #endif
 
 
+#ifdef __FreeBSD__
+// Return RSS only. Per-process swap usage isn't readily available
+static PyObject*
+get_process_memory_usage(PyObject *self, PyObject *args)
+{
+    int pid;
+    if (!PyArg_ParseTuple(args, "i", &pid)) {
+        return NULL;
+    }
+
+    long page_size = sysconf(_SC_PAGESIZE);
+    if (page_size <= 0) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+
+    // Using /dev/null for vmcore avoids needing dump file.
+    // NULL for kernel file uses running kernel.
+    char errbuf[_POSIX2_LINE_MAX];
+    kvm_t *kd = kvm_openfiles(NULL, "/dev/null", NULL, O_RDONLY, errbuf);
+    if (kd == NULL) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+
+    // KERN_PROC_PID filters for the specific process ID.
+    int n_procs;
+    struct kinfo_proc *kp = kvm_getprocs(kd, KERN_PROC_PID, pid, &n_procs);
+    if (kp == NULL) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        goto error;
+    }
+    if (n_procs <= 0) {
+        // Process with PID not found
+        errno = ESRCH;
+        PyErr_SetFromErrno(PyExc_OSError);
+        goto error;
+    }
+    assert(n_procs == 1);
+
+    // ki_rssize is in pages. Convert to bytes.
+    size_t rss = (size_t)kp[0].ki_rssize * page_size;
+    kvm_close(kd);
+
+    return PyLong_FromSize_t(rss);
+
+error:
+    kvm_close(kd);
+    return NULL;
+}
+#endif
+
+
 static PyMethodDef test_methods[] = {
     {"pymem_api_misuse",              pymem_api_misuse,              METH_NOARGS},
     {"pymem_buffer_overflow",         pymem_buffer_overflow,         METH_NOARGS},
@@ -737,7 +797,7 @@ static PyMethodDef test_methods[] = {
     {"test_pymem_setrawallocators",   test_pymem_setrawallocators,   METH_NOARGS},
     {"test_pyobject_new",             test_pyobject_new,             METH_NOARGS},
     {"test_pyobject_setallocators",   test_pyobject_setallocators,   METH_NOARGS},
-#if TARGET_OS_OSX
+#if TARGET_OS_OSX || defined(__FreeBSD__)
     {"get_process_memory_usage",      get_process_memory_usage,      METH_VARARGS},
 #endif
 

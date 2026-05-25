@@ -215,6 +215,8 @@ MACOSX_DEPLOYMENT_TARGET=@CONFIGURE_MACOSX_DEPLOYMENT_TARGET@
 # the build, and is only listed here so it will be included in sysconfigdata.
 IPHONEOS_DEPLOYMENT_TARGET=@IPHONEOS_DEPLOYMENT_TARGET@
 
+BUILD_DETAILS=@BUILD_DETAILS@
+
 # Option to install to strip binaries
 STRIPFLAG=-s
 
@@ -774,11 +776,11 @@ list-targets:
 
 .PHONY: build_all
 build_all:	check-clean-src check-app-store-compliance $(BUILDPYTHON) platform sharedmods \
-		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil build-details.json
+		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil $(BUILD_DETAILS)
 
 .PHONY: build_wasm
 build_wasm: check-clean-src $(BUILDPYTHON) platform sharedmods \
-		python-config checksharedmods build-details.json
+		python-config checksharedmods $(BUILD_DETAILS)
 
 .PHONY: build_emscripten
 build_emscripten: build_wasm web_example web_example_pyrepl_jspi
@@ -979,8 +981,8 @@ pybuilddir.txt: $(PYTHON_FOR_BUILD_DEPS)
 		exit 1 ; \
 	fi
 
-build-details.json: pybuilddir.txt
-	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/generate-build-details.py `cat pybuilddir.txt`/build-details.json
+$(BUILD_DETAILS): pybuilddir.txt
+	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/generate-build-details.py `cat pybuilddir.txt`/$(BUILD_DETAILS)
 
 # Build static library
 $(LIBRARY): $(LIBRARY_OBJS)
@@ -2349,7 +2351,7 @@ multissltest: all
 # Only the main install gets a build-details.json.
 .PHONY: install
 install: @FRAMEWORKINSTALLFIRST@ @INSTALLTARGETS@ @FRAMEWORKINSTALLLAST@
-	$(INSTALL_DATA) `cat pybuilddir.txt`/build-details.json $(DESTDIR)$(LIBDEST); \
+	$(INSTALL_DATA) `cat pybuilddir.txt`/$(BUILD_DETAILS) $(DESTDIR)$(LIBDEST); \
 	if test "x$(ENSUREPIP)" != "xno"  ; then \
 		case $(ENSUREPIP) in \
 			upgrade) ensurepip="--upgrade" ;; \
