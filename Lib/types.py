@@ -189,18 +189,19 @@ def get_original_bases(cls, /):
 class DynamicClassAttribute:
     """Route attribute access on a class to __getattr__.
 
-    This is a descriptor, used to define attributes that act differently when
-    accessed through an instance and through a class.  Instance access remains
-    normal, but access to an attribute through a class will be routed to the
-    class's __getattr__ method; this is done by raising AttributeError.
+    This is a descriptor, used to define attributes that act differently
+    when accessed through an instance and through a class.  Instance access
+    remains normal, but access to an attribute through a class will be
+    routed to the class's __getattr__ method; this is done by raising
+    AttributeError.
 
-    This allows one to have properties active on an instance, and have virtual
-    attributes on the class with the same name.  (Enum used this between Python
-    versions 3.4 - 3.9 .)
+    This allows one to have properties active on an instance, and have
+    virtual attributes on the class with the same name.  (Enum used this
+    between Python versions 3.4 - 3.9 .)
 
-    Subclass from this to use a different method of accessing virtual attributes
-    and still be treated properly by the inspect module. (Enum uses this since
-    Python 3.10 .)
+    Subclass from this to use a different method of accessing virtual
+    attributes and still be treated properly by the inspect module.  (Enum
+    uses this since Python 3.10 .)
 
     """
     def __init__(self, fget=None, fset=None, fdel=None, doc=None):
