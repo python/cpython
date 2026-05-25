@@ -1406,6 +1406,7 @@ setup_readline(readlinestate *mod_state)
         /* All nonalphanums except '.' */
 
     if (!completer_word_break_characters) {
+        RESTORE_LOCALE(saved_locale)
         return -1;
     }
 #ifdef WITH_EDITLINE
