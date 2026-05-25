@@ -714,7 +714,7 @@ class ElementTree:
           *default_namespace* -- sets the default XML namespace (for
                                  "xmlns")
 
-          *method* -- either "xml" (default), "html or "text"
+          *method* -- either "xml" (default), "html" or "text"
 
           *short_empty_elements* -- controls the formatting of elements
                                     that contain no content.  If True
