@@ -2,6 +2,19 @@
 
 #include <stddef.h>
 
+#if defined(__APPLE__)
+#  include <TargetConditionals.h>
+   // Older macOS SDKs do not define TARGET_OS_OSX
+#  if !defined(TARGET_OS_OSX)
+#    define TARGET_OS_OSX 1
+#  endif
+#  if TARGET_OS_OSX
+#    include <errno.h>              // errno, ESRCH
+#    include <libproc.h>            // proc_pidinfo(), PROC_PIDTASKINFO
+#    include <sys/proc_info.h>      // struct proc_taskinfo
+#  endif
+#endif
+
 #ifdef __FreeBSD__
 #  include <fcntl.h>              // O_RDONLY
 #  include <kvm.h>                // kvm_openfiles()
@@ -693,7 +706,7 @@ error:
 }
 
 
-#ifdef __FreeBSD__
+#if TARGET_OS_OSX || defined(__FreeBSD__)
 // Return RSS only. Per-process swap usage isn't readily available
 static PyObject*
 get_process_memory_usage(PyObject *self, PyObject *args)
@@ -703,6 +716,22 @@ get_process_memory_usage(PyObject *self, PyObject *args)
         return NULL;
     }
 
+#if TARGET_OS_OSX
+    // macOS: proc_pidinfo(PROC_PIDTASKINFO).pti_resident_size
+    struct proc_taskinfo pti;
+    int ret = proc_pidinfo(pid, PROC_PIDTASKINFO, 0, &pti, sizeof(pti));
+    if (ret <= 0) {
+        if (errno == 0) {
+            // proc_pidinfo() can return 0 without setting errno when the
+            // process does not exist.
+            errno = ESRCH;
+        }
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+
+    return PyLong_FromUnsignedLongLong(pti.pti_resident_size);
+#else
+    // FreeBSD: kvm_getprocs(KERN_PROC_PID) and ki_rssize * page_size
     long page_size = sysconf(_SC_PAGESIZE);
     if (page_size <= 0) {
         return PyErr_SetFromErrno(PyExc_OSError);
@@ -740,6 +769,7 @@ get_process_memory_usage(PyObject *self, PyObject *args)
 error:
     kvm_close(kd);
     return NULL;
+#endif
 }
 #endif
 
@@ -758,7 +788,7 @@ static PyMethodDef test_methods[] = {
     {"test_pymem_setrawallocators",   test_pymem_setrawallocators,   METH_NOARGS},
     {"test_pyobject_new",             test_pyobject_new,             METH_NOARGS},
     {"test_pyobject_setallocators",   test_pyobject_setallocators,   METH_NOARGS},
-#ifdef __FreeBSD__
+#if TARGET_OS_OSX || defined(__FreeBSD__)
     {"get_process_memory_usage",      get_process_memory_usage,      METH_VARARGS},
 #endif
 
