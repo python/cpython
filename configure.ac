@@ -3694,8 +3694,8 @@ then
 			dnl not implemented yet
 		]);;
 	CYGWIN*)
-		LDSHARED="$(CC) -shared -Wl,--enable-auto-image-base"
-		LDCXXSHARED="$(CXX) -shared -Wl,--enable-auto-image-base";;
+		LDSHARED='$(CC) -shared -Wl,--enable-auto-image-base'
+		LDCXXSHARED='$(CXX) -shared -Wl,--enable-auto-image-base';;
 	*)	LDSHARED="ld";;
 	esac
 fi
