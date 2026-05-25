@@ -7,7 +7,6 @@ and print it out, until terminated."""
 
 import sys
 import time
-from test.support import get_pagesize
 from test.libregrtest.utils import get_process_memory_usage
 
 
