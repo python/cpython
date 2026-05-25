@@ -5150,9 +5150,9 @@ class TestStdLib(unittest.TestCase):
                 Attribute(name='__qualname__', kind='data',
                     defining_class=self.Color, object='TestStdLib.Color'),
                 Attribute(name='_missing_', kind='class method',
-                    defining_class=Enum, object=self.Color._missing_),
+                    defining_class=Enum, object=Enum.__dict__['_missing_']),
                 Attribute(name='_generate_next_value_', kind='static method',
-                    defining_class=self.Color, object=staticmethod(self.Color._generate_next_value_)),
+                    defining_class=self.Color, object=self.Color.__dict__['_generate_next_value_']),
                 Attribute(name='YELLOW', kind='data',
                     defining_class=self.Color, object=self.Color.YELLOW),
                 Attribute(name='MAGENTA', kind='data',
@@ -5186,9 +5186,11 @@ class TestStdLib(unittest.TestCase):
                     if getattr(v, name) != getattr(r, name):
                         print('\n%s\nexpected: %s\nactual:   %s\n%s\n' % ('=' * 75, r, v, '=' * 75), sep='')
                         failed = True
+                        # breakpoint()
             elif r != v:
                 print('\n%s\nexpected: %s\nactual:   %s\n%s\n' % ('=' * 75, r, v, '=' * 75), sep='')
                 failed = True
+                # breakpoint()
         if failed:
             self.fail("result does not equal expected, see print above")
 
