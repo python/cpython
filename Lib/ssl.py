@@ -1058,6 +1058,7 @@ class SSLSocket(socket):
                     # EAGAIN occurs on Cygwin.
                     if e.errno not in (errno.ENOTCONN, errno.EINVAL,
                                        errno.EAGAIN):
+                        raise
                     notconn_pre_handshake_data = b''
                 self.setblocking(blocking)
                 if notconn_pre_handshake_data:
