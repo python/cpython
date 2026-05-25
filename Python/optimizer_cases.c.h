@@ -3073,13 +3073,11 @@
                 /* Start of uop copied from bytecodes for constant evaluation */
                 PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
                 PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
-                assert(_PyLong_IsCompact((PyLongObject *)left_o));
-                assert(_PyLong_IsCompact((PyLongObject *)right_o));
                 STAT_INC(COMPARE_OP, hit);
-                assert(_PyLong_DigitCount((PyLongObject *)left_o) <= 1 &&
-                   _PyLong_DigitCount((PyLongObject *)right_o) <= 1);
-                Py_ssize_t ileft = _PyLong_CompactValue((PyLongObject *)left_o);
-                Py_ssize_t iright = _PyLong_CompactValue((PyLongObject *)right_o);
+                int64_t ileft;
+                int64_t iright;
+                assert(_PyLong_TryAsInt64Exact((PyLongObject *)left_o, &ileft));
+                assert(_PyLong_TryAsInt64Exact((PyLongObject *)right_o, &iright));
                 int sign_ish = COMPARISON_BIT(ileft, iright);
                 l_stackref = left;
                 r_stackref = right;
