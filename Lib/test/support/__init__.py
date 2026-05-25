@@ -1241,29 +1241,20 @@ class _MemoryWatchdog:
     """
 
     def __init__(self):
-        self.procfile = '/proc/{pid}/statm'.format(pid=os.getpid())
         self.started = False
 
     def start(self):
-        try:
-            f = open(self.procfile, 'r')
-        except OSError as e:
-            logging.getLogger(__name__).warning('/proc not available for stats: %s', e, exc_info=e)
-            sys.stderr.flush()
-            return
-
         import subprocess
-        with f:
-            watchdog_script = findfile("memory_watchdog.py")
-            self.mem_watchdog = subprocess.Popen([sys.executable, watchdog_script],
-                                                 stdin=f,
-                                                 stderr=subprocess.DEVNULL)
+        watchdog_script = findfile("memory_watchdog.py")
+        cmd = [sys.executable, watchdog_script, str(os.getpid())]
+        self.mem_watchdog = subprocess.Popen(cmd)
         self.started = True
 
     def stop(self):
-        if self.started:
-            self.mem_watchdog.terminate()
-            self.mem_watchdog.wait()
+        if not self.started:
+            return
+        self.mem_watchdog.terminate()
+        self.mem_watchdog.wait()
 
 
 def bigmemtest(size, memuse, dry_run=True):
@@ -1296,8 +1287,8 @@ def bigmemtest(size, memuse, dry_run=True):
 
             if real_max_memuse and verbose:
                 print()
-                print(" ... expected peak memory use: {peak:.1f}G"
-                      .format(peak=size * memuse / (1024 ** 3)))
+                peak = (size * memuse) / (1024 ** 3)
+                print(f" ... expected peak memory use: {peak:.1f} GiB")
                 watchdog = _MemoryWatchdog()
                 watchdog.start()
             else:
