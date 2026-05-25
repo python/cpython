@@ -3934,7 +3934,6 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
         return NULL;
     }
     else if (PySet_Add(importing, lazy_import) < 0) {
-        _PyImport_ReleaseLock(interp);
         goto error;
     }
 
