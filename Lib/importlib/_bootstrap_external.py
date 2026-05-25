@@ -156,7 +156,9 @@ def _path_is_mode_type(path, mode):
     """Test whether the path is the specified mode type."""
     try:
         stat_info = _path_stat(path)
-    except OSError:
+    except OSError as exc:
+        if isinstance(exc, PermissionError):
+            raise
         return False
     return (stat_info.st_mode & 0o170000) == mode
 

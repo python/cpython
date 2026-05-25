@@ -1,4 +1,5 @@
-from test.support import os_helper
+from test import support
+from test.support import os_helper, import_helper
 from test.test_importlib import util
 
 importlib = util.import_importlib('importlib')
@@ -179,6 +180,21 @@ class FinderTests:
 
             # Do not want PermissionError raised.
             self.assertIsNone(self.machinery.PathFinder.find_spec('whatever'))
+
+    @os_helper.skip_unless_working_chmod
+    @unittest.skipIf(os.getuid() == 0, "root skips permission error checks")
+    def test_permission_error_raised_on_import_inaccessible_package(self):
+        # Issue #84352
+        with (os_helper.temp_dir() as new_dir,
+            os_helper.save_mode(new_dir)):
+            pkg_dir = os.path.join(new_dir, 'pkg')
+            os.mkdir(pkg_dir)
+            with open(os.path.join(pkg_dir, '__init__.py'), 'w') as f:
+                f.write("x = 1")
+            with import_helper.DirsOnSysPath(new_dir):
+                with os_helper.save_mode(pkg_dir):
+                    os.chmod(pkg_dir, 0o000)
+                    self.assertRaises(PermissionError, self.importlib.import_module, 'pkg')
 
     def test_invalidate_caches_finders(self):
         # Finders with an invalidate_caches() method have it called.
