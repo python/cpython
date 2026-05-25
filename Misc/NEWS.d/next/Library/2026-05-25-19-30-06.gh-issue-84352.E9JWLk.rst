@@ -1,0 +1,3 @@
+Fixed an issue where :mod:`importlib` would raise :exc:`AttributeError`
+instead of :exc:`PermissionError` when accessing a package directory with
+insufficient permissions.
