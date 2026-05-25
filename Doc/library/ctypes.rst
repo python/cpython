@@ -16,8 +16,10 @@ used to wrap these libraries in pure Python.
 
 .. warning::
 
-   :mod:`!ctypes` can call arbitrary functions in native libraries.
-   Incorrect use can crash Python or otherwise compromise the running process.
+   :mod:`!ctypes` provides low-level access to native libraries and the
+   process's memory. Incorrect use can bypass Python's memory safety, corrupt
+   memory, crash Python, execute arbitrary native code,
+   or otherwise compromise the running process.
    The :mod:`faulthandler` module can help debug crashes,
    such as segmentation faults produced by erroneous C library calls.
 
