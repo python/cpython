@@ -2,6 +2,12 @@
 
 #include <stddef.h>
 
+#ifdef __APPLE__
+#  include <errno.h>              // errno, ESRCH
+#  include <libproc.h>            // proc_pidinfo(), PROC_PIDTASKINFO
+#  include <sys/proc_info.h>      // struct proc_taskinfo
+#endif
+
 
 typedef struct {
     PyMemAllocatorEx alloc;
@@ -684,6 +690,32 @@ error:
 }
 
 
+#ifdef __APPLE__
+// Return RSS via proc_pidinfo(PROC_PIDTASKINFO).pti_resident_size.
+static PyObject*
+get_process_memory_usage(PyObject *self, PyObject *args)
+{
+    int pid;
+    if (!PyArg_ParseTuple(args, "i", &pid)) {
+        return NULL;
+    }
+
+    struct proc_taskinfo pti;
+    int ret = proc_pidinfo(pid, PROC_PIDTASKINFO, 0, &pti, sizeof(pti));
+    if (ret <= 0) {
+        if (errno == 0) {
+            // proc_pidinfo() can return 0 without setting errno when the
+            // process does not exist.
+            errno = ESRCH;
+        }
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+
+    return PyLong_FromUnsignedLongLong(pti.pti_resident_size);
+}
+#endif
+
+
 static PyMethodDef test_methods[] = {
     {"pymem_api_misuse",              pymem_api_misuse,              METH_NOARGS},
     {"pymem_buffer_overflow",         pymem_buffer_overflow,         METH_NOARGS},
@@ -698,6 +730,9 @@ static PyMethodDef test_methods[] = {
     {"test_pymem_setrawallocators",   test_pymem_setrawallocators,   METH_NOARGS},
     {"test_pyobject_new",             test_pyobject_new,             METH_NOARGS},
     {"test_pyobject_setallocators",   test_pyobject_setallocators,   METH_NOARGS},
+#ifdef __APPLE__
+    {"get_process_memory_usage",      get_process_memory_usage,      METH_VARARGS},
+#endif
 
     // Tracemalloc tests
     {"tracemalloc_track",             tracemalloc_track,             METH_VARARGS},
