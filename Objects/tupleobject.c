@@ -956,8 +956,7 @@ tuple___getnewargs___impl(PyTupleObject *self)
 
 
 PyDoc_STRVAR(tuple_class_getitem_doc,
-"Tuples are generic over the types of their contents.\n\
-The type arguments to a tuple should match the types and arity of the contents.\n\n\
+"Tuples are generic over the types of their contents.\n\n\
 For example, use ``tuple[int, str]`` for a pair whose first element is an int and second element is a string.\n\n\
 Tuples also support the form ``tuple[T, ...]`` to indicate an arbitrary length tuple of elements of type T.");
 

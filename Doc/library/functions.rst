@@ -584,8 +584,6 @@ are always available.  They are listed here in alphabetical order.
               yield n, elem
               n += 1
 
-   Enumerations are :ref:`generic <generics>` over the type of their values.
-
 .. _func-eval:
 
 .. function:: eval(source, /, globals=None, locals=None)
