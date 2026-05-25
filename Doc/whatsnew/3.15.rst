@@ -1989,8 +1989,8 @@ is now performed. This means when the JIT compiler detects that certain user
 code results in constants, the code can be simplified by the JIT.
 (Contributed by Ken Jin and Savannah Ostrowski in :gh:`132732`.)
 
-:term:`Reference count`\ s are avoided whenever it is safe to do so. This generally
-reduces the cost of most operations in Python.
+:term:`Reference counts <reference count>` are avoided whenever it is safe to
+do so. This generally reduces the cost of most operations in Python.
 (Contributed by Ken Jin, Donghee Na, Zheao Li, Hai Zhu, Savannah Ostrowski,
 Reiden Ong, Noam Cohen, Tomas Roun, PuQing, Cajetan Rodrigues, and Sacul in :gh:`134584`.)
 
