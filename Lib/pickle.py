@@ -1935,6 +1935,7 @@ except ImportError:
 def _main(args=None):
     import argparse
     import pprint
+    import warnings
     parser = argparse.ArgumentParser(
         description='display contents of the pickle files',
     )
@@ -1942,6 +1943,11 @@ def _main(args=None):
         'pickle_file',
         nargs='+', help='the pickle file')
     args = parser.parse_args(args)
+    warnings.warn(
+        "Unpickling arbitrary data is a security risk. "
+        "Only unpickle data you trust.",
+        stacklevel=1,
+    )
     for fn in args.pickle_file:
         if fn == '-':
             obj = load(sys.stdin.buffer)
