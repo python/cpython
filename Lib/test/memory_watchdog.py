@@ -19,6 +19,8 @@ def watchdog(pid):
             # fail the same way.
             return
 
+        # Prefer sys.stdout.write() to print() to use a single write() syscall.
+        # print(msg) calls write(msg.encode()) and then write(b"\n").
         sys.stdout.write(f" ... process data size: {mem / ONE_GIB:.1f} GiB\n")
         sys.stdout.flush()
         time.sleep(1)
