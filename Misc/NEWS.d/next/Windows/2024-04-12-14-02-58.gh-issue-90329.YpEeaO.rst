@@ -1,5 +1,0 @@
-Suppress the warning displayed on virtual environment creation when the
-requested and created paths differ only by a short (8.3 style) name.
-Warnings will continue to be shown if a junction or symlink in the path
-caused the venv to be created in a different location than originally
-requested.

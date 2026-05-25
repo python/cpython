@@ -1,1 +1,0 @@
-:func:`os.path.ismount` is now 2-3 times faster if the user has permissions.

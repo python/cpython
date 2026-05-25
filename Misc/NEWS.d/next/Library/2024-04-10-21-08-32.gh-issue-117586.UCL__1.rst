@@ -1,1 +1,0 @@
-Speed up :meth:`pathlib.Path.walk` by working with strings internally.

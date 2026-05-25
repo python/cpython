@@ -1,7 +1,7 @@
 #include "pyconfig.h"   // Py_GIL_DISABLED
 #ifndef Py_GIL_DISABLED
-   // Need limited C API 3.13 to test PyLong_AsInt()
-#  define Py_LIMITED_API 0x030d0000
+   // Need limited C API 3.14 to test PyLong_AsInt64()
+#  define Py_LIMITED_API 0x030e0000
 #endif
 
 #include "parts.h"
@@ -451,13 +451,13 @@ _testlimitedcapi.test_long_as_size_t
 
 Test the PyLong_As{Size,Ssize}_t API.
 
-At present this just tests that non-integer arguments are handled correctly.
-It should be extended to test overflow handling.
+At present this just tests that non-integer arguments are handled
+correctly.  It should be extended to test overflow handling.
 [clinic start generated code]*/
 
 static PyObject *
 _testlimitedcapi_test_long_as_size_t_impl(PyObject *module)
-/*[clinic end generated code: output=297a9f14a42f55af input=8923d8f2038c46f4]*/
+/*[clinic end generated code: output=297a9f14a42f55af input=692e73744b35bf6e]*/
 {
     size_t out_u;
     Py_ssize_t out_s;
@@ -625,7 +625,7 @@ pylong_aslongandoverflow(PyObject *module, PyObject *arg)
     int overflow = UNINITIALIZED_INT;
     long value = PyLong_AsLongAndOverflow(arg, &overflow);
     if (value == -1 && PyErr_Occurred()) {
-        assert(overflow == -1);
+        assert(overflow == 0);
         return NULL;
     }
     return Py_BuildValue("li", value, overflow);
@@ -671,7 +671,7 @@ pylong_aslonglongandoverflow(PyObject *module, PyObject *arg)
     int overflow = UNINITIALIZED_INT;
     long long value = PyLong_AsLongLongAndOverflow(arg, &overflow);
     if (value == -1 && PyErr_Occurred()) {
-        assert(overflow == -1);
+        assert(overflow == 0);
         return NULL;
     }
     return Py_BuildValue("Li", value, overflow);
@@ -758,6 +758,52 @@ pylong_aspid(PyObject *module, PyObject *arg)
 }
 
 
+static PyObject *
+pylong_asint32(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    int32_t value;
+    if (PyLong_AsInt32(arg, &value) < 0) {
+        return NULL;
+    }
+    return PyLong_FromInt32(value);
+}
+
+static PyObject *
+pylong_asuint32(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    uint32_t value;
+    if (PyLong_AsUInt32(arg, &value) < 0) {
+        return NULL;
+    }
+    return PyLong_FromUInt32(value);
+}
+
+
+static PyObject *
+pylong_asint64(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    int64_t value;
+    if (PyLong_AsInt64(arg, &value) < 0) {
+        return NULL;
+    }
+    return PyLong_FromInt64(value);
+}
+
+static PyObject *
+pylong_asuint64(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    uint64_t value;
+    if (PyLong_AsUInt64(arg, &value) < 0) {
+        return NULL;
+    }
+    return PyLong_FromUInt64(value);
+}
+
+
 static PyMethodDef test_methods[] = {
     _TESTLIMITEDCAPI_TEST_LONG_AND_OVERFLOW_METHODDEF
     _TESTLIMITEDCAPI_TEST_LONG_API_METHODDEF
@@ -785,6 +831,10 @@ static PyMethodDef test_methods[] = {
     {"pylong_asdouble",             pylong_asdouble,            METH_O},
     {"pylong_asvoidptr",            pylong_asvoidptr,           METH_O},
     {"pylong_aspid",                pylong_aspid,               METH_O},
+    {"pylong_asint32",              pylong_asint32,             METH_O},
+    {"pylong_asuint32",             pylong_asuint32,            METH_O},
+    {"pylong_asint64",              pylong_asint64,             METH_O},
+    {"pylong_asuint64",             pylong_asuint64,            METH_O},
     {NULL},
 };
 

@@ -1,1 +1,0 @@
-Add :data:`typing.TypeIs`, implementing :pep:`742`. Patch by Jelle Zijlstra.

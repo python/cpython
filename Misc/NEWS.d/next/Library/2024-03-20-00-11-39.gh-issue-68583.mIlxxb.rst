@@ -1,2 +1,0 @@
-webbrowser CLI: replace getopt with argparse, add long options. Patch by
-Hugo van Kemenade.

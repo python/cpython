@@ -42,10 +42,7 @@ class LoaderTest(unittest.TestCase):
                 self.skipTest('could not find library to load')
         CDLL(test_lib)
         CDLL(os.path.basename(test_lib))
-        class CTypesTestPathLikeCls:
-            def __fspath__(self):
-                return test_lib
-        CDLL(CTypesTestPathLikeCls())
+        CDLL(os_helper.FakePath(test_lib))
         self.assertRaises(OSError, CDLL, self.unknowndll)
 
     def test_load_version(self):
@@ -104,6 +101,20 @@ class LoaderTest(unittest.TestCase):
         self.assertRaises(AttributeError, dll.__getitem__, 1234)
 
     @unittest.skipUnless(os.name == "nt", 'Windows-specific test')
+    def test_load_without_name_and_with_handle(self):
+        handle = ctypes.windll.kernel32._handle
+        lib = ctypes.WinDLL(name=None, handle=handle)
+        self.assertIs(handle, lib._handle)
+
+    @unittest.skipIf(os.name == "nt", 'POSIX-specific test')
+    @unittest.skipIf(libc_name is None, 'could not find libc')
+    def test_load_without_name_and_with_handle_posix(self):
+        lib1 = CDLL(libc_name)
+        handle = lib1._handle
+        lib2 = CDLL(name=None, handle=handle)
+        self.assertIs(lib2._handle, handle)
+
+    @unittest.skipUnless(os.name == "nt", 'Windows-specific test')
     def test_1703286_A(self):
         # On winXP 64-bit, advapi32 loads at an address that does
         # NOT fit into a 32-bit integer.  FreeLibrary must be able
@@ -138,7 +149,7 @@ class LoaderTest(unittest.TestCase):
                          'test specific to Windows')
     def test_load_hasattr(self):
         # bpo-34816: shouldn't raise OSError
-        self.assertFalse(hasattr(ctypes.windll, 'test'))
+        self.assertNotHasAttr(ctypes.windll, 'test')
 
     @unittest.skipUnless(os.name == "nt",
                          'test specific to Windows')
