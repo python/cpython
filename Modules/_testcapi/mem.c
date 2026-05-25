@@ -715,6 +715,7 @@ get_process_memory_usage(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "i", &pid)) {
         return NULL;
     }
+
 #if TARGET_OS_OSX
     // macOS: proc_pidinfo(PROC_PIDTASKINFO).pti_resident_size
     struct proc_taskinfo pti;
