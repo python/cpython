@@ -1,4 +1,1 @@
-Fix crash in :mod:`socket` module initialization when :func:`PyThread_allocate_lock`
-fails to allocate ``netdb_lock``: the ``NULL`` return value is now checked and a
-:exc:`MemoryError` is raised instead of dereferencing a null pointer. Patch by
-Thomas Kowalski.
+Fix a possible crash in the :mod:`socket` module initialization.
