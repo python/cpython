@@ -3132,8 +3132,8 @@ Python/asm_trampoline_universal2.o: $(srcdir)/Python/asm_trampoline_aarch64.S $(
 	lipo -create -output $@ \
 		Python/asm_trampoline_arm64-apple-darwin.o \
 		Python/asm_trampoline_x86_64-apple-darwin.o
-		rm -f Python/asm_trampoline_arm64-apple-darwin.o \
-                  Python/asm_trampoline_x86_64-apple-darwin.o
+	rm -f Python/asm_trampoline_arm64-apple-darwin.o \
+	  Python/asm_trampoline_x86_64-apple-darwin.o
 
 Python/emscripten_trampoline_inner.wasm: $(srcdir)/Python/emscripten_trampoline_inner.c
 	# emcc has a path that ends with emsdk/upstream/emscripten/emcc, we're looking for emsdk/upstream/bin/clang.
