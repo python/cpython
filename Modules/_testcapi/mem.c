@@ -2,10 +2,17 @@
 
 #include <stddef.h>
 
-#ifdef __APPLE__
-#  include <errno.h>              // errno, ESRCH
-#  include <libproc.h>            // proc_pidinfo(), PROC_PIDTASKINFO
-#  include <sys/proc_info.h>      // struct proc_taskinfo
+#if defined(__APPLE__)
+#  include <TargetConditionals.h>
+   // Older macOS SDKs do not define TARGET_OS_OSX
+#  if !defined(TARGET_OS_OSX)
+#    define TARGET_OS_OSX 1
+#  endif
+#  if TARGET_OS_OSX
+#    include <errno.h>              // errno, ESRCH
+#    include <libproc.h>            // proc_pidinfo(), PROC_PIDTASKINFO
+#    include <sys/proc_info.h>      // struct proc_taskinfo
+#  endif
 #endif
 
 
@@ -690,7 +697,7 @@ error:
 }
 
 
-#ifdef __APPLE__
+#if TARGET_OS_OSX
 // Return RSS via proc_pidinfo(PROC_PIDTASKINFO).pti_resident_size.
 static PyObject*
 get_process_memory_usage(PyObject *self, PyObject *args)
@@ -730,7 +737,7 @@ static PyMethodDef test_methods[] = {
     {"test_pymem_setrawallocators",   test_pymem_setrawallocators,   METH_NOARGS},
     {"test_pyobject_new",             test_pyobject_new,             METH_NOARGS},
     {"test_pyobject_setallocators",   test_pyobject_setallocators,   METH_NOARGS},
-#ifdef __APPLE__
+#if TARGET_OS_OSX
     {"get_process_memory_usage",      get_process_memory_usage,      METH_VARARGS},
 #endif
 
