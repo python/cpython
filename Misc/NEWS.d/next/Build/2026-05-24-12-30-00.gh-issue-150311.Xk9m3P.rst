@@ -1,4 +1,0 @@
-Fix three minor issues in ``configure.ac`` for the Cygwin port: use
-consistent uppercase ``CYGWIN`` for ``ac_sys_system``, correct the static
-library extension from ``.dll.a`` to ``.a`` when shared is disabled, and use
-``$(CC)``/``$(CXX)`` instead of hardcoded ``gcc``/``g++``.
