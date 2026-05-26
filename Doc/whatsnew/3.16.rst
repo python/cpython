@@ -86,6 +86,14 @@ New modules
 Improved modules
 ================
 
+
+gzip
+----
+
+* :func:`gzip.open` now accepts an optional argument ``mtime``
+  which is passed on to the constructor of the :class:`~gzip.GzipFile` class.
+  (Contributed by Marin Misur in :gh:`91372`.)
+
 os
 --
 
@@ -218,6 +226,12 @@ Build changes
   (Contributed by Sergey B Kirpichev in :gh:`115119`.)
 
   .. _libmpdec: https://www.bytereef.org/mpdecimal/
+
+* Add a :option:`--with-build-details-suffix` configure flag to allow
+  Linux distributions that co-install multiple versions of Python in the
+  same tree to avoid ``build-details.json`` clashes.
+
+  (Contributed by Stefano Rivera in :gh:`131372`.)
 
 
 C API changes
