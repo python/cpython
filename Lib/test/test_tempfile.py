@@ -2054,5 +2054,30 @@ class TestTemporaryDirectory(BaseTestCase):
         self.assertTrue(os.path.exists(working_dir))
         shutil.rmtree(working_dir)
 
+
+class TestPrefixAndSuffix(BaseTestCase):
+    def test_value_error_if_prefix_or_suffix_contains_directory(self):
+        MESSAGE = "'prefix' or 'suffix' can't contain a directory component"
+
+        if os.altsep is None:
+            data = (
+                ((os.sep), None),
+                (os.fsencode(os.sep), tempfile.gettempdirb()),
+                )
+        else:
+            data = (
+                ((os.altsep), None),
+                (os.fsencode(os.altsep), tempfile.gettempdirb()),
+                )
+
+        for value, directory in data:
+            with self.subTest((value, directory)):
+                with self.assertRaisesRegex(ValueError, MESSAGE):
+                    tempfile.mkstemp(dir=directory, prefix=value)
+                with self.assertRaisesRegex(ValueError, MESSAGE):
+                    os.rmdir(tempfile.mkdtemp(dir=directory, prefix=value))
+                with self.assertRaisesRegex(ValueError, MESSAGE):
+                    tempfile.NamedTemporaryFile(dir=directory, prefix=value, delete=True)
+
 if __name__ == "__main__":
     unittest.main()
