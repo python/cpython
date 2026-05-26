@@ -2162,6 +2162,7 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
 
     struct _Py_ext_module_loader_result res;
     int rc = _PyImport_RunModInitFunc(p0, info, &res);
+    bool main_error = false;
     if (rc < 0) {
         /* We discard res.def. */
         assert(res.module == NULL);
@@ -2186,7 +2187,8 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
                     // obmalloc, so we create a copy here.
                     filename = _PyUnicode_Copy(info->filename);
                     if (filename == NULL) {
-                        return NULL;
+                        main_error = true;
+                        goto main_finally;
                     }
                 }
                 else {
@@ -2232,6 +2234,7 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
                     main_tstate, info->path, info->name, def, &singlephase);
             if (cached == NULL) {
                 assert(PyErr_Occurred());
+                main_error = true;
                 goto main_finally;
             }
         }
@@ -2247,7 +2250,7 @@ main_finally:
         // gh-144601: The exception object can't be transferred across
         // interpreters. Instead, we print out an unraisable exception, and
         // then raise a different exception for the calling interpreter.
-        if (rc < 0) {
+        if (rc < 0 || main_error) {
             assert(PyErr_Occurred());
             PyErr_FormatUnraisable("Exception while importing from subinterpreter");
         }
@@ -2256,7 +2259,7 @@ main_finally:
         /* Any module we got from the init function will have to be
          * reloaded in the subinterpreter. */
         mod = NULL;
-        if (rc < 0) {
+        if (rc < 0 || main_error) {
             PyErr_SetString(PyExc_ImportError,
                             "failed to import from subinterpreter due to exception");
             goto error;
@@ -2269,6 +2272,9 @@ main_finally:
 
     /* Finally we handle the error return from _PyImport_RunModInitFunc(). */
     if (rc < 0) {
+        goto error;
+    }
+    if (main_error) {
         goto error;
     }
 
