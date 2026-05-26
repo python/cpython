@@ -140,13 +140,13 @@ _io.FileIO.close
 
 Close the file.
 
-A closed file cannot be used for further I/O operations.  close() may be
-called more than once without error.
+A closed file cannot be used for further I/O operations.  close()
+may be called more than once without error.
 [clinic start generated code]*/
 
 static PyObject *
 _io_FileIO_close_impl(fileio *self, PyTypeObject *cls)
-/*[clinic end generated code: output=c30cbe9d1f23ca58 input=70da49e63db7c64d]*/
+/*[clinic end generated code: output=c30cbe9d1f23ca58 input=b405751dc4163da3]*/
 {
     PyObject *res;
     int rc;
@@ -218,22 +218,25 @@ _io.FileIO.__init__
 Open a file.
 
 The mode can be 'r' (default), 'w', 'x' or 'a' for reading,
-writing, exclusive creation or appending.  The file will be created if it
-doesn't exist when opened for writing or appending; it will be truncated
-when opened for writing.  A FileExistsError will be raised if it already
-exists when opened for creating. Opening a file for creating implies
-writing so this mode behaves in a similar way to 'w'.Add a '+' to the mode
-to allow simultaneous reading and writing. A custom opener can be used by
-passing a callable as *opener*. The underlying file descriptor for the file
-object is then obtained by calling opener with (*name*, *flags*).
-*opener* must return an open file descriptor (passing os.open as *opener*
-results in functionality similar to passing None).
+writing, exclusive creation or appending.  The file will be created
+if it doesn't exist when opened for writing or appending; it will be
+truncated when opened for writing.  A FileExistsError will be raised
+if it already exists when opened for creating.  Opening a file for
+creating implies writing so this mode behaves in a similar way to
+'w'.  Add a '+' to the mode to allow simultaneous reading and
+writing.
+
+A custom opener can be used by passing a callable as *opener*.
+The underlying file descriptor for the file object is then obtained
+by calling opener with (*name*, *flags*).  *opener* must return
+an open file descriptor (passing os.open as *opener* results in
+functionality similar to passing None).
 [clinic start generated code]*/
 
 static int
 _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
                          int closefd, PyObject *opener)
-/*[clinic end generated code: output=23413f68e6484bbd input=588aac967e0ba74b]*/
+/*[clinic end generated code: output=23413f68e6484bbd input=bac4efcd8f930bf3]*/
 {
 #ifdef MS_WINDOWS
     wchar_t *widename = NULL;
@@ -700,12 +703,13 @@ _io.FileIO.readall
 Read all data from the file, returned as bytes.
 
 In non-blocking mode, returns as much as is immediately available,
-or None if no data is available.  Return an empty bytes object at EOF.
+or None if no data is available.  Return an empty bytes object at
+EOF.
 [clinic start generated code]*/
 
 static PyObject *
 _io_FileIO_readall_impl(fileio *self)
-/*[clinic end generated code: output=faa0292b213b4022 input=dbdc137f55602834]*/
+/*[clinic end generated code: output=faa0292b213b4022 input=92f0b7ef378a9ef4]*/
 {
     struct _Py_stat_struct status;
     Py_off_t pos, end;
@@ -801,14 +805,14 @@ _io.FileIO.read
 
 Read at most size bytes, returned as bytes.
 
-Only makes one system call, so less data may be returned than requested.
-In non-blocking mode, returns None if no data is available.
-Return an empty bytes object at EOF.
+Only makes one system call, so less data may be returned than
+requested.  In non-blocking mode, returns None if no data is
+available.  Return an empty bytes object at EOF.
 [clinic start generated code]*/
 
 static PyObject *
 _io_FileIO_read_impl(fileio *self, PyTypeObject *cls, Py_ssize_t size)
-/*[clinic end generated code: output=bbd749c7c224143e input=f613d2057e4a1918]*/
+/*[clinic end generated code: output=bbd749c7c224143e input=5a5d6d3651fcbdc8]*/
 {
     char *ptr;
     Py_ssize_t n;
@@ -864,13 +868,13 @@ _io.FileIO.write
 Write buffer b to file, return number of bytes written.
 
 Only makes one system call, so not all of the data may be written.
-The number of bytes actually written is returned.  In non-blocking mode,
-returns None if the write would block.
+The number of bytes actually written is returned.  In non-blocking
+mode, returns None if the write would block.
 [clinic start generated code]*/
 
 static PyObject *
 _io_FileIO_write_impl(fileio *self, PyTypeObject *cls, Py_buffer *b)
-/*[clinic end generated code: output=927e25be80f3b77b input=2776314f043088f5]*/
+/*[clinic end generated code: output=927e25be80f3b77b input=233f1f70f9e8b09e]*/
 {
     Py_ssize_t n;
     int err;
@@ -971,18 +975,19 @@ _io.FileIO.seek
 
 Move to new file position and return the file position.
 
-Argument offset is a byte count.  Optional argument whence defaults to
-SEEK_SET or 0 (offset from start of file, offset should be >= 0); other values
-are SEEK_CUR or 1 (move relative to current position, positive or negative),
-and SEEK_END or 2 (move relative to end of file, usually negative, although
-many platforms allow seeking beyond the end of a file).
+Argument offset is a byte count.  Optional argument whence defaults
+to SEEK_SET or 0 (offset from start of file, offset should be >= 0);
+other values are SEEK_CUR or 1 (move relative to current position,
+positive or negative), and SEEK_END or 2 (move relative to end of
+file, usually negative, although many platforms allow seeking beyond
+the end of a file).
 
 Note that not all file objects are seekable.
 [clinic start generated code]*/
 
 static PyObject *
 _io_FileIO_seek_impl(fileio *self, PyObject *pos, int whence)
-/*[clinic end generated code: output=c976acdf054e6655 input=0439194b0774d454]*/
+/*[clinic end generated code: output=c976acdf054e6655 input=f165a1b4f5d494ad]*/
 {
     if (self->fd < 0)
         return err_closed();

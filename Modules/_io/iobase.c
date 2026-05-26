@@ -100,11 +100,13 @@ _io._IOBase.seek
 
 Change the stream position to the given byte offset.
 
-The offset is interpreted relative to the position indicated by whence.
-Values for whence are:
+The offset is interpreted relative to the position indicated by
+whence.  Values for whence are:
 
-* os.SEEK_SET or 0 -- start of stream (the default); offset should be zero or positive
-* os.SEEK_CUR or 1 -- current stream position; offset may be negative
+* os.SEEK_SET or 0 -- start of stream (the default); offset should
+  be zero or positive
+* os.SEEK_CUR or 1 -- current stream position; offset may be
+  negative
 * os.SEEK_END or 2 -- end of stream; offset is usually negative
 
 Return the new absolute position.
@@ -113,7 +115,7 @@ Return the new absolute position.
 static PyObject *
 _io__IOBase_seek_impl(PyObject *self, PyTypeObject *cls,
                       int Py_UNUSED(offset), int Py_UNUSED(whence))
-/*[clinic end generated code: output=8bd74ea6538ded53 input=74211232b363363e]*/
+/*[clinic end generated code: output=8bd74ea6538ded53 input=22eaf07a7a0ee289]*/
 {
     _PyIO_State *state = get_io_state_by_cls(cls);
     return iobase_unsupported(state, "seek");
@@ -140,14 +142,14 @@ _io._IOBase.truncate
 
 Truncate file to size bytes.
 
-File pointer is left unchanged. Size defaults to the current IO position
-as reported by tell(). Return the new size.
+File pointer is left unchanged.  Size defaults to the current IO
+position as reported by tell().  Return the new size.
 [clinic start generated code]*/
 
 static PyObject *
 _io__IOBase_truncate_impl(PyObject *self, PyTypeObject *cls,
                           PyObject *Py_UNUSED(size))
-/*[clinic end generated code: output=2013179bff1fe8ef input=660ac20936612c27]*/
+/*[clinic end generated code: output=2013179bff1fe8ef input=5b3b6ab3c7abd806]*/
 {
     _PyIO_State *state = get_io_state_by_cls(cls);
     return iobase_unsupported(state, "truncate");
