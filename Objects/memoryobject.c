@@ -2256,16 +2256,17 @@ memoryview.tobytes
 
 Return the data in the buffer as a byte string.
 
-Order can be {'C', 'F', 'A'}. When order is 'C' or 'F', the data of the
-original array is converted to C or Fortran order. For contiguous views,
-'A' returns an exact copy of the physical memory. In particular, in-memory
-Fortran order is preserved. For non-contiguous views, the data is converted
-to C first. order=None is the same as order='C'.
+Order can be {'C', 'F', 'A'}.  When order is 'C' or 'F', the data of
+the original array is converted to C or Fortran order.  For
+contiguous views, 'A' returns an exact copy of the physical memory.
+In particular, in-memory Fortran order is preserved.  For
+non-contiguous views, the data is converted to C first.  order=None
+is the same as order='C'.
 [clinic start generated code]*/
 
 static PyObject *
 memoryview_tobytes_impl(PyMemoryViewObject *self, const char *order)
-/*[clinic end generated code: output=1288b62560a32a23 input=0efa3ddaeda573a8]*/
+/*[clinic end generated code: output=1288b62560a32a23 input=119c70aa91791dc8]*/
 {
     Py_buffer *src = VIEW_ADDR(self);
     char ord = 'C';
@@ -2305,8 +2306,8 @@ memoryview.hex
     sep: object = NULL
         An optional single character or byte to separate hex bytes.
     bytes_per_sep: int = 1
-        How many bytes between separators.  Positive values count from the
-        right, negative values count from the left.
+        How many bytes between separators.  Positive values count from
+        the right, negative values count from the left.
 
 Return the data in the buffer as a str of hexadecimal numbers.
 
@@ -2325,7 +2326,7 @@ Example:
 static PyObject *
 memoryview_hex_impl(PyMemoryViewObject *self, PyObject *sep,
                     int bytes_per_sep)
-/*[clinic end generated code: output=430ca760f94f3ca7 input=539f6a3a5fb56946]*/
+/*[clinic end generated code: output=430ca760f94f3ca7 input=94c2495f886c786b]*/
 {
     Py_buffer *src = VIEW_ADDR(self);
     PyObject *bytes;

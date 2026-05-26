@@ -1718,14 +1718,14 @@ You probably don't want to use this function.
 
 It exists mainly to be used in Python's test suite.
 
-This function returns whichever of 'unknown', 'IEEE, big-endian' or 'IEEE,
-little-endian' best describes the format of floating-point numbers used by the
-C type named by typestr.
+This function returns whichever of 'unknown', 'IEEE, big-endian' or
+'IEEE, little-endian' best describes the format of floating-point
+numbers used by the C type named by typestr.
 [clinic start generated code]*/
 
 static PyObject *
 float___getformat___impl(PyTypeObject *type, const char *typestr)
-/*[clinic end generated code: output=2bfb987228cc9628 input=90d5e246409a246e]*/
+/*[clinic end generated code: output=2bfb987228cc9628 input=933cc4bdcf8fa8d3]*/
 {
     float_format_type r;
 
