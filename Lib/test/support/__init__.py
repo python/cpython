@@ -324,16 +324,6 @@ def requires(resource, msg=None):
     if resource == 'gui' and not _is_gui_available():
         raise ResourceDenied(_is_gui_available.reason)
 
-def _get_kernel_version(sysname="Linux"):
-    import platform
-    if platform.system() != sysname:
-        return None
-    version_txt = platform.release().split('-', 1)[0]
-    try:
-        return tuple(map(int, version_txt.split('.')))
-    except ValueError:
-        return None
-
 def _requires_unix_version(sysname, min_version):
     """Decorator raising SkipTest if the OS is `sysname` and the version is less
     than `min_version`.
@@ -2805,6 +2795,10 @@ def exceeds_recursion_limit():
 # Windows doesn't have os.uname() but it doesn't support s390x.
 is_s390x = hasattr(os, 'uname') and os.uname().machine == 's390x'
 skip_on_s390x = unittest.skipIf(is_s390x, 'skipped on s390x')
+
+# Cygwin uses the newlib C library
+skip_on_newlib = unittest.skipIf(sys.platform == 'cygwin',
+                                 'the test fails on newlib C library')
 
 Py_TRACE_REFS = hasattr(sys, 'getobjects')
 
