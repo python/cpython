@@ -360,7 +360,9 @@ PyDoc_STRVAR(slice_doc,
 "slice(stop)\n\
 slice(start, stop[, step])\n\
 \n\
-Create a slice object.  This is used for extended slicing (e.g. a[0:10:2]).");
+Create a slice object.\n\
+\n\
+This is used for extended slicing (e.g. a[0:10:2]).");
 
 static void
 slice_dealloc(PySliceObject *r)
