@@ -8,7 +8,6 @@ Usage:
     python Tools/scripts/jit_int_benchmark_pyperf.py -o result.json --rigorous
 """
 
-import pyperf
 import time
 
 
@@ -277,6 +276,7 @@ BENCHMARKS = [
 ]
 
 if __name__ == "__main__":
+    import pyperf
     runner = pyperf.Runner()
     for name, fn in BENCHMARKS:
         runner.bench_time_func(name, fn)

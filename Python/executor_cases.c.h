@@ -13250,9 +13250,18 @@
             stack_pointer += 2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            assert(_PyLong_TryAsInt64Exact((PyLongObject *)left_o, &ileft));
-            assert(_PyLong_TryAsInt64Exact((PyLongObject *)right_o, &iright));
+            int ok = _PyLong_TryAsInt64Exact((PyLongObject *)left_o, &ileft)
+            && _PyLong_TryAsInt64Exact((PyLongObject *)right_o, &iright);
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            if (!ok) {
+                UOP_STAT_INC(uopcode, miss);
+                _tos_cache1 = right;
+                _tos_cache0 = left;
+                SET_CURRENT_CACHED_VALUES(2);
+                stack_pointer += -2;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                JUMP_TO_JUMP_TARGET();
+            }
             int sign_ish = COMPARISON_BIT(ileft, iright);
             l = left;
             r = right;

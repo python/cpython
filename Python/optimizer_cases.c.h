@@ -3076,8 +3076,12 @@
                 STAT_INC(COMPARE_OP, hit);
                 int64_t ileft;
                 int64_t iright;
-                assert(_PyLong_TryAsInt64Exact((PyLongObject *)left_o, &ileft));
-                assert(_PyLong_TryAsInt64Exact((PyLongObject *)right_o, &iright));
+                int ok = _PyLong_TryAsInt64Exact((PyLongObject *)left_o, &ileft)
+                && _PyLong_TryAsInt64Exact((PyLongObject *)right_o, &iright);
+                if (!ok) {
+                    ctx->done = true;
+                    break;
+                }
                 int sign_ish = COMPARISON_BIT(ileft, iright);
                 l_stackref = left;
                 r_stackref = right;

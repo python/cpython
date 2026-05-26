@@ -5363,9 +5363,14 @@
                 int64_t ileft;
                 int64_t iright;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                assert(_PyLong_TryAsInt64Exact((PyLongObject *)left_o, &ileft));
-                assert(_PyLong_TryAsInt64Exact((PyLongObject *)right_o, &iright));
+                int ok = _PyLong_TryAsInt64Exact((PyLongObject *)left_o, &ileft)
+                && _PyLong_TryAsInt64Exact((PyLongObject *)right_o, &iright);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (!ok) {
+                    UPDATE_MISS_STATS(COMPARE_OP);
+                    assert(_PyOpcode_Deopt[opcode] == (COMPARE_OP));
+                    JUMP_TO_PREDICTED(COMPARE_OP);
+                }
                 int sign_ish = COMPARISON_BIT(ileft, iright);
                 l = left;
                 r = right;
