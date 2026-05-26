@@ -17,7 +17,7 @@ import sys
 import unittest
 from test import support
 from test.support import (import_helper, requires_IEEE_754,
-                          skip_if_double_rounding)
+                          skip_if_double_rounding, skip_on_newlib)
 
 from decimal import Decimal
 from fractions import Fraction
@@ -2793,6 +2793,7 @@ class TestCorrelationAndCovariance(unittest.TestCase):
     @requires_IEEE_754
     @skip_if_double_rounding
     @support.cpython_only    # Allow for a weaker sumprod() implementation
+    @skip_on_newlib
     def test_sqrtprod_helper_function_improved_accuracy(self):
         # Test a known example where accuracy is improved
         x, y, target = 0.8035720646477457, 0.7957468097636939, 0.7996498651651661

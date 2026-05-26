@@ -916,6 +916,7 @@ class MathTests(unittest.TestCase):
 
     @requires_IEEE_754
     @skip_if_double_rounding
+    @support.skip_on_newlib
     def testHypotAccuracy(self):
         # Verify improved accuracy in cases that were known to be inaccurate.
         #
@@ -1247,12 +1248,6 @@ class MathTests(unittest.TestCase):
         self.assertEqual(math.log2(4), 2.0)
         self.assertEqual(math.log2(MyIndexable(4)), 2.0)
 
-        # Large integer values
-        self.assertEqual(math.log2(2**1023), 1023.0)
-        self.assertEqual(math.log2(2**1024), 1024.0)
-        self.assertEqual(math.log2(2**2000), 2000.0)
-        self.assertEqual(math.log2(MyIndexable(2**2000)), 2000.0)
-
         self.assertRaises(ValueError, math.log2, 0.0)
         self.assertRaises(ValueError, math.log2, 0)
         self.assertRaises(ValueError, math.log2, MyIndexable(0))
@@ -1270,11 +1265,18 @@ class MathTests(unittest.TestCase):
     @requires_IEEE_754
     # log2() is not accurate enough on Mac OS X Tiger (10.4)
     @support.requires_mac_ver(10, 5)
+    @support.skip_on_newlib
     def testLog2Exact(self):
         # Check that we get exact equality for log2 of powers of 2.
         actual = [math.log2(math.ldexp(1.0, n)) for n in range(-1074, 1024)]
         expected = [float(n) for n in range(-1074, 1024)]
         self.assertEqual(actual, expected)
+
+        # Large integer values
+        self.assertEqual(math.log2(2**1023), 1023.0)
+        self.assertEqual(math.log2(2**1024), 1024.0)
+        self.assertEqual(math.log2(2**2000), 2000.0)
+        self.assertEqual(math.log2(MyIndexable(2**2000)), 2000.0)
 
     def testLog10(self):
         self.assertRaises(TypeError, math.log10)
@@ -2607,6 +2609,7 @@ class FMATests(unittest.TestCase):
                 self.assertIsNaN(math.fma(a, math.nan, b))
                 self.assertIsNaN(math.fma(a, b, math.nan))
 
+    @support.skip_on_newlib
     def test_fma_infinities(self):
         # Cases involving infinite inputs or results.
         positives = [1e-300, 2.3, 1e300, math.inf]
@@ -2677,7 +2680,7 @@ class FMATests(unittest.TestCase):
     # gh-73468: On some platforms, libc fma() doesn't implement IEE 754-2008
     # properly: it doesn't use the right sign when the result is zero.
     @unittest.skipIf(
-        sys.platform.startswith(("freebsd", "wasi", "netbsd", "emscripten"))
+        sys.platform.startswith(("freebsd", "wasi", "netbsd", "emscripten", "cygwin"))
         or (sys.platform == "android" and platform.machine() == "x86_64")
         or support.linked_to_musl(),  # gh-131032
         f"this platform doesn't implement IEE 754-2008 properly")
@@ -2735,6 +2738,7 @@ class FMATests(unittest.TestCase):
         self.assertIsNegativeZero(math.fma(y-x, -(x+y), -z))
         self.assertIsPositiveZero(math.fma(x-y, -(x+y), z))
 
+    @support.skip_on_newlib
     def test_fma_overflow(self):
         a = b = float.fromhex('0x1p512')
         c = float.fromhex('0x1p1023')
@@ -2768,11 +2772,13 @@ class FMATests(unittest.TestCase):
         c = float.fromhex('0x1.fffffffffffffp+1023')
         self.assertEqual(math.fma(a, b, -c), c)
 
+    @support.skip_on_newlib
     def test_fma_single_round(self):
         a = float.fromhex('0x1p-50')
         self.assertEqual(math.fma(a - 1.0, a + 1.0, 1.0), a*a)
 
-    def test_random(self):
+    @support.skip_on_newlib
+    def test_fma_random(self):
         # A collection of randomly generated inputs for which the naive FMA
         # (with two rounds) gives a different result from a singly-rounded FMA.
 
