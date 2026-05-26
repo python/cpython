@@ -31,9 +31,9 @@ PyDoc_STRVAR(blob_read__doc__,
 "  length\n"
 "    Read length in bytes.\n"
 "\n"
-"If the end of the blob is reached, the data up to end of file will be returned.\n"
-"When length is not specified, or is negative, Blob.read() will read until the\n"
-"end of the blob.");
+"If the end of the blob is reached, the data up to end of file will\n"
+"be returned.  When length is not specified, or is negative,\n"
+"Blob.read() will read until the end of the blob.");
 
 #define BLOB_READ_METHODDEF    \
     {"read", _PyCFunction_CAST(blob_read), METH_FASTCALL, blob_read__doc__},
@@ -70,8 +70,8 @@ PyDoc_STRVAR(blob_write__doc__,
 "\n"
 "Write data at the current offset.\n"
 "\n"
-"This function cannot change the blob length.  Writing beyond the end of the\n"
-"blob will result in an exception being raised.");
+"This function cannot change the blob length.  Writing beyond the end\n"
+"of the blob will result in an exception being raised.");
 
 #define BLOB_WRITE_METHODDEF    \
     {"write", (PyCFunction)blob_write, METH_O, blob_write__doc__},
@@ -105,9 +105,10 @@ PyDoc_STRVAR(blob_seek__doc__,
 "\n"
 "Set the current access position to offset.\n"
 "\n"
-"The origin argument defaults to os.SEEK_SET (absolute blob positioning).\n"
-"Other values for origin are os.SEEK_CUR (seek relative to the current position)\n"
-"and os.SEEK_END (seek relative to the blob\'s end).");
+"The origin argument defaults to os.SEEK_SET (absolute blob\n"
+"positioning).  Other values for origin are os.SEEK_CUR (seek\n"
+"relative to the current position) and os.SEEK_END (seek relative to\n"
+"the blob\'s end).");
 
 #define BLOB_SEEK_METHODDEF    \
     {"seek", _PyCFunction_CAST(blob_seek), METH_FASTCALL, blob_seek__doc__},
@@ -211,4 +212,4 @@ blob_exit(pysqlite_Blob *self, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=31abd55660e0c5af input=a9049054013a1b77]*/
+/*[clinic end generated code: output=45168bcaeea61140 input=a9049054013a1b77]*/

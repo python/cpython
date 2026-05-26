@@ -1590,8 +1590,8 @@ _sqlite3.Connection.set_progress_handler as pysqlite_connection_set_progress_han
     cls: defining_class
     progress_handler as callable: object
         A callable that takes no arguments.
-        If the callable returns non-zero, the current query is terminated,
-        and an exception is raised.
+        If the callable returns non-zero, the current query is
+        terminated, and an exception is raised.
     / [from 3.15]
     n: int
         The number of SQLite virtual machine instructions that are
@@ -1599,14 +1599,15 @@ _sqlite3.Connection.set_progress_handler as pysqlite_connection_set_progress_han
 
 Set progress handler callback.
 
-If 'progress_handler' is None or 'n' is 0, the progress handler is disabled.
+If 'progress_handler' is None or 'n' is 0, the progress handler is
+disabled.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_connection_set_progress_handler_impl(pysqlite_Connection *self,
                                               PyTypeObject *cls,
                                               PyObject *callable, int n)
-/*[clinic end generated code: output=0739957fd8034a50 input=b4d6e2ef8b4d32f9]*/
+/*[clinic end generated code: output=0739957fd8034a50 input=d46887797f0c0ecf]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -2234,15 +2235,15 @@ _sqlite3.Connection.serialize as serialize
 
 Serialize a database into a byte string.
 
-For an ordinary on-disk database file, the serialization is just a copy of the
-disk file. For an in-memory database or a "temp" database, the serialization is
-the same sequence of bytes which would be written to disk if that database
-were backed up to disk.
+For an ordinary on-disk database file, the serialization is just
+a copy of the disk file.  For an in-memory database or a "temp"
+database, the serialization is the same sequence of bytes which
+would be written to disk if that database were backed up to disk.
 [clinic start generated code]*/
 
 static PyObject *
 serialize_impl(pysqlite_Connection *self, const char *name)
-/*[clinic end generated code: output=97342b0e55239dd3 input=d2eb5194a65abe2b]*/
+/*[clinic end generated code: output=97342b0e55239dd3 input=7e48654e8e082fa8]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -2287,18 +2288,19 @@ _sqlite3.Connection.deserialize as deserialize
 
 Load a serialized database.
 
-The deserialize interface causes the database connection to disconnect from the
-target database, and then reopen it as an in-memory database based on the given
-serialized data.
+The deserialize interface causes the database connection to
+disconnect from the target database, and then reopen it as
+an in-memory database based on the given serialized data.
 
-The deserialize interface will fail with SQLITE_BUSY if the database is
-currently in a read transaction or is involved in a backup operation.
+The deserialize interface will fail with SQLITE_BUSY if the database
+is currently in a read transaction or is involved in a backup
+operation.
 [clinic start generated code]*/
 
 static PyObject *
 deserialize_impl(pysqlite_Connection *self, Py_buffer *data,
                  const char *name)
-/*[clinic end generated code: output=e394c798b98bad89 input=1be4ca1faacf28f2]*/
+/*[clinic end generated code: output=e394c798b98bad89 input=5d20e028d98c0686]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -2371,13 +2373,14 @@ _sqlite3.Connection.__exit__ as pysqlite_connection_exit
 
 Called when the connection is used as a context manager.
 
-If there was any exception, a rollback takes place; otherwise we commit.
+If there was any exception, a rollback takes place; otherwise we
+commit.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_connection_exit_impl(pysqlite_Connection *self, PyObject *exc_type,
                               PyObject *exc_value, PyObject *exc_tb)
-/*[clinic end generated code: output=0705200e9321202a input=bd66f1532c9c54a7]*/
+/*[clinic end generated code: output=0705200e9321202a input=8fdb0392ee6f3466]*/
 {
     int commit = 0;
     PyObject* result;
@@ -2417,20 +2420,20 @@ _sqlite3.Connection.setlimit as setlimit
     category: int
         The limit category to be set.
     limit: int
-        The new limit. If the new limit is a negative number, the limit is
-        unchanged.
+        The new limit. If the new limit is a negative number, the limit
+        is unchanged.
     /
 
 Set connection run-time limits.
 
-Attempts to increase a limit above its hard upper bound are silently truncated
-to the hard upper bound. Regardless of whether or not the limit was changed,
-the prior value of the limit is returned.
+Attempts to increase a limit above its hard upper bound are silently
+truncated to the hard upper bound. Regardless of whether or not the
+limit was changed, the prior value of the limit is returned.
 [clinic start generated code]*/
 
 static PyObject *
 setlimit_impl(pysqlite_Connection *self, int category, int limit)
-/*[clinic end generated code: output=0d208213f8d68ccd input=9bd469537e195635]*/
+/*[clinic end generated code: output=0d208213f8d68ccd input=5c2e430091206677]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
