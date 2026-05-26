@@ -2806,6 +2806,10 @@ def exceeds_recursion_limit():
 is_s390x = hasattr(os, 'uname') and os.uname().machine == 's390x'
 skip_on_s390x = unittest.skipIf(is_s390x, 'skipped on s390x')
 
+# Cygwin uses the newlib C library
+skip_on_newlib = unittest.skipIf(sys.platform == 'cygwin',
+                                 'the test fails on newlib C library')
+
 Py_TRACE_REFS = hasattr(sys, 'getobjects')
 
 _JIT_ENABLED = sys._jit.is_enabled()

@@ -37,9 +37,6 @@ test_dir = os.path.dirname(file) or os.curdir
 math_testcases = os.path.join(test_dir, 'mathdata', 'math_testcases.txt')
 test_file = os.path.join(test_dir, 'mathdata', 'cmath_testcases.txt')
 
-skip_on_newlib = unittest.skipIf(sys.platform == 'cygwin',
-                                 'the test fails on newlib C library')
-
 
 def to_ulps(x):
     """Convert a non-NaN float x to an integer, in such a way that
@@ -925,7 +922,7 @@ class MathTests(unittest.TestCase):
     @requires_IEEE_754
     @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
                      "hypot() loses accuracy on machines with double rounding")
-    @skip_on_newlib
+    @support.skip_on_newlib
     def testHypotAccuracy(self):
         # Verify improved accuracy in cases that were known to be inaccurate.
         #
@@ -1248,7 +1245,7 @@ class MathTests(unittest.TestCase):
         self.assertEqual(math.log1p(INF), INF)
 
     @requires_IEEE_754
-    @skip_on_newlib
+    @support.skip_on_newlib
     def testLog2(self):
         self.assertRaises(TypeError, math.log2)
 
@@ -1281,7 +1278,7 @@ class MathTests(unittest.TestCase):
     @requires_IEEE_754
     # log2() is not accurate enough on Mac OS X Tiger (10.4)
     @support.requires_mac_ver(10, 5)
-    @skip_on_newlib
+    @support.skip_on_newlib
     def testLog2Exact(self):
         # Check that we get exact equality for log2 of powers of 2.
         actual = [math.log2(math.ldexp(1.0, n)) for n in range(-1074, 1024)]
@@ -2621,7 +2618,7 @@ class FMATests(unittest.TestCase):
                 self.assertIsNaN(math.fma(a, math.nan, b))
                 self.assertIsNaN(math.fma(a, b, math.nan))
 
-    @skip_on_newlib
+    @support.skip_on_newlib
     def test_fma_infinities(self):
         # Cases involving infinite inputs or results.
         positives = [1e-300, 2.3, 1e300, math.inf]
@@ -2750,7 +2747,7 @@ class FMATests(unittest.TestCase):
         self.assertIsNegativeZero(math.fma(y-x, -(x+y), -z))
         self.assertIsPositiveZero(math.fma(x-y, -(x+y), z))
 
-    @skip_on_newlib
+    @support.skip_on_newlib
     def test_fma_overflow(self):
         a = b = float.fromhex('0x1p512')
         c = float.fromhex('0x1p1023')
@@ -2784,12 +2781,12 @@ class FMATests(unittest.TestCase):
         c = float.fromhex('0x1.fffffffffffffp+1023')
         self.assertEqual(math.fma(a, b, -c), c)
 
-    @skip_on_newlib
+    @support.skip_on_newlib
     def test_fma_single_round(self):
         a = float.fromhex('0x1p-50')
         self.assertEqual(math.fma(a - 1.0, a + 1.0, 1.0), a*a)
 
-    @skip_on_newlib
+    @support.skip_on_newlib
     def test_random(self):
         # A collection of randomly generated inputs for which the naive FMA
         # (with two rounds) gives a different result from a singly-rounded FMA.

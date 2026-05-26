@@ -16,7 +16,7 @@ import random
 import sys
 import unittest
 from test import support
-from test.support import import_helper, requires_IEEE_754
+from test.support import import_helper, requires_IEEE_754, skip_on_newlib
 
 from decimal import Decimal
 from fractions import Fraction
@@ -136,10 +136,6 @@ def approx_equal(x, y, tol=1e-12, rel=1e-7):
     actual_error = abs(x - y)
     allowed_error = max(tol, rel*max(abs(x), abs(y)))
     return actual_error <= allowed_error
-
-
-skip_on_newlib = unittest.skipIf(sys.platform == 'cygwin',
-                                 'the test fails on newlib C library')
 
 
 # This class exists only as somewhere to stick a docstring containing
