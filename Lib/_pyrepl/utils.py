@@ -97,8 +97,8 @@ def wlen(s: str) -> int:
         return str_width(s)
     length = 0
     # Strip ANSI escapes first
-    cleaned = ANSI_ESCAPE_SEQUENCE.sub("", s)
-    for c in cleaned:
+    plain = ANSI_ESCAPE_SEQUENCE.sub("", s)
+    for c in plain:
         if c == "\b":
             # Backspace decreases cursor position, and cannot move before column 0.
             length = max(length - 1, 0)
