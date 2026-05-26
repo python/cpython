@@ -1055,7 +1055,12 @@ class SSLSocket(socket):
                     notconn_pre_handshake_data = self.recv(1)
                 except OSError as e:
                     # EINVAL occurs for recv(1) on non-connected on unix sockets.
-                    if e.errno not in (errno.ENOTCONN, errno.EINVAL):
+                    if e.errno in (errno.ENOTCONN, errno.EINVAL):
+                        pass
+                    elif sys.platform == 'cygwin' and e.errno == errno.EAGAIN:
+                        # EAGAIN occurs on Cygwin.
+                        pass
+                    else:
                         raise
                     notconn_pre_handshake_data = b''
                 self.setblocking(blocking)

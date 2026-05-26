@@ -99,6 +99,7 @@
 </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_remote_debugging\module.c" />
+    <ClCompile Include="..\Modules\_remote_debugging\gc_stats.c" />
     <ClCompile Include="..\Modules\_remote_debugging\object_reading.c" />
     <ClCompile Include="..\Modules\_remote_debugging\code_objects.c" />
     <ClCompile Include="..\Modules\_remote_debugging\frames.c" />
@@ -108,10 +109,12 @@
     <ClCompile Include="..\Modules\_remote_debugging\binary_io_writer.c" />
     <ClCompile Include="..\Modules\_remote_debugging\binary_io_reader.c" />
     <ClCompile Include="..\Modules\_remote_debugging\subprocess.c" />
+    <ClCompile Include="..\Modules\_remote_debugging\interpreters.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Modules\_remote_debugging\_remote_debugging.h" />
     <ClInclude Include="..\Modules\_remote_debugging\binary_io.h" />
+    <ClInclude Include="..\Modules\_remote_debugging\gc_stats.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />
@@ -123,6 +126,10 @@
     </ProjectReference>
     <ProjectReference Include="python3dll.vcxproj">
       <Project>{885d4898-d08d-4091-9c40-c700cfe3fc5a}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="python3tdll.vcxproj">
+      <Project>{947BB5F5-6025-4A4F-8182-1B175469F8D2}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>

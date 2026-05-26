@@ -219,12 +219,24 @@ process and user.
    :data:`os.environ`, and when one of the :meth:`~dict.pop` or
    :meth:`~dict.clear` methods is called.
 
+   If the :manpage:`clearenv(3)` function is available, the :meth:`~dict.clear` method
+   uses it and emits a single ``os._clearenv`` audit event. Otherwise, it emits
+   an ``os.unsetenv`` event on each deleted variable.
+
+   .. audit-event:: os.unsetenv key os.unsetenv
+
+   .. audit-event:: os._clearenv "" os._clearenv
+
    .. seealso::
 
       The :func:`os.reload_environ` function.
 
    .. versionchanged:: 3.9
       Updated to support :pep:`584`'s merge (``|``) and update (``|=``) operators.
+
+   .. versionchanged:: 3.15
+      The :meth:`~dict.clear` method can now emit an ``os._clearenv`` audit
+      event.
 
 
 .. data:: environb
@@ -2549,7 +2561,8 @@ features:
       Windows now handles a *mode* of ``0o700``.
 
 
-.. function:: makedirs(name, mode=0o777, exist_ok=False)
+.. function:: makedirs(name, mode=0o777, exist_ok=False, *, \
+                       parent_mode=None)
 
    .. index::
       single: directory; creating
@@ -2566,6 +2579,12 @@ features:
 
    If *exist_ok* is ``False`` (the default), a :exc:`FileExistsError` is
    raised if the target directory already exists.
+
+   If *parent_mode* is not ``None``, it is used as the mode for any
+   newly-created, intermediate-level directories.  Like *mode*, it is
+   combined with the process's umask value; see :ref:`the mkdir()
+   description <mkdir_modebits>`.  Otherwise, intermediate directories are
+   created with the default mode, which is also subject to the umask.
 
    .. note::
 
@@ -2592,6 +2611,11 @@ features:
    .. versionchanged:: 3.7
       The *mode* argument no longer affects the file permission bits of
       newly created intermediate-level directories.
+
+   .. versionadded:: 3.15
+      The *parent_mode* parameter. To match the behavior from Python 3.6 and
+      earlier (where *mode* was applied to all created directories), pass
+      ``parent_mode=mode``.
 
 
 .. function:: mkfifo(path, mode=0o666, *, dir_fd=None)
@@ -5062,6 +5086,18 @@ written in Python, such as a mail server's external command delivery program.
    .. availability:: Linux >= 5.10
    .. versionadded:: 3.12
 
+.. function:: pidfd_getfd(pidfd, targetfd, *, flags=0)
+
+   Duplicate *targetfd* from the process referred to by the process file
+   descriptor *pidfd*, into the calling process.  The returned file descriptor
+   is :ref:`non-inheritable <fd_inheritance>`.
+
+   *flags* is reserved, and currently must be ``0``.
+
+   See the :manpage:`pidfd_getfd(2)` man page for more details.
+
+   .. availability:: Linux >= 5.6, Android >= :func:`build-time <sys.getandroidapilevel>` API level 31
+   .. versionadded:: next
 
 .. function:: plock(op, /)
 

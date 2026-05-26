@@ -279,6 +279,23 @@ def staticmethod_call():
     for _ in range(1000 * WORK_SCALE):
         obj.my_staticmethod()
 
+
+class MyDescriptor:
+    def __get__(self, obj, objtype=None):
+        return 42
+
+    def __set__(self, obj, value):
+        pass
+
+class MyClassWithDescriptor:
+    attr = MyDescriptor()
+
+@register_benchmark
+def descriptor():
+    obj = MyClassWithDescriptor()
+    for _ in range(1000 * WORK_SCALE):
+        obj.attr
+
 @register_benchmark
 def deepcopy():
     x = {'list': [1, 2], 'tuple': (1, None)}
