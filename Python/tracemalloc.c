@@ -224,11 +224,11 @@ tracemalloc_get_frame(_PyInterpreterFrame *pyframe, frame_t *frame)
     assert(PyStackRef_CodeCheck(pyframe->f_executable));
     frame->filename = &_Py_STR(anon_unknown);
 
-    PyCodeObject *code = (PyCodeObject *)PyUnstable_InterpreterFrame_GetCodeSafe(pyframe);
+    PyCodeObject *code = (PyCodeObject *)PyUnstable_InterpreterFrame_GetCodeBorrowed(pyframe);
     if (code == NULL) {
         return;
     }
-    int lineno = PyUnstable_InterpreterFrame_GetLineSafe(pyframe);
+    int lineno = PyUnstable_InterpreterFrame_GetLineChecked(pyframe);
     if (lineno < 0) {
         lineno = 0;
     }
@@ -305,7 +305,7 @@ traceback_get_frames(traceback_t *traceback)
     PyThreadState *tstate = _PyThreadState_GET();
     assert(tstate != NULL);
 
-    _PyInterpreterFrame *pyframe = PyUnstable_ThreadState_GetInterpreterFrame(tstate);
+    _PyInterpreterFrame *pyframe = PyUnstable_ThreadState_GetCurrentFrame(tstate);
     while (pyframe) {
         if (traceback->nframe < tracemalloc_config.max_nframe) {
             tracemalloc_get_frame(pyframe, &traceback->frames[traceback->nframe]);
@@ -315,7 +315,7 @@ traceback_get_frames(traceback_t *traceback)
         if (traceback->total_nframe < UINT16_MAX) {
             traceback->total_nframe++;
         }
-        pyframe = PyUnstable_InterpreterFrame_GetNextComplete(pyframe);
+        pyframe = PyUnstable_InterpreterFrame_GetCaller(pyframe);
     }
 }
 

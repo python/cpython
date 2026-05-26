@@ -2789,19 +2789,19 @@ class TestInternalFrameApi(unittest.TestCase):
         firstline = self.func.__code__.co_firstlineno
         self.assertEqual(line, firstline + 2)
 
-    def test_tstate_getframe_is_current(self):
-        # PyUnstable_ThreadState_GetInterpreterFrame must return the same
+    def test_tstate_getcurrentframe_is_current(self):
+        # PyUnstable_ThreadState_GetCurrentFrame must return the same
         # PyFrameObject as sys._getframe(0) when called at the same level.
-        frame_from_c = _testinternalcapi.tstate_getframe()
+        frame_from_c = _testinternalcapi.tstate_getcurrentframe()
         self.assertIs(frame_from_c, sys._getframe(0))
 
-    def test_getnextcomplete_matches_f_back(self):
-        # GetNextComplete must match f_back at every step, all the way to None.
-        c_frame = _testinternalcapi.tstate_getframe()
+    def test_getcaller_matches_f_back(self):
+        # GetCaller must match f_back at every step, all the way to None.
+        c_frame = _testinternalcapi.tstate_getcurrentframe()
         py_frame = sys._getframe(0)
         while c_frame is not None:
             self.assertIs(c_frame, py_frame)
-            c_frame = _testinternalcapi.iframe_getnextcomplete(c_frame)
+            c_frame = _testinternalcapi.iframe_getcaller(c_frame)
             py_frame = py_frame.f_back
         self.assertIsNone(py_frame)
 
@@ -2844,22 +2844,22 @@ class TestInternalFrameApi(unittest.TestCase):
             self.assertTrue(f.get('filename'), f)
             self.assertIsInstance(f.get('lineno'), int, f)
 
-    def test_getcodesafe_matches_fcode(self):
-        # GetCodeSafe must return the same code object as frame.f_code.
-        frame = _testinternalcapi.tstate_getframe()
-        self.assertIs(_testinternalcapi.iframe_getcodesafe(frame), frame.f_code)
+    def test_getcodeborrowed_matches_fcode(self):
+        # GetCodeBorrowed must return the same code object as frame.f_code.
+        frame = _testinternalcapi.tstate_getcurrentframe()
+        self.assertIs(_testinternalcapi.iframe_getcodeborrowed(frame), frame.f_code)
 
 
-    def test_iframe_getlinesafe(self):
+    def test_iframe_getlinechecked(self):
         # Use a generator frame frozen at a yield point so that iframe_getlasti
-        # and iframe_getlinesafe both read the same (stable) instruction pointer.
+        # and iframe_getlinechecked both read the same (stable) instruction pointer.
         def gen():
             yield
         g = gen()
         next(g)
         frame = g.gi_frame
         lasti = _testinternalcapi.iframe_getlasti(frame)
-        lineno = _testinternalcapi.iframe_getlinesafe(frame)
+        lineno = _testinternalcapi.iframe_getlinechecked(frame)
         if lasti >= 0:
             expected = None
             for start, end, ln in frame.f_code.co_lines():

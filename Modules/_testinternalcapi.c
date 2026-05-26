@@ -1355,12 +1355,12 @@ _emit_stack_yaml_nosignal(char *buf, int cap, PyThreadState *tstate)
 {
     int pos = 0;
     struct _PyInterpreterFrame *frame =
-        PyUnstable_ThreadState_GetInterpreterFrame(tstate);
+        PyUnstable_ThreadState_GetCurrentFrame(tstate);
     while (frame != NULL && pos < cap) {
         PyCodeObject *code =
-            (PyCodeObject *)PyUnstable_InterpreterFrame_GetCodeSafe(frame);
+            (PyCodeObject *)PyUnstable_InterpreterFrame_GetCodeBorrowed(frame);
         if (code == NULL) { break; }
-        int lineno = PyUnstable_InterpreterFrame_GetLineSafe(frame);
+        int lineno = PyUnstable_InterpreterFrame_GetLineChecked(frame);
 
         PyObject *filename = code->co_filename;
         PyObject *name     = code->co_name;
@@ -1383,7 +1383,7 @@ _emit_stack_yaml_nosignal(char *buf, int cap, PyThreadState *tstate)
         pos = _yaml_decimal(buf, pos, cap, lineno);
         pos = _yaml_lit(buf, pos, cap, "\n");
 
-        frame = PyUnstable_InterpreterFrame_GetNextComplete(frame);
+        frame = PyUnstable_InterpreterFrame_GetCaller(frame);
     }
     if (pos >= cap) { return -1; }
     buf[pos] = '\0';
@@ -1409,14 +1409,14 @@ stack_to_yaml(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-iframe_getnextcomplete(PyObject *self, PyObject *frame)
+iframe_getcaller(PyObject *self, PyObject *frame)
 {
     if (!PyFrame_Check(frame)) {
         PyErr_SetString(PyExc_TypeError, "argument must be a frame");
         return NULL;
     }
     struct _PyInterpreterFrame *f = ((PyFrameObject *)frame)->f_frame;
-    struct _PyInterpreterFrame *next = PyUnstable_InterpreterFrame_GetNextComplete(f);
+    struct _PyInterpreterFrame *next = PyUnstable_InterpreterFrame_GetCaller(f);
     if (next == NULL) {
         Py_RETURN_NONE;
     }
@@ -1428,10 +1428,10 @@ iframe_getnextcomplete(PyObject *self, PyObject *frame)
 }
 
 static PyObject *
-tstate_getframe(PyObject *self, PyObject *Py_UNUSED(ignored))
+tstate_getcurrentframe(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    struct _PyInterpreterFrame *f = PyUnstable_ThreadState_GetInterpreterFrame(tstate);
+    struct _PyInterpreterFrame *f = PyUnstable_ThreadState_GetCurrentFrame(tstate);
     if (f == NULL) {
         Py_RETURN_NONE;
     }
@@ -1443,14 +1443,14 @@ tstate_getframe(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-iframe_getcodesafe(PyObject *self, PyObject *frame)
+iframe_getcodeborrowed(PyObject *self, PyObject *frame)
 {
     if (!PyFrame_Check(frame)) {
         PyErr_SetString(PyExc_TypeError, "argument must be a frame");
         return NULL;
     }
     struct _PyInterpreterFrame *f = ((PyFrameObject *)frame)->f_frame;
-    PyObject *code = PyUnstable_InterpreterFrame_GetCodeSafe(f);
+    PyObject *code = PyUnstable_InterpreterFrame_GetCodeBorrowed(f);
     if (code == NULL) {
         Py_RETURN_NONE;
     }
@@ -1459,14 +1459,14 @@ iframe_getcodesafe(PyObject *self, PyObject *frame)
 
 
 static PyObject *
-iframe_getlinesafe(PyObject *self, PyObject *frame)
+iframe_getlinechecked(PyObject *self, PyObject *frame)
 {
     if (!PyFrame_Check(frame)) {
         PyErr_SetString(PyExc_TypeError, "argument must be a frame");
         return NULL;
     }
     struct _PyInterpreterFrame *f = ((PyFrameObject *)frame)->f_frame;
-    return PyLong_FromLong(PyUnstable_InterpreterFrame_GetLineSafe(f));
+    return PyLong_FromLong(PyUnstable_InterpreterFrame_GetLineChecked(f));
 }
 
 static PyObject *
@@ -3091,12 +3091,12 @@ static PyMethodDef module_functions[] = {
     {"iframe_getcode", iframe_getcode, METH_O, NULL},
     {"iframe_getline", iframe_getline, METH_O, NULL},
     {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
-    {"iframe_getnextcomplete", iframe_getnextcomplete, METH_O, NULL},
-    {"iframe_getcodesafe", iframe_getcodesafe, METH_O, NULL},
-    {"tstate_getframe", tstate_getframe, METH_NOARGS, NULL},
+    {"iframe_getcaller", iframe_getcaller, METH_O, NULL},
+    {"iframe_getcodeborrowed", iframe_getcodeborrowed, METH_O, NULL},
+    {"tstate_getcurrentframe", tstate_getcurrentframe, METH_NOARGS, NULL},
     {"stack_to_yaml", stack_to_yaml, METH_NOARGS, NULL},
 
-    {"iframe_getlinesafe", iframe_getlinesafe, METH_O, NULL},
+    {"iframe_getlinechecked", iframe_getlinechecked, METH_O, NULL},
     {"code_returns_only_none", code_returns_only_none, METH_O, NULL},
     {"get_co_framesize", get_co_framesize, METH_O, NULL},
     {"get_co_localskinds", get_co_localskinds, METH_O, NULL},

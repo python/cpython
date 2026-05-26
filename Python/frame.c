@@ -151,13 +151,13 @@ PyUnstable_InterpreterFrame_GetLine(_PyInterpreterFrame *frame)
 }
 
 PyObject * _Py_NO_SANITIZE_THREAD
-PyUnstable_InterpreterFrame_GetCodeSafe(struct _PyInterpreterFrame *frame)
+PyUnstable_InterpreterFrame_GetCodeBorrowed(struct _PyInterpreterFrame *frame)
 {
     return (PyObject *)_PyFrame_SafeGetCode(frame);
 }
 
 int _Py_NO_SANITIZE_THREAD
-PyUnstable_InterpreterFrame_GetLineSafe(struct _PyInterpreterFrame *frame)
+PyUnstable_InterpreterFrame_GetLineChecked(struct _PyInterpreterFrame *frame)
 {
     PyCodeObject *code = _PyFrame_SafeGetCode(frame);
     if (code == NULL) {
@@ -188,13 +188,13 @@ _first_complete_frame(_PyInterpreterFrame *frame)
 }
 
 struct _PyInterpreterFrame * _Py_NO_SANITIZE_THREAD
-PyUnstable_ThreadState_GetInterpreterFrame(PyThreadState *tstate)
+PyUnstable_ThreadState_GetCurrentFrame(PyThreadState *tstate)
 {
     return _first_complete_frame(tstate->current_frame);
 }
 
 struct _PyInterpreterFrame * _Py_NO_SANITIZE_THREAD
-PyUnstable_InterpreterFrame_GetNextComplete(struct _PyInterpreterFrame *frame)
+PyUnstable_InterpreterFrame_GetCaller(struct _PyInterpreterFrame *frame)
 {
     return _first_complete_frame(frame->previous);
 }
