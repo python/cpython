@@ -562,6 +562,12 @@ extern "C" {
 #      define _Py_NO_SANITIZE_ADDRESS __attribute__((no_sanitize_address))
 #    endif
 #  endif
+#  if __has_feature(hwaddress_sanitizer)
+#    if !defined(_Py_HWADDRESS_SANITIZER)
+#      define _Py_HWADDRESS_SANITIZER
+#      define _Py_NO_SANITIZE_HWADDRESS __attribute__((no_sanitize("hwaddress")))
+#    endif
+#  endif
 #  if __has_feature(thread_sanitizer)
 #    if !defined(_Py_THREAD_SANITIZER)
 #      define _Py_THREAD_SANITIZER
@@ -572,6 +578,10 @@ extern "C" {
 #  if defined(__SANITIZE_ADDRESS__)
 #    define _Py_ADDRESS_SANITIZER
 #    define _Py_NO_SANITIZE_ADDRESS __attribute__((no_sanitize_address))
+#  endif
+#  if defined(__SANITIZE_HWADDRESS__)
+#    define _Py_HWADDRESS_SANITIZER
+#    define _Py_NO_SANITIZE_HWADDRESS __attribute__((no_sanitize("hwaddress")))
 #  endif
 #  if defined(__SANITIZE_THREAD__)
 #    define _Py_THREAD_SANITIZER
