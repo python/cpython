@@ -1395,6 +1395,10 @@ class BlobTests(unittest.TestCase):
         self.assertEqual(self.blob[9:0:-2], self.data[9:0:-2])
         self.assertEqual(self.blob[9::-2], self.data[9::-2])
         self.assertEqual(self.blob[::-1], self.data[::-1])
+        # When start <= stop with a negative step the slice is empty; this
+        # must return b"" rather than crashing or raising an exception.
+        self.assertEqual(self.blob[3:8:-1], self.data[3:8:-1])   # b""
+        self.assertEqual(self.blob[5:5:-1], self.data[5:5:-1])   # b""
 
     def test_blob_set_slice(self):
         self.blob[0:5] = b"12345"
@@ -1426,6 +1430,15 @@ class BlobTests(unittest.TestCase):
         self.blob[9::-2] = b"12345"
         actual2 = self.cx.execute("select b from test").fetchone()[0]
         self.assertEqual(actual2, bytes(expected2))
+
+        # When start <= stop with a negative step the slice is empty;
+        # assigning b"" to it must be a no-op (blob contents unchanged).
+        state_before = bytes(self.blob[:])
+        self.blob[3:8:-1] = b""
+        self.assertEqual(bytes(self.blob[:]), state_before)
+        # Assigning a non-empty sequence to an empty slice must raise.
+        with self.assertRaisesRegex(IndexError, "wrong size"):
+            self.blob[3:8:-1] = b"abc"
 
     def test_blob_mapping_invalid_index_type(self):
         msg = "indices must be integers"
