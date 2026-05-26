@@ -68,6 +68,7 @@ typedef struct {
     PyObject *str_write;
     PyObject *str___dict__;
     PyObject *str_iter;
+    PyObject *typecodes;
 } array_state;
 
 static array_state *
@@ -1534,13 +1535,13 @@ array.array.buffer_info
 
 Return a tuple (address, length) giving the current memory address and the length in items of the buffer used to hold array's contents.
 
-The length should be multiplied by the itemsize attribute to calculate
-the buffer length in bytes.
+The length should be multiplied by the itemsize attribute to
+calculate the buffer length in bytes.
 [clinic start generated code]*/
 
 static PyObject *
 array_array_buffer_info_impl(arrayobject *self)
-/*[clinic end generated code: output=9b2a4ec3ae7e98e7 input=63d9ad83ba60cda8]*/
+/*[clinic end generated code: output=9b2a4ec3ae7e98e7 input=c2771b9f6a8e1c86]*/
 {
     PyObject* item1 = PyLong_FromVoidPtr(self->ob_item);
     if (item1 == NULL) {
@@ -1572,19 +1573,18 @@ array_array_append_impl(arrayobject *self, PyObject *v)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 array.array.byteswap
 
 Byteswap all items of the array.
 
-If the items in the array are not 1, 2, 4, 8 or 16 bytes in size, RuntimeError
-is raised.  Note, that for complex types the order of
+If the items in the array are not 1, 2, 4, 8 or 16 bytes in size,
+RuntimeError is raised.  Note, that for complex types the order of
 components (the real part, followed by imaginary part) is preserved.
 [clinic start generated code]*/
 
 static PyObject *
 array_array_byteswap_impl(arrayobject *self)
-/*[clinic end generated code: output=5f8236cbdf0d90b5 input=aafda275f48191d0]*/
+/*[clinic end generated code: output=5f8236cbdf0d90b5 input=8732f800e1b47bac]*/
 {
     char *p;
     Py_ssize_t i;
@@ -1967,7 +1967,6 @@ array_array_tobytes_impl(arrayobject *self)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 array.array.fromunicode
 
     ustr: unicode
@@ -1975,14 +1974,14 @@ array.array.fromunicode
 
 Extends this array with data from the unicode string ustr.
 
-The array must be a unicode type array; otherwise a ValueError is raised.
-Use array.frombytes(ustr.encode(...)) to append Unicode data to an array of
-some other type.
+The array must be a unicode type array; otherwise a ValueError is
+raised.  Use array.frombytes(ustr.encode(...)) to append Unicode
+data to an array of some other type.
 [clinic start generated code]*/
 
 static PyObject *
 array_array_fromunicode_impl(arrayobject *self, PyObject *ustr)
-/*[clinic end generated code: output=24359f5e001a7f2b input=158d47c302f27ca1]*/
+/*[clinic end generated code: output=24359f5e001a7f2b input=01fa592ec7b948b6]*/
 {
     const char *typecode = self->ob_descr->typecode;
     if (strcmp(typecode, "u") != 0 && strcmp(typecode, "w") != 0) {
@@ -2030,19 +2029,19 @@ array_array_fromunicode_impl(arrayobject *self, PyObject *ustr)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 array.array.tounicode
 
 Extends this array with data from the unicode string ustr.
 
-Convert the array to a unicode string.  The array must be a unicode type array;
-otherwise a ValueError is raised.  Use array.tobytes().decode() to obtain a
-unicode string from an array of some other type.
+Convert the array to a unicode string.  The array must be a unicode
+type array; otherwise a ValueError is raised.  Use
+array.tobytes().decode() to obtain a unicode string from an array of
+some other type.
 [clinic start generated code]*/
 
 static PyObject *
 array_array_tounicode_impl(arrayobject *self)
-/*[clinic end generated code: output=08e442378336e1ef input=6690997213d219db]*/
+/*[clinic end generated code: output=08e442378336e1ef input=d4d5f398aa71a2be]*/
 {
     const char *typecode = self->ob_descr->typecode;
     if (strcmp(typecode, "u") != 0 && strcmp(typecode, "w") != 0) {
@@ -3153,8 +3152,18 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
     }
     Py_XDECREF(it);
-    PyErr_SetString(PyExc_ValueError,
-        "bad typecode (must be b, B, u, w, h, H, i, I, l, L, q, Q, e, f, d, Zf or Zd)");
+
+    PyObject *sep = PyUnicode_FromString(", ");
+    if (sep == NULL) {
+        return NULL;
+    }
+    PyObject *msg = PyObject_CallMethod(sep, "join", "(O)", state->typecodes);
+    Py_DECREF(sep);
+    if (msg == NULL) {
+        return NULL;
+    }
+    PyErr_Format(PyExc_ValueError, "bad typecode (must be: %S)", msg);
+    Py_DECREF(msg);
     return NULL;
 }
 
@@ -3439,6 +3448,7 @@ array_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->ArrayType);
     Py_VISIT(state->ArrayIterType);
     Py_VISIT(state->array_reconstructor);
+    Py_VISIT(state->typecodes);
     return 0;
 }
 
@@ -3453,6 +3463,7 @@ array_clear(PyObject *module)
     Py_CLEAR(state->str_write);
     Py_CLEAR(state->str___dict__);
     Py_CLEAR(state->str_iter);
+    Py_CLEAR(state->typecodes);
     return 0;
 }
 
@@ -3549,6 +3560,7 @@ array_modexec(PyObject *m)
     if (tuple == NULL) {
         return -1;
     }
+    state->typecodes = Py_NewRef(tuple);
     if (PyModule_Add(m, "typecodes", tuple) < 0) {
         return -1;
     }

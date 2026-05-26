@@ -301,9 +301,9 @@ class BasicTest(BaseTest):
                 self.assertEqual(out.strip(), expected, err)
         for attr, expected in (
             ('executable', self.envpy()),
-            # Usually compare to sys.executable, but if we're running in our own
-            # venv then we really need to compare to our base executable
-            ('_base_executable', sys._base_executable),
+            # Usually compare to sys.prefix, but if we're running in our own
+            # venv then we really need to compare to our base prefix
+            ('base_prefix', sys.base_prefix),
         ):
             with self.subTest(attr):
                 cmd[2] = f'import sys; print(sys.{attr})'
@@ -500,6 +500,7 @@ class BasicTest(BaseTest):
 
     # gh-124651: test quoted strings
     @unittest.skipIf(os.name == 'nt', 'contains invalid characters on Windows')
+    @unittest.skipIf(sys.platform == 'cygwin', 'fail to locate cygpython DLL')
     def test_special_chars_bash(self):
         """
         Test that the template strings are quoted properly (bash)
@@ -714,6 +715,12 @@ class BasicTest(BaseTest):
         os.mkdir(bindir)
         python_exe = os.path.basename(sys.executable)
         shutil.copy2(sys.executable, os.path.join(bindir, python_exe))
+        if sys.platform == 'cygwin':
+            # Copy libpython DLL
+            exe_path = os.path.dirname(sys.executable)
+            libpython_dll = sysconfig.get_config_var('DLLLIBRARY')
+            shutil.copy2(os.path.join(exe_path, libpython_dll),
+                         os.path.join(bindir, libpython_dll))
         libdir = os.path.join(non_installed_dir, platlibdir, self.lib[1])
         os.makedirs(libdir)
         landmark = os.path.join(libdir, "os.py")
@@ -916,10 +923,10 @@ class BasicTest(BaseTest):
             exename = exename.replace("python", "pythonw")
         envpyw = os.path.join(self.env_dir, self.bindir, exename)
         try:
-            subprocess.check_call([envpyw, "-c", "import sys; "
-                "assert sys._base_executable.endswith('%s')" % exename])
+            subprocess.check_call([envpyw, "-c", "import fnmatch, sys; "
+                "assert fnmatch.fnmatch(sys._base_executable, '**/pythonw*.exe')"])
         except subprocess.CalledProcessError:
-            self.fail("venvwlauncher.exe did not run %s" % exename)
+            self.fail("venvwlauncher.exe did not run pythonw.exe")
 
 
 @requireVenvCreate

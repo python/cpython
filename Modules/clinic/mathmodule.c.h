@@ -1043,8 +1043,8 @@ PyDoc_STRVAR(math_nextafter__doc__,
 "\n"
 "If steps is not specified or is None, it defaults to 1.\n"
 "\n"
-"Raises a TypeError, if x or y is not a double, or if steps is not an integer.\n"
-"Raises ValueError if steps is negative.");
+"Raises a TypeError, if x or y is not a double, or if steps is not\n"
+"an integer.  Raises ValueError if steps is negative.");
 
 #define MATH_NEXTAFTER_METHODDEF    \
     {"nextafter", _PyCFunction_CAST(math_nextafter), METH_FASTCALL|METH_KEYWORDS, math_nextafter__doc__},
@@ -1163,4 +1163,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=23b2453ba77453e5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=80c666aef8d2df36 input=a9049054013a1b77]*/

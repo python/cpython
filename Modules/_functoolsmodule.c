@@ -1060,7 +1060,6 @@ _functools_cmp_to_key_impl(PyObject *module, PyObject *mycmp)
 
 /*[clinic input]
 @permit_long_summary
-@permit_long_docstring_body
 _functools.reduce
 
     function as func: object
@@ -1070,9 +1069,9 @@ _functools.reduce
 
 Apply a function of two arguments cumulatively to the items of an iterable, from left to right.
 
-This effectively reduces the iterable to a single value.  If initial is present,
-it is placed before the items of the iterable in the calculation, and serves as
-a default when the iterable is empty.
+This effectively reduces the iterable to a single value.  If initial is
+present, it is placed before the items of the iterable in the
+calculation, and serves as a default when the iterable is empty.
 
 For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5])
 calculates ((((1 + 2) + 3) + 4) + 5).
@@ -1081,7 +1080,7 @@ calculates ((((1 + 2) + 3) + 4) + 5).
 static PyObject *
 _functools_reduce_impl(PyObject *module, PyObject *func, PyObject *seq,
                        PyObject *result)
-/*[clinic end generated code: output=30d898fe1267c79d input=5c9088c98ffe2793]*/
+/*[clinic end generated code: output=30d898fe1267c79d input=ff4d5c73100e72e8]*/
 {
     PyObject *args, *it;
 
