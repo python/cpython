@@ -16,35 +16,35 @@ mode, which removes the GIL and allows true multi-threading. This means
 that asyncio can now take advantage of multiple CPU cores without the
 limitations imposed by the GIL.
 
-Since, Python 3.14 asyncio has first class support for free-threaded
+Since Python 3.14, asyncio has first-class support for free-threaded
 Python, and the implementation of asyncio is safe to use in a
 multi-threaded environment.
 
 .. seealso::
 
    `Scaling asyncio on Free-Threaded Python
-   <https://labs.quansight.org/blog/scaling-asyncio-on-free-threaded-python>`_,
-   a blog post by Kumar Aditya which explains through the internal changes
+   <https://labs.quansight.org/blog/scaling-asyncio-on-free-threaded-python>`__,
+   a blog post by Kumar Aditya which explains the internal changes
    that make asyncio safe and efficient under free-threaded Python,
    together with benchmarks of the resulting improvements.
 
 
-Thread Safety Considerations
+Thread safety considerations
 ----------------------------
 
 While asyncio is designed to be thread-safe in a free-threaded Python
 environment, there are still some considerations to keep in mind when
 using asyncio with threads:
 
-1. **Event Loop**: Each thread should have its own event loop which
+1. **Event loop**: Each thread should have its own event loop which
    should not be shared across threads. This ensures that the event loop
    can manage its own tasks and callbacks without interference from
    other threads.
 
-2. **Task Management**: Tasks and futures created in one thread should
+2. **Task management**: Tasks and futures created in one thread should
    not be awaited or manipulated from another thread.
 
-3. **Thread-Safe APIs**: When interacting with asyncio from multiple
+3. **Thread-safe APIs**: When interacting with asyncio from multiple
    threads, it's important to use thread-safe APIs provided by asyncio,
    such as :func:`asyncio.run_coroutine_threadsafe` for submitting
    coroutines to an event loop from another thread. If you need to
@@ -52,13 +52,13 @@ using asyncio with threads:
    :meth:`loop.call_soon_threadsafe` to schedule it safely.
 
 4. **Synchronization**: The synchronization primitives provided by
-   asyncio (like :class:`asyncio.Lock`, :class:`asyncio.Event`, etc.)
+   asyncio (like :class:`asyncio.Lock` and :class:`asyncio.Event`)
    are not designed to be used across threads. If you need to
    synchronize between threads, you should use the synchronization
    primitives from the :mod:`threading` module instead.
 
 
-Using asyncio with Threads
+Using asyncio with threads
 --------------------------
 
 asyncio supports running one event loop per thread, which allows you to
@@ -94,7 +94,7 @@ concurrently, and in a free-threaded build they can run on separate
 CPU cores in parallel.
 
 
-Producer/Consumer Across Threads
+Producer/consumer across threads
 --------------------------------
 
 When a regular (non-asyncio) thread needs to hand work to an asyncio
