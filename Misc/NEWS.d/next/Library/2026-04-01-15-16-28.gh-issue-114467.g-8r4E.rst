@@ -1,0 +1,3 @@
+The :mod:`subprocess` module can now use the :func:`os.posix_spawn` function
+with ``cwd`` set on platforms where ``posix_spawn_file_actions_addchdir_np``
+is available. Patch by Jakub Kulik.
