@@ -548,7 +548,6 @@ class HelpFormatter(object):
         return parts, pos_start
 
     def _format_text(self, text):
-        text = str(text)
         if '%(prog)' in text:
             text = text % dict(prog=self._prog)
         text_width = max(self._width - self._current_indent, 11)
@@ -565,7 +564,6 @@ class HelpFormatter(object):
 
         When colors are disabled, backticks are preserved as-is.
         """
-        text = str(text)
         t = self._theme
         if not t.reset:
             return text
@@ -612,9 +610,9 @@ class HelpFormatter(object):
         parts = [action_header]
 
         # if there was help for the action, add lines of help text
-        if action.help:
+        if action.help and action.help.strip():
             help_text = self._expand_help(action)
-            if help_text.strip():
+            if help_text:
                 help_lines = self._split_lines(help_text, help_width)
                 parts.append('%*s%s\n' % (indent_first, '', help_lines[0]))
                 for line in help_lines[1:]:
@@ -713,7 +711,7 @@ class HelpFormatter(object):
         return result
 
     def _expand_help(self, action):
-        help_string = str(self._get_help_string(action))
+        help_string = self._get_help_string(action)
         if '%' not in help_string:
             return self._apply_text_markup(help_string)
         params = dict(vars(action), prog=self._prog)
@@ -760,7 +758,7 @@ class HelpFormatter(object):
             return spec % params
 
         return self._apply_text_markup(
-            _re.sub(fmt_spec, colorize, help_string, flags=_re.VERBOSE)
+            _re.sub(fmt_spec, colorize, str(help_string), flags=_re.VERBOSE)
         )
 
     def _iter_indented_subactions(self, action):

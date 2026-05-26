@@ -7398,19 +7398,6 @@ class TestColorized(TestCase):
                                      lambda *args, **kwargs: True))
         self.theme = _colorize.get_theme(force_color=True).argparse
 
-    class _LazyStr:
-        def __init__(self, message):
-            self._message = message
-
-        def __str__(self):
-            return self._message
-
-        def __contains__(self, item):
-            return item in self._message
-
-        def __mod__(self, other):
-            return self._message % other
-
     def test_argparse_color(self):
         # Arrange: create a parser with a bit of everything
         parser = argparse.ArgumentParser(
@@ -7749,38 +7736,6 @@ class TestColorized(TestCase):
         )
         self.assertNotIn("`", help_text)
 
-    def test_backtick_markup_in_description_accepts_string_like_proxy(self):
-        parser = argparse.ArgumentParser(
-            prog='PROG',
-            color=True,
-            description=self._LazyStr(
-                'Run `python myapp` or ``python -m myapp`` to start.'
-            ),
-        )
-
-        prog_extra = self.theme.prog_extra
-        reset = self.theme.reset
-
-        help_text = parser.format_help()
-        self.assertIn(
-            f'Run {prog_extra}python myapp{reset} or '
-            f'{prog_extra}python -m myapp{reset} to start.',
-            help_text,
-        )
-
-    def test_backtick_markup_in_epilog_accepts_string_like_proxy(self):
-        parser = argparse.ArgumentParser(
-            prog='myapp',
-            color=True,
-            epilog=self._LazyStr('Run `%(prog)s --help` for more info.'),
-        )
-
-        prog_extra = self.theme.prog_extra
-        reset = self.theme.reset
-
-        help_text = parser.format_help()
-        self.assertIn(f'{prog_extra}myapp --help{reset}', help_text)
-
     def test_backtick_markup_multiple(self):
         parser = argparse.ArgumentParser(
             prog='PROG',
@@ -7882,24 +7837,28 @@ class TestColorized(TestCase):
         self.assertIn("set the `foo` value", help_text)
         self.assertNotIn("\x1b[", help_text)
 
-    def test_backtick_markup_in_argument_help_accepts_string_like_proxy(self):
-        parser = argparse.ArgumentParser(prog="PROG", color=True)
-        parser.add_argument(
-            "--foo", help=self._LazyStr("set the `foo` value")
-        )
-
-        prog_extra = self.theme.prog_extra
-        reset = self.theme.reset
-
-        help_text = parser.format_help()
-        self.assertIn(f"set the {prog_extra}foo{reset} value", help_text)
-
     def test_argument_help_interpolation_accepts_string_like_proxy(self):
+        class LazyStr:
+            def __init__(self, message):
+                self._message = message
+
+            def __str__(self):
+                return self._message
+
+            def __contains__(self, item):
+                return item in self._message
+
+            def __mod__(self, other):
+                return self._message % other
+
+            def strip(self):
+                return self._message.strip()
+
         parser = argparse.ArgumentParser(prog="PROG", color=True)
         parser.add_argument(
             "--foo",
             default="bar",
-            help=self._LazyStr("set `foo` (default: %(default)s)"),
+            help=LazyStr("set `foo` (default: %(default)s)"),
         )
 
         prog_extra = self.theme.prog_extra
