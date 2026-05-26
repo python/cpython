@@ -528,8 +528,8 @@ requires_IEEE_754 = unittest.skipUnless(
 # detect evidence of double-rounding:
 x, y = 1e16, 2.9999 # use temporary values to defeat peephole optimizer
 skip_if_double_rounding = unittest.skipIf(x + y == 1e16 + 4,
-                                          ("accuracy not guaranteed on "
-                                           "machines with double rounding"))
+                                          "accuracy not guaranteed on "
+                                          "machines with double rounding")
 
 
 def requires_zlib(reason='requires zlib'):
