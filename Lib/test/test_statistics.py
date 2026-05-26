@@ -16,7 +16,8 @@ import random
 import sys
 import unittest
 from test import support
-from test.support import HAVE_DOUBLE_ROUNDING, import_helper, requires_IEEE_754
+from test.support import (import_helper, requires_IEEE_754,
+                          skip_if_have_double_rounding)
 
 from decimal import Decimal
 from fractions import Fraction
@@ -2790,8 +2791,7 @@ class TestCorrelationAndCovariance(unittest.TestCase):
                 self.assertEqual(sign(actual), sign(expected))
 
     @requires_IEEE_754
-    @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
-                     "accuracy not guaranteed on machines with double rounding")
+    @skip_if_have_double_rounding
     @support.cpython_only    # Allow for a weaker sumprod() implementation
     def test_sqrtprod_helper_function_improved_accuracy(self):
         # Test a known example where accuracy is improved

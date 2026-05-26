@@ -73,7 +73,7 @@ __all__ = [
     "run_no_yield_async_fn", "run_yielding_async_fn", "async_yield",
     "reset_code", "on_github_actions",
     "requires_root_user", "requires_non_root_user",
-    "HAVE_DOUBLE_ROUNDING",
+    "skip_if_have_double_rounding",
     ]
 
 
@@ -525,10 +525,13 @@ requires_IEEE_754 = unittest.skipUnless(
     float.__getformat__("double").startswith("IEEE"),
     "test requires IEEE 754 doubles")
 
-# detect evidence of double-rounding: fsum is not always correctly
-# rounded on machines that suffer from double rounding.
+# detect evidence of double-rounding:
 x, y = 1e16, 2.9999 # use temporary values to defeat peephole optimizer
-HAVE_DOUBLE_ROUNDING = (x + y == 1e16 + 4)
+skip_if_have_double_rounding = unittest.skipIf(x + y == 1e16 + 4,
+                                               ("accuracy not guaranteed on "
+                                                "machines with double "
+                                                "rounding"))
+
 
 def requires_zlib(reason='requires zlib'):
     try:

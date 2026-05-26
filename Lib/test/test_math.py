@@ -1,7 +1,8 @@
 # Python test set -- math module
 # XXXX Should not do tests around zero only
 
-from test.support import HAVE_DOUBLE_ROUNDING, verbose, requires_IEEE_754
+from test.support import (verbose, requires_IEEE_754,
+                          skip_if_have_double_rounding)
 from test import support
 import unittest
 import fractions
@@ -678,8 +679,7 @@ class MathTests(unittest.TestCase):
         self.assertTrue(math.isnan(math.frexp(NAN)[0]))
 
     @requires_IEEE_754
-    @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
-                         "fsum is not exact on machines with double rounding")
+    @skip_if_have_double_rounding
     def testFsum(self):
         # math.fsum relies on exact rounding for correct operation.
         # There's a known problem with IA32 floating-point that causes
@@ -915,8 +915,7 @@ class MathTests(unittest.TestCase):
         self.assertRaises(TypeError, math.hypot, *([1.0]*18), 'spam')
 
     @requires_IEEE_754
-    @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
-                     "hypot() loses accuracy on machines with double rounding")
+    @skip_if_have_double_rounding
     def testHypotAccuracy(self):
         # Verify improved accuracy in cases that were known to be inaccurate.
         #
@@ -1405,8 +1404,7 @@ class MathTests(unittest.TestCase):
         self.assertEqual(sumprod(*args), 0.0)
 
     @requires_IEEE_754
-    @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
-                         "sumprod() accuracy not guaranteed on machines with double rounding")
+    @skip_if_have_double_rounding
     @support.cpython_only    # Other implementations may choose a different algorithm
     def test_sumprod_accuracy(self):
         sumprod = math.sumprod
@@ -1491,8 +1489,7 @@ class MathTests(unittest.TestCase):
                         )
 
     @requires_IEEE_754
-    @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
-                         "sumprod() accuracy not guaranteed on machines with double rounding")
+    @skip_if_have_double_rounding
     @support.cpython_only    # Other implementations may choose a different algorithm
     @support.requires_resource('cpu')
     def test_sumprod_extended_precision_accuracy(self):
