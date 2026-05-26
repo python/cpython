@@ -3277,6 +3277,19 @@ class TestMiscellaneous(TestEmailBase):
         self.assertRaises(UnicodeError, utils.formataddr, (None, addr))
         self.assertRaises(UnicodeError, utils.formataddr, ("Name", addr))
 
+    def test_crlf_in_parts_raises_error(self):
+        # formataddr() must reject CR and LF in either part so that the
+        # returned header value cannot be used to inject extra headers,
+        # matching email.headerregistry.Address.
+        for name, addr in [
+            ('Real\rName', 'person@dom.ain'),
+            ('Real\nName', 'person@dom.ain'),
+            ('Real Name', 'person@dom.ain\r\nBcc: victim@dom.ain'),
+            ('Real Name', 'person@dom.ain\nSubject: spoofed'),
+        ]:
+            with self.subTest(name=name, addr=addr):
+                self.assertRaises(ValueError, utils.formataddr, (name, addr))
+
     def test_name_with_dot(self):
         x = 'John X. Doe <jxd@example.com>'
         y = '"John X. Doe" <jxd@example.com>'
