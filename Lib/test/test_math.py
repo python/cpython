@@ -1245,7 +1245,6 @@ class MathTests(unittest.TestCase):
         self.assertEqual(math.log1p(INF), INF)
 
     @requires_IEEE_754
-    @support.skip_on_newlib
     def testLog2(self):
         self.assertRaises(TypeError, math.log2)
 
@@ -1254,12 +1253,6 @@ class MathTests(unittest.TestCase):
         self.assertEqual(math.log2(2), 1.0)
         self.assertEqual(math.log2(4), 2.0)
         self.assertEqual(math.log2(MyIndexable(4)), 2.0)
-
-        # Large integer values
-        self.assertEqual(math.log2(2**1023), 1023.0)
-        self.assertEqual(math.log2(2**1024), 1024.0)
-        self.assertEqual(math.log2(2**2000), 2000.0)
-        self.assertEqual(math.log2(MyIndexable(2**2000)), 2000.0)
 
         self.assertRaises(ValueError, math.log2, 0.0)
         self.assertRaises(ValueError, math.log2, 0)
@@ -1284,6 +1277,12 @@ class MathTests(unittest.TestCase):
         actual = [math.log2(math.ldexp(1.0, n)) for n in range(-1074, 1024)]
         expected = [float(n) for n in range(-1074, 1024)]
         self.assertEqual(actual, expected)
+
+        # Large integer values
+        self.assertEqual(math.log2(2**1023), 1023.0)
+        self.assertEqual(math.log2(2**1024), 1024.0)
+        self.assertEqual(math.log2(2**2000), 2000.0)
+        self.assertEqual(math.log2(MyIndexable(2**2000)), 2000.0)
 
     def testLog10(self):
         self.assertRaises(TypeError, math.log10)
