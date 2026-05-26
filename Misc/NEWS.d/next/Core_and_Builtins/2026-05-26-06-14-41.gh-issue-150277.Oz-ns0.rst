@@ -1,0 +1,1 @@
+Improve performance of storing attributes in slotted classes.
