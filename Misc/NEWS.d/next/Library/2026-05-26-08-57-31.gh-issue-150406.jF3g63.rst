@@ -1,0 +1,1 @@
+Migrate Lock usage in the :mod:`socket` module to :c:type:`PyMutex`.
