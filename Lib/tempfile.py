@@ -118,14 +118,14 @@ def _sanitize_params(prefix, suffix, dir):
     if suffix is None:
         suffix = output_type()
     if _os.path.dirname(suffix):
-        raise ValueError("'prefix' or 'suffix' can't contain a directory component")
+        raise ValueError("'suffix' can't contain a directory component")
     if prefix is None:
         if output_type is str:
             prefix = template
         else:
             prefix = _os.fsencode(template)
     if _os.path.dirname(prefix):
-        raise ValueError("'prefix' or 'suffix' can't contain a directory component")
+        raise ValueError("'prefix' can't contain a directory component")
     if dir is None:
         if output_type is str:
             dir = gettempdir()

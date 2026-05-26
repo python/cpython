@@ -2056,28 +2056,47 @@ class TestTemporaryDirectory(BaseTestCase):
 
 
 class TestPrefixAndSuffix(BaseTestCase):
-    def test_value_error_if_prefix_or_suffix_contains_directory(self):
-        MESSAGE = "'prefix' or 'suffix' can't contain a directory component"
+    DATA = (
+        f"dir{os.sep}name",
+        f"{os.sep}abs_name",
+        os.fsencode(f"dir{os.sep}name"),
+        os.fsencode(f"{os.sep}abs_name"),
+    )
+    if os.altsep is not None:
+        DATA += (
+            f"dir{os.altsep}name",
+            f"{os.altsep}abs_name",
+            os.fsencode(f"dir{os.altsep}name"),
+            os.fsencode(f"{os.altsep}abs_name"),
+        )
 
-        if os.altsep is None:
-            data = (
-                ((os.sep), None),
-                (os.fsencode(os.sep), tempfile.gettempdirb()),
-                )
-        else:
-            data = (
-                ((os.altsep), None),
-                (os.fsencode(os.altsep), tempfile.gettempdirb()),
-                )
+    def test_prefix_error(self):
+        MESSAGE = "'prefix' can't contain a directory component"
 
-        for value, directory in data:
-            with self.subTest((value, directory)):
+        for value in self.DATA:
+            with self.subTest((value)):
                 with self.assertRaisesRegex(ValueError, MESSAGE):
-                    tempfile.mkstemp(dir=directory, prefix=value)
+                    tempfile.mkstemp(prefix=value)
                 with self.assertRaisesRegex(ValueError, MESSAGE):
-                    os.rmdir(tempfile.mkdtemp(dir=directory, prefix=value))
+                    os.rmdir(tempfile.mkdtemp(prefix=value))
                 with self.assertRaisesRegex(ValueError, MESSAGE):
-                    tempfile.NamedTemporaryFile(dir=directory, prefix=value, delete=True)
+                    tempfile.TemporaryFile(prefix=value)
+                with self.assertRaisesRegex(ValueError, MESSAGE):
+                    tempfile.NamedTemporaryFile(prefix=value)
+
+    def test_suffix_error(self):
+        MESSAGE = "'suffix' can't contain a directory component"
+
+        for value in self.DATA:
+            with self.subTest((value)):
+                with self.assertRaisesRegex(ValueError, MESSAGE):
+                    tempfile.mkstemp(suffix=value)
+                with self.assertRaisesRegex(ValueError, MESSAGE):
+                    os.rmdir(tempfile.mkdtemp(suffix=value))
+                with self.assertRaisesRegex(ValueError, MESSAGE):
+                    tempfile.TemporaryFile(suffix=value)
+                with self.assertRaisesRegex(ValueError, MESSAGE):
+                    tempfile.NamedTemporaryFile(suffix=value)
 
 if __name__ == "__main__":
     unittest.main()
