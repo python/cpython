@@ -480,7 +480,8 @@ _io.StringIO.seek
 
 Change stream position.
 
-Seek to character offset pos relative to position indicated by whence:
+Seek to character offset pos relative to position indicated by
+whence:
     0  Start of stream (the default).  pos should be >= 0;
     1  Current position - pos must be 0;
     2  End of stream - pos must be 0.
@@ -489,7 +490,7 @@ Returns the new absolute position.
 
 static PyObject *
 _io_StringIO_seek_impl(stringio *self, Py_ssize_t pos, int whence)
-/*[clinic end generated code: output=e9e0ac9a8ae71c25 input=c75ced09343a00d7]*/
+/*[clinic end generated code: output=e9e0ac9a8ae71c25 input=ffef24668fd71a5d]*/
 {
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);

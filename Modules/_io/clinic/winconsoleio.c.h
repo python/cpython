@@ -46,9 +46,9 @@ PyDoc_STRVAR(_io__WindowsConsoleIO___init____doc__,
 "\n"
 "Open a console buffer by file descriptor.\n"
 "\n"
-"The mode can be \'rb\' (default), or \'wb\' for reading or writing bytes. All\n"
-"other mode characters will be ignored. Mode \'b\' will be assumed if it is\n"
-"omitted. The *opener* parameter is always ignored.");
+"The mode can be \'rb\' (default), or \'wb\' for reading or writing\n"
+"bytes.  All other mode characters will be ignored.  Mode \'b\' will be\n"
+"assumed if it is omitted.  The *opener* parameter is always ignored.");
 
 static int
 _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
@@ -457,4 +457,4 @@ _io__WindowsConsoleIO_isatty(winconsoleio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
     #define _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
 #endif /* !defined(_IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF) */
-/*[clinic end generated code: output=2c2bc86713b21dd6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2d7f2c99f2ab3e17 input=a9049054013a1b77]*/
