@@ -431,13 +431,14 @@ _dbm.dbm.setdefault
 
 Return the value for key if present, otherwise default.
 
-If key is not in the database, it is inserted with default as the value.
+If key is not in the database, it is inserted with default as the
+value.
 [clinic start generated code]*/
 
 static PyObject *
 _dbm_dbm_setdefault_impl(dbmobject *self, PyTypeObject *cls, const char *key,
                          Py_ssize_t key_length, PyObject *default_value)
-/*[clinic end generated code: output=9c2f6ea6d0fb576c input=c01510ef7571e13b]*/
+/*[clinic end generated code: output=9c2f6ea6d0fb576c input=81224965c110f830]*/
 {
     datum dbm_key, val;
     Py_ssize_t tmp_size;
@@ -515,8 +516,12 @@ dbm__enter__(PyObject *self, PyObject *Py_UNUSED(dummy))
 static PyObject *
 dbm__exit__(PyObject *self, PyObject *Py_UNUSED(args))
 {
+    PyObject *result;
     dbmobject *dp = dbmobject_CAST(self);
-    return _dbm_dbm_close_impl(dp);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = _dbm_dbm_close_impl(dp);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static PyMethodDef dbm_methods[] = {
@@ -670,6 +675,7 @@ _dbm_module_free(void *module)
 }
 
 static PyModuleDef_Slot _dbmmodule_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, _dbm_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

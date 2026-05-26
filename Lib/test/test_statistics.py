@@ -16,7 +16,7 @@ import random
 import sys
 import unittest
 from test import support
-from test.support import import_helper, requires_IEEE_754
+from test.support import import_helper, requires_IEEE_754, skip_on_newlib
 
 from decimal import Decimal
 from fractions import Fraction
@@ -2005,7 +2005,6 @@ class VarianceStdevMixin(UnivariateCommonMixin):
         expected = self.func(data)
         self.assertEqual(self.func(iter(data)), expected)
 
-
 class TestPVariance(VarianceStdevMixin, NumericTestCase, UnivariateTypeMixin):
     # Tests for population variance.
     def setUp(self):
@@ -2112,6 +2111,14 @@ class TestPStdev(VarianceStdevMixin, NumericTestCase):
         data = (3, 6, 7, 10)
         self.assertEqual(self.func(data), 2.5)
         self.assertEqual(self.func(data, mu=0.5), 6.5)
+
+    def test_gh_140938(self):
+        # Inputs with inf/nan should raise a ValueError
+        with self.assertRaises(ValueError):
+            self.func([1.0, math.inf])
+        with self.assertRaises(ValueError):
+            self.func([1.0, math.nan])
+
 
 class TestSqrtHelpers(unittest.TestCase):
 
@@ -2792,6 +2799,7 @@ class TestCorrelationAndCovariance(unittest.TestCase):
     @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
                      "accuracy not guaranteed on machines with double rounding")
     @support.cpython_only    # Allow for a weaker sumprod() implementation
+    @skip_on_newlib
     def test_sqrtprod_helper_function_improved_accuracy(self):
         # Test a known example where accuracy is improved
         x, y, target = 0.8035720646477457, 0.7957468097636939, 0.7996498651651661

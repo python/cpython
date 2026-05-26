@@ -1,2 +1,0 @@
-Fix excessive indentation in the default :mod:`argparse`
-:class:`!HelpFormatter`. Patch by Alexander Edland.

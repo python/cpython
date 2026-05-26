@@ -5021,8 +5021,8 @@ class Color(enum.Enum)
  |  __members__
  |      Returns a mapping of member name->value.
  |
- |      This mapping lists all enum members, including aliases. Note that this
- |      is a read-only view of the internal mapping."""
+ |      This mapping lists all enum members, including aliases.  Note that
+ |      this is a read-only view of the internal mapping."""
 
 expected_help_output_without_docs = """\
 Help on class Color in module %s:
@@ -5332,7 +5332,7 @@ class TestStdLib(unittest.TestCase):
 class MiscTestCase(unittest.TestCase):
 
     def test__all__(self):
-        support.check__all__(self, enum, not_exported={'bin', 'show_flag_values'})
+        support.check__all__(self, enum)
 
     @cpython_only
     def test_lazy_import(self):
@@ -5537,13 +5537,17 @@ class TestEnumDict(unittest.TestCase):
 # helpers
 
 def enum_dir(cls):
+    if issubclass(cls, Flag):
+        members = list(cls._member_map_.keys())
+    else:
+        members = cls._member_names_
     interesting = set([
             '__class__', '__contains__', '__doc__', '__getitem__',
             '__iter__', '__len__', '__members__', '__module__',
             '__name__', '__qualname__',
             '_generate_next_value_', '_missing_',
             ]
-            + cls._member_names_
+            + members
             )
     if cls._new_member_ is not object.__new__:
         interesting.add('__new__')

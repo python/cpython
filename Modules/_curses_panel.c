@@ -360,17 +360,17 @@ _curses_panel_panel_bottom_impl(PyCursesPanelObject *self)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 _curses_panel.panel.hide
 
 Hide the panel.
 
-This does not delete the object, it just makes the window on screen invisible.
+This does not delete the object, it just makes the window on screen
+invisible.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_panel_panel_hide_impl(PyCursesPanelObject *self)
-/*[clinic end generated code: output=a7bbbd523e1eab49 input=9071b463a39a1a6a]*/
+/*[clinic end generated code: output=a7bbbd523e1eab49 input=9456aca9b264dde1]*/
 {
     int rtn = hide_panel(self->pan);
     return curses_panel_panel_check_err(self, rtn, "hide_panel", "hide");
@@ -772,12 +772,13 @@ _curses_panel.update_panels
 
 Updates the virtual screen after changes in the panel stack.
 
-This does not call curses.doupdate(), so you'll have to do this yourself.
+This does not call curses.doupdate(), so you'll have to do this
+yourself.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_panel_update_panels_impl(PyObject *module)
-/*[clinic end generated code: output=2f3b4c2e03d90ded input=5299624c9a708621]*/
+/*[clinic end generated code: output=2f3b4c2e03d90ded input=0d0db79f05ec3ef4]*/
 {
     PyCursesInitialised;
     update_panels();
@@ -845,6 +846,7 @@ _curses_panel_exec(PyObject *mod)
 }
 
 static PyModuleDef_Slot _curses_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, _curses_panel_exec},
     // XXX gh-103092: fix isolation.
     {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
