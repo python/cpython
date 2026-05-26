@@ -181,7 +181,8 @@ PyDoc_STRVAR(_io_StringIO_seek__doc__,
 "\n"
 "Change stream position.\n"
 "\n"
-"Seek to character offset pos relative to position indicated by whence:\n"
+"Seek to character offset pos relative to position indicated by\n"
+"whence:\n"
 "    0  Start of stream (the default).  pos should be >= 0;\n"
 "    1  Current position - pos must be 0;\n"
 "    2  End of stream - pos must be 0.\n"
@@ -552,4 +553,4 @@ _io_StringIO_newlines_get(PyObject *self, void *Py_UNUSED(context))
 
     return return_value;
 }
-/*[clinic end generated code: output=5bfaaab7f41ee6b5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=101f798d9622b724 input=a9049054013a1b77]*/
