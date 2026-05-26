@@ -138,6 +138,10 @@ def approx_equal(x, y, tol=1e-12, rel=1e-7):
     return actual_error <= allowed_error
 
 
+skip_on_newlib = unittest.skipIf(sys.platform == 'cygwin',
+                                 'the test fails on newlib C library')
+
+
 # This class exists only as somewhere to stick a docstring containing
 # doctests. The following docstring and tests were originally in a separate
 # module. Now that it has been merged in here, I need somewhere to hang the.
@@ -2799,6 +2803,7 @@ class TestCorrelationAndCovariance(unittest.TestCase):
     @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
                      "accuracy not guaranteed on machines with double rounding")
     @support.cpython_only    # Allow for a weaker sumprod() implementation
+    @skip_on_newlib
     def test_sqrtprod_helper_function_improved_accuracy(self):
         # Test a known example where accuracy is improved
         x, y, target = 0.8035720646477457, 0.7957468097636939, 0.7996498651651661
