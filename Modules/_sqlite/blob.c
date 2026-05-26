@@ -576,8 +576,10 @@ ass_subscript_slice(pysqlite_Blob *self, PyObject *item, PyObject *value)
             char *blob_buf = PyBytes_AS_STRING(blob_bytes);
             size_t cur;
             Py_ssize_t i;
-            for (cur = (size_t)start, i = 0; i < len; cur += (size_t)step, i++) {
-                blob_buf[(Py_ssize_t)cur - read_offset] = ((char *)vbuf.buf)[i];
+            for (cur = (size_t)start, i = 0; i < len;
+                 cur += (size_t)step, i++) {
+                blob_buf[(Py_ssize_t)cur - read_offset] =
+                    ((char *)vbuf.buf)[i];
             }
             rc = inner_write(self, blob_buf, read_length, read_offset);
             Py_DECREF(blob_bytes);
