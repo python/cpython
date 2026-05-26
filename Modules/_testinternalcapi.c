@@ -1576,7 +1576,8 @@ _emit_stack_yaml_nosignal(char *buf, int cap, PyThreadState *tstate)
         } else { pos = _yaml_lit(buf, pos, cap, "???"); }
 
         pos = _yaml_lit(buf, pos, cap, "\n  lineno: ");
-        pos = _yaml_decimal(buf, pos, cap, lineno);
+        pos = lineno >= 0 ? _yaml_decimal(buf, pos, cap, lineno)
+                          : _yaml_lit(buf, pos, cap, "null");
         pos = _yaml_lit(buf, pos, cap, "\n");
 
         frame = PyUnstable_InterpreterFrame_GetCaller(frame);
@@ -3399,10 +3400,9 @@ static PyMethodDef module_functions[] = {
     {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
     {"iframe_getcaller", iframe_getcaller, METH_O, NULL},
     {"iframe_getcodeborrowed", iframe_getcodeborrowed, METH_O, NULL},
+    {"iframe_getlinechecked", iframe_getlinechecked, METH_O, NULL},
     {"tstate_getcurrentframe", tstate_getcurrentframe, METH_NOARGS, NULL},
     {"stack_to_yaml", stack_to_yaml, METH_NOARGS, NULL},
-
-    {"iframe_getlinechecked", iframe_getlinechecked, METH_O, NULL},
     {"code_returns_only_none", code_returns_only_none, METH_O, NULL},
     {"get_co_framesize", get_co_framesize, METH_O, NULL},
     {"get_co_localskinds", get_co_localskinds, METH_O, NULL},

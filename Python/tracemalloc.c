@@ -225,9 +225,7 @@ tracemalloc_get_frame(_PyInterpreterFrame *pyframe, frame_t *frame)
     frame->filename = &_Py_STR(anon_unknown);
 
     PyCodeObject *code = (PyCodeObject *)PyUnstable_InterpreterFrame_GetCodeBorrowed(pyframe);
-    if (code == NULL) {
-        return;
-    }
+    assert(code != NULL);
     int lineno = PyUnstable_InterpreterFrame_GetLineChecked(pyframe);
     if (lineno < 0) {
         lineno = 0;

@@ -1038,6 +1038,7 @@ _Py_DumpWideString(int fd, wchar_t *str)
 static int _Py_NO_SANITIZE_THREAD
 dump_frame(int fd, _PyInterpreterFrame *frame)
 {
+    /* Caller guarantees frame is a complete Python frame (not a trampoline). */
     PyCodeObject *code = (PyCodeObject *)PyUnstable_InterpreterFrame_GetCodeBorrowed(frame);
     if (code == NULL) {
         return -1;
