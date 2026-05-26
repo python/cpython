@@ -2,7 +2,7 @@
 
 .. _asyncio-threading:
 
-asyncio and Free-Threaded Python
+asyncio and free-threaded Python
 ================================
 
 asyncio uses an event loop as a scheduler to enable highly efficient
