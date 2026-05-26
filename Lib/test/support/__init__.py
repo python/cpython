@@ -73,7 +73,7 @@ __all__ = [
     "run_no_yield_async_fn", "run_yielding_async_fn", "async_yield",
     "reset_code", "on_github_actions",
     "requires_root_user", "requires_non_root_user",
-    "skip_if_have_double_rounding",
+    "skip_if_double_rounding",
     ]
 
 
@@ -527,10 +527,9 @@ requires_IEEE_754 = unittest.skipUnless(
 
 # detect evidence of double-rounding:
 x, y = 1e16, 2.9999 # use temporary values to defeat peephole optimizer
-skip_if_have_double_rounding = unittest.skipIf(x + y == 1e16 + 4,
-                                               ("accuracy not guaranteed on "
-                                                "machines with double "
-                                                "rounding"))
+skip_if_double_rounding = unittest.skipIf(x + y == 1e16 + 4,
+                                          ("accuracy not guaranteed on "
+                                           "machines with double rounding"))
 
 
 def requires_zlib(reason='requires zlib'):

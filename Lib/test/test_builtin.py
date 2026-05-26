@@ -39,7 +39,7 @@ from test.support.os_helper import (EnvironmentVarGuard, TESTFN, unlink)
 from test.support.script_helper import assert_python_ok
 from test.support.testcase import ComplexesAreIdenticalMixin
 from test.support.warnings_helper import check_warnings
-from test.support import requires_IEEE_754, skip_if_have_double_rounding
+from test.support import requires_IEEE_754, skip_if_double_rounding
 from unittest.mock import MagicMock, patch
 try:
     import pty, signal
@@ -2230,7 +2230,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                                          complex(2, -0.0))
 
     @requires_IEEE_754
-    @skip_if_have_double_rounding
+    @skip_if_double_rounding
     @support.cpython_only    # Other implementations may choose a different algorithm
     def test_sum_accuracy(self):
         self.assertEqual(sum([0.1] * 10), 1.0)

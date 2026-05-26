@@ -17,7 +17,7 @@ import sys
 import unittest
 from test import support
 from test.support import (import_helper, requires_IEEE_754,
-                          skip_if_have_double_rounding)
+                          skip_if_double_rounding)
 
 from decimal import Decimal
 from fractions import Fraction
@@ -2791,7 +2791,7 @@ class TestCorrelationAndCovariance(unittest.TestCase):
                 self.assertEqual(sign(actual), sign(expected))
 
     @requires_IEEE_754
-    @skip_if_have_double_rounding
+    @skip_if_double_rounding
     @support.cpython_only    # Allow for a weaker sumprod() implementation
     def test_sqrtprod_helper_function_improved_accuracy(self):
         # Test a known example where accuracy is improved
