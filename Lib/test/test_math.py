@@ -2787,7 +2787,7 @@ class FMATests(unittest.TestCase):
         self.assertEqual(math.fma(a - 1.0, a + 1.0, 1.0), a*a)
 
     @support.skip_on_newlib
-    def test_random(self):
+    def test_fma_random(self):
         # A collection of randomly generated inputs for which the naive FMA
         # (with two rounds) gives a different result from a singly-rounded FMA.
 
