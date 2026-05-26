@@ -638,6 +638,7 @@ class BasicSocketTests(unittest.TestCase):
             del ss
         self.assertEqual(wr(), None)
 
+    @unittest.skipIf(sys.platform == 'cygwin', 'test hangs on Cygwin')
     def test_wrapped_unconnected(self):
         # Methods on an unconnected SSLSocket propagate the original
         # OSError raise by the underlying socket object.
@@ -3631,7 +3632,7 @@ class ThreadedTests(unittest.TestCase):
                 OSError,
                 'alert unknown ca|EOF occurred|TLSV1_ALERT_UNKNOWN_CA|'
                 'closed by the remote host|Connection reset by peer|'
-                'Broken pipe'
+                'Broken pipe|Software caused connection abort'
             ):
                 # TLS 1.3 perform client cert exchange after handshake
                 s.write(b'data')
@@ -4585,6 +4586,8 @@ class ThreadedTests(unittest.TestCase):
             ssl.SSLError,
             # On handshake failures, some systems raise a ConnectionResetError.
             ConnectionResetError,
+            # On handshake failures, Cygwin raises ConnectionAbortedError.
+            ConnectionAbortedError,
             # On handshake failures, macOS may raise a BrokenPipeError.
             # See https://github.com/python/cpython/issues/139504.
             BrokenPipeError,
@@ -5693,7 +5696,7 @@ class TestPreHandshakeClose(unittest.TestCase):
     def non_linux_skip_if_other_okay_error(self, err):
         if sys.platform in ("linux", "android"):
             return  # Expect the full test setup to always work on Linux.
-        if (isinstance(err, ConnectionResetError) or
+        if (isinstance(err, (ConnectionResetError, ConnectionAbortedError)) or
             (isinstance(err, OSError) and err.errno == errno.EINVAL) or
             re.search('wrong.version.number', str(getattr(err, "reason", "")), re.I) or
             re.search('record.layer.failure', str(getattr(err, "reason", "")), re.I)
