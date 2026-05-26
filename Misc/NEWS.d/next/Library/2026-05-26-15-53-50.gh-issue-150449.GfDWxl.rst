@@ -1,0 +1,3 @@
+Fix :class:`sqlite3.Blob` raising :exc:`SystemError` (or :exc:`ValueError`
+on recent versions) when reading or writing with a negative-step slice such
+as ``blob[9:0:-2]``.

@@ -1390,6 +1390,12 @@ class BlobTests(unittest.TestCase):
     def test_blob_get_slice_with_skip(self):
         self.assertEqual(self.blob[0:10:2], b"ti lb")
 
+    def test_blob_get_slice_with_negative_step(self):
+        # gh-150449: negative-step slices must not crash
+        self.assertEqual(self.blob[9:0:-2], self.data[9:0:-2])
+        self.assertEqual(self.blob[9::-2], self.data[9::-2])
+        self.assertEqual(self.blob[::-1], self.data[::-1])
+
     def test_blob_set_slice(self):
         self.blob[0:5] = b"12345"
         expected = b"12345" + self.data[5:]
@@ -1405,6 +1411,21 @@ class BlobTests(unittest.TestCase):
         actual = self.cx.execute("select b from test").fetchone()[0]
         expected = b"1h2s3b4o5 " + self.data[10:]
         self.assertEqual(actual, expected)
+
+    def test_blob_set_slice_with_negative_step(self):
+        # gh-150449: negative-step slice assignment must not crash
+        expected = bytearray(self.data)
+        expected[9:0:-2] = b"12345"
+        self.blob[9:0:-2] = b"12345"
+        actual = self.cx.execute("select b from test").fetchone()[0]
+        self.assertEqual(actual, bytes(expected))
+
+        # Also verify a slice that includes index 0
+        expected2 = bytearray(self.data)
+        expected2[9::-2] = b"12345"
+        self.blob[9::-2] = b"12345"
+        actual2 = self.cx.execute("select b from test").fetchone()[0]
+        self.assertEqual(actual2, bytes(expected2))
 
     def test_blob_mapping_invalid_index_type(self):
         msg = "indices must be integers"
