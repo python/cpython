@@ -1,0 +1,142 @@
+.. currentmodule:: asyncio
+
+.. _asyncio-threading:
+
+asyncio and Free-Threaded Python
+================================
+
+asyncio uses an event loop as a scheduler to enable highly efficient
+I/O-bound concurrency by switching between tasks during non-blocking I/O
+operations. It allows off-loading CPU-bound work to a thread or process
+pool, but that is still limited by the :term:`global interpreter lock`
+in CPython.
+
+However, with :pep:`703`, Python can now be built in a "free-threaded"
+mode, which removes the GIL and allows true multi-threading. This means
+that asyncio can now take advantage of multiple CPU cores without the
+limitations imposed by the GIL.
+
+Since, Python 3.14 asyncio has first class support for free-threaded
+Python, and the implementation of asyncio is safe to use in a
+multi-threaded environment.
+
+.. seealso::
+
+   `Scaling asyncio on Free-Threaded Python
+   <https://labs.quansight.org/blog/scaling-asyncio-on-free-threaded-python>`_,
+   a blog post by Kumar Aditya which explains through the internal changes
+   that make asyncio safe and efficient under free-threaded Python,
+   together with benchmarks of the resulting improvements.
+
+
+Thread Safety Considerations
+----------------------------
+
+While asyncio is designed to be thread-safe in a free-threaded Python
+environment, there are still some considerations to keep in mind when
+using asyncio with threads:
+
+1. **Event Loop**: Each thread should have its own event loop which
+   should not be shared across threads. This ensures that the event loop
+   can manage its own tasks and callbacks without interference from
+   other threads.
+
+2. **Task Management**: Tasks and futures created in one thread should
+   not be awaited or manipulated from another thread.
+
+3. **Thread-Safe APIs**: When interacting with asyncio from multiple
+   threads, it's important to use thread-safe APIs provided by asyncio,
+   such as :func:`asyncio.run_coroutine_threadsafe` for submitting
+   coroutines to an event loop from another thread. If you need to
+   call a callback from a different thread, you can use
+   :meth:`loop.call_soon_threadsafe` to schedule it safely.
+
+4. **Synchronization**: The synchronization primitives provided by
+   asyncio (like :class:`asyncio.Lock`, :class:`asyncio.Event`, etc.)
+   are not designed to be used across threads. If you need to
+   synchronize between threads, you should use the synchronization
+   primitives from the :mod:`threading` module instead.
+
+
+Using asyncio with Threads
+--------------------------
+
+asyncio supports running one event loop per thread, which allows you to
+take advantage of multiple CPU cores in a free-threaded Python
+environment. Each thread can run its own event loop, and tasks can be
+scheduled on those loops independently.
+
+Here's an example of how to use asyncio with threads::
+
+    import asyncio
+    import threading
+
+    async def worker(name: str) -> None:
+        print(f"Worker {name} starting")
+        await asyncio.sleep(1)
+        print(f"Worker {name} done")
+
+    def run_loop(name: str) -> None:
+        asyncio.run(worker(name))
+
+    threads = [
+        threading.Thread(target=run_loop, args=(f"T{i}",))
+        for i in range(4)
+    ]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+In this example, each thread creates its own event loop with
+:func:`asyncio.run` and runs a coroutine on it. The threads execute
+concurrently, and in a free-threaded build they can run on separate
+CPU cores in parallel.
+
+
+Producer/Consumer Across Threads
+--------------------------------
+
+When a regular (non-asyncio) thread needs to hand work to an asyncio
+event loop running in another thread, use a thread-safe primitive such
+as :class:`queue.Queue` rather than :class:`asyncio.Queue`, which is
+only safe within a single event loop.::
+
+    import asyncio
+    import queue
+    import threading
+
+    def producer(q: queue.Queue[int]) -> None:
+        for i in range(5):
+            print(f"Producing {i}")
+            q.put(i)
+        q.shutdown()
+
+    async def consumer(q: queue.Queue[int]) -> None:
+        while True:
+            try:
+                item = q.get_nowait()
+            except queue.Empty:
+                await asyncio.sleep(0.1)
+                continue
+            except queue.ShutDown:
+                break
+            print(f"Consumed {item}")
+            await asyncio.sleep(item)
+
+    q: queue.Queue[int] = queue.Queue()
+    consumer_thread = threading.Thread(
+        target=lambda: asyncio.run(consumer(q))
+    )
+    consumer_thread.start()
+    producer(q)
+    consumer_thread.join()
+
+The producer runs on the main thread while the consumer runs inside an
+event loop on its own thread, yet they communicate safely through
+``queue.Queue``. When the queue is empty the consumer sleeps briefly
+and tries again. When the producer is done it calls
+:meth:`~queue.Queue.shutdown`, which causes subsequent
+:meth:`~queue.Queue.get_nowait` calls to raise :exc:`queue.ShutDown`
+so the consumer can exit cleanly.
+
