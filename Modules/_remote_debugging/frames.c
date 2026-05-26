@@ -56,12 +56,14 @@ process_single_stack_chunk(
             return -1;
         }
 
-        this_chunk = PyMem_RawRealloc(this_chunk, actual_size);
-        if (!this_chunk) {
+        char *tmp = PyMem_RawRealloc(this_chunk, actual_size);
+        if (!tmp) {
+            PyMem_RawFree(this_chunk);
             PyErr_NoMemory();
             set_exception_cause(unwinder, PyExc_MemoryError, "Failed to reallocate stack chunk buffer");
             return -1;
         }
+        this_chunk = tmp;
 
         if (_Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, chunk_addr, actual_size, this_chunk) < 0) {
             PyMem_RawFree(this_chunk);

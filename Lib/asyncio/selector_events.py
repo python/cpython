@@ -1233,7 +1233,6 @@ class _SelectorSocketTransport(_SelectorTransport):
 
 class _SelectorDatagramTransport(_SelectorTransport, transports.DatagramTransport):
 
-    _buffer_factory = collections.deque
     _header_size = 8
 
     def __init__(self, loop, sock, protocol, address=None,

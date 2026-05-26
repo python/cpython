@@ -1008,6 +1008,8 @@ class ElementTreeTest(unittest.TestCase):
         check("iso-8859-15", '\u20ac')
         check("cp437", '\u221a')
         check("mac-roman", '\u02da')
+        check('shift-jis-2004', '\u203e\u3406\uff66')
+        check('euc-jis-2004', '\u3406\uff66')
 
         def xml(encoding, body=''):
             return "<?xml version='1.0' encoding='%s'?><xml>%s</xml>" % (encoding, body)
@@ -1026,6 +1028,12 @@ class ElementTreeTest(unittest.TestCase):
             'mac-cyrillic', 'mac-greek', 'mac-iceland', 'mac-latin2',
             'mac-roman', 'mac-turkish',
             'koi8-r', 'koi8-t', 'koi8-u', 'kz1048', 'ptcp154',
+            'big5', 'big5hkscs',
+            'cp932', 'cp949', 'cp950',
+            'euc-jp', 'euc-jis-2004', 'euc-jisx0213',
+            'gb2312', 'gbk', 'johab',
+            'shift-jis', 'shift-jis-2004', 'shift-jisx0213',
+            'utf-8-sig', 'utf8',
         ]
         for encoding in supported_encodings:
             with self.subTest(encoding=encoding):
@@ -1035,12 +1043,10 @@ class ElementTreeTest(unittest.TestCase):
                                  ('<xml>&#%d;</xml>' % ord(c)).encode())
 
         unsupported_ascii_compatible_encodings = [
-            'big5', 'big5hkscs',
-            'cp932', 'cp949', 'cp950',
-            'euc-jp', 'euc-jis-2004', 'euc-jisx0213', 'euc-kr',
-            'gb2312', 'gbk', 'gb18030',
-            'iso2022-kr', 'johab',
-            'shift-jis', 'shift-jis-2004', 'shift-jisx0213',
+            'euc-kr', 'gb18030',
+            'iso2022-jp', 'iso2022-jp-1', 'iso2022-jp-2', 'iso2022-jp-2004',
+            'iso2022-jp-3', 'iso2022-jp-ext',
+            'iso2022-kr', 'hz',
             'utf-7',
         ]
         for encoding in unsupported_ascii_compatible_encodings:
