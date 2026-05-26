@@ -921,7 +921,7 @@ static _channelends *
 _channelends_new(void)
 {
     _channelends *ends = GLOBAL_MALLOC(_channelends);
-    if (ends== NULL) {
+    if (ends == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
