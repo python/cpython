@@ -1499,6 +1499,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             self.test_exe = exec_copy
 
             if sys.platform == "cygwin":
+                # Copy libpython DLL
                 exe_path = os.path.dirname(sys.executable)
                 libpython_dll = sysconfig.get_config_var('DLLLIBRARY')
                 shutil.copy2(os.path.join(exe_path, libpython_dll),
