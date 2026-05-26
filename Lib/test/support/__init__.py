@@ -527,7 +527,8 @@ requires_IEEE_754 = unittest.skipUnless(
 
 # detect evidence of double-rounding:
 x, y = 1e16, 2.9999 # use temporary values to defeat peephole optimizer
-skip_if_double_rounding = unittest.skipIf(x + y == 1e16 + 4,
+HAVE_DOUBLE_ROUNDING = (x + y == 1e16 + 4)
+skip_if_double_rounding = unittest.skipIf(HAVE_DOUBLE_ROUNDING,
                                           "accuracy not guaranteed on "
                                           "machines with double rounding")
 
