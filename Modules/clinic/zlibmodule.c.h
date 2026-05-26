@@ -503,8 +503,8 @@ PyDoc_STRVAR(zlib_Decompress_decompress__doc__,
 "    Unconsumed input data will be stored in\n"
 "    the unconsumed_tail attribute.\n"
 "\n"
-"After calling this function, some of the input data may still be stored in\n"
-"internal buffers for later processing.\n"
+"After calling this function, some of the input data may still be\n"
+"stored in internal buffers for later processing.\n"
 "Call the flush() method to clear these buffers.");
 
 #define ZLIB_DECOMPRESS_DECOMPRESS_METHODDEF    \
@@ -914,18 +914,19 @@ PyDoc_STRVAR(zlib__ZlibDecompressor_decompress__doc__,
 "\n"
 "Decompress *data*, returning uncompressed data as bytes.\n"
 "\n"
-"If *max_length* is nonnegative, returns at most *max_length* bytes of\n"
-"decompressed data. If this limit is reached and further output can be\n"
-"produced, *self.needs_input* will be set to ``False``. In this case, the next\n"
-"call to *decompress()* may provide *data* as b\'\' to obtain more of the output.\n"
+"If *max_length* is nonnegative, returns at most *max_length* bytes\n"
+"of decompressed data.  If this limit is reached and further output\n"
+"can be produced, *self.needs_input* will be set to ``False``.  In\n"
+"this case, the next call to *decompress()* may provide *data* as b\'\'\n"
+"to obtain more of the output.\n"
 "\n"
-"If all of the input data was decompressed and returned (either because this\n"
-"was less than *max_length* bytes, or because *max_length* was negative),\n"
-"*self.needs_input* will be set to True.\n"
+"If all of the input data was decompressed and returned (either\n"
+"because this was less than *max_length* bytes, or because\n"
+"*max_length* was negative), *self.needs_input* will be set to True.\n"
 "\n"
-"Attempting to decompress data after the end of stream is reached raises an\n"
-"EOFError.  Any data found after the end of the stream is ignored and saved in\n"
-"the unused_data attribute.");
+"Attempting to decompress data after the end of stream is reached\n"
+"raises an EOFError.  Any data found after the end of the stream is\n"
+"ignored and saved in the unused_data attribute.");
 
 #define ZLIB__ZLIBDECOMPRESSOR_DECOMPRESS_METHODDEF    \
     {"decompress", _PyCFunction_CAST(zlib__ZlibDecompressor_decompress), METH_FASTCALL|METH_KEYWORDS, zlib__ZlibDecompressor_decompress__doc__},
@@ -1402,4 +1403,4 @@ exit:
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=13627e14206d3552 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c9a60fe6600a2e4d input=a9049054013a1b77]*/

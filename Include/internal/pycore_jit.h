@@ -23,7 +23,7 @@ typedef _Py_CODEUNIT *(*jit_func)(
     _PyStackRef _tos_cache0, _PyStackRef _tos_cache1, _PyStackRef _tos_cache2
 );
 
-_Py_CODEUNIT *_PyJIT(
+_Py_CODEUNIT *_PyJIT_Entry(
     _PyExecutorObject *executor, _PyInterpreterFrame *frame,
     _PyStackRef *stack_pointer, PyThreadState *tstate
 );

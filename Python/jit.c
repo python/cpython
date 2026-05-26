@@ -11,10 +11,12 @@
 #include "pycore_floatobject.h"
 #include "pycore_frame.h"
 #include "pycore_function.h"
+#include "pycore_genobject.h"
 #include "pycore_import.h"
 #include "pycore_interpframe.h"
 #include "pycore_interpolation.h"
 #include "pycore_intrinsics.h"
+#include "pycore_jit_publish.h"
 #include "pycore_lazyimportobject.h"
 #include "pycore_list.h"
 #include "pycore_long.h"
@@ -31,7 +33,7 @@
 
 #include "pycore_jit.h"
 
-// Memory management stuff: ////////////////////////////////////////////////////
+// Memory management stuff: ///////////////////////////////////////////////////
 
 #ifndef MS_WINDOWS
     #include <sys/mman.h>
@@ -715,6 +717,11 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     }
     executor->jit_code = memory;
     executor->jit_size = total_size;
+    executor->jit_registration = _PyJit_RegisterCode(
+        memory,
+        code_size + state.trampolines.size,
+        "jit",
+        "executor");
     return 0;
 }
 
@@ -727,6 +734,8 @@ _PyJIT_Free(_PyExecutorObject *executor)
     if (memory) {
         executor->jit_code = NULL;
         executor->jit_size = 0;
+        _PyJit_UnregisterCode(executor->jit_registration);
+        executor->jit_registration = NULL;
         if (jit_free(memory, size)) {
             PyErr_FormatUnraisable("Exception ignored while "
                                    "freeing JIT memory");

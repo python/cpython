@@ -38,6 +38,7 @@
 
 const char *_PyImport_DynLoadFiletab[] = {
 #ifdef __CYGWIN__
+    "." SOABI ".dll",
     ".dll",
 #else  /* !__CYGWIN__ */
     "." SOABI ".so",

@@ -14,7 +14,7 @@ import pickle
 import re
 import sys
 import warnings
-from unittest import TestCase, main, skip
+from unittest import TestCase, main
 from unittest.mock import patch
 from copy import copy, deepcopy
 
@@ -6796,11 +6796,7 @@ class GetTypeHintsTests(BaseTestCase):
         self.assertEqual(gth(ann_module2), {})
         self.assertEqual(gth(ann_module3), {})
 
-    @skip("known bug")
     def test_get_type_hints_modules_forwardref(self):
-        # FIXME: This currently exposes a bug in typing. Cached forward references
-        # don't account for the case where there are multiple types of the same
-        # name coming from different modules in the same program.
         mgc_hints = {'default_a': Optional[mod_generics_cache.A],
                      'default_b': Optional[mod_generics_cache.B]}
         self.assertEqual(gth(mod_generics_cache), mgc_hints)
@@ -11134,6 +11130,10 @@ class NoDefaultTests(BaseTestCase):
             type(NoDefault).foo = 3
         with self.assertRaises(AttributeError):
             type(NoDefault).foo
+
+    def test_no_subclassing(self):
+        with self.assertRaises(TypeError):
+            class Test(type(NoDefault)): ...
 
 
 class AllTests(BaseTestCase):
