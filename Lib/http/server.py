@@ -170,6 +170,46 @@ class ThreadingHTTPSServer(socketserver.ThreadingMixIn, HTTPSServer):
     daemon_threads = True
 
 
+class _ReadCountingReader:
+    # Proxy around the underlying rfile that tracks the number of bytes
+    # consumed, so handle_one_request can drain or close per RFC 7230
+    # section 6.3.
+
+    def __init__(self, stream):
+        self._stream = stream
+        self.bytes_read = 0
+
+    def read(self, *args, **kwargs):
+        data = self._stream.read(*args, **kwargs)
+        self.bytes_read += len(data)
+        return data
+
+    def read1(self, *args, **kwargs):
+        data = self._stream.read1(*args, **kwargs)
+        self.bytes_read += len(data)
+        return data
+
+    def readline(self, *args, **kwargs):
+        data = self._stream.readline(*args, **kwargs)
+        self.bytes_read += len(data)
+        return data
+
+    def readinto(self, b):
+        n = self._stream.readinto(b)
+        if n:
+            self.bytes_read += n
+        return n
+
+    def readinto1(self, b):
+        n = self._stream.readinto1(b)
+        if n:
+            self.bytes_read += n
+        return n
+
+    def __getattr__(self, name):
+        return getattr(self._stream, name)
+
+
 class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
 
     """HTTP request handler base class.
@@ -426,6 +466,11 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         self.end_headers()
         return True
 
+    # Maximum number of bytes drained from an unread request body after
+    # dispatch to honour RFC 7230 section 6.3; over this, the connection
+    # is closed instead.
+    _MAX_BODY_DRAIN = 1 << 20
+
     def handle_one_request(self):
         """Handle a single HTTP request.
 
@@ -434,8 +479,10 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         commands such as GET and POST.
 
         """
+        raw_rfile = self.rfile
+        wrapped = False
         try:
-            self.raw_requestline = self.rfile.readline(65537)
+            self.raw_requestline = raw_rfile.readline(65537)
             if len(self.raw_requestline) > 65536:
                 self.requestline = ''
                 self.request_version = ''
@@ -445,9 +492,13 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
             if not self.raw_requestline:
                 self.close_connection = True
                 return
+            # Wrap rfile to track body consumption for RFC 7230 section 6.3.
+            self.rfile = _ReadCountingReader(raw_rfile)
+            wrapped = True
             if not self.parse_request():
                 # An error code has been sent, just exit
                 return
+            body_bytes_start = self.rfile.bytes_read
             mname = 'do_' + self.command
             if not hasattr(self, mname):
                 self.send_error(
@@ -457,11 +508,40 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
             method = getattr(self, mname)
             method()
             self.wfile.flush() #actually send the response if not already done.
+            self._drain_request_body(body_bytes_start)
         except TimeoutError as e:
             #a read or a write timed out.  Discard this connection
             self.log_error("Request timed out: %r", e)
             self.close_connection = True
             return
+        finally:
+            if wrapped:
+                self.rfile = raw_rfile
+
+    def _drain_request_body(self, body_bytes_start):
+        # Drain any unread declared request body, or close the connection
+        # if the remainder exceeds the drain cap. Required by RFC 7230
+        # section 6.3 for persistent connections.
+        if self.close_connection:
+            return
+        cl = self.headers.get('Content-Length')
+        if not cl or not cl.isdigit():
+            return
+        declared = int(cl)
+        consumed = self.rfile.bytes_read - body_bytes_start
+        remaining = declared - consumed
+        if remaining <= 0:
+            return
+        if remaining > self._MAX_BODY_DRAIN:
+            self.close_connection = True
+            return
+        try:
+            drained = self.rfile.read(remaining)
+        except OSError:
+            self.close_connection = True
+            return
+        if len(drained) < remaining:
+            self.close_connection = True
 
     def handle(self):
         """Handle multiple requests if necessary."""
