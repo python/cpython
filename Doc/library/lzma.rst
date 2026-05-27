@@ -4,9 +4,6 @@
 .. module:: lzma
    :synopsis: A Python wrapper for the liblzma compression library.
 
-.. moduleauthor:: Nadeem Vawda <nadeem.vawda@gmail.com>
-.. sectionauthor:: Nadeem Vawda <nadeem.vawda@gmail.com>
-
 .. versionadded:: 3.3
 
 **Source code:** :source:`Lib/lzma.py`
@@ -22,6 +19,8 @@ The interface provided by this module is very similar to that of the :mod:`bz2`
 module. Note that :class:`LZMAFile` and :class:`bz2.BZ2File` are *not*
 thread-safe, so if you need to use a single :class:`LZMAFile` instance
 from multiple threads, it is necessary to protect it with a lock.
+
+.. include:: ../includes/optional-module.rst
 
 
 .. exception:: LZMAError

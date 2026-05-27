@@ -1,9 +1,10 @@
 """ Tests for the internal type cache in CPython. """
+import collections.abc
 import dis
 import unittest
 import warnings
 from test import support
-from test.support import import_helper, requires_specialization, requires_specialization_ft
+from test.support import import_helper, requires_specialization
 try:
     from sys import _clear_type_cache
 except ImportError:
@@ -114,6 +115,25 @@ class TypeCacheTests(unittest.TestCase):
             Holder.set_value()
             HolderSub.value
 
+    def test_abc_register_invalidates_subclass_versions(self):
+        class Parent:
+            pass
+
+        class Child(Parent):
+            pass
+
+        type_assign_version(Parent)
+        type_assign_version(Child)
+        parent_version = type_get_version(Parent)
+        child_version = type_get_version(Child)
+        if parent_version == 0 or child_version == 0:
+            self.skipTest("Could not assign valid type versions")
+
+        collections.abc.Mapping.register(Parent)
+
+        self.assertEqual(type_get_version(Parent), 0)
+        self.assertEqual(type_get_version(Child), 0)
+
 @support.cpython_only
 class TypeCacheWithSpecializationTests(unittest.TestCase):
     def tearDown(self):
@@ -219,7 +239,7 @@ class TypeCacheWithSpecializationTests(unittest.TestCase):
 
         self._check_specialization(store_bar_2, B(), "STORE_ATTR", should_specialize=False)
 
-    @requires_specialization_ft
+    @requires_specialization
     def test_class_call_specialization_user_type(self):
         class F:
             def __init__(self):

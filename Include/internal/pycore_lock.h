@@ -13,7 +13,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-//_Py_UNLOCKED is defined as 0 and _Py_LOCKED as 1 in Include/cpython/lock.h
+//_Py_UNLOCKED is defined as 0 and _Py_LOCKED as 1 in Include/cpython/pylock.h
 #define _Py_HAS_PARKED  2
 #define _Py_ONCE_INITIALIZED 4
 
@@ -69,6 +69,9 @@ PyMutex_LockFlags(PyMutex *m, _PyLockFlags flags)
 // Unlock a mutex, returns -1 if the mutex is not locked (used for improved
 // error messages) otherwise returns 0.
 extern int _PyMutex_TryUnlock(PyMutex *m);
+
+// Yield the processor to other threads (e.g., sched_yield).
+extern void _Py_yield(void);
 
 
 // PyEvent is a one-time event notification

@@ -12,6 +12,7 @@ import subprocess
 import sys
 import threading
 import warnings
+import inspect
 
 from . import base_events
 from . import base_subprocess
@@ -94,7 +95,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         Raise RuntimeError if there is a problem setting up the handler.
         """
         if (coroutines.iscoroutine(callback) or
-                coroutines._iscoroutinefunction(callback)):
+                inspect.iscoroutinefunction(callback)):
             raise TypeError("coroutines cannot be used "
                             "with add_signal_handler()")
         self._check_signal(sig)
@@ -359,7 +360,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 "os.sendfile() is not available")
         try:
             fileno = file.fileno()
-        except (AttributeError, io.UnsupportedOperation) as err:
+        except (AttributeError, io.UnsupportedOperation):
             raise exceptions.SendfileNotAvailableError("not a regular file")
         try:
             fsize = os.fstat(fileno).st_size
@@ -834,7 +835,8 @@ class _UnixSubprocessTransport(base_subprocess.BaseSubprocessTransport):
 
     def _start(self, args, shell, stdin, stdout, stderr, bufsize, **kwargs):
         stdin_w = None
-        if stdin == subprocess.PIPE and sys.platform.startswith('aix'):
+        if (stdin == subprocess.PIPE
+            and (sys.platform.startswith('aix') or sys.platform == 'cygwin')):
             # Use a socket pair for stdin on AIX, since it does not
             # support selecting read events on the write end of a
             # socket (which we use in order to detect closing of the
