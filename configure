@@ -16487,33 +16487,93 @@ save_LIBS=$LIBS
 
     CPPFLAGS="$CPPFLAGS $LIBMPDEC_CFLAGS"
     LIBS="$LIBS $LIBMPDEC_LIBS"
+    ac_fn_c_check_header_compile "$LINENO" "mpdecimal.h" "ac_cv_header_mpdecimal_h" "$ac_includes_default"
+if test "x$ac_cv_header_mpdecimal_h" = xyes
+then :
 
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for mpd_version in -lmpdec" >&5
+printf %s "checking for mpd_version in -lmpdec... " >&6; }
+if test ${ac_cv_lib_mpdec_mpd_version+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) ac_check_lib_save_LIBS=$LIBS
+LIBS="-lmpdec  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-
-        #include <mpdecimal.h>
-        #if MPD_VERSION_HEX < 0x02050000
-        #  error "mpdecimal 2.5.0 or higher required"
-        #endif
-
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.
+   The 'extern "C"' is for builds by C++ compilers;
+   although this is not generally supported in C code supporting it here
+   has little cost and some practical benefit (sr 110532).  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char mpd_version (void);
 int
 main (void)
 {
-const char *x = mpd_version();
+return mpd_version ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"
 then :
+  ac_cv_lib_mpdec_mpd_version=yes
+else case e in #(
+  e) ac_cv_lib_mpdec_mpd_version=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mpdec_mpd_version" >&5
+printf "%s\n" "$ac_cv_lib_mpdec_mpd_version" >&6; }
+if test "x$ac_cv_lib_mpdec_mpd_version" = xyes
+then :
+
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+            #include <mpdecimal.h>
+            #if MPD_VERSION_HEX < 0x02050000
+            #  error "mpdecimal 2.5.0 or higher required"
+            #endif
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
   have_mpdec=yes
 else case e in #(
   e) have_mpdec=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+
+else case e in #(
+  e) have_mpdec=no ;;
+esac
+fi
+
+
+else case e in #(
+  e) have_mpdec=no ;;
+esac
+fi
+
 
     if test "x$have_mpdec" = xyes
 then :
@@ -16542,33 +16602,93 @@ save_LIBS=$LIBS
 
     CPPFLAGS="$CPPFLAGS $LIBMPDEC_CFLAGS"
     LIBS="$LIBS $LIBMPDEC_LIBS"
+    ac_fn_c_check_header_compile "$LINENO" "mpdecimal.h" "ac_cv_header_mpdecimal_h" "$ac_includes_default"
+if test "x$ac_cv_header_mpdecimal_h" = xyes
+then :
 
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for mpd_version in -lmpdec" >&5
+printf %s "checking for mpd_version in -lmpdec... " >&6; }
+if test ${ac_cv_lib_mpdec_mpd_version+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) ac_check_lib_save_LIBS=$LIBS
+LIBS="-lmpdec  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-
-        #include <mpdecimal.h>
-        #if MPD_VERSION_HEX < 0x02050000
-        #  error "mpdecimal 2.5.0 or higher required"
-        #endif
-
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.
+   The 'extern "C"' is for builds by C++ compilers;
+   although this is not generally supported in C code supporting it here
+   has little cost and some practical benefit (sr 110532).  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char mpd_version (void);
 int
 main (void)
 {
-const char *x = mpd_version();
+return mpd_version ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"
 then :
+  ac_cv_lib_mpdec_mpd_version=yes
+else case e in #(
+  e) ac_cv_lib_mpdec_mpd_version=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mpdec_mpd_version" >&5
+printf "%s\n" "$ac_cv_lib_mpdec_mpd_version" >&6; }
+if test "x$ac_cv_lib_mpdec_mpd_version" = xyes
+then :
+
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+            #include <mpdecimal.h>
+            #if MPD_VERSION_HEX < 0x02050000
+            #  error "mpdecimal 2.5.0 or higher required"
+            #endif
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
   have_mpdec=yes
 else case e in #(
   e) have_mpdec=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+
+else case e in #(
+  e) have_mpdec=no ;;
+esac
+fi
+
+
+else case e in #(
+  e) have_mpdec=no ;;
+esac
+fi
+
 
     if test "x$have_mpdec" = xyes
 then :

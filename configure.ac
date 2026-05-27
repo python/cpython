@@ -4380,16 +4380,19 @@ PKG_CHECK_MODULES([LIBMPDEC], [libmpdec >= 2.5.0], [have_mpdec=yes], [
   WITH_SAVE_ENV([
     CPPFLAGS="$CPPFLAGS $LIBMPDEC_CFLAGS"
     LIBS="$LIBS $LIBMPDEC_LIBS"
-
-    AC_LINK_IFELSE([
-      AC_LANG_PROGRAM([
-        #include <mpdecimal.h>
-        #if MPD_VERSION_HEX < 0x02050000
-        #  error "mpdecimal 2.5.0 or higher required"
-        #endif
-      ], [const char *x = mpd_version();])],
-      [have_mpdec=yes],
-      [have_mpdec=no])
+    AC_CHECK_HEADER([mpdecimal.h], [
+      AC_CHECK_LIB([mpdec], [mpd_version], [
+        AC_COMPILE_IFELSE([
+          AC_LANG_PROGRAM([
+            #include <mpdecimal.h>
+            #if MPD_VERSION_HEX < 0x02050000
+            #  error "mpdecimal 2.5.0 or higher required"
+            #endif
+          ], [])],
+          [have_mpdec=yes],
+          [have_mpdec=no])
+      ], [have_mpdec=no])
+    ], [have_mpdec=no])
 
     AS_VAR_IF([have_mpdec], [yes], [
      LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
