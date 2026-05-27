@@ -4065,11 +4065,7 @@ class ConfigDictTest(BaseTest):
         # and thus cannot be used as a queue-like object (gh-124653)
 
         import multiprocessing
-
-        if support.MS_WINDOWS:
-            start_methods = ['spawn']
-        else:
-            start_methods = ['spawn', 'fork', 'forkserver']
+        start_methods = multiprocessing.get_all_start_methods()
 
         for start_method in start_methods:
             with self.subTest(start_method=start_method):
@@ -4085,10 +4081,8 @@ class ConfigDictTest(BaseTest):
                                            " assertions in multiprocessing")
     def test_config_queue_handler_multiprocessing_context(self):
         # regression test for gh-121723
-        if support.MS_WINDOWS:
-            start_methods = ['spawn']
-        else:
-            start_methods = ['spawn', 'fork', 'forkserver']
+        import multiprocessing
+        start_methods = multiprocessing.get_all_start_methods()
         for start_method in start_methods:
             with self.subTest(start_method=start_method):
                 ctx = multiprocessing.get_context(start_method)

@@ -36,8 +36,8 @@ PyDoc_STRVAR(_decimal_Context_Etop__doc__,
 "\n"
 "Return a value equal to Emax - prec + 1.\n"
 "\n"
-"This is the maximum exponent if the _clamp field of the context is set\n"
-"to 1 (IEEE clamp mode).  Etop() must not be negative.");
+"This is the maximum exponent if the _clamp field of the context is\n"
+"set to 1 (IEEE clamp mode).  Etop() must not be negative.");
 
 #define _DECIMAL_CONTEXT_ETOP_METHODDEF    \
     {"Etop", (PyCFunction)_decimal_Context_Etop, METH_NOARGS, _decimal_Context_Etop__doc__},
@@ -1092,10 +1092,10 @@ PyDoc_STRVAR(_decimal_Decimal_to_integral_exact__doc__,
 "\n"
 "Round to the nearest integer.\n"
 "\n"
-"Decimal.to_integral_exact() signals Inexact or Rounded as appropriate\n"
-"if rounding occurs.  The rounding mode is determined by the rounding\n"
-"parameter if given, else by the given context. If neither parameter is\n"
-"given, then the rounding mode of the current default context is used.");
+"This method signals Inexact or Rounded as appropriate if rounding\n"
+"occurs.  The rounding mode is determined by the rounding parameter\n"
+"if given, else by the given context.  If neither parameter is given,\n"
+"then the rounding mode of the current default context is used.");
 
 #define _DECIMAL_DECIMAL_TO_INTEGRAL_EXACT_METHODDEF    \
     {"to_integral_exact", _PyCFunction_CAST(_decimal_Decimal_to_integral_exact), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_to_integral_exact__doc__},
@@ -1638,7 +1638,8 @@ PyDoc_STRVAR(_decimal_Decimal_sqrt__doc__,
 "\n"
 "Return the square root of the argument to full precision.\n"
 "\n"
-"The result is correctly rounded using the ROUND_HALF_EVEN rounding mode.");
+"The result is correctly rounded using the ROUND_HALF_EVEN rounding\n"
+"mode.");
 
 #define _DECIMAL_DECIMAL_SQRT_METHODDEF    \
     {"sqrt", _PyCFunction_CAST(_decimal_Decimal_sqrt), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_sqrt__doc__},
@@ -2113,10 +2114,10 @@ PyDoc_STRVAR(_decimal_Decimal_next_toward__doc__,
 "\n"
 "Returns the number closest to self, in the direction towards other.\n"
 "\n"
-"If the two operands are unequal, return the number closest to the first\n"
-"operand in the direction of the second operand.  If both operands are\n"
-"numerically equal, return a copy of the first operand with the sign set\n"
-"to be the same as the sign of the second operand.");
+"If the two operands are unequal, return the number closest to the\n"
+"first operand in the direction of the second operand.  If both\n"
+"operands are numerically equal, return a copy of the first operand\n"
+"with the sign set to be the same as the sign of the second operand.");
 
 #define _DECIMAL_DECIMAL_NEXT_TOWARD_METHODDEF    \
     {"next_toward", _PyCFunction_CAST(_decimal_Decimal_next_toward), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_next_toward__doc__},
@@ -2185,10 +2186,10 @@ PyDoc_STRVAR(_decimal_Decimal_remainder_near__doc__,
 "Return the remainder from dividing self by other.\n"
 "\n"
 "This differs from self % other in that the sign of the remainder is\n"
-"chosen so as to minimize its absolute value. More precisely, the return\n"
-"value is self - n * other where n is the integer nearest to the exact\n"
-"value of self / other, and if two integers are equally near then the\n"
-"even one is chosen.\n"
+"chosen so as to minimize its absolute value. More precisely, the\n"
+"return value is self - n * other where n is the integer nearest to\n"
+"the exact value of self / other, and if two integers are equally\n"
+"near then the even one is chosen.\n"
 "\n"
 "If the result is zero then its sign will be the sign of self.");
 
@@ -2671,8 +2672,8 @@ PyDoc_STRVAR(_decimal_Decimal_radix__doc__,
 "\n"
 "Return Decimal(10).\n"
 "\n"
-"This is the radix (base) in which the Decimal class does\n"
-"all its arithmetic. Included for compatibility with the specification.");
+"This is the radix (base) in which the Decimal class does all its\n"
+"arithmetic. Included for compatibility with the specification.");
 
 #define _DECIMAL_DECIMAL_RADIX_METHODDEF    \
     {"radix", _PyCFunction_CAST(_decimal_Decimal_radix), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_radix__doc__},
@@ -2812,9 +2813,9 @@ PyDoc_STRVAR(_decimal_Decimal_logb__doc__,
 "\n"
 "Return the adjusted exponent of the operand as a Decimal instance.\n"
 "\n"
-"If the operand is a zero, then Decimal(\'-Infinity\') is returned and the\n"
-"DivisionByZero condition is raised. If the operand is an infinity then\n"
-"Decimal(\'Infinity\') is returned.");
+"If the operand is a zero, then Decimal(\'-Infinity\') is returned and\n"
+"the DivisionByZero condition is raised.  If the operand is an\n"
+"infinity then Decimal(\'Infinity\') is returned.");
 
 #define _DECIMAL_DECIMAL_LOGB_METHODDEF    \
     {"logb", _PyCFunction_CAST(_decimal_Decimal_logb), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_logb__doc__},
@@ -2894,7 +2895,8 @@ PyDoc_STRVAR(_decimal_Decimal_number_class__doc__,
 "    * \'+Normal\', indicating that the operand is a positive normal\n"
 "      number.\n"
 "    * \'+Infinity\', indicating that the operand is positive infinity.\n"
-"    * \'NaN\', indicating that the operand is a quiet NaN (Not a Number).\n"
+"    * \'NaN\', indicating that the operand is a quiet NaN (Not a\n"
+"      Number).\n"
 "    * \'sNaN\', indicating that the operand is a signaling NaN.");
 
 #define _DECIMAL_DECIMAL_NUMBER_CLASS_METHODDEF    \
@@ -2961,12 +2963,12 @@ PyDoc_STRVAR(_decimal_Decimal_to_eng_string__doc__,
 "\n"
 "Convert to an engineering-type string.\n"
 "\n"
-"Engineering notation has an exponent which is a multiple of 3, so there\n"
-"are up to 3 digits left of the decimal place. For example,\n"
+"Engineering notation has an exponent which is a multiple of 3, so\n"
+"there are up to 3 digits left of the decimal place.  For example,\n"
 "Decimal(\'123E+1\') is converted to Decimal(\'1.23E+3\').\n"
 "\n"
-"The value of context.capitals determines whether the exponent sign is\n"
-"lower or upper case. Otherwise, the context does not affect the\n"
+"The value of context.capitals determines whether the exponent sign\n"
+"is lower or upper case.  Otherwise, the context does not affect the\n"
 "operation.");
 
 #define _DECIMAL_DECIMAL_TO_ENG_STRING_METHODDEF    \
@@ -3033,25 +3035,25 @@ PyDoc_STRVAR(_decimal_Decimal_compare_total__doc__,
 "\n"
 "Compare two operands using their abstract representation.\n"
 "\n"
-"Similar to the compare() method, but the result\n"
-"gives a total ordering on Decimal instances.  Two Decimal instances with\n"
-"the same numeric value but different representations compare unequal\n"
-"in this ordering:\n"
+"Similar to the compare() method, but the result gives a total\n"
+"ordering on Decimal instances.  Two Decimal instances with the same\n"
+"numeric value but different representations compare unequal in this\n"
+"ordering:\n"
 "\n"
 "    >>> Decimal(\'12.0\').compare_total(Decimal(\'12\'))\n"
 "    Decimal(\'-1\')\n"
 "\n"
-"Quiet and signaling NaNs are also included in the total ordering. The\n"
-"result of this function is Decimal(\'0\') if both operands have the same\n"
-"representation, Decimal(\'-1\') if the first operand is lower in the\n"
-"total order than the second, and Decimal(\'1\') if the first operand is\n"
-"higher in the total order than the second operand. See the\n"
-"specification for details of the total order.\n"
+"Quiet and signaling NaNs are also included in the total ordering.\n"
+"The result of this function is Decimal(\'0\') if both operands have\n"
+"the same representation, Decimal(\'-1\') if the first operand is lower\n"
+"in the total order than the second, and Decimal(\'1\') if the first\n"
+"operand is higher in the total order than the second operand.  See\n"
+"the specification for details of the total order.\n"
 "\n"
 "This operation is unaffected by context and is quiet: no flags are\n"
-"changed and no rounding is performed. As an exception, the C version\n"
-"may raise InvalidOperation if the second operand cannot be converted\n"
-"exactly.");
+"changed and no rounding is performed.  As an exception, the C\n"
+"version may raise InvalidOperation if the second operand cannot be\n"
+"converted exactly.");
 
 #define _DECIMAL_DECIMAL_COMPARE_TOTAL_METHODDEF    \
     {"compare_total", _PyCFunction_CAST(_decimal_Decimal_compare_total), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_compare_total__doc__},
@@ -3544,12 +3546,13 @@ PyDoc_STRVAR(_decimal_Decimal_rotate__doc__,
 "\n"
 "Returns a rotated copy of self\'s digits, value-of-other times.\n"
 "\n"
-"The second operand must be an integer in the range -precision through\n"
-"precision. The absolute value of the second operand gives the number of\n"
-"places to rotate. If the second operand is positive then rotation is to\n"
-"the left; otherwise rotation is to the right.  The coefficient of the\n"
-"first operand is padded on the left with zeros to length precision if\n"
-"necessary. The sign and exponent of the first operand are unchanged.");
+"The second operand must be an integer in the range -precision\n"
+"through precision.  The absolute value of the second operand gives\n"
+"the number of places to rotate.  If the second operand is positive\n"
+"then rotation is to the left; otherwise rotation is to the right.\n"
+"The coefficient of the first operand is padded on the left with\n"
+"zeros to length precision if necessary.  The sign and exponent of\n"
+"the first operand are unchanged.");
 
 #define _DECIMAL_DECIMAL_ROTATE_METHODDEF    \
     {"rotate", _PyCFunction_CAST(_decimal_Decimal_rotate), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_rotate__doc__},
@@ -3686,12 +3689,12 @@ PyDoc_STRVAR(_decimal_Decimal_shift__doc__,
 "\n"
 "Returns a shifted copy of self\'s digits, value-of-other times.\n"
 "\n"
-"The second operand must be an integer in the range -precision through\n"
-"precision. The absolute value of the second operand gives the number\n"
-"of places to shift. If the second operand is positive, then the shift\n"
-"is to the left; otherwise the shift is to the right. Digits shifted\n"
-"into the coefficient are zeros. The sign and exponent of the first\n"
-"operand are unchanged.");
+"The second operand must be an integer in the range -precision\n"
+"through precision.  The absolute value of the second operand gives\n"
+"the number of places to shift.  If the second operand is positive,\n"
+"then the shift is to the left; otherwise the shift is to the right.\n"
+"Digits shifted into the coefficient are zeros.  The sign and\n"
+"exponent of the first operand are unchanged.");
 
 #define _DECIMAL_DECIMAL_SHIFT_METHODDEF    \
     {"shift", _PyCFunction_CAST(_decimal_Decimal_shift), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_shift__doc__},
@@ -3774,11 +3777,11 @@ PyDoc_STRVAR(_decimal_Decimal_quantize__doc__,
 "Also unlike other operations, quantize never signals Underflow, even\n"
 "if the result is subnormal and inexact.\n"
 "\n"
-"If the exponent of the second operand is larger than that of the first,\n"
-"then rounding may be necessary. In this case, the rounding mode is\n"
-"determined by the rounding argument if given, else by the given context\n"
-"argument; if neither argument is given, the rounding mode of the\n"
-"current thread\'s context is used.");
+"If the exponent of the second operand is larger than that of the\n"
+"first, then rounding may be necessary.  In this case, the rounding\n"
+"mode is determined by the rounding argument if given, else by the\n"
+"given context argument; if neither argument is given, the rounding\n"
+"mode of the current thread\'s context is used.");
 
 #define _DECIMAL_DECIMAL_QUANTIZE_METHODDEF    \
     {"quantize", _PyCFunction_CAST(_decimal_Decimal_quantize), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_quantize__doc__},
@@ -5197,8 +5200,8 @@ PyDoc_STRVAR(_decimal_Context_remainder_near__doc__,
 "\n"
 "Return x - y * n.\n"
 "\n"
-"Here n is the integer nearest the exact value of x / y (if the result\n"
-"is 0 then its sign will be the sign of x).");
+"Here n is the integer nearest the exact value of x / y (if the\n"
+"result is 0 then its sign will be the sign of x).");
 
 #define _DECIMAL_CONTEXT_REMAINDER_NEAR_METHODDEF    \
     {"remainder_near", _PyCFunction_CAST(_decimal_Context_remainder_near), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_remainder_near__doc__},
@@ -5336,7 +5339,8 @@ PyDoc_STRVAR(_decimal_Context_power__doc__,
 "    * all three arguments must be integral\n"
 "    * \'b\' must be nonnegative\n"
 "    * at least one of \'a\' or \'b\' must be nonzero\n"
-"    * modulo must be nonzero and less than 10**prec in absolute value");
+"    * modulo must be nonzero and less than 10**prec in absolute\n"
+"      value");
 
 #define _DECIMAL_CONTEXT_POWER_METHODDEF    \
     {"power", _PyCFunction_CAST(_decimal_Context_power), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_power__doc__},
@@ -6980,4 +6984,4 @@ exit:
 #ifndef _DECIMAL_CONTEXT_APPLY_METHODDEF
     #define _DECIMAL_CONTEXT_APPLY_METHODDEF
 #endif /* !defined(_DECIMAL_CONTEXT_APPLY_METHODDEF) */
-/*[clinic end generated code: output=b288181c82fdc9f1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0eb835634388294e input=a9049054013a1b77]*/
