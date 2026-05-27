@@ -193,4 +193,4 @@ _abc_get_cache_token(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _abc_get_cache_token_impl(module);
 }
-/*[clinic end generated code: output=9fa68621578b46d0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d2ba2a778daeab50 input=a9049054013a1b77]*/
