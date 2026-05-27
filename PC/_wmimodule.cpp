@@ -230,13 +230,13 @@ _wmi.exec_query
 
 Runs a WMI query against the local machine.
 
-This returns a single string with 'name=value' pairs in a flat array separated
-by null characters.
+This returns a single string with 'name=value' pairs in a flat array
+separated by null characters.
 [clinic start generated code]*/
 
 static PyObject *
 _wmi_exec_query_impl(PyObject *module, PyObject *query)
-/*[clinic end generated code: output=a62303d5bb5e003f input=48d2d0a1e1a7e3c2]*/
+/*[clinic end generated code: output=a62303d5bb5e003f input=a8d5710acdfbf515]*/
 
 /*[clinic end generated code]*/
 {
