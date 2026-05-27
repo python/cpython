@@ -4328,13 +4328,14 @@ _imp.acquire_lock
 
 Acquires the interpreter's import lock for the current thread.
 
-This lock should be used by import hooks to ensure thread-safety when importing
-modules. On platforms without threads, this function does nothing.
+This lock should be used by import hooks to ensure thread-safety when
+importing modules.  On platforms without threads, this function does
+nothing.
 [clinic start generated code]*/
 
 static PyObject *
 _imp_acquire_lock_impl(PyObject *module)
-/*[clinic end generated code: output=1aff58cb0ee1b026 input=4a2d4381866d5fdc]*/
+/*[clinic end generated code: output=1aff58cb0ee1b026 input=60e9c1b4ab471ead]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     _PyImport_AcquireLock(interp);

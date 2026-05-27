@@ -297,15 +297,16 @@ _queue.SimpleQueue.put
 
 Put the item on the queue.
 
-The optional 'block' and 'timeout' arguments are ignored, as this method
-never blocks.  They are provided for compatibility with the Queue class.
+The optional 'block' and 'timeout' arguments are ignored, as this
+method never blocks.  They are provided for compatibility with the
+Queue class.
 
 [clinic start generated code]*/
 
 static PyObject *
 _queue_SimpleQueue_put_impl(simplequeueobject *self, PyObject *item,
                             int block, PyObject *timeout)
-/*[clinic end generated code: output=4333136e88f90d8b input=a16dbb33363c0fa8]*/
+/*[clinic end generated code: output=4333136e88f90d8b input=9f9ff270a74670c3]*/
 {
     HandoffData data = {
         .handed_off = 0,
@@ -365,10 +366,11 @@ _queue.SimpleQueue.get
 
 Remove and return an item from the queue.
 
-If optional args 'block' is true and 'timeout' is None (the default),
-block if necessary until an item is available. If 'timeout' is
-a non-negative number, it blocks at most 'timeout' seconds and raises
-the Empty exception if no item was available within that time.
+If optional args 'block' is true and 'timeout' is None (the
+default), block if necessary until an item is available.  If
+'timeout' is a non-negative number, it blocks at most 'timeout'
+seconds and raises the Empty exception if no item was available
+within that time.
 Otherwise ('block' is false), return an item if one is immediately
 available, else raise the Empty exception ('timeout' is ignored
 in that case).
@@ -378,7 +380,7 @@ in that case).
 static PyObject *
 _queue_SimpleQueue_get_impl(simplequeueobject *self, PyTypeObject *cls,
                             int block, PyObject *timeout_obj)
-/*[clinic end generated code: output=5c2cca914cd1e55b input=f7836c65e5839c51]*/
+/*[clinic end generated code: output=5c2cca914cd1e55b input=afa0889bbc6b4761]*/
 {
     PyTime_t endtime = 0;
 
