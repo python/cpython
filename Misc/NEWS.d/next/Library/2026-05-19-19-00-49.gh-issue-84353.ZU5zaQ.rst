@@ -1,2 +1,4 @@
-Preserve non-ASCII filenames encoded not in UTF-8 when appending to
-:class:`zipfile.ZipFile`.
+Preserve non-UTF-8 encoded filenames when appending to a
+:class:`zipfile.ZipFile`.  Previously, names stored in a legacy encoding
+(without the UTF-8 flag bit set) were corrupted when the central directory
+was rewritten.

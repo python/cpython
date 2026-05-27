@@ -3639,20 +3639,20 @@ class EncodedMetadataTests(unittest.TestCase):
 
     def test_read_after_append(self):
         newname = '\u56db'  # Han 'four'
-        newname2 = 'fünf'  # encodeable in cp437
+        newname2 = 'fünf'  # representable in cp437, but still stored as UTF-8
         expected_names = [*self.file_names, newname, newname2]
-        bad_expected_names = [name.encode('shift_jis').decode('cp437')
-                              if i < 2 else name
-                              for i, name in enumerate(expected_names)]
+        mojibake_expected_names = [name.encode('shift_jis').decode('cp437')
+                                   if i < 2 else name
+                                   for i, name in enumerate(expected_names)]
         expected_content = (*self.file_content, b"newcontent", b"newcontent2")
 
         with zipfile.ZipFile(TESTFN, "a") as zipfp:
             zipfp.writestr(newname, "newcontent")
             zipfp.writestr(newname2, "newcontent2")
-            self.assertEqual(sorted(zipfp.namelist()), sorted(bad_expected_names))
+            self.assertEqual(sorted(zipfp.namelist()), sorted(mojibake_expected_names))
 
         with zipfile.ZipFile(TESTFN, "r") as zipfp:
-            self._test_read(zipfp, bad_expected_names, expected_content)
+            self._test_read(zipfp, mojibake_expected_names, expected_content)
 
         with zipfile.ZipFile(TESTFN, "r", metadata_encoding='shift_jis') as zipfp:
             self._test_read(zipfp, expected_names, expected_content)
@@ -3666,14 +3666,14 @@ class EncodedMetadataTests(unittest.TestCase):
 
     def test_add_comment(self):
         with zipfile.ZipFile(TESTFN, "r") as zipfp:
-            bad_expected_names = zipfp.namelist()
+            mojibake_expected_names = zipfp.namelist()
 
         with zipfile.ZipFile(TESTFN, "a") as zipfp:
             zipfp.comment = b'comment'
-            self.assertEqual(zipfp.namelist(), bad_expected_names)
+            self.assertEqual(zipfp.namelist(), mojibake_expected_names)
 
         with zipfile.ZipFile(TESTFN, "r") as zipfp:
-            self._test_read(zipfp, bad_expected_names, self.file_content)
+            self._test_read(zipfp, mojibake_expected_names, self.file_content)
 
         with zipfile.ZipFile(TESTFN, "r", metadata_encoding='shift_jis') as zipfp:
             self._test_read(zipfp, self.file_names, self.file_content)
