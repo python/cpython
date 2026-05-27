@@ -240,10 +240,17 @@ classify_address(uintptr_t addr, int jit_enabled, PyInterpreterState *interp)
         if (strncmp(base, "python", 6) == 0) {
             return "python";
         }
+#ifdef __CYGWIN__
+        // Match Cygwin "cygpython3.16.dll"
+        if (strncmp(base, "cygpython", 9) == 0) {
+            return "python";
+        }
+#else
         // Match "libpython3.15.so.1.0"
         if (strncmp(base, "libpython", 9) == 0) {
             return "python";
         }
+#endif
         return "other";
     }
 #ifdef _Py_JIT
@@ -1105,7 +1112,7 @@ static PyObject *
 set_eval_frame_default(PyObject *self, PyObject *Py_UNUSED(args))
 {
     module_state *state = get_module_state(self);
-    _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), _PyEval_EvalFrameDefault);
+    _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), NULL);
     Py_CLEAR(state->record_list);
     Py_RETURN_NONE;
 }
