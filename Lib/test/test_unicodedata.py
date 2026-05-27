@@ -1106,6 +1106,22 @@ class UnicodeMiscTest(unittest.TestCase):
             "(can't load unicodedata module)"
         self.assertIn(error, result.err.decode("ascii"))
 
+    def test_unicodedata_unload_reload(self):
+        # gh-149449: dropping unicodedata and running gc must not leave the
+        # cached _ucnhash_CAPI pointer dangling.
+        code = (
+            "import gc, sys\n"
+            "assert '\\N{GRINNING FACE}'.encode("
+            "    'ascii', errors='namereplace') == b'\\\\N{GRINNING FACE}'\n"
+            "compile(r\"x = '\\\\N{LATIN CAPITAL LETTER A}'\", '<x>', 'exec')\n"
+            "del sys.modules['unicodedata']\n"
+            "gc.collect()\n"
+            "assert '\\N{WINKING FACE}'.encode("
+            "    'ascii', errors='namereplace') == b'\\\\N{WINKING FACE}'\n"
+            "compile(r\"x = '\\\\N{LATIN CAPITAL LETTER B}'\", '<x>', 'exec')\n"
+        )
+        script_helper.assert_python_ok("-c", code)
+
     def test_decimal_numeric_consistent(self):
         # Test that decimal and numeric are consistent,
         # i.e. if a character has a decimal value,
