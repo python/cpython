@@ -1603,27 +1603,6 @@ lzma_exec(PyObject *module)
         return -1;
     }
 
-    if (PyModule_AddStringConstant(
-                module, "LZMA_HEADER_VERSION_STRING",
-                LZMA_VERSION_STRING) < 0) {
-        return -1;
-    }
-    if (PyModule_AddStringConstant(
-                module, "LZMA_VERSION_STRING",
-                lzma_version_string()) < 0) {
-        return -1;
-    }
-    PyObject *uint32_obj = PyLong_FromUnsignedLong(LZMA_VERSION);
-    if (PyModule_AddObject(module, "LZMA_HEADER_VERSION", uint32_obj) < 0) {
-        Py_XDECREF(uint32_obj);
-        return -1;
-    }
-    uint32_obj = PyLong_FromUnsignedLong(lzma_version_number());
-    if (PyModule_AddObject(module, "LZMA_VERSION", uint32_obj) < 0) {
-        Py_XDECREF(uint32_obj);
-        return -1;
-    }
-
     return 0;
 }
 

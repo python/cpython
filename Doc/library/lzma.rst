@@ -335,39 +335,6 @@ Miscellaneous
    feature set.
 
 
-Information about the version of the lzma library in use is available through
-the following constants:
-
-
-.. data:: LZMA_VERSION
-.. data:: LZMA_VERSION_STRING
-
-   The version of the lzma C library actually loaded at runtime, in both
-   integer and string forms.
-
-   .. versionadded:: 3.15
-
-.. data:: LZMA_HEADER_VERSION
-.. data:: LZMA_HEADER_VERSION_STRING
-
-   The version of the lzma library that was used for building the module, in
-   both integer and string forms.  This may be different from the lzma library
-   actually used at runtime.
-
-   .. versionadded:: 3.15
-
-The version number and string formats are as defined in by C library. The
-integer is represented in decimal digits as ``jmmmppps`` where ``j`` is the
-major version, ``mmm`` is the minor version, ``ppp`` is the patch level, and
-``s`` is the "stability indicator" (2 means stable)::
-
-   >>> import lzma
-   >>> lzma.LZMA_VERSION
-   50020052
-   >>> lzma.LZMA_VERSION_STRING
-   '5.2.5'
-
-
 .. _filter-chain-specs:
 
 Specifying custom filter chains
