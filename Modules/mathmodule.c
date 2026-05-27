@@ -73,16 +73,6 @@ raised for division by zero and mod by zero.
 
 #include "clinic/mathmodule.c.h"
 
-// for testing; do not include in production version
-// this prevents the platform functions from ever being used.
-#undef HAVE_ACOSPI
-#undef HAVE_ASINPI
-#undef HAVE_ATANPI
-#undef HAVE_ATAN2PI
-#undef HAVE_COSPI
-#undef HAVE_SINPI
-#undef HAVE_TANPI
-
 /*[clinic input]
 module math
 [clinic start generated code]*/
