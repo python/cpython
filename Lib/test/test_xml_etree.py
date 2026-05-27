@@ -3565,6 +3565,32 @@ class ElementIterTest(unittest.TestCase):
         doc = ET.XML("<root>a&amp;<sub>b&amp;</sub>c&amp;</root>")
         self.assertEqual(''.join(doc.itertext()), 'a&b&c&')
 
+    def test_comment(self):
+        e = ET.Element('root')
+        e.text = 'before'
+        comment = ET.Comment('comment')
+        self.assertEqual(comment.text, 'comment')
+        comment.tail = 'after'
+        e.append(comment)
+        self.assertEqual(''.join(e.itertext()), 'beforeafter')
+        self.assertEqual(list(e.iter()), [e, comment])
+        self.assertEqual(list(e.iter('root')), [e])
+        self.assertEqual(''.join(comment.itertext()), '')
+        self.assertEqual(list(comment.iter()), [comment])
+
+    def test_processinginstruction(self):
+        e = ET.Element('root')
+        e.text = 'before'
+        pi = ET.PI('test', 'instruction')
+        self.assertEqual(pi.text, 'test instruction')
+        pi.tail = 'after'
+        e.append(pi)
+        self.assertEqual(''.join(e.itertext()), 'beforeafter')
+        self.assertEqual(list(e.iter()), [e, pi])
+        self.assertEqual(list(e.iter('root')), [e])
+        self.assertEqual(''.join(pi.itertext()), '')
+        self.assertEqual(list(pi.iter()), [pi])
+
     def test_corners(self):
         # single root, no subelements
         a = ET.Element('a')
