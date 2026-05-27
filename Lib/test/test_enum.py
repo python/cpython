@@ -4984,8 +4984,8 @@ class Color(enum.Enum)
  |  __members__
  |      Returns a mapping of member name->value.
  |
- |      This mapping lists all enum members, including aliases. Note that this
- |      is a read-only view of the internal mapping."""
+ |      This mapping lists all enum members, including aliases.  Note that
+ |      this is a read-only view of the internal mapping."""
 
 expected_help_output_without_docs = """\
 Help on class Color in module %s:
