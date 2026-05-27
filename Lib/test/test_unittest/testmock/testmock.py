@@ -2108,6 +2108,16 @@ class MockTest(unittest.TestCase):
         self.assertEqual([], h.readlines())
         self.assertEqual([], h.readlines())
 
+    def test_mock_open_exit_stack_issue_150484(self):
+        # Regression test for gh#150484
+        # mock_open().__exit__ must accept 4 args (ExitStack passes
+        # exc_info tuple) while previously it only accepted 3.
+        from contextlib import ExitStack
+        with mock.patch('builtins.open', mock.mock_open()):
+            with mock.mock_open() as m:
+                with ExitStack() as exit_stack:
+                    exit_stack.enter_context(open('/tmp/test.txt', 'w'))
+
     def test_mock_parents(self):
         for Klass in Mock, MagicMock:
             m = Klass()
