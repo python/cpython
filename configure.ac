@@ -6369,6 +6369,8 @@ AC_CHECK_FUNCS(
   [],
   [AC_MSG_ERROR([Python requires C99 compatible libm])]
 )
+
+AC_CHECK_FUNCS_ONCE(acospi asinpi atanpi atan2pi cospi sinpi tanpi)
 LIBS=$LIBS_SAVE
 
 dnl For multiprocessing module, check that sem_open

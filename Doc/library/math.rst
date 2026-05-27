@@ -83,13 +83,20 @@ noted otherwise, all return values are floats.
 
 **Trigonometric functions**
 --------------------------------------------------------------------------------------------------
-:func:`acos(x) <acos>`                                Arc cosine of *x*
-:func:`asin(x) <asin>`                                Arc sine of *x*
-:func:`atan(x) <atan>`                                Arc tangent of *x*
-:func:`atan2(y, x) <atan2>`                           ``atan(y / x)``
-:func:`cos(x) <cos>`                                  Cosine of *x*
-:func:`sin(x) <sin>`                                  Sine of *x*
-:func:`tan(x) <tan>`                                  Tangent of *x*
+:func:`acos(x) <acos>`                                Arc cosine of *x*, in radians
+:func:`acospi(x) <acospi>`                            Arc cosine of *x*, in half-turns
+:func:`asin(x) <asin>`                                Arc sine of *x*, in radians
+:func:`asinpi(x) <asinpi>`                            Arc sine of *x*, in half-turns
+:func:`atan(x) <atan>`                                Arc tangent of *x*, in radians
+:func:`atanpi(x) <atanpi>`                            Arc tangent of *x*, in half-turns
+:func:`atan2(y, x) <atan2>`                           ``atan(y / x)``, in radians
+:func:`atan2pi(y, x) <atan2pi>`                       ``atan(y / x)``, in half-turns
+:func:`cos(x) <cos>`                                  Cosine of *x* radians
+:func:`cospi(x) <cospi>`                              Cosine of *x⋅π* radians
+:func:`sin(x) <sin>`                                  Sine of *x* radians
+:func:`sinpi(x) <sinpi>`                              Sine of *x⋅π* radians
+:func:`tan(x) <tan>`                                  Tangent of *x* radians
+:func:`tanpi(x) <tanpi>`                              Tangent of *x⋅π* radians
 
 **Hyperbolic functions**
 --------------------------------------------------------------------------------------------------
@@ -597,16 +604,34 @@ Trigonometric functions
    ``pi``.
 
 
+.. function:: acospi(x)
+
+   Return the arc cosine of *x*, in half-turns. The result is between ``0`` and
+   ``1``.
+
+
 .. function:: asin(x)
 
    Return the arc sine of *x*, in radians. The result is between ``-pi/2`` and
    ``pi/2``.
 
 
+.. function:: asinpi(x)
+
+   Return the arc sine of *x*, in half-turns. The result is between ``-1/2`` and
+   ``1/2``.
+
+
 .. function:: atan(x)
 
    Return the arc tangent of *x*, in radians. The result is between ``-pi/2`` and
    ``pi/2``.
+
+
+.. function:: atanpi(x)
+
+   Return the arc tangent of *x*, in half-turns. The result is between ``-1/2`` and
+   ``1/2``.
 
 
 .. function:: atan2(y, x)
@@ -619,9 +644,24 @@ Trigonometric functions
    -1)`` is ``-3*pi/4``.
 
 
+.. function:: atan2pi(y, x)
+
+   Return ``atan(y / x)``, in half-turns. The result is between ``-1`` and ``1``.
+   The vector in the plane from the origin to point ``(x, y)`` makes this angle
+   with the positive X axis. The point of :func:`atan2` is that the signs of both
+   inputs are known to it, so it can compute the correct quadrant for the angle.
+   For example, ``atan(1)`` and ``atan2(1, 1)`` are both ``1/4``, but ``atan2(-1,
+   -1)`` is ``-3/4``.
+
+
 .. function:: cos(x)
 
    Return the cosine of *x* radians.
+
+
+.. function:: cospi(x)
+
+   Return the cosine of *x* half-turns (*x⋅π* radians).
 
 
 .. function:: sin(x)
@@ -629,9 +669,19 @@ Trigonometric functions
    Return the sine of *x* radians.
 
 
+.. function:: sinpi(x)
+
+   Return the sine of *x* half-turns (*x⋅π* radians).
+
+
 .. function:: tan(x)
 
    Return the tangent of *x* radians.
+
+
+.. function:: tanpi(x)
+
+   Return the tangent of *x* half-turns (*x⋅π* radians).
 
 
 Hyperbolic functions
