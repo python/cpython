@@ -3549,6 +3549,7 @@
             if (type != NULL) {
                 int match = type->tp_flags & Py_TPFLAGS_MAPPING;
                 REPLACE_OP(this_instr, _LOAD_COMMON_CONSTANT, match? CONSTANT_TRUE : CONSTANT_FALSE, 0);
+                res = sym_new_const(ctx, match? Py_True : Py_False);
             }
             else {
                 res = sym_new_type(ctx, &PyBool_Type);
@@ -3568,6 +3569,7 @@
             if (type != NULL) {
                 int match = type->tp_flags & Py_TPFLAGS_SEQUENCE;
                 REPLACE_OP(this_instr, _LOAD_COMMON_CONSTANT, match? CONSTANT_TRUE : CONSTANT_FALSE, 0);
+                res = sym_new_const(ctx, match? Py_True : Py_False);
             }
             else {
                 res = sym_new_type(ctx, &PyBool_Type);
