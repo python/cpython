@@ -369,13 +369,13 @@ options. Valid filter IDs are as follows:
 
     Only works if the lzma version is 5.4.0 or later.
 
-    .. versionadded:: 3.15
+    .. versionadded:: next
 
   * :const:`!FILTER_RISCV`
 
     Only works if the lzma version is 5.6.0 or later.
 
-    .. versionadded:: 3.15
+    .. versionadded:: next
 
 A filter chain can consist of up to 4 filters, and cannot be empty. The last
 filter in the chain must be a compression filter, and any other filters must be
