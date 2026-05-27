@@ -61,7 +61,7 @@ def _resolve_venv_child_pid(pid):
     Returns the original pid if not on Windows, not a venv launcher,
     or no child process is found.
     """
-    if os.name != "nt":
+    if os.name != "nt" or sys.prefix == sys.base_prefix:
         return pid
     try:
         children = _remote_debugging.get_child_pids(pid, recursive=False)
@@ -78,7 +78,7 @@ def _resolve_venv_child_pid(pid):
 
 class SampleProfiler:
     def __init__(self, pid, sample_interval_usec, all_threads, *, mode=PROFILING_MODE_WALL, native=False, gc=True, opcodes=False, skip_non_matching_threads=True, collect_stats=False, blocking=False):
-        self.pid = _resolve_venv_child_pid(pid) if os.name == "nt" and sys.prefix != sys.base_prefix else pid
+        self.pid = _resolve_venv_child_pid(pid)
         self.sample_interval_usec = sample_interval_usec
         self.all_threads = all_threads
         self.mode = mode  # Store mode for later use
