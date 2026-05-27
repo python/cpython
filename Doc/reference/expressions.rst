@@ -956,39 +956,91 @@ Generator expressions
    pair: object; generator
    single: () (parentheses); generator expression
 
-A generator expression is a compact generator notation in parentheses:
+The syntax for :dfn:`generator expressions` is the same as for
+list :ref:`comprehensions <comprehensions>`, except that they are enclosed in
+parentheses instead of brackets.
+For example::
 
-.. productionlist:: python-grammar
-   generator_expression: "(" `comprehension` ")"
+   >>> iterator = (x ** 2 for x in range(10))
+   >>> iterator
+   <generator object <genexpr> at ...>
 
-A generator expression yields a new generator object.  Its syntax is the same as
-for comprehensions, except that it is enclosed in parentheses instead of
-brackets or curly braces.
+At runtime, a generator expression evaluates to a :term:`generator iterator`
+which yields the same values as the corresponding list comprehension::
 
-Variables used in the generator expression are evaluated lazily when the
-:meth:`~generator.__next__` method is called for the generator object (in the same
-fashion as normal generators).  However, the iterable expression in the
-leftmost :keyword:`!for` clause is immediately evaluated, and the
-:term:`iterator` is immediately created for that iterable, so that an error
-produced while creating the iterator will be emitted at the point where the generator expression
-is defined, rather than at the point where the first value is retrieved.
-Subsequent :keyword:`!for` clauses and any filter condition in the leftmost
-:keyword:`!for` clause cannot be evaluated in the enclosing scope as they may
-depend on the values obtained from the leftmost iterable. For example:
-``(x*y for x in range(10) for y in range(x, x+10))``.
+   >>> list(iterator)
+   [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
 
-The parentheses can be omitted on calls with only one argument.  See section
-:ref:`calls` for details.
+Thus, the example above is roughly equivalent to defining and calling
+the following generator function::
+
+   def make_generator_of_squares(iterable):
+       for x in iterable:
+           yield x**2
+
+   make_generator_of_squares(range(10))
+
+The enclosing parentheses can be omitted in calls with only one
+positional argument.
+See the :ref:`Calls section <calls>` for details.
+For example::
+
+   # The parentheses after `sum` are part of the call syntax:
+   >>> sum(x ** 2 for x in range(10))
+   285
+
+   # The generator needs its own parentheses if it's not the only argument:
+   >>> sum((x ** 2 for x in range(10)), start=1000)
+   1285
+
+The iterable expression in the leftmost :keyword:`!for` clause is
+evaluated immediately, so that an error raised by this expression will be
+emitted at the point where the generator expression is defined,
+rather than at the point where the first value is retrieved::
+
+   >>> (x ** 2 for x in nonexistent_iterable)
+   Traceback (most recent call last):
+   File "<python-input-0>", line 1, in <module>
+     ...
+   NameError: name 'nonexistent_iterable' is not defined
+
+All other expressions are evaluated lazily, in the same fashion as normal
+generators (that is, when the iterator is asked to yield a value)::
+
+   >>> iterator = (nonexistent_value for x in range(10))
+   >>> iterator
+   <generator object <genexpr> at 0x7f373fb29cb0>
+   >>> list(iterator)
+   Traceback (most recent call last):
+     ...
+   NameError: name 'nonexistent_value' is not defined
+
+::
+
+   >>> iterator = (x*y for x in range(10) for y in nonexistent_iterable)
+   >>> iterator
+   <generator object <genexpr> at 0x7f373fcfa500>
+   >>> list(iterator)
+   Traceback (most recent call last):
+     ...
+   NameError: name 'nonexistent_iterable' is not defined
 
 To avoid interfering with the expected operation of the generator expression
-itself, ``yield`` and ``yield from`` expressions are prohibited in the
-implicitly defined generator.
+itself, ``yield`` and ``yield from`` expressions are prohibited inside
+the implicitly nested scope.
 
 If a generator expression contains either :keyword:`!async for`
 clauses or :keyword:`await` expressions it is called an
-:dfn:`asynchronous generator expression`.  An asynchronous generator
-expression returns a new asynchronous generator object,
-which is an asynchronous iterator (see :ref:`async-iterators`).
+:dfn:`asynchronous generator expression`.
+An asynchronous generator expression returns a new asynchronous generator
+object, which is an asynchronous iterator (see :ref:`async-iterators`).
+
+The formal grammar for generator expressions is:
+
+.. grammar-snippet::
+   :group: python-grammar
+
+   generator_expression: "(" `comprehension` ")"
 
 .. versionadded:: 3.6
    Asynchronous generator expressions were introduced.
