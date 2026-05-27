@@ -71,8 +71,11 @@ def _resolve_venv_child_pid(pid):
         ]
         if len(python_children) == 1:
             return python_children[0]
-    except (OSError, RuntimeError):
-        pass
+    except (OSError, RuntimeError) as err:
+        raise SystemExit(
+            f"Failed to initialize profiler from virtualenv: {err}\n"
+            f"Try running with the base interpreter: {sys._base_executable}"
+        ) from err
     return pid
 
 
@@ -87,11 +90,6 @@ class SampleProfiler:
         try:
             self.unwinder = self._new_unwinder(native, gc, opcodes, skip_non_matching_threads)
         except RuntimeError as err:
-            if os.name == "nt" and sys.prefix != sys.base_prefix:
-                raise SystemExit(
-                    f"Failed to initialize profiler from virtualenv: {err}\n"
-                    f"Try running with the base interpreter: {sys._base_executable}"
-                ) from err
             raise SystemExit(err) from err
         # Track sample intervals and total sample count
         self.sample_intervals = deque(maxlen=100)
