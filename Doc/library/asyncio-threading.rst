@@ -11,14 +11,20 @@ operations. It allows off-loading CPU-bound work to a thread or process
 pool, but that is still limited by the :term:`global interpreter lock`
 in CPython.
 
-However, with :pep:`703`, Python can now be built in a "free-threaded"
-mode, which removes the GIL and allows true multi-threading. This means
-that asyncio can now take advantage of multiple CPU cores without the
-limitations imposed by the GIL.
+However, in :ref:`free-threaded Python <freethreading-python-howto>`,
+the GIL is disabled and Python can run true multi-threaded code. This
+means that asyncio can now take advantage of multiple CPU cores without
+the limitations imposed by the GIL.
 
 Since Python 3.14, asyncio has first-class support for free-threaded
 Python, and the implementation of asyncio is safe to use in a
 multi-threaded environment.
+
+Combining asyncio with threads is most useful when you want to scale
+I/O-bound work across multiple CPU cores by running an event loop per
+thread, or when you need to run blocking or CPU bound code from an
+asyncio application.
+
 
 .. seealso::
 
