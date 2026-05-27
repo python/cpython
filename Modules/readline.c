@@ -1357,29 +1357,41 @@ setup_readline(readlinestate *mod_state)
     if (using_libedit_emulation)
         rl_initialize();
 
-    /* Detect if libedit's readline emulation uses 0-based
-     * indexing or 1-based indexing.
-     */
-    add_history("1");
-    if (history_get(1) == NULL) {
-        libedit_history_start = 0;
-    } else {
-        libedit_history_start = 1;
-    }
-    /* Some libedit implementations use 1 based indexing on
-     * replace_history_entry where libreadline uses 0 based.
-     * The API our module presents is supposed to be 0 based.
-     * It's a mad mad mad mad world.
-     */
-    {
-        add_history("2");
-        HIST_ENTRY *old_entry = replace_history_entry(1, "X", NULL);
-        _py_free_history_entry_lock_held(old_entry);
-        HIST_ENTRY *item = history_get(libedit_history_start);
-        if (item && item->line && strcmp(item->line, "X")) {
-            libedit_append_replace_history_offset = 0;
+    if (using_libedit_emulation) {
+        /* Detect if libedit's readline emulation uses 0-based
+         * indexing or 1-based indexing.
+         */
+        add_history("1");
+        if (history_get(1) == NULL) {
+            libedit_history_start = 0;
         } else {
-            libedit_append_replace_history_offset = 1;
+            libedit_history_start = 1;
+        }
+        /* Some libedit implementations use 1 based indexing on
+         * replace_history_entry where libreadline uses 0 based.
+         * The API our module presents is supposed to be 0 based.
+         * It's a mad mad mad mad world.
+         */
+        {
+            add_history("2");
+            HIST_ENTRY *old_entry = replace_history_entry(1, "X", NULL);
+            _py_free_history_entry_lock_held(old_entry);
+            HIST_ENTRY *item = history_get(libedit_history_start);
+            if (item && item->line && strcmp(item->line, "X")) {
+                libedit_append_replace_history_offset = 0;
+            } else {
+                libedit_append_replace_history_offset = 1;
+            }
+        }
+        /* Use remove_history instead of clear_history to explicitly free
+         * each probe entry: some libedit builds do not free the strdup'd line
+         * strings inside clear_history, causing a small leak per process. */
+        while (history_length > 0) {
+            HIST_ENTRY *entry = remove_history(libedit_history_start);
+            if (entry == NULL) {
+                break;
+            }
+            _py_free_history_entry_lock_held(entry);
         }
     }
     clear_history();
