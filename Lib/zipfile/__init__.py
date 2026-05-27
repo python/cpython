@@ -566,8 +566,12 @@ class ZipInfo:
         return header + filename + extra
 
     def _encodeFilenameFlags(self):
+        if self.flag_bits & _MASK_UTF_FILENAME:
+            encoding = 'ascii'
+        else:
+            encoding = 'cp437'
         try:
-            return self.filename.encode('ascii'), self.flag_bits
+            return self.filename.encode(encoding), self.flag_bits & ~_MASK_UTF_FILENAME
         except UnicodeEncodeError:
             return self.filename.encode('utf-8'), self.flag_bits | _MASK_UTF_FILENAME
 
@@ -1812,7 +1816,7 @@ class ZipFile:
         zinfo.compress_size = 0
         zinfo.CRC = 0
 
-        zinfo.flag_bits = 0x00
+        zinfo.flag_bits = _MASK_UTF_FILENAME
         if zinfo.compress_type == ZIP_LZMA:
             # Compressed data includes an end-of-stream (EOS) marker
             zinfo.flag_bits |= _MASK_COMPRESS_OPTION_1
