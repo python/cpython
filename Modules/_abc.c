@@ -757,7 +757,6 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
 
     PyObject *ok, *subclasses = NULL, *result = NULL;
     _abcmodule_state *state = NULL;
-    Py_ssize_t pos;
     int incache;
     _abc_data *impl = _get_impl(module, self);
     if (impl == NULL) {
