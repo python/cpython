@@ -1258,10 +1258,10 @@ pyexpat_xmlparser_SetBillionLaughsAttackProtectionActivationThreshold_impl(xmlpa
                                                                            unsigned long long threshold)
 /*[clinic end generated code: output=0c082342f1c78114 input=5a51695a481def92]*/
 {
-                    return set_activation_threshold(
-                        self, cls, threshold,
-                        XML_SetBillionLaughsAttackProtectionActivationThreshold
-                    );
+return set_activation_threshold(
+    self, cls, threshold,
+    XML_SetBillionLaughsAttackProtectionActivationThreshold
+);
 }
 #endif
 
@@ -1295,10 +1295,10 @@ pyexpat_xmlparser_SetBillionLaughsAttackProtectionMaximumAmplification_impl(xmlp
                                                                             float max_factor)
 /*[clinic end generated code: output=c590439eadf463fa input=5de7c6dd7169b3b0]*/
 {
-                    return set_maximum_amplification(
-                        self, cls, max_factor,
-                        XML_SetBillionLaughsAttackProtectionMaximumAmplification
-                    );
+return set_maximum_amplification(
+    self, cls, max_factor,
+    XML_SetBillionLaughsAttackProtectionMaximumAmplification
+);
 }
 #endif
 
