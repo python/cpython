@@ -2570,6 +2570,7 @@ treebuilder_dealloc(PyObject *self)
 /* helpers for handling of arbitrary element-like objects */
 
 /*[clinic input]
+@permit_long_summary
 _elementtree._set_factories
 
     comment_factory: object
@@ -2584,7 +2585,7 @@ For internal use only.
 static PyObject *
 _elementtree__set_factories_impl(PyObject *module, PyObject *comment_factory,
                                  PyObject *pi_factory)
-/*[clinic end generated code: output=813b408adee26535 input=99d17627aea7fb3b]*/
+/*[clinic end generated code: output=813b408adee26535 input=0f415cb6b821f768]*/
 {
     elementtreestate *st = get_elementtree_state(module);
     PyObject *old;

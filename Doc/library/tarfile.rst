@@ -144,7 +144,9 @@ Some facts and figures:
 
    For modes ``'w:gz'`` and ``'w|gz'``, :func:`tarfile.open` accepts the
    keyword argument *mtime* to create a gzip archive header with that mtime. By
-   default, the mtime is set to the time of creation of the archive.
+   default, the mtime is set to the time of creation of the archive. Use
+   *mtime* ``0`` to generate a compressed stream that does not depend on
+   creation time, for reproducible output.
 
    For special purposes, there is a second format for *mode*:
    ``'filemode|[compression]'``.  :func:`tarfile.open` will return a :class:`TarFile`

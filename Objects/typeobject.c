@@ -6490,9 +6490,25 @@ set_flags_recursive(PyTypeObject *self, unsigned long mask, unsigned long flags)
 void
 _PyType_SetFlagsRecursive(PyTypeObject *self, unsigned long mask, unsigned long flags)
 {
+    BEGIN_TYPE_LOCK();
+    /* Ideally, changing flags and invalidating the old version tag would
+       happen in one step. But type_modified_unlocked() is re-entrant and
+       cannot run with the world stopped, so we must invalidate first.
+       Immutable/static-builtin types are skipped because
+       set_flags_recursive() does not modify them. */
+    if (!PyType_HasFeature(self, Py_TPFLAGS_IMMUTABLETYPE) &&
+        (self->tp_flags & mask) != flags)
+    {
+        type_modified_unlocked(self);
+    }
+    /* Keep TYPE_LOCK held while waiting for stop-the-world so no thread
+       can reassign a version tag before the flag update. */
+    type_lock_prevent_release();
     types_stop_world();
     set_flags_recursive(self, mask, flags);
     types_start_world();
+    type_lock_allow_release();
+    END_TYPE_LOCK();
 }
 
 /* This is similar to PyObject_GenericGetAttr(),
@@ -12925,7 +12941,8 @@ PyDoc_STRVAR(super_doc,
 "super() -> same as super(__class__, <first argument>)\n"
 "super(type) -> unbound super object\n"
 "super(type, obj) -> bound super object; requires isinstance(obj, type)\n"
-"super(type, type2) -> bound super object; requires issubclass(type2, type)\n"
+"super(type, type2) -> bound super object; requires\n"
+"    issubclass(type2, type)\n"
 "Typical use to call a cooperative superclass method:\n"
 "class C(B):\n"
 "    def meth(self, arg):\n"

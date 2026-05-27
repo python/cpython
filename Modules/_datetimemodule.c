@@ -3325,7 +3325,6 @@ datetime_date_today_impl(PyTypeObject *type)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 @classmethod
 datetime.date.fromtimestamp
 
@@ -3334,13 +3333,13 @@ datetime.date.fromtimestamp
 
 Create a date from a POSIX timestamp.
 
-The timestamp is a number, e.g. created via time.time(), that is interpreted
-as local time.
+The timestamp is a number, e.g. created via time.time(), that is
+interpreted as local time.
 [clinic start generated code]*/
 
 static PyObject *
 datetime_date_fromtimestamp_impl(PyTypeObject *type, PyObject *timestamp)
-/*[clinic end generated code: output=59def4e32c028fb6 input=55ff6940f0a8339f]*/
+/*[clinic end generated code: output=59def4e32c028fb6 input=15720eef43b169a1]*/
 {
     return date_fromtimestamp(type, timestamp);
 }
@@ -3476,6 +3475,7 @@ datetime_date_fromisocalendar_impl(PyTypeObject *type, int year, int week,
 }
 
 /*[clinic input]
+@permit_long_summary
 @classmethod
 datetime.date.strptime
 
@@ -3492,7 +3492,7 @@ For a list of supported format codes, see the documentation:
 static PyObject *
 datetime_date_strptime_impl(PyTypeObject *type, PyObject *string,
                             PyObject *format)
-/*[clinic end generated code: output=454d473bee2d5161 input=31d57bb789433e99]*/
+/*[clinic end generated code: output=454d473bee2d5161 input=2db8f0b2b5242deb]*/
 {
     PyObject *result;
 
@@ -4744,6 +4744,7 @@ datetime_time_impl(PyTypeObject *type, int hour, int minute, int second,
 }
 
 /*[clinic input]
+@permit_long_summary
 @classmethod
 datetime.time.strptime
 
@@ -4760,7 +4761,7 @@ For a list of supported format codes, see the documentation:
 static PyObject *
 datetime_time_strptime_impl(PyTypeObject *type, PyObject *string,
                             PyObject *format)
-/*[clinic end generated code: output=ae05a9bc0241d3bf input=82ba425ecacc54aa]*/
+/*[clinic end generated code: output=ae05a9bc0241d3bf input=f01d0b9eb5383da5]*/
 {
     PyObject *result;
 
@@ -4856,8 +4857,8 @@ datetime.time.isoformat
 
 Return the time formatted according to ISO.
 
-The full format is 'HH:MM:SS.mmmmmm+zz:zz'. By default, the fractional
-part is omitted if self.microsecond == 0.
+The full format is 'HH:MM:SS.mmmmmm+zz:zz'. By default, the
+fractional part is omitted if self.microsecond == 0.
 
 The optional argument timespec specifies the number of additional
 terms of the time to include. Valid options are 'auto', 'hours',
@@ -4866,7 +4867,7 @@ terms of the time to include. Valid options are 'auto', 'hours',
 
 static PyObject *
 datetime_time_isoformat_impl(PyDateTime_Time *self, const char *timespec)
-/*[clinic end generated code: output=2bcc7cab65c35545 input=afbbbd953d10ad07]*/
+/*[clinic end generated code: output=2bcc7cab65c35545 input=0efae103081060f4]*/
 {
     char buf[100];
 
@@ -4927,14 +4928,14 @@ datetime_time_isoformat_impl(PyDateTime_Time *self, const char *timespec)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 datetime.time.strftime
 
     format: unicode
 
 Format using strftime().
 
-The date part of the timestamp passed to underlying strftime should not be used.
+The date part of the timestamp passed to underlying strftime should
+not be used.
 
 For a list of supported format codes, see the documentation:
     https://docs.python.org/3/library/datetime.html#format-codes
@@ -4942,7 +4943,7 @@ For a list of supported format codes, see the documentation:
 
 static PyObject *
 datetime_time_strftime_impl(PyDateTime_Time *self, PyObject *format)
-/*[clinic end generated code: output=10f65af20e2a78c7 input=c4a5bbecd798654b]*/
+/*[clinic end generated code: output=10f65af20e2a78c7 input=184e1c0d7d356c5d]*/
 {
     PyObject *result;
     PyObject *tuple;
@@ -5510,15 +5511,15 @@ datetime.datetime.__new__
 
 A combination of a date and a time.
 
-The year, month and day arguments are required. tzinfo may be None, or an
-instance of a tzinfo subclass. The remaining arguments may be ints.
+The year, month and day arguments are required. tzinfo may be None, or
+an instance of a tzinfo subclass. The remaining arguments may be ints.
 [clinic start generated code]*/
 
 static PyObject *
 datetime_datetime_impl(PyTypeObject *type, int year, int month, int day,
                        int hour, int minute, int second, int microsecond,
                        PyObject *tzinfo, int fold)
-/*[clinic end generated code: output=47983ddb47d36037 input=2af468d7a9c1e568]*/
+/*[clinic end generated code: output=47983ddb47d36037 input=c7fd85dcf6fe9691]*/
 {
     return new_datetime_ex2(year, month, day,
                             hour, minute, second, microsecond,
@@ -5735,7 +5736,6 @@ datetime_datetime_utcnow_impl(PyTypeObject *type)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 @classmethod
 datetime.datetime.fromtimestamp
 
@@ -5744,14 +5744,14 @@ datetime.datetime.fromtimestamp
 
 Create a datetime from a POSIX timestamp.
 
-The timestamp is a number, e.g. created via time.time(), that is interpreted
-as local time.
+The timestamp is a number, e.g. created via time.time(), that is
+interpreted as local time.
 [clinic start generated code]*/
 
 static PyObject *
 datetime_datetime_fromtimestamp_impl(PyTypeObject *type, PyObject *timestamp,
                                      PyObject *tzinfo)
-/*[clinic end generated code: output=9c47ea2b2ebdaded input=d6b5b2095c5a34b2]*/
+/*[clinic end generated code: output=9c47ea2b2ebdaded input=7a2bc81a049ea287]*/
 {
     PyObject *self;
     if (check_tzinfo_subclass(tzinfo) < 0)

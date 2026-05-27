@@ -49,6 +49,13 @@
 #include <crtdbg.h>
 #include "winreparse.h"
 
+// PSAPI_VERSION=2 redirects GetProcessMemoryInfo() to
+// K32GetProcessMemoryInfo() in kernel32.dll, so we don't need to link
+// psapi.lib. See:
+// https://learn.microsoft.com/windows/win32/api/psapi/nf-psapi-getprocessmemoryinfo
+#define PSAPI_VERSION 2
+#include <psapi.h>                // GetProcessMemoryInfo()
+
 #if defined(MS_WIN32) && !defined(MS_WIN64)
 #define HANDLE_TO_PYNUM(handle) \
     PyLong_FromUnsignedLong((unsigned long) handle)
@@ -3080,6 +3087,61 @@ _winapi_ReportEvent_impl(PyObject *module, HANDLE handle,
 }
 
 
+/*[clinic input]
+_winapi.GetProcessMemoryInfo
+    handle: HANDLE
+    /
+
+Return the memory usage of the given process handle as a dict.
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_GetProcessMemoryInfo_impl(PyObject *module, HANDLE handle)
+/*[clinic end generated code: output=00a5d09732e84120 input=5b90ad61cdc68d2a]*/
+{
+    PROCESS_MEMORY_COUNTERS pmc;
+    if (!GetProcessMemoryInfo(handle, &pmc, sizeof(pmc))) {
+        return PyErr_SetFromWindowsErr(0);
+    }
+
+    PyObject *result = PyDict_New();
+    if (result == NULL) {
+        return NULL;
+    }
+
+#define ADD(ATTR) \
+    do { \
+        PyObject *obj = PyLong_FromSize_t(pmc.ATTR); \
+        if (obj == NULL) { \
+            goto error; \
+        } \
+        if (PyDict_SetItemString(result, #ATTR, obj) < 0) { \
+            Py_DECREF(obj); \
+            goto error; \
+        } \
+        Py_DECREF(obj); \
+    } while (0)
+
+    ADD(PageFaultCount);
+    ADD(PeakWorkingSetSize);
+    ADD(WorkingSetSize);
+    ADD(QuotaPeakPagedPoolUsage);
+    ADD(QuotaPagedPoolUsage);
+    ADD(QuotaPeakNonPagedPoolUsage);
+    ADD(QuotaNonPagedPoolUsage);
+    ADD(PagefileUsage);
+    ADD(PeakPagefileUsage);
+
+#undef ADD
+
+    return result;
+
+error:
+    Py_DECREF(result);
+    return NULL;
+}
+
+
 static PyMethodDef winapi_functions[] = {
     _WINAPI_CLOSEHANDLE_METHODDEF
     _WINAPI_CONNECTNAMEDPIPE_METHODDEF
@@ -3130,6 +3192,7 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI__MIMETYPES_READ_WINDOWS_REGISTRY_METHODDEF
     _WINAPI_NEEDCURRENTDIRECTORYFOREXEPATH_METHODDEF
     _WINAPI_COPYFILE2_METHODDEF
+    _WINAPI_GETPROCESSMEMORYINFO_METHODDEF
     {NULL, NULL}
 };
 
@@ -3226,6 +3289,7 @@ static int winapi_exec(PyObject *m)
     WINAPI_CONSTANT(F_DWORD, PROCESS_ALL_ACCESS);
     WINAPI_CONSTANT(F_DWORD, SYNCHRONIZE);
     WINAPI_CONSTANT(F_DWORD, PROCESS_DUP_HANDLE);
+    WINAPI_CONSTANT(F_DWORD, PROCESS_QUERY_LIMITED_INFORMATION);
     WINAPI_CONSTANT(F_DWORD, SEC_COMMIT);
     WINAPI_CONSTANT(F_DWORD, SEC_IMAGE);
     WINAPI_CONSTANT(F_DWORD, SEC_LARGE_PAGES);
