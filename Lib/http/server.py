@@ -393,6 +393,23 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
             )
             return False
 
+        # RFC 7230 section 3.3.3 rule 3: this handler does not implement
+        # a chunked decoder, so any Transfer-Encoding is rejected.
+        if self.headers.get('Transfer-Encoding'):
+            self.send_error(
+                HTTPStatus.BAD_REQUEST,
+                "Transfer-Encoding not supported")
+            return False
+
+        # RFC 7230 section 3.3.3 rule 4: reject duplicate Content-Length
+        # values that disagree.
+        cl_values = self.headers.get_all('Content-Length') or []
+        if len({v.strip() for v in cl_values}) > 1:
+            self.send_error(
+                HTTPStatus.BAD_REQUEST,
+                "Conflicting Content-Length values")
+            return False
+
         conntype = self.headers.get('Connection', "")
         if conntype.lower() == 'close':
             self.close_connection = True
