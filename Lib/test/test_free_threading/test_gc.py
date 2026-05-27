@@ -1,7 +1,7 @@
 import unittest
 
 import threading
-from threading import Barrier, Thread
+from threading import Thread
 from unittest import TestCase
 import gc
 
@@ -99,7 +99,7 @@ class TestGC(TestCase):
         # race between the `gc_should_collect` and `gc_set_threshold` functions.
         NUM_THREADS = 8
         NUM_ITERS = 100_000
-        barrier = Barrier(NUM_THREADS)
+        barrier = threading.Barrier(NUM_THREADS)
 
         class CyclicReference:
             def __init__(self):

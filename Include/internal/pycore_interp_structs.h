@@ -229,6 +229,7 @@ struct _gc_runtime_state {
 #ifndef Py_GIL_DISABLED
     struct gc_generation generations[NUM_GENERATIONS];
 #else
+    PyMutex generations_mutex; // Mutex to guard threshold access to the generations below.
     struct gc_generation young;
     struct gc_generation old[2];
 #endif
