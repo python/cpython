@@ -463,14 +463,14 @@ _gdbm.gdbm.firstkey
 
 Return the starting key for the traversal.
 
-It's possible to loop over every key in the database using this method
-and the nextkey() method.  The traversal is ordered by GDBM's internal
-hash values, and won't be sorted by the key values.
+It's possible to loop over every key in the database using this
+method and the nextkey() method.  The traversal is ordered by GDBM's
+internal hash values, and won't be sorted by the key values.
 [clinic start generated code]*/
 
 static PyObject *
 _gdbm_gdbm_firstkey_impl(gdbmobject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=139275e9c8b60827 input=ed8782a029a5d299]*/
+/*[clinic end generated code: output=139275e9c8b60827 input=27874d56cf39ac72]*/
 {
     PyObject *v;
     datum key;
@@ -498,8 +498,8 @@ _gdbm.gdbm.nextkey
 
 Returns the key that follows key in the traversal.
 
-The following code prints every key in the database db, without having
-to create a list in memory that contains them all:
+The following code prints every key in the database db, without
+having to create a list in memory that contains them all:
 
       k = db.firstkey()
       while k is not None:
@@ -510,7 +510,7 @@ to create a list in memory that contains them all:
 static PyObject *
 _gdbm_gdbm_nextkey_impl(gdbmobject *self, PyTypeObject *cls, const char *key,
                         Py_ssize_t key_length)
-/*[clinic end generated code: output=c81a69300ef41766 input=365e297bc0b3db48]*/
+/*[clinic end generated code: output=c81a69300ef41766 input=143ca0c63b442738]*/
 {
     PyObject *v;
     datum dbm_key, nextkey;
@@ -540,14 +540,14 @@ Reorganize the database.
 
 If you have carried out a lot of deletions and would like to shrink
 the space used by the GDBM file, this routine will reorganize the
-database.  GDBM will not shorten the length of a database file except
-by using this reorganization; otherwise, deleted file space will be
-kept and reused as new (key,value) pairs are added.
+database.  GDBM will not shorten the length of a database file
+except by using this reorganization; otherwise, deleted file space
+will be kept and reused as new (key,value) pairs are added.
 [clinic start generated code]*/
 
 static PyObject *
 _gdbm_gdbm_reorganize_impl(gdbmobject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=d77c69e8e3dd644a input=e1359faeef844e46]*/
+/*[clinic end generated code: output=d77c69e8e3dd644a input=3efcec3838a4fdb6]*/
 {
     _gdbm_state *state = PyType_GetModuleState(cls);
     assert(state != NULL);

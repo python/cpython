@@ -451,13 +451,13 @@ _testlimitedcapi.test_long_as_size_t
 
 Test the PyLong_As{Size,Ssize}_t API.
 
-At present this just tests that non-integer arguments are handled correctly.
-It should be extended to test overflow handling.
+At present this just tests that non-integer arguments are handled
+correctly.  It should be extended to test overflow handling.
 [clinic start generated code]*/
 
 static PyObject *
 _testlimitedcapi_test_long_as_size_t_impl(PyObject *module)
-/*[clinic end generated code: output=297a9f14a42f55af input=8923d8f2038c46f4]*/
+/*[clinic end generated code: output=297a9f14a42f55af input=692e73744b35bf6e]*/
 {
     size_t out_u;
     Py_ssize_t out_s;

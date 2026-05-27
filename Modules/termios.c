@@ -483,12 +483,13 @@ termios.tcsetwinsize
 Set the tty winsize for file descriptor fd.
 
 The winsize to be set is taken from the winsize argument, which
-is a two-item tuple (ws_row, ws_col) like the one returned by tcgetwinsize().
+is a two-item tuple (ws_row, ws_col) like the one returned by
+tcgetwinsize().
 [clinic start generated code]*/
 
 static PyObject *
 termios_tcsetwinsize_impl(PyObject *module, int fd, PyObject *winsz)
-/*[clinic end generated code: output=2ac3c9bb6eda83e1 input=4a06424465b24aee]*/
+/*[clinic end generated code: output=2ac3c9bb6eda83e1 input=efc9beb16d06382a]*/
 {
     if (!PySequence_Check(winsz) || PySequence_Size(winsz) != 2) {
         PyErr_SetString(PyExc_TypeError,

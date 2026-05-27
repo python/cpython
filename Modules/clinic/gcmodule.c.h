@@ -381,8 +381,8 @@ PyDoc_STRVAR(gc_get_objects__doc__,
 "  generation\n"
 "    Generation to extract the objects from.\n"
 "\n"
-"If generation is not None, return only the objects tracked by the collector\n"
-"that are in that generation.");
+"If generation is not None, return only the objects tracked by the\n"
+"collector that are in that generation.");
 
 #define GC_GET_OBJECTS_METHODDEF    \
     {"get_objects", _PyCFunction_CAST(gc_get_objects), METH_FASTCALL|METH_KEYWORDS, gc_get_objects__doc__},
@@ -522,9 +522,10 @@ PyDoc_STRVAR(gc_freeze__doc__,
 "\n"
 "Freeze all current tracked objects and ignore them for future collections.\n"
 "\n"
-"This can be used before a POSIX fork() call to make the gc copy-on-write friendly.\n"
-"Note: collection before a POSIX fork() call may free pages for future allocation\n"
-"which can cause copy-on-write.");
+"This can be used before a POSIX fork() call to make the gc copy-on-write\n"
+"friendly.\n"
+"Note: collection before a POSIX fork() call may free pages for future\n"
+"allocation which can cause copy-on-write.");
 
 #define GC_FREEZE_METHODDEF    \
     {"freeze", (PyCFunction)gc_freeze, METH_NOARGS, gc_freeze__doc__},
@@ -585,4 +586,4 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0a7e91917adcb937 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0041275fbac029b2 input=a9049054013a1b77]*/

@@ -3940,13 +3940,13 @@ Return the floating-point value the given number of steps after x towards y.
 
 If steps is not specified or is None, it defaults to 1.
 
-Raises a TypeError, if x or y is not a double, or if steps is not an integer.
-Raises ValueError if steps is negative.
+Raises a TypeError, if x or y is not a double, or if steps is not
+an integer.  Raises ValueError if steps is negative.
 [clinic start generated code]*/
 
 static PyObject *
 math_nextafter_impl(PyObject *module, double x, double y, PyObject *steps)
-/*[clinic end generated code: output=cc6511f02afc099e input=7f2a5842112af2b4]*/
+/*[clinic end generated code: output=cc6511f02afc099e input=89764144d1a33160]*/
 {
 #if defined(_AIX)
     if (x == y) {

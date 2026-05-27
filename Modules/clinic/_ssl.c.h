@@ -264,9 +264,10 @@ _ssl__SSLSocket_compression(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(_ssl__SSLSocket_context__doc__,
 "This changes the context associated with the SSLSocket.\n"
 "\n"
-"This is typically used from within a callback function set by the sni_callback\n"
-"on the SSLContext to change the certificate information associated with the\n"
-"SSLSocket before the cryptographic exchange handshake messages.");
+"This is typically used from within a callback function set by the\n"
+"sni_callback on the SSLContext to change the certificate information\n"
+"associated with the SSLSocket before the cryptographic exchange\n"
+"handshake messages.");
 #if defined(_ssl__SSLSocket_context_DOCSTR)
 #   undef _ssl__SSLSocket_context_DOCSTR
 #endif
@@ -583,8 +584,9 @@ PyDoc_STRVAR(_ssl__SSLSocket_get_channel_binding__doc__,
 "\n"
 "Get channel binding data for current connection.\n"
 "\n"
-"Raise ValueError if the requested `cb_type` is not supported.  Return bytes\n"
-"of the data or None if the data is not available (e.g. before the handshake).\n"
+"Raise ValueError if the requested `cb_type` is not supported.\n"
+"Return bytes of the data or None if the data is not available (e.g.\n"
+"before the handshake).\n"
 "Only \'tls-unique\' channel binding data from RFC 5929 is supported.");
 
 #define _SSL__SSLSOCKET_GET_CHANNEL_BINDING_METHODDEF    \
@@ -1796,8 +1798,9 @@ _ssl__SSLContext_set_ecdh_curve(PySSLContext *self, PyObject *name)
 PyDoc_STRVAR(_ssl__SSLContext_sni_callback__doc__,
 "Set a callback that will be called when a server name is provided by the SSL/TLS client in the SNI extension.\n"
 "\n"
-"If the argument is None then the callback is disabled. The method is called\n"
-"with the SSLSocket, the server name as a string, and the SSLContext object.\n"
+"If the argument is None then the callback is disabled.  The method\n"
+"is called with the SSLSocket, the server name as a string, and the\n"
+"SSLContext object.\n"
 "\n"
 "See RFC 6066 for details of the SNI extension.");
 #if defined(_ssl__SSLContext_sni_callback_DOCSTR)
@@ -1861,11 +1864,11 @@ PyDoc_STRVAR(_ssl__SSLContext_cert_store_stats__doc__,
 "\n"
 "Returns quantities of loaded X.509 certificates.\n"
 "\n"
-"X.509 certificates with a CA extension and certificate revocation lists\n"
-"inside the context\'s cert store.\n"
+"X.509 certificates with a CA extension and certificate revocation\n"
+"lists inside the context\'s cert store.\n"
 "\n"
-"NOTE: Certificates in a capath directory aren\'t loaded unless they have\n"
-"been used at least once.");
+"NOTE: Certificates in a capath directory aren\'t loaded unless they\n"
+"have been used at least once.");
 
 #define _SSL__SSLCONTEXT_CERT_STORE_STATS_METHODDEF    \
     {"cert_store_stats", (PyCFunction)_ssl__SSLContext_cert_store_stats, METH_NOARGS, _ssl__SSLContext_cert_store_stats__doc__},
@@ -1891,11 +1894,11 @@ PyDoc_STRVAR(_ssl__SSLContext_get_ca_certs__doc__,
 "\n"
 "Returns a list of dicts with information of loaded CA certs.\n"
 "\n"
-"If the optional argument is True, returns a DER-encoded copy of the CA\n"
-"certificate.\n"
+"If the optional argument is True, returns a DER-encoded copy of the\n"
+"CA certificate.\n"
 "\n"
-"NOTE: Certificates in a capath directory aren\'t loaded unless they have\n"
-"been used at least once.");
+"NOTE: Certificates in a capath directory aren\'t loaded unless they\n"
+"have been used at least once.");
 
 #define _SSL__SSLCONTEXT_GET_CA_CERTS_METHODDEF    \
     {"get_ca_certs", _PyCFunction_CAST(_ssl__SSLContext_get_ca_certs), METH_FASTCALL|METH_KEYWORDS, _ssl__SSLContext_get_ca_certs__doc__},
@@ -2547,8 +2550,8 @@ PyDoc_STRVAR(_ssl_RAND_status__doc__,
 "\n"
 "Returns True if the OpenSSL PRNG has been seeded with enough data and False if not.\n"
 "\n"
-"It is necessary to seed the PRNG with RAND_add() on some platforms before\n"
-"using the ssl() function.");
+"It is necessary to seed the PRNG with RAND_add() on some platforms\n"
+"before using the ssl() function.");
 
 #define _SSL_RAND_STATUS_METHODDEF    \
     {"RAND_status", (PyCFunction)_ssl_RAND_status, METH_NOARGS, _ssl_RAND_status__doc__},
@@ -2714,11 +2717,11 @@ PyDoc_STRVAR(_ssl_enum_certificates__doc__,
 "\n"
 "Retrieve certificates from Windows\' cert store.\n"
 "\n"
-"store_name may be one of \'CA\', \'ROOT\' or \'MY\'.  The system may provide\n"
-"more cert storages, too.  The function returns a list of (bytes,\n"
-"encoding_type, trust) tuples.  The encoding_type flag can be interpreted\n"
-"with X509_ASN_ENCODING or PKCS_7_ASN_ENCODING. The trust setting is either\n"
-"a set of OIDs or the boolean True.");
+"store_name may be one of \'CA\', \'ROOT\' or \'MY\'.  The system may\n"
+"provide more cert storages, too.  The function returns a list of\n"
+"(bytes, encoding_type, trust) tuples.  The encoding_type flag can be\n"
+"interpreted with X509_ASN_ENCODING or PKCS_7_ASN_ENCODING.  The\n"
+"trust setting is either a set of OIDs or the boolean True.");
 
 #define _SSL_ENUM_CERTIFICATES_METHODDEF    \
     {"enum_certificates", _PyCFunction_CAST(_ssl_enum_certificates), METH_FASTCALL|METH_KEYWORDS, _ssl_enum_certificates__doc__},
@@ -2870,4 +2873,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=6849453c6b91db74 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d6407f7dbbc5d5b7 input=a9049054013a1b77]*/
