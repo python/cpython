@@ -1615,9 +1615,10 @@ may be called.
 
 For cases where you want passive introspection, like documentation tools, this
 can be inconvenient. :func:`getattr_static` has the same signature as :func:`getattr`
-but avoids executing code when it fetches attributes.
+(modulo positional-only differences), but avoids executing code when it fetches attributes.
 
-.. function:: getattr_static(obj, attr, default=None)
+.. function:: getattr_static(obj, attr)
+              getattr_static(obj, attr, default)
 
    Retrieve attributes without triggering dynamic lookup via the
    descriptor protocol, :meth:`~object.__getattr__`
@@ -1644,18 +1645,15 @@ for arbitrary getset descriptors invoking these may trigger
 code execution::
 
    # example code for resolving the builtin descriptor types
-   class _foo:
-       __slots__ = ['foo']
-
-   slot_descriptor = type(_foo.foo)
-   getset_descriptor = type(type(open(__file__)).name)
+   slot_descriptor = type(slice.step)
+   getset_descriptor = type(property.__dict__['__name__'])
    wrapper_descriptor = type(str.__dict__['__add__'])
    descriptor_types = (slot_descriptor, getset_descriptor, wrapper_descriptor)
 
    result = getattr_static(some_object, 'foo')
-   if type(result) in descriptor_types:
+   if isinstance(result, descriptor_types):
        try:
-           result = result.__get__()
+           result = result.__get__(some_object)
        except AttributeError:
            # descriptors can raise AttributeError to
            # indicate there is no underlying value
