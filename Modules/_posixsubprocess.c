@@ -988,15 +988,15 @@ _posixsubprocess.fork_exec as subprocess_fork_exec
 
 Spawn a fresh new child process.
 
-Fork a child process, close parent file descriptors as appropriate in the
-child and duplicate the few that are needed before calling exec() in the
-child process.
+Fork a child process, close parent file descriptors as appropriate in
+the child and duplicate the few that are needed before calling exec() in
+the child process.
 
-If close_fds is True, close file descriptors 3 and higher, except those listed
-in the sorted tuple pass_fds.
+If close_fds is True, close file descriptors 3 and higher, except those
+listed in the sorted tuple pass_fds.
 
-The preexec_fn, if supplied, will be called immediately before closing file
-descriptors and exec.
+The preexec_fn, if supplied, will be called immediately before closing
+file descriptors and exec.
 
 WARNING: preexec_fn is NOT SAFE if your application uses threads.
          It may trigger infrequent, difficult to debug deadlocks.
@@ -1021,7 +1021,7 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
                           PyObject *extra_groups_packed,
                           PyObject *uid_object, int child_umask,
                           PyObject *preexec_fn, int allow_vfork)
-/*[clinic end generated code: output=7ee4f6ee5cf22b5b input=51757287ef266ffa]*/
+/*[clinic end generated code: output=7ee4f6ee5cf22b5b input=53eb802a43d5c5fc]*/
 {
     PyObject *converted_args = NULL, *fast_args = NULL;
     PyObject *preexec_fn_args_tuple = NULL;

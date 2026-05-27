@@ -829,7 +829,8 @@ PyDoc_STRVAR(_tkinter_setbusywaitinterval__doc__,
 "\n"
 "Set the busy-wait interval in milliseconds between successive calls to Tcl_DoOneEvent in a threaded Python interpreter.\n"
 "\n"
-"It should be set to a divisor of the maximum time between frames in an animation.");
+"It should be set to a divisor of the maximum time between frames in\n"
+"an animation.");
 
 #define _TKINTER_SETBUSYWAITINTERVAL_METHODDEF    \
     {"setbusywaitinterval", (PyCFunction)_tkinter_setbusywaitinterval, METH_O, _tkinter_setbusywaitinterval__doc__},
@@ -888,4 +889,4 @@ exit:
 #ifndef _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF) */
-/*[clinic end generated code: output=d90c1a9850c63249 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4eca4b2509971772 input=a9049054013a1b77]*/
