@@ -345,6 +345,8 @@ class PEP3147Tests:
             with self.assertRaises(NotImplementedError):
                 self.util.cache_from_source('whatever.py')
 
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_cache_from_source_no_dot(self):
         # Directory with a dot, filename without dot.
         path = os.path.join('foo.bar', 'file')
@@ -353,12 +355,16 @@ class PEP3147Tests:
         self.assertEqual(self.util.cache_from_source(path, optimization=''),
                          expect)
 
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_cache_from_source_cwd(self):
         path = 'foo.py'
         expect = os.path.join('__pycache__', 'foo.{}.pyc'.format(self.tag))
         self.assertEqual(self.util.cache_from_source(path, optimization=''),
                          expect)
 
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_cache_from_source_optimization_empty_string(self):
         # Setting 'optimization' to '' leads to no optimization tag (PEP 488).
         path = 'foo.py'
@@ -366,6 +372,8 @@ class PEP3147Tests:
         self.assertEqual(self.util.cache_from_source(path, optimization=''),
                          expect)
 
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_cache_from_source_optimization_None(self):
         # Setting 'optimization' to None uses the interpreter's optimization.
         # (PEP 488)
@@ -382,6 +390,8 @@ class PEP3147Tests:
         self.assertEqual(self.util.cache_from_source(path, optimization=None),
                          expect)
 
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_cache_from_source_optimization_set(self):
         # The 'optimization' parameter accepts anything that has a string repr
         # that passes str.alnum().
@@ -399,6 +409,8 @@ class PEP3147Tests:
         with self.assertRaises(ValueError):
             self.util.cache_from_source(path, optimization='path/is/bad')
 
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_cache_from_source_debug_override_optimization_both_set(self):
         # Can only set one of the optimization-related parameters.
         with warnings.catch_warnings():
@@ -408,6 +420,8 @@ class PEP3147Tests:
 
     @unittest.skipUnless(os.sep == '\\' and os.altsep == '/',
                      'test meaningful only where os.altsep is defined')
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_sep_altsep_and_sep_cache_from_source(self):
         # Windows path and PEP 3147 where sep is right of altsep.
         self.assertEqual(
@@ -440,44 +454,60 @@ class PEP3147Tests:
             with self.assertRaises(NotImplementedError):
                 self.util.source_from_cache(path)
 
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_source_from_cache_bad_path(self):
         # When the path to a pyc file is not in PEP 3147 format, a ValueError
         # is raised.
         self.assertRaises(
             ValueError, self.util.source_from_cache, '/foo/bar/bazqux.pyc')
 
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_source_from_cache_no_slash(self):
         # No slashes at all in path -> ValueError
         self.assertRaises(
             ValueError, self.util.source_from_cache, 'foo.cpython-32.pyc')
 
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_source_from_cache_too_few_dots(self):
         # Too few dots in final path component -> ValueError
         self.assertRaises(
             ValueError, self.util.source_from_cache, '__pycache__/foo.pyc')
 
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_source_from_cache_too_many_dots(self):
         with self.assertRaises(ValueError):
             self.util.source_from_cache(
                     '__pycache__/foo.cpython-32.opt-1.foo.pyc')
 
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_source_from_cache_not_opt(self):
         # Non-`opt-` path component -> ValueError
         self.assertRaises(
             ValueError, self.util.source_from_cache,
             '__pycache__/foo.cpython-32.foo.pyc')
 
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_source_from_cache_no__pycache__(self):
         # Another problem with the path -> ValueError
         self.assertRaises(
             ValueError, self.util.source_from_cache,
             '/foo/bar/foo.cpython-32.foo.pyc')
 
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_source_from_cache_optimized_bytecode(self):
         # Optimized bytecode is not an issue.
         path = os.path.join('__pycache__', 'foo.{}.opt-1.pyc'.format(self.tag))
         self.assertEqual(self.util.source_from_cache(path), 'foo.py')
 
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_source_from_cache_missing_optimization(self):
         # An empty optimization level is a no-no.
         path = os.path.join('__pycache__', 'foo.{}.opt-.pyc'.format(self.tag))

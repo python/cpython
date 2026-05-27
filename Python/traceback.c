@@ -41,7 +41,7 @@
 
 #if defined(__STDC_NO_VLA__) && (__STDC_NO_VLA__ == 1)
 /* Use alloca() for VLAs. */
-#  define VLA(type, name, size) type *name = alloca(size)
+#  define VLA(type, name, size) type *name = alloca(sizeof(type) * (size))
 #elif !defined(__STDC_NO_VLA__) || (__STDC_NO_VLA__ == 0)
 /* Use actual C VLAs.*/
 #  define VLA(type, name, size) type name[size]
@@ -55,7 +55,7 @@
 
 #define MAX_STRING_LENGTH 500
 #define MAX_FRAME_DEPTH 100
-#define MAX_NTHREADS 100
+#define DEFAULT_MAX_NTHREADS 100
 
 /* Function from Parser/tokenizer/file_tokenizer.c */
 extern char* _PyTokenizer_FindEncodingFilename(int, PyObject *);
@@ -415,6 +415,9 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
     npath = PyList_Size(syspath);
 
     open = PyObject_GetAttr(io, &_Py_ID(open));
+    if (open == NULL) {
+        goto error;
+    }
     for (i = 0; i < npath; i++) {
         v = PyList_GetItem(syspath, i);
         if (v == NULL) {
@@ -1032,7 +1035,7 @@ _Py_DumpWideString(int fd, wchar_t *str)
 
    Return 0 on success. Return -1 if the frame is invalid. */
 
-static int
+static int _Py_NO_SANITIZE_THREAD
 dump_frame(int fd, _PyInterpreterFrame *frame)
 {
     if (frame->owner == FRAME_OWNED_BY_INTERPRETER) {
@@ -1085,7 +1088,7 @@ dump_frame(int fd, _PyInterpreterFrame *frame)
     return res;
 }
 
-static int
+static int _Py_NO_SANITIZE_THREAD
 tstate_is_freed(PyThreadState *tstate)
 {
     if (_PyMem_IsPtrFreed(tstate)) {
@@ -1101,14 +1104,14 @@ tstate_is_freed(PyThreadState *tstate)
 }
 
 
-static int
+static int _Py_NO_SANITIZE_THREAD
 interp_is_freed(PyInterpreterState *interp)
 {
     return _PyMem_IsPtrFreed(interp);
 }
 
 
-static void
+static void _Py_NO_SANITIZE_THREAD
 dump_traceback(int fd, PyThreadState *tstate, int write_header)
 {
     if (write_header) {
@@ -1164,10 +1167,11 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
 
    The caller is responsible to call PyErr_CheckSignals() to call Python signal
    handlers if signals were received. */
-void
-_Py_DumpTraceback(int fd, PyThreadState *tstate)
+const char*
+PyUnstable_DumpTraceback(int fd, PyThreadState *tstate)
 {
     dump_traceback(fd, tstate, 1);
+    return NULL;
 }
 
 #if defined(HAVE_PTHREAD_GETNAME_NP) || defined(HAVE_PTHREAD_GET_NAME_NP)
@@ -1183,7 +1187,7 @@ _Py_DumpTraceback(int fd, PyThreadState *tstate)
 
 
 // Write the thread name
-static void
+static void _Py_NO_SANITIZE_THREAD
 write_thread_name(int fd, PyThreadState *tstate)
 {
 #ifndef MS_WINDOWS
@@ -1236,7 +1240,7 @@ write_thread_name(int fd, PyThreadState *tstate)
 
    This function is signal safe (except on Windows). */
 
-static void
+static void _Py_NO_SANITIZE_THREAD
 write_thread_id(int fd, PyThreadState *tstate, int is_current)
 {
     if (is_current)
@@ -1260,12 +1264,17 @@ write_thread_id(int fd, PyThreadState *tstate, int is_current)
 
    The caller is responsible to call PyErr_CheckSignals() to call Python signal
    handlers if signals were received. */
-const char*
-_Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
-                         PyThreadState *current_tstate)
+const char* _Py_NO_SANITIZE_THREAD
+PyUnstable_DumpTracebackThreads(int fd, PyInterpreterState *interp,
+                                PyThreadState *current_tstate,
+                                Py_ssize_t max_threads)
 {
+    if (max_threads == 0) {
+        max_threads = DEFAULT_MAX_NTHREADS;
+    }
+
     if (current_tstate == NULL) {
-        /* _Py_DumpTracebackThreads() is called from signal handlers by
+        /* PyUnstable_DumpTracebackThreads() is called from signal handlers by
            faulthandler.
 
            SIGSEGV, SIGFPE, SIGABRT, SIGBUS and SIGILL are synchronous signals
@@ -1307,13 +1316,13 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
         return "unable to get the thread head state";
 
     /* Dump the traceback of each thread */
-    unsigned int nthreads = 0;
+    Py_ssize_t nthreads = 0;
     _Py_BEGIN_SUPPRESS_IPH
     do
     {
         if (nthreads != 0)
             PUTS(fd, "\n");
-        if (nthreads >= MAX_NTHREADS) {
+        if (nthreads >= max_threads) {
             PUTS(fd, "...\n");
             break;
         }
@@ -1329,7 +1338,7 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
         }
         dump_traceback(fd, tstate, 0);
 
-        tstate = PyThreadState_Next(tstate);
+        tstate = tstate->next;
         nthreads++;
     } while (tstate != NULL);
     _Py_END_SUPPRESS_IPH

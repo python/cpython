@@ -8,6 +8,7 @@ SIMPLE_FUNCTION_REGEX = re.compile(r"PyAPI_FUNC(.+) (\w+)\(")
 SIMPLE_MACRO_REGEX = re.compile(r"# *define *(\w+)(\(.+\))? ")
 SIMPLE_INLINE_REGEX = re.compile(r"static inline .+( |\n)(\w+)")
 SIMPLE_DATA_REGEX = re.compile(r"PyAPI_DATA\(.+\) (\w+)")
+API_NAME_REGEX = re.compile(r'\bP[yY][a-zA-Z0-9_]+')
 
 CPYTHON = Path(__file__).parent.parent.parent
 INCLUDE = CPYTHON / "Include"
@@ -72,24 +73,10 @@ def found_ignored_documented(singular: bool) -> str:
     )
 
 
-def is_documented(name: str) -> bool:
-    """
-    Is a name present in the C API documentation?
-    """
-    for path in C_API_DOCS.iterdir():
-        if path.is_dir():
-            continue
-        if path.suffix != ".rst":
-            continue
-
-        text = path.read_text(encoding="utf-8")
-        if name in text:
-            return True
-
-    return False
-
-
-def scan_file_for_docs(filename: str, text: str) -> tuple[list[str], list[str]]:
+def scan_file_for_docs(
+    filename: str,
+    text: str,
+    names: set[str]) -> tuple[list[str], list[str]]:
     """
     Scan a header file for  C API functions.
     """
@@ -98,7 +85,7 @@ def scan_file_for_docs(filename: str, text: str) -> tuple[list[str], list[str]]:
     colors = _colorize.get_colors()
 
     def check_for_name(name: str) -> None:
-        documented = is_documented(name)
+        documented = name in names
         if documented and (name in IGNORED):
             documented_ignored.append(name)
         elif not documented and (name not in IGNORED):
@@ -106,14 +93,14 @@ def scan_file_for_docs(filename: str, text: str) -> tuple[list[str], list[str]]:
 
     for function in SIMPLE_FUNCTION_REGEX.finditer(text):
         name = function.group(2)
-        if not name.startswith("Py"):
+        if not API_NAME_REGEX.fullmatch(name):
             continue
 
         check_for_name(name)
 
     for macro in SIMPLE_MACRO_REGEX.finditer(text):
         name = macro.group(1)
-        if not name.startswith("Py"):
+        if not API_NAME_REGEX.fullmatch(name):
             continue
 
         if "(" in name:
@@ -123,14 +110,14 @@ def scan_file_for_docs(filename: str, text: str) -> tuple[list[str], list[str]]:
 
     for inline in SIMPLE_INLINE_REGEX.finditer(text):
         name = inline.group(2)
-        if not name.startswith("Py"):
+        if not API_NAME_REGEX.fullmatch(name):
             continue
 
         check_for_name(name)
 
     for data in SIMPLE_DATA_REGEX.finditer(text):
         name = data.group(1)
-        if not name.startswith("Py"):
+        if not API_NAME_REGEX.fullmatch(name):
             continue
 
         check_for_name(name)
@@ -152,6 +139,14 @@ def scan_file_for_docs(filename: str, text: str) -> tuple[list[str], list[str]]:
 
 
 def main() -> None:
+    print("Gathering C API names from docs...")
+    names = set()
+    for path in C_API_DOCS.glob('**/*.rst'):
+        text = path.read_text(encoding="utf-8")
+        for name in API_NAME_REGEX.findall(text):
+            names.add(name)
+    print(f"Got {len(names)} names!")
+
     print("Scanning for undocumented C API functions...")
     files = [*INCLUDE.iterdir(), *(INCLUDE / "cpython").iterdir()]
     all_missing: list[str] = []
@@ -162,7 +157,7 @@ def main() -> None:
             continue
         assert file.exists()
         text = file.read_text(encoding="utf-8")
-        missing, ignored = scan_file_for_docs(str(file.relative_to(INCLUDE)), text)
+        missing, ignored = scan_file_for_docs(str(file.relative_to(INCLUDE)), text, names)
         all_found_ignored += ignored
         all_missing += missing
 

@@ -1,1 +1,0 @@
-Decrease the size of the generated stencils and the runtime JIT code. Patch by Diego Russo.

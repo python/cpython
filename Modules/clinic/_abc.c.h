@@ -178,9 +178,9 @@ PyDoc_STRVAR(_abc_get_cache_token__doc__,
 "\n"
 "Returns the current ABC cache token.\n"
 "\n"
-"The token is an opaque object (supporting equality testing) identifying the\n"
-"current version of the ABC cache for virtual subclasses. The token changes\n"
-"with every call to register() on any ABC.");
+"The token is an opaque object (supporting equality testing) identifying\n"
+"the current version of the ABC cache for virtual subclasses.  The token\n"
+"changes with every call to register() on any ABC.");
 
 #define _ABC_GET_CACHE_TOKEN_METHODDEF    \
     {"get_cache_token", (PyCFunction)_abc_get_cache_token, METH_NOARGS, _abc_get_cache_token__doc__},

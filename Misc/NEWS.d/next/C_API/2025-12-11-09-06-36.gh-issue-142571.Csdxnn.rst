@@ -1,1 +1,0 @@
-:c:func:`!PyUnstable_CopyPerfMapFile` now checks that opening the file succeeded before flushing.

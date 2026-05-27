@@ -80,8 +80,8 @@ class CommandLineInterface(unittest.TestCase):
 @force_not_colorized_test_class
 class InteractiveSession(unittest.TestCase):
     MEMORY_DB_MSG = "Connected to a transient in-memory database"
-    PS1 = "sqlite> "
-    PS2 = "... "
+    PS1 = "\001\002sqlite> \001\002"
+    PS2 = "\001\002    ... \001\002"
 
     def run_cli(self, *args, commands=()):
         with (
@@ -202,8 +202,8 @@ class InteractiveSession(unittest.TestCase):
     def test_color(self):
         with unittest.mock.patch("_colorize.can_colorize", return_value=True):
             out, err = self.run_cli(commands="TEXT\n")
-            self.assertIn("\x1b[1;35msqlite> \x1b[0m", out)
-            self.assertIn("\x1b[1;35m    ... \x1b[0m\x1b", out)
+            self.assertIn("\x01\x1b[1;35m\x02sqlite> \x01\x1b[0m\x02", out)
+            self.assertIn("\x01\x1b[1;35m\x02    ... \x01\x1b[0m\x02\x01\x1b", out)
             out, err = self.run_cli(commands=("sel;",))
             self.assertIn('\x1b[1;35mOperationalError (SQLITE_ERROR)\x1b[0m: '
                           '\x1b[35mnear "sel": syntax error\x1b[0m', err)
@@ -212,6 +212,10 @@ class InteractiveSession(unittest.TestCase):
 @requires_subprocess()
 @force_not_colorized_test_class
 class Completion(unittest.TestCase):
+    # run_pty() creates a real terminal environment, where sqlite3 CLI
+    # SqliteInteractiveConsole invokes GNU Readline for input. Readline's
+    # _rl_strip_prompt() strips \001 and \002 from the output, so test
+    # assertions use the plain prompt.
     PS1 = "sqlite> "
 
     @classmethod

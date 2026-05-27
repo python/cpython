@@ -9,6 +9,7 @@
 #include "pycore_fileutils.h"     // _PyFile_Flush
 #include "pycore_floatobject.h"   // _PyFloat_ExactDealloc()
 #include "pycore_interp.h"        // _PyInterpreterState_GetConfig()
+#include "pycore_import.h"        // _PyImport_LazyImportModuleLevelObject  ()
 #include "pycore_long.h"          // _PyLong_CompactValue
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _Py_AddToAllObjects()
@@ -251,7 +252,6 @@ PyDoc_STRVAR(build_class_doc,
 Internal helper function used by the class statement.");
 
 /*[clinic input]
-@permit_long_docstring_body
 __import__ as builtin___import__
 
     name: object
@@ -272,20 +272,82 @@ should be a list of names to emulate ``from name import ...``, or an
 empty list to emulate ``import name``.
 When importing a module from a package, note that __import__('A.B', ...)
 returns package A when fromlist is empty, but its submodule B when
-fromlist is not empty.  The level argument is used to determine whether to
-perform absolute or relative imports: 0 is absolute, while a positive number
-is the number of parent directories to search relative to the current module.
+fromlist is not empty.  The level argument is used to determine whether
+to perform absolute or relative imports: 0 is absolute, while a positive
+number is the number of parent directories to search relative to the
+current module.
 [clinic start generated code]*/
 
 static PyObject *
 builtin___import___impl(PyObject *module, PyObject *name, PyObject *globals,
                         PyObject *locals, PyObject *fromlist, int level)
-/*[clinic end generated code: output=4febeda88a0cd245 input=01a3283590eae93a]*/
+/*[clinic end generated code: output=4febeda88a0cd245 input=e3096a230383f72d]*/
 {
     return PyImport_ImportModuleLevelObject(name, globals, locals,
                                             fromlist, level);
 }
 
+
+/*[clinic input]
+__lazy_import__ as builtin___lazy_import__
+
+    name: object
+    globals: object(c_default="NULL") = None
+    locals: object(c_default="NULL") = None
+    fromlist: object(c_default="NULL") = ()
+    level: int = 0
+
+Lazily imports a module.
+
+Returns either the module to be imported or a imp.lazy_module object
+which indicates the module to be lazily imported.
+[clinic start generated code]*/
+
+static PyObject *
+builtin___lazy_import___impl(PyObject *module, PyObject *name,
+                             PyObject *globals, PyObject *locals,
+                             PyObject *fromlist, int level)
+/*[clinic end generated code: output=300f1771094b9e8c input=9c85cccd6a885b9b]*/
+{
+    PyObject *builtins;
+    PyThreadState *tstate = PyThreadState_GET();
+    if (globals == NULL) {
+        globals = PyEval_GetGlobals();
+    }
+    if (locals == NULL) {
+        locals = globals;
+    }
+
+    if (!PyDict_Check(globals)) {
+        PyErr_Format(PyExc_TypeError,
+                     "expect dict for globals, got %T", globals);
+        return NULL;
+    }
+
+    if (PyDict_GetItemRef(globals, &_Py_ID(__builtins__), &builtins) < 0) {
+        return NULL;
+    }
+    if (builtins == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                        "unable to get builtins for lazy import");
+        return NULL;
+    }
+    if (PyModule_Check(builtins)) {
+        PyObject *builtins_dict = Py_XNewRef(PyModule_GetDict(builtins));
+        if (builtins_dict == NULL) {
+            Py_DECREF(builtins);
+            PyErr_SetString(PyExc_AttributeError,
+                            "builtins module has no dict");
+            return NULL;
+        }
+        Py_SETREF(builtins, builtins_dict);
+    }
+
+    PyObject *res = _PyImport_LazyImportModuleLevelObject(
+        tstate, name, builtins, globals, locals, fromlist, level);
+    Py_DECREF(builtins);
+    return res;
+}
 
 /*[clinic input]
 abs as builtin_abs
@@ -634,8 +696,9 @@ PyDoc_STRVAR(filter_doc,
 "filter(function, iterable, /)\n\
 --\n\
 \n\
-Return an iterator yielding those items of iterable for which function(item)\n\
-is true. If function is None, return the items that are true.");
+Return an iterator yielding those items of iterable for which\n\
+function(item) is true.  If function is None, return the items that\n\
+are true.");
 
 PyTypeObject PyFilter_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
@@ -708,6 +771,7 @@ builtin_format_impl(PyObject *module, PyObject *value, PyObject *format_spec)
 }
 
 /*[clinic input]
+@permit_long_summary
 chr as builtin_chr
 
     i: object
@@ -718,7 +782,7 @@ Return a Unicode string of one character with ordinal i; 0 <= i <= 0x10ffff.
 
 static PyObject *
 builtin_chr(PyObject *module, PyObject *i)
-/*[clinic end generated code: output=d34f25b8035a9b10 input=f919867f0ba2f496]*/
+/*[clinic end generated code: output=d34f25b8035a9b10 input=a9b255f2d2e503f0]*/
 {
     int overflow;
     long v = PyLong_AsLongAndOverflow(i, &overflow);
@@ -742,6 +806,7 @@ builtin_chr(PyObject *module, PyObject *i)
 
 
 /*[clinic input]
+@permit_long_summary
 compile as builtin_compile
 
     source: object
@@ -756,23 +821,24 @@ compile as builtin_compile
 
 Compile source into a code object that can be executed by exec() or eval().
 
-The source code may represent a Python module, statement or expression.
+The source code may represent a Python module, statement or
+expression.
 The filename will be used for run-time error messages.
 The mode must be 'exec' to compile a module, 'single' to compile a
 single (interactive) statement, or 'eval' to compile an expression.
-The flags argument, if present, controls which future statements influence
-the compilation of the code.
+The flags argument, if present, controls which future statements
+influence the compilation of the code.
 The dont_inherit argument, if true, stops the compilation inheriting
 the effects of any future statements in effect in the code calling
-compile; if absent or false these statements do influence the compilation,
-in addition to any features explicitly specified.
+compile; if absent or false these statements do influence the
+compilation, in addition to any features explicitly specified.
 [clinic start generated code]*/
 
 static PyObject *
 builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
                      const char *mode, int flags, int dont_inherit,
                      int optimize, PyObject *modname, int feature_version)
-/*[clinic end generated code: output=9a0dce1945917a86 input=ddeae1e0253459dc]*/
+/*[clinic end generated code: output=9a0dce1945917a86 input=444c4fe466a97279]*/
 {
     PyObject *source_copy;
     const char *str;
@@ -920,10 +986,10 @@ PyDoc_STRVAR(dir_doc,
 "dir([object]) -> list of strings\n"
 "\n"
 "If called without an argument, return the names in the current scope.\n"
-"Else, return an alphabetized list of names comprising (some of) the attributes\n"
-"of the given object, and of attributes reachable from it.\n"
-"If the object supplies a method named __dir__, it will be used; otherwise\n"
-"the default dir() logic is used and returns:\n"
+"Else, return an alphabetized list of names comprising (some of) the\n"
+"attributes of the given object, and of attributes reachable from it.\n"
+"If the object supplies a method named __dir__, it will be used;\n"
+"otherwise the default dir() logic is used and returns:\n"
 "  for a module object: the module's attributes.\n"
 "  for a class object:  its attributes, and recursively the attributes\n"
 "    of its bases.\n"
@@ -978,10 +1044,11 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
         PyErr_SetString(PyExc_TypeError, "locals must be a mapping");
         return NULL;
     }
-    if (globals != Py_None && !PyDict_Check(globals)) {
+    if (globals != Py_None && !PyAnyDict_Check(globals)) {
         PyErr_SetString(PyExc_TypeError, PyMapping_Check(globals) ?
-            "globals must be a real dict; try eval(expr, {}, mapping)"
-            : "globals must be a dict");
+            "globals must be a real dict or a frozendict; "
+            "try eval(expr, {}, mapping)"
+            : "globals must be a dict or a frozendict");
         return NULL;
     }
 
@@ -1135,9 +1202,10 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
         locals = Py_NewRef(globals);
     }
 
-    if (!PyDict_Check(globals)) {
-        PyErr_Format(PyExc_TypeError, "exec() globals must be a dict, not %.100s",
-                     Py_TYPE(globals)->tp_name);
+    if (!PyAnyDict_Check(globals)) {
+        PyErr_Format(PyExc_TypeError,
+                     "exec() globals must be a dict or a frozendict, not %T",
+                     globals);
         goto error;
     }
     if (!PyMapping_Check(locals)) {
@@ -1262,9 +1330,11 @@ builtin_getattr(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 PyDoc_STRVAR(getattr_doc,
 "getattr(object, name[, default]) -> value\n\
 \n\
-Get a named attribute from an object; getattr(x, 'y') is equivalent to x.y.\n\
-When a default argument is given, it is returned when the attribute doesn't\n\
-exist; without it, an exception is raised in that case.");
+Get a named attribute from an object.\n\
+\n\
+getattr(x, 'y') is equivalent to x.y.\n\
+When a default argument is given, it is returned when the attribute\n\
+doesn't exist; without it, an exception is raised in that case.");
 
 
 /*[clinic input]
@@ -1272,13 +1342,13 @@ globals as builtin_globals
 
 Return the dictionary containing the current scope's global variables.
 
-NOTE: Updates to this dictionary *will* affect name lookups in the current
-global scope and vice-versa.
+NOTE: Updates to this dictionary *will* affect name lookups in the
+current global scope and vice-versa.
 [clinic start generated code]*/
 
 static PyObject *
 builtin_globals_impl(PyObject *module)
-/*[clinic end generated code: output=e5dd1527067b94d2 input=9327576f92bb48ba]*/
+/*[clinic end generated code: output=e5dd1527067b94d2 input=6d725a9b48d1eaeb]*/
 {
     PyObject *globals;
     if (_PyEval_GetFrame() != NULL) {
@@ -1543,7 +1613,7 @@ check:
         // ValueError: map() argument 3 is shorter than arguments 1-2
         const char* plural = i == 1 ? " " : "s 1-";
         PyErr_Format(PyExc_ValueError,
-                     "map() argument %d is shorter than argument%s%d",
+                     "map() argument %zd is shorter than argument%s%zd",
                      i + 1, plural, i);
         goto exit_no_result;
     }
@@ -1554,7 +1624,7 @@ check:
             Py_DECREF(val);
             const char* plural = i == 1 ? " " : "s 1-";
             PyErr_Format(PyExc_ValueError,
-                         "map() argument %d is longer than argument%s%d",
+                         "map() argument %zd is longer than argument%s%zd",
                          i + 1, plural, i);
             goto exit_no_result;
         }
@@ -1631,8 +1701,8 @@ PyDoc_STRVAR(map_doc,
 Make an iterator that computes the function using arguments from\n\
 each of the iterables.  Stops when the shortest iterable is exhausted.\n\
 \n\
-If strict is true and one of the arguments is exhausted before the others,\n\
-raise a ValueError.");
+If strict is true and one of the arguments is exhausted before the\n\
+others, raise a ValueError.");
 
 PyTypeObject PyMap_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
@@ -1719,8 +1789,8 @@ builtin_next(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 PyDoc_STRVAR(next_doc,
 "next(iterator[, default])\n\
 \n\
-Return the next item from the iterator. If default is given and the iterator\n\
-is exhausted, it is returned instead of raising StopIteration.");
+Return the next item from the iterator.  If default is given and the\n\
+iterator is exhausted, it is returned instead of raising StopIteration.");
 
 
 /*[clinic input]
@@ -1776,15 +1846,17 @@ hash as builtin_hash
     obj: object
     /
 
-Return the hash value for the given object.
+Return the integer hash value for the given object.
 
-Two objects that compare equal must also have the same hash value, but the
-reverse is not necessarily true.
+Two objects that compare equal must also have the same hash value, but
+the reverse is not necessarily true.  Hash values may differ between
+Python processes.  Not all objects are hashable; calling hash() on an
+unhashable object raises TypeError.
 [clinic start generated code]*/
 
 static PyObject *
 builtin_hash(PyObject *module, PyObject *obj)
-/*[clinic end generated code: output=237668e9d7688db7 input=58c48be822bf9c54]*/
+/*[clinic end generated code: output=237668e9d7688db7 input=70a242ff65f6717c]*/
 {
     Py_hash_t x;
 
@@ -1841,7 +1913,8 @@ iter(callable, sentinel) -> iterator\n\
 \n\
 Get an iterator from an object.  In the first form, the argument must\n\
 supply its own iterator, or be a sequence.\n\
-In the second form, the callable is called until it returns the sentinel.");
+In the second form, the callable is called until it returns the\n\
+sentinel.");
 
 
 /*[clinic input]
@@ -1935,14 +2008,15 @@ locals as builtin_locals
 
 Return a dictionary containing the current scope's local variables.
 
-NOTE: Whether or not updates to this dictionary will affect name lookups in
-the local scope and vice-versa is *implementation dependent* and not
-covered by any backwards compatibility guarantees.
+NOTE: Whether or not updates to this dictionary will affect name
+lookups in the local scope and vice-versa is *implementation
+dependent* and not covered by any backwards compatibility
+guarantees.
 [clinic start generated code]*/
 
 static PyObject *
 builtin_locals_impl(PyObject *module)
-/*[clinic end generated code: output=b46c94015ce11448 input=7874018d478d5c4b]*/
+/*[clinic end generated code: output=b46c94015ce11448 input=989cc75c22167c42]*/
 {
     PyObject *locals;
     if (_PyEval_GetFrame() != NULL) {
@@ -2194,6 +2268,7 @@ builtin_ord(PyObject *module, PyObject *c)
 
 
 /*[clinic input]
+@permit_long_summary
 pow as builtin_pow
 
     base: object
@@ -2202,14 +2277,14 @@ pow as builtin_pow
 
 Equivalent to base**exp with 2 arguments or base**exp % mod with 3 arguments
 
-Some types, such as ints, are able to use a more efficient algorithm when
-invoked using the three argument form.
+Some types, such as ints, are able to use a more efficient algorithm
+when invoked using the three argument form.
 [clinic start generated code]*/
 
 static PyObject *
 builtin_pow_impl(PyObject *module, PyObject *base, PyObject *exp,
                  PyObject *mod)
-/*[clinic end generated code: output=3ca1538221bbf15f input=435dbd48a12efb23]*/
+/*[clinic end generated code: output=3ca1538221bbf15f input=0cd5c3ecc8003aec]*/
 {
     return PyNumber_Power(base, exp, mod);
 }
@@ -2330,13 +2405,14 @@ Read a string from standard input.  The trailing newline is stripped.
 The prompt string, if given, is printed to standard output without a
 trailing newline before reading input.
 
-If the user hits EOF (*nix: Ctrl-D, Windows: Ctrl-Z+Return), raise EOFError.
+If the user hits EOF (*nix: Ctrl-D, Windows: Ctrl-Z+Return), raise
+EOFError.
 On *nix systems, readline is used if available.
 [clinic start generated code]*/
 
 static PyObject *
 builtin_input_impl(PyObject *module, PyObject *prompt)
-/*[clinic end generated code: output=83db5a191e7a0d60 input=159c46d4ae40977e]*/
+/*[clinic end generated code: output=83db5a191e7a0d60 input=ebb939c954639427]*/
 {
     PyObject *fin = NULL;
     PyObject *fout = NULL;
@@ -2604,13 +2680,14 @@ round as builtin_round
 
 Round a number to a given precision in decimal digits.
 
-The return value is an integer if ndigits is omitted or None.  Otherwise
-the return value has the same type as the number.  ndigits may be negative.
+The return value is an integer if ndigits is omitted or None.
+Otherwise the return value has the same type as the number.  ndigits
+may be negative.
 [clinic start generated code]*/
 
 static PyObject *
 builtin_round_impl(PyObject *module, PyObject *number, PyObject *ndigits)
-/*[clinic end generated code: output=ff0d9dd176c02ede input=275678471d7aca15]*/
+/*[clinic end generated code: output=ff0d9dd176c02ede input=bdcb7c67bf4a4320]*/
 {
     PyObject *result;
     if (ndigits == Py_None) {
@@ -2642,8 +2719,8 @@ sorted as builtin_sorted
 
 Return a new list containing all items from the iterable in ascending order.
 
-A custom key function can be supplied to customize the sort order, and the
-reverse flag can be set to request the result in descending order.
+A custom key function can be supplied to customize the sort order, and
+the reverse flag can be set to request the result in descending order.
 [end disabled clinic input]*/
 
 PyDoc_STRVAR(builtin_sorted__doc__,
@@ -2777,6 +2854,7 @@ cs_to_double(CompensatedSum total)
 }
 
 /*[clinic input]
+@permit_long_summary
 sum as builtin_sum
 
     iterable: object
@@ -2786,13 +2864,13 @@ sum as builtin_sum
 Return the sum of a 'start' value (default: 0) plus an iterable of numbers
 
 When the iterable is empty, return the start value.
-This function is intended specifically for use with numeric values and may
-reject non-numeric types.
+This function is intended specifically for use with numeric values and
+may reject non-numeric types.
 [clinic start generated code]*/
 
 static PyObject *
 builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
-/*[clinic end generated code: output=df758cec7d1d302f input=162b50765250d222]*/
+/*[clinic end generated code: output=df758cec7d1d302f input=d464d57815196b73]*/
 {
     PyObject *result = start;
     PyObject *temp, *item, *iter;
@@ -3028,6 +3106,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
 
 
 /*[clinic input]
+@permit_long_summary
 isinstance as builtin_isinstance
 
     obj: object
@@ -3036,15 +3115,15 @@ isinstance as builtin_isinstance
 
 Return whether an object is an instance of a class or of a subclass thereof.
 
-A tuple, as in ``isinstance(x, (A, B, ...))``, may be given as the target to
-check against. This is equivalent to ``isinstance(x, A) or isinstance(x, B)
-or ...`` etc.
+A tuple, as in ``isinstance(x, (A, B, ...))``, may be given as the
+target to check against.  This is equivalent to ``isinstance(x, A) or
+isinstance(x, B) or ...`` etc.
 [clinic start generated code]*/
 
 static PyObject *
 builtin_isinstance_impl(PyObject *module, PyObject *obj,
                         PyObject *class_or_tuple)
-/*[clinic end generated code: output=6faf01472c13b003 input=ffa743db1daf7549]*/
+/*[clinic end generated code: output=6faf01472c13b003 input=5d74d547df498f38]*/
 {
     int retval;
 
@@ -3064,15 +3143,15 @@ issubclass as builtin_issubclass
 
 Return whether 'cls' is derived from another class or is the same class.
 
-A tuple, as in ``issubclass(x, (A, B, ...))``, may be given as the target to
-check against. This is equivalent to ``issubclass(x, A) or issubclass(x, B)
-or ...``.
+A tuple, as in ``issubclass(x, (A, B, ...))``, may be given as the
+target to check against.  This is equivalent to ``issubclass(x, A) or
+issubclass(x, B) or ...``.
 [clinic start generated code]*/
 
 static PyObject *
 builtin_issubclass_impl(PyObject *module, PyObject *cls,
                         PyObject *class_or_tuple)
-/*[clinic end generated code: output=358412410cd7a250 input=a24b9f3d58c370d6]*/
+/*[clinic end generated code: output=358412410cd7a250 input=a91ce96345a6705d]*/
 {
     int retval;
 
@@ -3243,7 +3322,7 @@ check:
         // ValueError: zip() argument 3 is shorter than arguments 1-2
         const char* plural = i == 1 ? " " : "s 1-";
         return PyErr_Format(PyExc_ValueError,
-                            "zip() argument %d is shorter than argument%s%d",
+                            "zip() argument %zd is shorter than argument%s%zd",
                             i + 1, plural, i);
     }
     for (i = 1; i < tuplesize; i++) {
@@ -3253,7 +3332,7 @@ check:
             Py_DECREF(item);
             const char* plural = i == 1 ? " " : "s 1-";
             return PyErr_Format(PyExc_ValueError,
-                                "zip() argument %d is longer than argument%s%d",
+                                "zip() argument %zd is longer than argument%s%zd",
                                 i + 1, plural, i);
         }
         if (PyErr_Occurred()) {
@@ -3277,7 +3356,7 @@ zip_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (lz->strict) {
         return PyTuple_Pack(3, Py_TYPE(lz), lz->ittuple, Py_True);
     }
-    return PyTuple_Pack(2, Py_TYPE(lz), lz->ittuple);
+    return _PyTuple_FromPair((PyObject *)Py_TYPE(lz), lz->ittuple);
 }
 
 static PyObject *
@@ -3302,13 +3381,13 @@ PyDoc_STRVAR(zip_doc,
 "zip(*iterables, strict=False)\n\
 --\n\
 \n\
-The zip object yields n-length tuples, where n is the number of iterables\n\
-passed as positional arguments to zip().  The i-th element in every tuple\n\
-comes from the i-th iterable argument to zip().  This continues until the\n\
-shortest argument is exhausted.\n\
+The zip object yields n-length tuples, where n is the number of\n\
+iterables passed as positional arguments to zip().  The i-th element\n\
+in every tuple comes from the i-th iterable argument to zip().  This\n\
+continues until the shortest argument is exhausted.\n\
 \n\
-If strict is true and one of the arguments is exhausted before the others,\n\
-raise a ValueError.\n\
+If strict is true and one of the arguments is exhausted before the\n\
+others, raise a ValueError.\n\
 \n\
    >>> list(zip('abcdefg', range(3), range(4)))\n\
    [('a', 0, 0), ('b', 1, 1), ('c', 2, 2)]");
@@ -3362,6 +3441,7 @@ static PyMethodDef builtin_methods[] = {
     {"__build_class__", _PyCFunction_CAST(builtin___build_class__),
      METH_FASTCALL | METH_KEYWORDS, build_class_doc},
     BUILTIN___IMPORT___METHODDEF
+    BUILTIN___LAZY_IMPORT___METHODDEF
     BUILTIN_ABS_METHODDEF
     BUILTIN_ALL_METHODDEF
     BUILTIN_ANY_METHODDEF
@@ -3479,6 +3559,7 @@ _PyBuiltin_Init(PyInterpreterState *interp)
     SETBUILTIN("enumerate",             &PyEnum_Type);
     SETBUILTIN("filter",                &PyFilter_Type);
     SETBUILTIN("float",                 &PyFloat_Type);
+    SETBUILTIN("frozendict",            &PyFrozenDict_Type);
     SETBUILTIN("frozenset",             &PyFrozenSet_Type);
     SETBUILTIN("property",              &PyProperty_Type);
     SETBUILTIN("int",                   &PyLong_Type);
@@ -3487,6 +3568,7 @@ _PyBuiltin_Init(PyInterpreterState *interp)
     SETBUILTIN("object",                &PyBaseObject_Type);
     SETBUILTIN("range",                 &PyRange_Type);
     SETBUILTIN("reversed",              &PyReversed_Type);
+    SETBUILTIN("sentinel",              &PySentinel_Type);
     SETBUILTIN("set",                   &PySet_Type);
     SETBUILTIN("slice",                 &PySlice_Type);
     SETBUILTIN("staticmethod",          &PyStaticMethod_Type);

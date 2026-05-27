@@ -100,7 +100,10 @@ static bool mi_heap_page_collect(mi_heap_t* heap, mi_page_queue_t* pq, mi_page_t
     // note: this will free retired pages as well.
     bool freed = _PyMem_mi_page_maybe_free(page, pq, collect >= MI_FORCE);
     if (!freed && collect == MI_ABANDON) {
-      _mi_page_abandon(page, pq);
+      // _PyMem_mi_page_maybe_free may have moved the page to a different
+      // page queue, so we need to re-fetch the correct queue.
+      uint8_t bin = (mi_page_is_in_full(page) ? MI_BIN_FULL : _mi_bin(page->xblock_size));
+      _mi_page_abandon(page, &heap->pages[bin]);
     }
   }
   else if (collect == MI_ABANDON) {

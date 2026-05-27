@@ -4,9 +4,6 @@
 .. module:: venv
    :synopsis: Creation of virtual environments.
 
-.. moduleauthor:: Vinay Sajip <vinay_sajip@yahoo.co.uk>
-.. sectionauthor:: Vinay Sajip <vinay_sajip@yahoo.co.uk>
-
 .. versionadded:: 3.3
 
 **Source code:** :source:`Lib/venv/`
@@ -550,7 +547,7 @@ subclass which installs setuptools and pip into a created virtual environment::
     from subprocess import Popen, PIPE
     import sys
     from threading import Thread
-    from urllib.parse import urlparse
+    from urllib.parse import urlsplit
     from urllib.request import urlretrieve
     import venv
 
@@ -621,7 +618,7 @@ subclass which installs setuptools and pip into a created virtual environment::
             stream.close()
 
         def install_script(self, context, name, url):
-            _, _, path, _, _, _ = urlparse(url)
+            _, _, path, _, _ = urlsplit(url)
             fn = os.path.split(path)[-1]
             binpath = context.bin_path
             distpath = os.path.join(binpath, fn)
