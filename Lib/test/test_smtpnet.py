@@ -45,6 +45,59 @@ class SmtpTest(unittest.TestCase):
             server.ehlo()
             server.quit()
 
+    def test_connect_host_port_starttls(self):
+        support.get_attribute(smtplib, 'SMTP_SSL')
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+        with socket_helper.transient_internet(self.testServer):
+            server = smtplib.SMTP(f'{self.testServer}:{self.remotePort}')
+            try:
+                server.starttls(context=context)
+            except smtplib.SMTPException as e:
+                if e.args[0] == 'STARTTLS extension not supported by server.':
+                    unittest.skip(e.args[0])
+                else:
+                    raise
+            server.ehlo()
+            server.quit()
+
+    def test_explicit_connect_starttls(self):
+        support.get_attribute(smtplib, 'SMTP_SSL')
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+        with socket_helper.transient_internet(self.testServer):
+            server = smtplib.SMTP()
+            server.connect(self.testServer, self.remotePort)
+            try:
+                server.starttls(context=context)
+            except smtplib.SMTPException as e:
+                if e.args[0] == 'STARTTLS extension not supported by server.':
+                    unittest.skip(e.args[0])
+                else:
+                    raise
+            server.ehlo()
+            server.quit()
+
+    def test_explicit_connect_host_port_starttls(self):
+        support.get_attribute(smtplib, 'SMTP_SSL')
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+        with socket_helper.transient_internet(self.testServer):
+            server = smtplib.SMTP()
+            server.connect(f'{self.testServer}:{self.remotePort}')
+            try:
+                server.starttls(context=context)
+            except smtplib.SMTPException as e:
+                if e.args[0] == 'STARTTLS extension not supported by server.':
+                    unittest.skip(e.args[0])
+                else:
+                    raise
+            server.ehlo()
+            server.quit()
+
 
 class SmtpSSLTest(unittest.TestCase):
     testServer = SMTP_TEST_SERVER

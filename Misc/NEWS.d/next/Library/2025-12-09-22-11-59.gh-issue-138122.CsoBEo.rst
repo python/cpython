@@ -1,8 +1,0 @@
-The ``profiling.sampling`` flamegraph profiler now supports inverted
-flamegraph view that aggregates all leaf nodes. In a standard flamegraph, if
-a hot function is called from multiple locations, it appears multiple times
-as separate leaf nodes. In the inverted flamegraph, all occurrences of the
-same leaf function are merged into a single aggregated node at the root,
-showing the total hotness of that function in one place. The children of each
-aggregated node represent its callers, making it easier to identify which
-functions consume the most CPU time and where they are called from.

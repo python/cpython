@@ -23,6 +23,7 @@
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_stats.h"
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 
 #include "cpython/code.h"
@@ -296,6 +297,19 @@ compiler_set_qualname(compiler *c)
                 base = Py_NewRef(parent->u_metadata.u_qualname);
             }
         }
+        if (u->u_ste->ste_function_name != NULL) {
+            PyObject *tmp = base;
+            base = PyUnicode_FromFormat("%U.%U",
+                base,
+                u->u_ste->ste_function_name);
+            Py_DECREF(tmp);
+            if (base == NULL) {
+                return ERROR;
+            }
+        }
+    }
+    else if (u->u_ste->ste_function_name != NULL) {
+        base = Py_NewRef(u->u_ste->ste_function_name);
     }
 
     if (base != NULL) {
@@ -634,7 +648,7 @@ _PyCompile_EnterScope(compiler *c, identifier name, int scope_type,
         }
     }
     if (u->u_ste->ste_has_conditional_annotations) {
-        /* Cook up an implicit __conditional__annotations__ cell */
+        /* Cook up an implicit __conditional_annotations__ cell */
         Py_ssize_t res;
         assert(u->u_scope_type == COMPILE_SCOPE_CLASS || u->u_scope_type == COMPILE_SCOPE_MODULE);
         res = _PyCompile_DictAddObj(u->u_metadata.u_cellvars, &_Py_ID(__conditional_annotations__));
@@ -798,6 +812,26 @@ _PyCompile_TopFBlock(compiler *c)
         return NULL;
     }
     return &c->u->u_fblock[c->u->u_nfblocks - 1];
+}
+
+bool
+_PyCompile_InExceptionHandler(compiler *c)
+{
+    for (Py_ssize_t i = 0; i < c->u->u_nfblocks; i++) {
+        fblockinfo *block = &c->u->u_fblock[i];
+        switch (block->fb_type) {
+            case COMPILE_FBLOCK_TRY_EXCEPT:
+            case COMPILE_FBLOCK_FINALLY_TRY:
+            case COMPILE_FBLOCK_FINALLY_END:
+            case COMPILE_FBLOCK_EXCEPTION_HANDLER:
+            case COMPILE_FBLOCK_EXCEPTION_GROUP_HANDLER:
+            case COMPILE_FBLOCK_HANDLER_CLEANUP:
+                return true;
+            default:
+                break;
+        }
+    }
+    return false;
 }
 
 void
@@ -1079,18 +1113,22 @@ _PyCompile_TweakInlinedComprehensionScopes(compiler *c, location loc,
                 assert(orig == NULL || orig == Py_True || orig == Py_False);
                 if (orig != Py_True) {
                     if (PyDict_SetItem(c->u->u_metadata.u_fasthidden, k, Py_True) < 0) {
+                        Py_XDECREF(orig);
                         return ERROR;
                     }
                     if (state->fast_hidden == NULL) {
                         state->fast_hidden = PySet_New(NULL);
                         if (state->fast_hidden == NULL) {
+                            Py_XDECREF(orig);
                             return ERROR;
                         }
                     }
                     if (PySet_Add(state->fast_hidden, k) < 0) {
+                        Py_XDECREF(orig);
                         return ERROR;
                     }
                 }
+                Py_XDECREF(orig);
             }
         }
     }
@@ -1443,7 +1481,7 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
 
     int stackdepth;
     int nlocalsplus;
-    if (_PyCfg_OptimizedCfgToInstructionSequence(g, &u->u_metadata, code_flags,
+    if (_PyCfg_OptimizedCfgToInstructionSequence(g, &u->u_metadata,
                                                  &stackdepth, &nlocalsplus,
                                                  &optimized_instrs) < 0) {
         goto error;
@@ -1620,6 +1658,7 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
 {
     PyObject *res = NULL;
     PyObject *metadata = NULL;
+    PyObject *consts_list = NULL;
 
     if (!PyAST_Check(ast)) {
         PyErr_SetString(PyExc_TypeError, "expected an AST");
@@ -1674,12 +1713,23 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
     }
 
     if (_PyInstructionSequence_ApplyLabelMap(_PyCompile_InstrSequence(c)) < 0) {
-        return NULL;
+        goto finally;
     }
+
+    /* After AddReturnAtEnd: co_consts indices match the final instruction stream. */
+    consts_list = consts_dict_keys_inorder(umd->u_consts);
+    if (consts_list == NULL) {
+        goto finally;
+    }
+    if (PyDict_SetItemString(metadata, "consts", consts_list) < 0) {
+        goto finally;
+    }
+
     /* Allocate a copy of the instruction sequence on the heap */
-    res = PyTuple_Pack(2, _PyCompile_InstrSequence(c), metadata);
+    res = _PyTuple_FromPair((PyObject *)_PyCompile_InstrSequence(c), metadata);
 
 finally:
+    Py_XDECREF(consts_list);
     Py_XDECREF(metadata);
     _PyCompile_ExitScope(c);
     compiler_free(c);
@@ -1718,7 +1768,7 @@ _PyCompile_Assemble(_PyCompile_CodeUnitMetadata *umd, PyObject *filename,
 
     int code_flags = 0;
     int stackdepth, nlocalsplus;
-    if (_PyCfg_OptimizedCfgToInstructionSequence(g, umd, code_flags,
+    if (_PyCfg_OptimizedCfgToInstructionSequence(g, umd,
                                                  &stackdepth, &nlocalsplus,
                                                  &optimized_instrs) < 0) {
         goto error;

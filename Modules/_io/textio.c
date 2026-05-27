@@ -53,19 +53,19 @@ _unsupported(_PyIO_State *state, const char *message)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 _io._TextIOBase.detach
     cls: defining_class
     /
 
 Separate the underlying buffer from the TextIOBase and return it.
 
-After the underlying buffer has been detached, the TextIO is in an unusable state.
+After the underlying buffer has been detached, the TextIO is in
+an unusable state.
 [clinic start generated code]*/
 
 static PyObject *
 _io__TextIOBase_detach_impl(PyObject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=50915f40c609eaa4 input=8cd0652c17d7f015]*/
+/*[clinic end generated code: output=50915f40c609eaa4 input=8099c088abcb87d8]*/
 {
     _PyIO_State *state = get_io_state_by_cls(cls);
     return _unsupported(state, "detach");
@@ -79,14 +79,14 @@ _io._TextIOBase.read
 
 Read at most size characters from stream.
 
-Read from underlying buffer until we have size characters or we hit EOF.
-If size is negative or omitted, read until EOF.
+Read from underlying buffer until we have size characters or we hit
+EOF.  If size is negative or omitted, read until EOF.
 [clinic start generated code]*/
 
 static PyObject *
 _io__TextIOBase_read_impl(PyObject *self, PyTypeObject *cls,
                           int Py_UNUSED(size))
-/*[clinic end generated code: output=51a5178a309ce647 input=f5e37720f9fc563f]*/
+/*[clinic end generated code: output=51a5178a309ce647 input=c9fd4cc1cf1b4614]*/
 {
     _PyIO_State *state = get_io_state_by_cls(cls);
     return _unsupported(state, "read");
@@ -519,6 +519,7 @@ _PyIncrementalNewlineDecoder_decode(PyObject *myself,
 }
 
 /*[clinic input]
+@critical_section
 _io.IncrementalNewlineDecoder.decode
     input: object
     final: bool = False
@@ -527,18 +528,19 @@ _io.IncrementalNewlineDecoder.decode
 static PyObject *
 _io_IncrementalNewlineDecoder_decode_impl(nldecoder_object *self,
                                           PyObject *input, int final)
-/*[clinic end generated code: output=0d486755bb37a66e input=90e223c70322c5cd]*/
+/*[clinic end generated code: output=0d486755bb37a66e input=9475d16a73168504]*/
 {
     return _PyIncrementalNewlineDecoder_decode((PyObject *) self, input, final);
 }
 
 /*[clinic input]
+@critical_section
 _io.IncrementalNewlineDecoder.getstate
 [clinic start generated code]*/
 
 static PyObject *
 _io_IncrementalNewlineDecoder_getstate_impl(nldecoder_object *self)
-/*[clinic end generated code: output=f0d2c9c136f4e0d0 input=f8ff101825e32e7f]*/
+/*[clinic end generated code: output=f0d2c9c136f4e0d0 input=dc3e1f27aa850f12]*/
 {
     PyObject *buffer;
     unsigned long long flag;
@@ -576,6 +578,7 @@ _io_IncrementalNewlineDecoder_getstate_impl(nldecoder_object *self)
 }
 
 /*[clinic input]
+@critical_section
 _io.IncrementalNewlineDecoder.setstate
     state: object
     /
@@ -584,7 +587,7 @@ _io.IncrementalNewlineDecoder.setstate
 static PyObject *
 _io_IncrementalNewlineDecoder_setstate_impl(nldecoder_object *self,
                                             PyObject *state)
-/*[clinic end generated code: output=09135cb6e78a1dc8 input=c53fb505a76dbbe2]*/
+/*[clinic end generated code: output=09135cb6e78a1dc8 input=275fd3982d2b08cb]*/
 {
     PyObject *buffer;
     unsigned long long flag;
@@ -614,12 +617,13 @@ _io_IncrementalNewlineDecoder_setstate_impl(nldecoder_object *self,
 }
 
 /*[clinic input]
+@critical_section
 _io.IncrementalNewlineDecoder.reset
 [clinic start generated code]*/
 
 static PyObject *
 _io_IncrementalNewlineDecoder_reset_impl(nldecoder_object *self)
-/*[clinic end generated code: output=32fa40c7462aa8ff input=728678ddaea776df]*/
+/*[clinic end generated code: output=32fa40c7462aa8ff input=31bd8ae4e36cec83]*/
 {
     CHECK_INITIALIZED_DECODER(self);
 
@@ -2723,13 +2727,13 @@ _io.TextIOWrapper.tell
 
 Return the stream position as an opaque number.
 
-The return value of tell() can be given as input to seek(), to restore a
-previous stream position.
+The return value of tell() can be given as input to seek(), to
+restore a previous stream position.
 [clinic start generated code]*/
 
 static PyObject *
 _io_TextIOWrapper_tell_impl(textio *self)
-/*[clinic end generated code: output=4f168c08bf34ad5f input=415d6b4e4f8e6e8c]*/
+/*[clinic end generated code: output=4f168c08bf34ad5f input=aeece020f747fd92]*/
 {
     PyObject *res;
     PyObject *posobj = NULL;
@@ -3149,6 +3153,9 @@ _io_TextIOWrapper_close_impl(textio *self)
 
     if (r > 0) {
         Py_RETURN_NONE; /* stream already closed */
+    }
+    if (self->detached) {
+        Py_RETURN_NONE; /* gh-142594 null pointer issue */
     }
     else {
         PyObject *exc = NULL;

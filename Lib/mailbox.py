@@ -39,6 +39,13 @@ class Mailbox:
         self._path = os.path.abspath(os.path.expanduser(path))
         self._factory = factory
 
+    def __enter__(self):
+        self.lock()
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.close()
+
     def add(self, message):
         """Add message and return assigned key."""
         raise NotImplementedError('Method must be implemented by subclass')
@@ -2181,11 +2188,7 @@ def _unlock_file(f):
 
 def _create_carefully(path):
     """Create a file if it doesn't exist and open for reading and writing."""
-    fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_RDWR, 0o666)
-    try:
-        return open(path, 'rb+')
-    finally:
-        os.close(fd)
+    return open(path, 'xb+')
 
 def _create_temporary(path):
     """Create a temp file based on path and open for reading and writing."""

@@ -252,6 +252,8 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
         bad_zones = [
             b"",  # Empty file
             b"AAAA3" + b" " * 15,  # Bad magic
+            # Truncated V2 file (should not loop indefinitely)
+            b"TZif2" + (b"\x00" * 39) + b"TZif2" + (b"\x00" * 39) + b"\n" + b"Part",
         ]
 
         for bad_zone in bad_zones:
@@ -738,6 +740,38 @@ class WeirdZoneTest(ZoneInfoTestBase):
 
         with self.assertRaises(ValueError):
             self.klass.from_file(zf)
+
+    def test_invalid_transition_index(self):
+        STD = ZoneOffset("STD", ZERO)
+        DST = ZoneOffset("DST", ONE_H, ONE_H)
+
+        zf = self.construct_zone([
+            ZoneTransition(datetime(2026, 3, 1, 2), STD, DST),
+            ZoneTransition(datetime(2026, 11, 1, 2), DST, STD),
+        ], after="", version=1)
+
+        data = bytearray(zf.read())
+        timecnt = struct.unpack_from(">l", data, 32)[0]
+        idx_offset = 44 + timecnt * 4
+        data[idx_offset + 1] = 2  # typecnt is 2, so index 2 is OOB
+        f = io.BytesIO(bytes(data))
+
+        with self.assertRaises(ValueError):
+            self.klass.from_file(f)
+
+    def test_transition_lookahead_out_of_bounds(self):
+        STD = ZoneOffset("STD", ZERO)
+        DST = ZoneOffset("DST", ONE_H, ONE_H)
+        EXT = ZoneOffset("EXT", ONE_H)
+
+        zf = self.construct_zone([
+            ZoneTransition(datetime(2026, 3, 1), STD, DST),
+            ZoneTransition(datetime(2026, 6, 1), DST, EXT),
+            ZoneTransition(datetime(2026, 9, 1), EXT, DST),
+        ], after="")
+
+        zi = self.klass.from_file(zf)
+        self.assertIsNotNone(zi)
 
     def test_zone_very_large_timestamp(self):
         """Test when a transition is in the far past or future.
@@ -1551,9 +1585,79 @@ class ZoneInfoCacheTest(TzPathUserMixin, ZoneInfoTestBase):
         except CustomError:
             pass
 
+    def test_weak_cache_descriptor_use_after_free(self):
+        class BombDescriptor:
+            def __get__(self, obj, owner):
+                return {}
+
+        class EvilZoneInfo(self.klass):
+            pass
+
+        # Must be set after the class creation.
+        EvilZoneInfo._weak_cache = BombDescriptor()
+
+        key = "America/Los_Angeles"
+        zone1 = EvilZoneInfo(key)
+        self.assertEqual(str(zone1), key)
+
+        EvilZoneInfo.clear_cache()
+        zone2 = EvilZoneInfo(key)
+        self.assertEqual(str(zone2), key)
+        self.assertIsNot(zone2, zone1)
+
 
 class CZoneInfoCacheTest(ZoneInfoCacheTest):
     module = c_zoneinfo
+
+    def test_inconsistent_weak_cache_get(self):
+        class Cache:
+            def get(self, key, default=None):
+                return 1337
+
+        class ZI(self.klass):
+            pass
+        # Class attribute must be set after class creation
+        # to override zoneinfo.ZoneInfo.__init_subclass__.
+        ZI._weak_cache = Cache()
+
+        with self.assertRaises(RuntimeError) as te:
+            ZI("America/Los_Angeles")
+        self.assertEqual(
+            str(te.exception),
+            "Unexpected instance of int in ZI weak cache for key 'America/Los_Angeles'"
+        )
+
+    def test_deleted_weak_cache(self):
+        class ZI(self.klass):
+            pass
+        delattr(ZI, '_weak_cache')
+
+        # These should not segfault
+        with self.assertRaises(AttributeError):
+            ZI("UTC")
+
+        with self.assertRaises(AttributeError):
+            ZI.clear_cache()
+
+    def test_inconsistent_weak_cache_setdefault(self):
+        class Cache:
+            def get(self, key, default=None):
+                return default
+            def setdefault(self, key, value):
+                return 1337
+
+        class ZI(self.klass):
+            pass
+        # Class attribute must be set after class creation
+        # to override zoneinfo.ZoneInfo.__init_subclass__.
+        ZI._weak_cache = Cache()
+
+        with self.assertRaises(RuntimeError) as te:
+            ZI("America/Los_Angeles")
+        self.assertEqual(
+            str(te.exception),
+            "Unexpected instance of int in ZI weak cache for key 'America/Los_Angeles'"
+        )
 
 
 class ZoneInfoPickleTest(TzPathUserMixin, ZoneInfoTestBase):

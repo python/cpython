@@ -1,2 +1,0 @@
-Deprecate ``__version__`` from :mod:`http.server`. Patch by Hugo van
-Kemenade.

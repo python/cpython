@@ -130,7 +130,7 @@ def show_flag_values(value):
 def bin(num, max_bits=None):
     """
     Like built-in bin(), except negative values are represented in
-    twos-compliment, and the leading bit always indicates sign
+    twos-complement, and the leading bit always indicates sign
     (0=positive, 1=negative).
 
     >>> bin(10)
@@ -139,6 +139,7 @@ def bin(num, max_bits=None):
     '0b1 0101'
     """
 
+    num = num.__index__()
     ceiling = 2 ** (num).bit_length()
     if num >= 0:
         s = bltns.bin(num + ceiling).replace('1', '0', 1)
@@ -701,9 +702,9 @@ class EnumType(type):
         """
         Either returns an existing member, or creates a new enum class.
 
-        This method is used both when an enum class is given a value to match
-        to an enumeration member (i.e. Color(3)) and for the functional API
-        (i.e. Color = Enum('Color', names='RED GREEN BLUE')).
+        This method is used both when an enum class is given a value to
+        match to an enumeration member (i.e. Color(3)) and for the
+        functional API (i.e. Color = Enum('Color', names='RED GREEN BLUE')).
 
         The value lookup branch is chosen if the enum is final.
 
@@ -711,16 +712,17 @@ class EnumType(type):
 
         `value` will be the name of the new class.
 
-        `names` should be either a string of white-space/comma delimited names
-        (values will start at `start`), or an iterator/mapping of name, value pairs.
+        `names` should be either a string of white-space/comma delimited
+        names (values will start at `start`), or an iterator/mapping of
+        name, value pairs.
 
         `module` should be set to the module this class is being created in;
-        if it is not set, an attempt to find that module will be made, but if
-        it fails the class will not be picklable.
+        if it is not set, an attempt to find that module will be made, but
+        if it fails the class will not be picklable.
 
-        `qualname` should be set to the actual location this class can be found
-        at in its module; by default it is set to the global scope.  If this is
-        not correct, unpickling will fail in some circumstances.
+        `qualname` should be set to the actual location this class can be
+        found at in its module; by default it is set to the global scope.
+        If this is not correct, unpickling will fail in some circumstances.
 
         `type`, if set, will be mixed in as the first base class.
         """
@@ -818,8 +820,8 @@ class EnumType(type):
         """
         Returns a mapping of member name->value.
 
-        This mapping lists all enum members, including aliases. Note that this
-        is a read-only view of the internal mapping.
+        This mapping lists all enum members, including aliases.  Note that
+        this is a read-only view of the internal mapping.
         """
         return MappingProxyType(cls._member_map_)
 

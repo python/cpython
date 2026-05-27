@@ -750,6 +750,10 @@ class BaseFutureTests:
         self.assertIsNotNone(exc)
         self.assertListEqual(gc.get_referrers(exc), [])
 
+    def test_future_disallow_multiple_initialization(self):
+        f = self._new_future(loop=self.loop)
+        with self.assertRaises(RuntimeError, msg="is already initialized"):
+            f.__init__(loop=self.loop)
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
                      'requires the C _asyncio module')
@@ -1090,33 +1094,6 @@ class BaseFutureDoneCallbackTests():
             fut_callback_0 = lambda: ...
             fut.add_done_callback(fut_callback_0)
             self.assertRaises(ReachableCode, fut.set_result, "boom")
-
-    def test_use_after_free_on_fut_context_0_with_evil__getattribute__(self):
-        # see: https://github.com/python/cpython/issues/125984
-
-        class EvilEventLoop(SimpleEvilEventLoop):
-            def call_soon(self, *args, **kwargs):
-                super().call_soon(*args, **kwargs)
-                raise ReachableCode
-
-            def __getattribute__(self, name):
-                if name == 'call_soon':
-                    # resets the future's event loop
-                    fut.__init__(loop=SimpleEvilEventLoop())
-                return object.__getattribute__(self, name)
-
-        evil_loop = EvilEventLoop()
-        with mock.patch.object(self, 'loop', evil_loop):
-            fut = self._new_future()
-            self.assertIs(fut.get_loop(), evil_loop)
-
-            fut_callback_0 = mock.Mock()
-            fut_context_0 = mock.Mock()
-            fut.add_done_callback(fut_callback_0, context=fut_context_0)
-            del fut_context_0
-            del fut_callback_0
-            self.assertRaises(ReachableCode, fut.set_result, "boom")
-
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
                      'requires the C _asyncio module')
