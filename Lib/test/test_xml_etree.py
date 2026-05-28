@@ -1291,7 +1291,7 @@ class ElementTreeTest(unittest.TestCase):
         comm = ET.Comment('<spam> & ham')
         self.assertEqual(ET.tostring(comm), b'<!--<spam> & ham-->')
         self.assertEqual(ET.tostring(comm, method='html'), b'<!--<spam> & ham-->')
-        self.assertEqual(ET.tostring(comm, method='text'), b'<spam> & ham')
+        self.assertEqual(ET.tostring(comm, method='text'), b'')
 
     def test_processinginstruction_serialization(self):
         # Test ProcessingInstruction directly
@@ -1308,8 +1308,10 @@ class ElementTreeTest(unittest.TestCase):
         self.assertEqual(ET.tostring(ET.PI('test', '<testing&>\xe3'), 'latin-1'),
                 b"<?xml version='1.0' encoding='latin-1'?>\n"
                 b"<?test <testing&>\xe3?>")
-        self.assertEqual(ET.tostring(ET.PI('test', 'ham & eggs < spam'), method='html'),
-                b'<?test ham & eggs < spam?>')
+        pi = ET.PI('test', 'ham & eggs < spam')
+        self.assertEqual(ET.tostring(pi), b'<?test ham & eggs < spam?>')
+        self.assertEqual(ET.tostring(pi, method='html'), b'<?test ham & eggs < spam?>')
+        self.assertEqual(ET.tostring(pi, method='text'), b'')
 
     def test_empty_attribute_serialization(self):
         elem = ET.Element('tag', attrib={'attr': None})
