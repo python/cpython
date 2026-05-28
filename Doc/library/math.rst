@@ -646,12 +646,12 @@ Trigonometric functions
 
 .. function:: atan2pi(y, x)
 
-   Return ``atan(y / x)``, in half-turns. The result is between ``-1`` and ``1``.
+   Return ``atanpi(y / x)``, in half-turns. The result is between ``-1`` and ``1``.
    The vector in the plane from the origin to point ``(x, y)`` makes this angle
-   with the positive X axis. The point of :func:`atan2` is that the signs of both
+   with the positive X axis. The point of :func:`atan2pi` is that the signs of both
    inputs are known to it, so it can compute the correct quadrant for the angle.
-   For example, ``atan(1)`` and ``atan2(1, 1)`` are both ``1/4``, but ``atan2(-1,
-   -1)`` is ``-3/4``.
+   For example, ``atanpi(1)`` and ``atanpi2(1, 1)`` are both ``1/4``, but
+   ``atanpi2(-1, -1)`` is ``-3/4``.
 
 
 .. function:: cos(x)
