@@ -116,6 +116,10 @@ PyAPI_DATA(PyObject*) _PyLong_Lshift(PyObject *, int64_t);
 PyAPI_FUNC(_PyStackRef) _PyCompactLong_Add(PyLongObject *left, PyLongObject *right);
 PyAPI_FUNC(_PyStackRef) _PyCompactLong_Multiply(PyLongObject *left, PyLongObject *right);
 PyAPI_FUNC(_PyStackRef) _PyCompactLong_Subtract(PyLongObject *left, PyLongObject *right);
+/* Wide variants: accept exact ints in the full int64 range (may be non-compact). */
+PyAPI_FUNC(_PyStackRef) _PyCompactLong_AddWide(PyLongObject *left, PyLongObject *right);
+PyAPI_FUNC(_PyStackRef) _PyCompactLong_MultiplyWide(PyLongObject *left, PyLongObject *right);
+PyAPI_FUNC(_PyStackRef) _PyCompactLong_SubtractWide(PyLongObject *left, PyLongObject *right);
 
 // Export for 'binascii' shared extension.
 PyAPI_DATA(unsigned char) _PyLong_DigitValue[256];

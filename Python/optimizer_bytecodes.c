@@ -205,7 +205,37 @@ dummy_func(void) {
         res = PyJitRef_Borrow(sym_new_null(ctx));
     }
 
+    /* Compact guard: value must be a compact int.  When the type is already
+     * known to be PyLong_Type, use the cheaper _GUARD_TOS_COMPACT which skips
+     * the redundant type check. */
     op(_GUARD_TOS_INT, (value -- value)) {
+        if (sym_is_compact_int(value)) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        else {
+            if (sym_get_type(value) == &PyLong_Type) {
+                ADD_OP(_GUARD_TOS_COMPACT, 0, 0);
+            }
+            sym_set_compact_int(value);
+        }
+    }
+
+    op(_GUARD_NOS_INT, (left, unused -- left, unused)) {
+        if (sym_is_compact_int(left)) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        else {
+            if (sym_get_type(left) == &PyLong_Type) {
+                ADD_OP(_GUARD_NOS_COMPACT, 0, 0);
+            }
+            sym_set_compact_int(left);
+        }
+    }
+
+    /* Wide guards: value must be an exact int that fits in int64.  When the
+     * type is already known to be PyLong_Type the cheaper _OVERFLOWED guard
+     * (which skips the type check) can be used instead. */
+    op(_GUARD_TOS_INT_WIDE, (value -- value)) {
         if (sym_is_compact_int(value)) {
             ADD_OP(_NOP, 0, 0);
         }
@@ -217,7 +247,7 @@ dummy_func(void) {
         }
     }
 
-    op(_GUARD_NOS_INT, (left, unused -- left, unused)) {
+    op(_GUARD_NOS_INT_WIDE, (left, unused -- left, unused)) {
         if (sym_is_compact_int(left)) {
             ADD_OP(_NOP, 0, 0);
         }

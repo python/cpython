@@ -559,7 +559,7 @@
             }
             else {
                 if (sym_get_type(left) == &PyLong_Type) {
-                    ADD_OP(_GUARD_NOS_OVERFLOWED, 0, 0);
+                    ADD_OP(_GUARD_NOS_COMPACT, 0, 0);
                 }
                 sym_set_compact_int(left);
             }
@@ -567,6 +567,36 @@
         }
 
         case _GUARD_TOS_INT: {
+            JitOptRef value;
+            value = stack_pointer[-1];
+            if (sym_is_compact_int(value)) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                if (sym_get_type(value) == &PyLong_Type) {
+                    ADD_OP(_GUARD_TOS_COMPACT, 0, 0);
+                }
+                sym_set_compact_int(value);
+            }
+            break;
+        }
+
+        case _GUARD_NOS_INT_WIDE: {
+            JitOptRef left;
+            left = stack_pointer[-2];
+            if (sym_is_compact_int(left)) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                if (sym_get_type(left) == &PyLong_Type) {
+                    ADD_OP(_GUARD_NOS_OVERFLOWED, 0, 0);
+                }
+                sym_set_compact_int(left);
+            }
+            break;
+        }
+
+        case _GUARD_TOS_INT_WIDE: {
             JitOptRef value;
             value = stack_pointer[-1];
             if (sym_is_compact_int(value)) {
@@ -586,6 +616,14 @@
         }
 
         case _GUARD_TOS_OVERFLOWED: {
+            break;
+        }
+
+        case _GUARD_TOS_COMPACT: {
+            break;
+        }
+
+        case _GUARD_NOS_COMPACT: {
             break;
         }
 
@@ -622,6 +660,7 @@
                 PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
                 assert(PyLong_CheckExact(left_o));
                 assert(PyLong_CheckExact(right_o));
+                assert(_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o));
                 STAT_INC(BINARY_OP, hit);
                 res_stackref = _PyCompactLong_Multiply((PyLongObject *)left_o, (PyLongObject *)right_o);
                 if (PyStackRef_IsNull(res_stackref )) {
@@ -630,9 +669,6 @@
                 }
                 l_stackref = left;
                 r_stackref = right;
-                if (PyStackRef_IsError(res_stackref )) {
-                    goto error;
-                }
                 /* End of uop copied from bytecodes for constant evaluation */
                 (void)l_stackref;
                 (void)r_stackref;
@@ -695,6 +731,7 @@
                 PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
                 assert(PyLong_CheckExact(left_o));
                 assert(PyLong_CheckExact(right_o));
+                assert(_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o));
                 STAT_INC(BINARY_OP, hit);
                 res_stackref = _PyCompactLong_Add((PyLongObject *)left_o, (PyLongObject *)right_o);
                 if (PyStackRef_IsNull(res_stackref )) {
@@ -703,9 +740,6 @@
                 }
                 l_stackref = left;
                 r_stackref = right;
-                if (PyStackRef_IsError(res_stackref )) {
-                    goto error;
-                }
                 /* End of uop copied from bytecodes for constant evaluation */
                 (void)l_stackref;
                 (void)r_stackref;
@@ -768,6 +802,7 @@
                 PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
                 assert(PyLong_CheckExact(left_o));
                 assert(PyLong_CheckExact(right_o));
+                assert(_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o));
                 STAT_INC(BINARY_OP, hit);
                 res_stackref = _PyCompactLong_Subtract((PyLongObject *)left_o, (PyLongObject *)right_o);
                 if (PyStackRef_IsNull(res_stackref )) {
@@ -776,9 +811,6 @@
                 }
                 l_stackref = left;
                 r_stackref = right;
-                if (PyStackRef_IsError(res_stackref )) {
-                    goto error;
-                }
                 /* End of uop copied from bytecodes for constant evaluation */
                 (void)l_stackref;
                 (void)r_stackref;
@@ -799,6 +831,54 @@
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 break;
             }
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_ADD_INT_WIDE: {
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            res = sym_new_not_null(ctx);
+            l = sym_new_not_null(ctx);
+            r = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_SUBTRACT_INT_WIDE: {
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            res = sym_new_not_null(ctx);
+            l = sym_new_not_null(ctx);
+            r = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_MULTIPLY_INT_WIDE: {
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            res = sym_new_not_null(ctx);
+            l = sym_new_not_null(ctx);
+            r = sym_new_not_null(ctx);
             CHECK_STACK_BOUNDS(1);
             stack_pointer[-2] = res;
             stack_pointer[-1] = l;
@@ -889,6 +969,102 @@
         }
 
         case _BINARY_OP_MULTIPLY_INT_INPLACE_RIGHT: {
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            res = sym_new_not_null(ctx);
+            l = sym_new_not_null(ctx);
+            r = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_ADD_INT_WIDE_INPLACE: {
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            res = sym_new_not_null(ctx);
+            l = sym_new_not_null(ctx);
+            r = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_SUBTRACT_INT_WIDE_INPLACE: {
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            res = sym_new_not_null(ctx);
+            l = sym_new_not_null(ctx);
+            r = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_MULTIPLY_INT_WIDE_INPLACE: {
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            res = sym_new_not_null(ctx);
+            l = sym_new_not_null(ctx);
+            r = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_ADD_INT_WIDE_INPLACE_RIGHT: {
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            res = sym_new_not_null(ctx);
+            l = sym_new_not_null(ctx);
+            r = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_SUBTRACT_INT_WIDE_INPLACE_RIGHT: {
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            res = sym_new_not_null(ctx);
+            l = sym_new_not_null(ctx);
+            r = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_MULTIPLY_INT_WIDE_INPLACE_RIGHT: {
             JitOptRef res;
             JitOptRef l;
             JitOptRef r;

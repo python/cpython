@@ -2350,10 +2350,14 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
                 specialize(instr, BINARY_OP_ADD_UNICODE);
                 return;
             }
+            if (_PyLong_CheckExactAndCompact(lhs) && _PyLong_CheckExactAndCompact(rhs)) {
+                specialize(instr, BINARY_OP_ADD_INT);
+                return;
+            }
             if (_PyLong_CheckExactAndMightFitInt64(lhs) &&
                 _PyLong_CheckExactAndMightFitInt64(rhs))
             {
-                specialize(instr, BINARY_OP_ADD_INT);
+                specialize(instr, BINARY_OP_ADD_INT_WIDE);
                 return;
             }
             if (PyFloat_CheckExact(lhs)) {
@@ -2366,10 +2370,14 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
             if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
                 break;
             }
+            if (_PyLong_CheckExactAndCompact(lhs) && _PyLong_CheckExactAndCompact(rhs)) {
+                specialize(instr, BINARY_OP_MULTIPLY_INT);
+                return;
+            }
             if (_PyLong_CheckExactAndMightFitInt64(lhs) &&
                 _PyLong_CheckExactAndMightFitInt64(rhs))
             {
-                specialize(instr, BINARY_OP_MULTIPLY_INT);
+                specialize(instr, BINARY_OP_MULTIPLY_INT_WIDE);
                 return;
             }
             if (PyFloat_CheckExact(lhs)) {
@@ -2382,10 +2390,14 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
             if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
                 break;
             }
+            if (_PyLong_CheckExactAndCompact(lhs) && _PyLong_CheckExactAndCompact(rhs)) {
+                specialize(instr, BINARY_OP_SUBTRACT_INT);
+                return;
+            }
             if (_PyLong_CheckExactAndMightFitInt64(lhs) &&
                 _PyLong_CheckExactAndMightFitInt64(rhs))
             {
-                specialize(instr, BINARY_OP_SUBTRACT_INT);
+                specialize(instr, BINARY_OP_SUBTRACT_INT_WIDE);
                 return;
             }
             if (PyFloat_CheckExact(lhs)) {

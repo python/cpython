@@ -3900,28 +3900,78 @@ long_add(PyLongObject *a, PyLongObject *b)
 _PyStackRef
 _PyCompactLong_Add(PyLongObject *a, PyLongObject *b)
 {
-    if (_PyLong_BothAreCompact(a, b)) {
-        stwodigits v = medium_value(a) + medium_value(b);
-        if (IS_SMALL_INT(v)) {
-            return PyStackRef_FromPyObjectBorrow(get_small_int((sdigit)v));
-        }
-        PyLongObject *result = _PyLong_FromSTwoDigits(v);
+    assert(_PyLong_BothAreCompact(a, b));
+    stwodigits v = medium_value(a) + medium_value(b);
+    if (IS_SMALL_INT(v)) {
+        return PyStackRef_FromPyObjectBorrow(get_small_int((sdigit)v));
+    }
+    assert(v != 0);
+    if (!is_medium_int(v)) {
+        /* compact + compact overflowed the compact range; caller must fall
+         * back to the wide path.  Returns NULL to signal this. */
+        return PyStackRef_NULL;
+    }
+    PyLongObject *result = (PyLongObject *)_Py_FREELIST_POP(PyLongObject, ints);
+    if (result == NULL) {
+        result = PyObject_Malloc(sizeof(PyLongObject));
         if (result == NULL) {
-            return PyStackRef_ERROR;
+            return PyStackRef_NULL;
         }
+        _PyObject_Init((PyObject *)result, &PyLong_Type);
+        _PyLong_InitTag(result);
+    }
+    digit abs_v = v < 0 ? (digit)(-(sdigit)v) : (digit)(sdigit)v;
+    _PyLong_SetSignAndDigitCount(result, v < 0 ? -1 : 1, 1);
+    result->long_value.ob_digit[0] = abs_v;
+    return PyStackRef_FromPyObjectStealMortal((PyObject *)result);
+}
+
+/* Build a _PyStackRef from an int64 arithmetic result.  Inlined into the
+ * three _PyCompactLong_*Wide functions.  Covers small-int cache, single-digit
+ * freelist, and multi-digit allocation without going through PyLong_FromInt64
+ * → _PyLong_FromMedium.  Returns ERROR on OOM so callers can raise. */
+static inline _PyStackRef
+_wide_op_result(int64_t v)
+{
+    if (IS_SMALL_INT(v)) {
+        return PyStackRef_FromPyObjectBorrow(get_small_int((sdigit)v));
+    }
+    assert(v != 0);
+    if (is_medium_int(v)) {
+        PyLongObject *result = (PyLongObject *)_Py_FREELIST_POP(PyLongObject, ints);
+        if (result == NULL) {
+            result = PyObject_Malloc(sizeof(PyLongObject));
+            if (result == NULL) {
+                return PyStackRef_ERROR;
+            }
+            _PyObject_Init((PyObject *)result, &PyLong_Type);
+            _PyLong_InitTag(result);
+        }
+        digit abs_v = v < 0 ? (digit)(-(sdigit)v) : (digit)(sdigit)v;
+        _PyLong_SetSignAndDigitCount(result, v < 0 ? -1 : 1, 1);
+        result->long_value.ob_digit[0] = abs_v;
         return PyStackRef_FromPyObjectStealMortal((PyObject *)result);
     }
+    PyObject *result = (PyObject *)_PyLong_FromLarge(v);
+    if (result == NULL) {
+        return PyStackRef_ERROR;
+    }
+    return PyStackRef_FromPyObjectStealMortal(result);
+}
+
+/* Wide variant: handles inputs that are exact ints fitting in int64 but may
+ * be non-compact.  Returns NULL (without raising) if the result overflows
+ * int64 or if an input does not fit. */
+_PyStackRef
+_PyCompactLong_AddWide(PyLongObject *a, PyLongObject *b)
+{
     int64_t va, vb;
     if (_PyLong_TryAsInt64Exact(a, &va) && _PyLong_TryAsInt64Exact(b, &vb)) {
         int64_t v;
         if (_Py_i64_add_overflow(va, vb, &v)) {
             return PyStackRef_NULL;
         }
-        PyLongObject *result = (PyLongObject *)PyLong_FromInt64(v);
-        if (result == NULL) {
-            return PyStackRef_ERROR;
-        }
-        return PyStackRef_FromPyObjectSteal((PyObject *)result);
+        return _wide_op_result(v);
     }
     return PyStackRef_NULL;
 }
@@ -3966,28 +4016,40 @@ long_sub(PyLongObject *a, PyLongObject *b)
 _PyStackRef
 _PyCompactLong_Subtract(PyLongObject *a, PyLongObject *b)
 {
-    if (_PyLong_BothAreCompact(a, b)) {
-        stwodigits v = medium_value(a) - medium_value(b);
-        if (IS_SMALL_INT(v)) {
-            return PyStackRef_FromPyObjectBorrow(get_small_int((sdigit)v));
-        }
-        PyLongObject *result = _PyLong_FromSTwoDigits(v);
-        if (result == NULL) {
-            return PyStackRef_ERROR;
-        }
-        return PyStackRef_FromPyObjectStealMortal((PyObject *)result);
+    assert(_PyLong_BothAreCompact(a, b));
+    stwodigits v = medium_value(a) - medium_value(b);
+    if (IS_SMALL_INT(v)) {
+        return PyStackRef_FromPyObjectBorrow(get_small_int((sdigit)v));
     }
+    assert(v != 0);
+    if (!is_medium_int(v)) {
+        return PyStackRef_NULL;
+    }
+    PyLongObject *result = (PyLongObject *)_Py_FREELIST_POP(PyLongObject, ints);
+    if (result == NULL) {
+        result = PyObject_Malloc(sizeof(PyLongObject));
+        if (result == NULL) {
+            return PyStackRef_NULL;
+        }
+        _PyObject_Init((PyObject *)result, &PyLong_Type);
+        _PyLong_InitTag(result);
+    }
+    digit abs_v = v < 0 ? (digit)(-(sdigit)v) : (digit)(sdigit)v;
+    _PyLong_SetSignAndDigitCount(result, v < 0 ? -1 : 1, 1);
+    result->long_value.ob_digit[0] = abs_v;
+    return PyStackRef_FromPyObjectStealMortal((PyObject *)result);
+}
+
+_PyStackRef
+_PyCompactLong_SubtractWide(PyLongObject *a, PyLongObject *b)
+{
     int64_t va, vb;
     if (_PyLong_TryAsInt64Exact(a, &va) && _PyLong_TryAsInt64Exact(b, &vb)) {
         int64_t v;
         if (_Py_i64_sub_overflow(va, vb, &v)) {
             return PyStackRef_NULL;
         }
-        PyLongObject *result = (PyLongObject *)PyLong_FromInt64(v);
-        if (result == NULL) {
-            return PyStackRef_ERROR;
-        }
-        return PyStackRef_FromPyObjectSteal((PyObject *)result);
+        return _wide_op_result(v);
     }
     return PyStackRef_NULL;
 }
@@ -4429,33 +4491,44 @@ long_mul(PyLongObject *a, PyLongObject *b)
     return z;
 }
 
-/* This function returns NULL if the result does not fit in int64 range,
- * or if it fails to allocate, but never raises */
 _PyStackRef
 _PyCompactLong_Multiply(PyLongObject *a, PyLongObject *b)
 {
-    if (_PyLong_BothAreCompact(a, b)) {
-        stwodigits v = medium_value(a) * medium_value(b);
-        if (IS_SMALL_INT(v)) {
-            return PyStackRef_FromPyObjectBorrow(get_small_int((sdigit)v));
-        }
-        PyLongObject *result = _PyLong_FromSTwoDigits(v);
-        if (result == NULL) {
-            return PyStackRef_ERROR;
-        }
-        return PyStackRef_FromPyObjectStealMortal((PyObject *)result);
+    assert(_PyLong_BothAreCompact(a, b));
+    stwodigits v = medium_value(a) * medium_value(b);
+    if (IS_SMALL_INT(v)) {
+        return PyStackRef_FromPyObjectBorrow(get_small_int((sdigit)v));
     }
+    assert(v != 0);
+    if (!is_medium_int(v)) {
+        return PyStackRef_NULL;
+    }
+    PyLongObject *result = (PyLongObject *)_Py_FREELIST_POP(PyLongObject, ints);
+    if (result == NULL) {
+        result = PyObject_Malloc(sizeof(PyLongObject));
+        if (result == NULL) {
+            return PyStackRef_NULL;
+        }
+        _PyObject_Init((PyObject *)result, &PyLong_Type);
+        _PyLong_InitTag(result);
+    }
+    digit abs_v = v < 0 ? (digit)(-(sdigit)v) : (digit)(sdigit)v;
+    _PyLong_SetSignAndDigitCount(result, v < 0 ? -1 : 1, 1);
+    result->long_value.ob_digit[0] = abs_v;
+    return PyStackRef_FromPyObjectStealMortal((PyObject *)result);
+}
+
+/* Wide variant: returns NULL (without raising) if the result overflows int64. */
+_PyStackRef
+_PyCompactLong_MultiplyWide(PyLongObject *a, PyLongObject *b)
+{
     int64_t va, vb;
     if (_PyLong_TryAsInt64Exact(a, &va) && _PyLong_TryAsInt64Exact(b, &vb)) {
         int64_t v;
         if (_Py_i64_mul_overflow(va, vb, &v)) {
             return PyStackRef_NULL;
         }
-        PyLongObject *result = (PyLongObject *)PyLong_FromInt64(v);
-        if (result == NULL) {
-            return PyStackRef_ERROR;
-        }
-        return PyStackRef_FromPyObjectSteal((PyObject *)result);
+        return _wide_op_result(v);
     }
     return PyStackRef_NULL;
 }
