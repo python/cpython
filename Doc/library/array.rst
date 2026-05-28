@@ -107,7 +107,7 @@ The module defines the following item:
 
    A tuple with all available type codes.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       The type changed from :class:`str` to :class:`tuple`.
 
 

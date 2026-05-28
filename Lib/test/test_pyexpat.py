@@ -712,6 +712,20 @@ class ChardataBufferTest(unittest.TestCase):
         parser.Parse(xml2, True)
         self.assertEqual(self.n, 4)
 
+    @support.requires_resource('cpu')
+    @support.requires_resource('walltime')
+    @support.bigmemtest(size=2**31, memuse=4, dry_run=False)
+    def test_large_character_data_does_not_crash(self):
+        # See https://github.com/python/cpython/issues/148441
+        parser = expat.ParserCreate()
+        parser.buffer_text = True
+        parser.buffer_size = 2**31 - 1  # INT_MAX
+        N = 2049 * (1 << 20) - 3  # Character data greater than INT_MAX
+        self.assertGreater(N, parser.buffer_size)
+        parser.CharacterDataHandler = lambda text: None
+        xml_data = b"<r>" + b"A" * N + b"</r>"
+        self.assertEqual(parser.Parse(xml_data, True), 1)
+
 class ElementDeclHandlerTest(unittest.TestCase):
     def test_trigger_leak(self):
         # Unfixed, this test would leak the memory of the so-called

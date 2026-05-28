@@ -80,6 +80,66 @@ class StdStreamTest(unittest.TestCase):
                 self.assertRegex(mocked_stderr.getvalue(), r'usage:')
 
 
+class TestLazyImports(unittest.TestCase):
+    LAZY_IMPORTS = {
+        "_colorize",
+        "copy",
+        "difflib",
+        "shutil",
+        "textwrap",
+        "warnings",
+    }
+    def test_module_import(self):
+        import_helper.ensure_lazy_imports(
+            "argparse",
+            self.LAZY_IMPORTS,
+        )
+
+    def test_create_parser(self):
+        # Test imports are still unused after
+        # creating a parser
+        create_parser = "argparse.ArgumentParser()"
+        imported_modules = {"shutil"}
+
+        import_helper.ensure_lazy_imports(
+            "argparse",
+            self.LAZY_IMPORTS - imported_modules,
+            additional_code=create_parser,
+        )
+
+    def test_add_subparser(self):
+        add_subparser = textwrap.dedent(
+            """
+            parser = argparse.ArgumentParser()
+            parser.add_subparsers(dest='command', required=False)
+            """
+        )
+        imported_modules = {"shutil"}
+
+        import_helper.ensure_lazy_imports(
+            "argparse",
+            self.LAZY_IMPORTS - imported_modules,
+            additional_code=add_subparser,
+        )
+
+    def test_parse_args(self):
+        example_parser = textwrap.dedent(
+            """
+            parser = argparse.ArgumentParser(prog='PROG')
+            parser.add_argument('-f', '--foo')
+            parser.add_argument('bar')
+            parser.parse_args(['BAR'])
+            parser.parse_args(['BAR', '--foo', 'FOO'])
+            """
+        )
+        imported_modules = {"shutil"}
+        import_helper.ensure_lazy_imports(
+            "argparse",
+            self.LAZY_IMPORTS - imported_modules,
+            additional_code=example_parser
+        )
+
+
 class TestArgumentParserPickleable(unittest.TestCase):
 
     @force_not_colorized
@@ -7800,6 +7860,14 @@ class TestColorized(TestCase):
         self.assertIs(calls[-1], output)
         self.assertIn(output, calls)
         self.assertNotIn('\x1b[', output.getvalue())
+
+    def test_fake_color_theme_matches_real(self):
+        from argparse import _colorless_theme
+        _colorize_nocolor = _colorize.get_theme(force_no_color=True).argparse
+        for k in _colorize_nocolor:
+            self.assertEqual(
+                getattr(_colorless_theme, k), getattr(_colorize_nocolor, k)
+            )
 
 
 class TestModule(unittest.TestCase):

@@ -717,7 +717,7 @@ write_sample_with_encoding(BinaryWriter *writer, ThreadEntry *entry,
 }
 
 BinaryWriter *
-binary_writer_create(const char *filename, uint64_t sample_interval_us, int compression_type,
+binary_writer_create(PyObject *path, uint64_t sample_interval_us, int compression_type,
                      uint64_t start_time_us)
 {
     BinaryWriter *writer = PyMem_Calloc(1, sizeof(BinaryWriter));
@@ -725,14 +725,6 @@ binary_writer_create(const char *filename, uint64_t sample_interval_us, int comp
         PyErr_NoMemory();
         return NULL;
     }
-
-    writer->filename = PyMem_Malloc(strlen(filename) + 1);
-    if (!writer->filename) {
-        PyMem_Free(writer);
-        PyErr_NoMemory();
-        return NULL;
-    }
-    strcpy(writer->filename, filename);
 
     writer->start_time_us = start_time_us;
     writer->sample_interval_us = sample_interval_us;
@@ -799,9 +791,8 @@ binary_writer_create(const char *filename, uint64_t sample_interval_us, int comp
         }
     }
 
-    writer->fp = fopen(filename, "wb");
+    writer->fp = Py_fopen(path, "wb");
     if (!writer->fp) {
-        PyErr_SetFromErrnoWithFilename(PyExc_IOError, filename);
         goto error;
     }
 
@@ -1193,7 +1184,7 @@ binary_writer_finalize(BinaryWriter *writer)
         return -1;
     }
 
-    if (fclose(writer->fp) != 0) {
+    if (Py_fclose(writer->fp) != 0) {
         writer->fp = NULL;
         PyErr_SetFromErrno(PyExc_IOError);
         return -1;
@@ -1211,10 +1202,9 @@ binary_writer_destroy(BinaryWriter *writer)
     }
 
     if (writer->fp) {
-        fclose(writer->fp);
+        Py_fclose(writer->fp);
     }
 
-    PyMem_Free(writer->filename);
     PyMem_Free(writer->write_buffer);
 
 #ifdef HAVE_ZSTD
