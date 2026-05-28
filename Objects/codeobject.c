@@ -744,6 +744,7 @@ _PyCode_New(struct _PyCodeConstructor *con)
     }
 
     if (init_code(co, con) < 0) {
+        Py_XDECREF(replacement_locations);
         Py_DECREF(co);
         return NULL;
     }
@@ -2451,13 +2452,15 @@ code_dealloc(PyObject *self)
 #ifdef Py_GIL_DISABLED
     // The first element always points to the mutable bytecode at the end of
     // the code object, which will be freed when the code object is freed.
-    for (Py_ssize_t i = 1; i < co->co_tlbc->size; i++) {
-        char *entry = co->co_tlbc->entries[i];
-        if (entry != NULL) {
-            PyMem_Free(entry);
+    if (co->co_tlbc != NULL) {
+        for (Py_ssize_t i = 1; i < co->co_tlbc->size; i++) {
+            char *entry = co->co_tlbc->entries[i];
+            if (entry != NULL) {
+                PyMem_Free(entry);
+            }
         }
+        PyMem_Free(co->co_tlbc);
     }
-    PyMem_Free(co->co_tlbc);
 #endif
     PyObject_Free(co);
 }
