@@ -1892,9 +1892,11 @@ class CodecsModuleTest(unittest.TestCase):
         self.assertIsNot(dup, orig)
         self.assertEqual(dup, orig)
         self.assertTrue(orig._is_text_encoding)
+        self.assertIsInstance(orig._expat_decoding_table, tuple)
         self.assertEqual(dup.encode, orig.encode)
         self.assertEqual(dup.name, orig.name)
         self.assertEqual(dup.incrementalencoder, orig.incrementalencoder)
+        self.assertIs(dup._expat_decoding_table, orig._expat_decoding_table)
 
         # Test a CodecInfo with _is_text_encoding equal to false.
         orig = codecs.lookup("base64")
@@ -1902,9 +1904,11 @@ class CodecsModuleTest(unittest.TestCase):
         self.assertIsNot(dup, orig)
         self.assertEqual(dup, orig)
         self.assertFalse(orig._is_text_encoding)
+        self.assertNotHasAttr(orig, '_expat_decoding_table')
         self.assertEqual(dup.encode, orig.encode)
         self.assertEqual(dup.name, orig.name)
         self.assertEqual(dup.incrementalencoder, orig.incrementalencoder)
+        self.assertNotHasAttr(dup, '_expat_decoding_table')
 
     def test_deepcopy(self):
         orig = codecs.lookup('utf-8')
@@ -1912,9 +1916,11 @@ class CodecsModuleTest(unittest.TestCase):
         self.assertIsNot(dup, orig)
         self.assertEqual(dup, orig)
         self.assertTrue(orig._is_text_encoding)
+        self.assertIsInstance(orig._expat_decoding_table, tuple)
         self.assertEqual(dup.encode, orig.encode)
         self.assertEqual(dup.name, orig.name)
         self.assertEqual(dup.incrementalencoder, orig.incrementalencoder)
+        self.assertIs(dup._expat_decoding_table, orig._expat_decoding_table)
 
         # Test a CodecInfo with _is_text_encoding equal to false.
         orig = codecs.lookup("base64")
@@ -1922,9 +1928,11 @@ class CodecsModuleTest(unittest.TestCase):
         self.assertIsNot(dup, orig)
         self.assertEqual(dup, orig)
         self.assertFalse(orig._is_text_encoding)
+        self.assertNotHasAttr(orig, '_expat_decoding_table')
         self.assertEqual(dup.encode, orig.encode)
         self.assertEqual(dup.name, orig.name)
         self.assertEqual(dup.incrementalencoder, orig.incrementalencoder)
+        self.assertNotHasAttr(dup, '_expat_decoding_table')
 
     def test_pickle(self):
         codec_info = codecs.lookup('utf-8')
@@ -1940,6 +1948,8 @@ class CodecsModuleTest(unittest.TestCase):
                      unpickled_codec_info.incrementalencoder
                 )
                 self.assertTrue(unpickled_codec_info._is_text_encoding)
+                self.assertEqual(unpickled_codec_info._expat_decoding_table,
+                                 codec_info._expat_decoding_table)
 
         # Test a CodecInfo with _is_text_encoding equal to false.
         codec_info = codecs.lookup('base64')
@@ -1955,6 +1965,7 @@ class CodecsModuleTest(unittest.TestCase):
                      unpickled_codec_info.incrementalencoder
                 )
                 self.assertFalse(unpickled_codec_info._is_text_encoding)
+                self.assertNotHasAttr(unpickled_codec_info, '_expat_decoding_table')
 
 
 class StreamReaderTest(unittest.TestCase):
