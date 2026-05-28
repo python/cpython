@@ -359,10 +359,11 @@ _PyLong_CheckExactAndCompact(PyObject *op)
 static inline int
 _PyLong_MightFitInt64(const PyLongObject *v)
 {
-    if (_PyLong_IsCompact(v)) {
+    uintptr_t tag = v->long_value.lv_tag;
+    if (tag < (2 << NON_SIZE_BITS)) {
         return 1;
     }
-    Py_ssize_t ndigits = _PyLong_DigitCount(v);
+    Py_ssize_t ndigits = (Py_ssize_t)(tag >> NON_SIZE_BITS);
     return ndigits <= _PY_LONG_MAX_DIGITS_FOR_INT64;
 }
 
@@ -382,15 +383,25 @@ static inline bool
 _PyLong_TryAsInt64Exact(PyLongObject *v, int64_t *out)
 {
     assert(PyLong_CheckExact((PyObject *)v));
-    if (_PyLong_IsCompact(v)) {
-        *out = (int64_t)_PyLong_CompactValue(v);
+    uintptr_t tag = v->long_value.lv_tag;
+    int sign = 1 - (tag & SIGN_MASK);
+    if (tag < (2 << NON_SIZE_BITS)) {
+        *out = (int64_t)(sign * (Py_ssize_t)v->long_value.ob_digit[0]);
         return true;
     }
-    Py_ssize_t ndigits = _PyLong_DigitCount(v);
+    Py_ssize_t ndigits = (Py_ssize_t)(tag >> NON_SIZE_BITS);
     if (ndigits > _PY_LONG_MAX_DIGITS_FOR_INT64) {
         return false;
     }
     uint64_t abs_val = 0;
+#if PyLong_SHIFT == 30
+    if (ndigits == 2) {
+        abs_val = (uint64_t)v->long_value.ob_digit[0] |
+                  ((uint64_t)v->long_value.ob_digit[1] << 30);
+        *out = sign < 0 ? -(int64_t)abs_val : (int64_t)abs_val;
+        return true;
+    }
+#endif
     unsigned int shift = 0;
     for (Py_ssize_t i = 0; i < ndigits; i++) {
         uint64_t d = (uint64_t)v->long_value.ob_digit[i];
@@ -404,7 +415,6 @@ _PyLong_TryAsInt64Exact(PyLongObject *v, int64_t *out)
         abs_val |= d << shift;
         shift += PyLong_SHIFT;
     }
-    int sign = 1 - (v->long_value.lv_tag & SIGN_MASK);
     if (abs_val <= (uint64_t)INT64_MAX) {
         *out = sign < 0 ? -(int64_t)abs_val : (int64_t)abs_val;
         return true;

@@ -3900,6 +3900,17 @@ long_add(PyLongObject *a, PyLongObject *b)
 _PyStackRef
 _PyCompactLong_Add(PyLongObject *a, PyLongObject *b)
 {
+    if (_PyLong_BothAreCompact(a, b)) {
+        stwodigits v = medium_value(a) + medium_value(b);
+        if (IS_SMALL_INT(v)) {
+            return PyStackRef_FromPyObjectBorrow(get_small_int((sdigit)v));
+        }
+        PyLongObject *result = _PyLong_FromSTwoDigits(v);
+        if (result == NULL) {
+            return PyStackRef_ERROR;
+        }
+        return PyStackRef_FromPyObjectStealMortal((PyObject *)result);
+    }
     int64_t va, vb;
     if (_PyLong_TryAsInt64Exact(a, &va) && _PyLong_TryAsInt64Exact(b, &vb)) {
         int64_t v;
@@ -3955,6 +3966,17 @@ long_sub(PyLongObject *a, PyLongObject *b)
 _PyStackRef
 _PyCompactLong_Subtract(PyLongObject *a, PyLongObject *b)
 {
+    if (_PyLong_BothAreCompact(a, b)) {
+        stwodigits v = medium_value(a) - medium_value(b);
+        if (IS_SMALL_INT(v)) {
+            return PyStackRef_FromPyObjectBorrow(get_small_int((sdigit)v));
+        }
+        PyLongObject *result = _PyLong_FromSTwoDigits(v);
+        if (result == NULL) {
+            return PyStackRef_ERROR;
+        }
+        return PyStackRef_FromPyObjectStealMortal((PyObject *)result);
+    }
     int64_t va, vb;
     if (_PyLong_TryAsInt64Exact(a, &va) && _PyLong_TryAsInt64Exact(b, &vb)) {
         int64_t v;
@@ -4412,6 +4434,17 @@ long_mul(PyLongObject *a, PyLongObject *b)
 _PyStackRef
 _PyCompactLong_Multiply(PyLongObject *a, PyLongObject *b)
 {
+    if (_PyLong_BothAreCompact(a, b)) {
+        stwodigits v = medium_value(a) * medium_value(b);
+        if (IS_SMALL_INT(v)) {
+            return PyStackRef_FromPyObjectBorrow(get_small_int((sdigit)v));
+        }
+        PyLongObject *result = _PyLong_FromSTwoDigits(v);
+        if (result == NULL) {
+            return PyStackRef_ERROR;
+        }
+        return PyStackRef_FromPyObjectStealMortal((PyObject *)result);
+    }
     int64_t va, vb;
     if (_PyLong_TryAsInt64Exact(a, &va) && _PyLong_TryAsInt64Exact(b, &vb)) {
         int64_t v;
