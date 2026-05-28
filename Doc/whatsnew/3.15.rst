@@ -486,7 +486,7 @@ configuration files during normal interpreter startup.  Callers of
 :func:`site.addsitedir` can pass one of these explicitly to control startup
 configuration file batch processing.
 
-(Contributed by Barry Warsaw in :gh:`148641`.)
+(Contributed by Barry Warsaw in :gh:`148641` and :gh:`150542`.)
 
 
 .. _whatsnew315-abi3t:
