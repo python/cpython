@@ -654,10 +654,6 @@ class _socket.socket "PySocketSockObject *" "clinic_state()->sock_type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=2db2489bd2219fd8]*/
 
-#define clinic_state() (find_module_state_by_def(type))
-#include "clinic/socketmodule.c.h"
-#undef clinic_state
-
 /* XXX There's a problem here: *static* functions are not supposed to have
    a Py prefix (or use CapitalizedWords).  Later... */
 
@@ -687,6 +683,18 @@ class _socket.socket "PySocketSockObject *" "clinic_state()->sock_type"
  * little white lie. */
 #define IS_SELECTABLE(s) (_PyIsSelectable_fd((s)->sock_fd) || (s)->sock_timeout <= 0)
 #endif
+
+// SCM_RIGHTS, sendmsg(), recvmsg() and sethostname() don't work properly on
+// Cygwin: disable these features.
+#ifdef __CYGWIN__
+#  undef CMSG_LEN
+#  undef SCM_RIGHTS
+#  undef HAVE_SETHOSTNAME
+#endif
+
+#define clinic_state() (find_module_state_by_def(type))
+#include "clinic/socketmodule.c.h"
+#undef clinic_state
 
 static PyObject*
 select_error(void)
@@ -4620,7 +4628,6 @@ sock_send_impl(PySocketSockObject *s, void *data)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 _socket.socket.send
     self as s: self(type="PySocketSockObject *")
     data as pbuf: Py_buffer
@@ -4630,12 +4637,13 @@ _socket.socket.send
 Send a data string to the socket.
 
 For the optional flags argument, see the Unix manual.
-Return the number of bytes sent; this may be less than len(data) if the network is busy.
+Return the number of bytes sent; this may be less than len(data) if
+the network is busy.
 [clinic start generated code]*/
 
 static PyObject *
 _socket_socket_send_impl(PySocketSockObject *s, Py_buffer *pbuf, int flags)
-/*[clinic end generated code: output=3ddf83f17d0c875b input=e776a48af2e3d615]*/
+/*[clinic end generated code: output=3ddf83f17d0c875b input=d2b8af9bf99cfafb]*/
 
 {
     struct sock_send ctx;
@@ -4665,13 +4673,14 @@ Send a data string to the socket.
 
 For the optional flags argument, see the Unix manual.
 This calls send() repeatedly until all data is sent.
-If an error occurs, it's impossible to tell how much data has been sent.
+If an error occurs, it's impossible to tell how much data has been
+sent.
 [clinic start generated code]*/
 
 static PyObject *
 _socket_socket_sendall_impl(PySocketSockObject *s, Py_buffer *pbuf,
                             int flags)
-/*[clinic end generated code: output=ec92861424d3faa8 input=732b15b9ca64dce6]*/
+/*[clinic end generated code: output=ec92861424d3faa8 input=2600de13b4614893]*/
 
 {
     char *buf;
@@ -4921,20 +4930,20 @@ The buffers argument specifies the non-ancillary
 data as an iterable of bytes-like objects (e.g. bytes objects).
 The ancdata argument specifies the ancillary data (control messages)
 as an iterable of zero or more tuples (cmsg_level, cmsg_type,
-cmsg_data), where cmsg_level and cmsg_type are integers specifying the
-protocol level and protocol-specific type respectively, and cmsg_data
-is a bytes-like object holding the associated data.  The flags
-argument defaults to 0 and has the same meaning as for send().  If
-address is supplied and not None, it sets a destination address for
-the message.  The return value is the number of bytes of non-ancillary
-data sent.
+cmsg_data), where cmsg_level and cmsg_type are integers specifying
+the protocol level and protocol-specific type respectively, and
+cmsg_data is a bytes-like object holding the associated data.  The
+flags argument defaults to 0 and has the same meaning as for send().
+If address is supplied and not None, it sets a destination address
+for the message.  The return value is the number of bytes of
+non-ancillary data sent.
 [clinic start generated code]*/
 
 static PyObject *
 _socket_socket_sendmsg_impl(PySocketSockObject *s, PyObject *data_arg,
                             PyObject *cmsg_arg, int flags,
                             PyObject *addr_arg)
-/*[clinic end generated code: output=3b4cb1110644ce39 input=479c13d90bd2f88b]*/
+/*[clinic end generated code: output=3b4cb1110644ce39 input=8ae408971a3aa329]*/
 
 {
     Py_ssize_t i, ndatabufs = 0, ncmsgs, ncmsgbufs = 0;
@@ -7310,6 +7319,7 @@ _socket_if_nametoindex_impl(PyObject *module, PyObject *oname)
 
 
 /*[clinic input]
+@permit_long_summary
 _socket.if_indextoname
     if_index as index: NET_IFINDEX
     /
@@ -7319,7 +7329,7 @@ Returns the interface name corresponding to the interface index if_index.
 
 static PyObject *
 _socket_if_indextoname_impl(PyObject *module, NET_IFINDEX index)
-/*[clinic end generated code: output=e48bc324993052e0 input=c93f753d0cf6d7d1]*/
+/*[clinic end generated code: output=e48bc324993052e0 input=2a0026b271cd43ae]*/
 {
     errno = ENXIO;  // in case 'if_indextoname' does not set errno
     char name[IF_NAMESIZE + 1];

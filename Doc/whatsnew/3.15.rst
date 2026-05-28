@@ -157,11 +157,10 @@ making it straightforward to diagnose and debug the failure.
 For cases where you want to enable lazy loading globally without modifying
 source code, Python provides the :option:`-X lazy_imports <-X>` command-line
 option and the :envvar:`PYTHON_LAZY_IMPORTS` environment variable. Both
-accept three values: ``all`` makes all imports lazy by default, ``none``
-disables lazy imports entirely (even explicit ``lazy`` statements become
-eager), and ``normal`` (the default) respects the ``lazy`` keyword in source
-code. The :func:`sys.set_lazy_imports` and :func:`sys.get_lazy_imports`
-functions allow changing and querying this mode at runtime.
+accept two values: ``all`` makes all imports lazy by default, and ``normal``
+(the default) respects the ``lazy`` keyword in source code. The
+:func:`sys.set_lazy_imports` and :func:`sys.get_lazy_imports` functions allow
+changing and querying this mode at runtime.
 
 For more selective control, :func:`sys.set_lazy_imports_filter` accepts a
 callable that determines whether a specific module should be loaded lazily.
@@ -1208,6 +1207,19 @@ http.server
   (Contributed by Anton I. Sipos in :gh:`135057`.)
 
 
+importlib.metadata
+------------------
+
+* Previously, when accessing a distribution metadata directory not
+  containing a metadata file, ``metadata()`` and ``Distribution.metadata()``
+  would return an empty ``PackageMetadata`` object as if the file
+  was present but empty. Now, a ``MetadataNotFound`` exception is raised.
+  See `importlib_metadata#493 <https://github.com/python/importlib_metadata/issues/493>`_
+  for background and rationale and and :gh:`143387` for rationale on the
+  compatibility concerns.
+  (Contributed by Jason R. Coombs.)
+
+
 inspect
 -------
 
@@ -1285,6 +1297,10 @@ os
   glibc versions 2.28 and later.
   (Contributed by Jeffrey Bosboom and Victor Stinner in :gh:`83714`.)
 
+* :func:`os.makedirs` function now has a *parent_mode* parameter that allows
+  specifying the mode for intermediate directories. This can be used to match
+  the behavior from Python 3.6 and earlier by passing ``parent_mode=mode``.
+  (Contributed by Zackery Spytz and Gregory P. Smith in :gh:`86533`.)
 
 os.path
 -------
@@ -1327,11 +1343,12 @@ pickletools
 pprint
 ------
 
-* :mod:`pprint` now uses modern defaults: ``indent=4, width=88``,
-  and the default ``compact=False`` output is now formatted similar to
-  pretty-printed :func:`json.dumps`.
+* Add an *expand* keyword argument for :func:`pprint.pprint`,
+  :func:`pprint.pformat`, :func:`pprint.pp`. If true, the output will be
+  formatted similar to pretty-printed :func:`json.dumps` when
+  *indent* is supplied.
   (Contributed by Stefan Todoran, Semyon Moroz and Hugo van Kemenade in
-  :gh:`112632` and :gh:`149189`.)
+  :gh:`112632`.)
 
 * Add t-string support to :mod:`pprint`.
   (Contributed by Loïc Simon and Hugo van Kemenade in :gh:`134551`.)
@@ -2057,6 +2074,10 @@ importlib.resources
 pathlib
 -------
 
+* :meth:`pathlib.Path.mkdir` now has a *parent_mode* parameter that allows
+  specifying the mode for intermediate directories when ``parents=True``.
+  (Contributed by Gregory P. Smith in :gh:`86533`.)
+
 * Removed deprecated :meth:`!pathlib.PurePath.is_reserved`.
   Use :func:`os.path.isreserved` to detect reserved paths on Windows.
   (Contributed by Nikita Sobolev in :gh:`133875`.)
@@ -2626,7 +2647,7 @@ Build changes
 =============
 
 * Removed implicit fallback to the bundled copy of the ``libmpdec`` library.
-  Now this should be explicitly enabled with :option:`--with-system-libmpdec`
+  Now this should be explicitly enabled with :option:`!--with-system-libmpdec`
   set to ``no`` or with :option:`!--without-system-libmpdec`.
   (Contributed by Sergey B Kirpichev in :gh:`115119`.)
 

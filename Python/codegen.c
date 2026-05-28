@@ -3953,21 +3953,44 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
 
     if (! (func->kind == Name_kind &&
            asdl_seq_LEN(args) == 1 &&
-           asdl_seq_LEN(kwds) == 0 &&
-           asdl_seq_GET(args, 0)->kind == GeneratorExp_kind))
+           asdl_seq_LEN(kwds) == 0))
     {
         return 0;
     }
 
-    expr_ty generator_exp = asdl_seq_GET(args, 0);
-    PySTEntryObject *generator_entry = _PySymtable_Lookup(SYMTABLE(c), (void *)generator_exp);
+    location loc = LOC(func);
+
+    expr_ty arg_expr = asdl_seq_GET(args, 0);
+
+    if (_PyUnicode_EqualToASCIIString(func->v.Name.id, "frozenset")
+        && (arg_expr->kind == Set_kind || arg_expr->kind == SetComp_kind)) {
+        NEW_JUMP_TARGET_LABEL(c, skip_optimization);
+
+        ADDOP_I(c, loc, COPY, 1);
+        ADDOP_I(c, loc, LOAD_COMMON_CONSTANT, CONSTANT_BUILTIN_FROZENSET);
+        ADDOP_COMPARE(c, loc, Is);
+        ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, skip_optimization);
+        ADDOP(c, loc, POP_TOP);
+
+        VISIT(c, expr, arg_expr);
+        ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_BUILD_FROZENSET);
+
+        ADDOP_JUMP(c, loc, JUMP, end);
+
+        USE_LABEL(c, skip_optimization);
+        return 1;
+    }
+
+    if (arg_expr->kind != GeneratorExp_kind) {
+        return 0;
+    }
+
+    PySTEntryObject *generator_entry = _PySymtable_Lookup(SYMTABLE(c), (void *)arg_expr);
     if (generator_entry->ste_coroutine) {
         Py_DECREF(generator_entry);
         return 0;
     }
     Py_DECREF(generator_entry);
-
-    location loc = LOC(func);
 
     int optimized = 0;
     NEW_JUMP_TARGET_LABEL(c, skip_optimization);
@@ -3994,6 +4017,9 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
     else if (_PyUnicode_EqualToASCIIString(func->v.Name.id, "set")) {
         const_oparg = CONSTANT_BUILTIN_SET;
     }
+    else if (_PyUnicode_EqualToASCIIString(func->v.Name.id, "frozenset")) {
+        const_oparg = CONSTANT_BUILTIN_FROZENSET;
+    }
     if (const_oparg != -1) {
         ADDOP_I(c, loc, COPY, 1); // the function
         ADDOP_I(c, loc, LOAD_COMMON_CONSTANT, const_oparg);
@@ -4003,10 +4029,10 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
 
         if (const_oparg == CONSTANT_BUILTIN_TUPLE || const_oparg == CONSTANT_BUILTIN_LIST) {
             ADDOP_I(c, loc, BUILD_LIST, 0);
-        } else if (const_oparg == CONSTANT_BUILTIN_SET) {
+        } else if (const_oparg == CONSTANT_BUILTIN_SET || const_oparg == CONSTANT_BUILTIN_FROZENSET) {
             ADDOP_I(c, loc, BUILD_SET, 0);
         }
-        VISIT(c, expr, generator_exp);
+        VISIT(c, expr, arg_expr);
 
         NEW_JUMP_TARGET_LABEL(c, loop);
         NEW_JUMP_TARGET_LABEL(c, cleanup);
@@ -4017,7 +4043,7 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
         if (const_oparg == CONSTANT_BUILTIN_TUPLE || const_oparg == CONSTANT_BUILTIN_LIST) {
             ADDOP_I(c, loc, LIST_APPEND, 3);
             ADDOP_JUMP(c, loc, JUMP, loop);
-        } else if (const_oparg == CONSTANT_BUILTIN_SET) {
+        } else if (const_oparg == CONSTANT_BUILTIN_SET || const_oparg == CONSTANT_BUILTIN_FROZENSET) {
             ADDOP_I(c, loc, SET_ADD, 3);
             ADDOP_JUMP(c, loc, JUMP, loop);
         }
@@ -4029,7 +4055,8 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
         ADDOP(c, NO_LOCATION, POP_ITER);
         if (const_oparg != CONSTANT_BUILTIN_TUPLE &&
             const_oparg != CONSTANT_BUILTIN_LIST &&
-            const_oparg != CONSTANT_BUILTIN_SET) {
+            const_oparg != CONSTANT_BUILTIN_SET &&
+            const_oparg != CONSTANT_BUILTIN_FROZENSET) {
             ADDOP_LOAD_CONST(c, loc, initial_res == Py_True ? Py_False : Py_True);
         }
         ADDOP_JUMP(c, loc, JUMP, end);
@@ -4043,6 +4070,9 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
             // result is already a list
         } else if (const_oparg == CONSTANT_BUILTIN_SET) {
             // result is already a set
+        }
+        else if (const_oparg == CONSTANT_BUILTIN_FROZENSET) {
+            ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_BUILD_FROZENSET);
         }
         else {
             ADDOP_LOAD_CONST(c, loc, initial_res);

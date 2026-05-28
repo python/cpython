@@ -16,6 +16,8 @@ from .module_utils import extract_module_name, get_python_path_info
 
 
 class StackTraceCollector(Collector):
+    aggregating = True
+
     def __init__(self, sample_interval_usec, *, skip_idle=False):
         self.sample_interval_usec = sample_interval_usec
         self.skip_idle = skip_idle
