@@ -1,0 +1,2 @@
+Fix a data race in :class:`decimal.Context` status flag updates in the
+:term:`free-threaded build`.
