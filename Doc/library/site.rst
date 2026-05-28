@@ -415,7 +415,7 @@ Module contents
 
       Also processes :file:`.start` files.  See :ref:`site-start-files`.  All
       :file:`.pth` and :file:`.start` files are now read and accumulated
-      before any path extensions, entry point invocations, or``import`` line
+      before any path extensions, entry point invocations, or ``import`` line
       execution take place.
 
       The *startup_state* keyword-only argument was added.
