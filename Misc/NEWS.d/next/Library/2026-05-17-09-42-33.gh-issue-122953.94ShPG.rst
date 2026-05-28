@@ -1,0 +1,2 @@
+Update the :mod:`imaplib` module to support IMAP4rev2 following :rfc:`9501`, with backward compatibility with IMAP4rev1
+(outlined in  :rfc:`9051#appendix-A`) and IMAP4rev1 extensions folded into IMAP4rev2 (outlined in :rfc:`9051#appendix-E`).

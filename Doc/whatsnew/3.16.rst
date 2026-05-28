@@ -93,6 +93,11 @@ gzip
   which is passed on to the constructor of the :class:`~gzip.GzipFile` class.
   (Contributed by Marin Misur in :gh:`91372`.)
 
+imaplib
+-------
+
+* Add support for IMAP4rev2.
+
 os
 --
 

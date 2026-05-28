@@ -16,7 +16,8 @@
 This module defines three classes, :class:`IMAP4`, :class:`IMAP4_SSL` and
 :class:`IMAP4_stream`, which encapsulate a connection to an IMAP4 server and
 implement a large subset of the IMAP4rev1 client protocol as defined in
-:rfc:`2060`. It is backward compatible with IMAP4 (:rfc:`1730`) servers, but
+:rfc:`2060` and adds support for IMAP4rev2 client protocol as defined in
+:rfc:`9051`.  It is backward compatible with IMAP4 (:rfc:`1730`) servers, but
 note that the ``STATUS`` command is not supported in IMAP4.
 
 .. include:: ../includes/wasm-notavail.rst
@@ -28,7 +29,7 @@ base class:
 .. class:: IMAP4(host='', port=IMAP4_PORT, timeout=None)
 
    This class implements the actual IMAP4 protocol.  The connection is created and
-   protocol version (IMAP4 or IMAP4rev1) is determined when the instance is
+   protocol version (IMAP4, IMAP4rev1, or IMAP4rev2) is determined when the instance is
    initialized. If *host* is not specified, ``''`` (the local host) is used. If
    *port* is omitted, the standard IMAP4 port (143) is used. The optional *timeout*
    parameter specifies a timeout in seconds for the connection attempt.
@@ -169,8 +170,8 @@ example of usage.
 IMAP4 Objects
 -------------
 
-All IMAP4rev1 commands are represented by methods of the same name, either
-uppercase or lowercase.
+All IMAP4rev2 and IMAP4rev1 commands are represented by methods of the
+same name, either uppercase or lowercase.
 
 All arguments to commands are converted to strings, except for ``AUTHENTICATE``,
 and the last argument to ``APPEND`` which is passed as an IMAP4 literal.  If
@@ -260,8 +261,10 @@ An :class:`IMAP4` instance has the following methods:
 .. method:: IMAP4.enable(capability)
 
    Enable *capability* (see :rfc:`5161`).  Most capabilities do not need to be
-   enabled.  Currently only the ``UTF8=ACCEPT`` capability is supported
-   (see :RFC:`6855`).
+   enabled.  ``UTF8=ACCEPT`` has special client-side handling
+   (see :RFC:`6855`). On servers that advertise both ``IMAP4rev1`` and
+   ``IMAP4rev2``, ``ENABLE IMAP4REV2`` switches the connection from its
+   initial IMAP4rev1-compatible mode into IMAP4rev2 mode.
 
    .. versionadded:: 3.5
       The :meth:`enable` method itself, and :RFC:`6855` support.
@@ -507,7 +510,9 @@ An :class:`IMAP4` instance has the following methods:
    protocol requires that at least one criterion be specified; an exception will be
    raised when the server returns an error.  *charset* must be ``None`` if
    the ``UTF8=ACCEPT`` capability was enabled using the :meth:`enable`
-   command.
+   command; :rfc:`6855` requires this once UTF-8 support has been enabled.
+   In IMAP4rev2 mode (:rfc:`9051`), UTF-8 is already in use, so specifying an explicit
+   ``CHARSET`` such as ``UTF-8`` is redundant, which implies that  *charset* need not be ``None``.
 
    Example::
 
@@ -523,6 +528,11 @@ An :class:`IMAP4` instance has the following methods:
    Select a mailbox. Returned data is the count of messages in *mailbox*
    (``EXISTS`` response).  The default *mailbox* is ``'INBOX'``.  If the *readonly*
    flag is set, modifications to the mailbox are not allowed.
+
+   With the :rfc:`6855` ``UTF8=ACCEPT`` extension, the server can open
+   mailboxes containing internationalized messages with ``SELECT`` and
+   ``EXAMINE``.  In IMAP4rev2 mode, UTF-8 support is part of the protocol
+   instead of being enabled separately.
 
 
 .. method:: IMAP4.send(data)
@@ -681,8 +691,9 @@ The following attributes are defined on instances of :class:`IMAP4`:
 
 .. attribute:: IMAP4.PROTOCOL_VERSION
 
-   The most recent supported protocol in the ``CAPABILITY`` response from the
-   server.
+   The protocol version currently in use for the connection. If the server
+   advertises both ``IMAP4rev1`` and ``IMAP4rev2``, the connection starts in
+   ``IMAP4rev1`` mode until ``ENABLE IMAP4REV2`` is issued successfully.
 
 
 .. attribute:: IMAP4.debug
@@ -695,7 +706,7 @@ The following attributes are defined on instances of :class:`IMAP4`:
 
    Boolean value that is normally ``False``, but is set to ``True`` if an
    :meth:`enable` command is successfully issued for the ``UTF8=ACCEPT``
-   capability.
+   capability, and also when the connection enters IMAP4rev2 mode.
 
    .. versionadded:: 3.5
 
