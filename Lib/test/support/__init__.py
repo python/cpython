@@ -521,6 +521,7 @@ HAVE_DOUBLE_ROUNDING = (x + y == 1e16 + 4)
 skip_if_double_rounding = unittest.skipIf(HAVE_DOUBLE_ROUNDING,
                                           "accuracy not guaranteed on "
                                           "machines with double rounding")
+del x, y, HAVE_DOUBLE_ROUNDING
 
 
 def requires_zlib(reason='requires zlib'):
