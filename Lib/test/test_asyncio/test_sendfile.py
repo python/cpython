@@ -258,7 +258,6 @@ class SockSendfileMixin(SendfileBase):
                 with self.subTest(offset=offset, force_fallback=force_fallback):
                     self.check_sock_sendfile_offset(data, offset, force_fallback)
 
-
     def check_sendfile_offset(self, offset, fallback):
         srv_proto, cli_proto = self.prepare_sendfile()
         self.file.seek(123)
