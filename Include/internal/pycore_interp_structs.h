@@ -279,6 +279,7 @@ struct _gc_runtime_state {
     .heap_size = 0,
 #else
 #define GC_GENERATION_INIT \
+    .generations_mutex = (PyMutex){0}, \
     .young = { .threshold = 2000, }, \
     .old = { \
         { .threshold = 10, }, \
