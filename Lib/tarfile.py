@@ -576,11 +576,7 @@ class _Stream:
             t.append(dbuf)
             c += len(dbuf)
 
-        t = b"".join(t)
-        if len(t) > size:
-            # This would only happen if decompress() has a bug.
-            raise ReadError("decompress() returned too much data")
-        return t
+        return b"".join(t)
 
     def __read(self, size):
         """Return size bytes from stream. If internal buffer is empty,
