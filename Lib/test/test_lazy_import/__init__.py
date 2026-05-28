@@ -2268,7 +2268,7 @@ class CircularImportLazyTests(unittest.TestCase):
     def test_fails_without_lazy(self):
         """Same-level circular imports should fail without lazy mode."""
         result = subprocess.run(
-            [sys.executable, "-X", "lazy_imports=none", "-c",
+            [sys.executable, "-c",
              "import test.test_lazy_import.data.circular_import_pkg.main"],
             capture_output=True, text=True,
         )
