@@ -12440,20 +12440,11 @@
                 PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
                 bool truthy = !_PyLong_IsZero((PyLongObject *)value_o);
                 PyStackRef_CLOSE_SPECIALIZED(value, _PyLong_ExactDealloc);
-                stack_pointer += -1;
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
                 bit = PyStackRef_WrapBit(truthy);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             // _BIT_TO_BOOL
             {
-                stack_pointer[0] = bit;
-                stack_pointer += 1;
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
                 bool b = PyStackRef_UnwrapBit(bit);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
                 res = b ? PyStackRef_True : PyStackRef_False;
             }
             stack_pointer[-1] = res;
@@ -12566,20 +12557,11 @@
                 PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
                 bool truthy = value_o != &_Py_STR(empty);
                 PyStackRef_CLOSE_SPECIALIZED(value, _PyUnicode_ExactDealloc);
-                stack_pointer += -1;
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
                 bit = PyStackRef_WrapBit(truthy);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             // _BIT_TO_BOOL
             {
-                stack_pointer[0] = bit;
-                stack_pointer += 1;
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
                 bool b = PyStackRef_UnwrapBit(bit);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
                 res = b ? PyStackRef_True : PyStackRef_False;
             }
             stack_pointer[-1] = res;
