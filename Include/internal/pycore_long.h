@@ -363,19 +363,7 @@ _PyLong_MightFitInt64(const PyLongObject *v)
         return 1;
     }
     Py_ssize_t ndigits = _PyLong_DigitCount(v);
-    if (ndigits > _PY_LONG_MAX_DIGITS_FOR_INT64) {
-        return 0;
-    }
-    if (ndigits == _PY_LONG_MAX_DIGITS_FOR_INT64) {
-        unsigned int shift = PyLong_SHIFT * (unsigned int)(ndigits - 1);
-        uint64_t max_pos_top = (uint64_t)INT64_MAX >> shift;
-        uint64_t max_neg_top = ((uint64_t)INT64_MAX + 1) >> shift;  /* abs(INT64_MIN) */
-        uint64_t max_top = ((v->long_value.lv_tag & SIGN_MASK) == SIGN_NEGATIVE)
-            ? max_neg_top
-            : max_pos_top;
-        return (uint64_t)v->long_value.ob_digit[ndigits - 1] <= max_top;
-    }
-    return 1;
+    return ndigits <= _PY_LONG_MAX_DIGITS_FOR_INT64;
 }
 
 static inline int
