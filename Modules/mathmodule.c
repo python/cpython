@@ -73,6 +73,14 @@ raised for division by zero and mod by zero.
 
 #include "clinic/mathmodule.c.h"
 
+#undef HAVE_ACOSPI
+#undef HAVE_ASINPI
+#undef HAVE_ATANPI
+#undef HAVE_ATAN2PI
+#undef HAVE_COSPI
+#undef HAVE_SINPI
+#undef HAVE_TANPI
+
 /*[clinic input]
 module math
 [clinic start generated code]*/
@@ -669,7 +677,7 @@ m_lgamma(double x)
     r += (absx - 0.5) * (log(absx + lanczos_g - 0.5) - 1);
     if (x < 0.0)
         /* Use reflection formula to get value for negative x. */
-        r = logpi - log(fabs(sinpi(absx))) - log(absx) - r;
+        r = logpi - log(fabs(m_sinpi(absx))) - log(absx) - r;
     if (isinf(r))
         errno = ERANGE;
     return r;
