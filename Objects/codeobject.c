@@ -744,6 +744,7 @@ _PyCode_New(struct _PyCodeConstructor *con)
     }
 
     if (init_code(co, con) < 0) {
+        Py_XDECREF(replacement_locations);
         Py_DECREF(co);
         return NULL;
     }
