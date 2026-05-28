@@ -1,3 +1,0 @@
-Fix data race in :class:`pickle.Unpickler` when multiple threads assign to
-the ``memo`` attribute concurrently under free-threading. The memo swap and
-population loop are now protected with a critical section.

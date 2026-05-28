@@ -7786,38 +7786,24 @@ Unpickler_set_memo(PyObject *op, PyObject *obj, void *Py_UNUSED(closure))
         if (new_memo == NULL)
             return -1;
 
-        bool goto_error = false;
-        Py_BEGIN_CRITICAL_SECTION(self);
         while (PyDict_Next(obj, &i, &key, &value)) {
             Py_ssize_t idx;
             if (!PyLong_Check(key)) {
                 PyErr_SetString(PyExc_TypeError,
                                 "memo key must be integers");
-                goto_error = true;
-                break;
+                goto error;
             }
             idx = PyLong_AsSsize_t(key);
-            if (idx == -1 && PyErr_Occurred()) {
-                goto_error = true;
-                break;
-            }
+            if (idx == -1 && PyErr_Occurred())
+                goto error;
             if (idx < 0) {
                 PyErr_SetString(PyExc_ValueError,
                                 "memo key must be positive integers.");
-                goto_error = true;
-                break;
+                goto error;
             }
-
             if (_Unpickler_MemoPut(self, idx, value) < 0)
-            {
-                goto_error = true;
-                break;
-            }
+                goto error;
         }
-        Py_END_CRITICAL_SECTION();
-        if (goto_error)
-            goto error;
-
     }
     else {
         PyErr_Format(PyExc_TypeError,
@@ -7826,24 +7812,9 @@ Unpickler_set_memo(PyObject *op, PyObject *obj, void *Py_UNUSED(closure))
         return -1;
     }
 
-    Py_ssize_t old_memo_size, i;
-    PyObject **old_memo;
-
-    Py_BEGIN_CRITICAL_SECTION(self);
-    old_memo_size = self->memo_size;
-    old_memo = self->memo;
+    _Unpickler_MemoCleanup(self);
     self->memo_size = new_memo_size;
     self->memo = new_memo;
-    Py_END_CRITICAL_SECTION();
-
-    if (old_memo == NULL) {
-        return 0;
-    }
-    i = old_memo_size;
-    while (--i >= 0) {
-        Py_XDECREF(old_memo[i]);
-    }
-    PyMem_Free(old_memo);
 
     return 0;
 
