@@ -14,6 +14,14 @@ used to wrap these libraries in pure Python.
 
 .. include:: ../includes/optional-module.rst
 
+.. warning::
+
+   :mod:`!ctypes` provides low-level access to native libraries and the
+   process's memory, bypassing Python's safety mechanisms and allowing
+   execution of arbitrary native code.
+   Incorrect use can corrupt data and objects, reveal sensitive information,
+   cause crashes, or otherwise compromise the running process.
+
 
 .. _ctypes-ctypes-tutorial:
 
@@ -198,10 +206,8 @@ argument values::
    OSError: exception: access violation reading 0x00000020
    >>>
 
-There are, however, enough ways to crash Python with :mod:`!ctypes`, so you
-should be careful anyway.  The :mod:`faulthandler` module can be helpful in
-debugging crashes (e.g. from segmentation faults produced by erroneous C library
-calls).
+The :mod:`faulthandler` module can help debug crashes,
+such as segmentation faults produced by erroneous C library calls.
 
 ``None``, integers, bytes objects and (unicode) strings are the only native
 Python objects that can directly be used as parameters in these function calls.
