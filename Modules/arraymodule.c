@@ -2680,7 +2680,7 @@ static PyMethodDef array_methods[] = {
     ARRAY_ARRAY_TOUNICODE_METHODDEF
     ARRAY_ARRAY___SIZEOF___METHODDEF
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
-     PyDoc_STR("Arrays are generic over the type of their contents")},
+     PyDoc_STR("Arrays are generic over the type of their elements")},
     {NULL, NULL}  /* sentinel */
 };
 

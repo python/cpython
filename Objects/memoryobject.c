@@ -3580,7 +3580,7 @@ static PyMethodDef memory_methods[] = {
     {"__enter__",   memory_enter, METH_NOARGS, NULL},
     {"__exit__",    memory_exit, METH_VARARGS, memory_exit_doc},
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
-     PyDoc_STR("memoryviews are generic over the type of their contents, as retrieved by indexing")},
+     PyDoc_STR("memoryviews are generic over the type of their underlying data")},
     {NULL,          NULL}
 };
 

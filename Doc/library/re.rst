@@ -1257,7 +1257,8 @@ Regular expression objects
 
    Compiled regular expression object returned by :func:`re.compile`.
 
-   Patterns are :ref:`generic <generics>` over the type of string they handle (str or bytes).
+   Patterns are :ref:`generic <generics>` over the type of string they handle
+   (:class:`str` or :class:`bytes`).
 
    .. versionchanged:: 3.9
       :py:class:`re.Pattern` supports ``[]`` to indicate a Unicode (str) or bytes pattern.

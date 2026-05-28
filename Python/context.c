@@ -1099,7 +1099,7 @@ static PyMethodDef PyContextVar_methods[] = {
     _CONTEXTVARS_CONTEXTVAR_RESET_METHODDEF
     {"__class_getitem__", Py_GenericAlias,
     METH_O|METH_CLASS,
-    PyDoc_STR("ContextVars are generic over the type of their value.")},
+    PyDoc_STR("ContextVars are generic over the type of their contained values")},
     {NULL, NULL}
 };
 

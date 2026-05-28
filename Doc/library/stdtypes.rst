@@ -1404,7 +1404,7 @@ application).
    built-in.
 
 
-   Lists are :ref:`generic <generics>` over the types of their contents.
+   Lists are :ref:`generic <generics>` over the types of their items.
 
    Lists implement all of the :ref:`common <typesseq-common>` and
    :ref:`mutable <typesseq-mutable>` sequence operations. Lists also provide the
@@ -1500,6 +1500,8 @@ homogeneous data is needed (such as allowing storage in a :class:`set` or
    Tuples are :ref:`generic <generics>` over the types of their contents.
    For example, use ``tuple[int, str]`` for a pair whose first element is an int and second element is a string.
    Tuples also support the form ``tuple[T, ...]`` to indicate an arbitrary length tuple of elements of type T.
+   For more information, refer to
+   :ref:`the typing documentation on annotating tuples <annotating-tuples>`.
 
 
 For heterogeneous collections of data where access by name is clearer than
@@ -4672,8 +4674,7 @@ copying.
       True
 
 
-   memoryviews are :ref:`generic <generics>` over the type of their contents, as
-   retrieved by indexing.
+   memoryviews are :ref:`generic <generics>` over the type of their underlying data.
 
    .. versionchanged:: 3.3
       One-dimensional memoryviews can now be sliced.
@@ -5292,7 +5293,7 @@ Note, the *elem* argument to the :meth:`~object.__contains__`,
 frozenset, a temporary one is created from *elem*.
 
 
-Sets and frozensets are :ref:`generic <generics>` over the type of their contents.
+Sets and frozensets are :ref:`generic <generics>` over the type of their elements.
 
 .. seealso::
 
@@ -5397,8 +5398,8 @@ can be used interchangeably to index the same dictionary entry.
       Dictionary order is guaranteed to be insertion order.  This behavior was
       an implementation detail of CPython from 3.6.
 
-   Dictionaries are :ref:`generic <generics>` over two types, for the types of
-   keys and values, respectively.
+   Dictionaries are :ref:`generic <generics>` over two types, signifying
+   (respectively) the types of the dictionary's keys and values.
 
    These are the operations that dictionaries support (and therefore, custom
    mapping types should support too):
@@ -5738,7 +5739,7 @@ Frozen dictionaries
    from ``object``.
 
    Like dictionaries, frozendicts are :ref:`generic <generics>` over two types,
-   for the types of keys and values, respectively.
+   signifying (respectively) the types of the frozendict's keys and values.
 
 
    .. versionadded:: 3.15
