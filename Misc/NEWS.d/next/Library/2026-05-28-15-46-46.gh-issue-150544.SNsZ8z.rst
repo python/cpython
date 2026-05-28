@@ -1,0 +1,8 @@
+Fix :func:`pdb._pyrepl_available` to reflect whether pyrepl can actually be
+used for the given streams at call time, instead of relying only on the
+import-time :data:`~_pyrepl.main.CAN_USE_PYREPL` flag.  :class:`pdb.Pdb` now
+passes ``stdin`` and ``stdout`` to :func:`~pdb._pyrepl_available`.  This
+prevents :exc:`AttributeError` when ``pyrepl_input`` is ``None`` in non-TTY
+environments (such as :mod:`test` worker subprocesses) and avoids failures
+when ``stdin`` is replaced by doctest helpers without
+:meth:`~io.IOBase.fileno`.
