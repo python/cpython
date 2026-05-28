@@ -18,4 +18,3 @@ Fixes #NNNNNN
 - [ ] Tests added or updated
 - [ ] Documentation updated (if user-visible behavior changed)
 - [ ] News entry added (`blurb add`, or manually in `Misc/NEWS.d/next/`)
-- [ ] `make patchcheck` passes
