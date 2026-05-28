@@ -1,30 +1,21 @@
 <!--
-Thanks for your contribution!
-Please read this comment in its entirety. It's quite important.
+Title format:    gh-NNNNNN: Brief description of the change
+Backport format: [X.Y] Brief description (GH-NNNNNN)
 
-# Pull Request title
-
-It should be in the following format:
-
-```
-gh-NNNNNN: Summary of the changes made
-```
-
-Where: gh-NNNNNN refers to the GitHub issue number.
-
-Most PRs will require an issue number. Trivial changes, like fixing a typo, do not need an issue.
-
-# Backport Pull Request title
-
-If this is a backport PR (PR made against branches other than `main`),
-please ensure that the PR title is in the following format:
-
-```
-[X.Y] <title from the original PR> (GH-NNNNNN)
-```
-
-Where: [X.Y] is the branch name, for example: [3.13].
-
-GH-NNNNNN refers to the PR number from `main`.
-
+Trivial changes (typo fixes, etc.) do not need a linked issue.
+See .github/CONTRIBUTING.rst for the full contributor guide.
 -->
+
+<!-- If this resolves an issue, replace NNNNNN below. Otherwise remove the line. -->
+Fixes #NNNNNN
+
+## Summary
+
+<!-- Describe what this PR changes and why. -->
+
+## Checklist
+
+- [ ] Tests added or updated
+- [ ] Documentation updated (if user-visible behavior changed)
+- [ ] News entry added (`blurb add`, or manually in `Misc/NEWS.d/next/`)
+- [ ] `make patchcheck` passes
