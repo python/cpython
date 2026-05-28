@@ -357,12 +357,8 @@ _PyLong_CheckExactAndCompact(PyObject *op)
 #define _PY_LONG_MAX_DIGITS_FOR_INT64 ((64 + PyLong_SHIFT - 1) / PyLong_SHIFT)
 
 static inline int
-_PyLong_CheckExactAndMightFitInt64(PyObject *op)
+_PyLong_MightFitInt64(const PyLongObject *v)
 {
-    if (!PyLong_CheckExact(op)) {
-        return 0;
-    }
-    const PyLongObject *v = (const PyLongObject *)op;
     if (_PyLong_IsCompact(v)) {
         return 1;
     }
@@ -382,6 +378,13 @@ _PyLong_CheckExactAndMightFitInt64(PyObject *op)
     return 1;
 }
 
+static inline int
+_PyLong_CheckExactAndMightFitInt64(PyObject *op)
+{
+    return PyLong_CheckExact(op) &&
+           _PyLong_MightFitInt64((const PyLongObject *)op);
+}
+
 /* Extract an exact int to int64_t without raising.
  *
  * Returns true on success and writes to *out; returns false if the value is
@@ -396,10 +399,6 @@ _PyLong_TryAsInt64Exact(PyLongObject *v, int64_t *out)
         return true;
     }
     Py_ssize_t ndigits = _PyLong_DigitCount(v);
-    if (ndigits == 0) {
-        *out = 0;
-        return true;
-    }
     if (ndigits > _PY_LONG_MAX_DIGITS_FOR_INT64) {
         return false;
     }
@@ -407,10 +406,11 @@ _PyLong_TryAsInt64Exact(PyLongObject *v, int64_t *out)
     unsigned int shift = 0;
     for (Py_ssize_t i = 0; i < ndigits; i++) {
         uint64_t d = (uint64_t)v->long_value.ob_digit[i];
-        if (shift >= 64) {
-            return false;
-        }
-        if (shift != 0 && (d >> (64 - shift)) != 0) {
+        if (ndigits == _PY_LONG_MAX_DIGITS_FOR_INT64 &&
+            i == ndigits - 1 &&
+            shift != 0 &&
+            (d >> (64 - shift)) != 0)
+        {
             return false;
         }
         abs_val |= d << shift;

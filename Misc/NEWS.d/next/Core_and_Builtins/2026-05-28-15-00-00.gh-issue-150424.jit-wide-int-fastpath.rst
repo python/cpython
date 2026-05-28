@@ -1,0 +1,2 @@
+Improve JIT integer arithmetic fast paths for exact ``int`` values that fit
+in the signed 64-bit range but are not compact Python integers.

@@ -3900,19 +3900,6 @@ long_add(PyLongObject *a, PyLongObject *b)
 _PyStackRef
 _PyCompactLong_Add(PyLongObject *a, PyLongObject *b)
 {
-    if (_PyLong_BothAreCompact(a, b)) {
-        stwodigits va = medium_value(a);
-        stwodigits vb = medium_value(b);
-        int64_t v64;
-        if (_Py_i64_add_overflow((int64_t)va, (int64_t)vb, &v64)) {
-            return PyStackRef_NULL;
-        }
-        PyLongObject *result = (PyLongObject *)PyLong_FromInt64(v64);
-        if (result == NULL) {
-            return PyStackRef_ERROR;
-        }
-        return PyStackRef_FromPyObjectSteal((PyObject *)result);
-    }
     int64_t va, vb;
     if (_PyLong_TryAsInt64Exact(a, &va) && _PyLong_TryAsInt64Exact(b, &vb)) {
         int64_t v;
@@ -3968,19 +3955,6 @@ long_sub(PyLongObject *a, PyLongObject *b)
 _PyStackRef
 _PyCompactLong_Subtract(PyLongObject *a, PyLongObject *b)
 {
-    if (_PyLong_BothAreCompact(a, b)) {
-        stwodigits va = medium_value(a);
-        stwodigits vb = medium_value(b);
-        int64_t v64;
-        if (_Py_i64_sub_overflow((int64_t)va, (int64_t)vb, &v64)) {
-            return PyStackRef_NULL;
-        }
-        PyLongObject *result = (PyLongObject *)PyLong_FromInt64(v64);
-        if (result == NULL) {
-            return PyStackRef_ERROR;
-        }
-        return PyStackRef_FromPyObjectSteal((PyObject *)result);
-    }
     int64_t va, vb;
     if (_PyLong_TryAsInt64Exact(a, &va) && _PyLong_TryAsInt64Exact(b, &vb)) {
         int64_t v;
@@ -4438,19 +4412,6 @@ long_mul(PyLongObject *a, PyLongObject *b)
 _PyStackRef
 _PyCompactLong_Multiply(PyLongObject *a, PyLongObject *b)
 {
-    if (_PyLong_BothAreCompact(a, b)) {
-        stwodigits va = medium_value(a);
-        stwodigits vb = medium_value(b);
-        int64_t v64;
-        if (_Py_i64_mul_overflow((int64_t)va, (int64_t)vb, &v64)) {
-            return PyStackRef_NULL;
-        }
-        PyLongObject *result = (PyLongObject *)PyLong_FromInt64(v64);
-        if (result == NULL) {
-            return PyStackRef_ERROR;
-        }
-        return PyStackRef_FromPyObjectSteal((PyObject *)result);
-    }
     int64_t va, vb;
     if (_PyLong_TryAsInt64Exact(a, &va) && _PyLong_TryAsInt64Exact(b, &vb)) {
         int64_t v;

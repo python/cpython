@@ -634,83 +634,27 @@ dummy_func(
 
         op(_GUARD_NOS_INT, (left, unused -- left, unused)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-            PyLongObject *left_l = (PyLongObject *)left_o;
-            int ok = PyLong_CheckExact(left_o);
-            if (ok && !_PyLong_IsCompact(left_l)) {
-                Py_ssize_t ndigits = _PyLong_DigitCount(left_l);
-                ok = (ndigits <= _PY_LONG_MAX_DIGITS_FOR_INT64);
-                if (ok && ndigits == _PY_LONG_MAX_DIGITS_FOR_INT64) {
-                    unsigned int shift = PyLong_SHIFT * (unsigned int)(ndigits - 1);
-                    uint64_t max_pos_top = (uint64_t)INT64_MAX >> shift;
-                    uint64_t max_neg_top = ((uint64_t)INT64_MAX + 1) >> shift;
-                    uint64_t max_top = ((left_l->long_value.lv_tag & SIGN_MASK) == SIGN_NEGATIVE)
-                        ? max_neg_top
-                        : max_pos_top;
-                    ok = (uint64_t)left_l->long_value.ob_digit[ndigits - 1] <= max_top;
-                }
-            }
+            int ok = _PyLong_CheckExactAndMightFitInt64(left_o);
             EXIT_IF(!ok);
         }
 
         op(_GUARD_TOS_INT, (value -- value)) {
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            PyLongObject *value_l = (PyLongObject *)value_o;
-            int ok = PyLong_CheckExact(value_o);
-            if (ok && !_PyLong_IsCompact(value_l)) {
-                Py_ssize_t ndigits = _PyLong_DigitCount(value_l);
-                ok = (ndigits <= _PY_LONG_MAX_DIGITS_FOR_INT64);
-                if (ok && ndigits == _PY_LONG_MAX_DIGITS_FOR_INT64) {
-                    unsigned int shift = PyLong_SHIFT * (unsigned int)(ndigits - 1);
-                    uint64_t max_pos_top = (uint64_t)INT64_MAX >> shift;
-                    uint64_t max_neg_top = ((uint64_t)INT64_MAX + 1) >> shift;
-                    uint64_t max_top = ((value_l->long_value.lv_tag & SIGN_MASK) == SIGN_NEGATIVE)
-                        ? max_neg_top
-                        : max_pos_top;
-                    ok = (uint64_t)value_l->long_value.ob_digit[ndigits - 1] <= max_top;
-                }
-            }
+            int ok = _PyLong_CheckExactAndMightFitInt64(value_o);
             EXIT_IF(!ok);
         }
 
         op(_GUARD_NOS_OVERFLOWED, (left, unused -- left, unused)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             assert(Py_TYPE(left_o) == &PyLong_Type);
-            PyLongObject *left_l = (PyLongObject *)left_o;
-            int ok = _PyLong_IsCompact(left_l);
-            if (!ok) {
-                Py_ssize_t ndigits = _PyLong_DigitCount(left_l);
-                ok = (ndigits <= _PY_LONG_MAX_DIGITS_FOR_INT64);
-                if (ok && ndigits == _PY_LONG_MAX_DIGITS_FOR_INT64) {
-                    unsigned int shift = PyLong_SHIFT * (unsigned int)(ndigits - 1);
-                    uint64_t max_pos_top = (uint64_t)INT64_MAX >> shift;
-                    uint64_t max_neg_top = ((uint64_t)INT64_MAX + 1) >> shift;
-                    uint64_t max_top = ((left_l->long_value.lv_tag & SIGN_MASK) == SIGN_NEGATIVE)
-                        ? max_neg_top
-                        : max_pos_top;
-                    ok = (uint64_t)left_l->long_value.ob_digit[ndigits - 1] <= max_top;
-                }
-            }
+            int ok = _PyLong_MightFitInt64((PyLongObject *)left_o);
             EXIT_IF(!ok);
         }
 
         op(_GUARD_TOS_OVERFLOWED, (value -- value)) {
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
             assert(Py_TYPE(value_o) == &PyLong_Type);
-            PyLongObject *value_l = (PyLongObject *)value_o;
-            int ok = _PyLong_IsCompact(value_l);
-            if (!ok) {
-                Py_ssize_t ndigits = _PyLong_DigitCount(value_l);
-                ok = (ndigits <= _PY_LONG_MAX_DIGITS_FOR_INT64);
-                if (ok && ndigits == _PY_LONG_MAX_DIGITS_FOR_INT64) {
-                    unsigned int shift = PyLong_SHIFT * (unsigned int)(ndigits - 1);
-                    uint64_t max_pos_top = (uint64_t)INT64_MAX >> shift;
-                    uint64_t max_neg_top = ((uint64_t)INT64_MAX + 1) >> shift;
-                    uint64_t max_top = ((value_l->long_value.lv_tag & SIGN_MASK) == SIGN_NEGATIVE)
-                        ? max_neg_top
-                        : max_pos_top;
-                    ok = (uint64_t)value_l->long_value.ob_digit[ndigits - 1] <= max_top;
-                }
-            }
+            int ok = _PyLong_MightFitInt64((PyLongObject *)value_o);
             EXIT_IF(!ok);
         }
 

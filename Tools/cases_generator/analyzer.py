@@ -721,6 +721,8 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_Wrap",
     "PyStackRef_Unwrap",
     "_PyLong_CheckExactAndCompact",
+    "_PyLong_CheckExactAndMightFitInt64",
+    "_PyLong_MightFitInt64",
     "_PyExecutor_FromExit",
     "_PyJit_TryInitializeTracing",
     "_Py_unset_eval_breaker_bit",

@@ -4,8 +4,9 @@ Measures int arithmetic performance in hot JIT loops where
 intermediate results overflow the 30-bit compact range.
 
 Usage:
-    python Tools/scripts/jit_int_benchmark_pyperf.py
-    python Tools/scripts/jit_int_benchmark_pyperf.py -o result.json --rigorous
+    ./python Tools/scripts/jit_int_benchmark_pyperf.py -o nojit.json
+    ./python -X jit Tools/scripts/jit_int_benchmark_pyperf.py -o jit.json
+    ./python -m pyperf compare_to nojit.json jit.json
 """
 
 import time
@@ -239,35 +240,55 @@ def bench_mixed(loops):
 
 
 def bench_small(loops):
-    """All small ints (baseline)."""
+    """All small ints, bounded to stay in the small-int cache."""
     total = 0
     t0 = time.perf_counter()
     for _ in range(loops):
-        total += 1
-        total += 2
-        total += 3
-        total += 4
-        total += 5
-        total += 6
-        total += 7
-        total += 8
-        total += 9
-        total += 10
-        total += 11
-        total += 12
-        total += 13
-        total += 14
-        total += 15
-        total += 16
-        total += 17
-        total += 18
-        total += 19
-        total += 20
+        total = (total + 1) & 255
+        total = (total + 2) & 255
+        total = (total + 3) & 255
+        total = (total + 4) & 255
+        total = (total + 5) & 255
+        total = (total + 6) & 255
+        total = (total + 7) & 255
+        total = (total + 8) & 255
+        total = (total + 9) & 255
+        total = (total + 10) & 255
+        total = (total + 11) & 255
+        total = (total + 12) & 255
+        total = (total + 13) & 255
+        total = (total + 14) & 255
+        total = (total + 15) & 255
+        total = (total + 16) & 255
+        total = (total + 17) & 255
+        total = (total + 18) & 255
+        total = (total + 19) & 255
+        total = (total + 20) & 255
+    return time.perf_counter() - t0
+
+
+def bench_compact(loops):
+    """Compact ints outside the small-int cache, bounded below 2**30."""
+    total = 1 << 20
+    mask = (1 << 29) - 1
+    t0 = time.perf_counter()
+    for _ in range(loops):
+        total = (total + 10_000_001) & mask
+        total = (total + 10_000_003) & mask
+        total = (total + 10_000_019) & mask
+        total = (total + 10_000_079) & mask
+        total = (total + 10_000_103) & mask
+        total = (total + 10_000_121) & mask
+        total = (total + 10_000_123) & mask
+        total = (total + 10_000_133) & mask
+        total = (total + 10_000_139) & mask
+        total = (total + 10_000_159) & mask
     return time.perf_counter() - t0
 
 
 BENCHMARKS = [
     ("jit_int_small", bench_small),
+    ("jit_int_compact", bench_compact),
     ("jit_int_intermediate_overflow", bench_intermediate_overflow),
     ("jit_int_double_add", bench_double_add),
     ("jit_int_accumulate", bench_accumulate),

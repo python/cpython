@@ -188,21 +188,7 @@
             {
                 value = stack_pointer[-1];
                 PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-                PyLongObject *value_l = (PyLongObject *)value_o;
-                int ok = PyLong_CheckExact(value_o);
-                if (ok && !_PyLong_IsCompact(value_l)) {
-                    Py_ssize_t ndigits = _PyLong_DigitCount(value_l);
-                    ok = (ndigits <= _PY_LONG_MAX_DIGITS_FOR_INT64);
-                    if (ok && ndigits == _PY_LONG_MAX_DIGITS_FOR_INT64) {
-                        unsigned int shift = PyLong_SHIFT * (unsigned int)(ndigits - 1);
-                        uint64_t max_pos_top = (uint64_t)INT64_MAX >> shift;
-                        uint64_t max_neg_top = ((uint64_t)INT64_MAX + 1) >> shift;
-                        uint64_t max_top = ((value_l->long_value.lv_tag & SIGN_MASK) == SIGN_NEGATIVE)
-                        ? max_neg_top
-                    : max_pos_top;
-                        ok = (uint64_t)value_l->long_value.ob_digit[ndigits - 1] <= max_top;
-                    }
-                }
+                int ok = _PyLong_CheckExactAndMightFitInt64(value_o);
                 if (!ok) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
@@ -213,21 +199,7 @@
             {
                 left = stack_pointer[-2];
                 PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-                PyLongObject *left_l = (PyLongObject *)left_o;
-                int ok = PyLong_CheckExact(left_o);
-                if (ok && !_PyLong_IsCompact(left_l)) {
-                    Py_ssize_t ndigits = _PyLong_DigitCount(left_l);
-                    ok = (ndigits <= _PY_LONG_MAX_DIGITS_FOR_INT64);
-                    if (ok && ndigits == _PY_LONG_MAX_DIGITS_FOR_INT64) {
-                        unsigned int shift = PyLong_SHIFT * (unsigned int)(ndigits - 1);
-                        uint64_t max_pos_top = (uint64_t)INT64_MAX >> shift;
-                        uint64_t max_neg_top = ((uint64_t)INT64_MAX + 1) >> shift;
-                        uint64_t max_top = ((left_l->long_value.lv_tag & SIGN_MASK) == SIGN_NEGATIVE)
-                        ? max_neg_top
-                    : max_pos_top;
-                        ok = (uint64_t)left_l->long_value.ob_digit[ndigits - 1] <= max_top;
-                    }
-                }
+                int ok = _PyLong_CheckExactAndMightFitInt64(left_o);
                 if (!ok) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
@@ -606,21 +578,7 @@
             {
                 value = stack_pointer[-1];
                 PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-                PyLongObject *value_l = (PyLongObject *)value_o;
-                int ok = PyLong_CheckExact(value_o);
-                if (ok && !_PyLong_IsCompact(value_l)) {
-                    Py_ssize_t ndigits = _PyLong_DigitCount(value_l);
-                    ok = (ndigits <= _PY_LONG_MAX_DIGITS_FOR_INT64);
-                    if (ok && ndigits == _PY_LONG_MAX_DIGITS_FOR_INT64) {
-                        unsigned int shift = PyLong_SHIFT * (unsigned int)(ndigits - 1);
-                        uint64_t max_pos_top = (uint64_t)INT64_MAX >> shift;
-                        uint64_t max_neg_top = ((uint64_t)INT64_MAX + 1) >> shift;
-                        uint64_t max_top = ((value_l->long_value.lv_tag & SIGN_MASK) == SIGN_NEGATIVE)
-                        ? max_neg_top
-                    : max_pos_top;
-                        ok = (uint64_t)value_l->long_value.ob_digit[ndigits - 1] <= max_top;
-                    }
-                }
+                int ok = _PyLong_CheckExactAndMightFitInt64(value_o);
                 if (!ok) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
@@ -631,21 +589,7 @@
             {
                 left = stack_pointer[-2];
                 PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-                PyLongObject *left_l = (PyLongObject *)left_o;
-                int ok = PyLong_CheckExact(left_o);
-                if (ok && !_PyLong_IsCompact(left_l)) {
-                    Py_ssize_t ndigits = _PyLong_DigitCount(left_l);
-                    ok = (ndigits <= _PY_LONG_MAX_DIGITS_FOR_INT64);
-                    if (ok && ndigits == _PY_LONG_MAX_DIGITS_FOR_INT64) {
-                        unsigned int shift = PyLong_SHIFT * (unsigned int)(ndigits - 1);
-                        uint64_t max_pos_top = (uint64_t)INT64_MAX >> shift;
-                        uint64_t max_neg_top = ((uint64_t)INT64_MAX + 1) >> shift;
-                        uint64_t max_top = ((left_l->long_value.lv_tag & SIGN_MASK) == SIGN_NEGATIVE)
-                        ? max_neg_top
-                    : max_pos_top;
-                        ok = (uint64_t)left_l->long_value.ob_digit[ndigits - 1] <= max_top;
-                    }
-                }
+                int ok = _PyLong_CheckExactAndMightFitInt64(left_o);
                 if (!ok) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
@@ -871,21 +815,7 @@
             {
                 value = stack_pointer[-1];
                 PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-                PyLongObject *value_l = (PyLongObject *)value_o;
-                int ok = PyLong_CheckExact(value_o);
-                if (ok && !_PyLong_IsCompact(value_l)) {
-                    Py_ssize_t ndigits = _PyLong_DigitCount(value_l);
-                    ok = (ndigits <= _PY_LONG_MAX_DIGITS_FOR_INT64);
-                    if (ok && ndigits == _PY_LONG_MAX_DIGITS_FOR_INT64) {
-                        unsigned int shift = PyLong_SHIFT * (unsigned int)(ndigits - 1);
-                        uint64_t max_pos_top = (uint64_t)INT64_MAX >> shift;
-                        uint64_t max_neg_top = ((uint64_t)INT64_MAX + 1) >> shift;
-                        uint64_t max_top = ((value_l->long_value.lv_tag & SIGN_MASK) == SIGN_NEGATIVE)
-                        ? max_neg_top
-                    : max_pos_top;
-                        ok = (uint64_t)value_l->long_value.ob_digit[ndigits - 1] <= max_top;
-                    }
-                }
+                int ok = _PyLong_CheckExactAndMightFitInt64(value_o);
                 if (!ok) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
@@ -1060,21 +990,7 @@
             {
                 value = stack_pointer[-1];
                 PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-                PyLongObject *value_l = (PyLongObject *)value_o;
-                int ok = PyLong_CheckExact(value_o);
-                if (ok && !_PyLong_IsCompact(value_l)) {
-                    Py_ssize_t ndigits = _PyLong_DigitCount(value_l);
-                    ok = (ndigits <= _PY_LONG_MAX_DIGITS_FOR_INT64);
-                    if (ok && ndigits == _PY_LONG_MAX_DIGITS_FOR_INT64) {
-                        unsigned int shift = PyLong_SHIFT * (unsigned int)(ndigits - 1);
-                        uint64_t max_pos_top = (uint64_t)INT64_MAX >> shift;
-                        uint64_t max_neg_top = ((uint64_t)INT64_MAX + 1) >> shift;
-                        uint64_t max_top = ((value_l->long_value.lv_tag & SIGN_MASK) == SIGN_NEGATIVE)
-                        ? max_neg_top
-                    : max_pos_top;
-                        ok = (uint64_t)value_l->long_value.ob_digit[ndigits - 1] <= max_top;
-                    }
-                }
+                int ok = _PyLong_CheckExactAndMightFitInt64(value_o);
                 if (!ok) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
@@ -1164,21 +1080,7 @@
             {
                 value = stack_pointer[-1];
                 PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-                PyLongObject *value_l = (PyLongObject *)value_o;
-                int ok = PyLong_CheckExact(value_o);
-                if (ok && !_PyLong_IsCompact(value_l)) {
-                    Py_ssize_t ndigits = _PyLong_DigitCount(value_l);
-                    ok = (ndigits <= _PY_LONG_MAX_DIGITS_FOR_INT64);
-                    if (ok && ndigits == _PY_LONG_MAX_DIGITS_FOR_INT64) {
-                        unsigned int shift = PyLong_SHIFT * (unsigned int)(ndigits - 1);
-                        uint64_t max_pos_top = (uint64_t)INT64_MAX >> shift;
-                        uint64_t max_neg_top = ((uint64_t)INT64_MAX + 1) >> shift;
-                        uint64_t max_top = ((value_l->long_value.lv_tag & SIGN_MASK) == SIGN_NEGATIVE)
-                        ? max_neg_top
-                    : max_pos_top;
-                        ok = (uint64_t)value_l->long_value.ob_digit[ndigits - 1] <= max_top;
-                    }
-                }
+                int ok = _PyLong_CheckExactAndMightFitInt64(value_o);
                 if (!ok) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
@@ -1271,21 +1173,7 @@
             {
                 value = stack_pointer[-1];
                 PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-                PyLongObject *value_l = (PyLongObject *)value_o;
-                int ok = PyLong_CheckExact(value_o);
-                if (ok && !_PyLong_IsCompact(value_l)) {
-                    Py_ssize_t ndigits = _PyLong_DigitCount(value_l);
-                    ok = (ndigits <= _PY_LONG_MAX_DIGITS_FOR_INT64);
-                    if (ok && ndigits == _PY_LONG_MAX_DIGITS_FOR_INT64) {
-                        unsigned int shift = PyLong_SHIFT * (unsigned int)(ndigits - 1);
-                        uint64_t max_pos_top = (uint64_t)INT64_MAX >> shift;
-                        uint64_t max_neg_top = ((uint64_t)INT64_MAX + 1) >> shift;
-                        uint64_t max_top = ((value_l->long_value.lv_tag & SIGN_MASK) == SIGN_NEGATIVE)
-                        ? max_neg_top
-                    : max_pos_top;
-                        ok = (uint64_t)value_l->long_value.ob_digit[ndigits - 1] <= max_top;
-                    }
-                }
+                int ok = _PyLong_CheckExactAndMightFitInt64(value_o);
                 if (!ok) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
@@ -1448,21 +1336,7 @@
             {
                 value = stack_pointer[-1];
                 PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-                PyLongObject *value_l = (PyLongObject *)value_o;
-                int ok = PyLong_CheckExact(value_o);
-                if (ok && !_PyLong_IsCompact(value_l)) {
-                    Py_ssize_t ndigits = _PyLong_DigitCount(value_l);
-                    ok = (ndigits <= _PY_LONG_MAX_DIGITS_FOR_INT64);
-                    if (ok && ndigits == _PY_LONG_MAX_DIGITS_FOR_INT64) {
-                        unsigned int shift = PyLong_SHIFT * (unsigned int)(ndigits - 1);
-                        uint64_t max_pos_top = (uint64_t)INT64_MAX >> shift;
-                        uint64_t max_neg_top = ((uint64_t)INT64_MAX + 1) >> shift;
-                        uint64_t max_top = ((value_l->long_value.lv_tag & SIGN_MASK) == SIGN_NEGATIVE)
-                        ? max_neg_top
-                    : max_pos_top;
-                        ok = (uint64_t)value_l->long_value.ob_digit[ndigits - 1] <= max_top;
-                    }
-                }
+                int ok = _PyLong_CheckExactAndMightFitInt64(value_o);
                 if (!ok) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
@@ -1473,21 +1347,7 @@
             {
                 left = stack_pointer[-2];
                 PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-                PyLongObject *left_l = (PyLongObject *)left_o;
-                int ok = PyLong_CheckExact(left_o);
-                if (ok && !_PyLong_IsCompact(left_l)) {
-                    Py_ssize_t ndigits = _PyLong_DigitCount(left_l);
-                    ok = (ndigits <= _PY_LONG_MAX_DIGITS_FOR_INT64);
-                    if (ok && ndigits == _PY_LONG_MAX_DIGITS_FOR_INT64) {
-                        unsigned int shift = PyLong_SHIFT * (unsigned int)(ndigits - 1);
-                        uint64_t max_pos_top = (uint64_t)INT64_MAX >> shift;
-                        uint64_t max_neg_top = ((uint64_t)INT64_MAX + 1) >> shift;
-                        uint64_t max_top = ((left_l->long_value.lv_tag & SIGN_MASK) == SIGN_NEGATIVE)
-                        ? max_neg_top
-                    : max_pos_top;
-                        ok = (uint64_t)left_l->long_value.ob_digit[ndigits - 1] <= max_top;
-                    }
-                }
+                int ok = _PyLong_CheckExactAndMightFitInt64(left_o);
                 if (!ok) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
@@ -5307,21 +5167,7 @@
             {
                 value = stack_pointer[-1];
                 PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-                PyLongObject *value_l = (PyLongObject *)value_o;
-                int ok = PyLong_CheckExact(value_o);
-                if (ok && !_PyLong_IsCompact(value_l)) {
-                    Py_ssize_t ndigits = _PyLong_DigitCount(value_l);
-                    ok = (ndigits <= _PY_LONG_MAX_DIGITS_FOR_INT64);
-                    if (ok && ndigits == _PY_LONG_MAX_DIGITS_FOR_INT64) {
-                        unsigned int shift = PyLong_SHIFT * (unsigned int)(ndigits - 1);
-                        uint64_t max_pos_top = (uint64_t)INT64_MAX >> shift;
-                        uint64_t max_neg_top = ((uint64_t)INT64_MAX + 1) >> shift;
-                        uint64_t max_top = ((value_l->long_value.lv_tag & SIGN_MASK) == SIGN_NEGATIVE)
-                        ? max_neg_top
-                    : max_pos_top;
-                        ok = (uint64_t)value_l->long_value.ob_digit[ndigits - 1] <= max_top;
-                    }
-                }
+                int ok = _PyLong_CheckExactAndMightFitInt64(value_o);
                 if (!ok) {
                     UPDATE_MISS_STATS(COMPARE_OP);
                     assert(_PyOpcode_Deopt[opcode] == (COMPARE_OP));
@@ -5332,21 +5178,7 @@
             {
                 left = stack_pointer[-2];
                 PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-                PyLongObject *left_l = (PyLongObject *)left_o;
-                int ok = PyLong_CheckExact(left_o);
-                if (ok && !_PyLong_IsCompact(left_l)) {
-                    Py_ssize_t ndigits = _PyLong_DigitCount(left_l);
-                    ok = (ndigits <= _PY_LONG_MAX_DIGITS_FOR_INT64);
-                    if (ok && ndigits == _PY_LONG_MAX_DIGITS_FOR_INT64) {
-                        unsigned int shift = PyLong_SHIFT * (unsigned int)(ndigits - 1);
-                        uint64_t max_pos_top = (uint64_t)INT64_MAX >> shift;
-                        uint64_t max_neg_top = ((uint64_t)INT64_MAX + 1) >> shift;
-                        uint64_t max_top = ((left_l->long_value.lv_tag & SIGN_MASK) == SIGN_NEGATIVE)
-                        ? max_neg_top
-                    : max_pos_top;
-                        ok = (uint64_t)left_l->long_value.ob_digit[ndigits - 1] <= max_top;
-                    }
-                }
+                int ok = _PyLong_CheckExactAndMightFitInt64(left_o);
                 if (!ok) {
                     UPDATE_MISS_STATS(COMPARE_OP);
                     assert(_PyOpcode_Deopt[opcode] == (COMPARE_OP));
@@ -12377,21 +12209,7 @@
             {
                 value = stack_pointer[-1];
                 PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-                PyLongObject *value_l = (PyLongObject *)value_o;
-                int ok = PyLong_CheckExact(value_o);
-                if (ok && !_PyLong_IsCompact(value_l)) {
-                    Py_ssize_t ndigits = _PyLong_DigitCount(value_l);
-                    ok = (ndigits <= _PY_LONG_MAX_DIGITS_FOR_INT64);
-                    if (ok && ndigits == _PY_LONG_MAX_DIGITS_FOR_INT64) {
-                        unsigned int shift = PyLong_SHIFT * (unsigned int)(ndigits - 1);
-                        uint64_t max_pos_top = (uint64_t)INT64_MAX >> shift;
-                        uint64_t max_neg_top = ((uint64_t)INT64_MAX + 1) >> shift;
-                        uint64_t max_top = ((value_l->long_value.lv_tag & SIGN_MASK) == SIGN_NEGATIVE)
-                        ? max_neg_top
-                    : max_pos_top;
-                        ok = (uint64_t)value_l->long_value.ob_digit[ndigits - 1] <= max_top;
-                    }
-                }
+                int ok = _PyLong_CheckExactAndMightFitInt64(value_o);
                 if (!ok) {
                     UPDATE_MISS_STATS(STORE_SUBSCR);
                     assert(_PyOpcode_Deopt[opcode] == (STORE_SUBSCR));
@@ -12629,21 +12447,7 @@
             {
                 value = stack_pointer[-1];
                 PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-                PyLongObject *value_l = (PyLongObject *)value_o;
-                int ok = PyLong_CheckExact(value_o);
-                if (ok && !_PyLong_IsCompact(value_l)) {
-                    Py_ssize_t ndigits = _PyLong_DigitCount(value_l);
-                    ok = (ndigits <= _PY_LONG_MAX_DIGITS_FOR_INT64);
-                    if (ok && ndigits == _PY_LONG_MAX_DIGITS_FOR_INT64) {
-                        unsigned int shift = PyLong_SHIFT * (unsigned int)(ndigits - 1);
-                        uint64_t max_pos_top = (uint64_t)INT64_MAX >> shift;
-                        uint64_t max_neg_top = ((uint64_t)INT64_MAX + 1) >> shift;
-                        uint64_t max_top = ((value_l->long_value.lv_tag & SIGN_MASK) == SIGN_NEGATIVE)
-                        ? max_neg_top
-                    : max_pos_top;
-                        ok = (uint64_t)value_l->long_value.ob_digit[ndigits - 1] <= max_top;
-                    }
-                }
+                int ok = _PyLong_CheckExactAndMightFitInt64(value_o);
                 if (!ok) {
                     UPDATE_MISS_STATS(TO_BOOL);
                     assert(_PyOpcode_Deopt[opcode] == (TO_BOOL));
