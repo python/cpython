@@ -157,7 +157,7 @@ The :mod:`!functools` module defines the following functions:
    descriptor protocol), so parallel access on a single instance can race to
    initialize.
 
-   This decorator requires that the each instance supports weak references.
+   This decorator requires that the instance supports weak references.
    Some immutable types and slotted classes without ``__weakref__`` as one of
    the defined slots will encounter errors when the cached method is first used.
 
