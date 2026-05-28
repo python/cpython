@@ -1,3 +1,0 @@
-Document that :class:`pickle.Pickler` and :class:`pickle.Unpickler`
-instances are not thread-safe. Sharing instances across threads without
-external synchronization leads to undefined behavior.
