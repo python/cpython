@@ -157,34 +157,22 @@ def _init_pathinfo():
 # PEP 829 implementation notes.
 #
 # Startup information (.pth and .start file information) can be processed in
-# implicit or explicit batches.  Implicit batches are handled by the site.py
-# machinery automatically, while explicit batches are driven by user code and
-# processed on boundaries defined by that code.
-#
-# addsitedir() calls which use the default defer_processing_start_files=False
-# are self-contained: they create a per-call _StartupState, populate it from
-# the site directory's .pth/.start files, run process() on it, and then throw
-# the state away.  This is implicit batching and in that case the
-# _startup_state global variable stays None.
+# implicit or explicit batches.  Implicit batches are self-contained
+# addsitedir() calls: they create a per-call StartupState, populate it from the
+# site directory's .pth and .start files, run process() on it, and then throw the
+# state away.
 #
 # main() needs different semantics: it accumulates state across multiple
-# addsitedir() calls (user-site plus all global site-packages) so that
-# every sys.path extension is visible *before* any startup code (.pth
-# import lines and .start entry points) runs.  Callers opt into this by
-# passing defer_processing_start_files=True, which preserves the _StartupState
-# into the global _startup_state.  Subsequent addsitedir() calls (with
-# or without defer_processing_start_files=True) then write into that
-# same shared state, and a later process_startup_files() call flushes
-# all the state and resets the global to None.
+# addsitedir() calls (user-site plus all global site-packages) so that every
+# sys.path extension is visible *before* any startup code (.start entry points
+# and .pth import lines) runs.  Callers can opt into the same behavior by
+# creating a StartupState and passing it to addsitedir(); callers are responsible
+# in this case for calling StartupState.process() themselves.
 #
-# Here's the CRITICAL reentrancy invariant: process_startup_files() must clear
-# the global _startup_state *before* calling state.process(), so that any
-# reentrant site.addsitedir() calls reached from an exec'd .pth import line or
-# a .start entry point falls into the per-call branch and gets its own fresh
-# state.  Otherwise the recursive addsitedir() would mutate the very dicts
-# that the outer state.process() is iterating.  This is the bug reported in
-# gh-149504.
-_startup_state = None
+# Here's the CRITICAL reentrancy invariant: recursive site.addsitedir() calls
+# reached from a .start entry point or an exec'd .pth import line must not
+# mutate the StartupState currently being processed.  Reentrant calls without
+# an explicit startup_state therefore create their own fresh per-call state.
 
 
 def _read_pthstart_file(sitedir, name, suffix):
@@ -238,10 +226,10 @@ def _read_pthstart_file(sitedir, name, suffix):
     return content.splitlines(), filename
 
 
-class _StartupState:
+class StartupState:
     """Per-batch accumulator for .pth and .start file processing.
 
-    A _StartupState collects sys.path extensions, deprecated .pth import
+    A StartupState collects sys.path extensions, deprecated .pth import
     lines, and .start entry points read from one or more site-packages
     directories.  Calling process() applies them in PEP 829 order: paths
     are added to sys.path first, then import lines from .pth files (skipping
@@ -250,34 +238,83 @@ class _StartupState:
     State lives entirely on the instance; there is no module-level pending
     state.  This is what makes the module reentrancy-safe: a site.addsitedir()
     call reached recursively from an exec'd import line or a .start entry
-    point operates on a different _StartupState than the one being processed
+    point operates on a different StartupState than the one being processed
     by the outer call.
 
     The internal data is intentionally private; the public methods
     (read_pth_file, read_start_file, process) are the only supported write
     APIs.
     """
-    __slots__ = ('_syspaths', '_importexecs', '_entrypoints')
+    __slots__ = (
+        '_known_paths',
+        '_processed_sitedirs',
+        '_path_entries',
+        '_importexecs',
+        '_entrypoints',
+    )
 
-    def __init__(self):
-        # All three dicts map "<full path to .pth or .start file>" -> list
+    def __init__(self, known_paths=None):
+        """Create an independent startup state.
+
+        *known_paths* is a set of case-normalized paths already present
+        on sys.path, used to avoid duplicate path entries.  When None
+        (the default), it is initialized from the current sys.path.
+        """
+        self._known_paths = (
+            _init_pathinfo()
+            if known_paths is None
+            else known_paths)
+        self._processed_sitedirs = set()
+        # The sys.path append ledger.  This is a list of 2-tuples of the form
+        # (pthfile, path) where `pthfile` is the .pth file which is extending
+        # the path, and `path` is the directory to add to sys.path.  Note that
+        # to preserve the interleaving semantics (i.e. .pth file paths are
+        # added after the sitedir in which the .pth file is found), `path`
+        # could be a sitedir, in which case `pthfile` will always be None.
+        self._path_entries = []
+        # Both dicts map "<full path to .pth or .start file>" -> list
         # of items collected from that file.  Mapping by filename lets us
         # cross-reference a .pth and its matching .start (PEP 829 import
         # suppression rule) and lets _print_error report the source file
         # when an entry fails.
-        self._syspaths = {}
         self._importexecs = {}
         self._entrypoints = {}
 
-    def read_pth_file(self, sitedir, name, known_paths):
+    def add_sitedir(self, sitedir, *, process_known_sitedirs=True):
+        sitedir, sitedircase = makepath(sitedir)
+        # Have we already processed this sitedir?
+        if sitedircase in self._processed_sitedirs:
+            return None
+        # In legacy known_paths mode, a known sitedir means its startup files
+        # were already processed by an earlier addsitedir() call, so skip it
+        # to preserve idempotency (gh-75723).  In explicit StartupState mode,
+        # known_paths only tracks sys.path entries; a sitedir may already be
+        # on sys.path (for example from $PYTHONPATH, gh-149819) but still need
+        # its .pth and .start files processed once.  The separate
+        # _processed_sitedirs set is what lets explicit batches distinguish
+        # "already on sys.path" from "startup files already read".
+        if not process_known_sitedirs and sitedircase in self._known_paths:
+            return None
+        # Record that we've processed this sitedir.
+        self._processed_sitedirs.add(sitedircase)
+        if sitedircase not in self._known_paths:
+            self._known_paths.add(sitedircase)
+            # Add the sitedir to the sys.path extension ledger.  There is no
+            # .pth file to record.
+            self._path_entries.append((None, sitedir))
+        return sitedir
+
+    def read_pth_file(self, sitedir, name, known_paths=None):
         """Parse a .pth file, accumulating sys.path extensions and import lines.
 
         Errors on individual lines do not abort processing of the rest of
-        the file (PEP 829).  ``known_paths`` is the per-batch dedup
+        the file (PEP 829).  ``known_paths`` is the per-batch deduplication
         ledger: any path already in it is skipped, and newly accepted
         paths are added to it so that subsequent .pth files in the same
         batch don't add them more than once.
         """
+        if known_paths is None:
+            known_paths = self._known_paths
         lines, filename = _read_pthstart_file(sitedir, name, ".pth")
         if lines is None:
             return
@@ -308,15 +345,16 @@ class _StartupState:
                 _trace(f"Error in {filename!r}, line {n:d}: {line!r}", exc)
                 continue
 
-            # PEP 829 dedup: skip paths already seen in this batch.  See
-            # _startup_state docstring above for batch lifetimes.
+            # PEP 829 dedup: skip paths already seen in this batch.
             if dircase in known_paths:
                 _trace(
                     f"In {filename!r}, line {n:d}: "
                     f"skipping duplicate sys.path entry: {dir_}"
                 )
             else:
-                self._syspaths.setdefault(filename, []).append(dir_)
+                # Add this directory to the sys.path extension ledger, while
+                # also recording the .pth file it was found in.
+                self._path_entries.append((filename, dir_))
                 known_paths.add(dircase)
 
     def read_start_file(self, sitedir, name):
@@ -355,18 +393,22 @@ class _StartupState:
     def _extend_syspath(self):
         # Duplicates have already been filtered (in existing sys.path or
         # across .pth files via known_paths), and entries are already
-        # abspath/normpath'd, so all that remains is to confirm the path
-        # exists.
-        for filename, dirs in self._syspaths.items():
-            for dir_ in dirs:
-                if os.path.exists(dir_):
+        # abspath/normpath'd, so all that remains is to confirm that .pth
+        # file path entries exist before appending them.  filename will be
+        # None for sitedir entries in the ledger, and these have already been
+        # checked for existence, so no need to do so again.
+        for filename, dir_ in self._path_entries:
+            if dir_ in sys.path:
+                continue
+            if filename is None or os.path.exists(dir_):
+                if filename is not None:
                     _trace(f"Extending sys.path with {dir_} from {filename}")
-                    sys.path.append(dir_)
-                else:
-                    _print_error(
-                        f"In {filename}: {dir_} does not exist; "
-                        f"skipping sys.path append"
-                    )
+                sys.path.append(dir_)
+            else:
+                _print_error(
+                    f"In {filename}: {dir_} does not exist; "
+                    f"skipping sys.path append"
+                )
 
     def _exec_imports(self):
         # For each `import` line we've seen in a .pth file, exec() it in
@@ -435,26 +477,6 @@ class _StartupState:
                         )
 
 
-def process_startup_files():
-    """Flush any pending startup-file state accumulated during a batch.
-
-    Used by main() (and any external caller that drove addsitedir() with
-    defer_processing_start_files=True) to apply the accumulated paths
-    and run the deferred import lines / entry points.
-
-    Reentrancy: the active batch state is detached from _startup_state
-    *before* state.process() runs.  This way, if an exec'd import line
-    or .start entry point itself calls site.addsitedir(), that call
-    creates its own per-call _StartupState rather than mutating the dicts
-    being iterated here.  See gh-149504.
-    """
-    global _startup_state
-    if _startup_state is None:
-        return
-    state, _startup_state = _startup_state, None
-    state.process()
-
-
 def addpackage(sitedir, name, known_paths):
     """Process a .pth file within the site-packages directory."""
     if known_paths is None:
@@ -463,101 +485,97 @@ def addpackage(sitedir, name, known_paths):
     else:
         reset = False
 
-    # If a batch is already in progress (for example, main() is still
-    # accumulating sitedirs), participate in the batch by writing into the
-    # shared _startup_state and letting the eventual process_startup_files()
-    # flush it. Otherwise this is a standalone call, so create a unique
-    # per-call state, populate it, and process it before returning.
-    if _startup_state is None:
-        state = _StartupState()
-        state.read_pth_file(sitedir, name, known_paths)
-        state.process()
-    else:
-        _startup_state.read_pth_file(sitedir, name, known_paths)
+    # Although never documented, the semantics of addpackage() is to fully
+    # process a single sitedir.
+    state = StartupState(known_paths)
+    state.read_pth_file(sitedir, name)
+    state.process()
 
     return None if reset else known_paths
 
 
-def addsitedir(sitedir, known_paths=None, *, defer_processing_start_files=False):
-    """Add 'sitedir' argument to sys.path if missing and handle startup
-    files."""
-    global _startup_state
+def addsitedir(sitedir, known_paths=None, *, startup_state=None):
+    """Add a site directory and process its startup files.
+
+    If *startup_state* is given, add the directory's startup data to that
+    state without processing it, and the caller is responsible for calling
+    startup_state.process().  Otherwise, process the directory eagerly.
+    The *known_paths* and *startup_state* arguments cannot both be given.
+    """
     _trace(f"Adding directory: {sitedir!r}")
-    if known_paths is None:
+    if known_paths is not None and startup_state is not None:
+        raise TypeError("known_paths and startup_state are mutually exclusive")
+
+    # Select the processing mode.  known_paths is the deduplication ledger,
+    # reset controls the historical return value, flush_now says whether this
+    # call processes startup data eagerly, and process_known_sitedirs controls
+    # whether site directories already present in known_paths still have their
+    # startup files read.
+    if startup_state is not None:
+        # Explicit batch mode: accumulate startup data in the caller's state.
+        # The caller is responsible for calling startup_state.process().
+        known_paths = startup_state._known_paths
+        reset = False
+        flush_now = False
+        process_known_sitedirs = True
+    elif known_paths is None:
+        # Standalone mode: derive known paths from current sys.path, process
+        # eagerly, and preserve the historical return value of None.
         known_paths = _init_pathinfo()
         reset = True
+        startup_state = StartupState(known_paths)
+        flush_now = True
+        process_known_sitedirs = False
     else:
+        # Legacy known_paths mode: process eagerly and return the caller's
+        # updated known_paths set.
         reset = False
-    sitedir, sitedircase = makepath(sitedir)
+        startup_state = StartupState(known_paths)
+        flush_now = True
+        process_known_sitedirs = False
 
-    # If the normcase'd new sitedir isn't already known, record it to
-    # prevent re-processing, append it to sys.path (only if not already
-    # present), and process all .pth and .start files found in that
-    # directory.  Use a direct sys.path membership check for the append
-    # guard so that callers (like main()) can pass a fresh known_paths
-    # set while avoiding duplicate sys.path entries (gh-149819).
-    if sitedircase not in known_paths:
-        known_paths.add(sitedircase)
-        if sitedir not in sys.path:
-            sys.path.append(sitedir)
+    sitedir = startup_state.add_sitedir(
+        sitedir,
+        process_known_sitedirs=process_known_sitedirs,
+    )
+    if sitedir is None:
+        if not flush_now:
+            return startup_state
+        return None if reset else known_paths
 
-        try:
-            names = os.listdir(sitedir)
-        except OSError:
-            return None if reset else known_paths
-
-        # Pick the _StartupState we'll write into.  There are three cases:
-        #
-        # 1. A batch is already active (_startup_state is set, e.g.  because
-        #    main() previously called us with
-        #    defer_processing_start_files=True).  Participate in this batch by
-        #    sharing the same state.  Don't flush the state since the batch's
-        #    eventual process_startup_files() will do that.
-        #
-        # 2. There is no active batch but the caller passed
-        #    defer_processing_start_files=True.  Preserve a fresh
-        #    _StartupState into the global _startup_state so that subsequent
-        #    addsitedir() calls participate in this batch, and so that the
-        #    caller's later process_startup_files() finds it.
-        #
-        # 3. This is a standalone call (there is no active batch and
-        #    defer_processing_start_files=False).  Create a unique per-call
-        #    state, populate it, process it, and then clear it.  Per-call
-        #    state is what makes reentrant addsitedir() safe; a recursive call
-        #    from inside process() lands here too and gets its own independent
-        #    state.
-
-        if _startup_state is not None:
-            state = _startup_state
-            flush_now = False
-        elif defer_processing_start_files:
-            state = _startup_state = _StartupState()
-            flush_now = False
-        else:
-            state = _StartupState()
-            flush_now = True
-
-        # The following phases are defined by PEP 829.
-        # Phases 1-3: Read .pth files, accumulating paths and import lines.
-        pth_names = sorted(
-            name for name in names
-            if name.endswith(".pth") and not name.startswith(".")
-        )
-        for name in pth_names:
-            state.read_pth_file(sitedir, name, known_paths)
-
-        # Phases 6-7: Discover .start files and accumulate their entry points.
-        # Import lines from .pth files with a matching .start file are
-        # discarded at flush time by _StartupState._exec_imports().
-        start_names = sorted(
-            name for name in names
-            if name.endswith(".start") and not name.startswith(".")
-        )
-        for name in start_names:
-            state.read_start_file(sitedir, name)
-
+    try:
+        names = os.listdir(sitedir)
+    except OSError:
         if flush_now:
-            state.process()
+            startup_state.process()
+        if not flush_now:
+            return startup_state
+        return None if reset else known_paths
+
+    # The following phases are defined by PEP 829.
+    # Phases 1-3: Read .pth files, accumulating paths and import lines.
+    pth_names = sorted(
+        name for name in names
+        if name.endswith(".pth") and not name.startswith(".")
+    )
+    for name in pth_names:
+        startup_state.read_pth_file(sitedir, name)
+
+    # Phases 6-7: Discover .start files and accumulate their entry points.
+    # Import lines from .pth files with a matching .start file are
+    # discarded at flush time by StartupState._exec_imports().
+    start_names = sorted(
+        name for name in names
+        if name.endswith(".start") and not name.startswith(".")
+    )
+    for name in start_names:
+        startup_state.read_start_file(sitedir, name)
+
+    if flush_now:
+        startup_state.process()
+
+    if not flush_now:
+        return startup_state
 
     return None if reset else known_paths
 
@@ -671,20 +689,28 @@ def getusersitepackages():
 
     return USER_SITE
 
-def addusersitepackages(known_paths, *, defer_processing_start_files=False):
-    """Add a per user site-package to sys.path
 
-    Each user has its own python directory with site-packages in the
-    home directory.
+def addusersitepackages(known_paths, *, startup_state=None):
+    """Add the per-user site-packages directory, if enabled.
+
+    The user site directory is added only when user site-packages are enabled
+    and the directory exists.  If *startup_state* is given, the directory's
+    startup data is accumulated there for later processing, and the caller is
+    responsible for calling startup_state.process(); otherwise it is processed
+    eagerly.  Return *known_paths*, updated with any paths added by addsitedir().
     """
-    # get the per user site-package path
-    # this call will also make sure USER_BASE and USER_SITE are set
+    # Get the per-user site directory.  This call will also make sure
+    # $USER_BASE and $USER_SITE are set.
     _trace("Processing user site-packages")
     user_site = getusersitepackages()
 
     if ENABLE_USER_SITE and os.path.isdir(user_site):
-        addsitedir(user_site, known_paths, defer_processing_start_files=defer_processing_start_files)
+        if startup_state is None:
+            addsitedir(user_site, known_paths)
+        else:
+            addsitedir(user_site, startup_state=startup_state)
     return known_paths
+
 
 def getsitepackages(prefixes=None):
     """Returns a list containing all global site-packages directories.
@@ -725,14 +751,27 @@ def getsitepackages(prefixes=None):
             sitepackages.append(os.path.join(prefix, "Lib", "site-packages"))
     return sitepackages
 
-def addsitepackages(known_paths, prefixes=None, *, defer_processing_start_files=False):
-    """Add site-packages to sys.path"""
+
+def addsitepackages(known_paths, prefixes=None, *, startup_state=None):
+    """Add global site-packages directories, if they exist.
+
+    Site-packages directories are computed from *prefixes*, or from the global
+    prefixes when *prefixes* is None.  If *startup_state* is given, each
+    directory's startup data is accumulated there for later processing, and the
+    caller is responsible for calling startup_state.process(); otherwise each
+    directory is processed eagerly.  Return *known_paths*, updated with any
+    paths added by addsitedir().
+    """
     _trace("Processing global site-packages")
     for sitedir in getsitepackages(prefixes):
         if os.path.isdir(sitedir):
-            addsitedir(sitedir, known_paths, defer_processing_start_files=defer_processing_start_files)
+            if startup_state is None:
+                addsitedir(sitedir, known_paths)
+            else:
+                addsitedir(sitedir, startup_state=startup_state)
 
     return known_paths
+
 
 def setquit():
     """Define new builtins 'quit' and 'exit'.
@@ -899,7 +938,7 @@ def register_readline():
         atexit.register(write_history)
 
 
-def venv(known_paths):
+def venv(known_paths, *, startup_state=None):
     global PREFIXES, ENABLE_USER_SITE
 
     env = os.environ
@@ -944,7 +983,7 @@ def venv(known_paths):
             _warn(f'Unexpected value in sys.exec_prefix, expected {site_prefix}, got {sys.exec_prefix}', RuntimeWarning)
 
         # Doing this here ensures venv takes precedence over user-site
-        addsitepackages(known_paths, [sys.prefix])
+        addsitepackages(known_paths, [sys.prefix], startup_state=startup_state)
 
         if system_site == "true":
             PREFIXES += [sys.base_prefix, sys.base_exec_prefix]
@@ -1009,18 +1048,18 @@ def main():
         # Fix __file__ of already imported modules too.
         abs_paths()
 
-    known_paths = venv(known_paths=set())
+    known_paths = set()
+    startup_state = StartupState(known_paths)
+    known_paths = venv(known_paths, startup_state=startup_state)
     if ENABLE_USER_SITE is None:
         ENABLE_USER_SITE = check_enableusersite()
-    known_paths = addusersitepackages(known_paths, defer_processing_start_files=True)
-    known_paths = addsitepackages(known_paths, defer_processing_start_files=True)
+    known_paths = addusersitepackages(known_paths, startup_state=startup_state)
+    known_paths = addsitepackages(known_paths, startup_state=startup_state)
     # PEP 829: flush accumulated data from all .pth and .start files.
     # Paths are extended first, then deprecated import lines are exec'd,
     # and finally .start entry points are executed — ensuring sys.path is
-    # fully populated before any startup code runs.  process_startup_files()
-    # also clears the pending state so a later addsitedir() call does
-    # not re-apply already-processed data.
-    process_startup_files()
+    # fully populated before any startup code runs.
+    startup_state.process()
     setquit()
     setcopyright()
     sethelper()

@@ -478,6 +478,14 @@ matching :file:`.start` file is found, ``import`` lines in :file:`.pth` files
 are ignored.  There is no change to :data:`sys.path` extension lines in
 :file:`.pth` files.
 
+The :mod:`site` module also provides :class:`site.StartupState` to batch
+startup processing for multiple site directories, ensuring all static path
+extensions are applied before any startup code is executed.  :func:`site.main`
+uses an instance of this class implicitly to batch process all startup
+configuration files during normal interpreter startup.  Callers of
+:func:`site.addsitedir` can pass one of these explicitly to control startup
+configuration file batch processing.
+
 (Contributed by Barry Warsaw in :gh:`148641`.)
 
 
