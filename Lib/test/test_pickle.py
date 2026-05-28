@@ -17,6 +17,7 @@ import unittest
 from test import support
 from test.support import cpython_only, import_helper, os_helper
 from test.support.import_helper import ensure_lazy_imports
+from test.support import threading_helper
 
 from test.pickletester import AbstractHookTests
 from test.pickletester import AbstractUnpickleTests
@@ -807,6 +808,20 @@ class CommandLineTest(unittest.TestCase):
                 _ = self.invoke_pickle('--unknown')
         self.assertStartsWith(stderr.getvalue(), 'usage: ')
 
+
+class UnpicklerMemoThreadSafetyTest(unittest.TestCase):
+    @unittest.skipUnless(support.Py_GIL_DISABLED, 'this test can only possibly fail with GIL disabled')
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_memo_assignment_race(self):
+        from threading import Thread
+        shared = pickle.Unpickler(io.BytesIO(b''))
+        def assign():
+            for _ in range(10000):
+                shared.memo = {j: j for j in range(100)}
+        threads = [Thread(target=assign) for _ in range(8)]
+        for t in threads: t.start()
+        for t in threads: t.join()
 
 def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite(pickle))
