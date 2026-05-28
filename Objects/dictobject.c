@@ -866,7 +866,7 @@ free_keys_object(PyDictKeysObject *keys, bool use_qsbr)
     if (keys->dk_kind == DICT_KEYS_SPLIT) {
         ptr = _PyDictKeys_AsSharedKeys(keys);
 #ifdef Py_GIL_DISABLED
-        size += offsetof(struct _dictsharedkeysobject, dsk_keys);
+        size += offsetof(struct _instancekeysobject, dsk_keys);
 #endif
     }
 #ifdef Py_GIL_DISABLED
@@ -7129,8 +7129,8 @@ _PyDict_NewKeysForClass(PyHeapTypeObject *cls)
     int log2_bytes = get_log2_bytes(NEXT_LOG2_SHARED_KEYS_MAX_SIZE);
     Py_ssize_t usable = USABLE_FRACTION((size_t)1<<NEXT_LOG2_SHARED_KEYS_MAX_SIZE);
 
-    struct _dictsharedkeysobject *shared_keys =
-                          PyMem_Malloc(sizeof(struct _dictsharedkeysobject)
+    struct _instancekeysobject *shared_keys =
+                          PyMem_Malloc(sizeof(struct _instancekeysobject)
                           + ((size_t)1 << log2_bytes)
                           + sizeof(PyDictUnicodeEntry) * usable);
     if (shared_keys == NULL) {
@@ -7164,7 +7164,7 @@ _PyDict_NewKeysForClass(PyHeapTypeObject *cls)
 void
 _PyDict_RemoveKeysForClass(PyHeapTypeObject *cls)
 {
-    struct _dictsharedkeysobject *shared_keys = _PyDictKeys_AsSharedKeys(cls->ht_cached_keys);
+    struct _instancekeysobject *shared_keys = _PyDictKeys_AsSharedKeys(cls->ht_cached_keys);
     FT_ATOMIC_STORE_PTR_RELEASE(shared_keys->dsk_owning_type, NULL);
 
     _PyDictKeys_DecRef(cls->ht_cached_keys);
@@ -7173,7 +7173,7 @@ _PyDict_RemoveKeysForClass(PyHeapTypeObject *cls)
 void
 _PyDict_SplitKeysInvalidated(PyDictKeysObject* keys)
 {
-    struct _dictsharedkeysobject *shared_keys = _PyDictKeys_AsSharedKeys(keys);
+    struct _instancekeysobject *shared_keys = _PyDictKeys_AsSharedKeys(keys);
     PyTypeObject *type = FT_ATOMIC_LOAD_PTR_ACQUIRE(shared_keys->dsk_owning_type);
     if (type) {
         PyType_Modified(type);

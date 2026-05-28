@@ -241,15 +241,15 @@ struct _dictkeysobject {
        see the DK_ENTRIES() / DK_UNICODE_ENTRIES() functions below */
 };
 
-struct _dictsharedkeysobject {
+struct _instancekeysobject {
     PyTypeObject* dsk_owning_type;
     struct _dictkeysobject dsk_keys;
 };
 
-static inline struct _dictsharedkeysobject *_PyDictKeys_AsSharedKeys(struct _dictkeysobject *keys)
+static inline struct _instancekeysobject *_PyDictKeys_AsSharedKeys(struct _dictkeysobject *keys)
 {
     assert(keys->dk_kind == DICT_KEYS_SPLIT);
-    return _Py_CONTAINER_OF(keys, struct _dictsharedkeysobject, dsk_keys);
+    return _Py_CONTAINER_OF(keys, struct _instancekeysobject, dsk_keys);
 }
 
 /* This must be no more than 250, for the prefix size to fit in one byte. */
