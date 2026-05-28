@@ -956,10 +956,15 @@ _PyJit_translate_single_bytecode_to_trace(
                     case OPARG_REPLACED:
                         uop = _PyUOp_Replacements[uop];
                         assert(uop != 0);
-
                         uint32_t next_inst = target + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
                         if (uop == _TIER2_RESUME_CHECK) {
-                            target = next_inst;
+                            if (this_instr[-1].op.code == LOAD_SPECIAL) {
+                                // Don't check eval breaker immediately after LOAD_SPECIAL
+                                uop = _NOP;
+                            }
+                            else {
+                                target = next_inst;
+                            }
                         }
                         else {
                             int extended_arg = orig_oparg > 255;
