@@ -253,7 +253,6 @@ typedef struct {
 /* Main binary writer structure */
 typedef struct {
     FILE *fp;
-    char *filename;
 
     /* Write buffer for batched I/O */
     uint8_t *write_buffer;
@@ -311,10 +310,7 @@ typedef struct {
 
 /* Main binary reader structure */
 typedef struct {
-    char *filename;
-
 #if USE_MMAP
-    int fd;
     uint8_t *mapped_data;
     size_t mapped_size;
 #else
@@ -522,7 +518,7 @@ grow_array_inplace(void **ptr_addr, size_t count, size_t *capacity, size_t elem_
  * Create a new binary writer.
  *
  * Arguments:
- *   filename: Path to output file
+ *   path: Path to output file
  *   sample_interval_us: Sampling interval in microseconds
  *   compression_type: COMPRESSION_NONE or COMPRESSION_ZSTD
  *   start_time_us: Start timestamp in microseconds (from time.monotonic() * 1e6)
@@ -531,7 +527,7 @@ grow_array_inplace(void **ptr_addr, size_t count, size_t *capacity, size_t elem_
  *   New BinaryWriter* on success, NULL on failure (PyErr set)
  */
 BinaryWriter *binary_writer_create(
-    const char *filename,
+    PyObject *path,
     uint64_t sample_interval_us,
     int compression_type,
     uint64_t start_time_us
@@ -583,12 +579,12 @@ void binary_writer_destroy(BinaryWriter *writer);
  * Open a binary file for reading.
  *
  * Arguments:
- *   filename: Path to input file
+ *   path: Path to input file
  *
  * Returns:
  *   New BinaryReader* on success, NULL on failure (PyErr set)
  */
-BinaryReader *binary_reader_open(const char *filename);
+BinaryReader *binary_reader_open(PyObject *path);
 
 /*
  * Replay samples from binary file through a collector.

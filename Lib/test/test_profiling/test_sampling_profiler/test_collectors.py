@@ -18,6 +18,7 @@ try:
     )
     from profiling.sampling.jsonl_collector import JsonlCollector
     from profiling.sampling.gecko_collector import GeckoCollector
+    from profiling.sampling.heatmap_collector import _TemplateLoader
     from profiling.sampling.collector import extract_lineno, normalize_location
     from profiling.sampling.opcode_utils import get_opcode_info, format_opcode
     from profiling.sampling.constants import (
@@ -81,6 +82,18 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertEqual(frame.filename, long_filename)
         self.assertEqual(frame.location.lineno, 999999)
         self.assertEqual(frame.funcname, long_funcname)
+
+    def test_heatmap_navigation_restarts_line_highlight(self):
+        """Test heatmap navigation can replay target line highlights."""
+        loader = _TemplateLoader()
+
+        self.assertIn(".code-line:target", loader.file_css)
+        self.assertIn("function restartLineHighlight(target)", loader.file_js)
+        self.assertIn("target.style.animation = 'none'", loader.file_js)
+        self.assertIn("void target.offsetWidth", loader.file_js)
+        self.assertIn("url.href === window.location.href", loader.file_js)
+        self.assertIn("navigateToLine(JSON.parse(navData).link)", loader.file_js)
+        self.assertIn("navigateToLine(linkData.link)", loader.file_js)
 
     def test_pstats_collector_with_extreme_intervals_and_empty_data(self):
         """Test PstatsCollector handles zero/large intervals, empty frames, None thread IDs, and duplicate frames."""
@@ -1402,6 +1415,39 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertAlmostEqual(child["diff_pct"], -100.0)
         self.assertGreater(child["baseline"], 0)
         self.assertAlmostEqual(child["diff"], -child["baseline"])
+
+    def test_diff_flamegraph_elided_top_level_root(self):
+        """Elided top-level roots do not crash metadata generation."""
+        baseline_frames_1 = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 10, "kept_leaf"),
+                    MockFrameInfo("file.py", 20, "kept_root"),
+                ])
+            ])
+        ]
+        baseline_frames_2 = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 30, "old_leaf"),
+                    MockFrameInfo("file.py", 40, "old_root"),
+                ])
+            ])
+        ]
+
+        diff = make_diff_collector_with_mock_baseline([
+            baseline_frames_1,
+            baseline_frames_2,
+        ])
+        diff.collect(baseline_frames_1)
+
+        data = diff._convert_to_flamegraph_format()
+        elided = data["stats"]["elided_flamegraph"]
+        elided_strings = elided.get("strings", [])
+        children = elided.get("children", [])
+
+        self.assertEqual(len(children), 1)
+        self.assertIn("old_root", resolve_name(children[0], elided_strings))
 
     def test_diff_flamegraph_function_matched_despite_line_change(self):
         """Functions match by (filename, funcname), ignoring lineno."""

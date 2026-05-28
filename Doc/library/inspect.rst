@@ -416,10 +416,55 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    Return ``True`` if the object is a class, whether built-in or created in Python
    code.
 
+   This function returns ``False`` for :ref:`generic aliases <types-genericalias>` of classes,
+   such as ``list[int]``.
+
 
 .. function:: ismethod(object)
 
    Return ``True`` if the object is a bound method written in Python.
+
+   .. note::
+
+      For example, given this class::
+
+          >>> class Greeter:
+          ...     def say_hello(self):
+          ...         print('hello!')
+
+      A bound method (also known as an *instance method*) is created when
+      accessing ``say_hello`` (a :term:`function` defined in the
+      ``Greeter`` namespace) through an instance of the ``Greeter`` class::
+
+          >>> instance = Greeter()
+
+          >>> instance.say_hello
+          <bound method Greeter.say_hello of <__main__.Greeter object ...>>
+          >>> ismethod(instance.say_hello)
+          True
+          >>> isfunction(instance.say_hello)
+          False
+
+      Accessing ``say_hello`` through the ``Greeter`` class will return the
+      function itself. For this function, :func:`ismethod` will return
+      ``False``, but :func:`isfunction` will return ``True``::
+
+          >>> Greeter.say_hello
+          <function Greeter.say_hello at 0x7f7503854a90>
+          >>> ismethod(Greeter.say_hello)
+          False
+          >>> isfunction(Greeter.say_hello)
+          True
+
+      See :ref:`typesmethods` for details.
+
+
+.. function:: isfunction(object)
+
+   Return ``True`` if the object is a Python function, which includes functions
+   created by a :term:`lambda` expression.
+
+   See the note for :func:`~inspect.ismethod` for an example.
 
 
 .. function:: ispackage(object)
@@ -429,15 +474,12 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    .. versionadded:: 3.14
 
 
-.. function:: isfunction(object)
-
-   Return ``True`` if the object is a Python function, which includes functions
-   created by a :term:`lambda` expression.
-
-
 .. function:: isgeneratorfunction(object)
 
    Return ``True`` if the object is a Python generator function.
+
+   It also returns ``True`` for bound methods created from Python generator functions
+   (see :ref:`typesmethods` for more information).
 
    .. versionchanged:: 3.8
       Functions wrapped in :func:`functools.partial` now return ``True`` if the

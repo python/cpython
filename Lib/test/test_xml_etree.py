@@ -1008,13 +1008,15 @@ class ElementTreeTest(unittest.TestCase):
         check("iso-8859-15", '\u20ac')
         check("cp437", '\u221a')
         check("mac-roman", '\u02da')
+        check('shift-jis-2004', '\u203e\u3406\uff66')
+        check('euc-jis-2004', '\u3406\uff66')
 
-        def xml(encoding):
-            return "<?xml version='1.0' encoding='%s'?><xml />" % encoding
-        def bxml(encoding):
-            return xml(encoding).encode(encoding)
+        def xml(encoding, body=''):
+            return "<?xml version='1.0' encoding='%s'?><xml>%s</xml>" % (encoding, body)
+        def bxml(encoding, body=''):
+            return xml(encoding, body).encode(encoding)
         supported_encodings = [
-            'ascii', 'utf-8', 'utf-8-sig', 'utf-16', 'utf-16be', 'utf-16le',
+            'utf-8', 'utf-16', 'utf-16be', 'utf-16le',
             'iso8859-1', 'iso8859-2', 'iso8859-3', 'iso8859-4', 'iso8859-5',
             'iso8859-6', 'iso8859-7', 'iso8859-8', 'iso8859-9', 'iso8859-10',
             'iso8859-13', 'iso8859-14', 'iso8859-15', 'iso8859-16',
@@ -1025,32 +1027,39 @@ class ElementTreeTest(unittest.TestCase):
             'cp1256', 'cp1257', 'cp1258',
             'mac-cyrillic', 'mac-greek', 'mac-iceland', 'mac-latin2',
             'mac-roman', 'mac-turkish',
-            'iso2022-jp', 'iso2022-jp-1', 'iso2022-jp-2', 'iso2022-jp-2004',
-            'iso2022-jp-3', 'iso2022-jp-ext',
-            'koi8-r', 'koi8-t', 'koi8-u', 'kz1048',
-            'hz', 'ptcp154',
-        ]
-        for encoding in supported_encodings:
-            self.assertEqual(ET.tostring(ET.XML(bxml(encoding))), b'<xml />')
-
-        unsupported_ascii_compatible_encodings = [
+            'koi8-r', 'koi8-t', 'koi8-u', 'kz1048', 'ptcp154',
             'big5', 'big5hkscs',
             'cp932', 'cp949', 'cp950',
-            'euc-jp', 'euc-jis-2004', 'euc-jisx0213', 'euc-kr',
-            'gb2312', 'gbk', 'gb18030',
-            'iso2022-kr', 'johab',
+            'euc-jp', 'euc-jis-2004', 'euc-jisx0213',
+            'gb2312', 'gbk', 'johab',
             'shift-jis', 'shift-jis-2004', 'shift-jisx0213',
+            'utf-8-sig', 'utf8',
+        ]
+        for encoding in supported_encodings:
+            with self.subTest(encoding=encoding):
+                self.assertEqual(ET.tostring(ET.XML(bxml(encoding))), b'<xml />')
+                c = 'éπя\u05d0\u060c€'.encode(encoding, 'ignore').decode(encoding)[0]
+                self.assertEqual(ET.tostring(ET.XML(bxml(encoding, c))),
+                                 ('<xml>&#%d;</xml>' % ord(c)).encode())
+
+        unsupported_ascii_compatible_encodings = [
+            'euc-kr', 'gb18030',
+            'iso2022-jp', 'iso2022-jp-1', 'iso2022-jp-2', 'iso2022-jp-2004',
+            'iso2022-jp-3', 'iso2022-jp-ext',
+            'iso2022-kr', 'hz',
             'utf-7',
         ]
         for encoding in unsupported_ascii_compatible_encodings:
-            self.assertRaises(ValueError, ET.XML, bxml(encoding))
+            with self.subTest(encoding=encoding):
+                self.assertRaises(ValueError, ET.XML, bxml(encoding))
 
         unsupported_ascii_incompatible_encodings = [
             'cp037', 'cp424', 'cp500', 'cp864', 'cp875', 'cp1026', 'cp1140',
             'utf_32', 'utf_32_be', 'utf_32_le',
         ]
         for encoding in unsupported_ascii_incompatible_encodings:
-            self.assertRaises(ET.ParseError, ET.XML, bxml(encoding))
+            with self.subTest(encoding=encoding):
+                self.assertRaises(ET.ParseError, ET.XML, bxml(encoding))
 
         self.assertRaises(ValueError, ET.XML, xml('undefined').encode('ascii'))
         self.assertRaises(LookupError, ET.XML, xml('xxx').encode('ascii'))
@@ -3680,6 +3689,32 @@ class ElementIterTest(unittest.TestCase):
         # Issue #16913
         doc = ET.XML("<root>a&amp;<sub>b&amp;</sub>c&amp;</root>")
         self.assertEqual(''.join(doc.itertext()), 'a&b&c&')
+
+    def test_comment(self):
+        e = ET.Element('root')
+        e.text = 'before'
+        comment = ET.Comment('comment')
+        self.assertEqual(comment.text, 'comment')
+        comment.tail = 'after'
+        e.append(comment)
+        self.assertEqual(''.join(e.itertext()), 'beforeafter')
+        self.assertEqual(list(e.iter()), [e, comment])
+        self.assertEqual(list(e.iter('root')), [e])
+        self.assertEqual(''.join(comment.itertext()), '')
+        self.assertEqual(list(comment.iter()), [comment])
+
+    def test_processinginstruction(self):
+        e = ET.Element('root')
+        e.text = 'before'
+        pi = ET.PI('test', 'instruction')
+        self.assertEqual(pi.text, 'test instruction')
+        pi.tail = 'after'
+        e.append(pi)
+        self.assertEqual(''.join(e.itertext()), 'beforeafter')
+        self.assertEqual(list(e.iter()), [e, pi])
+        self.assertEqual(list(e.iter('root')), [e])
+        self.assertEqual(''.join(pi.itertext()), '')
+        self.assertEqual(list(pi.iter()), [pi])
 
     def test_corners(self):
         # single root, no subelements
