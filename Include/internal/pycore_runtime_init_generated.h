@@ -1941,6 +1941,7 @@ extern "C" {
     INIT_ID(newline), \
     INIT_ID(newlines), \
     INIT_ID(next), \
+    INIT_ID(nframe), \
     INIT_ID(nlocals), \
     INIT_ID(node_depth), \
     INIT_ID(node_offset), \
@@ -2042,6 +2043,7 @@ extern "C" {
     INIT_ID(reversed), \
     INIT_ID(rounding), \
     INIT_ID(salt), \
+    INIT_ID(sample_interval), \
     INIT_ID(sample_interval_us), \
     INIT_ID(sched_priority), \
     INIT_ID(scheduler), \

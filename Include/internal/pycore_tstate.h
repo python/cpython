@@ -23,6 +23,14 @@ struct _gc_thread_state {
 };
 #endif
 
+/* Per-thread tracemalloc Poisson sampling state.
+   Zero-initialized; prng_state == 0 means "needs initialization". */
+struct _tracemalloc_sampling_state {
+    size_t bytes_since_last_sample;
+    size_t threshold;
+    uint64_t prng_state;
+};
+
 
 // Every PyThreadState is actually allocated as a _PyThreadStateImpl. The
 // PyThreadState fields are exposed as part of the C API, although most fields
@@ -102,6 +110,8 @@ typedef struct _PyThreadStateImpl {
 #if _Py_TIER2
     struct _PyJitTracerState *jit_tracer_state;
 #endif
+
+    struct _tracemalloc_sampling_state tracemalloc_sampling;
 
 #ifdef Py_GIL_DISABLED
     // gh-144438: Add padding to ensure that the fields above don't share a

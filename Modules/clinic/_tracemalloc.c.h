@@ -2,7 +2,12 @@
 preserve
 [clinic start generated code]*/
 
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
+#endif
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_tracemalloc_is_tracing__doc__,
 "is_tracing($module, /)\n"
@@ -77,38 +82,94 @@ PyDoc_STRVAR(_tracemalloc__get_object_traceback__doc__,
     {"_get_object_traceback", (PyCFunction)_tracemalloc__get_object_traceback, METH_O, _tracemalloc__get_object_traceback__doc__},
 
 PyDoc_STRVAR(_tracemalloc_start__doc__,
-"start($module, nframe=1, /)\n"
+"start($module, /, nframe=1, sample_interval=0)\n"
 "--\n"
 "\n"
 "Start tracing Python memory allocations.\n"
 "\n"
 "Also set the maximum number of frames stored in the traceback of a\n"
-"trace to nframe.");
+"trace to nframe.\n"
+"\n"
+"If sample_interval is 0, every allocation is traced.  If sample_interval\n"
+"is N > 0, allocations are sampled using a Poisson process with a mean\n"
+"inter-arrival of N bytes.  In sampled mode, Trace.size is an upscaled\n"
+"estimate of the bytes represented by the sample, and Trace.real_size is\n"
+"the actual allocation size.");
 
 #define _TRACEMALLOC_START_METHODDEF    \
-    {"start", _PyCFunction_CAST(_tracemalloc_start), METH_FASTCALL, _tracemalloc_start__doc__},
+    {"start", _PyCFunction_CAST(_tracemalloc_start), METH_FASTCALL|METH_KEYWORDS, _tracemalloc_start__doc__},
 
 static PyObject *
-_tracemalloc_start_impl(PyObject *module, int nframe);
+_tracemalloc_start_impl(PyObject *module, int nframe,
+                        Py_ssize_t sample_interval);
 
 static PyObject *
-_tracemalloc_start(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+_tracemalloc_start(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    int nframe = 1;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    if (!_PyArg_CheckPositional("start", nargs, 0, 1)) {
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(nframe), &_Py_ID(sample_interval), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"nframe", "sample_interval", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "start",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    int nframe = 1;
+    Py_ssize_t sample_interval = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
-    if (nargs < 1) {
-        goto skip_optional;
+    if (!noptargs) {
+        goto skip_optional_pos;
     }
-    nframe = PyLong_AsInt(args[0]);
-    if (nframe == -1 && PyErr_Occurred()) {
-        goto exit;
+    if (args[0]) {
+        nframe = PyLong_AsInt(args[0]);
+        if (nframe == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
     }
-skip_optional:
-    return_value = _tracemalloc_start_impl(module, nframe);
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        sample_interval = ival;
+    }
+skip_optional_pos:
+    return_value = _tracemalloc_start_impl(module, nframe, sample_interval);
 
 exit:
     return return_value;
@@ -214,4 +275,4 @@ _tracemalloc_reset_peak(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _tracemalloc_reset_peak_impl(module);
 }
-/*[clinic end generated code: output=9d4d884b156c2ddb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=304f592415e8c883 input=a9049054013a1b77]*/

@@ -1410,7 +1410,8 @@ init_interp_main(PyThreadState *tstate)
         }
 
         if (config->tracemalloc) {
-           if (_PyTraceMalloc_Start(config->tracemalloc) < 0) {
+           if (_PyTraceMalloc_Start(config->tracemalloc,
+                                    config->tracemalloc_sample_interval) < 0) {
                 return _PyStatus_ERR("can't start tracemalloc");
             }
         }

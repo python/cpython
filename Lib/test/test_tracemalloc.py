@@ -195,8 +195,9 @@ class TestTracemallocEnabled(unittest.TestCase):
         trace = self.find_trace(traces, obj_traceback, obj_size)
 
         self.assertIsInstance(trace, tuple)
-        domain, size, traceback, length = trace
+        domain, size, traceback, length, real_size = trace
         self.assertEqual(traceback, obj_traceback._frames)
+        self.assertEqual(size, real_size)
 
         tracemalloc.stop()
         self.assertEqual(tracemalloc._get_traces(), [])
@@ -225,8 +226,8 @@ class TestTracemallocEnabled(unittest.TestCase):
 
         trace1 = self.find_trace(traces, obj1_traceback, obj1_size)
         trace2 = self.find_trace(traces, obj2_traceback, obj2_size)
-        domain1, size1, traceback1, length1 = trace1
-        domain2, size2, traceback2, length2 = trace2
+        domain1, size1, traceback1, length1, real_size1 = trace1
+        domain2, size2, traceback2, length2, real_size2 = trace2
         self.assertIs(traceback2, traceback1)
 
     def test_get_traced_memory(self):
@@ -952,7 +953,7 @@ class TestCommandLine(unittest.TestCase):
 
         if b'ValueError: the number of frames must be in range' in stderr:
             return
-        if b'PYTHONTRACEMALLOC: invalid number of frames' in stderr:
+        if b'PYTHONTRACEMALLOC: invalid' in stderr:
             return
         self.fail(f"unexpected output: {stderr!a}")
 
@@ -980,7 +981,7 @@ class TestCommandLine(unittest.TestCase):
 
         if b'ValueError: the number of frames must be in range' in stderr:
             return
-        if b'-X tracemalloc=NFRAME: invalid number of frames' in stderr:
+        if b'-X tracemalloc=' in stderr and b'invalid' in stderr:
             return
         self.fail(f"unexpected output: {stderr!a}")
 
@@ -989,6 +990,43 @@ class TestCommandLine(unittest.TestCase):
         for nframe in INVALID_NFRAME:
             with self.subTest(nframe=nframe):
                 self.check_sys_xoptions_invalid(nframe)
+
+    def test_env_var_sample_interval(self):
+        code = ('import tracemalloc; tracemalloc.clear_traces(); '
+                'objs = [bytearray(4096) for _ in range(2000)]; '
+                'print(len(tracemalloc._get_traces()))')
+        ok, stdout, stderr = assert_python_ok(
+            '-c', code, PYTHONTRACEMALLOC='1:524288')
+        trace_count = int(stdout.strip())
+        # With 8MB of allocs and 512KB interval, expect few sampled traces
+        self.assertGreater(trace_count, 0)
+        self.assertLess(trace_count, 500)
+
+    def test_sys_xoptions_sample_interval(self):
+        code = ('import tracemalloc; tracemalloc.clear_traces(); '
+                'objs = [bytearray(4096) for _ in range(2000)]; '
+                'print(len(tracemalloc._get_traces()))')
+        ok, stdout, stderr = assert_python_ok(
+            '-X', 'tracemalloc=1:524288', '-c', code)
+        trace_count = int(stdout.strip())
+        self.assertGreater(trace_count, 0)
+        self.assertLess(trace_count, 500)
+
+    def test_env_var_sample_interval_invalid(self):
+        for val in ('1:-1', '1:abc', 'abc:1', '-1:100'):
+            with self.subTest(val=val):
+                with support.SuppressCrashReport():
+                    ok, stdout, stderr = assert_python_failure(
+                        '-c', 'pass', PYTHONTRACEMALLOC=val)
+                self.assertIn(b'PYTHONTRACEMALLOC: invalid', stderr)
+
+    def test_sys_xoptions_sample_interval_invalid(self):
+        for val in ('1:-1', '1:abc', 'abc:1', '-1:100'):
+            with self.subTest(val=val):
+                with support.SuppressCrashReport():
+                    ok, stdout, stderr = assert_python_failure(
+                        '-X', f'tracemalloc={val}', '-c', 'pass')
+                self.assertIn(b'invalid', stderr)
 
     @unittest.skipIf(_testcapi is None, 'need _testcapi')
     def test_pymem_alloc0(self):
@@ -1142,6 +1180,372 @@ class TestCAPI(unittest.TestCase):
             support.late_deletion(obj)
         """)
         assert_python_ok("-c", code)
+
+
+class TestSampling(unittest.TestCase):
+    """Tests for tracemalloc Poisson sampling (sample_interval > 0)."""
+
+    SMALL_INTERVAL = 4096    # 4KB
+    MEDIUM_INTERVAL = 65536  # 64KB
+
+    def setUp(self):
+        if tracemalloc.is_tracing():
+            self.skipTest("tracemalloc must be stopped before the test")
+
+    def tearDown(self):
+        if tracemalloc.is_tracing():
+            tracemalloc.stop()
+
+    @staticmethod
+    def _allocate(n):
+        """Allocate n * 4KB bytearrays kept alive by the returned list."""
+        return [bytearray(4096) for _ in range(n)]
+
+    def test_start_and_validate_args(self):
+        """Basic start/stop, interval=0 as exact, negative raises."""
+        tracemalloc.start(1, 524288)
+        self.assertTrue(tracemalloc.is_tracing())
+        tracemalloc.stop()
+        self.assertFalse(tracemalloc.is_tracing())
+
+        tracemalloc.start(nframe=1, sample_interval=524288)
+        self.assertTrue(tracemalloc.is_tracing())
+        tracemalloc.stop()
+        self.assertFalse(tracemalloc.is_tracing())
+
+        tracemalloc.start(sample_interval=524288)
+        self.assertTrue(tracemalloc.is_tracing())
+        tracemalloc.stop()
+        self.assertFalse(tracemalloc.is_tracing())
+
+        # interval=0 should behave as exact mode
+        tracemalloc.start(1, 0)
+        tracemalloc.clear_traces()
+        obj_size = 12345
+        obj, obj_traceback = allocate_bytes(obj_size)
+        traces = tracemalloc._get_traces()
+        found = False
+        for trace in traces:
+            if trace[1] == obj_size:
+                domain, size, tb, nframe, real_size = trace
+                self.assertEqual(size, real_size)
+                found = True
+                break
+        self.assertTrue(found, "exact trace not found with sample_interval=0")
+        tracemalloc.stop()
+
+        # Negative interval raises
+        with self.assertRaises(ValueError):
+            tracemalloc.start(1, -1)
+
+        # Very large interval doesn't crash
+        tracemalloc.start(1, 2**30)
+        self.assertTrue(tracemalloc.is_tracing())
+
+    def test_trace_format_exact(self):
+        """Exact mode: 5-tuple with size == real_size at both C and Python layers."""
+        tracemalloc.start(1, 0)
+        tracemalloc.clear_traces()
+        obj_size = 4096
+        obj, obj_traceback = allocate_bytes(obj_size)
+
+        # C layer: raw trace tuple
+        trace = None
+        for t in tracemalloc._get_traces():
+            if t[1] == obj_size:
+                trace = t
+                break
+        self.assertIsNotNone(trace, "trace for test allocation not found")
+        self.assertEqual(len(trace), 5)
+        domain, size, tb, nframe, real_size = trace
+        self.assertEqual(size, real_size)
+
+        # Python layer: Trace.real_size property
+        snap = tracemalloc.take_snapshot()
+        our = [t for t in snap.traces if t.size == obj_size]
+        self.assertGreater(len(our), 0)
+        self.assertEqual(our[0].real_size, our[0].size)
+
+    def test_first_allocation_is_not_always_sampled(self):
+        tracemalloc.start(1, sys.maxsize)
+        tracemalloc.clear_traces()
+        obj = bytearray(64)
+        self.assertEqual(len(tracemalloc._get_traces()), 0)
+        del obj
+
+    def test_trace_format_sampled(self):
+        """Sampled mode: size >= real_size (upscaled weight invariant)."""
+        tracemalloc.start(1, self.SMALL_INTERVAL)
+        tracemalloc.clear_traces()
+        objs = self._allocate(2000)  # 8MB >> interval
+
+        # C layer
+        traces = tracemalloc._get_traces()
+        self.assertGreater(len(traces), 0)
+        for trace in traces:
+            self.assertEqual(len(trace), 5)
+            domain, size, tb, nframe, real_size = trace
+            self.assertGreater(real_size, 0)
+            self.assertGreaterEqual(size, real_size,
+                f"size {size} < real_size {real_size}: "
+                f"upscaled weight must be >= actual allocation")
+
+        # Python layer
+        snap = tracemalloc.take_snapshot()
+        for trace in snap.traces:
+            self.assertGreaterEqual(trace.size, trace.real_size)
+        del objs
+
+    def test_trace_real_size_backward_compat(self):
+        """Old 4-tuple traces (from pickled snapshots) fall back gracefully."""
+        old_trace_tuple = (0, 100, (('a.py', 1),), 1)
+        trace = tracemalloc.Trace(old_trace_tuple)
+        self.assertEqual(trace.real_size, 100)
+        self.assertEqual(trace.size, 100)
+
+    def test_sampling_produces_fewer_traces(self):
+        """Sampled mode records fewer traces than exact for same workload."""
+        # Exact: count while objects are alive
+        tracemalloc.start(1, 0)
+        tracemalloc.clear_traces()
+        objs = self._allocate(2000)
+        exact_count = len(tracemalloc._get_traces())
+        tracemalloc.stop()
+        del objs
+
+        # Sampled with 1MB interval
+        tracemalloc.start(1, 1024 * 1024)
+        tracemalloc.clear_traces()
+        objs = self._allocate(2000)
+        sampled_count = len(tracemalloc._get_traces())
+        tracemalloc.stop()
+        del objs
+
+        self.assertGreater(exact_count, 0)
+        self.assertGreater(sampled_count, 0,
+            "sampled mode should produce some traces with 8MB of allocs")
+        self.assertLess(sampled_count, exact_count)
+
+    def test_snapshot_operations(self):
+        """statistics, filter_traces, compare_to, cumulative all work
+        with sampled traces."""
+        tracemalloc.start(2, self.SMALL_INTERVAL)  # nframe=2 for cumulative
+        tracemalloc.clear_traces()
+
+        objs1 = self._allocate(2000)
+        snap1 = tracemalloc.take_snapshot()
+        self.assertGreater(len(snap1.traces), 0)
+
+        # statistics by filename and lineno
+        stats = snap1.statistics('filename')
+        self.assertGreater(len(stats), 0)
+        for stat in stats:
+            self.assertGreater(stat.size, 0)
+            self.assertGreater(stat.count, 0)
+        self.assertGreater(len(snap1.statistics('lineno')), 0)
+
+        # cumulative
+        cum = snap1.statistics('lineno', cumulative=True)
+        self.assertGreater(len(cum), 0)
+
+        # filter: inclusive + exclusive cover all traces
+        some_filename = snap1.traces[0].traceback[0].filename
+        inc = snap1.filter_traces([tracemalloc.Filter(True, some_filename)])
+        exc = snap1.filter_traces([tracemalloc.Filter(False, some_filename)])
+        self.assertEqual(
+            len(inc.traces) + len(exc.traces), len(snap1.traces))
+
+        # compare_to: more allocations should show growth
+        objs2 = self._allocate(2000)
+        snap2 = tracemalloc.take_snapshot()
+        diff = snap2.compare_to(snap1, 'filename')
+        self.assertTrue(any(s.size_diff > 0 for s in diff),
+            "compare_to should show memory growth")
+        del objs1, objs2
+
+    def test_synthetic_5tuple_traces(self):
+        """Snapshot and filter work with synthetic 5-tuple traces where
+        size != real_size."""
+        raw_traces = [
+            (0, 50000, (('alloc.py', 10),), 1, 4096),
+            (0, 80000, (('alloc.py', 20),), 1, 8192),
+            (0, 30000, (('other.py', 5),), 1, 2048),
+        ]
+        snapshot = tracemalloc.Snapshot(raw_traces, 1)
+
+        # size vs real_size
+        self.assertEqual(snapshot.traces[0].size, 50000)
+        self.assertEqual(snapshot.traces[0].real_size, 4096)
+
+        # statistics aggregate by effective (upscaled) size
+        stats = snapshot.statistics('filename')
+        alloc_stat = [s for s in stats
+                      if s.traceback[0].filename == 'alloc.py']
+        self.assertEqual(alloc_stat[0].size, 130000)  # 50000 + 80000
+        self.assertEqual(alloc_stat[0].count, 2)
+
+        # filter preserves 5-tuple format
+        filtered = snapshot.filter_traces(
+            [tracemalloc.Filter(True, 'alloc.py')])
+        self.assertEqual(len(filtered.traces), 2)
+        self.assertEqual(filtered.traces[0].real_size, 4096)
+
+    def test_lifecycle(self):
+        """Stop/restart, and switching between sampled and exact modes."""
+        # Sampled -> stop: traces are cleared
+        tracemalloc.start(1, self.SMALL_INTERVAL)
+        self.assertTrue(tracemalloc.is_tracing())
+        tracemalloc.stop()
+        self.assertEqual(tracemalloc._get_traces(), [])
+
+        # Restart sampled with different interval
+        tracemalloc.start(1, self.MEDIUM_INTERVAL)
+        tracemalloc.clear_traces()
+        objs = self._allocate(2000)
+        self.assertGreater(len(tracemalloc._get_traces()), 0)
+        tracemalloc.stop()
+        del objs
+
+        # Sampled -> exact: should find exact trace
+        tracemalloc.start(1, self.MEDIUM_INTERVAL)
+        self._allocate(100)  # exercise sampled mode, result discarded
+        tracemalloc.stop()
+
+        tracemalloc.start(1, 0)
+        tracemalloc.clear_traces()
+        obj_size = 12345
+        obj, _ = allocate_bytes(obj_size)
+        found = any(t[1] == obj_size for t in tracemalloc._get_traces())
+        self.assertTrue(found, "exact trace not found after switching from sampled")
+        tracemalloc.stop()
+
+        # Exact -> sampled: should produce sampled traces
+        tracemalloc.start(1, 0)
+        self._allocate(100)  # exercise exact mode, result discarded
+        tracemalloc.stop()
+
+        tracemalloc.start(1, self.SMALL_INTERVAL)
+        tracemalloc.clear_traces()
+        objs = self._allocate(2000)
+        self.assertGreater(len(tracemalloc._get_traces()), 0)
+        del objs
+
+    def test_traced_memory_and_peak(self):
+        """get_traced_memory, clear_traces, and reset_peak work with sampling."""
+        tracemalloc.start(1, self.SMALL_INTERVAL)
+        tracemalloc.clear_traces()
+
+        # Allocate, check current/peak
+        objs = self._allocate(2000)  # ~8MB
+        current, peak = tracemalloc.get_traced_memory()
+        self.assertGreater(current, 0)
+        self.assertGreater(peak, 0)
+        self.assertGreaterEqual(peak, current)
+
+        # clear_traces resets current to 0; the objects are still alive
+        # but their traces are gone, so subsequent del is a no-op for
+        # tracemalloc's counters.
+        tracemalloc.clear_traces()
+        self.assertEqual(len(tracemalloc._get_traces()), 0)
+        current_after_clear, _ = tracemalloc.get_traced_memory()
+        self.assertEqual(current_after_clear, 0)
+        del objs
+
+        # reset_peak: spike then reset
+        spike = self._allocate(2000)
+        _, peak1 = tracemalloc.get_traced_memory()
+        self.assertGreater(peak1, 0)
+        del spike
+
+        tracemalloc.reset_peak()
+        current2, peak2 = tracemalloc.get_traced_memory()
+        self.assertLess(peak2, peak1)
+        self.assertGreaterEqual(peak2, current2)
+
+        objs = self._allocate(2000)
+        _, peak3 = tracemalloc.get_traced_memory()
+        self.assertGreater(peak3, peak2)
+        del objs
+
+    def test_sampled_total_within_bounds(self):
+        """Sampled total is within 50–200% of exact total."""
+        tracemalloc.start(1, 0)
+        tracemalloc.clear_traces()
+        objs = self._allocate(2000)  # ~8MB
+        exact_current, _ = tracemalloc.get_traced_memory()
+        tracemalloc.stop()
+        del objs
+
+        tracemalloc.start(1, self.SMALL_INTERVAL)
+        tracemalloc.clear_traces()
+        objs = self._allocate(2000)
+        sampled_current, _ = tracemalloc.get_traced_memory()
+        tracemalloc.stop()
+        del objs
+
+        self.assertGreater(exact_current, 0)
+        self.assertGreater(sampled_current, 0)
+        ratio = sampled_current / exact_current
+        self.assertGreater(ratio, 0.5,
+            f"sampled {sampled_current} < 50% of exact {exact_current}")
+        self.assertLess(ratio, 2.0,
+            f"sampled {sampled_current} > 200% of exact {exact_current}")
+
+    def test_get_object_traceback_sampled(self):
+        """get_object_traceback returns None for unsampled objects."""
+        tracemalloc.start(1, 1024 * 1024)  # 1MB interval
+        tracemalloc.clear_traces()
+
+        # 100 * 64B = 6.4KB — most should be unsampled with a 1MB interval
+        objs = [bytearray(64) for _ in range(100)]
+        none_count = sum(
+            1 for obj in objs
+            if tracemalloc.get_object_traceback(obj) is None
+        )
+        # 6.4KB total vs 1MB interval: ~0 expected samples, so virtually
+        # all tracebacks should be None.
+        self.assertGreater(none_count, 90,
+            f"expected nearly all objects unsampled, got {none_count}/100 None")
+
+        # Large object should be sampled (not guaranteed, but don't crash)
+        big = bytearray(4 * 1024 * 1024)
+        tb = tracemalloc.get_object_traceback(big)
+        if tb is not None:
+            self.assertIsInstance(tb, tracemalloc.Traceback)
+            self.assertGreater(len(tb), 0)
+        del objs, big
+
+    @threading_helper.requires_working_threading()
+    def test_sampling_multithreaded(self):
+        """Sampling works correctly with multiple threads."""
+        import threading
+
+        results = {}
+        barrier = threading.Barrier(4)
+
+        def allocate_in_thread(name):
+            barrier.wait()
+            objs = [bytearray(4096) for _ in range(2000)]
+            results[name] = objs
+
+        tracemalloc.start(1, self.SMALL_INTERVAL)
+        tracemalloc.clear_traces()
+
+        threads = []
+        for i in range(4):
+            t = threading.Thread(target=allocate_in_thread, args=(f't{i}',))
+            threads.append(t)
+            t.start()
+        for t in threads:
+            t.join()
+
+        traces = tracemalloc._get_traces()
+        self.assertGreater(len(traces), 0)
+
+        current, _ = tracemalloc.get_traced_memory()
+        self.assertGreater(current, 0)
+
+        results.clear()
 
 
 if __name__ == "__main__":

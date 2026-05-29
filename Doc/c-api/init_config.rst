@@ -493,6 +493,10 @@ Configuration Options
      - :c:member:`tracemalloc <PyConfig.tracemalloc>`
      - ``int``
      - Read-only
+   * - ``"tracemalloc_sample_interval"``
+     - :c:member:`tracemalloc_sample_interval <PyConfig.tracemalloc_sample_interval>`
+     - ``int``
+     - Read-only
    * - ``"use_environment"``
      - :c:member:`use_environment <PyConfig.use_environment>`
      - ``bool``
@@ -1891,12 +1895,30 @@ PyConfig
 
       Enable tracemalloc?
 
-      If non-zero, call :func:`tracemalloc.start` at startup.
+      If non-zero, call :func:`tracemalloc.start` at startup with
+      :c:member:`tracemalloc` as the traceback limit and
+      :c:member:`tracemalloc_sample_interval` as the sampling interval.
 
-      Set by :option:`-X tracemalloc=N <-X>` command line option and by the
-      :envvar:`PYTHONTRACEMALLOC` environment variable.
+      Set by :option:`-X tracemalloc=NFRAME[:INTERVAL] <-X>` command line
+      option and by the :envvar:`PYTHONTRACEMALLOC` environment variable.
 
       Default: ``-1`` in Python mode, ``0`` in isolated mode.
+
+   .. c:member:: int tracemalloc_sample_interval
+
+      Set the :mod:`tracemalloc` sampling interval in bytes at startup.
+
+      If ``0``, every allocation is traced.  If greater than ``0``,
+      allocations are sampled using a Poisson process with a mean
+      inter-arrival of :c:member:`tracemalloc_sample_interval` bytes.
+
+      Only used when :c:member:`tracemalloc` is non-zero.
+
+      Set by the ``INTERVAL`` part of
+      :option:`-X tracemalloc=NFRAME:INTERVAL <-X>` command line option and
+      by the :envvar:`PYTHONTRACEMALLOC` environment variable.
+
+      Default: ``0``.
 
    .. c:member:: int perf_profiling
 

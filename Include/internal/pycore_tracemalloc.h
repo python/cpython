@@ -30,6 +30,10 @@ struct _PyTraceMalloc_Config {
     /* limit of the number of frames in a traceback, 1 by default.
        Variable protected by the GIL. */
     int max_nframe;
+
+    /* Poisson sampling interval in bytes. 0 means trace every allocation.
+       Variable protected by the GIL. */
+    size_t sample_interval;
 };
 
 
@@ -113,6 +117,7 @@ struct _tracemalloc_runtime_state {
             .initialized = TRACEMALLOC_NOT_INITIALIZED, \
             .tracing = 0, \
             .max_nframe = 1, \
+            .sample_interval = 0, \
         }, \
         .reentrant_key = Py_tss_NEEDS_INIT, \
     }
@@ -148,7 +153,7 @@ extern PyObject* _PyTraceMalloc_GetObjectTraceback(PyObject *obj);
 extern PyStatus _PyTraceMalloc_Init(void);
 
 /* Start tracemalloc */
-extern int _PyTraceMalloc_Start(int max_nframe);
+extern int _PyTraceMalloc_Start(int max_nframe, size_t sample_interval);
 
 /* Stop tracemalloc */
 extern void _PyTraceMalloc_Stop(void);

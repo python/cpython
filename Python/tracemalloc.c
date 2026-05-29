@@ -7,9 +7,12 @@
 #include "pycore_lock.h"          // PyMutex_LockFlags()
 #include "pycore_object.h"        // _PyType_PreHeaderSize()
 #include "pycore_pymem.h"         // _Py_tracemalloc_config
+#include "pycore_pystate.h"       // _Py_FOR_EACH_TSTATE_BEGIN
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_traceback.h"     // _Py_DumpASCII()
+#include "pycore_tstate.h"        // _PyThreadStateImpl
 
+#include <math.h>                 // log()
 #include <stdlib.h>               // malloc()
 
 #define tracemalloc_config _PyRuntime.tracemalloc.config
@@ -56,8 +59,13 @@ static const int MAX_NFRAME = UINT16_MAX;
 
 /* Trace of a memory block */
 typedef struct {
-    /* Size of the memory block in bytes */
+    /* Effective size in bytes.  In exact mode this equals real_size.
+       In sampled mode this is an upscaled estimate of the bytes this trace
+       represents. */
     size_t size;
+
+    /* Actual requested allocation size. */
+    size_t real_size;
 
     /* Traceback where the memory block was allocated */
     traceback_t *traceback;
@@ -122,6 +130,278 @@ set_reentrant(int reentrant)
         assert(get_reentrant());
         PyThread_tss_set(&tracemalloc_reentrant_key, NULL);
     }
+}
+
+
+/* Alias for the struct defined in pycore_tstate.h */
+typedef struct _tracemalloc_sampling_state tracemalloc_sampling_state_t;
+
+/* SplitMix64 PRNG, based on Steele, Lea, and Flood, "Fast splittable
+   pseudorandom number generators" (OOPSLA 2014).  See also Vigna's
+   public domain reference implementation:
+   https://prng.di.unimi.it/splitmix64.c
+
+   Fast, small-state generator suitable for randomized sampling.  This is
+   not intended to be cryptographically secure. */
+static uint64_t
+splitmix64_next(uint64_t *state)
+{
+    uint64_t z = (*state += UINT64_C(0x9e3779b97f4a7c15));
+    z = (z ^ (z >> 30)) * UINT64_C(0xbf58476d1ce4e5b9);
+    z = (z ^ (z >> 27)) * UINT64_C(0x94d049bb133111eb);
+    return z ^ (z >> 31);
+}
+
+static size_t
+new_sample_threshold(size_t interval, uint64_t *prng_state)
+{
+    /* Draw from Exponential(mean=interval) via inverse transform sampling:
+       https://en.wikipedia.org/wiki/Inverse_transform_sampling
+       Map the top 52 bits of the PRNG output into (0, 1).  Use 52 bits
+       because 2**52 + 1 is exactly representable as a double; using 53 bits
+       can round the maximum value to exactly 1.0. */
+    uint64_t r = splitmix64_next(prng_state);
+    double u = ((double)(r >> 12) + 1.0) *
+               (1.0 / ((double)(UINT64_C(1) << 52) + 1.0));
+    double threshold_d = -log(u) * (double)interval;
+    if (threshold_d >= (double)SIZE_MAX) {
+        return SIZE_MAX;
+    }
+    size_t threshold = (size_t)threshold_d;
+    return threshold >= 1 ? threshold : 1;
+}
+
+/* Horvitz-Thompson weight for a sampled allocation: the allocation's true
+   size divided by its sampling probability p = 1 - exp(-size/interval).
+
+   This makes the per-trace size an unbiased estimator of the bytes the
+   sample represents, for any allocation size relative to the interval.
+   Crediting the bytes accumulated since the last sample instead would
+   over-attribute allocations that are comparable to or larger than the
+   interval (they sweep up the small allocations pending in the counter)
+   and correspondingly under-attribute the small-allocation tail.
+
+   expm1() keeps p accurate when size << interval, where 1 - exp(-x) would
+   lose nearly all its significant digits to cancellation.  The weight is
+   always at least the real size and is clamped to SIZE_MAX. */
+static size_t
+sample_weight(size_t byte_size, size_t interval)
+{
+    if (byte_size == 0) {
+        return 0;
+    }
+    double p = -expm1(-(double)byte_size / (double)interval);
+    if (p <= 0.0) {
+        /* Defensive: p is mathematically in (0, 1) for byte_size > 0. */
+        return byte_size;
+    }
+    double weight = (double)byte_size / p;
+    if (weight >= (double)SIZE_MAX) {
+        return SIZE_MAX;
+    }
+    size_t w = (size_t)weight;
+    return w >= byte_size ? w : byte_size;
+}
+
+
+static uint64_t
+new_sampling_seed(void)
+{
+    /* Diversify sampling seeds across threads and tracemalloc restarts.
+       This counter is intentionally not reset between tracing sessions.
+       Return an initial SplitMix64 state; splitmix64_next() performs the
+       avalanche before producing each random value. */
+    static uint64_t sampling_seed_counter;
+    uint64_t seq = _Py_atomic_add_uint64(&sampling_seed_counter, 1) + 1;
+    uint64_t seed = (uint64_t)PyThread_get_thread_ident() ^ seq;
+    return seed ? seed : 1;
+}
+
+
+/* Seed the PRNG and draw the first threshold.  Called on a thread's first
+   sampled allocation (prng_state == 0 after zero-init or explicit reset). */
+static void
+init_sampling_state(tracemalloc_sampling_state_t *state, size_t interval)
+{
+    state->prng_state = new_sampling_seed();
+    state->threshold = new_sample_threshold(interval, &state->prng_state);
+    state->bytes_since_last_sample = 0;
+}
+
+
+/* ---- Global sampling state for non-Python threads -------------------
+   Rare path for allocator calls from threads without a PyThreadState.
+   Counter is stored in the high 32 bits and threshold in the low 32 bits.
+   Thresholds are clamped to 32 bits; counters are reset whenever a sample
+   is claimed. */
+static uint64_t g_sampling_state;        /* hi32=counter, lo32=threshold */
+static uint64_t g_sampling_prng;         /* 0 = needs seed */
+
+#define GS_COUNTER(s)    ((uint32_t)((s) >> 32))
+#define GS_THRESHOLD(s)  ((uint32_t)(s))
+#define GS_PACK(thresh, counter) \
+    (((uint64_t)(uint32_t)(counter) << 32) | (uint32_t)(thresh))
+
+
+static uint32_t
+saturate_threshold_to_uint32(size_t threshold)
+{
+    return threshold > UINT32_MAX ? UINT32_MAX : (uint32_t)threshold;
+}
+
+
+static uint64_t
+init_global_sampling(size_t interval)
+{
+    /* Use g_sampling_prng as an initialization guard so concurrent
+       initializers don't repeatedly reset g_sampling_state. */
+    uint64_t seed = new_sampling_seed();
+    uint32_t thresh = saturate_threshold_to_uint32(
+        new_sample_threshold(interval, &seed));
+
+    uint64_t expected = 0;
+    if (!_Py_atomic_compare_exchange_uint64(
+            &g_sampling_prng, &expected, seed)) {
+        return _Py_atomic_load_uint64_relaxed(&g_sampling_state);
+    }
+
+    uint64_t state = GS_PACK(thresh, 0);
+    _Py_atomic_store_uint64_relaxed(&g_sampling_state, state);
+    return state;
+}
+
+
+/* Advance the global PRNG and return a new threshold.  This is intentionally
+   lossy under races: this path is statistical and only used by non-Python
+   threads, so avoiding another CAS loop is preferable to preserving every PRNG
+   transition. */
+static uint32_t
+new_global_threshold(size_t interval)
+{
+    uint64_t prng = _Py_atomic_load_uint64_relaxed(&g_sampling_prng);
+    if (prng == 0) {
+        prng = new_sampling_seed();
+    }
+    uint32_t threshold = saturate_threshold_to_uint32(
+        new_sample_threshold(interval, &prng));
+    _Py_atomic_store_uint64_relaxed(&g_sampling_prng, prng);
+    return threshold;
+}
+
+
+Py_NO_INLINE static bool
+should_sample_slow(size_t byte_size, size_t interval,
+                   _PyThreadStateImpl *tstate, size_t *effective_size)
+{
+    assert(interval != 0);
+
+    if (tstate != NULL) {
+        /* Per-thread path via _PyThreadStateImpl. */
+        tracemalloc_sampling_state_t *s = &tstate->tracemalloc_sampling;
+        if (s->prng_state == 0) {
+            init_sampling_state(s, interval);
+        }
+
+        assert(s->bytes_since_last_sample < s->threshold);
+        size_t remaining = s->threshold - s->bytes_since_last_sample;
+        if (byte_size < remaining) {
+            s->bytes_since_last_sample += byte_size;
+            return false;
+        }
+
+        *effective_size = sample_weight(byte_size, interval);
+        s->bytes_since_last_sample = 0;
+        s->threshold = new_sample_threshold(interval, &s->prng_state);
+        return true;
+    }
+
+    /* Non-Python thread (no PyThreadState): use a global sampling counter.
+       The common Python-thread path keeps sampling state in PyThreadState;
+       this path only handles rare raw allocator calls from threads
+       unknown to Python.
+
+       The packed state stores a 32-bit counter and 32-bit threshold.  We do
+       the arithmetic in 64 bits, and only store a counter value when it is
+       below the 32-bit threshold, so truncation in GS_PACK() is safe.
+
+       The state transition is committed through one CAS site.  On CAS
+       failure, the compare-exchange updates "state" with the current value,
+       so the next loop iteration recomputes from the latest state.
+
+       This loop is lock-free but not wait-free: a failed CAS means another
+       thread updated the global sampling state, so the system as a whole makes
+       progress, but an individual thread can theoretically retry under
+       contention.  No locks or GIL are taken, so this cannot deadlock with
+       allocator or tracemalloc locks. */
+    uint64_t state = _Py_atomic_load_uint64_relaxed(&g_sampling_state);
+    uint64_t total;
+    bool sampled;
+    uint64_t new_state;
+    do {
+        uint64_t counter = GS_COUNTER(state);
+        uint64_t thresh = GS_THRESHOLD(state);
+        if (thresh == 0) {
+            state = init_global_sampling(interval);
+            counter = GS_COUNTER(state);
+            thresh = GS_THRESHOLD(state);
+            if (thresh == 0) {
+                /* Another thread won initialization but has not published
+                   g_sampling_state yet.  Skip tracing this allocation rather
+                   than spin in an allocator hook. */
+                return false;
+            }
+        }
+
+        total = counter + byte_size;
+        sampled = (total >= thresh);
+        if (sampled) {
+            uint32_t new_thresh = new_global_threshold(interval);
+            new_state = GS_PACK(new_thresh, 0);
+        }
+        else {
+            new_state = GS_PACK(thresh, total);
+        }
+    } while (!_Py_atomic_compare_exchange_uint64(
+                 &g_sampling_state, &state, new_state));
+
+    if (!sampled) {
+        return false;
+    }
+    *effective_size = sample_weight(byte_size, interval);
+    return true;
+}
+
+
+/* Sampling decision.  Returns true if this allocation should be traced,
+   false if it should be skipped.  When returning true,
+   *effective_size is set: to byte_size in exact mode (interval == 0),
+   or to the Horvitz-Thompson weight (see sample_weight) in sampled mode. */
+static inline Py_ALWAYS_INLINE bool
+should_sample(size_t byte_size, size_t *effective_size)
+{
+    size_t interval = tracemalloc_config.sample_interval;
+    if (interval == 0) {
+        *effective_size = byte_size;
+        return true;
+    }
+
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_Py_tss_tstate;
+    if (tstate != NULL) {
+        tracemalloc_sampling_state_t *s = &tstate->tracemalloc_sampling;
+        if (s->prng_state != 0) {
+            /* Common sampled path: this Python thread already has sampling
+               state, and this allocation does not cross the threshold.
+               Use subtraction rather than addition to avoid overflow. */
+            assert(s->bytes_since_last_sample < s->threshold);
+            size_t remaining = s->threshold - s->bytes_since_last_sample;
+            if (byte_size < remaining) {
+                s->bytes_since_last_sample += byte_size;
+                return false;
+            }
+        }
+    }
+
+    return should_sample_slow(byte_size, interval, tstate, effective_size);
 }
 
 
@@ -438,7 +718,7 @@ tracemalloc_remove_trace_unlocked(unsigned int domain, uintptr_t ptr)
 
 static int
 tracemalloc_add_trace_unlocked(unsigned int domain, uintptr_t ptr,
-                               size_t size)
+                               size_t size, size_t real_size)
 {
     assert(tracemalloc_config.tracing);
 
@@ -467,6 +747,7 @@ tracemalloc_add_trace_unlocked(unsigned int domain, uintptr_t ptr,
         tracemalloc_traced_memory -= trace->size;
 
         trace->size = size;
+        trace->real_size = real_size;
         trace->traceback = traceback;
     }
     else {
@@ -475,6 +756,7 @@ tracemalloc_add_trace_unlocked(unsigned int domain, uintptr_t ptr,
             return -1;
         }
         trace->size = size;
+        trace->real_size = real_size;
         trace->traceback = traceback;
 
         int res = _Py_hashtable_set(traces, TO_PTR(ptr), trace);
@@ -492,8 +774,8 @@ tracemalloc_add_trace_unlocked(unsigned int domain, uintptr_t ptr,
     return 0;
 }
 
-#define ADD_TRACE(ptr, size) \
-    tracemalloc_add_trace_unlocked(DEFAULT_DOMAIN, (uintptr_t)(ptr), size)
+#define ADD_TRACE(ptr, size, real_size) \
+    tracemalloc_add_trace_unlocked(DEFAULT_DOMAIN, (uintptr_t)(ptr), size, real_size)
 
 
 static void*
@@ -525,10 +807,14 @@ tracemalloc_alloc(int need_gil, int use_calloc,
         ptr = alloc->malloc(alloc->ctx, nelem * elsize);
     }
 
-    if (ptr == NULL) {
+    if (ptr == NULL || reentrant) {
         goto done;
     }
-    if (reentrant) {
+
+    size_t byte_size = nelem * elsize;
+    size_t effective_size;
+
+    if (!should_sample(byte_size, &effective_size)) {
         goto done;
     }
 
@@ -539,7 +825,7 @@ tracemalloc_alloc(int need_gil, int use_calloc,
     TABLES_LOCK();
 
     if (tracemalloc_config.tracing) {
-        if (ADD_TRACE(ptr, nelem * elsize) < 0) {
+        if (ADD_TRACE(ptr, effective_size, byte_size) < 0) {
             // Failed to allocate a trace for the new memory block
             alloc->free(alloc->ctx, ptr);
             ptr = NULL;
@@ -582,6 +868,19 @@ tracemalloc_realloc(int need_gil, void *ctx, void *ptr, size_t new_size)
         goto done;
     }
 
+    // Sampling decision: all realloc cases (new allocation, relocation,
+    // in-place resize) feed the sampling counter uniformly.  Whether the
+    // allocator resizes in place is an implementation detail that should
+    // not affect sampling.
+    size_t effective_size;
+    bool sampled = should_sample(new_size, &effective_size);
+
+    // New allocation that wasn't sampled — nothing to trace
+    // and no old trace to clean up.  Skip without locking.
+    if (ptr == NULL && !sampled) {
+        goto done;
+    }
+
     PyGILState_STATE gil_state;
     if (need_gil) {
         gil_state = PyGILState_Ensure();
@@ -593,35 +892,37 @@ tracemalloc_realloc(int need_gil, void *ctx, void *ptr, size_t new_size)
         goto unlock;
     }
 
-    if (ptr != NULL) {
-        // An existing memory block has been resized
-
-        // tracemalloc_add_trace_unlocked() updates the trace if there is
-        // already a trace at address ptr2.
-        if (ptr2 != ptr) {
-            REMOVE_TRACE(ptr);
-        }
-
-        if (ADD_TRACE(ptr2, new_size) < 0) {
-            // Memory allocation failed. The error cannot be reported to the
-            // caller, because realloc() already have shrunk the memory block
-            // and so removed bytes.
-            //
-            // This case is very unlikely: a hash entry has just been released,
-            // so the hash table should have at least one free entry.
-            //
-            // The GIL and the table lock ensures that only one thread is
-            // allocating memory.
-            Py_FatalError("tracemalloc_realloc() failed to allocate a trace");
-        }
-    }
-    else {
-        // New allocation
-
-        if (ADD_TRACE(ptr2, new_size) < 0) {
+    if (ptr == NULL) {
+        // New allocation (sampled, since we skipped unsampled above)
+        if (ADD_TRACE(ptr2, effective_size, new_size) < 0) {
             // Failed to allocate a trace for the new memory block
             alloc->free(alloc->ctx, ptr2);
             ptr2 = NULL;
+        }
+    }
+    else if (tracemalloc_config.sample_interval > 0) {
+        // Resize in sampling mode — always remove old trace,
+        // add new trace only if this realloc was sampled.
+        REMOVE_TRACE(ptr);
+        if (sampled) {
+            (void)ADD_TRACE(ptr2, effective_size, new_size);
+        }
+    }
+    else {
+        // Resize in exact mode — update trace in place.
+        // TODO: Consider whether exact mode resizes should use the same
+        // remove+add strategy as sampling mode for consistency.
+        if (ptr2 != ptr) {
+            REMOVE_TRACE(ptr);
+        }
+        if (ADD_TRACE(ptr2, new_size, new_size) < 0) {
+            // Memory allocation failed. The error cannot be reported
+            // to the caller, because realloc() may have already shrunk
+            // the memory block.  This case is very unlikely: a hash
+            // entry has just been released, so the hash table should
+            // have at least one free entry.
+            Py_FatalError("tracemalloc_realloc() failed to allocate "
+                          "a trace");
         }
     }
 
@@ -803,7 +1104,7 @@ tracemalloc_deinit(void)
 
 
 int
-_PyTraceMalloc_Start(int max_nframe)
+_PyTraceMalloc_Start(int max_nframe, size_t sample_interval)
 {
     if (max_nframe < 1 || max_nframe > MAX_NFRAME) {
         PyErr_Format(PyExc_ValueError,
@@ -818,6 +1119,23 @@ _PyTraceMalloc_Start(int max_nframe)
     }
 
     tracemalloc_config.max_nframe = max_nframe;
+    tracemalloc_config.sample_interval = sample_interval;
+
+    /* Reset all threads' sampling state so a previous session's stale
+       counters don't carry over.  prng_state=0 triggers re-initialization
+       on the next sampled allocation. */
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp != NULL) {
+        _Py_FOR_EACH_TSTATE_BEGIN(interp, t) {
+            memset(&((_PyThreadStateImpl *)t)->tracemalloc_sampling, 0,
+                   sizeof(tracemalloc_sampling_state_t));
+        }
+        _Py_FOR_EACH_TSTATE_END(interp);
+    }
+
+    /* Reset global sampling state for non-Python threads. */
+    _Py_atomic_store_uint64_relaxed(&g_sampling_state, 0);
+    _Py_atomic_store_uint64_relaxed(&g_sampling_prng, 0);
 
     /* allocate a buffer to store a new traceback */
     size_t size = TRACEBACK_SIZE(max_nframe);
@@ -965,7 +1283,7 @@ trace_to_pyobject(unsigned int domain, const trace_t *trace,
 {
     assert(get_reentrant());
 
-    PyObject *trace_obj = PyTuple_New(4);
+    PyObject *trace_obj = PyTuple_New(5);
     if (trace_obj == NULL) {
         return NULL;
     }
@@ -997,6 +1315,13 @@ trace_to_pyobject(unsigned int domain, const trace_t *trace,
         return NULL;
     }
     PyTuple_SET_ITEM(trace_obj, 3, obj);
+
+    obj = PyLong_FromSize_t(trace->real_size);
+    if (obj == NULL) {
+        Py_DECREF(trace_obj);
+        return NULL;
+    }
+    PyTuple_SET_ITEM(trace_obj, 4, obj);
 
     return trace_obj;
 }
@@ -1226,7 +1551,8 @@ PyTraceMalloc_Track(unsigned int domain, uintptr_t ptr,
 
     int result;
     if (tracemalloc_config.tracing) {
-        result = tracemalloc_add_trace_unlocked(domain, ptr, size);
+        // External registrations are always exact: size == real_size.
+        result = tracemalloc_add_trace_unlocked(domain, ptr, size, size);
     }
     else {
         /* tracemalloc is not tracing: do nothing */

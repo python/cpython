@@ -181,6 +181,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(stdio_encoding, WSTR, READ_ONLY, NO_SYS),
     SPEC(stdio_errors, WSTR, READ_ONLY, NO_SYS),
     SPEC(tracemalloc, UINT, READ_ONLY, NO_SYS),
+    SPEC(tracemalloc_sample_interval, UINT, READ_ONLY, NO_SYS),
     SPEC(use_frozen_modules, BOOL, READ_ONLY, NO_SYS),
     SPEC(use_hash_seed, BOOL, READ_ONLY, NO_SYS),
 #ifdef __APPLE__
@@ -483,8 +484,9 @@ static const char usage_xoptions[] =
 "#s{-X} #L{tlbc}#b{=[0|1]}: enable (#B{1}) or disable (#B{0}) thread-local bytecode. Also\n"
 "         #e{PYTHON_TLBC}\n"
 #endif
-"#s{-X} #L{tracemalloc}#b{[=N]}: trace Python memory allocations; N sets a traceback limit\n"
-"         of #B{N} frames (default: #B{1}); also #e{PYTHONTRACEMALLOC}#B{=N}\n"
+"#s{-X} #L{tracemalloc}#b{[=N[:INTERVAL]]}: trace Python memory allocations; N sets a\n"
+"         traceback limit of #B{N} frames (default: #B{1}); #B{INTERVAL} enables Poisson\n"
+"         sampling with mean #B{INTERVAL} bytes; also #e{PYTHONTRACEMALLOC}\n"
 "#s{-X} #L{utf8}#b{[=0|1]}: enable (#B{1}) or disable (#B{0}) UTF-8 mode; also #e{PYTHONUTF8}\n"
 "#s{-X} #L{warn_default_encoding}: enable opt-in EncodingWarning for 'encoding=None';\n"
 "         also #e{PYTHONWARNDEFAULTENCODING}\n"
@@ -2255,14 +2257,35 @@ config_init_tracemalloc(PyConfig *config)
 
     const char *env = config_get_env(config, "PYTHONTRACEMALLOC");
     if (env) {
-        if (!_Py_str_to_int(env, &nframe)) {
+        const char *colon = strchr(env, ':');
+        if (colon) {
+            /* NFRAME:INTERVAL */
+            char buf[32];
+            size_t nlen = (size_t)(colon - env);
+            if (nlen >= sizeof(buf)) {
+                valid = 0;
+            }
+            else {
+                memcpy(buf, env, nlen);
+                buf[nlen] = '\0';
+                int interval;
+                valid = !_Py_str_to_int(buf, &nframe) && nframe >= 0
+                     && !_Py_str_to_int(colon + 1, &interval) && interval >= 0;
+                if (valid) {
+                    config->tracemalloc_sample_interval = interval;
+                }
+            }
+        }
+        else if (!_Py_str_to_int(env, &nframe)) {
             valid = (nframe >= 0);
         }
         else {
             valid = 0;
         }
         if (!valid) {
-            return _PyStatus_ERR("PYTHONTRACEMALLOC: invalid number of frames");
+            return _PyStatus_ERR(
+                "PYTHONTRACEMALLOC: invalid value, "
+                "expected NFRAME or NFRAME:INTERVAL");
         }
         config->tracemalloc = nframe;
     }
@@ -2271,15 +2294,37 @@ config_init_tracemalloc(PyConfig *config)
     if (xoption) {
         const wchar_t *sep = wcschr(xoption, L'=');
         if (sep) {
-            if (!config_wstr_to_int(sep + 1, &nframe)) {
+            const wchar_t *val = sep + 1;
+            const wchar_t *colon = wcschr(val, L':');
+            if (colon) {
+                /* -X tracemalloc=NFRAME:INTERVAL */
+                wchar_t buf[32];
+                size_t nlen = (size_t)(colon - val);
+                if (nlen >= Py_ARRAY_LENGTH(buf)) {
+                    valid = 0;
+                }
+                else {
+                    wmemcpy(buf, val, nlen);
+                    buf[nlen] = L'\0';
+                    int interval;
+                    valid = !config_wstr_to_int(buf, &nframe) && nframe >= 0
+                         && !config_wstr_to_int(colon + 1, &interval)
+                         && interval >= 0;
+                    if (valid) {
+                        config->tracemalloc_sample_interval = interval;
+                    }
+                }
+            }
+            else if (!config_wstr_to_int(val, &nframe)) {
                 valid = (nframe >= 0);
             }
             else {
                 valid = 0;
             }
             if (!valid) {
-                return _PyStatus_ERR("-X tracemalloc=NFRAME: "
-                                     "invalid number of frames");
+                return _PyStatus_ERR(
+                    "-X tracemalloc=NFRAME[:INTERVAL]: "
+                    "invalid number of frames or interval");
             }
         }
         else {
