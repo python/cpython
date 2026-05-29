@@ -284,7 +284,8 @@ and replace them with the following:
        return my_slot_array;
    }
 
-Leave out any fields that were missing, and substitute your own values.
+Leave out any fields that were missing (excexpt the new :c:macro:`Py_mod_abi`),
+and substitute your own values.
 
 See :c:type:`PySlot` and :c:ref:`export hook <extension-export-hook>`
 documentation for details on this API.
