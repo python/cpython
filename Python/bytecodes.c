@@ -634,51 +634,12 @@ dummy_func(
 
         op(_GUARD_NOS_INT, (left, unused -- left, unused)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-            EXIT_IF(!_PyLong_CheckExactAndCompact(left_o));
+            EXIT_IF(!PyLong_CheckExact(left_o));
         }
 
         op(_GUARD_TOS_INT, (value -- value)) {
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            EXIT_IF(!_PyLong_CheckExactAndCompact(value_o));
-        }
-
-        /* Wide guards: accept exact ints in the full int64 range. */
-        op(_GUARD_NOS_INT_WIDE, (left, unused -- left, unused)) {
-            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-            EXIT_IF(!_PyLong_CheckExactAndFitsInt64(left_o));
-        }
-
-        op(_GUARD_TOS_INT_WIDE, (value -- value)) {
-            PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            EXIT_IF(!_PyLong_CheckExactAndFitsInt64(value_o));
-        }
-
-        op(_GUARD_NOS_OVERFLOWED, (left, unused -- left, unused)) {
-            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-            assert(Py_TYPE(left_o) == &PyLong_Type);
-            int ok = _PyLong_FitsInt64((PyLongObject *)left_o);
-            EXIT_IF(!ok);
-        }
-
-        op(_GUARD_TOS_OVERFLOWED, (value -- value)) {
-            PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            assert(Py_TYPE(value_o) == &PyLong_Type);
-            int ok = _PyLong_FitsInt64((PyLongObject *)value_o);
-            EXIT_IF(!ok);
-        }
-
-        /* Tier-2-only: type is already known to be PyLong_Type; just verify
-         * compactness.  Cheaper than _GUARD_TOS_INT (skips the type check). */
-        tier2 op(_GUARD_TOS_COMPACT, (value -- value)) {
-            PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            assert(Py_TYPE(value_o) == &PyLong_Type);
-            EXIT_IF(!_PyLong_IsCompact((PyLongObject *)value_o));
-        }
-
-        tier2 op(_GUARD_NOS_COMPACT, (left, unused -- left, unused)) {
-            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-            assert(Py_TYPE(left_o) == &PyLong_Type);
-            EXIT_IF(!_PyLong_IsCompact((PyLongObject *)left_o));
+            EXIT_IF(!PyLong_CheckExact(value_o));
         }
 
         pure op(_BINARY_OP_MULTIPLY_INT, (left, right -- res, l, r)) {
@@ -686,7 +647,6 @@ dummy_func(
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
             assert(PyLong_CheckExact(left_o));
             assert(PyLong_CheckExact(right_o));
-            assert(_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o));
 
             STAT_INC(BINARY_OP, hit);
             res = _PyCompactLong_Multiply((PyLongObject *)left_o, (PyLongObject *)right_o);
@@ -694,6 +654,7 @@ dummy_func(
             l = left;
             r = right;
             INPUTS_DEAD();
+            ERROR_IF(PyStackRef_IsError(res));
         }
 
         pure op(_BINARY_OP_ADD_INT, (left, right -- res, l, r)) {
@@ -701,7 +662,6 @@ dummy_func(
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
             assert(PyLong_CheckExact(left_o));
             assert(PyLong_CheckExact(right_o));
-            assert(_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o));
 
             STAT_INC(BINARY_OP, hit);
             res = _PyCompactLong_Add((PyLongObject *)left_o, (PyLongObject *)right_o);
@@ -709,6 +669,7 @@ dummy_func(
             l = left;
             r = right;
             INPUTS_DEAD();
+            ERROR_IF(PyStackRef_IsError(res));
         }
 
         pure op(_BINARY_OP_SUBTRACT_INT, (left, right -- res, l, r)) {
@@ -716,55 +677,9 @@ dummy_func(
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
             assert(PyLong_CheckExact(left_o));
             assert(PyLong_CheckExact(right_o));
-            assert(_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o));
 
             STAT_INC(BINARY_OP, hit);
             res = _PyCompactLong_Subtract((PyLongObject *)left_o, (PyLongObject *)right_o);
-            EXIT_IF(PyStackRef_IsNull(res));
-            l = left;
-            r = right;
-            INPUTS_DEAD();
-        }
-
-        /* Wide ops: handle exact ints in the full int64 range. */
-        pure op(_BINARY_OP_ADD_INT_WIDE, (left, right -- res, l, r)) {
-            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
-            assert(PyLong_CheckExact(left_o));
-            assert(PyLong_CheckExact(right_o));
-
-            STAT_INC(BINARY_OP, hit);
-            res = _PyCompactLong_AddWide((PyLongObject *)left_o, (PyLongObject *)right_o);
-            EXIT_IF(PyStackRef_IsNull(res));
-            l = left;
-            r = right;
-            INPUTS_DEAD();
-            ERROR_IF(PyStackRef_IsError(res));
-        }
-
-        pure op(_BINARY_OP_SUBTRACT_INT_WIDE, (left, right -- res, l, r)) {
-            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
-            assert(PyLong_CheckExact(left_o));
-            assert(PyLong_CheckExact(right_o));
-
-            STAT_INC(BINARY_OP, hit);
-            res = _PyCompactLong_SubtractWide((PyLongObject *)left_o, (PyLongObject *)right_o);
-            EXIT_IF(PyStackRef_IsNull(res));
-            l = left;
-            r = right;
-            INPUTS_DEAD();
-            ERROR_IF(PyStackRef_IsError(res));
-        }
-
-        pure op(_BINARY_OP_MULTIPLY_INT_WIDE, (left, right -- res, l, r)) {
-            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
-            assert(PyLong_CheckExact(left_o));
-            assert(PyLong_CheckExact(right_o));
-
-            STAT_INC(BINARY_OP, hit);
-            res = _PyCompactLong_MultiplyWide((PyLongObject *)left_o, (PyLongObject *)right_o);
             EXIT_IF(PyStackRef_IsNull(res));
             l = left;
             r = right;
@@ -781,11 +696,9 @@ dummy_func(
         macro(BINARY_OP_SUBTRACT_INT) =
             _GUARD_TOS_INT + _GUARD_NOS_INT + unused/5 + _BINARY_OP_SUBTRACT_INT + _POP_TOP_INT + _POP_TOP_INT;
 
-
-
-        // Merged inplace int ops: try compact in-place mutation; fall back
-        // to _PyCompactLong_{Add,Subtract,Multiply} which handle both compact
-        // and wide ints.  Tier 2 only.
+        // Inplace int ops: mutate the uniquely-referenced operand
+        // when possible. The op handles decref of TARGET internally so
+        // the following _POP_TOP_INT becomes _POP_TOP_NOP. Tier 2 only.
         tier2 op(_BINARY_OP_ADD_INT_INPLACE, (left, right -- res, l, r)) {
             INT_INPLACE_OP(left, right, left, +, _PyCompactLong_Add);
             EXIT_IF(PyStackRef_IsNull(_int_inplace_res));
@@ -843,6 +756,7 @@ dummy_func(
             l = left;
             r = right;
             INPUTS_DEAD();
+            ERROR_IF(PyStackRef_IsError(_int_inplace_res));
         }
 
         op(_GUARD_NOS_FLOAT, (left, unused -- left, unused)) {

@@ -206,34 +206,23 @@ dummy_func(void) {
         res = PyJitRef_Borrow(sym_new_null(ctx));
     }
 
-    /* Tier-2 merged guard: accept any exact int.  When the type is already
-     * known to be PyLong_Type the cheaper _OVERFLOWED guard (which skips the
-     * type check) can be used.  When compactness is known the guard can be
-     * eliminated entirely. */
+    /* Compact guard: value must be a compact int.  When the type is already
+     * known to be PyLong_Type, use the cheaper _GUARD_TOS_COMPACT which skips
+     * the redundant type check. */
+    /* Merged guard: accept any exact int.  When the type is already known to
+     * be PyLong_Type the guard can be eliminated. */
     op(_GUARD_TOS_INT, (value -- value)) {
-        if (sym_is_compact_int(value)) {
+        if (sym_matches_type(value, &PyLong_Type)) {
             ADD_OP(_NOP, 0, 0);
         }
-        else if (sym_get_type(value) == &PyLong_Type) {
-            ADD_OP(_GUARD_TOS_OVERFLOWED, 0, 0);
-            sym_set_type(value, &PyLong_Type);
-        }
-        else {
-            sym_set_type(value, &PyLong_Type);
-        }
+        sym_set_type(value, &PyLong_Type);
     }
 
     op(_GUARD_NOS_INT, (left, unused -- left, unused)) {
-        if (sym_is_compact_int(left)) {
+        if (sym_matches_type(left, &PyLong_Type)) {
             ADD_OP(_NOP, 0, 0);
         }
-        else if (sym_get_type(left) == &PyLong_Type) {
-            ADD_OP(_GUARD_NOS_OVERFLOWED, 0, 0);
-            sym_set_type(left, &PyLong_Type);
-        }
-        else {
-            sym_set_type(left, &PyLong_Type);
-        }
+        sym_set_type(left, &PyLong_Type);
     }
 
     op(_CHECK_ATTR_CLASS, (type_version/2, owner -- owner)) {
