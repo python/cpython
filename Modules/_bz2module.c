@@ -108,6 +108,7 @@ typedef struct {
 typedef struct {
     PyObject_HEAD
     bz_stream bzs;
+    int bzerror;
     char eof;           /* Py_T_BOOL expects a char */
     PyObject *unused_data;
     char needs_input;
@@ -435,8 +436,11 @@ decompress_buf(BZ2Decompressor *d, Py_ssize_t max_length)
 
         d->bzs_avail_in_real += bzs->avail_in;
 
-        if (catch_bz2_error(bzret))
+        if (catch_bz2_error(bzret)) {
+            d->bzerror = bzret;
+            FT_ATOMIC_STORE_CHAR_RELAXED(d->needs_input, 0);
             goto error;
+        }
         if (bzret == BZ_STREAM_END) {
             FT_ATOMIC_STORE_CHAR_RELAXED(d->eof, 1);
             break;
@@ -607,10 +611,15 @@ _bz2_BZ2Decompressor_decompress_impl(BZ2Decompressor *self, Py_buffer *data,
     PyObject *result = NULL;
 
     PyMutex_Lock(&self->mutex);
-    if (self->eof)
+    if (self->eof) {
         PyErr_SetString(PyExc_EOFError, "End of stream already reached");
-    else
+    }
+    else if (self->bzerror) {
+        catch_bz2_error(self->bzerror);
+    }
+    else {
         result = decompress(self, data->buf, data->len, max_length);
+    }
     PyMutex_Unlock(&self->mutex);
     return result;
 }
