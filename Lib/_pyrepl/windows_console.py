@@ -696,7 +696,7 @@ class WindowsConsole(Console):
             timeout = INFINITE
         else:
             timeout = int(timeout)
-        ret = WaitForSingleObject(InHandle, timeout)
+        ret = _winapi.WaitForSingleObject(InHandle, timeout)
         if ret == WAIT_FAILED:
             raise WinError(get_last_error())
         elif ret == WAIT_TIMEOUT:
@@ -800,8 +800,6 @@ if sys.platform == "win32":
 
     _KERNEL32 = WinDLL("kernel32", use_last_error=True)
 
-    GetStdHandle = _winapi.GetStdHandle
-
     GetConsoleScreenBufferInfo = _KERNEL32.GetConsoleScreenBufferInfo
     GetConsoleScreenBufferInfo.argtypes = [
         HANDLE,
@@ -836,22 +834,18 @@ if sys.platform == "win32":
     FlushConsoleInputBuffer.argtypes = [HANDLE]
     FlushConsoleInputBuffer.restype = BOOL
 
-    WaitForSingleObject = _winapi.WaitForSingleObject
-
-    OutHandle = GetStdHandle(STD_OUTPUT_HANDLE)
-    InHandle = GetStdHandle(STD_INPUT_HANDLE)
+    OutHandle = _winapi.GetStdHandle(STD_OUTPUT_HANDLE)
+    InHandle = _winapi.GetStdHandle(STD_INPUT_HANDLE)
 else:
 
     def _win_only(*args, **kwargs):
         raise NotImplementedError("Windows only")
 
-    GetStdHandle = _win_only
     GetConsoleScreenBufferInfo = _win_only
     ScrollConsoleScreenBuffer = _win_only
     GetConsoleMode = _win_only
     SetConsoleMode = _win_only
     ReadConsoleInput = _win_only
     FlushConsoleInputBuffer = _win_only
-    WaitForSingleObject = _win_only
     OutHandle = 0
     InHandle = 0
