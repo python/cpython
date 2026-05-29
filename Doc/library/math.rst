@@ -620,8 +620,8 @@ Trigonometric functions
 
 .. function:: asinpi(x)
 
-   Return the arc sine of *x*, in half-turns. The result is between ``-1/2`` and
-   ``1/2``.
+   Return the arc sine of *x*, in half-turns. The result is between ``-0.5`` and
+   ``0.5``.
 
    .. versionadded:: next
 
@@ -634,8 +634,8 @@ Trigonometric functions
 
 .. function:: atanpi(x)
 
-   Return the arc tangent of *x*, in half-turns. The result is between ``-1/2`` and
-   ``1/2``.
+   Return the arc tangent of *x*, in half-turns. The result is between ``-0.5`` and
+   ``0.5``.
 
    .. versionadded:: next
 
@@ -656,8 +656,8 @@ Trigonometric functions
    The vector in the plane from the origin to point ``(x, y)`` makes this angle
    with the positive X axis. The point of :func:`atan2pi` is that the signs of both
    inputs are known to it, so it can compute the correct quadrant for the angle.
-   For example, ``atanpi(1)`` and ``atan2pi(1, 1)`` are both ``1/4``, but
-   ``atan2pi(-1, -1)`` is ``-3/4``.
+   For example, ``atanpi(1)`` and ``atan2pi(1, 1)`` are both ``.25``, but
+   ``atan2pi(-1, -1)`` is ``-.75``.
 
    .. versionadded:: next
 
