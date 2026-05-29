@@ -1,0 +1,4 @@
+``BINARY_OP_SUBSCR_LIST_INT`` and ``STORE_SUBSCR_LIST_INT`` now verify that
+the subscript is a compact non-negative int before calling the compact-only
+internal helper, rather than relying solely on the shared ``_GUARD_TOS_INT``
+guard to enforce that invariant.
