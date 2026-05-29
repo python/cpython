@@ -225,7 +225,7 @@ BaseException___reduce___impl(PyBaseExceptionObject *self)
  */
 
 /*[clinic input]
-@critical_section
+@critical_section self state
 BaseException.__setstate__
     state: object
     /
@@ -233,7 +233,7 @@ BaseException.__setstate__
 
 static PyObject *
 BaseException___setstate___impl(PyBaseExceptionObject *self, PyObject *state)
-/*[clinic end generated code: output=f3834889950453ab input=5524b61cfe9b9856]*/
+/*[clinic end generated code: output=f3834889950453ab input=2ddc941f42fc5bf6]*/
 {
     PyObject *d_key, *d_value;
     Py_ssize_t i = 0;
@@ -243,8 +243,6 @@ BaseException___setstate___impl(PyBaseExceptionObject *self, PyObject *state)
             PyErr_SetString(PyExc_TypeError, "state is not a dictionary");
             return NULL;
         }
-        int error = 0;
-        Py_BEGIN_CRITICAL_SECTION(state);
         while (PyDict_Next(state, &i, &d_key, &d_value)) {
             Py_INCREF(d_key);
             Py_INCREF(d_value);
@@ -252,13 +250,8 @@ BaseException___setstate___impl(PyBaseExceptionObject *self, PyObject *state)
             Py_DECREF(d_value);
             Py_DECREF(d_key);
             if (res < 0) {
-                error = 1;
-                break;
+                return NULL;
             }
-        }
-        Py_END_CRITICAL_SECTION();
-        if (error) {
-            return NULL;
         }
     }
     Py_RETURN_NONE;
