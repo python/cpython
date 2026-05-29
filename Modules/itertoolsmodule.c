@@ -107,6 +107,7 @@ typedef struct {
 #define batchedobject_CAST(op)  ((batchedobject *)(op))
 
 /*[clinic input]
+@permit_long_summary
 @classmethod
 itertools.batched.__new__ as batched_new
     iterable: object
@@ -136,7 +137,7 @@ than n.
 static PyObject *
 batched_new_impl(PyTypeObject *type, PyObject *iterable, Py_ssize_t n,
                  int strict)
-/*[clinic end generated code: output=c6de11b061529d3e input=7814b47e222f5467]*/
+/*[clinic end generated code: output=c6de11b061529d3e input=b31d8be8e8577a34]*/
 {
     PyObject *it;
     batchedobject *bo;
@@ -437,6 +438,7 @@ typedef struct {
 static PyObject *_grouper_create(groupbyobject *, PyObject *);
 
 /*[clinic input]
+@permit_long_summary
 @classmethod
 itertools.groupby.__new__
 
@@ -452,7 +454,7 @@ make an iterator that returns consecutive keys and groups from the iterable
 
 static PyObject *
 itertools_groupby_impl(PyTypeObject *type, PyObject *it, PyObject *keyfunc)
-/*[clinic end generated code: output=cbb1ae3a90fd4141 input=6b3d123e87ff65a1]*/
+/*[clinic end generated code: output=cbb1ae3a90fd4141 input=9f89fe625b20ef1a]*/
 {
     groupbyobject *gbo;
 
@@ -3163,13 +3165,13 @@ itertools.compress.__new__
     selectors as seq2: object
 Return data elements corresponding to true selector elements.
 
-Forms a shorter iterator from selected data elements using the selectors to
-choose the data elements.
+Forms a shorter iterator from selected data elements using the selectors
+to choose the data elements.
 [clinic start generated code]*/
 
 static PyObject *
 itertools_compress_impl(PyTypeObject *type, PyObject *seq1, PyObject *seq2)
-/*[clinic end generated code: output=7e67157212ed09e0 input=79596d7cd20c77e5]*/
+/*[clinic end generated code: output=7e67157212ed09e0 input=32ca4347dbc46749]*/
 {
     PyObject *data=NULL, *selectors=NULL;
     compressobject *lz;
@@ -3427,6 +3429,7 @@ slow_mode:  when cnt == PY_SSIZE_T_MAX, step is not int(1), or cnt is a float.
 */
 
 /*[clinic input]
+@permit_long_summary
 @classmethod
 itertools.count.__new__
     start as long_cnt: object(c_default="NULL") = 0
@@ -3444,7 +3447,7 @@ Equivalent to:
 static PyObject *
 itertools_count_impl(PyTypeObject *type, PyObject *long_cnt,
                      PyObject *long_step)
-/*[clinic end generated code: output=09a9250aebd00b1c input=d7a85eec18bfcd94]*/
+/*[clinic end generated code: output=09a9250aebd00b1c input=91e4b12c0e88b9f4]*/
 {
     countobject *lz;
     int fast_mode;

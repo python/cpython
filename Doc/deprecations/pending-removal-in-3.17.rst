@@ -35,7 +35,12 @@ Pending removal in Python 3.17
 
   - Passing non-ascii *encoding* names to :func:`encodings.normalize_encoding`
     is deprecated and scheduled for removal in Python 3.17.
-    (Contributed by Stan Ulbrych in :gh:`136702`)
+    (Contributed by Stan Ulbrych in :gh:`136702`.)
+
+* :mod:`webbrowser`:
+
+  - :class:`!webbrowser.MacOSXOSAScript` is deprecated in favour of
+    :class:`!webbrowser.MacOS`. (:gh:`137586`)
 
 * :mod:`typing`:
 
