@@ -1,7 +1,8 @@
-:class:`site.StartupState` is publicly exposed to allow for :pep:`829`
-explicit batch processing of startup configuration files. :func:`~site.addsitedir`
-now takes an optional instance of this class so callers can control their
-own batch processing.  The previously added
-:data:`!defer_processing_start_files` argument has been removed.  The module
-global function ``process_startup_files()`` was removed (use
-:meth:`site.StartupState.process` instead).
+:func:`site.addsitedir` now accepts an optional *startup_state* keyword
+argument that lets callers batch-process :pep:`829` startup configuration
+files across multiple site directories before any startup code runs.  The new
+:class:`site.StartupState` class maintains the batch state, and callers can
+instantiate one of these to control the batching process.  The
+:data:`!defer_processing_start_files` argument and the
+``process_startup_files()`` function added earlier in the 3.15 cycle have been
+removed; use :meth:`site.StartupState.process` instead.

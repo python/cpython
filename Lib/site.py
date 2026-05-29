@@ -259,6 +259,10 @@ class StartupState:
         *known_paths* is a set of case-normalized paths already present
         on sys.path, used to avoid duplicate path entries.  When None
         (the default), it is initialized from the current sys.path.
+
+        A caller-supplied set is stored by reference and mutated in place
+        as new paths are recorded; pass a fresh set per StartupState if
+        isolation across instances is required.
         """
         self._known_paths = (
             _init_pathinfo()
@@ -280,7 +284,7 @@ class StartupState:
         self._importexecs = {}
         self._entrypoints = {}
 
-    def add_sitedir(self, sitedir, *, process_known_sitedirs=True):
+    def _add_sitedir(self, sitedir, *, process_known_sitedirs=True):
         sitedir, sitedircase = makepath(sitedir)
         # Have we already processed this sitedir?
         if sitedircase in self._processed_sitedirs:
@@ -391,13 +395,20 @@ class StartupState:
         self._execute_start_entrypoints()
 
     def _extend_syspath(self):
-        # Duplicates have already been filtered (in existing sys.path or
-        # across .pth files via known_paths), and entries are already
-        # abspath/normpath'd, so all that remains is to confirm that .pth
-        # file path entries exist before appending them.  filename will be
-        # None for sitedir entries in the ledger, and these have already been
-        # checked for existence, so no need to do so again.
+        # Duplicate path-extension specifications have already been filtered
+        # out upstream across .pth files within this batch (via known_paths),
+        # and ledger entries are already abspath/normpath'd.  .pth-derived
+        # entries (filename is not None) are existence-checked and skipped
+        # with an error if missing.  Sitedir entries (filename is None) are
+        # appended unconditionally: legacy addsitedir() added the sitedir to
+        # sys.path before attempting to list it, so an unreadable or
+        # non-existent sitedir still landed on sys.path.  Deferring the
+        # append to here preserves that contract.
         for filename, dir_ in self._path_entries:
+            # As a backstop, known_paths may not have been seeded from sys.path
+            # (callers can pass an empty set), and multiple StartupState
+            # instances against the same sys.path don't share state, so always
+            # do a final anti-duplication check.
             if dir_ in sys.path:
                 continue
             if filename is None or os.path.exists(dir_):
@@ -485,8 +496,6 @@ def addpackage(sitedir, name, known_paths):
     else:
         reset = False
 
-    # Although never documented, the semantics of addpackage() is to fully
-    # process a single sitedir.
     state = StartupState(known_paths)
     state.read_pth_file(sitedir, name)
     state.process()
@@ -534,23 +543,26 @@ def addsitedir(sitedir, known_paths=None, *, startup_state=None):
         flush_now = True
         process_known_sitedirs = False
 
-    sitedir = startup_state.add_sitedir(
+    # Reach into StartupState's non-public API deliberately: sitedir
+    # bookkeeping is a detail of how addsitedir() drives a batch, not
+    # something callers should manage themselves.  Keeping _add_sitedir()
+    # private avoids committing it to the public StartupState API.
+    sitedir = startup_state._add_sitedir(
         sitedir,
         process_known_sitedirs=process_known_sitedirs,
     )
     if sitedir is None:
-        if not flush_now:
-            return startup_state
-        return None if reset else known_paths
+        if flush_now:
+            return None if reset else known_paths
+        return startup_state
 
     try:
         names = os.listdir(sitedir)
     except OSError:
         if flush_now:
             startup_state.process()
-        if not flush_now:
-            return startup_state
-        return None if reset else known_paths
+            return None if reset else known_paths
+        return startup_state
 
     # The following phases are defined by PEP 829.
     # Phases 1-3: Read .pth files, accumulating paths and import lines.
@@ -573,11 +585,8 @@ def addsitedir(sitedir, known_paths=None, *, startup_state=None):
 
     if flush_now:
         startup_state.process()
-
-    if not flush_now:
-        return startup_state
-
-    return None if reset else known_paths
+        return None if reset else known_paths
+    return startup_state
 
 
 def check_enableusersite():
