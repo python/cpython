@@ -66,6 +66,11 @@ except:
             self.err = err
             self.descr = descr
 
+try:
+    import _winapi
+except ImportError:
+    _winapi = None
+
 # declare nt optional to allow None assignment on other platforms
 nt: types.ModuleType | None
 try:
@@ -696,6 +701,7 @@ class WindowsConsole(Console):
             timeout = INFINITE
         else:
             timeout = int(timeout)
+        assert _winapi is not None  # to make mypy happy
         ret = _winapi.WaitForSingleObject(InHandle, timeout)
         if ret == WAIT_FAILED:
             raise WinError(get_last_error())
@@ -796,8 +802,7 @@ STD_INPUT_HANDLE = -10
 STD_OUTPUT_HANDLE = -11
 
 if sys.platform == "win32":
-    import _winapi
-
+    assert _winapi is not None  # to make mypy happy
     _KERNEL32 = WinDLL("kernel32", use_last_error=True)
 
     GetConsoleScreenBufferInfo = _KERNEL32.GetConsoleScreenBufferInfo
