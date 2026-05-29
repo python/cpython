@@ -432,6 +432,7 @@ readline_append_history_file_impl(PyObject *module, int nelements,
 /* Set history length */
 
 /*[clinic input]
+@permit_long_summary
 readline.set_history_length
 
     length: int
@@ -444,7 +445,7 @@ A negative length is used to inhibit history truncation.
 
 static PyObject *
 readline_set_history_length_impl(PyObject *module, int length)
-/*[clinic end generated code: output=e161a53e45987dc7 input=b8901bf16488b760]*/
+/*[clinic end generated code: output=e161a53e45987dc7 input=8d02c81b38ef81ec]*/
 {
     FT_ATOMIC_STORE_INT_RELAXED(_history_length, length);
     Py_RETURN_NONE;
@@ -453,6 +454,7 @@ readline_set_history_length_impl(PyObject *module, int length)
 /* Get history length */
 
 /*[clinic input]
+@permit_long_summary
 readline.get_history_length
 
 Return the maximum number of lines that will be written to the history file.
@@ -460,7 +462,7 @@ Return the maximum number of lines that will be written to the history file.
 
 static PyObject *
 readline_get_history_length_impl(PyObject *module)
-/*[clinic end generated code: output=83a2eeae35b6d2b9 input=5dce2eeba4327817]*/
+/*[clinic end generated code: output=83a2eeae35b6d2b9 input=a65823e732ebfa9d]*/
 {
     int history_length = FT_ATOMIC_LOAD_INT_RELAXED(_history_length);
     return PyLong_FromLong(history_length);
