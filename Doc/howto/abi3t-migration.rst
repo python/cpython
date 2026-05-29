@@ -411,9 +411,9 @@ custom types no longer works:
       int my_data;
    } CustomObject;
 
-   static PyTypeObject CustomType = {
+   static PyType_Spec CustomType_spec = {
       ...
-      .tp_basicsize = sizeof(CustomObject),
+      .basicsize = sizeof(CustomObject),
       ...
    };
 
@@ -441,15 +441,15 @@ and changing the name will highlight the usages as compiler errors.
 typing the type name, this won't work. Be extra careful, and consider running
 tools to detect undefined behavior.)
 
-Then, to create the class, use *negative* :c:macro:`tp_basicsize` to indicate
+Then, to create the class, use *negative* ``basicsize`` to indicate
 “extra” storage space rather than *total* instance size:
 
 .. code-block::
    :class: good
 
-   static PyTypeObject CustomType = {
+   static PyType_Spec CustomType_spec = {
       ...
-      .tp_basicsize = -sizeof(CustomObjectData), /* note the minus sign */
+      .basicsize = -sizeof(CustomObjectData), /* note the minus sign */
       ...
    };
 
