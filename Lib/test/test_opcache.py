@@ -1386,12 +1386,9 @@ class TestSpecializer(TestBase):
                 self.assertEqual(c, 10000000000)
 
         binary_op_int_non_compact_int64()
-        self.assert_specialized(binary_op_int_non_compact_int64, "BINARY_OP_ADD_INT_WIDE")
-        self.assert_specialized(binary_op_int_non_compact_int64, "BINARY_OP_SUBTRACT_INT_WIDE")
-        self.assert_specialized(binary_op_int_non_compact_int64, "BINARY_OP_MULTIPLY_INT_WIDE")
-        self.assert_no_opcode(binary_op_int_non_compact_int64, "BINARY_OP_ADD_INT")
-        self.assert_no_opcode(binary_op_int_non_compact_int64, "BINARY_OP_SUBTRACT_INT")
-        self.assert_no_opcode(binary_op_int_non_compact_int64, "BINARY_OP_MULTIPLY_INT")
+        self.assert_specialized(binary_op_int_non_compact_int64, "BINARY_OP_ADD_INT")
+        self.assert_specialized(binary_op_int_non_compact_int64, "BINARY_OP_SUBTRACT_INT")
+        self.assert_specialized(binary_op_int_non_compact_int64, "BINARY_OP_MULTIPLY_INT")
 
         def binary_op_int_too_large():
             for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
@@ -1407,9 +1404,6 @@ class TestSpecializer(TestBase):
         self.assert_no_opcode(binary_op_int_too_large, "BINARY_OP_ADD_INT")
         self.assert_no_opcode(binary_op_int_too_large, "BINARY_OP_SUBTRACT_INT")
         self.assert_no_opcode(binary_op_int_too_large, "BINARY_OP_MULTIPLY_INT")
-        self.assert_no_opcode(binary_op_int_too_large, "BINARY_OP_ADD_INT_WIDE")
-        self.assert_no_opcode(binary_op_int_too_large, "BINARY_OP_SUBTRACT_INT_WIDE")
-        self.assert_no_opcode(binary_op_int_too_large, "BINARY_OP_MULTIPLY_INT_WIDE")
 
         def binary_op_int_max_digits_too_large():
             for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
@@ -1425,9 +1419,6 @@ class TestSpecializer(TestBase):
         self.assert_no_opcode(binary_op_int_max_digits_too_large, "BINARY_OP_ADD_INT")
         self.assert_no_opcode(binary_op_int_max_digits_too_large, "BINARY_OP_SUBTRACT_INT")
         self.assert_no_opcode(binary_op_int_max_digits_too_large, "BINARY_OP_MULTIPLY_INT")
-        self.assert_no_opcode(binary_op_int_max_digits_too_large, "BINARY_OP_ADD_INT_WIDE")
-        self.assert_no_opcode(binary_op_int_max_digits_too_large, "BINARY_OP_SUBTRACT_INT_WIDE")
-        self.assert_no_opcode(binary_op_int_max_digits_too_large, "BINARY_OP_MULTIPLY_INT_WIDE")
 
         def binary_op_add_unicode():
             for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):

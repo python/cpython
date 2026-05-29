@@ -557,11 +557,12 @@
             if (sym_is_compact_int(left)) {
                 ADD_OP(_NOP, 0, 0);
             }
+            else if (sym_get_type(left) == &PyLong_Type) {
+                ADD_OP(_GUARD_NOS_OVERFLOWED, 0, 0);
+                sym_set_type(left, &PyLong_Type);
+            }
             else {
-                if (sym_get_type(left) == &PyLong_Type) {
-                    ADD_OP(_GUARD_NOS_COMPACT, 0, 0);
-                }
-                sym_set_compact_int(left);
+                sym_set_type(left, &PyLong_Type);
             }
             break;
         }
@@ -572,42 +573,21 @@
             if (sym_is_compact_int(value)) {
                 ADD_OP(_NOP, 0, 0);
             }
+            else if (sym_get_type(value) == &PyLong_Type) {
+                ADD_OP(_GUARD_TOS_OVERFLOWED, 0, 0);
+                sym_set_type(value, &PyLong_Type);
+            }
             else {
-                if (sym_get_type(value) == &PyLong_Type) {
-                    ADD_OP(_GUARD_TOS_COMPACT, 0, 0);
-                }
-                sym_set_compact_int(value);
+                sym_set_type(value, &PyLong_Type);
             }
             break;
         }
 
         case _GUARD_NOS_INT_WIDE: {
-            JitOptRef left;
-            left = stack_pointer[-2];
-            if (sym_fits_int64(left)) {
-                ADD_OP(_NOP, 0, 0);
-            }
-            else {
-                if (sym_get_type(left) == &PyLong_Type) {
-                    ADD_OP(_GUARD_NOS_OVERFLOWED, 0, 0);
-                }
-                sym_set_type(left, &PyLong_Type);
-            }
             break;
         }
 
         case _GUARD_TOS_INT_WIDE: {
-            JitOptRef value;
-            value = stack_pointer[-1];
-            if (sym_fits_int64(value)) {
-                ADD_OP(_NOP, 0, 0);
-            }
-            else {
-                if (sym_get_type(value) == &PyLong_Type) {
-                    ADD_OP(_GUARD_TOS_OVERFLOWED, 0, 0);
-                }
-                sym_set_type(value, &PyLong_Type);
-            }
             break;
         }
 
@@ -641,7 +621,7 @@
             else if (PyJitRef_IsUnique(right)) {
                 REPLACE_OP(this_instr, _BINARY_OP_MULTIPLY_INT_INPLACE_RIGHT, 0, 0);
             }
-            res = PyJitRef_MakeUnique(sym_new_compact_int(ctx));
+            res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyLong_Type));
             l = left;
             r = right;
             if (
@@ -712,7 +692,7 @@
             else if (PyJitRef_IsUnique(right)) {
                 REPLACE_OP(this_instr, _BINARY_OP_ADD_INT_INPLACE_RIGHT, 0, 0);
             }
-            res = PyJitRef_MakeUnique(sym_new_compact_int(ctx));
+            res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyLong_Type));
             l = left;
             r = right;
             if (
@@ -783,7 +763,7 @@
             else if (PyJitRef_IsUnique(right)) {
                 REPLACE_OP(this_instr, _BINARY_OP_SUBTRACT_INT_INPLACE_RIGHT, 0, 0);
             }
-            res = PyJitRef_MakeUnique(sym_new_compact_int(ctx));
+            res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyLong_Type));
             l = left;
             r = right;
             if (
@@ -841,22 +821,12 @@
         }
 
         case _BINARY_OP_ADD_INT_WIDE: {
-            JitOptRef right;
-            JitOptRef left;
             JitOptRef res;
             JitOptRef l;
             JitOptRef r;
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            if (PyJitRef_IsUnique(left)) {
-                REPLACE_OP(this_instr, _BINARY_OP_ADD_INT_WIDE_INPLACE, 0, 0);
-            }
-            else if (PyJitRef_IsUnique(right)) {
-                REPLACE_OP(this_instr, _BINARY_OP_ADD_INT_WIDE_INPLACE_RIGHT, 0, 0);
-            }
-            res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyLong_Type));
-            l = left;
-            r = right;
+            res = sym_new_not_null(ctx);
+            l = sym_new_not_null(ctx);
+            r = sym_new_not_null(ctx);
             CHECK_STACK_BOUNDS(1);
             stack_pointer[-2] = res;
             stack_pointer[-1] = l;
@@ -867,22 +837,12 @@
         }
 
         case _BINARY_OP_SUBTRACT_INT_WIDE: {
-            JitOptRef right;
-            JitOptRef left;
             JitOptRef res;
             JitOptRef l;
             JitOptRef r;
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            if (PyJitRef_IsUnique(left)) {
-                REPLACE_OP(this_instr, _BINARY_OP_SUBTRACT_INT_WIDE_INPLACE, 0, 0);
-            }
-            else if (PyJitRef_IsUnique(right)) {
-                REPLACE_OP(this_instr, _BINARY_OP_SUBTRACT_INT_WIDE_INPLACE_RIGHT, 0, 0);
-            }
-            res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyLong_Type));
-            l = left;
-            r = right;
+            res = sym_new_not_null(ctx);
+            l = sym_new_not_null(ctx);
+            r = sym_new_not_null(ctx);
             CHECK_STACK_BOUNDS(1);
             stack_pointer[-2] = res;
             stack_pointer[-1] = l;
@@ -893,22 +853,12 @@
         }
 
         case _BINARY_OP_MULTIPLY_INT_WIDE: {
-            JitOptRef right;
-            JitOptRef left;
             JitOptRef res;
             JitOptRef l;
             JitOptRef r;
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            if (PyJitRef_IsUnique(left)) {
-                REPLACE_OP(this_instr, _BINARY_OP_MULTIPLY_INT_WIDE_INPLACE, 0, 0);
-            }
-            else if (PyJitRef_IsUnique(right)) {
-                REPLACE_OP(this_instr, _BINARY_OP_MULTIPLY_INT_WIDE_INPLACE_RIGHT, 0, 0);
-            }
-            res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyLong_Type));
-            l = left;
-            r = right;
+            res = sym_new_not_null(ctx);
+            l = sym_new_not_null(ctx);
+            r = sym_new_not_null(ctx);
             CHECK_STACK_BOUNDS(1);
             stack_pointer[-2] = res;
             stack_pointer[-1] = l;
@@ -999,102 +949,6 @@
         }
 
         case _BINARY_OP_MULTIPLY_INT_INPLACE_RIGHT: {
-            JitOptRef res;
-            JitOptRef l;
-            JitOptRef r;
-            res = sym_new_not_null(ctx);
-            l = sym_new_not_null(ctx);
-            r = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(1);
-            stack_pointer[-2] = res;
-            stack_pointer[-1] = l;
-            stack_pointer[0] = r;
-            stack_pointer += 1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
-        case _BINARY_OP_ADD_INT_WIDE_INPLACE: {
-            JitOptRef res;
-            JitOptRef l;
-            JitOptRef r;
-            res = sym_new_not_null(ctx);
-            l = sym_new_not_null(ctx);
-            r = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(1);
-            stack_pointer[-2] = res;
-            stack_pointer[-1] = l;
-            stack_pointer[0] = r;
-            stack_pointer += 1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
-        case _BINARY_OP_SUBTRACT_INT_WIDE_INPLACE: {
-            JitOptRef res;
-            JitOptRef l;
-            JitOptRef r;
-            res = sym_new_not_null(ctx);
-            l = sym_new_not_null(ctx);
-            r = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(1);
-            stack_pointer[-2] = res;
-            stack_pointer[-1] = l;
-            stack_pointer[0] = r;
-            stack_pointer += 1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
-        case _BINARY_OP_MULTIPLY_INT_WIDE_INPLACE: {
-            JitOptRef res;
-            JitOptRef l;
-            JitOptRef r;
-            res = sym_new_not_null(ctx);
-            l = sym_new_not_null(ctx);
-            r = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(1);
-            stack_pointer[-2] = res;
-            stack_pointer[-1] = l;
-            stack_pointer[0] = r;
-            stack_pointer += 1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
-        case _BINARY_OP_ADD_INT_WIDE_INPLACE_RIGHT: {
-            JitOptRef res;
-            JitOptRef l;
-            JitOptRef r;
-            res = sym_new_not_null(ctx);
-            l = sym_new_not_null(ctx);
-            r = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(1);
-            stack_pointer[-2] = res;
-            stack_pointer[-1] = l;
-            stack_pointer[0] = r;
-            stack_pointer += 1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
-        case _BINARY_OP_SUBTRACT_INT_WIDE_INPLACE_RIGHT: {
-            JitOptRef res;
-            JitOptRef l;
-            JitOptRef r;
-            res = sym_new_not_null(ctx);
-            l = sym_new_not_null(ctx);
-            r = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(1);
-            stack_pointer[-2] = res;
-            stack_pointer[-1] = l;
-            stack_pointer[0] = r;
-            stack_pointer += 1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
-        case _BINARY_OP_MULTIPLY_INT_WIDE_INPLACE_RIGHT: {
             JitOptRef res;
             JitOptRef l;
             JitOptRef r;

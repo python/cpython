@@ -615,11 +615,8 @@ dummy_func(
 
         family(BINARY_OP, INLINE_CACHE_ENTRIES_BINARY_OP) = {
             BINARY_OP_MULTIPLY_INT,
-            BINARY_OP_MULTIPLY_INT_WIDE,
             BINARY_OP_ADD_INT,
-            BINARY_OP_ADD_INT_WIDE,
             BINARY_OP_SUBTRACT_INT,
-            BINARY_OP_SUBTRACT_INT_WIDE,
             BINARY_OP_MULTIPLY_FLOAT,
             BINARY_OP_ADD_FLOAT,
             BINARY_OP_SUBTRACT_FLOAT,
@@ -784,18 +781,11 @@ dummy_func(
         macro(BINARY_OP_SUBTRACT_INT) =
             _GUARD_TOS_INT + _GUARD_NOS_INT + unused/5 + _BINARY_OP_SUBTRACT_INT + _POP_TOP_INT + _POP_TOP_INT;
 
-        macro(BINARY_OP_ADD_INT_WIDE) =
-            _GUARD_TOS_INT_WIDE + _GUARD_NOS_INT_WIDE + unused/5 + _BINARY_OP_ADD_INT_WIDE + _POP_TOP_INT + _POP_TOP_INT;
 
-        macro(BINARY_OP_SUBTRACT_INT_WIDE) =
-            _GUARD_TOS_INT_WIDE + _GUARD_NOS_INT_WIDE + unused/5 + _BINARY_OP_SUBTRACT_INT_WIDE + _POP_TOP_INT + _POP_TOP_INT;
 
-        macro(BINARY_OP_MULTIPLY_INT_WIDE) =
-            _GUARD_TOS_INT_WIDE + _GUARD_NOS_INT_WIDE + unused/5 + _BINARY_OP_MULTIPLY_INT_WIDE + _POP_TOP_INT + _POP_TOP_INT;
-
-        // Inplace compact int ops: mutate the uniquely-referenced operand
-        // when possible. The op handles decref of TARGET internally so
-        // the following _POP_TOP_INT becomes _POP_TOP_NOP. Tier 2 only.
+        // Merged inplace int ops: try compact in-place mutation; fall back
+        // to _PyCompactLong_{Add,Subtract,Multiply} which handle both compact
+        // and wide ints.  Tier 2 only.
         tier2 op(_BINARY_OP_ADD_INT_INPLACE, (left, right -- res, l, r)) {
             INT_INPLACE_OP(left, right, left, +, _PyCompactLong_Add);
             EXIT_IF(PyStackRef_IsNull(_int_inplace_res));
@@ -803,6 +793,7 @@ dummy_func(
             l = left;
             r = right;
             INPUTS_DEAD();
+            ERROR_IF(PyStackRef_IsError(_int_inplace_res));
         }
 
         tier2 op(_BINARY_OP_SUBTRACT_INT_INPLACE, (left, right -- res, l, r)) {
@@ -812,6 +803,7 @@ dummy_func(
             l = left;
             r = right;
             INPUTS_DEAD();
+            ERROR_IF(PyStackRef_IsError(_int_inplace_res));
         }
 
         tier2 op(_BINARY_OP_MULTIPLY_INT_INPLACE, (left, right -- res, l, r)) {
@@ -821,6 +813,7 @@ dummy_func(
             l = left;
             r = right;
             INPUTS_DEAD();
+            ERROR_IF(PyStackRef_IsError(_int_inplace_res));
         }
 
         tier2 op(_BINARY_OP_ADD_INT_INPLACE_RIGHT, (left, right -- res, l, r)) {
@@ -830,6 +823,7 @@ dummy_func(
             l = left;
             r = right;
             INPUTS_DEAD();
+            ERROR_IF(PyStackRef_IsError(_int_inplace_res));
         }
 
         tier2 op(_BINARY_OP_SUBTRACT_INT_INPLACE_RIGHT, (left, right -- res, l, r)) {
@@ -839,6 +833,7 @@ dummy_func(
             l = left;
             r = right;
             INPUTS_DEAD();
+            ERROR_IF(PyStackRef_IsError(_int_inplace_res));
         }
 
         tier2 op(_BINARY_OP_MULTIPLY_INT_INPLACE_RIGHT, (left, right -- res, l, r)) {
@@ -848,68 +843,6 @@ dummy_func(
             l = left;
             r = right;
             INPUTS_DEAD();
-        }
-
-        // Wide inplace ops: try compact in-place mutation; fall back to the
-        // wide (int64) helper for non-compact operands. Tier 2 only.
-        tier2 op(_BINARY_OP_ADD_INT_WIDE_INPLACE, (left, right -- res, l, r)) {
-            INT_INPLACE_OP(left, right, left, +, _PyCompactLong_AddWide);
-            EXIT_IF(PyStackRef_IsNull(_int_inplace_res));
-            res = _int_inplace_res;
-            l = left;
-            r = right;
-            INPUTS_DEAD();
-            ERROR_IF(PyStackRef_IsError(_int_inplace_res));
-        }
-
-        tier2 op(_BINARY_OP_SUBTRACT_INT_WIDE_INPLACE, (left, right -- res, l, r)) {
-            INT_INPLACE_OP(left, right, left, -, _PyCompactLong_SubtractWide);
-            EXIT_IF(PyStackRef_IsNull(_int_inplace_res));
-            res = _int_inplace_res;
-            l = left;
-            r = right;
-            INPUTS_DEAD();
-            ERROR_IF(PyStackRef_IsError(_int_inplace_res));
-        }
-
-        tier2 op(_BINARY_OP_MULTIPLY_INT_WIDE_INPLACE, (left, right -- res, l, r)) {
-            INT_INPLACE_OP(left, right, left, *, _PyCompactLong_MultiplyWide);
-            EXIT_IF(PyStackRef_IsNull(_int_inplace_res));
-            res = _int_inplace_res;
-            l = left;
-            r = right;
-            INPUTS_DEAD();
-            ERROR_IF(PyStackRef_IsError(_int_inplace_res));
-        }
-
-        tier2 op(_BINARY_OP_ADD_INT_WIDE_INPLACE_RIGHT, (left, right -- res, l, r)) {
-            INT_INPLACE_OP(left, right, right, +, _PyCompactLong_AddWide);
-            EXIT_IF(PyStackRef_IsNull(_int_inplace_res));
-            res = _int_inplace_res;
-            l = left;
-            r = right;
-            INPUTS_DEAD();
-            ERROR_IF(PyStackRef_IsError(_int_inplace_res));
-        }
-
-        tier2 op(_BINARY_OP_SUBTRACT_INT_WIDE_INPLACE_RIGHT, (left, right -- res, l, r)) {
-            INT_INPLACE_OP(left, right, right, -, _PyCompactLong_SubtractWide);
-            EXIT_IF(PyStackRef_IsNull(_int_inplace_res));
-            res = _int_inplace_res;
-            l = left;
-            r = right;
-            INPUTS_DEAD();
-            ERROR_IF(PyStackRef_IsError(_int_inplace_res));
-        }
-
-        tier2 op(_BINARY_OP_MULTIPLY_INT_WIDE_INPLACE_RIGHT, (left, right -- res, l, r)) {
-            INT_INPLACE_OP(left, right, right, *, _PyCompactLong_MultiplyWide);
-            EXIT_IF(PyStackRef_IsNull(_int_inplace_res));
-            res = _int_inplace_res;
-            l = left;
-            r = right;
-            INPUTS_DEAD();
-            ERROR_IF(PyStackRef_IsError(_int_inplace_res));
         }
 
         op(_GUARD_NOS_FLOAT, (left, unused -- left, unused)) {

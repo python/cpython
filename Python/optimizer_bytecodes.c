@@ -206,18 +206,20 @@ dummy_func(void) {
         res = PyJitRef_Borrow(sym_new_null(ctx));
     }
 
-    /* Compact guard: value must be a compact int.  When the type is already
-     * known to be PyLong_Type, use the cheaper _GUARD_TOS_COMPACT which skips
-     * the redundant type check. */
+    /* Tier-2 merged guard: accept any exact int.  When the type is already
+     * known to be PyLong_Type the cheaper _OVERFLOWED guard (which skips the
+     * type check) can be used.  When compactness is known the guard can be
+     * eliminated entirely. */
     op(_GUARD_TOS_INT, (value -- value)) {
         if (sym_is_compact_int(value)) {
             ADD_OP(_NOP, 0, 0);
         }
+        else if (sym_get_type(value) == &PyLong_Type) {
+            ADD_OP(_GUARD_TOS_OVERFLOWED, 0, 0);
+            sym_set_type(value, &PyLong_Type);
+        }
         else {
-            if (sym_get_type(value) == &PyLong_Type) {
-                ADD_OP(_GUARD_TOS_COMPACT, 0, 0);
-            }
-            sym_set_compact_int(value);
+            sym_set_type(value, &PyLong_Type);
         }
     }
 
@@ -225,37 +227,11 @@ dummy_func(void) {
         if (sym_is_compact_int(left)) {
             ADD_OP(_NOP, 0, 0);
         }
-        else {
-            if (sym_get_type(left) == &PyLong_Type) {
-                ADD_OP(_GUARD_NOS_COMPACT, 0, 0);
-            }
-            sym_set_compact_int(left);
-        }
-    }
-
-    /* Wide guards: value must be an exact int that fits in int64.  When the
-     * type is already known to be PyLong_Type the cheaper _OVERFLOWED guard
-     * (which skips the type check) can be used instead. */
-    op(_GUARD_TOS_INT_WIDE, (value -- value)) {
-        if (sym_fits_int64(value)) {
-            ADD_OP(_NOP, 0, 0);
+        else if (sym_get_type(left) == &PyLong_Type) {
+            ADD_OP(_GUARD_NOS_OVERFLOWED, 0, 0);
+            sym_set_type(left, &PyLong_Type);
         }
         else {
-            if (sym_get_type(value) == &PyLong_Type) {
-                ADD_OP(_GUARD_TOS_OVERFLOWED, 0, 0);
-            }
-            sym_set_type(value, &PyLong_Type);
-        }
-    }
-
-    op(_GUARD_NOS_INT_WIDE, (left, unused -- left, unused)) {
-        if (sym_fits_int64(left)) {
-            ADD_OP(_NOP, 0, 0);
-        }
-        else {
-            if (sym_get_type(left) == &PyLong_Type) {
-                ADD_OP(_GUARD_NOS_OVERFLOWED, 0, 0);
-            }
             sym_set_type(left, &PyLong_Type);
         }
     }
@@ -421,9 +397,7 @@ dummy_func(void) {
         else if (PyJitRef_IsUnique(right)) {
             REPLACE_OP(this_instr, _BINARY_OP_ADD_INT_INPLACE_RIGHT, 0, 0);
         }
-        // Result may be a unique compact int or a cached small int
-        // at runtime. Mark as unique; inplace ops verify at runtime.
-        res = PyJitRef_MakeUnique(sym_new_compact_int(ctx));
+        res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyLong_Type));
         l = left;
         r = right;
         REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, res);
@@ -436,7 +410,7 @@ dummy_func(void) {
         else if (PyJitRef_IsUnique(right)) {
             REPLACE_OP(this_instr, _BINARY_OP_SUBTRACT_INT_INPLACE_RIGHT, 0, 0);
         }
-        res = PyJitRef_MakeUnique(sym_new_compact_int(ctx));
+        res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyLong_Type));
         l = left;
         r = right;
         REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, res);
@@ -449,46 +423,10 @@ dummy_func(void) {
         else if (PyJitRef_IsUnique(right)) {
             REPLACE_OP(this_instr, _BINARY_OP_MULTIPLY_INT_INPLACE_RIGHT, 0, 0);
         }
-        res = PyJitRef_MakeUnique(sym_new_compact_int(ctx));
+        res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyLong_Type));
         l = left;
         r = right;
         REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, res);
-    }
-
-    op(_BINARY_OP_ADD_INT_WIDE, (left, right -- res, l, r)) {
-        if (PyJitRef_IsUnique(left)) {
-            REPLACE_OP(this_instr, _BINARY_OP_ADD_INT_WIDE_INPLACE, 0, 0);
-        }
-        else if (PyJitRef_IsUnique(right)) {
-            REPLACE_OP(this_instr, _BINARY_OP_ADD_INT_WIDE_INPLACE_RIGHT, 0, 0);
-        }
-        res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyLong_Type));
-        l = left;
-        r = right;
-    }
-
-    op(_BINARY_OP_SUBTRACT_INT_WIDE, (left, right -- res, l, r)) {
-        if (PyJitRef_IsUnique(left)) {
-            REPLACE_OP(this_instr, _BINARY_OP_SUBTRACT_INT_WIDE_INPLACE, 0, 0);
-        }
-        else if (PyJitRef_IsUnique(right)) {
-            REPLACE_OP(this_instr, _BINARY_OP_SUBTRACT_INT_WIDE_INPLACE_RIGHT, 0, 0);
-        }
-        res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyLong_Type));
-        l = left;
-        r = right;
-    }
-
-    op(_BINARY_OP_MULTIPLY_INT_WIDE, (left, right -- res, l, r)) {
-        if (PyJitRef_IsUnique(left)) {
-            REPLACE_OP(this_instr, _BINARY_OP_MULTIPLY_INT_WIDE_INPLACE, 0, 0);
-        }
-        else if (PyJitRef_IsUnique(right)) {
-            REPLACE_OP(this_instr, _BINARY_OP_MULTIPLY_INT_WIDE_INPLACE_RIGHT, 0, 0);
-        }
-        res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyLong_Type));
-        l = left;
-        r = right;
     }
 
     op(_BINARY_OP_ADD_FLOAT, (left, right -- res, l, r)) {
