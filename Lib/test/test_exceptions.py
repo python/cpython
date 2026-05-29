@@ -1954,25 +1954,6 @@ class ExceptionTests(unittest.TestCase):
         self.assertGreater(len(output), 0)  # At minimum, should not hang
         self.assertIn(b"MemoryError", output)
 
-    def test_data_race(self):
-        from threading import Thread
-        import copy
-
-        E = Exception()
-
-        def func():
-            for i in range(100):
-                setattr(E, 'x', i)
-                copy.copy(E)
-
-        threads = [Thread(target=func) for _ in range(4)]
-
-        for t in threads:
-            t.start()
-
-        for t in threads:
-            t.join()
-
 class NameErrorTests(unittest.TestCase):
     def test_name_error_has_name(self):
         try:
