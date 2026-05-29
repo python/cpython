@@ -1,12 +1,19 @@
-"""pyperf microbenchmark for JIT int fast path.
+"""pyperf microbenchmarks for int fast path (interpreter and JIT).
 
-Measures int arithmetic performance in hot JIT loops where
-intermediate results overflow the 30-bit compact range.
+Run twice — once with the JIT disabled, once enabled — to get both sets
+of numbers.  Pass --inherit-environ=PYTHON_JIT so pyperf worker processes
+pick up the environment variable.
 
 Usage:
-    ./python Tools/scripts/jit_int_benchmark_pyperf.py -o nojit.json
-    ./python -X jit Tools/scripts/jit_int_benchmark_pyperf.py -o jit.json
-    ./python -m pyperf compare_to nojit.json jit.json
+    # interpreter only
+    PYTHON_JIT=0 ./python Tools/scripts/jit_int_benchmark_pyperf.py \\
+        --inherit-environ=PYTHON_JIT -o nojit.json
+    # JIT
+    PYTHON_JIT=1 ./python Tools/scripts/jit_int_benchmark_pyperf.py \\
+        --inherit-environ=PYTHON_JIT -o jit.json
+    # compare
+    ./python -m pyperf compare_to main_nojit.json branch_nojit.json
+    ./python -m pyperf compare_to main_jit.json branch_jit.json
 """
 
 import time
@@ -287,13 +294,13 @@ def bench_compact(loops):
 
 
 BENCHMARKS = [
-    ("jit_int_small", bench_small),
-    ("jit_int_compact", bench_compact),
-    ("jit_int_intermediate_overflow", bench_intermediate_overflow),
-    ("jit_int_double_add", bench_double_add),
-    ("jit_int_accumulate", bench_accumulate),
-    ("jit_int_always_large", bench_always_large),
-    ("jit_int_mixed", bench_mixed),
+    ("int_small", bench_small),
+    ("int_compact", bench_compact),
+    ("int_intermediate_overflow", bench_intermediate_overflow),
+    ("int_double_add", bench_double_add),
+    ("int_accumulate", bench_accumulate),
+    ("int_always_large", bench_always_large),
+    ("int_mixed", bench_mixed),
 ]
 
 if __name__ == "__main__":
