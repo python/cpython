@@ -215,7 +215,7 @@ static const double logpi = 1.144729885849400174143427351353058711647;
 #ifndef HAVE_ACOSPI
 /*
    acos(x)/pi, giving accurate results for all finite x (especially x
-   integral or close to an integer).  It conforms to IEEE 754-2008.
+   integral or close to an integer). It conforms to C23 Annex 'F'.
    Special cases are handled as for glibc 2.41 __acospi.
 */
 
@@ -235,7 +235,7 @@ m_acospi(double x)
 #ifndef HAVE_ASINPI
 /*
    asin(x)/pi, giving accurate results for all finite x (especially x
-   integral or close to an integer).  It conforms to IEEE 754-2008.
+   integral or close to an integer). It conforms to C23 Annex 'F'.
    Special cases are handled as for glibc 2.41 __asinpi.
 */
 
@@ -255,7 +255,7 @@ m_asinpi(double x)
 #ifndef HAVE_ATANPI
 /*
    asin(x)/pi, giving accurate results for all finite x (especially x
-   integral or close to an integer).  It conforms to IEEE 754-2008.
+   integral or close to an integer).  It conforms to C23 Annex 'F'.
    Special cases are handled as for glibc 2.41 __atanpi.
 */
 
@@ -275,7 +275,7 @@ m_atanpi(double x)
 #ifndef HAVE_ATAN2PI
 /*
    asin(x)/pi, giving accurate results for all finite x (especially x
-   integral or close to an integer).  It conforms to IEEE 754-2008.
+   integral or close to an integer).  It conforms to C23 Annex 'F'.
    Special cases are handled as for glibc 2.41 __atan2pi.
 */
 
@@ -295,7 +295,7 @@ m_atan2pi(double y, double x)
 #ifndef HAVE_COSPI
 /*
    cos(pi*x), giving accurate results for all finite x (especially x
-   integral or close to an integer).  It conforms to IEEE 754-2008.
+   integral or close to an integer).  It conforms to C23 Annex 'F'.
    Special cases are handled as for glibc 2.41 __cospi.
 */
 
@@ -325,7 +325,7 @@ m_cospi(double x)
 #ifndef HAVE_SINPI
 /*
    sin(pi*x), giving accurate results for all finite x (especially x
-   integral or close to an integer).  It conforms to IEEE 754-2008.
+   integral or close to an integer).  It conforms to C23 Annex 'F'.
 */
 
 static double
@@ -369,7 +369,7 @@ m_sinpi(double x)
 #ifndef HAVE_TANPI
 /*
    tan(pi*x), giving accurate results for all finite x (especially x
-   integral or close to an integer).  It conforms to IEEE 754-2008.
+   integral or close to an integer).  It conforms to C23 Annex 'F'.
    Special cases are handled as for glibc 2.41 __tanpi.
 */
 
