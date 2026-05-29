@@ -2041,6 +2041,36 @@ class TestSpecializer(TestBase):
 
     @cpython_only
     @requires_specialization
+    def test_binary_subscr_list_int_wide_int(self):
+        def load(lst, idx):
+            return lst[idx]
+
+        lst = [1, 2, 3]
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            load(lst, 0)
+        self.assert_specialized(load, "BINARY_OP_SUBSCR_LIST_INT")
+        # 2**30+2 is non-compact; ob_digit[0]=2 so _PyLong_CompactValue
+        # would silently return 2 and read lst[2] instead of raising IndexError.
+        with self.assertRaises(IndexError):
+            load(lst, 2**30 + 2)
+
+    @cpython_only
+    @requires_specialization
+    def test_store_subscr_list_int_wide_int(self):
+        def store(lst, idx):
+            lst[idx] = 99
+
+        lst = [1, 2, 3]
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            store(lst, 0)
+        self.assert_specialized(store, "STORE_SUBSCR_LIST_INT")
+        # 2**30+2 is non-compact; ob_digit[0]=2 so _PyLong_CompactValue
+        # would silently write to lst[2] instead of raising IndexError.
+        with self.assertRaises(IndexError):
+            store(lst, 2**30 + 2)
+
+    @cpython_only
+    @requires_specialization
     def test_compare_op(self):
         def compare_op_int():
             for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
