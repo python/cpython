@@ -9313,7 +9313,7 @@
             INSTRUCTION_STATS(LOAD_COMMON_CONSTANT);
             _PyStackRef value;
             assert(oparg < NUM_COMMON_CONSTANTS);
-            value = PyStackRef_FromPyObjectNew(tstate->interp->common_consts[oparg]);
+            value = PyStackRef_DupImmortal(tstate->interp->common_consts[oparg]);
             stack_pointer[0] = value;
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -12004,7 +12004,8 @@
                 v = stack_pointer[-4];
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyObject *slice = _PyBuildSlice_ConsumeRefs(PyStackRef_AsPyObjectSteal(start),
-                    PyStackRef_AsPyObjectSteal(stop));
+                    PyStackRef_AsPyObjectSteal(stop),
+                    Py_None);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 int err;
                 if (slice == NULL) {
