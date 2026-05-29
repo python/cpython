@@ -1,0 +1,1 @@
+Fix potential data race in `meth:: BaseException.__setstate__`.
