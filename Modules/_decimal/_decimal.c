@@ -228,7 +228,6 @@ typedef struct PyDecContextObject {
 } PyDecContextObject;
 
 #define _PyDecContextObject_CAST(op)    ((PyDecContextObject *)(op))
-#define _PyDecContextObject_LOCKED_CAST(op)    ((PyDecContextObject *)(op))
 
 typedef struct {
     PyObject_HEAD
@@ -248,7 +247,9 @@ typedef struct {
 #define SdFlagAddr(v) (_PyDecSignalDictObject_CAST(v)->flags)
 #define SdFlags(v) (*_PyDecSignalDictObject_CAST(v)->flags)
 #define CTX(v) (&_PyDecContextObject_CAST(v)->ctx)
-#define CTX_LOCK(v) (&_PyDecContextObject_CAST(v)->ctx_lock)
+#define CTX_LOCK_INIT(v) _PyDecContextObject_CAST(v)->ctx_lock = (PyMutex){0}
+#define CTX_LOCK(v) PyMutex_Lock(&_PyDecContextObject_CAST(v)->ctx_lock)
+#define CTX_UNLOCK(v) PyMutex_Unlock(&_PyDecContextObject_CAST(v)->ctx_lock)
 #define CtxCaps(v) (_PyDecContextObject_CAST(v)->capitals)
 
 static inline decimal_state *
@@ -614,12 +615,11 @@ static int
 dec_addstatus(PyObject *context, uint32_t status)
 {
     mpd_context_t *ctx = CTX(context);
-    PyMutex* ctx_lock = CTX_LOCK(context);
     decimal_state *state = get_module_state_from_ctx(context);
 
-    PyMutex_Lock(ctx_lock);
+    CTX_LOCK(context);
     ctx->status |= status;
-    PyMutex_Unlock(ctx_lock);
+    CTX_UNLOCK(context);
     if (status & (ctx->traps|MPD_Malloc_error)) {
         PyObject *ex, *siglist;
 
@@ -1424,10 +1424,9 @@ static PyObject *
 _decimal_Context_clear_flags_impl(PyObject *self)
 /*[clinic end generated code: output=c86719a70177d0b6 input=a06055e2f3e7edb1]*/
 {
-    PyMutex* ctx_lock = CTX_LOCK(self);
-    PyMutex_Lock(ctx_lock);
+    CTX_LOCK(self);
     CTX(self)->status = 0;
-    PyMutex_Unlock(ctx_lock);
+    CTX_UNLOCK(self);
     Py_RETURN_NONE;
 }
 
@@ -1446,7 +1445,6 @@ context_new(PyTypeObject *type,
 {
     PyDecContextObject *self = NULL;
     mpd_context_t *ctx;
-    PyMutex* ctx_lock;
 
     decimal_state *state = get_module_state_by_def(type);
     if (type == state->PyDecContext_Type) {
@@ -1482,12 +1480,8 @@ context_new(PyTypeObject *type,
         *ctx = dflt_ctx;
     }
 
-    ctx_lock = CTX_LOCK(self);
-
     SdFlagAddr(self->traps) = &ctx->traps;
-    PyMutex_Lock(ctx_lock);
     SdFlagAddr(self->flags) = &ctx->status;
-    PyMutex_Unlock(ctx_lock);
 
     CtxCaps(self) = 1;
     self->tstate = NULL;
@@ -1571,7 +1565,6 @@ static PyObject *
 context_repr(PyObject *self)
 {
     mpd_context_t *ctx;
-    PyMutex* ctx_lock;
     char flags[MPD_MAX_SIGNAL_LIST];
     char traps[MPD_MAX_SIGNAL_LIST];
     int n, mem;
@@ -1582,10 +1575,9 @@ context_repr(PyObject *self)
 #endif
     ctx = CTX(self);
 
-    ctx_lock = CTX_LOCK(self);
-    PyMutex_Lock(ctx_lock);
+    CTX_LOCK(self);
     uint32_t ctx_status = ctx->status;
-    PyMutex_Unlock(ctx_lock);
+    CTX_UNLOCK(self);
 
     mem = MPD_MAX_SIGNAL_LIST;
     n = mpd_lsnprint_signals(flags, mem, ctx_status, dec_signal_string);
@@ -1615,7 +1607,7 @@ init_basic_context(PyObject *v)
     ctx.round = MPD_ROUND_HALF_UP;
 
     *CTX(v) = ctx;
-    *CTX_LOCK(v) = (PyMutex){0};
+    CTX_LOCK_INIT(v);
     CtxCaps(v) = 1;
 }
 
@@ -1628,7 +1620,7 @@ init_extended_context(PyObject *v)
     ctx.traps = 0;
 
     *CTX(v) = ctx;
-    *CTX_LOCK(v) = (PyMutex){0};
+    CTX_LOCK_INIT(v);
     CtxCaps(v) = 1;
 }
 
@@ -1738,15 +1730,14 @@ _decimal_Context___reduce___impl(PyObject *self, PyTypeObject *cls)
     PyObject *traps;
     PyObject *ret;
     mpd_context_t *ctx;
-    PyMutex* ctx_lock;
     decimal_state *state = PyType_GetModuleState(cls);
 
     ctx = CTX(self);
-    ctx_lock = CTX_LOCK(self);
 
-    PyMutex_Lock(ctx_lock);
+    CTX_LOCK(self);
     uint32_t ctx_status = ctx->status;
-    PyMutex_Unlock(ctx_lock);
+    CTX_UNLOCK(self);
+
     flags = signals_as_list(state, ctx_status);
     if (flags == NULL) {
         return NULL;
@@ -1946,16 +1937,12 @@ static PyObject *
 init_current_context(decimal_state *state)
 {
     mpd_context_t* ctx;
-    PyMutex* ctx_lock;
     PyObject *tl_context = context_copy(state, state->default_context_template);
     if (tl_context == NULL) {
         return NULL;
     }
     ctx = CTX(tl_context);
-    ctx_lock = CTX_LOCK(tl_context);
-    PyMutex_Lock(ctx_lock);
     ctx->status = 0;
-    PyMutex_Unlock(ctx_lock);
 
     PyObject *tok = PyContextVar_Set(state->current_context_var, tl_context);
     if (tok == NULL) {
@@ -2017,10 +2004,7 @@ PyDec_SetCurrentContext(PyObject *self, PyObject *v)
             return NULL;
         }
         mpd_context_t* ctx = CTX(v);
-        PyMutex* ctx_lock = CTX_LOCK(v);
-        PyMutex_Lock(ctx_lock);
         ctx->status = 0;
-        PyMutex_Unlock(ctx_lock);
     }
     else {
         Py_INCREF(v);
@@ -3517,7 +3501,6 @@ convert_op_cmp(PyObject **vcmp, PyObject **wcmp, PyObject *v, PyObject *w,
                int op, PyObject *context)
 {
     mpd_context_t *ctx = CTX(context);
-    PyMutex* ctx_lock = CTX_LOCK(context);
 
     *vcmp = v;
 
@@ -3534,9 +3517,9 @@ convert_op_cmp(PyObject **vcmp, PyObject **wcmp, PyObject *v, PyObject *w,
             *wcmp = NULL;
         }
         else {
-            PyMutex_Lock(ctx_lock);
+            CTX_LOCK(ctx);
             ctx->status |= MPD_Float_operation;
-            PyMutex_Unlock(ctx_lock);
+            CTX_UNLOCK(ctx);
             *wcmp = PyDec_FromFloatExact(state, w, context);
         }
     }
@@ -3551,9 +3534,9 @@ convert_op_cmp(PyObject **vcmp, PyObject **wcmp, PyObject *v, PyObject *w,
                 *wcmp = NULL;
             }
             else {
-                PyMutex_Lock(ctx_lock);
+                CTX_LOCK(ctx);
                 ctx->status |= MPD_Float_operation;
-                PyMutex_Unlock(ctx_lock);
+                CTX_UNLOCK(ctx);
                 *wcmp = PyDec_FromFloatExact(state, tmp, context);
                 Py_DECREF(tmp);
             }
