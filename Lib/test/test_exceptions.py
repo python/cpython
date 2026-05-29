@@ -1954,6 +1954,7 @@ class ExceptionTests(unittest.TestCase):
         self.assertGreater(len(output), 0)  # At minimum, should not hang
         self.assertIn(b"MemoryError", output)
 
+
 class NameErrorTests(unittest.TestCase):
     def test_name_error_has_name(self):
         try:
