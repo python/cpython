@@ -332,7 +332,7 @@ class TestBadTempdir:
         with _inside_empty_temp_dir():
             probe = os.path.join(tempfile.tempdir, 'probe')
             if os.name == 'nt':
-                #Use security identifier *S-1-1-0 instead
+                # Use security identifier *S-1-1-0 instead
                 # of localized "Everyone" to not depend on the locale.
                 cmd = ['icacls', tempfile.tempdir, '/deny', '*S-1-1-0:(W)']
                 stdout = None if support.verbose > 1 else subprocess.DEVNULL
