@@ -363,13 +363,10 @@ static inline int
 _PyLong_FitsInt64(const PyLongObject *v)
 {
     uintptr_t tag = v->long_value.lv_tag;
-    if (tag < (2 << NON_SIZE_BITS)) {
-        return 1;
+   if (tag < (_PY_LONG_MAX_DIGITS_FOR_INT64 << NON_SIZE_BITS)) {
+       return 1;
     }
     Py_ssize_t ndigits = (Py_ssize_t)(tag >> NON_SIZE_BITS);
-    if (ndigits < _PY_LONG_MAX_DIGITS_FOR_INT64) {
-        return 1;
-    }
     if (ndigits > _PY_LONG_MAX_DIGITS_FOR_INT64) {
         return 0;
     }
