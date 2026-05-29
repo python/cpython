@@ -768,6 +768,10 @@ acospi10128 acospi 0.7071993350982666 -> 0.249958333374387
 acospi10129 acospi 0.7071993911300235 -> 0.24995830814793119
 acospi10130 acospi 0.7071993911300234 -> 0.24995830814793124
 
+acospi20001 acospi inf -> nan invalid
+acospi20002 acospi -inf -> nan invalid
+acospi20003 acospi nan -> nan
+
 ------------
 -- asinpi --
 ------------
@@ -878,6 +882,10 @@ asinpi10102 asinpi -0.6554325222969055 -> -0.2275136345890164
 asinpi10103 asinpi -0.6554324978014275 -> -0.22751362426513144
 asinpi10104 asinpi -0.6554324978014276 -> -0.2275136242651315
 
+asinpi20001 asinpi inf -> nan invalid
+asinpi20002 asinpi -inf -> nan invalid
+asinpi20003 asinpi nan -> nan
+
 ------------
 -- atanpi --
 ------------
@@ -945,6 +953,10 @@ atanpi10059 atanpi 0.19859454035758972 -> 0.062402677059315244
 atanpi10060 atanpi 0.19859452545642853 -> 0.06240267249610054
 atanpi10061 atanpi 0.1985945401764544 -> 0.06240267700384578
 atanpi10062 atanpi 0.19859454017645436 -> 0.06240267700384577
+
+atanpi20001 atanpi inf -> 0.5
+atanpi20002 atanpi -inf -> -0.5
+atanpi20003 atanpi nan -> nan
 
 -----------
 -- cospi --
@@ -1234,6 +1246,10 @@ cospi10280 cospi -629430784.0 -> 1.0
 cospi10281 cospi -629430848.0 -> 1.0
 cospi10282 cospi -629430785.4800935 -> -0.06249742289199851
 cospi10283 cospi -629430785.4800936 -> -0.06249704911708015
+
+cospi20001 cospi inf -> nan invalid
+cospi20002 cospi -inf -> nan invalid
+cospi20003 cospi nan -> nan
 
 -----------
 -- sinpi --
@@ -1550,6 +1566,10 @@ sinpi10307 sinpi -0.004973720293492079 -> -0.015624767310717469
 sinpi10308 sinpi -0.004973719955059152 -> -0.015624766247628864
 sinpi10309 sinpi -0.004973719955059153 -> -0.015624766247628865
 
+sinpi20001 sinpi inf -> nan invalid
+sinpi20002 sinpi -inf -> nan invalid
+sinpi20003 sinpi nan -> nan
+
 -----------
 -- tanpi --
 -----------
@@ -1830,3 +1850,7 @@ tanpi10272 tanpi -1.6591962575912476 -> 1.829923165916756
 tanpi10273 tanpi -1.659196376800537 -> 1.8299215373295707
 tanpi10274 tanpi -1.6591963470121214 -> 1.8299219442861712
 tanpi10275 tanpi -1.6591963470121216 -> 1.829921944286168
+
+tanpi20001 tanpi inf -> nan invalid
+tanpi20002 tanpi -inf -> nan invalid
+tanpi20003 tanpi nan -> nan
