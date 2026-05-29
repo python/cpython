@@ -841,12 +841,22 @@
         }
 
         case _BINARY_OP_ADD_INT_WIDE: {
+            JitOptRef right;
+            JitOptRef left;
             JitOptRef res;
             JitOptRef l;
             JitOptRef r;
-            res = sym_new_not_null(ctx);
-            l = sym_new_not_null(ctx);
-            r = sym_new_not_null(ctx);
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (PyJitRef_IsUnique(left)) {
+                REPLACE_OP(this_instr, _BINARY_OP_ADD_INT_WIDE_INPLACE, 0, 0);
+            }
+            else if (PyJitRef_IsUnique(right)) {
+                REPLACE_OP(this_instr, _BINARY_OP_ADD_INT_WIDE_INPLACE_RIGHT, 0, 0);
+            }
+            res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyLong_Type));
+            l = left;
+            r = right;
             CHECK_STACK_BOUNDS(1);
             stack_pointer[-2] = res;
             stack_pointer[-1] = l;
@@ -857,12 +867,22 @@
         }
 
         case _BINARY_OP_SUBTRACT_INT_WIDE: {
+            JitOptRef right;
+            JitOptRef left;
             JitOptRef res;
             JitOptRef l;
             JitOptRef r;
-            res = sym_new_not_null(ctx);
-            l = sym_new_not_null(ctx);
-            r = sym_new_not_null(ctx);
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (PyJitRef_IsUnique(left)) {
+                REPLACE_OP(this_instr, _BINARY_OP_SUBTRACT_INT_WIDE_INPLACE, 0, 0);
+            }
+            else if (PyJitRef_IsUnique(right)) {
+                REPLACE_OP(this_instr, _BINARY_OP_SUBTRACT_INT_WIDE_INPLACE_RIGHT, 0, 0);
+            }
+            res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyLong_Type));
+            l = left;
+            r = right;
             CHECK_STACK_BOUNDS(1);
             stack_pointer[-2] = res;
             stack_pointer[-1] = l;
@@ -873,12 +893,22 @@
         }
 
         case _BINARY_OP_MULTIPLY_INT_WIDE: {
+            JitOptRef right;
+            JitOptRef left;
             JitOptRef res;
             JitOptRef l;
             JitOptRef r;
-            res = sym_new_not_null(ctx);
-            l = sym_new_not_null(ctx);
-            r = sym_new_not_null(ctx);
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (PyJitRef_IsUnique(left)) {
+                REPLACE_OP(this_instr, _BINARY_OP_MULTIPLY_INT_WIDE_INPLACE, 0, 0);
+            }
+            else if (PyJitRef_IsUnique(right)) {
+                REPLACE_OP(this_instr, _BINARY_OP_MULTIPLY_INT_WIDE_INPLACE_RIGHT, 0, 0);
+            }
+            res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyLong_Type));
+            l = left;
+            r = right;
             CHECK_STACK_BOUNDS(1);
             stack_pointer[-2] = res;
             stack_pointer[-1] = l;

@@ -454,6 +454,42 @@ dummy_func(void) {
         REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, res);
     }
 
+    op(_BINARY_OP_ADD_INT_WIDE, (left, right -- res, l, r)) {
+        if (PyJitRef_IsUnique(left)) {
+            REPLACE_OP(this_instr, _BINARY_OP_ADD_INT_WIDE_INPLACE, 0, 0);
+        }
+        else if (PyJitRef_IsUnique(right)) {
+            REPLACE_OP(this_instr, _BINARY_OP_ADD_INT_WIDE_INPLACE_RIGHT, 0, 0);
+        }
+        res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyLong_Type));
+        l = left;
+        r = right;
+    }
+
+    op(_BINARY_OP_SUBTRACT_INT_WIDE, (left, right -- res, l, r)) {
+        if (PyJitRef_IsUnique(left)) {
+            REPLACE_OP(this_instr, _BINARY_OP_SUBTRACT_INT_WIDE_INPLACE, 0, 0);
+        }
+        else if (PyJitRef_IsUnique(right)) {
+            REPLACE_OP(this_instr, _BINARY_OP_SUBTRACT_INT_WIDE_INPLACE_RIGHT, 0, 0);
+        }
+        res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyLong_Type));
+        l = left;
+        r = right;
+    }
+
+    op(_BINARY_OP_MULTIPLY_INT_WIDE, (left, right -- res, l, r)) {
+        if (PyJitRef_IsUnique(left)) {
+            REPLACE_OP(this_instr, _BINARY_OP_MULTIPLY_INT_WIDE_INPLACE, 0, 0);
+        }
+        else if (PyJitRef_IsUnique(right)) {
+            REPLACE_OP(this_instr, _BINARY_OP_MULTIPLY_INT_WIDE_INPLACE_RIGHT, 0, 0);
+        }
+        res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyLong_Type));
+        l = left;
+        r = right;
+    }
+
     op(_BINARY_OP_ADD_FLOAT, (left, right -- res, l, r)) {
         if (PyJitRef_IsUnique(left)) {
             ADD_OP(_BINARY_OP_ADD_FLOAT_INPLACE, 0, 0);
