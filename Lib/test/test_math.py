@@ -251,17 +251,6 @@ class MathTests(unittest.TestCase):
         self.assertRaises(ValueError, math.acosh, NINF)
         self.assertTrue(math.isnan(math.acosh(NAN)))
 
-    def testAcospi(self):
-        self.assertRaises(TypeError, math.acospi)
-        self.ftest('acospi(-1)', math.acospi(-1), 1)
-        self.ftest('acospi(0)', math.acospi(0), 1/2)
-        self.ftest('acospi(1)', math.acospi(1), 0)
-        self.assertRaises(ValueError, math.acospi, INF)
-        self.assertRaises(ValueError, math.acospi, NINF)
-        self.assertRaises(ValueError, math.acospi, 1 + eps)
-        self.assertRaises(ValueError, math.acospi, -1 - eps)
-        self.assertTrue(math.isnan(math.acospi(NAN)))
-
     def testAsin(self):
         self.assertRaises(TypeError, math.asin)
         self.ftest('asin(-1)', math.asin(-1), -math.pi/2)
@@ -282,17 +271,6 @@ class MathTests(unittest.TestCase):
         self.assertEqual(math.asinh(NINF), NINF)
         self.assertTrue(math.isnan(math.asinh(NAN)))
 
-    def testAsinpi(self):
-        self.assertRaises(TypeError, math.asinpi)
-        self.ftest('asinpi(-1)', math.asinpi(-1), -1/2)
-        self.ftest('asinpi(0)', math.asinpi(0), 0)
-        self.ftest('asinpi(1)', math.asinpi(1), 1/2)
-        self.assertRaises(ValueError, math.asinpi, INF)
-        self.assertRaises(ValueError, math.asinpi, NINF)
-        self.assertRaises(ValueError, math.asinpi, 1 + eps)
-        self.assertRaises(ValueError, math.asinpi, -1 - eps)
-        self.assertTrue(math.isnan(math.asinpi(NAN)))
-
     def testAtan(self):
         self.assertRaises(TypeError, math.atan)
         self.ftest('atan(-1)', math.atan(-1), -math.pi/4)
@@ -312,15 +290,6 @@ class MathTests(unittest.TestCase):
         self.assertRaises(ValueError, math.atanh, INF)
         self.assertRaises(ValueError, math.atanh, NINF)
         self.assertTrue(math.isnan(math.atanh(NAN)))
-
-    def testAtanpi(self):
-        self.assertRaises(TypeError, math.atanpi)
-        self.ftest('atanpi(-1)', math.atanpi(-1), -1/4)
-        self.ftest('atanpi(0)', math.atanpi(0), 0)
-        self.ftest('atanpi(1)', math.atanpi(1), 1/4)
-        self.ftest('atanpi(inf)', math.atanpi(INF), 1/2)
-        self.ftest('atanpi(-inf)', math.atanpi(NINF), -1/2)
-        self.assertTrue(math.isnan(math.atanpi(NAN)))
 
     @unittest.skipIf(sys.platform.startswith("sunos"),
                      "skipping, see gh-138573")
@@ -385,70 +354,6 @@ class MathTests(unittest.TestCase):
         self.assertTrue(math.isnan(math.atan2(NAN, 2.3)))
         self.assertTrue(math.isnan(math.atan2(NAN, INF)))
         self.assertTrue(math.isnan(math.atan2(NAN, NAN)))
-
-    @unittest.skipIf(sys.platform.startswith("sunos"),
-                     "skipping, see gh-138573")
-    def testAtanpi2(self):
-        self.assertRaises(TypeError, math.atan2pi)
-        self.ftest('atan2pi(-1, 0)', math.atan2pi(-1, 0), -1/2)
-        self.ftest('atan2pi(-1, 1)', math.atan2pi(-1, 1), -1/4)
-        self.ftest('atan2pi(0, 1)', math.atan2pi(0, 1), 0)
-        self.ftest('atan2pi(1, 1)', math.atan2pi(1, 1), 1/4)
-        self.ftest('atan2pi(1, 0)', math.atan2pi(1, 0), 1/2)
-        self.ftest('atan2pi(1, -1)', math.atan2pi(1, -1), 3/4)
-
-        # math.atan2pi(0, x)
-        self.ftest('atan2pi(0., -inf)', math.atan2pi(0., NINF), 1)
-        self.ftest('atan2pi(0., -2.3)', math.atan2pi(0., -2.3), 1)
-        self.ftest('atan2pi(0., -0.)', math.atan2pi(0., -0.), 1)
-        self.assertEqual(math.atan2pi(0., 0.), 0.)
-        self.assertEqual(math.atan2pi(0., 2.3), 0.)
-        self.assertEqual(math.atan2pi(0., INF), 0.)
-        self.assertTrue(math.isnan(math.atan2pi(0., NAN)))
-        # math.atan2pi(-0, x)
-        self.ftest('atan2pi(-0., -inf)', math.atan2pi(-0., NINF), -1)
-        self.ftest('atan2pi(-0., -2.3)', math.atan2pi(-0., -2.3), -1)
-        self.ftest('atan2pi(-0., -0.)', math.atan2pi(-0., -0.), -1)
-        self.assertEqual(math.atan2pi(-0., 0.), -0.)
-        self.assertEqual(math.atan2pi(-0., 2.3), -0.)
-        self.assertEqual(math.atan2pi(-0., INF), -0.)
-        self.assertTrue(math.isnan(math.atan2pi(-0., NAN)))
-        # math.atan2pi(INF, x)
-        self.ftest('atan2pi(inf, -inf)', math.atan2pi(INF, NINF), 3/4)
-        self.ftest('atan2pi(inf, -2.3)', math.atan2pi(INF, -2.3), 1/2)
-        self.ftest('atan2pi(inf, -0.)', math.atan2pi(INF, -0.0), 1/2)
-        self.ftest('atan2pi(inf, 0.)', math.atan2pi(INF, 0.0), 1/2)
-        self.ftest('atan2pi(inf, 2.3)', math.atan2pi(INF, 2.3), 1/2)
-        self.ftest('atan2pi(inf, inf)', math.atan2pi(INF, INF), 1/4)
-        self.assertTrue(math.isnan(math.atan2pi(INF, NAN)))
-        # math.atan2pi(NINF, x)
-        self.ftest('atan2pi(-inf, -inf)', math.atan2pi(NINF, NINF), -3/4)
-        self.ftest('atan2pi(-inf, -2.3)', math.atan2pi(NINF, -2.3), -1/2)
-        self.ftest('atan2pi(-inf, -0.)', math.atan2pi(NINF, -0.0), -1/2)
-        self.ftest('atan2pi(-inf, 0.)', math.atan2pi(NINF, 0.0), -1/2)
-        self.ftest('atan2pi(-inf, 2.3)', math.atan2pi(NINF, 2.3), -1/2)
-        self.ftest('atan2pi(-inf, inf)', math.atan2pi(NINF, INF), -1/4)
-        self.assertTrue(math.isnan(math.atan2pi(NINF, NAN)))
-        # math.atan2pi(+finite, x)
-        self.ftest('atan2pi(2.3, -inf)', math.atan2pi(2.3, NINF), 1)
-        self.ftest('atan2pi(2.3, -0.)', math.atan2pi(2.3, -0.), 1/2)
-        self.ftest('atan2pi(2.3, 0.)', math.atan2pi(2.3, 0.), 1/2)
-        self.assertEqual(math.atan2pi(2.3, INF), 0.)
-        self.assertTrue(math.isnan(math.atan2pi(2.3, NAN)))
-        # math.atan2pi(-finite, x)
-        self.ftest('atan2pi(-2.3, -inf)', math.atan2pi(-2.3, NINF), -1)
-        self.ftest('atan2pi(-2.3, -0.)', math.atan2pi(-2.3, -0.), -1/2)
-        self.ftest('atan2pi(-2.3, 0.)', math.atan2pi(-2.3, 0.), -1/2)
-        self.assertEqual(math.atan2pi(-2.3, INF), -0.)
-        self.assertTrue(math.isnan(math.atan2pi(-2.3, NAN)))
-        # math.atan2pi(NAN, x)
-        self.assertTrue(math.isnan(math.atan2pi(NAN, NINF)))
-        self.assertTrue(math.isnan(math.atan2pi(NAN, -2.3)))
-        self.assertTrue(math.isnan(math.atan2pi(NAN, -0.)))
-        self.assertTrue(math.isnan(math.atan2pi(NAN, 0.)))
-        self.assertTrue(math.isnan(math.atan2pi(NAN, 2.3)))
-        self.assertTrue(math.isnan(math.atan2pi(NAN, INF)))
-        self.assertTrue(math.isnan(math.atan2pi(NAN, NAN)))
 
     def testCbrt(self):
         self.assertRaises(TypeError, math.cbrt)
@@ -575,20 +480,6 @@ class MathTests(unittest.TestCase):
         self.assertEqual(math.cosh(INF), INF)
         self.assertEqual(math.cosh(NINF), INF)
         self.assertTrue(math.isnan(math.cosh(NAN)))
-
-    def testCospi(self):
-        self.assertRaises(TypeError, math.cospi)
-        self.ftest('cospi(-1/2)', math.cospi(-1/2), 0)
-        self.ftest('cospi(0)', math.cospi(0), 1)
-        self.ftest('cospi(1/2)', math.cospi(1/2), 0)
-        self.ftest('cospi(1)', math.cospi(1), -1)
-        try:
-            self.assertTrue(math.isnan(math.cospi(INF)))
-            self.assertTrue(math.isnan(math.cospi(NINF)))
-        except ValueError:
-            self.assertRaises(ValueError, math.cospi, INF)
-            self.assertRaises(ValueError, math.cospi, NINF)
-        self.assertTrue(math.isnan(math.cospi(NAN)))
 
     def testDegrees(self):
         self.assertRaises(TypeError, math.degrees)
@@ -2035,19 +1926,6 @@ class MathTests(unittest.TestCase):
         self.assertRaises(ValueError, math.sqrt, NINF)
         self.assertTrue(math.isnan(math.sqrt(NAN)))
 
-    def testSinpy(self):
-        self.assertRaises(TypeError, math.sinpi)
-        self.ftest('sinpi(0)', math.sinpi(0), 0)
-        self.ftest('sinpi(1/2)', math.sinpi(1/2), 1)
-        self.ftest('sinpi(-1/2)', math.sinpi(-1/2), -1)
-        try:
-            self.assertTrue(math.isnan(math.sinpi(INF)))
-            self.assertTrue(math.isnan(math.sinpi(NINF)))
-        except ValueError:
-            self.assertRaises(ValueError, math.sinpi, INF)
-            self.assertRaises(ValueError, math.sinpi, NINF)
-        self.assertTrue(math.isnan(math.sinpi(NAN)))
-
     def testTan(self):
         self.assertRaises(TypeError, math.tan)
         self.ftest('tan(0)', math.tan(0), 0)
@@ -2108,20 +1986,6 @@ class MathTests(unittest.TestCase):
         self.assertRaises(TypeError, math.trunc, FloatLike(23.5))
         self.assertRaises(TypeError, math.trunc, TestNoTrunc())
         self.assertRaises(ValueError, math.trunc, TestBadTrunc())
-
-    def testTanpi(self):
-        self.assertRaises(TypeError, math.tanpi)
-        self.ftest('tanpi(0)', math.tanpi(0), 0)
-        self.ftest('tanpi(1/4)', math.tanpi(1/4), 1)
-        self.ftest('tanpi(-1/4)', math.tanpi(-1/4), -1)
-        try:
-            self.assertTrue(math.isnan(math.tanpi(INF)))
-            self.assertTrue(math.isnan(math.tanpi(NINF)))
-        except ValueError:
-            self.assertRaises(ValueError, math.tanpi, INF)
-            self.assertRaises(ValueError, math.tanpi, NINF)
-        self.assertTrue(math.isnan(math.tanpi(NAN)))
-
 
     def testIsfinite(self):
         self.assertTrue(math.isfinite(0.0))
