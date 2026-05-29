@@ -1406,8 +1406,7 @@ setup_readline(readlinestate *mod_state)
         /* All nonalphanums except '.' */
 
     if (!completer_word_break_characters) {
-        RESTORE_LOCALE(saved_locale)
-        return -1;
+        goto error;
     }
 #ifdef WITH_EDITLINE
     // libedit uses rl_basic_word_break_characters instead of
@@ -1452,6 +1451,10 @@ setup_readline(readlinestate *mod_state)
 
     RESTORE_LOCALE(saved_locale)
     return 0;
+
+error:
+    RESTORE_LOCALE(saved_locale)
+    return -1;
 }
 
 /* Wrapper around GNU readline that handles signals differently. */
