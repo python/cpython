@@ -2354,8 +2354,8 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
                 specialize(instr, BINARY_OP_ADD_INT);
                 return;
             }
-            if (_PyLong_CheckExactAndMightFitInt64(lhs) &&
-                _PyLong_CheckExactAndMightFitInt64(rhs))
+            if (_PyLong_CheckExactAndFitsInt64(lhs) &&
+                _PyLong_CheckExactAndFitsInt64(rhs))
             {
                 specialize(instr, BINARY_OP_ADD_INT_WIDE);
                 return;
@@ -2374,8 +2374,8 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
                 specialize(instr, BINARY_OP_MULTIPLY_INT);
                 return;
             }
-            if (_PyLong_CheckExactAndMightFitInt64(lhs) &&
-                _PyLong_CheckExactAndMightFitInt64(rhs))
+            if (_PyLong_CheckExactAndFitsInt64(lhs) &&
+                _PyLong_CheckExactAndFitsInt64(rhs))
             {
                 specialize(instr, BINARY_OP_MULTIPLY_INT_WIDE);
                 return;
@@ -2394,8 +2394,8 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
                 specialize(instr, BINARY_OP_SUBTRACT_INT);
                 return;
             }
-            if (_PyLong_CheckExactAndMightFitInt64(lhs) &&
-                _PyLong_CheckExactAndMightFitInt64(rhs))
+            if (_PyLong_CheckExactAndFitsInt64(lhs) &&
+                _PyLong_CheckExactAndFitsInt64(rhs))
             {
                 specialize(instr, BINARY_OP_SUBTRACT_INT_WIDE);
                 return;

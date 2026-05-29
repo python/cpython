@@ -648,25 +648,25 @@ dummy_func(
         /* Wide guards: accept exact ints in the full int64 range. */
         op(_GUARD_NOS_INT_WIDE, (left, unused -- left, unused)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-            EXIT_IF(!_PyLong_CheckExactAndMightFitInt64(left_o));
+            EXIT_IF(!_PyLong_CheckExactAndFitsInt64(left_o));
         }
 
         op(_GUARD_TOS_INT_WIDE, (value -- value)) {
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            EXIT_IF(!_PyLong_CheckExactAndMightFitInt64(value_o));
+            EXIT_IF(!_PyLong_CheckExactAndFitsInt64(value_o));
         }
 
         op(_GUARD_NOS_OVERFLOWED, (left, unused -- left, unused)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             assert(Py_TYPE(left_o) == &PyLong_Type);
-            int ok = _PyLong_MightFitInt64((PyLongObject *)left_o);
+            int ok = _PyLong_FitsInt64((PyLongObject *)left_o);
             EXIT_IF(!ok);
         }
 
         op(_GUARD_TOS_OVERFLOWED, (value -- value)) {
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
             assert(Py_TYPE(value_o) == &PyLong_Type);
-            int ok = _PyLong_MightFitInt64((PyLongObject *)value_o);
+            int ok = _PyLong_FitsInt64((PyLongObject *)value_o);
             EXIT_IF(!ok);
         }
 

@@ -272,7 +272,7 @@ _Py_uop_sym_is_safe_const(JitOptContext *ctx, JitOptRef sym)
     if (const_val == NULL) {
         return false;
     }
-    if (_PyLong_CheckExactAndMightFitInt64(const_val)) {
+    if (_PyLong_CheckExactAndFitsInt64(const_val)) {
         return true;
     }
     PyTypeObject *typ = Py_TYPE(const_val);
@@ -566,7 +566,7 @@ _Py_uop_sym_set_const(JitOptContext *ctx, JitOptRef ref, PyObject *const_val)
             make_const(sym, const_val);
             return;
         case JIT_SYM_COMPACT_INT:
-            if (_PyLong_CheckExactAndMightFitInt64(const_val)) {
+            if (_PyLong_CheckExactAndFitsInt64(const_val)) {
                 make_const(sym, const_val);
             }
             else {
@@ -970,7 +970,7 @@ _Py_uop_sym_is_compact_int(JitOptRef ref)
 {
     JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     if (sym->tag == JIT_SYM_KNOWN_VALUE_TAG) {
-        return (bool)_PyLong_CheckExactAndMightFitInt64(sym->value.value);
+        return (bool)_PyLong_CheckExactAndFitsInt64(sym->value.value);
     }
     return sym->tag == JIT_SYM_COMPACT_INT;
 }
@@ -1008,7 +1008,7 @@ _Py_uop_sym_set_compact_int(JitOptContext *ctx, JitOptRef ref)
             }
             return;
         case JIT_SYM_KNOWN_VALUE_TAG:
-            if (!_PyLong_CheckExactAndMightFitInt64(sym->value.value)) {
+            if (!_PyLong_CheckExactAndFitsInt64(sym->value.value)) {
                 Py_CLEAR(sym->value.value);
                 sym_set_bottom(ctx, sym);
             }

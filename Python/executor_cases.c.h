@@ -4001,7 +4001,7 @@
             _PyStackRef left;
             left = stack_pointer[-2];
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-            if (!_PyLong_CheckExactAndMightFitInt64(left_o)) {
+            if (!_PyLong_CheckExactAndFitsInt64(left_o)) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
@@ -4022,7 +4022,7 @@
             _PyStackRef _stack_item_0 = _tos_cache0;
             left = stack_pointer[-1];
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-            if (!_PyLong_CheckExactAndMightFitInt64(left_o)) {
+            if (!_PyLong_CheckExactAndFitsInt64(left_o)) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache0 = _stack_item_0;
                 SET_CURRENT_CACHED_VALUES(1);
@@ -4045,7 +4045,7 @@
             _PyStackRef _stack_item_1 = _tos_cache1;
             left = _stack_item_0;
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-            if (!_PyLong_CheckExactAndMightFitInt64(left_o)) {
+            if (!_PyLong_CheckExactAndFitsInt64(left_o)) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache1 = _stack_item_1;
                 _tos_cache0 = left;
@@ -4068,7 +4068,7 @@
             _PyStackRef _stack_item_2 = _tos_cache2;
             left = _stack_item_1;
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-            if (!_PyLong_CheckExactAndMightFitInt64(left_o)) {
+            if (!_PyLong_CheckExactAndFitsInt64(left_o)) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache2 = _stack_item_2;
                 _tos_cache1 = left;
@@ -4090,7 +4090,7 @@
             _PyStackRef value;
             value = stack_pointer[-1];
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            if (!_PyLong_CheckExactAndMightFitInt64(value_o)) {
+            if (!_PyLong_CheckExactAndFitsInt64(value_o)) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
@@ -4110,7 +4110,7 @@
             _PyStackRef _stack_item_0 = _tos_cache0;
             value = _stack_item_0;
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            if (!_PyLong_CheckExactAndMightFitInt64(value_o)) {
+            if (!_PyLong_CheckExactAndFitsInt64(value_o)) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache0 = value;
                 SET_CURRENT_CACHED_VALUES(1);
@@ -4130,7 +4130,7 @@
             _PyStackRef _stack_item_1 = _tos_cache1;
             value = _stack_item_1;
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            if (!_PyLong_CheckExactAndMightFitInt64(value_o)) {
+            if (!_PyLong_CheckExactAndFitsInt64(value_o)) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache1 = value;
                 _tos_cache0 = _stack_item_0;
@@ -4153,7 +4153,7 @@
             _PyStackRef _stack_item_2 = _tos_cache2;
             value = _stack_item_2;
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            if (!_PyLong_CheckExactAndMightFitInt64(value_o)) {
+            if (!_PyLong_CheckExactAndFitsInt64(value_o)) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache2 = value;
                 _tos_cache1 = _stack_item_1;
@@ -4176,7 +4176,7 @@
             left = stack_pointer[-2];
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             assert(Py_TYPE(left_o) == &PyLong_Type);
-            int ok = _PyLong_MightFitInt64((PyLongObject *)left_o);
+            int ok = _PyLong_FitsInt64((PyLongObject *)left_o);
             if (!ok) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
@@ -4199,7 +4199,7 @@
             left = stack_pointer[-1];
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             assert(Py_TYPE(left_o) == &PyLong_Type);
-            int ok = _PyLong_MightFitInt64((PyLongObject *)left_o);
+            int ok = _PyLong_FitsInt64((PyLongObject *)left_o);
             if (!ok) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache0 = _stack_item_0;
@@ -4224,7 +4224,7 @@
             left = _stack_item_0;
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             assert(Py_TYPE(left_o) == &PyLong_Type);
-            int ok = _PyLong_MightFitInt64((PyLongObject *)left_o);
+            int ok = _PyLong_FitsInt64((PyLongObject *)left_o);
             if (!ok) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache1 = _stack_item_1;
@@ -4249,7 +4249,7 @@
             left = _stack_item_1;
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             assert(Py_TYPE(left_o) == &PyLong_Type);
-            int ok = _PyLong_MightFitInt64((PyLongObject *)left_o);
+            int ok = _PyLong_FitsInt64((PyLongObject *)left_o);
             if (!ok) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache2 = _stack_item_2;
@@ -4273,7 +4273,7 @@
             value = stack_pointer[-1];
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
             assert(Py_TYPE(value_o) == &PyLong_Type);
-            int ok = _PyLong_MightFitInt64((PyLongObject *)value_o);
+            int ok = _PyLong_FitsInt64((PyLongObject *)value_o);
             if (!ok) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
@@ -4295,7 +4295,7 @@
             value = _stack_item_0;
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
             assert(Py_TYPE(value_o) == &PyLong_Type);
-            int ok = _PyLong_MightFitInt64((PyLongObject *)value_o);
+            int ok = _PyLong_FitsInt64((PyLongObject *)value_o);
             if (!ok) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache0 = value;
@@ -4317,7 +4317,7 @@
             value = _stack_item_1;
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
             assert(Py_TYPE(value_o) == &PyLong_Type);
-            int ok = _PyLong_MightFitInt64((PyLongObject *)value_o);
+            int ok = _PyLong_FitsInt64((PyLongObject *)value_o);
             if (!ok) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache1 = value;
@@ -4342,7 +4342,7 @@
             value = _stack_item_2;
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
             assert(Py_TYPE(value_o) == &PyLong_Type);
-            int ok = _PyLong_MightFitInt64((PyLongObject *)value_o);
+            int ok = _PyLong_FitsInt64((PyLongObject *)value_o);
             if (!ok) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache2 = value;

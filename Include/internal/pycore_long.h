@@ -360,7 +360,7 @@ _PyLong_CheckExactAndCompact(PyObject *op)
 #define _PY_LONG_MAX_DIGITS_FOR_INT64 ((64 + PyLong_SHIFT - 1) / PyLong_SHIFT)
 
 static inline int
-_PyLong_MightFitInt64(const PyLongObject *v)
+_PyLong_FitsInt64(const PyLongObject *v)
 {
     uintptr_t tag = v->long_value.lv_tag;
     if (tag < (2 << NON_SIZE_BITS)) {
@@ -396,10 +396,10 @@ _PyLong_MightFitInt64(const PyLongObject *v)
 }
 
 static inline int
-_PyLong_CheckExactAndMightFitInt64(PyObject *op)
+_PyLong_CheckExactAndFitsInt64(PyObject *op)
 {
     return PyLong_CheckExact(op) &&
-           _PyLong_MightFitInt64((const PyLongObject *)op);
+           _PyLong_FitsInt64((const PyLongObject *)op);
 }
 
 /* Extract an exact int to int64_t without raising.
