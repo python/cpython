@@ -66,6 +66,7 @@ except:
             self.err = err
             self.descr = descr
 
+_winapi: types.ModuleType | None
 try:
     import _winapi
 except ImportError:
@@ -702,7 +703,9 @@ class WindowsConsole(Console):
         else:
             timeout = int(timeout)
         assert _winapi is not None  # to make mypy happy
-        ret = _winapi.WaitForSingleObject(InHandle, timeout)
+        ret = _winapi.WaitForSingleObject(  # type: ignore[attr-defined]
+            InHandle, timeout
+        )
         if ret == WAIT_FAILED:
             raise WinError(get_last_error())
         elif ret == WAIT_TIMEOUT:
