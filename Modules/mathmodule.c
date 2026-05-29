@@ -306,13 +306,13 @@ m_cospi(double x)
         return cos(x);
     }
     x = fabs(x - 2.0 * round(0.5 * x));
-    if (islessequal(x, 0.25)) {
+    if (x <= 0.25) {
         return cos(pi * x);
     }
     if (x == 0.5) {
         return 0.0;
     }
-    if (islessequal(x, 0.75)) {
+    if (x <= 0.75) {
         return sin(pi * (0.5 - x));
     }
     return -cos(pi * (1.0 - x));
