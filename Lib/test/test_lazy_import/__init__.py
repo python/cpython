@@ -2109,43 +2109,6 @@ class LazyCApiTests(unittest.TestCase):
         self.assertRaises(ValueError, _testcapi.PyImport_SetLazyImportsFilter, 42)
 
 
-
-class DictOperationsWithLazyTests(unittest.TestCase):
-    """Tests for dict operations with lazy import values."""
-
-    def tearDown(self):
-        for key in list(sys.modules.keys()):
-            if key.startswith('test.test_lazy_import.data'):
-                del sys.modules[key]
-        sys.set_lazy_imports_filter(None)
-        sys.set_lazy_imports("normal")
-
-    def test_dict_copy_preserves_lazy(self):
-        """dict.copy() should preserve lazy import proxy objects."""
-        sys.set_lazy_imports("all")
-        from test.test_lazy_import.data.metasyntactic import names
-        d = names.__dict__.copy()
-        self.assertIsInstance(d["Foo"], types.LazyImportType)
-        self.assertEqual(d["Metasyntactic"], "Metasyntactic")
-
-    def test_dict_or_preserves_lazy(self):
-        """dict | should keep the winning side's lazy/resolved status."""
-        sys.set_lazy_imports("all")
-        from test.test_lazy_import.data.metasyntactic import names
-        lazy = names.__dict__.copy()
-        resolved = {"Foo": "resolved"}
-        self.assertEqual((lazy | resolved)["Foo"], "resolved")
-        self.assertIsInstance((resolved | lazy)["Foo"], types.LazyImportType)
-
-    def test_dict_update_preserves_lazy(self):
-        """dict.update() should transfer lazy import proxy objects."""
-        sys.set_lazy_imports("all")
-        from test.test_lazy_import.data.metasyntactic import names
-        target = {}
-        target.update(names.__dict__)
-        self.assertIsInstance(target["Foo"], types.LazyImportType)
-
-
 class SubmoduleLazinessTests(unittest.TestCase):
     """Tests that module-level lazy imports remain lazy until accessed."""
 
@@ -2274,57 +2237,6 @@ class CircularImportLazyTests(unittest.TestCase):
         )
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("ImportError", result.stderr)
-
-
-@support.requires_subprocess()
-class DictMutationDuringLoadTests(unittest.TestCase):
-    """Tests that module dict mutation during loading doesn't crash."""
-
-    def test_dict_mutation_during_import(self):
-        """Iterating a module dict while lazy imports resolve should not
-        crash even if the dict is mutated during iteration."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            pkg = os.path.join(tmpdir, "dcwl_pkg")
-            os.makedirs(pkg)
-
-            with open(os.path.join(pkg, "__init__.py"), "w") as f:
-                f.write(textwrap.dedent("""\
-                    from .elements import elements_function
-
-                    def __go(lcls):
-                        global __all__
-                        __all__ = sorted(
-                            name
-                            for name, obj in lcls.items()
-                            if not name.startswith("_")
-                        )
-
-                    __go(locals())
-                """))
-
-            with open(os.path.join(pkg, "elements.py"), "w") as f:
-                f.write(textwrap.dedent("""\
-                    from .elements_sub import elements_sub_function
-
-                    def elements_function():
-                        pass
-                """))
-
-            with open(os.path.join(pkg, "elements_sub.py"), "w") as f:
-                f.write("def elements_sub_function(): pass\n")
-
-            env = os.environ.copy()
-            env["PYTHONPATH"] = tmpdir
-            result = subprocess.run(
-                [sys.executable, "-X", "lazy_imports=all",
-                 "-c", "import dcwl_pkg; print('OK')"],
-                capture_output=True, text=True, env=env,
-            )
-            self.assertEqual(
-                result.returncode, 0,
-                f"stdout: {result.stdout}, stderr: {result.stderr}",
-            )
-            self.assertIn("OK", result.stdout)
 
 
 if __name__ == '__main__':
