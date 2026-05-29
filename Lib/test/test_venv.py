@@ -500,6 +500,7 @@ class BasicTest(BaseTest):
 
     # gh-124651: test quoted strings
     @unittest.skipIf(os.name == 'nt', 'contains invalid characters on Windows')
+    @unittest.skipIf(sys.platform == 'cygwin', 'fail to locate cygpython DLL')
     def test_special_chars_bash(self):
         """
         Test that the template strings are quoted properly (bash)
@@ -714,6 +715,12 @@ class BasicTest(BaseTest):
         os.mkdir(bindir)
         python_exe = os.path.basename(sys.executable)
         shutil.copy2(sys.executable, os.path.join(bindir, python_exe))
+        if sys.platform == 'cygwin':
+            # Copy libpython DLL
+            exe_path = os.path.dirname(sys.executable)
+            libpython_dll = sysconfig.get_config_var('DLLLIBRARY')
+            shutil.copy2(os.path.join(exe_path, libpython_dll),
+                         os.path.join(bindir, libpython_dll))
         libdir = os.path.join(non_installed_dir, platlibdir, self.lib[1])
         os.makedirs(libdir)
         landmark = os.path.join(libdir, "os.py")
