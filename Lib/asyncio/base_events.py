@@ -968,7 +968,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             f"and file {file!r} combination")
 
     async def _sock_sendfile_fallback(self, sock, file, offset, count):
-        if offset:
+        if hasattr(file, 'seek'):
             file.seek(offset)
         blocksize = (
             min(count, constants.SENDFILE_FALLBACK_READBUFFER_SIZE)
@@ -1285,7 +1285,6 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise RuntimeError(
                 f"fallback is disabled and native sendfile is not "
                 f"supported for transport {transport!r}")
-
         return await self._sendfile_fallback(transport, file,
                                              offset, count)
 
@@ -1294,7 +1293,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             "sendfile syscall is not supported")
 
     async def _sendfile_fallback(self, transp, file, offset, count):
-        if offset:
+        if hasattr(file, 'seek'):
             file.seek(offset)
         blocksize = min(count, 16384) if count else 16384
         buf = bytearray(blocksize)
