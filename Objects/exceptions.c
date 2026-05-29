@@ -243,6 +243,8 @@ BaseException___setstate___impl(PyBaseExceptionObject *self, PyObject *state)
             PyErr_SetString(PyExc_TypeError, "state is not a dictionary");
             return NULL;
         }
+        int error = 0;
+        Py_BEGIN_CRITICAL_SECTION(state);
         while (PyDict_Next(state, &i, &d_key, &d_value)) {
             Py_INCREF(d_key);
             Py_INCREF(d_value);
@@ -250,8 +252,13 @@ BaseException___setstate___impl(PyBaseExceptionObject *self, PyObject *state)
             Py_DECREF(d_value);
             Py_DECREF(d_key);
             if (res < 0) {
-                return NULL;
+                error = 1;
+                break;
             }
+        }
+        Py_END_CRITICAL_SECTION();
+        if (error) {
+            return NULL;
         }
     }
     Py_RETURN_NONE;
