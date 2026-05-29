@@ -94,6 +94,8 @@ static struct _inittab *inittab_copy = NULL;
     (interp)->imports.modules_by_index
 #define LAZY_MODULES(interp) \
     (interp)->imports.lazy_modules
+#define LAZY_PENDING_SUBMODULES(interp) \
+    (interp)->imports.lazy_pending_submodules
 #define IMPORTLIB(interp) \
     (interp)->imports.importlib
 #define OVERRIDE_MULTI_INTERP_EXTENSIONS_CHECK(interp) \
@@ -271,8 +273,11 @@ import_get_module(PyThreadState *tstate, PyObject *name)
 PyObject *
 _PyImport_InitLazyModules(PyInterpreterState *interp)
 {
-    assert(LAZY_MODULES(interp) == NULL);
-    LAZY_MODULES(interp) = PyDict_New();
+    assert(LAZY_MODULES(interp) == NULL &&
+           LAZY_PENDING_SUBMODULES(interp) == NULL);
+
+    LAZY_PENDING_SUBMODULES(interp) = PyDict_New();
+    LAZY_MODULES(interp) = PySet_New(0);
     return LAZY_MODULES(interp);
 }
 
@@ -280,6 +285,7 @@ void
 _PyImport_ClearLazyModules(PyInterpreterState *interp)
 {
     Py_CLEAR(LAZY_MODULES(interp));
+    Py_CLEAR(LAZY_PENDING_SUBMODULES(interp));
 }
 
 static int
@@ -4338,7 +4344,7 @@ get_mod_dict(PyObject *module)
 // ensure we have the set for the parent module name in sys.lazy_modules.
 // Returns a new reference.
 static PyObject *
-ensure_lazy_submodules(PyDictObject *lazy_modules, PyObject *parent)
+ensure_lazy_pending_submodules(PyDictObject *lazy_modules, PyObject *parent)
 {
     PyObject *lazy_submodules;
     Py_BEGIN_CRITICAL_SECTION(lazy_modules);
@@ -4357,6 +4363,9 @@ ensure_lazy_submodules(PyDictObject *lazy_modules, PyObject *parent)
     return lazy_submodules;
 }
 
+// Ensures that we have a LazyImportObject on the parent module for
+// all children modules which have been lazily imported. If the parent
+// module overrides the child attribute then the value is not replaced.
 static int
 register_lazy_on_parent(PyThreadState *tstate, PyObject *name,
                         PyObject *builtins)
@@ -4368,16 +4377,16 @@ register_lazy_on_parent(PyThreadState *tstate, PyObject *name,
     PyObject *parent_dict = NULL;
 
     PyInterpreterState *interp = tstate->interp;
-    PyObject *lazy_modules = LAZY_MODULES(interp);
-    assert(lazy_modules != NULL);
+    PyObject *lazy_pending_submodules = LAZY_PENDING_SUBMODULES(interp);
+    assert(lazy_pending_submodules != NULL);
 
     Py_INCREF(name);
     while (true) {
         Py_ssize_t dot = PyUnicode_FindChar(name, '.', 0,
                                             PyUnicode_GET_LENGTH(name), -1);
         if (dot < 0) {
-            PyObject *lazy_submodules = ensure_lazy_submodules(
-                (PyDictObject *)lazy_modules, name);
+            PyObject *lazy_submodules = ensure_lazy_pending_submodules(
+                (PyDictObject *)lazy_pending_submodules, name);
             if (lazy_submodules == NULL) {
                 goto done;
             }
@@ -4399,8 +4408,8 @@ register_lazy_on_parent(PyThreadState *tstate, PyObject *name,
         }
 
         // Record the child as being lazily imported from the parent.
-        PyObject *lazy_submodules = ensure_lazy_submodules(
-            (PyDictObject *)lazy_modules, parent);
+        PyObject *lazy_submodules = ensure_lazy_pending_submodules(
+            (PyDictObject *)lazy_pending_submodules, parent);
         if (lazy_submodules == NULL) {
             goto done;
         }
@@ -4463,6 +4472,14 @@ register_from_lazy_on_parent(PyThreadState *tstate, PyObject *abs_name,
     if (fromname == NULL) {
         return -1;
     }
+
+    // Add the module name to sys.lazy_modules set (PEP 810).
+    PyObject *lazy_modules = LAZY_MODULES(tstate->interp);
+    if (PySet_Add(lazy_modules, fromname) < 0) {
+        Py_DECREF(fromname);
+        return -1;
+    }
+
     int res = register_lazy_on_parent(tstate, fromname, builtins);
     Py_DECREF(fromname);
     return res;
@@ -4554,6 +4571,13 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
         Py_DECREF(abs_name);
         return NULL;
     }
+
+    // Add the module name to sys.lazy_modules set (PEP 810).
+    PyObject *lazy_modules = LAZY_MODULES(tstate->interp);
+    if (PySet_Add(lazy_modules, abs_name) < 0) {
+        goto error;
+    }
+
     if (fromlist && PyUnicode_Check(fromlist)) {
         if (register_from_lazy_on_parent(tstate, abs_name, fromlist,
                                          builtins) < 0) {
@@ -4790,6 +4814,7 @@ _PyImport_ClearCore(PyInterpreterState *interp)
     Py_CLEAR(IMPORTLIB(interp));
     Py_CLEAR(IMPORT_FUNC(interp));
     Py_CLEAR(LAZY_IMPORT_FUNC(interp));
+    Py_CLEAR(interp->imports.lazy_pending_submodules);
     Py_CLEAR(interp->imports.lazy_modules);
     Py_CLEAR(interp->imports.lazy_importing_modules);
     Py_CLEAR(interp->imports.lazy_imports_filter);
@@ -5637,11 +5662,13 @@ _imp__set_lazy_attributes_impl(PyObject *module, PyObject *modobj,
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *module_dict = NULL;
     PyObject *ret = NULL;
-    PyObject *lazy_modules = LAZY_MODULES(tstate->interp);
-    assert(lazy_modules != NULL);
+    PyObject *lazy_pending_modules = LAZY_PENDING_SUBMODULES(tstate->interp);
+    assert(lazy_pending_modules != NULL);
 
     PyObject *lazy_submodules;
-    if (PyDict_GetItemRef(lazy_modules, name, &lazy_submodules) < 0) {
+    if (PySet_Discard(LAZY_MODULES(tstate->interp), name) < 0) {
+        return NULL;
+    } else if (PyDict_GetItemRef(lazy_pending_modules, name, &lazy_submodules) < 0) {
         return NULL;
     }
     else if (lazy_submodules == NULL) {
@@ -5660,8 +5687,7 @@ _imp__set_lazy_attributes_impl(PyObject *module, PyObject *modobj,
     Py_END_CRITICAL_SECTION();
     Py_DECREF(lazy_submodules);
 
-    // once a module is imported it is removed from sys.lazy_modules
-    if (PyDict_DelItem(lazy_modules, name) < 0) {
+    if (PyDict_DelItem(lazy_pending_modules, name) < 0) {
         goto error;
     }
 
