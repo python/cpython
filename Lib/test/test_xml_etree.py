@@ -1289,8 +1289,10 @@ class ElementTreeTest(unittest.TestCase):
 
     def test_comment_serialization(self):
         comm = ET.Comment('<spam> & ham')
+        # comments are not escaped
         self.assertEqual(ET.tostring(comm), b'<!--<spam> & ham-->')
         self.assertEqual(ET.tostring(comm, method='html'), b'<!--<spam> & ham-->')
+        # no comments in text serialization
         self.assertEqual(ET.tostring(comm, method='text'), b'')
 
     def test_processinginstruction_serialization(self):
@@ -1302,7 +1304,7 @@ class ElementTreeTest(unittest.TestCase):
                 b'<?test instruction?>')
 
         # Issue #2746
-
+        # processing instructions are not escaped
         self.assertEqual(ET.tostring(ET.PI('test', '<testing&>')),
                 b'<?test <testing&>?>')
         self.assertEqual(ET.tostring(ET.PI('test', '<testing&>\xe3'), 'latin-1'),
@@ -1311,15 +1313,18 @@ class ElementTreeTest(unittest.TestCase):
         pi = ET.PI('test', 'ham & eggs < spam')
         self.assertEqual(ET.tostring(pi), b'<?test ham & eggs < spam?>')
         self.assertEqual(ET.tostring(pi, method='html'), b'<?test ham & eggs < spam?>')
+        # no processing instructions in text serialization
         self.assertEqual(ET.tostring(pi, method='text'), b'')
 
     def test_empty_attribute_serialization(self):
+        # empty attrs only work in html
         elem = ET.Element('tag', attrib={'attr': None})
         self.assertRaises(TypeError, ET.tostring, elem)
         self.assertEqual(ET.tostring(elem, method='html'), b'<tag attr></tag>')
 
     @support.subTests('tag', ("script", "style", "xmp", "iframe", "noembed", "noframes"))
     def test_html_cdata_elems_serialization(self, tag):
+        # content of raw text elements is not escaped in html
         tag = tag.title()
         elem = ET.Element(tag)
         elem.text = '<spam>&ham'
@@ -1341,6 +1346,8 @@ class ElementTreeTest(unittest.TestCase):
                 self.assertEqual(serialized, expected)
 
     def test_html_plaintext_serialization(self):
+        # content of plaintext is not escaped in html
+        # no end tag for plaintext
         elem = ET.Element('PlainText')
         elem.text = '<spam>&ham'
         self.assertEqual(ET.tostring(elem, method='html'),
