@@ -591,7 +591,7 @@
                 if (sym_get_type(left) == &PyLong_Type) {
                     ADD_OP(_GUARD_NOS_OVERFLOWED, 0, 0);
                 }
-                sym_set_compact_int(left);
+                sym_set_type(left, &PyLong_Type);
             }
             break;
         }
@@ -606,7 +606,7 @@
                 if (sym_get_type(value) == &PyLong_Type) {
                     ADD_OP(_GUARD_TOS_OVERFLOWED, 0, 0);
                 }
-                sym_set_compact_int(value);
+                sym_set_type(value, &PyLong_Type);
             }
             break;
         }

@@ -1411,6 +1411,24 @@ class TestSpecializer(TestBase):
         self.assert_no_opcode(binary_op_int_too_large, "BINARY_OP_SUBTRACT_INT_WIDE")
         self.assert_no_opcode(binary_op_int_too_large, "BINARY_OP_MULTIPLY_INT_WIDE")
 
+        def binary_op_int_max_digits_too_large():
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a, b = 1 << 64, 1
+                c = a + b
+                self.assertEqual(c, (1 << 64) + 1)
+                c = a - b
+                self.assertEqual(c, (1 << 64) - 1)
+                c = a * b
+                self.assertEqual(c, 1 << 64)
+
+        binary_op_int_max_digits_too_large()
+        self.assert_no_opcode(binary_op_int_max_digits_too_large, "BINARY_OP_ADD_INT")
+        self.assert_no_opcode(binary_op_int_max_digits_too_large, "BINARY_OP_SUBTRACT_INT")
+        self.assert_no_opcode(binary_op_int_max_digits_too_large, "BINARY_OP_MULTIPLY_INT")
+        self.assert_no_opcode(binary_op_int_max_digits_too_large, "BINARY_OP_ADD_INT_WIDE")
+        self.assert_no_opcode(binary_op_int_max_digits_too_large, "BINARY_OP_SUBTRACT_INT_WIDE")
+        self.assert_no_opcode(binary_op_int_max_digits_too_large, "BINARY_OP_MULTIPLY_INT_WIDE")
+
         def binary_op_add_unicode():
             for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
                 a, b = "foo", "bar"

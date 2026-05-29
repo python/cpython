@@ -351,12 +351,11 @@ _PyLong_CheckExactAndCompact(PyObject *op)
     return PyLong_CheckExact(op) && _PyLong_IsCompact((const PyLongObject *)op);
 }
 
-/* A cheap guard used by Tier 2 / JIT integer fast paths.
+/* A cheap range guard used by Tier 2 / JIT integer fast paths.
  *
  * "Compact" ints are single-digit. Non-compact ints may still fit in int64_t,
  * but are limited to a small number of digits (3 for 30-bit digits, 5 for
- * 15-bit digits). This is an intentionally cheap filter: callers must still
- * do an exact range check during extraction.
+ * 15-bit digits).
  */
 #define _PY_LONG_MAX_DIGITS_FOR_INT64 ((64 + PyLong_SHIFT - 1) / PyLong_SHIFT)
 
@@ -368,7 +367,32 @@ _PyLong_MightFitInt64(const PyLongObject *v)
         return 1;
     }
     Py_ssize_t ndigits = (Py_ssize_t)(tag >> NON_SIZE_BITS);
-    return ndigits <= _PY_LONG_MAX_DIGITS_FOR_INT64;
+    if (ndigits < _PY_LONG_MAX_DIGITS_FOR_INT64) {
+        return 1;
+    }
+    if (ndigits > _PY_LONG_MAX_DIGITS_FOR_INT64) {
+        return 0;
+    }
+
+    unsigned int shift = PyLong_SHIFT * (unsigned int)(ndigits - 1);
+    uint64_t top = (uint64_t)v->long_value.ob_digit[ndigits - 1];
+    if ((tag & SIGN_MASK) == SIGN_NEGATIVE) {
+        uint64_t max_top = ((uint64_t)INT64_MAX + 1) >> shift;
+        if (top < max_top) {
+            return 1;
+        }
+        if (top > max_top) {
+            return 0;
+        }
+        for (Py_ssize_t i = 0; i < ndigits - 1; i++) {
+            if (v->long_value.ob_digit[i] != 0) {
+                return 0;
+            }
+        }
+        return 1;
+    }
+    uint64_t max_top = (uint64_t)INT64_MAX >> shift;
+    return top <= max_top;
 }
 
 static inline int
