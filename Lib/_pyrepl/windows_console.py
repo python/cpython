@@ -53,10 +53,10 @@ from .trace import trace, trace_text
 from .windows_eventqueue import EventQueue
 
 try:
-    from ctypes import get_last_error, WinDLL, windll, WinError  # type: ignore[attr-defined]
+    from ctypes import get_last_error, WinDLL, WinError  # type: ignore[attr-defined]
 except:
     # Keep MyPy happy off Windows
-    from ctypes import CDLL as WinDLL, cdll as windll
+    from ctypes import CDLL as WinDLL
 
     def get_last_error() -> int:
         return 42
@@ -796,11 +796,11 @@ STD_INPUT_HANDLE = -10
 STD_OUTPUT_HANDLE = -11
 
 if sys.platform == "win32":
+    import _winapi
+
     _KERNEL32 = WinDLL("kernel32", use_last_error=True)
 
-    GetStdHandle = windll.kernel32.GetStdHandle
-    GetStdHandle.argtypes = [DWORD]
-    GetStdHandle.restype = HANDLE
+    GetStdHandle = _winapi.GetStdHandle
 
     GetConsoleScreenBufferInfo = _KERNEL32.GetConsoleScreenBufferInfo
     GetConsoleScreenBufferInfo.argtypes = [
@@ -836,9 +836,7 @@ if sys.platform == "win32":
     FlushConsoleInputBuffer.argtypes = [HANDLE]
     FlushConsoleInputBuffer.restype = BOOL
 
-    WaitForSingleObject = _KERNEL32.WaitForSingleObject
-    WaitForSingleObject.argtypes = [HANDLE, DWORD]
-    WaitForSingleObject.restype = DWORD
+    WaitForSingleObject = _winapi.WaitForSingleObject
 
     OutHandle = GetStdHandle(STD_OUTPUT_HANDLE)
     InHandle = GetStdHandle(STD_INPUT_HANDLE)
