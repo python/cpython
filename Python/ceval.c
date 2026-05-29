@@ -1137,6 +1137,39 @@ _PyEval_GetIter(_PyStackRef iterable, _PyStackRef *index_or_null, int yield_from
     return PyStackRef_FromPyObjectSteal(iter_o);
 }
 
+int _PyEval_StoreName(PyThreadState *tstate, _PyStackRef v,PyObject *name, PyObject* ns, int oparg)
+{
+    int deletion = PyStackRef_IsNull(v);
+    int error = 0;
+    if (ns == NULL) {
+        const char *msg = deletion
+            ? "no locals found when deleting %R"
+            : "no locals found when storing %R";
+        _PyErr_Format(tstate, PyExc_SystemError, msg, name);
+        error = 1;
+    }
+
+    if (deletion) {
+        error = PyObject_DelItem(ns, name);
+        if (error) {
+            _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                                    NAME_ERROR_MSG,
+                                    name);
+        }
+    }
+
+    else {
+        if (PyDict_CheckExact(ns)) {
+            error = PyDict_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
+        }
+        else {
+            error = PyObject_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
+        }
+    }
+
+    return error;
+}
+
 #if (defined(__GNUC__) && __GNUC__ >= 10 && !defined(__clang__)) && defined(__x86_64__)
 /*
  * gh-129987: The SLP autovectorizer can cause poor code generation for

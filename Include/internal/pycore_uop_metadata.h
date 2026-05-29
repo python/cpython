@@ -177,6 +177,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_POP_EXCEPT] = HAS_ESCAPES_FLAG,
     [_LOAD_COMMON_CONSTANT] = HAS_ARG_FLAG,
     [_LOAD_BUILD_CLASS] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_STORE_NAME] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_UNPACK_SEQUENCE] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_UNPACK_SEQUENCE_TWO_TUPLE] = HAS_ARG_FLAG | HAS_EXIT_FLAG | HAS_ESCAPES_FLAG,
     [_UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE] = 0,
@@ -1721,6 +1722,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .entries = {
             { 1, 0, _LOAD_BUILD_CLASS_r01 },
             { -1, -1, -1 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+        },
+    },
+    [_STORE_NAME] = {
+        .best = { 1, 1, 1, 1 },
+        .entries = {
+            { -1, -1, -1 },
+            { 0, 1, _STORE_NAME_r10 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -4305,6 +4315,7 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_LOAD_COMMON_CONSTANT_r12] = _LOAD_COMMON_CONSTANT,
     [_LOAD_COMMON_CONSTANT_r23] = _LOAD_COMMON_CONSTANT,
     [_LOAD_BUILD_CLASS_r01] = _LOAD_BUILD_CLASS,
+    [_STORE_NAME_r10] = _STORE_NAME,
     [_UNPACK_SEQUENCE_r10] = _UNPACK_SEQUENCE,
     [_UNPACK_SEQUENCE_TWO_TUPLE_r12] = _UNPACK_SEQUENCE_TWO_TUPLE,
     [_UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE_r02] = _UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE,
@@ -6062,6 +6073,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_STORE_DEREF_r10] = "_STORE_DEREF_r10",
     [_STORE_GLOBAL] = "_STORE_GLOBAL",
     [_STORE_GLOBAL_r10] = "_STORE_GLOBAL_r10",
+    [_STORE_NAME] = "_STORE_NAME",
+    [_STORE_NAME_r10] = "_STORE_NAME_r10",
     [_STORE_SLICE] = "_STORE_SLICE",
     [_STORE_SLICE_r30] = "_STORE_SLICE_r30",
     [_STORE_SUBSCR] = "_STORE_SUBSCR",
@@ -6482,6 +6495,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _LOAD_BUILD_CLASS:
             return 0;
+        case _STORE_NAME:
+            return 1;
         case _UNPACK_SEQUENCE:
             return 1;
         case _UNPACK_SEQUENCE_TWO_TUPLE:

@@ -1992,43 +1992,14 @@ dummy_func(
         inst(STORE_NAME, (v -- )) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             PyObject *ns = LOCALS();
-            int deletion = PyStackRef_IsNull(v);
-            int err;
-            if (ns == NULL) {
-                const char *msg = deletion
-                    ? "no locals found when deleting %R"
-                    : "no locals found when storing %R";
-                _PyErr_Format(tstate, PyExc_SystemError, msg, name);
-                if (deletion) {
-                    DEAD(v);
-                }
-                else {
-                    PyStackRef_CLOSE(v);
-                }
-                ERROR_IF(true);
-            }
-
-            if (deletion) {
+            int error = _PyEval_StoreName(tstate, v, name, ns, oparg);
+            if (PyStackRef_IsNull(v)) {
                 DEAD(v);
-                err = PyObject_DelItem(ns, name);
-                if (err) {
-                    _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                                            NAME_ERROR_MSG,
-                                            name);
-                    ERROR_NO_POP();
-                }
             }
-
             else {
-                if (PyDict_CheckExact(ns)) {
-                    err = PyDict_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
-                }
-                else {
-                    err = PyObject_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
-                }
                 PyStackRef_CLOSE(v);
-                ERROR_IF(err);
             }
+            ERROR_IF(error);
         }
 
         family(UNPACK_SEQUENCE, INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE) = {
