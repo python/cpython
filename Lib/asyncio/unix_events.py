@@ -835,7 +835,8 @@ class _UnixSubprocessTransport(base_subprocess.BaseSubprocessTransport):
 
     def _start(self, args, shell, stdin, stdout, stderr, bufsize, **kwargs):
         stdin_w = None
-        if stdin == subprocess.PIPE and sys.platform.startswith('aix'):
+        if (stdin == subprocess.PIPE
+            and (sys.platform.startswith('aix') or sys.platform == 'cygwin')):
             # Use a socket pair for stdin on AIX, since it does not
             # support selecting read events on the write end of a
             # socket (which we use in order to detect closing of the

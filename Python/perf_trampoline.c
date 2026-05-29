@@ -210,14 +210,20 @@ enum perf_trampoline_type {
 static void free_code_arenas(void);
 
 static void
-perf_trampoline_reset_state(void)
+perf_trampoline_clear_code_watcher(void)
 {
-    free_code_arenas();
     if (code_watcher_id >= 0) {
         PyCode_ClearWatcher(code_watcher_id);
         code_watcher_id = -1;
     }
     extra_code_index = -1;
+}
+
+static void
+perf_trampoline_reset_state(void)
+{
+    free_code_arenas();
+    perf_trampoline_clear_code_watcher();
 }
 
 static int
@@ -621,9 +627,10 @@ _PyPerfTrampoline_AfterFork_Child(void)
             // After fork, Fini may leave the old code watcher registered
             // if trampolined code objects from the parent still exist
             // (trampoline_refcount > 0). Clear it unconditionally before
-            // Init registers a new one, to prevent two watchers sharing
-            // the same globals and double-decrementing trampoline_refcount.
-            perf_trampoline_reset_state();
+            // Init registers a new one, but keep the old arenas mapped: the
+            // child may still need to return through trampoline frames that
+            // were on the C stack at fork().
+            perf_trampoline_clear_code_watcher();
             _PyPerfTrampoline_Init(1);
         }
     }

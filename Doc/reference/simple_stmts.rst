@@ -965,10 +965,6 @@ Imports inside functions, class bodies, or
 :keyword:`try`/:keyword:`except`/:keyword:`finally` blocks are always eager,
 regardless of :attr:`!__lazy_modules__`.
 
-Setting ``-X lazy_imports=none`` (or the :envvar:`PYTHON_LAZY_IMPORTS`
-environment variable to ``none``) overrides :attr:`!__lazy_modules__` and
-forces all imports to be eager.
-
 .. versionadded:: 3.15
 
 .. _future:

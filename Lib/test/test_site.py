@@ -456,6 +456,7 @@ import {self.imported}
         if os.path.exists(self.bad_dir_path):
             os.rmdir(self.bad_dir_path)
 
+
 class ImportSideEffectTests(unittest.TestCase):
     """Test side-effects from importing 'site'."""
 
@@ -544,7 +545,6 @@ class ImportSideEffectTests(unittest.TestCase):
                 if 'usercustomize' == module_name:
                     output = subprocess.check_output([sys.executable, '-s', '-c', '""'])
                     self.assertNotIn(eyecatcher, output.decode('utf-8'))
-
 
     @unittest.skipUnless(hasattr(urllib.request, "HTTPSHandler"),
                          'need SSL support to download license')
@@ -926,18 +926,28 @@ class StartFileTests(unittest.TestCase):
     def _reset_startup_state(self):
         site._startup_state = None
 
-    def _make_start(self, content, name='testpkg'):
-        """Write a <name>.start file and return its basename."""
+    def _make_start(self, content, name='testpkg', basedir=None):
+        """Write a <name>.start file and return its basename.
+
+        ``basedir`` defaults to ``self.tmpdir``.  Pass an explicit directory
+        when the .start file needs to live somewhere other than the test's
+        primary tmpdir (e.g. a nested user-site).
+        """
         basename = f"{name}.start"
-        filepath = os.path.join(self.tmpdir, basename)
+        filepath = os.path.join(self.tmpdir if basedir is None else basedir, basename)
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(content)
         return basename
 
-    def _make_pth(self, content, name='testpkg'):
-        """Write a <name>.pth file and return its basename."""
+    def _make_pth(self, content, name='testpkg', basedir=None):
+        """Write a <name>.pth file and return its basename.
+
+        ``basedir`` defaults to ``self.tmpdir``.  Pass an explicit directory
+        when the .pth file needs to live somewhere other than the test's
+        primary tmpdir (e.g. a nested user-site).
+        """
         basename = f"{name}.pth"
-        filepath = os.path.join(self.tmpdir, basename)
+        filepath = os.path.join(self.tmpdir if basedir is None else basedir, basename)
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(content)
         return basename
@@ -1639,6 +1649,80 @@ def bootstrap():
         site.addsitedir(self.sitedir, set())
         self.assertIn(overlay, sys.path)
         self.assertIn(pkgdir, sys.path)
+
+    # gh-149819
+    @unittest.skipUnless(site.ENABLE_USER_SITE, "requires user-site")
+    @support.requires_subprocess()
+    def test_pth_processed_when_sitedir_already_on_path(self):
+        # A .pth file in a site-packages directory must still be processed by
+        # site.main() when that directory is already on sys.path at
+        # interpreter start up, for example in a subprocess that inherits
+        # PYTHONPATH from its parent.  Before the fix, main() seeded
+        # known_paths with all entries derived from removeduppaths(), and
+        # addsitedir() then skipped .pth processing for any directory already
+        # in known_paths.
+        user_base = self.tmpdir
+        user_site = site._get_path(user_base)
+        os.makedirs(user_site)
+        sentinel = "GH149819_PTH_RAN"
+        # Writing some text to stderr is the simplest observable side effect.
+        self._make_pth(f"""\
+import sys; sys.stderr.write({sentinel!r}); sys.stderr.flush()
+""",
+            name='gh149819',
+            basedir=user_site)
+        with EnvironmentVarGuard() as env:
+            # PYTHONUSERBASE points USER_SITE at our temp directory so
+            # site.main() will call addsitedir() on it, rather than on the
+            # host interpreter's real user-site.
+            env['PYTHONUSERBASE'] = user_base
+            # PYTHONPATH puts that same directory on sys.path before
+            # site.main() runs in the subprocess.  This is what triggers the
+            # bug: removeduppaths() records it in known_paths, and the unfixed
+            # addsitedir() then skips .pth processing.
+            env['PYTHONPATH'] = user_site
+            result = subprocess.run(
+                [sys.executable, '-c', ''],
+                capture_output=True,
+                check=True,
+            )
+        self.assertIn(sentinel.encode(), result.stderr)
+
+    @unittest.skipUnless(site.ENABLE_USER_SITE, "requires user-site")
+    @support.requires_subprocess()
+    def test_start_processed_when_sitedir_already_on_path(self):
+        # Companion to test_pth_processed_when_sitedir_already_on_path:
+        # the same dedup-guard skip in addsitedir() suppressed both .pth
+        # and .start file processing, so verify .start entry points also
+        # run for a site-packages directory inherited via PYTHONPATH.
+        user_base = self.tmpdir
+        user_site = site._get_path(user_base)
+        os.makedirs(user_site)
+        sentinel = "GH149819_START_RAN"
+        # The .start entry point resolves to a callable, so we write a
+        # tiny importable module that outputs the sentinel text.  It lands in
+        # <self.sitedir>/extdir.  That path is added to PYTHONPATH below so
+        # the subprocess can import it.
+        extdir = self._make_mod(f"""\
+import sys
+def run():
+    sys.stderr.write({sentinel!r})
+    sys.stderr.flush()
+""", name='gh149819mod')
+        self._make_start(
+            'gh149819mod:run\n', name='gh149819', basedir=user_site
+        )
+        with EnvironmentVarGuard() as env:
+            # See above for details.
+            env['PYTHONUSERBASE'] = user_base
+            env['PYTHONPATH'] = os.pathsep.join([user_site, extdir])
+            result = subprocess.run(
+                [sys.executable, '-c', ''],
+                capture_output=True,
+                check=True,
+            )
+        self.assertIn(sentinel.encode(), result.stderr)
+
 
 
 if __name__ == "__main__":

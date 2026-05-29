@@ -12,8 +12,9 @@
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interpframe.h"   // _PyThreadState_HasStackSpace()
-#include "pycore_object.h"        // _PyType_InitCache()
+#include "pycore_object.h"        // _PyType_InitCache(), _Py_ClearImmortal()
 #include "pycore_obmalloc.h"      // _PyMem_obmalloc_state_on_heap()
+#include "pycore_opcode_utils.h"  // NUM_COMMON_CONSTANTS
 #include "pycore_optimizer.h"     // JIT_CLEANUP_THRESHOLD
 #include "pycore_parking_lot.h"   // _PyParkingLot_AfterFork()
 #include "pycore_pyerrors.h"      // _PyErr_Clear()
@@ -21,7 +22,7 @@
 #include "pycore_pymem.h"         // _PyMem_DebugEnabled()
 #include "pycore_runtime.h"       // _PyRuntime
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
-#include "pycore_stackref.h"      // Py_STACKREF_DEBUG
+#include "pycore_stackref.h"      // PyStackRef_AsPyObjectBorrow()
 #include "pycore_stats.h"         // FT_STAT_WORLD_STOP_INC()
 #include "pycore_time.h"          // _PyTime_Init()
 #include "pycore_uniqueid.h"      // _PyObject_FinalizePerThreadRefcounts()
@@ -634,7 +635,7 @@ init_interpreter(PyInterpreterState *interp,
     // Trace fitness configuration
     init_policy(&interp->opt_config.fitness_initial,
                 "PYTHON_JIT_FITNESS_INITIAL",
-                FITNESS_INITIAL, EXIT_QUALITY_CLOSE_LOOP, UOP_MAX_TRACE_LENGTH - 1);
+                FITNESS_INITIAL, EXIT_QUALITY_CLOSE_LOOP, FITNESS_INITIAL);
 
     interp->opt_config.specialization_enabled = !is_env_enabled("PYTHON_SPECIALIZATION_OFF");
     interp->opt_config.uops_optimize_enabled = !is_env_disabled("PYTHON_UOPS_OPTIMIZE");
@@ -778,6 +779,36 @@ extern void
 _Py_stackref_report_leaks(PyInterpreterState *interp);
 #endif
 
+static int
+common_const_is_initialized(_PyStackRef ref)
+{
+#if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
+    return !PyStackRef_IsNull(ref);
+#else
+    return ref.bits != 0 && !PyStackRef_IsNull(ref);
+#endif
+}
+
+
+static void
+common_constants_clear(PyInterpreterState *interp)
+{
+    for (int i = 0; i < NUM_COMMON_CONSTANTS; i++) {
+        _PyStackRef ref = interp->common_consts[i];
+        if (!common_const_is_initialized(ref)) {
+            continue;
+        }
+        PyObject *obj = PyStackRef_AsPyObjectBorrow(ref);
+        PyStackRef_XCLOSE(ref);
+        interp->common_consts[i] = PyStackRef_NULL;
+        // Refcount reclamation skips heap immortals; release manually.
+        if (_Py_IsImmortal(obj) && !_Py_IsStaticImmortal(obj)) {
+            _Py_ClearImmortal(obj);
+        }
+    }
+}
+
+
 static void
 interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 {
@@ -904,6 +935,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     PyDict_Clear(interp->builtins);
     Py_CLEAR(interp->sysdict);
     Py_CLEAR(interp->builtins);
+    common_constants_clear(interp);
 
 #if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
 #  ifdef Py_STACKREF_CLOSE_DEBUG

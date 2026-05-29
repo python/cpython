@@ -105,6 +105,13 @@ You can also get a :ref:`distribution's version number <version>`, list its
    current Python environment.
 
 
+.. exception:: MetadataNotFound
+
+   Subclass of :class:`FileNotFoundError` raised when attempting to load metadata
+   from a distribution folder that is empty or otherwise does not contain a
+   metadata file.
+
+
 Functional API
 ==============
 
@@ -224,6 +231,9 @@ Distribution metadata
    Raises :exc:`PackageNotFoundError` if the named distribution
    package is not installed in the current Python environment.
 
+   Raises :exc:`MetadataNotFound` if a distribution package is
+   present but no METADATA file is present.
+
 .. class:: PackageMetadata
 
    A concrete implementation of the
@@ -251,6 +261,12 @@ all the metadata in a JSON-compatible form per :PEP:`566`::
 
 The full set of available metadata is not described here.
 See the PyPA `Core metadata specification <https://packaging.python.org/en/latest/specifications/core-metadata/#core-metadata>`_ for additional details.
+
+.. versionchanged:: 3.15
+   Previously and incidentally, if a METADATA file was missing from a distribution, an
+   empty ``PackageMetadata`` would be returned, indistinguishable from
+   an empty METADATA file. Now, a missing METADATA file triggers a
+   ``MetadataNotFound`` exception.
 
 .. versionchanged:: 3.10
    The ``Description`` is now included in the metadata when presented
@@ -464,6 +480,9 @@ The same applies for :func:`entry_points` and :func:`files`.
 
    .. attribute:: metadata
       :type: PackageMetadata
+
+      Raises :exc:`MetadataNotFound` if the METADATA file is not present in
+      the distribution.
 
       There are all kinds of additional metadata available on :class:`!Distribution`
       instances as a :class:`PackageMetadata` instance::
