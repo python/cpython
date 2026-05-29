@@ -404,7 +404,7 @@ Module contents
 
    * When only *sitedir* is given, startup configuration is processed before
      the function returns, and ``None`` is returned.
-   * When *known_paths* is given, startup configuration is process before the
+   * When *known_paths* is given, startup configuration is processed before the
      function returns, and the updated *known_paths* is returned.
    * When *startup_state* is given, startup configuration is **not**
      processed, and the state instance is returned.  It is up to the caller to
