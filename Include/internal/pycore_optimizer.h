@@ -462,6 +462,7 @@ extern JitOptRef _Py_uop_sym_tuple_getitem(JitOptContext *ctx, JitOptRef sym, Py
 extern Py_ssize_t _Py_uop_sym_tuple_length(JitOptRef sym);
 extern JitOptRef _Py_uop_sym_new_truthiness(JitOptContext *ctx, JitOptRef value, bool truthy);
 extern bool _Py_uop_sym_is_compact_int(JitOptRef sym);
+extern bool _Py_uop_sym_fits_int64(JitOptRef sym);
 extern JitOptRef _Py_uop_sym_new_compact_int(JitOptContext *ctx);
 extern void _Py_uop_sym_set_compact_int(JitOptContext *ctx,  JitOptRef sym);
 extern JitOptRef _Py_uop_sym_new_predicate(JitOptContext *ctx, JitOptRef lhs_ref, JitOptRef rhs_ref, JitOptPredicateKind kind);

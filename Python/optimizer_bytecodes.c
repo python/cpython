@@ -43,6 +43,7 @@ typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 #define sym_is_immortal _Py_uop_symbol_is_immortal
 #define sym_new_compact_int _Py_uop_sym_new_compact_int
 #define sym_is_compact_int _Py_uop_sym_is_compact_int
+#define sym_fits_int64 _Py_uop_sym_fits_int64
 #define sym_new_truthiness _Py_uop_sym_new_truthiness
 #define sym_new_predicate _Py_uop_sym_new_predicate
 #define sym_apply_predicate_narrowing _Py_uop_sym_apply_predicate_narrowing
@@ -236,7 +237,7 @@ dummy_func(void) {
      * type is already known to be PyLong_Type the cheaper _OVERFLOWED guard
      * (which skips the type check) can be used instead. */
     op(_GUARD_TOS_INT_WIDE, (value -- value)) {
-        if (sym_is_compact_int(value)) {
+        if (sym_fits_int64(value)) {
             ADD_OP(_NOP, 0, 0);
         }
         else {
@@ -248,7 +249,7 @@ dummy_func(void) {
     }
 
     op(_GUARD_NOS_INT_WIDE, (left, unused -- left, unused)) {
-        if (sym_is_compact_int(left)) {
+        if (sym_fits_int64(left)) {
             ADD_OP(_NOP, 0, 0);
         }
         else {

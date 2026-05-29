@@ -584,7 +584,7 @@
         case _GUARD_NOS_INT_WIDE: {
             JitOptRef left;
             left = stack_pointer[-2];
-            if (sym_is_compact_int(left)) {
+            if (sym_fits_int64(left)) {
                 ADD_OP(_NOP, 0, 0);
             }
             else {
@@ -599,7 +599,7 @@
         case _GUARD_TOS_INT_WIDE: {
             JitOptRef value;
             value = stack_pointer[-1];
-            if (sym_is_compact_int(value)) {
+            if (sym_fits_int64(value)) {
                 ADD_OP(_NOP, 0, 0);
             }
             else {
