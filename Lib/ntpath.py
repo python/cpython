@@ -287,7 +287,20 @@ def ismount(path):
     path = abspath(path)
     drive, root, rest = splitroot(path)
     if drive and drive[0] in seps:
-        return not rest
+        if rest:
+            return False
+        # A UNC mount point must name both a server and a share; a bare
+        # server (e.g. \\server or \\?\UNC\server) is not one.
+        if isinstance(drive, bytes):
+            sep, altsep, unc_prefix = b'\\', b'/', b'\\\\?\\UNC\\'
+        else:
+            sep, altsep, unc_prefix = '\\', '/', '\\\\?\\UNC\\'
+        normd = drive.replace(altsep, sep)
+        if normd[:len(unc_prefix)].upper() == unc_prefix:
+            start = len(unc_prefix)
+        else:
+            start = 2
+        return start < normd.find(sep, start) < len(normd) - 1
     if root and not rest:
         return True
 

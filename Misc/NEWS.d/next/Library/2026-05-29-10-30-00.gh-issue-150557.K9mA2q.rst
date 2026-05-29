@@ -1,0 +1,3 @@
+Fix :func:`os.path.ismount` on Windows incorrectly returning ``True`` for a UNC
+path that names a server but no share, such as ``\\server`` or
+``\\?\UNC\server``. Patch by Amrutha Modela.

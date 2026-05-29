@@ -1407,6 +1407,17 @@ class TestNtpath(NtpathTestCase):
             self.assertTrue(ntpath.ismount(b"\\\\localhost\\c$"))
             self.assertTrue(ntpath.ismount(b"\\\\localhost\\c$\\"))
 
+            # gh-150557: a UNC path that names a server but no share is not
+            # a mount point.
+            self.assertFalse(ntpath.ismount("\\\\server"))
+            self.assertFalse(ntpath.ismount("\\\\server\\"))
+            self.assertFalse(ntpath.ismount("\\\\?\\UNC\\server"))
+            self.assertFalse(ntpath.ismount("\\\\?\\UNC\\server\\"))
+            self.assertFalse(ntpath.ismount(b"\\\\server"))
+            self.assertFalse(ntpath.ismount(b"\\\\?\\UNC\\server"))
+            self.assertTrue(ntpath.ismount("\\\\?\\UNC\\server\\share"))
+            self.assertTrue(ntpath.ismount(b"\\\\?\\UNC\\server\\share"))
+
     def test_ismount_invalid_paths(self):
         ismount = ntpath.ismount
         self.assertFalse(ismount("c:\\\udfff"))
