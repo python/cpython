@@ -225,7 +225,7 @@ BaseException___reduce___impl(PyBaseExceptionObject *self)
  */
 
 /*[clinic input]
-@critical_section self state
+@critical_section state
 BaseException.__setstate__
     state: object
     /
