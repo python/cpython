@@ -2630,8 +2630,9 @@ capi_call_instrumentation(PyMonitoringState *state, PyObject *codelike, int32_t 
         PyErr_SetString(PyExc_ValueError, "offset must be non-negative");
         return -1;
     }
+    PyObject *offset_obj = NULL;
     if (event != PY_MONITORING_EVENT_LINE) {
-        PyObject *offset_obj = PyLong_FromLong(offset);
+        offset_obj = PyLong_FromLong(offset);
         if (offset_obj == NULL) {
             return -1;
         }
@@ -2672,6 +2673,7 @@ capi_call_instrumentation(PyMonitoringState *state, PyObject *codelike, int32_t 
             }
         }
     }
+    Py_XDECREF(offset_obj);
     return err;
 }
 

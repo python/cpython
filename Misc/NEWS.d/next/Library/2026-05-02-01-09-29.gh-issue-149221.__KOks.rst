@@ -1,1 +1,0 @@
-Catch rare math domain error for :func:`random.binomialvariate`.

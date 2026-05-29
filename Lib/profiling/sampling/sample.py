@@ -6,7 +6,7 @@ import sys
 import sysconfig
 import time
 from collections import deque
-from _colorize import ANSIColors
+lazy from _colorize import ANSIColors
 
 from .pstats_collector import PstatsCollector
 from .stack_collector import CollapsedStackCollector, FlamegraphCollector
@@ -46,6 +46,9 @@ _FREE_THREADED_BUILD = sysconfig.get_config_var("Py_GIL_DISABLED") is not None
 # Minimum number of samples required before showing the TUI
 # If fewer samples are collected, we skip the TUI and just print a message
 MIN_SAMPLES_FOR_TUI = 200
+
+# Maximum number of consecutive identical samples to keep before flushing.
+MAX_PENDING_SAMPLES = 8192
 
 class SampleProfiler:
     def __init__(self, pid, sample_interval_usec, all_threads, *, mode=PROFILING_MODE_WALL, native=False, gc=True, opcodes=False, skip_non_matching_threads=True, collect_stats=False, blocking=False):
@@ -109,6 +112,20 @@ class SampleProfiler:
         last_sample_time = start_time
         realtime_update_interval = 1.0  # Update every second
         last_realtime_update = start_time
+        aggregating = getattr(collector, 'aggregating', False) is True
+        prev_stack = None
+        pending_count = 0
+        pending_timestamps = [] if aggregating else None
+
+        def flush_pending():
+            nonlocal pending_count, pending_timestamps
+            if pending_count == 0:
+                return
+            pending_count = 0
+            ts = pending_timestamps
+            pending_timestamps = []
+            collector.collect(prev_stack, timestamps_us=ts)
+
         try:
             while duration_sec is None or running_time_sec < duration_sec:
                 # Check if live collector wants to stop
@@ -116,6 +133,7 @@ class SampleProfiler:
                     break
 
                 current_time = time.perf_counter()
+                current_time_us = int(current_time * 1_000_000)
                 if next_time > current_time:
                     sleep_time = (next_time - current_time) * 0.9
                     if sleep_time > 0.0001:
@@ -125,13 +143,24 @@ class SampleProfiler:
                         stack_frames = self._get_stack_trace(
                             async_aware=async_aware
                         )
-                        collector.collect(stack_frames)
+                        if aggregating:
+                            if stack_frames != prev_stack:
+                                flush_pending()
+                                prev_stack = stack_frames
+                            pending_count += 1
+                            pending_timestamps.append(current_time_us)
+                            if pending_count >= MAX_PENDING_SAMPLES:
+                                flush_pending()
+                        else:
+                            collector.collect(stack_frames)
                     except ProcessLookupError as e:
                         running_time_sec = current_time - start_time
                         break
                     except (RuntimeError, UnicodeDecodeError, MemoryError, OSError):
+                        flush_pending()
                         collector.collect_failed_sample()
                         errors += 1
+                        prev_stack = None
                     except Exception as e:
                         if not _is_process_running(self.pid):
                             break
@@ -163,6 +192,8 @@ class SampleProfiler:
             interrupted = True
             running_time_sec = time.perf_counter() - start_time
             print("Interrupted by user.")
+        finally:
+            flush_pending()
 
         # Clear real-time stats line if it was being displayed
         if self.realtime_stats and len(self.sample_intervals) > 0:
@@ -295,6 +326,33 @@ class SampleProfiler:
         print(f"  {ANSIColors.CYAN}Code Object Cache:{ANSIColors.RESET}")
         print(f"    Hits:             {code_hits:n} ({ANSIColors.GREEN}{fmt(code_hits_pct)}%{ANSIColors.RESET})")
         print(f"    Misses:           {code_misses:n} ({ANSIColors.RED}{fmt(code_misses_pct)}%{ANSIColors.RESET})")
+
+        batched_attempts = stats.get('batched_read_attempts', 0)
+        batched_successes = stats.get('batched_read_successes', 0)
+        batched_misses = stats.get('batched_read_misses', 0)
+        segments_requested = stats.get('batched_read_segments_requested', 0)
+        segments_completed = stats.get('batched_read_segments_completed', 0)
+        if batched_attempts > 0:
+            batched_success_rate = stats.get('batched_read_success_rate', 0.0)
+            batched_miss_rate = 100.0 - batched_success_rate
+            segment_completion_rate = stats.get(
+                'batched_read_segment_completion_rate', 0.0
+            )
+
+            print(f"  {ANSIColors.CYAN}Batched Reads:{ANSIColors.RESET}")
+            print(f"    Attempts:         {batched_attempts:n}")
+            print(
+                f"    Successes:        {batched_successes:n} "
+                f"({ANSIColors.GREEN}{fmt(batched_success_rate)}%{ANSIColors.RESET})"
+            )
+            print(
+                f"    Misses:           {batched_misses:n} "
+                f"({ANSIColors.RED}{fmt(batched_miss_rate)}%{ANSIColors.RESET})"
+            )
+            print(
+                f"    Segments read:    {segments_completed:n}/{segments_requested:n} "
+                f"({ANSIColors.GREEN}{fmt(segment_completion_rate)}%{ANSIColors.RESET})"
+            )
 
         # Memory operations
         memory_reads = stats.get('memory_reads', 0)

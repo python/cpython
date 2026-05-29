@@ -11,6 +11,7 @@
 #include "pycore_opcode_utils.h"
 #include "pycore_opcode_metadata.h" // OPCODE_HAS_ARG, etc
 #include "pycore_pystate.h"         // _PyInterpreterState_GET()
+#include "pycore_stackref.h"        // PyStackRef_AsPyObjectBorrow()
 
 #include <stdbool.h>
 
@@ -1330,7 +1331,8 @@ get_const_value(int opcode, int oparg, PyObject *co_consts)
     }
     if (opcode == LOAD_COMMON_CONSTANT) {
         assert(oparg < NUM_COMMON_CONSTANTS);
-        return Py_NewRef(_PyInterpreterState_GET()->common_consts[oparg]);
+        return PyStackRef_AsPyObjectBorrow(
+            _PyInterpreterState_GET()->common_consts[oparg]);
     }
 
     if (constant == NULL) {
@@ -1467,6 +1469,10 @@ maybe_instr_make_load_common_const(cfg_instr *instr, PyObject *newconst)
     else if (PyUnicode_CheckExact(newconst)
              && PyUnicode_GET_LENGTH(newconst) == 0) {
         oparg = CONSTANT_EMPTY_STR;
+    }
+    else if (PyTuple_CheckExact(newconst)
+             && PyTuple_GET_SIZE(newconst) == 0) {
+        oparg = CONSTANT_EMPTY_TUPLE;
     }
     else if (PyLong_CheckExact(newconst)) {
         int overflow;

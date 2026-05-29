@@ -2799,5 +2799,35 @@
     # (The definition of 'full-abi' was clarified when this entry was added.)
     struct_abi_kind = 'full-abi'
 
+# PEP 788 finalization protection
+
+[struct.PyInterpreterGuard]
+    added = '3.15'
+    struct_abi_kind = 'opaque'
+[function.PyInterpreterGuard_FromCurrent]
+    added = '3.15'
+[function.PyInterpreterGuard_FromView]
+    added = '3.15'
+[function.PyInterpreterGuard_Close]
+    added = '3.15'
+[struct.PyInterpreterView]
+    added = '3.15'
+    struct_abi_kind = 'opaque'
+[function.PyInterpreterView_FromCurrent]
+    added = '3.15'
+[function.PyInterpreterView_FromMain]
+    added = '3.15'
+[function.PyInterpreterView_Close]
+    added = '3.15'
+[function.PyThreadState_Ensure]
+    added = '3.15'
+[function.PyThreadState_EnsureFromView]
+    added = '3.15'
+[function.PyThreadState_Release]
+    added = '3.15'
+[struct.PyThreadStateToken]
+    added = '3.15'
+    struct_abi_kind = 'opaque'
+
 [function.PyObject_CallFinalizerFromDealloc]
     added = '3.15'

@@ -16,9 +16,9 @@ import tokenize
 import io
 import importlib.util
 import pathlib
-import _colorize
 
 from contextlib import suppress
+lazy import _colorize
 
 try:
     from _missing_stdlib_info import _MISSING_STDLIB_MODULE_MESSAGES
@@ -31,6 +31,36 @@ __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'print_last', 'print_stack', 'print_tb', 'clear_frames',
            'FrameSummary', 'StackSummary', 'TracebackException',
            'walk_stack', 'walk_tb', 'print_list']
+
+
+class _ShutdownTheme:
+    """Empty stand-in if `_colorize` cannot be imported during late shutdown."""
+    def __getattr__(self, _): return self
+    def __getitem__(self, _): return ""
+    def __format__(self, _): return ""
+    def __str__(self): return ""
+    def __add__(self, other): return other
+    __radd__ = __add__
+
+
+_shutdown_theme = _ShutdownTheme()
+
+
+def _safe_get_theme(*, force_color=False, force_no_color=False):
+    try:
+        return _colorize.get_theme(
+            force_color=force_color, force_no_color=force_no_color
+        )
+    except ImportError:
+        return _shutdown_theme
+
+
+def _safe_can_colorize(*, file=None):
+    try:
+        return _colorize.can_colorize(file=file)
+    except ImportError:
+        return False
+
 
 #
 # Formatting and printing lists of traceback lines.
@@ -85,10 +115,10 @@ def extract_tb(tb, limit=None):
     This is useful for alternate formatting of stack traces.  If
     'limit' is omitted or None, all entries are extracted.  A
     pre-processed stack trace entry is a FrameSummary object
-    containing attributes filename, lineno, name, and line
-    representing the information that is usually printed for a stack
-    trace.  The line is a string with leading and trailing
-    whitespace stripped; if the source is not available it is None.
+    representing the information that is usually printed for a
+    stack trace. The line attribute is a string with
+    leading and trailing whitespace stripped; if the source is not
+    available the corresponding attribute is None.
     """
     return StackSummary._extract_from_extended_frame_gen(
         _walk_tb_with_full_positions(tb), limit=limit)
@@ -151,7 +181,7 @@ BUILTIN_EXCEPTION_LIMIT = object()
 def _print_exception_bltin(exc, file=None, /):
     if file is None:
         file = sys.stderr if sys.stderr is not None else sys.__stderr__
-    colorize = _colorize.can_colorize(file=file)
+    colorize = _safe_can_colorize(file=file)
     return print_exception(exc, limit=BUILTIN_EXCEPTION_LIMIT, file=file, colorize=colorize)
 
 
@@ -199,9 +229,9 @@ def _format_final_exc_line(etype, value, *, insert_final_newline=True, colorize=
     valuestr = _safe_string(value, 'exception')
     end_char = "\n" if insert_final_newline else ""
     if colorize:
-        theme = _colorize.get_theme(force_color=True).traceback
+        theme = _safe_get_theme(force_color=True).traceback
     else:
-        theme = _colorize.get_theme(force_no_color=True).traceback
+        theme = _safe_get_theme(force_no_color=True).traceback
     if value is None or not valuestr:
         line = f"{theme.type}{etype}{theme.reset}{end_char}"
     else:
@@ -265,9 +295,8 @@ def extract_stack(f=None, limit=None):
 
     The return value has the same format as for extract_tb().  The
     optional 'f' and 'limit' arguments have the same meaning as for
-    print_stack().  Each item in the list is a quadruple (filename,
-    line number, function name, text), and the entries are in order
-    from oldest to newest stack frame.
+    print_stack().  Each item in the list is a FrameSummary object,
+    and the entries are in order from oldest to newest stack frame.
     """
     if f is None:
         f = sys._getframe().f_back
@@ -295,7 +324,7 @@ class FrameSummary:
       active when the frame was captured.
     - :attr:`name` The name of the function or method that was executing
       when the frame was captured.
-    - :attr:`line` The text from the linecache module for the
+    - :attr:`line` The text from the linecache module for the line
       of code that was running when the frame was captured.
     - :attr:`locals` Either None if locals were not supplied, or a dict
       mapping the name to the repr() of the variable.
@@ -555,9 +584,9 @@ class StackSummary(list):
         if frame_summary.filename.startswith("<stdin-") and frame_summary.filename.endswith('>'):
             filename = "<stdin>"
         if colorize:
-            theme = _colorize.get_theme(force_color=True).traceback
+            theme = _safe_get_theme(force_color=True).traceback
         else:
-            theme = _colorize.get_theme(force_no_color=True).traceback
+            theme = _safe_get_theme(force_no_color=True).traceback
         row.append(
             '  File {}"{}"{}, line {}{}{}, in {}{}{}\n'.format(
                 theme.filename,
@@ -1023,7 +1052,7 @@ def _wlen(s: str) -> int:
 
 
 def _display_width(line, offset=None):
-    """Calculate the extra amount of width space the given source
+    """Calculate the amount of width space the given source
     code segment might take if it were to be displayed on a fixed
     width output device. Supports wide unicode characters and emojis."""
 
@@ -1104,7 +1133,7 @@ class TracebackException:
     def __init__(self, exc_type, exc_value, exc_traceback, *, limit=None,
             lookup_lines=True, capture_locals=False, compact=False,
             max_group_width=15, max_group_depth=10, save_exc_type=True, _seen=None):
-        # NB: we need to accept exc_traceback, exc_value, exc_traceback to
+        # NB: we need to accept exc_type, exc_value, exc_traceback to
         # permit backwards compat with the existing API, otherwise we
         # need stub thunk objects just to glue it together.
         # Handle loops in __cause__ or __context__.
@@ -1344,9 +1373,9 @@ class TracebackException:
         """
         colorize = kwargs.get("colorize", False)
         if colorize:
-            theme = _colorize.get_theme(force_color=True).traceback
+            theme = _safe_get_theme(force_color=True).traceback
         else:
-            theme = _colorize.get_theme(force_no_color=True).traceback
+            theme = _safe_get_theme(force_no_color=True).traceback
 
         indent = 3 * _depth * ' '
         if not self._have_exc_type:
@@ -1494,9 +1523,9 @@ class TracebackException:
         # Show exactly where the problem was found.
         colorize = kwargs.get("colorize", False)
         if colorize:
-            theme = _colorize.get_theme(force_color=True).traceback
+            theme = _safe_get_theme(force_color=True).traceback
         else:
-            theme = _colorize.get_theme(force_no_color=True).traceback
+            theme = _safe_get_theme(force_no_color=True).traceback
         filename_suffix = ''
         if self.lineno is not None:
             yield '  File {}"{}"{}, line {}{}{}\n'.format(
@@ -1745,6 +1774,10 @@ _CROSS_LANGUAGE_HINTS = frozendict({
     # frozendict -- mutable method on immutable type (user expected a dict)
     "update": ((frozenset, "Did you mean to use a 'set' object?", True),
                (frozendict, "Did you mean to use a 'dict' object?", True)),
+    # clear() -- shared across immutable container types (user expected the mutable counterpart)
+    "clear": ((tuple, "Did you mean to use a 'list' object?", True),
+              (frozenset, "Did you mean to use a 'set' object?", True),
+              (frozendict, "Did you mean to use a 'dict' object?", True)),
     # float -- bitwise operators belong to int
     "__or__": ((float, "Did you mean to use an 'int' object? Bitwise operators are not supported by 'float'.", True),),
     "__and__": ((float, "Did you mean to use an 'int' object? Bitwise operators are not supported by 'float'.", True),),
