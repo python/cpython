@@ -1,4 +1,2 @@
-Fix missing null check on the result of :func:`!strdup` in
-:mod:`readline` module initialization, preventing a potential null pointer
 :mod:`readline`: Fix missing null check on the result of :func:`!strdup`
 in module initialization, preventing a potential null pointer
