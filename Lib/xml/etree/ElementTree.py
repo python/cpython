@@ -956,7 +956,7 @@ def _serialize_html(write, elem, qnames, namespaces, **kwargs):
                         k = k.text
                     k = qnames[k]
                     if v is None:
-                        write(" %s" % k)
+                        write(" %s" % k)  # empty attr
                     else:
                         if isinstance(v, QName):
                             v = qnames[v.text]
