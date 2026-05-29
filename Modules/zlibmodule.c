@@ -2375,10 +2375,6 @@ zlib_exec(PyObject *mod)
                      PyUnicode_FromString(ZLIBNG_VERSION)) < 0) {
         return -1;
     }
-    if (PyModule_Add(mod, "zlibng_version",
-                     PyUnicode_FromString(zlibng_version())) < 0) {
-        return -1;
-    }
 #endif
     PyTypeObject *version_type;
     version_type = PyStructSequence_NewType(&zlib_version_desc);
@@ -2405,12 +2401,6 @@ zlib_exec(PyObject *mod)
     }
     if (PyModule_Add(mod, "ZLIBNG_VERSION_INFO",
             make_zlibng_version(version_type, ZLIBNG_VERSION)) < 0)
-    {
-        Py_DECREF(version_type);
-        return -1;
-    }
-    if (PyModule_Add(mod, "zlibng_version_info",
-            make_zlibng_version(version_type, zlibng_version())) < 0)
     {
         Py_DECREF(version_type);
         return -1;

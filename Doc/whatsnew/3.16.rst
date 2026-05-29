@@ -150,8 +150,7 @@ zlib
 ----
 
 * Added constants :const:`~zlib.ZLIB_VERSION_INFO`,
-  :const:`~zlib.zlib_version_info`, :const:`~zlib.zlibng_version`,
-  :const:`~zlib.ZLIBNG_VERSION_INFO`, and :const:`~zlib.zlibng_version_info`,
+  :const:`~zlib.zlib_version_info`, and :const:`~zlib.ZLIBNG_VERSION_INFO`,
   which provide information about the version of the zlib and the zlib-ng
   libraries in use.
   Added :const:`~zlib.zlib_version` as an alias of

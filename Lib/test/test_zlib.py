@@ -72,16 +72,6 @@ class VersionTestCase(unittest.TestCase):
                          zlib.ZLIB_VERSION.split('.')[0])
         self.assertEqual(zlib.zlib_version_info[0],
                          zlib.ZLIB_VERSION_INFO[0])
-        if hasattr(zlib, 'ZLIBNG_VERSION'):
-            self.assertEqual(zlib.zlibng_version.split('.')[0],
-                             zlib.ZLIBNG_VERSION.split('.')[0])
-            self.assertEqual(zlib.zlibng_version_info[0],
-                             zlib.ZLIBNG_VERSION_INFO[0])
-        else:
-            self.assertNotHasAttr(zlib, 'ZLIBNG_VERSION')
-            self.assertNotHasAttr(zlib, 'zlibng_version')
-            self.assertNotHasAttr(zlib, 'ZLIBNG_VERSION_INFO')
-            self.assertNotHasAttr(zlib, 'zlibng_version_info')
 
     def _test_zlib_version(self, v):
         self.assertIsInstance(v[:], tuple)
@@ -135,13 +125,9 @@ class VersionTestCase(unittest.TestCase):
     def test_zlibng_version(self):
         if support.verbose:
             print(f'ZLIBNG_VERSION = {zlib.ZLIBNG_VERSION}', flush=True)
-            print(f'zlibng_version = {zlib.zlibng_version}', flush=True)
             print(f'ZLIBNG_VERSION_INFO = {zlib.ZLIBNG_VERSION_INFO}', flush=True)
-            print(f'zlibng_version_info = {zlib.zlibng_version_info}', flush=True)
         self._test_zlibng_version(zlib.ZLIBNG_VERSION_INFO)
         self.assertEqual(zlib.ZLIBNG_VERSION, '%d.%d.%d' % zlib.ZLIBNG_VERSION_INFO)
-        self._test_zlibng_version(zlib.zlibng_version_info)
-        self.assertEqual(zlib.zlibng_version, '%d.%d.%d' % zlib.zlibng_version_info)
 
 
 class ChecksumTestCase(unittest.TestCase):

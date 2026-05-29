@@ -526,26 +526,10 @@ the module:
 
    .. versionadded:: 3.14
 
-.. data:: zlibng_version
-
-   The version string of the zlib-ng library actually loaded
-   by the interpreter.
-
-   .. versionadded:: next
-
-
 .. data:: ZLIBNG_VERSION_INFO
 
    A named tuple containing the version of the zlib-ng library that was
    used for building the module if zlib-ng was used.
-
-   .. versionadded:: next
-
-
-.. data:: zlibng_version_info
-
-   A named tuple containing the zlib-ng library version actually loaded
-   by the interpreter.
 
    .. versionadded:: next
 
