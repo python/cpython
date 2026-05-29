@@ -171,6 +171,9 @@ class IsolatedCodeGenTests(CodegenTestCase):
             ('STORE_NAME', 0),
             ('LOAD_CONST', 0),
             ('RETURN_VALUE', None),
+        ]
+        self.codegen_test(snippet, expected)
+
     def test_frozenset_optimization(self):
         l1 = self.Label()
         snippet = "frozenset({1, 2, 3})"
@@ -200,4 +203,3 @@ class IsolatedCodeGenTests(CodegenTestCase):
             ('LOAD_CONST', 0),
             ('RETURN_VALUE', None)
         ]
-        self.codegen_test(snippet, expected)
