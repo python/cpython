@@ -1158,8 +1158,9 @@ are always available.  They are listed here in alphabetical order.
 
    .. impl-detail::
 
-      ``len`` raises :exc:`OverflowError` on lengths larger than
-      :data:`sys.maxsize`, such as :class:`range(2 ** 100) <range>`.
+      CPython's C length protocol is limited to :data:`sys.maxsize`.
+      When that limit is reached, ``len`` may still return a larger Python
+      integer if the object's :meth:`~object.__len__` method can provide one.
 
 
 .. _func-list:

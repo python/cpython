@@ -162,24 +162,14 @@ class RangeTest(unittest.TestCase):
 
     def test_large_range(self):
         # Check long ranges (len > sys.maxsize)
-        # len() is expected to fail due to limitations of the __len__ protocol
-        def _range_len(x):
-            try:
-                length = len(x)
-            except OverflowError:
-                step = x[1] - x[0]
-                length = 1 + ((x[-1] - x[0]) // step)
-            return length
-
         a = -sys.maxsize
         b = sys.maxsize
         expected_len = b - a
         x = range(a, b)
         self.assertIn(a, x)
         self.assertNotIn(b, x)
-        self.assertRaises(OverflowError, len, x)
+        self.assertEqual(len(x), expected_len)
         self.assertTrue(x)
-        self.assertEqual(_range_len(x), expected_len)
         self.assertEqual(x[0], a)
         idx = sys.maxsize+1
         self.assertEqual(x[idx], a+idx)
@@ -195,9 +185,8 @@ class RangeTest(unittest.TestCase):
         x = range(a, b)
         self.assertIn(a, x)
         self.assertNotIn(b, x)
-        self.assertRaises(OverflowError, len, x)
+        self.assertEqual(len(x), expected_len)
         self.assertTrue(x)
-        self.assertEqual(_range_len(x), expected_len)
         self.assertEqual(x[0], a)
         idx = sys.maxsize+1
         self.assertEqual(x[idx], a+idx)
@@ -214,9 +203,8 @@ class RangeTest(unittest.TestCase):
         x = range(a, b, c)
         self.assertIn(a, x)
         self.assertNotIn(b, x)
-        self.assertRaises(OverflowError, len, x)
+        self.assertEqual(len(x), expected_len)
         self.assertTrue(x)
-        self.assertEqual(_range_len(x), expected_len)
         self.assertEqual(x[0], a)
         idx = sys.maxsize+1
         self.assertEqual(x[idx], a+(idx*c))
@@ -233,9 +221,8 @@ class RangeTest(unittest.TestCase):
         x = range(a, b, c)
         self.assertIn(a, x)
         self.assertNotIn(b, x)
-        self.assertRaises(OverflowError, len, x)
+        self.assertEqual(len(x), expected_len)
         self.assertTrue(x)
-        self.assertEqual(_range_len(x), expected_len)
         self.assertEqual(x[0], a)
         idx = sys.maxsize+1
         self.assertEqual(x[idx], a+(idx*c))
