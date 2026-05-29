@@ -107,7 +107,7 @@ class VersionTestCase(unittest.TestCase):
 
     def _test_zlibng_version(self, v):
         self.assertIsInstance(v[:], tuple)
-        self.assertEqual(len(v), 4)
+        self.assertEqual(len(v), 3)
         self.assertIsInstance(v[0], int)
         self.assertIsInstance(v[1], int)
         self.assertIsInstance(v[2], int)
