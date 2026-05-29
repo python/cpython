@@ -335,6 +335,48 @@ Miscellaneous
    feature set.
 
 
+Information about the version of the lzma library in use is available through
+the following constants:
+
+
+.. data:: LZMA_VERSION
+
+   The version string of the lzma library that was used for building the module.
+   This may be different from the lzma library actually used at runtime, which
+   is available as :const:`lzma_version`.
+
+   .. versionadded:: next
+
+
+.. data:: lzma_version
+
+   The version string of the lzma library actually loaded by the interpreter.
+
+   .. versionadded:: next
+
+
+.. data:: LZMA_VERSION_INFO
+
+   A named tuple containing the four components of the lzma library
+   version that was used for building the module:
+   *major*, *minor*, *patch*, and *stability*.
+   All values except *stability* are integers; *stability* is ``'alpha'``,
+   ``'beta'``, or ``'stable'``.
+   The components can also be accessed by name, so ``lzma.LZMA_VERSION_INFO[0]``
+   is equivalent to ``lzma.LZMA_VERSION_INFO.major`` and so on.
+   This may be different from the lzma library actually used at runtime, which
+   is available as :const:`lzma_version_info`.
+
+   .. versionadded:: next
+
+
+.. data:: lzma_version_info
+
+   A named tuple containing the lzma library version actually loaded by the interpreter.
+
+   .. versionadded:: next
+
+
 .. _filter-chain-specs:
 
 Specifying custom filter chains
