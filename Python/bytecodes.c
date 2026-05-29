@@ -1135,6 +1135,7 @@ dummy_func(
 
             assert(PyLong_CheckExact(sub));
             assert(PyList_CheckExact(list));
+            EXIT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub));
 
             Py_ssize_t index = _PyLong_CompactValue((PyLongObject *)sub);
             if (index < 0) {
@@ -1413,6 +1414,7 @@ dummy_func(
 
             assert(PyLong_CheckExact(sub));
             assert(PyList_CheckExact(list));
+            DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub));
 
             Py_ssize_t index = _PyLong_CompactValue((PyLongObject *)sub);
             DEOPT_IF(!LOCK_OBJECT(list));

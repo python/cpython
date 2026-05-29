@@ -836,6 +836,11 @@
                 PyObject *list = PyStackRef_AsPyObjectBorrow(list_st);
                 assert(PyLong_CheckExact(sub));
                 assert(PyList_CheckExact(list));
+                if (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) {
+                    UPDATE_MISS_STATS(BINARY_OP);
+                    assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
+                    JUMP_TO_PREDICTED(BINARY_OP);
+                }
                 Py_ssize_t index = _PyLong_CompactValue((PyLongObject *)sub);
                 if (index < 0) {
                     index += PyList_GET_SIZE(list);
@@ -12223,6 +12228,11 @@
                 PyObject *list = PyStackRef_AsPyObjectBorrow(list_st);
                 assert(PyLong_CheckExact(sub));
                 assert(PyList_CheckExact(list));
+                if (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) {
+                    UPDATE_MISS_STATS(STORE_SUBSCR);
+                    assert(_PyOpcode_Deopt[opcode] == (STORE_SUBSCR));
+                    JUMP_TO_PREDICTED(STORE_SUBSCR);
+                }
                 Py_ssize_t index = _PyLong_CompactValue((PyLongObject *)sub);
                 if (!LOCK_OBJECT(list)) {
                     UPDATE_MISS_STATS(STORE_SUBSCR);

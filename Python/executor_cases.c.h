@@ -6874,6 +6874,13 @@
             PyObject *list = PyStackRef_AsPyObjectBorrow(list_st);
             assert(PyLong_CheckExact(sub));
             assert(PyList_CheckExact(list));
+            if (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) {
+                UOP_STAT_INC(uopcode, miss);
+                _tos_cache1 = sub_st;
+                _tos_cache0 = list_st;
+                SET_CURRENT_CACHED_VALUES(2);
+                JUMP_TO_JUMP_TARGET();
+            }
             Py_ssize_t index = _PyLong_CompactValue((PyLongObject *)sub);
             if (index < 0) {
                 index += PyList_GET_SIZE(list);
@@ -8307,6 +8314,14 @@
             PyObject *list = PyStackRef_AsPyObjectBorrow(list_st);
             assert(PyLong_CheckExact(sub));
             assert(PyList_CheckExact(list));
+            if (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) {
+                UOP_STAT_INC(uopcode, miss);
+                _tos_cache2 = sub_st;
+                _tos_cache1 = list_st;
+                _tos_cache0 = value;
+                SET_CURRENT_CACHED_VALUES(3);
+                JUMP_TO_JUMP_TARGET();
+            }
             Py_ssize_t index = _PyLong_CompactValue((PyLongObject *)sub);
             if (!LOCK_OBJECT(list)) {
                 UOP_STAT_INC(uopcode, miss);
