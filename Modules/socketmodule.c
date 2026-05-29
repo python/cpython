@@ -1170,7 +1170,7 @@ new_sockobject(socket_state *state, SOCKET_T fd, int family, int type,
 /* Lock to allow python interpreter to continue, but only allow one
    thread to be in gethostbyname or getaddrinfo */
 #if defined(USE_GETHOSTBYNAME_LOCK)
-static PyMutex netdb_lock;
+static PyMutex netdb_lock = {0};
 #endif
 
 
