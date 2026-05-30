@@ -18,7 +18,6 @@ class PyTest(unittest.TestCase):
     json = pyjson
     loads = staticmethod(pyjson.loads)
     dumps = staticmethod(pyjson.dumps)
-    AttrDict = pyjson.AttrDict
     JSONDecodeError = staticmethod(pyjson.JSONDecodeError)
 
 @unittest.skipUnless(cjson, 'requires _json')
@@ -46,6 +45,16 @@ class TestCTest(CTest):
         self.assertEqual(self.json.encoder.c_make_encoder.__module__, '_json')
         self.assertEqual(self.json.encoder.encode_basestring_ascii.__module__,
                          '_json')
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(json, "__version__")
+        self.assertEqual(cm.filename, __file__)
 
 
 def load_tests(loader, _, pattern):

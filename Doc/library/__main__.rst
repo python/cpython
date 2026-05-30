@@ -1,5 +1,5 @@
-:mod:`__main__` --- Top-level code environment
-==============================================
+:mod:`!__main__` --- Top-level code environment
+===============================================
 
 .. module:: __main__
    :synopsis: The environment where top-level code is run. Covers command-line
@@ -54,45 +54,45 @@ The top-level code environment can be:
 
 * the scope of an interactive prompt::
 
-    >>> __name__
-    '__main__'
+   >>> __name__
+   '__main__'
 
 * the Python module passed to the Python interpreter as a file argument:
 
-    .. code-block:: shell-session
+  .. code-block:: shell-session
 
-       $ python helloworld.py
-       Hello, world!
+     $ python helloworld.py
+     Hello, world!
 
 * the Python module or package passed to the Python interpreter with the
   :option:`-m` argument:
 
-    .. code-block:: shell-session
+  .. code-block:: shell-session
 
-       $ python -m tarfile
-       usage: tarfile.py [-h] [-v] (...)
+     $ python -m tarfile
+     usage: tarfile.py [-h] [-v] (...)
 
 * Python code read by the Python interpreter from standard input:
 
-    .. code-block:: shell-session
+  .. code-block:: shell-session
 
-       $ echo "import this" | python
-       The Zen of Python, by Tim Peters
+     $ echo "import this" | python
+     The Zen of Python, by Tim Peters
 
-       Beautiful is better than ugly.
-       Explicit is better than implicit.
-       ...
+     Beautiful is better than ugly.
+     Explicit is better than implicit.
+     ...
 
 * Python code passed to the Python interpreter with the :option:`-c` argument:
 
-    .. code-block:: shell-session
+  .. code-block:: shell-session
 
-       $ python -c "import this"
-       The Zen of Python, by Tim Peters
+     $ python -c "import this"
+     The Zen of Python, by Tim Peters
 
-       Beautiful is better than ugly.
-       Explicit is better than implicit.
-       ...
+     Beautiful is better than ugly.
+     Explicit is better than implicit.
+     ...
 
 In each of these situations, the top-level module's ``__name__`` is set to
 ``'__main__'``.
@@ -102,9 +102,9 @@ top-level environment by checking its own ``__name__``, which allows a common
 idiom for conditionally executing code when the module is not initialized from
 an import statement::
 
-    if __name__ == '__main__':
-        # Execute when the module is not initialized from an import statement.
-        ...
+   if __name__ == '__main__':
+       # Execute when the module is not initialized from an import statement.
+       ...
 
 .. seealso::
 
@@ -124,7 +124,7 @@ This is where using the ``if __name__ == '__main__'`` code block comes in
 handy. Code within this block won't run unless the module is executed in the
 top-level environment.
 
-Putting as few statements as possible in the block below ``if __name___ ==
+Putting as few statements as possible in the block below ``if __name__ ==
 '__main__'`` can improve code clarity and correctness. Most often, a function
 named ``main`` encapsulates the program's primary behavior::
 
@@ -227,7 +227,7 @@ students::
     import sys
     from .student import search_students
 
-    student_name = sys.argv[2] if len(sys.argv) >= 2 else ''
+    student_name = sys.argv[1] if len(sys.argv) >= 2 else ''
     print(f'Found student: {search_students(student_name)}')
 
 Note that ``from .student import search_students`` is an example of a relative
@@ -238,9 +238,9 @@ package.  For more details, see :ref:`intra-package-references` in the
 Idiomatic Usage
 ^^^^^^^^^^^^^^^
 
-The contents of ``__main__.py`` typically isn't fenced with
-``if __name__ == '__main__'`` blocks.  Instead, those files are kept short,
-functions to execute from other modules.  Those other modules can then be
+The content of ``__main__.py`` typically isn't fenced with an
+``if __name__ == '__main__'`` block.  Instead, those files are kept
+short and import functions to execute from other modules.  Those other modules can then be
 easily unit-tested and are properly reusable.
 
 If used, an ``if __name__ == '__main__'`` block will still work as expected
@@ -251,15 +251,15 @@ attribute will include the package's path if imported::
     >>> asyncio.__main__.__name__
     'asyncio.__main__'
 
-This won't work for ``__main__.py`` files in the root directory of a .zip file
-though.  Hence, for consistency, minimal ``__main__.py`` like the :mod:`venv`
-one mentioned below are preferred.
+This won't work for ``__main__.py`` files in the root directory of a
+``.zip`` file though.  Hence, for consistency, a minimal ``__main__.py``
+without a ``__name__`` check is preferred.
 
 .. seealso::
 
    See :mod:`venv` for an example of a package with a minimal ``__main__.py``
    in the standard library. It doesn't contain a ``if __name__ == '__main__'``
-   block. You can invoke it with ``python3 -m venv [directory]``.
+   block. You can invoke it with ``python -m venv [directory]``.
 
    See :mod:`runpy` for more details on the :option:`-m` flag to the
    interpreter executable.
@@ -292,10 +292,7 @@ Here is an example module that consumes the ``__main__`` namespace::
         if not did_user_define_their_name():
             raise ValueError('Define the variable `my_name`!')
 
-        if '__file__' in dir(__main__):
-            print(__main__.my_name, "found in file", __main__.__file__)
-        else:
-            print(__main__.my_name)
+        print(__main__.my_name)
 
 Example usage of this module could be as follows::
 
@@ -330,18 +327,18 @@ status code 0, indicating success:
 .. code-block:: shell-session
 
    $ python start.py
-   Dinsdale found in file /path/to/start.py
+   Dinsdale
 
 Note that importing ``__main__`` doesn't cause any issues with unintentionally
 running top-level code meant for script use which is put in the
 ``if __name__ == "__main__"`` block of the ``start`` module. Why does this work?
 
-Python inserts an empty ``__main__`` module in :attr:`sys.modules` at
+Python inserts an empty ``__main__`` module in :data:`sys.modules` at
 interpreter startup, and populates it by running top-level code. In our example
 this is the ``start`` module which runs line by line and imports ``namely``.
 In turn, ``namely`` imports ``__main__`` (which is really ``start``). That's an
 import cycle! Fortunately, since the partially populated ``__main__``
-module is present in :attr:`sys.modules`, Python passes that to ``namely``.
+module is present in :data:`sys.modules`, Python passes that to ``namely``.
 See :ref:`Special considerations for __main__ <import-dunder-main>` in the
 import system's reference for details on how this works.
 
@@ -360,9 +357,6 @@ defined in the REPL becomes part of the ``__main__`` scope::
     True
     >>> namely.print_user_name()
     Jabberwocky
-
-Note that in this case the ``__main__`` scope doesn't contain a ``__file__``
-attribute as it's interactive.
 
 The ``__main__`` scope is used in the implementation of :mod:`pdb` and
 :mod:`rlcompleter`.

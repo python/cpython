@@ -48,7 +48,7 @@ nested recursive function definition doesn't work::
            return g(value-1) + 1
        ...
 
-The function :func:`g` will always raise a :exc:`NameError` exception, because
+The function :func:`!g` will always raise a :exc:`NameError` exception, because
 the binding of the name ``g`` isn't in either its local namespace or in the
 module-level namespace.  This isn't much of a problem in practice (how often do
 you recursively define interior functions like this?), but this also made using
@@ -104,7 +104,7 @@ To make the preceding explanation a bit clearer, here's an example::
 
 Line 4 containing the ``exec`` statement is a syntax error, since
 ``exec`` would define a new local variable named ``x`` whose value should
-be accessed by :func:`g`.
+be accessed by :func:`!g`.
 
 This shouldn't be much of a limitation, since ``exec`` is rarely used in
 most Python code (and when it is used, it's often a sign of a poor design
@@ -161,7 +161,7 @@ PEP 207: Rich Comparisons
 
 In earlier versions, Python's support for implementing comparisons on user-defined
 classes and extension types was quite simple. Classes could implement a
-:meth:`__cmp__` method that was given two instances of a class, and could only
+:meth:`!__cmp__` method that was given two instances of a class, and could only
 return 0 if they were equal or +1 or -1 if they weren't; the method couldn't
 raise an exception or return anything other than a Boolean value.  Users of
 Numeric Python often found this model too weak and restrictive, because in the
@@ -175,21 +175,21 @@ In Python 2.1, rich comparisons were added in order to support this need.
 Python classes can now individually overload each of the ``<``, ``<=``, ``>``,
 ``>=``, ``==``, and ``!=`` operations.  The new magic method names are:
 
-+-----------+----------------+
-| Operation | Method name    |
-+===========+================+
-| ``<``     | :meth:`__lt__` |
-+-----------+----------------+
-| ``<=``    | :meth:`__le__` |
-+-----------+----------------+
-| ``>``     | :meth:`__gt__` |
-+-----------+----------------+
-| ``>=``    | :meth:`__ge__` |
-+-----------+----------------+
-| ``==``    | :meth:`__eq__` |
-+-----------+----------------+
-| ``!=``    | :meth:`__ne__` |
-+-----------+----------------+
++-----------+------------------------+
+| Operation | Method name            |
++===========+========================+
+| ``<``     | :meth:`~object.__lt__` |
++-----------+------------------------+
+| ``<=``    | :meth:`~object.__le__` |
++-----------+------------------------+
+| ``>``     | :meth:`~object.__gt__` |
++-----------+------------------------+
+| ``>=``    | :meth:`~object.__ge__` |
++-----------+------------------------+
+| ``==``    | :meth:`~object.__eq__` |
++-----------+------------------------+
+| ``!=``    | :meth:`~object.__ne__` |
++-----------+------------------------+
 
 (The magic methods are named after the corresponding Fortran operators ``.LT.``.
 ``.LE.``, &c.  Numeric programmers are almost certainly quite familiar with
@@ -208,7 +208,7 @@ The built-in ``cmp(A,B)`` function can use the rich comparison machinery,
 and now accepts an optional argument specifying which comparison operation to
 use; this is given as one of the strings ``"<"``, ``"<="``, ``">"``, ``">="``,
 ``"=="``, or ``"!="``.  If called without the optional third argument,
-:func:`cmp` will only return -1, 0, or +1 as in previous versions of Python;
+:func:`!cmp` will only return -1, 0, or +1 as in previous versions of Python;
 otherwise it will call the appropriate method and can return any Python object.
 
 There are also corresponding changes of interest to C programmers; there's a new
@@ -245,7 +245,7 @@ out warnings that you don't want to be displayed. Third-party modules can also
 use this framework to deprecate old features that they no longer wish to
 support.
 
-For example, in Python 2.1 the :mod:`regex` module is deprecated, so importing
+For example, in Python 2.1 the :mod:`!regex` module is deprecated, so importing
 it causes a warning to be printed::
 
    >>> import regex
@@ -262,7 +262,7 @@ can be used to specify a particular warning category.
 
 Filters can be added to disable certain warnings; a regular expression pattern
 can be applied to the message or to the module name in order to suppress a
-warning.  For example, you may have a program that uses the :mod:`regex` module
+warning.  For example, you may have a program that uses the :mod:`!regex` module
 and not want to spare the time to convert it to use the :mod:`re` module right
 now.  The warning can be suppressed by calling ::
 
@@ -274,7 +274,7 @@ now.  The warning can be suppressed by calling ::
 
 This adds a filter that will apply only to warnings of the class
 :class:`DeprecationWarning` triggered in the :mod:`__main__` module, and applies
-a regular expression to only match the message about the :mod:`regex` module
+a regular expression to only match the message about the :mod:`!regex` module
 being deprecated, and will cause such warnings to be ignored.  Warnings can also
 be printed only once, printed every time the offending code is executed, or
 turned into exceptions that will cause the program to stop (unless the
@@ -368,7 +368,7 @@ dictionary::
 This version works for simple things such as integers, but it has a side effect;
 the ``_cache`` dictionary holds a reference to the return values, so they'll
 never be deallocated until the Python process exits and cleans up. This isn't
-very noticeable for integers, but if :func:`f` returns an object, or a data
+very noticeable for integers, but if :func:`!f` returns an object, or a data
 structure that takes up a lot of memory, this can be a problem.
 
 Weak references provide a way to implement a cache that won't keep objects alive
@@ -379,7 +379,7 @@ created by calling ``wr = weakref.ref(obj)``.  The object being referred to is
 returned by calling the weak reference as if it were a function: ``wr()``.  It
 will return the referenced object, or ``None`` if the object no longer exists.
 
-This makes it possible to write a :func:`memoize` function whose cache doesn't
+This makes it possible to write a :func:`!memoize` function whose cache doesn't
 keep objects alive, by storing weak references in the cache. ::
 
    _cache = {}
@@ -402,7 +402,7 @@ weak references --- an object referenced only by proxy objects is deallocated --
 but instead of requiring an explicit call to retrieve the object, the proxy
 transparently forwards all operations to the object as long as the object still
 exists.  If the object is deallocated, attempting to use a proxy will cause a
-:exc:`weakref.ReferenceError` exception to be raised. ::
+:exc:`!weakref.ReferenceError` exception to be raised. ::
 
    proxy = weakref.proxy(obj)
    proxy.attr   # Equivalent to obj.attr
@@ -424,7 +424,8 @@ PEP 232: Function Attributes
 
 In Python 2.1, functions can now have arbitrary information attached to them.
 People were often using docstrings to hold information about functions and
-methods, because the ``__doc__`` attribute was the only way of attaching any
+methods, because the :attr:`~function.__doc__` attribute was the only way of
+attaching any
 information to a function.  For example, in the Zope web application server,
 functions are marked as safe for public access by having a docstring, and in
 John Aycock's SPARK parsing framework, docstrings hold parts of the BNF grammar
@@ -442,10 +443,10 @@ Python syntax::
    f.grammar = "A ::= B (C D)*"
 
 The dictionary containing attributes can be accessed as the function's
-:attr:`~object.__dict__`. Unlike the :attr:`~object.__dict__` attribute of class instances, in
-functions you can actually assign a new dictionary to :attr:`~object.__dict__`, though
+:attr:`~function.__dict__`. Unlike the :attr:`~type.__dict__` attribute of class instances, in
+functions you can actually assign a new dictionary to :attr:`~function.__dict__`, though
 the new value is restricted to a regular Python dictionary; you *can't* be
-tricky and set it to a :class:`UserDict` instance, or any other random object
+tricky and set it to a :class:`!UserDict` instance, or any other random object
 that behaves like a mapping.
 
 
@@ -583,11 +584,11 @@ available from the Distutils SIG at https://www.python.org/community/sigs/curren
 New and Improved Modules
 ========================
 
-* Ka-Ping Yee contributed two new modules: :mod:`inspect.py`, a module for
-  getting information about live Python code, and :mod:`pydoc.py`, a module for
+* Ka-Ping Yee contributed two new modules: :mod:`!inspect.py`, a module for
+  getting information about live Python code, and :mod:`!pydoc.py`, a module for
   interactively converting docstrings to HTML or text.  As a bonus,
   :file:`Tools/scripts/pydoc`, which is now automatically installed, uses
-  :mod:`pydoc.py` to display documentation given a Python module, package, or
+  :mod:`!pydoc.py` to display documentation given a Python module, package, or
   class name.  For example, ``pydoc xml.dom`` displays the following::
 
      Python Library Documentation: package xml.dom in xml
@@ -613,10 +614,10 @@ New and Improved Modules
   framework based on running embedded examples in docstrings and comparing the
   results against the expected output.  PyUnit, contributed by Steve Purcell, is a
   unit testing framework inspired by JUnit, which was in turn an adaptation of
-  Kent Beck's Smalltalk testing framework.  See http://pyunit.sourceforge.net/ for
+  Kent Beck's Smalltalk testing framework.  See https://pyunit.sourceforge.net/ for
   more information about PyUnit.
 
-* The :mod:`difflib` module contains a class, :class:`SequenceMatcher`, which
+* The :mod:`difflib` module contains a class, :class:`~difflib.SequenceMatcher`, which
   compares two sequences and computes the changes required to transform one
   sequence into the other.  For example, this module can be used to write a tool
   similar to the Unix :program:`diff` program, and in fact the sample program
@@ -632,7 +633,7 @@ New and Improved Modules
   2.1 includes an updated version of the :mod:`xml` package.  Some of the
   noteworthy changes include support for Expat 1.2 and later versions, the ability
   for Expat parsers to handle files in any encoding supported by Python, and
-  various bugfixes for SAX, DOM, and the :mod:`minidom` module.
+  various bugfixes for SAX, DOM, and the :mod:`!minidom` module.
 
 * Ping also contributed another hook for handling uncaught exceptions.
   :func:`sys.excepthook` can be set to a callable object.  When an exception isn't
@@ -642,10 +643,10 @@ New and Improved Modules
   printing an extended traceback that not only lists the stack frames, but also
   lists the function arguments and the local variables for each frame.
 
-* Various functions in the :mod:`time` module, such as :func:`asctime` and
-  :func:`localtime`, require a floating point argument containing the time in
+* Various functions in the :mod:`time` module, such as :func:`~time.asctime` and
+  :func:`~time.localtime`, require a floating-point argument containing the time in
   seconds since the epoch.  The most common use of these functions is to work with
-  the current time, so the floating point argument has been made optional; when a
+  the current time, so the floating-point argument has been made optional; when a
   value isn't provided, the current time will be used.  For example, log file
   entries usually need a string containing the current time; in Python 2.1,
   ``time.asctime()`` can be used, instead of the lengthier
@@ -692,8 +693,8 @@ applied, and 136 bugs fixed; both figures are likely to be underestimates.  Some
 of the more notable changes are:
 
 * A specialized object allocator is now optionally available, that should be
-  faster than the system :func:`malloc` and have less memory overhead.  The
-  allocator uses C's :func:`malloc` function to get large pools of memory, and
+  faster than the system :c:func:`malloc` and have less memory overhead.  The
+  allocator uses C's :c:func:`!malloc` function to get large pools of memory, and
   then fulfills smaller memory requests from these pools.  It can be enabled by
   providing the :option:`!--with-pymalloc` option to the :program:`configure`
   script; see :file:`Objects/obmalloc.c` for the implementation details.
@@ -701,13 +702,13 @@ of the more notable changes are:
   Authors of C extension modules should test their code with the object allocator
   enabled, because some incorrect code may break, causing core dumps at runtime.
   There are a bunch of memory allocation functions in Python's C API that have
-  previously been just aliases for the C library's :func:`malloc` and
-  :func:`free`, meaning that if you accidentally called mismatched functions, the
+  previously been just aliases for the C library's :c:func:`malloc` and
+  :c:func:`free`, meaning that if you accidentally called mismatched functions, the
   error wouldn't be noticeable.  When the object allocator is enabled, these
-  functions aren't aliases of :func:`malloc` and :func:`free` any more, and
+  functions aren't aliases of :c:func:`!malloc` and :c:func:`!free` any more, and
   calling the wrong function to free memory will get you a core dump.  For
-  example, if memory was allocated using :func:`PyMem_New`, it has to be freed
-  using :func:`PyMem_Del`, not :func:`free`.  A few modules included with Python
+  example, if memory was allocated using :c:macro:`PyMem_New`, it has to be freed
+  using :c:func:`PyMem_Del`, not :c:func:`!free`.  A few modules included with Python
   fell afoul of this and had to be fixed; doubtless there are more third-party
   modules that will have the same problem.
 
@@ -717,16 +718,16 @@ of the more notable changes are:
   complain about its lack of speed, and because it's often been used as a naïve
   benchmark.  The :meth:`readline` method of file objects has therefore been
   rewritten to be much faster.  The exact amount of the speedup will vary from
-  platform to platform depending on how slow the C library's :func:`getc` was, but
+  platform to platform depending on how slow the C library's :c:func:`!getc` was, but
   is around 66%, and potentially much faster on some particular operating systems.
   Tim Peters did much of the benchmarking and coding for this change, motivated by
   a discussion in comp.lang.python.
 
   A new module and method for file objects was also added, contributed by Jeff
-  Epler. The new method, :meth:`xreadlines`, is similar to the existing
-  :func:`xrange` built-in.  :func:`xreadlines` returns an opaque sequence object
+  Epler. The new method, :meth:`!xreadlines`, is similar to the existing
+  :func:`!xrange` built-in.  :func:`!xreadlines` returns an opaque sequence object
   that only supports being iterated over, reading a line on every iteration but
-  not reading the entire file into memory as the existing :meth:`readlines` method
+  not reading the entire file into memory as the existing :meth:`!readlines` method
   does. You'd use it like this::
 
      for line in sys.stdin.xreadlines():
@@ -736,7 +737,7 @@ of the more notable changes are:
   For a fuller discussion of the line I/O changes, see the python-dev summary for
   January 1--15, 2001 at https://mail.python.org/pipermail/python-dev/2001-January/.
 
-* A new method, :meth:`popitem`, was added to dictionaries to enable
+* A new method, :meth:`~dict.popitem`, was added to dictionaries to enable
   destructively iterating through the contents of a dictionary; this can be faster
   for large dictionaries because there's no need to construct a list containing
   all the keys or values. ``D.popitem()`` removes a random ``(key, value)`` pair
@@ -770,7 +771,7 @@ of the more notable changes are:
   reorganization done by Jeremy Hylton.
 
 * C extensions which import other modules have been changed to use
-  :func:`PyImport_ImportModule`, which means that they will use any import hooks
+  :c:func:`PyImport_ImportModule`, which means that they will use any import hooks
   that have been installed.  This is also encouraged for third-party extensions
   that need to import some other module from C code.
 

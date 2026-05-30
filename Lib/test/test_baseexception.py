@@ -10,13 +10,11 @@ class ExceptionClassTests(unittest.TestCase):
     inheritance hierarchy)"""
 
     def test_builtins_new_style(self):
-        self.assertTrue(issubclass(Exception, object))
+        self.assertIsSubclass(Exception, object)
 
     def verify_instance_interface(self, ins):
         for attr in ("args", "__str__", "__repr__"):
-            self.assertTrue(hasattr(ins, attr),
-                    "%s missing %s attribute" %
-                        (ins.__class__.__name__, attr))
+            self.assertHasAttr(ins, attr)
 
     def test_inheritance(self):
         # Make sure the inheritance hierarchy matches the documentation
@@ -65,7 +63,7 @@ class ExceptionClassTests(unittest.TestCase):
                 elif last_depth > depth:
                     while superclasses[-1][0] >= depth:
                         superclasses.pop()
-                self.assertTrue(issubclass(exc, superclasses[-1][1]),
+                self.assertIsSubclass(exc, superclasses[-1][1],
                 "%s is not a subclass of %s" % (exc.__name__,
                     superclasses[-1][1].__name__))
                 try:  # Some exceptions require arguments; just skip them
@@ -78,6 +76,9 @@ class ExceptionClassTests(unittest.TestCase):
                 last_depth = depth
         finally:
             inheritance_tree.close()
+
+        # Underscore-prefixed (private) exceptions don't need to be documented
+        exc_set = set(e for e in exc_set if not e.startswith('_'))
         self.assertEqual(len(exc_set), 0, "%s not accounted for" % exc_set)
 
     interface_tests = ("length", "args", "str", "repr")
@@ -129,7 +130,7 @@ class ExceptionClassTests(unittest.TestCase):
 
         d[HashThisKeyWillClearTheDict()] = Value()  # refcount of Value() is 1 now
 
-        # Exception.__setstate__ should aquire a strong reference of key and
+        # Exception.__setstate__ should acquire a strong reference of key and
         # value in the dict. Otherwise, Value()'s refcount would go below
         # zero in the tp_hash call in PyObject_SetAttr(), and it would cause
         # crash in GC.

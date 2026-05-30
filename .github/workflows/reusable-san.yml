@@ -1,0 +1,112 @@
+name: Reusable Sanitizer
+
+on:
+  workflow_call:
+    inputs:
+      sanitizer:
+        required: true
+        type: string
+      free-threading:
+        description: Whether to use free-threaded mode
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+env:
+  FORCE_COLOR: 1
+
+jobs:
+  build-san-reusable:
+    name: >-
+      ${{ inputs.sanitizer }}${{
+        inputs.free-threading
+        && ' (free-threading)'
+        || ''
+      }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      with:
+        persist-credentials: false
+    - name: Runner image version
+      run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
+    - name: Install dependencies
+      run: |
+        sudo ./.github/workflows/posix-deps-apt.sh
+        # Install clang
+        wget https://apt.llvm.org/llvm.sh
+        chmod +x llvm.sh
+        sudo ./llvm.sh 20
+        sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-20 100
+        sudo update-alternatives --set clang /usr/bin/clang-20
+        sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-20 100
+        sudo update-alternatives --set clang++ /usr/bin/clang++-20
+
+        if [ "${SANITIZER}" = "TSan" ]; then
+          # Reduce ASLR to avoid TSan crashing
+          sudo sysctl -w vm.mmap_rnd_bits=28
+        fi
+
+    - name: Sanitizer option setup
+      run: |
+        if [ "${SANITIZER}" = "TSan" ]; then
+          echo "TSAN_OPTIONS=${SAN_LOG_OPTION} suppressions=${GITHUB_WORKSPACE}/Tools/tsan/suppressions${{
+              fromJSON(inputs.free-threading)
+              && '_free_threading'
+              || ''
+            }}.txt handle_segv=0" >> "$GITHUB_ENV"
+        else
+          echo "UBSAN_OPTIONS=${SAN_LOG_OPTION} halt_on_error=1 suppressions=${GITHUB_WORKSPACE}/Tools/ubsan/suppressions.txt" >> "$GITHUB_ENV"
+        fi
+        echo "CC=clang" >> "$GITHUB_ENV"
+        echo "CXX=clang++" >> "$GITHUB_ENV"
+      env:
+        SANITIZER: ${{ inputs.sanitizer }}
+        SAN_LOG_OPTION: log_path=${{ github.workspace }}/san_log
+    - name: Configure CPython
+      run: >-
+        ./configure
+        --config-cache
+        ${{
+          inputs.sanitizer == 'TSan'
+          && '--with-thread-sanitizer'
+          || '--with-undefined-behavior-sanitizer --with-strict-overflow'
+        }}
+        --with-pydebug
+        ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
+    - name: Build CPython
+      run: make -j4
+    - name: Display build info
+      run: make pythoninfo
+    # test_{capi,faulthandler} are skipped under UBSan because
+    # they raise signals that UBSan with halt_on_error=1 intercepts.
+    - name: Tests
+      run: >-
+        ./python -m test
+        ${{ inputs.sanitizer == 'TSan' && '--tsan' || '' }}
+        ${{ inputs.sanitizer == 'UBSan' && '-x test_capi -x test_faulthandler' || '' }}
+        -j4
+    - name: Parallel tests
+      if: >-
+        inputs.sanitizer == 'TSan'
+        && fromJSON(inputs.free-threading)
+      run: ./python -m test --tsan-parallel --parallel-threads=4 -j4
+    - name: Display logs
+      if: always()
+      run: find "${GITHUB_WORKSPACE}" -name 'san_log.*' | xargs head -n 1000
+    - name: Archive logs
+      if: always()
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+      with:
+        name: >-
+          ${{ inputs.sanitizer }}-logs-${{
+            fromJSON(inputs.free-threading)
+            && 'free-threading'
+            || 'default'
+          }}
+        path: san_log.*
+        if-no-files-found: ignore

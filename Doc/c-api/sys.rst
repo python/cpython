@@ -5,11 +5,13 @@
 Operating System Utilities
 ==========================
 
+
 .. c:function:: PyObject* PyOS_FSPath(PyObject *path)
 
    Return the file system representation for *path*. If the object is a
-   :class:`str` or :class:`bytes` object, then its reference count is
-   incremented. If the object implements the :class:`os.PathLike` interface,
+   :class:`str` or :class:`bytes` object, then a new
+   :term:`strong reference` is returned.
+   If the object implements the :class:`os.PathLike` interface,
    then :meth:`~os.PathLike.__fspath__` is returned as long as it is a
    :class:`str` or :class:`bytes` object. Otherwise :exc:`TypeError` is raised
    and ``NULL`` is returned.
@@ -96,27 +98,48 @@ Operating System Utilities
 
 .. c:function:: int PyOS_CheckStack()
 
+   .. index:: single: USE_STACKCHECK (C macro)
+
    Return true when the interpreter runs out of stack space.  This is a reliable
-   check, but is only available when :const:`USE_STACKCHECK` is defined (currently
+   check, but is only available when :c:macro:`!USE_STACKCHECK` is defined (currently
    on certain versions of Windows using the Microsoft Visual C++ compiler).
-   :const:`USE_STACKCHECK` will be defined automatically; you should never
+   :c:macro:`!USE_STACKCHECK` will be defined automatically; you should never
    change the definition in your own code.
+
+
+.. c:type::  void (*PyOS_sighandler_t)(int)
 
 
 .. c:function:: PyOS_sighandler_t PyOS_getsig(int i)
 
    Return the current signal handler for signal *i*.  This is a thin wrapper around
-   either :c:func:`sigaction` or :c:func:`signal`.  Do not call those functions
-   directly! :c:type:`PyOS_sighandler_t` is a typedef alias for :c:expr:`void
-   (\*)(int)`.
+   either :c:func:`!sigaction` or :c:func:`!signal`.  Do not call those functions
+   directly!
 
 
 .. c:function:: PyOS_sighandler_t PyOS_setsig(int i, PyOS_sighandler_t h)
 
    Set the signal handler for signal *i* to be *h*; return the old signal handler.
-   This is a thin wrapper around either :c:func:`sigaction` or :c:func:`signal`.  Do
-   not call those functions directly!  :c:type:`PyOS_sighandler_t` is a typedef
-   alias for :c:expr:`void (\*)(int)`.
+   This is a thin wrapper around either :c:func:`!sigaction` or :c:func:`!signal`.  Do
+   not call those functions directly!
+
+
+.. c:function:: int PyOS_InterruptOccurred(void)
+
+   Check if a :c:macro:`!SIGINT` signal has been received.
+
+   Returns ``1`` if a :c:macro:`!SIGINT` has occurred and clears the signal flag,
+   or ``0`` otherwise.
+
+   In most cases, you should prefer :c:func:`PyErr_CheckSignals` over this function.
+   :c:func:`!PyErr_CheckSignals` invokes the appropriate signal handlers
+   for all pending signals, allowing Python code to handle the signal properly.
+   This function only detects :c:macro:`!SIGINT` and does not invoke any Python
+   signal handlers.
+
+   This function is async-signal-safe and this function cannot fail.
+   The caller must hold an :term:`attached thread state`.
+
 
 .. c:function:: wchar_t* Py_DecodeLocale(const char* arg, size_t *size)
 
@@ -167,7 +190,7 @@ Operating System Utilities
 
    .. versionchanged:: 3.8
       The function now uses the UTF-8 encoding on Windows if
-      :c:member:`PyConfig.legacy_windows_fs_encoding` is zero;
+      :c:member:`PyPreConfig.legacy_windows_fs_encoding` is zero;
 
 
 .. c:function:: char* Py_EncodeLocale(const wchar_t *text, size_t *error_pos)
@@ -209,7 +232,39 @@ Operating System Utilities
 
    .. versionchanged:: 3.8
       The function now uses the UTF-8 encoding on Windows if
-      :c:member:`PyConfig.legacy_windows_fs_encoding` is zero.
+      :c:member:`PyPreConfig.legacy_windows_fs_encoding` is zero.
+
+.. c:function:: FILE* Py_fopen(PyObject *path, const char *mode)
+
+   Similar to :c:func:`!fopen`, but *path* is a Python object and
+   an exception is set on error.
+
+   *path* must be a :class:`str` object, a :class:`bytes` object,
+   or a :term:`path-like object`.
+
+   On success, return the new file pointer.
+   On error, set an exception and return ``NULL``.
+
+   The file must be closed by :c:func:`Py_fclose` rather than calling directly
+   :c:func:`!fclose`.
+
+   The file descriptor is created non-inheritable (:pep:`446`).
+
+   The caller must have an :term:`attached thread state`.
+
+   .. versionadded:: 3.14
+
+
+.. c:function:: int Py_fclose(FILE *file)
+
+   Close a file that was opened by :c:func:`Py_fopen`.
+
+   On success, return ``0``.
+   On error, return ``EOF`` and ``errno`` is set to indicate the error.
+   In either case, any further access (including another call to
+   :c:func:`Py_fclose`) to the stream results in undefined behavior.
+
+   .. versionadded:: 3.14
 
 
 .. _systemfunctions:
@@ -221,61 +276,63 @@ These are utility functions that make functionality from the :mod:`sys` module
 accessible to C code.  They all work with the current interpreter thread's
 :mod:`sys` module's dict, which is contained in the internal thread state structure.
 
+.. c:function:: PyObject *PySys_GetAttr(PyObject *name)
+
+   Get the attribute *name* of the :mod:`sys` module.
+   Return a :term:`strong reference`.
+   Raise :exc:`RuntimeError` and return ``NULL`` if it does not exist or
+   if the :mod:`sys` module cannot be found.
+
+   If the non-existing object should not be treated as a failure, you can use
+   :c:func:`PySys_GetOptionalAttr` instead.
+
+   .. versionadded:: 3.15
+
+.. c:function:: PyObject *PySys_GetAttrString(const char *name)
+
+   This is the same as :c:func:`PySys_GetAttr`, but *name* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
+
+   If the non-existing object should not be treated as a failure, you can use
+   :c:func:`PySys_GetOptionalAttrString` instead.
+
+   .. versionadded:: 3.15
+
+.. c:function:: int PySys_GetOptionalAttr(PyObject *name, PyObject **result)
+
+   Variant of :c:func:`PySys_GetAttr` which doesn't raise
+   exception if the object does not exist.
+
+   * Set *\*result* to a new :term:`strong reference` to the object and
+     return ``1`` if the object exists.
+   * Set *\*result* to ``NULL`` and return ``0`` without setting an exception
+     if the object does not exist.
+   * Set an exception, set *\*result* to ``NULL``, and return ``-1``,
+     if an error occurred.
+
+   .. versionadded:: 3.15
+
+.. c:function:: int PySys_GetOptionalAttrString(const char *name, PyObject **result)
+
+   This is the same as :c:func:`PySys_GetOptionalAttr`, but *name* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
+
+   .. versionadded:: 3.15
+
 .. c:function:: PyObject *PySys_GetObject(const char *name)
 
-   Return the object *name* from the :mod:`sys` module or ``NULL`` if it does
-   not exist, without setting an exception.
+   Similar to :c:func:`PySys_GetAttrString`, but return a :term:`borrowed
+   reference` and return ``NULL`` *without* setting exception on failure.
+
+   Preserves exception that was set before the call.
 
 .. c:function:: int PySys_SetObject(const char *name, PyObject *v)
 
    Set *name* in the :mod:`sys` module to *v* unless *v* is ``NULL``, in which
    case *name* is deleted from the sys module. Returns ``0`` on success, ``-1``
    on error.
-
-.. c:function:: void PySys_ResetWarnOptions()
-
-   Reset :data:`sys.warnoptions` to an empty list. This function may be
-   called prior to :c:func:`Py_Initialize`.
-
-.. c:function:: void PySys_AddWarnOption(const wchar_t *s)
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.warnoptions` should be used instead, see :ref:`Python
-   Initialization Configuration <init-config>`.
-
-   Append *s* to :data:`sys.warnoptions`. This function must be called prior
-   to :c:func:`Py_Initialize` in order to affect the warnings filter list.
-
-   .. deprecated:: 3.11
-
-.. c:function:: void PySys_AddWarnOptionUnicode(PyObject *unicode)
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.warnoptions` should be used instead, see :ref:`Python
-   Initialization Configuration <init-config>`.
-
-   Append *unicode* to :data:`sys.warnoptions`.
-
-   Note: this function is not currently usable from outside the CPython
-   implementation, as it must be called prior to the implicit import of
-   :mod:`warnings` in :c:func:`Py_Initialize` to be effective, but can't be
-   called until enough of the runtime has been initialized to permit the
-   creation of Unicode objects.
-
-   .. deprecated:: 3.11
-
-.. c:function:: void PySys_SetPath(const wchar_t *path)
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.module_search_paths` and
-   :c:member:`PyConfig.module_search_paths_set` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   Set :data:`sys.path` to a list object of paths found in *path* which should
-   be a list of paths separated with the platform's search path delimiter
-   (``:`` on Unix, ``;`` on Windows).
-
-   .. deprecated:: 3.11
 
 .. c:function:: void PySys_WriteStdout(const char *format, ...)
 
@@ -313,20 +370,6 @@ accessible to C code.  They all work with the current interpreter thread's
 
    .. versionadded:: 3.2
 
-.. c:function:: void PySys_AddXOption(const wchar_t *s)
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.xoptions` should be used instead, see :ref:`Python
-   Initialization Configuration <init-config>`.
-
-   Parse *s* as a set of :option:`-X` options and add them to the current
-   options mapping as returned by :c:func:`PySys_GetXOptions`. This function
-   may be called prior to :c:func:`Py_Initialize`.
-
-   .. versionadded:: 3.2
-
-   .. deprecated:: 3.11
-
 .. c:function:: PyObject *PySys_GetXOptions()
 
    Return the current dictionary of :option:`-X` options, similarly to
@@ -341,18 +384,23 @@ accessible to C code.  They all work with the current interpreter thread's
    Raise an auditing event with any active hooks. Return zero for success
    and non-zero with an exception set on failure.
 
+   The *event* string argument must not be *NULL*.
+
    If any hooks have been added, *format* and other arguments will be used
    to construct a tuple to pass. Apart from ``N``, the same format characters
    as used in :c:func:`Py_BuildValue` are available. If the built value is not
-   a tuple, it will be added into a single-element tuple. (The ``N`` format
-   option consumes a reference, but since there is no way to know whether
-   arguments to this function will be consumed, using it may cause reference
-   leaks.)
+   a tuple, it will be added into a single-element tuple.
+
+   The ``N`` format option must not be used. It consumes a reference, but since
+   there is no way to know whether arguments to this function will be consumed,
+   using it may cause reference leaks.
 
    Note that ``#`` format characters should always be treated as
    :c:type:`Py_ssize_t`, regardless of whether ``PY_SSIZE_T_CLEAN`` was defined.
 
    :func:`sys.audit` performs the same function from Python code.
+
+   See also :c:func:`PySys_AuditTuple`.
 
    .. versionadded:: 3.8
 
@@ -360,6 +408,14 @@ accessible to C code.  They all work with the current interpreter thread's
 
       Require :c:type:`Py_ssize_t` for ``#`` format characters. Previously, an
       unavoidable deprecation warning was raised.
+
+
+.. c:function:: int PySys_AuditTuple(const char *event, PyObject *args)
+
+   Similar to :c:func:`PySys_Audit`, but pass arguments as a Python object.
+   *args* must be a :class:`tuple`. To pass no arguments, *args* can be *NULL*.
+
+   .. versionadded:: 3.13
 
 
 .. c:function:: int PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
@@ -379,10 +435,8 @@ accessible to C code.  They all work with the current interpreter thread's
    silently abort the operation by raising an error subclassed from
    :class:`Exception` (other errors will not be silenced).
 
-   The hook function is of type :c:expr:`int (*)(const char *event, PyObject
-   *args, void *userData)`, where *args* is guaranteed to be a
-   :c:type:`PyTupleObject`. The hook function is always called with the GIL
-   held by the Python interpreter that raised the event.
+   The hook function is always called with an :term:`attached thread state` by
+   the Python interpreter that raised the event.
 
    See :pep:`578` for a detailed description of auditing.  Functions in the
    runtime and standard library that raise events are listed in the
@@ -391,11 +445,20 @@ accessible to C code.  They all work with the current interpreter thread's
 
    .. audit-event:: sys.addaudithook "" c.PySys_AddAuditHook
 
-      If the interpreter is initialized, this function raises a auditing event
+      If the interpreter is initialized, this function raises an auditing event
       ``sys.addaudithook`` with no arguments. If any existing hooks raise an
       exception derived from :class:`Exception`, the new hook will not be
       added and the exception is cleared. As a result, callers cannot assume
       that their hook has been added unless they control all existing hooks.
+
+   .. c:namespace:: NULL
+   .. c:type:: int (*Py_AuditHookFunction) (const char *event, PyObject *args, void *userData)
+
+      The type of the hook function.
+      *event* is the C string event argument passed to :c:func:`PySys_Audit` or
+      :c:func:`PySys_AuditTuple`.
+      *args* is guaranteed to be a :c:type:`PyTupleObject`.
+      *userData* is the argument passed to PySys_AddAuditHook().
 
    .. versionadded:: 3.8
 
@@ -408,13 +471,13 @@ Process Control
 
 .. c:function:: void Py_FatalError(const char *message)
 
-   .. index:: single: abort()
+   .. index:: single: abort (C function)
 
    Print a fatal error message and kill the process.  No cleanup is performed.
    This function should only be invoked when a condition is detected that would
    make it dangerous to continue using the Python interpreter; e.g., when the
    object administration appears to be corrupted.  On Unix, the standard C library
-   function :c:func:`abort` is called which will attempt to produce a :file:`core`
+   function :c:func:`!abort` is called which will attempt to produce a :file:`core`
    file.
 
    The ``Py_FatalError()`` function is replaced with a macro which logs
@@ -428,8 +491,8 @@ Process Control
 .. c:function:: void Py_Exit(int status)
 
    .. index::
-      single: Py_FinalizeEx()
-      single: exit()
+      single: Py_FinalizeEx (C function)
+      single: exit (C function)
 
    Exit the current process.  This calls :c:func:`Py_FinalizeEx` and then calls the
    standard C library function ``exit(status)``.  If :c:func:`Py_FinalizeEx`
@@ -442,7 +505,7 @@ Process Control
 .. c:function:: int Py_AtExit(void (*func) ())
 
    .. index::
-      single: Py_FinalizeEx()
+      single: Py_FinalizeEx (C function)
       single: cleanup functions
 
    Register a cleanup function to be called by :c:func:`Py_FinalizeEx`.  The cleanup
@@ -452,3 +515,7 @@ Process Control
    function registered last is called first. Each cleanup function will be called
    at most once.  Since Python's internal finalization will have completed before
    the cleanup function, no Python APIs should be called by *func*.
+
+   .. seealso::
+
+      :c:func:`PyUnstable_AtExit` for passing a ``void *data`` argument.

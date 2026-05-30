@@ -30,8 +30,9 @@ Copyright (c) Corporation for National Research Initiatives.
 
    ------------------------------------------------------------------------ */
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_codecs.h"        // _PyCodec_Lookup()
+#include "pycore_unicodeobject.h" // _PyUnicode_EncodeCharmap
 
 #ifdef MS_WINDOWS
 #include <windows.h>
@@ -54,14 +55,15 @@ _codecs.register
 
 Register a codec search function.
 
-Search functions are expected to take one argument, the encoding name in
-all lower case letters, and either return None, or a tuple of functions
-(encoder, decoder, stream_reader, stream_writer) (or a CodecInfo object).
+Search functions are expected to take one argument, the encoding
+name in all lower case letters, and either return None, or a tuple
+of functions (encoder, decoder, stream_reader, stream_writer) (or
+a CodecInfo object).
 [clinic start generated code]*/
 
 static PyObject *
 _codecs_register(PyObject *module, PyObject *search_function)
-/*[clinic end generated code: output=d1bf21e99db7d6d3 input=369578467955cae4]*/
+/*[clinic end generated code: output=d1bf21e99db7d6d3 input=2321d8c8c0420dfc]*/
 {
     if (PyCodec_Register(search_function))
         return NULL;
@@ -91,6 +93,7 @@ _codecs_unregister(PyObject *module, PyObject *search_function)
 }
 
 /*[clinic input]
+@permit_long_summary
 _codecs.lookup
     encoding: str
     /
@@ -100,7 +103,7 @@ Looks up a codec tuple in the Python codec registry and returns a CodecInfo obje
 
 static PyObject *
 _codecs_lookup_impl(PyObject *module, const char *encoding)
-/*[clinic end generated code: output=9f0afa572080c36d input=3c572c0db3febe9c]*/
+/*[clinic end generated code: output=9f0afa572080c36d input=02227d5429491ab3]*/
 {
     return _PyCodec_Lookup(encoding);
 }
@@ -114,16 +117,16 @@ _codecs.encode
 Encodes obj using the codec registered for encoding.
 
 The default encoding is 'utf-8'.  errors may be given to set a
-different error handling scheme.  Default is 'strict' meaning that encoding
-errors raise a ValueError.  Other possible values are 'ignore', 'replace'
-and 'backslashreplace' as well as any other name registered with
-codecs.register_error that can handle ValueErrors.
+different error handling scheme.  Default is 'strict' meaning that
+encoding errors raise a ValueError.  Other possible values are 'ignore',
+'replace' and 'backslashreplace' as well as any other name registered
+with codecs.register_error that can handle ValueErrors.
 [clinic start generated code]*/
 
 static PyObject *
 _codecs_encode_impl(PyObject *module, PyObject *obj, const char *encoding,
                     const char *errors)
-/*[clinic end generated code: output=385148eb9a067c86 input=cd5b685040ff61f0]*/
+/*[clinic end generated code: output=385148eb9a067c86 input=e5271d443e391d7f]*/
 {
     if (encoding == NULL)
         encoding = PyUnicode_GetDefaultEncoding();
@@ -141,16 +144,16 @@ _codecs.decode
 Decodes obj using the codec registered for encoding.
 
 Default encoding is 'utf-8'.  errors may be given to set a
-different error handling scheme.  Default is 'strict' meaning that encoding
-errors raise a ValueError.  Other possible values are 'ignore', 'replace'
-and 'backslashreplace' as well as any other name registered with
-codecs.register_error that can handle ValueErrors.
+different error handling scheme.  Default is 'strict' meaning that
+encoding errors raise a ValueError.  Other possible values are 'ignore',
+'replace' and 'backslashreplace' as well as any other name registered
+with codecs.register_error that can handle ValueErrors.
 [clinic start generated code]*/
 
 static PyObject *
 _codecs_decode_impl(PyObject *module, PyObject *obj, const char *encoding,
                     const char *errors)
-/*[clinic end generated code: output=679882417dc3a0bd input=7702c0cc2fa1add6]*/
+/*[clinic end generated code: output=679882417dc3a0bd input=3e6254628f9ca538]*/
 {
     if (encoding == NULL)
         encoding = PyUnicode_GetDefaultEncoding();
@@ -200,55 +203,50 @@ _codecs_escape_encode_impl(PyObject *module, PyObject *data,
                            const char *errors)
 /*[clinic end generated code: output=4af1d477834bab34 input=8f4b144799a94245]*/
 {
-    Py_ssize_t size;
-    Py_ssize_t newsize;
-    PyObject *v;
-
-    size = PyBytes_GET_SIZE(data);
+    Py_ssize_t size = PyBytes_GET_SIZE(data);
     if (size > PY_SSIZE_T_MAX / 4) {
         PyErr_SetString(PyExc_OverflowError,
             "string is too large to encode");
             return NULL;
     }
-    newsize = 4*size;
-    v = PyBytes_FromStringAndSize(NULL, newsize);
+    Py_ssize_t newsize = 4*size;
 
-    if (v == NULL) {
+    PyBytesWriter *writer = PyBytesWriter_Create(newsize);
+    if (writer == NULL) {
         return NULL;
     }
-    else {
-        Py_ssize_t i;
-        char c;
-        char *p = PyBytes_AS_STRING(v);
+    char *p = PyBytesWriter_GetData(writer);
 
-        for (i = 0; i < size; i++) {
-            /* There's at least enough room for a hex escape */
-            assert(newsize - (p - PyBytes_AS_STRING(v)) >= 4);
-            c = PyBytes_AS_STRING(data)[i];
-            if (c == '\'' || c == '\\')
-                *p++ = '\\', *p++ = c;
-            else if (c == '\t')
-                *p++ = '\\', *p++ = 't';
-            else if (c == '\n')
-                *p++ = '\\', *p++ = 'n';
-            else if (c == '\r')
-                *p++ = '\\', *p++ = 'r';
-            else if (c < ' ' || c >= 0x7f) {
-                *p++ = '\\';
-                *p++ = 'x';
-                *p++ = Py_hexdigits[(c & 0xf0) >> 4];
-                *p++ = Py_hexdigits[c & 0xf];
-            }
-            else
-                *p++ = c;
+    for (Py_ssize_t i = 0; i < size; i++) {
+        /* There's at least enough room for a hex escape */
+        assert(newsize - (p - (char*)PyBytesWriter_GetData(writer)) >= 4);
+
+        char c = PyBytes_AS_STRING(data)[i];
+        if (c == '\'' || c == '\\') {
+            *p++ = '\\'; *p++ = c;
         }
-        *p = '\0';
-        if (_PyBytes_Resize(&v, (p - PyBytes_AS_STRING(v)))) {
-            return NULL;
+        else if (c == '\t') {
+            *p++ = '\\'; *p++ = 't';
+        }
+        else if (c == '\n') {
+            *p++ = '\\'; *p++ = 'n';
+        }
+        else if (c == '\r') {
+            *p++ = '\\'; *p++ = 'r';
+        }
+        else if (c < ' ' || c >= 0x7f) {
+            *p++ = '\\';
+            *p++ = 'x';
+            *p++ = Py_hexdigits[(c & 0xf0) >> 4];
+            *p++ = Py_hexdigits[c & 0xf];
+        }
+        else {
+            *p++ = c;
         }
     }
 
-    return codec_tuple(v, size);
+    PyObject *decoded = PyBytesWriter_FinishWithPointer(writer, p);
+    return codec_tuple(decoded, size);
 }
 
 /* --- Decoder ------------------------------------------------------------ */
@@ -674,7 +672,7 @@ _codecs_utf_7_encode_impl(PyObject *module, PyObject *str,
                           const char *errors)
 /*[clinic end generated code: output=0feda21ffc921bc8 input=2546dbbb3fa53114]*/
 {
-    return codec_tuple(_PyUnicode_EncodeUTF7(str, 0, 0, errors),
+    return codec_tuple(_PyUnicode_EncodeUTF7(str, errors),
                        PyUnicode_GET_LENGTH(str));
 }
 
@@ -965,18 +963,43 @@ _codecs.register_error
 Register the specified error handler under the name errors.
 
 handler must be a callable object, that will be called with an exception
-instance containing information about the location of the encoding/decoding
-error and must return a (replacement, new position) tuple.
+instance containing information about the location of the
+encoding/decoding error and must return a (replacement, new position)
+tuple.
 [clinic start generated code]*/
 
 static PyObject *
 _codecs_register_error_impl(PyObject *module, const char *errors,
                             PyObject *handler)
-/*[clinic end generated code: output=fa2f7d1879b3067d input=5e6709203c2e33fe]*/
+/*[clinic end generated code: output=fa2f7d1879b3067d input=5bea01dfe835d9d8]*/
 {
     if (PyCodec_RegisterError(errors, handler))
         return NULL;
     Py_RETURN_NONE;
+}
+
+/*[clinic input]
+_codecs._unregister_error -> bool
+    errors: str
+    /
+
+Un-register the specified error handler for the error handling `errors'.
+
+Only custom error handlers can be un-registered. An exception is raised
+if the error handling is a built-in one (e.g., 'strict'), or if an error
+occurs.
+
+Otherwise, this returns True if a custom handler has been successfully
+un-registered, and False if no custom handler for the specified error
+handling exists.
+
+[clinic start generated code]*/
+
+static int
+_codecs__unregister_error_impl(PyObject *module, const char *errors)
+/*[clinic end generated code: output=28c22be667465503 input=a63ab9e9ce1686d4]*/
+{
+    return _PyCodec_UnregisterError(errors);
 }
 
 /*[clinic input]
@@ -986,15 +1009,56 @@ _codecs.lookup_error
 
 lookup_error(errors) -> handler
 
-Return the error handler for the specified error handling name or raise a
-LookupError, if no handler exists under this name.
+Return the error handler for the specified error handling name or raise
+a LookupError, if no handler exists under this name.
 [clinic start generated code]*/
 
 static PyObject *
 _codecs_lookup_error_impl(PyObject *module, const char *name)
-/*[clinic end generated code: output=087f05dc0c9a98cc input=4775dd65e6235aba]*/
+/*[clinic end generated code: output=087f05dc0c9a98cc input=86cfb6a7a9c67113]*/
 {
     return PyCodec_LookupError(name);
+}
+
+extern int _Py_normalize_encoding(const char *, char *, size_t, int);
+
+/*[clinic input]
+_codecs._normalize_encoding
+    encoding: unicode
+
+Normalize an encoding name *encoding*.
+
+Used for encodings.normalize_encoding. Does not convert to lower case.
+[clinic start generated code]*/
+
+static PyObject *
+_codecs__normalize_encoding_impl(PyObject *module, PyObject *encoding)
+/*[clinic end generated code: output=d27465d81e361f8e input=3ff3f4d64995b988]*/
+{
+    Py_ssize_t len;
+    const char *cstr = PyUnicode_AsUTF8AndSize(encoding, &len);
+    if (cstr == NULL) {
+        return NULL;
+    }
+
+    if (len > PY_SSIZE_T_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "encoding is too large");
+        return NULL;
+    }
+
+    char *normalized = PyMem_Malloc(len + 1);
+    if (normalized == NULL) {
+        return PyErr_NoMemory();
+    }
+
+    if (!_Py_normalize_encoding(cstr, normalized, len + 1, 0)) {
+        PyMem_Free(normalized);
+        return NULL;
+    }
+
+    PyObject *result = PyUnicode_FromString(normalized);
+    PyMem_Free(normalized);
+    return result;
 }
 
 /* --- Module API --------------------------------------------------------- */
@@ -1044,11 +1108,16 @@ static PyMethodDef _codecs_functions[] = {
     _CODECS_CODE_PAGE_ENCODE_METHODDEF
     _CODECS_CODE_PAGE_DECODE_METHODDEF
     _CODECS_REGISTER_ERROR_METHODDEF
+    _CODECS__UNREGISTER_ERROR_METHODDEF
     _CODECS_LOOKUP_ERROR_METHODDEF
+    _CODECS__NORMALIZE_ENCODING_METHODDEF
     {NULL, NULL}                /* sentinel */
 };
 
 static PyModuleDef_Slot _codecs_slots[] = {
+    _Py_ABI_SLOT,
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

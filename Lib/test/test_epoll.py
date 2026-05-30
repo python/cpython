@@ -27,6 +27,7 @@ import select
 import socket
 import time
 import unittest
+from test import support
 
 if not hasattr(select, "epoll"):
     raise unittest.SkipTest("test works only on Linux 2.6")
@@ -186,10 +187,16 @@ class TestEPoll(unittest.TestCase):
         client.sendall(b"Hello!")
         server.sendall(b"world!!!")
 
-        now = time.monotonic()
-        events = ep.poll(1.0, 4)
-        then = time.monotonic()
-        self.assertFalse(then - now > 0.01)
+        # we might receive events one at a time, necessitating multiple calls to
+        # poll
+        events = []
+        for _ in support.busy_retry(support.SHORT_TIMEOUT):
+            now = time.monotonic()
+            events += ep.poll(1.0, 4)
+            then = time.monotonic()
+            self.assertFalse(then - now > 0.01)
+            if len(events) >= 2:
+                break
 
         expected = [(client.fileno(), select.EPOLLIN | select.EPOLLOUT),
                     (server.fileno(), select.EPOLLIN | select.EPOLLOUT)]
@@ -251,6 +258,15 @@ class TestEPoll(unittest.TestCase):
         self.assertRaises(ValueError, epoll.poll, 1.0)
         self.assertRaises(ValueError, epoll.register, fd, select.EPOLLIN)
         self.assertRaises(ValueError, epoll.unregister, fd)
+
+    def test_close_error(self):
+        # gh-146205: close() should raise OSError if underlying fd is invalid
+        epoll = select.epoll()
+        fd = epoll.fileno()
+        os.close(fd)
+        with self.assertRaises(OSError) as cm:
+            epoll.close()
+        self.assertEqual(cm.exception.errno, errno.EBADF)
 
     def test_fd_non_inheritable(self):
         epoll = select.epoll()

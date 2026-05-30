@@ -1,18 +1,31 @@
-#define PY_SSIZE_T_CLEAN
+// clinic/float.c.h uses internal pycore_modsupport.h API
+#define PYTESTCAPI_NEED_INTERNAL_API
 
 #include "parts.h"
+#include "util.h"
+#include "clinic/float.c.h"
 
 
-// Test PyFloat_Pack2(), PyFloat_Pack4() and PyFloat_Pack8()
+/*[clinic input]
+module _testcapi
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6361033e795369fc]*/
+
+/*[clinic input]
+_testcapi.float_pack
+
+    size: int
+    d: double
+    le: int
+    /
+
+Test PyFloat_Pack2(), PyFloat_Pack4() and PyFloat_Pack8()
+[clinic start generated code]*/
+
 static PyObject *
-test_float_pack(PyObject *self, PyObject *args)
+_testcapi_float_pack_impl(PyObject *module, int size, double d, int le)
+/*[clinic end generated code: output=7899bd98f8b6cb04 input=52c9115121999c98]*/
 {
-    int size;
-    double d;
-    int le;
-    if (!PyArg_ParseTuple(args, "idi", &size, &d, &le)) {
-        return NULL;
-    }
     switch (size)
     {
     case 2:
@@ -47,19 +60,24 @@ test_float_pack(PyObject *self, PyObject *args)
 }
 
 
-// Test PyFloat_Unpack2(), PyFloat_Unpack4() and PyFloat_Unpack8()
+/*[clinic input]
+_testcapi.float_unpack
+
+    data: str(accept={robuffer}, zeroes=True)
+    le: int
+    /
+
+Test PyFloat_Unpack2(), PyFloat_Unpack4() and PyFloat_Unpack8()
+[clinic start generated code]*/
+
 static PyObject *
-test_float_unpack(PyObject *self, PyObject *args)
+_testcapi_float_unpack_impl(PyObject *module, const char *data,
+                            Py_ssize_t data_length, int le)
+/*[clinic end generated code: output=617059f889ddbfe4 input=c095e4bb75a696cd]*/
 {
     assert(!PyErr_Occurred());
-    const char *data;
-    Py_ssize_t size;
-    int le;
-    if (!PyArg_ParseTuple(args, "y#i", &data, &size, &le)) {
-        return NULL;
-    }
     double d;
-    switch (size)
+    switch (data_length)
     {
     case 2:
         d = PyFloat_Unpack2(data, le);
@@ -81,9 +99,68 @@ test_float_unpack(PyObject *self, PyObject *args)
     return PyFloat_FromDouble(d);
 }
 
+
+/* Test PyOS_string_to_double. */
+static PyObject *
+test_string_to_double(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    double result;
+    const char *msg;
+
+#define CHECK_STRING(STR, expected) \
+    do { \
+        result = PyOS_string_to_double(STR, NULL, NULL); \
+        if (result == -1.0 && PyErr_Occurred()) { \
+            return NULL; \
+        } \
+        if (result != (double)expected) { \
+            msg = "conversion of " STR " to float failed"; \
+            goto fail; \
+        } \
+    } while (0)
+
+#define CHECK_INVALID(STR) \
+    do { \
+        result = PyOS_string_to_double(STR, NULL, NULL); \
+        if (result == -1.0 && PyErr_Occurred()) { \
+            if (PyErr_ExceptionMatches(PyExc_ValueError)) { \
+                PyErr_Clear(); \
+            } \
+            else { \
+                return NULL; \
+            } \
+        } \
+        else { \
+            msg = "conversion of " STR " didn't raise ValueError"; \
+            goto fail; \
+        } \
+    } while (0)
+
+    CHECK_STRING("0.1", 0.1);
+    CHECK_STRING("1.234", 1.234);
+    CHECK_STRING("-1.35", -1.35);
+    CHECK_STRING(".1e01", 1.0);
+    CHECK_STRING("2.e-2", 0.02);
+
+    CHECK_INVALID(" 0.1");
+    CHECK_INVALID("\t\n-3");
+    CHECK_INVALID(".123 ");
+    CHECK_INVALID("3\n");
+    CHECK_INVALID("123abc");
+
+    Py_RETURN_NONE;
+  fail:
+    PyErr_Format(PyExc_AssertionError, "test_string_to_double: %s", msg);
+    return NULL;
+#undef CHECK_STRING
+#undef CHECK_INVALID
+}
+
+
 static PyMethodDef test_methods[] = {
-    {"float_pack", test_float_pack, METH_VARARGS, NULL},
-    {"float_unpack", test_float_unpack, METH_VARARGS, NULL},
+    _TESTCAPI_FLOAT_PACK_METHODDEF
+    _TESTCAPI_FLOAT_UNPACK_METHODDEF
+    {"test_string_to_double", test_string_to_double, METH_NOARGS},
     {NULL},
 };
 
@@ -94,5 +171,9 @@ _PyTestCapi_Init_Float(PyObject *mod)
         return -1;
     }
 
-    return 0;
+#if (defined(__mips__) && !defined(__mips_nan2008)) || defined(__hppa__)
+    return PyModule_Add(mod, "nan_msb_is_signaling", PyBool_FromLong(1));
+#else
+    return PyModule_Add(mod, "nan_msb_is_signaling", PyBool_FromLong(0));
+#endif
 }

@@ -3,6 +3,8 @@ import io
 import os.path
 import re
 
+import consts_getter
+
 SCRIPT_NAME = 'Tools/build/generate_global_objects.py'
 __file__ = os.path.abspath(__file__)
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -121,6 +123,16 @@ IDENTIFIERS = [
     '__xor__',
     '__divmod__',
     '__rdivmod__',
+    '__buffer__',
+    '__release_buffer__',
+
+    #Workarounds for GH-108918
+    'alias',
+    'args',
+    'exc_type',
+    'exc_value',
+    'self',
+    'traceback',
 ]
 
 NON_GENERATED_IMMORTAL_OBJECTS = [
@@ -264,19 +276,7 @@ def generate_global_strings(identifiers, strings):
 
 
 def generate_runtime_init(identifiers, strings):
-    # First get some info from the declarations.
-    nsmallposints = None
-    nsmallnegints = None
-    with open(os.path.join(INTERNAL, 'pycore_global_objects.h')) as infile:
-        for line in infile:
-            if line.startswith('#define _PY_NSMALLPOSINTS'):
-                nsmallposints = int(line.split()[-1])
-            elif line.startswith('#define _PY_NSMALLNEGINTS'):
-                nsmallnegints = int(line.split()[-1])
-                break
-        else:
-            raise NotImplementedError
-    assert nsmallposints and nsmallnegints
+    nsmallnegints, nsmallposints = consts_getter.get_nsmallnegints_and_nsmallposints()
 
     # Then target the runtime initializer.
     filename = os.path.join(INTERNAL, 'pycore_runtime_init_generated.h')
@@ -354,14 +354,20 @@ def generate_static_strings_initializer(identifiers, strings):
         printer.write(before)
         printer.write(START)
         printer.write("static inline void")
-        with printer.block("_PyUnicode_InitStaticStrings(void)"):
+        with printer.block("_PyUnicode_InitStaticStrings(PyInterpreterState *interp)"):
             printer.write(f'PyObject *string;')
             for i in sorted(identifiers):
                 # This use of _Py_ID() is ignored by iter_global_strings()
                 # since iter_files() ignores .h files.
                 printer.write(f'string = &_Py_ID({i});')
-                printer.write(f'PyUnicode_InternInPlace(&string);')
-            # XXX What about "strings"?
+                printer.write(f'_PyUnicode_InternStatic(interp, &string);')
+                printer.write(f'assert(_PyUnicode_CheckConsistency(string, 1));')
+                printer.write(f'assert(PyUnicode_GET_LENGTH(string) != 1);')
+            for value, name in sorted(strings.items()):
+                printer.write(f'string = &_Py_STR({name});')
+                printer.write(f'_PyUnicode_InternStatic(interp, &string);')
+                printer.write(f'assert(_PyUnicode_CheckConsistency(string, 1));')
+                printer.write(f'assert(PyUnicode_GET_LENGTH(string) != 1);')
         printer.write(END)
         printer.write(after)
 
@@ -403,15 +409,31 @@ def generate_global_object_finalizers(generated_immortal_objects):
 def get_identifiers_and_strings() -> 'tuple[set[str], dict[str, str]]':
     identifiers = set(IDENTIFIERS)
     strings = {}
+    # Note that we store strings as they appear in C source, so the checks here
+    # can be defeated, e.g.:
+    # - "a" and "\0x61" won't be reported as duplicate.
+    # - "\n" appears as 2 characters.
+    # Probably not worth adding a C string parser.
     for name, string, *_ in iter_global_strings():
         if string is None:
             if name not in IGNORED:
                 identifiers.add(name)
         else:
+            if len(string) == 1 and ord(string) < 256:
+                # Give a nice message for common mistakes.
+                # To cover tricky cases (like "\n") we also generate C asserts.
+                raise ValueError(
+                    'do not use &_Py_ID or &_Py_STR for one-character latin-1 '
+                    f'strings, use _Py_LATIN1_CHR instead: {string!r}')
             if string not in strings:
                 strings[string] = name
             elif name != strings[string]:
-                raise ValueError(f'string mismatch for {name!r} ({string!r} != {strings[name]!r}')
+                raise ValueError(f'name mismatch for string {string!r} ({name!r} != {strings[string]!r}')
+    overlap = identifiers & set(strings.keys())
+    if overlap:
+        raise ValueError(
+            'do not use both _Py_ID and _Py_DECLARE_STR for the same string: '
+            + repr(overlap))
     return identifiers, strings
 
 
