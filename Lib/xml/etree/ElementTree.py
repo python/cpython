@@ -917,9 +917,12 @@ def _serialize_xml(write, elem, qnames, namespaces,
     if elem.tail:
         write(_escape_cdata(elem.tail))
 
+_CDATA_CONTENT_ELEMENTS = {"script", "style", "xmp", "iframe", "noembed",
+                           "noframes", "plaintext"}
+
 HTML_EMPTY = {"area", "base", "basefont", "br", "col", "embed", "frame", "hr",
               "img", "input", "isindex", "link", "meta", "param", "source",
-              "track", "wbr"}
+              "track", "wbr", "plaintext"}
 
 def _serialize_html(write, elem, qnames, namespaces, **kwargs):
     tag = elem.tag
@@ -960,7 +963,7 @@ def _serialize_html(write, elem, qnames, namespaces, **kwargs):
             write(">")
             ltag = tag.lower()
             if text:
-                if ltag == "script" or ltag == "style":
+                if ltag in _CDATA_CONTENT_ELEMENTS:
                     write(text)
                 else:
                     write(_escape_cdata(text))
