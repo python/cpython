@@ -214,8 +214,7 @@ static const double logpi = 1.144729885849400174143427351353058711647;
 
 #ifndef HAVE_ACOSPI
 /*
-   acos(x)/pi, giving accurate results for all finite x (especially x
-   integral or close to an integer). It conforms to C23 Annex 'F'.
+   acos(x)/pi.  It conforms to C23 Annex 'F'.
 */
 
 static double
@@ -233,8 +232,7 @@ m_acospi(double x)
 
 #ifndef HAVE_ASINPI
 /*
-   asin(x)/pi, giving accurate results for all finite x (especially x
-   integral or close to an integer). It conforms to C23 Annex 'F'.
+   asin(x)/pi.  It conforms to C23 Annex 'F'.
 */
 
 static double
@@ -252,8 +250,7 @@ m_asinpi(double x)
 
 #ifndef HAVE_ATANPI
 /*
-   asin(x)/pi, giving accurate results for all finite x (especially x
-   integral or close to an integer).  It conforms to C23 Annex 'F'.
+   asin(x)/pi.  It conforms to C23 Annex 'F'.
 */
 
 static double
@@ -271,8 +268,7 @@ m_atanpi(double x)
 
 #ifndef HAVE_ATAN2PI
 /*
-   asin(x)/pi, giving accurate results for all finite x (especially x
-   integral or close to an integer).  It conforms to C23 Annex 'F'.
+   asin(x)/pi.  It conforms to C23 Annex 'F'.
 */
 
 static double
