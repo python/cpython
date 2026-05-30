@@ -218,7 +218,9 @@ typedef struct {
 
 typedef struct PyDecContextObject {
     PyObject_HEAD
+#ifdef Py_GIL_DISABLED
     PyMutex ctx_lock;
+#endif
     mpd_context_t ctx;
     PyObject *traps;
     PyObject *flags;
@@ -247,10 +249,17 @@ typedef struct {
 #define SdFlagAddr(v) (_PyDecSignalDictObject_CAST(v)->flags)
 #define SdFlags(v) (*_PyDecSignalDictObject_CAST(v)->flags)
 #define CTX(v) (&_PyDecContextObject_CAST(v)->ctx)
+#define CtxCaps(v) (_PyDecContextObject_CAST(v)->capitals)
+
+#ifdef Py_GIL_DISABLED
 #define CTX_LOCK_INIT(v) _PyDecContextObject_CAST(v)->ctx_lock = (PyMutex){0}
 #define CTX_LOCK(v) PyMutex_Lock(&_PyDecContextObject_CAST(v)->ctx_lock)
 #define CTX_UNLOCK(v) PyMutex_Unlock(&_PyDecContextObject_CAST(v)->ctx_lock)
-#define CtxCaps(v) (_PyDecContextObject_CAST(v)->capitals)
+#else
+#define CTX_LOCK_INIT(v) ((void)0)
+#define CTX_LOCK(v) ((void)0)
+#define CTX_UNLOCK(v) ((void)0)
+#endif
 
 static inline decimal_state *
 get_module_state_from_ctx(PyObject *v)
@@ -1457,7 +1466,7 @@ context_new(PyTypeObject *type,
     if (self == NULL) {
         return NULL;
     }
-    self->ctx_lock = (PyMutex){0};
+    CTX_LOCK_INIT(self);
 
     self->traps = PyObject_CallObject((PyObject *)state->PyDecSignalDict_Type, NULL);
     if (self->traps == NULL) {
