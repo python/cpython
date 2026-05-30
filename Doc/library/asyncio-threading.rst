@@ -20,9 +20,14 @@ Since Python 3.14, asyncio has first-class support for free-threaded
 Python, and the implementation of asyncio is safe to use in a
 multi-threaded environment.
 
-Combining asyncio with threads is most useful when you want to scale
-I/O-bound work across multiple CPU cores by running an event loop per
-thread, or when you need to run blocking or CPU bound code from an
+A single event loop on one core can handle many connections
+concurrently, but the Python code that runs to handle each one still
+executes serially. Once requests involve a non-trivial amount of
+per-request computation, that handling becomes the bottleneck, and a
+single core can no longer keep up. Combining asyncio with threads is
+most useful here: by running an event loop per thread, the handling of
+different requests can run in parallel across multiple CPU cores. It is
+also useful when you need to run blocking or CPU-bound code from an
 asyncio application.
 
 
