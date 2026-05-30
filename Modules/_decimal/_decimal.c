@@ -1945,13 +1945,11 @@ PyDec_SetCurrentContext(PyObject *self, PyObject *v)
 static PyObject *
 init_current_context(decimal_state *state)
 {
-    mpd_context_t* ctx;
     PyObject *tl_context = context_copy(state, state->default_context_template);
     if (tl_context == NULL) {
         return NULL;
     }
-    ctx = CTX(tl_context);
-    ctx->status = 0;
+    CTX(tl_context)->status = 0;
 
     PyObject *tok = PyContextVar_Set(state->current_context_var, tl_context);
     if (tok == NULL) {
@@ -2012,8 +2010,7 @@ PyDec_SetCurrentContext(PyObject *self, PyObject *v)
         if (v == NULL) {
             return NULL;
         }
-        mpd_context_t* ctx = CTX(v);
-        ctx->status = 0;
+        CTX(v)->status = 0;
     }
     else {
         Py_INCREF(v);
