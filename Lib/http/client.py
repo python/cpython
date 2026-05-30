@@ -111,6 +111,13 @@ responses = {v: v.phrase for v in http.HTTPStatus.__members__.values()}
 _MAXLINE = 65536
 _MAXHEADERS = 100
 
+# maximal number of interim (1xx) responses tolerated before the final
+# response.  Real servers send at most a few; without a bound, a server
+# streaming "100 Continue" responses would hang getresponse() forever.
+# A socket timeout cannot detect that as data keeps arriving within every
+# timeout window.
+_MAXINTERIMRESPONSES = 100
+
 # Data larger than this will be read in chunks, to prevent extreme
 # overallocation.
 _MIN_READ_BUF_SIZE = 1 << 20
@@ -332,7 +339,7 @@ class HTTPResponse(io.BufferedIOBase):
             return
 
         # read until we get a non-100 response
-        while True:
+        for _ in range(_MAXINTERIMRESPONSES):
             version, status, reason = self._read_status()
             if status != CONTINUE:
                 break
@@ -341,6 +348,9 @@ class HTTPResponse(io.BufferedIOBase):
             if self.debuglevel > 0:
                 print("headers:", skipped_headers)
             del skipped_headers
+        else:
+            raise HTTPException(
+                f"got more than {_MAXINTERIMRESPONSES} interim responses")
 
         self.code = self.status = status
         self.reason = reason.strip()
