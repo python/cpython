@@ -1,2 +1,3 @@
-Fix a heap use-after-free in :mod:`pickle`\'s ``whichmodule`` on
-free-threaded builds. Patch by Thomas Kowalski.
+Fix a potential crash occurring when pickling objects
+concurrently in free-threaded builds.
+Patch by Thomas Kowalski.
