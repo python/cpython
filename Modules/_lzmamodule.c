@@ -26,6 +26,19 @@
     #error "The maximum block size accepted by liblzma is SIZE_MAX."
 #endif
 
+
+/*
+ * If the lzma.h we're building against is so old as not to define these, this
+ * provides their equivalent values so that the names remain defined in Python
+ * regardless of the header versions used at build time.
+ */
+#ifndef LZMA_FILTER_ARM64
+#define LZMA_FILTER_ARM64       LZMA_VLI_C(0x0A)
+#endif
+#ifndef LZMA_FILTER_RISCV
+#define LZMA_FILTER_RISCV       LZMA_VLI_C(0x0B)
+#endif
+
 /* On success, return value >= 0
    On failure, return -1 */
 static inline Py_ssize_t
@@ -373,6 +386,8 @@ lzma_filter_converter(_lzma_state *state, PyObject *spec, void *ptr)
         case LZMA_FILTER_ARM:
         case LZMA_FILTER_ARMTHUMB:
         case LZMA_FILTER_SPARC:
+        case LZMA_FILTER_ARM64:
+        case LZMA_FILTER_RISCV:
             f->options = parse_filter_spec_bcj(state, spec);
             return f->options != NULL;
         default:
@@ -491,7 +506,9 @@ build_filter_spec(const lzma_filter *f)
         case LZMA_FILTER_IA64:
         case LZMA_FILTER_ARM:
         case LZMA_FILTER_ARMTHUMB:
-        case LZMA_FILTER_SPARC: {
+        case LZMA_FILTER_SPARC:
+        case LZMA_FILTER_ARM64:
+        case LZMA_FILTER_RISCV: {
             lzma_options_bcj *options = f->options;
             if (options) {
                 ADD_FIELD(options, start_offset);
@@ -1544,6 +1561,8 @@ lzma_exec(PyObject *module)
     ADD_INT_PREFIX_MACRO(module, FILTER_ARMTHUMB);
     ADD_INT_PREFIX_MACRO(module, FILTER_SPARC);
     ADD_INT_PREFIX_MACRO(module, FILTER_POWERPC);
+    ADD_INT_PREFIX_MACRO(module, FILTER_ARM64);
+    ADD_INT_PREFIX_MACRO(module, FILTER_RISCV);
     ADD_INT_PREFIX_MACRO(module, MF_HC3);
     ADD_INT_PREFIX_MACRO(module, MF_HC4);
     ADD_INT_PREFIX_MACRO(module, MF_BT2);

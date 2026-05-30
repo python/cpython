@@ -610,6 +610,9 @@ class IocpProactor:
         ov = _overlapped.Overlapped(NULL)
         offset_low = offset & 0xffff_ffff
         offset_high = (offset >> 32) & 0xffff_ffff
+        # TransmitFile ignores OVERLAPPED.Offset for handles not opened with
+        # FILE_FLAG_OVERLAPPED, so seek the CRT file pointer to match.
+        file.seek(offset)
         ov.TransmitFile(sock.fileno(),
                         msvcrt.get_osfhandle(file.fileno()),
                         offset_low, offset_high,
