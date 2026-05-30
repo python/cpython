@@ -128,7 +128,6 @@ ALT_ACTIVE = 0x01 | 0x02
 CTRL_ACTIVE = 0x04 | 0x08
 
 WAIT_TIMEOUT = 0x102
-WAIT_FAILED = 0xFFFFFFFF
 
 # from winbase.h
 INFINITE = 0xFFFFFFFF
@@ -703,14 +702,8 @@ class WindowsConsole(Console):
         else:
             timeout = int(timeout)
         assert _winapi is not None  # to make mypy happy
-        ret = _winapi.WaitForSingleObject(  # type: ignore[attr-defined]
-            InHandle, timeout
-        )
-        if ret == WAIT_FAILED:
-            raise WinError(get_last_error())
-        elif ret == WAIT_TIMEOUT:
-            return False
-        return True
+        ret = _winapi.WaitForSingleObject(InHandle, timeout)
+        return ret != WAIT_TIMEOUT
 
     def wait(self, timeout: float | None) -> bool:
         """
