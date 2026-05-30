@@ -4,9 +4,6 @@
 .. module:: lzma
    :synopsis: A Python wrapper for the liblzma compression library.
 
-.. moduleauthor:: Nadeem Vawda <nadeem.vawda@gmail.com>
-.. sectionauthor:: Nadeem Vawda <nadeem.vawda@gmail.com>
-
 .. versionadded:: 3.3
 
 **Source code:** :source:`Lib/lzma.py`
@@ -22,6 +19,8 @@ The interface provided by this module is very similar to that of the :mod:`bz2`
 module. Note that :class:`LZMAFile` and :class:`bz2.BZ2File` are *not*
 thread-safe, so if you need to use a single :class:`LZMAFile` instance
 from multiple threads, it is necessary to protect it with a lock.
+
+.. include:: ../includes/optional-module.rst
 
 
 .. exception:: LZMAError
@@ -357,12 +356,26 @@ options. Valid filter IDs are as follows:
 
 * Branch-Call-Jump (BCJ) filters:
 
-  * :const:`FILTER_X86`
-  * :const:`FILTER_IA64`
-  * :const:`FILTER_ARM`
-  * :const:`FILTER_ARMTHUMB`
-  * :const:`FILTER_POWERPC`
-  * :const:`FILTER_SPARC`
+  * :const:`!FILTER_X86`
+  * :const:`!FILTER_IA64`
+  * :const:`!FILTER_ARM`
+  * :const:`!FILTER_ARMTHUMB`
+  * :const:`!FILTER_POWERPC`
+  * :const:`!FILTER_SPARC`
+
+    The above work on all lzma runtime library versions.
+
+  * :const:`!FILTER_ARM64`
+
+    Only works if the lzma version is 5.4.0 or later.
+
+    .. versionadded:: next
+
+  * :const:`!FILTER_RISCV`
+
+    Only works if the lzma version is 5.6.0 or later.
+
+    .. versionadded:: next
 
 A filter chain can consist of up to 4 filters, and cannot be empty. The last
 filter in the chain must be a compression filter, and any other filters must be

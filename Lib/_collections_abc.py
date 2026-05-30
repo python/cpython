@@ -461,8 +461,8 @@ class Buffer(metaclass=ABCMeta):
 class _CallableGenericAlias(GenericAlias):
     """ Represent `Callable[argtypes, resulttype]`.
 
-    This sets ``__args__`` to a tuple containing the flattened ``argtypes``
-    followed by ``resulttype``.
+    This sets ``__args__`` to a tuple containing the flattened
+    ``argtypes`` followed by ``resulttype``.
 
     Example: ``Callable[[int, str], float]`` sets ``__args__`` to
     ``(int, str, float)``.
@@ -823,6 +823,7 @@ class Mapping(Collection):
 
     __reversed__ = None
 
+Mapping.register(frozendict)
 Mapping.register(mappingproxy)
 Mapping.register(framelocalsproxy)
 
@@ -927,8 +928,9 @@ class MutableMapping(Mapping):
     __marker = object()
 
     def pop(self, key, default=__marker):
-        '''D.pop(k[,d]) -> v, remove specified key and return the corresponding value.
-          If key is not found, d is returned if given, otherwise KeyError is raised.
+        '''D.pop(k[,d]) -> v, remove specified key and return the corresponding
+        value.  If key is not found, d is returned if given, otherwise
+        KeyError is raised.
         '''
         try:
             value = self[key]
@@ -962,9 +964,12 @@ class MutableMapping(Mapping):
 
     def update(self, other=(), /, **kwds):
         ''' D.update([E, ]**F) -> None.  Update D from mapping/iterable E and F.
-            If E present and has a .keys() method, does:     for k in E.keys(): D[k] = E[k]
-            If E present and lacks .keys() method, does:     for (k, v) in E: D[k] = v
-            In either case, this is followed by: for k, v in F.items(): D[k] = v
+            If E present and has a .keys() method, does:
+                for k in E.keys(): D[k] = E[k]
+            If E present and lacks .keys() method, does:
+                for (k, v) in E: D[k] = v
+            In either case, this is followed by:
+                for k, v in F.items(): D[k] = v
         '''
         if isinstance(other, Mapping):
             for key in other:
@@ -1029,8 +1034,8 @@ class Sequence(Reversible, Collection):
             yield self[i]
 
     def index(self, value, start=0, stop=None):
-        '''S.index(value, [start, [stop]]) -> integer -- return first index of value.
-           Raises ValueError if the value is not present.
+        '''S.index(value, [start, [stop]]) -> integer -- return first index of
+           value.  Raises ValueError if the value is not present.
 
            Supporting start and stop arguments is optional, but
            recommended.
@@ -1060,6 +1065,41 @@ Sequence.register(str)
 Sequence.register(bytes)
 Sequence.register(range)
 Sequence.register(memoryview)
+
+class _DeprecateByteStringMeta(ABCMeta):
+    def __new__(cls, name, bases, namespace, **kwargs):
+        if name != "ByteString":
+            import warnings
+
+            warnings._deprecated(
+                "collections.abc.ByteString",
+                remove=(3, 17),
+            )
+        return super().__new__(cls, name, bases, namespace, **kwargs)
+
+    def __instancecheck__(cls, instance):
+        import warnings
+
+        warnings._deprecated(
+            "collections.abc.ByteString",
+            remove=(3, 17),
+        )
+        return super().__instancecheck__(instance)
+
+class ByteString(Sequence, metaclass=_DeprecateByteStringMeta):
+    """Deprecated ABC serving as a common supertype of ``bytes`` and ``bytearray``.
+
+    This ABC is scheduled for removal in Python 3.17.
+    Use ``isinstance(obj, collections.abc.Buffer)`` to test if ``obj``
+    implements the buffer protocol at runtime. For use in type annotations,
+    either use ``Buffer`` or a union that explicitly specifies the types your
+    code supports (e.g., ``bytes | bytearray | memoryview``).
+    """
+
+    __slots__ = ()
+
+ByteString.register(bytes)
+ByteString.register(bytearray)
 
 
 class MutableSequence(Sequence):
@@ -1103,15 +1143,16 @@ class MutableSequence(Sequence):
             self[i], self[n-i-1] = self[n-i-1], self[i]
 
     def extend(self, values):
-        'S.extend(iterable) -- extend sequence by appending elements from the iterable'
+        """S.extend(iterable) -- extend sequence by appending elements from the
+        iterable"""
         if values is self:
             values = list(values)
         for v in values:
             self.append(v)
 
     def pop(self, index=-1):
-        '''S.pop([index]) -> item -- remove and return item at index (default last).
-           Raise IndexError if list is empty or index is out of range.
+        '''S.pop([index]) -> item -- remove and return item at index (default
+        last).  Raise IndexError if list is empty or index is out of range.
         '''
         v = self[index]
         del self[index]
@@ -1130,3 +1171,13 @@ class MutableSequence(Sequence):
 
 MutableSequence.register(list)
 MutableSequence.register(bytearray)
+
+_deprecated_ByteString = globals().pop("ByteString")
+
+def __getattr__(attr):
+    if attr == "ByteString":
+        import warnings
+        warnings._deprecated("collections.abc.ByteString", remove=(3, 17))
+        globals()["ByteString"] = _deprecated_ByteString
+        return _deprecated_ByteString
+    raise AttributeError(f"module 'collections.abc' has no attribute {attr!r}")
