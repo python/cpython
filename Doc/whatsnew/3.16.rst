@@ -101,6 +101,14 @@ os
   process via a pidfd.  Available on Linux 5.6+.
   (Contributed by Maurycy Pawłowski-Wieroński in :gh:`149464`.)
 
+sqlite3
+-------
+
+* :class:`sqlite3.Blob` now supports negative-step slices for reading and
+  writing (e.g. ``blob[9:0:-2]``).  Previously, such slices would crash or
+  raise :exc:`SystemError`.
+  (Contributed by Jiseok CHOI in :gh:`150449`.)
+
 .. Add improved modules above alphabetically, not here at the end.
 
 Optimizations

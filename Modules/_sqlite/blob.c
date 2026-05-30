@@ -569,19 +569,19 @@ ass_subscript_slice(pysqlite_Blob *self, PyObject *item, PyObject *value)
         // update each element using the standard size_t-cursor pattern that
         // handles both positive and negative steps via unsigned arithmetic.
         Py_ssize_t last = start + (len - 1) * step;
-        Py_ssize_t read_offset = Py_MIN(start, last);
+        Py_ssize_t write_offset = Py_MIN(start, last);
         Py_ssize_t read_length = Py_ABS(start - last) + 1;
-        PyObject *blob_bytes = read_multiple(self, read_length, read_offset);
+        PyObject *blob_bytes = read_multiple(self, read_length, write_offset);
         if (blob_bytes != NULL) {
             char *blob_buf = PyBytes_AS_STRING(blob_bytes);
             size_t cur;
             Py_ssize_t i;
             for (cur = (size_t)start, i = 0; i < len;
                  cur += (size_t)step, i++) {
-                blob_buf[(Py_ssize_t)cur - read_offset] =
+                blob_buf[(Py_ssize_t)cur - write_offset] =
                     ((char *)vbuf.buf)[i];
             }
-            rc = inner_write(self, blob_buf, read_length, read_offset);
+            rc = inner_write(self, blob_buf, read_length, write_offset);
             Py_DECREF(blob_bytes);
         }
     }
