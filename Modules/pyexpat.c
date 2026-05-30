@@ -4,6 +4,7 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
+#include "pycore_codecs.h"        // _PyCodec_LookupTextEncoding()
 #include "pycore_import.h"        // _PyImport_SetModule()
 #include "pycore_pyhash.h"        // _Py_HashSecret
 #include "pycore_traceback.h"     // _PyTraceback_Add()
@@ -1438,6 +1439,60 @@ static struct PyMethodDef xmlparse_methods[] = {
    Make it as simple as possible.
 */
 
+typedef struct {
+    int map[256];
+    char name[0];
+} pyexpat_encoding_info;
+
+static pyexpat_encoding_info *
+pyexpat_encoding_create(const char *name, PyObject *mapping)
+{
+    if (!PyTuple_Check(mapping) || PyTuple_GET_SIZE(mapping) != 256) {
+        PyErr_SetString(PyExc_ValueError,
+                        "_expat_decoding_table must be a 256-tuple of integers");
+        return NULL;
+    }
+    pyexpat_encoding_info *info = (pyexpat_encoding_info *)PyMem_Malloc(
+        sizeof(pyexpat_encoding_info) + strlen(name) + 1);
+    if (info == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    for (int i = 0; i < 256; i++) {
+        int j = PyLong_AsInt(PyTuple_GET_ITEM(mapping, i));
+        if (j == -1 && PyErr_Occurred()) {
+            PyMem_Free(info);
+            return NULL;
+        }
+        info->map[i] = j;
+    }
+    strcpy(info->name, name);
+    return info;
+}
+
+static int
+pyexpat_encoding_convert(void *data, const char *s)
+{
+    if (PyErr_Occurred()) {
+        return -1;
+    }
+    pyexpat_encoding_info *info = (pyexpat_encoding_info *)data;
+    int i = (unsigned char)s[0];
+    assert(info->map[i] < -1);
+    PyObject *u = PyUnicode_Decode(s, -info->map[i], info->name, NULL);
+    if (u == NULL) {
+        return -1;
+    }
+    if (PyUnicode_GET_LENGTH(u) != 1) {
+        Py_DECREF(u);
+        return -1;
+    }
+    Py_UCS4 ch = PyUnicode_ReadChar(u, 0);
+    Py_DECREF(u);
+    return (int)ch;
+}
+
+
 static const unsigned char template_buffer[256] =
     {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
      20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37,
@@ -1470,6 +1525,43 @@ PyUnknownEncodingHandler(void *encodingHandlerData,
     if (PyErr_Occurred())
         return XML_STATUS_ERROR;
 
+    PyObject *codec = _PyCodec_LookupTextEncoding(name, NULL);
+    if (codec == NULL) {
+        return XML_STATUS_ERROR;
+    }
+    if (!PyTuple_CheckExact(codec)) {
+        PyObject *attr;
+        if (PyObject_GetOptionalAttrString(codec, "_expat_decoding_table", &attr) < 0) {
+            Py_DECREF(codec);
+            return XML_STATUS_ERROR;
+        }
+        if (attr != NULL) {
+            if (attr == Py_False) {
+                Py_DECREF(attr);
+                Py_DECREF(codec);
+                PyErr_Format(PyExc_ValueError,
+                             "encoding '%s' is not supported",
+                             name);
+                return XML_STATUS_ERROR;
+            }
+            pyexpat_encoding_info *data = pyexpat_encoding_create(name, attr);
+            Py_DECREF(attr);
+            if (data == NULL) {
+                Py_DECREF(codec);
+                return XML_STATUS_ERROR;
+            }
+            for (i = 0; i < 256; i++) {
+                info->map[i] = data->map[i];
+            }
+            info->data = data;
+            info->convert = pyexpat_encoding_convert;
+            info->release = PyMem_Free;
+            Py_DECREF(codec);
+            return XML_STATUS_OK;
+        }
+    }
+    Py_DECREF(codec);
+
     u = PyUnicode_Decode((const char*) template_buffer, 256, name, "replace");
     if (u == NULL) {
         Py_XDECREF(u);
@@ -1478,8 +1570,9 @@ PyUnknownEncodingHandler(void *encodingHandlerData,
 
     if (PyUnicode_GET_LENGTH(u) != 256) {
         Py_DECREF(u);
-        PyErr_SetString(PyExc_ValueError,
-                        "multi-byte encodings are not supported");
+        PyErr_Format(PyExc_ValueError,
+                     "multi-byte encoding '%s' is not supported",
+                     name);
         return XML_STATUS_ERROR;
     }
 

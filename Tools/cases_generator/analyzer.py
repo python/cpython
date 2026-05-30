@@ -609,6 +609,7 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_CLEAR",
     "PyStackRef_CLOSE_SPECIALIZED",
     "PyStackRef_DUP",
+    "PyStackRef_DupImmortal",
     "PyStackRef_False",
     "PyStackRef_FromPyObjectBorrow",
     "PyStackRef_FromPyObjectNew",
