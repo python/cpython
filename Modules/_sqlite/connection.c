@@ -558,14 +558,16 @@ pysqlite_connection_cursor_impl(pysqlite_Connection *self, PyObject *factory)
 }
 
 static PyObject *
-connection_get_row_factory(pysqlite_Connection *self, void *closure)
+connection_get_row_factory(PyObject *op, void *closure)
 {
+    pysqlite_Connection *self = (pysqlite_Connection *)op;
     return Py_NewRef(self->row_factory);
 }
 
 static int
-connection_set_row_factory(pysqlite_Connection *self, PyObject *value, void *closure)
+connection_set_row_factory(PyObject *op, PyObject *value, void *closure)
 {
+    pysqlite_Connection *self = (pysqlite_Connection *)op;
     if (value == NULL) {
         PyErr_SetString(PyExc_AttributeError,
                         "cannot delete row_factory attribute");
@@ -576,14 +578,16 @@ connection_set_row_factory(pysqlite_Connection *self, PyObject *value, void *clo
 }
 
 static PyObject *
-connection_get_text_factory(pysqlite_Connection *self, void *closure)
+connection_get_text_factory(PyObject *op, void *closure)
 {
+    pysqlite_Connection *self = (pysqlite_Connection *)op;
     return Py_NewRef(self->text_factory);
 }
 
 static int
-connection_set_text_factory(pysqlite_Connection *self, PyObject *value, void *closure)
+connection_set_text_factory(PyObject *op, PyObject *value, void *closure)
 {
+    pysqlite_Connection *self = (pysqlite_Connection *)op;
     if (value == NULL) {
         PyErr_SetString(PyExc_AttributeError,
                         "cannot delete text_factory attribute");
@@ -2657,10 +2661,10 @@ static PyGetSetDef connection_getset[] = {
     {"in_transaction", pysqlite_connection_get_in_transaction, NULL},
     {"autocommit",  get_autocommit, set_autocommit},
     {"__text_signature__", get_sig, NULL},
-    {"row_factory", (getter)connection_get_row_factory,
-                    (setter)connection_set_row_factory},
-    {"text_factory", (getter)connection_get_text_factory,
-                     (setter)connection_set_text_factory},
+    {"row_factory", connection_get_row_factory,
+                    connection_set_row_factory},
+    {"text_factory", connection_get_text_factory,
+                     connection_set_text_factory},
     {NULL}
 };
 
