@@ -4592,7 +4592,8 @@ copying.
    types such as :class:`bytes` and :class:`bytearray`, an element is a single
    byte, but other types such as :class:`array.array` may have bigger elements.
 
-   memoryviews are :ref:`generic <generics>` over the type of their underlying data.
+   :class:`!memoryviews` are :ref:`generic <generics>` over the type of their
+   underlying data.
 
    ``len(view)`` is equal to the length of :meth:`~memoryview.tolist`, which
    is the nested list representation of the view. If ``view.ndim = 1``,
