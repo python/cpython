@@ -626,12 +626,12 @@ Available Context Managers
 
     If the *record* argument is false (the default) the context manager
     returns ``None`` on entry.
-    If *record* is true, the :func:`showwarning` function is temporary reset
+    If *record* is true, the :func:`showwarning` function is temporarily reset
     to the default implementation and a list is returned that is progressively
     populated with objects as seen by the :func:`!showwarning` function
     (which also suppresses output to ``sys.stderr`` and other streams).
     Each object in the list has attributes with the same names as the arguments to
-    :func:`!showwarning`.
+    :func:`showwarning`.
 
     The *module* argument takes a module that will be used instead of the
     module returned when you import :mod:`!warnings` whose filter will be
