@@ -131,6 +131,7 @@ xml
   multi-byte encodings such us "ISO-2022-JP" or "raw-unicode-escape"
   instead of failing later, when encounter non-ASCII data.
   (Contributed by Serhiy Storchaka in :gh:`62259`.)
+
 .. Add improved modules above alphabetically, not here at the end.
 
 Optimizations
