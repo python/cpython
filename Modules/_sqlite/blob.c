@@ -570,8 +570,8 @@ ass_subscript_slice(pysqlite_Blob *self, PyObject *item, PyObject *value)
         // handles both positive and negative steps via unsigned arithmetic.
         Py_ssize_t last = start + (len - 1) * step;
         Py_ssize_t write_offset = Py_MIN(start, last);
-        Py_ssize_t read_length = Py_ABS(start - last) + 1;
-        PyObject *blob_bytes = read_multiple(self, read_length, write_offset);
+        Py_ssize_t write_length = Py_ABS(start - last) + 1;
+        PyObject *blob_bytes = read_multiple(self, write_length, write_offset);
         if (blob_bytes != NULL) {
             char *blob_buf = PyBytes_AS_STRING(blob_bytes);
             size_t cur;
@@ -581,7 +581,7 @@ ass_subscript_slice(pysqlite_Blob *self, PyObject *item, PyObject *value)
                 blob_buf[(Py_ssize_t)cur - write_offset] =
                     ((char *)vbuf.buf)[i];
             }
-            rc = inner_write(self, blob_buf, read_length, write_offset);
+            rc = inner_write(self, blob_buf, write_length, write_offset);
             Py_DECREF(blob_bytes);
         }
     }
