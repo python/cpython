@@ -3517,9 +3517,9 @@ convert_op_cmp(PyObject **vcmp, PyObject **wcmp, PyObject *v, PyObject *w,
             *wcmp = NULL;
         }
         else {
-            CTX_LOCK(ctx);
+            CTX_LOCK(context);
             ctx->status |= MPD_Float_operation;
-            CTX_UNLOCK(ctx);
+            CTX_UNLOCK(context);
             *wcmp = PyDec_FromFloatExact(state, w, context);
         }
     }
@@ -3534,9 +3534,9 @@ convert_op_cmp(PyObject **vcmp, PyObject **wcmp, PyObject *v, PyObject *w,
                 *wcmp = NULL;
             }
             else {
-                CTX_LOCK(ctx);
+                CTX_LOCK(context);
                 ctx->status |= MPD_Float_operation;
-                CTX_UNLOCK(ctx);
+                CTX_UNLOCK(context);
                 *wcmp = PyDec_FromFloatExact(state, tmp, context);
                 Py_DECREF(tmp);
             }
