@@ -1751,7 +1751,7 @@ Blob objects
 
    .. versionadded:: 3.11
 
-   .. versionchanged:: 3.16
+   .. versionchanged:: next
       :class:`Blob` now supports negative-step slices
       (e.g. ``blob[9:0:-2]``) for both reading and writing.
 
