@@ -615,6 +615,7 @@ _bz2_BZ2Decompressor_decompress_impl(BZ2Decompressor *self, Py_buffer *data,
         PyErr_SetString(PyExc_EOFError, "End of stream already reached");
     }
     else if (self->bzerror) {
+        // Re-entering BZ2_bzDecompress() after an error can write out of bounds.
         catch_bz2_error(self->bzerror);
     }
     else {
