@@ -123,7 +123,7 @@ Scheduler Objects
    a time value less than or equal to the current *timefunc* value (if any) and
    returns the difference between the current *timefunc* value and the time value
    of the next scheduled event in the scheduler's event queue.  If the queue is
-   empty, returns None.
+   empty, returns ``None``.
 
    Either *action* or *delayfunc* can raise an exception.  In either case, the
    scheduler will maintain a consistent state and propagate the exception.  If an
