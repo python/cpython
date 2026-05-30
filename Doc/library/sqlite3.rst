@@ -1417,6 +1417,10 @@ Connection objects
 
       See :ref:`sqlite3-howto-row-factory` for more details.
 
+      .. versionchanged:: 3.16
+         Deleting the ``row_factory`` attribute is no longer allowed and raises
+         :exc:`AttributeError`.
+
    .. attribute:: text_factory
 
       A :term:`callable` that accepts a :class:`bytes` parameter
@@ -1425,6 +1429,10 @@ Connection objects
       By default, this attribute is set to :class:`str`.
 
       See :ref:`sqlite3-howto-encoding` for more details.
+
+      .. versionchanged:: 3.16
+         Deleting the ``text_factory`` attribute is no longer allowed and raises
+         :exc:`AttributeError`.
 
    .. attribute:: total_changes
 
@@ -1708,6 +1716,10 @@ Cursor objects
       :attr:`Connection.row_factory` of the parent connection.
 
       See :ref:`sqlite3-howto-row-factory` for more details.
+
+      .. versionchanged:: 3.16
+         Deleting the ``row_factory`` attribute is no longer allowed and raises
+         :exc:`AttributeError`.
 
 
 .. The sqlite3.Row example used to be a how-to. It has now been incorporated
