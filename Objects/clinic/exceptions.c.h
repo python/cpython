@@ -40,11 +40,11 @@ static PyObject *
 BaseException___setstate___impl(PyBaseExceptionObject *self, PyObject *state);
 
 static PyObject *
-BaseException___setstate__(PyBaseExceptionObject *self, PyObject *state)
+BaseException___setstate__(PyObject *self, PyObject *state)
 {
     PyObject *return_value = NULL;
 
-    Py_BEGIN_CRITICAL_SECTION(self);
+    Py_BEGIN_CRITICAL_SECTION(state);
     return_value = BaseException___setstate___impl((PyBaseExceptionObject *)self, state);
     Py_END_CRITICAL_SECTION();
 
@@ -64,7 +64,7 @@ static PyObject *
 BaseException_with_traceback_impl(PyBaseExceptionObject *self, PyObject *tb);
 
 static PyObject *
-BaseException_with_traceback(PyBaseExceptionObject *self, PyObject *tb)
+BaseException_with_traceback(PyObject *self, PyObject *tb)
 {
     PyObject *return_value = NULL;
 
@@ -322,7 +322,7 @@ BaseExceptionGroup_derive_impl(PyBaseExceptionGroupObject *self,
                                PyObject *excs);
 
 static PyObject *
-BaseExceptionGroup_derive(PyBaseExceptionGroupObject *self, PyObject *excs)
+BaseExceptionGroup_derive(PyObject *self, PyObject *excs)
 {
     PyObject *return_value = NULL;
 
@@ -346,7 +346,7 @@ BaseExceptionGroup_split_impl(PyBaseExceptionGroupObject *self,
                               PyObject *matcher_value);
 
 static PyObject *
-BaseExceptionGroup_split(PyBaseExceptionGroupObject *self, PyObject *matcher_value)
+BaseExceptionGroup_split(PyObject *self, PyObject *matcher_value)
 {
     PyObject *return_value = NULL;
 
@@ -370,7 +370,7 @@ BaseExceptionGroup_subgroup_impl(PyBaseExceptionGroupObject *self,
                                  PyObject *matcher_value);
 
 static PyObject *
-BaseExceptionGroup_subgroup(PyBaseExceptionGroupObject *self, PyObject *matcher_value)
+BaseExceptionGroup_subgroup(PyObject *self, PyObject *matcher_value)
 {
     PyObject *return_value = NULL;
 
@@ -380,4 +380,4 @@ BaseExceptionGroup_subgroup(PyBaseExceptionGroupObject *self, PyObject *matcher_
 
     return return_value;
 }
-/*[clinic end generated code: output=19aed708dcaf7184 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e63b88d0443b4f92 input=a9049054013a1b77]*/

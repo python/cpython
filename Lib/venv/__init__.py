@@ -174,6 +174,7 @@ class EnvBuilder:
         context.python_exe = exename
         binpath = self._venv_path(env_dir, 'scripts')
         libpath = self._venv_path(env_dir, 'purelib')
+        platlibpath = self._venv_path(env_dir, 'platlib')
 
         # PEP 405 says venvs should create a local include directory.
         # See https://peps.python.org/pep-0405/#include-files
@@ -191,12 +192,8 @@ class EnvBuilder:
         create_if_needed(incpath)
         context.lib_path = libpath
         create_if_needed(libpath)
-        # Issue 21197: create lib64 as a symlink to lib on 64-bit non-OS X POSIX
-        if ((sys.maxsize > 2**32) and (os.name == 'posix') and
-            (sys.platform != 'darwin')):
-            link_path = os.path.join(env_dir, 'lib64')
-            if not os.path.exists(link_path):   # Issue #21643
-                os.symlink('lib', link_path)
+        context.platlib_path = platlibpath
+        create_if_needed(platlibpath)
         context.bin_path = binpath
         context.bin_name = os.path.relpath(binpath, env_dir)
         context.env_exe = os.path.join(binpath, exename)
@@ -309,15 +306,11 @@ class EnvBuilder:
             binpath = context.bin_path
             path = context.env_exe
             copier = self.symlink_or_copy
-            dirname = context.python_dir
             copier(context.executable, path)
             if not os.path.islink(path):
                 os.chmod(path, 0o755)
-
-            suffixes = ['python', 'python3', f'python3.{sys.version_info[1]}']
-            if sys.version_info[:2] == (3, 14):
-                suffixes.append('𝜋thon')
-            for suffix in suffixes:
+            for suffix in ('python', 'python3',
+                           f'python3.{sys.version_info[1]}'):
                 path = os.path.join(binpath, suffix)
                 if not os.path.exists(path):
                     # Issue 18807: make copies if
@@ -325,6 +318,14 @@ class EnvBuilder:
                     copier(context.env_exe, path, relative_symlinks_ok=True)
                     if not os.path.islink(path):
                         os.chmod(path, 0o755)
+
+            if not self.symlinks and sys.platform == 'cygwin':
+                # Copy libpython DLL
+                libpython_dll = sysconfig.get_config_var('DLLLIBRARY')
+                if not os.path.exists(os.path.join(binpath, libpython_dll)):
+                    exe_path = os.path.dirname(sys.executable)
+                    shutil.copy(os.path.join(exe_path, libpython_dll),
+                                os.path.join(binpath, libpython_dll))
 
     else:
         def setup_python(self, context):
@@ -365,6 +366,9 @@ class EnvBuilder:
                 exe_t = f'3.{sys.version_info[1]}t'
                 python_exe = os.path.join(dirname, f'python{exe_t}{exe_d}.exe')
                 pythonw_exe = os.path.join(dirname, f'pythonw{exe_t}{exe_d}.exe')
+                if not os.path.isfile(python_exe):
+                    python_exe = os.path.join(dirname, f'python{exe_d}.exe')
+                    pythonw_exe = os.path.join(dirname, f'pythonw{exe_d}.exe')
                 link_sources = {
                     'python.exe': python_exe,
                     f'python{exe_d}.exe': python_exe,
@@ -588,7 +592,7 @@ class EnvBuilder:
                                    'may be binary: %s', srcfile, e)
                     continue
                 if new_data == data:
-                    shutil.copy2(srcfile, dstfile)
+                    shutil.copy(srcfile, dstfile)
                 else:
                     with open(dstfile, 'wb') as f:
                         f.write(new_data)
@@ -624,7 +628,8 @@ def main(args=None):
                                             'created, you may wish to '
                                             'activate it, e.g. by '
                                             'sourcing an activate script '
-                                            'in its bin directory.')
+                                            'in its bin directory.',
+                                     )
     parser.add_argument('dirs', metavar='ENV_DIR', nargs='+',
                         help='A directory to create the environment in.')
     parser.add_argument('--system-site-packages', default=False,

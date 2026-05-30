@@ -516,6 +516,19 @@ sequence_tuple(PyObject *self, PyObject *obj)
 }
 
 
+static PyObject *
+sequence_fast(PyObject *self, PyObject *args)
+{
+    PyObject *obj;
+    const char *err_msg;
+    if (!PyArg_ParseTuple(args, "Os", &obj, &err_msg)) {
+        return NULL;
+    }
+    NULLABLE(obj);
+    return PySequence_Fast(obj, err_msg);
+}
+
+
 static PyMethodDef test_methods[] = {
     {"object_repr", object_repr, METH_O},
     {"object_ascii", object_ascii, METH_O},
@@ -567,6 +580,7 @@ static PyMethodDef test_methods[] = {
     {"sequence_index", sequence_index, METH_VARARGS},
     {"sequence_list", sequence_list, METH_O},
     {"sequence_tuple", sequence_tuple, METH_O},
+    {"sequence_fast", sequence_fast, METH_VARARGS},
 
     {NULL},
 };

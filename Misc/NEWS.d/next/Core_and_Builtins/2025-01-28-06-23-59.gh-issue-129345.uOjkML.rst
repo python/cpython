@@ -1,1 +1,0 @@
-Fix null pointer dereference in :func:`syslog.openlog` when an audit hook raises an exception.

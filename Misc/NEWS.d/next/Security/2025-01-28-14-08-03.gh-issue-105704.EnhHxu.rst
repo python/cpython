@@ -1,4 +1,0 @@
-When using :func:`urllib.parse.urlsplit` and :func:`urllib.parse.urlparse` host
-parsing would not reject domain names containing square brackets (``[`` and
-``]``). Square brackets are only valid for IPv6 and IPvFuture hosts according to
-`RFC 3986 Section 3.2.2 <https://www.rfc-editor.org/rfc/rfc3986#section-3.2.2>`__.

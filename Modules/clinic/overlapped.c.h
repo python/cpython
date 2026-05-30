@@ -459,9 +459,11 @@ _overlapped_Overlapped(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(event), },
     };
     #undef NUM_KEYWORDS
@@ -527,8 +529,9 @@ PyDoc_STRVAR(_overlapped_Overlapped_getresult__doc__,
 "\n"
 "Retrieve result of operation.\n"
 "\n"
-"If wait is true then it blocks until the operation is finished.  If wait\n"
-"is false and the operation is still pending then an error is raised.");
+"If wait is true then it blocks until the operation is finished.  If\n"
+"wait is false and the operation is still pending then an error is\n"
+"raised.");
 
 #define _OVERLAPPED_OVERLAPPED_GETRESULT_METHODDEF    \
     {"getresult", _PyCFunction_CAST(_overlapped_Overlapped_getresult), METH_FASTCALL, _overlapped_Overlapped_getresult__doc__},
@@ -1240,4 +1243,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=d009cc9e53d9732a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0ecaf45a09539599 input=a9049054013a1b77]*/

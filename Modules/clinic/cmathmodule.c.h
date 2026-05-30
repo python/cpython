@@ -644,7 +644,8 @@ PyDoc_STRVAR(cmath_log__doc__,
 "\n"
 "log(z[, base]) -> the logarithm of z to the given base.\n"
 "\n"
-"If the base is not specified, returns the natural logarithm (base e) of z.");
+"If the base is not specified, returns the natural logarithm (base e)\n"
+"of z.");
 
 #define CMATH_LOG_METHODDEF    \
     {"log", _PyCFunction_CAST(cmath_log), METH_FASTCALL, cmath_log__doc__},
@@ -882,11 +883,12 @@ PyDoc_STRVAR(cmath_isclose__doc__,
 "\n"
 "Return True if a is close in value to b, and False otherwise.\n"
 "\n"
-"For the values to be considered close, the difference between them must be\n"
-"smaller than at least one of the tolerances.\n"
+"For the values to be considered close, the difference between them must\n"
+"be smaller than at least one of the tolerances.\n"
 "\n"
-"-inf, inf and NaN behave similarly to the IEEE 754 Standard. That is, NaN is\n"
-"not close to anything, even itself. inf and -inf are only close to themselves.");
+"-inf, inf and NaN behave similarly to the IEEE 754 Standard.  That is,\n"
+"NaN is not close to anything, even itself. inf and -inf are only close\n"
+"to themselves.");
 
 #define CMATH_ISCLOSE_METHODDEF    \
     {"isclose", _PyCFunction_CAST(cmath_isclose), METH_FASTCALL|METH_KEYWORDS, cmath_isclose__doc__},
@@ -905,9 +907,11 @@ cmath_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), &_Py_ID(rel_tol), &_Py_ID(abs_tol), },
     };
     #undef NUM_KEYWORDS
@@ -983,4 +987,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5fda69f15dc9dfc9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7d5ad4cf258526cd input=a9049054013a1b77]*/

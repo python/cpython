@@ -35,8 +35,8 @@ PyDoc_STRVAR(bytes_split__doc__,
 "\n"
 "  sep\n"
 "    The delimiter according which to split the bytes.\n"
-"    None (the default value) means split on ASCII whitespace characters\n"
-"    (space, tab, return, newline, formfeed, vertical tab).\n"
+"    None (the default value) means split on ASCII whitespace\n"
+"    characters (space, tab, return, newline, formfeed, vertical tab).\n"
 "  maxsplit\n"
 "    Maximum number of splits to do.\n"
 "    -1 (the default value) means no limit.");
@@ -57,9 +57,11 @@ bytes_split(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(sep), &_Py_ID(maxsplit), },
     };
     #undef NUM_KEYWORDS
@@ -120,12 +122,12 @@ PyDoc_STRVAR(bytes_partition__doc__,
 "\n"
 "Partition the bytes into three parts using the given separator.\n"
 "\n"
-"This will search for the separator sep in the bytes. If the separator is found,\n"
-"returns a 3-tuple containing the part before the separator, the separator\n"
-"itself, and the part after it.\n"
+"This will search for the separator sep in the bytes.  If the\n"
+"separator is found, returns a 3-tuple containing the part before the\n"
+"separator, the separator itself, and the part after it.\n"
 "\n"
-"If the separator is not found, returns a 3-tuple containing the original bytes\n"
-"object and two empty bytes objects.");
+"If the separator is not found, returns a 3-tuple containing the\n"
+"original bytes object and two empty bytes objects.");
 
 #define BYTES_PARTITION_METHODDEF    \
     {"partition", (PyCFunction)bytes_partition, METH_O, bytes_partition__doc__},
@@ -159,12 +161,13 @@ PyDoc_STRVAR(bytes_rpartition__doc__,
 "\n"
 "Partition the bytes into three parts using the given separator.\n"
 "\n"
-"This will search for the separator sep in the bytes, starting at the end. If\n"
-"the separator is found, returns a 3-tuple containing the part before the\n"
-"separator, the separator itself, and the part after it.\n"
+"This will search for the separator sep in the bytes, starting at the\n"
+"end.  If the separator is found, returns a 3-tuple containing the\n"
+"part before the separator, the separator itself, and the part after\n"
+"it.\n"
 "\n"
-"If the separator is not found, returns a 3-tuple containing two empty bytes\n"
-"objects and the original bytes object.");
+"If the separator is not found, returns a 3-tuple containing two\n"
+"empty bytes objects and the original bytes object.");
 
 #define BYTES_RPARTITION_METHODDEF    \
     {"rpartition", (PyCFunction)bytes_rpartition, METH_O, bytes_rpartition__doc__},
@@ -200,13 +203,14 @@ PyDoc_STRVAR(bytes_rsplit__doc__,
 "\n"
 "  sep\n"
 "    The delimiter according which to split the bytes.\n"
-"    None (the default value) means split on ASCII whitespace characters\n"
-"    (space, tab, return, newline, formfeed, vertical tab).\n"
+"    None (the default value) means split on ASCII whitespace\n"
+"    characters (space, tab, return, newline, formfeed, vertical tab).\n"
 "  maxsplit\n"
 "    Maximum number of splits to do.\n"
 "    -1 (the default value) means no limit.\n"
 "\n"
-"Splitting is done starting at the end of the bytes and working to the front.");
+"Splitting is done starting at the end of the bytes and working to\n"
+"the front.");
 
 #define BYTES_RSPLIT_METHODDEF    \
     {"rsplit", _PyCFunction_CAST(bytes_rsplit), METH_FASTCALL|METH_KEYWORDS, bytes_rsplit__doc__},
@@ -224,9 +228,11 @@ bytes_rsplit(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(sep), &_Py_ID(maxsplit), },
     };
     #undef NUM_KEYWORDS
@@ -295,6 +301,19 @@ PyDoc_STRVAR(bytes_join__doc__,
 
 #define BYTES_JOIN_METHODDEF    \
     {"join", (PyCFunction)bytes_join, METH_O, bytes_join__doc__},
+
+static PyObject *
+bytes_join_impl(PyBytesObject *self, PyObject *iterable_of_bytes);
+
+static PyObject *
+bytes_join(PyObject *self, PyObject *iterable_of_bytes)
+{
+    PyObject *return_value = NULL;
+
+    return_value = bytes_join_impl((PyBytesObject *)self, iterable_of_bytes);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(bytes_find__doc__,
 "find($self, sub[, start[, end]], /)\n"
@@ -506,7 +525,8 @@ PyDoc_STRVAR(bytes_strip__doc__,
 "\n"
 "Strip leading and trailing bytes contained in the argument.\n"
 "\n"
-"If the argument is omitted or None, strip leading and trailing ASCII whitespace.");
+"If the argument is omitted or None, strip leading and trailing ASCII\n"
+"whitespace.");
 
 #define BYTES_STRIP_METHODDEF    \
     {"strip", _PyCFunction_CAST(bytes_strip), METH_FASTCALL, bytes_strip__doc__},
@@ -660,8 +680,9 @@ PyDoc_STRVAR(bytes_translate__doc__,
 "  table\n"
 "    Translation table, which must be a bytes object of length 256.\n"
 "\n"
-"All characters occurring in the optional argument delete are removed.\n"
-"The remaining characters are mapped through the given translation table.");
+"All characters occurring in the optional argument delete are\n"
+"removed.  The remaining characters are mapped through the given\n"
+"translation table.");
 
 #define BYTES_TRANSLATE_METHODDEF    \
     {"translate", _PyCFunction_CAST(bytes_translate), METH_FASTCALL|METH_KEYWORDS, bytes_translate__doc__},
@@ -680,9 +701,11 @@ bytes_translate(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObjec
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(delete), },
     };
     #undef NUM_KEYWORDS
@@ -727,8 +750,8 @@ PyDoc_STRVAR(bytes_maketrans__doc__,
 "\n"
 "Return a translation table usable for the bytes or bytearray translate method.\n"
 "\n"
-"The returned table will be one where each byte in frm is mapped to the byte at\n"
-"the same position in to.\n"
+"The returned table will be one where each byte in frm is mapped to\n"
+"the byte at the same position in to.\n"
 "\n"
 "The bytes objects frm and to must be of the same length.");
 
@@ -739,7 +762,7 @@ static PyObject *
 bytes_maketrans_impl(Py_buffer *frm, Py_buffer *to);
 
 static PyObject *
-bytes_maketrans(void *null, PyObject *const *args, Py_ssize_t nargs)
+bytes_maketrans(PyObject *null, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer frm = {NULL, NULL};
@@ -770,7 +793,7 @@ exit:
 }
 
 PyDoc_STRVAR(bytes_replace__doc__,
-"replace($self, old, new, count=-1, /)\n"
+"replace($self, old, new, /, count=-1)\n"
 "--\n"
 "\n"
 "Return a copy with all occurrences of substring old replaced by new.\n"
@@ -779,25 +802,56 @@ PyDoc_STRVAR(bytes_replace__doc__,
 "    Maximum number of occurrences to replace.\n"
 "    -1 (the default value) means replace all occurrences.\n"
 "\n"
-"If the optional argument count is given, only the first count occurrences are\n"
-"replaced.");
+"If count is given, only the first count occurrences are replaced.\n"
+"If count is not specified or -1, then all occurrences are replaced.");
 
 #define BYTES_REPLACE_METHODDEF    \
-    {"replace", _PyCFunction_CAST(bytes_replace), METH_FASTCALL, bytes_replace__doc__},
+    {"replace", _PyCFunction_CAST(bytes_replace), METH_FASTCALL|METH_KEYWORDS, bytes_replace__doc__},
 
 static PyObject *
 bytes_replace_impl(PyBytesObject *self, Py_buffer *old, Py_buffer *new,
                    Py_ssize_t count);
 
 static PyObject *
-bytes_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+bytes_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(count), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "", "count", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "replace",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     Py_buffer old = {NULL, NULL};
     Py_buffer new = {NULL, NULL};
     Py_ssize_t count = -1;
 
-    if (!_PyArg_CheckPositional("replace", nargs, 2, 3)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &old, PyBUF_SIMPLE) != 0) {
@@ -806,8 +860,8 @@ bytes_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (PyObject_GetBuffer(args[1], &new, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (nargs < 3) {
-        goto skip_optional;
+    if (!noptargs) {
+        goto skip_optional_pos;
     }
     {
         Py_ssize_t ival = -1;
@@ -821,7 +875,7 @@ bytes_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         }
         count = ival;
     }
-skip_optional:
+skip_optional_pos:
     return_value = bytes_replace_impl((PyBytesObject *)self, &old, &new, count);
 
 exit:
@@ -843,8 +897,9 @@ PyDoc_STRVAR(bytes_removeprefix__doc__,
 "\n"
 "Return a bytes object with the given prefix string removed if present.\n"
 "\n"
-"If the bytes starts with the prefix string, return bytes[len(prefix):].\n"
-"Otherwise, return a copy of the original bytes.");
+"If the bytes starts with the prefix string, return\n"
+"bytes[len(prefix):].  Otherwise, return a copy of the original\n"
+"bytes.");
 
 #define BYTES_REMOVEPREFIX_METHODDEF    \
     {"removeprefix", (PyCFunction)bytes_removeprefix, METH_O, bytes_removeprefix__doc__},
@@ -878,9 +933,9 @@ PyDoc_STRVAR(bytes_removesuffix__doc__,
 "\n"
 "Return a bytes object with the given suffix string removed if present.\n"
 "\n"
-"If the bytes ends with the suffix string and that suffix is not empty,\n"
-"return bytes[:-len(prefix)].  Otherwise, return a copy of the original\n"
-"bytes.");
+"If the bytes ends with the suffix string and that suffix is not\n"
+"empty, return bytes[:-len(prefix)].  Otherwise, return a copy of the\n"
+"original bytes.");
 
 #define BYTES_REMOVESUFFIX_METHODDEF    \
     {"removesuffix", (PyCFunction)bytes_removesuffix, METH_O, bytes_removesuffix__doc__},
@@ -1019,11 +1074,11 @@ PyDoc_STRVAR(bytes_decode__doc__,
 "  encoding\n"
 "    The encoding with which to decode the bytes.\n"
 "  errors\n"
-"    The error handling scheme to use for the handling of decoding errors.\n"
-"    The default is \'strict\' meaning that decoding errors raise a\n"
-"    UnicodeDecodeError. Other possible values are \'ignore\' and \'replace\'\n"
-"    as well as any other name registered with codecs.register_error that\n"
-"    can handle UnicodeDecodeErrors.");
+"    The error handling scheme to use for the handling of decoding\n"
+"    errors.  The default is \'strict\' meaning that decoding errors\n"
+"    raise a UnicodeDecodeError.  Other possible values are \'ignore\'\n"
+"    and \'replace\' as well as any other name registered with\n"
+"    codecs.register_error that can handle UnicodeDecodeErrors.");
 
 #define BYTES_DECODE_METHODDEF    \
     {"decode", _PyCFunction_CAST(bytes_decode), METH_FASTCALL|METH_KEYWORDS, bytes_decode__doc__},
@@ -1042,9 +1097,11 @@ bytes_decode(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(encoding), &_Py_ID(errors), },
     };
     #undef NUM_KEYWORDS
@@ -1118,8 +1175,8 @@ PyDoc_STRVAR(bytes_splitlines__doc__,
 "\n"
 "Return a list of the lines in the bytes, breaking at line boundaries.\n"
 "\n"
-"Line breaks are not included in the resulting list unless keepends is given and\n"
-"true.");
+"Line breaks are not included in the resulting list unless keepends\n"
+"is given and true.");
 
 #define BYTES_SPLITLINES_METHODDEF    \
     {"splitlines", _PyCFunction_CAST(bytes_splitlines), METH_FASTCALL|METH_KEYWORDS, bytes_splitlines__doc__},
@@ -1137,9 +1194,11 @@ bytes_splitlines(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(keepends), },
     };
     #undef NUM_KEYWORDS
@@ -1195,19 +1254,12 @@ static PyObject *
 bytes_fromhex_impl(PyTypeObject *type, PyObject *string);
 
 static PyObject *
-bytes_fromhex(PyTypeObject *type, PyObject *arg)
+bytes_fromhex(PyObject *type, PyObject *string)
 {
     PyObject *return_value = NULL;
-    PyObject *string;
 
-    if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("fromhex", "argument", "str", arg);
-        goto exit;
-    }
-    string = arg;
-    return_value = bytes_fromhex_impl(type, string);
+    return_value = bytes_fromhex_impl((PyTypeObject *)type, string);
 
-exit:
     return return_value;
 }
 
@@ -1220,8 +1272,8 @@ PyDoc_STRVAR(bytes_hex__doc__,
 "  sep\n"
 "    An optional single character or byte to separate hex bytes.\n"
 "  bytes_per_sep\n"
-"    How many bytes between separators.  Positive values count from the\n"
-"    right, negative values count from the left.\n"
+"    How many bytes between separators.  Positive values count from\n"
+"    the right, negative values count from the left.\n"
 "\n"
 "Example:\n"
 ">>> value = b\'\\xb9\\x01\\xef\'\n"
@@ -1238,7 +1290,7 @@ PyDoc_STRVAR(bytes_hex__doc__,
     {"hex", _PyCFunction_CAST(bytes_hex), METH_FASTCALL|METH_KEYWORDS, bytes_hex__doc__},
 
 static PyObject *
-bytes_hex_impl(PyBytesObject *self, PyObject *sep, int bytes_per_sep);
+bytes_hex_impl(PyBytesObject *self, PyObject *sep, Py_ssize_t bytes_per_sep);
 
 static PyObject *
 bytes_hex(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -1250,9 +1302,11 @@ bytes_hex(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(sep), &_Py_ID(bytes_per_sep), },
     };
     #undef NUM_KEYWORDS
@@ -1272,7 +1326,7 @@ bytes_hex(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *sep = NULL;
-    int bytes_per_sep = 1;
+    Py_ssize_t bytes_per_sep = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -1288,9 +1342,17 @@ bytes_hex(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
             goto skip_optional_pos;
         }
     }
-    bytes_per_sep = PyLong_AsInt(args[1]);
-    if (bytes_per_sep == -1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        bytes_per_sep = ival;
     }
 skip_optional_pos:
     return_value = bytes_hex_impl((PyBytesObject *)self, sep, bytes_per_sep);
@@ -1313,9 +1375,11 @@ bytes_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(source), &_Py_ID(encoding), &_Py_ID(errors), },
     };
     #undef NUM_KEYWORDS
@@ -1391,4 +1455,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=96fe2d6ef9ac8f6a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c20458db7a2123db input=a9049054013a1b77]*/

@@ -53,6 +53,19 @@ PyDoc_STRVAR(array_array___deepcopy____doc__,
 #define ARRAY_ARRAY___DEEPCOPY___METHODDEF    \
     {"__deepcopy__", (PyCFunction)array_array___deepcopy__, METH_O, array_array___deepcopy____doc__},
 
+static PyObject *
+array_array___deepcopy___impl(arrayobject *self, PyObject *unused);
+
+static PyObject *
+array_array___deepcopy__(PyObject *self, PyObject *unused)
+{
+    PyObject *return_value = NULL;
+
+    return_value = array_array___deepcopy___impl((arrayobject *)self, unused);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(array_array_count__doc__,
 "count($self, v, /)\n"
 "--\n"
@@ -61,6 +74,19 @@ PyDoc_STRVAR(array_array_count__doc__,
 
 #define ARRAY_ARRAY_COUNT_METHODDEF    \
     {"count", (PyCFunction)array_array_count, METH_O, array_array_count__doc__},
+
+static PyObject *
+array_array_count_impl(arrayobject *self, PyObject *v);
+
+static PyObject *
+array_array_count(PyObject *self, PyObject *v)
+{
+    PyObject *return_value = NULL;
+
+    return_value = array_array_count_impl((arrayobject *)self, v);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(array_array_index__doc__,
 "index($self, v, start=0, stop=sys.maxsize, /)\n"
@@ -116,6 +142,19 @@ PyDoc_STRVAR(array_array_remove__doc__,
 
 #define ARRAY_ARRAY_REMOVE_METHODDEF    \
     {"remove", (PyCFunction)array_array_remove, METH_O, array_array_remove__doc__},
+
+static PyObject *
+array_array_remove_impl(arrayobject *self, PyObject *v);
+
+static PyObject *
+array_array_remove(PyObject *self, PyObject *v)
+{
+    PyObject *return_value = NULL;
+
+    return_value = array_array_remove_impl((arrayobject *)self, v);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(array_array_pop__doc__,
 "pop($self, i=-1, /)\n"
@@ -253,8 +292,8 @@ PyDoc_STRVAR(array_array_buffer_info__doc__,
 "\n"
 "Return a tuple (address, length) giving the current memory address and the length in items of the buffer used to hold array\'s contents.\n"
 "\n"
-"The length should be multiplied by the itemsize attribute to calculate\n"
-"the buffer length in bytes.");
+"The length should be multiplied by the itemsize attribute to\n"
+"calculate the buffer length in bytes.");
 
 #define ARRAY_ARRAY_BUFFER_INFO_METHODDEF    \
     {"buffer_info", (PyCFunction)array_array_buffer_info, METH_NOARGS, array_array_buffer_info__doc__},
@@ -277,14 +316,28 @@ PyDoc_STRVAR(array_array_append__doc__,
 #define ARRAY_ARRAY_APPEND_METHODDEF    \
     {"append", (PyCFunction)array_array_append, METH_O, array_array_append__doc__},
 
+static PyObject *
+array_array_append_impl(arrayobject *self, PyObject *v);
+
+static PyObject *
+array_array_append(PyObject *self, PyObject *v)
+{
+    PyObject *return_value = NULL;
+
+    return_value = array_array_append_impl((arrayobject *)self, v);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(array_array_byteswap__doc__,
 "byteswap($self, /)\n"
 "--\n"
 "\n"
 "Byteswap all items of the array.\n"
 "\n"
-"If the items in the array are not 1, 2, 4, or 8 bytes in size, RuntimeError is\n"
-"raised.");
+"If the items in the array are not 1, 2, 4, 8 or 16 bytes in size,\n"
+"RuntimeError is raised.  Note, that for complex types the order of\n"
+"components (the real part, followed by imaginary part) is preserved.");
 
 #define ARRAY_ARRAY_BYTESWAP_METHODDEF    \
     {"byteswap", (PyCFunction)array_array_byteswap, METH_NOARGS, array_array_byteswap__doc__},
@@ -367,6 +420,11 @@ array_array_fromfile(PyObject *self, PyTypeObject *cls, PyObject *const *args, P
             goto exit;
         }
         n = ival;
+        if (n < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "n cannot be negative");
+            goto exit;
+        }
     }
     return_value = array_array_fromfile_impl((arrayobject *)self, cls, f, n);
 
@@ -426,6 +484,19 @@ PyDoc_STRVAR(array_array_fromlist__doc__,
 
 #define ARRAY_ARRAY_FROMLIST_METHODDEF    \
     {"fromlist", (PyCFunction)array_array_fromlist, METH_O, array_array_fromlist__doc__},
+
+static PyObject *
+array_array_fromlist_impl(arrayobject *self, PyObject *list);
+
+static PyObject *
+array_array_fromlist(PyObject *self, PyObject *list)
+{
+    PyObject *return_value = NULL;
+
+    return_value = array_array_fromlist_impl((arrayobject *)self, list);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(array_array_tolist__doc__,
 "tolist($self, /)\n"
@@ -501,9 +572,9 @@ PyDoc_STRVAR(array_array_fromunicode__doc__,
 "\n"
 "Extends this array with data from the unicode string ustr.\n"
 "\n"
-"The array must be a unicode type array; otherwise a ValueError is raised.\n"
-"Use array.frombytes(ustr.encode(...)) to append Unicode data to an array of\n"
-"some other type.");
+"The array must be a unicode type array; otherwise a ValueError is\n"
+"raised.  Use array.frombytes(ustr.encode(...)) to append Unicode\n"
+"data to an array of some other type.");
 
 #define ARRAY_ARRAY_FROMUNICODE_METHODDEF    \
     {"fromunicode", (PyCFunction)array_array_fromunicode, METH_O, array_array_fromunicode__doc__},
@@ -534,9 +605,10 @@ PyDoc_STRVAR(array_array_tounicode__doc__,
 "\n"
 "Extends this array with data from the unicode string ustr.\n"
 "\n"
-"Convert the array to a unicode string.  The array must be a unicode type array;\n"
-"otherwise a ValueError is raised.  Use array.tobytes().decode() to obtain a\n"
-"unicode string from an array of some other type.");
+"Convert the array to a unicode string.  The array must be a unicode\n"
+"type array; otherwise a ValueError is raised.  Use\n"
+"array.tobytes().decode() to obtain a unicode string from an array of\n"
+"some other type.");
 
 #define ARRAY_ARRAY_TOUNICODE_METHODDEF    \
     {"tounicode", (PyCFunction)array_array_tounicode, METH_NOARGS, array_array_tounicode__doc__},
@@ -580,7 +652,7 @@ PyDoc_STRVAR(array__array_reconstructor__doc__,
 
 static PyObject *
 array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
-                                int typecode,
+                                const char *typecode,
                                 enum machine_format_code mformat_code,
                                 PyObject *items);
 
@@ -589,7 +661,7 @@ array__array_reconstructor(PyObject *module, PyObject *const *args, Py_ssize_t n
 {
     PyObject *return_value = NULL;
     PyTypeObject *arraytype;
-    int typecode;
+    const char *typecode;
     enum machine_format_code mformat_code;
     PyObject *items;
 
@@ -598,17 +670,18 @@ array__array_reconstructor(PyObject *module, PyObject *const *args, Py_ssize_t n
     }
     arraytype = (PyTypeObject *)args[0];
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("_array_reconstructor", "argument 2", "a unicode character", args[1]);
+        _PyArg_BadArgument("_array_reconstructor", "argument 2", "str", args[1]);
         goto exit;
     }
-    if (PyUnicode_GET_LENGTH(args[1]) != 1) {
-        PyErr_Format(PyExc_TypeError,
-            "_array_reconstructor(): argument 2 must be a unicode character, "
-            "not a string of length %zd",
-            PyUnicode_GET_LENGTH(args[1]));
+    Py_ssize_t typecode_length;
+    typecode = PyUnicode_AsUTF8AndSize(args[1], &typecode_length);
+    if (typecode == NULL) {
         goto exit;
     }
-    typecode = PyUnicode_READ_CHAR(args[1], 0);
+    if (strlen(typecode) != (size_t)typecode_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
     mformat_code = PyLong_AsInt(args[2]);
     if (mformat_code == -1 && PyErr_Occurred()) {
         goto exit;
@@ -695,4 +768,17 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=8120dc5c4fa414b9 input=a9049054013a1b77]*/
+
+static PyObject *
+array_arrayiterator___setstate___impl(arrayiterobject *self, PyObject *state);
+
+static PyObject *
+array_arrayiterator___setstate__(PyObject *self, PyObject *state)
+{
+    PyObject *return_value = NULL;
+
+    return_value = array_arrayiterator___setstate___impl((arrayiterobject *)self, state);
+
+    return return_value;
+}
+/*[clinic end generated code: output=32784678e77ac658 input=a9049054013a1b77]*/

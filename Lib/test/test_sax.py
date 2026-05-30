@@ -1,5 +1,4 @@
 # regression test for SAX 2.0
-# $Id$
 
 from xml.sax import make_parser, ContentHandler, \
                     SAXException, SAXReaderNotAvailable, SAXParseException
@@ -832,8 +831,9 @@ class StreamReaderWriterXmlgenTest(XmlgenTest, unittest.TestCase):
     fname = os_helper.TESTFN + '-codecs'
 
     def ioclass(self):
-        writer = codecs.open(self.fname, 'w', encoding='ascii',
-                             errors='xmlcharrefreplace', buffering=0)
+        with self.assertWarns(DeprecationWarning):
+            writer = codecs.open(self.fname, 'w', encoding='ascii',
+                                errors='xmlcharrefreplace', buffering=0)
         def cleanup():
             writer.close()
             os_helper.unlink(self.fname)
@@ -1571,6 +1571,18 @@ class TestModuleAll(unittest.TestCase):
             'SAXReaderNotAvailable',
         )
         check__all__(self, sax, extra=extra)
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__and__date__(self):
+        for module in (sax.expatreader, sax.handler):
+            with self.subTest(module=module):
+                with self.assertWarnsRegex(
+                    DeprecationWarning,
+                    "'version' is deprecated and slated for removal in Python 3.20",
+                ) as cm:
+                    getattr(module, "version")
+                self.assertEqual(cm.filename, __file__)
 
 
 if __name__ == "__main__":

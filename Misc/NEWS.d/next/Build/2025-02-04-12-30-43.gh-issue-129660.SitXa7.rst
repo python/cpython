@@ -1,2 +1,0 @@
-Drop ``test_embed`` from PGO training, whose contribution in recent
-versions is considered to be ignorable.

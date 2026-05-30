@@ -30,9 +30,11 @@ _testinternalcapi_compiler_cleandoc(PyObject *module, PyObject *const *args, Py_
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(doc), },
     };
     #undef NUM_KEYWORDS
@@ -90,7 +92,11 @@ PyDoc_STRVAR(_testinternalcapi_compiler_codegen__doc__,
 "compiler_codegen($module, /, ast, filename, optimize, compile_mode=0)\n"
 "--\n"
 "\n"
-"Apply compiler code generation to an AST.");
+"Apply compiler code generation to an AST.\n"
+"\n"
+"Return (instruction_sequence, metadata).  metadata maps \"argcount\",\n"
+"\"posonlyargcount\", \"kwonlyargcount\" to ints and \"consts\" to the list of\n"
+"constants in LOAD_CONST index order (for use with optimize_cfg).");
 
 #define _TESTINTERNALCAPI_COMPILER_CODEGEN_METHODDEF    \
     {"compiler_codegen", _PyCFunction_CAST(_testinternalcapi_compiler_codegen), METH_FASTCALL|METH_KEYWORDS, _testinternalcapi_compiler_codegen__doc__},
@@ -110,9 +116,11 @@ _testinternalcapi_compiler_codegen(PyObject *module, PyObject *const *args, Py_s
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(ast), &_Py_ID(filename), &_Py_ID(optimize), &_Py_ID(compile_mode), },
     };
     #undef NUM_KEYWORDS
@@ -165,7 +173,10 @@ PyDoc_STRVAR(_testinternalcapi_optimize_cfg__doc__,
 "optimize_cfg($module, /, instructions, consts, nlocals)\n"
 "--\n"
 "\n"
-"Apply compiler optimizations to an instruction list.");
+"Apply compiler optimizations to an instruction list.\n"
+"\n"
+"consts must be a list aligned with LOAD_CONST opargs (the \"consts\" entry\n"
+"from the metadata dict returned by compiler_codegen for the same unit).");
 
 #define _TESTINTERNALCAPI_OPTIMIZE_CFG_METHODDEF    \
     {"optimize_cfg", _PyCFunction_CAST(_testinternalcapi_optimize_cfg), METH_FASTCALL|METH_KEYWORDS, _testinternalcapi_optimize_cfg__doc__},
@@ -184,9 +195,11 @@ _testinternalcapi_optimize_cfg(PyObject *module, PyObject *const *args, Py_ssize
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(instructions), &_Py_ID(consts), &_Py_ID(nlocals), },
     };
     #undef NUM_KEYWORDS
@@ -250,9 +263,11 @@ _testinternalcapi_assemble_code_object(PyObject *module, PyObject *const *args, 
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(filename), &_Py_ID(instructions), &_Py_ID(metadata), },
     };
     #undef NUM_KEYWORDS
@@ -327,9 +342,11 @@ gh_119213_getargs(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(spam), },
     };
     #undef NUM_KEYWORDS
@@ -365,4 +382,21 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ec77971c6c2663da input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(get_next_dict_keys_version__doc__,
+"get_next_dict_keys_version($module, /)\n"
+"--\n"
+"\n");
+
+#define GET_NEXT_DICT_KEYS_VERSION_METHODDEF    \
+    {"get_next_dict_keys_version", (PyCFunction)get_next_dict_keys_version, METH_NOARGS, get_next_dict_keys_version__doc__},
+
+static PyObject *
+get_next_dict_keys_version_impl(PyObject *module);
+
+static PyObject *
+get_next_dict_keys_version(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return get_next_dict_keys_version_impl(module);
+}
+/*[clinic end generated code: output=ecb5d7ac85b153fa input=a9049054013a1b77]*/

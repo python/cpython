@@ -1,1 +1,0 @@
-Fix a possible ``NULL`` pointer dereference in :c:func:`!PySys_AddWarnOptionUnicode`.

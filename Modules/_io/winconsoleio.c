@@ -10,6 +10,7 @@
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #ifdef HAVE_WINDOWS_CONSOLE_IO
 
@@ -23,7 +24,7 @@
 #include <stddef.h> /* For offsetof */
 
 #ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
+#  define WIN32_LEAN_AND_MEAN
 #endif
 #include <windows.h>
 #include <fcntl.h>
@@ -314,16 +315,16 @@ _io._WindowsConsoleIO.__init__
 
 Open a console buffer by file descriptor.
 
-The mode can be 'rb' (default), or 'wb' for reading or writing bytes. All
-other mode characters will be ignored. Mode 'b' will be assumed if it is
-omitted. The *opener* parameter is always ignored.
+The mode can be 'rb' (default), or 'wb' for reading or writing
+bytes.  All other mode characters will be ignored.  Mode 'b' will be
+assumed if it is omitted.  The *opener* parameter is always ignored.
 [clinic start generated code]*/
 
 static int
 _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
                                     const char *mode, int closefd,
                                     PyObject *opener)
-/*[clinic end generated code: output=3fd9cbcdd8d95429 input=7a3eed6bbe998fd9]*/
+/*[clinic end generated code: output=3fd9cbcdd8d95429 input=f31100e2cd724617]*/
 {
     const char *s;
     wchar_t *name = NULL;
@@ -331,7 +332,6 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
     int ret = 0;
     int rwa = 0;
     int fd = -1;
-    int fd_is_own = 0;
     HANDLE handle = NULL;
 
 #ifndef NDEBUG
@@ -519,8 +519,7 @@ winconsoleio_dealloc(PyObject *op)
     if (_PyIOBase_finalize(op) < 0)
         return;
     _PyObject_GC_UNTRACK(self);
-    if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs(op);
+    FT_CLEAR_WEAKREFS(op, self->weakreflist);
     Py_CLEAR(self->dict);
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -674,12 +673,13 @@ read_console_w(HANDLE handle, DWORD maxlen, DWORD *readlen) {
             maxlen += 1;
             Py_BLOCK_THREADS
             newbuf = (wchar_t*)PyMem_Realloc(buf, maxlen * sizeof(wchar_t));
-            Py_UNBLOCK_THREADS
             if (!newbuf) {
                 sig = -1;
                 PyErr_NoMemory();
+                Py_UNBLOCK_THREADS
                 break;
             }
+            Py_UNBLOCK_THREADS
             buf = newbuf;
             /* Only advance by n and not BUFSIZ in this case */
             off += n;
@@ -1196,7 +1196,7 @@ static PyMethodDef winconsoleio_methods[] = {
     _IO__WINDOWSCONSOLEIO_WRITABLE_METHODDEF
     _IO__WINDOWSCONSOLEIO_FILENO_METHODDEF
     _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
-    {"_isatty_open_only", (PyCFunction)_io__WindowsConsoleIO_isatty, METH_NOARGS},
+    {"_isatty_open_only", _io__WindowsConsoleIO_isatty, METH_NOARGS},
     {NULL,           NULL}             /* sentinel */
 };
 
@@ -1254,7 +1254,7 @@ static PyType_Slot winconsoleio_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec winconsoleio_spec = {
+PyType_Spec _Py_winconsoleio_spec = {
     .name = "_io._WindowsConsoleIO",
     .basicsize = sizeof(winconsoleio),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |

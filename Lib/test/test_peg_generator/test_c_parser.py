@@ -99,12 +99,16 @@ class TestCParser(unittest.TestCase):
         cls.addClassCleanup(shutil.rmtree, cls.library_dir)
 
         with contextlib.ExitStack() as stack:
-            python_exe = stack.enter_context(support.setup_venv_with_pip_setuptools_wheel("venv"))
-            sitepackages = subprocess.check_output(
+            python_exe = stack.enter_context(support.setup_venv_with_pip_setuptools("venv"))
+            platlib_path = subprocess.check_output(
                 [python_exe, "-c", "import sysconfig; print(sysconfig.get_path('platlib'))"],
                 text=True,
             ).strip()
-            stack.enter_context(import_helper.DirsOnSysPath(sitepackages))
+            purelib_path = subprocess.check_output(
+                [python_exe, "-c", "import sysconfig; print(sysconfig.get_path('purelib'))"],
+                text=True,
+            ).strip()
+            stack.enter_context(import_helper.DirsOnSysPath(platlib_path, purelib_path))
             cls.addClassCleanup(stack.pop_all().close)
 
     @support.requires_venv_with_pip()
@@ -352,9 +356,9 @@ class TestCParser(unittest.TestCase):
         grammar_source = """
         start[mod_ty]: a[asdl_stmt_seq*]=import_from+ NEWLINE ENDMARKER { _PyAST_Module(a, NULL, p->arena)}
         import_from[stmt_ty]: ( a='from' !'import' c=simple_name 'import' d=import_as_names_from {
-                                _PyAST_ImportFrom(c->v.Name.id, d, 0, EXTRA) }
+                                _PyAST_ImportFrom(c->v.Name.id, d, 0, 0, EXTRA) }
                             | a='from' '.' 'import' c=import_as_names_from {
-                                _PyAST_ImportFrom(NULL, c, 1, EXTRA) }
+                                _PyAST_ImportFrom(NULL, c, 1, 0, EXTRA) }
                             )
         simple_name[expr_ty]: NAME
         import_as_names_from[asdl_alias_seq*]: a[asdl_alias_seq*]=','.import_as_name_from+ { a }
@@ -387,10 +391,10 @@ class TestCParser(unittest.TestCase):
         test_source = """
         stmt = "with (\\n    a as b,\\n    c as d\\n): pass"
         the_ast = parse.parse_string(stmt, mode=1)
-        self.assertTrue(ast_dump(the_ast).startswith(
+        self.assertStartsWith(ast_dump(the_ast),
             "Module(body=[With(items=[withitem(context_expr=Name(id='a', ctx=Load()), optional_vars=Name(id='b', ctx=Store())), "
             "withitem(context_expr=Name(id='c', ctx=Load()), optional_vars=Name(id='d', ctx=Store()))]"
-        ))
+        )
         """
         self.run_test(grammar_source, test_source)
 

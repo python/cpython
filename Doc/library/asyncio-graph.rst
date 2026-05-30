@@ -17,7 +17,7 @@ a suspended *future*.  These utilities and the underlying machinery
 can be used from within a Python program or by external profilers
 and debuggers.
 
-.. versionadded:: next
+.. versionadded:: 3.14
 
 
 .. function:: print_call_graph(future=None, /, *, file=None, depth=1, limit=None)

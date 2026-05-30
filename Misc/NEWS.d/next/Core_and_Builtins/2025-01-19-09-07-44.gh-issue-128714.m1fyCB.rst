@@ -1,1 +1,0 @@
-Fix the potential races in get/set dunder methods ``__annotations__``, ``__annotate__`` and ``__type_params__`` for function object, and add related tests.

@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(memoryview__doc__,
@@ -27,9 +28,11 @@ memoryview(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(object), },
     };
     #undef NUM_KEYWORDS
@@ -76,7 +79,7 @@ static PyObject *
 memoryview__from_flags_impl(PyTypeObject *type, PyObject *object, int flags);
 
 static PyObject *
-memoryview__from_flags(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+memoryview__from_flags(PyObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -85,9 +88,11 @@ memoryview__from_flags(PyTypeObject *type, PyObject *const *args, Py_ssize_t nar
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(object), &_Py_ID(flags), },
     };
     #undef NUM_KEYWORDS
@@ -118,7 +123,7 @@ memoryview__from_flags(PyTypeObject *type, PyObject *const *args, Py_ssize_t nar
     if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = memoryview__from_flags_impl(type, object, flags);
+    return_value = memoryview__from_flags_impl((PyTypeObject *)type, object, flags);
 
 exit:
     return return_value;
@@ -165,9 +170,11 @@ memoryview_cast(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObjec
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(format), &_Py_ID(shape), },
     };
     #undef NUM_KEYWORDS
@@ -252,11 +259,12 @@ PyDoc_STRVAR(memoryview_tobytes__doc__,
 "\n"
 "Return the data in the buffer as a byte string.\n"
 "\n"
-"Order can be {\'C\', \'F\', \'A\'}. When order is \'C\' or \'F\', the data of the\n"
-"original array is converted to C or Fortran order. For contiguous views,\n"
-"\'A\' returns an exact copy of the physical memory. In particular, in-memory\n"
-"Fortran order is preserved. For non-contiguous views, the data is converted\n"
-"to C first. order=None is the same as order=\'C\'.");
+"Order can be {\'C\', \'F\', \'A\'}.  When order is \'C\' or \'F\', the data of\n"
+"the original array is converted to C or Fortran order.  For\n"
+"contiguous views, \'A\' returns an exact copy of the physical memory.\n"
+"In particular, in-memory Fortran order is preserved.  For\n"
+"non-contiguous views, the data is converted to C first.  order=None\n"
+"is the same as order=\'C\'.");
 
 #define MEMORYVIEW_TOBYTES_METHODDEF    \
     {"tobytes", _PyCFunction_CAST(memoryview_tobytes), METH_FASTCALL|METH_KEYWORDS, memoryview_tobytes__doc__},
@@ -274,9 +282,11 @@ memoryview_tobytes(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(order), },
     };
     #undef NUM_KEYWORDS
@@ -339,8 +349,8 @@ PyDoc_STRVAR(memoryview_hex__doc__,
 "  sep\n"
 "    An optional single character or byte to separate hex bytes.\n"
 "  bytes_per_sep\n"
-"    How many bytes between separators.  Positive values count from the\n"
-"    right, negative values count from the left.\n"
+"    How many bytes between separators.  Positive values count from\n"
+"    the right, negative values count from the left.\n"
 "\n"
 "Example:\n"
 ">>> value = memoryview(b\'\\xb9\\x01\\xef\')\n"
@@ -358,7 +368,7 @@ PyDoc_STRVAR(memoryview_hex__doc__,
 
 static PyObject *
 memoryview_hex_impl(PyMemoryViewObject *self, PyObject *sep,
-                    int bytes_per_sep);
+                    Py_ssize_t bytes_per_sep);
 
 static PyObject *
 memoryview_hex(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -370,9 +380,11 @@ memoryview_hex(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(sep), &_Py_ID(bytes_per_sep), },
     };
     #undef NUM_KEYWORDS
@@ -392,7 +404,7 @@ memoryview_hex(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *sep = NULL;
-    int bytes_per_sep = 1;
+    Py_ssize_t bytes_per_sep = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -408,9 +420,17 @@ memoryview_hex(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
             goto skip_optional_pos;
         }
     }
-    bytes_per_sep = PyLong_AsInt(args[1]);
-    if (bytes_per_sep == -1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        bytes_per_sep = ival;
     }
 skip_optional_pos:
     return_value = memoryview_hex_impl((PyMemoryViewObject *)self, sep, bytes_per_sep);
@@ -427,6 +447,19 @@ PyDoc_STRVAR(memoryview_count__doc__,
 
 #define MEMORYVIEW_COUNT_METHODDEF    \
     {"count", (PyCFunction)memoryview_count, METH_O, memoryview_count__doc__},
+
+static PyObject *
+memoryview_count_impl(PyMemoryViewObject *self, PyObject *value);
+
+static PyObject *
+memoryview_count(PyObject *self, PyObject *value)
+{
+    PyObject *return_value = NULL;
+
+    return_value = memoryview_count_impl((PyMemoryViewObject *)self, value);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(memoryview_index__doc__,
 "index($self, value, start=0, stop=sys.maxsize, /)\n"
@@ -473,4 +506,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2ef6c061d9c4e3dc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3abf9c80cd49229a input=a9049054013a1b77]*/

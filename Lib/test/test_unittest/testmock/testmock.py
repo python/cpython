@@ -316,7 +316,7 @@ class MockTest(unittest.TestCase):
         passed to the wrapped object and the return_value is returned instead.
         """
         def my_func():
-            return None
+            return None  # pragma: no cover
         func_mock = create_autospec(spec=my_func, wraps=my_func)
         return_value = "explicit return value"
         func_mock.return_value = return_value
@@ -1742,6 +1742,13 @@ class MockTest(unittest.TestCase):
                 mock_method()
                 mock_method.assert_called_once_with()
                 self.assertRaises(TypeError, mock_method, 'extra_arg')
+
+    # gh-145754
+    def test_create_autospec_type_hints_typechecking(self):
+        def foo(x: Tuple[int, ...]) -> None:
+            pass
+
+        mock.create_autospec(foo)
 
     #Issue21238
     def test_mock_unsafe(self):

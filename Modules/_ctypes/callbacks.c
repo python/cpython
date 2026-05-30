@@ -11,19 +11,8 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_runtime.h"       // _Py_ID()
 
-#include <stdbool.h>
-
-#ifdef MS_WIN32
-#  include <malloc.h>
-#endif
-
 #include <ffi.h>
 #include "ctypes.h"
-
-#ifdef HAVE_ALLOCA_H
-/* AIX needs alloca.h for alloca() */
-#include <alloca.h>
-#endif
 
 /**************************************************************/
 
