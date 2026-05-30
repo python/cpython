@@ -793,9 +793,6 @@ ENABLE_PROCESSED_OUTPUT = 0x01
 ENABLE_WRAP_AT_EOL_OUTPUT = 0x02
 ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x04
 
-STD_INPUT_HANDLE = -10
-STD_OUTPUT_HANDLE = -11
-
 if sys.platform == "win32":
     assert _winapi is not None  # to make mypy happy
     _KERNEL32 = WinDLL("kernel32", use_last_error=True)
@@ -834,8 +831,8 @@ if sys.platform == "win32":
     FlushConsoleInputBuffer.argtypes = [HANDLE]
     FlushConsoleInputBuffer.restype = BOOL
 
-    OutHandle = _winapi.GetStdHandle(STD_OUTPUT_HANDLE)
-    InHandle = _winapi.GetStdHandle(STD_INPUT_HANDLE)
+    OutHandle = _winapi.GetStdHandle(_winapi.STD_OUTPUT_HANDLE)
+    InHandle = _winapi.GetStdHandle(_winapi.STD_INPUT_HANDLE)
 else:
 
     def _win_only(*args, **kwargs):
