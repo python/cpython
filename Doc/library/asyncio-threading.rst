@@ -6,8 +6,8 @@ asyncio and free-threaded Python
 ================================
 
 asyncio uses an event loop as a scheduler to enable highly efficient
-I/O-bound concurrency by switching between tasks during non-blocking I/O
-operations. It allows off-loading CPU-bound work to a thread or process
+concurrency by switching between tasks to allow non-blocking I/O
+operations. This results in better performance for I/O-bound use cases. It also allows off-loading CPU-bound work to a thread or process
 pool, but that is still limited by the :term:`global interpreter lock`
 in CPython.
 
