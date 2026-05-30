@@ -999,11 +999,11 @@ class StartFileTests(unittest.TestCase):
         self.assertIs(state._known_paths, known_paths)
         self.assertIn(site.makepath(self.sitedir)[1], known_paths)
 
-    # --- StartupState.read_start_file tests ---
+    # --- StartupState._read_start_file tests ---
 
     def test_impl_read_start_file_basic(self):
         self._make_start("os.path:join\n", name='foo')
-        self.state.read_start_file(self.sitedir, 'foo.start')
+        self.state._read_start_file(self.sitedir, 'foo.start')
         fullname = os.path.join(self.sitedir, 'foo.start')
         self.assertEqual(
             self.state._entrypoints[fullname], ['os.path:join']
@@ -1011,7 +1011,7 @@ class StartFileTests(unittest.TestCase):
 
     def test_impl_read_start_file_multiple_entries(self):
         self._make_start("os.path:join\nos.path:exists\n", name='foo')
-        self.state.read_start_file(self.sitedir, 'foo.start')
+        self.state._read_start_file(self.sitedir, 'foo.start')
         fullname = os.path.join(self.sitedir, 'foo.start')
         self.assertEqual(
             self.state._entrypoints[fullname],
@@ -1020,7 +1020,7 @@ class StartFileTests(unittest.TestCase):
 
     def test_impl_read_start_file_comments_and_blanks(self):
         self._make_start("# a comment\n\nos.path:join\n  \n", name='foo')
-        self.state.read_start_file(self.sitedir, 'foo.start')
+        self.state._read_start_file(self.sitedir, 'foo.start')
         fullname = os.path.join(self.sitedir, 'foo.start')
         self.assertEqual(
             self.state._entrypoints[fullname], ['os.path:join']
@@ -1039,7 +1039,7 @@ class StartFileTests(unittest.TestCase):
             "os.path:join\n"            # valid
         )
         self._make_start(content, name='foo')
-        self.state.read_start_file(self.sitedir, 'foo.start')
+        self.state._read_start_file(self.sitedir, 'foo.start')
         fullname = os.path.join(self.sitedir, 'foo.start')
         self.assertEqual(self.state._entrypoints[fullname], [
             'os.path',
@@ -1054,7 +1054,7 @@ class StartFileTests(unittest.TestCase):
         # (with an empty entry point list) so that it suppresses `import`
         # lines in any matching .pth file.
         self._make_start("", name='foo')
-        self.state.read_start_file(self.sitedir, 'foo.start')
+        self.state._read_start_file(self.sitedir, 'foo.start')
         fullname = os.path.join(self.sitedir, 'foo.start')
         self.assertEqual(self.state._entrypoints, {fullname: []})
 
@@ -1062,13 +1062,13 @@ class StartFileTests(unittest.TestCase):
         # As with an empty file, a comments-only .start file is registered
         # as present so it can suppress matching .pth `import` lines.
         self._make_start("# just a comment\n# another\n", name='foo')
-        self.state.read_start_file(self.sitedir, 'foo.start')
+        self.state._read_start_file(self.sitedir, 'foo.start')
         fullname = os.path.join(self.sitedir, 'foo.start')
         self.assertEqual(self.state._entrypoints, {fullname: []})
 
     def test_impl_read_start_file_nonexistent(self):
         with captured_stderr():
-            self.state.read_start_file(self.tmpdir, 'nonexistent.start')
+            self.state._read_start_file(self.tmpdir, 'nonexistent.start')
         self.assertEqual(self.state._entrypoints, {})
 
     @unittest.skipUnless(hasattr(os, 'chflags'), 'test needs os.chflags()')
@@ -1077,13 +1077,13 @@ class StartFileTests(unittest.TestCase):
         filepath = os.path.join(self.tmpdir, 'foo.start')
         st = os.stat(filepath)
         os.chflags(filepath, st.st_flags | stat.UF_HIDDEN)
-        self.state.read_start_file(self.sitedir, 'foo.start')
+        self.state._read_start_file(self.sitedir, 'foo.start')
         self.assertEqual(self.state._entrypoints, {})
 
     def test_impl_one_start_file_with_duplicates_not_deduplicated(self):
         # PEP 829: duplicate entry points are NOT deduplicated.
         self._make_start("os.path:join\nos.path:join\n", name='foo')
-        self.state.read_start_file(self.sitedir, 'foo.start')
+        self.state._read_start_file(self.sitedir, 'foo.start')
         fullname = os.path.join(self.sitedir, 'foo.start')
         self.assertEqual(
             self.state._entrypoints[fullname],
@@ -1093,8 +1093,8 @@ class StartFileTests(unittest.TestCase):
     def test_impl_two_start_files_with_duplicates_not_deduplicated(self):
         self._make_start("os.path:join", name="foo")
         self._make_start("os.path:join", name="bar")
-        self.state.read_start_file(self.sitedir, 'foo.start')
-        self.state.read_start_file(self.sitedir, 'bar.start')
+        self.state._read_start_file(self.sitedir, 'foo.start')
+        self.state._read_start_file(self.sitedir, 'bar.start')
         self.assertEqual(
             self._just_entrypoints(),
             ['os.path:join', 'os.path:join'],
@@ -1105,7 +1105,7 @@ class StartFileTests(unittest.TestCase):
         filepath = os.path.join(self.tmpdir, 'foo.start')
         with open(filepath, 'wb') as f:
             f.write(b'\xef\xbb\xbf' + b'os.path:join\n')
-        self.state.read_start_file(self.sitedir, 'foo.start')
+        self.state._read_start_file(self.sitedir, 'foo.start')
         fullname = os.path.join(self.sitedir, 'foo.start')
         self.assertEqual(
             self.state._entrypoints[fullname], ['os.path:join']
@@ -1122,23 +1122,23 @@ class StartFileTests(unittest.TestCase):
             # Bare continuation byte -- invalid as a UTF-8 start byte.
             f.write(b'\x80\x80\x80\n')
         with captured_stderr() as err:
-            self.state.read_start_file(self.sitedir, 'foo.start')
+            self.state._read_start_file(self.sitedir, 'foo.start')
         self.assertEqual(self.state._entrypoints, {})
         self.assertEqual(err.getvalue(), "")
 
-    # --- StartupState.read_pth_file tests ---
+    # --- StartupState._read_pth_file tests ---
 
     def test_impl_read_pth_file_paths(self):
         subdir = os.path.join(self.sitedir, 'mylib')
         os.mkdir(subdir)
         self._make_pth("mylib\n", name='foo')
-        self.state.read_pth_file(self.sitedir, 'foo.pth', set())
+        self.state._read_pth_file(self.sitedir, 'foo.pth', set())
         fullname = os.path.join(self.sitedir, 'foo.pth')
         self.assertIn((fullname, subdir), self.state._path_entries)
 
     def test_impl_read_pth_file_imports_collected(self):
         self._make_pth("import sys\n", name='foo')
-        self.state.read_pth_file(self.sitedir, 'foo.pth', set())
+        self.state._read_pth_file(self.sitedir, 'foo.pth', set())
         fullname = os.path.join(self.sitedir, 'foo.pth')
         self.assertEqual(
             self.state._importexecs[fullname], ['import sys']
@@ -1146,7 +1146,7 @@ class StartFileTests(unittest.TestCase):
 
     def test_impl_read_pth_file_comments_and_blanks(self):
         self._make_pth("# comment\n\n  \n", name='foo')
-        self.state.read_pth_file(self.sitedir, 'foo.pth', set())
+        self.state._read_pth_file(self.sitedir, 'foo.pth', set())
         self.assertEqual(self.state._path_entries, [])
         self.assertEqual(self.state._importexecs, {})
 
@@ -1157,8 +1157,8 @@ class StartFileTests(unittest.TestCase):
         known_paths = set()
         self._make_pth("mylib\n", name='a')
         self._make_pth("mylib\n", name='b')
-        self.state.read_pth_file(self.sitedir, 'a.pth', known_paths)
-        self.state.read_pth_file(self.sitedir, 'b.pth', known_paths)
+        self.state._read_pth_file(self.sitedir, 'a.pth', known_paths)
+        self.state._read_pth_file(self.sitedir, 'b.pth', known_paths)
         # There is only one entry across both files.
         all_dirs = [dir_ for filename, dir_ in self.state._path_entries]
         self.assertEqual(all_dirs, [subdir])
@@ -1169,7 +1169,7 @@ class StartFileTests(unittest.TestCase):
         os.mkdir(subdir)
         self._make_pth("abc\x00def\ngoodpath\n", name='foo')
         with captured_stderr():
-            self.state.read_pth_file(self.sitedir, 'foo.pth', set())
+            self.state._read_pth_file(self.sitedir, 'foo.pth', set())
         fullname = os.path.join(self.sitedir, 'foo.pth')
         self.assertIn((fullname, subdir), self.state._path_entries)
 
@@ -1193,7 +1193,7 @@ class StartFileTests(unittest.TestCase):
             mock.patch('sys.flags', self._flags_with_verbose(False)),
             captured_stderr() as err,
         ):
-            self.state.read_pth_file(self.sitedir, 'foo.pth', set())
+            self.state._read_pth_file(self.sitedir, 'foo.pth', set())
         self.assertEqual(err.getvalue(), "")
 
     def test_impl_read_pth_file_parse_error_reported_under_verbose(self):
@@ -1204,7 +1204,7 @@ class StartFileTests(unittest.TestCase):
             mock.patch('sys.flags', self._flags_with_verbose(True)),
             captured_stderr() as err,
         ):
-            self.state.read_pth_file(self.sitedir, 'foo.pth', set())
+            self.state._read_pth_file(self.sitedir, 'foo.pth', set())
         out = err.getvalue()
         self.assertIn('Error in', out)
         self.assertIn('foo.pth', out)
@@ -1224,7 +1224,7 @@ class StartFileTests(unittest.TestCase):
             mock.patch('locale.getencoding', return_value='latin-1'),
             captured_stderr(),
         ):
-            self.state.read_pth_file(self.sitedir, 'foo.pth', set())
+            self.state._read_pth_file(self.sitedir, 'foo.pth', set())
         fullname = os.path.join(self.sitedir, 'foo.pth')
         self.assertIn((fullname, subdir), self.state._path_entries)
 
@@ -1320,8 +1320,8 @@ def bump(incr=2):
 """, name='countmod', package=False, on_path=True)
         self._make_start("countmod:bump\n", name='foo')
         self._make_pth("import countmod; countmod.bump(1)\n", name='foo')
-        self.state.read_pth_file(self.sitedir, 'foo.pth')
-        self.state.read_start_file(self.sitedir, 'foo.start')
+        self.state._read_pth_file(self.sitedir, 'foo.pth')
+        self.state._read_start_file(self.sitedir, 'foo.start')
         self.state._exec_imports()
         self.state._execute_start_entrypoints()
         import countmod
@@ -1354,8 +1354,8 @@ def startup():
     global called
     called = True
 """, name='epmod', package=True, on_path=True)
-        self.state.read_pth_file(self.sitedir, 'foo.pth', set())
-        self.state.read_start_file(self.sitedir, 'foo.start')
+        self.state._read_pth_file(self.sitedir, 'foo.pth', set())
+        self.state._read_start_file(self.sitedir, 'foo.start')
         self.state._exec_imports()
         import epmod
         self.assertFalse(epmod.called)

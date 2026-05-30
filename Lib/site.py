@@ -229,21 +229,22 @@ def _read_pthstart_file(sitedir, name, suffix):
 class StartupState:
     """Per-batch accumulator for .pth and .start file processing.
 
-    A StartupState collects sys.path extensions, deprecated .pth import
-    lines, and .start entry points read from one or more site-packages
-    directories.  Calling process() applies them in PEP 829 order: paths
-    are added to sys.path first, then import lines from .pth files (skipping
-    any with a matching .start), then entry points from .start files.
+    A StartupState collects sys.path extensions, deprecated .pth import lines,
+    and .start entry points read from one or more site-packages directories.
+    Calling process() applies them in PEP 829 order: paths are added to
+    sys.path first, then import lines from .pth files (skipping any with a
+    matching .start), then entry points from .start files.
 
     State lives entirely on the instance; there is no module-level pending
     state.  This is what makes the module reentrancy-safe: a site.addsitedir()
     call reached recursively from an exec'd import line or a .start entry
-    point operates on a different StartupState than the one being processed
-    by the outer call.
+    point operates on a different StartupState than the one being processed by
+    the outer call.
 
-    The internal data is intentionally private; the public methods
-    (read_pth_file, read_start_file, process) are the only supported write
-    APIs.
+    The internal data is intentionally private.  The write methods
+    (_read_pth_file() and _read_site_file()) are in a grey area.  They are used
+    outside of this class, but only within the site module, so they are not
+    intended to be part of the public API surface.
     """
     __slots__ = (
         '_known_paths',
@@ -308,7 +309,7 @@ class StartupState:
             self._path_entries.append((None, sitedir))
         return sitedir
 
-    def read_pth_file(self, sitedir, name, known_paths=None):
+    def _read_pth_file(self, sitedir, name, known_paths=None):
         """Parse a .pth file, accumulating sys.path extensions and import lines.
 
         Errors on individual lines do not abort processing of the rest of
@@ -361,7 +362,7 @@ class StartupState:
                 self._path_entries.append((filename, dir_))
                 known_paths.add(dircase)
 
-    def read_start_file(self, sitedir, name):
+    def _read_start_file(self, sitedir, name):
         """Parse a .start file for a list of entry point strings."""
         lines, filename = _read_pthstart_file(sitedir, name, ".start")
         if lines is None:
@@ -497,7 +498,7 @@ def addpackage(sitedir, name, known_paths):
         reset = False
 
     state = StartupState(known_paths)
-    state.read_pth_file(sitedir, name)
+    state._read_pth_file(sitedir, name)
     state.process()
 
     return None if reset else known_paths
@@ -571,7 +572,7 @@ def addsitedir(sitedir, known_paths=None, *, startup_state=None):
         if name.endswith(".pth") and not name.startswith(".")
     )
     for name in pth_names:
-        startup_state.read_pth_file(sitedir, name)
+        startup_state._read_pth_file(sitedir, name)
 
     # Phases 6-7: Discover .start files and accumulate their entry points.
     # Import lines from .pth files with a matching .start file are
@@ -581,7 +582,7 @@ def addsitedir(sitedir, known_paths=None, *, startup_state=None):
         if name.endswith(".start") and not name.startswith(".")
     )
     for name in start_names:
-        startup_state.read_start_file(sitedir, name)
+        startup_state._read_start_file(sitedir, name)
 
     if flush_now:
         startup_state.process()
