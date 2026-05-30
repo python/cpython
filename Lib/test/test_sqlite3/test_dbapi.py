@@ -1412,13 +1412,13 @@ class BlobTests(unittest.TestCase):
 
     def test_blob_set_empty_slice_wrong_type(self):
         # Assigning a non-buffer object to an empty slice must raise TypeError
-        # even when the slice length is zero (gh-150449).
+        # even when the slice length is zero.
         with self.assertRaises(TypeError):
             self.blob[5:5] = None
 
     def test_blob_set_empty_slice_wrong_size(self):
         # Assigning a non-empty bytes object to an empty slice must raise
-        # IndexError because the sizes do not match (gh-150449).
+        # IndexError because the sizes do not match.
         with self.assertRaisesRegex(IndexError, "wrong size"):
             self.blob[5:5] = b"123"
 
