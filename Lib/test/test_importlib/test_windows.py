@@ -4,8 +4,8 @@ machinery = test_util.import_importlib('importlib.machinery')
 import os
 import re
 import sys
-import sysconfig
 import unittest
+from test import support
 from test.support import import_helper
 from contextlib import contextmanager
 from test.test_importlib.util import temp_module
@@ -91,18 +91,47 @@ class WindowsRegistryFinderTests:
     test_module = "spamham{}".format(os.getpid())
 
     def test_find_spec_missing(self):
-        spec = self.machinery.WindowsRegistryFinder.find_spec('spam')
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            r"importlib\.machinery\.WindowsRegistryFinder is deprecated; "
+            r"use site configuration instead\. Future versions of Python may "
+            r"not enable this finder by default\."
+        ):
+            spec = self.machinery.WindowsRegistryFinder.find_spec('spam')
         self.assertIsNone(spec)
 
     def test_module_found(self):
         with setup_module(self.machinery, self.test_module):
-            spec = self.machinery.WindowsRegistryFinder.find_spec(self.test_module)
+            with self.assertWarnsRegex(
+                DeprecationWarning,
+                r"importlib\.machinery\.WindowsRegistryFinder is deprecated; "
+                r"use site configuration instead\. Future versions of Python may "
+                r"not enable this finder by default\."
+            ):
+                spec = self.machinery.WindowsRegistryFinder.find_spec(self.test_module)
             self.assertIsNotNone(spec)
 
     def test_module_not_found(self):
         with setup_module(self.machinery, self.test_module, path="."):
-            spec = self.machinery.WindowsRegistryFinder.find_spec(self.test_module)
+            with self.assertWarnsRegex(
+                DeprecationWarning,
+                r"importlib\.machinery\.WindowsRegistryFinder is deprecated; "
+                r"use site configuration instead\. Future versions of Python may "
+                r"not enable this finder by default\."
+            ):
+                spec = self.machinery.WindowsRegistryFinder.find_spec(self.test_module)
             self.assertIsNone(spec)
+
+    def test_raises_deprecation_warning(self):
+        # WindowsRegistryFinder is not meant to be instantiated, so the
+        # deprecation warning is raised in the 'find_spec' method instead.
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            r"importlib\.machinery\.WindowsRegistryFinder is deprecated; "
+            r"use site configuration instead\. Future versions of Python may "
+            r"not enable this finder by default\."
+        ):
+            self.machinery.WindowsRegistryFinder.find_spec('spam')
 
 (Frozen_WindowsRegistryFinderTests,
  Source_WindowsRegistryFinderTests
@@ -112,7 +141,7 @@ class WindowsRegistryFinderTests:
 class WindowsExtensionSuffixTests:
     def test_tagged_suffix(self):
         suffixes = self.machinery.EXTENSION_SUFFIXES
-        abi_flags = "t" if sysconfig.get_config_var("Py_NOGIL") else ""
+        abi_flags = "t" if support.Py_GIL_DISABLED else ""
         ver = sys.version_info
         platform = re.sub('[^a-zA-Z0-9]', '_', get_platform())
         expected_tag = f".cp{ver.major}{ver.minor}{abi_flags}-{platform}.pyd"

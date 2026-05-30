@@ -1,11 +1,8 @@
-:mod:`lzma` --- Compression using the LZMA algorithm
-====================================================
+:mod:`!lzma` --- Compression using the LZMA algorithm
+=====================================================
 
 .. module:: lzma
    :synopsis: A Python wrapper for the liblzma compression library.
-
-.. moduleauthor:: Nadeem Vawda <nadeem.vawda@gmail.com>
-.. sectionauthor:: Nadeem Vawda <nadeem.vawda@gmail.com>
 
 .. versionadded:: 3.3
 
@@ -22,6 +19,8 @@ The interface provided by this module is very similar to that of the :mod:`bz2`
 module. Note that :class:`LZMAFile` and :class:`bz2.BZ2File` are *not*
 thread-safe, so if you need to use a single :class:`LZMAFile` instance
 from multiple threads, it is necessary to protect it with a lock.
+
+.. include:: ../includes/optional-module.rst
 
 
 .. exception:: LZMAError
@@ -104,7 +103,7 @@ Reading and writing compressed files
    and :meth:`~io.IOBase.truncate`.
    Iteration and the :keyword:`with` statement are supported.
 
-   The following method is also provided:
+   The following method and attributes are also provided:
 
    .. method:: peek(size=-1)
 
@@ -116,6 +115,20 @@ Reading and writing compressed files
          the :class:`LZMAFile`, it may change the position of the underlying
          file object (e.g. if the :class:`LZMAFile` was constructed by passing a
          file object for *filename*).
+
+   .. attribute:: mode
+
+      ``'rb'`` for reading and ``'wb'`` for writing.
+
+      .. versionadded:: 3.13
+
+   .. attribute:: name
+
+      The lzma file name.  Equivalent to the :attr:`~io.FileIO.name`
+      attribute of the underlying :term:`file object`.
+
+      .. versionadded:: 3.13
+
 
    .. versionchanged:: 3.4
       Added support for the ``"x"`` and ``"xb"`` modes.
@@ -343,12 +356,26 @@ options. Valid filter IDs are as follows:
 
 * Branch-Call-Jump (BCJ) filters:
 
-  * :const:`FILTER_X86`
-  * :const:`FILTER_IA64`
-  * :const:`FILTER_ARM`
-  * :const:`FILTER_ARMTHUMB`
-  * :const:`FILTER_POWERPC`
-  * :const:`FILTER_SPARC`
+  * :const:`!FILTER_X86`
+  * :const:`!FILTER_IA64`
+  * :const:`!FILTER_ARM`
+  * :const:`!FILTER_ARMTHUMB`
+  * :const:`!FILTER_POWERPC`
+  * :const:`!FILTER_SPARC`
+
+    The above work on all lzma runtime library versions.
+
+  * :const:`!FILTER_ARM64`
+
+    Only works if the lzma version is 5.4.0 or later.
+
+    .. versionadded:: next
+
+  * :const:`!FILTER_RISCV`
+
+    Only works if the lzma version is 5.6.0 or later.
+
+    .. versionadded:: next
 
 A filter chain can consist of up to 4 filters, and cannot be empty. The last
 filter in the chain must be a compression filter, and any other filters must be

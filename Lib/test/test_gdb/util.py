@@ -1,12 +1,15 @@
 import os
 import re
 import shlex
+import shutil
 import subprocess
 import sys
 import sysconfig
 import unittest
 from test import support
 
+
+GDB_PROGRAM = shutil.which('gdb') or 'gdb'
 
 # Location of custom hooks file in a repository checkout.
 CHECKOUT_HOOK_PATH = os.path.join(os.path.dirname(sys.executable),
@@ -16,6 +19,27 @@ SAMPLE_SCRIPT = os.path.join(os.path.dirname(__file__), 'gdb_sample.py')
 BREAKPOINT_FN = 'builtin_id'
 
 PYTHONHASHSEED = '123'
+
+# gh-91960, bpo-40019: gdb reports these when the optimizer has dropped
+# python-frame debug info; the test can't read what's not there.
+_OPTIMIZED_OUT_PATTERNS = (
+    '(frame information optimized out)',
+    'Unable to read information on python frame',
+    '(unable to read python frame information)',
+)
+# gdb prints this when the unwinder genuinely failed to walk a frame —
+# i.e. the CFI (ours or a library's) is wrong. Treat as a hard failure,
+# not a skip, so regressions in our own unwind info don't hide.
+_UNWIND_FAILURE_PATTERNS = (
+    'Backtrace stopped: frame did not save the PC',
+)
+# gh-104736: " ?? ()" in the bt usually means the unwinder bailed early,
+# but can also be unrelated frames without debug info (e.g. libc). Tests
+# that validate the JIT-relevant part of the backtrace themselves can
+# opt out via skip_on_truncation=False.
+_TRUNCATED_BACKTRACE_PATTERNS = (
+    ' ?? ()',
+)
 
 
 def clean_environment():
@@ -27,7 +51,7 @@ def clean_environment():
 # Temporary value until it's initialized by get_gdb_version() below
 GDB_VERSION = (0, 0)
 
-def run_gdb(*args, exitcode=0, **env_vars):
+def run_gdb(*args, exitcode=0, check=True, **env_vars):
     """Runs gdb in --batch mode with the additional arguments given by *args.
 
     Returns its (stdout, stderr) decoded from utf-8 using the replace handler.
@@ -36,7 +60,7 @@ def run_gdb(*args, exitcode=0, **env_vars):
     if env_vars:
         env.update(env_vars)
 
-    cmd = ['gdb',
+    cmd = [GDB_PROGRAM,
            # Batch mode: Exit after processing all the command files
            # specified with -x/--command
            '--batch',
@@ -59,7 +83,7 @@ def run_gdb(*args, exitcode=0, **env_vars):
 
     stdout = proc.stdout
     stderr = proc.stderr
-    if proc.returncode != exitcode:
+    if check and proc.returncode != exitcode:
         cmd_text = shlex.join(cmd)
         raise Exception(f"{cmd_text} failed with exit code {proc.returncode}, "
                         f"expected exit code {exitcode}:\n"
@@ -72,10 +96,10 @@ def run_gdb(*args, exitcode=0, **env_vars):
 def get_gdb_version():
     try:
         stdout, stderr = run_gdb('--version')
-    except OSError:
+    except OSError as exc:
         # This is what "no gdb" looks like.  There may, however, be other
         # errors that manifest this way too.
-        raise unittest.SkipTest("Couldn't find gdb program on the path")
+        raise unittest.SkipTest(f"Couldn't find gdb program on the path: {exc}")
 
     # Regex to parse:
     # 'GNU gdb (GDB; SUSE Linux Enterprise 12) 7.7\n' -> 7.7
@@ -106,7 +130,8 @@ def check_usable_gdb():
     # disallow this without a customized .gdbinit.
     stdout, stderr = run_gdb(
         '--eval-command=python import sys; print(sys.version_info)',
-        '--args', sys.executable)
+        '--args', sys.executable,
+        check=False)
 
     if "auto-loading has been declined" in stderr:
         raise unittest.SkipTest(
@@ -144,6 +169,7 @@ def setup_module():
         print(f"gdb version {GDB_VERSION[0]}.{GDB_VERSION[1]}:")
         for line in GDB_VERSION_TEXT.splitlines():
             print(" " * 4 + line)
+        print(f"    path: {GDB_PROGRAM}")
         print()
 
 
@@ -155,7 +181,9 @@ class DebuggerTests(unittest.TestCase):
                         breakpoint=BREAKPOINT_FN,
                         cmds_after_breakpoint=None,
                         import_site=False,
-                        ignore_stderr=False):
+                        ignore_stderr=False,
+                        skip_on_truncation=True,
+                        **env_vars):
         '''
         Run 'python -c SOURCE' under gdb with a breakpoint.
 
@@ -234,7 +262,7 @@ class DebuggerTests(unittest.TestCase):
             args += [script]
 
         # Use "args" to invoke gdb, capturing stdout, stderr:
-        out, err = run_gdb(*args, PYTHONHASHSEED=PYTHONHASHSEED)
+        out, err = run_gdb(*args, PYTHONHASHSEED=PYTHONHASHSEED, **env_vars)
 
         if not ignore_stderr:
             for line in err.splitlines():
@@ -250,35 +278,24 @@ class DebuggerTests(unittest.TestCase):
                                     " because the Program Counter is"
                                     " not present")
 
+        for pattern in _UNWIND_FAILURE_PATTERNS:
+            if pattern in out:
+                raise AssertionError(
+                    f"gdb unwinder failed ({pattern!r}) — CFI bug in our "
+                    f"generated code or in a linked library.\n"
+                    f"Full gdb output:\n{out}"
+                )
+
         # bpo-40019: Skip the test if gdb failed to read debug information
         # because the Python binary is optimized.
-        for pattern in (
-            '(frame information optimized out)',
-            'Unable to read information on python frame',
-
-            # gh-91960: On Python built with "clang -Og", gdb gets
-            # "frame=<optimized out>" for _PyEval_EvalFrameDefault() parameter
-            '(unable to read python frame information)',
-
-            # gh-104736: On Python built with "clang -Og" on ppc64le,
-            # "py-bt" displays a truncated or not traceback, but "where"
-            # logs this error message:
-            'Backtrace stopped: frame did not save the PC',
-
-            # gh-104736: When "bt" command displays something like:
-            # "#1  0x0000000000000000 in ?? ()", the traceback is likely
-            # truncated or wrong.
-            ' ?? ()',
-        ):
+        patterns = _OPTIMIZED_OUT_PATTERNS
+        if skip_on_truncation:
+            patterns = patterns + _TRUNCATED_BACKTRACE_PATTERNS
+        for pattern in patterns:
             if pattern in out:
                 raise unittest.SkipTest(f"{pattern!r} found in gdb output")
 
         return out
-
-    def assertEndsWith(self, actual, exp_end):
-        '''Ensure that the given "actual" string ends with "exp_end"'''
-        self.assertTrue(actual.endswith(exp_end),
-                        msg='%r did not end with %r' % (actual, exp_end))
 
     def assertMultilineMatches(self, actual, pattern):
         m = re.match(pattern, actual, re.DOTALL)
