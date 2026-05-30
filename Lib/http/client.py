@@ -558,6 +558,7 @@ class HTTPResponse(io.BufferedIOBase):
     def _read_and_discard_trailer(self):
         # read and discard trailer up to the CRLF terminator
         ### note: we shouldn't have any trailers!
+        trailers_read = 0
         while True:
             line = self.fp.readline(_MAXLINE + 1)
             if len(line) > _MAXLINE:
@@ -568,6 +569,14 @@ class HTTPResponse(io.BufferedIOBase):
                 break
             if line in (b'\r\n', b'\n', b''):
                 break
+            # Bound the trailer count just as response headers are bounded.
+            # A server streaming trailer lines forever would otherwise hang
+            # the client; a socket timeout cannot detect that as data keeps
+            # arriving within every timeout window.
+            trailers_read += 1
+            if trailers_read > _MAXHEADERS:
+                raise HTTPException(
+                    f"got more than {_MAXHEADERS} trailers")
 
     def _get_chunk_left(self):
         # return self.chunk_left, reading a new chunk if necessary.

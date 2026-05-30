@@ -1403,6 +1403,35 @@ class BasicTest(TestCase):
         self.assertEqual(sock.file.read(), b"") #we read to the end
         resp.close()
 
+    def test_chunked_too_many_trailers(self):
+        """A response streaming endless trailer lines must raise, not hang"""
+        too_many_trailers = "".join(
+            f"X-Trailer{i}: {i}\r\n" for i in range(client._MAXHEADERS + 1)
+        )
+        # An unbounded read() reaches the trailers via the final 0 chunk.
+        sock = FakeSocket(
+            chunked_start + last_chunk + too_many_trailers + chunked_end)
+        resp = client.HTTPResponse(sock, method="GET")
+        resp.begin()
+        with self.assertRaisesRegex(
+            client.HTTPException,
+            f"got more than {client._MAXHEADERS} trailers",
+        ):
+            resp.read()
+        resp.close()
+
+        # A bounded read(amt) larger than the body hits the same limit.
+        sock = FakeSocket(
+            chunked_start + last_chunk + too_many_trailers + chunked_end)
+        resp = client.HTTPResponse(sock, method="GET")
+        resp.begin()
+        with self.assertRaisesRegex(
+            client.HTTPException,
+            f"got more than {client._MAXHEADERS} trailers",
+        ):
+            resp.read(len(chunked_expected) + 1)
+        resp.close()
+
     def test_chunked_sync(self):
         """Check that we don't read past the end of the chunked-encoding stream"""
         expected = chunked_expected
