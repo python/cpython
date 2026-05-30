@@ -1498,8 +1498,6 @@ homogeneous data is needed (such as allowing storage in a :class:`set` or
    operations.
 
    Tuples are :ref:`generic <generics>` over the types of their contents.
-   For example, use ``tuple[int, str]`` for a pair whose first element is an int and second element is a string.
-   Tuples also support the form ``tuple[T, ...]`` to indicate an arbitrary length tuple of elements of type T.
    For more information, refer to
    :ref:`the typing documentation on annotating tuples <annotating-tuples>`.
 
