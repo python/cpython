@@ -1407,6 +1407,35 @@ class BasicTest(TestCase):
         self.assertIn('got more than ', str(cm.exception))
         self.assertIn('headers', str(cm.exception))
 
+    def test_too_many_interim_responses(self):
+        # A server streaming "100 Continue" responses forever must not
+        # hang getresponse().
+        body = (
+            'HTTP/1.1 100 Continue\r\n\r\n'
+            * (client._MAXINTERIMRESPONSES + 1)
+        )
+        resp = client.HTTPResponse(FakeSocket(body))
+        with self.assertRaises(client.HTTPException) as cm:
+            resp.begin()
+        self.assertIn('got more than ', str(cm.exception))
+        self.assertIn('interim responses', str(cm.exception))
+
+    def test_multiple_interim_responses(self):
+        # A reasonable number of interim responses before the final
+        # response is skipped as before.
+        body = (
+            'HTTP/1.1 100 Continue\r\n\r\n' * 3 +
+            'HTTP/1.1 200 OK\r\n'
+            'Content-Length: 5\r\n'
+            '\r\n'
+            'hello'
+        )
+        resp = client.HTTPResponse(FakeSocket(body), method="GET")
+        resp.begin()
+        self.assertEqual(resp.status, 200)
+        self.assertEqual(resp.read(), b'hello')
+        resp.close()
+
     def test_overflowing_chunked_line(self):
         body = (
             'HTTP/1.1 200 OK\r\n'
