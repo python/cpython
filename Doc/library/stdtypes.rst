@@ -1403,7 +1403,6 @@ application).
    Many other operations also produce lists, including the :func:`sorted`
    built-in.
 
-
    Lists are :ref:`generic <generics>` over the types of their items.
 
    Lists implement all of the :ref:`common <typesseq-common>` and
@@ -1500,7 +1499,6 @@ homogeneous data is needed (such as allowing storage in a :class:`set` or
    Tuples are :ref:`generic <generics>` over the types of their contents.
    For more information, refer to
    :ref:`the typing documentation on annotating tuples <annotating-tuples>`.
-
 
 For heterogeneous collections of data where access by name is clearer than
 access by index, :func:`collections.namedtuple` may be a more appropriate
@@ -4671,7 +4669,6 @@ copying.
       >>> hash(v[::-2]) == hash(b'abcefg'[::-2])
       True
 
-
    memoryviews are :ref:`generic <generics>` over the type of their underlying data.
 
    .. versionchanged:: 3.3
@@ -5290,7 +5287,6 @@ Note, the *elem* argument to the :meth:`~object.__contains__`,
 :meth:`~set.discard` methods may be a set.  To support searching for an equivalent
 frozenset, a temporary one is created from *elem*.
 
-
 Sets and frozensets are :ref:`generic <generics>` over the type of their elements.
 
 .. seealso::
@@ -5738,7 +5734,6 @@ Frozen dictionaries
 
    Like dictionaries, frozendicts are :ref:`generic <generics>` over two types,
    signifying (respectively) the types of the frozendict's keys and values.
-
 
    .. versionadded:: 3.15
 

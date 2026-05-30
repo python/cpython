@@ -3173,6 +3173,7 @@ Arrays and pointers
 
    Arrays are :ref:`generic <generics>` over the type of their elements.
 
+
    .. attribute:: _length_
 
         A positive integer specifying the number of elements in the array.
