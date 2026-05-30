@@ -8,9 +8,6 @@ and networks.
 
 """
 
-__version__ = '1.0'
-
-
 import functools
 
 IPV4LENGTH = 32
@@ -729,7 +726,7 @@ class _BaseNetwork(_IPAddressBase):
             return NotImplemented
 
     def __hash__(self):
-        return hash(int(self.network_address) ^ int(self.netmask))
+        return hash((int(self.network_address), int(self.netmask)))
 
     def __contains__(self, other):
         # always false if one is v4 and the other is v6.
@@ -1479,6 +1476,10 @@ class IPv4Interface(IPv4Address):
         return '%s/%s' % (self._string_from_ip_int(self._ip),
                           self.hostmask)
 
+    @property
+    def is_unspecified(self):
+        return self._ip == 0 and self.network.is_unspecified
+
 
 class IPv4Network(_BaseV4, _BaseNetwork):
 
@@ -1545,7 +1546,7 @@ class IPv4Network(_BaseV4, _BaseNetwork):
         if self._prefixlen == (self.max_prefixlen - 1):
             self.hosts = self.__iter__
         elif self._prefixlen == (self.max_prefixlen):
-            self.hosts = lambda: [IPv4Address(addr)]
+            self.hosts = lambda: iter((IPv4Address(addr),))
 
     @property
     @functools.lru_cache()
@@ -1660,8 +1661,18 @@ class _BaseV6:
         """
         if not ip_str:
             raise AddressValueError('Address cannot be empty')
+        if len(ip_str) > 45:
+            shorten = ip_str
+            if len(shorten) > 100:
+                shorten = f'{ip_str[:45]}({len(ip_str)-90} chars elided){ip_str[-45:]}'
+            raise AddressValueError(f"At most 45 characters expected in "
+                                    f"{shorten!r}")
 
-        parts = ip_str.split(':')
+        # We want to allow more parts than the max to be 'split'
+        # to preserve the correct error message when there are
+        # too many parts combined with '::'
+        _max_parts = cls._HEXTET_COUNT + 1
+        parts = ip_str.split(':', maxsplit=_max_parts)
 
         # An IPv6 address needs at least 2 colons (3 parts).
         _min_parts = 3
@@ -1681,7 +1692,6 @@ class _BaseV6:
         # An IPv6 address can't have more than 8 colons (9 parts).
         # The extra colon comes from using the "::" notation for a single
         # leading or trailing zero part.
-        _max_parts = cls._HEXTET_COUNT + 1
         if len(parts) > _max_parts:
             msg = "At most %d colons permitted in %r" % (_max_parts-1, ip_str)
             raise AddressValueError(msg)
@@ -2327,7 +2337,7 @@ class IPv6Network(_BaseV6, _BaseNetwork):
         if self._prefixlen == (self.max_prefixlen - 1):
             self.hosts = self.__iter__
         elif self._prefixlen == self.max_prefixlen:
-            self.hosts = lambda: [IPv6Address(addr)]
+            self.hosts = lambda: iter((IPv6Address(addr),))
 
     def hosts(self):
         """Generate Iterator over usable hosts in a network.
@@ -2406,3 +2416,12 @@ class _IPv6Constants:
 
 IPv6Address._constants = _IPv6Constants
 IPv6Network._constants = _IPv6Constants
+
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return "1.0"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

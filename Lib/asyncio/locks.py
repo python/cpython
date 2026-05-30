@@ -145,10 +145,7 @@ class Lock(_ContextManagerMixin, mixins._LoopBoundMixin):
         """Ensure that the first waiter will wake up."""
         if not self._waiters:
             return
-        try:
-            fut = next(iter(self._waiters))
-        except StopIteration:
-            return
+        fut = next(iter(self._waiters))
 
         # .done() means that the waiter is already set to wake up.
         if not fut.done():
@@ -485,7 +482,7 @@ class Barrier(mixins._LoopBoundMixin):
     def __init__(self, parties):
         """Create a barrier, initialised to 'parties' tasks."""
         if parties < 1:
-            raise ValueError('parties must be > 0')
+            raise ValueError('parties must be >= 1')
 
         self._cond = Condition() # notify all tasks when state changes
 

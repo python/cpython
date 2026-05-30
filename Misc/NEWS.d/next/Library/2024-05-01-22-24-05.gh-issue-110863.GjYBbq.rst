@@ -1,2 +1,0 @@
-:func:`os.path.realpath` now suppresses any :exc:`OSError` from
-:func:`os.readlink` when *strict* mode is disabled (the default).

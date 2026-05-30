@@ -1,1 +1,0 @@
-The default minimum iOS version was increased to 13.0.

@@ -1,2 +1,0 @@
-``make_ssl_certs``, the script that prepares certificate data for the
-test suite, now allows specifying expiration dates.

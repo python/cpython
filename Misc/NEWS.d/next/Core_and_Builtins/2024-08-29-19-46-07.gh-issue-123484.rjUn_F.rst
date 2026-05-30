@@ -1,2 +1,0 @@
-Fix ``_Py_DebugOffsets`` for long objects to be relative to the start of the
-object rather than the start of a subobject.

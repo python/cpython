@@ -1,3 +1,0 @@
-Enable :mod:`json` module to work as a script using the :option:`-m` switch: ``python -m json``.
-See the :ref:`JSON command-line interface <json-commandline>` documentation.
-Patch by Trey Hunner.
