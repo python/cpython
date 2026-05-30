@@ -293,6 +293,7 @@ class HTTPResponse(io.BufferedIOBase):
         self.chunk_left = _UNKNOWN      # bytes left to read in current chunk
         self.length = _UNKNOWN          # number of bytes left in response
         self.will_close = _UNKNOWN      # conn will close at end of response
+        self._max_headers = None        # configured header count limit
 
     def _read_status(self):
         line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
@@ -331,6 +332,11 @@ class HTTPResponse(io.BufferedIOBase):
         if self.headers is not None:
             # we've already started reading the response
             return
+
+        # Trailers of a chunked response are read by read() long after
+        # begin() returns, so remember the configured header count limit
+        # for _read_and_discard_trailer() to enforce.
+        self._max_headers = _max_headers
 
         # read until we get a non-100 response
         while True:
@@ -561,6 +567,10 @@ class HTTPResponse(io.BufferedIOBase):
     def _read_and_discard_trailer(self):
         # read and discard trailer up to the CRLF terminator
         ### note: we shouldn't have any trailers!
+        max_trailers = self._max_headers
+        if max_trailers is None:
+            max_trailers = _MAXHEADERS
+        trailers_read = 0
         while True:
             line = self.fp.readline(_MAXLINE + 1)
             if len(line) > _MAXLINE:
@@ -571,6 +581,13 @@ class HTTPResponse(io.BufferedIOBase):
                 break
             if line in (b'\r\n', b'\n', b''):
                 break
+            # Bound the trailer count just as response headers are bounded.
+            # A server streaming trailer lines forever would otherwise hang
+            # the client; a socket timeout cannot detect that as data keeps
+            # arriving within every timeout window.
+            trailers_read += 1
+            if trailers_read > max_trailers:
+                raise HTTPException(f"got more than {max_trailers} trailers")
 
     def _get_chunk_left(self):
         # return self.chunk_left, reading a new chunk if necessary.
