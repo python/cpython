@@ -7094,6 +7094,10 @@ class TestImportStar(TestCase):
             self.assertHasAttr(argparse, name)
 
     def test_all_exports_everything_but_modules(self):
+        # Materialize lazily-created public names (the typing protocols) so
+        # they appear in the module namespace regardless of test ordering.
+        for name in argparse.__all__:
+            getattr(argparse, name)
         items = [
             name
             for name, value in vars(argparse).items()
@@ -7101,6 +7105,62 @@ class TestImportStar(TestCase):
             if not inspect.ismodule(value)
         ]
         self.assertEqual(sorted(items), sorted(argparse.__all__))
+
+
+class TestGroupProtocols(TestCase):
+    # gh-144812: public, structural typing protocols for the group objects
+    # returned by add_argument_group() and add_mutually_exclusive_group().
+
+    def test_protocols_are_accessible(self):
+        self.assertHasAttr(argparse, 'ArgumentGroup')
+        self.assertHasAttr(argparse, 'MutuallyExclusiveGroup')
+
+    def test_protocols_are_exported(self):
+        self.assertIn('ArgumentGroup', argparse.__all__)
+        self.assertIn('MutuallyExclusiveGroup', argparse.__all__)
+
+    def test_protocols_are_protocols(self):
+        import typing
+        self.assertTrue(typing.is_protocol(argparse.ArgumentGroup))
+        self.assertTrue(typing.is_protocol(argparse.MutuallyExclusiveGroup))
+
+    def test_protocol_identity_is_stable(self):
+        self.assertIs(argparse.ArgumentGroup, argparse.ArgumentGroup)
+        self.assertIs(argparse.MutuallyExclusiveGroup,
+                      argparse.MutuallyExclusiveGroup)
+
+    def test_protocol_names(self):
+        self.assertEqual(argparse.ArgumentGroup.__module__, 'argparse')
+        self.assertEqual(argparse.ArgumentGroup.__qualname__, 'ArgumentGroup')
+        self.assertEqual(argparse.MutuallyExclusiveGroup.__module__, 'argparse')
+        self.assertEqual(argparse.MutuallyExclusiveGroup.__qualname__,
+                         'MutuallyExclusiveGroup')
+
+    def test_concrete_groups_provide_protocol_members(self):
+        parser = argparse.ArgumentParser()
+        group = parser.add_argument_group('g')
+        mutex = parser.add_mutually_exclusive_group()
+        self.assertHasAttr(group, 'add_argument')
+        self.assertHasAttr(mutex, 'add_argument')
+
+    def test_import_does_not_import_typing(self):
+        # argparse is on the start-up path of most CLIs, so importing it must
+        # not pull in the comparatively expensive typing module.
+        script_helper.assert_python_ok(
+            '-S', '-c',
+            'import sys, argparse; '
+            'assert "typing" not in sys.modules, '
+            '"argparse imported typing eagerly"',
+        )
+
+    def test_protocol_access_imports_typing_lazily(self):
+        script_helper.assert_python_ok(
+            '-S', '-c',
+            'import sys, argparse; '
+            'assert "typing" not in sys.modules; '
+            'argparse.MutuallyExclusiveGroup; '
+            'assert "typing" in sys.modules',
+        )
 
 
 class TestWrappingMetavar(TestCase):

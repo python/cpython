@@ -1,0 +1,5 @@
+Add :class:`argparse.ArgumentGroup` and
+:class:`argparse.MutuallyExclusiveGroup`, public typing protocols describing the
+objects returned by :meth:`~argparse.ArgumentParser.add_argument_group` and
+:meth:`~argparse.ArgumentParser.add_mutually_exclusive_group`.  They are built
+lazily so importing :mod:`argparse` does not import :mod:`typing`.

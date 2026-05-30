@@ -77,6 +77,8 @@ __all__ = [
     'MetavarTypeHelpFormatter',
     'Namespace',
     'Action',
+    'ArgumentGroup',
+    'MutuallyExclusiveGroup',
     'ONE_OR_MORE',
     'OPTIONAL',
     'PARSER',
@@ -1927,6 +1929,39 @@ class _MutuallyExclusiveGroup(_ArgumentGroup):
     def add_mutually_exclusive_group(self, **kwargs):
         raise ValueError('mutually exclusive groups cannot be nested')
 
+
+def _build_group_protocols():
+    # Public typing protocols describing the objects returned by
+    # ArgumentParser.add_argument_group() and add_mutually_exclusive_group().
+    # The concrete classes (_ArgumentGroup and _MutuallyExclusiveGroup) stay
+    # private so their implementation is free to change; only the structural
+    # contract is exposed.  They are built lazily so that importing argparse
+    # does not import the (comparatively expensive) typing module.
+    from typing import Protocol
+
+    class ArgumentGroup(Protocol):
+        """Structural type of :meth:`ArgumentParser.add_argument_group` results.
+
+        Use this in annotations in place of the private implementation class.
+        """
+
+        def add_argument(self, *args, **kwargs) -> Action: ...
+
+    class MutuallyExclusiveGroup(Protocol):
+        """Structural type of :meth:`ArgumentParser.add_mutually_exclusive_group` results.
+
+        Use this in annotations in place of the private implementation class.
+        """
+
+        def add_argument(self, *args, **kwargs) -> Action: ...
+
+    for protocol in (ArgumentGroup, MutuallyExclusiveGroup):
+        protocol.__module__ = __name__
+        protocol.__qualname__ = protocol.__name__
+    return {'ArgumentGroup': ArgumentGroup,
+            'MutuallyExclusiveGroup': MutuallyExclusiveGroup}
+
+
 def _prog_name(prog=None):
     if prog is not None:
         return prog
@@ -2935,6 +2970,10 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         self._print_message(fmt % args, _sys.stderr)
 
 def __getattr__(name):
+    if name in ("ArgumentGroup", "MutuallyExclusiveGroup"):
+        protocols = _build_group_protocols()
+        globals().update(protocols)
+        return protocols[name]
     if name == "__version__":
         from warnings import _deprecated
 

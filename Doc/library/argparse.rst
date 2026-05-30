@@ -2041,6 +2041,22 @@ Argument groups
       Passing prefix_chars_ to :meth:`add_argument_group`
       is now deprecated.
 
+.. class:: ArgumentGroup
+
+   A :class:`typing.Protocol` describing the object returned by
+   :meth:`~ArgumentParser.add_argument_group`.  Use it to annotate code that
+   receives or stores an argument group instead of referring to the private
+   implementation class::
+
+      def add_common_options(group: argparse.ArgumentGroup) -> None:
+          group.add_argument('--verbose', action='store_true')
+
+   The protocol only guarantees the :meth:`~ArgumentParser.add_argument`
+   method.  It is intended for type annotations; the concrete class remains an
+   implementation detail and should not be instantiated or subclassed directly.
+
+   .. versionadded:: 3.16
+
 
 Mutual exclusion
 ^^^^^^^^^^^^^^^^
@@ -2103,6 +2119,23 @@ Mutual exclusion
       on a mutually exclusive group now raises an exception. This nesting was
       never supported, often failed to work correctly, and was unintentionally
       exposed through inheritance.
+
+.. class:: MutuallyExclusiveGroup
+
+   A :class:`typing.Protocol` describing the object returned by
+   :meth:`~ArgumentParser.add_mutually_exclusive_group`.  Use it to annotate
+   code that receives or stores a mutually exclusive group instead of referring
+   to the private implementation class::
+
+      def add_format_options(group: argparse.MutuallyExclusiveGroup) -> None:
+          group.add_argument('--json', action='store_true')
+          group.add_argument('--xml', action='store_true')
+
+   The protocol only guarantees the :meth:`~ArgumentParser.add_argument`
+   method.  It is intended for type annotations; the concrete class remains an
+   implementation detail and should not be instantiated or subclassed directly.
+
+   .. versionadded:: 3.16
 
 
 Parser defaults
