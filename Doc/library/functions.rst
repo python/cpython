@@ -1107,13 +1107,13 @@ are always available.  They are listed here in alphabetical order.
       *classinfo* can be a :ref:`types-union`.
 
 
-.. function:: issubclass(class, classinfo, /)
+.. function:: issubclass(cls, classinfo, /)
 
-   Return ``True`` if *class* is a subclass (direct, indirect, or :term:`virtual
+   Return ``True`` if *cls* is a subclass (direct, indirect, or :term:`virtual
    <abstract base class>`) of *classinfo*.  A
    class is considered a subclass of itself. *classinfo* may be a tuple of class
    objects (or recursively, other such tuples)
-   or a :ref:`types-union`, in which case return ``True`` if *class* is a
+   or a :ref:`types-union`, in which case return ``True`` if *cls* is a
    subclass of any entry in *classinfo*.  In any other case, a :exc:`TypeError`
    exception is raised.
 
@@ -1827,14 +1827,20 @@ are always available.  They are listed here in alphabetical order.
       :func:`setattr`.
 
 
-.. class:: sentinel(name, /)
+.. class:: sentinel(name, /, *, repr=None)
 
    Return a new unique sentinel object.  *name* must be a :class:`str`, and is
-   used as the returned object's representation::
+   used by default as the returned object's representation::
 
       >>> MISSING = sentinel("MISSING")
       >>> MISSING
       MISSING
+
+   The optional *repr* argument can be used to specify a different representation::
+
+      >>> MISSING = sentinel("MISSING", repr="<MISSING>")
+      >>> MISSING
+      <MISSING>
 
    Sentinel objects are truthy and compare equal only to themselves.  They are
    intended to be compared with the :keyword:`is` operator.
@@ -1879,9 +1885,9 @@ are always available.  They are listed here in alphabetical order.
 
    .. attribute:: __module__
 
-      The name of the module where the sentinel was created.
+      The name of the module where the sentinel was created. This attribute is writable.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. class:: slice(stop, /)

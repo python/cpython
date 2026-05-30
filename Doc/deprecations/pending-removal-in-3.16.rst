@@ -84,12 +84,12 @@ Pending removal in Python 3.16
 
 * :mod:`symtable`:
 
-  * The :meth:`Class.get_methods <symtable.Class.get_methods>` method
+  * The :meth:`!symtable.Class.get_methods` method
     has been deprecated since Python 3.14.
 
 * :mod:`sys`:
 
-  * The :func:`~sys._enablelegacywindowsfsencoding` function
+  * The :func:`!_enablelegacywindowsfsencoding` function
     has been deprecated since Python 3.13.
     Use the :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment variable instead.
 
@@ -101,5 +101,5 @@ Pending removal in Python 3.16
 
 * :mod:`tarfile`:
 
-  * The undocumented and unused :attr:`!TarFile.tarfile` attribute
+  * The undocumented and unused :attr:`!TarInfo.tarfile` attribute
     has been deprecated since Python 3.13.
