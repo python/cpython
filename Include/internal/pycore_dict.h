@@ -220,8 +220,8 @@ struct _dictkeysobject {
     Py_ssize_t dk_nentries;
 
      union {
-        PyDictKeyEntry entries[];
-        PyDictUnicodeEntry unicode_entries[];
+        PyDictKeyEntry entries[1];
+        PyDictUnicodeEntry unicode_entries[1];
     } dk_entries;
 };
 
