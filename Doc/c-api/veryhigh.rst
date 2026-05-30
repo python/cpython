@@ -191,7 +191,7 @@ the same library that the Python runtime is using.
    objects *globals* and *locals* with the compiler flags specified by
    *flags*.  *globals* must be a dictionary; *locals* can be any object
    that implements the mapping protocol.  The parameter *start* specifies
-   the start symbol and must one of the :ref:`available start symbols <start-symbols>`.
+   the start symbol and must be one of the :ref:`available start symbols <start-symbols>`.
 
    Returns the result of executing the code as a Python object, or ``NULL`` if an
    exception was raised.
@@ -394,5 +394,45 @@ Available start symbols
    .. seealso::
       * :py:class:`ast.FunctionType`
       * :pep:`484`
+
+   .. versionadded:: 3.8
+
+
+Stack Effects
+^^^^^^^^^^^^^
+
+.. seealso::
+   :py:func:`dis.stack_effect`
+
+
+.. c:macro:: PY_INVALID_STACK_EFFECT
+
+   Sentinel value representing an invalid stack effect.
+
+   This is currently equivalent to ``INT_MAX``.
+
+   .. versionadded:: 3.8
+
+
+.. c:function:: int PyCompile_OpcodeStackEffect(int opcode, int oparg)
+
+   Compute the stack effect of *opcode* with argument *oparg*.
+
+   On success, this function returns the stack effect; on failure, this
+   returns :c:macro:`PY_INVALID_STACK_EFFECT`.
+
+   .. versionadded:: 3.4
+
+
+.. c:function:: int PyCompile_OpcodeStackEffectWithJump(int opcode, int oparg, int jump)
+
+   Similar to :c:func:`PyCompile_OpcodeStackEffect`, but don't include the
+   stack effect of jumping if *jump* is zero.
+
+   If *jump* is ``0``, this will not include the stack effect of jumping, but
+   if *jump* is ``1`` or ``-1``, this will include it.
+
+   On success, this function returns the stack effect; on failure, this
+   returns :c:macro:`PY_INVALID_STACK_EFFECT`.
 
    .. versionadded:: 3.8

@@ -29,6 +29,7 @@ TSAN_TESTS = [
     'test_threadsignals',
     'test_weakref',
     'test_free_threading',
+    'test_embed',
 ]
 
 # Tests that should be run with `--parallel-threads=N` under TSAN. These tests

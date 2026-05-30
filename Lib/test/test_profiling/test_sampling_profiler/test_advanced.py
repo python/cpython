@@ -11,6 +11,8 @@ try:
     import _remote_debugging  # noqa: F401
     import profiling.sampling
     import profiling.sampling.sample
+    from profiling.sampling.pstats_collector import PstatsCollector
+    from profiling.sampling.stack_collector import CollapsedStackCollector
 except ImportError:
     raise unittest.SkipTest(
         "Test only runs when _remote_debugging is available"
@@ -20,15 +22,14 @@ from test.support import (
     SHORT_TIMEOUT,
     SuppressCrashReport,
     os_helper,
-    requires_subprocess,
+    requires_remote_subprocess_debugging,
     script_helper,
 )
 
-from .helpers import close_and_unlink, skip_if_not_supported, test_subprocess
+from .helpers import close_and_unlink, test_subprocess
 
 
-@requires_subprocess()
-@skip_if_not_supported
+@requires_remote_subprocess_debugging()
 class TestGCFrameTracking(unittest.TestCase):
     """Tests for GC frame tracking in the sampling profiler."""
 
@@ -39,46 +40,38 @@ class TestGCFrameTracking(unittest.TestCase):
 import gc
 
 class ExpensiveGarbage:
-    """Class that triggers GC with expensive finalizer (callback)."""
     def __init__(self):
         self.cycle = self
 
     def __del__(self):
-        # CPU-intensive work in the finalizer callback
         result = 0
         for i in range(100000):
             result += i * i
             if i % 1000 == 0:
                 result = result % 1000000
 
-def main_loop():
-    """Main loop that triggers GC with expensive callback."""
-    while True:
-        ExpensiveGarbage()
-        gc.collect()
-
-if __name__ == "__main__":
-    main_loop()
+_test_sock.sendall(b"working")
+while True:
+    ExpensiveGarbage()
+    gc.collect()
 '''
 
     def test_gc_frames_enabled(self):
         """Test that GC frames appear when gc tracking is enabled."""
         with (
-            test_subprocess(self.gc_test_script) as subproc,
+            test_subprocess(self.gc_test_script, wait_for_working=True) as subproc,
             io.StringIO() as captured_output,
             mock.patch("sys.stdout", captured_output),
         ):
-            try:
-                profiling.sampling.sample.sample(
-                    subproc.process.pid,
-                    duration_sec=1,
-                    sample_interval_usec=5000,
-                    show_summary=False,
-                    native=False,
-                    gc=True,
-                )
-            except PermissionError:
-                self.skipTest("Insufficient permissions for remote profiling")
+            collector = PstatsCollector(sample_interval_usec=5000, skip_idle=False)
+            profiling.sampling.sample.sample(
+                subproc.process.pid,
+                collector,
+                duration_sec=1,
+                native=False,
+                gc=True,
+            )
+            collector.print_stats(show_summary=False)
 
             output = captured_output.getvalue()
 
@@ -92,21 +85,19 @@ if __name__ == "__main__":
     def test_gc_frames_disabled(self):
         """Test that GC frames do not appear when gc tracking is disabled."""
         with (
-            test_subprocess(self.gc_test_script) as subproc,
+            test_subprocess(self.gc_test_script, wait_for_working=True) as subproc,
             io.StringIO() as captured_output,
             mock.patch("sys.stdout", captured_output),
         ):
-            try:
-                profiling.sampling.sample.sample(
-                    subproc.process.pid,
-                    duration_sec=1,
-                    sample_interval_usec=5000,
-                    show_summary=False,
-                    native=False,
-                    gc=False,
-                )
-            except PermissionError:
-                self.skipTest("Insufficient permissions for remote profiling")
+            collector = PstatsCollector(sample_interval_usec=5000, skip_idle=False)
+            profiling.sampling.sample.sample(
+                subproc.process.pid,
+                collector,
+                duration_sec=1,
+                native=False,
+                gc=False,
+            )
+            collector.print_stats(show_summary=False)
 
             output = captured_output.getvalue()
 
@@ -118,8 +109,7 @@ if __name__ == "__main__":
         self.assertNotIn("<GC>", output)
 
 
-@requires_subprocess()
-@skip_if_not_supported
+@requires_remote_subprocess_debugging()
 class TestNativeFrameTracking(unittest.TestCase):
     """Tests for native frame tracking in the sampling profiler."""
 
@@ -129,18 +119,13 @@ class TestNativeFrameTracking(unittest.TestCase):
         cls.native_test_script = """
 import operator
 
-def main_loop():
-    while True:
-        # Native code in the middle of the stack:
-        operator.call(inner)
-
 def inner():
-    # Python code at the top of the stack:
     for _ in range(1_000_0000):
         pass
 
-if __name__ == "__main__":
-    main_loop()
+_test_sock.sendall(b"working")
+while True:
+    operator.call(inner)
 """
 
     def test_native_frames_enabled(self):
@@ -150,27 +135,19 @@ if __name__ == "__main__":
         )
         self.addCleanup(close_and_unlink, collapsed_file)
 
-        with (
-            test_subprocess(self.native_test_script) as subproc,
-        ):
-            # Suppress profiler output when testing file export
+        with test_subprocess(self.native_test_script, wait_for_working=True) as subproc:
             with (
                 io.StringIO() as captured_output,
                 mock.patch("sys.stdout", captured_output),
             ):
-                try:
-                    profiling.sampling.sample.sample(
-                        subproc.process.pid,
-                        duration_sec=1,
-                        filename=collapsed_file.name,
-                        output_format="collapsed",
-                        sample_interval_usec=1000,
-                        native=True,
-                    )
-                except PermissionError:
-                    self.skipTest(
-                        "Insufficient permissions for remote profiling"
-                    )
+                collector = CollapsedStackCollector(1000, skip_idle=False)
+                profiling.sampling.sample.sample(
+                    subproc.process.pid,
+                    collector,
+                    duration_sec=1,
+                    native=True,
+                )
+                collector.export(collapsed_file.name)
 
             # Verify file was created and contains valid data
             self.assertTrue(os.path.exists(collapsed_file.name))
@@ -194,26 +171,23 @@ if __name__ == "__main__":
     def test_native_frames_disabled(self):
         """Test that native frames do not appear when native tracking is disabled."""
         with (
-            test_subprocess(self.native_test_script) as subproc,
+            test_subprocess(self.native_test_script, wait_for_working=True) as subproc,
             io.StringIO() as captured_output,
             mock.patch("sys.stdout", captured_output),
         ):
-            try:
-                profiling.sampling.sample.sample(
-                    subproc.process.pid,
-                    duration_sec=1,
-                    sample_interval_usec=5000,
-                    show_summary=False,
-                )
-            except PermissionError:
-                self.skipTest("Insufficient permissions for remote profiling")
+            collector = PstatsCollector(sample_interval_usec=5000, skip_idle=False)
+            profiling.sampling.sample.sample(
+                subproc.process.pid,
+                collector,
+                duration_sec=1,
+            )
+            collector.print_stats(show_summary=False)
             output = captured_output.getvalue()
         # Native frames should NOT be present:
         self.assertNotIn("<native>", output)
 
 
-@requires_subprocess()
-@skip_if_not_supported
+@requires_remote_subprocess_debugging()
 class TestProcessPoolExecutorSupport(unittest.TestCase):
     """
     Test that ProcessPoolExecutor works correctly with profiling.sampling.
@@ -239,11 +213,12 @@ if __name__ == "__main__":
             with SuppressCrashReport():
                 with script_helper.spawn_python(
                     "-m",
-                    "profiling.sampling.sample",
+                    "profiling.sampling",
+                    "run",
                     "-d",
                     "5",
-                    "-i",
-                    "100000",
+                    "-r",
+                    "10",
                     script,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
@@ -256,9 +231,6 @@ if __name__ == "__main__":
                     except subprocess.TimeoutExpired:
                         proc.kill()
                         stdout, stderr = proc.communicate()
-
-        if "PermissionError" in stderr:
-            self.skipTest("Insufficient permissions for remote profiling")
 
         self.assertIn("Results: [2, 4, 6]", stdout)
         self.assertNotIn("Can't pickle", stderr)

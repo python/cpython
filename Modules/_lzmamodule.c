@@ -20,9 +20,23 @@
 #include "pycore_long.h"          // _PyLong_UInt32_Converter()
 // Blocks output buffer wrappers
 #include "pycore_blocks_output_buffer.h"
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_STORE_*_RELAXED
 
 #if OUTPUT_BUFFER_MAX_BLOCK_SIZE > SIZE_MAX
     #error "The maximum block size accepted by liblzma is SIZE_MAX."
+#endif
+
+
+/*
+ * If the lzma.h we're building against is so old as not to define these, this
+ * provides their equivalent values so that the names remain defined in Python
+ * regardless of the header versions used at build time.
+ */
+#ifndef LZMA_FILTER_ARM64
+#define LZMA_FILTER_ARM64       LZMA_VLI_C(0x0A)
+#endif
+#ifndef LZMA_FILTER_RISCV
+#define LZMA_FILTER_RISCV       LZMA_VLI_C(0x0B)
 #endif
 
 /* On success, return value >= 0
@@ -372,6 +386,8 @@ lzma_filter_converter(_lzma_state *state, PyObject *spec, void *ptr)
         case LZMA_FILTER_ARM:
         case LZMA_FILTER_ARMTHUMB:
         case LZMA_FILTER_SPARC:
+        case LZMA_FILTER_ARM64:
+        case LZMA_FILTER_RISCV:
             f->options = parse_filter_spec_bcj(state, spec);
             return f->options != NULL;
         default:
@@ -490,7 +506,9 @@ build_filter_spec(const lzma_filter *f)
         case LZMA_FILTER_IA64:
         case LZMA_FILTER_ARM:
         case LZMA_FILTER_ARMTHUMB:
-        case LZMA_FILTER_SPARC: {
+        case LZMA_FILTER_SPARC:
+        case LZMA_FILTER_ARM64:
+        case LZMA_FILTER_RISCV: {
             lzma_options_bcj *options = f->options;
             if (options) {
                 ADD_FIELD(options, start_offset);
@@ -948,10 +966,10 @@ decompress_buf(Decompressor *d, Py_ssize_t max_length)
             goto error;
         }
         if (lzret == LZMA_GET_CHECK || lzret == LZMA_NO_CHECK) {
-            d->check = lzma_get_check(&d->lzs);
+            FT_ATOMIC_STORE_INT_RELAXED(d->check, lzma_get_check(&d->lzs));
         }
         if (lzret == LZMA_STREAM_END) {
-            d->eof = 1;
+            FT_ATOMIC_STORE_CHAR_RELAXED(d->eof, 1);
             break;
         } else if (lzs->avail_out == 0) {
             /* Need to check lzs->avail_out before lzs->avail_in.
@@ -1038,13 +1056,14 @@ decompress(Decompressor *d, uint8_t *data, size_t len, Py_ssize_t max_length)
     }
 
     if (d->eof) {
-        d->needs_input = 0;
+        FT_ATOMIC_STORE_CHAR_RELAXED(d->needs_input, 0);
         if (lzs->avail_in > 0) {
-            Py_XSETREF(d->unused_data,
-                      PyBytes_FromStringAndSize((char *)lzs->next_in, lzs->avail_in));
-            if (d->unused_data == NULL) {
+            PyObject *unused_data = PyBytes_FromStringAndSize(
+                (char *)lzs->next_in, lzs->avail_in);
+            if (unused_data == NULL) {
                 goto error;
             }
+            Py_XSETREF(d->unused_data, unused_data);
         }
     }
     else if (lzs->avail_in == 0) {
@@ -1054,17 +1073,17 @@ decompress(Decompressor *d, uint8_t *data, size_t len, Py_ssize_t max_length)
             /* (avail_in==0 && avail_out==0)
                Maybe lzs's internal state still have a few bytes can
                be output, try to output them next time. */
-            d->needs_input = 0;
+            FT_ATOMIC_STORE_CHAR_RELAXED(d->needs_input, 0);
 
             /* If max_length < 0, lzs->avail_out always > 0 */
             assert(max_length >= 0);
         } else {
             /* Input buffer exhausted, output buffer has space. */
-            d->needs_input = 1;
+            FT_ATOMIC_STORE_CHAR_RELAXED(d->needs_input, 1);
         }
     }
     else {
-        d->needs_input = 0;
+        FT_ATOMIC_STORE_CHAR_RELAXED(d->needs_input, 0);
 
         /* If we did not use the input buffer, we now have
            to copy the tail from the caller's buffer into the
@@ -1098,12 +1117,12 @@ decompress(Decompressor *d, uint8_t *data, size_t len, Py_ssize_t max_length)
     return result;
 
 error:
+    lzs->next_in = NULL;
     Py_XDECREF(result);
     return NULL;
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 _lzma.LZMADecompressor.decompress
 
     data: Py_buffer
@@ -1111,24 +1130,25 @@ _lzma.LZMADecompressor.decompress
 
 Decompress *data*, returning uncompressed data as bytes.
 
-If *max_length* is nonnegative, returns at most *max_length* bytes of
-decompressed data. If this limit is reached and further output can be
-produced, *self.needs_input* will be set to ``False``. In this case, the next
-call to *decompress()* may provide *data* as b'' to obtain more of the output.
+If *max_length* is nonnegative, returns at most *max_length* bytes
+of decompressed data. If this limit is reached and further output
+can be produced, *self.needs_input* will be set to ``False``.  In
+this case, the next call to *decompress()* may provide *data* as b''
+to obtain more of the output.
 
-If all of the input data was decompressed and returned (either because this
-was less than *max_length* bytes, or because *max_length* was negative),
-*self.needs_input* will be set to True.
+If all of the input data was decompressed and returned (either
+because this was less than *max_length* bytes, or because
+*max_length* was negative), *self.needs_input* will be set to True.
 
-Attempting to decompress data after the end of stream is reached raises an
-EOFError.  Any data found after the end of the stream is ignored and saved in
-the unused_data attribute.
+Attempting to decompress data after the end of stream is reached
+raises an EOFError.  Any data found after the end of the stream is
+ignored and saved in the unused_data attribute.
 [clinic start generated code]*/
 
 static PyObject *
 _lzma_LZMADecompressor_decompress_impl(Decompressor *self, Py_buffer *data,
                                        Py_ssize_t max_length)
-/*[clinic end generated code: output=ef4e20ec7122241d input=d5cbd45801b4b8b0]*/
+/*[clinic end generated code: output=ef4e20ec7122241d input=0eb62669c4315dee]*/
 {
     PyObject *result = NULL;
 
@@ -1314,6 +1334,26 @@ PyDoc_STRVAR(Decompressor_needs_input_doc,
 PyDoc_STRVAR(Decompressor_unused_data_doc,
 "Data found after the end of the compressed stream.");
 
+static PyObject *
+Decompressor_unused_data_get(PyObject *op, void *Py_UNUSED(closure))
+{
+    Decompressor *self = Decompressor_CAST(op);
+    if (!FT_ATOMIC_LOAD_CHAR_RELAXED(self->eof)) {
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+    }
+    PyMutex_Lock(&self->mutex);
+    assert(self->unused_data != NULL);
+    PyObject *result = Py_NewRef(self->unused_data);
+    PyMutex_Unlock(&self->mutex);
+    return result;
+}
+
+static PyGetSetDef Decompressor_getset[] = {
+    {"unused_data", Decompressor_unused_data_get, NULL,
+     Decompressor_unused_data_doc},
+    {NULL},
+};
+
 static PyMemberDef Decompressor_members[] = {
     {"check", Py_T_INT, offsetof(Decompressor, check), Py_READONLY,
      Decompressor_check_doc},
@@ -1321,8 +1361,6 @@ static PyMemberDef Decompressor_members[] = {
      Decompressor_eof_doc},
     {"needs_input", Py_T_BOOL, offsetof(Decompressor, needs_input), Py_READONLY,
      Decompressor_needs_input_doc},
-    {"unused_data", Py_T_OBJECT_EX, offsetof(Decompressor, unused_data), Py_READONLY,
-     Decompressor_unused_data_doc},
     {NULL}
 };
 
@@ -1332,6 +1370,7 @@ static PyType_Slot lzma_decompressor_type_slots[] = {
     {Py_tp_new, _lzma_LZMADecompressor},
     {Py_tp_doc, (char *)_lzma_LZMADecompressor__doc__},
     {Py_tp_members, Decompressor_members},
+    {Py_tp_getset, Decompressor_getset},
     {0, 0}
 };
 
@@ -1522,6 +1561,8 @@ lzma_exec(PyObject *module)
     ADD_INT_PREFIX_MACRO(module, FILTER_ARMTHUMB);
     ADD_INT_PREFIX_MACRO(module, FILTER_SPARC);
     ADD_INT_PREFIX_MACRO(module, FILTER_POWERPC);
+    ADD_INT_PREFIX_MACRO(module, FILTER_ARM64);
+    ADD_INT_PREFIX_MACRO(module, FILTER_RISCV);
     ADD_INT_PREFIX_MACRO(module, MF_HC3);
     ADD_INT_PREFIX_MACRO(module, MF_HC4);
     ADD_INT_PREFIX_MACRO(module, MF_BT2);
@@ -1573,6 +1614,7 @@ static PyMethodDef lzma_methods[] = {
 };
 
 static PyModuleDef_Slot lzma_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, lzma_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
