@@ -384,13 +384,13 @@ class BasicTest(BaseTest):
         Test that no warning is emitted when the venv version matches.
         """
         rmtree(self.env_dir)
-        
+
         self.run_with_capture(venv.create, self.env_dir, with_pip=False)
         cfg_path = self.get_env_file('pyvenv.cfg')
         with open(cfg_path, 'r', encoding='utf-8') as f:
             cfg_content = f.read()
         expected_version = f"{sys.version_info.major}.{sys.version_info.minor}"
-        
+
         with open(cfg_path, 'w', encoding='utf-8') as f:
             f.write(cfg_content)
         envpy = self.envpy(real_env_dir=True)
@@ -402,7 +402,7 @@ class BasicTest(BaseTest):
         )
 
         self.assertNotIn("Consider running `python -m venv --upgrade`", proc.stderr)
-    
+
     @requireVenvCreate
     def test_malformed_version_warning(self):
         """
@@ -462,7 +462,7 @@ class BasicTest(BaseTest):
         )
 
         self.assertIn("Malformed version_info string", proc.stderr)
-        self.assertIn(malformed_version, proc.stderr)        
+        self.assertIn(malformed_version, proc.stderr)
 
     @requireVenvCreate
     def test_conflicting_version_fields(self):
