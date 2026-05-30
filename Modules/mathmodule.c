@@ -216,7 +216,6 @@ static const double logpi = 1.144729885849400174143427351353058711647;
 /*
    acos(x)/pi, giving accurate results for all finite x (especially x
    integral or close to an integer). It conforms to C23 Annex 'F'.
-   Special cases are handled as for glibc 2.41 __acospi.
 */
 
 static double
@@ -236,7 +235,6 @@ m_acospi(double x)
 /*
    asin(x)/pi, giving accurate results for all finite x (especially x
    integral or close to an integer). It conforms to C23 Annex 'F'.
-   Special cases are handled as for glibc 2.41 __asinpi.
 */
 
 static double
@@ -256,7 +254,6 @@ m_asinpi(double x)
 /*
    asin(x)/pi, giving accurate results for all finite x (especially x
    integral or close to an integer).  It conforms to C23 Annex 'F'.
-   Special cases are handled as for glibc 2.41 __atanpi.
 */
 
 static double
@@ -276,7 +273,6 @@ m_atanpi(double x)
 /*
    asin(x)/pi, giving accurate results for all finite x (especially x
    integral or close to an integer).  It conforms to C23 Annex 'F'.
-   Special cases are handled as for glibc 2.41 __atan2pi.
 */
 
 static double
@@ -296,7 +292,6 @@ m_atan2pi(double y, double x)
 /*
    cos(pi*x), giving accurate results for all finite x (especially x
    integral or close to an integer).  It conforms to C23 Annex 'F'.
-   Special cases are handled as for glibc 2.41 __cospi.
 */
 
 static double
@@ -370,7 +365,6 @@ m_sinpi(double x)
 /*
    tan(pi*x), giving accurate results for all finite x (especially x
    integral or close to an integer).  It conforms to C23 Annex 'F'.
-   Special cases are handled as for glibc 2.41 __tanpi.
 */
 
 static double
