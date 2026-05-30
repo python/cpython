@@ -1314,15 +1314,20 @@ def bump():
         # Import lines from foo.pth are suppressed when foo.start exists.
         self._make_mod("""\
 call_count = 0
-def bump():
+def bump(incr=2):
     global call_count
-    call_count += 1
+    call_count += incr
 """, name='countmod', package=False, on_path=True)
-        self._make_start("os.path:join\n", name='foo')
-        self._make_pth("import countmod; countmod.bump()\n", name='foo')
+        self._make_start("countmod:bump\n", name='foo')
+        self._make_pth("import countmod; countmod.bump(1)\n", name='foo')
+        self.state.read_pth_file(self.sitedir, 'foo.pth')
+        self.state.read_start_file(self.sitedir, 'foo.start')
         self.state._exec_imports()
+        self.state._execute_start_entrypoints()
         import countmod
-        self.assertEqual(countmod.call_count, 0)
+        # This will be 2 because the entry point is called with no
+        # arguments, and the .pth import line is never exec'd.
+        self.assertEqual(countmod.call_count, 2)
 
     def test_impl_exec_imports_not_suppressed_by_different_start(self):
         # Import lines from foo.pth are NOT suppressed by bar.start.
