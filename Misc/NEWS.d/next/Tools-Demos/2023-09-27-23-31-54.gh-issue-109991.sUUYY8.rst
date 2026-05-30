@@ -1,2 +1,0 @@
-Update GitHub CI workflows to use OpenSSL 3.0.11 and multissltests to use
-1.1.1w, 3.0.11, and 3.1.3.

@@ -8,7 +8,6 @@ import os
 import os.path
 import subprocess
 import py_compile
-import zipfile
 
 from importlib.util import source_from_cache
 from test import support
@@ -64,42 +63,59 @@ class _PythonRunResult(collections.namedtuple("_PythonRunResult",
     """Helper for reporting Python subprocess run results"""
     def fail(self, cmd_line):
         """Provide helpful details about failed subcommand runs"""
-        # Limit to 80 lines to ASCII characters
-        maxlen = 80 * 100
+        # Limit to 300 lines of ASCII characters
+        maxlen = 300 * 100
         out, err = self.out, self.err
         if len(out) > maxlen:
             out = b'(... truncated stdout ...)' + out[-maxlen:]
         if len(err) > maxlen:
             err = b'(... truncated stderr ...)' + err[-maxlen:]
-        out = out.decode('ascii', 'replace').rstrip()
-        err = err.decode('ascii', 'replace').rstrip()
-        raise AssertionError("Process return code is %d\n"
-                             "command line: %r\n"
-                             "\n"
-                             "stdout:\n"
-                             "---\n"
-                             "%s\n"
-                             "---\n"
-                             "\n"
-                             "stderr:\n"
-                             "---\n"
-                             "%s\n"
-                             "---"
-                             % (self.rc, cmd_line,
-                                out,
-                                err))
+        out = out.decode('utf8', 'replace').rstrip()
+        err = err.decode('utf8', 'replace').rstrip()
+
+        exitcode = self.rc
+        signame = support.get_signal_name(exitcode)
+        if signame:
+            exitcode = f"{exitcode} ({signame})"
+        raise AssertionError(f"Process return code is {exitcode}\n"
+                             f"command line: {cmd_line!r}\n"
+                             f"\n"
+                             f"stdout:\n"
+                             f"---\n"
+                             f"{out}\n"
+                             f"---\n"
+                             f"\n"
+                             f"stderr:\n"
+                             f"---\n"
+                             f"{err}\n"
+                             f"---")
 
 
 # Executing the interpreter in a subprocess
 @support.requires_subprocess()
 def run_python_until_end(*args, **env_vars):
+    """Used to implement assert_python_*.
+
+    *args are the command line flags to pass to the python interpreter.
+    **env_vars keyword arguments are environment variables to set on the process.
+
+    If __run_using_command= is supplied, it must be a list of
+    command line arguments to prepend to the command line used.
+    Useful when you want to run another command that should launch the
+    python interpreter via its own arguments. ["/bin/echo", "--"] for
+    example could print the unquoted python command line instead of
+    run it.
+    """
     env_required = interpreter_requires_environment()
+    run_using_command = env_vars.pop('__run_using_command', None)
     cwd = env_vars.pop('__cwd', None)
     if '__isolated' in env_vars:
         isolated = env_vars.pop('__isolated')
     else:
         isolated = not env_vars and not env_required
     cmd_line = [sys.executable, '-X', 'faulthandler']
+    if run_using_command:
+        cmd_line = run_using_command + cmd_line
     if isolated:
         # isolated mode: ignore Python environment variables, ignore user
         # site-packages, and don't add the current directory to sys.path
@@ -218,14 +234,19 @@ def make_script(script_dir, script_basename, source, omit_suffix=False):
     if not omit_suffix:
         script_filename += os.extsep + 'py'
     script_name = os.path.join(script_dir, script_filename)
-    # The script should be encoded to UTF-8, the default string encoding
-    with open(script_name, 'w', encoding='utf-8') as script_file:
-        script_file.write(source)
+    if isinstance(source, str):
+        # The script should be encoded to UTF-8, the default string encoding
+        with open(script_name, 'w', encoding='utf-8') as script_file:
+            script_file.write(source)
+    else:
+        with open(script_name, 'wb') as script_file:
+            script_file.write(source)
     importlib.invalidate_caches()
     return script_name
 
 
 def make_zip_script(zip_dir, zip_basename, script_name, name_in_zip=None):
+    import zipfile
     zip_filename = zip_basename+os.extsep+'zip'
     zip_name = os.path.join(zip_dir, zip_filename)
     with zipfile.ZipFile(zip_name, 'w') as zip_file:
@@ -252,6 +273,7 @@ def make_pkg(pkg_dir, init_source=''):
 
 def make_zip_pkg(zip_dir, zip_basename, pkg_name, script_basename,
                  source, depth=1, compiled=False):
+    import zipfile
     unlink = []
     init_name = make_script(zip_dir, '__init__', '')
     unlink.append(init_name)

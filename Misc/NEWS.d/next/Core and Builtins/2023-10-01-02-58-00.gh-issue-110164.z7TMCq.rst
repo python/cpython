@@ -1,2 +1,0 @@
-regrtest: If the ``SOURCE_DATE_EPOCH`` environment variable is defined,
-regrtest now disables tests randomization. Patch by Victor Stinner.

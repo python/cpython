@@ -1,2 +1,0 @@
-The regen-opcode build stage was removed and its work is now done in
-regen-cases.

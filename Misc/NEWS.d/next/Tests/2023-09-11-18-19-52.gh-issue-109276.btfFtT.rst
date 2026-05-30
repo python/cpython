@@ -1,3 +1,0 @@
-libregrtest now uses a separated file descriptor to write test result as JSON.
-Previously, if a test wrote debug messages late around the JSON, the main test
-process failed to parse JSON. Patch by Victor Stinner.

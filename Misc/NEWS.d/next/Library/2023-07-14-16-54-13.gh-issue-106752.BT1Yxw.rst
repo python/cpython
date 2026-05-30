@@ -1,5 +1,0 @@
-Fixed several bugs in zipfile.Path, including: in :meth:`zipfile.Path.match`, Windows
-separators are no longer honored (and never were meant to be); Fixed
-``name``/``suffix``/``suffixes``/``stem`` operations when no filename is
-present and the Path is not at the root of the zipfile; Reworked glob for
-performance and more correct matching behavior.

@@ -1,3 +1,0 @@
-Fix :meth:`multiprocessing.synchronize.SemLock.__setstate__` to properly initialize :attr:`multiprocessing.synchronize.SemLock._is_fork_ctx`. This fixes a regression when passing a SemLock accross nested processes.
-
-Rename :attr:`multiprocessing.synchronize.SemLock.is_fork_ctx` to :attr:`multiprocessing.synchronize.SemLock._is_fork_ctx` to avoid exposing it as public API.

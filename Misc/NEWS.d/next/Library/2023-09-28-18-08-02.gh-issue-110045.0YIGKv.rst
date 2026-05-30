@@ -1,2 +1,0 @@
-Update the :mod:`symtable` module to support the new scopes introduced by
-:pep:`695`.

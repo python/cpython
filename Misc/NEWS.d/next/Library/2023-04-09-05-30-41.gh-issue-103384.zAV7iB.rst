@@ -1,1 +1,0 @@
-Generalize the regex pattern ``BaseConfigurator.INDEX_PATTERN`` to allow spaces and non-alphanumeric characters in keys.

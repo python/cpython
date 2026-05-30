@@ -2,12 +2,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-PyAPI_FUNC(void *) PyMem_RawMalloc(size_t size);
-PyAPI_FUNC(void *) PyMem_RawCalloc(size_t nelem, size_t elsize);
-PyAPI_FUNC(void *) PyMem_RawRealloc(void *ptr, size_t new_size);
-PyAPI_FUNC(void) PyMem_RawFree(void *ptr);
-
-
 typedef enum {
     /* PyMem_RawMalloc(), PyMem_RawRealloc() and PyMem_RawFree() */
     PYMEM_DOMAIN_RAW,
@@ -28,6 +22,10 @@ typedef enum {
 #ifdef WITH_PYMALLOC
     PYMEM_ALLOCATOR_PYMALLOC = 5,
     PYMEM_ALLOCATOR_PYMALLOC_DEBUG = 6,
+#endif
+#ifdef WITH_MIMALLOC
+    PYMEM_ALLOCATOR_MIMALLOC = 7,
+    PYMEM_ALLOCATOR_MIMALLOC_DEBUG = 8,
 #endif
 } PyMemAllocatorName;
 

@@ -46,10 +46,10 @@ passing other environment variables and command arguments.
 .. section: Security
 
 Upgrade expat copy from 2.2.0 to 2.2.1 to get fixes of multiple security
-vulnerabilities including: CVE-2017-9233 (External entity infinite loop
-DoS), CVE-2016-9063 (Integer overflow, re-fix), CVE-2016-0718 (Fix
-regression bugs from 2.2.0's fix to CVE-2016-0718) and CVE-2012-0876
-(Counter hash flooding with SipHash). Note: the CVE-2016-5300 (Use
+vulnerabilities including: :cve:`2017-9233` (External entity infinite loop
+DoS), :cve:`2016-9063` (Integer overflow, re-fix), :cve:`2016-0718` (Fix
+regression bugs from 2.2.0's fix to :cve:`2016-0718`) and :cve:`2012-0876`
+(Counter hash flooding with SipHash). Note: the :cve:`2016-5300` (Use
 os-specific entropy sources like getrandom) doesn't impact Python, since Python
 already gets entropy from the OS to set the expat secret using
 ``XML_SetHashSalt()``.
@@ -75,8 +75,8 @@ authentication (``login@host``).
 .. original section: Library
 .. section: Security
 
-Update expat copy from 2.1.1 to 2.2.0 to get fixes of CVE-2016-0718 and
-CVE-2016-4472. See https://sourceforge.net/p/expat/bugs/537/ for more
+Update expat copy from 2.1.1 to 2.2.0 to get fixes of :cve:`2016-0718` and
+:cve:`2016-4472`. See https://sourceforge.net/p/expat/bugs/537/ for more
 information.
 
 ..
@@ -86,7 +86,7 @@ information.
 .. nonce: r7m2sj
 .. section: Core and Builtins
 
-Fix an assertion failure in `ctypes` class definition, in case the class has
+Fix an assertion failure in ``ctypes`` class definition, in case the class has
 an attribute whose name is specified in ``_anonymous_`` but not in
 ``_fields_``. Patch by Oren Milman.
 
@@ -97,8 +97,8 @@ an attribute whose name is specified in ``_anonymous_`` but not in
 .. nonce: 0yiA5Q
 .. section: Core and Builtins
 
-Fix an assertion failure in `subprocess.Popen()` on Windows, in case the env
-argument has a bad keys() method. Patch by Oren Milman.
+Fix an assertion failure in ``subprocess.Popen()`` on Windows, in case the env
+argument has a bad ``keys()`` method. Patch by Oren Milman.
 
 ..
 
@@ -107,7 +107,7 @@ argument has a bad keys() method. Patch by Oren Milman.
 .. nonce: rS-FlC
 .. section: Core and Builtins
 
-Fix an assertion failure in `PyErr_WriteUnraisable()` in case of an
+Fix an assertion failure in ``PyErr_WriteUnraisable()`` in case of an
 exception with a bad ``__module__`` attribute. Patch by Oren Milman.
 
 ..
@@ -214,7 +214,7 @@ Fix possible undefined behavior in _PyObject_FastCall_Prepend.
 .. nonce: Kl_fS5
 .. section: Core and Builtins
 
-Include sys/sysmacros.h for major(), minor(), and makedev(). GNU C libray
+Include sys/sysmacros.h for major(), minor(), and makedev(). GNU C library
 plans to remove the functions from sys/types.h.
 
 ..
@@ -224,7 +224,7 @@ plans to remove the functions from sys/types.h.
 .. nonce: t8QggK
 .. section: Core and Builtins
 
-Fix an assertion failure in `zipimport.zipimporter.get_data` on Windows,
+Fix an assertion failure in ``zipimport.zipimporter.get_data`` on Windows,
 when the return value of ``pathname.replace('/','\\')`` isn't a string.
 Patch by Oren Milman.
 
@@ -235,7 +235,7 @@ Patch by Oren Milman.
 .. nonce: YMduKF
 .. section: Core and Builtins
 
-Fix an assertion failure in the write() method of `io.TextIOWrapper`, when
+Fix an assertion failure in the ``write()`` method of ``io.TextIOWrapper``, when
 the encoder doesn't return a bytes object. Patch by Oren Milman.
 
 ..
@@ -245,7 +245,7 @@ the encoder doesn't return a bytes object. Patch by Oren Milman.
 .. nonce: dRJzqR
 .. section: Core and Builtins
 
-Fix a crash in some methods of `io.TextIOWrapper`, when the decoder's state
+Fix a crash in some methods of ``io.TextIOWrapper``, when the decoder's state
 is invalid. Patch by Oren Milman.
 
 ..
@@ -1042,8 +1042,8 @@ method of other descriptors.
 
 Remove the ``PyEval_GetCallStats()`` function and deprecate the untested and
 undocumented ``sys.callstats()`` function. Remove the ``CALL_PROFILE``
-special build: use the :func:`sys.setprofile` function, :mod:`cProfile` or
-:mod:`profile` to profile function calls.
+special build: use the :func:`sys.setprofile` function, :mod:`!cProfile` or
+:mod:`!profile` to profile function calls.
 
 ..
 
@@ -1479,7 +1479,7 @@ memcpy().
 .. nonce: e5xc1i
 .. section: Core and Builtins
 
-Fix dict.pop() for splitted dictionary when trying to remove a "pending key"
+Fix dict.pop() for split dictionary when trying to remove a "pending key"
 (Not yet inserted in split-table). Patch by Xiang Zhang.
 
 ..
@@ -1855,7 +1855,7 @@ docserver attribute to None to break a reference cycle.
 .. nonce: gwnthq
 .. section: Library
 
-Many asserts in `multiprocessing` are now more informative, and some error
+Many asserts in ``multiprocessing`` are now more informative, and some error
 types have been changed to more specific ones.
 
 ..
@@ -1896,7 +1896,7 @@ child exit.
 .. nonce: -2_YGj
 .. section: Library
 
-`dis` now works with asynchronous generator and coroutine objects. Patch by
+``dis`` now works with asynchronous generator and coroutine objects. Patch by
 George Collins based on diagnosis by Luciano Ramalho.
 
 ..
@@ -1906,10 +1906,10 @@ George Collins based on diagnosis by Luciano Ramalho.
 .. nonce: huQi2Y
 .. section: Library
 
-There are a number of uninformative asserts in the `multiprocessing` module,
+There are a number of uninformative asserts in the ``multiprocessing`` module,
 as noted in issue 5001. This change fixes two of the most potentially
 problematic ones, since they are in error-reporting code, in the
-`multiprocessing.managers.convert_to_error` function. (It also makes more
+``multiprocessing.managers.convert_to_error`` function. (It also makes more
 informative a ValueError message.) The only potentially problematic change
 is that the AssertionError is now a TypeError; however, this should also
 help distinguish it from an AssertionError being *reported* by the
@@ -1973,7 +1973,7 @@ attributes to help the garbage collector to destroy all widgets.
 .. nonce: 1t2hn5
 .. section: Library
 
-Fix `copyreg._slotnames()` mangled attribute calculation for classes whose
+Fix ``copyreg._slotnames()`` mangled attribute calculation for classes whose
 name begins with an underscore. Patch by Shane Harvey.
 
 ..
@@ -1983,7 +1983,7 @@ name begins with an underscore. Patch by Shane Harvey.
 .. nonce: 2CFVCO
 .. section: Library
 
-Allow `logging.config.fileConfig` to accept kwargs and/or args.
+Allow ``logging.config.fileConfig`` to accept kwargs and/or args.
 
 ..
 
@@ -2159,7 +2159,7 @@ socket.close() now ignores ECONNRESET error.
 .. nonce: CLvEvV
 .. section: Library
 
-Fix out of bounds write in `asyncio.CFuture.remove_done_callback()`.
+Fix out of bounds write in ``asyncio.CFuture.remove_done_callback()``.
 
 ..
 
@@ -2406,7 +2406,7 @@ Don't log exceptions if Task/Future "cancel()" method was called.
 .. nonce: xihJ4Y
 .. section: Library
 
-Fix path calculation in `imp.load_package()`, fixing it for cases when a
+Fix path calculation in ``imp.load_package()``, fixing it for cases when a
 package is only shipped with bytecodes. Patch by Alexandru Ardelean.
 
 ..
@@ -2516,7 +2516,7 @@ stdin.write() if the child process is still running but closed the pipe.
 .. nonce: CdOuSl
 .. section: Library
 
-Addded empty __slots__ to abc.ABC.  This allows subclassers to deny __dict__
+Added empty __slots__ to abc.ABC.  This allows subclassers to deny __dict__
 and __weakref__ creation.  Patch by Aaron Hall.
 
 ..
@@ -4947,8 +4947,8 @@ run test_zipfile64.
 .. nonce: lo7FQX
 .. section: Tests
 
-Add the `set_nomemory(start, stop)` and `remove_mem_hooks()` functions to
-the _testcapi module.
+Add the ``set_nomemory(start, stop)`` and ``remove_mem_hooks()`` functions to
+the ``_testcapi`` module.
 
 ..
 
@@ -5076,7 +5076,7 @@ on the Android armv7 qemu emulator.
 .. nonce: 4f-VJK
 .. section: Build
 
-Allow --with-lto to be used on all builds, not just `make profile-opt`.
+Allow ``--with-lto`` to be used on all builds, not just ``make profile-opt``.
 
 ..
 
@@ -5819,7 +5819,7 @@ Add tests for configdialog keys tab. Patch by Cheryl Sabella.
 .. nonce: sqE1FS
 .. section: IDLE
 
-IDLE: Calltips use `inspect.signature` instead of `inspect.getfullargspec`.
+IDLE: Calltips use ``inspect.signature`` instead of ``inspect.getfullargspec``.
 This improves calltips for builtins converted to use Argument Clinic. Patch
 by Louie Lu.
 
@@ -6224,9 +6224,9 @@ Added the slice index converter in Argument Clinic.
 .. nonce: KPFC7o
 .. section: Tools/Demos
 
-Argument Clinic now uses the converter `bool(accept={int})` rather than
-`int` for semantical booleans.  This avoids repeating the default value for
-Python and C and will help in converting to `bool` in future.
+Argument Clinic now uses the converter ``bool(accept={int})`` rather than
+``int`` for semantical booleans.  This avoids repeating the default value for
+Python and C and will help in converting to ``bool`` in future.
 
 ..
 

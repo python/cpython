@@ -1,2 +1,0 @@
-Fix a bug in :c:func:`!_Unpickler_SetInputStream` where an exception could
-end up being overwritten in case of failure.

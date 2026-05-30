@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(_tracemalloc_is_tracing__doc__,
 "is_tracing($module, /)\n"
 "--\n"
@@ -212,4 +214,4 @@ _tracemalloc_reset_peak(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _tracemalloc_reset_peak_impl(module);
 }
-/*[clinic end generated code: output=ad7d1fae89f2bdaa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9d4d884b156c2ddb input=a9049054013a1b77]*/

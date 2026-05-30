@@ -1,1 +1,0 @@
-:func:`unittest.mock.create_autospec` now properly returns coroutine functions compatible with :func:`inspect.iscoroutinefunction`

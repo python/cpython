@@ -1,2 +1,0 @@
-Fix base case handling in statistics.quantiles.  Now allows a single data
-point.

@@ -1,3 +1,0 @@
-libregrtest now decodes stdout of test worker processes with the
-"backslashreplace" error handler to log corrupted stdout, instead of failing
-with an error and not logging the stdout. Patch by Victor Stinner.
