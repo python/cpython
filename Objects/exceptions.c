@@ -233,7 +233,7 @@ BaseException.__setstate__
 
 static PyObject *
 BaseException___setstate___impl(PyBaseExceptionObject *self, PyObject *state)
-/*[clinic end generated code: output=f3834889950453ab input=2ddc941f42fc5bf6]*/
+/*[clinic end generated code: output=f3834889950453ab input=f9b1aea70382cdb6]*/
 {
     PyObject *d_key, *d_value;
     Py_ssize_t i = 0;
