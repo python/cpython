@@ -623,8 +623,8 @@ Available Context Managers
 
     A context manager that copies and, upon exit, restores the warnings filter
     and the :func:`showwarning` function.
-    If the *record* argument is :const:`False` (the default) the context manager
-    returns :class:`None` on entry. If *record* is :const:`True`, the default
+    If the *record* argument is false (the default) the context manager
+    returns ``None`` on entry. If *record* is true, the default
     warning stream is intercepted and a list is returned that is progressively
     populated with objects as seen by a custom
     :func:`showwarning` function (which also suppresses output to ``sys.stderr`` and other streams).
