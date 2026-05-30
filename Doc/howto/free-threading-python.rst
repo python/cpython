@@ -225,7 +225,7 @@ mimalloc allocator does quite well in these respects as well but can have some
 more overhead.
 
 In the free-threaded build, mimalloc manages memory in a number of separate
-heaps (currently five).  For example, all GC supporting objects are allocated
+heaps (currently four).  For example, all GC supporting objects are allocated
 from their own heap.  Using separate heaps means that free memory in one heap
 cannot be used for an allocation that uses another heap.  Also, some heaps are
 configured to use QSBR (quiescent-state based reclamation) when freeing the
