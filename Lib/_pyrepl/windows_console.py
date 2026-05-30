@@ -66,17 +66,14 @@ except:
             self.err = err
             self.descr = descr
 
+# declare optional to allow None assignment on other platforms
 _winapi: types.ModuleType | None
-try:
-    import _winapi
-except ImportError:
-    _winapi = None
-
-# declare nt optional to allow None assignment on other platforms
 nt: types.ModuleType | None
 try:
+    import _winapi
     import nt
 except ImportError:
+    _winapi = None
     nt = None
 
 if TYPE_CHECKING:
