@@ -332,14 +332,14 @@ _zstd.ZstdCompressor.__new__ as _zstd_ZstdCompressor_new
 
 Create a compressor object for compressing data incrementally.
 
-Thread-safe at method level. For one-shot compression, use the compress()
-function instead.
+Thread-safe at method level.  For one-shot compression, use the
+compress() function instead.
 [clinic start generated code]*/
 
 static PyObject *
 _zstd_ZstdCompressor_new_impl(PyTypeObject *type, PyObject *level,
                               PyObject *options, PyObject *zstd_dict)
-/*[clinic end generated code: output=cdef61eafecac3d7 input=92de0211ae20ffdc]*/
+/*[clinic end generated code: output=cdef61eafecac3d7 input=bbfeeaa06fd3bd4d]*/
 {
     ZstdCompressor* self = PyObject_GC_New(ZstdCompressor, type);
     if (self == NULL) {
@@ -583,7 +583,6 @@ error:
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 _zstd.ZstdCompressor.compress
 
     data: Py_buffer
@@ -593,15 +592,15 @@ _zstd.ZstdCompressor.compress
 
 Provide data to the compressor object.
 
-Return a chunk of compressed data if possible, or b'' otherwise. When you have
-finished providing data to the compressor, call the flush() method to finish
-the compression process.
+Return a chunk of compressed data if possible, or b'' otherwise.
+When you have finished providing data to the compressor, call the
+flush() method to finish the compression process.
 [clinic start generated code]*/
 
 static PyObject *
 _zstd_ZstdCompressor_compress_impl(ZstdCompressor *self, Py_buffer *data,
                                    int mode)
-/*[clinic end generated code: output=ed7982d1cf7b4f98 input=6018ed6cc729cea6]*/
+/*[clinic end generated code: output=ed7982d1cf7b4f98 input=11726dff64d7b2f9]*/
 {
     PyObject *ret;
 
@@ -643,7 +642,6 @@ _zstd_ZstdCompressor_compress_impl(ZstdCompressor *self, Py_buffer *data,
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 _zstd.ZstdCompressor.flush
 
     mode: int(c_default="ZSTD_e_end") = ZstdCompressor.FLUSH_FRAME
@@ -652,14 +650,14 @@ _zstd.ZstdCompressor.flush
 
 Finish the compression process.
 
-Flush any remaining data left in internal buffers. Since Zstandard data
-consists of one or more independent frames, the compressor object can still
-be used after this method is called.
+Flush any remaining data left in internal buffers.  Since Zstandard
+data consists of one or more independent frames, the compressor
+object can still be used after this method is called.
 [clinic start generated code]*/
 
 static PyObject *
 _zstd_ZstdCompressor_flush_impl(ZstdCompressor *self, int mode)
-/*[clinic end generated code: output=b7cf2c8d64dcf2e3 input=a9871ec742d79003]*/
+/*[clinic end generated code: output=b7cf2c8d64dcf2e3 input=130e0b1eddf0f498]*/
 {
     PyObject *ret;
 
@@ -693,7 +691,7 @@ _zstd_ZstdCompressor_flush_impl(ZstdCompressor *self, int mode)
 
 
 /*[clinic input]
-@permit_long_docstring_body
+@permit_long_summary
 _zstd.ZstdCompressor.set_pledged_input_size
 
     size: zstd_contentsize
@@ -702,19 +700,20 @@ _zstd.ZstdCompressor.set_pledged_input_size
 
 Set the uncompressed content size to be written into the frame header.
 
-This method can be used to ensure the header of the frame about to be written
-includes the size of the data, unless the CompressionParameter.content_size_flag
-is set to False. If last_mode != FLUSH_FRAME, then a RuntimeError is raised.
+This method can be used to ensure the header of the frame about to
+be written includes the size of the data, unless the
+CompressionParameter.content_size_flag is set to False.
+If last_mode != FLUSH_FRAME, then a RuntimeError is raised.
 
-It is important to ensure that the pledged data size matches the actual data
-size. If they do not match the compressed output data may be corrupted and the
-final chunk written may be lost.
+It is important to ensure that the pledged data size matches the
+actual data size.  If they do not match the compressed output data
+may be corrupted and the final chunk written may be lost.
 [clinic start generated code]*/
 
 static PyObject *
 _zstd_ZstdCompressor_set_pledged_input_size_impl(ZstdCompressor *self,
                                                  unsigned long long size)
-/*[clinic end generated code: output=3a09e55cc0e3b4f9 input=b4c87bcbd5ce6111]*/
+/*[clinic end generated code: output=3a09e55cc0e3b4f9 input=714cd7a9aa10e2a8]*/
 {
     // Error occurred while converting argument, should be unreachable
     assert(size != ZSTD_CONTENTSIZE_ERROR);
