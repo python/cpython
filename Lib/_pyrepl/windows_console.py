@@ -703,7 +703,9 @@ class WindowsConsole(Console):
             timeout = int(timeout)
         assert _winapi is not None  # to make mypy happy
         ret = _winapi.WaitForSingleObject(InHandle, timeout)
-        return ret != WAIT_TIMEOUT
+        if ret == WAIT_TIMEOUT:
+            return False
+        return True
 
     def wait(self, timeout: float | None) -> bool:
         """
