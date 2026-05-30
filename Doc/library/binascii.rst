@@ -367,7 +367,7 @@ The :mod:`!binascii` module defines the following functions:
    *ignorechars* should be a :term:`bytes-like object` containing characters
    to ignore from the input.
 
-   Similar functionality (more liberal towards whitespace) is also accessible
+   Similar functionality (but more liberal towards whitespace) is also accessible
    using the :meth:`bytes.fromhex` class method.
 
    .. versionchanged:: 3.15
