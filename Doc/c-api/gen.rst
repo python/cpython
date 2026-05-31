@@ -40,8 +40,8 @@ than explicitly calling :c:func:`PyGen_New` or :c:func:`PyGen_NewWithQualName`.
 
    .. deprecated-removed:: 3.16 3.18
 
-      This function was not used since 3.10,
-      it is now impossible to construct a proper *frame*
+      This function has not been used since 3.10.
+      It is also impossible to construct a proper *frame*
       object to call this function.
 
 .. c:function:: PyObject* PyGen_NewWithQualName(PyFrameObject *frame, PyObject *name, PyObject *qualname)
@@ -53,8 +53,8 @@ than explicitly calling :c:func:`PyGen_New` or :c:func:`PyGen_NewWithQualName`.
 
    .. deprecated-removed:: 3.16 3.18
 
-      This function was not used since 3.10,
-      it is now impossible to construct a proper *frame*
+      This function has not been used since 3.10.
+      It is also impossible to construct a proper *frame*
       object to call this function.
 
 
@@ -91,8 +91,8 @@ Asynchronous Generator Objects
 
    .. deprecated-removed:: 3.16 3.18
 
-      This function was not used since 3.10,
-      it is now impossible to construct a proper *frame*
+      This function has not been used since 3.10.
+      It is also impossible to construct a proper *frame*
       object to call this function.
 
 .. c:function:: int PyAsyncGen_CheckExact(PyObject *op)

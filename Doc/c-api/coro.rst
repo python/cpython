@@ -36,6 +36,6 @@ return.
 
    .. deprecated-removed:: 3.16 3.18
 
-      This function was not used since 3.10,
-      it is now impossible to construct a proper *frame*
+      This function has not been used since 3.10.
+      It is also impossible to construct a proper *frame*
       object to call this function.
