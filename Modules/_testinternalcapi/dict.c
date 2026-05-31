@@ -3,7 +3,7 @@
 #include "pycore_dict.h"
 
 static PyObject*
-test_dict_keys_layout(PyObject *self, PyObject *arg)
+dict_keys_layout(PyObject *self, PyObject *arg)
 {
     PyDictObject *mp = (PyDictObject *)arg;
     PyDictKeysObject *keys = mp->ma_keys;
@@ -22,7 +22,7 @@ test_dict_keys_layout(PyObject *self, PyObject *arg)
 }
 
 static PyObject*
-test_dict_keys_to_base(PyObject *self, PyObject *arg)
+dict_keys_to_base(PyObject *self, PyObject *arg)
 {
     PyDictObject *mp = (PyDictObject *)arg;
     PyDictKeysObject *keys = mp->ma_keys;
@@ -35,8 +35,8 @@ test_dict_keys_to_base(PyObject *self, PyObject *arg)
 }
 
 static PyMethodDef test_methods[] = {
-    {"test_dict_keys_layout", test_dict_keys_layout, METH_O},
-    {"test_dict_keys_to_base", test_dict_keys_to_base, METH_O},
+    {"dict_keys_layout", dict_keys_layout, METH_O},
+    {"dict_keys_to_base", dict_keys_to_base, METH_O},
     {NULL},
 };
 
