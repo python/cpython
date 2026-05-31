@@ -57,6 +57,10 @@ class Popen(popen_fork.Popen):
             self._fds.extend([child_r, child_w])
             self.pid = util.spawnv_passfds(spawn.get_executable(),
                                            cmd, self._fds)
+            os.close(child_r)
+            child_r = None
+            os.close(child_w)
+            child_w = None
             self.sentinel = parent_r
             with open(parent_w, 'wb', closefd=False) as f:
                 f.write(fp.getbuffer())

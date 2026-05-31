@@ -3,7 +3,7 @@ import gc
 import sys
 import unittest
 from test import support
-from test.support import import_helper
+from test.support import import_helper, thread_unsafe
 from test.support import script_helper
 _ctypes_test = import_helper.import_module("_ctypes_test")
 
@@ -13,7 +13,7 @@ OtherCallback = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.c_ulonglong)
 
 dll = ctypes.CDLL(_ctypes_test.__file__)
 
-
+@thread_unsafe('not thread safe')
 class RefcountTestCase(unittest.TestCase):
     @support.refcount_test
     def test_1(self):
@@ -24,36 +24,35 @@ class RefcountTestCase(unittest.TestCase):
         def callback(value):
             return value
 
-        self.assertEqual(sys.getrefcount(callback), 2)
+        orig_refcount = sys.getrefcount(callback)
         cb = MyCallback(callback)
 
-        self.assertGreater(sys.getrefcount(callback), 2)
+        self.assertGreater(sys.getrefcount(callback), orig_refcount)
         result = f(-10, cb)
         self.assertEqual(result, -18)
         cb = None
 
         gc.collect()
 
-        self.assertEqual(sys.getrefcount(callback), 2)
+        self.assertEqual(sys.getrefcount(callback), orig_refcount)
 
     @support.refcount_test
     def test_refcount(self):
         def func(*args):
             pass
-        # this is the standard refcount for func
-        self.assertEqual(sys.getrefcount(func), 2)
+        orig_refcount = sys.getrefcount(func)
 
         # the CFuncPtr instance holds at least one refcount on func:
         f = OtherCallback(func)
-        self.assertGreater(sys.getrefcount(func), 2)
+        self.assertGreater(sys.getrefcount(func), orig_refcount)
 
         # and may release it again
         del f
-        self.assertGreaterEqual(sys.getrefcount(func), 2)
+        self.assertGreaterEqual(sys.getrefcount(func), orig_refcount)
 
         # but now it must be gone
         gc.collect()
-        self.assertEqual(sys.getrefcount(func), 2)
+        self.assertEqual(sys.getrefcount(func), orig_refcount)
 
         class X(ctypes.Structure):
             _fields_ = [("a", OtherCallback)]
@@ -61,29 +60,29 @@ class RefcountTestCase(unittest.TestCase):
         x.a = OtherCallback(func)
 
         # the CFuncPtr instance holds at least one refcount on func:
-        self.assertGreater(sys.getrefcount(func), 2)
+        self.assertGreater(sys.getrefcount(func), orig_refcount)
 
         # and may release it again
         del x
-        self.assertGreaterEqual(sys.getrefcount(func), 2)
+        self.assertGreaterEqual(sys.getrefcount(func), orig_refcount)
 
         # and now it must be gone again
         gc.collect()
-        self.assertEqual(sys.getrefcount(func), 2)
+        self.assertEqual(sys.getrefcount(func), orig_refcount)
 
         f = OtherCallback(func)
 
         # the CFuncPtr instance holds at least one refcount on func:
-        self.assertGreater(sys.getrefcount(func), 2)
+        self.assertGreater(sys.getrefcount(func), orig_refcount)
 
         # create a cycle
         f.cycle = f
 
         del f
         gc.collect()
-        self.assertEqual(sys.getrefcount(func), 2)
+        self.assertEqual(sys.getrefcount(func), orig_refcount)
 
-
+@thread_unsafe('not thread safe')
 class AnotherLeak(unittest.TestCase):
     def test_callback(self):
         proto = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.c_int)
@@ -122,6 +121,21 @@ class ModuleIsolationTest(unittest.TestCase):
             "exit()"
         )
         script_helper.assert_python_ok("-c", script)
+
+
+class PyObjectRestypeTest(unittest.TestCase):
+    def test_restype_py_object_with_null_return(self):
+        # Test that a function which returns a NULL PyObject *
+        # without setting an exception does not crash.
+        PyErr_Occurred = ctypes.pythonapi.PyErr_Occurred
+        PyErr_Occurred.argtypes = []
+        PyErr_Occurred.restype = ctypes.py_object
+
+        # At this point, there's no exception set, so PyErr_Occurred
+        # returns NULL. Given the restype is py_object, the
+        # ctypes machinery will raise a custom error.
+        with self.assertRaisesRegex(ValueError, "PyObject is NULL"):
+            PyErr_Occurred()
 
 
 if __name__ == '__main__':

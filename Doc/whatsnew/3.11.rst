@@ -740,8 +740,8 @@ fractions
 functools
 ---------
 
-* :func:`functools.singledispatch` now supports :data:`types.UnionType`
-  and :data:`typing.Union` as annotations to the dispatch argument.::
+* :func:`functools.singledispatch` now supports :class:`types.UnionType`
+  and :class:`typing.Union` as annotations to the dispatch argument.::
 
     >>> from functools import singledispatch
     >>> @singledispatch
@@ -1670,7 +1670,7 @@ Replaced opcodes
 |                                    |                                    | for each direction                      |
 |                                    |                                    |                                         |
 +------------------------------------+------------------------------------+-----------------------------------------+
-| | :opcode:`!SETUP_WITH`            | :opcode:`BEFORE_WITH`              | :keyword:`with` block setup             |
+| | :opcode:`!SETUP_WITH`            | :opcode:`!BEFORE_WITH`             | :keyword:`with` block setup             |
 | | :opcode:`!SETUP_ASYNC_WITH`      |                                    |                                         |
 +------------------------------------+------------------------------------+-----------------------------------------+
 
@@ -2168,7 +2168,7 @@ Build Changes
   (Contributed by Donghee Na and Brett Holman in :issue:`44340`.)
 
 * Freelists for object structs can now be disabled. A new :program:`configure`
-  option :option:`--without-freelists` can be used to disable all freelists
+  option ``--without-freelists`` can be used to disable all freelists
   except empty tuple singleton.
   (Contributed by Christian Heimes in :issue:`45522`.)
 
@@ -2673,7 +2673,7 @@ Removed
 
   (Contributed by Victor Stinner in :issue:`45474`.)
 
-* Exclude :c:func:`PyWeakref_GET_OBJECT` from the limited C API. It never
+* Exclude :c:func:`!PyWeakref_GET_OBJECT` from the limited C API. It never
   worked since the :c:type:`!PyWeakReference` structure is opaque in the
   limited C API.
   (Contributed by Victor Stinner in :issue:`35134`.)

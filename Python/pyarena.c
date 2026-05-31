@@ -4,7 +4,7 @@
 /* A simple arena block structure.
 
    Measurements with standard library modules suggest the average
-   allocation is about 20 bytes and that most compiles use a single
+   allocation is about 20 bytes and that most compilers use a single
    block.
 */
 

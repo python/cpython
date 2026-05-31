@@ -18,63 +18,40 @@ sys.prefix and sys.exec_prefix are set to that directory and
 it is also checked for site-packages (sys.base_prefix and
 sys.base_exec_prefix will always be the "real" prefixes of the Python
 installation). If "pyvenv.cfg" (a bootstrap configuration file) contains
-the key "include-system-site-packages" set to anything other than "false"
-(case-insensitive), the system-level prefixes will still also be
-searched for site-packages; otherwise they won't.
+the key "include-system-site-packages" set to "true" (case-insensitive),
+the system-level prefixes will still also be searched for site-packages;
+otherwise they won't.
 
-All of the resulting site-specific directories, if they exist, are
-appended to sys.path, and also inspected for path configuration
-files.
+Two kinds of configuration files are processed in each site-packages
+directory:
 
-A path configuration file is a file whose name has the form
-<package>.pth; its contents are additional directories (one per line)
-to be added to sys.path.  Non-existing directories (or
-non-directories) are never added to sys.path; no directory is added to
-sys.path more than once.  Blank lines and lines beginning with
-'#' are skipped. Lines starting with 'import' are executed.
+- <name>.pth files extend sys.path with additional directories (one per
+  line).  Lines starting with "import" are deprecated (see PEP 829).
 
-For example, suppose sys.prefix and sys.exec_prefix are set to
-/usr/local and there is a directory /usr/local/lib/python2.5/site-packages
-with three subdirectories, foo, bar and spam, and two path
-configuration files, foo.pth and bar.pth.  Assume foo.pth contains the
-following:
+- <name>.start files specify startup entry points using the pkg.mod:callable
+  syntax.  These are resolved via pkgutil.resolve_name() and called with no
+  arguments.
 
-  # foo package configuration
-  foo
-  bar
-  bletch
+When called from main(), all .pth path extensions are applied before any
+.start entry points are executed, ensuring that paths are available before
+startup code runs.
 
-and bar.pth contains:
-
-  # bar package configuration
-  bar
-
-Then the following directories are added to sys.path, in this order:
-
-  /usr/local/lib/python2.5/site-packages/bar
-  /usr/local/lib/python2.5/site-packages/foo
-
-Note that bletch is omitted because it doesn't exist; bar precedes foo
-because bar.pth comes alphabetically before foo.pth; and spam is
-omitted because it is not mentioned in either path configuration file.
-
-The readline module is also automatically configured to enable
-completion for systems that support it.  This can be overridden in
-sitecustomize, usercustomize or PYTHONSTARTUP.  Starting Python in
-isolated mode (-I) disables automatic readline configuration.
-
-After these operations, an attempt is made to import a module
-named sitecustomize, which can perform arbitrary additional
-site-specific customizations.  If this import fails with an
-ImportError exception, it is silently ignored.
+See the documentation for the site module for full details:
+https://docs.python.org/3/library/site.html
 """
 
 import sys
 import os
 import builtins
 import _sitebuiltins
-import io
+import _io as io
 import stat
+import errno
+
+lazy import locale
+lazy import pkgutil
+lazy import traceback
+lazy import warnings
 
 # Prefixes for site-packages; add additional prefixes like /usr/local here
 PREFIXES = [sys.prefix, sys.exec_prefix]
@@ -89,9 +66,32 @@ USER_SITE = None
 USER_BASE = None
 
 
-def _trace(message):
+def _trace(message, exc=None):
     if sys.flags.verbose:
-        print(message, file=sys.stderr)
+        _print_error(message, exc)
+
+
+def _print_error(message, exc=None):
+    """Print an error message to stderr, optionally with a formatted traceback."""
+    print(message, file=sys.stderr)
+    if exc is not None:
+        for record in traceback.format_exception(exc):
+            for line in record.splitlines():
+                print('  ' + line, file=sys.stderr)
+
+
+def _warn(*args, **kwargs):
+    warnings.warn(*args, **kwargs)
+
+
+def _warn_future_us(message, remove):
+    # Don't call warnings._deprecated() directly because we're lazily importing warnings and don't
+    # want to have to trigger an eager import if it's not necessary.  Startup time matters a lot
+    # here and warnings isn't cheap!  This inlines the check from
+    # warnings._py_warnings._deprecated().
+    _version = sys.version_info
+    if (_version[:2] > remove) or (_version[:2] == remove and _version[3] != "alpha"):
+        warnings._deprecated(message, remove=remove)
 
 
 def makepath(*paths):
@@ -104,7 +104,7 @@ def makepath(*paths):
 
 
 def abs_paths():
-    """Set all module __file__ and __cached__ attributes to an absolute path"""
+    """Set __file__ to an absolute path."""
     for m in set(sys.modules.values()):
         loader_module = None
         try:
@@ -118,10 +118,6 @@ def abs_paths():
             continue   # don't mess with a PEP 302-supplied __file__
         try:
             m.__file__ = os.path.abspath(m.__file__)
-        except (AttributeError, OSError, TypeError):
-            pass
-        try:
-            m.__cached__ = os.path.abspath(m.__cached__)
         except (AttributeError, OSError, TypeError):
             pass
 
@@ -158,75 +154,334 @@ def _init_pathinfo():
     return d
 
 
-def addpackage(sitedir, name, known_paths):
-    """Process a .pth file within the site-packages directory:
-       For each line in the file, either combine it with sitedir to a path
-       and add that to known_paths, or execute it if it starts with 'import '.
+# PEP 829 implementation notes.
+#
+# Startup information (.pth and .start file information) can be processed in
+# implicit or explicit batches.  Implicit batches are handled by the site.py
+# machinery automatically, while explicit batches are driven by user code and
+# processed on boundaries defined by that code.
+#
+# addsitedir() calls which use the default defer_processing_start_files=False
+# are self-contained: they create a per-call _StartupState, populate it from
+# the site directory's .pth/.start files, run process() on it, and then throw
+# the state away.  This is implicit batching and in that case the
+# _startup_state global variable stays None.
+#
+# main() needs different semantics: it accumulates state across multiple
+# addsitedir() calls (user-site plus all global site-packages) so that
+# every sys.path extension is visible *before* any startup code (.pth
+# import lines and .start entry points) runs.  Callers opt into this by
+# passing defer_processing_start_files=True, which preserves the _StartupState
+# into the global _startup_state.  Subsequent addsitedir() calls (with
+# or without defer_processing_start_files=True) then write into that
+# same shared state, and a later process_startup_files() call flushes
+# all the state and resets the global to None.
+#
+# Here's the CRITICAL reentrancy invariant: process_startup_files() must clear
+# the global _startup_state *before* calling state.process(), so that any
+# reentrant site.addsitedir() calls reached from an exec'd .pth import line or
+# a .start entry point falls into the per-call branch and gets its own fresh
+# state.  Otherwise the recursive addsitedir() would mutate the very dicts
+# that the outer state.process() is iterating.  This is the bug reported in
+# gh-149504.
+_startup_state = None
+
+
+def _read_pthstart_file(sitedir, name, suffix):
+    """Parse a .start or .pth file and return (lines, filename).
+
+    On success, ``lines`` is a (possibly empty) list of the file's lines.
+    On failure (file missing, hidden, unreadable, or .start with bad
+    encoding), ``lines`` is ``None`` so callers can distinguish a
+    successfully-read empty file from one that could not be read.
     """
+    filename = os.path.join(sitedir, name)
+    _trace(f"Reading startup configuration file: {filename}")
+
+    try:
+        st = os.lstat(filename)
+    except OSError as exc:
+        _trace(f"Cannot stat {filename!r}", exc)
+        return None, filename
+
+    if ((getattr(st, 'st_flags', 0) & stat.UF_HIDDEN) or
+        (getattr(st, 'st_file_attributes', 0) & stat.FILE_ATTRIBUTE_HIDDEN)):
+        _trace(f"Skipping hidden {suffix} file: {filename!r}")
+        return None, filename
+
+    _trace(f"Processing {suffix} file: {filename!r}")
+    try:
+        with io.open_code(filename) as f:
+            raw_content = f.read()
+    except OSError as exc:
+        _trace(f"Cannot read {filename!r}", exc)
+        return None, filename
+
+    try:
+        # Accept BOM markers in .start and .pth files as we do in source files
+        # (Windows PowerShell 5.1 makes it hard to emit UTF-8 files without a BOM).
+        content = raw_content.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        _trace(f"Cannot read {filename!r} as UTF-8.")
+        # For .pth files only, and then only until Python 3.20, fall back to
+        # locale encoding for backward compatibility.
+        _warn_future_us(
+            ".pth files decoded to locale encoding as a fallback",
+            remove=(3, 20)
+        )
+        if suffix == ".pth":
+            content = raw_content.decode(locale.getencoding())
+            _trace(f"Using fallback encoding {locale.getencoding()!r}")
+        else:
+            return None, filename
+
+    return content.splitlines(), filename
+
+
+class _StartupState:
+    """Per-batch accumulator for .pth and .start file processing.
+
+    A _StartupState collects sys.path extensions, deprecated .pth import
+    lines, and .start entry points read from one or more site-packages
+    directories.  Calling process() applies them in PEP 829 order: paths
+    are added to sys.path first, then import lines from .pth files (skipping
+    any with a matching .start), then entry points from .start files.
+
+    State lives entirely on the instance; there is no module-level pending
+    state.  This is what makes the module reentrancy-safe: a site.addsitedir()
+    call reached recursively from an exec'd import line or a .start entry
+    point operates on a different _StartupState than the one being processed
+    by the outer call.
+
+    The internal data is intentionally private; the public methods
+    (read_pth_file, read_start_file, process) are the only supported write
+    APIs.
+    """
+    __slots__ = ('_syspaths', '_importexecs', '_entrypoints')
+
+    def __init__(self):
+        # All three dicts map "<full path to .pth or .start file>" -> list
+        # of items collected from that file.  Mapping by filename lets us
+        # cross-reference a .pth and its matching .start (PEP 829 import
+        # suppression rule) and lets _print_error report the source file
+        # when an entry fails.
+        self._syspaths = {}
+        self._importexecs = {}
+        self._entrypoints = {}
+
+    def read_pth_file(self, sitedir, name, known_paths):
+        """Parse a .pth file, accumulating sys.path extensions and import lines.
+
+        Errors on individual lines do not abort processing of the rest of
+        the file (PEP 829).  ``known_paths`` is the per-batch dedup
+        ledger: any path already in it is skipped, and newly accepted
+        paths are added to it so that subsequent .pth files in the same
+        batch don't add them more than once.
+        """
+        lines, filename = _read_pthstart_file(sitedir, name, ".pth")
+        if lines is None:
+            return
+
+        for n, line in enumerate(lines, 1):
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+
+            # In Python 3.18 and 3.19, `import` lines are silently
+            # ignored.  In Python 3.20 and beyond, issue a warning when
+            # `import` lines in .pth files are detected.
+            if line.startswith(("import ", "import\t")):
+                _warn_future_us(
+                    "import lines in .pth files are silently ignored",
+                    remove=(3, 18),
+                )
+                _warn_future_us(
+                    "import lines in .pth files are noisily ignored",
+                    remove=(3, 20),
+                )
+                self._importexecs.setdefault(filename, []).append(line)
+                continue
+
+            try:
+                dir_, dircase = makepath(sitedir, line)
+            except Exception as exc:
+                _trace(f"Error in {filename!r}, line {n:d}: {line!r}", exc)
+                continue
+
+            # PEP 829 dedup: skip paths already seen in this batch.  See
+            # _startup_state docstring above for batch lifetimes.
+            if dircase in known_paths:
+                _trace(
+                    f"In {filename!r}, line {n:d}: "
+                    f"skipping duplicate sys.path entry: {dir_}"
+                )
+            else:
+                self._syspaths.setdefault(filename, []).append(dir_)
+                known_paths.add(dircase)
+
+    def read_start_file(self, sitedir, name):
+        """Parse a .start file for a list of entry point strings."""
+        lines, filename = _read_pthstart_file(sitedir, name, ".start")
+        if lines is None:
+            return
+
+        # PEP 829: the *presence* of a matching .start file disables `import`
+        # line processing in the matched .pth file, regardless of whether this
+        # .start file contains any entry points.  Register the filename as a
+        # key now so an empty (or comment-only) .start file still suppresses.
+        entrypoints = self._entrypoints.setdefault(filename, [])
+
+        for n, line in enumerate(lines, 1):
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            # Syntax validation is deferred to entry point execution
+            # time, where pkgutil.resolve_name(strict=True) enforces the
+            # pkg.mod:callable form.
+            entrypoints.append(line)
+
+    def process(self):
+        """Apply accumulated state in PEP 829 order.
+
+        Phase order matters: all .pth path extensions are applied to
+        sys.path *before* any import line or .start entry point runs, so
+        that an entry point may live in a module reachable only via a
+        .pth-extended path.
+        """
+        self._extend_syspath()
+        self._exec_imports()
+        self._execute_start_entrypoints()
+
+    def _extend_syspath(self):
+        # Duplicates have already been filtered (in existing sys.path or
+        # across .pth files via known_paths), and entries are already
+        # abspath/normpath'd, so all that remains is to confirm the path
+        # exists.
+        for filename, dirs in self._syspaths.items():
+            for dir_ in dirs:
+                if os.path.exists(dir_):
+                    _trace(f"Extending sys.path with {dir_} from {filename}")
+                    sys.path.append(dir_)
+                else:
+                    _print_error(
+                        f"In {filename}: {dir_} does not exist; "
+                        f"skipping sys.path append"
+                    )
+
+    def _exec_imports(self):
+        # For each `import` line we've seen in a .pth file, exec() it in
+        # order, unless the .pth has a matching .start file in this same
+        # batch.  In that case, PEP 829 says the import lines are
+        # suppressed in favor of the .start's entry points.
+        for filename, imports in self._importexecs.items():
+            # Given "/path/to/foo.pth", check whether "/path/to/foo.start" was
+            # registered in this same batch.
+            name, dot, pth = filename.rpartition(".")
+            assert dot == "." and pth == "pth", (
+                f"Bad startup filename: {filename}"
+            )
+            if f"{name}.start" in self._entrypoints:
+                _trace(
+                    f"import lines in {filename} are suppressed "
+                    f"due to matching {name}.start file."
+                )
+                continue
+
+            _trace(
+                f"import lines in {filename} are deprecated, "
+                f"use entry points in a {name}.start file instead."
+            )
+            for line in imports:
+                try:
+                    _trace(f"Exec'ing from {filename}: {line}")
+                    exec(line)
+                except Exception as exc:
+                    _print_error(
+                        f"Error in import line from {filename}: {line}",
+                        exc,
+                    )
+
+    def _execute_start_entrypoints(self):
+        # Resolve each entry point string to a callable via
+        # pkgutil.resolve_name(strict=True), which both validates the
+        # required pkg.mod:callable form and performs the import in one
+        # step, then call it with no arguments.
+        for filename, entrypoints in self._entrypoints.items():
+            for entrypoint in entrypoints:
+                try:
+                    _trace(
+                        f"Executing entry point: {entrypoint} from {filename}"
+                    )
+                    callable_ = pkgutil.resolve_name(entrypoint, strict=True)
+                except ValueError as exc:
+                    _print_error(
+                        f"Invalid entry point syntax in {filename}: "
+                        f"{entrypoint!r}",
+                        exc,
+                    )
+                except Exception as exc:
+                    _print_error(
+                        f"Error resolving entry point {entrypoint} "
+                        f"from {filename}",
+                        exc,
+                    )
+                else:
+                    try:
+                        callable_()
+                    except Exception as exc:
+                        _print_error(
+                            f"Error in entry point {entrypoint} from {filename}",
+                            exc,
+                        )
+
+
+def process_startup_files():
+    """Flush any pending startup-file state accumulated during a batch.
+
+    Used by main() (and any external caller that drove addsitedir() with
+    defer_processing_start_files=True) to apply the accumulated paths
+    and run the deferred import lines / entry points.
+
+    Reentrancy: the active batch state is detached from _startup_state
+    *before* state.process() runs.  This way, if an exec'd import line
+    or .start entry point itself calls site.addsitedir(), that call
+    creates its own per-call _StartupState rather than mutating the dicts
+    being iterated here.  See gh-149504.
+    """
+    global _startup_state
+    if _startup_state is None:
+        return
+    state, _startup_state = _startup_state, None
+    state.process()
+
+
+def addpackage(sitedir, name, known_paths):
+    """Process a .pth file within the site-packages directory."""
     if known_paths is None:
         known_paths = _init_pathinfo()
         reset = True
     else:
         reset = False
-    fullname = os.path.join(sitedir, name)
-    try:
-        st = os.lstat(fullname)
-    except OSError:
-        return
-    if ((getattr(st, 'st_flags', 0) & stat.UF_HIDDEN) or
-        (getattr(st, 'st_file_attributes', 0) & stat.FILE_ATTRIBUTE_HIDDEN)):
-        _trace(f"Skipping hidden .pth file: {fullname!r}")
-        return
-    _trace(f"Processing .pth file: {fullname!r}")
-    try:
-        with io.open_code(fullname) as f:
-            pth_content = f.read()
-    except OSError:
-        return
 
-    try:
-        # Accept BOM markers in .pth files as we do in source files
-        # (Windows PowerShell 5.1 makes it hard to emit UTF-8 files without a BOM)
-        pth_content = pth_content.decode("utf-8-sig")
-    except UnicodeDecodeError:
-        # Fallback to locale encoding for backward compatibility.
-        # We will deprecate this fallback in the future.
-        import locale
-        pth_content = pth_content.decode(locale.getencoding())
-        _trace(f"Cannot read {fullname!r} as UTF-8. "
-               f"Using fallback encoding {locale.getencoding()!r}")
+    # If a batch is already in progress (for example, main() is still
+    # accumulating sitedirs), participate in the batch by writing into the
+    # shared _startup_state and letting the eventual process_startup_files()
+    # flush it. Otherwise this is a standalone call, so create a unique
+    # per-call state, populate it, and process it before returning.
+    if _startup_state is None:
+        state = _StartupState()
+        state.read_pth_file(sitedir, name, known_paths)
+        state.process()
+    else:
+        _startup_state.read_pth_file(sitedir, name, known_paths)
 
-    for n, line in enumerate(pth_content.splitlines(), 1):
-        if line.startswith("#"):
-            continue
-        if line.strip() == "":
-            continue
-        try:
-            if line.startswith(("import ", "import\t")):
-                exec(line)
-                continue
-            line = line.rstrip()
-            dir, dircase = makepath(sitedir, line)
-            if dircase not in known_paths and os.path.exists(dir):
-                sys.path.append(dir)
-                known_paths.add(dircase)
-        except Exception as exc:
-            print(f"Error processing line {n:d} of {fullname}:\n",
-                  file=sys.stderr)
-            import traceback
-            for record in traceback.format_exception(exc):
-                for line in record.splitlines():
-                    print('  '+line, file=sys.stderr)
-            print("\nRemainder of file ignored", file=sys.stderr)
-            break
-    if reset:
-        known_paths = None
-    return known_paths
+    return None if reset else known_paths
 
 
-def addsitedir(sitedir, known_paths=None):
-    """Add 'sitedir' argument to sys.path if missing and handle .pth files in
-    'sitedir'"""
+def addsitedir(sitedir, known_paths=None, *, defer_processing_start_files=False):
+    """Add 'sitedir' argument to sys.path if missing and handle startup
+    files."""
+    global _startup_state
     _trace(f"Adding directory: {sitedir!r}")
     if known_paths is None:
         known_paths = _init_pathinfo()
@@ -234,20 +489,77 @@ def addsitedir(sitedir, known_paths=None):
     else:
         reset = False
     sitedir, sitedircase = makepath(sitedir)
-    if not sitedircase in known_paths:
-        sys.path.append(sitedir)        # Add path component
+
+    # If the normcase'd new sitedir isn't already known, record it to
+    # prevent re-processing, append it to sys.path (only if not already
+    # present), and process all .pth and .start files found in that
+    # directory.  Use a direct sys.path membership check for the append
+    # guard so that callers (like main()) can pass a fresh known_paths
+    # set while avoiding duplicate sys.path entries (gh-149819).
+    if sitedircase not in known_paths:
         known_paths.add(sitedircase)
-    try:
-        names = os.listdir(sitedir)
-    except OSError:
-        return
-    names = [name for name in names
-             if name.endswith(".pth") and not name.startswith(".")]
-    for name in sorted(names):
-        addpackage(sitedir, name, known_paths)
-    if reset:
-        known_paths = None
-    return known_paths
+        if sitedir not in sys.path:
+            sys.path.append(sitedir)
+
+        try:
+            names = os.listdir(sitedir)
+        except OSError:
+            return None if reset else known_paths
+
+        # Pick the _StartupState we'll write into.  There are three cases:
+        #
+        # 1. A batch is already active (_startup_state is set, e.g.  because
+        #    main() previously called us with
+        #    defer_processing_start_files=True).  Participate in this batch by
+        #    sharing the same state.  Don't flush the state since the batch's
+        #    eventual process_startup_files() will do that.
+        #
+        # 2. There is no active batch but the caller passed
+        #    defer_processing_start_files=True.  Preserve a fresh
+        #    _StartupState into the global _startup_state so that subsequent
+        #    addsitedir() calls participate in this batch, and so that the
+        #    caller's later process_startup_files() finds it.
+        #
+        # 3. This is a standalone call (there is no active batch and
+        #    defer_processing_start_files=False).  Create a unique per-call
+        #    state, populate it, process it, and then clear it.  Per-call
+        #    state is what makes reentrant addsitedir() safe; a recursive call
+        #    from inside process() lands here too and gets its own independent
+        #    state.
+
+        if _startup_state is not None:
+            state = _startup_state
+            flush_now = False
+        elif defer_processing_start_files:
+            state = _startup_state = _StartupState()
+            flush_now = False
+        else:
+            state = _StartupState()
+            flush_now = True
+
+        # The following phases are defined by PEP 829.
+        # Phases 1-3: Read .pth files, accumulating paths and import lines.
+        pth_names = sorted(
+            name for name in names
+            if name.endswith(".pth") and not name.startswith(".")
+        )
+        for name in pth_names:
+            state.read_pth_file(sitedir, name, known_paths)
+
+        # Phases 6-7: Discover .start files and accumulate their entry points.
+        # Import lines from .pth files with a matching .start file are
+        # discarded at flush time by _StartupState._exec_imports().
+        start_names = sorted(
+            name for name in names
+            if name.endswith(".start") and not name.startswith(".")
+        )
+        for name in start_names:
+            state.read_start_file(sitedir, name)
+
+        if flush_now:
+            state.process()
+
+    return None if reset else known_paths
 
 
 def check_enableusersite():
@@ -326,7 +638,7 @@ def _get_path(userbase):
     if sys.platform == 'darwin' and sys._framework:
         return f'{userbase}/lib/{implementation_lower}/site-packages'
 
-    return f'{userbase}/lib/python{version[0]}.{version[1]}{abi_thread}/site-packages'
+    return f'{userbase}/lib/{implementation_lower}{version[0]}.{version[1]}{abi_thread}/site-packages'
 
 
 def getuserbase():
@@ -359,7 +671,7 @@ def getusersitepackages():
 
     return USER_SITE
 
-def addusersitepackages(known_paths):
+def addusersitepackages(known_paths, *, defer_processing_start_files=False):
     """Add a per user site-package to sys.path
 
     Each user has its own python directory with site-packages in the
@@ -371,7 +683,7 @@ def addusersitepackages(known_paths):
     user_site = getusersitepackages()
 
     if ENABLE_USER_SITE and os.path.isdir(user_site):
-        addsitedir(user_site, known_paths)
+        addsitedir(user_site, known_paths, defer_processing_start_files=defer_processing_start_files)
     return known_paths
 
 def getsitepackages(prefixes=None):
@@ -413,12 +725,12 @@ def getsitepackages(prefixes=None):
             sitepackages.append(os.path.join(prefix, "Lib", "site-packages"))
     return sitepackages
 
-def addsitepackages(known_paths, prefixes=None):
+def addsitepackages(known_paths, prefixes=None, *, defer_processing_start_files=False):
     """Add site-packages to sys.path"""
     _trace("Processing global site-packages")
     for sitedir in getsitepackages(prefixes):
         if os.path.isdir(sitedir):
-            addsitedir(sitedir, known_paths)
+            addsitedir(sitedir, known_paths, defer_processing_start_files=defer_processing_start_files)
 
     return known_paths
 
@@ -442,8 +754,9 @@ def setcopyright():
     """Set 'copyright' and 'credits' in builtins"""
     builtins.copyright = _sitebuiltins._Printer("copyright", sys.copyright)
     builtins.credits = _sitebuiltins._Printer("credits", """\
-    Thanks to CWI, CNRI, BeOpen.com, Zope Corporation and a cast of thousands
-    for supporting Python development.  See www.python.org for more information.""")
+Thanks to CWI, CNRI, BeOpen, Zope Corporation, the Python Software
+Foundation, and a cast of thousands for supporting Python
+development.  See www.python.org for more information.""")
     files, dirs = [], []
     # Not all modules are required to have a __file__ attribute.  See
     # PEP 420 for more details.
@@ -491,33 +804,63 @@ def register_readline():
     This can be overridden in the sitecustomize or usercustomize module,
     or in a PYTHONSTARTUP file.
     """
+    if not sys.flags.ignore_environment:
+        PYTHON_BASIC_REPL = os.getenv("PYTHON_BASIC_REPL")
+    else:
+        PYTHON_BASIC_REPL = False
+
     import atexit
+
     try:
-        import readline
-        import rlcompleter  # noqa: F401
-        import _pyrepl.readline
-        import _pyrepl.unix_console
+        try:
+            import readline
+        except ImportError:
+            readline = None
+        else:
+            import rlcompleter  # noqa: F401
     except ImportError:
         return
 
-    # Reading the initialization (config) file may not be enough to set a
-    # completion key, so we set one first and then read the file.
-    if readline.backend == 'editline':
-        readline.parse_and_bind('bind ^I rl_complete')
-    else:
-        readline.parse_and_bind('tab: complete')
-
     try:
-        readline.read_init_file()
-    except OSError:
-        # An OSError here could have many causes, but the most likely one
-        # is that there's no .inputrc file (or .editrc file in the case of
-        # Mac OS X + libedit) in the expected location.  In that case, we
-        # want to ignore the exception.
-        pass
+        if PYTHON_BASIC_REPL:
+            CAN_USE_PYREPL = False
+        else:
+            original_path = sys.path
+            sys.path = [p for p in original_path if p != '']
+            try:
+                import _pyrepl.readline
+                if os.name == "nt":
+                    import _pyrepl.windows_console
+                    console_errors = (_pyrepl.windows_console._error,)
+                else:
+                    import _pyrepl.unix_console
+                    console_errors = _pyrepl.unix_console._error
+                from _pyrepl.main import CAN_USE_PYREPL
+            except ModuleNotFoundError:
+                CAN_USE_PYREPL = False
+            finally:
+                sys.path = original_path
+    except ImportError:
+        return
 
-    if readline.get_current_history_length() == 0:
-        from _pyrepl.main import CAN_USE_PYREPL
+    if readline is not None:
+        # Reading the initialization (config) file may not be enough to set a
+        # completion key, so we set one first and then read the file.
+        if readline.backend == 'editline':
+            readline.parse_and_bind('bind ^I rl_complete')
+        else:
+            readline.parse_and_bind('tab: complete')
+
+        try:
+            readline.read_init_file()
+        except OSError:
+            # An OSError here could have many causes, but the most likely one
+            # is that there's no .inputrc file (or .editrc file in the case of
+            # Mac OS X + libedit) in the expected location.  In that case, we
+            # want to ignore the exception.
+            pass
+
+    if readline is None or readline.get_current_history_length() == 0:
         # If no history was loaded, default to .python_history,
         # or PYTHON_HISTORY.
         # The guard is necessary to avoid doubling history size at
@@ -525,22 +868,33 @@ def register_readline():
         # through a PYTHONSTARTUP hook, see:
         # http://bugs.python.org/issue5845#msg198636
         history = gethistoryfile()
-        if os.getenv("PYTHON_BASIC_REPL") or not CAN_USE_PYREPL:
-            readline_module = readline
-        else:
+
+        if CAN_USE_PYREPL:
             readline_module = _pyrepl.readline
+            exceptions = (OSError, *console_errors)
+        else:
+            if readline is None:
+                return
+            readline_module = readline
+            exceptions = OSError
+
         try:
             readline_module.read_history_file(history)
-        except (OSError,* _pyrepl.unix_console._error):
+        except exceptions:
             pass
 
         def write_history():
             try:
                 readline_module.write_history_file(history)
-            except (FileNotFoundError, PermissionError):
+            except FileNotFoundError, PermissionError:
                 # home directory does not exist or is not writable
                 # https://bugs.python.org/issue19891
                 pass
+            except OSError:
+                if errno.EROFS:
+                    pass  # gh-128066: read-only file system
+                else:
+                    raise
 
         atexit.register(write_history)
 
@@ -584,17 +938,17 @@ def venv(known_paths):
                     elif key == 'home':
                         sys._home = value
 
-        sys.prefix = sys.exec_prefix = site_prefix
+        if sys.prefix != site_prefix:
+            _warn(f'Unexpected value in sys.prefix, expected {site_prefix}, got {sys.prefix}', RuntimeWarning)
+        if sys.exec_prefix != site_prefix:
+            _warn(f'Unexpected value in sys.exec_prefix, expected {site_prefix}, got {sys.exec_prefix}', RuntimeWarning)
 
         # Doing this here ensures venv takes precedence over user-site
         addsitepackages(known_paths, [sys.prefix])
 
-        # addsitepackages will process site_prefix again if its in PREFIXES,
-        # but that's ok; known_paths will prevent anything being added twice
         if system_site == "true":
-            PREFIXES.insert(0, sys.prefix)
+            PREFIXES += [sys.base_prefix, sys.base_exec_prefix]
         else:
-            PREFIXES = [sys.prefix]
             ENABLE_USER_SITE = False
 
     return known_paths
@@ -649,17 +1003,24 @@ def main():
     global ENABLE_USER_SITE
 
     orig_path = sys.path[:]
-    known_paths = removeduppaths()
+    removeduppaths()
     if orig_path != sys.path:
         # removeduppaths() might make sys.path absolute.
-        # fix __file__ and __cached__ of already imported modules too.
+        # Fix __file__ of already imported modules too.
         abs_paths()
 
-    known_paths = venv(known_paths)
+    known_paths = venv(known_paths=set())
     if ENABLE_USER_SITE is None:
         ENABLE_USER_SITE = check_enableusersite()
-    known_paths = addusersitepackages(known_paths)
-    known_paths = addsitepackages(known_paths)
+    known_paths = addusersitepackages(known_paths, defer_processing_start_files=True)
+    known_paths = addsitepackages(known_paths, defer_processing_start_files=True)
+    # PEP 829: flush accumulated data from all .pth and .start files.
+    # Paths are extended first, then deprecated import lines are exec'd,
+    # and finally .start entry points are executed — ensuring sys.path is
+    # fully populated before any startup code runs.  process_startup_files()
+    # also clears the pending state so a later addsitedir() call does
+    # not re-apply already-processed data.
+    process_startup_files()
     setquit()
     setcopyright()
     sethelper()

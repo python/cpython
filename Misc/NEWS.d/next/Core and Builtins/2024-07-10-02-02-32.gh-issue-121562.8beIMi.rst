@@ -1,2 +1,0 @@
-Optimized performance of hex_from_char by replacing switch-case with a
-lookup table

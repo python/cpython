@@ -1,3 +1,0 @@
-Changed IPv4-mapped ``ipaddress.IPv6Address`` to consistently use the mapped IPv4
-address value for deciding properties. Properties which have their behavior fixed
-are ``is_multicast``, ``is_reserved``, ``is_link_local``, ``is_global``, and ``is_unspecified``.

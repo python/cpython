@@ -1,2 +1,0 @@
-Fix :attr:`ipaddress.IPv6Address.reverse_pointer` output according to
-:rfc:`RFC 3596, §2.5 <3596#section-2.5>`.  Patch by Bénédikt Tran.
