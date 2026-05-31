@@ -1025,7 +1025,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    .. versionadded:: 3.3
 
 
-.. data:: SocketType
+.. class:: SocketType
 
    This is a Python type object that represents the socket object type. It is the
    same as ``type(socket(...))``.

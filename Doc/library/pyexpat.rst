@@ -49,7 +49,7 @@ This module provides one exception and one type object:
    Alias for :exc:`ExpatError`.
 
 
-.. data:: XMLParserType
+.. class:: XMLParserType
 
    The type of the return values from the :func:`ParserCreate` function.
 

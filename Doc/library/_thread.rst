@@ -36,7 +36,7 @@ This module defines the following constants and functions:
       This is now a synonym of the built-in :exc:`RuntimeError`.
 
 
-.. data:: LockType
+.. class:: LockType
 
    This is the type of lock objects.
 
