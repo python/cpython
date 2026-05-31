@@ -1385,7 +1385,7 @@ Tracebacks
    interpreter using thread-specific storage. If it cannot, it will return an
    error.
 
-   If *current_tstate* is not ``NULL`` then it will be used to identify which 
+   If *current_tstate* is not ``NULL`` then it will be used to identify which
    current thread is in the written output. If it is ``NULL`` then this function
    will identify the current thread using thread-specific storage. It is not an
    error if the function is unable to get the current Python thread state.
