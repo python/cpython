@@ -6,8 +6,9 @@ import sys
 import unittest.mock
 from platform import win32_edition
 from test import support
-from test.support import cpython_only, force_not_colorized, os_helper
+from test.support import cpython_only, force_not_colorized, os_helper, requires_subprocess
 from test.support.import_helper import ensure_lazy_imports
+from test.support.script_helper import assert_python_ok, assert_python_failure
 
 try:
     import _winapi
@@ -504,6 +505,60 @@ class CommandLineTest(unittest.TestCase):
             with self.subTest(command=command):
                 result = "\n".join(mimetypes._main(shlex.split(command)))
                 self.assertEqual(result, expected)
+
+
+@requires_subprocess()
+class CommandLineSubprocessTest(unittest.TestCase):
+    def test_help(self):
+        rc, stdout, stderr = assert_python_ok('-m', 'mimetypes', '--help')
+        self.assertIn(b'mimetypes', stdout)
+        self.assertIn(b'--extension', stdout)
+        self.assertIn(b'--lenient', stdout)
+
+    def test_type_lookup(self):
+        rc, stdout, stderr = assert_python_ok('-m', 'mimetypes', 'foo.pdf')
+        self.assertEqual(stdout.strip(), b'type: application/pdf encoding: None')
+        self.assertEqual(stderr, b'')
+
+    def test_type_lookup_unknown(self):
+        rc, stdout, stderr = assert_python_failure('-m', 'mimetypes', 'foo.unknownext12345')
+        self.assertEqual(stdout.strip(), b'error: media type unknown for foo.unknownext12345')
+        self.assertEqual(stderr, b'')
+
+    def test_extension_flag(self):
+        rc, stdout, stderr = assert_python_ok('-m', 'mimetypes', '-e', 'image/jpeg')
+        self.assertEqual(stdout.strip(), b'.jpg')
+        self.assertEqual(stderr, b'')
+
+    def test_extension_flag_unknown(self):
+        rc, stdout, stderr = assert_python_failure('-m', 'mimetypes', '-e', 'image/unknowntype12345')
+        self.assertEqual(stdout.strip(), b'error: unknown type image/unknowntype12345')
+        self.assertEqual(stderr, b'')
+
+    def test_lenient_flag(self):
+        rc, stdout, stderr = assert_python_ok('-m', 'mimetypes', '-e', '--lenient', 'text/xul')
+        self.assertIn(b'.xul', stdout)
+        self.assertEqual(stderr, b'')
+
+    def test_multiple_inputs(self):
+        rc, stdout, stderr = assert_python_ok('-m', 'mimetypes', 'foo.pdf', 'foo.png')
+        self.assertIn(b'type: application/pdf encoding: None', stdout)
+        self.assertIn(b'type: image/png encoding: None', stdout)
+        self.assertEqual(stderr, b'')
+
+    def test_multiple_inputs_with_error(self):
+        rc, stdout, stderr = assert_python_failure(
+            '-m', 'mimetypes', 'foo.pdf', 'foo.unknownext12345'
+        )
+        self.assertIn(b'type: application/pdf encoding: None', stdout)
+        self.assertIn(b'error: media type unknown for foo.unknownext12345', stdout)
+        self.assertEqual(stderr, b'')
+
+    @force_not_colorized
+    def test_unknown_flag(self):
+        rc, stdout, stderr = assert_python_failure('-m', 'mimetypes', '--unknown-flag', 'foo.pdf')
+        self.assertEqual(stdout, b'')
+        self.assertIn(b'error: unrecognized arguments: --unknown-flag', stderr)
 
 
 if __name__ == "__main__":
