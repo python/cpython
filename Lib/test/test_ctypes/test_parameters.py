@@ -1,6 +1,7 @@
 import sys
 import unittest
 import test.support
+import ctypes
 from ctypes import (CDLL, PyDLL, ArgumentError,
                     Structure, Array, Union,
                     _Pointer, _SimpleCData, _CFuncPtr,
@@ -247,6 +248,13 @@ class SimpleTypesTestCase(unittest.TestCase):
         self.assertRegex(repr(c_char_p.from_param(b'hihi')), r"^<cparam 'z' \(0x[A-Fa-f0-9]+\)>$")
         self.assertRegex(repr(c_wchar_p.from_param('hihi')), r"^<cparam 'Z' \(0x[A-Fa-f0-9]+\)>$")
         self.assertRegex(repr(c_void_p.from_param(0x12)), r"^<cparam 'P' \(0x0*12\)>$")
+        if hasattr(ctypes, 'c_double_complex'):
+            self.assertRegex(repr(ctypes.c_double_complex.from_param(0)),
+                             r"^<cparam 'Zd' at 0x[A-Fa-f0-9]+>$")
+            self.assertRegex(repr(ctypes.c_float_complex.from_param(0)),
+                             r"^<cparam 'Zf' at 0x[A-Fa-f0-9]+>$")
+            self.assertRegex(repr(ctypes.c_longdouble_complex.from_param(0)),
+                             r"^<cparam 'Zg' at 0x[A-Fa-f0-9]+>$")
 
     @test.support.cpython_only
     def test_from_param_result_refcount(self):

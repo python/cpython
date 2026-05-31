@@ -291,6 +291,7 @@ unicodedata_UCD_numeric_impl(PyObject *self, int chr,
 }
 
 /*[clinic input]
+@permit_long_summary
 unicodedata.UCD.category
 
     self: self
@@ -302,7 +303,7 @@ Returns the general category assigned to the character chr as string.
 
 static PyObject *
 unicodedata_UCD_category_impl(PyObject *self, int chr)
-/*[clinic end generated code: output=8571539ee2e6783a input=27d6f3d85050bc06]*/
+/*[clinic end generated code: output=8571539ee2e6783a input=1d729c67299e8a31]*/
 {
     int index;
     Py_UCS4 c = (Py_UCS4)chr;
@@ -316,6 +317,7 @@ unicodedata_UCD_category_impl(PyObject *self, int chr)
 }
 
 /*[clinic input]
+@permit_long_summary
 unicodedata.UCD.bidirectional
 
     self: self
@@ -329,7 +331,7 @@ If no such value is defined, an empty string is returned.
 
 static PyObject *
 unicodedata_UCD_bidirectional_impl(PyObject *self, int chr)
-/*[clinic end generated code: output=d36310ce2039bb92 input=b3d8f42cebfcf475]*/
+/*[clinic end generated code: output=d36310ce2039bb92 input=838f8a2203bd2990]*/
 {
     int index;
     Py_UCS4 c = (Py_UCS4)chr;
@@ -373,6 +375,7 @@ unicodedata_UCD_combining_impl(PyObject *self, int chr)
 }
 
 /*[clinic input]
+@permit_long_summary
 unicodedata.UCD.mirrored -> int
 
     self: self
@@ -387,7 +390,7 @@ character in bidirectional text, 0 otherwise.
 
 static int
 unicodedata_UCD_mirrored_impl(PyObject *self, int chr)
-/*[clinic end generated code: output=2532dbf8121b50e6 input=5dd400d351ae6f3b]*/
+/*[clinic end generated code: output=2532dbf8121b50e6 input=6db28989e49cd9c8]*/
 {
     int index;
     Py_UCS4 c = (Py_UCS4)chr;
@@ -403,6 +406,7 @@ unicodedata_UCD_mirrored_impl(PyObject *self, int chr)
 }
 
 /*[clinic input]
+@permit_long_summary
 unicodedata.UCD.east_asian_width
 
     self: self
@@ -414,7 +418,7 @@ Returns the east asian width assigned to the character chr as string.
 
 static PyObject *
 unicodedata_UCD_east_asian_width_impl(PyObject *self, int chr)
-/*[clinic end generated code: output=484e8537d9ee8197 input=c4854798aab026e0]*/
+/*[clinic end generated code: output=484e8537d9ee8197 input=207c5f68fa475516]*/
 {
     int index;
     Py_UCS4 c = (Py_UCS4)chr;
@@ -911,6 +915,7 @@ is_normalized_quickcheck(PyObject *self, PyObject *input, bool nfc, bool k,
 }
 
 /*[clinic input]
+@permit_long_summary
 unicodedata.UCD.is_normalized
 
     self: self
@@ -926,7 +931,7 @@ Valid values for form are 'NFC', 'NFKC', 'NFD', and 'NFKD'.
 static PyObject *
 unicodedata_UCD_is_normalized_impl(PyObject *self, PyObject *form,
                                    PyObject *input)
-/*[clinic end generated code: output=11e5a3694e723ca5 input=a544f14cea79e508]*/
+/*[clinic end generated code: output=11e5a3694e723ca5 input=de66aa679265300b]*/
 {
     if (PyUnicode_GET_LENGTH(input) == 0) {
         /* special case empty input strings. */
@@ -1543,32 +1548,17 @@ capi_getcode(const char* name, int namelen, Py_UCS4* code,
     return _check_alias_and_seq(code, with_named_seq);
 }
 
-static void
-unicodedata_destroy_capi(PyObject *capsule)
-{
-    void *capi = PyCapsule_GetPointer(capsule, PyUnicodeData_CAPSULE_NAME);
-    PyMem_Free(capi);
-}
-
 static PyObject *
 unicodedata_create_capi(void)
 {
-    _PyUnicode_Name_CAPI *capi = PyMem_Malloc(sizeof(_PyUnicode_Name_CAPI));
-    if (capi == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    capi->getname = capi_getucname;
-    capi->getcode = capi_getcode;
-
-    PyObject *capsule = PyCapsule_New(capi,
-                                      PyUnicodeData_CAPSULE_NAME,
-                                      unicodedata_destroy_capi);
-    if (capsule == NULL) {
-        PyMem_Free(capi);
-    }
-    return capsule;
-};
+    // Statically allocated so that any cached pointers stay valid after unicodedata
+    // is removed from sys.modules and the capsule is gc'd (gh-149449).
+    static _PyUnicode_Name_CAPI capi = {
+        .getname = capi_getucname,
+        .getcode = capi_getcode,
+    };
+    return PyCapsule_New(&capi, PyUnicodeData_CAPSULE_NAME, NULL);
+}
 
 
 /* -------------------------------------------------------------------- */
@@ -2303,6 +2293,7 @@ unicodedata_exec(PyObject *module)
 }
 
 static PyModuleDef_Slot unicodedata_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, unicodedata_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

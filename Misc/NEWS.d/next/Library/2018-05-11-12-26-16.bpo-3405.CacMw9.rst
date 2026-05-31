@@ -1,3 +1,0 @@
-Add support for user data of Tk virtual events and detail for
-``Enter``, ``Leave``, ``FocusIn``, ``FocusOut``, and
-``ConfigureRequest`` events to :mod:`tkinter`.

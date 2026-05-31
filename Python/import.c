@@ -94,6 +94,8 @@ static struct _inittab *inittab_copy = NULL;
     (interp)->imports.modules_by_index
 #define LAZY_MODULES(interp) \
     (interp)->imports.lazy_modules
+#define LAZY_PENDING_SUBMODULES(interp) \
+    (interp)->imports.lazy_pending_submodules
 #define IMPORTLIB(interp) \
     (interp)->imports.importlib
 #define OVERRIDE_MULTI_INTERP_EXTENSIONS_CHECK(interp) \
@@ -271,8 +273,11 @@ import_get_module(PyThreadState *tstate, PyObject *name)
 PyObject *
 _PyImport_InitLazyModules(PyInterpreterState *interp)
 {
-    assert(LAZY_MODULES(interp) == NULL);
-    LAZY_MODULES(interp) = PyDict_New();
+    assert(LAZY_MODULES(interp) == NULL &&
+           LAZY_PENDING_SUBMODULES(interp) == NULL);
+
+    LAZY_PENDING_SUBMODULES(interp) = PyDict_New();
+    LAZY_MODULES(interp) = PySet_New(0);
     return LAZY_MODULES(interp);
 }
 
@@ -280,6 +285,7 @@ void
 _PyImport_ClearLazyModules(PyInterpreterState *interp)
 {
     Py_CLEAR(LAZY_MODULES(interp));
+    Py_CLEAR(LAZY_PENDING_SUBMODULES(interp));
 }
 
 static int
@@ -2059,7 +2065,7 @@ import_run_modexport(PyThreadState *tstate, PyModExportFunction ex0,
     /* This is like import_run_extension, but avoids interpreter switching
      * and code for for single-phase modules.
      */
-    PyModuleDef_Slot *slots = ex0();
+    PySlot *slots = ex0();
     if (!slots) {
         if (!PyErr_Occurred()) {
             PyErr_Format(
@@ -2162,6 +2168,7 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
 
     struct _Py_ext_module_loader_result res;
     int rc = _PyImport_RunModInitFunc(p0, info, &res);
+    bool main_error = false;
     if (rc < 0) {
         /* We discard res.def. */
         assert(res.module == NULL);
@@ -2186,7 +2193,8 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
                     // obmalloc, so we create a copy here.
                     filename = _PyUnicode_Copy(info->filename);
                     if (filename == NULL) {
-                        return NULL;
+                        main_error = true;
+                        goto main_finally;
                     }
                 }
                 else {
@@ -2232,6 +2240,7 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
                     main_tstate, info->path, info->name, def, &singlephase);
             if (cached == NULL) {
                 assert(PyErr_Occurred());
+                main_error = true;
                 goto main_finally;
             }
         }
@@ -2247,7 +2256,7 @@ main_finally:
         // gh-144601: The exception object can't be transferred across
         // interpreters. Instead, we print out an unraisable exception, and
         // then raise a different exception for the calling interpreter.
-        if (rc < 0) {
+        if (rc < 0 || main_error) {
             assert(PyErr_Occurred());
             PyErr_FormatUnraisable("Exception while importing from subinterpreter");
         }
@@ -2256,7 +2265,7 @@ main_finally:
         /* Any module we got from the init function will have to be
          * reloaded in the subinterpreter. */
         mod = NULL;
-        if (rc < 0) {
+        if (rc < 0 || main_error) {
             PyErr_SetString(PyExc_ImportError,
                             "failed to import from subinterpreter due to exception");
             goto error;
@@ -2269,6 +2278,9 @@ main_finally:
 
     /* Finally we handle the error return from _PyImport_RunModInitFunc(). */
     if (rc < 0) {
+        goto error;
+    }
+    if (main_error) {
         goto error;
     }
 
@@ -3728,8 +3740,9 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
         _PyErr_SetString(tstate, PyExc_KeyError, "'__name__' not in globals");
         goto error;
     }
-    if (!PyDict_Check(globals)) {
-        _PyErr_SetString(tstate, PyExc_TypeError, "globals must be a dict");
+    if (!PyAnyDict_Check(globals)) {
+        _PyErr_SetString(tstate, PyExc_TypeError,
+                         "globals must be a dict or a frozendict");
         goto error;
     }
     if (PyDict_GetItemRef(globals, &_Py_ID(__package__), &package) < 0) {
@@ -3927,7 +3940,6 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
         return NULL;
     }
     else if (PySet_Add(importing, lazy_import) < 0) {
-        _PyImport_ReleaseLock(interp);
         goto error;
     }
 
@@ -4048,7 +4060,7 @@ error:
 
         // Create a cause exception showing where the lazy import was declared.
         PyObject *msg = PyUnicode_FromFormat(
-            "deferred import of '%U' raised an exception during resolution",
+            "lazy import of '%U' raised an exception during resolution",
             import_name
         );
         Py_DECREF(import_name); // Done with import_name.
@@ -4338,7 +4350,7 @@ get_mod_dict(PyObject *module)
 // ensure we have the set for the parent module name in sys.lazy_modules.
 // Returns a new reference.
 static PyObject *
-ensure_lazy_submodules(PyDictObject *lazy_modules, PyObject *parent)
+ensure_lazy_pending_submodules(PyDictObject *lazy_modules, PyObject *parent)
 {
     PyObject *lazy_submodules;
     Py_BEGIN_CRITICAL_SECTION(lazy_modules);
@@ -4357,6 +4369,9 @@ ensure_lazy_submodules(PyDictObject *lazy_modules, PyObject *parent)
     return lazy_submodules;
 }
 
+// Ensures that we have a LazyImportObject on the parent module for
+// all children modules which have been lazily imported. If the parent
+// module overrides the child attribute then the value is not replaced.
 static int
 register_lazy_on_parent(PyThreadState *tstate, PyObject *name,
                         PyObject *builtins)
@@ -4368,14 +4383,20 @@ register_lazy_on_parent(PyThreadState *tstate, PyObject *name,
     PyObject *parent_dict = NULL;
 
     PyInterpreterState *interp = tstate->interp;
-    PyObject *lazy_modules = LAZY_MODULES(interp);
-    assert(lazy_modules != NULL);
+    PyObject *lazy_pending_submodules = LAZY_PENDING_SUBMODULES(interp);
+    assert(lazy_pending_submodules != NULL);
 
     Py_INCREF(name);
     while (true) {
         Py_ssize_t dot = PyUnicode_FindChar(name, '.', 0,
                                             PyUnicode_GET_LENGTH(name), -1);
         if (dot < 0) {
+            PyObject *lazy_submodules = ensure_lazy_pending_submodules(
+                (PyDictObject *)lazy_pending_submodules, name);
+            if (lazy_submodules == NULL) {
+                goto done;
+            }
+            Py_DECREF(lazy_submodules);
             ret = 0;
             goto done;
         }
@@ -4393,8 +4414,8 @@ register_lazy_on_parent(PyThreadState *tstate, PyObject *name,
         }
 
         // Record the child as being lazily imported from the parent.
-        PyObject *lazy_submodules = ensure_lazy_submodules(
-            (PyDictObject *)lazy_modules, parent);
+        PyObject *lazy_submodules = ensure_lazy_pending_submodules(
+            (PyDictObject *)lazy_pending_submodules, parent);
         if (lazy_submodules == NULL) {
             goto done;
         }
@@ -4457,6 +4478,14 @@ register_from_lazy_on_parent(PyThreadState *tstate, PyObject *abs_name,
     if (fromname == NULL) {
         return -1;
     }
+
+    // Add the module name to sys.lazy_modules set (PEP 810).
+    PyObject *lazy_modules = LAZY_MODULES(tstate->interp);
+    if (PySet_Add(lazy_modules, fromname) < 0) {
+        Py_DECREF(fromname);
+        return -1;
+    }
+
     int res = register_lazy_on_parent(tstate, fromname, builtins);
     Py_DECREF(fromname);
     return res;
@@ -4512,7 +4541,11 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
             assert(!PyErr_Occurred());
             modname = Py_NewRef(Py_None);
         }
-        PyObject *args[] = {modname, name, fromlist};
+        if (fromlist == NULL) {
+            assert(!PyErr_Occurred());
+            fromlist = Py_NewRef(Py_None);
+        }
+        PyObject *args[] = {modname, abs_name, fromlist};
         PyObject *res = PyObject_Vectorcall(filter, args, 3, NULL);
 
         Py_DECREF(modname);
@@ -4544,6 +4577,13 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
         Py_DECREF(abs_name);
         return NULL;
     }
+
+    // Add the module name to sys.lazy_modules set (PEP 810).
+    PyObject *lazy_modules = LAZY_MODULES(tstate->interp);
+    if (PySet_Add(lazy_modules, abs_name) < 0) {
+        goto error;
+    }
+
     if (fromlist && PyUnicode_Check(fromlist)) {
         if (register_from_lazy_on_parent(tstate, abs_name, fromlist,
                                          builtins) < 0) {
@@ -4780,6 +4820,7 @@ _PyImport_ClearCore(PyInterpreterState *interp)
     Py_CLEAR(IMPORTLIB(interp));
     Py_CLEAR(IMPORT_FUNC(interp));
     Py_CLEAR(LAZY_IMPORT_FUNC(interp));
+    Py_CLEAR(interp->imports.lazy_pending_submodules);
     Py_CLEAR(interp->imports.lazy_modules);
     Py_CLEAR(interp->imports.lazy_importing_modules);
     Py_CLEAR(interp->imports.lazy_imports_filter);
@@ -4992,18 +5033,18 @@ _imp_lock_held_impl(PyObject *module)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 _imp.acquire_lock
 
 Acquires the interpreter's import lock for the current thread.
 
-This lock should be used by import hooks to ensure thread-safety when importing
-modules. On platforms without threads, this function does nothing.
+This lock should be used by import hooks to ensure thread-safety when
+importing modules.  On platforms without threads, this function does
+nothing.
 [clinic start generated code]*/
 
 static PyObject *
 _imp_acquire_lock_impl(PyObject *module)
-/*[clinic end generated code: output=1aff58cb0ee1b026 input=e1a4ef049d34e7dd]*/
+/*[clinic end generated code: output=1aff58cb0ee1b026 input=60e9c1b4ab471ead]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     _PyImport_AcquireLock(interp);
@@ -5161,6 +5202,7 @@ _imp_init_frozen_impl(PyObject *module, PyObject *name)
 }
 
 /*[clinic input]
+@permit_long_summary
 _imp.find_frozen
 
     name: unicode
@@ -5181,7 +5223,7 @@ The returned info (a 2-tuple):
 
 static PyObject *
 _imp_find_frozen_impl(PyObject *module, PyObject *name, int withdata)
-/*[clinic end generated code: output=8c1c3c7f925397a5 input=22a8847c201542fd]*/
+/*[clinic end generated code: output=8c1c3c7f925397a5 input=30a7a50da49eca97]*/
 {
     struct frozen_info info;
     frozen_status status = find_frozen(name, &info);
@@ -5368,6 +5410,7 @@ _imp__override_frozen_modules_for_tests_impl(PyObject *module, int override)
 }
 
 /*[clinic input]
+@permit_long_summary
 _imp._override_multi_interp_extensions_check
 
     override: int
@@ -5381,7 +5424,7 @@ _imp._override_multi_interp_extensions_check
 static PyObject *
 _imp__override_multi_interp_extensions_check_impl(PyObject *module,
                                                   int override)
-/*[clinic end generated code: output=3ff043af52bbf280 input=e086a2ea181f92ae]*/
+/*[clinic end generated code: output=3ff043af52bbf280 input=24f23f8510a7f6e7]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (_Py_IsMainInterpreter(interp)) {
@@ -5625,11 +5668,13 @@ _imp__set_lazy_attributes_impl(PyObject *module, PyObject *modobj,
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *module_dict = NULL;
     PyObject *ret = NULL;
-    PyObject *lazy_modules = LAZY_MODULES(tstate->interp);
-    assert(lazy_modules != NULL);
+    PyObject *lazy_pending_modules = LAZY_PENDING_SUBMODULES(tstate->interp);
+    assert(lazy_pending_modules != NULL);
 
     PyObject *lazy_submodules;
-    if (PyDict_GetItemRef(lazy_modules, name, &lazy_submodules) < 0) {
+    if (PySet_Discard(LAZY_MODULES(tstate->interp), name) < 0) {
+        return NULL;
+    } else if (PyDict_GetItemRef(lazy_pending_modules, name, &lazy_submodules) < 0) {
         return NULL;
     }
     else if (lazy_submodules == NULL) {
@@ -5638,6 +5683,7 @@ _imp__set_lazy_attributes_impl(PyObject *module, PyObject *modobj,
 
     module_dict = get_mod_dict(modobj);
     if (module_dict == NULL || !PyDict_CheckExact(module_dict)) {
+        Py_DECREF(lazy_submodules);
         goto done;
     }
 
@@ -5647,8 +5693,7 @@ _imp__set_lazy_attributes_impl(PyObject *module, PyObject *modobj,
     Py_END_CRITICAL_SECTION();
     Py_DECREF(lazy_submodules);
 
-    // once a module is imported it is removed from sys.lazy_modules
-    if (PyDict_DelItem(lazy_modules, name) < 0) {
+    if (PyDict_DelItem(lazy_pending_modules, name) < 0) {
         goto error;
     }
 
@@ -5708,6 +5753,7 @@ imp_module_exec(PyObject *module)
 
 
 static PyModuleDef_Slot imp_slots[] = {
+     _Py_ABI_SLOT,
     {Py_mod_exec, imp_module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
