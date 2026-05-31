@@ -890,7 +890,7 @@ def _serialize_xml(write, elem, qnames, namespaces, *,
                 target = text
             if (not is_valid_name(target) or target.lower() == 'xml'
                     or '?>' in text or not is_valid_text(text)):
-                raise ValueError('invalid processing instruction')
+                raise ValueError(f'invalid processing instruction {elem.text!r}')
         write("<?%s?>" % text)
     else:
         tag = qnames[tag]
@@ -904,7 +904,7 @@ def _serialize_xml(write, elem, qnames, namespaces, *,
         else:
             if validate:
                 if not is_valid_name(tag):
-                    raise ValueError('invalid element name')
+                    raise ValueError(f'invalid element name {tag!r}')
             write("<" + tag)
             items = list(elem.items())
             if items or namespaces:
@@ -915,7 +915,7 @@ def _serialize_xml(write, elem, qnames, namespaces, *,
                             k = ":" + k
                             if validate:
                                 if not is_valid_name(k):
-                                    raise ValueError('invalid namespace name')
+                                    raise ValueError(f'invalid namespace name {k[1:]!r}')
                         write(" xmlns%s=\"%s\"" % (
                             k,
                             _escape_attrib(v, validate)
@@ -925,12 +925,12 @@ def _serialize_xml(write, elem, qnames, namespaces, *,
                         k = k.text
                     if validate:
                         if not is_valid_name(qnames[k]):
-                            raise ValueError('invalid attribute name')
+                            raise ValueError(f'invalid attribute name {k!r}')
                     if isinstance(v, QName):
                         v = qnames[v.text]
                         if validate:
                             if not is_valid_name(v):
-                                raise ValueError('invalid attribute value')
+                                raise ValueError(f'invalid attribute value {v!r}')
                     else:
                         v = _escape_attrib(v, validate)
                     write(" %s=\"%s\"" % (qnames[k], v))
@@ -967,7 +967,7 @@ def _serialize_html(write, elem, qnames, namespaces, *, validate=True, **kwargs)
     elif tag is ProcessingInstruction:
         if validate:
             if '>' in text or '\0' in text:
-                raise ValueError('invalid processing instruction')
+                raise ValueError(f'invalid processing instruction {text!r}')
         write("<?%s?>" % text)
     else:
         tag = qnames[tag]
@@ -982,7 +982,7 @@ def _serialize_html(write, elem, qnames, namespaces, *, validate=True, **kwargs)
         else:
             if validate:
                 if not re.fullmatch('[A-Za-z][^\0\t\n\r\f />]*+', tag):
-                    raise ValueError('invalid element name')
+                    raise ValueError(f'invalid element name {tag!r}')
             write("<" + tag)
             items = list(elem.items())
             if items or namespaces:
@@ -993,7 +993,7 @@ def _serialize_html(write, elem, qnames, namespaces, *, validate=True, **kwargs)
                             k = ":" + k
                         if validate:
                             if not re.fullmatch('[^\0\t\n\r\f />=]++', k):
-                                raise ValueError('invalid attribute name')
+                                raise ValueError(f'invalid attribute name {k!r}')
                         if validate:
                             if '\0' in v:
                                 raise ValueError('invalid characters')
@@ -1007,7 +1007,7 @@ def _serialize_html(write, elem, qnames, namespaces, *, validate=True, **kwargs)
                     k = qnames[k]
                     if validate:
                         if not re.fullmatch('[^\0\t\n\r\f />][^\0\t\n\r\f />=]*+', k):
-                            raise ValueError('invalid attribute name')
+                            raise ValueError(f'invalid attribute name {k!r}')
                     if v is None:
                         write(" %s" % k)  # empty attr
                     else:
@@ -1015,11 +1015,11 @@ def _serialize_html(write, elem, qnames, namespaces, *, validate=True, **kwargs)
                             v = qnames[v.text]
                             if validate:
                                 if '\0' in v or '"' in v or '&' in v:
-                                    raise ValueError('invalid attribute value')
+                                    raise ValueError(f'invalid attribute value {v!r}')
                         else:
                             if validate:
                                 if '\0' in v:
-                                    raise ValueError('invalid attribute value')
+                                    raise ValueError(f'invalid attribute value {v!r}')
                             v = _escape_attrib_html(v)
                         write(" %s=\"%s\"" % (k, v))
             write(">")
