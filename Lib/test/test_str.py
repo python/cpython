@@ -454,6 +454,13 @@ class StrTest(string_tests.StringLikeTest,
         self.assertEqual("[a\xe9]".translate(str.maketrans({'a': '<\u20ac>'})),
                          "[<\u20ac>\xe9]")
 
+        # with frozendict
+        tbl = self.type2test.maketrans(frozendict({'s': 'S', 'T': 't'}))
+        self.assertEqual(tbl, {ord('s'): 'S', ord('T'): 't'})
+        self.assertEqual('sTan'.translate(tbl), 'Stan')
+        tbl = self.type2test.maketrans(frozendict({'a': None, 'b': '<i>'}))
+        self.checkequalnofix('<i><i><i>c', 'abababc', 'translate', tbl)
+
         # invalid Unicode characters
         invalid_char = 0x10ffff+1
         for before in "a\xe9\u20ac\U0010ffff":
@@ -853,6 +860,15 @@ class StrTest(string_tests.StringLikeTest,
         self.assertTrue('\U0001F46F'.isprintable())
         self.assertFalse('\U000E0020'.isprintable())
 
+    @support.requires_resource('cpu')
+    def test_isprintable_invariant(self):
+        for codepoint in range(sys.maxunicode + 1):
+            char = chr(codepoint)
+            category = unicodedata.category(char)
+            self.assertEqual(char.isprintable(),
+                             category[0] not in ('C', 'Z')
+                             or char == ' ')
+
     def test_surrogates(self):
         for s in ('a\uD800b\uDFFF', 'a\uDFFFb\uD800',
                   'a\uD800b\uDFFFa', 'a\uDFFFb\uD800a'):
@@ -1222,10 +1238,10 @@ class StrTest(string_tests.StringLikeTest,
         self.assertEqual('{0:\x00^6}'.format(3), '\x00\x003\x00\x00\x00')
         self.assertEqual('{0:<6}'.format(3), '3     ')
 
-        self.assertEqual('{0:\x00<6}'.format(3.14), '3.14\x00\x00')
-        self.assertEqual('{0:\x01<6}'.format(3.14), '3.14\x01\x01')
-        self.assertEqual('{0:\x00^6}'.format(3.14), '\x003.14\x00')
-        self.assertEqual('{0:^6}'.format(3.14), ' 3.14 ')
+        self.assertEqual('{0:\x00<6}'.format(3.25), '3.25\x00\x00')
+        self.assertEqual('{0:\x01<6}'.format(3.25), '3.25\x01\x01')
+        self.assertEqual('{0:\x00^6}'.format(3.25), '\x003.25\x00')
+        self.assertEqual('{0:^6}'.format(3.25), ' 3.25 ')
 
         self.assertEqual('{0:\x00<12}'.format(3+2.0j), '(3+2j)\x00\x00\x00\x00\x00\x00')
         self.assertEqual('{0:\x01<12}'.format(3+2.0j), '(3+2j)\x01\x01\x01\x01\x01\x01')
@@ -1569,17 +1585,40 @@ class StrTest(string_tests.StringLikeTest,
         self.assertEqual('%X' % letter_m, '6D')
         self.assertEqual('%o' % letter_m, '155')
         self.assertEqual('%c' % letter_m, 'm')
-        self.assertRaisesRegex(TypeError, '%x format: an integer is required, not float', operator.mod, '%x', 3.14)
-        self.assertRaisesRegex(TypeError, '%X format: an integer is required, not float', operator.mod, '%X', 2.11)
-        self.assertRaisesRegex(TypeError, '%o format: an integer is required, not float', operator.mod, '%o', 1.79)
-        self.assertRaisesRegex(TypeError, '%x format: an integer is required, not PseudoFloat', operator.mod, '%x', pi)
-        self.assertRaisesRegex(TypeError, '%x format: an integer is required, not complex', operator.mod, '%x', 3j)
-        self.assertRaisesRegex(TypeError, '%X format: an integer is required, not complex', operator.mod, '%X', 2j)
-        self.assertRaisesRegex(TypeError, '%o format: an integer is required, not complex', operator.mod, '%o', 1j)
-        self.assertRaisesRegex(TypeError, '%u format: a real number is required, not complex', operator.mod, '%u', 3j)
-        self.assertRaisesRegex(TypeError, '%i format: a real number is required, not complex', operator.mod, '%i', 2j)
-        self.assertRaisesRegex(TypeError, '%d format: a real number is required, not complex', operator.mod, '%d', 1j)
-        self.assertRaisesRegex(TypeError, r'%c requires an int or a unicode character, not .*\.PseudoFloat', operator.mod, '%c', pi)
+        with self.assertRaisesRegex(TypeError,
+                'format argument: %x requires an integer, not float'):
+            '%x' % 3.14
+        with self.assertRaisesRegex(TypeError,
+                'format argument: %X requires an integer, not float'):
+            '%X' % 2.11
+        with self.assertRaisesRegex(TypeError,
+                'format argument: %o requires an integer, not float'):
+            '%o' % 1.79
+        with self.assertRaisesRegex(TypeError,
+                r'format argument: %x requires an integer, not .*\.PseudoFloat'):
+            '%x' % pi
+        with self.assertRaisesRegex(TypeError,
+                'format argument: %x requires an integer, not complex'):
+            '%x' % 3j
+        with self.assertRaisesRegex(TypeError,
+                'format argument: %X requires an integer, not complex'):
+            '%X' % 2j
+        with self.assertRaisesRegex(TypeError,
+                'format argument: %o requires an integer, not complex'):
+            '%o' % 1j
+        with self.assertRaisesRegex(TypeError,
+                'format argument: %u requires a real number, not complex'):
+            '%u' % 3j
+        with self.assertRaisesRegex(TypeError,
+                'format argument: %i requires a real number, not complex'):
+            '%i' % 2j
+        with self.assertRaisesRegex(TypeError,
+                'format argument: %d requires a real number, not complex'):
+            '%d' % 1j
+        with self.assertRaisesRegex(TypeError,
+                r'format argument: %c requires an integer or a unicode character, '
+                r'not .*\.PseudoFloat'):
+            '%c' % pi
 
         class RaisingNumber:
             def __int__(self):
@@ -2596,7 +2635,8 @@ class StrTest(string_tests.StringLikeTest,
 
     def test_free_after_iterating(self):
         support.check_free_after_iterating(self, iter, str)
-        support.check_free_after_iterating(self, reversed, str)
+        if not support.Py_GIL_DISABLED:
+            support.check_free_after_iterating(self, reversed, str)
 
     def test_check_encoding_errors(self):
         # bpo-37388: str(bytes) and str.decode() must check encoding and errors

@@ -1,1 +1,0 @@
-Quitting :mod:`pdb` in ``inline`` mode will emit a confirmation prompt and exit gracefully now, instead of printing an exception traceback.

@@ -123,7 +123,7 @@ class SpecializationStatsTests(unittest.TestCase):
             if opcode._inline_cache_entries.get(op, 0)
         ]
         self.assertIn('load_attr', specialized_opcodes)
-        self.assertIn('binary_subscr', specialized_opcodes)
+        self.assertIn('binary_op', specialized_opcodes)
 
         stats = _opcode.get_specialization_stats()
         if stats is not None:

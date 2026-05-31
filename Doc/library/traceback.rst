@@ -115,14 +115,14 @@ Module-Level Functions
 
 .. function:: print_exc(limit=None, file=None, chain=True)
 
-   This is a shorthand for ``print_exception(sys.exception(), limit, file,
-   chain)``.
+   This is a shorthand for ``print_exception(sys.exception(), limit=limit, file=file,
+   chain=chain)``.
 
 
 .. function:: print_last(limit=None, file=None, chain=True)
 
-   This is a shorthand for ``print_exception(sys.last_exc, limit, file,
-   chain)``.  In general it will work only after an exception has reached
+   This is a shorthand for ``print_exception(sys.last_exc, limit=limit, file=file,
+   chain=chain)``.  In general it will work only after an exception has reached
    an interactive prompt (see :data:`sys.last_exc`).
 
 
@@ -147,9 +147,7 @@ Module-Level Functions
    :ref:`traceback object <traceback-objects>` *tb*.  It is useful
    for alternate formatting of stack traces.  The optional *limit* argument has
    the same meaning as for :func:`print_tb`.  A "pre-processed" stack trace
-   entry is a :class:`FrameSummary` object containing attributes
-   :attr:`~FrameSummary.filename`, :attr:`~FrameSummary.lineno`,
-   :attr:`~FrameSummary.name`, and :attr:`~FrameSummary.line` representing the
+   entry is a :class:`FrameSummary` object with attributes representing the
    information that is usually printed for a stack trace.
 
 
@@ -181,7 +179,7 @@ Module-Level Functions
 .. function:: format_exception_only(exc, /[, value], *, show_group=False)
 
    Format the exception part of a traceback using an exception value such as
-   given by :data:`sys.last_value`.  The return value is a list of strings, each
+   given by :data:`sys.last_exc`.  The return value is a list of strings, each
    ending in a newline.  The list contains the exception's message, which is
    normally a single string; however, for :exc:`SyntaxError` exceptions, it
    contains several lines that (when printed) display detailed information
@@ -256,6 +254,11 @@ Module-Level Functions
    used. This helper is used with :meth:`StackSummary.extract`.
 
    .. versionadded:: 3.5
+
+   .. versionchanged:: 3.14
+      This function previously returned a generator that would walk the stack
+      when first iterated over. The generator returned now is the state of the
+      stack when ``walk_stack`` is called.
 
 .. function:: walk_tb(tb)
 
@@ -342,7 +345,7 @@ the module-level functions described above.
 
    .. attribute:: exc_type
 
-      The class of the original traceback.
+      The class of the original exception.
 
       .. deprecated:: 3.13
 
@@ -386,7 +389,7 @@ the module-level functions described above.
 
       For syntax errors - the compiler error message.
 
-   .. classmethod:: from_exception(exc, *, limit=None, lookup_lines=True, capture_locals=False)
+   .. classmethod:: from_exception(exc, *, limit=None, lookup_lines=True, capture_locals=False, compact=False, max_group_width=15, max_group_depth=10)
 
       Capture an exception for later rendering. *limit*, *lookup_lines* and
       *capture_locals* are as for the :class:`StackSummary` class.
@@ -503,7 +506,9 @@ the module-level functions described above.
 A :class:`!FrameSummary` object represents a single :ref:`frame <frame-objects>`
 in a :ref:`traceback <traceback-objects>`.
 
-.. class:: FrameSummary(filename, lineno, name, lookup_line=True, locals=None, line=None)
+.. class:: FrameSummary(filename, lineno, name, *,\
+                        lookup_line=True, locals=None,\
+                        line=None, end_lineno=None, colno=None, end_colno=None)
 
    Represents a single :ref:`frame <frame-objects>` in the
    :ref:`traceback <traceback-objects>` or stack that is being formatted
@@ -538,6 +543,25 @@ in a :ref:`traceback <traceback-objects>`.
       A string representing the source code for this frame, with leading and
       trailing whitespace stripped.
       If the source is not available, it is ``None``.
+
+   .. attribute:: FrameSummary.end_lineno
+
+      The last line number of the source code for this frame.
+      By default, it is set to ``lineno`` and indexation starts from 1.
+
+      .. versionchanged:: 3.13
+         The default value changed from ``None`` to ``lineno``.
+
+   .. attribute:: FrameSummary.colno
+
+      The column number of the source code for this frame.
+      By default, it is ``None`` and indexation starts from 0.
+
+   .. attribute:: FrameSummary.end_colno
+
+      The last column number of the source code for this frame.
+      By default, it is ``None`` and indexation starts from 0.
+
 
 .. _traceback-example:
 

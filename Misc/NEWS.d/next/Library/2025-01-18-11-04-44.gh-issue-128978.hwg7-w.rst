@@ -1,2 +1,0 @@
-Fix a :exc:`NameError` in :func:`!sysconfig.expand_makefile_vars`. Patch by
-Bénédikt Tran.

@@ -10,7 +10,7 @@ This exports:
   - os.extsep is the extension separator (always '.')
   - os.altsep is the alternate pathname separator (None or '/')
   - os.pathsep is the component separator used in $PATH etc
-  - os.linesep is the line separator in text files ('\r' or '\n' or '\r\n')
+  - os.linesep is the line separator in text files ('\n' or '\r\n')
   - os.defpath is the default search path for executables
   - os.devnull is the file path of the null device ('/dev/null', etc.)
 
@@ -56,6 +56,11 @@ if 'posix' in _names:
     try:
         from posix import _exit
         __all__.append('_exit')
+    except ImportError:
+        pass
+    try:
+        from posix import _clearenv
+        __all__.append('_clearenv')
     except ImportError:
         pass
     import posixpath as path
@@ -118,6 +123,7 @@ if _exists("_have_functions"):
     _add("HAVE_FCHMODAT",   "chmod")
     _add("HAVE_FCHOWNAT",   "chown")
     _add("HAVE_FSTATAT",    "stat")
+    _add("HAVE_LSTAT",      "lstat")
     _add("HAVE_FUTIMESAT",  "utime")
     _add("HAVE_LINKAT",     "link")
     _add("HAVE_MKDIRAT",    "mkdir")
@@ -130,6 +136,8 @@ if _exists("_have_functions"):
     _add("HAVE_UNLINKAT",   "unlink")
     _add("HAVE_UNLINKAT",   "rmdir")
     _add("HAVE_UTIMENSAT",  "utime")
+    if _exists("statx"):
+        _set.add(statx)
     supports_dir_fd = _set
 
     _set = set()
@@ -151,6 +159,8 @@ if _exists("_have_functions"):
     _add("HAVE_FPATHCONF",  "pathconf")
     if _exists("statvfs") and _exists("fstatvfs"): # mac os x10.3
         _add("HAVE_FSTATVFS", "statvfs")
+    if _exists("statx"):
+        _set.add(statx)
     supports_fd = _set
 
     _set = set()
@@ -189,6 +199,8 @@ if _exists("_have_functions"):
     _add("HAVE_FSTATAT",    "stat")
     _add("HAVE_UTIMENSAT",  "utime")
     _add("MS_WINDOWS",      "stat")
+    if _exists("statx"):
+        _set.add(statx)
     supports_follow_symlinks = _set
 
     del _set
@@ -207,14 +219,17 @@ SEEK_END = 2
 # Super directory utilities.
 # (Inspired by Eric Raymond; the doc strings are mostly his)
 
-def makedirs(name, mode=0o777, exist_ok=False):
-    """makedirs(name [, mode=0o777][, exist_ok=False])
+def makedirs(name, mode=0o777, exist_ok=False, *, parent_mode=None):
+    """makedirs(name [, mode=0o777][, exist_ok=False][, parent_mode=None])
 
-    Super-mkdir; create a leaf directory and all intermediate ones.  Works like
-    mkdir, except that any intermediate path segment (not just the rightmost)
-    will be created if it does not exist. If the target directory already
-    exists, raise an OSError if exist_ok is False. Otherwise no exception is
-    raised.  This is recursive.
+    Super-mkdir; create a leaf directory and all intermediate ones.  Works
+    like mkdir, except that any intermediate path segment (not just the
+    rightmost) will be created if it does not exist.  If the target
+    directory already exists, raise an OSError if exist_ok is False.
+    Otherwise no exception is raised.  If parent_mode is not None, it will
+    be used as the mode for any newly-created, intermediate-level
+    directories. Otherwise, intermediate directories are created with the
+    default permissions (respecting umask).  This is recursive.
 
     """
     head, tail = path.split(name)
@@ -222,7 +237,11 @@ def makedirs(name, mode=0o777, exist_ok=False):
         head, tail = path.split(head)
     if head and tail and not path.exists(head):
         try:
-            makedirs(head, exist_ok=exist_ok)
+            if parent_mode is not None:
+                makedirs(head, mode=parent_mode, exist_ok=exist_ok,
+                         parent_mode=parent_mode)
+            else:
+                makedirs(head, exist_ok=exist_ok)
         except FileExistsError:
             # Defeats race condition when another thread created the path
             pass
@@ -302,12 +321,12 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
         dirpath, dirnames, filenames
 
     dirpath is a string, the path to the directory.  dirnames is a list of
-    the names of the subdirectories in dirpath (including symlinks to directories,
-    and excluding '.' and '..').
+    the names of the subdirectories in dirpath (including symlinks to
+    directories, and excluding '.' and '..').
     filenames is a list of the names of the non-directory files in dirpath.
-    Note that the names in the lists are just names, with no path components.
-    To get a full path (which begins with top) to a file or directory in
-    dirpath, do os.path.join(dirpath, name).
+    Note that the names in the lists are just names, with no path
+    components.  To get a full path (which begins with top) to a file or
+    directory in dirpath, do os.path.join(dirpath, name).
 
     If optional arg 'topdown' is true or not specified, the triple for a
     directory is generated before the triples for any of its subdirectories
@@ -317,13 +336,13 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
 
     When topdown is true, the caller can modify the dirnames list in-place
     (e.g., via del or slice assignment), and walk will only recurse into the
-    subdirectories whose names remain in dirnames; this can be used to prune the
-    search, or to impose a specific order of visiting.  Modifying dirnames when
-    topdown is false has no effect on the behavior of os.walk(), since the
-    directories in dirnames have already been generated by the time dirnames
-    itself is generated. No matter the value of topdown, the list of
-    subdirectories is retrieved before the tuples for the directory and its
-    subdirectories are generated.
+    subdirectories whose names remain in dirnames; this can be used to prune
+    the search, or to impose a specific order of visiting.  Modifying
+    dirnames when topdown is false has no effect on the behavior of
+    os.walk(), since the directories in dirnames have already been generated
+    by the time dirnames itself is generated. No matter the value of
+    topdown, the list of subdirectories is retrieved before the tuples for
+    the directory and its subdirectories are generated.
 
     By default errors from the os.scandir() call are ignored.  If
     optional arg 'onerror' is specified, it should be a function; it
@@ -345,12 +364,12 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
 
     import os
     from os.path import join, getsize
-    for root, dirs, files in os.walk('python/Lib/email'):
+    for root, dirs, files in os.walk('python/Lib/xml'):
         print(root, "consumes ")
         print(sum(getsize(join(root, name)) for name in files), end=" ")
         print("bytes in", len(files), "non-directory files")
-        if 'CVS' in dirs:
-            dirs.remove('CVS')  # don't visit CVS directories
+        if '__pycache__' in dirs:
+            dirs.remove('__pycache__')  # don't visit __pycache__ directories
 
     """
     sys.audit("os.walk", top, topdown, onerror, followlinks)
@@ -416,14 +435,16 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
             # Yield before sub-directory traversal if going top down
             yield top, dirs, nondirs
             # Traverse into sub-directories
-            for dirname in reversed(dirs):
-                new_path = join(top, dirname)
-                # bpo-23605: os.path.islink() is used instead of caching
-                # entry.is_symlink() result during the loop on os.scandir() because
-                # the caller can replace the directory entry during the "yield"
-                # above.
-                if followlinks or not islink(new_path):
-                    stack.append(new_path)
+            if dirs:
+                prefix = join(top, top[:0])  # Add trailing slash
+                for dirname in reversed(dirs):
+                    new_path = prefix + dirname
+                    # bpo-23605: os.path.islink() is used instead of caching
+                    # entry.is_symlink() result during the loop on os.scandir() because
+                    # the caller can replace the directory entry during the "yield"
+                    # above.
+                    if followlinks or not islink(new_path):
+                        stack.append(new_path)
         else:
             # Yield after sub-directory traversal if going bottom up
             stack.append((top, dirs, nondirs))
@@ -448,9 +469,9 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
         The advantage of fwalk() over walk() is that it's safe against symlink
         races (when follow_symlinks is False).
 
-        If dir_fd is not None, it should be a file descriptor open to a directory,
-          and top should be relative; top will then be relative to that directory.
-          (dir_fd is always supported for fwalk.)
+        If dir_fd is not None, it should be a file descriptor open to
+        a directory, and top should be relative; top will then be relative to
+        that directory.  (dir_fd is always supported for fwalk.)
 
         Caution:
         Since fwalk() yields file descriptors, those are only valid until the
@@ -460,13 +481,13 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
         Example:
 
         import os
-        for root, dirs, files, rootfd in os.fwalk('python/Lib/email'):
+        for root, dirs, files, rootfd in os.fwalk('python/Lib/xml'):
             print(root, "consumes", end="")
             print(sum(os.stat(name, dir_fd=rootfd).st_size for name in files),
                   end="")
             print("bytes in", len(files), "non-directory files")
-            if 'CVS' in dirs:
-                dirs.remove('CVS')  # don't visit CVS directories
+            if '__pycache__' in dirs:
+                dirs.remove('__pycache__')  # don't visit __pycache__ directories
         """
         sys.audit("os.fwalk", top, topdown, onerror, follow_symlinks, dir_fd)
         top = fspath(top)
@@ -765,6 +786,12 @@ class _Environ(MutableMapping):
         new.update(self)
         return new
 
+    if _exists("_clearenv"):
+        def clear(self):
+            _clearenv()
+            self._data.clear()
+
+
 def _create_environ_mapping():
     if name == 'nt':
         # Where Env Var Names Must Be UPPERCASE
@@ -812,6 +839,7 @@ if _exists("_create_environ"):
         env_data.clear()
         env_data.update(data)
 
+    __all__.append("reload_environ")
 
 def getenv(key, default=None):
     """Get an environment variable, return None if it doesn't exist.

@@ -1,5 +1,0 @@
-Unlikely errors in preparing arguments for :mod:`ctypes` callback are now
-handled in the same way as errors raised in the callback of in converting
-the result of the callback -- using :func:`sys.unraisablehook` instead of
-:func:`sys.excepthook` and not setting :data:`sys.last_exc` and other
-variables.

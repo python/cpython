@@ -1,7 +1,0 @@
-Fix a potential denial of service in the :mod:`imaplib` module. When connecting
-to a malicious server, it could cause an arbitrary amount of memory to be
-allocated. On many systems this is harmless as unused virtual memory is only a
-mapping, but if this hit a virtual address size limit it could lead to a
-:exc:`MemoryError` or other process crash. On unusual systems or builds where
-all allocated memory is touched and backed by actual ram or storage it could've
-consumed resources doing so until similarly crashing.
