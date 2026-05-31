@@ -6,6 +6,7 @@ from email.message import Message
 from email._policybase import compat32
 from test.support import load_package_tests
 from test.test_email import __file__ as landmark
+from test.test_email.params import ParamsMixin
 
 # Load all tests in package
 def load_tests(*args):
@@ -20,7 +21,7 @@ def openfile(filename, *args, **kws):
 
 
 # Base test class
-class TestEmailBase(unittest.TestCase):
+class TestEmailBase(ParamsMixin, unittest.TestCase):
 
     maxDiff = None
     # Currently the default policy is compat32.  By setting that as the default
@@ -72,6 +73,8 @@ class TestEmailBase(unittest.TestCase):
                                     'item {}'.format(i))
 
 
+# XXX Don't use this for new tests, use params instead.  @parameterized will be
+# deprecated and removed eventually.
 def parameterize(cls):
     """A test method parameterization class decorator.
 
