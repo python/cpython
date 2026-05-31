@@ -1,0 +1,2 @@
+Fix evaluating forward references in STRING format can 'leak' internal names
+in ``typing``.
