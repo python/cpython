@@ -1020,7 +1020,7 @@ def evaluate_forward_ref(
     """
     if format == annotationlib.Format.STRING:
         return forward_ref.__resolved_str__
-    if forward_ref.__resolved_str__ in _recursive_guard:
+    if forward_ref.__forward_arg__ in _recursive_guard:
         return forward_ref
 
     if format is None:
@@ -1044,7 +1044,7 @@ def evaluate_forward_ref(
         globals,
         locals,
         type_params,
-        recursive_guard=_recursive_guard | {forward_ref.__resolved_str__},
+        recursive_guard=_recursive_guard | {forward_ref.__forward_arg__},
         format=format,
         owner=owner,
         parent_fwdref=forward_ref,
