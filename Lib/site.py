@@ -516,33 +516,36 @@ def addsitedir(sitedir, known_paths=None, *, startup_state=None):
     if known_paths is not None and startup_state is not None:
         raise TypeError("known_paths and startup_state are mutually exclusive")
 
-    # Select the processing mode.  known_paths is the deduplication ledger,
-    # reset controls the historical return value, flush_now says whether this
-    # call processes startup data eagerly, and process_known_sitedirs controls
-    # whether site directories already present in known_paths still have their
-    # startup files read.
+    # Select the processing mode.  Each arm sets:
+    # - startup_state: the StartupState that holds the deduplication ledger
+    #   and accumulates this call's .pth and .start data
+    # - flush_now: whether this call applies the accumulated state before
+    #   returning
+    # - process_known_sitedirs: whether site directories already present in
+    #   the ledger should still have their startup files read
+    # - return_value: what this call returns, merging the historical
+    #   addsitedir() behavior (None, the caller's known_paths set), with the new
+    #   StartupState instance behavior.
     if startup_state is not None:
         # Explicit batch mode: accumulate startup data in the caller's state.
         # The caller is responsible for calling startup_state.process().
-        known_paths = startup_state._known_paths
-        reset = False
         flush_now = False
         process_known_sitedirs = True
+        return_value = startup_state
     elif known_paths is None:
         # Standalone mode: derive known paths from current sys.path, process
         # eagerly, and preserve the historical return value of None.
-        known_paths = _init_pathinfo()
-        reset = True
-        startup_state = StartupState(known_paths)
+        startup_state = StartupState(_init_pathinfo())
         flush_now = True
         process_known_sitedirs = False
+        return_value = None
     else:
         # Legacy known_paths mode: process eagerly and return the caller's
-        # updated known_paths set.
-        reset = False
+        # known_paths set, mutated in place by the StartupState.
         startup_state = StartupState(known_paths)
         flush_now = True
         process_known_sitedirs = False
+        return_value = known_paths
 
     # Reach into StartupState's non-public API deliberately: sitedir
     # bookkeeping is a detail of how addsitedir() drives a batch, not
@@ -553,17 +556,14 @@ def addsitedir(sitedir, known_paths=None, *, startup_state=None):
         process_known_sitedirs=process_known_sitedirs,
     )
     if sitedir is None:
-        if flush_now:
-            return None if reset else known_paths
-        return startup_state
+        return return_value
 
     try:
         names = os.listdir(sitedir)
     except OSError:
         if flush_now:
             startup_state.process()
-            return None if reset else known_paths
-        return startup_state
+        return return_value
 
     # The following phases are defined by PEP 829.
     # Phases 1-3: Read .pth files, accumulating paths and import lines.
@@ -586,8 +586,7 @@ def addsitedir(sitedir, known_paths=None, *, startup_state=None):
 
     if flush_now:
         startup_state.process()
-        return None if reset else known_paths
-    return startup_state
+    return return_value
 
 
 def check_enableusersite():
