@@ -893,10 +893,39 @@ class MiscReadTestBase(CommonReadTest):
                 self._assert_on_file_content(hardlink_filepath, sha256_regtype)
 
 
+class GzipReadTestBase:
+
+    def test_read_with_extra_field(self):
+        with open(self.tarname, 'rb') as f:
+            data = bytearray(f.read())
+        flags = data[3]
+        self.assertEqual(flags, 8)
+        data[3] = flags | 4
+        data[10:10] = b'\x05\x00extra'
+        with open(tmpname, 'wb') as f:
+            f.write(data)
+        print(self.mode)
+        with tarfile.open(tmpname, mode=self.mode):
+            pass
+
+    def test_read_with_file_comment(self):
+        with open(self.tarname, 'rb') as f:
+            data = bytearray(f.read())
+        flags = data[3]
+        self.assertEqual(flags, 8)
+        data[3] = flags | 16
+        i = data.index(0, 10) + 1
+        data[i:i] = b'comment\x00'
+        with open(tmpname, 'wb') as f:
+            f.write(data)
+        with tarfile.open(tmpname, mode=self.mode):
+            pass
+
+
 class MiscReadTest(MiscReadTestBase, unittest.TestCase):
     test_fail_comp = None
 
-class GzipMiscReadTest(GzipTest, MiscReadTestBase, unittest.TestCase):
+class GzipMiscReadTest(GzipTest, GzipReadTestBase, MiscReadTestBase, unittest.TestCase):
     pass
 
 class Bz2MiscReadTest(Bz2Test, MiscReadTestBase, unittest.TestCase):
@@ -970,7 +999,7 @@ class StreamReadTest(CommonReadTest, unittest.TestCase):
         finally:
             tar1.close()
 
-class GzipStreamReadTest(GzipTest, StreamReadTest):
+class GzipStreamReadTest(GzipTest, GzipReadTestBase, StreamReadTest):
     pass
 
 class Bz2StreamReadTest(Bz2Test, StreamReadTest):
@@ -1312,6 +1341,27 @@ class GNUReadTest(LongnameTest, ReadTest, unittest.TestCase):
             return (s.st_blocks * 512 < s.st_size)
         else:
             return False
+
+    def test_gnulong_dirname_strips_all_trailing_slashes(self):
+        # gh-149980: _proc_gnulong must normalize trailing slashes the same
+        # way _frombuf and _proc_builtin do (rstrip, not removesuffix), so
+        # a GNU long-name directory entry agrees with a short-name one.
+        long_name = "a" * 120 + "///"   # > 100 bytes => GNUTYPE_LONGNAME
+        short_name = "b" * 20 + "///"
+
+        buf = io.BytesIO()
+        with tarfile.open(fileobj=buf, mode="w",
+                          format=tarfile.GNU_FORMAT) as tar:
+            for name in (short_name, long_name):
+                info = tarfile.TarInfo(name=name)
+                info.type = tarfile.DIRTYPE
+                tar.addfile(info)
+
+        buf.seek(0)
+        with tarfile.open(fileobj=buf, mode="r") as tar:
+            names = [m.name for m in tar.getmembers()]
+
+        self.assertEqual(names, ["b" * 20, "a" * 120])
 
 
 class PaxReadTest(LongnameTest, ReadTest, unittest.TestCase):
@@ -3205,7 +3255,11 @@ def root_is_uid_gid_0():
         import pwd, grp
     except ImportError:
         return False
-    if pwd.getpwuid(0)[0] != 'root':
+    try:
+        if pwd.getpwuid(0)[0] != 'root':
+            return False
+    except KeyError:
+        # On Cygwin, there is no root user (uid 0)
         return False
     if grp.getgrgid(0)[0] != 'root':
         return False
@@ -3985,6 +4039,9 @@ class TestExtractionFilters(unittest.TestCase):
                                  check_flag=False)):
             if sys.platform == 'win32':
                 self.expect_exception((FileNotFoundError, FileExistsError))
+            elif sys.platform == 'cygwin':
+                exc = self.expect_exception(OSError)
+                self.assertEqual(exc.errno, errno.ELOOP)
             elif self.raised_exception:
                 # Cannot symlink/hardlink: tarfile falls back to getmember()
                 self.expect_exception(KeyError)
@@ -4006,7 +4063,8 @@ class TestExtractionFilters(unittest.TestCase):
                         # 206: ERROR_FILENAME_EXCED_RANGE
                         self.assertIn(exc.winerror, (3, 5, 206))
                     else:
-                        self.assertEqual(exc.errno, errno.ENAMETOOLONG)
+                        self.assertIn(exc.errno,
+                                      (errno.ENAMETOOLONG, errno.ELOOP))
 
     @symlink_test
     def test_parent_symlink2(self):
