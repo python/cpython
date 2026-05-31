@@ -111,6 +111,7 @@ math
   new functions :func:`math.cospi`, :func:`math.sinpi`, and :func:`math.tanpi`
   take half-turn angle arguments. These functions are recommended by IEEE
   754-2019 and standardized in C23.
+  (Contributed by Jeff Epler in :gh:`150534`.)
 
 os
 --

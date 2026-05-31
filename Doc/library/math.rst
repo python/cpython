@@ -656,8 +656,8 @@ Trigonometric functions
    The vector in the plane from the origin to point ``(x, y)`` makes this angle
    with the positive X axis. The point of :func:`atan2pi` is that the signs of both
    inputs are known to it, so it can compute the correct quadrant for the angle.
-   For example, ``atanpi(1)`` and ``atan2pi(1, 1)`` are both ``.25``, but
-   ``atan2pi(-1, -1)`` is ``-.75``.
+   For example, ``atanpi(1)`` and ``atan2pi(1, 1)`` are both ``0.25``, but
+   ``atan2pi(-1, -1)`` is ``-0.75``.
 
    .. versionadded:: next
 

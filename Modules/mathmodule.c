@@ -312,7 +312,6 @@ m_cospi(double x)
 #define m_cospi cospi
 #endif
 
-
 #ifndef HAVE_SINPI
 /*
    sin(pi*x), giving accurate results for all finite x (especially x
