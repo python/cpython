@@ -73,6 +73,7 @@ __all__ = [
     "run_no_yield_async_fn", "run_yielding_async_fn", "async_yield",
     "reset_code", "on_github_actions",
     "requires_root_user", "requires_non_root_user",
+    "skip_if_double_rounding",
     ]
 
 
@@ -324,16 +325,6 @@ def requires(resource, msg=None):
     if resource == 'gui' and not _is_gui_available():
         raise ResourceDenied(_is_gui_available.reason)
 
-def _get_kernel_version(sysname="Linux"):
-    import platform
-    if platform.system() != sysname:
-        return None
-    version_txt = platform.release().split('-', 1)[0]
-    try:
-        return tuple(map(int, version_txt.split('.')))
-    except ValueError:
-        return None
-
 def _requires_unix_version(sysname, min_version):
     """Decorator raising SkipTest if the OS is `sysname` and the version is less
     than `min_version`.
@@ -523,6 +514,15 @@ SOCK_MAX_SIZE = 16 * 1024 * 1024 + 1
 requires_IEEE_754 = unittest.skipUnless(
     float.__getformat__("double").startswith("IEEE"),
     "test requires IEEE 754 doubles")
+
+# detect evidence of double-rounding:
+x, y = 1e16, 2.9999 # use temporary values to defeat peephole optimizer
+HAVE_DOUBLE_ROUNDING = (x + y == 1e16 + 4)
+skip_if_double_rounding = unittest.skipIf(HAVE_DOUBLE_ROUNDING,
+                                          "accuracy not guaranteed on "
+                                          "machines with double rounding")
+del x, y, HAVE_DOUBLE_ROUNDING
+
 
 def requires_zlib(reason='requires zlib'):
     try:
@@ -2805,6 +2805,10 @@ def exceeds_recursion_limit():
 # Windows doesn't have os.uname() but it doesn't support s390x.
 is_s390x = hasattr(os, 'uname') and os.uname().machine == 's390x'
 skip_on_s390x = unittest.skipIf(is_s390x, 'skipped on s390x')
+
+# Cygwin uses the newlib C library
+skip_on_newlib = unittest.skipIf(sys.platform == 'cygwin',
+                                 'the test fails on newlib C library')
 
 Py_TRACE_REFS = hasattr(sys, 'getobjects')
 
