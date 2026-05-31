@@ -418,7 +418,8 @@ Some smaller changes made to the core Python language are:
 * All the UTF-\* codecs (except UTF-7) now reject surrogates during both
   encoding and decoding unless the ``surrogatepass`` error handler is used,
   with the exception of the UTF-16 decoder (which accepts valid surrogate pairs)
-  and the UTF-16 encoder (which produces them while encoding non-BMP characters).
+  and the UTF-16 encoder (which produces them while encoding characters that
+  are not in the :abbr:`BMP (Basic Multilingual Plane)`).
   (Contributed by Victor Stinner, Kang-Hao (Kenny) Lu and Serhiy Storchaka in
   :issue:`12892`.)
 

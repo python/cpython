@@ -864,7 +864,7 @@ A Windows console, for instance, keeps a user-settable 1 to 9999 lines,
 with 300 the default.
 
 A Tk Text widget, and hence IDLE's Shell, displays characters (codepoints) in
-the BMP (Basic Multilingual Plane) subset of Unicode.  Which characters are
+the :abbr:`BMP (Basic Multilingual Plane)` subset of Unicode.  Which characters are
 displayed with a proper glyph and which with a replacement box depends on the
 operating system and installed fonts.  Tab characters cause the following text
 to begin after the next tab stop. (They occur every 8 'characters').  Newline

@@ -76,7 +76,8 @@ The :mod:`!xml.parsers.expat` module contains two functions:
       For other encodings (including aliases like Latin1 and ASCII) it
       falls back to Python.
       It supports most of 8-bit encodings and many multi-byte encodings
-      like Shift_JIS, although only BMP characters (``U+0000-U+FFFF``)
+      like Shift_JIS, although only the :abbr:`BMP (Basic Multilingual Plane)`
+      characters (U+0000 through U+FFFF)
       are supported with non-native encodings (this restriction is also
       applied to aliases like UTF8).
       These restrictions only apply if *encoding* is not given.

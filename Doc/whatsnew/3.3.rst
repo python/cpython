@@ -262,7 +262,8 @@ The storage of Unicode strings now depends on the highest code point in the stri
 
 * pure ASCII and Latin1 strings (``U+0000-U+00FF``) use 1 byte per code point;
 
-* BMP strings (``U+0000-U+FFFF``) use 2 bytes per code point;
+* :abbr:`BMP (Basic Multilingual Plane)` strings (``U+0000-U+FFFF``) use
+  2 bytes per code point;
 
 * non-BMP strings (``U+10000-U+10FFFF``) use 4 bytes per code point.
 
