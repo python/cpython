@@ -43,6 +43,7 @@ static const char copyright[] =
 #include "pycore_dict.h"             // _PyDict_Next()
 #include "pycore_long.h"             // _PyLong_GetZero()
 #include "pycore_moduleobject.h"     // _PyModule_GetState()
+#include "pycore_tuple.h"            // _PyTuple_FromPairSteal
 #include "pycore_unicodeobject.h"    // _PyUnicode_Copy
 #include "pycore_weakref.h"          // FT_CLEAR_WEAKREFS()
 
@@ -2572,31 +2573,21 @@ _sre_SRE_Match_end_impl(MatchObject *self, PyObject *group)
 LOCAL(PyObject*)
 _pair(Py_ssize_t i1, Py_ssize_t i2)
 {
-    PyObject* pair;
-    PyObject* item;
-
-    pair = PyTuple_New(2);
-    if (!pair)
+    PyObject* item1 = PyLong_FromSsize_t(i1);
+    if (!item1) {
         return NULL;
+    }
+    PyObject* item2 = PyLong_FromSsize_t(i2);
+    if(!item2) {
+        Py_DECREF(item1);
+        return NULL;
+    }
 
-    item = PyLong_FromSsize_t(i1);
-    if (!item)
-        goto error;
-    PyTuple_SET_ITEM(pair, 0, item);
-
-    item = PyLong_FromSsize_t(i2);
-    if (!item)
-        goto error;
-    PyTuple_SET_ITEM(pair, 1, item);
-
-    return pair;
-
-  error:
-    Py_DECREF(pair);
-    return NULL;
+    return _PyTuple_FromPairSteal(item1, item2);
 }
 
 /*[clinic input]
+@permit_long_summary
 _sre.SRE_Match.span
 
     group: object(c_default="NULL") = 0
@@ -2607,7 +2598,7 @@ For match object m, return the 2-tuple (m.start(group), m.end(group)).
 
 static PyObject *
 _sre_SRE_Match_span_impl(MatchObject *self, PyObject *group)
-/*[clinic end generated code: output=f02ae40594d14fe6 input=8fa6014e982d71d4]*/
+/*[clinic end generated code: output=f02ae40594d14fe6 input=834cfe444f0f55cf]*/
 {
     Py_ssize_t index = match_getindex(self, group);
 
@@ -3466,6 +3457,7 @@ error:
 }
 
 static PyModuleDef_Slot sre_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, sre_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

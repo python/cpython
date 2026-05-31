@@ -4,8 +4,6 @@
 .. module:: contextvars
    :synopsis: Context Variables
 
-.. sectionauthor:: Yury Selivanov <yury@magic.io>
-
 --------------
 
 This module provides APIs to manage, store, and access context-local
