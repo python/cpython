@@ -3226,7 +3226,7 @@ static PyMethodDef math_methods[] = {
     {"atan2",           _PyCFunction_CAST(math_atan2),     METH_FASTCALL,  math_atan2_doc},
     {"atanh",           math_atanh,     METH_O,         math_atanh_doc},
     {"atan2pi",         _PyCFunction_CAST(math_atan2pi),   METH_FASTCALL,  math_atan2pi_doc},
-    {"atanpi",          math_atanpi,      METH_O,       math_atanpi_doc},
+    {"atanpi",          math_atanpi,    METH_O,       math_atanpi_doc},
     {"cbrt",            math_cbrt,      METH_O,         math_cbrt_doc},
     MATH_CEIL_METHODDEF
     {"copysign",        _PyCFunction_CAST(math_copysign),  METH_FASTCALL,  math_copysign_doc},
