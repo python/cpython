@@ -408,6 +408,7 @@ interface:
    type: application/x-sh encoding: None
    type: application/x-netcdf encoding: None
    error: media type unknown for filename.xxx
+   type: text/plain encoding: None
 
    $ # try to feed an unknown MIME type
    $ python -m mimetypes --extension audio/aac audio/opus audio/future audio/x-wav
