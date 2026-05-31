@@ -73,8 +73,8 @@ classes (shallow and deeply), by returning the original object unchanged; this
 is compatible with the way these are treated by the :mod:`pickle` module.
 
 Shallow copies of many collections can be made using the corresponding
-:meth:`!copy` method (such as :meth:`list.copy`, :meth:`dict.copy`,
-:meth:`set.copy`), and of sequences (lists, bytearrays, etc) by making a slice
+:meth:`!copy` method (such as :meth:`list.copy`, :meth:`dict.copy` or
+:meth:`set.copy`), and of sequences (lists, bytearrays, etc.) by making a slice
 of the entire sequence, for example, ``alist[:]``.
 But such methods can create an instance of the base type when copying
 an instance of a subclass, whereas :func:`copy.copy` normally returns
