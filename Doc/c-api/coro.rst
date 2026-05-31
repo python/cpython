@@ -33,3 +33,9 @@ return.
    with ``__name__`` and ``__qualname__`` set to *name* and *qualname*.
    A reference to *frame* is stolen by this function.  The *frame* argument
    must not be ``NULL``.
+
+   .. deprecated-removed:: 3.16 3.18
+
+      This function was not used since 3.10,
+      it is now impossible to construct a proper *frame*
+      object to call this function.
