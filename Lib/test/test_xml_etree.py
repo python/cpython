@@ -1477,6 +1477,7 @@ class XMLValidationTest(unittest.TestCase):
         self.check(ET.Element(ET.QName('\ud8ff', 'tag')))
         self.check(ET.Element(ET.QName('\ufffe', 'tag')))
 
+
 class HTMLValidationTest(unittest.TestCase):
 
     def check(self, elem, expected=None):
@@ -1572,6 +1573,7 @@ class HTMLValidationTest(unittest.TestCase):
         elem = ET.Element('plaintext')
         elem.text = 'a\x00b'
         self.check(elem)
+
 
 class IterparseTest(unittest.TestCase):
     # Test iterparse interface.

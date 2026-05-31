@@ -718,7 +718,7 @@ Functions
    the output encoding (default is US-ASCII).  Use ``encoding="unicode"`` to
    generate a Unicode string (otherwise, a bytestring is generated).  *method*
    is either ``"xml"``, ``"html"`` or ``"text"`` (default is ``"xml"``).
-   *xml_declaration*, *default_namespace*, *validate* and *short_empty_elements* has the same
+   *xml_declaration*, *default_namespace*, *validate* and *short_empty_elements* have the same
    meaning as in :meth:`ElementTree.write`. Returns an (optionally) encoded string
    containing the XML data.
 
@@ -745,7 +745,7 @@ Functions
    the output encoding (default is US-ASCII).  Use ``encoding="unicode"`` to
    generate a Unicode string (otherwise, a bytestring is generated).  *method*
    is either ``"xml"``, ``"html"`` or ``"text"`` (default is ``"xml"``).
-   *xml_declaration*, *default_namespace*, *validate* and *short_empty_elements* has the same
+   *xml_declaration*, *default_namespace*, *validate* and *short_empty_elements* have the same
    meaning as in :meth:`ElementTree.write`. Returns a list of (optionally) encoded
    strings containing the XML data. It does not guarantee any specific sequence,
    except that ``b"".join(tostringlist(element)) == tostring(element)``.
@@ -754,9 +754,6 @@ Functions
 
    .. versionchanged:: 3.4
       Added the *short_empty_elements* parameter.
-
-   .. versionchanged:: next
-      Added the *validate* parameter.
 
    .. versionchanged:: 3.8
       Added the *xml_declaration* and *default_namespace* parameters.
@@ -1207,12 +1204,13 @@ ElementTree Objects
       *method* is either ``"xml"``, ``"html"`` or ``"text"`` (default is
       ``"xml"``).
 
-      If *validate* is true, check that all characters are legal XML or HTML
-      characters, depending on *method*, element and attribute names are
-      valid, and the content of comments, processing instructions and
-      HTML elements like ``<script>`` do not contain illegal sequences,
-      and raise :exc:`ValueError` otherwise.
-      By default, no validation is performed.
+      If *validate* is true, check that all characters are legal,
+      that element and attribute names are valid, and that the content
+      of comments, processing instructions and HTML elements
+      like ``<script>`` do not contain illegal sequences according
+      to the selected *method* (``"xml"`` or ``"html"``).
+      Raise :exc:`ValueError` if any check fails.
+      By default, or if *method* is ``"text"``, no validation is performed.
 
       The keyword-only *short_empty_elements* parameter controls the formatting
       of elements that contain no content.  If ``True`` (the default), they are
