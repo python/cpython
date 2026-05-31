@@ -3785,6 +3785,7 @@ typedef struct {
     PyObject *ittuple;                  /* tuple of iterators */
     PyObject *result;
     PyObject *fillvalue;
+    int running;
 } ziplongestobject;
 
 #define ziplongestobject_CAST(op)   ((ziplongestobject *)(op))
@@ -3854,6 +3855,7 @@ zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     lz->numactive = tuplesize;
     lz->result = result;
     lz->fillvalue = Py_NewRef(fillvalue);
+    lz->running = 0;
     return (PyObject *)lz;
 }
 
@@ -3891,6 +3893,12 @@ zip_longest_next_lock_held(PyObject *op)
     PyObject *it;
     PyObject *item;
     PyObject *olditem;
+
+    if (lz->running == 1) {
+        PyErr_SetString(PyExc_ValueError, "zip_logest already executing");
+        return NULL;
+    }
+    lz->running = 1;
 
     if (tuplesize == 0)
         return NULL;
@@ -3950,6 +3958,7 @@ zip_longest_next_lock_held(PyObject *op)
             PyTuple_SET_ITEM(result, i, item);
         }
     }
+    lz->running = 0;
     return result;
 }
 
