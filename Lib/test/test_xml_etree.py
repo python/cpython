@@ -1389,10 +1389,13 @@ class ElementTreeTest(unittest.TestCase):
 
 class XMLValidationTest(unittest.TestCase):
 
-    def check(self, elem, expected=None):
+    def check(self, elem):
         self.assertRaises(ValueError,
             ET.tostring, elem, validate=True)
         ET.tostring(elem)  # no exception
+
+    def check_valid(self, elem, expected):
+        self.assertEqual(ET.tostring(elem, validate=True), expected)
 
     def test_invalid_comment(self):
         self.check(ET.Comment('a--b'))
@@ -1403,12 +1406,18 @@ class XMLValidationTest(unittest.TestCase):
         self.check(ET.PI('0'))
         self.check(ET.PI('a/b'))
         self.check(ET.PI('foo\xa0bar'))
+        self.check(ET.PI('foo\fbar'))
         self.check(ET.PI('xml'))
+        self.check(ET.PI('XML'))
         self.check(ET.PI('xml', 'encoding="UTF-8"'))
         self.check(ET.PI('foo', 'a?>b'))
         self.check(ET.PI('foo', '\x00'))
         self.check(ET.PI('foo', '\ud8ff'))
         self.check(ET.PI('foo', '\ufffe'))
+
+        self.check_valid(ET.PI('foo\tbar'), b'<?foo\tbar?>')
+        self.check_valid(ET.PI('foo\nbar'), b'<?foo\nbar?>')
+        self.check_valid(ET.PI('foo\rbar'), b'<?foo\rbar?>')
 
     def test_invalid_tag(self):
         self.check(ET.Element(''))
@@ -1480,7 +1489,7 @@ class XMLValidationTest(unittest.TestCase):
 
 class HTMLValidationTest(unittest.TestCase):
 
-    def check(self, elem, expected=None):
+    def check(self, elem):
         self.assertRaises(ValueError,
             ET.tostring, elem, method='html', validate=True)
         ET.tostring(elem, method='html')  # no exception
