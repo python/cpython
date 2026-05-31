@@ -828,6 +828,7 @@ MODULE__IO_FALSE
 MODULE__IO_TRUE
 MODULE_BUILDTYPE
 _PYTHREAD_NAME_MAXLEN
+BUILD_DETAILS
 TEST_MODULES
 OPENSSL_LDFLAGS
 OPENSSL_LIBS
@@ -1154,6 +1155,7 @@ with_openssl_rpath
 with_ssl_default_suites
 with_builtin_hashlib_hashes
 enable_test_modules
+with_build_details_suffix
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1989,6 +1991,10 @@ Optional Packages:
   --with-builtin-hashlib-hashes=md5,sha1,sha2,sha3,blake2
                           builtin hash modules, md5, sha1, sha2, sha3 (with
                           shake), blake2
+  --with-build-details-suffix=
+                          rename build-details.json to permit multiple
+                          colocated Python installs; optionally specify a
+                          custom suffix (default: no)
 
 Some influential environment variables:
   PKG_CONFIG  path to pkg-config utility
@@ -4151,7 +4157,7 @@ then
 		ac_sys_system=Linux
 		;;
 	*-*-cygwin*)
-		ac_sys_system=Cygwin
+		ac_sys_system=CYGWIN
 		;;
 	*-apple-ios*)
 		ac_sys_system=iOS
@@ -6640,7 +6646,7 @@ else case e in #(
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in notfound
+for as_dir in $PATH
 do
   IFS=$as_save_IFS
   case $as_dir in #(((
@@ -6689,7 +6695,7 @@ else case e in #(
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in notfound
+for as_dir in $PATH
 do
   IFS=$as_save_IFS
   case $as_dir in #(((
@@ -6721,7 +6727,7 @@ printf "%s\n" "no" >&6; }
 fi
 
   if test "x$ac_pt_CXX" = x; then
-    CXX="g++"
+    CXX="notfound"
   else
     case $cross_compiling:$ac_tool_warned in
 yes:)
@@ -6750,7 +6756,7 @@ else case e in #(
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in notfound
+for as_dir in $PATH
 do
   IFS=$as_save_IFS
   case $as_dir in #(((
@@ -6799,7 +6805,7 @@ else case e in #(
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in notfound
+for as_dir in $PATH
 do
   IFS=$as_save_IFS
   case $as_dir in #(((
@@ -6831,7 +6837,7 @@ printf "%s\n" "no" >&6; }
 fi
 
   if test "x$ac_pt_CXX" = x; then
-    CXX="c++"
+    CXX="notfound"
   else
     case $cross_compiling:$ac_tool_warned in
 yes:)
@@ -6860,7 +6866,7 @@ else case e in #(
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in notfound
+for as_dir in $PATH
 do
   IFS=$as_save_IFS
   case $as_dir in #(((
@@ -6909,7 +6915,7 @@ else case e in #(
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in notfound
+for as_dir in $PATH
 do
   IFS=$as_save_IFS
   case $as_dir in #(((
@@ -6941,7 +6947,7 @@ printf "%s\n" "no" >&6; }
 fi
 
   if test "x$ac_pt_CXX" = x; then
-    CXX="clang++"
+    CXX="notfound"
   else
     case $cross_compiling:$ac_tool_warned in
 yes:)
@@ -6970,7 +6976,7 @@ else case e in #(
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in notfound
+for as_dir in $PATH
 do
   IFS=$as_save_IFS
   case $as_dir in #(((
@@ -7019,7 +7025,7 @@ else case e in #(
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in notfound
+for as_dir in $PATH
 do
   IFS=$as_save_IFS
   case $as_dir in #(((
@@ -7051,7 +7057,7 @@ printf "%s\n" "no" >&6; }
 fi
 
   if test "x$ac_pt_CXX" = x; then
-    CXX="icpc"
+    CXX="notfound"
   else
     case $cross_compiling:$ac_tool_warned in
 yes:)
@@ -7783,7 +7789,7 @@ printf "%s\n" "#define Py_ENABLE_SHARED 1" >>confdefs.h
     CYGWIN*)
       LDLIBRARY='libpython$(LDVERSION).dll.a'
       BLDLIBRARY='-L. -lpython$(LDVERSION)'
-      DLLLIBRARY='libpython$(LDVERSION).dll'
+      DLLLIBRARY='cygpython$(LDVERSION).dll'
       ;;
     SunOS*)
       LDLIBRARY='libpython$(LDVERSION).so'
@@ -7842,7 +7848,7 @@ else # shared is disabled
   case $ac_sys_system in
     CYGWIN*)
       BLDLIBRARY='$(LIBRARY)'
-      LDLIBRARY='libpython$(LDVERSION).dll.a'
+      LDLIBRARY='libpython$(LDVERSION).a'
       ;;
   esac
 fi
@@ -9860,6 +9866,61 @@ fi
   *) :
      ;;
 esac
+
+if test "$ac_sys_system" = "Linux" -a "$cross_compiling" = no; then
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for thread stack size" >&5
+printf %s "checking for thread stack size... " >&6; }
+if test ${ac_cv_thread_stack_size+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e)
+    cat > conftest.c <<EOF
+#include <pthread.h>
+
+int main()
+{
+    pthread_attr_t attrs;
+    size_t size;
+
+    int rc = pthread_attr_init(&attrs);
+    if (rc != 0) {
+        return 2;
+    }
+
+    rc = pthread_attr_getstacksize(&attrs, &size);
+    if (rc != 0) {
+        return 2;
+    }
+
+    if (size < 1024 * 1024) {
+        return 1;
+    }
+    return 0;
+}
+EOF
+
+    ac_cv_thread_stack_size=unknown
+    if $CC -pthread $CFLAGS conftest.c -o conftest &>/dev/null; then
+        ./conftest &>/dev/null
+        exitcode=$?
+        if test $exitcode -eq 1; then
+            ac_cv_thread_stack_size=1048576
+        elif test $exitcode -eq 0; then
+            ac_cv_thread_stack_size="default"
+        fi
+    fi
+    rm -f conftest.c conftest
+     ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_thread_stack_size" >&5
+printf "%s\n" "$ac_cv_thread_stack_size" >&6; }
+
+    if test "$ac_cv_thread_stack_size" != "default" -a "$ac_cv_thread_stack_size" != "unknown"; then
+        LDFLAGS="$LDFLAGS -Wl,-z,stack-size=$ac_cv_thread_stack_size"
+    fi
+fi
 
 case $enable_wasm_dynamic_linking in #(
   yes) :
@@ -14171,8 +14232,8 @@ then :
 
 fi;;
 	CYGWIN*)
-		LDSHARED="gcc -shared -Wl,--enable-auto-image-base"
-		LDCXXSHARED="g++ -shared -Wl,--enable-auto-image-base";;
+		LDSHARED='$(CC) -shared -Wl,--enable-auto-image-base'
+		LDCXXSHARED='$(CXX) -shared -Wl,--enable-auto-image-base';;
 	*)	LDSHARED="ld";;
 	esac
 fi
@@ -14356,17 +14417,35 @@ printf "%s\n" "$SHLIBS" >&6; }
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking perf trampoline" >&5
 printf %s "checking perf trampoline... " >&6; }
+PERF_TRAMPOLINE_OBJ=""
 case $PLATFORM_TRIPLET in #(
   x86_64-linux-gnu) :
-    perf_trampoline=yes ;; #(
+    perf_trampoline=yes
+                        PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_x86_64.o ;; #(
   aarch64-linux-gnu) :
-    perf_trampoline=yes ;; #(
+    perf_trampoline=yes
+                         PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_aarch64.o ;; #(
   darwin) :
     case $MACOSX_DEPLOYMENT_TARGET in #(
   10.[0-9]|10.1[0-1]) :
     perf_trampoline=no ;; #(
   *) :
     perf_trampoline=yes
+                 if test "${enable_universalsdk}" && test "$UNIVERSAL_ARCHS" = "universal2"; then
+                   PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_universal2.o
+                 else
+                   case "$host_cpu" in
+                     x86_64)
+                       PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_x86_64.o
+                       ;;
+                     aarch64|arm64)
+                       PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_aarch64.o
+                       ;;
+                     *)
+                       perf_trampoline=no
+                       ;;
+                   esac
+                 fi
              ;;
 esac ;; #(
   *) :
@@ -14382,7 +14461,6 @@ then :
 
 printf "%s\n" "#define PY_HAVE_PERF_TRAMPOLINE 1" >>confdefs.h
 
-  PERF_TRAMPOLINE_OBJ=Python/asm_trampoline.o
 
 fi
 
@@ -19902,12 +19980,6 @@ then :
   printf "%s\n" "#define HAVE_DUP 1" >>confdefs.h
 
 fi
-ac_fn_c_check_func "$LINENO" "dup3" "ac_cv_func_dup3"
-if test "x$ac_cv_func_dup3" = xyes
-then :
-  printf "%s\n" "#define HAVE_DUP3 1" >>confdefs.h
-
-fi
 ac_fn_c_check_func "$LINENO" "execv" "ac_cv_func_execv"
 if test "x$ac_cv_func_execv" = xyes
 then :
@@ -20380,12 +20452,6 @@ ac_fn_c_check_func "$LINENO" "pipe" "ac_cv_func_pipe"
 if test "x$ac_cv_func_pipe" = xyes
 then :
   printf "%s\n" "#define HAVE_PIPE 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "pipe2" "ac_cv_func_pipe2"
-if test "x$ac_cv_func_pipe2" = xyes
-then :
-  printf "%s\n" "#define HAVE_PIPE2 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "plock" "ac_cv_func_plock"
@@ -21054,7 +21120,13 @@ fi
 # header definition prevents usage - autoconf doesn't use the headers), or
 # raise an error if used at runtime. Force these symbols off.
 if test "$ac_sys_system" != "iOS" ; then
-  ac_fn_c_check_func "$LINENO" "getentropy" "ac_cv_func_getentropy"
+  ac_fn_c_check_func "$LINENO" "dup3" "ac_cv_func_dup3"
+if test "x$ac_cv_func_dup3" = xyes
+then :
+  printf "%s\n" "#define HAVE_DUP3 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "getentropy" "ac_cv_func_getentropy"
 if test "x$ac_cv_func_getentropy" = xyes
 then :
   printf "%s\n" "#define HAVE_GETENTROPY 1" >>confdefs.h
@@ -21064,6 +21136,12 @@ ac_fn_c_check_func "$LINENO" "getgroups" "ac_cv_func_getgroups"
 if test "x$ac_cv_func_getgroups" = xyes
 then :
   printf "%s\n" "#define HAVE_GETGROUPS 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "pipe2" "ac_cv_func_pipe2"
+if test "x$ac_cv_func_pipe2" = xyes
+then :
+  printf "%s\n" "#define HAVE_PIPE2 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "system" "ac_cv_func_system"
@@ -31660,6 +31738,50 @@ fi
 printf "%s\n" "$TEST_MODULES" >&6; }
 
 
+# Check for --with-build-details-suffix
+BUILD_DETAILS=build-details.json
+
+# Check whether --with-build-details-suffix was given.
+if test ${with_build_details_suffix+y}
+then :
+  withval=$with_build_details_suffix;
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-build-details-suffix" >&5
+printf %s "checking for --with-build-details-suffix... " >&6; }
+    if test "x$with_build_details_suffix" = xno
+then :
+  as_fn_error $? "invalid --with-build-details-suffix option: expected custom suffix or \"yes\", not \"no\"" "$LINENO" 5
+
+fi
+    if test "x$with_build_details_suffix" = xyes
+then :
+
+        colocated_install=yes
+        threading_suffix=""
+        if [ "$ABI_THREAD" = "t" ]; then
+          threading_suffix=-free-threading
+        fi
+        debug_suffix=""
+        if [ "$Py_DEBUG" = "true" ]; then
+          debug_suffix=-debug
+        fi
+        BUILD_DETAILS=build-details.$MULTIARCH$threading_suffix$debug_suffix.json
+
+else case e in #(
+  e)
+        BUILD_DETAILS=build-details.$with_build_details_suffix.json
+
+     ;;
+esac
+fi
+
+
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_build_details_suffix" >&5
+printf "%s\n" "$with_build_details_suffix" >&6; }
+BUILD_DETAILS=$BUILD_DETAILS
+
+
 # gh-109054: Check if -latomic is needed to get <pyatomic.h> atomic functions.
 # On Linux aarch64, GCC may require programs and libraries to be linked
 # explicitly to libatomic. Call _Py_atomic_or_uint64() which may require
@@ -31754,6 +31876,7 @@ case "$ac_sys_system" in
   iOS) _PYTHREAD_NAME_MAXLEN=63;;
   FreeBSD*) _PYTHREAD_NAME_MAXLEN=19;; # gh-131268
   OpenBSD*) _PYTHREAD_NAME_MAXLEN=23;; # gh-131268
+  CYGWIN*) _PYTHREAD_NAME_MAXLEN=16;;
   *) _PYTHREAD_NAME_MAXLEN=;;
 esac
 if test -n "$_PYTHREAD_NAME_MAXLEN"; then
@@ -34376,6 +34499,15 @@ fi
 printf "%s\n" "$py_cv_module__hashlib" >&6; }
 
 
+case $ac_sys_system in #(
+  # On FreeBSD, _testcapi.get_process_memory_usage() calls kvm_openfiles()
+  # and so needs libkvm.
+  FreeBSD*) :
+    LIBKVM="-lkvm"
+ ;; #(
+  *) :
+     ;;
+esac
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testcapi" >&5
 printf %s "checking for stdlib extension module _testcapi... " >&6; }
@@ -34402,7 +34534,7 @@ fi
 then :
 
 
-    as_fn_append MODULE_BLOCK "MODULE__TESTCAPI_LDFLAGS=$LIBATOMIC$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__TESTCAPI_LDFLAGS=$LIBATOMIC $LIBKVM$as_nl"
 
 fi
    if test "$py_cv_module__testcapi" = yes; then

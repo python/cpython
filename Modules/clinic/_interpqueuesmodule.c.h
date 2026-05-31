@@ -109,7 +109,8 @@ PyDoc_STRVAR(_interpqueues_destroy__doc__,
 "\n"
 "Clear and destroy the queue.\n"
 "\n"
-"Afterward attempts to use the queue will behave as though it never existed.");
+"Afterward attempts to use the queue will behave as though it never\n"
+"existed.");
 
 #define _INTERPQUEUES_DESTROY_METHODDEF    \
     {"destroy", _PyCFunction_CAST(_interpqueues_destroy), METH_FASTCALL|METH_KEYWORDS, _interpqueues_destroy__doc__},
@@ -762,4 +763,4 @@ _interpqueues__register_heap_types(PyObject *module, PyObject *const *args, Py_s
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=64cea8e1063429b6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7e56e5b0c684d294 input=a9049054013a1b77]*/

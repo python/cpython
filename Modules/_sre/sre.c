@@ -2587,6 +2587,7 @@ _pair(Py_ssize_t i1, Py_ssize_t i2)
 }
 
 /*[clinic input]
+@permit_long_summary
 _sre.SRE_Match.span
 
     group: object(c_default="NULL") = 0
@@ -2597,7 +2598,7 @@ For match object m, return the 2-tuple (m.start(group), m.end(group)).
 
 static PyObject *
 _sre_SRE_Match_span_impl(MatchObject *self, PyObject *group)
-/*[clinic end generated code: output=f02ae40594d14fe6 input=8fa6014e982d71d4]*/
+/*[clinic end generated code: output=f02ae40594d14fe6 input=834cfe444f0f55cf]*/
 {
     Py_ssize_t index = match_getindex(self, group);
 
