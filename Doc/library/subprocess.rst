@@ -360,7 +360,7 @@ functions.
                  start_new_session=False, pass_fds=(), *, group=None, \
                  extra_groups=None, user=None, umask=-1, \
                  encoding=None, errors=None, text=None, pipesize=-1, \
-                 process_group=None)
+                 process_group=None, force_hide=False)
 
    Execute a child program in a new process.  On POSIX, the class uses
    :meth:`os.execvpe`-like behavior to execute the child program.  On Windows,
@@ -456,6 +456,10 @@ functions.
    ``shell=True`` on Windows is when the command you wish to execute is built
    into the shell (e.g. :command:`dir` or :command:`copy`).  You do not need
    ``shell=True`` to run a batch file or console-based executable.
+
+   On Windows, ``force_hide=True`` attempts to start the application without creating
+   or showing any windows. Some applications may ignore this request, and applications
+   that are hidden often cannot be used or exited by users.
 
    .. note::
 
