@@ -1995,22 +1995,13 @@ cleanup_worklist(struct worklist *worklist)
 static bool
 gc_should_collect(GCState *gcstate)
 {
-    int gc_enabled = _Py_atomic_load_int_relaxed(&gcstate->enabled);
-    if (!gc_enabled) {
-        return false;
-    }
-
     int count = _Py_atomic_load_int_relaxed(&gcstate->young.count);
-
-    PyMutex_Lock(&gcstate->generations_mutex);
     int threshold = gcstate->young.threshold;
-    int old_0_threshold = gcstate->old[0].threshold;
-    PyMutex_Unlock(&gcstate->generations_mutex);
-
-    if (count <= threshold || threshold == 0) {
+    int gc_enabled = _Py_atomic_load_int_relaxed(&gcstate->enabled);
+    if (count <= threshold || threshold == 0 || !gc_enabled) {
         return false;
     }
-    if (old_0_threshold == 0) {
+    if (gcstate->old[0].threshold == 0) {
         // A few tests rely on immediate scheduling of the GC so we ignore the
         // extra conditions if generations[1].threshold is set to zero.
         return true;

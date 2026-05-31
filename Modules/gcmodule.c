@@ -167,7 +167,8 @@ gc_set_threshold_impl(PyObject *module, int threshold0, int group_right_1,
         gcstate->generations[2].threshold = threshold2;
     }
 #else
-    PyMutex_Lock(&gcstate->generations_mutex);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
     gcstate->young.threshold = threshold0;
     if (group_right_1) {
         gcstate->old[0].threshold = threshold1;
@@ -175,7 +176,7 @@ gc_set_threshold_impl(PyObject *module, int threshold0, int group_right_1,
     if (group_right_2) {
         gcstate->old[1].threshold = threshold2;
     }
-    PyMutex_Unlock(&gcstate->generations_mutex);
+    _PyEval_StartTheWorld(interp);
 #endif
     Py_RETURN_NONE;
 }
@@ -197,15 +198,10 @@ gc_get_threshold_impl(PyObject *module)
                          gcstate->generations[1].threshold,
                          gcstate->generations[2].threshold);
 #else
-    PyMutex_Lock(&gcstate->generations_mutex);
-    int young_threshold = gcstate->young.threshold;
-    int old_0_threshold = gcstate->old[0].threshold;
-    int old_1_threshold = gcstate->old[1].threshold;
-    PyMutex_Unlock(&gcstate->generations_mutex);
     return Py_BuildValue("(iii)",
-                         young_threshold,
-                         old_0_threshold,
-                         old_1_threshold);
+                         gcstate->young.threshold,
+                         gcstate->old[0].threshold,
+                         gcstate->old[1].threshold);
 #endif
 }
 
