@@ -1440,12 +1440,12 @@ Return the mantissa and exponent of x, as pair (m, e).
 
 If x is a finite nonzero number, then m is a float with
 0.5 <= abs(m) < 1.0 and an integer e is such that
-x == m * 2.**e exactly.  Else, return (x, 0).
+x == m * 2**e exactly.  Else, return (x, 0).
 [clinic start generated code]*/
 
 static PyObject *
 math_frexp_impl(PyObject *module, double x)
-/*[clinic end generated code: output=03e30d252a15ad4a input=904718c4ea236def]*/
+/*[clinic end generated code: output=03e30d252a15ad4a input=215cf8ea28a0959b]*/
 {
     int i;
     /* deal with special cases directly, to sidestep platform

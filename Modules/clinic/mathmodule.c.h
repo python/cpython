@@ -200,7 +200,7 @@ PyDoc_STRVAR(math_frexp__doc__,
 "\n"
 "If x is a finite nonzero number, then m is a float with\n"
 "0.5 <= abs(m) < 1.0 and an integer e is such that\n"
-"x == m * 2.**e exactly.  Else, return (x, 0).");
+"x == m * 2**e exactly.  Else, return (x, 0).");
 
 #define MATH_FREXP_METHODDEF    \
     {"frexp", (PyCFunction)math_frexp, METH_O, math_frexp__doc__},
@@ -1164,4 +1164,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6f647e7c6dd60148 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3452ce8caa2d1bd7 input=a9049054013a1b77]*/

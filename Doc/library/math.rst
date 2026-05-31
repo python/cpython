@@ -258,7 +258,7 @@ Floating point manipulation functions
    Return the mantissa and exponent of *x* as the pair ``(m, e)``.
    If *x* is a finite nonzero number, then *m* is a float with
    ``0.5 <= abs(m) < 1.0`` and an integer *e* is such that
-   ``x == m * 2.**e`` exactly.  Else, return ``(x, 0)``.
+   ``x == m * 2**e`` exactly.  Else, return ``(x, 0)``.
    This is used to "pick apart" the internal representation of
    a float in a portable way.
 
