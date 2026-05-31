@@ -1536,9 +1536,9 @@ def hook():
         # Ensure that on sys.path we see this interspersed order:
         # [sitedir1, extdir1, sitedir2, extdir2]
         indexes = [
-            sys.path.index(path) for path in (
-            self.sitedir, extdir1, sitedir2, extdir2
-        )]
+            sys.path.index(path)
+            for path in (self.sitedir, extdir1, sitedir2, extdir2)
+        ]
         # If the index ordering is the same, we preserved the intersperse.
         self.assertEqual(indexes, sorted(indexes))
 

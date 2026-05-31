@@ -366,14 +366,14 @@ Module contents
    (the default), this set is built from the current :data:`sys.path`.
    :func:`main` implicitly uses an instance of this class.
 
+   .. versionadded:: 3.15
+
    .. method:: process()
 
       Apply the accumulated state by first adding the path extensions to
       :data:`sys.path`, then executing the :file:`.start` file entry points
       and :file:`.pth` file ``import`` lines (:ref:`deprecated
       <site-pth-files>`).
-
-   .. versionadded:: 3.15
 
 
 .. function:: addsitedir(sitedir, known_paths=None, *, startup_state=None)
