@@ -1262,10 +1262,10 @@ Test cases
    | :meth:`assertNotEndsWith(a, b)        | ``not a.endswith(b)``          | 3.14         |
    | <TestCase.assertNotEndsWith>`         |                                |              |
    +---------------------------------------+--------------------------------+--------------+
-   | :meth:`assertHasAttr(a, b)            | ``hastattr(a, b)``             | 3.14         |
+   | :meth:`assertHasAttr(a, b)            | ``hasattr(a, b)``              | 3.14         |
    | <TestCase.assertHasAttr>`             |                                |              |
    +---------------------------------------+--------------------------------+--------------+
-   | :meth:`assertNotHasAttr(a, b)         | ``not hastattr(a, b)``         | 3.14         |
+   | :meth:`assertNotHasAttr(a, b)         | ``not hasattr(a, b)``          | 3.14         |
    | <TestCase.assertNotHasAttr>`          |                                |              |
    +---------------------------------------+--------------------------------+--------------+
 

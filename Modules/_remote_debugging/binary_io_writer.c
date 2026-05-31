@@ -108,7 +108,15 @@ fwrite_checked_allow_threads(const void *data, size_t size, FILE *fp)
     written = fwrite(data, 1, size, fp);
     Py_END_ALLOW_THREADS
     if (written != size) {
-        PyErr_SetFromErrno(PyExc_IOError);
+        int err = errno;
+        if (ferror(fp) && err != 0) {
+            errno = err;
+            PyErr_SetFromErrno(PyExc_IOError);
+        }
+        else {
+            PyErr_Format(PyExc_IOError,
+                "short write: wrote %zu of %zu bytes", written, size);
+        }
         return -1;
     }
     return 0;
@@ -366,6 +374,11 @@ writer_intern_string(BinaryWriter *writer, PyObject *string, uint32_t *index)
         return 0;
     }
 
+    if (writer->string_count >= UINT32_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+            "too many strings for binary format");
+        return -1;
+    }
     if (writer->string_count >= writer->string_capacity) {
         if (grow_parallel_arrays((void **)&writer->strings,
                                   (void **)&writer->string_lengths,
@@ -378,6 +391,12 @@ writer_intern_string(BinaryWriter *writer, PyObject *string, uint32_t *index)
     Py_ssize_t str_len;
     const char *str_data = PyUnicode_AsUTF8AndSize(string, &str_len);
     if (!str_data) {
+        return -1;
+    }
+    if ((uintmax_t)str_len > UINT32_MAX) {
+        PyErr_Format(PyExc_OverflowError,
+            "string length %zd exceeds binary format maximum %u",
+            str_len, UINT32_MAX);
         return -1;
     }
 
@@ -422,6 +441,11 @@ writer_intern_frame(BinaryWriter *writer, const FrameEntry *entry, uint32_t *ind
         return 0;
     }
 
+    if (writer->frame_count >= UINT32_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+            "too many frames for binary format");
+        return -1;
+    }
     if (GROW_ARRAY(writer->frame_entries, writer->frame_count,
                    writer->frame_capacity, FrameEntry) < 0) {
         return -1;
@@ -466,6 +490,11 @@ writer_get_or_create_thread_entry(BinaryWriter *writer, uint64_t thread_id,
         }
     }
 
+    if (writer->thread_count >= UINT32_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+            "too many threads for binary format");
+        return NULL;
+    }
     if (writer->thread_count >= writer->thread_capacity) {
         ThreadEntry *new_entries = grow_array(writer->thread_entries,
                                               &writer->thread_capacity,
@@ -600,6 +629,11 @@ flush_pending_rle(BinaryWriter *writer, ThreadEntry *entry)
     if (!entry->has_pending_rle || entry->pending_rle_count == 0) {
         return 0;
     }
+    if (entry->pending_rle_count > UINT32_MAX - writer->total_samples) {
+        PyErr_SetString(PyExc_OverflowError,
+            "too many samples for binary format");
+        return -1;
+    }
 
     /* Write RLE record:
      * [thread_id: 8] [interpreter_id: 4] [STACK_REPEAT: 1] [count: varint]
@@ -644,6 +678,12 @@ write_sample_with_encoding(BinaryWriter *writer, ThreadEntry *entry,
                            const uint32_t *frame_indices, size_t stack_depth,
                            size_t shared_count, size_t pop_count, size_t push_count)
 {
+    if (writer->total_samples == UINT32_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+            "too many samples for binary format");
+        return -1;
+    }
+
     /* Header: thread_id(8) + interpreter_id(4) + encoding(1) + delta(varint) + status(1) */
     uint8_t header_buf[SAMPLE_HEADER_MAX_SIZE];
     memcpy(header_buf + SMP_OFF_THREAD_ID, &entry->thread_id, SMP_SIZE_THREAD_ID);
@@ -717,7 +757,7 @@ write_sample_with_encoding(BinaryWriter *writer, ThreadEntry *entry,
 }
 
 BinaryWriter *
-binary_writer_create(const char *filename, uint64_t sample_interval_us, int compression_type,
+binary_writer_create(PyObject *path, uint64_t sample_interval_us, int compression_type,
                      uint64_t start_time_us)
 {
     BinaryWriter *writer = PyMem_Calloc(1, sizeof(BinaryWriter));
@@ -725,14 +765,6 @@ binary_writer_create(const char *filename, uint64_t sample_interval_us, int comp
         PyErr_NoMemory();
         return NULL;
     }
-
-    writer->filename = PyMem_Malloc(strlen(filename) + 1);
-    if (!writer->filename) {
-        PyMem_Free(writer);
-        PyErr_NoMemory();
-        return NULL;
-    }
-    strcpy(writer->filename, filename);
 
     writer->start_time_us = start_time_us;
     writer->sample_interval_us = sample_interval_us;
@@ -799,9 +831,8 @@ binary_writer_create(const char *filename, uint64_t sample_interval_us, int comp
         }
     }
 
-    writer->fp = fopen(filename, "wb");
+    writer->fp = Py_fopen(path, "wb");
     if (!writer->fp) {
-        PyErr_SetFromErrnoWithFilename(PyExc_IOError, filename);
         goto error;
     }
 
@@ -1193,7 +1224,7 @@ binary_writer_finalize(BinaryWriter *writer)
         return -1;
     }
 
-    if (fclose(writer->fp) != 0) {
+    if (Py_fclose(writer->fp) != 0) {
         writer->fp = NULL;
         PyErr_SetFromErrno(PyExc_IOError);
         return -1;
@@ -1211,10 +1242,9 @@ binary_writer_destroy(BinaryWriter *writer)
     }
 
     if (writer->fp) {
-        fclose(writer->fp);
+        Py_fclose(writer->fp);
     }
 
-    PyMem_Free(writer->filename);
     PyMem_Free(writer->write_buffer);
 
 #ifdef HAVE_ZSTD
