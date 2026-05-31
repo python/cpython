@@ -262,6 +262,54 @@ class ListTest(list_tests.CommonTest):
         with self.assertRaises(TypeError):
             a[0] < a
 
+    def test_richcompare_stale_element_list_vitem(self):
+        # gh-148442: list_richcompare_impl must use the captured vitem for
+        # the final ordering comparison, not re-read list1's slot after __eq__
+        # may have mutated it.
+        #
+        # x.__eq__(0) puts AlwaysLT() into list1[0] and returns False.
+        class AlwaysLT:
+            def __eq__(self, other: object) -> bool:
+                return False
+
+            def __gt__(self, other: object) -> bool:
+                return False
+
+        class Mutating:
+            def __eq__(self, other: object) -> bool:
+                list1[0] = AlwaysLT()
+                return False
+
+            def __gt__(self, other: object) -> bool:
+                return True
+
+        list1 = [Mutating(), 0]
+        list2 = [0, 0]
+        self.assertTrue(list1 > list2)
+
+    def test_richcompare_stale_element_list_witem(self):
+        # gh-148442: list_richcompare_impl must use the captured witem for
+        # the final ordering comparison, not re-read list2's slot after __eq__
+        # may have mutated it.
+        #
+        # x.__eq__(0) puts AlwaysGT() into list2[0] and returns False.
+        class AlwaysGT:
+            pass
+
+        class Mutating:
+            def __eq__(self, other: object) -> bool:
+                list2[0] = AlwaysGT()
+                return False
+
+            def __gt__(self, other: object) -> bool:
+                if isinstance(other, AlwaysGT):
+                    return False  # pretend AlwaysGT beats us
+                return True       # beat everything else (including 0)
+
+        list1 = [Mutating(), 0]
+        list2 = [0, 0]
+        self.assertTrue(list1 > list2)
+
     def test_list_index_modifing_operand(self):
         # See gh-120384
         class evil:
