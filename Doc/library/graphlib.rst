@@ -109,7 +109,7 @@
       A :exc:`ValueError` will be raised if the sort has been started by
       :meth:`~.static_order` or :meth:`~.get_ready`.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.14
 
          ``prepare()`` can now be called more than once as long as the sort has
          not started. Previously this raised :exc:`ValueError`.
@@ -204,7 +204,7 @@
 
 Exceptions
 ----------
-The :mod:`graphlib` module defines the following exception classes:
+The :mod:`!graphlib` module defines the following exception classes:
 
 .. exception:: CycleError
 

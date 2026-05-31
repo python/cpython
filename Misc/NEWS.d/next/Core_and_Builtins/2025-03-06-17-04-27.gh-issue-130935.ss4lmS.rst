@@ -1,3 +1,0 @@
-Annotations at the class and module level that are conditionally defined are
-now only reflected in ``__annotations__`` if the block they are in is
-executed. Patch by Jelle Zijlstra.

@@ -5,6 +5,7 @@ preserve
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 #  include "pycore_runtime.h"     // _Py_SINGLETON()
 #endif
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_gdbm_gdbm_get__doc__,
@@ -70,7 +71,9 @@ _gdbm_gdbm_setdefault(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     default_value = args[1];
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _gdbm_gdbm_setdefault_impl((gdbmobject *)self, key, default_value);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -91,7 +94,13 @@ _gdbm_gdbm_close_impl(gdbmobject *self);
 static PyObject *
 _gdbm_gdbm_close(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _gdbm_gdbm_close_impl((gdbmobject *)self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _gdbm_gdbm_close_impl((gdbmobject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_gdbm_gdbm_keys__doc__,
@@ -109,11 +118,18 @@ _gdbm_gdbm_keys_impl(gdbmobject *self, PyTypeObject *cls);
 static PyObject *
 _gdbm_gdbm_keys(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
+    PyObject *return_value = NULL;
+
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "keys() takes no arguments");
-        return NULL;
+        goto exit;
     }
-    return _gdbm_gdbm_keys_impl((gdbmobject *)self, cls);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _gdbm_gdbm_keys_impl((gdbmobject *)self, cls);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(_gdbm_gdbm_firstkey__doc__,
@@ -122,9 +138,9 @@ PyDoc_STRVAR(_gdbm_gdbm_firstkey__doc__,
 "\n"
 "Return the starting key for the traversal.\n"
 "\n"
-"It\'s possible to loop over every key in the database using this method\n"
-"and the nextkey() method.  The traversal is ordered by GDBM\'s internal\n"
-"hash values, and won\'t be sorted by the key values.");
+"It\'s possible to loop over every key in the database using this\n"
+"method and the nextkey() method.  The traversal is ordered by GDBM\'s\n"
+"internal hash values, and won\'t be sorted by the key values.");
 
 #define _GDBM_GDBM_FIRSTKEY_METHODDEF    \
     {"firstkey", _PyCFunction_CAST(_gdbm_gdbm_firstkey), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _gdbm_gdbm_firstkey__doc__},
@@ -135,11 +151,18 @@ _gdbm_gdbm_firstkey_impl(gdbmobject *self, PyTypeObject *cls);
 static PyObject *
 _gdbm_gdbm_firstkey(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
+    PyObject *return_value = NULL;
+
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "firstkey() takes no arguments");
-        return NULL;
+        goto exit;
     }
-    return _gdbm_gdbm_firstkey_impl((gdbmobject *)self, cls);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _gdbm_gdbm_firstkey_impl((gdbmobject *)self, cls);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(_gdbm_gdbm_nextkey__doc__,
@@ -148,8 +171,8 @@ PyDoc_STRVAR(_gdbm_gdbm_nextkey__doc__,
 "\n"
 "Returns the key that follows key in the traversal.\n"
 "\n"
-"The following code prints every key in the database db, without having\n"
-"to create a list in memory that contains them all:\n"
+"The following code prints every key in the database db, without\n"
+"having to create a list in memory that contains them all:\n"
 "\n"
 "      k = db.firstkey()\n"
 "      while k is not None:\n"
@@ -187,7 +210,9 @@ _gdbm_gdbm_nextkey(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_
         &key, &key_length)) {
         goto exit;
     }
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _gdbm_gdbm_nextkey_impl((gdbmobject *)self, cls, key, key_length);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -201,9 +226,9 @@ PyDoc_STRVAR(_gdbm_gdbm_reorganize__doc__,
 "\n"
 "If you have carried out a lot of deletions and would like to shrink\n"
 "the space used by the GDBM file, this routine will reorganize the\n"
-"database.  GDBM will not shorten the length of a database file except\n"
-"by using this reorganization; otherwise, deleted file space will be\n"
-"kept and reused as new (key,value) pairs are added.");
+"database.  GDBM will not shorten the length of a database file\n"
+"except by using this reorganization; otherwise, deleted file space\n"
+"will be kept and reused as new (key,value) pairs are added.");
 
 #define _GDBM_GDBM_REORGANIZE_METHODDEF    \
     {"reorganize", _PyCFunction_CAST(_gdbm_gdbm_reorganize), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _gdbm_gdbm_reorganize__doc__},
@@ -214,11 +239,18 @@ _gdbm_gdbm_reorganize_impl(gdbmobject *self, PyTypeObject *cls);
 static PyObject *
 _gdbm_gdbm_reorganize(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
+    PyObject *return_value = NULL;
+
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "reorganize() takes no arguments");
-        return NULL;
+        goto exit;
     }
-    return _gdbm_gdbm_reorganize_impl((gdbmobject *)self, cls);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _gdbm_gdbm_reorganize_impl((gdbmobject *)self, cls);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(_gdbm_gdbm_sync__doc__,
@@ -239,11 +271,18 @@ _gdbm_gdbm_sync_impl(gdbmobject *self, PyTypeObject *cls);
 static PyObject *
 _gdbm_gdbm_sync(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
+    PyObject *return_value = NULL;
+
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "sync() takes no arguments");
-        return NULL;
+        goto exit;
     }
-    return _gdbm_gdbm_sync_impl((gdbmobject *)self, cls);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _gdbm_gdbm_sync_impl((gdbmobject *)self, cls);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(_gdbm_gdbm_clear__doc__,
@@ -261,11 +300,18 @@ _gdbm_gdbm_clear_impl(gdbmobject *self, PyTypeObject *cls);
 static PyObject *
 _gdbm_gdbm_clear(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
+    PyObject *return_value = NULL;
+
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "clear() takes no arguments");
-        return NULL;
+        goto exit;
     }
-    return _gdbm_gdbm_clear_impl((gdbmobject *)self, cls);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _gdbm_gdbm_clear_impl((gdbmobject *)self, cls);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(dbmopen__doc__,
@@ -343,4 +389,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d974cb39e4ee5d67 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=429b5db24568292e input=a9049054013a1b77]*/

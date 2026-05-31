@@ -4,10 +4,6 @@
 .. module:: plistlib
    :synopsis: Generate and parse Apple plist files.
 
-.. moduleauthor:: Jack Jansen
-.. sectionauthor:: Georg Brandl <georg@python.org>
-.. (harvested from docstrings in the original file)
-
 **Source code:** :source:`Lib/plistlib.py`
 
 .. index::
@@ -22,7 +18,7 @@ and XML plist files.
 
 The property list (``.plist``) file format is a simple serialization supporting
 basic object types, like dictionaries, lists, numbers and strings.  Usually the
-top level object is a dictionary.
+top level object is a dictionary or a frozen dictionary.
 
 To write out and to parse a plist file, use the :func:`dump` and
 :func:`load` functions.
@@ -147,8 +143,9 @@ The following classes are available:
    Wraps an :class:`int`.  This is used when reading or writing NSKeyedArchiver
    encoded data, which contains UID (see PList manual).
 
-   It has one attribute, :attr:`data`, which can be used to retrieve the int value
-   of the UID.  :attr:`data` must be in the range ``0 <= data < 2**64``.
+   .. attribute:: data
+
+      Int value of the UID.  It must be in the range ``0 <= data < 2**64``.
 
    .. versionadded:: 3.8
 
@@ -183,7 +180,7 @@ Examples
 
 Generating a plist::
 
-    import datetime
+    import datetime as dt
     import plistlib
 
     pl = dict(
@@ -199,7 +196,7 @@ Generating a plist::
         ),
         someData = b"<binary gunk>",
         someMoreData = b"<lots of binary gunk>" * 10,
-        aDate = datetime.datetime.now()
+        aDate = dt.datetime.now()
     )
     print(plistlib.dumps(pl).decode())
 

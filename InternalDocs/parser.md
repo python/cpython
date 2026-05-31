@@ -97,7 +97,7 @@ Consequences of the ordered choice operator
 -------------------------------------------
 
 Although PEG may look like EBNF, its meaning is quite different. The fact
-that the alternatives are ordered in a PEG grammer (which is at the core of
+that the alternatives are ordered in a PEG grammar (which is at the core of
 how PEG parsers work) has deep consequences, other than removing ambiguity.
 
 If a rule has two alternatives and the first of them succeeds, the second one is
@@ -818,6 +818,13 @@ directory on the CPython repository and manually call the parser generator by ex
 ```shell
 $ python -m pegen python <PATH TO YOUR GRAMMAR FILE>
 ```
+
+> [!CAUTION]
+> Python's grammar (the `Grammar/python.gram` file) is written for the
+> C backend. To experiment, you will need to write a grammar
+> without C-specific parts like actions and the trailer.
+> See [#133560](https://github.com/python/cpython/issues/133560) 
+> and [#96424](https://github.com/python/cpython/issues/96424) for more information.
 
 This will generate a file called `parse.py` in the same directory that you
 can use to parse some input:

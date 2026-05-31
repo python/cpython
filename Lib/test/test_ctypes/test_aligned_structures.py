@@ -1,7 +1,7 @@
 from ctypes import (
     c_char, c_uint32, c_uint16, c_ubyte, c_byte, alignment, sizeof,
     BigEndianStructure, LittleEndianStructure,
-    BigEndianUnion, LittleEndianUnion,
+    BigEndianUnion, LittleEndianUnion, Structure,
 )
 import struct
 import unittest
@@ -68,6 +68,41 @@ class TestAlignedStructures(unittest.TestCase, StructCheckMixin):
             self.assertEqual(main.y.bool2, False)
             self.assertEqual(Main.z.offset, 8)
             self.assertEqual(main.z, 7)
+
+    def test_negative_align(self):
+        for base in (Structure, LittleEndianStructure, BigEndianStructure):
+            with (
+                self.subTest(base=base),
+                self.assertRaisesRegex(
+                    ValueError,
+                    '_align_ must be a non-negative integer',
+                )
+            ):
+                class MyStructure(base):
+                    _align_ = -1
+                    _fields_ = []
+
+    def test_zero_align_no_fields(self):
+        for base in (Structure, LittleEndianStructure, BigEndianStructure):
+            with self.subTest(base=base):
+                class MyStructure(base):
+                    _align_ = 0
+                    _fields_ = []
+
+                self.assertEqual(alignment(MyStructure), 1)
+                self.assertEqual(alignment(MyStructure()), 1)
+
+    def test_zero_align_with_fields(self):
+        for base in (Structure, LittleEndianStructure, BigEndianStructure):
+            with self.subTest(base=base):
+                class MyStructure(base):
+                    _align_ = 0
+                    _fields_ = [
+                        ("x", c_ubyte),
+                    ]
+
+                self.assertEqual(alignment(MyStructure), 1)
+                self.assertEqual(alignment(MyStructure()), 1)
 
     def test_oversized_structure(self):
         data = bytearray(b"\0" * 8)
@@ -281,6 +316,7 @@ class TestAlignedStructures(unittest.TestCase, StructCheckMixin):
 
             class Main(sbase):
                 _pack_ = 1
+                _layout_ = "ms"
                 _fields_ = [
                     ("a", c_ubyte),
                     ("b", Inner),

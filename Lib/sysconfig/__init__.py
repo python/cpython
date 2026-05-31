@@ -219,18 +219,7 @@ if os.name == 'nt':
 if "_PYTHON_PROJECT_BASE" in os.environ:
     _PROJECT_BASE = _safe_realpath(os.environ["_PYTHON_PROJECT_BASE"])
 
-def is_python_build(check_home=None):
-    if check_home is not None:
-        import warnings
-        warnings.warn(
-            (
-                'The check_home argument of sysconfig.is_python_build is '
-                'deprecated and its value is ignored. '
-                'It will be removed in Python 3.15.'
-            ),
-            DeprecationWarning,
-            stacklevel=2,
-        )
+def is_python_build():
     for fn in ("Setup", "Setup.local"):
         if os.path.isfile(os.path.join(_PROJECT_BASE, "Modules", fn)):
             return True
@@ -401,8 +390,19 @@ def _init_non_posix(vars):
     vars['BINLIBDEST'] = get_path('platstdlib')
     vars['INCLUDEPY'] = get_path('include')
 
-    # Add EXT_SUFFIX, SOABI, and Py_GIL_DISABLED
+    # Add EXT_SUFFIX, SOABI, Py_DEBUG, and Py_GIL_DISABLED
     vars.update(_sysconfig.config_vars())
+
+    # NOTE: ABIFLAGS is only an emulated value. It is not present during build
+    #       on Windows. sys.abiflags is absent on Windows and vars['abiflags']
+    #       is already widely used to calculate paths, so it should remain an
+    #       empty string.
+    vars['ABIFLAGS'] = ''.join(
+        (
+            't' if vars['Py_GIL_DISABLED'] else '',
+            '_d' if vars['Py_DEBUG'] else '',
+        ),
+    )
 
     vars['LIBDIR'] = _safe_realpath(os.path.join(get_config_var('installed_base'), 'libs'))
     if hasattr(sys, 'dllhandle'):
@@ -412,7 +412,13 @@ def _init_non_posix(vars):
     vars['EXE'] = '.exe'
     vars['VERSION'] = _PY_VERSION_SHORT_NO_DOT
     vars['BINDIR'] = os.path.dirname(_safe_realpath(sys.executable))
-    vars['TZPATH'] = ''
+    # No standard path exists on Windows for this, but we'll check
+    # whether someone is imitating a POSIX-like layout
+    check_tzpath = os.path.join(vars['prefix'], 'share', 'zoneinfo')
+    if os.path.exists(check_tzpath):
+        vars['TZPATH'] = check_tzpath
+    else:
+        vars['TZPATH'] = ''
 
 #
 # public APIs
@@ -431,6 +437,7 @@ def parse_config_h(fp, vars=None):
     import re
     define_rx = re.compile("#define ([A-Z][A-Za-z0-9_]+) (.*)\n")
     undef_rx = re.compile("/[*] #undef ([A-Z][A-Za-z0-9_]+) [*]/\n")
+    quoted_re = re.compile('^"(.*)"$')
 
     while True:
         line = fp.readline()
@@ -439,6 +446,8 @@ def parse_config_h(fp, vars=None):
         m = define_rx.match(line)
         if m:
             n, v = m.group(1, 2)
+            if mq := quoted_re.match(v):
+                v = mq.group(1)
             try:
                 if n in _ALWAYS_STR:
                     raise ValueError
@@ -457,7 +466,7 @@ def get_config_h_filename():
     """Return the path of pyconfig.h."""
     if _PYTHON_BUILD:
         if os.name == "nt":
-            inc_dir = os.path.dirname(sys._base_executable)
+            inc_dir = os.path.join(_PROJECT_BASE, 'PC')
         else:
             inc_dir = _PROJECT_BASE
     else:
@@ -639,25 +648,30 @@ def get_platform():
     isn't particularly important.
 
     Examples of returned values:
-       linux-i586
-       linux-alpha (?)
+       linux-x86_64
+       linux-aarch64
        solaris-2.6-sun4u
 
-    Windows will return one of:
-       win-amd64 (64-bit Windows on AMD64 (aka x86_64, Intel64, EM64T, etc)
-       win-arm64 (64-bit Windows on ARM64 (aka AArch64)
-       win32 (all others - specifically, sys.platform is returned)
 
-    For other non-POSIX platforms, currently just returns 'sys.platform'.
+    Windows:
 
-    """
+    - win-amd64 (64-bit Windows on AMD64, aka x86_64, Intel64, and EM64T)
+    - win-arm64 (64-bit Windows on ARM64, aka AArch64)
+    - win32 (all others - specifically, sys.platform is returned)
+
+    POSIX based OS:
+
+    - linux-x86_64
+    - macosx-15.5-arm64
+    - macosx-26.0-universal2 (macOS on Apple Silicon or Intel)
+    - android-24-arm64_v8a
+
+    For other non-POSIX platforms, currently just returns :data:`sys.platform`."""
     if os.name == 'nt':
-        if 'amd64' in sys.version.lower():
-            return 'win-amd64'
-        if '(arm)' in sys.version.lower():
-            return 'win-arm32'
-        if '(arm64)' in sys.version.lower():
-            return 'win-arm64'
+        import _sysconfig
+        platform = _sysconfig.get_platform()
+        if platform:
+            return platform
         return sys.platform
 
     if os.name != "posix" or not hasattr(os, 'uname'):
@@ -683,11 +697,19 @@ def get_platform():
         release = get_config_var("ANDROID_API_LEVEL")
 
         # Wheel tags use the ABI names from Android's own tools.
+        # When Python is running on 32-bit ARM Android on a 64-bit ARM kernel,
+        # 'os.uname().machine' is 'armv8l'. Such devices run the same userspace
+        # code as 'armv7l' devices.
+        # During the build process of the Android testbed when targeting 32-bit ARM,
+        # '_PYTHON_HOST_PLATFORM' is 'arm-linux-androideabi', so 'machine' becomes
+        # 'arm'.
         machine = {
-            "x86_64": "x86_64",
-            "i686": "x86",
             "aarch64": "arm64_v8a",
+            "arm": "armeabi_v7a",
             "armv7l": "armeabi_v7a",
+            "armv8l": "armeabi_v7a",
+            "i686": "x86",
+            "x86_64": "x86_64",
         }[machine]
     elif osname == "linux":
         # At least on Linux/Intel, 'machine' is the processor --
@@ -734,41 +756,3 @@ def get_python_version():
 
 def _get_python_version_abi():
     return _PY_VERSION_SHORT + get_config_var("abi_thread")
-
-
-def expand_makefile_vars(s, vars):
-    """Expand Makefile-style variables -- "${foo}" or "$(foo)" -- in
-    'string' according to 'vars' (a dictionary mapping variable names to
-    values).  Variables not present in 'vars' are silently expanded to the
-    empty string.  The variable values in 'vars' should not contain further
-    variable expansions; if 'vars' is the output of 'parse_makefile()',
-    you're fine.  Returns a variable-expanded version of 's'.
-    """
-
-    import warnings
-    warnings.warn(
-        'sysconfig.expand_makefile_vars is deprecated and will be removed in '
-        'Python 3.16. Use sysconfig.get_paths(vars=...) instead.',
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
-    import re
-
-    _findvar1_rx = r"\$\(([A-Za-z][A-Za-z0-9_]*)\)"
-    _findvar2_rx = r"\${([A-Za-z][A-Za-z0-9_]*)}"
-
-    # This algorithm does multiple expansion, so if vars['foo'] contains
-    # "${bar}", it will expand ${foo} to ${bar}, and then expand
-    # ${bar}... and so forth.  This is fine as long as 'vars' comes from
-    # 'parse_makefile()', which takes care of such expansions eagerly,
-    # according to make's variable expansion semantics.
-
-    while True:
-        m = re.search(_findvar1_rx, s) or re.search(_findvar2_rx, s)
-        if m:
-            (beg, end) = m.span()
-            s = s[0:beg] + vars.get(m.group(1)) + s[end:]
-        else:
-            break
-    return s

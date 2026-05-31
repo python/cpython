@@ -460,7 +460,8 @@ class CAPITest(unittest.TestCase):
             self.assertFalse(haskey({}, []))
             self.assertEqual(cm.unraisable.exc_type, TypeError)
             self.assertEqual(str(cm.unraisable.exc_value),
-                             "unhashable type: 'list'")
+                             "cannot use 'list' as a dict key "
+                             "(unhashable type: 'list')")
 
         with support.catch_unraisable_exception() as cm:
             self.assertFalse(haskey([], 1))
@@ -1075,6 +1076,31 @@ class CAPITest(unittest.TestCase):
         regex = "expected.*iterator.*got.*'int'"
         with self.assertRaisesRegex(TypeError, regex):
             PyIter_NextItem(10)
+
+    def test_object_setattr_null_exc(self):
+        class Obj:
+            pass
+        obj = Obj()
+        obj.attr = 123
+
+        exc = ValueError("error")
+        with self.assertRaises(SystemError) as cm:
+            _testcapi.object_setattr_null_exc(obj, 'attr', exc)
+        self.assertIs(cm.exception.__context__, exc)
+        self.assertIsNone(cm.exception.__cause__)
+        self.assertHasAttr(obj, 'attr')
+
+        with self.assertRaises(SystemError) as cm:
+            _testcapi.object_setattrstring_null_exc(obj, 'attr', exc)
+        self.assertIs(cm.exception.__context__, exc)
+        self.assertIsNone(cm.exception.__cause__)
+        self.assertHasAttr(obj, 'attr')
+
+        with self.assertRaises(SystemError) as cm:
+            # undecodable name
+            _testcapi.object_setattrstring_null_exc(obj, b'\xff', exc)
+        self.assertIs(cm.exception.__context__, exc)
+        self.assertIsNone(cm.exception.__cause__)
 
 
 if __name__ == "__main__":

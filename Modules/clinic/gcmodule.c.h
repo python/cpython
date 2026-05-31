@@ -8,7 +8,6 @@ preserve
 #endif
 #include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
-#include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 PyDoc_STRVAR(gc_enable__doc__,
 "enable($module, /)\n"
@@ -324,7 +323,7 @@ gc_get_referrers(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *objs = NULL;
 
-    objs = _PyTuple_FromArray(args, nargs);
+    objs = PyTuple_FromArray(args, nargs);
     if (objs == NULL) {
         goto exit;
     }
@@ -355,7 +354,7 @@ gc_get_referents(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *objs = NULL;
 
-    objs = _PyTuple_FromArray(args, nargs);
+    objs = PyTuple_FromArray(args, nargs);
     if (objs == NULL) {
         goto exit;
     }
@@ -377,8 +376,8 @@ PyDoc_STRVAR(gc_get_objects__doc__,
 "  generation\n"
 "    Generation to extract the objects from.\n"
 "\n"
-"If generation is not None, return only the objects tracked by the collector\n"
-"that are in that generation.");
+"If generation is not None, return only the objects tracked by the\n"
+"collector that are in that generation.");
 
 #define GC_GET_OBJECTS_METHODDEF    \
     {"get_objects", _PyCFunction_CAST(gc_get_objects), METH_FASTCALL|METH_KEYWORDS, gc_get_objects__doc__},
@@ -521,9 +520,10 @@ PyDoc_STRVAR(gc_freeze__doc__,
 "\n"
 "Freeze all current tracked objects and ignore them for future collections.\n"
 "\n"
-"This can be used before a POSIX fork() call to make the gc copy-on-write friendly.\n"
-"Note: collection before a POSIX fork() call may free pages for future allocation\n"
-"which can cause copy-on-write.");
+"This can be used before a POSIX fork() call to make the gc copy-on-write\n"
+"friendly.\n"
+"Note: collection before a POSIX fork() call may free pages for future\n"
+"allocation which can cause copy-on-write.");
 
 #define GC_FREEZE_METHODDEF    \
     {"freeze", (PyCFunction)gc_freeze, METH_NOARGS, gc_freeze__doc__},
@@ -584,4 +584,4 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=96d057eac558e6ca input=a9049054013a1b77]*/
+/*[clinic end generated code: output=756c0e7719b76971 input=a9049054013a1b77]*/

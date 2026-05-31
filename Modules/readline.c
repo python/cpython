@@ -254,10 +254,22 @@ readline_read_init_file_impl(PyObject *module, PyObject *filename_obj)
     if (filename_obj != Py_None) {
         if (!PyUnicode_FSConverter(filename_obj, &filename_bytes))
             return NULL;
+        if (PySys_Audit("open", "OCi", filename_obj, 'r', 0) < 0) {
+            Py_DECREF(filename_bytes);
+            return NULL;
+        }
         errno = rl_read_init_file(PyBytes_AS_STRING(filename_bytes));
         Py_DECREF(filename_bytes);
-    } else
+    } else {
+        /* We have the choice to either try to exactly reproduce the
+         * logic to find the filename, ignore it, or provide a dummy value.
+         * In contract to the history file manipulations, there's no
+         * clear default to choose. */
+        if (PySys_Audit("open", "sCi", "<readline_init_file>", 'r', 0) < 0) {
+            return NULL;
+        }
         errno = rl_read_init_file(NULL);
+    }
     if (errno)
         return PyErr_SetFromErrno(PyExc_OSError);
     disable_bracketed_paste();
@@ -286,10 +298,20 @@ readline_read_history_file_impl(PyObject *module, PyObject *filename_obj)
     if (filename_obj != Py_None) {
         if (!PyUnicode_FSConverter(filename_obj, &filename_bytes))
             return NULL;
+        if (PySys_Audit("open", "OCi", filename_obj, 'r', 0) < 0) {
+            Py_DECREF(filename_bytes);
+            return NULL;
+        }
         errno = read_history(PyBytes_AS_STRING(filename_bytes));
         Py_DECREF(filename_bytes);
-    } else
+    } else {
+        /* Use the documented default filename here,
+         * even though readline expands it different internally. */
+        if (PySys_Audit("open", "sCi", "~/.history", 'r', 0) < 0) {
+            return NULL;
+        }
         errno = read_history(NULL);
+    }
     if (errno)
         return PyErr_SetFromErrno(PyExc_OSError);
     Py_RETURN_NONE;
@@ -322,9 +344,18 @@ readline_write_history_file_impl(PyObject *module, PyObject *filename_obj)
         if (!PyUnicode_FSConverter(filename_obj, &filename_bytes))
             return NULL;
         filename = PyBytes_AS_STRING(filename_bytes);
+        if (PySys_Audit("open", "OCi", filename_obj, 'w', 0) < 0) {
+            Py_DECREF(filename_bytes);
+            return NULL;
+        }
     } else {
         filename_bytes = NULL;
         filename = NULL;
+        /* Use the documented default filename here,
+         * even though readline expands it different internally. */
+        if (PySys_Audit("open", "sCi", "~/.history", 'w', 0) < 0) {
+            return NULL;
+        }
     }
     errno = err = write_history(filename);
     int history_length = FT_ATOMIC_LOAD_INT_RELAXED(_history_length);
@@ -360,7 +391,7 @@ readline_append_history_file_impl(PyObject *module, int nelements,
 {
     if (nelements < 0)
     {
-        PyErr_SetString(PyExc_ValueError, "nelements must be positive");
+        PyErr_SetString(PyExc_ValueError, "nelements must be non-negative");
         return NULL;
     }
 
@@ -371,9 +402,18 @@ readline_append_history_file_impl(PyObject *module, int nelements,
         if (!PyUnicode_FSConverter(filename_obj, &filename_bytes))
             return NULL;
         filename = PyBytes_AS_STRING(filename_bytes);
+        if (PySys_Audit("open", "OCi", filename_obj, 'a', 0) < 0) {
+            Py_DECREF(filename_bytes);
+            return NULL;
+        }
     } else {
         filename_bytes = NULL;
         filename = NULL;
+        /* Use the documented default filename here,
+         * even though readline expands it different internally. */
+        if (PySys_Audit("open", "sCi", "~/.history", 'a', 0) < 0) {
+            return NULL;
+        }
     }
     errno = err = append_history(
         nelements - libedit_append_replace_history_offset, filename);
@@ -392,6 +432,7 @@ readline_append_history_file_impl(PyObject *module, int nelements,
 /* Set history length */
 
 /*[clinic input]
+@permit_long_summary
 readline.set_history_length
 
     length: int
@@ -404,7 +445,7 @@ A negative length is used to inhibit history truncation.
 
 static PyObject *
 readline_set_history_length_impl(PyObject *module, int length)
-/*[clinic end generated code: output=e161a53e45987dc7 input=b8901bf16488b760]*/
+/*[clinic end generated code: output=e161a53e45987dc7 input=8d02c81b38ef81ec]*/
 {
     FT_ATOMIC_STORE_INT_RELAXED(_history_length, length);
     Py_RETURN_NONE;
@@ -413,6 +454,7 @@ readline_set_history_length_impl(PyObject *module, int length)
 /* Get history length */
 
 /*[clinic input]
+@permit_long_summary
 readline.get_history_length
 
 Return the maximum number of lines that will be written to the history file.
@@ -420,7 +462,7 @@ Return the maximum number of lines that will be written to the history file.
 
 static PyObject *
 readline_get_history_length_impl(PyObject *module)
-/*[clinic end generated code: output=83a2eeae35b6d2b9 input=5dce2eeba4327817]*/
+/*[clinic end generated code: output=83a2eeae35b6d2b9 input=a65823e732ebfa9d]*/
 {
     int history_length = FT_ATOMIC_LOAD_INT_RELAXED(_history_length);
     return PyLong_FromLong(history_length);
@@ -532,6 +574,26 @@ readline_set_pre_input_hook_impl(PyObject *module, PyObject *function)
     return set_hook("pre_input_hook", &state->pre_input_hook,
             function);
 }
+
+/* Get pre-input hook */
+
+/*[clinic input]
+readline.get_pre_input_hook
+
+Get the current pre-input hook function.
+[clinic start generated code]*/
+
+static PyObject *
+readline_get_pre_input_hook_impl(PyObject *module)
+/*[clinic end generated code: output=ad56b77a8e8981ca input=fb1e1b1fbd94e4e5]*/
+{
+    readlinestate *state = get_readline_state(module);
+    if (state->pre_input_hook == NULL) {
+        Py_RETURN_NONE;
+    }
+    return Py_NewRef(state->pre_input_hook);
+}
+
 #endif
 
 
@@ -984,6 +1046,7 @@ readline_insert_text_impl(PyObject *module, PyObject *string)
 /* Redisplay the line buffer */
 
 /*[clinic input]
+@permit_long_summary
 @critical_section
 readline.redisplay
 
@@ -992,7 +1055,7 @@ Change what's displayed on the screen to reflect contents of the line buffer.
 
 static PyObject *
 readline_redisplay_impl(PyObject *module)
-/*[clinic end generated code: output=a8b9725827c3c34b input=5895fd014615ff58]*/
+/*[clinic end generated code: output=a8b9725827c3c34b input=fb6ce76959c6f0ec]*/
 {
     rl_redisplay();
     Py_RETURN_NONE;
@@ -1033,6 +1096,7 @@ static struct PyMethodDef readline_methods[] =
     READLINE_SET_STARTUP_HOOK_METHODDEF
 #ifdef HAVE_RL_PRE_INPUT_HOOK
     READLINE_SET_PRE_INPUT_HOOK_METHODDEF
+    READLINE_GET_PRE_INPUT_HOOK_METHODDEF
 #endif
 #ifdef HAVE_RL_COMPLETION_APPEND_CHARACTER
     READLINE_CLEAR_HISTORY_METHODDEF
@@ -1342,6 +1406,10 @@ setup_readline(readlinestate *mod_state)
     completer_word_break_characters =
         strdup(" \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?");
         /* All nonalphanums except '.' */
+
+    if (!completer_word_break_characters) {
+        goto error;
+    }
 #ifdef WITH_EDITLINE
     // libedit uses rl_basic_word_break_characters instead of
     // rl_completer_word_break_characters as complete delimiter
@@ -1385,6 +1453,10 @@ setup_readline(readlinestate *mod_state)
 
     RESTORE_LOCALE(saved_locale)
     return 0;
+
+error:
+    RESTORE_LOCALE(saved_locale)
+    return -1;
 }
 
 /* Wrapper around GNU readline that handles signals differently. */
@@ -1564,6 +1636,11 @@ static struct PyModuleDef readlinemodule = {
 PyMODINIT_FUNC
 PyInit_readline(void)
 {
+    PyABIInfo_VAR(abi_info);
+    if (PyABIInfo_Check(&abi_info, "readline") < 0) {
+        return NULL;
+    }
+
     const char *backend = "readline";
     PyObject *m;
     readlinestate *mod_state;

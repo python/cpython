@@ -290,18 +290,15 @@ write_location_info_entry(struct assembler* a, location loc, int isize)
         assert(len > THEORETICAL_MAX_ENTRY_SIZE);
         RETURN_IF_ERROR(_PyBytes_Resize(&a->a_linetable, len*2));
     }
-    if (loc.lineno < 0) {
-        assert(loc.lineno == NO_LOCATION.lineno);
+    if (loc.lineno == NO_LOCATION.lineno) {
         write_location_info_none(a, isize);
         return SUCCESS;
     }
     int line_delta = loc.lineno - a->a_lineno;
     int column = loc.col_offset;
     int end_column = loc.end_col_offset;
-    assert(column >= -1);
-    assert(end_column >= -1);
     if (column < 0 || end_column < 0) {
-        if (loc.end_lineno == loc.lineno || loc.end_lineno == -1) {
+        if (loc.end_lineno == loc.lineno || loc.end_lineno < 0) {
             write_location_info_no_column(a, isize, line_delta);
             a->a_lineno = loc.lineno;
             return SUCCESS;
@@ -421,6 +418,7 @@ assemble_emit_instr(struct assembler *a, instruction *instr)
     int size = instr_size(instr);
     if (a->a_offset + size >= len / (int)sizeof(_Py_CODEUNIT)) {
         if (len > PY_SSIZE_T_MAX / 2) {
+            PyErr_NoMemory();
             return ERROR;
         }
         RETURN_IF_ERROR(_PyBytes_Resize(&a->a_bytecode, len * 2));
@@ -485,33 +483,52 @@ extern void _Py_set_localsplus_info(int, PyObject *, unsigned char,
 
 static int
 compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
-                        PyObject *names, PyObject *kinds)
+                        int flags, PyObject *names, PyObject *kinds)
 {
     PyObject *k, *v;
     Py_ssize_t pos = 0;
-    while (PyDict_Next(umd->u_varnames, &pos, &k, &v)) {
-        int offset = PyLong_AsInt(v);
-        if (offset == -1 && PyErr_Occurred()) {
-            return ERROR;
-        }
-        assert(offset >= 0);
-        assert(offset < nlocalsplus);
 
-        // For now we do not distinguish arg kinds.
-        _PyLocals_Kind kind = CO_FAST_LOCAL;
-        int has_key = PyDict_Contains(umd->u_fasthidden, k);
-        RETURN_IF_ERROR(has_key);
-        if (has_key) {
-            kind |= CO_FAST_HIDDEN;
-        }
+    // Set the locals kinds.  Arg vars fill the first portion of the list.
+    struct {
+        int count;
+        _PyLocals_Kind kind;
+    }  argvarkinds[6] = {
+        {(int)umd->u_posonlyargcount, CO_FAST_ARG_POS},
+        {(int)umd->u_argcount, CO_FAST_ARG_POS | CO_FAST_ARG_KW},
+        {(int)umd->u_kwonlyargcount, CO_FAST_ARG_KW},
+        {!!(flags & CO_VARARGS), CO_FAST_ARG_VAR | CO_FAST_ARG_POS},
+        {!!(flags & CO_VARKEYWORDS), CO_FAST_ARG_VAR | CO_FAST_ARG_KW},
+        {-1, 0},  // the remaining local vars
+    };
+    int max = 0;
+    for (int i = 0; i < 6; i++) {
+        max = argvarkinds[i].count < 0
+            ? INT_MAX
+            : max + argvarkinds[i].count;
+        while (pos < max && PyDict_Next(umd->u_varnames, &pos, &k, &v)) {
+            int offset = PyLong_AsInt(v);
+            if (offset == -1 && PyErr_Occurred()) {
+                return ERROR;
+            }
+            assert(offset >= 0);
+            assert(offset < nlocalsplus);
 
-        has_key = PyDict_Contains(umd->u_cellvars, k);
-        RETURN_IF_ERROR(has_key);
-        if (has_key) {
-            kind |= CO_FAST_CELL;
-        }
+            _PyLocals_Kind kind = CO_FAST_LOCAL | argvarkinds[i].kind;
 
-        _Py_set_localsplus_info(offset, k, kind, names, kinds);
+            int has_key = PyDict_Contains(umd->u_fasthidden, k);
+            RETURN_IF_ERROR(has_key);
+            if (has_key) {
+                kind |= CO_FAST_HIDDEN;
+            }
+
+            has_key = PyDict_Contains(umd->u_cellvars, k);
+            RETURN_IF_ERROR(has_key);
+            if (has_key) {
+                kind |= CO_FAST_CELL;
+            }
+
+            _Py_set_localsplus_info(offset, k, kind, names, kinds);
+        }
     }
     int nlocals = (int)PyDict_GET_SIZE(umd->u_varnames);
 
@@ -597,8 +614,10 @@ makecode(_PyCompile_CodeUnitMetadata *umd, struct assembler *a, PyObject *const_
     if (localspluskinds == NULL) {
         goto error;
     }
-    if (compute_localsplus_info(umd, nlocalsplus,
-                                localsplusnames, localspluskinds) == ERROR) {
+    if (compute_localsplus_info(
+            umd, nlocalsplus, code_flags,
+            localsplusnames, localspluskinds) == ERROR)
+    {
         goto error;
     }
 
@@ -651,7 +670,7 @@ error:
 
 
 // The offset (in code units) of the END_SEND from the SEND in the `yield from` sequence.
-#define END_SEND_OFFSET 5
+#define END_SEND_OFFSET 6
 
 static int
 resolve_jump_offsets(instr_sequence *instrs)

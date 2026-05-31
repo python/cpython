@@ -1,45 +1,12 @@
-# This file contains suppressions for the free-threaded build. It contains the
-# suppressions for the default build and additional suppressions needed only in
+# This file contains suppressions for the free-threaded build. It includes the
+# default build suppressions plus any additional suppressions needed only in
 # the free-threaded build.
 #
-# reference: https://github.com/google/sanitizers/wiki/ThreadSanitizerSuppressions
+# Reference: https://github.com/google/sanitizers/wiki/ThreadSanitizerSuppressions
+#
+# When adding a suppression, include a comment referencing a GitHub issue
+# that describes how to reproduce the race and includes the relevant TSan
+# output.
 
-## Free-threaded suppressions
-
-
-# These entries are for warnings that trigger in a library function, as called
-# by a CPython function.
-
-# These warnings trigger directly in a CPython function.
-
-race_top:assign_version_tag
-race_top:_Py_slot_tp_getattr_hook
-race_top:dump_traceback
-race_top:fatal_error
-race_top:_PyFrame_GetCode
-race_top:_PyFrame_Initialize
-race_top:_PyObject_TryGetInstanceAttribute
-race_top:PyUnstable_InterpreterFrame_GetLine
-race_top:type_modified_unlocked
-race_top:write_thread_id
-
-# gh-129068: race on shared range iterators (test_free_threading.test_zip.ZipThreading.test_threading)
-race_top:rangeiter_next
-
-# gh-129748: test.test_free_threading.test_slots.TestSlots.test_object
-race_top:mi_block_set_nextx
-
-# gh-127266: type slot updates are not thread-safe (test_opcache.test_load_attr_method_lazy_dict)
-race_top:update_one_slot
-
-# https://gist.github.com/mpage/6962e8870606cfc960e159b407a0cb40
-thread:pthread_create
-
-# Range iteration is not thread-safe yet (issue #129068)
-race_top:rangeiter_next
-
-# List resizing happens through different paths ending in memcpy or memmove
-# (for efficiency), which will probably need to rewritten as explicit loops
-# of ptr-sized copies to be thread-safe. (Issue #129069)
-race:list_ass_slice_lock_held
-race:list_inplace_repeat_lock_held
+# There are currently no active suppressions. This file is kept so tooling
+# that expects it can still find it.

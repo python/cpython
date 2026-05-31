@@ -271,13 +271,13 @@ Hacl_Hash_Blake2s_Simd128_init(Lib_IntVector_Intrinsics_vec128 *hash, uint32_t k
     uint32_t x = r;
     os[i] = x;);
   tmp[0U] =
-    (uint32_t)(uint8_t)nn
-    ^ ((uint32_t)(uint8_t)kk << 8U ^ ((uint32_t)p.fanout << 16U ^ (uint32_t)p.depth << 24U));
+    (uint32_t)(uint8_t)nn ^
+      ((uint32_t)(uint8_t)kk << 8U ^ ((uint32_t)p.fanout << 16U ^ (uint32_t)p.depth << 24U));
   tmp[1U] = p.leaf_length;
   tmp[2U] = (uint32_t)p.node_offset;
   tmp[3U] =
-    (uint32_t)(p.node_offset >> 32U)
-    ^ ((uint32_t)p.node_depth << 16U ^ (uint32_t)p.inner_length << 24U);
+    (uint32_t)(p.node_offset >> 32U) ^
+      ((uint32_t)p.node_depth << 16U ^ (uint32_t)p.inner_length << 24U);
   uint32_t tmp0 = tmp[0U];
   uint32_t tmp1 = tmp[1U];
   uint32_t tmp2 = tmp[2U];
@@ -736,16 +736,14 @@ static Hacl_Hash_Blake2s_Simd128_state_t
             uint32_t x = r4;
             os[i0] = x;);
           tmp[0U] =
-            (uint32_t)pv.digest_length
-            ^
-              ((uint32_t)pv.key_length
-              << 8U
-              ^ ((uint32_t)pv.fanout << 16U ^ (uint32_t)pv.depth << 24U));
+            (uint32_t)pv.digest_length ^
+              ((uint32_t)pv.key_length << 8U ^
+                ((uint32_t)pv.fanout << 16U ^ (uint32_t)pv.depth << 24U));
           tmp[1U] = pv.leaf_length;
           tmp[2U] = (uint32_t)pv.node_offset;
           tmp[3U] =
-            (uint32_t)(pv.node_offset >> 32U)
-            ^ ((uint32_t)pv.node_depth << 16U ^ (uint32_t)pv.inner_length << 24U);
+            (uint32_t)(pv.node_offset >> 32U) ^
+              ((uint32_t)pv.node_depth << 16U ^ (uint32_t)pv.inner_length << 24U);
           uint32_t tmp0 = tmp[0U];
           uint32_t tmp1 = tmp[1U];
           uint32_t tmp2 = tmp[2U];
@@ -923,13 +921,13 @@ reset_raw(Hacl_Hash_Blake2s_Simd128_state_t *state, Hacl_Hash_Blake2b_params_and
     uint32_t x = r;
     os[i0] = x;);
   tmp[0U] =
-    (uint32_t)pv.digest_length
-    ^ ((uint32_t)pv.key_length << 8U ^ ((uint32_t)pv.fanout << 16U ^ (uint32_t)pv.depth << 24U));
+    (uint32_t)pv.digest_length ^
+      ((uint32_t)pv.key_length << 8U ^ ((uint32_t)pv.fanout << 16U ^ (uint32_t)pv.depth << 24U));
   tmp[1U] = pv.leaf_length;
   tmp[2U] = (uint32_t)pv.node_offset;
   tmp[3U] =
-    (uint32_t)(pv.node_offset >> 32U)
-    ^ ((uint32_t)pv.node_depth << 16U ^ (uint32_t)pv.inner_length << 24U);
+    (uint32_t)(pv.node_offset >> 32U) ^
+      ((uint32_t)pv.node_depth << 16U ^ (uint32_t)pv.inner_length << 24U);
   uint32_t tmp0 = tmp[0U];
   uint32_t tmp1 = tmp[1U];
   uint32_t tmp2 = tmp[2U];
@@ -1061,8 +1059,7 @@ Hacl_Hash_Blake2s_Simd128_update(
     uint8_t *buf2 = buf + sz1;
     memcpy(buf2, chunk, chunk_len * sizeof (uint8_t));
     uint64_t total_len2 = total_len1 + (uint64_t)chunk_len;
-    *state
-    =
+    *state =
       (
         (Hacl_Hash_Blake2s_Simd128_state_t){
           .block_state = block_state1,
@@ -1116,8 +1113,7 @@ Hacl_Hash_Blake2s_Simd128_update(
     Hacl_Hash_Blake2s_Simd128_update_multi(data1_len, wv, hash, total_len1, data1, nb);
     uint8_t *dst = buf;
     memcpy(dst, data2, data2_len * sizeof (uint8_t));
-    *state
-    =
+    *state =
       (
         (Hacl_Hash_Blake2s_Simd128_state_t){
           .block_state = block_state1,
@@ -1147,8 +1143,7 @@ Hacl_Hash_Blake2s_Simd128_update(
     uint8_t *buf2 = buf0 + sz10;
     memcpy(buf2, chunk1, diff * sizeof (uint8_t));
     uint64_t total_len2 = total_len10 + (uint64_t)diff;
-    *state
-    =
+    *state =
       (
         (Hacl_Hash_Blake2s_Simd128_state_t){
           .block_state = block_state10,
@@ -1200,8 +1195,7 @@ Hacl_Hash_Blake2s_Simd128_update(
     Hacl_Hash_Blake2s_Simd128_update_multi(data1_len, wv, hash, total_len1, data1, nb);
     uint8_t *dst = buf;
     memcpy(dst, data2, data2_len * sizeof (uint8_t));
-    *state
-    =
+    *state =
       (
         (Hacl_Hash_Blake2s_Simd128_state_t){
           .block_state = block_state1,
@@ -1531,16 +1525,14 @@ Hacl_Hash_Blake2s_Simd128_hash_with_key_and_params(
     uint32_t x = r;
     os[i] = x;);
   tmp[0U] =
-    (uint32_t)params.digest_length
-    ^
-      ((uint32_t)params.key_length
-      << 8U
-      ^ ((uint32_t)params.fanout << 16U ^ (uint32_t)params.depth << 24U));
+    (uint32_t)params.digest_length ^
+      ((uint32_t)params.key_length << 8U ^
+        ((uint32_t)params.fanout << 16U ^ (uint32_t)params.depth << 24U));
   tmp[1U] = params.leaf_length;
   tmp[2U] = (uint32_t)params.node_offset;
   tmp[3U] =
-    (uint32_t)(params.node_offset >> 32U)
-    ^ ((uint32_t)params.node_depth << 16U ^ (uint32_t)params.inner_length << 24U);
+    (uint32_t)(params.node_offset >> 32U) ^
+      ((uint32_t)params.node_depth << 16U ^ (uint32_t)params.inner_length << 24U);
   uint32_t tmp0 = tmp[0U];
   uint32_t tmp1 = tmp[1U];
   uint32_t tmp2 = tmp[2U];
