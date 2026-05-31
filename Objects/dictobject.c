@@ -5058,7 +5058,7 @@ _PyDict_KeysSize(PyDictKeysObject *keys)
 {
     size_t es = (keys->dk_kind == DICT_KEYS_GENERAL
                  ? sizeof(PyDictKeyEntry) : sizeof(PyDictUnicodeEntry));
-    size_t size = sizeof(PyDictKeysObject);
+    size_t size = sizeof(PyDictKeysObject) - sizeof(PyDictKeyEntry);
     size += (size_t)1 << keys->dk_log2_index_bytes;
     size += USABLE_FRACTION((size_t)DK_SIZE(keys)) * es;
     return size;
