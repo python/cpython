@@ -885,10 +885,14 @@ def move(src, dst, copy_function=copy2):
     If dst already exists but is not a directory, it may be overwritten
     depending on os.rename() semantics.
 
-    If the destination is on our current filesystem, then rename() is used.
-    Otherwise, src is copied to the destination and then removed. Symlinks are
-    recreated under the new name if os.rename() fails because of cross
-    filesystem renames.
+    os.rename() is preferably used if the source and destination are on the
+    same filesystem. In case os.rename() fails due to OSError (e.g. the user
+    has write permission to *dst* file but not to its parent directory),
+    this method falls back to using *copy_function* silently.
+    Symlinks are also recreated under the new name if os.rename() fails
+    because of cross filesystem renames.
+
+    It's recommended to use os.rename() if atomic move is strictly required.
 
     The optional `copy_function` argument is a callable that will be used
     to copy the source or it will be delegated to `copytree`.
@@ -1638,15 +1642,3 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
                 if _access_check(name, mode):
                     return name
     return None
-
-def __getattr__(name):
-    if name == "ExecError":
-        import warnings
-        warnings._deprecated(
-            "shutil.ExecError",
-            f"{warnings._DEPRECATED_MSG}; it "
-            "isn't raised by any shutil function.",
-            remove=(3, 16)
-        )
-        return RuntimeError
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

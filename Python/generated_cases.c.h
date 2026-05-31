@@ -7945,8 +7945,9 @@
                 assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
                 #if TIER_ONE && defined(Py_DEBUG)
                 if (!PyStackRef_IsNone(frame->f_executable)) {
-                    int i = frame->instr_ptr - _PyFrame_GetBytecode(frame);
-                    int opcode = _Py_GetBaseCodeUnit(_PyFrame_GetCode(frame), i).op.code;
+                    Py_ssize_t i = frame->instr_ptr - _PyFrame_GetBytecode(frame);
+                    assert(i >= 0 && i <= INT_MAX);
+                    int opcode = _Py_GetBaseCodeUnit(_PyFrame_GetCode(frame), (int)i).op.code;
                     assert(opcode == SEND || opcode == FOR_ITER);
                 }
                 #endif
@@ -9312,7 +9313,7 @@
             INSTRUCTION_STATS(LOAD_COMMON_CONSTANT);
             _PyStackRef value;
             assert(oparg < NUM_COMMON_CONSTANTS);
-            value = PyStackRef_FromPyObjectNew(tstate->interp->common_consts[oparg]);
+            value = PyStackRef_DupImmortal(tstate->interp->common_consts[oparg]);
             stack_pointer[0] = value;
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -12003,7 +12004,8 @@
                 v = stack_pointer[-4];
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyObject *slice = _PyBuildSlice_ConsumeRefs(PyStackRef_AsPyObjectSteal(start),
-                    PyStackRef_AsPyObjectSteal(stop));
+                    PyStackRef_AsPyObjectSteal(stop),
+                    Py_None);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 int err;
                 if (slice == NULL) {
@@ -13053,8 +13055,9 @@
                 assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
                 #if TIER_ONE && defined(Py_DEBUG)
                 if (!PyStackRef_IsNone(frame->f_executable)) {
-                    int i = frame->instr_ptr - _PyFrame_GetBytecode(frame);
-                    int opcode = _Py_GetBaseCodeUnit(_PyFrame_GetCode(frame), i).op.code;
+                    Py_ssize_t i = frame->instr_ptr - _PyFrame_GetBytecode(frame);
+                    assert(i >= 0 && i <= INT_MAX);
+                    int opcode = _Py_GetBaseCodeUnit(_PyFrame_GetCode(frame), (int)i).op.code;
                     assert(opcode == SEND || opcode == FOR_ITER);
                 }
                 #endif
