@@ -383,9 +383,13 @@ interface:
    $ python -m mimetypes filename.tar.gz
    type: application/x-tar encoding: gzip
 
-   $ # get a MIME type for an unknown file extension
-   $ python -m mimetypes filename.zzz
-   error: media type unknown for filename.zzz
+   $ # get a MIME type for a rare file extension
+   $ python -m mimetypes filename.pict
+   error: media type unknown for filename.pict
+
+   $ # now look in the extended database built into Python
+   $ python -m mimetypes --lenient filename.pict
+   type: image/pict encoding: None
 
    $ # get a file extension by a MIME type
    $ python -m mimetypes --extension text/javascript
@@ -400,15 +404,13 @@ interface:
    .xul
 
    $ # try to feed an unknown file extension
-   $ python -m mimetypes filename.sh filename.nc filename.zzz filename.txt
+   $ python -m mimetypes filename.sh filename.nc filename.xxx filename.txt
    type: application/x-sh encoding: None
    type: application/x-netcdf encoding: None
-   error: media type unknown for filename.zzz
-   type: text/plain encoding: None
+   error: media type unknown for filename.xxx
 
    $ # try to feed an unknown MIME type
    $ python -m mimetypes --extension audio/aac audio/opus audio/future audio/x-wav
    .aac
    .opus
    error: unknown type audio/future
-   .wav
