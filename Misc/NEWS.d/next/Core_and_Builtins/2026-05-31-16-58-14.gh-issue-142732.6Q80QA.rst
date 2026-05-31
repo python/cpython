@@ -1,1 +1,1 @@
-Now :func:`itertools.zip_longest` raises an :exc:`ValueError` when a reentrancy is detected.
+Now :func:`itertools.zip_longest` raises a :exc:`ValueError` when a reentrancy is detected.

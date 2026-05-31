@@ -3896,7 +3896,7 @@ zip_longest_next_lock_held(PyObject *op)
 
     if (lz->running == 1) {
         PyErr_SetString(PyExc_ValueError,
-                        "zip_logest() iterator already executing");
+                        "zip_longest() iterator already executing");
         return NULL;
     }
     lz->running = 1;
