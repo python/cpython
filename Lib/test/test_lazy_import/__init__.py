@@ -38,8 +38,7 @@ class LazyImportTests(unittest.TestCase):
         """Lazy imported module should not be loaded if never accessed."""
         import test.test_lazy_import.data.basic_unused
         self.assertNotIn("test.test_lazy_import.data.basic2", sys.modules)
-        self.assertIn("test.test_lazy_import.data", sys.lazy_modules)
-        self.assertEqual(sys.lazy_modules["test.test_lazy_import.data"], {"basic2"})
+        self.assertIn("test.test_lazy_import.data.basic2", sys.lazy_modules)
 
     def test_sys_lazy_modules(self):
         try:
@@ -49,7 +48,7 @@ class LazyImportTests(unittest.TestCase):
 
         self.assertFalse("test.test_lazy_import.data.basic2" in sys.modules)
         self.assertIn("test.test_lazy_import.data", sys.lazy_modules)
-        self.assertEqual(sys.lazy_modules["test.test_lazy_import.data"], {"basic2"})
+        self.assertIn("test.test_lazy_import.data.basic2", sys.lazy_modules)
         test.test_lazy_import.data.basic_from_unused.basic2
         self.assertNotIn("test.test_import.data", sys.lazy_modules)
 
@@ -677,8 +676,8 @@ class SysLazyImportsAPITests(unittest.TestCase):
         self.assertIs(sys.get_lazy_imports_filter(), my_filter)
 
     def test_lazy_modules_attribute_is_dict(self):
-        """sys.lazy_modules should be a dict per PEP 810."""
-        self.assertIsInstance(sys.lazy_modules, dict)
+        """sys.lazy_modules should be a set per PEP 810."""
+        self.assertIsInstance(sys.lazy_modules, set)
 
     @support.requires_subprocess()
     def test_lazy_modules_tracks_lazy_imports(self):
@@ -687,8 +686,7 @@ class SysLazyImportsAPITests(unittest.TestCase):
             import sys
             initial_count = len(sys.lazy_modules)
             import test.test_lazy_import.data.basic_unused
-            assert "test.test_lazy_import.data" in sys.lazy_modules
-            assert sys.lazy_modules["test.test_lazy_import.data"] == {"basic2"}
+            assert "test.test_lazy_import.data.basic2" in sys.lazy_modules
             assert len(sys.lazy_modules) > initial_count
             print("OK")
         """)
@@ -1137,15 +1135,14 @@ class SysLazyModulesTrackingTests(unittest.TestCase):
             lazy import test.test_lazy_import.data.basic2
 
             # Should be in lazy_modules after lazy import
-            assert "test.test_lazy_import.data" in sys.lazy_modules
-            assert sys.lazy_modules["test.test_lazy_import.data"] == {"basic2"}
+            assert "test.test_lazy_import.data.basic2" in sys.lazy_modules
             assert len(sys.lazy_modules) > initial_count
 
             # Trigger reification
             _ = test.test_lazy_import.data.basic2.x
 
             # Module should still be tracked (for diagnostics per PEP 810)
-            assert "test.test_lazy_import.data" not in sys.lazy_modules
+            assert "test.test_lazy_import.data.basic2" not in sys.lazy_modules
             print("OK")
         """)
         result = subprocess.run(
@@ -1158,8 +1155,8 @@ class SysLazyModulesTrackingTests(unittest.TestCase):
 
     def test_lazy_modules_is_per_interpreter(self):
         """Each interpreter should have independent sys.lazy_modules."""
-        # Basic test that sys.lazy_modules exists and is a dict
-        self.assertIsInstance(sys.lazy_modules, dict)
+        # Basic test that sys.lazy_modules exists and is a set
+        self.assertIsInstance(sys.lazy_modules, set)
 
     def test_lazy_module_without_children_is_tracked(self):
         code = textwrap.dedent("""
@@ -1167,10 +1164,6 @@ class SysLazyModulesTrackingTests(unittest.TestCase):
             lazy import json
             assert "json" in sys.lazy_modules, (
                 f"expected 'json' in sys.lazy_modules, got {set(sys.lazy_modules)}"
-            )
-            assert sys.lazy_modules["json"] == set(), (
-                f"expected empty set for sys.lazy_modules['json'], "
-                f"got {sys.lazy_modules['json']!r}"
             )
             print("OK")
         """)
@@ -1938,7 +1931,7 @@ class ThreadSafetyTests(unittest.TestCase):
                 t.join()
 
             assert not errors, f"Errors: {errors}"
-            assert isinstance(sys.lazy_modules, dict), "sys.lazy_modules is not a dict"
+            assert isinstance(sys.lazy_modules, set), "sys.lazy_modules is not a dict"
             print("OK")
         """)
 
