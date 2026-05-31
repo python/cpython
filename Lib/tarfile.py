@@ -380,7 +380,6 @@ class _Stream:
                 except ImportError:
                     raise CompressionError("bz2 module is not available") from None
                 if mode == "r":
-                    self.dbuf = b""
                     self.cmp = bz2.BZ2Decompressor()
                     self.exception = OSError
                 else:
@@ -392,7 +391,6 @@ class _Stream:
                 except ImportError:
                     raise CompressionError("lzma module is not available") from None
                 if mode == "r":
-                    self.dbuf = b""
                     self.cmp = lzma.LZMADecompressor()
                     self.exception = lzma.LZMAError
                 else:
@@ -403,7 +401,6 @@ class _Stream:
                 except ImportError:
                     raise CompressionError("compression.zstd module is not available") from None
                 if mode == "r":
-                    self.dbuf = b""
                     self.cmp = zstd.ZstdDecompressor()
                     self.exception = zstd.ZstdError
                 else:
@@ -485,7 +482,6 @@ class _Stream:
         """Initialize for reading a gzip compressed fileobj.
         """
         self.cmp = self.zlib.decompressobj(-self.zlib.MAX_WBITS)
-        self.dbuf = b""
 
         # taken from gzip.GzipFile with some alterations
         if self.__read(2) != b"\037\213":
@@ -543,26 +539,44 @@ class _Stream:
         if self.comptype == "tar":
             return self.__read(size)
 
-        c = len(self.dbuf)
-        t = [self.dbuf]
+        c = 0
+        t = []
         while c < size:
-            # Skip underlying buffer to avoid unaligned double buffering.
-            if self.buf:
-                buf = self.buf
-                self.buf = b""
+            if self.comptype == "gz":
+                # zlib interface is different than others.
+                # It returns data in unconsumed_tail.
+                if self.buf:
+                    cbuf = self.buf
+                    self.buf = b""
+                else:
+                    cbuf = self.fileobj.read(self.bufsize)
+                    if not cbuf:
+                        break
+
+                try:
+                    dbuf = self.cmp.decompress(cbuf, size - c)
+                    self.buf = self.cmp.unconsumed_tail
+                except self.exception as e:
+                    raise ReadError("invalid compressed data") from e
             else:
-                buf = self.fileobj.read(self.bufsize)
-                if not buf:
-                    break
-            try:
-                buf = self.cmp.decompress(buf)
-            except self.exception as e:
-                raise ReadError("invalid compressed data") from e
-            t.append(buf)
-            c += len(buf)
-        t = b"".join(t)
-        self.dbuf = t[size:]
-        return t[:size]
+                # Other decompressors have needs_input.
+                # decompress() can buffer data internally.
+                if self.cmp.needs_input:
+                    cbuf = self.fileobj.read(self.bufsize)
+                    if not cbuf:
+                        break
+                else:
+                    cbuf = b""
+
+                try:
+                    dbuf = self.cmp.decompress(cbuf, size - c)
+                except self.exception as e:
+                    raise ReadError("invalid compressed data") from e
+
+            t.append(dbuf)
+            c += len(dbuf)
+
+        return b"".join(t)
 
     def __read(self, size):
         """Return size bytes from stream. If internal buffer is empty,

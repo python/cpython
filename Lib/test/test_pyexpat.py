@@ -426,6 +426,16 @@ class ParseTest(unittest.TestCase):
         with self.assertRaises(LookupError):
             parser.Parse(data, True)
 
+    @support.subTests('sample,exception', [
+        (b'<x> \xa1</x>', UnicodeDecodeError),  # crashed
+        (b'<x> \xa1</x', UnicodeDecodeError),  # crashed
+        (b'<x> \xa1', expat.ExpatError),
+    ])
+    def test_multibyte_encoding_errors(self, sample, exception):
+        parser = expat.ParserCreate()
+        data = b'<?xml version="1.0" encoding="EUC-JP"?>\n' + sample
+        with self.assertRaises(exception):
+            parser.Parse(data, True)
 
 class NamespaceSeparatorTest(unittest.TestCase):
     def test_legal(self):

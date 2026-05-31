@@ -1064,6 +1064,17 @@ class ElementTreeTest(unittest.TestCase):
         self.assertRaises(ValueError, ET.XML, xml('undefined').encode('ascii'))
         self.assertRaises(LookupError, ET.XML, xml('xxx').encode('ascii'))
 
+    @support.subTests('sample,exception', [
+        (b'<x> \xa1</x>', UnicodeDecodeError),  # crashed
+        (b'<x> \xa1</x', UnicodeDecodeError),  # crashed
+        (b'<x> \xa1', None), # ET.ParseError
+    ])
+    def test_multibyte_encoding_errors(self, sample, exception):
+        exception = exception or ET.ParseError
+        data = b'<?xml version="1.0" encoding="EUC-JP"?>\n' + sample
+        with self.assertRaises(exception):
+            ET.XML(data)
+
     def test_methods(self):
         # Test serialization methods.
 
