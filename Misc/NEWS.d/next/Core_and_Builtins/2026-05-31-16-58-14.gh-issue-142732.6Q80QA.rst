@@ -1,0 +1,1 @@
+Now :func:`functools.zip_longest` raises an :exc:`ValueError` when a reentrancy is detected.
