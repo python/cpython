@@ -3710,13 +3710,8 @@
                 STAT_INC(CALL, hit);
                 PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                Py_ssize_t len_i = PyObject_Length(arg_o);
+                PyObject *res_o = _PyObject_LengthAsPyLong(arg_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (len_i < 0) {
-                    JUMP_TO_LABEL(error);
-                }
-                PyObject *res_o = PyLong_FromSsize_t(len_i);
-                assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
                 if (res_o == NULL) {
                     JUMP_TO_LABEL(error);
                 }
@@ -6688,12 +6683,8 @@
             _PyStackRef len;
             obj = stack_pointer[-1];
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            Py_ssize_t len_i = PyObject_Length(PyStackRef_AsPyObjectBorrow(obj));
+            PyObject *len_o = _PyObject_LengthAsPyLong(PyStackRef_AsPyObjectBorrow(obj));
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (len_i < 0) {
-                JUMP_TO_LABEL(error);
-            }
-            PyObject *len_o = PyLong_FromSsize_t(len_i);
             if (len_o == NULL) {
                 JUMP_TO_LABEL(error);
             }
