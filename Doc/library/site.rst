@@ -356,15 +356,31 @@ Module contents
       This function used to be called unconditionally.
 
 
+.. function:: makepath(*paths)
+
+   Join *paths* with :func:`os.path.join`, attempt to make the result
+   absolute with :func:`os.path.abspath`, and return a 2-tuple containing
+   the absolute path and its case-normalized form as produced by
+   :func:`os.path.normcase`.  If :func:`os.path.abspath` raises
+   :exc:`OSError`, the joined path is used unchanged for the
+   case-normalization step.
+
+   The second element of the returned tuple is the form used throughout the
+   :mod:`!site` module to compare paths on case-insensitive file systems, and
+   is what populates the ``known_paths`` sets that prevent duplicate
+   :data:`sys.path` entries in various APIs within this module.
+
+
 .. class:: StartupState(known_paths=None)
 
    Instances of this class are used as an accumulator for interpreter startup
    configuration data, such as ``.pth`` and ``.start`` files, from one or more
    site directories.  These are used to batch the processing of these startup
    files.  The optional *known_paths* argument is a set of case-normalized
-   paths used to prevent duplicate :data:`sys.path` entries.  With ``None``
-   (the default), this set is built from the current :data:`sys.path`.
-   :func:`main` implicitly uses an instance of this class.
+   paths (which can be produced by :func:`makepath`) used to prevent duplicate
+   :data:`sys.path` entries.  With ``None`` (the default), this set is built
+   from the current :data:`sys.path`.  :func:`main` implicitly uses an
+   instance of this class.
 
    .. versionadded:: 3.15
 
@@ -374,6 +390,10 @@ Module contents
       :data:`sys.path`, then executing the :file:`.start` file entry points
       and :file:`.pth` file ``import`` lines (:ref:`deprecated
       <site-pth-files>`).
+
+      This method is not idempotent and must not be called more than once
+      on the same instance.  Doing so would apply the accumulated state
+      more than once, re-running entry points and ``import`` lines.
 
 
 .. function:: addsitedir(sitedir, known_paths=None, *, startup_state=None)
