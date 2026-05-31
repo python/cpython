@@ -47,7 +47,6 @@ cache_tlbc_array(RemoteUnwinderObject *unwinder, uintptr_t code_addr, uintptr_t 
 
     // Read the TLBC array pointer
     if (read_ptr(unwinder, tlbc_array_addr, &tlbc_array_ptr) != 0) {
-        PyErr_SetString(PyExc_RuntimeError, "Failed to read TLBC array pointer");
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read TLBC array pointer");
         return 0; // Read error
     }
@@ -61,7 +60,6 @@ cache_tlbc_array(RemoteUnwinderObject *unwinder, uintptr_t code_addr, uintptr_t 
     // Read the TLBC array size
     Py_ssize_t tlbc_size;
     if (_Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, tlbc_array_ptr, sizeof(tlbc_size), &tlbc_size) != 0) {
-        PyErr_SetString(PyExc_RuntimeError, "Failed to read TLBC array size");
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read TLBC array size");
         return 0; // Read error
     }

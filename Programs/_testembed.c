@@ -41,8 +41,13 @@ char **main_argv;
 #define PROGRAM "test_embed"
 
 /* Use path starting with "./" avoids a search along the PATH */
-#define PROGRAM_NAME L"./_testembed"
-#define PROGRAM_NAME_UTF8 "./_testembed"
+#ifdef __CYGWIN__
+#  define PROGRAM_NAME L"./_testembed.exe"
+#  define PROGRAM_NAME_UTF8 "./_testembed.exe"
+#else
+#  define PROGRAM_NAME L"./_testembed"
+#  define PROGRAM_NAME_UTF8 "./_testembed"
+#endif
 
 #define INIT_LOOPS 4
 
