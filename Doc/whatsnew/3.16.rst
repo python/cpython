@@ -101,7 +101,7 @@ lzma
   new filters will work only if runtime library supports them. ARM64 filter
   requires ``lzma`` 5.4.0 or newer while RISC-V requires 5.6.0 or newer.
   (Contributed by Chien Wong in :gh:`115988`.)
-  
+
 math.integer
 ------------
 
