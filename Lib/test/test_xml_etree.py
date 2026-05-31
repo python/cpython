@@ -1400,6 +1400,10 @@ class XMLValidationTest(unittest.TestCase):
     def test_invalid_comment(self):
         self.check(ET.Comment('a--b'))
         self.check(ET.Comment(' B+, B, or B-'))
+        self.check(ET.Comment('\x00'))
+        self.check(ET.Comment('\x01'))
+        self.check(ET.Comment('\ud8ff'))
+        self.check(ET.Comment('\ufffe'))
 
     def test_invalid_processing_instruction(self):
         self.check(ET.PI(''))
@@ -1412,6 +1416,7 @@ class XMLValidationTest(unittest.TestCase):
         self.check(ET.PI('xml', 'encoding="UTF-8"'))
         self.check(ET.PI('foo', 'a?>b'))
         self.check(ET.PI('foo', '\x00'))
+        self.check(ET.PI('foo', '\x01'))
         self.check(ET.PI('foo', '\ud8ff'))
         self.check(ET.PI('foo', '\ufffe'))
 
@@ -1500,10 +1505,12 @@ class HTMLValidationTest(unittest.TestCase):
         self.check(ET.Comment('a-->b'))
         self.check(ET.Comment('a--!>b'))
         self.check(ET.Comment('a\x00b'))
+        self.check(ET.Comment('a\ud8ffb'))
 
     def test_invalid_processing_instruction(self):
         self.check(ET.PI('a>b'))
         self.check(ET.PI('a\x00b'))
+        self.check(ET.PI('a\ud8ffb'))
 
     def test_invalid_tag(self):
         self.check(ET.Element(''))
@@ -1516,20 +1523,27 @@ class HTMLValidationTest(unittest.TestCase):
         self.check(ET.Element('a/b'))
         self.check(ET.Element('a>b'))
         self.check(ET.Element('a\x00b'))
+        self.check(ET.Element('a\ud8ffb'))
         self.check(ET.Element(ET.QName('')))
         self.check(ET.Element(ET.QName('0')))
         self.check(ET.Element(ET.QName('a/b')))
 
     def test_invalid_attr_name(self):
         self.check(ET.Element('tag', attrib={'': 'value'}))
+        self.check(ET.Element('tag', attrib={'\x00': 'value'}))
+        self.check(ET.Element('tag', attrib={'\ud8ff': 'value'}))
         self.check(ET.Element('tag', attrib={'a/b': 'value'}))
         self.check(ET.Element('tag', attrib={'a=b': 'value'}))
+        self.check(ET.Element('tag', attrib={'a\x00b': 'value'}))
+        self.check(ET.Element('tag', attrib={'a\ud8ffb': 'value'}))
         self.check(ET.Element('tag', attrib={ET.QName(''): 'value'}))
         self.check(ET.Element('tag', attrib={ET.QName('a/b'): 'value'}))
 
     def test_invalid_attr_value(self):
         self.check(ET.Element('tag', attrib={'key': '\x00'}))
+        self.check(ET.Element('tag', attrib={'key': '\ud8ff'}))
         self.check(ET.Element('tag', attrib={'key': ET.QName('\x00')}))
+        self.check(ET.Element('tag', attrib={'key': ET.QName('\ud8ff')}))
         self.check(ET.Element('tag', attrib={'key': ET.QName('a"b')}))
         self.check(ET.Element('tag', attrib={'key': ET.QName('a&b')}))
 
@@ -1537,15 +1551,21 @@ class HTMLValidationTest(unittest.TestCase):
         elem = ET.Element('tag')
         elem.text = '\x00'
         self.check(elem)
+        elem.text = '\ud8ff'
+        self.check(elem)
 
     def test_invalid_tail(self):
         elem = ET.Element('tag')
         elem.tail = '\x00'
         self.check(elem)
+        elem.tail = '\ud8ff'
+        self.check(elem)
 
     def test_invalid_text_without_tag(self):
         elem = ET.Element(None)
         elem.text = '\x00'
+        self.check(elem)
+        elem.text = '\ud8ff'
         self.check(elem)
 
     def test_invalid_subelements(self):
@@ -1558,7 +1578,9 @@ class HTMLValidationTest(unittest.TestCase):
 
     def test_invalid_namespace_uri(self):
         self.check(ET.Element('{\x00}tag'))
+        self.check(ET.Element('{\ud8ff}tag'))
         self.check(ET.Element(ET.QName('\x00', 'tag')))
+        self.check(ET.Element(ET.QName('\ud8ff', 'tag')))
 
     @support.subTests('tag', ("script", "style", "xmp", "iframe", "noembed", "noframes"))
     def test_invalid_cdata_content(self, tag):
@@ -1571,6 +1593,8 @@ class HTMLValidationTest(unittest.TestCase):
         self.check(elem)
         elem.text = 'a\x00b'
         self.check(elem)
+        elem.text = 'a\ud8ffb'
+        self.check(elem)
 
     @support.subTests('tag', ("script", "style", "xmp", "iframe", "noembed", "noframes"))
     def test_cdata_subelements(self, tag):
@@ -1581,6 +1605,8 @@ class HTMLValidationTest(unittest.TestCase):
     def test_invalid_plaintext_content(self):
         elem = ET.Element('plaintext')
         elem.text = 'a\x00b'
+        self.check(elem)
+        elem.text = 'a\ud8ffb'
         self.check(elem)
 
 
