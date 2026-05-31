@@ -547,17 +547,22 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
                     message = ''
             if not hasattr(self, '_headers_buffer'):
                 self._headers_buffer = []
-            self._headers_buffer.append(("%s %d %s\r\n" %
-                    (self.protocol_version, code, message)).encode(
-                        'latin-1', 'strict'))
+            line = "%s %d %s\r\n" % (self.protocol_version, code, message)
+            if '\r' in line[:-2] or '\n' in line[:-2]:
+                raise ValueError("CR and LF characters are not allowed "
+                                 "in the response reason phrase")
+            self._headers_buffer.append(line.encode('latin-1', 'strict'))
 
     def send_header(self, keyword, value, *, _is_extra=False):
         """Send a MIME header to the headers buffer."""
         if self.request_version != 'HTTP/0.9':
             if not hasattr(self, '_headers_buffer'):
                 self._headers_buffer = []
-            self._headers_buffer.append(
-                ("%s: %s\r\n" % (keyword, value)).encode('latin-1', 'strict'))
+            line = "%s: %s\r\n" % (keyword, value)
+            if '\r' in line[:-2] or '\n' in line[:-2]:
+                raise ValueError("CR and LF characters are not allowed "
+                                 "in HTTP header names or values")
+            self._headers_buffer.append(line.encode('latin-1', 'strict'))
             if not hasattr(self, '_default_response_headers'):
                 self._default_response_headers = []
             if not _is_extra:

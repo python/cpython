@@ -1,0 +1,5 @@
+:meth:`~http.server.BaseHTTPRequestHandler.send_header` and
+:meth:`~http.server.BaseHTTPRequestHandler.send_response_only` now raise
+:exc:`ValueError` when a header name, header value or the response reason
+phrase contains a carriage return or line feed, preventing response
+splitting and header injection.

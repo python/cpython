@@ -1184,6 +1184,29 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
         self.assertEqual(output.getData(), b'Foo: foo\r\nbar: bar\r\n\r\n')
         self.assertEqual(output.numWrites, 1)
 
+    def test_send_header_rejects_crlf(self):
+        handler = SocketlessRequestHandler()
+        handler.wfile = BytesIO()
+        handler.request_version = 'HTTP/1.1'
+
+        for keyword, value in (
+            ('Foo', 'bar\r\nSet-Cookie: injected=1'),
+            ('Foo', 'bar\nSet-Cookie: injected=1'),
+            ('Foo', 'bar\rSet-Cookie: injected=1'),
+            ('Foo\r\nEvil', 'bar'),
+        ):
+            with self.subTest(keyword=keyword, value=value):
+                with self.assertRaises(ValueError):
+                    handler.send_header(keyword, value)
+
+    def test_send_response_only_rejects_crlf(self):
+        handler = SocketlessRequestHandler()
+        handler.wfile = BytesIO()
+        handler.request_version = 'HTTP/1.1'
+
+        with self.assertRaises(ValueError):
+            handler.send_response_only(200, 'OK\r\nX-Injected: yes')
+
     def test_header_unbuffered_when_continue(self):
 
         def _readAndReseek(f):
