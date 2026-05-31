@@ -2335,6 +2335,8 @@ New deprecations
 
 .. include:: ../deprecations/pending-removal-in-3.20.rst
 
+.. include:: ../deprecations/pending-removal-in-3.21.rst
+
 .. include:: ../deprecations/pending-removal-in-future.rst
 
 .. include:: ../deprecations/soft-deprecations.rst
