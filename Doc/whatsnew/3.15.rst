@@ -183,7 +183,7 @@ eager:
    import myapp.slow_module  # lazy (matches filter)
    import json               # eager (does not match filter)
 
-The proxy type itself is available as :data:`types.LazyImportType` for code
+The proxy type itself is available as :class:`types.LazyImportType` for code
 that needs to detect lazy imports programmatically.
 
 There are some restrictions on where the ``lazy`` keyword can be used. Lazy
@@ -1650,7 +1650,7 @@ types
 -----
 
 * Expose the write-through :func:`locals` proxy type
-  as :data:`types.FrameLocalsProxyType`.
+  as :class:`types.FrameLocalsProxyType`.
   This represents the type of the :attr:`frame.f_locals` attribute,
   as described in :pep:`667`.
 
