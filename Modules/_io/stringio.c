@@ -225,7 +225,9 @@ write_str(stringio *self, PyObject *obj)
 
     if (self->state == STATE_ACCUMULATING) {
         if (self->string_size == self->pos) {
-            if (PyUnicodeWriter_WriteStr(self->writer, decoded))
+            // gh-149046: Avoid PyUnicodeWriter_WriteStr() which calls str(obj)
+            // on str subclasses
+            if (_PyUnicodeWriter_WriteStr((_PyUnicodeWriter*)self->writer, decoded))
                 goto fail;
             goto success;
         }
