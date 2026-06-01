@@ -217,11 +217,7 @@ struct BaseEvent {
 typedef struct {
     struct BaseEvent base;   // Common event header
     uint32_t process_id;     // Process ID where code was generated
-#if defined(__APPLE__)
-    uint64_t thread_id;      // Thread ID where code was generated
-#else
     uint32_t thread_id;      // Thread ID where code was generated
-#endif
     uint64_t vma;            // Virtual memory address where code is loaded
     uint64_t code_address;   // Address of the actual machine code
     uint64_t code_size;      // Size of the machine code in bytes
@@ -652,7 +648,12 @@ static void perf_map_jit_write_entry_with_name(
     ev.base.time_stamp = get_current_monotonic_ticks();
     ev.process_id = getpid();
 #if defined(__APPLE__)
-    pthread_threadid_np(NULL, &ev.thread_id);
+    // The jitdump format defines the thread id field as a 32-bit value, but
+    // pthread_threadid_np() returns a 64-bit id. Truncate it to 32 bits to
+    // keep the record layout identical to other platforms.
+    uint64_t thread_id = 0;
+    pthread_threadid_np(NULL, &thread_id);
+    ev.thread_id = (uint32_t)thread_id;
 #else
     ev.thread_id = syscall(SYS_gettid);  // Get thread ID via system call
 #endif
