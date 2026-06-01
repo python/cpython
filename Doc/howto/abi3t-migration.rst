@@ -203,7 +203,7 @@ This should result in a different error than "``abt3t`` define is not set".
    resulting extension manually as well.
    This is covered in :ref:`abi3t-migration-tagging` below.
 
-This guide will ask you to do a series of changes.
+This guide will ask you to make a series of changes.
 After each one, verify that your extension still builds in the original
 (non-``abi3t``) configuration, and ideally run tests on all Python
 versions you support.
@@ -216,7 +216,7 @@ Module export hook
 Unless you've done this step already, your extension module defines a
 :ref:`module initialization function <extension-pyinit>`
 named :samp:`PyInit_{<module_name>}`.
-You will need to port it to :ref:`module export hook <extension-export-hook>`,
+You will need to port it to a :ref:`module export hook <extension-export-hook>`,
 :samp:`PyModExport_{<module name>}`, a feature added in CPython 3.15 in
 :pep:`793`.
 
@@ -234,7 +234,7 @@ for ``<modname>`` and ``<moddef>``):
 
 If there is some code before the ``return``, move it to
 a :c:macro:`Py_mod_create` or :c:macro:`Py_mod_exec` slot function.
-See :ref:`PyInit documentation <extension-pyinit>` for related information.
+See the :ref:`PyInit documentation <extension-pyinit>` for related information.
 
 The function references a ``PyModuleDef`` object (``<moddef>`` in the code
 above).
@@ -287,7 +287,7 @@ and replace them with the following:
 Leave out any fields that were missing (excexpt the new :c:macro:`Py_mod_abi`),
 and substitute your own values.
 
-See :c:type:`PySlot` and :c:ref:`export hook <extension-export-hook>`
+See the :c:type:`PySlot` and :c:ref:`export hook <extension-export-hook>`
 documentation for details on this API.
 
 Associated ``PyModuleDef``
@@ -301,7 +301,7 @@ This changes the behavior of the following functions:
 - :c:func:`PyType_GetModuleByDef`
 
 Check your code for these.
-If you do not use them, you skip the rest of this section.
+If you do not use them, you can skip this section.
 
 These functions are typically used for two purposes:
 
@@ -349,7 +349,7 @@ These functions are typically used for two purposes:
 
       void *token;
       if (PyModule_GetToken(module, &token) < 0) {
-         /* handle error */
+          /* handle error */
       }
 
    and from :c:func:`PyType_GetModuleByDef` calls such as:
@@ -603,7 +603,7 @@ Testing
 =======
 
 Note that when you build an extension compatible with multiple versions of
-CPython, you should always *test* it witch each version it supports (for
+CPython, you should always *test* it with each version it supports (for
 example, 3.15, 3.16, and so on).
 Stable ABI only guarantees *ABI* compatibility; there may also be behavior
 changes -- both intentional ones (covered by :pep:`387`) and bugs.
