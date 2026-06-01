@@ -1713,7 +1713,7 @@ symtable_enter_type_param_block(struct symtable *st, identifier name,
     return 1;
 }
 
-/* VISIT, VISIT_SEQ and VIST_SEQ_TAIL take an ASDL type as their second argument.
+/* VISIT, VISIT_SEQ and VISIT_SEQ_TAIL take an ASDL type as their second argument.
    They use the ASDL name to synthesize the name of the C type and the visit
    function.
 

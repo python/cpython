@@ -268,10 +268,10 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 
 #if defined(Py_DEBUG) && !defined(_Py_JIT)
 // This allows temporary stack "overflows", provided it's all in the cache at any point of time.
-#define WITHIN_STACK_BOUNDS_IGNORING_CACHE() \
-   (frame->owner == FRAME_OWNED_BY_INTERPRETER || (STACK_LEVEL() >= 0 && (STACK_LEVEL()) <= STACK_SIZE()))
+#define ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(F, L) \
+   assert(frame->owner == FRAME_OWNED_BY_INTERPRETER || (STACK_LEVEL() >= 0 && (STACK_LEVEL()) <= STACK_SIZE()))
 #else
-#define WITHIN_STACK_BOUNDS_IGNORING_CACHE WITHIN_STACK_BOUNDS
+#define ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE ASSERT_WITHIN_STACK_BOUNDS
 #endif
 
 /* Data access macros */
