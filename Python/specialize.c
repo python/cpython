@@ -1641,8 +1641,7 @@ specialize_class_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
     assert(PyType_Check(callable));
     PyTypeObject *tp = _PyType_CAST(callable);
     if (tp->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) {
-        int oparg = instr->op.arg;
-        if (nargs == 1 && oparg == 1) {
+        if (nargs == 1 && (instr->op.arg >> 1) == 1) {
             if (tp == &PyUnicode_Type) {
                 specialize(instr, CALL_STR_1);
                 return 0;
@@ -1710,8 +1709,8 @@ specialize_method_descriptor(PyMethodDescrObject *descr, PyObject *self_or_null,
             }
             PyInterpreterState *interp = _PyInterpreterState_GET();
             PyObject *list_append = interp->callable_cache.list_append;
-            int oparg = instr->op.arg;
-            if ((PyObject *)descr == list_append && oparg == 1) {
+            if ((PyObject *)descr == list_append &&
+                (instr->op.arg >> 1) == 1) {
                 assert(self_or_null != NULL);
                 if (PyList_CheckExact(self_or_null)) {
                     specialize(instr, CALL_LIST_APPEND);
@@ -1824,7 +1823,8 @@ specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
             }
             /* len(o) */
             PyInterpreterState *interp = _PyInterpreterState_GET();
-            if (callable == interp->callable_cache.len && instr->op.arg == 1) {
+            if (callable == interp->callable_cache.len &&
+                (instr->op.arg >> 1) == 1) {
                 specialize(instr, CALL_LEN);
                 return 0;
             }
@@ -1835,7 +1835,8 @@ specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
             if (nargs == 2) {
                 /* isinstance(o1, o2) */
                 PyInterpreterState *interp = _PyInterpreterState_GET();
-                if (callable == interp->callable_cache.isinstance && instr->op.arg == 2) {
+                if (callable == interp->callable_cache.isinstance &&
+                    (instr->op.arg >> 1) == 2) {
                     specialize(instr, CALL_ISINSTANCE);
                     return 0;
                 }

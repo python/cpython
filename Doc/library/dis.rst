@@ -77,7 +77,7 @@ the following command can be used to display the disassembly of
    <BLANKLINE>
      3           LOAD_GLOBAL              1 (len + NULL)
                  LOAD_FAST_BORROW         0 (alist)
-                 CALL                     1
+                 CALL                     3 (1)
                  RETURN_VALUE
 
 (The "2" is a line number).
@@ -1600,6 +1600,10 @@ iterations of the loop.
 
    .. versionchanged:: 3.13
       Calls with keyword arguments are now handled by :opcode:`CALL_KW`.
+
+   .. versionchanged:: next
+      ``argc`` is now the oparg shifted right by one. The low bit indicates
+      that no interrupt check is made after the call
 
 
 .. opcode:: CALL_KW (argc)
