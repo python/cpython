@@ -1418,8 +1418,7 @@ Connection objects
       See :ref:`sqlite3-howto-row-factory` for more details.
 
       .. versionchanged:: next
-         Deleting the ``row_factory`` attribute is no longer allowed and raises
-         :exc:`AttributeError`.
+         Deleting the ``row_factory`` attribute is no longer allowed.
 
    .. attribute:: text_factory
 
@@ -1431,8 +1430,7 @@ Connection objects
       See :ref:`sqlite3-howto-encoding` for more details.
 
       .. versionchanged:: next
-         Deleting the ``text_factory`` attribute is no longer allowed and raises
-         :exc:`AttributeError`.
+         Deleting the ``text_factory`` attribute is no longer allowed.
 
    .. attribute:: total_changes
 
@@ -1718,8 +1716,7 @@ Cursor objects
       See :ref:`sqlite3-howto-row-factory` for more details.
 
       .. versionchanged:: next
-         Deleting the ``row_factory`` attribute is no longer allowed and raises
-         :exc:`AttributeError`.
+         Deleting the ``row_factory`` attribute is no longer allowed.
 
 
 .. The sqlite3.Row example used to be a how-to. It has now been incorporated
