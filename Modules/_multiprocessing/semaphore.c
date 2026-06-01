@@ -1288,9 +1288,9 @@ _multiprocessing_SemLock__rebuild_impl(PyTypeObject *type, SEM_HANDLE handle,
                                        const char *name)
 /*[clinic end generated code: output=2aaee14f063f3bd9 input=f7040492ac6d9962]*/
 {
-    PyObject *result = NULL;
     char *name_copy = NULL;
 #ifdef HAVE_BROKEN_SEM_GETVALUE
+    PyObject *result = NULL;
     char mutex_name[SIZE_MUTEX_NAME];
     SemLockObject *semlock = NULL;
     SEM_HANDLE handle_mutex = SEM_FAILED;
