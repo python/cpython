@@ -143,6 +143,8 @@ def iter_async_frames(awaited_info_list):
 
 
 class Collector(ABC):
+    aggregating = False
+
     @abstractmethod
     def collect(self, stack_frames, timestamps_us=None):
         """Collect profiling data from stack frames.

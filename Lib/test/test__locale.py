@@ -89,6 +89,9 @@ known_alt_digits = {
     'ar_AE': (100, {0: '\u0660', 10: '\u0661\u0660', 99: '\u0669\u0669'}),
     'bn_IN': (100, {0: '\u09e6', 10: '\u09e7\u09e6', 99: '\u09ef\u09ef'}),
 }
+if sys.platform == 'cygwin':
+    count, samples = known_alt_digits['ja_JP']
+    known_alt_digits['ja_JP'] = (101, samples)
 
 known_era = {
     'C': (0, ''),

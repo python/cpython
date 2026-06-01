@@ -1644,7 +1644,7 @@ def _astuple_inner(obj, tuple_factory):
 def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
                    repr=True, eq=True, order=False, unsafe_hash=False,
                    frozen=False, match_args=True, kw_only=False, slots=False,
-                   weakref_slot=False, module=None, decorator=dataclass):
+                   weakref_slot=False, module=None, qualname=None, decorator=dataclass):
     """Return a new dynamically created dataclass.
 
     The dataclass name will be 'cls_name'.  'fields' is an iterable
@@ -1669,6 +1669,9 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
 
     If module parameter is defined, the '__module__' attribute of the dataclass is
     set to that value.
+
+    If qualname parameter is defined, the '__qualname__' attribute of the dataclass is set
+    to that value.
     """
 
     if namespace is None:
@@ -1757,6 +1760,9 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
                 pass
     if module is not None:
         cls.__module__ = module
+
+    if qualname:
+        cls.__qualname__ = qualname
 
     # Apply the normal provided decorator.
     cls = decorator(cls, init=init, repr=repr, eq=eq, order=order,
