@@ -993,11 +993,15 @@ def _venv(state):
                         sys._home = value
 
         if sys.prefix != site_prefix:
-            _warn(f'Unexpected value in sys.prefix, expected {site_prefix}, got {sys.prefix}', RuntimeWarning)
+            _warn(
+                f'Unexpected value in sys.prefix, expected {site_prefix}, got {sys.prefix}',
+                RuntimeWarning)
         if sys.exec_prefix != site_prefix:
-            _warn(f'Unexpected value in sys.exec_prefix, expected {site_prefix}, got {sys.exec_prefix}', RuntimeWarning)
+            _warn(
+                f'Unexpected value in sys.exec_prefix, expected {site_prefix}, got {sys.exec_prefix}',
+                RuntimeWarning)
 
-        # Doing this here ensures venv takes precedence over user-site
+        # Doing this here ensures venv takes precedence over user-site.
         state.addsitepackages([sys.prefix])
 
         if system_site == "true":
@@ -1063,8 +1067,10 @@ def main():
 
     state = StartupState(set())
     _venv(state)
+
     if ENABLE_USER_SITE is None:
         ENABLE_USER_SITE = check_enableusersite()
+
     state.addusersitepackages()
     state.addsitepackages()
     # PEP 829: flush accumulated data from all .pth and .start files.

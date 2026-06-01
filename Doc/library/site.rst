@@ -424,7 +424,7 @@ Module contents
       <site-pth-files>`).
 
       This method is not idempotent and must not be called more than once
-      on the same instance.  Doing so would apply the accumulated state
+      on the same instance.  Doing so will apply the accumulated state
       more than once, re-running entry points and ``import`` lines.
 
 
