@@ -996,6 +996,7 @@ class CmdLineTest(unittest.TestCase):
         p = subprocess.run([sys.executable, "-c", code],
                            creationflags=subprocess.CREATE_NEW_CONSOLE,
                            env=env)
+        support.skip_on_low_desktop_heap_memory_subprocess(p.returncode)
         self.assertEqual(p.returncode, 0)
 
         # Then test that FIleIO is used when PYTHONLEGACYWINDOWSSTDIO is set.
@@ -1004,6 +1005,7 @@ class CmdLineTest(unittest.TestCase):
         p = subprocess.run([sys.executable, "-c", code],
                            creationflags=subprocess.CREATE_NEW_CONSOLE,
                            env=env)
+        support.skip_on_low_desktop_heap_memory_subprocess(p.returncode)
         self.assertEqual(p.returncode, 0)
 
     @unittest.skipIf("-fsanitize" in sysconfig.get_config_vars().get('PY_CFLAGS', ()),
