@@ -2840,12 +2840,13 @@ code._varname_from_oparg
 
 (internal-only) Return the local variable name for the given oparg.
 
-WARNING: this method is for internal use only and may change or go away.
+WARNING: this method is for internal use only and may change or go
+away.
 [clinic start generated code]*/
 
 static PyObject *
 code__varname_from_oparg_impl(PyCodeObject *self, int oparg)
-/*[clinic end generated code: output=1fd1130413184206 input=c5fa3ee9bac7d4ca]*/
+/*[clinic end generated code: output=1fd1130413184206 input=6ba7d6df0d566463]*/
 {
     PyObject *name = PyTuple_GetItem(self->co_localsplusnames, oparg);
     if (name == NULL) {

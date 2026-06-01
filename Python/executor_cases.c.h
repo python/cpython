@@ -6811,7 +6811,8 @@
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyObject *slice = _PyBuildSlice_ConsumeRefs(PyStackRef_AsPyObjectSteal(start),
-                PyStackRef_AsPyObjectSteal(stop));
+                PyStackRef_AsPyObjectSteal(stop),
+                Py_None);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             int err;
             if (slice == NULL) {
@@ -9346,8 +9347,9 @@
             assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
             #if TIER_ONE && defined(Py_DEBUG)
             if (!PyStackRef_IsNone(frame->f_executable)) {
-                int i = frame->instr_ptr - _PyFrame_GetBytecode(frame);
-                int opcode = _Py_GetBaseCodeUnit(_PyFrame_GetCode(frame), i).op.code;
+                Py_ssize_t i = frame->instr_ptr - _PyFrame_GetBytecode(frame);
+                assert(i >= 0 && i <= INT_MAX);
+                int opcode = _Py_GetBaseCodeUnit(_PyFrame_GetCode(frame), (int)i).op.code;
                 assert(opcode == SEND || opcode == FOR_ITER);
             }
             #endif
@@ -9394,7 +9396,7 @@
             _PyStackRef value;
             oparg = CURRENT_OPARG();
             assert(oparg < NUM_COMMON_CONSTANTS);
-            value = PyStackRef_FromPyObjectNew(tstate->interp->common_consts[oparg]);
+            value = PyStackRef_DupImmortal(tstate->interp->common_consts[oparg]);
             _tos_cache0 = value;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
@@ -9408,7 +9410,7 @@
             _PyStackRef _stack_item_0 = _tos_cache0;
             oparg = CURRENT_OPARG();
             assert(oparg < NUM_COMMON_CONSTANTS);
-            value = PyStackRef_FromPyObjectNew(tstate->interp->common_consts[oparg]);
+            value = PyStackRef_DupImmortal(tstate->interp->common_consts[oparg]);
             _tos_cache1 = value;
             _tos_cache0 = _stack_item_0;
             SET_CURRENT_CACHED_VALUES(2);
@@ -9424,7 +9426,7 @@
             _PyStackRef _stack_item_1 = _tos_cache1;
             oparg = CURRENT_OPARG();
             assert(oparg < NUM_COMMON_CONSTANTS);
-            value = PyStackRef_FromPyObjectNew(tstate->interp->common_consts[oparg]);
+            value = PyStackRef_DupImmortal(tstate->interp->common_consts[oparg]);
             _tos_cache2 = value;
             _tos_cache1 = _stack_item_1;
             _tos_cache0 = _stack_item_0;

@@ -6159,7 +6159,10 @@ class TestStartMethod(unittest.TestCase):
     @only_run_in_spawn_testsuite("avoids redundant testing.")
     def test_mixed_startmethod(self):
         # Fork-based locks cannot be used with spawned process
-        for process_method in ["spawn", "forkserver"]:
+        test_methods = ["spawn"]
+        if "forkserver" in multiprocessing.get_all_start_methods():
+            test_methods.append("forkserver")
+        for process_method in test_methods:
             queue = multiprocessing.get_context("fork").Queue()
             process_ctx = multiprocessing.get_context(process_method)
             p = process_ctx.Process(target=close_queue, args=(queue,))
@@ -6168,7 +6171,7 @@ class TestStartMethod(unittest.TestCase):
                 p.start()
 
         # non-fork-based locks can be used with all other start methods
-        for queue_method in ["spawn", "forkserver"]:
+        for queue_method in test_methods:
             for process_method in multiprocessing.get_all_start_methods():
                 queue = multiprocessing.get_context(queue_method).Queue()
                 process_ctx = multiprocessing.get_context(process_method)
@@ -6323,6 +6326,8 @@ class TestResourceTracker(unittest.TestCase):
         # Catchable signal (ignored by semaphore tracker)
         self.check_resource_tracker_death(signal.SIGINT, False)
 
+    @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
+                         'need signal.pthread_sigmask')
     def test_resource_tracker_sigterm(self):
         # Catchable signal (ignored by semaphore tracker)
         self.check_resource_tracker_death(signal.SIGTERM, False)
