@@ -82,6 +82,9 @@
 #if defined(__linux__)
 #  include <sys/syscall.h>        // System call interface
 #endif
+#if defined(__APPLE__)
+#  include <mach/mach_time.h>     // mach_absolute_time, mach_timebase_info
+#endif
 
 // =============================================================================
 //                           CONSTANTS AND CONFIGURATION
@@ -291,7 +294,9 @@ static PerfMapJitState perf_jit_map_state;
 // =============================================================================
 
 /* Time conversion constant */
+#if !defined(__APPLE__)
 static const intptr_t nanoseconds_per_second = 1000000000;
+#endif
 
 /*
  * Get current monotonic time in nanoseconds
@@ -303,6 +308,18 @@ static const intptr_t nanoseconds_per_second = 1000000000;
  * Returns: Current monotonic time in nanoseconds since an arbitrary epoch
  */
 static int64_t get_current_monotonic_ticks(void) {
+#if defined(__APPLE__)
+    // On macOS the jitdump file is consumed by profilers (such as samply) that
+    // timestamp their samples using mach_absolute_time(). The jitdump event
+    // timestamps must use the same clock domain, otherwise the JIT code
+    // mappings cannot be lined up with the samples.
+    static mach_timebase_info_data_t timebase = {0, 0};
+    if (timebase.denom == 0) {
+        (void)mach_timebase_info(&timebase);
+    }
+    uint64_t ticks = mach_absolute_time();
+    return (int64_t)(ticks * timebase.numer / timebase.denom);
+#else
     struct timespec ts;
     if (clock_gettime(CLOCK_MONOTONIC, &ts) != 0) {
         Py_UNREACHABLE();  // Should never fail on supported systems
@@ -314,6 +331,7 @@ static int64_t get_current_monotonic_ticks(void) {
     result *= nanoseconds_per_second;
     result += ts.tv_nsec;
     return result;
+#endif
 }
 
 /*
