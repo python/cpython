@@ -3765,6 +3765,8 @@ class Win32ProcessTestCase(BaseTestCase):
             self.assertEqual(startupinfo.wShowWindow, subprocess.SW_HIDE)
             self.assertEqual(startupinfo.lpAttributeList, {"handle_list": []})
 
+    # CREATE_NEW_CONSOLE creates a "popup" window.
+    @support.requires_resource('gui')
     def test_creationflags(self):
         # creationflags argument
         CREATE_NEW_CONSOLE = 16
