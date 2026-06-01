@@ -38,10 +38,9 @@ class Headers:
         if type(headers) is not list:
             raise TypeError("Headers must be a list of name/value tuples")
         self._headers = headers
-        if __debug__:
-            for k, v in headers:
-                self._convert_string_type(k, name=True)
-                self._convert_string_type(v, name=False)
+        for k, v in headers:
+            self._convert_string_type(k, name=True)
+            self._convert_string_type(v, name=False)
 
     def _convert_string_type(self, value, *, name):
         """Convert/check value type."""
