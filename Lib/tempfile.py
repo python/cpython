@@ -922,9 +922,14 @@ class TemporaryDirectory:
                     raise
 
                 try:
-                    if path != name:
-                        _resetperms(_os.path.dirname(path))
-                    _resetperms(path)
+                    try:
+                        if path != name:
+                            _resetperms(_os.path.dirname(path))
+                        _resetperms(path)
+                    except PermissionError:
+                        if ignore_errors:
+                            return
+                        raise
 
                     try:
                         _os.unlink(path)
