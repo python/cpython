@@ -171,6 +171,22 @@ class ListComprehensionTest(unittest.TestCase):
         """
         self._check_in_scopes(code, raises=NameError)
 
+    def test_lambda_in_comprehension_references___class__(self):
+        # gh-150700: lambda in class-scope comprehension referencing __class__
+        # must compile without SystemError and raise NameError at runtime
+        # (__class__ cell is not yet filled during class body execution).
+        code = """
+            res = [(lambda: __class__)() for _ in [1]]
+        """
+        self._check_in_scopes(code, raises=NameError)
+
+    def test_lambda_in_comprehension_references___classdict__(self):
+        # gh-150700: lambda in class-scope comprehension referencing __classdict__
+        # must compile without SystemError; __classdict__ is available at runtime.
+        class _C:
+            res = [(lambda: __classdict__)() for _ in [1]]
+        self.assertIn("res", _C.res[0])
+
     def test_references___class___defined(self):
         code = """
             __class__ = 2
