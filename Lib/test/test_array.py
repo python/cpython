@@ -26,9 +26,7 @@ class ArraySubclassWithKwargs(array.array):
     def __init__(self, typecode, newarg=None):
         array.array.__init__(self)
 
-typecodes = (
-    'w', 'b', 'B', 'h', 'H', 'i', 'I', 'l', 'L',
-    'f', 'd', 'q', 'Q', 'e', 'Zf', 'Zd')
+typecodes = array.typecodes
 
 
 class MiscTest(unittest.TestCase):

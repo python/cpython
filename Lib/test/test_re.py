@@ -1783,7 +1783,7 @@ class ReTests(unittest.TestCase):
     def test_empty_array(self):
         # SF buf 1647541
         import array
-        for typecode in 'bBhwHiIlLfd':
+        for typecode in array.typecodes:
             a = array.array(typecode)
             self.assertIsNone(re.compile(b"bla").match(a))
             self.assertEqual(re.compile(b"").match(a).groups(), ())
