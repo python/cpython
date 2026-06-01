@@ -1985,6 +1985,10 @@ frame_tp_clear(PyObject *op)
     Py_CLEAR(f->f_locals_cache);
     Py_CLEAR(f->f_overwritten_fast_locals);
 
+    if (f->f_frame->owner != FRAME_OWNED_BY_FRAME_OBJECT) {
+        return 0;
+    }
+
     /* locals and stack */
     _PyStackRef *locals = _PyFrame_GetLocalsArray(f->f_frame);
     _PyStackRef *sp = f->f_frame->stackpointer;
