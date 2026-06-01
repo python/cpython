@@ -170,11 +170,13 @@ class ListComprehensionTest(unittest.TestCase):
             res = [__class__ for x in [1]]
         """
         self._check_in_scopes(code, raises=NameError)
+
     def test_references___class___nested(self):
         code = """
             res = [lambda: __class__ for _ in [1]]
         """
         self._check_in_scopes(code, raises=NameError)
+
     def test_references___class___defined(self):
         code = """
             __class__ = 2
