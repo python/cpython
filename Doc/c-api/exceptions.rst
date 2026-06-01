@@ -303,7 +303,7 @@ For convenience, some of these functions will always return a
 
    Set file, line, and offset information for the current exception.  If the
    current exception is not a :exc:`SyntaxError`, then it sets additional
-   attributes, which make the exception printing subsystem think the exception
+   attributes, which make the exception printing subsystem to think that the exception
    is a :exc:`SyntaxError`.
 
    .. versionadded:: 3.4
@@ -412,7 +412,7 @@ an error value).
 
 .. c:function:: int PyErr_WarnFormat(PyObject *category, Py_ssize_t stack_level, const char *format, ...)
 
-   Function similar to :c:func:`PyErr_WarnEx`, but use
+   Function similar to :c:func:`PyErr_WarnEx`, but uses
    :c:func:`PyUnicode_FromFormat` to format the warning message.  *format* is
    an ASCII-encoded string.
 
