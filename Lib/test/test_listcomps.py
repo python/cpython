@@ -184,7 +184,7 @@ class ListComprehensionTest(unittest.TestCase):
                 code, outputs={"res": [2]}, scopes=["module", "function"])
         self._check_in_scopes(code, raises=NameError, scopes=["class"])
 
-    def test_references___class___define_nested(self):
+    def test_references___class___defined_nested(self):
         code = """
             __class__ = 2
             res = [(lambda: __class__)() for x in [1]]
