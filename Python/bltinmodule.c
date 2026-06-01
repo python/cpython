@@ -1,6 +1,7 @@
 /* Built-in functions */
 
 #include "Python.h"
+#include "pycore_abstract.h"      // _PyObject_LengthAsPyLong()
 #include "pycore_ast.h"           // _PyAST_Validate()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_cell.h"          // PyCell_GetRef()
@@ -1992,14 +1993,7 @@ static PyObject *
 builtin_len(PyObject *module, PyObject *obj)
 /*[clinic end generated code: output=fa7a270d314dfb6c input=bc55598da9e9c9b5]*/
 {
-    Py_ssize_t res;
-
-    res = PyObject_Size(obj);
-    if (res < 0) {
-        assert(PyErr_Occurred());
-        return NULL;
-    }
-    return PyLong_FromSsize_t(res);
+    return _PyObject_LengthAsPyLong(obj);
 }
 
 

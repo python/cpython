@@ -3240,11 +3240,10 @@ through the object's keys; for sequences, it should iterate through the values.
 
    .. impl-detail::
 
-      In CPython, the length is required to be at most :data:`sys.maxsize`.
-      If the length is larger than :data:`!sys.maxsize` some features (such as
-      :func:`len`) may raise :exc:`OverflowError`.  To prevent raising
-      :exc:`!OverflowError` by truth value testing, an object must define a
-      :meth:`~object.__bool__` method.
+      In CPython, the C length protocol is limited to :data:`sys.maxsize`.
+      Some features that use that protocol may raise :exc:`OverflowError`
+      for larger lengths.  To prevent raising :exc:`!OverflowError` by truth
+      value testing, an object must define a :meth:`~object.__bool__` method.
 
 
 .. method:: object.__length_hint__(self)

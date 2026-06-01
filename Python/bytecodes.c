@@ -7,7 +7,7 @@
 // See Tools/cases_generator/README.md for more information.
 
 #include "Python.h"
-#include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_abstract.h"      // _PyIndex_Check(), _PyObject_LengthAsPyLong()
 #include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_backoff.h"
 #include "pycore_cell.h"          // PyCell_GetRef()
@@ -3698,9 +3698,7 @@ dummy_func(
 
         inst(GET_LEN, (obj -- obj, len)) {
             // PUSH(len(TOS))
-            Py_ssize_t len_i = PyObject_Length(PyStackRef_AsPyObjectBorrow(obj));
-            ERROR_IF(len_i < 0);
-            PyObject *len_o = PyLong_FromSsize_t(len_i);
+            PyObject *len_o = _PyObject_LengthAsPyLong(PyStackRef_AsPyObjectBorrow(obj));
             ERROR_IF(len_o == NULL);
             len = PyStackRef_FromPyObjectSteal(len_o);
         }
@@ -5037,12 +5035,7 @@ dummy_func(
             /* len(o) */
             STAT_INC(CALL, hit);
             PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
-            Py_ssize_t len_i = PyObject_Length(arg_o);
-            if (len_i < 0) {
-                ERROR_NO_POP();
-            }
-            PyObject *res_o = PyLong_FromSsize_t(len_i);
-            assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+            PyObject *res_o = _PyObject_LengthAsPyLong(arg_o);
             if (res_o == NULL) {
                 ERROR_NO_POP();
             }

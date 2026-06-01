@@ -1533,8 +1533,9 @@ loops.
    indices.
 
    Ranges containing absolute values larger than :data:`sys.maxsize` are
-   permitted but some features (such as :func:`len`) may raise
-   :exc:`OverflowError`.
+   permitted, though some operations that use the C length protocol may still
+   raise :exc:`OverflowError` for ranges with lengths larger than
+   :data:`!sys.maxsize`.
 
    Range examples::
 

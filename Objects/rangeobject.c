@@ -330,6 +330,13 @@ range_length(PyObject *op)
 }
 
 static PyObject *
+range_len(PyObject *op, PyObject *Py_UNUSED(ignored))
+{
+    rangeobject *r = (rangeobject*)op;
+    return Py_NewRef(r->length);
+}
+
+static PyObject *
 compute_item(rangeobject *r, PyObject *i)
 {
     PyObject *incr, *result;
@@ -779,6 +786,7 @@ PyDoc_STRVAR(index_doc,
 "Raise ValueError if the value is not present.");
 
 static PyMethodDef range_methods[] = {
+    {"__len__",         range_len,                  METH_NOARGS | METH_COEXIST, NULL},
     {"__reversed__",    range_reverse,              METH_NOARGS, reverse_doc},
     {"__reduce__",      range_reduce,               METH_NOARGS},
     {"count",           range_count,                METH_O,      count_doc},

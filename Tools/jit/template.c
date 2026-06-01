@@ -1,5 +1,6 @@
 #include "Python.h"
 
+#include "pycore_abstract.h"
 #include "pycore_backoff.h"
 #include "pycore_call.h"
 #include "pycore_cell.h"
