@@ -503,7 +503,8 @@ Querying the error indicator
 
    .. warning::
 
-      This call steals a reference to *exc*, which must be a valid exception.
+      *exc* must be a valid exception (in which case a reference is stolen) or
+      ``NULL``.
 
    .. versionadded:: 3.12
 
