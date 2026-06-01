@@ -151,6 +151,45 @@ while True:
     time.sleep(0.05)
 '''
 
+ASYNC_CODE = '''\
+import asyncio
+import contextlib
+import math
+
+def compute_slice(seed):
+    result = 0.0
+    for i in range(2000):
+        result += math.sin(seed + i) * math.sqrt(i + 1)
+    return result
+
+async def leaf_task(seed):
+    total = 0.0
+    while True:
+        total += compute_slice(seed)
+        await asyncio.sleep(0)
+
+async def parent_task(seed):
+    child = asyncio.create_task(leaf_task(seed + 1000), name=f"leaf-{seed}")
+    try:
+        while True:
+            compute_slice(seed)
+            await asyncio.sleep(0.001)
+    finally:
+        child.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await child
+
+async def main():
+    tasks = [
+        asyncio.create_task(parent_task(i), name=f"parent-{i}")
+        for i in range(8)
+    ]
+    await asyncio.gather(*tasks)
+
+if __name__ == "__main__":
+    asyncio.run(main())
+'''
+
 CODE_EXAMPLES = {
     "basic": {
         "code": CODE,
@@ -164,10 +203,29 @@ CODE_EXAMPLES = {
         "code": CODE_WITH_TONS_OF_THREADS,
         "description": "Tons of threads doing mixed CPU/IO work",
     },
+    "asyncio": {
+        "code": ASYNC_CODE,
+        "description": "Asyncio tasks with active and awaited coroutine chains",
+    },
+}
+
+OPERATIONS = {
+    "stack_trace": {
+        "method": "get_stack_trace",
+        "label": "get_stack_trace()",
+    },
+    "async_stack_trace": {
+        "method": "get_async_stack_trace",
+        "label": "get_async_stack_trace()",
+    },
+    "all_awaited_by": {
+        "method": "get_all_awaited_by",
+        "label": "get_all_awaited_by()",
+    },
 }
 
 
-def benchmark(unwinder, duration_seconds=10, blocking=False):
+def benchmark(unwinder, duration_seconds=10, blocking=False, operation="stack_trace"):
     """Benchmark mode - measure raw sampling speed for specified duration"""
     sample_count = 0
     fail_count = 0
@@ -175,11 +233,14 @@ def benchmark(unwinder, duration_seconds=10, blocking=False):
     start_time = time.perf_counter()
     end_time = start_time + duration_seconds
     total_attempts = 0
+    operation_info = OPERATIONS[operation]
+    operation_method = getattr(unwinder, operation_info["method"])
 
     colors = get_colors(can_colorize())
 
     print(
-        f"{colors.BOLD_BLUE}Benchmarking sampling speed for {duration_seconds} seconds...{colors.RESET}"
+        f"{colors.BOLD_BLUE}Benchmarking {operation_info['label']} speed "
+        f"for {duration_seconds} seconds...{colors.RESET}"
     )
 
     try:
@@ -190,8 +251,8 @@ def benchmark(unwinder, duration_seconds=10, blocking=False):
                 if blocking:
                     unwinder.pause_threads()
                 try:
-                    stack_trace = unwinder.get_stack_trace()
-                    if stack_trace:
+                    sample = operation_method()
+                    if sample:
                         sample_count += 1
                 finally:
                     if blocking:
@@ -239,6 +300,7 @@ def benchmark(unwinder, duration_seconds=10, blocking=False):
             (sample_count / total_attempts) * 100 if total_attempts > 0 else 0
         ),
         "total_work_time": total_work_time,
+        "operation": operation_info["label"],
         "avg_work_time_us": (
             (total_work_time / total_attempts) * 1e6 if total_attempts > 0 else 0
         ),
@@ -252,7 +314,7 @@ def print_benchmark_results(results):
     colors = get_colors(can_colorize())
 
     print(f"\n{colors.BOLD_GREEN}{'='*60}{colors.RESET}")
-    print(f"{colors.BOLD_GREEN}get_stack_trace() Benchmark Results{colors.RESET}")
+    print(f"{colors.BOLD_GREEN}{results['operation']} Benchmark Results{colors.RESET}")
     print(f"{colors.BOLD_GREEN}{'='*60}{colors.RESET}")
 
     # Basic statistics
@@ -329,6 +391,8 @@ Examples:
   %(prog)s -d 60                     # Run basic benchmark for 60 seconds
   %(prog)s --code deep_static        # Run deep static call stack benchmark
   %(prog)s --code deep_static -d 30  # Run deep static benchmark for 30 seconds
+  %(prog)s --operation async_stack_trace
+  %(prog)s --operation all_awaited_by
 
 Available code examples:
 {examples_desc}
@@ -348,8 +412,15 @@ Available code examples:
         "--code",
         "-c",
         choices=list(CODE_EXAMPLES.keys()),
-        default="basic",
-        help="Code example to benchmark (default: basic)",
+        default=None,
+        help="Code example to benchmark (default: basic, or asyncio for async operations)",
+    )
+
+    parser.add_argument(
+        "--operation",
+        choices=list(OPERATIONS.keys()),
+        default="stack_trace",
+        help="Remote unwinder operation to benchmark (default: stack_trace)",
     )
 
     parser.add_argument(
@@ -365,7 +436,10 @@ Available code examples:
         help="Stop all threads before sampling for consistent snapshots",
     )
 
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.code is None:
+        args.code = "asyncio" if args.operation != "stack_trace" else "basic"
+    return args
 
 
 def create_target_process(temp_file, code_example="basic"):
@@ -421,6 +495,9 @@ def main():
         f"{colors.CYAN}Benchmark Duration:{colors.RESET} {colors.YELLOW}{args.duration}{colors.RESET} seconds"
     )
     print(
+        f"{colors.CYAN}Operation:{colors.RESET} {colors.GREEN}{OPERATIONS[args.operation]['label']}{colors.RESET}"
+    )
+    print(
         f"{colors.CYAN}Blocking Mode:{colors.RESET} {colors.GREEN if args.blocking else colors.YELLOW}{'enabled' if args.blocking else 'disabled'}{colors.RESET}"
     )
 
@@ -451,7 +528,12 @@ def main():
                     unwinder = _remote_debugging.RemoteUnwinder(
                         process.pid, cache_frames=True, **kwargs
                     )
-                    results = benchmark(unwinder, duration_seconds=args.duration, blocking=args.blocking)
+                    results = benchmark(
+                        unwinder,
+                        duration_seconds=args.duration,
+                        blocking=args.blocking,
+                        operation=args.operation,
+                    )
                 finally:
                     cleanup_process(process, temp_file_path)
 

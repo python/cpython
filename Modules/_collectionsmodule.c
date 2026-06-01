@@ -1077,6 +1077,7 @@ done:
 }
 
 /*[clinic input]
+@permit_long_summary
 @critical_section
 _collections.deque.rotate as deque_rotate
 
@@ -1089,7 +1090,7 @@ Rotate the deque n steps to the right.  If n is negative, rotates left.
 
 static PyObject *
 deque_rotate_impl(dequeobject *deque, Py_ssize_t n)
-/*[clinic end generated code: output=96c2402a371eb15d input=5bf834296246e002]*/
+/*[clinic end generated code: output=96c2402a371eb15d input=3543c3b2297de8f1]*/
 {
     if (!_deque_rotate(deque, n))
         Py_RETURN_NONE;
@@ -2420,7 +2421,7 @@ defdict_or(PyObject* left, PyObject* right)
         self = right;
         other = left;
     }
-    if (!PyDict_Check(other)) {
+    if (!PyAnyDict_Check(other)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
     // Like copy(), this calls the object's class.

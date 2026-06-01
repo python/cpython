@@ -22,35 +22,38 @@ _Py_RemoteDebug_GetAsyncioDebugAddress(proc_handle_t* handle)
     address = search_windows_map_for_section(handle, "AsyncioD", L"_asyncio",
                                              NULL);
     if (address == 0) {
-        // Error out: 'python' substring covers both executable and DLL
-        PyObject *exc = PyErr_GetRaisedException();
-        PyErr_SetString(PyExc_RuntimeError, "Failed to find the AsyncioDebug section in the process.");
-        _PyErr_ChainExceptions1(exc);
+        if (!_Py_RemoteDebug_HasPermissionError()) {
+            PyObject *exc = PyErr_GetRaisedException();
+            PyErr_SetString(PyExc_RuntimeError, "Failed to find the AsyncioDebug section in the process.");
+            _PyErr_ChainExceptions1(exc);
+        }
     }
 #elif defined(__linux__) && HAVE_PROCESS_VM_READV
     // On Linux, search for asyncio debug in executable or DLL
     address = search_linux_map_for_section(handle, "AsyncioDebug", "python",
                                            NULL);
     if (address == 0) {
-        // Error out: 'python' substring covers both executable and DLL
-        PyObject *exc = PyErr_GetRaisedException();
-        PyErr_SetString(PyExc_RuntimeError, "Failed to find the AsyncioDebug section in the process.");
-        _PyErr_ChainExceptions1(exc);
+        if (!_Py_RemoteDebug_HasPermissionError()) {
+            PyObject *exc = PyErr_GetRaisedException();
+            PyErr_SetString(PyExc_RuntimeError, "Failed to find the AsyncioDebug section in the process.");
+            _PyErr_ChainExceptions1(exc);
+        }
     }
 #elif defined(__APPLE__) && TARGET_OS_OSX
     // On macOS, try libpython first, then fall back to python
     address = search_map_for_section(handle, "AsyncioDebug", "libpython",
                                      NULL);
-    if (address == 0) {
+    if (address == 0 && !_Py_RemoteDebug_HasPermissionError()) {
         PyErr_Clear();
         address = search_map_for_section(handle, "AsyncioDebug", "python",
                                          NULL);
     }
     if (address == 0) {
-        // Error out: 'python' substring covers both executable and DLL
-        PyObject *exc = PyErr_GetRaisedException();
-        PyErr_SetString(PyExc_RuntimeError, "Failed to find the AsyncioDebug section in the process.");
-        _PyErr_ChainExceptions1(exc);
+        if (!_Py_RemoteDebug_HasPermissionError()) {
+            PyObject *exc = PyErr_GetRaisedException();
+            PyErr_SetString(PyExc_RuntimeError, "Failed to find the AsyncioDebug section in the process.");
+            _PyErr_ChainExceptions1(exc);
+        }
     }
 #else
     Py_UNREACHABLE();
@@ -96,10 +99,12 @@ ensure_async_debug_offsets(RemoteUnwinderObject *unwinder)
         return -1;
     }
     if (result < 0) {
-        PyErr_Clear();
-        PyErr_SetString(PyExc_RuntimeError, "AsyncioDebug section not available");
-        set_exception_cause(unwinder, PyExc_RuntimeError,
-            "AsyncioDebug section unavailable - asyncio module may not be loaded in target process");
+        if (!_Py_RemoteDebug_HasPermissionError()) {
+            PyErr_Clear();
+            PyErr_SetString(PyExc_RuntimeError, "AsyncioDebug section not available");
+            set_exception_cause(unwinder, PyExc_RuntimeError,
+                "AsyncioDebug section unavailable - asyncio module may not be loaded in target process");
+        }
         return -1;
     }
 
@@ -218,7 +223,7 @@ parse_task_name(
 
     if ((GET_MEMBER(unsigned long, type_obj, unwinder->debug_offsets.type_object.tp_flags) & Py_TPFLAGS_LONG_SUBCLASS)) {
         long res = read_py_long(unwinder, task_name_addr);
-        if (res == -1) {
+        if (res == -1 && PyErr_Occurred()) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Task name PyLong parsing failed");
             return NULL;
         }
