@@ -59,7 +59,6 @@ CHARSETS = {
     'shift_jis':   (BASE64,    None,    'iso-2022-jp'),
     'iso-2022-jp': (BASE64,    None,    None),
     'koi8-r':      (BASE64,    BASE64,  None),
-    'utf-8':       (SHORTEST,  BASE64, 'utf-8'),
     }
 
 # Map Python codec names to their corresponding MIME/IANA names.
@@ -273,7 +272,7 @@ class Charset:
         # Set the attributes, allowing the arguments to override the default.
         self.header_encoding = henc
         self.body_encoding = benc
-        self.output_charset = conv
+        self.output_charset = ALIASES.get(conv, conv)
         # Now set the codecs.  If one isn't defined for input_charset,
         # guess and try a Unicode codec with the same name as input_codec.
         self.input_codec = CODEC_MAP.get(self.input_charset,

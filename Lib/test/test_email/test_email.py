@@ -5079,15 +5079,16 @@ class TestCharset(unittest.TestCase):
         self.assertEqual(c.output_codec, 'fake0')
 
         charset.add_alias('fake1', 'mime-fake')
+        charset.add_alias('output-mime-fake', 'output-mime-fake-alias')
         charset.add_codec('mime-fake', 'fakecodec')
-        charset.add_codec('output-mime-fake', 'outputfakecodec')
+        charset.add_codec('output-mime-fake-alias', 'outputfakecodec')
         charset.add_charset('mime-fake', charset.QP, None, 'output-mime-fake')
 
         c = Charset('fake1')
         self.assertEqual(c.input_charset, 'mime-fake')
         self.assertEqual(c.header_encoding, charset.QP)
         self.assertEqual(c.body_encoding, None)
-        self.assertEqual(c.output_charset, 'output-mime-fake')
+        self.assertEqual(c.output_charset, 'output-mime-fake-alias')
         self.assertEqual(c.input_codec, 'fakecodec')
         self.assertEqual(c.output_codec, 'outputfakecodec')
 
