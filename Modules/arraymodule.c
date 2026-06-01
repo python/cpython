@@ -3009,6 +3009,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                 Py_DECREF(v);
             }
             else if (initial != NULL && PyUnicode_Check(initial))  {
+                assert(strcmp(descr->typecode, "w") == 0);
                 Py_ssize_t n = PyUnicode_GET_LENGTH(initial);
                 Py_UCS4 *ustr = PyUnicode_AsUCS4Copy(initial);
                 if (ustr == NULL) {
