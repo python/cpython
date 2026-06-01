@@ -170,27 +170,24 @@ class ListComprehensionTest(unittest.TestCase):
             res = [__class__ for x in [1]]
         """
         self._check_in_scopes(code, raises=NameError)
-
-    def test_lambda_in_comprehension_references___class__(self):
-        # gh-150700: lambda in class-scope comprehension referencing __class__
-        # must compile without SystemError and raise NameError at runtime
-        # (__class__ cell is not yet filled during class body execution).
+    def test_references___class___nested(self):
         code = """
-            res = [(lambda: __class__)() for _ in [1]]
+            res = [lambda: __class__ for _ in [1]]
         """
         self._check_in_scopes(code, raises=NameError)
-
-    def test_lambda_in_comprehension_references___classdict__(self):
-        # gh-150700: lambda in class-scope comprehension referencing __classdict__
-        # must compile without SystemError; __classdict__ is available at runtime.
-        class _C:
-            res = [(lambda: __classdict__)() for _ in [1]]
-        self.assertIn("res", _C.res[0])
-
     def test_references___class___defined(self):
         code = """
             __class__ = 2
             res = [__class__ for x in [1]]
+        """
+        self._check_in_scopes(
+                code, outputs={"res": [2]}, scopes=["module", "function"])
+        self._check_in_scopes(code, raises=NameError, scopes=["class"])
+
+    def test_references___class___define_nested(self):
+        code = """
+            __class__ = 2
+            res = [(lambda: __class__)() for x in [1]]
         """
         self._check_in_scopes(
                 code, outputs={"res": [2]}, scopes=["module", "function"])
@@ -202,9 +199,20 @@ class ListComprehensionTest(unittest.TestCase):
         """
         self._check_in_scopes(code, raises=NameError)
 
+    def test_references___classdict___nested(self):
+        class _C:
+            res = [(lambda: __classdict__)() for _ in [1]]
+        self.assertIn("res", _C.res[0])
+
     def test_references___conditional_annotations__(self):
         code = """
             class i: [__conditional_annotations__ for x in y]
+        """
+        self._check_in_scopes(code, raises=NameError)
+
+    def test_references___conditional_annotations___nested(self):
+        code = """
+            class i: [lambda: __conditional_annotations__ for x in y]
         """
         self._check_in_scopes(code, raises=NameError)
 
