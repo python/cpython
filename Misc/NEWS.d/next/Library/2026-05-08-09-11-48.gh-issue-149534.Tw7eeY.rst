@@ -1,2 +1,1 @@
-Fix :class:`collections.defaultdict` to work correctly with ``|
-frozendict()``.
+Fix merging of :class:`collections.defaultdict` and :class:`frozendict`.
