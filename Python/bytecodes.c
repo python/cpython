@@ -1116,7 +1116,8 @@ dummy_func(
 
         op(_STORE_SLICE, (v, container, start, stop -- )) {
             PyObject *slice = _PyBuildSlice_ConsumeRefs(PyStackRef_AsPyObjectSteal(start),
-                                                        PyStackRef_AsPyObjectSteal(stop));
+                                                        PyStackRef_AsPyObjectSteal(stop),
+                                                        Py_None);
             int err;
             if (slice == NULL) {
                 err = 1;
@@ -1867,8 +1868,9 @@ dummy_func(
             assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
             #if TIER_ONE && defined(Py_DEBUG)
             if (!PyStackRef_IsNone(frame->f_executable)) {
-                int i = frame->instr_ptr - _PyFrame_GetBytecode(frame);
-                int opcode = _Py_GetBaseCodeUnit(_PyFrame_GetCode(frame), i).op.code;
+                Py_ssize_t i = frame->instr_ptr - _PyFrame_GetBytecode(frame);
+                assert(i >= 0 && i <= INT_MAX);
+                int opcode = _Py_GetBaseCodeUnit(_PyFrame_GetCode(frame), (int)i).op.code;
                 assert(opcode == SEND || opcode == FOR_ITER);
             }
             #endif
@@ -1972,7 +1974,7 @@ dummy_func(
         inst(LOAD_COMMON_CONSTANT, ( -- value)) {
             // Keep in sync with _common_constants in opcode.py
             assert(oparg < NUM_COMMON_CONSTANTS);
-            value = PyStackRef_FromPyObjectNew(tstate->interp->common_consts[oparg]);
+            value = PyStackRef_DupImmortal(tstate->interp->common_consts[oparg]);
         }
 
         inst(LOAD_BUILD_CLASS, ( -- bc)) {

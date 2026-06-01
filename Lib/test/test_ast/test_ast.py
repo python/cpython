@@ -523,6 +523,12 @@ class AST_Tests(unittest.TestCase):
         self.assertIs(ast.Constant(None).value, None)
         self.assertIs(ast.Constant(...).value, ...)
 
+        with self.assertWarns(DeprecationWarning):
+            ast.Tuple().dims
+
+        with self.assertWarns(DeprecationWarning):
+            ast.Tuple().dims = 3
+
     def test_constant_subclasses(self):
         class N(ast.Constant):
             def __init__(self, *args, **kwargs):
@@ -1100,6 +1106,38 @@ class AST_Tests(unittest.TestCase):
         self.assertIsInstance(tree.body[0].value.values[0], ast.Constant)
         self.assertIsInstance(tree.body[0].value.values[1], ast.Interpolation)
 
+    def test_deprecated(self):
+        with self.assertWarns(DeprecationWarning):
+            ast.slice
+
+        with self.assertWarns(DeprecationWarning):
+            ast.Index
+
+        with self.assertWarns(DeprecationWarning):
+            ast.ExtSlice
+
+        with self.assertWarns(DeprecationWarning):
+            ast.Suite
+
+        with self.assertWarns(DeprecationWarning):
+            ast.AugLoad
+
+        with self.assertWarns(DeprecationWarning):
+            ast.AugStore
+
+        with self.assertWarns(DeprecationWarning):
+            ast.Param
+
+        namespace = {}
+        exec("from ast import *", namespace)
+        self.assertNotIn("slice", namespace)
+        self.assertNotIn("Index", namespace)
+        self.assertNotIn("ExtSlice", namespace)
+        self.assertNotIn("Suite", namespace)
+        self.assertNotIn("AugLoad", namespace)
+        self.assertNotIn("AugStore", namespace)
+        self.assertNotIn("Param", namespace)
+
     def test_filter_syntax_warnings_by_module(self):
         filename = support.findfile('test_import/data/syntax_warnings.py')
         with open(filename, 'rb') as f:
@@ -1139,8 +1177,9 @@ class CopyTests(unittest.TestCase):
         def do(cls):
             if cls.__module__ != 'ast':
                 return
-            if cls is ast.Index:
-                return
+            with warnings.catch_warnings(action="ignore", category=DeprecationWarning):
+                if cls is ast.Index:
+                    return
             # Don't attempt to create instances of abstract AST nodes
             if _ast._is_abstract(cls):
                 return

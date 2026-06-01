@@ -41,8 +41,6 @@ pyimport_setlazyimportsmode(PyObject *self, PyObject *args)
         PyImport_SetLazyImportsMode(PyImport_LAZY_NORMAL);
     } else if (strcmp(PyUnicode_AsUTF8(mode), "all") == 0) {
         PyImport_SetLazyImportsMode(PyImport_LAZY_ALL);
-    } else if (strcmp(PyUnicode_AsUTF8(mode), "none") == 0) {
-        PyImport_SetLazyImportsMode(PyImport_LAZY_NONE);
     } else {
         PyErr_SetString(PyExc_ValueError, "invalid mode");
         return NULL;
@@ -59,8 +57,6 @@ pyimport_getlazyimportsmode(PyObject *self, PyObject *args)
             return PyUnicode_FromString("normal");
         case PyImport_LAZY_ALL:
             return PyUnicode_FromString("all");
-        case PyImport_LAZY_NONE:
-            return PyUnicode_FromString("none");
         default:
             PyErr_SetString(PyExc_ValueError, "unknown mode");
             return NULL;
