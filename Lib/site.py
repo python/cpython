@@ -158,21 +158,23 @@ def _init_pathinfo():
 #
 # Startup information (.pth and .start file information) can be processed in
 # implicit or explicit batches.  Implicit batches are self-contained
-# addsitedir() calls: they create a per-call StartupState, populate it from the
-# site directory's .pth and .start files, run process() on it, and then throw the
-# state away.
+# site.addsitedir() calls: they create a per-call StartupState, populate it
+# from the site directory's .pth and .start files, run process() on it, and
+# then throw the state away.
 #
 # main() needs different semantics: it accumulates state across multiple
-# addsitedir() calls (user-site plus all global site-packages) so that every
-# sys.path extension is visible *before* any startup code (.start entry points
-# and .pth import lines) runs.  Callers can opt into the same behavior by
-# creating a StartupState and passing it to addsitedir(); callers are responsible
-# in this case for calling StartupState.process() themselves.
+# StartupState.addsitedir() calls (user-site plus all global site-packages) so
+# that every sys.path extension is visible *before* any startup code (.start
+# entry points and .pth import lines) runs.  Callers can opt into the same
+# behavior by creating a StartupState directly and calling its addsitedir(),
+# addusersitepackages(), and addsitepackages() methods, then invoking
+# process() once at the end of the batch.
 #
 # Here's the CRITICAL reentrancy invariant: recursive site.addsitedir() calls
 # reached from a .start entry point or an exec'd .pth import line must not
-# mutate the StartupState currently being processed.  Reentrant calls without
-# an explicit startup_state therefore create their own fresh per-call state.
+# mutate the StartupState currently being processed.  Reentrant calls reach
+# the module-level site.addsitedir() shim, which always builds a fresh
+# per-call state.
 
 
 def _read_pthstart_file(sitedir, name, suffix):
@@ -241,10 +243,10 @@ class StartupState:
     point operates on a different StartupState than the one being processed by
     the outer call.
 
-    The internal data is intentionally private.  The write methods
-    (_read_pth_file() and _read_site_file()) are in a grey area.  They are used
-    outside of this class, but only within the site module, so they are not
-    intended to be part of the public API surface.
+    The internal data is intentionally private.  The lower-level write
+    methods (_record_sitedir(), _read_pth_file(), _read_start_file()) are
+    private to the site module; the public surface is addsitedir(),
+    addusersitepackages(), addsitepackages(), and process().
     """
     __slots__ = (
         '_known_paths',
@@ -285,7 +287,84 @@ class StartupState:
         self._importexecs = {}
         self._entrypoints = {}
 
-    def _add_sitedir(self, sitedir, *, process_known_sitedirs=True):
+    def addsitedir(self, sitedir):
+        """Add a site directory and accumulate its .pth and .start startup data.
+
+        Read the .pth and .start files in *sitedir* and record their
+        sys.path extensions, deprecated .pth import lines, and .start entry
+        points on this state.  The recorded data is not applied until
+        process() is called.
+
+        Typically used to batch multiple site directories before a single
+        process() call, so that every sys.path extension is visible before
+        any startup code runs.  Reentrant calls reached from a .start entry
+        point or an exec'd .pth import line must not mutate the state
+        currently being processed; for those cases, use site.addsitedir()
+        instead, which always creates a fresh per-call state.
+        """
+        self._addsitedir(sitedir, process_known_sitedirs=True)
+
+    def addusersitepackages(self):
+        """Add the per-user site-packages directory, if enabled.
+
+        The user site directory is added only when user site-packages are
+        enabled and the directory exists.  Its startup data is accumulated
+        for later processing by process().
+        """
+        _trace("Processing user site-packages")
+        user_site = getusersitepackages()
+        if ENABLE_USER_SITE and os.path.isdir(user_site):
+            self.addsitedir(user_site)
+
+    def addsitepackages(self, prefixes=None):
+        """Add global site-packages directories, if they exist.
+
+        Site-packages directories are computed from *prefixes*, or from the
+        global PREFIXES when *prefixes* is None.  Each directory's startup
+        data is accumulated for later processing by process().
+        """
+        _trace("Processing global site-packages")
+        for sitedir in getsitepackages(prefixes):
+            if os.path.isdir(sitedir):
+                self.addsitedir(sitedir)
+
+    def _addsitedir(self, sitedir, *, process_known_sitedirs):
+        """Internal addsitedir() implementation with full dedup control.
+
+        The public addsitedir() always uses process_known_sitedirs=True
+        (gh-149819 semantics).  The module-level legacy known_paths shim
+        uses process_known_sitedirs=False to preserve 3.14 idempotency
+        (gh-75723).
+        """
+        sitedir = self._record_sitedir(
+            sitedir, process_known_sitedirs=process_known_sitedirs)
+        if sitedir is None:
+            return
+        try:
+            names = os.listdir(sitedir)
+        except OSError:
+            return
+
+        # The following phases are defined by PEP 829.
+        # Phases 1-3: Read .pth files, accumulating paths and import lines.
+        pth_names = sorted(
+            name for name in names
+            if name.endswith(".pth") and not name.startswith(".")
+        )
+        for name in pth_names:
+            self._read_pth_file(sitedir, name)
+
+        # Phases 6-7: Discover .start files and accumulate their entry points.
+        # Import lines from .pth files with a matching .start file are
+        # discarded at flush time by _exec_imports().
+        start_names = sorted(
+            name for name in names
+            if name.endswith(".start") and not name.startswith(".")
+        )
+        for name in start_names:
+            self._read_start_file(sitedir, name)
+
+    def _record_sitedir(self, sitedir, *, process_known_sitedirs=True):
         sitedir, sitedircase = makepath(sitedir)
         # Have we already processed this sitedir?
         if sitedircase in self._processed_sitedirs:
@@ -504,89 +583,24 @@ def addpackage(sitedir, name, known_paths):
     return None if reset else known_paths
 
 
-def addsitedir(sitedir, known_paths=None, *, startup_state=None):
+def addsitedir(sitedir, known_paths=None):
     """Add a site directory and process its startup files.
 
-    If *startup_state* is given, add the directory's startup data to that
-    state without processing it, and the caller is responsible for calling
-    startup_state.process().  Otherwise, process the directory eagerly.
-    The *known_paths* and *startup_state* arguments cannot both be given.
+    For batched processing across multiple site directories, build a
+    StartupState explicitly and call StartupState.addsitedir() on it; that
+    defers .pth/.start processing until a single StartupState.process() call.
     """
     _trace(f"Adding directory: {sitedir!r}")
-    if known_paths is not None and startup_state is not None:
-        raise TypeError("known_paths and startup_state are mutually exclusive")
-
-    # Select the processing mode.  Each arm sets:
-    # - startup_state: the StartupState that holds the deduplication ledger
-    #   and accumulates this call's .pth and .start data
-    # - flush_now: whether this call applies the accumulated state before
-    #   returning
-    # - process_known_sitedirs: whether site directories already present in
-    #   the ledger should still have their startup files read
-    # - return_value: what this call returns, merging the historical
-    #   addsitedir() behavior (None, the caller's known_paths set), with the new
-    #   StartupState instance behavior.
-    if startup_state is not None:
-        # Explicit batch mode: accumulate startup data in the caller's state.
-        # The caller is responsible for calling startup_state.process().
-        flush_now = False
-        process_known_sitedirs = True
-        return_value = startup_state
-    elif known_paths is None:
-        # Standalone mode: derive known paths from current sys.path, process
-        # eagerly, and preserve the historical return value of None.
-        startup_state = StartupState(_init_pathinfo())
-        flush_now = True
-        process_known_sitedirs = False
-        return_value = None
+    if known_paths is None:
+        state = StartupState(_init_pathinfo())
+        state.addsitedir(sitedir)
     else:
-        # Legacy known_paths mode: process eagerly and return the caller's
-        # known_paths set, mutated in place by the StartupState.
-        startup_state = StartupState(known_paths)
-        flush_now = True
-        process_known_sitedirs = False
-        return_value = known_paths
-
-    # Reach into StartupState's non-public API deliberately: sitedir
-    # bookkeeping is a detail of how addsitedir() drives a batch, not
-    # something callers should manage themselves.  Keeping _add_sitedir()
-    # private avoids committing it to the public StartupState API.
-    sitedir = startup_state._add_sitedir(
-        sitedir,
-        process_known_sitedirs=process_known_sitedirs,
-    )
-    if sitedir is None:
-        return return_value
-
-    try:
-        names = os.listdir(sitedir)
-    except OSError:
-        if flush_now:
-            startup_state.process()
-        return return_value
-
-    # The following phases are defined by PEP 829.
-    # Phases 1-3: Read .pth files, accumulating paths and import lines.
-    pth_names = sorted(
-        name for name in names
-        if name.endswith(".pth") and not name.startswith(".")
-    )
-    for name in pth_names:
-        startup_state._read_pth_file(sitedir, name)
-
-    # Phases 6-7: Discover .start files and accumulate their entry points.
-    # Import lines from .pth files with a matching .start file are
-    # discarded at flush time by StartupState._exec_imports().
-    start_names = sorted(
-        name for name in names
-        if name.endswith(".start") and not name.startswith(".")
-    )
-    for name in start_names:
-        startup_state._read_start_file(sitedir, name)
-
-    if flush_now:
-        startup_state.process()
-    return return_value
+        # Preserve gh-75723 idempotency for legacy known_paths mode: a
+        # sitedir already present in known_paths is skipped, not reprocessed.
+        state = StartupState(known_paths)
+        state._addsitedir(sitedir, process_known_sitedirs=False)
+    state.process()
+    return known_paths
 
 
 def check_enableusersite():
@@ -699,25 +713,16 @@ def getusersitepackages():
     return USER_SITE
 
 
-def addusersitepackages(known_paths, *, startup_state=None):
+def addusersitepackages(known_paths):
     """Add the per-user site-packages directory, if enabled.
 
     The user site directory is added only when user site-packages are enabled
-    and the directory exists.  If *startup_state* is given, the directory's
-    startup data is accumulated there for later processing, and the caller is
-    responsible for calling startup_state.process(); otherwise it is processed
-    eagerly.  Return *known_paths*, updated with any paths added by addsitedir().
+    and the directory exists.  Return *known_paths*, updated with any paths
+    added by addsitedir().
     """
-    # Get the per-user site directory.  This call will also make sure
-    # $USER_BASE and $USER_SITE are set.
-    _trace("Processing user site-packages")
-    user_site = getusersitepackages()
-
-    if ENABLE_USER_SITE and os.path.isdir(user_site):
-        if startup_state is None:
-            addsitedir(user_site, known_paths)
-        else:
-            addsitedir(user_site, startup_state=startup_state)
+    state = StartupState(known_paths)
+    state.addusersitepackages()
+    state.process()
     return known_paths
 
 
@@ -761,24 +766,16 @@ def getsitepackages(prefixes=None):
     return sitepackages
 
 
-def addsitepackages(known_paths, prefixes=None, *, startup_state=None):
+def addsitepackages(known_paths, prefixes=None):
     """Add global site-packages directories, if they exist.
 
     Site-packages directories are computed from *prefixes*, or from the global
-    prefixes when *prefixes* is None.  If *startup_state* is given, each
-    directory's startup data is accumulated there for later processing, and the
-    caller is responsible for calling startup_state.process(); otherwise each
-    directory is processed eagerly.  Return *known_paths*, updated with any
+    prefixes when *prefixes* is None.  Return *known_paths*, updated with any
     paths added by addsitedir().
     """
-    _trace("Processing global site-packages")
-    for sitedir in getsitepackages(prefixes):
-        if os.path.isdir(sitedir):
-            if startup_state is None:
-                addsitedir(sitedir, known_paths)
-            else:
-                addsitedir(sitedir, startup_state=startup_state)
-
+    state = StartupState(known_paths)
+    state.addsitepackages(prefixes)
+    state.process()
     return known_paths
 
 
@@ -947,7 +944,16 @@ def register_readline():
         atexit.register(write_history)
 
 
-def venv(known_paths, *, startup_state=None):
+def venv(known_paths):
+    """Process pyvenv.cfg and add the venv site-packages, if applicable."""
+    state = StartupState(known_paths)
+    _venv(state)
+    state.process()
+    return known_paths
+
+
+def _venv(state):
+    """State-driven implementation of venv(); used by main() for batching."""
     global PREFIXES, ENABLE_USER_SITE
 
     env = os.environ
@@ -992,14 +998,12 @@ def venv(known_paths, *, startup_state=None):
             _warn(f'Unexpected value in sys.exec_prefix, expected {site_prefix}, got {sys.exec_prefix}', RuntimeWarning)
 
         # Doing this here ensures venv takes precedence over user-site
-        addsitepackages(known_paths, [sys.prefix], startup_state=startup_state)
+        state.addsitepackages([sys.prefix])
 
         if system_site == "true":
             PREFIXES += [sys.base_prefix, sys.base_exec_prefix]
         else:
             ENABLE_USER_SITE = False
-
-    return known_paths
 
 
 def execsitecustomize():
@@ -1057,18 +1061,17 @@ def main():
         # Fix __file__ of already imported modules too.
         abs_paths()
 
-    known_paths = set()
-    startup_state = StartupState(known_paths)
-    known_paths = venv(known_paths, startup_state=startup_state)
+    state = StartupState(set())
+    _venv(state)
     if ENABLE_USER_SITE is None:
         ENABLE_USER_SITE = check_enableusersite()
-    known_paths = addusersitepackages(known_paths, startup_state=startup_state)
-    known_paths = addsitepackages(known_paths, startup_state=startup_state)
+    state.addusersitepackages()
+    state.addsitepackages()
     # PEP 829: flush accumulated data from all .pth and .start files.
     # Paths are extended first, then deprecated import lines are exec'd,
     # and finally .start entry points are executed — ensuring sys.path is
     # fully populated before any startup code runs.
-    startup_state.process()
+    state.process()
     setquit()
     setcopyright()
     sethelper()

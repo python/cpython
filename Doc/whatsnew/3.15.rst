@@ -482,9 +482,12 @@ The :mod:`site` module also provides :class:`site.StartupState` to batch
 startup processing for multiple site directories, ensuring all static path
 extensions are applied before any startup code is executed.  :func:`site.main`
 uses an instance of this class implicitly to batch process all startup
-configuration files during normal interpreter startup.  Callers of
-:func:`site.addsitedir` can pass one of these explicitly to control startup
-configuration file batch processing.
+configuration files during normal interpreter startup.  Callers needing the
+same batching behavior can build a :class:`~site.StartupState` directly and
+drive it with :meth:`~site.StartupState.addsitedir`,
+:meth:`~site.StartupState.addusersitepackages`, and
+:meth:`~site.StartupState.addsitepackages`, then call
+:meth:`~site.StartupState.process` once at the end of the batch.
 
 (Contributed by Barry Warsaw in :gh:`148641` and :gh:`150228`.)
 

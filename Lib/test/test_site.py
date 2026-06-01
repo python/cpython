@@ -187,16 +187,15 @@ class HelperFunctionsTests(unittest.TestCase):
             self.pth_file_tests(pth_file)
 
     def test_addsitedir_explicit_flush(self):
-        # addsitedir() reads .pth files and, with an explicit StartupState,
-        # accumulates pending state without flushing.  A subsequent
-        # state.process() call then applies the paths and runs the import
-        # lines.
+        # StartupState.addsitedir() reads .pth files and accumulates pending
+        # state without flushing.  A subsequent state.process() call then
+        # applies the paths and runs the import lines.
         pth_file = PthFile()
         # Ensure we have a clean slate.
         pth_file.cleanup(prep=True)
         with pth_file.create():
             state = site.StartupState(known_paths=set())
-            site.addsitedir(pth_file.base_dir, startup_state=state)
+            state.addsitedir(pth_file.base_dir)
             self.assertNotIn(pth_file.imported, sys.modules)
             state.process()
             self.pth_file_tests(pth_file)
@@ -995,7 +994,7 @@ class StartFileTests(unittest.TestCase):
     def test_impl_startupstate_uses_supplied_known_paths(self):
         known_paths = set()
         state = site.StartupState(known_paths)
-        site.addsitedir(self.sitedir, startup_state=state)
+        state.addsitedir(self.sitedir)
         self.assertIs(state._known_paths, known_paths)
         self.assertIn(site.makepath(self.sitedir)[1], known_paths)
 
@@ -1379,13 +1378,6 @@ def startup():
 
     # --- addsitedir integration tests ---
 
-    def test_addsitedir_rejects_known_paths_with_startup_state(self):
-        with self.assertRaises(TypeError):
-            site.addsitedir(
-                self.sitedir,
-                known_paths=set(),
-                startup_state=site.StartupState())
-
     def test_addsitedir_pth_import_skipped_when_matching_start_exists(self):
         # PEP 829: an empty .start file disables the matching .pth's import
         # lines, even when the .start has no entry points of its own.
@@ -1431,7 +1423,7 @@ def hook():
         # addsitedir() should discover .start files and accumulate entries.
         self._make_start("os.path:join\n", name='foo')
         state = site.StartupState(known_paths=set())
-        site.addsitedir(self.sitedir, startup_state=state)
+        state.addsitedir(self.sitedir)
         fullname = os.path.join(self.sitedir, 'foo.start')
         self.assertIn(
             'os.path:join', state._entrypoints[fullname]
@@ -1444,7 +1436,7 @@ def hook():
         self._make_start("os.path:join\n", name='foo')
         self._make_pth("mylib\n", name='foo')
         state = site.StartupState(known_paths=set())
-        site.addsitedir(self.sitedir, startup_state=state)
+        state.addsitedir(self.sitedir)
         fullname = os.path.join(self.sitedir, 'foo.pth')
         self.assertIn((fullname, subdir), state._path_entries)
 
@@ -1453,7 +1445,7 @@ def hook():
         self._make_start("os.path:join\n", name='zzz')
         self._make_start("os.path:exists\n", name='aaa')
         state = site.StartupState(known_paths=set())
-        site.addsitedir(self.sitedir, startup_state=state)
+        state.addsitedir(self.sitedir)
         entries = self._just_entrypoints(state)
         idx_a = entries.index('os.path:exists')
         idx_z = entries.index('os.path:join')
@@ -1467,7 +1459,7 @@ def hook():
         self._make_pth("mylib\n", name='foo')
         self._make_start("os.path:join\n", name='foo')
         state = site.StartupState(known_paths=set())
-        site.addsitedir(self.sitedir, startup_state=state)
+        state.addsitedir(self.sitedir)
         # Both should be collected.
         pth_fullname = os.path.join(self.sitedir, 'foo.pth')
         start_fullname = os.path.join(self.sitedir, 'foo.start')
@@ -1482,7 +1474,7 @@ def hook():
         # This will create `.hidden.start`.
         self._make_start("os.path:join\n", name='.hidden')
         state = site.StartupState(known_paths=set())
-        site.addsitedir(self.sitedir, startup_state=state)
+        state.addsitedir(self.sitedir)
         self.assertEqual(state._entrypoints, {})
 
     def test_addsitedir_standalone_flushes(self):
@@ -1503,7 +1495,7 @@ def hook():
         os.mkdir(subdir)
         self._make_pth("acclib\n", name='foo')
         state = site.StartupState(known_paths=set())
-        site.addsitedir(self.sitedir, startup_state=state)
+        state.addsitedir(self.sitedir)
         # Path is pending, not yet on sys.path.
         self.assertNotIn(subdir, sys.path)
         fullname = os.path.join(self.sitedir, 'foo.pth')
@@ -1530,8 +1522,8 @@ def hook():
         # Now create an explicit batch, add each sitedir, then process the
         # entire batch.
         state = site.StartupState(known_paths=set())
-        site.addsitedir(self.sitedir, startup_state=state)
-        site.addsitedir(sitedir2, startup_state=state)
+        state.addsitedir(self.sitedir)
+        state.addsitedir(sitedir2)
         state.process()
         # Ensure that on sys.path we see this interspersed order:
         # [sitedir1, extdir1, sitedir2, extdir2]
@@ -1557,7 +1549,7 @@ def hook():
         # Before the startup state is explicitly processed, neither
         # the path extension is added, nor the entry point called.
         state = site.StartupState(known_paths=set())
-        site.addsitedir(self.sitedir, startup_state=state)
+        state.addsitedir(self.sitedir)
         self.assertNotIn(extdir, sys.path)
         self.assertNotIn('mod', sys.modules)
         # After processing the batch, sys.path is extended and
