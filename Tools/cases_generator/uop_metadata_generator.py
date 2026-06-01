@@ -10,7 +10,8 @@ from analyzer import (
     analyze_files,
     get_uop_cache_depths,
     Uop,
-    MAX_CACHED_REGISTER,
+    MIN_GENERATED_CACHED_REGISTER,
+    MAX_GENERATED_CACHED_REGISTER,
 )
 from generators_common import (
     DEFAULT_INPUT,
@@ -20,29 +21,33 @@ from generators_common import (
 )
 from stack import Stack
 from cwriter import CWriter
-from typing import TextIO
+from typing import Callable, List, TextIO
 
 DEFAULT_OUTPUT = ROOT / "Include/internal/pycore_uop_metadata.h"
 
 
-def uop_cache_info(uop: Uop) -> list[str] | None:
+def uop_cache_info(uop: Uop, max_cached_register: int) -> list[str] | None:
     if uop.name == "_SPILL_OR_RELOAD":
         return None
     if uop.properties.records_value:
         return None
     default = "{ -1, -1, -1 },\n"
-    table_size = MAX_CACHED_REGISTER + 1
+    table_size = max_cached_register + 1
     entries = [ default ] * table_size
-    low = MAX_CACHED_REGISTER+1
+    low = max_cached_register + 1
     high = -1
-    defined = [ False ] * 4
-    for inputs, outputs, exit_depth in get_uop_cache_depths(uop):
+    for inputs, outputs, exit_depth in get_uop_cache_depths(
+        uop, max_cached_register=max_cached_register
+    ):
         entries[inputs] = f"{{ {outputs}, {exit_depth}, {uop.name}_r{inputs}{outputs} }},\n"
         if inputs < low:
             low = inputs
         if inputs > high:
             high = inputs
-    best = [ str(low if i < low else (high if high < i else i)) for i in range(MAX_CACHED_REGISTER+1) ]
+    best = [
+        str(low if i < low else (high if high < i else i))
+        for i in range(max_cached_register + 1)
+    ]
 
     return [ f".best = {{ {', '.join(best)} }},\n", ".entries = {\n",  ] + entries + [ "},\n" ]
 
@@ -54,24 +59,105 @@ typedef struct _pyuop_tos_cache_entry {
     int8_t exit;
     int16_t opcode;
 } _PyUopTOSentry;
-typedef struct _PyUopCachingInfo {
-    uint8_t best[MAX_CACHED_REGISTER + 1];
-    _PyUopTOSentry entries[MAX_CACHED_REGISTER + 1];
-} _PyUopCachingInfo;
-extern const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1];
 """
 
 
+def emit_runtime_tables(out: CWriter, max_cached_register: int) -> None:
+    out.emit(
+        f"typedef struct _PyUopCachingInfo_{max_cached_register} {{\n"
+    )
+    out.emit(f"    uint8_t best[{max_cached_register + 1}];\n")
+    out.emit(f"    _PyUopTOSentry entries[{max_cached_register + 1}];\n")
+    out.emit(f"}} _PyUopCachingInfo_{max_cached_register};\n")
+    out.emit(
+        f"extern const _PyUopCachingInfo_{max_cached_register} "
+        f"_PyUop_Caching_{max_cached_register}[MAX_UOP_ID+1];\n"
+    )
+    out.emit(
+        f"extern const uint16_t _PyUop_SpillsAndReloads_{max_cached_register}"
+        f"[{max_cached_register + 1}][{max_cached_register + 1}];\n"
+    )
+
+
+def emit_runtime_table_selector(out: CWriter) -> None:
+    first = True
+    for max_cached_register in range(
+        MIN_GENERATED_CACHED_REGISTER, MAX_GENERATED_CACHED_REGISTER + 1
+    ):
+        directive = "#if" if first else "#elif"
+        out.emit(f"{directive} MAX_CACHED_REGISTER == {max_cached_register}\n")
+        out.emit(
+            f"typedef _PyUopCachingInfo_{max_cached_register} _PyUopCachingInfo;\n"
+        )
+        out.emit(
+            f"#define _PyUop_Caching _PyUop_Caching_{max_cached_register}\n"
+        )
+        out.emit(
+            f"#define _PyUop_SpillsAndReloads "
+            f"_PyUop_SpillsAndReloads_{max_cached_register}\n"
+        )
+        first = False
+    out.emit("#else\n")
+    out.emit('#error "Unsupported MAX_CACHED_REGISTER value"\n')
+    out.emit("#endif\n")
+    out.emit("extern const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1];\n\n")
+
+
+def generate_runtime_metadata(
+    analysis: Analysis, out: CWriter, max_cached_register: int
+) -> None:
+    out.emit(
+        f"const _PyUopCachingInfo_{max_cached_register} "
+        f"_PyUop_Caching_{max_cached_register}[MAX_UOP_ID+1] = {{\n"
+    )
+    for uop in analysis.uops.values():
+        if uop.is_viable() and uop.properties.tier != 1 and not uop.is_super():
+            info = uop_cache_info(uop, max_cached_register)
+            if info is not None:
+                out.emit(f"[{uop.name}] = {{\n")
+                for line in info:
+                    out.emit(line)
+                out.emit("},\n")
+    out.emit("};\n\n")
+    out.emit(
+        f"const uint16_t _PyUop_SpillsAndReloads_{max_cached_register}"
+        f"[{max_cached_register + 1}][{max_cached_register + 1}] = {{\n"
+    )
+    for i in range(max_cached_register + 1):
+        for j in range(max_cached_register + 1):
+            if i != j:
+                out.emit(f"[{i}][{j}] = _SPILL_OR_RELOAD_r{i}{j},\n")
+    out.emit("};\n\n")
+
+
+def emit_exact_match_dispatch(
+    out: CWriter, emitter: Callable[[int], None]
+) -> None:
+    first = True
+    for max_cached_register in range(
+        MIN_GENERATED_CACHED_REGISTER, MAX_GENERATED_CACHED_REGISTER + 1
+    ):
+        directive = "#if" if first else "#elif"
+        out.emit(f"{directive} MAX_CACHED_REGISTER == {max_cached_register}\n")
+        emitter(max_cached_register)
+        first = False
+    out.emit("#else\n")
+    out.emit('#error "Unsupported MAX_CACHED_REGISTER value"\n')
+    out.emit("#endif\n\n")
+
+
 def generate_names_and_flags(analysis: Analysis, out: CWriter) -> None:
-    out.emit(f"#define MAX_CACHED_REGISTER {MAX_CACHED_REGISTER}\n")
     out.emit("extern const uint32_t _PyUop_Flags[MAX_UOP_ID+1];\n")
     out.emit("typedef struct _rep_range { uint8_t start; uint8_t stop; } ReplicationRange;\n")
     out.emit("extern const ReplicationRange _PyUop_Replication[MAX_UOP_ID+1];\n")
     out.emit("extern const char * const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1];\n\n")
     out.emit("extern int _PyUop_num_popped(int opcode, int oparg);\n")
     out.emit(CACHING_INFO_DECL)
-    out.emit(f"extern const uint16_t _PyUop_SpillsAndReloads[{MAX_CACHED_REGISTER+1}][{MAX_CACHED_REGISTER+1}];\n")
-    out.emit("extern const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1];\n\n")
+    for max_cached_register in range(
+        MIN_GENERATED_CACHED_REGISTER, MAX_GENERATED_CACHED_REGISTER + 1
+    ):
+        emit_runtime_tables(out, max_cached_register)
+    emit_runtime_table_selector(out)
     out.emit("#ifdef NEED_OPCODE_METADATA\n")
     out.emit("const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {\n")
     for uop in analysis.uops.values():
@@ -86,36 +172,45 @@ def generate_names_and_flags(analysis: Analysis, out: CWriter) -> None:
             out.emit(f"[{uop.name}] = {{ {uop.replicated.start}, {uop.replicated.stop} }},\n")
 
     out.emit("};\n\n")
-    out.emit("const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {\n")
-    for uop in analysis.uops.values():
-        if uop.is_viable() and uop.properties.tier != 1 and not uop.is_super():
-            info = uop_cache_info(uop)
-            if info is not None:
-                out.emit(f"[{uop.name}] = {{\n")
-                for line in info:
-                    out.emit(line)
-                out.emit("},\n")
-    out.emit("};\n\n")
-    out.emit("const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {\n");
-    for uop in analysis.uops.values():
-        if uop.is_viable() and uop.properties.tier != 1 and not uop.is_super() and not uop.properties.records_value:
-            for inputs, outputs, _ in get_uop_cache_depths(uop):
-                out.emit(f"[{uop.name}_r{inputs}{outputs}] = {uop.name},\n")
-    out.emit("};\n\n")
-    out.emit(f"const uint16_t _PyUop_SpillsAndReloads[{MAX_CACHED_REGISTER+1}][{MAX_CACHED_REGISTER+1}] = {{\n")
-    for i in range(MAX_CACHED_REGISTER+1):
-        for j in range(MAX_CACHED_REGISTER+1):
-            if i != j:
-                out.emit(f"[{i}][{j}] = _SPILL_OR_RELOAD_r{i}{j},\n")
-    out.emit("};\n\n")
-    out.emit("const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {\n")
-    for uop in sorted(analysis.uops.values(), key=lambda t: t.name):
-        if uop.is_viable() and uop.properties.tier != 1 and not uop.is_super():
-            out.emit(f'[{uop.name}] = "{uop.name}",\n')
-            if not uop.properties.records_value:
-                for inputs, outputs, _ in get_uop_cache_depths(uop):
-                    out.emit(f'[{uop.name}_r{inputs}{outputs}] = "{uop.name}_r{inputs}{outputs}",\n')
-    out.emit("};\n")
+    emit_exact_match_dispatch(
+        out,
+        lambda max_cached_register: generate_runtime_metadata(
+            analysis, out, max_cached_register
+        ),
+    )
+    def emit_uncached_for_target(max_cached_register: int) -> None:
+        out.emit("const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {\n")
+        for uop in analysis.uops.values():
+            if (
+                uop.is_viable()
+                and uop.properties.tier != 1
+                and not uop.is_super()
+                and not uop.properties.records_value
+            ):
+                for inputs, outputs, _ in get_uop_cache_depths(
+                    uop, max_cached_register=max_cached_register
+                ):
+                    out.emit(f"[{uop.name}_r{inputs}{outputs}] = {uop.name},\n")
+        out.emit("};\n")
+
+    emit_exact_match_dispatch(out, emit_uncached_for_target)
+
+    def emit_opname_for_target(max_cached_register: int) -> None:
+        out.emit("const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {\n")
+        for uop in sorted(analysis.uops.values(), key=lambda t: t.name):
+            if uop.is_viable() and uop.properties.tier != 1 and not uop.is_super():
+                out.emit(f'[{uop.name}] = "{uop.name}",\n')
+                if not uop.properties.records_value:
+                    for inputs, outputs, _ in get_uop_cache_depths(
+                        uop, max_cached_register=max_cached_register
+                    ):
+                        out.emit(
+                            f'[{uop.name}_r{inputs}{outputs}] = '
+                            f'"{uop.name}_r{inputs}{outputs}",\n'
+                        )
+        out.emit("};\n")
+
+    emit_exact_match_dispatch(out, emit_opname_for_target)
     out.emit("int _PyUop_num_popped(int opcode, int oparg)\n{\n")
     out.emit("switch(opcode) {\n")
     null = CWriter.null()

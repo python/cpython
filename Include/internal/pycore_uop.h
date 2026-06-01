@@ -8,6 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#define MAX_CACHED_REGISTER 3
+
 #include <stdint.h>
 /* Depending on the format,
  * the 32 bits between the oparg and operand are:
