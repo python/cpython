@@ -3769,9 +3769,11 @@ class Win32ProcessTestCase(BaseTestCase):
         # creationflags argument
         CREATE_NEW_CONSOLE = 16
         sys.stderr.write("    a DOS box should flash briefly ...\n")
-        subprocess.call(sys.executable +
-                        ' -c "import time; time.sleep(0.25)"',
-                        creationflags=CREATE_NEW_CONSOLE)
+        rc = subprocess.call(sys.executable +
+                             ' -c "import time; time.sleep(0.25)"',
+                             creationflags=CREATE_NEW_CONSOLE)
+        support.skip_on_low_heap_memory_subprocess(rc)
+        self.assertEqual(rc, 0)
 
     def test_invalid_args(self):
         # invalid arguments should raise ValueError
