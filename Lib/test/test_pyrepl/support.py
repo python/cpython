@@ -44,7 +44,7 @@ def more_lines(text: str, namespace: dict | None = None):
     console = InteractiveConsole(namespace, filename="<stdin>")
     try:
         code = console.compile(src, "<stdin>", "single")
-    except (OverflowError, SyntaxError, ValueError):
+    except (OverflowError, SyntaxError, ValueError, SystemError):
         return False
     else:
         return code is None

@@ -71,6 +71,8 @@ def _maybe_compile(compiler, source, filename, symbol, flags):
             except SyntaxError:
                 pass
                 # fallthrough
+            except SystemError as exc:
+                raise exc from None
 
     return compiler(source, filename, symbol, incomplete_input=False)
 
@@ -147,8 +149,8 @@ class CommandCompiler:
 
         - Return a code object if the command is complete and valid
         - Return None if the command is incomplete
-        - Raise SyntaxError, ValueError or OverflowError if the command is a
-          syntax error (OverflowError and ValueError can be produced by
-          malformed literals).
+        - Raise SyntaxError, ValueError, OverflowError or SystemError.
+          OverflowError and ValueError can be produced by malformed
+          literals, SystemError if source cannot be compiled.
         """
         return _maybe_compile(self.compiler, source, filename, symbol, flags=self.compiler.flags)
