@@ -5347,17 +5347,24 @@ class TestPreHandshakeClose(unittest.TestCase):
             return  # Expect the full test setup to always work on Linux.
         if (isinstance(err, ConnectionResetError) or
             (isinstance(err, OSError) and err.errno == errno.EINVAL) or
-            re.search('wrong.version.number', str(getattr(err, "reason", "")), re.I) or
-            re.search('record.layer.failure', str(getattr(err, "reason", "")), re.I)
+            re.search(
+                # Matches the following error messages:
+                # '[SSL: WRONG_VERSION_NUMBER] wrong version number (_ssl.c:1123)'
+                # '[SSL: RECORD_LAYER_FAILURE] record layer failure (_ssl.c:1109)'
+                # '[SSL: HTTP_REQUEST] http request (_ssl.c:1143)'
+                r'wrong.version.number|record.layer.failure|http.request',
+                str(getattr(err, "reason", "")),
+                re.IGNORECASE,
+            )
         ):
             # On Windows the TCP RST leads to a ConnectionResetError
             # (ECONNRESET) which Linux doesn't appear to surface to userspace.
             # If wrap_socket() winds up on the "if connected:" path and doing
             # the actual wrapping... we get an SSLError from OpenSSL. This is
             # typically WRONG_VERSION_NUMBER. The same happens on iOS, but
-            # RECORD_LAYER_FAILURE is the error.
+            # RECORD_LAYER_FAILURE or HTTP_REQUEST is the error.
             #
-            # While appropriate, neither is the scenario we're specifically
+            # While appropriate, these scenarios aren't what we're specifically
             # trying to test. The way this test is written is known to work on
             # Linux. We'll skip it anywhere else that it does not present as
             # doing so.
