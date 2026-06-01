@@ -71,7 +71,7 @@ class TestConsoleIO(unittest.TestCase):
             subprocess.run(cmd, check=True, capture_output=True,
                            creationflags=subprocess.CREATE_NEW_CONSOLE)
         except subprocess.CalledProcessError as exc:
-            support.skip_on_low_heap_memory_subprocess(exc.returncode)
+            support.skip_on_low_desktop_heap_memory_subprocess(exc.returncode)
             raise
 
     def test_kbhit(self):

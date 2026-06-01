@@ -3321,7 +3321,7 @@ requires_non_root_user = unittest.skipIf(_ROOT_IN_POSIX, "test needs non-root ac
 
 
 STATUS_DLL_INIT_FAILED = 0xC0000142
-def skip_on_low_heap_memory_subprocess(returncode):
+def skip_on_low_desktop_heap_memory_subprocess(returncode):
     if sys.platform not in ('win32', 'cygwin'):
         return
     # On Windows, STATUS_DLL_INIT_FAILED is a generic error code that could
