@@ -4,6 +4,7 @@ import sys
 import unittest
 from textwrap import dedent
 
+from test import support
 from test.support import os_helper, requires_resource
 from test.support.os_helper import TESTFN, TESTFN_ASCII
 
