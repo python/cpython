@@ -23,21 +23,21 @@ to support.
 For example, each tag in the following table represents a separate
 library/wheel:
 
-+-----------------+-------------------+------------------+
-| CPython version | Non-free-threaded | Free-threaded    |
-+=================+===================+==================+
-| 3.12            | ``cpython-312``   | ---              |
-+-----------------+-------------------+------------------+
-| 3.13            | ``cpython-313``   | ``cpython-313t`` |
-+-----------------+-------------------+------------------+
-| 3.14            | ``cpython-314``   | ``cpython-314t`` |
-+-----------------+-------------------+------------------+
-| 3.15            | ``cpython-315``   | ``cpython-315t`` |
-+-----------------+-------------------+------------------+
-| 3.16            | ``cpython-316``   | ``cpython-316t`` |
-+-----------------+-------------------+------------------+
-| Future versions | (etc.)            | (etc.)           |
-+-----------------+-------------------+------------------+
++-----------------+-----------------------+------------------------+
+| CPython version | Non-free-threaded     | Free-threaded          |
++=================+=======================+========================+
+| 3.12            | ``cpython-312``       | ---                    |
++-----------------+-----------------------+------------------------+
+| 3.13            | ``cpython-313``       | ``cpython-313t``       |
++-----------------+-----------------------+------------------------+
+| 3.14            | ``cpython-314``       | ``cpython-314t``       |
++-----------------+-----------------------+------------------------+
+| 3.15            | ``cpython-315``       | ``cpython-315t``       |
++-----------------+-----------------------+------------------------+
+| 3.16            | ``cpython-316``       | ``cpython-316t``       |
++-----------------+-----------------------+------------------------+
+| Later versions  | :samp:`cpython-3{YY}` | :samp:`cpython-3{YY}t` |
++-----------------+-----------------------+------------------------+
 
 That's a lot of builds, especially when multiplied by the number
 of supported platforms.
@@ -45,21 +45,21 @@ of supported platforms.
 With the Stable ABI (``abi3``, introduced in CPython 3.2), a single extension
 (per platform) can cover all *non-free-threaded* builds of CPython:
 
-+-----------------+-------------------+------------------+
-| CPython version | Non-free-threaded | Free-threaded    |
-+=================+===================+==================+
-| 3.12            | ``abi3``          | ---              |
-+-----------------+                   +------------------+
-| 3.13            |                   | ``cpython-313t`` |
-+-----------------+                   +------------------+
-| 3.14            |                   | ``cpython-314t`` |
-+-----------------+                   +------------------+
-| 3.15            |                   | ``cpython-315t`` |
-+-----------------+                   +------------------+
-| 3.16            |                   | ``cpython-316t`` |
-+-----------------+                   +------------------+
-| Future versions |                   | (etc.)           |
-+-----------------+-------------------+------------------+
++-----------------+-------------------+------------------------+
+| CPython version | Non-free-threaded | Free-threaded          |
++=================+===================+========================+
+| 3.12            | ``abi3``          | ---                    |
++-----------------+                   +------------------------+
+| 3.13            |                   | ``cpython-313t``       |
++-----------------+                   +------------------------+
+| 3.14            |                   | ``cpython-314t``       |
++-----------------+                   +------------------------+
+| 3.15            |                   | ``cpython-315t``       |
++-----------------+                   +------------------------+
+| 3.16            |                   | ``cpython-316t``       |
++-----------------+                   +------------------------+
+| Later versions  |                   | :samp:`cpython-3{YY}t` |
++-----------------+-------------------+------------------------+
 
 The Stable ABI for free-threaded builds (``abi3t``), introduced in
 CPython 3.15, does the same for free-threaded builds.
@@ -78,7 +78,7 @@ And it's compatible with non-free-threaded ones as well:
 +-----------------+                                      +
 | 3.16            |                                      |
 +-----------------+                                      +
-| Future versions |                                      |
+| Later versions  |                                      |
 +-----------------+-------------------+------------------+
 
 \* (As above, the ``abi3`` extension is compatible with all non-free-threaded
@@ -555,7 +555,8 @@ Alas, this guide is limited, and cannot cover all possible code
 changes extensions may need.
 
 If you find a problem that other extension authors might run into,
-consider submitting an issue (or pull request) for this guide.
+consider :ref:`reporting an issue <reporting-documentation-bugs>` (or sending
+a pull request) for this guide.
 
 It is possible your issue cannot be fixed for the current version of ``abi3t``.
 In that case, reporting it may help it get prioritized for the next version
