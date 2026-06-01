@@ -303,7 +303,7 @@ For convenience, some of these functions will always return a
 
    Set file, line, and offset information for the current exception.  If the
    current exception is not a :exc:`SyntaxError`, then it sets additional
-   attributes, which make the exception printing subsystem to think that the exception
+   attributes, which make the exception printing subsystem think the exception
    is a :exc:`SyntaxError`.
 
    .. versionadded:: 3.4
