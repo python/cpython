@@ -53,7 +53,7 @@ def _test_selector_event(selector, fd, event):
 class BaseSelectorEventLoop(base_events.BaseEventLoop):
     """Selector event loop.
 
-    See events.EventLoop for API specification.
+    See events.AbstractEventLoop for API specification.
     """
 
     def __init__(self, selector=None):

@@ -1,0 +1,2 @@
+Fix :mod:`tarfile` performance issue when reading archives in streaming mode
+(e.g. ``r|*``).
