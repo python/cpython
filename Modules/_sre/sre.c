@@ -548,10 +548,16 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
 
     memset(state, 0, sizeof(SRE_STATE));
 
-    state->mark = PyMem_New(const void *, pattern->groups * 2);
-    if (!state->mark) {
-        PyErr_NoMemory();
-        goto err;
+    /* Patterns with no capturing groups never emit MARK opcodes and never
+       read state->mark (group 0's span comes from state->start/ptr), so skip
+       the allocation entirely -- state->mark stays NULL, which both the err
+       path and state_fini already free safely. */
+    if (pattern->groups) {
+        state->mark = PyMem_New(const void *, pattern->groups * 2);
+        if (!state->mark) {
+            PyErr_NoMemory();
+            goto err;
+        }
     }
     state->lastmark = -1;
     state->lastindex = -1;
