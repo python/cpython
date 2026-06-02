@@ -150,8 +150,8 @@ Standard names are defined for the following types:
    .. versionadded:: 3.10
 
 
-.. data:: FunctionType
-          LambdaType
+.. class:: FunctionType
+           LambdaType
 
    The type of user-defined functions and functions created by
    :keyword:`lambda`  expressions.
@@ -162,13 +162,13 @@ Standard names are defined for the following types:
    and is not raised for normal compilation.
 
 
-.. data:: GeneratorType
+.. class:: GeneratorType
 
    The type of :term:`generator`-iterator objects, created by
    generator functions.
 
 
-.. data:: CoroutineType
+.. class:: CoroutineType
 
    The type of :term:`coroutine` objects, created by
    :keyword:`async def` functions.
@@ -176,7 +176,7 @@ Standard names are defined for the following types:
    .. versionadded:: 3.5
 
 
-.. data:: AsyncGeneratorType
+.. class:: AsyncGeneratorType
 
    The type of :term:`asynchronous generator`-iterator objects, created by
    asynchronous generator functions.
@@ -196,7 +196,7 @@ Standard names are defined for the following types:
    required by the initializer.  The audit event only occurs for direct
    instantiation of code objects, and is not raised for normal compilation.
 
-.. data:: CellType
+.. class:: CellType
 
    The type for cell objects: such objects are used as containers for
    a function's :term:`closure variables <closure variable>`.
@@ -204,20 +204,20 @@ Standard names are defined for the following types:
    .. versionadded:: 3.8
 
 
-.. data:: MethodType
+.. class:: MethodType
 
    The type of methods of user-defined class instances.
 
 
-.. data:: BuiltinFunctionType
-          BuiltinMethodType
+.. class:: BuiltinFunctionType
+           BuiltinMethodType
 
    The type of built-in functions like :func:`len` or :func:`sys.exit`, and
    methods of built-in classes.  (Here, the term "built-in" means "written in
    C".)
 
 
-.. data:: WrapperDescriptorType
+.. class:: WrapperDescriptorType
 
    The type of methods of some built-in data types and base classes such as
    :meth:`object.__init__` or :meth:`object.__lt__`.
@@ -225,7 +225,7 @@ Standard names are defined for the following types:
    .. versionadded:: 3.7
 
 
-.. data:: MethodWrapperType
+.. class:: MethodWrapperType
 
    The type of *bound* methods of some built-in data types and base classes.
    For example it is the type of :code:`object().__str__`.
@@ -240,14 +240,14 @@ Standard names are defined for the following types:
    .. versionadded:: 3.10
 
 
-.. data:: MethodDescriptorType
+.. class:: MethodDescriptorType
 
    The type of methods of some built-in data types such as :meth:`str.join`.
 
    .. versionadded:: 3.7
 
 
-.. data:: ClassMethodDescriptorType
+.. class:: ClassMethodDescriptorType
 
    The type of *unbound* class methods of some built-in data types such as
    ``dict.__dict__['fromkeys']``.
@@ -327,13 +327,13 @@ Standard names are defined for the following types:
    dynamically.
 
 
-.. data:: FrameType
+.. class:: FrameType
 
    The type of :ref:`frame objects <frame-objects>` such as found in
    :attr:`tb.tb_frame <traceback.tb_frame>` if ``tb`` is a traceback object.
 
 
-.. data:: GetSetDescriptorType
+.. class:: GetSetDescriptorType
 
    The type of objects defined in extension modules with ``PyGetSetDef``, such
    as :attr:`FrameType.f_locals <frame.f_locals>` or ``array.array.typecode``.
@@ -342,7 +342,7 @@ Standard names are defined for the following types:
    :class:`property` type, but for classes defined in extension modules.
 
 
-.. data:: MemberDescriptorType
+.. class:: MemberDescriptorType
 
    The type of objects defined in extension modules with ``PyMemberDef``, such
    as ``datetime.timedelta.days``.  This type is used as descriptor for simple C
