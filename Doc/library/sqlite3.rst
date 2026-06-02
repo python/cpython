@@ -1417,7 +1417,7 @@ Connection objects
 
       See :ref:`sqlite3-howto-row-factory` for more details.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.15
          Deleting the ``row_factory`` attribute is no longer allowed.
 
    .. attribute:: text_factory
@@ -1429,7 +1429,7 @@ Connection objects
 
       See :ref:`sqlite3-howto-encoding` for more details.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.15
          Deleting the ``text_factory`` attribute is no longer allowed.
 
    .. attribute:: total_changes
@@ -1715,7 +1715,7 @@ Cursor objects
 
       See :ref:`sqlite3-howto-row-factory` for more details.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.15
          Deleting the ``row_factory`` attribute is no longer allowed.
 
 
