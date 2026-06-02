@@ -1484,7 +1484,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
 .. data:: lazy_modules
 
-   A :class:`set` of fully-qualified module name strings that have been lazily
+   A :class:`set` of fully qualified module name strings that have been lazily
    imported in the current interpreter but not yet loaded.  When a
    lazily imported module is accessed for the first time, its name is removed
    from this set.
@@ -1493,7 +1493,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    See also :func:`set_lazy_imports` and :pep:`810`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. data:: maxsize
