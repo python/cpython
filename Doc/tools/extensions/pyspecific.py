@@ -22,7 +22,7 @@ from sphinx.locale import _ as sphinx_gettext
 from sphinx.util.docutils import SphinxDirective
 
 # Used in conf.py and updated here by python/release-tools/run_release.py
-SOURCE_URI = 'https://github.com/python/cpython/tree/main/%s'
+SOURCE_URI = 'https://github.com/python/cpython/tree/3.15/%s'
 
 class PyAwaitableMixin(object):
     def handle_signature(self, sig, signode):
