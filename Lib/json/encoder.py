@@ -223,29 +223,6 @@ class JSONEncoder(object):
         else:
             _encoder = encode_basestring
 
-        def floatstr(o, allow_nan=self.allow_nan,
-                _repr=float.__repr__, _inf=INFINITY, _neginf=-INFINITY):
-            # Check for specials.  Note that this type of test is processor
-            # and/or platform-specific, so do tests which don't depend on the
-            # internals.
-
-            if o != o:
-                text = 'NaN'
-            elif o == _inf:
-                text = 'Infinity'
-            elif o == _neginf:
-                text = '-Infinity'
-            else:
-                return _repr(o)
-
-            if not allow_nan:
-                raise ValueError(
-                    "Out of range float values are not JSON compliant: " +
-                    repr(o))
-
-            return text
-
-
         if self.indent is None or isinstance(self.indent, str):
             indent = self.indent
         else:
@@ -256,6 +233,31 @@ class JSONEncoder(object):
                 self.key_separator, self.item_separator, self.sort_keys,
                 self.skipkeys, self.allow_nan)
         else:
+            # floatstr is only needed by the pure-Python encoder; defining it
+            # lazily avoids building this closure on every encode that takes
+            # the C fast path above.
+            def floatstr(o, allow_nan=self.allow_nan,
+                    _repr=float.__repr__, _inf=INFINITY, _neginf=-INFINITY):
+                # Check for specials.  Note that this type of test is processor
+                # and/or platform-specific, so do tests which don't depend on
+                # the internals.
+
+                if o != o:
+                    text = 'NaN'
+                elif o == _inf:
+                    text = 'Infinity'
+                elif o == _neginf:
+                    text = '-Infinity'
+                else:
+                    return _repr(o)
+
+                if not allow_nan:
+                    raise ValueError(
+                        "Out of range float values are not JSON compliant: " +
+                        repr(o))
+
+                return text
+
             _iterencode = _make_iterencode(
                 markers, self.default, _encoder, indent, floatstr,
                 self.key_separator, self.item_separator, self.sort_keys,
