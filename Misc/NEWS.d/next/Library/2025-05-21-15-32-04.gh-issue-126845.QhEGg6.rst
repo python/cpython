@@ -1,2 +1,7 @@
-Fixed _parsedate_tz to not evaluate 1 digit years as as 4-digit years, adhering to RFC 2855 4.3
+Fixed the :mod:`email` parsing of three digit dates to
+conform to :rfc:`5322`: three digit dates were previously
+turned in to non-conformant four digit dates with a
+leading `0`.  Now, per the RFC section 4.3, `1990` is added
+to such dates to form compliant four digit years.
+
 Contributed by Gustaf Gyllensporre.
