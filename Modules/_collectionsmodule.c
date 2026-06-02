@@ -1251,7 +1251,7 @@ _collections.deque.index as deque_index
     deque: dequeobject
     value as v: object
     start: object(converter='_PyEval_SliceIndexNotNone', type='Py_ssize_t', c_default='0') = NULL
-    stop: object(converter='_PyEval_SliceIndexNotNone', type='Py_ssize_t', c_default='Py_SIZE(deque)') = NULL
+    stop: object(converter='_PyEval_SliceIndexNotNone', type='Py_ssize_t', c_default='PY_SSIZE_T_MAX') = NULL
     /
 
 Return first index of value.
@@ -1262,7 +1262,7 @@ Raises ValueError if the value is not present.
 static PyObject *
 deque_index_impl(dequeobject *deque, PyObject *v, Py_ssize_t start,
                  Py_ssize_t stop)
-/*[clinic end generated code: output=df45132753175ef9 input=90f48833a91e1743]*/
+/*[clinic end generated code: output=df45132753175ef9 input=1c3b19632cf3484f]*/
 {
     Py_ssize_t i, n;
     PyObject *item;
@@ -1270,22 +1270,23 @@ deque_index_impl(dequeobject *deque, PyObject *v, Py_ssize_t start,
     Py_ssize_t index = deque->leftindex;
     size_t start_state = deque->state;
     int cmp;
+    Py_ssize_t size = Py_SIZE(deque);
 
     if (start < 0) {
-        start += Py_SIZE(deque);
+        start += size;
         if (start < 0)
             start = 0;
     }
     if (stop < 0) {
-        stop += Py_SIZE(deque);
+        stop += size;
         if (stop < 0)
             stop = 0;
     }
-    if (stop > Py_SIZE(deque))
-        stop = Py_SIZE(deque);
+    if (stop > size)
+        stop = size;
     if (start > stop)
         start = stop;
-    assert(0 <= start && start <= stop && stop <= Py_SIZE(deque));
+    assert(0 <= start && start <= stop && stop <= size);
 
     for (i=0 ; i < start - BLOCKLEN ; i += BLOCKLEN) {
         b = b->rightlink;

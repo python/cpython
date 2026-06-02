@@ -1,6 +1,7 @@
 import unittest
 from collections import deque
 from copy import copy
+from threading import Barrier
 from test.support import threading_helper
 
 threading_helper.requires_working_threading(module=True)
@@ -23,6 +24,34 @@ class TestDeque(unittest.TestCase):
                 copy(d)
 
         threading_helper.run_concurrently([mutate, copy_loop])
+
+    def test_index_race_in_ac(self):
+        # gh-150750: There was a c_default specified as `Py_SIZE(self)`,
+        # it was used without a critical section.
+
+        d = deque(range(100))
+        N_MUT = 3
+        barrier = Barrier(1 + N_MUT)
+
+        def index():
+            barrier.wait()
+            for _ in range(10000):
+                try:
+                    d.index(50)
+                except ValueError:
+                    pass
+
+        def mutate():
+            barrier.wait()
+            for _ in range(10000):
+                d.append(0)
+                d.clear()
+                d.extend(range(100))
+                d.appendleft(-1)
+
+        threading_helper.run_concurrently(
+            [index, *[mutate for _ in range(N_MUT)]],
+        )
 
 
 if __name__ == "__main__":
