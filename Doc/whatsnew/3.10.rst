@@ -1928,7 +1928,7 @@ Changes in the Python API
   (Contributed by Yurii Karabas, Andrew Svetlov, Yury Selivanov and Kyle Stanley
   in :issue:`42392`.)
 
-* The :data:`types.FunctionType` constructor now inherits the current builtins
+* The :class:`types.FunctionType` constructor now inherits the current builtins
   if the *globals* dictionary has no ``"__builtins__"`` key, rather than using
   ``{"None": None}`` as builtins: same behavior as :func:`eval` and
   :func:`exec` functions.  Defining a function with ``def function(...): ...``
