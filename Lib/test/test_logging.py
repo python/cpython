@@ -3297,12 +3297,11 @@ class ConfigDictTest(BaseTest):
         }
     }
 
-    # Remove when deprecation ends.
-    class DeprecatedStrmHandler(logging.StreamHandler):
+    class StrmHandler(logging.StreamHandler):
         def __init__(self, strm=None):
             super().__init__(stream=strm)
 
-    config_custom_handler_with_deprecated_strm_arg = {
+    config_custom_handler_with_removed_strm_arg = {
         "version": 1,
         "formatters": {
             "form1": {
@@ -3311,7 +3310,7 @@ class ConfigDictTest(BaseTest):
         },
         "handlers": {
             "hand1": {
-                "class": DeprecatedStrmHandler,
+                "class": StrmHandler,
                 "formatter": "form1",
                 "level": "NOTSET",
                 "stream": "ext://sys.stdout",
@@ -3417,14 +3416,9 @@ class ConfigDictTest(BaseTest):
         self.test_config1_ok(config=self.config5)
         self.check_handler('hand1', CustomHandler)
 
-    def test_deprecation_warning_custom_handler_with_strm_arg(self):
-        msg = (
-            "Support for custom logging handlers with the 'strm' argument "
-            "is deprecated and scheduled for removal in Python 3.16. "
-            "Define handlers with the 'stream' argument instead."
-        )
-        with self.assertWarnsRegex(DeprecationWarning, msg):
-            self.test_config1_ok(config=self.config_custom_handler_with_deprecated_strm_arg)
+    def test_removed_strm_arg(self):
+        with self.assertRaisesRegex(ValueError, 'hand1'):
+            self.apply_config(self.config_custom_handler_with_removed_strm_arg)
 
     def test_config6_failure(self):
         self.assertRaises(Exception, self.apply_config, self.config6)
@@ -4071,11 +4065,7 @@ class ConfigDictTest(BaseTest):
         # and thus cannot be used as a queue-like object (gh-124653)
 
         import multiprocessing
-
-        if support.MS_WINDOWS:
-            start_methods = ['spawn']
-        else:
-            start_methods = ['spawn', 'fork', 'forkserver']
+        start_methods = multiprocessing.get_all_start_methods()
 
         for start_method in start_methods:
             with self.subTest(start_method=start_method):
@@ -4091,10 +4081,8 @@ class ConfigDictTest(BaseTest):
                                            " assertions in multiprocessing")
     def test_config_queue_handler_multiprocessing_context(self):
         # regression test for gh-121723
-        if support.MS_WINDOWS:
-            start_methods = ['spawn']
-        else:
-            start_methods = ['spawn', 'fork', 'forkserver']
+        import multiprocessing
+        start_methods = multiprocessing.get_all_start_methods()
         for start_method in start_methods:
             with self.subTest(start_method=start_method):
                 ctx = multiprocessing.get_context(start_method)
@@ -4184,6 +4172,30 @@ class ConfigDictTest(BaseTest):
         self.apply_config(config)
         # Logger should be enabled, since explicitly mentioned
         self.assertFalse(logger.disabled)
+
+    def test_disable_existing_loggers_preserves_children(self):
+        parent = logging.getLogger('many')
+        child = logging.getLogger('many.child')
+        child.setLevel(logging.CRITICAL)
+        self.assertFalse(child.isEnabledFor(logging.INFO))
+        cousin = logging.getLogger('many-child')
+        for i in range(20):
+            logging.getLogger(f'many-sibling-{i}')
+
+        self.apply_config({
+            'version': 1,
+            'loggers': {
+                'many': {
+                    'level': 'INFO',
+                },
+            },
+        })
+
+        self.assertFalse(parent.disabled)
+        self.assertFalse(child.disabled)
+        self.assertEqual(child.level, logging.NOTSET)
+        self.assertTrue(child.isEnabledFor(logging.INFO))
+        self.assertTrue(cousin.disabled)
 
     def test_111615(self):
         # See gh-111615

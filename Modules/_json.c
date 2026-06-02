@@ -258,7 +258,10 @@ write_escaped_ascii(PyUnicodeWriter *writer, PyObject *pystr)
         if (PyUnicodeWriter_WriteChar(writer, '"') < 0) {
             return -1;
         }
-        if (PyUnicodeWriter_WriteStr(writer, pystr) < 0) {
+        // gh-148241: Avoid PyUnicodeWriter_WriteStr() which calls str(obj)
+        // on str subclasses
+        assert(PyUnicode_IS_ASCII(pystr));
+        if (PyUnicodeWriter_WriteASCII(writer, input, input_chars) < 0) {
             return -1;
         }
         return PyUnicodeWriter_WriteChar(writer, '"');
@@ -399,7 +402,9 @@ write_escaped_unicode(PyUnicodeWriter *writer, PyObject *pystr)
         if (PyUnicodeWriter_WriteChar(writer, '"') < 0) {
             return -1;
         }
-        if (PyUnicodeWriter_WriteStr(writer, pystr) < 0) {
+        // gh-148241: Avoid PyUnicodeWriter_WriteStr() which calls str(obj)
+        // on str subclasses
+        if (_PyUnicodeWriter_WriteStr((_PyUnicodeWriter*)writer, pystr) < 0) {
             return -1;
         }
         return PyUnicodeWriter_WriteChar(writer, '"');
@@ -652,14 +657,14 @@ JSON string. Unescapes all valid JSON string escape sequences and raises
 ValueError on attempt to decode an invalid string. If strict is False
 then literal control characters are allowed in the string.
 
-Returns a tuple of the decoded string and the index of the character in s
-after the end quote.
+Returns a tuple of the decoded string and the index of the character in
+s after the end quote.
 [clinic start generated code]*/
 
 static PyObject *
 py_scanstring_impl(PyObject *module, PyObject *pystr, Py_ssize_t end,
                    int strict)
-/*[clinic end generated code: output=961740cfae07cdb3 input=cff59e47498f4d8e]*/
+/*[clinic end generated code: output=961740cfae07cdb3 input=6d5abb5947ccc297]*/
 {
     Py_ssize_t next_end = -1;
     PyObject *rval = scanstring_unicode(pystr, end, strict, &next_end);
@@ -1740,15 +1745,12 @@ _encoder_iterate_mapping_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
     PyObject *key, *value;
     for (Py_ssize_t  i = 0; i < PyList_GET_SIZE(items); i++) {
         PyObject *item = PyList_GET_ITEM(items, i);
-#ifdef Py_GIL_DISABLED
-        // gh-119438: in the free-threading build the critical section on items can get suspended
+        // gh-142831: encoder_encode_key_value() can invoke user code
+        // that mutates the items list, invalidating this borrowed ref.
         Py_INCREF(item);
-#endif
         if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 2) {
             PyErr_SetString(PyExc_ValueError, "items must return 2-tuples");
-#ifdef Py_GIL_DISABLED
             Py_DECREF(item);
-#endif
             return -1;
         }
 
@@ -1757,14 +1759,10 @@ _encoder_iterate_mapping_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
         if (encoder_encode_key_value(s, writer, first, dct, key, value,
                                      indent_level, indent_cache,
                                      separator) < 0) {
-#ifdef Py_GIL_DISABLED
             Py_DECREF(item);
-#endif
             return -1;
         }
-#ifdef Py_GIL_DISABLED
         Py_DECREF(item);
-#endif
     }
 
     return 0;
@@ -1779,24 +1777,19 @@ _encoder_iterate_dict_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
     PyObject *key, *value;
     Py_ssize_t pos = 0;
     while (PyDict_Next(dct, &pos, &key, &value)) {
-#ifdef Py_GIL_DISABLED
-        // gh-119438: in the free-threading build the critical section on dct can get suspended
+        // gh-145244: encoder_encode_key_value() can invoke user code
+        // that mutates the dict, invalidating these borrowed refs.
         Py_INCREF(key);
         Py_INCREF(value);
-#endif
         if (encoder_encode_key_value(s, writer, first, dct, key, value,
                                     indent_level, indent_cache,
                                     separator) < 0) {
-#ifdef Py_GIL_DISABLED
             Py_DECREF(key);
             Py_DECREF(value);
-#endif
             return -1;
         }
-#ifdef Py_GIL_DISABLED
         Py_DECREF(key);
         Py_DECREF(value);
-#endif
     }
     return 0;
 }
@@ -1900,28 +1893,21 @@ _encoder_iterate_fast_seq_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
 {
     for (Py_ssize_t i = 0; i < PySequence_Fast_GET_SIZE(s_fast); i++) {
         PyObject *obj = PySequence_Fast_GET_ITEM(s_fast, i);
-#ifdef Py_GIL_DISABLED
-        // gh-119438: in the free-threading build the critical section on s_fast can get suspended
+        // gh-142831: encoder_listencode_obj() can invoke user code
+        // that mutates the sequence, invalidating this borrowed ref.
         Py_INCREF(obj);
-#endif
         if (i) {
             if (PyUnicodeWriter_WriteStr(writer, separator) < 0) {
-#ifdef Py_GIL_DISABLED
                 Py_DECREF(obj);
-#endif
                 return -1;
             }
         }
         if (encoder_listencode_obj(s, writer, obj, indent_level, indent_cache)) {
             _PyErr_FormatNote("when serializing %T item %zd", seq, i);
-#ifdef Py_GIL_DISABLED
             Py_DECREF(obj);
-#endif
             return -1;
         }
-#ifdef Py_GIL_DISABLED
         Py_DECREF(obj);
-#endif
     }
     return 0;
 }

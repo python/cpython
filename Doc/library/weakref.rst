@@ -324,17 +324,17 @@ same issues as the :meth:`WeakKeyDictionary.keyrefs` method.
    .. versionadded:: 3.4
 
 
-.. data:: ReferenceType
+.. class:: ReferenceType
 
    The type object for weak references objects.
 
 
-.. data:: ProxyType
+.. class:: ProxyType
 
    The type object for proxies of objects which are not callable.
 
 
-.. data:: CallableProxyType
+.. class:: CallableProxyType
 
    The type object for proxies of callable objects.
 

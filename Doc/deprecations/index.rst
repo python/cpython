@@ -13,7 +13,11 @@ Deprecations
 
 .. include:: pending-removal-in-3.20.rst
 
+.. include:: pending-removal-in-3.21.rst
+
 .. include:: pending-removal-in-future.rst
+
+.. include:: soft-deprecations.rst
 
 C API deprecations
 ------------------

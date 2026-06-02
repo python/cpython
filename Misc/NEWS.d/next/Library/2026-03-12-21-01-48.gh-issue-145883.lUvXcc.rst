@@ -1,2 +1,0 @@
-:mod:`zoneinfo`: Fix heap buffer overflow reads from malformed TZif data.
-Found by OSS Fuzz, issues :oss-fuzz:`492245058` and :oss-fuzz:`492230068`.
