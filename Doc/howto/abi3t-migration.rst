@@ -421,10 +421,9 @@ Most likely, all your class definitions, *and* all code that accesses
 your classes' data, will need to be rewritten.
 This will probably be the biggest change you need to support ``abi3t``.
 
-For each such type:
-
-Instead of defining a ``struct`` for the entire instance, define one with only
-the “additional” fields -- ones specific to your class, not its superclasses:
+For each such type, instead of defining a ``struct`` for the entire instance,
+define one with only the “additional” fields -- ones specific to your class,
+not its superclasses:
 
 .. code-block::
    :class: good
