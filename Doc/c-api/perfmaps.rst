@@ -5,11 +5,12 @@
 Support for Perf Maps
 ----------------------
 
-On supported platforms (as of this writing, only Linux), the runtime can take
+On supported platforms (Linux and macOS), the runtime can take
 advantage of *perf map files* to make Python functions visible to an external
-profiling tool (such as `perf <https://perf.wiki.kernel.org/index.php/Main_Page>`_).
-A running process may create a file in the ``/tmp`` directory, which contains entries
-that can map a section of executable code to a name. This interface is described in the
+profiling tool (such as `perf <https://perf.wiki.kernel.org/index.php/Main_Page>`_ or
+`samply <https://github.com/mstange/samply/>`_). A running process may create a
+file in the ``/tmp`` directory, which contains entries that can map a section
+of executable code to a name. This interface is described in the
 `documentation of the Linux Perf tool <https://git.kernel.org/pub/scm/linux/
 kernel/git/torvalds/linux.git/tree/tools/perf/Documentation/jit-interface.txt>`_.
 
@@ -30,7 +31,7 @@ Note that holding an :term:`attached thread state` is not required for these API
    or ``-2`` on failure to create a lock. Check ``errno`` for more information
    about the cause of a failure.
 
-.. c:function:: int PyUnstable_WritePerfMapEntry(const void *code_addr, unsigned int code_size, const char *entry_name)
+.. c:function:: int PyUnstable_WritePerfMapEntry(const void *code_addr, size_t code_size, const char *entry_name)
 
    Write one single entry to the ``/tmp/perf-$pid.map`` file. This function is
    thread safe. Here is what an example entry looks like::

@@ -1,4 +1,4 @@
-/* Low level interface to the Zstandard algorthm & the zstd library. */
+/* Low level interface to the Zstandard algorithm & the zstd library. */
 
 /* ZstdCompressor class definitions */
 
@@ -16,7 +16,6 @@ class _zstd.ZstdCompressor "ZstdCompressor *" "&zstd_compressor_type_spec"
 
 #include "_zstdmodule.h"
 #include "buffer.h"
-#include "zstddict.h"
 #include "internal/pycore_lock.h" // PyMutex_IsLocked
 
 #include <stddef.h>               // offsetof()
@@ -46,6 +45,52 @@ typedef struct {
 
 #define ZstdCompressor_CAST(op) ((ZstdCompressor *)op)
 
+/*[python input]
+
+class zstd_contentsize_converter(CConverter):
+    type = 'unsigned long long'
+    converter = 'zstd_contentsize_converter'
+
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=0932c350d633c7de]*/
+
+
+static int
+zstd_contentsize_converter(PyObject *size, unsigned long long *p)
+{
+    // None means the user indicates the size is unknown.
+    if (size == Py_None) {
+        *p = ZSTD_CONTENTSIZE_UNKNOWN;
+    }
+    else {
+        /* ZSTD_CONTENTSIZE_UNKNOWN is 0ULL - 1
+           ZSTD_CONTENTSIZE_ERROR   is 0ULL - 2
+           Users should only pass values < ZSTD_CONTENTSIZE_ERROR */
+        unsigned long long pledged_size = PyLong_AsUnsignedLongLong(size);
+        /* Here we check for (unsigned long long)-1 as a sign of an error in
+           PyLong_AsUnsignedLongLong */
+        if (pledged_size == (unsigned long long)-1 && PyErr_Occurred()) {
+            *p = ZSTD_CONTENTSIZE_ERROR;
+            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+                PyErr_Format(PyExc_ValueError,
+                             "size argument should be a positive int less "
+                             "than %llu", ZSTD_CONTENTSIZE_ERROR);
+                return 0;
+            }
+            return 0;
+        }
+        if (pledged_size >= ZSTD_CONTENTSIZE_ERROR) {
+            *p = ZSTD_CONTENTSIZE_ERROR;
+            PyErr_Format(PyExc_ValueError,
+                         "size argument should be a positive int less "
+                         "than %llu", ZSTD_CONTENTSIZE_ERROR);
+            return 0;
+        }
+        *p = pledged_size;
+    }
+    return 1;
+}
+
 #include "clinic/compressor.c.h"
 
 static int
@@ -71,9 +116,6 @@ _zstd_set_c_level(ZstdCompressor *self, int level)
     /* Check error */
     if (ZSTD_isError(zstd_ret)) {
         _zstd_state* mod_state = PyType_GetModuleState(Py_TYPE(self));
-        if (mod_state == NULL) {
-            return -1;
-        }
         set_zstd_error(mod_state, ERR_SET_C_LEVEL, zstd_ret);
         return -1;
     }
@@ -265,56 +307,17 @@ static int
 _zstd_load_c_dict(ZstdCompressor *self, PyObject *dict)
 {
     _zstd_state* mod_state = PyType_GetModuleState(Py_TYPE(self));
-    if (mod_state == NULL) {
+    /* When compressing, use undigested dictionary by default. */
+    int type = DICT_TYPE_UNDIGESTED;
+    ZstdDict *zd = _Py_parse_zstd_dict(mod_state, dict, &type);
+    if (zd == NULL) {
         return -1;
     }
-    ZstdDict *zd;
-    int type, ret;
-
-    /* Check ZstdDict */
-    ret = PyObject_IsInstance(dict, (PyObject*)mod_state->ZstdDict_type);
-    if (ret < 0) {
-        return -1;
-    }
-    else if (ret > 0) {
-        /* When compressing, use undigested dictionary by default. */
-        zd = (ZstdDict*)dict;
-        type = DICT_TYPE_UNDIGESTED;
-        PyMutex_Lock(&zd->lock);
-        ret = _zstd_load_impl(self, zd, mod_state, type);
-        PyMutex_Unlock(&zd->lock);
-        return ret;
-    }
-
-    /* Check (ZstdDict, type) */
-    if (PyTuple_CheckExact(dict) && PyTuple_GET_SIZE(dict) == 2) {
-        /* Check ZstdDict */
-        ret = PyObject_IsInstance(PyTuple_GET_ITEM(dict, 0),
-                                  (PyObject*)mod_state->ZstdDict_type);
-        if (ret < 0) {
-            return -1;
-        }
-        else if (ret > 0) {
-            /* type == -1 may indicate an error. */
-            type = PyLong_AsInt(PyTuple_GET_ITEM(dict, 1));
-            if (type == DICT_TYPE_DIGESTED
-                || type == DICT_TYPE_UNDIGESTED
-                || type == DICT_TYPE_PREFIX)
-            {
-                assert(type >= 0);
-                zd = (ZstdDict*)PyTuple_GET_ITEM(dict, 0);
-                PyMutex_Lock(&zd->lock);
-                ret = _zstd_load_impl(self, zd, mod_state, type);
-                PyMutex_Unlock(&zd->lock);
-                return ret;
-            }
-        }
-    }
-
-    /* Wrong type */
-    PyErr_SetString(PyExc_TypeError,
-                    "zstd_dict argument should be ZstdDict object.");
-    return -1;
+    int ret;
+    PyMutex_Lock(&zd->lock);
+    ret = _zstd_load_impl(self, zd, mod_state, type);
+    PyMutex_Unlock(&zd->lock);
+    return ret;
 }
 
 /*[clinic input]
@@ -329,14 +332,14 @@ _zstd.ZstdCompressor.__new__ as _zstd_ZstdCompressor_new
 
 Create a compressor object for compressing data incrementally.
 
-Thread-safe at method level. For one-shot compression, use the compress()
-function instead.
+Thread-safe at method level.  For one-shot compression, use the
+compress() function instead.
 [clinic start generated code]*/
 
 static PyObject *
 _zstd_ZstdCompressor_new_impl(PyTypeObject *type, PyObject *level,
                               PyObject *options, PyObject *zstd_dict)
-/*[clinic end generated code: output=cdef61eafecac3d7 input=92de0211ae20ffdc]*/
+/*[clinic end generated code: output=cdef61eafecac3d7 input=bbfeeaa06fd3bd4d]*/
 {
     ZstdCompressor* self = PyObject_GC_New(ZstdCompressor, type);
     if (self == NULL) {
@@ -443,7 +446,7 @@ compress_lock_held(ZstdCompressor *self, Py_buffer *data,
     assert(PyMutex_IsLocked(&self->lock));
     ZSTD_inBuffer in;
     ZSTD_outBuffer out;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
     size_t zstd_ret;
     PyObject *ret;
 
@@ -481,9 +484,7 @@ compress_lock_held(ZstdCompressor *self, Py_buffer *data,
         /* Check error */
         if (ZSTD_isError(zstd_ret)) {
             _zstd_state* mod_state = PyType_GetModuleState(Py_TYPE(self));
-            if (mod_state != NULL) {
-                set_zstd_error(mod_state, ERR_COMPRESS, zstd_ret);
-            }
+            set_zstd_error(mod_state, ERR_COMPRESS, zstd_ret);
             goto error;
         }
 
@@ -526,7 +527,7 @@ compress_mt_continue_lock_held(ZstdCompressor *self, Py_buffer *data)
     assert(PyMutex_IsLocked(&self->lock));
     ZSTD_inBuffer in;
     ZSTD_outBuffer out;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
     size_t zstd_ret;
     PyObject *ret;
 
@@ -553,9 +554,7 @@ compress_mt_continue_lock_held(ZstdCompressor *self, Py_buffer *data)
         /* Check error */
         if (ZSTD_isError(zstd_ret)) {
             _zstd_state* mod_state = PyType_GetModuleState(Py_TYPE(self));
-            if (mod_state != NULL) {
-                set_zstd_error(mod_state, ERR_COMPRESS, zstd_ret);
-            }
+            set_zstd_error(mod_state, ERR_COMPRESS, zstd_ret);
             goto error;
         }
 
@@ -593,15 +592,15 @@ _zstd.ZstdCompressor.compress
 
 Provide data to the compressor object.
 
-Return a chunk of compressed data if possible, or b'' otherwise. When you have
-finished providing data to the compressor, call the flush() method to finish
-the compression process.
+Return a chunk of compressed data if possible, or b'' otherwise.
+When you have finished providing data to the compressor, call the
+flush() method to finish the compression process.
 [clinic start generated code]*/
 
 static PyObject *
 _zstd_ZstdCompressor_compress_impl(ZstdCompressor *self, Py_buffer *data,
                                    int mode)
-/*[clinic end generated code: output=ed7982d1cf7b4f98 input=ac2c21d180f579ea]*/
+/*[clinic end generated code: output=ed7982d1cf7b4f98 input=11726dff64d7b2f9]*/
 {
     PyObject *ret;
 
@@ -651,14 +650,14 @@ _zstd.ZstdCompressor.flush
 
 Finish the compression process.
 
-Flush any remaining data left in internal buffers. Since Zstandard data
-consists of one or more independent frames, the compressor object can still
-be used after this method is called.
+Flush any remaining data left in internal buffers.  Since Zstandard
+data consists of one or more independent frames, the compressor
+object can still be used after this method is called.
 [clinic start generated code]*/
 
 static PyObject *
 _zstd_ZstdCompressor_flush_impl(ZstdCompressor *self, int mode)
-/*[clinic end generated code: output=b7cf2c8d64dcf2e3 input=0ab19627f323cdbc]*/
+/*[clinic end generated code: output=b7cf2c8d64dcf2e3 input=130e0b1eddf0f498]*/
 {
     PyObject *ret;
 
@@ -690,9 +689,63 @@ _zstd_ZstdCompressor_flush_impl(ZstdCompressor *self, int mode)
     return ret;
 }
 
+
+/*[clinic input]
+@permit_long_summary
+_zstd.ZstdCompressor.set_pledged_input_size
+
+    size: zstd_contentsize
+        The size of the uncompressed data to be provided to the compressor.
+    /
+
+Set the uncompressed content size to be written into the frame header.
+
+This method can be used to ensure the header of the frame about to
+be written includes the size of the data, unless the
+CompressionParameter.content_size_flag is set to False.
+If last_mode != FLUSH_FRAME, then a RuntimeError is raised.
+
+It is important to ensure that the pledged data size matches the
+actual data size.  If they do not match the compressed output data
+may be corrupted and the final chunk written may be lost.
+[clinic start generated code]*/
+
+static PyObject *
+_zstd_ZstdCompressor_set_pledged_input_size_impl(ZstdCompressor *self,
+                                                 unsigned long long size)
+/*[clinic end generated code: output=3a09e55cc0e3b4f9 input=714cd7a9aa10e2a8]*/
+{
+    // Error occurred while converting argument, should be unreachable
+    assert(size != ZSTD_CONTENTSIZE_ERROR);
+
+    /* Thread-safe code */
+    PyMutex_Lock(&self->lock);
+
+    /* Check the current mode */
+    if (self->last_mode != ZSTD_e_end) {
+        PyErr_SetString(PyExc_ValueError,
+                        "set_pledged_input_size() method must be called "
+                        "when last_mode == FLUSH_FRAME");
+        PyMutex_Unlock(&self->lock);
+        return NULL;
+    }
+
+    /* Set pledged content size */
+    size_t zstd_ret = ZSTD_CCtx_setPledgedSrcSize(self->cctx, size);
+    PyMutex_Unlock(&self->lock);
+    if (ZSTD_isError(zstd_ret)) {
+        _zstd_state* mod_state = PyType_GetModuleState(Py_TYPE(self));
+        set_zstd_error(mod_state, ERR_SET_PLEDGED_INPUT_SIZE, zstd_ret);
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef ZstdCompressor_methods[] = {
     _ZSTD_ZSTDCOMPRESSOR_COMPRESS_METHODDEF
     _ZSTD_ZSTDCOMPRESSOR_FLUSH_METHODDEF
+    _ZSTD_ZSTDCOMPRESSOR_SET_PLEDGED_INPUT_SIZE_METHODDEF
     {NULL, NULL}
 };
 

@@ -1,6 +1,7 @@
 /* PickleBuffer object implementation */
 
 #include "Python.h"
+#include "pycore_weakref.h"     // FT_CLEAR_WEAKREFS()
 #include <stddef.h>
 
 typedef struct {
@@ -111,8 +112,7 @@ picklebuf_dealloc(PyObject *op)
 {
     PyPickleBufferObject *self = (PyPickleBufferObject*)op;
     PyObject_GC_UnTrack(self);
-    if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *) self);
+    FT_CLEAR_WEAKREFS(op, self->weakreflist);
     PyBuffer_Release(&self->view);
     Py_TYPE(self)->tp_free((PyObject *) self);
 }

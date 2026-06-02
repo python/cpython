@@ -413,6 +413,24 @@ readline.write_history_file(history_file)
         # So, we've only tested that the read did not fail.
         # See TestHistoryManipulation for the full test.
 
+    @unittest.skipUnless(hasattr(readline, "get_pre_input_hook"),
+                         "get_pre_input_hook not available")
+    def test_get_pre_input_hook(self):
+        # Save and restore the original hook to avoid side effects
+        original_hook = readline.get_pre_input_hook()
+        self.addCleanup(readline.set_pre_input_hook, original_hook)
+
+        # Test that get_pre_input_hook returns None when no hook is set
+        readline.set_pre_input_hook(None)
+        self.assertIsNone(readline.get_pre_input_hook())
+
+        # Set a hook and verify we can retrieve it
+        def my_hook():
+            pass
+
+        readline.set_pre_input_hook(my_hook)
+        self.assertIs(readline.get_pre_input_hook(), my_hook)
+
 
 @unittest.skipUnless(support.Py_GIL_DISABLED, 'these tests can only possibly fail with GIL disabled')
 class FreeThreadingTest(unittest.TestCase):
