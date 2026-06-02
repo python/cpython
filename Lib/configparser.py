@@ -1373,14 +1373,25 @@ class ConverterMapping(MutableMapping):
 
     GETTERCRE = re.compile(r"^get(?P<name>.+)$")
 
+    # The set of ``get<name>`` converter methods is fixed per parser class, so
+    # cache the discovered names per class instead of running dir() + a regex
+    # over every attribute on each ConfigParser construction.
+    _getter_names_cache = {}
+
     def __init__(self, parser):
         self._parser = parser
-        self._data = {}
-        for getter in dir(self._parser):
-            m = self.GETTERCRE.match(getter)
-            if not m or not callable(getattr(self._parser, getter)):
-                continue
-            self._data[m.group('name')] = None   # See class docstring.
+        cls = type(parser)
+        try:
+            names = ConverterMapping._getter_names_cache[cls]
+        except KeyError:
+            getter_re = self.GETTERCRE
+            names = tuple(
+                m['name']
+                for getter in dir(parser)
+                if (m := getter_re.match(getter)) and callable(getattr(parser, getter))
+            )
+            ConverterMapping._getter_names_cache[cls] = names
+        self._data = dict.fromkeys(names)   # See class docstring (values None).
 
     def __getitem__(self, key):
         return self._data[key]

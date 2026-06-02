@@ -1,0 +1,3 @@
+Speed up :class:`configparser.ConfigParser` construction by caching the
+discovered ``get*`` converter method names per parser class. Patch by Bernát
+Gábor.
