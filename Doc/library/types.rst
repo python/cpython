@@ -143,7 +143,7 @@ If you instantiate any of these types, note that signatures may vary between Pyt
 
 Standard names are defined for the following types:
 
-.. data:: NoneType
+.. class:: NoneType
 
    The type of :data:`None`.
 
@@ -233,7 +233,7 @@ Standard names are defined for the following types:
    .. versionadded:: 3.7
 
 
-.. data:: NotImplementedType
+.. class:: NotImplementedType
 
    The type of :data:`NotImplemented`.
 
@@ -273,7 +273,7 @@ Standard names are defined for the following types:
          creating :class:`!ModuleType` instances which ensures the various
          attributes are set appropriately.
 
-.. data:: EllipsisType
+.. class:: EllipsisType
 
    The type of :data:`Ellipsis`.
 
