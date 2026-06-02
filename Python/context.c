@@ -1048,7 +1048,8 @@ static PyMethodDef PyContextVar_methods[] = {
     _CONTEXTVARS_CONTEXTVAR_SET_METHODDEF
     _CONTEXTVARS_CONTEXTVAR_RESET_METHODDEF
     {"__class_getitem__", Py_GenericAlias,
-    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
+    METH_O|METH_CLASS,
+    PyDoc_STR("ContextVars are generic over the type of their contained values")},
     {NULL, NULL}
 };
 
@@ -1187,7 +1188,8 @@ static PyGetSetDef PyContextTokenType_getsetlist[] = {
 
 static PyMethodDef PyContextTokenType_methods[] = {
     {"__class_getitem__",    Py_GenericAlias,
-    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
+    METH_O|METH_CLASS,
+    PyDoc_STR("Tokens are generic over the same type as the ContextVar which created them.")},
     {NULL}
 };
 
