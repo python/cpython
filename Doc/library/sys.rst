@@ -1485,8 +1485,8 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 .. data:: lazy_modules
 
    A :class:`set` of fully-qualified module name strings that have been lazily
-   imported in the current interpreter but not yet reified (loaded).  When a
-   lazily-imported module is accessed for the first time, its name is removed
+   imported in the current interpreter but not yet loaded.  When a
+   lazily imported module is accessed for the first time, its name is removed
    from this set.
 
    This attribute is intended for debugging and introspection.
