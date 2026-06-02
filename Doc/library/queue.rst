@@ -76,6 +76,8 @@ The :mod:`!queue` module defines the following classes and exceptions:
    Constructor for an unbounded :abbr:`FIFO (first-in, first-out)` queue.
    Simple queues lack advanced functionality such as task tracking.
 
+   Simple queues are :ref:`generic <generics>` over the type of their items.
+
    .. versionadded:: 3.7
 
 
