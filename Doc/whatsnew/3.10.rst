@@ -1446,8 +1446,8 @@ as a positional-only argument.
 types
 -----
 
-Reintroduce the :data:`types.EllipsisType`, :data:`types.NoneType`
-and :data:`types.NotImplementedType` classes, providing a new set
+Reintroduce the :class:`types.EllipsisType`, :class:`types.NoneType`
+and :class:`types.NotImplementedType` classes, providing a new set
 of types readily interpretable by type checkers.
 (Contributed by Bas van Beek in :issue:`41810`.)
 
