@@ -1,0 +1,284 @@
+# Thread safety annotations for C API functions.
+#
+# Each line has the form:
+#   function_name : level
+#
+# Where level is one of:
+#   incompatible -- not safe even with external locking
+#   compatible   -- safe if the caller serializes all access with external locks
+#   distinct     -- safe on distinct objects without external synchronization
+#   shared       -- safe for concurrent use on the same object
+#   atomic       -- atomic
+#
+# Lines beginning with '#' are ignored.
+# The function name must match the C domain identifier used in the documentation.
+
+# Synchronization primitives (Doc/c-api/synchronization.rst)
+PyMutex_Lock:atomic:
+PyMutex_Unlock:atomic:
+PyMutex_IsLocked:atomic:
+
+
+# Dictionary objects (Doc/c-api/dict.rst)
+
+# Type checks - read ob_type pointer, always safe
+PyDict_Check:atomic:
+PyDict_CheckExact:atomic:
+
+# Creation - pure allocation, no shared state
+PyDict_New:atomic:
+
+# Lock-free lookups - use _Py_dict_lookup_threadsafe(), no locking.
+# Atomic with simple types.
+PyDict_Contains:shared:
+PyDict_ContainsString:atomic:
+PyDict_GetItemRef:shared:
+PyDict_GetItemStringRef:atomic:
+PyDict_Size:atomic:
+PyDict_GET_SIZE:atomic:
+
+# Borrowed-reference lookups - lock-free dict access but returned
+# borrowed reference is unsafe in free-threaded builds without
+# external synchronization
+PyDict_GetItem:compatible:
+PyDict_GetItemWithError:compatible:
+PyDict_GetItemString:compatible:
+PyDict_SetDefault:compatible:
+
+# Iteration - no locking; returns borrowed refs
+PyDict_Next:compatible:
+
+# Single-item mutations - protected by per-object critical section
+PyDict_SetItem:shared:
+PyDict_SetItemString:atomic:
+PyDict_DelItem:shared:
+PyDict_DelItemString:atomic:
+PyDict_SetDefaultRef:shared:
+PyDict_Pop:shared:
+PyDict_PopString:atomic:
+
+# Bulk reads - hold per-object lock for duration
+PyDict_Clear:atomic:
+PyDict_Copy:atomic:
+PyDict_Keys:atomic:
+PyDict_Values:atomic:
+PyDict_Items:atomic:
+
+# Merge/update - lock target dict; also lock source when it is a dict
+PyDict_Update:shared:
+PyDict_Merge:shared:
+PyDict_MergeFromSeq2:shared:
+
+# Watcher registration - no synchronization on interpreter state
+PyDict_AddWatcher:compatible:
+PyDict_ClearWatcher:compatible:
+
+# Per-dict watcher tags - non-atomic RMW on _ma_watcher_tag;
+# safe on distinct dicts only
+PyDict_Watch:distinct:
+PyDict_Unwatch:distinct:
+
+
+# List objects (Doc/c-api/list.rst)
+
+# Type checks - read ob_type pointer, always safe
+PyList_Check:atomic:
+PyList_CheckExact:atomic:
+
+# Creation - pure allocation, no shared state
+PyList_New:atomic:
+
+# Size - uses atomic load on free-threaded builds
+PyList_Size:atomic:
+PyList_GET_SIZE:atomic:
+
+# Strong-reference lookup - lock-free with atomic ops
+PyList_GetItemRef:atomic:
+
+# Borrowed-reference lookups - no locking; returned borrowed
+# reference is unsafe in free-threaded builds without
+# external synchronization
+PyList_GetItem:compatible:
+PyList_GET_ITEM:compatible:
+
+# Single-item mutations - hold per-object lock for duration;
+# appear atomic to lock-free readers
+PyList_SetItem:atomic:
+PyList_Append:atomic:
+
+# Insert - protected by per-object critical section; shifts
+# elements so lock-free readers may observe intermediate states
+PyList_Insert:shared:
+
+# Initialization macro - no synchronization; normally only used
+# to fill in new lists where there is no previous content
+PyList_SET_ITEM:compatible:
+
+# Bulk operations - hold per-object lock for duration
+PyList_GetSlice:atomic:
+PyList_AsTuple:atomic:
+PyList_Clear:atomic:
+
+# Reverse - protected by per-object critical section; swaps
+# elements so lock-free readers may observe intermediate states
+PyList_Reverse:shared:
+
+# Slice assignment - lock target list; also lock source when it
+# is a list
+PyList_SetSlice:shared:
+
+# Sort - per-object lock held; the list is emptied before sorting
+# so other threads may observe an empty list, but they won't see the
+# intermediate states of the sort
+PyList_Sort:shared:
+
+# Extend - lock target list; also lock source when it is a
+# list, set, or dict
+PyList_Extend:shared:
+
+# Creation - pure allocation, no shared state
+PyBytes_FromString:atomic:
+PyBytes_FromStringAndSize:atomic:
+PyBytes_DecodeEscape:atomic:
+
+# Creation from formatting C primitives - pure allocation, no shared state
+PyBytes_FromFormat:atomic:
+PyBytes_FromFormatV:atomic:
+
+# Creation from object - uses buffer protocol so may call arbitrary code;
+# safe as long as the buffer is not mutated by another thread during the operation
+PyBytes_FromObject:shared:
+
+# Size - uses atomic load on free-threaded builds
+PyBytes_Size:atomic:
+PyBytes_GET_SIZE:atomic:
+
+# Raw data - no locking; mutating it is unsafe if the bytes object is shared between threads
+PyBytes_AsString:compatible:
+PyBytes_AS_STRING:compatible:
+PyBytes_AsStringAndSize:compatible:
+
+# Concatenation - uses buffer protocol; safe as long as buffer is not mutated by another thread during the operation
+PyBytes_Concat:shared:
+PyBytes_ConcatAndDel:shared:
+PyBytes_Join:shared:
+
+# Resizing - safe if the object is unique
+_PyBytes_Resize:distinct:
+
+# Repr - atomic as bytes are immutable
+PyBytes_Repr:atomic:
+
+# Creation from object - may call arbitrary code
+PyByteArray_FromObject:shared:
+
+# Creation - pure allocation, no shared state
+PyByteArray_FromStringAndSize:atomic:
+
+# Concatenation - uses buffer protocol; safe as long as buffer is not mutated by another thread during the operation
+PyByteArray_Concat:shared:
+
+# Size - uses atomic load on free-threaded builds
+PyByteArray_Size:atomic:
+PyByteArray_GET_SIZE:atomic:
+
+# Raw data - no locking; mutating it is unsafe if the bytearray object is shared between threads
+PyByteArray_AsString:compatible:
+PyByteArray_AS_STRING:compatible:
+
+# Creation - may iterate the iterable argument, calling arbitrary code.
+# Atomic for sets, frozensets, dicts, and frozendicts.
+PySet_New:shared:
+PyFrozenSet_New:shared:
+
+# Size - uses atomic load on free-threaded builds
+PySet_Size:atomic:
+PySet_GET_SIZE:atomic:
+
+# Contains - lock-free, atomic with simple types
+PySet_Contains:shared:
+
+# Mutations - hold per-object lock for duration
+# atomic with simple types
+PySet_Add:shared:
+PySet_Discard:shared:
+
+# Pop - hold per-object lock for duration
+PySet_Pop:atomic:
+
+# Clear - empties the set before clearing
+PySet_Clear:atomic:
+
+# Capsule objects (Doc/c-api/capsule.rst)
+
+# Type check - read ob_type pointer, always safe
+PyCapsule_CheckExact:atomic:
+
+# Creation - pure allocation, no shared state
+PyCapsule_New:atomic:
+
+# Validation - reads pointer and name fields; safe on distinct objects
+PyCapsule_IsValid:distinct:
+
+# Getters - read struct fields; safe on distinct objects but
+# concurrent access to the same capsule requires external synchronization
+PyCapsule_GetPointer:distinct:
+PyCapsule_GetName:distinct:
+PyCapsule_GetDestructor:distinct:
+PyCapsule_GetContext:distinct:
+
+# Setters - write struct fields; safe on distinct objects but
+# concurrent access to the same capsule requires external synchronization
+PyCapsule_SetPointer:distinct:
+PyCapsule_SetName:distinct:
+PyCapsule_SetDestructor:distinct:
+PyCapsule_SetContext:distinct:
+
+# Import - looks up a capsule from a module attribute and
+# calls PyCapsule_GetPointer; may call arbitrary code
+PyCapsule_Import:compatible:
+
+# Tuple objects
+
+# Creation - pure allocation, no shared state
+PyTuple_New:atomic:
+PyTuple_FromArray:atomic:
+PyTuple_Pack:atomic:
+
+# Size - tuples are immutable so size never changes
+PyTuple_Size:atomic:
+PyTuple_GET_SIZE:atomic:
+
+# Borrowed-reference lookups - tuples are immutable so items
+# never change, however the tuple must be kept alive while using the borrowed reference
+PyTuple_GetItem:compatible:
+PyTuple_GET_ITEM:compatible:
+
+# Slice - creates a new tuple from an existing tuple
+PyTuple_GetSlice:atomic:
+
+# SetItem - only usable on tuples with refcount 1
+PyTuple_SetItem:compatible:
+PyTuple_SET_ITEM:compatible:
+
+# Resize - only usable on tuples with refcount 1
+_PyTuple_Resize:compatible:
+
+# Struct Sequence objects
+
+# Creation
+PyStructSequence_NewType:atomic:
+PyStructSequence_New:atomic:
+
+# Initialization - modifies the type object in place
+PyStructSequence_InitType:distinct:
+PyStructSequence_InitType2:distinct:
+
+# Borrowed-reference lookups - same as tuple items
+PyStructSequence_GetItem:compatible:
+PyStructSequence_GET_ITEM:compatible:
+
+# SetItem - only for filling in brand new instances
+PyStructSequence_SetItem:compatible:
+PyStructSequence_SET_ITEM:compatible:
+

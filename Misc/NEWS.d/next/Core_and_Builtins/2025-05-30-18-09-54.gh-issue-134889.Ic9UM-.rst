@@ -1,2 +1,0 @@
-Fix handling of a few opcodes that leave operands on the stack when
-optimizing ``LOAD_FAST``.

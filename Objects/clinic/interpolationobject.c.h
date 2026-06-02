@@ -47,25 +47,30 @@ interpolation_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *argsbuf[4];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 2;
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
     PyObject *value;
-    PyObject *expression;
+    PyObject *expression = &_Py_STR(empty);
     PyObject *conversion = Py_None;
     PyObject *format_spec = &_Py_STR(empty);
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+            /*minpos*/ 1, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
     value = fastargs[0];
-    if (!PyUnicode_Check(fastargs[1])) {
-        _PyArg_BadArgument("Interpolation", "argument 'expression'", "str", fastargs[1]);
-        goto exit;
-    }
-    expression = fastargs[1];
     if (!noptargs) {
         goto skip_optional_pos;
+    }
+    if (fastargs[1]) {
+        if (!PyUnicode_Check(fastargs[1])) {
+            _PyArg_BadArgument("Interpolation", "argument 'expression'", "str", fastargs[1]);
+            goto exit;
+        }
+        expression = fastargs[1];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
     }
     if (fastargs[2]) {
         if (!_conversion_converter(fastargs[2], &conversion)) {
@@ -86,4 +91,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=599742a5ccd6f060 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2391391e2d7708c0 input=a9049054013a1b77]*/

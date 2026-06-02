@@ -4,10 +4,6 @@
 .. module:: abc
    :synopsis: Abstract base classes according to :pep:`3119`.
 
-.. moduleauthor:: Guido van Rossum
-.. sectionauthor:: Georg Brandl
-.. much of the content adapted from docstrings
-
 **Source code:** :source:`Lib/abc.py`
 
 --------------
@@ -241,7 +237,7 @@ The :mod:`!abc` module also supports the following legacy decorators:
 .. decorator:: abstractclassmethod
 
    .. versionadded:: 3.2
-   .. deprecated:: 3.3
+   .. deprecated-removed:: 3.3 3.21
        It is now possible to use :class:`classmethod` with
        :func:`abstractmethod`, making this decorator redundant.
 
@@ -262,7 +258,7 @@ The :mod:`!abc` module also supports the following legacy decorators:
 .. decorator:: abstractstaticmethod
 
    .. versionadded:: 3.2
-   .. deprecated:: 3.3
+   .. deprecated-removed:: 3.3 3.21
        It is now possible to use :class:`staticmethod` with
        :func:`abstractmethod`, making this decorator redundant.
 
@@ -282,7 +278,7 @@ The :mod:`!abc` module also supports the following legacy decorators:
 
 .. decorator:: abstractproperty
 
-   .. deprecated:: 3.3
+   .. deprecated-removed:: 3.3 3.21
        It is now possible to use :class:`property`, :meth:`property.getter`,
        :meth:`property.setter` and :meth:`property.deleter` with
        :func:`abstractmethod`, making this decorator redundant.

@@ -1,2 +1,0 @@
-Fix :exc:`SyntaxError` regression in :keyword:`except` parsing after
-:gh:`123440`.

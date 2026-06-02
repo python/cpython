@@ -147,11 +147,6 @@ extern int _PyTime_FromSecondsDouble(
 // Clamp to [PyTime_MIN; PyTime_MAX] on overflow.
 extern PyTime_t _PyTime_FromMicrosecondsClamp(PyTime_t us);
 
-// Create a timestamp from a Python int object (number of nanoseconds).
-// Export for '_lsprof' shared extension.
-PyAPI_FUNC(int) _PyTime_FromLong(PyTime_t *t,
-    PyObject *obj);
-
 // Convert a number of seconds (Python float or int) to a timestamp.
 // Raise an exception and return -1 on error, return 0 on success.
 // Export for '_socket' shared extension.
@@ -181,10 +176,6 @@ PyAPI_FUNC(PyTime_t) _PyTime_AsMicroseconds(PyTime_t t,
 extern PyTime_t _PyTime_As100Nanoseconds(PyTime_t t,
     _PyTime_round_t round);
 #endif
-
-// Convert a timestamp (number of nanoseconds) as a Python int object.
-// Export for '_testinternalcapi' shared extension.
-PyAPI_FUNC(PyObject*) _PyTime_AsLong(PyTime_t t);
 
 #ifndef MS_WINDOWS
 // Create a timestamp from a timeval structure.

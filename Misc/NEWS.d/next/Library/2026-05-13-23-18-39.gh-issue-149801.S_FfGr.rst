@@ -1,0 +1,2 @@
+Add IANA registered names and aliases with leading zeros before number (like
+IBM00858, CP00858, IBM01140, CP01140) for corresponding codecs.
