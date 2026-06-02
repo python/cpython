@@ -246,9 +246,9 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="OpenSSL 3.5.4",
-              url="https://github.com/openssl/openssl/releases/download/openssl-3.5.4/openssl-3.5.4.tar.gz",
-              checksum="967311f84955316969bdb1d8d4b983718ef42338639c621ec4c34fddef355e99",
+              name="OpenSSL 3.5.6",
+              url="https://github.com/openssl/openssl/releases/download/openssl-3.5.6/openssl-3.5.6.tar.gz",
+              checksum="deae7c80cba99c4b4f940ecadb3c3338b13cb77418409238e57d7f31f2a3b736",
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
@@ -264,10 +264,10 @@ def library_recipes():
             tk_patches = ['backport_gh71383_fix.patch', 'tk868_on_10_8_10_9.patch', 'backport_gh110950_fix.patch']
 
         else:
-            tcl_tk_ver='9.0.2'
-            tcl_checksum='e074c6a8d9ba2cddf914ba97b6677a552d7a52a3ca102924389a05ccb249b520'
+            tcl_tk_ver='9.0.3'
+            tcl_checksum='2537ba0c86112c8c953f7c09d33f134dd45c0fb3a71f2d7f7691fd301d2c33a6'
 
-            tk_checksum='76fb852b2f167592fe8b41aa6549ce4e486dbf3b259a269646600e3894517c76'
+            tk_checksum='bf344efadb618babb7933f69275620f72454d1c8220130da93e3f7feb0efbf9b'
             tk_patches = []
 
 
@@ -359,9 +359,9 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.50.4",
-              url="https://www.sqlite.org/2025/sqlite-autoconf-3500400.tar.gz",
-              checksum="a3db587a1b92ee5ddac2f66b3edb41b26f9c867275782d46c3a088977d6a5b18",
+              name="SQLite 3.53.1",
+              url="https://www.sqlite.org/2026/sqlite-autoconf-3530100.tar.gz",
+              checksum="83e6b2020a034e9a7ad4a72feea59e1ad52f162e09cbd26735a3ffb98359fc4f",
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
@@ -1158,7 +1158,6 @@ def buildPython():
     print(" NOTE: --with-mimalloc=no pending resolution of weak linking issues")
     runCommand("%s -C --enable-framework --enable-universalsdk=/ "
                "--with-mimalloc=no "
-               "--with-system-libmpdec "
                "--with-universal-archs=%s "
                "%s "
                "%s "

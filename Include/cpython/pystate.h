@@ -105,13 +105,16 @@ struct _ts {
 #  define _PyThreadState_WHENCE_INIT 1
 #  define _PyThreadState_WHENCE_FINI 2
 #  define _PyThreadState_WHENCE_THREADING 3
-#  define _PyThreadState_WHENCE_GILSTATE 4
+#  define _PyThreadState_WHENCE_C_API 4
 #  define _PyThreadState_WHENCE_EXEC 5
 #  define _PyThreadState_WHENCE_THREADING_DAEMON 6
 #endif
 
     /* Currently holds the GIL. Must be its own field to avoid data races */
     int holds_gil;
+
+    /* Currently requesting the GIL */
+    int gil_requested;
 
     int _whence;
 
@@ -131,6 +134,15 @@ struct _ts {
 
     /* Pointer to currently executing frame. */
     struct _PyInterpreterFrame *current_frame;
+
+    /* Pointer to the base frame (bottommost sentinel frame).
+       Used by profilers to validate complete stack unwinding.
+       Points to the embedded base_frame in _PyThreadStateImpl.
+       The frame is embedded there rather than here because _PyInterpreterFrame
+       is defined in internal headers that cannot be exposed in the public API. */
+    struct _PyInterpreterFrame *base_frame;
+
+    struct _PyInterpreterFrame *last_profiled_frame;
 
     Py_tracefunc c_profilefunc;
     Py_tracefunc c_tracefunc;
@@ -186,6 +198,7 @@ struct _ts {
     _PyStackChunk *datastack_chunk;
     PyObject **datastack_top;
     PyObject **datastack_limit;
+    _PyStackChunk *datastack_cached_chunk;
     /* XXX signal handlers should also be here */
 
     /* The following fields are here to avoid allocation during init.
@@ -217,6 +230,29 @@ struct _ts {
     */
     PyObject *threading_local_sentinel;
     _PyRemoteDebuggerSupport remote_debugger_support;
+
+#ifdef Py_STATS
+    // Pointer to PyStats structure, NULL if recording is off.  For the
+    // free-threaded build, the structure is per-thread (stored as a pointer
+    // in _PyThreadStateImpl).  For the default build, the structure is stored
+    // in the PyInterpreterState structure (threads do not have their own
+    // structure and all share the same per-interpreter structure).
+    PyStats *pystats;
+#endif
+
+    struct {
+        /* Number of nested PyThreadState_Ensure() calls on this thread state */
+        Py_ssize_t counter;
+
+        /* Should this thread state be deleted upon calling
+           PyThreadState_Release() (with the counter at 1)?
+
+           This is only true for thread states created by PyThreadState_Ensure() */
+        int delete_on_release;
+
+        /* The interpreter guard owned by PyThreadState_EnsureFromView(), if any. */
+        PyInterpreterGuard *owned_guard;
+    } ensure;
 };
 
 /* other API */
@@ -239,6 +275,21 @@ PyAPI_FUNC(void) PyThreadState_EnterTracing(PyThreadState *tstate);
 // function is set, otherwise disable them.
 PyAPI_FUNC(void) PyThreadState_LeaveTracing(PyThreadState *tstate);
 
+#ifdef Py_STATS
+#if defined(HAVE_THREAD_LOCAL) && !defined(Py_BUILD_CORE_MODULE)
+extern _Py_thread_local PyThreadState *_Py_tss_tstate;
+
+static inline PyStats*
+_PyThreadState_GetStatsFast(void)
+{
+    if (_Py_tss_tstate == NULL) {
+        return NULL; // no attached thread state
+    }
+    return _Py_tss_tstate->pystats;
+}
+#endif
+#endif // Py_STATS
+
 /* PyGILState */
 
 /* Helper/diagnostic function - return 1 if the current thread
@@ -251,6 +302,18 @@ PyAPI_FUNC(int) PyGILState_Check(void);
    thread id to that thread's current frame.
 */
 PyAPI_FUNC(PyObject*) _PyThread_CurrentFrames(void);
+
+// Set the stack protection start address and stack protection size
+// of a Python thread state
+PyAPI_FUNC(int) PyUnstable_ThreadState_SetStackProtection(
+    PyThreadState *tstate,
+    void *stack_start_addr,  // Stack start address
+    size_t stack_size);      // Stack size (in bytes)
+
+// Reset the stack protection start address and stack protection size
+// of a Python thread state
+PyAPI_FUNC(void) PyUnstable_ThreadState_ResetStackProtection(
+    PyThreadState *tstate);
 
 /* Routines for advanced debuggers, requested by David Beazley.
    Don't use unless you know what you are doing! */
@@ -270,3 +333,8 @@ PyAPI_FUNC(_PyFrameEvalFunction) _PyInterpreterState_GetEvalFrameFunc(
 PyAPI_FUNC(void) _PyInterpreterState_SetEvalFrameFunc(
     PyInterpreterState *interp,
     _PyFrameEvalFunction eval_frame);
+PyAPI_FUNC(void) _PyInterpreterState_SetEvalFrameAllowSpecialization(
+    PyInterpreterState *interp,
+    int allow_specialization);
+PyAPI_FUNC(int) _PyInterpreterState_IsSpecializationEnabled(
+    PyInterpreterState *interp);
