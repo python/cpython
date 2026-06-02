@@ -2221,8 +2221,8 @@ without the dedicated syntax, as documented below.
       * :data:`Concatenate`
       * :ref:`annotating-callables`
 
-.. data:: ParamSpecArgs
-          ParamSpecKwargs
+.. class:: ParamSpecArgs
+           ParamSpecKwargs
 
    Arguments and keyword arguments attributes of a :class:`ParamSpec`. The
    ``P.args`` attribute of a ``ParamSpec`` is an instance of ``ParamSpecArgs``,
