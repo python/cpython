@@ -741,7 +741,7 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
     as if they were passed to the :class:`dict` constructor, including keyword
     arguments.
 
-    :class:`!defaultdicts` are :ref:`generic <generics>` over two types,
+    :class:`!defaultdict`\s are :ref:`generic <generics>` over two types,
     signifying (respectively) the types of the dictionary's keys and values.
 
 
