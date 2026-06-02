@@ -7,8 +7,6 @@ Pending removal in Python 3.15
   Use :c:func:`PyWeakref_GetRef` instead. The `pythoncapi-compat project
   <https://github.com/python/pythoncapi-compat/>`__ can be used to get
   :c:func:`PyWeakref_GetRef` on Python 3.12 and older.
-* :c:type:`Py_UNICODE` type and the :c:macro:`!Py_UNICODE_WIDE` macro:
-  Use :c:type:`wchar_t` instead.
 * :c:func:`!PyUnicode_AsDecodedObject`:
   Use :c:func:`PyCodec_Decode` instead.
 * :c:func:`!PyUnicode_AsDecodedUnicode`:

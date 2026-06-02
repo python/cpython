@@ -11,8 +11,8 @@ extern "C" {
 
 /* Error handling definitions */
 
-extern _PyErr_StackItem* _PyErr_GetTopmostException(PyThreadState *tstate);
-extern PyObject* _PyErr_GetHandledException(PyThreadState *);
+PyAPI_FUNC(_PyErr_StackItem*) _PyErr_GetTopmostException(PyThreadState *tstate);
+PyAPI_FUNC(PyObject*) _PyErr_GetHandledException(PyThreadState *);
 extern void _PyErr_SetHandledException(PyThreadState *, PyObject *);
 extern void _PyErr_GetExcInfo(PyThreadState *, PyObject **, PyObject **, PyObject **);
 
@@ -29,7 +29,8 @@ PyAPI_FUNC(PyObject*) _PyErr_FormatFromCause(
     ...
     );
 
-extern int _PyException_AddNote(
+// Export for 'pyexpat' shared extension.
+PyAPI_FUNC(int) _PyException_AddNote(
      PyObject *exc,
      PyObject *note);
 
@@ -108,7 +109,7 @@ extern void _PyErr_Restore(
     PyObject *value,
     PyObject *traceback);
 
-extern void _PyErr_SetObject(
+PyAPI_FUNC(void) _PyErr_SetObject(
     PyThreadState *tstate,
     PyObject *type,
     PyObject *value);
@@ -169,7 +170,8 @@ extern PyObject* _PyErr_FormatFromCauseTstate(
     const char *format,
     ...);
 
-extern PyObject* _PyExc_CreateExceptionGroup(
+// Exported for external JIT support
+PyAPI_FUNC(PyObject *) _PyExc_CreateExceptionGroup(
     const char *msg,
     PyObject *excs);
 
@@ -180,7 +182,8 @@ extern PyObject* _PyExc_PrepReraiseStar(
 extern int _PyErr_CheckSignalsTstate(PyThreadState *tstate);
 
 extern void _Py_DumpExtensionModules(int fd, PyInterpreterState *interp);
-extern PyObject* _Py_CalculateSuggestions(PyObject *dir, PyObject *name);
+// Exported for external JIT support
+PyAPI_FUNC(PyObject *) _Py_CalculateSuggestions(PyObject *dir, PyObject *name);
 extern PyObject* _Py_Offer_Suggestions(PyObject* exception);
 
 // Export for '_testinternalcapi' shared extension

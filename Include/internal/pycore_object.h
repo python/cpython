@@ -144,7 +144,7 @@ static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
         new_refcnt = _Py_IMMORTAL_INITIAL_REFCNT;
     }
 #  if SIZEOF_VOID_P > 4
-    op->ob_refcnt = (PY_UINT32_T)new_refcnt;
+    op->ob_refcnt = (uint32_t)new_refcnt;
 #  else
     op->ob_refcnt = new_refcnt;
 #  endif
@@ -252,35 +252,10 @@ _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
     }
 }
 
-static inline void
-_Py_DECREF_NO_DEALLOC(PyObject *op)
-{
-    if (_Py_IsImmortal(op)) {
-        _Py_DECREF_IMMORTAL_STAT_INC();
-        return;
-    }
-    _Py_DECREF_STAT_INC();
-#ifdef Py_REF_DEBUG
-    _Py_DEC_REFTOTAL(PyInterpreterState_Get());
-#endif
-    op->ob_refcnt--;
-#ifdef Py_DEBUG
-    if (op->ob_refcnt <= 0) {
-        _Py_FatalRefcountError("Expected a positive remaining refcount");
-    }
-#endif
-}
-
 #else
 // TODO: implement Py_DECREF specializations for Py_GIL_DISABLED build
 static inline void
 _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
-{
-    Py_DECREF(op);
-}
-
-static inline void
-_Py_DECREF_NO_DEALLOC(PyObject *op)
 {
     Py_DECREF(op);
 }
@@ -904,14 +879,16 @@ PyAPI_FUNC(PyObject *) _PyType_NewManagedObject(PyTypeObject *type);
 extern PyTypeObject* _PyType_CalculateMetaclass(PyTypeObject *, PyObject *);
 extern PyObject* _PyType_GetDocFromInternalDoc(const char *, const char *);
 extern PyObject* _PyType_GetTextSignatureFromInternalDoc(const char *, const char *, int);
-extern int _PyObject_SetAttributeErrorContext(PyObject *v, PyObject* name);
+// Exported for external JIT support
+PyAPI_FUNC(int) _PyObject_SetAttributeErrorContext(PyObject *v, PyObject* name);
 
 void _PyObject_InitInlineValues(PyObject *obj, PyTypeObject *tp);
 extern int _PyObject_StoreInstanceAttribute(PyObject *obj,
                                             PyObject *name, PyObject *value);
 extern bool _PyObject_TryGetInstanceAttribute(PyObject *obj, PyObject *name,
                                               PyObject **attr);
-extern PyObject *_PyType_LookupRefAndVersion(PyTypeObject *, PyObject *,
+// Exported for external JIT support
+PyAPI_FUNC(PyObject *) _PyType_LookupRefAndVersion(PyTypeObject *, PyObject *,
                                              unsigned int *);
 
 // Internal API to look for a name through the MRO.
@@ -920,8 +897,12 @@ extern PyObject *_PyType_LookupRefAndVersion(PyTypeObject *, PyObject *,
 extern unsigned int
 _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef *out);
 
-PyAPI_FUNC(int) _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
+extern int _PyObject_GetMethodStackRef(PyThreadState *ts, _PyStackRef *self,
                                        PyObject *name, _PyStackRef *method);
+
+// Like PyObject_GetAttr but returns a _PyStackRef. For types, this can
+// return a deferred reference to reduce reference count contention.
+PyAPI_FUNC(_PyStackRef) _PyObject_GetAttrStackRef(PyObject *obj, PyObject *name);
 
 // Cache the provided init method in the specialization cache of type if the
 // provided type version matches the current version of the type.
@@ -931,7 +912,9 @@ PyAPI_FUNC(int) _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
 // deferred reference counting.
 //
 // Returns 1 if the value was cached or 0 otherwise.
-extern int _PyType_CacheInitForSpecialization(PyHeapTypeObject *type,
+//
+// Exported for external JIT support
+PyAPI_FUNC(int) _PyType_CacheInitForSpecialization(PyHeapTypeObject *type,
                                               PyObject *init,
                                               unsigned int tp_version);
 

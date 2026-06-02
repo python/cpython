@@ -16,7 +16,7 @@ import _remote_debugging
 _CHILD_POLL_INTERVAL_SEC = 0.1
 
 # Default timeout for waiting on child profilers
-_DEFAULT_WAIT_TIMEOUT = 30.0
+_DEFAULT_WAIT_TIMEOUT_SEC = 30.0
 
 # Maximum number of child profilers to spawn (prevents resource exhaustion)
 _MAX_CHILD_PROFILERS = 100
@@ -138,7 +138,7 @@ class ChildProcessMonitor:
         with self._lock:
             return list(self._spawned_profilers)
 
-    def wait_for_profilers(self, timeout=_DEFAULT_WAIT_TIMEOUT):
+    def wait_for_profilers(self, timeout=_DEFAULT_WAIT_TIMEOUT_SEC):
         """
         Wait for all spawned child profilers to complete.
 

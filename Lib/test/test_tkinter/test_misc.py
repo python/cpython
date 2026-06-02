@@ -1,10 +1,13 @@
 import collections.abc
 import functools
+import platform
+import sys
 import unittest
 import tkinter
 from tkinter import TclError
 import enum
 from test import support
+from test.test_tkinter.support import setUpModule  # noqa: F401
 from test.test_tkinter.support import (AbstractTkTest, AbstractDefaultRootTest,
                                        requires_tk, get_tk_patchlevel)
 
@@ -577,12 +580,27 @@ class WmTest(AbstractTkTest, unittest.TestCase):
 
     def test_wm_iconbitmap(self):
         t = tkinter.Toplevel(self.root)
+        patchlevel = get_tk_patchlevel(t)
+
+        if (
+            t._windowingsystem == 'aqua'
+            and sys.platform == 'darwin'
+            and platform.machine() == 'x86_64'
+            and platform.mac_ver()[0].startswith('26.')
+            and (
+                patchlevel[:3] <= (8, 6, 17)
+                or (9, 0) <= patchlevel[:3] <= (9, 0, 3)
+            )
+        ):
+            # https://github.com/python/cpython/issues/146531
+            # Tk bug 4a2070f0d3a99aa412bc582d386d575ca2f37323
+            self.skipTest('wm iconbitmap hangs on macOS 26 Intel')
+
         self.assertEqual(t.wm_iconbitmap(), '')
         t.wm_iconbitmap('hourglass')
         bug = False
         if t._windowingsystem == 'aqua':
             # Tk bug 13ac26b35dc55f7c37f70b39d59d7ef3e63017c8.
-            patchlevel = get_tk_patchlevel(t)
             if patchlevel < (8, 6, 17) or (9, 0) <= patchlevel < (9, 0, 2):
                 bug = True
         if not bug:
@@ -635,6 +653,8 @@ class EventTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(e.x_root, '??')
         self.assertEqual(e.y_root, '??')
         self.assertEqual(e.delta, 0)
+        self.assertEqual(e.user_data, '??')
+        self.assertEqual(e.detail, 'NotifyAncestor')
         self.assertEqual(repr(e), '<FocusIn event>')
 
     def test_configure(self):
@@ -668,6 +688,8 @@ class EventTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(e.x_root, '??')
         self.assertEqual(e.y_root, '??')
         self.assertEqual(e.delta, 0)
+        self.assertEqual(e.user_data, '??')
+        self.assertEqual(e.detail, '??')
         self.assertEqual(repr(e), '<Configure event x=0 y=0 width=150 height=100>')
 
     def test_event_generate_key_press(self):
@@ -704,6 +726,8 @@ class EventTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(e.x_root, -1)
         self.assertEqual(e.y_root, -1)
         self.assertEqual(e.delta, 0)
+        self.assertEqual(e.user_data, '??')
+        self.assertEqual(e.detail, '??')
         self.assertEqual(repr(e),
             f"<KeyPress event state={e.state:#x} "
             f"keysym=z keycode={e.keycode} char='z' x={e.x} y={e.y}>")
@@ -739,7 +763,16 @@ class EventTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(e.x_root, 100 + f.winfo_rootx())
         self.assertEqual(e.y_root, 50 + f.winfo_rooty())
         self.assertEqual(e.delta, 0)
+        self.assertEqual(e.user_data, '??')
+        self.assertEqual(e.detail, 'NotifyAncestor')
         self.assertEqual(repr(e), '<Enter event focus=False x=100 y=50>')
+
+        f.event_generate('<Enter>', x=100, y=50, detail='NotifyPointer')
+        self.assertEqual(len(events), 2, events)
+        e = events[1]
+        self.assertIs(e.type, tkinter.EventType.Enter)
+        self.assertEqual(e.user_data, '??')
+        self.assertEqual(e.detail, 'NotifyPointer')
 
     def test_event_generate_button_press(self):
         f = tkinter.Frame(self.root, width=150, height=100)
@@ -773,6 +806,8 @@ class EventTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(e.x_root, f.winfo_rootx() + 100)
         self.assertEqual(e.y_root, f.winfo_rooty() + 50)
         self.assertEqual(e.delta, 0)
+        self.assertEqual(e.user_data, '??')
+        self.assertEqual(e.detail, '??')
         self.assertEqual(repr(e), '<ButtonPress event num=1 x=100 y=50>')
 
     def test_event_generate_motion(self):
@@ -807,6 +842,8 @@ class EventTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(e.x_root, f.winfo_rootx() + 100)
         self.assertEqual(e.y_root, f.winfo_rooty() + 50)
         self.assertEqual(e.delta, 0)
+        self.assertEqual(e.user_data, '??')
+        self.assertEqual(e.detail, '??')
         self.assertEqual(repr(e), '<Motion event state=Button1 x=100 y=50>')
 
     def test_event_generate_mouse_wheel(self):
@@ -841,9 +878,11 @@ class EventTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(e.x_root, f.winfo_rootx() + 100)
         self.assertEqual(e.y_root, f.winfo_rooty() + 50)
         self.assertEqual(e.delta, -5)
+        self.assertEqual(e.user_data, '??')
+        self.assertEqual(e.detail, '??')
         self.assertEqual(repr(e), '<MouseWheel event delta=-5 x=100 y=50>')
 
-    def test_generate_event_virtual_event(self):
+    def test_event_generate_virtual_event(self):
         f = tkinter.Frame(self.root, width=150, height=100)
         f.pack()
         self.root.wait_visibility()  # needed on Windows
@@ -875,8 +914,17 @@ class EventTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(e.x_root, f.winfo_rootx() + 50)
         self.assertEqual(e.y_root, -1)
         self.assertEqual(e.delta, 0)
+        self.assertEqual(e.user_data, '')
+        self.assertEqual(e.detail, '??')
         self.assertEqual(repr(e),
             f"<VirtualEvent event x=50 y=0>")
+
+        f.event_generate('<<Spam>>', data='spam')
+        self.assertEqual(len(events), 2, events)
+        e = events[1]
+        self.assertIs(e.type, tkinter.EventType.VirtualEvent)
+        self.assertEqual(e.user_data, 'spam')
+        self.assertEqual(e.detail, '??')
 
 
 class BindTest(AbstractTkTest, unittest.TestCase):

@@ -122,6 +122,12 @@ Importing ``parent.one`` will implicitly execute ``parent/__init__.py`` and
 ``parent.three`` will execute ``parent/two/__init__.py`` and
 ``parent/three/__init__.py`` respectively.
 
+A subdirectory inside a regular package that does not contain an
+``__init__.py`` file is treated as an implicit
+:ref:`namespace package <reference-namespace-package>` (a "namespace
+subpackage") rooted in that parent.  See :pep:`420` for the underlying
+specification.
+
 
 .. _reference-namespace-package:
 
@@ -152,6 +158,12 @@ each one is provided by a different portion.  Thus ``parent/one`` may not be
 physically located next to ``parent/two``.  In this case, Python will create a
 namespace package for the top-level ``parent`` package whenever it or one of
 its subpackages is imported.
+
+Namespace packages may also be nested inside a regular package.  When the
+import system searches a regular package's ``__path__`` and encounters a
+subdirectory that does not contain an ``__init__.py`` file, that
+subdirectory becomes a :term:`portion` contributing to a namespace
+subpackage of the enclosing regular package.
 
 See also :pep:`420` for the namespace package specification.
 
@@ -832,9 +844,7 @@ entirely with a custom meta path hook.
 
 If it is acceptable to only alter the behaviour of import statements
 without affecting other APIs that access the import system, then replacing
-the builtin :func:`__import__` function may be sufficient. This technique
-may also be employed at the module level to only alter the behaviour of
-import statements within that module.
+the builtin :func:`__import__` function may be sufficient.
 
 To selectively prevent the import of some modules from a hook early on the
 meta path (rather than disabling the standard import system entirely),

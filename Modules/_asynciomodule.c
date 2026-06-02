@@ -13,6 +13,7 @@
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_runtime_init.h"  // _Py_ID()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 
 #include <stddef.h>               // offsetof()
 
@@ -498,21 +499,13 @@ future_schedule_callbacks(asyncio_state *state, FutureObj *fut)
 static int
 future_init(FutureObj *fut, PyObject *loop)
 {
+    if (fut->fut_loop != NULL) {
+        PyErr_Format(PyExc_RuntimeError, "%T object is already initialized", fut);
+        return -1;
+    }
+
     PyObject *res;
     int is_true;
-
-    Py_CLEAR(fut->fut_loop);
-    Py_CLEAR(fut->fut_callback0);
-    Py_CLEAR(fut->fut_context0);
-    Py_CLEAR(fut->fut_callbacks);
-    Py_CLEAR(fut->fut_result);
-    Py_CLEAR(fut->fut_exception);
-    Py_CLEAR(fut->fut_exception_tb);
-    Py_CLEAR(fut->fut_source_tb);
-    Py_CLEAR(fut->fut_cancel_msg);
-    Py_CLEAR(fut->fut_cancelled_exc);
-    Py_CLEAR(fut->fut_awaited_by);
-
     fut->fut_state = STATE_PENDING;
     fut->fut_log_tb = 0;
     fut->fut_blocking = 0;
@@ -837,14 +830,10 @@ future_add_done_callback(asyncio_state *state, FutureObj *fut, PyObject *arg,
             fut->fut_context0 = Py_NewRef(ctx);
         }
         else {
-            PyObject *tup = PyTuple_New(2);
+            PyObject *tup = _PyTuple_FromPair(arg, (PyObject *)ctx);
             if (tup == NULL) {
                 return NULL;
             }
-            Py_INCREF(arg);
-            PyTuple_SET_ITEM(tup, 0, arg);
-            Py_INCREF(ctx);
-            PyTuple_SET_ITEM(tup, 1, (PyObject *)ctx);
 
             if (fut->fut_callbacks != NULL) {
                 int err = PyList_Append(fut->fut_callbacks, tup);
@@ -955,8 +944,7 @@ FutureObj_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(fut->fut_cancel_msg);
     Py_VISIT(fut->fut_cancelled_exc);
     Py_VISIT(fut->fut_awaited_by);
-    PyObject_VisitManagedDict((PyObject *)fut, visit, arg);
-    return 0;
+    return PyObject_VisitManagedDict((PyObject *)fut, visit, arg);
 }
 
 /*[clinic input]
@@ -967,12 +955,13 @@ Return the result this future represents.
 
 If the future has been cancelled, raises CancelledError.  If the
 future's result isn't yet available, raises InvalidStateError.  If
-the future is done and has an exception set, this exception is raised.
+the future is done and has an exception set, this exception is
+raised.
 [clinic start generated code]*/
 
 static PyObject *
 _asyncio_Future_result_impl(FutureObj *self)
-/*[clinic end generated code: output=f35f940936a4b1e5 input=61d89f48e4c8b670]*/
+/*[clinic end generated code: output=f35f940936a4b1e5 input=ee20e126776cbb04]*/
 {
     asyncio_state *state = get_asyncio_state_by_def((PyObject *)self);
     PyObject *result;
@@ -1107,15 +1096,15 @@ _asyncio.Future.add_done_callback
 
 Add a callback to be run when the future becomes done.
 
-The callback is called with a single argument - the future object. If
-the future is already done when this is called, the callback is
+The callback is called with a single argument - the future object.
+If the future is already done when this is called, the callback is
 scheduled with call_soon.
 [clinic start generated code]*/
 
 static PyObject *
 _asyncio_Future_add_done_callback_impl(FutureObj *self, PyTypeObject *cls,
                                        PyObject *fn, PyObject *context)
-/*[clinic end generated code: output=922e9a4cbd601167 input=37d97f941beb7b3e]*/
+/*[clinic end generated code: output=922e9a4cbd601167 input=f4f6adb074cd3e0f]*/
 {
     asyncio_state *state = get_asyncio_state_by_cls(cls);
     if (context == NULL) {
@@ -1264,15 +1253,15 @@ _asyncio.Future.cancel
 
 Cancel the future and schedule callbacks.
 
-If the future is already done or cancelled, return False.  Otherwise,
-change the future's state to cancelled, schedule the callbacks and
-return True.
+If the future is already done or cancelled, return False.
+Otherwise, change the future's state to cancelled, schedule the
+callbacks and return True.
 [clinic start generated code]*/
 
 static PyObject *
 _asyncio_Future_cancel_impl(FutureObj *self, PyTypeObject *cls,
                             PyObject *msg)
-/*[clinic end generated code: output=074956f35904b034 input=44ab4003da839970]*/
+/*[clinic end generated code: output=074956f35904b034 input=0c9157547a964c4c]*/
 {
     asyncio_state *state = get_asyncio_state_by_cls(cls);
     ENSURE_FUTURE_ALIVE(state, self)
@@ -1304,13 +1293,13 @@ _asyncio.Future.done
 
 Return True if the future is done.
 
-Done means either that a result / exception are available, or that the
-future was cancelled.
+Done means either that a result / exception are available, or that
+the future was cancelled.
 [clinic start generated code]*/
 
 static PyObject *
 _asyncio_Future_done_impl(FutureObj *self)
-/*[clinic end generated code: output=244c5ac351145096 input=7204d3cc63bef7f3]*/
+/*[clinic end generated code: output=244c5ac351145096 input=acf2c2347f3c01d8]*/
 {
     if (!future_is_alive(self) || self->fut_state == STATE_PENDING) {
         Py_RETURN_FALSE;
@@ -1511,14 +1500,12 @@ _asyncio_Future__callbacks_get_impl(FutureObj *self)
 
     Py_ssize_t i = 0;
     if (self->fut_callback0 != NULL) {
-        PyObject *tup0 = PyTuple_New(2);
+        assert(self->fut_context0 != NULL);
+        PyObject *tup0 = _PyTuple_FromPair(self->fut_callback0, self->fut_context0);
         if (tup0 == NULL) {
             Py_DECREF(callbacks);
             return NULL;
         }
-        PyTuple_SET_ITEM(tup0, 0, Py_NewRef(self->fut_callback0));
-        assert(self->fut_context0 != NULL);
-        PyTuple_SET_ITEM(tup0, 1, Py_NewRef(self->fut_context0));
         PyList_SET_ITEM(callbacks, i, tup0);
         i++;
     }
@@ -2252,7 +2239,7 @@ enter_task(_PyThreadStateImpl *ts, PyObject *loop, PyObject *task)
             PyExc_RuntimeError,
             "Cannot enter into task %R while another " \
             "task %R is being executed.",
-            task, ts->asyncio_running_task, NULL);
+            task, ts->asyncio_running_task);
         return -1;
     }
 
@@ -2273,7 +2260,7 @@ leave_task(_PyThreadStateImpl *ts, PyObject *loop, PyObject *task)
             PyExc_RuntimeError,
             "Invalid attempt to leave task %R while " \
             "task %R is entered.",
-            task, ts->asyncio_running_task ? ts->asyncio_running_task : Py_None, NULL);
+            task, ts->asyncio_running_task ? ts->asyncio_running_task : Py_None);
         return -1;
     }
     Py_CLEAR(ts->asyncio_running_task);
@@ -2336,7 +2323,7 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
         self->task_log_destroy_pending = 0;
         PyErr_Format(PyExc_TypeError,
                      "a coroutine was expected, got %R",
-                     coro, NULL);
+                     coro);
         return -1;
     }
 
@@ -2438,8 +2425,7 @@ TaskObj_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(fut->fut_cancel_msg);
     Py_VISIT(fut->fut_cancelled_exc);
     Py_VISIT(fut->fut_awaited_by);
-    PyObject_VisitManagedDict((PyObject *)fut, visit, arg);
-    return 0;
+    return PyObject_VisitManagedDict((PyObject *)fut, visit, arg);
 }
 
 /*[clinic input]
@@ -3008,11 +2994,7 @@ task_call_step_soon(asyncio_state *state, TaskObj *task, PyObject *arg)
         return -1;
     }
 
-    // Beware: An evil call_soon could alter task_context.
-    // See: https://github.com/python/cpython/issues/126080.
-    PyObject *task_context = Py_NewRef(task->task_context);
-    int ret = call_soon(state, task->task_loop, cb, NULL, task_context);
-    Py_DECREF(task_context);
+    int ret = call_soon(state, task->task_loop, cb, NULL, task->task_context);
     Py_DECREF(cb);
     return ret;
 }
@@ -3863,6 +3845,7 @@ _asyncio__leave_task_impl(PyObject *module, PyObject *loop, PyObject *task)
 
 
 /*[clinic input]
+@permit_long_summary
 _asyncio._swap_current_task
 
     loop: object
@@ -3877,7 +3860,7 @@ This is intended for use during eager coroutine execution.
 static PyObject *
 _asyncio__swap_current_task_impl(PyObject *module, PyObject *loop,
                                  PyObject *task)
-/*[clinic end generated code: output=9f88de958df74c7e input=c9c72208d3d38b6c]*/
+/*[clinic end generated code: output=9f88de958df74c7e input=ec14ed25855e3068]*/
 {
     _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
     return swap_current_task(ts, loop, task);
@@ -4406,6 +4389,7 @@ module_exec(PyObject *mod)
 }
 
 static struct PyModuleDef_Slot module_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

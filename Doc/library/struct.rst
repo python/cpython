@@ -36,7 +36,7 @@ and the C layer.
    responsible for defining byte ordering and padding between elements.
    See :ref:`struct-alignment` for details.
 
-Several :mod:`struct` functions (and methods of :class:`Struct`) take a *buffer*
+Several :mod:`!struct` functions (and methods of :class:`Struct`) take a *buffer*
 argument.  This refers to objects that implement the :ref:`bufferobjects` and
 provide either a readable or read-writable buffer.  The most common types used
 for that purpose are :class:`bytes` and :class:`bytearray`, but many other types
@@ -111,7 +111,7 @@ Format Strings
 --------------
 
 Format strings describe the data layout when
-packing and unpacking data.  They are built up from :ref:`format characters<format-characters>`,
+packing and unpacking data.  They are built up from :ref:`type codes <type-codes>`,
 which specify the type of data being packed/unpacked.  In addition,
 special characters control the :ref:`byte order, size and alignment<struct-alignment>`.
 Each format string consists of an optional prefix character which
@@ -183,8 +183,8 @@ Use :data:`sys.byteorder` to check the endianness of your system.
 Native size and alignment are determined using the C compiler's
 ``sizeof`` expression.  This is always combined with native byte order.
 
-Standard size depends only on the format character;  see the table in
-the :ref:`format-characters` section.
+Standard size depends only on the type code;  see the table in
+the :ref:`type-codes` section.
 
 Note the difference between ``'@'`` and ``'='``: both use native byte order, but
 the size and alignment of the latter is standardized.
@@ -208,12 +208,13 @@ Notes:
     count of zero.  See :ref:`struct-examples`.
 
 
+.. _type-codes:
 .. _format-characters:
 
-Format Characters
-^^^^^^^^^^^^^^^^^
+Type Codes
+^^^^^^^^^^
 
-Format characters have the following meaning; the conversion between C and
+Type codes (or format codes) have the following meaning; the conversion between C and
 Python values should be obvious given their types.  The 'Standard size' column
 refers to the size of the packed value in bytes when using standard size; that
 is, when the format string starts with one of ``'<'``, ``'>'``, ``'!'`` or
@@ -227,34 +228,34 @@ platform-dependent.
 +--------+--------------------------+--------------------+----------------+------------+
 | ``c``  | :c:expr:`char`           | bytes of length 1  | 1              |            |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``b``  | :c:expr:`signed char`    | integer            | 1              | \(1), \(2) |
+| ``b``  | :c:expr:`signed char`    | int                | 1              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``B``  | :c:expr:`unsigned char`  | integer            | 1              | \(2)       |
+| ``B``  | :c:expr:`unsigned char`  | int                | 1              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
 | ``?``  | :c:expr:`_Bool`          | bool               | 1              | \(1)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``h``  | :c:expr:`short`          | integer            | 2              | \(2)       |
+| ``h``  | :c:expr:`short`          | int                | 2              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``H``  | :c:expr:`unsigned short` | integer            | 2              | \(2)       |
+| ``H``  | :c:expr:`unsigned short` | int                | 2              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``i``  | :c:expr:`int`            | integer            | 4              | \(2)       |
+| ``i``  | :c:expr:`int`            | int                | 4              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``I``  | :c:expr:`unsigned int`   | integer            | 4              | \(2)       |
+| ``I``  | :c:expr:`unsigned int`   | int                | 4              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``l``  | :c:expr:`long`           | integer            | 4              | \(2)       |
+| ``l``  | :c:expr:`long`           | int                | 4              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``L``  | :c:expr:`unsigned long`  | integer            | 4              | \(2)       |
+| ``L``  | :c:expr:`unsigned long`  | int                | 4              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``q``  | :c:expr:`long long`      | integer            | 8              | \(2)       |
+| ``q``  | :c:expr:`long long`      | int                | 8              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``Q``  | :c:expr:`unsigned long   | integer            | 8              | \(2)       |
+| ``Q``  | :c:expr:`unsigned long   | int                | 8              | \(2)       |
 |        | long`                    |                    |                |            |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``n``  | :c:type:`ssize_t`        | integer            |                | \(3)       |
+| ``n``  | :c:type:`ssize_t`        | int                |                | \(2), \(3) |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``N``  | :c:type:`size_t`         | integer            |                | \(3)       |
+| ``N``  | :c:type:`size_t`         | int                |                | \(2), \(3) |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``e``  | \(6)                     | float              | 2              | \(4)       |
+| ``e``  | :c:expr:`_Float16`       | float              | 2              | \(4), \(6) |
 +--------+--------------------------+--------------------+----------------+------------+
 | ``f``  | :c:expr:`float`          | float              | 4              | \(4)       |
 +--------+--------------------------+--------------------+----------------+------------+
@@ -264,11 +265,15 @@ platform-dependent.
 +--------+--------------------------+--------------------+----------------+------------+
 | ``D``  | :c:expr:`double complex` | complex            | 16             | \(10)      |
 +--------+--------------------------+--------------------+----------------+------------+
+| ``Zf`` | :c:expr:`float complex`  | complex            | 8              | \(10)      |
++--------+--------------------------+--------------------+----------------+------------+
+| ``Zd`` | :c:expr:`double complex` | complex            | 16             | \(10)      |
++--------+--------------------------+--------------------+----------------+------------+
 | ``s``  | :c:expr:`char[]`         | bytes              |                | \(9)       |
 +--------+--------------------------+--------------------+----------------+------------+
 | ``p``  | :c:expr:`char[]`         | bytes              |                | \(8)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``P``  | :c:expr:`void \*`        | integer            |                | \(5)       |
+| ``P``  | :c:expr:`void \*`        | int                |                | \(2), \(5) |
 +--------+--------------------------+--------------------+----------------+------------+
 
 .. versionchanged:: 3.3
@@ -279,6 +284,15 @@ platform-dependent.
 
 .. versionchanged:: 3.14
    Added support for the ``'F'`` and ``'D'`` formats.
+
+.. versionchanged:: 3.15
+   Added support for the ``'Zf'`` and ``'Zd'`` formats.
+
+.. seealso::
+
+   The :mod:`array` and :ref:`ctypes <ctypes-fundamental-data-types>` modules,
+   as well as third-party modules like `numpy <https://numpy.org/doc/stable/reference/arrays.interface.html#object.__array_interface__>`__,
+   use similar -- but slightly different -- type codes.
 
 
 Notes:
@@ -311,7 +325,7 @@ Notes:
    format used by the platform.
 
 (5)
-   The ``'P'`` format character is only available for the native byte ordering
+   The ``'P'`` type code is only available for the native byte ordering
    (selected as the default or with the ``'@'`` byte order character). The byte
    order character ``'='`` chooses to use little- or big-endian ordering based
    on the host system. The struct module does not interpret this as native
@@ -322,7 +336,9 @@ Notes:
    revision of the `IEEE 754 standard <ieee 754 standard_>`_. It has a sign
    bit, a 5-bit exponent and 11-bit precision (with 10 bits explicitly stored),
    and can represent numbers between approximately ``6.1e-05`` and ``6.5e+04``
-   at full precision. This type is not widely supported by C compilers: on a
+   at full precision. This type is not widely supported by C compilers:
+   it's available as :c:expr:`_Float16` type, if the compiler supports the Annex H
+   of the C23 standard.  On a
    typical machine, an unsigned short can be used for storage, but not for math
    operations. See the Wikipedia page on the `half-precision floating-point
    format <half precision format_>`_ for more information.
@@ -331,42 +347,46 @@ Notes:
    When packing, ``'x'`` inserts one NUL byte.
 
 (8)
-   The ``'p'`` format character encodes a "Pascal string", meaning a short
+   The ``'p'`` type code encodes a "Pascal string", meaning a short
    variable-length string stored in a *fixed number of bytes*, given by the count.
    The first byte stored is the length of the string, or 255, whichever is
-   smaller.  The bytes of the string follow.  If the string passed in to
+   smaller.  The bytes of the string follow.  If the byte string passed in to
    :func:`pack` is too long (longer than the count minus 1), only the leading
-   ``count-1`` bytes of the string are stored.  If the string is shorter than
+   ``count-1`` bytes of the string are stored.  If the byte string is shorter than
    ``count-1``, it is padded with null bytes so that exactly count bytes in all
-   are used.  Note that for :func:`unpack`, the ``'p'`` format character consumes
-   ``count`` bytes, but that the string returned can never contain more than 255
+   are used.  Note that for :func:`unpack`, the ``'p'`` type code consumes
+   ``count`` bytes, but that the :class:`!bytes` object returned can never contain more than 255
    bytes.
+   When packing, arguments of types :class:`bytes` and :class:`bytearray`
+   are accepted.
 
 (9)
-   For the ``'s'`` format character, the count is interpreted as the length of the
-   bytes, not a repeat count like for the other format characters; for example,
+   For the ``'s'`` type code, the count is interpreted as the length of the
+   byte string, not a repeat count like for the other type codes; for example,
    ``'10s'`` means a single 10-byte string mapping to or from a single
    Python byte string, while ``'10c'`` means 10
    separate one byte character elements (e.g., ``cccccccccc``) mapping
    to or from ten different Python byte objects. (See :ref:`struct-examples`
    for a concrete demonstration of the difference.)
-   If a count is not given, it defaults to 1.  For packing, the string is
+   If a count is not given, it defaults to 1.  For packing, the byte string is
    truncated or padded with null bytes as appropriate to make it fit. For
-   unpacking, the resulting bytes object always has exactly the specified number
-   of bytes.  As a special case, ``'0s'`` means a single, empty string (while
+   unpacking, the resulting :class:`!bytes` object always has exactly the specified number
+   of bytes.  As a special case, ``'0s'`` means a single, empty byte string (while
    ``'0c'`` means 0 characters).
+   When packing, arguments of types :class:`bytes` and :class:`bytearray`
+   are accepted.
 
 (10)
-   For the ``'F'`` and ``'D'`` format characters, the packed representation uses
+   For the ``'F'`` and ``'D'`` type codes, the packed representation uses
    the IEEE 754 binary32 and binary64 format for components of the complex
    number, regardless of the floating-point format used by the platform.
-   Note that complex types (``F`` and ``D``) are available unconditionally,
+   Note that complex types (``F``/``Zf`` and ``D``/``Zd``) are available unconditionally,
    despite complex types being an optional feature in C.
    As specified in the C11 standard, each complex type is represented by a
    two-element C array containing, respectively, the real and imaginary parts.
 
 
-A format character may be preceded by an integral repeat count.  For example,
+A type code may be preceded by an integral repeat count.  For example,
 the format string ``'4h'`` means exactly the same as ``'hhhh'``.
 
 Whitespace characters between formats are ignored; a count and its format must
@@ -383,7 +403,7 @@ then :exc:`struct.error` is raised.
 
 .. index:: single: ? (question mark); in struct format strings
 
-For the ``'?'`` format character, the return value is either :const:`True` or
+For the ``'?'`` type code, the return value is either :const:`True` or
 :const:`False`. When packing, the truth value of the argument object is used.
 Either 0 or 1 in the native or standard bool representation will be packed, and
 any non-zero value will be ``True`` when unpacking.
@@ -438,7 +458,7 @@ the result in a named tuple::
     >>> Student._make(unpack('<10sHHb', record))
     Student(name=b'raymond   ', serialnum=4658, school=264, gradelevel=8)
 
-The ordering of format characters may have an impact on size in native
+The ordering of type codes may have an impact on size in native
 mode since padding is implicit. In standard mode, the user is
 responsible for inserting any desired padding.
 Note in
@@ -479,7 +499,7 @@ at the end, assuming the platform's longs are aligned on 4-byte boundaries::
 Applications
 ------------
 
-Two main applications for the :mod:`struct` module exist, data
+Two main applications for the :mod:`!struct` module exist, data
 interchange between Python and C code within an application or another
 application compiled using the same compiler (:ref:`native formats<struct-native-formats>`), and
 data interchange between applications using agreed upon data layout
@@ -496,7 +516,7 @@ When constructing format strings which mimic native layouts, the
 compiler and machine architecture determine byte ordering and padding.
 In such cases, the ``@`` format character should be used to specify
 native byte ordering and data sizes.  Internal pad bytes are normally inserted
-automatically.  It is possible that a zero-repeat format code will be
+automatically.  It is possible that a zero-repeat type code will be
 needed at the end of a format string to round up to the correct
 byte boundary for proper alignment of consecutive chunks of data.
 
@@ -515,7 +535,7 @@ code solves that problem::
     >>> calcsize('@llh0l')
     24
 
-The ``'x'`` format code can be used to specify the repeat, but for
+The ``'x'`` type code can be used to specify the repeat, but for
 native formats it is better to use a zero-repeat format like ``'0l'``.
 
 By default, native byte ordering and alignment is used, but it is
@@ -571,7 +591,7 @@ below were executed on a 32-bit machine::
 Classes
 -------
 
-The :mod:`struct` module also defines the following type:
+The :mod:`!struct` module also defines the following type:
 
 
 .. class:: Struct(format)
