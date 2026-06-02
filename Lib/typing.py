@@ -449,9 +449,33 @@ def _eval_type(t, globalns, localns, type_params, *, recursive_guard=frozenset()
         # prefer_fwd_module flag), so that the default behavior remains more straightforward.
         if prefer_fwd_module and t.__forward_module__ is not None:
             globalns = None
-            # If there are type params on the owner, we need to add them back, because
-            # annotationlib won't.
-            if owner_type_params := getattr(owner, "__type_params__", None):
+            # # If there are type params on the owner, we need to add them back, because
+            # # annotationlib won't.
+            owner_type_params = getattr(owner, "__type_params__", ())
+            # TypedDict classes copy the parent type annotations, but do not
+            # copy parent type params / mro. So, we need to collect them manually here.
+            if is_typeddict(owner):
+                owner_type_params = list(owner_type_params)
+                mro_stack = list(owner.__orig_bases__)
+                seen = {tp.__name__ for tp in owner_type_params}
+                while mro_stack:
+                    typ = mro_stack.pop(0)
+                    if is_typeddict(typ):
+                        mro_stack.extend(typ.__orig_bases__)
+                        if t not in typ.__annotations__.values():
+                            # We only copy __type_params__ for types that own
+                            # this annotation. So, it won't be possible to use
+                            # undeclared type parameters from parent types in children.
+                            continue
+
+                        base_type_params = getattr(typ, "__type_params__", ())
+                        for btp in base_type_params:
+                            if btp.__name__ in seen:
+                                continue
+                            owner_type_params.append(btp)
+                            seen.add(btp.__name__)
+                owner_type_params = tuple(owner_type_params)
+            if owner_type_params:
                 globalns = getattr(
                     sys.modules.get(t.__forward_module__, None), "__dict__", None
                 )
