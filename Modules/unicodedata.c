@@ -485,6 +485,64 @@ get_decomp_record(PyObject *self, Py_UCS4 code,
     (*index)++;
 }
 
+/* Small combining runs are usually cheaper with insertion sort. */
+#define CANONICAL_ORDERING_COUNTING_SORT_THRESHOLD 20
+
+static void
+canonical_ordering_sort_insertion(int kind, void *data,
+                                  Py_ssize_t start, Py_ssize_t end)
+{
+    for (Py_ssize_t i = start + 1; i < end; i++) {
+        Py_UCS4 code = PyUnicode_READ(kind, data, i);
+        unsigned char combining = _getrecord_ex(code)->combining;
+        Py_ssize_t j = i;
+
+        while (j > start) {
+            Py_UCS4 previous = PyUnicode_READ(kind, data, j - 1);
+            if (_getrecord_ex(previous)->combining <= combining) {
+                break;
+            }
+            PyUnicode_WRITE(kind, data, j, previous);
+            j--;
+        }
+        if (j != i) {
+            PyUnicode_WRITE(kind, data, j, code);
+        }
+    }
+}
+
+static void
+canonical_ordering_sort_counting(int kind, void *data,
+                                 Py_ssize_t start, Py_ssize_t end,
+                                 Py_UCS4 *sortbuf)
+{
+    Py_ssize_t counts[256] = {0};
+    Py_ssize_t run_length = end - start;
+    Py_ssize_t total = 0;
+
+    for (Py_ssize_t i = start; i < end; i++) {
+        Py_UCS4 code = PyUnicode_READ(kind, data, i);
+        unsigned char combining = _getrecord_ex(code)->combining;
+        counts[combining]++;
+    }
+
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(counts); i++) {
+        Py_ssize_t count = counts[i];
+        counts[i] = total;
+        total += count;
+    }
+
+    /* Reuse counts[] as the next output slot for each CCC. */
+    for (Py_ssize_t i = start; i < end; i++) {
+        Py_UCS4 code = PyUnicode_READ(kind, data, i);
+        unsigned char combining = _getrecord_ex(code)->combining;
+        sortbuf[counts[combining]++] = code;
+    }
+    for (Py_ssize_t i = 0; i < run_length; i++) {
+        PyUnicode_WRITE(kind, data, start + i, sortbuf[i]);
+    }
+}
+
 #define SBase   0xAC00
 #define LBase   0x1100
 #define VBase   0x1161
@@ -501,13 +559,16 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
     PyObject *result;
     Py_UCS4 *output;
     Py_ssize_t i, o, osize;
-    int kind;
-    const void *data;
+    int input_kind, result_kind;
+    const void *input_data;
+    void *result_data;
     /* Longest decomposition in Unicode 3.2: U+FDFA */
     Py_UCS4 stack[20];
     Py_ssize_t space, isize;
     int index, prefix, count, stackptr;
     unsigned char prev, cur;
+    Py_UCS4 *sortbuf = NULL;
+    Py_ssize_t sortbuflen = 0;
 
     stackptr = 0;
     isize = PyUnicode_GET_LENGTH(input);
@@ -527,11 +588,11 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
         return NULL;
     }
     i = o = 0;
-    kind = PyUnicode_KIND(input);
-    data = PyUnicode_DATA(input);
+    input_kind = PyUnicode_KIND(input);
+    input_data = PyUnicode_DATA(input);
 
     while (i < isize) {
-        stack[stackptr++] = PyUnicode_READ(kind, data, i++);
+        stack[stackptr++] = PyUnicode_READ(input_kind, input_data, i++);
         while(stackptr) {
             Py_UCS4 code = stack[--stackptr];
             /* Hangul Decomposition adds three characters in
@@ -597,34 +658,64 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
     if (!result)
         return NULL;
     /* result is guaranteed to be ready, as it is compact. */
-    kind = PyUnicode_KIND(result);
-    data = PyUnicode_DATA(result);
+    result_kind = PyUnicode_KIND(result);
+    result_data = PyUnicode_DATA(result);
 
-    /* Sort canonically. */
+    /* Sort each consecutive combining-character run canonically. */
     i = 0;
-    prev = _getrecord_ex(PyUnicode_READ(kind, data, i))->combining;
-    for (i++; i < PyUnicode_GET_LENGTH(result); i++) {
-        cur = _getrecord_ex(PyUnicode_READ(kind, data, i))->combining;
-        if (prev == 0 || cur == 0 || prev <= cur) {
-            prev = cur;
+    while (i < o) {
+        Py_ssize_t run_length, run_start;
+        int needs_sort = 0;
+
+        Py_UCS4 ch = PyUnicode_READ(result_kind, result_data, i);
+        prev = _getrecord_ex(ch)->combining;
+        if (prev == 0) {
+            i++;
             continue;
         }
-        /* Non-canonical order. Need to switch *i with previous. */
-        o = i - 1;
-        while (1) {
-            Py_UCS4 tmp = PyUnicode_READ(kind, data, o+1);
-            PyUnicode_WRITE(kind, data, o+1,
-                            PyUnicode_READ(kind, data, o));
-            PyUnicode_WRITE(kind, data, o, tmp);
-            o--;
-            if (o < 0)
+
+        run_start = i++;
+        while (i < o) {
+            Py_UCS4 ch = PyUnicode_READ(result_kind, result_data, i);
+            cur = _getrecord_ex(ch)->combining;
+            if (cur == 0) {
                 break;
-            prev = _getrecord_ex(PyUnicode_READ(kind, data, o))->combining;
-            if (prev == 0 || prev <= cur)
-                break;
+            }
+            if (prev > cur) {
+                needs_sort = 1;
+            }
+            prev = cur;
+            i++;
         }
-        prev = _getrecord_ex(PyUnicode_READ(kind, data, i))->combining;
+        if (!needs_sort) {
+            continue;
+        }
+
+        run_length = i - run_start;
+        if (run_length < CANONICAL_ORDERING_COUNTING_SORT_THRESHOLD) {
+            canonical_ordering_sort_insertion(result_kind, result_data,
+                                              run_start, i);
+            continue;
+        }
+
+        if (run_length > sortbuflen) {
+            Py_UCS4 *new_sortbuf = PyMem_Resize(sortbuf,
+                                                Py_UCS4,
+                                                run_length);
+            if (new_sortbuf == NULL) {
+                PyErr_NoMemory();
+                PyMem_Free(sortbuf);
+                Py_DECREF(result);
+                return NULL;
+            }
+            sortbuf = new_sortbuf;
+            sortbuflen = run_length;
+        }
+
+        canonical_ordering_sort_counting(result_kind, result_data,
+                                         run_start, i, sortbuf);
     }
+    PyMem_Free(sortbuf);
     return result;
 }
 
