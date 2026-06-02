@@ -1845,6 +1845,7 @@ class Helper:
         'in': ('in', 'SEQUENCEMETHODS'),
         'is': 'COMPARISON',
         'lambda': ('lambda', 'FUNCTIONS'),
+        'lazy': ('lazy', 'MODULES'),
         'nonlocal': ('nonlocal', 'global NAMESPACES'),
         'not': 'BOOLEAN',
         'or': 'BOOLEAN',
