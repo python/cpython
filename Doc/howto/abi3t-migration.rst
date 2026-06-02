@@ -3,7 +3,7 @@
 .. _abi3t-migration-howto:
 
 ******************************************************
-Migrating to Stable ABI for Free Threading (``abi3t``)
+Migrating to Stable ABI for free threading (``abi3t``)
 ******************************************************
 
 Starting with the 3.15 release, CPython supports a variant of the Stable ABI
@@ -36,7 +36,7 @@ library/wheel:
 +-----------------+-----------------------+------------------------+
 | 3.16            | ``cpython-316``       | ``cpython-316t``       |
 +-----------------+-----------------------+------------------------+
-| Later versions  | :samp:`cpython-3{YY}` | :samp:`cpython-3{YY}t` |
+| Later versions  | :samp:`cpython-3{XX}` | :samp:`cpython-3{XX}t` |
 +-----------------+-----------------------+------------------------+
 
 That's a lot of builds, especially when multiplied by the number
@@ -58,7 +58,7 @@ With the Stable ABI (``abi3``, introduced in CPython 3.2), a single extension
 +-----------------+                   +------------------------+
 | 3.16            |                   | ``cpython-316t``       |
 +-----------------+                   +------------------------+
-| Later versions  |                   | :samp:`cpython-3{YY}t` |
+| Later versions  |                   | :samp:`cpython-3{XX}t` |
 +-----------------+-------------------+------------------------+
 
 The Stable ABI for free-threaded builds (``abi3t``), introduced in
@@ -99,7 +99,7 @@ Second, not all of the C API is available.
 Extensions need to be ported to build for Stable ABI, which may be difficult
 or, in rare cases, impossible.
 
-Specifically, ``abi3t`` requires on API added in CPython 3.15.
+Specifically, ``abi3t`` requires APIs added in CPython 3.15.
 If you want to build your extension for older versions of CPython from the
 same source, you have two main options:
 
@@ -149,10 +149,10 @@ See :ref:`freethreading-extensions-howto` for instructions.
 .. seealso::
 
    `Porting Extension Modules to Support Free-Threading
-   <https://py-free-threading.github.io/porting/>`_:
+   <https://py-free-threading.github.io/porting/>`__:
    A community-maintained porting guide for extension authors.
 
-Isolating Extension Modules
+Isolating extension modules
 ---------------------------
 
 Your module should use :ref:`multi-phase initialization <multi-phase-initialization>`,
@@ -284,7 +284,7 @@ and replace them with the following:
        return my_slot_array;
    }
 
-Leave out any fields that were missing (excexpt the new :c:macro:`Py_mod_abi`),
+Leave out any fields that were missing (except the new :c:macro:`Py_mod_abi`),
 and substitute your own values.
 
 See the :c:type:`PySlot` and :c:ref:`export hook <extension-export-hook>`
@@ -582,7 +582,7 @@ Extensions built with ``abi3t`` should have the following extension:
 
 If you distribute the extension as a *wheel*, use the following tags:
 
-* Python tag: :samp:`cp3{YY}`, where *YY* is the minimum Python version
+* Python tag: :samp:`cp3{XX}`, where *XX* is the minimum Python version
   the extension is built for.
   (For example, ``cp315`` if you set ``Py_TARGET_ABI3T`` to ``0x30f0000``.
   See :ref:`abi3-compiling` for more values.)
