@@ -913,8 +913,9 @@ class StartFileTests(unittest.TestCase):
         self.enterContext(import_helper.DirsOnSysPath())
         self.tmpdir = self.sitedir = self.enterContext(os_helper.temp_dir())
         # Each test gets its own StartupState to batch the parsing and
-        # explicitly invoke the processing.
-        self.state = site.StartupState()
+        # explicitly invoke the processing.  Seed with an empty known_paths
+        # so dedup is not influenced by the current sys.path.
+        self.state = site.StartupState(known_paths=set())
 
     def _make_start(self, content, name='testpkg', basedir=None):
         """Write a <name>.start file and return its basename.
@@ -1131,13 +1132,13 @@ class StartFileTests(unittest.TestCase):
         subdir = os.path.join(self.sitedir, 'mylib')
         os.mkdir(subdir)
         self._make_pth("mylib\n", name='foo')
-        self.state._read_pth_file(self.sitedir, 'foo.pth', set())
+        self.state._read_pth_file(self.sitedir, 'foo.pth')
         fullname = os.path.join(self.sitedir, 'foo.pth')
         self.assertIn((fullname, subdir), self.state._path_entries)
 
     def test_impl_read_pth_file_imports_collected(self):
         self._make_pth("import sys\n", name='foo')
-        self.state._read_pth_file(self.sitedir, 'foo.pth', set())
+        self.state._read_pth_file(self.sitedir, 'foo.pth')
         fullname = os.path.join(self.sitedir, 'foo.pth')
         self.assertEqual(
             self.state._importexecs[fullname], ['import sys']
@@ -1145,19 +1146,19 @@ class StartFileTests(unittest.TestCase):
 
     def test_impl_read_pth_file_comments_and_blanks(self):
         self._make_pth("# comment\n\n  \n", name='foo')
-        self.state._read_pth_file(self.sitedir, 'foo.pth', set())
+        self.state._read_pth_file(self.sitedir, 'foo.pth')
         self.assertEqual(self.state._path_entries, [])
         self.assertEqual(self.state._importexecs, {})
 
     def test_impl_read_pth_file_deduplication(self):
         subdir = os.path.join(self.sitedir, 'mylib')
         os.mkdir(subdir)
-        # An accumulator acts as a deduplication ledger.
-        known_paths = set()
+        # self.state._known_paths acts as the deduplication ledger across
+        # both reads.
         self._make_pth("mylib\n", name='a')
         self._make_pth("mylib\n", name='b')
-        self.state._read_pth_file(self.sitedir, 'a.pth', known_paths)
-        self.state._read_pth_file(self.sitedir, 'b.pth', known_paths)
+        self.state._read_pth_file(self.sitedir, 'a.pth')
+        self.state._read_pth_file(self.sitedir, 'b.pth')
         # There is only one entry across both files.
         all_dirs = [dir_ for filename, dir_ in self.state._path_entries]
         self.assertEqual(all_dirs, [subdir])
@@ -1168,7 +1169,7 @@ class StartFileTests(unittest.TestCase):
         os.mkdir(subdir)
         self._make_pth("abc\x00def\ngoodpath\n", name='foo')
         with captured_stderr():
-            self.state._read_pth_file(self.sitedir, 'foo.pth', set())
+            self.state._read_pth_file(self.sitedir, 'foo.pth')
         fullname = os.path.join(self.sitedir, 'foo.pth')
         self.assertIn((fullname, subdir), self.state._path_entries)
 
@@ -1192,7 +1193,7 @@ class StartFileTests(unittest.TestCase):
             mock.patch('sys.flags', self._flags_with_verbose(False)),
             captured_stderr() as err,
         ):
-            self.state._read_pth_file(self.sitedir, 'foo.pth', set())
+            self.state._read_pth_file(self.sitedir, 'foo.pth')
         self.assertEqual(err.getvalue(), "")
 
     def test_impl_read_pth_file_parse_error_reported_under_verbose(self):
@@ -1203,7 +1204,7 @@ class StartFileTests(unittest.TestCase):
             mock.patch('sys.flags', self._flags_with_verbose(True)),
             captured_stderr() as err,
         ):
-            self.state._read_pth_file(self.sitedir, 'foo.pth', set())
+            self.state._read_pth_file(self.sitedir, 'foo.pth')
         out = err.getvalue()
         self.assertIn('Error in', out)
         self.assertIn('foo.pth', out)
@@ -1223,7 +1224,7 @@ class StartFileTests(unittest.TestCase):
             mock.patch('locale.getencoding', return_value='latin-1'),
             captured_stderr(),
         ):
-            self.state._read_pth_file(self.sitedir, 'foo.pth', set())
+            self.state._read_pth_file(self.sitedir, 'foo.pth')
         fullname = os.path.join(self.sitedir, 'foo.pth')
         self.assertIn((fullname, subdir), self.state._path_entries)
 
@@ -1353,7 +1354,7 @@ def startup():
     global called
     called = True
 """, name='epmod', package=True, on_path=True)
-        self.state._read_pth_file(self.sitedir, 'foo.pth', set())
+        self.state._read_pth_file(self.sitedir, 'foo.pth')
         self.state._read_start_file(self.sitedir, 'foo.start')
         self.state._exec_imports()
         import epmod

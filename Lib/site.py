@@ -388,17 +388,15 @@ class StartupState:
             self._path_entries.append((None, sitedir))
         return sitedir
 
-    def _read_pth_file(self, sitedir, name, known_paths=None):
+    def _read_pth_file(self, sitedir, name):
         """Parse a .pth file, accumulating sys.path extensions and import lines.
 
         Errors on individual lines do not abort processing of the rest of
-        the file (PEP 829).  ``known_paths`` is the per-batch deduplication
-        ledger: any path already in it is skipped, and newly accepted
-        paths are added to it so that subsequent .pth files in the same
-        batch don't add them more than once.
+        the file (PEP 829).  Per-batch deduplication is done against
+        self._known_paths: any path already in it is skipped, and newly
+        accepted paths are added to it so that subsequent .pth files in
+        the same batch don't add them more than once.
         """
-        if known_paths is None:
-            known_paths = self._known_paths
         lines, filename = _read_pthstart_file(sitedir, name, ".pth")
         if lines is None:
             return
@@ -430,7 +428,7 @@ class StartupState:
                 continue
 
             # PEP 829 dedup: skip paths already seen in this batch.
-            if dircase in known_paths:
+            if dircase in self._known_paths:
                 _trace(
                     f"In {filename!r}, line {n:d}: "
                     f"skipping duplicate sys.path entry: {dir_}"
@@ -439,7 +437,7 @@ class StartupState:
                 # Add this directory to the sys.path extension ledger, while
                 # also recording the .pth file it was found in.
                 self._path_entries.append((filename, dir_))
-                known_paths.add(dircase)
+                self._known_paths.add(dircase)
 
     def _read_start_file(self, sitedir, name):
         """Parse a .start file for a list of entry point strings."""
