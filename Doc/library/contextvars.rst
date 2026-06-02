@@ -42,7 +42,7 @@ Context Variables
    references to context variables which prevents context variables
    from being properly garbage collected.
 
-   Context Variables are :ref:`generic <generics>` over the type of
+   :class:`!ContextVar`\s are :ref:`generic <generics>` over the type of
    their contained value.
 
    .. attribute:: ContextVar.name
