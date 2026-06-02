@@ -1708,7 +1708,7 @@ symtable_enter_type_param_block(struct symtable *st, identifier name,
     return 1;
 }
 
-/* VISIT, VISIT_SEQ and VIST_SEQ_TAIL take an ASDL type as their second argument.
+/* VISIT, VISIT_SEQ and VISIT_SEQ_TAIL take an ASDL type as their second argument.
    They use the ASDL name to synthesize the name of the C type and the visit
    function.
 
@@ -2870,6 +2870,7 @@ symtable_visit_annotation(struct symtable *st, expr_ty annotation, void *key)
         int future_annotations = st->st_future->ff_features & CO_FUTURE_ANNOTATIONS;
         if (current_type == ClassBlock && !future_annotations) {
             st->st_cur->ste_can_see_class_scope = 1;
+            parent_ste->ste_needs_classdict = 1;
             if (!symtable_add_def(st, &_Py_ID(__classdict__), USE, LOCATION(annotation))) {
                 return 0;
             }
