@@ -1,0 +1,1 @@
+Fix a bug where garbage collection could corrupt a live generator by clearing its locals.
