@@ -1,0 +1,2 @@
+Speed up :func:`mimetypes.guess_type` for plain file paths by skipping URL
+parsing when the argument has no scheme. Patch by Bernát Gábor.

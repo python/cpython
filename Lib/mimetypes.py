@@ -123,10 +123,14 @@ class MimeTypes:
         """
         # Lazy import to improve module import time
         import os
-        import urllib.parse
 
         # TODO: Deprecate accepting file paths (in particular path-like objects).
         url = os.fspath(url)
+        # A URL scheme requires a ':'; a plain file path (the common case) has
+        # none, so skip the relatively expensive urlparse() for it.
+        if isinstance(url, str) and ':' not in url:
+            return self.guess_file_type(url, strict=strict)
+        import urllib.parse
         p = urllib.parse.urlparse(url)
         if p.scheme and len(p.scheme) > 1:
             scheme = p.scheme
