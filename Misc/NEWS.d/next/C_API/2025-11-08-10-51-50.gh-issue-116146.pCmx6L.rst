@@ -1,2 +1,0 @@
-Add a new :c:func:`PyImport_CreateModuleFromInitfunc` C-API for creating a
-module from a *spec* and *initfunc*. Patch by Itamar Oren.

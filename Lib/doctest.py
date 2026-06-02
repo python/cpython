@@ -106,8 +106,8 @@ import types
 import unittest
 from io import StringIO, TextIOWrapper, BytesIO
 from collections import namedtuple
-import _colorize  # Used in doctests
-from _colorize import ANSIColors, can_colorize
+lazy import _colorize  # Used in doctests
+lazy from _colorize import ANSIColors, can_colorize
 
 
 class TestResults(namedtuple('TestResults', 'failed attempted')):
@@ -1166,6 +1166,32 @@ class DocTestFinder:
             for lineno in range(lineno, len(source_lines)):
                 if pat.match(source_lines[lineno]):
                     return lineno
+
+        # Handle __test__ string doctests formatted as triple-quoted
+        # strings. Find a non-blank line in the test string and match it
+        # in the source, verifying subsequent lines also match to handle
+        # duplicate lines.
+        if isinstance(obj, str) and source_lines is not None:
+            obj_lines = obj.splitlines(keepends=True)
+            # Skip the first line (may be on same line as opening quotes)
+            # and any blank lines to find a meaningful line to match.
+            start_index = 1
+            while (start_index < len(obj_lines)
+                   and not obj_lines[start_index].strip()):
+                start_index += 1
+            if start_index < len(obj_lines):
+                target_line = obj_lines[start_index]
+                for lineno, source_line in enumerate(source_lines):
+                    if source_line == target_line:
+                        # Verify subsequent lines also match
+                        for i in range(start_index + 1, len(obj_lines) - 1):
+                            source_idx = lineno + i - start_index
+                            if source_idx >= len(source_lines):
+                                break
+                            if obj_lines[i] != source_lines[source_idx]:
+                                break
+                        else:
+                            return lineno - start_index
 
         # We couldn't find the line number.
         return None
@@ -2925,7 +2951,7 @@ __test__ = {"_TestClass": _TestClass,
 def _test():
     import argparse
 
-    parser = argparse.ArgumentParser(description="doctest runner", color=True)
+    parser = argparse.ArgumentParser(description="doctest runner")
     parser.add_argument('-v', '--verbose', action='store_true', default=False,
                         help='print very verbose output for all tests')
     parser.add_argument('-o', '--option', action='append',
@@ -2935,8 +2961,8 @@ def _test():
                               ' than once to apply multiple options'))
     parser.add_argument('-f', '--fail-fast', action='store_true',
                         help=('stop running tests after first failure (this'
-                              ' is a shorthand for -o FAIL_FAST, and is'
-                              ' in addition to any other -o options)'))
+                              ' is a shorthand for `-o FAIL_FAST`, and is'
+                              ' in addition to any other `-o` options)'))
     parser.add_argument('file', nargs='+',
                         help='file containing the tests to run')
     args = parser.parse_args()

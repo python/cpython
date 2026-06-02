@@ -1,3 +1,0 @@
-Fixed a reference leak when iterating over the result of :func:`map`
-with ``strict=True`` when the input iterables have different lengths.
-Patch by Mikhail Efimov.

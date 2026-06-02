@@ -1,3 +1,0 @@
-Suggest using :meth:`concurrent.interpreters.Interpreter.close` instead of the
-private ``_interpreters.destroy`` function when warning about remaining subinterpreters.
-Patch by Sergey Miryanov.

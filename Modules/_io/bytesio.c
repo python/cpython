@@ -194,18 +194,18 @@ write_bytes_lock_held(bytesio *self, PyObject *b)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
 
-    if (check_closed(self)) {
-        return -1;
-    }
-    if (check_exports(self)) {
-        return -1;
-    }
-
     Py_buffer buf;
+    Py_ssize_t len;
     if (PyObject_GetBuffer(b, &buf, PyBUF_CONTIG_RO) < 0) {
         return -1;
     }
-    Py_ssize_t len = buf.len;
+
+    if (check_closed(self) || check_exports(self)) {
+        len = -1;
+        goto done;
+    }
+
+    len = buf.len;
     if (len == 0) {
         goto done;
     }
@@ -488,13 +488,13 @@ _io.BytesIO.read1
 
 Read at most size bytes, returned as a bytes object.
 
-If the size argument is negative or omitted, read until EOF is reached.
-Return an empty bytes object at EOF.
+If the size argument is negative or omitted, read until EOF is
+reached.  Return an empty bytes object at EOF.
 [clinic start generated code]*/
 
 static PyObject *
 _io_BytesIO_read1_impl(bytesio *self, Py_ssize_t size)
-/*[clinic end generated code: output=d0f843285aa95f1c input=a08fc9e507ab380c]*/
+/*[clinic end generated code: output=d0f843285aa95f1c input=796ff4e0efccc4d9]*/
 {
     return _io_BytesIO_read_impl(self, size);
 }
@@ -792,13 +792,13 @@ _io.BytesIO.writelines
 Write lines to the file.
 
 Note that newlines are not added.  lines can be any iterable object
-producing bytes-like objects. This is equivalent to calling write() for
-each element.
+producing bytes-like objects.  This is equivalent to calling write()
+for each element.
 [clinic start generated code]*/
 
 static PyObject *
 _io_BytesIO_writelines_impl(bytesio *self, PyObject *lines)
-/*[clinic end generated code: output=03a43a75773bc397 input=5d6a616ae39dc9ca]*/
+/*[clinic end generated code: output=03a43a75773bc397 input=d265f76533b058e7]*/
 {
     PyObject *it, *item;
 

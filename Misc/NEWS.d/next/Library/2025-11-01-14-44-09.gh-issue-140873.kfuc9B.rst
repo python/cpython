@@ -1,2 +1,0 @@
-Add support of non-:term:`descriptor` callables in
-:func:`functools.singledispatchmethod`.

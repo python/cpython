@@ -1,1 +1,0 @@
-Preserve and restore the state of ``stty echo`` as part of the test environment.

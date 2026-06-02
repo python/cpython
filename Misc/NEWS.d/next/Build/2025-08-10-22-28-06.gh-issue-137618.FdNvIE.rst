@@ -1,2 +1,0 @@
-``PYTHON_FOR_REGEN`` now requires Python 3.10 to Python 3.15.
-Patch by Adam Turner.

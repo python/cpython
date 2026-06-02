@@ -1,1 +1,0 @@
-Initialize all Pdb's instance variables in ``__init__``,  remove some hasattr/getattr

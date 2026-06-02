@@ -1,2 +1,0 @@
-Fix partial evaluation of :class:`annotationlib.ForwardRef` objects which rely
-on names defined as globals.

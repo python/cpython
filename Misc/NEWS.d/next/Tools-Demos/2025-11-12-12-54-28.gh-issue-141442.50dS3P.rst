@@ -1,1 +1,0 @@
-The iOS testbed now correctly handles test arguments that contain spaces.
