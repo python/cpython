@@ -391,7 +391,7 @@ readline_append_history_file_impl(PyObject *module, int nelements,
 {
     if (nelements < 0)
     {
-        PyErr_SetString(PyExc_ValueError, "nelements must be positive");
+        PyErr_SetString(PyExc_ValueError, "nelements must be non-negative");
         return NULL;
     }
 
@@ -432,6 +432,7 @@ readline_append_history_file_impl(PyObject *module, int nelements,
 /* Set history length */
 
 /*[clinic input]
+@permit_long_summary
 readline.set_history_length
 
     length: int
@@ -444,7 +445,7 @@ A negative length is used to inhibit history truncation.
 
 static PyObject *
 readline_set_history_length_impl(PyObject *module, int length)
-/*[clinic end generated code: output=e161a53e45987dc7 input=b8901bf16488b760]*/
+/*[clinic end generated code: output=e161a53e45987dc7 input=8d02c81b38ef81ec]*/
 {
     FT_ATOMIC_STORE_INT_RELAXED(_history_length, length);
     Py_RETURN_NONE;
@@ -453,6 +454,7 @@ readline_set_history_length_impl(PyObject *module, int length)
 /* Get history length */
 
 /*[clinic input]
+@permit_long_summary
 readline.get_history_length
 
 Return the maximum number of lines that will be written to the history file.
@@ -460,7 +462,7 @@ Return the maximum number of lines that will be written to the history file.
 
 static PyObject *
 readline_get_history_length_impl(PyObject *module)
-/*[clinic end generated code: output=83a2eeae35b6d2b9 input=5dce2eeba4327817]*/
+/*[clinic end generated code: output=83a2eeae35b6d2b9 input=a65823e732ebfa9d]*/
 {
     int history_length = FT_ATOMIC_LOAD_INT_RELAXED(_history_length);
     return PyLong_FromLong(history_length);
@@ -572,6 +574,26 @@ readline_set_pre_input_hook_impl(PyObject *module, PyObject *function)
     return set_hook("pre_input_hook", &state->pre_input_hook,
             function);
 }
+
+/* Get pre-input hook */
+
+/*[clinic input]
+readline.get_pre_input_hook
+
+Get the current pre-input hook function.
+[clinic start generated code]*/
+
+static PyObject *
+readline_get_pre_input_hook_impl(PyObject *module)
+/*[clinic end generated code: output=ad56b77a8e8981ca input=fb1e1b1fbd94e4e5]*/
+{
+    readlinestate *state = get_readline_state(module);
+    if (state->pre_input_hook == NULL) {
+        Py_RETURN_NONE;
+    }
+    return Py_NewRef(state->pre_input_hook);
+}
+
 #endif
 
 
@@ -1074,6 +1096,7 @@ static struct PyMethodDef readline_methods[] =
     READLINE_SET_STARTUP_HOOK_METHODDEF
 #ifdef HAVE_RL_PRE_INPUT_HOOK
     READLINE_SET_PRE_INPUT_HOOK_METHODDEF
+    READLINE_GET_PRE_INPUT_HOOK_METHODDEF
 #endif
 #ifdef HAVE_RL_COMPLETION_APPEND_CHARACTER
     READLINE_CLEAR_HISTORY_METHODDEF
@@ -1383,6 +1406,10 @@ setup_readline(readlinestate *mod_state)
     completer_word_break_characters =
         strdup(" \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?");
         /* All nonalphanums except '.' */
+
+    if (!completer_word_break_characters) {
+        goto error;
+    }
 #ifdef WITH_EDITLINE
     // libedit uses rl_basic_word_break_characters instead of
     // rl_completer_word_break_characters as complete delimiter
@@ -1426,6 +1453,10 @@ setup_readline(readlinestate *mod_state)
 
     RESTORE_LOCALE(saved_locale)
     return 0;
+
+error:
+    RESTORE_LOCALE(saved_locale)
+    return -1;
 }
 
 /* Wrapper around GNU readline that handles signals differently. */
@@ -1605,6 +1636,11 @@ static struct PyModuleDef readlinemodule = {
 PyMODINIT_FUNC
 PyInit_readline(void)
 {
+    PyABIInfo_VAR(abi_info);
+    if (PyABIInfo_Check(&abi_info, "readline") < 0) {
+        return NULL;
+    }
+
     const char *backend = "readline";
     PyObject *m;
     readlinestate *mod_state;

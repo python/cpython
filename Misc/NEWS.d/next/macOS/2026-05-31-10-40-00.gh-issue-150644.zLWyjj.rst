@@ -1,0 +1,3 @@
+When system logging is enabled (with ``config.use_system_logger``, messages
+are now tagged as public. This allows the macOS 26 system logger to view
+messages without special configuration.
