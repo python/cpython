@@ -1450,15 +1450,15 @@ when there is no match, you can test whether there was a match with a simple
    If a group is contained in a part of the pattern that matched multiple times,
    the last match is returned. ::
 
-      >>> m = re.search(r"\A(\w+) (\w+)", "Norwegian Blue, pining for the fjords")
+      >>> m = re.search(r"\A(\w+) (\w+)", "Isaac Newton, physicist")
       >>> m.group(0)       # The entire match
-      'Norwegian Blue'
+      'Isaac Newton'
       >>> m.group(1)       # The first parenthesized subgroup.
-      'Norwegian'
+      'Isaac'
       >>> m.group(2)       # The second parenthesized subgroup.
-      'Blue'
+      'Newton'
       >>> m.group(1, 2)    # Multiple arguments give us a tuple.
-      ('Norwegian', 'Blue')
+      ('Isaac', 'Newton')
 
    If the regular expression uses the ``(?P<name>...)`` syntax, the *groupN*
    arguments may also be strings identifying groups by their group name.  If a
@@ -1467,18 +1467,18 @@ when there is no match, you can test whether there was a match with a simple
 
    A moderately complicated example::
 
-      >>> m = re.search(r"(?P<adjective>\w+) (?P<animal>\w+)", "killer rabbit")
-      >>> m.group('adjective')
-      'killer'
-      >>> m.group('animal')
-      'rabbit'
+      >>> m = re.search(r"(?P<first_name>\w+) (?P<last_name>\w+)", "Malcolm Reynolds")
+      >>> m.group('first_name')
+      'Malcolm'
+      >>> m.group('last_name')
+      'Reynolds'
 
    Named groups can also be referred to by their index::
 
       >>> m.group(1)
-      'killer'
+      'Malcolm'
       >>> m.group(2)
-      'rabbit'
+      'Reynolds'
 
    If a group matches multiple times, only the last match is accessible::
 
@@ -1492,21 +1492,21 @@ when there is no match, you can test whether there was a match with a simple
    This is identical to ``m.group(g)``.  This allows easier access to
    an individual group from a match::
 
-      >>> m = re.search(r"(\w+) (\w+)", "Norwegian Blue, pining for the fjords")
+      >>> m = re.search(r"(\w+) (\w+)", "Isaac Newton, physicist")
       >>> m[0]       # The entire match
-      'Norwegian Blue'
+      'Isaac Newton'
       >>> m[1]       # The first parenthesized subgroup.
-      'Norwegian'
+      'Isaac'
       >>> m[2]       # The second parenthesized subgroup.
-      'Blue'
+      'Newton'
 
    Named groups are supported as well::
 
-      >>> m = re.search(r"(?P<adjective>\w+) (?P<animal>\w+)", "killer rabbit")
-      >>> m['adjective']
-      'killer'
-      >>> m['animal']
-      'rabbit'
+      >>> m = re.search(r"(?P<first_name>\w+) (?P<last_name>\w+)", "Isaac Newton")
+      >>> m['first_name']
+      'Isaac'
+      >>> m['last_name']
+      'Newton'
 
    .. versionadded:: 3.6
 
@@ -1540,9 +1540,9 @@ when there is no match, you can test whether there was a match with a simple
    the subgroup name.  The *default* argument is used for groups that did not
    participate in the match; it defaults to ``None``.  For example::
 
-      >>> m = re.search(r"(?P<adjective>\w+) (?P<animal>\w+)", "killer rabbit")
+      >>> m = re.search(r"(?P<first_name>\w+) (?P<last_name>\w+)", "Malcolm Reynolds")
       >>> m.groupdict()
-      {'adjective': 'killer', 'animal': 'rabbit'}
+      {'first_name': 'Malcolm', 'last_name': 'Reynolds'}
 
 
 .. method:: Match.start([group])
