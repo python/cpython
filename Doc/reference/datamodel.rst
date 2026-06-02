@@ -3851,6 +3851,9 @@ Coroutines also have the methods listed below, which are analogous to
 those of generators (see :ref:`generator-methods`).  However, unlike
 generators, coroutines do not directly support iteration.
 
+Coroutines are :ref:`generic <generics>` over the types of their yield, send,
+and return values, respectively.
+
 .. versionchanged:: 3.5.2
    It is a :exc:`RuntimeError` to await on a coroutine more than once.
 

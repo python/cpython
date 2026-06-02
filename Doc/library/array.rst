@@ -106,6 +106,8 @@ The module defines the following type:
    :exc:`TypeError` is raised. Array objects also implement the buffer interface,
    and may be used wherever :term:`bytes-like objects <bytes-like object>` are supported.
 
+   Arrays are :ref:`generic <generics>` over the type of their contents.
+
    .. audit-event:: array.__new__ typecode,initializer array.array
 
 
