@@ -1172,6 +1172,7 @@ subject value:
    * :class:`bytes`
    * :class:`dict`
    * :class:`float`
+   * :class:`frozendict`
    * :class:`frozenset`
    * :class:`int`
    * :class:`list`
