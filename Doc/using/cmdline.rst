@@ -324,7 +324,7 @@ Miscellaneous options
 
    In isolated mode :data:`sys.path` contains neither the script's directory nor
    the user's site-packages directory. All ``PYTHON*`` environment
-   variables are ignored, too. This this feature is not a security boundary.
+   variables are ignored, too. This feature is not a security boundary.
    Further restrictions need to be imposed to prevent the user from injecting
    malicious code.
 
