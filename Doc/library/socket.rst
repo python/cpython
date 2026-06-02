@@ -1593,7 +1593,7 @@ Socket Objects
 
       .. versionchanged:: 3.6
          :exc:`OSError` is now raised if an error occurs when the underlying
-         :c:func:`close` call is made.
+         :c:func:`!close` call is made.
 
       .. note::
 
@@ -1629,7 +1629,7 @@ Socket Objects
    .. method:: connect_ex(address)
 
       Like ``connect(address)``, but return an error indicator instead of raising an
-      exception for errors returned by the C-level :c:func:`connect` call (other
+      exception for errors returned by the C-level :c:func:`!connect` call (other
       problems, such as "host not found," can still raise exceptions).  The error
       indicator is ``0`` if the operation succeeded, otherwise the value of the
       :c:data:`errno` variable.  This is useful to support, for example, asynchronous
@@ -1859,7 +1859,7 @@ Socket Objects
       inside the buffer provided it has not been truncated before the
       start of its associated data.
 
-      On systems which support the :const:`SCM_RIGHTS` mechanism, the
+      On systems which support the :const:`!SCM_RIGHTS` mechanism, the
       following function will receive up to *maxfds* file descriptors,
       returning the message data and a list containing the descriptors
       (while ignoring unexpected conditions such as unrelated control
@@ -2021,7 +2021,7 @@ Socket Objects
 
       The following function sends the list of file descriptors *fds*
       over an :const:`AF_UNIX` socket, on systems which support the
-      :const:`SCM_RIGHTS` mechanism.  See also :meth:`recvmsg`. ::
+      :const:`!SCM_RIGHTS` mechanism.  See also :meth:`recvmsg`. ::
 
          import socket, array
 
@@ -2121,7 +2121,7 @@ Socket Objects
       case it is up to the caller to ensure that the bytestring contains the
       proper bits (see the optional built-in module :mod:`struct` for a way to
       encode C structures as bytestrings). When *value* is set to ``None``,
-      *optlen* argument is required. It's equivalent to calling :c:func:`setsockopt` C
+      *optlen* argument is required. It's equivalent to calling :c:func:`!setsockopt` C
       function with ``optval=NULL`` and ``optlen=optlen``.
 
       .. versionchanged:: 3.5
@@ -2157,7 +2157,7 @@ Socket Objects
       .. versionadded:: 3.3
 
 
-   Note that there are no methods :meth:`read` or :meth:`write`; use
+   Note that there are no methods :meth:`!read` or :meth:`!write`; use
    :meth:`~socket.recv` and :meth:`~socket.send` without *flags* argument instead.
 
    Socket objects also have these (read-only) attributes that correspond to the
