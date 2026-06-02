@@ -1824,7 +1824,7 @@ static PyMethodDef deque_methods[] = {
     DEQUE_ROTATE_METHODDEF
     DEQUE___SIZEOF___METHODDEF
     {"__class_getitem__",       Py_GenericAlias,
-        METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
+    METH_O|METH_CLASS,          PyDoc_STR("deques are generic over the type of their contents")},
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -2284,6 +2284,12 @@ defdict_reduce(defdictobject *dd, PyObject *Py_UNUSED(ignored))
     return result;
 }
 
+
+PyDoc_STRVAR(defdict_class_getitem_doc,
+"defaultdicts are generic over two types, signifying (respectively) the types \
+of the dictionary's keys and values");
+
+
 static PyMethodDef defdict_methods[] = {
     {"__missing__", (PyCFunction)defdict_missing, METH_O,
      defdict_missing_doc},
@@ -2294,7 +2300,7 @@ static PyMethodDef defdict_methods[] = {
     {"__reduce__", (PyCFunction)defdict_reduce, METH_NOARGS,
      reduce_doc},
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
-     PyDoc_STR("See PEP 585")},
+     defdict_class_getitem_doc},
     {NULL}
 };
 

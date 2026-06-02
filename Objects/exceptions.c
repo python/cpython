@@ -1541,7 +1541,8 @@ static PyMemberDef BaseExceptionGroup_members[] = {
 
 static PyMethodDef BaseExceptionGroup_methods[] = {
     {"__class_getitem__", (PyCFunction)Py_GenericAlias,
-      METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+      METH_O|METH_CLASS,
+      PyDoc_STR("Exception groups are generic over the type of their contained exceptions")},
     {"derive", (PyCFunction)BaseExceptionGroup_derive, METH_O},
     {"split", (PyCFunction)BaseExceptionGroup_split, METH_O},
     {"subgroup", (PyCFunction)BaseExceptionGroup_subgroup, METH_O},
@@ -3933,4 +3934,3 @@ _PyException_AddNote(PyObject *exc, PyObject *note)
     Py_XDECREF(r);
     return res;
 }
-
