@@ -550,7 +550,7 @@ static PyMethodDef simplequeue_methods[] = {
     _QUEUE_SIMPLEQUEUE_QSIZE_METHODDEF
     _QUEUE_SIMPLEQUEUE___SIZEOF___METHODDEF
     {"__class_getitem__",    Py_GenericAlias,
-    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
+    METH_O|METH_CLASS,       PyDoc_STR("SimpleQueues are generic over the type of their contents")},
     {NULL,           NULL}              /* sentinel */
 };
 

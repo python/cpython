@@ -2982,6 +2982,9 @@ features:
    To be directly usable as a :term:`path-like object`, ``os.DirEntry``
    implements the :class:`PathLike` interface.
 
+   :class:`!DirEntry` objects are :ref:`generic <generics>` over the type of the
+   path (:class:`str` or :class:`bytes`).
+
    Attributes and methods on a ``os.DirEntry`` instance are as follows:
 
    .. attribute:: name
