@@ -13,8 +13,10 @@
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_time.h"          // _PyTime_ObjectToTime_t()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_unicodeobject.h" // _PyUnicode_Copy()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_pyatomic_ft_wrappers.h"
 
 #include "datetime.h"
 
@@ -2540,14 +2542,16 @@ static Py_hash_t
 delta_hash(PyObject *op)
 {
     PyDateTime_Delta *self = PyDelta_CAST(op);
-    if (self->hashcode == -1) {
+    Py_hash_t hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(self->hashcode);
+    if (hash == -1) {
         PyObject *temp = delta_getstate(self);
         if (temp != NULL) {
-            self->hashcode = PyObject_Hash(temp);
+            hash = PyObject_Hash(temp);
+            FT_ATOMIC_STORE_SSIZE_RELAXED(self->hashcode, hash);
             Py_DECREF(temp);
         }
     }
-    return self->hashcode;
+    return hash;
 }
 
 static PyObject *
@@ -2689,7 +2693,7 @@ delta_divmod(PyObject *left, PyObject *right)
         Py_DECREF(divmod);
         return NULL;
     }
-    result = PyTuple_Pack(2, PyTuple_GET_ITEM(divmod, 0), delta);
+    result = _PyTuple_FromPair(PyTuple_GET_ITEM(divmod, 0), delta);
     Py_DECREF(delta);
     Py_DECREF(divmod);
     return result;
@@ -3291,25 +3295,36 @@ static PyObject *
 datetime_date_today_impl(PyTypeObject *type)
 /*[clinic end generated code: output=d5474697df6b251c input=21688afa289c0a06]*/
 {
-    PyObject *time;
-    PyObject *result;
-    time = time_time();
-    if (time == NULL)
-        return NULL;
+    /* Use C implementation to boost performance for date type */
+    if (type == &PyDateTime_DateType) {
+        struct tm tm;
+        time_t t;
+        time(&t);
 
-    /* Note well:  today() is a class method, so this may not call
-     * date.fromtimestamp.  For example, it may call
-     * datetime.fromtimestamp.  That's why we need all the accuracy
-     * time.time() delivers; if someone were gonzo about optimization,
-     * date.today() could get away with plain C time().
+        if (_PyTime_localtime(t, &tm) != 0) {
+            return NULL;
+        }
+
+        return new_date_ex(tm.tm_year + 1900,
+                           tm.tm_mon + 1,
+                           tm.tm_mday,
+                           type);
+    }
+
+    PyObject *time = time_time();
+    if (time == NULL) {
+        return NULL;
+    }
+
+    /* Note well: since today() is a class method, it may not call
+     * date.fromtimestamp, e.g., it may call datetime.fromtimestamp.
      */
-    result = PyObject_CallMethodOneArg((PyObject*)type, &_Py_ID(fromtimestamp), time);
+    PyObject *result = PyObject_CallMethodOneArg((PyObject*)type, &_Py_ID(fromtimestamp), time);
     Py_DECREF(time);
     return result;
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 @classmethod
 datetime.date.fromtimestamp
 
@@ -3318,13 +3333,13 @@ datetime.date.fromtimestamp
 
 Create a date from a POSIX timestamp.
 
-The timestamp is a number, e.g. created via time.time(), that is interpreted
-as local time.
+The timestamp is a number, e.g. created via time.time(), that is
+interpreted as local time.
 [clinic start generated code]*/
 
 static PyObject *
 datetime_date_fromtimestamp_impl(PyTypeObject *type, PyObject *timestamp)
-/*[clinic end generated code: output=59def4e32c028fb6 input=55ff6940f0a8339f]*/
+/*[clinic end generated code: output=59def4e32c028fb6 input=15720eef43b169a1]*/
 {
     return date_fromtimestamp(type, timestamp);
 }
@@ -3460,6 +3475,7 @@ datetime_date_fromisocalendar_impl(PyTypeObject *type, int year, int week,
 }
 
 /*[clinic input]
+@permit_long_summary
 @classmethod
 datetime.date.strptime
 
@@ -3468,12 +3484,15 @@ datetime.date.strptime
     /
 
 Parse string according to the given date format (like time.strptime()).
+
+For a list of supported format codes, see the documentation:
+    https://docs.python.org/3/library/datetime.html#format-codes
 [clinic start generated code]*/
 
 static PyObject *
 datetime_date_strptime_impl(PyTypeObject *type, PyObject *string,
                             PyObject *format)
-/*[clinic end generated code: output=454d473bee2d5161 input=001904ab34f594a1]*/
+/*[clinic end generated code: output=454d473bee2d5161 input=2db8f0b2b5242deb]*/
 {
     PyObject *result;
 
@@ -3608,11 +3627,14 @@ datetime.date.strftime
 Format using strftime().
 
 Example: "%d/%m/%Y, %H:%M:%S".
+
+For a list of supported format codes, see the documentation:
+    https://docs.python.org/3/library/datetime.html#format-codes
 [clinic start generated code]*/
 
 static PyObject *
 datetime_date_strftime_impl(PyObject *self, PyObject *format)
-/*[clinic end generated code: output=6529b70095e16778 input=72af55077e606ed8]*/
+/*[clinic end generated code: output=6529b70095e16778 input=b6fd4a2ded27b557]*/
 {
     /* This method can be inherited, and needs to call the
      * timetuple() method appropriate to self's class.
@@ -3801,9 +3823,26 @@ iso_calendar_date_new_impl(PyTypeObject *type, int year, int week,
         return NULL;
     }
 
-    PyTuple_SET_ITEM(self, 0, PyLong_FromLong(year));
-    PyTuple_SET_ITEM(self, 1, PyLong_FromLong(week));
-    PyTuple_SET_ITEM(self, 2, PyLong_FromLong(weekday));
+    PyObject *year_object = PyLong_FromLong(year);
+    if (year_object == NULL) {
+        Py_DECREF(self);
+        return NULL;
+    }
+    PyTuple_SET_ITEM(self, 0, year_object);
+
+    PyObject *week_object = PyLong_FromLong(week);
+    if (week_object == NULL) {
+        Py_DECREF(self);
+        return NULL;
+    }
+    PyTuple_SET_ITEM(self, 1, week_object);
+
+    PyObject *weekday_object = PyLong_FromLong(weekday);
+    if (weekday_object == NULL) {
+        Py_DECREF(self);
+        return NULL;
+    }
+    PyTuple_SET_ITEM(self, 2, weekday_object);
 
     return (PyObject *)self;
 }
@@ -3903,12 +3942,14 @@ static Py_hash_t
 date_hash(PyObject *op)
 {
     PyDateTime_Date *self = PyDate_CAST(op);
-    if (self->hashcode == -1) {
-        self->hashcode = generic_hash(
+    Py_hash_t hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(self->hashcode);
+    if (hash == -1) {
+        hash = generic_hash(
             (unsigned char *)self->data, _PyDateTime_DATE_DATASIZE);
+        FT_ATOMIC_STORE_SSIZE_RELAXED(self->hashcode, hash);
     }
 
-    return self->hashcode;
+    return hash;
 }
 
 static PyObject *
@@ -4456,7 +4497,7 @@ timezone_getinitargs(PyObject *op, PyObject *Py_UNUSED(dummy))
     PyDateTime_TimeZone *self = PyTimeZone_CAST(op);
     if (self->name == NULL)
         return PyTuple_Pack(1, self->offset);
-    return PyTuple_Pack(2, self->offset, self->name);
+    return _PyTuple_FromPair(self->offset, self->name);
 }
 
 static PyMethodDef timezone_methods[] = {
@@ -4703,6 +4744,7 @@ datetime_time_impl(PyTypeObject *type, int hour, int minute, int second,
 }
 
 /*[clinic input]
+@permit_long_summary
 @classmethod
 datetime.time.strptime
 
@@ -4711,12 +4753,15 @@ datetime.time.strptime
     /
 
 Parse string according to the given time format (like time.strptime()).
+
+For a list of supported format codes, see the documentation:
+    https://docs.python.org/3/library/datetime.html#format-codes
 [clinic start generated code]*/
 
 static PyObject *
 datetime_time_strptime_impl(PyTypeObject *type, PyObject *string,
                             PyObject *format)
-/*[clinic end generated code: output=ae05a9bc0241d3bf input=6d0f263a5f94d78d]*/
+/*[clinic end generated code: output=ae05a9bc0241d3bf input=f01d0b9eb5383da5]*/
 {
     PyObject *result;
 
@@ -4812,8 +4857,8 @@ datetime.time.isoformat
 
 Return the time formatted according to ISO.
 
-The full format is 'HH:MM:SS.mmmmmm+zz:zz'. By default, the fractional
-part is omitted if self.microsecond == 0.
+The full format is 'HH:MM:SS.mmmmmm+zz:zz'. By default, the
+fractional part is omitted if self.microsecond == 0.
 
 The optional argument timespec specifies the number of additional
 terms of the time to include. Valid options are 'auto', 'hours',
@@ -4822,7 +4867,7 @@ terms of the time to include. Valid options are 'auto', 'hours',
 
 static PyObject *
 datetime_time_isoformat_impl(PyDateTime_Time *self, const char *timespec)
-/*[clinic end generated code: output=2bcc7cab65c35545 input=afbbbd953d10ad07]*/
+/*[clinic end generated code: output=2bcc7cab65c35545 input=0efae103081060f4]*/
 {
     char buf[100];
 
@@ -4883,19 +4928,22 @@ datetime_time_isoformat_impl(PyDateTime_Time *self, const char *timespec)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 datetime.time.strftime
 
     format: unicode
 
 Format using strftime().
 
-The date part of the timestamp passed to underlying strftime should not be used.
+The date part of the timestamp passed to underlying strftime should
+not be used.
+
+For a list of supported format codes, see the documentation:
+    https://docs.python.org/3/library/datetime.html#format-codes
 [clinic start generated code]*/
 
 static PyObject *
 datetime_time_strftime_impl(PyDateTime_Time *self, PyObject *format)
-/*[clinic end generated code: output=10f65af20e2a78c7 input=541934a2860f7db5]*/
+/*[clinic end generated code: output=10f65af20e2a78c7 input=184e1c0d7d356c5d]*/
 {
     PyObject *result;
     PyObject *tuple;
@@ -5019,7 +5067,8 @@ static Py_hash_t
 time_hash(PyObject *op)
 {
     PyDateTime_Time *self = PyTime_CAST(op);
-    if (self->hashcode == -1) {
+    Py_hash_t hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(self->hashcode);
+    if (hash == -1) {
         PyObject *offset, *self0;
         if (TIME_GET_FOLD(self)) {
             self0 = new_time_ex2(TIME_GET_HOUR(self),
@@ -5041,10 +5090,11 @@ time_hash(PyObject *op)
             return -1;
 
         /* Reduce this to a hash of another object. */
-        if (offset == Py_None)
-            self->hashcode = generic_hash(
+        if (offset == Py_None) {
+            hash = generic_hash(
                 (unsigned char *)self->data, _PyDateTime_TIME_DATASIZE);
-        else {
+            FT_ATOMIC_STORE_SSIZE_RELAXED(self->hashcode, hash);
+        } else {
             PyObject *temp1, *temp2;
             int seconds, microseconds;
             assert(HASTZINFO(self));
@@ -5063,12 +5113,13 @@ time_hash(PyObject *op)
                 Py_DECREF(offset);
                 return -1;
             }
-            self->hashcode = PyObject_Hash(temp2);
+            hash = PyObject_Hash(temp2);
+            FT_ATOMIC_STORE_SSIZE_RELAXED(self->hashcode, hash);
             Py_DECREF(temp2);
         }
         Py_DECREF(offset);
     }
-    return self->hashcode;
+    return hash;
 }
 
 /*[clinic input]
@@ -5198,7 +5249,7 @@ time_getstate(PyDateTime_Time *self, int proto)
         if (! HASTZINFO(self) || self->tzinfo == Py_None)
             result = PyTuple_Pack(1, basestate);
         else
-            result = PyTuple_Pack(2, basestate, self->tzinfo);
+            result = _PyTuple_FromPair(basestate, self->tzinfo);
         Py_DECREF(basestate);
     }
     return result;
@@ -5460,15 +5511,15 @@ datetime.datetime.__new__
 
 A combination of a date and a time.
 
-The year, month and day arguments are required. tzinfo may be None, or an
-instance of a tzinfo subclass. The remaining arguments may be ints.
+The year, month and day arguments are required. tzinfo may be None, or
+an instance of a tzinfo subclass. The remaining arguments may be ints.
 [clinic start generated code]*/
 
 static PyObject *
 datetime_datetime_impl(PyTypeObject *type, int year, int month, int day,
                        int hour, int minute, int second, int microsecond,
                        PyObject *tzinfo, int fold)
-/*[clinic end generated code: output=47983ddb47d36037 input=2af468d7a9c1e568]*/
+/*[clinic end generated code: output=47983ddb47d36037 input=c7fd85dcf6fe9691]*/
 {
     return new_datetime_ex2(year, month, day,
                             hour, minute, second, microsecond,
@@ -5552,22 +5603,7 @@ datetime_from_timet_and_us(PyTypeObject *cls, TM_FUNC f, time_t timet, int us,
     second = Py_MIN(59, tm.tm_sec);
 
     /* local timezone requires to compute fold */
-    if (tzinfo == Py_None && f == _PyTime_localtime
-    /* On Windows, passing a negative value to local results
-     * in an OSError because localtime_s on Windows does
-     * not support negative timestamps. Unfortunately this
-     * means that fold detection for time values between
-     * 0 and max_fold_seconds will result in an identical
-     * error since we subtract max_fold_seconds to detect a
-     * fold. However, since we know there haven't been any
-     * folds in the interval [0, max_fold_seconds) in any
-     * timezone, we can hackily just forego fold detection
-     * for this time range.
-     */
-#ifdef MS_WINDOWS
-        && (timet - max_fold_seconds > 0)
-#endif
-        ) {
+    if (tzinfo == Py_None && f == _PyTime_localtime) {
         long long probe_seconds, result_seconds, transition;
 
         result_seconds = utc_to_seconds(year, month, day,
@@ -5700,7 +5736,6 @@ datetime_datetime_utcnow_impl(PyTypeObject *type)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 @classmethod
 datetime.datetime.fromtimestamp
 
@@ -5709,14 +5744,14 @@ datetime.datetime.fromtimestamp
 
 Create a datetime from a POSIX timestamp.
 
-The timestamp is a number, e.g. created via time.time(), that is interpreted
-as local time.
+The timestamp is a number, e.g. created via time.time(), that is
+interpreted as local time.
 [clinic start generated code]*/
 
 static PyObject *
 datetime_datetime_fromtimestamp_impl(PyTypeObject *type, PyObject *timestamp,
                                      PyObject *tzinfo)
-/*[clinic end generated code: output=9c47ea2b2ebdaded input=d6b5b2095c5a34b2]*/
+/*[clinic end generated code: output=9c47ea2b2ebdaded input=7a2bc81a049ea287]*/
 {
     PyObject *self;
     if (check_tzinfo_subclass(tzinfo) < 0)
@@ -5787,12 +5822,15 @@ datetime.datetime.strptime
     /
 
 Parse string according to the given date and time format (like time.strptime()).
+
+For a list of supported format codes, see the documentation:
+    https://docs.python.org/3/library/datetime.html#format-codes
 [clinic start generated code]*/
 
 static PyObject *
 datetime_datetime_strptime_impl(PyTypeObject *type, PyObject *string,
                                 PyObject *format)
-/*[clinic end generated code: output=af2c2d024f3203f5 input=d7597c7f5327117b]*/
+/*[clinic end generated code: output=af2c2d024f3203f5 input=ef7807589f1d50e7]*/
 {
     PyObject *result;
 
@@ -6358,7 +6396,7 @@ datetime_str(PyObject *op)
 /*[clinic input]
 datetime.datetime.isoformat
 
-    sep: int(accept={str}, c_default="'T'", py_default="'T'") = ord('T')
+    sep: int(accept={str}) = 'T'
     timespec: str(c_default="NULL") = 'auto'
 
 Return the time formatted according to ISO.
@@ -6380,7 +6418,7 @@ terms of the time to include. Valid options are 'auto', 'hours',
 static PyObject *
 datetime_datetime_isoformat_impl(PyDateTime_DateTime *self, int sep,
                                  const char *timespec)
-/*[clinic end generated code: output=9b6ce1383189b0bf input=2fa2512172ccf5d5]*/
+/*[clinic end generated code: output=9b6ce1383189b0bf input=db935a57fa697c5e]*/
 {
     char buffer[100];
 
@@ -6600,7 +6638,8 @@ static Py_hash_t
 datetime_hash(PyObject *op)
 {
     PyDateTime_DateTime *self = PyDateTime_CAST(op);
-    if (self->hashcode == -1) {
+    Py_hash_t hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(self->hashcode);
+    if (hash == -1) {
         PyObject *offset, *self0;
         if (DATE_GET_FOLD(self)) {
             self0 = new_datetime_ex2(GET_YEAR(self),
@@ -6625,10 +6664,11 @@ datetime_hash(PyObject *op)
             return -1;
 
         /* Reduce this to a hash of another object. */
-        if (offset == Py_None)
-            self->hashcode = generic_hash(
+        if (offset == Py_None) {
+            hash = generic_hash(
                 (unsigned char *)self->data, _PyDateTime_DATETIME_DATASIZE);
-        else {
+            FT_ATOMIC_STORE_SSIZE_RELAXED(self->hashcode, hash);
+        } else {
             PyObject *temp1, *temp2;
             int days, seconds;
 
@@ -6652,12 +6692,13 @@ datetime_hash(PyObject *op)
                 Py_DECREF(offset);
                 return -1;
             }
-            self->hashcode = PyObject_Hash(temp2);
+            hash = PyObject_Hash(temp2);
+            FT_ATOMIC_STORE_SSIZE_RELAXED(self->hashcode, hash);
             Py_DECREF(temp2);
         }
         Py_DECREF(offset);
     }
-    return self->hashcode;
+    return hash;
 }
 
 /*[clinic input]
@@ -6868,9 +6909,9 @@ datetime_datetime_astimezone_impl(PyDateTime_DateTime *self,
         goto naive;
     }
     else if (!PyDelta_Check(offset)) {
+        PyErr_Format(PyExc_TypeError, "utcoffset() returned %T,"
+                     " expected timedelta or None", offset);
         Py_DECREF(offset);
-        PyErr_Format(PyExc_TypeError, "utcoffset() returned %.200s,"
-                     " expected timedelta or None", Py_TYPE(offset)->tp_name);
         return NULL;
     }
     /* result = self - offset */
@@ -7129,7 +7170,7 @@ datetime_getstate(PyDateTime_DateTime *self, int proto)
         if (! HASTZINFO(self) || self->tzinfo == Py_None)
             result = PyTuple_Pack(1, basestate);
         else
-            result = PyTuple_Pack(2, basestate, self->tzinfo);
+            result = _PyTuple_FromPair(basestate, self->tzinfo);
         Py_DECREF(basestate);
     }
     return result;
@@ -7616,7 +7657,7 @@ finally:
 }
 
 static PyModuleDef_Slot module_slots[] = {
-    _Py_INTERNAL_ABI_SLOT,
+    _Py_ABI_SLOT,
     {Py_mod_exec, _datetime_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

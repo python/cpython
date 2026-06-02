@@ -1,5 +1,7 @@
 import difflib
+from test import support
 from test.support import findfile, force_colorized
+from test.support.import_helper import ensure_lazy_imports
 import unittest
 import doctest
 import sys
@@ -28,6 +30,16 @@ class TestWithAscii(unittest.TestCase):
             [   ('equal', 0, 40, 0, 40),
                 ('delete', 40, 41, 40, 40),
                 ('equal', 41, 81, 40, 80)])
+
+    def test_opcode_caching(self):
+        sm = difflib.SequenceMatcher(None, 'b' * 100, 'a' + 'b' * 100)
+        opcode = sm.get_opcodes()
+        self.assertEqual(opcode,
+            [   ('insert', 0, 0, 0, 1),
+                ('equal', 0, 100, 1, 101)])
+        # Implementation detail: opcodes are cached;
+        # `get_opcodes()` returns the same object
+        self.assertIs(opcode, sm.get_opcodes())
 
     def test_bjunk(self):
         sm = difflib.SequenceMatcher(isjunk=lambda x: x == ' ',
@@ -292,6 +304,15 @@ class TestDiffer(unittest.TestCase):
                             '?             ^\n',
                             '+ kitten\n',
                             '+ puppy\n'])
+
+    def test_one_insert(self):
+        m = difflib.Differ().compare('b' * 2, 'a' + 'b' * 2)
+        self.assertEqual(list(m), ['+ a', '  b', '  b'])
+
+    def test_one_delete(self):
+        m = difflib.Differ().compare('a' + 'b' * 2, 'b' * 2)
+        self.assertEqual(list(m), ['- a', '  b', '  b'])
+
 
 class TestOutputFormat(unittest.TestCase):
     def test_tab_delimiter(self):
@@ -601,8 +622,34 @@ class TestFindLongest(unittest.TestCase):
         self.assertFalse(self.longer_match_exists(a, b, match.size))
 
 
+class TestCloseMatches(unittest.TestCase):
+    # Happy paths are tested in the doctests of `difflib.get_close_matches`.
+
+    def test_invalid_inputs(self):
+        self.assertRaises(ValueError, difflib.get_close_matches, "spam", ['egg'], n=0)
+        self.assertRaises(ValueError, difflib.get_close_matches, "spam", ['egg'], n=-1)
+        self.assertRaises(ValueError, difflib.get_close_matches, "spam", ['egg'], cutoff=1.1)
+        self.assertRaises(ValueError, difflib.get_close_matches, "spam", ['egg'], cutoff=-0.1)
+
+
+class TestRestore(unittest.TestCase):
+    # Happy paths are tested in the doctests of `difflib.restore`.
+
+    def test_invalid_input(self):
+        with self.assertRaises(ValueError):
+            ''.join(difflib.restore([], 0))
+        with self.assertRaises(ValueError):
+            ''.join(difflib.restore([], 3))
+
+
 def setUpModule():
     difflib.HtmlDiff._default_prefix = 0
+
+
+class LazyImportTest(unittest.TestCase):
+    @support.cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("difflib", {"_colorize"})
 
 
 def load_tests(loader, tests, pattern):

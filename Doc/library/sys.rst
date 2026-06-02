@@ -11,6 +11,51 @@ interpreter and to functions that interact strongly with the interpreter. It is
 always available. Unless explicitly noted otherwise, all variables are read-only.
 
 
+.. data:: abi_info
+
+   .. versionadded:: 3.15
+
+   An object containing information about the ABI of the currently running
+   Python interpreter.
+   It should include information that affect the CPython ABI in ways that
+   require a specific build of the interpreter chosen from variants that can
+   co-exist on a single machine.
+   For example, it does not encode the base OS (Linux or Windows), but does
+   include pointer size since some systems support both 32- and 64-bit builds.
+   The available entries are the same on all platforms;
+   e.g. *pointer_size* is available even on 64-bit-only architectures.
+
+   The following attributes are available:
+
+   .. attribute:: abi_info.pointer_bits
+
+      The width of pointers in bits, as an integer,
+      equivalent to ``8 * sizeof(void *)``.
+      Usually, this is  ``32`` or ``64``.
+
+   .. attribute:: abi_info.free_threaded
+
+      A Boolean indicating whether the interpreter was built with
+      :term:`free threading` support.
+      This reflects either the presence of the :option:`--disable-gil`
+      :file:`configure` option (on Unix)
+      or setting the ``DisableGil`` property (on Windows).
+
+   .. attribute:: abi_info.debug
+
+      A Boolean indicating whether the interpreter was built in
+      :ref:`debug mode <debug-build>`.
+      This reflects either the presence of the :option:`--with-pydebug`
+      :file:`configure` option (on Unix)
+      or the ``Debug`` configuration (on Windows).
+
+   .. attribute:: abi_info.byteorder
+
+      A string indicating the native byte order,
+      either ``'big'`` or ``'little'``.
+      This is the same as the :data:`byteorder` attribute.
+
+
 .. data:: abiflags
 
    On POSIX systems where Python was built with the standard ``configure``
@@ -515,7 +560,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    in the range 0--127, and produce undefined results otherwise.  Some systems
    have a convention for assigning specific meanings to specific exit codes, but
    these are generally underdeveloped; Unix programs generally use 2 for command
-   line syntax errors and 1 for all other kind of errors.  If another type of
+   line syntax errors and 1 for all other kinds of errors.  If another type of
    object is passed, ``None`` is equivalent to passing zero, and any other
    object is printed to :data:`stderr` and results in an exit code of 1.  In
    particular, ``sys.exit("some error message")`` is a quick way to exit a
@@ -523,8 +568,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    Since :func:`exit` ultimately "only" raises an exception, it will only exit
    the process when called from the main thread, and the exception is not
-   intercepted. Cleanup actions specified by finally clauses of :keyword:`try` statements
-   are honored, and it is possible to intercept the exit attempt at an outer level.
+   intercepted. Cleanup actions specified by :keyword:`finally` clauses of
+   :keyword:`try` statements are honored, and it is possible to intercept the
+   exit attempt at an outer level.
 
    .. versionchanged:: 3.6
       If an error occurs in the cleanup after the Python interpreter
@@ -833,7 +879,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. versionchanged:: 3.6
       Windows is no longer guaranteed to return ``'mbcs'``. See :pep:`529`
-      and :func:`_enablelegacywindowsfsencoding` for more information.
+      for more information.
 
    .. versionchanged:: 3.7
       Return ``'utf-8'`` if the :ref:`Python UTF-8 Mode <utf8-mode>` is
@@ -864,6 +910,33 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    limitation <int_max_str_digits>`. See also :func:`set_int_max_str_digits`.
 
    .. versionadded:: 3.11
+
+
+.. function:: get_lazy_imports()
+
+   Returns the current lazy imports mode as a string.
+
+   * ``"normal"``: Only imports explicitly marked with the ``lazy`` keyword
+     are lazy
+   * ``"all"``: All top-level imports are potentially lazy
+
+   See also :func:`set_lazy_imports` and :pep:`810`.
+
+   .. versionadded:: 3.15
+
+
+.. function:: get_lazy_imports_filter()
+
+   Returns the current lazy imports filter function, or ``None`` if no
+   filter is set.
+
+   The filter function is called for every potentially lazy import to
+   determine whether it should actually be lazy. See
+   :func:`set_lazy_imports_filter` for details on the filter function
+   signature.
+
+   .. versionadded:: 3.15
+
 
 .. function:: getrefcount(object)
 
@@ -1130,10 +1203,14 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
       The size of the seed key of the hash algorithm
 
+   .. attribute:: hash_info.cutoff
+
+      Cutoff for small string DJBX33A optimization in range ``[1, cutoff)``.
+
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.4
-      Added *algorithm*, *hash_bits* and *seed_bits*
+      Added *algorithm*, *hash_bits*, *seed_bits*, and *cutoff*.
 
 
 .. data:: hexversion
@@ -1404,6 +1481,21 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    They hold the legacy representation of ``sys.last_exc``, as returned
    from :func:`exc_info` above.
 
+
+.. data:: lazy_modules
+
+   A :class:`set` of fully qualified module name strings that have been lazily
+   imported in the current interpreter but not yet loaded.  When a
+   lazily imported module is accessed for the first time, its name is removed
+   from this set.
+
+   This attribute is intended for debugging and introspection.
+
+   See also :func:`set_lazy_imports` and :pep:`810`.
+
+   .. versionadded:: 3.15
+
+
 .. data:: maxsize
 
    An integer giving the maximum value a variable of type :c:type:`Py_ssize_t` can
@@ -1668,6 +1760,61 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    :func:`get_int_max_str_digits`.
 
    .. versionadded:: 3.11
+
+
+.. function:: set_lazy_imports(mode)
+
+   Sets the global lazy imports mode. The *mode* parameter must be one of
+   the following strings:
+
+   * ``"normal"``: Only imports explicitly marked with the ``lazy`` keyword
+     are lazy
+   * ``"all"``: All top-level imports become potentially lazy
+
+   This function is intended for advanced users who need to control lazy
+   imports across their entire application. Library developers should
+   generally not use this function as it affects the runtime execution of
+   applications.
+
+   In addition to the mode, lazy imports can be controlled via the filter
+   provided by :func:`set_lazy_imports_filter`.
+
+   See also :func:`get_lazy_imports` and :pep:`810`.
+
+   .. versionadded:: 3.15
+
+
+.. function:: set_lazy_imports_filter(filter)
+
+   Sets the lazy imports filter callback. The *filter* parameter must be a
+   callable or ``None`` to clear the filter.
+
+   The filter function is called for every potentially lazy import to
+   determine whether it should actually be lazy. It must have the following
+   signature::
+
+      def filter(importing_module: str, imported_module: str,
+                 fromlist: tuple[str, ...] | None) -> bool
+
+   Where:
+
+   * *importing_module* is the name of the module doing the import
+   * *imported_module* is the resolved name of the module being imported
+     (for example, ``lazy from .spam import eggs`` passes
+     ``package.spam``)
+   * *fromlist* is the tuple of names being imported (for ``from ... import``
+     statements), or ``None`` for regular imports
+
+   The filter should return ``True`` to allow the import to be lazy, or
+   ``False`` to force an eager import.
+
+   This is an advanced feature intended for specialized users who need
+   fine-grained control over lazy import behavior.
+
+   See also :func:`get_lazy_imports_filter` and :pep:`810`.
+
+   .. versionadded:: 3.15
+
 
 .. function:: setprofile(profilefunc)
 
@@ -1947,6 +2094,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    interpreter is pre-release (alpha, beta, or release candidate) then the
    local and remote interpreters must be the same exact version.
 
+   See :ref:`remote-debugging` for more information about the remote debugging
+   mechanism.
+
    .. audit-event:: sys.remote_exec pid script_path
 
       When the code is executed in the remote process, an
@@ -1965,32 +2115,8 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. availability:: Unix, Windows.
    .. versionadded:: 3.14
+      See :pep:`768` for more details.
 
-
-.. function:: _enablelegacywindowsfsencoding()
-
-   Changes the :term:`filesystem encoding and error handler` to 'mbcs' and
-   'replace' respectively, for consistency with versions of Python prior to
-   3.6.
-
-   This is equivalent to defining the :envvar:`PYTHONLEGACYWINDOWSFSENCODING`
-   environment variable before launching Python.
-
-   See also :func:`sys.getfilesystemencoding` and
-   :func:`sys.getfilesystemencodeerrors`.
-
-   .. availability:: Windows.
-
-   .. note::
-      Changing the filesystem encoding after Python startup is risky because
-      the old fsencoding or paths encoded by the old fsencoding may be cached
-      somewhere. Use :envvar:`PYTHONLEGACYWINDOWSFSENCODING` instead.
-
-   .. versionadded:: 3.6
-      See :pep:`529` for more details.
-
-   .. deprecated-removed:: 3.13 3.16
-      Use :envvar:`PYTHONLEGACYWINDOWSFSENCODING` instead.
 
 .. data:: stdin
           stdout
@@ -2159,7 +2285,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    :func:`sys.unraisablehook` can be overridden to control how unraisable
    exceptions are handled.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Exceptions are now printed with colorful text.
 
    .. seealso::
@@ -2227,7 +2353,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    The version number used to form registry keys on Windows platforms. This is
    stored as string resource 1000 in the Python DLL.  The value is normally the
-   major and minor versions of the running Python interpreter.  It is provided in the :mod:`sys`
+   major and minor versions of the running Python interpreter.  It is provided in the :mod:`!sys`
    module for informational purposes; modifying this value has no effect on the
    registry keys used by Python.
 

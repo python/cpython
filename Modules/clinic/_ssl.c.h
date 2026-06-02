@@ -48,7 +48,7 @@ static PyObject *
 _ssl__test_decode_cert(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    PyObject *path;
+    PyObject *path = NULL;
 
     if (!PyUnicode_FSConverter(arg, &path)) {
         goto exit;
@@ -56,6 +56,9 @@ _ssl__test_decode_cert(PyObject *module, PyObject *arg)
     return_value = _ssl__test_decode_cert_impl(module, path);
 
 exit:
+    /* Cleanup for path */
+    Py_XDECREF(path);
+
     return return_value;
 }
 
@@ -219,6 +222,52 @@ _ssl__SSLSocket_group(PyObject *self, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
+PyDoc_STRVAR(_ssl__SSLSocket_client_sigalg__doc__,
+"client_sigalg($self, /)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLSOCKET_CLIENT_SIGALG_METHODDEF    \
+    {"client_sigalg", (PyCFunction)_ssl__SSLSocket_client_sigalg, METH_NOARGS, _ssl__SSLSocket_client_sigalg__doc__},
+
+static PyObject *
+_ssl__SSLSocket_client_sigalg_impl(PySSLSocket *self);
+
+static PyObject *
+_ssl__SSLSocket_client_sigalg(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_client_sigalg_impl((PySSLSocket *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+PyDoc_STRVAR(_ssl__SSLSocket_server_sigalg__doc__,
+"server_sigalg($self, /)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLSOCKET_SERVER_SIGALG_METHODDEF    \
+    {"server_sigalg", (PyCFunction)_ssl__SSLSocket_server_sigalg, METH_NOARGS, _ssl__SSLSocket_server_sigalg__doc__},
+
+static PyObject *
+_ssl__SSLSocket_server_sigalg_impl(PySSLSocket *self);
+
+static PyObject *
+_ssl__SSLSocket_server_sigalg(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_server_sigalg_impl((PySSLSocket *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_ssl__SSLSocket_version__doc__,
 "version($self, /)\n"
 "--\n"
@@ -285,9 +334,10 @@ _ssl__SSLSocket_compression(PyObject *self, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(_ssl__SSLSocket_context__doc__,
 "This changes the context associated with the SSLSocket.\n"
 "\n"
-"This is typically used from within a callback function set by the sni_callback\n"
-"on the SSLContext to change the certificate information associated with the\n"
-"SSLSocket before the cryptographic exchange handshake messages.");
+"This is typically used from within a callback function set by the\n"
+"sni_callback on the SSLContext to change the certificate information\n"
+"associated with the SSLSocket before the cryptographic exchange\n"
+"handshake messages.");
 #if defined(_ssl__SSLSocket_context_DOCSTR)
 #   undef _ssl__SSLSocket_context_DOCSTR
 #endif
@@ -522,9 +572,9 @@ PyDoc_STRVAR(_ssl__SSLSocket_sendfile__doc__,
 "\n"
 "Write size bytes from offset in the file descriptor fd to the SSL connection.\n"
 "\n"
-"This method uses the zero-copy technique and returns the number of bytes\n"
-"written. It should be called only when Kernel TLS is used for sending data in\n"
-"the connection.\n"
+"This method uses the zero-copy technique and returns the number of\n"
+"bytes written.  It should be called only when Kernel TLS is used for\n"
+"sending data in the connection.\n"
 "\n"
 "The meaning of flags is platform dependent.");
 
@@ -713,8 +763,9 @@ PyDoc_STRVAR(_ssl__SSLSocket_get_channel_binding__doc__,
 "\n"
 "Get channel binding data for current connection.\n"
 "\n"
-"Raise ValueError if the requested `cb_type` is not supported.  Return bytes\n"
-"of the data or None if the data is not available (e.g. before the handshake).\n"
+"Raise ValueError if the requested `cb_type` is not supported.\n"
+"Return bytes of the data or None if the data is not available (e.g.\n"
+"before the handshake).\n"
 "Only \'tls-unique\' channel binding data from RFC 5929 is supported.");
 
 #define _SSL__SSLSOCKET_GET_CHANNEL_BINDING_METHODDEF    \
@@ -1130,6 +1181,84 @@ _ssl__SSLContext_get_groups(PyObject *self, PyObject *const *args, Py_ssize_t na
 skip_optional_kwonly:
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _ssl__SSLContext_get_groups_impl((PySSLContext *)self, include_aliases);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_ssl__SSLContext_set_client_sigalgs__doc__,
+"set_client_sigalgs($self, sigalgslist, /)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLCONTEXT_SET_CLIENT_SIGALGS_METHODDEF    \
+    {"set_client_sigalgs", (PyCFunction)_ssl__SSLContext_set_client_sigalgs, METH_O, _ssl__SSLContext_set_client_sigalgs__doc__},
+
+static PyObject *
+_ssl__SSLContext_set_client_sigalgs_impl(PySSLContext *self,
+                                         const char *sigalgslist);
+
+static PyObject *
+_ssl__SSLContext_set_client_sigalgs(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    const char *sigalgslist;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("set_client_sigalgs", "argument", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t sigalgslist_length;
+    sigalgslist = PyUnicode_AsUTF8AndSize(arg, &sigalgslist_length);
+    if (sigalgslist == NULL) {
+        goto exit;
+    }
+    if (strlen(sigalgslist) != (size_t)sigalgslist_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_set_client_sigalgs_impl((PySSLContext *)self, sigalgslist);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_ssl__SSLContext_set_server_sigalgs__doc__,
+"set_server_sigalgs($self, sigalgslist, /)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLCONTEXT_SET_SERVER_SIGALGS_METHODDEF    \
+    {"set_server_sigalgs", (PyCFunction)_ssl__SSLContext_set_server_sigalgs, METH_O, _ssl__SSLContext_set_server_sigalgs__doc__},
+
+static PyObject *
+_ssl__SSLContext_set_server_sigalgs_impl(PySSLContext *self,
+                                         const char *sigalgslist);
+
+static PyObject *
+_ssl__SSLContext_set_server_sigalgs(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    const char *sigalgslist;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("set_server_sigalgs", "argument", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t sigalgslist_length;
+    sigalgslist = PyUnicode_AsUTF8AndSize(arg, &sigalgslist_length);
+    if (sigalgslist == NULL) {
+        goto exit;
+    }
+    if (strlen(sigalgslist) != (size_t)sigalgslist_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_set_server_sigalgs_impl((PySSLContext *)self, sigalgslist);
     Py_END_CRITICAL_SECTION();
 
 exit:
@@ -1702,9 +1831,7 @@ _ssl__SSLContext_load_cert_chain(PyObject *self, PyObject *const *args, Py_ssize
     }
     password = args[2];
 skip_optional_pos:
-    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _ssl__SSLContext_load_cert_chain_impl((PySSLContext *)self, certfile, keyfile, password);
-    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -2085,8 +2212,9 @@ _ssl__SSLContext_set_ecdh_curve(PyObject *self, PyObject *name)
 PyDoc_STRVAR(_ssl__SSLContext_sni_callback__doc__,
 "Set a callback that will be called when a server name is provided by the SSL/TLS client in the SNI extension.\n"
 "\n"
-"If the argument is None then the callback is disabled. The method is called\n"
-"with the SSLSocket, the server name as a string, and the SSLContext object.\n"
+"If the argument is None then the callback is disabled.  The method\n"
+"is called with the SSLSocket, the server name as a string, and the\n"
+"SSLContext object.\n"
 "\n"
 "See RFC 6066 for details of the SNI extension.");
 #if defined(_ssl__SSLContext_sni_callback_DOCSTR)
@@ -2150,11 +2278,11 @@ PyDoc_STRVAR(_ssl__SSLContext_cert_store_stats__doc__,
 "\n"
 "Returns quantities of loaded X.509 certificates.\n"
 "\n"
-"X.509 certificates with a CA extension and certificate revocation lists\n"
-"inside the context\'s cert store.\n"
+"X.509 certificates with a CA extension and certificate revocation\n"
+"lists inside the context\'s cert store.\n"
 "\n"
-"NOTE: Certificates in a capath directory aren\'t loaded unless they have\n"
-"been used at least once.");
+"NOTE: Certificates in a capath directory aren\'t loaded unless they\n"
+"have been used at least once.");
 
 #define _SSL__SSLCONTEXT_CERT_STORE_STATS_METHODDEF    \
     {"cert_store_stats", (PyCFunction)_ssl__SSLContext_cert_store_stats, METH_NOARGS, _ssl__SSLContext_cert_store_stats__doc__},
@@ -2180,11 +2308,11 @@ PyDoc_STRVAR(_ssl__SSLContext_get_ca_certs__doc__,
 "\n"
 "Returns a list of dicts with information of loaded CA certs.\n"
 "\n"
-"If the optional argument is True, returns a DER-encoded copy of the CA\n"
-"certificate.\n"
+"If the optional argument is True, returns a DER-encoded copy of the\n"
+"CA certificate.\n"
 "\n"
-"NOTE: Certificates in a capath directory aren\'t loaded unless they have\n"
-"been used at least once.");
+"NOTE: Certificates in a capath directory aren\'t loaded unless they\n"
+"have been used at least once.");
 
 #define _SSL__SSLCONTEXT_GET_CA_CERTS_METHODDEF    \
     {"get_ca_certs", _PyCFunction_CAST(_ssl__SSLContext_get_ca_certs), METH_FASTCALL|METH_KEYWORDS, _ssl__SSLContext_get_ca_certs__doc__},
@@ -2845,8 +2973,8 @@ PyDoc_STRVAR(_ssl_RAND_status__doc__,
 "\n"
 "Returns True if the OpenSSL PRNG has been seeded with enough data and False if not.\n"
 "\n"
-"It is necessary to seed the PRNG with RAND_add() on some platforms before\n"
-"using the ssl() function.");
+"It is necessary to seed the PRNG with RAND_add() on some platforms\n"
+"before using the ssl() function.");
 
 #define _SSL_RAND_STATUS_METHODDEF    \
     {"RAND_status", (PyCFunction)_ssl_RAND_status, METH_NOARGS, _ssl_RAND_status__doc__},
@@ -2890,6 +3018,23 @@ _ssl_get_default_verify_paths(PyObject *module, PyObject *Py_UNUSED(ignored))
     Py_END_CRITICAL_SECTION();
 
     return return_value;
+}
+
+PyDoc_STRVAR(_ssl_get_sigalgs__doc__,
+"get_sigalgs($module, /)\n"
+"--\n"
+"\n");
+
+#define _SSL_GET_SIGALGS_METHODDEF    \
+    {"get_sigalgs", (PyCFunction)_ssl_get_sigalgs, METH_NOARGS, _ssl_get_sigalgs__doc__},
+
+static PyObject *
+_ssl_get_sigalgs_impl(PyObject *module);
+
+static PyObject *
+_ssl_get_sigalgs(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _ssl_get_sigalgs_impl(module);
 }
 
 PyDoc_STRVAR(_ssl_txt2obj__doc__,
@@ -3015,11 +3160,11 @@ PyDoc_STRVAR(_ssl_enum_certificates__doc__,
 "\n"
 "Retrieve certificates from Windows\' cert store.\n"
 "\n"
-"store_name may be one of \'CA\', \'ROOT\' or \'MY\'.  The system may provide\n"
-"more cert storages, too.  The function returns a list of (bytes,\n"
-"encoding_type, trust) tuples.  The encoding_type flag can be interpreted\n"
-"with X509_ASN_ENCODING or PKCS_7_ASN_ENCODING. The trust setting is either\n"
-"a set of OIDs or the boolean True.");
+"store_name may be one of \'CA\', \'ROOT\' or \'MY\'.  The system may\n"
+"provide more cert storages, too.  The function returns a list of\n"
+"(bytes, encoding_type, trust) tuples.  The encoding_type flag can be\n"
+"interpreted with X509_ASN_ENCODING or PKCS_7_ASN_ENCODING.  The\n"
+"trust setting is either a set of OIDs or the boolean True.");
 
 #define _SSL_ENUM_CERTIFICATES_METHODDEF    \
     {"enum_certificates", _PyCFunction_CAST(_ssl_enum_certificates), METH_FASTCALL|METH_KEYWORDS, _ssl_enum_certificates__doc__},
@@ -3181,4 +3326,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=4e35d2ea2fc46023 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=aef2e74b706c6106 input=a9049054013a1b77]*/

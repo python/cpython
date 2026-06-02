@@ -56,9 +56,7 @@ class TestFileMethods(LargeFileTest):
     (i.e. > 2 GiB) files.
     """
 
-    # _pyio.FileIO.readall() uses a temporary bytearray then casted to bytes,
-    # so memuse=2 is needed
-    @bigmemtest(size=size, memuse=2, dry_run=False)
+    @bigmemtest(size=size, memuse=1, dry_run=False)
     def test_large_read(self, _size):
         # bpo-24658: Test that a read greater than 2GB does not fail.
         with self.open(TESTFN, "rb") as f:
@@ -154,7 +152,7 @@ class TestFileMethods(LargeFileTest):
                 f.seek(pos)
                 self.assertTrue(f.seekable())
 
-    @bigmemtest(size=size, memuse=2, dry_run=False)
+    @bigmemtest(size=size, memuse=1, dry_run=False)
     def test_seek_readall(self, _size):
         # Seek which doesn't change position should readall successfully.
         with self.open(TESTFN, 'rb') as f:

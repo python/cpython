@@ -1,7 +1,0 @@
-:mod:`hashlib`: Supporting the ``string`` keyword parameter in hash function
-constructors such as :func:`~hashlib.new` or the direct hash-named constructors
-such as :func:`~hashlib.md5` and :func:`~hashlib.sha256` is now deprecated and
-slated for removal in Python 3.19.
-Prefer passing the initial data as a positional argument for maximum backwards
-compatibility.
-Patch by Bénédikt Tran.

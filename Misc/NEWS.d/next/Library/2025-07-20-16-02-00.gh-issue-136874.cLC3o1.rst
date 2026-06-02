@@ -1,1 +1,0 @@
-Discard URL query and fragment in :func:`urllib.request.url2pathname`.
