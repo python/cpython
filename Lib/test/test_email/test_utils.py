@@ -77,6 +77,30 @@ class DateTimeTests(unittest.TestCase):
             with self.subTest(dtstr=dtstr):
                 self.assertRaises(ValueError, utils.parsedate_to_datetime, dtstr)
 
+    def test_parsedate_to_datetime_year_edge_cases(self):
+        expectations = {
+            # Various short-year formats that get expanded
+            "Sat, 15 Aug 0001 23:12:09 +0500": "2001",
+            "Thu, 1 Sep 1 23:12:09 +0800": "2001",
+            "Thu, 7 Oct 123 23:12:09 +0500": "2023",
+            "Tue, 17 Nov 2026 12:12:09 +0500": "2026",
+            # RFC 5322 section 4.3 boundaries for 2-digit years
+            "Mon, 1 Jan 0 00:00:00 +0000": "2000",
+            "Mon, 1 Jan 68 00:00:00 +0000": "2068",
+            "Mon, 1 Jan 69 00:00:00 +0000": "1969",
+            "Mon, 1 Jan 99 00:00:00 +0000": "1999",
+            # 3-digit year boundary
+            "Mon, 1 Jan 999 00:00:00 +0000": "2899",
+            # Pre-1900 four-digit year: illegal per RFC but we accept it
+            "Mon, 1 Jan 1000 00:00:00 +0000": "1000",
+        }
+        for input_string, expected_year in expectations.items():
+            with self.subTest(input_string=input_string):
+                self.assertEqual(
+                    str(utils.parsedate_to_datetime(input_string))[:4],
+                    expected_year,
+                )
+
 class LocaltimeTests(unittest.TestCase):
 
     def test_localtime_is_tz_aware_daylight_true(self):
@@ -185,19 +209,6 @@ class FormatDateTests(unittest.TestCase):
         timeval = time.mktime((2011, 12, 1, 18, 0, 0, 4, 335, 0))
         string = utils.formatdate(timeval, localtime=True)
         self.assertEqual(string, 'Thu, 01 Dec 2011 18:00:00 +0300')
-
-# Issue #126845: Some edge cases seem to differ from RFC28222 spec
-class ParsedateToDatetimeTest(unittest.TestCase):
-    def test_year_parsing_edge_cases(self):
-        expectations = {
-            "Sat, 15 Aug 0001 23:12:09 +0500": "2001",
-            "Thu, 1 Sep 1 23:12:09 +0800": "2001",
-            "Thu, 7 Oct 123 23:12:09 +0500": "2023",
-            "Tue, 17 Nov 2026 12:12:09 +0500": "2026",
-        }
-        for input_string, output_string in expectations.items():
-            with self.subTest(input_string=input_string):
-                self.assertEqual(str(utils.parsedate_to_datetime(input_string))[:4], output_string)
 
 if __name__ == '__main__':
     unittest.main()
