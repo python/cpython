@@ -2271,7 +2271,7 @@ expression support in the :mod:`re` module).
 
       >>> '0123456789'.isdigit()
       True
-      >>> '٠١٢٣٤٥٦٧٨٩'.isdigit()  # Arabic-indic digits zero to nine
+      >>> '٠١٢٣٤٥٦٧٨٩'.isdigit()  # Arabic-Indic digits zero to nine
       True
       >>> '⅕'.isdigit()  # Vulgar fraction one fifth
       False
