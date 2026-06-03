@@ -57,6 +57,7 @@ class CmdLineTest(unittest.TestCase):
         return out
 
     @support.cpython_only
+    @support.force_not_colorized
     def test_help(self):
         self.verify_valid_flag('-h')
         self.verify_valid_flag('-?')
@@ -68,6 +69,7 @@ class CmdLineTest(unittest.TestCase):
         self.assertLess(len(lines), 50)
 
     @support.cpython_only
+    @support.force_not_colorized
     def test_help_env(self):
         out = self.verify_valid_flag('--help-env')
         self.assertIn(b'PYTHONHOME', out)
@@ -81,6 +83,7 @@ class CmdLineTest(unittest.TestCase):
                              "env vars should be sorted alphabetically")
 
     @support.cpython_only
+    @support.force_not_colorized
     def test_help_xoptions(self):
         out = self.verify_valid_flag('--help-xoptions')
         self.assertIn(b'-X dev', out)
@@ -89,6 +92,7 @@ class CmdLineTest(unittest.TestCase):
                          "options should be sorted alphabetically")
 
     @support.cpython_only
+    @support.force_not_colorized
     def test_help_all(self):
         out = self.verify_valid_flag('--help-all')
         lines = out.splitlines()
@@ -99,6 +103,25 @@ class CmdLineTest(unittest.TestCase):
         # The first line contains the program name,
         # but the rest should be ASCII-only
         b''.join(lines[1:]).decode('ascii')
+
+    @support.cpython_only
+    @support.force_colorized
+    def test_help_colorized(self):
+        rc, out, err = assert_python_ok("--help", FORCE_COLOR="1")
+        # Check ANSI color codes are present
+        self.assertIn(b"\x1b[", out)
+        # Check that key text elements are still present
+        self.assertIn(b"usage:", out)
+        self.assertIn(b"-h", out)
+        self.assertIn(b"--help-all", out)
+        self.assertIn(b"cmd", out)
+        self.assertIn(b"Arguments:", out)
+
+    @support.cpython_only
+    @support.force_not_colorized
+    def test_help_not_colorized(self):
+        rc, out, err = assert_python_ok("--help")
+        self.assertNotIn(b"\x1b[", out)
 
     def test_optimize(self):
         self.verify_valid_flag('-O')
@@ -1013,6 +1036,7 @@ class CmdLineTest(unittest.TestCase):
         p = subprocess.run([sys.executable, "-c", code],
                            creationflags=subprocess.CREATE_NEW_CONSOLE,
                            env=env)
+        support.skip_on_low_desktop_heap_memory_subprocess(p.returncode)
         self.assertEqual(p.returncode, 0)
 
         # Then test that FIleIO is used when PYTHONLEGACYWINDOWSSTDIO is set.
@@ -1021,6 +1045,7 @@ class CmdLineTest(unittest.TestCase):
         p = subprocess.run([sys.executable, "-c", code],
                            creationflags=subprocess.CREATE_NEW_CONSOLE,
                            env=env)
+        support.skip_on_low_desktop_heap_memory_subprocess(p.returncode)
         self.assertEqual(p.returncode, 0)
 
     @unittest.skipIf("-fsanitize" in sysconfig.get_config_vars().get('PY_CFLAGS', ()),
@@ -1063,6 +1088,7 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(proc.stdout.strip(), b'0')
 
     @support.cpython_only
+    @support.force_not_colorized
     def test_parsing_error(self):
         args = [sys.executable, '-I', '--unknown-option']
         proc = subprocess.run(args,

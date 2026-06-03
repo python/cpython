@@ -1077,6 +1077,7 @@ done:
 }
 
 /*[clinic input]
+@permit_long_summary
 @critical_section
 _collections.deque.rotate as deque_rotate
 
@@ -1089,7 +1090,7 @@ Rotate the deque n steps to the right.  If n is negative, rotates left.
 
 static PyObject *
 deque_rotate_impl(dequeobject *deque, Py_ssize_t n)
-/*[clinic end generated code: output=96c2402a371eb15d input=5bf834296246e002]*/
+/*[clinic end generated code: output=96c2402a371eb15d input=3543c3b2297de8f1]*/
 {
     if (!_deque_rotate(deque, n))
         Py_RETURN_NONE;
@@ -1854,7 +1855,7 @@ static PyMethodDef deque_methods[] = {
     DEQUE_ROTATE_METHODDEF
     DEQUE___SIZEOF___METHODDEF
     {"__class_getitem__",       Py_GenericAlias,
-        METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
+    METH_O|METH_CLASS,          PyDoc_STR("deques are generic over the type of their contents")},
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -2330,6 +2331,12 @@ defdict_reduce(PyObject *op, PyObject *Py_UNUSED(dummy))
     return result;
 }
 
+
+PyDoc_STRVAR(defdict_class_getitem_doc,
+"defaultdicts are generic over two types, signifying (respectively) the types \
+of the dictionary's keys and values");
+
+
 static PyMethodDef defdict_methods[] = {
     {"__missing__", defdict_missing, METH_O,
      defdict_missing_doc},
@@ -2340,7 +2347,7 @@ static PyMethodDef defdict_methods[] = {
     {"__reduce__", defdict_reduce, METH_NOARGS,
      reduce_doc},
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
-     PyDoc_STR("See PEP 585")},
+     defdict_class_getitem_doc},
     {NULL}
 };
 
@@ -2420,7 +2427,7 @@ defdict_or(PyObject* left, PyObject* right)
         self = right;
         other = left;
     }
-    if (!PyDict_Check(other)) {
+    if (!PyAnyDict_Check(other)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
     // Like copy(), this calls the object's class.

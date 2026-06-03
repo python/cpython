@@ -1,4 +1,8 @@
+
 #include "Python.h"
+
+#undef assert
+#define assert(TEST) ((TEST) ? 0 : _Py_jit_assertion_failure(__LINE__))
 
 #include "pycore_backoff.h"
 #include "pycore_call.h"
@@ -36,6 +40,8 @@
 
 #include "jit.h"
 
+#undef assert
+#define assert(TEST) ((TEST) ? 0 : _Py_jit_assertion_failure(__LINE__))
 
 #undef CURRENT_OPERAND0_64
 #define CURRENT_OPERAND0_64() (_operand0_64)
@@ -115,7 +121,7 @@ do {                                                                      \
 #define TIER_TWO 2
 
 #ifdef Py_DEBUG
-#define ASSERT_WITHIN_STACK_BOUNDS(F, L) _Py_assert_within_stack_bounds(frame, stack_pointer, (F), (L))
+#define ASSERT_WITHIN_STACK_BOUNDS(F, L) _Py_jit_assert_within_stack_bounds(frame, stack_pointer, (L))
 #else
 #define ASSERT_WITHIN_STACK_BOUNDS(F, L) (void)0
 #endif

@@ -100,11 +100,12 @@ void _PyOpcode_RecordFunction_CODE(_PyInterpreterFrame *frame, _PyStackRef *stac
 
 #define _RECORD_TOS_TYPE_INDEX 1
 #define _RECORD_NOS_INDEX 2
-#define _RECORD_3OS_GEN_FUNC_INDEX 3
-#define _RECORD_NOS_GEN_FUNC_INDEX 4
-#define _RECORD_CALLABLE_INDEX 5
-#define _RECORD_CALLABLE_KW_INDEX 6
-#define _RECORD_4OS_INDEX 7
+#define _RECORD_NOS_TYPE_INDEX 3
+#define _RECORD_3OS_GEN_FUNC_INDEX 4
+#define _RECORD_TOS_INDEX 5
+#define _RECORD_CALLABLE_INDEX 6
+#define _RECORD_CALLABLE_KW_INDEX 7
+#define _RECORD_4OS_INDEX 8
 
 const _PyOpcodeRecordEntry _PyOpcode_RecordEntries[256] = {
         [TO_BOOL_BOOL] = {1, {_RECORD_TOS_TYPE_INDEX}},
@@ -131,38 +132,43 @@ const _PyOpcodeRecordEntry _PyOpcode_RecordEntries[256] = {
         [BINARY_OP_SUBSCR_TUPLE_INT] = {2, {_RECORD_NOS_INDEX, _RECORD_TOS_TYPE_INDEX}},
         [BINARY_OP_SUBSCR_DICT] = {2, {_RECORD_NOS_INDEX, _RECORD_TOS_TYPE_INDEX}},
         [BINARY_OP_SUBSCR_GETITEM] = {2, {_RECORD_NOS_INDEX, _RECORD_TOS_TYPE_INDEX}},
+        [STORE_SUBSCR] = {1, {_RECORD_NOS_TYPE_INDEX}},
+        [STORE_SUBSCR_LIST_INT] = {1, {_RECORD_NOS_TYPE_INDEX}},
+        [STORE_SUBSCR_DICT] = {1, {_RECORD_NOS_TYPE_INDEX}},
         [SEND] = {1, {_RECORD_3OS_GEN_FUNC_INDEX}},
         [SEND_GEN] = {1, {_RECORD_3OS_GEN_FUNC_INDEX}},
+        [FOR_ITER] = {1, {_RECORD_NOS_INDEX}},
+        [SEND_VIRTUAL] = {1, {_RECORD_3OS_GEN_FUNC_INDEX}},
+        [SEND_ASYNC_GEN] = {1, {_RECORD_3OS_GEN_FUNC_INDEX}},
         [STORE_ATTR] = {1, {_RECORD_TOS_TYPE_INDEX}},
         [LOAD_SUPER_ATTR] = {1, {_RECORD_NOS_INDEX}},
         [LOAD_SUPER_ATTR_METHOD] = {1, {_RECORD_NOS_INDEX}},
-        [LOAD_ATTR] = {1, {_RECORD_TOS_TYPE_INDEX}},
-        [LOAD_ATTR_INSTANCE_VALUE] = {1, {_RECORD_TOS_TYPE_INDEX}},
-        [LOAD_ATTR_MODULE] = {1, {_RECORD_TOS_TYPE_INDEX}},
-        [LOAD_ATTR_WITH_HINT] = {1, {_RECORD_TOS_TYPE_INDEX}},
-        [LOAD_ATTR_SLOT] = {1, {_RECORD_TOS_TYPE_INDEX}},
-        [LOAD_ATTR_CLASS] = {1, {_RECORD_TOS_TYPE_INDEX}},
-        [LOAD_ATTR_CLASS_WITH_METACLASS_CHECK] = {1, {_RECORD_TOS_TYPE_INDEX}},
-        [LOAD_ATTR_PROPERTY] = {1, {_RECORD_TOS_TYPE_INDEX}},
-        [LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN] = {1, {_RECORD_TOS_TYPE_INDEX}},
+        [LOAD_ATTR] = {1, {_RECORD_TOS_INDEX}},
+        [LOAD_ATTR_INSTANCE_VALUE] = {1, {_RECORD_TOS_INDEX}},
+        [LOAD_ATTR_MODULE] = {1, {_RECORD_TOS_INDEX}},
+        [LOAD_ATTR_WITH_HINT] = {1, {_RECORD_TOS_INDEX}},
+        [LOAD_ATTR_SLOT] = {1, {_RECORD_TOS_INDEX}},
+        [LOAD_ATTR_CLASS] = {1, {_RECORD_TOS_INDEX}},
+        [LOAD_ATTR_CLASS_WITH_METACLASS_CHECK] = {1, {_RECORD_TOS_INDEX}},
+        [LOAD_ATTR_PROPERTY] = {1, {_RECORD_TOS_INDEX}},
+        [LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN] = {1, {_RECORD_TOS_INDEX}},
         [STORE_ATTR_INSTANCE_VALUE] = {1, {_RECORD_TOS_TYPE_INDEX}},
         [STORE_ATTR_WITH_HINT] = {1, {_RECORD_TOS_TYPE_INDEX}},
         [STORE_ATTR_SLOT] = {1, {_RECORD_TOS_TYPE_INDEX}},
         [GET_ITER] = {1, {_RECORD_TOS_TYPE_INDEX}},
         [GET_ITER_SELF] = {1, {_RECORD_TOS_TYPE_INDEX}},
         [GET_ITER_VIRTUAL] = {1, {_RECORD_TOS_TYPE_INDEX}},
-        [FOR_ITER] = {1, {_RECORD_NOS_GEN_FUNC_INDEX}},
-        [FOR_ITER_VIRTUAL] = {1, {_RECORD_NOS_GEN_FUNC_INDEX}},
-        [FOR_ITER_LIST] = {1, {_RECORD_NOS_GEN_FUNC_INDEX}},
-        [FOR_ITER_TUPLE] = {1, {_RECORD_NOS_GEN_FUNC_INDEX}},
-        [FOR_ITER_RANGE] = {1, {_RECORD_NOS_GEN_FUNC_INDEX}},
-        [FOR_ITER_GEN] = {1, {_RECORD_NOS_GEN_FUNC_INDEX}},
+        [FOR_ITER_VIRTUAL] = {1, {_RECORD_NOS_INDEX}},
+        [FOR_ITER_LIST] = {1, {_RECORD_NOS_INDEX}},
+        [FOR_ITER_TUPLE] = {1, {_RECORD_NOS_INDEX}},
+        [FOR_ITER_RANGE] = {1, {_RECORD_NOS_INDEX}},
+        [FOR_ITER_GEN] = {1, {_RECORD_NOS_INDEX}},
         [LOAD_SPECIAL] = {1, {_RECORD_TOS_TYPE_INDEX}},
-        [LOAD_ATTR_METHOD_WITH_VALUES] = {1, {_RECORD_TOS_TYPE_INDEX}},
-        [LOAD_ATTR_METHOD_NO_DICT] = {1, {_RECORD_TOS_TYPE_INDEX}},
-        [LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES] = {1, {_RECORD_TOS_TYPE_INDEX}},
-        [LOAD_ATTR_NONDESCRIPTOR_NO_DICT] = {1, {_RECORD_TOS_TYPE_INDEX}},
-        [LOAD_ATTR_METHOD_LAZY_DICT] = {1, {_RECORD_TOS_TYPE_INDEX}},
+        [LOAD_ATTR_METHOD_WITH_VALUES] = {1, {_RECORD_TOS_INDEX}},
+        [LOAD_ATTR_METHOD_NO_DICT] = {1, {_RECORD_TOS_INDEX}},
+        [LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES] = {1, {_RECORD_TOS_INDEX}},
+        [LOAD_ATTR_NONDESCRIPTOR_NO_DICT] = {1, {_RECORD_TOS_INDEX}},
+        [LOAD_ATTR_METHOD_LAZY_DICT] = {1, {_RECORD_TOS_INDEX}},
         [CALL] = {1, {_RECORD_CALLABLE_INDEX}},
         [CALL_PY_GENERAL] = {1, {_RECORD_CALLABLE_INDEX}},
         [CALL_BOUND_METHOD_GENERAL] = {1, {_RECORD_CALLABLE_INDEX}},
@@ -196,28 +202,32 @@ const _PyOpcodeRecordEntry _PyOpcode_RecordEntries[256] = {
 
 const _PyOpcodeRecordSlotMap _PyOpcode_RecordSlotMaps[256] = {
         [TO_BOOL_ALWAYS_TRUE] = {1, 0, {0}},
+        [BINARY_OP_SUBSCR_DICT] = {1, 1, {0}},
         [BINARY_OP_SUBSCR_GETITEM] = {1, 0, {0}},
+        [STORE_SUBSCR_DICT] = {1, 0, {0}},
         [SEND_GEN] = {1, 0, {0}},
+        [FOR_ITER] = {1, 1, {0}},
         [LOAD_SUPER_ATTR_METHOD] = {1, 0, {0}},
-        [LOAD_ATTR_INSTANCE_VALUE] = {1, 0, {0}},
-        [LOAD_ATTR_WITH_HINT] = {1, 0, {0}},
-        [LOAD_ATTR_SLOT] = {1, 0, {0}},
+        [LOAD_ATTR_INSTANCE_VALUE] = {1, 1, {0}},
+        [LOAD_ATTR_WITH_HINT] = {1, 1, {0}},
+        [LOAD_ATTR_SLOT] = {1, 1, {0}},
+        [LOAD_ATTR_CLASS] = {1, 0, {0}},
         [LOAD_ATTR_CLASS_WITH_METACLASS_CHECK] = {1, 0, {0}},
-        [LOAD_ATTR_PROPERTY] = {1, 0, {0}},
-        [LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN] = {1, 0, {0}},
+        [LOAD_ATTR_PROPERTY] = {1, 1, {0}},
+        [LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN] = {1, 1, {0}},
         [STORE_ATTR_INSTANCE_VALUE] = {1, 0, {0}},
         [STORE_ATTR_WITH_HINT] = {1, 0, {0}},
         [STORE_ATTR_SLOT] = {1, 0, {0}},
         [GET_ITER] = {1, 0, {0}},
         [GET_ITER_SELF] = {1, 0, {0}},
         [GET_ITER_VIRTUAL] = {1, 0, {0}},
-        [FOR_ITER_GEN] = {1, 0, {0}},
+        [FOR_ITER_GEN] = {1, 1, {0}},
         [LOAD_SPECIAL] = {1, 0, {0}},
-        [LOAD_ATTR_METHOD_WITH_VALUES] = {1, 0, {0}},
-        [LOAD_ATTR_METHOD_NO_DICT] = {1, 0, {0}},
-        [LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES] = {1, 0, {0}},
-        [LOAD_ATTR_NONDESCRIPTOR_NO_DICT] = {1, 0, {0}},
-        [LOAD_ATTR_METHOD_LAZY_DICT] = {1, 0, {0}},
+        [LOAD_ATTR_METHOD_WITH_VALUES] = {1, 1, {0}},
+        [LOAD_ATTR_METHOD_NO_DICT] = {1, 1, {0}},
+        [LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES] = {1, 1, {0}},
+        [LOAD_ATTR_NONDESCRIPTOR_NO_DICT] = {1, 1, {0}},
+        [LOAD_ATTR_METHOD_LAZY_DICT] = {1, 1, {0}},
         [CALL_PY_GENERAL] = {1, 0, {0}},
         [CALL_BOUND_METHOD_GENERAL] = {1, 1, {0}},
         [CALL_NON_PY_GENERAL] = {1, 0, {0}},
@@ -237,30 +247,89 @@ const _PyOpcodeRecordSlotMap _PyOpcode_RecordSlotMaps[256] = {
         [BINARY_OP] = {2, 2, {1, 0}},
 };
 
-const _Py_RecordFuncPtr _PyOpcode_RecordFunctions[8] = {
+const _Py_RecordFuncPtr _PyOpcode_RecordFunctions[9] = {
         [0] = NULL,
         [_RECORD_TOS_TYPE_INDEX] = _PyOpcode_RecordFunction_TOS_TYPE,
         [_RECORD_NOS_INDEX] = _PyOpcode_RecordFunction_NOS,
+        [_RECORD_NOS_TYPE_INDEX] = _PyOpcode_RecordFunction_NOS_TYPE,
         [_RECORD_3OS_GEN_FUNC_INDEX] = _PyOpcode_RecordFunction_3OS_GEN_FUNC,
-        [_RECORD_NOS_GEN_FUNC_INDEX] = _PyOpcode_RecordFunction_NOS_GEN_FUNC,
+        [_RECORD_TOS_INDEX] = _PyOpcode_RecordFunction_TOS,
         [_RECORD_CALLABLE_INDEX] = _PyOpcode_RecordFunction_CALLABLE,
         [_RECORD_CALLABLE_KW_INDEX] = _PyOpcode_RecordFunction_CALLABLE_KW,
         [_RECORD_4OS_INDEX] = _PyOpcode_RecordFunction_4OS,
 };
 
+static PyObject *
+_PyOpcode_RecordTransform_NOS_TYPE(PyObject *recorded_value)
+{
+    PyObject *transformed_value = NULL;
+    _PyStackRef nos;
+    nos = PyStackRef_FromPyObjectBorrow(recorded_value);
+    transformed_value = (PyObject *)Py_TYPE(PyStackRef_AsPyObjectBorrow(nos));
+    Py_XINCREF(transformed_value);
+    Py_DECREF(recorded_value);
+    return transformed_value;
+}
+
+static PyObject *
+_PyOpcode_RecordTransform_TOS_TYPE(PyObject *recorded_value)
+{
+    PyObject *transformed_value = NULL;
+    _PyStackRef tos;
+    tos = PyStackRef_FromPyObjectBorrow(recorded_value);
+    transformed_value = (PyObject *)Py_TYPE(PyStackRef_AsPyObjectBorrow(tos));
+    Py_XINCREF(transformed_value);
+    Py_DECREF(recorded_value);
+    return transformed_value;
+}
+
+static PyObject *
+_PyOpcode_RecordTransform_NOS_GEN_FUNC(PyObject *recorded_value)
+{
+    PyObject *transformed_value = NULL;
+    _PyStackRef nos;
+    nos = PyStackRef_FromPyObjectBorrow(recorded_value);
+    PyObject *obj = PyStackRef_AsPyObjectBorrow(nos);
+    if (PyGen_Check(obj)) {
+        PyGenObject *gen = (PyGenObject *)obj;
+        _PyStackRef func = gen->gi_iframe.f_funcobj;
+        if (!PyStackRef_IsNull(func)) {
+            transformed_value = (PyObject *)PyStackRef_AsPyObjectBorrow(func);
+            Py_XINCREF(transformed_value);
+        }
+    }
+    Py_DECREF(recorded_value);
+    return transformed_value;
+}
+
+static PyObject *
+_PyOpcode_RecordTransform_BOUND_METHOD(PyObject *recorded_value)
+{
+    PyObject *transformed_value = NULL;
+    _PyStackRef callable;
+    callable = PyStackRef_FromPyObjectBorrow(recorded_value);
+    PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+    if (Py_TYPE(callable_o) == &PyMethod_Type) {
+        transformed_value = (PyObject *)callable_o;
+        Py_XINCREF(transformed_value);
+    }
+    Py_DECREF(recorded_value);
+    return transformed_value;
+}
+
 PyObject *
 _PyOpcode_RecordTransformValue(int uop, PyObject *value)
 {
-        switch (uop) {
-                case _RECORD_TOS_TYPE:
-                case _RECORD_NOS_TYPE:
-                    return record_trace_transform_to_type(value);
-                case _RECORD_NOS_GEN_FUNC:
-                case _RECORD_3OS_GEN_FUNC:
-                    return record_trace_transform_gen_func(value);
-                case _RECORD_BOUND_METHOD:
-                    return record_trace_transform_bound_method(value);
-                default:
-                    return value;
-        }
+    switch (uop) {
+        case _RECORD_NOS_TYPE:
+            return _PyOpcode_RecordTransform_NOS_TYPE(value);
+        case _RECORD_TOS_TYPE:
+            return _PyOpcode_RecordTransform_TOS_TYPE(value);
+        case _RECORD_NOS_GEN_FUNC:
+            return _PyOpcode_RecordTransform_NOS_GEN_FUNC(value);
+        case _RECORD_BOUND_METHOD:
+            return _PyOpcode_RecordTransform_BOUND_METHOD(value);
+        default:
+            return value;
+    }
 }
