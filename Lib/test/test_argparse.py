@@ -7869,6 +7869,23 @@ class TestColorized(TestCase):
         self.assertIn(f"set {prog_extra}foo{reset}", help_text)
         self.assertIn(f"default: {interp}bar{reset}", help_text)
 
+    def test_argument_help_without_interpolation_accepts_string_like_proxy(self):
+        class LazyStr:
+            def __init__(self, message):
+                self._message = message
+
+            def __str__(self):
+                return self._message
+
+        parser = argparse.ArgumentParser(prog="PROG", color=True)
+        parser.add_argument("--foo", help=LazyStr("set `foo` value"))
+
+        prog_extra = self.theme.prog_extra
+        reset = self.theme.reset
+
+        help_text = parser.format_help()
+        self.assertIn(f"set {prog_extra}foo{reset} value", help_text)
+
     def test_help_with_format_specifiers(self):
         # GH-142950: format specifiers like %x should work with color=True
         parser = argparse.ArgumentParser(prog='PROG', color=True)

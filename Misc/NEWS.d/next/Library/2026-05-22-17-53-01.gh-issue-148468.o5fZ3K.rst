@@ -1,3 +1,2 @@
-Fix a regression in :mod:`argparse` so colorized help formatting once again
-accepts string-like proxy objects for descriptions, epilogs, and argument
-help text.
+Fix regression in :mod:`argparse` so colorized argument help once again accepts
+string-like proxy objects.
