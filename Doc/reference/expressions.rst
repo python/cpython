@@ -976,7 +976,7 @@ the following generator function::
 
    def make_generator_of_squares(iterable):
        for x in iterable:
-           yield x**2
+           yield x ** 2
 
    make_generator_of_squares(range(10))
 
@@ -1000,7 +1000,6 @@ rather than at the point where the first value is retrieved::
 
    >>> (x ** 2 for x in nonexistent_iterable)
    Traceback (most recent call last):
-   File "<python-input-0>", line 1, in <module>
      ...
    NameError: name 'nonexistent_iterable' is not defined
 
@@ -1009,7 +1008,7 @@ generators (that is, when the iterator is asked to yield a value)::
 
    >>> iterator = (nonexistent_value for x in range(10))
    >>> iterator
-   <generator object <genexpr> at 0x7f373fb29cb0>
+   <generator object <genexpr> at ...>
    >>> list(iterator)
    Traceback (most recent call last):
      ...
@@ -1017,9 +1016,9 @@ generators (that is, when the iterator is asked to yield a value)::
 
 ::
 
-   >>> iterator = (x*y for x in range(10) for y in nonexistent_iterable)
+   >>> iterator = (x * y for x in range(10) for y in nonexistent_iterable)
    >>> iterator
-   <generator object <genexpr> at 0x7f373fcfa500>
+   <generator object <genexpr> at ...>
    >>> list(iterator)
    Traceback (most recent call last):
      ...
