@@ -39,6 +39,31 @@ class TestUnicode:
         self.assertEqual(self.dumps(u, ensure_ascii=False),
                          '"\\b\\t\\n\\f\\r\\u0000\\u001f\x7f"')
 
+    def test_ensure_ascii_false_long_string_paths(self):
+        # Exercise the encoder's escape-size scan for ensure_ascii=False over
+        # long runs that cross the 8-byte scan windows and the short-string
+        # guard: a special character at every offset, in 1-byte (ASCII and
+        # Latin-1) and wider (BMP, astral) strings.
+        dumps, loads = self.dumps, self.loads
+        for n in range(40):
+            run = "a" * n
+            for tail in ('"', "\\", "\n", "\x00", "\x1f", "\x7f", "\xe9",
+                         "中", "\U0001f600"):
+                s = run + tail + "tail"
+                self.assertEqual(loads(dumps(s, ensure_ascii=False)), s)
+        # The no-escape fast path returns the string verbatim between quotes,
+        # including kept-as-is Latin-1 and 0x7f.
+        for s in ("x" * 20, "\xe9" * 20, "kept latin1 \xe9\xff \x7f text " * 3):
+            self.assertEqual(dumps(s, ensure_ascii=False), '"' + s + '"')
+        # The structural escapes and control chars are still escaped after a
+        # long no-escape run.
+        self.assertEqual(dumps("a" * 20 + '"', ensure_ascii=False),
+                         '"' + "a" * 20 + '\\""')
+        self.assertEqual(dumps("a" * 20 + "\\", ensure_ascii=False),
+                         '"' + "a" * 20 + '\\\\"')
+        self.assertEqual(dumps("a" * 20 + "\x01", ensure_ascii=False),
+                         '"' + "a" * 20 + '\\u0001"')
+
     def test_ascii_non_printable_decode(self):
         self.assertEqual(self.loads('"\\b\\t\\n\\f\\r"'),
                          '\b\t\n\f\r')
