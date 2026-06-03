@@ -1,3 +1,3 @@
-Speed up :func:`json.loads` and :func:`json.dumps` for small documents by
-avoiding a redundant whitespace scan on decode and by building the float
-helper only on the Python encoding path. Patch by Bernát Gábor.
+Speed up :func:`json.dumps` for small documents by building the float
+formatting helper only on the slower Python encoding path instead of on every
+call. Patch by Bernát Gábor.
