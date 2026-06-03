@@ -225,6 +225,148 @@ parse_frame_buffer(
     return parse_code_object(unwinder, result, &code_ctx);
 }
 
+#if defined(__APPLE__) && TARGET_OS_OSX
+static int
+remote_pointer_plausible(RemoteUnwinderObject *unwinder, uintptr_t ptr)
+{
+    if (ptr == 0) {
+        return 1;
+    }
+    if ((ptr & (uintptr_t)(sizeof(void *) - 1)) != 0) {
+        return 0;
+    }
+    if (ptr < (uintptr_t)unwinder->handle.page_size) {
+        return 0;
+    }
+#if UINTPTR_MAX > 0xffffffffU
+#  if defined(__x86_64__)
+    if (ptr >= (1ULL << 47)) {
+        return 0;
+    }
+#  elif defined(__arm64__) || defined(__aarch64__)
+    if ((ptr >> 56) != 0) {
+        return 0;
+    }
+#  else
+    if (ptr >= (UINTPTR_MAX >> 1)) {
+        return 0;
+    }
+#  endif
+#endif
+    return 1;
+}
+
+int
+_Py_RemoteDebug_ValidateInterpreterSnapshot(
+    RemoteUnwinderObject *unwinder,
+    const char *interp_state_buffer)
+{
+    uintptr_t threads_head = GET_MEMBER(uintptr_t, interp_state_buffer,
+        unwinder->debug_offsets.interpreter_state.threads_head);
+    uintptr_t threads_main = GET_MEMBER(uintptr_t, interp_state_buffer,
+        unwinder->debug_offsets.interpreter_state.threads_main);
+    uintptr_t next = GET_MEMBER(uintptr_t, interp_state_buffer,
+        unwinder->debug_offsets.interpreter_state.next);
+    uintptr_t gil_holder_tstate = GET_MEMBER(uintptr_t, interp_state_buffer,
+        unwinder->debug_offsets.interpreter_state.gil_runtime_state_holder);
+    uintptr_t gc_frame = GET_MEMBER(uintptr_t, interp_state_buffer,
+        unwinder->debug_offsets.interpreter_state.gc
+        + unwinder->debug_offsets.gc.frame);
+
+    return remote_pointer_plausible(unwinder, threads_head)
+        && remote_pointer_plausible(unwinder, threads_main)
+        && remote_pointer_plausible(unwinder, next)
+        && remote_pointer_plausible(unwinder, gil_holder_tstate)
+        && remote_pointer_plausible(unwinder, gc_frame);
+}
+
+int
+_Py_RemoteDebug_ValidateThreadStateSnapshot(
+    RemoteUnwinderObject *unwinder,
+    const char *tstate_buffer,
+    uintptr_t tstate_addr,
+    uintptr_t current_interpreter)
+{
+    uintptr_t interp = GET_MEMBER(uintptr_t, tstate_buffer,
+        unwinder->debug_offsets.thread_state.interp);
+    if (interp != current_interpreter) {
+        return 0;
+    }
+
+    uintptr_t current_frame = GET_MEMBER(uintptr_t, tstate_buffer,
+        unwinder->debug_offsets.thread_state.current_frame);
+    uintptr_t base_frame = GET_MEMBER(uintptr_t, tstate_buffer,
+        unwinder->debug_offsets.thread_state.base_frame);
+    uintptr_t next = GET_MEMBER(uintptr_t, tstate_buffer,
+        unwinder->debug_offsets.thread_state.next);
+    uintptr_t last_profiled_frame = GET_MEMBER(uintptr_t, tstate_buffer,
+        unwinder->debug_offsets.thread_state.last_profiled_frame);
+
+    return next != tstate_addr
+        && remote_pointer_plausible(unwinder, current_frame)
+        && remote_pointer_plausible(unwinder, base_frame)
+        && remote_pointer_plausible(unwinder, next)
+        && remote_pointer_plausible(unwinder, last_profiled_frame);
+}
+
+static int
+validate_frame_snapshot(
+    RemoteUnwinderObject *unwinder,
+    const char *frame,
+    uintptr_t expected_parent)
+{
+    int owner = (unsigned char)GET_MEMBER(char, frame,
+        unwinder->debug_offsets.interpreter_frame.owner);
+    if (owner < FRAME_OWNED_BY_THREAD || owner > FRAME_OWNED_BY_INTERPRETER) {
+        return 0;
+    }
+
+    uintptr_t executable = GET_MEMBER_NO_TAG(uintptr_t, frame,
+        unwinder->debug_offsets.interpreter_frame.executable);
+    uintptr_t previous = GET_MEMBER(uintptr_t, frame,
+        unwinder->debug_offsets.interpreter_frame.previous);
+    if (!remote_pointer_plausible(unwinder, executable)
+            || !remote_pointer_plausible(unwinder, previous)) {
+        return 0;
+    }
+    if (expected_parent != 0 && previous != expected_parent) {
+        return 0;
+    }
+    return 1;
+}
+
+int
+parse_frame_object_aliased(
+    RemoteUnwinderObject *unwinder,
+    uintptr_t expected_parent,
+    PyObject **result,
+    uintptr_t address,
+    uintptr_t *address_of_code_object,
+    uintptr_t *previous_frame)
+{
+    char frame[SIZEOF_INTERP_FRAME];
+    if (_Py_RemoteDebug_AliasedRead(
+            unwinder, ALIAS_FRAME_PAGE, address, SIZEOF_INTERP_FRAME,
+            frame) < 0) {
+        set_exception_cause(unwinder, PyExc_RuntimeError,
+                            "Failed to read interpreter frame");
+        return -1;
+    }
+    STATS_INC(unwinder, memory_reads);
+    STATS_ADD(unwinder, memory_bytes_read, SIZEOF_INTERP_FRAME);
+
+    if (!validate_frame_snapshot(unwinder, frame, expected_parent)) {
+        STATS_INC(unwinder, alias_validation_fails);
+        _Py_RemoteDebug_AliasCacheInvalidatePage(unwinder, address);
+        return parse_frame_object(unwinder, result, address,
+                                  address_of_code_object, previous_frame);
+    }
+
+    return parse_frame_buffer(unwinder, result, frame,
+                              address_of_code_object, previous_frame);
+}
+#endif
+
 int
 parse_frame_object(
     RemoteUnwinderObject *unwinder,
@@ -340,9 +482,19 @@ process_frame_chain(
                     &address_of_code_object, &next_frame_addr);
             }
             else {
+#if defined(__APPLE__) && TARGET_OS_OSX
+                if (unwinder->cache_frames) {
+                    parse_result = parse_frame_object_aliased(
+                        unwinder, 0, &frame, frame_addr,
+                        &address_of_code_object, &next_frame_addr);
+                }
+                else
+#endif
+                {
                 parse_result = parse_frame_object(
                     unwinder, &frame, frame_addr,
                     &address_of_code_object, &next_frame_addr);
+                }
             }
             if (parse_result < 0) {
                 set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse frame object in chain");
@@ -531,6 +683,7 @@ try_full_cache_hit(
     PyObject *current_frame = NULL;
     uintptr_t code_object_addr = 0;
     uintptr_t previous_frame = 0;
+    uintptr_t expected_parent = entry->num_addrs >= 2 ? entry->addrs[1] : 0;
     int parse_result;
     if (ctx->prefetch.frame && ctx->prefetch.frame_addr == ctx->frame_addr) {
         parse_result = parse_frame_buffer(unwinder, &current_frame,
@@ -538,8 +691,18 @@ try_full_cache_hit(
                                           &code_object_addr, &previous_frame);
     }
     else {
+#if defined(__APPLE__) && TARGET_OS_OSX
+        if (unwinder->cache_frames) {
+            parse_result = parse_frame_object_aliased(
+                unwinder, expected_parent, &current_frame, ctx->frame_addr,
+                &code_object_addr, &previous_frame);
+        }
+        else
+#endif
+        {
         parse_result = parse_frame_object(unwinder, &current_frame, ctx->frame_addr,
                                           &code_object_addr, &previous_frame);
+        }
     }
     if (parse_result < 0) {
         return -1;

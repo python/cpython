@@ -383,6 +383,9 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
         set_exception_cause(self, PyExc_RuntimeError, "Failed to initialize process handle");
         return -1;
     }
+#if defined(__APPLE__) && TARGET_OS_OSX
+    _Py_RemoteDebug_AliasCacheInit(self);
+#endif
 
     self->runtime_start_address = _Py_RemoteDebug_GetPyRuntimeAddress(&self->handle);
     if (self->runtime_start_address == 0) {
@@ -425,6 +428,9 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
         set_exception_cause(self, PyExc_RuntimeError, "Failed to populate initial state data");
         return -1;
     }
+#if defined(__APPLE__) && TARGET_OS_OSX
+    (void)_Py_RemoteDebug_AliasProbe(self, self->interpreter_addr);
+#endif
 
     self->code_object_cache = _Py_hashtable_new_full(
         _Py_hashtable_hash_ptr,
@@ -609,6 +615,30 @@ read_interp_state_and_maybe_thread_frame(
 {
     prefetch->tstate = NULL;
     prefetch->frame = NULL;
+#if defined(__APPLE__) && TARGET_OS_OSX
+    if (unwinder->cache_frames) {
+        if (_Py_RemoteDebug_AliasedRead(
+                unwinder,
+                ALIAS_STABLE_RUNTIME,
+                interpreter_addr,
+                INTERP_STATE_BUFFER_SIZE,
+                interp_state_buffer) < 0) {
+            return -1;
+        }
+        if (!_Py_RemoteDebug_ValidateInterpreterSnapshot(
+                unwinder, interp_state_buffer)) {
+            STATS_INC(unwinder, alias_validation_fails);
+            _Py_RemoteDebug_AliasCacheInvalidatePage(unwinder,
+                                                     interpreter_addr);
+            return _Py_RemoteDebug_ReadRemoteMemory(
+                &unwinder->handle,
+                interpreter_addr,
+                INTERP_STATE_BUFFER_SIZE,
+                interp_state_buffer);
+        }
+        return 0;
+    }
+#endif
     if (prefetch->tstate_addr != 0) {
         size_t tstate_size = (size_t)unwinder->debug_offsets.thread_state.size;
         _Py_RemoteReadSegment segments[3] = {
@@ -802,7 +832,9 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
 
         while (current_tstate != 0) {
             uintptr_t prev_tstate = current_tstate;
-            PyObject* frame_info = unwind_stack_for_thread(self, &current_tstate,
+            PyObject* frame_info = unwind_stack_for_thread(self,
+                                                           current_interpreter,
+                                                           &current_tstate,
                                                            gil_holder_tstate,
                                                            gc_frame,
                                                            main_thread_tstate,
@@ -1113,6 +1145,17 @@ Returns:
           batched reads
         - batched_read_segments_completed: Segments completed by
           batched reads
+        - alias_hits: macOS alias-cache hits
+        - alias_misses: macOS alias-cache misses
+        - alias_remap_failures: macOS remap/protect failures
+        - alias_validation_fails: macOS alias snapshot validation
+          failures
+        - alias_evictions: macOS alias-cache LRU evictions
+        - alias_identity_mismatches: macOS target identity mismatches
+        - alias_disabled_at_init: Whether aliasing was disabled
+          during initialization
+        - alias_disabled_at_runtime: Whether aliasing was disabled
+          at runtime
         - frame_cache_hit_rate: Percentage of samples that hit the
           cache
         - code_object_cache_hit_rate: Percentage of code object
@@ -1168,6 +1211,14 @@ _remote_debugging_RemoteUnwinder_get_stats_impl(RemoteUnwinderObject *self)
     ADD_STAT(batched_read_misses);
     ADD_STAT(batched_read_segments_requested);
     ADD_STAT(batched_read_segments_completed);
+    ADD_STAT(alias_hits);
+    ADD_STAT(alias_misses);
+    ADD_STAT(alias_remap_failures);
+    ADD_STAT(alias_validation_fails);
+    ADD_STAT(alias_evictions);
+    ADD_STAT(alias_identity_mismatches);
+    ADD_STAT(alias_disabled_at_init);
+    ADD_STAT(alias_disabled_at_runtime);
 
 #undef ADD_STAT
 
@@ -1334,6 +1385,9 @@ RemoteUnwinder_dealloc(PyObject *op)
     if (self->tlbc_cache) {
         _Py_hashtable_destroy(self->tlbc_cache);
     }
+#endif
+#if defined(__APPLE__) && TARGET_OS_OSX
+    _Py_RemoteDebug_AliasCacheClear(self);
 #endif
     if (self->handle.pid != 0) {
         _Py_RemoteDebug_ClearCache(&self->handle);

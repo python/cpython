@@ -262,6 +262,44 @@ typedef struct {
     uintptr_t frame_addr;
 } RemoteReadPrefetch;
 
+#if defined(__APPLE__) && TARGET_OS_OSX
+typedef enum {
+    ALIAS_STABLE_RUNTIME,
+    ALIAS_TSTATE,
+    ALIAS_FRAME_PAGE
+} AliasReadKind;
+
+#define MAX_ALIAS_PAGES 256
+#define ALIAS_PROBE_MASK 0x3ff
+#define ALIAS_FAILURE_WINDOW 100
+#define ALIAS_FAILURE_THRESHOLD 10
+
+typedef struct {
+    uintptr_t remote_page_base;
+    mach_vm_address_t local_page_base;
+    mach_vm_size_t size;
+    mach_port_t task_port;
+    uint64_t target_start_tvsec;
+    uint64_t target_start_tvusec;
+    uint64_t access_seq;
+    int valid;
+} AliasPageEntry;
+
+typedef struct {
+    AliasPageEntry pages[MAX_ALIAS_PAGES];
+    uint64_t access_seq;
+    uint64_t target_start_tvsec;
+    uint64_t target_start_tvusec;
+    uint32_t probe_counter;
+    uint32_t remap_failure_index;
+    uint32_t remap_failure_samples;
+    uint32_t remap_failure_count;
+    unsigned char remap_failure_window[ALIAS_FAILURE_WINDOW];
+    int disabled_at_init;
+    int disabled_at_runtime;
+} AliasReadCache;
+#endif
+
 /* Statistics for profiling performance analysis */
 typedef struct {
     uint64_t total_samples;                  // Total number of get_stack_trace calls
@@ -280,6 +318,14 @@ typedef struct {
     uint64_t batched_read_misses;            // Attempts that fell back or partially read
     uint64_t batched_read_segments_requested; // Segments requested by batched reads
     uint64_t batched_read_segments_completed; // Segments completed by batched reads
+    uint64_t alias_hits;                     // macOS alias-cache hits
+    uint64_t alias_misses;                   // macOS alias-cache misses
+    uint64_t alias_remap_failures;           // macOS remap/protect failures
+    uint64_t alias_validation_fails;         // macOS alias snapshot validation failures
+    uint64_t alias_evictions;                // macOS alias-cache LRU evictions
+    uint64_t alias_identity_mismatches;      // macOS target identity mismatches
+    uint64_t alias_disabled_at_init;         // macOS aliasing disabled during init (0/1)
+    uint64_t alias_disabled_at_runtime;      // macOS aliasing disabled at runtime (0/1)
 } UnwinderStats;
 
 #if defined(__GNUC__) || defined(__clang__)
@@ -382,6 +428,9 @@ typedef struct {
 #ifdef __APPLE__
     uint64_t thread_id_offset;
     int thread_id_offset_initialized;
+#  if TARGET_OS_OSX
+    AliasReadCache alias_cache;
+#  endif
 #endif
 #ifdef MS_WINDOWS
     PVOID win_process_buffer;
@@ -648,6 +697,38 @@ extern int collect_frames_with_cache(
     FrameWalkContext *ctx,
     uint64_t thread_id);
 
+#if defined(__APPLE__) && TARGET_OS_OSX
+extern int parse_frame_object_aliased(
+    RemoteUnwinderObject *unwinder,
+    uintptr_t expected_parent,
+    PyObject **result,
+    uintptr_t address,
+    uintptr_t *address_of_code_object,
+    uintptr_t *previous_frame
+);
+
+extern int _Py_RemoteDebug_ValidateInterpreterSnapshot(
+    RemoteUnwinderObject *unwinder,
+    const char *interp_state_buffer
+);
+extern int _Py_RemoteDebug_ValidateThreadStateSnapshot(
+    RemoteUnwinderObject *unwinder,
+    const char *tstate_buffer,
+    uintptr_t tstate_addr,
+    uintptr_t current_interpreter
+);
+extern int _Py_RemoteDebug_AliasedRead(
+    RemoteUnwinderObject *unwinder,
+    AliasReadKind kind,
+    uintptr_t remote_addr,
+    size_t len,
+    void *dst);
+extern void _Py_RemoteDebug_AliasCacheInit(RemoteUnwinderObject *unwinder);
+extern void _Py_RemoteDebug_AliasCacheClear(RemoteUnwinderObject *unwinder);
+extern void _Py_RemoteDebug_AliasCacheInvalidatePage(RemoteUnwinderObject *unwinder, uintptr_t remote_addr);
+extern int _Py_RemoteDebug_AliasProbe(RemoteUnwinderObject *unwinder, uintptr_t probe_addr);
+#endif
+
 /* ============================================================================
  * THREAD FUNCTION DECLARATIONS
  * ============================================================================ */
@@ -676,6 +757,7 @@ extern int get_thread_status(RemoteUnwinderObject *unwinder, uint64_t tid, uint6
 
 extern PyObject* unwind_stack_for_thread(
     RemoteUnwinderObject *unwinder,
+    uintptr_t current_interpreter,
     uintptr_t *current_tstate,
     uintptr_t gil_holder_tstate,
     uintptr_t gc_frame,
