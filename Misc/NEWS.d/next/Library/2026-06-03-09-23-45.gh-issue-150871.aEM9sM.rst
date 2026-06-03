@@ -1,0 +1,4 @@
+Speed up :func:`json.loads` decoding of strings that contain long runs of
+ordinary characters by scanning eight bytes at a time for the closing quote, a
+backslash, or a control character. Strings containing non-Latin-1 characters
+and short strings are unaffected. Patch by Bernát Gábor.
