@@ -23,6 +23,10 @@ init([files]) -- parse a list of files, default knownfiles (on Windows, the
 read_mime_types(file) -- parse one file, return a dictionary or None
 """
 
+lazy import os
+lazy import posixpath
+lazy import urllib.parse
+
 try:
     from _winapi import _mimetypes_read_windows_registry
 except ImportError:
@@ -32,8 +36,6 @@ try:
     import winreg as _winreg
 except ImportError:
     _winreg = None
-
-lazy import urllib.parse
 
 __all__ = [
     "knownfiles", "inited", "MimeTypes",
@@ -123,9 +125,6 @@ class MimeTypes:
         Optional 'strict' argument when False adds a bunch of commonly found,
         but non-standard types.
         """
-        # Lazy import to improve module import time
-        import os
-
         # TODO: Deprecate accepting file paths (in particular path-like objects).
         url = os.fspath(url)
         # Without a ':' the argument cannot carry a URL scheme, so it cannot
@@ -159,9 +158,6 @@ class MimeTypes:
                 type = 'text/plain'
             return type, None           # never compressed, so encoding is None
 
-        # Lazy import to improve module import time
-        import posixpath
-
         return self._guess_file_type(url, strict, posixpath.splitext)
 
     def guess_file_type(self, path, *, strict=True):
@@ -169,9 +165,6 @@ class MimeTypes:
 
         Similar to guess_type(), but takes file path instead of URL.
         """
-        # Lazy import to improve module import time
-        import os
-
         path = os.fsdecode(path)
         path = os.path.splitdrive(path)[1]
         return self._guess_file_type(path, strict, os.path.splitext)
@@ -417,9 +410,6 @@ def init(files=None):
             files = knownfiles + list(files)
     else:
         db = _db
-
-    # Lazy import to improve module import time
-    import os
 
     for file in files:
         if os.path.isfile(file):
