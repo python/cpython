@@ -3892,6 +3892,7 @@ PyDict_Items(PyObject *dict)
 }
 
 /*[clinic input]
+@permit_long_summary
 @classmethod
 dict.fromkeys
     iterable: object
@@ -3903,7 +3904,7 @@ Create a new dictionary with keys from iterable and values set to value.
 
 static PyObject *
 dict_fromkeys_impl(PyTypeObject *type, PyObject *iterable, PyObject *value)
-/*[clinic end generated code: output=8fb98e4b10384999 input=382ba4855d0f74c3]*/
+/*[clinic end generated code: output=8fb98e4b10384999 input=3903715eb48b287e]*/
 {
     return _PyDict_FromKeys((PyObject *)type, iterable, value);
 }
@@ -5129,7 +5130,8 @@ static PyMethodDef mapp_methods[] = {
     DICT_CLEAR_METHODDEF
     DICT_COPY_METHODDEF
     DICT___REVERSED___METHODDEF
-    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
+     PyDoc_STR("dicts are generic over two types, signifying (respectively) the types of their keys and values")},
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -8197,7 +8199,8 @@ static PyMethodDef frozendict_methods[] = {
     DICT_FROMKEYS_METHODDEF
     FROZENDICT_COPY_METHODDEF
     DICT___REVERSED___METHODDEF
-    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
+     PyDoc_STR("frozendicts are generic over two types, signifying (respectively) the types of the frozendict's keys and values")},
     {"__getnewargs__", frozendict_getnewargs, METH_NOARGS},
     {NULL,              NULL}   /* sentinel */
 };
