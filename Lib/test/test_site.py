@@ -16,6 +16,7 @@ from test.support.os_helper import TESTFN, EnvironmentVarGuard
 from test.support.script_helper import spawn_python, kill_python
 import ast
 import builtins
+import contextlib
 import glob
 import io
 import os
@@ -27,6 +28,7 @@ import sys
 import sysconfig
 import tempfile
 from textwrap import dedent
+from types import SimpleNamespace
 import urllib.error
 import urllib.request
 from unittest import mock
@@ -123,14 +125,11 @@ class HelperFunctionsTests(unittest.TestCase):
         # comment or import that is a valid directory name for where the .pth
         # file resides; invalid directories are not added
         pth_file = PthFile()
-        pth_file.cleanup(prep=True)  # to make sure that nothing is
-                                      # pre-existing that shouldn't be
-        try:
-            pth_file.create()
+        # Ensure we have a clean slate.
+        pth_file.cleanup(prep=True)
+        with pth_file.create():
             site.addpackage(pth_file.base_dir, pth_file.filename, set())
             self.pth_file_tests(pth_file)
-        finally:
-            pth_file.cleanup()
 
     def make_pth(self, contents, pth_dir='.', pth_name=TESTFN):
         # Create a .pth file and return its (abspath, basename).
@@ -150,9 +149,6 @@ class HelperFunctionsTests(unittest.TestCase):
         self.assertRegex(err_out.getvalue(), "line 1")
         self.assertRegex(err_out.getvalue(),
             re.escape(os.path.join(pth_dir, pth_fn)))
-        # XXX: the previous two should be independent checks so that the
-        # order doesn't matter.  The next three could be a single check
-        # but my regex foo isn't good enough to write it.
         self.assertRegex(err_out.getvalue(), 'Traceback')
         self.assertRegex(err_out.getvalue(), r'import bad-syntax')
         self.assertRegex(err_out.getvalue(), 'SyntaxError')
@@ -162,10 +158,8 @@ class HelperFunctionsTests(unittest.TestCase):
         pth_dir, pth_fn = self.make_pth("randompath\nimport nosuchmodule\n")
         with captured_stderr() as err_out:
             site.addpackage(pth_dir, pth_fn, set())
-        self.assertRegex(err_out.getvalue(), "line 2")
         self.assertRegex(err_out.getvalue(),
             re.escape(os.path.join(pth_dir, pth_fn)))
-        # XXX: ditto previous XXX comment.
         self.assertRegex(err_out.getvalue(), 'Traceback')
         self.assertRegex(err_out.getvalue(), 'ModuleNotFoundError')
 
@@ -178,65 +172,66 @@ class HelperFunctionsTests(unittest.TestCase):
     def test_addpackage_import_bad_pth_file(self):
         # Issue 5258
         pth_dir, pth_fn = self.make_pth("abc\x00def\n")
-        with captured_stderr() as err_out:
-            self.assertFalse(site.addpackage(pth_dir, pth_fn, set()))
-        self.maxDiff = None
-        self.assertEqual(err_out.getvalue(), "")
         for path in sys.path:
             if isinstance(path, str):
                 self.assertNotIn("abc\x00def", path)
 
     def test_addsitedir(self):
-        # Same tests for test_addpackage since addsitedir() essentially just
-        # calls addpackage() for every .pth file in the directory
+        # addsitedir() reads .pth files and, when called standalone
+        # (known_paths=None), flushes paths and import lines immediately.
         pth_file = PthFile()
-        pth_file.cleanup(prep=True) # Make sure that nothing is pre-existing
-                                    # that is tested for
-        try:
-            pth_file.create()
-            site.addsitedir(pth_file.base_dir, set())
+        # Ensure we have a clean slate.
+        pth_file.cleanup(prep=True)
+        with pth_file.create():
+            site.addsitedir(pth_file.base_dir)
             self.pth_file_tests(pth_file)
-        finally:
-            pth_file.cleanup()
+
+    def test_addsitedir_explicit_flush(self):
+        # StartupState.addsitedir() reads .pth files and accumulates pending
+        # state without flushing.  A subsequent state.process() call then
+        # applies the paths and runs the import lines.
+        pth_file = PthFile()
+        # Ensure we have a clean slate.
+        pth_file.cleanup(prep=True)
+        with pth_file.create():
+            state = site.StartupState(known_paths=set())
+            state.addsitedir(pth_file.base_dir)
+            self.assertNotIn(pth_file.imported, sys.modules)
+            state.process()
+            self.pth_file_tests(pth_file)
 
     def test_addsitedir_dotfile(self):
         pth_file = PthFile('.dotfile')
+        # Ensure we have a clean slate.
         pth_file.cleanup(prep=True)
-        try:
-            pth_file.create()
-            site.addsitedir(pth_file.base_dir, set())
+        with pth_file.create():
+            site.addsitedir(pth_file.base_dir)
             self.assertNotIn(site.makepath(pth_file.good_dir_path)[0], sys.path)
             self.assertIn(pth_file.base_dir, sys.path)
-        finally:
-            pth_file.cleanup()
 
     @unittest.skipUnless(hasattr(os, 'chflags'), 'test needs os.chflags()')
     def test_addsitedir_hidden_flags(self):
         pth_file = PthFile()
+        # Ensure we have a clean slate.
         pth_file.cleanup(prep=True)
-        try:
-            pth_file.create()
+        with pth_file.create():
             st = os.stat(pth_file.file_path)
             os.chflags(pth_file.file_path, st.st_flags | stat.UF_HIDDEN)
-            site.addsitedir(pth_file.base_dir, set())
+            site.addsitedir(pth_file.base_dir)
             self.assertNotIn(site.makepath(pth_file.good_dir_path)[0], sys.path)
             self.assertIn(pth_file.base_dir, sys.path)
-        finally:
-            pth_file.cleanup()
 
     @unittest.skipUnless(sys.platform == 'win32', 'test needs Windows')
     @support.requires_subprocess()
     def test_addsitedir_hidden_file_attribute(self):
         pth_file = PthFile()
+        # Ensure we have a clean slate.
         pth_file.cleanup(prep=True)
-        try:
-            pth_file.create()
+        with pth_file.create():
             subprocess.check_call(['attrib', '+H', pth_file.file_path])
-            site.addsitedir(pth_file.base_dir, set())
+            site.addsitedir(pth_file.base_dir)
             self.assertNotIn(site.makepath(pth_file.good_dir_path)[0], sys.path)
             self.assertIn(pth_file.base_dir, sys.path)
-        finally:
-            pth_file.cleanup()
 
     # This tests _getuserbase, hence the double underline
     # to distinguish from a test for getuserbase
@@ -400,7 +395,7 @@ class HelperFunctionsTests(unittest.TestCase):
                 self.assertEqual(sys.stderr.getvalue(), out)
 
 
-class PthFile(object):
+class PthFile:
     """Helper class for handling testing of .pth files"""
 
     def __init__(self, filename_base=TESTFN, imported="time",
@@ -415,6 +410,7 @@ class PthFile(object):
         self.good_dir_path = os.path.join(self.base_dir, self.good_dirname)
         self.bad_dir_path = os.path.join(self.base_dir, self.bad_dirname)
 
+    @contextlib.contextmanager
     def create(self):
         """Create a .pth file with a comment, blank lines, an ``import
         <self.imported>``, a line with self.good_dirname, and a line with
@@ -423,19 +419,21 @@ class PthFile(object):
         Creation of the directory for self.good_dir_path (based off of
         self.good_dirname) is also performed.
 
-        Make sure to call self.cleanup() to undo anything done by this method.
-
+        Used as a context manager: self.cleanup() is called on exit.
         """
-        FILE = open(self.file_path, 'w')
-        try:
-            print("#import @bad module name", file=FILE)
-            print("\n", file=FILE)
-            print("import %s" % self.imported, file=FILE)
-            print(self.good_dirname, file=FILE)
-            print(self.bad_dirname, file=FILE)
-        finally:
-            FILE.close()
+        with open(self.file_path, 'w') as fp:
+            print(f"""\
+#import @bad module name
+import {self.imported}
+{self.good_dirname}
+{self.bad_dirname}
+""", file=fp)
+
         os.mkdir(self.good_dir_path)
+        try:
+            yield self
+        finally:
+            self.cleanup()
 
     def cleanup(self, prep=False):
         """Make sure that the .pth file is deleted, self.imported is not in
@@ -455,6 +453,7 @@ class PthFile(object):
         if os.path.exists(self.bad_dir_path):
             os.rmdir(self.bad_dir_path)
 
+
 class ImportSideEffectTests(unittest.TestCase):
     """Test side-effects from importing 'site'."""
 
@@ -465,17 +464,6 @@ class ImportSideEffectTests(unittest.TestCase):
     def tearDown(self):
         """Restore sys.path"""
         sys.path[:] = self.sys_path
-
-    def test_abs_paths_cached_None(self):
-        """Test for __cached__ is None.
-
-        Regarding to PEP 3147, __cached__ can be None.
-
-        See also: https://bugs.python.org/issue30167
-        """
-        sys.modules['test'].__cached__ = None
-        site.abs_paths()
-        self.assertIsNone(sys.modules['test'].__cached__)
 
     def test_no_duplicate_paths(self):
         # No duplicate paths should exist in sys.path
@@ -554,7 +542,6 @@ class ImportSideEffectTests(unittest.TestCase):
                 if 'usercustomize' == module_name:
                     output = subprocess.check_output([sys.executable, '-s', '-c', '""'])
                     self.assertNotIn(eyecatcher, output.decode('utf-8'))
-
 
     @unittest.skipUnless(hasattr(urllib.request, "HTTPSHandler"),
                          'need SSL support to download license')
@@ -917,6 +904,838 @@ class CommandLineTests(unittest.TestCase):
         excepted_return_code, excepted_output = excepted
         self.assertEqual(return_code, excepted_return_code)
         self.assertEqual(output, excepted_output)
+
+
+class StartFileTests(unittest.TestCase):
+    """Tests for .start file processing (PEP 829)."""
+
+    def setUp(self):
+        self.enterContext(import_helper.DirsOnSysPath())
+        self.tmpdir = self.sitedir = self.enterContext(os_helper.temp_dir())
+        # Each test gets its own StartupState to batch the parsing and
+        # explicitly invoke the processing.  Seed with an empty known_paths
+        # so dedup is not influenced by the current sys.path.
+        self.state = site.StartupState(known_paths=set())
+
+    def _make_start(self, content, name='testpkg', basedir=None):
+        """Write a <name>.start file and return its basename.
+
+        ``basedir`` defaults to ``self.tmpdir``.  Pass an explicit directory
+        when the .start file needs to live somewhere other than the test's
+        primary tmpdir (e.g. a nested user-site).
+        """
+        basename = f"{name}.start"
+        filepath = os.path.join(self.tmpdir if basedir is None else basedir, basename)
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(content)
+        return basename
+
+    def _make_pth(self, content, name='testpkg', basedir=None):
+        """Write a <name>.pth file and return its basename.
+
+        ``basedir`` defaults to ``self.tmpdir``.  Pass an explicit directory
+        when the .pth file needs to live somewhere other than the test's
+        primary tmpdir (e.g. a nested user-site).
+        """
+        basename = f"{name}.pth"
+        filepath = os.path.join(self.tmpdir if basedir is None else basedir, basename)
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(content)
+        return basename
+
+    def _make_mod(self, contents, name='mod', *, package=False, on_path=False):
+        """Write an importable module (or package), returning its parent dir."""
+        extdir = os.path.join(self.sitedir, 'extdir')
+        os.makedirs(extdir, exist_ok=True)
+
+        # Put the code in a package's dunder-init or flat module.
+        if package:
+            pkgdir = os.path.join(extdir, name)
+            os.mkdir(pkgdir)
+            modpath = os.path.join(pkgdir, '__init__.py')
+        else:
+            modpath = os.path.join(extdir, f'{name}.py')
+
+        with open(modpath, 'w') as fp:
+            fp.write(contents)
+
+        self.addCleanup(sys.modules.pop, name, None)
+        if on_path:
+            # Don't worry, DirsOnSysPath() in setUp() will clean this up.
+            sys.path.insert(0, extdir)
+        return extdir
+
+    def _all_entrypoints(self, state=None):
+        """Flatten state._entrypoints into a list of (filename, entry) tuples."""
+        result = []
+        state = self.state if state is None else state
+        for filename, entries in state._entrypoints.items():
+            for entry in entries:
+                result.append((filename, entry))
+        return result
+
+    def _just_entrypoints(self, state=None):
+        return [entry for filename, entry in self._all_entrypoints(state)]
+
+    # There are two classes of tests here.  Tests that start with `test_impl_`
+    # know details about the implementation and they access non-public methods
+    # and data structures to perform focused functional tests.
+    #
+    # Tests that start with `test_addsitedir_` are end-to-end tests that ensure
+    # integration semantics and functionality as a caller of the public
+    # surfaces would see.
+
+    # --- Basic StartupState implementation tests ---
+
+    def test_impl_startupstate_defaults_to_sys_path(self):
+        sys.path.insert(0, self.sitedir)
+        state = site.StartupState()
+        self.assertIn(site.makepath(self.sitedir)[1], state._known_paths)
+
+    def test_impl_startupstate_uses_supplied_known_paths(self):
+        known_paths = set()
+        state = site.StartupState(known_paths)
+        state.addsitedir(self.sitedir)
+        self.assertIs(state._known_paths, known_paths)
+        self.assertIn(site.makepath(self.sitedir)[1], known_paths)
+
+    # --- StartupState._read_start_file tests ---
+
+    def test_impl_read_start_file_basic(self):
+        self._make_start("os.path:join\n", name='foo')
+        self.state._read_start_file(self.sitedir, 'foo.start')
+        fullname = os.path.join(self.sitedir, 'foo.start')
+        self.assertEqual(
+            self.state._entrypoints[fullname], ['os.path:join']
+        )
+
+    def test_impl_read_start_file_multiple_entries(self):
+        self._make_start("os.path:join\nos.path:exists\n", name='foo')
+        self.state._read_start_file(self.sitedir, 'foo.start')
+        fullname = os.path.join(self.sitedir, 'foo.start')
+        self.assertEqual(
+            self.state._entrypoints[fullname],
+            ['os.path:join', 'os.path:exists'],
+        )
+
+    def test_impl_read_start_file_comments_and_blanks(self):
+        self._make_start("# a comment\n\nos.path:join\n  \n", name='foo')
+        self.state._read_start_file(self.sitedir, 'foo.start')
+        fullname = os.path.join(self.sitedir, 'foo.start')
+        self.assertEqual(
+            self.state._entrypoints[fullname], ['os.path:join']
+        )
+
+    def test_impl_read_start_file_accepts_all_non_blank_lines(self):
+        # Syntax validation is deferred to entry-point execution time
+        # (where pkgutil.resolve_name(strict=True) enforces the strict
+        # pkg.mod:callable form), so parsing accepts every non-blank,
+        # non-comment line, including syntactically invalid ones.
+        content = (
+            "os.path\n"                 # no colon
+            "pkg.mod:\n"                # empty callable
+            ":callable\n"               # empty module
+            "pkg.mod:callable:extra\n"  # multiple colons
+            "os.path:join\n"            # valid
+        )
+        self._make_start(content, name='foo')
+        self.state._read_start_file(self.sitedir, 'foo.start')
+        fullname = os.path.join(self.sitedir, 'foo.start')
+        self.assertEqual(self.state._entrypoints[fullname], [
+            'os.path',
+            'pkg.mod:',
+            ':callable',
+            'pkg.mod:callable:extra',
+            'os.path:join',
+        ])
+
+    def test_impl_read_start_file_empty(self):
+        # PEP 829: an empty .start file is still registered as present
+        # (with an empty entry point list) so that it suppresses `import`
+        # lines in any matching .pth file.
+        self._make_start("", name='foo')
+        self.state._read_start_file(self.sitedir, 'foo.start')
+        fullname = os.path.join(self.sitedir, 'foo.start')
+        self.assertEqual(self.state._entrypoints, {fullname: []})
+
+    def test_impl_read_start_file_comments_only(self):
+        # As with an empty file, a comments-only .start file is registered
+        # as present so it can suppress matching .pth `import` lines.
+        self._make_start("# just a comment\n# another\n", name='foo')
+        self.state._read_start_file(self.sitedir, 'foo.start')
+        fullname = os.path.join(self.sitedir, 'foo.start')
+        self.assertEqual(self.state._entrypoints, {fullname: []})
+
+    def test_impl_read_start_file_nonexistent(self):
+        with captured_stderr():
+            self.state._read_start_file(self.tmpdir, 'nonexistent.start')
+        self.assertEqual(self.state._entrypoints, {})
+
+    @unittest.skipUnless(hasattr(os, 'chflags'), 'test needs os.chflags()')
+    def test_impl_read_start_file_hidden_flags(self):
+        self._make_start("os.path:join\n", name='foo')
+        filepath = os.path.join(self.tmpdir, 'foo.start')
+        st = os.stat(filepath)
+        os.chflags(filepath, st.st_flags | stat.UF_HIDDEN)
+        self.state._read_start_file(self.sitedir, 'foo.start')
+        self.assertEqual(self.state._entrypoints, {})
+
+    def test_impl_one_start_file_with_duplicates_not_deduplicated(self):
+        # PEP 829: duplicate entry points are NOT deduplicated.
+        self._make_start("os.path:join\nos.path:join\n", name='foo')
+        self.state._read_start_file(self.sitedir, 'foo.start')
+        fullname = os.path.join(self.sitedir, 'foo.start')
+        self.assertEqual(
+            self.state._entrypoints[fullname],
+            ['os.path:join', 'os.path:join'],
+        )
+
+    def test_impl_two_start_files_with_duplicates_not_deduplicated(self):
+        self._make_start("os.path:join", name="foo")
+        self._make_start("os.path:join", name="bar")
+        self.state._read_start_file(self.sitedir, 'foo.start')
+        self.state._read_start_file(self.sitedir, 'bar.start')
+        self.assertEqual(
+            self._just_entrypoints(),
+            ['os.path:join', 'os.path:join'],
+        )
+
+    def test_impl_read_start_file_accepts_utf8_bom(self):
+        # PEP 829: .start files MUST be utf-8-sig (UTF-8 with optional BOM).
+        filepath = os.path.join(self.tmpdir, 'foo.start')
+        with open(filepath, 'wb') as f:
+            f.write(b'\xef\xbb\xbf' + b'os.path:join\n')
+        self.state._read_start_file(self.sitedir, 'foo.start')
+        fullname = os.path.join(self.sitedir, 'foo.start')
+        self.assertEqual(
+            self.state._entrypoints[fullname], ['os.path:join']
+        )
+
+    def test_impl_read_start_file_invalid_utf8_silently_skipped(self):
+        # PEP 829: .start files MUST be utf-8-sig.  Unlike .pth files, there
+        # is no locale-encoding fallback.  A .start file that is not valid
+        # UTF-8 is silently skipped, with no key registered in
+        # state._entrypoints and no output to stderr (parsing errors are
+        # reported only under -v).
+        filepath = os.path.join(self.tmpdir, 'foo.start')
+        with open(filepath, 'wb') as f:
+            # Bare continuation byte -- invalid as a UTF-8 start byte.
+            f.write(b'\x80\x80\x80\n')
+        with captured_stderr() as err:
+            self.state._read_start_file(self.sitedir, 'foo.start')
+        self.assertEqual(self.state._entrypoints, {})
+        self.assertEqual(err.getvalue(), "")
+
+    # --- StartupState._read_pth_file tests ---
+
+    def test_impl_read_pth_file_paths(self):
+        subdir = os.path.join(self.sitedir, 'mylib')
+        os.mkdir(subdir)
+        self._make_pth("mylib\n", name='foo')
+        self.state._read_pth_file(self.sitedir, 'foo.pth')
+        fullname = os.path.join(self.sitedir, 'foo.pth')
+        self.assertIn((fullname, subdir), self.state._path_entries)
+
+    def test_impl_read_pth_file_imports_collected(self):
+        self._make_pth("import sys\n", name='foo')
+        self.state._read_pth_file(self.sitedir, 'foo.pth')
+        fullname = os.path.join(self.sitedir, 'foo.pth')
+        self.assertEqual(
+            self.state._importexecs[fullname], ['import sys']
+        )
+
+    def test_impl_read_pth_file_comments_and_blanks(self):
+        self._make_pth("# comment\n\n  \n", name='foo')
+        self.state._read_pth_file(self.sitedir, 'foo.pth')
+        self.assertEqual(self.state._path_entries, [])
+        self.assertEqual(self.state._importexecs, {})
+
+    def test_impl_read_pth_file_deduplication(self):
+        subdir = os.path.join(self.sitedir, 'mylib')
+        os.mkdir(subdir)
+        # self.state._known_paths acts as the deduplication ledger across
+        # both reads.
+        self._make_pth("mylib\n", name='a')
+        self._make_pth("mylib\n", name='b')
+        self.state._read_pth_file(self.sitedir, 'a.pth')
+        self.state._read_pth_file(self.sitedir, 'b.pth')
+        # There is only one entry across both files.
+        all_dirs = [dir_ for filename, dir_ in self.state._path_entries]
+        self.assertEqual(all_dirs, [subdir])
+
+    def test_impl_read_pth_file_bad_line_continues(self):
+        # PEP 829: errors on individual lines don't abort processing the file.
+        subdir = os.path.join(self.sitedir, 'goodpath')
+        os.mkdir(subdir)
+        self._make_pth("abc\x00def\ngoodpath\n", name='foo')
+        with captured_stderr():
+            self.state._read_pth_file(self.sitedir, 'foo.pth')
+        fullname = os.path.join(self.sitedir, 'foo.pth')
+        self.assertIn((fullname, subdir), self.state._path_entries)
+
+    def _flags_with_verbose(self, verbose):
+        # Build a sys.flags clone with verbose overridden but every
+        # other field preserved, so unrelated reads like
+        # sys.flags.optimize during io.open_code() continue to work.
+        attrs = {
+            name: getattr(sys.flags, name)
+            for name in sys.flags.__match_args__
+        }
+        attrs['verbose'] = verbose
+        return SimpleNamespace(**attrs)
+
+    def test_impl_read_pth_file_parse_error_silent_by_default(self):
+        # PEP 829: parse-time errors are silent unless -v is given.
+        # Force the error path by making makepath() raise an exception.
+        self._make_pth("badline\n", name='foo')
+        with (
+            mock.patch('site.makepath', side_effect=ValueError("boom")),
+            mock.patch('sys.flags', self._flags_with_verbose(False)),
+            captured_stderr() as err,
+        ):
+            self.state._read_pth_file(self.sitedir, 'foo.pth')
+        self.assertEqual(err.getvalue(), "")
+
+    def test_impl_read_pth_file_parse_error_reported_under_verbose(self):
+        # PEP 829: parse-time errors are reported when -v is given.
+        self._make_pth("badline\n", name='foo')
+        with (
+            mock.patch('site.makepath', side_effect=ValueError("boom")),
+            mock.patch('sys.flags', self._flags_with_verbose(True)),
+            captured_stderr() as err,
+        ):
+            self.state._read_pth_file(self.sitedir, 'foo.pth')
+        out = err.getvalue()
+        self.assertIn('Error in', out)
+        self.assertIn('foo.pth', out)
+
+    def test_impl_read_pth_file_locale_fallback(self):
+        # PEP 829: .pth files that fail UTF-8 decoding fall back to the
+        # locale encoding for backward compatibility (deprecated in
+        # 3.15, to be removed in 3.20).  Mock locale.getencoding() so
+        # the test does not depend on the host's actual locale.
+        subdir = os.path.join(self.sitedir, 'mylib')
+        os.mkdir(subdir)
+        filepath = os.path.join(self.tmpdir, 'foo.pth')
+        # \xe9 is invalid UTF-8 but valid in latin-1.
+        with open(filepath, 'wb') as f:
+            f.write(b'# caf\xe9 comment\nmylib\n')
+        with (
+            mock.patch('locale.getencoding', return_value='latin-1'),
+            captured_stderr(),
+        ):
+            self.state._read_pth_file(self.sitedir, 'foo.pth')
+        fullname = os.path.join(self.sitedir, 'foo.pth')
+        self.assertIn((fullname, subdir), self.state._path_entries)
+
+    # --- StartupState._execute_start_entrypoints tests ---
+
+    def test_impl_execute_entrypoints_with_callable(self):
+        # An entry point with a callable.
+        self._make_mod("""\
+called = False
+def startup():
+    global called
+    called = True
+""", name='epmod', package=True, on_path=True)
+        fullname = os.path.join(self.sitedir, 'epmod.start')
+        self.state._entrypoints[fullname] = ['epmod:startup']
+        self.state._execute_start_entrypoints()
+        import epmod
+        self.assertTrue(epmod.called)
+
+    def test_impl_execute_entrypoints_import_error(self):
+        # Import errors print a traceback and continue.
+        fullname = os.path.join(self.sitedir, 'bad.start')
+        self.state._entrypoints[fullname] = [
+            'nosuchmodule_xyz:func', 'os.path:join',
+        ]
+        with captured_stderr() as err:
+            self.state._execute_start_entrypoints()
+        self.assertIn('nosuchmodule_xyz', err.getvalue())
+        # os.path:join should still have been called (no exception for it)
+
+    def test_impl_execute_entrypoints_strict_syntax_rejection(self):
+        # PEP 829: only the strict pkg.mod:callable form is valid.  At entry
+        # point execution time, pkgutil.resolve_name(strict=True) raises a
+        # ValueError for the invalid syntax.  The invalid entry is reported
+        # and execution continues with the next one.
+        fullname = os.path.join(self.sitedir, 'bad.start')
+        self.state._entrypoints[fullname] = [
+            'os.path',                  # no colon
+            'pkg.mod:',                 # empty callable
+            ':callable',                # empty module
+            'pkg.mod:callable:extra',   # multiple colons
+        ]
+        with captured_stderr() as err:
+            self.state._execute_start_entrypoints()
+        out = err.getvalue()
+        self.assertIn('Invalid entry point syntax', out)
+        for bad in (
+            'os.path',
+            'pkg.mod:',
+            ':callable',
+            'pkg.mod:callable:extra',
+        ):
+            self.assertIn(bad, out)
+
+    def test_impl_execute_entrypoints_callable_error(self):
+        # A callable that errors prints a traceback but continues.
+        self._make_mod("""\
+def fail():
+    raise RuntimeError("boom")
+""", name='badmod', package=True, on_path=True)
+        fullname = os.path.join(self.sitedir, 'badmod.start')
+        self.state._entrypoints[fullname] = ['badmod:fail']
+        with captured_stderr() as err:
+            self.state._execute_start_entrypoints()
+        self.assertIn('RuntimeError', err.getvalue())
+        self.assertIn('boom', err.getvalue())
+
+    def test_impl_execute_entrypoints_duplicates_called_twice(self):
+        # PEP 829: duplicate entry points execute multiple times.
+        self._make_mod("""\
+call_count = 0
+def bump():
+    global call_count
+    call_count += 1
+""", name='countmod', package=False, on_path=True)
+        fullname = os.path.join(self.sitedir, 'countmod.start')
+        self.state._entrypoints[fullname] = [
+            'countmod:bump', 'countmod:bump',
+        ]
+        self.state._execute_start_entrypoints()
+        import countmod
+        self.assertEqual(countmod.call_count, 2)
+
+    # --- StartupState._exec_imports tests ---
+
+    def test_impl_exec_imports_suppressed_by_matching_start(self):
+        # Import lines from foo.pth are suppressed when foo.start exists.
+        self._make_mod("""\
+call_count = 0
+def bump(incr=2):
+    global call_count
+    call_count += incr
+""", name='countmod', package=False, on_path=True)
+        self._make_start("countmod:bump\n", name='foo')
+        self._make_pth("import countmod; countmod.bump(1)\n", name='foo')
+        self.state._read_pth_file(self.sitedir, 'foo.pth')
+        self.state._read_start_file(self.sitedir, 'foo.start')
+        self.state._exec_imports()
+        self.state._execute_start_entrypoints()
+        import countmod
+        # This will be 2 because the entry point is called with no
+        # arguments, and the .pth import line is never exec'd.
+        self.assertEqual(countmod.call_count, 2)
+
+    def test_impl_exec_imports_not_suppressed_by_different_start(self):
+        # Import lines from foo.pth are NOT suppressed by bar.start.
+        self._make_mod("""\
+call_count = 0
+def bump():
+    global call_count
+    call_count += 1
+""", name='countmod', package=False, on_path=True)
+        pth_fullname = os.path.join(self.sitedir, 'foo.pth')
+        start_fullname = os.path.join(self.sitedir, 'bar.start')
+        self.state._importexecs[pth_fullname] = ['import countmod; countmod.bump()']
+        self.state._entrypoints[start_fullname] = ['os.path:join']
+        self.state._exec_imports()
+        import countmod
+        self.assertEqual(countmod.call_count, 1)
+
+    def test_impl_exec_imports_suppressed_by_empty_matching_start(self):
+        self._make_start("", name='foo')
+        self._make_pth("import epmod; epmod.startup()", name='foo')
+        self._make_mod("""\
+called = False
+def startup():
+    global called
+    called = True
+""", name='epmod', package=True, on_path=True)
+        self.state._read_pth_file(self.sitedir, 'foo.pth')
+        self.state._read_start_file(self.sitedir, 'foo.start')
+        self.state._exec_imports()
+        import epmod
+        self.assertFalse(epmod.called)
+
+    # --- StartupState._extend_syspath tests ---
+
+    def test_impl_extend_syspath_existing_dir(self):
+        subdir = os.path.join(self.sitedir, 'extlib')
+        os.mkdir(subdir)
+        self.state._path_entries.append(('test.pth', subdir))
+        self.state._extend_syspath()
+        self.assertIn(subdir, sys.path)
+
+    def test_impl_extend_syspath_nonexistent_dir(self):
+        nonesuch = os.path.join(self.sitedir, 'nosuchdir')
+        self.state._path_entries.append(('test.pth', nonesuch))
+        with captured_stderr() as err:
+            self.state._extend_syspath()
+        self.assertNotIn(nonesuch, sys.path)
+        self.assertIn('does not exist', err.getvalue())
+
+    # --- addsitedir integration tests ---
+
+    def test_addsitedir_pth_import_skipped_when_matching_start_exists(self):
+        # PEP 829: an empty .start file disables the matching .pth's import
+        # lines, even when the .start has no entry points of its own.
+        self._make_mod("flag = False\n", name='suppressed', on_path=True)
+        self._make_start("", name='foo')
+        self._make_pth(
+            "import suppressed; suppressed.flag = True\n",
+            name='foo')
+        site.addsitedir(self.sitedir, set())
+        import suppressed
+        self.assertFalse(
+            suppressed.flag,
+            "import line in foo.pth should be suppressed by foo.start")
+
+    def test_addsitedir_dotfile_start_entrypoint_not_executed(self):
+        # .start files starting with '.' are skipped, so their entry
+        # points must not run.
+        self._make_mod("""\
+called = False
+def hook():
+    global called
+    called = True
+""",
+                       name='dotted', on_path=True)
+        self._make_start("dotted:hook\n", name='.hidden')
+        site.addsitedir(self.sitedir, set())
+        import dotted
+        self.assertFalse(dotted.called)
+
+    def test_addsitedir_dedups_paths_across_pth_files(self):
+        # PEP 829: when multiple .pth files reference the same path within
+        # a single addsitedir() invocation, the path is appended to
+        # sys.path exactly once.
+        subdir = os.path.join(self.sitedir, 'shared')
+        os.mkdir(subdir)
+        self._make_pth("shared\n", name='a')
+        self._make_pth("shared\n", name='b')
+        before = sys.path.count(subdir)
+        site.addsitedir(self.sitedir, set())
+        self.assertEqual(sys.path.count(subdir), before + 1)
+
+    def test_addsitedir_discovers_start_files(self):
+        # addsitedir() should discover .start files and accumulate entries.
+        self._make_start("os.path:join\n", name='foo')
+        state = site.StartupState(known_paths=set())
+        state.addsitedir(self.sitedir)
+        fullname = os.path.join(self.sitedir, 'foo.start')
+        self.assertIn(
+            'os.path:join', state._entrypoints[fullname]
+        )
+
+    def test_addsitedir_pth_paths_still_work_with_start(self):
+        # Path lines in .pth files still work even when a .start file exists.
+        subdir = os.path.join(self.sitedir, 'mylib')
+        os.mkdir(subdir)
+        self._make_start("os.path:join\n", name='foo')
+        self._make_pth("mylib\n", name='foo')
+        state = site.StartupState(known_paths=set())
+        state.addsitedir(self.sitedir)
+        fullname = os.path.join(self.sitedir, 'foo.pth')
+        self.assertIn((fullname, subdir), state._path_entries)
+
+    def test_addsitedir_start_alphabetical_order(self):
+        # Multiple .start files are discovered alphabetically.
+        self._make_start("os.path:join\n", name='zzz')
+        self._make_start("os.path:exists\n", name='aaa')
+        state = site.StartupState(known_paths=set())
+        state.addsitedir(self.sitedir)
+        entries = self._just_entrypoints(state)
+        idx_a = entries.index('os.path:exists')
+        idx_z = entries.index('os.path:join')
+        self.assertLess(idx_a, idx_z)
+
+    def test_addsitedir_pth_and_start(self):
+        # Create a .pth and .start with the same basename; verify both the
+        # .pth data and .start data is collected.
+        subdir = os.path.join(self.sitedir, 'mylib')
+        os.mkdir(subdir)
+        self._make_pth("mylib\n", name='foo')
+        self._make_start("os.path:join\n", name='foo')
+        state = site.StartupState(known_paths=set())
+        state.addsitedir(self.sitedir)
+        # Both should be collected.
+        pth_fullname = os.path.join(self.sitedir, 'foo.pth')
+        start_fullname = os.path.join(self.sitedir, 'foo.start')
+        self.assertIn((pth_fullname, subdir), state._path_entries)
+        self.assertIn(
+            'os.path:join',
+            state._entrypoints.get(start_fullname, []),
+        )
+
+    def test_impl_addsitedir_skips_dotfile_start(self):
+        # .start files starting with '.' are skipped.
+        # This will create `.hidden.start`.
+        self._make_start("os.path:join\n", name='.hidden')
+        state = site.StartupState(known_paths=set())
+        state.addsitedir(self.sitedir)
+        self.assertEqual(state._entrypoints, {})
+
+    def test_addsitedir_standalone_flushes(self):
+        # Standalone addsitedir creates a per-call StartupState and processes
+        # it before returning, so the caller sees the effect immediately.
+        subdir = os.path.join(self.sitedir, 'flushlib')
+        os.mkdir(subdir)
+        self._make_pth("flushlib\n", name='foo')
+        # No arguments means state is implied and processing is eager.
+        site.addsitedir(self.sitedir)
+        self.assertIn(subdir, sys.path)
+
+    def test_addsitedir_explicit_startup_state_does_not_flush(self):
+        # With an explicit StartupState, addsitedir accumulates pending state
+        # but does not flush it; sys.path is updated only when process() is
+        # called explicitly.
+        subdir = os.path.join(self.sitedir, 'acclib')
+        os.mkdir(subdir)
+        self._make_pth("acclib\n", name='foo')
+        state = site.StartupState(known_paths=set())
+        state.addsitedir(self.sitedir)
+        # Path is pending, not yet on sys.path.
+        self.assertNotIn(subdir, sys.path)
+        fullname = os.path.join(self.sitedir, 'foo.pth')
+        self.assertIn((fullname, subdir), state._path_entries)
+
+    def test_addsitedir_startup_state_preserves_site_relative_order(self):
+        # As pointed out by @ncoghlan in
+        # https://github.com/python/cpython/issues/150228#issuecomment-4528614952
+        # a subtle ordering change was inadvertently introduced where the
+        # interspersing of the sitedirs with the sys.path extensions they defined
+        # was lost during batch mode.  You'd see all the sitedirs, then all path
+        # extensions.  This test ensures that the old interspersing behavior
+        # has been restored.
+        #
+        # Let's start by creating two sitedirs, each with an extension directory
+        # which will be added to sys.path by .pth files in the respective sitedirs.
+        sitedir2 = self.enterContext(os_helper.temp_dir())
+        extdir1 = os.path.join(self.sitedir, 'ext1')
+        extdir2 = os.path.join(sitedir2, 'ext2')
+        os.mkdir(extdir1)
+        os.mkdir(extdir2)
+        self._make_pth(extdir1 + "\n", name='one')
+        self._make_pth(extdir2 + "\n", name='two', basedir=sitedir2)
+        # Now create an explicit batch, add each sitedir, then process the
+        # entire batch.
+        state = site.StartupState(known_paths=set())
+        state.addsitedir(self.sitedir)
+        state.addsitedir(sitedir2)
+        state.process()
+        # Ensure that on sys.path we see this interspersed order:
+        # [sitedir1, extdir1, sitedir2, extdir2]
+        indexes = [
+            sys.path.index(path)
+            for path in (self.sitedir, extdir1, sitedir2, extdir2)
+        ]
+        # If the index ordering is the same, we preserved the intersperse.
+        self.assertEqual(indexes, sorted(indexes))
+
+    def test_addsitedir_startup_state_paths_before_entrypoints(self):
+        # Ensure that sys.path extensions are available by the time
+        # .start file entry points are called.
+        extdir = self._make_mod("""\
+called = False
+def hook():
+    global called
+    called = True
+""")
+        self.assertNotIn(extdir, sys.path)
+        self._make_pth("extdir\n", name='extlib')
+        self._make_start("mod:hook\n", name='extlib')
+        # Before the startup state is explicitly processed, neither
+        # the path extension is added, nor the entry point called.
+        state = site.StartupState(known_paths=set())
+        state.addsitedir(self.sitedir)
+        self.assertNotIn(extdir, sys.path)
+        self.assertNotIn('mod', sys.modules)
+        # After processing the batch, sys.path is extended and
+        # the entry point was called.
+        state.process()
+        self.assertIn(extdir, sys.path)
+        import mod
+        self.assertTrue(mod.called)
+
+    def test_pth_path_is_available_to_start_entrypoint(self):
+        # Core PEP 829 invariant: all .pth path extensions are applied to
+        # sys.path *before* any .start entry point runs, so an entry
+        # point may live in a module reachable only via a .pth-extended
+        # path.  If the flush phases were inverted, resolving the entry
+        # point would fail with ModuleNotFoundError.
+        extdir = self._make_mod("""\
+called = False
+def hook():
+    global called
+    called = True
+""")
+        # extdir is not on sys.path; only the .pth file makes it so.
+        self.assertNotIn(extdir, sys.path)
+        self._make_pth("extdir\n", name='extlib')
+        self._make_start("mod:hook\n", name='extlib')
+
+        # Standalone addsitedir() triggers the full flush sequence.
+        site.addsitedir(self.sitedir)
+
+        self.assertIn(extdir, sys.path)
+        import mod
+        self.assertTrue(
+            mod.called,
+            "entry point did not run; .pth path was likely not applied "
+            "before .start entry-point execution")
+
+    # --- bugs ---
+
+    # gh-75723
+    def test_addsitdir_idempotent_pth(self):
+        # Adding the same sitedir twice with a known_paths, should not
+        # process .pth files twice.
+        extdir = self._make_mod("""\
+_pth_count = 0
+""")
+        self._make_pth(f"""\
+{extdir}
+import mod; mod._pth_count += 1
+""")
+        dirs = set()
+        dirs = site.addsitedir(self.sitedir, dirs)
+        dirs = site.addsitedir(self.sitedir, dirs)
+        import mod
+        self.assertEqual(mod._pth_count, 1)
+
+    def test_addsitdir_idempotent_start(self):
+        # Adding the same sitedir twice with a known_paths, should not
+        # process .pth files twice.
+        extdir = self._make_mod("""\
+_pth_count = 0
+def increment():
+    global _pth_count
+    _pth_count += 1
+""")
+        self._make_pth(f"""\
+{extdir}
+""")
+        self._make_start("""\
+mod:increment
+""")
+        dirs = set()
+        dirs = site.addsitedir(self.sitedir, dirs)
+        dirs = site.addsitedir(self.sitedir, dirs)
+        import mod
+        self.assertEqual(mod._pth_count, 1)
+
+    # gh-149504
+    def test_reentrant_addsitedir_pth(self):
+        # An import line in a .pth file that calls site.addsitedir()
+        # must not crash or re-execute outer entries while the outer
+        # call is still processing its pending startup state.
+        overlay = self.enterContext(os_helper.temp_dir())
+        overlay_pth = os.path.join(overlay, 'overlay.pth')
+        pkgdir = self.enterContext(os_helper.temp_dir())
+        with open(overlay_pth, 'w', encoding='utf-8') as fp:
+            print(pkgdir, file=fp)
+        self._make_pth(f"import site; site.addsitedir({overlay!r})\n")
+        site.addsitedir(self.sitedir, set())
+        self.assertIn(overlay, sys.path)
+        self.assertIn(pkgdir, sys.path)
+
+    # gh-149504
+    def test_reentrant_addsitedir_start(self):
+        # As above, but the re-entry happens from a .start entry point
+        # instead of a .pth import line.  The entry point execution
+        # phase is vulnerable to the same class of bug.
+        overlay = self.enterContext(os_helper.temp_dir())
+        overlay_pth = os.path.join(overlay, 'overlay.pth')
+        pkgdir = self.enterContext(os_helper.temp_dir())
+        with open(overlay_pth, 'w', encoding='utf-8') as fp:
+            print(pkgdir, file=fp)
+        self._make_mod(f"""\
+import site
+def bootstrap():
+    site.addsitedir({overlay!r})
+""",
+            name='reenter_helper', on_path=True)
+        self._make_start("reenter_helper:bootstrap\n")
+        site.addsitedir(self.sitedir, set())
+        self.assertIn(overlay, sys.path)
+        self.assertIn(pkgdir, sys.path)
+
+    # gh-149819
+    @unittest.skipUnless(site.ENABLE_USER_SITE, "requires user-site")
+    @support.requires_subprocess()
+    def test_pth_processed_when_sitedir_already_on_path(self):
+        # A .pth file in a site-packages directory must still be processed by
+        # site.main() when that directory is already on sys.path at
+        # interpreter start up, for example in a subprocess that inherits
+        # PYTHONPATH from its parent.  Before the fix, main() seeded
+        # known_paths with all entries derived from removeduppaths(), and
+        # addsitedir() then skipped .pth processing for any directory already
+        # in known_paths.
+        user_base = self.tmpdir
+        user_site = site._get_path(user_base)
+        os.makedirs(user_site)
+        sentinel = "GH149819_PTH_RAN"
+        # Writing some text to stderr is the simplest observable side effect.
+        self._make_pth(f"""\
+import sys; sys.stderr.write({sentinel!r}); sys.stderr.flush()
+""",
+            name='gh149819',
+            basedir=user_site)
+        with EnvironmentVarGuard() as env:
+            # PYTHONUSERBASE points USER_SITE at our temp directory so
+            # site.main() will call addsitedir() on it, rather than on the
+            # host interpreter's real user-site.
+            env['PYTHONUSERBASE'] = user_base
+            # PYTHONPATH puts that same directory on sys.path before
+            # site.main() runs in the subprocess.  This is what triggers the
+            # bug: removeduppaths() records it in known_paths, and the unfixed
+            # addsitedir() then skips .pth processing.
+            env['PYTHONPATH'] = user_site
+            result = subprocess.run(
+                [sys.executable, '-c', ''],
+                capture_output=True,
+                check=True,
+            )
+        self.assertIn(sentinel.encode(), result.stderr)
+
+    @unittest.skipUnless(site.ENABLE_USER_SITE, "requires user-site")
+    @support.requires_subprocess()
+    def test_start_processed_when_sitedir_already_on_path(self):
+        # Companion to test_pth_processed_when_sitedir_already_on_path:
+        # the same dedup-guard skip in addsitedir() suppressed both .pth
+        # and .start file processing, so verify .start entry points also
+        # run for a site-packages directory inherited via PYTHONPATH.
+        user_base = self.tmpdir
+        user_site = site._get_path(user_base)
+        os.makedirs(user_site)
+        sentinel = "GH149819_START_RAN"
+        # The .start entry point resolves to a callable, so we write a
+        # tiny importable module that outputs the sentinel text.  It lands in
+        # <self.sitedir>/extdir.  That path is added to PYTHONPATH below so
+        # the subprocess can import it.
+        extdir = self._make_mod(f"""\
+import sys
+def run():
+    sys.stderr.write({sentinel!r})
+    sys.stderr.flush()
+""", name='gh149819mod')
+        self._make_start(
+            'gh149819mod:run\n', name='gh149819', basedir=user_site
+        )
+        with EnvironmentVarGuard() as env:
+            # See above for details.
+            env['PYTHONUSERBASE'] = user_base
+            env['PYTHONPATH'] = os.pathsep.join([user_site, extdir])
+            result = subprocess.run(
+                [sys.executable, '-c', ''],
+                capture_output=True,
+                check=True,
+            )
+        self.assertIn(sentinel.encode(), result.stderr)
+
 
 
 if __name__ == "__main__":

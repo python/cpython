@@ -1,0 +1,3 @@
+Fix race condition in :class:`unittest.mock.ThreadingMock` where
+concurrent calls could lose increments to ``call_count`` and other
+attributes due to a missing lock in ``_increment_mock_call``.

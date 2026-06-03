@@ -147,6 +147,8 @@ class FailingInitializerResourcesTest(unittest.TestCase):
         self._test(ProcessPoolSpawnFailingInitializerTest)
 
     @support.skip_if_sanitizer("TSAN doesn't support threads after fork", thread=True)
+    @unittest.skipIf(sys.platform == "cygwin",
+                     "Forkserver is not available on Cygwin")
     def test_forkserver(self):
         self._test(ProcessPoolForkserverFailingInitializerTest)
 

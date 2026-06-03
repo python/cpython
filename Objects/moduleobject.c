@@ -2,21 +2,23 @@
 
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_ceval.h"         // _PyEval_EnableGILTransient()
 #include "pycore_dict.h"          // _PyDict_EnablePerThreadRefcounting()
 #include "pycore_fileutils.h"     // _Py_wgetcwd
 #include "pycore_import.h"        // _PyImport_GetNextModuleIndex()
 #include "pycore_interp.h"        // PyInterpreterState.importlib
+#include "pycore_lazyimportobject.h" // _PyLazyImportObject_Check()
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_modsupport.h"    // _PyModule_CreateInitialized()
-#include "pycore_moduleobject.h"  // _PyModule_GetDef()
+#include "pycore_moduleobject.h"  // _PyModule_GetDefOrNull()
 #include "pycore_object.h"        // _PyType_AllocNoTrack
 #include "pycore_pyerrors.h"      // _PyErr_FormatFromCause()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_slots.h"         // _PySlotIterator_Init
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include "osdefs.h"               // MAXPATHLEN
-
 
 #define _PyModule_CAST(op) \
     (assert(PyModule_Check(op)), _Py_CAST(PyModuleObject*, (op)))
@@ -26,6 +28,27 @@ static PyMemberDef module_members[] = {
     {"__dict__", _Py_T_OBJECT, offsetof(PyModuleObject, md_dict), Py_READONLY},
     {0}
 };
+
+static void
+assert_def_missing_or_redundant(PyModuleObject *m)
+{
+    /* We copy all relevant info into the module object.
+     * Modules created using a def keep a reference to that (statically
+     * allocated) def; the info there should match what we have in the module.
+     */
+#ifndef NDEBUG
+    if (m->md_token_is_def) {
+        PyModuleDef *def = (PyModuleDef *)m->md_token;
+        assert(def);
+#define DO_ASSERT(F) assert (def->m_ ## F == m->md_state_ ## F);
+        DO_ASSERT(size);
+        DO_ASSERT(traverse);
+        DO_ASSERT(clear);
+        DO_ASSERT(free);
+#undef DO_ASSERT
+    }
+#endif // NDEBUG
+}
 
 
 PyTypeObject PyModuleDef_Type = {
@@ -44,8 +67,14 @@ _PyModule_IsExtension(PyObject *obj)
     }
     PyModuleObject *module = (PyModuleObject*)obj;
 
-    PyModuleDef *def = module->md_def;
-    return (def != NULL && def->m_methods != NULL);
+    if (module->md_exec) {
+        return 1;
+    }
+    if (module->md_token_is_def) {
+        PyModuleDef *def = (PyModuleDef *)module->md_token;
+        return (module->md_token_is_def && def->m_methods != NULL);
+    }
+    return 0;
 }
 
 
@@ -146,10 +175,19 @@ new_module_notrack(PyTypeObject *mt)
     m = (PyModuleObject *)_PyType_AllocNoTrack(mt, 0);
     if (m == NULL)
         return NULL;
-    m->md_def = NULL;
     m->md_state = NULL;
     m->md_weaklist = NULL;
     m->md_name = NULL;
+    m->md_token_is_def = false;
+#ifdef Py_GIL_DISABLED
+    m->md_requires_gil = true;
+#endif
+    m->md_state_size = 0;
+    m->md_state_traverse = NULL;
+    m->md_state_clear = NULL;
+    m->md_state_free = NULL;
+    m->md_exec = NULL;
+    m->md_token = NULL;
     m->md_dict = PyDict_New();
     if (m->md_dict == NULL) {
         Py_DECREF(m);
@@ -158,11 +196,40 @@ new_module_notrack(PyTypeObject *mt)
     return m;
 }
 
+/* Module dict watcher callback.
+ * When a module dictionary is modified, we need to clear the keys version
+ * to invalidate any cached lookups that depend on the dictionary structure.
+ */
+static int
+module_dict_watcher(PyDict_WatchEvent event, PyObject *dict,
+                    PyObject *key, PyObject *new_value)
+{
+    assert(PyDict_Check(dict));
+    // Only if a new lazy object shows up do we need to clear the dictionary. If
+    // this is adding a new key then the version will be reset anyway.
+    if (event == PyDict_EVENT_MODIFIED &&
+        new_value != NULL &&
+        PyLazyImport_CheckExact(new_value)) {
+        _PyDict_ClearKeysVersionLockHeld(dict);
+    }
+    return 0;
+}
+
+int
+_PyModule_InitModuleDictWatcher(PyInterpreterState *interp)
+{
+    // This is a reserved watcher for CPython so there's no need to check for non-NULL.
+    assert(interp->dict_state.watchers[MODULE_WATCHER_ID] == NULL);
+    interp->dict_state.watchers[MODULE_WATCHER_ID] = &module_dict_watcher;
+    return 0;
+}
+
 static void
 track_module(PyModuleObject *m)
 {
     _PyDict_EnablePerThreadRefcounting(m->md_dict);
     _PyObject_SetDeferredRefcount((PyObject *)m);
+    PyDict_Watch(MODULE_WATCHER_ID, m->md_dict);
     PyObject_GC_Track(m);
 }
 
@@ -264,6 +331,17 @@ PyModule_Create2(PyModuleDef* module, int module_api_version)
     return _PyModule_CreateInitialized(module, module_api_version);
 }
 
+static void
+module_copy_members_from_deflike(
+    PyModuleObject *md,
+    PyModuleDef *def_like /* not necessarily a valid Python object */)
+{
+    md->md_state_size = def_like->m_size;
+    md->md_state_traverse = def_like->m_traverse;
+    md->md_state_clear = def_like->m_clear;
+    md->md_state_free = def_like->m_free;
+}
+
 PyObject *
 _PyModule_CreateInitialized(PyModuleDef* module, int module_api_version)
 {
@@ -310,30 +388,34 @@ _PyModule_CreateInitialized(PyModuleDef* module, int module_api_version)
             return NULL;
         }
     }
-    m->md_def = module;
+    m->md_token = module;
+    m->md_token_is_def = true;
+    module_copy_members_from_deflike(m, module);
 #ifdef Py_GIL_DISABLED
-    m->md_gil = Py_MOD_GIL_USED;
+    m->md_requires_gil = true;
 #endif
     return (PyObject*)m;
 }
 
-PyObject *
-PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_version)
+typedef PyObject *(*createfunc_t)(PyObject *, PyModuleDef*);
+
+static PyObject *
+module_from_slots_and_spec(
+    const PySlot *slots,
+    PyObject *spec,
+    int module_api_version,
+    PyModuleDef* original_def /* NULL if not defined by a def */)
 {
-    PyModuleDef_Slot* cur_slot;
-    PyObject *(*create)(PyObject *, PyModuleDef*) = NULL;
+    createfunc_t create = NULL;
     PyObject *nameobj;
     PyObject *m = NULL;
-    int has_multiple_interpreters_slot = 0;
-    void *multiple_interpreters = (void *)0;
-    int has_gil_slot = 0;
-    void *gil_slot = Py_MOD_GIL_USED;
-    int has_execution_slots = 0;
+    uint64_t multiple_interpreters = (uint64_t)Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED;
+    bool requires_gil = true;
     const char *name;
     int ret;
+    void *token = NULL;
+    _Py_modexecfunc m_exec = NULL;
     PyInterpreterState *interp = _PyInterpreterState_GET();
-
-    PyModuleDef_Init(def);
 
     nameobj = PyObject_GetAttrString(spec, "name");
     if (nameobj == NULL) {
@@ -348,7 +430,123 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
         goto error;
     }
 
-    if (def->m_size < 0) {
+    _PySlotIterator it;
+
+    PyModuleDef _dummy_def = {0};
+    PyModuleDef *def_like;
+    if (slots) {
+        assert(!original_def);
+        def_like = &_dummy_def;
+         _PySlotIterator_Init(&it, slots, _PySlot_KIND_MOD);
+    }
+    else {
+        assert(original_def);
+        def_like = original_def;
+         _PySlotIterator_InitLegacy(&it, def_like->m_slots, _PySlot_KIND_MOD);
+    }
+    it.name = name;
+
+    while (_PySlotIterator_Next(&it)) {
+        switch (it.current.sl_id) {
+            case Py_slot_invalid:
+                goto error;
+            case Py_mod_create:
+                create = (createfunc_t)it.current.sl_func;
+                break;
+            case Py_mod_exec:
+                if (!original_def) {
+                    if (m_exec) {
+                        PyErr_Format(
+                            PyExc_SystemError,
+                            "module %s has multiple Py_mod_exec slots",
+                            name);
+                        goto error;
+                    }
+                    m_exec = (_Py_modexecfunc)it.current.sl_func;
+                }
+                break;
+            case Py_mod_multiple_interpreters:
+                multiple_interpreters = it.current.sl_uint64;
+                break;
+            case Py_mod_gil:
+                {
+                    uint64_t val = it.current.sl_uint64;
+                    requires_gil = (val != (uint64_t)Py_MOD_GIL_NOT_USED);
+                }
+                break;
+            case Py_mod_abi:
+                if (PyABIInfo_Check(it.current.sl_ptr, name) < 0) {
+                    goto error;
+                }
+                break;
+            case Py_mod_token:
+                if (original_def && original_def != it.current.sl_ptr) {
+                    PyErr_Format(
+                        PyExc_SystemError,
+                        "module %s: arbitrary Py_mod_token not "
+                        "allowed with PyModuleDef",
+                        name);
+                    goto error;
+                }
+                token = it.current.sl_ptr;
+                break;
+            // Common case: Copy a PEP 793 slot to def_like
+#define DEF_SLOT_CASE(SLOT, TYPE, SL_MEMBER, MEMBER)                        \
+            case SLOT:                                                      \
+                do {                                                        \
+                    if (original_def) {                                     \
+                        TYPE orig_value = (TYPE)original_def->MEMBER;       \
+                        TYPE new_value = (TYPE)it.current.SL_MEMBER;        \
+                        if (orig_value != new_value) {                      \
+                            PyErr_Format(                                   \
+                                PyExc_SystemError,                          \
+                                "module %s: %s conflicts with "             \
+                                "PyModuleDef." #MEMBER,                     \
+                                name, _PySlot_GetName(it.current.sl_id));   \
+                            goto error;                                     \
+                        }                                                   \
+                    }                                                       \
+                    (def_like->MEMBER) = (TYPE)it.current.SL_MEMBER;        \
+                } while (0);                                                \
+                break;                                                      \
+            /////////////////////////////////////////////////////////////////
+            DEF_SLOT_CASE(Py_mod_name, char*, sl_ptr, m_name)
+            DEF_SLOT_CASE(Py_mod_doc, char*, sl_ptr, m_doc)
+            DEF_SLOT_CASE(Py_mod_state_size, Py_ssize_t, sl_size, m_size)
+            DEF_SLOT_CASE(Py_mod_methods, PyMethodDef*, sl_ptr, m_methods)
+            DEF_SLOT_CASE(Py_mod_state_traverse,
+                          traverseproc, sl_func, m_traverse)
+            DEF_SLOT_CASE(Py_mod_state_clear, inquiry, sl_func, m_clear)
+            DEF_SLOT_CASE(Py_mod_state_free, freefunc, sl_func, m_free)
+#undef DEF_SLOT_CASE
+        }
+    }
+    if (!original_def && !_PySlotIterator_SawSlot(&it, Py_mod_abi)) {
+        PyErr_Format(
+            PyExc_SystemError,
+            "module %s does not define Py_mod_abi,"
+            " which is mandatory for modules defined from slots only.",
+            name);
+        goto error;
+    }
+
+#ifdef Py_GIL_DISABLED
+    // For modules created directly from slots (not from a def), we enable
+    // the GIL here (pairing `_PyEval_EnableGILTransient` with
+    // an immediate `_PyImport_EnableGILAndWarn`).
+    // For modules created from a def, the caller is responsible for this.
+    if (!original_def && requires_gil) {
+        PyThreadState *tstate = _PyThreadState_GET();
+        if (_PyEval_EnableGILTransient(tstate) < 0) {
+            goto error;
+        }
+        if (_PyImport_EnableGILAndWarn(tstate, nameobj) < 0) {
+            goto error;
+        }
+    }
+#endif
+
+    if (def_like->m_size < 0) {
         PyErr_Format(
             PyExc_SystemError,
             "module %s: m_size may not be negative for multi-phase initialization",
@@ -356,71 +554,16 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
         goto error;
     }
 
-    for (cur_slot = def->m_slots; cur_slot && cur_slot->slot; cur_slot++) {
-        switch (cur_slot->slot) {
-            case Py_mod_create:
-                if (create) {
-                    PyErr_Format(
-                        PyExc_SystemError,
-                        "module %s has multiple create slots",
-                        name);
-                    goto error;
-                }
-                create = cur_slot->value;
-                break;
-            case Py_mod_exec:
-                has_execution_slots = 1;
-                break;
-            case Py_mod_multiple_interpreters:
-                if (has_multiple_interpreters_slot) {
-                    PyErr_Format(
-                        PyExc_SystemError,
-                        "module %s has more than one 'multiple interpreters' slots",
-                        name);
-                    goto error;
-                }
-                multiple_interpreters = cur_slot->value;
-                has_multiple_interpreters_slot = 1;
-                break;
-            case Py_mod_gil:
-                if (has_gil_slot) {
-                    PyErr_Format(
-                       PyExc_SystemError,
-                       "module %s has more than one 'gil' slot",
-                       name);
-                    goto error;
-                }
-                gil_slot = cur_slot->value;
-                has_gil_slot = 1;
-                break;
-            case Py_mod_abi:
-                if (PyABIInfo_Check((PyABIInfo *)cur_slot->value, name) < 0) {
-                    goto error;
-                }
-                break;
-            default:
-                assert(cur_slot->slot < 0 || cur_slot->slot > _Py_mod_LAST_SLOT);
-                PyErr_Format(
-                    PyExc_SystemError,
-                    "module %s uses unknown slot ID %i",
-                    name, cur_slot->slot);
-                goto error;
-        }
-    }
-
     /* By default, multi-phase init modules are expected
        to work under multiple interpreters. */
-    if (!has_multiple_interpreters_slot) {
-        multiple_interpreters = Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED;
-    }
-    if (multiple_interpreters == Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED) {
+    if (multiple_interpreters == (int64_t)(intptr_t)Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED) {
         if (!_Py_IsMainInterpreter(interp)
             && _PyImport_CheckSubinterpIncompatibleExtensionAllowed(name) < 0)
         {
             goto error;
         }
     }
-    else if (multiple_interpreters != Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
+    else if (multiple_interpreters != (int64_t)(intptr_t)Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
              && interp->ceval.own_gil
              && !_Py_IsMainInterpreter(interp)
              && _PyImport_CheckSubinterpIncompatibleExtensionAllowed(name) < 0)
@@ -429,7 +572,7 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
     }
 
     if (create) {
-        m = create(spec, def);
+        m = create(spec, original_def);
         if (m == NULL) {
             if (!PyErr_Occurred()) {
                 PyErr_Format(
@@ -455,22 +598,34 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
     }
 
     if (PyModule_Check(m)) {
-        ((PyModuleObject*)m)->md_state = NULL;
-        ((PyModuleObject*)m)->md_def = def;
+        PyModuleObject *mod = (PyModuleObject*)m;
+        mod->md_state = NULL;
+        module_copy_members_from_deflike(mod, def_like);
+        if (original_def) {
+            assert (!token || token == original_def);
+            mod->md_token = original_def;
+            mod->md_token_is_def = 1;
+        }
+        else {
+            mod->md_token = token;
+        }
 #ifdef Py_GIL_DISABLED
-        ((PyModuleObject*)m)->md_gil = gil_slot;
+        mod->md_requires_gil = requires_gil;
 #else
-        (void)gil_slot;
+        (void)requires_gil;
 #endif
+        mod->md_exec = m_exec;
     } else {
-        if (def->m_size > 0 || def->m_traverse || def->m_clear || def->m_free) {
+        if (def_like->m_size > 0 || def_like->m_traverse || def_like->m_clear
+            || def_like->m_free)
+        {
             PyErr_Format(
                 PyExc_SystemError,
                 "module %s is not a module object, but requests module state",
                 name);
             goto error;
         }
-        if (has_execution_slots) {
+        if (_PySlotIterator_SawSlot(&it, Py_mod_exec)) {
             PyErr_Format(
                 PyExc_SystemError,
                 "module %s specifies execution slots, but did not create "
@@ -478,17 +633,25 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
                 name);
             goto error;
         }
+        if (token) {
+            PyErr_Format(
+                PyExc_SystemError,
+                "module %s specifies a token, but did not create "
+                    "a ModuleType instance",
+                name);
+            goto error;
+        }
     }
 
-    if (def->m_methods != NULL) {
-        ret = _add_methods_to_object(m, nameobj, def->m_methods);
+    if (def_like->m_methods != NULL) {
+        ret = _add_methods_to_object(m, nameobj, def_like->m_methods);
         if (ret != 0) {
             goto error;
         }
     }
 
-    if (def->m_doc != NULL) {
-        ret = PyModule_SetDocString(m, def->m_doc);
+    if (def_like->m_doc != NULL) {
+        ret = PyModule_SetDocString(m, def_like->m_doc);
         if (ret != 0) {
             goto error;
         }
@@ -503,84 +666,133 @@ error:
     return NULL;
 }
 
+PyObject *
+PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_version)
+{
+    PyModuleDef_Init(def);
+    return module_from_slots_and_spec(NULL, spec, module_api_version, def);
+}
+
+PyObject *
+PyModule_FromSlotsAndSpec(const PySlot *slots, PyObject *spec)
+{
+    if (!slots) {
+        PyErr_SetString(
+            PyExc_SystemError,
+            "PyModule_FromSlotsAndSpec called with NULL slots");
+        return NULL;
+    }
+
+    return module_from_slots_and_spec(slots, spec, PYTHON_API_VERSION,
+                                      NULL);
+}
+
 #ifdef Py_GIL_DISABLED
 int
 PyUnstable_Module_SetGIL(PyObject *module, void *gil)
 {
+    bool requires_gil = (gil != Py_MOD_GIL_NOT_USED);
     if (!PyModule_Check(module)) {
         PyErr_BadInternalCall();
         return -1;
     }
-    ((PyModuleObject *)module)->md_gil = gil;
+    ((PyModuleObject *)module)->md_requires_gil = requires_gil;
     return 0;
 }
 #endif
 
-int
-PyModule_ExecDef(PyObject *module, PyModuleDef *def)
+static int
+run_exec_func(PyObject *module, int (*exec)(PyObject *))
 {
-    PyModuleDef_Slot *cur_slot;
-    const char *name;
-    int ret;
-
-    name = PyModule_GetName(module);
-    if (name == NULL) {
+    int ret = exec(module);
+    if (ret != 0) {
+        if (!PyErr_Occurred()) {
+            PyErr_Format(
+                PyExc_SystemError,
+                "execution of %R failed without setting an exception",
+                module);
+        }
         return -1;
     }
+    if (PyErr_Occurred()) {
+        _PyErr_FormatFromCause(
+            PyExc_SystemError,
+            "execution of module %R raised unreported exception",
+            module);
+        return -1;
+    }
+    return 0;
+}
 
-    if (def->m_size >= 0) {
-        PyModuleObject *md = (PyModuleObject*)module;
+static int
+alloc_state(PyObject *module)
+{
+    if (!PyModule_Check(module)) {
+        PyErr_Format(PyExc_TypeError, "expected module, got %T", module);
+        return -1;
+    }
+    PyModuleObject *md = (PyModuleObject*)module;
+
+    if (md->md_state_size >= 0) {
         if (md->md_state == NULL) {
             /* Always set a state pointer; this serves as a marker to skip
              * multiple initialization (importlib.reload() is no-op) */
-            md->md_state = PyMem_Malloc(def->m_size);
+            md->md_state = PyMem_Malloc(md->md_state_size);
             if (!md->md_state) {
                 PyErr_NoMemory();
                 return -1;
             }
-            memset(md->md_state, 0, def->m_size);
+            memset(md->md_state, 0, md->md_state_size);
         }
     }
+    return 0;
+}
+
+int
+PyModule_Exec(PyObject *module)
+{
+    if (alloc_state(module) < 0) {
+        return -1;
+    }
+    PyModuleObject *md = (PyModuleObject*)module;
+    if (md->md_exec) {
+        assert(!md->md_token_is_def);
+        return run_exec_func(module, md->md_exec);
+    }
+
+    PyModuleDef *def = _PyModule_GetDefOrNull(module);
+    if (def) {
+        return PyModule_ExecDef(module, def);
+    }
+    return 0;
+}
+
+int
+PyModule_ExecDef(PyObject *module, PyModuleDef *def)
+{
+    if (alloc_state(module) < 0) {
+        return -1;
+    }
+
+    assert(PyModule_Check(module));
 
     if (def->m_slots == NULL) {
         return 0;
     }
 
-    for (cur_slot = def->m_slots; cur_slot && cur_slot->slot; cur_slot++) {
-        switch (cur_slot->slot) {
-            case Py_mod_create:
-                /* handled in PyModule_FromDefAndSpec2 */
-                break;
-            case Py_mod_exec:
-                ret = ((int (*)(PyObject *))cur_slot->value)(module);
-                if (ret != 0) {
-                    if (!PyErr_Occurred()) {
-                        PyErr_Format(
-                            PyExc_SystemError,
-                            "execution of module %s failed without setting an exception",
-                            name);
-                    }
-                    return -1;
-                }
-                if (PyErr_Occurred()) {
-                    _PyErr_FormatFromCause(
-                        PyExc_SystemError,
-                        "execution of module %s raised unreported exception",
-                        name);
-                    return -1;
-                }
-                break;
-            case Py_mod_multiple_interpreters:
-            case Py_mod_gil:
-            case Py_mod_abi:
-                /* handled in PyModule_FromDefAndSpec2 */
-                break;
-            default:
-                PyErr_Format(
-                    PyExc_SystemError,
-                    "module %s initialized with unknown slot %i",
-                    name, cur_slot->slot);
+    _PySlotIterator it;
+    _PySlotIterator_InitLegacy(&it, def->m_slots, _PySlot_KIND_MOD);
+    while (_PySlotIterator_Next(&it)) {
+        _Py_modexecfunc func;
+        switch (it.current.sl_id) {
+            case Py_slot_invalid:
                 return -1;
+            case Py_mod_exec:
+                func = (_Py_modexecfunc)it.current.sl_func;
+                if (run_exec_func(module, func) < 0) {
+                    return -1;
+                }
+                break;
         }
     }
     return 0;
@@ -622,6 +834,42 @@ PyModule_GetDict(PyObject *m)
         return NULL;
     }
     return _PyModule_GetDict(m);  // borrowed reference
+}
+
+int
+PyModule_GetStateSize(PyObject *m, Py_ssize_t *size_p)
+{
+    *size_p = -1;
+    if (!PyModule_Check(m)) {
+        PyErr_Format(PyExc_TypeError, "expected module, got %T", m);
+        return -1;
+    }
+    PyModuleObject *mod = (PyModuleObject *)m;
+    *size_p = mod->md_state_size;
+    return 0;
+}
+
+int
+PyModule_GetToken_DuringGC(PyObject *m, void **token_p)
+{
+    *token_p = NULL;
+    if (!PyModule_Check(m)) {
+        return -1;
+    }
+    *token_p = _PyModule_GetToken(m);
+    return 0;
+}
+
+int
+PyModule_GetToken(PyObject *m, void **token_p)
+{
+    *token_p = NULL;
+    if (!PyModule_Check(m)) {
+        PyErr_Format(PyExc_TypeError, "expected module, got %T", m);
+        return -1;
+    }
+    *token_p = _PyModule_GetToken(m);
+    return 0;
 }
 
 PyObject*
@@ -764,7 +1012,16 @@ PyModule_GetDef(PyObject* m)
         PyErr_BadArgument();
         return NULL;
     }
-    return _PyModule_GetDef(m);
+    return _PyModule_GetDefOrNull(m);
+}
+
+void*
+PyModule_GetState_DuringGC(PyObject* m)
+{
+    if (!PyModule_Check(m)) {
+        return NULL;
+    }
+    return _PyModule_GetState(m);
 }
 
 void*
@@ -888,17 +1145,18 @@ module_dealloc(PyObject *self)
     }
     FT_CLEAR_WEAKREFS(self, m->md_weaklist);
 
+    assert_def_missing_or_redundant(m);
     /* bpo-39824: Don't call m_free() if m_size > 0 and md_state=NULL */
-    if (m->md_def && m->md_def->m_free
-        && (m->md_def->m_size <= 0 || m->md_state != NULL))
+    if (m->md_state_free && (m->md_state_size <= 0 || m->md_state != NULL))
     {
-        m->md_def->m_free(m);
+        m->md_state_free(m);
     }
 
     Py_XDECREF(m->md_dict);
     Py_XDECREF(m->md_name);
-    if (m->md_state != NULL)
+    if (m->md_state != NULL) {
         PyMem_Free(m->md_state);
+    }
     Py_TYPE(m)->tp_free((PyObject *)m);
 }
 
@@ -1041,6 +1299,33 @@ _PyModule_IsPossiblyShadowing(PyObject *origin)
     return result;
 }
 
+// Check if `name` is a lazily pending submodule of module `m`.
+// Returns a new reference on success, or NULL with no error set.
+static PyObject *
+try_load_lazy_submodule(PyModuleObject *m, PyObject *name)
+{
+    PyObject *mod_name;
+    int rc = PyDict_GetItemRef(m->md_dict, &_Py_ID(__name__), &mod_name);
+    if (rc <= 0) {
+        return NULL;
+    }
+    if (!PyUnicode_Check(mod_name)) {
+        Py_DECREF(mod_name);
+        return NULL;
+    }
+    PyObject *result = _PyImport_TryLoadLazySubmodule(mod_name, name);
+    Py_DECREF(mod_name);
+    if (result == NULL) {
+        PyErr_Clear();
+        return NULL;
+    }
+    if (PyDict_SetItem(m->md_dict, name, result) < 0) {
+        Py_DECREF(result);
+        return NULL;
+    }
+    return result;
+}
+
 PyObject*
 _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
 {
@@ -1048,6 +1333,47 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
     PyObject *attr, *mod_name, *getattr;
     attr = _PyObject_GenericGetAttrWithDict((PyObject *)m, name, NULL, suppress);
     if (attr) {
+        if (PyLazyImport_CheckExact(attr)) {
+            // gh-144957: Module __getattr__ should get a chance to provide
+            // the attribute before resolving a lazy import placeholder.
+            if (PyDict_GetItemRef(m->md_dict, &_Py_ID(__getattr__), &getattr) < 0) {
+                Py_DECREF(attr);
+                return NULL;
+            }
+            if (getattr) {
+                PyObject *result = PyObject_CallOneArg(getattr, name);
+                Py_DECREF(getattr);
+                if (result != NULL) {
+                    Py_DECREF(attr);
+                    return result;
+                }
+                if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                    Py_DECREF(attr);
+                    return NULL;
+                }
+                PyErr_Clear();
+            }
+            PyObject *new_value = _PyImport_LoadLazyImportTstate(
+                PyThreadState_GET(), attr);
+            if (new_value == NULL) {
+                if (suppress &&
+                    PyErr_ExceptionMatches(PyExc_ImportCycleError)) {
+                    // ImportCycleError is raised when a lazy object tries
+                    // to import itself. In this case, the error should not
+                    // propagate to the caller and instead treated as if the
+                    // attribute doesn't exist.
+                    PyErr_Clear();
+                }
+                Py_DECREF(attr);
+                return NULL;
+            }
+
+            if (PyDict_SetItem(m->md_dict, name, new_value) < 0) {
+                Py_CLEAR(new_value);
+            }
+            Py_DECREF(attr);
+            return new_value;
+        }
         return attr;
     }
     if (suppress == 1) {
@@ -1064,6 +1390,13 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
         PyErr_Clear();
     }
     assert(m->md_dict != NULL);
+    attr = try_load_lazy_submodule(m, name);
+    if (attr != NULL) {
+        return attr;
+    }
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
     if (PyDict_GetItemRef(m->md_dict, &_Py_ID(__getattr__), &getattr) < 0) {
         return NULL;
     }
@@ -1206,11 +1539,11 @@ module_traverse(PyObject *self, visitproc visit, void *arg)
 {
     PyModuleObject *m = _PyModule_CAST(self);
 
+    assert_def_missing_or_redundant(m);
     /* bpo-39824: Don't call m_traverse() if m_size > 0 and md_state=NULL */
-    if (m->md_def && m->md_def->m_traverse
-        && (m->md_def->m_size <= 0 || m->md_state != NULL))
+    if (m->md_state_traverse && (m->md_state_size <= 0 || m->md_state != NULL))
     {
-        int res = m->md_def->m_traverse((PyObject*)m, visit, arg);
+        int res = m->md_state_traverse((PyObject*)m, visit, arg);
         if (res)
             return res;
     }
@@ -1224,18 +1557,19 @@ module_clear(PyObject *self)
 {
     PyModuleObject *m = _PyModule_CAST(self);
 
+    assert_def_missing_or_redundant(m);
     /* bpo-39824: Don't call m_clear() if m_size > 0 and md_state=NULL */
-    if (m->md_def && m->md_def->m_clear
-        && (m->md_def->m_size <= 0 || m->md_state != NULL))
+    if (m->md_state_clear && (m->md_state_size <= 0 || m->md_state != NULL))
     {
-        int res = m->md_def->m_clear((PyObject*)m);
+        int res = m->md_state_clear((PyObject*)m);
         if (PyErr_Occurred()) {
             PyErr_FormatUnraisable("Exception ignored in m_clear of module%s%V",
                                    m->md_name ? " " : "",
                                    m->md_name, "");
         }
-        if (res)
+        if (res) {
             return res;
+        }
     }
     Py_CLEAR(m->md_dict);
     return 0;
@@ -1245,7 +1579,12 @@ static PyObject *
 module_dir(PyObject *self, PyObject *args)
 {
     PyObject *result = NULL;
-    PyObject *dict = PyObject_GetAttr(self, &_Py_ID(__dict__));
+    PyObject *dict;
+    if (PyModule_CheckExact(self)) {
+        dict = Py_NewRef(((PyModuleObject *)self)->md_dict);
+    } else {
+        dict = PyObject_GetAttr(self, &_Py_ID(__dict__));
+    }
 
     if (dict != NULL) {
         if (PyDict_Check(dict)) {
@@ -1273,7 +1612,7 @@ static PyMethodDef module_methods[] = {
 };
 
 static PyObject *
-module_get_dict(PyModuleObject *m)
+module_load_dict(PyModuleObject *m)
 {
     PyObject *dict = PyObject_GetAttr((PyObject *)m, &_Py_ID(__dict__));
     if (dict == NULL) {
@@ -1292,7 +1631,7 @@ module_get_annotate(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyModuleObject *m = _PyModule_CAST(self);
 
-    PyObject *dict = module_get_dict(m);
+    PyObject *dict = module_load_dict(m);
     if (dict == NULL) {
         return NULL;
     }
@@ -1317,7 +1656,7 @@ module_set_annotate(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
         return -1;
     }
 
-    PyObject *dict = module_get_dict(m);
+    PyObject *dict = module_load_dict(m);
     if (dict == NULL) {
         return -1;
     }
@@ -1347,7 +1686,7 @@ module_get_annotations(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyModuleObject *m = _PyModule_CAST(self);
 
-    PyObject *dict = module_get_dict(m);
+    PyObject *dict = module_load_dict(m);
     if (dict == NULL) {
         return NULL;
     }
@@ -1419,7 +1758,7 @@ module_set_annotations(PyObject *self, PyObject *value, void *Py_UNUSED(ignored)
 {
     PyModuleObject *m = _PyModule_CAST(self);
 
-    PyObject *dict = module_get_dict(m);
+    PyObject *dict = module_load_dict(m);
     if (dict == NULL) {
         return -1;
     }
@@ -1447,7 +1786,6 @@ module_set_annotations(PyObject *self, PyObject *value, void *Py_UNUSED(ignored)
     Py_DECREF(dict);
     return ret;
 }
-
 
 static PyGetSetDef module_getsets[] = {
     {"__annotations__", module_get_annotations, module_set_annotations},

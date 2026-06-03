@@ -1,0 +1,2 @@
+Fix test_socket on Linux kernel 7.1 and newer: skip UDP Lite tests if it's
+not supported. Patch by Victor Stinner.

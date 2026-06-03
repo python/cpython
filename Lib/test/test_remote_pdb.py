@@ -1441,6 +1441,34 @@ class PdbConnectTestCase(unittest.TestCase):
             self.assertIn("Function returned: 42", stdout)
             self.assertEqual(process.returncode, 0)
 
+    def test_exec_in_closure_result_uses_pdb_stdout(self):
+        """
+        Expression results executed via _exec_in_closure() should be written
+        to the debugger output stream (pdb stdout), not to sys.stdout.
+        """
+        self._create_script()
+        process, client_file = self._connect_and_get_client_file()
+
+        with kill_on_error(process):
+            self._read_until_prompt(client_file)
+
+            self._send_command(client_file, "(lambda: 123)()")
+            messages = self._read_until_prompt(client_file)
+            result_msg = "".join(msg.get("message", "") for msg in messages)
+            self.assertIn("123", result_msg)
+
+            self._send_command(client_file, "sum(i for i in (1, 2, 3))")
+            messages = self._read_until_prompt(client_file)
+            result_msg = "".join(msg.get("message", "") for msg in messages)
+            self.assertIn("6", result_msg)
+
+            self._send_command(client_file, "c")
+            stdout, _ = process.communicate(timeout=SHORT_TIMEOUT)
+
+            self.assertNotIn("\n123\n", stdout)
+            self.assertNotIn("\n6\n", stdout)
+            self.assertEqual(process.returncode, 0)
+
 
 def _supports_remote_attaching():
     PROCESS_VM_READV_SUPPORTED = False
@@ -1589,6 +1617,18 @@ class PdbAttachTestCase(unittest.TestCase):
         self.assertIn("\x1b", output["client"]["stdout"])
         self.assertNotIn("while x == 1", output["client"]["stdout"])
         self.assertIn("while x == 1", re.sub("\x1b[^m]*m", "", output["client"]["stdout"]))
+
+    def test_attach_to_non_existent_process(self):
+        with force_color(False):
+            result = subprocess.run([sys.executable, "-m", "pdb", "-p", "999999"], text=True, capture_output=True)
+        self.assertNotEqual(result.returncode, 0)
+        if sys.platform == "darwin":
+            # On MacOS, attaching to a non-existent process gives PermissionError
+            error = "The specified process cannot be attached to due to insufficient permissions"
+        else:
+            error = "Cannot attach to pid 999999, please make sure that the process exists"
+        self.assertIn(error, result.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()
