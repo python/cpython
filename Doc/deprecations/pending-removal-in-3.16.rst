@@ -8,6 +8,13 @@ Pending removal in Python 3.16
     is deprecated. In Python 3.16, :attr:`!__loader__` will cease to be set or
     taken into consideration by the import system or the standard library.
 
+  * Setting :attr:`~module.__package__` on a module while
+    failing to set :attr:`__spec__.parent <importlib.machinery.ModuleSpec.parent>`
+    is deprecated. In Python 3.16, :attr:`!__package__` will cease to be
+    taken into consideration by the import system or standard library. (:gh:`97879`)
+
+* The bundled copy of ``libmpdec``.
+
 * :mod:`array`:
 
   * The ``'u'`` format code (:c:type:`wchar_t`)
