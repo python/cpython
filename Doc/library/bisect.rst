@@ -132,7 +132,7 @@ thoughts in mind:
   they are used.  Consequently, if the search functions are used in a loop,
   the key function may be called again and again on the same array elements.
   If the key function isn't fast, consider wrapping it with
-  :py:func:`functools.cache` to avoid duplicate computations.  Alternatively,
+  :py:deco:`functools.cache` to avoid duplicate computations.  Alternatively,
   consider searching an array of precomputed keys to locate the insertion
   point (as shown in the examples section below).
 
