@@ -375,6 +375,15 @@ class MimeTypesClassTestCase(unittest.TestCase):
         result = self.db.guess_type('http://example.com/host.html?q=x.tar')
         self.assertSequenceEqual(result, ('text/html', None))
 
+    def test_path_with_colon_but_no_url_scheme(self):
+        # A ':' that does not introduce a real URL scheme -- a single-letter
+        # Windows drive, or a colon elsewhere in the name -- is treated as a
+        # file path rather than a URL.
+        eq = self.assertSequenceEqual
+        eq(self.db.guess_type("c:fake.html"), ("text/html", None))
+        eq(self.db.guess_type(r"c:\dir\fake.html"), ("text/html", None))
+        eq(self.db.guess_type("note 12:30.txt"), ("text/plain", None))
+
     def test_guess_all_types(self):
         # First try strict.  Use a set here for testing the results because if
         # test_urllib2 is run before test_mimetypes, global state is modified

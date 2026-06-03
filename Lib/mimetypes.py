@@ -126,10 +126,11 @@ class MimeTypes:
 
         # TODO: Deprecate accepting file paths (in particular path-like objects).
         url = os.fspath(url)
-        # A URL scheme requires a ':'; a plain file path (the common case) has
-        # none, so skip the relatively expensive urlparse() for it.
+        # Without a ':' the argument cannot carry a URL scheme, so it cannot
+        # be a URL; skip the relatively expensive urlparse() in that case.
         if isinstance(url, str) and ':' not in url:
             return self.guess_file_type(url, strict=strict)
+
         import urllib.parse
         p = urllib.parse.urlparse(url)
         if p.scheme and len(p.scheme) > 1:
