@@ -310,13 +310,15 @@ class AddressList(TokenList):
 
     @property
     def mailboxes(self):
-        return sum((x.mailboxes
-                    for x in self if x.token_type=='address'), [])
+        return [mailbox
+                for x in self if x.token_type == 'address'
+                for mailbox in x.mailboxes]
 
     @property
     def all_mailboxes(self):
-        return sum((x.all_mailboxes
-                    for x in self if x.token_type=='address'), [])
+        return [mailbox
+                for x in self if x.token_type == 'address'
+                for mailbox in x.all_mailboxes]
 
 
 class Address(TokenList):

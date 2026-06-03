@@ -1,0 +1,4 @@
+Building the combined mailbox list of a parsed :mod:`email` address header
+(the ``mailboxes`` and ``all_mailboxes`` properties of its address-list parse
+tree) is now linear rather than quadratic in the number of addresses. Patch by
+Bernát Gábor.
