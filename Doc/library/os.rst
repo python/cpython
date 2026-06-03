@@ -219,12 +219,24 @@ process and user.
    :data:`os.environ`, and when one of the :meth:`~dict.pop` or
    :meth:`~dict.clear` methods is called.
 
+   If the :manpage:`clearenv(3)` function is available, the :meth:`~dict.clear` method
+   uses it and emits a single ``os._clearenv`` audit event. Otherwise, it emits
+   an ``os.unsetenv`` event on each deleted variable.
+
+   .. audit-event:: os.unsetenv key os.unsetenv
+
+   .. audit-event:: os._clearenv "" os._clearenv
+
    .. seealso::
 
       The :func:`os.reload_environ` function.
 
    .. versionchanged:: 3.9
       Updated to support :pep:`584`'s merge (``|``) and update (``|=``) operators.
+
+   .. versionchanged:: 3.15
+      The :meth:`~dict.clear` method can now emit an ``os._clearenv`` audit
+      event.
 
 
 .. data:: environb
@@ -1294,8 +1306,8 @@ as internal buffering of data.
 
       This function is intended for low-level I/O.  For normal usage, use the
       built-in function :func:`open`, which returns a :term:`file object` with
-      :meth:`~file.read` and :meth:`~file.write` methods (and many more).  To
-      wrap a file descriptor in a file object, use :func:`fdopen`.
+      :meth:`~io.BufferedIOBase.read` and :meth:`~io.BufferedIOBase.write` methods.
+      To wrap a file descriptor in a file object, use :func:`fdopen`.
 
    .. versionchanged:: 3.3
       Added the *dir_fd* parameter.
@@ -1670,7 +1682,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       descriptor as returned by :func:`os.open` or :func:`pipe`.  To read a
       "file object" returned by the built-in function :func:`open` or by
       :func:`popen` or :func:`fdopen`, or :data:`sys.stdin`, use its
-      :meth:`~file.read` or :meth:`~file.readline` methods.
+      :meth:`~io.TextIOBase.read` or :meth:`~io.IOBase.readline` methods.
 
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise an
@@ -1905,7 +1917,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       descriptor as returned by :func:`os.open` or :func:`pipe`.  To write a "file
       object" returned by the built-in function :func:`open` or by :func:`popen` or
       :func:`fdopen`, or :data:`sys.stdout` or :data:`sys.stderr`, use its
-      :meth:`~file.write` method.
+      :meth:`~io.TextIOBase.write` method.
 
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise an
@@ -2409,7 +2421,7 @@ features:
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       ``os.listdir(-1)`` now fails with ``OSError(errno.EBADF)`` rather than
       listing the current directory.
 
@@ -2549,7 +2561,8 @@ features:
       Windows now handles a *mode* of ``0o700``.
 
 
-.. function:: makedirs(name, mode=0o777, exist_ok=False)
+.. function:: makedirs(name, mode=0o777, exist_ok=False, *, \
+                       parent_mode=None)
 
    .. index::
       single: directory; creating
@@ -2566,6 +2579,12 @@ features:
 
    If *exist_ok* is ``False`` (the default), a :exc:`FileExistsError` is
    raised if the target directory already exists.
+
+   If *parent_mode* is not ``None``, it is used as the mode for any
+   newly-created, intermediate-level directories.  Like *mode*, it is
+   combined with the process's umask value; see :ref:`the mkdir()
+   description <mkdir_modebits>`.  Otherwise, intermediate directories are
+   created with the default mode, which is also subject to the umask.
 
    .. note::
 
@@ -2592,6 +2611,11 @@ features:
    .. versionchanged:: 3.7
       The *mode* argument no longer affects the file permission bits of
       newly created intermediate-level directories.
+
+   .. versionadded:: 3.15
+      The *parent_mode* parameter. To match the behavior from Python 3.6 and
+      earlier (where *mode* was applied to all created directories), pass
+      ``parent_mode=mode``.
 
 
 .. function:: mkfifo(path, mode=0o666, *, dir_fd=None)
@@ -2943,7 +2967,7 @@ features:
    .. versionchanged:: 3.7
       Added support for :ref:`file descriptors <path_fd>` on Unix.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       ``os.scandir(-1)`` now fails with ``OSError(errno.EBADF)`` rather than
       listing the current directory.
 
@@ -2969,6 +2993,9 @@ features:
 
    To be directly usable as a :term:`path-like object`, ``os.DirEntry``
    implements the :class:`PathLike` interface.
+
+   :class:`!DirEntry` objects are :ref:`generic <generics>` over the type of the
+   path (:class:`str` or :class:`bytes`).
 
    Attributes and methods on a ``os.DirEntry`` instance are as follows:
 
@@ -4582,7 +4609,7 @@ These functions are all available on Linux only.
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       ``os.listxattr(-1)`` now fails with ``OSError(errno.EBADF)`` rather than
       listing extended attributes of the current directory.
 
@@ -4720,7 +4747,7 @@ to be ignored.
    The current process is replaced immediately. Open file objects and
    descriptors are not flushed, so if there may be data buffered
    on these open files, you should flush them using
-   :func:`sys.stdout.flush` or :func:`os.fsync` before calling an
+   :func:`~io.IOBase.flush` or :func:`os.fsync` before calling an
    :func:`exec\* <execl>` function.
 
    The "l" and "v" variants of the :func:`exec\* <execl>` functions differ in how
@@ -5062,6 +5089,18 @@ written in Python, such as a mail server's external command delivery program.
    .. availability:: Linux >= 5.10
    .. versionadded:: 3.12
 
+.. function:: pidfd_getfd(pidfd, targetfd, *, flags=0)
+
+   Duplicate *targetfd* from the process referred to by the process file
+   descriptor *pidfd*, into the calling process.  The returned file descriptor
+   is :ref:`non-inheritable <fd_inheritance>`.
+
+   *flags* is reserved, and currently must be ``0``.
+
+   See the :manpage:`pidfd_getfd(2)` man page for more details.
+
+   .. availability:: Linux >= 5.6, Android >= :func:`build-time <sys.getandroidapilevel>` API level 31
+   .. versionadded:: next
 
 .. function:: plock(op, /)
 
@@ -5110,9 +5149,8 @@ written in Python, such as a mail server's external command delivery program.
       Use :class:`subprocess.Popen` or :func:`subprocess.run` to
       control options like encodings.
 
-   .. deprecated:: 3.14
-      The function is :term:`soft deprecated` and should no longer be used to
-      write new code. The :mod:`subprocess` module is recommended instead.
+   .. soft-deprecated:: 3.14
+      The :mod:`subprocess` module is recommended instead.
 
 
 .. function:: posix_spawn(path, argv, env, *, file_actions=None, \
@@ -5340,9 +5378,8 @@ written in Python, such as a mail server's external command delivery program.
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
-   .. deprecated:: 3.14
-      These functions are :term:`soft deprecated` and should no longer be used
-      to write new code. The :mod:`subprocess` module is recommended instead.
+   .. soft-deprecated:: 3.14
+      The :mod:`subprocess` module is recommended instead.
 
 
 .. data:: P_NOWAIT

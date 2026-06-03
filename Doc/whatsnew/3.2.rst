@@ -992,12 +992,12 @@ datetime and time
   offset and timezone name. This makes it easier to create timezone-aware
   datetime objects::
 
-    >>> from datetime import datetime, timezone
+    >>> import datetime as dt
 
-    >>> datetime.now(timezone.utc)
+    >>> dt.datetime.now(dt.timezone.utc)
     datetime.datetime(2010, 12, 8, 21, 4, 2, 923754, tzinfo=datetime.timezone.utc)
 
-    >>> datetime.strptime("01/01/2000 12:00 +0000", "%m/%d/%Y %H:%M %z")
+    >>> dt.datetime.strptime("01/01/2000 12:00 +0000", "%m/%d/%Y %H:%M %z")
     datetime.datetime(2000, 1, 1, 12, 0, tzinfo=datetime.timezone.utc)
 
 * Also, :class:`~datetime.timedelta` objects can now be multiplied by

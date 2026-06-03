@@ -30,10 +30,10 @@ __all__ = ['get_close_matches', 'ndiff', 'restore', 'SequenceMatcher',
            'Differ','IS_CHARACTER_JUNK', 'IS_LINE_JUNK', 'context_diff',
            'unified_diff', 'diff_bytes', 'HtmlDiff', 'Match']
 
-from _colorize import can_colorize, get_theme
 from heapq import nlargest as _nlargest
 from collections import namedtuple as _namedtuple
 from types import GenericAlias
+lazy from _colorize import can_colorize, get_theme
 
 Match = _namedtuple('Match', 'a b size')
 

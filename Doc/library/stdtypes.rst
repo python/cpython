@@ -1163,13 +1163,13 @@ Sequence types also support the following methods:
 
    Return the total number of occurrences of *value* in *sequence*.
 
-.. method:: list.index(value[, start[, stop])
-            range.index(value[, start[, stop])
-            tuple.index(value[, start[, stop])
+.. method:: list.index(value[, start[, stop]])
+            range.index(value[, start[, stop]])
+            tuple.index(value[, start[, stop]])
    :no-contents-entry:
    :no-index-entry:
    :no-typesetting:
-.. method:: sequence.index(value[, start[, stop])
+.. method:: sequence.index(value[, start[, stop]])
 
    Return the index of the first occurrence of *value* in *sequence*.
 
@@ -1286,7 +1286,7 @@ Mutable sequence types also support the following methods:
    :no-typesetting:
 .. method:: sequence.append(value, /)
 
-   Append *value* to the end of the sequence
+   Append *value* to the end of the sequence.
    This is equivalent to writing ``seq[len(seq):len(seq)] = [value]``.
 
 .. method:: bytearray.clear()
@@ -1403,6 +1403,8 @@ application).
    Many other operations also produce lists, including the :func:`sorted`
    built-in.
 
+   Lists are :ref:`generic <generics>` over the types of their items.
+
    Lists implement all of the :ref:`common <typesseq-common>` and
    :ref:`mutable <typesseq-mutable>` sequence operations. Lists also provide the
    following additional method:
@@ -1493,6 +1495,10 @@ homogeneous data is needed (such as allowing storage in a :class:`set` or
 
    Tuples implement all of the :ref:`common <typesseq-common>` sequence
    operations.
+
+   Tuples are :ref:`generic <generics>` over the types of their contents.
+   For more information, refer to
+   :ref:`the typing documentation on annotating tuples <annotating-tuples>`.
 
 For heterogeneous collections of data where access by name is clearer than
 access by index, :func:`collections.namedtuple` may be a more appropriate
@@ -2247,16 +2253,33 @@ expression support in the :mod:`re` module).
       >>> '\t'.isprintable(), '\n'.isprintable()
       (False, False)
 
+   See also :meth:`isspace`.
+
 
 .. method:: str.isspace()
 
    Return ``True`` if there are only whitespace characters in the string and there is
    at least one character, ``False`` otherwise.
 
+   For example:
+
+   .. doctest::
+
+      >>> ''.isspace()
+      False
+      >>> ' '.isspace()
+      True
+      >>> '\t\n'.isspace() # TAB and BREAK LINE
+      True
+      >>> '\u3000'.isspace() # IDEOGRAPHIC SPACE
+      True
+
    A character is *whitespace* if in the Unicode character database
    (see :mod:`unicodedata`), either its general category is ``Zs``
    ("Separator, space"), or its bidirectional class is one of ``WS``,
    ``B``, or ``S``.
+
+   See also :meth:`isprintable`.
 
 
 .. method:: str.istitle()
@@ -2384,6 +2407,10 @@ expression support in the :mod:`re` module).
    resulting dictionary, each character in *from* will be mapped to the character at
    the same position in *to*.  If there is a third argument, it must be a string,
    whose characters will be mapped to ``None`` in the result.
+
+   .. versionchanged:: 3.15
+
+      *dict* can now be a :class:`frozendict`.
 
 
 .. method:: str.partition(sep, /)
@@ -2726,6 +2753,8 @@ expression support in the :mod:`re` module).
    The *chars* argument is not a prefix or suffix; rather, all combinations of its
    values are stripped.
 
+   Whitespace characters are defined by :meth:`str.isspace`.
+
    For example:
 
    .. doctest::
@@ -2754,8 +2783,22 @@ expression support in the :mod:`re` module).
 .. method:: str.swapcase()
 
    Return a copy of the string with uppercase characters converted to lowercase and
-   vice versa. Note that it is not necessarily true that
-   ``s.swapcase().swapcase() == s``.
+   vice versa. For example:
+
+   .. doctest::
+
+      >>> 'Hello World'.swapcase()
+      'hELLO wORLD'
+
+   Note that it is not necessarily true that ``s.swapcase().swapcase() == s``.
+   For example:
+
+   .. doctest::
+
+      >>> 'straße'.swapcase().swapcase()
+      'strasse'
+
+   See also :meth:`str.lower` and :meth:`str.upper`.
 
 
 .. method:: str.title()
@@ -3181,6 +3224,10 @@ The conversion types are:
 |            | character in the result.                            |       |
 +------------+-----------------------------------------------------+-------+
 
+For floating-point formats, the result should be correctly rounded to a given
+precision ``p`` of digits after the decimal point.  The rounding mode matches
+that of the :func:`round` builtin.
+
 Notes:
 
 (1)
@@ -3489,6 +3536,11 @@ The representation of bytearray objects uses the bytes literal format
 ``bytearray([46, 46, 46])``.  You can always convert a bytearray object into
 a list of integers using ``list(b)``.
 
+.. seealso::
+
+   For detailed information on thread-safety guarantees for :class:`bytearray`
+   objects, see :ref:`thread-safety-bytearray`.
+
 
 .. _bytes-methods:
 
@@ -3705,12 +3757,13 @@ arbitrary binary data.
    The separator to search for may be any :term:`bytes-like object`.
 
 
-.. method:: bytes.replace(old, new, count=-1, /)
-            bytearray.replace(old, new, count=-1, /)
+.. method:: bytes.replace(old, new, /, count=-1)
+            bytearray.replace(old, new, /, count=-1)
 
    Return a copy of the sequence with all occurrences of subsequence *old*
-   replaced by *new*.  If the optional argument *count* is given, only the
-   first *count* occurrences are replaced.
+   replaced by *new*.  If *count* is given, only the first *count* occurrences
+   are replaced.  If *count* is not specified or ``-1``, then all occurrences
+   are replaced.
 
    The subsequence to search for and its replacement may be any
    :term:`bytes-like object`.
@@ -3719,6 +3772,9 @@ arbitrary binary data.
 
       The bytearray version of this method does *not* operate in place - it
       always produces a new object, even if no changes were made.
+
+   .. versionchanged:: 3.15
+      *count* is now supported as a keyword argument.
 
 
 .. method:: bytes.rfind(sub[, start[, end]])
@@ -4536,6 +4592,9 @@ copying.
    types such as :class:`bytes` and :class:`bytearray`, an element is a single
    byte, but other types such as :class:`array.array` may have bigger elements.
 
+   :class:`!memoryview`\s are :ref:`generic <generics>` over the type of their
+   underlying data.
+
    ``len(view)`` is equal to the length of :meth:`~memoryview.tolist`, which
    is the nested list representation of the view. If ``view.ndim = 1``,
    this is equal to the number of elements in the view.
@@ -5015,6 +5074,9 @@ copying.
 
       .. versionadded:: 3.3
 
+For information on the thread safety of :class:`memoryview` objects in
+the :term:`free-threaded build`, see :ref:`thread-safety-memoryview`.
+
 
 .. _types-set:
 
@@ -5226,6 +5288,13 @@ Note, the *elem* argument to the :meth:`~object.__contains__`,
 :meth:`~set.discard` methods may be a set.  To support searching for an equivalent
 frozenset, a temporary one is created from *elem*.
 
+Sets and frozensets are :ref:`generic <generics>` over the type of their elements.
+
+.. seealso::
+
+   For detailed information on thread-safety guarantees for :class:`set`
+   objects, see :ref:`thread-safety-set`.
+
 
 .. _typesmapping:
 
@@ -5323,6 +5392,9 @@ can be used interchangeably to index the same dictionary entry.
    .. versionchanged:: 3.7
       Dictionary order is guaranteed to be insertion order.  This behavior was
       an implementation detail of CPython from 3.6.
+
+   Dictionaries are :ref:`generic <generics>` over two types, signifying
+   (respectively) the types of the dictionary's keys and values.
 
    These are the operations that dictionaries support (and therefore, custom
    mapping types should support too):
@@ -5661,7 +5733,10 @@ Frozen dictionaries
    :class:`!frozendict` is not a :class:`!dict` subclass but inherits directly
    from ``object``.
 
-   .. versionadded:: next
+   Like dictionaries, frozendicts are :ref:`generic <generics>` over two types,
+   signifying (respectively) the types of the frozendict's keys and values.
+
+   .. versionadded:: 3.15
 
 
 .. _typecontextmanager:
@@ -5802,7 +5877,8 @@ type and the :class:`bytes` data type:
 
 ``GenericAlias`` objects are instances of the class
 :class:`types.GenericAlias`, which can also be used to create ``GenericAlias``
-objects directly.
+objects directly. Specializations of user-defined :ref:`generic classes <generic-classes>`
+may not be instances of :class:`types.GenericAlias`, but they provide similar functionality.
 
 .. describe:: T[X, Y, ...]
 

@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(memoryview__doc__,
@@ -258,11 +259,12 @@ PyDoc_STRVAR(memoryview_tobytes__doc__,
 "\n"
 "Return the data in the buffer as a byte string.\n"
 "\n"
-"Order can be {\'C\', \'F\', \'A\'}. When order is \'C\' or \'F\', the data of the\n"
-"original array is converted to C or Fortran order. For contiguous views,\n"
-"\'A\' returns an exact copy of the physical memory. In particular, in-memory\n"
-"Fortran order is preserved. For non-contiguous views, the data is converted\n"
-"to C first. order=None is the same as order=\'C\'.");
+"Order can be {\'C\', \'F\', \'A\'}.  When order is \'C\' or \'F\', the data of\n"
+"the original array is converted to C or Fortran order.  For\n"
+"contiguous views, \'A\' returns an exact copy of the physical memory.\n"
+"In particular, in-memory Fortran order is preserved.  For\n"
+"non-contiguous views, the data is converted to C first.  order=None\n"
+"is the same as order=\'C\'.");
 
 #define MEMORYVIEW_TOBYTES_METHODDEF    \
     {"tobytes", _PyCFunction_CAST(memoryview_tobytes), METH_FASTCALL|METH_KEYWORDS, memoryview_tobytes__doc__},
@@ -347,8 +349,8 @@ PyDoc_STRVAR(memoryview_hex__doc__,
 "  sep\n"
 "    An optional single character or byte to separate hex bytes.\n"
 "  bytes_per_sep\n"
-"    How many bytes between separators.  Positive values count from the\n"
-"    right, negative values count from the left.\n"
+"    How many bytes between separators.  Positive values count from\n"
+"    the right, negative values count from the left.\n"
 "\n"
 "Example:\n"
 ">>> value = memoryview(b\'\\xb9\\x01\\xef\')\n"
@@ -366,7 +368,7 @@ PyDoc_STRVAR(memoryview_hex__doc__,
 
 static PyObject *
 memoryview_hex_impl(PyMemoryViewObject *self, PyObject *sep,
-                    int bytes_per_sep);
+                    Py_ssize_t bytes_per_sep);
 
 static PyObject *
 memoryview_hex(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -402,7 +404,7 @@ memoryview_hex(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *sep = NULL;
-    int bytes_per_sep = 1;
+    Py_ssize_t bytes_per_sep = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -418,9 +420,17 @@ memoryview_hex(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
             goto skip_optional_pos;
         }
     }
-    bytes_per_sep = PyLong_AsInt(args[1]);
-    if (bytes_per_sep == -1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        bytes_per_sep = ival;
     }
 skip_optional_pos:
     return_value = memoryview_hex_impl((PyMemoryViewObject *)self, sep, bytes_per_sep);
@@ -496,4 +506,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=154f4c04263ccb24 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3abf9c80cd49229a input=a9049054013a1b77]*/

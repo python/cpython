@@ -1829,6 +1829,13 @@ class FrozenDictTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             dict.__init__(d, x=1)
 
+        # Avoid copy if it's frozendict type
+        d2 = frozendict(d)
+        self.assertIs(d2, d)
+        d2 = FrozenDict(d)
+        self.assertIsNot(d2, d)
+        self.assertEqual(d2, d)
+
     def test_copy(self):
         d = frozendict(x=1, y=2)
         d2 = d.copy()
@@ -1848,10 +1855,23 @@ class FrozenDictTests(unittest.TestCase):
                          frozendict({'x': 1, 'y': 2}))
         self.assertEqual(frozendict(x=1, y=2) | frozendict(y=5),
                          frozendict({'x': 1, 'y': 5}))
+        self.assertEqual(FrozenDict(x=1, y=2) | FrozenDict(y=5),
+                         frozendict({'x': 1, 'y': 5}))
+
         fd = frozendict(x=1, y=2)
         self.assertIs(fd | frozendict(), fd)
         self.assertIs(fd | {}, fd)
         self.assertIs(frozendict() | fd, fd)
+
+        fd = FrozenDict(x=1, y=2)
+        self.assertEqual(fd | frozendict(), fd)
+        self.assertEqual(fd | {}, fd)
+        self.assertEqual(frozendict() | fd, fd)
+
+        # gh-149676: Test hash(frozendict | frozendict)
+        a = frozendict({"a": 1})
+        b = frozendict({"b": 2})
+        self.assertEqual(hash(a | b), hash(frozendict({"a": 1, "b": 2})))
 
     def test_update(self):
         # test "a |= b" operator
@@ -1862,6 +1882,11 @@ class FrozenDictTests(unittest.TestCase):
         self.assertIsNot(copy, d)
         self.assertEqual(d, frozendict({'x': 1, 'y': 2}))
         self.assertEqual(copy, frozendict({'x': 1}))
+
+    def test_items_xor(self):
+        # test "a ^ b" operator on items views
+        res = frozendict(a=1, b=2).items() ^ frozendict(b=2, c=3).items()
+        self.assertEqual(res, {('a', 1), ('c', 3)})
 
     def test_repr(self):
         d = frozendict()
@@ -1878,9 +1903,34 @@ class FrozenDictTests(unittest.TestCase):
         self.assertEqual(hash(frozendict(x=1, y=2)),
                          hash(frozendict(y=2, x=1)))
 
+        # Check that hash() computes the hash of (key, value) pairs
+        cases = [
+            frozendict(a=False, b=True, c=True),
+            frozendict(a=True, b=False, c=True),
+            frozendict(a=True, b=True, c=False),
+            frozendict({False: "a", "b": True, "c": True}),
+            frozendict({"a": "b", False: True, True: "c"}),
+        ]
+        hashes = {hash(fd) for fd in cases}
+        self.assertEqual(len(hashes), len(cases))
+
         fd = frozendict(x=[1], y=[2])
         with self.assertRaisesRegex(TypeError, "unhashable type: 'list'"):
             hash(fd)
+
+    @support.cpython_only
+    def test_hash_cpython(self):
+        # Check that hash(frozendict) implementation is:
+        # hash(frozenset(fd.items()))
+        for fd in (
+            frozendict(),
+            frozendict(x=1, y=2),
+            frozendict(y=2, x=1),
+            frozendict(a=False, b=True, c=True),
+            frozendict.fromkeys('abc'),
+        ):
+            with self.subTest(fd=fd):
+                self.assertEqual(hash(fd), hash(frozenset(fd.items())))
 
     def test_fromkeys(self):
         self.assertEqual(frozendict.fromkeys('abc'),

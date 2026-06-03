@@ -1,10 +1,6 @@
 # Configuration for the zizmor static analysis tool, run via prek in CI
-# https://woodruffw.github.io/zizmor/configuration/
+# https://docs.zizmor.sh/configuration/
 rules:
   dangerous-triggers:
     ignore:
       - documentation-links.yml
-  unpinned-uses:
-    config:
-      policies:
-        "*": ref-pin

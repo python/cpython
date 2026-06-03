@@ -1,4 +1,4 @@
-# This file lists the contents of the Limited API and Stable ABI.
+# This file lists the contents of Limited API and Stable ABI.
 # Please append new items at the end.
 
 # The syntax of this file is not fixed.
@@ -46,15 +46,24 @@
 #   - 'opaque': No members are part of the ABI, nor is the size. The Limited
 #     API only handles these via pointers. The C definition should be
 #     incomplete (opaque).
-#   - 'members': Only specific members are part of the stable ABI.
-#     The struct's size may change, so it can't be used in arrays.
+#   - 'abi3t-opaque': 'full-abi' in abi3; 'opaque' in abi3t.
+#     For docs, the generated annotation refers to details that need to
+#     be added to the ReST file manually.
+#   - 'members':
+#     - 'opaque' in abi3t.
+#     - In abi3, only specific members are part of the stable ABI.
+#       The struct's size may change, so it can't be used in arrays.
 #     Do not add new structs of this kind without an extremely good reason.
+#     For docs, the generated annotation refers to details that need to
+#     be added to the ReST file manually.
 # - members: For `struct` with struct_abi_kind = 'members', a list of the
 #   exposed members.
 # - doc: for `feature_macro`, the blurb added in documentation
 # - windows: for `feature_macro`, this macro is defined on Windows.
 #   (This info is used to generate the DLL manifest and needs to be available
 #   on all platforms.)
+# - abi3t_opaque: In abi3t, this struct is opaque (as if `struct_abi_kind`
+#   was 'opaque' and `members` was missing).
 
 # Removing items from this file is generally not allowed, and additions should
 # be considered with that in mind. See the devguide for exact rules:
@@ -107,10 +116,10 @@
     struct_abi_kind = 'full-abi'
 [struct.PyModuleDef_Base]
     added = '3.2'
-    struct_abi_kind = 'full-abi'
+    struct_abi_kind = 'abi3t-opaque'
 [struct.PyModuleDef]
     added = '3.2'
-    struct_abi_kind = 'full-abi'
+    struct_abi_kind = 'abi3t-opaque'
 [struct.PyStructSequence_Field]
     added = '3.2'
     struct_abi_kind = 'full-abi'
@@ -287,10 +296,12 @@
 [const.Py_sq_inplace_repeat]
     added = '3.2'
 [const.Py_mp_length]
+    # Note: value changed in 3.15 (old value is still accepted)
     added = '3.2'
 [const.Py_mp_subscript]
     added = '3.2'
 [const.Py_mp_ass_subscript]
+    # Note: value changed in 3.15 (old value is still accepted)
     added = '3.2'
 
 [typedef.Py_uintptr_t]
@@ -1905,8 +1916,10 @@
 [data.PyModuleDef_Type]
     added = '3.5'
 [const.Py_mod_create]
+    # Note: value changed in 3.15 (old value is still accepted)
     added = '3.5'
 [const.Py_mod_exec]
+    # Note: value changed in 3.15 (old value is still accepted)
     added = '3.5'
 [struct.PyModuleDef_Slot]
     added = '3.5'
@@ -2316,8 +2329,10 @@
 [function.PyMemoryView_FromBuffer]
     added = '3.11'
 [const.Py_bf_getbuffer]
+    # Note: value changed in 3.15 (old value is still accepted)
     added = '3.11'
 [const.Py_bf_releasebuffer]
+    # Note: value changed in 3.15 (old value is still accepted)
     added = '3.11'
 
 # Constants for Py_buffer API added to this list in Python 3.11.1 (https://github.com/python/cpython/issues/98680)
@@ -2454,6 +2469,7 @@
 [const.Py_TPFLAGS_ITEMS_AT_END]
     added = '3.12'
 [const.Py_mod_multiple_interpreters]
+    # Note: value changed in 3.15 (old value is still accepted)
     added = '3.12'
 
 [function.PyImport_AddModuleRef]
@@ -2535,6 +2551,7 @@
 [function.PyEval_GetFrameLocals]
     added = '3.13'
 [const.Py_mod_gil]
+    # Note: value changed in 3.15 (old value is still accepted)
     added = '3.13'
 
 [function.Py_TYPE]
@@ -2666,6 +2683,95 @@
 [function.Py_SET_SIZE]
     # Before 3.15, this was a macro that accessed the PyObject member
     added = '3.15'
+[function.PyObject_GetTypeData_DuringGC]
+    added = '3.15'
+[function.PyType_GetModuleState_DuringGC]
+    added = '3.15'
+[function.PyModule_GetState_DuringGC]
+    added = '3.15'
+[function.PyModule_GetToken_DuringGC]
+    added = '3.15'
+[function.PyType_GetBaseByToken_DuringGC]
+    added = '3.15'
+[function.PyType_GetModule_DuringGC]
+    added = '3.15'
+[function.PyType_GetModuleByToken_DuringGC]
+    added = '3.15'
+[function.PyCriticalSection_Begin]
+    added = '3.15'
+[function.PyCriticalSection_End]
+    added = '3.15'
+[struct.PyCriticalSection]
+    added = '3.15'
+    struct_abi_kind = 'full-abi'
+[macro.Py_BEGIN_CRITICAL_SECTION]
+    added = '3.15'
+[macro.Py_END_CRITICAL_SECTION]
+    added = '3.15'
+[function.PyCriticalSection2_Begin]
+    added = '3.15'
+[function.PyCriticalSection2_End]
+    added = '3.15'
+[struct.PyCriticalSection2]
+    added = '3.15'
+    struct_abi_kind = 'full-abi'
+[macro.Py_BEGIN_CRITICAL_SECTION2]
+    added = '3.15'
+[macro.Py_END_CRITICAL_SECTION2]
+    added = '3.15'
+[struct.PySlot]
+    added = '3.15'
+    struct_abi_kind = 'full-abi'
+[function.PyType_FromSlots]
+    added = '3.15'
+[const.PySlot_OPTIONAL]
+    added = '3.15'
+[const.PySlot_STATIC]
+    added = '3.15'
+[const.PySlot_INTPTR]
+    added = '3.15'
+[macro.PySlot_DATA]
+    added = '3.15'
+[macro.PySlot_FUNC]
+    added = '3.15'
+[macro.PySlot_SIZE]
+    added = '3.15'
+[macro.PySlot_INT64]
+    added = '3.15'
+[macro.PySlot_UINT64]
+    added = '3.15'
+[macro.PySlot_STATIC_DATA]
+    added = '3.15'
+[macro.PySlot_END]
+    added = '3.15'
+[macro.PySlot_PTR]
+    added = '3.15'
+[macro.PySlot_PTR_STATIC]
+    added = '3.15'
+[const.Py_slot_end]
+    added = '3.15'
+[const.Py_slot_invalid]
+    added = '3.15'
+[const.Py_slot_subslots]
+    added = '3.15'
+[const.Py_tp_slots]
+    added = '3.15'
+[const.Py_mod_slots]
+    added = '3.15'
+[const.Py_tp_name]
+    added = '3.15'
+[const.Py_tp_basicsize]
+    added = '3.15'
+[const.Py_tp_extra_basicsize]
+    added = '3.15'
+[const.Py_tp_itemsize]
+    added = '3.15'
+[const.Py_tp_flags]
+    added = '3.15'
+[const.Py_tp_metaclass]
+    added = '3.15'
+[const.Py_tp_module]
+    added = '3.15'
 
 # PEP 757 import/export API.
 
@@ -2692,3 +2798,36 @@
     # Note: The `_reserved` member of this struct is for interal use only.
     # (The definition of 'full-abi' was clarified when this entry was added.)
     struct_abi_kind = 'full-abi'
+
+# PEP 788 finalization protection
+
+[struct.PyInterpreterGuard]
+    added = '3.15'
+    struct_abi_kind = 'opaque'
+[function.PyInterpreterGuard_FromCurrent]
+    added = '3.15'
+[function.PyInterpreterGuard_FromView]
+    added = '3.15'
+[function.PyInterpreterGuard_Close]
+    added = '3.15'
+[struct.PyInterpreterView]
+    added = '3.15'
+    struct_abi_kind = 'opaque'
+[function.PyInterpreterView_FromCurrent]
+    added = '3.15'
+[function.PyInterpreterView_FromMain]
+    added = '3.15'
+[function.PyInterpreterView_Close]
+    added = '3.15'
+[function.PyThreadState_Ensure]
+    added = '3.15'
+[function.PyThreadState_EnsureFromView]
+    added = '3.15'
+[function.PyThreadState_Release]
+    added = '3.15'
+[struct.PyThreadStateToken]
+    added = '3.15'
+    struct_abi_kind = 'opaque'
+
+[function.PyObject_CallFinalizerFromDealloc]
+    added = '3.15'
