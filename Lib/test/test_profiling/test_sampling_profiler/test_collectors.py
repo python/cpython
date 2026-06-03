@@ -2659,6 +2659,7 @@ class TestGeckoOpcodeMarkers(unittest.TestCase):
     def test_gecko_opcode_state_tracking(self):
         """Test that GeckoCollector tracks opcode state changes."""
         collector = GeckoCollector(sample_interval_usec=1000, opcodes=True)
+        self.addCleanup(lambda: collector.spill_dir.cleanup())
 
         # First sample with opcode 90 (RAISE_VARARGS)
         frame1 = MockFrameInfo("test.py", 10, "func", opcode=90)
@@ -2680,6 +2681,7 @@ class TestGeckoOpcodeMarkers(unittest.TestCase):
     def test_gecko_opcode_state_change_emits_marker(self):
         """Test that opcode state change emits an interval marker."""
         collector = GeckoCollector(sample_interval_usec=1000, opcodes=True)
+        self.addCleanup(lambda: collector.spill_dir.cleanup())
 
         # First sample: opcode 90
         frame1 = MockFrameInfo("test.py", 10, "func", opcode=90)
@@ -2707,6 +2709,7 @@ class TestGeckoOpcodeMarkers(unittest.TestCase):
     def test_gecko_opcode_markers_not_emitted_when_disabled(self):
         """Test that no opcode markers when opcodes=False."""
         collector = GeckoCollector(sample_interval_usec=1000, opcodes=False)
+        self.addCleanup(lambda: collector.spill_dir.cleanup())
 
         frame1 = MockFrameInfo("test.py", 10, "func", opcode=90)
         frames1 = [
@@ -2732,6 +2735,7 @@ class TestGeckoOpcodeMarkers(unittest.TestCase):
     def test_gecko_opcode_with_none_opcode(self):
         """Test that None opcode doesn't cause issues."""
         collector = GeckoCollector(sample_interval_usec=1000, opcodes=True)
+        self.addCleanup(lambda: collector.spill_dir.cleanup())
 
         # Frame with no opcode (None)
         frame = MockFrameInfo("test.py", 10, "func", opcode=None)
