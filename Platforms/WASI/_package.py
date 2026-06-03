@@ -1,6 +1,6 @@
-import functools
 import json
 import pathlib
+import shutil
 
 import _shared
 
@@ -31,7 +31,6 @@ import _shared
 # ☐ python.wasm
 
 
-@functools.cache
 def build_dir(context):
     """The path to the build directory pointed to by pybuilddir.txt."""
     relative_dir = (
@@ -42,7 +41,6 @@ def build_dir(context):
     return _shared.wasi_build_path(context) / relative_dir
 
 
-@functools.cache
 def build_details(context):
     """Get the JSON contents of build-details.json."""
     with (build_dir(context) / "build-details.json").open() as f:
@@ -63,9 +61,8 @@ def pythonXY(context, support_debug=False):
     return name
 
 
-@functools.cache
 def lib_python(context):
-    pathlib.PurePath("lib") / pythonXY(context)
+    return pathlib.PurePath("lib") / pythonXY(context)
 
 
 def license_file(context):
@@ -90,7 +87,7 @@ def stdlib_files(context):
     """Have <src>/Lib files end up in lib/pythonXY."""
     lib_dir = _shared.CHECKOUT / "Lib"
     lib_files = []
-    for root, dirs, files in lib_dir:
+    for root, dirs, files in lib_dir.walk():
         try:
             dirs.remove("__pycache__")
         except ValueError:
@@ -115,7 +112,7 @@ def pkgconfig_files(context):
     details = build_details(context)
     major = details["language"]["version_info"]["major"]
     minor = details["language"]["version_info"]["minor"]
-    pkgconfig = lib_python(context) / "pkgconfig"
+    pkgconfig = pathlib.PurePath("lib") / "pkgconfig"
     return [
         (pkgconfig / f"python{major}.pc", misc_dir / "python.pc"),
         (pkgconfig / f"python-{major}.{minor}.pc", misc_dir / "python.pc"),
@@ -133,10 +130,14 @@ def filename_stem(context):
 
 def package(context):
     dist = _shared.CHECKOUT / "dist"
+    if dist.exists():
+        shutil.rmtree(dist)
     files = []
     files.append(license_file(context))
     files.extend(build_dir_files(context))
     files.extend(stdlib_files(context))
     files.extend(pkgconfig_files(context))
     for dest, src in files:
-        src.copy(dist / dest)
+        target = dist / dest
+        target.parent.mkdir(parents=True, exist_ok=True)
+        src.copy(target)

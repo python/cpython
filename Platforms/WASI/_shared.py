@@ -18,7 +18,7 @@ CROSS_BUILD_DIR = CHECKOUT / "cross-build"
 
 def host_triple(context):
     """Determine the target triple for the WASI host build."""
-    if context.host_triple:
+    if getattr(context, "host_triple", None):
         return context.host_triple
 
     with (HERE / "config.toml").open("rb") as file:
@@ -27,3 +27,8 @@ def host_triple(context):
     # Cache the result.
     context.host_triple = config["targets"]["host-triple"]
     return context.host_triple
+
+
+def wasi_build_path(context):
+    """Determine the path to the WASI build directory."""
+    return CROSS_BUILD_DIR / host_triple(context)
