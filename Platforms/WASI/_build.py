@@ -21,7 +21,9 @@ except ImportError:
 import _shared
 
 # Build platform can also be found via `config.guess`.
-BUILD_DIR = _shared.CROSS_BUILD_DIR / sysconfig.get_config_var("BUILD_GNU_TYPE")
+BUILD_DIR = _shared.CROSS_BUILD_DIR / sysconfig.get_config_var(
+    "BUILD_GNU_TYPE"
+)
 
 LOCAL_SETUP = _shared.CHECKOUT / "Modules" / "Setup.local"
 LOCAL_SETUP_MARKER = (
@@ -147,6 +149,7 @@ def call(command, *, context=None, quiet=False, **kwargs):
     subprocess.check_call(command, **kwargs, stdout=stdout, stderr=stderr)
 
 
+@functools.cache
 def build_python_path():
     """The path to the build Python binary."""
     binary = BUILD_DIR / "python"
@@ -160,6 +163,7 @@ def build_python_path():
     return binary
 
 
+@functools.cache
 def build_python_is_pydebug():
     """Find out if the build Python is a pydebug build."""
     test = "import sys, test.support; sys.exit(test.support.Py_DEBUG)"
@@ -206,6 +210,7 @@ def make_build_python(context, working_dir):
     log("🎉", f"{binary} {version}")
 
 
+@functools.cache
 def wasi_sdk(context):
     """Find the path to the WASI SDK."""
     if wasi_sdk_path := context.wasi_sdk_path:
@@ -267,6 +272,7 @@ def wasi_sdk(context):
     return wasi_sdk_path
 
 
+@functools.cache
 def wasi_sdk_env(context):
     """Calculate environment variables for building with wasi-sdk."""
     wasi_sdk_path = wasi_sdk(context)
@@ -306,7 +312,7 @@ def wasi_sdk_env(context):
     return env
 
 
-@subdir(lambda context: _shared.CROSS_BUILD_DIR / _shared.host_triple(context), clean_ok=True)
+@subdir(lambda context: _shared.wasi_build_path(context), clean_ok=True)
 def configure_wasi_python(context, working_dir):
     """Configure the WASI/host build."""
     config_site = os.fsdecode(_shared.HERE / "config.site-wasm32-wasi")
@@ -334,7 +340,7 @@ def configure_wasi_python(context, working_dir):
     build_python = os.fsdecode(build_python_path())
     # The path to `configure` MUST be relative, else `python.wasm` is unable
     # to find the stdlib due to Python not recognizing that it's being
-    # executed from within a _shared.CHECKOUT.
+    # executed from within a _shared.checkout.
     configure = [
         os.path.relpath(_shared.CHECKOUT / "configure", working_dir),
         f"--host={_shared.host_triple(context)}",
@@ -360,7 +366,7 @@ def configure_wasi_python(context, working_dir):
     sys.stdout.flush()
 
 
-@subdir(lambda context: _shared.CROSS_BUILD_DIR / _shared.host_triple(context))
+@subdir(lambda context: _shared.wasi_build_path(context))
 def make_wasi_python(context, working_dir):
     """Run `make` for the WASI/host build."""
     call(

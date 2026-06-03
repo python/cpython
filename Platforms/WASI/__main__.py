@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
-__lazy_modules__ = ["_build"]
+__lazy_modules__ = ["_build", "_package"]
 
 import argparse
 import os
 import pathlib
 
 import _build
+import _package
 
 HERE = pathlib.Path(__file__).parent
 
@@ -52,6 +53,9 @@ def main():
     )
     build_host = subcommands.add_parser(
         "build-host", help="Build the host/WASI Python"
+    )
+    package = subcommands.add_parser(
+        "package", help="Package the host/WASI Python into an archive"
     )
     subcommands.add_parser(
         "clean", help="Delete files and directories created by this script"
@@ -151,6 +155,8 @@ def main():
             _build.make_wasi_python(context)
         case "clean":
             _build.clean_contents(context)
+        case "package":
+            _package.package(context)
         case _:
             raise ValueError(f"Unknown subcommand {context.subcommand!r}")
 
