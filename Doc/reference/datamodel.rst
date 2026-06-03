@@ -496,7 +496,7 @@ subscript notation ``a[k]`` selects the item indexed by ``k`` from the mapping
 :keyword:`del` statements. The built-in function :func:`len` returns the number
 of items in a mapping.
 
-There is currently a single intrinsic mapping type:
+There are two intrinsic mapping types:
 
 
 Dictionaries
@@ -533,6 +533,20 @@ module.
    Dictionaries did not preserve insertion order in versions of Python before 3.6.
    In CPython 3.6, insertion order was preserved, but it was considered
    an implementation detail at that time rather than a language guarantee.
+
+
+Frozen dictionaries
+^^^^^^^^^^^^^^^^^^^
+
+.. index:: pair: object; frozendict
+
+These represent an immutable dictionary.  They are created by the built-in
+:func:`frozendict` constructor.  A frozendict is :term:`hashable` if all of
+its keys and values are hashable, in which case it can be used as an element
+of a set, or as a key in another mapping.  :class:`!frozendict` is not a
+subclass of :class:`dict`; it inherits directly from :class:`object`.
+
+.. versionadded:: 3.15
 
 
 Callable types
@@ -3852,6 +3866,9 @@ should not directly raise unhandled :exc:`StopIteration` exceptions.
 Coroutines also have the methods listed below, which are analogous to
 those of generators (see :ref:`generator-methods`).  However, unlike
 generators, coroutines do not directly support iteration.
+
+Coroutines are :ref:`generic <generics>` over the types of their yield, send,
+and return values, respectively.
 
 .. versionchanged:: 3.5.2
    It is a :exc:`RuntimeError` to await on a coroutine more than once.

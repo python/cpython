@@ -240,5 +240,29 @@ class TestSamplyProfiler(unittest.TestCase, TestSamplyProfilerMixin):
                 self.assertIn(line, child_perf_file_contents)
 
 
+@unittest.skipUnless(samply_command_works(), "samply command doesn't work")
+class TestSamplyProfilerWithJitDump(unittest.TestCase, TestSamplyProfilerMixin):
+    # Regression test for gh-150723: exercises the binary jitdump backend
+    # (-Xperf_jit) end to end through samply, unlike TestSamplyProfiler which
+    # uses the textual perf-map backend (-Xperf).
+    def run_samply(self, script_dir, script, activate_trampoline=True):
+        if activate_trampoline:
+            return run_samply(script_dir, sys.executable, "-Xperf_jit", script)
+        return run_samply(script_dir, sys.executable, script)
+
+    def setUp(self):
+        super().setUp()
+        self.jit_files = set(pathlib.Path("/tmp/").glob("jit-*.dump"))
+        self.jit_files |= set(pathlib.Path("/tmp/").glob("jitted-*.so"))
+
+    def tearDown(self) -> None:
+        super().tearDown()
+        files_to_delete = set(pathlib.Path("/tmp/").glob("jit-*.dump"))
+        files_to_delete |= set(pathlib.Path("/tmp/").glob("jitted-*.so"))
+        files_to_delete -= self.jit_files
+        for file in files_to_delete:
+            file.unlink()
+
+
 if __name__ == "__main__":
     unittest.main()

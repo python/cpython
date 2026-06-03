@@ -484,6 +484,8 @@ or subtracting from an empty counter.
     Unix. They are also useful for tracking transactions and other pools of data
     where only the most recent activity is of interest.
 
+    Deques are :ref:`generic <generics>` over the type of their contents.
+
 
     Deque objects support the following methods:
 
@@ -738,6 +740,9 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
     attribute; it defaults to ``None``. All remaining arguments are treated the same
     as if they were passed to the :class:`dict` constructor, including keyword
     arguments.
+
+    :class:`!defaultdict`\s are :ref:`generic <generics>` over two types,
+    signifying (respectively) the types of the dictionary's keys and values.
 
 
     :class:`defaultdict` objects support the following method in addition to the
