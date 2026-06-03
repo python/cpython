@@ -631,8 +631,8 @@ Available Context Managers
 
       - ``message``: the warning message (an instance of :exc:`Warning`)
       - ``category``: the warning category (a subclass of :exc:`Warning`)
-      - ``filename``: the file name where the warning occurred (str)
-      - ``lineno``: the line number in the file (int)
+      - ``filename``: the file name where the warning occurred (:class:`str`)
+      - ``lineno``: the line number in the file (:class:`int`)
       - ``file``: the file object used for output (if any), or ``None``
       - ``line``: the line of source code (if available), or ``None``
       - ``source``: the original object that generated the warning (if available), or ``None``
