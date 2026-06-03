@@ -1369,7 +1369,7 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         TypeGuard[bool]
         TypeIs[range]
 
-    Note that objects of this class is not considered to be a class (e.g by `inspect.isclass`),
+    Note that instances of this class are not classes (e.g by `inspect.isclass`),
     even though they behave like them.
     """
     def __init__(self, origin, args, *, inst=True, name=None):
