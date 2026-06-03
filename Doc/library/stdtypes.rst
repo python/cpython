@@ -5928,7 +5928,7 @@ creation::
    <class 'list'>
 
 
-Additionally, instances of ``GenericAlias`` are not classes at runtime, even though they behave like classes (e.g. they can be instantiated)::
+Instances of ``GenericAlias`` are not classes at runtime, even though they behave like classes (they can be instantiated and subclassed)::
 
    >>> import inspect
    >>> inspect.isclass(list[int])
