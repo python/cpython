@@ -1,3 +1,1 @@
-Speed up :func:`json.dumps` for small documents by building the float
-formatting helper only on the slower Python encoding path instead of on every
-call. Patch by Bernát Gábor.
+Speed up :func:`json.dumps` for small documents. Patch by Bernát Gábor.

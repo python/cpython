@@ -233,9 +233,6 @@ class JSONEncoder(object):
                 self.key_separator, self.item_separator, self.sort_keys,
                 self.skipkeys, self.allow_nan)
         else:
-            # floatstr is only needed by the pure-Python encoder; defining it
-            # lazily avoids building this closure on every encode that takes
-            # the C fast path above.
             def floatstr(o, allow_nan=self.allow_nan,
                     _repr=float.__repr__, _inf=INFINITY, _neginf=-INFINITY):
                 # Check for specials.  Note that this type of test is processor
