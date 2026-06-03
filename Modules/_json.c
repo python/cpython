@@ -502,10 +502,10 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
             // Use tight scope variable to help register allocation.
             Py_UCS4 d = 0;
             next = end;
-            /* SWAR PROTOTYPE: for the 1-byte representation, skip 8 bytes at a
-               time while none is '"', '\\', or (strict) a control char < 0x20.
-               Masks use the exact haszero trick (no false negatives); the
-               scalar loop below pins the exact first special char. */
+            /* For the 1-byte representation, skip 8 bytes at a time while none
+               is '"', '\\', or (strict) a control char < 0x20.  The masks are
+               exact (no false negatives); the scalar loop below pins the exact
+               first special char and does the work. */
             if (kind == PyUnicode_1BYTE_KIND) {
                 const Py_UCS1 *p = (const Py_UCS1 *)buf;
                 const uint64_t ones = 0x0101010101010101ULL;
