@@ -1,0 +1,1 @@
+Fix :exc:`SyntaxError` error message for ``from x lazy import y``.

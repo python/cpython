@@ -3618,6 +3618,10 @@ def outer():
         lazy from collections import deque
 """, "lazy from ... import not allowed inside functions")
 
+        self._check_error("""\
+from os lazy import path
+""", "use 'lazy from ... ' instead of 'from ... lazy import'")
+
     def test_lazy_import_valid_cases(self):
         """Test that lazy imports work at module level."""
         # These should compile without errors
