@@ -60,20 +60,6 @@ PyWrapperFlag_KEYWORDS
 PyFile_NewStdPrinter
 PyStdPrinter_Type
 Py_UniversalNewlineFgets
-# cpython/setobject.h
-PySet_MINSIZE
-# cpython/ceval.h
-PyUnstable_CopyPerfMapFile
-PyUnstable_PerfTrampoline_CompileCode
-PyUnstable_PerfTrampoline_SetPersistAfterFork
-# cpython/genobject.h
-PyAsyncGenASend_CheckExact
-# cpython/longintrepr.h
-PyLong_BASE
-PyLong_MASK
-PyLong_SHIFT
-# cpython/pyerrors.h
-PyException_HEAD
 # cpython/pyframe.h
 PyUnstable_EXECUTABLE_KINDS
 PyUnstable_EXECUTABLE_KIND_BUILTIN_FUNCTION
@@ -142,3 +128,10 @@ PyUnicode_IS_READY
 PYTHON_ABI_VERSION
 PySequence_In
 PYOS_STACK_MARGIN
+# Soft-deprecated in 3.14; will remain undocumented in 3.13
+PySet_MINSIZE
+PyAsyncGenASend_CheckExact
+PyLong_BASE
+PyLong_MASK
+PyLong_SHIFT
+PyException_HEAD
