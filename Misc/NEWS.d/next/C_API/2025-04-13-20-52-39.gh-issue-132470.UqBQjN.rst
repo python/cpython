@@ -1,2 +1,0 @@
-Creating a :class:`ctypes.CField` with a *byte_size* that does not match the actual
-type size now raises a :exc:`ValueError` instead of crashing the interpreter.

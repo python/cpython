@@ -1,1 +1,0 @@
-Add the ``F_DUPFD_QUERY`` constant to the :mod:`fcntl` module.

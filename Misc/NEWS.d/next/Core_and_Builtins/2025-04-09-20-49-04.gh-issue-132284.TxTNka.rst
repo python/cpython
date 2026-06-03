@@ -1,1 +1,0 @@
-Don't wrap base ``PyCFunction`` slots on class creation if not overridden.

@@ -1,2 +1,0 @@
-Fix instance error suggestions trigger potential exceptions
-in :meth:`object.__getattr__` in :mod:`traceback`.

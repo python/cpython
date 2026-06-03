@@ -1,2 +1,0 @@
-Fix crash when passing a dict subclass as the ``globals`` parameter to
-:func:`exec`.

@@ -130,6 +130,9 @@ class TestCurses(unittest.TestCase):
         curses.use_env(False)
         curses.use_env(True)
 
+    def test_error(self):
+        self.assertIsSubclass(curses.error, Exception)
+
     def test_create_windows(self):
         win = curses.newwin(5, 10)
         self.assertEqual(win.getbegyx(), (0, 0))
@@ -1257,7 +1260,7 @@ class TestAscii(unittest.TestCase):
 
     def test_controlnames(self):
         for name in curses.ascii.controlnames:
-            self.assertTrue(hasattr(curses.ascii, name), name)
+            self.assertHasAttr(curses.ascii, name)
 
     def test_ctypes(self):
         def check(func, expected):

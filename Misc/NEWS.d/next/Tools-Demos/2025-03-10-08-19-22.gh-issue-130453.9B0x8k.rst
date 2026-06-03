@@ -1,2 +1,0 @@
-Allow passing multiple keyword arguments with the same function name in
-:program:`pygettext`.

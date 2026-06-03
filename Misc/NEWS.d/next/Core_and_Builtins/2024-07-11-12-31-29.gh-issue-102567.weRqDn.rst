@@ -1,4 +1,0 @@
-:option:`-X importtime <-X>` now accepts value ``2``, which indicates that
-an ``importtime`` entry should also be printed if an imported module has
-already been loaded.
-Patch by Noah Kim and Adam Turner.

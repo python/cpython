@@ -1,2 +1,0 @@
-Add ability to externally inspect all pending asyncio tasks, even if no task
-is currently entered on the event loop.
