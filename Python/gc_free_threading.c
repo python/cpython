@@ -9,6 +9,7 @@
 #include "pycore_initconfig.h"    // _PyStatus_NO_MEMORY()
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_interpframe.h"   // _PyFrame_GetLocalsArray()
+#include "pycore_list.h"          // _PyList_GetItemRef()
 #include "pycore_object_alloc.h"  // _PyObject_MallocWithType()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tstate.h"        // _PyThreadStateImpl
@@ -1940,24 +1941,22 @@ invoke_gc_callback(PyThreadState *tstate, const char *phase,
 
     /* The local variable cannot be rebound, check it for sanity */
     assert(PyList_CheckExact(gcstate->callbacks));
-    PyObject *info = NULL;
-    if (PyList_GET_SIZE(gcstate->callbacks) != 0) {
-        info = Py_BuildValue("{sisnsnsnsd}",
-            "generation", generation,
-            "collected", collected,
-            "uncollectable", uncollectable,
-            "candidates", candidates,
-            "duration", duration);
-        if (info == NULL) {
-            PyErr_FormatUnraisable("Exception ignored while "
-                                   "invoking gc callbacks");
-            return;
-        }
+
+    PyObject *info = Py_BuildValue("{sisnsnsnsd}",
+        "generation", generation,
+        "collected", collected,
+        "uncollectable", uncollectable,
+        "candidates", candidates,
+        "duration", duration);
+    if (info == NULL) {
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "invoking gc callbacks");
+        return;
     }
 
     PyObject *phase_obj = PyUnicode_FromString(phase);
     if (phase_obj == NULL) {
-        Py_XDECREF(info);
+        Py_DECREF(info);
         PyErr_FormatUnraisable("Exception ignored while "
                                "invoking gc callbacks");
         return;
@@ -1965,8 +1964,10 @@ invoke_gc_callback(PyThreadState *tstate, const char *phase,
 
     PyObject *stack[] = {phase_obj, info};
     for (Py_ssize_t i=0; i<PyList_GET_SIZE(gcstate->callbacks); i++) {
-        PyObject *r, *cb = PyList_GET_ITEM(gcstate->callbacks, i);
-        Py_INCREF(cb); /* make sure cb doesn't go away */
+        PyObject *r, *cb = _PyList_GetItemRef((PyListObject *)gcstate->callbacks, i);
+        if (cb == NULL) {
+            break;
+        }
         r = PyObject_Vectorcall(cb, stack, 2, NULL);
         if (r == NULL) {
             PyErr_FormatUnraisable("Exception ignored while "
@@ -1978,7 +1979,7 @@ invoke_gc_callback(PyThreadState *tstate, const char *phase,
         Py_DECREF(cb);
     }
     Py_DECREF(phase_obj);
-    Py_XDECREF(info);
+    Py_DECREF(info);
     assert(!_PyErr_Occurred(tstate));
 }
 
