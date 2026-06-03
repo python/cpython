@@ -281,6 +281,36 @@ escape_size(const void *input, int kind, Py_ssize_t input_chars)
     Py_ssize_t i;
     Py_ssize_t output_size;
 
+    /* SWAR no-escape fast path (1-byte): needs-escape is c == '"' || c == '\\'
+       || c < 0x20; non-ASCII (Latin-1 >= 0x80) is kept verbatim here.  A length
+       guard keeps short strings on the original per-character loop. */
+    if (kind == PyUnicode_1BYTE_KIND && input_chars >= 16
+            && input_chars < PY_SSIZE_T_MAX - 2) {
+        const Py_UCS1 *p = (const Py_UCS1 *)input;
+        const uint64_t ones = 0x0101010101010101ULL;
+        const uint64_t high = 0x8080808080808080ULL;
+        const uint64_t bq = 0x22ULL * ones, bs = 0x5cULL * ones, bc = 0xE0ULL * ones;
+        Py_ssize_t j = 0;
+        int needs_escape = 0;
+        for (; j + 8 <= input_chars; j += 8) {
+            uint64_t w;
+            memcpy(&w, p + j, 8);
+            uint64_t mq = w ^ bq; mq = (mq - ones) & ~mq & high;
+            uint64_t ms = w ^ bs; ms = (ms - ones) & ~ms & high;
+            uint64_t vc = w & bc; uint64_t mlo = (vc - ones) & ~vc & high;
+            if (mq | ms | mlo) { needs_escape = 1; break; }
+        }
+        if (!needs_escape) {
+            for (; j < input_chars; j++) {
+                Py_UCS1 c = p[j];
+                if (c == '"' || c == '\\' || c < 0x20) { needs_escape = 1; break; }
+            }
+        }
+        if (!needs_escape) {
+            return input_chars + 2;
+        }
+    }
+
     /* Compute the output size */
     for (i = 0, output_size = 2; i < input_chars; i++) {
         Py_UCS4 c = PyUnicode_READ(kind, input, i);
