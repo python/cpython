@@ -169,7 +169,7 @@ _atomic_types = frozenset({types.NoneType, types.EllipsisType, types.NotImplemen
 _deepcopy_dispatch = d = {}
 
 
-def _deepcopy_list(x, memo, deepcopy=deepcopy, _atomic=_atomic_types):
+def _deepcopy_list(x, memo, deepcopy=deepcopy):
     y = []
     memo[id(x)] = y
     append = y.append
@@ -177,12 +177,12 @@ def _deepcopy_list(x, memo, deepcopy=deepcopy, _atomic=_atomic_types):
         # Inline the atomic-type check so atomic elements (int, str, None, ...)
         # skip the deepcopy() call overhead entirely; deepcopy() would just
         # return them unchanged after the same check.
-        append(a if type(a) in _atomic else deepcopy(a, memo))
+        append(a if type(a) in _atomic_types else deepcopy(a, memo))
     return y
 d[list] = _deepcopy_list
 
-def _deepcopy_tuple(x, memo, deepcopy=deepcopy, _atomic=_atomic_types):
-    y = [a if type(a) in _atomic else deepcopy(a, memo) for a in x]
+def _deepcopy_tuple(x, memo, deepcopy=deepcopy):
+    y = [a if type(a) in _atomic_types else deepcopy(a, memo) for a in x]
     # We're not going to put the tuple in the memo, but it's still important we
     # check for it, in case the tuple contains recursive mutable structures.
     try:
@@ -198,15 +198,15 @@ def _deepcopy_tuple(x, memo, deepcopy=deepcopy, _atomic=_atomic_types):
     return y
 d[tuple] = _deepcopy_tuple
 
-def _deepcopy_dict(x, memo, deepcopy=deepcopy, _atomic=_atomic_types):
+def _deepcopy_dict(x, memo, deepcopy=deepcopy):
     y = {}
     memo[id(x)] = y
     for key, value in x.items():
         # Inline the atomic-type check for keys and values: atomic objects
         # (str keys, int/str/None values, ...) are returned as-is by
         # deepcopy(), so skip the per-item call in that common case.
-        y[key if type(key) in _atomic else deepcopy(key, memo)] = (
-            value if type(value) in _atomic else deepcopy(value, memo))
+        y[key if type(key) in _atomic_types else deepcopy(key, memo)] = (
+            value if type(value) in _atomic_types else deepcopy(value, memo))
     return y
 d[dict] = _deepcopy_dict
 
