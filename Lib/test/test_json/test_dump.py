@@ -130,6 +130,25 @@ class TestDump:
         self.assertEqual(self.dumps({'key': obj}),
                          '{"key": "nonascii:\\u00e9"}')
 
+    def test_ascii_encode_long_string_paths(self):
+        # Exercise the ensure_ascii encoder's escape scan over long runs that
+        # cross the 8-byte scan windows and the short-string guard: a character
+        # needing escaping at every offset, in 1-byte and wider strings.
+        dumps, loads = self.dumps, self.loads
+        for n in range(40):
+            run = "a" * n
+            for tail in ('"', "\\", "\n", "\x01", "\x7f", "\xe9", "中",
+                         "\U0001f600"):
+                s = run + tail + "tail"
+                self.assertEqual(loads(dumps(s)), s)
+        # No-escape pure-ASCII fast path returns the string verbatim.
+        self.assertEqual(dumps("x" * 20), '"' + "x" * 20 + '"')
+        # Non-ASCII is escaped under the default ensure_ascii=True.
+        self.assertEqual(dumps("a" * 20 + "\xe9"), '"' + "a" * 20 + '\\u00e9"')
+        self.assertEqual(dumps("a" * 20 + "中"), '"' + "a" * 20 + '\\u4e2d"')
+        self.assertEqual(dumps("a" * 20 + "\x7f"), '"' + "a" * 20 + '\\u007f"')
+        self.assertEqual(dumps("a" * 20 + '"'), '"' + "a" * 20 + '\\""')
+
 
 class TestPyDump(TestDump, PyTest): pass
 
