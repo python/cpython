@@ -858,7 +858,7 @@ to behave like normal instance methods when included in a class definition.
 
 .. _whatsnew-singledispatch:
 
-The new :func:`~functools.singledispatch` decorator brings support for
+The new :deco:`~functools.singledispatch` decorator brings support for
 single-dispatch generic functions to the Python standard library. Where
 object oriented programming focuses on grouping multiple operations on a
 common set of data into a class, a generic function focuses on grouping
@@ -870,7 +870,7 @@ multiple implementations of an operation that allows it to work with
    :pep:`443` -- Single-dispatch generic functions
       PEP written and implemented by Łukasz Langa.
 
-:func:`~functools.total_ordering` now supports a return value of
+:deco:`~functools.total_ordering` now supports a return value of
 :data:`NotImplemented` from the underlying comparison function.  (Contributed
 by Katie Miller in :issue:`10042`.)
 
@@ -1029,7 +1029,7 @@ information for modules, classes and functions.  (Contributed by Claudiu Popa
 and Nick Coghlan in :issue:`18626`.)
 
 :func:`~inspect.unwrap` makes it easy to unravel wrapper function chains
-created by :func:`functools.wraps` (and any other API that sets the
+created by :deco:`functools.wraps` (and any other API that sets the
 ``__wrapped__`` attribute on a wrapper function).  (Contributed by
 Daniel Urban, Aaron Iles and Nick Coghlan in :issue:`13266`.)
 
@@ -2317,7 +2317,7 @@ Changes in the Python API
   wish to continue to ignore syntax or decoding issues, catch all three
   exceptions now.
 
-* :func:`functools.update_wrapper` and :func:`functools.wraps` now correctly
+* :func:`functools.update_wrapper` and :deco:`functools.wraps` now correctly
   set the ``__wrapped__`` attribute to the function being wrapped, even if
   that function also had its ``__wrapped__`` attribute set. This means
   ``__wrapped__`` attributes now correctly link a stack of decorated
