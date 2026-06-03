@@ -2702,10 +2702,7 @@ class TestGeckoOpcodeMarkers(unittest.TestCase):
         collector.collect(frames2)
 
         # Should have emitted a marker for the first opcode
-        thread_data = collector.threads[1]
-        markers = thread_data["markers"]
-        # At least one marker should have been added
-        self.assertGreater(len(markers["name"]), 0)
+        self.assertGreater(collector.thread_spills[1].marker_count, 0)
 
     def test_gecko_opcode_markers_not_emitted_when_disabled(self):
         """Test that no opcode markers when opcodes=False."""
