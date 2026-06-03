@@ -1,0 +1,2 @@
+Fix :meth:`asyncio.loop.shutdown_asyncgens` to report
+:exc:`asyncio.CancelledError` raised during asynchronous generator cleanup.
