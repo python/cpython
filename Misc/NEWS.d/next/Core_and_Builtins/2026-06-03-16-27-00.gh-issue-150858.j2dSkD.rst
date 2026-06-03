@@ -1,0 +1,2 @@
+Fix a data race in :c:func:`type_set_qualname` where concurrent calls
+``__qualname__`` could cause a memory corruption on free-threaded builds.
