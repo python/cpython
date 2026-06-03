@@ -616,7 +616,8 @@ _bz2_BZ2Decompressor_decompress_impl(BZ2Decompressor *self, Py_buffer *data,
     }
     else if (self->bzerror) {
         // Re-entering BZ2_bzDecompress() after an error can write out of bounds.
-        catch_bz2_error(self->bzerror);
+        PyErr_SetString(PyExc_ValueError,
+                        "Decompressor is unusable after a previous error");
     }
     else {
         result = decompress(self, data->buf, data->len, max_length);

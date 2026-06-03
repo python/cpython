@@ -1044,7 +1044,7 @@ class BZ2DecompressorTest(BaseTest):
         # Previously, a second call could crash due to internal inconsistency
         self.assertFalse(bzd.needs_input)
         self.assertFalse(bzd.eof)
-        with self.assertRaisesRegex(OSError, "Invalid data stream"):
+        with self.assertRaisesRegex(ValueError, "previous error"):
             bzd.decompress(b'\x00' * 18)
 
     @support.refcount_test
