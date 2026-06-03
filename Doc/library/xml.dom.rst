@@ -4,9 +4,6 @@
 .. module:: xml.dom
    :synopsis: Document Object Model API for Python.
 
-.. sectionauthor:: Paul Prescod <paul@prescod.net>
-.. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
-
 **Source code:** :source:`Lib/xml/dom/__init__.py`
 
 --------------

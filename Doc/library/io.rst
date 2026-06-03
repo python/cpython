@@ -4,14 +4,6 @@
 .. module:: io
    :synopsis: Core tools for working with streams.
 
-.. moduleauthor:: Guido van Rossum <guido@python.org>
-.. moduleauthor:: Mike Verdone <mike.verdone@gmail.com>
-.. moduleauthor:: Mark Russell <mark.russell@zen.co.uk>
-.. moduleauthor:: Antoine Pitrou <solipsis@pitrou.net>
-.. moduleauthor:: Amaury Forgeot d'Arc <amauryfa@gmail.com>
-.. moduleauthor:: Benjamin Peterson <benjamin@python.org>
-.. sectionauthor:: Benjamin Peterson <benjamin@python.org>
-
 **Source code:** :source:`Lib/io.py`
 
 --------------
@@ -832,9 +824,9 @@ than raw I/O does.
 
 .. class:: BufferedRandom(raw, buffer_size=DEFAULT_BUFFER_SIZE)
 
-   A buffered binary stream providing higher-level access to a seekable
-   :class:`RawIOBase` raw binary stream.  It inherits from :class:`BufferedReader`
-   and :class:`BufferedWriter`.
+   A buffered binary stream implementing :class:`BufferedIOBase` interfaces
+   providing higher-level access to a seekable :class:`RawIOBase` raw binary
+   stream.
 
    The constructor creates a reader and writer for a seekable raw stream, given
    in the first argument.  If the *buffer_size* is omitted it defaults to

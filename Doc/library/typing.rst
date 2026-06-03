@@ -719,8 +719,8 @@ The :data:`Any` type
 ====================
 
 A special kind of type is :data:`Any`. A static type checker will treat
-every type as being compatible with :data:`Any` and :data:`Any` as being
-compatible with every type.
+every type as assignable to :data:`Any` and :data:`Any` as assignable to
+every type.
 
 This means that it is possible to perform any operation or method call on a
 value of type :data:`Any` and assign it to any variable::
@@ -785,7 +785,7 @@ it as a return value) of a more specialized type is a type error. For example::
    hash_a(42)
    hash_a("foo")
 
-   # Passes type checking, since Any is compatible with all types
+   # Passes type checking, since Any is assignable to all types
    hash_b(42)
    hash_b("foo")
 
@@ -851,8 +851,8 @@ using ``[]``.
 
    Special type indicating an unconstrained type.
 
-   * Every type is compatible with :data:`Any`.
-   * :data:`Any` is compatible with every type.
+   * Every type is assignable to :data:`Any`.
+   * :data:`Any` is assignable to every type.
 
    .. versionchanged:: 3.11
       :data:`Any` can now be used as a base class. This can be useful for
@@ -1174,7 +1174,8 @@ These can be used as types in annotations. They all support subscription using
    or transforms parameters of another
    callable.  Usage is in the form
    ``Concatenate[Arg1Type, Arg2Type, ..., ParamSpecVariable]``. ``Concatenate``
-   is currently only valid when used as the first argument to a :ref:`Callable <annotating-callables>`.
+   is valid when used in :ref:`Callable <annotating-callables>` type hints
+   and when instantiating user-defined generic classes with :class:`ParamSpec` parameters.
    The last parameter to ``Concatenate`` must be a :class:`ParamSpec` or
    ellipsis (``...``).
 
@@ -1291,10 +1292,10 @@ These can be used as types in annotations. They all support subscription using
 
    :data:`ClassVar` accepts only types and cannot be further subscribed.
 
-   :data:`ClassVar` is not a class itself, and should not
+   :data:`ClassVar` is not a class itself, and cannot
    be used with :func:`isinstance` or :func:`issubclass`.
    :data:`ClassVar` does not change Python runtime behavior, but
-   it can be used by third-party type checkers. For example, a type checker
+   it can be used by static type checkers. For example, a type checker
    might flag the following code as an error::
 
       enterprise_d = Starship(3000)
@@ -1364,7 +1365,7 @@ These can be used as types in annotations. They all support subscription using
 
       def mutate_movie(m: Movie) -> None:
          m["year"] = 1999  # allowed
-         m["title"] = "The Matrix"  # typechecker error
+         m["title"] = "The Matrix"  # type checker error
 
    There is no runtime checking for this property.
 
@@ -1522,6 +1523,35 @@ These can be used as types in annotations. They all support subscription using
          The PEP introducing ``Annotated`` to the standard library.
 
    .. versionadded:: 3.9
+
+
+.. data:: TypeForm
+
+   A special form representing the value that results from evaluating a
+   type expression.
+
+   This value encodes the information supplied in the type expression, and
+   it represents the type described by that type expression.
+
+   When used in a type expression, ``TypeForm`` describes a set of type form
+   objects. It accepts a single type argument, which must be a valid type
+   expression. ``TypeForm[T]`` describes the set of all type form objects that
+   represent the type ``T`` or types assignable to ``T``.
+
+   ``TypeForm(obj)`` simply returns ``obj`` unchanged. This is useful for
+   explicitly marking a value as a type form for static type checkers.
+
+   Example::
+
+      from typing import Any, TypeForm
+
+      def cast[T](typ: TypeForm[T], value: Any) -> T: ...
+
+      reveal_type(cast(int, "x"))  # Revealed type is "int"
+
+   See :pep:`747` for details.
+
+   .. versionadded:: 3.15
 
 
 .. data:: TypeIs
@@ -1951,7 +1981,7 @@ without the dedicated syntax, as documented below.
 
 .. _typevartuple:
 
-.. class:: TypeVarTuple(name, *, default=typing.NoDefault)
+.. class:: TypeVarTuple(name, *, bound=None, covariant=False, contravariant=False, infer_variance=False, default=typing.NoDefault)
 
    Type variable tuple. A specialized form of :ref:`type variable <typevar>`
    that enables *variadic* generics.
@@ -2061,6 +2091,24 @@ without the dedicated syntax, as documented below.
 
       The name of the type variable tuple.
 
+   .. attribute:: __covariant__
+
+      Whether the type variable tuple has been explicitly marked as covariant.
+
+      .. versionadded:: 3.15
+
+   .. attribute:: __contravariant__
+
+      Whether the type variable tuple has been explicitly marked as contravariant.
+
+      .. versionadded:: 3.15
+
+   .. attribute:: __infer_variance__
+
+      Whether the type variable tuple's variance should be inferred by type checkers.
+
+      .. versionadded:: 3.15
+
    .. attribute:: __default__
 
       The default value of the type variable tuple, or :data:`typing.NoDefault` if it
@@ -2087,6 +2135,11 @@ without the dedicated syntax, as documented below.
 
       .. versionadded:: 3.13
 
+   Type variable tuples created with ``covariant=True`` or
+   ``contravariant=True`` can be used to declare covariant or contravariant
+   generic types.  The ``bound`` argument is also accepted, similar to
+   :class:`TypeVar`, but its actual semantics are yet to be decided.
+
    .. versionadded:: 3.11
 
    .. versionchanged:: 3.12
@@ -2098,7 +2151,12 @@ without the dedicated syntax, as documented below.
 
       Support for default values was added.
 
-.. class:: ParamSpec(name, *, bound=None, covariant=False, contravariant=False, default=typing.NoDefault)
+   .. versionchanged:: 3.15
+
+      Added support for the ``bound``, ``covariant``, ``contravariant``, and
+      ``infer_variance`` parameters.
+
+.. class:: ParamSpec(name, *, bound=None, covariant=False, contravariant=False, infer_variance=False, default=typing.NoDefault)
 
    Parameter specification variable.  A specialized version of
    :ref:`type variables <typevar>`.
@@ -2167,6 +2225,20 @@ without the dedicated syntax, as documented below.
 
       The name of the parameter specification.
 
+   .. attribute:: __covariant__
+
+      Whether the parameter specification has been explicitly marked as covariant.
+
+   .. attribute:: __contravariant__
+
+      Whether the parameter specification has been explicitly marked as contravariant.
+
+   .. attribute:: __infer_variance__
+
+      Whether the parameter specification's variance should be inferred by type checkers.
+
+      .. versionadded:: 3.12
+
    .. attribute:: __default__
 
       The default value of the parameter specification, or :data:`typing.NoDefault` if it
@@ -2220,8 +2292,8 @@ without the dedicated syntax, as documented below.
       * :data:`Concatenate`
       * :ref:`annotating-callables`
 
-.. data:: ParamSpecArgs
-          ParamSpecKwargs
+.. class:: ParamSpecArgs
+           ParamSpecKwargs
 
    Arguments and keyword arguments attributes of a :class:`ParamSpec`. The
    ``P.args`` attribute of a ``ParamSpec`` is an instance of ``ParamSpecArgs``,
@@ -2288,6 +2360,12 @@ without the dedicated syntax, as documented below.
          >>> type Alias = int
          >>> Alias.__module__
          '__main__'
+
+      This attribute is writable.
+
+      .. versionchanged:: 3.15
+
+         The attribute is now writable.
 
    .. attribute:: __type_params__
 
@@ -2394,9 +2472,9 @@ types.
 
    Fields with a default value must come after any fields without a default.
 
-   The resulting class has an extra attribute ``__annotations__`` giving a
-   dict that maps the field names to the field types.  (The field names are in
-   the ``_fields`` attribute and the default values are in the
+   The types for each field name can be retrieved by calling
+   :func:`annotationlib.get_annotations` on the resulting class. (The field
+   names are in the ``_fields`` attribute and the default values are in the
    ``_field_defaults`` attribute, both of which are part of the :func:`~collections.namedtuple`
    API.)
 
@@ -2457,7 +2535,7 @@ types.
 
    Helper class to create low-overhead :ref:`distinct types <distinct>`.
 
-   A ``NewType`` is considered a distinct type by a typechecker. At runtime,
+   A ``NewType`` is considered a distinct type by a type checker. At runtime,
    however, calling a ``NewType`` returns its argument unchanged.
 
    Usage::
@@ -2505,7 +2583,7 @@ types.
       func(C())  # Passes static type check
 
    See :pep:`544` for more details. Protocol classes decorated with
-   :func:`runtime_checkable` (described later) act as simple-minded runtime
+   :deco:`runtime_checkable` (described later) act as simple-minded runtime
    protocols that check only the presence of given attributes, ignoring their
    type signatures. Protocol classes without this decorator cannot be used
    as the second argument to :func:`isinstance` or :func:`issubclass`.
@@ -2538,7 +2616,7 @@ types.
    Mark a protocol class as a runtime protocol.
 
    Such a protocol can be used with :func:`isinstance` and :func:`issubclass`.
-   This allows a simple-minded structural check, very similar to "one trick ponies"
+   This allows a simple-minded structural check, very similar to "one-trick ponies"
    in :mod:`collections.abc` such as :class:`~collections.abc.Iterable`.  For example::
 
       @runtime_checkable
@@ -2570,7 +2648,7 @@ types.
 
    .. note::
 
-        :func:`!runtime_checkable` will check only the presence of the required
+        :deco:`!runtime_checkable` will check only the presence of the required
         methods or attributes, not their type signatures or types.
         For example, :class:`ssl.SSLObject`
         is a class, therefore it passes an :func:`issubclass`
@@ -2714,6 +2792,37 @@ types.
           y: int
           z: int
 
+   By default, a ``TypedDict`` is open, meaning that it may contain additional keys
+   at runtime beyond those defined in the class body. The *closed* class argument can
+   be used to control this; if ``closed=True``, the ``TypedDict`` cannot contain additional keys.
+
+   ::
+
+      class ClosedPoint(TypedDict, closed=True):
+          x: int
+          y: int
+
+      class ClosedPoint3D(ClosedPoint):  # type checker error: cannot add keys to a closed TypedDict
+          z: int
+
+   Setting ``closed=False`` explicitly requests the default open behavior. If the argument is not
+   passed, this state is inherited from the parent class.
+
+   In addition to being open or closed, a ``TypedDict`` can also be configured to have extra items.
+   If the *extra_items* class argument is set to a type, the ``TypedDict`` can contain arbitrary
+   additional keys, but the values of those keys must be of the specified type.
+
+   ::
+
+      class ExtraItemsPoint(TypedDict, extra_items=int):
+          x: int
+          y: int
+
+      point: ExtraItemsPoint = {'x': 1, 'y': 2, 'anything': 3}  # OK
+
+   The *extra_items* argument is also inherited through subclassing. It is unset
+   by default, and it may not be used together with the *closed* argument.
+
    A ``TypedDict`` cannot inherit from a non-\ ``TypedDict`` class,
    except for :class:`Generic`. For example::
 
@@ -2746,9 +2855,9 @@ types.
           key: T
           group: list[T]
 
-   A ``TypedDict`` can be introspected via annotations dicts
-   (see :ref:`annotations-howto` for more information on annotations best practices),
-   :attr:`__total__`, :attr:`__required_keys__`, and :attr:`__optional_keys__`.
+   A ``TypedDict`` can be introspected via :func:`annotationlib.get_annotations`
+   (see :ref:`annotations-howto` for more information on annotations best practices)
+   and the following attributes:
 
    .. attribute:: __total__
 
@@ -2789,7 +2898,7 @@ types.
 
       For backwards compatibility with Python 3.10 and below,
       it is also possible to use inheritance to declare both required and
-      non-required keys in the same ``TypedDict`` . This is done by declaring a
+      non-required keys in the same ``TypedDict``. This is done by declaring a
       ``TypedDict`` with one value for the ``total`` argument and then
       inheriting from it in another ``TypedDict`` with a different value for
       ``total``:
@@ -2818,8 +2927,6 @@ types.
          ``__required_keys__`` and ``__optional_keys__`` rely on may not work
          properly, and the values of the attributes may be incorrect.
 
-   Support for :data:`ReadOnly` is reflected in the following attributes:
-
    .. attribute:: __readonly_keys__
 
       A :class:`frozenset` containing the names of all read-only keys. Keys
@@ -2833,6 +2940,14 @@ types.
       are mutable if they do not carry the :data:`ReadOnly` qualifier.
 
       .. versionadded:: 3.13
+
+   .. attribute:: __closed__
+
+      The value of the *closed* class argument. It can be ``True``, ``False``, or :data:`None`.
+
+   .. attribute:: __extra_items__
+
+      The value of the *extra_items* class argument. It can be a valid type or :data:`NoExtraItems`.
 
    See the `TypedDict <https://typing.python.org/en/latest/spec/typeddict.html#typeddict>`_ section in the typing documentation for more examples and detailed rules.
 
@@ -2853,7 +2968,10 @@ types.
       Removed support for the keyword-argument method of creating ``TypedDict``\ s.
 
    .. versionchanged:: 3.13
-      Support for the :data:`ReadOnly` qualifier was added.
+      Support for the :data:`ReadOnly` qualifier was added. See :pep:`705`.
+
+   .. versionchanged:: 3.15
+      Support for the *closed* and *extra_items* class arguments was added. See :pep:`728`.
 
 
 Protocols
@@ -2864,34 +2982,34 @@ with :deco:`runtime_checkable`.
 
 .. class:: SupportsAbs
 
-    An ABC with one abstract method ``__abs__`` that is covariant
+    A protocol with one abstract method ``__abs__`` that is covariant
     in its return type.
 
 .. class:: SupportsBytes
 
-    An ABC with one abstract method ``__bytes__``.
+    A protocol with one abstract method ``__bytes__``.
 
 .. class:: SupportsComplex
 
-    An ABC with one abstract method ``__complex__``.
+    A protocol with one abstract method ``__complex__``.
 
 .. class:: SupportsFloat
 
-    An ABC with one abstract method ``__float__``.
+    A protocol with one abstract method ``__float__``.
 
 .. class:: SupportsIndex
 
-    An ABC with one abstract method ``__index__``.
+    A protocol with one abstract method ``__index__``.
 
     .. versionadded:: 3.8
 
 .. class:: SupportsInt
 
-    An ABC with one abstract method ``__int__``.
+    A protocol with one abstract method ``__int__``.
 
 .. class:: SupportsRound
 
-    An ABC with one abstract method ``__round__``
+    A protocol with one abstract method ``__round__``
     that is covariant in its return type.
 
 .. _typing-io:
@@ -3036,7 +3154,7 @@ Functions and decorators
    Decorator to mark an object as providing
    :func:`dataclass <dataclasses.dataclass>`-like behavior.
 
-   ``dataclass_transform`` may be used to
+   ``@dataclass_transform`` may be used to
    decorate a class, metaclass, or a function that is itself a decorator.
    The presence of ``@dataclass_transform()`` tells a static type checker that the
    decorated object performs runtime "magic" that
@@ -3091,7 +3209,7 @@ Functions and decorators
    ``kw_only``, and ``slots``. It must be possible for the value of these
    arguments (``True`` or ``False``) to be statically evaluated.
 
-   The arguments to the ``dataclass_transform`` decorator can be used to
+   The arguments to the ``@dataclass_transform`` decorator can be used to
    customize the default behaviors of the decorated class, metaclass, or
    function:
 
@@ -3155,8 +3273,8 @@ Functions and decorators
           keyword-only. If ``True``, the field will be keyword-only. If
           ``False``, it will not be keyword-only. If unspecified, the value of
           the ``kw_only`` parameter on the object decorated with
-          ``dataclass_transform`` will be used, or if that is unspecified, the
-          value of ``kw_only_default`` on ``dataclass_transform`` will be used.
+          ``@dataclass_transform`` will be used, or if that is unspecified, the
+          value of ``kw_only_default`` on ``@dataclass_transform`` will be used.
       * - ``alias``
         - Provides an alternative name for the field. This alternative
           name is used in the synthesized ``__init__`` method.
@@ -3329,6 +3447,36 @@ Functions and decorators
 
    .. versionadded:: 3.12
 
+.. decorator:: disjoint_base
+
+   Decorator to mark a class as a disjoint base.
+
+   Type checkers do not allow child classes of a disjoint base ``C`` to
+   inherit from other disjoint bases that are not parent or child classes of ``C``.
+
+   For example::
+
+       @disjoint_base
+       class Disjoint1: pass
+
+       @disjoint_base
+       class Disjoint2: pass
+
+       class Disjoint3(Disjoint1, Disjoint2): pass  # Type checker error
+
+   Type checkers can use knowledge of disjoint bases to detect unreachable code
+   and determine when two types can overlap.
+
+   The corresponding runtime concept is a solid base (see :ref:`multiple-inheritance`).
+   Classes that are solid bases at runtime can be marked with ``@disjoint_base`` in stub files.
+   Users may also mark other classes as disjoint bases to indicate to type checkers that
+   multiple inheritance with other disjoint bases should not be allowed.
+
+   Note that the concept of a solid base is a CPython implementation
+   detail, and the exact set of standard library classes that are
+   disjoint bases at runtime may change in future versions of Python.
+
+   .. versionadded:: 3.15
 
 .. decorator:: type_check_only
 
@@ -3351,13 +3499,13 @@ Functions and decorators
 Introspection helpers
 ---------------------
 
-.. function:: get_type_hints(obj, globalns=None, localns=None, include_extras=False)
+.. function:: get_type_hints(obj, globalns=None, localns=None, include_extras=False, *, format=Format.VALUE)
 
-   Return a dictionary containing type hints for a function, method, module
-   or class object.
+   Return a dictionary containing type hints for a function, method, module,
+   class object, or other callable object.
 
-   This is often the same as ``obj.__annotations__``, but this function makes
-   the following changes to the annotations dictionary:
+   This is often the same as :func:`annotationlib.get_annotations`, but this
+   function makes the following changes to the annotations dictionary:
 
    * Forward references encoded as string literals or :class:`ForwardRef`
      objects are handled by evaluating them in *globalns*, *localns*, and
@@ -3371,16 +3519,14 @@ Introspection helpers
      annotations from ``C``'s base classes with those on ``C`` directly. This
      is done by traversing :attr:`C.__mro__ <type.__mro__>` and iteratively
      combining
-     ``__annotations__`` dictionaries. Annotations on classes appearing
-     earlier in the :term:`method resolution order` always take precedence over
-     annotations on classes appearing later in the method resolution order.
+     :term:`annotations <variable annotation>` of each base class. Annotations
+     on classes appearing earlier in the :term:`method resolution order` always
+     take precedence over annotations on classes appearing later in the method
+     resolution order.
    * The function recursively replaces all occurrences of
      ``Annotated[T, ...]``, ``Required[T]``, ``NotRequired[T]``, and ``ReadOnly[T]``
      with ``T``, unless *include_extras* is set to ``True`` (see
      :class:`Annotated` for more information).
-
-   See also :func:`annotationlib.get_annotations`, a lower-level function that
-   returns annotations more directly.
 
    .. caution::
 
@@ -3389,11 +3535,19 @@ Introspection helpers
 
    .. note::
 
-      If any forward references in the annotations of *obj* are not resolvable
-      or are not valid Python code, this function will raise an exception
-      such as :exc:`NameError`. For example, this can happen with imported
-      :ref:`type aliases <type-aliases>` that include forward references,
-      or with names imported under :data:`if TYPE_CHECKING <TYPE_CHECKING>`.
+      If :attr:`Format.VALUE <annotationlib.Format.VALUE>` is used and any
+      forward references in the annotations of *obj* are not resolvable, a
+      :exc:`NameError` exception is raised. For example, this can happen
+      with names imported under :data:`if TYPE_CHECKING <TYPE_CHECKING>`.
+      More generally, any kind of exception can be raised if an annotation
+      contains invalid Python code.
+
+   .. note::
+
+      Calling :func:`get_type_hints` on an instance is not supported.
+      To retrieve annotations for an instance, call
+      :func:`get_type_hints` on the instance's class instead
+      (for example, ``get_type_hints(type(obj))``).
 
    .. versionchanged:: 3.9
       Added ``include_extras`` parameter as part of :pep:`593`.
@@ -3403,6 +3557,15 @@ Introspection helpers
       Previously, ``Optional[t]`` was added for function and method annotations
       if a default value equal to ``None`` was set.
       Now the annotation is returned unchanged.
+
+   .. versionchanged:: 3.14
+      Added the ``format`` parameter. See the documentation on
+      :func:`annotationlib.get_annotations` for more information.
+
+   .. versionchanged:: 3.14
+      Calling :func:`get_type_hints` on instances is no longer supported.
+      Some instances were accepted in earlier versions as an undocumented
+      implementation detail.
 
 .. function:: get_origin(tp)
 
@@ -3470,14 +3633,27 @@ Introspection helpers
 
    Determine if a type is a :class:`Protocol`.
 
-   For example::
+   For example:
+
+   .. testcode::
 
       class P(Protocol):
           def a(self) -> str: ...
           b: int
 
-      is_protocol(P)    # => True
-      is_protocol(int)  # => False
+      assert is_protocol(P)
+      assert not is_protocol(int)
+
+   This function only returns true for ``Protocol`` classes, not for
+   :ref:`generic aliases <types-genericalias>` of them:
+
+   .. testcode::
+
+      class GenericP[T](Protocol):
+          def a(self) -> T: ...
+          b: int
+
+      assert not is_protocol(GenericP[int])
 
    .. versionadded:: 3.13
 
@@ -3499,6 +3675,17 @@ Introspection helpers
       # TypedDict is a factory for creating typed dicts,
       # not a typed dict itself
       assert not is_typeddict(TypedDict)
+
+   This function only returns true for ``TypedDict`` classes, not for
+   :ref:`generic aliases <types-genericalias>` of them:
+
+   .. testcode::
+
+      class GenericFilm[T](TypedDict):
+          title: str
+          year: T
+
+      assert not is_typeddict(GenericFilm[int])
 
    .. versionadded:: 3.10
 
@@ -3556,12 +3743,27 @@ Introspection helpers
 
    .. versionadded:: 3.13
 
+.. data:: NoExtraItems
+
+   A :class:`sentinel` object used to indicate that a :class:`TypedDict`
+   does not have the *extra_items* class argument.
+
+   .. doctest::
+
+      >>> from typing import TypedDict, NoExtraItems
+      >>> class Point(TypedDict):
+      ...     x: int
+      ...     y: int
+      ...
+      >>> Point.__extra_items__ is NoExtraItems
+      True
+
 Constant
 --------
 
 .. data:: TYPE_CHECKING
 
-   A special constant that is assumed to be ``True`` by 3rd party static
+   A special constant that is assumed to be ``True`` by static
    type checkers. It's ``False`` at runtime.
 
    A module which is expensive to import, and which only contain types
@@ -3756,7 +3958,7 @@ Aliases to other concrete types
            Match
 
    Deprecated aliases corresponding to the return types from
-   :func:`re.compile` and :func:`re.match`.
+   :func:`re.compile` and :func:`re.search`.
 
    These types (and the corresponding functions) are generic over
    :data:`AnyStr`. ``Pattern`` can be specialised as ``Pattern[str]`` or

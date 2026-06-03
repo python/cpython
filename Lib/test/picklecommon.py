@@ -263,6 +263,17 @@ myclasses = [MyInt, MyLong, MyFloat,
              MyStr, MyUnicode,
              MyTuple, MyList, MyDict, MySet, MyFrozenSet]
 
+try:
+    frozendict
+except NameError:
+    # Python 3.14 and older
+    pass
+else:
+    class MyFrozenDict(dict):
+        sample = frozendict({"a": 1, "b": 2})
+    myclasses.append(MyFrozenDict)
+
+
 # For test_newobj_overridden_new
 class MyIntWithNew(int):
     def __new__(cls, value):
