@@ -33,6 +33,8 @@ try:
 except ImportError:
     _winreg = None
 
+lazy import urllib.parse
+
 __all__ = [
     "knownfiles", "inited", "MimeTypes",
     "guess_type", "guess_file_type", "guess_all_extensions", "guess_extension",
@@ -131,7 +133,6 @@ class MimeTypes:
         if isinstance(url, str) and ':' not in url:
             return self.guess_file_type(url, strict=strict)
 
-        import urllib.parse
         p = urllib.parse.urlparse(url)
         if p.scheme and len(p.scheme) > 1:
             scheme = p.scheme
