@@ -624,6 +624,8 @@ class TestSampleProfilerComponents(unittest.TestCase):
         """Test Gecko profile export functionality."""
         gecko_out = tempfile.NamedTemporaryFile(suffix=".json", delete=False)
         self.addCleanup(close_and_unlink, gecko_out)
+        # We cannot overwrite an open file on Windows.
+        gecko_out.close()
 
         collector = GeckoCollector(1000)
 
