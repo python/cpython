@@ -89,7 +89,8 @@ class DateTimeTests(unittest.TestCase):
             "Mon, 1 Jan 68 00:00:00 +0000": "2068",
             "Mon, 1 Jan 69 00:00:00 +0000": "1969",
             "Mon, 1 Jan 99 00:00:00 +0000": "1999",
-            # 3-digit year boundary
+            # 3-digit year boundaries
+            "Mon, 1 Jan 100 00:00:00 +0000": "2000",
             "Mon, 1 Jan 999 00:00:00 +0000": "2899",
             # Pre-1900 four-digit year: illegal per RFC but we accept it
             "Mon, 1 Jan 1000 00:00:00 +0000": "1000",
