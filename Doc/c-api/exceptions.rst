@@ -412,7 +412,7 @@ an error value).
 
 .. c:function:: int PyErr_WarnFormat(PyObject *category, Py_ssize_t stack_level, const char *format, ...)
 
-   Function similar to :c:func:`PyErr_WarnEx`, but use
+   Function similar to :c:func:`PyErr_WarnEx`, but uses
    :c:func:`PyUnicode_FromFormat` to format the warning message.  *format* is
    an ASCII-encoded string.
 
@@ -1393,7 +1393,7 @@ Tracebacks
 
    This function will return ``NULL`` on success, or an error message on error.
 
-   This function is meant to debug debug situations such as segfaults, fatal
+   This function is meant to debug situations such as segfaults, fatal
    errors, and similar. It calls :c:func:`PyUnstable_DumpTraceback` for each
    thread. It only writes the tracebacks of the first *max_threads* threads,
    further output is truncated with the line ``...``. If *max_threads* is 0, the

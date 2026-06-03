@@ -2870,6 +2870,7 @@ symtable_visit_annotation(struct symtable *st, expr_ty annotation, void *key)
         int future_annotations = st->st_future->ff_features & CO_FUTURE_ANNOTATIONS;
         if (current_type == ClassBlock && !future_annotations) {
             st->st_cur->ste_can_see_class_scope = 1;
+            parent_ste->ste_needs_classdict = 1;
             if (!symtable_add_def(st, &_Py_ID(__classdict__), USE, LOCATION(annotation))) {
                 return 0;
             }

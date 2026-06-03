@@ -1952,10 +1952,14 @@ Return a chain object whose .__next__() method returns elements from the\n\
 first iterable until it is exhausted, then elements from the next\n\
 iterable, until all of the iterables are exhausted.");
 
+PyDoc_STRVAR(chain_class_getitem_doc,
+"chain is generic over the type of its contents.\n\
+This is the union of the types of the input iterable contents.");
+
 static PyMethodDef chain_methods[] = {
     ITERTOOLS_CHAIN_FROM_ITERABLE_METHODDEF
     {"__class_getitem__",    Py_GenericAlias,
-    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
+    METH_O|METH_CLASS,       chain_class_getitem_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
