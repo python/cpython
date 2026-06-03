@@ -369,8 +369,9 @@ class TestGeneratedCases(unittest.TestCase):
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
             escaping_call();
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_StackPointerInvalidate(frame);
             res = Py_None;
             stack_pointer[0] = res;
             stack_pointer += 1;
@@ -392,8 +393,9 @@ class TestGeneratedCases(unittest.TestCase):
             res = Py_None;
             stack_pointer[-1] = res;
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
             escaping_call();
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_StackPointerInvalidate(frame);
             DISPATCH();
         }
     """
@@ -626,8 +628,9 @@ class TestGeneratedCases(unittest.TestCase):
                 uint16_t counter = read_u16(&this_instr[1].cache);
                 (void)counter;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyFrame_StackPointerValidate(frame);
                 op1(left, right);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
+                _PyFrame_StackPointerInvalidate(frame);
             }
             /* Skip 2 cache entries */
             // OP2
@@ -635,9 +638,10 @@ class TestGeneratedCases(unittest.TestCase):
                 arg2 = stack_pointer[-3];
                 uint32_t extra = read_u32(&this_instr[4].cache);
                 (void)extra;
-                _PyFrame_SetStackPointer(frame, stack_pointer);
+                assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                _PyFrame_StackPointerValidate(frame);
                 res = op2(arg2, left, right);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
+                _PyFrame_StackPointerInvalidate(frame);
             }
             stack_pointer[-3] = res;
             stack_pointer += -2;
@@ -662,8 +666,9 @@ class TestGeneratedCases(unittest.TestCase):
             uint16_t counter = read_u16(&this_instr[1].cache);
             (void)counter;
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
             op1(left, right);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_StackPointerInvalidate(frame);
             DISPATCH();
         }
 
@@ -685,8 +690,9 @@ class TestGeneratedCases(unittest.TestCase):
             left = stack_pointer[-2];
             arg2 = stack_pointer[-3];
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
             res = op3(arg2, left, right);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_StackPointerInvalidate(frame);
             stack_pointer[-3] = res;
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -1475,8 +1481,10 @@ class TestGeneratedCases(unittest.TestCase):
             next_instr += 1;
             INSTRUCTION_STATS(BALANCED);
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
             code();
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_StackPointerInvalidate(frame);
             DISPATCH();
         }
         """
@@ -1500,6 +1508,10 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BALANCED);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_StackPointerInvalidate(frame);
             DISPATCH();
         }
         """
@@ -1522,13 +1534,13 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BALANCED);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
+            // Explicit stack reload
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            assert(frame->stackpointer_valid == 0);
             DISPATCH();
         }
         """
-        with self.assertRaises(SyntaxError):
-            self.run_cases_test(input, output)
+        self.run_cases_test(input, output)
 
     def test_stack_save_only(self):
 
@@ -1614,16 +1626,19 @@ class TestGeneratedCases(unittest.TestCase):
             INSTRUCTION_STATS(OP);
             #ifdef Py_GIL_DISABLED
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
             escaping_call();
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_StackPointerInvalidate(frame);
             #else
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
             another_escaping_call();
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_StackPointerInvalidate(frame);
             #endif
-            _PyFrame_SetStackPointer(frame, stack_pointer);
+            assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+            _PyFrame_StackPointerValidate(frame);
             yet_another_escaping_call();
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_StackPointerInvalidate(frame);
             DISPATCH();
         }
         """
@@ -1735,8 +1750,9 @@ class TestGeneratedCases(unittest.TestCase):
         LABEL(my_label)
         {
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
             do_thing();
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_StackPointerInvalidate(frame);
             if (complex) {
                 JUMP_TO_LABEL(other_label);
             }
@@ -1762,12 +1778,14 @@ class TestGeneratedCases(unittest.TestCase):
         LABEL(one)
         {
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_StackPointerInvalidate(frame);
             JUMP_TO_LABEL(two);
         }
 
         LABEL(two)
         {
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
             JUMP_TO_LABEL(one);
         }
         """
@@ -1817,16 +1835,18 @@ class TestGeneratedCases(unittest.TestCase):
         LABEL(my_label_1)
         {
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
             do_thing1();
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_StackPointerInvalidate(frame);
             JUMP_TO_LABEL(my_label_2);
         }
 
         LABEL(my_label_2)
         {
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
             do_thing2();
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_StackPointerInvalidate(frame);
             JUMP_TO_LABEL(my_label_1);
         }
         """
@@ -1878,14 +1898,16 @@ class TestGeneratedCases(unittest.TestCase):
             _PyStackRef in;
             in = stack_pointer[-1];
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
             temp = use(in);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_StackPointerInvalidate(frame);
             in = temp;
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
             PyStackRef_CLOSE(in);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_StackPointerInvalidate(frame);
             DISPATCH();
         }
         """

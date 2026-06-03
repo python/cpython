@@ -211,6 +211,7 @@ def generate_tier1_labels(
         storage = Storage(Stack(), [], [], 0, False)
         if label.spilled:
             storage.spilled = 1
+            storage.stack.physical_sp = None
         emitter.emit_tokens(label, storage, None)
         emitter.emit("\n\n")
 

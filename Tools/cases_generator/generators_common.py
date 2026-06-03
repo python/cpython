@@ -505,7 +505,8 @@ class Emitter:
         next(tkn_iter)
         next(tkn_iter)
         next(tkn_iter)
-        self.emit_reload(storage)
+        storage.flush(self.out)
+        storage.full_reload(self.out)
         return True
 
     def instruction_size(self,
