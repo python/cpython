@@ -144,6 +144,7 @@ typedef struct _optimization_stats {
     uint64_t unknown_callee;
     uint64_t trace_immediately_deopts;
     uint64_t executors_invalidated;
+    uint64_t fitness_terminated_traces;
     UOpStats opcode[PYSTATS_MAX_UOP_ID + 1];
     uint64_t unsupported_opcode[256];
     uint64_t trace_length_hist[_Py_UOP_HIST_SIZE];
@@ -162,6 +163,7 @@ typedef struct _optimization_stats {
     uint64_t jit_code_size;
     uint64_t jit_trampoline_size;
     uint64_t jit_data_size;
+    uint64_t jit_got_size;
     uint64_t jit_padding_size;
     uint64_t jit_freed_memory_size;
     uint64_t trace_total_memory_hist[_Py_UOP_HIST_SIZE];

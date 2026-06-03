@@ -31,7 +31,7 @@ Note that holding an :term:`attached thread state` is not required for these API
    or ``-2`` on failure to create a lock. Check ``errno`` for more information
    about the cause of a failure.
 
-.. c:function:: int PyUnstable_WritePerfMapEntry(const void *code_addr, unsigned int code_size, const char *entry_name)
+.. c:function:: int PyUnstable_WritePerfMapEntry(const void *code_addr, size_t code_size, const char *entry_name)
 
    Write one single entry to the ``/tmp/perf-$pid.map`` file. This function is
    thread safe. Here is what an example entry looks like::

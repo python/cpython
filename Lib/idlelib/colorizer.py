@@ -42,6 +42,11 @@ def make_pat():
         ]) +
         r"))"
     )
+    lazy_softkw = (
+        r"^[ \t]*" +  # at beginning of line + possible indentation
+        r"(?P<LAZY_SOFTKW>lazy)" +
+        r"(?=[ \t]+(?:import|from)\b)"  # followed by 'import' or 'from'
+    )
     builtinlist = [str(name) for name in dir(builtins)
                    if not name.startswith('_') and
                    name not in keyword.kwlist]
@@ -56,7 +61,7 @@ def make_pat():
     prog = re.compile("|".join([
                                 builtin, comment, string, kw,
                                 match_softkw, case_default,
-                                case_softkw_and_pattern,
+                                case_softkw_and_pattern, lazy_softkw,
                                 any("SYNC", [r"\n"]),
                                ]),
                       re.DOTALL | re.MULTILINE)
@@ -70,6 +75,7 @@ prog_group_name_to_tag = {
     "CASE_SOFTKW": "KEYWORD",
     "CASE_DEFAULT_UNDERSCORE": "KEYWORD",
     "CASE_SOFTKW2": "KEYWORD",
+    "LAZY_SOFTKW": "KEYWORD",
 }
 
 

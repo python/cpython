@@ -19,23 +19,25 @@
 
 from __future__ import annotations
 
+import os
 import _colorize
 
 from abc import ABC, abstractmethod
 import ast
 import code
 import linecache
-from dataclasses import dataclass, field
-import os.path
+from dataclasses import dataclass
 import re
 import sys
+from typing import TYPE_CHECKING
 
-
-TYPE_CHECKING = False
+from .render import RenderedScreen
+from .trace import trace
 
 if TYPE_CHECKING:
-    from typing import IO
-    from typing import Callable
+    from typing import Callable, IO
+
+    from .types import CursorXY
 
 
 @dataclass
@@ -47,10 +49,17 @@ class Event:
 
 @dataclass
 class Console(ABC):
-    posxy: tuple[int, int]
-    screen: list[str] = field(default_factory=list)
+    posxy: CursorXY = (0, 0)
     height: int = 25
     width: int = 80
+    _redraw_debug_palette: tuple[str, ...] = (
+        "\x1b[41m",
+        "\x1b[42m",
+        "\x1b[43m",
+        "\x1b[44m",
+        "\x1b[45m",
+        "\x1b[46m",
+    )
 
     def __init__(
         self,
@@ -71,8 +80,52 @@ class Console(ABC):
         else:
             self.output_fd = f_out.fileno()
 
+        self.posxy = (0, 0)
+        self.height = 25
+        self.width = 80
+        self._rendered_screen = RenderedScreen.empty()
+        self._redraw_visual_cycle = 0
+
+    @property
+    def screen(self) -> list[str]:
+        return list(self._rendered_screen.screen_lines)
+
+    def sync_rendered_screen(
+        self,
+        rendered_screen: RenderedScreen,
+        posxy: CursorXY | None = None,
+    ) -> None:
+        if posxy is None:
+            posxy = rendered_screen.cursor
+        self.posxy = posxy
+        self._rendered_screen = rendered_screen
+        trace(
+            "console.sync_rendered_screen lines={lines} cursor={cursor}",
+            lines=len(rendered_screen.composed_lines),
+            cursor=posxy,
+        )
+
+    def invalidate_render_state(self) -> None:
+        self._rendered_screen = RenderedScreen.empty()
+        trace("console.invalidate_render_state")
+
+    def begin_redraw_visualization(self) -> str | None:
+        if "PYREPL_VISUALIZE_REDRAWS" not in os.environ:
+            return None
+
+        palette = self._redraw_debug_palette
+        cycle = self._redraw_visual_cycle
+        style = palette[cycle % len(palette)]
+        self._redraw_visual_cycle = cycle + 1
+        trace(
+            "console.begin_redraw_visualization cycle={cycle} style={style!r}",
+            cycle=cycle,
+            style=style,
+        )
+        return style
+
     @abstractmethod
-    def refresh(self, screen: list[str], xy: tuple[int, int]) -> None: ...
+    def refresh(self, rendered_screen: RenderedScreen) -> None: ...
 
     @abstractmethod
     def prepare(self) -> None: ...

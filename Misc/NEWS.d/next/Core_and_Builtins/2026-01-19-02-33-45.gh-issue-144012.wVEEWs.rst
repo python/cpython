@@ -1,1 +1,0 @@
-Check if the result is ``NULL`` in ``BINARY_OP_EXTENT`` opcode.
