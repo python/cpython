@@ -31,6 +31,7 @@ import _shared
 # ☐ python.wasm
 
 
+@_shared.forced_cache
 def build_dir(context):
     """The path to the build directory pointed to by pybuilddir.txt."""
     relative_dir = (
@@ -41,10 +42,12 @@ def build_dir(context):
     return _shared.wasi_build_path(context) / relative_dir
 
 
+@_shared.forced_cache
 def build_details(context):
     """Get the JSON contents of build-details.json."""
     with (build_dir(context) / "build-details.json").open() as f:
         return json.load(f)
+
 
 
 def pythonXY(context, support_debug=False):

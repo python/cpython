@@ -1,3 +1,4 @@
+import functools
 import pathlib
 import tomllib
 
@@ -16,6 +17,26 @@ else:
 CROSS_BUILD_DIR = CHECKOUT / "cross-build"
 
 
+_NO_CACHE = object()
+
+def forced_cache(func):
+    """Cache the result of a function no matter what.
+
+    Useful for functions that will only ever be called with the same arguments.
+    """
+    cache = _NO_CACHE
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        nonlocal cache
+        if cache is _NO_CACHE:
+            cache = func(*args, **kwargs)
+        return cache
+
+    return wrapper
+
+
+@forced_cache
 def host_triple(context):
     """Determine the target triple for the WASI host build."""
     if getattr(context, "host_triple", None):

@@ -149,7 +149,7 @@ def call(command, *, context=None, quiet=False, **kwargs):
     subprocess.check_call(command, **kwargs, stdout=stdout, stderr=stderr)
 
 
-@functools.cache
+@_shared.forced_cache
 def build_python_path():
     """The path to the build Python binary."""
     binary = BUILD_DIR / "python"
@@ -163,7 +163,7 @@ def build_python_path():
     return binary
 
 
-@functools.cache
+@_shared.forced_cache
 def build_python_is_pydebug():
     """Find out if the build Python is a pydebug build."""
     test = "import sys, test.support; sys.exit(test.support.Py_DEBUG)"
@@ -210,7 +210,7 @@ def make_build_python(context, working_dir):
     log("🎉", f"{binary} {version}")
 
 
-@functools.cache
+@_shared.forced_cache
 def wasi_sdk(context):
     """Find the path to the WASI SDK."""
     if wasi_sdk_path := context.wasi_sdk_path:
@@ -272,7 +272,7 @@ def wasi_sdk(context):
     return wasi_sdk_path
 
 
-@functools.cache
+@_shared.forced_cache
 def wasi_sdk_env(context):
     """Calculate environment variables for building with wasi-sdk."""
     wasi_sdk_path = wasi_sdk(context)
