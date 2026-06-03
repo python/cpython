@@ -254,17 +254,30 @@ to
 
 The simplest settings apply a particular action unconditionally to all warnings
 emitted by a process (even those that are otherwise ignored by default):
-
-.nf
-  \-Wdefault  # Warn once per call location
-  \-Werror    # Convert to exceptions
-  \-Walways   # Warn every time
-  \-Wall      # Same as \-Walways
-  \-Wmodule   # Warn once per calling module
-  \-Wonce     # Warn once per Python process
-  \-Wignore   # Never warn
-.fi
-
+.RS
+.TP
+.B \-Wdefault
+Warn once per call location
+.TP
+.B \-Werror
+Convert to exceptions
+.TP
+.B \-Walways
+Warn every time
+.TP
+.B \-Wall
+Same as \-Walways
+.TP
+.B \-Wmodule
+Warn once per calling module
+.TP
+.B \-Wonce
+Warn once per Python process
+.TP
+.B \-Wignore
+Never warn
+.RE
+.IP
 The action names can be abbreviated as desired and the interpreter will resolve
 them to the appropriate action name. For example,
 .B \-Wi
