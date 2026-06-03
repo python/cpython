@@ -8,14 +8,13 @@
 
 import os
 import sys
-from importlib import import_module
 from importlib.util import find_spec
 
 # Make our custom extensions available to Sphinx
 sys.path.append(os.path.abspath('tools/extensions'))
 sys.path.append(os.path.abspath('includes'))
 
-from patchlevel import get_header_version_info
+from patchlevel import get_header_version_info, get_version_info
 
 # General configuration
 # ---------------------
@@ -77,7 +76,7 @@ _doc_authors = 'Python documentation authors'
 # We look for the Include/patchlevel.h file in the current Python source tree
 # and replace the values accordingly.
 # See Doc/tools/extensions/patchlevel.py
-version, release = import_module('patchlevel').get_version_info()
+version, release = get_version_info()
 
 rst_epilog = f"""
 .. |python_version_literal| replace:: ``Python {version}``
