@@ -1041,7 +1041,7 @@ class BaseEventLoopTests(test_utils.TestCase):
 
         asyncio.create_task(iter_one())
         return status
-        
+
     def test_shutdown_asyncgens_reports_cancelled_error(self):
         # gh-150866: shutdown_asyncgens silently swallowed
         # CancelledError raised during aclose() because the check was
@@ -1049,7 +1049,7 @@ class BaseEventLoopTests(test_utils.TestCase):
         # from BaseException.
         self.loop._process_events = mock.Mock()
         self.loop._write_to_self = mock.Mock()
-        
+
         async def agen_cancel():
             try:
                 yield 1
