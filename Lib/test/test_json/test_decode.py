@@ -155,6 +155,25 @@ class TestDecode:
             with self.assertRaises(ValueError):
                 self.loads('1' * (maxdigits + 1))
 
+    def test_long_string_scan_paths(self):
+        # Exercise the string scan over long runs that cross the 8-byte scan
+        # windows: a terminator, a backslash escape and a \uXXXX escape at every
+        # offset, in 1-byte and wider (BMP, astral) strings.
+        loads = self.loads
+        for n in range(40):
+            run = "a" * n
+            self.assertEqual(loads('"' + run + '"'), run)
+            self.assertEqual(loads('"' + run + '\\nz"'), run + "\nz")
+            self.assertEqual(loads('"' + run + '\\u00e9z"'), run + "\xe9z")
+            self.assertEqual(loads('"' + "中" * n + '\\n"'), "中" * n + "\n")
+            self.assertEqual(loads('"' + "\U0001f600" * n + '"'), "\U0001f600" * n)
+        # Strict control-character detection at the window boundaries, and the
+        # non-strict path that keeps them.
+        for n in (7, 8, 15, 16, 17, 23, 24):
+            self.assertRaises(self.JSONDecodeError, loads, '"' + "a" * n + '\x01"')
+            self.assertEqual(loads('"' + "a" * n + '\x01"', strict=False),
+                             "a" * n + "\x01")
+
 
 class TestPyDecode(TestDecode, PyTest): pass
 class TestCDecode(TestDecode, CTest): pass
