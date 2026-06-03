@@ -63,7 +63,7 @@
     <NMakeBuildCommandLine>setlocal
 set VCINSTALLDIR=$(VCInstallDir)
 cd /D "$(tclDir)win"
-nmake -f makefile.vc MACHINE=$(TclMachine) OPTS=$(TclOpts) $(TclDirs) $(DebugFlags) $(WarningsFlags) $(TclshNativeFlag) core shell dlls
+nmake -f makefile.vc MACHINE=$(TclMachine) OPTS=$(TclOpts) $(TclDirs) $(DebugFlags) $(WarningsFlags) $(TclshNativeFlag) core shell dlls libtclzip
 nmake -f makefile.vc MACHINE=$(TclMachine) OPTS=$(TclOpts) $(TclDirs) $(DebugFlags) $(WarningsFlags) $(TclshNativeFlag) install-binaries install-libraries
 copy /Y ..\license.terms "$(OutDir)\tcllicense.terms"
 </NMakeBuildCommandLine>
