@@ -164,7 +164,7 @@ Then, create ``meson.build`` containing the following:
 
 .. note::
 
-   See `meson-python documentation <meson-python>`_ for details on
+   See `meson-python documentation`_ for details on
    configuration.
 
 Now, build install the *project in the current directory* (``.``) via ``pip``:
@@ -183,6 +183,7 @@ the compiler, which is often useful during development.
    (Or, if you prefer another tool that can build and install
    ``pyproject.toml``-based projects, use that.)
 
+.. _meson-python documentation: meson-python_
 .. _meson-python: https://mesonbuild.com/meson-python/
 .. _virtual environment: https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/#create-and-use-virtual-environments
 
