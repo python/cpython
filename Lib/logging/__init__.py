@@ -1383,7 +1383,6 @@ class Manager(object):
         rv = self.loggerDict.get(name)
         if rv is not None and not isinstance(rv, PlaceHolder):
             return rv
-        rv = None
         with _lock:
             if name in self.loggerDict:
                 rv = self.loggerDict[name]
