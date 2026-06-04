@@ -1787,7 +1787,6 @@
 [const.METH_COEXIST]
     added = '3.2'
 # METH_STACKLESS is undocumented
-# METH_FASTCALL is not part of limited API.
 
 # The following are defined in private headers, but historically
 # they were exported as part of the stable ABI.
@@ -2121,8 +2120,6 @@
 
 # New method flags in 3.7 (PEP 590):
 
-[const.METH_FASTCALL]
-    added = '3.7'
 [const.METH_METHOD]
     added = '3.7'
 
@@ -2271,6 +2268,10 @@
     added = '3.11'
 [data.PyStructSequence_UnnamedField]
     added = '3.11'
+
+# Added in 3.7 but in the Stable ABI from 3.10
+[const.METH_FASTCALL]
+    added = '3.10'
 
 # Add stable Py_buffer API in Python 3.11 (https://bugs.python.org/issue45459)
 [struct.Py_buffer]
