@@ -621,7 +621,8 @@ has_fork_support = hasattr(os, "fork") and not (
     or is_android
 )
 
-# At the moment, st_birthtime attribute is only supported on Windows, MacOS and FreeBSD
+# At the moment, st_birthtime attribute is only supported on Windows,
+# MacOS and FreeBSD.
 has_st_birthtime = sys.platform.startswith(("win", "freebsd", "darwin"))
 
 def requires_fork():

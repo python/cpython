@@ -282,10 +282,11 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         # path object (see Issue #27493), but self.baseFilename will be a string
         filename = self.baseFilename
         if os.path.exists(filename):
-            # Use the minimum of file creation and modification time as the base of the
-            # rollover calculation
+            # Use the minimum of file creation and modification time as
+            # the base of the rollover calculation
             stat_result = os.stat(filename)
-            # Use st_birthtime whenever it is available or use st_ctime instead otherwise
+            # Use st_birthtime whenever it is available or use st_ctime
+            # instead otherwise
             try:
                 creation_time = stat_result.st_birthtime
             except AttributeError:

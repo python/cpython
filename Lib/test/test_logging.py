@@ -6615,7 +6615,8 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
                     print(tf.read())
         self.assertTrue(found, msg=msg)
 
-    @unittest.skipUnless(support.has_st_birthtime, "st_birthtime not available or supported by Python on this OS")
+    @unittest.skipUnless(support.has_st_birthtime,
+        "st_birthtime not available or supported by Python on this OS")
     def test_rollover_based_on_st_birthtime_only(self):
         def add_record(message: str) -> None:
             fh = logging.handlers.TimedRotatingFileHandler(
@@ -6628,15 +6629,17 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
 
         add_record('testing - initial')
         self.assertLogFile(self.fn)
-        # Sleep a little over the half of rollover time - and this value must be over
-        # 2 seconds, since this is the mtime resolution on FAT32 filesystems.
+        # Sleep a little over the half of rollover time - and this value
+        # must be over 2 seconds, since this is the mtime resolution on
+        # FAT32 filesystems.
         time.sleep(2.1)
         add_record('testing - update before rollover to renew the st_mtime')
         time.sleep(2.1)    # a little over the half of rollover time
         add_record('testing - new record supposedly in the new file after rollover')
 
-        # At this point, the log file should be rotated if the rotation is based
-        # on creation time but should be not if it's based on creation time
+        # At this point, the log file should be rotated if the rotation
+        # is based on creation time but should be not if it's based on
+        # creation time.
         found = False
         now = datetime.datetime.now()
         GO_BACK = 5 # seconds
