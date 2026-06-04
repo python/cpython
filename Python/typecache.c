@@ -14,9 +14,14 @@
 #include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_typeobject.h"    // _PyStaticType_GetState()
 
-static struct {
+
+// This is a union because MSVC doesn't support flexible array member in
+// the middle of a struct and we use a char array to reserve space for the
+// actual hashtable entries of the empty cache.
+static union {
     struct type_cache cache;
-    struct type_cache_entry entries[_Py_TYPECACHE_MINSIZE];
+    char storage[sizeof(struct type_cache)
+            + _Py_TYPECACHE_MINSIZE * sizeof(struct type_cache_entry)];
 } empty_cache_storage = {
     .cache = {
         .mask = _Py_TYPECACHE_MINSIZE - 1,
