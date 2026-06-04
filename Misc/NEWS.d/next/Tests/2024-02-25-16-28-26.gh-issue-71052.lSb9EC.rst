@@ -1,1 +1,0 @@
-Add test exclusions to support running the test suite on Android.

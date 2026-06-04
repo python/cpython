@@ -19,7 +19,7 @@ from test.test_asyncio import utils as test_utils
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio.events._set_event_loop_policy(None)
 
 
 class UpperProto(asyncio.Protocol):
@@ -36,7 +36,23 @@ class UpperProto(asyncio.Protocol):
             self.trans.close()
 
 
-class ProactorLoopCtrlC(test_utils.TestCase):
+class WindowsEventsTestCase(test_utils.TestCase):
+    def _unraisablehook(self, unraisable):
+        # Storing unraisable.object can resurrect an object which is being
+        # finalized. Storing unraisable.exc_value creates a reference cycle.
+        self._unraisable = unraisable
+        print(unraisable)
+
+    def setUp(self):
+        self._prev_unraisablehook = sys.unraisablehook
+        self._unraisable = None
+        sys.unraisablehook = self._unraisablehook
+
+    def tearDown(self):
+        sys.unraisablehook = self._prev_unraisablehook
+        self.assertIsNone(self._unraisable)
+
+class ProactorLoopCtrlC(WindowsEventsTestCase):
 
     def test_ctrl_c(self):
 
@@ -58,7 +74,7 @@ class ProactorLoopCtrlC(test_utils.TestCase):
         thread.join()
 
 
-class ProactorMultithreading(test_utils.TestCase):
+class ProactorMultithreading(WindowsEventsTestCase):
     def test_run_from_nonmain_thread(self):
         finished = False
 
@@ -79,7 +95,7 @@ class ProactorMultithreading(test_utils.TestCase):
         self.assertTrue(finished)
 
 
-class ProactorTests(test_utils.TestCase):
+class ProactorTests(WindowsEventsTestCase):
 
     def setUp(self):
         super().setUp()
@@ -283,22 +299,47 @@ class ProactorTests(test_utils.TestCase):
 
         return "done"
 
+    def test_loop_restart(self):
+        # We're fishing for the "RuntimeError: <_overlapped.Overlapped object at XXX>
+        # still has pending operation at deallocation, the process may crash" error
+        stop = threading.Event()
+        def threadMain():
+            while not stop.is_set():
+                self.loop.call_soon_threadsafe(lambda: None)
+                time.sleep(0.01)
+        thr = threading.Thread(target=threadMain)
 
-class WinPolicyTests(test_utils.TestCase):
+        # In 10 60-second runs of this test prior to the fix:
+        # time in seconds until failure: (none), 15.0, 6.4, (none), 7.6, 8.3, 1.7, 22.2, 23.5, 8.3
+        # 10 seconds had a 50% failure rate but longer would be more costly
+        end_time = time.time() + 10 # Run for 10 seconds
+        self.loop.call_soon(thr.start)
+        while not self._unraisable: # Stop if we got an unraisable exc
+            self.loop.stop()
+            self.loop.run_forever()
+            if time.time() >= end_time:
+                break
+
+        stop.set()
+        thr.join()
+
+
+class WinPolicyTests(WindowsEventsTestCase):
 
     def test_selector_win_policy(self):
         async def main():
-            self.assertIsInstance(
-                asyncio.get_running_loop(),
-                asyncio.SelectorEventLoop)
+            self.assertIsInstance(asyncio.get_running_loop(), asyncio.SelectorEventLoop)
 
-        old_policy = asyncio.get_event_loop_policy()
+        old_policy = asyncio.events._get_event_loop_policy()
         try:
-            asyncio.set_event_loop_policy(
-                asyncio.WindowsSelectorEventLoopPolicy())
+            with self.assertWarnsRegex(
+                DeprecationWarning,
+                "'asyncio.WindowsSelectorEventLoopPolicy' is deprecated",
+            ):
+                asyncio.events._set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
             asyncio.run(main())
         finally:
-            asyncio.set_event_loop_policy(old_policy)
+            asyncio.events._set_event_loop_policy(old_policy)
 
     def test_proactor_win_policy(self):
         async def main():
@@ -306,13 +347,16 @@ class WinPolicyTests(test_utils.TestCase):
                 asyncio.get_running_loop(),
                 asyncio.ProactorEventLoop)
 
-        old_policy = asyncio.get_event_loop_policy()
+        old_policy = asyncio.events._get_event_loop_policy()
         try:
-            asyncio.set_event_loop_policy(
-                asyncio.WindowsProactorEventLoopPolicy())
+            with self.assertWarnsRegex(
+                DeprecationWarning,
+                "'asyncio.WindowsProactorEventLoopPolicy' is deprecated",
+            ):
+                asyncio.events._set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
             asyncio.run(main())
         finally:
-            asyncio.set_event_loop_policy(old_policy)
+            asyncio.events._set_event_loop_policy(old_policy)
 
 
 if __name__ == '__main__':

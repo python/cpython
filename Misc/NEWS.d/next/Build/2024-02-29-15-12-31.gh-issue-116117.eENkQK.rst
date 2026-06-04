@@ -1,2 +1,0 @@
-Backport ``libb2``'s PR #42 to fix compiling CPython on 32-bit Windows
-with ``clang-cl``.

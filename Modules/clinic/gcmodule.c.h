@@ -101,9 +101,11 @@ gc_collect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(generation), },
     };
     #undef NUM_KEYWORDS
@@ -125,7 +127,8 @@ gc_collect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     int generation = NUM_GENERATIONS - 1;
     Py_ssize_t _return_value;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -312,28 +315,24 @@ PyDoc_STRVAR(gc_get_referrers__doc__,
     {"get_referrers", _PyCFunction_CAST(gc_get_referrers), METH_FASTCALL, gc_get_referrers__doc__},
 
 static PyObject *
-gc_get_referrers_impl(PyObject *module, PyObject *args);
+gc_get_referrers_impl(PyObject *module, PyObject *objs);
 
 static PyObject *
 gc_get_referrers(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *__clinic_args = NULL;
+    PyObject *objs = NULL;
 
-    if (!_PyArg_CheckPositional("get_referrers", nargs, 0, PY_SSIZE_T_MAX)) {
+    objs = PyTuple_FromArray(args, nargs);
+    if (objs == NULL) {
         goto exit;
     }
-    __clinic_args = PyTuple_New(nargs - 0);
-    if (!__clinic_args) {
-        goto exit;
-    }
-    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
-        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
-    }
-    return_value = gc_get_referrers_impl(module, __clinic_args);
+    return_value = gc_get_referrers_impl(module, objs);
 
 exit:
-    Py_XDECREF(__clinic_args);
+    /* Cleanup for objs */
+    Py_XDECREF(objs);
+
     return return_value;
 }
 
@@ -347,28 +346,24 @@ PyDoc_STRVAR(gc_get_referents__doc__,
     {"get_referents", _PyCFunction_CAST(gc_get_referents), METH_FASTCALL, gc_get_referents__doc__},
 
 static PyObject *
-gc_get_referents_impl(PyObject *module, PyObject *args);
+gc_get_referents_impl(PyObject *module, PyObject *objs);
 
 static PyObject *
 gc_get_referents(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *__clinic_args = NULL;
+    PyObject *objs = NULL;
 
-    if (!_PyArg_CheckPositional("get_referents", nargs, 0, PY_SSIZE_T_MAX)) {
+    objs = PyTuple_FromArray(args, nargs);
+    if (objs == NULL) {
         goto exit;
     }
-    __clinic_args = PyTuple_New(nargs - 0);
-    if (!__clinic_args) {
-        goto exit;
-    }
-    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
-        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
-    }
-    return_value = gc_get_referents_impl(module, __clinic_args);
+    return_value = gc_get_referents_impl(module, objs);
 
 exit:
-    Py_XDECREF(__clinic_args);
+    /* Cleanup for objs */
+    Py_XDECREF(objs);
+
     return return_value;
 }
 
@@ -381,8 +376,8 @@ PyDoc_STRVAR(gc_get_objects__doc__,
 "  generation\n"
 "    Generation to extract the objects from.\n"
 "\n"
-"If generation is not None, return only the objects tracked by the collector\n"
-"that are in that generation.");
+"If generation is not None, return only the objects tracked by the\n"
+"collector that are in that generation.");
 
 #define GC_GET_OBJECTS_METHODDEF    \
     {"get_objects", _PyCFunction_CAST(gc_get_objects), METH_FASTCALL|METH_KEYWORDS, gc_get_objects__doc__},
@@ -400,9 +395,11 @@ gc_get_objects(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(generation), },
     };
     #undef NUM_KEYWORDS
@@ -423,7 +420,8 @@ gc_get_objects(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     Py_ssize_t generation = -1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -522,9 +520,10 @@ PyDoc_STRVAR(gc_freeze__doc__,
 "\n"
 "Freeze all current tracked objects and ignore them for future collections.\n"
 "\n"
-"This can be used before a POSIX fork() call to make the gc copy-on-write friendly.\n"
-"Note: collection before a POSIX fork() call may free pages for future allocation\n"
-"which can cause copy-on-write.");
+"This can be used before a POSIX fork() call to make the gc copy-on-write\n"
+"friendly.\n"
+"Note: collection before a POSIX fork() call may free pages for future\n"
+"allocation which can cause copy-on-write.");
 
 #define GC_FREEZE_METHODDEF    \
     {"freeze", (PyCFunction)gc_freeze, METH_NOARGS, gc_freeze__doc__},
@@ -585,4 +584,4 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0a7e91917adcb937 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=756c0e7719b76971 input=a9049054013a1b77]*/

@@ -88,6 +88,147 @@ class GetpassRawinputTest(unittest.TestCase):
         input = StringIO('test\n')
         self.assertEqual('test', getpass._raw_input(input=input))
 
+    def check_raw_input(self, inputs, expect_result, prompt='Password: '):
+        mock_input = StringIO(inputs)
+        mock_output = StringIO()
+        result = getpass._raw_input(prompt, mock_output, mock_input, '*')
+        self.assertEqual(result, expect_result)
+        return mock_output.getvalue()
+
+    def test_null_char(self):
+        self.check_raw_input('pass\x00word\n', 'password')
+
+    def test_raw_input_with_echo_char(self):
+        output = self.check_raw_input('my1pa$$word!\n', 'my1pa$$word!')
+        self.assertEqual('Password: ************', output)
+
+    def test_control_chars_with_echo_char(self):
+        output = self.check_raw_input('pass\twd\b\n', 'pass\tw')
+        # After backspace: refresh rewrites prompt + 6 echo chars
+        self.assertEqual(
+            'Password: *******'           # initial prompt + 7 echo chars
+            '\r' + ' ' * 17 + '\r'        # clear line (10 prompt + 7 prev)
+            'Password: ******',           # rewrite prompt + 6 echo chars
+            output
+        )
+
+    def test_kill_ctrl_u_with_echo_char(self):
+        # Ctrl+U (KILL) should clear the entire line
+        output = self.check_raw_input('foo\x15bar\n', 'bar')
+        # Should show "***" then refresh to clear, then show "***" for "bar"
+        self.assertIn('***', output)
+        # Display refresh uses \r to rewrite the line including prompt
+        self.assertIn('\r', output)
+
+    def test_werase_ctrl_w_with_echo_char(self):
+        # Ctrl+W (WERASE) should delete the previous word
+        self.check_raw_input('hello world\x17end\n', 'hello end')
+
+    def test_ctrl_w_display_preserves_prompt(self):
+        # Reproducer from gh-138577: type "hello world", Ctrl+W
+        # Display must show "Password: ******" not "******rd: ***********"
+        output = self.check_raw_input('hello world\x17\n', 'hello ')
+        # The final visible state should be "Password: ******"
+        # Verify prompt is rewritten during refresh, not overwritten by stars
+        self.assertEndsWith(output, 'Password: ******')
+
+    def test_ctrl_a_insert_display_preserves_prompt(self):
+        # Reproducer from gh-138577: type "abc", Ctrl+A, type "x"
+        # Display must show "Password: ****" not "****word: ***"
+        output = self.check_raw_input('abc\x01x\n', 'xabc')
+        # The final visible state should be "Password: ****"
+        self.assertEndsWith(output, 'Password: ****\x08\x08\x08')
+
+    def test_lnext_ctrl_v_with_echo_char(self):
+        # Ctrl+V (LNEXT) should insert the next character literally
+        self.check_raw_input('test\x16\x15more\n', 'test\x15more')
+
+    def test_ctrl_a_move_to_start_with_echo_char(self):
+        # Ctrl+A should move cursor to start
+        self.check_raw_input('end\x01start\n', 'startend')
+
+    def test_ctrl_a_cursor_position(self):
+        # After Ctrl+A, cursor is at position 0.
+        # Refresh writes backspaces to move cursor from end to start.
+        output = self.check_raw_input('abc\x01\n', 'abc')
+        self.assertEndsWith(output, 'Password: ***\x08\x08\x08')
+
+    def test_ctrl_a_on_empty(self):
+        # Ctrl+A on empty line should be a no-op
+        self.check_raw_input('\x01hello\n', 'hello')
+
+    def test_ctrl_a_already_at_start(self):
+        # Double Ctrl+A should be same as single Ctrl+A
+        self.check_raw_input('abc\x01\x01start\n', 'startabc')
+
+    def test_ctrl_a_then_backspace(self):
+        # Backspace after Ctrl+A should do nothing (cursor at 0)
+        self.check_raw_input('abc\x01\x7f\n', 'abc')
+
+    def test_ctrl_e_move_to_end_with_echo_char(self):
+        # Ctrl+E should move cursor to end
+        self.check_raw_input('start\x01X\x05end\n', 'Xstartend')
+
+    def test_ctrl_e_cursor_position(self):
+        # After Ctrl+A then Ctrl+E, cursor is back at end.
+        # Refresh has no backspaces since cursor is at end.
+        output = self.check_raw_input('abc\x01\x05\n', 'abc')
+        self.assertEndsWith(output, 'Password: ***')
+
+    def test_ctrl_e_on_empty(self):
+        # Ctrl+E on empty line should be a no-op
+        self.check_raw_input('\x05hello\n', 'hello')
+
+    def test_ctrl_e_already_at_end(self):
+        # Ctrl+E when already at end should be a no-op
+        self.check_raw_input('abc\x05more\n', 'abcmore')
+
+    def test_ctrl_a_then_ctrl_e(self):
+        # Ctrl+A then Ctrl+E should return cursor to end, typing appends
+        self.check_raw_input('abc\x01\x05def\n', 'abcdef')
+
+    def test_ctrl_k_kill_forward_with_echo_char(self):
+        # Ctrl+K should kill from cursor to end
+        self.check_raw_input('delete\x01\x0bkeep\n', 'keep')
+
+    def test_ctrl_c_interrupt_with_echo_char(self):
+        # Ctrl+C should raise KeyboardInterrupt
+        with self.assertRaises(KeyboardInterrupt):
+            self.check_raw_input('test\x03more', '')
+
+    def test_ctrl_d_eof_with_echo_char(self):
+        # Ctrl+D twice should cause EOF
+        self.check_raw_input('test\x04\x04', 'test')
+
+    def test_backspace_at_start_with_echo_char(self):
+        # Backspace at start should do nothing
+        self.check_raw_input('\x7fhello\n', 'hello')
+
+    def test_ctrl_k_at_end_with_echo_char(self):
+        # Ctrl+K at end should do nothing
+        self.check_raw_input('hello\x0b\n', 'hello')
+
+    def test_ctrl_w_on_empty_with_echo_char(self):
+        # Ctrl+W on empty line should do nothing
+        self.check_raw_input('\x17hello\n', 'hello')
+
+    def test_ctrl_u_on_empty_with_echo_char(self):
+        # Ctrl+U on empty line should do nothing
+        self.check_raw_input('\x15hello\n', 'hello')
+
+    def test_multiple_ctrl_operations_with_echo_char(self):
+        # Test combination: type, move, insert, delete
+        # "world", Ctrl+A, "hello ", Ctrl+E, "!", Ctrl+A, Ctrl+K, "start"
+        self.check_raw_input('world\x01hello \x05!\x01\x0bstart\n', 'start')
+
+    def test_ctrl_w_multiple_words_with_echo_char(self):
+        # Ctrl+W should delete only the last word
+        self.check_raw_input('one two three\x17\n', 'one two ')
+
+    def test_ctrl_v_then_ctrl_c_with_echo_char(self):
+        # Ctrl+V should make Ctrl+C literal (not interrupt)
+        self.check_raw_input('test\x16\x03end\n', 'test\x03end')
+
 
 # Some of these tests are a bit white-box.  The functional requirement is that
 # the password input be taken directly from the tty, and that it not be echoed
@@ -160,6 +301,58 @@ class UnixGetpassTest(unittest.TestCase):
             stdin.readline.assert_called_once_with()
             self.assertIn('Warning', stderr.getvalue())
             self.assertIn('Password:', stderr.getvalue())
+
+    def test_echo_char_replaces_input_with_asterisks(self):
+        mock_result = '*************'
+        with mock.patch('os.open') as os_open, \
+                mock.patch('io.FileIO'), \
+                mock.patch('io.TextIOWrapper') as textio, \
+                mock.patch('termios.tcgetattr'), \
+                mock.patch('termios.tcsetattr'), \
+                mock.patch('getpass._raw_input') as mock_input:
+            os_open.return_value = 3
+            mock_input.return_value = mock_result
+
+            result = getpass.unix_getpass(echo_char='*')
+            mock_input.assert_called_once_with('Password: ', textio(),
+                                               input=textio(), echo_char='*',
+                                               term_ctrl_chars=mock.ANY)
+            self.assertEqual(result, mock_result)
+
+class GetpassEchoCharTest(unittest.TestCase):
+
+    def test_accept_none(self):
+        getpass._check_echo_char(None)
+
+    @support.subTests('echo_char', ["*", "A", " "])
+    def test_accept_single_printable_ascii(self, echo_char):
+        getpass._check_echo_char(echo_char)
+
+    def test_reject_empty_string(self):
+        self.assertRaises(ValueError, getpass.getpass, echo_char="")
+
+    @support.subTests('echo_char', ["***", "AA", "aA*!"])
+    def test_reject_multi_character_strings(self, echo_char):
+        self.assertRaises(ValueError, getpass.getpass, echo_char=echo_char)
+
+    @support.subTests('echo_char', [
+        '\N{LATIN CAPITAL LETTER AE}',  # non-ASCII single character
+        '\N{HEAVY BLACK HEART}',        # non-ASCII multibyte character
+    ])
+    def test_reject_non_ascii(self, echo_char):
+        self.assertRaises(ValueError, getpass.getpass, echo_char=echo_char)
+
+    @support.subTests('echo_char', [
+        ch for ch in map(chr, range(0, 128))
+        if not ch.isprintable()
+    ])
+    def test_reject_non_printable_characters(self, echo_char):
+        self.assertRaises(ValueError, getpass.getpass, echo_char=echo_char)
+
+    # TypeError Rejection
+    @support.subTests('echo_char', [b"*", 0, 0.0, [], {}])
+    def test_reject_non_string(self, echo_char):
+        self.assertRaises(TypeError, getpass.getpass, echo_char=echo_char)
 
 
 if __name__ == "__main__":

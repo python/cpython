@@ -46,10 +46,10 @@ passing other environment variables and command arguments.
 .. section: Security
 
 Upgrade expat copy from 2.2.0 to 2.2.1 to get fixes of multiple security
-vulnerabilities including: CVE-2017-9233 (External entity infinite loop
-DoS), CVE-2016-9063 (Integer overflow, re-fix), CVE-2016-0718 (Fix
-regression bugs from 2.2.0's fix to CVE-2016-0718) and CVE-2012-0876
-(Counter hash flooding with SipHash). Note: the CVE-2016-5300 (Use
+vulnerabilities including: :cve:`2017-9233` (External entity infinite loop
+DoS), :cve:`2016-9063` (Integer overflow, re-fix), :cve:`2016-0718` (Fix
+regression bugs from 2.2.0's fix to :cve:`2016-0718`) and :cve:`2012-0876`
+(Counter hash flooding with SipHash). Note: the :cve:`2016-5300` (Use
 os-specific entropy sources like getrandom) doesn't impact Python, since Python
 already gets entropy from the OS to set the expat secret using
 ``XML_SetHashSalt()``.
@@ -75,8 +75,8 @@ authentication (``login@host``).
 .. original section: Library
 .. section: Security
 
-Update expat copy from 2.1.1 to 2.2.0 to get fixes of CVE-2016-0718 and
-CVE-2016-4472. See https://sourceforge.net/p/expat/bugs/537/ for more
+Update expat copy from 2.1.1 to 2.2.0 to get fixes of :cve:`2016-0718` and
+:cve:`2016-4472`. See https://sourceforge.net/p/expat/bugs/537/ for more
 information.
 
 ..
@@ -214,7 +214,7 @@ Fix possible undefined behavior in _PyObject_FastCall_Prepend.
 .. nonce: Kl_fS5
 .. section: Core and Builtins
 
-Include sys/sysmacros.h for major(), minor(), and makedev(). GNU C libray
+Include sys/sysmacros.h for major(), minor(), and makedev(). GNU C library
 plans to remove the functions from sys/types.h.
 
 ..
@@ -1042,8 +1042,8 @@ method of other descriptors.
 
 Remove the ``PyEval_GetCallStats()`` function and deprecate the untested and
 undocumented ``sys.callstats()`` function. Remove the ``CALL_PROFILE``
-special build: use the :func:`sys.setprofile` function, :mod:`cProfile` or
-:mod:`profile` to profile function calls.
+special build: use the :func:`sys.setprofile` function, :mod:`!cProfile` or
+:mod:`!profile` to profile function calls.
 
 ..
 
@@ -1479,7 +1479,7 @@ memcpy().
 .. nonce: e5xc1i
 .. section: Core and Builtins
 
-Fix dict.pop() for splitted dictionary when trying to remove a "pending key"
+Fix dict.pop() for split dictionary when trying to remove a "pending key"
 (Not yet inserted in split-table). Patch by Xiang Zhang.
 
 ..
@@ -2516,7 +2516,7 @@ stdin.write() if the child process is still running but closed the pipe.
 .. nonce: CdOuSl
 .. section: Library
 
-Addded empty __slots__ to abc.ABC.  This allows subclassers to deny __dict__
+Added empty __slots__ to abc.ABC.  This allows subclassers to deny __dict__
 and __weakref__ creation.  Patch by Aaron Hall.
 
 ..

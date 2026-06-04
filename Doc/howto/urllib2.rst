@@ -15,7 +15,7 @@ Introduction
     You may also find useful the following article on fetching web resources
     with Python:
 
-    * `Basic Authentication <https://web.archive.org/web/20201215133350/http://www.voidspace.org.uk/python/articles/authentication.shtml>`_
+    * `Basic Authentication <https://web.archive.org/web/20201215133350/http://www.voidspace.org.uk/python/articles/authentication.shtml>`__
 
         A tutorial on *Basic Authentication*, with examples in Python.
 
@@ -245,75 +245,27 @@ codes in the 100--299 range indicate success, you will usually only see error
 codes in the 400--599 range.
 
 :attr:`http.server.BaseHTTPRequestHandler.responses` is a useful dictionary of
-response codes in that shows all the response codes used by :rfc:`2616`. The
-dictionary is reproduced here for convenience ::
+response codes that shows all the response codes used by :rfc:`2616`.
+An excerpt from the dictionary is shown below ::
 
-    # Table mapping response codes to messages; entries have the
-    # form {code: (shortmessage, longmessage)}.
     responses = {
-        100: ('Continue', 'Request received, please continue'),
-        101: ('Switching Protocols',
-              'Switching to new protocol; obey Upgrade header'),
-
-        200: ('OK', 'Request fulfilled, document follows'),
-        201: ('Created', 'Document created, URL follows'),
-        202: ('Accepted',
-              'Request accepted, processing continues off-line'),
-        203: ('Non-Authoritative Information', 'Request fulfilled from cache'),
-        204: ('No Content', 'Request fulfilled, nothing follows'),
-        205: ('Reset Content', 'Clear input form for further input.'),
-        206: ('Partial Content', 'Partial content follows.'),
-
-        300: ('Multiple Choices',
-              'Object has several resources -- see URI list'),
-        301: ('Moved Permanently', 'Object moved permanently -- see URI list'),
-        302: ('Found', 'Object moved temporarily -- see URI list'),
-        303: ('See Other', 'Object moved -- see Method and URL list'),
-        304: ('Not Modified',
-              'Document has not changed since given time'),
-        305: ('Use Proxy',
-              'You must use proxy specified in Location to access this '
-              'resource.'),
-        307: ('Temporary Redirect',
-              'Object moved temporarily -- see URI list'),
-
-        400: ('Bad Request',
-              'Bad request syntax or unsupported method'),
-        401: ('Unauthorized',
-              'No permission -- see authorization schemes'),
-        402: ('Payment Required',
-              'No payment -- see charging schemes'),
-        403: ('Forbidden',
-              'Request forbidden -- authorization will not help'),
-        404: ('Not Found', 'Nothing matches the given URI'),
-        405: ('Method Not Allowed',
-              'Specified method is invalid for this server.'),
-        406: ('Not Acceptable', 'URI not available in preferred format.'),
-        407: ('Proxy Authentication Required', 'You must authenticate with '
-              'this proxy before proceeding.'),
-        408: ('Request Timeout', 'Request timed out; try again later.'),
-        409: ('Conflict', 'Request conflict.'),
-        410: ('Gone',
-              'URI no longer exists and has been permanently removed.'),
-        411: ('Length Required', 'Client must specify Content-Length.'),
-        412: ('Precondition Failed', 'Precondition in headers is false.'),
-        413: ('Request Entity Too Large', 'Entity is too large.'),
-        414: ('Request-URI Too Long', 'URI is too long.'),
-        415: ('Unsupported Media Type', 'Entity body in unsupported format.'),
-        416: ('Requested Range Not Satisfiable',
-              'Cannot satisfy request range.'),
-        417: ('Expectation Failed',
-              'Expect condition could not be satisfied.'),
-
-        500: ('Internal Server Error', 'Server got itself in trouble'),
-        501: ('Not Implemented',
-              'Server does not support this operation'),
-        502: ('Bad Gateway', 'Invalid responses from another server/proxy.'),
-        503: ('Service Unavailable',
-              'The server cannot process the request due to a high load'),
-        504: ('Gateway Timeout',
-              'The gateway server did not receive a timely response'),
-        505: ('HTTP Version Not Supported', 'Cannot fulfill request.'),
+        ...
+        <HTTPStatus.OK: 200>: ('OK', 'Request fulfilled, document follows'),
+        ...
+        <HTTPStatus.FORBIDDEN: 403>: ('Forbidden',
+                                      'Request forbidden -- authorization will '
+                                      'not help'),
+        <HTTPStatus.NOT_FOUND: 404>: ('Not Found',
+                                      'Nothing matches the given URI'),
+        ...
+        <HTTPStatus.IM_A_TEAPOT: 418>: ("I'm a Teapot",
+                                        'Server refuses to brew coffee because '
+                                        'it is a teapot'),
+        ...
+        <HTTPStatus.SERVICE_UNAVAILABLE: 503>: ('Service Unavailable',
+                                                'The server cannot process the '
+                                                'request due to a high load'),
+        ...
         }
 
 When an error is raised the server responds by returning an HTTP error code
@@ -594,5 +546,5 @@ This document was reviewed and revised by John Lee.
        scripts with a localhost server, I have to prevent urllib from using
        the proxy.
 .. [#] urllib opener for SSL proxy (CONNECT method): `ASPN Cookbook Recipe
-       <https://code.activestate.com/recipes/456195/>`_.
+       <https://code.activestate.com/recipes/456195-urrlib2-opener-for-ssl-proxy-connect-method/>`_.
 

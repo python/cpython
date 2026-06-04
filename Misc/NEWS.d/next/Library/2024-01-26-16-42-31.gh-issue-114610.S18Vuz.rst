@@ -1,4 +1,0 @@
-Fix bug where :meth:`pathlib.PurePath.with_stem` converted a non-empty path
-suffix to a stem when given an empty *stem* argument. It now raises
-:exc:`ValueError`, just like :meth:`pathlib.PurePath.with_suffix` does when
-called on a path with an empty stem, given a non-empty *suffix* argument.

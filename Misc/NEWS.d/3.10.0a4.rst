@@ -102,7 +102,7 @@ blocks
 .. bpo: 42639
 .. date: 2020-12-09-01-55-10
 .. nonce: 5pI5HG
-.. section: Core and Builtins
+.. section: Library
 
 Make the :mod:`atexit` module state per-interpreter. It is now safe have
 more than one :mod:`atexit` module instance. Patch by Donghee Na and Victor
@@ -124,7 +124,7 @@ the filename.
 .. bpo: 42195
 .. date: 2020-11-20-00-57-47
 .. nonce: HeqcpS
-.. section: Core and Builtins
+.. section: Library
 
 The ``__args__`` of the parameterized generics for :data:`typing.Callable`
 and :class:`collections.abc.Callable` are now consistent.  The ``__args__``
@@ -143,7 +143,7 @@ Ken Jin.
 .. bpo: 40137
 .. date: 2020-11-19-23-12-57
 .. nonce: bihl9O
-.. section: Core and Builtins
+.. section: Library
 
 Convert functools module to use :c:func:`PyType_FromModuleAndSpec`.
 
@@ -152,7 +152,7 @@ Convert functools module to use :c:func:`PyType_FromModuleAndSpec`.
 .. bpo: 40077
 .. date: 2020-11-03-13-46-10
 .. nonce: NfAIdj
-.. section: Core and Builtins
+.. section: Library
 
 Convert :mod:`array` to use heap types, and establish module state for
 these.
@@ -162,7 +162,7 @@ these.
 .. bpo: 42008
 .. date: 2020-10-12-14-51-59
 .. nonce: ijWw2I
-.. section: Core and Builtins
+.. section: Library
 
 Fix _random.Random() seeding.
 
@@ -171,7 +171,7 @@ Fix _random.Random() seeding.
 .. bpo: 1635741
 .. date: 2020-09-12-19-21-52
 .. nonce: F2kDrU
-.. section: Core and Builtins
+.. section: Library
 
 Port the :mod:`pyexpat` extension module to multi-phase initialization
 (:pep:`489`).
@@ -193,7 +193,7 @@ subinterpreters. Patch by Victor Stinner.
 .. nonce: j7nl6A
 .. section: Core and Builtins
 
-Make :c:func:`_PyUnicode_FromId` function compatible with subinterpreters.
+Make :c:func:`!_PyUnicode_FromId` function compatible with subinterpreters.
 Each interpreter now has an array of identifier objects (interned strings
 decoded from UTF-8). Patch by Victor Stinner.
 
@@ -367,7 +367,7 @@ uses "options" instead.
 .. nonce: Quy3zn
 .. section: Library
 
-Port the :mod:`_thread` extension module to the multiphase initialization
+Port the :mod:`!_thread` extension module to the multiphase initialization
 API (:pep:`489`) and convert its static types to heap types.
 
 ..
@@ -412,7 +412,7 @@ be created automatically.
 
 ``logging.disable`` will now validate the types and value of its parameter.
 It also now accepts strings representing the levels (as does
-``loging.setLevel``) instead of only the numerical values.
+``logging.setLevel``) instead of only the numerical values.
 
 ..
 
@@ -709,7 +709,7 @@ directories.
 .. nonce: ek38d_
 .. section: Library
 
-Add :func:`os.set_blocking()` support for VxWorks RTOS.
+Add :func:`os.set_blocking` support for VxWorks RTOS.
 
 ..
 
@@ -960,8 +960,8 @@ explicitly and so not exported.
 .. nonce: Je08Ny
 .. section: C API
 
-Remove the private :c:func:`_Py_fopen` function which is no longer needed.
-Use :c:func:`_Py_wfopen` or :c:func:`_Py_fopen_obj` instead. Patch by Victor
+Remove the private :c:func:`!_Py_fopen` function which is no longer needed.
+Use :c:func:`!_Py_wfopen` or :c:func:`!_Py_fopen_obj` instead. Patch by Victor
 Stinner.
 
 ..

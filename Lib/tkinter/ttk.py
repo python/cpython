@@ -12,8 +12,6 @@ maintaining the widget state and invoking callbacks, all aspects
 of the widgets appearance lies at Themes.
 """
 
-__version__ = "0.3.1"
-
 __author__ = "Guilherme Polo <ggpolo@gmail.com>"
 
 __all__ = ["Button", "Checkbutton", "Combobox", "Entry", "Frame", "Label",
@@ -321,6 +319,8 @@ def _tclobj_to_py(val):
     elif hasattr(val, 'typename'): # some other (single) Tcl object
         val = _convert_stringval(val)
 
+    if isinstance(val, tuple) and len(val) == 0:
+        return ''
     return val
 
 def tclobjs_to_py(adict):
@@ -690,7 +690,10 @@ class Combobox(Entry):
         returns the index of the current value in the list of values
         or -1 if the current value does not appear in the list."""
         if newindex is None:
-            return self.tk.getint(self.tk.call(self._w, "current"))
+            res = self.tk.call(self._w, "current")
+            if res == '':
+                return -1
+            return self.tk.getint(res)
         return self.tk.call(self._w, "current", newindex)
 
 
@@ -1522,7 +1525,7 @@ class LabeledScale(Frame):
         self.label.place(anchor='n' if label_side == 'top' else 's')
 
         # update the label as scale or variable changes
-        self.__tracecb = self._variable.trace_variable('w', self._adjust)
+        self.__tracecb = self._variable.trace_add('write', self._adjust)
         self.bind('<Configure>', self._adjust)
         self.bind('<Map>', self._adjust)
 
@@ -1530,7 +1533,7 @@ class LabeledScale(Frame):
     def destroy(self):
         """Destroy this widget and possibly its associated variable."""
         try:
-            self._variable.trace_vdelete('w', self.__tracecb)
+            self._variable.trace_remove('write', self.__tracecb)
         except AttributeError:
             pass
         else:
@@ -1584,7 +1587,7 @@ class OptionMenu(Menubutton):
 
     def __init__(self, master, variable, default=None, *values, **kwargs):
         """Construct a themed OptionMenu widget with master as the parent,
-        the resource textvariable set to variable, the initially selected
+        the option textvariable set to variable, the initially selected
         value specified by the default parameter, the menu values given by
         *values and additional keywords.
 
@@ -1598,7 +1601,8 @@ class OptionMenu(Menubutton):
                 A callback that will be invoked after selecting an item.
         """
         kw = {'textvariable': variable, 'style': kwargs.pop('style', None),
-              'direction': kwargs.pop('direction', None)}
+              'direction': kwargs.pop('direction', None),
+              'name': kwargs.pop('name', None)}
         Menubutton.__init__(self, master, **kw)
         self['menu'] = tkinter.Menu(self, tearoff=False)
 
@@ -1642,3 +1646,12 @@ class OptionMenu(Menubutton):
         except AttributeError:
             pass
         super().destroy()
+
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return "0.3.1"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

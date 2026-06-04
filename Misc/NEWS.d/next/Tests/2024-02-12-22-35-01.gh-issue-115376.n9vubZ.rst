@@ -1,1 +1,0 @@
-Fix segfault in ``_testinternalcapi.compiler_codegen`` on bad input.

@@ -1,1 +1,0 @@
-Set ``__main__.__spec__`` to ``None`` when running a script with :mod:`pdb`

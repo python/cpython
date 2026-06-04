@@ -25,8 +25,8 @@
         <?endif ?>
         
         <!-- Install/uninstall pip -->
-        <CustomAction Id="SetUpdatePipCommandLine" Property="UpdatePip" Value='"[PYTHON_EXE]" -E -s -m ensurepip -U --default-pip' Execute="immediate" />
-        <CustomAction Id="SetRemovePipCommandLine" Property="UpdatePip" Value='"[PYTHON_EXE]" -E -s -B -m ensurepip._uninstall' Execute="immediate" />
+        <CustomAction Id="SetUpdatePipCommandLine" Property="UpdatePip" Value='"[PYTHON_EXE]" -I -m ensurepip -U --default-pip' Execute="immediate" />
+        <CustomAction Id="SetRemovePipCommandLine" Property="UpdatePip" Value='"[PYTHON_EXE]" -I -B -m ensurepip._uninstall' Execute="immediate" />
         
         <InstallExecuteSequence>
             <Custom Action="SetUpdatePipCommandLine" Before="UpdatePip">(&amp;DefaultFeature=3) AND NOT (!DefaultFeature=3)</Custom>
