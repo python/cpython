@@ -505,9 +505,9 @@ I/O Base Classes
       Read and return all the bytes from the stream until EOF, using multiple
       calls to the stream if necessary.
 
-      If 0 bytes are returned this indicates end of file. If the object is in
+      If ``0`` bytes are returned this indicates end of file. If the object is in
       non-blocking mode and the underlying :meth:`read` returns ``None``
-      indicating no bytes are available ``None`` is returned.
+      indicating no bytes are available, ``None`` is returned.
 
    .. method:: readinto(b, /)
 
@@ -515,8 +515,8 @@ I/O Base Classes
       :term:`bytes-like object` *b*, and return the
       number of bytes read.  For example, *b* might be a :class:`bytearray`.
 
-      If 0 is returned and ``len(b)`` is not 0 this indicates end of file. If
-      the object is in non-blocking mode and no bytes are available ``None`` is
+      If ``0`` is returned and ``len(b)`` is not ``0``, this indicates end of file. If
+      the object is in non-blocking mode and no bytes are available, ``None`` is
       returned.
 
    .. method:: write(b, /)
@@ -670,7 +670,7 @@ Raw File I/O
    This means :meth:`~RawIOBase.write` doesn't guarantee all bytes are written
    and :meth:`~RawIOBase.read` may read less bytes than requested even when more
    bytes may be present in the underlying file. To get "write all" and
-   "read at least" behavior use :ref:`binary-io`.
+   "read at least" behavior, use :ref:`binary-io`.
 
    The *name* can be one of two things:
 
