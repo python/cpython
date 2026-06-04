@@ -747,7 +747,7 @@ than raw I/O does.
       The number of read bytes depends on the buffer size
       and the current position in the internal buffer.
 
-      .. versionadded:: 3.15
+      .. versionadded:: next
 
    .. method:: read1(size=-1, /)
 
