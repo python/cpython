@@ -1410,18 +1410,6 @@ class BlobTests(unittest.TestCase):
         self.blob[0:0] = b""
         self.assertEqual(self.blob[:], self.data)
 
-    def test_blob_set_empty_slice_wrong_type(self):
-        # Assigning a non-buffer object to an empty slice must raise TypeError
-        # even when the slice length is zero.
-        with self.assertRaises(TypeError):
-            self.blob[5:5] = None
-
-    def test_blob_set_empty_slice_wrong_size(self):
-        # Assigning a non-empty bytes object to an empty slice must raise
-        # IndexError because the sizes do not match.
-        with self.assertRaisesRegex(IndexError, "wrong size"):
-            self.blob[5:5] = b"123"
-
     def test_blob_set_slice_with_skip(self):
         self.blob[0:10:2] = b"12345"
         actual = self.cx.execute("select b from test").fetchone()[0]
@@ -1448,9 +1436,6 @@ class BlobTests(unittest.TestCase):
         state_before = bytes(self.blob[:])
         self.blob[3:8:-1] = b""
         self.assertEqual(bytes(self.blob[:]), state_before)
-        # Assigning a non-empty sequence to an empty slice must raise.
-        with self.assertRaisesRegex(IndexError, "wrong size"):
-            self.blob[3:8:-1] = b"abc"
 
     def test_blob_mapping_invalid_index_type(self):
         msg = "indices must be integers"

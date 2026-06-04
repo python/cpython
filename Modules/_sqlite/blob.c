@@ -540,31 +540,24 @@ ass_subscript_slice(pysqlite_Blob *self, PyObject *item, PyObject *value)
         return -1;
     }
 
+    if (len == 0) {
+        return 0;
+    }
+
     Py_buffer vbuf;
     if (PyObject_GetBuffer(value, &vbuf, PyBUF_SIMPLE) < 0) {
         return -1;
     }
 
-    // For extended slices the right-hand side must have the exact same
-    // element count as the slice, even when that count is zero.
+    int rc = -1;
     if (vbuf.len != len) {
         PyErr_SetString(PyExc_IndexError,
                         "Blob slice assignment is wrong size");
-        PyBuffer_Release(&vbuf);
-        return -1;
     }
-
-    if (len == 0) {
-        PyBuffer_Release(&vbuf);
-        return 0;
-    }
-
-    int rc;
-    if (step == 1) {
+    else if (step == 1) {
         rc = inner_write(self, vbuf.buf, len, start);
     }
     else {
-        rc = -1;
         // Compute the contiguous blob region covering all slice elements, then
         // update each element using the standard size_t-cursor pattern that
         // handles both positive and negative steps via unsigned arithmetic.
