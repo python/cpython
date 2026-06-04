@@ -442,6 +442,16 @@ _Pypegen_set_syntax_error(Parser* p, Token* last_token) {
         RAISE_INDENTATION_ERROR(last_token->type == INDENT ? "unexpected indent" : "unexpected unindent");
         return;
     }
+    if (last_token->type == AMPER && p->tokens[p->fill - 2]->type == AMPER) {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(p->tokens[p->fill - 2], last_token,
+                                       "invalid syntax.  Maybe you meant 'and' or '&' instead of '&&'");
+        return;
+    }
+    if (last_token->type == VBAR && p->tokens[p->fill - 2]->type == VBAR) {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(p->tokens[p->fill - 2], last_token,
+                                       "invalid syntax.  Maybe you meant 'or' or '|' instead of '||'");
+        return;
+    }
     // Unknown error (generic case)
 
     // Use the last token we found on the first pass to avoid reporting
