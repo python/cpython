@@ -484,8 +484,8 @@ are always available.  They are listed here in alphabetical order.
            dict(iterable, /, **kwargs)
    :noindex:
 
-   Create a new dictionary.  The :class:`!dict` object is the dictionary class.
-   See :class:`dict` and :ref:`typesmapping` for documentation about this class.
+   Create a new dictionary.  The :class:`dict` object is the dictionary class.
+   See also :ref:`typesmapping` for documentation about this class.
 
    For other containers see the built-in :class:`frozendict`, :class:`list`,
    :class:`set`, and :class:`tuple` classes, as well as the :mod:`collections` module.
@@ -872,8 +872,8 @@ are always available.  They are listed here in alphabetical order.
            frozendict(iterable, /, **kwargs)
    :noindex:
 
-   Create a new frozen dictionary.  The :class:`!frozendict` object is a built-in class.
-   See :class:`frozendict` and :ref:`typesmapping` for documentation about this class.
+   Create a new frozen dictionary.  The :class:`frozendict` object is a built-in class.
+   See also :ref:`typesmapping` for documentation about this class.
 
    For other containers see the built-in :class:`dict`, :class:`list`, :class:`set`,
    and :class:`tuple` classes, as well as the :mod:`collections` module.
@@ -885,8 +885,8 @@ are always available.  They are listed here in alphabetical order.
 .. class:: frozenset(iterable=(), /)
    :noindex:
 
-   Return a new :class:`!frozenset` object, optionally with elements taken from
-   *iterable*.  :class:`!frozenset` is a built-in class.  See :class:`frozenset` and
+   Return a new :class:`frozenset` object, optionally with elements taken from
+   *iterable*.  :class:`frozenset` is a built-in class.  See also
    :ref:`types-set` for documentation about this class.
 
    For other containers see the built-in :class:`set`, :class:`list`,
@@ -1813,8 +1813,8 @@ are always available.  They are listed here in alphabetical order.
 .. class:: set(iterable=(), /)
    :noindex:
 
-   Return a new :class:`!set` object, optionally with elements taken from
-   *iterable*.  :class:`!set` is a built-in class.  See :class:`set` and
+   Return a new :class:`set` object, optionally with elements taken from
+   *iterable*.  :class:`set` is a built-in class.  See also
    :ref:`types-set` for documentation about this class.
 
    For other containers see the built-in :class:`frozenset`, :class:`list`,
