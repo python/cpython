@@ -843,6 +843,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 
 
 .. class:: socket(family=AF_INET, type=SOCK_STREAM, proto=0, fileno=None)
+   :noindex:
 
    Create a new socket using the given address family, socket type and protocol
    number.  The address family should be :const:`AF_INET` (the default),
@@ -1533,7 +1534,6 @@ Socket Objects
 --------------
 
 .. class:: socket
-   :noindex:
 
    Socket objects have the following methods.  Except for
    :meth:`~socket.makefile`, these correspond to Unix system calls applicable
