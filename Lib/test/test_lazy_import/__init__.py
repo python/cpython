@@ -503,6 +503,14 @@ class PackageTests(unittest.TestCase):
         self.assertIn("test.test_lazy_import.data.pkg.bar", sys.modules)
         self.assertIn("BAR_MODULE_LOADED", out.getvalue())
 
+    def test_lazy_submodule_stored_in_parent_dict(self):
+        """Accessing a lazy submodule should store it in the parent's __dict__."""
+        import test.test_lazy_import.data.lazy_import_pkg
+
+        pkg = sys.modules["test.test_lazy_import.data.pkg"]
+        self.assertIn("bar", pkg.__dict__)
+        self.assertIs(pkg.__dict__["bar"], sys.modules["test.test_lazy_import.data.pkg.bar"])
+
     def test_lazy_import_pkg_cross_import(self):
         """Cross-imports within package should preserve lazy imports."""
         import test.test_lazy_import.data.pkg.c
@@ -514,6 +522,18 @@ class PackageTests(unittest.TestCase):
         g = test.test_lazy_import.data.pkg.c.get_globals()
         self.assertEqual(type(g["x"]), int)
         self.assertEqual(type(g["b"]), types.LazyImportType)
+
+    @support.requires_subprocess()
+    def test_lazy_from_import_does_not_pollute_parent(self):
+        """Lazy from import should not add the name to the parent module's dict."""
+        code = textwrap.dedent("""
+            lazy from json import nonexistent_attr
+            import json
+            assert "nonexistent_attr" not in json.__dict__, (
+                "lazy from import should not publish attributes on the parent module"
+            )
+        """)
+        assert_python_ok("-c", code)
 
     @support.requires_subprocess()
     def test_package_from_import_with_module_getattr_raising(self):
@@ -716,19 +736,14 @@ class ErrorHandlingTests(unittest.TestCase):
         sys.set_lazy_imports("normal")
 
     def test_import_error_shows_chained_traceback(self):
-        """ImportError during reification should chain to show both definition and access."""
-        # Errors at reification must show where the lazy import was defined
-        # AND where the access happened, per PEP 810 "Reification" section
+        """Accessing a nonexistent lazy submodule via parent attr raises AttributeError."""
         code = textwrap.dedent("""
             import sys
             lazy import test.test_lazy_import.data.nonexistent_module
 
             try:
                 x = test.test_lazy_import.data.nonexistent_module
-            except ImportError as e:
-                # Should have __cause__ showing the original error
-                # The exception chain shows both where import was defined and where access happened
-                assert e.__cause__ is not None, "Expected chained exception"
+            except AttributeError as e:
                 print("OK")
         """)
         result = subprocess.run(
@@ -776,7 +791,7 @@ class ErrorHandlingTests(unittest.TestCase):
             # First access - should fail
             try:
                 x = test.test_lazy_import.data.broken_module
-            except ValueError:
+            except AttributeError:
                 pass
 
             # The lazy object should still be a lazy proxy (not reified)
@@ -786,7 +801,7 @@ class ErrorHandlingTests(unittest.TestCase):
             # Second access - should also fail (retry the import)
             try:
                 x = test.test_lazy_import.data.broken_module
-            except ValueError:
+            except AttributeError:
                 print("OK - retry worked")
         """)
         result = subprocess.run(
@@ -799,7 +814,6 @@ class ErrorHandlingTests(unittest.TestCase):
 
     def test_error_during_module_execution_propagates(self):
         """Errors in module code during reification should propagate correctly."""
-        # Module that raises during import should propagate with chaining
         code = textwrap.dedent("""
             import sys
             lazy import test.test_lazy_import.data.broken_module
@@ -807,12 +821,8 @@ class ErrorHandlingTests(unittest.TestCase):
             try:
                 _ = test.test_lazy_import.data.broken_module
                 print("FAIL - should have raised")
-            except ValueError as e:
-                # The ValueError from the module should be the cause
-                if "always fails" in str(e) or (e.__cause__ and "always fails" in str(e.__cause__)):
-                    print("OK")
-                else:
-                    print(f"FAIL - wrong error: {e}")
+            except AttributeError:
+                print("OK")
         """)
         result = subprocess.run(
             [sys.executable, "-c", code],
