@@ -131,16 +131,28 @@ def filename_stem(context):
     # `build-details.json` for either/both version and triple
 
 
+def copy_files(files, base):
+    for dest, src in files:
+            target = base / dest
+            target.parent.mkdir(parents=True, exist_ok=True)
+            src.copy(target)
+
 def package(context):
     dist = _shared.CHECKOUT / "dist"
     if dist.exists():
+        _shared.log("🧹", f"Deleting {dist} ...")
         shutil.rmtree(dist)
-    files = []
-    files.append(license_file(context))
-    files.extend(build_dir_files(context))
-    files.extend(stdlib_files(context))
-    files.extend(pkgconfig_files(context))
-    for dest, src in files:
-        target = dist / dest
-        target.parent.mkdir(parents=True, exist_ok=True)
-        src.copy(target)
+
+    indent = "  "
+    _shared.log("📝", f"Copying files to {dist} ...")
+    _shared.log("📁", "lib/", spacing=indent * 2)
+    _shared.log("📁", "pythonN.M/", spacing=indent * 3)
+    _shared.log("📄", "LICENSE.txt", spacing=indent * 4)
+    copy_files([license_file(context)], dist)
+    _shared.log("📄", "files in pybuilddir.txt", spacing=indent * 4)
+    copy_files(build_dir_files(context), dist)
+    _shared.log("📄", "**/*.py", spacing=indent * 4)
+    copy_files(stdlib_files(context), dist)
+    _shared.log("📁", "pkgconfig/", spacing=indent * 3)
+    _shared.log("📄", "python*.pc", spacing=indent * 4)
+    copy_files(pkgconfig_files(context), dist)

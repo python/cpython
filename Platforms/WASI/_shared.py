@@ -53,3 +53,14 @@ def host_triple(context):
 def wasi_build_path(context):
     """Determine the path to the WASI build directory."""
     return CROSS_BUILD_DIR / host_triple(context)
+
+
+def log(emoji, message, *, spacing=None):
+    """Print a notification with an emoji.
+
+    If 'spacing' is None, calculate the spacing based on the number of code points
+    in the emoji as terminals "eat" a space when the emoji has multiple code points.
+    """
+    if spacing is None:
+        spacing = " " if len(emoji) == 1 else "  "
+    print("".join([emoji, spacing, message]))

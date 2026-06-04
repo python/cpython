@@ -48,17 +48,6 @@ def separator():
     print("⎯" * terminal_width)
 
 
-def log(emoji, message, *, spacing=None):
-    """Print a notification with an emoji.
-
-    If 'spacing' is None, calculate the spacing based on the number of code points
-    in the emoji as terminals "eat" a space when the emoji has multiple code points.
-    """
-    if spacing is None:
-        spacing = " " if len(emoji) == 1 else "  "
-    print("".join([emoji, spacing, message]))
-
-
 def updated_env(updates={}):
     """Create a new dict representing the environment to use.
 
@@ -85,7 +74,7 @@ def updated_env(updates={}):
     env_vars = [
         f"\n     {key}={item}" for key, item in sorted(env_diff.items())
     ]
-    log("🌎", f"Environment changes:{''.join(env_vars)}")
+    _shared.log("🌎", f"Environment changes:{''.join(env_vars)}")
 
     return environment
 
@@ -101,13 +90,13 @@ def subdir(working_dir, *, clean_ok=False):
             if callable(working_dir):
                 working_dir = working_dir(context)
             separator()
-            log("📁", os.fsdecode(working_dir))
+            _shared.log("📁", os.fsdecode(working_dir))
             if (
                 clean_ok
                 and getattr(context, "clean", False)
                 and working_dir.exists()
             ):
-                log("🚮", "Deleting directory (--clean)...")
+                _shared.log("🚮", "Deleting directory (--clean)...")
                 shutil.rmtree(working_dir)
 
             working_dir.mkdir(parents=True, exist_ok=True)
@@ -128,7 +117,7 @@ def call(command, *, context=None, quiet=False, **kwargs):
     if context is not None:
         quiet = context.quiet
 
-    log("❯", " ".join(map(str, command)), spacing="  ")
+    _shared.log("❯", " ".join(map(str, command)), spacing="  ")
     if not quiet:
         stdout = None
         stderr = None
@@ -144,7 +133,7 @@ def call(command, *, context=None, quiet=False, **kwargs):
             suffix=".log",
         )
         stderr = subprocess.STDOUT
-        log("📝", f"Logging output to {stdout.name} (--quiet)...")
+        _shared.log("📝", f"Logging output to {stdout.name} (--quiet)...")
 
     subprocess.check_call(command, **kwargs, stdout=stdout, stderr=stderr)
 
@@ -179,11 +168,11 @@ def configure_build_python(context, working_dir):
     """Configure the build/host Python."""
     if LOCAL_SETUP.exists():
         if LOCAL_SETUP.read_bytes() == LOCAL_SETUP_MARKER:
-            log("👍", f"{LOCAL_SETUP} exists ...")
+            _shared.log("👍", f"{LOCAL_SETUP} exists ...")
         else:
-            log("⚠️", f"{LOCAL_SETUP} exists, but has unexpected contents")
+            _shared.log("⚠️", f"{LOCAL_SETUP} exists, but has unexpected contents")
     else:
-        log("📝", f"Creating {LOCAL_SETUP} ...")
+        _shared.log("📝", f"Creating {LOCAL_SETUP} ...")
         LOCAL_SETUP.write_bytes(LOCAL_SETUP_MARKER)
 
     configure = [os.path.relpath(_shared.CHECKOUT / "configure", working_dir)]
@@ -207,7 +196,7 @@ def make_build_python(context, working_dir):
     ]
     version = subprocess.check_output(cmd, encoding="utf-8").strip()
 
-    log("🎉", f"{binary} {version}")
+    _shared.log("🎉", f"{binary} {version}")
 
 
 @_shared.forced_cache
@@ -261,7 +250,7 @@ def wasi_sdk(context):
         # supported version is a prefix of the found version (e.g. `25` and `2567`).
         if not found_version.startswith(f"{wasi_sdk_version}."):
             major_version = found_version.partition(".")[0]
-            log(
+            _shared.log(
                 "⚠️",
                 f" Found WASI SDK {major_version}, "
                 f"but WASI SDK {wasi_sdk_version} is the supported version",
@@ -362,7 +351,7 @@ def configure_wasi_python(context, working_dir):
     with exec_script.open("w", encoding="utf-8") as file:
         file.write(f'#!/bin/sh\nexec {host_runner} {python_wasm} "$@"\n')
     exec_script.chmod(0o755)
-    log("🏃", f"Created {exec_script} (--host-runner)... ")
+    _shared.log("🏃", f"Created {exec_script} (--host-runner)... ")
     sys.stdout.flush()
 
 
@@ -377,7 +366,7 @@ def make_wasi_python(context, working_dir):
 
     exec_script = working_dir / "python.sh"
     call([exec_script, "-c", "import sys; print(sys.version)"], quiet=False)
-    log(
+    _shared.log(
         "🎉",
         f"Use `{exec_script.relative_to(pathlib.Path().absolute())}` "
         "to run CPython w/ the WASI host specified by --host-runner",
@@ -387,9 +376,9 @@ def make_wasi_python(context, working_dir):
 def clean_contents(context):
     """Delete all files created by this script."""
     if _shared.CROSS_BUILD_DIR.exists():
-        log("🧹", f"Deleting {_shared.CROSS_BUILD_DIR} ...")
+        _shared.log("🧹", f"Deleting {_shared.CROSS_BUILD_DIR} ...")
         shutil.rmtree(_shared.CROSS_BUILD_DIR)
 
     if LOCAL_SETUP.exists():
         if LOCAL_SETUP.read_bytes() == LOCAL_SETUP_MARKER:
-            log("🧹", f"Deleting generated {LOCAL_SETUP} ...")
+            _shared.log("🧹", f"Deleting generated {LOCAL_SETUP} ...")
