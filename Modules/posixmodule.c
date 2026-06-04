@@ -13678,6 +13678,10 @@ static PyObject *
 os__clearenv_impl(PyObject *module)
 /*[clinic end generated code: output=2d6705d62c014b51 input=47d2fa7f323c43ca]*/
 {
+    if (PySys_Audit("os._clearenv", NULL) < 0) {
+        return NULL;
+    }
+
     errno = 0;
     int err = clearenv();
     if (err) {
