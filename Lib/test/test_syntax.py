@@ -3509,12 +3509,20 @@ while 1:
         self._check_error(
             "a && b",
             "Maybe you meant 'and' or '&' instead of '&&'",
+            lineno=1,
+            end_lineno=1,
+            offset=3,
+            end_offset=5,
         )
 
     def test_double_pipe(self):
         self._check_error(
             "a || b",
             "Maybe you meant 'or' or '|' instead of '||'",
+            lineno=1,
+            end_lineno=1,
+            offset=3,
+            end_offset=5,
         )
 
 
