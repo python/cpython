@@ -109,6 +109,13 @@ os
   process via a pidfd.  Available on Linux 5.6+.
   (Contributed by Maurycy Pawłowski-Wieroński in :gh:`149464`.)
 
+shlex
+-----
+
+* Add keyword-only parameter *force* to :func:`shlex.quote` to force quoting
+  a string, even if it is already safe for a shell without being quoted.
+  (Contributed by Jay Berry in :gh:`148846`.)
+
 sqlite3
 -------
 
@@ -154,6 +161,13 @@ annotationlib
   which has been deprecated since Python 3.14.
   Use :meth:`annotationlib.ForwardRef.evaluate`
   or :func:`typing.evaluate_forward_ref` instead.
+
+array
+-----
+
+* The ``'u'`` format code (:c:type:`wchar_t`) which has been deprecated in
+  documentation since Python 3.3 and at runtime since Python 3.13.
+  Use ``'w'`` format code instead (:c:type:`Py_UCS4`, always 4 bytes).
 
 asyncio
 -------
@@ -223,6 +237,15 @@ tarfile
 Deprecated
 ==========
 
+* :mod:`abc`
+
+   * Soft-deprecated since Python 3.3 :class:`abc.abstractclassmethod`,
+     :class:`abc.abstractstaticmethod`, and :class:`abc.abstractproperty`
+     now raise a :exc:`DeprecationWarning`.
+     These classes will be removed in Python 3.21, instead
+     use :func:`abc.abstractmethod` with :func:`classmethod`,
+     :func:`staticmethod`, and :class:`property` respectively.
+
 * :mod:`ast`:
 
   * Classes ``slice``, ``Index``, ``ExtSlice``, ``Suite``, ``Param``,
@@ -235,6 +258,14 @@ Deprecated
     removal in 3.21. Use ``ast.Tuple.elts`` instead.
 
 .. Add deprecations above alphabetically, not here at the end.
+
+.. include:: ../deprecations/pending-removal-in-3.17.rst
+
+.. include:: ../deprecations/pending-removal-in-3.19.rst
+
+.. include:: ../deprecations/pending-removal-in-3.20.rst
+
+.. include:: ../deprecations/pending-removal-in-future.rst
 
 
 Porting to Python 3.16

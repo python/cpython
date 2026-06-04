@@ -40,6 +40,7 @@ __all__ = [
     "has_fork_support", "requires_fork",
     "has_subprocess_support", "requires_subprocess",
     "has_socket_support", "requires_working_socket",
+    "has_st_birthtime",
     "has_remote_subprocess_debugging", "requires_remote_subprocess_debugging",
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     "check__all__", "skip_if_buggy_ucrt_strfptime",
@@ -619,6 +620,10 @@ has_fork_support = hasattr(os, "fork") and not (
     # all Android apps are multi-threaded.
     or is_android
 )
+
+# At the moment, st_birthtime attribute is only supported on Windows,
+# MacOS and FreeBSD.
+has_st_birthtime = sys.platform.startswith(("win", "freebsd", "darwin"))
 
 def requires_fork():
     return unittest.skipUnless(has_fork_support, "requires working os.fork()")
@@ -3318,3 +3323,18 @@ def control_characters_c0() -> list[str]:
 _ROOT_IN_POSIX = hasattr(os, 'geteuid') and os.geteuid() == 0
 requires_root_user = unittest.skipUnless(_ROOT_IN_POSIX, "test needs root privilege")
 requires_non_root_user = unittest.skipIf(_ROOT_IN_POSIX, "test needs non-root account")
+
+
+STATUS_DLL_INIT_FAILED = 0xC0000142
+def skip_on_low_desktop_heap_memory_subprocess(returncode):
+    if sys.platform not in ('win32', 'cygwin'):
+        return
+    # On Windows, STATUS_DLL_INIT_FAILED is a generic error code that could
+    # come from any of the DLLs being loaded when a new Python process is
+    # created. In practice, it's likely a memory allocation failure in the
+    # desktop heap memory which caused the DLL init failure, especially on
+    # process created with CREATE_NEW_CONSOLE creation flag. See the article:
+    # https://learn.microsoft.com/en-us/troubleshoot/windows-server/performance/desktop-heap-limitation-out-of-memory
+    if returncode == STATUS_DLL_INIT_FAILED:
+        raise unittest.SkipTest('gh-150436: DLL init failed, likely because '
+                                'of low desktop heap memory')
