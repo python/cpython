@@ -1,2 +1,1 @@
-Avoid unnecessary presence checks for :attr:`ssl.SSLContext.keylog_filename`,
-which since Python 3.10 always exists.
+Unconditionally assume :attr:`ssl.SSLContext.keylog_filename` exists.
