@@ -20,7 +20,7 @@ its optional *Python native development* component selected.
 
 Building from the command line is recommended in order to obtain any
 external dependencies. To build, simply run the "build.bat" script without
-any arguments. After this succeeds, you can open the "pcbuild.sln"
+any arguments. After this succeeds, you can open the "pcbuild.slnx"
 solution in Visual Studio to continue development.
 
 To build an installer package, refer to the README in the Tools/msi folder.
@@ -122,7 +122,7 @@ Sub-Projects
 ------------
 
 The CPython project is split up into several smaller sub-projects which
-are managed by the pcbuild.sln solution file.  Each sub-project is
+are managed by the pcbuild.slnx solution file.  Each sub-project is
 represented by a .vcxproj and a .vcxproj.filters file starting with the
 name of the sub-project.  These sub-projects fall into a few general
 categories:
@@ -412,7 +412,7 @@ _testclinic_limited extension, the file Modules/_testclinic_limited.c:
   `_asyncio.c` with `_testclinic_limited.c`.
 * In PCbuild/, copy _testclinic.vcxproj.filters to
   _testclinic_limited.vcxproj.filters, edit the list of files in the new file.
-* Open Visual Studio, open PCbuild\pcbuild.sln solution, add the
+* Open Visual Studio, open PCbuild\pcbuild.slnx solution, add the
   PCbuild\_testclinic_limited.vcxproj project to the solution ("add existing
   project).
 * Add a dependency on the python project to the new _testclinic_limited
@@ -428,5 +428,5 @@ _testclinic_limited extension, the file Modules/_testclinic_limited.c:
 * Build Python from scratch (clean the solution) to check that the new project
   is built successfully.
 * Ensure the new .vcxproj and .vcxproj.filters files are added to your commit,
-  as well as the changes to pcbuild.sln, pcbuild.proj and any other modified
+  as well as the changes to pcbuild.slnx, pcbuild.proj and any other modified
   files.
