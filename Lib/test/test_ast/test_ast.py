@@ -1098,10 +1098,17 @@ class AST_Tests(unittest.TestCase):
         ):
             compile(expr_with_wrong_body, "<test>", "eval")
 
+        variable = ast.parse("test", mode="eval")
+        variable.body.id = b'test'
+        with self.assertRaisesRegex(TypeError,
+            "field 'id' was expecting a string object, got bytes"
+        ):
+            compile(variable, "<test>", "eval")
+
         constant = ast.parse("u'test'", mode="eval")
         constant.body.kind = 0xFF
-        with self.assertRaisesRegex(
-            TypeError, "field 'kind' was expecting a string or bytes object"
+        with self.assertRaisesRegex(TypeError,
+            "field 'kind' was expecting a string or bytes object, got int"
         ):
             compile(constant, "<test>", "eval")
 
