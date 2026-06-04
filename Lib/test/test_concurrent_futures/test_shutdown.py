@@ -261,6 +261,64 @@ class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase
         self.assertIn(out.strip(), [b"apple", b""])
 
 
+class ThreadPoolDaemonTest(BaseTestCase):
+    def test_daemon_worker_threads(self):
+        executor = futures.ThreadPoolExecutor(max_workers=2, daemon=True)
+        executor.submit(time.sleep, 0)
+        executor.shutdown(wait=True)
+        for t in executor._threads:
+            self.assertTrue(t.daemon)
+
+    def test_default_non_daemon_workers(self):
+        executor = futures.ThreadPoolExecutor(max_workers=2)
+        executor.submit(time.sleep, 0)
+        executor.shutdown(wait=True)
+        for t in executor._threads:
+            self.assertFalse(t.daemon)
+
+    def test_daemon_workers_untracked(self):
+        from concurrent.futures.thread import _threads_queues
+        executor = futures.ThreadPoolExecutor(max_workers=2, daemon=True)
+        executor.submit(time.sleep, 0)
+        executor.shutdown(wait=True)
+        for t in executor._threads:
+            self.assertNotIn(t, _threads_queues)
+
+    def test_daemon_explicit_shutdown_wait(self):
+        # shutdown(wait=True) should still wait for task completion
+        results = []
+        def append_after_sleep():
+            time.sleep(0.1)
+            results.append(42)
+        executor = futures.ThreadPoolExecutor(max_workers=2, daemon=True)
+        executor.submit(append_after_sleep)
+        executor.shutdown(wait=True)
+        self.assertEqual(results, [42])
+
+    def test_daemon_exit_no_block(self):
+        # Interpreter should exit promptly with daemon=True and
+        # shutdown(wait=False), even if a task is still running.
+        rc, out, err = assert_python_ok('-c', """if True:
+            from concurrent.futures import ThreadPoolExecutor
+            import time
+            t = ThreadPoolExecutor(max_workers=1, daemon=True)
+            t.submit(time.sleep, 60)
+            t.shutdown(wait=False)
+        """)
+        self.assertFalse(err)
+
+    def test_daemon_context_manager_waits(self):
+        # Context manager calls shutdown(wait=True), so it should
+        # still wait for tasks to finish.
+        results = []
+        def append_after_sleep():
+            time.sleep(0.1)
+            results.append(42)
+        with futures.ThreadPoolExecutor(max_workers=2, daemon=True) as e:
+            e.submit(append_after_sleep)
+        self.assertEqual(results, [42])
+
+
 class ProcessPoolShutdownTest(ExecutorShutdownTest):
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_processes_terminate(self):
