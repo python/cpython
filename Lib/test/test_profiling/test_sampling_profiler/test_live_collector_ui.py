@@ -835,8 +835,7 @@ class TestLiveModeErrors(unittest.TestCase):
         # still failing
         for _ in range(n_times):
             mock_self.display.simulate_input(-1)
-        if n_times >= 500:
-            mock_self.display.simulate_input(ord('q'))
+        mock_self.display.simulate_input(ord('q'))
 
     def test_run_failed_module_live(self):
         """Test that running a existing module that fails exits with clean error."""

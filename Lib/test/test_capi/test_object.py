@@ -71,6 +71,8 @@ class SentinelTest(unittest.TestCase):
         self.assertIs(type(marker), sentinel)
         self.assertTrue(_testcapi.pysentinel_check(marker))
         self.assertFalse(_testcapi.pysentinel_check(object()))
+        self.assertTrue(_testcapi.pysentinel_checkexact(marker))
+        self.assertFalse(_testcapi.pysentinel_checkexact(object()))
         self.assertEqual(marker.__name__, "CAPI_SENTINEL")
         self.assertEqual(marker.__module__, __name__)
         self.assertEqual(repr(marker), "CAPI_SENTINEL")
@@ -79,6 +81,12 @@ class SentinelTest(unittest.TestCase):
         self.assertIs(type(no_module), sentinel)
         self.assertEqual(no_module.__name__, "NO_MODULE")
         self.assertIs(no_module.__module__, None)
+
+        with_repr = _testcapi.pysentinel_new("WITH_REPR", __name__, "custom repr")
+        self.assertIs(type(with_repr), sentinel)
+        self.assertEqual(with_repr.__name__, "WITH_REPR")
+        self.assertEqual(with_repr.__module__, __name__)
+        self.assertEqual(repr(with_repr), "custom repr")
 
         globals()["CAPI_SENTINEL"] = marker
         self.addCleanup(globals().pop, "CAPI_SENTINEL", None)

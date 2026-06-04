@@ -485,6 +485,13 @@ class DeferredEvaluationTests(unittest.TestCase):
         ns = run_code("x: [y for y in range(10)]")
         self.assertEqual(ns["__annotate__"](1), {"x": list(range(10))})
 
+    def test_class_annotation_dunder_classdict(self):
+        ns = run_code("""
+            class C:
+                __classdict__: int
+        """)
+        self.assertEqual(ns["C"].__annotations__, {"__classdict__": int})
+
     def test_future_annotations(self):
         code = """
         from __future__ import annotations

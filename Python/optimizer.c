@@ -500,6 +500,8 @@ _PyUOp_Replacements[MAX_UOP_ID + 1] = {
     [_ITER_NEXT_LIST] = _ITER_NEXT_LIST_TIER_TWO,
     [_CHECK_PERIODIC_AT_END] = _TIER2_RESUME_CHECK,
     [_LOAD_BYTECODE] = _NOP,
+    [_SEND_VIRTUAL] = _SEND_VIRTUAL_TIER_TWO,
+    [_SEND_ASYNC_GEN] = _SEND_ASYNC_GEN_TIER_TWO,
 };
 
 static const uint8_t
@@ -508,6 +510,7 @@ is_for_iter_test[MAX_UOP_ID + 1] = {
     [_GUARD_NOT_EXHAUSTED_LIST] = 1,
     [_GUARD_NOT_EXHAUSTED_TUPLE] = 1,
     [_FOR_ITER_TIER_TWO] = 1,
+    [_ITER_NEXT_INLINE] = 1,
 };
 
 static const uint16_t
@@ -658,44 +661,6 @@ is_terminator(const _PyUOpInstruction *uop)
         opcode == _JUMP_TO_TOP ||
         opcode == _DYNAMIC_EXIT
     );
-}
-
-static PyObject *
-record_trace_transform_to_type(PyObject *value)
-{
-    PyObject *tp = Py_NewRef((PyObject *)Py_TYPE(value));
-    Py_DECREF(value);
-    return tp;
-}
-
-/* _RECORD_NOS_GEN_FUNC and _RECORD_3OS_GEN_FUNC record the raw receiver.
- * If it is a generator, return its function object; otherwise return NULL.
- */
-static PyObject *
-record_trace_transform_gen_func(PyObject *value)
-{
-    PyObject *func = NULL;
-    if (PyGen_Check(value)) {
-        _PyStackRef f = ((PyGenObject *)value)->gi_iframe.f_funcobj;
-        if (!PyStackRef_IsNull(f)) {
-            func = Py_NewRef(PyStackRef_AsPyObjectBorrow(f));
-        }
-    }
-    Py_DECREF(value);
-    return func;
-}
-
-/* _RECORD_BOUND_METHOD records the raw callable.
- * Keep it only for bound methods; otherwise return NULL.
- */
-static PyObject *
-record_trace_transform_bound_method(PyObject *value)
-{
-    if (Py_TYPE(value) == &PyMethod_Type) {
-        return value;
-    }
-    Py_DECREF(value);
-    return NULL;
 }
 
 /* Returns 1 on success (added to trace), 0 on trace end.
@@ -999,8 +964,14 @@ _PyJit_translate_single_bytecode_to_trace(
                         else {
                             int extended_arg = orig_oparg > 255;
                             uint32_t jump_target = next_inst + orig_oparg + extended_arg;
-                            assert(_Py_GetBaseCodeUnit(old_code, jump_target).op.code == END_FOR);
-                            assert(_Py_GetBaseCodeUnit(old_code, jump_target+1).op.code == POP_ITER);
+                            /* Jump must be to an "END" either END_FOR or END_SEND */
+                            assert((
+                                    _Py_GetBaseCodeUnit(old_code, jump_target).op.code == END_FOR &&
+                                    _Py_GetBaseCodeUnit(old_code, jump_target+1).op.code == POP_ITER
+                                )
+                                ||
+                                _Py_GetBaseCodeUnit(old_code, jump_target).op.code == END_SEND
+                            );
                             if (is_for_iter_test[uop]) {
                                 target = jump_target + 1;
                             }
@@ -1448,6 +1419,7 @@ allocate_executor(int exit_count, int length)
     res->trace = (_PyUOpInstruction *)(res->exits + exit_count);
     res->code_size = length;
     res->exit_count = exit_count;
+    res->jit_registration = NULL;
     return res;
 }
 

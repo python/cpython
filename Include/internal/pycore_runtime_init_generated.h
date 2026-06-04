@@ -1580,6 +1580,7 @@ extern "C" {
     INIT_ID(alias), \
     INIT_ID(align), \
     INIT_ID(all), \
+    INIT_ID(all_interpreters), \
     INIT_ID(all_threads), \
     INIT_ID(allow_code), \
     INIT_ID(alphabet), \
@@ -1987,6 +1988,7 @@ extern "C" {
     INIT_ID(person), \
     INIT_ID(pi_factory), \
     INIT_ID(pid), \
+    INIT_ID(pidfd), \
     INIT_ID(pointer_bits), \
     INIT_ID(policy), \
     INIT_ID(pos), \
@@ -2028,6 +2030,7 @@ extern "C" {
     INIT_ID(repeat), \
     INIT_ID(repl), \
     INIT_ID(replace), \
+    INIT_ID(repr), \
     INIT_ID(reqrefs), \
     INIT_ID(require_ready), \
     INIT_ID(reserved), \
@@ -2105,6 +2108,7 @@ extern "C" {
     INIT_ID(take_bytes), \
     INIT_ID(target), \
     INIT_ID(target_is_directory), \
+    INIT_ID(targetfd), \
     INIT_ID(task), \
     INIT_ID(tb_frame), \
     INIT_ID(tb_lasti), \
