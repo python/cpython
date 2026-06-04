@@ -93,6 +93,12 @@ gzip
   which is passed on to the constructor of the :class:`~gzip.GzipFile` class.
   (Contributed by Marin Misur in :gh:`91372`.)
 
+io
+--
+
+* Add :meth:`io.BytesIO.peek`.
+  (Contributed by Marcel Martin in :gh:`90533`.)
+
 lzma
 ----
 
