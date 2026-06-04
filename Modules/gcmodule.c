@@ -234,8 +234,8 @@ gc_get_count_impl(PyObject *module)
 #else
     return Py_BuildValue("(iii)",
                          _Py_atomic_load_int_relaxed(&gcstate->young.count),
-                         _Py_atomic_load_int_relaxed(&gcstate->old[0].count),
-                         _Py_atomic_load_int_relaxed(&gcstate->old[1].count));
+                         gcstate->old[0].count,
+                         gcstate->old[1].count);
 #endif
 }
 
