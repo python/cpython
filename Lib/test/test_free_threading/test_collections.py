@@ -30,11 +30,8 @@ class TestDeque(unittest.TestCase):
         # it was used without a critical section.
 
         d = deque(range(100))
-        N_MUT = 3
-        barrier = Barrier(1 + N_MUT)
 
         def index():
-            barrier.wait()
             for _ in range(10000):
                 try:
                     d.index(50)
@@ -42,7 +39,6 @@ class TestDeque(unittest.TestCase):
                     pass
 
         def mutate():
-            barrier.wait()
             for _ in range(10000):
                 d.append(0)
                 d.clear()
@@ -50,7 +46,7 @@ class TestDeque(unittest.TestCase):
                 d.appendleft(-1)
 
         threading_helper.run_concurrently(
-            [index, *[mutate for _ in range(N_MUT)]],
+            [index, *[mutate for _ in range(3)]],
         )
 
 
