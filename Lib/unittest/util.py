@@ -1,7 +1,6 @@
 """Various utility functions."""
 
 from collections import namedtuple, Counter
-from os.path import commonprefix
 
 __unittest = True
 
@@ -21,13 +20,23 @@ def _shorten(s, prefixlen, suffixlen):
         s = '%s[%d chars]%s' % (s[:prefixlen], skip, s[len(s) - suffixlen:])
     return s
 
+def _common_prefix(m):
+    if not m:
+        return ""
+    s1 = min(m)
+    s2 = max(m)
+    for i, c in enumerate(s1):
+        if c != s2[i]:
+            return s1[:i]
+    return s1
+
 def _common_shorten_repr(*args):
     args = tuple(map(safe_repr, args))
     maxlen = max(map(len, args))
     if maxlen <= _MAX_LENGTH:
         return args
 
-    prefix = commonprefix(args)
+    prefix = _common_prefix(args)
     prefixlen = len(prefix)
 
     common_len = _MAX_LENGTH - \
@@ -53,6 +62,14 @@ def safe_repr(obj, short=False):
 
 def strclass(cls):
     return "%s.%s" % (cls.__module__, cls.__qualname__)
+
+def _dedupe_sorted(lst):
+    """Remove consecutive duplicate elements from a sorted list."""
+    result = []
+    for item in lst:
+        if not result or result[-1] != item:
+            result.append(item)
+    return result
 
 def sorted_list_difference(expected, actual):
     """Finds elements in only one or the other of two, sorted input lists.
@@ -89,8 +106,8 @@ def sorted_list_difference(expected, actual):
                     while actual[j] == a:
                         j += 1
         except IndexError:
-            missing.extend(expected[i:])
-            unexpected.extend(actual[j:])
+            missing.extend(_dedupe_sorted(expected[i:]))
+            unexpected.extend(_dedupe_sorted(actual[j:]))
             break
     return missing, unexpected
 

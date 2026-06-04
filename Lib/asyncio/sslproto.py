@@ -1,3 +1,7 @@
+# Contains code from https://github.com/MagicStack/uvloop/tree/v0.16.0
+# SPDX-License-Identifier: PSF-2.0 AND (MIT OR Apache-2.0)
+# SPDX-FileCopyrightText: Copyright (c) 2015-2021 MagicStack Inc.  http://magic.io
+
 import collections
 import enum
 import warnings
@@ -97,7 +101,7 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
         return self._ssl_protocol._app_protocol
 
     def is_closing(self):
-        return self._closed
+        return self._closed or self._ssl_protocol._is_transport_closing()
 
     def close(self):
         """Close the transport.
@@ -375,6 +379,9 @@ class SSLProtocol(protocols.BufferedProtocol):
             self._app_transport_created = True
         return self._app_transport
 
+    def _is_transport_closing(self):
+        return self._transport is not None and self._transport.is_closing()
+
     def connection_made(self, transport):
         """Called when the low-level connection is made.
 
@@ -575,6 +582,7 @@ class SSLProtocol(protocols.BufferedProtocol):
 
             peercert = sslobj.getpeercert()
         except Exception as exc:
+            handshake_exc = None
             self._set_state(SSLProtocolState.UNWRAPPED)
             if isinstance(exc, ssl.CertificateError):
                 msg = 'SSL handshake failed on verifying the certificate'

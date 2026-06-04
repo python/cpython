@@ -1,3 +1,0 @@
-The tests now correctly compare zlib version when
-:const:`zlib.ZLIB_RUNTIME_VERSION` contains non-integer suffixes. For
-example zlib-ng defines the version as ``1.3.0.zlib-ng``.

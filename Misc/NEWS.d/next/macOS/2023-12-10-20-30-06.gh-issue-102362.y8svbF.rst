@@ -1,3 +1,0 @@
-Make sure the result of :func:`sysconfig.get_plaform` includes at least a
-major and minor versions, even if ``MACOSX_DEPLOYMENT_TARGET`` is set to
-only a major version during build to match the format expected by pip.

@@ -1,15 +1,26 @@
 import unittest
-from test.support import cpython_only, requires_limited_api, skip_on_s390x
+from test.support import (cpython_only, is_wasi, requires_limited_api, Py_DEBUG,
+                          set_recursion_limit, skip_on_s390x,
+                          skip_emscripten_stack_overflow,
+                          skip_wasi_stack_overflow, skip_if_sanitizer,
+                          import_helper)
 try:
     import _testcapi
 except ImportError:
     _testcapi = None
+try:
+    import _testlimitedcapi
+except ImportError:
+    _testlimitedcapi = None
+try:
+    import _testinternalcapi
+except ImportError:
+    _testinternalcapi = None
 import struct
 import collections
 import itertools
 import gc
 import contextlib
-import sys
 import types
 
 
@@ -41,11 +52,16 @@ class FunctionCalls(unittest.TestCase):
         # recovering from failed calls:
         def f():
             pass
-        for _ in range(1000):
-            try:
-                f(None)
-            except TypeError:
+        class C:
+            def m(self):
                 pass
+        callables = [f, C.m, [].__len__]
+        for c in callables:
+            for _ in range(1000):
+                try:
+                    c(None)
+                except TypeError:
+                    pass
         # BOOM!
 
 
@@ -154,12 +170,12 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
                                min, 0, default=1, key=2, foo=3)
 
     def test_varargs17_kw(self):
-        msg = r"'foo' is an invalid keyword argument for print\(\)$"
+        msg = r"print\(\) got an unexpected keyword argument 'foo'$"
         self.assertRaisesRegex(TypeError, msg,
                                print, 0, sep=1, end=2, file=3, flush=4, foo=5)
 
     def test_varargs18_kw(self):
-        # _PyArg_UnpackKeywordsWithVararg()
+        # _PyArg_UnpackKeywords() with varpos
         msg = r"invalid keyword argument for print\(\)$"
         with self.assertRaisesRegex(TypeError, msg):
             print(0, 1, **{BadStr('foo'): ','})
@@ -239,6 +255,7 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         self.assertRaisesRegex(TypeError, msg, mod)
 
 
+@unittest.skipIf(_testcapi is None, "requires _testcapi")
 class TestCallingConventions(unittest.TestCase):
     """Test calling using various C calling conventions (METH_*) from Python
 
@@ -436,6 +453,7 @@ PYTHON_INSTANCE = PythonClass()
 
 NULL_OR_EMPTY = object()
 
+
 class FastCallTests(unittest.TestCase):
     """Test calling using various callables from C
     """
@@ -479,42 +497,43 @@ class FastCallTests(unittest.TestCase):
     ]
 
     # Add all the calling conventions and variants of C callables
-    _instance = _testcapi.MethInstance()
-    for obj, expected_self in (
-        (_testcapi, _testcapi),  # module-level function
-        (_instance, _instance),  # bound method
-        (_testcapi.MethClass, _testcapi.MethClass),  # class method on class
-        (_testcapi.MethClass(), _testcapi.MethClass),  # class method on inst.
-        (_testcapi.MethStatic, None),  # static method
-    ):
-        CALLS_POSARGS.extend([
-            (obj.meth_varargs, (1, 2), (expected_self, (1, 2))),
-            (obj.meth_varargs_keywords,
-                (1, 2), (expected_self, (1, 2), NULL_OR_EMPTY)),
-            (obj.meth_fastcall, (1, 2), (expected_self, (1, 2))),
-            (obj.meth_fastcall, (), (expected_self, ())),
-            (obj.meth_fastcall_keywords,
-                (1, 2), (expected_self, (1, 2), NULL_OR_EMPTY)),
-            (obj.meth_fastcall_keywords,
-                (), (expected_self, (), NULL_OR_EMPTY)),
-            (obj.meth_noargs, (), expected_self),
-            (obj.meth_o, (123, ), (expected_self, 123)),
-        ])
+    if _testcapi:
+        _instance = _testcapi.MethInstance()
+        for obj, expected_self in (
+            (_testcapi, _testcapi),  # module-level function
+            (_instance, _instance),  # bound method
+            (_testcapi.MethClass, _testcapi.MethClass),  # class method on class
+            (_testcapi.MethClass(), _testcapi.MethClass),  # class method on inst.
+            (_testcapi.MethStatic, None),  # static method
+        ):
+            CALLS_POSARGS.extend([
+                (obj.meth_varargs, (1, 2), (expected_self, (1, 2))),
+                (obj.meth_varargs_keywords,
+                    (1, 2), (expected_self, (1, 2), NULL_OR_EMPTY)),
+                (obj.meth_fastcall, (1, 2), (expected_self, (1, 2))),
+                (obj.meth_fastcall, (), (expected_self, ())),
+                (obj.meth_fastcall_keywords,
+                    (1, 2), (expected_self, (1, 2), NULL_OR_EMPTY)),
+                (obj.meth_fastcall_keywords,
+                    (), (expected_self, (), NULL_OR_EMPTY)),
+                (obj.meth_noargs, (), expected_self),
+                (obj.meth_o, (123, ), (expected_self, 123)),
+            ])
 
-        CALLS_KWARGS.extend([
-            (obj.meth_varargs_keywords,
-                (1, 2), {'x': 'y'}, (expected_self, (1, 2), {'x': 'y'})),
-            (obj.meth_varargs_keywords,
-                (), {'x': 'y'}, (expected_self, (), {'x': 'y'})),
-            (obj.meth_varargs_keywords,
-                (1, 2), {}, (expected_self, (1, 2), NULL_OR_EMPTY)),
-            (obj.meth_fastcall_keywords,
-                (1, 2), {'x': 'y'}, (expected_self, (1, 2), {'x': 'y'})),
-            (obj.meth_fastcall_keywords,
-                (), {'x': 'y'}, (expected_self, (), {'x': 'y'})),
-            (obj.meth_fastcall_keywords,
-                (1, 2), {}, (expected_self, (1, 2), NULL_OR_EMPTY)),
-        ])
+            CALLS_KWARGS.extend([
+                (obj.meth_varargs_keywords,
+                    (1, 2), {'x': 'y'}, (expected_self, (1, 2), {'x': 'y'})),
+                (obj.meth_varargs_keywords,
+                    (), {'x': 'y'}, (expected_self, (), {'x': 'y'})),
+                (obj.meth_varargs_keywords,
+                    (1, 2), {}, (expected_self, (1, 2), NULL_OR_EMPTY)),
+                (obj.meth_fastcall_keywords,
+                    (1, 2), {'x': 'y'}, (expected_self, (1, 2), {'x': 'y'})),
+                (obj.meth_fastcall_keywords,
+                    (), {'x': 'y'}, (expected_self, (), {'x': 'y'})),
+                (obj.meth_fastcall_keywords,
+                    (1, 2), {}, (expected_self, (1, 2), NULL_OR_EMPTY)),
+            ])
 
     def check_result(self, result, expected):
         if isinstance(expected, tuple) and expected[-1] is NULL_OR_EMPTY:
@@ -522,6 +541,7 @@ class FastCallTests(unittest.TestCase):
                 expected = (*expected[:-1], result[-1])
         self.assertEqual(result, expected)
 
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_vectorcall_dict(self):
         # Test PyObject_VectorcallDict()
 
@@ -541,6 +561,7 @@ class FastCallTests(unittest.TestCase):
                 result = _testcapi.pyobject_fastcalldict(func, args, kwargs)
                 self.check_result(result, expected)
 
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_vectorcall(self):
         # Test PyObject_Vectorcall()
 
@@ -602,9 +623,7 @@ def testfunction_kw(self, *, kw):
     return self
 
 
-ADAPTIVE_WARMUP_DELAY = 2
-
-
+@unittest.skipIf(_testcapi is None, "requires _testcapi")
 class TestPEP590(unittest.TestCase):
 
     def test_method_descriptor_flag(self):
@@ -680,8 +699,8 @@ class TestPEP590(unittest.TestCase):
         UnaffectedType2 = _testcapi.make_vectorcall_class(SuperType)
 
         # Aside: Quickly check that the C helper actually made derived types
-        self.assertTrue(issubclass(UnaffectedType1, DerivedType))
-        self.assertTrue(issubclass(UnaffectedType2, SuperType))
+        self.assertIsSubclass(UnaffectedType1, DerivedType)
+        self.assertIsSubclass(UnaffectedType2, SuperType)
 
         # Initial state: tp_call
         self.assertEqual(instance(), "tp_call")
@@ -787,17 +806,18 @@ class TestPEP590(unittest.TestCase):
 
     def test_setvectorcall(self):
         from _testcapi import function_setvectorcall
+        _testinternalcapi = import_helper.import_module("_testinternalcapi")
         def f(num): return num + 1
         assert_equal = self.assertEqual
         num = 10
         assert_equal(11, f(num))
         function_setvectorcall(f)
-        # make sure specializer is triggered by running > 50 times
-        for _ in range(10 * ADAPTIVE_WARMUP_DELAY):
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
             assert_equal("overridden", f(num))
 
     def test_setvectorcall_load_attr_specialization_skip(self):
         from _testcapi import function_setvectorcall
+        _testinternalcapi = import_helper.import_module("_testinternalcapi")
 
         class X:
             def __getattribute__(self, attr):
@@ -809,11 +829,12 @@ class TestPEP590(unittest.TestCase):
         function_setvectorcall(X.__getattribute__)
         # make sure specialization doesn't trigger
         # when vectorcall is overridden
-        for _ in range(ADAPTIVE_WARMUP_DELAY):
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
             assert_equal("overridden", x.a)
 
     def test_setvectorcall_load_attr_specialization_deopt(self):
         from _testcapi import function_setvectorcall
+        _testinternalcapi = import_helper.import_module("_testinternalcapi")
 
         class X:
             def __getattribute__(self, attr):
@@ -825,23 +846,28 @@ class TestPEP590(unittest.TestCase):
         assert_equal = self.assertEqual
         x = X()
         # trigger LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN specialization
-        for _ in range(ADAPTIVE_WARMUP_DELAY):
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
             assert_equal("a", get_a(x))
         function_setvectorcall(X.__getattribute__)
         # make sure specialized LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN
         # gets deopted due to overridden vectorcall
-        for _ in range(ADAPTIVE_WARMUP_DELAY):
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
             assert_equal("overridden", get_a(x))
 
     @requires_limited_api
     def test_vectorcall_limited_incoming(self):
         from _testcapi import pyobject_vectorcall
-        obj = _testcapi.LimitedVectorCallClass()
-        self.assertEqual(pyobject_vectorcall(obj, (), ()), "vectorcall called")
+        for cls in (_testlimitedcapi.LimitedVectorCallClass,
+                    _testlimitedcapi.LimitedRelativeVectorCallClass):
+            with self.subTest(cls=cls):
+                obj = cls()
+                self.assertEqual(
+                    pyobject_vectorcall(obj, (), ()),
+                    "vectorcall called")
 
     @requires_limited_api
     def test_vectorcall_limited_outgoing(self):
-        from _testcapi import call_vectorcall
+        from _testlimitedcapi import call_vectorcall
 
         args_captured = []
         kwargs_captured = []
@@ -857,7 +883,7 @@ class TestPEP590(unittest.TestCase):
 
     @requires_limited_api
     def test_vectorcall_limited_outgoing_method(self):
-        from _testcapi import call_vectorcall_method
+        from _testlimitedcapi import call_vectorcall_method
 
         args_captured = []
         kwargs_captured = []
@@ -927,7 +953,7 @@ class TestErrorMessagesSuggestions(unittest.TestCase):
         self.assertIn(f"Did you mean '{message}'?", str(cm.exception))
 
     @contextlib.contextmanager
-    def check_suggestion_not_pressent(self):
+    def check_suggestion_not_present(self):
         with self.assertRaises(TypeError) as cm:
             yield
         self.assertNotIn("Did you mean", str(cm.exception))
@@ -945,7 +971,7 @@ class TestErrorMessagesSuggestions(unittest.TestCase):
 
         for keyword, suggestion in cases:
             with self.subTest(keyword):
-                ctx = self.check_suggestion_includes(suggestion) if suggestion else self.check_suggestion_not_pressent()
+                ctx = self.check_suggestion_includes(suggestion) if suggestion else self.check_suggestion_not_present()
                 with ctx:
                     foo(**{keyword:None})
 
@@ -986,10 +1012,58 @@ class TestErrorMessagesSuggestions(unittest.TestCase):
                 with self.check_suggestion_includes(suggestion):
                     func(bluch=None)
 
+    def test_unexpected_keyword_suggestion_via_getargs(self):
+        with self.check_suggestion_includes("maxsplit"):
+            "foo".split(maxsplt=1)
+
+        self.assertRaisesRegex(
+            TypeError, r"split\(\) got an unexpected keyword argument 'blech'$",
+            "foo".split, blech=1
+        )
+        with self.check_suggestion_not_present():
+            "foo".split(blech=1)
+        with self.check_suggestion_not_present():
+            "foo".split(more_noise=1, maxsplt=1)
+
+        # Also test the vgetargskeywords path
+        with self.check_suggestion_includes("name"):
+            ImportError(namez="oops")
+
+        self.assertRaisesRegex(
+            TypeError, r"ImportError\(\) got an unexpected keyword argument 'blech'$",
+            ImportError, blech=1
+        )
+        with self.check_suggestion_not_present():
+            ImportError(blech=1)
+        with self.check_suggestion_not_present():
+            ImportError(blech=1, namez="oops")
+
 @cpython_only
 class TestRecursion(unittest.TestCase):
 
+    def test_margin_is_sufficient(self):
+
+        def get_sp():
+            return _testinternalcapi.get_stack_pointer()
+
+        this_sp = _testinternalcapi.get_stack_pointer()
+        lower_sp = _testcapi.pyobject_vectorcall(get_sp, (), ())
+        if _testcapi._Py_STACK_GROWS_DOWN:
+            self.assertLess(lower_sp, this_sp)
+            safe_margin = this_sp - lower_sp
+        else:
+            self.assertGreater(lower_sp, this_sp)
+            safe_margin = lower_sp - this_sp
+        # Add an (arbitrary) extra 25% for safety
+        safe_margin = safe_margin * 5 / 4
+        self.assertLess(safe_margin, _testinternalcapi.get_stack_margin())
+
     @skip_on_s390x
+    @unittest.skipIf(is_wasi and Py_DEBUG, "requires deep stack")
+    @skip_if_sanitizer("requires deep stack", thread=True)
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    @skip_emscripten_stack_overflow()
+    @skip_wasi_stack_overflow()
     def test_super_deep(self):
 
         def recurse(n):
@@ -1010,20 +1084,24 @@ class TestRecursion(unittest.TestCase):
             if m:
                 _testcapi.pyobject_vectorcall(py_recurse, (1000, m), ())
 
-        depth = sys.getrecursionlimit()
-        sys.setrecursionlimit(100_000)
-        try:
+        with set_recursion_limit(100_000):
             recurse(90_000)
             with self.assertRaises(RecursionError):
                 recurse(101_000)
-            c_recurse(100)
+            c_recurse(50)
             with self.assertRaises(RecursionError):
                 c_recurse(90_000)
-            c_py_recurse(90)
+            c_py_recurse(50)
             with self.assertRaises(RecursionError):
                 c_py_recurse(100_000)
-        finally:
-            sys.setrecursionlimit(depth)
+
+    def test_recursion_with_kwargs(self):
+        # GH-137883: The interpreter forgot to check the recursion limit when
+        # calling with keywords.
+        def recurse_kw(a=0):
+            recurse_kw(a=0)
+        with self.assertRaises(RecursionError):
+            recurse_kw()
 
 
 class TestFunctionWithManyArgs(unittest.TestCase):
