@@ -1042,7 +1042,7 @@ this approach.
       Raise :exc:`DeprecationWarning` instead of :exc:`ImportWarning` when
       falling back to :attr:`!__package__` during import resolution.
 
-   .. deprecated-removed:: 3.13 3.15
+   .. deprecated-removed:: 3.13 3.16
       :attr:`!__package__` will cease to be set or taken into consideration
       by the import system or standard library.
 
@@ -2197,7 +2197,7 @@ Basic customization
    :data:`!NotImplemented`.  There are no other implied relationships among the
    comparison operators or default implementations; for example, the truth of
    ``(x<y or x==y)`` does not imply ``x<=y``. To automatically generate ordering
-   operations from a single root operation, see :func:`functools.total_ordering`.
+   operations from a single root operation, see :deco:`functools.total_ordering`.
 
    By default, the :class:`object` class provides implementations consistent
    with :ref:`expressions-value-comparisons`: equality compares according to
@@ -2621,7 +2621,7 @@ implemented as non-data descriptors.  Accordingly, instances can redefine and
 override methods.  This allows individual instances to acquire behaviors that
 differ from other instances of the same class.
 
-The :func:`property` function is implemented as a data descriptor. Accordingly,
+The :deco:`property` decorator is implemented as a data descriptor. Accordingly,
 instances cannot override the behavior of a property.
 
 
@@ -3867,6 +3867,9 @@ should not directly raise unhandled :exc:`StopIteration` exceptions.
 Coroutines also have the methods listed below, which are analogous to
 those of generators (see :ref:`generator-methods`).  However, unlike
 generators, coroutines do not directly support iteration.
+
+Coroutines are :ref:`generic <generics>` over the types of their yield, send,
+and return values, respectively.
 
 .. versionchanged:: 3.5.2
    It is a :exc:`RuntimeError` to await on a coroutine more than once.

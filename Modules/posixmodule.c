@@ -3123,7 +3123,7 @@ class path_t_converter(CConverter):
     impl_by_reference = True
     parse_by_reference = True
     default_type = ()
-    c_init_default = "<placeholder>"  # overridden in pre_render(()
+    c_init_default = "<placeholder>"  # overridden in pre_render()
 
     converter = 'path_converter'
 
@@ -3266,7 +3266,7 @@ class confname_converter(CConverter):
         """, argname=argname, converter=self.converter, table=self.table)
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=d58f18bdf3bd3565]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=ddbf3ac90a981122]*/
 
 /*[clinic input]
 
@@ -16561,7 +16561,7 @@ static PyMethodDef DirEntry_methods[] = {
     OS_DIRENTRY_INODE_METHODDEF
     OS_DIRENTRY___FSPATH___METHODDEF
     {"__class_getitem__",       Py_GenericAlias,
-    METH_O|METH_CLASS,          PyDoc_STR("See PEP 585")},
+    METH_O|METH_CLASS,          PyDoc_STR("DirEntry is generic over the type of the path (str or bytes)")},
     {NULL}
 };
 
