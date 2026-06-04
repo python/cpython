@@ -11,7 +11,8 @@ extern "C" {
 #include "pycore_stackref.h"
 
 
-#define _Py_TYPECACHE_MINSIZE 8
+#define _Py_TYPECACHE_MINSIZE (1 << 3)
+#define _Py_TYPECACHE_MAXSIZE (1 << 16)
 
 struct type_cache_entry {
     PyObject *name;     // name of the attribute or method, interned string, NULL if the entry is empty
@@ -25,7 +26,7 @@ struct type_cache {
     uint32_t version_tag;                   // initialized from type->tp_version_tag
     uint32_t available;                     // number of available entries in hashtable
     uint32_t used;                          // number of used entries in hashtable
-    struct type_cache_entry hashtable[1];   // hashtable entries, the total size is always power of 2 and at least _Py_TYPECACHE_MINSIZE
+    struct type_cache_entry hashtable[];   // hashtable entries, the total size is always power of 2 and at least _Py_TYPECACHE_MINSIZE
 };
 
 struct _PyTypeCacheLookupResult {

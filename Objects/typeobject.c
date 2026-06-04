@@ -6854,6 +6854,7 @@ type_dealloc(PyObject *self)
     Py_XDECREF(type->tp_mro);
     Py_XDECREF(type->tp_cache);
     clear_tp_subclasses(type);
+    _PyTypeCache_Invalidate(type);
 
     /* A type's tp_doc is heap allocated, unlike the tp_doc slots
      * of most other objects.  It's okay to cast it to char *.

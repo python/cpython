@@ -22,6 +22,7 @@ static struct {
         .mask = _Py_TYPECACHE_MINSIZE - 1,
         .available = 0,
         .used = 0,
+        .version_tag = 0,
     },
 };
 // The empty cache is statically allocated and shared across all the types,
@@ -96,13 +97,13 @@ cache_slot(PyTypeObject *type)
 static inline struct type_cache *
 cache_get(PyTypeObject *type)
 {
-    return (struct type_cache *)FT_ATOMIC_LOAD_PTR(*cache_slot(type));
+    return (struct type_cache *)FT_ATOMIC_LOAD_PTR_ACQUIRE(*cache_slot(type));
 }
 
 static inline void
 cache_set(PyTypeObject *type, struct type_cache *cache)
 {
-    FT_ATOMIC_STORE_PTR(*cache_slot(type), cache);
+    FT_ATOMIC_STORE_PTR_RELEASE(*cache_slot(type), cache);
 }
 
 void
@@ -124,8 +125,8 @@ cache_insert(struct type_cache *cache, PyObject *name,
             // On free-threading, all interned strings are immortal.
             Py_INCREF(name);
 #endif
-            FT_ATOMIC_STORE_PTR(cache->hashtable[index].value, value);
-            FT_ATOMIC_STORE_PTR(cache->hashtable[index].name, name);
+            cache->hashtable[index].value = value;
+            FT_ATOMIC_STORE_PTR_RELEASE(cache->hashtable[index].name, name);
             cache->used++;
             cache->available--;
             return;
@@ -151,17 +152,20 @@ cache_resize(PyTypeObject *type, struct type_cache *cache)
         // double the cache size when resizing
         new_size = old_size * 2;
     }
+    if (new_size > _Py_TYPECACHE_MAXSIZE) {
+        // The cache is too big, don't resize and just return.
+        return -1;
+    }
     struct type_cache *new_cache = cache_allocate(new_size);
     if (new_cache == NULL) {
         return -1;
     }
     for (uint32_t i = 0; i < old_size; i++) {
         if (cache->hashtable[i].name != NULL) {
-            cache_insert(new_cache, cache->hashtable[i].name,
-                              cache->hashtable[i].value);
+            cache_insert(new_cache, cache->hashtable[i].name, cache->hashtable[i].value);
         }
     }
-    new_cache->version_tag = cache->version_tag;
+    new_cache->version_tag = type->tp_version_tag;
     cache_set(type, new_cache);
     cache_free_delayed(cache);
     return 0;
@@ -183,8 +187,8 @@ _PyTypeCache_Insert(PyTypeObject *type, PyObject *name, PyObject *value)
         cache = cache_get(type);
         assert(cache->available > 0);
     }
+    assert(cache->version_tag == type->tp_version_tag);
     cache_insert(cache, name, value);
-    FT_ATOMIC_STORE_UINT_RELAXED(cache->version_tag, FT_ATOMIC_LOAD_UINT_RELAXED(type->tp_version_tag));
 }
 
 
@@ -205,10 +209,7 @@ _PyTypeCache_Lookup(PyTypeObject *type, PyObject *name)
     uint32_t index = hash & cache->mask;
     _PyStackRef out_ref;
     for (;;) {
-        PyObject *entry_name = FT_ATOMIC_LOAD_PTR(cache->hashtable[index].name);
-        if (entry_name == NULL) {
-            return miss;
-        }
+        PyObject *entry_name = FT_ATOMIC_LOAD_PTR_ACQUIRE(cache->hashtable[index].name);
         if (entry_name == name) {
 #ifdef Py_GIL_DISABLED
             if (!_Py_TryXGetStackRef(&cache->hashtable[index].value, &out_ref)) {
@@ -220,15 +221,18 @@ _PyTypeCache_Lookup(PyTypeObject *type, PyObject *name)
 #endif
             break;
         }
+        else if (entry_name == NULL) {
+            return miss;
+        }
         index = (index + 1) & cache->mask;
     }
-    // to maintain consistency with find_name_in_mro and prevent stale cache reads
-    uint32_t cache_version = FT_ATOMIC_LOAD_UINT_RELAXED(cache->version_tag);
-    if (cache_version != FT_ATOMIC_LOAD_UINT_RELAXED(type->tp_version_tag)) {
+    // Check the cache version against the type version tag to maintain
+    // consistency with find_name_in_mro and prevent stale cache reads
+    if (cache->version_tag != FT_ATOMIC_LOAD_UINT_RELAXED(type->tp_version_tag)) {
         PyStackRef_XCLOSE(out_ref);
         return miss;
     }
-    return (struct _PyTypeCacheLookupResult){out_ref, 1, cache_version};
+    return (struct _PyTypeCacheLookupResult){out_ref, 1, cache->version_tag};
 }
 
 // Invalidate the type cache of the type.
