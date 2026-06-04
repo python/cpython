@@ -87,7 +87,7 @@ class SpillColumn:
         self.buffer.clear()
 
     def iter_tokens(self):
-        with open(self.path) as file:
+        with open(self.path, encoding="utf-8") as file:
             for line in file:
                 yield line.rstrip("\n")
 
