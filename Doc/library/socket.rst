@@ -1532,13 +1532,6 @@ The :mod:`!socket` module also offers various network-related services:
 Socket Objects
 --------------
 
-.. class:: SocketType
-
-   The base class of the :class:`~socket.socket` type, re-exported from
-   :mod:`!_socket`.  An instance check such as
-   ``isinstance(socket(...), SocketType)`` is true, but ``SocketType`` is not
-   the same as ``type(socket(...))``, which is :class:`~socket.socket` itself.
-
 .. class:: socket
    :noindex:
 
@@ -2178,6 +2171,13 @@ Socket Objects
 
       The socket protocol.
 
+
+.. class:: SocketType
+
+   The base class of the :class:`~socket.socket` type, re-exported from
+   :mod:`!_socket`.  An instance check such as
+   ``isinstance(socket(...), SocketType)`` is true, but ``SocketType`` is not
+   the same as ``type(socket(...))``, which is :class:`~socket.socket` itself.
 
 
 .. _socket-timeouts:
