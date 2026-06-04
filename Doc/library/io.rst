@@ -535,7 +535,7 @@ I/O Base Classes
 
          This function does not ensure all bytes are written or an exception is
          thrown. Callers may implement that behavior by checking the return
-         value, and if it is less than the length of *b* looping with additional
+         value and, if it is less than the length of *b*, looping with additional
          write calls until all unwritten bytes are written. High-level I/O
          objects like :ref:`binary-io` and :ref:`text-io` implement retry behavior.
 
@@ -667,7 +667,7 @@ Raw File I/O
 
    A raw binary stream representing an OS-level file containing bytes data.  It
    inherits from :class:`RawIOBase` and implements its low-level access design.
-   This means :meth:`~RawIOBase.write` doesn't guarantee all bytes are written
+   This means :meth:`~RawIOBase.write` does not guarantee all bytes are written
    and :meth:`~RawIOBase.read` may read less bytes than requested even when more
    bytes may be present in the underlying file. To get "write all" and
    "read at least" behavior, use :ref:`binary-io`.
