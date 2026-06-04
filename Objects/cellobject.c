@@ -22,7 +22,7 @@ PyCell_New(PyObject *obj)
 }
 
 PyDoc_STRVAR(cell_new_doc,
-"types.CellType([contents])\n"
+"CellType([contents])\n"
 "--\n"
 "\n"
 "Create a new cell object.\n"

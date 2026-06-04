@@ -14,10 +14,11 @@
 
 
 /*[clinic input]
-class mappingproxy "mappingproxyobject *" "&PyDictProxy_Type"
+module types
+class types.MappingProxyType "mappingproxyobject *" "&PyDictProxy_Type"
 class property "propertyobject *" "&PyProperty_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=556352653fd4c02e]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=4c16626dfaee9098]*/
 
 static void
 descr_dealloc(PyObject *self)
@@ -1255,7 +1256,7 @@ mappingproxy_check_mapping(PyObject *mapping)
 
 /*[clinic input]
 @classmethod
-mappingproxy.__new__ as mappingproxy_new
+types.MappingProxyType.__new__ as mappingproxy_new
 
     mapping: object
 
@@ -1264,7 +1265,7 @@ Read-only proxy of a mapping.
 
 static PyObject *
 mappingproxy_new_impl(PyTypeObject *type, PyObject *mapping)
-/*[clinic end generated code: output=65f27f02d5b68fa7 input=c156df096ef7590c]*/
+/*[clinic end generated code: output=65f27f02d5b68fa7 input=29b80727762902b3]*/
 {
     mappingproxyobject *mappingproxy;
 

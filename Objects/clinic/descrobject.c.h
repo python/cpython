@@ -9,7 +9,7 @@ preserve
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(mappingproxy_new__doc__,
-"mappingproxy(mapping)\n"
+"MappingProxyType(mapping)\n"
 "--\n"
 "\n"
 "Read-only proxy of a mapping.");
@@ -44,7 +44,7 @@ mappingproxy_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static const char * const _keywords[] = {"mapping", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .fname = "mappingproxy",
+        .fname = "MappingProxyType",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
@@ -179,4 +179,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2e8df497abc4f915 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2f2695e34f607ef7 input=a9049054013a1b77]*/

@@ -719,8 +719,8 @@ class TypesTests(unittest.TestCase):
             self.assertIsNone(types.FrameLocalsProxyType.__doc__)
         else:
             self.assertIsInstance(types.FrameLocalsProxyType.__doc__, str)
-        self.assertEqual(types.FrameLocalsProxyType.__module__, 'builtins')
-        self.assertEqual(types.FrameLocalsProxyType.__name__, 'FrameLocalsProxy')
+        self.assertEqual(types.FrameLocalsProxyType.__module__, 'types')
+        self.assertEqual(types.FrameLocalsProxyType.__name__, 'FrameLocalsProxyType')
 
         frame = inspect.currentframe()
         self.assertIsNotNone(frame)
@@ -1401,7 +1401,8 @@ class MappingProxyTests(unittest.TestCase):
         self.assertFalse(mp1 == mp2)
         self.assertTrue(mp1 != mp2)
 
-        msg = "not supported between instances of 'mappingproxy' and 'mappingproxy'"
+        msg = (r"not supported between instances of "
+               r"'types\.MappingProxyType' and 'types\.MappingProxyType'")
 
         with self.assertRaisesRegex(TypeError, msg):
             mp1 > mp2

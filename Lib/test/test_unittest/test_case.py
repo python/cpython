@@ -337,7 +337,7 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         self.assertIn('It is deprecated to return a value that is not None', str(w.warning))
         self.assertIn('test2', str(w.warning))
         self.assertEqual(w.filename, __file__)
-        self.assertIn("returned 'generator'", str(w.warning))
+        self.assertIn("returned 'GeneratorType'", str(w.warning))
 
         with self.assertWarns(DeprecationWarning) as w:
             Foo('test3').run()
@@ -359,7 +359,7 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         self.assertIn('It is deprecated to return a value that is not None', str(w.warning))
         self.assertIn('test1', str(w.warning))
         self.assertEqual(w.filename, __file__)
-        self.assertIn("returned 'coroutine'", str(w.warning))
+        self.assertIn("returned 'CoroutineType'", str(w.warning))
         self.assertIn(
             'Maybe you forgot to use IsolatedAsyncioTestCase as the base class?',
             str(w.warning),

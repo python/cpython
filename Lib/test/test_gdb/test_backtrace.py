@@ -20,7 +20,7 @@ class PyBtTests(DebuggerTests):
         self.assertMultilineMatches(bt,
                                     r'''^.*
 Traceback \(most recent call first\):
-  <built-in method id of module object .*>
+  <built-in method id of types\.ModuleType object .*>
   File ".*gdb_sample.py", line 10, in baz
     id\(42\)
   File ".*gdb_sample.py", line 7, in bar

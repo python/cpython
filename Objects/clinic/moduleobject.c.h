@@ -9,7 +9,7 @@ preserve
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(module___init____doc__,
-"module(name, doc=None)\n"
+"ModuleType(name, doc=None)\n"
 "--\n"
 "\n"
 "Create a module object.\n"
@@ -46,7 +46,7 @@ module___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     static const char * const _keywords[] = {"name", "doc", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .fname = "module",
+        .fname = "ModuleType",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
@@ -63,7 +63,7 @@ module___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         goto exit;
     }
     if (!PyUnicode_Check(fastargs[0])) {
-        _PyArg_BadArgument("module", "argument 'name'", "str", fastargs[0]);
+        _PyArg_BadArgument("ModuleType", "argument 'name'", "str", fastargs[0]);
         goto exit;
     }
     name = fastargs[0];
@@ -77,4 +77,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=523344ad09ab2ea1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=eb7550e27914313d input=a9049054013a1b77]*/

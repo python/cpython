@@ -770,7 +770,7 @@ class PydocDocTest(unittest.TestCase):
         # test for special True, False, None keywords
         run_pydoc_for_request('True', 'class bool(int)')
         run_pydoc_for_request('False', 'class bool(int)')
-        run_pydoc_for_request('None', 'class NoneType(object)')
+        run_pydoc_for_request('None', 'class NoneType(builtins.object)')
         # test for keyword "assert"
         run_pydoc_for_request('assert', 'The "assert" statement')
         # test for topic "TYPES"

@@ -132,7 +132,7 @@ static PyMethodDef lazy_import_methods[] = {
 
 
 PyDoc_STRVAR(lazy_import_doc,
-"lazy_import(builtins, name, fromlist=None, /)\n"
+"types.LazyImportType(builtins, name, fromlist=None, /)\n"
 "--\n"
 "\n"
 "Represents a lazy import that will be resolved on first use.\n"
@@ -143,7 +143,7 @@ PyDoc_STRVAR(lazy_import_doc,
 
 PyTypeObject PyLazyImport_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    .tp_name = "lazy_import",
+    .tp_name = "types.LazyImportType",
     .tp_basicsize = sizeof(PyLazyImportObject),
     .tp_dealloc = lazy_import_dealloc,
     .tp_repr = lazy_import_repr,

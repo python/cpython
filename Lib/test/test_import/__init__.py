@@ -1262,7 +1262,7 @@ os.does_not_exist
         self.assertIs(_imp.create_builtin(spec), sys)
 
         spec.name = None
-        with self.assertRaisesRegex(TypeError, 'name must be string, not NoneType'):
+        with self.assertRaisesRegex(TypeError, 'name must be string, not types.NoneType'):
             _imp.create_builtin(spec)
 
         # gh-142029

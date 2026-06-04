@@ -267,7 +267,7 @@ class StrAndReprTests(unittest.TestCase):
         seq = MySeq(None)
         with self.assertRaisesRegex(
             TypeError,
-            r".*MySeq\.__repr__\(\) must return a str, not NoneType"
+            r".*MySeq\.__repr__\(\) must return a str, not types.NoneType"
         ):
             ExceptionGroup("test", seq)
 
