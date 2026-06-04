@@ -83,7 +83,7 @@ def formataddr(pair, charset='utf-8', *, strict=True):
     'utf-8'.
 
     If strict is True (the default), raise ValueError for inputs that
-    contain characters invalid in an email address (CR or LF).
+    contain CR or LF, which are not allowed in an email address.
     """
     name, address = pair
     if strict and ('\r' in address or '\n' in address or (name and ('\r' in name or '\n' in name))):

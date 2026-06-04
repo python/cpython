@@ -83,7 +83,7 @@ of the new API.
    :class:`~email.charset.Charset`.  Defaults to ``utf-8``.
 
    If *strict* is true (the default), raise :exc:`ValueError` for inputs that
-   contain characters invalid in an email address (CR or LF).  Set *strict*
+   contain CR or LF, which are not allowed in an email address.  Set *strict*
    to ``False`` to allow non-strict inputs.
 
    .. versionchanged:: 3.3

@@ -3290,6 +3290,15 @@ class TestMiscellaneous(TestEmailBase):
             with self.subTest(name=name, addr=addr):
                 self.assertRaises(ValueError, utils.formataddr, (name, addr))
 
+    def test_crlf_in_parts_allowed_when_not_strict(self):
+        # strict=False keeps the old behaviour and passes CR/LF through.
+        self.assertEqual(
+            utils.formataddr(('Real\rName', 'person@dom.ain'), strict=False),
+            'Real\rName <person@dom.ain>')
+        self.assertEqual(
+            utils.formataddr(('Real Name', 'person@dom.ain\nfoo'), strict=False),
+            'Real Name <person@dom.ain\nfoo>')
+
     def test_name_with_dot(self):
         x = 'John X. Doe <jxd@example.com>'
         y = '"John X. Doe" <jxd@example.com>'
