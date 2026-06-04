@@ -235,7 +235,7 @@ multiprocessing_exec(PyObject *module)
     Py_DECREF(py_sem_value_max);
 
 #ifdef HAVE_BROKEN_SEM_GETVALUE
-    if (_PyMp_init_shm_names(module) < 0)
+    if (_PyMp_init_module_constants(module) < 0)
         return -1;
 #endif
 

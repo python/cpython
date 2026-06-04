@@ -390,7 +390,8 @@ shm_semlock_counters = {
     .shmlock_name = {0},
     .handle_shmlock = (SEM_HANDLE)0,
     .header = (HeaderObject *)NULL,
-    .counters = (CounterObject *)NULL
+    .counters = (CounterObject *)NULL,
+    .max_open_sems = 0
 };
 
 /*
@@ -435,12 +436,34 @@ _init_shm_names(pid_t pid)
                   "%s%ld", SHMLOCK_NAME, (long)pid);
 }
 
+static void
+_init_sem_max_from_kern_posix(int value)
+{
+    shm_semlock_counters.max_open_sems = value/2;
+}
+
 /*
 Public entry point called from multiprocessing_exec().
-Builds names from getpid() and exposes them as module attributes.
+Builds names from getpid(), get 'kern.posix.sem.max' value and exposes them as module attributes.
 */
+
 int
-_PyMp_init_shm_names(PyObject *module)
+_get_sem_max_from_kern_posix(void)
+{
+    int value;
+    size_t len = sizeof(value);
+
+    if (sysctlbyname("kern.posix.sem.max", &value, &len, NULL, 0) < 0) {
+        value = sysconf(_SC_SEM_NSEMS_MAX);
+        if (value < 0) {
+            return 5000;
+        }
+    }
+    return value;
+}
+
+int
+_PyMp_init_module_constants(PyObject *module)
 {
     _init_shm_names(getpid());
     if (PyModule_AddStringConstant(module, "_MACOSX_SHAREDMEM_NAME",
@@ -448,6 +471,14 @@ _PyMp_init_shm_names(PyObject *module)
         return -1;
     if (PyModule_AddStringConstant(module, "_MACOSX_SHMLOCK_NAME",
                                    shm_semlock_counters.shmlock_name) < 0)
+        return -1;
+
+    // A mutex is associated to each semaphore, so we could only open
+    // value//2 MacOSX semaphores.
+    int value = _get_sem_max_from_kern_posix();
+    _init_sem_max_from_kern_posix(value);
+    if (PyModule_AddIntConstant(module, "_MACOSX_MAX_OPEN_SEMS",
+                                   value/2) < 0)
         return -1;
     return 0;
 }
@@ -716,7 +747,7 @@ create_shm_semlock_counters(const char *from_sem_name) {
         header = shm_semlock_counters.header;
 
         header->size_shm = size_shm;
-        header->n_slots = CALC_NB_SLOTS(size_shm - sizeof(HeaderObject));
+        header->n_slots = shm_semlock_counters.max_open_sems;
         header->n_semlocks = 0;
         header->sizeof_counter = sizeof(CounterObject);
         res = 0;
@@ -799,7 +830,7 @@ _search_counter_from_sem_name(const char *sem_name)
     HeaderObject *header = shm_semlock_counters.header;
     CounterObject *counter = shm_semlock_counters.counters;
 
-    for(int i = 0, j = 0; i < header->n_slots && j < header->n_semlocks; i++, counter++) {
+    for(Py_ssize_t i = 0, j = 0; i < header->n_slots && j < header->n_semlocks; i++, counter++) {
         if (counter->sem_name[0] != 0) {
             if (!PyOS_stricmp(counter->sem_name, sem_name)) {
                 return counter;
@@ -819,12 +850,11 @@ _search_counter_free_slot(void)
     HeaderObject *header = shm_semlock_counters.header;
     CounterObject *counter = shm_semlock_counters.counters;
 
-    for(int i = 0; i < header->n_slots; i++, counter++) {
+    for(Py_ssize_t i = 0; i < header->n_slots; i++, counter++) {
         if(counter->sem_name[0] == 0) {
             return counter;
         }
     }
-
     /*
     Not enough memory: see NSEMS_MAX in semaphore_macosx.h.
     */
@@ -1175,6 +1205,7 @@ _multiprocessing_SemLock_impl(PyTypeObject *type, int kind, int value,
     SEM_HANDLE handle = SEM_FAILED;
     PyObject *result;
     char *name_copy = NULL;
+    int err = 0;
 #ifdef HAVE_BROKEN_SEM_GETVALUE
     char mutex_name[SIZE_MUTEX_NAME];
     SEM_HANDLE handle_mutex = SEM_FAILED;
@@ -1252,7 +1283,10 @@ _multiprocessing_SemLock_impl(PyTypeObject *type, int kind, int value,
     failure:
 #ifdef HAVE_BROKEN_SEM_GETVALUE
     if (ISSEMAPHORE_FROM_ARGS(maxvalue, kind)) {
+        // Save errno before releasing the lock, as sem_post can change it
+        err = errno;
         RELEASE_SHMLOCK;
+        errno = err;
     }
     failure_shmlock:
 #endif /* HAVE_BROKEN_SEM_GETVALUE*/

@@ -7545,7 +7545,8 @@ class _TestMacOSXSemaphore(BaseTestCase):
                 with memoryview(_mmap[:16]).cast('i') as _buf: # signed int
                     header = _buf[:4].tolist()
                     self.assertEqual(header[0], n)
-                    self.assertEqual(header[-2], size)
+                    self.assertEqual(header[1], _multiprocessing._MACOSX_MAX_OPEN_SEMS)
+                    self.assertEqual(header[2], size)
                     sizeof_counter = header[-1]
 
                 start += _len
@@ -7597,6 +7598,12 @@ class _TestMacOSXSemaphore(BaseTestCase):
         while len(sems) and (s := sems.pop()):
             del s
 
+    def test_sharedmem_max_open_sems(self):
+        # This test should be run alone.
+        with self.assertRaisesRegex(OSError, "No space left on device"):
+            sems = []
+            for i in range(1, _multiprocessing._MACOSX_MAX_OPEN_SEMS + 1):
+                sems.append(self.Semaphore(i) if i % 2 else self.BoundedSemaphore(i))
 
 #
 # Mixins

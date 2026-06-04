@@ -2,6 +2,7 @@
 #define SEMAPHORE_MACOSX_H
 
 #include <unistd.h>     // sysconf(SC_PAGESIZE)
+#include <sys/sysctl.h>  // sysctlbyname
 
 /*
 Structures and constants in shared memory
@@ -33,12 +34,9 @@ typedef struct {
 Structure, constants and macros of static memory:
 */
 
-#define NSEMS_MAX               sysconf(_SC_SEM_NSEMS_MAX) // returns 87381 on MacOSX 15.1 and m4 pro.
-#define CALC_SIZE_SHM           (NSEMS_MAX * sizeof(CounterObject)) + sizeof(HeaderObject)
 #define SC_PAGESIZE             sysconf(_SC_PAGESIZE)
+#define CALC_SIZE_SHM           (shm_semlock_counters.max_open_sems * sizeof(CounterObject)) + sizeof(HeaderObject)
 #define ALIGN_SHM_PAGE(n)       ((int)((n)/SC_PAGESIZE)+1)*SC_PAGESIZE
-
-#define CALC_NB_SLOTS(n)        (int)((((n)) - sizeof(HeaderObject)) / sizeof(CounterObject))
 
 #define SHAREDMEM_NAME  "/psm-gh125828-"
 #define SHMLOCK_NAME    "/mp-gh125828-"
@@ -54,6 +52,7 @@ struct _CountersWorkaround{
     MEMORY_HANDLE handle_shm; // Memory handle.
     char shmlock_name[SIZE_SHMLOCK_NAME];
     SEM_HANDLE handle_shmlock; // Global memory lock to handle shared memory.
+    int max_open_sems;              // Max number of opened semaphores.
     /*-- Pointers to shared memory --*/
     HeaderObject *header;     // Pointer to header (shared memory).
     CounterObject*counters;   // Pointer to the first item of fixed array (shared memory).
