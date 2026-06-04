@@ -1,7 +1,6 @@
 import unittest
 from collections import deque
 from copy import copy
-from threading import Barrier
 from test.support import threading_helper
 
 threading_helper.requires_working_threading(module=True)
