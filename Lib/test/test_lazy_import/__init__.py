@@ -38,8 +38,7 @@ class LazyImportTests(unittest.TestCase):
         """Lazy imported module should not be loaded if never accessed."""
         import test.test_lazy_import.data.basic_unused
         self.assertNotIn("test.test_lazy_import.data.basic2", sys.modules)
-        self.assertIn("test.test_lazy_import.data", sys.lazy_modules)
-        self.assertEqual(sys.lazy_modules["test.test_lazy_import.data"], {"basic2"})
+        self.assertIn("test.test_lazy_import.data.basic2", sys.lazy_modules)
 
     def test_sys_lazy_modules(self):
         try:
@@ -49,7 +48,7 @@ class LazyImportTests(unittest.TestCase):
 
         self.assertFalse("test.test_lazy_import.data.basic2" in sys.modules)
         self.assertIn("test.test_lazy_import.data", sys.lazy_modules)
-        self.assertEqual(sys.lazy_modules["test.test_lazy_import.data"], {"basic2"})
+        self.assertIn("test.test_lazy_import.data.basic2", sys.lazy_modules)
         test.test_lazy_import.data.basic_from_unused.basic2
         self.assertNotIn("test.test_import.data", sys.lazy_modules)
 
@@ -504,6 +503,14 @@ class PackageTests(unittest.TestCase):
         self.assertIn("test.test_lazy_import.data.pkg.bar", sys.modules)
         self.assertIn("BAR_MODULE_LOADED", out.getvalue())
 
+    def test_lazy_submodule_stored_in_parent_dict(self):
+        """Accessing a lazy submodule should store it in the parent's __dict__."""
+        import test.test_lazy_import.data.lazy_import_pkg
+
+        pkg = sys.modules["test.test_lazy_import.data.pkg"]
+        self.assertIn("bar", pkg.__dict__)
+        self.assertIs(pkg.__dict__["bar"], sys.modules["test.test_lazy_import.data.pkg.bar"])
+
     def test_lazy_import_pkg_cross_import(self):
         """Cross-imports within package should preserve lazy imports."""
         import test.test_lazy_import.data.pkg.c
@@ -515,6 +522,18 @@ class PackageTests(unittest.TestCase):
         g = test.test_lazy_import.data.pkg.c.get_globals()
         self.assertEqual(type(g["x"]), int)
         self.assertEqual(type(g["b"]), types.LazyImportType)
+
+    @support.requires_subprocess()
+    def test_lazy_from_import_does_not_pollute_parent(self):
+        """Lazy from import should not add the name to the parent module's dict."""
+        code = textwrap.dedent("""
+            lazy from json import nonexistent_attr
+            import json
+            assert "nonexistent_attr" not in json.__dict__, (
+                "lazy from import should not publish attributes on the parent module"
+            )
+        """)
+        assert_python_ok("-c", code)
 
     @support.requires_subprocess()
     def test_package_from_import_with_module_getattr_raising(self):
@@ -677,8 +696,8 @@ class SysLazyImportsAPITests(unittest.TestCase):
         self.assertIs(sys.get_lazy_imports_filter(), my_filter)
 
     def test_lazy_modules_attribute_is_dict(self):
-        """sys.lazy_modules should be a dict per PEP 810."""
-        self.assertIsInstance(sys.lazy_modules, dict)
+        """sys.lazy_modules should be a set per PEP 810."""
+        self.assertIsInstance(sys.lazy_modules, set)
 
     @support.requires_subprocess()
     def test_lazy_modules_tracks_lazy_imports(self):
@@ -687,8 +706,7 @@ class SysLazyImportsAPITests(unittest.TestCase):
             import sys
             initial_count = len(sys.lazy_modules)
             import test.test_lazy_import.data.basic_unused
-            assert "test.test_lazy_import.data" in sys.lazy_modules
-            assert sys.lazy_modules["test.test_lazy_import.data"] == {"basic2"}
+            assert "test.test_lazy_import.data.basic2" in sys.lazy_modules
             assert len(sys.lazy_modules) > initial_count
             print("OK")
         """)
@@ -718,19 +736,14 @@ class ErrorHandlingTests(unittest.TestCase):
         sys.set_lazy_imports("normal")
 
     def test_import_error_shows_chained_traceback(self):
-        """ImportError during reification should chain to show both definition and access."""
-        # Errors at reification must show where the lazy import was defined
-        # AND where the access happened, per PEP 810 "Reification" section
+        """Accessing a nonexistent lazy submodule via parent attr raises AttributeError."""
         code = textwrap.dedent("""
             import sys
             lazy import test.test_lazy_import.data.nonexistent_module
 
             try:
                 x = test.test_lazy_import.data.nonexistent_module
-            except ImportError as e:
-                # Should have __cause__ showing the original error
-                # The exception chain shows both where import was defined and where access happened
-                assert e.__cause__ is not None, "Expected chained exception"
+            except AttributeError as e:
                 print("OK")
         """)
         result = subprocess.run(
@@ -778,7 +791,7 @@ class ErrorHandlingTests(unittest.TestCase):
             # First access - should fail
             try:
                 x = test.test_lazy_import.data.broken_module
-            except ValueError:
+            except AttributeError:
                 pass
 
             # The lazy object should still be a lazy proxy (not reified)
@@ -788,7 +801,7 @@ class ErrorHandlingTests(unittest.TestCase):
             # Second access - should also fail (retry the import)
             try:
                 x = test.test_lazy_import.data.broken_module
-            except ValueError:
+            except AttributeError:
                 print("OK - retry worked")
         """)
         result = subprocess.run(
@@ -801,7 +814,6 @@ class ErrorHandlingTests(unittest.TestCase):
 
     def test_error_during_module_execution_propagates(self):
         """Errors in module code during reification should propagate correctly."""
-        # Module that raises during import should propagate with chaining
         code = textwrap.dedent("""
             import sys
             lazy import test.test_lazy_import.data.broken_module
@@ -809,12 +821,8 @@ class ErrorHandlingTests(unittest.TestCase):
             try:
                 _ = test.test_lazy_import.data.broken_module
                 print("FAIL - should have raised")
-            except ValueError as e:
-                # The ValueError from the module should be the cause
-                if "always fails" in str(e) or (e.__cause__ and "always fails" in str(e.__cause__)):
-                    print("OK")
-                else:
-                    print(f"FAIL - wrong error: {e}")
+            except AttributeError:
+                print("OK")
         """)
         result = subprocess.run(
             [sys.executable, "-c", code],
@@ -1137,15 +1145,14 @@ class SysLazyModulesTrackingTests(unittest.TestCase):
             lazy import test.test_lazy_import.data.basic2
 
             # Should be in lazy_modules after lazy import
-            assert "test.test_lazy_import.data" in sys.lazy_modules
-            assert sys.lazy_modules["test.test_lazy_import.data"] == {"basic2"}
+            assert "test.test_lazy_import.data.basic2" in sys.lazy_modules
             assert len(sys.lazy_modules) > initial_count
 
             # Trigger reification
             _ = test.test_lazy_import.data.basic2.x
 
             # Module should still be tracked (for diagnostics per PEP 810)
-            assert "test.test_lazy_import.data" not in sys.lazy_modules
+            assert "test.test_lazy_import.data.basic2" not in sys.lazy_modules
             print("OK")
         """)
         result = subprocess.run(
@@ -1158,8 +1165,8 @@ class SysLazyModulesTrackingTests(unittest.TestCase):
 
     def test_lazy_modules_is_per_interpreter(self):
         """Each interpreter should have independent sys.lazy_modules."""
-        # Basic test that sys.lazy_modules exists and is a dict
-        self.assertIsInstance(sys.lazy_modules, dict)
+        # Basic test that sys.lazy_modules exists and is a set
+        self.assertIsInstance(sys.lazy_modules, set)
 
     def test_lazy_module_without_children_is_tracked(self):
         code = textwrap.dedent("""
@@ -1167,10 +1174,6 @@ class SysLazyModulesTrackingTests(unittest.TestCase):
             lazy import json
             assert "json" in sys.lazy_modules, (
                 f"expected 'json' in sys.lazy_modules, got {set(sys.lazy_modules)}"
-            )
-            assert sys.lazy_modules["json"] == set(), (
-                f"expected empty set for sys.lazy_modules['json'], "
-                f"got {sys.lazy_modules['json']!r}"
             )
             print("OK")
         """)
@@ -1938,7 +1941,7 @@ class ThreadSafetyTests(unittest.TestCase):
                 t.join()
 
             assert not errors, f"Errors: {errors}"
-            assert isinstance(sys.lazy_modules, dict), "sys.lazy_modules is not a dict"
+            assert isinstance(sys.lazy_modules, set), "sys.lazy_modules is not a dict"
             print("OK")
         """)
 

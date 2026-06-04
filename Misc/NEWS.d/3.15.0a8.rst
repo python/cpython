@@ -340,7 +340,7 @@ Fix :func:`repr` for lists and tuples containing ``NULL``\ s.
 .. nonce: aB3xKm
 .. section: Core and Builtins
 
-Fixed ``sys.lazy_modules`` to include lazy modules without submodules. Patch
+Fixed :py:attr:`sys.lazy_modules` to include lazy modules without submodules. Patch
 by Bartosz Sławecki.
 
 ..
