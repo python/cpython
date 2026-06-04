@@ -1,5 +1,5 @@
-:mod:`_thread` --- Low-level threading API
-==========================================
+:mod:`!_thread` --- Low-level threading API
+===========================================
 
 .. module:: _thread
    :synopsis: Low-level threading API.
@@ -36,11 +36,6 @@ This module defines the following constants and functions:
       This is now a synonym of the built-in :exc:`RuntimeError`.
 
 
-.. data:: LockType
-
-   This is the type of lock objects.
-
-
 .. function:: start_new_thread(function, args[, kwargs])
 
    Start a new thread and return its identifier.  The thread executes the
@@ -70,10 +65,10 @@ This module defines the following constants and functions:
    there is no guarantee that the interruption will happen immediately.
 
    If given, *signum* is the number of the signal to simulate.
-   If *signum* is not given, :data:`signal.SIGINT` is simulated.
+   If *signum* is not given, :const:`signal.SIGINT` is simulated.
 
    If the given signal isn't handled by Python (it was set to
-   :data:`signal.SIG_DFL` or :data:`signal.SIG_IGN`), this function does
+   :const:`signal.SIG_DFL` or :const:`signal.SIG_IGN`), this function does
    nothing.
 
    .. versionchanged:: 3.10
@@ -120,9 +115,15 @@ This module defines the following constants and functions:
    Its value may be used to uniquely identify this particular thread system-wide
    (until the thread terminates, after which the value may be recycled by the OS).
 
-   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX, DragonFlyBSD.
+   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX, DragonFlyBSD, GNU/kFreeBSD, Solaris.
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.13
+      Added support for GNU/kFreeBSD.
+
+   .. versionchanged:: 3.15
+      Added support for Solaris.
 
 
 .. function:: stack_size([size])
@@ -150,82 +151,85 @@ This module defines the following constants and functions:
 .. data:: TIMEOUT_MAX
 
    The maximum value allowed for the *timeout* parameter of
-   :meth:`Lock.acquire`. Specifying a timeout greater than this value will
-   raise an :exc:`OverflowError`.
+   :meth:`Lock.acquire <threading.Lock.acquire>`. Specifying a timeout greater
+   than this value will raise an :exc:`OverflowError`.
 
    .. versionadded:: 3.2
 
 
-Lock objects have the following methods:
+.. raw:: html
 
+   <!-- Keep the old URL fragments working (see gh-89554) -->
+   <span id='thread.lock.acquire'></span>
+   <span id='thread.lock.release'></span>
+   <span id='thread.lock.locked'></span>
 
-.. method:: lock.acquire(blocking=True, timeout=-1)
+.. class:: LockType
 
-   Without any optional argument, this method acquires the lock unconditionally, if
-   necessary waiting until it is released by another thread (only one thread at a
-   time can acquire a lock --- that's their reason for existence).
+   This is the type of lock objects.
 
-   If the *blocking* argument is present, the action depends on its
-   value: if it is False, the lock is only acquired if it can be acquired
-   immediately without waiting, while if it is True, the lock is acquired
-   unconditionally as above.
+   Lock objects have the following methods:
 
-   If the floating-point *timeout* argument is present and positive, it
-   specifies the maximum wait time in seconds before returning.  A negative
-   *timeout* argument specifies an unbounded wait.  You cannot specify
-   a *timeout* if *blocking* is False.
+   .. method:: acquire(blocking=True, timeout=-1)
 
-   The return value is ``True`` if the lock is acquired successfully,
-   ``False`` if not.
+      Without any optional argument, this method acquires the lock unconditionally, if
+      necessary waiting until it is released by another thread (only one thread at a
+      time can acquire a lock --- that's their reason for existence).
 
-   .. versionchanged:: 3.2
-      The *timeout* parameter is new.
+      If the *blocking* argument is present, the action depends on its
+      value: if it is false, the lock is only acquired if it can be acquired
+      immediately without waiting, while if it is true, the lock is acquired
+      unconditionally as above.
 
-   .. versionchanged:: 3.2
-      Lock acquires can now be interrupted by signals on POSIX.
+      If the floating-point *timeout* argument is present and positive, it
+      specifies the maximum wait time in seconds before returning.  A negative
+      *timeout* argument specifies an unbounded wait.  You cannot specify
+      a *timeout* if *blocking* is false.
 
+      The return value is ``True`` if the lock is acquired successfully,
+      ``False`` if not.
 
-.. method:: lock.release()
+      .. versionchanged:: 3.2
+         The *timeout* parameter is new.
 
-   Releases the lock.  The lock must have been acquired earlier, but not
-   necessarily by the same thread.
+      .. versionchanged:: 3.2
+         Lock acquires can now be interrupted by signals on POSIX.
 
+      .. versionchanged:: 3.14
+         Lock acquires can now be interrupted by signals on Windows.
 
-.. method:: lock.locked()
+   .. method:: release()
 
-   Return the status of the lock: ``True`` if it has been acquired by some thread,
-   ``False`` if not.
+      Releases the lock.  The lock must have been acquired earlier, but not
+      necessarily by the same thread.
 
-In addition to these methods, lock objects can also be used via the
-:keyword:`with` statement, e.g.::
+   .. method:: locked()
 
-   import _thread
+      Return the status of the lock: ``True`` if it has been acquired by some thread,
+      ``False`` if not.
 
-   a_lock = _thread.allocate_lock()
+   In addition to these methods, lock objects can also be used via the
+   :keyword:`with` statement, e.g.::
 
-   with a_lock:
-       print("a_lock is locked while this executes")
+      import _thread
+
+      a_lock = _thread.allocate_lock()
+
+      with a_lock:
+          print("a_lock is locked while this executes")
 
 **Caveats:**
 
-  .. index:: pair: module; signal
+.. index:: pair: module; signal
 
-* Threads interact strangely with interrupts: the :exc:`KeyboardInterrupt`
-  exception will be received by an arbitrary thread.  (When the :mod:`signal`
-  module is available, interrupts always go to the main thread.)
+* Interrupts always go to the main thread (the :exc:`KeyboardInterrupt`
+  exception will be received by that thread.)
 
 * Calling :func:`sys.exit` or raising the :exc:`SystemExit` exception is
   equivalent to calling :func:`_thread.exit`.
-
-* It is not possible to interrupt the :meth:`acquire` method on a lock --- the
-  :exc:`KeyboardInterrupt` exception will happen after the lock has been acquired.
 
 * When the main thread exits, it is system defined whether the other threads
   survive.  On most systems, they are killed without executing
   :keyword:`try` ... :keyword:`finally` clauses or executing object
   destructors.
-
-* When the main thread exits, it does not do any of its usual cleanup (except
-  that :keyword:`try` ... :keyword:`finally` clauses are honored), and the
-  standard I/O files are not flushed.
 

@@ -1,25 +1,27 @@
-:mod:`curses` --- Terminal handling for character-cell displays
-===============================================================
+:mod:`!curses` --- Terminal handling for character-cell displays
+================================================================
 
 .. module:: curses
    :synopsis: An interface to the curses library, providing portable
               terminal handling.
-   :platform: Unix
-
-.. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
-.. sectionauthor:: Eric Raymond <esr@thyrsus.com>
 
 **Source code:** :source:`Lib/curses`
 
 --------------
 
-The :mod:`curses` module provides an interface to the curses library, the
+The :mod:`!curses` module provides an interface to the curses library, the
 de-facto standard for portable advanced terminal handling.
 
 While curses is most widely used in the Unix environment, versions are available
 for Windows, DOS, and possibly other systems as well.  This extension module is
 designed to match the API of ncurses, an open-source curses library hosted on
 Linux and the BSD variants of Unix.
+
+.. include:: ../includes/wasm-mobile-notavail.rst
+
+.. include:: ../includes/optional-module.rst
+
+.. availability:: Unix.
 
 .. note::
 
@@ -50,7 +52,7 @@ Linux and the BSD variants of Unix.
 Functions
 ---------
 
-The module :mod:`curses` defines the following exception:
+The module :mod:`!curses` defines the following exception:
 
 
 .. exception:: error
@@ -63,7 +65,22 @@ The module :mod:`curses` defines the following exception:
    default to the current cursor location. Whenever *attr* is optional, it defaults
    to :const:`A_NORMAL`.
 
-The module :mod:`curses` defines the following functions:
+The module :mod:`!curses` defines the following functions:
+
+
+.. function:: assume_default_colors(fg, bg, /)
+
+   Allow use of default values for colors on terminals supporting this feature.
+   Use this to support transparency in your application.
+
+   * Assign terminal default foreground/background colors to color number ``-1``.
+     So ``init_pair(x, COLOR_RED, -1)`` will initialize pair *x* as red
+     on default background and ``init_pair(x, -1, COLOR_BLUE)`` will
+     initialize pair *x* as default foreground on blue.
+
+   * Change the definition of the color-pair ``0`` to ``(fg, bg)``.
+
+   .. versionadded:: 3.14
 
 
 .. function:: baudrate()
@@ -288,9 +305,11 @@ The module :mod:`curses` defines the following functions:
    Change the definition of a color-pair.  It takes three arguments: the number of
    the color-pair to be changed, the foreground color number, and the background
    color number.  The value of *pair_number* must be between ``1`` and
-   ``COLOR_PAIRS - 1`` (the ``0`` color pair is wired to white on black and cannot
-   be changed).  The value of *fg* and *bg* arguments must be between ``0`` and
-   ``COLORS - 1``, or, after calling :func:`use_default_colors`, ``-1``.
+   ``COLOR_PAIRS - 1`` (the ``0`` color pair can only be changed by
+   :func:`use_default_colors` and :func:`assume_default_colors`).
+   The value of *fg* and *bg* arguments must be between ``0`` and
+   ``COLORS - 1``, or, after calling :func:`!use_default_colors` or
+   :func:`!assume_default_colors`, ``-1``.
    If the color-pair was previously initialized, the screen is
    refreshed and all occurrences of that color-pair are changed to the new
    definition.
@@ -560,7 +579,7 @@ The module :mod:`curses` defines the following functions:
    after :func:`initscr`.
 
    :func:`start_color` initializes eight basic colors (black, red,  green, yellow,
-   blue, magenta, cyan, and white), and two global variables in the :mod:`curses`
+   blue, magenta, cyan, and white), and two global variables in the :mod:`!curses`
    module, :const:`COLORS` and :const:`COLOR_PAIRS`, containing the maximum number
    of colors and color-pairs the terminal can support.  It also restores the colors
    on the terminal to the values they had when the terminal was just turned on.
@@ -641,7 +660,8 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: update_lines_cols()
 
-   Update :envvar:`LINES` and :envvar:`COLS`. Useful for detecting manual screen resize.
+   Update the :const:`LINES` and :const:`COLS` module variables.
+   Useful for detecting manual screen resize.
 
    .. versionadded:: 3.5
 
@@ -675,11 +695,7 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: use_default_colors()
 
-   Allow use of default values for colors on terminals supporting this feature. Use
-   this to support transparency in your application.  The default color is assigned
-   to the color number ``-1``. After calling this function,  ``init_pair(x,
-   curses.COLOR_RED, -1)`` initializes, for instance, color pair *x* to a red
-   foreground color on the default background.
+   Equivalent to ``assume_default_colors(-1, -1)``.
 
 
 .. function:: wrapper(func, /, *args, **kwargs)
@@ -700,8 +716,10 @@ The module :mod:`curses` defines the following functions:
 Window Objects
 --------------
 
-Window objects, as returned by :func:`initscr` and :func:`newwin` above, have
-the following methods and attributes:
+.. class:: window
+
+   Window objects, as returned by :func:`initscr` and :func:`newwin` above, have
+   the following methods and attributes:
 
 
 .. method:: window.addch(ch[, attr])
@@ -754,7 +772,7 @@ the following methods and attributes:
 
 .. method:: window.attron(attr)
 
-   Add attribute *attr* from the "background" set applied to all writes to the
+   Add attribute *attr* to the "background" set applied to all writes to the
    current window.
 
 
@@ -921,7 +939,7 @@ the following methods and attributes:
 
 .. method:: window.getbegyx()
 
-   Return a tuple ``(y, x)`` of co-ordinates of upper-left corner.
+   Return a tuple ``(y, x)`` of coordinates of upper-left corner.
 
 
 .. method:: window.getbkgd()
@@ -972,6 +990,10 @@ the following methods and attributes:
             window.getstr(y, x, n)
 
    Read a bytes object from the user, with primitive line editing capacity.
+   The maximum value for *n* is 2047.
+
+   .. versionchanged:: 3.14
+      The maximum value for *n* was increased from 1023 to 2047.
 
 
 .. method:: window.getyx()
@@ -997,7 +1019,7 @@ the following methods and attributes:
 
 .. method:: window.idlok(flag)
 
-   If *flag* is ``True``, :mod:`curses` will try and use hardware line
+   If *flag* is ``True``, :mod:`!curses` will try and use hardware line
    editing facilities. Otherwise, line insertion/deletion are disabled.
 
 
@@ -1063,6 +1085,10 @@ the following methods and attributes:
    current cursor position, or at *y*, *x* if specified. Attributes are stripped
    from the characters.  If *n* is specified, :meth:`instr` returns a string
    at most *n* characters long (exclusive of the trailing NUL).
+   The maximum value for *n* is 2047.
+
+   .. versionchanged:: 3.14
+      The maximum value for *n* was increased from 1023 to 2047.
 
 
 .. method:: window.is_linetouched(line)
@@ -1081,7 +1107,7 @@ the following methods and attributes:
 .. method:: window.keypad(flag)
 
    If *flag* is ``True``, escape sequences generated by some keys (keypad,  function keys)
-   will be interpreted by :mod:`curses`. If *flag* is ``False``, escape sequences will be
+   will be interpreted by :mod:`!curses`. If *flag* is ``False``, escape sequences will be
    left as is in the input stream.
 
 
@@ -1307,7 +1333,7 @@ the following methods and attributes:
 Constants
 ---------
 
-The :mod:`curses` module defines the following data members:
+The :mod:`!curses` module defines the following data members:
 
 
 .. data:: ERR
@@ -1323,7 +1349,6 @@ The :mod:`curses` module defines the following data members:
 
 
 .. data:: version
-.. data:: __version__
 
    A bytes object representing the current version of the module.
 
@@ -1342,10 +1367,27 @@ The :mod:`curses` module defines the following data members:
 .. data:: COLORS
 
    The maximum number of colors the terminal can support.
+   It is defined only after the call to :func:`start_color`.
 
 .. data:: COLOR_PAIRS
 
    The maximum number of color pairs the terminal can support.
+   It is defined only after the call to :func:`start_color`.
+
+.. data:: COLS
+
+   The width of the screen, i.e., the number of columns.
+   It is defined only after the call to :func:`initscr`.
+   Updated by :func:`update_lines_cols`, :func:`resizeterm` and
+   :func:`resize_term`.
+
+.. data:: LINES
+
+   The height of the screen, i.e., the number of lines.
+   It is defined only after the call to :func:`initscr`.
+   Updated by :func:`update_lines_cols`, :func:`resizeterm` and
+   :func:`resize_term`.
+
 
 Some constants are available to specify character cell attributes.
 The exact constants available are system dependent.
@@ -1630,6 +1672,8 @@ keys); also, the following keypad mappings are standard:
 | :kbd:`Page Down` | KEY_NPAGE |
 +------------------+-----------+
 
+.. _curses-acs-codes:
+
 The following table lists characters from the alternate character set. These are
 inherited from the VT100 terminal, and will generally be  available on software
 emulations such as X terminals.  When there is no graphic available, curses
@@ -1751,9 +1795,9 @@ The following table lists mouse button constants used by :meth:`getmouse`:
 | .. data:: BUTTON_ALT             | Control was down during button state change |
 +----------------------------------+---------------------------------------------+
 
-   .. versionchanged:: 3.10
-      The ``BUTTON5_*`` constants are now exposed if they are provided by the
-      underlying curses library.
+.. versionchanged:: 3.10
+   The ``BUTTON5_*`` constants are now exposed if they are provided by the
+   underlying curses library.
 
 The following table lists the predefined colors:
 
@@ -1778,22 +1822,19 @@ The following table lists the predefined colors:
 +-------------------------+----------------------------+
 
 
-:mod:`curses.textpad` --- Text input widget for curses programs
-===============================================================
+:mod:`!curses.textpad` --- Text input widget for curses programs
+================================================================
 
 .. module:: curses.textpad
    :synopsis: Emacs-like input editing in a curses window.
-.. moduleauthor:: Eric Raymond <esr@thyrsus.com>
-.. sectionauthor:: Eric Raymond <esr@thyrsus.com>
 
-
-The :mod:`curses.textpad` module provides a :class:`Textbox` class that handles
+The :mod:`!curses.textpad` module provides a :class:`Textbox` class that handles
 elementary text editing in a curses window, supporting a set of keybindings
 resembling those of Emacs (thus, also of Netscape Navigator, BBedit 6.x,
 FrameMaker, and many other programs).  The module also provides a
 rectangle-drawing function useful for framing text boxes or for other purposes.
 
-The module :mod:`curses.textpad` defines the following function:
+The module :mod:`!curses.textpad` defines the following function:
 
 
 .. function:: rectangle(win, uly, ulx, lry, lrx)

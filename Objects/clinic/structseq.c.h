@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 static PyObject *
 structseq_new_impl(PyTypeObject *type, PyObject *arg, PyObject *dict);
@@ -21,9 +21,11 @@ structseq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(sequence), &_Py_ID(dict), },
     };
     #undef NUM_KEYWORDS
@@ -47,7 +49,8 @@ structseq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *arg;
     PyObject *dict = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 2, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -62,4 +65,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=802d5663c7d01024 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=112d59f5e98d652b input=a9049054013a1b77]*/

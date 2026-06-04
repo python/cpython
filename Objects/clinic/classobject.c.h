@@ -2,11 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(MethodType___reduce____doc__,
 "__reduce__($self, /)\n"
@@ -20,9 +16,9 @@ static PyObject *
 MethodType___reduce___impl(PyMethodObject *self);
 
 static PyObject *
-MethodType___reduce__(PyMethodObject *self, PyObject *Py_UNUSED(ignored))
+MethodType___reduce__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return MethodType___reduce___impl(self);
+    return MethodType___reduce___impl((PyMethodObject *)self);
 }
 
 PyDoc_STRVAR(method_new__doc__,
@@ -86,4 +82,4 @@ instancemethod_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2da6cbf42d469027 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e044d6a54d44b473 input=a9049054013a1b77]*/

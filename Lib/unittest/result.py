@@ -166,7 +166,8 @@ class TestResult(object):
         """
         # support for a TextTestRunner using an old TestResult class
         if hasattr(self, "collectedDurations"):
-            self.collectedDurations.append((test, elapsed))
+            # Pass test repr and not the test object itself to avoid resources leak
+            self.collectedDurations.append((str(test), elapsed))
 
     def wasSuccessful(self):
         """Tells whether or not this result was a success."""
@@ -188,7 +189,10 @@ class TestResult(object):
         tb_e = traceback.TracebackException(
             exctype, value, tb,
             capture_locals=self.tb_locals, compact=True)
-        msgLines = list(tb_e.format())
+        from _colorize import can_colorize
+
+        colorize = hasattr(self, "stream") and can_colorize(file=self.stream)
+        msgLines = list(tb_e.format(colorize=colorize))
 
         if self.buffer:
             output = sys.stdout.getvalue()

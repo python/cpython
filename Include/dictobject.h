@@ -57,6 +57,29 @@ PyAPI_FUNC(int) PyDict_MergeFromSeq2(PyObject *d,
 PyAPI_FUNC(PyObject *) PyDict_GetItemString(PyObject *dp, const char *key);
 PyAPI_FUNC(int) PyDict_SetItemString(PyObject *dp, const char *key, PyObject *item);
 PyAPI_FUNC(int) PyDict_DelItemString(PyObject *dp, const char *key);
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030D0000
+// Return the object from dictionary *op* which has a key *key*.
+// - If the key is present, set *result to a new strong reference to the value
+//   and return 1.
+// - If the key is missing, set *result to NULL and return 0 .
+// - On error, raise an exception and return -1.
+PyAPI_FUNC(int) PyDict_GetItemRef(PyObject *mp, PyObject *key, PyObject **result);
+PyAPI_FUNC(int) PyDict_GetItemStringRef(PyObject *mp, const char *key, PyObject **result);
+#endif
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030F0000
+// Inserts `key` with a value `default_value`, if `key` is not already present
+// in the dictionary.  If `result` is not NULL, then the value associated
+// with `key` is returned in `*result` (either the existing value, or the now
+// inserted `default_value`).
+// Returns:
+//   -1 on error
+//    0 if `key` was not present and `default_value` was inserted
+//    1 if `key` was present and `default_value` was not inserted
+PyAPI_FUNC(int) PyDict_SetDefaultRef(PyObject *mp, PyObject *key, PyObject *default_value, PyObject **result);
+#endif
+
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
 PyAPI_FUNC(PyObject *) PyObject_GenericGetDict(PyObject *, void *);
 #endif
