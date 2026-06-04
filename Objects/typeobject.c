@@ -6194,7 +6194,9 @@ _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef
             version_tag = type->tp_version_tag;
         }
         res = find_name_in_mro(type, name, out);
-        if (res >= 0 && version_tag != 0) {
+        // find_name_in_mro can release the type lock and another thread can
+        // modify the type, so we need to check version tag again before caching the result.
+        if (res >= 0 && version_tag != 0 && version_tag == type->tp_version_tag) {
             _PyTypeCache_Insert(type, name, PyStackRef_AsPyObjectBorrow(*out));
         }
         END_TYPE_LOCK();
