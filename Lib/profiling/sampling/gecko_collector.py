@@ -1,4 +1,3 @@
-import array
 import itertools
 import io
 import json
@@ -68,34 +67,7 @@ STACKWALK_DISABLED = 0
 DEFAULT_SPILL_BUFFER_BYTES = 128 * 1024
 
 
-class TypedSpillColumn:
-    def __init__(self, directory, basename, typecode, *,
-                 buffer_bytes=DEFAULT_SPILL_BUFFER_BYTES):
-        self.path = os.path.join(directory, basename)
-        self.buffer = array.array(typecode)
-        self.max_items = max(1, buffer_bytes // self.buffer.itemsize)
-
-    def append(self, value):
-        self.buffer.append(value)
-        if len(self.buffer) >= self.max_items:
-            self.flush()
-
-    def flush(self):
-        with open(self.path, "ab") as file:
-            self.buffer.tofile(file)
-        self.buffer.clear()
-
-    def iter_chunks(self):
-        typecode = self.buffer.typecode
-        block_bytes = self.max_items * self.buffer.itemsize
-        with open(self.path, "rb") as file:
-            for block in iter(lambda: file.read(block_bytes), b""):
-                chunk = array.array(typecode)
-                chunk.frombytes(block)
-                yield chunk
-
-
-class NDJSONSpillColumn:
+class SpillColumn:
     _encoder = json.JSONEncoder(separators=(",", ":"))
 
     def __init__(self, directory, basename, *,
@@ -104,8 +76,8 @@ class NDJSONSpillColumn:
         self.buffer = bytearray()
         self._buffer_bytes = buffer_bytes
 
-    def append_object(self, data):
-        self.buffer += (self._encoder.encode(data) + "\n").encode()
+    def append(self, value):
+        self.buffer += (self._encoder.encode(value) + "\n").encode()
         if len(self.buffer) >= self._buffer_bytes:
             self.flush()
 
@@ -114,30 +86,28 @@ class NDJSONSpillColumn:
             file.write(self.buffer)
         self.buffer.clear()
 
-    def iter_lines(self):
+    def iter_tokens(self):
         with open(self.path) as file:
             for line in file:
                 yield line.rstrip("\n")
 
 
 class GeckoThreadSpill:
-    _TYPED_COLUMNS = (
-        ("samples_stack", "samples-stack.bin", "q"),
-        ("samples_time", "samples-time.bin", "d"),
-        ("markers_name", "markers-name.bin", "q"),
-        ("markers_start_time", "markers-start-time.bin", "d"),
-        ("markers_end_time", "markers-end-time.bin", "d"),
-        ("markers_phase", "markers-phase.bin", "B"),
-        ("markers_category", "markers-category.bin", "I"),
+    _COLUMNS = (
+        ("samples_stack", "samples-stack.json"),
+        ("samples_time", "samples-time.json"),
+        ("markers_name", "markers-name.json"),
+        ("markers_start_time", "markers-start-time.json"),
+        ("markers_end_time", "markers-end-time.json"),
+        ("markers_phase", "markers-phase.json"),
+        ("markers_category", "markers-category.json"),
+        ("markers_data", "markers-data.json"),
     )
 
     def __init__(self, directory, tid):
         prefix = f"thread-{tid}-"
-        for attr, basename, typecode in self._TYPED_COLUMNS:
-            setattr(self, attr, TypedSpillColumn(
-                directory, prefix + basename, typecode))
-        self.markers_data = NDJSONSpillColumn(
-            directory, prefix + "markers-data.ndjson")
+        for attr, basename in self._COLUMNS:
+            setattr(self, attr, SpillColumn(directory, prefix + basename))
         self.sample_count = 0
         self.marker_count = 0
 
@@ -152,13 +122,12 @@ class GeckoThreadSpill:
         self.markers_end_time.append(end_time)
         self.markers_phase.append(phase)
         self.markers_category.append(category)
-        self.markers_data.append_object(data)
+        self.markers_data.append(data)
         self.marker_count += 1
 
     def prepare_read(self):
-        for attr, _basename, _typecode in self._TYPED_COLUMNS:
+        for attr, _basename in self._COLUMNS:
             getattr(self, attr).flush()
-        self.markers_data.flush()
 
 
 class GeckoCollector(Collector):
@@ -928,9 +897,13 @@ class GeckoCollector(Collector):
 
     def _stream_samples(self, file, spill):
         file.write('{"stack":')
-        _stream_array(file, _tokens(spill.samples_stack), spill.sample_count)
+        _stream_array(
+            file, spill.samples_stack.iter_tokens(), spill.sample_count
+        )
         file.write(',"time":')
-        _stream_array(file, _tokens(spill.samples_time), spill.sample_count)
+        _stream_array(
+            file, spill.samples_time.iter_tokens(), spill.sample_count
+        )
         file.write(',"eventDelay":')
         _stream_array(
             file,
@@ -943,17 +916,29 @@ class GeckoCollector(Collector):
 
     def _stream_markers(self, file, spill):
         file.write('{"data":')
-        _stream_array(file, spill.markers_data.iter_lines(), spill.marker_count)
+        _stream_array(
+            file, spill.markers_data.iter_tokens(), spill.marker_count
+        )
         file.write(',"name":')
-        _stream_array(file, _tokens(spill.markers_name), spill.marker_count)
+        _stream_array(
+            file, spill.markers_name.iter_tokens(), spill.marker_count
+        )
         file.write(',"startTime":')
-        _stream_array(file, _tokens(spill.markers_start_time), spill.marker_count)
+        _stream_array(
+            file, spill.markers_start_time.iter_tokens(), spill.marker_count
+        )
         file.write(',"endTime":')
-        _stream_array(file, _tokens(spill.markers_end_time), spill.marker_count)
+        _stream_array(
+            file, spill.markers_end_time.iter_tokens(), spill.marker_count
+        )
         file.write(',"phase":')
-        _stream_array(file, _tokens(spill.markers_phase), spill.marker_count)
+        _stream_array(
+            file, spill.markers_phase.iter_tokens(), spill.marker_count
+        )
         file.write(',"category":')
-        _stream_array(file, _tokens(spill.markers_category), spill.marker_count)
+        _stream_array(
+            file, spill.markers_category.iter_tokens(), spill.marker_count
+        )
         file.write(',"length":')
         file.write(repr(spill.marker_count))
         file.write("}")
@@ -972,9 +957,3 @@ def _stream_array(file, token_iter, expected_count):
             f"streamed {count} array items, expected {expected_count}"
         )
     file.write("]")
-
-
-def _tokens(column):
-    for chunk in column.iter_chunks():
-        for value in chunk:
-            yield repr(value)
