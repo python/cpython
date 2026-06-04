@@ -609,12 +609,6 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
             self.assertEqual(memio.peek(len(abc) + 100), abc)
             self.assertEqual(memio.tell(), len(buf))
 
-        # Length of returned bytes object is capped to DEFAULT_BUFFER_SIZE
-        buf = self.buftype("a" * (io.DEFAULT_BUFFER_SIZE + 10))
-        with self.ioclass(buf) as memio:
-            self.assertEqual(len(memio.peek()), io.DEFAULT_BUFFER_SIZE)
-            self.assertEqual(len(memio.peek(io.DEFAULT_BUFFER_SIZE + 1)), io.DEFAULT_BUFFER_SIZE)
-
         with self.ioclass(buf) as memio:
             memio.seek(len(buf))
             self.assertEqual(memio.peek(), self.EOF)
