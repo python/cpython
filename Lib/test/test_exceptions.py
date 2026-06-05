@@ -1718,24 +1718,24 @@ class ExceptionTests(unittest.TestCase):
         msg = "some error message"
         filename = "some filename"
         filename2 = "some filename 2"
-    
+
         class LeakingOSError(OSError):
             def __init__(self, code, message, filename, filename2):
                 self.strerror = message
                 self.filename = filename
                 self.filename2 = filename2
                 super().__init__(code, message, filename, None, filename2)
-    
+
         refcount_msg = sys.getrefcount(msg)
         refcount_filename = sys.getrefcount(filename)
         refcount_filename2 = sys.getrefcount(filename2)
-    
+
         for _ in range(5):
             try:
                 raise LeakingOSError(1, msg, filename, filename2)
             except OSError:
                 pass
-    
+
         gc_collect()
         self.assertEqual(sys.getrefcount(msg), refcount_msg)
         self.assertEqual(sys.getrefcount(filename), refcount_filename)
