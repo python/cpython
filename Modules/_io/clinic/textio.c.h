@@ -1331,4 +1331,4 @@ _io_TextIOWrapper__CHUNK_SIZE_set(PyObject *self, PyObject *value, void *Py_UNUS
 
     return return_value;
 }
-/*[clinic end generated code: output=f900b42090c9781c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8c571c9dba87d2b1 input=a9049054013a1b77]*/
