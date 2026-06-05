@@ -388,7 +388,7 @@ class Morsel(dict):
     def __repr__(self):
         return '<%s: %s>' % (self.__class__.__name__, self.OutputString())
 
-   def _js_output(self, attrs=None):
+    def js_output(self, attrs=None):
         import urllib.parse
         # Print javascript
         output_string = self.OutputString(attrs)

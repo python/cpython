@@ -163,7 +163,7 @@ class CookieTests(unittest.TestCase, ExtraAssertions):
         """)
         cookie_encoded = urllib.parse.quote('Customer="WILE_E_COYOTE"; Path=/acme', safe='', encoding='utf-8')
         self.assertEqual(C.js_output(['path']), fr"""
-        script type="text/javascript">
+        <script type="text/javascript">
         <!-- begin hiding
         document.cookie = decodeURIComponent("{cookie_encoded}");
         // end hiding -->
