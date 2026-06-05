@@ -1,0 +1,1 @@
+On iOS and macOS, when ``PyConfig.use_system_logger`` is enabled, partial-line writes to ``sys.stdout`` or ``sys.stderr`` are now tagged with a marker so that a cooperating log reader can re-join them instead of rendering each flush as a separate line.
