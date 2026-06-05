@@ -58,7 +58,7 @@ Python/pyhash.c	-	_Py_HashSecret	-
 Python/parking_lot.c	-	buckets	-
 
 ## shared empty sentinel for the per-type method cache
-Python/typecache.c	-	empty_cache_storage	-
+Python/typecache.c	-	empty_cache	-
 
 ## data needed for introspecting asyncio state from debuggers and profilers
 Modules/_asynciomodule.c	-	_Py_AsyncioDebug	-
