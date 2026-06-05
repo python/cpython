@@ -4269,6 +4269,43 @@ class ManagerTest(BaseTest):
         man.setLogRecordFactory(expected)
         self.assertEqual(man.logRecordFactory, expected)
 
+    @threading_helper.requires_working_threading()
+    def test_getLogger_fast_path_never_returns_unwired_logger(self):
+        # getLogger()'s lock-free fast path returns a logger straight out of
+        # loggerDict, so a logger must be published there only after
+        # _fixupParents() has set its parent; otherwise a concurrent caller
+        # observes it detached from the hierarchy (gh-150818 follow-up).
+        manager = logging.Manager(logging.RootLogger(logging.WARNING))
+        name = 'a.b.c'
+
+        paused = threading.Event()
+        seen = []
+        real_fixup = manager._fixupParents
+
+        # Pause the creating thread between publishing rv and wiring its
+        # parent, then read loggerDict the way the fast path does and snapshot
+        # the parent at that instant (rv is wired in place soon after).
+        def fixup(alogger):
+            paused.set()
+            reader.join()
+            real_fixup(alogger)
+
+        def read():
+            paused.wait()
+            rv = manager.loggerDict.get(name)
+            if rv is not None and not isinstance(rv, logging.PlaceHolder):
+                seen.append(rv.parent)
+
+        reader = threading.Thread(target=read)
+        manager._fixupParents = fixup
+        try:
+            reader.start()
+            manager.getLogger(name)
+        finally:
+            manager._fixupParents = real_fixup
+
+        self.assertNotIn(None, seen)
+
 class ChildLoggerTest(BaseTest):
     def test_child_loggers(self):
         r = logging.getLogger()
