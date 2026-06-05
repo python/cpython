@@ -1,1 +1,0 @@
-The :c:macro:`!Py_HUGE_VAL` macro is :term:`soft deprecated`.

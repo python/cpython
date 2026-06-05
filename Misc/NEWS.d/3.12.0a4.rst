@@ -125,7 +125,7 @@ Improve the accuracy of ``sum()`` with compensated summation.
 .. date: 2022-12-20-16-14-19
 .. gh-issue: 100374
 .. nonce: YRrVHT
-.. section: Core and Builtins
+.. section: Library
 
 Fix incorrect result and delay in :func:`socket.getfqdn`. Patch by Dominic
 Socular.
@@ -315,7 +315,7 @@ Improve performance of ``list.pop`` for small lists.
 .. date: 2022-06-17-08-00-34
 .. gh-issue: 89051
 .. nonce: yP4Na0
-.. section: Core and Builtins
+.. section: Library
 
 Add :const:`ssl.OP_LEGACY_SERVER_CONNECT`
 

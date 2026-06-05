@@ -1,5 +1,6 @@
 import doctest
 import unittest
+import itertools
 from test import support
 from test.support import threading_helper, script_helper
 from itertools import *
@@ -494,6 +495,8 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(take(2, zip('abc',count(-3))), [('a', -3), ('b', -2)])
         self.assertRaises(TypeError, count, 2, 3, 4)
         self.assertRaises(TypeError, count, 'a')
+        self.assertEqual(take(3, count(maxsize)),
+                        [maxsize, maxsize + 1, maxsize + 2])
         self.assertEqual(take(10, count(maxsize-5)),
                          list(range(maxsize-5, maxsize+5)))
         self.assertEqual(take(10, count(-maxsize-5)),
@@ -516,6 +519,15 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(next(c), -8)
         self.assertEqual(repr(count(10.25)), 'count(10.25)')
         self.assertEqual(repr(count(10.0)), 'count(10.0)')
+
+        self.assertEqual(repr(count(maxsize)), f'count({maxsize})')
+        c = count(maxsize - 1)
+        self.assertEqual(repr(c), f'count({maxsize - 1})')
+        next(c)  # c is now at masize
+        self.assertEqual(repr(c), f'count({maxsize})')
+        next(c)
+        self.assertEqual(repr(c), f'count({maxsize + 1})')
+
         self.assertEqual(type(next(count(10.0))), float)
         for i in (-sys.maxsize-5, -sys.maxsize+5 ,-10, -1, 0, 10, sys.maxsize-5, sys.maxsize+5):
             # Test repr
@@ -540,6 +552,12 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(take(20, count(-maxsize-15, 3)), take(20, range(-maxsize-15,-maxsize+100, 3)))
         self.assertEqual(take(3, count(10, maxsize+5)),
                          list(range(10, 10+3*(maxsize+5), maxsize+5)))
+        self.assertEqual(take(3, count(maxsize, 2)),
+                         [maxsize, maxsize + 2, maxsize + 4])
+        self.assertEqual(take(3, count(maxsize, maxsize)),
+                         [maxsize, 2 * maxsize, 3 * maxsize])
+        self.assertEqual(take(3, count(-maxsize, maxsize)),
+                        [-maxsize, 0, maxsize])
         self.assertEqual(take(3, count(2, 1.25)), [2, 3.25, 4.5])
         self.assertEqual(take(3, count(2, 3.25-4j)), [2, 5.25-4j, 8.5-8j])
         self.assertEqual(take(3, count(Decimal('1.1'), Decimal('.1'))),
@@ -569,6 +587,20 @@ class TestBasicOps(unittest.TestCase):
         c = count(10, 1.0)
         self.assertEqual(type(next(c)), int)
         self.assertEqual(type(next(c)), float)
+
+        c = count(maxsize -2, 2)
+        self.assertEqual(repr(c), f'count({maxsize - 2}, 2)')
+        next(c)  # c is now at masize
+        self.assertEqual(repr(c), f'count({maxsize}, 2)')
+        next(c)
+        self.assertEqual(repr(c), f'count({maxsize + 2}, 2)')
+
+        c = count(maxsize + 1, -1)
+        self.assertEqual(repr(c), f'count({maxsize + 1}, -1)')
+        next(c)  # c is now at masize
+        self.assertEqual(repr(c), f'count({maxsize}, -1)')
+        next(c)
+        self.assertEqual(repr(c), f'count({maxsize - 1}, -1)')
 
     @threading_helper.requires_working_threading()
     def test_count_threading(self, step=1):
@@ -700,6 +732,59 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(ExpectedError, gulp, [None], keyfunc)
         keyfunc.skip = 1
         self.assertRaises(ExpectedError, gulp, [None, None], keyfunc)
+
+    def test_groupby_reentrant_eq_does_not_crash(self):
+        # regression test for gh-143543
+        class Key:
+            def __init__(self, do_advance):
+                self.do_advance = do_advance
+
+            def __eq__(self, other):
+                if self.do_advance:
+                    self.do_advance = False
+                    next(g)
+                    return NotImplemented
+                return False
+
+        def keys():
+            yield Key(True)
+            yield Key(False)
+
+        g = itertools.groupby([None, None], keys().send)
+        next(g)
+        next(g)  # must pass with address sanitizer
+
+    def test_grouper_reentrant_eq_does_not_crash(self):
+        # regression test for gh-146613
+        grouper_iter = None
+
+        class Key:
+            __hash__ = None
+
+            def __init__(self, do_advance):
+                self.do_advance = do_advance
+
+            def __eq__(self, other):
+                nonlocal grouper_iter
+                if self.do_advance:
+                    self.do_advance = False
+                    if grouper_iter is not None:
+                        try:
+                            next(grouper_iter)
+                        except StopIteration:
+                            pass
+                    return NotImplemented
+                return True
+
+        def keyfunc(element):
+            if element == 0:
+                return Key(do_advance=True)
+            return Key(do_advance=False)
+
+        g = itertools.groupby(range(4), keyfunc)
+        key, grouper_iter = next(g)
+        items = list(grouper_iter)
+        self.assertEqual(len(items), 1)
 
     def test_filter(self):
         self.assertEqual(list(filter(isEven, range(6))), [0,2,4])
@@ -2500,7 +2585,7 @@ class SizeofTest(unittest.TestCase):
 
 
 def load_tests(loader, tests, pattern):
-    tests.addTest(doctest.DocTestSuite())
+    tests.addTest(doctest.DocTestSuite(itertools))
     return tests
 
 

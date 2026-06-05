@@ -1,11 +1,10 @@
 import annotationlib
-import asyncio
 import textwrap
 import types
 import unittest
 import pickle
 import weakref
-from test.support import requires_working_socket, check_syntax_error, run_code
+from test.support import check_syntax_error, run_code, run_no_yield_async_fn
 
 from typing import Generic, NoDefault, Sequence, TypeAliasType, TypeVar, TypeVarTuple, ParamSpec, get_args
 
@@ -152,6 +151,13 @@ class TypeParamsInvalidTest(unittest.TestCase):
     def test_incorrect_mro_explicit_object(self):
         with self.assertRaisesRegex(TypeError, r"\(MRO\) for bases object, Generic"):
             class My[X](object): ...
+
+    def test_compile_error_in_type_param_bound(self):
+        # This should not crash, see gh-145187
+        check_syntax_error(
+            self,
+            "if True:\n class h[l:{7for*()in 0}]:2"
+        )
 
 
 class TypeParamsNonlocalTest(unittest.TestCase):
@@ -1051,7 +1057,6 @@ class TypeParamsTypeVarTest(unittest.TestCase):
         self.assertIsInstance(c, TypeVar)
         self.assertEqual(c.__name__, "C")
 
-    @requires_working_socket()
     def test_typevar_coroutine(self):
         def get_coroutine[A]():
             async def coroutine[B]():
@@ -1060,8 +1065,7 @@ class TypeParamsTypeVarTest(unittest.TestCase):
 
         co = get_coroutine()
 
-        self.addCleanup(asyncio.set_event_loop_policy, None)
-        a, b = asyncio.run(co())
+        a, b = run_no_yield_async_fn(co)
 
         self.assertIsInstance(a, TypeVar)
         self.assertEqual(a.__name__, "A")

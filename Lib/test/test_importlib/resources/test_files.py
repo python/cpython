@@ -1,17 +1,16 @@
-import os
+import contextlib
+import importlib
+import importlib.resources as resources
 import pathlib
 import py_compile
-import shutil
 import textwrap
 import unittest
 import warnings
-import importlib
-import contextlib
-
-from importlib import resources
 from importlib.resources.abc import Traversable
+
+from test.support import import_helper, os_helper
+
 from . import util
-from test.support import os_helper, import_helper
 
 
 @contextlib.contextmanager
@@ -38,15 +37,7 @@ class FilesTests:
     def test_joinpath_with_multiple_args(self):
         files = resources.files(self.data)
         binfile = files.joinpath('subdirectory', 'binary.file')
-        self.assertTrue(binfile.is_file())
-
-    def test_old_parameter(self):
-        """
-        Files used to take a 'package' parameter. Make sure anyone
-        passing by name is still supported.
-        """
-        with suppress_known_deprecation():
-            resources.files(package=self.data)
+        assert binfile.is_file()
 
 
 class OpenDiskTests(FilesTests, util.DiskSetup, unittest.TestCase):
@@ -59,6 +50,26 @@ class OpenZipTests(FilesTests, util.ZipSetup, unittest.TestCase):
 
 class OpenNamespaceTests(FilesTests, util.DiskSetup, unittest.TestCase):
     MODULE = 'namespacedata01'
+
+    def test_non_paths_in_dunder_path(self):
+        """
+        Non-path items in a namespace package's ``__path__`` are ignored.
+
+        As reported in python/importlib_resources#311, some tools
+        like Setuptools, when creating editable packages, will inject
+        non-paths into a namespace package's ``__path__``, a
+        sentinel like
+        ``__editable__.sample_namespace-1.0.finder.__path_hook__``
+        to cause the ``PathEntryFinder`` to be called when searching
+        for packages. In that case, resources should still be loadable.
+        """
+        import namespacedata01  # type: ignore[import-not-found]
+
+        namespacedata01.__path__.append(
+            '__editable__.sample_namespace-1.0.finder.__path_hook__'
+        )
+
+        resources.files(namespacedata01)
 
 
 class OpenNamespaceZipTests(FilesTests, util.ZipSetup, unittest.TestCase):
@@ -86,7 +97,7 @@ class ModulesFiles:
         """
         A module can have resources found adjacent to the module.
         """
-        import mod
+        import mod  # type: ignore[import-not-found]
 
         actual = resources.files(mod).joinpath('res.txt').read_text(encoding='utf-8')
         assert actual == self.spec['res.txt']
@@ -143,7 +154,9 @@ class ImplicitContextFiles:
         sources = pathlib.Path(resources.__file__).parent
 
         for source_path in sources.glob('**/*.py'):
-            c_path = c_resources.joinpath(source_path.relative_to(sources)).with_suffix('.pyc')
+            c_path = c_resources.joinpath(source_path.relative_to(sources)).with_suffix(
+                '.pyc'
+            )
             py_compile.compile(source_path, c_path)
         self.fixtures.enter_context(import_helper.DirsOnSysPath(bin_site))
 

@@ -29,8 +29,8 @@ from .log import logger
 
 __all__ = (
     'SelectorEventLoop', 'ProactorEventLoop', 'IocpProactor',
-    'DefaultEventLoopPolicy', 'WindowsSelectorEventLoopPolicy',
-    'WindowsProactorEventLoopPolicy', 'EventLoop',
+    '_DefaultEventLoopPolicy', '_WindowsSelectorEventLoopPolicy',
+    '_WindowsProactorEventLoopPolicy', 'EventLoop',
 )
 
 
@@ -610,6 +610,9 @@ class IocpProactor:
         ov = _overlapped.Overlapped(NULL)
         offset_low = offset & 0xffff_ffff
         offset_high = (offset >> 32) & 0xffff_ffff
+        # TransmitFile ignores OVERLAPPED.Offset for handles not opened with
+        # FILE_FLAG_OVERLAPPED, so seek the CRT file pointer to match.
+        file.seek(offset)
         ov.TransmitFile(sock.fileno(),
                         msvcrt.get_osfhandle(file.fileno()),
                         offset_low, offset_high,
@@ -891,13 +894,13 @@ class _WindowsSubprocessTransport(base_subprocess.BaseSubprocessTransport):
 SelectorEventLoop = _WindowsSelectorEventLoop
 
 
-class WindowsSelectorEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
+class _WindowsSelectorEventLoopPolicy(events._BaseDefaultEventLoopPolicy):
     _loop_factory = SelectorEventLoop
 
 
-class WindowsProactorEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
+class _WindowsProactorEventLoopPolicy(events._BaseDefaultEventLoopPolicy):
     _loop_factory = ProactorEventLoop
 
 
-DefaultEventLoopPolicy = WindowsProactorEventLoopPolicy
+_DefaultEventLoopPolicy = _WindowsProactorEventLoopPolicy
 EventLoop = ProactorEventLoop

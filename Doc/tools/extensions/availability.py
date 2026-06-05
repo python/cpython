@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from docutils import nodes
 from sphinx import addnodes
+from sphinx.locale import _ as sphinx_gettext
 from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
 
@@ -55,7 +56,7 @@ class Availability(SphinxDirective):
     final_argument_whitespace = True
 
     def run(self) -> list[nodes.container]:
-        title = "Availability"
+        title = sphinx_gettext("Availability")
         refnode = addnodes.pending_xref(
             title,
             nodes.inline(title, title, classes=["xref", "std", "std-ref"]),

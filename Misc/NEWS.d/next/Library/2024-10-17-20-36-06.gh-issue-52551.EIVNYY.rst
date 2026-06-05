@@ -1,1 +1,0 @@
-Use :c:func:`!wcsftime` to implement :func:`time.strftime` on Windows.

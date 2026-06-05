@@ -1,2 +1,0 @@
-Fix crash in :class:`!cProfile.Profile` and :class:`!_lsprof.Profiler` when their
-callbacks were directly called with 0 arguments.

@@ -1,8 +1,0 @@
-Fix encoding issues in :func:`time.strftime`, the
-:meth:`~datetime.datetime.strftime` method of the :mod:`datetime` classes
-:class:`~datetime.datetime`, :class:`~datetime.date` and
-:class:`~datetime.time` and formatting of these classes. Characters not
-encodable in the current locale are now acceptable in the format string.
-Surrogate pairs and sequence of surrogatescape-encoded bytes are no longer
-recombinated. Embedded null character no longer terminates the format
-string.
