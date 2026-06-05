@@ -1,0 +1,1 @@
+The internal method cache used for types is now a per-type cache instead of a global per-interpreter one, improving performance and reducing cache misses. Patch by Kumar Aditya.
