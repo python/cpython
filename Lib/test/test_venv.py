@@ -627,6 +627,14 @@ class BasicTest(BaseTest):
         self.assertTrue(os.path.islink(python))
         self.assertTrue(os.path.exists(python))
 
+        rmtree(self.env_dir)
+        os.makedirs(bindir)
+        os.symlink('/path/to/deleted/conda/env/bin/python3', python)
+        builder = venv.EnvBuilder(with_pip=False, symlinks=False)
+        self.run_with_capture(builder.create, self.env_dir)
+        self.assertFalse(os.path.islink(python))
+        self.assertTrue(os.path.exists(python))
+
     @requireVenvCreate
     def test_multiprocessing(self):
         """
