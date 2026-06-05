@@ -1,0 +1,2 @@
+Add :c:func:`PyUnicodeWriter_WriteRawStr` function to write a string into a
+Unicode writer. Patch by Victor Stinner.
