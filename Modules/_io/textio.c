@@ -774,10 +774,10 @@ static PyObject *
 buffer_callmethod_noargs(textio *self, PyObject *name)
 {
     PyObject *buffer = buffer_access_safe(self);
-
     if (buffer == NULL) {
         return NULL;
     }
+
     return PyObject_CallMethodNoArgs(buffer, name);
 }
 
@@ -785,10 +785,10 @@ static PyObject *
 buffer_callmethod_onearg(textio *self, PyObject *name, PyObject *arg)
 {
     PyObject *buffer = buffer_access_safe(self);
-
     if (buffer == NULL) {
         return NULL;
     }
+
     return PyObject_CallMethodOneArg(buffer, name, arg);
 }
 
