@@ -1,1 +1,1 @@
-Expose ``Barrier`` in ``multiprocessing.synchronize.__all__``.
+:mod:`!multiprocessing.synchronize`: publicly expose :class:`multiprocessing.Barrier`.
