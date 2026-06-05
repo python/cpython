@@ -1452,20 +1452,21 @@ class BlobTests(unittest.TestCase):
         self.blob[3:8:-1] = b""
         self.assertEqual(bytes(self.blob[:]), state_before)
 
-        # Extreme step values: cur += (size_t)step must not overflow.
-        # Use the current blob state (already modified above) as baseline.
-        current = bytes(self.blob[:])
-        expected3 = bytearray(current)
-        expected3[5::sys.maxsize] = current[5::sys.maxsize]
-        self.blob[5::sys.maxsize] = current[5::sys.maxsize]
-        actual3 = self.cx.execute("select b from test").fetchone()[0]
-        self.assertEqual(actual3, bytes(expected3))
+    def test_blob_set_slice_with_extreme_positive_step(self):
+        expected = bytearray(self.data)
+        expected[5::sys.maxsize] = b"\xab"
+        self.blob[5::sys.maxsize] = b"\xab"
+        actual = self.cx.execute("select b from test").fetchone()[0]
+        self.assertEqual(actual, bytes(expected))
+        self.assertEqual(actual[5], 0xab)
 
-        expected4 = bytearray(actual3)
-        expected4[::-sys.maxsize - 1] = bytes(actual3)[::-sys.maxsize - 1]
-        self.blob[::-sys.maxsize - 1] = bytes(actual3)[::-sys.maxsize - 1]
-        actual4 = self.cx.execute("select b from test").fetchone()[0]
-        self.assertEqual(actual4, bytes(expected4))
+    def test_blob_set_slice_with_extreme_negative_step(self):
+        expected = bytearray(self.data)
+        expected[::-sys.maxsize - 1] = b"\xcd"
+        self.blob[::-sys.maxsize - 1] = b"\xcd"
+        actual = self.cx.execute("select b from test").fetchone()[0]
+        self.assertEqual(actual, bytes(expected))
+        self.assertEqual(actual[-1], 0xcd)
 
     def test_blob_mapping_invalid_index_type(self):
         msg = "indices must be integers"
