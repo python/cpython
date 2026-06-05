@@ -1052,9 +1052,9 @@ is used when no command-line argument was present::
    >>> parser.parse_args([])
    Namespace(foo=42)
 
-Because ``nargs='*'`` collects matched values into a list, an absent positional
-argument yields an empty list (``[]``); a default of ``None`` is replaced by
-``[]``, although any other default is used as given.
+Because ``nargs='*'`` gathers any supplied values into a list, an absent
+positional argument yields an empty list (``[]``). Only a non-``None``
+*default* overrides this (so ``default=None`` still gives ``[]``).
 
 For required_ arguments, the ``default`` value is ignored. For example, this
 applies to positional arguments with nargs_ values other than ``?`` or ``*``,
