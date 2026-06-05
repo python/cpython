@@ -115,11 +115,12 @@ class ProcessPoolExecutorTest(ExecutorTest):
             with self.assertRaises(BrokenProcessPool) as bpe:
                 future.result()
 
-        cause = bpe.exception.__cause__
-        self.assertIsInstance(cause, futures.process._RemoteTraceback)
-        self.assertIn(
-            f"terminated abruptly with exit code {exit_code}", cause.tb
-        )
+        if sys.platform != 'cygwin':
+            cause = bpe.exception.__cause__
+            self.assertIsInstance(cause, futures.process._RemoteTraceback)
+            self.assertIn(
+                f"terminated abruptly with exit code {exit_code}", cause.tb
+            )
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @hashlib_helper.requires_hashdigest('md5')

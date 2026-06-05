@@ -2951,3 +2951,11 @@ PyIter_Send(PyObject *iter, PyObject *arg, PyObject **result)
     }
     return PYGEN_ERROR;
 }
+
+PySendResultPair
+_PyIter_Send(PyObject *iter, PyObject *arg)
+{
+    PySendResultPair pair;
+    pair.kind = PyIter_Send(iter, arg, &pair.object);
+    return pair;
+}

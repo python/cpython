@@ -31,17 +31,17 @@ typedef struct _PyUOpInstruction{
     uint64_t operand0;  // A cache entry
     uint64_t operand1;
 #ifdef Py_STATS
+    int32_t fitness;
     uint64_t execution_count;
 #endif
 } _PyUOpInstruction;
 
-// This is the length of the trace we translate initially.
-#if defined(Py_DEBUG) && defined(_Py_JIT)
-    // With asserts, the stencils are a lot larger
-#define UOP_MAX_TRACE_LENGTH 1000
-#else
-#define UOP_MAX_TRACE_LENGTH 2500
-#endif
+// Fitness is the target length of the trace we translate initially. The uop
+// buffer has a small amount of extra space for entry/loop-closing overhead.
+#define FITNESS_INITIAL 2500
+
+#define UOP_TRACE_BUFFER_OVERHEAD 10
+#define UOP_MAX_TRACE_LENGTH (FITNESS_INITIAL + UOP_TRACE_BUFFER_OVERHEAD)
 
 /* Bloom filter with m = 256
  * https://en.wikipedia.org/wiki/Bloom_filter */
