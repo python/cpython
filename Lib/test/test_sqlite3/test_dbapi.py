@@ -1453,8 +1453,19 @@ class BlobTests(unittest.TestCase):
         self.assertEqual(bytes(self.blob[:]), state_before)
 
         # Extreme step values: cur += (size_t)step must not overflow.
-        self.blob[5::sys.maxsize] = self.data[5::sys.maxsize]
-        self.blob[::-sys.maxsize - 1] = self.data[::-sys.maxsize - 1]
+        # Use the current blob state (already modified above) as baseline.
+        current = bytes(self.blob[:])
+        expected3 = bytearray(current)
+        expected3[5::sys.maxsize] = current[5::sys.maxsize]
+        self.blob[5::sys.maxsize] = current[5::sys.maxsize]
+        actual3 = self.cx.execute("select b from test").fetchone()[0]
+        self.assertEqual(actual3, bytes(expected3))
+
+        expected4 = bytearray(actual3)
+        expected4[::-sys.maxsize - 1] = bytes(actual3)[::-sys.maxsize - 1]
+        self.blob[::-sys.maxsize - 1] = bytes(actual3)[::-sys.maxsize - 1]
+        actual4 = self.cx.execute("select b from test").fetchone()[0]
+        self.assertEqual(actual4, bytes(expected4))
 
     def test_blob_mapping_invalid_index_type(self):
         msg = "indices must be integers"
