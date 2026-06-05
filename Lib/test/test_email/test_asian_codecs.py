@@ -104,12 +104,12 @@ Chinese =?gb2312?b?1tDOxA==?= =?gbk?b?1tDOxA==?= =?gb18030?b?1tDOxA==?=
         h.append(s, Charset('iso-2022-kr'))
         h.append(s, Charset('johab'))
         eq(h.encode(), """\
-Korean =?euc-kr?b?x9Gxub7uIMfRsbm+7g==?= =?ks_c_5601-1987?b?x9Gxub7u?=
+Korean =?euc-kr?b?x9Gxub7u?= =?ks_c_5601-1987?b?x9Gxub7uIMfRsbm+7g==?=
  =?iso-2022-kr?b?GyQpQw5HUTE5Pm4P?= =?johab?b?0GWKgrTh?=""")
         eq(decode_header(h.encode()),
            [(b'Korean ', None),
-            (b'\xc7\xd1\xb1\xb9\xbe\xee \xc7\xd1\xb1\xb9\xbe\xee', 'euc-kr'),
-            (b'\xc7\xd1\xb1\xb9\xbe\xee', 'ks_c_5601-1987'),
+            (b'\xc7\xd1\xb1\xb9\xbe\xee', 'euc-kr'),
+            (b'\xc7\xd1\xb1\xb9\xbe\xee \xc7\xd1\xb1\xb9\xbe\xee', 'ks_c_5601-1987'),
             (b'\x1b$)C\x0eGQ19>n\x0f', 'iso-2022-kr'),
             (b'\xd0e\x8a\x82\xb4\xe1', 'johab'),
            ])
