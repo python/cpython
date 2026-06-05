@@ -231,7 +231,7 @@ import_name[stmt_ty]:
 import_from[stmt_ty]:
     | invalid_import_from
     | lazy="lazy"? 'from' a=('.' | '...')* b=dotted_name 'import' c=import_from_targets {
-        _PyPegen_checked_future_import(p, b->v.Name.id, c, _PyPegen_seq_count_dots(a), lazy, EXTRA) }
+        _PyPegen_checked_from_import(p, a, b, c, lazy, EXTRA) }
     | lazy="lazy"? 'from' a=('.' | '...')+ 'import' b=import_from_targets {
         _PyAST_ImportFrom(NULL, b, _PyPegen_seq_count_dots(a), lazy ? 1 : 0, EXTRA) }
 import_from_targets[asdl_alias_seq*]:
