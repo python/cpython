@@ -51,7 +51,7 @@ MIN_SAMPLES_FOR_TUI = 200
 MAX_PENDING_SAMPLES = 8192
 
 
-def _resolve_venv_child_pid(pid):
+def _resolve_python_pid(pid):
     """On Windows, if pid is a venvlauncher process, return the child Python PID.
 
     The venvlauncher (used as python.exe in venvs) spawns the real Python
@@ -81,7 +81,7 @@ def _resolve_venv_child_pid(pid):
 
 class SampleProfiler:
     def __init__(self, pid, sample_interval_usec, all_threads, *, mode=PROFILING_MODE_WALL, native=False, gc=True, opcodes=False, skip_non_matching_threads=True, collect_stats=False, blocking=False):
-        self.pid = _resolve_venv_child_pid(pid)
+        self.pid = _resolve_python_pid(pid)
         self.sample_interval_usec = sample_interval_usec
         self.all_threads = all_threads
         self.mode = mode  # Store mode for later use
