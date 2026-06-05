@@ -381,7 +381,7 @@ and reliable way to wait for all tasks in the group to finish.
       * pass the task group instance or bound :meth:`cancel` method to some other task *before*
         opening the task group, allowing remote cancellation
 
-      .. versionadded:: next
+      .. versionadded:: 3.15
 
 Example::
 
@@ -394,8 +394,8 @@ Example::
 The ``async with`` statement will wait for all tasks in the group to finish.
 While waiting, new tasks may still be added to the group
 (for example, by passing ``tg`` into one of the coroutines
-and calling ``tg.create_task()`` in that coroutine).  There is also opportunity
-to short-circuit the entire task group with ``tg.cancel()``, based on some condition.
+and calling ``tg.create_task()`` in that coroutine).  There is also opportunity to
+request termination of the entire task group with ``tg.cancel()``, based on some condition.
 Once the last task has finished and the ``async with`` block is exited,
 no new tasks may be added to the group.
 
@@ -1229,6 +1229,9 @@ Task object
    executing the coroutine immediately, until the first time the coroutine
    blocks. If the coroutine returns or raises without blocking, the task
    will be finished eagerly and will skip scheduling to the event loop.
+
+   Tasks are :ref:`generic <generics>` over the return type of their wrapped
+   coroutines.
 
    .. versionchanged:: 3.7
       Added support for the :mod:`contextvars` module.

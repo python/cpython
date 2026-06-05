@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_typedefs.h"      // _PyInterpreterFrame
+#include "pycore_jit_publish.h"
 #include "pycore_uop.h"           // _PyUOpInstruction
 #include "pycore_uop_ids.h"
 #include "pycore_stackref.h"      // _PyStackRef
@@ -30,9 +31,8 @@ extern "C" {
  * 4. A push followed by a matching return is net-zero on frame-specific
  *    fitness, excluding per-slot costs.
  */
-#define MAX_TARGET_LENGTH          (UOP_MAX_TRACE_LENGTH / 2)
 #define OPTIMIZER_EFFECTIVENESS    2
-#define FITNESS_INITIAL            (MAX_TARGET_LENGTH * OPTIMIZER_EFFECTIVENESS)
+#define MAX_TARGET_LENGTH          (FITNESS_INITIAL / OPTIMIZER_EFFECTIVENESS)
 
 /* Exit quality thresholds: trace stops when fitness < exit_quality.
  * Higher = trace is more willing to stop here. */
@@ -198,6 +198,7 @@ typedef struct _PyExecutorObject {
     uint32_t code_size;
     size_t jit_size;
     void *jit_code;
+    _PyJitCodeRegistration *jit_registration;
     _PyExitData exits[1];
 } _PyExecutorObject;
 
@@ -534,7 +535,21 @@ typedef struct {
     uint8_t count;
     uint8_t indices[MAX_RECORDED_VALUES];
 } _PyOpcodeRecordEntry;
+
+typedef struct {
+    uint8_t count;
+    uint8_t transform_mask;
+    uint8_t slots[MAX_RECORDED_VALUES];
+} _PyOpcodeRecordSlotMap;
+
 PyAPI_DATA(const _PyOpcodeRecordEntry) _PyOpcode_RecordEntries[256];
+PyAPI_DATA(const _PyOpcodeRecordSlotMap) _PyOpcode_RecordSlotMaps[256];
+
+/* Convert a family-recorded value to the form a recorder uop expects.
+ * If no transform is needed, return the input value unchanged.
+ * Takes ownership of `value` and returns a new strong reference or NULL.
+ */
+PyAPI_FUNC(PyObject *) _PyOpcode_RecordTransformValue(int uop, PyObject *value);
 #endif
 
 #ifdef __cplusplus

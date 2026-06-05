@@ -388,7 +388,7 @@ Kumar Srinivasan and Graham Bleaney.)
 PEP 681: Data class transforms
 ------------------------------
 
-:data:`~typing.dataclass_transform` may be used to
+:deco:`~typing.dataclass_transform` may be used to
 decorate a class, metaclass, or a function that is itself a decorator.
 The presence of ``@dataclass_transform()`` tells a static type checker that the
 decorated object performs runtime "magic" that transforms a class,
@@ -686,8 +686,8 @@ enum
 * Added the :func:`~enum.member` and :func:`~enum.nonmember` decorators,
   to ensure the decorated object is/is not converted to an enum member.
 
-* Added the :func:`~enum.property` decorator,
-  which works like :func:`property` except for enums.
+* Added the :deco:`~enum.property` decorator,
+  which works like :deco:`property` except for enums.
   Use this instead of :func:`types.DynamicClassAttribute`.
 
 * Added the :func:`~enum.global_enum` enum decorator,
@@ -740,7 +740,7 @@ fractions
 functools
 ---------
 
-* :func:`functools.singledispatch` now supports :class:`types.UnionType`
+* :deco:`functools.singledispatch` now supports :class:`types.UnionType`
   and :class:`typing.Union` as annotations to the dispatch argument.::
 
     >>> from functools import singledispatch
@@ -1164,7 +1164,7 @@ For major changes, see :ref:`new-feat-related-type-hints-311`.
   type checker errors related to highly dynamic class, such as mocks.
   (Contributed by Shantanu Jain in :gh:`91154`.)
 
-* The :func:`typing.final` decorator now sets the ``__final__`` attributed on
+* The :deco:`typing.final` decorator now sets the ``__final__`` attributed on
   the decorated object.
   (Contributed by Jelle Zijlstra in :gh:`90500`.)
 
@@ -1197,7 +1197,7 @@ For major changes, see :ref:`new-feat-related-type-hints-311`.
   :data:`~typing.ClassVar` annotations. (Contributed by Gregory Beauregard
   in :gh:`90711`.)
 
-* :func:`typing.no_type_check` no longer modifies external classes and functions.
+* :deco:`typing.no_type_check` no longer modifies external classes and functions.
   It also now correctly marks classmethods as not to be type checked. (Contributed
   by Nikita Sobolev in :gh:`90729`.)
 
