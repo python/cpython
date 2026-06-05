@@ -146,7 +146,7 @@ purposes.
    *cadata* is given) or uses :meth:`SSLContext.load_default_certs` to load
    default CA certificates.
 
-   When the environment variable :envvar:`SSLKEYLOGFILE` is set,
+   When the environment variable :envvar:`!SSLKEYLOGFILE` is set,
    :func:`create_default_context` enables key logging by setting
    :attr:`~SSLContext.keylog_filename` to the variable's value.
 
