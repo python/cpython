@@ -1369,8 +1369,8 @@ behavior::
    >>> parser.parse_args('--foo XXX'.split())
    Namespace(bar='XXX')
 
-Multiple arguments may share the same ``dest``.  By default the value from the
-last such argument given on the command line wins; use ``action='append'`` to
+Multiple arguments may share the same ``dest``.  By default, the value from the
+last such argument given on the command line wins.  Use ``action='append'`` to
 collect values from all of them into a list instead.  For conflicting *option
 strings* rather than ``dest`` names, see conflict_handler_.
 
