@@ -602,11 +602,12 @@ class IsCloseTests(test_math.IsCloseTests):
 
         inf_complex = [c for c in special_complex
                       if not math.isnan(c.real) and not math.isnan(c.imag)]
-        for z, w in itertools.combinations(inf_complex, 2):
-            self.assertIsNotClose(z, w)
-
         for z in inf_complex:
-            self.assertIsClose(z, z)
+            for w in inf_complex:
+                if z != w:
+                    self.assertIsNotClose(z, w)
+                else:
+                    self.assertIsClose(z, z)
 
 
 if __name__ == "__main__":
