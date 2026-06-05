@@ -109,6 +109,13 @@ os
   process via a pidfd.  Available on Linux 5.6+.
   (Contributed by Maurycy Pawłowski-Wieroński in :gh:`149464`.)
 
+shlex
+-----
+
+* Add keyword-only parameter *force* to :func:`shlex.quote` to force quoting
+  a string, even if it is already safe for a shell without being quoted.
+  (Contributed by Jay Berry in :gh:`148846`.)
+
 xml
 ---
 
