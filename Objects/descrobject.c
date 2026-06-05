@@ -150,7 +150,7 @@ method_get(PyObject *self, PyObject *obj, PyObject *type)
         } else {
             PyErr_Format(PyExc_TypeError,
                         "descriptor '%V' needs a type, not '%s', as arg 2",
-                        descr_name((PyDescrObject *)descr),
+                        descr_name((PyDescrObject *)descr), "?",
                         Py_TYPE(type)->tp_name);
             return NULL;
         }
@@ -1178,7 +1178,7 @@ static PyMethodDef mappingproxy_methods[] = {
     {"copy",      mappingproxy_copy,       METH_NOARGS,
      PyDoc_STR("D.copy() -> a shallow copy of D")},
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
-     PyDoc_STR("See PEP 585")},
+     PyDoc_STR("mappingproxy objects are generic over two types, signifying (respectively) the types of their keys and values")},
     {"__reversed__", mappingproxy_reversed, METH_NOARGS,
      PyDoc_STR("D.__reversed__() -> reverse iterator")},
     {0}
@@ -1610,7 +1610,7 @@ property_set_name(PyObject *self, PyObject *args) {
     if (PyTuple_GET_SIZE(args) != 2) {
         PyErr_Format(
                 PyExc_TypeError,
-                "__set_name__() takes 2 positional arguments but %d were given",
+                "__set_name__() takes 2 positional arguments but %zd were given",
                 PyTuple_GET_SIZE(args));
         return NULL;
     }

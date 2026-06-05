@@ -16,7 +16,8 @@ PyDoc_STRVAR(_io__TextIOBase_detach__doc__,
 "\n"
 "Separate the underlying buffer from the TextIOBase and return it.\n"
 "\n"
-"After the underlying buffer has been detached, the TextIO is in an unusable state.");
+"After the underlying buffer has been detached, the TextIO is in\n"
+"an unusable state.");
 
 #define _IO__TEXTIOBASE_DETACH_METHODDEF    \
     {"detach", _PyCFunction_CAST(_io__TextIOBase_detach), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__TextIOBase_detach__doc__},
@@ -40,8 +41,8 @@ PyDoc_STRVAR(_io__TextIOBase_read__doc__,
 "\n"
 "Read at most size characters from stream.\n"
 "\n"
-"Read from underlying buffer until we have size characters or we hit EOF.\n"
-"If size is negative or omitted, read until EOF.");
+"Read from underlying buffer until we have size characters or we hit\n"
+"EOF.  If size is negative or omitted, read until EOF.");
 
 #define _IO__TEXTIOBASE_READ_METHODDEF    \
     {"read", _PyCFunction_CAST(_io__TextIOBase_read), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__TextIOBase_read__doc__},
@@ -966,8 +967,8 @@ PyDoc_STRVAR(_io_TextIOWrapper_tell__doc__,
 "\n"
 "Return the stream position as an opaque number.\n"
 "\n"
-"The return value of tell() can be given as input to seek(), to restore a\n"
-"previous stream position.");
+"The return value of tell() can be given as input to seek(), to\n"
+"restore a previous stream position.");
 
 #define _IO_TEXTIOWRAPPER_TELL_METHODDEF    \
     {"tell", (PyCFunction)_io_TextIOWrapper_tell, METH_NOARGS, _io_TextIOWrapper_tell__doc__},
@@ -1330,4 +1331,4 @@ _io_TextIOWrapper__CHUNK_SIZE_set(PyObject *self, PyObject *value, void *Py_UNUS
 
     return return_value;
 }
-/*[clinic end generated code: output=733751f384022580 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f900b42090c9781c input=a9049054013a1b77]*/

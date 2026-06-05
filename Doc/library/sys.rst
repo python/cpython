@@ -879,7 +879,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. versionchanged:: 3.6
       Windows is no longer guaranteed to return ``'mbcs'``. See :pep:`529`
-      and :func:`_enablelegacywindowsfsencoding` for more information.
+      for more information.
 
    .. versionchanged:: 3.7
       Return ``'utf-8'`` if the :ref:`Python UTF-8 Mode <utf8-mode>` is
@@ -919,8 +919,6 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    * ``"normal"``: Only imports explicitly marked with the ``lazy`` keyword
      are lazy
    * ``"all"``: All top-level imports are potentially lazy
-   * ``"none"``: All lazy imports are suppressed (even explicitly marked
-     ones)
 
    See also :func:`set_lazy_imports` and :pep:`810`.
 
@@ -1483,6 +1481,21 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    They hold the legacy representation of ``sys.last_exc``, as returned
    from :func:`exc_info` above.
 
+
+.. data:: lazy_modules
+
+   A :class:`set` of fully qualified module name strings that have been lazily
+   imported in the current interpreter but not yet loaded.  When a
+   lazily imported module is accessed for the first time, its name is removed
+   from this set.
+
+   This attribute is intended for debugging and introspection.
+
+   See also :func:`set_lazy_imports` and :pep:`810`.
+
+   .. versionadded:: 3.15
+
+
 .. data:: maxsize
 
    An integer giving the maximum value a variable of type :c:type:`Py_ssize_t` can
@@ -1757,8 +1770,6 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    * ``"normal"``: Only imports explicitly marked with the ``lazy`` keyword
      are lazy
    * ``"all"``: All top-level imports become potentially lazy
-   * ``"none"``: All lazy imports are suppressed (even explicitly marked
-     ones)
 
    This function is intended for advanced users who need to control lazy
    imports across their entire application. Library developers should
@@ -1788,7 +1799,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    Where:
 
    * *importing_module* is the name of the module doing the import
-   * *imported_module* is the name of the module being imported
+   * *imported_module* is the resolved name of the module being imported
+     (for example, ``lazy from .spam import eggs`` passes
+     ``package.spam``)
    * *fromlist* is the tuple of names being imported (for ``from ... import``
      statements), or ``None`` for regular imports
 
@@ -2104,31 +2117,6 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    .. versionadded:: 3.14
       See :pep:`768` for more details.
 
-
-.. function:: _enablelegacywindowsfsencoding()
-
-   Changes the :term:`filesystem encoding and error handler` to 'mbcs' and
-   'replace' respectively, for consistency with versions of Python prior to
-   3.6.
-
-   This is equivalent to defining the :envvar:`PYTHONLEGACYWINDOWSFSENCODING`
-   environment variable before launching Python.
-
-   See also :func:`sys.getfilesystemencoding` and
-   :func:`sys.getfilesystemencodeerrors`.
-
-   .. availability:: Windows.
-
-   .. note::
-      Changing the filesystem encoding after Python startup is risky because
-      the old fsencoding or paths encoded by the old fsencoding may be cached
-      somewhere. Use :envvar:`PYTHONLEGACYWINDOWSFSENCODING` instead.
-
-   .. versionadded:: 3.6
-      See :pep:`529` for more details.
-
-   .. deprecated-removed:: 3.13 3.16
-      Use :envvar:`PYTHONLEGACYWINDOWSFSENCODING` instead.
 
 .. data:: stdin
           stdout

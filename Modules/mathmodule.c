@@ -1438,13 +1438,14 @@ math.frexp
 
 Return the mantissa and exponent of x, as pair (m, e).
 
-m is a float and e is an int, such that x = m * 2.**e.
-If x is 0, m and e are both 0.  Else 0.5 <= abs(m) < 1.0.
+If x is a finite nonzero number, then m is a float with
+0.5 <= abs(m) < 1.0 and an integer e is such that
+x == m * 2**e exactly.  Else, return (x, 0).
 [clinic start generated code]*/
 
 static PyObject *
 math_frexp_impl(PyObject *module, double x)
-/*[clinic end generated code: output=03e30d252a15ad4a input=96251c9e208bc6e9]*/
+/*[clinic end generated code: output=03e30d252a15ad4a input=215cf8ea28a0959b]*/
 {
     int i;
     /* deal with special cases directly, to sidestep platform
@@ -2541,6 +2542,7 @@ math_isnan_impl(PyObject *module, double x)
 
 
 /*[clinic input]
+@permit_long_summary
 math.isinf
 
     x: double
@@ -2551,7 +2553,7 @@ Return True if x is a positive or negative infinity, and False otherwise.
 
 static PyObject *
 math_isinf_impl(PyObject *module, double x)
-/*[clinic end generated code: output=9f00cbec4de7b06b input=32630e4212cf961f]*/
+/*[clinic end generated code: output=9f00cbec4de7b06b input=8584152a71a3aea9]*/
 {
     return PyBool_FromLong((long)isinf(x));
 }
@@ -2831,7 +2833,7 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
 
 
 /*[clinic input]
-@permit_long_docstring_body
+@permit_long_summary
 math.nextafter
 
     x: double
@@ -2844,13 +2846,13 @@ Return the floating-point value the given number of steps after x towards y.
 
 If steps is not specified or is None, it defaults to 1.
 
-Raises a TypeError, if x or y is not a double, or if steps is not an integer.
-Raises ValueError if steps is negative.
+Raises a TypeError, if x or y is not a double, or if steps is not
+an integer.  Raises ValueError if steps is negative.
 [clinic start generated code]*/
 
 static PyObject *
 math_nextafter_impl(PyObject *module, double x, double y, PyObject *steps)
-/*[clinic end generated code: output=cc6511f02afc099e input=cc8f0dad1b27a8a4]*/
+/*[clinic end generated code: output=cc6511f02afc099e input=3a9151e6b1e9f346]*/
 {
 #if defined(_AIX)
     if (x == y) {

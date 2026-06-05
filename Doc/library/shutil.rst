@@ -385,10 +385,14 @@ Directory and files operations
    If *dst* already exists but is not a directory, it may be overwritten
    depending on :func:`os.rename` semantics.
 
-   If the destination is on the current filesystem, then :func:`os.rename` is
-   used. Otherwise, *src* is copied to the destination using *copy_function*
-   and then removed.  In case of symlinks, a new symlink pointing to the target
-   of *src* will be created as the destination and *src* will be removed.
+   :func:`os.rename` is preferably used internally when *src* and the destination are on
+   the same filesystem. In case :func:`os.rename` fails due to :exc:`OSError`
+   (e.g. the user has write permission to the destination file but not to its parent
+   directory), this method falls back to using *copy_function*, in which case
+   *src* is copied to the destination using *copy_function* and then removed.
+
+   In case of symlinks, a new symlink pointing to the target of *src* will be
+   created in or as the destination, and *src* will be removed.
 
    If *copy_function* is given, it must be a callable that takes two arguments,
    *src* and the destination, and will be used to copy *src* to the destination
@@ -696,7 +700,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    Register an archiver for the format *name*.
 
-   *function* is the callable that will be used to unpack archives. The callable
+   *function* is the callable that will be used to create archives. The callable
    will receive the *base_name* of the file to create, followed by the
    *base_dir* (which defaults to :data:`os.curdir`) to start archiving from.
    Further arguments are passed as keyword arguments: *owner*, *group*,
@@ -749,8 +753,8 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
       Never extract archives from untrusted sources without prior inspection.
       It is possible that files are created outside of the path specified in
-      the *extract_dir* argument, e.g. members that have absolute filenames
-      starting with "/" or filenames with two dots "..".
+      the *extract_dir* argument, for example, members that have absolute filenames
+      or filenames with ".." components.
 
       Since Python 3.14, the defaults for both built-in formats (zip and tar
       files) will prevent the most dangerous of such security issues,

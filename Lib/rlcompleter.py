@@ -179,14 +179,14 @@ class Completer:
                 if (word[:n] == attr and
                     not (noprefix and word[:n+1] == noprefix)):
                     match = "%s.%s" % (expr, word)
-                    if isinstance(getattr(type(thisobject), word, None),
-                                  property):
-                        # bpo-44752: thisobject.word is a method decorated by
-                        # `@property`. What follows applies a postfix if
-                        # thisobject.word is callable, but know we know that
-                        # this is not callable (because it is a property).
-                        # Also, getattr(thisobject, word) will evaluate the
-                        # property method, which is not desirable.
+
+                    class_attr = getattr(type(thisobject), word, None)
+                    if isinstance(
+                        class_attr,
+                        (property, types.GetSetDescriptorType, types.MemberDescriptorType)
+                    ) or (hasattr(class_attr, '__get__') and not callable(class_attr)):
+                        # Avoid evaluating descriptors, which could run
+                        # arbitrary code or raise exceptions.
                         matches.append(match)
                         continue
 

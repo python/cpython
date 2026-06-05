@@ -551,10 +551,10 @@ class BaseBytesTest:
         self.assertEqual(three_bytes.hex('*', -2), 'b901*ef')
         self.assertEqual(three_bytes.hex(sep=':', bytes_per_sep=2), 'b9:01ef')
         self.assertEqual(three_bytes.hex(sep='*', bytes_per_sep=-2), 'b901*ef')
-        for bytes_per_sep in 3, -3, 2**31-1, -(2**31-1):
+        for bytes_per_sep in 3, -3, sys.maxsize, -sys.maxsize:
             with self.subTest(bytes_per_sep=bytes_per_sep):
                 self.assertEqual(three_bytes.hex(':', bytes_per_sep), 'b901ef')
-        for bytes_per_sep in 2**31, -2**31, 2**1000, -2**1000:
+        for bytes_per_sep in sys.maxsize+1, -sys.maxsize-1, 2**1000, -2**1000:
             with self.subTest(bytes_per_sep=bytes_per_sep):
                 try:
                     self.assertEqual(three_bytes.hex(':', bytes_per_sep), 'b901ef')
@@ -877,6 +877,13 @@ class BaseBytesTest:
         b = self.type2test(b'mississippi')
         self.assertEqual(b.replace(b'i', b'a'), b'massassappa')
         self.assertEqual(b.replace(b'ss', b'x'), b'mixixippi')
+
+    def test_replace_count_keyword(self):
+        b = self.type2test(b'aa')
+        self.assertEqual(b.replace(b'a', b'b', count=0), b'aa')
+        self.assertEqual(b.replace(b'a', b'b', count=1), b'ba')
+        self.assertEqual(b.replace(b'a', b'b', count=2), b'bb')
+        self.assertEqual(b.replace(b'a', b'b', count=3), b'bb')
 
     def test_replace_int_error(self):
         self.assertRaises(TypeError, self.type2test(b'a b').replace, 32, b'')
@@ -2693,10 +2700,6 @@ class FreeThreadingTest(unittest.TestCase):
             b.wait()
             a += c
 
-        def irepeat(b, a):  # MODIFIES!
-            b.wait()
-            a *= 2
-
         def subscript(b, a):
             b.wait()
             try: assert a[0] != 0xdd
@@ -2830,9 +2833,10 @@ class FreeThreadingTest(unittest.TestCase):
 
         check([clear] + [repeat] * 10)
         check([clear] + [iconcat] * 10)
-        check([clear] + [irepeat] * 10)
         check([clear] + [ass_subscript] * 10)
         check([clear] + [repr_] * 10)
+        # gh-148605: Do not test "a *= 2" since it allocates up to 4 GiB using
+        # 10 threads
 
         # value errors
 

@@ -906,7 +906,7 @@ odict_or(PyObject *left, PyObject *right)
         type = Py_TYPE(right);
         other = left;
     }
-    if (!PyDict_Check(other)) {
+    if (!PyAnyDict_Check(other)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
     PyObject *new = PyObject_CallOneArg((PyObject*)type, left);
@@ -1149,12 +1149,13 @@ OrderedDict.popitem
 
 Remove and return a (key, value) pair from the dictionary.
 
-Pairs are returned in LIFO order if last is true or FIFO order if false.
+Pairs are returned in LIFO order if last is true or FIFO order if
+false.
 [clinic start generated code]*/
 
 static PyObject *
 OrderedDict_popitem_impl(PyODictObject *self, int last)
-/*[clinic end generated code: output=98e7d986690d49eb input=8aafc7433e0a40e7]*/
+/*[clinic end generated code: output=98e7d986690d49eb input=ebf1cc91579c9e54]*/
 {
     PyObject *key, *value;
     _ODictNode *node;
@@ -2268,7 +2269,7 @@ static int
 mutablemapping_update_arg(PyObject *self, PyObject *arg)
 {
     int res = 0;
-    if (PyDict_CheckExact(arg)) {
+    if (PyAnyDict_CheckExact(arg)) {
         PyObject *items = PyDict_Items(arg);
         if (items == NULL) {
             return -1;

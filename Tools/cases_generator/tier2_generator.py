@@ -279,7 +279,7 @@ def generate_tier2(
             emitter = Tier2Emitter(out, analysis.labels, exit_depth)
             out.emit(f"case {uop.name}_r{inputs}{outputs}: {{\n")
             out.emit(f"CHECK_CURRENT_CACHED_VALUES({inputs});\n")
-            out.emit("assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());\n")
+            out.emit("ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);\n")
             declare_variables(uop, out)
             stack = Stack()
             stack.push_cache([f"_tos_cache{i}" for i in range(inputs)], out)
@@ -287,7 +287,7 @@ def generate_tier2(
             reachable, stack = write_uop(uop, emitter, stack, outputs)
             out.start_line()
             if reachable:
-                out.emit("assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());\n")
+                out.emit("ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);\n")
                 if not uop.properties.always_exits:
                     out.emit("break;\n")
             out.start_line()

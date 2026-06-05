@@ -1,6 +1,6 @@
 from unittest import mock
 from test import support
-from test.support import socket_helper, control_characters_c0
+from test.support import force_not_colorized, socket_helper, control_characters_c0
 from test.test_httpservers import NoLogRequestHandler
 from unittest import TestCase
 from wsgiref.util import setup_testing_defaults
@@ -192,6 +192,7 @@ class IntegrationTests(TestCase):
             err.splitlines()[-2], "AssertionError"
         )
 
+    @force_not_colorized
     def test_bytes_validation(self):
         def app(e, s):
             s("200 OK", [

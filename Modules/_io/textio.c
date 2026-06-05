@@ -53,19 +53,19 @@ _unsupported(_PyIO_State *state, const char *message)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 _io._TextIOBase.detach
     cls: defining_class
     /
 
 Separate the underlying buffer from the TextIOBase and return it.
 
-After the underlying buffer has been detached, the TextIO is in an unusable state.
+After the underlying buffer has been detached, the TextIO is in
+an unusable state.
 [clinic start generated code]*/
 
 static PyObject *
 _io__TextIOBase_detach_impl(PyObject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=50915f40c609eaa4 input=8cd0652c17d7f015]*/
+/*[clinic end generated code: output=50915f40c609eaa4 input=8099c088abcb87d8]*/
 {
     _PyIO_State *state = get_io_state_by_cls(cls);
     return _unsupported(state, "detach");
@@ -79,14 +79,14 @@ _io._TextIOBase.read
 
 Read at most size characters from stream.
 
-Read from underlying buffer until we have size characters or we hit EOF.
-If size is negative or omitted, read until EOF.
+Read from underlying buffer until we have size characters or we hit
+EOF.  If size is negative or omitted, read until EOF.
 [clinic start generated code]*/
 
 static PyObject *
 _io__TextIOBase_read_impl(PyObject *self, PyTypeObject *cls,
                           int Py_UNUSED(size))
-/*[clinic end generated code: output=51a5178a309ce647 input=f5e37720f9fc563f]*/
+/*[clinic end generated code: output=51a5178a309ce647 input=c9fd4cc1cf1b4614]*/
 {
     _PyIO_State *state = get_io_state_by_cls(cls);
     return _unsupported(state, "read");
@@ -2803,13 +2803,13 @@ _io.TextIOWrapper.tell
 
 Return the stream position as an opaque number.
 
-The return value of tell() can be given as input to seek(), to restore a
-previous stream position.
+The return value of tell() can be given as input to seek(), to
+restore a previous stream position.
 [clinic start generated code]*/
 
 static PyObject *
 _io_TextIOWrapper_tell_impl(textio *self)
-/*[clinic end generated code: output=4f168c08bf34ad5f input=415d6b4e4f8e6e8c]*/
+/*[clinic end generated code: output=4f168c08bf34ad5f input=aeece020f747fd92]*/
 {
     PyObject *res;
     PyObject *posobj = NULL;
