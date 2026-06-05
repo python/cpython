@@ -641,12 +641,10 @@ Glossary
       .. index:: single: generator
 
    generator
-      An :term:`iterator` object created by a :term:`generator function` or
-      a :term:`generator expression`.
-
-      Usually refers to a generator iterator object, but in some contexts
-      may refer to a :term:`generator function`.  In cases where the
-      intended meaning isn't clear, using the full terms avoids ambiguity.
+      Informally used to mean either a :term:`generator function` or a
+      :term:`generator iterator`, depending on context.  The formal terms
+      :term:`generator function` and :term:`generator iterator` are uncommon
+      in practice; "generator" alone is almost always sufficient.
 
       .. index:: single: generator function
 
