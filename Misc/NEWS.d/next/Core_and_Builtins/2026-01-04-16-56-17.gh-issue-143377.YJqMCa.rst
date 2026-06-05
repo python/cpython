@@ -1,2 +1,0 @@
-Fix a crash in :func:`!_interpreters.capture_exception` when
-the exception is incorrectly formatted. Patch by Bénédikt Tran.

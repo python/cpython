@@ -629,6 +629,28 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         memio = self.ioclass()
         self.assertRaises(BufferError, memio.writelines, [B()])
 
+    def test_write_mutating_buffer(self):
+        # Test that buffer is exported only once during write().
+        # See: https://github.com/python/cpython/issues/143602.
+        class B:
+            count = 0
+            def __buffer__(self, flags):
+                self.count += 1
+                if self.count == 1:
+                    return memoryview(b"AAA")
+                else:
+                    return memoryview(b"BBBBBBBBB")
+
+        memio = self.ioclass(b'0123456789')
+        memio.seek(2)
+        b = B()
+        n = memio.write(b)
+
+        self.assertEqual(b.count, 1)
+        self.assertEqual(n, 3)
+        self.assertEqual(memio.getvalue(), b"01AAA56789")
+        self.assertEqual(memio.tell(), 5)
+
 
 class TextIOTestMixin:
 
@@ -944,6 +966,25 @@ class CStringIOTest(PyStringIOTest):
         self.assertRaises(TypeError, memio.__setstate__, 0)
         memio.close()
         self.assertRaises(ValueError, memio.__setstate__, ("closed", "", 0, None))
+
+    def test_write_str_subclass(self):
+        # Writing a str subclass should use the subclass's unicode data
+        # directly, not call __str__ on it (which may return a different
+        # value).  gh-149047
+        class MyStr(str):
+            def __str__(self):
+                return "WRONG"
+
+        s = MyStr("correct")
+        memio = self.ioclass()
+        memio.write(s)
+        self.assertEqual(memio.getvalue(), "correct")
+
+        # Also test the fast path where pos == string_size (STATE_ACCUMULATING)
+        memio2 = self.ioclass()
+        memio2.write(MyStr("hello "))
+        memio2.write(MyStr("world"))
+        self.assertEqual(memio2.getvalue(), "hello world")
 
 
 class CStringIOPickleTest(PyStringIOPickleTest):

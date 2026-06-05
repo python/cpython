@@ -4828,6 +4828,15 @@ class TestQuopri(unittest.TestCase):
     def test_decode_false_quoting(self):
         self._test_decode('A=1,B=A ==> A+B==2', 'A=1,B=A ==> A+B==2')
 
+    def test_decode_crlf_eol_no_trailing_newline(self):
+        self._test_decode('abc', 'abc', eol='\r\n')
+
+    def test_decode_crlf_eol_multiline_no_trailing_newline(self):
+        self._test_decode('a\r\nb', 'a\r\nb', eol='\r\n')
+
+    def test_decode_crlf_eol_with_trailing_newline(self):
+        self._test_decode('abc\r\n', 'abc\r\n', eol='\r\n')
+
     def _test_encode(self, body, expected_encoded_body, maxlinelen=None, eol=None):
         kwargs = {}
         if maxlinelen is None:
@@ -4986,15 +4995,8 @@ class TestCharset(unittest.TestCase):
         # Try the convert argument, where input codec != output codec
         c = Charset('euc-jp')
         # With apologies to Tokio Kikuchi ;)
-        # XXX FIXME
-##         try:
-##             eq('\x1b$B5FCO;~IW\x1b(B',
-##                c.body_encode('\xb5\xc6\xc3\xcf\xbb\xfe\xc9\xd7'))
-##             eq('\xb5\xc6\xc3\xcf\xbb\xfe\xc9\xd7',
-##                c.body_encode('\xb5\xc6\xc3\xcf\xbb\xfe\xc9\xd7', False))
-##         except LookupError:
-##             # We probably don't have the Japanese codecs installed
-##             pass
+        eq('\x1b$B5FCO;~IW\x1b(B',
+           c.body_encode('\u83ca\u5730\u6642\u592b'))
         # Testing SF bug #625509, which we have to fake, since there are no
         # built-in encodings where the header encoding is QP but the body
         # encoding is not.

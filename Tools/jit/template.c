@@ -1,4 +1,10 @@
+
 #include "Python.h"
+
+#ifndef NDEBUG
+#undef assert
+#define assert(TEST) ((TEST) ? 0 : _Py_jit_assertion_failure(__LINE__))
+#endif
 
 #include "pycore_backoff.h"
 #include "pycore_call.h"
@@ -12,9 +18,11 @@
 #include "pycore_frame.h"
 #include "pycore_function.h"
 #include "pycore_genobject.h"
+#include "pycore_import.h"
 #include "pycore_interpframe.h"
 #include "pycore_interpolation.h"
 #include "pycore_intrinsics.h"
+#include "pycore_lazyimportobject.h"
 #include "pycore_jit.h"
 #include "pycore_list.h"
 #include "pycore_long.h"
@@ -34,6 +42,10 @@
 
 #include "jit.h"
 
+#ifndef NDEBUG
+#undef assert
+#define assert(TEST) ((TEST) ? 0 : _Py_jit_assertion_failure(__LINE__))
+#endif
 
 #undef CURRENT_OPERAND0_64
 #define CURRENT_OPERAND0_64() (_operand0_64)
@@ -113,7 +125,7 @@ do {                                                                      \
 #define TIER_TWO 2
 
 #ifdef Py_DEBUG
-#define ASSERT_WITHIN_STACK_BOUNDS(F, L) _Py_assert_within_stack_bounds(frame, stack_pointer, (F), (L))
+#define ASSERT_WITHIN_STACK_BOUNDS(F, L) _Py_jit_assert_within_stack_bounds(frame, stack_pointer, (L))
 #else
 #define ASSERT_WITHIN_STACK_BOUNDS(F, L) (void)0
 #endif

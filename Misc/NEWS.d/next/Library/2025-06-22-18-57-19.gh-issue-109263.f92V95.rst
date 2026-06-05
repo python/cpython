@@ -1,2 +1,0 @@
-Starting a process from spawn context in :mod:`multiprocessing` no longer
-sets the start method globally.

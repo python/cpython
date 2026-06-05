@@ -185,6 +185,9 @@ atexit_register(PyObject *module, PyObject *args, PyObject *kwargs)
         return NULL;
     }
     PyObject *func_args = PyTuple_GetSlice(args, 1, PyTuple_GET_SIZE(args));
+    if (func_args == NULL) {
+        return NULL;
+    }
     PyObject *func_kwargs = kwargs;
 
     if (func_kwargs == NULL)
@@ -192,6 +195,7 @@ atexit_register(PyObject *module, PyObject *args, PyObject *kwargs)
         func_kwargs = Py_None;
     }
     PyObject *callback = PyTuple_Pack(3, func, func_args, func_kwargs);
+    Py_DECREF(func_args);
     if (callback == NULL)
     {
         return NULL;
@@ -337,6 +341,7 @@ Two public functions, register and unregister, are defined.\n\
 ");
 
 static PyModuleDef_Slot atexitmodule_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
