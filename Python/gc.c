@@ -1876,7 +1876,7 @@ _PyGC_Fini(PyInterpreterState *interp)
     GCState *gcstate = &interp->gc;
     Py_CLEAR(gcstate->garbage);
     Py_CLEAR(gcstate->callbacks);
-    PyMem_Free(gcstate->generation_stats);
+    PyMem_RawFree(gcstate->generation_stats);
     gcstate->generation_stats = NULL;
 
     /* Prevent a subtle bug that affects sub-interpreters that use basic
