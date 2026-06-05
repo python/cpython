@@ -1371,7 +1371,8 @@ behavior::
 
 Multiple arguments may share the same ``dest``.  By default the value from the
 last such argument given on the command line wins; use ``action='append'`` to
-collect values from all of them into a list instead.
+collect values from all of them into a list instead.  (For conflicting *option
+strings* rather than ``dest`` names, see conflict_handler_.)
 
 .. versionchanged:: 3.15
    Single-dash long option now takes precedence over short options.
@@ -1780,6 +1781,10 @@ Subcommands
    the ``a`` command is specified, only the ``foo`` and ``bar`` attributes are
    present, and when the ``b`` command is specified, only the ``foo`` and
    ``baz`` attributes are present.
+
+   If a subparser defines an argument with the same ``dest`` as the parent
+   parser, the subparser's value overwrites the parent's, so users should give
+   them distinct ``dest`` values to keep both.
 
    Similarly, when a help message is requested from a subparser, only the help
    for that particular parser will be printed.  The help message will not
