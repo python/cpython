@@ -4269,6 +4269,7 @@ class ManagerTest(BaseTest):
         man.setLogRecordFactory(expected)
         self.assertEqual(man.logRecordFactory, expected)
 
+    @threading_helper.requires_working_threading()
     def test_getLogger_fast_path_never_returns_unwired_logger(self):
         # getLogger()'s lock-free fast path returns a logger straight out of
         # loggerDict, so a logger must be published there only after
