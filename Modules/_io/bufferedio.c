@@ -1509,7 +1509,9 @@ buffered_iternext(PyObject *op)
         tp == state->PyBufferedRandom_Type)
     {
         /* Skip method call overhead for speed */
+        Py_BEGIN_CRITICAL_SECTION(self);
         line = _buffered_readline(self, -1);
+        Py_END_CRITICAL_SECTION();
     }
     else {
         line = PyObject_CallMethodNoArgs((PyObject *)self,

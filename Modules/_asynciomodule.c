@@ -955,12 +955,13 @@ Return the result this future represents.
 
 If the future has been cancelled, raises CancelledError.  If the
 future's result isn't yet available, raises InvalidStateError.  If
-the future is done and has an exception set, this exception is raised.
+the future is done and has an exception set, this exception is
+raised.
 [clinic start generated code]*/
 
 static PyObject *
 _asyncio_Future_result_impl(FutureObj *self)
-/*[clinic end generated code: output=f35f940936a4b1e5 input=61d89f48e4c8b670]*/
+/*[clinic end generated code: output=f35f940936a4b1e5 input=ee20e126776cbb04]*/
 {
     asyncio_state *state = get_asyncio_state_by_def((PyObject *)self);
     PyObject *result;
@@ -1095,15 +1096,15 @@ _asyncio.Future.add_done_callback
 
 Add a callback to be run when the future becomes done.
 
-The callback is called with a single argument - the future object. If
-the future is already done when this is called, the callback is
+The callback is called with a single argument - the future object.
+If the future is already done when this is called, the callback is
 scheduled with call_soon.
 [clinic start generated code]*/
 
 static PyObject *
 _asyncio_Future_add_done_callback_impl(FutureObj *self, PyTypeObject *cls,
                                        PyObject *fn, PyObject *context)
-/*[clinic end generated code: output=922e9a4cbd601167 input=37d97f941beb7b3e]*/
+/*[clinic end generated code: output=922e9a4cbd601167 input=f4f6adb074cd3e0f]*/
 {
     asyncio_state *state = get_asyncio_state_by_cls(cls);
     if (context == NULL) {
@@ -1252,15 +1253,15 @@ _asyncio.Future.cancel
 
 Cancel the future and schedule callbacks.
 
-If the future is already done or cancelled, return False.  Otherwise,
-change the future's state to cancelled, schedule the callbacks and
-return True.
+If the future is already done or cancelled, return False.
+Otherwise, change the future's state to cancelled, schedule the
+callbacks and return True.
 [clinic start generated code]*/
 
 static PyObject *
 _asyncio_Future_cancel_impl(FutureObj *self, PyTypeObject *cls,
                             PyObject *msg)
-/*[clinic end generated code: output=074956f35904b034 input=44ab4003da839970]*/
+/*[clinic end generated code: output=074956f35904b034 input=0c9157547a964c4c]*/
 {
     asyncio_state *state = get_asyncio_state_by_cls(cls);
     ENSURE_FUTURE_ALIVE(state, self)
@@ -1292,13 +1293,13 @@ _asyncio.Future.done
 
 Return True if the future is done.
 
-Done means either that a result / exception are available, or that the
-future was cancelled.
+Done means either that a result / exception are available, or that
+the future was cancelled.
 [clinic start generated code]*/
 
 static PyObject *
 _asyncio_Future_done_impl(FutureObj *self)
-/*[clinic end generated code: output=244c5ac351145096 input=7204d3cc63bef7f3]*/
+/*[clinic end generated code: output=244c5ac351145096 input=acf2c2347f3c01d8]*/
 {
     if (!future_is_alive(self) || self->fut_state == STATE_PENDING) {
         Py_RETURN_FALSE;
@@ -1741,7 +1742,8 @@ static PyMethodDef FutureType_methods[] = {
     _ASYNCIO_FUTURE_DONE_METHODDEF
     _ASYNCIO_FUTURE_GET_LOOP_METHODDEF
     _ASYNCIO_FUTURE__MAKE_CANCELLED_ERROR_METHODDEF
-    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
+    PyDoc_STR("Futures are generic over the type of their results")},
     {NULL, NULL}        /* Sentinel */
 };
 
@@ -2926,7 +2928,8 @@ static PyMethodDef TaskType_methods[] = {
     _ASYNCIO_TASK_SET_NAME_METHODDEF
     _ASYNCIO_TASK_GET_CORO_METHODDEF
     _ASYNCIO_TASK_GET_CONTEXT_METHODDEF
-    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
+    PyDoc_STR("Tasks are generic over the return type of their wrapped coroutines")},
     {NULL, NULL}        /* Sentinel */
 };
 
@@ -3844,6 +3847,7 @@ _asyncio__leave_task_impl(PyObject *module, PyObject *loop, PyObject *task)
 
 
 /*[clinic input]
+@permit_long_summary
 _asyncio._swap_current_task
 
     loop: object
@@ -3858,7 +3862,7 @@ This is intended for use during eager coroutine execution.
 static PyObject *
 _asyncio__swap_current_task_impl(PyObject *module, PyObject *loop,
                                  PyObject *task)
-/*[clinic end generated code: output=9f88de958df74c7e input=c9c72208d3d38b6c]*/
+/*[clinic end generated code: output=9f88de958df74c7e input=ec14ed25855e3068]*/
 {
     _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
     return swap_current_task(ts, loop, task);

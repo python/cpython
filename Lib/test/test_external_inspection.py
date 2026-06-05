@@ -3767,6 +3767,13 @@ recurse({depth})
             "frames_read_from_cache",
             "frames_read_from_memory",
             "frame_cache_hit_rate",
+            "batched_read_attempts",
+            "batched_read_successes",
+            "batched_read_misses",
+            "batched_read_segments_requested",
+            "batched_read_segments_completed",
+            "batched_read_success_rate",
+            "batched_read_segment_completion_rate",
         ]
         for key in expected_keys:
             self.assertIn(key, stats)

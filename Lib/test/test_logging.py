@@ -4065,11 +4065,7 @@ class ConfigDictTest(BaseTest):
         # and thus cannot be used as a queue-like object (gh-124653)
 
         import multiprocessing
-
-        if support.MS_WINDOWS:
-            start_methods = ['spawn']
-        else:
-            start_methods = ['spawn', 'fork', 'forkserver']
+        start_methods = multiprocessing.get_all_start_methods()
 
         for start_method in start_methods:
             with self.subTest(start_method=start_method):
@@ -4085,10 +4081,8 @@ class ConfigDictTest(BaseTest):
                                            " assertions in multiprocessing")
     def test_config_queue_handler_multiprocessing_context(self):
         # regression test for gh-121723
-        if support.MS_WINDOWS:
-            start_methods = ['spawn']
-        else:
-            start_methods = ['spawn', 'fork', 'forkserver']
+        import multiprocessing
+        start_methods = multiprocessing.get_all_start_methods()
         for start_method in start_methods:
             with self.subTest(start_method=start_method):
                 ctx = multiprocessing.get_context(start_method)
@@ -4178,6 +4172,30 @@ class ConfigDictTest(BaseTest):
         self.apply_config(config)
         # Logger should be enabled, since explicitly mentioned
         self.assertFalse(logger.disabled)
+
+    def test_disable_existing_loggers_preserves_children(self):
+        parent = logging.getLogger('many')
+        child = logging.getLogger('many.child')
+        child.setLevel(logging.CRITICAL)
+        self.assertFalse(child.isEnabledFor(logging.INFO))
+        cousin = logging.getLogger('many-child')
+        for i in range(20):
+            logging.getLogger(f'many-sibling-{i}')
+
+        self.apply_config({
+            'version': 1,
+            'loggers': {
+                'many': {
+                    'level': 'INFO',
+                },
+            },
+        })
+
+        self.assertFalse(parent.disabled)
+        self.assertFalse(child.disabled)
+        self.assertEqual(child.level, logging.NOTSET)
+        self.assertTrue(child.isEnabledFor(logging.INFO))
+        self.assertTrue(cousin.disabled)
 
     def test_111615(self):
         # See gh-111615
@@ -6593,6 +6611,56 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
             for f in files:
                 print('Contents of %s:' % f)
                 path = os.path.join(dn, f)
+                with open(path, 'r') as tf:
+                    print(tf.read())
+        self.assertTrue(found, msg=msg)
+
+    @unittest.skipUnless(support.has_st_birthtime,
+        "st_birthtime not available or supported by Python on this OS")
+    def test_rollover_based_on_st_birthtime_only(self):
+        def add_record(message: str) -> None:
+            fh = logging.handlers.TimedRotatingFileHandler(
+                    self.fn, when='S', interval=4, encoding="utf-8", backupCount=1)
+            fmt = logging.Formatter('%(asctime)s %(message)s')
+            fh.setFormatter(fmt)
+            record = logging.makeLogRecord({'msg': message})
+            fh.emit(record)
+            fh.close()
+
+        add_record('testing - initial')
+        self.assertLogFile(self.fn)
+        # Sleep a little over the half of rollover time - and this value
+        # must be over 2 seconds, since this is the mtime resolution on
+        # FAT32 filesystems.
+        time.sleep(2.1)
+        add_record('testing - update before rollover to renew the st_mtime')
+        time.sleep(2.1)    # a little over the half of rollover time
+        add_record('testing - new record supposedly in the new file after rollover')
+
+        # At this point, the log file should be rotated if the rotation
+        # is based on creation time but should be not if it's based on
+        # creation time.
+        found = False
+        now = datetime.datetime.now()
+        GO_BACK = 5 # seconds
+        for secs in range(GO_BACK):
+            prev = now - datetime.timedelta(seconds=secs)
+            fn = self.fn + prev.strftime(".%Y-%m-%d_%H-%M-%S")
+            found = os.path.exists(fn)
+            if found:
+                self.rmfiles.append(fn)
+                break
+        msg = 'No rotated files found, went back %d seconds' % GO_BACK
+        if not found:
+            # print additional diagnostics
+            dn, fn = os.path.split(self.fn)
+            files = [f for f in os.listdir(dn) if f.startswith(fn)]
+            print('Test time: %s' % now.strftime("%Y-%m-%d %H-%M-%S"), file=sys.stderr)
+            print('The only matching files are: %s' % files, file=sys.stderr)
+            for f in files:
+                print('Contents of %s:' % f)
+                path = os.path.join(dn, f)
+                print(os.stat(path))
                 with open(path, 'r') as tf:
                     print(tf.read())
         self.assertTrue(found, msg=msg)

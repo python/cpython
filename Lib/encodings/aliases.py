@@ -240,6 +240,16 @@ aliases = {
 
     # cp949 codec
     '949'                : 'cp949',
+    'csksc56011987'      : 'cp949',
+    'iso_ir_149'         : 'cp949',
+    'korean'             : 'cp949',
+    'ks_c_5601_1987'     : 'cp949',
+    'ks_c_5601_1989'     : 'cp949',
+    'ksc5601'            : 'cp949',
+    'ks_c_5601'          : 'cp949',
+    'ksc_5601'           : 'cp949',
+    'ksx1001'            : 'cp949',
+    'ks_x_1001'          : 'cp949',
     'ms949'              : 'cp949',
     'uhc'                : 'cp949',
 
@@ -264,17 +274,7 @@ aliases = {
 
     # euc_kr codec
     'cseuckr'            : 'euc_kr',
-    'csksc56011987'      : 'euc_kr',
     'euckr'              : 'euc_kr',
-    'iso_ir_149'         : 'euc_kr',
-    'korean'             : 'euc_kr',
-    'ks_c_5601_1987'     : 'euc_kr',
-    'ks_c_5601_1989'     : 'euc_kr',
-    'ksc5601'            : 'euc_kr',
-    'ks_c_5601'          : 'euc_kr',
-    'ksc_5601'           : 'euc_kr',
-    'ksx1001'            : 'euc_kr',
-    'ks_x_1001'          : 'euc_kr',
 
     # gb18030 codec
     'csgb18030'          : 'gb18030',

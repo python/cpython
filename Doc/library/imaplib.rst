@@ -199,6 +199,11 @@ An :class:`IMAP4` instance has the following methods:
 
    Append *message* to named mailbox.
 
+   *flags* may be ``None`` or a string of IMAP flag tokens.  Multiple
+   flags are separated by spaces, for example ``r'\Seen \Answered'``.
+   If *flags* is not already enclosed in parentheses, parentheses are
+   added automatically.
+
 
 .. method:: IMAP4.authenticate(mechanism, authobject)
 
