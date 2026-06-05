@@ -37,6 +37,13 @@ class SystemLog(io.TextIOWrapper):
 
 
 class LogStream(io.RawIOBase):
+    # Marker appended to any log message that does not end with a newline,
+    # so a cooperating log reader can re-join it with the following message
+    # instead of rendering it as a spurious standalone line. Placing the
+    # marker after the data also prevents the system log from stripping any
+    # trailing whitespace. Uses ASCII Unit Separator (0x1f).
+    PARTIAL_LINE_MARKER = b"\x1f"
+
     def __init__(self, log_write, level):
         self.log_write = log_write
         self.level = level
@@ -59,8 +66,14 @@ class LogStream(io.RawIOBase):
         # Writing an empty string to the stream should have no effect.
         if b:
             # Encode null bytes using "modified UTF-8" to avoid truncating the
-            # message. This should not affect the return value, as the caller
-            # may be expecting it to match the length of the input.
-            self.log_write(self.level, b.replace(b"\x00", b"\xc0\x80"))
+            # message.
+            data = b.replace(b"\x00", b"\xc0\x80")
 
+            # Append a marker to partial lines (see PARTIAL_LINE_MARKER).
+            if not b.endswith(b"\n"):
+                data += self.PARTIAL_LINE_MARKER
+            self.log_write(self.level, data)
+
+        # Modifications of the changed data should not affect the return value, as
+        # the caller may be expecting it to match the length of the input.
         return len(b)

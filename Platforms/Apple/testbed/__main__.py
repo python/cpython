@@ -24,6 +24,23 @@ LOG_PREFIX_REGEX = re.compile(
     r"\s+iOSTestbed\[\d+:\w+\] "  # Process/thread ID
 )
 
+# The system log escapes non-printable bytes using caret notation (e.g. ESC
+# becomes "\^["). This regex matches those sequences so they can be restored.
+LOG_CTRL_CHAR_REGEX = re.compile(r"\\\^(.)")
+
+# Matches the partial-line marker (ASCII Unit Separator, 0x1f) appended by
+# Lib/_apple_support.py to log messages that did not end with a newline,
+# followed by the log-appended newline. Removing both causes the next write
+# to continue on the same line rather than starting a new one.
+LOG_PARTIAL_LINE_REGEX = re.compile(r"\x1f\n$")
+
+
+def _decode_log_ctrl_char(match):
+    char = match.group(1)
+    # Caret notation: "^?" is DEL (0x7f); otherwise XOR the character with
+    # 0x40 (e.g. "^[" -> ESC 0x1b).
+    return "\x7f" if char == "?" else chr(ord(char) ^ 0x40)
+
 
 # Select a simulator device to use.
 def select_simulator_device(platform):
@@ -99,6 +116,16 @@ def xcode_test(location: Path, platform: str, simulator: str, verbose: bool):
     while line := (process.stdout.readline()).decode(*DECODE_ARGS):
         # Strip the timestamp/process prefix from each log line
         line = LOG_PREFIX_REGEX.sub("", line)
+
+        # Restore control characters (e.g. ANSI color escapes) escaped by the
+        # system log.
+        line = LOG_CTRL_CHAR_REGEX.sub(_decode_log_ctrl_char, line)
+
+        # A marker immediately before the message's trailing newline means the
+        # writer did not emit a newline: it is a partial line that should be
+        # joined with the following message rather than shown on its own line.
+        line = LOG_PARTIAL_LINE_REGEX.sub("", line)
+
         sys.stdout.write(line)
         sys.stdout.flush()
 

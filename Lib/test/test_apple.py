@@ -1,11 +1,12 @@
 import unittest
-from _apple_support import SystemLog
+from _apple_support import LogStream, SystemLog
 from test.support import is_apple
 from unittest.mock import Mock, call
 
 if not is_apple:
     raise unittest.SkipTest("Apple-specific")
 
+MARKER = LogStream.PARTIAL_LINE_MARKER
 
 # Test redirection of stdout and stderr to the Apple system log.
 class TestAppleSystemLogOutput(unittest.TestCase):
@@ -52,6 +53,21 @@ class TestAppleSystemLogOutput(unittest.TestCase):
 
         self.assert_writes([b"hello world\n"])
 
+    def test_partial_line_marker(self):
+        self.log.write("complete\n")
+        self.assert_writes([b"complete\n"])
+
+        self.log.write("partial")
+        self.log.flush()
+        self.assert_writes([b"partial" + MARKER])
+
+        self.log.write("trailing whitespace ")
+        self.log.flush()
+        self.assert_writes([b"trailing whitespace " + MARKER])
+
+        self.log.write("done\n")
+        self.assert_writes([b"done\n"])
+
     def test_buffered_str(self):
         self.log.write("h")
         self.log.write("ello")
@@ -60,7 +76,7 @@ class TestAppleSystemLogOutput(unittest.TestCase):
         self.log.write("goodbye.")
         self.log.flush()
 
-        self.assert_writes([b"hello world\n", b"goodbye."])
+        self.assert_writes([b"hello world\n", b"goodbye." + MARKER])
 
     def test_manual_flush(self):
         self.log.write("Hello")
@@ -74,7 +90,7 @@ class TestAppleSystemLogOutput(unittest.TestCase):
         self.assert_writes([b"Goodbye world\n"])
 
         self.log.flush()
-        self.assert_writes([b"Hello again"])
+        self.assert_writes([b"Hello again" + MARKER])
 
     def test_non_ascii(self):
         # Spanish
@@ -142,7 +158,7 @@ class TestAppleSystemLogOutput(unittest.TestCase):
         self.log.buffer.write(b"goodbye")
         self.log.flush()
 
-        self.assert_writes([b"hello", b"goodbye"])
+        self.assert_writes([b"hello" + MARKER, b"goodbye" + MARKER])
 
     def test_non_byteslike_in_buffer(self):
         for obj in ["hello", None, 42]:
