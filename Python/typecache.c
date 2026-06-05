@@ -15,26 +15,16 @@
 #include "pycore_typeobject.h"    // _PyStaticType_GetState()
 
 
-// This is a union because MSVC doesn't support flexible array member in
-// the middle of a struct and we use a char array to reserve space for the
-// actual hashtable entries of the empty cache.
-static union {
-    struct type_cache cache;
-    char storage[sizeof(struct type_cache)
-            + _Py_TYPECACHE_MINSIZE * sizeof(struct type_cache_entry)];
-} empty_cache_storage = {
-    .cache = {
-        .mask = _Py_TYPECACHE_MINSIZE - 1,
-        .available = 0,
-        .used = 0,
-        .version_tag = 0,
-    },
-};
 // The empty cache is statically allocated and shared across all the types,
 // when a type is modified, the cache of type is set to the empty cache
 // and when a cache entry is inserted to the empty cache, a new cache is
 // allocated for the type and the entry is inserted to the new cache.
-#define empty_cache (empty_cache_storage.cache)
+static struct type_cache empty_cache = {
+    .mask = _Py_TYPECACHE_MINSIZE - 1,
+    .version_tag = 0,
+    .available = 0,
+    .used = 0,
+};
 
 static inline uint32_t
 cache_size(struct type_cache *cache)
@@ -45,7 +35,7 @@ cache_size(struct type_cache *cache)
 static inline size_t
 cache_nbytes(struct type_cache *cache)
 {
-    return sizeof(struct type_cache)
+    return offsetof(struct type_cache, hashtable)
         + (size_t)cache_size(cache) * sizeof(struct type_cache_entry);
 }
 
@@ -54,7 +44,7 @@ cache_allocate(uint32_t size)
 {
     // size must be a power of two
     assert((size & (size - 1)) == 0);
-    size_t nbytes = sizeof(struct type_cache)
+    size_t nbytes = offsetof(struct type_cache, hashtable)
                     + (size_t)size * sizeof(struct type_cache_entry);
     struct type_cache *cache = PyMem_Calloc(1, nbytes);
     if (cache == NULL) {
@@ -158,7 +148,7 @@ cache_resize(PyTypeObject *type, struct type_cache *cache)
         new_size = old_size * 2;
     }
     if (new_size > _Py_TYPECACHE_MAXSIZE) {
-        // The cache is too big, don't resize and just return.
+        // The new size is too big, don't resize and just return.
         return -1;
     }
     struct type_cache *new_cache = cache_allocate(new_size);
@@ -176,7 +166,7 @@ cache_resize(PyTypeObject *type, struct type_cache *cache)
     return 0;
 }
 
-// Insert a new entry to the type cache. If the cache is full, resize it before inserting the new entry.
+// Insert a new entry to the type cache.
 // The TYPE_LOCK should be held while calling this function.
 void
 _PyTypeCache_Insert(PyTypeObject *type, PyObject *name, PyObject *value)

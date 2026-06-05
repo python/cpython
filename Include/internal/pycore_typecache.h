@@ -22,11 +22,11 @@ struct type_cache_entry {
 // Per-type attribute lookup cache: speed up attribute and method lookups,
 // see _PyTypeCache_Lookup().
 struct type_cache {
-    uint32_t mask;                          // mask for indexing into hashtable, i.e. size of hashtable is mask + 1
-    uint32_t version_tag;                   // initialized from type->tp_version_tag
-    uint32_t available;                     // number of available entries in hashtable
-    uint32_t used;                          // number of used entries in hashtable
-    struct type_cache_entry hashtable[];   // hashtable entries, the total size is always power of 2 and at least _Py_TYPECACHE_MINSIZE
+    uint32_t mask;                                              // mask for indexing into hashtable, i.e. size of hashtable is mask + 1
+    uint32_t version_tag;                                       // initialized from type->tp_version_tag
+    uint32_t available;                                         // number of available entries in hashtable
+    uint32_t used;                                              // number of used entries in hashtable
+    struct type_cache_entry hashtable[_Py_TYPECACHE_MINSIZE];   // hashtable entries
 };
 
 struct _PyTypeCacheLookupResult {
