@@ -226,6 +226,12 @@ aliases = {
 
     # cp949 codec
     '949'                : 'cp949',
+    'korean'             : 'cp949',
+    'ksc5601'            : 'cp949',
+    'ks_c_5601'          : 'cp949',
+    'ks_c_5601_1987'     : 'cp949',
+    'ksx1001'            : 'cp949',
+    'ks_x_1001'          : 'cp949',
     'ms949'              : 'cp949',
     'uhc'                : 'cp949',
 
@@ -248,12 +254,6 @@ aliases = {
 
     # euc_kr codec
     'euckr'              : 'euc_kr',
-    'korean'             : 'euc_kr',
-    'ksc5601'            : 'euc_kr',
-    'ks_c_5601'          : 'euc_kr',
-    'ks_c_5601_1987'     : 'euc_kr',
-    'ksx1001'            : 'euc_kr',
-    'ks_x_1001'          : 'euc_kr',
     'cseuckr'            : 'euc_kr',
 
     # gb18030 codec
