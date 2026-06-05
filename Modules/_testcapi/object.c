@@ -212,10 +212,10 @@ test_py_set_immortal(PyObject *self, PyObject *unused)
 #ifdef Py_GIL_DISABLED
     object.ob_tid = _Py_ThreadId();
     object.ob_gc_bits = 0;
-    object.ob_ref_local = 1;
-    object.ob_ref_shared = 0;
+    object.ob_ref_local = 3;
+    object.ob_ref_shared = 128;
 #else
-    object.ob_refcnt = 1;
+    object.ob_refcnt = 3;
 #endif
     object.ob_type = &PyBaseObject_Type;
 
@@ -228,7 +228,17 @@ test_py_set_immortal(PyObject *self, PyObject *unused)
 
     // Check already immortal object
     rc = PyUnstable_SetImmortal(&object);
+    assert(rc == 1);
+
+    // If not owned by the current thread cannot immortalize
+    #if Py_GIL_DISABLED
+    object.ob_tid = _Py_ThreadId() + 1;
+    object.ob_ref_local = 1;  // reset refcount
+
+    rc = PyUnstable_SetImmortal(&object);
     assert(rc == 0);
+    assert(!PyUnstable_IsImmortal(&object));
+    #endif
 
     // Check unicode objects
     PyObject *unicode = PyUnicode_FromString("test");
