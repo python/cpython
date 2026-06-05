@@ -6617,6 +6617,7 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
 
     @unittest.skipUnless(support.has_st_birthtime,
         "st_birthtime not available or supported by Python on this OS")
+    @support.requires_resource('walltime')
     def test_rollover_based_on_st_birthtime_only(self):
         def add_record(message: str) -> None:
             fh = logging.handlers.TimedRotatingFileHandler(
@@ -6639,11 +6640,11 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
 
         # At this point, the log file should be rotated if the rotation
         # is based on creation time but should be not if it's based on
-        # creation time.
+        # modification time.
         found = False
         now = datetime.datetime.now()
         GO_BACK = 5 # seconds
-        for secs in range(GO_BACK):
+        for secs in range(GO_BACK + 1):
             prev = now - datetime.timedelta(seconds=secs)
             fn = self.fn + prev.strftime(".%Y-%m-%d_%H-%M-%S")
             found = os.path.exists(fn)
