@@ -2191,8 +2191,7 @@ expression support in the :mod:`re` module).
       >>> '²'.isdecimal(), '²'.isdigit(),  '²'.isnumeric()
       (False, True, True)
 
-   See also :meth:`isdecimal` and :meth:`isnumeric`. Digit characters are a
-   superset of decimal characters.
+   See also :meth:`isdecimal` and :meth:`isnumeric`.
 
 
 .. method:: str.isidentifier()
