@@ -295,7 +295,7 @@ Return an iterator of overlapping pairs taken from the input iterator.
 
 static PyObject *
 pairwise_new_impl(PyTypeObject *type, PyObject *iterable)
-/*[clinic end generated code: output=9f0267062d384456 input=6e7c3cddb431a8d6]*/
+/*[clinic end generated code: output=9f0267062d384456 input=9a46953818e0801a]*/
 {
     PyObject *it;
     pairwiseobject *po;
