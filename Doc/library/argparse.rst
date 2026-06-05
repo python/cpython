@@ -2118,7 +2118,7 @@ Mutual exclusion
      >>> parser.parse_args(['--foo', 'X', '--bar', 'Y'])
      Namespace(foo='X', bar='Y')
      >>> parser.parse_args([])
-     Namespace(bar=None, foo=None)
+     Namespace(foo=None, bar=None)
      >>> parser.parse_args(['--foo', 'X'])
      usage: PROG [-h] [--foo FOO & --bar BAR]
      PROG: error: the following arguments must be used together: --foo --bar
