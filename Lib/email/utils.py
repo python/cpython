@@ -86,8 +86,10 @@ def formataddr(pair, charset='utf-8', *, strict=True):
     contain CR or LF, which are not allowed in an email address.
     """
     name, address = pair
-    if strict and ('\r' in address or '\n' in address or (name and ('\r' in name or '\n' in name))):
-        raise ValueError("invalid arguments; address parts cannot contain CR or LF")
+    if strict and ('\r' in address or '\n' in address
+                   or (name and ('\r' in name or '\n' in name))):
+        raise ValueError(
+            "invalid arguments; address parts cannot contain CR or LF")
     # The address MUST (per RFC) be ascii, so raise a UnicodeError if it isn't.
     address.encode('ascii')
     if name:
