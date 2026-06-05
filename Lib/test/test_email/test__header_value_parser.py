@@ -153,7 +153,7 @@ non_word_phrase_start_defect = (
 
 non_dot_atom_local_part_obs_defect = (
     errors.ObsoleteHeaderDefect,
-    r'local-part is not a dot-atom \(contains CFWS\)',
+    r'local-part is not a valid dot-atom \(it contains internal CFWS\)',
     )
 
 not_even_obs_local_part_defect = (
@@ -184,6 +184,11 @@ repeated_dot_in_local_part_defect = (
 misplaced_backslash_defect = (
     errors.InvalidHeaderDefect,
     r"'\\' character outside of quoted-string/ccontent",
+    )
+
+ew_in_local_part_defect = (
+    errors.InvalidHeaderDefect,
+    'encoded-word in local-part',
     )
 
 # ---> End Defect Expectations
@@ -4151,6 +4156,12 @@ class TestParser(TestParserMixin, TestEmailBase):
             )
         self.assertEqual(lp.local_part, local_part)
 
+    @params_map
+    def add_ew_defects(*args, ew_indexes=[], defects=[], **kw):
+        if ew_indexes:
+            defects = defects + [ew_in_local_part_defect] * len(ew_indexes)
+        yield '', C(*args, ew_indexes=ew_indexes, defects=defects, **kw)
+
     @params_map(with_namelist=True)
     def adapt_get_dot_atom_tests_for_get_local_part(nl, s, *args, **kw):
         r = kw.get('remainder')
@@ -4165,10 +4176,6 @@ class TestParser(TestParserMixin, TestEmailBase):
             # For those two ew tests the blank comes from inside the ew.
             local_part = local_part.removeprefix(' ').removesuffix(' ')
         kw['local_part'] = local_part
-        # XXX XXX indexes won't be right mid-refactor, remove when
-        # get_local_part refactored.
-        if 'ew_indexes' in kw:
-            kw['ew_indexes'] = ...
         yield '', C(s, *args, **kw)
 
     @params_map
@@ -4177,10 +4184,6 @@ class TestParser(TestParserMixin, TestEmailBase):
             kw['value'] = kw.pop('quoted_value')
         if 'exception' not in kw:
             kw['local_part'] = kw.pop('content')
-        # XXX XXX indexes won't be right mid-refactor, remove when
-        # get_local_part refactored.
-        if 'ew_indexes' in kw:
-            kw['ew_indexes'] = ...
         yield '', C(*args, **kw)
 
     @params_map
@@ -4202,75 +4205,79 @@ class TestParser(TestParserMixin, TestEmailBase):
             defects.append(not_even_obs_local_part_defect)
         else:
             defects.append(non_dot_atom_local_part_obs_defect)
-        # XXX XXX indexes won't be right mid-refactor, remove when
-        # get_local_part refactored.
-        if 'ew_indexes' in kw:
-            kw['ew_indexes'] = ...
         yield '', C(*args, defects=defects, **kw)
 
-    params_test_get_local_part = old_api_only(
+    params_test_get_local_part = for_each_api(
 
         # An RFC compliant local part can be a dot atom or a quoted string, so
         # it should pass some of the tests for those.
 
-        adapt_get_dot_atom_tests_for_get_local_part(
-            include_unless(
-                lambda n, *a, **k:
-                    n.has_any(
-                        # Get local part handles multiple atoms.
-                        'two_ew_two_atoms',
-                        'atom_ends_at_noncfws',
-                        # There are some things get_dot_atom raises for that
-                        # get_local_part treats as obs-local-part.
-                        'two_dots_raises',
-                        'trailing_dot_raises',
-                        'space_ends_dot_atom',
-                        # XXX XXX These need a logic fix to whitespace handling
-                        # in get_local_part itself.
-                        'ew_and_comments_no_ws',
-                        'ew_and_empty_comments_no_ws',
-                        )
-                    or
-                        # get_local_part handles quoted strings (tested above),
-                        # and leading dots or \ are handled as obs-local-part.
+        add_ew_defects(
+            adapt_get_dot_atom_tests_for_get_local_part(
+                include_unless(
+                    lambda n, *a, **k:
                         n.has_any(
-                            'up_to_special',
-                            'leading_special_raises',
-                            'no_atom_before_special',
-                            'no_atext_before_special_or_wsp',
-                            'atom_ends_at_special',
-                            'ends_at_special_after_comment',
-                            'ends_at_special',
+                            # Get local part handles multiple atoms.
+                            'two_ew_two_atoms',
+                            'atom_ends_at_noncfws',
+                            # There are some things get_dot_atom raises for
+                            # that get_local_part treats as obs-local-part.
+                            'two_dots_raises',
+                            'trailing_dot_raises',
+                            'space_ends_dot_atom',
+                            # XXX XXX These need a logic fix to whitespace
+                            # handling in get_local_part itself.
+                            'ew_and_comments_no_ws',
+                            'ew_and_empty_comments_no_ws',
                             )
-                        and n.has_any(
-                            'reverse_solidus',
-                            'quotation_mark',
-                            'full_stop',
-                            ),
-                label='from_test_get_dot_atom',
-                )(params_test_get_dot_atom),
+                        or
+                            # get_local_part handles quoted strings (tested
+                            # above), and leading dots or \ are handled as
+                            # obs-local-part.
+                            n.has_any(
+                                'up_to_special',
+                                'leading_special_raises',
+                                'no_atom_before_special',
+                                'no_atext_before_special_or_wsp',
+                                'atom_ends_at_special',
+                                'ends_at_special_after_comment',
+                                'ends_at_special',
+                                )
+                            and n.has_any(
+                                'reverse_solidus',
+                                'quotation_mark',
+                                'full_stop',
+                                ),
+                    label='from_test_get_dot_atom',
+                    )(params_test_get_dot_atom),
+                ),
             ),
 
-        adapt_get_quoted_string_tests_for_get_local_part(
-            include_unless(
-                lambda n, *a, **k: n.has_any(
-                    # These tests have an atom first; get_quoted_string raises,
-                    # but get_local_part parses the atom.  Atoms are tested above.
-                    'no_quoted_string',
-                    'no_leading_dquote_before_non_ws',
-                    # A local part only ends at specials other than " and .
-                    'qs_ends_at_noncfws',
-                    'ew_after_dquote',
-                    'encoded_word_after_dquote_with_no_ws',
-                    'end_dquote_mid_word',
+        add_ew_defects(
+            adapt_get_quoted_string_tests_for_get_local_part(
+                include_unless(
+                    lambda n, *a, **k: n.has_any(
+                        # These tests have an atom first; get_quoted_string
+                        # raises, but get_local_part parses the atom.  Atoms
+                        # are tested above.
+                        'no_quoted_string',
+                        'no_leading_dquote_before_non_ws',
+                        # A local part only ends at specials other than " and .
+                        'qs_ends_at_noncfws',
+                        'ew_after_dquote',
+                        'encoded_word_after_dquote_with_no_ws',
+                        'end_dquote_mid_word',
+                        ),
+                    label='from_test_get_quoted_string',
+                    )(params_test_get_quoted_string),
+                ),
+            ),
+
+        add_ew_defects(
+            add_label('from_test_get_obs_local_part')(
+                adapt_get_obs_local_part_tests_for_get_local_part(
+                    params_test_get_obs_local_part,
                     ),
-                label='from_test_get_quoted_string',
-                )(params_test_get_quoted_string),
-            ),
-
-        add_label('from_test_get_obs_local_part')(
-            adapt_get_obs_local_part_tests_for_get_local_part(
-                params_test_get_obs_local_part,
                 ),
             ),
 
@@ -4357,7 +4364,7 @@ class TestParser(TestParserMixin, TestEmailBase):
                 # XXX XXX there should be exactly one missing whitespace here,
                 # but it will change until we refactor get_local_part.
                 #missing_whitespace_after_ew_defect,
-                # XXX XXX there should be a defect for there being an EW at all.
+                ew_in_local_part_defect,
                 ],
             local_part='exámple',
             ew_indexes=[0],
@@ -4376,6 +4383,7 @@ class TestParser(TestParserMixin, TestEmailBase):
                 missing_whitespace_before_ew_defect,
                 missing_whitespace_after_ew_defect,
                 # XXX XXX There should also be an ew in local part defect.
+                *[ew_in_local_part_defect]*2,
                 ],
             ew_indexes=[0, 17],
             ),

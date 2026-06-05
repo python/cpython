@@ -2081,40 +2081,55 @@ def get_obs_local_part(value, start):
         obs_local_part.token_type = 'invalid-obs-local-part'
     return obs_local_part, start
 
-def get_local_part(value):
+@_deprecate_old_api
+def get_local_part(value, start):
     """ local-part = dot-atom / quoted-string / obs-local-part
 
     """
     local_part = LocalPart()
-    orig_value = value
+    vlen = len(value)
     leader = None
-    if value and value[0] in CFWS_LEADER:
-        leader, value = get_cfws(value)
-    if not value:
+    if start < vlen and value[start] in CFWS_LEADER:
+        leader, start = get_cfws(value, start)
+    text_start = start
+    if start >= vlen:
         raise errors.HeaderParseError(
             "expected local-part but found '{}'".format(value))
     try:
-        token, value = get_dot_atom(value)
+        token, start = get_dot_atom(value, start)
     except errors.HeaderParseError:
         try:
-            token, value = get_word(value)
+            token, start = get_word(value, start)
         except errors.HeaderParseError:
-            if value[0] != '\\' and value[0] in PHRASE_ENDS:
+            if value[start] != '\\' and value[start] in PHRASE_ENDS:
+                # XXX XXX should this be a separate message mentioning
+                # both dot atom and word?
                 raise
             token = TokenList()
-    if leader is not None:
-        token[:0] = [leader]
-    local_part.append(token)
-    if value and (value[0]=='\\' or value[0] not in PHRASE_ENDS):
-        obs_local_part, value = get_obs_local_part(orig_value)
-        if obs_local_part.token_type == 'invalid-obs-local-part':
+    if start < vlen and (value[start]=='\\' or value[start] not in PHRASE_ENDS):
+        # Even if we started with valid text there is more, so start over as obs
+        token, start = get_obs_local_part(value, text_start)
+        if token.token_type == 'invalid-obs-local-part':
             local_part.defects.append(errors.InvalidHeaderDefect(
                 "local-part is not dot-atom, quoted-string, or obs-local-part"))
         else:
-            local_part.defects.append(errors.ObsoleteHeaderDefect(
-                "local-part is not a dot-atom (contains CFWS)"))
-        local_part[0] = obs_local_part
-    return local_part, value
+            local_part.defects.append(
+                errors.ObsoleteHeaderDefect(
+                    "local-part is not a valid dot-atom"
+                    " (it contains internal CFWS)"
+                    )
+                )
+    if leader is not None:
+        token.push(leader)
+    local_part.append(token)
+    if local_part.ew_indexes:
+        # XXX some day we'll put each index into its own defect.
+        local_part.defects.extend(
+            [
+                errors.InvalidHeaderDefect('encoded-word in local-part'),
+                ] * len(local_part.ew_indexes)
+            )
+    return local_part, start
 
 def get_dtext(value):
     r""" dtext = <printable ascii except \ [ ]> / obs-dtext
