@@ -1371,8 +1371,8 @@ behavior::
 
 Multiple arguments may share the same ``dest``.  By default the value from the
 last such argument given on the command line wins; use ``action='append'`` to
-collect values from all of them into a list instead.  (For conflicting *option
-strings* rather than ``dest`` names, see conflict_handler_.)
+collect values from all of them into a list instead.  For conflicting *option
+strings* rather than ``dest`` names, see conflict_handler_.
 
 .. versionchanged:: 3.15
    Single-dash long option now takes precedence over short options.
