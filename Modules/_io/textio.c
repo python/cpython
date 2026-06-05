@@ -759,10 +759,10 @@ static PyObject *
 buffer_getattr(textio *self, PyObject *attr_name)
 {
     PyObject *buffer = buffer_access_safe(self);
-
     if (buffer == NULL) {
         return NULL;
     }
+
     return PyObject_GetAttr(buffer, attr_name);
 }
 
