@@ -593,14 +593,13 @@ class IsCloseTests(test_math.IsCloseTests):
         special = [INF, -INF, NAN, 0.0, -0.0, 1.0]
         special_complex = [complex(x, y) for x in special for y in special]
 
-        nan_complex = [c for c in special_complex
-                      if cmath.isnan(c.real) or cmath.isnan(c.imag)]
+        nan_complex = [c for c in special_complex if cmath.isnan(c)]
         for z in nan_complex:
             for w in special_complex:
                 self.assertIsNotClose(z, w)
 
         inf_complex = [c for c in special_complex
-                      if not cmath.isnan(c.real) and not cmath.isnan(c.imag)]
+                      if cmath.isinf(c) and not cmath.isnan(c)]
         for z in inf_complex:
             for w in inf_complex:
                 if z != w:
