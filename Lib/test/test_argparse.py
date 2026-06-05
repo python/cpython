@@ -4076,6 +4076,7 @@ class TestMutuallyExclusiveOptionalsAndPositionalsMixedParent(
 # Mutually inclusive group tests
 # =============================
 
+@force_not_colorized_test_class
 class TestMutuallyInclusiveGroupErrors(TestCase):
 
     def test_nested_inclusive_groups(self):
