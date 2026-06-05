@@ -1,0 +1,3 @@
+:mod:`venv`: Replace a dangling interpreter symlink in an existing
+environment instead of failing or silently leaving it broken. Fix by
+Clay Dugo.

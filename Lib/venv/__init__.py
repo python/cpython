@@ -267,6 +267,8 @@ class EnvBuilder:
         switch to a different set of files instead.)
         """
         assert os.name != 'nt'
+        if os.path.islink(dst) and not os.path.exists(dst):
+            os.unlink(dst)
         force_copy = not self.symlinks
         if not force_copy:
             try:
