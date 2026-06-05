@@ -1399,6 +1399,9 @@ class BlobTests(unittest.TestCase):
         # must return b"" rather than crashing or raising an exception.
         self.assertEqual(self.blob[3:8:-1], self.data[3:8:-1])   # b""
         self.assertEqual(self.blob[5:5:-1], self.data[5:5:-1])   # b""
+        # Extreme step values: cur += (size_t)step must not overflow.
+        self.assertEqual(self.blob[5::sys.maxsize], self.data[5::sys.maxsize])
+        self.assertEqual(self.blob[::-sys.maxsize - 1], self.data[::-sys.maxsize - 1])
 
     def test_blob_set_slice(self):
         self.blob[0:5] = b"12345"
@@ -1448,6 +1451,10 @@ class BlobTests(unittest.TestCase):
         state_before = bytes(self.blob[:])
         self.blob[3:8:-1] = b""
         self.assertEqual(bytes(self.blob[:]), state_before)
+
+        # Extreme step values: cur += (size_t)step must not overflow.
+        self.blob[5::sys.maxsize] = self.data[5::sys.maxsize]
+        self.blob[::-sys.maxsize - 1] = self.data[::-sys.maxsize - 1]
 
     def test_blob_mapping_invalid_index_type(self):
         msg = "indices must be integers"
