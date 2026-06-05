@@ -268,7 +268,6 @@ aliases = {
     # euc_jp codec
     'cseucpkdfmtjapanese' : 'euc_jp',
     'eucjp'              : 'euc_jp',
-    'extended_unix_code_packed_format_for_japanese' : 'euc_jp',
     'ujis'               : 'euc_jp',
     'u_jis'              : 'euc_jp',
 
