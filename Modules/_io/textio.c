@@ -753,8 +753,9 @@ buffer_access_safe(textio *self)
         return NULL;
     }
 
-    // Returning a borrowed reference is safe since TextIOWrapper
-    // methods are protected by critical sections.
+    /* Returning a borrowed reference is safe since TextIOWrapper methods are
+       protected by critical sections. */
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     return self->buffer;
 }
 
