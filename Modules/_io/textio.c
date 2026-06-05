@@ -3325,11 +3325,16 @@ static PyObject *
 _io_TextIOWrapper_closed_get_impl(textio *self)
 /*[clinic end generated code: output=b49b68f443a85e3c input=7dfcf43f63c7003d]*/
 {
-    /* During destruction self->ok is 0 but self->buffer is non-NULL and this
-       needs to error in that case which the safe buffer wrapper does not.
+    /* If partially constructed or deconstructed return that the underlying
+       buffer is closed.
 
-       Match original behavior by calling CHECK_ATTACHED explicitly. */
-    CHECK_ATTACHED(self);
+       The code managing the transition is responsible for closing. The closed
+       attribute is often called in re-initalization, as part of repr in error
+       cases, and when the I/O stack is garbage collected. */
+    if (self->ok <= 0) {
+        Py_RETURN_TRUE;
+    }
+
     return buffer_getattr(self, &_Py_ID(closed));
 }
 
