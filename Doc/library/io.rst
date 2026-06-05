@@ -514,6 +514,73 @@ I/O Base Classes
       during the method call.
 
 
+Raw File I/O
+^^^^^^^^^^^^
+
+.. class:: FileIO(name, mode='r', closefd=True, opener=None)
+
+   A raw binary stream representing an OS-level file containing bytes data.  It
+   inherits from :class:`RawIOBase`.
+
+   The *name* can be one of two things:
+
+   * a character string or :class:`bytes` object representing the path to the
+     file which will be opened. In this case closefd must be ``True`` (the default)
+     otherwise an error will be raised.
+   * an integer representing the number of an existing OS-level file descriptor
+     to which the resulting :class:`FileIO` object will give access. When the
+     FileIO object is closed this fd will be closed as well, unless *closefd*
+     is set to ``False``.
+
+   The *mode* can be ``'r'``, ``'w'``, ``'x'`` or ``'a'`` for reading
+   (default), writing, exclusive creation or appending. The file will be
+   created if it doesn't exist when opened for writing or appending; it will be
+   truncated when opened for writing. :exc:`FileExistsError` will be raised if
+   it already exists when opened for creating. Opening a file for creating
+   implies writing, so this mode behaves in a similar way to ``'w'``. Add a
+   ``'+'`` to the mode to allow simultaneous reading and writing.
+
+   The :meth:`~RawIOBase.read` (when called with a positive argument),
+   :meth:`~RawIOBase.readinto` and :meth:`~RawIOBase.write` methods on this
+   class will only make one system call.
+
+   A custom opener can be used by passing a callable as *opener*. The underlying
+   file descriptor for the file object is then obtained by calling *opener* with
+   (*name*, *flags*). *opener* must return an open file descriptor (passing
+   :mod:`os.open` as *opener* results in functionality similar to passing
+   ``None``).
+
+   The newly created file is :ref:`non-inheritable <fd_inheritance>`.
+
+   See the :func:`open` built-in function for examples on using the *opener*
+   parameter.
+
+   .. versionchanged:: 3.3
+      The *opener* parameter was added.
+      The ``'x'`` mode was added.
+
+   .. versionchanged:: 3.4
+      The file is now non-inheritable.
+
+   :class:`FileIO` provides these data attributes in addition to those from
+   :class:`RawIOBase` and :class:`IOBase`:
+
+   .. attribute:: mode
+
+      The mode as given in the constructor.
+
+   .. attribute:: name
+
+      The file name.  This is the file descriptor of the file when no name is
+      given in the constructor.
+
+
+Buffered Streams
+^^^^^^^^^^^^^^^^
+
+Buffered I/O streams provide a higher-level interface to an I/O device
+than raw I/O does.
+
 .. class:: BufferedIOBase
 
    Base class for binary streams that support some kind of buffering.
@@ -634,73 +701,6 @@ I/O Base Classes
       The caller may release or mutate *b* after this method returns,
       so the implementation should only access *b* during the method call.
 
-
-Raw File I/O
-^^^^^^^^^^^^
-
-.. class:: FileIO(name, mode='r', closefd=True, opener=None)
-
-   A raw binary stream representing an OS-level file containing bytes data.  It
-   inherits from :class:`RawIOBase`.
-
-   The *name* can be one of two things:
-
-   * a character string or :class:`bytes` object representing the path to the
-     file which will be opened. In this case closefd must be ``True`` (the default)
-     otherwise an error will be raised.
-   * an integer representing the number of an existing OS-level file descriptor
-     to which the resulting :class:`FileIO` object will give access. When the
-     FileIO object is closed this fd will be closed as well, unless *closefd*
-     is set to ``False``.
-
-   The *mode* can be ``'r'``, ``'w'``, ``'x'`` or ``'a'`` for reading
-   (default), writing, exclusive creation or appending. The file will be
-   created if it doesn't exist when opened for writing or appending; it will be
-   truncated when opened for writing. :exc:`FileExistsError` will be raised if
-   it already exists when opened for creating. Opening a file for creating
-   implies writing, so this mode behaves in a similar way to ``'w'``. Add a
-   ``'+'`` to the mode to allow simultaneous reading and writing.
-
-   The :meth:`~RawIOBase.read` (when called with a positive argument),
-   :meth:`~RawIOBase.readinto` and :meth:`~RawIOBase.write` methods on this
-   class will only make one system call.
-
-   A custom opener can be used by passing a callable as *opener*. The underlying
-   file descriptor for the file object is then obtained by calling *opener* with
-   (*name*, *flags*). *opener* must return an open file descriptor (passing
-   :mod:`os.open` as *opener* results in functionality similar to passing
-   ``None``).
-
-   The newly created file is :ref:`non-inheritable <fd_inheritance>`.
-
-   See the :func:`open` built-in function for examples on using the *opener*
-   parameter.
-
-   .. versionchanged:: 3.3
-      The *opener* parameter was added.
-      The ``'x'`` mode was added.
-
-   .. versionchanged:: 3.4
-      The file is now non-inheritable.
-
-   :class:`FileIO` provides these data attributes in addition to those from
-   :class:`RawIOBase` and :class:`IOBase`:
-
-   .. attribute:: mode
-
-      The mode as given in the constructor.
-
-   .. attribute:: name
-
-      The file name.  This is the file descriptor of the file when no name is
-      given in the constructor.
-
-
-Buffered Streams
-^^^^^^^^^^^^^^^^
-
-Buffered I/O streams provide a higher-level interface to an I/O device
-than raw I/O does.
 
 .. class:: BytesIO(initial_bytes=b'')
 
