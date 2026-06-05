@@ -115,9 +115,6 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 |                   | variables (variables from |
 |                 |                   | outer scopes) used in     |
 |                 |                   | nested functions.         |
-|                 |                   | Essential for             |
-|                 |                   | understanding how closures|
-|                 |                   | work in Python.           |
 +-----------------+-------------------+---------------------------+
 |                 | __dict__          | The namespace dictionary  |
 |                 |                   | that stores arbitrary     |
