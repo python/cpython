@@ -842,66 +842,8 @@ Creating sockets
 The following functions all create :ref:`socket objects <socket-objects>`.
 
 
-.. class:: socket(family=AF_INET, type=SOCK_STREAM, proto=0, fileno=None)
-   :noindex:
-
-   Create a new socket using the given address family, socket type and protocol
-   number.  The address family should be :const:`AF_INET` (the default),
-   :const:`AF_INET6`, :const:`AF_UNIX`, :const:`AF_CAN`, :const:`AF_PACKET`,
-   or :const:`AF_RDS`. The socket type should be :const:`SOCK_STREAM` (the
-   default), :const:`SOCK_DGRAM`, :const:`SOCK_RAW` or perhaps one of the other
-   ``SOCK_`` constants. The protocol number is usually zero and may be omitted
-   or in the case where the address family is :const:`AF_CAN` the protocol
-   should be one of :const:`CAN_RAW`, :const:`CAN_BCM`, :const:`CAN_ISOTP` or
-   :const:`CAN_J1939`.
-
-   If *fileno* is specified, the values for *family*, *type*, and *proto* are
-   auto-detected from the specified file descriptor.  Auto-detection can be
-   overruled by calling the function with explicit *family*, *type*, or *proto*
-   arguments.  This only affects how Python represents e.g. the return value
-   of :meth:`socket.getpeername` but not the actual OS resource.  Unlike
-   :func:`socket.fromfd`, *fileno* will return the same socket and not a
-   duplicate. This may help close a detached socket using
-   :meth:`socket.close`.
-
-   The newly created socket is :ref:`non-inheritable <fd_inheritance>`.
-
-   .. audit-event:: socket.__new__ self,family,type,protocol socket.socket
-
-   .. versionchanged:: 3.3
-      The AF_CAN family was added.
-      The AF_RDS family was added.
-
-   .. versionchanged:: 3.4
-       The CAN_BCM protocol was added.
-
-   .. versionchanged:: 3.4
-      The returned socket is now non-inheritable.
-
-   .. versionchanged:: 3.7
-       The CAN_ISOTP protocol was added.
-
-   .. versionchanged:: 3.7
-      When :const:`SOCK_NONBLOCK` or :const:`SOCK_CLOEXEC`
-      bit flags are applied to *type* they are cleared, and
-      :attr:`socket.type` will not reflect them.  They are still passed
-      to the underlying system ``socket()`` call.  Therefore,
-
-      ::
-
-          sock = socket.socket(
-              socket.AF_INET,
-              socket.SOCK_STREAM | socket.SOCK_NONBLOCK)
-
-      will still create a non-blocking socket on OSes that support
-      ``SOCK_NONBLOCK``, but ``sock.type`` will be set to
-      ``socket.SOCK_STREAM``.
-
-   .. versionchanged:: 3.9
-       The CAN_J1939 protocol was added.
-
-   .. versionchanged:: 3.10
-       The IPPROTO_MPTCP protocol was added.
+The :class:`socket <socket.socket>` class constructor creates a new socket
+directly; see :ref:`socket-objects` for its parameters and full description.
 
 .. function:: socketpair([family[, type[, proto]]])
 
@@ -1533,7 +1475,65 @@ The :mod:`!socket` module also offers various network-related services:
 Socket Objects
 --------------
 
-.. class:: socket
+.. class:: socket(family=AF_INET, type=SOCK_STREAM, proto=0, fileno=None)
+
+   Create a new socket using the given address family, socket type and protocol
+   number.  The address family should be :const:`AF_INET` (the default),
+   :const:`AF_INET6`, :const:`AF_UNIX`, :const:`AF_CAN`, :const:`AF_PACKET`,
+   or :const:`AF_RDS`. The socket type should be :const:`SOCK_STREAM` (the
+   default), :const:`SOCK_DGRAM`, :const:`SOCK_RAW` or perhaps one of the other
+   ``SOCK_`` constants. The protocol number is usually zero and may be omitted
+   or in the case where the address family is :const:`AF_CAN` the protocol
+   should be one of :const:`CAN_RAW`, :const:`CAN_BCM`, :const:`CAN_ISOTP` or
+   :const:`CAN_J1939`.
+
+   If *fileno* is specified, the values for *family*, *type*, and *proto* are
+   auto-detected from the specified file descriptor.  Auto-detection can be
+   overruled by calling the function with explicit *family*, *type*, or *proto*
+   arguments.  This only affects how Python represents e.g. the return value
+   of :meth:`socket.getpeername` but not the actual OS resource.  Unlike
+   :func:`socket.fromfd`, *fileno* will return the same socket and not a
+   duplicate. This may help close a detached socket using
+   :meth:`socket.close`.
+
+   The newly created socket is :ref:`non-inheritable <fd_inheritance>`.
+
+   .. audit-event:: socket.__new__ self,family,type,protocol socket.socket
+
+   .. versionchanged:: 3.3
+      The AF_CAN family was added.
+      The AF_RDS family was added.
+
+   .. versionchanged:: 3.4
+       The CAN_BCM protocol was added.
+
+   .. versionchanged:: 3.4
+      The returned socket is now non-inheritable.
+
+   .. versionchanged:: 3.7
+       The CAN_ISOTP protocol was added.
+
+   .. versionchanged:: 3.7
+      When :const:`SOCK_NONBLOCK` or :const:`SOCK_CLOEXEC`
+      bit flags are applied to *type* they are cleared, and
+      :attr:`socket.type` will not reflect them.  They are still passed
+      to the underlying system ``socket()`` call.  Therefore,
+
+      ::
+
+          sock = socket.socket(
+              socket.AF_INET,
+              socket.SOCK_STREAM | socket.SOCK_NONBLOCK)
+
+      will still create a non-blocking socket on OSes that support
+      ``SOCK_NONBLOCK``, but ``sock.type`` will be set to
+      ``socket.SOCK_STREAM``.
+
+   .. versionchanged:: 3.9
+       The CAN_J1939 protocol was added.
+
+   .. versionchanged:: 3.10
+       The IPPROTO_MPTCP protocol was added.
 
    Socket objects have the following methods.  Except for
    :meth:`~socket.makefile`, these correspond to Unix system calls applicable
