@@ -734,8 +734,8 @@ struct textio
 /* Helpers to safely operate on self->buffer.
 
    self->buffer can be detached (set to NULL) by any user code that is called
-   leading to NULL pointer dereferences (see gh-143008, gh-142594). Protect against
-   that by using helpers to check self->buffer validity at callsites. */
+   leading to NULL pointer dereferences (see gh-143008, gh-142594). Protect
+   against that by using helpers to check self->buffer validity at callsites. */
 static PyObject *
 buffer_access_safe(textio *self)
 {
@@ -752,6 +752,9 @@ buffer_access_safe(textio *self)
         }
         return NULL;
     }
+
+    // Returning a borrowed reference is safe since TextIOWrapper
+    // methods are protected by critical sections.
     return self->buffer;
 }
 
@@ -1119,6 +1122,7 @@ io_check_errors(PyObject *errors)
 
 
 /*[clinic input]
+@critical_section
 _io.TextIOWrapper.__init__
     buffer: object
     encoding: str(accept={str, NoneType}) = None
@@ -1162,7 +1166,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
                                 const char *encoding, PyObject *errors,
                                 const char *newline, int line_buffering,
                                 int write_through)
-/*[clinic end generated code: output=72267c0c01032ed2 input=e6cfaaaf6059d4f5]*/
+/*[clinic end generated code: output=72267c0c01032ed2 input=0f077220214c40a4]*/
 {
     PyObject *raw, *codec_info = NULL;
     PyObject *res;
