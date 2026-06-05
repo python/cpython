@@ -86,6 +86,15 @@ New modules
 Improved modules
 ================
 
+argparse
+--------
+
+* Add :meth:`~argparse.ArgumentParser.add_mutually_inclusive_group`, the
+  inverse of :meth:`~argparse.ArgumentParser.add_mutually_exclusive_group`: it
+  enforces that a set of arguments are either all provided together or not at
+  all (or, with ``required=True``, that all of them are provided).
+  (Contributed by Savannah Ostrowski in :gh:`150981`.)
+
 gzip
 ----
 
