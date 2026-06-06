@@ -130,3 +130,11 @@ def unescape(s):
     if '&' not in s:
         return s
     return _charref.sub(_replace_charref, s)
+
+
+try:
+    # Prefer the C accelerator; fall back to the pure-Python versions above on
+    # implementations that do not ship it (see PEP 399).
+    from _html import escape, unescape
+except ImportError:
+    pass

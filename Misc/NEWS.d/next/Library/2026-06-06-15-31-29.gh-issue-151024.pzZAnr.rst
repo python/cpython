@@ -1,0 +1,3 @@
+Add a C accelerator for :func:`html.escape` and :func:`html.unescape`, with the
+pure-Python implementations kept as a fallback. This also speeds up
+:class:`html.parser.HTMLParser`, which uses :func:`html.unescape`.

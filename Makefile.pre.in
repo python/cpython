@@ -1848,6 +1848,13 @@ regen-limited-abi: all
 regen-unicodedata:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/unicode/makeunicodedata.py
 
+.PHONY: regen-html
+regen-html:
+	# Regenerate Modules/html_entities.h from the html module data
+	# using Tools/build/generate_html_entities.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_html_entities.py \
+		$(srcdir)/Modules/html_entities.h
+
 
 ############################################################################
 # Regenerate all generated files
@@ -1860,7 +1867,7 @@ regen-all: regen-cases regen-slots \
 	regen-test-levenshtein regen-global-objects
 	@echo
 	@echo "Note: make regen-stdlib-module-names, make regen-limited-abi, "
-	@echo "make regen-configure, make regen-sbom, and make regen-unicodedata should be run manually"
+	@echo "make regen-configure, make regen-sbom, make regen-html, and make regen-unicodedata should be run manually"
 
 ############################################################################
 # Special rules for object files
@@ -3422,6 +3429,7 @@ MODULE_DEPS_SHARED=@MODULE_DEPS_SHARED@
 MODULE__CURSES_DEPS=$(srcdir)/Include/py_curses.h
 MODULE__CURSES_PANEL_DEPS=$(srcdir)/Include/py_curses.h
 MODULE__DATETIME_DEPS=$(srcdir)/Include/datetime.h
+MODULE__HTML_DEPS=$(srcdir)/Modules/html_entities.h
 MODULE_CMATH_DEPS=$(srcdir)/Modules/_math.h
 MODULE_MATH_DEPS=$(srcdir)/Modules/_math.h
 MODULE_PYEXPAT_DEPS=@LIBEXPAT_INTERNAL@

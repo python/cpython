@@ -810,6 +810,8 @@ MODULE__LSPROF_FALSE
 MODULE__LSPROF_TRUE
 MODULE__JSON_FALSE
 MODULE__JSON_TRUE
+MODULE__HTML_FALSE
+MODULE__HTML_TRUE
 MODULE__HEAPQ_FALSE
 MODULE__HEAPQ_TRUE
 MODULE__CSV_FALSE
@@ -32325,6 +32327,28 @@ then :
 fi
 
 
+        if test "$py_cv_module__html" != "n/a"
+then :
+  py_cv_module__html=yes
+fi
+   if test "$py_cv_module__html" = yes; then
+  MODULE__HTML_TRUE=
+  MODULE__HTML_FALSE='#'
+else
+  MODULE__HTML_TRUE='#'
+  MODULE__HTML_FALSE=
+fi
+
+  as_fn_append MODULE_BLOCK "MODULE__HTML_STATE=$py_cv_module__html$as_nl"
+  if test "x$py_cv_module__html" = xyes
+then :
+
+
+
+
+fi
+
+
         if test "$py_cv_module__json" != "n/a"
 then :
   py_cv_module__json=yes
@@ -35427,6 +35451,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__HEAPQ_TRUE}" && test -z "${MODULE__HEAPQ_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__HEAPQ\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__HTML_TRUE}" && test -z "${MODULE__HTML_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__HTML\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__JSON_TRUE}" && test -z "${MODULE__JSON_FALSE}"; then

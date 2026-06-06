@@ -1013,6 +1013,9 @@
     <ClCompile Include="..\Modules\_heapqmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
+    <ClCompile Include="..\Modules\_htmlmodule.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
     <ClCompile Include="..\Modules\_json.c">
       <Filter>Modules</Filter>
     </ClCompile>
