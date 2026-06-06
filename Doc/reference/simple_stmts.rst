@@ -181,7 +181,7 @@ Assignment of an object to a single target is recursively defined as follows.
      inst.x = inst.x + 1   # writes inst.x as 4 leaving Cls.x as 3
 
   This description does not necessarily apply to descriptor attributes, such as
-  properties created with :func:`property`.
+  properties created with :deco:`property`.
 
   .. index::
      pair: subscription; assignment
@@ -964,10 +964,6 @@ For ``from``-style imports, the relevant name is the module following
 Imports inside functions, class bodies, or
 :keyword:`try`/:keyword:`except`/:keyword:`finally` blocks are always eager,
 regardless of :attr:`!__lazy_modules__`.
-
-Setting ``-X lazy_imports=none`` (or the :envvar:`PYTHON_LAZY_IMPORTS`
-environment variable to ``none``) overrides :attr:`!__lazy_modules__` and
-forces all imports to be eager.
 
 .. versionadded:: 3.15
 

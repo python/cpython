@@ -885,10 +885,14 @@ def move(src, dst, copy_function=copy2):
     If dst already exists but is not a directory, it may be overwritten
     depending on os.rename() semantics.
 
-    If the destination is on our current filesystem, then rename() is used.
-    Otherwise, src is copied to the destination and then removed. Symlinks are
-    recreated under the new name if os.rename() fails because of cross
-    filesystem renames.
+    os.rename() is preferably used if the source and destination are on the
+    same filesystem. In case os.rename() fails due to OSError (e.g. the user
+    has write permission to *dst* file but not to its parent directory),
+    this method falls back to using *copy_function* silently.
+    Symlinks are also recreated under the new name if os.rename() fails
+    because of cross filesystem renames.
+
+    It's recommended to use os.rename() if atomic move is strictly required.
 
     The optional `copy_function` argument is a callable that will be used
     to copy the source or it will be delegated to `copytree`.
@@ -940,8 +944,8 @@ def move(src, dst, copy_function=copy2):
     return real_dst
 
 def _destinsrc(src, dst):
-    src = os.path.abspath(src)
-    dst = os.path.abspath(dst)
+    src = os.path.realpath(src)
+    dst = os.path.realpath(dst)
     if not src.endswith(os.path.sep):
         src += os.path.sep
     if not dst.endswith(os.path.sep):

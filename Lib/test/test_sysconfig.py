@@ -576,6 +576,12 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
                 expected_suffixes = 'x86_64-linux-gnu.so', 'x86_64-linux-musl.so'
             self.assertEndsWith(suffix, expected_suffixes)
 
+    @unittest.skipIf(sysconfig.get_config_var('PY_BUILTIN_HASHLIB_HASHES') is None,
+                     'PY_BUILTIN_HASHLIB_HASHES required for this test')
+    def test_PY_BUILTIN_HASHLIB_HASHES_in_vars(self):
+        vars = sysconfig.get_config_vars()
+        self.assertFalse(vars['PY_BUILTIN_HASHLIB_HASHES'].startswith('"'))
+
     @unittest.skipUnless(sys.platform == 'android', 'Android-specific test')
     def test_android_ext_suffix(self):
         machine = platform.machine()
