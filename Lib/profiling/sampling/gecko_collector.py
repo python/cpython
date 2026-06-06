@@ -65,19 +65,24 @@ STACKWALK_DISABLED = 0
 
 # In-memory buffer before spilling to disk
 DEFAULT_SPILL_BUFFER_BYTES = 128 * 1024
+_JSON_SEPARATORS = (",", ":")
+_JSON_ENCODER = json.JSONEncoder(
+    separators=_JSON_SEPARATORS, allow_nan=False
+)
 
 
 class SpillColumn:
-    _encoder = json.JSONEncoder(separators=(",", ":"))
-
     def __init__(self, directory, basename, *,
-                 buffer_bytes=DEFAULT_SPILL_BUFFER_BYTES):
+                 buffer_bytes=None):
         self.path = os.path.join(directory, basename)
         self.buffer = bytearray()
-        self._buffer_bytes = buffer_bytes
+        self._buffer_bytes = (
+            DEFAULT_SPILL_BUFFER_BYTES if buffer_bytes is None
+            else buffer_bytes
+        )
 
     def append(self, value):
-        self.buffer += (self._encoder.encode(value) + "\n").encode()
+        self.buffer += (_JSON_ENCODER.encode(value) + "\n").encode("utf-8")
         if len(self.buffer) >= self._buffer_bytes:
             self.flush()
 
@@ -146,7 +151,6 @@ class GeckoCollector(Collector):
         # Per-thread data structures
         self.threads = {}  # tid -> thread data
         self.spill_dir = None
-        self.thread_spills = {}
         self.exported = False
 
         # Global tables
@@ -333,7 +337,7 @@ class GeckoCollector(Collector):
                 stack_index = self._process_stack(thread_data, frames)
 
                 # Add samples with timestamps
-                thread_spill = self.thread_spills[tid]
+                thread_spill = thread_data["_spill"]
                 for t in times:
                     thread_spill.append_sample(stack_index, t)
 
@@ -364,8 +368,6 @@ class GeckoCollector(Collector):
         """Create a new thread structure with processed profile format."""
         if self.spill_dir is None:
             self.spill_dir = tempfile.TemporaryDirectory()
-
-        self.thread_spills[tid] = GeckoThreadSpill(self.spill_dir.name, tid)
 
         thread = {
             "name": f"Thread-{tid}",
@@ -434,6 +436,7 @@ class GeckoCollector(Collector):
             "_frameCache": {},
             "_funcCache": {},
             "_resourceCache": {},
+            "_spill": GeckoThreadSpill(self.spill_dir.name, tid),
         }
 
         return thread
@@ -461,13 +464,16 @@ class GeckoCollector(Collector):
         duration = end_time - start_time
 
         name_idx = self._intern_string(name)
-        self.thread_spills[tid].append_marker(name_idx, start_time, end_time, 1, category, {
-            "type": name.replace(" ", ""),
-            "duration": duration,
-            "tid": tid
-        })
+        self.threads[tid]["_spill"].append_marker(
+            name_idx, start_time, end_time, 1, category, {
+                "type": name.replace(" ", ""),
+                "duration": duration,
+                "tid": tid,
+            }
+        )
 
-    def _add_opcode_interval_marker(self, tid, opcode, lineno, col_offset, funcname, start_time, end_time):
+    def _add_opcode_interval_marker(self, tid, opcode, lineno, col_offset,
+                                    funcname, start_time, end_time):
         """Add an interval marker for opcode execution span."""
         if tid not in self.threads or opcode is None:
             return
@@ -478,17 +484,19 @@ class GeckoCollector(Collector):
 
         name_idx = self._intern_string(formatted_opname)
 
-        self.thread_spills[tid].append_marker(name_idx, start_time, end_time, 1, CATEGORY_OPCODES, {
-            "type": "Opcode",
-            "opcode": opcode,
-            "opname": formatted_opname,
-            "base_opname": opcode_info["base_opname"],
-            "is_specialized": opcode_info["is_specialized"],
-            "line": lineno,
-            "column": col_offset if col_offset >= 0 else None,
-            "function": funcname,
-            "duration": end_time - start_time,
-        })
+        self.threads[tid]["_spill"].append_marker(
+            name_idx, start_time, end_time, 1, CATEGORY_OPCODES, {
+                "type": "Opcode",
+                "opcode": opcode,
+                "opname": formatted_opname,
+                "base_opname": opcode_info["base_opname"],
+                "is_specialized": opcode_info["is_specialized"],
+                "line": lineno,
+                "column": col_offset if col_offset >= 0 else None,
+                "function": funcname,
+                "duration": end_time - start_time,
+            }
+        )
 
     def _process_stack(self, thread_data, frames):
         """Process a stack and return the stack index."""
@@ -742,8 +750,7 @@ class GeckoCollector(Collector):
                     os.unlink(temp_path)
                 except FileNotFoundError:
                     pass
-            if self.spill_dir is not None:
-                self.spill_dir.cleanup()
+            self._cleanup_spills()
 
         print(f"Gecko profile written to {filename}")
         print(
@@ -784,8 +791,7 @@ class GeckoCollector(Collector):
             return json.loads(file.getvalue())
         finally:
             self.exported = True
-            if self.spill_dir is not None:
-                self.spill_dir.cleanup()
+            self._cleanup_spills()
 
     def _profile_head(self):
         return {
@@ -833,34 +839,38 @@ class GeckoCollector(Collector):
         if self.exported:
             raise RuntimeError("GeckoCollector has already been exported")
         self._finalize_markers()
-        for spill in self.thread_spills.values():
-            spill.prepare_read()
         for thread_data in self.threads.values():
+            thread_data["_spill"].prepare_read()
             thread_data["stackTable"]["length"] = len(thread_data["stackTable"]["frame"])
             thread_data["frameTable"]["length"] = len(thread_data["frameTable"]["func"])
             thread_data["funcTable"]["length"] = len(thread_data["funcTable"]["name"])
             thread_data["resourceTable"]["length"] = len(thread_data["resourceTable"]["name"])
 
+    def _cleanup_spills(self):
+        if self.spill_dir is not None:
+            self.spill_dir.cleanup()
+            self.spill_dir = None
+
     def _stream_profile(self, file):
-        head = json.dumps(
-            self._profile_head(), separators=(",", ":"), allow_nan=False
-        )[1:-1]
-        tail = json.dumps(
-            self._profile_tail(), separators=(",", ":"), allow_nan=False
-        )[1:-1]
         file.write("{")
-        file.write(head)
-        file.write(',"threads":[')
+        first = True
+        for key, value in self._profile_head().items():
+            first = _write_json_member(file, key, value, first)
+
+        first = _write_member_name(file, "threads", first)
+        file.write("[")
         for index, (tid, thread_data) in enumerate(self.threads.items()):
             if index:
                 file.write(",")
             self._stream_thread(file, tid, thread_data)
-        file.write("],")
-        file.write(tail)
+        file.write("]")
+
+        for key, value in self._profile_tail().items():
+            first = _write_json_member(file, key, value, first)
         file.write("}")
 
     def _stream_thread(self, file, tid, thread_data):
-        spill = self.thread_spills[tid]
+        spill = thread_data["_spill"]
         metadata = {
             "name": thread_data["name"],
             "isMainThread": thread_data["isMainThread"],
@@ -875,8 +885,11 @@ class GeckoCollector(Collector):
             "processName": thread_data["processName"],
         }
         file.write("{")
-        file.write(json.dumps(metadata, separators=(",", ":"), allow_nan=False)[1:-1])
-        file.write(',"samples":')
+        first = True
+        for key, value in metadata.items():
+            first = _write_json_member(file, key, value, first)
+
+        first = _write_member_name(file, "samples", first)
         self._stream_samples(file, spill)
         for key in (
             "stackTable",
@@ -885,66 +898,74 @@ class GeckoCollector(Collector):
             "resourceTable",
             "nativeSymbols",
         ):
-            file.write(',"')
-            file.write(key)
-            file.write('":')
-            file.write(json.dumps(
-                thread_data[key], separators=(",", ":"), allow_nan=False
-            ))
-        file.write(',"markers":')
+            first = _write_json_member(file, key, thread_data[key], first)
+        first = _write_member_name(file, "markers", first)
         self._stream_markers(file, spill)
         file.write("}")
 
     def _stream_samples(self, file, spill):
-        file.write('{"stack":')
-        _stream_array(
-            file, spill.samples_stack.iter_tokens(), spill.sample_count
-        )
-        file.write(',"time":')
-        _stream_array(
-            file, spill.samples_time.iter_tokens(), spill.sample_count
-        )
-        file.write(',"eventDelay":')
-        _stream_array(
+        _stream_column_table(
             file,
-            ("null" for _ in range(spill.sample_count)),
+            (
+                ("stack", spill.samples_stack.iter_tokens()),
+                ("time", spill.samples_time.iter_tokens()),
+                ("eventDelay", ("null" for _ in range(spill.sample_count))),
+            ),
             spill.sample_count,
+            (
+                ("weight", None),
+                ("weightType", "samples"),
+                ("length", spill.sample_count),
+            ),
         )
-        file.write(',"weight":null,"weightType":"samples","length":')
-        file.write(repr(spill.sample_count))
-        file.write("}")
 
     def _stream_markers(self, file, spill):
-        file.write('{"data":')
-        _stream_array(
-            file, spill.markers_data.iter_tokens(), spill.marker_count
+        _stream_column_table(
+            file,
+            (
+                ("data", spill.markers_data.iter_tokens()),
+                ("name", spill.markers_name.iter_tokens()),
+                ("startTime", spill.markers_start_time.iter_tokens()),
+                ("endTime", spill.markers_end_time.iter_tokens()),
+                ("phase", spill.markers_phase.iter_tokens()),
+                ("category", spill.markers_category.iter_tokens()),
+            ),
+            spill.marker_count,
+            (("length", spill.marker_count),),
         )
-        file.write(',"name":')
-        _stream_array(
-            file, spill.markers_name.iter_tokens(), spill.marker_count
-        )
-        file.write(',"startTime":')
-        _stream_array(
-            file, spill.markers_start_time.iter_tokens(), spill.marker_count
-        )
-        file.write(',"endTime":')
-        _stream_array(
-            file, spill.markers_end_time.iter_tokens(), spill.marker_count
-        )
-        file.write(',"phase":')
-        _stream_array(
-            file, spill.markers_phase.iter_tokens(), spill.marker_count
-        )
-        file.write(',"category":')
-        _stream_array(
-            file, spill.markers_category.iter_tokens(), spill.marker_count
-        )
-        file.write(',"length":')
-        file.write(repr(spill.marker_count))
-        file.write("}")
 
 
-def _stream_array(file, token_iter, expected_count):
+def _write_json(file, value):
+    for chunk in _JSON_ENCODER.iterencode(value):
+        file.write(chunk)
+
+
+def _write_member_name(file, name, first):
+    if not first:
+        file.write(",")
+    _write_json(file, name)
+    file.write(":")
+    return False
+
+
+def _write_json_member(file, name, value, first):
+    first = _write_member_name(file, name, first)
+    _write_json(file, value)
+    return first
+
+
+def _stream_column_table(file, columns, expected_count, trailing_members=()):
+    file.write("{")
+    first = True
+    for name, token_iter in columns:
+        first = _write_member_name(file, name, first)
+        _stream_array(file, token_iter, expected_count, name)
+    for name, value in trailing_members:
+        first = _write_json_member(file, name, value, first)
+    file.write("}")
+
+
+def _stream_array(file, token_iter, expected_count, label="array"):
     file.write("[")
     count = 0
     for token in token_iter:
@@ -954,6 +975,6 @@ def _stream_array(file, token_iter, expected_count):
         count += 1
     if count != expected_count:
         raise RuntimeError(
-            f"streamed {count} array items, expected {expected_count}"
+            f"streamed {count} {label} items, expected {expected_count}"
         )
     file.write("]")
