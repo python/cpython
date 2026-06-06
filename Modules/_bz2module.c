@@ -649,6 +649,7 @@ _bz2_BZ2Decompressor_impl(PyTypeObject *type)
     }
 
     self->mutex = (PyMutex){0};
+    self->bzerror = 0;
     self->needs_input = 1;
     self->bzs_avail_in_real = 0;
     self->input_buffer = NULL;
