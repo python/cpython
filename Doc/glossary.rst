@@ -667,7 +667,7 @@ Glossary
       Generator iterators also implement the :meth:`~generator.send` method
       to send a value into the suspended generator, and the
       :meth:`~generator.throw` method to raise an exception at the point
-      where the generator was paused.  See :pep:`342`.
+      where the generator was paused.  See :ref:`generator-methods`.
 
       .. index:: single: generator expression
 
