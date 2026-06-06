@@ -242,11 +242,8 @@ class _LazyModule(types.ModuleType):
 
     def __delattr__(self, attr):
         """Trigger the load and then perform the deletion."""
-        # Reading __name__/__file__ aliases the spec and no longer triggers
-        # the load, so access __spec__ to force it.  This also resets
-        # __class__ to the real module type, avoiding infinite recursion in
-        # the delattr() below.
         self.__getattribute__('__spec__')
+        # Goes into ModuleType.__delattr__
         delattr(self, attr)
 
 

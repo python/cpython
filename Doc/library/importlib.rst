@@ -1373,15 +1373,13 @@ an :term:`importer`.
 
    .. versionchanged:: 3.16
       Reading a lazily-loaded module's :attr:`~module.__name__` and
-      :attr:`~module.__file__` attributes no longer triggers the load.  Until
+      :attr:`~module.__file__` attributes no longer triggers the load. Until
       the module is loaded they act as aliases for the
       :attr:`~importlib.machinery.ModuleSpec.name` and
       :attr:`~importlib.machinery.ModuleSpec.origin` of its
       :attr:`~module.__spec__`, and assigning to them updates the spec
-      instead.  This keeps introspection tools such as
-      :func:`inspect.getmodule` -- used indirectly by, for example,
-      :func:`inspect.getframeinfo` -- from forcing every lazily-loaded module
-      in :data:`sys.modules` to be imported (:gh:`139669`).
+      instead. This avoids the unintentional loading caused by
+      introspection tools like :func:`inspect.getframeinfo` (:gh:`139669`).
 
    .. classmethod:: factory(loader)
 
