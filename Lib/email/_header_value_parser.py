@@ -1499,6 +1499,34 @@ def parse_unstructured(value):
 def get_unstructured(value):
     return parse_unstructured(value)
 
+_get_ccontent_content = content_getter(
+    TokenList,
+    'ptext',
+    end_chars='()',
+    qp=True,
+    )
+def get_ccontent_sequence(value, start):
+    """ccontent_sequence = *([FWS] qp_ctext / encoded_word [FWS])
+
+    This bridges the RFC ctext, ccontent, and comment into something that
+    makes recovery from errors in the input easier.
+
+    Return a (possibly empty) TokenList containing all characters up to the
+    next unquoted open or close parenthesis outside of an encoded word (or the
+    end of value if there isn't one) and the index of that parenthesis (or the
+    len of value), unquoting any quoted pairs and decoding any encoded words.
+    All ValueTerminals returned should have the token_type 'ptext'.
+
+    Encoded words should be decoded even if there is non-whitespace around
+    them, and whether or not they contain any RFC invalid whitespace.  Register
+    defects for any internal or missing whitespace.
+
+    Register defects if there are any non-printable or undecodable characters
+    in the non-whitespace tokens.
+
+    """
+    return _get_ccontent_content(value, start)
+
 def get_qp_ctext(value):
     r"""ctext = <printable ascii except \ ( )>
 

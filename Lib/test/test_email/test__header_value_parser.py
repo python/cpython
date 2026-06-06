@@ -1856,6 +1856,115 @@ class TestParser(TestParserMixin, TestEmailBase):
         )
 
 
+    # get_ccontent_sequence
+
+    @params
+    def test_get_ccontent_sequence(self, s, *args, **kw):
+        tl = self._test_parse(
+            parser.get_ccontent_sequence,
+            C(s),
+            *args,
+            **kw,
+            )
+        self.assertIsInstance(tl, parser.TokenList)
+        self.verify_terminal_types(tl, 'ptext', 'fws')
+
+    params_test_get_ccontent_sequence = Params(
+
+        **for_each_character(RFC_WSP)(
+            two_words = C(
+                'foo{char}de',
+                value='foo de',
+                ),
+            ),
+
+        wsp_before_close_paren = C(
+            'foo  \t)',
+            value='foo ',
+            remainder=')',
+            ),
+
+        up_to_open_paren_only = C(
+            'foo(',
+            remainder='(',
+            ),
+
+        wsp_before_open_paren = C(
+            'foo \t(',
+            value='foo ',
+            remainder='(',
+            ),
+
+        ew = C(
+            '=?UTF-8?q?test?=',
+            stringified='test',
+            ew_indexes=[0],
+            ),
+
+        ws_around_ew = C(
+            ' =?UTF-8?q?test?= ',
+            stringified=' test ',
+            ew_indexes=[1],
+            ),
+
+        ws_inside_ew = C(
+            '=?UTF-8?q? Test ?=',
+            stringified=' Test ',
+            defects=[whitespace_inside_ew_defect],
+            ew_indexes=[0],
+            ),
+
+        non_ws_around_ew = C(
+            'foo=?UTF-8?q?bar_?=bird',
+            stringified='foobar bird',
+            defects=[
+                missing_whitespace_before_ew_defect,
+                missing_whitespace_after_ew_defect,
+                ],
+            ew_indexes=[3],
+            ),
+
+        multiple_ew = C(
+            'foo =?UTF-8?q?a?= =?UTF-8?q?t?=',
+            stringified='foo at',
+            ew_indexes=[4, 18],
+            ),
+
+        ew_missing_whitespace_between_ews = C(
+            'foo =?UTF-8?q?a?==?UTF-8?q?t?=',
+            stringified='foo at',
+            defects=[
+                missing_whitespace_after_ew_defect,
+                missing_whitespace_before_ew_defect,
+                ],
+            ew_indexes=[4, 17],
+            ),
+
+        **for_each_character(RFC_WSP)(
+            inter_ew_whitespace_handled_correctly = C(
+                '{char}=?UTF-8?q?_foo_?={char}{char}=?UTF-8?q?bar_?= ',
+                stringified='{char} foo bar  ',
+                value='  foo bar  ',
+                ew_indexes=[1, 20],
+                ),
+            ),
+
+        qp_inside_ew = C(
+            r'=?UTF-8?q?\test\)_?= =?UTF-8?q?\(test?=',
+            stringified=r'test) (test',
+            ew_indexes=[0, 21],
+            ),
+
+        unquoted_parens_inside_ew = C(
+            '=?UTF-8?q?test)_?= =?UTF-8?q?(test?=) foo',
+            stringified=r'test) (test',
+            remainder=') foo',
+            ew_indexes=[0, 19],
+            ),
+
+        )
+
+
     # get_qp_ctext
 
     @params
@@ -1865,12 +1974,14 @@ class TestParser(TestParserMixin, TestEmailBase):
             C(s),
             *args,
             value=value,
+            warnings=...,
+            test_start=False,
             **kw,
             )
         self.assertIsInstance(ptext, parser.Terminal)
         self.assertEqual(ptext.token_type, 'ptext')
 
-    params_test_get_qp_ctext = old_api_only(
+    params_test_get_qp_ctext = Params(
 
         value_ends_at_input_end = C(
             'foobar',
@@ -1971,6 +2082,18 @@ class TestParser(TestParserMixin, TestEmailBase):
             r'sillier\❌walks\❗',
             stringified='sillier❌walks❗',
             ),
+
+        )
+
+    params_test_get_ccontent_sequence.update(
+
+        # get_ccontent_sequence is handling a superset of what get_qp_ctext
+        # used to handle.  It should pass the get_qp_ctext tests that don't
+        # involve whitespace, which get_qp_ctext stops at.
+        include_unless(
+            lambda n, *a, **k: 'wsp' in str(n) or 'two_words_gets_first' in n,
+            label='from_test_get_qp_ctext',
+            )(params_test_get_qp_ctext)
 
         )
 
