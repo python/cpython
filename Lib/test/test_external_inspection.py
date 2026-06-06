@@ -438,6 +438,41 @@ class RemoteInspectionTestBase(unittest.TestCase):
 # ============================================================================
 
 
+class TestSelfStackTrace(RemoteInspectionTestBase):
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_self_trace_with_large_linetable(self):
+        script = textwrap.dedent("""\
+            import os
+            import _remote_debugging
+
+            assignments = "\\n".join(
+                f"value_{i} = {i}" for i in range(1000)
+            )
+            source = (
+                f"{assignments}\\n"
+                "_remote_debugging.RemoteUnwinder(os.getpid()).get_stack_trace()\\n"
+            )
+            code = compile(source, "large_linetable.py", "exec")
+            assert len(code.co_linetable) > 4096, len(code.co_linetable)
+            exec(code)
+            """)
+
+        result = subprocess.run(
+            [sys.executable, "-c", script],
+            capture_output=True,
+            text=True,
+            timeout=SHORT_TIMEOUT,
+        )
+        self.assertEqual(
+            result.returncode, 0,
+            f"stdout: {result.stdout}\nstderr: {result.stderr}"
+        )
+
+
 @requires_remote_subprocess_debugging()
 class TestGetStackTrace(RemoteInspectionTestBase):
     @skip_if_not_supported
