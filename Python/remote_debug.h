@@ -963,14 +963,15 @@ search_linux_map_for_section(proc_handle_t *handle, const char* secname, const c
         if (strstr(filename, substr)) {
             int deleted_pyruntime_mapping =
                 strcmp(secname, "PyRuntime") == 0
-                && linux_map_path_is_deleted(path)
-                && linux_map_perms_are_readwrite(perms);
-            if (deleted_pyruntime_mapping) {
+                && linux_map_path_is_deleted(path);
+            if (deleted_pyruntime_mapping
+                && linux_map_perms_are_readwrite(perms)) {
                 PyErr_Clear();
                 retval = scan_linux_mapping_for_pyruntime_cookie(
                     handle, (uintptr_t)start, (uintptr_t)end);
             }
-            if (retval == 0 && !PyErr_Occurred()) {
+            if (!deleted_pyruntime_mapping
+                && retval == 0 && !PyErr_Occurred()) {
                 PyErr_Clear();
                 retval = search_elf_file_for_section(
                     handle, secname, start, path);
