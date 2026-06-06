@@ -735,6 +735,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(qualname)
         STRUCT_FOR_ID(query)
         STRUCT_FOR_ID(queuetype)
+        STRUCT_FOR_ID(quote)
         STRUCT_FOR_ID(quotetabs)
         STRUCT_FOR_ID(raw)
         STRUCT_FOR_ID(read)

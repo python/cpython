@@ -2010,6 +2010,7 @@ extern "C" {
     INIT_ID(qualname), \
     INIT_ID(query), \
     INIT_ID(queuetype), \
+    INIT_ID(quote), \
     INIT_ID(quotetabs), \
     INIT_ID(raw), \
     INIT_ID(read), \

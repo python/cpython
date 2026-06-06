@@ -2012,6 +2012,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(qualname));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(query));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(queuetype));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(quote));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(quotetabs));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(raw));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(read));
