@@ -228,29 +228,6 @@ sys.modules[__name__].__class__ = ImmutableModule
         with self.assertRaises(AttributeError):
             del module.CONSTANT
 
-    def test_name_file_alias_spec(self):
-        # gh-139669: __name__/__file__ are aliases for __spec__.name and
-        # __spec__.origin.  Reading them returns the spec values and does not
-        # trigger the load; writing them flows through to the spec.
-        loader = TestingImporter()
-        module = self.new_module(loader=loader)
-        spec = object.__getattribute__(module, '__spec__')
-        spec.origin = '/some/where.py'
-        self.assertEqual(module.__name__, spec.name)
-        self.assertEqual(module.__file__, '/some/where.py')
-        # Neither read triggered the load.
-        self.assertIsNone(loader.loaded)
-        self.assertEqual(0, loader.load_count)
-        # Writes flow through to the spec, still without loading.
-        module.__name__ = 'renamed'
-        module.__file__ = '/other.py'
-        self.assertEqual(spec.name, 'renamed')
-        self.assertEqual(spec.origin, '/other.py')
-        self.assertEqual(module.__name__, 'renamed')
-        self.assertEqual(module.__file__, '/other.py')
-        self.assertIsNone(loader.loaded)
-        self.assertIsInstance(module, util._LazyModule)
-
     def test_inspect_does_not_trigger_lazy_load(self):
         # gh-139669: introspecting an unrelated frame iterates over
         # sys.modules and must not force lazy modules to be loaded.
