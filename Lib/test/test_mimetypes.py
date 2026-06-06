@@ -303,6 +303,14 @@ class MimeTypesClassTestCase(unittest.TestCase):
         self.db.add_type("text/x-test-lowercase-non-strict",
                          ".non-strict-ext", strict=False)
         self.assertEqual(
+            self.db.guess_file_type("example.NON-STRICT-EXT"),
+            (None, None),
+        )
+        self.assertEqual(
+            self.db.guess_file_type("example.non-strict-ext"),
+            (None, None),
+        )
+        self.assertEqual(
             self.db.guess_file_type("example.NON-STRICT-EXT", strict=False),
             ("text/x-test-uppercase-non-strict", None),
         )
