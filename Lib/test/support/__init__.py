@@ -40,7 +40,6 @@ __all__ = [
     "has_fork_support", "requires_fork",
     "has_subprocess_support", "requires_subprocess",
     "has_socket_support", "requires_working_socket",
-    "has_st_birthtime",
     "has_remote_subprocess_debugging", "requires_remote_subprocess_debugging",
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     "check__all__", "skip_if_buggy_ucrt_strfptime",
@@ -620,10 +619,6 @@ has_fork_support = hasattr(os, "fork") and not (
     # all Android apps are multi-threaded.
     or is_android
 )
-
-# At the moment, st_birthtime attribute is only supported on Windows,
-# MacOS and FreeBSD.
-has_st_birthtime = sys.platform.startswith(("win", "freebsd", "darwin"))
 
 def requires_fork():
     return unittest.skipUnless(has_fork_support, "requires working os.fork()")
