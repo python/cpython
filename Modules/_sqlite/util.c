@@ -138,6 +138,11 @@ set_error_from_code(pysqlite_state *state, int code)
 int
 set_error_from_db(pysqlite_state *state, sqlite3 *db)
 {
+    if (db == NULL) {
+        PyErr_SetString(state->ProgrammingError,
+                        "Cannot operate on a closed database.");
+        return SQLITE_MISUSE;
+    }
     int errorcode = sqlite3_errcode(db);
     PyObject *exc_class = get_exception_class(state, errorcode);
     if (exc_class == NULL) {

@@ -360,6 +360,12 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
         return NULL;
 
     sqlite3 *db = self->connection->db;
+    if (db == NULL) {
+        pysqlite_state *state = self->connection->state;
+        PyErr_SetString(state->ProgrammingError,
+                        "Cannot operate on a closed database.");
+        goto error;
+    }
     for (i = 0; i < numcols; i++) {
         if (self->connection->detect_types
                 && self->row_cast_map != NULL
@@ -530,10 +536,16 @@ begin_transaction(pysqlite_Connection *self)
 static PyObject *
 get_statement_from_cache(pysqlite_Cursor *self, PyObject *operation)
 {
-    PyObject *args[] = { NULL, operation, };  // Borrowed ref.
-    PyObject *cache = self->connection->statement_cache;
+    PyObject *args[] = { NULL, operation, };
+    
+    /* Hold a strong reference: a Python callback invoked during statement
+     * preparation (e.g. an authorizer) may close the connection, freeing
+     * the cache while the call is still in progress. */
+    PyObject *cache = Py_NewRef(self->connection->statement_cache);
     size_t nargsf = 1 | PY_VECTORCALL_ARGUMENTS_OFFSET;
-    return PyObject_Vectorcall(cache, args + 1, nargsf, NULL);
+    PyObject *result = PyObject_Vectorcall(cache, args + 1, nargsf, NULL);
+    Py_DECREF(cache);
+    return result;
 }
 
 static inline int
@@ -957,7 +969,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         }
 
         if (rc == SQLITE_DONE) {
-            if (self->statement->is_dml) {
+            if (self->statement->is_dml && self->connection->db) {
                 self->rowcount += (long)sqlite3_changes(self->connection->db);
             }
             if (stmt_reset(self->statement) != SQLITE_OK) {
@@ -967,7 +979,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         Py_XDECREF(parameters);
     }
 
-    if (!multiple) {
+    if (!multiple && self->connection->db) {
         sqlite_int64 lastrowid;
 
         Py_BEGIN_ALLOW_THREADS
@@ -1157,7 +1169,7 @@ pysqlite_cursor_iternext(PyObject *op)
     }
     int rc = stmt_step(stmt);
     if (rc == SQLITE_DONE) {
-        if (self->statement->is_dml) {
+        if (self->statement->is_dml && self->connection->db) {
             self->rowcount = (long)sqlite3_changes(self->connection->db);
         }
         rc = stmt_reset(self->statement);

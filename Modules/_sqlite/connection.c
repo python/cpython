@@ -456,6 +456,10 @@ connection_close(pysqlite_Connection *self)
     sqlite3 *db = self->db;
     self->db = NULL;
 
+    /* Unregister callbacks before closing so that SQLite cannot invoke them
+     * again after free_callback_contexts releases their contexts. */
+    remove_callbacks(db);
+
     Py_BEGIN_ALLOW_THREADS
     /* The v2 close call always returns SQLITE_OK if given a valid database
      * pointer (which we do), so we can safely ignore the return value */
