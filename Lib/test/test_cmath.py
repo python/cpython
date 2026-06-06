@@ -590,18 +590,12 @@ class IsCloseTests(test_math.IsCloseTests):
         self.assertIsNotClose(-INF, INF)
         self.assertIsNotClose(0, INF)
         self.assertIsNotClose(0, INF*1j)
-        special = [INF, -INF, NAN, 0.0, -0.0, 1.0]
-        special_complex = [complex(x, y) for x in special for y in special]
-
-        nan_complex = [c for c in special_complex if cmath.isnan(c)]
-        for z in nan_complex:
-            for w in special_complex:
+        for z in complex_nans:
+            for w in complex_infinities + complex_nans:
                 self.assertIsNotClose(z, w)
 
-        inf_complex = [c for c in special_complex
-                      if cmath.isinf(c) and not cmath.isnan(c)]
-        for z in inf_complex:
-            for w in inf_complex:
+        for z in complex_infinities:
+            for w in complex_infinities:
                 if z != w:
                     self.assertIsNotClose(z, w)
                 else:
