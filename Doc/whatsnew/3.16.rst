@@ -102,6 +102,17 @@ lzma
   requires ``lzma`` 5.4.0 or newer while RISC-V requires 5.6.0 or newer.
   (Contributed by Chien Wong in :gh:`115988`.)
 
+logging
+-------
+
+* :class:`~logging.handlers.TimedRotatingFileHandler` now uses the creation
+  time instead of the last modification time of an existing log file as
+  the basis for the first rotation after handler creation, if supported by
+  the OS and file system.
+  This allows it to be used in short-running programs that start and end
+  before the rotation interval expires.
+  (Contributed by Iván Márton and Serhiy Storchaka in :gh:`84649`.)
+
 os
 --
 
