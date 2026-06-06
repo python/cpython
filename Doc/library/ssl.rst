@@ -1121,7 +1121,7 @@ SSL sockets
       :meth:`SSLContext.wrap_socket` to wrap a socket.
 
    .. versionchanged:: 3.7
-      :class:`SSLSocket` instances must to created with
+      :class:`SSLSocket` instances must be created with
       :meth:`~SSLContext.wrap_socket`. In earlier versions, it was possible
       to create instances directly. This was never documented or officially
       supported.

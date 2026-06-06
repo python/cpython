@@ -1,0 +1,4 @@
+Fix :option:`--enable-bolt` build by switching the default BOLT flag from
+``-icf=1`` to ``-icf=0``. ``-icf=1`` folds address-taken functions and
+breaks type-slot dispatch, crashing on :mod:`list` and :mod:`tuple`
+concatenation. Patched by Shamil Abdulaev.

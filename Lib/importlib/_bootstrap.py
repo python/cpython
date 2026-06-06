@@ -20,12 +20,6 @@ work. One should use importlib as the public-facing version of this module.
 # reference any injected objects! This includes not only global code but also
 # anything specified at the class level.
 
-def _object_name(obj):
-    try:
-        return obj.__qualname__
-    except AttributeError:
-        return type(obj).__qualname__
-
 # Bootstrap-related code ######################################################
 
 # Modules injected manually by _setup()

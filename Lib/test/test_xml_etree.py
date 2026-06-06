@@ -1064,6 +1064,17 @@ class ElementTreeTest(unittest.TestCase):
         self.assertRaises(ValueError, ET.XML, xml('undefined').encode('ascii'))
         self.assertRaises(LookupError, ET.XML, xml('xxx').encode('ascii'))
 
+    @support.subTests('sample,exception', [
+        (b'<x> \xa1</x>', UnicodeDecodeError),  # crashed
+        (b'<x> \xa1</x', UnicodeDecodeError),  # crashed
+        (b'<x> \xa1', None), # ET.ParseError
+    ])
+    def test_multibyte_encoding_errors(self, sample, exception):
+        exception = exception or ET.ParseError
+        data = b'<?xml version="1.0" encoding="EUC-JP"?>\n' + sample
+        with self.assertRaises(exception):
+            ET.XML(data)
+
     def test_methods(self):
         # Test serialization methods.
 
@@ -1287,7 +1298,15 @@ class ElementTreeTest(unittest.TestCase):
               {'': 'http://www.w3.org/2001/XMLSchema',
                'ns': 'http://www.w3.org/2001/XMLSchema'})
 
-    def test_processinginstruction(self):
+    def test_comment_serialization(self):
+        comm = ET.Comment('<spam> & ham')
+        # comments are not escaped
+        self.assertEqual(ET.tostring(comm), b'<!--<spam> & ham-->')
+        self.assertEqual(ET.tostring(comm, method='html'), b'<!--<spam> & ham-->')
+        # no comments in text serialization
+        self.assertEqual(ET.tostring(comm, method='text'), b'')
+
+    def test_processinginstruction_serialization(self):
         # Test ProcessingInstruction directly
 
         self.assertEqual(ET.tostring(ET.ProcessingInstruction('test', 'instruction')),
@@ -1296,12 +1315,32 @@ class ElementTreeTest(unittest.TestCase):
                 b'<?test instruction?>')
 
         # Issue #2746
-
+        # processing instructions are not escaped
         self.assertEqual(ET.tostring(ET.PI('test', '<testing&>')),
                 b'<?test <testing&>?>')
         self.assertEqual(ET.tostring(ET.PI('test', '<testing&>\xe3'), 'latin-1'),
                 b"<?xml version='1.0' encoding='latin-1'?>\n"
                 b"<?test <testing&>\xe3?>")
+        pi = ET.PI('test', 'ham & eggs < spam')
+        self.assertEqual(ET.tostring(pi), b'<?test ham & eggs < spam?>')
+        self.assertEqual(ET.tostring(pi, method='html'), b'<?test ham & eggs < spam?>')
+        # no processing instructions in text serialization
+        self.assertEqual(ET.tostring(pi, method='text'), b'')
+
+    def test_empty_attribute_serialization(self):
+        # empty attrs only work in html
+        elem = ET.Element('tag', attrib={'attr': None})
+        self.assertRaises(TypeError, ET.tostring, elem)
+        self.assertEqual(ET.tostring(elem, method='html'), b'<tag attr></tag>')
+
+    @support.subTests('tag', ("script", "style", "xmp", "iframe", "noembed", "noframes"))
+    def test_html_cdata_elems_serialization(self, tag):
+        # content of raw text elements is not escaped in html
+        tag = tag.title()
+        elem = ET.Element(tag)
+        elem.text = '<spam>&ham'
+        self.assertEqual(ET.tostring(elem, method='html'),
+                         ('<%s><spam>&ham</%s>' % (tag, tag)).encode())
 
     def test_html_empty_elems_serialization(self):
         # issue 15970
@@ -1316,6 +1355,14 @@ class ElementTreeTest(unittest.TestCase):
                 serialized = serialize(ET.XML('<%s></%s>' % (elem,elem)),
                                        method='html')
                 self.assertEqual(serialized, expected)
+
+    def test_html_plaintext_serialization(self):
+        # content of plaintext is not escaped in html
+        # no end tag for plaintext
+        elem = ET.Element('PlainText')
+        elem.text = '<spam>&ham'
+        self.assertEqual(ET.tostring(elem, method='html'),
+                         b'<PlainText><spam>&ham')
 
     def test_dump_attribute_order(self):
         # See BPO 34160
