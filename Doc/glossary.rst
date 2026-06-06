@@ -653,7 +653,7 @@ Glossary
       normal function except that it contains :keyword:`yield` expressions
       for producing a series of values usable in a :keyword:`for`\-loop or
       that can be retrieved one at a time with the :func:`next` function.
-      See :pep:`255`.
+      See :ref:`yieldexpr`.
 
    generator iterator
       An object created by a :term:`generator function` or a
