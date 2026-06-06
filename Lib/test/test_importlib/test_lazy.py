@@ -1,6 +1,7 @@
 import importlib
 from importlib import abc
 from importlib import util
+import inspect
 import sys
 import time
 import threading
@@ -99,6 +100,9 @@ class LazyLoaderTests(unittest.TestCase):
         # An attribute only mutated as a side-effect of import should not be
         # changed needlessly.
         module = self.new_module()
+        # __name__ itself doesn't trigger the lazy loading,
+        # trigger via another attr
+        module.__package__
         self.assertEqual(TestingImporter.mutated_name, module.__name__)
 
     def test_new_attr(self):
@@ -138,14 +142,14 @@ class LazyLoaderTests(unittest.TestCase):
             sys.modules[TestingImporter.module_name] = fresh_module
             module = self.new_module()
             with self.assertRaisesRegex(ValueError, "substituted"):
-                module.__name__
+                module.__package__
 
     def test_module_already_in_sys(self):
         with test_util.uncache(TestingImporter.module_name):
             module = self.new_module()
             sys.modules[TestingImporter.module_name] = module
             # Force the load; just care that no exception is raised.
-            module.__name__
+            module.__package__
 
     @threading_helper.requires_working_threading()
     def test_module_load_race(self):
@@ -223,6 +227,43 @@ sys.modules[__name__].__class__ = ImmutableModule
             module.CONSTANT = 2.71
         with self.assertRaises(AttributeError):
             del module.CONSTANT
+
+    def test_name_file_alias_spec(self):
+        # gh-139669: __name__/__file__ are aliases for __spec__.name and
+        # __spec__.origin.  Reading them returns the spec values and does not
+        # trigger the load; writing them flows through to the spec.
+        loader = TestingImporter()
+        module = self.new_module(loader=loader)
+        spec = object.__getattribute__(module, '__spec__')
+        spec.origin = '/some/where.py'
+        self.assertEqual(module.__name__, spec.name)
+        self.assertEqual(module.__file__, '/some/where.py')
+        # Neither read triggered the load.
+        self.assertIsNone(loader.loaded)
+        self.assertEqual(0, loader.load_count)
+        # Writes flow through to the spec, still without loading.
+        module.__name__ = 'renamed'
+        module.__file__ = '/other.py'
+        self.assertEqual(spec.name, 'renamed')
+        self.assertEqual(spec.origin, '/other.py')
+        self.assertEqual(module.__name__, 'renamed')
+        self.assertEqual(module.__file__, '/other.py')
+        self.assertIsNone(loader.loaded)
+        self.assertIsInstance(module, util._LazyModule)
+
+    def test_inspect_does_not_trigger_lazy_load(self):
+        # gh-139669: introspecting an unrelated frame iterates over
+        # sys.modules and must not force lazy modules to be loaded.
+        loader = TestingImporter()
+        module = self.new_module(loader=loader)
+        with test_util.uncache(TestingImporter.module_name):
+            sys.modules[TestingImporter.module_name] = module
+            self.assertIsInstance(module, util._LazyModule)
+
+            inspect.getframeinfo(inspect.currentframe())
+            self.assertIsNone(loader.loaded)
+            self.assertEqual(0, loader.load_count)
+            self.assertIsInstance(module, util._LazyModule)
 
 
 if __name__ == '__main__':
