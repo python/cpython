@@ -565,6 +565,8 @@ created::
         def __init__(self, *args, **kwargs):
             self.packages = kwargs.pop('packages', [])
             self.verbose = kwargs.pop('verbose', False)
+            # pip is required to install the requested packages.
+            kwargs.setdefault('with_pip', True)
             super().__init__(*args, **kwargs)
 
         def post_setup(self, context):
@@ -589,16 +591,8 @@ created::
             if not self.verbose:
                 args.append('-q')
             args.extend(self.packages)
-            sys.stderr.write('Installing packages: %s ...\n'
-                             % ', '.join(self.packages))
-            result = subprocess.run(args, capture_output=not self.verbose)
-            if result.returncode != 0:
-                sys.stderr.write('Package installation failed '
-                                 '(exit code %d).\n' % result.returncode)
-                if result.stderr:
-                    sys.stderr.write(result.stderr.decode('utf-8'))
-            else:
-                sys.stderr.write('done.\n')
+            print('Installing packages', ', '.join(self.packages), file=sys.stderr)
+            subprocess.run(args, check=True)
 
 
     def main(args=None):
