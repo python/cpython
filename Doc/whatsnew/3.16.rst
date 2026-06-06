@@ -141,6 +141,14 @@ module_name
 
 * TODO
 
+html
+----
+
+* :func:`html.escape` and :func:`html.unescape` are now implemented in C, with
+  the pure-Python versions kept as a fallback. This also speeds up
+  :class:`html.parser.HTMLParser`, which relies on :func:`html.unescape`.
+  (Contributed by Bernát Gábor in :gh:`151024`.)
+
 
 
 Removed
