@@ -2415,7 +2415,35 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(cmt.token_type, 'comment')
         self.verify_terminal_types(cmt, 'ptext', 'fws')
 
+    @params_map(with_name=True)
+    def adapt_get_ccontent_sequence_tests_for_get_comment(
+            name,
+            s,
+            *args,
+            stringified=None,
+            remainder='',
+            **kw,
+        ):
+        # get_comment parses parens, and quotes them differently in str, so
+        # tests involving parens in the test string won't pass here.
+        if '(' in s or ')' in s:
+            return
+        # XXX XXX (most) ew tests will work after get_comment is refactored.
+        if 'ew' in name:
+            return
+        if stringified:
+            kw['comments'] = [stringified]
+            kw['stringified'] = f"({stringified})"
+        else:
+            kw['comments'] = [s]
+        kw.pop('value', None)
+        yield 'from_test_get_ccontent_sequence', C(f'({s})', *args, **kw)
+
     params_test_get_comment = old_api_only(
+
+        adapt_get_ccontent_sequence_tests_for_get_comment(
+            params_test_get_ccontent_sequence,
+            ),
 
         simple_comment_only = C(
             '(comment)',
