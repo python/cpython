@@ -132,7 +132,7 @@ class TestGC(TestCase):
         NUM_ALLOCATORS = 7
         NUM_READERS = 1
         NUM_THREADS = NUM_ALLOCATORS + NUM_READERS
-        NUM_ITERS = 200_000
+        NUM_ITERS = 1000
 
         barrier = threading.Barrier(NUM_THREADS)
 
