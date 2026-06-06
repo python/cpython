@@ -503,5 +503,72 @@ class RecursiveUseOfCursors(unittest.TestCase):
                                    self.cur.fetchall)
 
 
+class CallbackClosesConnectionTests(unittest.TestCase):
+    """Regression tests for gh-151030: callbacks that close the connection
+    during query execution must raise ProgrammingError, not crash."""
+
+    def _make_con(self) -> sqlite.Connection:
+        con = sqlite.connect(":memory:")
+        con.execute("CREATE TABLE t (v INTEGER)")
+        con.execute("INSERT INTO t VALUES (1)")
+        con.commit()
+        return con
+
+    def test_udf_closes_connection(self) -> None:
+        con = self._make_con()
+
+        def bad(x: int) -> int:
+            con.close()
+            return x
+
+        con.create_function("bad", 1, bad)
+        with self.assertRaises((sqlite.ProgrammingError, sqlite.OperationalError)):
+            con.execute("SELECT bad(v) FROM t").fetchall()
+
+    def test_progress_handler_closes_connection(self) -> None:
+        con = self._make_con()
+        fired = False
+
+        def handler() -> int:
+            nonlocal fired
+            if not fired:
+                fired = True
+                con.close()
+            return 0
+
+        con.set_progress_handler(handler, 1)
+        with self.assertRaises((sqlite.ProgrammingError, sqlite.OperationalError)):
+            con.execute("SELECT v FROM t").fetchall()
+
+    def test_trace_callback_closes_connection(self) -> None:
+        con = self._make_con()
+        fired = False
+
+        def tracer(statement: str) -> None:
+            nonlocal fired
+            if not fired:
+                fired = True
+                con.close()
+
+        con.set_trace_callback(tracer)
+        with self.assertRaises((sqlite.ProgrammingError, sqlite.OperationalError)):
+            con.execute("SELECT v FROM t").fetchall()
+
+    def test_authorizer_closes_connection(self) -> None:
+        con = self._make_con()
+        fired = False
+
+        def auth(action: int, arg1: str, arg2: str, db: str, trigger: str) -> int:
+            nonlocal fired
+            if not fired:
+                fired = True
+                con.close()
+            return sqlite.SQLITE_OK
+
+        con.set_authorizer(auth)
+        with self.assertRaises((sqlite.ProgrammingError, sqlite.OperationalError)):
+            con.execute("SELECT v FROM t").fetchall()
+
+
 if __name__ == "__main__":
     unittest.main()
