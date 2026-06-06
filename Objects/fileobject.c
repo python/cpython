@@ -68,9 +68,9 @@ PyFile_GetLine(PyObject *f, int n)
     }
     if (result != NULL && !PyBytes_Check(result) &&
         !PyUnicode_Check(result)) {
+        PyErr_Format(PyExc_TypeError,
+                     "%T.readline() must return a str, not %T", f, result);
         Py_SETREF(result, NULL);
-        PyErr_SetString(PyExc_TypeError,
-                   "object.readline() returned non-string");
     }
 
     if (n < 0 && result != NULL && PyBytes_Check(result)) {
@@ -193,8 +193,8 @@ PyObject_AsFileDescriptor(PyObject *o)
             Py_DECREF(fno);
         }
         else {
-            PyErr_SetString(PyExc_TypeError,
-                            "fileno() returned a non-integer");
+            PyErr_Format(PyExc_TypeError,
+                         "%T.fileno() must return an int, not %T", o, fno);
             Py_DECREF(fno);
             return -1;
         }

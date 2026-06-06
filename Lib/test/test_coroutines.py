@@ -527,7 +527,7 @@ class CoroutineTest(unittest.TestCase):
 
     def test_gen_1(self):
         def gen(): yield
-        self.assertFalse(hasattr(gen, '__await__'))
+        self.assertNotHasAttr(gen, '__await__')
 
     def test_func_1(self):
         async def foo():
@@ -1008,7 +1008,7 @@ class CoroutineTest(unittest.TestCase):
             return (await Awaitable())
 
         with self.assertRaisesRegex(
-            TypeError, "__await__.*returned non-iterator of type"):
+            TypeError, "__await__.*must return an iterator, not"):
 
             run_async(foo())
 
@@ -1106,7 +1106,7 @@ class CoroutineTest(unittest.TestCase):
             return await Awaitable()
 
         with self.assertRaisesRegex(
-                TypeError, r"__await__\(\) returned a coroutine"):
+                TypeError, r"__await__\(\) must return an iterator, not coroutine"):
             run_async(foo())
 
         c.close()
@@ -1120,7 +1120,7 @@ class CoroutineTest(unittest.TestCase):
             return await Awaitable()
 
         with self.assertRaisesRegex(
-            TypeError, "__await__.*returned non-iterator of type"):
+            TypeError, "__await__.*must return an iterator, not"):
 
             run_async(foo())
 
@@ -2265,6 +2265,20 @@ class CoroutineTest(unittest.TestCase):
         # before fixing, visible stack from throw would be shorter than from send.
         self.assertEqual(len_send, len_throw)
 
+    def test_call_generator_in_frame_clear(self):
+        # gh-143939: Running a generator while clearing the coroutine's frame
+        # should not be misinterpreted as a yield.
+        class CallGeneratorOnDealloc:
+            def __del__(self):
+                next(x for x in [1])
+
+        async def coro():
+            obj = CallGeneratorOnDealloc()
+            return 42
+
+        yielded, result = run_async(coro())
+        self.assertEqual(yielded, [])
+        self.assertEqual(result, 42)
 
 @unittest.skipIf(
     support.is_emscripten or support.is_wasi,
@@ -2307,7 +2321,7 @@ class CoroAsyncIOCompatTest(unittest.TestCase):
             pass
         finally:
             loop.close()
-            asyncio._set_event_loop_policy(None)
+            asyncio.events._set_event_loop_policy(None)
 
         self.assertEqual(buffer, [1, 2, 'MyException'])
 
@@ -2490,7 +2504,7 @@ class CAPITest(unittest.TestCase):
             return (await future)
 
         with self.assertRaisesRegex(
-                TypeError, "__await__.*returned non-iterator of type 'int'"):
+                TypeError, "__await__.*must return an iterator, not int"):
             self.assertEqual(foo().send(None), 1)
 
 

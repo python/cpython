@@ -2,28 +2,28 @@
 
 __all__ = (
     # compression.zstd
-    "COMPRESSION_LEVEL_DEFAULT",
-    "compress",
-    "CompressionParameter",
-    "decompress",
-    "DecompressionParameter",
-    "finalize_dict",
-    "get_frame_info",
-    "Strategy",
-    "train_dict",
+    'COMPRESSION_LEVEL_DEFAULT',
+    'compress',
+    'CompressionParameter',
+    'decompress',
+    'DecompressionParameter',
+    'finalize_dict',
+    'get_frame_info',
+    'Strategy',
+    'train_dict',
 
     # compression.zstd._zstdfile
-    "open",
-    "ZstdFile",
+    'open',
+    'ZstdFile',
 
     # _zstd
-    "get_frame_size",
-    "zstd_version",
-    "zstd_version_info",
-    "ZstdCompressor",
-    "ZstdDecompressor",
-    "ZstdDict",
-    "ZstdError",
+    'get_frame_size',
+    'zstd_version',
+    'zstd_version_info',
+    'ZstdCompressor',
+    'ZstdDecompressor',
+    'ZstdDict',
+    'ZstdError',
 )
 
 import _zstd
@@ -43,6 +43,7 @@ COMPRESSION_LEVEL_DEFAULT = _zstd.ZSTD_CLEVEL_DEFAULT
 
 class FrameInfo:
     """Information about a Zstandard frame."""
+
     __slots__ = 'decompressed_size', 'dictionary_id'
 
     def __init__(self, decompressed_size, dictionary_id):
@@ -60,8 +61,9 @@ class FrameInfo:
 def get_frame_info(frame_buffer):
     """Get Zstandard frame information from a frame header.
 
-    *frame_buffer* is a bytes-like object. It should start from the beginning
-    of a frame, and needs to include at least the frame header (6 to 18 bytes).
+    *frame_buffer* is a bytes-like object. It should start from the
+    beginning of a frame, and needs to include at least the frame header
+    (6 to 18 bytes).
 
     The returned FrameInfo object has two attributes.
     'decompressed_size' is the size in bytes of the data in the frame when
@@ -102,16 +104,17 @@ def finalize_dict(zstd_dict, /, samples, dict_size, level):
     finalize *zstd_dict* by adding headers and statistics according to the
     Zstandard dictionary format.
 
-    You may compose an effective dictionary content by hand, which is used as
-    basis dictionary, and use some samples to finalize a dictionary. The basis
-    dictionary may be a "raw content" dictionary. See *is_raw* in ZstdDict.
+    You may compose an effective dictionary content by hand, which is used
+    as basis dictionary, and use some samples to finalize a dictionary.  The
+    basis dictionary may be a "raw content" dictionary.  See *is_raw* in
+    ZstdDict.
 
-    *samples* is an iterable of samples, where a sample is a bytes-like object
-    representing a file.
+    *samples* is an iterable of samples, where a sample is a bytes-like
+    object representing a file.
     *dict_size* is the dictionary's maximum size, in bytes.
     *level* is the expected compression level. The statistics for each
-    compression level differ, so tuning the dictionary to the compression level
-    can provide improvements.
+    compression level differ, so tuning the dictionary to the compression
+    level can provide improvements.
     """
 
     if not isinstance(zstd_dict, ZstdDict):
@@ -125,12 +128,12 @@ def finalize_dict(zstd_dict, /, samples, dict_size, level):
     chunks = b''.join(samples)
     chunk_sizes = tuple(_nbytes(sample) for sample in samples)
     if not chunks:
-        raise ValueError("The samples are empty content, can't finalize the"
+        raise ValueError("The samples are empty content, can't finalize the "
                          "dictionary.")
-    dict_content = _zstd.finalize_dict(zstd_dict.dict_content,
-                                        chunks, chunk_sizes,
-                                        dict_size, level)
+    dict_content = _zstd.finalize_dict(zstd_dict.dict_content, chunks,
+                                       chunk_sizes, dict_size, level)
     return ZstdDict(dict_content)
+
 
 def compress(data, level=None, options=None, zstd_dict=None):
     """Return Zstandard compressed *data* as bytes.
@@ -139,19 +142,20 @@ def compress(data, level=None, options=None, zstd_dict=None):
     COMPRESSION_LEVEL_DEFAULT ('3').
     *options* is a dict object that contains advanced compression
     parameters. See CompressionParameter for more on options.
-    *zstd_dict* is a ZstdDict object, a pre-trained Zstandard dictionary. See
-    the function train_dict for how to train a ZstdDict on sample data.
+    *zstd_dict* is a ZstdDict object, a pre-trained Zstandard dictionary.
+    See the function train_dict for how to train a ZstdDict on sample data.
 
     For incremental compression, use a ZstdCompressor instead.
     """
     comp = ZstdCompressor(level=level, options=options, zstd_dict=zstd_dict)
     return comp.compress(data, mode=ZstdCompressor.FLUSH_FRAME)
 
+
 def decompress(data, zstd_dict=None, options=None):
     """Decompress one or more frames of Zstandard compressed *data*.
 
-    *zstd_dict* is a ZstdDict object, a pre-trained Zstandard dictionary. See
-    the function train_dict for how to train a ZstdDict on sample data.
+    *zstd_dict* is a ZstdDict object, a pre-trained Zstandard dictionary.
+    See the function train_dict for how to train a ZstdDict on sample data.
     *options* is a dict object that contains advanced compression
     parameters. See DecompressionParameter for more on options.
 
@@ -162,12 +166,12 @@ def decompress(data, zstd_dict=None, options=None):
         decomp = ZstdDecompressor(options=options, zstd_dict=zstd_dict)
         results.append(decomp.decompress(data))
         if not decomp.eof:
-            raise ZstdError("Compressed data ended before the "
-                            "end-of-stream marker was reached")
+            raise ZstdError('Compressed data ended before the '
+                            'end-of-stream marker was reached')
         data = decomp.unused_data
         if not data:
             break
-    return b"".join(results)
+    return b''.join(results)
 
 
 class CompressionParameter(enum.IntEnum):
