@@ -1,0 +1,2 @@
+Fix crashes in :mod:`sqlite3` when a callback closes the connection
+while a query is being prepared or executed.
