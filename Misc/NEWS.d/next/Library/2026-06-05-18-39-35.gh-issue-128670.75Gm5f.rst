@@ -1,0 +1,5 @@
+Creating a virtual environment from another virtual environment no longer
+resolves a symlinked base interpreter further than the original environment
+did, so an internal, implementation-detail install path (such as a Homebrew
+``Cellar`` directory) is no longer baked into the second environment's
+``pyvenv.cfg``.
