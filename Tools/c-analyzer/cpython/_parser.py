@@ -70,6 +70,7 @@ EXCLUDED = format_conf_lines([
     # only huge constants (safe but parsing is slow)
     'Modules/_ssl_data_*.h',
     'Modules/cjkcodecs/mappings_*.h',
+    'Modules/html_entities.h',
     'Modules/unicodedata_db.h',
     'Modules/unicodename_db.h',
     'Objects/unicodetype_db.h',
