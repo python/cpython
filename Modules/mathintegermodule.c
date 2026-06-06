@@ -341,18 +341,8 @@ _approximate_isqrt(uint64_t n)
     return (u << 15) + (uint32_t)((n >> 17) / u);
 }
 
-/*[clinic input]
-math.integer.isqrt
-
-    n: object
-    /
-
-Return the integer part of the square root of the input.
-[clinic start generated code]*/
-
 static PyObject *
-math_integer_isqrt(PyObject *module, PyObject *n)
-/*[clinic end generated code: output=551031e41a0f5d9e input=921ddd9853133d8d]*/
+_isqrt_rem(PyObject *n, PyObject **rem)
 {
     int a_too_large, c_bit_length;
     int64_t c, d;
@@ -373,6 +363,9 @@ math_integer_isqrt(PyObject *module, PyObject *n)
     }
     if (_PyLong_IsZero((PyLongObject *)n)) {
         Py_DECREF(n);
+        if (rem) {
+            *rem = PyLong_FromLong(0);
+        }
         return PyLong_FromLong(0);
     }
 
@@ -392,7 +385,15 @@ math_integer_isqrt(PyObject *module, PyObject *n)
             return NULL;
         }
         u = _approximate_isqrt(m << 2*shift) >> shift;
-        u -= (uint64_t)u * u > m;
+        uint64_t sq = (uint64_t)u * u;
+        u -= sq > m;
+        if (rem) {
+            if (sq > m) {
+                sq -= 2*(uint64_t)u + 1;
+            }
+            m -= sq;
+            *rem = PyLong_FromUnsignedLongLong(m);
+        }
         return PyLong_FromUnsignedLong(u);
     }
 
@@ -460,13 +461,40 @@ math_integer_isqrt(PyObject *module, PyObject *n)
         goto error;
     }
     a_too_large = PyObject_RichCompareBool(n, b, Py_LT);
-    Py_DECREF(b);
     if (a_too_large == -1) {
+        Py_DECREF(b);
         goto error;
     }
 
     if (a_too_large) {
+        if (rem) {
+            PyObject *tmp = PyNumber_Add(b, _PyLong_GetOne());
+
+            if (tmp == NULL) {
+                Py_DECREF(b);
+                goto error;
+            }
+            Py_SETREF(b, tmp);
+            tmp = PyNumber_Add(a, a);
+            if (tmp == NULL) {
+                Py_DECREF(b);
+                goto error;
+            }
+            Py_SETREF(b, PyNumber_Subtract(b, tmp));
+            Py_DECREF(tmp);
+        }
         Py_SETREF(a, PyNumber_Subtract(a, _PyLong_GetOne()));
+        if (a == NULL) {
+            Py_DECREF(b);
+            goto error;
+        }
+    }
+    if (rem) {
+        Py_SETREF(b, PyNumber_Subtract(n, b));
+        *rem = b;
+    }
+    else {
+        Py_DECREF(b);
     }
     Py_DECREF(n);
     return a;
@@ -475,6 +503,48 @@ math_integer_isqrt(PyObject *module, PyObject *n)
     Py_XDECREF(a);
     Py_DECREF(n);
     return NULL;
+}
+
+
+/*[clinic input]
+math.integer.isqrt
+
+    n: object
+    /
+
+Return the integer part of the square root of the input.
+[clinic start generated code]*/
+
+static PyObject *
+math_integer_isqrt(PyObject *module, PyObject *n)
+/*[clinic end generated code: output=551031e41a0f5d9e input=921ddd9853133d8d]*/
+{
+    return _isqrt_rem(n, NULL);
+}
+
+/*[clinic input]
+math.integer.isqrt_rem
+
+    n: object
+    /
+
+Return a pair of values (s,t) such that s=isqrt(n) and t=n-s*s.
+[clinic start generated code]*/
+
+static PyObject *
+math_integer_isqrt_rem(PyObject *module, PyObject *n)
+/*[clinic end generated code: output=b17d11479d08cdc4 input=7ed2dd870818d2bb]*/
+{
+    PyObject *rem = NULL;
+    PyObject *root = _isqrt_rem(n, &rem);
+    PyObject *res = NULL;
+
+    if (root && rem) {
+        res = PyTuple_Pack(2, root, rem);
+    }
+    Py_XDECREF(root);
+    Py_XDECREF(rem);
+    return res;
 }
 
 
@@ -1231,6 +1301,7 @@ static PyMethodDef math_integer_methods[] = {
     MATH_INTEGER_FACTORIAL_METHODDEF
     MATH_INTEGER_GCD_METHODDEF
     MATH_INTEGER_ISQRT_METHODDEF
+    MATH_INTEGER_ISQRT_REM_METHODDEF
     MATH_INTEGER_LCM_METHODDEF
     MATH_INTEGER_PERM_METHODDEF
     {NULL,              NULL}           /* sentinel */

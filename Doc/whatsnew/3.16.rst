@@ -102,6 +102,13 @@ lzma
   requires ``lzma`` 5.4.0 or newer while RISC-V requires 5.6.0 or newer.
   (Contributed by Chien Wong in :gh:`115988`.)
 
+math.integer
+------------
+
+* Add :func:`math.integer.isqrt_rem` to compute integer square root with
+  a remainder.
+  (Contributed by Sergey B Kirpichev in :gh:`90345`.)
+
 os
 --
 
