@@ -1984,7 +1984,8 @@ class TestRemoteExec(unittest.TestCase):
         test.support.reap_children()
 
     def _run_remote_exec_test(self, script_code, python_args=None, env=None,
-                              prologue='', after_ready=None,
+                              python_executable=None, prologue='',
+                              after_ready=None,
                               script_path=os_helper.TESTFN + '_remote.py'):
         # Create the script that will be remotely executed
         self.addCleanup(os_helper.unlink, script_path)
@@ -2032,7 +2033,10 @@ sock.close()
 ''')
 
         # Start the target process and capture its output
-        cmd = [sys.executable]
+        if python_executable is None:
+            python_executable = sys.executable
+
+        cmd = [python_executable]
         if python_args:
             cmd.extend(python_args)
         cmd.append(target)
@@ -2244,6 +2248,55 @@ this is invalid python code
             script = 'print("Remote script executed successfully!")'
             returncode, stdout, stderr = self._run_remote_exec_test(
                 script, env=env, after_ready=delete_loaded_libpython)
+            self.assertEqual(returncode, 0)
+            self.assertIn(b"Remote script executed successfully!", stdout)
+            self.assertEqual(stderr, b"")
+
+    @unittest.skipUnless(sys.platform == 'linux', 'Linux-only regression test')
+    @unittest.skipUnless(
+        sysconfig.get_config_var('Py_ENABLE_SHARED') == 0,
+        'requires a static Python build')
+    def test_remote_exec_deleted_static_executable(self):
+        """Test remote exec when the target static executable was deleted."""
+        build_dir = sysconfig.get_config_var('abs_builddir')
+        srcdir = sysconfig.get_config_var('srcdir')
+        if not build_dir or not srcdir:
+            self.skipTest('cannot determine build-tree locations')
+
+        pybuilddir_txt = os.path.join(build_dir, 'pybuilddir.txt')
+        if not os.path.exists(pybuilddir_txt):
+            self.skipTest(f'{pybuilddir_txt!r} does not exist')
+
+        with open(pybuilddir_txt, encoding='utf-8') as pybuilddir_file:
+            pybuilddir = pybuilddir_file.read().strip()
+        source_ext_dir = os.path.join(build_dir, pybuilddir)
+        if not os.path.isdir(source_ext_dir):
+            self.skipTest(f'{source_ext_dir!r} does not exist')
+
+        with os_helper.temp_dir() as copied_root:
+            copied_build_dir = os.path.join(copied_root, 'build')
+            copied_pybuilddir = os.path.join(copied_build_dir, pybuilddir)
+            os.makedirs(os.path.dirname(copied_pybuilddir))
+            os.symlink(os.path.join(srcdir, 'Lib'),
+                       os.path.join(copied_root, 'Lib'))
+            os.symlink(source_ext_dir, copied_pybuilddir)
+            shutil.copy2(pybuilddir_txt,
+                         os.path.join(copied_build_dir, 'pybuilddir.txt'))
+
+            copied_python = os.path.join(copied_build_dir,
+                                         os.path.basename(sys.executable))
+            shutil.copy2(sys.executable, copied_python)
+
+            def delete_loaded_executable(proc):
+                os_helper.unlink(copied_python)
+                with open(f'/proc/{proc.pid}/maps', encoding='utf-8') as maps:
+                    self.assertIn(f'{copied_python} (deleted)',
+                                  maps.read())
+
+            script = 'print("Remote script executed successfully!")'
+            returncode, stdout, stderr = self._run_remote_exec_test(
+                script, python_args=['-S'], python_executable=copied_python,
+                after_ready=delete_loaded_executable)
             self.assertEqual(returncode, 0)
             self.assertIn(b"Remote script executed successfully!", stdout)
             self.assertEqual(stderr, b"")
