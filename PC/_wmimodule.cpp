@@ -224,20 +224,19 @@ wait_event(HANDLE event, DWORD timeout)
 
 
 /*[clinic input]
-@permit_long_docstring_body
 _wmi.exec_query
 
     query: unicode
 
 Runs a WMI query against the local machine.
 
-This returns a single string with 'name=value' pairs in a flat array separated
-by null characters.
+This returns a single string with 'name=value' pairs in a flat array
+separated by null characters.
 [clinic start generated code]*/
 
 static PyObject *
 _wmi_exec_query_impl(PyObject *module, PyObject *query)
-/*[clinic end generated code: output=a62303d5bb5e003f input=621f5c50c56d06d0]*/
+/*[clinic end generated code: output=a62303d5bb5e003f input=a8d5710acdfbf515]*/
 
 /*[clinic end generated code]*/
 {
