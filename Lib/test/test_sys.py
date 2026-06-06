@@ -6,6 +6,7 @@ import locale
 import operator
 import os
 import random
+import shutil
 import socket
 import struct
 import subprocess
@@ -1983,7 +1984,7 @@ class TestRemoteExec(unittest.TestCase):
         test.support.reap_children()
 
     def _run_remote_exec_test(self, script_code, python_args=None, env=None,
-                              prologue='',
+                              prologue='', after_ready=None,
                               script_path=os_helper.TESTFN + '_remote.py'):
         # Create the script that will be remotely executed
         self.addCleanup(os_helper.unlink, script_path)
@@ -2055,6 +2056,9 @@ sock.close()
 
                 response = client_socket.recv(1024)
                 self.assertEqual(response, b"ready")
+
+                if after_ready is not None:
+                    after_ready(proc)
 
                 # Try remote exec on the target process
                 sys.remote_exec(proc.pid, script_path)
@@ -2203,6 +2207,46 @@ this is invalid python code
         """Test remote exec with invalid script path"""
         with self.assertRaises(OSError):
             sys.remote_exec(os.getpid(), "invalid_script_path")
+
+    @unittest.skipUnless(sys.platform == 'linux', 'Linux-only regression test')
+    @unittest.skipUnless(
+        sysconfig.get_config_var('Py_ENABLE_SHARED') == 1,
+        'requires a shared libpython build')
+    def test_remote_exec_deleted_libpython(self):
+        """Test remote exec when the target libpython was deleted."""
+        build_dir = sysconfig.get_config_var('abs_builddir')
+        ldlibrary = sysconfig.get_config_var('LDLIBRARY')
+        instsoname = sysconfig.get_config_var('INSTSONAME')
+        if not build_dir or not ldlibrary or not instsoname:
+            self.skipTest('cannot determine shared libpython location')
+
+        source_libpython = os.path.join(build_dir, instsoname)
+        if not os.path.exists(source_libpython):
+            self.skipTest(f'{source_libpython!r} does not exist')
+
+        with os_helper.temp_dir() as lib_dir:
+            copied_libpython = os.path.join(lib_dir, instsoname)
+            shutil.copy2(source_libpython, copied_libpython)
+            if ldlibrary != instsoname:
+                os.symlink(instsoname, os.path.join(lib_dir, ldlibrary))
+
+            env = os.environ.copy()
+            ld_library_path = env.get('LD_LIBRARY_PATH')
+            env['LD_LIBRARY_PATH'] = lib_dir if not ld_library_path else (
+                lib_dir + os.pathsep + ld_library_path)
+
+            def delete_loaded_libpython(proc):
+                os_helper.unlink(copied_libpython)
+                with open(f'/proc/{proc.pid}/maps', encoding='utf-8') as maps:
+                    self.assertIn(f'{copied_libpython} (deleted)',
+                                  maps.read())
+
+            script = 'print("Remote script executed successfully!")'
+            returncode, stdout, stderr = self._run_remote_exec_test(
+                script, env=env, after_ready=delete_loaded_libpython)
+            self.assertEqual(returncode, 0)
+            self.assertIn(b"Remote script executed successfully!", stdout)
+            self.assertEqual(stderr, b"")
 
     def test_remote_exec_in_process_without_debug_fails_envvar(self):
         """Test remote exec in a process without remote debugging enabled"""
