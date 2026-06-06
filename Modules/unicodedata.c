@@ -785,15 +785,19 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
 static int
 find_nfc_index(const struct reindex* nfc, Py_UCS4 code)
 {
-    unsigned int index;
-    for (index = 0; nfc[index].start; index++) {
-        unsigned int start = nfc[index].start;
-        if (code < start)
-            return -1;
-        if (code <= start + nfc[index].count) {
-            unsigned int delta = code - start;
-            return nfc[index].index + delta;
-        }
+    /* The table is sorted by .start ascending with disjoint [start, start+count]
+       ranges and ends with a sentinel whose .start exceeds every codepoint, so
+       a single .start <= code test per entry also stops at the sentinel.  Find
+       the first entry past code, then range-check the candidate (entry i - 1). */
+    unsigned int i;
+    for (i = 0; (Py_UCS4)nfc[i].start <= code; i++) {
+    }
+    if (i == 0) {
+        return -1;
+    }
+    unsigned int start = nfc[i - 1].start;
+    if (code <= start + nfc[i - 1].count) {
+        return nfc[i - 1].index + (code - start);
     }
     return -1;
 }
