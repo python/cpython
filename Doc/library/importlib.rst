@@ -1371,6 +1371,18 @@ an :term:`importer`.
       compatibility warning for :class:`importlib.machinery.BuiltinImporter` and
       :class:`importlib.machinery.ExtensionFileLoader`.
 
+   .. versionchanged:: 3.16
+      Reading a lazily-loaded module's :attr:`~module.__name__` and
+      :attr:`~module.__file__` attributes no longer triggers the load.  Until
+      the module is loaded they act as aliases for the
+      :attr:`~importlib.machinery.ModuleSpec.name` and
+      :attr:`~importlib.machinery.ModuleSpec.origin` of its
+      :attr:`~module.__spec__`, and assigning to them updates the spec
+      instead.  This keeps introspection tools such as
+      :func:`inspect.getmodule` -- used indirectly by, for example,
+      :func:`inspect.getframeinfo` -- from forcing every lazily-loaded module
+      in :data:`sys.modules` to be imported (:gh:`139669`).
+
    .. classmethod:: factory(loader)
 
       A class method which returns a callable that creates a lazy loader. This
@@ -1481,6 +1493,11 @@ The example below shows how to implement lazy imports::
     >>> #but it is not loaded in memory yet.
     >>> lazy_typing.TYPE_CHECKING
     False
+
+Reading the module's :attr:`~module.__name__` or :attr:`~module.__file__`
+does not trigger the load; until then they mirror the module's
+:attr:`~module.__spec__`.  Accessing any other attribute (such as
+``TYPE_CHECKING`` above) loads the module.
 
 
 Setting up an importer
