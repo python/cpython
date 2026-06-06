@@ -4,14 +4,12 @@ import sys
 
 from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass, field, Field
+lazy from typing import IO, Literal, Self, ClassVar
 
 COLORIZE = True
 
-
-# types
-if False:
-    from typing import IO, Literal, Self, ClassVar
-    _theme: Theme
+_theme: Theme
+type BackgroundStyle = Literal["dark", "light"]
 
 
 class ANSIColors:
@@ -319,7 +317,7 @@ class LiveProfiler(ThemeSection):
     medal_bronze_fg: int = CursesColors.GREEN
 
     # Background style: 'dark' or 'light'
-    background_style: Literal["dark", "light"] = "dark"
+    background_style: BackgroundStyle = "dark"
 
 
 LiveProfilerLight = LiveProfiler(
