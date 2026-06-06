@@ -1890,6 +1890,7 @@ frame_trace_set_impl(PyFrameObject *self, PyObject *value)
 }
 
 /*[clinic input]
+@permit_long_summary
 @critical_section
 @getter
 frame.f_generator as frame_generator
@@ -1899,7 +1900,7 @@ Return the generator or coroutine associated with this frame, or None.
 
 static PyObject *
 frame_generator_get_impl(PyFrameObject *self)
-/*[clinic end generated code: output=97aeb2392562e55b input=00a2bd008b239ab0]*/
+/*[clinic end generated code: output=97aeb2392562e55b input=3ffba57ba10f84be]*/
 {
     if (self->f_frame->owner == FRAME_OWNED_BY_GENERATOR) {
         PyObject *gen = (PyObject *)_PyGen_GetGeneratorFromFrame(self->f_frame);
