@@ -2394,6 +2394,8 @@ class _IPv6Constants:
     _private_networks_exceptions = [
         IPv6Network('2001:1::1/128'),
         IPv6Network('2001:1::2/128'),
+        # RFC 9665: https://www.rfc-editor.org/rfc/rfc9665.html
+        IPv6Network('2001:1::3/128'),
         IPv6Network('2001:3::/32'),
         IPv6Network('2001:4:112::/48'),
         IPv6Network('2001:20::/28'),
