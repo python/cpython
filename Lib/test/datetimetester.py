@@ -7509,6 +7509,29 @@ class ExtensionModuleTests(unittest.TestCase):
         self.assertEqual(out, b"a" * 8)
         self.assertEqual(err, b"")
 
+    @support.cpython_only
+    def test_gh_151039(self):
+        # gh-151039: This code used to crash
+        script = """if True:
+            import sys, gc
+            import _datetime
+
+            td = _datetime.timedelta         # static C type, survives the module
+            del sys.modules['_datetime']
+            del _datetime
+            sys.modules['_datetime'] = None  # block re-import
+            gc.collect()                     # module object is collected
+
+            try:
+                td(seconds=2)                # used to be a segmentation fault
+            except ImportError:
+                pass
+            else:
+                assert False, "ImportError not raised"
+        """
+        rc, out, err = script_helper.assert_python_ok("-c", script)
+        self.assertEqual(rc, 0)
+
 
 def load_tests(loader, standard_tests, pattern):
     standard_tests.addTest(ZoneInfoCompleteTest())

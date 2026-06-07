@@ -141,7 +141,10 @@ get_current_module(PyInterpreterState *interp)
     }
     if (ref != NULL) {
         if (ref != Py_None) {
-            (void)PyWeakref_GetRef(ref, &mod);
+            if (PyWeakref_GetRef(ref, &mod) < 0) {
+                Py_DECREF(ref);
+                goto error;
+            }
             if (mod == Py_None) {
                 Py_CLEAR(mod);
             }
@@ -163,7 +166,6 @@ _get_current_state(PyObject **p_mod)
     PyInterpreterState *interp = PyInterpreterState_Get();
     PyObject *mod = get_current_module(interp);
     if (mod == NULL) {
-        assert(!PyErr_Occurred());
         if (PyErr_Occurred()) {
             return NULL;
         }
@@ -2130,6 +2132,10 @@ delta_to_microseconds(PyDateTime_Delta *self)
 
     PyObject *current_mod = NULL;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (st == NULL) {
+        assert(current_mod == NULL);
+        return NULL;
+    }
 
     x1 = PyLong_FromLong(GET_TD_DAYS(self));
     if (x1 == NULL)
@@ -2209,6 +2215,10 @@ microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
 
     PyObject *current_mod = NULL;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (st == NULL) {
+        assert(current_mod == NULL);
+        return NULL;
+    }
 
     tuple = checked_divmod(pyus, CONST_US_PER_SECOND(st));
     if (tuple == NULL) {
@@ -2817,6 +2827,10 @@ delta_new_impl(PyTypeObject *type, PyObject *days, PyObject *seconds,
 
     PyObject *current_mod = NULL;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (st == NULL) {
+        assert(current_mod == NULL);
+        return NULL;
+    }
 
     PyObject *x = NULL;         /* running sum of microseconds */
     PyObject *y = NULL;         /* temp sum of microseconds */
@@ -3016,6 +3030,10 @@ delta_total_seconds(PyObject *op, PyObject *Py_UNUSED(dummy))
 
     PyObject *current_mod = NULL;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (st == NULL) {
+        assert(current_mod == NULL);
+        return NULL;
+    }
 
     total_seconds = PyNumber_TrueDivide(total_microseconds, CONST_US_PER_SECOND(st));
 
@@ -3869,6 +3887,10 @@ date_isocalendar(PyObject *self, PyObject *Py_UNUSED(dummy))
 
     PyObject *current_mod = NULL;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (st == NULL) {
+        assert(current_mod == NULL);
+        return NULL;
+    }
 
     PyObject *v = iso_calendar_date_new_impl(ISOCALENDAR_DATE_TYPE(st),
                                              year, week + 1, day + 1);
@@ -6802,6 +6824,10 @@ local_timezone(PyDateTime_DateTime *utc_time)
 
     PyObject *current_mod = NULL;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (st == NULL) {
+        assert(current_mod == NULL);
+        return NULL;
+    }
 
     delta = datetime_subtract((PyObject *)utc_time, CONST_EPOCH(st));
     RELEASE_CURRENT_STATE(st, current_mod);
@@ -7049,6 +7075,10 @@ datetime_timestamp(PyObject *op, PyObject *Py_UNUSED(dummy))
     if (HASTZINFO(self) && self->tzinfo != Py_None) {
         PyObject *current_mod = NULL;
         datetime_state *st = GET_CURRENT_STATE(current_mod);
+        if (st == NULL) {
+            assert(current_mod == NULL);
+            return NULL;
+        }
 
         PyObject *delta;
         delta = datetime_subtract(op, CONST_EPOCH(st));
