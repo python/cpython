@@ -1,1 +1,1 @@
-Fix a crash when :class:`datetime.timezone` outlives ``_datetime`` module.
+Fix a crash when static :mod:`datetime` types outlive the ``_datetime`` module.
