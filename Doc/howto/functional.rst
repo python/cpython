@@ -1042,7 +1042,7 @@ first calculation. ::
     >>> functools.reduce(operator.concat, [])
     Traceback (most recent call last):
       ...
-    TypeError: reduce() of empty sequence with no initial value
+    TypeError: reduce() of empty iterable with no initial value
     >>> functools.reduce(operator.mul, [1, 2, 3], 1)
     6
     >>> functools.reduce(operator.mul, [], 1)
