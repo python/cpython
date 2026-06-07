@@ -984,6 +984,9 @@ their subgroups based on the types of the contained exceptions.
    raises a :exc:`TypeError` if any contained exception is not an
    :exc:`Exception` subclass.
 
+   Exception groups are :ref:`generic <generics>` over the type of their
+   contained exceptions.
+
    .. impl-detail::
 
       The ``excs`` parameter may be any sequence, but lists and tuples are
