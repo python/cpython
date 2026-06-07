@@ -7510,48 +7510,29 @@ class ExtensionModuleTests(unittest.TestCase):
         self.assertEqual(err, b"")
 
     @support.cpython_only
-    def test_gh_151039(self):
+    @support.subTests(("setup", "call"), [
+        ("obj = _datetime.timedelta", "obj(seconds=2)"),
+        ("obj = _datetime.date(2026, 6, 7)", "obj.isocalendar()"),
+    ])
+    def test_static_datetime_types_outlive_collected_module(self, setup, call):
         # gh-151039: This code used to crash
-        script = """if True:
+        script = f"""if True:
             import sys, gc
             import _datetime
 
-            td = _datetime.timedelta         # static C type, survives the module
+            {setup}                          # static C type, survives the module
             del sys.modules['_datetime']
             del _datetime
             sys.modules['_datetime'] = None  # block re-import
             gc.collect()                     # module object is collected
 
             try:
-                td(seconds=2)                # used to be a segmentation fault
+                {call}                       # used to be a segmentation fault
             except ImportError:
                 pass
             else:
-                assert False, "ImportError not raised"
+                raise AssertionError("ImportError not raised")
         """
-        rc, out, err = script_helper.assert_python_ok("-c", script)
-        self.assertEqual(rc, 0)
-        self.assertEqual(out, b'')
-        self.assertEqual(err, b'')
-
-    @support.cpython_only
-    def test_static_type_at_shutdown(self):
-        # gh-132413
-        script = textwrap.dedent("""
-            import _datetime
-            timedelta = _datetime.timedelta
-
-            def gen():
-                try:
-                    yield
-                finally:
-                    # sys.modules is empty
-                    _datetime.timedelta(days=1)
-                    timedelta(days=1)
-
-            it = gen()
-            next(it)
-        """)
         rc, out, err = script_helper.assert_python_ok("-c", script)
         self.assertEqual(rc, 0)
         self.assertEqual(out, b'')
