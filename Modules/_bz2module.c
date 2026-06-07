@@ -464,7 +464,7 @@ decompress_buf(BZ2Decompressor *d, Py_ssize_t max_length)
 
         if (catch_bz2_error(bzret)) {
             d->bzerror = bzret;
-            _Py_atomic_store_char_relaxed(&d->needs_input, 0);
+            d->needs_input = 0;
             goto error;
         }
         if (bzret == BZ_STREAM_END) {
