@@ -2229,6 +2229,18 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertComplexesAreIdentical(sum([1.0, complex(1, -0.0)]),
                                          complex(2, -0.0))
 
+    def test_sum_float_subclass(self):
+        # gh-151060: the C fast-sum loop must not free a float subclass with
+        # the exact-float deallocator.  A generator keeps each item's only
+        # reference in sum(), so the specialized DECREF runs the deallocator.
+        class F(float):
+            count = 0
+            def __del__(self):
+                F.count += 1
+
+        self.assertEqual(sum((F(i) for i in range(5)), 1j), complex(10, 1))
+        self.assertEqual(F.count, 5)
+
     @requires_IEEE_754
     @skip_if_double_rounding
     @support.cpython_only    # Other implementations may choose a different algorithm
