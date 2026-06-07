@@ -1283,6 +1283,32 @@ _Unpickler_SkipConsumed(UnpicklerObject *self)
 
 static const Py_ssize_t READ_WHOLE_LINE = -1;
 
+/* Release the temporary memoryview that was handed to a readinto() call and
+   drop our reference to it.  Releasing it severs the link between the view and
+   the underlying buffer, so a reference retained by readinto() can no longer be
+   used to read or write the (soon to be freed) buffer.  Returns 0 on success,
+   -1 if the view could not be released (for example because readinto() exported
+   the buffer and still holds it); in that case an exception is set.  Any
+   exception already pending when this is called is preserved. */
+static int
+_Unpickler_ReleaseBufObj(PyObject *buf_obj)
+{
+    PyObject *exc = PyErr_GetRaisedException();
+    PyObject *res = PyObject_CallMethodNoArgs(buf_obj, &_Py_ID(release));
+    int err = (res == NULL) ? -1 : 0;
+    Py_XDECREF(res);
+    if (exc != NULL) {
+        /* Keep the original error; ignore any error from release(). */
+        if (err < 0) {
+            PyErr_Clear();
+        }
+        PyErr_SetRaisedException(exc);
+        err = 0;
+    }
+    Py_DECREF(buf_obj);
+    return err;
+}
+
 /* Don't call it directly: use _Unpickler_ReadInto() */
 static Py_ssize_t
 _Unpickler_ReadIntoFromFile(PickleState *state, UnpicklerObject *self, char *buf,
@@ -1318,17 +1344,32 @@ _Unpickler_ReadIntoFromFile(PickleState *state, UnpicklerObject *self, char *buf
         return n;
     }
 
-    /* Call readinto() into user buffer */
+    /* Call readinto() into user buffer.
+
+       buf points into a temporary buffer (e.g. a bytes object on the
+       unpickler stack) that does not outlive this unpickling operation.  We
+       wrap it in a memoryview only so we can hand it to readinto(); a buggy or
+       hostile readinto() implementation may keep a reference to that view.
+       Release the view as soon as readinto() returns so that any surviving
+       reference can no longer dereference buf: using it then raises a clean
+       Python exception instead of accessing freed memory. */
     PyObject *buf_obj = PyMemoryView_FromMemory(buf, n, PyBUF_WRITE);
     if (buf_obj == NULL) {
         return -1;
     }
-    PyObject *read_size_obj = _Pickle_FastCall(self->readinto, buf_obj);
+    /* Keep our own reference across the call (PyObject_CallOneArg does not
+       steal it) so that we can release the view afterwards regardless of what
+       readinto() does with the object it receives. */
+    PyObject *read_size_obj = PyObject_CallOneArg(self->readinto, buf_obj);
     if (read_size_obj == NULL) {
+        _Unpickler_ReleaseBufObj(buf_obj);
         return -1;
     }
     Py_ssize_t read_size = PyLong_AsSsize_t(read_size_obj);
     Py_DECREF(read_size_obj);
+    if (_Unpickler_ReleaseBufObj(buf_obj) < 0) {
+        return -1;
+    }
 
     if (read_size < 0) {
         if (!PyErr_Occurred()) {
