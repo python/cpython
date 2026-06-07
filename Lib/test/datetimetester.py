@@ -7531,6 +7531,31 @@ class ExtensionModuleTests(unittest.TestCase):
         """
         rc, out, err = script_helper.assert_python_ok("-c", script)
         self.assertEqual(rc, 0)
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+
+    @support.cpython_only
+    def test_static_type_at_shutdown(self):
+        # gh-132413
+        script = textwrap.dedent("""
+            import _datetime
+            timedelta = _datetime.timedelta
+
+            def gen():
+                try:
+                    yield
+                finally:
+                    # sys.modules is empty
+                    _datetime.timedelta(days=1)
+                    timedelta(days=1)
+
+            it = gen()
+            next(it)
+        """)
+        rc, out, err = script_helper.assert_python_ok("-c", script)
+        self.assertEqual(rc, 0)
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
 
 
 def load_tests(loader, standard_tests, pattern):

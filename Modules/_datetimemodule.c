@@ -3032,6 +3032,7 @@ delta_total_seconds(PyObject *op, PyObject *Py_UNUSED(dummy))
     datetime_state *st = GET_CURRENT_STATE(current_mod);
     if (st == NULL) {
         assert(current_mod == NULL);
+        Py_DECREF(total_microseconds);
         return NULL;
     }
 
