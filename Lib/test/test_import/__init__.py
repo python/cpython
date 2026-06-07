@@ -369,7 +369,7 @@ class ImportTests(unittest.TestCase):
         # lead to duplicates in sys.modules
         before = set(sys.modules.keys())
         with self.assertRaises(ModuleNotFoundError):
-            __import__('codecs\x00junk')
+            __import__('zipimport\x00junk')
 
         self.assertEqual(set(sys.modules.keys()), before)
 
