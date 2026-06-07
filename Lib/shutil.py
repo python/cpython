@@ -1307,12 +1307,6 @@ def unregister_unpack_format(name):
     """Removes the pack format from the registry."""
     del _UNPACK_FORMATS[name]
 
-def _ensure_directory(path):
-    """Ensure that the parent directory of `path` exists"""
-    dirname = os.path.dirname(path)
-    if not os.path.isdir(dirname):
-        os.makedirs(dirname)
-
 def _unpack_zipfile(filename, extract_dir):
     """Unpack zip `filename` to `extract_dir`
     """
