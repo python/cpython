@@ -620,8 +620,6 @@ mmap_gfind_lock_held(mmap_object *self, Py_buffer *view, PyObject *start_obj,
         start += self->size;
     if (start < 0)
         start = 0;
-    else if (start > self->size)
-        start = self->size;
 
     if (end < 0)
         end += self->size;
