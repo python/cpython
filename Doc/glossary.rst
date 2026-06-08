@@ -96,21 +96,18 @@ Glossary
       :meth:`~object.__aexit__` methods.  Introduced by :pep:`492`.
 
    asynchronous generator
-      A function which returns an :term:`asynchronous generator iterator`.  It
-      looks like a coroutine function defined with :keyword:`async def` except
-      that it contains :keyword:`yield` expressions for producing a series of
-      values usable in an :keyword:`async for` loop.
-
-      Usually refers to an asynchronous generator function, but may refer to an
-      *asynchronous generator iterator* in some contexts.  In cases where the
-      intended meaning isn't clear, using the full terms avoids ambiguity.
+      Informally used to mean either an :term:`asynchronous generator
+      function` or an :term:`asynchronous generator iterator`, depending on
+      context.  The formal terms :term:`asynchronous generator function` and
+      :term:`asynchronous generator iterator` are uncommon in practice;
+      "asynchronous generator" alone is almost always sufficient.
 
       An asynchronous generator function may contain :keyword:`await`
       expressions as well as :keyword:`async for`, and :keyword:`async with`
       statements.
 
    asynchronous generator iterator
-      An object created by an :term:`asynchronous generator` function.
+      An object created by an :term:`asynchronous generator function`.
 
       This is an :term:`asynchronous iterator` which when called using the
       :meth:`~object.__anext__` method returns an awaitable object which will execute
