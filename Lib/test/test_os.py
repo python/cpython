@@ -3876,7 +3876,6 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
     @requires_headers_trailers
     @requires_32b
     async def test_headers_overflow_32bits(self):
-        self.server.handler_instance.accumulate = False
         with self.assertRaises(OSError) as cm:
             await self.async_sendfile(self.sockno, self.fileno, 0, 0,
                                       headers=[b"x" * 2**16] * 2**15)
@@ -3885,7 +3884,6 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
     @requires_headers_trailers
     @requires_32b
     async def test_trailers_overflow_32bits(self):
-        self.server.handler_instance.accumulate = False
         with self.assertRaises(OSError) as cm:
             await self.async_sendfile(self.sockno, self.fileno, 0, 0,
                                       trailers=[b"x" * 2**16] * 2**15)
