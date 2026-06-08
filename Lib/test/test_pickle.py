@@ -383,12 +383,8 @@ if has_c_implementation:
         size_overflow_error = (OverflowError, 'exceeds')
 
         def test_readinto_does_not_keep_buffer_alive(self):
-            # The C unpickler hands readinto() a temporary memoryview over an
-            # internal buffer that does not outlive the unpickling operation.
-            # A readinto() implementation that keeps a reference to that view
-            # must not be able to read or write the buffer after readinto()
-            # returns: the view is released, so using it raises ValueError
-            # rather than accessing freed memory.
+            # A readinto() that retains the memoryview it is handed must not be
+            # able to access the buffer after readinto() returns (gh-151046).
             stashed = []
 
             class StashingFile:
