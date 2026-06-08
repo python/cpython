@@ -78,17 +78,30 @@ class Test_OpenGL_libs(unittest.TestCase):
 @unittest.skipUnless(sys.platform.startswith('linux'),
                      'Test only valid for Linux')
 class FindLibraryLinux(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        import subprocess
+
+        try:
+            subprocess.check_output(['gcc', '--version'])
+            cls.has_gcc = True
+        except (FileNotFoundError, subprocess.CalledProcessError):
+            cls.has_gcc = False
+
+        try:
+            subprocess.check_output(['ld', '--version'])
+            cls.has_ld = True
+        except (FileNotFoundError, subprocess.CalledProcessError):
+            cls.has_ld = False
+
     @thread_unsafe('uses setenv')
     def test_find_on_libpath(self):
+        if not self.has_gcc:
+            self.skipTest("gcc not available")
+
         import subprocess
         import tempfile
 
-        try:
-            p = subprocess.Popen(['gcc', '--version'], stdout=subprocess.PIPE,
-                                 stderr=subprocess.DEVNULL)
-            out, _ = p.communicate()
-        except OSError:
-            raise unittest.SkipTest('gcc, needed for test, not available')
         with tempfile.TemporaryDirectory() as d:
             # create an empty temporary file
             srcname = os.path.join(d, 'dummy.c')
@@ -118,11 +131,17 @@ class FindLibraryLinux(unittest.TestCase):
                 self.assertEqual(find_library(libname), 'lib%s.so' % libname)
 
     def test_find_library_with_gcc(self):
+        if not self.has_gcc:
+            self.skipTest("gcc not available")
+
         with unittest.mock.patch("ctypes.util._findSoname_ldconfig", lambda *args: None), \
              unittest.mock.patch("ctypes.util._findLib_ld", lambda *args: None):
             self.assertNotEqual(find_library('c'), None)
 
     def test_find_library_with_ld(self):
+        if not self.has_ld:
+            self.skipTest("ld not available")
+
         with unittest.mock.patch("ctypes.util._findSoname_ldconfig", lambda *args: None), \
              unittest.mock.patch("ctypes.util._findLib_gcc", lambda *args: None):
             self.assertNotEqual(find_library('c'), None)
