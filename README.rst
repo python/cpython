@@ -1,3 +1,5 @@
+[![Quantum-Safe by QuantumScan](https://quantumscan.io/api/badge/python/cpython.svg)](https://quantumscan.io/en/share/71a54800-b9c1-4ba6-927b-fe0ba7102702)
+
 This is Python version 3.16.0 alpha 0
 =====================================
 
