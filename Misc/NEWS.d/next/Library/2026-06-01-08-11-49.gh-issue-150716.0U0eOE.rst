@@ -1,0 +1,4 @@
+Speed up construction of :class:`datetime.timedelta` when all arguments are
+exact :class:`int` objects by accumulating the value with 64-bit integer
+arithmetic, falling back to the previous implementation for other argument
+types. Patch by Bernát Gábor.

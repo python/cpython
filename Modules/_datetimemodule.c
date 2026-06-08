@@ -2789,6 +2789,85 @@ accum(const char* tag, PyObject *sofar, PyObject *num, PyObject *factor,
     return NULL;
 }
 
+/* Fast path for timedelta() when every supplied argument is an exact int.
+ * The total number of microseconds is accumulated in a 64-bit integer and
+ * normalized with floor division, exactly mirroring the object path (accum()
+ * + checked_divmod()) but without the per-argument allocations and the
+ * per-call module-state lookup.  *handled is left 0 -- so the caller runs the
+ * unchanged object path that reproduces identical results and errors -- for a
+ * non-exact-int argument, 64-bit overflow, or a day count that does not fit in
+ * C int.
+ */
+static PyObject *
+delta_new_int_fastpath(PyTypeObject *type,
+                       PyObject *days, PyObject *seconds, PyObject *microseconds,
+                       PyObject *milliseconds, PyObject *minutes, PyObject *hours,
+                       PyObject *weeks, int *handled)
+{
+    const struct { PyObject *arg; long long factor; } parts[] = {
+        {microseconds, 1LL},
+        {milliseconds, 1000LL},
+        {seconds,      1000000LL},
+        {minutes,      60000000LL},
+        {hours,        3600000000LL},
+        {days,         86400000000LL},
+        {weeks,        604800000000LL},
+    };
+
+    *handled = 0;
+    long long total_us = 0;
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(parts); i++) {
+        PyObject *arg = parts[i].arg;
+        if (arg == NULL) {
+            continue;
+        }
+        if (!PyLong_CheckExact(arg)) {
+            return NULL;        /* float / bool / int subclass -> object path */
+        }
+        int overflow;
+        long long value = PyLong_AsLongLongAndOverflow(arg, &overflow);
+        if (overflow) {
+            return NULL;        /* magnitude needs bignum -> object path */
+        }
+        if (value == -1 && PyErr_Occurred()) {
+            *handled = 1;       /* genuine error -> propagate as-is */
+            return NULL;
+        }
+        /* value * factor + total_us, bailing to the object path on any
+           64-bit overflow.  factor is a positive constant, so the bounds
+           checks below are portable (no compiler overflow builtins). */
+        long long factor = parts[i].factor;
+        if (value > LLONG_MAX / factor || value < LLONG_MIN / factor) {
+            return NULL;        /* 64-bit overflow -> object path (bignum) */
+        }
+        long long product = value * factor;
+        if ((product > 0 && total_us > LLONG_MAX - product) ||
+            (product < 0 && total_us < LLONG_MIN - product)) {
+            return NULL;
+        }
+        total_us += product;
+    }
+
+    /* Floor division into (days, seconds, microseconds), matching divmod()
+     * with a positive divisor (Python rounds toward negative infinity). */
+    long long q = total_us / 1000000, us = total_us % 1000000;
+    if (us < 0) {
+        us += 1000000;
+        q -= 1;
+    }
+    long long d = q / 86400, s = q % 86400;
+    if (s < 0) {
+        s += 86400;
+        d -= 1;
+    }
+    if (d < INT_MIN || d > INT_MAX) {
+        return NULL;            /* let the object path raise the right error */
+    }
+
+    *handled = 1;
+    return new_delta_ex((int)d, (int)s, (int)us, 0, type);
+}
+
 /*[clinic input]
 @classmethod
 datetime.timedelta.__new__ as delta_new
@@ -2814,6 +2893,13 @@ delta_new_impl(PyTypeObject *type, PyObject *days, PyObject *seconds,
 /*[clinic end generated code: output=61d7e02a92a97700 input=e8cd54819295d34b]*/
 {
     PyObject *self = NULL;
+
+    int handled;
+    self = delta_new_int_fastpath(type, days, seconds, microseconds,
+                                  milliseconds, minutes, hours, weeks, &handled);
+    if (handled) {
+        return self;
+    }
 
     PyObject *current_mod = NULL;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
