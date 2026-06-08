@@ -4,9 +4,6 @@
   Socket Programming HOWTO
 ****************************
 
-:Author: Gordon McMillan
-
-
 .. topic:: Abstract
 
    Sockets are used nearly everywhere, but are one of the most severely

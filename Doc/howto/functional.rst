@@ -4,9 +4,6 @@
   Functional Programming HOWTO
 ********************************
 
-:Author: \A. M. Kuchling
-:Release: 0.32
-
 In this document, we'll take a tour of Python's features suitable for
 implementing programs in a functional style.  After an introduction to the
 concepts of functional programming, we'll look at language features such as
@@ -1185,7 +1182,8 @@ about whether this lambda-free style is better.
 Revision History and Acknowledgements
 =====================================
 
-The author would like to thank the following people for offering suggestions,
+This HOWTO was originally written by A. M. Kuchling. The author would like to
+thank the following people for offering suggestions,
 corrections and assistance with various drafts of this article: Ian Bicking,
 Nick Coghlan, Nick Efford, Raymond Hettinger, Jim Jewett, Mike Krell, Leandro
 Lameiro, Jussi Salmela, Collin Winter, Blake Winton.
@@ -1239,9 +1237,9 @@ Text Processing".
 
 Mertz also wrote a 3-part series of articles on functional programming
 for IBM's DeveloperWorks site; see
-`part 1 <https://developer.ibm.com/articles/l-prog/>`__,
-`part 2 <https://developer.ibm.com/tutorials/l-prog2/>`__, and
-`part 3 <https://developer.ibm.com/tutorials/l-prog3/>`__,
+`part 1 <https://web.archive.org/web/20211006103639/https://developer.ibm.com/articles/l-prog/>`__,
+`part 2 <https://web.archive.org/web/20211205224606/https://developer.ibm.com/tutorials/l-prog2/>`__, and
+`part 3 <https://web.archive.org/web/20211127083846/https://developer.ibm.com/tutorials/l-prog3/>`__.
 
 
 Python documentation
