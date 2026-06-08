@@ -997,6 +997,14 @@ _Py_assert_within_stack_bounds(
         abort();
     }
 }
+#ifdef _Py_JIT
+void
+_Py_jit_assert_within_stack_bounds(
+    _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, int lineno
+) {
+    _Py_assert_within_stack_bounds(frame, stack_pointer, "executor_cases.c.h", lineno);
+}
+#endif
 #endif
 
 int _Py_CheckRecursiveCallPy(

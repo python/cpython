@@ -743,4 +743,14 @@ _PyJIT_Free(_PyExecutorObject *executor)
     }
 }
 
+// Avoid excessive bloat due to asserts in stencils
+int
+_Py_jit_assertion_failure(int line)
+{
+    printf("Assertion failure at line %d of executor_cases.c.h", line);
+    fflush(stdout);
+    abort();
+    return 0;
+}
+
 #endif  // _Py_JIT
