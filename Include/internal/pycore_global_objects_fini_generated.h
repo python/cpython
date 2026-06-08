@@ -2153,6 +2153,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(updates));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(uri));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(usedforsecurity));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(utcoffset));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(value));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(values));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(version));
