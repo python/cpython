@@ -2,7 +2,7 @@
 /* Traceback implementation */
 
 #include "Python.h"
-#include "pycore_call.h"          // _PyObject_CallMethodFormat()
+#include "pycore_call.h"          // _PyObject_CallMethod()
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_frame.h"         // PyFrameObject
 #include "pycore_interp.h"        // PyInterpreterState.gc
@@ -404,7 +404,6 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
         tail++;
     taillen = strlen(tail);
 
-    PyThreadState *tstate = _PyThreadState_GET();
     if (PySys_GetOptionalAttr(&_Py_ID(path), &syspath) < 0) {
         PyErr_Clear();
         goto error;
@@ -444,7 +443,7 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
             namebuf[len++] = SEP;
         strcpy(namebuf+len, tail);
 
-        binary = _PyObject_CallMethodFormat(tstate, open, "ss", namebuf, "rb");
+        binary = PyObject_CallFunction(open, "ss", namebuf, "rb");
         if (binary != NULL) {
             result = binary;
             goto finally;
