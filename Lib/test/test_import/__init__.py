@@ -367,11 +367,11 @@ class ImportTests(unittest.TestCase):
     def test_import_null_byte_in_name_raises_ModuleNotFoundError(self):
         # gh-150633: module names containing null bytes should not
         # lead to duplicates in sys.modules
-        before = set(sys.modules.keys())
+        before = set(sys.modules)
         with self.assertRaises(ModuleNotFoundError):
             __import__('zipimport\x00junk')
 
-        self.assertEqual(set(sys.modules.keys()), before)
+        self.assertEqual(set(sys.modules), before)
 
     def test_from_import_missing_module_raises_ModuleNotFoundError(self):
         with self.assertRaises(ModuleNotFoundError):
