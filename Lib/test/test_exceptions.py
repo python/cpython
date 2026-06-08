@@ -1723,7 +1723,8 @@ class ExceptionTests(unittest.TestCase):
                 self.filename2 = filename2
                 super().__init__(code, message, filename, None, filename2)
 
-        LeakingOSError(1, "some message", "filename.py", "filename2.py")
+        exc = LeakingOSError(1, "some message", "filename.py", "filename2.py")
+        exc.__init__(2, "another message", "filename3.py", "filename4.py")
 
     def test_errno_ENOTDIR(self):
         # Issue #12802: "not a directory" errors are ENOTDIR even on Windows
