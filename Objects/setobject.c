@@ -2416,7 +2416,8 @@ static PyMethodDef set_methods[] = {
     SET_SYMMETRIC_DIFFERENCE_UPDATE_METHODDEF
     SET_UNION_METHODDEF
     SET_UPDATE_METHODDEF
-    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
+     PyDoc_STR("sets are generic over the type of their elements")},
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -2519,7 +2520,8 @@ static PyMethodDef frozenset_methods[] = {
     SET___SIZEOF___METHODDEF
     SET_SYMMETRIC_DIFFERENCE_METHODDEF
     SET_UNION_METHODDEF
-    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
+     PyDoc_STR("frozensets are generic over the type of their elements")},
     {NULL,              NULL}   /* sentinel */
 };
 

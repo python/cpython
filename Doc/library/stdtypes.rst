@@ -1351,6 +1351,8 @@ application).
    Many other operations also produce lists, including the :func:`sorted`
    built-in.
 
+   Lists are :ref:`generic <generics>` over the types of their items.
+
    Lists implement all of the :ref:`common <typesseq-common>` and
    :ref:`mutable <typesseq-mutable>` sequence operations. Lists also provide the
    following additional method:
@@ -1436,6 +1438,10 @@ homogeneous data is needed (such as allowing storage in a :class:`set` or
 
    Tuples implement all of the :ref:`common <typesseq-common>` sequence
    operations.
+
+   Tuples are :ref:`generic <generics>` over the types of their contents.
+   For more information, refer to
+   :ref:`the typing documentation on annotating tuples <annotating-tuples>`.
 
 For heterogeneous collections of data where access by name is clearer than
 access by index, :func:`collections.namedtuple` may be a more appropriate
@@ -2017,8 +2023,24 @@ expression support in the :mod:`re` module).
    character, ``False`` otherwise.  Digits include decimal characters and digits that need
    special handling, such as the compatibility superscript digits.
    This covers digits which cannot be used to form numbers in base 10,
-   like the Kharosthi numbers.  Formally, a digit is a character that has the
+   like the `Kharosthi numbers <https://en.wikipedia.org/wiki/Kharosthi#Numerals>`__.
+   Formally, a digit is a character that has the
    property value Numeric_Type=Digit or Numeric_Type=Decimal.
+
+   For example:
+
+   .. doctest::
+
+      >>> '0123456789'.isdigit()
+      True
+      >>> '٠١٢٣٤٥٦٧٨٩'.isdigit()  # Arabic-Indic digits zero to nine
+      True
+      >>> '⅕'.isdigit()  # Vulgar fraction one fifth
+      False
+      >>> '²'.isdecimal(), '²'.isdigit(),  '²'.isnumeric()
+      (False, True, True)
+
+   See also :meth:`isdecimal` and :meth:`isnumeric`.
 
 
 .. method:: str.isidentifier()
@@ -2060,15 +2082,14 @@ expression support in the :mod:`re` module).
 
       >>> '0123456789'.isnumeric()
       True
-      >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric()  # Arabic-indic digit zero to nine
+      >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric()  # Arabic-Indic digits zero to nine
       True
       >>> '⅕'.isnumeric()  # Vulgar fraction one fifth
       True
       >>> '²'.isdecimal(), '²'.isdigit(),  '²'.isnumeric()
       (False, True, True)
 
-   See also :meth:`isdecimal` and :meth:`isdigit`. Numeric characters are
-   a superset of decimal numbers.
+   See also :meth:`isdecimal` and :meth:`isdigit`.
 
 
 .. method:: str.isprintable()
@@ -2455,7 +2476,9 @@ expression support in the :mod:`re` module).
    :func:`re.split`). Splitting an empty string with a specified separator
    returns ``['']``.
 
-   For example::
+   For example:
+
+   .. doctest::
 
       >>> '1,2,3'.split(',')
       ['1', '2', '3']
@@ -2473,7 +2496,9 @@ expression support in the :mod:`re` module).
    string or a string consisting of just whitespace with a ``None`` separator
    returns ``[]``.
 
-   For example::
+   For example:
+
+   .. doctest::
 
       >>> '1 2 3'.split()
       ['1', '2', '3']
@@ -2485,7 +2510,9 @@ expression support in the :mod:`re` module).
    If *sep* is not specified or is ``None`` and  *maxsplit* is ``0``, only
    leading runs of consecutive whitespace are considered.
 
-   For example::
+   For example:
+
+   .. doctest::
 
       >>> "".split(None, 0)
       []
@@ -2494,7 +2521,7 @@ expression support in the :mod:`re` module).
       >>> "   foo   ".split(maxsplit=0)
       ['foo   ']
 
-   See also :meth:`join`.
+   See also :meth:`join` and :meth:`rsplit`.
 
 
 .. index::
@@ -4994,6 +5021,7 @@ Note, the *elem* argument to the :meth:`~object.__contains__`,
 :meth:`~set.discard` methods may be a set.  To support searching for an equivalent
 frozenset, a temporary one is created from *elem*.
 
+Sets and frozensets are :ref:`generic <generics>` over the type of their elements.
 
 .. _typesmapping:
 
@@ -5090,6 +5118,9 @@ can be used interchangeably to index the same dictionary entry.
    .. versionchanged:: 3.7
       Dictionary order is guaranteed to be insertion order.  This behavior was
       an implementation detail of CPython from 3.6.
+
+   Dictionaries are :ref:`generic <generics>` over two types, signifying
+   (respectively) the types of the dictionary's keys and values.
 
    These are the operations that dictionaries support (and therefore, custom
    mapping types should support too):
