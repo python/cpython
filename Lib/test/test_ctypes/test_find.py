@@ -118,7 +118,8 @@ class FindLibraryLinux(unittest.TestCase):
                 self.assertEqual(find_library(libname), 'lib%s.so' % libname)
 
     def test_find_library_with_gcc(self):
-        with unittest.mock.patch("ctypes.util._findSoname_ldconfig", lambda *args: None):
+        with unittest.mock.patch("ctypes.util._findSoname_ldconfig", lambda *args: None), \
+             unittest.mock.patch("ctypes.util._findLib_ld", lambda *args: None):
             self.assertNotEqual(find_library('c'), None)
 
     def test_find_library_with_ld(self):
