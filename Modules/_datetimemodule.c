@@ -126,8 +126,8 @@ get_module_state(PyObject *module)
 
 #define INTERP_KEY ((PyObject *)&_Py_ID(cached_datetime_module))
 
-static PyObject *
-get_current_module(PyInterpreterState *interp)
+static int
+get_current_module(PyInterpreterState *interp, PyObject **p_mod)
 {
     PyObject *mod = NULL;
 
@@ -151,11 +151,14 @@ get_current_module(PyInterpreterState *interp)
             Py_DECREF(ref);
         }
     }
-    return mod;
+    assert(!PyErr_Occurred());
+    *p_mod = mod;
+    return mod != NULL;
 
 error:
     assert(PyErr_Occurred());
-    return NULL;
+    *p_mod = NULL;
+    return -1;
 }
 
 static PyModuleDef datetimemodule;
@@ -164,11 +167,11 @@ static datetime_state *
 _get_current_state(PyObject **p_mod)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
-    PyObject *mod = get_current_module(interp);
+    PyObject *mod;
+    if (get_current_module(interp, &mod) < 0) {
+        goto error;
+    }
     if (mod == NULL) {
-        if (PyErr_Occurred()) {
-            goto error;
-        }
         /* The static types can outlive the module,
          * so we must re-import the module. */
         mod = PyImport_ImportModule("_datetime");
@@ -7610,9 +7613,8 @@ _datetime_exec(PyObject *module)
     datetime_state *st = get_module_state(module);
 
     PyInterpreterState *interp = PyInterpreterState_Get();
-    PyObject *old_module = get_current_module(interp);
-    if (PyErr_Occurred()) {
-        assert(old_module == NULL);
+    PyObject *old_module;
+    if (get_current_module(interp, &old_module) < 0) {
         goto error;
     }
     /* We actually set the "current" module right before a successful return. */
