@@ -1,4 +1,4 @@
-name: Tests (Lazy Imports)
+name: Reusable Lazy Imports Tests
 
 # Run the CPython test suite with global lazy imports forced on
 # (``PYTHON_LAZY_IMPORTS=all``, equivalent to ``-X lazy_imports=all``).
@@ -9,19 +9,7 @@ name: Tests (Lazy Imports)
 # against regressions.
 
 on:
-  workflow_dispatch:
-  push:
-    branches: &branches
-    - 'main'
-    - '3.*'
-    paths-ignore: &paths-ignore
-    - 'Doc/**'
-    - 'Misc/**'
-    - '**/*.md'
-    - '**/*.rst'
-  pull_request:
-    branches: *branches
-    paths-ignore: *paths-ignore
+  workflow_call:
 
 permissions:
   contents: read
@@ -34,8 +22,8 @@ env:
   FORCE_COLOR: 1
 
 jobs:
-  lazy-imports:
-    name: lazy_imports=all enabled
+  test-lazy-imports-all:
+    name: 'Test Lazy Imports Fully Enabled'
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
