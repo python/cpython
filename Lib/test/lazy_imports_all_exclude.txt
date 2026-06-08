@@ -1,4 +1,4 @@
-# Standard library test modules that currently FAIL under global lazy imports
+# Test modules that currently FAIL under global lazy imports
 # (``-X lazy_imports=all`` / ``PYTHON_LAZY_IMPORTS=all``).
 #
 # The "Lazy Imports All" CI workflow (.github/workflows/lazy-imports-all.yml) runs the
