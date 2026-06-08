@@ -1,2 +1,0 @@
-Prevent a deadlock when multiple threads start, stop and use :mod:`tracemalloc`
-simultaneously.

@@ -27,15 +27,6 @@ noted otherwise, all return values are floats.
 
 
 ====================================================  ============================================
-**Number-theoretic functions**
---------------------------------------------------------------------------------------------------
-:func:`comb(n, k) <comb>`                             Number of ways to choose *k* items from *n* items without repetition and without order
-:func:`factorial(n) <factorial>`                      *n* factorial
-:func:`gcd(*integers) <gcd>`                          Greatest common divisor of the integer arguments
-:func:`isqrt(n) <isqrt>`                              Integer square root of a nonnegative integer *n*
-:func:`lcm(*integers) <lcm>`                          Least common multiple of the integer arguments
-:func:`perm(n, k) <perm>`                             Number of ways to choose *k* items from *n* items without repetition and with order
-
 **Floating point arithmetic**
 --------------------------------------------------------------------------------------------------
 :func:`ceil(x) <ceil>`                                Ceiling of *x*, the smallest integer greater than or equal to *x*
@@ -92,13 +83,20 @@ noted otherwise, all return values are floats.
 
 **Trigonometric functions**
 --------------------------------------------------------------------------------------------------
-:func:`acos(x) <acos>`                                Arc cosine of *x*
-:func:`asin(x) <asin>`                                Arc sine of *x*
-:func:`atan(x) <atan>`                                Arc tangent of *x*
-:func:`atan2(y, x) <atan2>`                           ``atan(y / x)``
-:func:`cos(x) <cos>`                                  Cosine of *x*
-:func:`sin(x) <sin>`                                  Sine of *x*
-:func:`tan(x) <tan>`                                  Tangent of *x*
+:func:`acos(x) <acos>`                                Arc cosine of *x*, in radians
+:func:`acospi(x) <acospi>`                            Arc cosine of *x*, in half-turns
+:func:`asin(x) <asin>`                                Arc sine of *x*, in radians
+:func:`asinpi(x) <asinpi>`                            Arc sine of *x*, in half-turns
+:func:`atan(x) <atan>`                                Arc tangent of *x*, in radians
+:func:`atanpi(x) <atanpi>`                            Arc tangent of *x*, in half-turns
+:func:`atan2(y, x) <atan2>`                           ``atan(y / x)``, in radians
+:func:`atan2pi(y, x) <atan2pi>`                       ``atan(y / x)``, in half-turns
+:func:`cos(x) <cos>`                                  Cosine of *x* radians
+:func:`cospi(x) <cospi>`                              Cosine of *x⋅π* radians
+:func:`sin(x) <sin>`                                  Sine of *x* radians
+:func:`sinpi(x) <sinpi>`                              Sine of *x⋅π* radians
+:func:`tan(x) <tan>`                                  Tangent of *x* radians
+:func:`tanpi(x) <tanpi>`                              Tangent of *x⋅π* radians
 
 **Hyperbolic functions**
 --------------------------------------------------------------------------------------------------
@@ -124,92 +122,6 @@ noted otherwise, all return values are floats.
 :data:`inf`                                           Positive infinity
 :data:`nan`                                           "Not a number" (NaN)
 ====================================================  ============================================
-
-
-Number-theoretic functions
---------------------------
-
-.. function:: comb(n, k)
-
-   Return the number of ways to choose *k* items from *n* items without repetition
-   and without order.
-
-   Evaluates to ``n! / (k! * (n - k)!)`` when ``k <= n`` and evaluates
-   to zero when ``k > n``.
-
-   Also called the binomial coefficient because it is equivalent
-   to the coefficient of k-th term in polynomial expansion of
-   ``(1 + x)ⁿ``.
-
-   Raises :exc:`TypeError` if either of the arguments are not integers.
-   Raises :exc:`ValueError` if either of the arguments are negative.
-
-   .. versionadded:: 3.8
-
-
-.. function:: factorial(n)
-
-   Return factorial of the nonnegative integer *n*.
-
-   .. versionchanged:: 3.10
-      Floats with integral values (like ``5.0``) are no longer accepted.
-
-
-.. function:: gcd(*integers)
-
-   Return the greatest common divisor of the specified integer arguments.
-   If any of the arguments is nonzero, then the returned value is the largest
-   positive integer that is a divisor of all arguments.  If all arguments
-   are zero, then the returned value is ``0``.  ``gcd()`` without arguments
-   returns ``0``.
-
-   .. versionadded:: 3.5
-
-   .. versionchanged:: 3.9
-      Added support for an arbitrary number of arguments. Formerly, only two
-      arguments were supported.
-
-
-.. function:: isqrt(n)
-
-   Return the integer square root of the nonnegative integer *n*. This is the
-   floor of the exact square root of *n*, or equivalently the greatest integer
-   *a* such that *a*\ ² |nbsp| ≤ |nbsp| *n*.
-
-   For some applications, it may be more convenient to have the least integer
-   *a* such that *n* |nbsp| ≤ |nbsp| *a*\ ², or in other words the ceiling of
-   the exact square root of *n*. For positive *n*, this can be computed using
-   ``a = 1 + isqrt(n - 1)``.
-
-   .. versionadded:: 3.8
-
-
-.. function:: lcm(*integers)
-
-   Return the least common multiple of the specified integer arguments.
-   If all arguments are nonzero, then the returned value is the smallest
-   positive integer that is a multiple of all arguments.  If any of the arguments
-   is zero, then the returned value is ``0``.  ``lcm()`` without arguments
-   returns ``1``.
-
-   .. versionadded:: 3.9
-
-
-.. function:: perm(n, k=None)
-
-   Return the number of ways to choose *k* items from *n* items
-   without repetition and with order.
-
-   Evaluates to ``n! / (n - k)!`` when ``k <= n`` and evaluates
-   to zero when ``k > n``.
-
-   If *k* is not specified or is ``None``, then *k* defaults to *n*
-   and the function returns ``n!``.
-
-   Raises :exc:`TypeError` if either of the arguments are not integers.
-   Raises :exc:`ValueError` if either of the arguments are negative.
-
-   .. versionadded:: 3.8
 
 
 Floating point arithmetic
@@ -259,7 +171,7 @@ Floating point arithmetic
    is, :func:`!fmax` is not required to be sensitive to the sign of such
    operands (see Annex F of the C11 standard, §F.10.0.3 and §F.10.9.2).
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: fmin(x, y)
@@ -271,7 +183,7 @@ Floating point arithmetic
    is, :func:`!fmin` is not required to be sensitive to the sign of such
    operands (see Annex F of the C11 standard, §F.10.0.3 and §F.10.9.3).
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: fmod(x, y)
@@ -350,10 +262,12 @@ Floating point manipulation functions
 
 .. function:: frexp(x)
 
-   Return the mantissa and exponent of *x* as the pair ``(m, e)``.  *m* is a float
-   and *e* is an integer such that ``x == m * 2**e`` exactly. If *x* is zero,
-   returns ``(0.0, 0)``, otherwise ``0.5 <= abs(m) < 1``.  This is used to "pick
-   apart" the internal representation of a float in a portable way.
+   Return the mantissa and exponent of *x* as the pair ``(m, e)``.
+   If *x* is a finite nonzero number, then *m* is a float with
+   ``0.5 <= abs(m) < 1.0`` and an integer *e* is such that
+   ``x == m * 2**e`` exactly.  Else, return ``(x, 0)``.
+   This is used to "pick apart" the internal representation of
+   a float in a portable way.
 
    Note that :func:`frexp` has a different call/return pattern
    than its C equivalents: it takes a single argument and return a pair of
@@ -408,7 +322,7 @@ Floating point manipulation functions
    nonzero number that is not a subnormal (see :func:`issubnormal`).
    Return ``False`` otherwise.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: issubnormal(x)
@@ -417,7 +331,7 @@ Floating point manipulation functions
    nonzero number with a magnitude smaller than :data:`sys.float_info.min`.
    Return ``False`` otherwise.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: isinf(x)
@@ -464,7 +378,7 @@ Floating point manipulation functions
 
    This is useful to detect the sign bit of zeroes, infinities and NaNs.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: ulp(x)
@@ -601,7 +515,7 @@ Summation and product functions
 
    Roughly equivalent to::
 
-       sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q)))
+       sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q, strict=True)))
 
    .. versionadded:: 3.8
 
@@ -692,16 +606,40 @@ Trigonometric functions
    ``pi``.
 
 
+.. function:: acospi(x)
+
+   Return the arc cosine of *x*, in half-turns. The result is between ``0`` and
+   ``1``.
+
+   .. versionadded:: next
+
+
 .. function:: asin(x)
 
    Return the arc sine of *x*, in radians. The result is between ``-pi/2`` and
    ``pi/2``.
 
 
+.. function:: asinpi(x)
+
+   Return the arc sine of *x*, in half-turns. The result is between ``-0.5`` and
+   ``0.5``.
+
+   .. versionadded:: next
+
+
 .. function:: atan(x)
 
    Return the arc tangent of *x*, in radians. The result is between ``-pi/2`` and
    ``pi/2``.
+
+
+.. function:: atanpi(x)
+
+   Return the arc tangent of *x*, in half-turns. The result is between ``-0.5`` and
+   ``0.5``.
+
+   .. versionadded:: next
 
 
 .. function:: atan2(y, x)
@@ -714,9 +652,28 @@ Trigonometric functions
    -1)`` is ``-3*pi/4``.
 
 
+.. function:: atan2pi(y, x)
+
+   Return ``atanpi(y / x)``, in half-turns. The result is between ``-1`` and ``1``.
+   The vector in the plane from the origin to point ``(x, y)`` makes this angle
+   with the positive X axis. The point of :func:`atan2pi` is that the signs of both
+   inputs are known to it, so it can compute the correct quadrant for the angle.
+   For example, ``atanpi(1)`` and ``atan2pi(1, 1)`` are both ``0.25``, but
+   ``atan2pi(-1, -1)`` is ``-0.75``.
+
+   .. versionadded:: next
+
+
 .. function:: cos(x)
 
    Return the cosine of *x* radians.
+
+
+.. function:: cospi(x)
+
+   Return the cosine of *x* half-turns (*x⋅π* radians).
+
+   .. versionadded:: next
 
 
 .. function:: sin(x)
@@ -724,9 +681,23 @@ Trigonometric functions
    Return the sine of *x* radians.
 
 
+.. function:: sinpi(x)
+
+   Return the sine of *x* half-turns (*x⋅π* radians).
+
+   .. versionadded:: next
+
+
 .. function:: tan(x)
 
    Return the tangent of *x* radians.
+
+
+.. function:: tanpi(x)
+
+   Return the tangent of *x* half-turns (*x⋅π* radians).
+
+   .. versionadded:: next
 
 
 Hyperbolic functions
@@ -812,6 +783,74 @@ Special functions
    .. versionadded:: 3.2
 
 
+Number-theoretic functions
+--------------------------
+
+For backward compatibility, the :mod:`!math` module provides also aliases of
+the following functions from the :mod:`math.integer` module:
+
+.. list-table::
+
+   * - .. function:: comb(n, k)
+          :no-typesetting:
+
+       :func:`comb(n, k) <math.integer.comb>`
+     - Number of ways to choose *k* items from *n* items without repetition
+       and without order
+
+   * - .. function:: factorial(n)
+          :no-typesetting:
+
+       :func:`factorial(n) <math.integer.factorial>`
+     - *n* factorial
+
+   * - .. function:: gcd(*integers)
+          :no-typesetting:
+
+       :func:`gcd(*integers) <math.integer.gcd>`
+     - Greatest common divisor of the integer arguments
+
+   * - .. function:: isqrt(n)
+          :no-typesetting:
+
+       :func:`isqrt(n) <math.integer.isqrt>`
+     - Integer square root of a nonnegative integer *n*
+
+   * - .. function:: lcm(*integers)
+          :no-typesetting:
+
+       :func:`lcm(*integers) <math.integer.lcm>`
+     - Least common multiple of the integer arguments
+
+   * - .. function:: perm(n, k)
+          :no-typesetting:
+
+       :func:`perm(n, k) <math.integer.perm>`
+     - Number of ways to choose *k* items from *n* items without repetition
+       and with order
+
+.. versionadded:: 3.5
+   The :func:`gcd` function.
+
+.. versionadded:: 3.8
+   The :func:`comb`, :func:`perm` and :func:`isqrt` functions.
+
+.. versionadded:: 3.9
+   The :func:`lcm` function.
+
+.. versionchanged:: 3.9
+   Added support for an arbitrary number of arguments in the :func:`gcd`
+   function.
+   Formerly, only two arguments were supported.
+
+.. versionchanged:: 3.10
+   Floats with integral values (like ``5.0``) are no longer accepted in the
+   :func:`factorial` function.
+
+.. soft-deprecated:: 3.15
+   Use the :mod:`math.integer` functions instead of these aliases.
+
+
 Constants
 ---------
 
@@ -872,7 +911,7 @@ Constants
 
 .. impl-detail::
 
-   The :mod:`math` module consists mostly of thin wrappers around the platform C
+   The :mod:`!math` module consists mostly of thin wrappers around the platform C
    math library functions.  Behavior in exceptional cases follows Annex F of
    the C99 standard where appropriate.  The current implementation will raise
    :exc:`ValueError` for invalid operations like ``sqrt(-1.0)`` or ``log(0.0)``
@@ -894,5 +933,5 @@ Constants
    Module :mod:`cmath`
       Complex number versions of many of these functions.
 
-.. |nbsp| unicode:: 0xA0
-   :trim:
+   Module :mod:`math.integer`
+      Integer-specific mathematics functions.

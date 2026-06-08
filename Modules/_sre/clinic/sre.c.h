@@ -164,22 +164,22 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_sre_SRE_Pattern_match__doc__,
-"match($self, /, string, pos=0, endpos=sys.maxsize)\n"
+PyDoc_STRVAR(_sre_SRE_Pattern_prefixmatch__doc__,
+"prefixmatch($self, /, string, pos=0, endpos=sys.maxsize)\n"
 "--\n"
 "\n"
 "Matches zero or more characters at the beginning of the string.");
 
-#define _SRE_SRE_PATTERN_MATCH_METHODDEF    \
-    {"match", _PyCFunction_CAST(_sre_SRE_Pattern_match), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_match__doc__},
+#define _SRE_SRE_PATTERN_PREFIXMATCH_METHODDEF    \
+    {"prefixmatch", _PyCFunction_CAST(_sre_SRE_Pattern_prefixmatch), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_prefixmatch__doc__},
 
 static PyObject *
-_sre_SRE_Pattern_match_impl(PatternObject *self, PyTypeObject *cls,
-                            PyObject *string, Py_ssize_t pos,
-                            Py_ssize_t endpos);
+_sre_SRE_Pattern_prefixmatch_impl(PatternObject *self, PyTypeObject *cls,
+                                  PyObject *string, Py_ssize_t pos,
+                                  Py_ssize_t endpos);
 
 static PyObject *
-_sre_SRE_Pattern_match(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_sre_SRE_Pattern_prefixmatch(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -205,7 +205,7 @@ _sre_SRE_Pattern_match(PyObject *self, PyTypeObject *cls, PyObject *const *args,
     static const char * const _keywords[] = {"string", "pos", "endpos", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .fname = "match",
+        .fname = "prefixmatch",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
@@ -254,7 +254,7 @@ _sre_SRE_Pattern_match(PyObject *self, PyTypeObject *cls, PyObject *const *args,
         endpos = ival;
     }
 skip_optional_pos:
-    return_value = _sre_SRE_Pattern_match_impl((PatternObject *)self, cls, string, pos, endpos);
+    return_value = _sre_SRE_Pattern_prefixmatch_impl((PatternObject *)self, cls, string, pos, endpos);
 
 exit:
     return return_value;
@@ -1523,25 +1523,25 @@ _sre_SRE_Match___deepcopy__(PyObject *self, PyObject *memo)
     return return_value;
 }
 
-PyDoc_STRVAR(_sre_SRE_Scanner_match__doc__,
-"match($self, /)\n"
+PyDoc_STRVAR(_sre_SRE_Scanner_prefixmatch__doc__,
+"prefixmatch($self, /)\n"
 "--\n"
 "\n");
 
-#define _SRE_SRE_SCANNER_MATCH_METHODDEF    \
-    {"match", _PyCFunction_CAST(_sre_SRE_Scanner_match), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Scanner_match__doc__},
+#define _SRE_SRE_SCANNER_PREFIXMATCH_METHODDEF    \
+    {"prefixmatch", _PyCFunction_CAST(_sre_SRE_Scanner_prefixmatch), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Scanner_prefixmatch__doc__},
 
 static PyObject *
-_sre_SRE_Scanner_match_impl(ScannerObject *self, PyTypeObject *cls);
+_sre_SRE_Scanner_prefixmatch_impl(ScannerObject *self, PyTypeObject *cls);
 
 static PyObject *
-_sre_SRE_Scanner_match(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_sre_SRE_Scanner_prefixmatch(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
-        PyErr_SetString(PyExc_TypeError, "match() takes no arguments");
+        PyErr_SetString(PyExc_TypeError, "prefixmatch() takes no arguments");
         return NULL;
     }
-    return _sre_SRE_Scanner_match_impl((ScannerObject *)self, cls);
+    return _sre_SRE_Scanner_prefixmatch_impl((ScannerObject *)self, cls);
 }
 
 PyDoc_STRVAR(_sre_SRE_Scanner_search__doc__,
@@ -1568,4 +1568,4 @@ _sre_SRE_Scanner_search(PyObject *self, PyTypeObject *cls, PyObject *const *args
 #ifndef _SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF
     #define _SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF
 #endif /* !defined(_SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF) */
-/*[clinic end generated code: output=bbf42e1de3bdd3ae input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0c867efb64e020aa input=a9049054013a1b77]*/

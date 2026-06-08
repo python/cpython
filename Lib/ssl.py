@@ -110,11 +110,6 @@ from _ssl import (
     )
 from _ssl import txt2obj as _txt2obj, nid2obj as _nid2obj
 from _ssl import RAND_status, RAND_add, RAND_bytes
-try:
-    from _ssl import RAND_egd
-except ImportError:
-    # RAND_egd is not supported on some platforms
-    pass
 from _ssl import get_sigalgs
 
 
@@ -155,7 +150,8 @@ _IntEnum._convert_(
     source=_ssl)
 
 PROTOCOL_SSLv23 = _SSLMethod.PROTOCOL_SSLv23 = _SSLMethod.PROTOCOL_TLS
-_PROTOCOL_NAMES = {value: name for name, value in _SSLMethod.__members__.items()}
+_PROTOCOL_NAMES = frozendict({
+    value: name for name, value in _SSLMethod.__members__.items()})
 
 _SSLv2_IF_EXISTS = getattr(_SSLMethod, 'PROTOCOL_SSLv2', None)
 
@@ -190,7 +186,7 @@ class _TLSContentType:
 class _TLSAlertType:
     """Alert types for TLSContentType.ALERT messages
 
-    See RFC 8466, section B.2
+    See RFC 8446, section B.2
     """
     CLOSE_NOTIFY = 0
     UNEXPECTED_MESSAGE = 10
@@ -1059,7 +1055,12 @@ class SSLSocket(socket):
                     notconn_pre_handshake_data = self.recv(1)
                 except OSError as e:
                     # EINVAL occurs for recv(1) on non-connected on unix sockets.
-                    if e.errno not in (errno.ENOTCONN, errno.EINVAL):
+                    if e.errno in (errno.ENOTCONN, errno.EINVAL):
+                        pass
+                    elif sys.platform == 'cygwin' and e.errno == errno.EAGAIN:
+                        # EAGAIN occurs on Cygwin.
+                        pass
+                    else:
                         raise
                     notconn_pre_handshake_data = b''
                 self.setblocking(blocking)
@@ -1539,11 +1540,8 @@ def DER_cert_to_PEM_cert(der_cert_bytes):
     """Takes a certificate in binary DER format and returns the
     PEM version of it as a string."""
 
-    f = str(base64.standard_b64encode(der_cert_bytes), 'ASCII', 'strict')
-    ss = [PEM_HEADER]
-    ss += [f[i:i+64] for i in range(0, len(f), 64)]
-    ss.append(PEM_FOOTER + '\n')
-    return '\n'.join(ss)
+    f = str(base64.b64encode(der_cert_bytes, wrapcol=64), 'ASCII')
+    return f'{PEM_HEADER}\n{f}\n{PEM_FOOTER}\n'
 
 def PEM_cert_to_DER_cert(pem_cert_string):
     """Takes a certificate in ASCII PEM format and returns the

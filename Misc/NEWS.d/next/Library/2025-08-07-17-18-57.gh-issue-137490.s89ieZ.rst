@@ -1,2 +1,0 @@
-Handle :data:`~errno.ECANCELED` in the same way as :data:`~errno.EINTR` in
-:func:`signal.sigwaitinfo` on NetBSD.

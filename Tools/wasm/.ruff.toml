@@ -22,7 +22,4 @@ select = [
 ]
 ignore = [
     "E501",    # Line too long
-    "F541",    # f-string without any placeholders
-    "PYI024",  # Use `typing.NamedTuple` instead of `collections.namedtuple`
-    "PYI025",  # Use `from collections.abc import Set as AbstractSet`
 ]

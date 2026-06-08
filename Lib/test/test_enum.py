@@ -5021,8 +5021,8 @@ class Color(enum.Enum)
  |  __members__
  |      Returns a mapping of member name->value.
  |
- |      This mapping lists all enum members, including aliases. Note that this
- |      is a read-only view of the internal mapping."""
+ |      This mapping lists all enum members, including aliases.  Note that
+ |      this is a read-only view of the internal mapping."""
 
 expected_help_output_without_docs = """\
 Help on class Color in module %s:
@@ -5105,6 +5105,8 @@ class TestStdLib(unittest.TestCase):
                 ('__qualname__', 'TestStdLib.Color'),
                 ('__init_subclass__', getattr(self.Color, '__init_subclass__')),
                 ('__iter__', self.Color.__iter__),
+                ('_missing_', self.Color._missing_),
+                ('_generate_next_value_', self.Color._generate_next_value_),
                 ))
         result = dict(inspect.getmembers(self.Color))
         self.assertEqual(set(values.keys()), set(result.keys()))
@@ -5147,6 +5149,10 @@ class TestStdLib(unittest.TestCase):
                     defining_class=self.Color, object='Color'),
                 Attribute(name='__qualname__', kind='data',
                     defining_class=self.Color, object='TestStdLib.Color'),
+                Attribute(name='_missing_', kind='class method',
+                    defining_class=Enum, object=Enum.__dict__['_missing_']),
+                Attribute(name='_generate_next_value_', kind='static method',
+                    defining_class=self.Color, object=self.Color.__dict__['_generate_next_value_']),
                 Attribute(name='YELLOW', kind='data',
                     defining_class=self.Color, object=self.Color.YELLOW),
                 Attribute(name='MAGENTA', kind='data',
@@ -5178,11 +5184,13 @@ class TestStdLib(unittest.TestCase):
                 # __doc__ is too big to check exactly, so treat the same as __init_subclass__
                 for name in ('name','kind','defining_class'):
                     if getattr(v, name) != getattr(r, name):
-                        print('\n%s\n%s\n%s\n%s\n' % ('=' * 75, r, v, '=' * 75), sep='')
+                        print('\n%s\nexpected: %s\nactual:   %s\n%s\n' % ('=' * 75, r, v, '=' * 75), sep='')
                         failed = True
+                        # breakpoint()
             elif r != v:
-                print('\n%s\n%s\n%s\n%s\n' % ('=' * 75, r, v, '=' * 75), sep='')
+                print('\n%s\nexpected: %s\nactual:   %s\n%s\n' % ('=' * 75, r, v, '=' * 75), sep='')
                 failed = True
+                # breakpoint()
         if failed:
             self.fail("result does not equal expected, see print above")
 
@@ -5324,7 +5332,7 @@ class TestStdLib(unittest.TestCase):
 class MiscTestCase(unittest.TestCase):
 
     def test__all__(self):
-        support.check__all__(self, enum, not_exported={'bin', 'show_flag_values'})
+        support.check__all__(self, enum)
 
     @cpython_only
     def test_lazy_import(self):
@@ -5529,12 +5537,17 @@ class TestEnumDict(unittest.TestCase):
 # helpers
 
 def enum_dir(cls):
+    if issubclass(cls, Flag):
+        members = list(cls._member_map_.keys())
+    else:
+        members = cls._member_names_
     interesting = set([
             '__class__', '__contains__', '__doc__', '__getitem__',
             '__iter__', '__len__', '__members__', '__module__',
             '__name__', '__qualname__',
+            '_generate_next_value_', '_missing_',
             ]
-            + cls._member_names_
+            + members
             )
     if cls._new_member_ is not object.__new__:
         interesting.add('__new__')
@@ -5548,7 +5561,8 @@ def enum_dir(cls):
 
 def member_dir(member):
     if member.__class__._member_type_ is object:
-        allowed = set(['__class__', '__doc__', '__eq__', '__hash__', '__module__', 'name', 'value'])
+        allowed = set(['__class__', '__doc__', '__eq__', '__hash__', '__module__', 'name', 'value',
+                       '_generate_next_value_', '_missing_', '_add_alias_', '_add_value_alias_'])
     else:
         allowed = set(dir(member))
     for cls in member.__class__.mro():

@@ -1,3 +1,0 @@
-Add the *block* parameter in the :meth:`!put` and :meth:`!get` methods
-of the :mod:`concurrent.interpreters` queues for compatibility with the
-:class:`queue.Queue` interface.

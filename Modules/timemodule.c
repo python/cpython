@@ -128,7 +128,7 @@ time_time_ns(PyObject *self, PyObject *unused)
     if (PyTime_Time(&t) < 0) {
         return NULL;
     }
-    return _PyTime_AsLong(t);
+    return PyLong_FromInt64(t);
 }
 
 PyDoc_STRVAR(time_ns_doc,
@@ -261,7 +261,7 @@ time_clock_gettime_ns_impl(PyObject *module, clockid_t clk_id)
     if (_PyTime_FromTimespec(&t, &ts) < 0) {
         return NULL;
     }
-    return _PyTime_AsLong(t);
+    return PyLong_FromInt64(t);
 }
 #endif   /* HAVE_CLOCK_GETTIME */
 
@@ -310,7 +310,7 @@ time_clock_settime_ns(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    if (_PyTime_FromLong(&t, obj) < 0) {
+    if (PyLong_AsInt64(obj, &t) < 0) {
         return NULL;
     }
     if (_PyTime_AsTimespec(t, &ts) == -1) {
@@ -820,12 +820,15 @@ time_strftime1(time_char **outbuf, size_t *bufsize,
             PyErr_NoMemory();
             return NULL;
         }
-        *outbuf = (time_char *)PyMem_Realloc(*outbuf,
-                                             *bufsize*sizeof(time_char));
-        if (*outbuf == NULL) {
+        time_char *tmp = (time_char *)PyMem_Realloc(*outbuf,
+                                                    *bufsize*sizeof(time_char));
+        if (tmp == NULL) {
+            PyMem_Free(*outbuf);
+            *outbuf = NULL;
             PyErr_NoMemory();
             return NULL;
         }
+        *outbuf = tmp;
 #if defined _MSC_VER && _MSC_VER >= 1400 && defined(__STDC_SECURE_LIB__)
         errno = 0;
 #endif
@@ -1170,7 +1173,8 @@ time_tzset(PyObject *self, PyObject *unused)
 
     /* Reset timezone, altzone, daylight and tzname */
     if (init_timezone(m) < 0) {
-         return NULL;
+        Py_DECREF(m);
+        return NULL;
     }
     Py_DECREF(m);
     if (PyErr_Occurred())
@@ -1216,7 +1220,7 @@ time_monotonic_ns(PyObject *self, PyObject *unused)
     if (PyTime_Monotonic(&t) < 0) {
         return NULL;
     }
-    return _PyTime_AsLong(t);
+    return PyLong_FromInt64(t);
 }
 
 PyDoc_STRVAR(monotonic_ns_doc,
@@ -1248,7 +1252,7 @@ time_perf_counter_ns(PyObject *self, PyObject *unused)
     if (PyTime_PerfCounter(&t) < 0) {
         return NULL;
     }
-    return _PyTime_AsLong(t);
+    return PyLong_FromInt64(t);
 }
 
 PyDoc_STRVAR(perf_counter_ns_doc,
@@ -1437,7 +1441,7 @@ time_process_time_ns(PyObject *module, PyObject *unused)
     if (py_process_time(state, &t, NULL) < 0) {
         return NULL;
     }
-    return _PyTime_AsLong(t);
+    return PyLong_FromInt64(t);
 }
 
 PyDoc_STRVAR(process_time_ns_doc,
@@ -1610,7 +1614,7 @@ time_thread_time_ns(PyObject *self, PyObject *unused)
     if (_PyTime_GetThreadTimeWithInfo(&t, NULL) < 0) {
         return NULL;
     }
-    return _PyTime_AsLong(t);
+    return PyLong_FromInt64(t);
 }
 
 PyDoc_STRVAR(thread_time_ns_doc,
@@ -2184,6 +2188,7 @@ time_module_free(void *module)
 
 
 static struct PyModuleDef_Slot time_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, time_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

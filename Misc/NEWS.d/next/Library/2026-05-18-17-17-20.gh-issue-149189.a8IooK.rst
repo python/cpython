@@ -1,0 +1,1 @@
+Revert the changes to :mod:`pprint` defaults. Patch by Hugo van Kemenade.

@@ -1,2 +1,0 @@
-Fix unraisable exception during finalization when using
-:mod:`concurrent.interpreters` in the REPL.

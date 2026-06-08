@@ -43,7 +43,7 @@ _Py_parse_inf_or_nan(const char *p, char **endptr)
         s += 3;
         if (case_insensitive_match(s, "inity"))
             s += 5;
-        retval = negate ? -Py_INFINITY : Py_INFINITY;
+        retval = negate ? -INFINITY : INFINITY;
     }
     else if (case_insensitive_match(s, "nan")) {
         s += 3;
@@ -286,7 +286,7 @@ _PyOS_ascii_strtod(const char *nptr, char **endptr)
    string, -1.0 is returned and again ValueError is raised.
 
    On overflow (e.g., when trying to convert '1e500' on an IEEE 754 machine),
-   if overflow_exception is NULL then +-Py_INFINITY is returned, and no Python
+   if overflow_exception is NULL then +-INFINITY is returned, and no Python
    exception is raised.  Otherwise, overflow_exception should point to
    a Python exception, this exception will be raised, -1.0 will be returned,
    and *endptr will point just past the end of the converted value.

@@ -309,6 +309,14 @@ For convenience, some of these functions will always return a
    .. versionadded:: 3.4
 
 
+.. c:function:: void PyErr_RangedSyntaxLocationObject(PyObject *filename, int lineno, int col_offset, int end_lineno, int end_col_offset)
+
+   Similar to :c:func:`PyErr_SyntaxLocationObject`, but also sets the
+   *end_lineno* and *end_col_offset* information for the current exception.
+
+   .. versionadded:: 3.10
+
+
 .. c:function:: void PyErr_SyntaxLocationEx(const char *filename, int lineno, int col_offset)
 
    Like :c:func:`PyErr_SyntaxLocationObject`, but *filename* is a byte string
@@ -329,6 +337,23 @@ For convenience, some of these functions will always return a
    where *message* indicates that an internal operation (e.g. a Python/C API
    function) was invoked with an illegal argument.  It is mostly for internal
    use.
+
+
+.. c:function:: PyObject *PyErr_ProgramTextObject(PyObject *filename, int lineno)
+
+   Get the source line in *filename* at line *lineno*. *filename* should be a
+   Python :class:`str` object.
+
+   On success, this function returns a Python string object with the found line.
+   On failure, this function returns ``NULL`` without an exception set.
+
+
+.. c:function:: PyObject *PyErr_ProgramText(const char *filename, int lineno)
+
+   Similar to :c:func:`PyErr_ProgramTextObject`, but *filename* is a
+   :c:expr:`const char *`, which is decoded with the
+   :term:`filesystem encoding and error handler`, instead of a
+   Python object reference.
 
 
 Issuing warnings
@@ -387,8 +412,17 @@ an error value).
 
 .. c:function:: int PyErr_WarnFormat(PyObject *category, Py_ssize_t stack_level, const char *format, ...)
 
-   Function similar to :c:func:`PyErr_WarnEx`, but use
+   Function similar to :c:func:`PyErr_WarnEx`, but uses
    :c:func:`PyUnicode_FromFormat` to format the warning message.  *format* is
+   an ASCII-encoded string.
+
+   .. versionadded:: 3.2
+
+
+.. c:function:: int PyErr_WarnExplicitFormat(PyObject *category, const char *filename, int lineno, const char *module, PyObject *registry, const char *format, ...)
+
+   Similar to :c:func:`PyErr_WarnExplicit`, but uses
+   :c:func:`PyUnicode_FromFormat` to format the warning message. *format* is
    an ASCII-encoded string.
 
    .. versionadded:: 3.2
@@ -639,28 +673,51 @@ Signal Handling
       single: SIGINT (C macro)
       single: KeyboardInterrupt (built-in exception)
 
-   This function interacts with Python's signal handling.
+   Handle external interruptions, such as signals or activating a debugger,
+   whose processing has been delayed until it is safe
+   to run Python code and/or raise exceptions.
 
-   If the function is called from the main thread and under the main Python
-   interpreter, it checks whether a signal has been sent to the processes
-   and if so, invokes the corresponding signal handler.  If the :mod:`signal`
-   module is supported, this can invoke a signal handler written in Python.
+   For example, pressing :kbd:`Ctrl-C` causes a terminal to send the
+   :py:data:`signal.SIGINT` signal.
+   This function executes the corresponding Python signal handler, which,
+   by default, raises the :exc:`KeyboardInterrupt` exception.
 
-   The function attempts to handle all pending signals, and then returns ``0``.
-   However, if a Python signal handler raises an exception, the error
-   indicator is set and the function returns ``-1`` immediately (such that
-   other pending signals may not have been handled yet: they will be on the
-   next :c:func:`PyErr_CheckSignals()` invocation).
+   :c:func:`!PyErr_CheckSignals` should be called by long-running C code
+   frequently enough so that the response appears immediate to humans.
 
-   If the function is called from a non-main thread, or under a non-main
-   Python interpreter, it does nothing and returns ``0``.
+   Handlers invoked by this function currently include:
 
-   This function can be called by long-running C code that wants to
-   be interruptible by user requests (such as by pressing Ctrl-C).
+   - Signal handlers, including Python functions registered using
+     the :mod:`signal` module.
 
-   .. note::
-      The default Python signal handler for :c:macro:`!SIGINT` raises the
-      :exc:`KeyboardInterrupt` exception.
+     Signal handlers are only run in the main thread of the main interpreter.
+
+     (This is where the function got the name: originally, signals
+     were the only way to interrupt the interpreter.)
+
+   - Running the garbage collector, if necessary.
+
+   - Executing a pending :ref:`remote debugger <remote-debugging>` script.
+
+   - Raise the exception set by :c:func:`PyThreadState_SetAsyncExc`.
+
+   If any handler raises an exception, immediately return ``-1`` with that
+   exception set.
+   Any remaining interruptions are left to be processed on the next
+   :c:func:`PyErr_CheckSignals()` invocation, if appropriate.
+
+   If all handlers finish successfully, or there are no handlers to run,
+   return ``0``.
+
+   .. versionchanged:: 3.12
+      This function may now invoke the garbage collector.
+
+   .. versionchanged:: 3.14
+      This function may now execute a remote debugger script, if remote
+      debugging is enabled.
+
+   .. versionchanged:: 3.15
+      The exception set by :c:func:`PyThreadState_SetAsyncExc` is now raised.
 
 
 .. c:function:: void PyErr_SetInterrupt()
@@ -759,8 +816,32 @@ Exception Classes
    Return :c:member:`~PyTypeObject.tp_name` of the exception class *ob*.
 
 
+.. c:macro:: PyException_HEAD
+
+   This is a macro including the base fields for an
+   exception object.
+
+   This was included in Python's C API by mistake and is not designed for use
+   in extensions. For creating custom exception objects, use
+   :c:func:`PyErr_NewException` or otherwise create a class inheriting from
+   :c:data:`PyExc_BaseException`.
+
+   .. soft-deprecated:: 3.15
+
+
 Exception Objects
 =================
+
+.. c:function:: int PyExceptionInstance_Check(PyObject *op)
+
+   Return true if *op* is an instance of :class:`BaseException`, false
+   otherwise. This function always succeeds.
+
+
+.. c:macro:: PyExceptionInstance_Class(op)
+
+   Equivalent to :c:func:`Py_TYPE(op) <Py_TYPE>`.
+
 
 .. c:function:: PyObject* PyException_GetTraceback(PyObject *ex)
 
@@ -939,6 +1020,9 @@ because the :ref:`call protocol <call>` takes care of recursion handling.
    be concatenated to the :exc:`RecursionError` message caused by the recursion
    depth limit.
 
+   .. seealso::
+      The :c:func:`PyUnstable_ThreadState_SetStackProtection` function.
+
    .. versionchanged:: 3.9
       This function is now also available in the :ref:`limited API <limited-c-api>`.
 
@@ -954,7 +1038,7 @@ Properly implementing :c:member:`~PyTypeObject.tp_repr` for container types requ
 special recursion handling.  In addition to protecting the stack,
 :c:member:`~PyTypeObject.tp_repr` also needs to track objects to prevent cycles.  The
 following two functions facilitate this functionality.  Effectively,
-these are the C equivalent to :func:`reprlib.recursive_repr`.
+these are the C equivalent to :deco:`reprlib.recursive_repr`.
 
 .. c:function:: int Py_ReprEnter(PyObject *object)
 
@@ -979,6 +1063,27 @@ these are the C equivalent to :func:`reprlib.recursive_repr`.
    Ends a :c:func:`Py_ReprEnter`.  Must be called once for each
    invocation of :c:func:`Py_ReprEnter` that returns zero.
 
+.. c:function:: int Py_GetRecursionLimit(void)
+
+   Get the recursion limit for the current interpreter. It can be set with
+   :c:func:`Py_SetRecursionLimit`. The recursion limit prevents the
+   Python interpreter stack from growing infinitely.
+
+   This function cannot fail, and the caller must hold an
+   :term:`attached thread state`.
+
+   .. seealso::
+      :py:func:`sys.getrecursionlimit`
+
+.. c:function:: void Py_SetRecursionLimit(int new_limit)
+
+   Set the recursion limit for the current interpreter.
+
+   This function cannot fail, and the caller must hold an
+   :term:`attached thread state`.
+
+   .. seealso::
+      :py:func:`sys.setrecursionlimit`
 
 .. _standardexceptions:
 
@@ -1039,6 +1144,8 @@ Exception types
      * :exc:`FloatingPointError`
    * * .. c:var:: PyObject *PyExc_GeneratorExit
      * :exc:`GeneratorExit`
+   * * .. c:var:: PyObject *PyExc_ImportCycleError
+     * :exc:`ImportCycleError`
    * * .. c:var:: PyObject *PyExc_ImportError
      * :exc:`ImportError`
    * * .. c:var:: PyObject *PyExc_IndentationError
@@ -1207,3 +1314,101 @@ Warning types
 
 .. versionadded:: 3.10
    :c:data:`PyExc_EncodingWarning`.
+
+
+Tracebacks
+==========
+
+.. c:var:: PyTypeObject PyTraceBack_Type
+
+   Type object for traceback objects. This is available as
+   :class:`types.TracebackType` in the Python layer.
+
+
+.. c:function:: int PyTraceBack_Check(PyObject *op)
+
+   Return true if *op* is a traceback object, false otherwise. This function
+   does not account for subtypes.
+
+
+.. c:function:: int PyTraceBack_Here(PyFrameObject *f)
+
+   Replace the :attr:`~BaseException.__traceback__` attribute on the current
+   exception with a new traceback prepending *f* to the existing chain.
+
+   Calling this function without an exception set is undefined behavior.
+
+   This function returns ``0`` on success, and returns ``-1`` with an
+   exception set on failure.
+
+
+.. c:function:: int PyTraceBack_Print(PyObject *tb, PyObject *f)
+
+   Write the traceback *tb* into the file *f*.
+
+   This function returns ``0`` on success, and returns ``-1`` with an
+   exception set on failure.
+
+.. c:function:: const char* PyUnstable_DumpTraceback(int fd, PyThreadState *tstate)
+
+   Write a trace of the Python stack in *tstate* into the file *fd*.  The format
+   looks like::
+
+      Traceback (most recent call first):
+        File "xxx", line xxx in <xxx>
+        File "xxx", line xxx in <xxx>
+        ...
+        File "xxx", line xxx in <xxx>
+
+   This function is meant to debug situations such as segfaults, fatal errors,
+   and similar. The file and function names it outputs are encoded to ASCII with
+   backslashreplace and truncated to 500 characters. It writes only the first
+   100 frames; further frames are truncated with the line ``...``.
+
+   This function will return ``NULL`` on success, or an error message on error.
+
+   This function is intended for use in crash scenarios such as signal handlers
+   for SIGSEGV, where the interpreter may be in an inconsistent state. Given
+   that it reads interpreter data structures that may be partially modified, the
+   function might produce incomplete output or it may even crash itself.
+
+   The caller does not need to hold an :term:`attached thread state`, nor does
+   *tstate* need to be attached.
+
+   .. versionadded:: 3.15
+
+.. c:function:: const char* PyUnstable_DumpTracebackThreads(int fd, PyInterpreterState *interp, PyThreadState *current_tstate, Py_ssize_t max_threads)
+
+   Write the traces of all Python threads in *interp* into the file *fd*.
+
+   If *interp* is ``NULL`` then this function will try to identify the current
+   interpreter using thread-specific storage. If it cannot, it will return an
+   error.
+
+   If *current_tstate* is not ``NULL`` then it will be used to identify what the
+   current thread is in the written output. If it is ``NULL`` then this function
+   will identify the current thread using thread-specific storage. It is not an
+   error if the function is unable to get the current Python thread state.
+
+   This function will return ``NULL`` on success, or an error message on error.
+
+   This function is meant to debug situations such as segfaults, fatal
+   errors, and similar. It calls :c:func:`PyUnstable_DumpTraceback` for each
+   thread. It only writes the tracebacks of the first *max_threads* threads,
+   further output is truncated with the line ``...``. If *max_threads* is 0, the
+   function will use a default value of 100 for the argument.
+
+   This function is intended for use in crash scenarios such as signal handlers
+   for SIGSEGV, where the interpreter may be in an inconsistent state. Given
+   that it reads interpreter data structures that may be partially modified, the
+   function might produce incomplete output or it may even crash itself.
+
+   The caller does not need to hold an :term:`attached thread state`, nor does
+   *current_tstate* need to be attached.
+
+   .. warning::
+      On the :term:`free-threaded build`, this function is not thread-safe. If
+      another thread deletes its :term:`thread state` while this function is being
+      called, the process will likely crash.
+
+   .. versionadded:: 3.15
