@@ -287,6 +287,18 @@ class MimeTypesClassTestCase(unittest.TestCase):
         eq(self.db.guess_file_type("foobar.tar.z"), (None, None))
         eq(self.db.guess_type("scheme:foobar.tar.z"), (None, None))
 
+    def test_suffix_map_case_sensitive_preferred(self):
+        self.db.suffix_map[".TEST-SUFFIX"] = ".tar.gz"
+        self.db.suffix_map[".test-suffix"] = ".tar.xz"
+        self.assertEqual(
+            self.db.guess_file_type("example.TEST-SUFFIX"),
+            ("application/x-tar", "gzip"),
+        )
+        self.assertEqual(
+            self.db.guess_file_type("example.test-suffix"),
+            ("application/x-tar", "xz"),
+        )
+
     def test_added_types_case_sensitive_preferred(self):
         self.db.add_type("text/x-test-uppercase-r", ".R")
         self.db.add_type("text/x-test-lowercase-r", ".r")
