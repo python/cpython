@@ -1,6 +1,6 @@
-name: Lazy imports all
+name: Tests (Lazy Imports)
 
-# Run the standard library test suite with global lazy imports forced on
+# Run the CPython test suite with global lazy imports forced on
 # (``PYTHON_LAZY_IMPORTS=all``, equivalent to ``-X lazy_imports=all``).
 #
 # Modules that are known to fail under lazy imports are listed in
@@ -35,7 +35,7 @@ env:
 
 jobs:
   lazy-imports:
-    name: Stdlib tests (lazy imports all)
+    name: lazy_imports=all enabled
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
