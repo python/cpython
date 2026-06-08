@@ -33,6 +33,10 @@
       <link rel="canonical" href="https://docs.python.org/3/{{pagename}}.html">
       {% if pagename == 'whatsnew/changelog' and not embedded %}
       <script type="text/javascript" src="{{ pathto('_static/changelog_search.js', 1) }}"></script>{% endif %}
+      {% if anchor_redirects %}
+      <script id="python-docs-anchor-redirects" type="application/json">{{ anchor_redirects|tojson }}</script>
+      <script type="module" src="{{ pathto('_static/anchor_redirects.js', 1) }}"></script>
+      {% endif %}
     {% endif %}
 
     {# custom CSS; used in asyncio docs! #}
