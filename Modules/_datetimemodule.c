@@ -1509,7 +1509,7 @@ get_tzinfo_member(PyObject *self)
  * this returns NULL.  Else result is returned.
  */
 static PyObject *
-call_tzinfo_method(PyObject *tzinfo, const char *name, PyObject *tzinfoarg)
+call_tzinfo_method(PyObject *tzinfo, PyObject *name, PyObject *tzinfoarg)
 {
     PyObject *offset;
 
@@ -1519,7 +1519,7 @@ call_tzinfo_method(PyObject *tzinfo, const char *name, PyObject *tzinfoarg)
 
     if (tzinfo == Py_None)
         Py_RETURN_NONE;
-    offset = PyObject_CallMethod(tzinfo, name, "O", tzinfoarg);
+    offset = PyObject_CallMethodOneArg(tzinfo, name, tzinfoarg);
     if (offset == Py_None || offset == NULL)
         return offset;
     if (PyDelta_Check(offset)) {
@@ -1536,7 +1536,7 @@ call_tzinfo_method(PyObject *tzinfo, const char *name, PyObject *tzinfoarg)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "tzinfo.%s() must return None or "
+                     "tzinfo.%U() must return None or "
                      "timedelta, not '%.200s'",
                      name, Py_TYPE(offset)->tp_name);
         Py_DECREF(offset);
@@ -1557,7 +1557,7 @@ call_tzinfo_method(PyObject *tzinfo, const char *name, PyObject *tzinfoarg)
 static PyObject *
 call_utcoffset(PyObject *tzinfo, PyObject *tzinfoarg)
 {
-    return call_tzinfo_method(tzinfo, "utcoffset", tzinfoarg);
+    return call_tzinfo_method(tzinfo, &_Py_ID(utcoffset), tzinfoarg);
 }
 
 /* Call tzinfo.dst(tzinfoarg), and extract an integer from the
@@ -1571,7 +1571,7 @@ call_utcoffset(PyObject *tzinfo, PyObject *tzinfoarg)
 static PyObject *
 call_dst(PyObject *tzinfo, PyObject *tzinfoarg)
 {
-    return call_tzinfo_method(tzinfo, "dst", tzinfoarg);
+    return call_tzinfo_method(tzinfo, &_Py_ID(dst), tzinfoarg);
 }
 
 /* Call tzinfo.tzname(tzinfoarg), and return the result.  tzinfo must be
