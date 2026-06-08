@@ -101,6 +101,25 @@ world"""
         t = t'Hello, {name}, {age} from {country}'
         self.assertEqual(t.values, ("Lys", 0, "GR"))
 
+    def test_repr(self):
+        self.assertEqual(repr(t''), 'Template()')
+        self.assertEqual(repr(t'foo'), "Template('foo')")
+        x = 42
+        self.assertEqual(
+            repr(t'{x}'),
+            "Template(Interpolation(42, 'x', None, ''))")
+        self.assertEqual(
+            repr(t'a{x!r:02}b'),
+            "Template('a', Interpolation(42, 'x', 'r', '02'), 'b')")
+
+        # Test a "recursive" template
+        x = []
+        t = t'a{x}b'
+        x.append(t)
+        self.assertEqual(
+            repr(t),
+            "Template('a', Interpolation([Template(...)], 'x', None, ''), 'b')")
+
     def test_pickle_template(self):
         user = 'test'
         for template in (
