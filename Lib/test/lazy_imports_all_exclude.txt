@@ -23,6 +23,7 @@ test_clinic
 test_compileall
 test_crossinterp
 test_datetime
+test_external_inspection
 test_generated_cases
 test_idle
 test_import
