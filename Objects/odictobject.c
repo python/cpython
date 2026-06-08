@@ -1128,12 +1128,13 @@ OrderedDict.popitem
 
 Remove and return a (key, value) pair from the dictionary.
 
-Pairs are returned in LIFO order if last is true or FIFO order if false.
+Pairs are returned in LIFO order if last is true or FIFO order if
+false.
 [clinic start generated code]*/
 
 static PyObject *
 OrderedDict_popitem_impl(PyODictObject *self, int last)
-/*[clinic end generated code: output=98e7d986690d49eb input=d992ac5ee8305e1a]*/
+/*[clinic end generated code: output=98e7d986690d49eb input=9cc253963e351588]*/
 {
     PyObject *key, *value, *item = NULL;
     _ODictNode *node;

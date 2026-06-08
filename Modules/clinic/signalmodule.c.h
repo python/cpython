@@ -138,11 +138,12 @@ PyDoc_STRVAR(signal_signal__doc__,
 "Set the action for the given signal.\n"
 "\n"
 "The action can be SIG_DFL, SIG_IGN, or a callable Python object.\n"
-"The previous action is returned.  See getsignal() for possible return values.\n"
+"The previous action is returned.  See getsignal() for possible return\n"
+"values.\n"
 "\n"
 "*** IMPORTANT NOTICE ***\n"
-"A signal handler function is called with two arguments:\n"
-"the first is the signal number, the second is the interrupted stack frame.");
+"A signal handler function is called with two arguments: the first is\n"
+"the signal number, the second is the interrupted stack frame.");
 
 #define SIGNAL_SIGNAL_METHODDEF    \
     {"signal", _PyCFunction_CAST(signal_signal), METH_FASTCALL, signal_signal__doc__},
@@ -359,8 +360,8 @@ PyDoc_STRVAR(signal_setitimer__doc__,
 "\n"
 "Sets given itimer (one of ITIMER_REAL, ITIMER_VIRTUAL or ITIMER_PROF).\n"
 "\n"
-"The timer will fire after value seconds and after that every interval seconds.\n"
-"The itimer can be cleared by setting seconds to zero.\n"
+"The timer will fire after value seconds and after that every interval\n"
+"seconds.  The itimer can be cleared by setting seconds to zero.\n"
 "\n"
 "Returns old values as a tuple: (delay, interval).");
 
@@ -505,8 +506,8 @@ PyDoc_STRVAR(signal_sigwait__doc__,
 "Wait for a signal.\n"
 "\n"
 "Suspend execution of the calling thread until the delivery of one of the\n"
-"signals specified in the signal set sigset.  The function accepts the signal\n"
-"and returns the signal number.");
+"signals specified in the signal set sigset.  The function accepts the\n"
+"signal and returns the signal number.");
 
 #define SIGNAL_SIGWAIT_METHODDEF    \
     {"sigwait", (PyCFunction)signal_sigwait, METH_O, signal_sigwait__doc__},
@@ -776,4 +777,4 @@ exit:
 #ifndef SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
     #define SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
 #endif /* !defined(SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF) */
-/*[clinic end generated code: output=c57b4b98fad6f4b8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=496d4bc3e9ed4528 input=a9049054013a1b77]*/

@@ -93,8 +93,6 @@ ALIASES = {
 
 # Map charsets to their Unicode codec strings.
 CODEC_MAP = {
-    'gb2312':      'eucgb2312_cn',
-    'big5':        'big5_tw',
     # Hack: We don't want *any* conversion for stuff marked us-ascii, as all
     # sorts of garbage might be sent to us in the guise of 7-bit us-ascii.
     # Let that stuff pass through without conversion to/from Unicode.

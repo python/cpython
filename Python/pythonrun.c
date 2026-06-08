@@ -1150,6 +1150,7 @@ _PyErr_Display(PyObject *file, PyObject *unused, PyObject *value, PyObject *tb)
 
     if (print_exception_fn == NULL || !PyCallable_Check(print_exception_fn)) {
         Py_DECREF(traceback_module);
+        Py_XDECREF(print_exception_fn);
         goto fallback;
     }
 

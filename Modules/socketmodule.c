@@ -8939,6 +8939,9 @@ socket_exec(PyObject *m)
     /* Initialize gethostbyname lock */
 #if defined(USE_GETHOSTBYNAME_LOCK)
     netdb_lock = PyThread_allocate_lock();
+    if (netdb_lock == NULL) {
+        goto error;
+    }
 #endif
 
 #ifdef MS_WINDOWS

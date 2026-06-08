@@ -644,7 +644,8 @@ PyDoc_STRVAR(cmath_log__doc__,
 "\n"
 "log(z[, base]) -> the logarithm of z to the given base.\n"
 "\n"
-"If the base is not specified, returns the natural logarithm (base e) of z.");
+"If the base is not specified, returns the natural logarithm (base e)\n"
+"of z.");
 
 #define CMATH_LOG_METHODDEF    \
     {"log", _PyCFunction_CAST(cmath_log), METH_FASTCALL, cmath_log__doc__},
@@ -882,11 +883,12 @@ PyDoc_STRVAR(cmath_isclose__doc__,
 "\n"
 "Return True if a is close in value to b, and False otherwise.\n"
 "\n"
-"For the values to be considered close, the difference between them must be\n"
-"smaller than at least one of the tolerances.\n"
+"For the values to be considered close, the difference between them must\n"
+"be smaller than at least one of the tolerances.\n"
 "\n"
-"-inf, inf and NaN behave similarly to the IEEE 754 Standard. That is, NaN is\n"
-"not close to anything, even itself. inf and -inf are only close to themselves.");
+"-inf, inf and NaN behave similarly to the IEEE 754 Standard.  That is,\n"
+"NaN is not close to anything, even itself. inf and -inf are only close\n"
+"to themselves.");
 
 #define CMATH_ISCLOSE_METHODDEF    \
     {"isclose", _PyCFunction_CAST(cmath_isclose), METH_FASTCALL|METH_KEYWORDS, cmath_isclose__doc__},
@@ -982,4 +984,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=454309b21cfa9bf6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2e01537e62454991 input=a9049054013a1b77]*/

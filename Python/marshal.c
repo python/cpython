@@ -1895,14 +1895,14 @@ marshal.dumps
 
 Return the bytes object that would be written to a file by dump(value, file).
 
-Raise a ValueError exception if value has (or contains an object that has) an
-unsupported type.
+Raise a ValueError exception if value has (or contains an object that
+has) an unsupported type.
 [clinic start generated code]*/
 
 static PyObject *
 marshal_dumps_impl(PyObject *module, PyObject *value, int version,
                    int allow_code)
-/*[clinic end generated code: output=115f90da518d1d49 input=167eaecceb63f0a8]*/
+/*[clinic end generated code: output=115f90da518d1d49 input=d9609c4dee4507fb]*/
 {
     return _PyMarshal_WriteObjectToString(value, version, allow_code);
 }
@@ -1918,13 +1918,13 @@ marshal.loads
 
 Convert the bytes-like object to a value.
 
-If no valid value is found, raise EOFError, ValueError or TypeError.  Extra
-bytes in the input are ignored.
+If no valid value is found, raise EOFError, ValueError or TypeError.
+Extra bytes in the input are ignored.
 [clinic start generated code]*/
 
 static PyObject *
 marshal_loads_impl(PyObject *module, Py_buffer *bytes, int allow_code)
-/*[clinic end generated code: output=62c0c538d3edc31f input=14de68965b45aaa7]*/
+/*[clinic end generated code: output=62c0c538d3edc31f input=286f1dbd6811d2ad]*/
 {
     RFILE rf;
     char *s = bytes->buf;

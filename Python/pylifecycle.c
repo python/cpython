@@ -2976,7 +2976,9 @@ apple_log_write_impl(PyObject *self, PyObject *args)
 
     // Pass the user-provided text through explicit %s formatting
     // to avoid % literals being interpreted as a formatting directive.
-    os_log_with_type(OS_LOG_DEFAULT, logtype, "%s", text);
+    // Using {public} ensures "dynamic" string messages are visible
+    // in the log without special configuration.
+    os_log_with_type(OS_LOG_DEFAULT, logtype, "%{public}s", text);
     Py_RETURN_NONE;
 }
 

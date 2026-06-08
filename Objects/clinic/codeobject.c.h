@@ -411,7 +411,8 @@ PyDoc_STRVAR(code__varname_from_oparg__doc__,
 "\n"
 "(internal-only) Return the local variable name for the given oparg.\n"
 "\n"
-"WARNING: this method is for internal use only and may change or go away.");
+"WARNING: this method is for internal use only and may change or go\n"
+"away.");
 
 #define CODE__VARNAME_FROM_OPARG_METHODDEF    \
     {"_varname_from_oparg", _PyCFunction_CAST(code__varname_from_oparg), METH_FASTCALL|METH_KEYWORDS, code__varname_from_oparg__doc__},
@@ -464,4 +465,4 @@ code__varname_from_oparg(PyCodeObject *self, PyObject *const *args, Py_ssize_t n
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d604263a3ca72a0f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ffe4f70404970c51 input=a9049054013a1b77]*/

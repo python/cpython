@@ -799,13 +799,14 @@ PyDoc_STRVAR(pysqlite_connection_set_progress_handler__doc__,
 "\n"
 "  progress_handler\n"
 "    A callable that takes no arguments.\n"
-"    If the callable returns non-zero, the current query is terminated,\n"
-"    and an exception is raised.\n"
+"    If the callable returns non-zero, the current query is\n"
+"    terminated, and an exception is raised.\n"
 "  n\n"
 "    The number of SQLite virtual machine instructions that are\n"
 "    executed between invocations of \'progress_handler\'.\n"
 "\n"
-"If \'progress_handler\' is None or \'n\' is 0, the progress handler is disabled.\n"
+"If \'progress_handler\' is None or \'n\' is 0, the progress handler is\n"
+"disabled.\n"
 "\n"
 "Note: Passing keyword argument \'progress_handler\' to\n"
 "_sqlite3.Connection.set_progress_handler() is deprecated. Parameter\n"
@@ -1453,10 +1454,10 @@ PyDoc_STRVAR(serialize__doc__,
 "  name\n"
 "    Which database to serialize.\n"
 "\n"
-"For an ordinary on-disk database file, the serialization is just a copy of the\n"
-"disk file. For an in-memory database or a \"temp\" database, the serialization is\n"
-"the same sequence of bytes which would be written to disk if that database\n"
-"were backed up to disk.");
+"For an ordinary on-disk database file, the serialization is just\n"
+"a copy of the disk file.  For an in-memory database or a \"temp\"\n"
+"database, the serialization is the same sequence of bytes which\n"
+"would be written to disk if that database were backed up to disk.");
 
 #define SERIALIZE_METHODDEF    \
     {"serialize", _PyCFunction_CAST(serialize), METH_FASTCALL|METH_KEYWORDS, serialize__doc__},
@@ -1539,12 +1540,13 @@ PyDoc_STRVAR(deserialize__doc__,
 "  name\n"
 "    Which database to reopen with the deserialization.\n"
 "\n"
-"The deserialize interface causes the database connection to disconnect from the\n"
-"target database, and then reopen it as an in-memory database based on the given\n"
-"serialized data.\n"
+"The deserialize interface causes the database connection to\n"
+"disconnect from the target database, and then reopen it as\n"
+"an in-memory database based on the given serialized data.\n"
 "\n"
-"The deserialize interface will fail with SQLITE_BUSY if the database is\n"
-"currently in a read transaction or is involved in a backup operation.");
+"The deserialize interface will fail with SQLITE_BUSY if the database\n"
+"is currently in a read transaction or is involved in a backup\n"
+"operation.");
 
 #define DESERIALIZE_METHODDEF    \
     {"deserialize", _PyCFunction_CAST(deserialize), METH_FASTCALL|METH_KEYWORDS, deserialize__doc__},
@@ -1662,7 +1664,8 @@ PyDoc_STRVAR(pysqlite_connection_exit__doc__,
 "\n"
 "Called when the connection is used as a context manager.\n"
 "\n"
-"If there was any exception, a rollback takes place; otherwise we commit.");
+"If there was any exception, a rollback takes place; otherwise we\n"
+"commit.");
 
 #define PYSQLITE_CONNECTION_EXIT_METHODDEF    \
     {"__exit__", _PyCFunction_CAST(pysqlite_connection_exit), METH_FASTCALL, pysqlite_connection_exit__doc__},
@@ -1700,12 +1703,12 @@ PyDoc_STRVAR(setlimit__doc__,
 "  category\n"
 "    The limit category to be set.\n"
 "  limit\n"
-"    The new limit. If the new limit is a negative number, the limit is\n"
-"    unchanged.\n"
+"    The new limit. If the new limit is a negative number, the limit\n"
+"    is unchanged.\n"
 "\n"
-"Attempts to increase a limit above its hard upper bound are silently truncated\n"
-"to the hard upper bound. Regardless of whether or not the limit was changed,\n"
-"the prior value of the limit is returned.");
+"Attempts to increase a limit above its hard upper bound are silently\n"
+"truncated to the hard upper bound. Regardless of whether or not the\n"
+"limit was changed, the prior value of the limit is returned.");
 
 #define SETLIMIT_METHODDEF    \
     {"setlimit", _PyCFunction_CAST(setlimit), METH_FASTCALL, setlimit__doc__},
@@ -1866,4 +1869,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=fa34f4c5f8837a7c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5e0bcef289eb64cc input=a9049054013a1b77]*/

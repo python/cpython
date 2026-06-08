@@ -2229,6 +2229,10 @@ Return a chain object whose .__next__() method returns elements from the\n\
 first iterable until it is exhausted, then elements from the next\n\
 iterable, until all of the iterables are exhausted.");
 
+PyDoc_STRVAR(chain_class_getitem_doc,
+"chain is generic over the type of its contents.\n\
+This is the union of the types of the input iterable contents.");
+
 static PyMethodDef chain_methods[] = {
     ITERTOOLS_CHAIN_FROM_ITERABLE_METHODDEF
     {"__reduce__",      (PyCFunction)chain_reduce,      METH_NOARGS,
@@ -2236,7 +2240,7 @@ static PyMethodDef chain_methods[] = {
     {"__setstate__",    (PyCFunction)chain_setstate,    METH_O,
      setstate_doc},
     {"__class_getitem__",    Py_GenericAlias,
-    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
+    METH_O|METH_CLASS,       chain_class_getitem_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -3769,13 +3773,13 @@ itertools.compress.__new__
     selectors as seq2: object
 Return data elements corresponding to true selector elements.
 
-Forms a shorter iterator from selected data elements using the selectors to
-choose the data elements.
+Forms a shorter iterator from selected data elements using the selectors
+to choose the data elements.
 [clinic start generated code]*/
 
 static PyObject *
 itertools_compress_impl(PyTypeObject *type, PyObject *seq1, PyObject *seq2)
-/*[clinic end generated code: output=7e67157212ed09e0 input=79596d7cd20c77e5]*/
+/*[clinic end generated code: output=7e67157212ed09e0 input=32ca4347dbc46749]*/
 {
     PyObject *data=NULL, *selectors=NULL;
     compressobject *lz;

@@ -56,9 +56,8 @@ from unittest.case import _AssertRaisesContext
 from queue import Queue, SimpleQueue
 from weakref import WeakSet, ReferenceType, ref
 import typing
-from typing import Unpack
+from typing import TypeVar, Unpack
 
-from typing import TypeVar
 T = TypeVar('T')
 K = TypeVar('K')
 V = TypeVar('V')
@@ -537,6 +536,13 @@ class BaseTest(unittest.TestCase):
         iter_x = iter(t)
         del iter_x
 
+    def test_gh150146(self):
+        # It used to crash:
+        for container in [list, tuple]:
+            with self.subTest(container=container):
+                x = container[TypeVar("")]
+                with self.assertRaises(TypeError):
+                    x[*typing.Mapping[..., ...]]
 
 class TypeIterationTests(unittest.TestCase):
     _UNITERABLE_TYPES = (list, tuple)
