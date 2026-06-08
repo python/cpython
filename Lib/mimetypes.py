@@ -172,8 +172,14 @@ class MimeTypes:
 
     def _guess_file_type(self, path, strict, splitext):
         base, ext = splitext(path)
-        while (ext_lower := ext.lower()) in self.suffix_map:
-            base, ext = splitext(base + self.suffix_map[ext_lower])
+        while True:
+            if ext in self.suffix_map:
+                suffix = self.suffix_map[ext]
+            elif (ext_lower := ext.lower()) in self.suffix_map:
+                suffix = self.suffix_map[ext_lower]
+            else:
+                break
+            base, ext = splitext(base + suffix)
         # encodings_map is case sensitive
         if ext in self.encodings_map:
             encoding = self.encodings_map[ext]
