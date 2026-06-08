@@ -39,8 +39,8 @@ the information :func:`init` sets up.
    (e.g. :program:`compress` or :program:`gzip`). The encoding is suitable for use
    as a :mailheader:`Content-Encoding` header, **not** as a
    :mailheader:`Content-Transfer-Encoding` header. The mappings are table driven.
-   Encoding suffixes are case sensitive; type suffixes are first tried case
-   sensitively, then case insensitively.
+   Encoding suffixes are case sensitive. Suffix mappings and type suffixes are
+   first tried case sensitively, then case insensitively.
 
    The optional *strict* argument is a flag specifying whether the list of known MIME types
    is limited to only the official types `registered with IANA
