@@ -247,8 +247,9 @@ Feature slots
    If ``Py_mod_multiple_interpreters`` is not specified, the import
    machinery defaults to ``Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED``.
 
-   A suitable slot value can be defined using the :c:macro:`PySlot_DATA` macro,
-   as in:
+   For historical reasons, the values are declared as pointers (``void *``).
+   When using :c:type:`PySlot` arrays, use :c:macro:`PySlot_DATA` for
+   :c:macro:`!Py_mod_multiple_interpreters`:
 
    .. code-block:: c
 
@@ -280,8 +281,9 @@ Feature slots
    If ``Py_mod_gil`` is not specified, the import machinery defaults to
    ``Py_MOD_GIL_USED``.
 
-   A suitable slot value can be defined using the :c:macro:`PySlot_DATA` macro,
-   as in:
+   For historical reasons, the values are declared as pointers (``void *``).
+   When using :c:type:`PySlot` arrays, use :c:macro:`PySlot_DATA` for
+   :c:macro:`!Py_mod_gil`:
 
    .. code-block:: c
 
