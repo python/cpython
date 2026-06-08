@@ -2255,7 +2255,7 @@ then
      -reorder-blocks=ext-tsp
      -reorder-functions=cdsort
      -split-functions
-     -icf=1
+     -icf=0
      -inline-all
      -split-eh
      -reorder-functions-use-hot-size
@@ -6367,6 +6367,8 @@ AC_CHECK_FUNCS(
   [],
   [AC_MSG_ERROR([Python requires C99 compatible libm])]
 )
+
+AC_CHECK_FUNCS_ONCE(acospi asinpi atanpi atan2pi cospi sinpi tanpi)
 LIBS=$LIBS_SAVE
 
 dnl For multiprocessing module, check that sem_open
