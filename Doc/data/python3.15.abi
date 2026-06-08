@@ -26840,7 +26840,6 @@
       <underlying-type type-id='type-id-45'/>
       <enumerator name='PyImport_LAZY_NORMAL' value='0'/>
       <enumerator name='PyImport_LAZY_ALL' value='1'/>
-      <enumerator name='PyImport_LAZY_NONE' value='2'/>
     </enum-decl>
     <typedef-decl name='PyImport_LazyImportsMode' type-id='type-id-1652' filepath='./Include/import.h' line='95' column='1' id='type-id-1651'/>
     <typedef-decl name='conversion_func' type-id='type-id-1456' filepath='./Include/internal/pycore_ceval.h' line='282' column='1' id='type-id-1653'/>

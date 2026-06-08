@@ -2845,7 +2845,6 @@ Sets the global lazy imports mode.
 
 The mode parameter must be one of the following strings:
 - "all": All top-level imports become potentially lazy
-- "none": All lazy imports are suppressed (even explicitly marked ones)
 - "normal": Only explicitly marked imports (with 'lazy' keyword) are
   lazy
 
@@ -2856,12 +2855,12 @@ provided to sys.set_lazy_imports_filter
 
 static PyObject *
 sys_set_lazy_imports_impl(PyObject *module, PyObject *mode)
-/*[clinic end generated code: output=1ff34ba6c4feaf73 input=cb6df28a51844a31]*/
+/*[clinic end generated code: output=1ff34ba6c4feaf73 input=db3242f0ff6e5dcc]*/
 {
     PyImport_LazyImportsMode lazy_mode;
     if (!PyUnicode_Check(mode)) {
         PyErr_SetString(PyExc_TypeError,
-                        "mode must be a string: 'normal', 'all', or 'none'");
+                        "mode must be a string: 'normal' or 'all'");
         return NULL;
     }
     if (PyUnicode_CompareWithASCIIString(mode, "normal") == 0) {
@@ -2870,12 +2869,9 @@ sys_set_lazy_imports_impl(PyObject *module, PyObject *mode)
     else if (PyUnicode_CompareWithASCIIString(mode, "all") == 0) {
         lazy_mode = PyImport_LAZY_ALL;
     }
-    else if (PyUnicode_CompareWithASCIIString(mode, "none") == 0) {
-        lazy_mode = PyImport_LAZY_NONE;
-    }
     else {
         PyErr_SetString(PyExc_ValueError,
-                        "mode must be 'normal', 'all', or 'none'");
+                        "mode must be 'normal' or 'all'");
         return NULL;
     }
 
@@ -2891,22 +2887,19 @@ sys.get_lazy_imports
 Gets the global lazy imports mode.
 
 Returns "all" if all top level imports are potentially lazy.
-Returns "none" if all explicitly marked lazy imports are suppressed.
 Returns "normal" if only explicitly marked imports are lazy.
 
 [clinic start generated code]*/
 
 static PyObject *
 sys_get_lazy_imports_impl(PyObject *module)
-/*[clinic end generated code: output=4147dec48c51ae99 input=8cb574f1e4e3003c]*/
+/*[clinic end generated code: output=4147dec48c51ae99 input=6f8dd4f2c82893f2]*/
 {
     switch (PyImport_GetLazyImportsMode()) {
         case PyImport_LAZY_NORMAL:
             return PyUnicode_FromString("normal");
         case PyImport_LAZY_ALL:
             return PyUnicode_FromString("all");
-        case PyImport_LAZY_NONE:
-            return PyUnicode_FromString("none");
         default:
             PyErr_SetString(PyExc_RuntimeError, "unknown lazy imports mode");
             return NULL;
