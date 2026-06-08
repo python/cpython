@@ -167,18 +167,23 @@ _get_current_state(PyObject **p_mod)
     PyObject *mod = get_current_module(interp);
     if (mod == NULL) {
         if (PyErr_Occurred()) {
-            return NULL;
+            goto error;
         }
         /* The static types can outlive the module,
          * so we must re-import the module. */
         mod = PyImport_ImportModule("_datetime");
         if (mod == NULL) {
-            return NULL;
+            goto error;
         }
     }
     datetime_state *st = get_module_state(mod);
     *p_mod = mod;
     return st;
+
+error:
+    assert(PyErr_Occurred());
+    *p_mod = NULL;
+    return NULL;
 }
 
 #define GET_CURRENT_STATE(MOD_VAR)  \
@@ -2130,10 +2135,9 @@ delta_to_microseconds(PyDateTime_Delta *self)
     PyObject *x3 = NULL;
     PyObject *result = NULL;
 
-    PyObject *current_mod = NULL;
+    PyObject *current_mod;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
     if (st == NULL) {
-        assert(current_mod == NULL);
         return NULL;
     }
 
@@ -2213,10 +2217,9 @@ microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
     PyObject *num = NULL;
     PyObject *result = NULL;
 
-    PyObject *current_mod = NULL;
+    PyObject *current_mod;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
     if (st == NULL) {
-        assert(current_mod == NULL);
         return NULL;
     }
 
@@ -2825,10 +2828,9 @@ delta_new_impl(PyTypeObject *type, PyObject *days, PyObject *seconds,
 {
     PyObject *self = NULL;
 
-    PyObject *current_mod = NULL;
+    PyObject *current_mod;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
     if (st == NULL) {
-        assert(current_mod == NULL);
         return NULL;
     }
 
@@ -3028,10 +3030,9 @@ delta_total_seconds(PyObject *op, PyObject *Py_UNUSED(dummy))
     if (total_microseconds == NULL)
         return NULL;
 
-    PyObject *current_mod = NULL;
+    PyObject *current_mod;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
     if (st == NULL) {
-        assert(current_mod == NULL);
         Py_DECREF(total_microseconds);
         return NULL;
     }
@@ -3886,10 +3887,9 @@ date_isocalendar(PyObject *self, PyObject *Py_UNUSED(dummy))
         week = 0;
     }
 
-    PyObject *current_mod = NULL;
+    PyObject *current_mod;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
     if (st == NULL) {
-        assert(current_mod == NULL);
         return NULL;
     }
 
@@ -6823,10 +6823,9 @@ local_timezone(PyDateTime_DateTime *utc_time)
     PyObject *one_second;
     PyObject *seconds;
 
-    PyObject *current_mod = NULL;
+    PyObject *current_mod;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
     if (st == NULL) {
-        assert(current_mod == NULL);
         return NULL;
     }
 
@@ -7074,10 +7073,9 @@ datetime_timestamp(PyObject *op, PyObject *Py_UNUSED(dummy))
     PyObject *result;
 
     if (HASTZINFO(self) && self->tzinfo != Py_None) {
-        PyObject *current_mod = NULL;
+        PyObject *current_mod;
         datetime_state *st = GET_CURRENT_STATE(current_mod);
         if (st == NULL) {
-            assert(current_mod == NULL);
             return NULL;
         }
 
