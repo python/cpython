@@ -7,7 +7,7 @@ import tokenize
 
 from tkinter import filedialog
 from tkinter import messagebox
-from tkinter.simpledialog import askstring
+from tkinter.simpledialog import askstring  # loadfile encoding.
 
 from idlelib.config import idleConf
 from idlelib.util import py_extensions
@@ -61,6 +61,7 @@ class IOBinding:
         self.filename_change_hook = hook
 
     filename = None
+    file_timestamp = None
     dirname = None
 
     def set_filename(self, filename):
@@ -127,6 +128,7 @@ class IOBinding:
                     chars = f.read()
                     fileencoding = f.encoding
                     eol_convention = f.newlines
+                    file_timestamp = self.getmtime(filename)
                     converted = False
             except (UnicodeDecodeError, SyntaxError):
                 # Wait for the editor window to appear
@@ -142,6 +144,7 @@ class IOBinding:
                     chars = f.read()
                     fileencoding = f.encoding
                     eol_convention = f.newlines
+                    file_timestamp = self.getmtime(filename)
                     converted = True
         except OSError as err:
             messagebox.showerror("I/O Error", str(err), parent=self.text)
@@ -170,6 +173,7 @@ class IOBinding:
         self.text.insert("1.0", chars)
         self.reset_undo()
         self.set_filename(filename)
+        self.file_timestamp = file_timestamp
         if converted:
             # We need to save the conversion results first
             # before being able to execute the code
@@ -180,24 +184,25 @@ class IOBinding:
         return True
 
     def maybesave(self):
+        """Return 'yes', 'no', 'cancel' as appropriate.
+
+        Tkinter messagebox.askyesnocancel converts these tk responses
+        to True, False, None.  Convert back, as now expected elsewhere.
+        """
         if self.get_saved():
             return "yes"
-        message = "Do you want to save %s before closing?" % (
-            self.filename or "this untitled document")
+        message = ("Do you want to save "
+                   f"{self.filename or 'this untitled document'}"
+                   " before closing?")
         confirm = messagebox.askyesnocancel(
                   title="Save On Close",
                   message=message,
                   default=messagebox.YES,
                   parent=self.text)
         if confirm:
-            reply = "yes"
             self.save(None)
-            if not self.get_saved():
-                reply = "cancel"
-        elif confirm is None:
-            reply = "cancel"
-        else:
-            reply = "no"
+            reply = "yes" if self.get_saved() else "cancel"
+        else:  reply = "cancel" if confirm is None else "no"
         self.text.focus_set()
         return reply
 
@@ -205,7 +210,26 @@ class IOBinding:
         if not self.filename:
             self.save_as(event)
         else:
+            # Check the time of most recent content modification so the
+            # user doesn't accidentally overwrite a newer version of the file.
+            try:
+                file_timestamp = self.getmtime(self.filename)
+            except OSError:
+                pass
+            else:
+                if self.file_timestamp != file_timestamp:
+                    confirm = messagebox.askokcancel(
+                        title="File has changed",
+                        message=(
+                            "The file has changed on disk since reading it!\n\n"
+                            "Do you really want to overwrite it?"),
+                        default=messagebox.CANCEL,
+                        parent=self.text)
+                    if not confirm:
+                        return "break"
+
             if self.writefile(self.filename):
+                self.file_timestamp = self.getmtime(self.filename)
                 self.set_saved(True)
                 try:
                     self.editwin.store_file_breaks()
@@ -218,6 +242,7 @@ class IOBinding:
         filename = self.asksavefile()
         if filename:
             if self.writefile(filename):
+                self.file_timestamp = self.getmtime(filename)
                 self.set_filename(filename)
                 self.set_saved(1)
                 try:
@@ -249,6 +274,9 @@ class IOBinding:
             messagebox.showerror("I/O Error", str(msg),
                                    parent=self.text)
             return False
+
+    def getmtime(self, filename):
+        return os.stat(filename).st_mtime
 
     def fixnewlines(self):
         """Return text with os eols.
@@ -393,13 +421,15 @@ class IOBinding:
         if self.editwin.flist:
             self.editwin.update_recent_files_list(filename)
 
+
 def _io_binding(parent):  # htest #
     from tkinter import Toplevel, Text
 
-    root = Toplevel(parent)
-    root.title("Test IOBinding")
+    top = Toplevel(parent)
+    top.title("Test IOBinding")
     x, y = map(int, parent.geometry().split('+')[1:])
-    root.geometry("+%d+%d" % (x, y + 175))
+    top.geometry("+%d+%d" % (x, y + 175))
+
     class MyEditWin:
         def __init__(self, text):
             self.text = text
@@ -423,11 +453,12 @@ def _io_binding(parent):  # htest #
         def savecopy(self, event):
             self.text.event_generate("<<save-copy-of-window-as-file>>")
 
-    text = Text(root)
+    text = Text(top)
     text.pack()
     text.focus_set()
     editwin = MyEditWin(text)
     IOBinding(editwin)
+
 
 if __name__ == "__main__":
     from unittest import main

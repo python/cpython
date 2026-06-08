@@ -1,2 +1,0 @@
-Ensure that the ``line`` attribute in :class:`tokenize.TokenInfo` objects in
-the :mod:`tokenize` module are always correct. Patch by Pablo Galindo

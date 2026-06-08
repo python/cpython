@@ -1,11 +1,8 @@
-:mod:`py_compile` --- Compile Python source files
-=================================================
+:mod:`!py_compile` --- Compile Python source files
+==================================================
 
 .. module:: py_compile
    :synopsis: Generate byte-code files from Python source files.
-
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-.. documentation based on module docstrings
 
 **Source code:** :source:`Lib/py_compile.py`
 
@@ -13,7 +10,7 @@
 
 --------------
 
-The :mod:`py_compile` module provides a function to generate a byte-code file
+The :mod:`!py_compile` module provides a function to generate a byte-code file
 from a source file, and another function used when the module source file is
 invoked as a script.
 
@@ -96,7 +93,7 @@ byte-code cache files in the directory containing the source code.
 
 .. class:: PycInvalidationMode
 
-   A enumeration of possible methods the interpreter can use to determine
+   An enumeration of possible methods the interpreter can use to determine
    whether a bytecode file is up to date with a source file. The ``.pyc`` file
    indicates the desired invalidation mode in its header. See
    :ref:`pyc-invalidation` for more information on how Python invalidates
@@ -125,6 +122,7 @@ byte-code cache files in the directory containing the source code.
       This option is useful when the ``.pycs`` are kept up to date by some
       system external to Python like a build system.
 
+.. _py_compile-cli:
 
 Command-Line Interface
 ----------------------
@@ -138,13 +136,13 @@ not be compiled.
 
 .. program:: python -m py_compile
 
-.. cmdoption:: <file> ... <fileN>
-               -
+.. option:: <file> ... <fileN>
+            -
 
    Positional arguments are files to compile.  If ``-`` is the only
    parameter, the list of files is taken from standard input.
 
-.. cmdoption:: -q, --quiet
+.. option:: -q, --quiet
 
    Suppress errors output.
 

@@ -1,4 +1,3 @@
-#! /usr/bin/env python3
 #
 # Class for profiling python code. rev 1.0  6/2/94
 #
@@ -29,8 +28,17 @@ import io
 import sys
 import time
 import marshal
+import warnings
 
 __all__ = ["run", "runctx", "Profile"]
+
+# Emit deprecation warning as per PEP 799
+warnings.warn(
+    "The profile module is deprecated and will be removed in Python 3.17. "
+    "Use profiling.tracing (or cProfile) for tracing profilers instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 # Sample timer for use with
 #i_count = 0
@@ -387,8 +395,9 @@ class Profile:
 
     def print_stats(self, sort=-1):
         import pstats
-        pstats.Stats(self).strip_dirs().sort_stats(sort). \
-                  print_stats()
+        if not isinstance(sort, tuple):
+            sort = (sort,)
+        pstats.Stats(self).strip_dirs().sort_stats(*sort).print_stats()
 
     def dump_stats(self, file):
         with open(file, 'wb') as f:
@@ -598,7 +607,6 @@ def main():
                 '__file__': spec.origin,
                 '__name__': spec.name,
                 '__package__': None,
-                '__cached__': None,
             }
         try:
             runctx(code, globs, None, options.outfile, options.sort)

@@ -13,6 +13,7 @@ __all__ = [
     "CHECK_ID_MAX", "CHECK_UNKNOWN",
     "FILTER_LZMA1", "FILTER_LZMA2", "FILTER_DELTA", "FILTER_X86", "FILTER_IA64",
     "FILTER_ARM", "FILTER_ARMTHUMB", "FILTER_POWERPC", "FILTER_SPARC",
+    "FILTER_ARM64", "FILTER_RISCV",
     "FORMAT_AUTO", "FORMAT_XZ", "FORMAT_ALONE", "FORMAT_RAW",
     "MF_HC3", "MF_HC4", "MF_BT2", "MF_BT3", "MF_BT4",
     "MODE_FAST", "MODE_NORMAL", "PRESET_DEFAULT", "PRESET_EXTREME",
@@ -24,18 +25,18 @@ __all__ = [
 import builtins
 import io
 import os
+from compression._common import _streams
 from _lzma import *
-from _lzma import _encode_filter_properties, _decode_filter_properties
-import _compression
+from _lzma import _encode_filter_properties, _decode_filter_properties  # noqa: F401
 
 
-_MODE_CLOSED   = 0
+# Value 0 no longer used
 _MODE_READ     = 1
 # Value 2 no longer used
 _MODE_WRITE    = 3
 
 
-class LZMAFile(_compression.BaseStream):
+class LZMAFile(_streams.BaseStream):
 
     """A file object providing transparent LZMA (de)compression.
 
@@ -92,7 +93,7 @@ class LZMAFile(_compression.BaseStream):
         """
         self._fp = None
         self._closefp = False
-        self._mode = _MODE_CLOSED
+        self._mode = None
 
         if mode in ("r", "rb"):
             if check != -1:
@@ -127,7 +128,7 @@ class LZMAFile(_compression.BaseStream):
             raise TypeError("filename must be a str, bytes, file or PathLike object")
 
         if self._mode == _MODE_READ:
-            raw = _compression.DecompressReader(self._fp, LZMADecompressor,
+            raw = _streams.DecompressReader(self._fp, LZMADecompressor,
                 trailing_error=LZMAError, format=format, filters=filters)
             self._buffer = io.BufferedReader(raw)
 
@@ -137,7 +138,7 @@ class LZMAFile(_compression.BaseStream):
         May be called more than once without error. Once the file is
         closed, any other operation on it will raise a ValueError.
         """
-        if self._mode == _MODE_CLOSED:
+        if self.closed:
             return
         try:
             if self._mode == _MODE_READ:
@@ -153,12 +154,20 @@ class LZMAFile(_compression.BaseStream):
             finally:
                 self._fp = None
                 self._closefp = False
-                self._mode = _MODE_CLOSED
 
     @property
     def closed(self):
         """True if this file is closed."""
-        return self._mode == _MODE_CLOSED
+        return self._fp is None
+
+    @property
+    def name(self):
+        self._check_not_closed()
+        return self._fp.name
+
+    @property
+    def mode(self):
+        return 'wb' if self._mode == _MODE_WRITE else 'rb'
 
     def fileno(self):
         """Return the file descriptor for the underlying file."""

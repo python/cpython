@@ -1,1 +1,0 @@
-Fix a regression introduced in GH-101251 for 3.12, causing :meth:`gzip.GzipFile.flush` to not flush the compressor (nor pass along the ``zip_mode`` argument).

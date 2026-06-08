@@ -20,6 +20,10 @@ typedef struct {
 
 typedef propertyobject _PyPropertyObject;
 
+extern PyTypeObject _PyMethodWrapper_Type;
+
+extern void *_PyMember_GetOffset(PyObject *, PyMemberDef *);
+
 #ifdef __cplusplus
 }
 #endif

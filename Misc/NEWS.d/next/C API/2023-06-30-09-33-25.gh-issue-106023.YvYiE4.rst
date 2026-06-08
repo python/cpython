@@ -1,2 +1,0 @@
-Remove private ``_PyObject_FastCall()`` function: use ``PyObject_Vectorcall()``
-which is available since Python 3.8 (:pep:`590`). Patch by Victor Stinner.

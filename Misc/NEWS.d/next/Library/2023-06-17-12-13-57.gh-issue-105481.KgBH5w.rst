@@ -1,4 +1,0 @@
-:func:`~dis.stack_effect` no longer raises an exception if an ``oparg`` is
-provided for an ``opcode`` that doesn't use its arg, or when it is not
-provided for an ``opcode`` that does use it. In the latter case, the stack
-effect is returned for ``oparg=0``.
