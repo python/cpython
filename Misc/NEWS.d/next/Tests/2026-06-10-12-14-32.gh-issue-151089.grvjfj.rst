@@ -1,0 +1,3 @@
+Fix the mocking in test_ctypes/test_find.py:test_find_library_with_gcc() where
+it will call ld if gcc isn't found, and skip the tests if ld or gcc isn't
+available.
