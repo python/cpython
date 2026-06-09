@@ -97,6 +97,7 @@
     <ClCompile Include="..\Modules\_testinternalcapi\pytime.c" />
     <ClCompile Include="..\Modules\_testinternalcapi\test_critical_sections.c" />
     <ClCompile Include="..\Modules\_testinternalcapi\test_lock.c" />
+    <ClCompile Include="..\Modules\_testinternalcapi\test_ptr_wise_memmove.c" />
     <ClCompile Include="..\Modules\_testinternalcapi\set.c" />
     <ClCompile Include="..\Modules\_testinternalcapi\complex.c" />
     <ClCompile Include="..\Modules\_testinternalcapi\interpreter.c" />

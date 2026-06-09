@@ -18,6 +18,7 @@
 #include "Python.h"
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_dict.h"          // _PyDict_CopyAsDict()
+#include "pycore_object.h"        // _Py_ptr_wise_atomic_memmove()
 #include "pycore_pyhash.h"        // _Py_HashSecret
 #include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
@@ -1863,34 +1864,6 @@ element_subscr(PyObject *op, PyObject *item)
     }
 }
 
-// Pointer-by-pointer memmove for PyObject** arrays that is safe
-// for shared ElementObjects in Py_GIL_DISABLED builds.
-static void
-ptr_wise_atomic_memmove(ElementObject *a, PyObject **dest, PyObject **src, Py_ssize_t n)
-{
-#ifndef Py_GIL_DISABLED
-    memmove(dest, src, n * sizeof(PyObject *));
-#else
-    // XXX: maybe a critical section isn't needed for ElementObject?
-    // _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(a);
-    if (_Py_IsOwnedByCurrentThread((PyObject *)a) && !_PyObject_GC_IS_SHARED(a)) {
-        // No other threads can read this list concurrently
-        memmove(dest, src, n * sizeof(PyObject *));
-        return;
-    }
-    if (dest < src) {
-        for (Py_ssize_t i = 0; i != n; i++) {
-            _Py_atomic_store_ptr_release(&dest[i], src[i]);
-        }
-    }
-    else {
-        // copy backwards to avoid overwriting src before it's read
-        for (Py_ssize_t i = n; i != 0; i--) {
-            _Py_atomic_store_ptr_release(&dest[i - 1], src[i - 1]);
-        }
-    }
-#endif
-}
 
 static int
 element_ass_subscr(PyObject *op, PyObject *item, PyObject *value)
@@ -1967,8 +1940,8 @@ element_ass_subscr(PyObject *op, PyObject *item, PyObject *value)
 
                 PyList_SET_ITEM(recycle, i, self->extra->children[cur]);
 
-                ptr_wise_atomic_memmove(
-                    self,
+                _Py_ptr_wise_atomic_memmove(
+                    (PyObject *)self,
                     self->extra->children + cur - i,
                     self->extra->children + cur + 1,
                     num_moved);
@@ -1977,8 +1950,8 @@ element_ass_subscr(PyObject *op, PyObject *item, PyObject *value)
             /* Leftover "tail" after the last removed child */
             cur = start + (size_t)slicelen * step;
             if (cur < (size_t)self->extra->length) {
-                ptr_wise_atomic_memmove(
-                    self,
+                _Py_ptr_wise_atomic_memmove(
+                    (PyObject *)self,
                     self->extra->children + cur - slicelen,
                     self->extra->children + cur,
                     self->extra->length - cur);
