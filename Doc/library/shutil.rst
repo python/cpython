@@ -381,10 +381,14 @@ Directory and files operations
    If *dst* already exists but is not a directory, it may be overwritten
    depending on :func:`os.rename` semantics.
 
-   If the destination is on the current filesystem, then :func:`os.rename` is
-   used. Otherwise, *src* is copied to the destination using *copy_function*
-   and then removed.  In case of symlinks, a new symlink pointing to the target
-   of *src* will be created as the destination and *src* will be removed.
+   :func:`os.rename` is preferably used internally when *src* and the destination are on
+   the same filesystem. In case :func:`os.rename` fails due to :exc:`OSError`
+   (e.g. the user has write permission to the destination file but not to its parent
+   directory), this method falls back to using *copy_function*, in which case
+   *src* is copied to the destination using *copy_function* and then removed.
+
+   In case of symlinks, a new symlink pointing to the target of *src* will be
+   created in or as the destination, and *src* will be removed.
 
    If *copy_function* is given, it must be a callable that takes two arguments,
    *src* and the destination, and will be used to copy *src* to the destination
