@@ -1,0 +1,3 @@
+Fix serialization of :mod:`email` messages using ``shift_jis`` or ``euc-jp``
+charsets.  Converting surrogate-escaped payloads to the required
+``iso-2022-jp`` output charset no longer raises :exc:`UnicodeEncodeError`.

@@ -355,6 +355,38 @@ class TestRawDataManager(TestEmailBase):
         self.assertEqual(m.get_payload(decode=True).decode('ks_c_5601-1987'), content)
         self.assertEqual(m.get_content(), content)
 
+    def test_set_text_charset_shift_jis(self):
+        m = self._make_message()
+        content = "\u65e5\u672c\u8a9e\n"
+        raw_data_manager.set_content(m, content, charset='shift_jis')
+        self.assertEqual(m['Content-Type'], 'text/plain; charset="shift_jis"')
+        self.assertEqual(m['Content-Transfer-Encoding'], '8bit')
+        self.assertEqual(m.get_payload(decode=True), content.encode('shift_jis'))
+        self.assertEqual(m.get_content(), content)
+        # Serialization converts the payload to iso-2022-jp for output.
+        self.assertEqual(str(m), textwrap.dedent("""\
+            Content-Type: text/plain; charset="iso-2022-jp"
+            Content-Transfer-Encoding: 7bit
+
+            \x1b$BF|K\\8l\x1b(B
+            """))
+
+    def test_set_text_charset_euc_jp(self):
+        m = self._make_message()
+        content = "\u65e5\u672c\u8a9e\n"
+        raw_data_manager.set_content(m, content, charset='euc-jp')
+        self.assertEqual(m['Content-Type'], 'text/plain; charset="euc-jp"')
+        self.assertEqual(m['Content-Transfer-Encoding'], '8bit')
+        self.assertEqual(m.get_payload(decode=True), content.encode('euc-jp'))
+        self.assertEqual(m.get_content(), content)
+        # Serialization converts the payload to iso-2022-jp for output.
+        self.assertEqual(str(m), textwrap.dedent("""\
+            Content-Type: text/plain; charset="iso-2022-jp"
+            Content-Transfer-Encoding: 7bit
+
+            \x1b$BF|K\\8l\x1b(B
+            """))
+
     def test_set_text_plain_long_line_heuristics(self):
         m = self._make_message()
         content = ("Simple but long message that is over 78 characters"
