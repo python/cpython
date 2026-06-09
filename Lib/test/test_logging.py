@@ -6652,8 +6652,8 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
                     print(tf.read())
         self.assertTrue(found, msg=msg)
 
-    @unittest.skipUnless(support.has_st_birthtime,
-        "st_birthtime not available or supported by Python on this OS")
+    @unittest.skipUnless(hasattr(os.stat_result, 'st_birthtime') or hasattr(os, 'statx'),
+        "st_birthtime and statx() not available or supported by Python on this OS")
     @support.requires_resource('walltime')
     def test_rollover_based_on_st_birthtime_only(self):
         def add_record(message: str) -> None:
