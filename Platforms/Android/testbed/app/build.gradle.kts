@@ -179,22 +179,6 @@ android {
                     systemImageSource = "aosp_atd"
                 }
             }
-
-            afterEvaluate {
-                (localDevices.names + listOf("connected")).forEach { deviceName ->
-                    val copyOutputTask = createCopyOutputTask(deviceName)
-                    tasks.named("${deviceName}DebugAndroidTest") {
-                        // If the previous test run succeeded and nothing has changed,
-                        // Gradle thinks there's no need to run it again. Override that.
-                        outputs.upToDateWhen { false }
-
-                        // If python.outputDir is set, copy all files that are pulled
-                        // from the emulator to the host by the UTP to the given output
-                        // directory on the host.
-                        copyOutputTask?.let { finalizedBy(it) }
-                    }
-                }
-            }
         }
     }
 }
@@ -230,6 +214,20 @@ afterEvaluate {
         }
         tasks.named("${device.name}Setup") {
             dependsOn(createTask)
+        }
+    }
+
+    for (deviceName in android.testOptions.managedDevices.localDevices.names + listOf("connected")) {
+        val copyOutputTask = createCopyOutputTask(deviceName)
+        tasks.named("${deviceName}DebugAndroidTest") {
+            // If the previous test run succeeded and nothing has changed,
+            // Gradle thinks there's no need to run it again. Override that.
+            outputs.upToDateWhen { false }
+
+            // If python.outputDir is set, copy all files that are pulled
+            // from the emulator to the host by the UTP to the given output
+            // directory on the host.
+            copyOutputTask?.let { finalizedBy(it) }
         }
     }
 }
