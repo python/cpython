@@ -1485,7 +1485,7 @@ class TracebackException:
             # Limit the number of possible matches to try
             max_matches = 3
             matches = []
-            
+
             hint = _get_cross_language_keyword_hint(wrong_name)
             if hint:
                 matches.append(hint)
