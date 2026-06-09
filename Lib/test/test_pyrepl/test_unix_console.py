@@ -2,19 +2,17 @@ import errno
 import itertools
 import os
 import signal
-import subprocess
 import sys
 import threading
 import unittest
 from functools import partial
-from test import support
-from test.support import os_helper, force_not_colorized_test_class
-from test.support import script_helper, threading_helper
+from test.support import force_color, os_helper, force_not_colorized_test_class
+from test.support import threading_helper
 
 from unittest import TestCase
 from unittest.mock import MagicMock, call, patch, ANY, Mock
 
-from .support import handle_all_events, code_to_events
+from .support import handle_all_events, code_to_events, more_lines
 
 try:
     from _pyrepl.console import Event
@@ -102,6 +100,46 @@ handle_events_unix_console_height_3 = partial(
 @patch("os.write")
 @force_not_colorized_test_class
 class TestConsole(TestCase):
+    @staticmethod
+    def _prepare_reader_with_prompts(console, **kwargs):
+        from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
+
+        config = ReadlineConfig(
+            readline_completer=kwargs.pop("readline_completer", None)
+        )
+        reader = ReadlineAlikeReader(console=console, config=config)
+        reader.paste_mode = False
+        for key, val in kwargs.items():
+            setattr(reader, key, val)
+        return reader
+
+    def test_colorized_multiline_typing_does_not_redraw_previous_line(self, _os_write):
+        def prepare_reader_with_prompts(console, **kwargs):
+            reader = self._prepare_reader_with_prompts(console, **kwargs)
+            reader.more_lines = partial(more_lines, namespace=None)
+            return reader
+
+        with force_color(True):
+            events = itertools.chain(
+                code_to_events("def foo():"),
+                [Event(evt="key", data="\n", raw=bytearray(b"\n"))],
+                code_to_events("x = 1"),
+                [Event(evt="key", data="\n", raw=bytearray(b"\n"))],
+                code_to_events("y"),
+            )
+            _, con = handle_all_events(
+                events,
+                prepare_console=unix_console,
+                prepare_reader=prepare_reader_with_prompts,
+            )
+            con.restore()
+
+        self.assertNotIn(
+            call(ANY, b" \x1b[0m    x \x1b[0m=\x1b[0m "),
+            _os_write.mock_calls,
+        )
+        self.assertIn(call(ANY, b"y"), _os_write.mock_calls)
+
     def test_no_newline(self, _os_write):
         code = "1"
         events = code_to_events(code)
@@ -252,8 +290,7 @@ class TestConsole(TestCase):
         events = itertools.chain(code_to_events(code))
         reader, console = handle_events_short_unix_console(events)
 
-        console.height = 2
-        console.getheightwidth = MagicMock(lambda _: (2, 80))
+        console.getheightwidth = MagicMock(side_effect=lambda: (2, 80))
 
         def same_reader(_):
             return reader
@@ -288,8 +325,7 @@ class TestConsole(TestCase):
         events = itertools.chain(code_to_events(code))
         reader, console = handle_events_unix_console_height_3(events)
 
-        console.height = 1
-        console.getheightwidth = MagicMock(lambda _: (1, 80))
+        console.getheightwidth = MagicMock(side_effect=lambda: (1, 80))
 
         def same_reader(_):
             return reader
@@ -369,34 +405,3 @@ class TestUnixConsoleEIOHandling(TestCase):
 
         # EIO error should be handled gracefully in restore()
         console.restore()
-
-    @unittest.skipUnless(sys.platform == "linux", "Only valid on Linux")
-    def test_repl_eio(self):
-        # Use the pty-based approach to simulate EIO error
-        script_path = os.path.join(os.path.dirname(__file__), "eio_test_script.py")
-
-        proc = script_helper.spawn_python(
-            "-S", script_path,
-            stderr=subprocess.PIPE,
-            text=True
-        )
-
-        ready_line = proc.stdout.readline().strip()
-        if ready_line != "READY" or proc.poll() is not None:
-            self.fail("Child process failed to start properly")
-
-        os.kill(proc.pid, signal.SIGUSR1)
-        # sleep for pty to settle
-        _, err = proc.communicate(timeout=support.LONG_TIMEOUT)
-        self.assertEqual(
-            proc.returncode,
-            1,
-            f"Expected EIO/ENXIO error, got return code {proc.returncode}",
-        )
-        self.assertTrue(
-            (
-                "Got EIO:" in err
-                or "Got ENXIO:" in err
-            ),
-            f"Expected EIO/ENXIO error message in stderr: {err}",
-        )

@@ -4,8 +4,6 @@
 .. module:: test
    :synopsis: Regression tests package containing the testing suite for Python.
 
-.. sectionauthor:: Brett Cannon <brett@python.org>
-
 .. note::
    The :mod:`!test` package is meant for internal use by Python only. It is
    documented for the benefit of the core developers of Python. Any use of
@@ -720,7 +718,7 @@ The :mod:`!test.support` module defines the following functions:
 .. decorator:: anticipate_failure(condition)
 
    A decorator to conditionally mark tests with
-   :func:`unittest.expectedFailure`. Any use of this decorator should
+   :deco:`unittest.expectedFailure`. Any use of this decorator should
    have an associated comment identifying the relevant tracker issue.
 
 

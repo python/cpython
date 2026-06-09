@@ -4,9 +4,6 @@
 .. module:: logging.handlers
    :synopsis: Handlers for the logging module.
 
-.. moduleauthor:: Vinay Sajip <vinay_sajip@red-dove.com>
-.. sectionauthor:: Vinay Sajip <vinay_sajip@red-dove.com>
-
 **Source code:** :source:`Lib/logging/handlers.py`
 
 .. sidebar:: Important
@@ -405,7 +402,8 @@ timed intervals.
    rollover interval.
 
    When computing the next rollover time for the first time (when the handler
-   is created), the last modification time of an existing log file, or else
+   is created), the creation time (if supported by the OS and file system)
+   or the last modification of an existing log file, or else
    the current time, is used to compute when the next rotation will occur.
 
    If the *utc* argument is true, times in UTC will be used; otherwise
@@ -451,6 +449,10 @@ timed intervals.
 
    .. versionchanged:: 3.9
       The *errors* parameter was added.
+
+   .. versionchanged:: next
+      Use the creation time instead of the last modification time, if supported by the OS and file system.
+
 
    .. method:: doRollover()
 

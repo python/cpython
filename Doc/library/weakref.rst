@@ -6,11 +6,6 @@
 .. module:: weakref
    :synopsis: Support for weak references and weak dictionaries.
 
-.. moduleauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-.. moduleauthor:: Neil Schemenauer <nas@arctrix.com>
-.. moduleauthor:: Martin von Löwis <martin@loewis.home.cs.tu-berlin.de>
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
 **Source code:** :source:`Lib/weakref.py`
 
 --------------
@@ -124,6 +119,9 @@ See :ref:`__slots__ documentation <slots>` for details.
    the references are equal only if the reference objects are the same object.
 
    This is a subclassable type rather than a factory function.
+
+   Weak references are :ref:`generic <generics>` over the type of the object they
+   reference.
 
    .. attribute:: __callback__
 
@@ -329,17 +327,17 @@ same issues as the :meth:`WeakKeyDictionary.keyrefs` method.
    .. versionadded:: 3.4
 
 
-.. data:: ReferenceType
+.. class:: ReferenceType
 
    The type object for weak references objects.
 
 
-.. data:: ProxyType
+.. class:: ProxyType
 
    The type object for proxies of objects which are not callable.
 
 
-.. data:: CallableProxyType
+.. class:: CallableProxyType
 
    The type object for proxies of callable objects.
 

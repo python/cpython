@@ -702,9 +702,9 @@ class EnumType(type):
         """
         Either returns an existing member, or creates a new enum class.
 
-        This method is used both when an enum class is given a value to match
-        to an enumeration member (i.e. Color(3)) and for the functional API
-        (i.e. Color = Enum('Color', names='RED GREEN BLUE')).
+        This method is used both when an enum class is given a value to
+        match to an enumeration member (i.e. Color(3)) and for the
+        functional API (i.e. Color = Enum('Color', names='RED GREEN BLUE')).
 
         The value lookup branch is chosen if the enum is final.
 
@@ -712,16 +712,17 @@ class EnumType(type):
 
         `value` will be the name of the new class.
 
-        `names` should be either a string of white-space/comma delimited names
-        (values will start at `start`), or an iterator/mapping of name, value pairs.
+        `names` should be either a string of white-space/comma delimited
+        names (values will start at `start`), or an iterator/mapping of
+        name, value pairs.
 
         `module` should be set to the module this class is being created in;
-        if it is not set, an attempt to find that module will be made, but if
-        it fails the class will not be picklable.
+        if it is not set, an attempt to find that module will be made, but
+        if it fails the class will not be picklable.
 
-        `qualname` should be set to the actual location this class can be found
-        at in its module; by default it is set to the global scope.  If this is
-        not correct, unpickling will fail in some circumstances.
+        `qualname` should be set to the actual location this class can be
+        found at in its module; by default it is set to the global scope.
+        If this is not correct, unpickling will fail in some circumstances.
 
         `type`, if set, will be mixed in as the first base class.
         """
@@ -783,6 +784,8 @@ class EnumType(type):
                 '__class__', '__contains__', '__doc__', '__getitem__',
                 '__iter__', '__len__', '__members__', '__module__',
                 '__name__', '__qualname__',
+                # Supported sunder names of Enum class
+                '_generate_next_value_', '_missing_',
                 ]
                 + members
                 )
@@ -819,8 +822,8 @@ class EnumType(type):
         """
         Returns a mapping of member name->value.
 
-        This mapping lists all enum members, including aliases. Note that this
-        is a read-only view of the internal mapping.
+        This mapping lists all enum members, including aliases.  Note that
+        this is a read-only view of the internal mapping.
         """
         return MappingProxyType(cls._member_map_)
 
@@ -1296,7 +1299,8 @@ class Enum(metaclass=EnumType):
         """
         Returns public methods and other interesting attributes.
         """
-        interesting = set()
+        # Initialize with supported sunder names
+        interesting = set(('_generate_next_value_', '_missing_', '_add_alias_', '_add_value_alias_'))
         if self.__class__._member_type_ is not object:
             interesting = set(object.__dir__(self))
         for name in getattr(self, '__dict__', []):
@@ -1616,10 +1620,14 @@ class Flag(Enum, boundary=STRICT):
         if other_value is NotImplemented:
             return NotImplemented
 
-        for flag in self, other:
-            if self._get_value(flag) is None:
-                raise TypeError(f"'{flag}' cannot be combined with other flags with |")
         value = self._value_
+        # _get_value(self) is self._value_ and _get_value(other) is
+        # other_value, so only walk the operands (to raise on the offending
+        # flag) when one of those values is actually None.
+        if value is None or other_value is None:
+            for flag in self, other:
+                if self._get_value(flag) is None:
+                    raise TypeError(f"'{flag}' cannot be combined with other flags with |")
         return self.__class__(value | other_value)
 
     def __and__(self, other):
@@ -1627,10 +1635,11 @@ class Flag(Enum, boundary=STRICT):
         if other_value is NotImplemented:
             return NotImplemented
 
-        for flag in self, other:
-            if self._get_value(flag) is None:
-                raise TypeError(f"'{flag}' cannot be combined with other flags with &")
         value = self._value_
+        if value is None or other_value is None:
+            for flag in self, other:
+                if self._get_value(flag) is None:
+                    raise TypeError(f"'{flag}' cannot be combined with other flags with &")
         return self.__class__(value & other_value)
 
     def __xor__(self, other):
@@ -1638,10 +1647,11 @@ class Flag(Enum, boundary=STRICT):
         if other_value is NotImplemented:
             return NotImplemented
 
-        for flag in self, other:
-            if self._get_value(flag) is None:
-                raise TypeError(f"'{flag}' cannot be combined with other flags with ^")
         value = self._value_
+        if value is None or other_value is None:
+            for flag in self, other:
+                if self._get_value(flag) is None:
+                    raise TypeError(f"'{flag}' cannot be combined with other flags with ^")
         return self.__class__(value ^ other_value)
 
     def __invert__(self):

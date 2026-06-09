@@ -364,6 +364,15 @@ class ImportTests(unittest.TestCase):
         with self.assertRaises(ModuleNotFoundError):
             import something_that_should_not_exist_anywhere
 
+    def test_import_null_byte_in_name_raises_ModuleNotFoundError(self):
+        # gh-150633: module names containing null bytes should not
+        # lead to duplicates in sys.modules
+        before = set(sys.modules)
+        with self.assertRaises(ModuleNotFoundError):
+            __import__('zipimport\x00junk')
+
+        self.assertEqual(set(sys.modules), before)
+
     def test_from_import_missing_module_raises_ModuleNotFoundError(self):
         with self.assertRaises(ModuleNotFoundError):
             from something_that_should_not_exist_anywhere import blah
@@ -3499,12 +3508,20 @@ class ModexportTests(unittest.TestCase):
             pass
         self.assertEqual(_testcapi.pytype_getmodulebytoken(Sub, token), module)
 
-    @requires_gil_enabled("empty slots re-enable GIL")
     def test_from_modexport_empty_slots(self):
-        # Module to test that:
-        # - no slots are mandatory for PyModExport
-        # - the slots array is used as the default token
+        # Module to test that Py_mod_abi is mandatory for PyModExport
         modname = '_test_from_modexport_empty_slots'
+        filename = _testmultiphase.__file__
+        with self.assertRaises(SystemError):
+            import_extension_from_file(
+                modname, filename, put_in_sys_modules=False)
+
+    @requires_gil_enabled("this module re-enables GIL")
+    def test_from_modexport_minimal_slots(self):
+        # Module to test that:
+        # - no slots except Py_mod_abi is mandatory for PyModExport
+        # - the slots array is used as the default token
+        modname = '_test_from_modexport_minimal_slots'
         filename = _testmultiphase.__file__
         module = import_extension_from_file(
             modname, filename, put_in_sys_modules=False)
@@ -3516,7 +3533,7 @@ class ModexportTests(unittest.TestCase):
         smoke_mod = import_extension_from_file(
             '_test_from_modexport_smoke', filename, put_in_sys_modules=False)
         self.assertEqual(_testcapi.pymodule_get_token(module),
-                         smoke_mod.get_modexport_empty_slots())
+                         smoke_mod.get_modexport_minimal_slots())
 
 @cpython_only
 class TestMagicNumber(unittest.TestCase):

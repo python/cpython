@@ -322,6 +322,16 @@ class Family:
     size: str
     members: list[Instruction]
 
+    def get_member_record_names(self) -> tuple[str, ...]:
+        seen: set[str] = set()
+        names: list[str] = []
+        for member in self.members:
+            for part in member.parts:
+                if part.properties.records_value and part.name not in seen:
+                    seen.add(part.name)
+                    names.append(part.name)
+        return tuple(names)
+
     def dump(self, indent: str) -> None:
         print(indent, self.name, "= ", ", ".join([m.name for m in self.members]))
 
@@ -599,6 +609,7 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_CLEAR",
     "PyStackRef_CLOSE_SPECIALIZED",
     "PyStackRef_DUP",
+    "PyStackRef_DupImmortal",
     "PyStackRef_False",
     "PyStackRef_FromPyObjectBorrow",
     "PyStackRef_FromPyObjectNew",
@@ -616,6 +627,9 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_RefcountOnObject",
     "PyStackRef_TYPE",
     "PyStackRef_True",
+    "PyBytes_GET_SIZE",
+    "PyDict_GET_SIZE",
+    "PySet_GET_SIZE",
     "PyTuple_GET_ITEM",
     "PyTuple_GET_SIZE",
     "PyType_HasFeature",
@@ -714,7 +728,10 @@ NON_ESCAPING_FUNCTIONS = (
     "trigger_backoff_counter",
     "_PyThreadState_PopCStackRefSteal",
     "doesnt_escape",
-
+    "_Py_GatherStats_GetIter",
+    "_PyStolenTuple_Free",
+    "PyObject_GC_UnTrack",
+    "_PyErr_ExceptionMatches",
 )
 
 
@@ -1130,7 +1147,7 @@ def add_macro(
     macro: parser.Macro, instructions: dict[str, Instruction], uops: dict[str, Uop]
 ) -> None:
     parts: list[Part] = []
-    first = True
+    seen_real_uop = False
     for part in macro.uops:
         match part:
             case parser.OpName():
@@ -1142,12 +1159,15 @@ def add_macro(
                             f"No Uop named {part.name}", macro.tokens[0]
                         )
                     uop = uops[part.name]
-                    if uop.properties.records_value and not first:
-                        raise analysis_error(
-                            f"Recording uop {part.name} must be first in macro",
-                            macro.tokens[0])
+                    if uop.properties.records_value:
+                        if seen_real_uop:
+                            raise analysis_error(
+                                f"Recording uop {part.name} must precede all "
+                                f"non-recording, non-specializing uops in macro",
+                                macro.tokens[0])
+                    elif "specializing" not in uop.annotations:
+                        seen_real_uop = True
                     parts.append(uop)
-                    first = False
             case parser.CacheEffect():
                 parts.append(Skip(part.size))
             case _:
