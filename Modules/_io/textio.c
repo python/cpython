@@ -672,7 +672,7 @@ struct textio
     int ok; /* initialized? */
     int detached;
     Py_ssize_t chunk_size;
-    /* Use helpers buffer_* to access buffer; many operations can set it to
+    /* Use helpers buffer_*() functions to access buffer; many operations can set it to
        NULL (see gh-143008, gh-142594). */
     PyObject *buffer;
     PyObject *encoding;
@@ -3326,7 +3326,7 @@ static PyObject *
 _io_TextIOWrapper_closed_get_impl(textio *self)
 /*[clinic end generated code: output=b49b68f443a85e3c input=7dfcf43f63c7003d]*/
 {
-    /* If partially constructed or deconstructed return that the underlying
+    /* If partially constructed or deconstructed, return that the underlying
        buffer is closed.
 
        The code managing the transition is responsible for closing. The closed
