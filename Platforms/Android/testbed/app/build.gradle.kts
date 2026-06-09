@@ -218,16 +218,20 @@ afterEvaluate {
     }
 
     for (deviceName in android.testOptions.managedDevices.localDevices.names + listOf("connected")) {
-        val copyOutputTask = createCopyOutputTask(deviceName)
+        val outputTasks = createOutputTasks(deviceName)
         tasks.named("${deviceName}DebugAndroidTest") {
             // If the previous test run succeeded and nothing has changed,
             // Gradle thinks there's no need to run it again. Override that.
             outputs.upToDateWhen { false }
 
             // If python.outputDir is set, copy all files that are pulled
-            // from the emulator to the host by the UTP to the given output
-            // directory on the host.
-            copyOutputTask?.let { finalizedBy(it) }
+            // from the emulator to the host by the test runner to the given
+            // output directory on the host.
+            if (outputTasks != null) {
+                val (deleteTask, copyTask) = outputTasks
+                dependsOn(deleteTask)
+                finalizedBy(copyTask)
+            }
         }
     }
 }
@@ -338,7 +342,7 @@ abstract class CreateEmulatorTask : DefaultTask() {
 }
 
 
-fun createCopyOutputTask(deviceName: String): TaskProvider<Copy>? {
+fun createOutputTasks(deviceName: String): Pair<TaskProvider<Delete>, TaskProvider<Task>>? {
     val outputDir = findProperty("python.outputDir") as String?
     if (outputDir.isNullOrEmpty()) return null
 
@@ -352,26 +356,52 @@ fun createCopyOutputTask(deviceName: String): TaskProvider<Copy>? {
     // to avoid issues because the test runner skips dotfiles like ".coverage".
     val archiveName = "org.python.testbed-output.zip"
 
-    return tasks.register<Copy>("${deviceName}CopyTestOutput") {
-        from(layout.buildDirectory.dir(additionalOutputPath))
-        // The subfolders of `connected_android_test_additional_output` contains
-        // names that are not equal to the serial of the device.
-        // The subfolders of `managed_device_android_test_additional_output` are
-        // also unpredictable, because e.g. the subfolder for the "maxVersion" emulator
-        // is named "minVersion".
-        // So we can't rely on the subfolder names and search for the archive in
-        // all subfolders. The archive should be in exactly one of the subfolders.
-        include("**/$archiveName")
-        into(outputDir)
-        // Flatten: drop any device-subfolder prefix, put the zip
-        // directly in outputDir.
-        eachFile { path = name }
-        includeEmptyDirs = false
-        // Each android.py invocation runs only one device at a time,
-        // so there should never be more than one archive. Fail loudly
-        // if that assumption is violated.
-        duplicatesStrategy = DuplicatesStrategy.FAIL
+    // Delete any output from a previous run before the test starts, to avoid
+    // picking up stale archives.
+    val deleteTask = tasks.register<Delete>("${deviceName}DeleteTestOutput") {
+        delete(layout.buildDirectory.dir(additionalOutputPath))
+        outputs.upToDateWhen { false }
     }
+
+    val copyTask = tasks.register("${deviceName}CopyTestOutput") {
+        outputs.upToDateWhen { false }
+        doLast {
+            // The subfolders of `connected_android_test_additional_output` contains
+            // names that are not equal to the serial of the device.
+            // The subfolders of `managed_device_android_test_additional_output` are
+            // also unpredictable, because e.g. the subfolder for the "maxVersion" emulator
+            // is named "minVersion".
+            // So we can't rely on the subfolder names and search for the archive in
+            // all subfolders. The archive should be in exactly one of the subfolders.
+            project.copy {
+                from(layout.buildDirectory.dir(additionalOutputPath))
+                include("**/$archiveName")
+                into(outputDir)
+                // Flatten: drop any device-subfolder prefix, put the zip
+                // directly in outputDir.
+                eachFile { path = name }
+                includeEmptyDirs = false
+                // Each android.py invocation runs only one device at a time,
+                // so there should never be more than one archive. Fail loudly
+                // if that assumption is violated.
+                duplicatesStrategy = DuplicatesStrategy.FAIL
+            }
+            if (!file("$outputDir/$archiveName").exists()) {
+                val message = StringBuilder(
+                    "$archiveName was not found in " +
+                    layout.buildDirectory.dir(additionalOutputPath).get()
+                )
+                if (deviceName != "connected") {
+                    message.append(
+                        ". On managed devices, additionalTestOutput requires API level >= 29"
+                    )
+                }
+                throw GradleException(message.toString())
+            }
+        }
+    }
+
+    return Pair(deleteTask, copyTask)
 }
 
 
