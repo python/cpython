@@ -1,2 +1,1 @@
-Fix several crashes in the compiler that could occur when running out of
-memory.
+Fix a crash in the compiler that could occur when running out of memory.
