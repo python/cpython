@@ -732,11 +732,6 @@ _PyCompile_EnterScope(compiler *c, identifier name, int scope_type,
 void
 _PyCompile_ExitScope(compiler *c)
 {
-    if (c->u == NULL) {
-        // scope was never entered
-        return;
-    }
-
     // Don't call PySequence_DelItem() with an exception raised
     PyObject *exc = PyErr_GetRaisedException();
 
