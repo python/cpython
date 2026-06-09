@@ -1702,9 +1702,13 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
 
         for (Py_ssize_t  i = 0; i < PyList_GET_SIZE(items); i++) {
             PyObject *item = PyList_GET_ITEM(items, i);
+            // gh-142831: encoder_encode_key_value() can invoke user code
+            // that mutates the items list, invalidating this borrowed ref.
+            Py_INCREF(item);
 
             if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 2) {
                 PyErr_SetString(PyExc_ValueError, "items must return 2-tuples");
+                Py_DECREF(item);
                 goto bail;
             }
 
@@ -1712,18 +1716,30 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
             value = PyTuple_GET_ITEM(item, 1);
             if (encoder_encode_key_value(s, writer, &first, dct, key, value,
                                          indent_level, indent_cache,
-                                         separator) < 0)
+                                         separator) < 0) {
+                Py_DECREF(item);
                 goto bail;
+            }
+            Py_DECREF(item);
         }
         Py_CLEAR(items);
 
     } else {
         Py_ssize_t pos = 0;
         while (PyDict_Next(dct, &pos, &key, &value)) {
+            // gh-142831: encoder_encode_key_value() can invoke user code
+            // that mutates the dict, invalidating these borrowed refs.
+            Py_INCREF(key);
+            Py_INCREF(value);
             if (encoder_encode_key_value(s, writer, &first, dct, key, value,
                                          indent_level, indent_cache,
-                                         separator) < 0)
+                                         separator) < 0) {
+                Py_DECREF(key);
+                Py_DECREF(value);
                 goto bail;
+            }
+            Py_DECREF(key);
+            Py_DECREF(value);
         }
     }
 
@@ -1800,14 +1816,21 @@ encoder_listencode_list(PyEncoderObject *s, PyUnicodeWriter *writer,
     }
     for (i = 0; i < PySequence_Fast_GET_SIZE(s_fast); i++) {
         PyObject *obj = PySequence_Fast_GET_ITEM(s_fast, i);
+        // gh-142831: encoder_listencode_obj() can invoke user code
+        // that mutates the sequence, invalidating this borrowed ref.
+        Py_INCREF(obj);
         if (i) {
-            if (PyUnicodeWriter_WriteStr(writer, separator) < 0)
+            if (PyUnicodeWriter_WriteStr(writer, separator) < 0) {
+                Py_DECREF(obj);
                 goto bail;
+            }
         }
         if (encoder_listencode_obj(s, writer, obj, indent_level, indent_cache)) {
             _PyErr_FormatNote("when serializing %T item %zd", seq, i);
+            Py_DECREF(obj);
             goto bail;
         }
+        Py_DECREF(obj);
     }
     if (ident != NULL) {
         if (PyDict_DelItem(s->markers, ident))

@@ -719,8 +719,8 @@ The :data:`Any` type
 ====================
 
 A special kind of type is :data:`Any`. A static type checker will treat
-every type as being compatible with :data:`Any` and :data:`Any` as being
-compatible with every type.
+every type as assignable to :data:`Any` and :data:`Any` as assignable to
+every type.
 
 This means that it is possible to perform any operation or method call on a
 value of type :data:`Any` and assign it to any variable::
@@ -785,7 +785,7 @@ it as a return value) of a more specialized type is a type error. For example::
    hash_a(42)
    hash_a("foo")
 
-   # Passes type checking, since Any is compatible with all types
+   # Passes type checking, since Any is assignable to all types
    hash_b(42)
    hash_b("foo")
 
@@ -851,8 +851,8 @@ using ``[]``.
 
    Special type indicating an unconstrained type.
 
-   * Every type is compatible with :data:`Any`.
-   * :data:`Any` is compatible with every type.
+   * Every type is assignable to :data:`Any`.
+   * :data:`Any` is assignable to every type.
 
    .. versionchanged:: 3.11
       :data:`Any` can now be used as a base class. This can be useful for
@@ -1292,10 +1292,10 @@ These can be used as types in annotations. They all support subscription using
 
    :data:`ClassVar` accepts only types and cannot be further subscribed.
 
-   :data:`ClassVar` is not a class itself, and should not
+   :data:`ClassVar` is not a class itself, and cannot
    be used with :func:`isinstance` or :func:`issubclass`.
    :data:`ClassVar` does not change Python runtime behavior, but
-   it can be used by third-party type checkers. For example, a type checker
+   it can be used by static type checkers. For example, a type checker
    might flag the following code as an error::
 
       enterprise_d = Starship(3000)
@@ -1365,7 +1365,7 @@ These can be used as types in annotations. They all support subscription using
 
       def mutate_movie(m: Movie) -> None:
          m["year"] = 1999  # allowed
-         m["title"] = "The Matrix"  # typechecker error
+         m["title"] = "The Matrix"  # type checker error
 
    There is no runtime checking for this property.
 
@@ -2221,8 +2221,8 @@ without the dedicated syntax, as documented below.
       * :data:`Concatenate`
       * :ref:`annotating-callables`
 
-.. data:: ParamSpecArgs
-          ParamSpecKwargs
+.. class:: ParamSpecArgs
+           ParamSpecKwargs
 
    Arguments and keyword arguments attributes of a :class:`ParamSpec`. The
    ``P.args`` attribute of a ``ParamSpec`` is an instance of ``ParamSpecArgs``,
@@ -2381,9 +2381,9 @@ types.
 
    Fields with a default value must come after any fields without a default.
 
-   The resulting class has an extra attribute ``__annotations__`` giving a
-   dict that maps the field names to the field types.  (The field names are in
-   the ``_fields`` attribute and the default values are in the
+   The types for each field name can be retrieved by calling
+   :func:`annotationlib.get_annotations` on the resulting class. (The field
+   names are in the ``_fields`` attribute and the default values are in the
    ``_field_defaults`` attribute, both of which are part of the :func:`~collections.namedtuple`
    API.)
 
@@ -2457,7 +2457,7 @@ types.
 
    Helper class to create low-overhead :ref:`distinct types <distinct>`.
 
-   A ``NewType`` is considered a distinct type by a typechecker. At runtime,
+   A ``NewType`` is considered a distinct type by a type checker. At runtime,
    however, calling a ``NewType`` returns its argument unchanged.
 
    Usage::
@@ -2532,7 +2532,7 @@ types.
    Mark a protocol class as a runtime protocol.
 
    Such a protocol can be used with :func:`isinstance` and :func:`issubclass`.
-   This allows a simple-minded structural check, very similar to "one trick ponies"
+   This allows a simple-minded structural check, very similar to "one-trick ponies"
    in :mod:`collections.abc` such as :class:`~collections.abc.Iterable`.  For example::
 
       @runtime_checkable
@@ -2723,9 +2723,9 @@ types.
           key: T
           group: list[T]
 
-   A ``TypedDict`` can be introspected via annotations dicts
-   (see :ref:`annotations-howto` for more information on annotations best practices),
-   :attr:`__total__`, :attr:`__required_keys__`, and :attr:`__optional_keys__`.
+   A ``TypedDict`` can be introspected via :func:`annotationlib.get_annotations`
+   (see :ref:`annotations-howto` for more information on annotations best practices)
+   and the following attributes:
 
    .. attribute:: __total__
 
@@ -2766,7 +2766,7 @@ types.
 
       For backwards compatibility with Python 3.10 and below,
       it is also possible to use inheritance to declare both required and
-      non-required keys in the same ``TypedDict`` . This is done by declaring a
+      non-required keys in the same ``TypedDict``. This is done by declaring a
       ``TypedDict`` with one value for the ``total`` argument and then
       inheriting from it in another ``TypedDict`` with a different value for
       ``total``:
@@ -2848,34 +2848,34 @@ with :deco:`runtime_checkable`.
 
 .. class:: SupportsAbs
 
-    An ABC with one abstract method ``__abs__`` that is covariant
+    A protocol with one abstract method ``__abs__`` that is covariant
     in its return type.
 
 .. class:: SupportsBytes
 
-    An ABC with one abstract method ``__bytes__``.
+    A protocol with one abstract method ``__bytes__``.
 
 .. class:: SupportsComplex
 
-    An ABC with one abstract method ``__complex__``.
+    A protocol with one abstract method ``__complex__``.
 
 .. class:: SupportsFloat
 
-    An ABC with one abstract method ``__float__``.
+    A protocol with one abstract method ``__float__``.
 
 .. class:: SupportsIndex
 
-    An ABC with one abstract method ``__index__``.
+    A protocol with one abstract method ``__index__``.
 
     .. versionadded:: 3.8
 
 .. class:: SupportsInt
 
-    An ABC with one abstract method ``__int__``.
+    A protocol with one abstract method ``__int__``.
 
 .. class:: SupportsRound
 
-    An ABC with one abstract method ``__round__``
+    A protocol with one abstract method ``__round__``
     that is covariant in its return type.
 
 .. _typing-io:
@@ -3480,14 +3480,27 @@ Introspection helpers
 
    Determine if a type is a :class:`Protocol`.
 
-   For example::
+   For example:
+
+   .. testcode::
 
       class P(Protocol):
           def a(self) -> str: ...
           b: int
 
-      is_protocol(P)    # => True
-      is_protocol(int)  # => False
+      assert is_protocol(P)
+      assert not is_protocol(int)
+
+   This function only returns true for ``Protocol`` classes, not for
+   :ref:`generic aliases <types-genericalias>` of them:
+
+   .. testcode::
+
+      class GenericP[T](Protocol):
+          def a(self) -> T: ...
+          b: int
+
+      assert not is_protocol(GenericP[int])
 
    .. versionadded:: 3.13
 
@@ -3509,6 +3522,17 @@ Introspection helpers
       # TypedDict is a factory for creating typed dicts,
       # not a typed dict itself
       assert not is_typeddict(TypedDict)
+
+   This function only returns true for ``TypedDict`` classes, not for
+   :ref:`generic aliases <types-genericalias>` of them:
+
+   .. testcode::
+
+      class GenericFilm[T](TypedDict):
+          title: str
+          year: T
+
+      assert not is_typeddict(GenericFilm[int])
 
    .. versionadded:: 3.10
 
@@ -3571,7 +3595,7 @@ Constant
 
 .. data:: TYPE_CHECKING
 
-   A special constant that is assumed to be ``True`` by 3rd party static
+   A special constant that is assumed to be ``True`` by static
    type checkers. It's ``False`` at runtime.
 
    A module which is expensive to import, and which only contain types

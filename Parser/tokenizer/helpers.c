@@ -193,6 +193,7 @@ _PyTokenizer_new_string(const char *s, Py_ssize_t len, struct tok_state *tok)
     char* result = (char *)PyMem_Malloc(len + 1);
     if (!result) {
         tok->done = E_NOMEM;
+        PyErr_NoMemory();
         return NULL;
     }
     memcpy(result, s, len);
@@ -221,6 +222,7 @@ _PyTokenizer_translate_newlines(const char *s, int exec_input, int preserve_crlf
     buf = PyMem_Malloc(needed_length);
     if (buf == NULL) {
         tok->done = E_NOMEM;
+        PyErr_NoMemory();
         return NULL;
     }
     for (current = buf; *s; s++, current++) {

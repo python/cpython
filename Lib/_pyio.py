@@ -83,27 +83,28 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
     wrapped. (If a file descriptor is given, it is closed when the
     returned I/O object is closed, unless closefd is set to False.)
 
-    mode is an optional string that specifies the mode in which the file is
-    opened. It defaults to 'r' which means open for reading in text mode. Other
-    common values are 'w' for writing (truncating the file if it already
-    exists), 'x' for exclusive creation of a new file, and 'a' for appending
-    (which on some Unix systems, means that all writes append to the end of the
-    file regardless of the current seek position). In text mode, if encoding is
-    not specified the encoding used is platform dependent. (For reading and
-    writing raw bytes use binary mode and leave encoding unspecified.) The
-    available modes are:
+    mode is an optional string that specifies the mode in which the file
+    is opened.  It defaults to 'r' which means open for reading in text
+    mode.  Other common values are 'w' for writing (truncating the file if
+    it already exists), 'x' for exclusive creation of a new file, and
+    'a' for appending (which on some Unix systems, means that all writes
+    append to the end of the file regardless of the current seek position).
+    In text mode, if encoding is not specified the encoding used is platform
+    dependent.  (For reading and writing raw bytes use binary mode and leave
+    encoding unspecified.)  The available modes are:
 
-    ========= ===============================================================
+    ========= ==========================================================
     Character Meaning
-    --------- ---------------------------------------------------------------
+    --------- ----------------------------------------------------------
     'r'       open for reading (default)
     'w'       open for writing, truncating the file first
     'x'       create a new file and open it for writing
-    'a'       open for writing, appending to the end of the file if it exists
+    'a'       open for writing, appending to the end of the file if it
+              exists
     'b'       binary mode
     't'       text mode (default)
     '+'       open a disk file for updating (reading and writing)
-    ========= ===============================================================
+    ========= ==========================================================
 
     The default mode is 'rt' (open for reading text). For binary random
     access, the mode 'w+b' opens and truncates the file to 0 bytes, while
@@ -111,23 +112,23 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
     raises an `FileExistsError` if the file already exists.
 
     Python distinguishes between files opened in binary and text modes,
-    even when the underlying operating system doesn't. Files opened in
+    even when the underlying operating system doesn't.  Files opened in
     binary mode (appending 'b' to the mode argument) return contents as
-    bytes objects without any decoding. In text mode (the default, or when
+    bytes objects without any decoding.  In text mode (the default, or when
     't' is appended to the mode argument), the contents of the file are
     returned as strings, the bytes having been first decoded using a
     platform-dependent encoding or using the specified encoding if given.
 
     buffering is an optional integer used to set the buffering policy.
-    Pass 0 to switch buffering off (only allowed in binary mode), 1 to select
-    line buffering (only usable in text mode), and an integer > 1 to indicate
-    the size of a fixed-size chunk buffer.  When no buffering argument is
-    given, the default buffering policy works as follows:
+    Pass 0 to switch buffering off (only allowed in binary mode), 1 to
+    select line buffering (only usable in text mode), and an integer > 1 to
+    indicate the size of a fixed-size chunk buffer.  When no buffering
+    argument is given, the default buffering policy works as follows:
 
-   * Binary files are buffered in fixed-size chunks; the size of the buffer
-     is max(min(blocksize, 8 MiB), DEFAULT_BUFFER_SIZE)
-     when the device block size is available.
-     On most systems, the buffer will typically be 128 kilobytes long.
+    * Binary files are buffered in fixed-size chunks; the size of the buffer
+      is max(min(blocksize, 8 MiB), DEFAULT_BUFFER_SIZE) when the device
+      block size is available.
+      On most systems, the buffer will typically be 128 kilobytes long.
 
     * "Interactive" text files (files for which isatty() returns True)
       use line buffering.  Other text files use the policy described above
@@ -147,8 +148,8 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
     encoding error strings.
 
     newline is a string controlling how universal newlines works (it only
-    applies to text mode). It can be None, '', '\n', '\r', and '\r\n'.  It works
-    as follows:
+    applies to text mode). It can be None, '', '\n', '\r', and '\r\n'.  It
+    works as follows:
 
     * On input, if newline is None, universal newlines mode is
       enabled. Lines in the input can end in '\n', '\r', or '\r\n', and
@@ -164,17 +165,17 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
       other legal values, any '\n' characters written are translated to
       the given string.
 
-    closedfd is a bool. If closefd is False, the underlying file descriptor will
-    be kept open when the file is closed. This does not work when a file name is
-    given and must be True in that case.
+    closedfd is a bool. If closefd is False, the underlying file descriptor
+    will be kept open when the file is closed. This does not work when
+    a file name is given and must be True in that case.
 
     The newly created file is non-inheritable.
 
     A custom opener can be used by passing a callable as *opener*. The
-    underlying file descriptor for the file object is then obtained by calling
-    *opener* with (*file*, *flags*). *opener* must return an open file
-    descriptor (passing os.open as *opener* results in functionality similar to
-    passing None).
+    underlying file descriptor for the file object is then obtained by
+    calling *opener* with (*file*, *flags*).  *opener* must return an open
+    file descriptor (passing os.open as *opener* results in functionality
+    similar to passing None).
 
     open() returns a file object whose type depends on the mode, and
     through which the standard file operations such as reading and writing
@@ -351,10 +352,12 @@ class IOBase(metaclass=abc.ABCMeta):
         interpreted relative to the position indicated by whence.  Values
         for whence are ints:
 
-        * 0 -- start of stream (the default); offset should be zero or positive
+        * 0 -- start of stream (the default); offset should be zero or
+          positive
         * 1 -- current stream position; offset may be negative
         * 2 -- end of stream; offset is usually negative
-        Some operating systems / file systems could provide additional values.
+        Some operating systems / file systems could provide additional
+        values.
 
         Return an int indicating the new absolute position.
         """
@@ -367,8 +370,8 @@ class IOBase(metaclass=abc.ABCMeta):
     def truncate(self, pos=None):
         """Truncate file to size bytes.
 
-        Size defaults to the current IO position as reported by tell().  Return
-        the new size.
+        Size defaults to the current IO position as reported by tell().
+        Return the new size.
         """
         self._unsupported("truncate")
 
@@ -492,7 +495,8 @@ class IOBase(metaclass=abc.ABCMeta):
     def fileno(self):
         """Returns underlying file descriptor (an int) if one exists.
 
-        An OSError is raised if the IO object does not use a file descriptor.
+        An OSError is raised if the IO object does not use a file
+        descriptor.
         """
         self._unsupported("fileno")
 
@@ -1485,17 +1489,22 @@ class FileIO(RawIOBase):
     _closefd = True
 
     def __init__(self, file, mode='r', closefd=True, opener=None):
-        """Open a file.  The mode can be 'r' (default), 'w', 'x' or 'a' for reading,
-        writing, exclusive creation or appending.  The file will be created if it
-        doesn't exist when opened for writing or appending; it will be truncated
-        when opened for writing.  A FileExistsError will be raised if it already
-        exists when opened for creating. Opening a file for creating implies
-        writing so this mode behaves in a similar way to 'w'. Add a '+' to the mode
-        to allow simultaneous reading and writing. A custom opener can be used by
-        passing a callable as *opener*. The underlying file descriptor for the file
-        object is then obtained by calling opener with (*name*, *flags*).
-        *opener* must return an open file descriptor (passing os.open as *opener*
-        results in functionality similar to passing None).
+        """Open a file.
+
+        The mode can be 'r' (default), 'w', 'x' or 'a' for reading,
+        writing, exclusive creation or appending.  The file will be created
+        if it doesn't exist when opened for writing or appending; it will be
+        truncated when opened for writing.  A FileExistsError will be raised
+        if it already exists when opened for creating.  Opening a file for
+        creating implies writing so this mode behaves in a similar way to
+        'w'.  Add a '+' to the mode to allow simultaneous reading and
+        writing.
+
+        A custom opener can be used by passing a callable as *opener*.
+        The underlying file descriptor for the file object is then obtained
+        by calling opener with (*name*, *flags*).  *opener* must return
+        an open file descriptor (passing os.open as *opener* results in
+        functionality similar to passing None).
         """
         if self._fd >= 0:
             # Have to close the existing file first.
@@ -1733,8 +1742,8 @@ class FileIO(RawIOBase):
         """Write bytes b to file, return number written.
 
         Only makes one system call, so not all of the data may be written.
-        The number of bytes actually written is returned.  In non-blocking mode,
-        returns None if the write would block.
+        The number of bytes actually written is returned.  In non-blocking
+        mode, returns None if the write would block.
         """
         self._checkClosed()
         self._checkWritable()
@@ -1746,11 +1755,12 @@ class FileIO(RawIOBase):
     def seek(self, pos, whence=SEEK_SET):
         """Move to new file position.
 
-        Argument offset is a byte count.  Optional argument whence defaults to
-        SEEK_SET or 0 (offset from start of file, offset should be >= 0); other values
-        are SEEK_CUR or 1 (move relative to current position, positive or negative),
-        and SEEK_END or 2 (move relative to end of file, usually negative, although
-        many platforms allow seeking beyond the end of a file).
+        Argument offset is a byte count.  Optional argument whence defaults
+        to SEEK_SET or 0 (offset from start of file, offset should be >= 0);
+        other values are SEEK_CUR or 1 (move relative to current position,
+        positive or negative), and SEEK_END or 2 (move relative to end of
+        file, usually negative, although many platforms allow seeking beyond
+        the end of a file).
 
         Note that not all file objects are seekable.
         """
@@ -1783,8 +1793,8 @@ class FileIO(RawIOBase):
     def close(self):
         """Close the file.
 
-        A closed file cannot be used for further I/O operations.  close() may be
-        called more than once without error.
+        A closed file cannot be used for further I/O operations.
+        close() may be called more than once without error.
         """
         if not self.closed:
             self._stat_atopen = None
@@ -1879,8 +1889,8 @@ class TextIOBase(IOBase):
     def read(self, size=-1):
         """Read at most size characters from stream, where size is an int.
 
-        Read from underlying buffer until we have size characters or we hit EOF.
-        If size is negative or omitted, read until EOF.
+        Read from underlying buffer until we have size characters or we hit
+        EOF.  If size is negative or omitted, read until EOF.
 
         Returns a string.
         """

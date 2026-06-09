@@ -1533,6 +1533,59 @@ class ContextTests(unittest.TestCase):
         gc.collect()
         self.assertIs(wr(), None)
 
+    @unittest.skipUnless(support.Py_GIL_DISABLED,
+                         "test is only useful if the GIL is disabled")
+    @threading_helper.requires_working_threading()
+    def test_sni_callback_race(self):
+        # Replacing sni_callback while handshakes are in-flight must not
+        # crash (use-after-free on the callback in free-threaded builds).
+        client_ctx, server_ctx, hostname = testing_context()
+
+        server_ctx.sni_callback = lambda *a: None
+        done = threading.Event()
+
+        def do_handshakes():
+            while not done.is_set():
+                c_in = ssl.MemoryBIO()
+                c_out = ssl.MemoryBIO()
+                s_in = ssl.MemoryBIO()
+                s_out = ssl.MemoryBIO()
+                client = client_ctx.wrap_bio(
+                    c_in, c_out, server_hostname=hostname)
+                server = server_ctx.wrap_bio(s_in, s_out, server_side=True)
+                for _ in range(50):
+                    try:
+                        client.do_handshake()
+                    except ssl.SSLWantReadError:
+                        pass
+                    except ssl.SSLError:
+                        break
+                    if c_out.pending:
+                        s_in.write(c_out.read())
+                    try:
+                        server.do_handshake()
+                    except ssl.SSLWantReadError:
+                        pass
+                    except ssl.SSLError:
+                        break
+                    if s_out.pending:
+                        c_in.write(s_out.read())
+
+        def toggle_callback():
+            while not done.is_set():
+                server_ctx.sni_callback = lambda *a: None
+                server_ctx.sni_callback = None
+
+        workers = max(4, (os.cpu_count() or 4) * 2)
+        threads = [threading.Thread(target=do_handshakes)
+                   for _ in range(workers)]
+        threads.append(threading.Thread(target=toggle_callback))
+
+        with threading_helper.catch_threading_exception() as cm:
+            with threading_helper.start_threads(threads):
+                done.set()
+            self.assertIsNone(cm.exc_value)
+
     def test_cert_store_stats(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         self.assertEqual(ctx.cert_store_stats(),
@@ -5294,17 +5347,24 @@ class TestPreHandshakeClose(unittest.TestCase):
             return  # Expect the full test setup to always work on Linux.
         if (isinstance(err, ConnectionResetError) or
             (isinstance(err, OSError) and err.errno == errno.EINVAL) or
-            re.search('wrong.version.number', str(getattr(err, "reason", "")), re.I) or
-            re.search('record.layer.failure', str(getattr(err, "reason", "")), re.I)
+            re.search(
+                # Matches the following error messages:
+                # '[SSL: WRONG_VERSION_NUMBER] wrong version number (_ssl.c:1123)'
+                # '[SSL: RECORD_LAYER_FAILURE] record layer failure (_ssl.c:1109)'
+                # '[SSL: HTTP_REQUEST] http request (_ssl.c:1143)'
+                r'wrong.version.number|record.layer.failure|http.request',
+                str(getattr(err, "reason", "")),
+                re.IGNORECASE,
+            )
         ):
             # On Windows the TCP RST leads to a ConnectionResetError
             # (ECONNRESET) which Linux doesn't appear to surface to userspace.
             # If wrap_socket() winds up on the "if connected:" path and doing
             # the actual wrapping... we get an SSLError from OpenSSL. This is
             # typically WRONG_VERSION_NUMBER. The same happens on iOS, but
-            # RECORD_LAYER_FAILURE is the error.
+            # RECORD_LAYER_FAILURE or HTTP_REQUEST is the error.
             #
-            # While appropriate, neither is the scenario we're specifically
+            # While appropriate, these scenarios aren't what we're specifically
             # trying to test. The way this test is written is known to work on
             # Linux. We'll skip it anywhere else that it does not present as
             # doing so.

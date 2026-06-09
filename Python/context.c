@@ -620,14 +620,14 @@ _contextvars.Context.get
 
 Return the value for `key` if `key` has the value in the context object.
 
-If `key` does not exist, return `default`. If `default` is not given,
-return None.
+If `key` does not exist, return `default`.  If `default` is not
+given, return None.
 [clinic start generated code]*/
 
 static PyObject *
 _contextvars_Context_get_impl(PyContext *self, PyObject *key,
                               PyObject *default_value)
-/*[clinic end generated code: output=0c54aa7664268189 input=c8eeb81505023995]*/
+/*[clinic end generated code: output=0c54aa7664268189 input=d1be897231334ea9]*/
 {
     if (context_check_key_type(key)) {
         return NULL;
@@ -1007,16 +1007,18 @@ _contextvars.ContextVar.get
 
 Return a value for the context variable for the current context.
 
-If there is no value for the variable in the current context, the method will:
- * return the value of the default argument of the method, if provided; or
- * return the default value for the context variable, if it was created
-   with one; or
+If there is no value for the variable in the current context, the
+method will:
+ * return the value of the default argument of the method, if
+   provided; or
+ * return the default value for the context variable, if it was
+   created with one; or
  * raise a LookupError.
 [clinic start generated code]*/
 
 static PyObject *
 _contextvars_ContextVar_get_impl(PyContextVar *self, PyObject *default_value)
-/*[clinic end generated code: output=0746bd0aa2ced7bf input=30aa2ab9e433e401]*/
+/*[clinic end generated code: output=0746bd0aa2ced7bf input=83814c6aef4a9fe3]*/
 {
     PyObject *val;
     if (PyContextVar_Get((PyObject *)self, default_value, &val) < 0) {
@@ -1038,15 +1040,16 @@ _contextvars.ContextVar.set
 
 Call to set a new value for the context variable in the current context.
 
-The required value argument is the new value for the context variable.
+The required value argument is the new value for the context
+variable.
 
-Returns a Token object that can be used to restore the variable to its previous
-value via the `ContextVar.reset()` method.
+Returns a Token object that can be used to restore the variable to
+its previous value via the `ContextVar.reset()` method.
 [clinic start generated code]*/
 
 static PyObject *
 _contextvars_ContextVar_set_impl(PyContextVar *self, PyObject *value)
-/*[clinic end generated code: output=1b562d35cc79c806 input=c0a6887154227453]*/
+/*[clinic end generated code: output=1b562d35cc79c806 input=6ffee66796d67896]*/
 {
     return PyContextVar_Set((PyObject *)self, value);
 }
@@ -1058,13 +1061,13 @@ _contextvars.ContextVar.reset
 
 Reset the context variable.
 
-The variable is reset to the value it had before the `ContextVar.set()` that
-created the token was used.
+The variable is reset to the value it had before the
+`ContextVar.set()` that created the token was used.
 [clinic start generated code]*/
 
 static PyObject *
 _contextvars_ContextVar_reset_impl(PyContextVar *self, PyObject *token)
-/*[clinic end generated code: output=3205d2bdff568521 input=ebe2881e5af4ffda]*/
+/*[clinic end generated code: output=3205d2bdff568521 input=dd33cfcb18c00e37]*/
 {
     if (!PyContextToken_CheckExact(token)) {
         PyErr_Format(PyExc_TypeError,
@@ -1090,7 +1093,8 @@ static PyMethodDef PyContextVar_methods[] = {
     _CONTEXTVARS_CONTEXTVAR_SET_METHODDEF
     _CONTEXTVARS_CONTEXTVAR_RESET_METHODDEF
     {"__class_getitem__", Py_GenericAlias,
-    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
+    METH_O|METH_CLASS,
+    PyDoc_STR("ContextVars are generic over the type of their contained values")},
     {NULL, NULL}
 };
 
@@ -1256,7 +1260,8 @@ token_exit_impl(PyContextToken *self, PyObject *type, PyObject *val,
 
 static PyMethodDef PyContextTokenType_methods[] = {
     {"__class_getitem__",    Py_GenericAlias,
-    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
+    METH_O|METH_CLASS,
+    PyDoc_STR("Tokens are generic over the same type as the ContextVar which created them.")},
     TOKEN_ENTER_METHODDEF
     TOKEN_EXIT_METHODDEF
     {NULL}

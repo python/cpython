@@ -36,11 +36,6 @@ This module defines the following constants and functions:
       This is now a synonym of the built-in :exc:`RuntimeError`.
 
 
-.. data:: LockType
-
-   This is the type of lock objects.
-
-
 .. function:: start_new_thread(function, args[, kwargs])
 
    Start a new thread and return its identifier.  The thread executes the
@@ -159,58 +154,66 @@ This module defines the following constants and functions:
    .. versionadded:: 3.2
 
 
-Lock objects have the following methods:
+.. raw:: html
 
+   <!-- Keep the old URL fragments working (see gh-89554) -->
+   <span id='thread.lock.acquire'></span>
+   <span id='thread.lock.release'></span>
+   <span id='thread.lock.locked'></span>
 
-.. method:: lock.acquire(blocking=True, timeout=-1)
+.. class:: LockType
 
-   Without any optional argument, this method acquires the lock unconditionally, if
-   necessary waiting until it is released by another thread (only one thread at a
-   time can acquire a lock --- that's their reason for existence).
+   This is the type of lock objects.
 
-   If the *blocking* argument is present, the action depends on its
-   value: if it is false, the lock is only acquired if it can be acquired
-   immediately without waiting, while if it is true, the lock is acquired
-   unconditionally as above.
+   Lock objects have the following methods:
 
-   If the floating-point *timeout* argument is present and positive, it
-   specifies the maximum wait time in seconds before returning.  A negative
-   *timeout* argument specifies an unbounded wait.  You cannot specify
-   a *timeout* if *blocking* is false.
+   .. method:: acquire(blocking=True, timeout=-1)
 
-   The return value is ``True`` if the lock is acquired successfully,
-   ``False`` if not.
+      Without any optional argument, this method acquires the lock unconditionally, if
+      necessary waiting until it is released by another thread (only one thread at a
+      time can acquire a lock --- that's their reason for existence).
 
-   .. versionchanged:: 3.2
-      The *timeout* parameter is new.
+      If the *blocking* argument is present, the action depends on its
+      value: if it is false, the lock is only acquired if it can be acquired
+      immediately without waiting, while if it is true, the lock is acquired
+      unconditionally as above.
 
-   .. versionchanged:: 3.2
-      Lock acquires can now be interrupted by signals on POSIX.
+      If the floating-point *timeout* argument is present and positive, it
+      specifies the maximum wait time in seconds before returning.  A negative
+      *timeout* argument specifies an unbounded wait.  You cannot specify
+      a *timeout* if *blocking* is false.
 
-   .. versionchanged:: 3.14
-      Lock acquires can now be interrupted by signals on Windows.
+      The return value is ``True`` if the lock is acquired successfully,
+      ``False`` if not.
 
+      .. versionchanged:: 3.2
+         The *timeout* parameter is new.
 
-.. method:: lock.release()
+      .. versionchanged:: 3.2
+         Lock acquires can now be interrupted by signals on POSIX.
 
-   Releases the lock.  The lock must have been acquired earlier, but not
-   necessarily by the same thread.
+      .. versionchanged:: 3.14
+         Lock acquires can now be interrupted by signals on Windows.
 
+   .. method:: release()
 
-.. method:: lock.locked()
+      Releases the lock.  The lock must have been acquired earlier, but not
+      necessarily by the same thread.
 
-   Return the status of the lock: ``True`` if it has been acquired by some thread,
-   ``False`` if not.
+   .. method:: locked()
 
-In addition to these methods, lock objects can also be used via the
-:keyword:`with` statement, e.g.::
+      Return the status of the lock: ``True`` if it has been acquired by some thread,
+      ``False`` if not.
 
-   import _thread
+   In addition to these methods, lock objects can also be used via the
+   :keyword:`with` statement, e.g.::
 
-   a_lock = _thread.allocate_lock()
+      import _thread
 
-   with a_lock:
-       print("a_lock is locked while this executes")
+      a_lock = _thread.allocate_lock()
+
+      with a_lock:
+          print("a_lock is locked while this executes")
 
 **Caveats:**
 

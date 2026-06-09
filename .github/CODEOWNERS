@@ -213,7 +213,7 @@ Lib/test/test_ast/            @eclips4
 **/*multiprocessing*          @gpshead
 
 # SQLite 3
-**/*sqlite*                   @berkerpeksag @erlend-aasland
+**/*sqlite*                   @erlend-aasland
 
 # subprocess
 /Lib/subprocess.py            @gpshead

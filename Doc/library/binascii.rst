@@ -158,9 +158,8 @@ The :mod:`!binascii` module defines the following functions:
    of hexadecimal digits (which can be upper or lower case), otherwise an
    :exc:`Error` exception is raised.
 
-   Similar functionality (accepting only text string arguments, but more
-   liberal towards whitespace) is also accessible using the
-   :meth:`bytes.fromhex` class method.
+   Similar functionality (but more liberal towards whitespace) is also accessible
+   using the :meth:`bytes.fromhex` class method.
 
 .. exception:: Error
 

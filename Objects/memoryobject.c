@@ -1600,11 +1600,7 @@ memory_getbuf(PyObject *_self, Py_buffer *view, int flags)
 
 
     view->obj = Py_NewRef(self);
-#ifdef Py_GIL_DISABLED
-    _Py_atomic_add_ssize(&self->exports, 1);
-#else
-    self->exports++;
-#endif
+    FT_ATOMIC_ADD_SSIZE(self->exports, 1);
 
     return 0;
 }
@@ -1613,11 +1609,7 @@ static void
 memory_releasebuf(PyObject *_self, Py_buffer *view)
 {
     PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
-#ifdef Py_GIL_DISABLED
-    _Py_atomic_add_ssize(&self->exports, -1);
-#else
-    self->exports--;
-#endif
+    FT_ATOMIC_ADD_SSIZE(self->exports, -1);
     return;
     /* PyBuffer_Release() decrements view->obj after this function returns. */
 }
@@ -2275,16 +2267,17 @@ memoryview.tobytes
 
 Return the data in the buffer as a byte string.
 
-Order can be {'C', 'F', 'A'}. When order is 'C' or 'F', the data of the
-original array is converted to C or Fortran order. For contiguous views,
-'A' returns an exact copy of the physical memory. In particular, in-memory
-Fortran order is preserved. For non-contiguous views, the data is converted
-to C first. order=None is the same as order='C'.
+Order can be {'C', 'F', 'A'}.  When order is 'C' or 'F', the data of
+the original array is converted to C or Fortran order.  For
+contiguous views, 'A' returns an exact copy of the physical memory.
+In particular, in-memory Fortran order is preserved.  For
+non-contiguous views, the data is converted to C first.  order=None
+is the same as order='C'.
 [clinic start generated code]*/
 
 static PyObject *
 memoryview_tobytes_impl(PyMemoryViewObject *self, const char *order)
-/*[clinic end generated code: output=1288b62560a32a23 input=0efa3ddaeda573a8]*/
+/*[clinic end generated code: output=1288b62560a32a23 input=119c70aa91791dc8]*/
 {
     Py_buffer *src = VIEW_ADDR(self);
     char ord = 'C';
@@ -2324,8 +2317,8 @@ memoryview.hex
     sep: object = NULL
         An optional single character or byte to separate hex bytes.
     bytes_per_sep: int = 1
-        How many bytes between separators.  Positive values count from the
-        right, negative values count from the left.
+        How many bytes between separators.  Positive values count from
+        the right, negative values count from the left.
 
 Return the data in the buffer as a str of hexadecimal numbers.
 
@@ -2344,7 +2337,7 @@ Example:
 static PyObject *
 memoryview_hex_impl(PyMemoryViewObject *self, PyObject *sep,
                     int bytes_per_sep)
-/*[clinic end generated code: output=430ca760f94f3ca7 input=539f6a3a5fb56946]*/
+/*[clinic end generated code: output=430ca760f94f3ca7 input=94c2495f886c786b]*/
 {
     Py_buffer *src = VIEW_ADDR(self);
     PyObject *bytes;
@@ -2356,9 +2349,9 @@ memoryview_hex_impl(PyMemoryViewObject *self, PyObject *sep,
         // Prevent 'self' from being freed if computing len(sep) mutates 'self'
         // in _Py_strhex_with_sep().
         // See: https://github.com/python/cpython/issues/143195.
-        self->exports++;
+        FT_ATOMIC_ADD_SSIZE(self->exports, 1);
         PyObject *ret = _Py_strhex_with_sep(src->buf, src->len, sep, bytes_per_sep);
-        self->exports--;
+        FT_ATOMIC_ADD_SSIZE(self->exports, -1);
         return ret;
     }
 
@@ -3235,9 +3228,9 @@ memory_hash(PyObject *_self)
         if (view->obj != NULL) {
             // Prevent 'self' from being freed when computing the item's hash.
             // See https://github.com/python/cpython/issues/142664.
-            self->exports++;
+            FT_ATOMIC_ADD_SSIZE(self->exports, 1);
             Py_hash_t h = PyObject_Hash(view->obj);
-            self->exports--;
+            FT_ATOMIC_ADD_SSIZE(self->exports, -1);
             if (h == -1) {
                 /* Keep the original error message */
                 return -1;
@@ -3459,7 +3452,8 @@ static PyMethodDef memory_methods[] = {
     MEMORYVIEW_INDEX_METHODDEF
     {"__enter__",   memory_enter, METH_NOARGS, NULL},
     {"__exit__",    memory_exit, METH_VARARGS, memory_exit_doc},
-    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
+     PyDoc_STR("memoryviews are generic over the type of their underlying data")},
     {NULL,          NULL}
 };
 
