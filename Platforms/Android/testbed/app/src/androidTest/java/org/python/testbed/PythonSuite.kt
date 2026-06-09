@@ -29,7 +29,7 @@ class PythonSuite {
             )
             assertEquals(0, status)
         } finally {
-            // Copy files requested via --pull to the directory that AGP/UTP
+            // Copy files requested via --pull to the directory that AGP
             // injected as `additionalTestOutputDir`. AGP will pull everything
             // written there back to the host before shutting down the emulator.
             copyOutputFiles(instrumentation.targetContext, args)
@@ -48,13 +48,13 @@ class PythonSuite {
         // copied back to the host after the test finishes.
         val pullPathsJson = args.getString("pythonPull") ?: return
 
-        // The output directory is created by AGP/UTP and points to a location inside
-        // the emulator's filesystem. AGP/UTP will pull everything from there back
+        // The output directory is created by AGP and points to a location inside
+        // the emulator's filesystem. AGP will pull everything from there back
         // to the host after the test finishes.
         val outputDir = args.getString("additionalTestOutputDir") ?: return
 
-        // Pack all files into a single zip archive to avoid issues because the UTP copy
-        // skips dotfiles like ".coverage".
+        // Pack all files into a single zip archive to avoid issues because AGP
+        // skips dotfiles like ".coverage" when pulling files from the emulator.
         val archiveFile = File(outputDir, "org.python.testbed-output.zip")
         val srcBase = File(context.filesDir, "python/cwd")
         val paths = JSONArray(pullPathsJson)

@@ -349,7 +349,7 @@ fun createCopyOutputTask(deviceName: String): TaskProvider<Copy>? {
     }
 
     // PythonSuite.kt packs all output files into a single zip archive,
-    // to avoid issues because the UTP copy skips dotfiles like ".coverage".
+    // to avoid issues because the test runner skips dotfiles like ".coverage".
     val archiveName = "org.python.testbed-output.zip"
 
     return tasks.register<Copy>("${deviceName}CopyTestOutput") {
