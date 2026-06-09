@@ -4392,7 +4392,7 @@ struct static_exception {
     const char *name;
 };
 
-static struct static_exception static_exceptions[] = {
+static struct static_exception static_exceptions[_Py_NUM_STATIC_EXCEPTIONS] = {
 #define ITEM(NAME) {&_PyExc_##NAME, #NAME}
     // Level 1
     ITEM(BaseException),
