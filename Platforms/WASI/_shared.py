@@ -25,6 +25,10 @@ class Context:
             "Unable to find the root of the CPython checkout by looking for 'configure'"
         )
 
+    def _pybuilddir(self, build_path):
+        relative_dir = (build_path / "pybuilddir.txt").read_text().strip()
+        return build_path / relative_dir
+
     @functools.cached_property
     def setup_local_path(self):
         return self.checkout / "Modules" / "Setup.local"
@@ -62,12 +66,17 @@ class Context:
 
     @functools.cached_property
     def is_debug(self):
-        test = "import sys, test.support; sys.exit(test.support.Py_DEBUG)"
-        result = subprocess.run(
-            [self.build_python_interpreter, "-c", test],
-            capture_output=True,
-        )
-        return bool(result.returncode)
+        pybuilddir = self._pybuilddir(self.build_python_path)
+        if pybuilddir.is_file():
+            build_details = json.loads(pybuilddir.read_text())
+            return "d" in build_details["abi"]["flags"]
+        else:
+            test = "import sys, test.support; sys.exit(test.support.Py_DEBUG)"
+            result = subprocess.run(
+                [self.build_python_interpreter, "-c", test],
+                capture_output=True,
+            )
+            return bool(result.returncode)
 
     @functools.cached_property
     def wasi_build_path(self):
@@ -75,12 +84,7 @@ class Context:
 
     @functools.cached_property
     def wasi_pybuilddir(self):
-        relative_dir = (
-            (self.wasi_build_path / "pybuilddir.txt")
-            .read_text()
-            .strip()
-        )
-        return self.wasi_build_path / relative_dir
+        return self._pybuilddir(self.wasi_build_path)
 
     @functools.cached_property
     def wasi_build_details(self):

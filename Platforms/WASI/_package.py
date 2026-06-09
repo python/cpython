@@ -39,7 +39,7 @@ def pythonXY(context, support_debug=False):
     major = details["language"]["version_info"]["major"]
     minor = details["language"]["version_info"]["minor"]
     name = f"python{major}.{minor}"
-    if support_debug and "d" in details["abi"]["flags"]:
+    if support_debug and context.is_debug:
         name += "d"
     return name
 
