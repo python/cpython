@@ -11,7 +11,6 @@ import warnings
 import weakref
 from collections import UserList
 from test import support
-from test.support import set_recursion_limit
 from test.support import os_helper, threading_helper
 from test.support.script_helper import assert_python_ok
 from .utils import CTestCase, PyTestCase
@@ -1563,21 +1562,35 @@ class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
 
     def test_reentrant_detach_during_flush(self):
         # gh-143008: Reentrant detach() during flush should not crash.
-        wrapper = None
 
-        class DetachOnFlush(self.BufferedRandom):
+        class DetachOnce(self.BufferedRandom):
+            wrapper = None
+
+            def detach_once(self):
+                original = self.wrapper
+                self.wrapper = None
+                if original is not None:
+                    original.detach()
+                    original.flush()
+
+        class DetachOnFlush(DetachOnce):
             def flush(self):
-                if wrapper is not None:
-                    wrapper.detach()
-                return super().flush()
+                self.detach_once()
 
-        class DetachOnWrite(self.BufferedRandom):
+        class DetachOnWrite(DetachOnce):
             def write(self, b):
-                if wrapper is not None:
-                    wrapper.detach()
+                self.detach_once()
                 return len(b)
 
-        # Used to crash; now will run out of stack.
+        # Separate reference for after detach_once.
+        wrapper = None
+
+        def make_text(buffer):
+            nonlocal wrapper
+            buffer.wrapper = self.TextIOWrapper(buffer, encoding='utf-8')
+            wrapper = buffer.wrapper
+
+        # Many calls could result in the same null self->buffer crash.
         tests = [
             ('truncate', lambda: wrapper.truncate(0)),
             ('close', lambda: wrapper.close()),
@@ -1586,26 +1599,16 @@ class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
             ('tell', lambda: wrapper.tell()),
             ('reconfigure', lambda: wrapper.reconfigure(line_buffering=True)),
         ]
-        for name, call in tests:
-            with self.subTest(name), set_recursion_limit(100):
-                buffer = DetachOnFlush(self.MockRawIO())
-                wrapper = self.TextIOWrapper(buffer, encoding='utf-8')
-                try:
-                    self.assertRaises(RecursionError, call)
-                finally:
-                    # Disarm before GC so finalization succeeds.
-                    wrapper = None
+        for name, method in tests:
+            with self.subTest(name):
+                make_text(DetachOnFlush(self.MockRawIO()))
+                self.assertRaisesRegex(ValueError, "detached", method)
 
-        # Used to crash.
+        # Should not crash.
         with self.subTest('read via writeflush'):
-            buffer = DetachOnWrite(self.MockRawIO())
-            wrapper = self.TextIOWrapper(buffer, encoding='utf-8')
-            try:
-                wrapper.write('x')
-                self.assertRaisesRegex(ValueError, "detached", wrapper.read)
-            finally:
-                # Disarm before GC so finalization succeeds.
-                wrapper = None
+            make_text(DetachOnWrite(self.MockRawIO()))
+            wrapper.write('x')
+            self.assertRaisesRegex(ValueError, "detached", wrapper.read)
 
 
 class PyTextIOWrapperTest(TextIOWrapperTest, PyTestCase):
