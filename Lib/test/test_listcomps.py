@@ -177,7 +177,7 @@ class ListComprehensionTest(unittest.TestCase):
         """
         self._check_in_scopes(code, raises=NameError)
 
-    def test_references___class___nested_deferred(self):
+    def test_references___class___nested_used(self):
         class _C:
             res = [lambda: __class__ for _ in [1]]
         self.assertIs(_C.res[0](), _C)
