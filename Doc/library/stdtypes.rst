@@ -2174,8 +2174,24 @@ expression support in the :mod:`re` module).
    character, ``False`` otherwise.  Digits include decimal characters and digits that need
    special handling, such as the compatibility superscript digits.
    This covers digits which cannot be used to form numbers in base 10,
-   like the Kharosthi numbers.  Formally, a digit is a character that has the
+   like the `Kharosthi numbers <https://en.wikipedia.org/wiki/Kharosthi#Numerals>`__.
+   Formally, a digit is a character that has the
    property value Numeric_Type=Digit or Numeric_Type=Decimal.
+
+   For example:
+
+   .. doctest::
+
+      >>> '0123456789'.isdigit()
+      True
+      >>> '٠١٢٣٤٥٦٧٨٩'.isdigit()  # Arabic-Indic digits zero to nine
+      True
+      >>> '⅕'.isdigit()  # Vulgar fraction one fifth
+      False
+      >>> '²'.isdecimal(), '²'.isdigit(),  '²'.isnumeric()
+      (False, True, True)
+
+   See also :meth:`isdecimal` and :meth:`isnumeric`.
 
 
 .. method:: str.isidentifier()
@@ -2217,15 +2233,14 @@ expression support in the :mod:`re` module).
 
       >>> '0123456789'.isnumeric()
       True
-      >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric()  # Arabic-indic digit zero to nine
+      >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric()  # Arabic-Indic digits zero to nine
       True
       >>> '⅕'.isnumeric()  # Vulgar fraction one fifth
       True
       >>> '²'.isdecimal(), '²'.isdigit(),  '²'.isnumeric()
       (False, True, True)
 
-   See also :meth:`isdecimal` and :meth:`isdigit`. Numeric characters are
-   a superset of decimal numbers.
+   See also :meth:`isdecimal` and :meth:`isdigit`.
 
 
 .. method:: str.isprintable()
@@ -2376,7 +2391,8 @@ expression support in the :mod:`re` module).
 
    Return a copy of the string with leading characters removed.  The *chars*
    argument is a string specifying the set of characters to be removed.  If omitted
-   or ``None``, the *chars* argument defaults to removing whitespace.  The *chars*
+   or ``None``, the *chars* argument defaults to removing whitespace, that is
+   characters for which :meth:`str.isspace` is true.  The *chars*
    argument is not a prefix; rather, all combinations of its values are stripped::
 
       >>> '   spacious   '.lstrip()
@@ -2579,7 +2595,8 @@ expression support in the :mod:`re` module).
 
    Return a copy of the string with trailing characters removed.  The *chars*
    argument is a string specifying the set of characters to be removed.  If omitted
-   or ``None``, the *chars* argument defaults to removing whitespace.  The *chars*
+   or ``None``, the *chars* argument defaults to removing whitespace, that is
+   characters for which :meth:`str.isspace` is true.  The *chars*
    argument is not a suffix; rather, all combinations of its values are stripped.
    For example:
 
@@ -2755,11 +2772,9 @@ expression support in the :mod:`re` module).
 
    Return a copy of the string with the leading and trailing characters removed.
    The *chars* argument is a string specifying the set of characters to be removed.
-   If omitted or ``None``, the *chars* argument defaults to removing whitespace.
-   The *chars* argument is not a prefix or suffix; rather, all combinations of its
-   values are stripped.
-
-   Whitespace characters are defined by :meth:`str.isspace`.
+   If omitted or ``None``, the *chars* argument defaults to removing whitespace,
+   that is characters for which :meth:`str.isspace` is true.  The *chars* argument
+   is not a prefix or suffix; rather, all combinations of its values are stripped.
 
    For example:
 
