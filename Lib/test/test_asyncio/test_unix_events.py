@@ -1333,5 +1333,44 @@ class TestFork(unittest.TestCase):
 
         self.assertEqual(result.value, 0)
 
+
+@unittest.skipUnless(
+    unix_events.can_use_pidfd(),
+    "operating system does not support pidfd",
+)
+class PidfdChildWatcherTests(test_utils.TestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.loop = asyncio.new_event_loop()
+        self.set_event_loop(self.loop)
+
+    def test_pidfd_closed_when_waitpid_raises(self):
+        # _do_wait() must close the pidfd even when waitpid()
+        # fails with something other than ChildProcessError, otherwise the
+        # pidfd is leaked
+        watcher = unix_events._PidfdChildWatcher()
+        pid = os.posix_spawn(sys.executable, [sys.executable, '-c', ''],
+                             os.environ)
+        pidfd = os.pidfd_open(pid)
+        try:
+            async def coro():
+                with mock.patch.object(os, 'waitpid',
+                                       side_effect=OSError('unexpected')):
+                    with self.assertRaises(OSError):
+                        watcher._do_wait(pid, pidfd, lambda *a: None, ())
+
+            self.loop.run_until_complete(coro())
+
+            with self.assertRaises(OSError):
+                os.fstat(pidfd)
+        finally:
+            try:
+                os.close(pidfd)
+            except OSError:
+                pass
+            os.waitpid(pid, 0)
+
+
 if __name__ == '__main__':
     unittest.main()

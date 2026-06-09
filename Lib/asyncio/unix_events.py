@@ -876,19 +876,20 @@ class _PidfdChildWatcher:
         loop = events.get_running_loop()
         loop._remove_reader(pidfd)
         try:
-            _, status = os.waitpid(pid, 0)
-        except ChildProcessError:
-            # The child process is already reaped
-            # (may happen if waitpid() is called elsewhere).
-            returncode = 255
-            logger.warning(
-                "child process pid %d exit status already read: "
-                " will report returncode 255",
-                pid)
-        else:
-            returncode = waitstatus_to_exitcode(status)
-
-        os.close(pidfd)
+            try:
+                _, status = os.waitpid(pid, 0)
+            except ChildProcessError:
+                # The child process is already reaped
+                # (may happen if waitpid() is called elsewhere).
+                returncode = 255
+                logger.warning(
+                    "child process pid %d exit status already read: "
+                    " will report returncode 255",
+                    pid)
+            else:
+                returncode = waitstatus_to_exitcode(status)
+        finally:
+            os.close(pidfd)
         callback(pid, returncode, *args)
 
 class _ThreadedChildWatcher:
