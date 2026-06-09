@@ -1,7 +1,7 @@
 #include "pyconfig.h"   // Py_GIL_DISABLED
 #ifndef Py_GIL_DISABLED
-   // Need limited C API 3.13 for PyLong_AsInt()
-#  define Py_LIMITED_API 0x030d0000
+   // Need limited C API 3.5 for PyModule_AddFunctions()
+#  define Py_LIMITED_API 0x03050000
 #endif
 
 #include "parts.h"

@@ -94,6 +94,7 @@ class CAPIWeakrefTest(unittest.TestCase):
         obj = Object()
         wr = newref(obj)
         self.assertIs(type(wr), weakref.ReferenceType)
+        # PyWeakref_NewRef() handles None callback as NULL callback
         wr = newref(obj, None)
         self.assertIs(type(wr), weakref.ReferenceType)
         log = []
@@ -112,6 +113,7 @@ class CAPIWeakrefTest(unittest.TestCase):
         obj = Object()
         wp = newproxy(obj)
         self.assertIs(type(wp), weakref.ProxyType)
+        # PyWeakref_NewProxy() handles None callback as NULL callback
         wp = newproxy(obj, None)
         self.assertIs(type(wp), weakref.ProxyType)
         log = []
