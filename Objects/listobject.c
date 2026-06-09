@@ -3770,12 +3770,14 @@ list_ass_subscript_lock_held(PyObject *_self, PyObject *item, PyObject *value)
                     lim = Py_SIZE(self) - cur - 1;
                 }
 
-                _Py_ptr_wise_atomic_memmove(self, self->ob_item + cur - i,
+                _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
+                _Py_ptr_wise_atomic_memmove((PyObject *)self, self->ob_item + cur - i,
                     self->ob_item + cur + 1, lim);
             }
             cur = start + (size_t)slicelength * step;
             if (cur < (size_t)Py_SIZE(self)) {
-                _Py_ptr_wise_atomic_memmove(self, self->ob_item + cur - slicelength,
+                _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
+                _Py_ptr_wise_atomic_memmove((PyObject *)self, self->ob_item + cur - slicelength,
                     self->ob_item + cur, Py_SIZE(self) - cur);
             }
 
