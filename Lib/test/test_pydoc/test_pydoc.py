@@ -1308,7 +1308,7 @@ DATA
 FILE
     %s
 
-''' % longsummary.__file__)
+''' % inspect.getabsfile(longsummary))
 
     def test__future__imports(self):
         # __future__ features are excluded from module help,
