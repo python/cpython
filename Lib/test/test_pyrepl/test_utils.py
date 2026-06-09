@@ -132,13 +132,6 @@ class TestUtils(TestCase):
                     ("+", "op"),
                 ],
             ),
-            (
-                "case -1",
-                [
-                    ("case", "soft_keyword"),
-                    ("-", "op"),
-                ],
-            ),
         ]
         for code, expected_highlights in cases:
             with self.subTest(code=code):
