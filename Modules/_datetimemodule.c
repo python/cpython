@@ -139,17 +139,15 @@ get_current_module(PyInterpreterState *interp, PyObject **p_mod)
     if (PyDict_GetItemRef(dict, INTERP_KEY, &ref) < 0) {
         goto error;
     }
-    if (ref != NULL) {
-        if (ref != Py_None) {
-            if (PyWeakref_GetRef(ref, &mod) < 0) {
-                Py_DECREF(ref);
-                goto error;
-            }
-            if (mod == Py_None) {
-                Py_CLEAR(mod);
-            }
+    if (ref != NULL && ref != Py_None) {
+        if (PyWeakref_GetRef(ref, &mod) < 0) {
             Py_DECREF(ref);
+            goto error;
         }
+        if (mod == Py_None) {
+            Py_CLEAR(mod);
+        }
+        Py_DECREF(ref);
     }
     assert(!PyErr_Occurred());
     *p_mod = mod;

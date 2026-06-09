@@ -7512,6 +7512,7 @@ class ExtensionModuleTests(unittest.TestCase):
     @support.cpython_only
     @support.subTests(("setup", "call"), [
         ("obj = _datetime.timedelta", "obj(seconds=2)"),
+        ("obj = _datetime.timedelta(seconds=2)", "obj.total_seconds()"),
         ("obj = _datetime.date(2026, 6, 7)", "obj.isocalendar()"),
     ])
     def test_static_datetime_types_outlive_collected_module(self, setup, call):
