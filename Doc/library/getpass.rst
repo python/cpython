@@ -27,12 +27,12 @@ The :mod:`!getpass` module provides two functions:
    typed character is replaced by it. For example, ``echo_char='*'`` will
    display asterisks instead of the actual input.
 
-   If echo free input is unavailable :meth:`~getpass.getpass` falls back to printing
+   If echo-free input is unavailable, :func:`getpass` falls back to printing
    a warning message to *stream* and reading from :data:`sys.stdin` and
    issuing a :exc:`GetPassWarning`.
 
    .. note::
-      If you call :meth:`~getpass.getpass` from within IDLE, the input may be done in the
+      If you call :func:`getpass` from within IDLE, the input may be done in the
       terminal you launched IDLE from rather than the idle window itself.
 
    .. note::
