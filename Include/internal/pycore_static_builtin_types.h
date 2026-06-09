@@ -8,6 +8,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_exceptions.h"    // _Py_FOREACH_STATIC_EXCEPTION_TYPE
+
+
 /* Single source of truth for every static builtin type registered at
    startup, partitioned by where it is registered.  Adding a
    registration anywhere in the tree requires adding an entry to the
@@ -147,94 +150,6 @@ extern "C" {
     TYPE(PyODictKeys_Type) \
     TYPE(PyODictValues_Type) \
     TYPE(PyODict_Type)
-
-
-/* Registered via static_exceptions[] in Objects/exceptions.c.
-   NAME is the suffix; the real type is &_PyExc_<NAME>. */
-#define _Py_FOREACH_STATIC_EXCEPTION_TYPE(EXC) \
-    EXC(BaseException) \
-    \
-    EXC(BaseExceptionGroup) \
-    EXC(Exception) \
-    EXC(GeneratorExit) \
-    EXC(KeyboardInterrupt) \
-    EXC(SystemExit) \
-    \
-    EXC(ArithmeticError) \
-    EXC(AssertionError) \
-    EXC(AttributeError) \
-    EXC(BufferError) \
-    EXC(EOFError) \
-    EXC(ImportError) \
-    EXC(LookupError) \
-    EXC(MemoryError) \
-    EXC(NameError) \
-    EXC(OSError) \
-    EXC(ReferenceError) \
-    EXC(RuntimeError) \
-    EXC(StopAsyncIteration) \
-    EXC(StopIteration) \
-    EXC(SyntaxError) \
-    EXC(SystemError) \
-    EXC(TypeError) \
-    EXC(ValueError) \
-    EXC(Warning) \
-    \
-    EXC(FloatingPointError) \
-    EXC(OverflowError) \
-    EXC(ZeroDivisionError) \
-    \
-    EXC(BytesWarning) \
-    EXC(DeprecationWarning) \
-    EXC(EncodingWarning) \
-    EXC(FutureWarning) \
-    EXC(ImportWarning) \
-    EXC(PendingDeprecationWarning) \
-    EXC(ResourceWarning) \
-    EXC(RuntimeWarning) \
-    EXC(SyntaxWarning) \
-    EXC(UnicodeWarning) \
-    EXC(UserWarning) \
-    \
-    EXC(BlockingIOError) \
-    EXC(ChildProcessError) \
-    EXC(ConnectionError) \
-    EXC(FileExistsError) \
-    EXC(FileNotFoundError) \
-    EXC(InterruptedError) \
-    EXC(IsADirectoryError) \
-    EXC(NotADirectoryError) \
-    EXC(PermissionError) \
-    EXC(ProcessLookupError) \
-    EXC(TimeoutError) \
-    \
-    EXC(IndentationError) \
-    EXC(IndexError) \
-    EXC(KeyError) \
-    EXC(ImportCycleError) \
-    EXC(ModuleNotFoundError) \
-    EXC(NotImplementedError) \
-    EXC(PythonFinalizationError) \
-    EXC(RecursionError) \
-    EXC(UnboundLocalError) \
-    EXC(UnicodeError) \
-    \
-    EXC(BrokenPipeError) \
-    EXC(ConnectionAbortedError) \
-    EXC(ConnectionRefusedError) \
-    EXC(ConnectionResetError) \
-    \
-    EXC(TabError) \
-    \
-    EXC(UnicodeDecodeError) \
-    EXC(UnicodeEncodeError) \
-    EXC(UnicodeTranslateError)
-
-
-/* Static exceptions whose exposed name differs from the symbol's
-   suffix after `_PyExc_`.  Each entry is (NAME, "exposed name"). */
-#define _Py_FOREACH_RENAMED_EXCEPTION_TYPE(EXC) \
-    EXC(IncompleteInputError, "_IncompleteInputError")
 
 
 /* One TYPE(name) per textual _PyStaticType_InitBuiltin /
