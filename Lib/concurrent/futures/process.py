@@ -642,19 +642,21 @@ class ProcessPoolExecutor(_base.Executor):
 
         Args:
             max_workers: The maximum number of processes that can be used to
-                execute the given calls. If None or not given then as many
-                worker processes will be created as the machine has processors.
-            mp_context: A multiprocessing context to launch the workers created
-                using the multiprocessing.get_context('start method') API. This
-                object should provide SimpleQueue, Queue and Process.
+                execute the given calls.  If None or not given then as many
+                worker processes will be created as the machine has
+                processors.
+            mp_context: A multiprocessing context to launch the workers
+                created using the multiprocessing.get_context('start method')
+                API.  This object should provide SimpleQueue, Queue and
+                Process.
             initializer: A callable used to initialize worker processes.
             initargs: A tuple of arguments to pass to the initializer.
-            max_tasks_per_child: The maximum number of tasks a worker process
-                can complete before it will exit and be replaced with a fresh
-                worker process. The default of None means worker process will
-                live as long as the executor. Requires a non-'fork' mp_context
-                start method. When given, we default to using 'spawn' if no
-                mp_context is supplied.
+            max_tasks_per_child: The maximum number of tasks a worker
+                process can complete before it will exit and be replaced
+                with a fresh worker process.  The default of None means
+                worker process will live as long as the executor.  Requires
+                a non-'fork' mp_context start method.  When given, we
+                default to using 'spawn' if no mp_context is supplied.
         """
         _check_system_limits()
 
@@ -824,24 +826,25 @@ class ProcessPoolExecutor(_base.Executor):
         Args:
             fn: A callable that will take as many arguments as there are
                 passed iterables.
-            timeout: The maximum number of seconds to wait. If None, then there
-                is no limit on the wait time.
-            chunksize: If greater than one, the iterables will be chopped into
-                chunks of size chunksize and submitted to the process pool.
-                If set to one, the items in the list will be sent one at a time.
+            timeout: The maximum number of seconds to wait.  If None, then
+                there is no limit on the wait time.
+            chunksize: If greater than one, the iterables will be chopped
+                into chunks of size chunksize and submitted to the process
+                pool.  If set to one, the items in the list will be sent
+                one at a time.
             buffersize: The number of submitted tasks whose results have not
-                yet been yielded. If the buffer is full, iteration over the
+                yet been yielded.  If the buffer is full, iteration over the
                 iterables pauses until a result is yielded from the buffer.
-                If None, all input elements are eagerly collected, and a task is
-                submitted for each.
+                If None, all input elements are eagerly collected, and
+                a task is submitted for each.
 
         Returns:
-            An iterator equivalent to: map(func, *iterables) but the calls may
-            be evaluated out-of-order.
+            An iterator equivalent to: map(func, *iterables) but the calls
+            may be evaluated out-of-order.
 
         Raises:
-            TimeoutError: If the entire result iterator could not be generated
-                before the given timeout.
+            TimeoutError: If the entire result iterator could not be
+                generated before the given timeout.
             Exception: If fn(*args) raises for any values.
         """
         if chunksize < 1:
