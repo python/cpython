@@ -8,8 +8,7 @@ import pathlib
 
 import _build
 import _package
-
-HERE = pathlib.Path(__file__).parent
+import _shared
 
 
 def main():
@@ -28,6 +27,7 @@ def main():
         # may want to use them.
         "--config {WASMTIME_CONFIG_PATH}"
     )
+    context = _shared.Context()
 
     parser = argparse.ArgumentParser()
     subcommands = parser.add_subparsers(dest="subcommand")
@@ -80,6 +80,8 @@ def main():
             "--logdir",
             type=pathlib.Path,
             default=None,
+            dest="_log_path",
+            metavar="LOG-DIR",
             help="Directory to store log files",
         )
     for subcommand in (
@@ -109,8 +111,9 @@ def main():
         subcommand.add_argument(
             "--wasi-sdk",
             type=pathlib.Path,
-            dest="wasi_sdk_path",
+            dest="_wasi_sdk_path",
             default=None,
+            metavar="WASI-SDK-PATH",
             help="Path to the WASI SDK; defaults to WASI_SDK_PATH environment variable "
             "or the appropriate version found in /opt",
         )
@@ -122,16 +125,18 @@ def main():
             help="Command template for running the WASI host; defaults to "
             f"`{default_host_runner}`",
         )
-    for subcommand in build, configure_host, make_host, build_host:
+    for subcommand in build, configure_host, make_host, build_host, package:
         subcommand.add_argument(
             "--host-triple",
             action="store",
             default=None,
+            dest="_host_triple",
+            metavar="WASI-TRIPLE",
             help="The target triple for the WASI host build; "
-            f"defaults to the value found in {os.fsdecode(HERE / 'config.toml')}",
+            f"defaults to the value found in {os.fsdecode(context.here / 'config.toml')}",
         )
 
-    context = parser.parse_args()
+    parser.parse_args(namespace=context)
 
     match context.subcommand:
         case "configure-build-python":

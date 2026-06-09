@@ -30,32 +30,12 @@ import _shared
 # ❌ share/man/man1/
 # ☐ python.wasm
 
-
-@_shared.forced_cache
-def build_dir(context):
-    """The path to the build directory pointed to by pybuilddir.txt."""
-    relative_dir = (
-        (_shared.wasi_build_path(context) / "pybuilddir.txt")
-        .read_text()
-        .strip()
-    )
-    return _shared.wasi_build_path(context) / relative_dir
-
-
-@_shared.forced_cache
-def build_details(context):
-    """Get the JSON contents of build-details.json."""
-    with (build_dir(context) / "build-details.json").open() as f:
-        return json.load(f)
-
-
-
 def pythonXY(context, support_debug=False):
     """Calculate the "pythonX.Y" part of a path.
 
     If *support_debug* is True, then "d" is appended as appropriate.
     """
-    details = build_details(context)
+    details = context.wasi_build_details
     major = details["language"]["version_info"]["major"]
     minor = details["language"]["version_info"]["minor"]
     name = f"python{major}.{minor}"
@@ -70,7 +50,7 @@ def lib_python(context):
 
 def license_file(context):
     """Have <src>/LICENSE end up as lib/pythonXY/LICENSE.txt."""
-    return (lib_python(context) / "LICENSE.txt", _shared.CHECKOUT / "LICENSE")
+    return (lib_python(context) / "LICENSE.txt", context.checkout / "LICENSE")
 
 
 def build_dir_files(context):
@@ -81,14 +61,14 @@ def build_dir_files(context):
     """
     return [
         (lib_python(context) / path.name, path)
-        for path in build_dir(context).iterdir()
+        for path in context.wasi_pybuilddir.iterdir()
         if path.is_file(follow_symlinks=False)
     ]
 
 
 def stdlib_files(context):
     """Have <src>/Lib files end up in lib/pythonXY."""
-    lib_dir = _shared.CHECKOUT / "Lib"
+    lib_dir = context.checkout / "Lib"
     lib_files = []
     for root, dirs, files in lib_dir.walk():
         try:
@@ -111,8 +91,8 @@ def pkgconfig_files(context):
 
     Each file ends up being listed under `python3` and `python-3.N`.
     """
-    misc_dir = _shared.wasi_build_path(context) / "Misc"
-    details = build_details(context)
+    misc_dir = context.wasi_build_path / "Misc"
+    details = context.wasi_build_details
     major = details["language"]["version_info"]["major"]
     minor = details["language"]["version_info"]["minor"]
     pkgconfig = pathlib.PurePath("lib") / "pkgconfig"
@@ -138,7 +118,7 @@ def copy_files(files, base):
             src.copy(target)
 
 def package(context):
-    dist = _shared.CHECKOUT / "dist"
+    dist = context.checkout / "dist"
     if dist.exists():
         _shared.log("🧹", f"Deleting {dist} ...")
         shutil.rmtree(dist)
