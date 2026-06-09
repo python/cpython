@@ -311,7 +311,7 @@ def configure_wasi_python(context, working_dir):
     args = {
         "WASMTIME": "wasmtime",
         "ARGV0": f"/{wasi_build_dir}/python.wasm",
-        "_shared.CHECKOUT": os.fsdecode(_shared.CHECKOUT),
+        "CHECKOUT": os.fsdecode(_shared.CHECKOUT),
         "WASMTIME_CONFIG_PATH": os.fsdecode(_shared.HERE / "wasmtime.toml"),
     }
     # Check dynamically for wasmtime in case it was specified manually via
