@@ -3482,6 +3482,9 @@ module_exec(PyObject *module)
     if (_PyTestInternalCapi_Init_PyTime(module) < 0) {
         return 1;
     }
+    if (_PyTestInternalCapi_Init_PtrWiseMemmove(module) < 0) {
+        return 1;
+    }
     if (_PyTestInternalCapi_Init_Set(module) < 0) {
         return 1;
     }

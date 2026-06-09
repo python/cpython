@@ -1,7 +1,14 @@
+<<<<<<< HEAD
 // Tests for _PyObject_ptr_wise_atomic_memmove() in pycore_object.h
 
 #include "parts.h"
 #include "pycore_object.h"    // _PyObject_ptr_wise_atomic_memmove()
+=======
+// Tests for _Py_ptr_wise_atomic_memmove() in pycore_object.h
+
+#include "parts.h"
+#include "pycore_object.h"    // _Py_ptr_wise_atomic_memmove()
+>>>>>>> a4c9efbacc (gh-149966: deduplicate ptr_wise_atomic_memmove into a shared internal helper and add unit tests)
 #include "pycore_gc.h"        // _PyObject_GC_SET_SHARED()
 
 // Five distinguishable immortal singletons used as placeholder pointers.
@@ -29,7 +36,11 @@ fill_buf(PyObject **buf)
 }
 
 // Return a fresh empty PyListObject whose GC SHARED bit is set in
+<<<<<<< HEAD
 // Py_GIL_DISABLED builds.  This forces _PyObject_ptr_wise_atomic_memmove()
+=======
+// Py_GIL_DISABLED builds.  This forces _Py_ptr_wise_atomic_memmove()
+>>>>>>> a4c9efbacc (gh-149966: deduplicate ptr_wise_atomic_memmove into a shared internal helper and add unit tests)
 // to take the atomic (non-fast) path so we can exercise all branches.
 // In non-GIL builds the function always uses memmove, so no flag is needed.
 static PyObject *
@@ -52,7 +63,11 @@ call_memmove(PyObject **dest, PyObject **src, Py_ssize_t n)
 {
     PyObject *a = make_shared_container();
     if (a != NULL) {
+<<<<<<< HEAD
         _PyObject_ptr_wise_atomic_memmove(a, dest, src, n);
+=======
+        _Py_ptr_wise_atomic_memmove(a, dest, src, n);
+>>>>>>> a4c9efbacc (gh-149966: deduplicate ptr_wise_atomic_memmove into a shared internal helper and add unit tests)
     }
     return a;
 }
@@ -185,7 +200,11 @@ test_memmove_single_owner(PyObject *self, PyObject *Py_UNUSED(arg))
     PyObject *buf[NPTRS];
     fill_buf(buf);
 
+<<<<<<< HEAD
     _PyObject_ptr_wise_atomic_memmove(a, &buf[0], &buf[2], 3);
+=======
+    _Py_ptr_wise_atomic_memmove(a, &buf[0], &buf[2], 3);
+>>>>>>> a4c9efbacc (gh-149966: deduplicate ptr_wise_atomic_memmove into a shared internal helper and add unit tests)
 
     assert(buf[0] == test_objs[2]);
     assert(buf[1] == test_objs[3]);
