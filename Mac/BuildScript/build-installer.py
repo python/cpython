@@ -246,9 +246,9 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="OpenSSL 3.0.20",
-              url="https://github.com/openssl/openssl/releases/download/openssl-3.0.20/openssl-3.0.20.tar.gz",
-              checksum='c80a01dfc70ece4dc21168932c37739042d404d46ccc81a5986dd75314ecda6f',
+              name="OpenSSL 3.0.21",
+              url="https://github.com/openssl/openssl/releases/download/openssl-3.0.21/openssl-3.0.21.tar.gz",
+              checksum="617e29af8e421f46649484a4937e48c685e47f46488167c982f88bc4ec1d522f",
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
