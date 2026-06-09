@@ -130,6 +130,7 @@ class TestUtils(TestCase):
                 [
                     ("case", "soft_keyword"),
                     ("+", "op"),
+                    ("1", "number"),
                 ],
             ),
         ]
