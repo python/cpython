@@ -34,7 +34,7 @@ PyAPI_FUNC(Py_hash_t) _Py_HashBytes(const void*, Py_ssize_t);
 /* hash secret
  *
  * memory layout on 64 bit systems
- *   cccccccc cccccccc cccccccc  uc -- unsigned char[24]
+ *   cccccccc cccccccc cccccccc cccccccc cccccccc  uc -- unsigned char[40]
  *   pppppppp ssssssss ........  fnv -- two Py_hash_t
  *   k0k0k0k0 k1k1k1k1 ........  siphash -- two uint64_t
  *   ........ ........ ssssssss  djbx33a -- 16 bytes padding + one Py_hash_t
@@ -52,8 +52,8 @@ PyAPI_FUNC(Py_hash_t) _Py_HashBytes(const void*, Py_ssize_t);
  */
 #ifndef Py_LIMITED_API
 typedef union {
-    /* ensure 24 bytes */
-    unsigned char uc[24];
+    /* ensure 40 bytes */
+    unsigned char uc[40];
     /* two Py_hash_t for FNV */
     struct {
         Py_hash_t prefix;
@@ -72,6 +72,7 @@ typedef union {
     struct {
         unsigned char padding[16];
         Py_hash_t hashsalt;
+        uint8_t hashsalt16[16];
     } expat;
 } _Py_HashSecret_t;
 PyAPI_DATA(_Py_HashSecret_t) _Py_HashSecret;
