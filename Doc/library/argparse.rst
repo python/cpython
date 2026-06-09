@@ -1783,8 +1783,9 @@ Subcommands
    ``baz`` attributes are present.
 
    If a subparser defines an argument with the same ``dest`` as the parent
-   parser, the subparser's value overwrites the parent's, so users should give
-   them distinct ``dest`` values to keep both.
+   parser, the two share a single namespace attribute, so the parent's value
+   won't be retained. Users should give them  distinct ``dest`` values to
+   keep both.
 
    Similarly, when a help message is requested from a subparser, only the help
    for that particular parser will be printed.  The help message will not
