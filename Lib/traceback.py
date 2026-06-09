@@ -1495,7 +1495,7 @@ class TracebackException:
                 if not suggestion or suggestion == wrong_name:
                     continue
                 # semantic edge case
-                if suggestion == 'switch':
+                if suggestion == 'switch' or wrong_name == 'switch':
                     suggestion = 'match'
                 # Try to replace the token with the keyword
                 the_lines = error_lines.copy()
