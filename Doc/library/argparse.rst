@@ -1363,6 +1363,10 @@ behavior::
    >>> parser.parse_args('--foo XXX'.split())
    Namespace(bar='XXX')
 
+Multiple arguments may share the same ``dest``.  By default, the value from the
+last such argument given on the command line wins.  Use ``action='append'`` to
+collect values from all of them into a list instead.  For conflicting *option
+strings* rather than ``dest`` names, see conflict_handler_.
 
 .. _deprecated:
 
@@ -1757,6 +1761,11 @@ Subcommands
    the ``a`` command is specified, only the ``foo`` and ``bar`` attributes are
    present, and when the ``b`` command is specified, only the ``foo`` and
    ``baz`` attributes are present.
+
+   If a subparser defines an argument with the same ``dest`` as the parent
+   parser, the two share a single namespace attribute, so the parent's value
+   won't be retained. Users should give them  distinct ``dest`` values to
+   keep both.
 
    Similarly, when a help message is requested from a subparser, only the help
    for that particular parser will be printed.  The help message will not
