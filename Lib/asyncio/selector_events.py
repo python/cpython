@@ -530,11 +530,12 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
     async def sock_sendall(self, sock, data):
         """Send data to the socket.
 
-        The socket must be connected to a remote socket. This method continues
-        to send data from data until either all data has been sent or an
-        error occurs. None is returned on success. On error, an exception is
-        raised, and there is no way to determine how much data, if any, was
-        successfully processed by the receiving end of the connection.
+        The socket must be connected to a remote socket.  This method
+        continues to send data from data until either all data has been
+        sent or an error occurs.  None is returned on success.  On error,
+        an exception is raised, and there is no way to determine how much
+        data, if any, was successfully processed by the receiving end of
+        the connection.
         """
         base_events._check_ssl_socket(sock)
         if self._debug and sock.gettimeout() != 0:
@@ -583,11 +584,12 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
     async def sock_sendto(self, sock, data, address):
         """Send data to the socket.
 
-        The socket must be connected to a remote socket. This method continues
-        to send data from data until either all data has been sent or an
-        error occurs. None is returned on success. On error, an exception is
-        raised, and there is no way to determine how much data, if any, was
-        successfully processed by the receiving end of the connection.
+        The socket must be connected to a remote socket.  This method
+        continues to send data from data until either all data has been
+        sent or an error occurs.  None is returned on success.  On error,
+        an exception is raised, and there is no way to determine how much
+        data, if any, was successfully processed by the receiving end of
+        the connection.
         """
         base_events._check_ssl_socket(sock)
         if self._debug and sock.gettimeout() != 0:
@@ -698,10 +700,11 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
     async def sock_accept(self, sock):
         """Accept a connection.
 
-        The socket must be bound to an address and listening for connections.
-        The return value is a pair (conn, address) where conn is a new socket
-        object usable to send and receive data on the connection, and address
-        is the address bound to the socket on the other end of the connection.
+        The socket must be bound to an address and listening for
+        connections.  The return value is a pair (conn, address) where
+        conn is a new socket object usable to send and receive data on the
+        connection, and address is the address bound to the socket on the
+        other end of the connection.
         """
         base_events._check_ssl_socket(sock)
         if self._debug and sock.gettimeout() != 0:
