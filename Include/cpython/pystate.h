@@ -8,8 +8,6 @@
 PyAPI_FUNC(int) _PyInterpreterState_RequiresIDRef(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_RequireIDRef(PyInterpreterState *, int);
 
-PyAPI_FUNC(PyObject *) PyUnstable_InterpreterState_GetMainModule(PyInterpreterState *);
-
 /* State unique per thread */
 
 /* Py_tracefunc return -1 when raising an exception, or 0 for success. */
@@ -28,6 +26,13 @@ typedef int (*Py_tracefunc)(PyObject *, PyFrameObject *, int, PyObject *);
 #define PyTrace_C_EXCEPTION 5
 #define PyTrace_C_RETURN 6
 #define PyTrace_OPCODE 7
+
+/* Remote debugger support */
+#define _Py_MAX_SCRIPT_PATH_SIZE 512
+typedef struct {
+    int32_t debugger_pending_call;
+    char debugger_script_path[_Py_MAX_SCRIPT_PATH_SIZE];
+} _PyRemoteDebuggerSupport;
 
 typedef struct _err_stackitem {
     /* This struct represents a single execution context where we might
@@ -56,17 +61,19 @@ typedef struct _stack_chunk {
     PyObject * data[1]; /* Variable sized */
 } _PyStackChunk;
 
-struct _py_trashcan {
-    int delete_nesting;
-    PyObject *delete_later;
-};
-
+/* Minimum size of data stack chunk */
+#define _PY_DATA_STACK_CHUNK_SIZE (16*1024)
 struct _ts {
     /* See Python/ceval.c for comments explaining most fields */
 
     PyThreadState *prev;
     PyThreadState *next;
     PyInterpreterState *interp;
+
+    /* The global instrumentation version in high bits, plus flags indicating
+       when to break out of the interpreter loop in lower bits. See details in
+       pycore_ceval.h. */
+    uintptr_t eval_breaker;
 
     struct {
         /* Has been initialized to a safe state.
@@ -95,21 +102,28 @@ struct _ts {
 #ifdef Py_BUILD_CORE
 #  define _PyThreadState_WHENCE_NOTSET -1
 #  define _PyThreadState_WHENCE_UNKNOWN 0
-#  define _PyThreadState_WHENCE_INTERP 1
-#  define _PyThreadState_WHENCE_THREADING 2
-#  define _PyThreadState_WHENCE_GILSTATE 3
-#  define _PyThreadState_WHENCE_EXEC 4
+#  define _PyThreadState_WHENCE_INIT 1
+#  define _PyThreadState_WHENCE_FINI 2
+#  define _PyThreadState_WHENCE_THREADING 3
+#  define _PyThreadState_WHENCE_C_API 4
+#  define _PyThreadState_WHENCE_EXEC 5
+#  define _PyThreadState_WHENCE_THREADING_DAEMON 6
 #endif
+
+    /* Currently holds the GIL. Must be its own field to avoid data races */
+    int holds_gil;
+
+    /* Currently requesting the GIL */
+    int gil_requested;
+
     int _whence;
 
-    /* Thread state (_Py_THREAD_ATTACHED, _Py_THREAD_DETACHED, _Py_THREAD_GC).
+    /* Thread state (_Py_THREAD_ATTACHED, _Py_THREAD_DETACHED, _Py_THREAD_SUSPENDED).
        See Include/internal/pycore_pystate.h for more details. */
     int state;
 
     int py_recursion_remaining;
     int py_recursion_limit;
-
-    int c_recursion_remaining;
     int recursion_headroom; /* Allow 50 more calls to handle any errors. */
 
     /* 'tracing' keeps track of the execution depth when tracing/profiling.
@@ -120,6 +134,15 @@ struct _ts {
 
     /* Pointer to currently executing frame. */
     struct _PyInterpreterFrame *current_frame;
+
+    /* Pointer to the base frame (bottommost sentinel frame).
+       Used by profilers to validate complete stack unwinding.
+       Points to the embedded base_frame in _PyThreadStateImpl.
+       The frame is embedded there rather than here because _PyInterpreterFrame
+       is defined in internal headers that cannot be exposed in the public API. */
+    struct _PyInterpreterFrame *base_frame;
+
+    struct _PyInterpreterFrame *last_profiled_frame;
 
     Py_tracefunc c_profilefunc;
     Py_tracefunc c_tracefunc;
@@ -147,33 +170,19 @@ struct _ts {
      */
     unsigned long native_thread_id;
 
-    struct _py_trashcan trash;
-
-    /* Called when a thread state is deleted normally, but not when it
-     * is destroyed after fork().
-     * Pain:  to prevent rare but fatal shutdown errors (issue 18808),
-     * Thread.join() must wait for the join'ed thread's tstate to be unlinked
-     * from the tstate chain.  That happens at the end of a thread's life,
-     * in pystate.c.
-     * The obvious way doesn't quite work:  create a lock which the tstate
-     * unlinking code releases, and have Thread.join() wait to acquire that
-     * lock.  The problem is that we _are_ at the end of the thread's life:
-     * if the thread holds the last reference to the lock, decref'ing the
-     * lock will delete the lock, and that may trigger arbitrary Python code
-     * if there's a weakref, with a callback, to the lock.  But by this time
-     * _PyRuntime.gilstate.tstate_current is already NULL, so only the simplest
-     * of C code can be allowed to run (in particular it must not be possible to
-     * release the GIL).
-     * So instead of holding the lock directly, the tstate holds a weakref to
-     * the lock:  that's the value of on_delete_data below.  Decref'ing a
-     * weakref is harmless.
-     * on_delete points to _threadmodule.c's static release_sentinel() function.
-     * After the tstate is unlinked, release_sentinel is called with the
-     * weakref-to-lock (on_delete_data) argument, and release_sentinel releases
-     * the indirectly held lock.
+    /* List of objects that still need to be cleaned up, singly linked
+     * via their gc headers' gc_next pointers. The list is populated by
+     * _PyTrash_thread_deposit_object and cleaned up by
+     * _PyTrash_thread_destroy_chain.
      */
-    void (*on_delete)(void *);
-    void *on_delete_data;
+    PyObject *delete_later;
+
+    /* Tagged pointer to top-most critical section, or zero if there is no
+     * active critical section. Critical sections are only used in
+     * `--disable-gil` builds (i.e., when Py_GIL_DISABLED is defined to 1). In the
+     * default build, this field is always zero.
+     */
+    uintptr_t critical_section;
 
     int coroutine_origin_tracking_depth;
 
@@ -189,6 +198,7 @@ struct _ts {
     _PyStackChunk *datastack_chunk;
     PyObject **datastack_top;
     PyObject **datastack_limit;
+    _PyStackChunk *datastack_cached_chunk;
     /* XXX signal handlers should also be here */
 
     /* The following fields are here to avoid allocation during init.
@@ -205,18 +215,45 @@ struct _ts {
     /* The thread's exception stack entry.  (Always the last entry.) */
     _PyErr_StackItem exc_state;
 
-};
+    PyObject *current_executor;
 
-#ifdef __wasi__
-   // WASI has limited call stack. Python's recursion limit depends on code
-   // layout, optimization, and WASI runtime. Wasmtime can handle about 700
-   // recursions, sometimes less. 500 is a more conservative limit.
-#  define Py_C_RECURSION_LIMIT 500
-#else
-   // This value is duplicated in Lib/test/support/__init__.py
-#  define Py_C_RECURSION_LIMIT 1500
+    /* Internal to the JIT */
+    struct _PyExitData *jit_exit;
+
+    uint64_t dict_global_version;
+
+    /* Used to store/retrieve `threading.local` keys/values for this thread */
+    PyObject *threading_local_key;
+
+    /* Used by `threading.local`s to be remove keys/values for dying threads.
+       The PyThreadObject must hold the only reference to this value.
+    */
+    PyObject *threading_local_sentinel;
+    _PyRemoteDebuggerSupport remote_debugger_support;
+
+#ifdef Py_STATS
+    // Pointer to PyStats structure, NULL if recording is off.  For the
+    // free-threaded build, the structure is per-thread (stored as a pointer
+    // in _PyThreadStateImpl).  For the default build, the structure is stored
+    // in the PyInterpreterState structure (threads do not have their own
+    // structure and all share the same per-interpreter structure).
+    PyStats *pystats;
 #endif
 
+    struct {
+        /* Number of nested PyThreadState_Ensure() calls on this thread state */
+        Py_ssize_t counter;
+
+        /* Should this thread state be deleted upon calling
+           PyThreadState_Release() (with the counter at 1)?
+
+           This is only true for thread states created by PyThreadState_Ensure() */
+        int delete_on_release;
+
+        /* The interpreter guard owned by PyThreadState_EnsureFromView(), if any. */
+        PyInterpreterGuard *owned_guard;
+    } ensure;
+};
 
 /* other API */
 
@@ -224,6 +261,12 @@ struct _ts {
  * if it is NULL. */
 PyAPI_FUNC(PyThreadState *) PyThreadState_GetUnchecked(void);
 
+// Deprecated alias kept for backward compatibility
+Py_DEPRECATED(3.14) static inline PyThreadState*
+_PyThreadState_UncheckedGet(void)
+{
+    return PyThreadState_GetUnchecked();
+}
 
 // Disable tracing and profiling.
 PyAPI_FUNC(void) PyThreadState_EnterTracing(PyThreadState *tstate);
@@ -232,6 +275,21 @@ PyAPI_FUNC(void) PyThreadState_EnterTracing(PyThreadState *tstate);
 // function is set, otherwise disable them.
 PyAPI_FUNC(void) PyThreadState_LeaveTracing(PyThreadState *tstate);
 
+#ifdef Py_STATS
+#if defined(HAVE_THREAD_LOCAL) && !defined(Py_BUILD_CORE_MODULE)
+extern _Py_thread_local PyThreadState *_Py_tss_tstate;
+
+static inline PyStats*
+_PyThreadState_GetStatsFast(void)
+{
+    if (_Py_tss_tstate == NULL) {
+        return NULL; // no attached thread state
+    }
+    return _Py_tss_tstate->pystats;
+}
+#endif
+#endif // Py_STATS
+
 /* PyGILState */
 
 /* Helper/diagnostic function - return 1 if the current thread
@@ -239,6 +297,23 @@ PyAPI_FUNC(void) PyThreadState_LeaveTracing(PyThreadState *tstate);
 
    The function returns 1 if _PyGILState_check_enabled is non-zero. */
 PyAPI_FUNC(int) PyGILState_Check(void);
+
+/* The implementation of sys._current_frames()  Returns a dict mapping
+   thread id to that thread's current frame.
+*/
+PyAPI_FUNC(PyObject*) _PyThread_CurrentFrames(void);
+
+// Set the stack protection start address and stack protection size
+// of a Python thread state
+PyAPI_FUNC(int) PyUnstable_ThreadState_SetStackProtection(
+    PyThreadState *tstate,
+    void *stack_start_addr,  // Stack start address
+    size_t stack_size);      // Stack size (in bytes)
+
+// Reset the stack protection start address and stack protection size
+// of a Python thread state
+PyAPI_FUNC(void) PyUnstable_ThreadState_ResetStackProtection(
+    PyThreadState *tstate);
 
 /* Routines for advanced debuggers, requested by David Beazley.
    Don't use unless you know what you are doing! */
@@ -258,3 +333,8 @@ PyAPI_FUNC(_PyFrameEvalFunction) _PyInterpreterState_GetEvalFrameFunc(
 PyAPI_FUNC(void) _PyInterpreterState_SetEvalFrameFunc(
     PyInterpreterState *interp,
     _PyFrameEvalFunction eval_frame);
+PyAPI_FUNC(void) _PyInterpreterState_SetEvalFrameAllowSpecialization(
+    PyInterpreterState *interp,
+    int allow_specialization);
+PyAPI_FUNC(int) _PyInterpreterState_IsSpecializationEnabled(
+    PyInterpreterState *interp);

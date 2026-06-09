@@ -24,6 +24,10 @@ NUSPEC_PLATFORM_DATA = dict(
     amd64=("64-bit", "python", "Python"),
     arm32=("ARM", "pythonarm", "Python (ARM)"),
     arm64=("ARM64", "pythonarm64", "Python (ARM64)"),
+    win32t=("32-bit free-threaded", "pythonx86-freethreaded", "Python (32-bit, free-threaded)"),
+    amd64t=("64-bit free-threaded", "python-freethreaded", "Python (free-threaded)"),
+    arm32t=("ARM free-threaded", "pythonarm-freethreaded", "Python (ARM, free-threaded)"),
+    arm64t=("ARM64 free-threaded", "pythonarm64-freethreaded", "Python (ARM64, free-threaded)"),
 )
 
 if not NUSPEC_DATA["PYTHON_VERSION"]:
@@ -58,7 +62,10 @@ NUSPEC_TEMPLATE = r"""<?xml version="1.0"?>
 
 
 def _get_nuspec_data_overrides(ns):
-    for k, v in zip(NUSPEC_PLATFORM_DATA["_keys"], NUSPEC_PLATFORM_DATA[ns.arch]):
+    arch = ns.arch
+    if ns.include_freethreaded:
+        arch += "t"
+    for k, v in zip(NUSPEC_PLATFORM_DATA["_keys"], NUSPEC_PLATFORM_DATA[arch]):
         ev = os.getenv("PYTHON_NUSPEC_" + k)
         if ev:
             yield k, ev

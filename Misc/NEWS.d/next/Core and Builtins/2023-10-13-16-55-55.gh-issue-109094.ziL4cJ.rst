@@ -1,3 +1,0 @@
-Replace ``prev_instr`` on the interpreter frame by ``instr_ptr`` which
-points to the beginning of the instruction that is currently executing (or
-will execute once the frame resumes).

@@ -1,1 +1,0 @@
-Implement biased reference counting in ``--disable-gil`` builds.

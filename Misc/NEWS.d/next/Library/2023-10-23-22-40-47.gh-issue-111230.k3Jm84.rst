@@ -1,1 +1,0 @@
-Fix :mod:`ssl` not checking for errors when initializing.
