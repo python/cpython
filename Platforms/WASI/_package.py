@@ -30,6 +30,7 @@ import _shared
 # ❌ share/man/man1/
 # ☐ python.wasm
 
+
 def pythonXY(context, support_debug=False):
     """Calculate the "pythonX.Y" part of a path.
 
@@ -80,7 +81,7 @@ def stdlib_files(context):
             file_path = pathlib.Path(root) / file
             details = (
                 lib_python(context) / file_path.relative_to(lib_dir),
-                file_path
+                file_path,
             )
             lib_files.append(details)
     return lib_files
@@ -100,7 +101,10 @@ def pkgconfig_files(context):
         (pkgconfig / f"python{major}.pc", misc_dir / "python.pc"),
         (pkgconfig / f"python-{major}.{minor}.pc", misc_dir / "python.pc"),
         (pkgconfig / f"python3-embed.pc", misc_dir / "python-embed.pc"),
-        (pkgconfig / f"python-{major}.{minor}-embed.pc", misc_dir / "python-embed.pc"),
+        (
+            pkgconfig / f"python-{major}.{minor}-embed.pc",
+            misc_dir / "python-embed.pc",
+        ),
     ]
 
 
@@ -113,9 +117,10 @@ def filename_stem(context):
 
 def copy_files(files, base):
     for dest, src in files:
-            target = base / dest
-            target.parent.mkdir(parents=True, exist_ok=True)
-            src.copy(target)
+        target = base / dest
+        target.parent.mkdir(parents=True, exist_ok=True)
+        src.copy(target)
+
 
 def package(context):
     dist = context.checkout / "dist"

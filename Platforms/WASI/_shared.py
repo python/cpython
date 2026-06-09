@@ -1,4 +1,11 @@
-__lazy_modules__ = ["json", "os", "subprocess", "sysconfig", "tempfile", "tomllib"]
+__lazy_modules__ = [
+    "json",
+    "os",
+    "subprocess",
+    "sysconfig",
+    "tempfile",
+    "tomllib",
+]
 import functools
 import json
 import os
@@ -10,7 +17,6 @@ import tomllib
 
 
 class Context:
-
     def __init__(self):
         self.here = pathlib.Path(__file__).parent
 
@@ -50,7 +56,9 @@ class Context:
     @functools.cached_property
     def build_python_path(self):
         # Build platform can also be found via `config.guess`.
-        return self.cross_build_path / sysconfig.get_config_var("BUILD_GNU_TYPE")
+        return self.cross_build_path / sysconfig.get_config_var(
+            "BUILD_GNU_TYPE"
+        )
 
     @functools.cached_property
     def build_python_interpreter(self):
@@ -94,14 +102,14 @@ class Context:
     @functools.cached_property
     def wasi_sdk_path(self):
         if wasi_sdk_path := self._wasi_sdk_path:
-                if not wasi_sdk_path.exists():
-                    raise ValueError(
-                        "WASI SDK not found; "
-                        "download from "
-                        "https://github.com/WebAssembly/wasi-sdk and/or "
-                        "specify via $WASI_SDK_PATH or --wasi-sdk"
-                    )
-                return wasi_sdk_path
+            if not wasi_sdk_path.exists():
+                raise ValueError(
+                    "WASI SDK not found; "
+                    "download from "
+                    "https://github.com/WebAssembly/wasi-sdk and/or "
+                    "specify via $WASI_SDK_PATH or --wasi-sdk"
+                )
+            return wasi_sdk_path
 
         with (self.here / "config.toml").open("rb") as file:
             config = tomllib.load(file)
@@ -134,7 +142,10 @@ class Context:
         # Starting with WASI SDK 25, a VERSION file is included in the root
         # of the SDK directory that we can read to warn folks when they are using
         # an unsupported version.
-        if wasi_sdk_path and (version_file := wasi_sdk_path / "VERSION").is_file():
+        if (
+            wasi_sdk_path
+            and (version_file := wasi_sdk_path / "VERSION").is_file()
+        ):
             version_details = version_file.read_text(encoding="utf-8")
             found_version = version_details.splitlines()[0]
             # Make sure there's a trailing dot to avoid false positives if somehow the

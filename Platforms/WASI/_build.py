@@ -82,11 +82,7 @@ def subdir(context_attr, *, clean_ok=False):
             working_dir = getattr(context, context_attr)
             separator()
             _shared.log("📁", os.fsdecode(working_dir))
-            if (
-                clean_ok
-                and context.clean
-                and working_dir.exists()
-            ):
+            if clean_ok and context.clean and working_dir.exists():
                 _shared.log("🚮", "Deleting directory (--clean)...")
                 shutil.rmtree(working_dir)
 
@@ -136,7 +132,10 @@ def configure_build_python(context, working_dir):
         if context.setup_local_path.read_bytes() == LOCAL_SETUP_MARKER:
             _shared.log("👍", f"{context.setup_local_path} exists ...")
         else:
-            _shared.log("⚠️", f"{context.setup_local_path} exists, but has unexpected contents")
+            _shared.log(
+                "⚠️",
+                f"{context.setup_local_path} exists, but has unexpected contents",
+            )
     else:
         _shared.log("📝", f"Creating {context.setup_local_path} ...")
         context.setup_local_path.write_bytes(LOCAL_SETUP_MARKER)
@@ -284,4 +283,6 @@ def clean_contents(context):
 
     if context.setup_local_path.exists():
         if context.setup_local_path.read_bytes() == LOCAL_SETUP_MARKER:
-            _shared.log("🧹", f"Deleting generated {context.setup_local_path} ...")
+            _shared.log(
+                "🧹", f"Deleting generated {context.setup_local_path} ..."
+            )
