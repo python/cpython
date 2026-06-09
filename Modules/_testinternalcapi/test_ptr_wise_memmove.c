@@ -7,7 +7,7 @@
 // Five distinguishable immortal singletons used as placeholder pointers.
 // These require no reference-count management when stored in a raw array.
 #define NPTRS 5
-const static PyObject *test_objs[NPTRS] = {
+static PyObject *test_objs[NPTRS] = {
     Py_None, Py_True, Py_False, Py_Ellipsis, Py_NotImplemented
 };
 // Fill buf[0..NPTRS-1] with test_objs in order.
