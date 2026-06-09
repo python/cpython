@@ -442,9 +442,8 @@ is considered equivalent to the expression ``['-f', 'foo', '-f', 'bar']``.
 
 .. note::
 
-   Empty lines are treated as empty strings (``''``), which are allowed as values but
-   not as arguments. Empty lines that are read as arguments will result in an
-   "unrecognized arguments" error.
+   Each line is treated as a single argument, so an empty line is read as an
+   empty string (``''``).
 
 :class:`ArgumentParser` uses :term:`filesystem encoding and error handler`
 to read the file containing arguments.
@@ -2231,6 +2230,9 @@ Customizing file parsing
     class MyArgumentParser(argparse.ArgumentParser):
         def convert_arg_line_to_args(self, arg_line):
             return arg_line.split()
+
+   Note that with this override an argument can no longer contain spaces, since
+   each space-separated word becomes a separate argument.
 
 
 Exiting methods
