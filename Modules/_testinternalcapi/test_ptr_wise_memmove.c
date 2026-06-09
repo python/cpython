@@ -7,18 +7,9 @@
 // Five distinguishable immortal singletons used as placeholder pointers.
 // These require no reference-count management when stored in a raw array.
 #define NPTRS 5
-static PyObject *test_objs[NPTRS];
-
-static void
-setup_test_objs(void)
-{
-    test_objs[0] = Py_None;
-    test_objs[1] = Py_True;
-    test_objs[2] = Py_False;
-    test_objs[3] = Py_Ellipsis;
-    test_objs[4] = Py_NotImplemented;
-}
-
+const static PyObject *test_objs[NPTRS] = {
+    Py_None, Py_True, Py_False, Py_Ellipsis, Py_NotImplemented
+};
 // Fill buf[0..NPTRS-1] with test_objs in order.
 static void
 fill_buf(PyObject **buf)
@@ -64,7 +55,6 @@ call_memmove(PyObject **dest, PyObject **src, Py_ssize_t n)
 static PyObject *
 test_memmove_dest_lt_src(PyObject *self, PyObject *Py_UNUSED(arg))
 {
-    setup_test_objs();
 
     PyObject *buf[NPTRS];
     fill_buf(buf);
@@ -90,7 +80,6 @@ test_memmove_dest_lt_src(PyObject *self, PyObject *Py_UNUSED(arg))
 static PyObject *
 test_memmove_dest_gt_src(PyObject *self, PyObject *Py_UNUSED(arg))
 {
-    setup_test_objs();
 
     PyObject *buf[NPTRS];
     fill_buf(buf);
@@ -116,7 +105,6 @@ test_memmove_dest_gt_src(PyObject *self, PyObject *Py_UNUSED(arg))
 static PyObject *
 test_memmove_dest_eq_src(PyObject *self, PyObject *Py_UNUSED(arg))
 {
-    setup_test_objs();
 
     PyObject *buf[NPTRS];
     fill_buf(buf);
@@ -141,7 +129,6 @@ test_memmove_dest_eq_src(PyObject *self, PyObject *Py_UNUSED(arg))
 static PyObject *
 test_memmove_overlapping(PyObject *self, PyObject *Py_UNUSED(arg))
 {
-    setup_test_objs();
 
     PyObject *buf[NPTRS];
     fill_buf(buf);
@@ -168,7 +155,6 @@ test_memmove_overlapping(PyObject *self, PyObject *Py_UNUSED(arg))
 static PyObject *
 test_memmove_single_owner(PyObject *self, PyObject *Py_UNUSED(arg))
 {
-    setup_test_objs();
 
     PyObject *a = PyList_New(0);
     if (a == NULL) {
