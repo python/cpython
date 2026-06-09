@@ -1,1 +1,3 @@
-Add missing :c:func:`PyErr_NoMemory` call to ``Python/flowgraph.c`` module.
+Fix a crash, when there's no memory left on a device,
+which happened in code compilation.
+Now it raises a proper :exc:`MemoryError`.
