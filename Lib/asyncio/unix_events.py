@@ -54,7 +54,8 @@ def waitstatus_to_exitcode(status):
 class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     """Unix event loop.
 
-    Adds signal handling and UNIX Domain Socket support to SelectorEventLoop.
+    Adds signal handling and UNIX Domain Socket support to
+    SelectorEventLoop.
     """
 
     def __init__(self, selector=None):
