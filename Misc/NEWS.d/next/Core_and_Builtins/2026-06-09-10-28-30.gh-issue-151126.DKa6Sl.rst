@@ -1,3 +1,7 @@
 Fix a crash, when there's no memory left on a device,
-which happened in code compilation.
-Now it raises a proper :exc:`MemoryError`.
+which happened in:
+
+- code compilation
+- :func:`!_winapi.CreateProcess`
+
+Now these places raise proper :exc:`MemoryError` errors.
