@@ -11,11 +11,8 @@ import warnings
 import weakref
 from collections import UserList
 from test import support
-from test.support import (
-    os_helper,
-    set_recursion_limit,
-    threading_helper
-)
+from test.support import set_recursion_limit
+from test.support import os_helper, threading_helper
 from test.support.script_helper import assert_python_ok
 from .utils import CTestCase, PyTestCase
 
