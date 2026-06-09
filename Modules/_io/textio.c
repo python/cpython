@@ -1631,11 +1631,14 @@ _io_TextIOWrapper_detach_impl(textio *self)
 /*[clinic end generated code: output=7ba3715cd032d5f2 input=c908a3b4ef203b0f]*/
 {
     PyObject *buffer;
-    CHECK_ATTACHED(self);
     if (_PyFile_Flush((PyObject *)self) < 0) {
         return NULL;
     }
-    buffer = self->buffer;
+    /* _PyFile_Flush could detach before returning; raise an exception. */
+    buffer = buffer_access_safe(self);
+    if (buffer == NULL) {
+        return NULL;
+    }
     self->buffer = NULL;
     self->detached = 1;
     return buffer;
