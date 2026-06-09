@@ -378,11 +378,14 @@ class CheckDtraceProbes(unittest.TestCase):
     def get_readelf_version():
         try:
             cmd = ["readelf", "--version"]
+            # Force the C locale to disable localization.
+            env = dict(os.environ, LC_ALL="C")
             proc = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 universal_newlines=True,
+                env=env,
             )
             with proc:
                 version, stderr = proc.communicate()
@@ -427,11 +430,14 @@ class CheckDtraceProbes(unittest.TestCase):
                         break
 
         command = ["readelf", "-n", binary]
+        # Force the C locale to disable localization.
+        env = dict(os.environ, LC_ALL="C")
         stdout, _ = subprocess.Popen(
             command,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             universal_newlines=True,
+            env=env,
         ).communicate()
         return stdout
 
