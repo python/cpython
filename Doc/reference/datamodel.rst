@@ -2843,8 +2843,9 @@ The appropriate metaclass for a class definition is determined in two steps:
 
    * if the current candidate is a subclass of the class of the current base,
      continue with the next base;
-   * if the class of the current base is a subclass of the current candidate ,
-     continue with the next base;
+   * if the class of the current base is a subclass of the current candidate,
+     make the class of the current base the new candidate
+     and continue with the next base;
    * else raise a :exc:`TypeError`.
 
 
