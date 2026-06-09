@@ -1,3 +1,6 @@
 Fix a crash, when there's no memory left on a device,
-which happened in code compilation.
-Now it raises a proper :exc:`MemoryError`.
+which happened in:
+- Code compilation
+- :mod:`zoneinfo` caching
+
+Now these places raise a proper :exc:`MemoryError`.
