@@ -405,7 +405,28 @@ class CheckDtraceProbes(unittest.TestCase):
         return int(match.group(1)), int(match.group(2))
 
     def get_readelf_output(self):
-        command = ["readelf", "-n", sys.executable]
+        binary = sys.executable
+        if sysconfig.get_config_var("Py_ENABLE_SHARED"):
+            lib_dir = sysconfig.get_config_var("LIBDIR")
+            if not lib_dir or sysconfig.is_python_build():
+                lib_dir = os.path.abspath(os.path.dirname(sys.executable))
+
+            lib_names = []
+            for name in (
+                sysconfig.get_config_var("INSTSONAME"),
+                sysconfig.get_config_var("LDLIBRARY"),
+            ):
+                if name and name not in lib_names:
+                    lib_names.append(name)
+
+            if lib_dir:
+                for name in lib_names:
+                    libpython_path = os.path.join(lib_dir, name)
+                    if os.path.exists(libpython_path):
+                        binary = libpython_path
+                        break
+
+        command = ["readelf", "-n", binary]
         stdout, _ = subprocess.Popen(
             command,
             stdout=subprocess.PIPE,
