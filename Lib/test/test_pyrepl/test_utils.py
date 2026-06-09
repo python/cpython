@@ -125,6 +125,15 @@ class TestUtils(TestCase):
                     ("import", "keyword"),
                 ],
             ),
+            # `case` soft keyword with unary +/- operators (gh-145239)
+            (
+                "case +1",
+                [("case", "soft_keyword"), ("+", "op")],
+            ),
+            (
+                "case -1",
+                [("case", "soft_keyword"), ("-", "op")],
+            ),
         ]
         for code, expected_highlights in cases:
             with self.subTest(code=code):
