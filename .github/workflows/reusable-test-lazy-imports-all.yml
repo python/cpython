@@ -14,10 +14,6 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.actor }}-${{ github.head_ref || github.run_id }}
-  cancel-in-progress: true
-
 env:
   FORCE_COLOR: 1
 
