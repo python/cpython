@@ -79,6 +79,7 @@ class Context:
             build_details = json.loads(pybuilddir.read_text())
             return "d" in build_details["abi"]["flags"]
         else:
+            # Python 3.13 and older.
             test = "import sys, test.support; sys.exit(test.support.Py_DEBUG)"
             result = subprocess.run(
                 [self.build_python_interpreter, "-c", test],
