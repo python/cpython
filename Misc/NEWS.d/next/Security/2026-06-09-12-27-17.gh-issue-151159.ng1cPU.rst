@@ -1,0 +1,1 @@
+Bumps the OpenSSL version to 3.0.21 on Android.
