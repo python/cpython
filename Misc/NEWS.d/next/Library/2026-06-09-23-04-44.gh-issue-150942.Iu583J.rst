@@ -1,0 +1,2 @@
+Speed up :mod:`xml.etree.ElementTree` parsing of element attributes by using
+reference-stealing dict insertion.
