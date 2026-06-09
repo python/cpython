@@ -23,7 +23,7 @@ env:
 
 jobs:
   test-lazy-imports-all:
-    name: 'Test Lazy Imports Fully Enabled'
+    name: 'Lazy Imports All Enabled'
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
