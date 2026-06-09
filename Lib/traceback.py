@@ -1486,7 +1486,7 @@ class TracebackException:
             max_matches = 3
             matches = []
             if _suggestions is not None:
-                suggestion = _suggestions._generate_suggestions(keyword.kwlist, wrong_name)
+                suggestion = _suggestions._generate_suggestions(keyword.kwlist + keyword.softkwlist + ['switch'], wrong_name)
                 if suggestion:
                     matches.append(suggestion)
             matches.extend(difflib.get_close_matches(wrong_name, keyword.kwlist, n=max_matches, cutoff=0.5))
@@ -1494,6 +1494,9 @@ class TracebackException:
             for suggestion in matches:
                 if not suggestion or suggestion == wrong_name:
                     continue
+                # semantic edge case
+                if suggestion == 'switch':
+                    suggestion = 'match'
                 # Try to replace the token with the keyword
                 the_lines = error_lines.copy()
                 the_line = the_lines[start[0] - 1][:]
