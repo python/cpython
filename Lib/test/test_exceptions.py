@@ -1714,6 +1714,48 @@ class ExceptionTests(unittest.TestCase):
         gc_collect()  # For PyPy or other GCs.
         self.assertEqual(wr(), None)
 
+    @cpython_only
+    def test_oserror_refleak_attributes_before_init(self):
+        # gh-150988: no leak when a subclass sets OSError fields before
+        # super().__init__(), or when __init__ is called more than once.
+        class LeakingOSError(OSError):
+            def __init__(self, code, message, filename, filename2):
+                self.strerror = message
+                self.filename = filename
+                self.filename2 = filename2
+                super().__init__(code, message, filename, None, filename2)
+
+        msg = "some error message"
+        filename = "some filename"
+        filename2 = "some filename 2"
+        refcount_msg = sys.getrefcount(msg)
+        refcount_filename = sys.getrefcount(filename)
+        refcount_filename2 = sys.getrefcount(filename2)
+
+        for _ in range(5):
+            try:
+                raise LeakingOSError(1, msg, filename, filename2)
+            except OSError:
+                pass
+
+        gc_collect()
+        self.assertEqual(sys.getrefcount(msg), refcount_msg)
+        self.assertEqual(sys.getrefcount(filename), refcount_filename)
+        self.assertEqual(sys.getrefcount(filename2), refcount_filename2)
+
+        exc = LeakingOSError(1, msg, filename, filename2)
+        exc.__init__(2, msg, filename, filename2)
+        self.assertEqual(exc.errno, 2)
+        self.assertEqual(exc.strerror, msg)
+        self.assertEqual(exc.filename, filename)
+        self.assertEqual(exc.filename2, filename2)
+        del exc
+
+        gc_collect()
+        self.assertEqual(sys.getrefcount(msg), refcount_msg)
+        self.assertEqual(sys.getrefcount(filename), refcount_filename)
+        self.assertEqual(sys.getrefcount(filename2), refcount_filename2)
+
     def test_errno_ENOTDIR(self):
         # Issue #12802: "not a directory" errors are ENOTDIR even on Windows
         with self.assertRaises(OSError) as cm:

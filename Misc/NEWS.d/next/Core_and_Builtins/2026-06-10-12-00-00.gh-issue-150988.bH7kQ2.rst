@@ -1,0 +1,2 @@
+Fix a reference leak in :exc:`OSError` when attributes are set before
+``super().__init__()`` or when :meth:`~object.__init__` runs more than once.
