@@ -924,7 +924,6 @@ _PyPegen_set_syntax_error_metadata(Parser *p) {
         the_source // N gives ownership to metadata
     );
     if (!metadata) {
-        Py_DECREF(the_source);
         PyErr_Clear();
         return;
     }
@@ -1026,8 +1025,8 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
 
     if (tok->fp_interactive && tok->interactive_src_start && result && interactive_src != NULL) {
         *interactive_src = PyUnicode_FromString(tok->interactive_src_start);
-        if (!interactive_src || _PyArena_AddPyObject(arena, *interactive_src) < 0) {
-            Py_XDECREF(interactive_src);
+        if (!*interactive_src || _PyArena_AddPyObject(arena, *interactive_src) < 0) {
+            Py_XDECREF(*interactive_src);
             result = NULL;
             goto error;
         }

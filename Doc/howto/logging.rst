@@ -28,7 +28,7 @@ When to use logging
 ^^^^^^^^^^^^^^^^^^^
 
 You can access logging functionality by creating a logger via ``logger =
-getLogger(__name__)``, and then calling the logger's :meth:`~Logger.debug`,
+logging.getLogger(__name__)``, and then calling the logger's :meth:`~Logger.debug`,
 :meth:`~Logger.info`, :meth:`~Logger.warning`, :meth:`~Logger.error` and
 :meth:`~Logger.critical` methods. To determine when to use logging, and to see
 which logger methods to use when, see the table below. It states, for each of a

@@ -566,8 +566,12 @@ class ZipInfo:
         return header + filename + extra
 
     def _encodeFilenameFlags(self):
+        if self.flag_bits & _MASK_UTF_FILENAME:
+            encoding = 'ascii'
+        else:
+            encoding = 'cp437'
         try:
-            return self.filename.encode('ascii'), self.flag_bits
+            return self.filename.encode(encoding), self.flag_bits & ~_MASK_UTF_FILENAME
         except UnicodeEncodeError:
             return self.filename.encode('utf-8'), self.flag_bits | _MASK_UTF_FILENAME
 
@@ -620,11 +624,12 @@ class ZipInfo:
     def from_file(cls, filename, arcname=None, *, strict_timestamps=True):
         """Construct an appropriate ZipInfo for a file on the filesystem.
 
-        filename should be the path to a file or directory on the filesystem.
+        filename should be the path to a file or directory on the
+        filesystem.
 
-        arcname is the name which it will have within the archive (by default,
-        this will be the same as filename, but without a drive letter and with
-        leading path separators removed).
+        arcname is the name which it will have within the archive (by
+        default, this will be the same as filename, but without a drive
+        letter and with leading path separators removed).
         """
         if isinstance(filename, os.PathLike):
             filename = os.fspath(filename)
@@ -663,9 +668,12 @@ class ZipInfo:
         Return self.
         """
         # gh-91279: Set the SOURCE_DATE_EPOCH to a specific timestamp
-        epoch = os.environ.get('SOURCE_DATE_EPOCH')
-        get_time = int(epoch) if epoch else time.time()
-        self.date_time = time.localtime(get_time)[:6]
+        source_date_epoch = os.environ.get('SOURCE_DATE_EPOCH')
+
+        if source_date_epoch:
+            self.date_time = time.gmtime(int(source_date_epoch))[:6]
+        else:
+            self.date_time = time.localtime(time.time())[:6]
 
         self.compress_type = archive.compression
         self.compress_level = archive.compresslevel
@@ -1392,29 +1400,30 @@ class ZipFile:
     mode: The mode can be either read 'r', write 'w', exclusive create 'x',
           or append 'a'.
     compression: ZIP_STORED (no compression), ZIP_DEFLATED (requires zlib),
-                 ZIP_BZIP2 (requires bz2), ZIP_LZMA (requires lzma), or
-                 ZIP_ZSTANDARD (requires compression.zstd).
-    allowZip64: if True ZipFile will create files with ZIP64 extensions when
-                needed, otherwise it will raise an exception when this would
-                be necessary.
-    compresslevel: None (default for the given compression type) or an integer
-                   specifying the level to pass to the compressor.
-                   When using ZIP_STORED or ZIP_LZMA this keyword has no effect.
-                   When using ZIP_DEFLATED integers 0 through 9 are accepted.
-                   When using ZIP_BZIP2 integers 1 through 9 are accepted.
-                   When using ZIP_ZSTANDARD integers -7 though 22 are common,
-                   see the CompressionParameter enum in compression.zstd for
-                   details.
+          ZIP_BZIP2 (requires bz2), ZIP_LZMA (requires lzma), or
+          ZIP_ZSTANDARD (requires compression.zstd).
+    allowZip64: if True ZipFile will create files with ZIP64 extensions
+          when needed, otherwise it will raise an exception when this
+          would be necessary.
+    compresslevel: None (default for the given compression type) or
+          an integer specifying the level to pass to the compressor.
+          When using ZIP_STORED or ZIP_LZMA this keyword has no effect.
+          When using ZIP_DEFLATED integers 0 through 9 are accepted.
+          When using ZIP_BZIP2 integers 1 through 9 are accepted.
+          When using ZIP_ZSTANDARD integers -7 though 22 are common,
+          see the CompressionParameter enum in compression.zstd for
+          details.
 
     """
 
     fp = None                   # Set here since __del__ checks it
     _windows_illegal_name_trans_table = None
+    _ignore_invalid_names = False
 
     def __init__(self, file, mode="r", compression=ZIP_STORED, allowZip64=True,
                  compresslevel=None, *, strict_timestamps=True, metadata_encoding=None):
-        """Open the ZIP file with mode read 'r', write 'w', exclusive create 'x',
-        or append 'a'."""
+        """Open the ZIP file with mode read 'r', write 'w', exclusive create
+        'x', or append 'a'."""
         if mode not in ('r', 'w', 'x', 'a'):
             raise ValueError("ZipFile requires mode 'r', 'w', 'x', or 'a'")
 
@@ -1692,10 +1701,10 @@ class ZipFile:
 
         pwd is the password to decrypt files (only used for reading).
 
-        When writing, if the file size is not known in advance but may exceed
-        2 GiB, pass force_zip64 to use the ZIP64 format, which can handle large
-        files.  If the size is known in advance, it is best to pass a ZipInfo
-        instance for name, with zinfo.file_size set.
+        When writing, if the file size is not known in advance but may
+        exceed 2 GiB, pass force_zip64 to use the ZIP64 format, which can
+        handle large files.  If the size is known in advance, it is best to
+        pass a ZipInfo instance for name, with zinfo.file_size set.
         """
         if mode not in {"r", "w"}:
             raise ValueError('open() requires mode "r" or "w"')
@@ -1807,7 +1816,7 @@ class ZipFile:
         zinfo.compress_size = 0
         zinfo.CRC = 0
 
-        zinfo.flag_bits = 0x00
+        zinfo.flag_bits = _MASK_UTF_FILENAME
         if zinfo.compress_type == ZIP_LZMA:
             # Compressed data includes an end-of-stream (EOS) marker
             zinfo.flag_bits |= _MASK_COMPRESS_OPTION_1
@@ -1890,21 +1899,31 @@ class ZipFile:
 
         # build the destination pathname, replacing
         # forward slashes to platform specific separators.
-        arcname = member.filename.replace('/', os.path.sep)
-
-        if os.path.altsep:
+        arcname = member.filename
+        if os.path.sep != '/':
+            arcname = arcname.replace('/', os.path.sep)
+        if os.path.altsep and os.path.altsep != '/':
             arcname = arcname.replace(os.path.altsep, os.path.sep)
         # interpret absolute pathname as relative, remove drive letter or
         # UNC path, redundant separators, "." and ".." components.
-        arcname = os.path.splitdrive(arcname)[1]
+        drive, root, arcname = os.path.splitroot(arcname)
+        if self._ignore_invalid_names and (drive or root):
+            return None
+        if self._ignore_invalid_names and os.path.pardir in arcname.split(os.path.sep):
+            return None
         invalid_path_parts = ('', os.path.curdir, os.path.pardir)
         arcname = os.path.sep.join(x for x in arcname.split(os.path.sep)
                                    if x not in invalid_path_parts)
         if os.path.sep == '\\':
             # filter illegal characters on Windows
-            arcname = self._sanitize_windows_name(arcname, os.path.sep)
+            arcname2 = self._sanitize_windows_name(arcname, os.path.sep)
+            if self._ignore_invalid_names and arcname2 != arcname:
+                return None
+            arcname = arcname2
 
         if not arcname and not member.is_dir():
+            if self._ignore_invalid_names:
+                return None
             raise ValueError("Empty filename.")
 
         targetpath = os.path.join(targetpath, arcname)
@@ -2317,7 +2336,7 @@ def main(args=None):
     import argparse
 
     description = 'A simple command-line interface for zipfile module.'
-    parser = argparse.ArgumentParser(description=description, color=True)
+    parser = argparse.ArgumentParser(description=description)
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-l', '--list', metavar='<zipfile>',
                        help='Show listing of a zipfile')
@@ -2330,7 +2349,7 @@ def main(args=None):
     group.add_argument('-t', '--test', metavar='<zipfile>',
                        help='Test if a zipfile is valid')
     parser.add_argument('--metadata-encoding', metavar='<encoding>',
-                        help='Specify encoding of member names for -l, -e and -t')
+                        help='Specify encoding of member names for `-l`, `-e` and `-t`')
     args = parser.parse_args(args)
 
     encoding = args.metadata_encoding

@@ -39,10 +39,11 @@ Glossary
       ABCs with the :mod:`abc` module.
 
    annotate function
-      A function that can be called to retrieve the :term:`annotations <annotation>`
-      of an object. This function is accessible as the :attr:`~object.__annotate__`
-      attribute of functions, classes, and modules. Annotate functions are a
-      subset of :term:`evaluate functions <evaluate function>`.
+      A callable that can be called to retrieve the :term:`annotations <annotation>` of
+      an object. Annotate functions are usually :term:`functions <function>`,
+      automatically generated as the :attr:`~object.__annotate__` attribute of functions,
+      classes, and modules. Annotate functions are a subset of
+      :term:`evaluate functions <evaluate function>`.
 
    annotation
       A label associated with a variable, a class
@@ -412,7 +413,7 @@ Glossary
    decorator
       A function returning another function, usually applied as a function
       transformation using the ``@wrapper`` syntax.  Common examples for
-      decorators are :func:`classmethod` and :func:`staticmethod`.
+      decorators are :deco:`classmethod` and :deco:`staticmethod`.
 
       The decorator syntax is merely syntactic sugar, the following two
       function definitions are semantically equivalent::
@@ -675,7 +676,7 @@ Glossary
       determined by the dispatch algorithm.
 
       See also the :term:`single dispatch` glossary entry, the
-      :func:`functools.singledispatch` decorator, and :pep:`443`.
+      :deco:`functools.singledispatch` decorator, and :pep:`443`.
 
    generic type
       A :term:`type` that can be parameterized; typically a

@@ -1,13 +1,21 @@
 import io
+import re
 import textwrap
 import unittest
+import random
+import sys
 from email import message_from_string, message_from_bytes
 from email.message import EmailMessage
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from email.generator import Generator, BytesGenerator
+import email.generator
 from email.headerregistry import Address
 from email import policy
 import email.errors
 from test.test_email import TestEmailBase, parameterize
+import test.support
+
 
 
 @parameterize
@@ -288,6 +296,99 @@ class TestGeneratorBase:
         g.flatten(msg)
         self.assertEqual(s.getvalue(), self.typ(expected))
 
+    def test_non_ascii_addr_spec_raises(self):
+        # non-ascii is not permitted in any part of an addr-spec.  If the
+        # programmer generated it, it's an error.  (See also
+        # test_non_ascii_addr_spec_preserved below.)
+        p = self.policy.clone(utf8=False, max_line_length=20)
+        g = self.genclass(self.ioclass(), policy=p)
+        # XXX The particular part detected here isn't part of a behavioral
+        # spec and may change in the future.
+        cases = [
+            ('wők@example.com', 'wők', 'local-part'),
+            ('wok@exàmple.com', 'exàmple.com', 'domain'),
+            ('wők@exàmple.com', 'wők', 'local-part'),
+            (
+                '"Name, for display" <wők@example.com>',
+                'wők@example.com',
+                'addr-spec',
+                ),
+            (
+                'Näyttönimi <wők@example.com>',
+                'wők@example.com',
+                'addr-spec',
+                ),
+            (
+                '"a lőng quoted string as the local part"@example.com',
+                'a lőng quoted string as the local part',
+                'local-part',
+                ),
+
+        ]
+        for address, badtoken, partname in cases:
+            with self.subTest(address=address):
+                msg = EmailMessage()
+                msg['To'] = address
+                expected_error = (
+                    fr"(?i)(?=.*non-ascii)"
+                    fr"(?=.*{re.escape(badtoken)})"
+                    fr"(?=.*{partname})"
+                    fr"(?=.*policy.*utf8)"
+                )
+                with self.assertRaisesRegex(
+                    email.errors.HeaderWriteError, expected_error
+                ):
+                    g.flatten(msg)
+
+    def test_local_part_quoted_string_wrapped_correctly(self):
+        msg = self.msgmaker(self.typ(textwrap.dedent("""\
+            To: <"a long local part in a quoted string"@example.com>
+            Subject: test
+
+            None
+            """)), policy=self.policy.clone(max_line_length=20))
+        expected = textwrap.dedent("""\
+            To: <"a long local part in a
+             quoted string"@example.com>
+            Subject: test
+
+            None
+            """)
+        s = self.ioclass()
+        g = self.genclass(s, policy=self.policy.clone(max_line_length=30))
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), self.typ(expected))
+
+    def _test_boundary_detection(self, linesep):
+        # Generate a boundary token in the same way as _make_boundary
+        token = random.randrange(sys.maxsize)
+
+        def _patch_random_randrange(*args, **kwargs):
+            return token
+
+        with test.support.swap_attr(
+            random, "randrange", _patch_random_randrange
+        ):
+            boundary = self.genclass._make_boundary(text=None)
+            boundary_in_part = (
+                "this goes before the boundary\n--"
+                + boundary
+                + "\nthis goes after\n"
+            )
+            msg = MIMEMultipart()
+            msg.attach(MIMEText(boundary_in_part))
+            self.genclass(self.ioclass()).flatten(msg, linesep=linesep)
+            # Generator checks the message content for the string it is about
+            # to use as a boundary ('token' in this test) and when it finds it
+            # in our attachment appends .0 to make the boundary it uses unique.
+            self.assertEqual(msg.get_boundary(), boundary + ".0")
+
+    def test_lf_boundary_detection(self):
+        self._test_boundary_detection("\n")
+
+    def test_crlf_boundary_detection(self):
+        self._test_boundary_detection("\r\n")
+
 
 class TestGenerator(TestGeneratorBase, TestEmailBase):
 
@@ -478,12 +579,12 @@ class TestBytesGenerator(TestGeneratorBase, TestEmailBase):
 
     def test_smtputf8_policy(self):
         msg = EmailMessage()
-        msg['From'] = "Páolo <főo@bar.com>"
+        msg['From'] = "Páolo <főo@bàr.com>"
         msg['To'] = 'Dinsdale'
         msg['Subject'] = 'Nudge nudge, wink, wink \u1F609'
         msg.set_content("oh là là, know what I mean, know what I mean?")
         expected = textwrap.dedent("""\
-            From: Páolo <főo@bar.com>
+            From: Páolo <főo@bàr.com>
             To: Dinsdale
             Subject: Nudge nudge, wink, wink \u1F609
             Content-Type: text/plain; charset="utf-8"
@@ -515,6 +616,37 @@ class TestBytesGenerator(TestGeneratorBase, TestEmailBase):
             """).encode().replace(b"\n", b"\r\n")
         s = io.BytesIO()
         g = BytesGenerator(s, policy=policy.SMTP)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), expected)
+
+    def test_non_ascii_addr_spec_preserved(self):
+        # A defective non-ASCII addr-spec parsed from the original
+        # message is left unchanged when flattening.
+        # (See also test_non_ascii_addr_spec_raises above.)
+        source = (
+            'To: jörg@example.com, "But a long name still works with refold_source" <jörg@example.com>'
+        ).encode()
+        expected = (
+            b'To: j\xc3\xb6rg@example.com,\n'
+            b' "But a long name still works with refold_source" <j\xc3\xb6rg@example.com>\n'
+            b'\n'
+        )
+        msg = message_from_bytes(source, policy=policy.default)
+        s = io.BytesIO()
+        g = BytesGenerator(s, policy=policy.default)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), expected)
+
+    def test_idna_encoding_preserved(self):
+        # Nothing tries to decode a pre-encoded IDNA domain.
+        msg = EmailMessage()
+        msg["To"] = Address(
+            username='jörg',
+            domain='☕.example'.encode('idna').decode()  # IDNA 2003
+        )
+        expected = 'To: jörg@xn--53h.example\n\n'.encode()
+        s = io.BytesIO()
+        g = BytesGenerator(s, policy=policy.default.clone(utf8=True))
         g.flatten(msg)
         self.assertEqual(s.getvalue(), expected)
 

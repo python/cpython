@@ -230,6 +230,8 @@ The variables defined in the :mod:`!signal` module are:
 
    Stop executing (cannot be caught or ignored).
 
+   .. availability:: Unix.
+
 .. data:: SIGSTKFLT
 
    Stack fault on coprocessor. The Linux kernel does not raise this signal: it

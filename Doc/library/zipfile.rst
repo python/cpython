@@ -411,9 +411,9 @@ ZipFile objects
    .. warning::
 
       Never extract archives from untrusted sources without prior inspection.
-      It is possible that files are created outside of *path*, e.g. members
-      that have absolute filenames starting with ``"/"`` or filenames with two
-      dots ``".."``.  This module attempts to prevent that.
+      It is possible that files are created outside of *path*, for example, members
+      that have absolute filenames or filenames with ".." components.
+      This module attempts to prevent that.
       See :meth:`extract` note.
 
    .. versionchanged:: 3.6
@@ -533,6 +533,11 @@ ZipFile objects
       a closed ZipFile will raise a :exc:`ValueError`.  Previously,
       a :exc:`RuntimeError` was raised.
 
+   .. versionchanged:: 3.14
+      Now respects the :envvar:`SOURCE_DATE_EPOCH` environment variable.
+      If set, it uses this value as the modification timestamp for the file
+      written into the ZIP archive, instead of using the current time.
+
 .. method:: ZipFile.mkdir(zinfo_or_directory, mode=511)
 
    Create a directory inside the archive.  If *zinfo_or_directory* is a string,
@@ -585,7 +590,7 @@ Path objects
       The :class:`Path` class does not sanitize filenames within the ZIP archive. Unlike
       the :meth:`ZipFile.extract` and :meth:`ZipFile.extractall` methods, it is the
       caller's responsibility to validate or sanitize filenames to prevent path traversal
-      vulnerabilities (e.g., filenames containing ".." or absolute paths). When handling
+      vulnerabilities (for example, absolute paths or paths with ".." components). When handling
       untrusted archives, consider resolving filenames using :func:`os.path.abspath`
       and checking against the target directory with :func:`os.path.commonpath`.
 

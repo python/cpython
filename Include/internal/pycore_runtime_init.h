@@ -13,7 +13,7 @@ extern "C" {
 #include "pycore_debug_offsets.h"  // _Py_DebugOffsets_INIT()
 #include "pycore_dtoa.h"          // _dtoa_state_INIT()
 #include "pycore_faulthandler.h"  // _faulthandler_runtime_state_INIT
-#include "pycore_floatobject.h"   // _py_float_format_unknown
+#include "pycore_floatobject.h"   // _py_float_format_*
 #include "pycore_function.h"
 #include "pycore_hamt.h"          // _PyHamt_BitmapNode_Type
 #include "pycore_import.h"        // IMPORTS_INIT
@@ -84,10 +84,6 @@ extern PyTypeObject _PyExc_MemoryError;
         .stoptheworld = { \
             .is_global = 1, \
         }, \
-        .float_state = { \
-            .float_format = _py_float_format_unknown, \
-            .double_format = _py_float_format_unknown, \
-        }, \
         .types = { \
             .next_version_tag = _Py_TYPE_VERSION_NEXT, \
         }, \
@@ -134,13 +130,7 @@ extern PyTypeObject _PyExc_MemoryError;
         }, \
         .gc = { \
             .enabled = 1, \
-            .young = { .threshold = 2000, }, \
-            .old = { \
-                { .threshold = 10, }, \
-                { .threshold = 0, }, \
-            }, \
-            .work_to_do = -5000, \
-            .phase = GC_PHASE_MARK, \
+            GC_GENERATION_INIT \
         }, \
         .qsbr = { \
             .wr_seq = QSBR_INITIAL, \

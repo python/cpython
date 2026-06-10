@@ -6,6 +6,7 @@
  ******************************************************************************/
 
 #include "_remote_debugging.h"
+#include <limits.h>
 
 /* ============================================================================
  * MEMORY READING FUNCTIONS
@@ -48,10 +49,8 @@ read_py_str(
     uintptr_t address,
     Py_ssize_t max_len
 ) {
-    PyObject *result = NULL;
-    char *buf = NULL;
-
-    // Read the entire PyUnicodeObject at once
+    // Read the entire PyUnicodeObject at once; for short strings the data
+    // is inline right after the header and we'll already have (some of) it.
     char unicode_obj[SIZEOF_UNICODE_OBJ];
     int res = _Py_RemoteDebug_PagedReadRemoteMemory(
         &unwinder->handle,
@@ -61,7 +60,7 @@ read_py_str(
     );
     if (res < 0) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read PyUnicodeObject");
-        goto err;
+        return NULL;
     }
 
     Py_ssize_t len = GET_MEMBER(Py_ssize_t, unicode_obj, unwinder->debug_offsets.unicode_object.length);
@@ -72,36 +71,94 @@ read_py_str(
         return NULL;
     }
 
-    buf = (char *)PyMem_RawMalloc(len+1);
-    if (buf == NULL) {
-        PyErr_NoMemory();
-        set_exception_cause(unwinder, PyExc_MemoryError, "Failed to allocate buffer for string reading");
+    // Inspect state to pick the right data offset and character width.
+    // We rely on the remote process sharing this Python version's
+    // PyASCIIObject layout, the same assumption already used for `length`.
+    struct _PyUnicodeObject_state state = GET_MEMBER(
+        struct _PyUnicodeObject_state,
+        unicode_obj,
+        unwinder->debug_offsets.unicode_object.state);
+
+    if (!state.compact) {
+        PyErr_Format(PyExc_RuntimeError,
+                     "Cannot read non-compact Unicode object at 0x%lx", address);
+        set_exception_cause(unwinder, PyExc_RuntimeError,
+                            "Legacy (non-compact) Unicode objects are not supported");
         return NULL;
     }
 
-    size_t offset = (size_t)unwinder->debug_offsets.unicode_object.asciiobject_size;
-    res = _Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, address + offset, len, buf);
-    if (res < 0) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read string data from remote memory");
-        goto err;
+    int kind = (int)state.kind;
+    Py_UCS4 max_char;
+    switch (kind) {
+        case PyUnicode_1BYTE_KIND:
+            max_char = state.ascii ? 0x7F : 0xFF;
+            break;
+        case PyUnicode_2BYTE_KIND:
+            max_char = 0xFFFF;
+            break;
+        case PyUnicode_4BYTE_KIND:
+            max_char = 0x10FFFF;
+            break;
+        default:
+            PyErr_Format(PyExc_RuntimeError,
+                         "Invalid Unicode kind %d at 0x%lx", kind, address);
+            set_exception_cause(unwinder, PyExc_RuntimeError,
+                                "Invalid kind in remote Unicode object");
+            return NULL;
     }
-    buf[len] = '\0';
 
-    result = PyUnicode_FromStringAndSize(buf, len);
+    size_t header_size = state.ascii
+        ? (size_t)unwinder->debug_offsets.unicode_object.asciiobject_size
+        : (size_t)unwinder->debug_offsets.unicode_object.compactunicodeobject_size;
+
+    // len * kind is bounded by max_len * 4 (kind <= 4, len <= max_len), so
+    // the multiplication can't overflow for any caller-sane max_len, but the
+    // explicit cap here keeps a corrupted remote `length` from later turning
+    // into a giant allocation.
+    size_t nbytes = (size_t)len * (size_t)kind;
+    if ((size_t)len > (SIZE_MAX / 4) || nbytes > (size_t)max_len * 4) {
+        PyErr_Format(PyExc_RuntimeError,
+                     "Implausible Unicode byte size %zu at 0x%lx", nbytes, address);
+        set_exception_cause(unwinder, PyExc_RuntimeError,
+                            "Garbage byte size in remote Unicode object");
+        return NULL;
+    }
+
+    PyObject *result = PyUnicode_New(len, max_char);
     if (result == NULL) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to create PyUnicode from remote string data");
-        goto err;
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to allocate PyUnicode for remote string");
+        return NULL;
+    }
+    if (nbytes == 0) {
+        return result;
     }
 
-    PyMem_RawFree(buf);
-    assert(result != NULL);
+    void *data = PyUnicode_DATA(result);
+
+    // Reuse data already present in the header read; only round-trip for
+    // whatever spills past it.
+    size_t inline_avail = (header_size < SIZEOF_UNICODE_OBJ)
+        ? SIZEOF_UNICODE_OBJ - header_size
+        : 0;
+    size_t inline_bytes = nbytes < inline_avail ? nbytes : inline_avail;
+    if (inline_bytes > 0) {
+        memcpy(data, unicode_obj + header_size, inline_bytes);
+    }
+
+    if (nbytes > inline_bytes) {
+        res = _Py_RemoteDebug_PagedReadRemoteMemory(
+            &unwinder->handle,
+            address + header_size + inline_bytes,
+            nbytes - inline_bytes,
+            (char *)data + inline_bytes);
+        if (res < 0) {
+            Py_DECREF(result);
+            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read string data from remote memory");
+            return NULL;
+        }
+    }
+
     return result;
-
-err:
-    if (buf != NULL) {
-        PyMem_RawFree(buf);
-    }
-    return NULL;
 }
 
 PyObject *
@@ -196,6 +253,8 @@ read_py_long(
 
     // Validate size: reject garbage (negative or unreasonably large)
     if (size < 0 || size > MAX_LONG_DIGITS) {
+        PyErr_Format(PyExc_RuntimeError,
+            "Invalid PyLong digit count: %zd (expected 0-%d)", size, MAX_LONG_DIGITS);
         set_exception_cause(unwinder, PyExc_RuntimeError,
             "Invalid PyLong size (corrupted remote memory)");
         return -1;
@@ -206,26 +265,16 @@ read_py_long(
     Py_ssize_t inline_digits_space = SIZEOF_LONG_OBJ - ob_digit_offset;
     Py_ssize_t max_inline_digits = inline_digits_space / (Py_ssize_t)sizeof(digit);
 
-    // If the long object has inline digits that fit in our buffer, use them directly
-    digit *digits;
+    digit *digits = (digit *)PyMem_RawMalloc(size * sizeof(digit));
+    if (!digits) {
+        PyErr_NoMemory();
+        set_exception_cause(unwinder, PyExc_MemoryError, "Failed to allocate digits for PyLong");
+        return -1;
+    }
+
     if (size <= max_inline_digits && size <= _PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS) {
-        // For small integers, digits are inline in the long_value.ob_digit array
-        digits = (digit *)PyMem_RawMalloc(size * sizeof(digit));
-        if (!digits) {
-            PyErr_NoMemory();
-            set_exception_cause(unwinder, PyExc_MemoryError, "Failed to allocate digits for small PyLong");
-            return -1;
-        }
         memcpy(digits, long_obj + ob_digit_offset, size * sizeof(digit));
     } else {
-        // For larger integers, we need to read the digits separately
-        digits = (digit *)PyMem_RawMalloc(size * sizeof(digit));
-        if (!digits) {
-            PyErr_NoMemory();
-            set_exception_cause(unwinder, PyExc_MemoryError, "Failed to allocate digits for large PyLong");
-            return -1;
-        }
-
         bytes_read = _Py_RemoteDebug_PagedReadRemoteMemory(
             &unwinder->handle,
             address + (uintptr_t)unwinder->debug_offsets.long_object.ob_digit,
@@ -238,19 +287,34 @@ read_py_long(
         }
     }
 
-    long long value = 0;
+    unsigned long limit = negative
+        ? (unsigned long)LONG_MAX + 1UL
+        : (unsigned long)LONG_MAX;
+    unsigned long value = 0;
 
-    // In theory this can overflow, but because of llvm/llvm-project#16778
-    // we can't use __builtin_mul_overflow because it fails to link with
-    // __muloti4 on aarch64. In practice this is fine because all we're
-    // testing here are task numbers that would fit in a single byte.
-    for (Py_ssize_t i = 0; i < size; ++i) {
-        long long factor = digits[i] * (1UL << (Py_ssize_t)(shift * i));
-        value += factor;
+    for (Py_ssize_t i = size; i-- > 0;) {
+        if (digits[i] >= PyLong_BASE) {
+            PyErr_Format(PyExc_RuntimeError,
+                "Invalid PyLong digit: %u (base %u)", digits[i], PyLong_BASE);
+            set_exception_cause(unwinder, PyExc_RuntimeError,
+                "Invalid PyLong digit (corrupted remote memory)");
+            goto error;
+        }
+        if (value > ((limit - (unsigned long)digits[i]) >> shift)) {
+            PyErr_SetString(PyExc_OverflowError,
+                "Remote PyLong value does not fit in C long");
+            set_exception_cause(unwinder, PyExc_OverflowError,
+                "Remote PyLong value is too large");
+            goto error;
+        }
+        value = (value << shift) | (unsigned long)digits[i];
     }
     PyMem_RawFree(digits);
     if (negative) {
-        value *= -1;
+        if (value == (unsigned long)LONG_MAX + 1UL) {
+            return LONG_MIN;
+        }
+        return -(long)value;
     }
     return (long)value;
 error:

@@ -85,9 +85,9 @@ unknown: Final = Sentinels.unknown
 
 
 # This one needs to be a distinct class, unlike the other two
-class Null:
+class NullType:
     def __repr__(self) -> str:
         return '<Null>'
 
 
-NULL = Null()
+NULL = NullType()

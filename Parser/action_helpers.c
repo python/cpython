@@ -435,6 +435,9 @@ _PyPegen_name_default_pair(Parser *p, arg_ty arg, expr_ty value, Token *tc)
         return NULL;
     }
     a->arg = _PyPegen_add_type_comment_to_arg(p, arg, tc);
+    if (!a->arg) {
+        return NULL;
+    }
     a->value = value;
     return a;
 }

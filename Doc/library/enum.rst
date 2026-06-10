@@ -56,7 +56,7 @@ are not normal Python classes.  See
 
 ---------------
 
-Module Contents
+Module contents
 ---------------
 
    :class:`EnumType`
@@ -115,30 +115,30 @@ Module Contents
       :class:`StrEnum` defaults to the lower-cased version of the member name,
       while other Enums default to 1 and increase from there.
 
-   :func:`~enum.property`
+   :deco:`~enum.property`
 
       Allows :class:`Enum` members to have attributes without conflicting with
       member names.  The ``value`` and ``name`` attributes are implemented this
       way.
 
-   :func:`unique`
+   :deco:`unique`
 
       Enum class decorator that ensures only one name is bound to any one value.
 
-   :func:`verify`
+   :deco:`verify`
 
       Enum class decorator that checks user-selectable constraints on an
       enumeration.
 
-   :func:`member`
+   :deco:`member`
 
       Make ``obj`` a member.  Can be used as a decorator.
 
-   :func:`nonmember`
+   :deco:`nonmember`
 
       Do not make ``obj`` a member.  Can be used as a decorator.
 
-   :func:`global_enum`
+   :deco:`global_enum`
 
       Modify the :class:`str() <str>` and :func:`repr` of an enum
       to show its members as belonging to the module instead of its class,
@@ -161,7 +161,7 @@ Module Contents
 
 ---------------
 
-Data Types
+Data types
 ----------
 
 
@@ -222,7 +222,7 @@ Data Types
       names of the members in *cls*::
 
         >>> dir(Color)
-        ['BLUE', 'GREEN', 'RED', '__class__', '__contains__', '__doc__', '__getitem__', '__init_subclass__', '__iter__', '__len__', '__members__', '__module__', '__name__', '__qualname__']
+        ['BLUE', 'GREEN', 'RED', '__class__', '__contains__', '__doc__', '__getitem__', '__init_subclass__', '__iter__', '__len__', '__members__', '__module__', '__name__', '__qualname__', '_generate_next_value_', '_missing_']
 
    .. method:: EnumType.__getitem__(cls, name)
 
@@ -240,7 +240,7 @@ Data Types
 
    .. method:: EnumType.__len__(cls)
 
-      Returns the number of member in *cls*::
+      Returns the number of members in *cls*::
 
         >>> len(Color)
         3
@@ -341,7 +341,7 @@ Data Types
       any public methods defined on *self.__class__*::
 
          >>> from enum import Enum
-         >>> from datetime import date
+         >>> import datetime as dt
          >>> class Weekday(Enum):
          ...     MONDAY = 1
          ...     TUESDAY = 2
@@ -352,10 +352,10 @@ Data Types
          ...     SUNDAY = 7
          ...     @classmethod
          ...     def today(cls):
-         ...         print('today is %s' % cls(date.today().isoweekday()).name)
+         ...         print(f'today is {cls(dt.date.today().isoweekday()).name}')
          ...
          >>> dir(Weekday.SATURDAY)
-         ['__class__', '__doc__', '__eq__', '__hash__', '__module__', 'name', 'today', 'value']
+         ['__class__', '__doc__', '__eq__', '__hash__', '__module__', '_add_alias_', '_add_value_alias_', '_generate_next_value_', '_missing_', 'name', 'today', 'value']
 
    .. method:: Enum._generate_next_value_(name, start, count, last_values)
 
@@ -502,7 +502,7 @@ Data Types
       Using :class:`auto` with :class:`Enum` results in integers of increasing value,
       starting with ``1``.
 
-   .. versionchanged:: 3.12 Added :ref:`enum-dataclass-support`
+   .. versionchanged:: 3.12 Added :ref:`enum-dataclass-support`.
 
    .. method:: Enum._add_alias_
 
@@ -970,16 +970,16 @@ Supported ``_sunder_`` names
 
 ---------------
 
-Utilities and Decorators
+Utilities and decorators
 ------------------------
 
 .. class:: auto
 
    *auto* can be used in place of a value.  If used, the *Enum* machinery will
    call an :class:`Enum`'s :meth:`~Enum._generate_next_value_` to get an appropriate value.
-   For :class:`Enum` and :class:`IntEnum` that appropriate value will be the last value plus
-   one; for :class:`Flag` and :class:`IntFlag` it will be the first power-of-two greater
-   than the highest value; for :class:`StrEnum` it will be the lower-cased version of
+   For :class:`Enum` and :class:`IntEnum` that appropriate value will be the highest value seen
+   plus one; for :class:`Flag` and :class:`IntFlag` it will be the first power-of-two greater
+   than the highest value seen; for :class:`StrEnum` it will be the lower-cased version of
    the member's name.  Care must be taken if mixing *auto()* with manually
    specified values.
 
@@ -989,8 +989,8 @@ Utilities and Decorators
    * ``FIRST = auto()`` will work (auto() is replaced with ``1``);
    * ``SECOND = auto(), -2`` will work (auto is replaced with ``2``, so ``2, -2`` is
      used to create the ``SECOND`` enum member;
-   * ``THREE = [auto(), -3]`` will *not* work (``[<auto instance>, -3]`` is used to
-     create the ``THREE`` enum member)
+   * ``THIRD = [auto(), -3]`` will *not* work (``[<auto instance>, -3]`` is used to
+     create the ``THIRD`` enum member)
 
    .. versionchanged:: 3.11.1
 
@@ -1000,17 +1000,17 @@ Utilities and Decorators
    ``_generate_next_value_`` can be overridden to customize the values used by
    *auto*.
 
-   .. note:: in 3.13 the default ``_generate_next_value_`` will always return
+   .. note:: In version 3.13 the default ``_generate_next_value_`` will always return
              the highest member value incremented by 1, and will fail if any
              member is an incompatible type.
 
 .. decorator:: property
 
-   A decorator similar to the built-in *property*, but specifically for
+   A decorator similar to the built-in :deco:`property`, but specifically for
    enumerations.  It allows member attributes to have the same names as members
    themselves.
 
-   .. note:: the *property* and the member must be defined in separate classes;
+   .. note:: The *property* and the member must be defined in separate classes;
              for example, the *value* and *name* attributes are defined in the
              *Enum* class, and *Enum* subclasses can define members with the
              names ``value`` and ``name``.

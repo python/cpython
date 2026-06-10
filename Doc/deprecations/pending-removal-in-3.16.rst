@@ -8,6 +8,13 @@ Pending removal in Python 3.16
     is deprecated. In Python 3.16, :attr:`!__loader__` will cease to be set or
     taken into consideration by the import system or the standard library.
 
+  * Setting :attr:`~module.__package__` on a module while
+    failing to set :attr:`__spec__.parent <importlib.machinery.ModuleSpec.parent>`
+    is deprecated. In Python 3.16, :attr:`!__package__` will cease to be
+    taken into consideration by the import system or standard library. (:gh:`97879`)
+
+* The bundled copy of ``libmpdec``.
+
 * :mod:`array`:
 
   * The ``'u'`` format code (:c:type:`wchar_t`)
@@ -84,12 +91,12 @@ Pending removal in Python 3.16
 
 * :mod:`symtable`:
 
-  * The :meth:`Class.get_methods <symtable.Class.get_methods>` method
+  * The :meth:`!symtable.Class.get_methods` method
     has been deprecated since Python 3.14.
 
 * :mod:`sys`:
 
-  * The :func:`~sys._enablelegacywindowsfsencoding` function
+  * The :func:`!_enablelegacywindowsfsencoding` function
     has been deprecated since Python 3.13.
     Use the :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment variable instead.
 
@@ -101,5 +108,5 @@ Pending removal in Python 3.16
 
 * :mod:`tarfile`:
 
-  * The undocumented and unused :attr:`!TarFile.tarfile` attribute
+  * The undocumented and unused :attr:`!TarInfo.tarfile` attribute
     has been deprecated since Python 3.13.
