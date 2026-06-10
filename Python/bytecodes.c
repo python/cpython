@@ -642,6 +642,16 @@ dummy_func(
             EXIT_IF(!_PyLong_CheckExactAndCompact(value_o));
         }
 
+        op(_GUARD_NOS_INT_WIDE, (left, unused -- left, unused)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            EXIT_IF(!_PyLong_CheckExactAndFitsInt64(left_o));
+        }
+
+        op(_GUARD_TOS_INT_WIDE, (value -- value)) {
+            PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
+            EXIT_IF(!_PyLong_CheckExactAndFitsInt64(value_o));
+        }
+
         op(_GUARD_NOS_OVERFLOWED, (left, unused -- left, unused)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             assert(Py_TYPE(left_o) == &PyLong_Type);
@@ -684,6 +694,21 @@ dummy_func(
             INPUTS_DEAD();
         }
 
+        pure op(_BINARY_OP_ADD_INT_WIDE, (left, right -- res, l, r)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            assert(PyLong_CheckExact(left_o));
+            assert(PyLong_CheckExact(right_o));
+
+            STAT_INC(BINARY_OP, hit);
+            res = _PyCompactLong_AddWide((PyLongObject *)left_o, (PyLongObject *)right_o);
+            EXIT_IF(PyStackRef_IsNull(res));
+            l = left;
+            r = right;
+            INPUTS_DEAD();
+            ERROR_IF(PyStackRef_IsError(res));
+        }
+
         pure op(_BINARY_OP_SUBTRACT_INT, (left, right -- res, l, r)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
@@ -703,7 +728,7 @@ dummy_func(
             _GUARD_TOS_INT + _GUARD_NOS_INT + unused/5 + _BINARY_OP_MULTIPLY_INT + _POP_TOP_INT + _POP_TOP_INT;
 
         macro(BINARY_OP_ADD_INT) =
-            _GUARD_TOS_INT + _GUARD_NOS_INT + unused/5 + _BINARY_OP_ADD_INT + _POP_TOP_INT + _POP_TOP_INT;
+            _GUARD_TOS_INT_WIDE + _GUARD_NOS_INT_WIDE + unused/5 + _BINARY_OP_ADD_INT_WIDE + _POP_TOP_INT + _POP_TOP_INT;
 
         macro(BINARY_OP_SUBTRACT_INT) =
             _GUARD_TOS_INT + _GUARD_NOS_INT + unused/5 + _BINARY_OP_SUBTRACT_INT + _POP_TOP_INT + _POP_TOP_INT;
