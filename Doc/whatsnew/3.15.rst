@@ -2476,6 +2476,12 @@ New features
   * :c:func:`PyModule_FromDefAndSpec2`
   * :c:func:`PyModule_ExecDef`
 
+
+  The slots :c:macro:`Py_tp_bases` and :c:macro:`Py_tp_base` are now
+  equivalent: they can be set either to a single type or a tuple of types.
+  The :c:macro:`Py_tp_bases` slot is preferred; the other is ignored if both
+  are specified.
+
   (Contributed by Petr Viktorin in :gh:`149044`.)
 
 * Add :c:func:`PyUnstable_ThreadState_SetStackProtection` and

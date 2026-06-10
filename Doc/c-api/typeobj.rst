@@ -1936,11 +1936,11 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: PyTypeObject* PyTypeObject.tp_base
 
-   .. corresponding-type-slot:: Py_tp_base
-
    An optional pointer to a base type from which type properties are inherited.  At
    this level, only single inheritance is supported; multiple inheritance require
    dynamically creating a type object by calling the metatype.
+
+   For the corresponding slot ID, see :c:macro:`Py_tp_base`.
 
    .. note::
 
@@ -2253,17 +2253,12 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: PyObject* PyTypeObject.tp_bases
 
-   .. corresponding-type-slot:: Py_tp_bases
-
    Tuple of base types.
 
    This field should be set to ``NULL`` and treated as read-only.
    Python will fill it in when the type is :c:func:`initialized <PyType_Ready>`.
 
-   For dynamically created classes, the :c:data:`Py_tp_bases`
-   :c:type:`slot <PyType_Slot>` can be used instead of the *bases* argument
-   of :c:func:`PyType_FromSpecWithBases`.
-   The argument form is preferred.
+   For the corresponding slot ID, see :c:macro:`Py_tp_bases`.
 
    .. warning::
 

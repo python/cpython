@@ -670,6 +670,37 @@ but need extra remarks for use as slots:
 
    .. versionadded:: 3.15
 
+.. c:macro:: Py_tp_bases
+
+   :c:member:`Slot ID <PySlot.sl_id>` for type flags, used to set
+   :c:member:`PyTypeObject.tp_bases`.
+
+   The slot can be set to a tuple of type objects which the newly created
+   type should inherit from, like the "positional arguments" of
+   a Python :ref:`class definition <class>`.
+
+   Alternately, the slot can be set to a single type object to specify
+   a single base.
+   The effect is the same as specifying a one-element tuple.
+
+   .. versionchanged:: 3.15
+
+      Previously, :c:macro:`!Py_tp_bases` required a tuple of types.
+
+.. c:macro:: Py_tp_base
+
+   Equivalent to :c:macro:`Py_tp_bases` (with ``s`` at the end).
+   If both are specified, :c:macro:`!Py_tp_bases` takes priority and
+   this slot is ignored.
+
+   .. versionchanged:: 3.15
+
+      Previously, :c:macro:`!Py_tp_base` required a single type, not a tuple.
+
+   .. soft-deprecated:: 3.15
+
+      When not targetting older Python versions, pefer :c:macro:`!Py_tp_bases`.
+
 The following slots do not correspond to public fields in the
 underlying structures:
 
