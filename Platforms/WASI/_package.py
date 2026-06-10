@@ -110,9 +110,14 @@ def pkgconfig_files(context):
 
 def filename_stem(context):
     """Calculate the stem of the archive file name."""
-    # XXX File name: python-3.15.0a8-wasm32-wasip1.tar.xz
-    # Include/patchlevel.h: `#define PY_VERSION              "3.15.0a8+"`
-    # `build-details.json` for either/both version and triple
+    version_info = context.wasi_build_details["language"]["version_info"]
+    version = f"python-{version_info['major']}.{version_info['minor']}.{version_info['micro']}"
+    if version_info["releaselevel"] != "final":
+        version += version_info["releaselevel"][0] + str(
+            version_info["serial"]
+        )
+
+    return f"{version}-{context.host_triple}"
 
 
 def copy_files(files, base):
@@ -129,15 +134,16 @@ def package(context):
         shutil.rmtree(dist)
 
     indent = "  "
-    _shared.log("📝", f"Copying files to {dist} ...")
+    base = dist / filename_stem(context)
+    _shared.log("📝", f"Copying files to {base} ...")
     _shared.log("📁", "lib/", spacing=indent * 2)
     _shared.log("📁", "pythonN.M/", spacing=indent * 3)
     _shared.log("📄", "LICENSE.txt", spacing=indent * 4)
-    copy_files([license_file(context)], dist)
+    copy_files([license_file(context)], base)
     _shared.log("📄", "files in pybuilddir.txt", spacing=indent * 4)
-    copy_files(build_dir_files(context), dist)
+    copy_files(build_dir_files(context), base)
     _shared.log("📄", "**/*.py", spacing=indent * 4)
-    copy_files(stdlib_files(context), dist)
+    copy_files(stdlib_files(context), base)
     _shared.log("📁", "pkgconfig/", spacing=indent * 3)
     _shared.log("📄", "python*.pc", spacing=indent * 4)
-    copy_files(pkgconfig_files(context), dist)
+    copy_files(pkgconfig_files(context), base)
