@@ -3362,7 +3362,9 @@ fatal_error(int fd, int header, const char *prefix, const char *msg,
        This function already did its best to display a traceback.
        Disable faulthandler to prevent writing a second traceback
        on abort(). */
-    _PyFaulthandler_Fini();
+    if (has_tstate_and_gil) {
+        _PyFaulthandler_Fini();
+    }
 
     /* Check if the current Python thread hold the GIL */
     if (has_tstate_and_gil) {
