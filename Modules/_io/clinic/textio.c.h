@@ -624,7 +624,9 @@ _io_TextIOWrapper___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         goto exit;
     }
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io_TextIOWrapper___init___impl((textio *)self, buffer, encoding, errors, newline, line_buffering, write_through);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -1284,4 +1286,4 @@ _io_TextIOWrapper__CHUNK_SIZE_set(textio *self, PyObject *value, void *Py_UNUSED
 
     return return_value;
 }
-/*[clinic end generated code: output=3ac677af6649862d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2d73d5adb0ce09a8 input=a9049054013a1b77]*/

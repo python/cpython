@@ -1049,6 +1049,7 @@ io_check_errors(PyObject *errors)
 
 
 /*[clinic input]
+@critical_section
 _io.TextIOWrapper.__init__
     buffer: object
     encoding: str(accept={str, NoneType}) = None
@@ -1092,7 +1093,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
                                 const char *encoding, PyObject *errors,
                                 const char *newline, int line_buffering,
                                 int write_through)
-/*[clinic end generated code: output=72267c0c01032ed2 input=e6cfaaaf6059d4f5]*/
+/*[clinic end generated code: output=72267c0c01032ed2 input=0f077220214c40a4]*/
 {
     PyObject *raw, *codec_info = NULL;
     PyObject *res;
