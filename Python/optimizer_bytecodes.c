@@ -396,6 +396,21 @@ dummy_func(void) {
         REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, res);
     }
 
+    op(_BINARY_OP_ADD_INT, (left, right -- res, l, r)) {
+        if (PyJitRef_IsUnique(left)) {
+            REPLACE_OP(this_instr, _BINARY_OP_ADD_INT_INPLACE, 0, 0);
+        }
+        else if (PyJitRef_IsUnique(right)) {
+            REPLACE_OP(this_instr, _BINARY_OP_ADD_INT_INPLACE_RIGHT, 0, 0);
+        }
+        // Result may be a unique compact int or a cached small int
+        // at runtime. Mark as unique; inplace ops verify at runtime.
+        res = PyJitRef_MakeUnique(sym_new_compact_int(ctx));
+        l = left;
+        r = right;
+        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, res);
+    }
+
     op(_BINARY_OP_ADD_FLOAT, (left, right -- res, l, r)) {
         if (PyJitRef_IsUnique(left)) {
             ADD_OP(_BINARY_OP_ADD_FLOAT_INPLACE, 0, 0);
@@ -430,6 +445,19 @@ dummy_func(void) {
             r = right;
         }
         res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
+    }
+
+    op(_BINARY_OP_SUBTRACT_INT, (left, right -- res, l, r)) {
+        if (PyJitRef_IsUnique(left)) {
+            REPLACE_OP(this_instr, _BINARY_OP_SUBTRACT_INT_INPLACE, 0, 0);
+        }
+        else if (PyJitRef_IsUnique(right)) {
+            REPLACE_OP(this_instr, _BINARY_OP_SUBTRACT_INT_INPLACE_RIGHT, 0, 0);
+        }
+        res = PyJitRef_MakeUnique(sym_new_compact_int(ctx));
+        l = left;
+        r = right;
+        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, res);
     }
 
     op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res, l, r)) {
