@@ -460,7 +460,7 @@ class EnvBuilder:
     def _setup_pip(self, context):
         """Installs or upgrades pip in a virtual environment"""
         self._call_new_python(context, '-m', 'ensurepip', '--upgrade',
-                              '--default-pip', stderr=subprocess.STDOUT)
+                              '--default-pip')
 
     def setup_scripts(self, context):
         """
