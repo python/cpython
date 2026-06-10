@@ -1,4 +1,5 @@
 Speed up :func:`json.dumps` with ``ensure_ascii=False`` for strings made up of
 long runs of characters that need no escaping, by scanning eight bytes at a
-time. Short strings, strings that need escaping, and strings with characters
-above U+00FF are unaffected. Patch by Bernát Gábor.
+time (roughly 1.5x faster for long ASCII or Latin-1 strings). Short strings,
+strings that need escaping, and strings with characters above U+00FF are
+unaffected. Patch by Bernát Gábor.
