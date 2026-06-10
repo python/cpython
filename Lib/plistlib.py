@@ -143,9 +143,17 @@ def _date_from_string(s, aware_datetime):
     lst = []
     for key in order:
         val = gd[key]
-        if val is None:
-            break
-        lst.append(int(val))
+        if val is not None:
+            lst.append(int(val))
+        else:
+            # Fill missing components with defaults: month/day -> 1, hour/minute/second -> 0
+            if key in ('month', 'day'):
+                lst.append(1)
+            elif key in ('hour', 'minute', 'second'):
+                lst.append(0)
+            else:
+                # Year should never be missing due to regex
+                raise ValueError("Missing year in date string")
     if aware_datetime:
         return datetime.datetime(*lst, tzinfo=datetime.UTC)
     return datetime.datetime(*lst)
