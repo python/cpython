@@ -1,0 +1,4 @@
+Remove the private, undocumented function
+``importlib._bootstrap._object_name()``. It had no caller after
+``load_module()`` and its deprecation warnings were removed from
+:mod:`importlib`.
