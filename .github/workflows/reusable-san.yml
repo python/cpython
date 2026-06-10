@@ -86,7 +86,7 @@ jobs:
       run: >-
         ./python -m test
         ${{ inputs.sanitizer == 'TSan' && '--tsan' || '' }}
-        -j4
+        -j4 -W
     - name: Display logs
       if: always()
       run: find "${GITHUB_WORKSPACE}" -name 'san_log.*' | xargs head -n 1000
