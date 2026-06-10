@@ -422,16 +422,16 @@ _PyLong_TryAsInt64Exact(PyLongObject *v, int64_t *out)
     }
 #endif
     unsigned int shift = 0;
-    for (Py_ssize_t i = 0; i < ndigits; i++) {
-        uint64_t d = (uint64_t)v->long_value.ob_digit[i];
-        if (ndigits == _PY_LONG_MAX_DIGITS_FOR_INT64 && i == ndigits - 1 &&
-            shift != 0 && (d >> (64 - shift)) != 0)
-        {
-            return false;
-        }
-        abs_val |= d << shift;
+    for (Py_ssize_t i = 0; i < ndigits - 1; i++) {
+        abs_val |= (uint64_t)v->long_value.ob_digit[i] << shift;
         shift += PyLong_SHIFT;
     }
+    uint64_t top = (uint64_t)v->long_value.ob_digit[ndigits - 1];
+    /* Prevent UB from an oversized shift when at the maximum digit count. */
+    if (ndigits == _PY_LONG_MAX_DIGITS_FOR_INT64 && (top >> (64 - shift)) != 0) {
+        return false;
+    }
+    abs_val |= top << shift;
     if (abs_val <= (uint64_t)INT64_MAX) {
         *out = sign < 0 ? -(int64_t)abs_val : (int64_t)abs_val;
         return true;
