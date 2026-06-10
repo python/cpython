@@ -81,7 +81,7 @@ memory footprint as a whole. Consequently, under certain circumstances, the
 Python memory manager may or may not trigger appropriate actions, like garbage
 collection, memory compaction or other preventive procedures. Note that by using
 the C library allocator as shown in the previous example, the allocated memory
-for the I/O buffer escapes completely the Python memory manager.
+for the I/O buffer completely escapes the Python memory manager.
 
 .. seealso::
 
@@ -161,7 +161,7 @@ zero bytes.
 
 .. c:function:: void* PyMem_RawCalloc(size_t nelem, size_t elsize)
 
-   Allocates *nelem* elements each whose size in bytes is *elsize* and returns
+   Allocates *nelem* elements each of size *elsize* bytes and returns
    a pointer of type :c:expr:`void*` to the allocated memory, or ``NULL`` if the
    request fails. The memory is initialized to zeros.
 
@@ -239,7 +239,7 @@ In the GIL-enabled build (default build) the
 
 .. c:function:: void* PyMem_Calloc(size_t nelem, size_t elsize)
 
-   Allocates *nelem* elements each whose size in bytes is *elsize* and returns
+   Allocates *nelem* elements each of size *elsize* bytes and returns
    a pointer of type :c:expr:`void*` to the allocated memory, or ``NULL`` if the
    request fails. The memory is initialized to zeros.
 
@@ -372,7 +372,7 @@ The :ref:`default object allocator <default-memory-allocators>` uses the
 
 .. c:function:: void* PyObject_Calloc(size_t nelem, size_t elsize)
 
-   Allocates *nelem* elements each whose size in bytes is *elsize* and returns
+   Allocates *nelem* elements each of size *elsize* bytes and returns
    a pointer of type :c:expr:`void*` to the allocated memory, or ``NULL`` if the
    request fails. The memory is initialized to zeros.
 
