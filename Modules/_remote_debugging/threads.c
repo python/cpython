@@ -34,11 +34,11 @@ iterate_threads(
 
     if (0 > _Py_RemoteDebug_PagedReadRemoteMemory(
                 &unwinder->handle,
-                unwinder->interpreter_addr + (uintptr_t)unwinder->debug_offsets.interpreter_state.threads_main,
+                unwinder->interpreter_addr + (uintptr_t)unwinder->debug_offsets.interpreter_state.threads_head,
                 sizeof(void*),
                 &thread_state_addr))
     {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read main thread state");
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read threads head");
         return -1;
     }
 
@@ -289,28 +289,110 @@ typedef struct {
     unsigned int :24;
 } _thread_status;
 
+static int
+read_thread_state_and_maybe_frame(
+    RemoteUnwinderObject *unwinder,
+    uintptr_t tstate_addr,
+    size_t tstate_size,
+    char *tstate_buffer,
+    uintptr_t predicted_frame_addr,
+    char *frame_buffer,
+    int *frame_read)
+{
+    *frame_read = 0;
+    if (predicted_frame_addr != 0) {
+        _Py_RemoteReadSegment segments[2] = {
+            {tstate_addr, tstate_buffer, tstate_size},
+            {predicted_frame_addr, frame_buffer, SIZEOF_INTERP_FRAME},
+        };
+        Py_ssize_t nread = _Py_RemoteDebug_BatchedReadRemoteMemory(
+            &unwinder->handle, segments, 2);
+        int completed = 0;
+        if (nread >= (Py_ssize_t)tstate_size) {
+            completed = 1;
+            if (nread == (Py_ssize_t)(tstate_size + SIZEOF_INTERP_FRAME)) {
+                completed = 2;
+            }
+        }
+        STATS_BATCHED_READ(unwinder, 2, completed);
+        if (completed >= 1) {
+            *frame_read = completed == 2;
+            return 0;
+        }
+    }
+    return _Py_RemoteDebug_ReadRemoteMemory(
+        &unwinder->handle, tstate_addr, tstate_size, tstate_buffer);
+}
+
 PyObject*
 unwind_stack_for_thread(
     RemoteUnwinderObject *unwinder,
     uintptr_t *current_tstate,
     uintptr_t gil_holder_tstate,
     uintptr_t gc_frame,
-    uintptr_t main_thread_tstate
+    uintptr_t main_thread_tstate,
+    const RemoteReadPrefetch *prefetch
 ) {
     PyObject *frame_info = NULL;
     PyObject *thread_id = NULL;
     PyObject *result = NULL;
     StackChunkList chunks = {0};
 
-    char ts[SIZEOF_THREAD_STATE];
-    int bytes_read = _Py_RemoteDebug_PagedReadRemoteMemory(
-        &unwinder->handle, *current_tstate, (size_t)unwinder->debug_offsets.thread_state.size, ts);
-    if (bytes_read < 0) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read thread state");
-        goto error;
+    char local_ts[SIZEOF_THREAD_STATE];
+    char local_prefetched_frame[SIZEOF_INTERP_FRAME];
+    const char *ts;
+    RemoteReadPrefetch ctx_prefetch = {0};
+    if (prefetch->tstate && prefetch->tstate_addr == *current_tstate) {
+        ts = prefetch->tstate;
+        if (prefetch->frame) {
+            ctx_prefetch.frame = prefetch->frame;
+            ctx_prefetch.frame_addr = prefetch->frame_addr;
+        }
+    }
+    else if (unwinder->cache_frames) {
+        uintptr_t predicted_frame_addr = 0;
+        int have_prefetched_frame = 0;
+        FrameCacheEntry *entry = frame_cache_find_by_tstate(unwinder, *current_tstate);
+        if (entry && entry->num_addrs > 0) {
+            predicted_frame_addr = entry->addrs[0];
+        }
+
+        int rc = read_thread_state_and_maybe_frame(
+            unwinder,
+            *current_tstate,
+            (size_t)unwinder->debug_offsets.thread_state.size,
+            local_ts,
+            predicted_frame_addr,
+            local_prefetched_frame,
+            &have_prefetched_frame);
+        if (rc < 0) {
+            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read thread state");
+            goto error;
+        }
+        ts = local_ts;
+        if (have_prefetched_frame) {
+            ctx_prefetch.frame = local_prefetched_frame;
+            ctx_prefetch.frame_addr = predicted_frame_addr;
+        }
+    }
+    else {
+        int rc = _Py_RemoteDebug_ReadRemoteMemory(
+            &unwinder->handle,
+            *current_tstate,
+            (size_t)unwinder->debug_offsets.thread_state.size,
+            local_ts);
+        if (rc < 0) {
+            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read thread state");
+            goto error;
+        }
+        ts = local_ts;
     }
     STATS_INC(unwinder, memory_reads);
     STATS_ADD(unwinder, memory_bytes_read, unwinder->debug_offsets.thread_state.size);
+    if (ctx_prefetch.frame) {
+        STATS_INC(unwinder, memory_reads);
+        STATS_ADD(unwinder, memory_bytes_read, SIZEOF_INTERP_FRAME);
+    }
 
     long tid = GET_MEMBER(long, ts, unwinder->debug_offsets.thread_state.native_thread_id);
 
@@ -432,9 +514,11 @@ unwind_stack_for_thread(
     uintptr_t addrs[FRAME_CACHE_MAX_FRAMES];
     FrameWalkContext ctx = {
         .frame_addr = frame_addr,
+        .thread_state_addr = *current_tstate,
         .base_frame_addr = base_frame_addr,
         .gc_frame = gc_frame,
         .chunks = &chunks,
+        .prefetch = ctx_prefetch,
         .frame_info = frame_info,
         .frame_addrs = addrs,
         .num_addrs = 0,
@@ -450,12 +534,14 @@ unwind_stack_for_thread(
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to collect frames");
             goto error;
         }
-        // Update last_profiled_frame for next sample
-        uintptr_t lpf_addr =
-            *current_tstate + (uintptr_t)unwinder->debug_offsets.thread_state.last_profiled_frame;
-        if (_Py_RemoteDebug_WriteRemoteMemory(&unwinder->handle, lpf_addr,
-                                              sizeof(uintptr_t), &frame_addr) < 0) {
-            PyErr_Clear();  // Non-fatal
+        // Update last_profiled_frame for next sample if it changed
+        if (frame_addr != ctx.last_profiled_frame) {
+            uintptr_t lpf_addr =
+                *current_tstate + (uintptr_t)unwinder->debug_offsets.thread_state.last_profiled_frame;
+            if (_Py_RemoteDebug_WriteRemoteMemory(&unwinder->handle, lpf_addr,
+                                                  sizeof(uintptr_t), &frame_addr) < 0) {
+                PyErr_Clear();  // Non-fatal
+            }
         }
     } else {
         // No caching - process entire frame chain with base_frame validation
@@ -467,10 +553,18 @@ unwind_stack_for_thread(
 
     *current_tstate = GET_MEMBER(uintptr_t, ts, unwinder->debug_offsets.thread_state.next);
 
-    thread_id = PyLong_FromLongLong(tid);
+    if (unwinder->cache_frames) {
+        FrameCacheEntry *entry = frame_cache_find(unwinder, (uint64_t)tid);
+        if (entry && entry->thread_id_obj) {
+            thread_id = Py_NewRef(entry->thread_id_obj);
+        }
+    }
     if (thread_id == NULL) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to create thread ID");
-        goto error;
+        thread_id = PyLong_FromLongLong(tid);
+        if (thread_id == NULL) {
+            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to create thread ID");
+            goto error;
+        }
     }
 
     RemoteDebuggingState *state = RemoteDebugging_GetStateFromObject((PyObject*)unwinder);
@@ -566,8 +660,7 @@ read_thread_ids(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_ThreadsState *st
 
     DIR *dir = opendir(task_path);
     if (dir == NULL) {
-        st->tids = NULL;
-        st->count = 0;
+        _Py_RemoteDebug_InitThreadsState(unwinder, st);
         if (errno == ENOENT || errno == ESRCH) {
             PyErr_Format(PyExc_ProcessLookupError,
                 "Process %d has terminated", unwinder->handle.pid);
@@ -579,8 +672,21 @@ read_thread_ids(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_ThreadsState *st
 
     st->count = 0;
 
-    struct dirent *entry;
-    while ((entry = readdir(dir)) != NULL) {
+    for (;;) {
+        errno = 0;
+        struct dirent *entry = readdir(dir);
+        if (entry == NULL) {
+            if (errno != 0) {
+                int err = errno;
+                closedir(dir);
+                _Py_RemoteDebug_InitThreadsState(unwinder, st);
+                _set_debug_oserror_from_errno_with_filename(err, task_path,
+                    "Failed to read process task directory '%s': %s",
+                    task_path, strerror(err));
+                return -1;
+            }
+            break;
+        }
         if (entry->d_name[0] < '1' || entry->d_name[0] > '9') {
             continue;
         }
@@ -594,8 +700,7 @@ read_thread_ids(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_ThreadsState *st
             pid_t *new_tids = PyMem_RawRealloc(unwinder->thread_tids, new_cap * sizeof(pid_t));
             if (new_tids == NULL) {
                 closedir(dir);
-                st->tids = NULL;
-                st->count = 0;
+                _Py_RemoteDebug_InitThreadsState(unwinder, st);
                 PyErr_NoMemory();
                 return -1;
             }
@@ -605,8 +710,15 @@ read_thread_ids(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_ThreadsState *st
         unwinder->thread_tids[st->count++] = (pid_t)tid;
     }
 
+    if (closedir(dir) != 0) {
+        int err = errno;
+        _Py_RemoteDebug_InitThreadsState(unwinder, st);
+        _set_debug_oserror_from_errno_with_filename(err, task_path,
+            "Failed to close process task directory '%s': %s",
+            task_path, strerror(err));
+        return -1;
+    }
     st->tids = unwinder->thread_tids;
-    closedir(dir);
     return 0;
 }
 
@@ -619,28 +731,30 @@ detach_threads(_Py_RemoteDebug_ThreadsState *st, size_t up_to)
 }
 
 static int
-seize_thread(pid_t tid)
+seize_thread(pid_t tid, int *err)
 {
     if (ptrace(PTRACE_SEIZE, tid, NULL, 0) == 0) {
         return 0;
     }
-    if (errno == ESRCH) {
+    *err = errno;
+    if (*err == ESRCH) {
         return 1;  // Thread gone, skip
     }
-    if (errno == EPERM) {
+    if (*err == EPERM) {
         // Thread may have exited, be in a special state, or already be traced.
         // Skip rather than fail - this avoids endless retry loops when
         // threads transiently become inaccessible.
         return 1;
     }
-    if (errno == EINVAL || errno == EIO) {
+    if (*err == EINVAL || *err == EIO) {
         // Fallback for older kernels
         if (ptrace(PTRACE_ATTACH, tid, NULL, NULL) == 0) {
             int status;
             waitpid(tid, &status, __WALL);
             return 0;
         }
-        if (errno == ESRCH || errno == EPERM) {
+        *err = errno;
+        if (*err == ESRCH || *err == EPERM) {
             return 1;  // Thread gone or inaccessible
         }
     }
@@ -654,39 +768,50 @@ _Py_RemoteDebug_StopAllThreads(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_T
         return -1;
     }
 
-    for (size_t i = 0; i < st->count; i++) {
+    size_t n_tids = st->count;
+    size_t seized = 0;
+    for (size_t i = 0; i < n_tids; i++) {
         pid_t tid = st->tids[i];
 
-        int ret = seize_thread(tid);
+        int err = 0;
+        int ret = seize_thread(tid, &err);
         if (ret == 1) {
             continue;  // Thread gone, skip
         }
         if (ret < 0) {
-            detach_threads(st, i);
-            PyErr_Format(PyExc_RuntimeError, "Failed to seize thread %d: %s", tid, strerror(errno));
-            st->tids = NULL;
-            st->count = 0;
+            detach_threads(st, seized);
+            _set_debug_oserror_from_errno(err,
+                "Failed to seize thread %d: %s", tid, strerror(err));
+            _Py_RemoteDebug_InitThreadsState(unwinder, st);
             return -1;
         }
+        st->tids[seized++] = tid;
 
-        if (ptrace(PTRACE_INTERRUPT, tid, NULL, NULL) == -1 && errno != ESRCH) {
-            detach_threads(st, i + 1);
-            PyErr_Format(PyExc_RuntimeError, "Failed to interrupt thread %d: %s", tid, strerror(errno));
-            st->tids = NULL;
-            st->count = 0;
-            return -1;
+        if (ptrace(PTRACE_INTERRUPT, tid, NULL, NULL) == -1) {
+            err = errno;
+            if (err != ESRCH) {
+                detach_threads(st, seized);
+                _set_debug_oserror_from_errno(err,
+                    "Failed to interrupt thread %d: %s", tid, strerror(err));
+                _Py_RemoteDebug_InitThreadsState(unwinder, st);
+                return -1;
+            }
         }
 
         int status;
-        if (waitpid(tid, &status, __WALL) == -1 && errno != ECHILD && errno != ESRCH) {
-            detach_threads(st, i + 1);
-            PyErr_Format(PyExc_RuntimeError, "waitpid failed for thread %d: %s", tid, strerror(errno));
-            st->tids = NULL;
-            st->count = 0;
-            return -1;
+        if (waitpid(tid, &status, __WALL) == -1) {
+            err = errno;
+            if (err != ECHILD && err != ESRCH) {
+                detach_threads(st, seized);
+                _set_debug_oserror_from_errno(err,
+                    "waitpid failed for thread %d: %s", tid, strerror(err));
+                _Py_RemoteDebug_InitThreadsState(unwinder, st);
+                return -1;
+            }
         }
     }
 
+    st->count = seized;
     return 0;
 }
 

@@ -555,6 +555,9 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: const char* PyTypeObject.tp_name
 
+   See :c:macro:`Py_tp_name` for the corresponding
+   :c:member:`Slot ID <PySlot.sl_id>`.
+
    Pointer to a NUL-terminated string containing the name of the type. For types
    that are accessible as module globals, the string should be the full module
    name, followed by a dot, followed by the type name; for built-in types, it
@@ -593,6 +596,10 @@ and :c:data:`PyType_Type` effectively act as defaults.)
               Py_ssize_t PyTypeObject.tp_itemsize
 
    These fields allow calculating the size in bytes of instances of the type.
+
+   See :c:macro:`Py_tp_basicsize`, :c:macro:`Py_tp_extra_basicsize` and
+   :c:macro:`Py_tp_itemsize` for the corresponding
+   :c:member:`Slot IDs <PySlot.sl_id>`.
 
    There are two kinds of types: types with fixed-length instances have a zero
    :c:member:`!tp_itemsize` field, types with variable-length instances have a non-zero
@@ -1132,6 +1139,9 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
 
 .. c:member:: unsigned long PyTypeObject.tp_flags
+
+   See :c:macro:`Py_tp_flags` for the corresponding
+   :c:member:`Slot ID <PySlot.sl_id>`.
 
    This field is a bit mask of various flags.  Some flags indicate variant
    semantics for certain situations; others are used to indicate that certain
@@ -2965,13 +2975,13 @@ Buffer Object Structures
    steps:
 
    (1) Check if the request can be met. If not, raise :exc:`BufferError`,
-       set :c:expr:`view->obj` to ``NULL`` and return ``-1``.
+       set ``view->obj`` to ``NULL`` and return ``-1``.
 
    (2) Fill in the requested fields.
 
    (3) Increment an internal counter for the number of exports.
 
-   (4) Set :c:expr:`view->obj` to *exporter* and increment :c:expr:`view->obj`.
+   (4) Set ``view->obj`` to *exporter* and increment ``view->obj``.
 
    (5) Return ``0``.
 
@@ -2997,10 +3007,10 @@ Buffer Object Structures
    schemes can be used:
 
    * Re-export: Each member of the tree acts as the exporting object and
-     sets :c:expr:`view->obj` to a new reference to itself.
+     sets ``view->obj`` to a new reference to itself.
 
    * Redirect: The buffer request is redirected to the root object of the
-     tree. Here, :c:expr:`view->obj` will be a new reference to the root
+     tree. Here, ``view->obj`` will be a new reference to the root
      object.
 
    The individual fields of *view* are described in section
@@ -3054,7 +3064,7 @@ Buffer Object Structures
    *view* argument.
 
 
-   This function MUST NOT decrement :c:expr:`view->obj`, since that is
+   This function MUST NOT decrement ``view->obj``, since that is
    done automatically in :c:func:`PyBuffer_Release` (this scheme is
    useful for breaking reference cycles).
 

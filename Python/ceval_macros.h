@@ -168,7 +168,6 @@
 #define STOP_TRACING() ((void)(0));
 #endif
 
-
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
 #ifdef Py_DEBUG
 #define PRE_DISPATCH_GOTO() if (frame->lltrace >= 5) { \
@@ -269,10 +268,10 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 
 #if defined(Py_DEBUG) && !defined(_Py_JIT)
 // This allows temporary stack "overflows", provided it's all in the cache at any point of time.
-#define WITHIN_STACK_BOUNDS_IGNORING_CACHE() \
-   (frame->owner == FRAME_OWNED_BY_INTERPRETER || (STACK_LEVEL() >= 0 && (STACK_LEVEL()) <= STACK_SIZE()))
+#define ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(F, L) \
+   assert(frame->owner == FRAME_OWNED_BY_INTERPRETER || (STACK_LEVEL() >= 0 && (STACK_LEVEL()) <= STACK_SIZE()))
 #else
-#define WITHIN_STACK_BOUNDS_IGNORING_CACHE WITHIN_STACK_BOUNDS
+#define ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE ASSERT_WITHIN_STACK_BOUNDS
 #endif
 
 /* Data access macros */
@@ -329,10 +328,23 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define CONSTS() _PyFrame_GetCode(frame)->co_consts
 #define NAMES() _PyFrame_GetCode(frame)->co_names
 
+#if defined(WITH_DTRACE) && !defined(Py_BUILD_CORE_MODULE)
+static void dtrace_function_entry(_PyInterpreterFrame *);
+static void dtrace_function_return(_PyInterpreterFrame *);
+
 #define DTRACE_FUNCTION_ENTRY()  \
     if (PyDTrace_FUNCTION_ENTRY_ENABLED()) { \
         dtrace_function_entry(frame); \
     }
+
+#define DTRACE_FUNCTION_RETURN() \
+    if (PyDTrace_FUNCTION_RETURN_ENABLED()) { \
+        dtrace_function_return(frame); \
+    }
+#else
+#define DTRACE_FUNCTION_ENTRY() ((void)0)
+#define DTRACE_FUNCTION_RETURN() ((void)0)
+#endif
 
 /* This takes a uint16_t instead of a _Py_BackoffCounter,
  * because it is used directly on the cache entry in generated code,
@@ -628,3 +640,6 @@ gen_try_set_executing(PyGenObject *gen)
             (PyLongObject *)PyStackRef_AsPyObjectBorrow(left),           \
             (PyLongObject *)PyStackRef_AsPyObjectBorrow(right));         \
     }
+
+#define CALL_TP_ITERITEM_NO_ESCAPE(ITER, INDEX) \
+    Py_TYPE(ITER)->_tp_iteritem((ITER), (INDEX))
