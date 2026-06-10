@@ -17,9 +17,9 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
 
 .. warning::
 
-   The :mod:`!mailbox` module assumes full control over input parameters and the
-   underlying mailbox storage; it does not protect against untrusted paths or
-   externally modified data.
+ The :mod:`!mailbox` module is designed for use in trusted environments,
+ where all inputs are provided by the local user and the underlying mailbox
+ storage is accessible only to that user.
 
 .. seealso::
 
