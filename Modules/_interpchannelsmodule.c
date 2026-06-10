@@ -903,7 +903,8 @@ static _channelends *
 _channelends_new(void)
 {
     _channelends *ends = GLOBAL_MALLOC(_channelends);
-    if (ends== NULL) {
+    if (ends == NULL) {
+        PyErr_NoMemory();
         return NULL;
     }
     ends->numsendopen = 0;
@@ -1095,6 +1096,7 @@ _channel_new(PyThread_type_lock mutex, int unboundop)
 {
     _channel_state *chan = GLOBAL_MALLOC(_channel_state);
     if (chan == NULL) {
+        PyErr_NoMemory();
         return NULL;
     }
     chan->mutex = mutex;
@@ -1295,6 +1297,7 @@ _channelref_new(int64_t cid, _channel_state *chan)
 {
     _channelref *ref = GLOBAL_MALLOC(_channelref);
     if (ref == NULL) {
+        PyErr_NoMemory();
         return NULL;
     }
     ref->cid = cid;
@@ -1680,6 +1683,7 @@ _channel_set_closing(_channelref *ref, PyThread_type_lock mutex) {
     }
     chan->closing = GLOBAL_MALLOC(struct _channel_closing);
     if (chan->closing == NULL) {
+        PyErr_NoMemory();
         goto done;
     }
     chan->closing->ref = ref;
