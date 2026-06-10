@@ -42,8 +42,8 @@ as much as it can.
    callable object that receives notification when *ob* is garbage collected; it
    should accept a single parameter, which will be the weak reference object
    itself. *callback* may also be ``None`` or ``NULL``.  If *ob* is not a
-   weakly referenceable object, or if *callback* is not callable, ``None``, or
-   ``NULL``, this will return ``NULL`` and raise :exc:`TypeError`.
+   weakly referenceable object, this will raise :exc:`TypeError` and return
+   ``NULL``.
 
    .. seealso::
       :c:func:`PyType_SUPPORTS_WEAKREFS` for checking if *ob* is weakly
@@ -58,8 +58,8 @@ as much as it can.
    be a callable object that receives notification when *ob* is garbage
    collected; it should accept a single parameter, which will be the weak
    reference object itself. *callback* may also be ``None`` or ``NULL``.  If *ob*
-   is not a weakly referenceable object, or if *callback* is not callable,
-   ``None``, or ``NULL``, this will return ``NULL`` and raise :exc:`TypeError`.
+   weakly referenceable object, this will raise :exc:`TypeError` and return
+   ``NULL``.
 
    .. seealso::
       :c:func:`PyType_SUPPORTS_WEAKREFS` for checking if *ob* is weakly
