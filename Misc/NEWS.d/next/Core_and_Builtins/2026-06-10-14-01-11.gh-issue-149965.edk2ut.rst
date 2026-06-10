@@ -1,1 +1,0 @@
-Promote ``ptr_wise_atomic_memmove`` to internal header
