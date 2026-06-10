@@ -438,6 +438,12 @@ _PyLong_TryAsInt64Exact(PyLongObject *v, int64_t *out)
     return false;
 }
 
+static inline int
+_PyLong_CheckExactAndFitsInt64(PyObject *op)
+{
+    return PyLong_CheckExact(op) && _PyLong_FitsInt64((const PyLongObject *)op);
+}
+
 #ifdef __cplusplus
 }
 #endif

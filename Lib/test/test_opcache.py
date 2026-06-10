@@ -1383,7 +1383,7 @@ class TestSpecializer(TestBase):
                 self.assertEqual(c, 10000000001)
 
         binary_op_int_wide_add()
-        self.assert_specialized(binary_op_int_wide_add, "BINARY_OP_ADD_INT")
+        self.assert_specialized(binary_op_int_wide_add, "BINARY_OP_ADD_INT_WIDE")
 
         # Wide (non-compact) ints in the int64 range now specialize subtract.
         def binary_op_int_wide_sub():
@@ -1393,7 +1393,7 @@ class TestSpecializer(TestBase):
                 self.assertEqual(c, 9999999999)
 
         binary_op_int_wide_sub()
-        self.assert_specialized(binary_op_int_wide_sub, "BINARY_OP_SUBTRACT_INT")
+        self.assert_specialized(binary_op_int_wide_sub, "BINARY_OP_SUBTRACT_INT_WIDE")
 
         # Multiply is still compact-only.
         def binary_op_int_non_compact_mul():
