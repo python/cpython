@@ -898,7 +898,9 @@ compiler_mod(compiler *c, mod_ty mod)
     }
     co = _PyCompile_OptimizeAndAssemble(c, addNone);
 finally:
-    _PyCompile_ExitScope(c);
+    if (c->u != NULL) {
+        _PyCompile_ExitScope(c);
+    }
     return co;
 }
 
