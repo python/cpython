@@ -1,5 +1,0 @@
-Preserve non-UTF-8 encoded filenames when appending to a
-:class:`zipfile.ZipFile`.  Previously, non-ASCII names stored in a legacy
-encoding (without the UTF-8 flag bit set) could be corrupted when the
-central directory was rewritten: they were decoded as cp437 and then
-re-stored as UTF-8.
