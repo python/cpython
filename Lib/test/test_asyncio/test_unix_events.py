@@ -1349,27 +1349,28 @@ class PidfdChildWatcherTests(test_utils.TestCase):
         # _do_wait() must close the pidfd even when waitpid()
         # fails with something other than ChildProcessError, otherwise the
         # pidfd is leaked
-        watcher = unix_events._PidfdChildWatcher()
-        pid = os.posix_spawn(sys.executable, [sys.executable, '-c', ''],
-                             os.environ)
-        pidfd = os.pidfd_open(pid)
-        try:
-            async def coro():
-                with mock.patch.object(os, 'waitpid',
-                                       side_effect=OSError('unexpected')):
-                    with self.assertRaises(OSError):
-                        watcher._do_wait(pid, pidfd, lambda *a: None, ())
+        self.loop.set_exception_handler(lambda loop, context: None)
 
-            self.loop.run_until_complete(coro())
+        async def coro():
+            before = os_helper.fd_count()
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable, '-c', 'import sys; sys.stdin.read()',
+                stdin=asyncio.subprocess.PIPE
+            )
 
-            with self.assertRaises(OSError):
-                os.fstat(pidfd)
-        finally:
-            try:
-                os.close(pidfd)
-            except OSError:
-                pass
-            os.waitpid(pid, 0)
+            with mock.patch.object(os, 'waitpid',
+                                   side_effect=OSError('unexpected')) as m:
+                proc.stdin.close()
+                while not m.called:
+                    await asyncio.sleep(0)
+
+            os.waitpid(proc.pid, 0)
+            proc._transport._process_exited(0)
+            await proc.wait()
+
+            self.assertEqual(os_helper.fd_count(), before)
+
+        self.loop.run_until_complete(coro())
 
 
 if __name__ == '__main__':
