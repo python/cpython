@@ -275,9 +275,13 @@ Deprecated
 
 .. include:: ../deprecations/pending-removal-in-3.17.rst
 
+.. include:: ../deprecations/pending-removal-in-3.18.rst
+
 .. include:: ../deprecations/pending-removal-in-3.19.rst
 
 .. include:: ../deprecations/pending-removal-in-3.20.rst
+
+.. include:: ../deprecations/pending-removal-in-3.21.rst
 
 .. include:: ../deprecations/pending-removal-in-future.rst
 
@@ -326,9 +330,19 @@ Porting to Python 3.16
 Deprecated C APIs
 -----------------
 
-* TODO
+* :c:func:`PyGen_New`, :c:func:`PyGen_NewWithQualName`, :c:func:`PyCoro_New`,
+  and :c:func:`PyAsyncGen_New` are deprecated.
+  They are scheduled for removal in 3.18.
 
 .. Add C API deprecations above alphabetically, not here at the end.
+
+.. include:: ../deprecations/c-api-pending-removal-in-3.18.rst
+
+.. include:: ../deprecations/c-api-pending-removal-in-3.19.rst
+
+.. include:: ../deprecations/c-api-pending-removal-in-3.20.rst
+
+.. include:: ../deprecations/c-api-pending-removal-in-future.rst
 
 Removed C APIs
 --------------
