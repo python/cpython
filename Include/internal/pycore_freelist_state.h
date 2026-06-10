@@ -19,6 +19,7 @@ extern "C" {
 #  define Py_complexes_MAXFREELIST 100
 #  define Py_ints_MAXFREELIST 100
 #  define Py_ints2_MAXFREELIST 100
+#  define Py_ints3_MAXFREELIST 50
 #  define Py_slices_MAXFREELIST 1
 #  define Py_ranges_MAXFREELIST 6
 #  define Py_range_iters_MAXFREELIST 6
@@ -49,6 +50,7 @@ struct _Py_freelists {
     struct _Py_freelist complexes;
     struct _Py_freelist ints;
     struct _Py_freelist ints2;
+    struct _Py_freelist ints3;
     struct _Py_freelist tuples[PyTuple_MAXSAVESIZE];
     struct _Py_freelist lists;
     struct _Py_freelist list_iters;
