@@ -7492,7 +7492,7 @@ class FreeThreadingTests(unittest.TestCase):
 
 
 class ReentrantMutationTests(unittest.TestCase):
-    """Regression tests for re-entrant mutation vulnerabilities in sendmsg/recvmsg_into.
+    """Regression tests for re-entrant mutation in sendmsg/recvmsg_into.
 
     These tests verify that mutating sequences during argument parsing
     via __buffer__ protocol does not cause crashes.

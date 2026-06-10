@@ -4521,19 +4521,19 @@ sock_recvmsg_into(PyObject *self, PyObject *args)
     struct iovec *iovs = NULL;
     Py_ssize_t i, nitems, nbufs = 0;
     Py_buffer *bufs = NULL;
-    PyObject *buffers_arg, *fast, *retval = NULL;
+    PyObject *buffers_arg, *buffers_tuple, *retval = NULL;
 
     if (!PyArg_ParseTuple(args, "O|ni:recvmsg_into",
                           &buffers_arg, &ancbufsize, &flags))
         return NULL;
 
-    fast = PySequence_Tuple(buffers_arg);
-    if (fast == NULL) {
+    buffers_tuple = PySequence_Tuple(buffers_arg);
+    if (buffers_tuple == NULL) {
         PyErr_SetString(PyExc_TypeError,
                         "recvmsg_into() argument 1 must be an iterable");
         return NULL;
     }
-    nitems = PyTuple_GET_SIZE(fast);
+    nitems = PyTuple_GET_SIZE(buffers_tuple);
     if (nitems > INT_MAX) {
         PyErr_SetString(PyExc_OSError, "recvmsg_into() argument 1 is too long");
         goto finally;
@@ -4547,7 +4547,7 @@ sock_recvmsg_into(PyObject *self, PyObject *args)
         goto finally;
     }
     for (; nbufs < nitems; nbufs++) {
-        if (!PyArg_Parse(PyTuple_GET_ITEM(fast, nbufs),
+        if (!PyArg_Parse(PyTuple_GET_ITEM(buffers_tuple, nbufs),
                          "w*;recvmsg_into() argument 1 must be an iterable "
                          "of single-segment read-write buffers",
                          &bufs[nbufs]))
@@ -4563,7 +4563,7 @@ finally:
         PyBuffer_Release(&bufs[i]);
     PyMem_Free(bufs);
     PyMem_Free(iovs);
-    Py_DECREF(fast);
+    Py_DECREF(buffers_tuple);
     return retval;
 }
 
