@@ -133,6 +133,7 @@
     <ClCompile Include="..\Modules\_testcapi\frame.c" />
     <ClCompile Include="..\Modules\_testcapi\type.c" />
     <ClCompile Include="..\Modules\_testcapi\function.c" />
+    <ClCompile Include="..\Modules\_testcapi\weakref.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />
