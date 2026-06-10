@@ -40,7 +40,7 @@ Updated bundled version of OpenSSL to 3.0.21.
 .. date: 2026-06-09-11-40-17
 .. gh-issue: 151159
 .. nonce: 9si8Fo
-.. section: Windows
+.. section: macOS
 
 Update macOS installer to use OpenSSL 3.0.21.
 
