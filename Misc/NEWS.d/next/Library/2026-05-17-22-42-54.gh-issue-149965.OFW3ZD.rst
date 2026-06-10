@@ -1,1 +1,0 @@
-Improve thread-safety of ElementObjects in ``element_ass_subscr``
