@@ -19,7 +19,7 @@ env:
 
 jobs:
   test-lazy-imports-all:
-    name: 'Lazy Imports All Enabled'
+    name: 'Run Tests with lazy_imports=all'
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
@@ -39,7 +39,7 @@ jobs:
       run: make -j4
     - name: Display build info
       run: make pythoninfo
-    - name: Verify lazy imports are fullly enabled
+    - name: Verify lazy imports are fully enabled
       run: ./python -c "import sys; assert sys.flags.lazy_imports == 1, sys.flags.lazy_imports; print('lazy imports all enabled')"
     - name: Build test list (all tests minus the known-failing exclusions)
       run: |
