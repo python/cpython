@@ -50,9 +50,38 @@ MIN_SAMPLES_FOR_TUI = 200
 # Maximum number of consecutive identical samples to keep before flushing.
 MAX_PENDING_SAMPLES = 8192
 
+
+def _resolve_python_pid(pid):
+    """On Windows, if pid is a venvlauncher process, return the child Python PID.
+
+    The venvlauncher (used as python.exe in venvs) spawns the real Python
+    interpreter as a child process via CreateProcessW. The RemoteUnwinder
+    needs the child's PID, not the launcher's.
+
+    Returns the original pid if not on Windows, not a venv launcher,
+    or no child process is found.
+    """
+    if os.name != "nt" or sys.prefix == sys.base_prefix:
+        return pid
+    try:
+        children = _remote_debugging.get_child_pids(pid, recursive=False)
+        python_children = [
+            child for child in children
+            if _remote_debugging.is_python_process(child)
+        ]
+        if len(python_children) == 1:
+            return python_children[0]
+    except (OSError, RuntimeError) as err:
+        raise SystemExit(
+            f"Failed to initialize profiler from virtualenv: {err}\n"
+            f"Try running with the base interpreter: {sys._base_executable}"
+        ) from err
+    return pid
+
+
 class SampleProfiler:
     def __init__(self, pid, sample_interval_usec, all_threads, *, mode=PROFILING_MODE_WALL, native=False, gc=True, opcodes=False, skip_non_matching_threads=True, collect_stats=False, blocking=False):
-        self.pid = pid
+        self.pid = _resolve_python_pid(pid)
         self.sample_interval_usec = sample_interval_usec
         self.all_threads = all_threads
         self.mode = mode  # Store mode for later use
@@ -61,10 +90,6 @@ class SampleProfiler:
         try:
             self.unwinder = self._new_unwinder(native, gc, opcodes, skip_non_matching_threads)
         except RuntimeError as err:
-            if os.name == "nt" and sys.executable.endswith("python.exe"):
-                raise SystemExit(
-                    "Running profiling.sampling from virtualenv on Windows platform is not supported"
-                ) from err
             raise SystemExit(err) from err
         # Track sample intervals and total sample count
         self.sample_intervals = deque(maxlen=100)
@@ -326,6 +351,33 @@ class SampleProfiler:
         print(f"  {ANSIColors.CYAN}Code Object Cache:{ANSIColors.RESET}")
         print(f"    Hits:             {code_hits:n} ({ANSIColors.GREEN}{fmt(code_hits_pct)}%{ANSIColors.RESET})")
         print(f"    Misses:           {code_misses:n} ({ANSIColors.RED}{fmt(code_misses_pct)}%{ANSIColors.RESET})")
+
+        batched_attempts = stats.get('batched_read_attempts', 0)
+        batched_successes = stats.get('batched_read_successes', 0)
+        batched_misses = stats.get('batched_read_misses', 0)
+        segments_requested = stats.get('batched_read_segments_requested', 0)
+        segments_completed = stats.get('batched_read_segments_completed', 0)
+        if batched_attempts > 0:
+            batched_success_rate = stats.get('batched_read_success_rate', 0.0)
+            batched_miss_rate = 100.0 - batched_success_rate
+            segment_completion_rate = stats.get(
+                'batched_read_segment_completion_rate', 0.0
+            )
+
+            print(f"  {ANSIColors.CYAN}Batched Reads:{ANSIColors.RESET}")
+            print(f"    Attempts:         {batched_attempts:n}")
+            print(
+                f"    Successes:        {batched_successes:n} "
+                f"({ANSIColors.GREEN}{fmt(batched_success_rate)}%{ANSIColors.RESET})"
+            )
+            print(
+                f"    Misses:           {batched_misses:n} "
+                f"({ANSIColors.RED}{fmt(batched_miss_rate)}%{ANSIColors.RESET})"
+            )
+            print(
+                f"    Segments read:    {segments_completed:n}/{segments_requested:n} "
+                f"({ANSIColors.GREEN}{fmt(segment_completion_rate)}%{ANSIColors.RESET})"
+            )
 
         # Memory operations
         memory_reads = stats.get('memory_reads', 0)

@@ -6367,20 +6367,21 @@ int_as_integer_ratio_impl(PyObject *self)
 int.to_bytes
 
     length: Py_ssize_t(allow_negative=False) = 1
-        Length of bytes object to use.  An OverflowError is raised if the
-        integer is not representable with the given number of bytes.  Default
-        is length 1.
+        Length of bytes object to use.  An OverflowError is raised if
+        the integer is not representable with the given number of bytes.
+        Default is length 1.
     byteorder: unicode(c_default="NULL") = "big"
-        The byte order used to represent the integer.  If byteorder is 'big',
-        the most significant byte is at the beginning of the byte array.  If
-        byteorder is 'little', the most significant byte is at the end of the
-        byte array.  To request the native byte order of the host system, use
-        sys.byteorder as the byte order value.  Default is to use 'big'.
+        The byte order used to represent the integer.  If byteorder is
+        'big', the most significant byte is at the beginning of the byte
+        array.  If byteorder is 'little', the most significant byte is at
+        the end of the byte array.  To request the native byte order of
+        the host system, use sys.byteorder as the byte order value.
+        Default is to use 'big'.
     *
     signed as is_signed: bool = False
-        Determines whether two's complement is used to represent the integer.
-        If signed is False and a negative integer is given, an OverflowError
-        is raised.
+        Determines whether two's complement is used to represent the
+        integer.  If signed is False and a negative integer is given,
+        an OverflowError is raised.
 
 Return an array of bytes representing an integer.
 [clinic start generated code]*/
@@ -6388,7 +6389,7 @@ Return an array of bytes representing an integer.
 static PyObject *
 int_to_bytes_impl(PyObject *self, Py_ssize_t length, PyObject *byteorder,
                   int is_signed)
-/*[clinic end generated code: output=89c801df114050a3 input=66f9d0c20529b44f]*/
+/*[clinic end generated code: output=89c801df114050a3 input=c74a93c07b2f6526]*/
 {
     int little_endian;
     if (byteorder == NULL)
@@ -6424,18 +6425,20 @@ int.from_bytes
 
     bytes as bytes_obj: object
         Holds the array of bytes to convert.  The argument must either
-        support the buffer protocol or be an iterable object producing bytes.
-        Bytes and bytearray are examples of built-in objects that support the
-        buffer protocol.
+        support the buffer protocol or be an iterable object producing
+        bytes.  Bytes and bytearray are examples of built-in objects that
+        support the buffer protocol.
     byteorder: unicode(c_default="NULL") = "big"
-        The byte order used to represent the integer.  If byteorder is 'big',
-        the most significant byte is at the beginning of the byte array.  If
-        byteorder is 'little', the most significant byte is at the end of the
-        byte array.  To request the native byte order of the host system, use
-        sys.byteorder as the byte order value.  Default is to use 'big'.
+        The byte order used to represent the integer.  If byteorder is
+        'big', the most significant byte is at the beginning of the byte
+        array.  If byteorder is 'little', the most significant byte is at
+        the end of the byte array.  To request the native byte order of
+        the host system, use sys.byteorder as the byte order value.
+        Default is to use 'big'.
     *
     signed as is_signed: bool = False
-        Indicates whether two's complement is used to represent the integer.
+        Indicates whether two's complement is used to represent the
+        integer.
 
 Return the integer represented by the given array of bytes.
 [clinic start generated code]*/
@@ -6443,7 +6446,7 @@ Return the integer represented by the given array of bytes.
 static PyObject *
 int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
                     PyObject *byteorder, int is_signed)
-/*[clinic end generated code: output=efc5d68e31f9314f input=2ff527997fe7b0c5]*/
+/*[clinic end generated code: output=efc5d68e31f9314f input=95801e50b942e164]*/
 {
     int little_endian;
     PyObject *long_obj, *bytes;
@@ -6508,6 +6511,7 @@ long_long_getter(PyObject *self, void *Py_UNUSED(ignored))
 }
 
 /*[clinic input]
+@permit_long_summary
 int.is_integer
 
 Returns True. Exists for duck type compatibility with float.is_integer.
@@ -6515,7 +6519,7 @@ Returns True. Exists for duck type compatibility with float.is_integer.
 
 static PyObject *
 int_is_integer_impl(PyObject *self)
-/*[clinic end generated code: output=90f8e794ce5430ef input=7e41c4d4416e05f2]*/
+/*[clinic end generated code: output=90f8e794ce5430ef input=aacf01a2c81c0244]*/
 {
     Py_RETURN_TRUE;
 }
@@ -6597,7 +6601,8 @@ If x is not a number or if base is given, then x must be a string,\n\
 bytes, or bytearray instance representing an integer literal in the\n\
 given base.  The literal can be preceded by '+' or '-' and be surrounded\n\
 by whitespace.  The base defaults to 10.  Valid bases are 0 and 2-36.\n\
-Base 0 means to interpret the base from the string as an integer literal.\n\
+Base 0 means to interpret the base from the string as an integer\n\
+iteral.\n\
 >>> int('0b100', base=0)\n\
 4");
 

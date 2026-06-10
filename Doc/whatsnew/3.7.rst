@@ -571,7 +571,7 @@ decimal operations to work with the correct context in asynchronous code.
 dataclasses
 -----------
 
-The new :func:`~dataclasses.dataclass` decorator provides a way to declare
+The new :deco:`~dataclasses.dataclass` decorator provides a way to declare
 *data classes*.  A data class describes its attributes using class variable
 annotations.  Its constructor and other magic methods, such as
 :meth:`~object.__repr__`, :meth:`~object.__eq__`, and
@@ -830,7 +830,7 @@ The new :func:`~contextlib.nullcontext` is a simpler and faster no-op
 context manager than :class:`~contextlib.ExitStack`.
 (Contributed by Jesse-Bakker in :issue:`10049`.)
 
-The new :func:`~contextlib.asynccontextmanager`,
+The new :deco:`~contextlib.asynccontextmanager`,
 :class:`~contextlib.AbstractAsyncContextManager`, and
 :class:`~contextlib.AsyncExitStack` have been added to
 complement their synchronous counterparts.  (Contributed
@@ -921,7 +921,7 @@ return :const:`False` instead and are deprecated.
 functools
 ---------
 
-:func:`functools.singledispatch` now supports registering implementations
+:deco:`functools.singledispatch` now supports registering implementations
 using type annotations.
 (Contributed by Łukasz Langa in :issue:`32227`.)
 

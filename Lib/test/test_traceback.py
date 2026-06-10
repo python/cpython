@@ -206,7 +206,7 @@ class TracebackCases(unittest.TestCase):
                 sys.setrecursionlimit(15)
 
                 def f():
-                    ref(lambda: 0, [])
+                    ref(lambda: 0, ord)
                     f()
 
                 try:
@@ -4637,6 +4637,9 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
             (frozenset, 'remove', "Did you mean to use a 'set' object?"),
             (frozenset, 'update', "Did you mean to use a 'set' object?"),
             (frozendict, 'update', "Did you mean to use a 'dict' object?"),
+            (tuple, 'clear', "Did you mean to use a 'list' object?"),
+            (frozenset, 'clear', "Did you mean to use a 'set' object?"),
+            (frozendict, 'clear', "Did you mean to use a 'dict' object?"),
         ]
         for test_type, attr, expected in cases:
             with self.subTest(type=test_type.__name__, attr=attr):
