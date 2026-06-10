@@ -643,7 +643,7 @@ The formal grammar for generator expressions is:
 .. grammar-snippet::
    :group: python-grammar
 
-   generator_expression: "(" `expression` ")"
+   generator_expression: "(" `expression` `comp_for` ")"
 
 .. versionadded:: 3.6
    Asynchronous generator expressions were introduced.
