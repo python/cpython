@@ -106,7 +106,7 @@ The :mod:`!runpy` module provides two functions:
 
    Execute the code at the named filesystem location and return the resulting
    module's globals dictionary. As with a script name supplied to the CPython
-   command line, *file_path* may refer to a Python source file, a
+   command line, *path_name* may refer to a Python source file, a
    compiled bytecode file or a valid :data:`sys.path` entry containing a
    :mod:`__main__` module
    (e.g. a zipfile containing a top-level :file:`__main__.py` file).
@@ -134,12 +134,12 @@ The :mod:`!runpy` module provides two functions:
    ``__name__`` is set to *run_name* if this optional argument is not
    :const:`None` and to ``'<run_path>'`` otherwise.
 
-   If *file_path* directly references a script file (whether as source
+   If *path_name* directly references a script file (whether as source
    or as precompiled byte code), then ``__file__`` will be set to
-   *file_path*, and ``__spec__``, ``__loader__`` and
+   *path_name*, and ``__spec__``, ``__loader__`` and
    ``__package__`` will all be set to :const:`None`.
 
-   If *file_path* is a reference to a valid :data:`sys.path` entry, then
+   If *path_name* is a reference to a valid :data:`sys.path` entry, then
    ``__spec__`` will be set appropriately for the imported :mod:`__main__`
    module (that is, ``__spec__.name`` will always be ``__main__``).
    ``__file__``, ``__loader__`` and ``__package__`` will be
@@ -147,7 +147,7 @@ The :mod:`!runpy` module provides two functions:
 
    A number of alterations are also made to the :mod:`sys` module. Firstly,
    :data:`sys.path` may be altered as described above. ``sys.argv[0]`` is updated
-   with the value of *file_path* and ``sys.modules[__name__]`` is updated
+   with the value of *path_name* and ``sys.modules[__name__]`` is updated
    with a temporary module object for the module being executed. All
    modifications to items in :mod:`sys` are reverted before the function
    returns.
