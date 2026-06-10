@@ -352,7 +352,14 @@ class TestRawDataManager(TestEmailBase):
 
             x9Gxub7uCoFBCg==
             """))
-        self.assertEqual(m.get_payload(decode=True).decode('ks_c_5601-1987'), content)
+        self.assertEqual(bytes(m), textwrap.dedent("""\
+            Content-Type: text/plain; charset="ks_c_5601-1987"
+            Content-Transfer-Encoding: 8bit
+
+            \ud55c\uad6d\uc5b4
+            \uac02
+            """).encode('ks_c_5601-1987'))
+        self.assertEqual(m.get_payload(decode=True), content.encode('ks_c_5601-1987'))
         self.assertEqual(m.get_content(), content)
 
     def test_set_text_plain_long_line_heuristics(self):
