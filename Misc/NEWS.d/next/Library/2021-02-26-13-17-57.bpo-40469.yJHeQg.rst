@@ -1,0 +1,5 @@
+:class:`~logging.handlers.TimedRotatingFileHandler` now uses the creation time
+instead of the last modification time of an existing log file as the basis
+for the first rotation after handler creation, if supported by the OS and file system.
+This allows it to be used in short-running programs that start and end before
+the rotation interval expires.

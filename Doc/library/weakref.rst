@@ -120,6 +120,9 @@ See :ref:`__slots__ documentation <slots>` for details.
 
    This is a subclassable type rather than a factory function.
 
+   Weak references are :ref:`generic <generics>` over the type of the object they
+   reference.
+
    .. attribute:: __callback__
 
       This read-only attribute returns the callback currently associated to the
@@ -128,6 +131,9 @@ See :ref:`__slots__ documentation <slots>` for details.
 
    .. versionchanged:: 3.4
       Added the :attr:`__callback__` attribute.
+
+   .. versionchanged:: next
+      Raise :exc:`!TypeError` if *callback* is not callable or ``None``.
 
 
 .. function:: proxy(object[, callback])
@@ -147,6 +153,9 @@ See :ref:`__slots__ documentation <slots>` for details.
    .. versionchanged:: 3.8
       Extended the operator support on proxy objects to include the matrix
       multiplication operators ``@`` and ``@=``.
+
+   .. versionchanged:: next
+      Raise :exc:`!TypeError` if *callback* is not callable or ``None``.
 
 
 .. function:: getweakrefcount(object)
@@ -324,17 +333,17 @@ same issues as the :meth:`WeakKeyDictionary.keyrefs` method.
    .. versionadded:: 3.4
 
 
-.. data:: ReferenceType
+.. class:: ReferenceType
 
    The type object for weak references objects.
 
 
-.. data:: ProxyType
+.. class:: ProxyType
 
    The type object for proxies of objects which are not callable.
 
 
-.. data:: CallableProxyType
+.. class:: CallableProxyType
 
    The type object for proxies of callable objects.
 
