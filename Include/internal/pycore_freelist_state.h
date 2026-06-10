@@ -18,7 +18,7 @@ extern "C" {
 #  define Py_floats_MAXFREELIST 100
 #  define Py_complexes_MAXFREELIST 100
 #  define Py_ints_MAXFREELIST 100
-#  define PyLong_MAXSAVESIZE 8     // Keep freelists for all ints with less than this number of digits
+#  define PyLong_MAXSAVESIZE 6     // Keep freelists for all ints with less than this number of digits
 #  define Py_slices_MAXFREELIST 1
 #  define Py_ranges_MAXFREELIST 6
 #  define Py_range_iters_MAXFREELIST 6

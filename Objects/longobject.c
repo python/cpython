@@ -163,6 +163,14 @@ maybe_freelist_push(PyObject *self)
     PyLongObject *op = (PyLongObject *)self;
     Py_ssize_t ndigits = _PyLong_DigitCount(op);
 
+    /* A value that normalized to zero still owns a buffer of at least one
+     * digit (long_alloc always allocates max(size, 1) digits), so it can be
+     * reused as a 1-digit int.  Bucketing it at index 0 would strand it:
+     * long_alloc never requests bucket 0 (it clamps ndigits to >= 1). */
+    if (ndigits == 0) {
+        ndigits = 1;
+    }
+
     if (ndigits < PyLong_MAXSAVESIZE) {
         return _Py_FREELIST_PUSH(ints[ndigits], self, Py_ints_MAXFREELIST);
     }
@@ -349,7 +357,7 @@ medium_from_stwodigits(stwodigits x)
     if(!is_medium_int(x)) {
         return PyStackRef_NULL;
     }
-    PyLongObject *v = (PyLongObject *)_Py_FREELIST_POP(PyLongObject, ints);
+    PyLongObject *v = (PyLongObject *)_Py_FREELIST_POP(PyLongObject, ints[1]);
     if (v == NULL) {
         v = PyObject_Malloc(sizeof(PyLongObject));
         if (v == NULL) {
