@@ -593,6 +593,51 @@ class BasicTest(BaseTest):
         )
         self.assertEqual(out.strip(), '0')
 
+    @unittest.skipUnless(os.name == 'nt', 'only relevant on Windows')
+    def test_activate_bat_respects_disable_prompt(self):
+        rmtree(self.env_dir)
+        env_dir = os.path.join(os.path.realpath(self.env_dir), 'venv')
+        builder = venv.EnvBuilder(clear=True)
+        builder.create(env_dir)
+        activate = os.path.join(env_dir, self.bindir, 'activate.bat')
+        test_batch = os.path.join(self.env_dir, 'test_disable_prompt.bat')
+        with open(test_batch, "w") as f:
+            f.write('@echo off\n'
+                    'set "PROMPT=base$G"\n'
+                    'set "VIRTUAL_ENV_DISABLE_PROMPT=1"\n'
+                    f'call "{activate}"\n'
+                    'echo ACTIVE_PROMPT:%PROMPT%\n'
+                    'echo VIRTUAL_ENV:%VIRTUAL_ENV%\n'
+                    'set "PROMPT=changed$G"\n'
+                    'call deactivate\n'
+                    'echo FINAL_PROMPT:%PROMPT%\n')
+        out, err = check_output([test_batch])
+        lines = out.splitlines()
+        self.assertEqual(lines[0], b'ACTIVE_PROMPT:base$G')
+        self.assertEndsWith(lines[1], os.fsencode(env_dir))
+        self.assertEqual(lines[2], b'FINAL_PROMPT:changed$G')
+
+    @unittest.skipUnless(os.name == 'nt', 'only relevant on Windows')
+    def test_activate_bat_prefixes_prompt_by_default(self):
+        rmtree(self.env_dir)
+        env_dir = os.path.join(os.path.realpath(self.env_dir), 'venv')
+        builder = venv.EnvBuilder(clear=True)
+        builder.create(env_dir)
+        activate = os.path.join(env_dir, self.bindir, 'activate.bat')
+        test_batch = os.path.join(self.env_dir, 'test_enable_prompt.bat')
+        with open(test_batch, "w") as f:
+            f.write('@echo off\n'
+                    'set "PROMPT=base) $G"\n'
+                    'set "VIRTUAL_ENV_DISABLE_PROMPT="\n'
+                    f'call "{activate}"\n'
+                    'echo ACTIVE_PROMPT:%PROMPT%\n'
+                    'call deactivate\n'
+                    'echo FINAL_PROMPT:%PROMPT%\n')
+        out, err = check_output([test_batch])
+        lines = out.splitlines()
+        self.assertEqual(lines[0], b'ACTIVE_PROMPT:(venv) base) $G')
+        self.assertEqual(lines[1], b'FINAL_PROMPT:base) $G')
+
     @unittest.skipUnless(os.name == 'nt' and can_symlink(),
                          'symlinks on Windows')
     def test_failed_symlink(self):
