@@ -88,7 +88,10 @@ For example:
   '~/envs/tutorial-env/lib/python3.5/site-packages']
   >>>
 
-Note that the activated virtual environment does not alter the ``PYTHONPATH`` variable in any way. This may lead to unexpected results if the path includes references to code which is incompatible with the Python version the virtual environment is using. The best practice is to ``unset PYTHONPATH`` in bash or the equivalent for the shell you are using.
+Note that the activated virtual environment does not alter the ``PYTHONPATH`` variable in any way. 
+This may lead to unexpected results if the path includes references to code which is incompatible with 
+the Python version the virtual environment is using. The best practice is to ``unset PYTHONPATH`` 
+in bash or the equivalent for the shell you are using.
 
 To deactivate a virtual environment, type::
 
