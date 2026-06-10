@@ -28,21 +28,21 @@ Update macOS installer to use libmpdecimal 4.0.1.
 
 ..
 
+.. date: 2026-06-09-11-40-17
+.. gh-issue: 151159
+.. nonce: 9si8Fo
+.. section: macOS
+
+Update macOS installer to use OpenSSL 3.0.21.
+
+..
+
 .. date: 2026-06-09-12-04-21
 .. gh-issue: 151159
 .. nonce: O2NVrd
 .. section: Windows
 
 Updated bundled version of OpenSSL to 3.0.21.
-
-..
-
-.. date: 2026-06-09-11-40-17
-.. gh-issue: 151159
-.. nonce: 9si8Fo
-.. section: Windows
-
-Update macOS installer to use OpenSSL 3.0.21.
 
 ..
 
