@@ -378,11 +378,14 @@ class CheckDtraceProbes(unittest.TestCase):
     def get_readelf_version():
         try:
             cmd = ["readelf", "--version"]
+            # Force the C locale to disable localization.
+            env = dict(os.environ, LC_ALL="C")
             proc = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 universal_newlines=True,
+                env=env,
             )
             with proc:
                 version, stderr = proc.communicate()
@@ -405,12 +408,36 @@ class CheckDtraceProbes(unittest.TestCase):
         return int(match.group(1)), int(match.group(2))
 
     def get_readelf_output(self):
-        command = ["readelf", "-n", sys.executable]
+        binary = sys.executable
+        if sysconfig.get_config_var("Py_ENABLE_SHARED"):
+            lib_dir = sysconfig.get_config_var("LIBDIR")
+            if not lib_dir or sysconfig.is_python_build():
+                lib_dir = os.path.abspath(os.path.dirname(sys.executable))
+
+            lib_names = []
+            for name in (
+                sysconfig.get_config_var("INSTSONAME"),
+                sysconfig.get_config_var("LDLIBRARY"),
+            ):
+                if name and name not in lib_names:
+                    lib_names.append(name)
+
+            if lib_dir:
+                for name in lib_names:
+                    libpython_path = os.path.join(lib_dir, name)
+                    if os.path.exists(libpython_path):
+                        binary = libpython_path
+                        break
+
+        command = ["readelf", "-n", binary]
+        # Force the C locale to disable localization.
+        env = dict(os.environ, LC_ALL="C")
         stdout, _ = subprocess.Popen(
             command,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             universal_newlines=True,
+            env=env,
         ).communicate()
         return stdout
 
