@@ -1324,37 +1324,38 @@
             _PyStackRef res;
             _PyStackRef l;
             _PyStackRef r;
-            // _GUARD_TOS_INT
+            // _GUARD_TOS_INT_WIDE
             {
                 value = stack_pointer[-1];
                 PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-                if (!_PyLong_CheckExactAndCompact(value_o)) {
+                if (!_PyLong_CheckExactAndFitsInt64(value_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
             }
-            // _GUARD_NOS_INT
+            // _GUARD_NOS_INT_WIDE
             {
                 left = stack_pointer[-2];
                 PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-                if (!_PyLong_CheckExactAndCompact(left_o)) {
+                if (!_PyLong_CheckExactAndFitsInt64(left_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
             }
             /* Skip 5 cache entries */
-            // _BINARY_OP_SUBTRACT_INT
+            // _BINARY_OP_SUBTRACT_INT_WIDE
             {
                 right = value;
                 PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
                 PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
                 assert(PyLong_CheckExact(left_o));
                 assert(PyLong_CheckExact(right_o));
-                assert(_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o));
                 STAT_INC(BINARY_OP, hit);
-                res = _PyCompactLong_Subtract((PyLongObject *)left_o, (PyLongObject *)right_o);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                res = _PyCompactLong_SubtractWide((PyLongObject *)left_o, (PyLongObject *)right_o);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (PyStackRef_IsNull(res)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));

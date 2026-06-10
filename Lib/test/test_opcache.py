@@ -1385,18 +1385,25 @@ class TestSpecializer(TestBase):
         binary_op_int_wide_add()
         self.assert_specialized(binary_op_int_wide_add, "BINARY_OP_ADD_INT")
 
-        # Subtract and multiply are still compact-only.
-        def binary_op_int_non_compact_sub_mul():
+        # Wide (non-compact) ints in the int64 range now specialize subtract.
+        def binary_op_int_wide_sub():
             for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
                 a, b = 10000000000, 1
                 c = a - b
                 self.assertEqual(c, 9999999999)
+
+        binary_op_int_wide_sub()
+        self.assert_specialized(binary_op_int_wide_sub, "BINARY_OP_SUBTRACT_INT")
+
+        # Multiply is still compact-only.
+        def binary_op_int_non_compact_mul():
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a, b = 10000000000, 1
                 c = a * b
                 self.assertEqual(c, 10000000000)
 
-        binary_op_int_non_compact_sub_mul()
-        self.assert_no_opcode(binary_op_int_non_compact_sub_mul, "BINARY_OP_SUBTRACT_INT")
-        self.assert_no_opcode(binary_op_int_non_compact_sub_mul, "BINARY_OP_MULTIPLY_INT")
+        binary_op_int_non_compact_mul()
+        self.assert_no_opcode(binary_op_int_non_compact_mul, "BINARY_OP_MULTIPLY_INT")
 
         def binary_op_add_unicode():
             for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):

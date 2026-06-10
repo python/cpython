@@ -4010,6 +4010,38 @@ _PyCompactLong_Subtract(PyLongObject *a, PyLongObject *b)
     return medium_from_stwodigits(v);
 }
 
+static inline bool
+_Py_i64_sub_overflow(int64_t a, int64_t b, int64_t *out)
+{
+#if defined(__GNUC__) || defined(__clang__)
+    return __builtin_sub_overflow(a, b, out);
+#else
+    if ((b < 0 && a > INT64_MAX + b) || (b > 0 && a < INT64_MIN + b)) {
+        return true;
+    }
+    *out = a - b;
+    return false;
+#endif
+}
+
+_PyStackRef
+_PyCompactLong_SubtractWide(PyLongObject *a, PyLongObject *b)
+{
+    if (_PyLong_BothAreCompact(a, b)) {
+        stwodigits v = medium_value(a) - medium_value(b);
+        return medium_from_stwodigits(v);
+    }
+    int64_t va, vb;
+    if (!_PyLong_TryAsInt64Exact(a, &va) || !_PyLong_TryAsInt64Exact(b, &vb)) {
+        return PyStackRef_NULL;
+    }
+    int64_t v;
+    if (_Py_i64_sub_overflow(va, vb, &v)) {
+        return PyStackRef_NULL;
+    }
+    return _wide_op_result(v);
+}
+
 static PyObject *
 long_sub_method(PyObject *a, PyObject *b)
 {

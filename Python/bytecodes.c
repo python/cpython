@@ -694,15 +694,14 @@ dummy_func(
             ERROR_IF(PyStackRef_IsError(res));
         }
 
-        pure op(_BINARY_OP_SUBTRACT_INT, (left, right -- res, l, r)) {
+        tier1 op(_BINARY_OP_SUBTRACT_INT_WIDE, (left, right -- res, l, r)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
             assert(PyLong_CheckExact(left_o));
             assert(PyLong_CheckExact(right_o));
-            assert(_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o));
 
             STAT_INC(BINARY_OP, hit);
-            res = _PyCompactLong_Subtract((PyLongObject *)left_o, (PyLongObject *)right_o);
+            res = _PyCompactLong_SubtractWide((PyLongObject *)left_o, (PyLongObject *)right_o);
             EXIT_IF(PyStackRef_IsNull(res));
             l = left;
             r = right;
@@ -716,7 +715,7 @@ dummy_func(
             _GUARD_TOS_INT_WIDE + _GUARD_NOS_INT_WIDE + unused/5 + _BINARY_OP_ADD_INT_WIDE + _POP_TOP_INT + _POP_TOP_INT;
 
         macro(BINARY_OP_SUBTRACT_INT) =
-            _GUARD_TOS_INT + _GUARD_NOS_INT + unused/5 + _BINARY_OP_SUBTRACT_INT + _POP_TOP_INT + _POP_TOP_INT;
+            _GUARD_TOS_INT_WIDE + _GUARD_NOS_INT_WIDE + unused/5 + _BINARY_OP_SUBTRACT_INT_WIDE + _POP_TOP_INT + _POP_TOP_INT;
 
         // Inplace compact int ops: mutate the uniquely-referenced operand
         // when possible. The op handles decref of TARGET internally so
