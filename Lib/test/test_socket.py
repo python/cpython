@@ -7521,9 +7521,9 @@ class ReentrantMutationTests(unittest.TestCase):
         seq = [MutBuffer(), b'World', b'Test']
 
         left, right = socket.socketpair()
-        self.addCleanup(left.close)
-        self.addCleanup(right.close)
-        left.sendmsg(seq)
+        with left, right:
+            left.sendmsg(seq)
+            self.assertEqual(right.recv(1024), b'HelloWorldTest')
 
     @unittest.skipUnless(hasattr(socket.socket, "recvmsg_into"),
                          "recvmsg_into not supported")
@@ -7532,6 +7532,7 @@ class ReentrantMutationTests(unittest.TestCase):
         # via __buffer__ protocol.
         # See: https://github.com/python/cpython/issues/143988
         seq = []
+        buf1 = bytearray(100)
 
         class MutBuffer:
             def __init__(self):
@@ -7541,15 +7542,15 @@ class ReentrantMutationTests(unittest.TestCase):
                 if not self.tripped:
                     self.tripped = True
                     seq.clear()
-                return memoryview(bytearray(100))
+                return memoryview(buf1)
 
         seq = [MutBuffer(), bytearray(100), bytearray(100)]
 
         left, right = socket.socketpair()
-        self.addCleanup(left.close)
-        self.addCleanup(right.close)
-        left.send(b'Hello World!')
-        right.recvmsg_into(seq)
+        with left, right:
+            left.send(b'Hello World!')
+            right.recvmsg_into(seq)
+        self.assertEqual(buf1, b'Hello World!'.ljust(100, b'\x00'))
 
 
 def setUpModule():
