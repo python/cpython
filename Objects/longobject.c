@@ -3942,6 +3942,15 @@ _wide_op_result(int64_t v)
     return PyStackRef_FromPyObjectStealMortal(result);
 }
 
+/* Exact int -> int64_t helper for the wide int fast path.
+ * Keeps the exact-type check local to this translation unit. */
+static inline bool
+_PyLong_CheckExactAndTryAsInt64(PyObject *op, int64_t *out)
+{
+    return PyLong_CheckExact(op) &&
+        _PyLong_TryAsInt64Exact((PyLongObject *)op, out);
+}
+
 /* Wide variant: operands are exact ints in the full int64 range (may be
  * non-compact).  Returns PyStackRef_NULL (without raising) when an input is
  * out of int64 range or the sum overflows int64.  Returns PyStackRef_ERROR
@@ -3955,7 +3964,8 @@ _PyCompactLong_AddWide(PyLongObject *a, PyLongObject *b)
         return medium_from_stwodigits(v);
     }
     int64_t va, vb;
-    if (!_PyLong_TryAsInt64Exact(a, &va) || !_PyLong_TryAsInt64Exact(b, &vb)) {
+    if (!_PyLong_CheckExactAndTryAsInt64((PyObject *)a, &va) ||
+        !_PyLong_CheckExactAndTryAsInt64((PyObject *)b, &vb)) {
         return PyStackRef_NULL;
     }
     int64_t v;
@@ -3971,7 +3981,6 @@ long_add_method(PyObject *a, PyObject *b)
     CHECK_BINOP(a, b);
     return (PyObject*)long_add((PyLongObject*)a, (PyLongObject*)b);
 }
-
 
 static PyLongObject *
 long_sub(PyLongObject *a, PyLongObject *b)
@@ -4032,7 +4041,8 @@ _PyCompactLong_SubtractWide(PyLongObject *a, PyLongObject *b)
         return medium_from_stwodigits(v);
     }
     int64_t va, vb;
-    if (!_PyLong_TryAsInt64Exact(a, &va) || !_PyLong_TryAsInt64Exact(b, &vb)) {
+    if (!_PyLong_CheckExactAndTryAsInt64((PyObject *)a, &va) ||
+        !_PyLong_CheckExactAndTryAsInt64((PyObject *)b, &vb)) {
         return PyStackRef_NULL;
     }
     int64_t v;

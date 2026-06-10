@@ -388,12 +388,6 @@ _PyLong_FitsInt64(const PyLongObject *v)
     return top <= max_top;
 }
 
-static inline int
-_PyLong_CheckExactAndFitsInt64(PyObject *op)
-{
-    return PyLong_CheckExact(op) && _PyLong_FitsInt64((const PyLongObject *)op);
-}
-
 /* Extract an exact int to int64_t without raising.
  * Returns true and writes *out on success; returns false if out of range.
  * Never sets a Python exception. */
