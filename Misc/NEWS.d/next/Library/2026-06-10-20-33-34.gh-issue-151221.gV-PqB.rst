@@ -1,0 +1,1 @@
+plistlib._date_from_string() was raising a confusing TypeError for partial ISO 8601 dates (e.g., '2024-06Z') because it broke early on missing components. The fix fills missing components with sensible defaults: month/day → 1, hour/minute/second → 0.
