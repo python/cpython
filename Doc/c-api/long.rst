@@ -71,6 +71,12 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    on failure.
 
 
+.. c:function:: PyObject* PyLong_FromUnsignedLongLong(unsigned long long v)
+
+   Return a new :c:type:`PyLongObject` object from a C :c:expr:`unsigned long long`,
+   or ``NULL`` on failure.
+
+
 .. c:function:: PyObject* PyLong_FromInt32(int32_t value)
                 PyObject* PyLong_FromInt64(int64_t value)
 
@@ -79,12 +85,6 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    with an exception set on failure.
 
    .. versionadded:: 3.14
-
-
-.. c:function:: PyObject* PyLong_FromUnsignedLongLong(unsigned long long v)
-
-   Return a new :c:type:`PyLongObject` object from a C :c:expr:`unsigned long long`,
-   or ``NULL`` on failure.
 
 
 .. c:function:: PyObject* PyLong_FromUInt32(uint32_t value)
@@ -197,12 +197,10 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
    .. c:function:: long PyLong_AS_LONG(PyObject *obj)
 
-      A :term:`soft deprecated` alias.
       Exactly equivalent to the preferred ``PyLong_AsLong``. In particular,
       it can fail with :exc:`OverflowError` or another exception.
 
-      .. deprecated:: 3.14
-         The function is soft deprecated.
+      .. soft-deprecated:: 3.14
 
 .. c:function:: int PyLong_AsInt(PyObject *obj)
 
@@ -687,7 +685,7 @@ Export API
 
 .. versionadded:: 3.14
 
-.. c:struct:: PyLongLayout
+.. c:type:: PyLongLayout
 
    Layout of an array of "digits" ("limbs" in the GMP terminology), used to
    represent absolute value for arbitrary precision integers.
@@ -727,7 +725,7 @@ Export API
 
    Get the native layout of Python :class:`int` objects.
 
-   See the :c:struct:`PyLongLayout` structure.
+   See the :c:type:`PyLongLayout` structure.
 
    The function must not be called before Python initialization nor after
    Python finalization. The returned layout is valid until Python is
@@ -735,7 +733,7 @@ Export API
    in a process, and so it can be cached.
 
 
-.. c:struct:: PyLongExport
+.. c:type:: PyLongExport
 
    Export of a Python :class:`int` object.
 
@@ -769,7 +767,7 @@ Export API
 
    Export a Python :class:`int` object.
 
-   *export_long* must point to a :c:struct:`PyLongExport` structure allocated
+   *export_long* must point to a :c:type:`PyLongExport` structure allocated
    by the caller. It must not be ``NULL``.
 
    On success, fill in *\*export_long* and return ``0``.
@@ -799,7 +797,7 @@ The :c:type:`PyLongWriter` API can be used to import an integer.
 
 .. versionadded:: 3.14
 
-.. c:struct:: PyLongWriter
+.. c:type:: PyLongWriter
 
    A Python :class:`int` writer instance.
 
@@ -827,7 +825,7 @@ The :c:type:`PyLongWriter` API can be used to import an integer.
    The layout of *digits* is described by :c:func:`PyLong_GetNativeLayout`.
 
    Digits must be in the range [``0``; ``(1 << bits_per_digit) - 1``]
-   (where the :c:struct:`~PyLongLayout.bits_per_digit` is the number of bits
+   (where the :c:type:`~PyLongLayout.bits_per_digit` is the number of bits
    per digit).
    Any unused most significant digits must be set to ``0``.
 

@@ -78,20 +78,41 @@ from collections import deque
 from reprlib import Repr
 from traceback import format_exception_only
 
-from _pyrepl.pager import (get_pager, pipe_pager,
-                           plain_pager, tempfile_pager, tty_pager)
+try:
+    from _pyrepl.pager import (get_pager, pipe_pager,
+                               plain_pager, tempfile_pager, tty_pager)
 
-# Expose plain() as pydoc.plain()
-from _pyrepl.pager import plain  # noqa: F401
+    # Expose plain() as pydoc.plain()
+    from _pyrepl.pager import plain  # noqa: F401
 
+    # --------------------------------------------------------- old names
+    getpager = get_pager
+    pipepager = pipe_pager
+    plainpager = plain_pager
+    tempfilepager = tempfile_pager
+    ttypager = tty_pager
 
-# --------------------------------------------------------- old names
+except ModuleNotFoundError:
+    # Minimal alternatives for cases where _pyrepl is absent.
 
-getpager = get_pager
-pipepager = pipe_pager
-plainpager = plain_pager
-tempfilepager = tempfile_pager
-ttypager = tty_pager
+    def plain(text: str) -> str:
+        """Remove boldface formatting from text."""
+        return re.sub('.\b', '', text)
+
+    def plain_pager(text: str, title: str = '') -> None:
+        """Simply print unformatted text.  This is the ultimate fallback."""
+        encoding = getattr(sys.stdout, 'encoding', None) or 'utf-8'
+        text = text.encode(encoding, 'backslashreplace').decode(encoding)
+        text = plain(text)
+        sys.stdout.write(text)
+
+    def get_pager():
+        """Unconditionally return the plain pager, since _pyrepl is absent."""
+        return plain_pager
+
+    # --------------------------------------------------------- old names
+    getpager = get_pager
+    plainpager = plain_pager
 
 
 # --------------------------------------------------------- common routines
@@ -1219,6 +1240,17 @@ class TextDoc(Doc):
         lines = [(prefix + line).rstrip() for line in text.split('\n')]
         return '\n'.join(lines)
 
+    def _format_doc(self, text, width=68):
+        """Wraps the single-line summary if it is too long."""
+        if not text: return ''
+        lines = text.split('\n', 2)
+        if len(lines) > 1 and lines[1]:
+            return text
+        lines[:1] = textwrap.wrap(lines[0], width,
+                                  break_long_words=False,
+                                  break_on_hyphens=False)
+        return '\n'.join(lines)
+
     def section(self, title, contents):
         """Format a section with a given heading."""
         clean_contents = self.indent(contents).rstrip()
@@ -1369,6 +1401,7 @@ location listed above.
 
         doc = getdoc(object)
         if doc:
+            doc = self._format_doc(doc)
             push(doc + '\n')
 
         # List the mro, if non-trivial.
@@ -1569,6 +1602,7 @@ location listed above.
             return decl + '\n'
         else:
             doc = getdoc(object) or ''
+            doc = self._format_doc(doc)
             return decl + '\n' + (doc and self.indent(doc).rstrip() + '\n')
 
     def docdata(self, object, name=None, mod=None, cl=None, *ignored):
@@ -1581,6 +1615,7 @@ location listed above.
             push('\n')
         doc = getdoc(object) or ''
         if doc:
+            doc = self._format_doc(doc)
             push(self.indent(doc))
             push('\n')
         return ''.join(results)
@@ -1599,7 +1634,8 @@ location listed above.
         if not doc:
             doc = getdoc(object)
         if doc:
-            line += '\n' + self.indent(str(doc)) + '\n'
+            doc = self._format_doc(str(doc))
+            line += '\n' + self.indent(doc) + '\n'
         return line
 
 class _PlainTextDoc(TextDoc):
@@ -1824,6 +1860,7 @@ class Helper:
         'in': ('in', 'SEQUENCEMETHODS'),
         'is': 'COMPARISON',
         'lambda': ('lambda', 'FUNCTIONS'),
+        'lazy': ('lazy', 'MODULES'),
         'nonlocal': ('nonlocal', 'global NAMESPACES'),
         'not': 'BOOLEAN',
         'or': 'BOOLEAN',

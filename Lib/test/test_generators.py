@@ -1366,7 +1366,7 @@ From the Iterators list, about the types of these things.
 >>> type(i)
 <class 'generator'>
 >>> [s for s in dir(i) if not s.startswith('_')]
-['close', 'gi_code', 'gi_frame', 'gi_running', 'gi_suspended', 'gi_yieldfrom', 'send', 'throw']
+['close', 'gi_code', 'gi_frame', 'gi_running', 'gi_state', 'gi_suspended', 'gi_yieldfrom', 'send', 'throw']
 >>> from test.support import HAVE_DOCSTRINGS
 >>> print(i.__next__.__doc__ if HAVE_DOCSTRINGS else 'Implement next(self).')
 Implement next(self).

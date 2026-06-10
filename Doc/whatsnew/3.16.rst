@@ -1,0 +1,334 @@
+
+****************************
+  What's new in Python 3.16
+****************************
+
+:Editor: TBD
+
+.. Rules for maintenance:
+
+   * Anyone can add text to this document.  Do not spend very much time
+   on the wording of your changes, because your text will probably
+   get rewritten to some degree.
+
+   * The maintainer will go through Misc/NEWS periodically and add
+   changes; it's therefore more important to add your changes to
+   Misc/NEWS than to this file.
+
+   * This is not a complete list of every single change; completeness
+   is the purpose of Misc/NEWS.  Some changes I consider too small
+   or esoteric to include.  If such a change is added to the text,
+   I'll just remove it.  (This is another reason you shouldn't spend
+   too much time on writing your addition.)
+
+   * If you want to draw your new text to the attention of the
+   maintainer, add 'XXX' to the beginning of the paragraph or
+   section.
+
+   * It's OK to just add a fragmentary note about a change.  For
+   example: "XXX Describe the transmogrify() function added to the
+   socket module."  The maintainer will research the change and
+   write the necessary text.
+
+   * You can comment out your additions if you like, but it's not
+   necessary (especially when a final release is some months away).
+
+   * Credit the author of a patch or bugfix.   Just the name is
+   sufficient; the e-mail address isn't necessary.
+
+   * It's helpful to add the issue number as a comment:
+
+   XXX Describe the transmogrify() function added to the socket
+   module.
+   (Contributed by P.Y. Developer in :gh:`12345`.)
+
+   This saves the maintainer the effort of going through the VCS log
+   when researching a change.
+
+This article explains the new features in Python 3.16, compared to 3.15.
+
+For full details, see the :ref:`changelog <changelog>`.
+
+.. note::
+
+   Prerelease users should be aware that this document is currently in draft
+   form. It will be updated substantially as Python 3.16 moves towards release,
+   so it's worth checking back even after reading earlier versions.
+
+
+Summary --- release highlights
+==============================
+
+.. This section singles out the most important changes in Python 3.16.
+   Brevity is key.
+
+
+.. PEP-sized items next.
+
+
+
+New features
+============
+
+
+
+Other language changes
+======================
+
+
+
+New modules
+===========
+
+* None yet.
+
+
+Improved modules
+================
+
+gzip
+----
+
+* :func:`gzip.open` now accepts an optional argument ``mtime``
+  which is passed on to the constructor of the :class:`~gzip.GzipFile` class.
+  (Contributed by Marin Misur in :gh:`91372`.)
+
+lzma
+----
+
+* Add support of new BCJ filters ARM64 and RISC-V via
+  :const:`!lzma.FILTER_ARM64` and :const:`!lzma.FILTER_RISCV`.  Note that the
+  new filters will work only if runtime library supports them. ARM64 filter
+  requires ``lzma`` 5.4.0 or newer while RISC-V requires 5.6.0 or newer.
+  (Contributed by Chien Wong in :gh:`115988`.)
+
+logging
+-------
+
+* :class:`~logging.handlers.TimedRotatingFileHandler` now uses the creation
+  time instead of the last modification time of an existing log file as
+  the basis for the first rotation after handler creation, if supported by
+  the OS and file system.
+  This allows it to be used in short-running programs that start and end
+  before the rotation interval expires.
+  (Contributed by Iván Márton and Serhiy Storchaka in :gh:`84649`.)
+
+math
+----
+
+* Added trigonometric functions that work in units of half turns, rather than
+  radians. The new functions :func:`math.acospi`, :func:`math.asinpi`,
+  :func:`math.atanpi`, and :func:`math.atan2pi` return half-turn angles. The
+  new functions :func:`math.cospi`, :func:`math.sinpi`, and :func:`math.tanpi`
+  take half-turn angle arguments. These functions are recommended by IEEE
+  754-2019 and standardized in C23.
+  (Contributed by Jeff Epler in :gh:`150534`.)
+
+os
+--
+
+* Add :func:`os.pidfd_getfd` for duplicating a file descriptor from another
+  process via a pidfd.  Available on Linux 5.6+.
+  (Contributed by Maurycy Pawłowski-Wieroński in :gh:`149464`.)
+
+shlex
+-----
+
+* Add keyword-only parameter *force* to :func:`shlex.quote` to force quoting
+  a string, even if it is already safe for a shell without being quoted.
+  (Contributed by Jay Berry in :gh:`148846`.)
+
+xml
+---
+
+* Add support for multiple multi-byte encodings in the :mod:`XML parser
+  <xml.parsers.expat>`: "cp932", "cp949", "cp950", "Big5","EUC-JP",
+  "GB2312", "GBK", "johab", and "Shift_JIS".
+  Add partial support (only BMP characters) for multi-byte encodings
+  "Big5-HKSCS", "EUC_JIS-2004", "EUC_JISX0213", "Shift_JIS-2004",
+  "Shift_JISX0213", "utf-8-sig" and non-standard aliases like "UTF8"
+  (without hyphen).
+  The parser now raises :exc:`ValueError` for known unsupported
+  multi-byte encodings such us "ISO-2022-JP" or "raw-unicode-escape"
+  instead of failing later, when encounter non-ASCII data.
+  (Contributed by Serhiy Storchaka in :gh:`62259`.)
+
+.. Add improved modules above alphabetically, not here at the end.
+
+Optimizations
+=============
+
+module_name
+-----------
+
+* TODO
+
+
+
+Removed
+=======
+
+annotationlib
+-------------
+
+* The :meth:`!annotationlib.ForwardRef._evaluate` method
+  which has been deprecated since Python 3.14.
+  Use :meth:`annotationlib.ForwardRef.evaluate`
+  or :func:`typing.evaluate_forward_ref` instead.
+
+array
+-----
+
+* The ``'u'`` format code (:c:type:`wchar_t`) which has been deprecated in
+  documentation since Python 3.3 and at runtime since Python 3.13.
+  Use ``'w'`` format code instead (:c:type:`Py_UCS4`, always 4 bytes).
+
+asyncio
+-------
+
+* The :func:`!asyncio.iscoroutinefunction`
+  which has been deprecated since Python 3.14.
+  Use :func:`inspect.iscoroutinefunction` instead.
+
+functools
+---------
+
+* Calling the Python implementation of :func:`functools.reduce` with *function*
+  or *sequence* as keyword arguments has been deprecated since Python 3.14.
+
+logging
+-------
+
+* Support for custom logging handlers with the *strm* argument is deprecated
+  and scheduled for removal in Python 3.16. Define handlers with the *stream*
+  argument instead.
+
+mimetypes
+---------
+
+* Valid extensions start with a '.' or are empty for
+  :meth:`mimetypes.MimeTypes.add_type`.
+  Undotted extensions now raise a :exc:`ValueError`.
+
+shutil
+------
+
+* The :exc:`!ExecError` exception which has been deprecated since Python 3.14.
+  It has not been used by any function in :mod:`!shutil` since Python 3.4.
+  (Contributed by Stan Ulbrych in :gh:`149567`.)
+
+symtable
+--------
+
+* The :meth:`!symtable.Class.get_methods` method
+  which has been deprecated since Python 3.14.
+
+sys
+---
+
+* The :func:`!_enablelegacywindowsfsencoding` function
+  which has been deprecated since Python 3.13.
+  Use the :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment variable instead.
+  (Contributed by Stan Ulbrych in :gh:`149595`.)
+
+sysconfig
+---------
+
+* The :func:`!sysconfig.expand_makefile_vars` function
+  which has been deprecated since Python 3.14.
+  Use the ``vars`` argument of :func:`sysconfig.get_paths` instead.
+  (Contributed by Stan Ulbrych in :gh:`149499`.)
+
+tarfile
+-------
+
+* The undocumented and unused :attr:`!tarfile.TarFile.tarfile` attribute
+  has been deprecated since Python 3.13.
+
+.. Add removals above alphabetically, not here at the end.
+
+
+Deprecated
+==========
+
+* :mod:`abc`
+
+   * Soft-deprecated since Python 3.3 :class:`abc.abstractclassmethod`,
+     :class:`abc.abstractstaticmethod`, and :class:`abc.abstractproperty`
+     now raise a :exc:`DeprecationWarning`.
+     These classes will be removed in Python 3.21, instead
+     use :func:`abc.abstractmethod` with :func:`classmethod`,
+     :func:`staticmethod`, and :class:`property` respectively.
+
+* :mod:`ast`:
+
+  * Classes ``slice``, ``Index``, ``ExtSlice``, ``Suite``, ``Param``,
+    ``AugLoad`` and ``AugStore``, deprecated since Python 3.9, are no longer
+    imported by ``from ast import *`` and issue a deprecation warning on
+    use. The classes are slated for removal in Python 3.21. These types are not
+    generated by the parser or accepted by the code generator.
+  * The ``dims`` property of ``ast.Tuple`` objects, deprecated since Python
+    3.9, now issues a deprecation warning on use. This property is slated for
+    removal in 3.21. Use ``ast.Tuple.elts`` instead.
+
+.. Add deprecations above alphabetically, not here at the end.
+
+.. include:: ../deprecations/pending-removal-in-3.17.rst
+
+.. include:: ../deprecations/pending-removal-in-3.19.rst
+
+.. include:: ../deprecations/pending-removal-in-3.20.rst
+
+.. include:: ../deprecations/pending-removal-in-future.rst
+
+
+Porting to Python 3.16
+======================
+
+This section lists previously described changes and other bugfixes
+that may require changes to your code.
+
+
+Build changes
+=============
+
+* Remove the bundled copy of the libmpdec_ decimal library from the CPython source tree
+  to simplify maintenence and updates. The :mod:`decimal` module will now
+  unconditionally use the system's libmpdec decimal library. Also remove the
+  now unused :option:`!--with-system-libmpdec` :program:`configure` flag.
+  This change has no impact on binary releases of Python, which have been
+  built against a separate copy of libmpdec for the past several releases.
+
+  (Contributed by Sergey B Kirpichev in :gh:`115119`.)
+
+  .. _libmpdec: https://www.bytereef.org/mpdecimal/
+
+* Add a :option:`--with-build-details-suffix` configure flag to allow
+  Linux distributions that co-install multiple versions of Python in the
+  same tree to avoid ``build-details.json`` clashes.
+
+  (Contributed by Stefano Rivera in :gh:`131372`.)
+
+
+C API changes
+=============
+
+New features
+------------
+
+* TODO
+
+Porting to Python 3.16
+----------------------
+
+* TODO
+
+Deprecated C APIs
+-----------------
+
+* TODO
+
+.. Add C API deprecations above alphabetically, not here at the end.
+
+Removed C APIs
+--------------

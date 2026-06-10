@@ -32,6 +32,8 @@ extern PyObject* _PyUnicode_ResizeCompact(
     PyObject *unicode,
     Py_ssize_t length);
 extern PyObject* _PyUnicode_GetEmpty(void);
+PyAPI_FUNC(PyObject*) _PyUnicode_BinarySlice(PyObject *, PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) _PyUnicode_Repeat(PyObject *str, Py_ssize_t len);
 
 
 /* Generic helper macro to convert characters of different types.
@@ -325,7 +327,8 @@ extern PyObject* _PyUnicode_XStrip(
 
 
 /* Dedent a string.
-   Behaviour is expected to be an exact match of `textwrap.dedent`.
+   Intended to dedent Python source. Unlike `textwrap.dedent`, this
+   only supports spaces and tabs and doesn't normalize empty lines.
    Return a new reference on success, NULL with exception set on error.
    */
 extern PyObject* _PyUnicode_Dedent(PyObject *unicode);

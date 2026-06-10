@@ -187,13 +187,6 @@ tl_to_d(TripleLength total)
 }
 
 
-/*
-   sin(pi*x), giving accurate results for all finite x (especially x
-   integral or close to an integer).  This is here for use in the
-   reflection formula for the gamma function.  It conforms to IEEE
-   754-2008 for finite arguments, but not for infinities or nans.
-*/
-
 static const double pi = 3.141592653589793238462643383279502884197;
 static const double logpi = 1.144729885849400174143427351353058711647;
 
@@ -219,13 +212,120 @@ static const double logpi = 1.144729885849400174143427351353058711647;
         }                                                  \
     }
 
+#ifndef HAVE_ACOSPI
+/*
+   acos(x)/pi.  It conforms to C23 Annex 'F'.
+*/
+
+static double
+m_acospi(double x)
+{
+    double r = acos(x)/pi;
+    if (isgreater(r, 1.0)) {
+        return 1.0;
+    }
+    return r;
+}
+#else
+#define m_acospi acospi
+#endif
+
+#ifndef HAVE_ASINPI
+/*
+   asin(x)/pi.  It conforms to C23 Annex 'F'.
+*/
+
+static double
+m_asinpi(double x)
+{
+    double r = asin(x)/pi;
+    if (isgreater(fabs(r), 0.5)) {
+        return copysign(0.5, r);
+    }
+    return r;
+}
+#else
+#define m_asinpi asinpi
+#endif
+
+#ifndef HAVE_ATANPI
+/*
+   asin(x)/pi.  It conforms to C23 Annex 'F'.
+*/
+
+static double
+m_atanpi(double x)
+{
+    double r = atan(x)/pi;
+    if (isgreater(fabs(r), 0.5)) {
+        return copysign(0.5, r);
+    }
+    return r;
+}
+#else
+#define m_atanpi atanpi
+#endif
+
+#ifndef HAVE_ATAN2PI
+/*
+   asin(x)/pi.  It conforms to C23 Annex 'F'.
+*/
+
+static double
+m_atan2pi(double y, double x)
+{
+    double r = atan2(y, x)/pi;
+    if (isgreater(fabs(r), 1.0)) {
+        return copysign(1.0, r);
+    }
+    return r;
+}
+#else
+#define m_atan2pi atan2pi
+#endif
+
+#ifndef HAVE_COSPI
+/*
+   cos(pi*x), giving accurate results for all finite x (especially x
+   integral or close to an integer).  It conforms to C23 Annex 'F'.
+*/
+
+static double
+m_cospi(double x)
+{
+    if (!isfinite(x)) {
+        return cos(x);
+    }
+    x = fabs(x - 2.0 * round(0.5 * x));
+    if (x <= 0.25) {
+        return cos(pi * x);
+    }
+    if (x == 0.5) {
+        return 0.0;
+    }
+    if (x <= 0.75) {
+        return sin(pi * (0.5 - x));
+    }
+    return -cos(pi * (1.0 - x));
+}
+#else
+#define m_cospi cospi
+#endif
+
+#ifndef HAVE_SINPI
+/*
+   sin(pi*x), giving accurate results for all finite x (especially x
+   integral or close to an integer).  It conforms to C23 Annex 'F'.
+*/
+
 static double
 m_sinpi(double x)
 {
     double y, r;
     int n;
-    /* this function should only ever be called for finite arguments */
-    assert(isfinite(x));
+    if (!isfinite(x)) {
+        return sin(x);
+    }
     y = fmod(fabs(x), 2.0);
     n = (int)round(2.0*y);
     assert(0 <= n && n <= 4);
@@ -252,6 +352,47 @@ m_sinpi(double x)
     }
     return copysign(1.0, x)*r;
 }
+#else
+#define m_sinpi sinpi
+#endif
+
+#ifndef HAVE_TANPI
+/*
+   tan(pi*x), giving accurate results for all finite x (especially x
+   integral or close to an integer).  It conforms to C23 Annex 'F'.
+*/
+
+static double
+m_tanpi(double x)
+{
+    double y, absy;
+    if (!isfinite(x)) {
+        return tan(x);
+    }
+    y = x - 2.0 * round(0.5 * x);
+    absy = fabs(y);
+    if (absy == 0.0) {
+        return copysign(0.0, x);
+    }
+    if (absy == 1.0) {
+        return copysign(0.0, -x);
+    }
+    if (absy == 0.5) {
+        errno = ERANGE;
+        return 1.0 / copysign(0.0, y);
+    }
+    if (absy > 0.5) {
+        y -= copysign(1.0, y);
+        absy = fabs(y);
+    }
+    if (absy <= 0.25) {
+        return tan(pi * y);
+    }
+    return copysign(1.0 / tan(pi * (0.5 - absy)), y);
+}
+#else
+#define m_tanpi tanpi
+#endif
 
 /* Implementation of the real gamma function.  Kept here to work around
    issues (see e.g. gh-70309) with quality of libm's tgamma/lgamma implementations
@@ -952,6 +1093,11 @@ FUNC1D(acosh, acosh, 0,
       "acosh($module, x, /)\n--\n\n"
       "Return the inverse hyperbolic cosine of x.",
       "expected argument value not less than 1, got %s")
+FUNC1D(acospi, m_acospi, 0,
+      "acospi($module, x, /)\n--\n\n"
+      "Return the arc cosine (measured in half-turns) of x.\n\n"
+      "The result is between 0 and 1.",
+      "expected a number in range from -1 up to 1, got %s")
 FUNC1D(asin, asin, 0,
       "asin($module, x, /)\n--\n\n"
       "Return the arc sine (measured in radians) of x.\n\n"
@@ -960,6 +1106,11 @@ FUNC1D(asin, asin, 0,
 FUNC1(asinh, asinh, 0,
       "asinh($module, x, /)\n--\n\n"
       "Return the inverse hyperbolic sine of x.")
+FUNC1D(asinpi, m_asinpi, 0,
+      "asinpi($module, x, /)\n--\n\n"
+      "Return the arc sine (measured in half-turns) of x.\n\n"
+      "The result is between -1/2 and 1/2.",
+      "expected a number in range from -1 up to 1, got %s")
 FUNC1(atan, atan, 0,
       "atan($module, x, /)\n--\n\n"
       "Return the arc tangent (measured in radians) of x.\n\n"
@@ -968,10 +1119,19 @@ FUNC2(atan2, atan2,
       "atan2($module, y, x, /)\n--\n\n"
       "Return the arc tangent (measured in radians) of y/x.\n\n"
       "Unlike atan(y/x), the signs of both x and y are considered.")
+FUNC2(atan2pi, m_atan2pi,
+      "atan2pi($module, y, x, /)\n--\n\n"
+      "Return the arc tangent (measured in half-turns) of y/x.\n\n"
+      "Unlike atanpi(y/x), the signs of both x and y are considered.")
 FUNC1D(atanh, atanh, 0,
       "atanh($module, x, /)\n--\n\n"
       "Return the inverse hyperbolic tangent of x.",
       "expected a number between -1 and 1, got %s")
+FUNC1D(atanpi, m_atanpi, 0,
+      "atanpi($module, x, /)\n--\n\n"
+      "Return the arc tangent (measured in half-turns) of x.\n\n"
+      "The result is between 0 and 1.",
+      "expected a number in range from -1 up to 1, got %s")
 FUNC1(cbrt, cbrt, 0,
       "cbrt($module, x, /)\n--\n\n"
       "Return the cube root of x.")
@@ -1024,6 +1184,10 @@ FUNC1D(cos, cos, 0,
 FUNC1(cosh, cosh, 1,
       "cosh($module, x, /)\n--\n\n"
       "Return the hyperbolic cosine of x.")
+FUNC1D(cospi, m_cospi, 0,
+      "cospi($module, x, /)\n--\n\n"
+      "Return the cosine of x (measured in half-turns).",
+      "expected a finite input, got %s")
 FUNC1A(erf, erf,
        "erf($module, x, /)\n--\n\n"
        "Error function at x.")
@@ -1158,6 +1322,10 @@ FUNC1D(sin, sin, 0,
 FUNC1(sinh, sinh, 1,
       "sinh($module, x, /)\n--\n\n"
       "Return the hyperbolic sine of x.")
+FUNC1D(sinpi, m_sinpi, 0,
+      "sinpi($module, x, /)\n--\n\n"
+      "Return the sine of x (measured in half-turns).",
+      "expected a finite input, got %s")
 FUNC1D(sqrt, sqrt, 0,
       "sqrt($module, x, /)\n--\n\n"
       "Return the square root of x.",
@@ -1169,6 +1337,10 @@ FUNC1D(tan, tan, 0,
 FUNC1(tanh, tanh, 0,
       "tanh($module, x, /)\n--\n\n"
       "Return the hyperbolic tangent of x.")
+FUNC1D(tanpi, m_tanpi, 1,
+      "tanpi($module, x, /)\n--\n\n"
+      "Return the tangent of x (measured in half-turns).",
+      "expected a finite input, got %s")
 
 /* Precision summation function as msum() by Raymond Hettinger in
    <https://code.activestate.com/recipes/393090-binary-floating-point-summation-accurate-to-full-p/>,
@@ -1438,13 +1610,14 @@ math.frexp
 
 Return the mantissa and exponent of x, as pair (m, e).
 
-m is a float and e is an int, such that x = m * 2.**e.
-If x is 0, m and e are both 0.  Else 0.5 <= abs(m) < 1.0.
+If x is a finite nonzero number, then m is a float with
+0.5 <= abs(m) < 1.0 and an integer e is such that
+x == m * 2**e exactly.  Else, return (x, 0).
 [clinic start generated code]*/
 
 static PyObject *
 math_frexp_impl(PyObject *module, double x)
-/*[clinic end generated code: output=03e30d252a15ad4a input=96251c9e208bc6e9]*/
+/*[clinic end generated code: output=03e30d252a15ad4a input=215cf8ea28a0959b]*/
 {
     int i;
     /* deal with special cases directly, to sidestep platform
@@ -2541,6 +2714,7 @@ math_isnan_impl(PyObject *module, double x)
 
 
 /*[clinic input]
+@permit_long_summary
 math.isinf
 
     x: double
@@ -2551,7 +2725,7 @@ Return True if x is a positive or negative infinity, and False otherwise.
 
 static PyObject *
 math_isinf_impl(PyObject *module, double x)
-/*[clinic end generated code: output=9f00cbec4de7b06b input=32630e4212cf961f]*/
+/*[clinic end generated code: output=9f00cbec4de7b06b input=8584152a71a3aea9]*/
 {
     return PyBool_FromLong((long)isinf(x));
 }
@@ -2831,7 +3005,7 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
 
 
 /*[clinic input]
-@permit_long_docstring_body
+@permit_long_summary
 math.nextafter
 
     x: double
@@ -2844,13 +3018,13 @@ Return the floating-point value the given number of steps after x towards y.
 
 If steps is not specified or is None, it defaults to 1.
 
-Raises a TypeError, if x or y is not a double, or if steps is not an integer.
-Raises ValueError if steps is negative.
+Raises a TypeError, if x or y is not a double, or if steps is not
+an integer.  Raises ValueError if steps is negative.
 [clinic start generated code]*/
 
 static PyObject *
 math_nextafter_impl(PyObject *module, double x, double y, PyObject *steps)
-/*[clinic end generated code: output=cc6511f02afc099e input=cc8f0dad1b27a8a4]*/
+/*[clinic end generated code: output=cc6511f02afc099e input=3a9151e6b1e9f346]*/
 {
 #if defined(_AIX)
     if (x == y) {
@@ -3045,16 +3219,21 @@ math_exec(PyObject *module)
 static PyMethodDef math_methods[] = {
     {"acos",            math_acos,      METH_O,         math_acos_doc},
     {"acosh",           math_acosh,     METH_O,         math_acosh_doc},
+    {"acospi",          math_acospi,    METH_O,         math_acospi_doc},
     {"asin",            math_asin,      METH_O,         math_asin_doc},
     {"asinh",           math_asinh,     METH_O,         math_asinh_doc},
+    {"asinpi",          math_asinpi,    METH_O,         math_asinpi_doc},
     {"atan",            math_atan,      METH_O,         math_atan_doc},
     {"atan2",           _PyCFunction_CAST(math_atan2),     METH_FASTCALL,  math_atan2_doc},
     {"atanh",           math_atanh,     METH_O,         math_atanh_doc},
+    {"atan2pi",         _PyCFunction_CAST(math_atan2pi),   METH_FASTCALL,  math_atan2pi_doc},
+    {"atanpi",          math_atanpi,    METH_O,       math_atanpi_doc},
     {"cbrt",            math_cbrt,      METH_O,         math_cbrt_doc},
     MATH_CEIL_METHODDEF
     {"copysign",        _PyCFunction_CAST(math_copysign),  METH_FASTCALL,  math_copysign_doc},
     {"cos",             math_cos,       METH_O,         math_cos_doc},
     {"cosh",            math_cosh,      METH_O,         math_cosh_doc},
+    {"cospi",           math_cospi,     METH_O,         math_cospi_doc},
     MATH_DEGREES_METHODDEF
     MATH_DIST_METHODDEF
     {"erf",             math_erf,       METH_O,         math_erf_doc},
@@ -3091,9 +3270,11 @@ static PyMethodDef math_methods[] = {
     MATH_SIGNBIT_METHODDEF
     {"sin",             math_sin,       METH_O,         math_sin_doc},
     {"sinh",            math_sinh,      METH_O,         math_sinh_doc},
+    {"sinpi",           math_sinpi,     METH_O,         math_sinpi_doc},
     {"sqrt",            math_sqrt,      METH_O,         math_sqrt_doc},
     {"tan",             math_tan,       METH_O,         math_tan_doc},
     {"tanh",            math_tanh,      METH_O,         math_tanh_doc},
+    {"tanpi",           math_tanpi,     METH_O,         math_tanpi_doc},
     MATH_SUMPROD_METHODDEF
     MATH_TRUNC_METHODDEF
     MATH_PROD_METHODDEF
@@ -3103,6 +3284,7 @@ static PyMethodDef math_methods[] = {
 };
 
 static PyModuleDef_Slot math_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, math_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

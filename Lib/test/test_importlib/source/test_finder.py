@@ -57,6 +57,8 @@ class FinderTests(abc.FinderTests):
         """
         if create is None:
             create = {test}
+        if (compile_ or unlink) and sys.implementation.cache_tag is None:
+            raise unittest.SkipTest('requires sys.implementation.cache_tag')
         with util.create_modules(*create) as mapping:
             if compile_:
                 for name in compile_:

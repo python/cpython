@@ -534,7 +534,7 @@ class PlatformTest(unittest.TestCase):
 
     def test_libc_ver(self):
         if support.is_emscripten:
-            assert platform.libc_ver() == ("emscripten", "4.0.12")
+            assert platform.libc_ver() == ("emscripten", "4.0.19")
             return
         # check that libc_ver(executable) doesn't raise an exception
         if os.path.isdir(sys.executable) and \
