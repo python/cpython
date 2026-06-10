@@ -2821,6 +2821,13 @@ PyUnstable_Object_EnableDeferredRefcount(PyObject *op)
         return 0;
     }
 
+    if (!PyObject_GC_IsTracked(op)) {
+        // When deferred refcount is enabled, the object will only be
+        // deallocated by the tracing garbage collector. So it must be tracked
+        // by the garbage collector.
+        return 0;
+    }
+
     uint8_t bits = _Py_atomic_load_uint8(&op->ob_gc_bits);
     if ((bits & _PyGC_BITS_DEFERRED) != 0)
     {
