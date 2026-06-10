@@ -893,6 +893,7 @@ compiler_mod(compiler *c, mod_ty mod)
 {
     PyCodeObject *co = NULL;
     int addNone = mod->kind != Expression_kind;
+    assert(c->u == NULL);
     if (compiler_codegen(c, mod) < 0) {
         goto finally;
     }
