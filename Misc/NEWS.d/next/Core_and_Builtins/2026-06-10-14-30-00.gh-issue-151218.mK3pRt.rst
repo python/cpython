@@ -1,0 +1,2 @@
+Fix a data race in :func:`sys.set_int_max_str_digits` when updating
+:data:`sys.flags` in the free-threaded build.

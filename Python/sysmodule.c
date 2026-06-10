@@ -22,6 +22,9 @@ Data members:
 #include "pycore_import.h"        // _PyImport_SetDLOpenFlags()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_interpframe.h"   // _PyFrame_GetFirstComplete()
+#ifdef Py_GIL_DISABLED
+#  include "pycore_lock.h"        // PyMutex_Lock()
+#endif
 #include "pycore_long.h"          // _PY_LONG_MAX_STR_DIGITS_THRESHOLD
 #include "pycore_modsupport.h"    // _PyModule_CreateInitialized()
 #include "pycore_namespace.h"     // _PyNamespace_New()
@@ -3476,13 +3479,31 @@ static PyStructSequence_Desc flags_desc = {
     // https://github.com/python/cpython/issues/122575#issuecomment-2416497086
 };
 
+#ifdef Py_GIL_DISABLED
+static PyMutex sys_flags_mutex;
+#endif
+
 static void
-sys_set_flag(PyObject *flags, Py_ssize_t pos, PyObject *value)
+sys_set_flag_unlocked(PyObject *flags, Py_ssize_t pos, PyObject *value,
+                      PyObject **p_old_value)
 {
     assert(pos >= 0 && pos < (Py_ssize_t)(Py_ARRAY_LENGTH(flags_fields) - 1));
 
-    PyObject *old_value = PyStructSequence_GET_ITEM(flags, pos);
+    *p_old_value = PyStructSequence_GET_ITEM(flags, pos);
     PyStructSequence_SET_ITEM(flags, pos, Py_NewRef(value));
+}
+
+static void
+sys_set_flag(PyObject *flags, Py_ssize_t pos, PyObject *value)
+{
+    PyObject *old_value;
+#ifdef Py_GIL_DISABLED
+    PyMutex_Lock(&sys_flags_mutex);
+#endif
+    sys_set_flag_unlocked(flags, pos, value, &old_value);
+#ifdef Py_GIL_DISABLED
+    PyMutex_Unlock(&sys_flags_mutex);
+#endif
     Py_XDECREF(old_value);
 }
 
@@ -3498,20 +3519,6 @@ _PySys_SetFlagObj(Py_ssize_t pos, PyObject *value)
     sys_set_flag(flags, pos, value);
     Py_DECREF(flags);
     return 0;
-}
-
-
-static int
-_PySys_SetFlagInt(Py_ssize_t pos, int value)
-{
-    PyObject *obj = PyLong_FromLong(value);
-    if (obj == NULL) {
-        return -1;
-    }
-
-    int res = _PySys_SetFlagObj(pos, obj);
-    Py_DECREF(obj);
-    return res;
 }
 
 
@@ -4666,16 +4673,40 @@ _PySys_SetIntMaxStrDigits(int maxdigits)
         return -1;
     }
 
-    // Set sys.flags.int_max_str_digits
     const Py_ssize_t pos = SYS_FLAGS_INT_MAX_STR_DIGITS;
-    if (_PySys_SetFlagInt(pos, maxdigits) < 0) {
+    PyObject *obj = PyLong_FromLong(maxdigits);
+    if (obj == NULL) {
         return -1;
     }
+
+#ifdef Py_GIL_DISABLED
+    PyMutex_Lock(&sys_flags_mutex);
+#endif
+
+    PyObject *flags = PySys_GetAttrString("flags");
+    if (flags == NULL) {
+        Py_DECREF(obj);
+#ifdef Py_GIL_DISABLED
+        PyMutex_Unlock(&sys_flags_mutex);
+#endif
+        return -1;
+    }
+
+    PyObject *old_value;
+    sys_set_flag_unlocked(flags, pos, obj, &old_value);
+    Py_DECREF(flags);
 
     // Set PyInterpreterState.long_state.max_str_digits
     // and PyInterpreterState.config.int_max_str_digits.
     PyInterpreterState *interp = _PyInterpreterState_GET();
     interp->long_state.max_str_digits = maxdigits;
     interp->config.int_max_str_digits = maxdigits;
+
+#ifdef Py_GIL_DISABLED
+    PyMutex_Unlock(&sys_flags_mutex);
+#endif
+
+    Py_DECREF(obj);
+    Py_XDECREF(old_value);
     return 0;
 }

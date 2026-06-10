@@ -887,6 +887,59 @@ class SysModuleTest(unittest.TestCase):
         self.assertIsInstance(sys.flags.context_aware_warnings, int|type(None))
         self.assertIsInstance(sys.flags.lazy_imports, int|type(None))
 
+    @unittest.skipUnless(support.Py_GIL_DISABLED,
+                         "test is only useful if the GIL is disabled")
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_set_int_max_str_digits_concurrent(self):
+        # Regression test for gh-151218: concurrent
+        # sys.set_int_max_str_digits() in free-threaded builds previously
+        # double-freed the old sys.flags tuple item. With the fix in place
+        # the loop must not crash and must only ever observe valid values
+        # that some worker wrote.
+        import threading
+
+        original = sys.get_int_max_str_digits()
+        self.addCleanup(sys.set_int_max_str_digits, original)
+
+        values = (4300, 5000, 0)
+        allowed = set(values) | {original}
+
+        start = threading.Barrier(4)
+        done = threading.Event()
+        errors = []
+
+        def worker():
+            try:
+                start.wait(timeout=support.SHORT_TIMEOUT)
+                iterations = 0
+                while iterations < 200 and not done.is_set():
+                    for value in values:
+                        sys.set_int_max_str_digits(value)
+                        observed = sys.get_int_max_str_digits()
+                        if observed not in allowed:
+                            errors.append(('getter', observed))
+                        observed_flag = sys.flags.int_max_str_digits
+                        if observed_flag not in allowed:
+                            errors.append(('flag', observed_flag))
+                    iterations += 1
+            except BaseException as exc:
+                errors.append(exc)
+
+        threads = [threading.Thread(target=worker) for _ in range(4)]
+        try:
+            for thread in threads:
+                thread.start()
+        finally:
+            done.set()
+            for thread in threads:
+                thread.join()
+
+        self.assertEqual(errors, [])
+        sys.set_int_max_str_digits(original)
+        self.assertEqual(sys.get_int_max_str_digits(), original)
+        self.assertEqual(sys.flags.int_max_str_digits, original)
+
     def assert_raise_on_new_sys_type(self, sys_attr):
         # Users are intentionally prevented from creating new instances of
         # sys.flags, sys.version_info, and sys.getwindowsversion.
