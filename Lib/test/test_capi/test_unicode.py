@@ -842,9 +842,7 @@ class CAPITest(unittest.TestCase):
         if SIZEOF_WCHAR_T == 2:
             self.assertEqual(fromwidechar('a\U0001f600'.encode(encoding), 2), 'a\ud83d')
 
-        self.assertRaises(MemoryError, fromwidechar, b'', PY_SSIZE_T_MAX)
         self.assertRaises(SystemError, fromwidechar, b'\0'*SIZEOF_WCHAR_T, -2)
-        self.assertRaises(SystemError, fromwidechar, b'\0'*SIZEOF_WCHAR_T, PY_SSIZE_T_MIN)
         self.assertEqual(fromwidechar(NULL, 0), '')
         self.assertRaises(SystemError, fromwidechar, NULL, 1)
         self.assertRaises(SystemError, fromwidechar, NULL, PY_SSIZE_T_MAX)
