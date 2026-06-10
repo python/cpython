@@ -1,0 +1,1 @@
+:attr:`!socket.SocketType` is now deprecated and planned to be removed in Python 3.16. Use :class:`socket.socket` instead.
