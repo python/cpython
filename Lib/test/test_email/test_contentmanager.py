@@ -342,6 +342,26 @@ class TestRawDataManager(TestEmailBase):
         self.assertEqual(m.get_payload(decode=True).decode('utf-8'), content)
         self.assertEqual(m.get_content(), content)
 
+    def test_set_text_charset_cp949(self):
+        m = self._make_message()
+        content = "\ud55c\uad6d\uc5b4\n\uac02\n"
+        raw_data_manager.set_content(m, content, charset='cp949')
+        self.assertEqual(str(m), textwrap.dedent("""\
+            Content-Type: text/plain; charset="ks_c_5601-1987"
+            Content-Transfer-Encoding: base64
+
+            x9Gxub7uCoFBCg==
+            """))
+        self.assertEqual(bytes(m), textwrap.dedent("""\
+            Content-Type: text/plain; charset="ks_c_5601-1987"
+            Content-Transfer-Encoding: 8bit
+
+            \ud55c\uad6d\uc5b4
+            \uac02
+            """).encode('ks_c_5601-1987'))
+        self.assertEqual(m.get_payload(decode=True), content.encode('ks_c_5601-1987'))
+        self.assertEqual(m.get_content(), content)
+
     def test_set_text_plain_long_line_heuristics(self):
         m = self._make_message()
         content = ("Simple but long message that is over 78 characters"
