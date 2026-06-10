@@ -262,7 +262,7 @@ against some common XML vulnerabilities.
       Activation thresholds below 4 MiB are known to break support for DITA 1.3
       payload and are hence not recommended.
 
-   .. versionadded:: next
+   .. versionadded:: 3.13.14
 
 .. method:: xmlparser.SetBillionLaughsAttackProtectionMaximumAmplification(max_factor, /)
 
@@ -294,7 +294,7 @@ against some common XML vulnerabilities.
       that can be adjusted by :meth:`.SetBillionLaughsAttackProtectionActivationThreshold`
       is exceeded.
 
-   .. versionadded:: next
+   .. versionadded:: 3.13.14
 
 .. method:: xmlparser.SetAllocTrackerActivationThreshold(threshold, /)
 

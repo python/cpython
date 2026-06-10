@@ -1,3 +1,0 @@
-Fix the frozen importer accepting module names with embedded null bytes, which
-caused it to bypass the :data:`sys.modules` cache and create duplicate module
-objects.
