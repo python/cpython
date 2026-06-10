@@ -1,0 +1,4 @@
+Fix a crash, when there's no memory left on a device,
+which happened in :mod:`!_interpchannels` module.
+
+Now it raises proper :exc:`MemoryError` errors.
