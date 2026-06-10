@@ -266,12 +266,6 @@ _Py_REF_IS_MERGED(Py_ssize_t ob_ref_shared)
     return (ob_ref_shared & _Py_REF_SHARED_FLAG_MASK) == _Py_REF_MERGED;
 }
 
-static inline int
-_Py_REF_IS_QUEUED(Py_ssize_t ob_ref_shared)
-{
-    return (ob_ref_shared & _Py_REF_SHARED_FLAG_MASK) == _Py_REF_QUEUED;
-}
-
 // Merge the local and shared reference count fields and add `extra` to the
 // refcount when merging.
 Py_ssize_t _Py_ExplicitMergeRefcount(PyObject *op, Py_ssize_t extra);
