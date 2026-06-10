@@ -4414,6 +4414,33 @@ class TestExtractionFilters(unittest.TestCase):
                     self.expect_file("c", symlink_to='b')
 
     @symlink_test
+    def test_sneaky_hardlink_fallback_deep(self):
+        with ArchiveMaker() as arc:
+            arc.add("a/b/s", symlink_to=os.path.join("..", "escape"))
+            arc.add("s", hardlink_to=os.path.join("a", "b", "s"))
+
+        with self.check_context(arc.open(), 'data'):
+            if not os_helper.can_symlink() or sys.platform == "win32":
+                # See notes in test_sneaky_hardlink_fallback.
+                self.expect_exception(tarfile.LinkOutsideDestinationError)
+            else:
+                e = self.expect_exception(
+                    tarfile.LinkFallbackError,
+                    "link 's' would be extracted as a copy of "
+                    + "'a/b/s', which was rejected")
+                self.assertIsInstance(e.__cause__,
+                                      tarfile.LinkOutsideDestinationError)
+
+        for filter in 'tar', 'fully_trusted':
+            with self.subTest(filter), self.check_context(arc.open(), filter):
+                if not os_helper.can_symlink():
+                    self.expect_file("a/b/s")
+                    self.expect_file("s")
+                else:
+                    self.expect_file("a/b/s", symlink_to=os.path.join('..', 'escape'))
+                    self.expect_file("s", symlink_to=os.path.join('..', 'escape'))
+
+    @symlink_test
     def test_exfiltration_via_symlink(self):
         # (CVE-2025-4138)
         # Test changing symlinks that result in a symlink pointing outside
