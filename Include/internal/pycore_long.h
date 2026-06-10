@@ -116,6 +116,7 @@ PyAPI_DATA(PyObject*) _PyLong_Lshift(PyObject *, int64_t);
 PyAPI_FUNC(_PyStackRef) _PyCompactLong_Add(PyLongObject *left, PyLongObject *right);
 PyAPI_FUNC(_PyStackRef) _PyCompactLong_Multiply(PyLongObject *left, PyLongObject *right);
 PyAPI_FUNC(_PyStackRef) _PyCompactLong_Subtract(PyLongObject *left, PyLongObject *right);
+PyAPI_FUNC(_PyStackRef) _PyCompactLong_AddWide(PyLongObject *left, PyLongObject *right);
 
 // Export for 'binascii' shared extension.
 PyAPI_DATA(unsigned char) _PyLong_DigitValue[256];
@@ -344,6 +345,102 @@ static inline int
 _PyLong_CheckExactAndCompact(PyObject *op)
 {
     return PyLong_CheckExact(op) && _PyLong_IsCompact((const PyLongObject *)op);
+}
+
+/* Max number of digits a PyLong can have and still fit in int64_t.
+ * 30-bit builds: ceil(64/30) = 3.  15-bit builds: ceil(64/15) = 5. */
+#define _PY_LONG_MAX_DIGITS_FOR_INT64  ((64 + PyLong_SHIFT - 1) / PyLong_SHIFT)
+
+/* Return 1 if v fits in int64_t.  Does not require exact type. */
+static inline int
+_PyLong_FitsInt64(const PyLongObject *v)
+{
+    uintptr_t tag = v->long_value.lv_tag;
+    /* Fast path: digit count is strictly below the max — always fits. */
+    if (tag < ((uintptr_t)_PY_LONG_MAX_DIGITS_FOR_INT64 << NON_SIZE_BITS)) {
+        return 1;
+    }
+    Py_ssize_t ndigits = (Py_ssize_t)(tag >> NON_SIZE_BITS);
+    if (ndigits > _PY_LONG_MAX_DIGITS_FOR_INT64) {
+        return 0;
+    }
+    /* ndigits == _PY_LONG_MAX_DIGITS_FOR_INT64: check the top digit. */
+    unsigned int shift = PyLong_SHIFT * (unsigned int)(ndigits - 1);
+    uint64_t top = (uint64_t)v->long_value.ob_digit[ndigits - 1];
+    if ((tag & SIGN_MASK) == SIGN_NEGATIVE) {
+        uint64_t max_top = ((uint64_t)INT64_MAX + 1) >> shift;
+        if (top < max_top) {
+            return 1;
+        }
+        if (top > max_top) {
+            return 0;
+        }
+        /* top == max_top: only INT64_MIN has all lower digits == 0. */
+        for (Py_ssize_t i = 0; i < ndigits - 1; i++) {
+            if (v->long_value.ob_digit[i] != 0) {
+                return 0;
+            }
+        }
+        return 1;
+    }
+    uint64_t max_top = (uint64_t)INT64_MAX >> shift;
+    return top <= max_top;
+}
+
+static inline int
+_PyLong_CheckExactAndFitsInt64(PyObject *op)
+{
+    return PyLong_CheckExact(op) && _PyLong_FitsInt64((const PyLongObject *)op);
+}
+
+/* Extract an exact int to int64_t without raising.
+ * Returns true and writes *out on success; returns false if out of range.
+ * Never sets a Python exception. */
+static inline bool
+_PyLong_TryAsInt64Exact(PyLongObject *v, int64_t *out)
+{
+    assert(PyLong_CheckExact((PyObject *)v));
+    uintptr_t tag = v->long_value.lv_tag;
+    int sign = 1 - (int)(tag & SIGN_MASK);
+    /* Compact (0 or 1 digit): fast, branchless extraction. */
+    if (tag < (2u << NON_SIZE_BITS)) {
+        *out = (int64_t)(sign * (Py_ssize_t)v->long_value.ob_digit[0]);
+        return true;
+    }
+    Py_ssize_t ndigits = (Py_ssize_t)(tag >> NON_SIZE_BITS);
+    if (ndigits > _PY_LONG_MAX_DIGITS_FOR_INT64) {
+        return false;
+    }
+    uint64_t abs_val = 0;
+#if PyLong_SHIFT == 30
+    if (ndigits == 2) {
+        /* Most common non-compact case on 64-bit builds. */
+        abs_val = (uint64_t)v->long_value.ob_digit[0] |
+                  ((uint64_t)v->long_value.ob_digit[1] << 30);
+        *out = sign < 0 ? -(int64_t)abs_val : (int64_t)abs_val;
+        return true;
+    }
+#endif
+    unsigned int shift = 0;
+    for (Py_ssize_t i = 0; i < ndigits; i++) {
+        uint64_t d = (uint64_t)v->long_value.ob_digit[i];
+        if (ndigits == _PY_LONG_MAX_DIGITS_FOR_INT64 && i == ndigits - 1 &&
+            shift != 0 && (d >> (64 - shift)) != 0)
+        {
+            return false;
+        }
+        abs_val |= d << shift;
+        shift += PyLong_SHIFT;
+    }
+    if (abs_val <= (uint64_t)INT64_MAX) {
+        *out = sign < 0 ? -(int64_t)abs_val : (int64_t)abs_val;
+        return true;
+    }
+    if (sign < 0 && abs_val == (uint64_t)INT64_MAX + 1) {
+        *out = INT64_MIN;
+        return true;
+    }
+    return false;
 }
 
 #ifdef __cplusplus
