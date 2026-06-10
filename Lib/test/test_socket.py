@@ -7503,9 +7503,6 @@ class ReentrantMutationTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(socket.socket, "sendmsg"),
                          "sendmsg not supported")
     def test_sendmsg_reentrant_data_mutation(self):
-        # Test that sendmsg() handles re-entrant mutation of data buffers
-        # via __buffer__ protocol.
-        # See: https://github.com/python/cpython/issues/143988
         seq = []
 
         class MutBuffer:
@@ -7528,9 +7525,6 @@ class ReentrantMutationTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(socket.socket, "recvmsg_into"),
                          "recvmsg_into not supported")
     def test_recvmsg_into_reentrant_buffer_mutation(self):
-        # Test that recvmsg_into() handles re-entrant mutation of buffers
-        # via __buffer__ protocol.
-        # See: https://github.com/python/cpython/issues/143988
         seq = []
         buf1 = bytearray(100)
 
