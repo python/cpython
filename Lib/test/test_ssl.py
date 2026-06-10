@@ -59,10 +59,7 @@ CAN_IGNORE_UNKNOWN_OPENSSL_SIGALGS = ssl.OPENSSL_VERSION_INFO >= (3, 3)
 CAN_GET_SELECTED_OPENSSL_SIGALG = ssl.OPENSSL_VERSION_INFO >= (3, 5)
 PY_SSL_DEFAULT_CIPHERS = sysconfig.get_config_var('PY_SSL_DEFAULT_CIPHERS')
 
-HAS_KEYLOG = hasattr(ssl.SSLContext, 'keylog_filename')
-requires_keylog = unittest.skipUnless(
-    HAS_KEYLOG, 'test requires OpenSSL 1.1.1 with keylog callback')
-CAN_SET_KEYLOG = HAS_KEYLOG and os.name != "nt"
+CAN_SET_KEYLOG = (os.name != "nt")
 requires_keylog_setter = unittest.skipUnless(
     CAN_SET_KEYLOG,
     "cannot set 'keylog_filename' on Windows"
@@ -5453,7 +5450,6 @@ class TestSSLDebug(unittest.TestCase):
         with open(fname) as f:
             return len(list(f))
 
-    @requires_keylog
     def test_keylog_defaults(self):
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -5481,7 +5477,6 @@ class TestSSLDebug(unittest.TestCase):
         with self.assertRaises(TypeError):
             ctx.keylog_filename = 1
 
-    @requires_keylog
     def test_keylog_filename(self):
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         client_context, server_context, hostname = testing_context()
@@ -5522,7 +5517,6 @@ class TestSSLDebug(unittest.TestCase):
         client_context.keylog_filename = None
         server_context.keylog_filename = None
 
-    @requires_keylog
     @unittest.skipIf(sys.flags.ignore_environment,
                      "test is not compatible with ignore_environment")
     def test_keylog_env(self):

@@ -42,6 +42,7 @@ static const char copyright[] =
 #include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION
 #include "pycore_dict.h"             // _PyDict_Next()
 #include "pycore_long.h"             // _PyLong_GetZero()
+#include "pycore_list.h"             // _PyList_AppendTakeRef()
 #include "pycore_moduleobject.h"     // _PyModule_GetState()
 #include "pycore_tuple.h"            // _PyTuple_FromPairSteal
 #include "pycore_unicodeobject.h"    // _PyUnicode_Copy
@@ -986,8 +987,7 @@ _sre_SRE_Pattern_findall_impl(PatternObject *self, PyObject *string,
             break;
         }
 
-        status = PyList_Append(list, item);
-        Py_DECREF(item);
+        status = _PyList_AppendTakeRef((PyListObject *)list, item);
         if (status < 0)
             goto error;
 
@@ -1333,8 +1333,7 @@ pattern_subx(_sremodulestate* module_state,
                 string, i, b);
             if (!item)
                 goto error;
-            status = PyList_Append(list, item);
-            Py_DECREF(item);
+            status = _PyList_AppendTakeRef((PyListObject *)list, item);
             if (status < 0)
                 goto error;
 
@@ -1363,8 +1362,7 @@ pattern_subx(_sremodulestate* module_state,
 
         /* add to list */
         if (item != Py_None) {
-            status = PyList_Append(list, item);
-            Py_DECREF(item);
+            status = _PyList_AppendTakeRef((PyListObject *)list, item);
             if (status < 0)
                 goto error;
         }
@@ -1381,8 +1379,7 @@ pattern_subx(_sremodulestate* module_state,
                         string, i, state.endpos);
         if (!item)
             goto error;
-        status = PyList_Append(list, item);
-        Py_DECREF(item);
+        status = _PyList_AppendTakeRef((PyListObject *)list, item);
         if (status < 0)
             goto error;
     }

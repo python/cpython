@@ -1373,9 +1373,17 @@ class Manager(object):
         logger and fix up the parent/child references which pointed to the
         placeholder to now point to the logger.
         """
-        rv = None
         if not isinstance(name, str):
             raise TypeError('A logger name must be a string')
+        # Fast path: an already-registered, non-placeholder logger can be
+        # returned without taking the lock. dict.get() is atomic under both
+        # the GIL and free threading. A Logger is inserted into loggerDict only
+        # after it is fully wired up (parent/child references fixed) under the
+        # lock, so the fast path never observes a logger whose parent is not yet
+        # set.
+        rv = self.loggerDict.get(name)
+        if rv is not None and not isinstance(rv, PlaceHolder):
+            return rv
         with _lock:
             if name in self.loggerDict:
                 rv = self.loggerDict[name]
@@ -1383,14 +1391,18 @@ class Manager(object):
                     ph = rv
                     rv = (self.loggerClass or _loggerClass)(name)
                     rv.manager = self
-                    self.loggerDict[name] = rv
                     self._fixupChildren(ph, rv)
                     self._fixupParents(rv)
+                    # Publish only after rv is fully wired: the fast path reads
+                    # loggerDict without the lock.
+                    self.loggerDict[name] = rv
             else:
                 rv = (self.loggerClass or _loggerClass)(name)
                 rv.manager = self
-                self.loggerDict[name] = rv
                 self._fixupParents(rv)
+                # Publish only after rv is fully wired: the fast path reads
+                # loggerDict without the lock.
+                self.loggerDict[name] = rv
         return rv
 
     def setLoggerClass(self, klass):

@@ -944,8 +944,8 @@ def move(src, dst, copy_function=copy2):
     return real_dst
 
 def _destinsrc(src, dst):
-    src = os.path.abspath(src)
-    dst = os.path.abspath(dst)
+    src = os.path.realpath(src)
+    dst = os.path.realpath(dst)
     if not src.endswith(os.path.sep):
         src += os.path.sep
     if not dst.endswith(os.path.sep):
@@ -1306,12 +1306,6 @@ def register_unpack_format(name, extensions, function, extra_args=None,
 def unregister_unpack_format(name):
     """Removes the pack format from the registry."""
     del _UNPACK_FORMATS[name]
-
-def _ensure_directory(path):
-    """Ensure that the parent directory of `path` exists"""
-    dirname = os.path.dirname(path)
-    if not os.path.isdir(dirname):
-        os.makedirs(dirname)
 
 def _unpack_zipfile(filename, extract_dir):
     """Unpack zip `filename` to `extract_dir`
