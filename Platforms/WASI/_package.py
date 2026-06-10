@@ -17,9 +17,9 @@ import _shared
 #   ☐ pythonN.M.wasmtime
 #   ❌ idleN.M
 #   ❌ pydocN.M
-# ☐ include/pythonN.Md?
-#   ☐ pyconfig.h
-#   ☐ .h files
+# ✅ include/pythonN.Md?
+#   ✅ pyconfig.h
+#   ✅ .h files
 # ✅ lib
 #   ✅ pkgconfig (from Misc/)
 #   ✅ pythonN.M
@@ -27,7 +27,7 @@ import _shared
 #     ✅ LICENSE.txt (license_file())
 #     ✅ Stuff from build/lib.* (build_dir_files())
 #     ✅ Lib/
-# ❌ share/man/man1/
+# ✅ share/man/man1/
 # ☐ python.wasm
 
 
@@ -100,10 +100,52 @@ def pkgconfig_files(context):
     return [
         (pkgconfig / f"python{major}.pc", misc_dir / "python.pc"),
         (pkgconfig / f"python-{major}.{minor}.pc", misc_dir / "python.pc"),
-        (pkgconfig / f"python3-embed.pc", misc_dir / "python-embed.pc"),
+        (pkgconfig / f"python{major}-embed.pc", misc_dir / "python-embed.pc"),
         (
             pkgconfig / f"python-{major}.{minor}-embed.pc",
             misc_dir / "python-embed.pc",
+        ),
+    ]
+
+
+def pyconfig_file(context):
+    """Have <build>/pyconfig.h end up in include/pythonXYd?/pyconfig.h."""
+    return (
+        pathlib.PurePath("include")
+        / pythonXY(context, support_debug=True)
+        / "pyconfig.h",
+        context.wasi_build_path / "pyconfig.h",
+    )
+
+
+def header_files(context):
+    """Have <build>/Include/*.h end up in include/pythonXYd?/."""
+    include_dir = context.checkout / "Include"
+    files = []
+    for root, dirs, filenames in include_dir.walk():
+        for filename in filenames:
+            file_path = pathlib.Path(root) / filename
+            details = (
+                pathlib.PurePath("include")
+                / pythonXY(context, support_debug=True)
+                / file_path.relative_to(include_dir),
+                file_path,
+            )
+            files.append(details)
+    return files
+
+
+def man_files(context):
+    """Have Misc/python.man end up in share/man/man1/."""
+    version_info = context.wasi_build_details["language"]["version_info"]
+    man_dir = pathlib.PurePath("share", "man", "man1")
+    man_file = context.checkout / "Misc" / "python.man"
+    return [
+        (man_dir / f"python{version_info['major']}.1", man_file),
+        (
+            man_dir
+            / f"python{version_info['major']}.{version_info['minor']}.1",
+            man_file,
         ),
     ]
 
@@ -136,6 +178,12 @@ def package(context):
     indent = "  "
     base = dist / filename_stem(context)
     _shared.log("📝", f"Copying files to {base} ...")
+    _shared.log("📁", "include/", spacing=indent * 2)
+    _shared.log("📁", "pythonN.Md?/", spacing=indent * 3)
+    _shared.log("📄", "pyconfig.h", spacing=indent * 4)
+    copy_files([pyconfig_file(context)], base)
+    _shared.log("📄", "**/*.h", spacing=indent * 4)
+    copy_files(header_files(context), base)
     _shared.log("📁", "lib/", spacing=indent * 2)
     _shared.log("📁", "pythonN.M/", spacing=indent * 3)
     _shared.log("📄", "LICENSE.txt", spacing=indent * 4)
@@ -147,3 +195,8 @@ def package(context):
     _shared.log("📁", "pkgconfig/", spacing=indent * 3)
     _shared.log("📄", "python*.pc", spacing=indent * 4)
     copy_files(pkgconfig_files(context), base)
+    _shared.log("📁", "share", spacing=indent * 2)
+    _shared.log("📁", "man", spacing=indent * 3)
+    _shared.log("📁", "man1", spacing=indent * 4)
+    _shared.log("📄", "python*.1", spacing=indent * 5)
+    copy_files(man_files(context), base)
