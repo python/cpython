@@ -82,13 +82,13 @@ jobs:
       run: make -j4
     - name: Display build info
       run: make pythoninfo
-    # test_{capi,faulthandler} are skipped under UBSan because
+    # test_capi is skipped under UBSan because
     # they raise signals that UBSan with halt_on_error=1 intercepts.
     - name: Tests
       run: >-
         ./python -m test
         ${{ inputs.sanitizer == 'TSan' && '--tsan' || '' }}
-        ${{ inputs.sanitizer == 'UBSan' && '-x test_capi -x test_faulthandler' || '' }}
+        ${{ inputs.sanitizer == 'UBSan' && '-x test_capi' || '' }}
         -j4 -W
     - name: Parallel tests
       if: >-
