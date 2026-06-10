@@ -1,12 +1,12 @@
 # xml.etree test for cElementTree
 import io
 import struct
+import time
 from test import support
 from test.support.import_helper import import_fresh_module
 from test.support import threading_helper
 import types
 import unittest
-import threading
 
 cET = import_fresh_module('xml.etree.ElementTree',
                           fresh=['_elementtree'])
@@ -258,18 +258,19 @@ class SizeofTest(unittest.TestCase):
         self.check_sizeof(e, self.elementsize + self.extra +
                              struct.calcsize('8P'))
 
+
 @unittest.skipUnless(cET, 'requires _elementtree')
 @threading_helper.requires_working_threading()
 class TestElementTreeFreeThreading(unittest.TestCase):
     def test_element_concurrent_clear_and_access(self):
-        #Race len(), .attrib, and .clear() to verify fix for gh-149861.
+        # Race len(), .attrib, and .clear() to verify fix for gh-149861.
         root = cET.Element('root')
         children = [cET.Element(f'child-{i}') for i in range(5)]
 
-        stop_event = threading.Event()
+        end_time = time.monotonic() + 1.0
 
         def reader_task():
-            while not stop_event.is_set():
+            while time.monotonic() < end_time:
                 len(root)
                 try:
                     _ = root.attrib
@@ -279,7 +280,7 @@ class TestElementTreeFreeThreading(unittest.TestCase):
                     pass
 
         def writer_task():
-            while not stop_event.is_set():
+            while time.monotonic() < end_time:
                 # Test element_add_subelement / extend
                 root.extend(children)
                 # Test clear_extra
@@ -287,15 +288,11 @@ class TestElementTreeFreeThreading(unittest.TestCase):
 
         threads = []
         for _ in range(4):
-            threads.append(threading.Thread(target=reader_task))
+            threads.append(reader_task)
         for _ in range(2):
-            threads.append(threading.Thread(target=writer_task))
+            threads.append(writer_task)
 
-        with threading_helper.start_threads(threads):
-            import time
-            time.sleep(1.0)
-            stop_event.set()
-
+        threading_helper.run_concurrently(worker_func=threads, nthreads=6)
 
 
 def install_tests():

@@ -271,31 +271,20 @@ typedef struct {
 LOCAL(int)
 create_extra(ElementObject* self, PyObject* attrib)
 {
-    int res;
-    Py_BEGIN_CRITICAL_SECTION(self);
-
-    if (self->extra != NULL) {
-        res = 0;
-        goto end;
-    }
-    ElementObjectExtra* extra = PyMem_Malloc(sizeof(ElementObjectExtra));
-    if (!extra) {
+    self->extra = PyMem_Malloc(sizeof(ElementObjectExtra));
+    if (!self->extra) {
         PyErr_NoMemory();
-        res = -1;
-        goto end;
+        return -1;
     }
+    Py_BEGIN_CRITICAL_SECTION(self);
+    self->extra->attrib = Py_XNewRef(attrib);
 
-    extra->attrib = Py_XNewRef(attrib);
+    self->extra->length = 0;
+    self->extra->allocated = STATIC_CHILDREN;
+    self->extra->children = self->extra->_children;
 
-    extra->length = 0;
-    extra->allocated = STATIC_CHILDREN;
-    extra->children = extra->_children;
-    self->extra = extra;
-    res = 0;
-
-  end: ;
     Py_END_CRITICAL_SECTION();
-    return res;
+    return 0;
 }
 
 LOCAL(void)
@@ -575,23 +564,15 @@ element_get_attrib(ElementObject* self)
     /* return new reference to attrib dictionary */
     /* note: this function assumes that the extra section exists */
 
-    PyObject *res = NULL;
+    PyObject *res;
     Py_BEGIN_CRITICAL_SECTION(self);
-    if (self->extra == NULL) {
-        PyErr_SetString(PyExc_AttributeError, "extra section does not exist");
-        goto end;
-    }
     res = self->extra->attrib;
 
     if (!res) {
         /* create missing dictionary */
-        res = PyDict_New();
-        if (res) {
-            self->extra->attrib = res;
-        }
+        res = self->extra->attrib = PyDict_New();
     }
     Py_XINCREF(res);
-  end: ;
     Py_END_CRITICAL_SECTION();
     return res;
 }
@@ -709,7 +690,6 @@ static int
 element_gc_clear(PyObject *op)
 {
     ElementObject *self = _Element_CAST(op);
-    Py_BEGIN_CRITICAL_SECTION(self);
     Py_CLEAR(self->tag);
     _clear_joined_ptr(&self->text);
     _clear_joined_ptr(&self->tail);
@@ -718,7 +698,6 @@ element_gc_clear(PyObject *op)
      * so fully deallocate it.
     */
     clear_extra(self);
-    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -1655,9 +1634,12 @@ static Py_ssize_t
 element_length(PyObject *op)
 {
     ElementObject *self = _Element_CAST(op);
-    Py_ssize_t res = 0;
+    Py_ssize_t res;
     Py_BEGIN_CRITICAL_SECTION(self);
-    if (self->extra) {
+    if (!self->extra) {
+        res = 0;
+    }
+    else {
         res = self->extra->length;
     }
     Py_END_CRITICAL_SECTION();
@@ -2114,16 +2096,15 @@ element_tail_getter(PyObject *op, void *closure)
 static PyObject*
 element_attrib_getter(PyObject *op, void *closure)
 {
-    PyObject *res = NULL;
+    PyObject *res;
     ElementObject *self = _Element_CAST(op);
     Py_BEGIN_CRITICAL_SECTION(self);
-    if (!self->extra) {
-        if (create_extra(self, NULL) < 0)
-            goto end;
+    if (!self->extra && create_extra(self, NULL) < 0){
+            res = NULL;
     }
-    res = element_get_attrib(self);
-
-  end: ;
+    else {
+        res = element_get_attrib(self);
+    }
     Py_END_CRITICAL_SECTION();
     return res;
 }
