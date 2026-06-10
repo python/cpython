@@ -272,12 +272,7 @@ class TestElementTreeFreeThreading(unittest.TestCase):
         def reader_task():
             while time.monotonic() < end_time:
                 len(root)
-                try:
-                    _ = root.attrib
-                except AttributeError:
-                    # In a race where clear() just ran, this is expected
-                    # because of the PyErr_SetString is added in C.
-                    pass
+                _ = root.attrib
 
         def writer_task():
             while time.monotonic() < end_time:
