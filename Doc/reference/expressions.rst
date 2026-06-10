@@ -974,11 +974,11 @@ which yields the same values as the corresponding list comprehension::
 Thus, the example above is roughly equivalent to defining and calling
 the following generator function::
 
-   def make_generator_of_squares(iterable):
-       for x in iterable:
+   def make_generator_of_squares(iterator):
+       for x in iterator:
            yield x ** 2
 
-   make_generator_of_squares(range(10))
+   make_generator_of_squares(iter(range(10)))
 
 The enclosing parentheses can be omitted in calls when the generator
 expression is the only positional argument and there are no keyword
@@ -1003,6 +1003,15 @@ rather than at the point where the first value is retrieved::
    Traceback (most recent call last):
      ...
    NameError: name 'nonexistent_iterable' is not defined
+
+After the expression is evaluated, an iterator is created
+from the result, as if :py:func:`iter` was called on it.
+Any error raised when creating the iterator is also emitted immediately::
+
+   >>> (x ** 2 for x in None)
+   Traceback (most recent call last):
+     ...
+   TypeError: 'NoneType' object is not iterable
 
 All other expressions are evaluated lazily, in the same fashion as normal
 generators (that is, when the iterator is asked to yield a value)::
