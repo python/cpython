@@ -38,12 +38,24 @@ than explicitly calling :c:func:`PyGen_New` or :c:func:`PyGen_NewWithQualName`.
    A reference to *frame* is stolen by this function. The argument must not be
    ``NULL``.
 
+   .. deprecated-removed:: 3.16 3.18
+
+      This function has not been used since 3.10.
+      It is also impossible to construct a proper *frame*
+      object to call this function.
+
 .. c:function:: PyObject* PyGen_NewWithQualName(PyFrameObject *frame, PyObject *name, PyObject *qualname)
 
    Create and return a new generator object based on the *frame* object,
    with ``__name__`` and ``__qualname__`` set to *name* and *qualname*.
    A reference to *frame* is stolen by this function.  The *frame* argument
    must not be ``NULL``.
+
+   .. deprecated-removed:: 3.16 3.18
+
+      This function has not been used since 3.10.
+      It is also impossible to construct a proper *frame*
+      object to call this function.
 
 
 .. c:function:: PyCodeObject* PyGen_GetCode(PyGenObject *gen)
@@ -76,6 +88,12 @@ Asynchronous Generator Objects
    with an exception set.
 
    .. versionadded:: 3.6
+
+   .. deprecated-removed:: 3.16 3.18
+
+      This function has not been used since 3.10.
+      It is also impossible to construct a proper *frame*
+      object to call this function.
 
 .. c:function:: int PyAsyncGen_CheckExact(PyObject *op)
 
