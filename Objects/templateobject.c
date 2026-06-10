@@ -213,9 +213,12 @@ template_repr(PyObject *op)
 {
     templateobject *self = templateobject_CAST(op);
 
-    int res = Py_ReprEnter(self);
+    int res = Py_ReprEnter(op);
     if (res != 0) {
-        return (res > 0 ? PyUnicode_FromString("Template(...)") : NULL);
+        if (res < 0)
+            return NULL;
+        else
+            return PyUnicode_FromFormat("%s(...)", _PyType_Name(Py_TYPE(self)));
     }
 
     Py_ssize_t stringslen = PyTuple_GET_SIZE(self->strings);
@@ -268,12 +271,12 @@ template_repr(PyObject *op)
         goto error;
     }
 
-    Py_ReprLeave(self);
+    Py_ReprLeave(op);
 
     return PyUnicodeWriter_Finish(writer);
 
 error:
-    Py_ReprLeave(self);
+    Py_ReprLeave(op);
     PyUnicodeWriter_Discard(writer);
     return NULL;
 }
