@@ -1716,6 +1716,8 @@ class ExceptionTests(unittest.TestCase):
 
     def test_oserror_reinit_leak(self):
         # gh-150988: Check for memory leak when re-initializing OSError
+        # Previously, setting OSError attributes in a subclass
+        # before calling super().__init__() leaked memory.
         class LeakingOSError(OSError):
             def __init__(self, code, message, filename, filename2):
                 self.strerror = message
