@@ -3,5 +3,6 @@ which happened in:
 
 - code compilation
 - :func:`!_winapi.CreateProcess`
+- :mod:`!_interpchannels` module
 
 Now these places raise proper :exc:`MemoryError` errors.
