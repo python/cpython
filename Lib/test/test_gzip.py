@@ -8,6 +8,7 @@ import io
 import os
 import struct
 import sys
+import tarfile
 import unittest
 from subprocess import PIPE, Popen
 from unittest import mock
@@ -789,6 +790,51 @@ class TestGzip(BaseTest):
         with gzip.GzipFile(fileobj=io.BytesIO(datac3), mode="rb") as f:
             f.read(1) # to set mtime attribute
             self.assertGreater(f.mtime, 1)
+
+    def assertReproducibleGzipMetadata(self, datac, data_size):
+        self.assertEqual(datac[:4], b"\x1f\x8b\x08\x00")
+        self.assertEqual(struct.unpack("<I", datac[4:8])[0], 0)
+        self.assertEqual(datac[9], 255)
+        self.assertEqual(struct.unpack("<I", datac[-4:])[0], data_size)
+
+    def test_reproducible_output_metadata(self):
+        data = b"Hello world"
+
+        def gzip_file():
+            buf = io.BytesIO()
+            with gzip.GzipFile(fileobj=buf, mode="wb", mtime=0) as f:
+                f.write(data)
+            return buf.getvalue()
+
+        def gzip_open():
+            buf = io.BytesIO()
+            with gzip.open(buf, mode="wb", mtime=0) as f:
+                f.write(data)
+            return buf.getvalue()
+
+        def gzipped_tarfile():
+            buf = io.BytesIO()
+            tarinfo = tarfile.TarInfo("data")
+            tarinfo.size = len(data)
+            tarinfo.mtime = 0
+            with tarfile.open(fileobj=buf, mode="w:gz", mtime=0) as tar:
+                tar.addfile(tarinfo, io.BytesIO(data))
+            return buf.getvalue()
+
+        cases = [
+            ("compress default mtime", lambda: gzip.compress(data), len(data)),
+            ("compress explicit mtime", lambda: gzip.compress(data, mtime=0), len(data)),
+            ("GzipFile", gzip_file, len(data)),
+            ("gzip.open", gzip_open, len(data)),
+            ("gzipped tarfile", gzipped_tarfile, None),
+        ]
+        for name, make_gzip, data_size in cases:
+            with self.subTest(name):
+                datac = make_gzip()
+                self.assertEqual(datac, make_gzip())
+                if data_size is None:
+                    data_size = len(gzip.decompress(datac))
+                self.assertReproducibleGzipMetadata(datac, data_size)
 
     def test_compress_correct_level(self):
         for mtime in (0, 42):
