@@ -980,8 +980,9 @@ the following generator function::
 
    make_generator_of_squares(range(10))
 
-The enclosing parentheses can be omitted in calls with only one
-positional argument.
+The enclosing parentheses can be omitted in calls when the generator
+expression is the only positional argument and there are no keyword
+arguments.
 See the :ref:`Calls section <calls>` for details.
 For example::
 
