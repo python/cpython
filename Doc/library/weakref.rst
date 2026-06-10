@@ -132,6 +132,9 @@ See :ref:`__slots__ documentation <slots>` for details.
    .. versionchanged:: 3.4
       Added the :attr:`__callback__` attribute.
 
+   .. versionchanged:: next
+      Raise :exc:`!TypeError` if *callback* is not callable or ``None``.
+
 
 .. function:: proxy(object[, callback])
 
@@ -150,6 +153,9 @@ See :ref:`__slots__ documentation <slots>` for details.
    .. versionchanged:: 3.8
       Extended the operator support on proxy objects to include the matrix
       multiplication operators ``@`` and ``@=``.
+
+   .. versionchanged:: next
+      Raise :exc:`!TypeError` if *callback* is not callable or ``None``.
 
 
 .. function:: getweakrefcount(object)
