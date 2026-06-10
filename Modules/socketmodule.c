@@ -4851,19 +4851,19 @@ sock_sendmsg_iovec(PySocketSockObject *s, PyObject *data_arg,
     Py_ssize_t ndataparts, ndatabufs = 0;
     int result = -1;
     struct iovec *iovs = NULL;
-    PyObject *data_tuple = NULL;
+    PyObject *data_fast = NULL;
     Py_buffer *databufs = NULL;
 
     /* Fill in an iovec for each message part, and save the Py_buffer
        structs to release afterwards. */
-    data_tuple = PySequence_Tuple(data_arg);
-    if (data_tuple == NULL) {
+    data_fast = PySequence_Tuple(data_arg);
+    if (data_fast == NULL) {
         PyErr_SetString(PyExc_TypeError,
                         "sendmsg() argument 1 must be an iterable");
         goto finally;
     }
 
-    ndataparts = PyTuple_GET_SIZE(data_tuple);
+    ndataparts = PyTuple_GET_SIZE(data_fast);
     if (ndataparts > INT_MAX) {
         PyErr_SetString(PyExc_OSError, "sendmsg() argument 1 is too long");
         goto finally;
@@ -4885,7 +4885,7 @@ sock_sendmsg_iovec(PySocketSockObject *s, PyObject *data_arg,
         }
     }
     for (; ndatabufs < ndataparts; ndatabufs++) {
-        if (PyObject_GetBuffer(PyTuple_GET_ITEM(data_tuple, ndatabufs),
+        if (PyObject_GetBuffer(PyTuple_GET_ITEM(data_fast, ndatabufs),
             &databufs[ndatabufs], PyBUF_SIMPLE) < 0)
             goto finally;
         iovs[ndatabufs].iov_base = databufs[ndatabufs].buf;
@@ -4895,7 +4895,7 @@ sock_sendmsg_iovec(PySocketSockObject *s, PyObject *data_arg,
   finally:
     *databufsout = databufs;
     *ndatabufsout = ndatabufs;
-    Py_XDECREF(data_tuple);
+    Py_XDECREF(data_fast);
     return result;
 }
 
