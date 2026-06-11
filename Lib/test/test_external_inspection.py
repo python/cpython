@@ -438,6 +438,7 @@ class RemoteInspectionTestBase(unittest.TestCase):
 # ============================================================================
 
 
+@requires_remote_subprocess_debugging()
 class TestSelfStackTrace(RemoteInspectionTestBase):
     @skip_if_not_supported
     @unittest.skipIf(
@@ -452,13 +453,27 @@ class TestSelfStackTrace(RemoteInspectionTestBase):
             assignments = "\\n".join(
                 f"value_{i} = {i}" for i in range(1000)
             )
+            expected_lineno = len(assignments.splitlines()) + 1
             source = (
                 f"{assignments}\\n"
+                "stack_trace = "
                 "_remote_debugging.RemoteUnwinder(os.getpid()).get_stack_trace()\\n"
             )
             code = compile(source, "large_linetable.py", "exec")
             assert len(code.co_linetable) > 4096, len(code.co_linetable)
-            exec(code)
+            namespace = {"os": os, "_remote_debugging": _remote_debugging}
+            exec(code, namespace)
+            large_linetable_frames = [
+                frame
+                for interpreter in namespace["stack_trace"]
+                for thread in interpreter.threads
+                for frame in thread.frame_info
+                if frame.filename == "large_linetable.py"
+            ]
+            assert len(large_linetable_frames) == 1, large_linetable_frames
+            assert large_linetable_frames[0].location.lineno == expected_lineno, (
+                large_linetable_frames[0]
+            )
             """)
 
         result = subprocess.run(
