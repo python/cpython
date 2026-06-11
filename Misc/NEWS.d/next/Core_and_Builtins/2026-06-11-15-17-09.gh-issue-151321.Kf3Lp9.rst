@@ -1,0 +1,3 @@
+Fix the opcode metadata flags for :opcode:`LOAD_DEREF` and :opcode:`LOAD_CLOSURE`
+so that they are reported by :data:`dis.hasfree` again, and are no longer
+incorrectly reported by :data:`dis.haslocal`.
