@@ -321,7 +321,10 @@ escape_size(const void *input, int kind, Py_ssize_t input_chars)
         if (!needs_escape) {
             for (; j < input_chars; j++) {
                 Py_UCS1 c = p[j];
-                if (c == '"' || c == '\\' || c < 0x20) { needs_escape = 1; break; }
+                if (c == '"' || c == '\\' || c < 0x20) {
+                    needs_escape = 1;
+                    break;
+                }
             }
         }
         if (!needs_escape) {
