@@ -4,8 +4,6 @@
 Annotations Best Practices
 **************************
 
-:author: Larry Hastings
-
 .. topic:: Abstract
 
   This document is designed to encapsulate the best practices
