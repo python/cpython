@@ -41,7 +41,7 @@ import types
 __all__ = ["Completer"]
 
 # Sentinel object to distinguish "missing" from "present but None"
-_SENTINEL = object()
+_MISSING = sentinel("MISSING")
 
 class Completer:
     def __init__(self, namespace = None):
@@ -200,9 +200,9 @@ class Completer:
                        ):
                         value = thisobject.__dict__.get(word)
                     else:
-                        value = getattr(thisobject, word, _SENTINEL)
+                        value = getattr(thisobject, word, _MISSING)
 
-                    if value is not _SENTINEL:
+                    if value is not _MISSING:
                         matches.append(self._callable_postfix(value, match))
                     elif word in getattr(type(thisobject), '__slots__', ()):
                         matches.append(match)
