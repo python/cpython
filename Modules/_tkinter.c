@@ -3219,7 +3219,6 @@ _tkinter_create_impl(PyObject *module, const char *screenName,
 
 /*[clinic input]
 @permit_long_summary
-@permit_long_docstring_body
 _tkinter.setbusywaitinterval
 
     new_val: int
@@ -3227,12 +3226,13 @@ _tkinter.setbusywaitinterval
 
 Set the busy-wait interval in milliseconds between successive calls to Tcl_DoOneEvent in a threaded Python interpreter.
 
-It should be set to a divisor of the maximum time between frames in an animation.
+It should be set to a divisor of the maximum time between frames in
+an animation.
 [clinic start generated code]*/
 
 static PyObject *
 _tkinter_setbusywaitinterval_impl(PyObject *module, int new_val)
-/*[clinic end generated code: output=42bf7757dc2d0ab6 input=07b82a04b56625e1]*/
+/*[clinic end generated code: output=42bf7757dc2d0ab6 input=0360dd95c8bd8619]*/
 {
     if (new_val < 0) {
         PyErr_SetString(PyExc_ValueError,

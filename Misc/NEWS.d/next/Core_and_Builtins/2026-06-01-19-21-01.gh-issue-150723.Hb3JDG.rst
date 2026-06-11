@@ -1,0 +1,4 @@
+Fix malformed perf jitdump thread ids on macOS. The ``thread_id`` field of the
+``JR_CODE_LOAD`` record was written as a 64-bit value instead of the 32-bit
+value required by the jitdump format, which shifted every following field and
+prevented profilers from resolving Python frames.

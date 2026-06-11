@@ -219,12 +219,24 @@ process and user.
    :data:`os.environ`, and when one of the :meth:`~dict.pop` or
    :meth:`~dict.clear` methods is called.
 
+   If the :manpage:`clearenv(3)` function is available, the :meth:`~dict.clear` method
+   uses it and emits a single ``os._clearenv`` audit event. Otherwise, it emits
+   an ``os.unsetenv`` event on each deleted variable.
+
+   .. audit-event:: os.unsetenv key os.unsetenv
+
+   .. audit-event:: os._clearenv "" os._clearenv
+
    .. seealso::
 
       The :func:`os.reload_environ` function.
 
    .. versionchanged:: 3.9
       Updated to support :pep:`584`'s merge (``|``) and update (``|=``) operators.
+
+   .. versionchanged:: 3.15
+      The :meth:`~dict.clear` method can now emit an ``os._clearenv`` audit
+      event.
 
 
 .. data:: environb
@@ -2981,6 +2993,9 @@ features:
 
    To be directly usable as a :term:`path-like object`, ``os.DirEntry``
    implements the :class:`PathLike` interface.
+
+   :class:`!DirEntry` objects are :ref:`generic <generics>` over the type of the
+   path (:class:`str` or :class:`bytes`).
 
    Attributes and methods on a ``os.DirEntry`` instance are as follows:
 

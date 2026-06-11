@@ -49,20 +49,6 @@ _Py_ReachedRecursionLimitWithMargin(PyThreadState *tstate, int margin_count)
 #endif
 }
 
-void
-_Py_EnterRecursiveCallUnchecked(PyThreadState *tstate)
-{
-    uintptr_t here_addr = _Py_get_machine_stack_pointer();
-    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-#if _Py_STACK_GROWS_DOWN
-    if (here_addr < _tstate->c_stack_hard_limit) {
-#else
-    if (here_addr > _tstate->c_stack_hard_limit) {
-#endif
-        Py_FatalError("Unchecked stack overflow.");
-    }
-}
-
 #if defined(__s390x__)
 #  define Py_C_STACK_SIZE 320000
 #elif defined(_WIN32)
@@ -278,7 +264,7 @@ PyUnstable_ThreadState_ResetStackProtection(PyThreadState *tstate)
 
 
 /* The function _Py_EnterRecursiveCallTstate() only calls _Py_CheckRecursiveCall()
-   if the stack pointer is between the stack base and c_stack_hard_limit. */
+   if the stack pointer is beyond c_stack_soft_limit. */
 int
 _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
 {
@@ -287,16 +273,21 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
     assert(_tstate->c_stack_soft_limit != 0);
     assert(_tstate->c_stack_hard_limit != 0);
 #if _Py_STACK_GROWS_DOWN
-    assert(here_addr >= _tstate->c_stack_hard_limit - _PyOS_STACK_MARGIN_BYTES);
     if (here_addr < _tstate->c_stack_hard_limit) {
-        /* Overflowing while handling an overflow. Give up. */
+        if (here_addr < _tstate->c_stack_hard_limit - _PyOS_STACK_MARGIN_BYTES) {
+            // Far out of bounds -- Assume stack switching has occurred
+            return 0;
+        }
         int kbytes_used = (int)(_tstate->c_stack_top - here_addr)/1024;
 #else
-    assert(here_addr <= _tstate->c_stack_hard_limit + _PyOS_STACK_MARGIN_BYTES);
     if (here_addr > _tstate->c_stack_hard_limit) {
-        /* Overflowing while handling an overflow. Give up. */
+        if (here_addr > _tstate->c_stack_hard_limit + _PyOS_STACK_MARGIN_BYTES) {
+            // Far out of bounds -- Assume stack switching has occurred
+            return 0;
+        }
         int kbytes_used = (int)(here_addr - _tstate->c_stack_top)/1024;
 #endif
+        /* Too much stack used to safely raise an exception. Give up. */
         char buffer[80];
         snprintf(buffer, 80, "Unrecoverable stack overflow (used %d kB)%s", kbytes_used, where);
         Py_FatalError(buffer);
@@ -1006,6 +997,14 @@ _Py_assert_within_stack_bounds(
         abort();
     }
 }
+#ifdef _Py_JIT
+void
+_Py_jit_assert_within_stack_bounds(
+    _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, int lineno
+) {
+    _Py_assert_within_stack_bounds(frame, stack_pointer, "executor_cases.c.h", lineno);
+}
+#endif
 #endif
 
 int _Py_CheckRecursiveCallPy(
@@ -1146,19 +1145,6 @@ _PyEval_GetIter(_PyStackRef iterable, _PyStackRef *index_or_null, int yield_from
     return PyStackRef_FromPyObjectSteal(iter_o);
 }
 
-Py_NO_INLINE int
-_Py_ReachedRecursionLimit(PyThreadState *tstate)  {
-    uintptr_t here_addr = _Py_get_machine_stack_pointer();
-    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-    assert(_tstate->c_stack_hard_limit != 0);
-#if _Py_STACK_GROWS_DOWN
-    return here_addr <= _tstate->c_stack_soft_limit;
-#else
-    return here_addr >= _tstate->c_stack_soft_limit;
-#endif
-}
-
-
 #if (defined(__GNUC__) && __GNUC__ >= 10 && !defined(__clang__)) && defined(__x86_64__)
 /*
  * gh-129987: The SLP autovectorizer can cause poor code generation for
@@ -1169,7 +1155,7 @@ _Py_ReachedRecursionLimit(PyThreadState *tstate)  {
  * (prior to GCC 9, 40% performance drop), so we have to selectively disable
  * it.
  */
-#define DONT_SLP_VECTORIZE __attribute__((optimize ("no-tree-slp-vectorize")))
+#define DONT_SLP_VECTORIZE __attribute__((optimize ("no-tree-slp-vectorize", "no-omit-frame-pointer")))
 #else
 #define DONT_SLP_VECTORIZE
 #endif
@@ -3072,12 +3058,8 @@ _PyEval_LazyImportName(PyThreadState *tstate, PyObject *builtins,
                        PyObject *fromlist, PyObject *level, int lazy)
 {
     PyObject *res = NULL;
-    PyImport_LazyImportsMode mode = PyImport_GetLazyImportsMode();
     // Check if global policy overrides the local syntax
-    switch (mode) {
-        case PyImport_LAZY_NONE:
-            lazy = 0;
-            break;
+    switch (PyImport_GetLazyImportsMode()) {
         case PyImport_LAZY_ALL:
             if (!lazy) {
                 lazy = is_lazy_import_module_level();
@@ -3087,11 +3069,15 @@ _PyEval_LazyImportName(PyThreadState *tstate, PyObject *builtins,
             break;
     }
 
-    if (!lazy && mode != PyImport_LAZY_NONE && is_lazy_import_module_level()) {
+    if (!lazy) {
         // See if __lazy_modules__ forces this to be lazy.
-        lazy = check_lazy_import_compatibility(tstate, globals, name, level);
-        if (lazy < 0) {
-            return NULL;
+        // __lazy_modules__ only applies at module level; exec() inside
+        // functions or classes should remain eager.
+        if (is_lazy_import_module_level()) {
+            lazy = check_lazy_import_compatibility(tstate, globals, name, level);
+            if (lazy < 0) {
+                return NULL;
+            }
         }
     }
 

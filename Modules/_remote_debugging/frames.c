@@ -56,12 +56,14 @@ process_single_stack_chunk(
             return -1;
         }
 
-        this_chunk = PyMem_RawRealloc(this_chunk, actual_size);
-        if (!this_chunk) {
+        char *tmp = PyMem_RawRealloc(this_chunk, actual_size);
+        if (!tmp) {
+            PyMem_RawFree(this_chunk);
             PyErr_NoMemory();
             set_exception_cause(unwinder, PyExc_MemoryError, "Failed to reallocate stack chunk buffer");
             return -1;
         }
+        this_chunk = tmp;
 
         if (_Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, chunk_addr, actual_size, this_chunk) < 0) {
             PyMem_RawFree(this_chunk);
@@ -186,29 +188,15 @@ is_frame_valid(
     return 1;
 }
 
-int
-parse_frame_object(
+static int
+parse_frame_buffer(
     RemoteUnwinderObject *unwinder,
     PyObject** result,
-    uintptr_t address,
+    const char *frame,
     uintptr_t* address_of_code_object,
     uintptr_t* previous_frame
 ) {
-    char frame[SIZEOF_INTERP_FRAME];
     *address_of_code_object = 0;
-
-    Py_ssize_t bytes_read = _Py_RemoteDebug_PagedReadRemoteMemory(
-        &unwinder->handle,
-        address,
-        SIZEOF_INTERP_FRAME,
-        frame
-    );
-    if (bytes_read < 0) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read interpreter frame");
-        return -1;
-    }
-    STATS_INC(unwinder, memory_reads);
-    STATS_ADD(unwinder, memory_bytes_read, SIZEOF_INTERP_FRAME);
 
     *previous_frame = GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.previous);
     uintptr_t code_object = GET_MEMBER_NO_TAG(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.executable);
@@ -235,6 +223,31 @@ parse_frame_object(
         .tlbc_index = tlbc_index,
     };
     return parse_code_object(unwinder, result, &code_ctx);
+}
+
+int
+parse_frame_object(
+    RemoteUnwinderObject *unwinder,
+    PyObject** result,
+    uintptr_t address,
+    uintptr_t* address_of_code_object,
+    uintptr_t* previous_frame
+) {
+    char frame[SIZEOF_INTERP_FRAME];
+    Py_ssize_t bytes_read = _Py_RemoteDebug_ReadRemoteMemory(
+        &unwinder->handle,
+        address,
+        SIZEOF_INTERP_FRAME,
+        frame
+    );
+    if (bytes_read < 0) {
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read interpreter frame");
+        return -1;
+    }
+    STATS_INC(unwinder, memory_reads);
+    STATS_ADD(unwinder, memory_bytes_read, SIZEOF_INTERP_FRAME);
+
+    return parse_frame_buffer(unwinder, result, frame, address_of_code_object, previous_frame);
 }
 
 int
@@ -312,15 +325,32 @@ process_frame_chain(
         }
         assert(frame_count <= MAX_FRAMES);
 
-        if (parse_frame_from_chunks(unwinder, &frame, frame_addr, &next_frame_addr, &stackpointer, ctx->chunks) < 0) {
+        if (ctx->chunks && ctx->chunks->count > 0) {
+            if (parse_frame_from_chunks(unwinder, &frame, frame_addr, &next_frame_addr, &stackpointer, ctx->chunks) == 0) {
+                goto parsed_frame;
+            }
             PyErr_Clear();
+        }
+        {
             uintptr_t address_of_code_object = 0;
-            if (parse_frame_object(unwinder, &frame, frame_addr, &address_of_code_object, &next_frame_addr) < 0) {
+            int parse_result;
+            if (ctx->prefetch.frame && ctx->prefetch.frame_addr == frame_addr) {
+                parse_result = parse_frame_buffer(
+                    unwinder, &frame, ctx->prefetch.frame,
+                    &address_of_code_object, &next_frame_addr);
+            }
+            else {
+                parse_result = parse_frame_object(
+                    unwinder, &frame, frame_addr,
+                    &address_of_code_object, &next_frame_addr);
+            }
+            if (parse_result < 0) {
                 set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse frame object in chain");
                 return -1;
             }
         }
 
+parsed_frame:
         // Skip first frame if requested (used for cache miss continuation)
         if (ctx->skip_first_frame && frame_count == 1) {
             Py_XDECREF(frame);
@@ -501,41 +531,37 @@ try_full_cache_hit(
     PyObject *current_frame = NULL;
     uintptr_t code_object_addr = 0;
     uintptr_t previous_frame = 0;
-    int parse_result = parse_frame_object(unwinder, &current_frame, ctx->frame_addr,
+    int parse_result;
+    if (ctx->prefetch.frame && ctx->prefetch.frame_addr == ctx->frame_addr) {
+        parse_result = parse_frame_buffer(unwinder, &current_frame,
+                                          ctx->prefetch.frame,
                                           &code_object_addr, &previous_frame);
+    }
+    else {
+        parse_result = parse_frame_object(unwinder, &current_frame, ctx->frame_addr,
+                                          &code_object_addr, &previous_frame);
+    }
     if (parse_result < 0) {
         return -1;
-    }
-
-    Py_ssize_t cached_size = PyList_GET_SIZE(entry->frame_list);
-    PyObject *parent_slice = NULL;
-    if (cached_size > 1) {
-        parent_slice = PyList_GetSlice(entry->frame_list, 1, cached_size);
-        if (!parent_slice) {
-            Py_XDECREF(current_frame);
-            return -1;
-        }
     }
 
     if (current_frame != NULL) {
         if (PyList_Append(ctx->frame_info, current_frame) < 0) {
             Py_DECREF(current_frame);
-            Py_XDECREF(parent_slice);
             return -1;
         }
         Py_DECREF(current_frame);
         STATS_ADD(unwinder, frames_read_from_memory, 1);
     }
 
-    if (parent_slice) {
-        Py_ssize_t cur_size = PyList_GET_SIZE(ctx->frame_info);
-        int result = PyList_SetSlice(ctx->frame_info, cur_size, cur_size, parent_slice);
-        Py_DECREF(parent_slice);
-        if (result < 0) {
+    Py_ssize_t cached_size = PyList_GET_SIZE(entry->frame_list);
+    for (Py_ssize_t i = 1; i < cached_size; i++) {
+        PyObject *cached_frame = PyList_GET_ITEM(entry->frame_list, i);
+        if (PyList_Append(ctx->frame_info, cached_frame) < 0) {
             return -1;
         }
-        STATS_ADD(unwinder, frames_read_from_cache, cached_size - 1);
     }
+    STATS_ADD(unwinder, frames_read_from_cache, cached_size > 1 ? cached_size - 1 : 0);
 
     STATS_INC(unwinder, frame_cache_hits);
     return 1;
@@ -606,7 +632,8 @@ collect_frames_with_cache(
     }
 
     if (frame_cache_store(unwinder, thread_id, ctx->frame_info, ctx->frame_addrs, ctx->num_addrs,
-                          ctx->base_frame_addr, ctx->last_frame_visited) < 0) {
+                          ctx->thread_state_addr, ctx->base_frame_addr,
+                          ctx->last_frame_visited) < 0) {
         return -1;
     }
 

@@ -1545,6 +1545,16 @@ set_swap_bodies(PySetObject *a, PySetObject *b)
     FT_ATOMIC_STORE_PTR_RELEASE(b->table, b_table);
 }
 
+PyObject *
+_PySet_Freeze(PyObject *set)
+{
+    assert(set != NULL);
+    assert(PySet_CheckExact(set));
+    assert(_PyObject_IsUniquelyReferenced(set));
+    set->ob_type = &PyFrozenSet_Type;
+    return Py_NewRef(set);
+}
+
 /*[clinic input]
 @critical_section
 set.copy
@@ -2111,6 +2121,7 @@ set_difference(PySetObject *so, PyObject *other)
 }
 
 /*[clinic input]
+@permit_long_summary
 set.difference as set_difference_multi
     so: setobject
     *others: array
@@ -2121,7 +2132,7 @@ Return a new set with elements in the set that are not in the others.
 static PyObject *
 set_difference_multi_impl(PySetObject *so, PyObject * const *others,
                           Py_ssize_t others_length)
-/*[clinic end generated code: output=b0d33fb05d5477a7 input=c1eb448d483416ad]*/
+/*[clinic end generated code: output=b0d33fb05d5477a7 input=e0fbedbf79d91d4e]*/
 {
     Py_ssize_t i;
     PyObject *result, *other;
@@ -2293,6 +2304,7 @@ set_symmetric_difference_update_impl(PySetObject *so, PyObject *other)
 }
 
 /*[clinic input]
+@permit_long_summary
 @critical_section so other
 set.symmetric_difference
     so: setobject
@@ -2304,7 +2316,7 @@ Return a new set with elements in either the set or other but not both.
 
 static PyObject *
 set_symmetric_difference_impl(PySetObject *so, PyObject *other)
-/*[clinic end generated code: output=270ee0b5d42b0797 input=624f6e7bbdf70db1]*/
+/*[clinic end generated code: output=270ee0b5d42b0797 input=8c29b0be90d47feb]*/
 {
     PySetObject *result = (PySetObject *)make_new_set_basetype(Py_TYPE(so), NULL);
     if (result == NULL) {
@@ -2790,7 +2802,8 @@ static PyMethodDef set_methods[] = {
     SET_SYMMETRIC_DIFFERENCE_UPDATE_METHODDEF
     SET_UNION_METHODDEF
     SET_UPDATE_METHODDEF
-    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
+     PyDoc_STR("sets are generic over the type of their elements")},
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -2894,7 +2907,8 @@ static PyMethodDef frozenset_methods[] = {
     SET___SIZEOF___METHODDEF
     SET_SYMMETRIC_DIFFERENCE_METHODDEF
     SET_UNION_METHODDEF
-    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
+     PyDoc_STR("frozensets are generic over the type of their elements")},
     {NULL,              NULL}   /* sentinel */
 };
 

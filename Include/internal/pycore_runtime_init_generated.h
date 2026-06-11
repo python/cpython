@@ -2030,6 +2030,7 @@ extern "C" {
     INIT_ID(repeat), \
     INIT_ID(repl), \
     INIT_ID(replace), \
+    INIT_ID(repr), \
     INIT_ID(reqrefs), \
     INIT_ID(require_ready), \
     INIT_ID(reserved), \
@@ -2150,6 +2151,7 @@ extern "C" {
     INIT_ID(updates), \
     INIT_ID(uri), \
     INIT_ID(usedforsecurity), \
+    INIT_ID(utcoffset), \
     INIT_ID(value), \
     INIT_ID(values), \
     INIT_ID(version), \

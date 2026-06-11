@@ -2032,6 +2032,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(repeat));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(repl));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(replace));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(repr));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(reqrefs));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(require_ready));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(reserved));
@@ -2152,6 +2153,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(updates));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(uri));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(usedforsecurity));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(utcoffset));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(value));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(values));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(version));

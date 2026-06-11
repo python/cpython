@@ -9,6 +9,7 @@
 #include "pycore_intrinsics.h"    // INTRINSIC_PRINT
 #include "pycore_list.h"          // _PyList_AsTupleAndClear()
 #include "pycore_object.h"        // _PyObject_IsUniquelyReferenced()
+#include "pycore_setobject.h"     // _PySet_Freeze()
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_typevarobject.h" // _Py_make_typevar()
@@ -207,6 +208,14 @@ make_typevar(PyThreadState* Py_UNUSED(ignored), PyObject *v)
     return _Py_make_typevar(v, NULL, NULL);
 }
 
+static PyObject *
+make_frozenset(PyThreadState* Py_UNUSED(ignored), PyObject *set)
+{
+    assert(PySet_CheckExact(set));
+    assert(_PyObject_IsUniquelyReferenced(set));
+    return _PySet_Freeze(set);
+}
+
 
 #define INTRINSIC_FUNC_ENTRY(N, F) \
     [N] = {F, #N},
@@ -225,6 +234,7 @@ _PyIntrinsics_UnaryFunctions[] = {
     INTRINSIC_FUNC_ENTRY(INTRINSIC_TYPEVARTUPLE, _Py_make_typevartuple)
     INTRINSIC_FUNC_ENTRY(INTRINSIC_SUBSCRIPT_GENERIC, _Py_subscript_generic)
     INTRINSIC_FUNC_ENTRY(INTRINSIC_TYPEALIAS, _Py_make_typealias)
+    INTRINSIC_FUNC_ENTRY(INTRINSIC_BUILD_FROZENSET, make_frozenset)
 };
 
 
