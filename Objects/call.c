@@ -612,27 +612,36 @@ _PyObject_CallFunction_SizeT(PyObject *callable, const char *format, ...)
 }
 
 
-/* Resolve 'name' on 'obj' with _PyObject_GetMethod and call it directly,
-   avoiding the bound-method object that PyObject_GetAttr()+call would allocate. */
+/* Resolve 'name' on 'obj' with _PyObject_GetMethodStackRef and call it
+   directly, avoiding the bound-method object that PyObject_GetAttr()+call
+   would allocate. Using the StackRef variant keeps method resolution
+   reference-count-free on the fast path so it scales in free-threading. */
 static PyObject *
 callmethod_va(PyObject *obj, PyObject *name,
                      const char *format, va_list va)
 {
     PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *result = NULL;
 
-    PyObject *method = NULL;
-    /* unbound: 1 -> 'method' is an unbound function, call method(obj, *args);
-                0 -> 'method' is the resolved attribute, call method(*args). */
-    int unbound = _PyObject_GetMethod(obj, name, &method);
-    if (method == NULL) {
-        return NULL;
+    _PyCStackRef self, method;
+    _PyThreadState_PushCStackRef(tstate, &self);
+    _PyThreadState_PushCStackRef(tstate, &method);
+    self.ref = PyStackRef_FromPyObjectBorrow(obj);
+    /* On return, self.ref is non-NULL -> call method(self, *args) (unbound
+       method or classmethod), NULL -> call method(*args). */
+    int res = _PyObject_GetMethodStackRef(tstate, &self.ref, name, &method.ref);
+    if (res < 0) {
+        goto pop_return;
     }
-    if (!PyCallable_Check(method)) {
+
+    PyObject *callable = PyStackRef_AsPyObjectBorrow(method.ref);
+    PyObject *self_obj = PyStackRef_AsPyObjectBorrow(self.ref);
+
+    if (!PyCallable_Check(callable)) {
         _PyErr_Format(tstate, PyExc_TypeError,
                       "attribute of type '%.200s' is not callable",
-                      Py_TYPE(method)->tp_name);
-        Py_DECREF(method);
-        return NULL;
+                      Py_TYPE(callable)->tp_name);
+        goto pop_return;
     }
 
     /* Build the positional arguments from the format string. */
@@ -643,8 +652,7 @@ callmethod_va(PyObject *obj, PyObject *name,
         built = _Py_VaBuildStack(small_stack, _PY_FASTCALL_SMALL_STACK,
                                  format, va, &nargs);
         if (built == NULL) {
-            Py_DECREF(method);
-            return NULL;
+            goto pop_return;
         }
     }
 
@@ -656,12 +664,11 @@ callmethod_va(PyObject *obj, PyObject *name,
         n = PyTuple_GET_SIZE(built[0]);
     }
 
-    PyObject *result;
-    if (unbound) {
-        result = _PyObject_VectorcallPrepend(tstate, method, obj, args, n, NULL);
+    if (self_obj != NULL) {
+        result = _PyObject_VectorcallPrepend(tstate, callable, self_obj, args, n, NULL);
     }
     else {
-        result = _PyObject_VectorcallTstate(tstate, method, args, n, NULL);
+        result = _PyObject_VectorcallTstate(tstate, callable, args, n, NULL);
     }
 
     for (Py_ssize_t i = 0; i < nargs; i++) {
@@ -670,7 +677,10 @@ callmethod_va(PyObject *obj, PyObject *name,
     if (built != NULL && built != small_stack) {
         PyMem_Free(built);
     }
-    Py_DECREF(method);
+
+pop_return:
+    _PyThreadState_PopCStackRef(tstate, &method);
+    _PyThreadState_PopCStackRef(tstate, &self);
     return result;
 }
 
