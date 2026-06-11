@@ -21,32 +21,32 @@ import _shared
 #   ✅ pyconfig.h
 #   ✅ .h files
 # ✅ lib
-#   ✅ pkgconfig (from Misc/)
+#   ☐ pkgconfig (from Misc/)
 #   ✅ pythonN.M
 #     ❌ lib-dynload
 #     ✅ LICENSE.txt (license_file())
 #     ✅ Stuff from build/lib.* (build_dir_files())
 #     ✅ Lib/
-# ✅ share/man/man1/
+# ☐ share/man/man1/
 # ☐ python.wasm
 
 
-def pythonXY(context, support_debug=False):
-    """Calculate the "pythonX.Y" part of a path.
+def python_version(context, debug_ok=False):
+    """Calculate the M.N part of Python's version.
 
-    If *support_debug* is True, then "d" is appended as appropriate.
+    If *debug_ok* is True, then "d" is appended as appropriate.
     """
     details = context.wasi_build_details
     major = details["language"]["version_info"]["major"]
     minor = details["language"]["version_info"]["minor"]
-    name = f"python{major}.{minor}"
-    if support_debug and context.is_debug:
-        name += "d"
-    return name
+    version = f"{major}.{minor}"
+    if debug_ok and context.is_debug:
+        version += "d"
+    return version
 
 
 def lib_python(context):
-    return pathlib.PurePath("lib") / pythonXY(context)
+    return pathlib.PurePath("lib") / f"python{python_version(context)}"
 
 
 def license_file(context):
@@ -95,14 +95,15 @@ def pkgconfig_files(context):
     misc_dir = context.wasi_build_path / "Misc"
     details = context.wasi_build_details
     major = details["language"]["version_info"]["major"]
-    minor = details["language"]["version_info"]["minor"]
     pkgconfig = pathlib.PurePath("lib") / "pkgconfig"
     return [
-        (pkgconfig / f"python{major}.pc", misc_dir / "python.pc"),
-        (pkgconfig / f"python-{major}.{minor}.pc", misc_dir / "python.pc"),
-        (pkgconfig / f"python{major}-embed.pc", misc_dir / "python-embed.pc"),
         (
-            pkgconfig / f"python-{major}.{minor}-embed.pc",
+            pkgconfig / f"python-{python_version(context, debug_ok=True)}.pc",
+            misc_dir / "python.pc",
+        ),
+        (
+            pkgconfig
+            / f"python-{python_version(context, debug_ok=True)}-embed.pc",
             misc_dir / "python-embed.pc",
         ),
     ]
@@ -112,7 +113,7 @@ def pyconfig_file(context):
     """Have <build>/pyconfig.h end up in include/pythonXYd?/pyconfig.h."""
     return (
         pathlib.PurePath("include")
-        / pythonXY(context, support_debug=True)
+        / f"python{python_version(context, debug_ok=True)}"
         / "pyconfig.h",
         context.wasi_build_path / "pyconfig.h",
     )
@@ -127,7 +128,7 @@ def header_files(context):
             file_path = pathlib.Path(root) / filename
             details = (
                 pathlib.PurePath("include")
-                / pythonXY(context, support_debug=True)
+                / f"python{python_version(context, debug_ok=True)}"
                 / file_path.relative_to(include_dir),
                 file_path,
             )
@@ -135,19 +136,20 @@ def header_files(context):
     return files
 
 
-def man_files(context):
+def man_file(context):
     """Have Misc/python.man end up in share/man/man1/."""
-    version_info = context.wasi_build_details["language"]["version_info"]
     man_dir = pathlib.PurePath("share", "man", "man1")
     man_file = context.checkout / "Misc" / "python.man"
-    return [
-        (man_dir / f"python{version_info['major']}.1", man_file),
-        (
-            man_dir
-            / f"python{version_info['major']}.{version_info['minor']}.1",
-            man_file,
-        ),
-    ]
+    return (
+        man_dir / f"python{python_version(context)}.1",
+        man_file,
+    )
+
+
+def man_symlink(man_path, context):
+    """Symlink pythonN.M.1 to pythonN.1."""
+    major = context.wasi_build_details["language"]["version_info"]["major"]
+    return (man_path.parent / f"python{major}.1", man_path)
 
 
 def filename_stem(context):
@@ -167,6 +169,11 @@ def copy_files(files, base):
         target = base / dest
         target.parent.mkdir(parents=True, exist_ok=True)
         src.copy(target)
+
+
+def symlink_files(files, base):
+    for target, source in files:
+        (base / target).symlink_to(base / source)
 
 
 def package(context):
@@ -195,8 +202,11 @@ def package(context):
     _shared.log("📁", "pkgconfig/", spacing=indent * 3)
     _shared.log("📄", "python*.pc", spacing=indent * 4)
     copy_files(pkgconfig_files(context), base)
+    # XXX symlinks
     _shared.log("📁", "share", spacing=indent * 2)
     _shared.log("📁", "man", spacing=indent * 3)
     _shared.log("📁", "man1", spacing=indent * 4)
     _shared.log("📄", "python*.1", spacing=indent * 5)
-    copy_files(man_files(context), base)
+    man_path = man_file(context)
+    copy_files([man_path], base)
+    symlink_files([man_symlink(man_path[0], context)], base)
