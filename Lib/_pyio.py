@@ -1004,7 +1004,7 @@ class BytesIO(BufferedIOBase):
         if self.closed:
             raise ValueError("peek on closed file")
         if size < 1:
-            return self._buffer[self._pos:self._pos + DEFAULT_BUFFER_SIZE]
+            return self._buffer[self._pos:]
         return self._buffer[self._pos:self._pos + size]
 
     def truncate(self, pos=None):
