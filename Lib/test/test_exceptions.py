@@ -1714,6 +1714,20 @@ class ExceptionTests(unittest.TestCase):
         gc_collect()  # For PyPy or other GCs.
         self.assertEqual(wr(), None)
 
+    def test_oserror_reinit_leak(self):
+        # gh-150988: Check for memory leak when re-initializing OSError.
+        # Previously, setting OSError attributes in a subclass
+        # before calling super().__init__() leaked memory.
+        class LeakingOSError(OSError):
+            def __init__(self, code, message, filename, filename2):
+                self.strerror = message
+                self.filename = filename
+                self.filename2 = filename2
+                super().__init__(code, message, filename, None, filename2)
+
+        exc = LeakingOSError(1, "some message", "filename.py", "filename2.py")
+        exc.__init__(2, "another message", "filename3.py", "filename4.py")
+
     def test_errno_ENOTDIR(self):
         # Issue #12802: "not a directory" errors are ENOTDIR even on Windows
         with self.assertRaises(OSError) as cm:
