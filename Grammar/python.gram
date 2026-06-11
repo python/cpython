@@ -801,8 +801,11 @@ compare_op_bitwise_or_pair[CmpopExprPair*]:
     | in_bitwise_or
     | isnot_bitwise_or
     | is_bitwise_or
+    | invalid_eqeqeq
 
 eq_bitwise_or[CmpopExprPair*]: '==' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, Eq, a) }
+invalid_eqeqeq:
+    | a='==' b='=' { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax.  Maybe you meant '==' instead of '==='") }
 noteq_bitwise_or[CmpopExprPair*]:
     | (tok='!=' { _PyPegen_check_barry_as_flufl(p, tok) ? NULL : tok}) a=bitwise_or {_PyPegen_cmpop_expr_pair(p, NotEq, a) }
 lte_bitwise_or[CmpopExprPair*]: '<=' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, LtE, a) }
@@ -1315,6 +1318,9 @@ invalid_assignment:
             "'%s' is an illegal expression for augmented assignment",
             _PyPegen_get_expr_name(a)
         )}
+    | star_expressions a='=' b='<' { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax.  Maybe you meant '<=' instead of '=<'") }
+    | star_expressions a='=' b='>' { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax.  Maybe you meant '>=' instead of '=>'") }
+    | star_expressions a='=' b='!' { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax.  Maybe you meant '!=' instead of '=!'") }
 invalid_ann_assign_target[expr_ty]:
     | list
     | tuple
