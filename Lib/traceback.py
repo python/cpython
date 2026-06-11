@@ -1495,9 +1495,9 @@ class TracebackException:
                     matches.append(suggestion)
             matches.extend(
                 difflib.get_close_matches(
-                    wrong_name, 
-                    keyword.kwlist + keyword.softkwlist, 
-                    n=max_matches, 
+                    wrong_name,
+                    keyword.kwlist + keyword.softkwlist,
+                    n=max_matches,
                     cutoff=0.5
                 )
             )
