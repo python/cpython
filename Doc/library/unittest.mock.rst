@@ -2224,7 +2224,7 @@ return something else::
    >>> mock == 3
    True
 
-The return value of :meth:`MagicMock.__iter__` can be any iterable object and isn't
+The return value of :meth:`!__iter__` can be any iterable object and isn't
 required to be an iterator:
 
    >>> mock = MagicMock()
