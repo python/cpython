@@ -1493,7 +1493,14 @@ class TracebackException:
                 suggestion = _suggestions._generate_suggestions(keyword.kwlist + keyword.softkwlist, wrong_name)
                 if suggestion:
                     matches.append(suggestion)
-            matches.extend(difflib.get_close_matches(wrong_name, keyword.kwlist, n=max_matches, cutoff=0.5))
+            matches.extend(
+                difflib.get_close_matches(
+                    wrong_name, 
+                    keyword.kwlist + keyword.softkwlist, 
+                    n=max_matches, 
+                    cutoff=0.5
+                )
+            )
             matches = matches[:max_matches]
             for suggestion in matches:
                 if not suggestion or suggestion == wrong_name:
@@ -1799,10 +1806,6 @@ _CROSS_LANGUAGE_KEYWORD_HINTS = frozendict({
     # function define equivalents
     'function': 'def',
     'func': 'def',
-    # null equivalents
-    'NULL': 'None',
-    'null': 'None',
-    'nil': 'None',
 })
 
 def _substitution_cost(ch_a, ch_b):
@@ -1887,8 +1890,7 @@ def _get_cross_language_hint(obj, wrong_name):
 def _get_cross_language_keyword_hint(wrong_name):
     """Check if wrong_name is a common keyword from another language
     """
-    hint = _CROSS_LANGUAGE_KEYWORD_HINTS.get(wrong_name)
-    return hint
+    return _CROSS_LANGUAGE_KEYWORD_HINTS.get(wrong_name)
 
 
 def _get_safe___dir__(obj):

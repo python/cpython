@@ -1287,12 +1287,6 @@ invalid_named_expression(memo):
     | a=expression ':=' expression {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
             a, "cannot use assignment expressions with %s", _PyPegen_get_expr_name(a)) }
-    | a=expression '&''&' b=expression {
-        RAISE_SYNTAX_ERROR_KNOWN_RANGE(
-            a, b, "invalid syntax '&&'. Use 'and' instead.") }
-    | a=expression '|''|' b=expression {
-        RAISE_SYNTAX_ERROR_KNOWN_RANGE(
-            a, b, "invalid syntax '||'. Use 'or' instead.") }
     | a=NAME '=' b=bitwise_or !('='|':=') {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax. Maybe you meant '==' or ':=' instead of '='?") }
     | !(list|tuple|genexp|'True'|'None'|'False') a=bitwise_or b='=' bitwise_or !('='|':=') {

@@ -22029,8 +22029,6 @@ invalid_if_expression_rule(Parser *p)
 
 // invalid_named_expression:
 //     | expression ':=' expression
-//     | expression '&' '&' expression
-//     | expression '|' '|' expression
 //     | NAME '=' bitwise_or !('=' | ':=')
 //     | !(list | tuple | genexp | 'True' | 'None' | 'False') bitwise_or '=' bitwise_or !('=' | ':=')
 static void *
@@ -22078,72 +22076,6 @@ invalid_named_expression_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_named_expression[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "expression ':=' expression"));
-    }
-    { // expression '&' '&' expression
-        if (p->error_indicator) {
-            p->level--;
-            return NULL;
-        }
-        D(fprintf(stderr, "%*c> invalid_named_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression '&' '&' expression"));
-        Token * _literal;
-        Token * _literal_1;
-        expr_ty a;
-        expr_ty b;
-        if (
-            (a = expression_rule(p))  // expression
-            &&
-            (_literal = _PyPegen_expect_token(p, 19))  // token='&'
-            &&
-            (_literal_1 = _PyPegen_expect_token(p, 19))  // token='&'
-            &&
-            (b = expression_rule(p))  // expression
-        )
-        {
-            D(fprintf(stderr, "%*c+ invalid_named_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expression '&' '&' expression"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "invalid syntax '&&'. Use 'and' instead." );
-            if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
-                p->error_indicator = 1;
-                p->level--;
-                return NULL;
-            }
-            goto done;
-        }
-        p->mark = _mark;
-        D(fprintf(stderr, "%*c%s invalid_named_expression[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "expression '&' '&' expression"));
-    }
-    { // expression '|' '|' expression
-        if (p->error_indicator) {
-            p->level--;
-            return NULL;
-        }
-        D(fprintf(stderr, "%*c> invalid_named_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression '|' '|' expression"));
-        Token * _literal;
-        Token * _literal_1;
-        expr_ty a;
-        expr_ty b;
-        if (
-            (a = expression_rule(p))  // expression
-            &&
-            (_literal = _PyPegen_expect_token(p, 18))  // token='|'
-            &&
-            (_literal_1 = _PyPegen_expect_token(p, 18))  // token='|'
-            &&
-            (b = expression_rule(p))  // expression
-        )
-        {
-            D(fprintf(stderr, "%*c+ invalid_named_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expression '|' '|' expression"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "invalid syntax '||'. Use 'or' instead." );
-            if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
-                p->error_indicator = 1;
-                p->level--;
-                return NULL;
-            }
-            goto done;
-        }
-        p->mark = _mark;
-        D(fprintf(stderr, "%*c%s invalid_named_expression[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "expression '|' '|' expression"));
     }
     { // NAME '=' bitwise_or !('=' | ':=')
         if (p->error_indicator) {

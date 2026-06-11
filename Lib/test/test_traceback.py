@@ -1815,6 +1815,10 @@ class TestKeywordTypoSuggestions(unittest.TestCase):
         ("[x for x\nin range(3)\nof x]", "if"),
         ("[123 fur x\nin range(3)\nif x]", "for"),
         ("for x im n:\n  pass", "in"),
+        ("switch x:\n case:", "match"),
+        ("delete x", "del"),
+        ("function f():", "def"),
+        ("func f():", "def"),
     ]
 
     def test_keyword_suggestions_from_file(self):
