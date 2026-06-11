@@ -363,7 +363,9 @@ _PyObject_MiRealloc(void *ctx, void *ptr, size_t nbytes)
         _mi_memcpy((char*)newp + offset, (char*)ptr + offset, copy_size - offset);
     }
     else {
-        _mi_memcpy(newp, ptr, copy_size);
+        if mi_likely(ptr) {
+            _mi_memcpy(newp, ptr, copy_size);
+        }
     }
     mi_free(ptr);
     return newp;
