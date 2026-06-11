@@ -10,7 +10,7 @@
 #include "pycore_list.h"          // struct _Py_list_freelist, _PyListIterObject
 #include "pycore_long.h"          // _PyLong_DigitCount
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
-#include "pycore_object.h"        // _PyObject_GC_TRACK(), _Py_ptr_wise_atomic_memmove()
+#include "pycore_object.h"        // _PyObject_GC_TRACK(), _PyObject_ptr_wise_atomic_memmove()
 #include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_stackref.h"      // _Py_TryIncrefCompareStackRef()
@@ -985,7 +985,7 @@ list_ass_slice_lock_held(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyO
     if (d < 0) { /* Delete -d items */
         Py_ssize_t tail = Py_SIZE(a) - ihigh;
         _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(a);
-        _Py_ptr_wise_atomic_memmove((PyObject *)a, &item[ihigh+d], &item[ihigh], tail);
+        _PyObject_ptr_wise_atomic_memmove(a, &item[ihigh+d], &item[ihigh], tail);
         (void)list_resize(a, Py_SIZE(a) + d); // NB: shrinking a list can't fail
         item = a->ob_item;
     }
@@ -995,7 +995,7 @@ list_ass_slice_lock_held(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyO
             goto Error;
         item = a->ob_item;
         _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(a);
-        _Py_ptr_wise_atomic_memmove((PyObject *)a, &item[ihigh+d], &item[ihigh], k - ihigh);
+        _PyObject_ptr_wise_atomic_memmove(a, &item[ihigh+d], &item[ihigh], k - ihigh);
     }
     for (k = 0; k < n; k++, ilow++) {
         PyObject *w = vitem[k];
@@ -1087,7 +1087,7 @@ list_inplace_repeat_lock_held(PyListObject *self, Py_ssize_t n)
     Py_ssize_t copied = input_size;
     while (copied < output_size) {
         Py_ssize_t items_to_copy = Py_MIN(copied, output_size - copied);
-        _Py_ptr_wise_atomic_memmove((PyObject *)self, items + copied, items, items_to_copy);
+        _PyObject_ptr_wise_atomic_memmove(self, items + copied, items, items_to_copy);
         copied += items_to_copy;
     }
 #endif
@@ -1586,7 +1586,7 @@ list_pop_impl(PyListObject *self, Py_ssize_t index)
     Py_ssize_t size_after_pop = Py_SIZE(self) - 1;
     if (index < size_after_pop) {
         _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
-        _Py_ptr_wise_atomic_memmove((PyObject *)self, &items[index], &items[index+1],
+        _PyObject_ptr_wise_atomic_memmove(self, &items[index], &items[index+1],
                                     size_after_pop - index);
     }
     list_resize(self, size_after_pop);  // NB: shrinking a list can't fail
@@ -3771,13 +3771,13 @@ list_ass_subscript_lock_held(PyObject *_self, PyObject *item, PyObject *value)
                 }
 
                 _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
-                _Py_ptr_wise_atomic_memmove((PyObject *)self, self->ob_item + cur - i,
+                _PyObject_ptr_wise_atomic_memmove(self, self->ob_item + cur - i,
                     self->ob_item + cur + 1, lim);
             }
             cur = start + (size_t)slicelength * step;
             if (cur < (size_t)Py_SIZE(self)) {
                 _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
-                _Py_ptr_wise_atomic_memmove((PyObject *)self, self->ob_item + cur - slicelength,
+                _PyObject_ptr_wise_atomic_memmove(self, self->ob_item + cur - slicelength,
                     self->ob_item + cur, Py_SIZE(self) - cur);
             }
 
