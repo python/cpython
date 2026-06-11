@@ -7,8 +7,6 @@ Use this with PYTHON_JIT=0 for a stable interpreter-only run:
 
 from __future__ import annotations
 
-import pyperf
-
 _BATCH = 10_000
 _sink = 0
 
@@ -68,6 +66,8 @@ def bench_chain_wide() -> None:
 
 
 def main() -> None:
+    import pyperf
+
     runner = pyperf.Runner()
     runner.bench_func("add_compact", bench_add_compact)
     runner.bench_func("add_wide", bench_add_wide)
