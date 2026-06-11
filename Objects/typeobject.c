@@ -11327,6 +11327,7 @@ slot_bf_getbuffer(PyObject *self, Py_buffer *buffer, int flags)
 
     wrapper = PyObject_GC_New(PyBufferWrapper, &_PyBufferWrapper_Type);
     if (wrapper == NULL) {
+        PyBuffer_Release(buffer);
         goto fail;
     }
     wrapper->mv = ret;
