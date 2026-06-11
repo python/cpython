@@ -101,7 +101,6 @@ static int
 faulthandler_get_fileno(PyObject **file_ptr)
 {
     PyObject *result;
-    long fd_long;
     PyObject *file = *file_ptr;
 
     if (file == NULL || file == Py_None) {
@@ -1234,7 +1233,7 @@ faulthandler__fatal_error_c_thread_impl(PyObject *module)
     PyThread_acquire_lock(lock, WAIT_LOCK);
 
     tid = PyThread_start_new_thread(faulthandler_fatal_error_thread, lock);
-    if (tid == -1) {
+    if (tid == PYTHREAD_INVALID_THREAD_ID) {
         PyThread_free_lock(lock);
         PyErr_SetString(PyExc_RuntimeError, "unable to start the thread");
         return NULL;
