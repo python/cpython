@@ -1,0 +1,2 @@
+Fix unittest test discovery to find tests in files and directories with
+non-ascii characters in their filename
