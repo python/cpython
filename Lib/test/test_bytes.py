@@ -650,8 +650,7 @@ class BaseBytesTest:
         # to that item by mutating the joined sequence.
         # See: https://github.com/python/cpython/issues/151295
         def make_seq(mutate):
-            # The mutating item is only referenced from the list slot, so
-            # mutate() drops its last reference mid-join.
+            # Item is only referenced from the list slot, so mutate() frees it.
             class Item:
                 def __buffer__(self, flags):
                     mutate(seq)
@@ -665,15 +664,12 @@ class BaseBytesTest:
 
         for sep in (self.type2test(b''), self.type2test(b'::')):
             with self.subTest(sep=sep):
-                # Clearing the list changes its length, which is reported as a
-                # RuntimeError.
+                # Changing the list length is reported as a RuntimeError.
                 seq = make_seq(lambda seq: seq.clear())
                 self.assertRaises(RuntimeError, sep.join, seq)
 
-                # Replacing the item in place keeps the list length unchanged,
-                # so the size-change recheck cannot fire; only keeping the item
-                # alive across __buffer__() prevents the use-after-free, and
-                # the join uses the buffer returned by __buffer__().
+                # The list length is unchanged, so the size-change recheck
+                # cannot fire: only keeping the item alive avoids the crash.
                 def replace(seq):
                     seq[1] = b'z'
                 seq = make_seq(replace)

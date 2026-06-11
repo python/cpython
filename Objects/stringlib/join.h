@@ -68,11 +68,8 @@ STRINGLIB(bytes_join)(PyObject *sep, PyObject *iterable)
             buffers[i].len = PyBytes_GET_SIZE(item);
         }
         else {
-            /* Keep item alive across PyObject_GetBuffer(): item is only
-               borrowed from the sequence, and its __buffer__() may run
-               Python that drops that last reference (e.g. by mutating the
-               sequence being joined), freeing item while the buffer
-               machinery is still using it. */
+            /* item is only borrowed; its __buffer__() may run Python that
+               drops the sequence's last reference to it. */
             Py_INCREF(item);
             if (PyObject_GetBuffer(item, &buffers[i], PyBUF_SIMPLE) != 0) {
                 Py_DECREF(item);
