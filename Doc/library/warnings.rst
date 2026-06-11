@@ -638,6 +638,9 @@ Available Context Managers
       - ``source``: the original object that generated the warning (if available), or ``None``
       - ``module``: the module name where the warning occurred (:class:`str`), or ``None``
 
+    .. versionchanged:: 3.15
+      The ``module`` attribute was added.
+
     The type of these objects is not specified and may change; only the presence of these attributes is guaranteed.
 
     The *module* argument takes a module that will be used instead of the
