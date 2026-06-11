@@ -1,0 +1,4 @@
+Fix race condition where :meth:`asyncio.subprocess.Process.send_signal`,
+:meth:`asyncio.subprocess.Process.terminate`, and
+:meth:`asyncio.subprocess.Process.kill` could signal an already-freed PID on
+non-Windows platforms. Patch by Ganden Schaffner.
