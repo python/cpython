@@ -773,11 +773,11 @@ than raw I/O does.
 
    .. method:: peek(size=0, /)
 
-      Return bytes from the current position onwards without advancing the position.
-      At least one byte of data is returned if not at EOF.
+      Return a copy of the buffer from the current position onwards without advancing the position.
+
+      If *size* is zero or omitted, the returned :class:`bytes` object extends to EOF.
+      Otherwise, at most *size* bytes are returned.
       Return an empty :class:`bytes` object at EOF.
-      The number of read bytes depends on the buffer size
-      and the current position in the internal buffer.
 
       .. versionadded:: next
 
