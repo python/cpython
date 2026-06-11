@@ -1020,7 +1020,7 @@ PyAPI_FUNC(int) _PyObject_VisitType(PyObject *op, visitproc visit, void *arg);
 // Pointer-by-pointer memmove for PyObject** arrays that is safe for shared
 // objects in Py_GIL_DISABLED builds.  Locking is the caller's responsibility.
 static inline void
-_Py_ptr_wise_atomic_memmove(PyObject *a, PyObject **dest, PyObject **src,
+_PyObject_ptr_wise_atomic_memmove(PyObject *a, PyObject **dest, PyObject **src,
                              Py_ssize_t n)
 {
 #ifndef Py_GIL_DISABLED
@@ -1045,6 +1045,8 @@ _Py_ptr_wise_atomic_memmove(PyObject *a, PyObject **dest, PyObject **src,
     }
 #endif
 }
+
+#define _PyObject_ptr_wise_atomic_memmove(a, dest, src, n) _PyObject_ptr_wise_atomic_memmove(_PyObject_CAST(a), dest, src, n)
 
 #ifdef __cplusplus
 }
