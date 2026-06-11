@@ -2209,6 +2209,9 @@ zlib_exec(PyObject *mod)
     }
 
     state->ZlibError = PyErr_NewException("zlib.error", NULL, NULL);
+    if (state->ZlibError == NULL) {
+        return -1;
+    }
     if (PyModule_AddObjectRef(mod, "error", state->ZlibError) < 0) {
         return -1;
     }
