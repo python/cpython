@@ -115,30 +115,30 @@ Module contents
       :class:`StrEnum` defaults to the lower-cased version of the member name,
       while other Enums default to 1 and increase from there.
 
-   :func:`~enum.property`
+   :deco:`~enum.property`
 
       Allows :class:`Enum` members to have attributes without conflicting with
       member names.  The ``value`` and ``name`` attributes are implemented this
       way.
 
-   :func:`unique`
+   :deco:`unique`
 
       Enum class decorator that ensures only one name is bound to any one value.
 
-   :func:`verify`
+   :deco:`verify`
 
       Enum class decorator that checks user-selectable constraints on an
       enumeration.
 
-   :func:`member`
+   :deco:`member`
 
       Make ``obj`` a member.  Can be used as a decorator.
 
-   :func:`nonmember`
+   :deco:`nonmember`
 
       Do not make ``obj`` a member.  Can be used as a decorator.
 
-   :func:`global_enum`
+   :deco:`global_enum`
 
       Modify the :class:`str() <str>` and :func:`repr` of an enum
       to show its members as belonging to the module instead of its class,
@@ -222,7 +222,7 @@ Data types
       names of the members in *cls*::
 
         >>> dir(Color)
-        ['BLUE', 'GREEN', 'RED', '__class__', '__contains__', '__doc__', '__getitem__', '__init_subclass__', '__iter__', '__len__', '__members__', '__module__', '__name__', '__qualname__']
+        ['BLUE', 'GREEN', 'RED', '__class__', '__contains__', '__doc__', '__getitem__', '__init_subclass__', '__iter__', '__len__', '__members__', '__module__', '__name__', '__qualname__', '_generate_next_value_', '_missing_']
 
    .. method:: EnumType.__getitem__(cls, name)
 
@@ -355,7 +355,7 @@ Data types
          ...         print(f'today is {cls(dt.date.today().isoweekday()).name}')
          ...
          >>> dir(Weekday.SATURDAY)
-         ['__class__', '__doc__', '__eq__', '__hash__', '__module__', 'name', 'today', 'value']
+         ['__class__', '__doc__', '__eq__', '__hash__', '__module__', '_add_alias_', '_add_value_alias_', '_generate_next_value_', '_missing_', 'name', 'today', 'value']
 
    .. method:: Enum._generate_next_value_(name, start, count, last_values)
 
@@ -1006,7 +1006,7 @@ Utilities and decorators
 
 .. decorator:: property
 
-   A decorator similar to the built-in *property*, but specifically for
+   A decorator similar to the built-in :deco:`property`, but specifically for
    enumerations.  It allows member attributes to have the same names as members
    themselves.
 

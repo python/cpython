@@ -28,7 +28,7 @@ This guide has four major sections:
 4) The last section has pure Python equivalents for built-in descriptors that
    are written in C.  Read this if you're curious about how functions turn
    into bound methods or about the implementation of common tools like
-   :func:`classmethod`, :func:`staticmethod`, :func:`property`, and
+   :deco:`classmethod`, :deco:`staticmethod`, :deco:`property`, and
    :term:`__slots__`.
 
 
@@ -317,8 +317,8 @@ Descriptors invert that relationship and allow the data being looked-up to
 have a say in the matter.
 
 Descriptors are used throughout the language.  It is how functions turn into
-bound methods.  Common tools like :func:`classmethod`, :func:`staticmethod`,
-:func:`property`, and :func:`functools.cached_property` are all implemented as
+bound methods.  Common tools like :deco:`classmethod`, :deco:`staticmethod`,
+:deco:`property`, and :deco:`functools.cached_property` are all implemented as
 descriptors.
 
 
@@ -1326,7 +1326,7 @@ example calls are unexciting:
     30
 
 Using the non-data descriptor protocol, a pure Python version of
-:func:`staticmethod` would look like this:
+:deco:`staticmethod` would look like this:
 
 .. testcode::
 
@@ -1466,7 +1466,7 @@ Now a new dictionary of unique keys can be constructed like this:
     {'a': None, 'b': None, 'r': None, 'c': None, 'd': None}
 
 Using the non-data descriptor protocol, a pure Python version of
-:func:`classmethod` would look like this:
+:deco:`classmethod` would look like this:
 
 .. testcode::
 
@@ -1604,7 +1604,7 @@ matters when a large number of instances are going to be created.
 4. Improves speed.  Reading instance variables is 35% faster with
 ``__slots__`` (as measured with Python 3.10 on an Apple M1 processor).
 
-5. Blocks tools like :func:`functools.cached_property` which require an
+5. Blocks tools like :deco:`functools.cached_property` which require an
 instance dictionary to function correctly:
 
 .. testcode::

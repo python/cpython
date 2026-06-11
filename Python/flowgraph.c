@@ -11,6 +11,7 @@
 #include "pycore_opcode_utils.h"
 #include "pycore_opcode_metadata.h" // OPCODE_HAS_ARG, etc
 #include "pycore_pystate.h"         // _PyInterpreterState_GET()
+#include "pycore_stackref.h"        // PyStackRef_AsPyObjectBorrow()
 
 #include <stdbool.h>
 
@@ -1330,7 +1331,8 @@ get_const_value(int opcode, int oparg, PyObject *co_consts)
     }
     if (opcode == LOAD_COMMON_CONSTANT) {
         assert(oparg < NUM_COMMON_CONSTANTS);
-        return Py_NewRef(_PyInterpreterState_GET()->common_consts[oparg]);
+        return PyStackRef_AsPyObjectBorrow(
+            _PyInterpreterState_GET()->common_consts[oparg]);
     }
 
     if (constant == NULL) {
@@ -3277,6 +3279,7 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
 
     index_map = PyMem_Malloc(nconsts * sizeof(Py_ssize_t));
     if (index_map == NULL) {
+        PyErr_NoMemory();
         goto end;
     }
     for (Py_ssize_t i = 1; i < nconsts; i++) {
@@ -3329,6 +3332,7 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
     /* adjust const indices in the bytecode */
     reverse_index_map = PyMem_Malloc(nconsts * sizeof(Py_ssize_t));
     if (reverse_index_map == NULL) {
+        PyErr_NoMemory();
         goto end;
     }
     for (Py_ssize_t i = 0; i < nconsts; i++) {

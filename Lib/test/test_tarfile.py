@@ -893,10 +893,39 @@ class MiscReadTestBase(CommonReadTest):
                 self._assert_on_file_content(hardlink_filepath, sha256_regtype)
 
 
+class GzipReadTestBase:
+
+    def test_read_with_extra_field(self):
+        with open(self.tarname, 'rb') as f:
+            data = bytearray(f.read())
+        flags = data[3]
+        self.assertEqual(flags, 8)
+        data[3] = flags | 4
+        data[10:10] = b'\x05\x00extra'
+        with open(tmpname, 'wb') as f:
+            f.write(data)
+        print(self.mode)
+        with tarfile.open(tmpname, mode=self.mode):
+            pass
+
+    def test_read_with_file_comment(self):
+        with open(self.tarname, 'rb') as f:
+            data = bytearray(f.read())
+        flags = data[3]
+        self.assertEqual(flags, 8)
+        data[3] = flags | 16
+        i = data.index(0, 10) + 1
+        data[i:i] = b'comment\x00'
+        with open(tmpname, 'wb') as f:
+            f.write(data)
+        with tarfile.open(tmpname, mode=self.mode):
+            pass
+
+
 class MiscReadTest(MiscReadTestBase, unittest.TestCase):
     test_fail_comp = None
 
-class GzipMiscReadTest(GzipTest, MiscReadTestBase, unittest.TestCase):
+class GzipMiscReadTest(GzipTest, GzipReadTestBase, MiscReadTestBase, unittest.TestCase):
     pass
 
 class Bz2MiscReadTest(Bz2Test, MiscReadTestBase, unittest.TestCase):
@@ -970,7 +999,7 @@ class StreamReadTest(CommonReadTest, unittest.TestCase):
         finally:
             tar1.close()
 
-class GzipStreamReadTest(GzipTest, StreamReadTest):
+class GzipStreamReadTest(GzipTest, GzipReadTestBase, StreamReadTest):
     pass
 
 class Bz2StreamReadTest(Bz2Test, StreamReadTest):

@@ -629,7 +629,7 @@ static struct reindex nfc_first[] = {
     { 93539, 0, 388},
     { 93543, 0, 389},
     { 93545, 0, 390},
-    {0,0,0}
+    {0x7fffffff, 0, 0}
 };
 
 static struct reindex nfc_last[] = {
@@ -680,7 +680,7 @@ static struct reindex nfc_last[] = {
   { 90398, 2, 67},
   { 90409, 0, 70},
   { 93543, 0, 71},
-  {0,0,0}
+  {0x7fffffff, 0, 0}
 };
 
 /* string literals */

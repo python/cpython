@@ -1,6 +1,3 @@
-#ifndef ASM_TRAMPOLINE_AARCH_64_H_
-#define ASM_TRAMPOLINE_AARCH_64_H_
-
 /*
  * References:
  *  - https://developer.arm.com/documentation/101028/0012/5--Feature-test-macros
@@ -38,6 +35,31 @@
   #define GNU_PROPERTY_AARCH64_GCS 0
 #endif
 
+    .text
+#if defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)
+#if defined(__APPLE__)
+    .globl	__Py_trampoline_func_start
+__Py_trampoline_func_start:
+#else
+    .globl	_Py_trampoline_func_start
+_Py_trampoline_func_start:
+#endif
+    SIGN_LR
+    stp     x29, x30, [sp, -16]!
+    mov     x29, sp
+    blr     x3
+    ldp     x29, x30, [sp], 16
+    VERIFY_LR
+    ret
+#if defined(__APPLE__)
+    .globl	__Py_trampoline_func_end
+__Py_trampoline_func_end:
+#else
+    .globl	_Py_trampoline_func_end
+_Py_trampoline_func_end:
+    .section        .note.GNU-stack,"",@progbits
+#endif
+
 /* Add the BTI, PAC and GCS support to GNU Notes section */
 #if GNU_PROPERTY_AARCH64_BTI != 0 || GNU_PROPERTY_AARCH64_POINTER_AUTH != 0 || GNU_PROPERTY_AARCH64_GCS != 0
     .pushsection .note.gnu.property, "a"; /* Start a new allocatable section */
@@ -52,5 +74,4 @@
     .long 0; /* padding for 8 byte alignment */
     .popsection; /* end the section */
 #endif
-
-#endif
+#endif // __aarch64__ && __AARCH64EL__ && !__ILP32__
