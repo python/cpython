@@ -715,6 +715,89 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_CODE_VERSION__PUSH_FRAME", uops)
         self.assertNotIn("_GUARD_IP__PUSH_FRAME", uops)
 
+    def assert_kw_call_optimized(self, ex):
+        uops = get_opnames(ex)
+        self.assertNotIn("_PY_FRAME_KW", uops)
+        init_index = next(
+            (i for i, opname in enumerate(uops)
+             if opname.startswith("_INIT_CALL_PY_EXACT_ARGS")),
+            None,
+        )
+        self.assertIsNotNone(init_index, uops)
+        pop_index = max(
+            (i for i, opname in enumerate(uops[:init_index])
+             if opname == "_POP_TOP"),
+            default=None,
+        )
+        self.assertIsNotNone(pop_index, uops)
+        stack_check_index = max(
+            (i for i, opname in enumerate(uops[:init_index])
+             if opname == "_CHECK_STACK_SPACE_OPERAND"),
+            default=None,
+        )
+        self.assertIsNotNone(stack_check_index, uops)
+        self.assertLess(stack_check_index, pop_index, uops)
+        self.assertNotIn("_CHECK_FUNCTION_EXACT_ARGS", uops[pop_index:init_index])
+        return uops, pop_index, init_index
+
+    def test_call_kw_py_exact_args(self):
+        def callee(x, a, b):
+            return x + a + b
+
+        def testfunc(n):
+            total = 0
+            for i in range(n):
+                total += callee(i, b=2, a=1)
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * (TIER2_THRESHOLD - 1) // 2 + 3 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops, pop_index, init_index = self.assert_kw_call_optimized(ex)
+        self.assertTrue(
+            any(opname.startswith("_SWAP") for opname in uops[pop_index:init_index]),
+            uops,
+        )
+        self.assertIn("_BINARY_OP_ADD_INT", uops)
+
+    def test_call_kw_py_exact_args_no_reorder(self):
+        def callee(x, a, b):
+            return x + a + b
+
+        def testfunc(n):
+            total = 0
+            for i in range(n):
+                total += callee(i, a=1, b=2)
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * (TIER2_THRESHOLD - 1) // 2 + 3 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops, pop_index, init_index = self.assert_kw_call_optimized(ex)
+        self.assertFalse(
+            any(opname.startswith("_SWAP") for opname in uops[pop_index:init_index]),
+            uops,
+        )
+
+    def test_call_kw_bound_method_exact_args(self):
+        class C:
+            def callee(self, x, a, b):
+                return x + a + b
+
+        obj = C()
+
+        def testfunc(n):
+            total = 0
+            for i in range(n):
+                total += obj.callee(i, b=2, a=1)
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * (TIER2_THRESHOLD - 1) // 2 + 3 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops, _, _ = self.assert_kw_call_optimized(ex)
+        self.assertIn("_BINARY_OP_ADD_INT", uops)
+
     def test_int_type_propagate_through_range(self):
         def testfunc(n):
 
