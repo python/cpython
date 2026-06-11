@@ -1,7 +1,7 @@
 name: Reusable Lazy Imports Tests
 
 # Run the CPython test suite with global lazy imports forced on
-# (``PYTHON_LAZY_IMPORTS=all``, equivalent to ``-X lazy_imports=all``).
+# (``-X lazy_imports=all``).
 #
 # Modules that are known to fail under lazy imports are listed in
 # Lib/test/lazy_imports_all_exclude.txt and skipped here. Remove entries from
@@ -24,7 +24,6 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
-      PYTHON_LAZY_IMPORTS: all
       EXCLUDE_FILE: Lib/test/lazy_imports_all_exclude.txt
     steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -41,7 +40,7 @@ jobs:
     - name: Display build info
       run: make pythoninfo
     - name: Verify lazy imports are fully enabled
-      run: ./python -c "import sys; assert sys.flags.lazy_imports == 1, sys.flags.lazy_imports; print('lazy imports all enabled')"
+      run: ./python -X lazy_imports=all -c "import sys; assert sys.flags.lazy_imports == 1, sys.flags.lazy_imports; print('lazy imports all enabled')"
     - name: Build test list (all tests minus the known-failing exclusions)
       run: |
         set -euo pipefail
@@ -60,8 +59,8 @@ jobs:
           exit 1
         fi
         echo "Excluding $(wc -l < exclude_tests.txt) module(s); running $(wc -l < run_tests.txt) of $(wc -l < all_tests.txt)."
-    - name: Run stdlib tests with lazy imports
-      run: xvfb-run xargs ./python -m test --fast-ci --timeout=900 < run_tests.txt
+    - name: Run tests with lazy imports
+      run: xvfb-run xargs ./python -X lazy_imports=all -m test --fast-ci --timeout=900 < run_tests.txt
     - name: Verify excluded tests still need exclusion
       if: success()
       run: |
@@ -70,12 +69,12 @@ jobs:
         while IFS= read -r test_name; do
           [ -n "$test_name" ] || continue
           echo "Checking excluded test: $test_name"
-          if xvfb-run ./python -m test --fast-ci --timeout=900 "$test_name"; then
+          if xvfb-run ./python -X lazy_imports=all -m test --fast-ci --timeout=900 "$test_name"; then
             unexpected_passes+=("$test_name")
           fi
         done < exclude_tests.txt
         if [ "${#unexpected_passes[@]}" -ne 0 ]; then
-          echo "::error::These tests still appear in $EXCLUDE_FILE but now pass with PYTHON_LAZY_IMPORTS=all. Remove them from the exclude file:"
+          echo "::error::These tests still appear in $EXCLUDE_FILE but now pass with -X lazy_imports=all. Remove them from the exclude file:"
           printf '%s\n' "${unexpected_passes[@]}"
           exit 1
         fi
