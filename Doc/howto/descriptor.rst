@@ -4,9 +4,6 @@
 Descriptor Guide
 ================
 
-:Author: Raymond Hettinger
-:Contact: <python at rcn dot com>
-
 .. Contents::
 
 
