@@ -1931,16 +1931,22 @@ static PyObject *
 kqueue_event_repr(PyObject *op)
 {
     kqueue_event_Object *s = kqueue_event_Object_CAST(op);
-    return PyUnicode_FromFormat(
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    res = PyUnicode_FromFormat(
         "<select.kevent ident=%zu filter=%d flags=0x%x fflags=0x%x "
         "data=0x%llx udata=%p>",
         (size_t)(s->e.ident), (int)s->e.filter, (unsigned int)s->e.flags,
         (unsigned int)s->e.fflags, (long long)(s->e.data), (void *)s->e.udata);
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 static int
-kqueue_event_init(PyObject *op, PyObject *args, PyObject *kwds)
+kqueue_event_init_lock_held(PyObject *op, PyObject *args, PyObject *kwds)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
+
     PyObject *pfd;
     static char *kwlist[] = {"ident", "filter", "flags", "fflags",
                              "data", "udata", NULL};
@@ -1984,6 +1990,16 @@ kqueue_event_init(PyObject *op, PyObject *args, PyObject *kwds)
     return 0;
 }
 
+static int
+kqueue_event_init(PyObject *op, PyObject *args, PyObject *kwds)
+{
+    int res;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    res = kqueue_event_init_lock_held(op, args, kwds);
+    Py_END_CRITICAL_SECTION();
+    return res;
+}
+
 static PyObject *
 kqueue_event_richcompare(PyObject *lhs, PyObject *rhs, int op)
 {
@@ -1997,6 +2013,7 @@ kqueue_event_richcompare(PyObject *lhs, PyObject *rhs, int op)
     kqueue_event_Object *o = (kqueue_event_Object *)rhs;  // fast cast
 
 #define CMP(a, b) ((a) != (b)) ? ((a) < (b) ? -1 : 1)
+    Py_BEGIN_CRITICAL_SECTION2(s, o);
     result = CMP(s->e.ident, o->e.ident)
            : CMP(s->e.filter, o->e.filter)
            : CMP(s->e.flags, o->e.flags)
@@ -2004,6 +2021,7 @@ kqueue_event_richcompare(PyObject *lhs, PyObject *rhs, int op)
            : CMP(s->e.data, o->e.data)
            : CMP((intptr_t)s->e.udata, (intptr_t)o->e.udata)
            : 0;
+    Py_END_CRITICAL_SECTION2();
 #undef CMP
 
     Py_RETURN_RICHCOMPARE(result, 0, op);
@@ -2159,6 +2177,8 @@ kqueue_tracking_remove(_selectstate *state, kqueue_queue_Object *self)
 static int
 kqueue_queue_internal_close(kqueue_queue_Object *self)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
+
     int save_errno = 0;
     if (self->kqfd >= 0) {
         int kqfd = self->kqfd;
@@ -2246,7 +2266,9 @@ kqueue_queue_finalize(PyObject *op)
 {
     kqueue_queue_Object *self = kqueue_queue_Object_CAST(op);
     PyObject *error = PyErr_GetRaisedException();
+    Py_BEGIN_CRITICAL_SECTION(self);
     (void)kqueue_queue_internal_close(self);
+    Py_END_CRITICAL_SECTION();
     PyErr_SetRaisedException(error);
 }
 
@@ -2275,11 +2297,12 @@ select_kqueue_close_impl(kqueue_queue_Object *self)
 static PyObject *
 kqueue_queue_get_closed(PyObject *op, void *Py_UNUSED(closure))
 {
+    int closed;
     kqueue_queue_Object *self = kqueue_queue_Object_CAST(op);
-    if (self->kqfd < 0) {
-        Py_RETURN_TRUE;
-    }
-    Py_RETURN_FALSE;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    closed = (self->kqfd < 0);
+    Py_END_CRITICAL_SECTION();
+    return PyBool_FromLong(closed);
 }
 
 /*[clinic input]
