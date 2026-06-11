@@ -38,9 +38,79 @@ than explicitly calling :c:func:`PyGen_New` or :c:func:`PyGen_NewWithQualName`.
    A reference to *frame* is stolen by this function. The argument must not be
    ``NULL``.
 
+   .. deprecated-removed:: 3.16 3.18
+
+      This function has not been used since 3.10.
+      It is also impossible to construct a proper *frame*
+      object to call this function.
+
 .. c:function:: PyObject* PyGen_NewWithQualName(PyFrameObject *frame, PyObject *name, PyObject *qualname)
 
    Create and return a new generator object based on the *frame* object,
    with ``__name__`` and ``__qualname__`` set to *name* and *qualname*.
    A reference to *frame* is stolen by this function.  The *frame* argument
    must not be ``NULL``.
+
+   .. deprecated-removed:: 3.16 3.18
+
+      This function has not been used since 3.10.
+      It is also impossible to construct a proper *frame*
+      object to call this function.
+
+
+.. c:function:: PyCodeObject* PyGen_GetCode(PyGenObject *gen)
+
+   Return a new :term:`strong reference` to the code object wrapped by *gen*.
+   This function always succeeds.
+
+
+Asynchronous Generator Objects
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. seealso::
+   :pep:`525`
+
+.. c:var:: PyTypeObject PyAsyncGen_Type
+
+   The type object corresponding to asynchronous generator objects. This is
+   available as :class:`types.AsyncGeneratorType` in the Python layer.
+
+   .. versionadded:: 3.6
+
+.. c:function:: PyObject *PyAsyncGen_New(PyFrameObject *frame, PyObject *name, PyObject *qualname)
+
+   Create a new asynchronous generator wrapping *frame*, with ``__name__`` and
+   ``__qualname__`` set to *name* and *qualname*. *frame* is stolen by this
+   function and must not be ``NULL``.
+
+   On success, this function returns a :term:`strong reference` to the
+   new asynchronous generator. On failure, this function returns ``NULL``
+   with an exception set.
+
+   .. versionadded:: 3.6
+
+   .. deprecated-removed:: 3.16 3.18
+
+      This function has not been used since 3.10.
+      It is also impossible to construct a proper *frame*
+      object to call this function.
+
+.. c:function:: int PyAsyncGen_CheckExact(PyObject *op)
+
+   Return true if *op* is an asynchronous generator object, false otherwise.
+   This function always succeeds.
+
+   .. versionadded:: 3.6
+
+
+Deprecated API
+^^^^^^^^^^^^^^
+
+.. c:macro:: PyAsyncGenASend_CheckExact(op)
+
+   This is an API that was included in Python's C API
+   by mistake.
+
+   It is solely here for completeness; do not use this API.
+
+   .. soft-deprecated:: 3.14

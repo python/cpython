@@ -4,9 +4,6 @@
 .. module:: platform
    :synopsis: Retrieves as much platform identifying data as possible.
 
-.. moduleauthor:: Marc-André Lemburg <mal@egenix.com>
-.. sectionauthor:: Bjorn Pettersen <bpettersen@corp.fairisaac.com>
-
 **Source code:** :source:`Lib/platform.py`
 
 --------------
@@ -357,7 +354,7 @@ Android platform
 Command-line usage
 ------------------
 
-:mod:`platform` can also be invoked directly using the :option:`-m`
+:mod:`!platform` can also be invoked directly using the :option:`-m`
 switch of the interpreter::
 
    python -m platform [--terse] [--nonaliased] [{nonaliased,terse} ...]

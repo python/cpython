@@ -122,6 +122,8 @@ class POP3:
     def _putcmd(self, line):
         if self._debugging: print('*cmd*', repr(line))
         line = bytes(line, self.encoding)
+        if re.search(b'[\x00-\x1F\x7F]', line):
+            raise ValueError('Control characters not allowed in commands')
         self._putline(line)
 
 

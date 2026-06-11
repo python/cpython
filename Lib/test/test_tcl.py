@@ -40,6 +40,9 @@ class TclTest(unittest.TestCase):
         self.interp = Tcl()
         self.wantobjects = self.interp.tk.wantobjects()
 
+    def passValue(self, value):
+        return self.interp.call('set', '_', value)
+
     def testEval(self):
         tcl = self.interp
         tcl.eval('set a 1')
@@ -51,7 +54,11 @@ class TclTest(unittest.TestCase):
 
     def test_eval_surrogates_in_result(self):
         tcl = self.interp
-        self.assertEqual(tcl.eval(r'set a "<\ud83d\udcbb>"'), '<\U0001f4bb>')
+        result = tcl.eval(r'set a "<\ud83d\udcbb>"')
+        if sys.platform == 'win32' and tcl_version >= (9, 0):
+            self.assertEqual('<\ud83d\udcbb>', result)
+        else:
+            self.assertEqual('<\U0001f4bb>', result)
 
     def testEvalException(self):
         tcl = self.interp
@@ -286,7 +293,11 @@ class TclTest(unittest.TestCase):
             set b "<\\ud83d\\udcbb>"
             """)
         tcl.evalfile(filename)
-        self.assertEqual(tcl.eval('set b'), '<\U0001f4bb>')
+        result = tcl.eval('set b')
+        if sys.platform == 'win32' and tcl_version >= (9, 0):
+            self.assertEqual('<\ud83d\udcbb>', result)
+        else:
+            self.assertEqual('<\U0001f4bb>', result)
 
     def testEvalFileException(self):
         tcl = self.interp
@@ -490,8 +501,7 @@ class TclTest(unittest.TestCase):
                 self.assertIsInstance(result, str)
 
     def test_passing_values(self):
-        def passValue(value):
-            return self.interp.call('set', '_', value)
+        passValue = self.passValue
 
         self.assertEqual(passValue(True), True if self.wantobjects else '1')
         self.assertEqual(passValue(False), False if self.wantobjects else '0')
@@ -536,6 +546,24 @@ class TclTest(unittest.TestCase):
                          (1, '2', (3.4,)) if self.wantobjects else '1 2 3.4')
         self.assertEqual(passValue(['a', ['b', 'c']]),
                          ('a', ('b', 'c')) if self.wantobjects else 'a {b c}')
+
+    def test_set_object_concurrent_mutation_in_sequence_conversion(self):
+        # Prevent SIGSEV when the object to convert is concurrently mutated.
+        # See: https://github.com/python/cpython/issues/143310.
+
+        string = "value"
+
+        class Value:
+            def __str__(self):
+                values.clear()
+                return string
+
+        class List(list):
+            pass
+
+        expect = (string, "pad") if self.wantobjects else f"{string} pad"
+        self.assertEqual(self.passValue(values := [Value(), "pad"]), expect)
+        self.assertEqual(self.passValue(values := List([Value(), "pad"])), expect)
 
     def test_user_command(self):
         result = None
@@ -797,6 +825,10 @@ class BigmemTclTest(unittest.TestCase):
 
 
 def setUpModule():
+    wantobjects = support.get_resource_value('wantobjects')
+    if wantobjects is not None:
+        unittest.enterModuleContext(
+            support.swap_attr(tkinter, 'wantobjects', int(wantobjects)))
     if support.verbose:
         tcl = Tcl()
         print('patchlevel =', tcl.call('info', 'patchlevel'), flush=True)

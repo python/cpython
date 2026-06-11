@@ -87,14 +87,11 @@ class SqliteInteractiveConsole(InteractiveConsole):
 
 
 def main(*args):
-    parser = ArgumentParser(
-        description="Python sqlite3 CLI",
-        color=True,
-    )
+    parser = ArgumentParser(description="Python sqlite3 CLI")
     parser.add_argument(
         "filename", type=str, default=":memory:", nargs="?",
         help=(
-            "SQLite database to open (defaults to ':memory:'). "
+            "SQLite database to open (defaults to `:memory:`). "
             "A new database is created if the file does not previously exist."
         ),
     )
@@ -102,7 +99,7 @@ def main(*args):
         "sql", type=str, nargs="?",
         help=(
             "An SQL query to execute. "
-            "Any returned rows are printed to stdout."
+            "Any returned rows are printed to `stdout`."
         ),
     )
     parser.add_argument(
@@ -133,8 +130,11 @@ def main(*args):
     theme = get_theme()
     s = theme.syntax
 
-    sys.ps1 = f"{s.prompt}sqlite> {s.reset}"
-    sys.ps2 = f"{s.prompt}    ... {s.reset}"
+    # Use RL_PROMPT_START_IGNORE (\001) and RL_PROMPT_END_IGNORE (\002) to
+    # bracket non-printing characters. This tells readline to ignore them
+    # when calculating screen space for redisplay during history scrolling.
+    sys.ps1 = f"\001{s.prompt}\002sqlite> \001{s.reset}\002"
+    sys.ps2 = f"\001{s.prompt}\002    ... \001{s.reset}\002"
 
     con = sqlite3.connect(args.filename, isolation_level=None)
     try:

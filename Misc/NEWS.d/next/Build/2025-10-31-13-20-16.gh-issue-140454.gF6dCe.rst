@@ -1,3 +1,0 @@
-When building the JIT, match the jit_stencils filename expectations in
-Makefile with the generator script. This avoid needless JIT recompilation
-during ``make install``.

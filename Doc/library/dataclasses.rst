@@ -4,9 +4,6 @@
 .. module:: dataclasses
     :synopsis: Generate special methods on user-defined classes.
 
-.. moduleauthor:: Eric V. Smith <eric@trueblade.com>
-.. sectionauthor:: Eric V. Smith <eric@trueblade.com>
-
 **Source code:** :source:`Lib/dataclasses.py`
 
 --------------
@@ -346,6 +343,10 @@ Module contents
    :attr:`!C.t` will be ``20``, and the class attributes :attr:`!C.x` and
    :attr:`!C.y` will not be set.
 
+   .. versionchanged:: 3.15
+      If *metadata* is ``None``, use an empty :class:`frozendict`, instead
+      of a :func:`~types.MappingProxyType` of an empty :class:`dict`.
+
 .. class:: Field
 
    :class:`!Field` objects describe each defined field. These objects
@@ -383,8 +384,8 @@ Module contents
    Converts the dataclass *obj* to a dict (by using the
    factory function *dict_factory*).  Each dataclass is converted
    to a dict of its fields, as ``name: value`` pairs.  dataclasses, dicts,
-   lists, and tuples are recursed into.  Other objects are copied with
-   :func:`copy.deepcopy`.
+   frozendicts, lists, and tuples are recursed into.  Other objects are copied
+   with :func:`copy.deepcopy`.
 
    Example of using :func:`!asdict` on nested dataclasses::
 
@@ -414,8 +415,8 @@ Module contents
 
    Converts the dataclass *obj* to a tuple (by using the
    factory function *tuple_factory*).  Each dataclass is converted
-   to a tuple of its field values.  dataclasses, dicts, lists, and
-   tuples are recursed into. Other objects are copied with
+   to a tuple of its field values.  dataclasses, dicts, frozendicts, lists,
+   and tuples are recursed into. Other objects are copied with
    :func:`copy.deepcopy`.
 
    Continuing from the previous example::
@@ -430,7 +431,7 @@ Module contents
    :func:`!astuple` raises :exc:`TypeError` if *obj* is not a dataclass
    instance.
 
-.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False, weakref_slot=False, module=None, decorator=dataclass)
+.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False, weakref_slot=False, module=None, qualname=None, decorator=dataclass)
 
    Creates a new dataclass with name *cls_name*, fields as defined
    in *fields*, base classes as given in *bases*, and initialized
@@ -445,6 +446,9 @@ Module contents
    If *module* is defined, the :attr:`!__module__` attribute
    of the dataclass is set to that value.
    By default, it is set to the module name of the caller.
+
+   If *qualname* is defined, the :attr:`~type.__qualname__` attribute of the dataclass
+   is set to that value. By default, it is set to the value passed to *cls_name*.
 
    The *decorator* parameter is a callable that will be used to create the dataclass.
    It should take the class object as a first argument and the same keyword arguments
@@ -476,6 +480,8 @@ Module contents
 
    .. versionadded:: 3.14
       Added the *decorator* parameter.
+   .. versionadded:: next
+      Added the *qualname* parameter.
 
 .. function:: replace(obj, /, **changes)
 
@@ -510,7 +516,8 @@ Module contents
 .. function:: is_dataclass(obj)
 
    Return ``True`` if its parameter is a dataclass (including subclasses of a
-   dataclass) or an instance of one, otherwise return ``False``.
+   dataclass, but not including :ref:`generic aliases <types-genericalias>`)
+   or an instance of one, otherwise return ``False``.
 
    If you need to know if a class is an instance of a dataclass (and
    not a dataclass itself), then add a further check for ``not

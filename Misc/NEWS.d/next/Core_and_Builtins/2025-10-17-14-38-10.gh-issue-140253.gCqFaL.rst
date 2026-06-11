@@ -1,2 +1,0 @@
-Wrong placement of a double-star pattern inside a mapping pattern now throws a specialized syntax error.
-Contributed by Bartosz Sławecki in :gh:`140253`.

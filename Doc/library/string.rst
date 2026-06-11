@@ -82,12 +82,12 @@ The constants defined in this module are:
 
 .. _string-formatting:
 
-Custom String Formatting
+Custom string formatting
 ------------------------
 
 The built-in string class provides the ability to do complex variable
 substitutions and value formatting via the :meth:`~str.format` method described in
-:pep:`3101`.  The :class:`Formatter` class in the :mod:`string` module allows
+:pep:`3101`.  The :class:`Formatter` class in the :mod:`!string` module allows
 you to create and customize your own string formatting behaviors using the same
 implementation as the built-in :meth:`~str.format` method.
 
@@ -192,7 +192,7 @@ implementation as the built-in :meth:`~str.format` method.
 
 .. _formatstrings:
 
-Format String Syntax
+Format string syntax
 --------------------
 
 The :meth:`str.format` method and the :class:`Formatter` class share the same
@@ -304,7 +304,7 @@ See the :ref:`formatexamples` section for some examples.
 
 .. _formatspec:
 
-Format Specification Mini-Language
+Format specification mini-language
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 "Format specifications" are used within replacement fields contained within a
@@ -472,7 +472,9 @@ of a number respectively. It can be one of the following:
 |         | this option is not supported.                            |
 +---------+----------------------------------------------------------+
 
-For a locale aware separator, use the ``'n'`` presentation type instead.
+For a locale-aware separator, use the ``'n'``
+:ref:`float presentation type <n-format-float>` or
+:ref:`integer presentation type <n-format-integer>` instead.
 
 .. versionchanged:: 3.1
    Added the ``','`` option (see also :pep:`378`).
@@ -518,9 +520,14 @@ The available integer presentation types are:
    |         | In case ``'#'`` is specified, the prefix ``'0x'`` will   |
    |         | be upper-cased to ``'0X'`` as well.                      |
    +---------+----------------------------------------------------------+
-   | ``'n'`` | Number. This is the same as ``'d'``, except that it uses |
+   | ``'n'`` | .. _n-format-integer:                                    |
+   |         |                                                          |
+   |         | Number. This is the same as ``'d'``, except that it uses |
    |         | the current locale setting to insert the appropriate     |
-   |         | digit group separators.                                  |
+   |         | digit group separators. Note that the default locale is  |
+   |         | not the system locale. Depending on your use case, you   |
+   |         | may wish to set :const:`~locale.LC_NUMERIC` with         |
+   |         | :func:`locale.setlocale` before using ``'n'``.           |
    +---------+----------------------------------------------------------+
    | None    | The same as ``'d'``.                                     |
    +---------+----------------------------------------------------------+
@@ -546,6 +553,9 @@ The available presentation types for :class:`float` and
    |         | :class:`float`, and shows all coefficient digits         |
    |         | for :class:`~decimal.Decimal`.  If ``p=0``, the decimal  |
    |         | point is omitted unless the ``#`` option is used.        |
+   |         |                                                          |
+   |         | For :class:`float`, the exponent always contains at      |
+   |         | least two digits, and is zero if the value is zero.      |
    +---------+----------------------------------------------------------+
    | ``'E'`` | Scientific notation. Same as ``'e'`` except it uses      |
    |         | an upper case 'E' as the separator character.            |
@@ -600,10 +610,15 @@ The available presentation types for :class:`float` and
    |         | ``'E'`` if the number gets too large. The                |
    |         | representations of infinity and NaN are uppercased, too. |
    +---------+----------------------------------------------------------+
-   | ``'n'`` | Number. This is the same as ``'g'``, except that it uses |
+   | ``'n'`` | .. _n-format-float:                                      |
+   |         |                                                          |
+   |         | Number. This is the same as ``'g'``, except that it uses |
    |         | the current locale setting to insert the appropriate     |
-   |         | digit group separators                                   |
-   |         | for the integral part of a number.                       |
+   |         | digit group separators for the integral part of a        |
+   |         | number. Note that the default locale is not the system   |
+   |         | locale. Depending on your use case, you may wish to set  |
+   |         | :const:`~locale.LC_NUMERIC` with                         |
+   |         | :func:`locale.setlocale` before using ``'n'``.           |
    +---------+----------------------------------------------------------+
    | ``'%'`` | Percentage. Multiplies the number by 100 and displays    |
    |         | in fixed (``'f'``) format, followed by a percent sign.   |
@@ -756,8 +771,8 @@ Expressing a percentage::
 
 Using type-specific formatting::
 
-   >>> import datetime
-   >>> d = datetime.datetime(2010, 7, 4, 12, 15, 58)
+   >>> import datetime as dt
+   >>> d = dt.datetime(2010, 7, 4, 12, 15, 58)
    >>> '{:%Y-%m-%d %H:%M:%S}'.format(d)
    '2010-07-04 12:15:58'
 
@@ -837,7 +852,7 @@ Template strings support ``$``-based substitutions, using the following rules:
 Any other appearance of ``$`` in the string will result in a :exc:`ValueError`
 being raised.
 
-The :mod:`string` module provides a :class:`Template` class that implements
+The :mod:`!string` module provides a :class:`Template` class that implements
 these rules.  The methods of :class:`Template` are:
 
 

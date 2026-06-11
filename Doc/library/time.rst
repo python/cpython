@@ -407,9 +407,9 @@ Functions
    On Windows, if *secs* is zero, the thread relinquishes the remainder of its
    time slice to any other thread that is ready to run. If there are no other
    threads ready to run, the function returns immediately, and the thread
-   continues execution.  On Windows 8.1 and newer the implementation uses
+   continues execution.  On Windows 10 and newer the implementation uses
    a `high-resolution timer
-   <https://learn.microsoft.com/windows-hardware/drivers/kernel/high-resolution-timers>`_
+   <https://learn.microsoft.com/windows/win32/api/synchapi/nf-synchapi-createwaitabletimerexw>`_
    which provides resolution of 100 nanoseconds. If *secs* is zero, ``Sleep(0)`` is used.
 
    .. rubric:: Unix implementation
