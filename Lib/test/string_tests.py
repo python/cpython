@@ -1127,7 +1127,7 @@ class BaseTest:
         self.checkequal(True, '0', 'isdigit')
         self.checkequal(True, '0123456789', 'isdigit')
         self.checkequal(False, '0123456789a', 'isdigit')
-
+        self.checkequal(False, '123 ', 'isdigit')
         self.checkraises(TypeError, 'abc', 'isdigit', 42)
 
     def test_title(self):
