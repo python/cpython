@@ -3039,7 +3039,7 @@ clear_embedded_values(PyDictValues *values, Py_ssize_t nentries)
     assert(nentries <= SHARED_KEYS_MAX_SIZE);
     for (Py_ssize_t i = 0; i < nentries; i++) {
         refs[i] = values->values[i];
-        values->values[i] = NULL;
+        FT_ATOMIC_STORE_PTR_RELEASE(values->values[i], NULL);
     }
     values->size = 0;
     for (Py_ssize_t i = 0; i < nentries; i++) {
