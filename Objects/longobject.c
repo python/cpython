@@ -172,12 +172,6 @@ long_alloc(Py_ssize_t size)
     if (ndigits == 1) {
         result = (PyLongObject *)_Py_FREELIST_POP(PyLongObject, ints);
     }
-    else if (ndigits == 2) {
-        result = (PyLongObject *)_Py_FREELIST_POP(PyLongObject, ints2);
-    }
-    else if (ndigits == 3) {
-        result = (PyLongObject *)_Py_FREELIST_POP(PyLongObject, ints3);
-    }
     if (result == NULL) {
         /* Number of bytes needed is: offsetof(PyLongObject, ob_digit) +
         sizeof(digit)*size.  Previous incarnations of this code used
@@ -3650,15 +3644,6 @@ _PyLong_ExactDealloc(PyObject *self)
         _Py_FREELIST_FREE(ints, self, PyObject_Free);
         return;
     }
-    Py_ssize_t ndigits = _PyLong_DigitCount((PyLongObject *)self);
-    if (ndigits == 2) {
-        _Py_FREELIST_FREE(ints2, self, PyObject_Free);
-        return;
-    }
-    if (ndigits == 3) {
-        _Py_FREELIST_FREE(ints3, self, PyObject_Free);
-        return;
-    }
     PyObject_Free(self);
 }
 
@@ -3675,20 +3660,9 @@ long_dealloc(PyObject *self)
         _Py_SetImmortal(self);
         return;
     }
-    if (PyLong_CheckExact(self)) {
-        if (_PyLong_IsCompact((PyLongObject *)self)) {
-            _Py_FREELIST_FREE(ints, self, PyObject_Free);
-            return;
-        }
-        Py_ssize_t ndigits = _PyLong_DigitCount((PyLongObject *)self);
-        if (ndigits == 2) {
-            _Py_FREELIST_FREE(ints2, self, PyObject_Free);
-            return;
-        }
-        if (ndigits == 3) {
-            _Py_FREELIST_FREE(ints3, self, PyObject_Free);
-            return;
-        }
+    if (PyLong_CheckExact(self) && _PyLong_IsCompact((PyLongObject *)self)) {
+        _Py_FREELIST_FREE(ints, self, PyObject_Free);
+        return;
     }
     Py_TYPE(self)->tp_free(self);
 }
