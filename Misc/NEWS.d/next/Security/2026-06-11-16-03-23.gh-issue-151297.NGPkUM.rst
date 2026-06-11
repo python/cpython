@@ -1,0 +1,1 @@
+Fix an invalid pointer dereference that could occur when calling `PyObject_Realloc` with a NULL pointer in free-threaded builds or with `PYTHONMALLOC=mimalloc`.
