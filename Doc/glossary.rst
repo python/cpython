@@ -106,6 +106,12 @@ Glossary
       expressions as well as :keyword:`async for`, and :keyword:`async with`
       statements.
 
+   asynchronous generator function
+      A function which returns an :term:`asynchronous generator iterator`.
+      It looks like a coroutine function defined with :keyword:`async def`
+      except that it contains :keyword:`yield` expressions for producing a
+      series of values usable in an :keyword:`async for` loop.  See :pep:`525`.
+
    asynchronous generator iterator
       An object created by an :term:`asynchronous generator function`.
 
