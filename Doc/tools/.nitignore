@@ -35,7 +35,6 @@ Doc/library/test.rst
 Doc/library/tkinter.rst
 Doc/library/tkinter.scrolledtext.rst
 Doc/library/tkinter.ttk.rst
-Doc/library/unittest.mock.rst
 Doc/library/urllib.parse.rst
 Doc/library/urllib.request.rst
 Doc/library/wsgiref.rst
