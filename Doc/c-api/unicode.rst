@@ -1953,7 +1953,7 @@ The following API is deprecated.
       whether you selected a "narrow" or "wide" Unicode version of Python at
       build time.
 
-   .. deprecated-removed:: 3.13 3.15
+   .. deprecated-removed:: 3.13 3.16
 
 
 .. c:function:: int PyUnicode_READY(PyObject *unicode)

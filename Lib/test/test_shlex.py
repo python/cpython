@@ -342,6 +342,14 @@ class ShlexTest(unittest.TestCase):
         self.assertRaises(TypeError, shlex.quote, 42)
         self.assertRaises(TypeError, shlex.quote, b"abc")
 
+    def testForceQuote(self):
+        self.assertEqual(shlex.quote("spam"), "spam")
+        self.assertEqual(shlex.quote("spam", force=False), "spam")
+        self.assertEqual(shlex.quote("spam", force=True), "'spam'")
+        self.assertEqual(shlex.quote("spam eggs", force=False), "'spam eggs'")
+        self.assertEqual(shlex.quote("spam eggs", force=True), "'spam eggs'")
+        self.assertEqual(shlex.quote("two's-complement", force=False), "'two'\"'\"'s-complement'")
+
     def testJoin(self):
         for split_command, command in [
             (['a ', 'b'], "'a ' b"),
