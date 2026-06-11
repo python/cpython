@@ -889,8 +889,8 @@ class _PidfdChildWatcher:
                 pid)
         else:
             returncode = waitstatus_to_exitcode(status)
-
-        os.close(pidfd)
+        finally:
+            os.close(pidfd)
         callback(pid, returncode, *args)
 
 class _ThreadedChildWatcher:
