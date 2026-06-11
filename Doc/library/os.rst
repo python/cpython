@@ -800,20 +800,16 @@ process and user.
       single: gethostbyaddr() (in module socket)
 
    Returns information identifying the current operating system.
-   The return value is an object with five attributes:
-
-   * :attr:`sysname` - operating system name
-   * :attr:`nodename` - name of machine on network (implementation-defined)
-   * :attr:`release` - operating system release
-   * :attr:`version` - operating system version
-   * :attr:`machine` - hardware identifier
+   The return value is a :class:`uname_result` object whose attributes
+   correspond to the members described in :manpage:`uname(2)`.
 
    For backwards compatibility, this object is also iterable, behaving
-   like a five-tuple containing :attr:`sysname`, :attr:`nodename`,
-   :attr:`release`, :attr:`version`, and :attr:`machine`
+   like a five-tuple containing :attr:`~uname_result.sysname`,
+   :attr:`~uname_result.nodename`, :attr:`~uname_result.release`,
+   :attr:`~uname_result.version`, and :attr:`~uname_result.machine`
    in that order.
 
-   Some systems truncate :attr:`nodename` to 8 characters or to the
+   Some systems truncate :attr:`~uname_result.nodename` to 8 characters or to the
    leading component; a better way to get the hostname is
    :func:`socket.gethostname`  or even
    ``socket.gethostbyaddr(socket.gethostname())``.
@@ -823,11 +819,42 @@ process and user.
    can be used to get the user-facing operating system name and version on iOS and
    Android.
 
+   .. seealso::
+      :data:`sys.platform` has a finer granularity.
+
+      The :mod:`platform` module provides detailed checks for the
+      system's identity.
+
    .. availability:: Unix.
 
    .. versionchanged:: 3.3
       Return type changed from a tuple to a tuple-like object
       with named attributes.
+
+
+.. class:: uname_result
+
+   Name and information about the system returned by :func:`os.uname`.
+
+   .. attribute:: sysname
+
+      Operating system name.
+
+   .. attribute:: nodename
+
+      Name of machine on network (implementation-defined).
+
+   .. attribute:: release
+
+      Operating system release.
+
+   .. attribute:: version
+
+      Operating system version.
+
+   .. attribute:: machine
+
+      Hardware identifier.
 
 
 .. function:: unsetenv(key, /)
@@ -1112,8 +1139,8 @@ as internal buffering of data.
 .. function:: fstatvfs(fd, /)
 
    Return information about the filesystem containing the file associated with
-   file descriptor *fd*, like :func:`statvfs`.  As of Python 3.3, this is
-   equivalent to ``os.statvfs(fd)``.
+   file descriptor *fd* in a :class:`statvfs_result` like :func:`statvfs`.
+   As of Python 3.3, this is equivalent to ``os.statvfs(fd)``.
 
    .. availability:: Unix.
 
@@ -3784,48 +3811,142 @@ features:
 
 .. function:: statvfs(path)
 
-   Perform a :c:func:`!statvfs` system call on the given path.  The return value is
-   an object whose attributes describe the filesystem on the given path, and
-   correspond to the members of the :c:struct:`statvfs` structure, namely:
-   :attr:`f_bsize`, :attr:`f_frsize`, :attr:`f_blocks`, :attr:`f_bfree`,
-   :attr:`f_bavail`, :attr:`f_files`, :attr:`f_ffree`, :attr:`f_favail`,
-   :attr:`f_flag`, :attr:`f_namemax`, :attr:`f_fsid`.
-
-   Two module-level constants are defined for the :attr:`f_flag` attribute's
-   bit-flags: if :const:`ST_RDONLY` is set, the filesystem is mounted
-   read-only, and if :const:`ST_NOSUID` is set, the semantics of
-   setuid/setgid bits are disabled or not supported.
-
-   Additional module-level constants are defined for GNU/glibc based systems.
-   These are :const:`ST_NODEV` (disallow access to device special files),
-   :const:`ST_NOEXEC` (disallow program execution), :const:`ST_SYNCHRONOUS`
-   (writes are synced at once), :const:`ST_MANDLOCK` (allow mandatory locks on an FS),
-   :const:`ST_WRITE` (write on file/directory/symlink), :const:`ST_APPEND`
-   (append-only file), :const:`ST_IMMUTABLE` (immutable file), :const:`ST_NOATIME`
-   (do not update access times), :const:`ST_NODIRATIME` (do not update directory access
-   times), :const:`ST_RELATIME` (update atime relative to mtime/ctime).
+   Perform a :manpage:`statvfs(3)` system call on the given path.  The return value
+   is a :class:`statvfs_result` whose attributes describe the filesystem
+   on the given path and correspond to the members of the :c:struct:`statvfs`
+   structure.
 
    This function can support :ref:`specifying a file descriptor <path_fd>`.
 
    .. availability:: Unix.
 
-   .. versionchanged:: 3.2
-      The :const:`ST_RDONLY` and :const:`ST_NOSUID` constants were added.
-
    .. versionchanged:: 3.3
       Added support for specifying *path* as an open file descriptor.
-
-   .. versionchanged:: 3.4
-      The :const:`ST_NODEV`, :const:`ST_NOEXEC`, :const:`ST_SYNCHRONOUS`,
-      :const:`ST_MANDLOCK`, :const:`ST_WRITE`, :const:`ST_APPEND`,
-      :const:`ST_IMMUTABLE`, :const:`ST_NOATIME`, :const:`ST_NODIRATIME`,
-      and :const:`ST_RELATIME` constants were added.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
-   .. versionchanged:: 3.7
-      Added the :attr:`f_fsid` attribute.
+
+.. class:: statvfs_result
+
+   Filesystem statistics returned by :func:`os.statvfs` and :func:`os.fstatvfs`.
+   See :manpage:`statvfs(3)` for the meaning of each member.
+
+   .. attribute:: f_bsize
+   .. attribute:: f_frsize
+   .. attribute:: f_blocks
+   .. attribute:: f_bfree
+   .. attribute:: f_bavail
+   .. attribute:: f_files
+   .. attribute:: f_ffree
+   .. attribute:: f_favail
+
+   .. attribute:: f_flag
+
+      Bit-mask of mount flags.  The following flags are defined:
+      :data:`ST_RDONLY`, :data:`ST_NOSUID`, :data:`ST_NODEV`,
+      :data:`ST_NOEXEC`, :data:`ST_SYNCHRONOUS`, :data:`ST_MANDLOCK`,
+      :data:`ST_WRITE`, :data:`ST_APPEND`, :data:`ST_IMMUTABLE`,
+      :data:`ST_NOATIME`, :data:`ST_NODIRATIME`, and :data:`ST_RELATIME`.
+
+   .. attribute:: f_namemax
+
+   .. attribute:: f_fsid
+
+      .. versionadded:: 3.7
+
+
+.. data:: ST_RDONLY
+
+   Read-only filesystem.
+
+   .. versionadded:: 3.2
+
+.. data:: ST_NOSUID
+
+   Setuid/setgid bits are disabled or not supported.
+
+   .. versionadded:: 3.2
+
+.. data:: ST_NODEV
+
+   Disallow access to device special files.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.4
+
+.. data:: ST_NOEXEC
+
+   Disallow program execution.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.4
+
+.. data:: ST_SYNCHRONOUS
+
+   Writes are synced at once.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.4
+
+.. data:: ST_MANDLOCK
+
+   Allow mandatory locks on an FS.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.4
+
+.. data:: ST_WRITE
+
+   Write on file/directory/symlink.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.4
+
+.. data:: ST_APPEND
+
+   Append-only file.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.4
+
+.. data:: ST_IMMUTABLE
+
+   Immutable file.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.4
+
+.. data:: ST_NOATIME
+
+   Do not update access times.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.4
+
+.. data:: ST_NODIRATIME
+
+   Do not update directory access times.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.4
+
+.. data:: ST_RELATIME
+
+   Update atime relative to mtime/ctime.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.4
 
 
 .. data:: supports_dir_fd
