@@ -21,13 +21,13 @@ import _shared
 #   ✅ pyconfig.h
 #   ✅ .h files
 # ✅ lib
-#   ☐ pkgconfig (from Misc/)
+#   ✅ pkgconfig (from Misc/)
 #   ✅ pythonN.M
 #     ❌ lib-dynload
 #     ✅ LICENSE.txt (license_file())
 #     ✅ Stuff from build/lib.* (build_dir_files())
 #     ✅ Lib/
-# ☐ share/man/man1/
+# ✅ share/man/man1/
 # ☐ python.wasm
 
 
@@ -107,6 +107,33 @@ def pkgconfig_files(context):
             misc_dir / "python-embed.pc",
         ),
     ]
+
+
+def pkgconfig_symlinks(pkgconfig_files, context):
+    assert len(pkgconfig_files) == 2
+    embed, plain = (
+        (0, 1) if pkgconfig_files[0].name.endswith("-embed.pc") else (1, 0)
+    )
+    embed_path, plain_path = pkgconfig_files[embed], pkgconfig_files[plain]
+    major = context.wasi_build_details["language"]["version_info"]["major"]
+    paths = [
+        (embed_path.parent / f"python{major}-embed.pc", embed_path),
+        (plain_path.parent / f"python{major}.pc", plain_path),
+    ]
+    if context.is_debug:
+        paths += [
+            (
+                embed_path.parent
+                / f"python-{python_version(context)}-embed.pc",
+                embed_path,
+            ),
+            (
+                plain_path.parent / f"python-{python_version(context)}.pc",
+                plain_path,
+            ),
+        ]
+
+    return paths
 
 
 def pyconfig_file(context):
@@ -201,8 +228,12 @@ def package(context):
     copy_files(stdlib_files(context), base)
     _shared.log("📁", "pkgconfig/", spacing=indent * 3)
     _shared.log("📄", "python*.pc", spacing=indent * 4)
-    copy_files(pkgconfig_files(context), base)
-    # XXX symlinks
+    pkgconfig_paths = pkgconfig_files(context)
+    copy_files(pkgconfig_paths, base)
+    symlink_files(
+        pkgconfig_symlinks([path for path, _ in pkgconfig_paths], context),
+        base,
+    )
     _shared.log("📁", "share", spacing=indent * 2)
     _shared.log("📁", "man", spacing=indent * 3)
     _shared.log("📁", "man1", spacing=indent * 4)
