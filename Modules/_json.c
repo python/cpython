@@ -998,7 +998,6 @@ _match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
     Py_ssize_t idx = start;
     int is_float = 0;
     PyObject *rval;
-    PyObject *numstr = NULL;
     PyObject *custom_func;
 
     str = PyUnicode_DATA(pystr);
@@ -1065,9 +1064,9 @@ _match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
 
     if (custom_func) {
         /* copy the section we determined to be a number */
-        numstr = PyUnicode_FromKindAndData(kind,
-                                           (char*)str + kind * start,
-                                           idx - start);
+        PyObject *numstr = PyUnicode_FromKindAndData(kind,
+                                                    (char*)str + kind * start,
+                                                    idx - start);
         if (numstr == NULL)
             return NULL;
         rval = PyObject_CallOneArg(custom_func, numstr);
@@ -1075,7 +1074,6 @@ _match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
     }
     else {
         Py_ssize_t i, n;
-        char *buf;
 
         /* Fast path for integers with at most 19 digits (excluding the
            optional minus sign): the magnitude always fits in an unsigned
@@ -1100,6 +1098,8 @@ _match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
            decimal unicode digits (which cannot appear here) */
         n = idx - start;
         char stackbuf[64];
+        PyObject *numstr = NULL;
+        char *buf;
         if (n < (Py_ssize_t)sizeof(stackbuf)) {
             buf = stackbuf;
             buf[n] = '\0';
