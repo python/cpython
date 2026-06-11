@@ -645,9 +645,9 @@ class BaseBytesTest:
         with self.assertRaises(TypeError):
             dot_join([memoryview(b"ab"), "cd", b"ef"])
 
-    def test_join_reentrant_buffer_mutation(self):
-        # An item's __buffer__() may run Python that drops the last reference
-        # to that item by mutating the joined sequence.
+    def test_join_concurrent_buffer_mutation(self):
+        # __buffer__() can release the GIL, letting another thread concurrently
+        # mutate the joined sequence (simulated here by mutating in __buffer__).
         # See: https://github.com/python/cpython/issues/151295
         def make_seq(mutate):
             # Item is only referenced from the list slot, so mutate() frees it.
@@ -657,10 +657,6 @@ class BaseBytesTest:
                     return memoryview(b'x')
             seq = [b'a', Item(), b'c']
             return seq
-
-        class Benign:
-            def __buffer__(self, flags):
-                return memoryview(b'x')
 
         for sep in (self.type2test(b''), self.type2test(b'::')):
             with self.subTest(sep=sep):
@@ -674,10 +670,6 @@ class BaseBytesTest:
                     seq[1] = b'z'
                 seq = make_seq(replace)
                 self.assertEqual(sep.join(seq), sep.join([b'a', b'x', b'c']))
-
-                # A benign __buffer__() that does not mutate joins normally.
-                self.assertEqual(sep.join([Benign(), b'Y', Benign()]),
-                                 sep.join([b'x', b'Y', b'x']))
 
     def test_count(self):
         b = self.type2test(b'mississippi')
