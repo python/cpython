@@ -243,6 +243,51 @@ class BufferTestCase(unittest.TestCase, HelperMixin):
         new = marshal.loads(marshal.dumps(a))
         self.assertEqual(new, b"abc")
 
+    def test_concurrent_buffer_mutation(self):
+        # An item's __buffer__() runs Python while the container is being
+        # marshalled, so the container can be concurrently mutated (simulated
+        # here by mutating it inside __buffer__).
+        # See: https://github.com/python/cpython/issues/151370
+        def make(kind):
+            # The item is only referenced from the container, so clearing the
+            # container inside __buffer__ drops its last reference to it.
+            class Item:
+                def __buffer__(self, flags):
+                    container.clear()
+                    return memoryview(bytearray(4))
+            item = Item()
+            if kind is dict:
+                container = {item: 1, 2: item}
+            elif kind is set:
+                container = {item, b'other'}
+            else:
+                container = [item, 1, 2]
+            return container
+
+        # A size change while marshalling is reported as a RuntimeError.
+        for kind in (list, dict, set):
+            with self.subTest(kind=kind):
+                self.assertRaises(RuntimeError, marshal.dumps, make(kind))
+
+        # The length is unchanged, so the size recheck cannot fire: only
+        # keeping the item alive across its __buffer__() avoids the crash.
+        class Replacer:
+            def __buffer__(self, flags):
+                container[0] = b'.'
+                return memoryview(bytearray(4))
+        container = [Replacer()]
+        result = marshal.loads(marshal.dumps(container))
+        self.assertEqual(result, [b'\x00' * 4])
+
+        # Growing the set during marshalling is reported too, rather than
+        # writing past the buffer pre-sized to the original length.
+        class Grower:
+            def __buffer__(self, flags):
+                grown.add(b'grown')
+                return memoryview(bytearray(4))
+        grown = {Grower(), 1, 2}
+        self.assertRaises(RuntimeError, marshal.dumps, grown)
+
 
 class BugsTestCase(unittest.TestCase):
     def test_bug_5888452(self):
