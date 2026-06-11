@@ -163,7 +163,8 @@ configuring the execution of a third-party test suite:
   packages.
 * `--pull`: if specified, the testbed app will pull the file or folder from the device
   back to the build machine after the test run. This is useful for retrieving coverage
-  data, for example. Can be used multiple times.
+  data, for example. Can be used multiple times. On managed devices this is supported
+  since Android API level 29, so only `--managed maxVersion` can be used.
 * `--output-dir`: the directory on the build machine to which files will be pulled.
 
 Extra arguments on the `android.py test` command line will be passed through to
