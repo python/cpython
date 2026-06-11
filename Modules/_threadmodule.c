@@ -820,8 +820,8 @@ _thread.lock.acquire
 
 Lock the lock.
 
-Without argument, this blocks if the lock is already
-locked (even by the same thread), waiting for another thread to release
+Without argument, this blocks if the lock is already locked
+(even by the same thread), waiting for another thread to release
 the lock, and return True once the lock is acquired.
 With an argument, this will only block if the argument is true,
 and the return value reflects whether the lock is acquired.
@@ -831,7 +831,7 @@ The blocking operation is interruptible.
 static PyObject *
 _thread_lock_acquire_impl(lockobject *self, int blocking,
                           PyObject *timeoutobj)
-/*[clinic end generated code: output=569d6b25d508bf6f input=13e999649bc1c798]*/
+/*[clinic end generated code: output=569d6b25d508bf6f input=73e75b3d2ec32677]*/
 {
     PyTime_t timeout;
 
@@ -1131,19 +1131,19 @@ _thread.RLock.release
 
 Release the lock.
 
-Allows another thread that is blocked waiting for
-the lock to acquire the lock.  The lock must be in the locked state,
+Allows another thread that is blocked waiting for the lock
+to acquire the lock.  The lock must be in the locked state,
 and must be locked by the same thread that unlocks it; otherwise a
 `RuntimeError` is raised.
 
-Do note that if the lock was acquire()d several times in a row by the
-current thread, release() needs to be called as many times for the lock
-to be available for other threads.
+Do note that if the lock was acquire()d several times in a row by
+the current thread, release() needs to be called as many times for
+the lock to be available for other threads.
 [clinic start generated code]*/
 
 static PyObject *
 _thread_RLock_release_impl(rlockobject *self)
-/*[clinic end generated code: output=51f4a013c5fae2c5 input=d425daf1a5782e63]*/
+/*[clinic end generated code: output=51f4a013c5fae2c5 input=7c188f60189be13a]*/
 {
     if (_PyRecursiveMutex_TryUnlock(&self->lock) < 0) {
         PyErr_SetString(PyExc_RuntimeError,

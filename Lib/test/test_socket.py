@@ -7191,12 +7191,6 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
 
     @support.requires_linux_version(4, 9)  # see gh-73510
     def test_aead_aes_gcm(self):
-        kernel_version = support._get_kernel_version("Linux")
-        if kernel_version is not None:
-            if kernel_version >= (6, 16) and kernel_version < (6, 18):
-                # See https://github.com/python/cpython/issues/139310.
-                self.skipTest("upstream Linux kernel issue")
-
         key = bytes.fromhex('c939cc13397c1d37de6ae0e1cb7c423c')
         iv = bytes.fromhex('b3d8cc017cbb89b39e0f67e2')
         plain = bytes.fromhex('c3b3c41f113a31b73d9a5cd432103069')
@@ -7533,6 +7527,62 @@ class FreeThreadingTests(unittest.TestCase):
 
         with threading_helper.start_threads([t1, t2]):
             pass
+
+
+class ReentrantMutationTests(unittest.TestCase):
+    """Regression tests for re-entrant mutation in sendmsg/recvmsg_into.
+
+    These tests verify that mutating sequences during argument parsing
+    via __buffer__ protocol does not cause crashes.
+
+    See: https://github.com/python/cpython/issues/143988
+    """
+
+    @unittest.skipUnless(hasattr(socket.socket, "sendmsg"),
+                         "sendmsg not supported")
+    def test_sendmsg_reentrant_data_mutation(self):
+        seq = []
+
+        class MutBuffer:
+            def __init__(self):
+                self.tripped = False
+
+            def __buffer__(self, flags):
+                if not self.tripped:
+                    self.tripped = True
+                    seq.clear()
+                return memoryview(b'Hello')
+
+        seq = [MutBuffer(), b'World', b'Test']
+
+        left, right = socket.socketpair()
+        with left, right:
+            left.sendmsg(seq)
+            self.assertEqual(right.recv(1024), b'HelloWorldTest')
+
+    @unittest.skipUnless(hasattr(socket.socket, "recvmsg_into"),
+                         "recvmsg_into not supported")
+    def test_recvmsg_into_reentrant_buffer_mutation(self):
+        seq = []
+        buf1 = bytearray(100)
+
+        class MutBuffer:
+            def __init__(self):
+                self.tripped = False
+
+            def __buffer__(self, flags):
+                if not self.tripped:
+                    self.tripped = True
+                    seq.clear()
+                return memoryview(buf1)
+
+        seq = [MutBuffer(), bytearray(100), bytearray(100)]
+
+        left, right = socket.socketpair()
+        with left, right:
+            left.send(b'Hello World!')
+            right.recvmsg_into(seq)
+        self.assertEqual(buf1, b'Hello World!'.ljust(100, b'\x00'))
 
 
 def setUpModule():

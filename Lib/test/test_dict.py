@@ -1903,9 +1903,34 @@ class FrozenDictTests(unittest.TestCase):
         self.assertEqual(hash(frozendict(x=1, y=2)),
                          hash(frozendict(y=2, x=1)))
 
+        # Check that hash() computes the hash of (key, value) pairs
+        cases = [
+            frozendict(a=False, b=True, c=True),
+            frozendict(a=True, b=False, c=True),
+            frozendict(a=True, b=True, c=False),
+            frozendict({False: "a", "b": True, "c": True}),
+            frozendict({"a": "b", False: True, True: "c"}),
+        ]
+        hashes = {hash(fd) for fd in cases}
+        self.assertEqual(len(hashes), len(cases))
+
         fd = frozendict(x=[1], y=[2])
         with self.assertRaisesRegex(TypeError, "unhashable type: 'list'"):
             hash(fd)
+
+    @support.cpython_only
+    def test_hash_cpython(self):
+        # Check that hash(frozendict) implementation is:
+        # hash(frozenset(fd.items()))
+        for fd in (
+            frozendict(),
+            frozendict(x=1, y=2),
+            frozendict(y=2, x=1),
+            frozendict(a=False, b=True, c=True),
+            frozendict.fromkeys('abc'),
+        ):
+            with self.subTest(fd=fd):
+                self.assertEqual(hash(fd), hash(frozenset(fd.items())))
 
     def test_fromkeys(self):
         self.assertEqual(frozendict.fromkeys('abc'),

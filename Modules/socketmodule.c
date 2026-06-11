@@ -4526,17 +4526,19 @@ sock_recvmsg_into(PyObject *self, PyObject *args)
     struct iovec *iovs = NULL;
     Py_ssize_t i, nitems, nbufs = 0;
     Py_buffer *bufs = NULL;
-    PyObject *buffers_arg, *fast, *retval = NULL;
+    PyObject *buffers_arg, *buffers_tuple, *retval = NULL;
 
     if (!PyArg_ParseTuple(args, "O|ni:recvmsg_into",
                           &buffers_arg, &ancbufsize, &flags))
         return NULL;
 
-    if ((fast = PySequence_Fast(buffers_arg,
-                                "recvmsg_into() argument 1 must be an "
-                                "iterable")) == NULL)
+    buffers_tuple = PySequence_Tuple(buffers_arg);
+    if (buffers_tuple == NULL) {
+        PyErr_SetString(PyExc_TypeError,
+                        "recvmsg_into() argument 1 must be an iterable");
         return NULL;
-    nitems = PySequence_Fast_GET_SIZE(fast);
+    }
+    nitems = PyTuple_GET_SIZE(buffers_tuple);
     if (nitems > INT_MAX) {
         PyErr_SetString(PyExc_OSError, "recvmsg_into() argument 1 is too long");
         goto finally;
@@ -4550,7 +4552,7 @@ sock_recvmsg_into(PyObject *self, PyObject *args)
         goto finally;
     }
     for (; nbufs < nitems; nbufs++) {
-        if (!PyArg_Parse(PySequence_Fast_GET_ITEM(fast, nbufs),
+        if (!PyArg_Parse(PyTuple_GET_ITEM(buffers_tuple, nbufs),
                          "w*;recvmsg_into() argument 1 must be an iterable "
                          "of single-segment read-write buffers",
                          &bufs[nbufs]))
@@ -4566,7 +4568,7 @@ finally:
         PyBuffer_Release(&bufs[i]);
     PyMem_Free(bufs);
     PyMem_Free(iovs);
-    Py_DECREF(fast);
+    Py_DECREF(buffers_tuple);
     return retval;
 }
 
@@ -4628,7 +4630,6 @@ sock_send_impl(PySocketSockObject *s, void *data)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 _socket.socket.send
     self as s: self(type="PySocketSockObject *")
     data as pbuf: Py_buffer
@@ -4638,12 +4639,13 @@ _socket.socket.send
 Send a data string to the socket.
 
 For the optional flags argument, see the Unix manual.
-Return the number of bytes sent; this may be less than len(data) if the network is busy.
+Return the number of bytes sent; this may be less than len(data) if
+the network is busy.
 [clinic start generated code]*/
 
 static PyObject *
 _socket_socket_send_impl(PySocketSockObject *s, Py_buffer *pbuf, int flags)
-/*[clinic end generated code: output=3ddf83f17d0c875b input=e776a48af2e3d615]*/
+/*[clinic end generated code: output=3ddf83f17d0c875b input=d2b8af9bf99cfafb]*/
 
 {
     struct sock_send ctx;
@@ -4673,13 +4675,14 @@ Send a data string to the socket.
 
 For the optional flags argument, see the Unix manual.
 This calls send() repeatedly until all data is sent.
-If an error occurs, it's impossible to tell how much data has been sent.
+If an error occurs, it's impossible to tell how much data has been
+sent.
 [clinic start generated code]*/
 
 static PyObject *
 _socket_socket_sendall_impl(PySocketSockObject *s, Py_buffer *pbuf,
                             int flags)
-/*[clinic end generated code: output=ec92861424d3faa8 input=732b15b9ca64dce6]*/
+/*[clinic end generated code: output=ec92861424d3faa8 input=2600de13b4614893]*/
 
 {
     char *buf;
@@ -4860,14 +4863,14 @@ sock_sendmsg_iovec(PySocketSockObject *s, PyObject *data_arg,
 
     /* Fill in an iovec for each message part, and save the Py_buffer
        structs to release afterwards. */
-    data_fast = PySequence_Fast(data_arg,
-                                "sendmsg() argument 1 must be an "
-                                "iterable");
+    data_fast = PySequence_Tuple(data_arg);
     if (data_fast == NULL) {
+        PyErr_SetString(PyExc_TypeError,
+                        "sendmsg() argument 1 must be an iterable");
         goto finally;
     }
 
-    ndataparts = PySequence_Fast_GET_SIZE(data_fast);
+    ndataparts = PyTuple_GET_SIZE(data_fast);
     if (ndataparts > INT_MAX) {
         PyErr_SetString(PyExc_OSError, "sendmsg() argument 1 is too long");
         goto finally;
@@ -4889,7 +4892,7 @@ sock_sendmsg_iovec(PySocketSockObject *s, PyObject *data_arg,
         }
     }
     for (; ndatabufs < ndataparts; ndatabufs++) {
-        if (PyObject_GetBuffer(PySequence_Fast_GET_ITEM(data_fast, ndatabufs),
+        if (PyObject_GetBuffer(PyTuple_GET_ITEM(data_fast, ndatabufs),
             &databufs[ndatabufs], PyBUF_SIMPLE) < 0)
             goto finally;
         iovs[ndatabufs].iov_base = databufs[ndatabufs].buf;
@@ -4929,20 +4932,20 @@ The buffers argument specifies the non-ancillary
 data as an iterable of bytes-like objects (e.g. bytes objects).
 The ancdata argument specifies the ancillary data (control messages)
 as an iterable of zero or more tuples (cmsg_level, cmsg_type,
-cmsg_data), where cmsg_level and cmsg_type are integers specifying the
-protocol level and protocol-specific type respectively, and cmsg_data
-is a bytes-like object holding the associated data.  The flags
-argument defaults to 0 and has the same meaning as for send().  If
-address is supplied and not None, it sets a destination address for
-the message.  The return value is the number of bytes of non-ancillary
-data sent.
+cmsg_data), where cmsg_level and cmsg_type are integers specifying
+the protocol level and protocol-specific type respectively, and
+cmsg_data is a bytes-like object holding the associated data.  The
+flags argument defaults to 0 and has the same meaning as for send().
+If address is supplied and not None, it sets a destination address
+for the message.  The return value is the number of bytes of
+non-ancillary data sent.
 [clinic start generated code]*/
 
 static PyObject *
 _socket_socket_sendmsg_impl(PySocketSockObject *s, PyObject *data_arg,
                             PyObject *cmsg_arg, int flags,
                             PyObject *addr_arg)
-/*[clinic end generated code: output=3b4cb1110644ce39 input=479c13d90bd2f88b]*/
+/*[clinic end generated code: output=3b4cb1110644ce39 input=8ae408971a3aa329]*/
 
 {
     Py_ssize_t i, ndatabufs = 0, ncmsgs, ncmsgbufs = 0;
@@ -7318,6 +7321,7 @@ _socket_if_nametoindex_impl(PyObject *module, PyObject *oname)
 
 
 /*[clinic input]
+@permit_long_summary
 _socket.if_indextoname
     if_index as index: NET_IFINDEX
     /
@@ -7327,7 +7331,7 @@ Returns the interface name corresponding to the interface index if_index.
 
 static PyObject *
 _socket_if_indextoname_impl(PyObject *module, NET_IFINDEX index)
-/*[clinic end generated code: output=e48bc324993052e0 input=c93f753d0cf6d7d1]*/
+/*[clinic end generated code: output=e48bc324993052e0 input=2a0026b271cd43ae]*/
 {
     errno = ENXIO;  // in case 'if_indextoname' does not set errno
     char name[IF_NAMESIZE + 1];
@@ -9291,6 +9295,9 @@ socket_exec(PyObject *m)
     /* Initialize gethostbyname lock */
 #if defined(USE_GETHOSTBYNAME_LOCK)
     netdb_lock = PyThread_allocate_lock();
+    if (netdb_lock == NULL) {
+        goto error;
+    }
 #endif
 
 #ifdef MS_WINDOWS
