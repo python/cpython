@@ -6,7 +6,8 @@ name: Reusable Lazy Imports Tests
 # Modules that are known to fail under lazy imports are listed in
 # Lib/test/lazy_imports_all_exclude.txt and skipped here. Remove entries from
 # that file as the modules are fixed so this workflow starts guarding them
-# against regressions.
+# against regressions. Excluded modules are also checked separately so the
+# workflow fails when one starts passing and its exclusion should be removed.
 
 on:
   workflow_call:
@@ -61,3 +62,20 @@ jobs:
         echo "Excluding $(wc -l < exclude_tests.txt) module(s); running $(wc -l < run_tests.txt) of $(wc -l < all_tests.txt)."
     - name: Run stdlib tests with lazy imports
       run: xvfb-run xargs ./python -m test --fast-ci --timeout=900 < run_tests.txt
+    - name: Verify excluded tests still need exclusion
+      if: success()
+      run: |
+        set -euo pipefail
+        unexpected_passes=()
+        while IFS= read -r test_name; do
+          [ -n "$test_name" ] || continue
+          echo "Checking excluded test: $test_name"
+          if xvfb-run ./python -m test --fast-ci --timeout=900 "$test_name"; then
+            unexpected_passes+=("$test_name")
+          fi
+        done < exclude_tests.txt
+        if [ "${#unexpected_passes[@]}" -ne 0 ]; then
+          echo "::error::These tests still appear in $EXCLUDE_FILE but now pass with PYTHON_LAZY_IMPORTS=all. Remove them from the exclude file:"
+          printf '%s\n' "${unexpected_passes[@]}"
+          exit 1
+        fi
