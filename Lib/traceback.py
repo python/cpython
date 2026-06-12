@@ -1806,6 +1806,7 @@ _CROSS_LANGUAGE_KEYWORD_HINTS = frozendict({
     # function define equivalents
     'function': 'def',
     'func': 'def',
+    'void': 'def',
 })
 
 def _substitution_cost(ch_a, ch_b):
