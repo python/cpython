@@ -545,6 +545,36 @@ class PackageTests(LazyImportTestCase):
         """)
         assert_python_ok("-c", code)
 
+    @support.requires_subprocess()
+    def test_lazy_import_reimports_submodule_evicted_from_sys_modules(self):
+        """A submodule evicted from sys.modules but still cached on its parent
+        must be re-imported, like eager 'import a.b.c as t' is."""
+        code = textwrap.dedent("""
+            import sys
+            modname = "test.test_lazy_import.data.pkg.bar"
+            import test.test_lazy_import.data.pkg.bar
+            del sys.modules[modname]
+            lazy import test.test_lazy_import.data.pkg.bar as t
+            t.f()
+            assert modname in sys.modules, modname
+        """)
+        assert_python_ok("-c", code)
+
+    @support.requires_subprocess()
+    def test_lazy_from_import_reimports_submodule_evicted_from_sys_modules(self):
+        """Same as above for 'from a.b import c': the stale parent attribute
+        must not shadow a re-import after sys.modules eviction."""
+        code = textwrap.dedent("""
+            import sys
+            modname = "test.test_lazy_import.data.pkg.bar"
+            import test.test_lazy_import.data.pkg.bar
+            del sys.modules[modname]
+            lazy from test.test_lazy_import.data.pkg import bar
+            bar.f()
+            assert modname in sys.modules, modname
+        """)
+        assert_python_ok("-c", code)
+
 
 class DunderLazyImportTests(LazyImportTestCase):
     """Tests for __lazy_import__ builtin function."""
