@@ -1,0 +1,3 @@
+Fix a crash in :func:`os.spawnv` and :func:`os.spawnve` when an *argv*
+item's :meth:`~os.PathLike.__fspath__` method mutates the *argv* list
+during argument conversion.
