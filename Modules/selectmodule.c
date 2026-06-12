@@ -13,6 +13,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_critical_section.h" // _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED()
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
 #include "pycore_time.h"          // _PyTime_FromSecondsObject()
 #include "pycore_tuple.h"         // _PyTuple_FromPairSteal
