@@ -820,7 +820,7 @@ process and user.
    Android.
 
    .. seealso::
-      :data:`sys.platform` has a finer granularity.
+      :data:`sys.platform` which has finer granularity.
 
       The :mod:`platform` module provides detailed checks for the
       system's identity.
