@@ -8,20 +8,16 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_runtime.h"       // _PyRuntimeState
+#include "pycore_typedefs.h"      // _PyRuntimeState
 
 /* Forward declarations */
 struct _PyArgv;
-struct pyruntimestate;
 
 extern int _Py_SetFileSystemEncoding(
     const char *encoding,
     const char *errors);
 extern void _Py_ClearFileSystemEncoding(void);
 extern PyStatus _PyUnicode_InitEncodings(PyThreadState *tstate);
-#ifdef MS_WINDOWS
-extern int _PyUnicode_EnableLegacyWindowsFSEncoding(void);
-#endif
 
 extern int _Py_IsLocaleCoercionTarget(const char *ctype_loc);
 
@@ -42,6 +38,7 @@ extern PyStatus _Py_HashRandomization_Init(const PyConfig *);
 
 extern PyStatus _PyGC_Init(PyInterpreterState *interp);
 extern PyStatus _PyAtExit_Init(PyInterpreterState *interp);
+extern PyStatus _PyDateTime_InitTypes(PyInterpreterState *interp);
 
 /* Various internal finalizers */
 
@@ -75,7 +72,7 @@ extern PyStatus _Py_PreInitializeFromConfig(
 
 extern wchar_t * _Py_GetStdlibDir(void);
 
-extern int _Py_HandleSystemExit(int *exitcode_p);
+extern int _Py_HandleSystemExitAndKeyboardInterrupt(int *exitcode_p);
 
 extern PyObject* _PyErr_WriteUnraisableDefaultHook(PyObject *unraisable);
 

@@ -1004,6 +1004,56 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
         parsed_msg = message_from_bytes(m.as_bytes(), policy=policy.default)
         self.assertEqual(parsed_msg['Message-ID'], m['Message-ID'])
 
+    def test_no_wrapping_max_line_length(self):
+        # Test that falsey 'max_line_length' are converted to sys.maxsize.
+        for n in [0, None]:
+            with self.subTest(max_line_length=n):
+                self.do_test_no_wrapping_max_line_length(n)
+
+    def do_test_no_wrapping_max_line_length(self, falsey):
+        self.assertFalse(falsey)
+        pol = policy.default.clone(max_line_length=falsey)
+        subj = "S" * 100
+        body = "B" * 100
+        msg = EmailMessage(policy=pol)
+        msg["From"] = "a@ex.com"
+        msg["To"] = "b@ex.com"
+        msg["Subject"] = subj
+        msg.set_content(body)
+
+        raw = msg.as_bytes()
+        self.assertNotIn(b"=\n", raw,
+                         "Found fold indicator; wrapping not disabled")
+
+        parsed = message_from_bytes(raw, policy=policy.default)
+        self.assertEqual(parsed["Subject"], subj)
+        parsed_body = parsed.get_body().get_content().rstrip('\n')
+        self.assertEqual(parsed_body, body)
+
+    def test_invalid_header_names(self):
+        invalid_headers = [
+            ('Invalid Header', 'contains space'),
+            ('Tab\tHeader', 'contains tab'),
+            ('Colon:Header', 'contains colon'),
+            ('', 'Empty name'),
+            (' LeadingSpace', 'starts with space'),
+            ('TrailingSpace ', 'ends with space'),
+            ('Header\x7F', 'Non-ASCII character'),
+            ('Header\x80', 'Extended ASCII'),
+        ]
+        for email_policy in (policy.default, policy.compat32):
+            for setter in (EmailMessage.__setitem__, EmailMessage.add_header):
+                for name, value in invalid_headers:
+                    self.do_test_invalid_header_names(email_policy, setter, name, value)
+
+    def do_test_invalid_header_names(self, policy, setter, name, value):
+        with self.subTest(policy=policy, setter=setter, name=name, value=value):
+            message = EmailMessage(policy=policy)
+            pattern = r'(?i)(?=.*invalid)(?=.*header)(?=.*name)'
+            with self.assertRaisesRegex(ValueError, pattern) as cm:
+                 setter(message, name, value)
+            self.assertIn(f"{name!r}", str(cm.exception))
+
     def test_get_body_malformed(self):
         """test for bpo-42892"""
         msg = textwrap.dedent("""\
@@ -1030,6 +1080,15 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
         # In bpo-42892, this would raise
         # AttributeError: 'str' object has no attribute 'is_attachment'
         m.get_body()
+
+    def test_get_bytes_payload_with_quoted_printable_encoding(self):
+        # We use a memoryview to avoid directly changing the private payload
+        # and to prevent using the dedicated paths for string or bytes objects.
+        payload = memoryview(b'Some payload')
+        m = self._make_message()
+        m.add_header('Content-Transfer-Encoding', 'quoted-printable')
+        m.set_payload(payload)
+        self.assertEqual(m.get_payload(decode=True), payload)
 
 
 class TestMIMEPart(TestEmailMessageBase, TestEmailBase):

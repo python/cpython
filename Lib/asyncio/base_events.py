@@ -14,21 +14,24 @@ to modify the meaning of the API call itself.
 """
 
 import collections
+import contextvars
 import collections.abc
 import concurrent.futures
 import errno
 import heapq
 import itertools
+import math
 import os
 import socket
 import stat
 import subprocess
+import sys
 import threading
 import time
 import traceback
-import sys
 import warnings
 import weakref
+import inspect
 
 try:
     import ssl
@@ -289,6 +292,7 @@ class Server(events.AbstractServer):
         self._ssl_shutdown_timeout = ssl_shutdown_timeout
         self._serving = False
         self._serving_forever_fut = None
+        self._context = contextvars.copy_context()
 
     def __repr__(self):
         return f'<{self.__class__.__name__} sockets={self.sockets!r}>'
@@ -318,7 +322,7 @@ class Server(events.AbstractServer):
             self._loop._start_serving(
                 self._protocol_factory, sock, self._ssl_context,
                 self, self._backlog, self._ssl_handshake_timeout,
-                self._ssl_shutdown_timeout)
+                self._ssl_shutdown_timeout, context=self._context)
 
     def get_loop(self):
         return self._loop
@@ -380,6 +384,7 @@ class Server(events.AbstractServer):
         except exceptions.CancelledError:
             try:
                 self.close()
+                self.close_clients()
                 await self.wait_closed()
             finally:
                 raise
@@ -459,7 +464,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         return futures.Future(loop=self)
 
     def create_task(self, coro, **kwargs):
-        """Schedule a coroutine object.
+        """Schedule or begin executing a coroutine object.
 
         Return a task object.
         """
@@ -483,10 +488,10 @@ class BaseEventLoop(events.AbstractEventLoop):
         If factory is None the default task factory will be set.
 
         If factory is a callable, it should have a signature matching
-        '(loop, coro, **kwargs)', where 'loop' will be a reference to the active
-        event loop, 'coro' will be a coroutine object, and **kwargs will be
-        arbitrary keyword arguments that should be passed on to Task.
-        The callable must return a Task.
+        '(loop, coro, **kwargs)', where 'loop' will be a reference to the
+        active event loop, 'coro' will be a coroutine object, and **kwargs
+        will be arbitrary keyword arguments that should be passed on to
+        Task.  The callable must return a Task.
         """
         if factory is not None and not callable(factory):
             raise TypeError('task factory must be a callable or None')
@@ -507,7 +512,8 @@ class BaseEventLoop(events.AbstractEventLoop):
             extra=None, server=None,
             ssl_handshake_timeout=None,
             ssl_shutdown_timeout=None,
-            call_connection_made=True):
+            call_connection_made=True,
+            context=None):
         """Create SSL transport."""
         raise NotImplementedError
 
@@ -636,7 +642,7 @@ class BaseEventLoop(events.AbstractEventLoop):
     def _run_forever_setup(self):
         """Prepare the run loop to process events.
 
-        This method exists so that custom custom event loop subclasses (e.g., event loops
+        This method exists so that custom event loop subclasses (e.g., event loops
         that integrate a GUI event loop with Python's event loop) have access to all the
         loop setup logic.
         """
@@ -656,7 +662,7 @@ class BaseEventLoop(events.AbstractEventLoop):
     def _run_forever_cleanup(self):
         """Clean up after an event loop finishes the looping over events.
 
-        This method exists so that custom custom event loop subclasses (e.g., event loops
+        This method exists so that custom event loop subclasses (e.g., event loops
         that integrate a GUI event loop with Python's event loop) have access to all the
         loop cleanup logic.
         """
@@ -671,8 +677,8 @@ class BaseEventLoop(events.AbstractEventLoop):
 
     def run_forever(self):
         """Run until stop() is called."""
+        self._run_forever_setup()
         try:
-            self._run_forever_setup()
             while True:
                 self._run_once()
                 if self._stopping:
@@ -721,8 +727,8 @@ class BaseEventLoop(events.AbstractEventLoop):
     def stop(self):
         """Stop running the event loop.
 
-        Every callback already scheduled will still run.  This simply informs
-        run_forever to stop looping after a complete iteration.
+        Every callback already scheduled will still run.  This simply
+        informs run_forever to stop looping after a complete iteration.
         """
         self._stopping = True
 
@@ -835,7 +841,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
     def _check_callback(self, callback, method):
         if (coroutines.iscoroutine(callback) or
-                coroutines._iscoroutinefunction(callback)):
+                inspect.iscoroutinefunction(callback)):
             raise TypeError(
                 f"coroutines cannot be used with {method}()")
         if not callable(callback):
@@ -949,7 +955,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         try:
             return await self._sock_sendfile_native(sock, file,
                                                     offset, count)
-        except exceptions.SendfileNotAvailableError as exc:
+        except exceptions.SendfileNotAvailableError:
             if not fallback:
                 raise
         return await self._sock_sendfile_fallback(sock, file,
@@ -963,7 +969,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             f"and file {file!r} combination")
 
     async def _sock_sendfile_fallback(self, sock, file, offset, count):
-        if offset:
+        if hasattr(file, 'seek'):
             file.seek(offset)
         blocksize = (
             min(count, constants.SENDFILE_FALLBACK_READBUFFER_SIZE)
@@ -1016,38 +1022,43 @@ class BaseEventLoop(events.AbstractEventLoop):
         family, type_, proto, _, address = addr_info
         sock = None
         try:
-            sock = socket.socket(family=family, type=type_, proto=proto)
-            sock.setblocking(False)
-            if local_addr_infos is not None:
-                for lfamily, _, _, _, laddr in local_addr_infos:
-                    # skip local addresses of different family
-                    if lfamily != family:
-                        continue
-                    try:
-                        sock.bind(laddr)
-                        break
-                    except OSError as exc:
-                        msg = (
-                            f'error while attempting to bind on '
-                            f'address {laddr!r}: {str(exc).lower()}'
-                        )
-                        exc = OSError(exc.errno, msg)
-                        my_exceptions.append(exc)
-                else:  # all bind attempts failed
-                    if my_exceptions:
-                        raise my_exceptions.pop()
-                    else:
-                        raise OSError(f"no matching local address with {family=} found")
-            await self.sock_connect(sock, address)
-            return sock
-        except OSError as exc:
-            my_exceptions.append(exc)
-            if sock is not None:
-                sock.close()
-            raise
+            try:
+                sock = socket.socket(family=family, type=type_, proto=proto)
+                sock.setblocking(False)
+                if local_addr_infos is not None:
+                    for lfamily, _, _, _, laddr in local_addr_infos:
+                        # skip local addresses of different family
+                        if lfamily != family:
+                            continue
+                        try:
+                            sock.bind(laddr)
+                            break
+                        except OSError as exc:
+                            msg = (
+                                f'error while attempting to bind on '
+                                f'address {laddr!r}: {str(exc).lower()}'
+                            )
+                            exc = OSError(exc.errno, msg)
+                            my_exceptions.append(exc)
+                    else:  # all bind attempts failed
+                        if my_exceptions:
+                            raise my_exceptions.pop()
+                        else:
+                            raise OSError(f"no matching local address with {family=} found")
+                await self.sock_connect(sock, address)
+                return sock
+            except OSError as exc:
+                my_exceptions.append(exc)
+                raise
         except:
             if sock is not None:
-                sock.close()
+                try:
+                    sock.close()
+                except OSError:
+                    # An error when closing a newly created socket is
+                    # not important, but it can overwrite more important
+                    # non-OSError error. So ignore it.
+                    pass
             raise
         finally:
             exceptions = my_exceptions = None
@@ -1065,12 +1076,12 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         Create a streaming transport connection to a given internet host and
         port: socket family AF_INET or socket.AF_INET6 depending on host (or
-        family if specified), socket type SOCK_STREAM. protocol_factory must be
-        a callable returning a protocol instance.
+        family if specified), socket type SOCK_STREAM. protocol_factory must
+        be a callable returning a protocol instance.
 
-        This method is a coroutine which will try to establish the connection
-        in the background.  When successful, the coroutine returns a
-        (transport, protocol) pair.
+        This method is a coroutine which will try to establish the
+        connection in the background.  When successful, the coroutine
+        returns a (transport, protocol) pair.
         """
         if server_hostname is not None and not ssl:
             raise ValueError('server_hostname is only meaningful with ssl')
@@ -1161,7 +1172,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                         raise ExceptionGroup("create_connection failed", exceptions)
                     if len(exceptions) == 1:
                         raise exceptions[0]
-                    else:
+                    elif exceptions:
                         # If they all have the same str(), raise one.
                         model = str(exceptions[0])
                         if all(str(exc) == model for exc in exceptions):
@@ -1170,6 +1181,9 @@ class BaseEventLoop(events.AbstractEventLoop):
                         # the various error messages.
                         raise OSError('Multiple exceptions: {}'.format(
                             ', '.join(str(exc) for exc in exceptions)))
+                    else:
+                        # No exceptions were collected, raise a timeout error
+                        raise TimeoutError('create_connection failed')
                 finally:
                     exceptions = None
 
@@ -1203,9 +1217,10 @@ class BaseEventLoop(events.AbstractEventLoop):
             self, sock, protocol_factory, ssl,
             server_hostname, server_side=False,
             ssl_handshake_timeout=None,
-            ssl_shutdown_timeout=None):
+            ssl_shutdown_timeout=None, context=None):
 
         sock.setblocking(False)
+        context = context if context is not None else contextvars.copy_context()
 
         protocol = protocol_factory()
         waiter = self.create_future()
@@ -1215,9 +1230,10 @@ class BaseEventLoop(events.AbstractEventLoop):
                 sock, protocol, sslcontext, waiter,
                 server_side=server_side, server_hostname=server_hostname,
                 ssl_handshake_timeout=ssl_handshake_timeout,
-                ssl_shutdown_timeout=ssl_shutdown_timeout)
+                ssl_shutdown_timeout=ssl_shutdown_timeout,
+                context=context)
         else:
-            transport = self._make_socket_transport(sock, protocol, waiter)
+            transport = self._make_socket_transport(sock, protocol, waiter, context=context)
 
         try:
             await waiter
@@ -1262,7 +1278,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             try:
                 return await self._sendfile_native(transport, file,
                                                    offset, count)
-            except exceptions.SendfileNotAvailableError as exc:
+            except exceptions.SendfileNotAvailableError:
                 if not fallback:
                     raise
 
@@ -1270,7 +1286,6 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise RuntimeError(
                 f"fallback is disabled and native sendfile is not "
                 f"supported for transport {transport!r}")
-
         return await self._sendfile_fallback(transport, file,
                                              offset, count)
 
@@ -1279,7 +1294,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             "sendfile syscall is not supported")
 
     async def _sendfile_fallback(self, transp, file, offset, count):
-        if offset:
+        if hasattr(file, 'seek'):
             file.seek(offset)
         blocksize = min(count, 16384) if count else 16384
         buf = bytearray(blocksize)
@@ -1295,8 +1310,8 @@ class BaseEventLoop(events.AbstractEventLoop):
                 read = await self.run_in_executor(None, file.readinto, view)
                 if not read:
                     return total_sent  # EOF
-                await proto.drain()
                 transp.write(view[:read])
+                await proto.drain()
                 total_sent += read
         finally:
             if total_sent > 0 and hasattr(file, 'seek'):
@@ -1336,6 +1351,17 @@ class BaseEventLoop(events.AbstractEventLoop):
         # Pause early so that "ssl_protocol.data_received()" doesn't
         # have a chance to get called before "ssl_protocol.connection_made()".
         transport.pause_reading()
+
+        # gh-142352: move buffered StreamReader data to SSLProtocol
+        if server_side:
+            from .streams import StreamReaderProtocol
+            if isinstance(protocol, StreamReaderProtocol):
+                stream_reader = getattr(protocol, '_stream_reader', None)
+                if stream_reader is not None:
+                    buffer = stream_reader._buffer
+                    if buffer:
+                        ssl_protocol._incoming.write(buffer)
+                        buffer.clear()
 
         transport.set_protocol(ssl_protocol)
         conmade_cb = self.call_soon(ssl_protocol.connection_made, transport)
@@ -1524,11 +1550,11 @@ class BaseEventLoop(events.AbstractEventLoop):
         The host parameter can be a string, in that case the TCP server is
         bound to host and port.
 
-        The host parameter can also be a sequence of strings and in that case
-        the TCP server is bound to all hosts of the sequence. If a host
-        appears multiple times (possibly indirectly e.g. when hostnames
-        resolve to the same IP address), the server is only bound once to that
-        host.
+        The host parameter can also be a sequence of strings and in that
+        case the TCP server is bound to all hosts of the sequence.  If
+        a host appears multiple times (possibly indirectly e.g. when
+        hostnames resolve to the same IP address), the server is only bound
+        once to that host.
 
         Return a Server object which can be used to stop the service.
 
@@ -1666,8 +1692,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise ValueError(
                 'ssl_shutdown_timeout is only meaningful with ssl')
 
-        if sock is not None:
-            _check_ssl_socket(sock)
+        _check_ssl_socket(sock)
 
         transport, protocol = await self._create_connection_transport(
             sock, protocol_factory, ssl, '', server_side=True,
@@ -1880,6 +1905,8 @@ class BaseEventLoop(events.AbstractEventLoop):
         - 'protocol' (optional): Protocol instance;
         - 'transport' (optional): Transport instance;
         - 'socket' (optional): Socket instance;
+        - 'source_traceback' (optional): Traceback of the source;
+        - 'handle_traceback' (optional): Traceback of the handle;
         - 'asyncgen' (optional): Asynchronous generator that caused
                                  the exception.
 
@@ -2002,7 +2029,10 @@ class BaseEventLoop(events.AbstractEventLoop):
         event_list = None
 
         # Handle 'later' callbacks that are ready.
-        end_time = self.time() + self._clock_resolution
+        now = self.time()
+        # Ensure that `end_time` is strictly increasing
+        # when the clock resolution is too small.
+        end_time = now + max(self._clock_resolution, math.ulp(now))
         while self._scheduled:
             handle = self._scheduled[0]
             if handle._when >= end_time:

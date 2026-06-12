@@ -69,6 +69,20 @@ class PLexer:
             f"Expected {kind!r} but got {tkn and tkn.text!r}", tkn
         )
 
+    def consume_to(self, end: str) -> list[Token]:
+        res: list[Token] = []
+        parens = 0
+        while tkn := self.next(raw=True):
+            res.append(tkn)
+            if tkn.kind == end and parens == 0:
+                return res
+            if tkn.kind == "LPAREN":
+                parens += 1
+            if tkn.kind == "RPAREN":
+                parens -= 1
+        raise self.make_syntax_error(
+            f"Expected {end!r} but reached EOF", tkn)
+
     def extract_line(self, lineno: int) -> str:
         # Return source line `lineno` (1-based)
         lines = self.src.splitlines()

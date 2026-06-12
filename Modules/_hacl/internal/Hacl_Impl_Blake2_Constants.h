@@ -23,15 +23,15 @@
  */
 
 
-#ifndef __internal_Hacl_Impl_Blake2_Constants_H
-#define __internal_Hacl_Impl_Blake2_Constants_H
+#ifndef internal_Hacl_Impl_Blake2_Constants_H
+#define internal_Hacl_Impl_Blake2_Constants_H
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
 #include <string.h>
-#include "krml/types.h"
+#include "krml/internal/types.h"
 #include "krml/lowstar_endianness.h"
 #include "krml/internal/target.h"
 
@@ -69,5 +69,5 @@ Hacl_Hash_Blake2b_ivTable_B[8U] =
 }
 #endif
 
-#define __internal_Hacl_Impl_Blake2_Constants_H_DEFINED
-#endif
+#define internal_Hacl_Impl_Blake2_Constants_H_DEFINED
+#endif /* internal_Hacl_Impl_Blake2_Constants_H */

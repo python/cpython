@@ -281,7 +281,7 @@ last_dim_is_contiguous(const Py_buffer *dest, const Py_buffer *src)
 /* This is not a general function for determining format equivalence.
    It is used in copy_single() and copy_buffer() to weed out non-matching
    formats. Skipping the '@' character is specifically used in slice
-   assignments, where the lvalue is already known to have a single character
+   assignments, where the lvalue is already known to have a
    format. This is a performance hack that could be rewritten (if properly
    benchmarked). */
 static inline int
@@ -1197,10 +1197,11 @@ memory_exit(PyObject *self, PyObject *args)
 /*                         Casting format and shape                         */
 /****************************************************************************/
 
-#define IS_BYTE_FORMAT(f) (f == 'b' || f == 'B' || f == 'c')
+#define IS_BYTE_FORMAT(f) \
+    (strcmp(f, "b") == 0 || strcmp(f, "B") == 0 || strcmp(f, "c") == 0)
 
 static inline Py_ssize_t
-get_native_fmtchar(char *result, const char *fmt)
+get_native_fmtchar(const char **result, const char *fmt)
 {
     Py_ssize_t size = -1;
 
@@ -1218,10 +1219,21 @@ get_native_fmtchar(char *result, const char *fmt)
     case 'e': size = sizeof(float) / 2; break;
     case '?': size = sizeof(_Bool); break;
     case 'P': size = sizeof(void *); break;
+    case 'Z': {
+        switch (fmt[1]) {
+            case 'f': size = 2*sizeof(float); break;
+            case 'd': size = 2*sizeof(double); break;
+        }
+        if (size > 0 && fmt[2] == '\0') {
+            *result = fmt;
+            return size;
+        }
+        break;
+    }
     }
 
     if (size > 0 && fmt[1] == '\0') {
-        *result = fmt[0];
+        *result = fmt;
         return size;
     }
 
@@ -1237,8 +1249,18 @@ get_native_fmtstr(const char *fmt)
         at = 1;
         fmt++;
     }
-    if (fmt[0] == '\0' || fmt[1] != '\0') {
+    if (fmt[0] == '\0') {
         return NULL;
+    }
+    if (fmt[0] == 'Z') {
+        if (fmt[1] == '\0' || fmt[2] != '\0') {
+            return NULL;
+        }
+    }
+    else {
+        if (fmt[1] != '\0') {
+            return NULL;
+        }
     }
 
 #define RETURN(s) do { return at ? "@" s : s; } while (0)
@@ -1260,6 +1282,13 @@ get_native_fmtstr(const char *fmt)
     case 'f': RETURN("f");
     case 'd': RETURN("d");
     case 'e': RETURN("e");
+    case 'Z': {
+        switch (fmt[1]) {
+        case 'f': RETURN("Zf");
+        case 'd': RETURN("Zd");
+        }
+        break;
+    }
     case '?': RETURN("?");
     case 'P': RETURN("P");
     }
@@ -1277,7 +1306,7 @@ cast_to_1D(PyMemoryViewObject *mv, PyObject *format)
 {
     Py_buffer *view = &mv->view;
     PyObject *asciifmt;
-    char srcchar, destchar;
+    const char *srcfmt, *destfmt;
     Py_ssize_t itemsize;
     int ret = -1;
 
@@ -1291,16 +1320,16 @@ cast_to_1D(PyMemoryViewObject *mv, PyObject *format)
     if (asciifmt == NULL)
         return ret;
 
-    itemsize = get_native_fmtchar(&destchar, PyBytes_AS_STRING(asciifmt));
+    itemsize = get_native_fmtchar(&destfmt, PyBytes_AS_STRING(asciifmt));
     if (itemsize < 0) {
         PyErr_SetString(PyExc_ValueError,
-            "memoryview: destination format must be a native single "
-            "character format prefixed with an optional '@'");
+            "memoryview: destination format must be a native "
+            "format prefixed with an optional '@'");
         goto out;
     }
 
-    if ((get_native_fmtchar(&srcchar, view->format) < 0 ||
-         !IS_BYTE_FORMAT(srcchar)) && !IS_BYTE_FORMAT(destchar)) {
+    if ((get_native_fmtchar(&srcfmt, view->format) < 0 ||
+         !IS_BYTE_FORMAT(srcfmt)) && !IS_BYTE_FORMAT(destfmt)) {
         PyErr_SetString(PyExc_TypeError,
             "memoryview: cannot cast between two non-byte formats");
         goto out;
@@ -1600,11 +1629,7 @@ memory_getbuf(PyObject *_self, Py_buffer *view, int flags)
 
 
     view->obj = Py_NewRef(self);
-#ifdef Py_GIL_DISABLED
-    _Py_atomic_add_ssize(&self->exports, 1);
-#else
-    self->exports++;
-#endif
+    FT_ATOMIC_ADD_SSIZE(self->exports, 1);
 
     return 0;
 }
@@ -1613,11 +1638,7 @@ static void
 memory_releasebuf(PyObject *_self, Py_buffer *view)
 {
     PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
-#ifdef Py_GIL_DISABLED
-    _Py_atomic_add_ssize(&self->exports, -1);
-#else
-    self->exports--;
-#endif
+    FT_ATOMIC_ADD_SSIZE(self->exports, -1);
     return;
     /* PyBuffer_Release() decrements view->obj after this function returns. */
 }
@@ -1671,6 +1692,10 @@ fix_error_int(const char *fmt)
 
     return -1;
 }
+
+// UNPACK_TO_BOOL: Return 0 if PTR represents "false", and 1 otherwise.
+static const _Bool bool_false = 0;
+#define UNPACK_TO_BOOL(PTR) (memcmp((PTR), &bool_false, sizeof(_Bool)) != 0)
 
 /* Accept integer objects or objects with an __index__() method. */
 static long
@@ -1773,7 +1798,7 @@ pylong_as_zu(PyObject *item)
         dest = x;                          \
     } while (0)
 
-/* Unpack a single item. 'fmt' can be any native format character in struct
+/* Unpack a single item. 'fmt' can be any native format in struct
    module syntax. This function is very sensitive to small changes. With this
    layout gcc automatically generates a fast jump table. */
 static inline PyObject *
@@ -1785,7 +1810,7 @@ unpack_single(PyMemoryViewObject *self, const char *ptr, const char *fmt)
     long long lld;
     long ld;
     Py_ssize_t zd;
-    double d;
+    double d[2];
     unsigned char uc;
     void *p;
 
@@ -1807,7 +1832,7 @@ unpack_single(PyMemoryViewObject *self, const char *ptr, const char *fmt)
     case 'l': UNPACK_SINGLE(ld, ptr, long); goto convert_ld;
 
     /* boolean */
-    case '?': UNPACK_SINGLE(ld, ptr, _Bool); goto convert_bool;
+    case '?': ld = UNPACK_TO_BOOL(ptr); goto convert_bool;
 
     /* unsigned integers */
     case 'H': UNPACK_SINGLE(lu, ptr, unsigned short); goto convert_lu;
@@ -1823,9 +1848,27 @@ unpack_single(PyMemoryViewObject *self, const char *ptr, const char *fmt)
     case 'N': UNPACK_SINGLE(zu, ptr, size_t); goto convert_zu;
 
     /* floats */
-    case 'f': UNPACK_SINGLE(d, ptr, float); goto convert_double;
-    case 'd': UNPACK_SINGLE(d, ptr, double); goto convert_double;
-    case 'e': d = PyFloat_Unpack2(ptr, endian); goto convert_double;
+    case 'f': UNPACK_SINGLE(d[0], ptr, float); goto convert_double;
+    case 'd': UNPACK_SINGLE(d[0], ptr, double); goto convert_double;
+    case 'e': d[0] = PyFloat_Unpack2(ptr, endian); goto convert_double;
+
+    /* complexes */
+    case 'Z': {
+        switch (fmt[1]) {
+        case 'f':
+            d[0] = PyFloat_Unpack4(ptr, endian);
+            d[1] = PyFloat_Unpack4(ptr + sizeof(float), endian);
+            goto convert_double_complex;
+
+        case 'd':
+            d[0] = PyFloat_Unpack8(ptr, endian);
+            d[1] = PyFloat_Unpack8(ptr + sizeof(double), endian);
+            goto convert_double_complex;
+
+        default: goto err_format;
+        }
+        break;
+    }
 
     /* bytes object */
     case 'c': goto convert_bytes;
@@ -1853,7 +1896,9 @@ convert_zd:
 convert_zu:
     return PyLong_FromSize_t(zu);
 convert_double:
-    return PyFloat_FromDouble(d);
+    return PyFloat_FromDouble(d[0]);
+convert_double_complex:
+    return PyComplex_FromDoubles(d[0], d[1]);
 convert_bool:
     return PyBool_FromLong(ld);
 convert_bytes:
@@ -1873,7 +1918,7 @@ err_format:
         memcpy(ptr, (char *)&x, sizeof x);   \
     } while (0)
 
-/* Pack a single item. 'fmt' can be any native format character in
+/* Pack a single item. 'fmt' can be any native format in
    struct module syntax. */
 static int
 pack_single(PyMemoryViewObject *self, char *ptr, PyObject *item, const char *fmt)
@@ -1885,6 +1930,7 @@ pack_single(PyMemoryViewObject *self, char *ptr, PyObject *item, const char *fmt
     long ld;
     Py_ssize_t zd;
     double d;
+    Py_complex c;
     void *p;
 
 #if PY_LITTLE_ENDIAN
@@ -1986,6 +2032,32 @@ pack_single(PyMemoryViewObject *self, char *ptr, PyObject *item, const char *fmt
         }
         break;
 
+    /* complexes */
+    case 'Z': {
+        switch (fmt[1]) {
+        case 'f': case 'd':
+            c = PyComplex_AsCComplex(item);
+            if (c.real == -1.0 && PyErr_Occurred()) {
+                goto err_occurred;
+            }
+            CHECK_RELEASED_INT_AGAIN(self);
+            if (fmt[1] == 'd') {
+                double x[2] = {c.real, c.imag};
+
+                memcpy(ptr, &x, sizeof(x));
+            }
+            else {
+                float x[2] = {(float)c.real, (float)c.imag};
+
+                memcpy(ptr, &x, sizeof(x));
+            }
+            break;
+
+        default: goto err_format;
+        }
+        break;
+    }
+
     /* bool */
     case '?':
         ld = PyObject_IsTrue(item);
@@ -2083,7 +2155,7 @@ struct_get_unpacker(const char *fmt, Py_ssize_t itemsize)
     PyObject *format = NULL;
     struct unpacker *x = NULL;
 
-    Struct = _PyImport_GetModuleAttrString("struct", "Struct");
+    Struct = PyImport_ImportModuleAttrString("struct", "Struct");
     if (Struct == NULL)
         return NULL;
 
@@ -2159,6 +2231,8 @@ adjust_fmt(const Py_buffer *view)
     const char *fmt;
 
     fmt = (view->format[0] == '@') ? view->format+1 : view->format;
+    if (fmt[0] == 'Z' && fmt[1] && fmt[2] == '\0')
+        return fmt;
     if (fmt[0] && fmt[1] == '\0')
         return fmt;
 
@@ -2271,20 +2345,20 @@ memoryview.tobytes
 
 Return the data in the buffer as a byte string.
 
-Order can be {'C', 'F', 'A'}. When order is 'C' or 'F', the data of the
-original array is converted to C or Fortran order. For contiguous views,
-'A' returns an exact copy of the physical memory. In particular, in-memory
-Fortran order is preserved. For non-contiguous views, the data is converted
-to C first. order=None is the same as order='C'.
+Order can be {'C', 'F', 'A'}.  When order is 'C' or 'F', the data of
+the original array is converted to C or Fortran order.  For
+contiguous views, 'A' returns an exact copy of the physical memory.
+In particular, in-memory Fortran order is preserved.  For
+non-contiguous views, the data is converted to C first.  order=None
+is the same as order='C'.
 [clinic start generated code]*/
 
 static PyObject *
 memoryview_tobytes_impl(PyMemoryViewObject *self, const char *order)
-/*[clinic end generated code: output=1288b62560a32a23 input=0efa3ddaeda573a8]*/
+/*[clinic end generated code: output=1288b62560a32a23 input=119c70aa91791dc8]*/
 {
     Py_buffer *src = VIEW_ADDR(self);
     char ord = 'C';
-    PyObject *bytes;
 
     CHECK_RELEASED(self);
 
@@ -2302,16 +2376,18 @@ memoryview_tobytes_impl(PyMemoryViewObject *self, const char *order)
         }
     }
 
-    bytes = PyBytes_FromStringAndSize(NULL, src->len);
-    if (bytes == NULL)
-        return NULL;
-
-    if (PyBuffer_ToContiguous(PyBytes_AS_STRING(bytes), src, src->len, ord) < 0) {
-        Py_DECREF(bytes);
+    PyBytesWriter *writer = PyBytesWriter_Create(src->len);
+    if (writer == NULL) {
         return NULL;
     }
 
-    return bytes;
+    if (PyBuffer_ToContiguous(PyBytesWriter_GetData(writer),
+                              src, src->len, ord) < 0) {
+        PyBytesWriter_Discard(writer);
+        return NULL;
+    }
+
+    return PyBytesWriter_Finish(writer);
 }
 
 /*[clinic input]
@@ -2319,9 +2395,9 @@ memoryview.hex
 
     sep: object = NULL
         An optional single character or byte to separate hex bytes.
-    bytes_per_sep: int = 1
-        How many bytes between separators.  Positive values count from the
-        right, negative values count from the left.
+    bytes_per_sep: Py_ssize_t = 1
+        How many bytes between separators.  Positive values count from
+        the right, negative values count from the left.
 
 Return the data in the buffer as a str of hexadecimal numbers.
 
@@ -2339,32 +2415,39 @@ Example:
 
 static PyObject *
 memoryview_hex_impl(PyMemoryViewObject *self, PyObject *sep,
-                    int bytes_per_sep)
-/*[clinic end generated code: output=430ca760f94f3ca7 input=539f6a3a5fb56946]*/
+                    Py_ssize_t bytes_per_sep)
+/*[clinic end generated code: output=c9bb00c7a8e86056 input=3f1c5d08906e3b70]*/
 {
     Py_buffer *src = VIEW_ADDR(self);
-    PyObject *bytes;
-    PyObject *ret;
 
     CHECK_RELEASED(self);
 
     if (MV_C_CONTIGUOUS(self->flags)) {
-        return _Py_strhex_with_sep(src->buf, src->len, sep, bytes_per_sep);
+        // Prevent 'self' from being freed if computing len(sep) mutates 'self'
+        // in _Py_strhex_with_sep().
+        // See: https://github.com/python/cpython/issues/143195.
+        FT_ATOMIC_ADD_SSIZE(self->exports, 1);
+        PyObject *ret = _Py_strhex_with_sep(src->buf, src->len, sep, bytes_per_sep);
+        FT_ATOMIC_ADD_SSIZE(self->exports, -1);
+        return ret;
     }
 
-    bytes = PyBytes_FromStringAndSize(NULL, src->len);
-    if (bytes == NULL)
-        return NULL;
-
-    if (PyBuffer_ToContiguous(PyBytes_AS_STRING(bytes), src, src->len, 'C') < 0) {
-        Py_DECREF(bytes);
+    PyBytesWriter *writer = PyBytesWriter_Create(src->len);
+    if (writer == NULL) {
         return NULL;
     }
 
-    ret = _Py_strhex_with_sep(
-            PyBytes_AS_STRING(bytes), PyBytes_GET_SIZE(bytes),
-            sep, bytes_per_sep);
-    Py_DECREF(bytes);
+    if (PyBuffer_ToContiguous(PyBytesWriter_GetData(writer),
+                              src, src->len, 'C') < 0) {
+        PyBytesWriter_Discard(writer);
+        return NULL;
+    }
+
+    PyObject *ret = _Py_strhex_with_sep(
+        PyBytesWriter_GetData(writer),
+        PyBytesWriter_GetSize(writer),
+        sep, bytes_per_sep);
+    PyBytesWriter_Discard(writer);
 
     return ret;
 }
@@ -2426,7 +2509,7 @@ ptr_from_tuple(const Py_buffer *view, PyObject *tup)
 
     if (nindices > view->ndim) {
         PyErr_Format(PyExc_TypeError,
-                     "cannot index %zd-dimension view with %zd-element tuple",
+                     "cannot index %d-dimension view with %zd-element tuple",
                      view->ndim, nindices);
         return NULL;
     }
@@ -2781,8 +2864,8 @@ Count the number of occurrences of a value.
 [clinic start generated code]*/
 
 static PyObject *
-memoryview_count(PyMemoryViewObject *self, PyObject *value)
-/*[clinic end generated code: output=e2c255a8d54eaa12 input=e3036ce1ed7d1823]*/
+memoryview_count_impl(PyMemoryViewObject *self, PyObject *value)
+/*[clinic end generated code: output=a15cb19311985063 input=e3036ce1ed7d1823]*/
 {
     PyObject *iter = PyObject_GetIter(_PyObject_CAST(self));
     if (iter == NULL) {
@@ -2968,12 +3051,12 @@ struct_unpack_cmp(const char *p, const char *q,
     } while (0)
 
 static inline int
-unpack_cmp(const char *p, const char *q, char fmt,
+unpack_cmp(const char *p, const char *q, const char *fmt,
            struct unpacker *unpack_p, struct unpacker *unpack_q)
 {
     int equal;
 
-    switch (fmt) {
+    switch (fmt[0]) {
 
     /* signed integers and fast path for 'B' */
     case 'B': return *((const unsigned char *)p) == *((const unsigned char *)q);
@@ -2983,7 +3066,7 @@ unpack_cmp(const char *p, const char *q, char fmt,
     case 'l': CMP_SINGLE(p, q, long); return equal;
 
     /* boolean */
-    case '?': CMP_SINGLE(p, q, _Bool); return equal;
+    case '?': return UNPACK_TO_BOOL(p) == UNPACK_TO_BOOL(q);
 
     /* unsigned integers */
     case 'H': CMP_SINGLE(p, q, unsigned short); return equal;
@@ -3014,6 +3097,29 @@ unpack_cmp(const char *p, const char *q, char fmt,
         return (u == v);
     }
 
+    /* complexes */
+    case 'Z': {
+        switch (fmt[1]) {
+        case 'f':
+        {
+             float x[2], y[2];
+
+             memcpy(&x, p, sizeof(x));
+             memcpy(&y, q, sizeof(y));
+             return (x[0] == y[0]) && (x[1] == y[1]);
+        }
+        case 'd':
+        {
+             double x[2], y[2];
+
+             memcpy(&x, p, sizeof(x));
+             memcpy(&y, q, sizeof(y));
+             return (x[0] == y[0]) && (x[1] == y[1]);
+        }
+        }
+        break;
+    }
+
     /* bytes object */
     case 'c': return *p == *q;
 
@@ -3038,7 +3144,7 @@ static int
 cmp_base(const char *p, const char *q, const Py_ssize_t *shape,
          const Py_ssize_t *pstrides, const Py_ssize_t *psuboffsets,
          const Py_ssize_t *qstrides, const Py_ssize_t *qsuboffsets,
-         char fmt, struct unpacker *unpack_p, struct unpacker *unpack_q)
+         const char *fmt, struct unpacker *unpack_p, struct unpacker *unpack_q)
 {
     Py_ssize_t i;
     int equal;
@@ -3061,7 +3167,7 @@ cmp_rec(const char *p, const char *q,
         Py_ssize_t ndim, const Py_ssize_t *shape,
         const Py_ssize_t *pstrides, const Py_ssize_t *psuboffsets,
         const Py_ssize_t *qstrides, const Py_ssize_t *qsuboffsets,
-        char fmt, struct unpacker *unpack_p, struct unpacker *unpack_q)
+        const char *fmt, struct unpacker *unpack_p, struct unpacker *unpack_q)
 {
     Py_ssize_t i;
     int equal;
@@ -3100,7 +3206,7 @@ memory_richcompare(PyObject *v, PyObject *w, int op)
     Py_buffer *ww = NULL;
     struct unpacker *unpack_v = NULL;
     struct unpacker *unpack_w = NULL;
-    char vfmt, wfmt;
+    const char *vfmt, *wfmt;
     int equal = MV_COMPARE_NOT_IMPL;
 
     if (op != Py_EQ && op != Py_NE)
@@ -3112,6 +3218,30 @@ memory_richcompare(PyObject *v, PyObject *w, int op)
         goto result;
     }
     vv = VIEW_ADDR(v);
+
+    // For formats supported by the struct module a memoryview is equal to
+    // itself: there is no need to compare individual values.
+    // This is not true for float values since they can be NaN, and NaN
+    // is not equal to itself.  So only use this optimization on format known to
+    // not use floats.
+    if (v == w) {
+        const char *format = vv->format;
+        if (format != NULL) {
+            if (*format == '@') {
+                format++;
+            }
+            // Include only formats known by struct, exclude float formats
+            // "d" (double), "f" (float) and "e" (16-bit float).
+            // Do not optimize "P" format.
+            if (format[0] != 0
+                && strchr("bBchHiIlLnNqQ?", format[0]) != NULL
+                && format[1] == 0)
+            {
+                equal = 1;
+                goto result;
+            }
+        }
+    }
 
     if (PyMemoryView_Check(w)) {
         if (BASE_INACCESSIBLE(w)) {
@@ -3136,15 +3266,15 @@ memory_richcompare(PyObject *v, PyObject *w, int op)
 
     /* Use fast unpacking for identical primitive C type formats. */
     if (get_native_fmtchar(&vfmt, vv->format) < 0)
-        vfmt = '_';
+        vfmt = "_";
     if (get_native_fmtchar(&wfmt, ww->format) < 0)
-        wfmt = '_';
-    if (vfmt == '_' || wfmt == '_' || vfmt != wfmt) {
+        wfmt = "_";
+    if (strcmp(vfmt, "_") == 0 || strcmp(wfmt, "_") == 0 || strcmp(vfmt, wfmt) != 0) {
         /* Use struct module unpacking. NOTE: Even for equal format strings,
            memcmp() cannot be used for item comparison since it would give
            incorrect results in the case of NaNs or uninitialized padding
            bytes. */
-        vfmt = '_';
+        vfmt = "_";
         unpack_v = struct_get_unpacker(vv->format, vv->itemsize);
         if (unpack_v == NULL) {
             equal = fix_struct_error_int();
@@ -3207,7 +3337,7 @@ memory_hash(PyObject *_self)
         Py_buffer *view = &self->view;
         char *mem = view->buf;
         Py_ssize_t ret;
-        char fmt;
+        const char *fmt;
 
         CHECK_RELEASED_INT(self);
 
@@ -3222,9 +3352,16 @@ memory_hash(PyObject *_self)
                 "memoryview: hashing is restricted to formats 'B', 'b' or 'c'");
             return -1;
         }
-        if (view->obj != NULL && PyObject_Hash(view->obj) == -1) {
-            /* Keep the original error message */
-            return -1;
+        if (view->obj != NULL) {
+            // Prevent 'self' from being freed when computing the item's hash.
+            // See https://github.com/python/cpython/issues/142664.
+            FT_ATOMIC_ADD_SSIZE(self->exports, 1);
+            Py_hash_t h = PyObject_Hash(view->obj);
+            FT_ATOMIC_ADD_SSIZE(self->exports, -1);
+            if (h == -1) {
+                /* Keep the original error message */
+                return -1;
+            }
         }
 
         if (!MV_C_CONTIGUOUS(self->flags)) {
@@ -3442,7 +3579,8 @@ static PyMethodDef memory_methods[] = {
     MEMORYVIEW_INDEX_METHODDEF
     {"__enter__",   memory_enter, METH_NOARGS, NULL},
     {"__exit__",    memory_exit, METH_VARARGS, memory_exit_doc},
-    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
+     PyDoc_STR("memoryviews are generic over the type of their underlying data")},
     {NULL,          NULL}
 };
 

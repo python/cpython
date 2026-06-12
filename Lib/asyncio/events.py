@@ -5,17 +5,13 @@
 # SPDX-FileCopyrightText: Copyright (c) 2015-2021 MagicStack Inc.  http://magic.io
 
 __all__ = (
-    "_AbstractEventLoopPolicy",
     "AbstractEventLoop",
     "AbstractServer",
     "Handle",
     "TimerHandle",
-    "_get_event_loop_policy",
     "get_event_loop_policy",
-    "_set_event_loop_policy",
     "set_event_loop_policy",
     "get_event_loop",
-    "_set_event_loop",
     "set_event_loop",
     "new_event_loop",
     "_set_running_loop",
@@ -378,8 +374,8 @@ class AbstractEventLoop:
 
         If host is an empty string or None all interfaces are assumed
         and a list of multiple sockets will be returned (most likely
-        one for IPv4 and another one for IPv6). The host parameter can also be
-        a sequence (e.g. list) of hosts to bind to.
+        one for IPv4 and another one for IPv6). The host parameter can also
+        be a sequence (e.g. list) of hosts to bind to.
 
         family can be set to either AF_INET or AF_INET6 to force the
         socket to use IPv4 or IPv6. If not set it will be determined
@@ -419,8 +415,9 @@ class AbstractEventLoop:
 
         start_serving set to True (default) causes the created server
         to start accepting connections immediately.  When set to False,
-        the user should await Server.start_serving() or Server.serve_forever()
-        to make the server to start accepting connections.
+        the user should await Server.start_serving() or
+        Server.serve_forever() to make the server to start accepting
+        connections.
         """
         raise NotImplementedError
 
@@ -483,8 +480,9 @@ class AbstractEventLoop:
 
         start_serving set to True (default) causes the created server
         to start accepting connections immediately.  When set to False,
-        the user should await Server.start_serving() or Server.serve_forever()
-        to make the server to start accepting connections.
+        the user should await Server.start_serving() or
+        Server.serve_forever() to make the server to start accepting
+        connections.
         """
         raise NotImplementedError
 
@@ -515,8 +513,8 @@ class AbstractEventLoop:
 
         protocol_factory must be a callable returning a protocol instance.
 
-        socket family AF_INET, socket.AF_INET6 or socket.AF_UNIX depending on
-        host (or family if specified), socket type SOCK_DGRAM.
+        socket family AF_INET, socket.AF_INET6 or socket.AF_UNIX depending
+        on host (or family if specified), socket type SOCK_DGRAM.
 
         reuse_address tells the kernel to reuse a local socket in
         TIME_WAIT state, without waiting for its natural timeout to
@@ -556,7 +554,8 @@ class AbstractEventLoop:
     async def connect_write_pipe(self, protocol_factory, pipe):
         """Register write pipe in event loop.
 
-        protocol_factory should instantiate object with BaseProtocol interface.
+        protocol_factory should instantiate object with BaseProtocol
+        interface.
         Pipe is file-like object already switched to nonblocking.
         Return pair (transport, protocol), where transport support
         WriteTransport interface."""
@@ -792,7 +791,10 @@ def _init_event_loop_policy():
     global _event_loop_policy
     with _lock:
         if _event_loop_policy is None:  # pragma: no branch
-            from . import _DefaultEventLoopPolicy
+            if sys.platform == 'win32':
+                from .windows_events import _DefaultEventLoopPolicy
+            else:
+                from .unix_events import _DefaultEventLoopPolicy
             _event_loop_policy = _DefaultEventLoopPolicy()
 
 
@@ -835,13 +837,9 @@ def get_event_loop():
     return _get_event_loop_policy().get_event_loop()
 
 
-def _set_event_loop(loop):
-    _get_event_loop_policy().set_event_loop(loop)
-
 def set_event_loop(loop):
     """Equivalent to calling get_event_loop_policy().set_event_loop(loop)."""
-    warnings._deprecated('asyncio.set_event_loop', remove=(3,16))
-    _set_event_loop(loop)
+    _get_event_loop_policy().set_event_loop(loop)
 
 
 def new_event_loop():

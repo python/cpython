@@ -4,17 +4,15 @@
 .. module:: filecmp
    :synopsis: Compare files efficiently.
 
-.. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
-
 **Source code:** :source:`Lib/filecmp.py`
 
 --------------
 
-The :mod:`filecmp` module defines functions to compare files and directories,
+The :mod:`!filecmp` module defines functions to compare files and directories,
 with various optional time/correctness trade-offs. For comparing files,
 see also the :mod:`difflib` module.
 
-The :mod:`filecmp` module defines the following functions:
+The :mod:`!filecmp` module defines the following functions:
 
 
 .. function:: cmp(f1, f2, shallow=True)
@@ -189,7 +187,7 @@ The :class:`dircmp` class
          are the same type as *self*, if *self* is a subclass of
          :class:`dircmp`.
 
-.. attribute:: DEFAULT_IGNORES
+.. data:: DEFAULT_IGNORES
 
    .. versionadded:: 3.4
 

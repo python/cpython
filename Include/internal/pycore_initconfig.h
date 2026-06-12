@@ -8,8 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-/* Forward declaration */
-struct pyruntimestate;
+#include "pycore_typedefs.h"      // _PyRuntimeState
 
 /* --- PyStatus ----------------------------------------------- */
 
@@ -154,10 +153,8 @@ typedef enum {
 } _PyConfigInitEnum;
 
 typedef enum {
-    /* For now, this means the GIL is enabled.
-
-       gh-116329: This will eventually change to "the GIL is disabled but can
-       be re-enabled by loading an incompatible extension module." */
+    /* In free threaded builds, this means that the GIL is disabled at startup,
+       but may be enabled by loading an incompatible extension module. */
     _PyConfig_GIL_DEFAULT = -1,
 
     /* The GIL has been forced off or on, and will not be affected by module loading. */
@@ -177,7 +174,7 @@ extern PyStatus _PyConfig_InitPathConfig(
 extern PyStatus _PyConfig_InitImportConfig(PyConfig *config);
 extern PyStatus _PyConfig_Read(PyConfig *config, int compute_path_config);
 extern PyStatus _PyConfig_Write(const PyConfig *config,
-    struct pyruntimestate *runtime);
+    _PyRuntimeState *runtime);
 extern PyStatus _PyConfig_SetPyArgv(
     PyConfig *config,
     const _PyArgv *args);

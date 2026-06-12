@@ -1,6 +1,5 @@
 import unittest
 from threading import Thread
-from test.support import threading_helper
 from operator import methodcaller
 
 

@@ -12,8 +12,6 @@ maintaining the widget state and invoking callbacks, all aspects
 of the widgets appearance lies at Themes.
 """
 
-__version__ = "0.3.1"
-
 __author__ = "Guilherme Polo <ggpolo@gmail.com>"
 
 __all__ = ["Button", "Checkbutton", "Combobox", "Entry", "Frame", "Label",
@@ -1589,7 +1587,7 @@ class OptionMenu(Menubutton):
 
     def __init__(self, master, variable, default=None, *values, **kwargs):
         """Construct a themed OptionMenu widget with master as the parent,
-        the resource textvariable set to variable, the initially selected
+        the option textvariable set to variable, the initially selected
         value specified by the default parameter, the menu values given by
         *values and additional keywords.
 
@@ -1603,7 +1601,8 @@ class OptionMenu(Menubutton):
                 A callback that will be invoked after selecting an item.
         """
         kw = {'textvariable': variable, 'style': kwargs.pop('style', None),
-              'direction': kwargs.pop('direction', None)}
+              'direction': kwargs.pop('direction', None),
+              'name': kwargs.pop('name', None)}
         Menubutton.__init__(self, master, **kw)
         self['menu'] = tkinter.Menu(self, tearoff=False)
 
@@ -1647,3 +1646,12 @@ class OptionMenu(Menubutton):
         except AttributeError:
             pass
         super().destroy()
+
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return "0.3.1"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

@@ -1,3 +1,0 @@
-Remove the private ``_Py_InitializeMain()`` function. It was a
-:term:`provisional API` added to Python 3.8 by :pep:`587`. Patch by Victor
-Stinner.

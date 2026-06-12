@@ -23,8 +23,8 @@
  */
 
 
-#ifndef __Hacl_Hash_Blake2b_H
-#define __Hacl_Hash_Blake2b_H
+#ifndef Hacl_Hash_Blake2b_H
+#define Hacl_Hash_Blake2b_H
 
 #if defined(__cplusplus)
 extern "C" {
@@ -32,12 +32,11 @@ extern "C" {
 
 #include <string.h>
 #include "python_hacl_namespaces.h"
-#include "krml/types.h"
+#include "krml/internal/types.h"
 #include "krml/lowstar_endianness.h"
 #include "krml/internal/target.h"
 
 #include "Hacl_Streaming_Types.h"
-
 
 typedef struct Hacl_Hash_Blake2b_blake2_params_s
 {
@@ -72,29 +71,9 @@ Hacl_Hash_Blake2b_index;
 
 #define HACL_HASH_BLAKE2B_PERSONAL_BYTES (16U)
 
-typedef struct K____uint64_t___uint64_t__s
-{
-  uint64_t *fst;
-  uint64_t *snd;
-}
-K____uint64_t___uint64_t_;
+typedef struct Hacl_Hash_Blake2b_block_state_t_s Hacl_Hash_Blake2b_block_state_t;
 
-typedef struct Hacl_Hash_Blake2b_block_state_t_s
-{
-  uint8_t fst;
-  uint8_t snd;
-  bool thd;
-  K____uint64_t___uint64_t_ f3;
-}
-Hacl_Hash_Blake2b_block_state_t;
-
-typedef struct Hacl_Hash_Blake2b_state_t_s
-{
-  Hacl_Hash_Blake2b_block_state_t block_state;
-  uint8_t *buf;
-  uint64_t total_len;
-}
-Hacl_Hash_Blake2b_state_t;
+typedef struct Hacl_Hash_Blake2b_state_t_s Hacl_Hash_Blake2b_state_t;
 
 /**
  General-purpose allocation function that gives control over all
@@ -241,5 +220,5 @@ Hacl_Hash_Blake2b_hash_with_key_and_params(
 }
 #endif
 
-#define __Hacl_Hash_Blake2b_H_DEFINED
-#endif
+#define Hacl_Hash_Blake2b_H_DEFINED
+#endif /* Hacl_Hash_Blake2b_H */

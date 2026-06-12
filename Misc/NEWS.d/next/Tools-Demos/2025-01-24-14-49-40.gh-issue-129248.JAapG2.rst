@@ -1,2 +1,0 @@
-The iOS test runner now strips the log prefix from each line output by the
-test suite.

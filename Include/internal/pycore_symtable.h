@@ -58,6 +58,7 @@ typedef struct {
                .end_col_offset = (n)->end_col_offset }
 
 static const _Py_SourceLocation NO_LOCATION = {-1, -1, -1, -1};
+static const _Py_SourceLocation NEXT_LOCATION = {-2, -2, -2, -2};
 
 /* __future__ information */
 typedef struct {
@@ -82,8 +83,6 @@ struct symtable {
     PyObject *st_private;           /* name of current class or NULL */
     _PyFutureFeatures *st_future;   /* module's future features that affect
                                        the symbol table */
-    int recursion_depth;            /* current recursion depth */
-    int recursion_limit;            /* recursion limit */
 };
 
 typedef struct _symtable_entry {
@@ -91,6 +90,7 @@ typedef struct _symtable_entry {
     PyObject *ste_id;        /* int: key in ste_table->st_blocks */
     PyObject *ste_symbols;   /* dict: variable names to flags */
     PyObject *ste_name;      /* string: name of current block */
+    PyObject *ste_function_name;  /* string or NULL: for annotation blocks: name of the corresponding functions */
     PyObject *ste_varnames;  /* list of function parameters */
     PyObject *ste_children;  /* list of child blocks */
     PyObject *ste_directives;/* locations of global and nonlocal statements */
@@ -125,6 +125,10 @@ typedef struct _symtable_entry {
                                              enclosing class scope */
     unsigned ste_has_docstring : 1; /* true if docstring present */
     unsigned ste_method : 1; /* true if block is a function block defined in class scope */
+    unsigned ste_has_conditional_annotations : 1; /* true if block has conditionally executed annotations */
+    unsigned ste_in_conditional_block : 1; /* set while we are inside a conditionally executed block */
+    unsigned ste_in_try_block : 1; /* set while we are inside a try/except block */
+    unsigned ste_in_unevaluated_annotation : 1; /* set while we are processing an annotation that will not be evaluated */
     int ste_comp_iter_expr; /* non-zero if visiting a comprehension range expression */
     _Py_SourceLocation ste_loc; /* source location of block */
     struct _symtable_entry *ste_annotation_block; /* symbol table entry for this entry's annotations */
@@ -149,7 +153,12 @@ extern int _PySymtable_LookupOptional(struct symtable *, void *, PySTEntryObject
 extern void _PySymtable_Free(struct symtable *);
 
 extern PyObject *_Py_MaybeMangle(PyObject *privateobj, PySTEntryObject *ste, PyObject *name);
-extern PyObject* _Py_Mangle(PyObject *p, PyObject *name);
+
+// Export for '_pickle' shared extension
+PyAPI_FUNC(PyObject *)
+_Py_Mangle(PyObject *, PyObject *);
+PyAPI_FUNC(int)
+_Py_IsPrivateName(PyObject *);
 
 /* Flags for def-use information */
 
@@ -186,7 +195,8 @@ extern struct symtable* _Py_SymtableStringObjectFlags(
     const char *str,
     PyObject *filename,
     int start,
-    PyCompilerFlags *flags);
+    PyCompilerFlags *flags,
+    PyObject *module);
 
 int _PyFuture_FromAST(
     struct _mod * mod,

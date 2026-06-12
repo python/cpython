@@ -4,6 +4,6 @@
 # Format example:
 # /path/to/file (number of warnings in file)
 Modules/expat/siphash.h 7
-Modules/expat/xmlparse.c 8
+Modules/expat/xmlparse.c 13
 Modules/expat/xmltok.c 3
 Modules/expat/xmltok_impl.c 26

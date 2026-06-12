@@ -16,7 +16,8 @@ PyDoc_STRVAR(select_select__doc__,
 "\n"
 "Wait until one or more file descriptors are ready for some kind of I/O.\n"
 "\n"
-"The first three arguments are iterables of file descriptors to be waited for:\n"
+"The first three arguments are iterables of file descriptors to be waited\n"
+"for:\n"
 "rlist -- wait until ready for reading\n"
 "wlist -- wait until ready for writing\n"
 "xlist -- wait for an \"exceptional condition\"\n"
@@ -26,12 +27,12 @@ PyDoc_STRVAR(select_select__doc__,
 "gotten from a fileno() method call on one of those.\n"
 "\n"
 "The optional 4th argument specifies a timeout in seconds; it may be\n"
-"a floating-point number to specify fractions of seconds.  If it is absent\n"
+"a non-integer to specify fractions of seconds.  If it is absent\n"
 "or None, the call will never time out.\n"
 "\n"
-"The return value is a tuple of three lists corresponding to the first three\n"
-"arguments; each contains the subset of the corresponding file descriptors\n"
-"that are ready.\n"
+"The return value is a tuple of three lists corresponding to the first\n"
+"three arguments; each contains the subset of the corresponding file\n"
+"descriptors that are ready.\n"
 "\n"
 "*** IMPORTANT NOTICE ***\n"
 "On Windows, only sockets are supported; on Unix, all file\n"
@@ -70,7 +71,7 @@ exit:
     return return_value;
 }
 
-#if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL))
+#if ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL))
 
 PyDoc_STRVAR(select_poll_register__doc__,
 "register($self, fd,\n"
@@ -119,9 +120,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) */
+#endif /* ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) */
 
-#if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL))
+#if ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL))
 
 PyDoc_STRVAR(select_poll_modify__doc__,
 "modify($self, fd, eventmask, /)\n"
@@ -166,9 +167,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) */
+#endif /* ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) */
 
-#if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL))
+#if ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL))
 
 PyDoc_STRVAR(select_poll_unregister__doc__,
 "unregister($self, fd, /)\n"
@@ -200,9 +201,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) */
+#endif /* ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) */
 
-#if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL))
+#if ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL))
 
 PyDoc_STRVAR(select_poll_poll__doc__,
 "poll($self, timeout=None, /)\n"
@@ -214,8 +215,8 @@ PyDoc_STRVAR(select_poll_poll__doc__,
 "    The maximum time to wait in milliseconds, or else None (or a negative\n"
 "    value) to wait indefinitely.\n"
 "\n"
-"Returns a list containing any descriptors that have events or errors to\n"
-"report, as a list of (fd, event) 2-tuples.");
+"Returns a list containing any descriptors that have events or errors\n"
+"to report, as a list of (fd, event) 2-tuples.");
 
 #define SELECT_POLL_POLL_METHODDEF    \
     {"poll", _PyCFunction_CAST(select_poll_poll), METH_FASTCALL, select_poll_poll__doc__},
@@ -245,9 +246,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) */
+#endif /* ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) */
 
-#if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
+#if ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
 
 PyDoc_STRVAR(select_devpoll_register__doc__,
 "register($self, fd,\n"
@@ -298,9 +299,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
+#endif /* ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
 
-#if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
+#if ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
 
 PyDoc_STRVAR(select_devpoll_modify__doc__,
 "modify($self, fd,\n"
@@ -351,9 +352,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
+#endif /* ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
 
-#if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
+#if ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
 
 PyDoc_STRVAR(select_devpoll_unregister__doc__,
 "unregister($self, fd, /)\n"
@@ -385,9 +386,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
+#endif /* ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
 
-#if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
+#if ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
 
 PyDoc_STRVAR(select_devpoll_poll__doc__,
 "poll($self, timeout=None, /)\n"
@@ -396,11 +397,11 @@ PyDoc_STRVAR(select_devpoll_poll__doc__,
 "Polls the set of registered file descriptors.\n"
 "\n"
 "  timeout\n"
-"    The maximum time to wait in milliseconds, or else None (or a negative\n"
-"    value) to wait indefinitely.\n"
+"    The maximum time to wait in milliseconds, or else None (or\n"
+"    a negative value) to wait indefinitely.\n"
 "\n"
-"Returns a list containing any descriptors that have events or errors to\n"
-"report, as a list of (fd, event) 2-tuples.");
+"Returns a list containing any descriptors that have events or errors\n"
+"to report, as a list of (fd, event) 2-tuples.");
 
 #define SELECT_DEVPOLL_POLL_METHODDEF    \
     {"poll", _PyCFunction_CAST(select_devpoll_poll), METH_FASTCALL, select_devpoll_poll__doc__},
@@ -430,9 +431,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
+#endif /* ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
 
-#if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
+#if ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
 
 PyDoc_STRVAR(select_devpoll_close__doc__,
 "close($self, /)\n"
@@ -460,9 +461,9 @@ select_devpoll_close(PyObject *self, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
-#endif /* (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
+#endif /* ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
 
-#if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
+#if ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
 
 PyDoc_STRVAR(select_devpoll_fileno__doc__,
 "fileno($self, /)\n"
@@ -488,9 +489,9 @@ select_devpoll_fileno(PyObject *self, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
-#endif /* (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
+#endif /* ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
 
-#if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL))
+#if ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL))
 
 PyDoc_STRVAR(select_poll__doc__,
 "poll($module, /)\n"
@@ -498,8 +499,8 @@ PyDoc_STRVAR(select_poll__doc__,
 "\n"
 "Returns a polling object.\n"
 "\n"
-"This object supports registering and unregistering file descriptors, and then\n"
-"polling them for I/O events.");
+"This object supports registering and unregistering file descriptors, and\n"
+"then polling them for I/O events.");
 
 #define SELECT_POLL_METHODDEF    \
     {"poll", (PyCFunction)select_poll, METH_NOARGS, select_poll__doc__},
@@ -513,9 +514,9 @@ select_poll(PyObject *module, PyObject *Py_UNUSED(ignored))
     return select_poll_impl(module);
 }
 
-#endif /* (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) */
+#endif /* ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) */
 
-#if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
+#if ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
 
 PyDoc_STRVAR(select_devpoll__doc__,
 "devpoll($module, /)\n"
@@ -523,8 +524,8 @@ PyDoc_STRVAR(select_devpoll__doc__,
 "\n"
 "Returns a polling object.\n"
 "\n"
-"This object supports registering and unregistering file descriptors, and then\n"
-"polling them for I/O events.");
+"This object supports registering and unregistering file descriptors, and\n"
+"then polling them for I/O events.");
 
 #define SELECT_DEVPOLL_METHODDEF    \
     {"devpoll", (PyCFunction)select_devpoll, METH_NOARGS, select_devpoll__doc__},
@@ -538,7 +539,7 @@ select_devpoll(PyObject *module, PyObject *Py_UNUSED(ignored))
     return select_devpoll_impl(module);
 }
 
-#endif /* (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
+#endif /* ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
 
 #if defined(HAVE_EPOLL)
 
@@ -570,9 +571,11 @@ select_epoll(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(sizehint), &_Py_ID(flags), },
     };
     #undef NUM_KEYWORDS
@@ -693,7 +696,7 @@ static PyObject *
 select_epoll_fromfd_impl(PyTypeObject *type, int fd);
 
 static PyObject *
-select_epoll_fromfd(PyTypeObject *type, PyObject *arg)
+select_epoll_fromfd(PyObject *type, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -702,7 +705,7 @@ select_epoll_fromfd(PyTypeObject *type, PyObject *arg)
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = select_epoll_fromfd_impl(type, fd);
+    return_value = select_epoll_fromfd_impl((PyTypeObject *)type, fd);
 
 exit:
     return return_value;
@@ -743,9 +746,11 @@ select_epoll_register(PyObject *self, PyObject *const *args, Py_ssize_t nargs, P
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(fd), &_Py_ID(eventmask), },
     };
     #undef NUM_KEYWORDS
@@ -779,9 +784,21 @@ select_epoll_register(PyObject *self, PyObject *const *args, Py_ssize_t nargs, P
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    eventmask = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
-    if (eventmask == (unsigned int)-1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[1], &eventmask, sizeof(unsigned int),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned int)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
     }
 skip_optional_pos:
     return_value = select_epoll_register_impl((pyEpoll_Object *)self, fd, eventmask);
@@ -822,9 +839,11 @@ select_epoll_modify(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyO
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(fd), &_Py_ID(eventmask), },
     };
     #undef NUM_KEYWORDS
@@ -854,9 +873,21 @@ select_epoll_modify(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyO
     if (fd < 0) {
         goto exit;
     }
-    eventmask = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
-    if (eventmask == (unsigned int)-1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[1], &eventmask, sizeof(unsigned int),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned int)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
     }
     return_value = select_epoll_modify_impl((pyEpoll_Object *)self, fd, eventmask);
 
@@ -893,9 +924,11 @@ select_epoll_unregister(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(fd), },
     };
     #undef NUM_KEYWORDS
@@ -941,13 +974,13 @@ PyDoc_STRVAR(select_epoll_poll__doc__,
 "Wait for events on the epoll file descriptor.\n"
 "\n"
 "  timeout\n"
-"    the maximum time to wait in seconds (as float);\n"
+"    the maximum time to wait in seconds (with fractions);\n"
 "    a timeout of None or -1 makes poll wait indefinitely\n"
 "  maxevents\n"
 "    the maximum number of events returned; -1 means no limit\n"
 "\n"
-"Returns a list containing any descriptors that have events to report,\n"
-"as a list of (fd, events) 2-tuples.");
+"Returns a list containing any descriptors that have events to\n"
+"report, as a list of (fd, events) 2-tuples.");
 
 #define SELECT_EPOLL_POLL_METHODDEF    \
     {"poll", _PyCFunction_CAST(select_epoll_poll), METH_FASTCALL|METH_KEYWORDS, select_epoll_poll__doc__},
@@ -966,9 +999,11 @@ select_epoll_poll(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObj
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(timeout), &_Py_ID(maxevents), },
     };
     #undef NUM_KEYWORDS
@@ -1196,7 +1231,7 @@ static PyObject *
 select_kqueue_fromfd_impl(PyTypeObject *type, int fd);
 
 static PyObject *
-select_kqueue_fromfd(PyTypeObject *type, PyObject *arg)
+select_kqueue_fromfd(PyObject *type, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -1205,7 +1240,7 @@ select_kqueue_fromfd(PyTypeObject *type, PyObject *arg)
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = select_kqueue_fromfd_impl(type, fd);
+    return_value = select_kqueue_fromfd_impl((PyTypeObject *)type, fd);
 
 exit:
     return return_value;
@@ -1228,7 +1263,7 @@ PyDoc_STRVAR(select_kqueue_control__doc__,
 "    The maximum number of events that the kernel will return.\n"
 "  timeout\n"
 "    The maximum time to wait in seconds, or else None to wait forever.\n"
-"    This accepts floats for smaller timeouts, too.");
+"    This accepts non-integers for smaller timeouts, too.");
 
 #define SELECT_KQUEUE_CONTROL_METHODDEF    \
     {"control", _PyCFunction_CAST(select_kqueue_control), METH_FASTCALL, select_kqueue_control__doc__},
@@ -1365,4 +1400,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=c18fd93efc5f4dce input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a1ac666294fd14bd input=a9049054013a1b77]*/

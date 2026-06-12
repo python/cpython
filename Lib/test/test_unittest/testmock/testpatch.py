@@ -748,7 +748,7 @@ class PatchTest(unittest.TestCase):
     def test_exit_idempotent(self):
         patcher = patch(foo_name, 'bar', 3)
         with patcher:
-            patcher.stop()
+            patcher.__exit__(None, None, None)
 
 
     def test_second_start_failure(self):

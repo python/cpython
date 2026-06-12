@@ -89,6 +89,9 @@ known_alt_digits = {
     'ar_AE': (100, {0: '\u0660', 10: '\u0661\u0660', 99: '\u0669\u0669'}),
     'bn_IN': (100, {0: '\u09e6', 10: '\u09e7\u09e6', 99: '\u09ef\u09ef'}),
 }
+if sys.platform == 'cygwin':
+    count, samples = known_alt_digits['ja_JP']
+    known_alt_digits['ja_JP'] = (101, samples)
 
 known_era = {
     'C': (0, ''),
@@ -137,10 +140,7 @@ class _LocaleTests(unittest.TestCase):
             return True
 
     @unittest.skipUnless(nl_langinfo, "nl_langinfo is not available")
-    @unittest.skipIf(
-        support.is_emscripten or support.is_wasi,
-        "musl libc issue on Emscripten, bpo-46390"
-    )
+    @unittest.skipIf(support.linked_to_musl(), "musl libc issue, bpo-46390")
     def test_lc_numeric_nl_langinfo(self):
         # Test nl_langinfo against known values
         tested = False
@@ -158,10 +158,7 @@ class _LocaleTests(unittest.TestCase):
         if not tested:
             self.skipTest('no suitable locales')
 
-    @unittest.skipIf(
-        support.is_emscripten or support.is_wasi,
-        "musl libc issue on Emscripten, bpo-46390"
-    )
+    @unittest.skipIf(support.linked_to_musl(), "musl libc issue, bpo-46390")
     def test_lc_numeric_localeconv(self):
         # Test localeconv against known values
         tested = False
@@ -210,10 +207,7 @@ class _LocaleTests(unittest.TestCase):
 
     @unittest.skipUnless(nl_langinfo, "nl_langinfo is not available")
     @unittest.skipUnless(hasattr(locale, 'ALT_DIGITS'), "requires locale.ALT_DIGITS")
-    @unittest.skipIf(
-        support.is_emscripten or support.is_wasi,
-        "musl libc issue on Emscripten, bpo-46390"
-    )
+    @unittest.skipIf(support.linked_to_musl(), "musl libc issue, bpo-46390")
     def test_alt_digits_nl_langinfo(self):
         # Test nl_langinfo(ALT_DIGITS)
         tested = False
@@ -245,10 +239,7 @@ class _LocaleTests(unittest.TestCase):
 
     @unittest.skipUnless(nl_langinfo, "nl_langinfo is not available")
     @unittest.skipUnless(hasattr(locale, 'ERA'), "requires locale.ERA")
-    @unittest.skipIf(
-        support.is_emscripten or support.is_wasi,
-        "musl libc issue on Emscripten, bpo-46390"
-    )
+    @unittest.skipIf(support.linked_to_musl(), "musl libc issue, bpo-46390")
     def test_era_nl_langinfo(self):
         # Test nl_langinfo(ERA)
         tested = False

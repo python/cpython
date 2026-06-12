@@ -105,14 +105,14 @@ snippet decode a complete instruction:
 For various reasons we'll get to later (mostly efficiency, given that `EXTENDED_ARG`
 is rare) the actual code is different.
 
-## Jumps
+## Jumps
 
 Note that when the `switch` statement is reached, `next_instr` (the "instruction offset")
 already points to the next instruction.
 Thus, jump instructions can be implemented by manipulating `next_instr`:
 
 - A jump forward (`JUMP_FORWARD`) sets `next_instr += oparg`.
-- A jump backward sets `next_instr -= oparg`.
+- A jump backward (`JUMP_BACKWARD`) sets `next_instr -= oparg`.
 
 ## Inline cache entries
 
@@ -226,10 +226,11 @@ Up through 3.10, the call stack was implemented as a singly-linked list of
 heap allocation for the stack frame.
 
 Since 3.11, frames are no longer fully-fledged objects. Instead, a leaner internal
-`_PyInterpreterFrame` structure is used, which is allocated using a custom allocator
-function (`_PyThreadState_BumpFramePointer()`), which allocates and initializes a
-frame structure. Usually a frame allocation is just a pointer bump, which improves
-memory locality.
+`_PyInterpreterFrame` structure is used. Most frames are allocated contiguously in a
+per-thread stack (see `_PyThreadState_PushFrame` in [Python/pystate.c](../Python/pystate.c)),
+which improves memory locality and reduces overhead.
+If the current `datastack_chunk` has enough space (`_PyThreadState_HasStackSpace`)
+then the lightweight `_PyFrame_PushUnchecked` can be used instead of `_PyThreadState_PushFrame`.
 
 Sometimes an actual `PyFrameObject` is needed, such as when Python code calls
 `sys._getframe()` or an extension module calls
@@ -506,6 +507,38 @@ After the last `DEOPT_IF` has passed, a hit should be recorded with
 After an optimization has been deferred in the adaptive instruction,
 that should be recorded with `STAT_INC(BASE_INSTRUCTION, deferred)`.
 
+## Interpreter types
+There are three different types of interpreters to choose from based on compiler support:
+
+ * traditional switch-case interpreter
+   
+   Supported by all compilers covered in PEP 7.
+ 
+ * computed-gotos interpreter
+ 
+   Enabled using configure option `--with-computed-gotos` and used by default on supported compilers.
+   It uses [Labels as Values](https://gcc.gnu.org/onlinedocs/gcc/Labels-as-Values.html)
+   for more efficient dispatching.
+ 
+ * tail-calling interpreter
+
+   Enabled using configure option `--with-tail-call-interp` (or `--tail-call-interp` for build.bat on Windows).
+   It uses [tail calls](https://clang.llvm.org/docs/AttributeReference.html#musttail) and the
+   [preserve_none](https://clang.llvm.org/docs/AttributeReference.html#preserve-none)
+   calling convention between the small C functions that implement individual Python opcodes.
+
+   Not all compilers support these and if they do not all targets might be supported (for example,
+   MSVC currently only supports x64 and only in optimized builds).
+
+   In addition, compilers must do [escape analysis](https://gcc.gnu.org/onlinedocs/gcc/Common-Attributes.html#index-musttail)
+   of the lifetimes of automatic variables, function parameters, and temporaries to ensure proper tail-calls. They
+   emit a compile error in case of a violation or detection failure. The ability to detect this varies depending on the compiler and
+   also on the optimization level. Following techniques are particularly helpful to the MSVC compiler in this regard
+   * [Introducing additional scopes](https://github.com/python/cpython/blob/3908593039bde9d4b591ab09919003ee57418d64/Python/bytecodes.c#L2526)
+   * [extracting problematic code paths into a separate function](https://github.com/python/cpython/pull/143068/files#diff-729a985b0cb8b431cb291f1edb561bbbfea22e3f8c262451cd83328a0936a342R3724)
+   * [returning a pointer instead of taking it as an output parameter](https://github.com/python/cpython/blob/3908593039bde9d4b591ab09919003ee57418d64/Include/internal/pycore_ceval.h#L489-L492)
+   
+   Using `restrict` is another (currently unused) remedy.
 
 Additional resources
 --------------------

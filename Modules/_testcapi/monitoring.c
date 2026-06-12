@@ -1,8 +1,6 @@
 #include "parts.h"
 #include "util.h"
 
-#include "monitoring.h"
-
 #define Py_BUILD_CORE
 #include "internal/pycore_instruments.h"
 
@@ -14,6 +12,7 @@ typedef struct {
     /* Other fields */
 } PyCodeLikeObject;
 
+#define PyCodeLikeObject_CAST(op)   ((PyCodeLikeObject *)(op))
 
 static PyObject *
 CodeLike_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -40,8 +39,9 @@ CodeLike_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static void
-CodeLike_dealloc(PyCodeLikeObject *self)
+CodeLike_dealloc(PyObject *op)
 {
+    PyCodeLikeObject *self = PyCodeLikeObject_CAST(op);
     if (self->monitoring_states) {
         PyMem_Free(self->monitoring_states);
     }
@@ -49,8 +49,9 @@ CodeLike_dealloc(PyCodeLikeObject *self)
 }
 
 static PyObject *
-CodeLike_str(PyCodeLikeObject *self)
+CodeLike_str(PyObject *op)
 {
+    PyCodeLikeObject *self = PyCodeLikeObject_CAST(op);
     PyObject *res = NULL;
     PyObject *sep = NULL;
     PyObject *parts = NULL;
@@ -101,12 +102,12 @@ static PyTypeObject PyCodeLike_Type = {
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_new = CodeLike_new,
-    .tp_dealloc = (destructor) CodeLike_dealloc,
-    .tp_str = (reprfunc) CodeLike_str,
+    .tp_dealloc = CodeLike_dealloc,
+    .tp_str = CodeLike_str,
 };
 
 #define RAISE_UNLESS_CODELIKE(v)  if (!Py_IS_TYPE((v), &PyCodeLike_Type)) { \
-        PyErr_Format(PyExc_TypeError, "expected a code-like, got %s", Py_TYPE(v)->tp_name); \
+        PyErr_Format(PyExc_TypeError, "expected a code-like, got %T", v); \
         return NULL; \
     }
 

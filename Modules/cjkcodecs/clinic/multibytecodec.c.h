@@ -14,10 +14,11 @@ PyDoc_STRVAR(_multibytecodec_MultibyteCodec_encode__doc__,
 "\n"
 "Return an encoded string version of \'input\'.\n"
 "\n"
-"\'errors\' may be given to set a different error handling scheme. Default is\n"
-"\'strict\' meaning that encoding errors raise a UnicodeEncodeError. Other possible\n"
-"values are \'ignore\', \'replace\' and \'xmlcharrefreplace\' as well as any other name\n"
-"registered with codecs.register_error that can handle UnicodeEncodeErrors.");
+"\'errors\' may be given to set a different error handling scheme.\n"
+"Default is \'strict\' meaning that encoding errors raise\n"
+"a UnicodeEncodeError.  Other possible values are \'ignore\', \'replace\'\n"
+"and \'xmlcharrefreplace\' as well as any other name registered with\n"
+"codecs.register_error that can handle UnicodeEncodeErrors.");
 
 #define _MULTIBYTECODEC_MULTIBYTECODEC_ENCODE_METHODDEF    \
     {"encode", _PyCFunction_CAST(_multibytecodec_MultibyteCodec_encode), METH_FASTCALL|METH_KEYWORDS, _multibytecodec_MultibyteCodec_encode__doc__},
@@ -37,9 +38,11 @@ _multibytecodec_MultibyteCodec_encode(PyObject *self, PyObject *const *args, Py_
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(input), &_Py_ID(errors), },
     };
     #undef NUM_KEYWORDS
@@ -101,9 +104,10 @@ PyDoc_STRVAR(_multibytecodec_MultibyteCodec_decode__doc__,
 "\n"
 "Decodes \'input\'.\n"
 "\n"
-"\'errors\' may be given to set a different error handling scheme. Default is\n"
-"\'strict\' meaning that encoding errors raise a UnicodeDecodeError. Other possible\n"
-"values are \'ignore\' and \'replace\' as well as any other name registered with\n"
+"\'errors\' may be given to set a different error handling scheme.\n"
+"Default is \'strict\' meaning that encoding errors raise\n"
+"a UnicodeDecodeError.  Other possible values are \'ignore\' and\n"
+"\'replace\' as well as any other name registered with\n"
 "codecs.register_error that is able to handle UnicodeDecodeErrors.\"");
 
 #define _MULTIBYTECODEC_MULTIBYTECODEC_DECODE_METHODDEF    \
@@ -124,9 +128,11 @@ _multibytecodec_MultibyteCodec_decode(PyObject *self, PyObject *const *args, Py_
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(input), &_Py_ID(errors), },
     };
     #undef NUM_KEYWORDS
@@ -212,9 +218,11 @@ _multibytecodec_MultibyteIncrementalEncoder_encode(PyObject *self, PyObject *con
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(input), &_Py_ID(final), },
     };
     #undef NUM_KEYWORDS
@@ -342,9 +350,11 @@ _multibytecodec_MultibyteIncrementalDecoder_decode(PyObject *self, PyObject *con
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(input), &_Py_ID(final), },
     };
     #undef NUM_KEYWORDS
@@ -688,4 +698,4 @@ PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
 
 #define _MULTIBYTECODEC___CREATE_CODEC_METHODDEF    \
     {"__create_codec", (PyCFunction)_multibytecodec___create_codec, METH_O, _multibytecodec___create_codec__doc__},
-/*[clinic end generated code: output=6571941b8e45b013 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a84b1544d7d01abb input=a9049054013a1b77]*/

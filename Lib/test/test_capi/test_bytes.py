@@ -22,6 +22,7 @@ class CAPITest(unittest.TestCase):
         # Test PyBytes_Check()
         check = _testlimitedcapi.bytes_check
         self.assertTrue(check(b'abc'))
+        self.assertTrue(check(b''))
         self.assertFalse(check('abc'))
         self.assertFalse(check(bytearray(b'abc')))
         self.assertTrue(check(BytesSubclass(b'abc')))
@@ -36,6 +37,7 @@ class CAPITest(unittest.TestCase):
         # Test PyBytes_CheckExact()
         check = _testlimitedcapi.bytes_checkexact
         self.assertTrue(check(b'abc'))
+        self.assertTrue(check(b''))
         self.assertFalse(check('abc'))
         self.assertFalse(check(bytearray(b'abc')))
         self.assertFalse(check(BytesSubclass(b'abc')))
@@ -79,6 +81,7 @@ class CAPITest(unittest.TestCase):
         # Test PyBytes_FromObject()
         fromobject = _testlimitedcapi.bytes_fromobject
 
+        self.assertEqual(fromobject(b''), b'')
         self.assertEqual(fromobject(b'abc'), b'abc')
         self.assertEqual(fromobject(bytearray(b'abc')), b'abc')
         self.assertEqual(fromobject(BytesSubclass(b'abc')), b'abc')
@@ -93,6 +96,7 @@ class CAPITest(unittest.TestCase):
         # Test PyBytes_Size()
         size = _testlimitedcapi.bytes_size
 
+        self.assertEqual(size(b''), 0)
         self.assertEqual(size(b'abc'), 3)
         self.assertEqual(size(BytesSubclass(b'abc')), 3)
         self.assertRaises(TypeError, size, bytearray(b'abc'))
@@ -107,6 +111,7 @@ class CAPITest(unittest.TestCase):
 
         self.assertEqual(asstring(b'abc', 4), b'abc\0')
         self.assertEqual(asstring(b'abc\0def', 8), b'abc\0def\0')
+        self.assertEqual(asstring(b'', 1), b'\0')
         self.assertRaises(TypeError, asstring, 'abc', 0)
         self.assertRaises(TypeError, asstring, object(), 0)
 
@@ -119,6 +124,7 @@ class CAPITest(unittest.TestCase):
 
         self.assertEqual(asstringandsize(b'abc', 4), (b'abc\0', 3))
         self.assertEqual(asstringandsize(b'abc\0def', 8), (b'abc\0def\0', 7))
+        self.assertEqual(asstringandsize(b'', 1), (b'\0', 0))
         self.assertEqual(asstringandsize_null(b'abc', 4), b'abc\0')
         self.assertRaises(ValueError, asstringandsize_null, b'abc\0def', 8)
         self.assertRaises(TypeError, asstringandsize, 'abc', 0)
@@ -133,6 +139,7 @@ class CAPITest(unittest.TestCase):
         # Test PyBytes_Repr()
         bytes_repr = _testlimitedcapi.bytes_repr
 
+        self.assertEqual(bytes_repr(b'', 0), r"""b''""")
         self.assertEqual(bytes_repr(b'''abc''', 0), r"""b'abc'""")
         self.assertEqual(bytes_repr(b'''abc''', 1), r"""b'abc'""")
         self.assertEqual(bytes_repr(b'''a'b"c"d''', 0), r"""b'a\'b"c"d'""")
@@ -162,6 +169,7 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(concat(b'', bytearray(b'def')), b'def')
         self.assertEqual(concat(memoryview(b'xabcy')[1:4], b'def'), b'abcdef')
         self.assertEqual(concat(b'abc', memoryview(b'xdefy')[1:4]), b'abcdef')
+        self.assertEqual(concat(b'', b''), b'')
 
         self.assertEqual(concat(b'abc', b'def', True), b'abcdef')
         self.assertEqual(concat(b'abc', bytearray(b'def'), True), b'abcdef')
@@ -191,6 +199,7 @@ class CAPITest(unittest.TestCase):
         """Test PyBytes_DecodeEscape()"""
         decodeescape = _testlimitedcapi.bytes_decodeescape
 
+        self.assertEqual(decodeescape(b''), b'')
         self.assertEqual(decodeescape(b'abc'), b'abc')
         self.assertEqual(decodeescape(br'\t\n\r\x0b\x0c\x00\\\'\"'),
                          b'''\t\n\r\v\f\0\\'"''')
@@ -288,6 +297,96 @@ class CAPITest(unittest.TestCase):
             bytes_join(b'', 123)
         with self.assertRaises(SystemError):
             bytes_join(b'', NULL)
+
+
+class BytesWriterTest(unittest.TestCase):
+    result_type = bytes
+
+    def create_writer(self, alloc=0, string=b''):
+        return _testcapi.PyBytesWriter(alloc, string, 0)
+
+    def test_create(self):
+        # Test PyBytesWriter_Create()
+        writer = self.create_writer()
+        self.assertEqual(writer.get_size(), 0)
+        self.assertEqual(writer.finish(), self.result_type(b''))
+
+        writer = self.create_writer(3, b'abc')
+        self.assertEqual(writer.get_size(), 3)
+        self.assertEqual(writer.finish(), self.result_type(b'abc'))
+
+        writer = self.create_writer(10, b'abc')
+        self.assertEqual(writer.get_size(), 10)
+        self.assertEqual(writer.finish_with_size(3), self.result_type(b'abc'))
+
+    def test_write_bytes(self):
+         # Test PyBytesWriter_WriteBytes()
+         writer = self.create_writer()
+         writer.write_bytes(b'Hello World!', -1)
+         self.assertEqual(writer.finish(), self.result_type(b'Hello World!'))
+
+         writer = self.create_writer()
+         writer.write_bytes(b'Hello ', -1)
+         writer.write_bytes(b'World! <truncated>', 6)
+         self.assertEqual(writer.finish(), self.result_type(b'Hello World!'))
+
+    def test_resize(self):
+        # Test PyBytesWriter_Resize()
+        writer = self.create_writer()
+        writer.resize(len(b'number=123456'), b'number=123456')
+        writer.resize(len(b'number=123456'), b'')
+        self.assertEqual(writer.get_size(), len(b'number=123456'))
+        self.assertEqual(writer.finish(), self.result_type(b'number=123456'))
+
+        writer = self.create_writer()
+        writer.resize(0, b'')
+        writer.resize(len(b'number=123456'), b'number=123456')
+        self.assertEqual(writer.finish(), self.result_type(b'number=123456'))
+
+        writer = self.create_writer()
+        writer.resize(len(b'number='), b'number=')
+        writer.resize(len(b'number=123456'), b'123456')
+        self.assertEqual(writer.finish(), self.result_type(b'number=123456'))
+
+        writer = self.create_writer()
+        writer.resize(len(b'number='), b'number=')
+        writer.resize(len(b'number='), b'')
+        writer.resize(len(b'number=123456'), b'123456')
+        self.assertEqual(writer.finish(), self.result_type(b'number=123456'))
+
+        writer = self.create_writer()
+        writer.resize(len(b'number'), b'number')
+        writer.resize(len(b'number='), b'=')
+        writer.resize(len(b'number=123'), b'123')
+        writer.resize(len(b'number=123456'), b'456')
+        self.assertEqual(writer.finish(), self.result_type(b'number=123456'))
+
+    def test_format_i(self):
+        # Test PyBytesWriter_Format()
+        writer = self.create_writer()
+        writer.format_i(b'x=%i', 123456)
+        self.assertEqual(writer.finish(), self.result_type(b'x=123456'))
+
+        writer = self.create_writer()
+        writer.format_i(b'x=%i, ', 123)
+        writer.format_i(b'y=%i', 456)
+        self.assertEqual(writer.finish(), self.result_type(b'x=123, y=456'))
+
+    def test_example_abc(self):
+        self.assertEqual(_testcapi.byteswriter_abc(), b'abc')
+
+    def test_example_resize(self):
+        self.assertEqual(_testcapi.byteswriter_resize(), b'Hello World')
+
+    def test_example_highlevel(self):
+        self.assertEqual(_testcapi.byteswriter_highlevel(), b'Hello World!')
+
+
+class ByteArrayWriterTest(BytesWriterTest):
+    result_type = bytearray
+
+    def create_writer(self, alloc=0, string=b''):
+        return _testcapi.PyBytesWriter(alloc, string, 1)
 
 
 if __name__ == "__main__":

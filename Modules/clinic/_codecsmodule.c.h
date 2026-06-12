@@ -14,9 +14,10 @@ PyDoc_STRVAR(_codecs_register__doc__,
 "\n"
 "Register a codec search function.\n"
 "\n"
-"Search functions are expected to take one argument, the encoding name in\n"
-"all lower case letters, and either return None, or a tuple of functions\n"
-"(encoder, decoder, stream_reader, stream_writer) (or a CodecInfo object).");
+"Search functions are expected to take one argument, the encoding\n"
+"name in all lower case letters, and either return None, or a tuple\n"
+"of functions (encoder, decoder, stream_reader, stream_writer) (or\n"
+"a CodecInfo object).");
 
 #define _CODECS_REGISTER_METHODDEF    \
     {"register", (PyCFunction)_codecs_register, METH_O, _codecs_register__doc__},
@@ -76,10 +77,10 @@ PyDoc_STRVAR(_codecs_encode__doc__,
 "Encodes obj using the codec registered for encoding.\n"
 "\n"
 "The default encoding is \'utf-8\'.  errors may be given to set a\n"
-"different error handling scheme.  Default is \'strict\' meaning that encoding\n"
-"errors raise a ValueError.  Other possible values are \'ignore\', \'replace\'\n"
-"and \'backslashreplace\' as well as any other name registered with\n"
-"codecs.register_error that can handle ValueErrors.");
+"different error handling scheme.  Default is \'strict\' meaning that\n"
+"encoding errors raise a ValueError.  Other possible values are \'ignore\',\n"
+"\'replace\' and \'backslashreplace\' as well as any other name registered\n"
+"with codecs.register_error that can handle ValueErrors.");
 
 #define _CODECS_ENCODE_METHODDEF    \
     {"encode", _PyCFunction_CAST(_codecs_encode), METH_FASTCALL|METH_KEYWORDS, _codecs_encode__doc__},
@@ -98,9 +99,11 @@ _codecs_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(obj), &_Py_ID(encoding), &_Py_ID(errors), },
     };
     #undef NUM_KEYWORDS
@@ -177,10 +180,10 @@ PyDoc_STRVAR(_codecs_decode__doc__,
 "Decodes obj using the codec registered for encoding.\n"
 "\n"
 "Default encoding is \'utf-8\'.  errors may be given to set a\n"
-"different error handling scheme.  Default is \'strict\' meaning that encoding\n"
-"errors raise a ValueError.  Other possible values are \'ignore\', \'replace\'\n"
-"and \'backslashreplace\' as well as any other name registered with\n"
-"codecs.register_error that can handle ValueErrors.");
+"different error handling scheme.  Default is \'strict\' meaning that\n"
+"encoding errors raise a ValueError.  Other possible values are \'ignore\',\n"
+"\'replace\' and \'backslashreplace\' as well as any other name registered\n"
+"with codecs.register_error that can handle ValueErrors.");
 
 #define _CODECS_DECODE_METHODDEF    \
     {"decode", _PyCFunction_CAST(_codecs_decode), METH_FASTCALL|METH_KEYWORDS, _codecs_decode__doc__},
@@ -199,9 +202,11 @@ _codecs_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(obj), &_Py_ID(encoding), &_Py_ID(errors), },
     };
     #undef NUM_KEYWORDS
@@ -2645,8 +2650,9 @@ PyDoc_STRVAR(_codecs_register_error__doc__,
 "Register the specified error handler under the name errors.\n"
 "\n"
 "handler must be a callable object, that will be called with an exception\n"
-"instance containing information about the location of the encoding/decoding\n"
-"error and must return a (replacement, new position) tuple.");
+"instance containing information about the location of the\n"
+"encoding/decoding error and must return a (replacement, new position)\n"
+"tuple.");
 
 #define _CODECS_REGISTER_ERROR_METHODDEF    \
     {"register_error", _PyCFunction_CAST(_codecs_register_error), METH_FASTCALL, _codecs_register_error__doc__},
@@ -2741,8 +2747,8 @@ PyDoc_STRVAR(_codecs_lookup_error__doc__,
 "\n"
 "lookup_error(errors) -> handler\n"
 "\n"
-"Return the error handler for the specified error handling name or raise a\n"
-"LookupError, if no handler exists under this name.");
+"Return the error handler for the specified error handling name or raise\n"
+"a LookupError, if no handler exists under this name.");
 
 #define _CODECS_LOOKUP_ERROR_METHODDEF    \
     {"lookup_error", (PyCFunction)_codecs_lookup_error, METH_O, _codecs_lookup_error__doc__},
@@ -2775,6 +2781,70 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_codecs__normalize_encoding__doc__,
+"_normalize_encoding($module, /, encoding)\n"
+"--\n"
+"\n"
+"Normalize an encoding name *encoding*.\n"
+"\n"
+"Used for encodings.normalize_encoding. Does not convert to lower case.");
+
+#define _CODECS__NORMALIZE_ENCODING_METHODDEF    \
+    {"_normalize_encoding", _PyCFunction_CAST(_codecs__normalize_encoding), METH_FASTCALL|METH_KEYWORDS, _codecs__normalize_encoding__doc__},
+
+static PyObject *
+_codecs__normalize_encoding_impl(PyObject *module, PyObject *encoding);
+
+static PyObject *
+_codecs__normalize_encoding(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(encoding), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"encoding", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_normalize_encoding",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *encoding;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("_normalize_encoding", "argument 'encoding'", "str", args[0]);
+        goto exit;
+    }
+    encoding = args[0];
+    return_value = _codecs__normalize_encoding_impl(module, encoding);
+
+exit:
+    return return_value;
+}
+
 #ifndef _CODECS_MBCS_DECODE_METHODDEF
     #define _CODECS_MBCS_DECODE_METHODDEF
 #endif /* !defined(_CODECS_MBCS_DECODE_METHODDEF) */
@@ -2798,4 +2868,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=f8a7fdd0b7edc0c4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=505edef891a06329 input=a9049054013a1b77]*/

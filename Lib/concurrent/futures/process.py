@@ -440,7 +440,7 @@ class _ExecutorManagerThread(threading.Thread):
         work_item = self.pending_work_items.pop(result_item.work_id, None)
         # work_item can be None if another process terminated (see above)
         if work_item is not None:
-            if result_item.exception:
+            if result_item.exception is not None:
                 work_item.future.set_exception(result_item.exception)
             else:
                 work_item.future.set_result(result_item.result)
@@ -474,9 +474,23 @@ class _ExecutorManagerThread(threading.Thread):
         bpe = BrokenProcessPool("A process in the process pool was "
                                 "terminated abruptly while the future was "
                                 "running or pending.")
+        cause_str = None
         if cause is not None:
-            bpe.__cause__ = _RemoteTraceback(
-                f"\n'''\n{''.join(cause)}'''")
+            cause_str = ''.join(cause)
+        else:
+            # No cause known, so report any processes that have
+            # terminated with nonzero exit codes, e.g. from a
+            # segfault. Multiple may terminate simultaneously,
+            # so include all of them in the traceback.
+            errors = []
+            for p in self.processes.values():
+                if p.exitcode is not None and p.exitcode != 0:
+                    errors.append(f"Process {p.pid} terminated abruptly "
+                                  f"with exit code {p.exitcode}")
+            if errors:
+                cause_str = "\n".join(errors)
+        if cause_str:
+            bpe.__cause__ = _RemoteTraceback(f"\n'''\n{cause_str}'''")
 
         # Mark pending tasks as failed.
         for work_id, work_item in self.pending_work_items.items():
@@ -626,6 +640,14 @@ class BrokenProcessPool(_base.BrokenExecutor):
     while a future was in the running state.
     """
 
+_TERMINATE = "terminate"
+_KILL = "kill"
+
+_SHUTDOWN_CALLBACK_OPERATION = {
+    _TERMINATE,
+    _KILL
+}
+
 
 class ProcessPoolExecutor(_base.Executor):
     def __init__(self, max_workers=None, mp_context=None,
@@ -634,19 +656,21 @@ class ProcessPoolExecutor(_base.Executor):
 
         Args:
             max_workers: The maximum number of processes that can be used to
-                execute the given calls. If None or not given then as many
-                worker processes will be created as the machine has processors.
-            mp_context: A multiprocessing context to launch the workers created
-                using the multiprocessing.get_context('start method') API. This
-                object should provide SimpleQueue, Queue and Process.
+                execute the given calls.  If None or not given then as many
+                worker processes will be created as the machine has
+                processors.
+            mp_context: A multiprocessing context to launch the workers
+                created using the multiprocessing.get_context('start method')
+                API.  This object should provide SimpleQueue, Queue and
+                Process.
             initializer: A callable used to initialize worker processes.
             initargs: A tuple of arguments to pass to the initializer.
-            max_tasks_per_child: The maximum number of tasks a worker process
-                can complete before it will exit and be replaced with a fresh
-                worker process. The default of None means worker process will
-                live as long as the executor. Requires a non-'fork' mp_context
-                start method. When given, we default to using 'spawn' if no
-                mp_context is supplied.
+            max_tasks_per_child: The maximum number of tasks a worker
+                process can complete before it will exit and be replaced
+                with a fresh worker process.  The default of None means
+                worker process will live as long as the executor.  Requires
+                a non-'fork' mp_context start method.  When given, we
+                default to using 'spawn' if no mp_context is supplied.
         """
         _check_system_limits()
 
@@ -747,6 +771,11 @@ class ProcessPoolExecutor(_base.Executor):
                 self._executor_manager_thread_wakeup
 
     def _adjust_process_count(self):
+        # gh-132969: avoid error when state is reset and executor is still running,
+        # which will happen when shutdown(wait=False) is called.
+        if self._processes is None:
+            return
+
         # if there's an idle process, we don't need to spawn a new one.
         if self._idle_worker_semaphore.acquire(blocking=False):
             return
@@ -805,25 +834,31 @@ class ProcessPoolExecutor(_base.Executor):
             return f
     submit.__doc__ = _base.Executor.submit.__doc__
 
-    def map(self, fn, *iterables, timeout=None, chunksize=1):
+    def map(self, fn, *iterables, timeout=None, chunksize=1, buffersize=None):
         """Returns an iterator equivalent to map(fn, iter).
 
         Args:
             fn: A callable that will take as many arguments as there are
                 passed iterables.
-            timeout: The maximum number of seconds to wait. If None, then there
-                is no limit on the wait time.
-            chunksize: If greater than one, the iterables will be chopped into
-                chunks of size chunksize and submitted to the process pool.
-                If set to one, the items in the list will be sent one at a time.
+            timeout: The maximum number of seconds to wait.  If None, then
+                there is no limit on the wait time.
+            chunksize: If greater than one, the iterables will be chopped
+                into chunks of size chunksize and submitted to the process
+                pool.  If set to one, the items in the list will be sent
+                one at a time.
+            buffersize: The number of submitted tasks whose results have not
+                yet been yielded.  If the buffer is full, iteration over the
+                iterables pauses until a result is yielded from the buffer.
+                If None, all input elements are eagerly collected, and
+                a task is submitted for each.
 
         Returns:
-            An iterator equivalent to: map(func, *iterables) but the calls may
-            be evaluated out-of-order.
+            An iterator equivalent to: map(func, *iterables) but the calls
+            may be evaluated out-of-order.
 
         Raises:
-            TimeoutError: If the entire result iterator could not be generated
-                before the given timeout.
+            TimeoutError: If the entire result iterator could not be
+                generated before the given timeout.
             Exception: If fn(*args) raises for any values.
         """
         if chunksize < 1:
@@ -831,7 +866,8 @@ class ProcessPoolExecutor(_base.Executor):
 
         results = super().map(partial(_process_chunk, fn),
                               itertools.batched(zip(*iterables), chunksize),
-                              timeout=timeout)
+                              timeout=timeout,
+                              buffersize=buffersize)
         return _chain_from_iterable_of_lists(results)
 
     def shutdown(self, wait=True, *, cancel_futures=False):
@@ -855,3 +891,66 @@ class ProcessPoolExecutor(_base.Executor):
         self._executor_manager_thread_wakeup = None
 
     shutdown.__doc__ = _base.Executor.shutdown.__doc__
+
+    def _force_shutdown(self, operation):
+        """Attempts to terminate or kill the executor's workers based off the
+        given operation. Iterates through all of the current processes and
+        performs the relevant task if the process is still alive.
+
+        After terminating workers, the pool will be in a broken state
+        and no longer usable (for instance, new tasks should not be
+        submitted).
+        """
+        if operation not in _SHUTDOWN_CALLBACK_OPERATION:
+            raise ValueError(f"Unsupported operation: {operation!r}")
+
+        processes = {}
+        if self._processes:
+            processes = self._processes.copy()
+
+        # shutdown will invalidate ._processes, so we copy it right before
+        # calling. If we waited here, we would deadlock if a process decides not
+        # to exit.
+        self.shutdown(wait=False, cancel_futures=True)
+
+        if not processes:
+            return
+
+        for proc in processes.values():
+            try:
+                if not proc.is_alive():
+                    continue
+            except ValueError:
+                # The process is already exited/closed out.
+                continue
+
+            try:
+                if operation == _TERMINATE:
+                    proc.terminate()
+                elif operation == _KILL:
+                    proc.kill()
+            except ProcessLookupError:
+                # The process just ended before our signal
+                continue
+
+    def terminate_workers(self):
+        """Attempts to terminate the executor's workers.
+        Iterates through all of the current worker processes and terminates
+        each one that is still alive.
+
+        After terminating workers, the pool will be in a broken state
+        and no longer usable (for instance, new tasks should not be
+        submitted).
+        """
+        return self._force_shutdown(operation=_TERMINATE)
+
+    def kill_workers(self):
+        """Attempts to kill the executor's workers.
+        Iterates through all of the current worker processes and kills
+        each one that is still alive.
+
+        After killing workers, the pool will be in a broken state
+        and no longer usable (for instance, new tasks should not be
+        submitted).
+        """
+        return self._force_shutdown(operation=_KILL)

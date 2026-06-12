@@ -416,8 +416,15 @@ get_or_create_weakref(PyTypeObject *type, PyObject *obj, PyObject *callback)
                      Py_TYPE(obj)->tp_name);
         return NULL;
     }
-    if (callback == Py_None)
+    if (callback == Py_None) {
         callback = NULL;
+    }
+    if (callback != NULL && !PyCallable_Check(callback)) {
+        PyErr_Format(PyExc_TypeError,
+                     "callback must be callable or None, not '%T'",
+                     callback);
+        return NULL;
+    }
 
     PyWeakReference **list = GET_WEAKREFS_LISTPTR(obj);
     if ((type == &_PyWeakref_RefType) ||
@@ -491,7 +498,8 @@ static PyMemberDef weakref_members[] = {
 
 static PyMethodDef weakref_methods[] = {
     {"__class_getitem__",    Py_GenericAlias,
-    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
+    METH_O|METH_CLASS,
+    PyDoc_STR("Weakrefs are generic over the type of the referenced object.")},
     {NULL} /* Sentinel */
 };
 
@@ -964,7 +972,8 @@ PyWeakref_GetRef(PyObject *ref, PyObject **pobj)
 }
 
 
-PyObject *
+/* removed in 3.15, but kept for stable ABI compatibility */
+PyAPI_FUNC(PyObject *)
 PyWeakref_GetObject(PyObject *ref)
 {
     if (ref == NULL || !PyWeakref_Check(ref)) {
@@ -987,10 +996,13 @@ handle_callback(PyWeakReference *ref, PyObject *callback)
 {
     PyObject *cbresult = PyObject_CallOneArg(callback, (PyObject *)ref);
 
-    if (cbresult == NULL)
-        PyErr_WriteUnraisable(callback);
-    else
+    if (cbresult == NULL) {
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "calling weakref callback %R", callback);
+    }
+    else {
         Py_DECREF(cbresult);
+    }
 }
 
 /* This function is called by the tp_dealloc handler to clear weak references.
@@ -1042,7 +1054,8 @@ PyObject_ClearWeakRefs(PyObject *object)
     PyObject *tuple = PyTuple_New(num_weakrefs * 2);
     if (tuple == NULL) {
         _PyWeakref_ClearWeakRefsNoCallbacks(object);
-        PyErr_WriteUnraisable(NULL);
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "clearing object weakrefs");
         PyErr_SetRaisedException(exc);
         return;
     }

@@ -13,7 +13,7 @@
 #ifdef __DATE__
 #define DATE __DATE__
 #else
-#define DATE "xx/xx/xx"
+#define DATE "Jan 01 1970"
 #endif
 #endif
 
@@ -21,7 +21,7 @@
 #ifdef __TIME__
 #define TIME __TIME__
 #else
-#define TIME "xx:xx:xx"
+#define TIME "00:00:00"
 #endif
 #endif
 

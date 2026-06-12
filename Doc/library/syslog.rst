@@ -2,7 +2,6 @@
 ===============================================
 
 .. module:: syslog
-   :platform: Unix
    :synopsis: An interface to the Unix syslog library routines.
 
 --------------

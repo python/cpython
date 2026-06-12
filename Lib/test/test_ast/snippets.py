@@ -118,6 +118,12 @@ exec_tests = [
     # ImportFrom
     "from sys import x as y",
     "from sys import v",
+    # Lazy Import
+    "lazy import sys",
+    "lazy import foo as bar",
+    # Lazy ImportFrom
+    "lazy from sys import x as y",
+    "lazy from sys import v",
     # Global
     "global v",
     # Expr
@@ -364,6 +370,12 @@ eval_tests = [
   "f'{a:.2f}'",
   "f'{a!r}'",
   "f'foo({a})'",
+  # TemplateStr and Interpolation
+  "t'{a}'",
+  "t'{a:.2f}'",
+  "t'{a!r}'",
+  "t'{a!r:.2f}'",
+  "t'foo({a})'",
 ]
 
 
@@ -454,10 +466,14 @@ exec_results = [
 ('Module', [('TryStar', (1, 0, 7, 6), [('Pass', (2, 2, 2, 6))], [('ExceptHandler', (3, 0, 4, 6), ('Name', (3, 8, 3, 17), 'Exception', ('Load',)), 'exc', [('Pass', (4, 2, 4, 6))])], [('Pass', (5, 7, 5, 11))], [('Pass', (7, 2, 7, 6))])], []),
 ('Module', [('Assert', (1, 0, 1, 8), ('Name', (1, 7, 1, 8), 'v', ('Load',)), None)], []),
 ('Module', [('Assert', (1, 0, 1, 19), ('Name', (1, 7, 1, 8), 'v', ('Load',)), ('Constant', (1, 10, 1, 19), 'message', None))], []),
-('Module', [('Import', (1, 0, 1, 10), [('alias', (1, 7, 1, 10), 'sys', None)])], []),
-('Module', [('Import', (1, 0, 1, 17), [('alias', (1, 7, 1, 17), 'foo', 'bar')])], []),
-('Module', [('ImportFrom', (1, 0, 1, 22), 'sys', [('alias', (1, 16, 1, 22), 'x', 'y')], 0)], []),
-('Module', [('ImportFrom', (1, 0, 1, 17), 'sys', [('alias', (1, 16, 1, 17), 'v', None)], 0)], []),
+('Module', [('Import', (1, 0, 1, 10), [('alias', (1, 7, 1, 10), 'sys', None)], 0)], []),
+('Module', [('Import', (1, 0, 1, 17), [('alias', (1, 7, 1, 17), 'foo', 'bar')], 0)], []),
+('Module', [('ImportFrom', (1, 0, 1, 22), 'sys', [('alias', (1, 16, 1, 22), 'x', 'y')], 0, 0)], []),
+('Module', [('ImportFrom', (1, 0, 1, 17), 'sys', [('alias', (1, 16, 1, 17), 'v', None)], 0, 0)], []),
+('Module', [('Import', (1, 0, 1, 15), [('alias', (1, 12, 1, 15), 'sys', None)], 1)], []),
+('Module', [('Import', (1, 0, 1, 22), [('alias', (1, 12, 1, 22), 'foo', 'bar')], 1)], []),
+('Module', [('ImportFrom', (1, 0, 1, 27), 'sys', [('alias', (1, 21, 1, 27), 'x', 'y')], 0, 1)], []),
+('Module', [('ImportFrom', (1, 0, 1, 22), 'sys', [('alias', (1, 21, 1, 22), 'v', None)], 0, 1)], []),
 ('Module', [('Global', (1, 0, 1, 8), ['v'])], []),
 ('Module', [('Expr', (1, 0, 1, 1), ('Constant', (1, 0, 1, 1), 1, None))], []),
 ('Module', [('Pass', (1, 0, 1, 4))], []),
@@ -597,5 +613,10 @@ eval_results = [
 ('Expression', ('JoinedStr', (1, 0, 1, 10), [('FormattedValue', (1, 2, 1, 9), ('Name', (1, 3, 1, 4), 'a', ('Load',)), -1, ('JoinedStr', (1, 4, 1, 8), [('Constant', (1, 5, 1, 8), '.2f', None)]))])),
 ('Expression', ('JoinedStr', (1, 0, 1, 8), [('FormattedValue', (1, 2, 1, 7), ('Name', (1, 3, 1, 4), 'a', ('Load',)), 114, None)])),
 ('Expression', ('JoinedStr', (1, 0, 1, 11), [('Constant', (1, 2, 1, 6), 'foo(', None), ('FormattedValue', (1, 6, 1, 9), ('Name', (1, 7, 1, 8), 'a', ('Load',)), -1, None), ('Constant', (1, 9, 1, 10), ')', None)])),
+('Expression', ('TemplateStr', (1, 0, 1, 6), [('Interpolation', (1, 2, 1, 5), ('Name', (1, 3, 1, 4), 'a', ('Load',)), 'a', -1, None)])),
+('Expression', ('TemplateStr', (1, 0, 1, 10), [('Interpolation', (1, 2, 1, 9), ('Name', (1, 3, 1, 4), 'a', ('Load',)), 'a', -1, ('JoinedStr', (1, 4, 1, 8), [('Constant', (1, 5, 1, 8), '.2f', None)]))])),
+('Expression', ('TemplateStr', (1, 0, 1, 8), [('Interpolation', (1, 2, 1, 7), ('Name', (1, 3, 1, 4), 'a', ('Load',)), 'a', 114, None)])),
+('Expression', ('TemplateStr', (1, 0, 1, 12), [('Interpolation', (1, 2, 1, 11), ('Name', (1, 3, 1, 4), 'a', ('Load',)), 'a', 114, ('JoinedStr', (1, 6, 1, 10), [('Constant', (1, 7, 1, 10), '.2f', None)]))])),
+('Expression', ('TemplateStr', (1, 0, 1, 11), [('Constant', (1, 2, 1, 6), 'foo(', None), ('Interpolation', (1, 6, 1, 9), ('Name', (1, 7, 1, 8), 'a', ('Load',)), 'a', -1, None), ('Constant', (1, 9, 1, 10), ')', None)])),
 ]
 main()

@@ -42,7 +42,11 @@ static const char copyright[] =
 #include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION
 #include "pycore_dict.h"             // _PyDict_Next()
 #include "pycore_long.h"             // _PyLong_GetZero()
+#include "pycore_list.h"             // _PyList_AppendTakeRef()
 #include "pycore_moduleobject.h"     // _PyModule_GetState()
+#include "pycore_tuple.h"            // _PyTuple_FromPairSteal
+#include "pycore_unicodeobject.h"    // _PyUnicode_Copy
+#include "pycore_weakref.h"          // FT_CLEAR_WEAKREFS()
 
 #include "sre.h"                     // SRE_CODE
 
@@ -90,7 +94,7 @@ static unsigned int sre_toupper(unsigned int ch) {
 
 /* -------------------------------------------------------------------- */
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && !defined(__clang__)
 #pragma optimize("agtw", on) /* doesn't seem to make much difference... */
 #pragma warning(disable: 4710) /* who cares if functions are not inlined ;-) */
 /* fastest possible local call under MSVC */
@@ -545,10 +549,16 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
 
     memset(state, 0, sizeof(SRE_STATE));
 
-    state->mark = PyMem_New(const void *, pattern->groups * 2);
-    if (!state->mark) {
-        PyErr_NoMemory();
-        goto err;
+    /* Patterns with no capturing groups never emit MARK opcodes and never
+       read state->mark (group 0's span comes from state->start/ptr), so skip
+       the allocation entirely -- state->mark stays NULL, which both the err
+       path and state_fini already free safely. */
+    if (pattern->groups) {
+        state->mark = PyMem_New(const void *, pattern->groups * 2);
+        if (!state->mark) {
+            PyErr_NoMemory();
+            goto err;
+        }
     }
     state->lastmark = -1;
     state->lastindex = -1;
@@ -735,10 +745,7 @@ pattern_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    PatternObject *obj = _PatternObject_CAST(self);
-    if (obj->weakreflist != NULL) {
-        PyObject_ClearWeakRefs(self);
-    }
+    FT_CLEAR_WEAKREFS(self, _PatternObject_CAST(self)->weakreflist);
     (void)pattern_clear(self);
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -767,7 +774,7 @@ sre_search(SRE_STATE* state, SRE_CODE* pattern)
 }
 
 /*[clinic input]
-_sre.SRE_Pattern.match
+_sre.SRE_Pattern.prefixmatch
 
     cls: defining_class
     /
@@ -779,10 +786,10 @@ Matches zero or more characters at the beginning of the string.
 [clinic start generated code]*/
 
 static PyObject *
-_sre_SRE_Pattern_match_impl(PatternObject *self, PyTypeObject *cls,
-                            PyObject *string, Py_ssize_t pos,
-                            Py_ssize_t endpos)
-/*[clinic end generated code: output=ec6208ea58a0cca0 input=4bdb9c3e564d13ac]*/
+_sre_SRE_Pattern_prefixmatch_impl(PatternObject *self, PyTypeObject *cls,
+                                  PyObject *string, Py_ssize_t pos,
+                                  Py_ssize_t endpos)
+/*[clinic end generated code: output=a0e079fb4f875240 input=e2a7e68ea47d048c]*/
 {
     _sremodulestate *module_state = get_sre_module_state_by_class(cls);
     SRE_STATE state;
@@ -809,6 +816,7 @@ _sre_SRE_Pattern_match_impl(PatternObject *self, PyTypeObject *cls,
     state_fini(&state);
     return match;
 }
+
 
 /*[clinic input]
 _sre.SRE_Pattern.fullmatch
@@ -856,6 +864,7 @@ _sre_SRE_Pattern_fullmatch_impl(PatternObject *self, PyTypeObject *cls,
 }
 
 /*[clinic input]
+@permit_long_summary
 _sre.SRE_Pattern.search
 
     cls: defining_class
@@ -873,7 +882,7 @@ static PyObject *
 _sre_SRE_Pattern_search_impl(PatternObject *self, PyTypeObject *cls,
                              PyObject *string, Py_ssize_t pos,
                              Py_ssize_t endpos)
-/*[clinic end generated code: output=bd7f2d9d583e1463 input=afa9afb66a74a4b3]*/
+/*[clinic end generated code: output=bd7f2d9d583e1463 input=05e9feee0334c156]*/
 {
     _sremodulestate *module_state = get_sre_module_state_by_class(cls);
     SRE_STATE state;
@@ -978,8 +987,7 @@ _sre_SRE_Pattern_findall_impl(PatternObject *self, PyObject *string,
             break;
         }
 
-        status = PyList_Append(list, item);
-        Py_DECREF(item);
+        status = _PyList_AppendTakeRef((PyListObject *)list, item);
         if (status < 0)
             goto error;
 
@@ -998,6 +1006,7 @@ error:
 }
 
 /*[clinic input]
+@permit_long_summary
 _sre.SRE_Pattern.finditer
 
     cls: defining_class
@@ -1015,7 +1024,7 @@ static PyObject *
 _sre_SRE_Pattern_finditer_impl(PatternObject *self, PyTypeObject *cls,
                                PyObject *string, Py_ssize_t pos,
                                Py_ssize_t endpos)
-/*[clinic end generated code: output=1791dbf3618ade56 input=812e332a4848cbaf]*/
+/*[clinic end generated code: output=1791dbf3618ade56 input=ee28865796048023]*/
 {
     _sremodulestate *module_state = get_sre_module_state_by_class(cls);
     PyObject* scanner;
@@ -1167,13 +1176,21 @@ compile_template(_sremodulestate *module_state,
                  PatternObject *pattern, PyObject *template)
 {
     /* delegate to Python code */
-    PyObject *func = module_state->compile_template;
+    PyObject *func = FT_ATOMIC_LOAD_PTR(module_state->compile_template);
     if (func == NULL) {
-        func = _PyImport_GetModuleAttrString("re", "_compile_template");
+        func = PyImport_ImportModuleAttrString("re", "_compile_template");
         if (func == NULL) {
             return NULL;
         }
+#ifdef Py_GIL_DISABLED
+        PyObject *other_func = NULL;
+        if (!_Py_atomic_compare_exchange_ptr(&module_state->compile_template, &other_func, func))  {
+            Py_DECREF(func);
+            func = other_func;
+        }
+#else
         Py_XSETREF(module_state->compile_template, func);
+#endif
     }
 
     PyObject *args[] = {(PyObject *)pattern, template};
@@ -1316,8 +1333,7 @@ pattern_subx(_sremodulestate* module_state,
                 string, i, b);
             if (!item)
                 goto error;
-            status = PyList_Append(list, item);
-            Py_DECREF(item);
+            status = _PyList_AppendTakeRef((PyListObject *)list, item);
             if (status < 0)
                 goto error;
 
@@ -1346,8 +1362,7 @@ pattern_subx(_sremodulestate* module_state,
 
         /* add to list */
         if (item != Py_None) {
-            status = PyList_Append(list, item);
-            Py_DECREF(item);
+            status = _PyList_AppendTakeRef((PyListObject *)list, item);
             if (status < 0)
                 goto error;
         }
@@ -1364,8 +1379,7 @@ pattern_subx(_sremodulestate* module_state,
                         string, i, state.endpos);
         if (!item)
             goto error;
-        status = PyList_Append(list, item);
-        Py_DECREF(item);
+        status = _PyList_AppendTakeRef((PyListObject *)list, item);
         if (status < 0)
             goto error;
     }
@@ -1409,6 +1423,7 @@ error:
 }
 
 /*[clinic input]
+@permit_long_summary
 _sre.SRE_Pattern.sub
 
     cls: defining_class
@@ -1423,7 +1438,7 @@ Return the string obtained by replacing the leftmost non-overlapping occurrences
 static PyObject *
 _sre_SRE_Pattern_sub_impl(PatternObject *self, PyTypeObject *cls,
                           PyObject *repl, PyObject *string, Py_ssize_t count)
-/*[clinic end generated code: output=4be141ab04bca60d input=d8d1d4ac2311a07c]*/
+/*[clinic end generated code: output=4be141ab04bca60d input=eba511fd1c4908b7]*/
 {
     _sremodulestate *module_state = get_sre_module_state_by_class(cls);
 
@@ -1431,6 +1446,7 @@ _sre_SRE_Pattern_sub_impl(PatternObject *self, PyTypeObject *cls,
 }
 
 /*[clinic input]
+@permit_long_summary
 _sre.SRE_Pattern.subn
 
     cls: defining_class
@@ -1446,7 +1462,7 @@ static PyObject *
 _sre_SRE_Pattern_subn_impl(PatternObject *self, PyTypeObject *cls,
                            PyObject *repl, PyObject *string,
                            Py_ssize_t count)
-/*[clinic end generated code: output=da02fd85258b1e1f input=8b78a65b8302e58d]*/
+/*[clinic end generated code: output=da02fd85258b1e1f input=6a5bb5b61717abf0]*/
 {
     _sremodulestate *module_state = get_sre_module_state_by_class(cls);
 
@@ -1474,8 +1490,8 @@ _sre.SRE_Pattern.__deepcopy__
 [clinic start generated code]*/
 
 static PyObject *
-_sre_SRE_Pattern___deepcopy__(PatternObject *self, PyObject *memo)
-/*[clinic end generated code: output=2ad25679c1f1204a input=a465b1602f997bed]*/
+_sre_SRE_Pattern___deepcopy___impl(PatternObject *self, PyObject *memo)
+/*[clinic end generated code: output=75efe69bd12c5d7d input=a465b1602f997bed]*/
 {
     return Py_NewRef(self);
 }
@@ -1935,7 +1951,7 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                sre_match() code is robust even if they don't, and the worst
                you can get is nonsensical match results. */
             GET_ARG;
-            if (arg > 2 * (size_t)groups + 1) {
+            if (arg >= 2 * (size_t)groups) {
                 VTRACE(("arg=%d, groups=%d\n", (int)arg, (int)groups));
                 FAIL;
             }
@@ -2348,7 +2364,7 @@ match_getindex(MatchObject* self, PyObject* index)
     }
 
     // Check that i*2 cannot overflow to make static analyzers happy
-    assert(i <= SRE_MAXGROUPS);
+    assert((size_t)i <= SRE_MAXGROUPS);
     return i;
 }
 
@@ -2365,6 +2381,7 @@ match_getslice(MatchObject* self, PyObject* index, PyObject* def)
 }
 
 /*[clinic input]
+@permit_long_summary
 _sre.SRE_Match.expand
 
     template: object
@@ -2374,7 +2391,7 @@ Return the string obtained by doing backslash substitution on the string templat
 
 static PyObject *
 _sre_SRE_Match_expand_impl(MatchObject *self, PyObject *template)
-/*[clinic end generated code: output=931b58ccc323c3a1 input=4bfdb22c2f8b146a]*/
+/*[clinic end generated code: output=931b58ccc323c3a1 input=dc74d81265376ac3]*/
 {
     _sremodulestate *module_state = get_sre_module_state_by_class(Py_TYPE(self));
     PyObject *filter = compile_template(module_state, self->pattern, template);
@@ -2463,6 +2480,7 @@ _sre_SRE_Match_groups_impl(MatchObject *self, PyObject *default_value)
 }
 
 /*[clinic input]
+@permit_long_summary
 _sre.SRE_Match.groupdict
 
     default: object = None
@@ -2473,7 +2491,7 @@ Return a dictionary containing all the named subgroups of the match, keyed by th
 
 static PyObject *
 _sre_SRE_Match_groupdict_impl(MatchObject *self, PyObject *default_value)
-/*[clinic end generated code: output=29917c9073e41757 input=0ded7960b23780aa]*/
+/*[clinic end generated code: output=29917c9073e41757 input=a8d3a1dc80336872]*/
 {
     PyObject *result;
     PyObject *key;
@@ -2558,31 +2576,21 @@ _sre_SRE_Match_end_impl(MatchObject *self, PyObject *group)
 LOCAL(PyObject*)
 _pair(Py_ssize_t i1, Py_ssize_t i2)
 {
-    PyObject* pair;
-    PyObject* item;
-
-    pair = PyTuple_New(2);
-    if (!pair)
+    PyObject* item1 = PyLong_FromSsize_t(i1);
+    if (!item1) {
         return NULL;
+    }
+    PyObject* item2 = PyLong_FromSsize_t(i2);
+    if(!item2) {
+        Py_DECREF(item1);
+        return NULL;
+    }
 
-    item = PyLong_FromSsize_t(i1);
-    if (!item)
-        goto error;
-    PyTuple_SET_ITEM(pair, 0, item);
-
-    item = PyLong_FromSsize_t(i2);
-    if (!item)
-        goto error;
-    PyTuple_SET_ITEM(pair, 1, item);
-
-    return pair;
-
-  error:
-    Py_DECREF(pair);
-    return NULL;
+    return _PyTuple_FromPairSteal(item1, item2);
 }
 
 /*[clinic input]
+@permit_long_summary
 _sre.SRE_Match.span
 
     group: object(c_default="NULL") = 0
@@ -2593,7 +2601,7 @@ For match object m, return the 2-tuple (m.start(group), m.end(group)).
 
 static PyObject *
 _sre_SRE_Match_span_impl(MatchObject *self, PyObject *group)
-/*[clinic end generated code: output=f02ae40594d14fe6 input=8fa6014e982d71d4]*/
+/*[clinic end generated code: output=f02ae40594d14fe6 input=834cfe444f0f55cf]*/
 {
     Py_ssize_t index = match_getindex(self, group);
 
@@ -2651,14 +2659,14 @@ _sre.SRE_Match.__deepcopy__
 [clinic start generated code]*/
 
 static PyObject *
-_sre_SRE_Match___deepcopy__(MatchObject *self, PyObject *memo)
-/*[clinic end generated code: output=ba7cb46d655e4ee2 input=779d12a31c2c325e]*/
+_sre_SRE_Match___deepcopy___impl(MatchObject *self, PyObject *memo)
+/*[clinic end generated code: output=2b657578eb03f4a3 input=779d12a31c2c325e]*/
 {
     return Py_NewRef(self);
 }
 
 PyDoc_STRVAR(match_doc,
-"The result of re.match() and re.search().\n\
+"The result of re.search(), re.prefixmatch(), and re.fullmatch().\n\
 Match objects always have a boolean value of True.");
 
 PyDoc_STRVAR(match_group_doc,
@@ -2701,8 +2709,9 @@ match_regs_get(PyObject *op, void *Py_UNUSED(ignored))
 }
 
 static PyObject *
-match_repr(MatchObject *self)
+match_repr(PyObject *op)
 {
+    MatchObject *self = _MatchObject_CAST(op);
     PyObject *result;
     PyObject *group0 = match_getslice_by_index(self, 0, Py_None);
     if (group0 == NULL)
@@ -2827,24 +2836,29 @@ scanner_dealloc(PyObject *self)
 static int
 scanner_begin(ScannerObject* self)
 {
-    if (self->executing) {
+#ifdef Py_GIL_DISABLED
+    int was_executing = _Py_atomic_exchange_int(&self->executing, 1);
+#else
+    int was_executing = self->executing;
+    self->executing = 1;
+#endif
+    if (was_executing) {
         PyErr_SetString(PyExc_ValueError,
                         "regular expression scanner already executing");
         return 0;
     }
-    self->executing = 1;
     return 1;
 }
 
 static void
 scanner_end(ScannerObject* self)
 {
-    assert(self->executing);
-    self->executing = 0;
+    assert(FT_ATOMIC_LOAD_INT_RELAXED(self->executing));
+    FT_ATOMIC_STORE_INT(self->executing, 0);
 }
 
 /*[clinic input]
-_sre.SRE_Scanner.match
+_sre.SRE_Scanner.prefixmatch
 
     cls: defining_class
     /
@@ -2852,8 +2866,8 @@ _sre.SRE_Scanner.match
 [clinic start generated code]*/
 
 static PyObject *
-_sre_SRE_Scanner_match_impl(ScannerObject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=6e22c149dc0f0325 input=b5146e1f30278cb7]*/
+_sre_SRE_Scanner_prefixmatch_impl(ScannerObject *self, PyTypeObject *cls)
+/*[clinic end generated code: output=02b3b9d2954a2157 input=3049b20466c56a8e]*/
 {
     _sremodulestate *module_state = get_sre_module_state_by_class(cls);
     SRE_STATE* state = &self->state;
@@ -3151,7 +3165,12 @@ pattern_richcompare(PyObject *lefto, PyObject *righto, int op)
 #include "clinic/sre.c.h"
 
 static PyMethodDef pattern_methods[] = {
-    _SRE_SRE_PATTERN_MATCH_METHODDEF
+    _SRE_SRE_PATTERN_PREFIXMATCH_METHODDEF
+    /* "match" reuses the prefixmatch Clinic-generated parser and impl
+     * to avoid duplicating the argument parsing boilerplate code. */
+    {"match", _PyCFunction_CAST(_sre_SRE_Pattern_prefixmatch),
+     METH_METHOD|METH_FASTCALL|METH_KEYWORDS,
+     _sre_SRE_Pattern_prefixmatch__doc__},
     _SRE_SRE_PATTERN_FULLMATCH_METHODDEF
     _SRE_SRE_PATTERN_SEARCH_METHODDEF
     _SRE_SRE_PATTERN_SUB_METHODDEF
@@ -3164,7 +3183,7 @@ static PyMethodDef pattern_methods[] = {
     _SRE_SRE_PATTERN___DEEPCOPY___METHODDEF
     _SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
-     PyDoc_STR("See PEP 585")},
+     PyDoc_STR("Patterns are generic over the type of string they handle (str or bytes)")},
     {NULL, NULL}
 };
 
@@ -3220,7 +3239,7 @@ static PyMethodDef match_methods[] = {
     _SRE_SRE_MATCH___COPY___METHODDEF
     _SRE_SRE_MATCH___DEEPCOPY___METHODDEF
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
-     PyDoc_STR("See PEP 585")},
+     PyDoc_STR("Matches are generic over the type of string which was matched (str or bytes)")},
     {NULL, NULL}
 };
 
@@ -3278,7 +3297,12 @@ static PyType_Spec match_spec = {
 };
 
 static PyMethodDef scanner_methods[] = {
-    _SRE_SRE_SCANNER_MATCH_METHODDEF
+    _SRE_SRE_SCANNER_PREFIXMATCH_METHODDEF
+    /* "match" reuses the prefixmatch Clinic-generated parser and impl
+     * to avoid duplicating the argument parsing boilerplate code. */
+    {"match", _PyCFunction_CAST(_sre_SRE_Scanner_prefixmatch),
+     METH_METHOD|METH_FASTCALL|METH_KEYWORDS,
+     _sre_SRE_Scanner_prefixmatch__doc__},
     _SRE_SRE_SCANNER_SEARCH_METHODDEF
     {NULL, NULL}
 };
@@ -3382,10 +3406,30 @@ do {                                                                \
         }                                                 \
 } while (0)
 
+
+#ifdef Py_DEBUG
+static void
+_assert_match_aliases_prefixmatch(PyMethodDef *methods)
+{
+    PyMethodDef *prefixmatch_md = &methods[0];
+    PyMethodDef *match_md = &methods[1];
+    assert(strcmp(prefixmatch_md->ml_name, "prefixmatch") == 0);
+    assert(strcmp(match_md->ml_name, "match") == 0);
+    assert(match_md->ml_meth == prefixmatch_md->ml_meth);
+    assert(match_md->ml_flags == prefixmatch_md->ml_flags);
+    assert(match_md->ml_doc == prefixmatch_md->ml_doc);
+}
+#endif
+
 static int
 sre_exec(PyObject *m)
 {
     _sremodulestate *state;
+
+#ifdef Py_DEBUG
+    _assert_match_aliases_prefixmatch(pattern_methods);
+    _assert_match_aliases_prefixmatch(scanner_methods);
+#endif
 
     /* Create heap types */
     state = get_sre_module_state(m);
@@ -3416,6 +3460,7 @@ error:
 }
 
 static PyModuleDef_Slot sre_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, sre_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

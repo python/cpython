@@ -122,6 +122,14 @@ Importing ``parent.one`` will implicitly execute ``parent/__init__.py`` and
 ``parent.three`` will execute ``parent/two/__init__.py`` and
 ``parent/three/__init__.py`` respectively.
 
+A subdirectory inside a regular package that does not contain an
+``__init__.py`` file is treated as an implicit
+:ref:`namespace package <reference-namespace-package>` (a "namespace
+subpackage") rooted in that parent.  See :pep:`420` for the underlying
+specification.
+
+
+.. _reference-namespace-package:
 
 Namespace packages
 ------------------
@@ -150,6 +158,12 @@ each one is provided by a different portion.  Thus ``parent/one`` may not be
 physically located next to ``parent/two``.  In this case, Python will create a
 namespace package for the top-level ``parent`` package whenever it or one of
 its subpackages is imported.
+
+Namespace packages may also be nested inside a regular package.  When the
+import system searches a regular package's ``__path__`` and encounters a
+subdirectory that does not contain an ``__init__.py`` file, that
+subdirectory becomes a :term:`portion` contributing to a namespace
+subpackage of the enclosing regular package.
 
 See also :pep:`420` for the namespace package specification.
 
@@ -357,21 +371,16 @@ of what happens during the loading portion of import::
     if spec.loader is None:
         # unsupported
         raise ImportError
-    if spec.origin is None and spec.submodule_search_locations is not None:
-        # namespace package
-        sys.modules[spec.name] = module
-    elif not hasattr(spec.loader, 'exec_module'):
-        module = spec.loader.load_module(spec.name)
-    else:
-        sys.modules[spec.name] = module
+
+    sys.modules[spec.name] = module
+    try:
+        spec.loader.exec_module(module)
+    except BaseException:
         try:
-            spec.loader.exec_module(module)
-        except BaseException:
-            try:
-                del sys.modules[spec.name]
-            except KeyError:
-                pass
-            raise
+            del sys.modules[spec.name]
+        except KeyError:
+            pass
+        raise
     return sys.modules[spec.name]
 
 Note the following details:
@@ -406,7 +415,10 @@ Note the following details:
 .. versionchanged:: 3.4
    The import system has taken over the boilerplate responsibilities of
    loaders.  These were previously performed by the
-   :meth:`importlib.abc.Loader.load_module` method.
+   ``importlib.abc.Loader.load_module`` method.
+
+.. versionchanged:: 3.15
+    The ``load_module`` method is no longer used.
 
 Loaders
 -------
@@ -441,7 +453,7 @@ import machinery will create the new module itself.
    The :meth:`~importlib.abc.Loader.create_module` method of loaders.
 
 .. versionchanged:: 3.4
-   The :meth:`~importlib.abc.Loader.load_module` method was replaced by
+   The ``importlib.abc.Loader.load_module`` method was replaced by
    :meth:`~importlib.abc.Loader.exec_module` and the import
    machinery assumed all the boilerplate responsibilities of loading.
 
@@ -762,10 +774,10 @@ module.
 
 The current working directory -- denoted by an empty string -- is handled
 slightly differently from other entries on :data:`sys.path`. First, if the
-current working directory is found to not exist, no value is stored in
-:data:`sys.path_importer_cache`. Second, the value for the current working
-directory is looked up fresh for each module lookup. Third, the path used for
-:data:`sys.path_importer_cache` and returned by
+current working directory cannot be determined or is found not to exist, no
+value is stored in :data:`sys.path_importer_cache`. Second, the value for the
+current working directory is looked up fresh for each module lookup. Third,
+the path used for :data:`sys.path_importer_cache` and returned by
 :meth:`importlib.machinery.PathFinder.find_spec` will be the actual current
 working directory and not the empty string.
 
@@ -832,9 +844,7 @@ entirely with a custom meta path hook.
 
 If it is acceptable to only alter the behaviour of import statements
 without affecting other APIs that access the import system, then replacing
-the builtin :func:`__import__` function may be sufficient. This technique
-may also be employed at the module level to only alter the behaviour of
-import statements within that module.
+the builtin :func:`__import__` function may be sufficient.
 
 To selectively prevent the import of some modules from a hook early on the
 meta path (rather than disabling the standard import system entirely),
