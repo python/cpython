@@ -3132,6 +3132,25 @@ import_from_resolve_module_attr(PyThreadState *tstate, PyObject *package_name,
         return Py_NewRef(attr);
     }
 
+    /* Only packages can legitimately republish importable submodules here.
+       Plain modules may expose arbitrary module-valued attributes. */
+    PyObject *package = PyImport_GetModule(package_name);
+    if (package == NULL) {
+        if (_PyErr_Occurred(tstate)) {
+            return NULL;
+        }
+        return Py_NewRef(attr);
+    }
+
+    int is_package = PyObject_HasAttrWithError(package, &_Py_ID(__path__));
+    Py_DECREF(package);
+    if (is_package <= 0) {
+        if (is_package < 0) {
+            return NULL;
+        }
+        return Py_NewRef(attr);
+    }
+
     PyObject *fullmodname = PyUnicode_FromFormat("%U.%U", package_name, name);
     if (fullmodname == NULL) {
         return NULL;
@@ -3190,6 +3209,8 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
                 Py_DECREF(x);
                 return NULL;
             }
+            /* If this is a cached submodule, resolve it through sys.modules
+               so from-import repairs stale package entries. */
             resolved = import_from_resolve_module_attr(tstate, mod_name, name, x);
             Py_XDECREF(mod_name);
             Py_DECREF(x);
@@ -3366,8 +3387,8 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObje
     PyLazyImportObject *d = (PyLazyImportObject *)v;
     PyObject *mod = PyImport_GetModule(d->lz_from);
     if (mod != NULL) {
-        // Check if the module already has the attribute, if so, resolve it
-        // eagerly.
+        /* If the parent is already imported, resolve any module-valued
+           attribute through the same stale-submodule check. */
         if (PyModule_Check(mod)) {
             PyObject *mod_dict = PyModule_GetDict(mod);
             if (mod_dict != NULL) {
