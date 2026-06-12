@@ -397,7 +397,6 @@ class StartupState:
         accepted paths are added to it so that subsequent .pth files in
         the same batch don't add them more than once.
         """
-
         lines, filename = _read_pthstart_file(sitedir, name, ".pth")
         if lines is None:
             return
