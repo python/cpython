@@ -1594,7 +1594,12 @@ type_set_qualname(PyObject *tp, PyObject *value, void *context)
     }
 
     et = (PyHeapTypeObject*)type;
-    Py_SETREF(et->ht_qualname, Py_NewRef(value));
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    PyObject *old_qualname = et->ht_qualname;
+    et->ht_qualname = Py_NewRef(value);
+    _PyEval_StartTheWorld(interp);
+    Py_DECREF(old_qualname);
     return 0;
 }
 
@@ -7018,7 +7023,7 @@ type_dealloc(PyObject *self)
     Py_XDECREF(et->ht_qualname);
     Py_XDECREF(et->ht_slots);
     if (et->ht_cached_keys) {
-        _PyDictKeys_DecRef(et->ht_cached_keys);
+        _PyDict_RemoveKeysForClass(et);
     }
     Py_XDECREF(et->ht_module);
     PyMem_Free(et->_ht_tpname);
