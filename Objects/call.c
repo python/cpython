@@ -617,10 +617,9 @@ _PyObject_CallFunction_SizeT(PyObject *callable, const char *format, ...)
    would allocate. Using the StackRef variant keeps method resolution
    reference-count-free on the fast path so it scales in free-threading. */
 static PyObject *
-callmethod_va(PyObject *obj, PyObject *name,
-                     const char *format, va_list va)
+callmethod(PyThreadState *tstate, PyObject *obj, PyObject *name,
+           const char *format, va_list va)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
     PyObject *result = NULL;
 
     _PyCStackRef self, method;
@@ -631,7 +630,7 @@ callmethod_va(PyObject *obj, PyObject *name,
        method or classmethod), NULL -> call method(*args). */
     int res = _PyObject_GetMethodStackRef(tstate, &self.ref, name, &method.ref);
     if (res < 0) {
-        goto pop_return;
+        goto exit;
     }
 
     PyObject *callable = PyStackRef_AsPyObjectBorrow(method.ref);
@@ -641,7 +640,7 @@ callmethod_va(PyObject *obj, PyObject *name,
         _PyErr_Format(tstate, PyExc_TypeError,
                       "attribute of type '%.200s' is not callable",
                       Py_TYPE(callable)->tp_name);
-        goto pop_return;
+        goto exit;
     }
 
     /* Build the positional arguments from the format string. */
@@ -652,7 +651,7 @@ callmethod_va(PyObject *obj, PyObject *name,
         built = _Py_VaBuildStack(small_stack, _PY_FASTCALL_SMALL_STACK,
                                  format, va, &nargs);
         if (built == NULL) {
-            goto pop_return;
+            goto exit;
         }
     }
 
@@ -678,7 +677,7 @@ callmethod_va(PyObject *obj, PyObject *name,
         PyMem_Free(built);
     }
 
-pop_return:
+exit:
     _PyThreadState_PopCStackRef(tstate, &method);
     _PyThreadState_PopCStackRef(tstate, &self);
     return result;
@@ -700,7 +699,7 @@ PyObject_CallMethod(PyObject *obj, const char *name, const char *format, ...)
 
     va_list va;
     va_start(va, format);
-    PyObject *retval = callmethod_va(obj, name_obj, format, va);
+    PyObject *retval = callmethod(tstate, obj, name_obj, format, va);
     va_end(va);
 
     Py_DECREF(name_obj);
@@ -725,7 +724,7 @@ PyEval_CallMethod(PyObject *obj, const char *name, const char *format, ...)
 
     va_list va;
     va_start(va, format);
-    PyObject *retval = callmethod_va(obj, name_obj, format, va);
+    PyObject *retval = callmethod(tstate, obj, name_obj, format, va);
     va_end(va);
 
     Py_DECREF(name_obj);
@@ -744,7 +743,7 @@ _PyObject_CallMethod(PyObject *obj, PyObject *name,
 
     va_list va;
     va_start(va, format);
-    PyObject *retval = callmethod_va(obj, name, format, va);
+    PyObject *retval = callmethod(tstate, obj, name, format, va);
     va_end(va);
 
     return retval;
@@ -770,7 +769,7 @@ _Py_COMP_DIAG_POP
 
     va_list va;
     va_start(va, format);
-    PyObject *retval = callmethod_va(obj, name_obj, format, va);
+    PyObject *retval = callmethod(tstate, obj, name_obj, format, va);
     va_end(va);
 
     return retval;
@@ -795,7 +794,7 @@ _PyObject_CallMethod_SizeT(PyObject *obj, const char *name,
 
     va_list va;
     va_start(va, format);
-    PyObject *retval = callmethod_va(obj, name_obj, format, va);
+    PyObject *retval = callmethod(tstate, obj, name_obj, format, va);
     va_end(va);
 
     Py_DECREF(name_obj);
