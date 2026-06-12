@@ -635,8 +635,10 @@ Available Context Managers
       - ``lineno``: the line number in the file (:class:`int`)
       - ``file``: the file object used for output (if any), or ``None``
       - ``line``: the line of source code (if available), or ``None``
-      - ``source``: the original object that generated the warning (if available), or ``None``
-      - ``module``: the module name where the warning occurred (:class:`str`), or ``None``
+      - ``source``: the original object that generated the warning (if
+        available), or ``None``
+      - ``module``: the module name where the warning occurred
+        (:class:`str`), or ``None``
 
     .. versionchanged:: 3.6
       The ``source`` attribute was added.
@@ -644,7 +646,8 @@ Available Context Managers
     .. versionchanged:: 3.15
       The ``module`` attribute was added.
 
-    The type of these objects is not specified and may change; only the presence of these attributes is guaranteed.
+    The type of these objects is not specified and may change; only the
+    presence of these attributes is guaranteed.
 
     The *module* argument takes a module that will be used instead of the
     module returned when you import :mod:`!warnings` whose filter will be
