@@ -81,13 +81,23 @@ types_world_is_stopped(void)
 #endif
 
 // Checks that the type has not yet been revealed (exposed) to other
-// threads.  The _Py_TYPE_REVEALED_FLAG flag is set by type_new() and
-// PyType_FromMetaclass() to indicate that a newly initialized type might be
-// revealed.  We only have ob_flags on 64-bit platforms.
-#if SIZEOF_VOID_P > 4
-#define TYPE_IS_REVEALED(tp) ((((PyObject *)(tp))->ob_flags & _Py_TYPE_REVEALED_FLAG) != 0)
+// threads.  The _Py_TYPE_REVEALED_FLAG flag is set by type_ready_publish(),
+// just before the type is added to the subclasses of its bases.  That is the
+// point where other threads can find it.  The flag only exists on 64-bit
+// platforms (we only have ob_flags there) and in debug builds.
+//
+// The flag is set with the type lock held and it is never cleared.  A thread
+// that can see the type has either found it through the subclasses of its
+// bases, which requires the type lock, or the world is stopped.  So, plain
+// loads and stores are enough here.
+#if defined(Py_DEBUG) && SIZEOF_VOID_P > 4
+#define TYPE_IS_REVEALED(tp) \
+    ((((PyObject *)(tp))->ob_flags & _Py_TYPE_REVEALED_FLAG) != 0)
+#define TYPE_SET_REVEALED(tp) \
+    ((void)(((PyObject *)(tp))->ob_flags |= _Py_TYPE_REVEALED_FLAG))
 #else
 #define TYPE_IS_REVEALED(tp) 0
+#define TYPE_SET_REVEALED(tp) ((void)0)
 #endif
 
 #ifdef Py_DEBUG
@@ -173,6 +183,7 @@ type_lock_allow_release(void)
 #define END_TYPE_DICT_LOCK()
 #define ASSERT_TYPE_LOCK_HELD()
 #define TYPE_IS_REVEALED(tp) 0
+#define TYPE_SET_REVEALED(tp) ((void)0)
 #define ASSERT_WORLD_STOPPED_OR_NEW_TYPE(tp)
 #define ASSERT_NEW_TYPE_OR_LOCKED(tp)
 #define types_world_is_stopped() 1
@@ -758,17 +769,14 @@ _PyType_HasSubclasses(PyTypeObject *self)
     return 1;
 }
 
-PyObject*
-_PyType_GetSubclasses(PyTypeObject *self)
+static int
+get_subclasses_unlocked(PyTypeObject *self, PyObject *list)
 {
-    PyObject *list = PyList_New(0);
-    if (list == NULL) {
-        return NULL;
-    }
+    ASSERT_TYPE_LOCK_HELD();
 
     PyObject *subclasses = lookup_tp_subclasses(self);  // borrowed ref
     if (subclasses == NULL) {
-        return list;
+        return 0;
     }
     assert(PyDict_CheckExact(subclasses));
     // The loop cannot modify tp_subclasses, there is no need
@@ -782,12 +790,34 @@ _PyType_GetSubclasses(PyTypeObject *self)
             continue;
         }
 
-        if (PyList_Append(list, _PyObject_CAST(subclass)) < 0) {
-            Py_DECREF(list);
-            Py_DECREF(subclass);
-            return NULL;
-        }
+        int res = PyList_Append(list, _PyObject_CAST(subclass));
         Py_DECREF(subclass);
+        if (res < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+PyObject*
+_PyType_GetSubclasses(PyTypeObject *self)
+{
+    PyObject *list = PyList_New(0);
+    if (list == NULL) {
+        return NULL;
+    }
+
+    // The type lock protects tp_subclasses from being mutated while we
+    // iterate over it (e.g. by add_subclass() or by remove_subclass() when a
+    // subclass is deallocated).  Note that the lock is not actually acquired
+    // if it is already held by this thread or if the world is stopped.
+    int res;
+    BEGIN_TYPE_LOCK();
+    res = get_subclasses_unlocked(self, list);
+    END_TYPE_LOCK();
+
+    if (res < 0) {
+        Py_CLEAR(list);
     }
     return list;
 }
@@ -3873,7 +3903,9 @@ static void object_dealloc(PyObject *);
 static PyObject *object_new(PyTypeObject *, PyObject *, PyObject *);
 static int object_init(PyObject *, PyObject *, PyObject *);
 static int update_slot(PyTypeObject *, PyObject *, slot_update_t *update);
-static void fixup_slot_dispatchers(PyTypeObject *);
+static int fixup_slot_dispatchers(PyTypeObject *);
+static int type_ready(PyTypeObject *, int, int);
+static int type_ready_publish(PyTypeObject *, int);
 static int type_new_set_names(PyTypeObject *);
 static int type_new_init_subclass(PyTypeObject *, PyObject *);
 static bool has_slotdef(PyObject *);
@@ -4879,13 +4911,29 @@ type_new_impl(type_new_ctx *ctx)
         goto error;
     }
 
-    /* Initialize the rest */
-    if (PyType_Ready(type) < 0) {
+    /* Initialize the rest, put the proper slots in place and only then
+       publish the type as a subclass of its bases.  Since the type is not
+       reachable by other threads before it is published, the slots can be
+       updated without stopping the world.
+
+       All of it is done with the type lock held.  Otherwise a thread that
+       assigns to a special method of a base could look for the subclasses to
+       update after we have looked up the special methods in the bases but
+       before the type is published, and the type would be left with a stale
+       slot. */
+    int res;
+    BEGIN_TYPE_LOCK();
+    res = type_ready(type, 1, 0);
+    if (res == 0) {
+        res = fixup_slot_dispatchers(type);
+    }
+    if (res == 0) {
+        res = type_ready_publish(type, 1);
+    }
+    END_TYPE_LOCK();
+    if (res < 0) {
         goto error;
     }
-
-    // Put the proper slots in place
-    fixup_slot_dispatchers(type);
 
     if (!_PyDict_HasOnlyStringKeys(type->tp_dict)) {
         if (PyErr_WarnFormat(
@@ -4907,10 +4955,6 @@ type_new_impl(type_new_ctx *ctx)
     }
 
     assert(_PyType_CheckConsistency(type));
-#if defined(Py_GIL_DISABLED) && defined(Py_DEBUG) && SIZEOF_VOID_P > 4
-    // After this point, other threads can potentally use this type.
-    ((PyObject*)type)->ob_flags |= _Py_TYPE_REVEALED_FLAG;
-#endif
 
     return (PyObject *)type;
 
@@ -5652,7 +5696,15 @@ type_from_slots_or_spec(
      * accessible to Python code, like __dict__.
      */
 
-    if (PyType_Ready(type) < 0) {
+    BEGIN_TYPE_LOCK();
+    r = type_ready(type, 1, 0);
+    if (r == 0) {
+        /* The type is only revealed to other threads once it is fully
+           initialized. */
+        r = type_ready_publish(type, 1);
+    }
+    END_TYPE_LOCK();
+    if (r < 0) {
         goto finally;
     }
 
@@ -5712,10 +5764,6 @@ type_from_slots_or_spec(
     }
 
     assert(_PyType_CheckConsistency(type));
-#if defined(Py_GIL_DISABLED) && defined(Py_DEBUG) && SIZEOF_VOID_P > 4
-    // After this point, other threads can potentally use this type.
-    ((PyObject*)type)->ob_flags |= _Py_TYPE_REVEALED_FLAG;
-#endif
 
 finally:
     if (PyErr_Occurred()) {
@@ -6692,7 +6740,9 @@ type_dealloc_common(PyTypeObject *type)
     PyObject *bases = lookup_tp_bases(type);
     if (bases != NULL) {
         PyObject *exc = PyErr_GetRaisedException();
+        BEGIN_TYPE_LOCK();
         remove_all_subclasses(type, bases);
+        END_TYPE_LOCK();
         PyErr_SetRaisedException(exc);
     }
 }
@@ -9368,7 +9418,7 @@ type_ready_post_checks(PyTypeObject *type)
 
 
 static int
-type_ready(PyTypeObject *type, int initial)
+type_ready(PyTypeObject *type, int initial, int add_subclasses)
 {
     ASSERT_TYPE_LOCK_HELD();
 
@@ -9423,8 +9473,10 @@ type_ready(PyTypeObject *type, int initial)
     if (type_ready_set_hash(type) < 0) {
         goto error;
     }
-    if (type_ready_add_subclasses(type) < 0) {
-        goto error;
+    if (add_subclasses) {
+        if (type_ready_add_subclasses(type) < 0) {
+            goto error;
+        }
     }
     if (initial) {
         if (type_ready_managed_dict(type) < 0) {
@@ -9435,21 +9487,51 @@ type_ready(PyTypeObject *type, int initial)
         }
     }
 
-    /* All done -- set the ready flag */
-    if (initial) {
-        type_add_flags(type, Py_TPFLAGS_READY);
-    } else {
-        assert(type->tp_flags & Py_TPFLAGS_READY);
+    if (add_subclasses) {
+        /* All done -- set the ready flag */
+        if (initial) {
+            type_add_flags(type, Py_TPFLAGS_READY);
+        } else {
+            assert(type->tp_flags & Py_TPFLAGS_READY);
+        }
     }
 
     stop_readying(type);
 
-    assert(_PyType_CheckConsistency(type));
+    if (add_subclasses) {
+        assert(_PyType_CheckConsistency(type));
+    }
     return 0;
 
 error:
     stop_readying(type);
     return -1;
+}
+
+static int
+type_ready_publish(PyTypeObject *type, int initial)
+{
+    ASSERT_TYPE_LOCK_HELD();
+    assert(initial);
+    assert(!(type->tp_flags & Py_TPFLAGS_READY));
+    assert(!is_readying(type));
+
+    /* Set the ready flag before revealing the type since type_add_flags()
+       may only be used on types that are not yet revealed. */
+    type_add_flags(type, Py_TPFLAGS_READY);
+
+    /* Mark the type as revealed while still holding the type lock.  Threads
+       can only find the type through the subclasses of its bases, which is
+       done below with the lock held.  So, they cannot see the type before
+       the flag is set. */
+    TYPE_SET_REVEALED(type);
+
+    if (type_ready_add_subclasses(type) < 0) {
+        return -1;
+    }
+
+    assert(_PyType_CheckConsistency(type));
+    return 0;
 }
 
 int
@@ -9471,7 +9553,7 @@ PyType_Ready(PyTypeObject *type)
     int res;
     BEGIN_TYPE_LOCK();
     if (!(type->tp_flags & Py_TPFLAGS_READY)) {
-        res = type_ready(type, 1);
+        res = type_ready(type, 1, 1);
     } else {
         res = 0;
         assert(_PyType_CheckConsistency(type));
@@ -9512,7 +9594,7 @@ init_static_type(PyInterpreterState *interp, PyTypeObject *self,
 
     int res;
     BEGIN_TYPE_LOCK();
-    res = type_ready(self, initial);
+    res = type_ready(self, initial, 1);
     END_TYPE_LOCK();
     if (res < 0) {
         _PyStaticType_ClearWeakRefs(interp, self);
@@ -11972,14 +12054,20 @@ update_slot(PyTypeObject *type, PyObject *name, slot_update_t *queued_updates)
 
 /* Store the proper functions in the slot dispatches at class (type)
    definition time, based upon which operations the class overrides in its
-   dict. */
-static void
+   dict.  The type must not be revealed to other threads yet, so that the
+   slots can be updated directly rather than with the world stopped. */
+static int
 fixup_slot_dispatchers(PyTypeObject *type)
 {
+    ASSERT_TYPE_LOCK_HELD();
+    ASSERT_WORLD_STOPPED_OR_NEW_TYPE(type);
     assert(!PyErr_Occurred());
     for (pytype_slotdef *p = slotdefs; p->name; ) {
-        update_one_slot(type, p, &p, NULL);
+        if (update_one_slot(type, p, &p, NULL) < 0) {
+            return -1;
+        }
     }
+    return 0;
 }
 
 #ifdef Py_GIL_DISABLED
