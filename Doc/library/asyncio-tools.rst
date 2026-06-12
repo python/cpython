@@ -8,6 +8,8 @@ Command-line introspection tools
 
 **Source code:** :source:`Lib/asyncio/tools.py`
 
+-------------------------------------
+
 The :mod:`!asyncio` module can be executed as a script to inspect asyncio
 tasks in another Python process:
 
