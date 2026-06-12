@@ -47,9 +47,6 @@ things manually, it may be instructive to study the project file for the
 Differences Between Unix and Windows
 ====================================
 
-.. sectionauthor:: Chris Phoenix <cphoenix@best.com>
-
-
 Unix and Windows use completely different paradigms for run-time loading of
 code.  Before you try to build a module that can be dynamically loaded, be aware
 of how your system works.
@@ -108,9 +105,6 @@ separate copy.
 
 Using DLLs in Practice
 ======================
-
-.. sectionauthor:: Chris Phoenix <cphoenix@best.com>
-
 
 Windows Python is built in Microsoft Visual C++; using other compilers may or
 may not work.  The rest of this section is MSVC++ specific.

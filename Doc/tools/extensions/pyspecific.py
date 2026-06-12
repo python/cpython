@@ -10,26 +10,9 @@
 """
 
 import re
-import io
-from os import getenv, path
 
-from docutils import nodes
-from docutils.parsers.rst import directives
-from docutils.utils import unescape
 from sphinx import addnodes
-from sphinx.domains.python import PyFunction, PyMethod, PyModule
-from sphinx.locale import _ as sphinx_gettext
-from sphinx.util.docutils import SphinxDirective
-
-# Used in conf.py and updated here by python/release-tools/run_release.py
-SOURCE_URI = 'https://github.com/python/cpython/tree/main/%s'
-
-# monkey-patch reST parser to disable alphabetic and roman enumerated lists
-from docutils.parsers.rst.states import Body
-Body.enum.converters['loweralpha'] = \
-    Body.enum.converters['upperalpha'] = \
-    Body.enum.converters['lowerroman'] = \
-    Body.enum.converters['upperroman'] = lambda x: None
+from sphinx.domains.python import PyFunction, PyMethod
 
 
 class PyAwaitableMixin(object):

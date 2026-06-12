@@ -65,7 +65,7 @@ error:
 int
 _PyTokenizer_syntaxerror(struct tok_state *tok, const char *format, ...)
 {
-    // This errors are cleaned on startup. Todo: Fix it.
+    // These errors are cleaned on startup. Todo: Fix it.
     va_list vargs;
     va_start(vargs, format);
     int ret = _syntaxerror_range(tok, format, -1, -1, vargs);
@@ -127,7 +127,7 @@ _PyTokenizer_warn_invalid_escape_sequence(struct tok_state *tok, int first_inval
     }
 
     if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, msg, tok->filename,
-                                 tok->lineno, NULL, NULL) < 0) {
+                                 tok->lineno, tok->module, NULL) < 0) {
         Py_DECREF(msg);
 
         if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
@@ -166,7 +166,7 @@ _PyTokenizer_parser_warn(struct tok_state *tok, PyObject *category, const char *
     }
 
     if (PyErr_WarnExplicitObject(category, errmsg, tok->filename,
-                                 tok->lineno, NULL, NULL) < 0) {
+                                 tok->lineno, tok->module, NULL) < 0) {
         if (PyErr_ExceptionMatches(category)) {
             /* Replace the DeprecationWarning exception with a SyntaxError
                to get a more accurate error report */
@@ -193,6 +193,7 @@ _PyTokenizer_new_string(const char *s, Py_ssize_t len, struct tok_state *tok)
     char* result = (char *)PyMem_Malloc(len + 1);
     if (!result) {
         tok->done = E_NOMEM;
+        PyErr_NoMemory();
         return NULL;
     }
     memcpy(result, s, len);
@@ -221,6 +222,7 @@ _PyTokenizer_translate_newlines(const char *s, int exec_input, int preserve_crlf
     buf = PyMem_Malloc(needed_length);
     if (buf == NULL) {
         tok->done = E_NOMEM;
+        PyErr_NoMemory();
         return NULL;
     }
     for (current = buf; *s; s++, current++) {
@@ -494,9 +496,11 @@ valid_utf8(const unsigned char* s)
         return 0;
     }
     length = expected + 1;
-    for (; expected; expected--)
-        if (s[expected] < 0x80 || s[expected] >= 0xC0)
+    for (int i = 1; i <= expected; i++) {
+        if (s[i] < 0x80 || s[i] >= 0xC0) {
             return 0;
+        }
+    }
     return length;
 }
 

@@ -9,7 +9,7 @@ XXX TO DO:
 - seems to contain a bug when updating...
 
 - reclaim free space (currently, space once occupied by deleted or expanded
-items is not reused exept if .reorganize() is called)
+items is not reused except if .reorganize() is called)
 
 - support concurrent access (currently, if two processes take turns making
 updates, they can mess up the index)

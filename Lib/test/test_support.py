@@ -569,13 +569,25 @@ class TestSupport(unittest.TestCase):
             # -X options
             ['-X', 'dev'],
             ['-Wignore', '-X', 'dev'],
+            ['-X', 'cpu_count=4'],
+            ['-X', 'disable-remote-debug'],
             ['-X', 'faulthandler'],
             ['-X', 'importtime'],
             ['-X', 'importtime=2'],
+            ['-X', 'int_max_str_digits=1000'],
+            ['-X', 'lazy_imports=all'],
+            ['-X', 'no_debug_ranges'],
             ['-X', 'showrefcount'],
             ['-X', 'tracemalloc'],
             ['-X', 'tracemalloc=3'],
+            ['-X', 'warn_default_encoding'],
         ):
+            with self.subTest(opts=opts):
+                self.check_options(opts, 'args_from_interpreter_flags')
+
+        with os_helper.temp_dir() as temp_path:
+            prefix = os.path.join(temp_path, 'pycache')
+            opts = ['-X', f'pycache_prefix={prefix}']
             with self.subTest(opts=opts):
                 self.check_options(opts, 'args_from_interpreter_flags')
 
@@ -672,6 +684,7 @@ class TestSupport(unittest.TestCase):
         """)
         script_helper.assert_python_ok("-c", code)
 
+    @support.skip_if_unlimited_stack_size
     def test_recursion(self):
         # Test infinite_recursion() and get_recursion_available() functions.
         def recursive_function(depth):
@@ -787,6 +800,7 @@ class TestSupport(unittest.TestCase):
             (128 + int(signal.SIGABRT), 'SIGABRT'),
             (3221225477, "STATUS_ACCESS_VIOLATION"),
             (0xC00000FD, "STATUS_STACK_OVERFLOW"),
+            (0xC0000906, "0xC0000906"),
         ):
             self.assertEqual(support.get_signal_name(exitcode), expected,
                              exitcode)
@@ -798,10 +812,10 @@ class TestSupport(unittest.TestCase):
             self.assertTrue(linked)
         # The value is cached, so make sure it returns the same value again.
         self.assertIs(linked, support.linked_to_musl())
-        # The unlike libc, the musl version is a triple.
+        # The musl version is either triple or just a major version number.
         if linked:
             self.assertIsInstance(linked, tuple)
-            self.assertEqual(3, len(linked))
+            self.assertIn(len(linked), (1, 3))
             for v in linked:
                 self.assertIsInstance(v, int)
 

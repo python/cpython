@@ -19,6 +19,8 @@ extern int _PyModule_IsPossiblyShadowing(PyObject *);
 
 extern int _PyModule_IsExtension(PyObject *obj);
 
+extern int _PyModule_InitModuleDictWatcher(PyInterpreterState *interp);
+
 typedef int (*_Py_modexecfunc)(PyObject *);
 
 typedef struct {
@@ -30,7 +32,7 @@ typedef struct {
     PyObject *md_name;
     bool md_token_is_def;  /* if true, `md_token` is the PyModuleDef */
 #ifdef Py_GIL_DISABLED
-    void *md_gil;
+    bool md_requires_gil;
 #endif
     Py_ssize_t md_state_size;
     traverseproc md_state_traverse;
@@ -51,11 +53,13 @@ static inline PyModuleDef *_PyModule_GetDefOrNull(PyObject *arg) {
     return NULL;
 }
 
+// Get md_token. Used in _DuringGC functions; must have no side effects.
 static inline PyModuleDef *_PyModule_GetToken(PyObject *arg) {
     PyModuleObject *mod = _PyModule_CAST(arg);
     return (PyModuleDef *)mod->md_token;
 }
 
+// Get md_state. Used in _DuringGC functions; must have no side effects.
 static inline void* _PyModule_GetState(PyObject* mod) {
     return _PyModule_CAST(mod)->md_state;
 }

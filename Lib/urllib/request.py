@@ -415,6 +415,8 @@ class OpenerDirector:
                 continue
 
             i = meth.find("_")
+            if i < 1:
+                continue
             protocol = meth[:i]
             condition = meth[i+1:]
 
@@ -1633,6 +1635,11 @@ class DataHandler(BaseHandler):
 
         scheme, data = url.split(":",1)
         mediatype, data = data.split(",",1)
+
+        # Disallow control characters within mediatype.
+        if re.search(r"[\x00-\x1F\x7F]", mediatype):
+            raise ValueError(
+                "Control characters not allowed in data: mediatype")
 
         # even base64 encoded data URLs might be quoted so unquote in any case:
         data = unquote_to_bytes(data)

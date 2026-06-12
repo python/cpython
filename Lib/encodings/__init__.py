@@ -26,7 +26,7 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
 
-"""#"
+"""
 
 import codecs
 import sys
@@ -34,6 +34,7 @@ from _codecs import _normalize_encoding
 from . import aliases
 
 _cache = {}
+_MAXCACHE = 500
 _unknown = '--unknown--'
 _import_tail = ['*']
 _aliases = aliases.aliases
@@ -55,6 +56,12 @@ def normalize_encoding(encoding):
     """
     if isinstance(encoding, bytes):
         encoding = str(encoding, "ascii")
+
+    if not encoding.isascii():
+        import warnings
+        warnings.warn(
+            "Support for non-ascii encoding names will be removed in 3.17",
+            DeprecationWarning, stacklevel=2)
 
     return _normalize_encoding(encoding)
 
@@ -105,6 +112,8 @@ def search_function(encoding):
 
     if mod is None:
         # Cache misses
+        if len(_cache) >= _MAXCACHE:
+            _cache.clear()
         _cache[encoding] = None
         return None
 
@@ -126,6 +135,8 @@ def search_function(encoding):
         entry = codecs.CodecInfo(*entry)
 
     # Cache the codec registry entry
+    if len(_cache) >= _MAXCACHE:
+        _cache.clear()
     _cache[encoding] = entry
 
     # Register its aliases (without overwriting previously registered
