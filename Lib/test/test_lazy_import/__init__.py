@@ -469,6 +469,44 @@ class PackageTests(LazyImportTestCase):
         self.assertEqual(type(g["x"]), int)
         self.assertEqual(type(g["b"]), types.LazyImportType)
 
+    def test_lazy_reimport_after_sys_modules_delete(self):
+        """gh-151408: re-resolving a lazy import restores sys.modules."""
+        modname = "test.test_lazy_import.data.pkg.bar"
+        import test.test_lazy_import.data.pkg.bar
+        del sys.modules[modname]
+
+        exec(
+            "lazy from test.test_lazy_import.data.pkg import bar\nbar.f()",
+            globals(),
+        )
+        self.assertIn(modname, sys.modules)
+
+    def test_lazy_import_as_reimport_after_sys_modules_delete(self):
+        """gh-151408: lazy import with alias restores sys.modules."""
+        modname = "test.test_lazy_import.data.pkg.bar"
+        import test.test_lazy_import.data.pkg.bar
+        del sys.modules[modname]
+
+        ns = {}
+        exec(
+            "lazy import test.test_lazy_import.data.pkg.bar as bar\nbar.f()",
+            ns,
+        )
+        self.assertIn(modname, sys.modules)
+
+    def test_lazy_import_dotted_reimport_after_sys_modules_delete(self):
+        """gh-151408: dotted lazy import access restores sys.modules."""
+        modname = "test.test_lazy_import.data.pkg.bar"
+        import test.test_lazy_import.data.pkg.bar
+        del sys.modules[modname]
+
+        exec(
+            "lazy import test.test_lazy_import.data.pkg.bar\n"
+            "test.test_lazy_import.data.pkg.bar.f()",
+            globals(),
+        )
+        self.assertIn(modname, sys.modules)
+
     @support.requires_subprocess()
     def test_lazy_from_import_does_not_pollute_parent(self):
         """Lazy from import should not add the name to the parent module's dict."""

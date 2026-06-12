@@ -1326,6 +1326,20 @@ try_load_lazy_submodule(PyModuleObject *m, PyObject *name)
     return result;
 }
 
+static PyObject *
+ensure_submodule_and_return(PyModuleObject *m, PyObject *name, PyObject *attr)
+{
+    if (attr != NULL && PyModule_Check(attr)) {
+        if (_PyImport_EnsureSubmoduleRegistered(
+                PyThreadState_GET(), (PyObject *)m, name, attr) < 0)
+        {
+            Py_DECREF(attr);
+            return NULL;
+        }
+    }
+    return attr;
+}
+
 PyObject*
 _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
 {
@@ -1372,9 +1386,9 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
                 Py_CLEAR(new_value);
             }
             Py_DECREF(attr);
-            return new_value;
+            return ensure_submodule_and_return(m, name, new_value);
         }
-        return attr;
+        return ensure_submodule_and_return(m, name, attr);
     }
     if (suppress == 1) {
         if (PyErr_Occurred()) {
@@ -1392,7 +1406,7 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
     assert(m->md_dict != NULL);
     attr = try_load_lazy_submodule(m, name);
     if (attr != NULL) {
-        return attr;
+        return ensure_submodule_and_return(m, name, attr);
     }
     if (PyErr_Occurred()) {
         return NULL;

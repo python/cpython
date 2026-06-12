@@ -255,6 +255,59 @@ _PyImport_SetModuleString(const char *name, PyObject *m)
     return PyMapping_SetItemString(modules, name, m);
 }
 
+int
+_PyImport_EnsureSubmoduleRegistered(PyThreadState *tstate, PyObject *parent,
+                                    PyObject *name, PyObject *submodule)
+{
+    if (!PyModule_Check(submodule) || !PyModule_Check(parent)) {
+        return 0;
+    }
+
+    PyObject *parent_name;
+    if (PyObject_GetOptionalAttr(parent, &_Py_ID(__name__), &parent_name) < 0) {
+        return -1;
+    }
+    if (parent_name == NULL || !PyUnicode_Check(parent_name)) {
+        Py_XDECREF(parent_name);
+        return 0;
+    }
+
+    PyObject *full_name = PyUnicode_FromFormat("%U.%U", parent_name, name);
+    Py_DECREF(parent_name);
+    if (full_name == NULL) {
+        return -1;
+    }
+
+    PyObject *sub_name;
+    if (PyObject_GetOptionalAttr(submodule, &_Py_ID(__name__), &sub_name) < 0) {
+        Py_DECREF(full_name);
+        return -1;
+    }
+    if (sub_name == NULL || !PyUnicode_Check(sub_name) ||
+        PyUnicode_Compare(sub_name, full_name) != 0)
+    {
+        Py_XDECREF(sub_name);
+        Py_DECREF(full_name);
+        return 0;
+    }
+    Py_DECREF(sub_name);
+
+    PyObject *existing = PyImport_GetModule(full_name);
+    if (existing != NULL) {
+        Py_DECREF(existing);
+        Py_DECREF(full_name);
+        return 0;
+    }
+    if (_PyErr_Occurred(tstate)) {
+        Py_DECREF(full_name);
+        return -1;
+    }
+
+    int res = _PyImport_SetModule(full_name, submodule);
+    Py_DECREF(full_name);
+    return res;
+}
+
 static PyObject *
 import_get_module(PyThreadState *tstate, PyObject *name)
 {

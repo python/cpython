@@ -1,0 +1,2 @@
+Fix lazy import reification to restore submodules removed from
+:mod:`sys.modules` but still cached on the parent package.

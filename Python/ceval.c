@@ -3130,6 +3130,12 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
     PyObject *fullmodname, *mod_name, *origin, *mod_name_or_unknown, *errmsg, *spec;
 
     if (PyObject_GetOptionalAttr(v, name, &x) != 0) {
+        if (x != NULL &&
+            _PyImport_EnsureSubmoduleRegistered(tstate, v, name, x) < 0)
+        {
+            Py_DECREF(x);
+            return NULL;
+        }
         return x;
     }
     /* Issue #17636: in case this failed because of a circular relative
@@ -3311,6 +3317,13 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObje
                     return NULL;
                 }
                 if (ret != NULL) {
+                    if (_PyImport_EnsureSubmoduleRegistered(
+                            tstate, mod, name, ret) < 0)
+                    {
+                        Py_DECREF(ret);
+                        Py_DECREF(mod);
+                        return NULL;
+                    }
                     Py_DECREF(mod);
                     return ret;
                 }

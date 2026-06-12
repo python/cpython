@@ -32,6 +32,12 @@ extern int _PyImport_FixupBuiltin(
     PyObject *modules
     );
 
+extern int _PyImport_EnsureSubmoduleRegistered(
+    PyThreadState *tstate,
+    PyObject *parent,
+    PyObject *name,
+    PyObject *submodule);
+
 extern PyObject * _PyImport_ResolveName(
     PyThreadState *tstate, PyObject *name, PyObject *globals, int level);
 extern PyObject * _PyImport_GetAbsName(
