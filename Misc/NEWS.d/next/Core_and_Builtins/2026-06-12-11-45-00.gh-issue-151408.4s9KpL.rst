@@ -1,0 +1,2 @@
+Fix lazy submodule imports so package submodules removed from
+:data:`sys.modules` are properly re-imported.
