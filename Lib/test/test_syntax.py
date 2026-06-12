@@ -3518,7 +3518,7 @@ while 1:
     def test_double_pipe(self):
         self._check_error(
             "a || b",
-            "Maybe you meant 'or' or '|' instead of '||'",
+            "Maybe you meant 'or' or '|' instead of '||'?",
             lineno=1,
             end_lineno=1,
             offset=3,
