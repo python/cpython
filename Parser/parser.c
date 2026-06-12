@@ -28508,7 +28508,7 @@ invalid_bitwise_and_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_bitwise_and[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "bitwise_and '&' '&'"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( b , c , "invalid syntax.  Maybe you meant 'and' or '&' instead of '&&'" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( b , c , "invalid syntax.  Maybe you meant 'and' or '&' instead of '&&'?" );
             if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -28558,7 +28558,7 @@ invalid_bitwise_or_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_bitwise_or[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "bitwise_or '|' '|'"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( b , c , "invalid syntax.  Maybe you meant 'or' or '|' instead of '||'" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( b , c , "invalid syntax.  Maybe you meant 'or' or '|' instead of '||'?" );
             if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
