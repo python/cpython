@@ -612,10 +612,6 @@ _PyObject_CallFunction_SizeT(PyObject *callable, const char *format, ...)
 }
 
 
-/* Resolve 'name' on 'obj' with _PyObject_GetMethodStackRef and call it
-   directly, avoiding the bound-method object that PyObject_GetAttr()+call
-   would allocate. Using the StackRef variant keeps method resolution
-   reference-count-free on the fast path so it scales in free-threading. */
 static PyObject *
 callmethod(PyThreadState *tstate, PyObject *obj, PyObject *name,
            const char *format, va_list va)
@@ -626,8 +622,7 @@ callmethod(PyThreadState *tstate, PyObject *obj, PyObject *name,
     _PyThreadState_PushCStackRef(tstate, &self);
     _PyThreadState_PushCStackRef(tstate, &method);
     self.ref = PyStackRef_FromPyObjectBorrow(obj);
-    /* On return, self.ref is non-NULL -> call method(self, *args) (unbound
-       method or classmethod), NULL -> call method(*args). */
+
     int res = _PyObject_GetMethodStackRef(tstate, &self.ref, name, &method.ref);
     if (res < 0) {
         goto exit;
@@ -673,7 +668,7 @@ callmethod(PyThreadState *tstate, PyObject *obj, PyObject *name,
     for (Py_ssize_t i = 0; i < nargs; i++) {
         Py_DECREF(built[i]);
     }
-    if (built != NULL && built != small_stack) {
+    if (built != small_stack) {
         PyMem_Free(built);
     }
 
