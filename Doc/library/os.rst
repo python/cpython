@@ -1139,7 +1139,7 @@ as internal buffering of data.
 .. function:: fstatvfs(fd, /)
 
    Return information about the filesystem containing the file associated with
-   file descriptor *fd* in a :class:`statvfs_result` like :func:`statvfs`.
+   file descriptor *fd* in a :class:`statvfs_result`, like :func:`statvfs`.
    As of Python 3.3, this is equivalent to ``os.statvfs(fd)``.
 
    .. availability:: Unix.
