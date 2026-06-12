@@ -3943,7 +3943,7 @@ static void object_dealloc(PyObject *);
 static PyObject *object_new(PyTypeObject *, PyObject *, PyObject *);
 static int object_init(PyObject *, PyObject *, PyObject *);
 static int update_slot(PyTypeObject *, PyObject *, slot_update_t *update);
-static void fixup_slot_dispatchers(PyTypeObject *);
+static int fixup_slot_dispatchers(PyTypeObject *);
 static int type_new_set_names(PyTypeObject *);
 static int type_new_init_subclass(PyTypeObject *, PyObject *);
 static bool has_slotdef(PyObject *);
@@ -4954,7 +4954,9 @@ type_new_impl(type_new_ctx *ctx)
     }
 
     // Put the proper slots in place
-    fixup_slot_dispatchers(type);
+    if (fixup_slot_dispatchers(type) < 0) {
+        goto error;
+    }
 
     if (!_PyDict_HasOnlyStringKeys(type->tp_dict)) {
         if (PyErr_WarnFormat(
@@ -6841,7 +6843,13 @@ type_dealloc_common(PyTypeObject *type)
     PyObject *bases = lookup_tp_bases(type);
     if (bases != NULL) {
         PyObject *exc = PyErr_GetRaisedException();
+#ifdef Py_GIL_DISABLED
+        BEGIN_TYPE_LOCK();
+#endif
         remove_all_subclasses(type, bases);
+#ifdef Py_GIL_DISABLED
+        END_TYPE_LOCK();
+#endif
         PyErr_SetRaisedException(exc);
     }
 }
@@ -12117,13 +12125,33 @@ update_slot(PyTypeObject *type, PyObject *name, slot_update_t *queued_updates)
 /* Store the proper functions in the slot dispatches at class (type)
    definition time, based upon which operations the class overrides in its
    dict. */
-static void
+static int
 fixup_slot_dispatchers(PyTypeObject *type)
 {
     assert(!PyErr_Occurred());
+#ifdef Py_GIL_DISABLED
+    slot_update_t queued_updates = {0};
+    int res = 0;
+    BEGIN_TYPE_LOCK();
+    for (pytype_slotdef *p = slotdefs; p->name; ) {
+        if (update_one_slot(type, p, &p, &queued_updates) < 0) {
+            res = -1;
+            break;
+        }
+    }
+    if (res == 0 && queued_updates.head != NULL) {
+        apply_type_slot_updates(&queued_updates);
+        ASSERT_TYPE_LOCK_HELD();
+    }
+    END_TYPE_LOCK();
+    slot_update_free_chunks(&queued_updates);
+    return res;
+#else
     for (pytype_slotdef *p = slotdefs; p->name; ) {
         update_one_slot(type, p, &p, NULL);
     }
+    return 0;
+#endif
 }
 
 #ifdef Py_GIL_DISABLED
