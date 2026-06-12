@@ -1,1 +1,1 @@
-On Windows Tcl/Tk 9.0.3 is built without embedded Tcl/Tk library scripts.
+Make released and installed tkinter work after import on Windows.
