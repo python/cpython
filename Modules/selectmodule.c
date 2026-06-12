@@ -1933,7 +1933,7 @@ kqueue_event_repr(PyObject *op)
 {
     kqueue_event_Object *s = kqueue_event_Object_CAST(op);
     PyObject *res;
-    Py_BEGIN_CRITICAL_SECTION(self);
+    Py_BEGIN_CRITICAL_SECTION(op);
     res = PyUnicode_FromFormat(
         "<select.kevent ident=%zu filter=%d flags=0x%x fflags=0x%x "
         "data=0x%llx udata=%p>",
