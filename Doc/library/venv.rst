@@ -130,6 +130,7 @@ The command, if run with ``-h``, will show the available options::
 .. option:: --clear
 
    Delete all contents of the environment directory if it already exists,
+   including files that were not created by ``venv``,
    before environment creation.
 
 .. option:: --upgrade
