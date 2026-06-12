@@ -1893,12 +1893,14 @@ def getproxies_environment():
             environment.append((name, value, proxy_name))
             if value:
                 proxies[proxy_name] = value
-    # CVE-2016-1000110 - If we are running as CGI script, forget HTTP_PROXY
-    # (non-all-lowercase) as it may be set from the web server by a "Proxy:"
-    # header from the client.
-    # The below check it and only accepts the lowercase "_proxy"
+
+    # CVE-2016-1000110 - If we are running as CGI script (i.e. when "REQUEST_METHOD"
+    # environment varable is set), forget HTTP_PROXY (non-all-lowercase)
+    # as it may be set from the web server by a "Proxy:" header from the atacker client.
+    # The below code check and drop it before the second pass matches lowercase.
     if 'REQUEST_METHOD' in os.environ:
         proxies.pop('http', None)
+
     for name, value, proxy_name in environment:
         # not case-folded, checking here for lower-case env vars only
         if name[-6:] == '_proxy':
