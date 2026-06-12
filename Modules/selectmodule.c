@@ -1943,10 +1943,8 @@ kqueue_event_repr(PyObject *op)
 }
 
 static int
-kqueue_event_init_lock_held(PyObject *op, PyObject *args, PyObject *kwds)
+kqueue_event_init(PyObject *op, PyObject *args, PyObject *kwds)
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
-
     PyObject *pfd;
     static char *kwlist[] = {"ident", "filter", "flags", "fflags",
                              "data", "udata", NULL};
@@ -1988,16 +1986,6 @@ kqueue_event_init_lock_held(PyObject *op, PyObject *args, PyObject *kwds)
         }
     }
     return 0;
-}
-
-static int
-kqueue_event_init(PyObject *op, PyObject *args, PyObject *kwds)
-{
-    int res;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    res = kqueue_event_init_lock_held(op, args, kwds);
-    Py_END_CRITICAL_SECTION();
-    return res;
 }
 
 static PyObject *

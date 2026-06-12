@@ -1,2 +1,2 @@
-Add critical sections to :func:`select.kqueue` objects. Patch by Victor
+Fix thread-safety issues in :func:`select.kqueue` objects. Patch by Victor
 Stinner.
