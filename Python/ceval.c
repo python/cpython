@@ -2006,6 +2006,9 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, _PyStackRef func,
     _PyFrame_Initialize(tstate, frame, func, locals, code, 0, previous);
     if (initialize_locals(tstate, func_obj, frame->localsplus, args, argcount, kwnames)) {
         assert(frame->owner == FRAME_OWNED_BY_THREAD);
+        if (tstate->last_profiled_frame == frame) {
+            tstate->last_profiled_frame = tstate->current_frame;
+        }
         clear_thread_frame(tstate, frame);
         return NULL;
     }

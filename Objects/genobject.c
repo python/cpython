@@ -681,6 +681,9 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
                'yield from' or awaiting on with 'await'. */
             ret = _gen_throw((PyGenObject *)yf, close_on_genexit,
                              typ, val, tb);
+            if (tstate->last_profiled_frame == frame) {
+                tstate->last_profiled_frame = prev;
+            }
             tstate->current_frame = prev;
             frame->previous = NULL;
         }
@@ -701,6 +704,9 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             frame->previous = prev;
             tstate->current_frame = frame;
             ret = PyObject_CallFunctionObjArgs(meth, typ, val, tb, NULL);
+            if (tstate->last_profiled_frame == frame) {
+                tstate->last_profiled_frame = prev;
+            }
             tstate->current_frame = prev;
             frame->previous = NULL;
             Py_DECREF(meth);
