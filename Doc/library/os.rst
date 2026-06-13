@@ -803,17 +803,6 @@ process and user.
    The return value is a :class:`uname_result` object. These attributes
    correspond to the members described in :manpage:`uname(2)`.
 
-   For backwards compatibility, this object is also iterable, behaving
-   like a five-tuple containing :attr:`~uname_result.sysname`,
-   :attr:`~uname_result.nodename`, :attr:`~uname_result.release`,
-   :attr:`~uname_result.version`, and :attr:`~uname_result.machine`
-   in that order.
-
-   Some systems truncate :attr:`~uname_result.nodename` to 8 characters or to the
-   leading component; a better way to get the hostname is
-   :func:`socket.gethostname`  or even
-   ``socket.gethostbyaddr(socket.gethostname())``.
-
    On macOS, iOS and Android, this returns the *kernel* name and version (i.e.,
    ``'Darwin'`` on macOS and iOS; ``'Linux'`` on Android). :func:`platform.uname`
    can be used to get the user-facing operating system name and version on iOS and
@@ -836,13 +825,22 @@ process and user.
 
    Name and information about the system returned by :func:`os.uname`.
 
+   For backwards compatibility, this object is also iterable, behaving
+   like a five-tuple containing :attr:`~uname_result.sysname`,
+   :attr:`~uname_result.nodename`, :attr:`~uname_result.release`,
+   :attr:`~uname_result.version`, and :attr:`~uname_result.machine`
+   in that order.
+
    .. attribute:: sysname
 
       Operating system name.
 
    .. attribute:: nodename
 
-      Name of machine on network (implementation-defined).
+      Name of machine on network. Some systems truncate
+      :attr:`~uname_result.nodename` to 8 characters or to the leading
+      component; a better way to get the hostname is :func:`socket.gethostname`
+      or even ``socket.gethostbyaddr(socket.gethostname())``.
 
    .. attribute:: release
 
