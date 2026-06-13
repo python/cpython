@@ -3640,29 +3640,23 @@ class EncodedMetadataTests(unittest.TestCase):
 
     def test_read_after_append(self):
         newname = '\u56db'  # Han 'four'
-        expected_names = [name.encode('shift_jis').decode('cp437')
-                          for name in self.file_names[:2]] + self.file_names[2:]
-        expected_names.append(newname)
-        expected_content = (*self.file_content, b"newcontent")
+        newname2 = 'fünf'  # representable in cp437, but still stored as UTF-8
+        expected_names = [*self.file_names, newname, newname2]
+        mojibake_expected_names = [name.encode('shift_jis').decode('cp437')
+                                   if i < 2 else name
+                                   for i, name in enumerate(expected_names)]
+        expected_content = (*self.file_content, b"newcontent", b"newcontent2")
 
         with zipfile.ZipFile(TESTFN, "a") as zipfp:
             zipfp.writestr(newname, "newcontent")
-            self.assertEqual(sorted(zipfp.namelist()), sorted(expected_names))
+            zipfp.writestr(newname2, "newcontent2")
+            self.assertEqual(sorted(zipfp.namelist()), sorted(mojibake_expected_names))
 
         with zipfile.ZipFile(TESTFN, "r") as zipfp:
-            self._test_read(zipfp, expected_names, expected_content)
+            self._test_read(zipfp, mojibake_expected_names, expected_content)
 
         with zipfile.ZipFile(TESTFN, "r", metadata_encoding='shift_jis') as zipfp:
-            self.assertEqual(sorted(zipfp.namelist()), sorted(expected_names))
-            for i, (name, content) in enumerate(zip(expected_names, expected_content)):
-                info = zipfp.getinfo(name)
-                self.assertEqual(info.filename, name)
-                self.assertEqual(info.file_size, len(content))
-                if i < 2:
-                    with self.assertRaises(zipfile.BadZipFile):
-                        zipfp.read(name)
-                else:
-                    self.assertEqual(zipfp.read(name), content)
+            self._test_read(zipfp, expected_names, expected_content)
 
     def test_write_with_metadata_encoding(self):
         ZF = zipfile.ZipFile
@@ -3670,6 +3664,20 @@ class EncodedMetadataTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,
                                         "^metadata_encoding is only"):
                 ZF("nonesuch.zip", mode, metadata_encoding="shift_jis")
+
+    def test_add_comment(self):
+        with zipfile.ZipFile(TESTFN, "r") as zipfp:
+            mojibake_expected_names = zipfp.namelist()
+
+        with zipfile.ZipFile(TESTFN, "a") as zipfp:
+            zipfp.comment = b'comment'
+            self.assertEqual(zipfp.namelist(), mojibake_expected_names)
+
+        with zipfile.ZipFile(TESTFN, "r") as zipfp:
+            self._test_read(zipfp, mojibake_expected_names, self.file_content)
+
+        with zipfile.ZipFile(TESTFN, "r", metadata_encoding='shift_jis') as zipfp:
+            self._test_read(zipfp, self.file_names, self.file_content)
 
     def test_cli_with_metadata_encoding(self):
         errmsg = "Non-conforming encodings not supported with -c."

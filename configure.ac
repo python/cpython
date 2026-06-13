@@ -334,7 +334,7 @@ then
 		ac_sys_system=Linux
 		;;
 	*-*-cygwin*)
-		ac_sys_system=Cygwin
+		ac_sys_system=CYGWIN
 		;;
 	*-apple-ios*)
 		ac_sys_system=iOS
@@ -1650,7 +1650,7 @@ else # shared is disabled
   case $ac_sys_system in
     CYGWIN*)
       BLDLIBRARY='$(LIBRARY)'
-      LDLIBRARY='libpython$(LDVERSION).dll.a'
+      LDLIBRARY='libpython$(LDVERSION).a'
       ;;
   esac
 fi
@@ -2255,7 +2255,7 @@ then
      -reorder-blocks=ext-tsp
      -reorder-functions=cdsort
      -split-functions
-     -icf=1
+     -icf=0
      -inline-all
      -split-eh
      -reorder-functions-use-hot-size
@@ -3694,8 +3694,8 @@ then
 			dnl not implemented yet
 		]);;
 	CYGWIN*)
-		LDSHARED="gcc -shared -Wl,--enable-auto-image-base"
-		LDCXXSHARED="g++ -shared -Wl,--enable-auto-image-base";;
+		LDSHARED='$(CC) -shared -Wl,--enable-auto-image-base'
+		LDCXXSHARED='$(CXX) -shared -Wl,--enable-auto-image-base';;
 	*)	LDSHARED="ld";;
 	esac
 fi
@@ -4380,16 +4380,19 @@ PKG_CHECK_MODULES([LIBMPDEC], [libmpdec >= 2.5.0], [have_mpdec=yes], [
   WITH_SAVE_ENV([
     CPPFLAGS="$CPPFLAGS $LIBMPDEC_CFLAGS"
     LIBS="$LIBS $LIBMPDEC_LIBS"
-
-    AC_LINK_IFELSE([
-      AC_LANG_PROGRAM([
-        #include <mpdecimal.h>
-        #if MPD_VERSION_HEX < 0x02050000
-        #  error "mpdecimal 2.5.0 or higher required"
-        #endif
-      ], [const char *x = mpd_version();])],
-      [have_mpdec=yes],
-      [have_mpdec=no])
+    AC_CHECK_HEADER([mpdecimal.h], [
+      AC_CHECK_LIB([mpdec], [mpd_version], [
+        AC_COMPILE_IFELSE([
+          AC_LANG_PROGRAM([
+            #include <mpdecimal.h>
+            #if MPD_VERSION_HEX < 0x02050000
+            #  error "mpdecimal 2.5.0 or higher required"
+            #endif
+          ], [])],
+          [have_mpdec=yes],
+          [have_mpdec=no])
+      ], [have_mpdec=no])
+    ], [have_mpdec=no])
 
     AS_VAR_IF([have_mpdec], [yes], [
      LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
@@ -4397,11 +4400,6 @@ PKG_CHECK_MODULES([LIBMPDEC], [libmpdec >= 2.5.0], [have_mpdec=yes], [
     ])
   ])
 ])
-
-# Disable forced inlining in debug builds, see GH-94847
-AS_VAR_IF(
-  [with_pydebug], [yes],
-  [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DTEST_COVERAGE"])])
 
 # Check whether _decimal should use a coroutine-local or thread-local context
 AC_MSG_CHECKING([for --with-decimal-contextvar])
@@ -6369,6 +6367,8 @@ AC_CHECK_FUNCS(
   [],
   [AC_MSG_ERROR([Python requires C99 compatible libm])]
 )
+
+AC_CHECK_FUNCS_ONCE(acospi asinpi atanpi atan2pi cospi sinpi tanpi)
 LIBS=$LIBS_SAVE
 
 dnl For multiprocessing module, check that sem_open

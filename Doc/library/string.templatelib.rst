@@ -245,6 +245,8 @@ Types
    ...
    3.0 | 1. + 2. | None | .2f
 
+   Interpolations are :ref:`generic <generics>` over the types of their values.
+
    .. rubric:: Attributes
 
    .. attribute:: value
