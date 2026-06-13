@@ -2540,7 +2540,7 @@ Alternatively you can just use ``vars(my_mock)`` (instance members) and
 mock_open
 ~~~~~~~~~
 
-.. function:: mock_open(mock=None, read_data=None)
+.. function:: mock_open(mock=None, read_data='')
 
    A helper function to create a mock to replace the use of :func:`open`. It works
    for :func:`open` called directly or used as a context manager.
