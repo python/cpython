@@ -1779,7 +1779,11 @@ _PyErr_FormatUnraisable(PyThreadState *tstate, const char *format, ...)
 void
 PyErr_FormatUnraisable(const char *format, ...)
 {
-    _PyErr_FormatUnraisable(_PyThreadState_GET(), format);
+    PyThreadState *tstate = _PyThreadState_GET();
+    va_list va;
+    va_start(va, format);
+    format_unraisable_v(tstate, format, va, NULL);
+    va_end(va);
 }
 
 static void
