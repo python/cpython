@@ -267,7 +267,8 @@ b32hexdecode.__doc__ = _B32_DECODE_DOCSTRING.format(encoding='base32hex',
 
 
 # RFC 4648, Base 16 Alphabet specifies uppercase, but hexlify() returns
-# lowercase.
+# lowercase.  The RFC also recommends against accepting input case
+# insensitively.
 def b16encode(s, *, wrapcol=0):
     """Encode the bytes-like object s using Base16 and return a bytes object.
 
