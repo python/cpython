@@ -3540,6 +3540,16 @@ while 1:
             end_offset=6,
         )
 
+    def test_diamond_operator_barry_as_flufl(self):
+        self._check_error(
+           "from __future__ import barry_as_FLUFL\n1 < > 2",
+            "Maybe you meant '<>' instead of '< >'",
+            lineno=2,
+            end_lineno=2,
+            offset=3,
+            end_offset=6,
+        )
+
     def test_triple_equal(self):
         self._check_error(
             "a === b",

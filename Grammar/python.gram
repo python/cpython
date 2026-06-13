@@ -805,7 +805,11 @@ compare_op_bitwise_or_pair[CmpopExprPair*]:
     | invalid_eqeqeq
 
 invalid_diamond_op:
-    | a='<' b='>' { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax.  Maybe you meant '!=' instead of '<>'?") }
+    | a='<' b='>' {
+        (p->flags & PyPARSE_BARRY_AS_BDFL)
+        ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax.  Maybe you meant '<>' instead of '< >'?")
+        : RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax.  Maybe you meant '!=' instead of '<>'?")
+    }
 eq_bitwise_or[CmpopExprPair*]: '==' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, Eq, a) }
 invalid_eqeqeq:
     | a='==' b='=' { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax.  Maybe you meant '==' instead of '==='?") }

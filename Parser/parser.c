@@ -13447,7 +13447,7 @@ invalid_diamond_op_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_diamond_op[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'<' '>'"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "invalid syntax.  Maybe you meant '!=' instead of '<>'?" );
+            _res = ( p -> flags & PyPARSE_BARRY_AS_BDFL ) ? RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "invalid syntax.  Maybe you meant '<>' instead of '< >'?" ) : RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "invalid syntax.  Maybe you meant '!=' instead of '<>'?" );
             if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
