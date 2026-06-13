@@ -3528,6 +3528,15 @@ while 1:
             lineno=2,
             end_lineno=2,
             offset=5,
+        )
+
+    def test_diamond_operator(self):
+        self._check_error(
+            "1 < > 2",
+            "Maybe you meant '!=' instead of '<>'?",
+            lineno=1,
+            end_lineno=1,
+            offset=3,
             end_offset=6,
         )
 
