@@ -1,5 +1,5 @@
-:mod:`socket` --- Low-level networking interface
-================================================
+:mod:`!socket` --- Low-level networking interface
+=================================================
 
 .. module:: socket
    :synopsis: Low-level networking interface.
@@ -19,11 +19,11 @@ all modern Unix systems, Windows, MacOS, and probably additional platforms.
 
 .. include:: ../includes/wasm-notavail.rst
 
-.. index:: object: socket
+.. index:: pair: object; socket
 
 The Python interface is a straightforward transliteration of the Unix system
 call and library interface for sockets to Python's object-oriented style: the
-:func:`.socket` function returns a :dfn:`socket object` whose methods implement
+:func:`~socket.socket` function returns a :dfn:`socket object` whose methods implement
 the various socket system calls.  Parameter types are somewhat higher-level than
 in the C interface: as with :meth:`read` and :meth:`write` operations on Python
 files, buffer allocation on receive operations is automatic, and buffer length
@@ -38,6 +38,8 @@ is implicit on send operations.
    Module :mod:`ssl`
       A TLS/SSL wrapper for socket objects.
 
+
+.. _socket-addresses:
 
 Socket families
 ---------------
@@ -83,7 +85,7 @@ created.  Socket addresses are represented as follows:
 - For :const:`AF_INET6` address family, a four-tuple ``(host, port, flowinfo,
   scope_id)`` is used, where *flowinfo* and *scope_id* represent the ``sin6_flowinfo``
   and ``sin6_scope_id`` members in :const:`struct sockaddr_in6` in C.  For
-  :mod:`socket` module methods, *flowinfo* and *scope_id* can be omitted just for
+  :mod:`!socket` module methods, *flowinfo* and *scope_id* can be omitted just for
   backward compatibility.  Note, however, omission of *scope_id* can cause problems
   in manipulating scoped IPv6 addresses.
 
@@ -118,10 +120,10 @@ created.  Socket addresses are represented as follows:
   ``'can0'``. The network interface name ``''`` can be used to receive packets
   from all network interfaces of this family.
 
-  - :const:`CAN_ISOTP` protocol require a tuple ``(interface, rx_addr, tx_addr)``
+  - :const:`CAN_ISOTP` protocol requires a tuple ``(interface, rx_addr, tx_addr)``
     where both additional parameters are unsigned long integer that represent a
     CAN identifier (standard or extended).
-  - :const:`CAN_J1939` protocol require a tuple ``(interface, name, pgn, addr)``
+  - :const:`CAN_J1939` protocol requires a tuple ``(interface, name, pgn, addr)``
     where additional parameters are 64-bit unsigned integer representing the
     ECU name, a 32-bit unsigned integer representing the Parameter Group Number
     (PGN), and an 8-bit integer representing the address.
@@ -137,24 +139,49 @@ created.  Socket addresses are represented as follows:
 - :const:`AF_BLUETOOTH` supports the following protocols and address
   formats:
 
-  - :const:`BTPROTO_L2CAP` accepts ``(bdaddr, psm)`` where ``bdaddr`` is
-    the Bluetooth address as a string and ``psm`` is an integer.
+  - :const:`BTPROTO_L2CAP` accepts a tuple
+    ``(bdaddr, psm[, cid[, bdaddr_type]])`` where:
+
+    - ``bdaddr`` is a string specifying the Bluetooth address.
+    - ``psm`` is an integer specifying the Protocol/Service Multiplexer.
+    - ``cid`` is an optional integer specifying the Channel Identifier.
+      If not given, defaults to zero.
+    - ``bdaddr_type`` is an optional integer specifying the address type;
+      one of :const:`BDADDR_BREDR` (default), :const:`BDADDR_LE_PUBLIC`,
+      :const:`BDADDR_LE_RANDOM`.
+
+    .. versionchanged:: 3.14
+       Added ``cid`` and ``bdaddr_type`` fields.
 
   - :const:`BTPROTO_RFCOMM` accepts ``(bdaddr, channel)`` where ``bdaddr``
     is the Bluetooth address as a string and ``channel`` is an integer.
 
-  - :const:`BTPROTO_HCI` accepts ``(device_id,)`` where ``device_id`` is
-    either an integer or a string with the Bluetooth address of the
-    interface. (This depends on your OS; NetBSD and DragonFlyBSD expect
-    a Bluetooth address while everything else expects an integer.)
+  - :const:`BTPROTO_HCI` accepts a format that depends on your OS.
+
+    - On Linux it accepts an integer ``device_id`` or a tuple
+      ``(device_id, [channel])`` where ``device_id``
+      specifies the number of the Bluetooth device,
+      and ``channel`` is an optional integer specifying the HCI channel
+      (:const:`HCI_CHANNEL_RAW` by default).
+    - On FreeBSD, NetBSD and DragonFly BSD it accepts ``bdaddr``
+      where ``bdaddr`` is the Bluetooth address as a string.
 
     .. versionchanged:: 3.2
        NetBSD and DragonFlyBSD support added.
 
-  - :const:`BTPROTO_SCO` accepts ``bdaddr`` where ``bdaddr`` is a
-    :class:`bytes` object containing the Bluetooth address in a
-    string format. (ex. ``b'12:23:34:45:56:67'``) This protocol is not
-    supported under FreeBSD.
+    .. versionchanged:: 3.13.3
+       FreeBSD support added.
+
+    .. versionchanged:: 3.14
+       Added ``channel`` field.
+       ``device_id`` not packed in a tuple is now accepted.
+
+  - :const:`BTPROTO_SCO` accepts ``bdaddr`` where ``bdaddr`` is
+    the Bluetooth address as a string or a :class:`bytes` object.
+    (ex. ``'12:23:34:45:56:67'`` or ``b'12:23:34:45:56:67'``)
+
+    .. versionchanged:: 3.14
+       FreeBSD support added.
 
 - :const:`AF_ALG` is a Linux-only socket based interface to Kernel
   cryptography. An algorithm socket is configured with a tuple of two to four
@@ -185,7 +212,7 @@ created.  Socket addresses are represented as follows:
   .. versionadded:: 3.7
 
 - :const:`AF_PACKET` is a low-level interface directly to network devices.
-  The packets are represented by the tuple
+  The addresses are represented by the tuple
   ``(ifname, proto[, pkttype[, hatype[, addr]]])`` where:
 
   - *ifname* - String specifying the device name.
@@ -193,7 +220,6 @@ created.  Socket addresses are represented as follows:
     May be :data:`ETH_P_ALL` to capture all protocols,
     one of the :ref:`ETHERTYPE_* constants <socket-ethernet-types>`
     or any other Ethernet protocol number.
-    Value must be in network-byte-order.
   - *pkttype* - Optional integer specifying the packet type:
 
     - ``PACKET_HOST`` (the default) - Packet addressed to the local host.
@@ -207,14 +233,14 @@ created.  Socket addresses are represented as follows:
   - *addr* - Optional bytes-like object specifying the hardware physical
     address, whose interpretation depends on the device.
 
-   .. availability:: Linux >= 2.2.
+  .. availability:: Linux >= 2.2.
 
 - :const:`AF_QIPCRTR` is a Linux-only socket based interface for communicating
   with services running on co-processors in Qualcomm platforms. The address
   family is represented as a ``(node, port)`` tuple where the *node* and *port*
   are non-negative integers.
 
-   .. availability:: Linux >= 4.7.
+  .. availability:: Linux >= 4.7.
 
   .. versionadded:: 3.8
 
@@ -278,7 +304,7 @@ generalization of this based on timeouts is supported through
 Module contents
 ---------------
 
-The module :mod:`socket` exports the following elements.
+The module :mod:`!socket` exports the following elements.
 
 
 Exceptions
@@ -312,7 +338,7 @@ Exceptions
    The accompanying value is a pair ``(error, string)`` representing an error
    returned by a library call.  *string* represents the description of
    *error*, as returned by the :c:func:`gai_strerror` C function.  The
-   numeric *error* value will match one of the :const:`EAI_\*` constants
+   numeric *error* value will match one of the :const:`!EAI_\*` constants
    defined in this module.
 
    .. versionchanged:: 3.3
@@ -338,20 +364,25 @@ Exceptions
 Constants
 ^^^^^^^^^
 
-   The AF_* and SOCK_* constants are now :class:`AddressFamily` and
-   :class:`SocketKind` :class:`.IntEnum` collections.
+The AF_* and SOCK_* constants are now :class:`AddressFamily` and
+:class:`SocketKind` :class:`.IntEnum` collections.
 
-   .. versionadded:: 3.4
+.. versionadded:: 3.4
 
 .. data:: AF_UNIX
           AF_INET
           AF_INET6
 
    These constants represent the address (and protocol) families, used for the
-   first argument to :func:`.socket`.  If the :const:`AF_UNIX` constant is not
+   first argument to :func:`~socket.socket`.  If the :const:`AF_UNIX` constant is not
    defined then this protocol is unsupported.  More constants may be available
    depending on the system.
 
+.. data:: AF_UNSPEC
+
+   :const:`AF_UNSPEC` means that
+   :func:`getaddrinfo` should return socket addresses for any
+   address family (either IPv4, IPv6, or any other) that can be used.
 
 .. data:: SOCK_STREAM
           SOCK_DGRAM
@@ -360,7 +391,7 @@ Constants
           SOCK_SEQPACKET
 
    These constants represent the socket types, used for the second argument to
-   :func:`.socket`.  More constants may be available depending on the system.
+   :func:`~socket.socket`.  More constants may be available depending on the system.
    (Only :const:`SOCK_STREAM` and :const:`SOCK_DGRAM` appear to be generally
    useful.)
 
@@ -380,6 +411,8 @@ Constants
 
    .. versionadded:: 3.2
 
+.. _socket-unix-constants:
+
 .. data:: SO_*
           SOMAXCONN
           MSG_*
@@ -397,7 +430,7 @@ Constants
 
    Many constants of these forms, documented in the Unix documentation on sockets
    and/or the IP protocol, are also defined in the socket module. They are
-   generally used in arguments to the :meth:`setsockopt` and :meth:`getsockopt`
+   generally used in arguments to the :meth:`~socket.setsockopt` and :meth:`~socket.getsockopt`
    methods of socket objects.  In most cases, only those symbols that are defined
    in the Unix header files are defined; for a few symbols, default values are
    provided.
@@ -407,14 +440,14 @@ Constants
       ``TCP_USER_TIMEOUT``, ``TCP_CONGESTION`` were added.
 
    .. versionchanged:: 3.6.5
-      On Windows, ``TCP_FASTOPEN``, ``TCP_KEEPCNT`` appear if run-time Windows
-      supports.
+      Added support for ``TCP_FASTOPEN``, ``TCP_KEEPCNT`` on Windows platforms
+      when available.
 
    .. versionchanged:: 3.7
       ``TCP_NOTSENT_LOWAT`` was added.
 
-      On Windows, ``TCP_KEEPIDLE``, ``TCP_KEEPINTVL`` appear if run-time Windows
-      supports.
+      Added support for ``TCP_KEEPIDLE``, ``TCP_KEEPINTVL`` on Windows platforms
+      when available.
 
    .. versionchanged:: 3.10
       ``IP_RECVTOS`` was added.
@@ -436,7 +469,25 @@ Constants
       ``TCP_FASTOPEN_CONNECT``, ``TCP_ULP``, ``TCP_MD5SIG_EXT``,
       ``TCP_FASTOPEN_KEY``, ``TCP_FASTOPEN_NO_COOKIE``,
       ``TCP_ZEROCOPY_RECEIVE``, ``TCP_INQ``, ``TCP_TX_DELAY``.
-      Added ``IP_PKTINFO``.
+      Added ``IP_PKTINFO``, ``IP_UNBLOCK_SOURCE``, ``IP_BLOCK_SOURCE``,
+      ``IP_ADD_SOURCE_MEMBERSHIP``, ``IP_DROP_SOURCE_MEMBERSHIP``.
+
+   .. versionchanged:: 3.13
+      Added ``SO_BINDTOIFINDEX``. On Linux this constant can be used in the
+      same way that ``SO_BINDTODEVICE`` is used, but with the index of a
+      network interface instead of its name.
+
+   .. versionchanged:: 3.14
+      Added missing ``IP_FREEBIND``, ``IP_RECVERR``, ``IPV6_RECVERR``,
+      ``IP_RECVTTL``, and ``IP_RECVORIGDSTADDR`` on Linux.
+
+   .. versionchanged:: 3.14
+      Added support for ``TCP_QUICKACK`` on Windows platforms when available.
+
+   .. versionchanged:: 3.15
+      ``IPV6_HDRINCL`` was added.
+      Added support for ``SO_PASSRIGHTS`` on Linux platforms when available.
+
 
 .. data:: AF_CAN
           PF_CAN
@@ -452,6 +503,9 @@ Constants
 
    .. versionchanged:: 3.11
       NetBSD support was added.
+
+   .. versionchanged:: 3.14
+      Restored missing ``CAN_RAW_ERR_FILTER`` on Linux.
 
 .. data:: CAN_BCM
           CAN_BCM_*
@@ -507,6 +561,17 @@ Constants
    .. availability:: Linux >= 5.4.
 
    .. versionadded:: 3.9
+
+
+.. data:: AF_DIVERT
+          PF_DIVERT
+
+   These two constants, documented in the FreeBSD divert(4) manual page, are
+   also defined in the socket module.
+
+   .. availability:: FreeBSD >= 14.0.
+
+   .. versionadded:: 3.12
 
 
 .. data:: AF_PACKET
@@ -595,6 +660,14 @@ Constants
    This constant contains a boolean value which indicates if IPv6 is supported on
    this platform.
 
+.. data:: AF_BLUETOOTH
+          BTPROTO_L2CAP
+          BTPROTO_RFCOMM
+          BTPROTO_HCI
+          BTPROTO_SCO
+
+   Integer constants for use with Bluetooth addresses.
+
 .. data:: BDADDR_ANY
           BDADDR_LOCAL
 
@@ -603,14 +676,81 @@ Constants
    any address when specifying the binding socket with
    :const:`BTPROTO_RFCOMM`.
 
+.. data:: BDADDR_BREDR
+          BDADDR_LE_PUBLIC
+          BDADDR_LE_RANDOM
+
+   These constants describe the Bluetooth address type when binding or
+   connecting a :const:`BTPROTO_L2CAP` socket.
+
+   .. availability:: Linux, FreeBSD
+
+   .. versionadded:: 3.14
+
+.. data:: SOL_RFCOMM
+          SOL_L2CAP
+          SOL_HCI
+          SOL_SCO
+          SOL_BLUETOOTH
+
+   Used in the level argument to the :meth:`~socket.setsockopt` and
+   :meth:`~socket.getsockopt` methods of Bluetooth socket objects.
+
+   :const:`SOL_BLUETOOTH` is only available on Linux. Other constants
+   are available if the corresponding protocol is supported.
+
+.. data:: SO_L2CAP_*
+          L2CAP_LM
+          L2CAP_LM_*
+          SO_RFCOMM_*
+          RFCOMM_LM_*
+          SO_SCO_*
+          SO_BTH_*
+          BT_*
+
+   Used in the option name and value argument to the :meth:`~socket.setsockopt`
+   and :meth:`~socket.getsockopt` methods of Bluetooth socket objects.
+
+   :const:`!BT_*` and :const:`L2CAP_LM` are only available on Linux.
+   :const:`!SO_BTH_*` are only available on Windows.
+   Other constants may be available on Linux and various BSD platforms.
+
+   .. versionadded:: 3.14
+
 .. data:: HCI_FILTER
           HCI_TIME_STAMP
           HCI_DATA_DIR
+          SO_HCI_EVT_FILTER
+          SO_HCI_PKT_FILTER
 
-   For use with :const:`BTPROTO_HCI`. :const:`HCI_FILTER` is not
-   available for NetBSD or DragonFlyBSD. :const:`HCI_TIME_STAMP` and
-   :const:`HCI_DATA_DIR` are not available for FreeBSD, NetBSD, or
-   DragonFlyBSD.
+   Option names for use with :const:`BTPROTO_HCI`.
+   Availability and format of the option values depend on platform.
+
+   .. versionchanged:: 3.14
+      Added :const:`!SO_HCI_EVT_FILTER` and :const:`!SO_HCI_PKT_FILTER`
+      on NetBSD and DragonFly BSD.
+      Added :const:`!HCI_DATA_DIR` on FreeBSD, NetBSD and DragonFly BSD.
+
+.. data:: HCI_DEV_NONE
+
+   The ``device_id`` value used to create an HCI socket that isn't specific
+   to a single Bluetooth adapter.
+
+   .. availability:: Linux
+
+   .. versionadded:: 3.14
+
+.. data:: HCI_CHANNEL_RAW
+          HCI_CHANNEL_USER
+          HCI_CHANNEL_MONITOR
+          HCI_CHANNEL_CONTROL
+          HCI_CHANNEL_LOGGING
+
+   Possible values for ``channel`` field in the :const:`BTPROTO_HCI` address.
+
+   .. availability:: Linux
+
+   .. versionadded:: 3.14
 
 .. data:: AF_QIPCRTR
 
@@ -639,9 +779,17 @@ Constants
    Constant to optimize CPU locality, to be used in conjunction with
    :data:`SO_REUSEPORT`.
 
-  .. versionadded:: 3.11
+   .. versionadded:: 3.11
 
-  .. availability:: Linux >= 3.9
+   .. availability:: Linux >= 3.9
+
+.. data:: SO_REUSEPORT_LB
+
+   Constant to enable duplicate address and port bindings with load balancing.
+
+  .. versionadded:: 3.14
+
+  .. availability:: FreeBSD >= 12.0
 
 .. data:: AF_HYPERV
           HV_PROTOCOL_RAW
@@ -654,7 +802,7 @@ Constants
           HV_GUID_BROADCAST
           HV_GUID_CHILDREN
           HV_GUID_LOOPBACK
-          HV_GUID_LOOPBACK
+          HV_GUID_PARENT
 
    Constants for Windows Hyper-V sockets for host/guest communications.
 
@@ -677,6 +825,13 @@ Constants
 
    .. versionadded:: 3.12
 
+.. data:: SHUT_RD
+          SHUT_WR
+          SHUT_RDWR
+
+   These constants are used by the :meth:`~socket.socket.shutdown` method of socket objects.
+
+   .. availability:: not WASI.
 
 Functions
 ^^^^^^^^^
@@ -687,71 +842,14 @@ Creating sockets
 The following functions all create :ref:`socket objects <socket-objects>`.
 
 
-.. class:: socket(family=AF_INET, type=SOCK_STREAM, proto=0, fileno=None)
-
-   Create a new socket using the given address family, socket type and protocol
-   number.  The address family should be :const:`AF_INET` (the default),
-   :const:`AF_INET6`, :const:`AF_UNIX`, :const:`AF_CAN`, :const:`AF_PACKET`,
-   or :const:`AF_RDS`. The socket type should be :const:`SOCK_STREAM` (the
-   default), :const:`SOCK_DGRAM`, :const:`SOCK_RAW` or perhaps one of the other
-   ``SOCK_`` constants. The protocol number is usually zero and may be omitted
-   or in the case where the address family is :const:`AF_CAN` the protocol
-   should be one of :const:`CAN_RAW`, :const:`CAN_BCM`, :const:`CAN_ISOTP` or
-   :const:`CAN_J1939`.
-
-   If *fileno* is specified, the values for *family*, *type*, and *proto* are
-   auto-detected from the specified file descriptor.  Auto-detection can be
-   overruled by calling the function with explicit *family*, *type*, or *proto*
-   arguments.  This only affects how Python represents e.g. the return value
-   of :meth:`socket.getpeername` but not the actual OS resource.  Unlike
-   :func:`socket.fromfd`, *fileno* will return the same socket and not a
-   duplicate. This may help close a detached socket using
-   :meth:`socket.close()`.
-
-   The newly created socket is :ref:`non-inheritable <fd_inheritance>`.
-
-   .. audit-event:: socket.__new__ self,family,type,protocol socket.socket
-
-   .. versionchanged:: 3.3
-      The AF_CAN family was added.
-      The AF_RDS family was added.
-
-   .. versionchanged:: 3.4
-       The CAN_BCM protocol was added.
-
-   .. versionchanged:: 3.4
-      The returned socket is now non-inheritable.
-
-   .. versionchanged:: 3.7
-       The CAN_ISOTP protocol was added.
-
-   .. versionchanged:: 3.7
-      When :const:`SOCK_NONBLOCK` or :const:`SOCK_CLOEXEC`
-      bit flags are applied to *type* they are cleared, and
-      :attr:`socket.type` will not reflect them.  They are still passed
-      to the underlying system ``socket()`` call.  Therefore,
-
-      ::
-
-          sock = socket.socket(
-              socket.AF_INET,
-              socket.SOCK_STREAM | socket.SOCK_NONBLOCK)
-
-      will still create a non-blocking socket on OSes that support
-      ``SOCK_NONBLOCK``, but ``sock.type`` will be set to
-      ``socket.SOCK_STREAM``.
-
-   .. versionchanged:: 3.9
-       The CAN_J1939 protocol was added.
-
-   .. versionchanged:: 3.10
-       The IPPROTO_MPTCP protocol was added.
+The :class:`socket <socket.socket>` class constructor creates a new socket
+directly; see :ref:`socket-objects` for its parameters and full description.
 
 .. function:: socketpair([family[, type[, proto]]])
 
    Build a pair of connected socket objects using the given address family, socket
    type, and protocol number.  Address family, socket type, and protocol number are
-   as for the :func:`.socket` function above. The default family is :const:`AF_UNIX`
+   as for the :func:`~socket.socket` function. The default family is :const:`AF_UNIX`
    if defined on the platform; otherwise, the default is :const:`AF_INET`.
 
    The newly created sockets are :ref:`non-inheritable <fd_inheritance>`.
@@ -808,10 +906,10 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    , a default reasonable value is chosen.
    *reuse_port* dictates whether to set the :data:`SO_REUSEPORT` socket option.
 
-   If *dualstack_ipv6* is true and the platform supports it the socket will
-   be able to accept both IPv4 and IPv6 connections, else it will raise
-   :exc:`ValueError`. Most POSIX platforms and Windows are supposed to support
-   this functionality.
+   If *dualstack_ipv6* is true, *family* is :data:`AF_INET6` and the platform
+   supports it the socket will be able to accept both IPv4 and IPv6 connections,
+   else it will raise :exc:`ValueError`. Most POSIX platforms and Windows are
+   supposed to support this functionality.
    When this functionality is enabled the address returned by
    :meth:`socket.getpeername` when an IPv4 connection occurs will be an IPv6
    address represented as an IPv4-mapped IPv6 address.
@@ -846,9 +944,9 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 .. function:: fromfd(fd, family, type, proto=0)
 
    Duplicate the file descriptor *fd* (an integer as returned by a file object's
-   :meth:`fileno` method) and build a socket object from the result.  Address
-   family, socket type and protocol number are as for the :func:`.socket` function
-   above. The file descriptor should refer to a socket, but this is not checked ---
+   :meth:`~io.IOBase.fileno` method) and build a socket object from the result.  Address
+   family, socket type and protocol number are as for the :func:`~socket.socket` function.
+   The file descriptor should refer to a socket, but this is not checked ---
    subsequent operations on the object may fail if the file descriptor is invalid.
    This function is rarely needed, but can be used to get or set socket options on
    a socket passed to a program as standard input or output (such as a server
@@ -870,27 +968,23 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    .. versionadded:: 3.3
 
 
-.. data:: SocketType
-
-   This is a Python type object that represents the socket object type. It is the
-   same as ``type(socket(...))``.
-
-
 Other functions
 '''''''''''''''
 
-The :mod:`socket` module also offers various network-related services:
+The :mod:`!socket` module also offers various network-related services:
 
 
 .. function:: close(fd)
 
    Close a socket file descriptor. This is like :func:`os.close`, but for
-   sockets. On some platforms (most noticeable Windows) :func:`os.close`
+   sockets. On some platforms (most notably Windows) :func:`os.close`
    does not work for socket file descriptors.
 
    .. versionadded:: 3.7
 
-.. function:: getaddrinfo(host, port, family=0, type=0, proto=0, flags=0)
+.. function:: getaddrinfo(host, port, family=AF_UNSPEC, type=0, proto=0, flags=0)
+
+   This function wraps the C function ``getaddrinfo`` of the underlying system.
 
    Translate the *host*/*port* argument into a sequence of 5-tuples that contain
    all the necessary arguments for creating a socket connected to that service.
@@ -900,8 +994,10 @@ The :mod:`socket` module also offers various network-related services:
    and *port*, you can pass ``NULL`` to the underlying C API.
 
    The *family*, *type* and *proto* arguments can be optionally specified
-   in order to narrow the list of addresses returned.  Passing zero as a
-   value for each of these arguments selects the full range of results.
+   in order to provide options and limit the list of addresses returned.
+   Pass their default values (:data:`AF_UNSPEC`, 0, and 0, respectively)
+   to not limit the results. See the note below for details.
+
    The *flags* argument can be one or several of the ``AI_*`` constants,
    and will influence how results are computed and returned.
    For example, :const:`AI_NUMERICHOST` will disable domain name resolution
@@ -912,14 +1008,43 @@ The :mod:`socket` module also offers various network-related services:
    ``(family, type, proto, canonname, sockaddr)``
 
    In these tuples, *family*, *type*, *proto* are all integers and are
-   meant to be passed to the :func:`.socket` function.  *canonname* will be
+   meant to be passed to the :func:`~socket.socket` function.  *canonname* will be
    a string representing the canonical name of the *host* if
    :const:`AI_CANONNAME` is part of the *flags* argument; else *canonname*
    will be empty.  *sockaddr* is a tuple describing a socket address, whose
-   format depends on the returned *family* (a ``(address, port)`` 2-tuple for
-   :const:`AF_INET`, a ``(address, port, flowinfo, scope_id)`` 4-tuple for
-   :const:`AF_INET6`), and is meant to be passed to the :meth:`socket.connect`
-   method.
+   format depends on the returned *family* and flags Python was compiled with,
+   and is meant to be passed to the :meth:`socket.connect` method.
+
+   *sockaddr* can be one of the following:
+
+   * a ``(address, port)`` 2-tuple for :const:`AF_INET`
+   * a ``(address, port, flowinfo, scope_id)`` 4-tuple for :const:`AF_INET6` if
+     Python was compiled with ``--enable-ipv6`` (the default)
+   * a 2-tuple containing raw data for :const:`AF_INET6` if Python was
+     compiled with ``--disable-ipv6``
+
+   .. note::
+
+      If you intend to use results from :func:`!getaddrinfo` to create a socket
+      (rather than, for example, retrieve *canonname*),
+      consider limiting the results by *type* (e.g. :data:`SOCK_STREAM` or
+      :data:`SOCK_DGRAM`) and/or *proto* (e.g. :data:`IPPROTO_TCP` or
+      :data:`IPPROTO_UDP`) that your application can handle.
+
+      The behavior with default values of *family*, *type*, *proto*
+      and *flags* is system-specific.
+
+      Many systems (for example, most Linux configurations) will return a sorted
+      list of all matching addresses.
+      These addresses should generally be tried in order until a connection succeeds
+      (possibly tried in parallel, for example, using a `Happy Eyeballs`_ algorithm).
+      In these cases, limiting the *type* and/or *proto* can help eliminate
+      unsuccessful or unusable connection attempts.
+
+      Some systems will, however, only return a single address.
+      (For example, this was reported on Solaris and AIX configurations.)
+      On these systems, limiting the *type* and/or *proto* helps ensure that
+      this address is usable.
 
    .. audit-event:: socket.getaddrinfo host,port,family,type,protocol socket.getaddrinfo
 
@@ -939,6 +1064,8 @@ The :mod:`socket` module also offers various network-related services:
    .. versionchanged:: 3.7
       for IPv6 multicast addresses, string representing an address will not
       contain ``%scope_id`` part.
+
+.. _Happy Eyeballs: https://en.wikipedia.org/wiki/Happy_Eyeballs
 
 .. function:: getfqdn([name])
 
@@ -967,7 +1094,7 @@ The :mod:`socket` module also offers various network-related services:
 .. function:: gethostbyname_ex(hostname)
 
    Translate a host name to IPv4 address format, extended interface. Return a
-   triple ``(hostname, aliaslist, ipaddrlist)`` where *hostname* is the host's
+   3-tuple ``(hostname, aliaslist, ipaddrlist)`` where *hostname* is the host's
    primary host name, *aliaslist* is a (possibly
    empty) list of alternative host names for the same address, and *ipaddrlist* is
    a list of IPv4 addresses for the same interface on the same host (often but not
@@ -995,7 +1122,7 @@ The :mod:`socket` module also offers various network-related services:
 
 .. function:: gethostbyaddr(ip_address)
 
-   Return a triple ``(hostname, aliaslist, ipaddrlist)`` where *hostname* is the
+   Return a 3-tuple ``(hostname, aliaslist, ipaddrlist)`` where *hostname* is the
    primary host name responding to the given *ip_address*, *aliaslist* is a
    (possibly empty) list of alternative host names for the same address, and
    *ipaddrlist* is a list of IPv4/v6 addresses for the same interface on the same
@@ -1028,7 +1155,7 @@ The :mod:`socket` module also offers various network-related services:
 .. function:: getprotobyname(protocolname)
 
    Translate an internet protocol name (for example, ``'icmp'``) to a constant
-   suitable for passing as the (optional) third argument to the :func:`.socket`
+   suitable for passing as the (optional) third argument to the :func:`~socket.socket`
    function.  This is usually only needed for sockets opened in "raw" mode
    (:const:`SOCK_RAW`); for the normal socket modes, the correct protocol is chosen
    automatically if the protocol is omitted or zero.
@@ -1190,7 +1317,7 @@ The :mod:`socket` module also offers various network-related services:
    buffer.  Raises :exc:`OverflowError` if *length* is outside the
    permissible range of values.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
       Most Unix platforms.
 
@@ -1213,7 +1340,7 @@ The :mod:`socket` module also offers various network-related services:
    amount of ancillary data that can be received, since additional
    data may be able to fit into the padding area.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
       most Unix platforms.
 
@@ -1229,10 +1356,13 @@ The :mod:`socket` module also offers various network-related services:
 
 .. function:: setdefaulttimeout(timeout)
 
-   Set the default timeout in seconds (float) for new socket objects.  When
+   Set the default timeout in seconds (real number) for new socket objects.  When
    the socket module is first imported, the default is ``None``.  See
    :meth:`~socket.settimeout` for possible values and their respective
    meanings.
+
+   .. versionchanged:: 3.15
+      Accepts any real number, not only integer or float.
 
 
 .. function:: sethostname(name)
@@ -1242,7 +1372,7 @@ The :mod:`socket` module also offers various network-related services:
 
    .. audit-event:: socket.sethostname name socket.sethostname
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Android.
 
    .. versionadded:: 3.3
 
@@ -1253,7 +1383,7 @@ The :mod:`socket` module also offers various network-related services:
    (index int, name string) tuples.
    :exc:`OSError` if the system call fails.
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not WASI.
 
    .. versionadded:: 3.3
 
@@ -1280,7 +1410,7 @@ The :mod:`socket` module also offers various network-related services:
    interface name.
    :exc:`OSError` if no interface with the given name exists.
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not WASI.
 
    .. versionadded:: 3.3
 
@@ -1297,7 +1427,7 @@ The :mod:`socket` module also offers various network-related services:
    interface index number.
    :exc:`OSError` if no interface with the given index exists.
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not WASI.
 
    .. versionadded:: 3.3
 
@@ -1312,9 +1442,9 @@ The :mod:`socket` module also offers various network-related services:
 
    Send the list of file descriptors *fds* over an :const:`AF_UNIX` socket *sock*.
    The *fds* parameter is a sequence of file descriptors.
-   Consult :meth:`sendmsg` for the documentation of these parameters.
+   Consult :meth:`~socket.sendmsg` for the documentation of these parameters.
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
       Unix platforms supporting :meth:`~socket.sendmsg`
       and :const:`SCM_RIGHTS` mechanism.
@@ -1326,11 +1456,11 @@ The :mod:`socket` module also offers various network-related services:
 
    Receive up to *maxfds* file descriptors from an :const:`AF_UNIX` socket *sock*.
    Return ``(msg, list(fds), flags, addr)``.
-   Consult :meth:`recvmsg` for the documentation of these parameters.
+   Consult :meth:`~socket.recvmsg` for the documentation of these parameters.
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
-      Unix platforms supporting :meth:`~socket.sendmsg`
+      Unix platforms supporting :meth:`~socket.recvmsg`
       and :const:`SCM_RIGHTS` mechanism.
 
    .. versionadded:: 3.9
@@ -1345,643 +1475,709 @@ The :mod:`socket` module also offers various network-related services:
 Socket Objects
 --------------
 
-Socket objects have the following methods.  Except for
-:meth:`~socket.makefile`, these correspond to Unix system calls applicable
-to sockets.
+.. class:: socket(family=AF_INET, type=SOCK_STREAM, proto=0, fileno=None)
 
-.. versionchanged:: 3.2
-   Support for the :term:`context manager` protocol was added.  Exiting the
-   context manager is equivalent to calling :meth:`~socket.close`.
+   Create a new socket using the given address family, socket type and protocol
+   number.  The address family should be :const:`AF_INET` (the default),
+   :const:`AF_INET6`, :const:`AF_UNIX`, :const:`AF_CAN`, :const:`AF_PACKET`,
+   or :const:`AF_RDS`. The socket type should be :const:`SOCK_STREAM` (the
+   default), :const:`SOCK_DGRAM`, :const:`SOCK_RAW` or perhaps one of the other
+   ``SOCK_`` constants. The protocol number is usually zero and may be omitted
+   or in the case where the address family is :const:`AF_CAN` the protocol
+   should be one of :const:`CAN_RAW`, :const:`CAN_BCM`, :const:`CAN_ISOTP` or
+   :const:`CAN_J1939`.
 
-
-.. method:: socket.accept()
-
-   Accept a connection. The socket must be bound to an address and listening for
-   connections. The return value is a pair ``(conn, address)`` where *conn* is a
-   *new* socket object usable to send and receive data on the connection, and
-   *address* is the address bound to the socket on the other end of the connection.
+   If *fileno* is specified, the values for *family*, *type*, and *proto* are
+   auto-detected from the specified file descriptor.  Auto-detection can be
+   overruled by calling the function with explicit *family*, *type*, or *proto*
+   arguments.  This only affects how Python represents e.g. the return value
+   of :meth:`socket.getpeername` but not the actual OS resource.  Unlike
+   :func:`socket.fromfd`, *fileno* will return the same socket and not a
+   duplicate. This may help close a detached socket using
+   :meth:`socket.close`.
 
    The newly created socket is :ref:`non-inheritable <fd_inheritance>`.
 
+   .. audit-event:: socket.__new__ self,family,type,protocol socket.socket
+
+   .. versionchanged:: 3.3
+      The AF_CAN family was added.
+      The AF_RDS family was added.
+
    .. versionchanged:: 3.4
-      The socket is now non-inheritable.
+       The CAN_BCM protocol was added.
 
-   .. versionchanged:: 3.5
-      If the system call is interrupted and the signal handler does not raise
-      an exception, the method now retries the system call instead of raising
-      an :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
+   .. versionchanged:: 3.4
+      The returned socket is now non-inheritable.
 
+   .. versionchanged:: 3.7
+       The CAN_ISOTP protocol was added.
 
-.. method:: socket.bind(address)
+   .. versionchanged:: 3.7
+      When :const:`SOCK_NONBLOCK` or :const:`SOCK_CLOEXEC`
+      bit flags are applied to *type* they are cleared, and
+      :attr:`socket.type` will not reflect them.  They are still passed
+      to the underlying system ``socket()`` call.  Therefore,
 
-   Bind the socket to *address*.  The socket must not already be bound. (The format
-   of *address* depends on the address family --- see above.)
+      ::
 
-   .. audit-event:: socket.bind self,address socket.socket.bind
+          sock = socket.socket(
+              socket.AF_INET,
+              socket.SOCK_STREAM | socket.SOCK_NONBLOCK)
 
-   .. availability:: not WASI.
+      will still create a non-blocking socket on OSes that support
+      ``SOCK_NONBLOCK``, but ``sock.type`` will be set to
+      ``socket.SOCK_STREAM``.
 
+   .. versionchanged:: 3.9
+       The CAN_J1939 protocol was added.
 
-.. method:: socket.close()
+   .. versionchanged:: 3.10
+       The IPPROTO_MPTCP protocol was added.
 
-   Mark the socket closed.  The underlying system resource (e.g. a file
-   descriptor) is also closed when all file objects from :meth:`makefile()`
-   are closed.  Once that happens, all future operations on the socket
-   object will fail. The remote end will receive no more data (after
-   queued data is flushed).
+   Socket objects have the following methods.  Except for
+   :meth:`~socket.makefile`, these correspond to Unix system calls applicable
+   to sockets.
 
-   Sockets are automatically closed when they are garbage-collected, but
-   it is recommended to :meth:`close` them explicitly, or to use a
-   :keyword:`with` statement around them.
-
-   .. versionchanged:: 3.6
-      :exc:`OSError` is now raised if an error occurs when the underlying
-      :c:func:`close` call is made.
-
-   .. note::
-
-      :meth:`close()` releases the resource associated with a connection but
-      does not necessarily close the connection immediately.  If you want
-      to close the connection in a timely fashion, call :meth:`shutdown()`
-      before :meth:`close()`.
+   .. versionchanged:: 3.2
+      Support for the :term:`context manager` protocol was added.  Exiting the
+      context manager is equivalent to calling :meth:`~socket.close`.
 
 
-.. method:: socket.connect(address)
+   .. method:: accept()
 
-   Connect to a remote socket at *address*. (The format of *address* depends on the
-   address family --- see above.)
+      Accept a connection. The socket must be bound to an address and listening for
+      connections. The return value is a pair ``(conn, address)`` where *conn* is a
+      *new* socket object usable to send and receive data on the connection, and
+      *address* is the address bound to the socket on the other end of the connection.
 
-   If the connection is interrupted by a signal, the method waits until the
-   connection completes, or raise a :exc:`TimeoutError` on timeout, if the
-   signal handler doesn't raise an exception and the socket is blocking or has
-   a timeout. For non-blocking sockets, the method raises an
-   :exc:`InterruptedError` exception if the connection is interrupted by a
-   signal (or the exception raised by the signal handler).
+      The newly created socket is :ref:`non-inheritable <fd_inheritance>`.
 
-   .. audit-event:: socket.connect self,address socket.socket.connect
+      .. versionchanged:: 3.4
+         The socket is now non-inheritable.
 
-   .. versionchanged:: 3.5
-      The method now waits until the connection completes instead of raising an
+      .. versionchanged:: 3.5
+         If the system call is interrupted and the signal handler does not raise
+         an exception, the method now retries the system call instead of raising
+         an :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
+
+
+   .. method:: bind(address)
+
+      Bind the socket to *address*.  The socket must not already be bound. The format
+      of *address* depends on the address family --- see :ref:`socket-addresses`.
+
+      .. audit-event:: socket.bind self,address socket.socket.bind
+
+      .. availability:: not WASI.
+
+
+   .. method:: close()
+
+      Mark the socket closed.  The underlying system resource (e.g. a file
+      descriptor) is also closed when all file objects from :meth:`makefile`
+      are closed.  Once that happens, all future operations on the socket
+      object will fail. The remote end will receive no more data (after
+      queued data is flushed).
+
+      Sockets are automatically closed when they are garbage-collected, but
+      it is recommended to :meth:`close` them explicitly, or to use a
+      :keyword:`with` statement around them.
+
+      .. versionchanged:: 3.6
+         :exc:`OSError` is now raised if an error occurs when the underlying
+         :c:func:`!close` call is made.
+
+      .. note::
+
+         :meth:`close` releases the resource associated with a connection but
+         does not necessarily close the connection immediately.  If you want
+         to close the connection in a timely fashion, call :meth:`shutdown`
+         before :meth:`close`.
+
+
+   .. method:: connect(address)
+
+      Connect to a remote socket at *address*. The format of *address* depends on the
+      address family --- see :ref:`socket-addresses`.
+
+      If the connection is interrupted by a signal, the method waits until the
+      connection completes, or raises a :exc:`TimeoutError` on timeout, if the
+      signal handler doesn't raise an exception and the socket is blocking or has
+      a timeout. For non-blocking sockets, the method raises an
       :exc:`InterruptedError` exception if the connection is interrupted by a
-      signal, the signal handler doesn't raise an exception and the socket is
-      blocking or has a timeout (see the :pep:`475` for the rationale).
+      signal (or the exception raised by the signal handler).
 
-   .. availability:: not WASI.
+      .. audit-event:: socket.connect self,address socket.socket.connect
 
+      .. versionchanged:: 3.5
+         The method now waits until the connection completes instead of raising an
+         :exc:`InterruptedError` exception if the connection is interrupted by a
+         signal, the signal handler doesn't raise an exception and the socket is
+         blocking or has a timeout (see the :pep:`475` for the rationale).
 
-.. method:: socket.connect_ex(address)
+      .. availability:: not WASI.
 
-   Like ``connect(address)``, but return an error indicator instead of raising an
-   exception for errors returned by the C-level :c:func:`connect` call (other
-   problems, such as "host not found," can still raise exceptions).  The error
-   indicator is ``0`` if the operation succeeded, otherwise the value of the
-   :c:data:`errno` variable.  This is useful to support, for example, asynchronous
-   connects.
 
-   .. audit-event:: socket.connect self,address socket.socket.connect_ex
+   .. method:: connect_ex(address)
 
-   .. availability:: not WASI.
+      Like ``connect(address)``, but return an error indicator instead of raising an
+      exception for errors returned by the C-level :c:func:`!connect` call (other
+      problems, such as "host not found," can still raise exceptions).  The error
+      indicator is ``0`` if the operation succeeded, otherwise the value of the
+      :c:data:`errno` variable.  This is useful to support, for example, asynchronous
+      connects.
 
-.. method:: socket.detach()
+      .. audit-event:: socket.connect self,address socket.socket.connect_ex
 
-   Put the socket object into closed state without actually closing the
-   underlying file descriptor.  The file descriptor is returned, and can
-   be reused for other purposes.
+      .. availability:: not WASI.
 
-   .. versionadded:: 3.2
+   .. method:: detach()
 
+      Put the socket object into closed state without actually closing the
+      underlying file descriptor.  The file descriptor is returned, and can
+      be reused for other purposes.
 
-.. method:: socket.dup()
+      .. versionadded:: 3.2
 
-   Duplicate the socket.
 
-   The newly created socket is :ref:`non-inheritable <fd_inheritance>`.
+   .. method:: dup()
 
-   .. versionchanged:: 3.4
-      The socket is now non-inheritable.
+      Duplicate the socket.
 
-   .. availability:: not WASI.
+      The newly created socket is :ref:`non-inheritable <fd_inheritance>`.
 
+      .. versionchanged:: 3.4
+         The socket is now non-inheritable.
 
-.. method:: socket.fileno()
+      .. availability:: not WASI.
 
-   Return the socket's file descriptor (a small integer), or -1 on failure. This
-   is useful with :func:`select.select`.
 
-   Under Windows the small integer returned by this method cannot be used where a
-   file descriptor can be used (such as :func:`os.fdopen`).  Unix does not have
-   this limitation.
+   .. method:: fileno()
 
-.. method:: socket.get_inheritable()
+      Return the socket's file descriptor (a small integer), or -1 on failure. This
+      is useful with :func:`select.select`.
 
-   Get the :ref:`inheritable flag <fd_inheritance>` of the socket's file
-   descriptor or socket's handle: ``True`` if the socket can be inherited in
-   child processes, ``False`` if it cannot.
+      Under Windows the small integer returned by this method cannot be used where a
+      file descriptor can be used (such as :func:`os.fdopen`).  Unix does not have
+      this limitation.
 
-   .. versionadded:: 3.4
+   .. method:: get_inheritable()
 
+      Get the :ref:`inheritable flag <fd_inheritance>` of the socket's file
+      descriptor or socket's handle: ``True`` if the socket can be inherited in
+      child processes, ``False`` if it cannot.
 
-.. method:: socket.getpeername()
+      .. versionadded:: 3.4
 
-   Return the remote address to which the socket is connected.  This is useful to
-   find out the port number of a remote IPv4/v6 socket, for instance. (The format
-   of the address returned depends on the address family --- see above.)  On some
-   systems this function is not supported.
 
+   .. method:: getpeername()
 
-.. method:: socket.getsockname()
+      Return the remote address to which the socket is connected.  This is useful to
+      find out the port number of a remote IPv4/v6 socket, for instance. The format
+      of the address returned depends on the address family --- see :ref:`socket-addresses`.
+      On some systems this function is not supported.
 
-   Return the socket's own address.  This is useful to find out the port number of
-   an IPv4/v6 socket, for instance. (The format of the address returned depends on
-   the address family --- see above.)
 
+   .. method:: getsockname()
 
-.. method:: socket.getsockopt(level, optname[, buflen])
+      Return the socket's own address.  This is useful to find out the port number of
+      an IPv4/v6 socket, for instance. The format of the address returned depends on
+      the address family --- see :ref:`socket-addresses`.
 
-   Return the value of the given socket option (see the Unix man page
-   :manpage:`getsockopt(2)`).  The needed symbolic constants (:const:`SO_\*` etc.)
-   are defined in this module.  If *buflen* is absent, an integer option is assumed
-   and its integer value is returned by the function.  If *buflen* is present, it
-   specifies the maximum length of the buffer used to receive the option in, and
-   this buffer is returned as a bytes object.  It is up to the caller to decode the
-   contents of the buffer (see the optional built-in module :mod:`struct` for a way
-   to decode C structures encoded as byte strings).
 
-   .. availability:: not WASI.
+   .. method:: getsockopt(level, optname[, buflen])
 
+      Return the value of the given socket option (see the Unix man page
+      :manpage:`getsockopt(2)`).  The needed symbolic constants (:ref:`SO_\* etc. <socket-unix-constants>`)
+      are defined in this module.  If *buflen* is absent, an integer option is assumed
+      and its integer value is returned by the function.  If *buflen* is present, it
+      specifies the maximum length of the buffer used to receive the option in, and
+      this buffer is returned as a bytes object.  It is up to the caller to decode the
+      contents of the buffer (see the optional built-in module :mod:`struct` for a way
+      to decode C structures encoded as byte strings).
 
-.. method:: socket.getblocking()
+      .. availability:: not WASI.
 
-   Return ``True`` if socket is in blocking mode, ``False`` if in
-   non-blocking.
 
-   This is equivalent to checking ``socket.gettimeout() == 0``.
+   .. method:: getblocking()
 
-   .. versionadded:: 3.7
+      Return ``True`` if socket is in blocking mode, ``False`` if in
+      non-blocking.
 
+      This is equivalent to checking ``socket.gettimeout() != 0``.
 
-.. method:: socket.gettimeout()
+      .. versionadded:: 3.7
 
-   Return the timeout in seconds (float) associated with socket operations,
-   or ``None`` if no timeout is set.  This reflects the last call to
-   :meth:`setblocking` or :meth:`settimeout`.
 
+   .. method:: gettimeout()
 
-.. method:: socket.ioctl(control, option)
+      Return the timeout in seconds (float) associated with socket operations,
+      or ``None`` if no timeout is set.  This reflects the last call to
+      :meth:`setblocking` or :meth:`settimeout`.
 
-   :platform: Windows
 
-   The :meth:`ioctl` method is a limited interface to the WSAIoctl system
-   interface.  Please refer to the `Win32 documentation
-   <https://msdn.microsoft.com/en-us/library/ms741621%28VS.85%29.aspx>`_ for more
-   information.
+   .. method:: ioctl(control, option)
 
-   On other platforms, the generic :func:`fcntl.fcntl` and :func:`fcntl.ioctl`
-   functions may be used; they accept a socket object as their first argument.
+      The :meth:`ioctl` method is a limited interface to the WSAIoctl system
+      interface.  Please refer to the `Win32 documentation
+      <https://msdn.microsoft.com/en-us/library/ms741621%28VS.85%29.aspx>`_ for more
+      information.
 
-   Currently only the following control codes are supported:
-   ``SIO_RCVALL``, ``SIO_KEEPALIVE_VALS``, and ``SIO_LOOPBACK_FAST_PATH``.
+      On other platforms, the generic :func:`fcntl.fcntl` and :func:`fcntl.ioctl`
+      functions may be used; they accept a socket object as their first argument.
 
-   .. versionchanged:: 3.6
-      ``SIO_LOOPBACK_FAST_PATH`` was added.
+      Currently only the following control codes are supported:
+      ``SIO_RCVALL``, ``SIO_KEEPALIVE_VALS``, and ``SIO_LOOPBACK_FAST_PATH``.
 
-.. method:: socket.listen([backlog])
+      .. availability:: Windows
 
-   Enable a server to accept connections.  If *backlog* is specified, it must
-   be at least 0 (if it is lower, it is set to 0); it specifies the number of
-   unaccepted connections that the system will allow before refusing new
-   connections. If not specified, a default reasonable value is chosen.
+      .. versionchanged:: 3.6
+         ``SIO_LOOPBACK_FAST_PATH`` was added.
 
-   .. availability:: not WASI.
 
-   .. versionchanged:: 3.5
-      The *backlog* parameter is now optional.
+   .. method:: listen([backlog])
 
+      Enable a server to accept connections.  If *backlog* is specified, it must
+      be at least 0 (if it is lower, it is set to 0); it specifies the number of
+      unaccepted connections that the system will allow before refusing new
+      connections. If not specified, a default reasonable value is chosen.
 
-.. method:: socket.makefile(mode='r', buffering=None, *, encoding=None, \
-                            errors=None, newline=None)
+      .. availability:: not WASI.
 
-   .. index:: single: I/O control; buffering
+      .. versionchanged:: 3.5
+         The *backlog* parameter is now optional.
 
-   Return a :term:`file object` associated with the socket.  The exact returned
-   type depends on the arguments given to :meth:`makefile`.  These arguments are
-   interpreted the same way as by the built-in :func:`open` function, except
-   the only supported *mode* values are ``'r'`` (default), ``'w'`` and ``'b'``.
 
-   The socket must be in blocking mode; it can have a timeout, but the file
-   object's internal buffer may end up in an inconsistent state if a timeout
-   occurs.
+   .. method:: makefile(mode='r', buffering=None, *, encoding=None, \
+                               errors=None, newline=None)
 
-   Closing the file object returned by :meth:`makefile` won't close the
-   original socket unless all other file objects have been closed and
-   :meth:`socket.close` has been called on the socket object.
+      .. index:: single: I/O control; buffering
 
-   .. note::
-
-      On Windows, the file-like object created by :meth:`makefile` cannot be
-      used where a file object with a file descriptor is expected, such as the
-      stream arguments of :meth:`subprocess.Popen`.
-
+      Return a :term:`file object` associated with the socket.  The exact returned
+      type depends on the arguments given to :meth:`makefile`.  These arguments are
+      interpreted the same way as by the built-in :func:`open` function, except
+      the only supported *mode* values are ``'r'`` (default), ``'w'``, ``'b'``, or
+      a combination of those.
 
-.. method:: socket.recv(bufsize[, flags])
+      The socket must be in blocking mode; it can have a timeout, but the file
+      object's internal buffer may end up in an inconsistent state if a timeout
+      occurs.
 
-   Receive data from the socket.  The return value is a bytes object representing the
-   data received.  The maximum amount of data to be received at once is specified
-   by *bufsize*.  See the Unix manual page :manpage:`recv(2)` for the meaning of
-   the optional argument *flags*; it defaults to zero.
+      Closing the file object returned by :meth:`makefile` won't close the
+      original socket unless all other file objects have been closed and
+      :meth:`socket.close` has been called on the socket object.
 
-   .. note::
+      .. note::
 
-      For best match with hardware and network realities, the value of  *bufsize*
-      should be a relatively small power of 2, for example, 4096.
+         On Windows, the file-like object created by :meth:`makefile` cannot be
+         used where a file object with a file descriptor is expected, such as the
+         stream arguments of :meth:`subprocess.Popen`.
 
-   .. versionchanged:: 3.5
-      If the system call is interrupted and the signal handler does not raise
-      an exception, the method now retries the system call instead of raising
-      an :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
 
+   .. method:: recv(bufsize[, flags])
 
-.. method:: socket.recvfrom(bufsize[, flags])
+      Receive data from the socket.  The return value is a bytes object representing the
+      data received.  The maximum amount of data to be received at once is specified
+      by *bufsize*. A returned empty bytes object indicates that the client has disconnected.
+      See the Unix manual page :manpage:`recv(2)` for the meaning of the optional argument
+      *flags*; it defaults to zero.
 
-   Receive data from the socket.  The return value is a pair ``(bytes, address)``
-   where *bytes* is a bytes object representing the data received and *address* is the
-   address of the socket sending the data.  See the Unix manual page
-   :manpage:`recv(2)` for the meaning of the optional argument *flags*; it defaults
-   to zero. (The format of *address* depends on the address family --- see above.)
-
-   .. versionchanged:: 3.5
-      If the system call is interrupted and the signal handler does not raise
-      an exception, the method now retries the system call instead of raising
-      an :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
+      .. versionchanged:: 3.5
+         If the system call is interrupted and the signal handler does not raise
+         an exception, the method now retries the system call instead of raising
+         an :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
 
-   .. versionchanged:: 3.7
-      For multicast IPv6 address, first item of *address* does not contain
-      ``%scope_id`` part anymore. In order to get full IPv6 address use
-      :func:`getnameinfo`.
-
-.. method:: socket.recvmsg(bufsize[, ancbufsize[, flags]])
-
-   Receive normal data (up to *bufsize* bytes) and ancillary data from
-   the socket.  The *ancbufsize* argument sets the size in bytes of
-   the internal buffer used to receive the ancillary data; it defaults
-   to 0, meaning that no ancillary data will be received.  Appropriate
-   buffer sizes for ancillary data can be calculated using
-   :func:`CMSG_SPACE` or :func:`CMSG_LEN`, and items which do not fit
-   into the buffer might be truncated or discarded.  The *flags*
-   argument defaults to 0 and has the same meaning as for
-   :meth:`recv`.
 
-   The return value is a 4-tuple: ``(data, ancdata, msg_flags,
-   address)``.  The *data* item is a :class:`bytes` object holding the
-   non-ancillary data received.  The *ancdata* item is a list of zero
-   or more tuples ``(cmsg_level, cmsg_type, cmsg_data)`` representing
-   the ancillary data (control messages) received: *cmsg_level* and
-   *cmsg_type* are integers specifying the protocol level and
-   protocol-specific type respectively, and *cmsg_data* is a
-   :class:`bytes` object holding the associated data.  The *msg_flags*
-   item is the bitwise OR of various flags indicating conditions on
-   the received message; see your system documentation for details.
-   If the receiving socket is unconnected, *address* is the address of
-   the sending socket, if available; otherwise, its value is
-   unspecified.
+   .. method:: recvfrom(bufsize[, flags])
 
-   On some systems, :meth:`sendmsg` and :meth:`recvmsg` can be used to
-   pass file descriptors between processes over an :const:`AF_UNIX`
-   socket.  When this facility is used (it is often restricted to
-   :const:`SOCK_STREAM` sockets), :meth:`recvmsg` will return, in its
-   ancillary data, items of the form ``(socket.SOL_SOCKET,
-   socket.SCM_RIGHTS, fds)``, where *fds* is a :class:`bytes` object
-   representing the new file descriptors as a binary array of the
-   native C :c:expr:`int` type.  If :meth:`recvmsg` raises an
-   exception after the system call returns, it will first attempt to
-   close any file descriptors received via this mechanism.
+      Receive data from the socket.  The return value is a pair ``(bytes, address)``
+      where *bytes* is a bytes object representing the data received and *address* is the
+      address of the socket sending the data.  See the Unix manual page
+      :manpage:`recv(2)` for the meaning of the optional argument *flags*; it defaults
+      to zero. The format of *address* depends on the address family --- see
+      :ref:`socket-addresses`.
 
-   Some systems do not indicate the truncated length of ancillary data
-   items which have been only partially received.  If an item appears
-   to extend beyond the end of the buffer, :meth:`recvmsg` will issue
-   a :exc:`RuntimeWarning`, and will return the part of it which is
-   inside the buffer provided it has not been truncated before the
-   start of its associated data.
+      .. versionchanged:: 3.5
+         If the system call is interrupted and the signal handler does not raise
+         an exception, the method now retries the system call instead of raising
+         an :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
 
-   On systems which support the :const:`SCM_RIGHTS` mechanism, the
-   following function will receive up to *maxfds* file descriptors,
-   returning the message data and a list containing the descriptors
-   (while ignoring unexpected conditions such as unrelated control
-   messages being received).  See also :meth:`sendmsg`. ::
+      .. versionchanged:: 3.7
+         For multicast IPv6 address, first item of *address* does not contain
+         ``%scope_id`` part anymore. In order to get full IPv6 address use
+         :func:`getnameinfo`.
 
-      import socket, array
+   .. method:: recvmsg(bufsize[, ancbufsize[, flags]])
 
-      def recv_fds(sock, msglen, maxfds):
-          fds = array.array("i")   # Array of ints
-          msg, ancdata, flags, addr = sock.recvmsg(msglen, socket.CMSG_LEN(maxfds * fds.itemsize))
-          for cmsg_level, cmsg_type, cmsg_data in ancdata:
-              if cmsg_level == socket.SOL_SOCKET and cmsg_type == socket.SCM_RIGHTS:
-                  # Append data, ignoring any truncated integers at the end.
-                  fds.frombytes(cmsg_data[:len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
-          return msg, list(fds)
+      Receive normal data (up to *bufsize* bytes) and ancillary data from
+      the socket.  The *ancbufsize* argument sets the size in bytes of
+      the internal buffer used to receive the ancillary data; it defaults
+      to 0, meaning that no ancillary data will be received.  Appropriate
+      buffer sizes for ancillary data can be calculated using
+      :func:`CMSG_SPACE` or :func:`CMSG_LEN`, and items which do not fit
+      into the buffer might be truncated or discarded.  The *flags*
+      argument defaults to 0 and has the same meaning as for
+      :meth:`recv`.
 
-   .. availability:: Unix.
+      The return value is a 4-tuple: ``(data, ancdata, msg_flags,
+      address)``.  The *data* item is a :class:`bytes` object holding the
+      non-ancillary data received.  The *ancdata* item is a list of zero
+      or more tuples ``(cmsg_level, cmsg_type, cmsg_data)`` representing
+      the ancillary data (control messages) received: *cmsg_level* and
+      *cmsg_type* are integers specifying the protocol level and
+      protocol-specific type respectively, and *cmsg_data* is a
+      :class:`bytes` object holding the associated data.  The *msg_flags*
+      item is the bitwise OR of various flags indicating conditions on
+      the received message; see your system documentation for details.
+      If the receiving socket is unconnected, *address* is the address of
+      the sending socket, if available; otherwise, its value is
+      unspecified.
 
-      Most Unix platforms.
+      On some systems, :meth:`sendmsg` and :meth:`recvmsg` can be used to
+      pass file descriptors between processes over an :const:`AF_UNIX`
+      socket.  When this facility is used (it is often restricted to
+      :const:`SOCK_STREAM` sockets), :meth:`recvmsg` will return, in its
+      ancillary data, items of the form ``(socket.SOL_SOCKET,
+      socket.SCM_RIGHTS, fds)``, where *fds* is a :class:`bytes` object
+      representing the new file descriptors as a binary array of the
+      native C :c:expr:`int` type.  If :meth:`recvmsg` raises an
+      exception after the system call returns, it will first attempt to
+      close any file descriptors received via this mechanism.
 
-   .. versionadded:: 3.3
+      Some systems do not indicate the truncated length of ancillary data
+      items which have been only partially received.  If an item appears
+      to extend beyond the end of the buffer, :meth:`recvmsg` will issue
+      a :exc:`RuntimeWarning`, and will return the part of it which is
+      inside the buffer provided it has not been truncated before the
+      start of its associated data.
 
-   .. versionchanged:: 3.5
-      If the system call is interrupted and the signal handler does not raise
-      an exception, the method now retries the system call instead of raising
-      an :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
+      On systems which support the :const:`!SCM_RIGHTS` mechanism, the
+      following function will receive up to *maxfds* file descriptors,
+      returning the message data and a list containing the descriptors
+      (while ignoring unexpected conditions such as unrelated control
+      messages being received).  See also :meth:`sendmsg`. ::
 
+         import socket, array
 
-.. method:: socket.recvmsg_into(buffers[, ancbufsize[, flags]])
+         def recv_fds(sock, msglen, maxfds):
+             fds = array.array("i")   # Array of ints
+             msg, ancdata, flags, addr = sock.recvmsg(msglen, socket.CMSG_LEN(maxfds * fds.itemsize))
+             for cmsg_level, cmsg_type, cmsg_data in ancdata:
+                 if cmsg_level == socket.SOL_SOCKET and cmsg_type == socket.SCM_RIGHTS:
+                     # Append data, ignoring any truncated integers at the end.
+                     fds.frombytes(cmsg_data[:len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
+             return msg, list(fds)
 
-   Receive normal data and ancillary data from the socket, behaving as
-   :meth:`recvmsg` would, but scatter the non-ancillary data into a
-   series of buffers instead of returning a new bytes object.  The
-   *buffers* argument must be an iterable of objects that export
-   writable buffers (e.g. :class:`bytearray` objects); these will be
-   filled with successive chunks of the non-ancillary data until it
-   has all been written or there are no more buffers.  The operating
-   system may set a limit (:func:`~os.sysconf` value ``SC_IOV_MAX``)
-   on the number of buffers that can be used.  The *ancbufsize* and
-   *flags* arguments have the same meaning as for :meth:`recvmsg`.
+      .. availability:: Unix.
 
-   The return value is a 4-tuple: ``(nbytes, ancdata, msg_flags,
-   address)``, where *nbytes* is the total number of bytes of
-   non-ancillary data written into the buffers, and *ancdata*,
-   *msg_flags* and *address* are the same as for :meth:`recvmsg`.
+         Most Unix platforms.
 
-   Example::
+      .. versionadded:: 3.3
 
-      >>> import socket
-      >>> s1, s2 = socket.socketpair()
-      >>> b1 = bytearray(b'----')
-      >>> b2 = bytearray(b'0123456789')
-      >>> b3 = bytearray(b'--------------')
-      >>> s1.send(b'Mary had a little lamb')
-      22
-      >>> s2.recvmsg_into([b1, memoryview(b2)[2:9], b3])
-      (22, [], 0, None)
-      >>> [b1, b2, b3]
-      [bytearray(b'Mary'), bytearray(b'01 had a 9'), bytearray(b'little lamb---')]
+      .. versionchanged:: 3.5
+         If the system call is interrupted and the signal handler does not raise
+         an exception, the method now retries the system call instead of raising
+         an :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
 
-   .. availability:: Unix.
-
-      Most Unix platforms.
 
-   .. versionadded:: 3.3
+   .. method:: recvmsg_into(buffers[, ancbufsize[, flags]])
 
+      Receive normal data and ancillary data from the socket, behaving as
+      :meth:`recvmsg` would, but scatter the non-ancillary data into a
+      series of buffers instead of returning a new bytes object.  The
+      *buffers* argument must be an iterable of objects that export
+      writable buffers (e.g. :class:`bytearray` objects); these will be
+      filled with successive chunks of the non-ancillary data until it
+      has all been written or there are no more buffers.  The operating
+      system may set a limit (:func:`~os.sysconf` value ``SC_IOV_MAX``)
+      on the number of buffers that can be used.  The *ancbufsize* and
+      *flags* arguments have the same meaning as for :meth:`recvmsg`.
 
-.. method:: socket.recvfrom_into(buffer[, nbytes[, flags]])
+      The return value is a 4-tuple: ``(nbytes, ancdata, msg_flags,
+      address)``, where *nbytes* is the total number of bytes of
+      non-ancillary data written into the buffers, and *ancdata*,
+      *msg_flags* and *address* are the same as for :meth:`recvmsg`.
 
-   Receive data from the socket, writing it into *buffer* instead of creating a
-   new bytestring.  The return value is a pair ``(nbytes, address)`` where *nbytes* is
-   the number of bytes received and *address* is the address of the socket sending
-   the data.  See the Unix manual page :manpage:`recv(2)` for the meaning of the
-   optional argument *flags*; it defaults to zero.  (The format of *address*
-   depends on the address family --- see above.)
+      Example::
 
+         >>> import socket
+         >>> s1, s2 = socket.socketpair()
+         >>> b1 = bytearray(b'----')
+         >>> b2 = bytearray(b'0123456789')
+         >>> b3 = bytearray(b'--------------')
+         >>> s1.send(b'Mary had a little lamb')
+         22
+         >>> s2.recvmsg_into([b1, memoryview(b2)[2:9], b3])
+         (22, [], 0, None)
+         >>> [b1, b2, b3]
+         [bytearray(b'Mary'), bytearray(b'01 had a 9'), bytearray(b'little lamb---')]
 
-.. method:: socket.recv_into(buffer[, nbytes[, flags]])
+      .. availability:: Unix.
 
-   Receive up to *nbytes* bytes from the socket, storing the data into a buffer
-   rather than creating a new bytestring.  If *nbytes* is not specified (or 0),
-   receive up to the size available in the given buffer.  Returns the number of
-   bytes received.  See the Unix manual page :manpage:`recv(2)` for the meaning
-   of the optional argument *flags*; it defaults to zero.
+         Most Unix platforms.
 
+      .. versionadded:: 3.3
 
-.. method:: socket.send(bytes[, flags])
 
-   Send data to the socket.  The socket must be connected to a remote socket.  The
-   optional *flags* argument has the same meaning as for :meth:`recv` above.
-   Returns the number of bytes sent. Applications are responsible for checking that
-   all data has been sent; if only some of the data was transmitted, the
-   application needs to attempt delivery of the remaining data. For further
-   information on this topic, consult the :ref:`socket-howto`.
+   .. method:: recvfrom_into(buffer[, nbytes[, flags]])
 
-   .. versionchanged:: 3.5
-      If the system call is interrupted and the signal handler does not raise
-      an exception, the method now retries the system call instead of raising
-      an :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
+      Receive data from the socket, writing it into *buffer* instead of creating a
+      new bytestring.  The return value is a pair ``(nbytes, address)`` where *nbytes* is
+      the number of bytes received and *address* is the address of the socket sending
+      the data.  See the Unix manual page :manpage:`recv(2)` for the meaning of the
+      optional argument *flags*; it defaults to zero. The format of *address*
+      depends on the address family --- see :ref:`socket-addresses`.
 
 
-.. method:: socket.sendall(bytes[, flags])
+   .. method:: recv_into(buffer[, nbytes[, flags]])
 
-   Send data to the socket.  The socket must be connected to a remote socket.  The
-   optional *flags* argument has the same meaning as for :meth:`recv` above.
-   Unlike :meth:`send`, this method continues to send data from *bytes* until
-   either all data has been sent or an error occurs.  ``None`` is returned on
-   success.  On error, an exception is raised, and there is no way to determine how
-   much data, if any, was successfully sent.
+      Receive up to *nbytes* bytes from the socket, storing the data into a buffer
+      rather than creating a new bytestring.  If *nbytes* is not specified (or 0),
+      receive up to the size available in the given buffer.  Returns the number of
+      bytes received.  See the Unix manual page :manpage:`recv(2)` for the meaning
+      of the optional argument *flags*; it defaults to zero.
 
-   .. versionchanged:: 3.5
-      The socket timeout is no more reset each time data is sent successfully.
-      The socket timeout is now the maximum total duration to send all data.
 
-   .. versionchanged:: 3.5
-      If the system call is interrupted and the signal handler does not raise
-      an exception, the method now retries the system call instead of raising
-      an :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
+   .. method:: send(bytes[, flags])
 
+      Send data to the socket.  The socket must be connected to a remote socket.  The
+      optional *flags* argument has the same meaning as for :meth:`recv`.
+      Returns the number of bytes sent. Applications are responsible for checking that
+      all data has been sent; if only some of the data was transmitted, the
+      application needs to attempt delivery of the remaining data. For further
+      information on this topic, consult the :ref:`socket-howto`.
 
-.. method:: socket.sendto(bytes, address)
-            socket.sendto(bytes, flags, address)
+      .. versionchanged:: 3.5
+         If the system call is interrupted and the signal handler does not raise
+         an exception, the method now retries the system call instead of raising
+         an :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
 
-   Send data to the socket.  The socket should not be connected to a remote socket,
-   since the destination socket is specified by *address*.  The optional *flags*
-   argument has the same meaning as for :meth:`recv` above.  Return the number of
-   bytes sent. (The format of *address* depends on the address family --- see
-   above.)
 
-   .. audit-event:: socket.sendto self,address socket.socket.sendto
+   .. method:: sendall(bytes[, flags])
 
-   .. versionchanged:: 3.5
-      If the system call is interrupted and the signal handler does not raise
-      an exception, the method now retries the system call instead of raising
-      an :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
+      Send data to the socket.  The socket must be connected to a remote socket.  The
+      optional *flags* argument has the same meaning as for :meth:`recv`.
+      Unlike :meth:`send`, this method continues to send data from *bytes* until
+      either all data has been sent or an error occurs.  ``None`` is returned on
+      success.  On error, an exception is raised, and there is no way to determine how
+      much data, if any, was successfully sent.
 
+      .. versionchanged:: 3.5
+         The socket timeout is no longer reset each time data is sent successfully.
+         The socket timeout is now the maximum total duration to send all data.
 
-.. method:: socket.sendmsg(buffers[, ancdata[, flags[, address]]])
+      .. versionchanged:: 3.5
+         If the system call is interrupted and the signal handler does not raise
+         an exception, the method now retries the system call instead of raising
+         an :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
 
-   Send normal and ancillary data to the socket, gathering the
-   non-ancillary data from a series of buffers and concatenating it
-   into a single message.  The *buffers* argument specifies the
-   non-ancillary data as an iterable of
-   :term:`bytes-like objects <bytes-like object>`
-   (e.g. :class:`bytes` objects); the operating system may set a limit
-   (:func:`~os.sysconf` value ``SC_IOV_MAX``) on the number of buffers
-   that can be used.  The *ancdata* argument specifies the ancillary
-   data (control messages) as an iterable of zero or more tuples
-   ``(cmsg_level, cmsg_type, cmsg_data)``, where *cmsg_level* and
-   *cmsg_type* are integers specifying the protocol level and
-   protocol-specific type respectively, and *cmsg_data* is a
-   bytes-like object holding the associated data.  Note that
-   some systems (in particular, systems without :func:`CMSG_SPACE`)
-   might support sending only one control message per call.  The
-   *flags* argument defaults to 0 and has the same meaning as for
-   :meth:`send`.  If *address* is supplied and not ``None``, it sets a
-   destination address for the message.  The return value is the
-   number of bytes of non-ancillary data sent.
 
-   The following function sends the list of file descriptors *fds*
-   over an :const:`AF_UNIX` socket, on systems which support the
-   :const:`SCM_RIGHTS` mechanism.  See also :meth:`recvmsg`. ::
+   .. method:: sendto(bytes, address)
+               sendto(bytes, flags, address)
 
-      import socket, array
+      Send data to the socket.  The socket should not be connected to a remote socket,
+      since the destination socket is specified by *address*.  The optional *flags*
+      argument has the same meaning as for :meth:`recv`.  Return the number of
+      bytes sent. The format of *address* depends on the address family --- see
+      :ref:`socket-addresses`.
 
-      def send_fds(sock, msg, fds):
-          return sock.sendmsg([msg], [(socket.SOL_SOCKET, socket.SCM_RIGHTS, array.array("i", fds))])
+      .. audit-event:: socket.sendto self,address socket.socket.sendto
 
-   .. availability:: Unix, not WASI.
+      .. versionchanged:: 3.5
+         If the system call is interrupted and the signal handler does not raise
+         an exception, the method now retries the system call instead of raising
+         an :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
 
-      Most Unix platforms.
 
-   .. audit-event:: socket.sendmsg self,address socket.socket.sendmsg
+   .. method:: sendmsg(buffers[, ancdata[, flags[, address]]])
 
-   .. versionadded:: 3.3
+      Send normal and ancillary data to the socket, gathering the
+      non-ancillary data from a series of buffers and concatenating it
+      into a single message.  The *buffers* argument specifies the
+      non-ancillary data as an iterable of
+      :term:`bytes-like objects <bytes-like object>`
+      (e.g. :class:`bytes` objects); the operating system may set a limit
+      (:func:`~os.sysconf` value ``SC_IOV_MAX``) on the number of buffers
+      that can be used.  The *ancdata* argument specifies the ancillary
+      data (control messages) as an iterable of zero or more tuples
+      ``(cmsg_level, cmsg_type, cmsg_data)``, where *cmsg_level* and
+      *cmsg_type* are integers specifying the protocol level and
+      protocol-specific type respectively, and *cmsg_data* is a
+      bytes-like object holding the associated data.  Note that
+      some systems (in particular, systems without :func:`CMSG_SPACE`)
+      might support sending only one control message per call.  The
+      *flags* argument defaults to 0 and has the same meaning as for
+      :meth:`send`.  If *address* is supplied and not ``None``, it sets a
+      destination address for the message.  The return value is the
+      number of bytes of non-ancillary data sent.
 
-   .. versionchanged:: 3.5
-      If the system call is interrupted and the signal handler does not raise
-      an exception, the method now retries the system call instead of raising
-      an :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
+      The following function sends the list of file descriptors *fds*
+      over an :const:`AF_UNIX` socket, on systems which support the
+      :const:`!SCM_RIGHTS` mechanism.  See also :meth:`recvmsg`. ::
 
-.. method:: socket.sendmsg_afalg([msg], *, op[, iv[, assoclen[, flags]]])
+         import socket, array
 
-   Specialized version of :meth:`~socket.sendmsg` for :const:`AF_ALG` socket.
-   Set mode, IV, AEAD associated data length and flags for :const:`AF_ALG` socket.
+         def send_fds(sock, msg, fds):
+             return sock.sendmsg([msg], [(socket.SOL_SOCKET, socket.SCM_RIGHTS, array.array("i", fds))])
 
-   .. availability:: Linux >= 2.6.38.
+      .. availability:: Unix, not WASI.
 
-   .. versionadded:: 3.6
+         Most Unix platforms.
 
-.. method:: socket.sendfile(file, offset=0, count=None)
+      .. audit-event:: socket.sendmsg self,address socket.socket.sendmsg
 
-   Send a file until EOF is reached by using high-performance
-   :mod:`os.sendfile` and return the total number of bytes which were sent.
-   *file* must be a regular file object opened in binary mode. If
-   :mod:`os.sendfile` is not available (e.g. Windows) or *file* is not a
-   regular file :meth:`send` will be used instead. *offset* tells from where to
-   start reading the file. If specified, *count* is the total number of bytes
-   to transmit as opposed to sending the file until EOF is reached. File
-   position is updated on return or also in case of error in which case
-   :meth:`file.tell() <io.IOBase.tell>` can be used to figure out the number of
-   bytes which were sent. The socket must be of :const:`SOCK_STREAM` type.
-   Non-blocking sockets are not supported.
+      .. versionadded:: 3.3
 
-   .. versionadded:: 3.5
+      .. versionchanged:: 3.5
+         If the system call is interrupted and the signal handler does not raise
+         an exception, the method now retries the system call instead of raising
+         an :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
 
-.. method:: socket.set_inheritable(inheritable)
+   .. method:: sendmsg_afalg([msg], *, op[, iv[, assoclen[, flags]]])
 
-   Set the :ref:`inheritable flag <fd_inheritance>` of the socket's file
-   descriptor or socket's handle.
+      Specialized version of :meth:`~socket.sendmsg` for :const:`AF_ALG` socket.
+      Set mode, IV, AEAD associated data length and flags for :const:`AF_ALG` socket.
 
-   .. versionadded:: 3.4
+      .. availability:: Linux >= 2.6.38.
 
+      .. versionadded:: 3.6
 
-.. method:: socket.setblocking(flag)
+   .. method:: sendfile(file, offset=0, count=None)
 
-   Set blocking or non-blocking mode of the socket: if *flag* is false, the
-   socket is set to non-blocking, else to blocking mode.
+      Send a file until EOF is reached by using high-performance
+      :mod:`os.sendfile` and return the total number of bytes which were sent.
+      *file* must be a regular file object opened in binary mode. If
+      :mod:`os.sendfile` is not available (e.g. Windows) or *file* is not a
+      regular file :meth:`send` will be used instead. *offset* tells from where to
+      start reading the file. If specified, *count* is the total number of bytes
+      to transmit as opposed to sending the file until EOF is reached. File
+      position is updated on return or also in case of error in which case
+      :meth:`file.tell() <io.IOBase.tell>` can be used to figure out the number of
+      bytes which were sent. The socket must be of :const:`SOCK_STREAM` type.
+      Non-blocking sockets are not supported.
 
-   This method is a shorthand for certain :meth:`~socket.settimeout` calls:
+      .. versionadded:: 3.5
 
-   * ``sock.setblocking(True)`` is equivalent to ``sock.settimeout(None)``
+   .. method:: set_inheritable(inheritable)
 
-   * ``sock.setblocking(False)`` is equivalent to ``sock.settimeout(0.0)``
+      Set the :ref:`inheritable flag <fd_inheritance>` of the socket's file
+      descriptor or socket's handle.
 
-   .. versionchanged:: 3.7
-      The method no longer applies :const:`SOCK_NONBLOCK` flag on
-      :attr:`socket.type`.
+      .. versionadded:: 3.4
 
 
-.. method:: socket.settimeout(value)
+   .. method:: setblocking(flag)
 
-   Set a timeout on blocking socket operations.  The *value* argument can be a
-   nonnegative floating point number expressing seconds, or ``None``.
-   If a non-zero value is given, subsequent socket operations will raise a
-   :exc:`timeout` exception if the timeout period *value* has elapsed before
-   the operation has completed.  If zero is given, the socket is put in
-   non-blocking mode. If ``None`` is given, the socket is put in blocking mode.
+      Set blocking or non-blocking mode of the socket: if *flag* is false, the
+      socket is set to non-blocking, else to blocking mode.
 
-   For further information, please consult the :ref:`notes on socket timeouts <socket-timeouts>`.
+      This method is a shorthand for certain :meth:`~socket.settimeout` calls:
 
-   .. versionchanged:: 3.7
-      The method no longer toggles :const:`SOCK_NONBLOCK` flag on
-      :attr:`socket.type`.
+      * ``sock.setblocking(True)`` is equivalent to ``sock.settimeout(None)``
 
+      * ``sock.setblocking(False)`` is equivalent to ``sock.settimeout(0.0)``
 
-.. method:: socket.setsockopt(level, optname, value: int)
-.. method:: socket.setsockopt(level, optname, value: buffer)
-   :noindex:
-.. method:: socket.setsockopt(level, optname, None, optlen: int)
-   :noindex:
+      .. versionchanged:: 3.7
+         The method no longer applies :const:`SOCK_NONBLOCK` flag on
+         :attr:`socket.type`.
 
-   .. index:: module: struct
 
-   Set the value of the given socket option (see the Unix manual page
-   :manpage:`setsockopt(2)`).  The needed symbolic constants are defined in the
-   :mod:`socket` module (:const:`SO_\*` etc.).  The value can be an integer,
-   ``None`` or a :term:`bytes-like object` representing a buffer. In the later
-   case it is up to the caller to ensure that the bytestring contains the
-   proper bits (see the optional built-in module :mod:`struct` for a way to
-   encode C structures as bytestrings). When *value* is set to ``None``,
-   *optlen* argument is required. It's equivalent to call :c:func:`setsockopt` C
-   function with ``optval=NULL`` and ``optlen=optlen``.
+   .. method:: settimeout(value)
 
-   .. versionchanged:: 3.5
-      Writable :term:`bytes-like object` is now accepted.
+      Set a timeout on blocking socket operations.  The *value* argument can be a
+      nonnegative real number expressing seconds, or ``None``.
+      If a non-zero value is given, subsequent socket operations will raise a
+      :exc:`timeout` exception if the timeout period *value* has elapsed before
+      the operation has completed.  If zero is given, the socket is put in
+      non-blocking mode. If ``None`` is given, the socket is put in blocking mode.
 
-   .. versionchanged:: 3.6
-      setsockopt(level, optname, None, optlen: int) form added.
+      For further information, please consult the :ref:`notes on socket timeouts <socket-timeouts>`.
 
-   .. availability:: not WASI.
+      .. versionchanged:: 3.7
+         The method no longer toggles :const:`SOCK_NONBLOCK` flag on
+         :attr:`socket.type`.
 
+      .. versionchanged:: 3.15
+         Accepts any real number, not only integer or float.
 
-.. method:: socket.shutdown(how)
 
-   Shut down one or both halves of the connection.  If *how* is :const:`SHUT_RD`,
-   further receives are disallowed.  If *how* is :const:`SHUT_WR`, further sends
-   are disallowed.  If *how* is :const:`SHUT_RDWR`, further sends and receives are
-   disallowed.
+   .. method:: setsockopt(level, optname, value: int | Buffer)
+               setsockopt(level, optname, None, optlen: int)
 
-   .. availability:: not WASI.
+      .. index:: pair: module; struct
 
+      Set the value of the given socket option (see the Unix manual page
+      :manpage:`setsockopt(2)`).  The needed symbolic constants are defined in this
+      module (:ref:`!SO_\* etc. <socket-unix-constants>`).  The value can be an integer,
+      ``None`` or a :term:`bytes-like object` representing a buffer. In the latter
+      case it is up to the caller to ensure that the bytestring contains the
+      proper bits (see the optional built-in module :mod:`struct` for a way to
+      encode C structures as bytestrings). When *value* is set to ``None``,
+      *optlen* argument is required. It's equivalent to calling :c:func:`!setsockopt` C
+      function with ``optval=NULL`` and ``optlen=optlen``.
 
-.. method:: socket.share(process_id)
+      .. versionchanged:: 3.5
+         Writable :term:`bytes-like object` is now accepted.
 
-   Duplicate a socket and prepare it for sharing with a target process.  The
-   target process must be provided with *process_id*.  The resulting bytes object
-   can then be passed to the target process using some form of interprocess
-   communication and the socket can be recreated there using :func:`fromshare`.
-   Once this method has been called, it is safe to close the socket since
-   the operating system has already duplicated it for the target process.
+      .. versionchanged:: 3.6
+         setsockopt(level, optname, None, optlen: int) form added.
 
-   .. availability:: Windows.
+      .. availability:: not WASI.
 
-   .. versionadded:: 3.3
 
+   .. method:: shutdown(how)
 
-Note that there are no methods :meth:`read` or :meth:`write`; use
-:meth:`~socket.recv` and :meth:`~socket.send` without *flags* argument instead.
+      Shut down one or both halves of the connection.  If *how* is :const:`SHUT_RD`,
+      further receives are disallowed.  If *how* is :const:`SHUT_WR`, further sends
+      are disallowed.  If *how* is :const:`SHUT_RDWR`, further sends and receives are
+      disallowed.
 
-Socket objects also have these (read-only) attributes that correspond to the
-values given to the :class:`~socket.socket` constructor.
+      .. availability:: not WASI.
 
 
-.. attribute:: socket.family
+   .. method:: share(process_id)
 
-   The socket family.
+      Duplicate a socket and prepare it for sharing with a target process.  The
+      target process must be provided with *process_id*.  The resulting bytes object
+      can then be passed to the target process using some form of interprocess
+      communication and the socket can be recreated there using :func:`fromshare`.
+      Once this method has been called, it is safe to close the socket since
+      the operating system has already duplicated it for the target process.
 
+      .. availability:: Windows.
 
-.. attribute:: socket.type
+      .. versionadded:: 3.3
 
-   The socket type.
 
+   Note that there are no methods :meth:`!read` or :meth:`!write`; use
+   :meth:`~socket.recv` and :meth:`~socket.send` without *flags* argument instead.
 
-.. attribute:: socket.proto
+   Socket objects also have these (read-only) attributes that correspond to the
+   values given to the :class:`~socket.socket` constructor.
 
-   The socket protocol.
 
+   .. attribute:: family
+
+      The socket family.
+
+
+   .. attribute:: type
+
+      The socket type.
+
+
+   .. attribute:: proto
+
+      The socket protocol.
+
+
+.. class:: SocketType
+
+   The base class of the :class:`~socket.socket` type, re-exported from
+   :mod:`!_socket`.  An instance check such as
+   ``isinstance(socket(...), SocketType)`` is true, but ``SocketType`` is not
+   the same as ``type(socket(...))``, which is :class:`~socket.socket` itself.
 
 
 .. _socket-timeouts:
@@ -1998,8 +2194,8 @@ can be changed by calling :func:`setdefaulttimeout`.
 
 * In *non-blocking mode*, operations fail (with an error that is unfortunately
   system-dependent) if they cannot be completed immediately: functions from the
-  :mod:`select` can be used to know when and whether a socket is available for
-  reading or writing.
+  :mod:`select` module can be used to know when and whether a socket is available
+  for reading or writing.
 
 * In *timeout mode*, operations fail if they cannot be completed within the
   timeout specified for the socket (they raise a :exc:`timeout` exception)
@@ -2010,7 +2206,7 @@ can be changed by calling :func:`setdefaulttimeout`.
    in non-blocking mode.  Also, the blocking and timeout modes are shared between
    file descriptors and socket objects that refer to the same network endpoint.
    This implementation detail can have visible consequences if e.g. you decide
-   to use the :meth:`~socket.fileno()` of a socket.
+   to use the :meth:`~socket.fileno` of a socket.
 
 Timeouts and the ``connect`` method
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -2045,10 +2241,10 @@ Example
 
 Here are four minimal example programs using the TCP/IP protocol: a server that
 echoes all data that it receives back (servicing only one client), and a client
-using it.  Note that a server must perform the sequence :func:`.socket`,
+using it.  Note that a server must perform the sequence :func:`~socket.socket`,
 :meth:`~socket.bind`, :meth:`~socket.listen`, :meth:`~socket.accept` (possibly
 repeating the :meth:`~socket.accept` to service more than one client), while a
-client only needs the sequence :func:`.socket`, :meth:`~socket.connect`.  Also
+client only needs the sequence :func:`~socket.socket`, :meth:`~socket.connect`.  Also
 note that the server does not :meth:`~socket.sendall`/:meth:`~socket.recv` on
 the socket it is listening on but on the new socket returned by
 :meth:`~socket.accept`.
@@ -2088,7 +2284,7 @@ The next two examples are identical to the above two, but support both IPv4 and
 IPv6. The server side will listen to the first address family available (it
 should listen to both instead). On most of IPv6-ready systems, IPv6 will take
 precedence and the server may not accept IPv4 traffic. The client side will try
-to connect to the all addresses returned as a result of the name resolution, and
+to connect to all the addresses returned as a result of the name resolution, and
 sends traffic to the first one connected successfully. ::
 
    # Echo server program
@@ -2188,7 +2384,7 @@ manager protocol instead, open a socket with::
     socket.socket(socket.AF_CAN, socket.SOCK_DGRAM, socket.CAN_BCM)
 
 After binding (:const:`CAN_RAW`) or connecting (:const:`CAN_BCM`) the socket, you
-can use the :meth:`socket.send`, and the :meth:`socket.recv` operations (and
+can use the :meth:`socket.send` and :meth:`socket.recv` operations (and
 their counterparts) on the socket object as usual.
 
 This last example might require special privileges::
@@ -2239,8 +2435,8 @@ lead to this error::
 This is because the previous execution has left the socket in a ``TIME_WAIT``
 state, and can't be immediately reused.
 
-There is a :mod:`socket` flag to set, in order to prevent this,
-:data:`socket.SO_REUSEADDR`::
+There is a :mod:`!socket` flag to set, in order to prevent this,
+:const:`socket.SO_REUSEADDR`::
 
    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)

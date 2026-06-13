@@ -324,7 +324,7 @@ Raise ModuleNotFoundError in pyclbr when a module can't be found. Thanks to
 .. nonce: MDXLw6
 .. section: Library
 
-Switch the default format used for writing tars with mod:`tarfile` to the
+Switch the default format used for writing tars with :mod:`tarfile` to the
 modern POSIX.1-2001 pax standard, from the vendor-specific GNU. Contributed
 by C.A.M. Gerlach.
 
@@ -473,7 +473,7 @@ path string.
 .. nonce: NA_rXa
 .. section: Library
 
-Ensure custom :func:`warnings.formatwarning` function can receive `line` as
+Ensure custom :func:`warnings.formatwarning` function can receive ``line`` as
 positional argument. Based on patch by Tashrif Billah.
 
 ..
@@ -533,10 +533,10 @@ Kumar Akshay.
 .. nonce: yffB3F
 .. section: Library
 
-`pprint.pp` has been added to pretty-print objects with dictionary keys
+``pprint.pp`` has been added to pretty-print objects with dictionary keys
 being sorted with their insertion order by default. Parameter *sort_dicts*
-has been added to `pprint.pprint`, `pprint.pformat` and
-`pprint.PrettyPrinter`. Contributed by Rémi Lapeyre.
+has been added to ``pprint.pprint``, ``pprint.pformat`` and
+``pprint.PrettyPrinter``. Contributed by Rémi Lapeyre.
 
 ..
 

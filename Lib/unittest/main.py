@@ -3,12 +3,12 @@
 import sys
 import argparse
 import os
-import warnings
 
 from . import loader, runner
 from .signals import installHandler
 
 __unittest = True
+_NO_TESTS_EXITCODE = 5
 
 MAIN_EXAMPLES = """\
 Examples:
@@ -66,7 +66,8 @@ class TestProgram(object):
     def __init__(self, module='__main__', defaultTest=None, argv=None,
                     testRunner=None, testLoader=loader.defaultTestLoader,
                     exit=True, verbosity=1, failfast=None, catchbreak=None,
-                    buffer=None, warnings=None, *, tb_locals=False):
+                    buffer=None, warnings=None, *, tb_locals=False,
+                    durations=None):
         if isinstance(module, str):
             self.module = __import__(module)
             for part in module.split('.')[1:]:
@@ -82,6 +83,7 @@ class TestProgram(object):
         self.verbosity = verbosity
         self.buffer = buffer
         self.tb_locals = tb_locals
+        self.durations = durations
         if warnings is None and not sys.warnoptions:
             # even if DeprecationWarnings are ignored by default
             # print them anyway unless other warnings settings are
@@ -100,16 +102,6 @@ class TestProgram(object):
         self.progName = os.path.basename(argv[0])
         self.parseArgs(argv)
         self.runTests()
-
-    def usageExit(self, msg=None):
-        warnings.warn("TestProgram.usageExit() is deprecated and will be"
-                      " removed in Python 3.13", DeprecationWarning)
-        if msg:
-            print(msg)
-        if self._discovery_parser is None:
-            self._initArgParsers()
-        self._print_help()
-        sys.exit(2)
 
     def _print_help(self, *args, **kwargs):
         if self.module is None:
@@ -178,6 +170,9 @@ class TestProgram(object):
         parser.add_argument('--locals', dest='tb_locals',
                             action='store_true',
                             help='Show local variables in tracebacks')
+        parser.add_argument('--durations', dest='durations', type=int,
+                            default=None, metavar="N",
+                            help='Show the `N` slowest test cases (`N=0` for all)')
         if self.failfast is None:
             parser.add_argument('-f', '--failfast', dest='failfast',
                                 action='store_true',
@@ -186,12 +181,12 @@ class TestProgram(object):
         if self.catchbreak is None:
             parser.add_argument('-c', '--catch', dest='catchbreak',
                                 action='store_true',
-                                help='Catch Ctrl-C and display results so far')
+                                help='Catch `Ctrl-C` and display results so far')
             self.catchbreak = False
         if self.buffer is None:
             parser.add_argument('-b', '--buffer', dest='buffer',
                                 action='store_true',
-                                help='Buffer stdout and stderr during tests')
+                                help='Buffer `stdout` and `stderr` during tests')
             self.buffer = False
         if self.testNamePatterns is None:
             parser.add_argument('-k', dest='testNamePatterns',
@@ -220,9 +215,9 @@ class TestProgram(object):
                          'project.')
 
         parser.add_argument('-s', '--start-directory', dest='start',
-                            help="Directory to start discovery ('.' default)")
+                            help="Directory to start discovery (`.` default)")
         parser.add_argument('-p', '--pattern', dest='pattern',
-                            help="Pattern to match tests ('test*.py' default)")
+                            help="Pattern to match tests (`test*.py` default)")
         parser.add_argument('-t', '--top-level-directory', dest='top',
                             help='Top level directory of project (defaults to '
                                  'start directory)')
@@ -258,9 +253,10 @@ class TestProgram(object):
                                                  failfast=self.failfast,
                                                  buffer=self.buffer,
                                                  warnings=self.warnings,
-                                                 tb_locals=self.tb_locals)
+                                                 tb_locals=self.tb_locals,
+                                                 durations=self.durations)
                 except TypeError:
-                    # didn't accept the tb_locals argument
+                    # didn't accept the tb_locals or durations argument
                     testRunner = self.testRunner(verbosity=self.verbosity,
                                                  failfast=self.failfast,
                                                  buffer=self.buffer,
@@ -273,6 +269,12 @@ class TestProgram(object):
             testRunner = self.testRunner
         self.result = testRunner.run(self.test)
         if self.exit:
-            sys.exit(not self.result.wasSuccessful())
+            if not self.result.wasSuccessful():
+                sys.exit(1)
+            elif self.result.testsRun == 0 and len(self.result.skipped) == 0:
+                sys.exit(_NO_TESTS_EXITCODE)
+            else:
+                sys.exit(0)
+
 
 main = TestProgram

@@ -10,7 +10,7 @@ __version__ = '1.0.0'
 import re
 import sys
 
-from urllib.request import *
+from urllib.request import Request, urlopen
 
 VERSION_RE = re.compile(r'(\d+\.\d+\.\d+)([A-Za-z_]+\d+)?$')
 
@@ -51,14 +51,6 @@ FILES = [
     "test_pdb.msi",
     "tools.msi",
     "ucrt.msi",
-    "Windows6.0-KB2999226-x64.msu",
-    "Windows6.0-KB2999226-x86.msu",
-    "Windows6.1-KB2999226-x64.msu",
-    "Windows6.1-KB2999226-x86.msu",
-    "Windows8.1-KB2999226-x64.msu",
-    "Windows8.1-KB2999226-x86.msu",
-    "Windows8-RT-KB2999226-x64.msu",
-    "Windows8-RT-KB2999226-x86.msu",
 ]
 PATHS = [
     "python-{}.exe".format(m.group(0)),

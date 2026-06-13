@@ -2,11 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(method___reduce____doc__,
 "__reduce__($self, /)\n"
@@ -20,9 +16,9 @@ static PyObject *
 method___reduce___impl(PyMethodObject *self);
 
 static PyObject *
-method___reduce__(PyMethodObject *self, PyObject *Py_UNUSED(ignored))
+method___reduce__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return method___reduce___impl(self);
+    return method___reduce___impl((PyMethodObject *)self);
 }
 
 PyDoc_STRVAR(method_new__doc__,
@@ -38,11 +34,11 @@ static PyObject *
 method_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    PyTypeObject *base_tp = &PyMethod_Type;
     PyObject *function;
     PyObject *instance;
 
-    if ((type == &PyMethod_Type ||
-         type->tp_init == PyMethod_Type.tp_init) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoKeywords("method", kwargs)) {
         goto exit;
     }
@@ -70,10 +66,10 @@ static PyObject *
 instancemethod_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    PyTypeObject *base_tp = &PyInstanceMethod_Type;
     PyObject *function;
 
-    if ((type == &PyInstanceMethod_Type ||
-         type->tp_init == PyInstanceMethod_Type.tp_init) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoKeywords("instancemethod", kwargs)) {
         goto exit;
     }
@@ -86,4 +82,4 @@ instancemethod_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e3294c26a71d456d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ab546abf90aac94e input=a9049054013a1b77]*/

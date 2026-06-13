@@ -55,19 +55,24 @@ Queue
       Return ``True`` if there are :attr:`maxsize` items in the queue.
 
       If the queue was initialized with ``maxsize=0`` (the default),
-      then :meth:`full()` never returns ``True``.
+      then :meth:`full` never returns ``True``.
 
-   .. coroutinemethod:: get()
+   .. method:: get()
+      :async:
 
       Remove and return an item from the queue. If queue is empty,
       wait until an item is available.
+
+      Raises :exc:`QueueShutDown` if the queue has been shut down and
+      is empty, or if the queue has been shut down immediately.
 
    .. method:: get_nowait()
 
       Return an item if one is immediately available, else raise
       :exc:`QueueEmpty`.
 
-   .. coroutinemethod:: join()
+   .. method:: join()
+      :async:
 
       Block until all items in the queue have been received and processed.
 
@@ -77,10 +82,13 @@ Queue
       work on it is complete.  When the count of unfinished tasks drops
       to zero, :meth:`join` unblocks.
 
-   .. coroutinemethod:: put(item)
+   .. method:: put(item)
+      :async:
 
       Put an item into the queue. If the queue is full, wait until a
       free slot is available before adding the item.
+
+      Raises :exc:`QueueShutDown` if the queue has been shut down.
 
    .. method:: put_nowait(item)
 
@@ -92,13 +100,46 @@ Queue
 
       Return the number of items in the queue.
 
+   .. method:: shutdown(immediate=False)
+
+      Put a :class:`Queue` instance into a shutdown mode.
+
+      The queue can no longer grow.
+      Future calls to :meth:`~Queue.put` raise :exc:`QueueShutDown`.
+      Currently blocked callers of :meth:`~Queue.put` will be unblocked
+      and will raise :exc:`QueueShutDown` in the formerly awaiting task.
+
+      If *immediate* is false (the default), the queue can be wound
+      down normally with :meth:`~Queue.get` calls to extract tasks
+      that have already been loaded.
+
+      And if :meth:`~Queue.task_done` is called for each remaining task, a
+      pending :meth:`~Queue.join` will be unblocked normally.
+
+      Once the queue is empty, future calls to :meth:`~Queue.get` will
+      raise :exc:`QueueShutDown`.
+
+      If *immediate* is true, the queue is terminated immediately.
+      The queue is drained to be completely empty and the count
+      of unfinished tasks is reduced by the number of tasks drained.
+      If unfinished tasks is zero, callers of :meth:`~Queue.join`
+      are unblocked.  Also, blocked callers of :meth:`~Queue.get`
+      are unblocked and will raise :exc:`QueueShutDown` because the
+      queue is empty.
+
+      Use caution when using :meth:`~Queue.join` with *immediate* set
+      to true. This unblocks the join even when no work has been done
+      on the tasks, violating the usual invariant for joining a queue.
+
+      .. versionadded:: 3.13
+
    .. method:: task_done()
 
-      Indicate that a formerly enqueued task is complete.
+      Indicate that a formerly enqueued work item is complete.
 
       Used by queue consumers. For each :meth:`~Queue.get` used to
-      fetch a task, a subsequent call to :meth:`task_done` tells the
-      queue that the processing on the task is complete.
+      fetch a work item, a subsequent call to :meth:`task_done` tells the
+      queue that the processing on the work item is complete.
 
       If a :meth:`join` is currently blocking, it will resume when all
       items have been processed (meaning that a :meth:`task_done`
@@ -143,6 +184,14 @@ Exceptions
 
    Exception raised when the :meth:`~Queue.put_nowait` method is called
    on a queue that has reached its *maxsize*.
+
+
+.. exception:: QueueShutDown
+
+   Exception raised when :meth:`~Queue.put` or :meth:`~Queue.get` is
+   called on a queue which has been shut down.
+
+   .. versionadded:: 3.13
 
 
 Examples

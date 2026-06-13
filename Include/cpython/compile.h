@@ -19,9 +19,10 @@
 #define PyCF_TYPE_COMMENTS 0x1000
 #define PyCF_ALLOW_TOP_LEVEL_AWAIT 0x2000
 #define PyCF_ALLOW_INCOMPLETE_INPUT 0x4000
+#define PyCF_OPTIMIZED_AST (0x8000 | PyCF_ONLY_AST)
 #define PyCF_COMPILE_MASK (PyCF_ONLY_AST | PyCF_ALLOW_TOP_LEVEL_AWAIT | \
                            PyCF_TYPE_COMMENTS | PyCF_DONT_IMPLY_DEDENT | \
-                           PyCF_ALLOW_INCOMPLETE_INPUT)
+                           PyCF_ALLOW_INCOMPLETE_INPUT | PyCF_OPTIMIZED_AST)
 
 typedef struct {
     int cf_flags;  /* bitmask of CO_xxx flags relevant to future */
@@ -31,27 +32,7 @@ typedef struct {
 #define _PyCompilerFlags_INIT \
     (PyCompilerFlags){.cf_flags = 0, .cf_feature_version = PY_MINOR_VERSION}
 
-/* source location information */
-typedef struct {
-    int lineno;
-    int end_lineno;
-    int col_offset;
-    int end_col_offset;
-} _PyCompilerSrcLocation;
-
-#define SRC_LOCATION_FROM_AST(n) \
-    (_PyCompilerSrcLocation){ \
-               .lineno = (n)->lineno, \
-               .end_lineno = (n)->end_lineno, \
-               .col_offset = (n)->col_offset, \
-               .end_col_offset = (n)->end_col_offset }
-
 /* Future feature support */
-
-typedef struct {
-    int ff_features;                    /* flags set by future statements */
-    _PyCompilerSrcLocation ff_location; /* location of last future statement */
-} PyFutureFeatures;
 
 #define FUTURE_NESTED_SCOPES "nested_scopes"
 #define FUTURE_GENERATORS "generators"

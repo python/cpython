@@ -3,19 +3,22 @@ from test import support
 from test.support import warnings_helper
 import os
 import sys
-import types
-
-try:
-    import _multiprocessing
-except ModuleNotFoundError:
-    _multiprocessing = None
 
 
 if support.check_sanitizer(address=True, memory=True):
-    # bpo-46633: test___all__ is skipped because importing some modules
-    # directly can trigger known problems with ASAN (like tk or crypt).
-    raise unittest.SkipTest("workaround ASAN build issues on loading tests "
-                            "like tk or crypt")
+    SKIP_MODULES = frozenset((
+        # gh-90791: Tests involving libX11 can SEGFAULT on ASAN/MSAN builds.
+        # Skip modules, packages and tests using '_tkinter'.
+        '_tkinter',
+        'tkinter',
+        'test_tkinter',
+        'test_ttk',
+        'test_ttk_textonly',
+        'idlelib',
+        'test_idle',
+    ))
+else:
+    SKIP_MODULES = ()
 
 
 class NoAll(RuntimeError):
@@ -27,17 +30,6 @@ class FailedImport(RuntimeError):
 
 class AllTest(unittest.TestCase):
 
-    def setUp(self):
-        # concurrent.futures uses a __getattr__ hook. Its __all__ triggers
-        # import of a submodule, which fails when _multiprocessing is not
-        # available.
-        if _multiprocessing is None:
-            sys.modules["_multiprocessing"] = types.ModuleType("_multiprocessing")
-
-    def tearDown(self):
-        if _multiprocessing is None:
-            sys.modules.pop("_multiprocessing")
-
     def check_all(self, modname):
         names = {}
         with warnings_helper.check_warnings(
@@ -45,6 +37,7 @@ class AllTest(unittest.TestCase):
             (".* (module|package)", DeprecationWarning),
             (".* (module|package)", PendingDeprecationWarning),
             ("", ResourceWarning),
+            ("", SyntaxWarning),
             quiet=True):
             try:
                 exec("import %s" % modname, names)
@@ -60,6 +53,7 @@ class AllTest(unittest.TestCase):
             with warnings_helper.check_warnings(
                 ("", DeprecationWarning),
                 ("", ResourceWarning),
+                ("", SyntaxWarning),
                 quiet=True):
                 try:
                     exec("from %s import *" % modname, names)
@@ -78,20 +72,30 @@ class AllTest(unittest.TestCase):
                 all_set = set(all_list)
                 self.assertCountEqual(all_set, all_list, "in module {}".format(modname))
                 self.assertEqual(keys, all_set, "in module {}".format(modname))
+                # Verify __dir__ is non-empty and doesn't produce an error
+                self.assertTrue(dir(sys.modules[modname]))
 
     def walk_modules(self, basedir, modpath):
         for fn in sorted(os.listdir(basedir)):
             path = os.path.join(basedir, fn)
             if os.path.isdir(path):
+                if fn in SKIP_MODULES:
+                    continue
                 pkg_init = os.path.join(path, '__init__.py')
                 if os.path.exists(pkg_init):
                     yield pkg_init, modpath + fn
                     for p, m in self.walk_modules(path, modpath + fn + "."):
                         yield p, m
                 continue
-            if not fn.endswith('.py') or fn == '__init__.py':
+
+            if fn == '__init__.py':
                 continue
-            yield path, modpath + fn[:-3]
+            if not fn.endswith('.py'):
+                continue
+            modname = fn.removesuffix('.py')
+            if modname in SKIP_MODULES:
+                continue
+            yield path, modpath + modname
 
     def test_all(self):
         # List of denied modules and packages
@@ -101,8 +105,9 @@ class AllTest(unittest.TestCase):
         ])
 
         # In case _socket fails to build, make this test fail more gracefully
-        # than an AttributeError somewhere deep in CGIHTTPServer.
-        import _socket
+        # than an AttributeError somewhere deep in concurrent.futures, email
+        # or unittest.
+        import _socket  # noqa: F401
 
         ignored = []
         failed_imports = []
@@ -118,14 +123,14 @@ class AllTest(unittest.TestCase):
             if denied:
                 continue
             if support.verbose:
-                print(modname)
+                print(f"Check {modname}", flush=True)
             try:
                 # This heuristic speeds up the process by removing, de facto,
                 # most test modules (and avoiding the auto-executing ones).
                 with open(path, "rb") as f:
                     if b"__all__" not in f.read():
                         raise NoAll(modname)
-                    self.check_all(modname)
+                self.check_all(modname)
             except NoAll:
                 ignored.append(modname)
             except FailedImport:

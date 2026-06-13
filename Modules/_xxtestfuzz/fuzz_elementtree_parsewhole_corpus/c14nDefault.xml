@@ -1,0 +1,3 @@
+<dsig:CanonicalizationMethod xmlns:dsig="http://www.w3.org/2000/09/xmldsig#" Algorithm="http://www.w3.org/2010/xml-c14n2">
+</dsig:CanonicalizationMethod>
+

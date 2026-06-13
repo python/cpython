@@ -35,6 +35,12 @@
    winsound.PlaySound(None, 0)
 */
 
+// Need limited C API version 3.13 for Py_mod_gil
+#include "pyconfig.h"  // Py_GIL_DISABLED
+#ifndef Py_GIL_DISABLED
+#  define Py_LIMITED_API 0x030d0000
+#endif
+
 #include <Python.h>
 #include <windows.h>
 #include <mmsystem.h>
@@ -50,6 +56,10 @@ PyDoc_STRVAR(sound_module_doc,
 "SND_NODEFAULT - Do not play a default beep if the sound can not be found\n"
 "SND_NOSTOP - Do not interrupt any sounds currently playing\n"  // Raising RuntimeError if needed
 "SND_NOWAIT - Return immediately if the sound driver is busy\n" // Without any errors
+"SND_APPLICATION - sound is an application-specific alias in the registry.\n"
+"SND_SENTRY - Triggers a SoundSentry event when the sound is played.\n"
+"SND_SYNC - Play the sound synchronously, default behavior.\n"
+"SND_SYSTEM - Assign sound to the audio session for system notification sounds.\n"
 "\n"
 "Beep(frequency, duration) - Make a beep through the PC speaker.\n"
 "MessageBeep(type) - Call Windows MessageBeep.");
@@ -95,9 +105,13 @@ winsound_PlaySound_impl(PyObject *module, PyObject *sound, int flags)
         }
         wsound = (wchar_t *)view.buf;
     } else if (PyBytes_Check(sound)) {
-        PyErr_Format(PyExc_TypeError,
-                     "'sound' must be str, os.PathLike, or None, not '%s'",
-                     Py_TYPE(sound)->tp_name);
+        PyObject *type_name = PyType_GetQualName(Py_TYPE(sound));
+        if (type_name != NULL) {
+            PyErr_Format(PyExc_TypeError,
+                         "'sound' must be str, os.PathLike, or None, not %S",
+                         type_name);
+            Py_DECREF(type_name);
+        }
         return NULL;
     } else {
         PyObject *obj = PyOS_FSPath(sound);
@@ -202,42 +216,15 @@ static struct PyMethodDef sound_methods[] =
     {NULL,  NULL}
 };
 
-static void
-add_define(PyObject *dict, const char *key, long value)
+#define ADD_DEFINE(CONST) do {                                  \
+    if (PyModule_AddIntConstant(module, #CONST, CONST) < 0) {   \
+        return -1;                                              \
+    }                                                           \
+} while (0)
+
+static int
+exec_module(PyObject *module)
 {
-    PyObject *k = PyUnicode_FromString(key);
-    PyObject *v = PyLong_FromLong(value);
-    if (v && k) {
-        PyDict_SetItem(dict, k, v);
-    }
-    Py_XDECREF(k);
-    Py_XDECREF(v);
-}
-
-#define ADD_DEFINE(tok) add_define(dict,#tok,tok)
-
-
-static struct PyModuleDef winsoundmodule = {
-    PyModuleDef_HEAD_INIT,
-    "winsound",
-    sound_module_doc,
-    -1,
-    sound_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
-
-PyMODINIT_FUNC
-PyInit_winsound(void)
-{
-    PyObject *dict;
-    PyObject *module = PyModule_Create(&winsoundmodule);
-    if (module == NULL)
-        return NULL;
-    dict = PyModule_GetDict(module);
-
     ADD_DEFINE(SND_ASYNC);
     ADD_DEFINE(SND_NODEFAULT);
     ADD_DEFINE(SND_NOSTOP);
@@ -248,11 +235,42 @@ PyInit_winsound(void)
     ADD_DEFINE(SND_PURGE);
     ADD_DEFINE(SND_LOOP);
     ADD_DEFINE(SND_APPLICATION);
+    ADD_DEFINE(SND_SENTRY);
+    ADD_DEFINE(SND_SYNC);
+    ADD_DEFINE(SND_SYSTEM);
 
     ADD_DEFINE(MB_OK);
     ADD_DEFINE(MB_ICONASTERISK);
     ADD_DEFINE(MB_ICONEXCLAMATION);
     ADD_DEFINE(MB_ICONHAND);
     ADD_DEFINE(MB_ICONQUESTION);
-    return module;
+    ADD_DEFINE(MB_ICONERROR);
+    ADD_DEFINE(MB_ICONINFORMATION);
+    ADD_DEFINE(MB_ICONSTOP);
+    ADD_DEFINE(MB_ICONWARNING);
+
+#undef ADD_DEFINE
+
+    return 0;
+}
+
+static PyModuleDef_Slot sound_slots[] = {
+    {Py_mod_exec, exec_module},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {0, NULL}
+};
+
+static struct PyModuleDef winsoundmodule = {
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "winsound",
+    .m_doc = sound_module_doc,
+    .m_methods = sound_methods,
+    .m_slots = sound_slots,
+};
+
+PyMODINIT_FUNC
+PyInit_winsound(void)
+{
+    return PyModuleDef_Init(&winsoundmodule);
 }

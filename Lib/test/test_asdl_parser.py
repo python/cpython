@@ -62,17 +62,17 @@ class TestAsdlParser(unittest.TestCase):
         alias = self.types['alias']
         self.assertEqual(
             str(alias),
-            'Product([Field(identifier, name), Field(identifier, asname, opt=True)], '
+            'Product([Field(identifier, name), Field(identifier, asname, quantifiers=[OPTIONAL])], '
             '[Field(int, lineno), Field(int, col_offset), '
-            'Field(int, end_lineno, opt=True), Field(int, end_col_offset, opt=True)])')
+            'Field(int, end_lineno, quantifiers=[OPTIONAL]), Field(int, end_col_offset, quantifiers=[OPTIONAL])])')
 
     def test_attributes(self):
         stmt = self.types['stmt']
         self.assertEqual(len(stmt.attributes), 4)
         self.assertEqual(repr(stmt.attributes[0]), 'Field(int, lineno)')
         self.assertEqual(repr(stmt.attributes[1]), 'Field(int, col_offset)')
-        self.assertEqual(repr(stmt.attributes[2]), 'Field(int, end_lineno, opt=True)')
-        self.assertEqual(repr(stmt.attributes[3]), 'Field(int, end_col_offset, opt=True)')
+        self.assertEqual(repr(stmt.attributes[2]), 'Field(int, end_lineno, quantifiers=[OPTIONAL])')
+        self.assertEqual(repr(stmt.attributes[3]), 'Field(int, end_col_offset, quantifiers=[OPTIONAL])')
 
     def test_constructor_fields(self):
         ehandler = self.types['excepthandler']

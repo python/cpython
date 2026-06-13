@@ -11,15 +11,12 @@ from tkinter import SUNKEN, TOP, BOTTOM, LEFT, X, BOTH, W, EW, NSEW, E
 
 from idlelib import textview
 
-version = python_version()
+pyver = python_version()
 
-
-def build_bits():
-    "Return bits for platform."
-    if sys.platform == 'darwin':
-        return '64' if sys.maxsize > 2**32 else '32'
-    else:
-        return architecture()[0][:2]
+if sys.platform == 'darwin':
+    bits = '64' if sys.maxsize > 2**32 else '32'
+else:
+    bits = architecture()[0][:2]
 
 
 class AboutDialog(Toplevel):
@@ -45,7 +42,7 @@ class AboutDialog(Toplevel):
         self.create_widgets()
         self.resizable(height=False, width=False)
         self.title(title or
-                   f'About IDLE {version} ({build_bits()} bit)')
+                   f'About IDLE {pyver} ({bits} bit)')
         self.transient(parent)
         self.grab_set()
         self.protocol("WM_DELETE_WINDOW", self.ok)
@@ -76,8 +73,8 @@ class AboutDialog(Toplevel):
                        bg=self.bg, font=('courier', 24, 'bold'))
         header.grid(row=0, column=0, sticky=E, padx=10, pady=10)
 
-        tk_patchlevel = self.info_patchlevel()
-        ext = '.png' if tk_patchlevel >= (8, 6) else '.gif'
+        tkpatch = self._root().getvar('tk_patchLevel')
+        ext = '.png' if tkpatch >= '8.6' else '.gif'
         icon = os.path.join(os.path.abspath(os.path.dirname(__file__)),
                             'Icons', f'idle_48{ext}')
         self.icon_image = PhotoImage(master=self._root(), file=icon)
@@ -88,27 +85,31 @@ class AboutDialog(Toplevel):
         byline = Label(frame_background, text=byline_text, justify=LEFT,
                        fg=self.fg, bg=self.bg)
         byline.grid(row=2, column=0, sticky=W, columnspan=3, padx=10, pady=5)
-        email = Label(frame_background, text='email:  idle-dev@python.org',
-                      justify=LEFT, fg=self.fg, bg=self.bg)
-        email.grid(row=6, column=0, columnspan=2, sticky=W, padx=10, pady=0)
+
+        forums_url = "https://discuss.python.org"
+        forums = Button(frame_background, text='Python (and IDLE) Discussion', width=35,
+                                 highlightbackground=self.bg,
+                                 command=lambda: webbrowser.open(forums_url))
+        forums.grid(row=6, column=0, sticky=W, padx=10, pady=10)
+
+
         docs_url = ("https://docs.python.org/%d.%d/library/idle.html" %
                     sys.version_info[:2])
-        docs = Label(frame_background, text=docs_url,
-                     justify=LEFT, fg=self.fg, bg=self.bg)
-        docs.grid(row=7, column=0, columnspan=2, sticky=W, padx=10, pady=0)
-        docs.bind("<Button-1>", lambda event: webbrowser.open(docs['text']))
+        docs = Button(frame_background, text='IDLE Documentation', width=35,
+                                 highlightbackground=self.bg,
+                                 command=lambda: webbrowser.open(docs_url))
+        docs.grid(row=7, column=0, columnspan=2, sticky=W, padx=10, pady=10)
+
 
         Frame(frame_background, borderwidth=1, relief=SUNKEN,
               height=2, bg=self.bg).grid(row=8, column=0, sticky=EW,
                                          columnspan=3, padx=5, pady=5)
 
-        pyver = Label(frame_background,
-                      text='Python version:  ' + version,
-                      fg=self.fg, bg=self.bg)
-        pyver.grid(row=9, column=0, sticky=W, padx=10, pady=0)
-        tkver = Label(frame_background, text=f'Tk version:  {tk_patchlevel}',
-                      fg=self.fg, bg=self.bg)
-        tkver.grid(row=9, column=1, sticky=W, padx=2, pady=0)
+        tclver = str(self.info_patchlevel())
+        tkver = ' and ' + tkpatch if tkpatch != tclver else ''
+        versions = f"Python {pyver} with tcl/tk {tclver}{tkver}"
+        vers = Label(frame_background, text=versions, fg=self.fg, bg=self.bg)
+        vers.grid(row=9, column=0, sticky=W, padx=10, pady=0)
         py_buttons = Frame(frame_background, bg=self.bg)
         py_buttons.grid(row=10, column=0, columnspan=2, sticky=NSEW)
         self.py_license = Button(py_buttons, text='License', width=8,
@@ -128,17 +129,15 @@ class AboutDialog(Toplevel):
               height=2, bg=self.bg).grid(row=11, column=0, sticky=EW,
                                          columnspan=3, padx=5, pady=5)
 
-        idlever = Label(frame_background,
-                        text='IDLE version:   ' + version,
-                        fg=self.fg, bg=self.bg)
-        idlever.grid(row=12, column=0, sticky=W, padx=10, pady=0)
+        idle = Label(frame_background, text='IDLE', fg=self.fg, bg=self.bg)
+        idle.grid(row=12, column=0, sticky=W, padx=10, pady=0)
         idle_buttons = Frame(frame_background, bg=self.bg)
         idle_buttons.grid(row=13, column=0, columnspan=3, sticky=NSEW)
-        self.readme = Button(idle_buttons, text='README', width=8,
+        self.readme = Button(idle_buttons, text='Readme', width=8,
                              highlightbackground=self.bg,
                              command=self.show_readme)
         self.readme.pack(side=LEFT, padx=10, pady=10)
-        self.idle_news = Button(idle_buttons, text='NEWS', width=8,
+        self.idle_news = Button(idle_buttons, text='News', width=8,
                                 highlightbackground=self.bg,
                                 command=self.show_idle_news)
         self.idle_news.pack(side=LEFT, padx=10, pady=10)
@@ -172,7 +171,7 @@ class AboutDialog(Toplevel):
 
     def show_idle_news(self):
         "Handle News button event."
-        self.display_file_text('About - NEWS', 'NEWS.txt', 'utf-8')
+        self.display_file_text('About - News', 'News3.txt', 'utf-8')
 
     def display_printer_text(self, title, printer):
         """Create textview for built-in constants.
