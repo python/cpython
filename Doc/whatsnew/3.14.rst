@@ -691,24 +691,22 @@ Victor Stinner, and Rogdham in :gh:`132983`.)
 Asyncio introspection capabilities
 ----------------------------------
 
-Added a new command-line interface to inspect running Python processes
-using asynchronous tasks, available via ``python -m asyncio ps PID``
-or ``python -m asyncio pstree PID``.
+Two new subcommands let you inspect the task graph of a running asyncio
+application without modifying its source code or restarting it.
 
-The ``ps`` subcommand inspects the given process ID (PID) and displays
-information about currently running asyncio tasks.
-It outputs a task table: a flat listing of all tasks, their names,
-their coroutine stacks, and which tasks are awaiting them.
+``python -m asyncio ps PID`` prints a flat table of all pending tasks in the
+process: their names, coroutine stacks, and which task (if any) is waiting
+for each one.
 
+``python -m asyncio pstree PID`` renders the same information as an async
+call tree, showing the full hierarchy of task groups and the coroutine frames
+suspended inside each task.  When a program hangs or stalls, a glance at the
+tree is often enough to identify which branch is blocked and exactly where in
+its coroutine stack execution has paused.
 
-The ``pstree`` subcommand fetches the same information, but instead renders a
-visual async call tree, showing coroutine relationships in a hierarchical format.
-This command is particularly useful for debugging long-running or stuck
-asynchronous programs.
-It can help developers quickly identify where a program is blocked,
-what tasks are pending, and how coroutines are chained together.
+Both commands read the target process state without executing any code in it.
 
-For example given this code:
+For example, given this code:
 
 .. code-block:: python
 

@@ -18,9 +18,8 @@ tasks in another Python process:
    $ python -m asyncio ps [--retries N] PID
    $ python -m asyncio pstree [--retries N] PID
 
-``PID`` is the process ID of the Python process to inspect.  The commands use
-Python's :ref:`remote debugging support <remote-debugging>` to read the target
-process state, but do not execute code in the target process.  They are only
+``PID`` is the process ID of the Python process to inspect.  The commands read
+the target process state without executing any code in it.  They are only
 available on supported platforms and may require permission to inspect another
 process.  See :ref:`permission-requirements` for details.
 
@@ -127,6 +126,17 @@ Command-line options
                                       └── (T) Aqua Regia
                                           └──  play example.py:4
                                               └──  sleep Lib/asyncio/tasks.py:702
+
+   If the await graph contains a cycle, ``pstree`` reports an error instead
+   of printing a tree.  A cycle in the await graph is unusual and typically
+   indicates a programming error:
+
+   .. code-block:: shell-session
+
+      $ python -m asyncio pstree 12345
+      ERROR: await-graph contains cycles - cannot print a tree!
+
+      cycle: Task-2 → Task-3 → Task-2
 
 .. option:: --retries N
 
