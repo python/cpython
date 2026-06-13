@@ -413,7 +413,7 @@ static inline void _Py_DECREF(PyThreadState *tstate, PyObject *op)
     }
 }
 
-#define _Py_DECREF(op) _Py_DECREF(_PyObject_CAST(op))
+#define _Py_DECREF(tstate, op) _Py_DECREF(tstate, _PyObject_CAST(op))
 
 #elif defined(Py_REF_DEBUG)
 
