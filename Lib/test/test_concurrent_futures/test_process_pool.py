@@ -3,6 +3,7 @@ import queue
 import sys
 import threading
 import time
+import traceback
 import unittest
 import unittest.mock
 from concurrent import futures
@@ -61,6 +62,32 @@ class ProcessPoolExecutorTest(ExecutorTest):
             self.assertRaises(BrokenProcessPool, fut.result)
         # Submitting other jobs fails as well.
         self.assertRaises(BrokenProcessPool, self.executor.submit, pow, 2, 8)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_broken_process_pool_traceback(self):
+        # When a child process is abruptly terminated, the whole pool gets
+        # "broken", and a BrokenProcessPool exception should be created
+        # for each future instead of sharing one exception among all futures.
+        event = self.create_event()
+        futures = [self.executor.submit(event.wait) for _ in range(3)]
+        p = next(iter(self.executor._processes.values()))
+        p.terminate()
+        for fut in futures:
+            # Don't use assertRaises(): it clears the traceback off exc.
+            try:
+                fut.result()
+            except BrokenProcessPool as exc:
+                tb = exc.__traceback__
+            else:
+                self.fail("BrokenProcessPool not raised")
+            count = sum(
+                1
+                for frame_summary in traceback.extract_tb(tb)
+                if frame_summary.filename == __file__
+            )
+            # This code file should appear exactly once in the traceback.
+            # A shared exception would accumulate a frame per result() call.
+            self.assertEqual(count, 1)
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_map_chunksize(self):
