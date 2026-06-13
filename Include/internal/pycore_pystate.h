@@ -113,11 +113,12 @@ PyAPI_FUNC(PyThreadState *) _PyThreadState_GetCurrent(void);
 
    See also PyThreadState_Get() and PyThreadState_GetUnchecked(). */
 
-#ifdef Py_DEBUG
+static PyThreadState*
 // Forcing this to be non-inlined is nice for finding where this is called often.
-static Py_NO_INLINE PyThreadState*
+#ifdef Py_DEBUG
+_Py_MAYBE_UNUSED Py_NO_INLINE
 #else
-static inline PyThreadState*
+inline
 #endif
 _PyThreadState_GET(void)
 {
@@ -211,11 +212,11 @@ _Py_EnsureFuncTstateNotNULL(const char *func, PyThreadState *tstate)
 
    See also PyInterpreterState_Get()
    and _PyGILState_GetInterpreterStateUnsafe(). */
+static _Py_MAYBE_UNUSED PyInterpreterState*
 #ifdef Py_DEBUG
-// Forcing this to be non-inlined is nice for finding where this is called often.
-static Py_NO_INLINE PyInterpreterState*
+Py_NO_INLINE
 #else
-static inline PyInterpreterState*
+inline
 #endif
 _PyInterpreterState_GET(void) {
 #ifdef Py_DEBUG

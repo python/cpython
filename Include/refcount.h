@@ -314,14 +314,17 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 #if !defined(Py_LIMITED_API)
 #if defined(Py_GIL_DISABLED)
 // Implements Py_DECREF on objects not owned by the current thread.
-PyAPI_FUNC(void) _Py_DecRefShared(PyThreadState *, PyObject *);
-PyAPI_FUNC(void) _Py_DecRefSharedDebug(PyThreadState *, PyObject *, const char *, int);
+PyAPI_FUNC(void) _Py_DecRefShared(PyObject *);
+PyAPI_FUNC(void) _Py_DecRefSharedDebug(PyObject *, const char *, int);
+PyAPI_FUNC(void) _Py_DecRefSharedTstate(PyThreadState *, PyObject *);
+PyAPI_FUNC(void) _Py_DecRefSharedDebugTstate(PyThreadState *, PyObject *, const char *, int);
 
 // Called from Py_DECREF by the owning thread when the local refcount reaches
 // zero. The call will deallocate the object if the shared refcount is also
 // zero. Otherwise, the thread gives up ownership and merges the reference
 // count fields.
-PyAPI_FUNC(void) _Py_MergeZeroLocalRefcount(PyThreadState *, PyObject *);
+PyAPI_FUNC(void) _Py_MergeZeroLocalRefcount(PyObject *);
+PyAPI_FUNC(void) _Py_MergeZeroLocalRefcountTstate(PyThreadState *, PyObject *);
 #endif  // Py_GIL_DISABLED
 #endif  // Py_LIMITED_API
 
@@ -385,7 +388,7 @@ static inline void Py_DECREF(PyObject *op)
         }
     }
     else {
-        _Py_DecRefShared(_PyThreadState_GET(), op);
+        _Py_DecRefShared(op);
     }
 }
 #define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
@@ -402,11 +405,11 @@ static inline void _Py_DECREF(PyThreadState *tstate, PyObject *op)
         local--;
         _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, local);
         if (local == 0) {
-            _Py_MergeZeroLocalRefcount(tstate, op);
+            _Py_MergeZeroLocalRefcountTstate(tstate, op);
         }
     }
     else {
-        _Py_DecRefShared(tstate, op);
+        _Py_DecRefSharedTstate(tstate, op);
     }
 }
 

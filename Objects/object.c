@@ -420,21 +420,33 @@ _Py_DecRefSharedIsDead(PyObject *o, const char *filename, int lineno)
 }
 
 void
-_Py_DecRefSharedDebug(PyThreadState *tstate, PyObject *o, const char *filename, int lineno)
+_Py_DecRefSharedDebugTstate(PyThreadState *tstate, PyObject *o, const char *filename, int lineno)
 {
     if (_Py_DecRefSharedIsDead(o, filename, lineno)) {
-        _Py_Dealloc(tstate, o);
+        _Py_DeallocTstate(tstate, o);
     }
 }
 
 void
-_Py_DecRefShared(PyThreadState *tstate, PyObject *o)
+_Py_DecRefSharedDebug(PyObject *o, const char *filename, int lineno)
 {
-    _Py_DecRefSharedDebug(tstate, o, NULL, 0);
+    _Py_DecRefSharedDebugTstate(_PyThreadState_GET(), o, filename, lineno);
 }
 
 void
-_Py_MergeZeroLocalRefcount(PyThreadState *tstate, PyObject *op)
+_Py_DecRefSharedTstate(PyThreadState *tstate, PyObject *o)
+{
+    _Py_DecRefSharedDebugTstate(tstate, o, NULL, 0);
+}
+
+void
+_Py_DecRefShared(PyObject *o)
+{
+    _Py_DecRefSharedTstate(_PyThreadState_GET(), o);
+}
+
+void
+_Py_MergeZeroLocalRefcountTstate(PyThreadState *tstate, PyObject *op)
 {
     assert(op->ob_ref_local == 0);
 
@@ -462,6 +474,12 @@ _Py_MergeZeroLocalRefcount(PyThreadState *tstate, PyObject *op)
         // deallocate the object.
         _Py_DeallocTstate(tstate, op);
     }
+}
+
+void
+_Py_MergeZeroLocalRefcount(PyObject *op)
+{
+    _Py_MergeZeroLocalRefcountTstate(_PyThreadState_GET(), op);
 }
 
 Py_ssize_t

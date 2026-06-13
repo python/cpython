@@ -1,6 +1,7 @@
 // Cyclic garbage collector implementation for free-threaded build.
 #include "Python.h"
 #include "pycore_brc.h"           // struct _brc_thread_state
+#include "pycore_call.h"          // _PyObject_VectorcallTstate()
 #include "pycore_ceval.h"         // _Py_set_eval_breaker_bit()
 #include "pycore_dict.h"          // _PyInlineValuesSize()
 #include "pycore_frame.h"         // FRAME_CLEARED
