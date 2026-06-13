@@ -2702,7 +2702,7 @@ _Py_ScheduleGC(PyThreadState *tstate)
 }
 
 void
-_PyObject_GC_Link(PyObject *op)
+_PyObject_GC_Link(PyThreadState *tstate, PyObject *op)
 {
     record_allocation(_PyThreadState_GET());
 }

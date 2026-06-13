@@ -3764,12 +3764,12 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
         }
         else if (spec != NULL && spec != Py_None) {
             int equal;
-            PyObject *parent = PyObject_GetAttr(spec, &_Py_ID(parent));
+            PyObject *parent = _PyObject_GetAttr(tstate ,spec, &_Py_ID(parent));
             if (parent == NULL) {
                 goto error;
             }
 
-            equal = PyObject_RichCompareBool(package, parent, Py_EQ);
+            equal = _PyObject_RichCompareBool(tstate, package, parent, Py_EQ);
             Py_DECREF(parent);
             if (equal < 0) {
                 goto error;

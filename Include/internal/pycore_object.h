@@ -854,7 +854,7 @@ _PyType_PreHeaderSize(PyTypeObject *tp)
     );
 }
 
-void _PyObject_GC_Link(PyObject *op);
+void _PyObject_GC_Link(PyThreadState *tstate, PyObject *op);
 
 // Usage: assert(_Py_CheckSlotResult(obj, "__getitem__", result != NULL));
 extern int _Py_CheckSlotResult(
@@ -874,7 +874,7 @@ extern PyTypeObject* _PyType_CalculateMetaclass(PyTypeObject *, PyObject *);
 extern PyObject* _PyType_GetDocFromInternalDoc(const char *, const char *);
 extern PyObject* _PyType_GetTextSignatureFromInternalDoc(const char *, const char *, int);
 // Exported for external JIT support
-PyAPI_FUNC(int) _PyObject_SetAttributeErrorContext(PyObject *v, PyObject* name);
+PyAPI_FUNC(int) _PyObject_SetAttributeErrorContext(PyThreadState *tstate, PyObject *v, PyObject* name);
 
 void _PyObject_InitInlineValues(PyObject *obj, PyTypeObject *tp);
 extern int _PyObject_StoreInstanceAttribute(PyObject *obj,
@@ -896,7 +896,7 @@ extern int _PyObject_GetMethodStackRef(PyThreadState *ts, _PyStackRef *self,
 
 // Like PyObject_GetAttr but returns a _PyStackRef. For types, this can
 // return a deferred reference to reduce reference count contention.
-PyAPI_FUNC(_PyStackRef) _PyObject_GetAttrStackRef(PyObject *obj, PyObject *name);
+PyAPI_FUNC(_PyStackRef) _PyObject_GetAttrStackRef(PyThreadState *tstate, PyObject *obj, PyObject *name);
 
 // Cache the provided init method in the specialization cache of type if the
 // provided type version matches the current version of the type.
@@ -965,7 +965,7 @@ _PyObject_MaybeCallSpecialOneArg(PyObject *self, PyObject *attr, PyObject *arg);
 
 extern int _PyObject_IsAbstract(PyObject *);
 
-PyAPI_FUNC(int) _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method);
+PyAPI_FUNC(int) _PyObject_GetMethod(PyThreadState *tstate, PyObject *obj, PyObject *name, PyObject **method);
 extern PyObject* _PyObject_NextNotImplemented(PyObject *);
 
 // Pickle support.
@@ -1032,6 +1032,10 @@ static inline Py_ALWAYS_INLINE void _Py_INCREF_MORTAL(PyObject *op)
 /* Utility for the tp_traverse slot of mutable heap types that have no other
  * references. */
 PyAPI_FUNC(int) _PyObject_VisitType(PyObject *op, visitproc visit, void *arg);
+
+PyAPI_FUNC(PyObject *) _PyObject_RichCompare(PyThreadState *, PyObject *, PyObject *, int);
+PyAPI_FUNC(int) _PyObject_RichCompareBool(PyThreadState *, PyObject *, PyObject *, int);
+PyAPI_FUNC(PyObject *) _PyObject_GetAttr(PyThreadState *, PyObject *, PyObject *);
 
 #ifdef __cplusplus
 }

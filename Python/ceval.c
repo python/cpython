@@ -1648,7 +1648,7 @@ positional_only_passed_as_keyword(PyThreadState *tstate, PyCodeObject *co,
                 continue;
             }
 
-            int cmp = PyObject_RichCompareBool(posonly_name, kwname, Py_EQ);
+            int cmp = _PyObject_RichCompareBool(tstate, posonly_name, kwname, Py_EQ);
 
             if ( cmp > 0) {
                 if(PyList_Append(posonly_names, kwname) != 0) {
@@ -1783,7 +1783,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
             /* Slow fallback, just in case */
             for (j = co->co_posonlyargcount; j < total_args; j++) {
                 PyObject *varname = co_varnames[j];
-                int cmp = PyObject_RichCompareBool( keyword, varname, Py_EQ);
+                int cmp = _PyObject_RichCompareBool(tstate, keyword, varname, Py_EQ);
                 if (cmp > 0) {
                     goto kw_found;
                 }

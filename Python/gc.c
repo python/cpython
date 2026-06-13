@@ -1971,13 +1971,13 @@ _Py_ScheduleGC(PyThreadState *tstate)
 }
 
 void
-_PyObject_GC_Link(PyObject *op)
+_PyObject_GC_Link(PyThreadState *tstate, PyObject *op)
 {
+    assert(tstate != NULL);
     PyGC_Head *gc = AS_GC(op);
     // gc must be correctly aligned
     _PyObject_ASSERT(op, ((uintptr_t)gc & (sizeof(uintptr_t)-1)) == 0);
 
-    PyThreadState *tstate = _PyThreadState_GET();
     GCState *gcstate = &tstate->interp->gc;
     gc->_gc_next = 0;
     gc->_gc_prev = 0;
@@ -2017,7 +2017,7 @@ gc_alloc(PyTypeObject *tp, size_t basicsize, size_t presize)
     ((PyObject **)mem)[0] = NULL;
     ((PyObject **)mem)[1] = NULL;
     PyObject *op = (PyObject *)(mem + presize);
-    _PyObject_GC_Link(op);
+    _PyObject_GC_Link(tstate, op);
     return op;
 }
 
