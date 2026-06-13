@@ -21,7 +21,7 @@ This is Python version 3.16.0 alpha 0
 
 *See the end of this file for further copyright and license information.*
 
-.. contents:: **Table of Contents**
+.. contents:: Table of Contents
    :local:
    :depth: 2
 
