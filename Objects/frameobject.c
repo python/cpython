@@ -285,11 +285,12 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
             PyCell_SetTakeRef((PyCellObject *)cell, value);
         } else if (value != PyStackRef_AsPyObjectBorrow(oldvalue)) {
             PyObject *old_obj = PyStackRef_AsPyObjectBorrow(fast[i]);
+            PyThreadState *tstate = _PyThreadState_GET();
             if (old_obj != NULL && !_Py_IsImmortal(old_obj)) {
                 if (add_overwritten_fast_local(frame, old_obj) < 0) {
                     return -1;
                 }
-                PyStackRef_CLOSE(fast[i]);
+                _PyStackRef_CLOSE(tstate, fast[i]);
             }
             fast[i] = PyStackRef_FromPyObjectNew(value);
         }

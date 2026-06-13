@@ -3767,7 +3767,7 @@ dummy_func(
         }
 
         op(_GET_ITER, (iterable -- iter, index_or_null)) {
-            _PyStackRef result = _PyEval_GetIter(iterable, &index_or_null, oparg);
+            _PyStackRef result = _PyEval_GetIter(tstate, iterable, &index_or_null, oparg);
             DEAD(iterable);
             ERROR_IF(PyStackRef_IsError(result));
             iter = result;
@@ -5466,7 +5466,7 @@ dummy_func(
                 DEAD(args);
                 DEAD(self_or_null);
                 DEAD(callable);
-                PyStackRef_CLOSE(kwnames);
+                _PyStackRef_CLOSE(tstate, kwnames);
                 // Sync stack explicitly since we leave using DISPATCH_INLINED().
                 SYNC_SP();
                 // The frame has stolen all the arguments from the stack,
@@ -5514,7 +5514,7 @@ dummy_func(
                 tstate, callable, locals,
                 arguments, positional_args, kwnames_o, frame
             );
-            PyStackRef_CLOSE(kwnames);
+            _PyStackRef_CLOSE(tstate, kwnames);
             // The frame has stolen all the arguments from the stack,
             // so there is no need to clean them up.
             DEAD(args);
@@ -5560,7 +5560,7 @@ dummy_func(
             self_or_null = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_self);
             callable = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_func);
             assert(PyStackRef_FunctionCheck(callable));
-            PyStackRef_CLOSE(callable_s);
+            _PyStackRef_CLOSE(tstate, callable_s);
         }
 
         macro(CALL_KW_BOUND_METHOD) =
