@@ -122,8 +122,6 @@ PyAPI_FUNC(PyObject *) PyCMethod_New(PyMethodDef *, PyObject *,
 #  define METH_STACKLESS 0x0000
 #endif
 
-#define _METH_TSTATE 0x0100
-
 /* METH_METHOD means the function stores an
  * additional reference to the class that defines it;
  * both self and class are passed to it.

@@ -112,9 +112,16 @@ PyAPI_FUNC(PyThreadState *) _PyThreadState_GetCurrent(void);
    The caller must hold the GIL.
 
    See also PyThreadState_Get() and PyThreadState_GetUnchecked(). */
+
+#ifdef Py_DEBUG
+// Forcing this to be non-inlined is nice for finding where this is called often.
+static Py_NO_INLINE PyThreadState*
+#else
 static inline PyThreadState*
+#endif
 _PyThreadState_GET(void)
 {
+
 #if !defined(Py_BUILD_CORE_MODULE)
     return _Py_tss_tstate;
 #else
@@ -204,7 +211,13 @@ _Py_EnsureFuncTstateNotNULL(const char *func, PyThreadState *tstate)
 
    See also PyInterpreterState_Get()
    and _PyGILState_GetInterpreterStateUnsafe(). */
-static inline PyInterpreterState* _PyInterpreterState_GET(void) {
+#ifdef Py_DEBUG
+// Forcing this to be non-inlined is nice for finding where this is called often.
+static Py_NO_INLINE PyInterpreterState*
+#else
+static inline PyInterpreterState*
+#endif
+_PyInterpreterState_GET(void) {
 #ifdef Py_DEBUG
     PyThreadState *tstate = _PyThreadState_GET();
     _Py_EnsureTstateNotNULL(tstate);
