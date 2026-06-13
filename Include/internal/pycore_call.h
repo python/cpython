@@ -179,10 +179,6 @@ PyAPI_FUNC(void) _PyStack_UnpackDict_FreeNoDecRef(
 PyAPI_FUNC(PyObject *)
 _PyObject_CallOneArgTstate(PyThreadState *tstate, PyObject *func, PyObject *arg);
 
-PyAPI_FUNC(PyObject *)
-_PyObject_Call(PyThreadState *tstate, PyObject *callable,
-               PyObject *args, PyObject *kwargs);
-
 #ifdef __cplusplus
 }
 #endif
