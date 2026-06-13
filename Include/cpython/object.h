@@ -388,6 +388,45 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
     } while (0)
 #endif
 
+#ifdef _Py_TYPEOF
+#define _Py_SETREF(tstate, dst, src) \
+    do { \
+        _Py_TYPEOF(dst)* _tmp_dst_ptr = &(dst); \
+        _Py_TYPEOF(dst) _tmp_old_dst = (*_tmp_dst_ptr); \
+        *_tmp_dst_ptr = (src); \
+        _Py_DECREF(tstate, _tmp_old_dst); \
+    } while (0)
+#else
+#define _Py_SETREF(tstate, dst, src) \
+    do { \
+        PyObject **_tmp_dst_ptr = _Py_CAST(PyObject**, &(dst)); \
+        PyObject *_tmp_old_dst = (*_tmp_dst_ptr); \
+        PyObject *_tmp_src = _PyObject_CAST(src); \
+        memcpy(_tmp_dst_ptr, &_tmp_src, sizeof(PyObject*)); \
+        _Py_DECREF(tstate, _tmp_old_dst); \
+    } while (0)
+#endif
+
+
+#ifdef _Py_TYPEOF
+#define _Py_XSETREF(tstate, dst, src) \
+    do { \
+        _Py_TYPEOF(dst)* _tmp_dst_ptr = &(dst); \
+        _Py_TYPEOF(dst) _tmp_old_dst = (*_tmp_dst_ptr); \
+        *_tmp_dst_ptr = (src); \
+        _Py_XDECREF(tstate, _tmp_old_dst); \
+    } while (0)
+#else
+#define _Py_XSETREF(tstate, dst, src) \
+    do { \
+        PyObject **_tmp_dst_ptr = _Py_CAST(PyObject**, &(dst)); \
+        PyObject *_tmp_old_dst = (*_tmp_dst_ptr); \
+        PyObject *_tmp_src = _PyObject_CAST(src); \
+        memcpy(_tmp_dst_ptr, &_tmp_src, sizeof(PyObject*)); \
+        _Py_XDECREF(tstate, _tmp_old_dst); \
+    } while (0)
+#endif
+
 
 /* Define a pair of assertion macros:
    _PyObject_ASSERT_FROM(), _PyObject_ASSERT_WITH_MSG() and _PyObject_ASSERT().

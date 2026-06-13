@@ -1949,7 +1949,7 @@ clear_thread_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
         tstate->datastack_top);
     assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
     _PyFrame_ClearExceptCode(frame);
-    PyStackRef_CLEAR(frame->f_executable);
+    _PyStackRef_CLEAR(tstate, frame->f_executable);
     _PyThreadState_PopFrame(tstate, frame);
 }
 
@@ -2015,14 +2015,14 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, _PyStackRef func,
 fail:
     /* Consume the references */
     _PyStackRef_CLOSE(tstate, func);
-    Py_XDECREF(locals);
+    _Py_XDECREF(tstate, locals);
     for (size_t i = 0; i < argcount; i++) {
         _PyStackRef_CLOSE(tstate, args[i]);
     }
     if (kwnames) {
         Py_ssize_t kwcount = PyTuple_GET_SIZE(kwnames);
         for (Py_ssize_t i = 0; i < kwcount; i++) {
-            _PyStackRef_CLOSE(tsatte, args[i+argcount]);
+            _PyStackRef_CLOSE(tstate, args[i+argcount]);
         }
     }
     _PyErr_NoMemory(tstate);
@@ -3609,7 +3609,7 @@ _PyEval_GetANext(PyObject *aiter)
             "from __anext__: %.100s",
             Py_TYPE(next_iter)->tp_name);
     }
-    _Py_DECREF(tstate, next_iter);
+    Py_DECREF(next_iter);
     return awaitable;
 }
 

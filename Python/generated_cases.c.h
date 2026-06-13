@@ -3310,7 +3310,7 @@
                     stack_pointer += -3 - oparg;
                     ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                     _PyFrame_SetStackPointer(frame, stack_pointer);
-                    PyStackRef_CLOSE(kwnames);
+                    _PyStackRef_CLOSE(tstate, kwnames);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     if (new_frame == NULL) {
                         JUMP_TO_LABEL(error);
@@ -3412,7 +3412,7 @@
                 stack_pointer[-3 - oparg] = callable;
                 stack_pointer[-2 - oparg] = self_or_null;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyStackRef_CLOSE(callable_s);
+                _PyStackRef_CLOSE(tstate, callable_s);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             // flush
@@ -3441,7 +3441,7 @@
                 stack_pointer += -1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyStackRef_CLOSE(kwnames);
+                _PyStackRef_CLOSE(tstate, kwnames);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 stack_pointer += -2 - oparg;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -3630,7 +3630,7 @@
                 stack_pointer += -1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyStackRef_CLOSE(kwnames);
+                _PyStackRef_CLOSE(tstate, kwnames);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 stack_pointer += -2 - oparg;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -6594,7 +6594,7 @@
             // _GET_ITER
             {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyStackRef result = _PyEval_GetIter(iterable, &index_or_null, oparg);
+                _PyStackRef result = _PyEval_GetIter(tstate, iterable, &index_or_null, oparg);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (PyStackRef_IsError(result)) {
                     JUMP_TO_LABEL(pop_1_error);
@@ -7183,7 +7183,7 @@
                     stack_pointer += -3 - oparg;
                     ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                     _PyFrame_SetStackPointer(frame, stack_pointer);
-                    PyStackRef_CLOSE(kwnames);
+                    _PyStackRef_CLOSE(tstate, kwnames);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     if (new_frame == NULL) {
                         JUMP_TO_LABEL(error);
@@ -9554,7 +9554,7 @@
                     if (PyLazyImport_CheckExact(v_o)) {
                         _PyFrame_SetStackPointer(frame, stack_pointer);
                         PyObject *l_v = _PyImport_LoadLazyImportTstate(tstate, v_o);
-                        Py_SETREF(v_o, l_v);
+                        _Py_SETREF(tstate, v_o, l_v);
                         stack_pointer = _PyFrame_GetStackPointer(frame);
                         if (v_o == NULL) {
                             JUMP_TO_LABEL(error);
@@ -9587,7 +9587,7 @@
                     if (PyLazyImport_CheckExact(v_o)) {
                         _PyFrame_SetStackPointer(frame, stack_pointer);
                         PyObject *l_v = _PyImport_LoadLazyImportTstate(tstate, v_o);
-                        Py_SETREF(v_o, l_v);
+                        _Py_SETREF(tstate, v_o, l_v);
                         stack_pointer = _PyFrame_GetStackPointer(frame);
                         if (v_o == NULL) {
                             JUMP_TO_LABEL(error);
@@ -9866,7 +9866,7 @@
                     JUMP_TO_LABEL(error);
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                Py_SETREF(v_o, l_v);
+                _Py_SETREF(tstate, v_o, l_v);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             v = PyStackRef_FromPyObjectSteal(v_o);
@@ -12596,7 +12596,7 @@
             PyObject *prev_code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
             if (tracer->prev_state.instr_code != (PyCodeObject *)prev_code) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                Py_SETREF(tracer->prev_state.instr_code, (PyCodeObject*)Py_NewRef((prev_code)));
+                _Py_SETREF(tstate, tracer->prev_state.instr_code, (PyCodeObject*)Py_NewRef((prev_code)));
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             tracer->prev_state.instr_frame = frame;

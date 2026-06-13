@@ -237,9 +237,7 @@ PyAPI_FUNC(void) _Py_INCREF_IncRefTotal(void);
 PyAPI_FUNC(void) _Py_DECREF_DecRefTotal(void);
 #endif  // Py_REF_DEBUG && !Py_LIMITED_API
 
-#if !defined(Py_LIMITED_API)
 PyAPI_FUNC(void) _Py_DeallocTstate(PyThreadState *, PyObject *);
-#endif
 PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
 
 
@@ -341,6 +339,7 @@ static inline void Py_DECREF(PyObject *op) {
 #  endif
 }
 #define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
+#define _Py_DECREF(tstate, op) Py_DECREF(op)
 
 #elif defined(Py_GIL_DISABLED) && defined(Py_REF_DEBUG)
 static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
@@ -386,7 +385,7 @@ static inline void Py_DECREF(PyObject *op)
         }
     }
     else {
-        _Py_DecRefShared(op);
+        _Py_DecRefShared(_PyThreadState_GET(), op);
     }
 }
 #define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
@@ -410,6 +409,8 @@ static inline void _Py_DECREF(PyThreadState *tstate, PyObject *op)
         _Py_DecRefShared(tstate, op);
     }
 }
+
+#define _Py_DECREF(op) _Py_DECREF(_PyObject_CAST(op))
 
 #elif defined(Py_REF_DEBUG)
 
@@ -452,6 +453,7 @@ static inline Py_ALWAYS_INLINE void _Py_DECREF(PyThreadState *tstate, PyObject *
         _Py_DeallocTstate(tstate, op);
     }
 }
+#define _Py_DECREF(tstate, op) _Py_DECREF(tstate, _PyObject_CAST(op))
 
 // We copy the implementation instead of doing _Py_DECREF(_PyThreadState_GET(), op)
 // because we don't necessarily need a thread state for every Py_DECREF() call, so
@@ -464,7 +466,7 @@ static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
     }
     _Py_DECREF_STAT_INC();
     if (--op->ob_refcnt == 0) {
-        _Py_DeallocTstate(_PyThreadState_GET(), op);
+        _Py_Dealloc(op);
     }
 }
 #define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
@@ -585,6 +587,14 @@ static inline void Py_XDECREF(PyObject *op)
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_XDECREF(op) Py_XDECREF(_PyObject_CAST(op))
 #endif
+
+static inline void _Py_XDECREF(PyThreadState *tstate, PyObject *op)
+{
+    if (op != _Py_NULL) {
+        _Py_DECREF(tstate, op);
+    }
+}
+#  define _Py_XDECREF(tstate, op) _Py_XDECREF(tstate, _PyObject_CAST(op))
 
 // Create a new strong reference to an object:
 // increment the reference count of the object and return the object.
