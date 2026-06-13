@@ -29,6 +29,18 @@ RFC_WSP = chr(32) + chr(9)
 # https://datatracker.ietf.org/doc/html/rfc5322#section-2.2
 RFC_NONPRINTABLES = bytes([*range(0, 33), 127]).decode('ascii')
 
+# https://datatracker.ietf.org/doc/html/rfc2978#section-2.3
+# Except that like
+#   https://datatracker.ietf.org/doc/html/rfc8187#section-3.2.1
+# we omit the "'" character as otherwise it is difficult to correctly parse
+# extended parameters values absent a complete registry.  In any case charset
+# names generally do not include special characters in practice.
+RFC_CHARSET_CHARS = ''.join((
+    string.ascii_letters,
+    string.digits,
+    "!#$%&+-^_`{}~",
+    ))
+
 ALL_ASCII = bytes(range(0, 128)).decode('ascii')
 
 
@@ -613,12 +625,23 @@ class TestParser(TestParserMixin, TestEmailBase):
     # get_encoded_word
 
     @params
-    def test_get_encoded_word(self, s, *args, charset='us-ascii', lang='', **kw):
-        res = self._test_parse(parser.get_encoded_word, C(s), *args, **kw)
+    def test_get_encoded_word(
+            self,
+            s,
+            *args,
+            charset='us-ascii',
+            lang='',
+            terminal_type=None,
+            **kw,
+            ):
+        callspec = C(s) if terminal_type is None else C(s, terminal_type)
+        res = self._test_parse(parser.get_encoded_word, callspec, *args, **kw)
         if 'exception' in kw:
             return
         self.assertEqual(res.charset, charset)
         self.assertEqual(res.lang, lang)
+        terminal_type = 'vtext' if terminal_type is None else terminal_type
+        self.verify_terminal_types(res, terminal_type, 'fws')
 
     # This params_map will handle either single strings or C objects.
     @params_map
@@ -634,11 +657,38 @@ class TestParser(TestParserMixin, TestEmailBase):
         yield 'oldapi', newspec
 
     params_test_get_encoded_word__invalid_input = expect_get_encoded_word_raise(
+        null_string =                               '',
         no_chrome =                                 'content',
+        eq_only =                                   '=content',
+        start_chrome_only =                         '=?',
         start_and_charset_only =                    '=?UTF-8',
+        start_charset_qm_only =                     '=?UTF-8?',
+        start_charset_qm_cte_only =                 '=?UTF-8?q',
+        start_charset_qm_cte_qm_only =              '=?UTF-8?q?',
+        start_charset_qm_cte_qm_content_only =      '=?UTF-8?q?content',
+        start_charset_qm_cte_qm_content_qm_only =   '=?UTF-8?q?content?',
+        end_eq_only =                               'content=',
+        end_chrome_only =                           '?=',
+        end_and_content_only =                      'content?=',
+        end_content_eq_only =                       '?content?=',
+        end_content_eq_cte_only =                   'q?content?=',
+        end_content_eq_cte_eq_only =                '?q?content?=',
+        end_content_eq_cte_eq_charset_only =        'UTF-8?q?content?=',
+        end_content_eq_cte_eq_charset_eq_only =     '?UTF-8?q?content?=',
         missing_both_middle =                       '=?content?=',
+        missing_one_middle =                        '=?q?content?=',
+        empty_cte =                                 '=UTF-8??content?=',
+        empty_charset_and_cte =                     '=???content?=',
+        empty_everything =                          '=????=',
         unknown_cte =                               '=?UTF-8?X?content?=',
         invalid_base64_length =                     '=?utf-8?b?abcde?=',
+        multicharacter_cte =                        '=?UTF-8?qq?content?=',
+        too_many_qm =                               '=?UTF-8?q?q?content?=',
+        empty_lang =                                '=?UTF-8*??q?content?=',
+        lang_with_empty_charset =                   '=?*foo??q?content?=',
+        **for_each_character(ALL_ASCII)(
+            character_before_valid_ew = C('{char}=?us-ascii?q?test?='),
+            ),
         )
 
     params_test_get_encoded_word = old_api_only(
@@ -647,6 +697,30 @@ class TestParser(TestParserMixin, TestEmailBase):
             '=?us-ascii?q?this_is_a_test?=  bird',
             stringified='this is a test',
             remainder='  bird',
+            ),
+
+        # XXX XXX the skip for the RFC_WSP will go away after refactor.  It's
+        # here because it would be a pain to handle the lack of the defect,
+        # which will go away in the refactor.
+        **for_each_character(ALL_ASCII, skip=RFC_WSP)(
+            ew_followed_by = C(
+                '=?us-ascii?q?foo?={char}',
+                stringified='foo',
+                remainder='{char}',
+                defects=[missing_whitespace_after_ew_defect],
+                ),
+            ),
+
+        # XXX some of these characters should result in defects depending on
+        # the context from which get_encoded_word is called (ex: ()s are
+        # illegal in comment encoded words), but but at least at the moment
+        # that it isn't worth the effort to implement.
+        # XXX XXX the skip for ? is a bug which will be fixed in the refactor
+        **for_each_character(RFC_PRINTABLES, skip='_?')(
+            q_content_may_contain = C(
+                '=?us-ascii?q?foo_{char}_bar_{char}?=',
+                stringified='foo {char} bar {char}',
+                )
             ),
 
         internal_spaces = C(
@@ -663,6 +737,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             remainder='  =?utf-8?q?second?=',
             ),
 
+        # XXX XXX This defect will also go away (gets detected higher up)
         only_gets_first_ew_even_if_no_space = C(
             '=?us-ascii?q?first?==?utf-8?q?second?=',
             stringified='first',
@@ -683,15 +758,53 @@ class TestParser(TestParserMixin, TestEmailBase):
             charset='utf-8',
             ),
 
-        non_printable_defect = C(
-            '=?us-ascii?q?first\x02second?=',
-            stringified='first\x02second',
-            defects=[(nonprintable_defect, '\x02')],
+        **for_each_character(
+                RFC_NONPRINTABLES,
+                # XXX XXX skip things split considers whitespace. This is buggy.
+                #                         US  RS  GS  FS
+                skip=RFC_WSP + '\r\n\v\f\x1f\x1e\x1d\x1c',
+                )(
+            non_printable_defect = C(
+                '=?us-ascii?q?first{char}second?=',
+                stringified='first{char}second',
+                defects=[(nonprintable_defect, '{char}')],
+                ),
             ),
 
-        leading_internal_space = C(
+        # Note that other characters may work as well, but these *must* work.
+        **for_each_character(RFC_CHARSET_CHARS)(
+            char_valid_in_charset_name = C(
+                '=?a_bad_{char}set_name?q?foo?=',
+                stringified='foo',
+                defects=[(charset_defect('a_bad_{echar}set_name'))],
+                charset='a_bad_{char}set_name',
+                ),
+            ),
+
+        leading_internal_encoded_space = C(
             '=?us-ascii?q?=20foo?=',
             stringified=' foo',
+            ),
+
+        leading_internal_unencoded_space = C(
+            '=?us-ascii?q? foo?=',
+            stringified=' foo',
+            defects=[whitespace_inside_ew_defect],
+            ),
+
+        trailing_internal_encoded_space = C(
+            '=?us-ascii?q?foo=20_?=  bird',
+            stringified='foo  ',
+            value='foo ',
+            remainder='  bird',
+            ),
+
+        trailing_internal_unencoded_space = C(
+            '=?us-ascii?q?foo _ ?=  bird',
+            stringified='foo   ',
+            value='foo ',
+            defects=[whitespace_inside_ew_defect],
+            remainder='  bird',
             ),
 
         # Issue 18044
@@ -699,6 +812,79 @@ class TestParser(TestParserMixin, TestEmailBase):
             '=?utf-8?q?=C3=89ric?=',
             stringified='Éric',
             charset='utf-8',
+            ),
+
+        unknown_charset_leads_to_undecodable_bytes_with_non_ascii = C(
+            '=?invalid?q?=C3=89ric?=',
+            stringified='\udcc3\udc89ric',
+            charset='invalid',
+            defects=[charset_defect('invalid'), undecodable_bytes_defect],
+            ),
+
+        empty_charset = C(
+            '=??q?content?=',
+            stringified='content',
+            charset='',
+            defects=[charset_defect('')],
+            ),
+
+        missing_base64_padding = C(
+            '=?us-ascii?b?dmk?=',
+            stringified='vi',
+            defects=[invalid_base64_padding_defect],
+            ),
+
+
+        invalid_base64_character = C(
+            '=?us-ascii?b?dm\x01k===?=',
+            stringified='vi',
+            defects=[invalid_base64_characters_defect],
+            ),
+
+        invalid_base64_character_and_bad_padding = C(
+            '=?us-ascii?b?dm\x01k?=',
+            stringified='vi',
+            defects=[
+                invalid_base64_padding_defect,
+                invalid_base64_characters_defect,
+                ],
+            ),
+
+        ws_only_charset_leads_to_undecodable_bytes_with_non_ascii = C(
+            '=? * ?q?=C3=89ric?=',
+            stringified='\udcc3\udc89ric',
+            charset='',
+            defects=[
+               charset_defect(' '),
+               undecodable_bytes_defect,
+               whitespace_inside_ew_defect,
+               ],
+            ),
+
+        eq_is_only_special_with_two_digits_after_it = C(
+            '=?UTF-8?q?=C3=89ric_=_?=',
+            stringified='Éric = ',
+            charset='UTF-8',
+            ),
+
+        ws_around_charset_and_lang = C(
+            '=?  us-ascii\t* jive\t ?q?test?=  bird',
+            stringified='test',
+            lang='jive',
+            defects=[whitespace_inside_ew_defect],
+            remainder='  bird',
+            ),
+
+        set_terminal_type_on_single_word_content = C(
+            '=?us-ascii?q?text?=',
+            stringified='text',
+            terminal_type='test',
+            ),
+
+        set_terminal_type_on_multiple_word_content = C(
+            '=?us-ascii?q?text_and_more_text?=',
+            stringified='text and more text',
+            terminal_type='test',
             ),
 
         )
