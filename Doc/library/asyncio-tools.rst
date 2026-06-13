@@ -10,8 +10,8 @@ Command-line introspection tools
 
 -------------------------------------
 
-The :mod:`!asyncio` module can be executed as a script to inspect asyncio
-tasks in another Python process:
+The :mod:`!asyncio` module can be executed as a script to inspect the task
+graph of another running Python process without modifying it or restarting it:
 
 .. code-block:: shell-session
 
@@ -78,9 +78,21 @@ Command-line options
 
 .. option:: ps PID
 
-   Display a table of pending tasks in the process *PID*.  The table includes
-   the thread ID, task ID, task name, coroutine stack, awaiter chain, awaiter
-   name, and awaiter ID:
+   Display a flat table of all pending tasks in the process *PID*.  Each row
+   contains:
+
+   * **tid** — OS thread ID of the thread running the event loop
+   * **task id** — memory address of the :class:`~asyncio.Task` object
+   * **task name** — name assigned to the task (see :meth:`~asyncio.Task.get_name`)
+   * **coroutine stack** — chain of coroutine frame names from outermost to innermost
+   * **awaiter chain** — coroutine frames of the task that is awaiting this task
+   * **awaiter name** — name of the awaiting task
+   * **awaiter id** — memory address of the awaiting task (``0x0`` if none)
+
+   This subcommand prints all tasks regardless of whether the await graph
+   contains cycles.  Use it when you need to filter or process task data
+   programmatically, or when the task count is large enough that a tree
+   would be unwieldy:
 
    .. code-block:: shell-session
 
@@ -97,7 +109,11 @@ Command-line options
 
 .. option:: pstree PID
 
-   Display the same task and coroutine relationships as a tree:
+   Display task and coroutine relationships as a tree.  Each task is shown
+   with its full coroutine stack, nested under the task (if any) that is
+   awaiting it.  This subcommand is useful for quickly identifying which branch
+   of a task hierarchy is blocked and where in its coroutine stack execution
+   has paused:
 
    .. code-block:: shell-session
 
