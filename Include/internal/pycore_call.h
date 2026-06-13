@@ -46,7 +46,7 @@ extern PyObject* _PyObject_VectorcallDictTstate(
     size_t nargsf,
     PyObject *kwargs);
 
-extern PyObject* _PyObject_Call(
+PyAPI_FUNC(PyObject*) _PyObject_Call(
     PyThreadState *tstate,
     PyObject *callable,
     PyObject *args,
