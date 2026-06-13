@@ -470,10 +470,8 @@ class _ExecutorManagerThread(threading.Thread):
             executor = None
 
         # All pending tasks are to be marked failed with a
-        # BrokenProcessPool error. The cause is shared by every future,
-        # but a separate exception instance is created for each one below:
-        # raising a single shared instance from multiple Future.result()
-        # calls accumulates tracebacks onto it (gh-101267).
+        # BrokenProcessPool error, as separate instances to avoid sharing
+        # a traceback (gh-101267).
         cause_str = None
         if cause is not None:
             cause_str = ''.join(cause)
@@ -489,14 +487,15 @@ class _ExecutorManagerThread(threading.Thread):
                                   f"with exit code {p.exitcode}")
             if errors:
                 cause_str = "\n".join(errors)
+        cause_tb = f"\n'''\n{cause_str}'''" if cause_str else None
 
         # Mark pending tasks as failed.
         for work_id, work_item in self.pending_work_items.items():
             bpe = BrokenProcessPool("A process in the process pool was "
                                     "terminated abruptly while the future was "
                                     "running or pending.")
-            if cause_str:
-                bpe.__cause__ = _RemoteTraceback(f"\n'''\n{cause_str}'''")
+            if cause_tb is not None:
+                bpe.__cause__ = _RemoteTraceback(cause_tb)
             try:
                 work_item.future.set_exception(bpe)
             except _base.InvalidStateError:
@@ -815,8 +814,7 @@ class ProcessPoolExecutor(_base.Executor):
     def submit(self, fn, /, *args, **kwargs):
         with self._shutdown_lock:
             if self._broken:
-                raise BrokenProcessPool(
-                    'cannot schedule new futures after process pool has broken')
+                raise BrokenProcessPool(self._broken)
             if self._shutdown_thread:
                 raise RuntimeError('cannot schedule new futures after shutdown')
             if _global_shutdown:
