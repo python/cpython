@@ -1,0 +1,5 @@
+When called without extra parameters, :meth:`email.message.Message.add_header`
+now stores the value the same way ``msg[name] = value`` does, so it accepts the
+:class:`~email.header.Header` instances that :meth:`~email.message.Message.items`
+returns under the ``compat32`` policy.  Previously it raised ``TypeError:
+sequence item 0: expected str instance, Header found``.
