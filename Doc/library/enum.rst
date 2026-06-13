@@ -629,7 +629,7 @@ Data types
          >>> white in purple
          False
 
-   .. method:: __iter__(self):
+   .. method:: __iter__(self)
 
       Returns all contained non-alias members::
 
@@ -640,7 +640,7 @@ Data types
 
       .. versionadded:: 3.11
 
-   .. method:: __len__(self):
+   .. method:: __len__(self)
 
       Returns number of members in flag::
 
@@ -651,7 +651,7 @@ Data types
 
       .. versionadded:: 3.11
 
-   .. method:: __bool__(self):
+   .. method:: __bool__(self)
 
       Returns *True* if any members in flag, *False* otherwise::
 
@@ -688,7 +688,7 @@ Data types
          >>> purple ^ Color.GREEN
          <Color.RED|GREEN|BLUE: 7>
 
-   .. method:: __invert__(self):
+   .. method:: __invert__(self)
 
       Returns all the flags in *type(self)* that are not in *self*::
 
