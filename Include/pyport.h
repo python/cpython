@@ -667,13 +667,5 @@ extern "C" {
 #  define _Py_STACK_GROWS_DOWN 1
 #endif
 
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
-// C23 standard attribute
-#  define _Py_MAYBE_UNUSED [[maybe_unused]]
-#elif _Py__has_attribute(__unused__)
-#  define _Py_MAYBE_UNUSED __attribute__((__unused__))
-#else
-#  define _Py_MAYBE_UNUSED
-#endif
 
 #endif /* Py_PYPORT_H */
