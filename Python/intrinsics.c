@@ -7,10 +7,11 @@
 #include "pycore_genobject.h"     // _PyAsyncGenValueWrapperNew
 #include "pycore_interpframe.h"   // _PyFrame_GetLocals()
 #include "pycore_intrinsics.h"    // INTRINSIC_PRINT
+#include "pycore_list.h"          // _PyList_AsTupleAndClear()
+#include "pycore_object.h"        // _PyObject_IsUniquelyReferenced()
+#include "pycore_setobject.h"     // _PySet_Freeze()
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_runtime.h"       // _Py_ID()
-#include "pycore_sysmodule.h"     // _PySys_GetRequiredAttr()
-#include "pycore_tuple.h"         // _PyTuple_FromArray()
 #include "pycore_typevarobject.h" // _Py_make_typevar()
 #include "pycore_unicodeobject.h" // _PyUnicode_FromASCII()
 
@@ -27,8 +28,7 @@ no_intrinsic1(PyThreadState* tstate, PyObject *unused)
 static PyObject *
 print_expr(PyThreadState* Py_UNUSED(ignored), PyObject *value)
 {
-    PyObject *hook = _PySys_GetRequiredAttr(&_Py_ID(displayhook));
-    // Can't use ERROR_IF here.
+    PyObject *hook = PySys_GetAttr(&_Py_ID(displayhook));
     if (hook == NULL) {
         return NULL;
     }
@@ -193,8 +193,12 @@ unary_pos(PyThreadState* unused, PyObject *value)
 static PyObject *
 list_to_tuple(PyThreadState* unused, PyObject *v)
 {
-    assert(PyList_Check(v));
-    return _PyTuple_FromArray(((PyListObject *)v)->ob_item, Py_SIZE(v));
+    /* INTRINSIC_LIST_TO_TUPLE is only emitted by the compiler for a
+       freshly-built, uniquely-referenced temporary list, so steal its items
+       into the tuple instead of copying them. */
+    assert(PyList_CheckExact(v));
+    assert(_PyObject_IsUniquelyReferenced(v));
+    return _PyList_AsTupleAndClear((PyListObject *)v);
 }
 
 static PyObject *
@@ -202,6 +206,14 @@ make_typevar(PyThreadState* Py_UNUSED(ignored), PyObject *v)
 {
     assert(PyUnicode_Check(v));
     return _Py_make_typevar(v, NULL, NULL);
+}
+
+static PyObject *
+make_frozenset(PyThreadState* Py_UNUSED(ignored), PyObject *set)
+{
+    assert(PySet_CheckExact(set));
+    assert(_PyObject_IsUniquelyReferenced(set));
+    return _PySet_Freeze(set);
 }
 
 
@@ -222,6 +234,7 @@ _PyIntrinsics_UnaryFunctions[] = {
     INTRINSIC_FUNC_ENTRY(INTRINSIC_TYPEVARTUPLE, _Py_make_typevartuple)
     INTRINSIC_FUNC_ENTRY(INTRINSIC_SUBSCRIPT_GENERIC, _Py_subscript_generic)
     INTRINSIC_FUNC_ENTRY(INTRINSIC_TYPEALIAS, _Py_make_typealias)
+    INTRINSIC_FUNC_ENTRY(INTRINSIC_BUILD_FROZENSET, make_frozenset)
 };
 
 

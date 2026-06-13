@@ -12,6 +12,8 @@ posix posixmodule.c
 _signal signalmodule.c
 _tracemalloc _tracemalloc.c
 _suggestions _suggestions.c
+# needs libm and on some platforms librt
+_datetime _datetimemodule.c
 
 # modules used by importlib, deepfreeze, freeze, runpy, and sysconfig
 _codecs _codecsmodule.c
@@ -23,6 +25,7 @@ _sre _sre/sre.c
 _sysconfig _sysconfig.c
 _thread _threadmodule.c
 time timemodule.c
+_types _typesmodule.c
 _typing _typingmodule.c
 _weakref _weakref.c
 

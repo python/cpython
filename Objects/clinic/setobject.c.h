@@ -425,9 +425,29 @@ set___contains__(PyObject *so, PyObject *key)
 {
     PyObject *return_value = NULL;
 
-    Py_BEGIN_CRITICAL_SECTION(so);
     return_value = set___contains___impl((PySetObject *)so, key);
-    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+PyDoc_STRVAR(frozenset___contains____doc__,
+"__contains__($self, object, /)\n"
+"--\n"
+"\n"
+"x.__contains__(y) <==> y in x.");
+
+#define FROZENSET___CONTAINS___METHODDEF    \
+    {"__contains__", (PyCFunction)frozenset___contains__, METH_O|METH_COEXIST, frozenset___contains____doc__},
+
+static PyObject *
+frozenset___contains___impl(PySetObject *so, PyObject *key);
+
+static PyObject *
+frozenset___contains__(PyObject *so, PyObject *key)
+{
+    PyObject *return_value = NULL;
+
+    return_value = frozenset___contains___impl((PySetObject *)so, key);
 
     return return_value;
 }
@@ -532,4 +552,4 @@ set___sizeof__(PyObject *so, PyObject *Py_UNUSED(ignored))
 
     return return_value;
 }
-/*[clinic end generated code: output=e2f1470de062d661 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5800c0bf136a5a0a input=a9049054013a1b77]*/

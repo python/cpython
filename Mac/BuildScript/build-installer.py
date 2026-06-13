@@ -246,9 +246,9 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="OpenSSL 3.0.15",
-              url="https://github.com/openssl/openssl/releases/download/openssl-3.0.15/openssl-3.0.15.tar.gz",
-              checksum='23c666d0edf20f14249b3d8f0368acaee9ab585b09e1de82107c66e1f3ec9533',
+              name="OpenSSL 3.5.7",
+              url="https://github.com/openssl/openssl/releases/download/openssl-3.5.7/openssl-3.5.7.tar.gz",
+              checksum="a8c0d28a529ca480f9f36cf5792e2cd21984552a3c8e4aa11a24aa31aeac98e8",
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
@@ -264,10 +264,10 @@ def library_recipes():
             tk_patches = ['backport_gh71383_fix.patch', 'tk868_on_10_8_10_9.patch', 'backport_gh110950_fix.patch']
 
         else:
-            tcl_tk_ver='8.6.15'
-            tcl_checksum='861e159753f2e2fbd6ec1484103715b0be56be3357522b858d3cbb5f893ffef1'
+            tcl_tk_ver='9.0.3'
+            tcl_checksum='2537ba0c86112c8c953f7c09d33f134dd45c0fb3a71f2d7f7691fd301d2c33a6'
 
-            tk_checksum='550969f35379f952b3020f3ab7b9dd5bfd11c1ef7c9b7c6a75f5c49aca793fec'
+            tk_checksum='bf344efadb618babb7933f69275620f72454d1c8220130da93e3f7feb0efbf9b'
             tk_patches = []
 
 
@@ -359,9 +359,9 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.49.1",
-              url="https://sqlite.org/2025/sqlite-autoconf-3490100.tar.gz",
-              checksum="106642d8ccb36c5f7323b64e4152e9b719f7c0215acf5bfeac3d5e7f97b59254",
+              name="SQLite 3.53.2",
+              url="https://www.sqlite.org/2026/sqlite-autoconf-3530200.tar.gz",
+              checksum="588ad51949419a56ebe81fe56193d510c559eb94c9a57748387860b5d3069316",
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
@@ -378,9 +378,9 @@ def library_recipes():
               install=f"make && ranlib libsqlite3.a && make install DESTDIR={shellQuote(os.path.join(WORKDIR, 'libraries'))}",
           ),
           dict(
-              name="libmpdec 4.0.0",
-              url="https://www.bytereef.org/software/mpdecimal/releases/mpdecimal-4.0.0.tar.gz",
-              checksum="942445c3245b22730fd41a67a7c5c231d11cb1b9936b9c0f76334fb7d0b4468c",
+              name="libmpdec 4.0.1",
+              url="https://www.bytereef.org/software/mpdecimal/releases/mpdecimal-4.0.1.tar.gz",
+              checksum="96d33abb4bb0070c7be0fed4246cd38416188325f820468214471938545b1ac8",
               configure_pre=[
                   "--disable-cxx",
                   "MACHINE=universal",
@@ -1158,7 +1158,6 @@ def buildPython():
     print(" NOTE: --with-mimalloc=no pending resolution of weak linking issues")
     runCommand("%s -C --enable-framework --enable-universalsdk=/ "
                "--with-mimalloc=no "
-               "--with-system-libmpdec "
                "--with-universal-archs=%s "
                "%s "
                "%s "
@@ -1747,7 +1746,7 @@ def main():
     fn = os.path.join(folder, "ReadMe.rtf")
     patchFile("resources/ReadMe.rtf",  fn)
     fn = os.path.join(folder, "Update Shell Profile.command")
-    patchScript("scripts/postflight.patch-profile",  fn)
+    patchScript("resources/update_shell_profile.command",  fn)
     fn = os.path.join(folder, "Install Certificates.command")
     patchScript("resources/install_certificates.command",  fn)
     os.chmod(folder, STAT_0o755)

@@ -37,7 +37,7 @@ except ImportError:
 
 from test.support import cpython_only, import_helper
 from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
-from test.support import run_no_yield_async_fn
+from test.support import run_no_yield_async_fn, EqualToForwardRef
 from test.support.import_helper import DirsOnSysPath, ready_to_import
 from test.support.os_helper import TESTFN, temp_cwd
 from test.support.script_helper import assert_python_ok, assert_python_failure, kill_python
@@ -46,6 +46,7 @@ from test import support
 
 from test.test_inspect import inspect_fodder as mod
 from test.test_inspect import inspect_fodder2 as mod2
+from test.test_inspect import inspect_fodder3 as mod3
 from test.test_inspect import inspect_stringized_annotations
 from test.test_inspect import inspect_deferred_annotations
 
@@ -147,6 +148,38 @@ def meth_self_noargs(self, /): pass
 def meth_self_o(self, object, /): pass
 def meth_type_noargs(type, /): pass
 def meth_type_o(type, object, /): pass
+
+# Decorator decorator that returns a simple wrapped function
+def identity_wrapper(func):
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        return func(*args, **kwargs)
+    return wrapped
+
+# Original signature of the simple wrapped function returned by
+# identity_wrapper().
+varargs_signature = (
+    (('args', ..., ..., 'var_positional'),
+    ('kwargs', ..., ..., 'var_keyword')),
+    ...,
+)
+
+# Decorator decorator that returns a simple descriptor
+class custom_descriptor:
+    def __init__(self, func):
+        self.func = func
+
+    def __get__(self, instance, owner):
+        return self.func.__get__(instance, owner)
+
+
+class TestImportTime(unittest.TestCase):
+
+    @cpython_only
+    def test_lazy_import(self):
+        import_helper.ensure_lazy_imports(
+            "inspect", {"re", "tokenize"}
+        )
 
 
 class TestPredicates(IsTestBase):
@@ -665,10 +698,56 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertEqual(inspect.getdoc(mod.FesteringGob.contradiction),
                          'The automatic gainsaying.')
 
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
+    def test_getdoc_inherited_class_doc(self):
+        class A:
+            """Common base class"""
+        class B(A):
+            pass
+
+        a = A()
+        self.assertEqual(inspect.getdoc(A), 'Common base class')
+        self.assertEqual(inspect.getdoc(A, inherit_class_doc=False),
+                         'Common base class')
+        self.assertEqual(inspect.getdoc(a), 'Common base class')
+        self.assertIsNone(inspect.getdoc(a, fallback_to_class_doc=False))
+        a.__doc__ = 'Instance'
+        self.assertEqual(inspect.getdoc(a, fallback_to_class_doc=False),
+                          'Instance')
+
+        b = B()
+        self.assertEqual(inspect.getdoc(B), 'Common base class')
+        self.assertIsNone(inspect.getdoc(B, inherit_class_doc=False))
+        self.assertIsNone(inspect.getdoc(b))
+        self.assertIsNone(inspect.getdoc(b, fallback_to_class_doc=False))
+        b.__doc__ = 'Instance'
+        self.assertEqual(inspect.getdoc(b, fallback_to_class_doc=False), 'Instance')
+
+    def test_getdoc_inherited_cached_property(self):
+        doc = inspect.getdoc(mod3.ParentInheritDoc.foo)
+        self.assertEqual(doc, 'docstring for foo defined in parent')
+        self.assertEqual(inspect.getdoc(mod3.ChildInheritDoc.foo), doc)
+        self.assertEqual(inspect.getdoc(mod3.ChildInheritDefineDoc.foo), doc)
+
+    def test_getdoc_redefine_cached_property_as_other(self):
+        self.assertEqual(inspect.getdoc(mod3.ChildPropertyFoo.foo),
+                         'docstring for the property foo')
+        self.assertEqual(inspect.getdoc(mod3.ChildMethodFoo.foo),
+                         'docstring for the method foo')
+
+    def test_getdoc_define_cached_property(self):
+        self.assertEqual(inspect.getdoc(mod3.ChildDefineDoc.foo),
+                         'docstring for foo defined in child')
+
+    def test_getdoc_nodoc_inherited(self):
+        self.assertIsNone(inspect.getdoc(mod3.ChildNoDoc.foo))
+
     @unittest.skipIf(MISSING_C_DOCSTRINGS, "test requires docstrings")
     def test_finddoc(self):
         finddoc = inspect._finddoc
         self.assertEqual(finddoc(int), int.__doc__)
+        self.assertIsNone(finddoc(int, search_in_class=False))
         self.assertEqual(finddoc(int.to_bytes), int.to_bytes.__doc__)
         self.assertEqual(finddoc(int().to_bytes), int.to_bytes.__doc__)
         self.assertEqual(finddoc(int.from_bytes), int.from_bytes.__doc__)
@@ -786,12 +865,12 @@ class TestRetrievingSourceCode(GetSourceBase):
     def test_getfile_builtin_module(self):
         with self.assertRaises(TypeError) as e:
             inspect.getfile(sys)
-        self.assertTrue(str(e.exception).startswith('<module'))
+        self.assertStartsWith(str(e.exception), '<module')
 
     def test_getfile_builtin_class(self):
         with self.assertRaises(TypeError) as e:
             inspect.getfile(int)
-        self.assertTrue(str(e.exception).startswith('<class'))
+        self.assertStartsWith(str(e.exception), '<class')
 
     def test_getfile_builtin_function_or_method(self):
         with self.assertRaises(TypeError) as e_abs:
@@ -1189,11 +1268,21 @@ class TestBuggyCases(GetSourceBase):
 
         self.assertSourceEqual(run(mod2.func225), 226, 227)
         self.assertSourceEqual(mod2.cls226, 231, 235)
+        self.assertSourceEqual(mod2.cls226.func232, 232, 235)
         self.assertSourceEqual(run(mod2.cls226().func232), 233, 234)
 
     def test_class_definition_same_name_diff_methods(self):
         self.assertSourceEqual(mod2.cls296, 296, 298)
         self.assertSourceEqual(mod2.cls310, 310, 312)
+
+    def test_generator_expression(self):
+        self.assertSourceEqual(next(mod2.ge377), 377, 380)
+        self.assertSourceEqual(next(mod2.func383()), 385, 388)
+
+    def test_comment_or_empty_line_after_decorator(self):
+        self.assertSourceEqual(mod2.func394, 392, 395)
+        self.assertSourceEqual(mod2.func400, 398, 401)
+
 
 class TestNoEOL(GetSourceBase):
     def setUp(self):
@@ -1266,9 +1355,10 @@ class TestClassesAndFunctions(unittest.TestCase):
                                     varkw_e=None, defaults_e=None,
                                     posonlyargs_e=[], kwonlyargs_e=[],
                                     kwonlydefaults_e=None,
-                                    ann_e={}):
+                                    ann_e={},
+                                    annotation_format=Format.VALUE):
         args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, ann = \
-            inspect.getfullargspec(routine)
+            inspect.getfullargspec(routine, annotation_format=annotation_format)
         self.assertEqual(args, args_e)
         self.assertEqual(varargs, varargs_e)
         self.assertEqual(varkw, varkw_e)
@@ -1300,6 +1390,19 @@ class TestClassesAndFunctions(unittest.TestCase):
                                      defaults_e=(1,2,3),
                                      kwonlyargs_e=['e', 'f'],
                                      kwonlydefaults_e={'e': 4, 'f': 5})
+
+    def get_getfullargspec_with_undefined_names_in_annotations(self):
+        def my_func(a: undefined_name):
+            pass
+
+        with self.assertRaises(NameError):
+            inspect.getfullargspec(my_func)
+
+        self.assertFullArgSpecEquals(my_func, ['a'], ann_e={'a': 'undefined_name'},
+                                     annotation_format=Format.STRING)
+
+        arg_spec = inspect.getfullargspec(my_func, annotation_format=Format.FORWARDREF)
+        self.assertIsInstance(arg_spec.annotations['a'], ForwardRef)
 
     def test_argspec_api_ignores_wrapped(self):
         # Issue 20684: low level introspection API must ignore __wrapped__
@@ -1749,13 +1852,54 @@ class TestClassesAndFunctions(unittest.TestCase):
 
 class TestFormatAnnotation(unittest.TestCase):
     def test_typing_replacement(self):
-        from test.typinganndata.ann_module9 import ann, ann1
+        from test.typinganndata.ann_module9 import A, ann, ann1
         self.assertEqual(inspect.formatannotation(ann), 'List[str] | int')
         self.assertEqual(inspect.formatannotation(ann1), 'List[testModule.typing.A] | int')
+
+        self.assertEqual(inspect.formatannotation(A, 'testModule.typing'), 'A')
+        self.assertEqual(inspect.formatannotation(A, 'other'), 'testModule.typing.A')
+        self.assertEqual(
+            inspect.formatannotation(ann1, 'testModule.typing'),
+            'List[testModule.typing.A] | int',
+        )
 
     def test_forwardref(self):
         fwdref = ForwardRef('fwdref')
         self.assertEqual(inspect.formatannotation(fwdref), 'fwdref')
+
+    def test_formatannotationrelativeto(self):
+        from test.typinganndata.ann_module9 import A, ann1
+
+        # Builtin types:
+        self.assertEqual(
+            inspect.formatannotationrelativeto(object)(type),
+            'type',
+        )
+
+        # Custom types:
+        self.assertEqual(
+            inspect.formatannotationrelativeto(None)(A),
+            'testModule.typing.A',
+        )
+
+        class B: ...
+        B.__module__ = 'testModule.typing'
+
+        self.assertEqual(
+            inspect.formatannotationrelativeto(B)(A),
+            'A',
+        )
+
+        self.assertEqual(
+            inspect.formatannotationrelativeto(object)(A),
+            'testModule.typing.A',
+        )
+
+        # Not an instance of "type":
+        self.assertEqual(
+            inspect.formatannotationrelativeto(A)(ann1),
+            'List[testModule.typing.A] | int',
+        )
 
 
 class TestIsMethodDescriptor(unittest.TestCase):
@@ -2683,6 +2827,30 @@ class TestGetGeneratorState(unittest.TestCase):
         # Running after the first yield
         next(self.generator)
 
+    def test_types_coroutine_wrapper_state(self):
+        def gen():
+            yield 1
+            yield 2
+
+        @types.coroutine
+        def wrapped_generator_coro():
+            # return a generator iterator so types.coroutine
+            # wraps it into types._GeneratorWrapper.
+            return gen()
+
+        g = wrapped_generator_coro()
+        self.addCleanup(g.close)
+        self.assertIs(type(g), types._GeneratorWrapper)
+
+        # _GeneratorWrapper must provide gi_suspended/cr_suspended
+        # so inspect.get*state() doesn't raise AttributeError.
+        self.assertEqual(inspect.getgeneratorstate(g), inspect.GEN_CREATED)
+        self.assertEqual(inspect.getcoroutinestate(g), inspect.CORO_CREATED)
+
+        next(g)
+        self.assertEqual(inspect.getgeneratorstate(g), inspect.GEN_SUSPENDED)
+        self.assertEqual(inspect.getcoroutinestate(g), inspect.CORO_SUSPENDED)
+
     def test_easy_debugging(self):
         # repr() and str() of a generator state should contain the state name
         names = 'GEN_CREATED GEN_RUNNING GEN_SUSPENDED GEN_CLOSED'.split()
@@ -2820,7 +2988,7 @@ class TestGetAsyncGenState(unittest.IsolatedAsyncioTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        asyncio._set_event_loop_policy(None)
+        asyncio.events._set_event_loop_policy(None)
 
     def _asyncgenstate(self):
         return inspect.getasyncgenstate(self.asyncgen)
@@ -2949,7 +3117,7 @@ class TestSignatureObject(unittest.TestCase):
             pass
 
         sig = inspect.signature(test)
-        self.assertTrue(repr(sig).startswith('<Signature'))
+        self.assertStartsWith(repr(sig), '<Signature')
         self.assertTrue('(po, /, pk' in repr(sig))
 
         # We need two functions, because it is impossible to represent
@@ -2958,7 +3126,7 @@ class TestSignatureObject(unittest.TestCase):
             pass
 
         sig2 = inspect.signature(test2)
-        self.assertTrue(repr(sig2).startswith('<Signature'))
+        self.assertStartsWith(repr(sig2), '<Signature')
         self.assertTrue('(pod=42, /)' in repr(sig2))
 
         po = sig.parameters['po']
@@ -3412,9 +3580,10 @@ class TestSignatureObject(unittest.TestCase):
                           int))
 
     def test_signature_on_classmethod(self):
-        self.assertEqual(self.signature(classmethod),
-                         ((('function', ..., ..., "positional_only"),),
-                          ...))
+        if not support.MISSING_C_DOCSTRINGS:
+            self.assertEqual(self.signature(classmethod),
+                            ((('function', ..., ..., "positional_only"),),
+                            ...))
 
         class Test:
             @classmethod
@@ -3434,9 +3603,10 @@ class TestSignatureObject(unittest.TestCase):
                           ...))
 
     def test_signature_on_staticmethod(self):
-        self.assertEqual(self.signature(staticmethod),
-                         ((('function', ..., ..., "positional_only"),),
-                          ...))
+        if not support.MISSING_C_DOCSTRINGS:
+            self.assertEqual(self.signature(staticmethod),
+                            ((('function', ..., ..., "positional_only"),),
+                            ...))
 
         class Test:
             @staticmethod
@@ -3845,7 +4015,6 @@ class TestSignatureObject(unittest.TestCase):
                            ('b', ..., ..., "positional_or_keyword")),
                           ...))
 
-
     def test_signature_on_class(self):
         class C:
             def __init__(self, a):
@@ -3954,9 +4123,10 @@ class TestSignatureObject(unittest.TestCase):
 
             self.assertEqual(C(3), 8)
             self.assertEqual(C(3, 7), 1)
-            # BUG: Returns '<Signature (b)>'
-            with self.assertRaises(AssertionError):
-                self.assertEqual(self.signature(C), self.signature((0).__pow__))
+            if not support.MISSING_C_DOCSTRINGS:
+                # BUG: Returns '<Signature (b)>'
+                with self.assertRaises(AssertionError):
+                    self.assertEqual(self.signature(C), self.signature((0).__pow__))
 
         class CM(type):
             def __new__(mcls, name, bases, dct, *, foo=1):
@@ -4018,6 +4188,273 @@ class TestSignatureObject(unittest.TestCase):
                            ('dct', ..., ..., "positional_or_keyword"),
                            ('bar', 2, ..., "keyword_only")),
                           ...))
+
+    def test_signature_on_class_with_wrapped_metaclass_call(self):
+        class CM(type):
+            @identity_wrapper
+            def __call__(cls, a):
+                pass
+        class C(metaclass=CM):
+            def __init__(self, b):
+                pass
+
+        self.assertEqual(self.signature(C),
+                         ((('a', ..., ..., "positional_or_keyword"),),
+                          ...))
+
+        with self.subTest('classmethod'):
+            class CM(type):
+                @classmethod
+                @identity_wrapper
+                def __call__(cls, a):
+                    return a
+            class C(metaclass=CM):
+                def __init__(self, b):
+                    pass
+
+            self.assertEqual(C(1), 1)
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('staticmethod'):
+            class CM(type):
+                @staticmethod
+                @identity_wrapper
+                def __call__(a):
+                    return a
+            class C(metaclass=CM):
+                def __init__(self, b):
+                    pass
+
+            self.assertEqual(C(1), 1)
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('MethodType'):
+            class A:
+                @identity_wrapper
+                def call(self, a):
+                    return a
+            class CM(type):
+                __call__ = A().call
+            class C(metaclass=CM):
+                def __init__(self, b):
+                    pass
+
+            self.assertEqual(C(1), 1)
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('descriptor'):
+            class CM(type):
+                @custom_descriptor
+                @identity_wrapper
+                def __call__(self, a):
+                    return a
+            class C(metaclass=CM):
+                def __init__(self, b):
+                    pass
+
+            self.assertEqual(C(1), 1)
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+            self.assertEqual(self.signature(C.__call__),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+            self.assertEqual(self.signature(C, follow_wrapped=False),
+                             varargs_signature)
+            self.assertEqual(self.signature(C.__call__, follow_wrapped=False),
+                             varargs_signature)
+
+    def test_signature_on_class_with_wrapped_init(self):
+        class C:
+            @identity_wrapper
+            def __init__(self, b):
+                pass
+
+        C(1)  # does not raise
+        self.assertEqual(self.signature(C),
+                        ((('b', ..., ..., "positional_or_keyword"),),
+                        ...))
+
+        with self.subTest('classmethod'):
+            class C:
+                @classmethod
+                @identity_wrapper
+                def __init__(cls, b):
+                    pass
+
+            C(1)  # does not raise
+            self.assertEqual(self.signature(C),
+                            ((('b', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('staticmethod'):
+            class C:
+                @staticmethod
+                @identity_wrapper
+                def __init__(b):
+                    pass
+
+            C(1)  # does not raise
+            self.assertEqual(self.signature(C),
+                            ((('b', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('MethodType'):
+            class A:
+                @identity_wrapper
+                def call(self, a):
+                    pass
+
+            class C:
+                __init__ = A().call
+
+            C(1)  # does not raise
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('partial'):
+            class C:
+                __init__ = functools.partial(identity_wrapper(lambda x, a, b: None), 2)
+
+            C(1)  # does not raise
+            self.assertEqual(self.signature(C),
+                            ((('b', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('partialmethod'):
+            class C:
+                @identity_wrapper
+                def _init(self, x, a):
+                    self.a = (x, a)
+                __init__ = functools.partialmethod(_init, 2)
+
+            self.assertEqual(C(1).a, (2, 1))
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('descriptor'):
+            class C:
+                @custom_descriptor
+                @identity_wrapper
+                def __init__(self, a):
+                    pass
+
+            C(1)  # does not raise
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+            self.assertEqual(self.signature(C.__init__),
+                            ((('self', ..., ..., "positional_or_keyword"),
+                            ('a', ..., ..., "positional_or_keyword")),
+                            ...))
+
+            self.assertEqual(self.signature(C, follow_wrapped=False),
+                             varargs_signature)
+            if support.MISSING_C_DOCSTRINGS:
+                self.assertRaisesRegex(
+                    ValueError, "no signature found",
+                    self.signature, C.__new__, follow_wrapped=False,
+                )
+            else:
+                self.assertEqual(self.signature(C.__new__, follow_wrapped=False),
+                                varargs_signature)
+
+    def test_signature_on_class_with_wrapped_new(self):
+        with self.subTest('FunctionType'):
+            class C:
+                @identity_wrapper
+                def __new__(cls, a):
+                    return a
+
+            self.assertEqual(C(1), 1)
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('classmethod'):
+            class C:
+                @classmethod
+                @identity_wrapper
+                def __new__(cls, cls2, a):
+                    return a
+
+            self.assertEqual(C(1), 1)
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('staticmethod'):
+            class C:
+                @staticmethod
+                @identity_wrapper
+                def __new__(cls, a):
+                    return a
+
+            self.assertEqual(C(1), 1)
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('MethodType'):
+            class A:
+                @identity_wrapper
+                def call(self, cls, a):
+                    return a
+            class C:
+                __new__ = A().call
+
+            self.assertEqual(C(1), 1)
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('partial'):
+            class C:
+                __new__ = functools.partial(identity_wrapper(lambda x, cls, a: (x, a)), 2)
+
+            self.assertEqual(C(1), (2, 1))
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('partialmethod'):
+            class C:
+                __new__ = functools.partialmethod(identity_wrapper(lambda cls, x, a: (x, a)), 2)
+
+            self.assertEqual(C(1), (2, 1))
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('descriptor'):
+            class C:
+                @custom_descriptor
+                @identity_wrapper
+                def __new__(cls, a):
+                    return a
+
+            self.assertEqual(C(1), 1)
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+            self.assertEqual(self.signature(C.__new__),
+                            ((('cls', ..., ..., "positional_or_keyword"),
+                            ('a', ..., ..., "positional_or_keyword")),
+                            ...))
+
+            self.assertEqual(self.signature(C, follow_wrapped=False),
+                             varargs_signature)
+            self.assertEqual(self.signature(C.__new__, follow_wrapped=False),
+                             varargs_signature)
 
     def test_signature_on_class_with_init(self):
         class C:
@@ -4352,7 +4789,8 @@ class TestSignatureObject(unittest.TestCase):
                 __call__ = (2).__pow__
 
             self.assertEqual(C()(3), 8)
-            self.assertEqual(self.signature(C()), self.signature((0).__pow__))
+            if not support.MISSING_C_DOCSTRINGS:
+                self.assertEqual(self.signature(C()), self.signature((0).__pow__))
 
         with self.subTest('ClassMethodDescriptorType'):
             class C(dict):
@@ -4361,7 +4799,8 @@ class TestSignatureObject(unittest.TestCase):
             res = C()([1, 2], 3)
             self.assertEqual(res, {1: 3, 2: 3})
             self.assertEqual(type(res), C)
-            self.assertEqual(self.signature(C()), self.signature(dict.fromkeys))
+            if not support.MISSING_C_DOCSTRINGS:
+                self.assertEqual(self.signature(C()), self.signature(dict.fromkeys))
 
         with self.subTest('MethodDescriptorType'):
             class C(str):
@@ -4375,7 +4814,8 @@ class TestSignatureObject(unittest.TestCase):
                 __call__ = int.__pow__
 
             self.assertEqual(C(2)(3), 8)
-            self.assertEqual(self.signature(C()), self.signature((0).__pow__))
+            if not support.MISSING_C_DOCSTRINGS:
+                self.assertEqual(self.signature(C()), self.signature((0).__pow__))
 
         with self.subTest('MemberDescriptorType'):
             class C:
@@ -4393,7 +4833,8 @@ class TestSignatureObject(unittest.TestCase):
             def __call__(self, *args, **kwargs):
                 pass
 
-        self.assertEqual(self.signature(C), ((), ...))
+        if not support.MISSING_C_DOCSTRINGS:
+            self.assertEqual(self.signature(C), ((), ...))
         self.assertEqual(self.signature(C()),
                          ((('a', ..., ..., "positional_only"),
                            ('b', ..., ..., "positional_or_keyword"),
@@ -4940,14 +5381,48 @@ class TestSignatureObject(unittest.TestCase):
                     signature_func(ida.f, annotation_format=Format.STRING),
                     sig([par("x", PORK, annotation="undefined")])
                 )
+                s1 = signature_func(ida.f, annotation_format=Format.FORWARDREF)
+                s2 = sig([par("x", PORK, annotation=EqualToForwardRef("undefined", owner=ida.f))])
+                #breakpoint()
                 self.assertEqual(
                     signature_func(ida.f, annotation_format=Format.FORWARDREF),
-                    sig([par("x", PORK, annotation=ForwardRef("undefined"))])
+                    sig([par("x", PORK, annotation=EqualToForwardRef("undefined", owner=ida.f))])
                 )
                 with self.assertRaisesRegex(NameError, "undefined"):
                     signature_func(ida.f, annotation_format=Format.VALUE)
                 with self.assertRaisesRegex(NameError, "undefined"):
                     signature_func(ida.f)
+
+    def test_signature_deferred_annotations(self):
+        def f(x: undef):
+            pass
+
+        class C:
+            x: undef
+
+            def __init__(self, x: undef):
+                self.x = x
+
+        sig = inspect.signature(f, annotation_format=Format.FORWARDREF)
+        self.assertEqual(list(sig.parameters), ['x'])
+        sig = inspect.signature(C, annotation_format=Format.FORWARDREF)
+        self.assertEqual(list(sig.parameters), ['x'])
+
+        class CallableWrapper:
+            def __init__(self, func):
+                self.func = func
+                self.__annotate__ = func.__annotate__
+
+            def __call__(self, *args, **kwargs):
+                return self.func(*args, **kwargs)
+
+            @property
+            def __annotations__(self):
+                return self.__annotate__(Format.VALUE)
+
+        cw = CallableWrapper(f)
+        sig = inspect.signature(cw, annotation_format=Format.FORWARDREF)
+        self.assertEqual(list(sig.parameters), ['args', 'kwargs'])
 
     def test_signature_none_annotation(self):
         class funclike:
@@ -5054,7 +5529,7 @@ class TestParameterObject(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'cannot have default values'):
             p.replace(kind=inspect.Parameter.VAR_POSITIONAL)
 
-        self.assertTrue(repr(p).startswith('<Parameter'))
+        self.assertStartsWith(repr(p), '<Parameter')
         self.assertTrue('"a=42"' in repr(p))
 
     def test_signature_parameter_hashable(self):
@@ -5675,7 +6150,8 @@ class TestSignatureDefinitions(unittest.TestCase):
                 self.assertRaises(ValueError, inspect.signature, getattr(cls, name))
 
     def test_builtins_have_signatures(self):
-        no_signature = {'type', 'super', 'bytearray', 'bytes', 'dict', 'int', 'str'}
+        no_signature = {'type', 'super', 'bytearray', 'bytes',
+                        'dict', 'frozendict', 'int', 'str'}
         # These need PEP 457 groups
         needs_groups = {"range", "slice", "dir", "getattr",
                         "next", "iter", "vars"}
@@ -5707,6 +6183,7 @@ class TestSignatureDefinitions(unittest.TestCase):
             'AsyncGeneratorType': {'athrow'},
             'CoroutineType': {'throw'},
             'GeneratorType': {'throw'},
+            'FrameLocalsProxyType': {'setdefault', 'pop', 'get'},
         }
         self._test_module_has_signatures(types,
                 unsupported_signature=unsupported_signature,
@@ -5751,20 +6228,34 @@ class TestSignatureDefinitions(unittest.TestCase):
         import collections.abc
         self._test_module_has_signatures(collections.abc)
 
+    def test_datetime_module_has_signatures(self):
+        # Only test if the C implementation is available.
+        import_helper.import_module('_datetime')
+        import datetime
+        no_signature = {'tzinfo'}
+        unsupported_signature = {'timezone'}
+        methods_unsupported_signature = {
+            'date': {'replace'},
+            'time': {'replace'},
+            'datetime': {'replace', 'combine'},
+        }
+        self._test_module_has_signatures(datetime,
+                no_signature, unsupported_signature,
+                methods_unsupported_signature=methods_unsupported_signature)
+
     def test_errno_module_has_signatures(self):
         import errno
         self._test_module_has_signatures(errno)
 
     def test_faulthandler_module_has_signatures(self):
         import faulthandler
-        unsupported_signature = {'dump_traceback', 'dump_traceback_later', 'enable'}
+        unsupported_signature = {'dump_traceback', 'dump_traceback_later', 'enable', 'dump_c_stack'}
         unsupported_signature |= {name for name in ['register']
                                   if hasattr(faulthandler, name)}
         self._test_module_has_signatures(faulthandler, unsupported_signature=unsupported_signature)
 
     def test_functools_module_has_signatures(self):
-        unsupported_signature = {"reduce"}
-        self._test_module_has_signatures(functools, unsupported_signature=unsupported_signature)
+        self._test_module_has_signatures(functools)
 
     def test_gc_module_has_signatures(self):
         import gc
@@ -5798,8 +6289,7 @@ class TestSignatureDefinitions(unittest.TestCase):
     def test_os_module_has_signatures(self):
         unsupported_signature = {'chmod', 'utime'}
         unsupported_signature |= {name for name in
-            ['get_terminal_size', 'posix_spawn', 'posix_spawnp',
-             'register_at_fork', 'startfile']
+            ['get_terminal_size', 'link', 'register_at_fork', 'startfile']
             if hasattr(os, name)}
         self._test_module_has_signatures(os, unsupported_signature=unsupported_signature)
 
@@ -5809,7 +6299,10 @@ class TestSignatureDefinitions(unittest.TestCase):
 
     def test_re_module_has_signatures(self):
         import re
-        methods_no_signature = {'Match': {'group'}}
+        methods_no_signature = {
+                'Match': {'group'},
+                'Pattern': {'match'},  # It is now an alias for prefixmatch
+        }
         self._test_module_has_signatures(re,
                 methods_no_signature=methods_no_signature,
                 good_exceptions={'error', 'PatternError'})
@@ -5821,6 +6314,10 @@ class TestSignatureDefinitions(unittest.TestCase):
     def test_stat_module_has_signatures(self):
         import stat
         self._test_module_has_signatures(stat)
+
+    def test_struct_module_has_signatures(self):
+        import struct
+        self._test_module_has_signatures(struct)
 
     def test_string_module_has_signatures(self):
         import string
@@ -5837,6 +6334,7 @@ class TestSignatureDefinitions(unittest.TestCase):
     def test_threading_module_has_signatures(self):
         import threading
         self._test_module_has_signatures(threading)
+        self.assertIsNotNone(inspect.signature(threading.__excepthook__))
 
     def test_thread_module_has_signatures(self):
         import _thread
@@ -6008,8 +6506,19 @@ class TestUnwrap(unittest.TestCase):
         self.assertIs(inspect.unwrap(staticmethod(classmethod)), classmethod)
         self.assertIs(inspect.unwrap(classmethod(staticmethod)), staticmethod)
 
+def _clean_object_ids(text):
+    # Helper to handle "<obj at 0x...>" details in CLI output checks
+    import re
+    detect = r"object at 0x([0-9A-Fa-f]+)>"
+    replace = "object at 0x...>"
+    return re.sub(detect, replace, text)
 
-class TestMain(unittest.TestCase):
+class TestModuleCLI(unittest.TestCase):
+
+    BUILTIN_ERROR = "No source code available for builtin module"
+    NO_SOURCE_ERROR = "No source code available for defining module"
+    NO_SOURCE_TARGET_ERROR = "Failed to retrieve source code for given target"
+
     def test_only_source(self):
         module = importlib.import_module('unittest')
         rc, out, err = assert_python_ok('-m', 'inspect',
@@ -6037,26 +6546,222 @@ class TestMain(unittest.TestCase):
                          inspect.getsource(ThreadPoolExecutor).splitlines())
         self.assertEqual(err, b'')
 
-    def test_builtins(self):
+    def test_error_builtins(self):
         _, out, err = assert_python_failure('-m', 'inspect',
                                             'sys')
         lines = err.decode().splitlines()
-        self.assertEqual(lines, ["Can't get info for builtin modules."])
+        self.assertEqual(lines, [self.BUILTIN_ERROR])
 
-    def test_details(self):
-        module = importlib.import_module('unittest')
+    def test_error_extension(self):
+        module_name = "_testcapi"
+        if module_name in sys.builtin_module_names:
+            # WASI test environment has even _testcapi as a builtin module
+            expected_error = self.BUILTIN_ERROR
+        else:
+            expected_error = self.NO_SOURCE_ERROR
+        _, out, err = assert_python_failure('-m', 'inspect',
+                                            module_name)
+        lines = err.decode().splitlines()
+        self.assertEqual(lines, [expected_error])
+
+    def test_error_data(self):
+        _, out, err = assert_python_failure('-m', 'inspect',
+                                            'importlib.machinery:SOURCE_SUFFIXES')
+        lines = err.decode().splitlines()
+        self.assertEqual(lines, [self.NO_SOURCE_TARGET_ERROR])
+
+    def test_details_option_with_package(self):
+        module_name = 'unittest'
+        module = importlib.import_module(module_name)
         args = support.optim_args_from_interpreter_flags()
         rc, out, err = assert_python_ok(*args, '-m', 'inspect',
-                                        'unittest', '--details')
-        output = out.decode()
-        # Just a quick sanity check on the output
-        self.assertIn(module.__spec__.name, output)
-        self.assertIn(module.__name__, output)
-        self.assertIn(module.__spec__.origin, output)
-        self.assertIn(module.__file__, output)
-        self.assertIn(module.__spec__.cached, output)
-        self.assertIn(module.__cached__, output)
+                                        module_name, '--details')
+        # Full rendering check on the expected output
+        expected_lines = [
+            f"Target: {module.__name__}",  # No aliasing
+            f"Origin: {module.__spec__.origin}",
+            f"Source: {module.__file__}",
+            f"Cached: {module.__spec__.cached}",  # None is still displayed
+            f"Loader: {_clean_object_ids(repr(module.__spec__.loader))}",
+            f"Submodule search paths: {module.__path__}",
+            "",
+        ]
+        output_lines = _clean_object_ids(out.decode()).splitlines()
+        self.assertEqual(output_lines, expected_lines)
         self.assertEqual(err, b'')
+
+    def test_details_option_with_builtin_module(self):
+        # Also an end-to-end test of non-package lookups
+        module_name = 'sys'
+        module = importlib.import_module(module_name)
+        args = support.optim_args_from_interpreter_flags()
+        rc, out, err = assert_python_ok(*args, '-m', 'inspect',
+                                        module_name, '--details')
+        # Full rendering check on the expected output
+        # No error is reported when just fetching the module details
+        expected_lines = [
+            f"Target: {module.__name__}",  # No aliasing
+            f"Origin: {module.__spec__.origin}",
+            "Source: None",
+            "Cached: None",
+            f"Loader: {_clean_object_ids(repr(module.__spec__.loader))}",
+            "",
+        ]
+        output_lines = _clean_object_ids(out.decode()).splitlines()
+        self.assertEqual(output_lines, expected_lines)
+        self.assertEqual(err, b'')
+
+    def test_details_option_with_data_target(self):
+        # Also an end-to-end test of non-module lookups without aliasing
+        module_name = 'importlib.machinery'
+        cli_target = f"{module_name}:SOURCE_SUFFIXES"
+        module = importlib.import_module(module_name)
+        args = support.optim_args_from_interpreter_flags()
+        rc, out, err = assert_python_ok(*args, '-m', 'inspect',
+                                        cli_target, '--details')
+        # Full rendering check on the expected output
+        # The error is only informational when reading source details
+        expected_lines = [
+            f"Target: {cli_target}",  # No aliasing
+            f"Origin: {module.__spec__.origin}",
+            f"Source: {module.__file__}",
+            f"Cached: {module.__spec__.cached}",  # None is still displayed
+            self.NO_SOURCE_TARGET_ERROR,
+            "",
+        ]
+        output_lines = out.decode().splitlines()
+        self.assertEqual(output_lines, expected_lines)
+        self.assertEqual(err, b'')
+
+    @unittest.skipIf(not os.path.exists(os.path.__file__), "Needs frozen source file")
+    def test_details_option_with_aliased_target(self):
+        # Also an end-to-end test of successful non-module lookups
+        module = importlib.import_module("os.path")
+        target = module.join
+        cli_target = "os:path.join"  # Defining module is os.path, not os
+        defining_target = f"{target.__module__}:{target.__qualname__}"
+
+        args = support.optim_args_from_interpreter_flags()
+        rc, out, err = assert_python_ok(*args, '-m', 'inspect',
+                                        cli_target, '--details')
+        # Full rendering check on the expected output
+        expected_lines = [
+            f'Target: {defining_target} (looked up as "{cli_target}")',
+            f"Origin: {module.__spec__.origin}",
+            f"Source: {module.__file__}",
+            f"Cached: {module.__spec__.cached}",  # None is still displayed
+            f"Line: {inspect.findsource(target)[1]}",
+            "",
+        ]
+        output_lines = out.decode().splitlines()
+        self.assertEqual(output_lines, expected_lines)
+        self.assertEqual(err, b'')
+
+    def _check_details(self, module, details, other_expected_keys=(), *, alias=None, error=None):
+        expected_keys = {"target", "origin", "source", "cached"}
+        if other_expected_keys:
+            expected_keys |= other_expected_keys
+        if alias is not None:
+            expected_keys.add("alias")
+        if error is not None:
+            expected_keys.add("error")
+        self.assertEqual(set(details.keys()), expected_keys)
+        self.assertEqual(module.__spec__.origin, details["origin"])
+        try:
+            expected_source = inspect.getsourcefile(module)
+        except Exception:
+            expected_source = None
+        if expected_source and expected_source.startswith("<frozen"):
+            # Check special case for frozen modules
+            expected_source = module.__file__
+        self.assertEqual(expected_source, details["source"])
+        self.assertEqual(module.__spec__.cached, details["cached"])
+        if "loader" in other_expected_keys:
+            self.assertEqual(repr(module.__spec__.loader), details["loader"])
+        if "submodule_paths" in other_expected_keys:
+            self.assertEqual(repr(module.__path__), details["submodule_paths"])
+        if alias is not None:
+            self.assertEqual(details["alias"], alias)
+            self.assertNotEqual(details["target"], alias)
+        if error is not None:
+            self.assertEqual(details["error"], error)
+
+    def test_get_cli_details_for_source_module(self):
+        module_name = "inspect"
+        module = importlib.import_module(module_name)
+        details = inspect._get_details_for_cli(module, module_name, module)
+        self._check_details(module, details, {"loader"})
+        target = module.signature
+        nominal_target = f"{module_name}:{target.__qualname__}"
+        details = inspect._get_details_for_cli(module, nominal_target, target)
+        self._check_details(module, details, {"lineno"})
+        self.assertEqual(inspect.findsource(target)[1], details["lineno"])
+
+    def test_get_cli_details_for_source_package(self):
+        module_name = "importlib"
+        module = importlib.import_module(module_name)
+        details = inspect._get_details_for_cli(module, module_name, module)
+        self._check_details(module, details, {"loader", "submodule_paths"})
+        target = module.import_module  # Assumes this is not re-exported
+        nominal_target = f"{module_name}:{target.__qualname__}"
+        details = inspect._get_details_for_cli(module, nominal_target, target)
+        self._check_details(module, details, {"lineno"})
+        self.assertEqual(inspect.findsource(target)[1], details["lineno"])
+
+    def test_get_cli_details_for_builtin_module(self):
+        expected_error = self.BUILTIN_ERROR
+        module_name = "sys"
+        module = importlib.import_module(module_name)
+        details = inspect._get_details_for_cli(module, module_name, module)
+        self._check_details(module, details, {"loader"}, error=expected_error)
+        target = module.exit
+        nominal_target = f"{module_name}:{target.__qualname__}"
+        details = inspect._get_details_for_cli(module, nominal_target, target)
+        self._check_details(module, details, error=expected_error)
+
+    def test_get_cli_details_for_frozen_module(self):
+        # Source is actually available for this frozen module, as
+        # __file__ refers to the location of importlib._bootstrap
+        module_name = "_frozen_importlib"
+        module = importlib.import_module(module_name)
+        details = inspect._get_details_for_cli(module, module_name, module)
+        self._check_details(module, details, {"loader"}, alias=module_name)
+        target = module.__import__
+        nominal_target = f"{module_name}:{target.__qualname__}"
+        details = inspect._get_details_for_cli(module, nominal_target, target)
+        self._check_details(module, details, {"lineno"}, alias=nominal_target)
+        self.assertEqual(inspect.findsource(target)[1], details["lineno"])
+
+    def test_get_cli_details_for_extension_module(self):
+        module_name = "_testcapi"
+        if module_name in sys.builtin_module_names:
+            # WASI test environment has even _testcapi as a builtin module
+            expected_error = self.BUILTIN_ERROR
+        else:
+            expected_error = self.NO_SOURCE_ERROR
+        module = importlib.import_module(module_name)
+        details = inspect._get_details_for_cli(module, module_name, module)
+        self._check_details(module, details, {"loader"}, error=expected_error)
+        target = module.fatal_error
+        nominal_target = f"{module_name}:{target.__qualname__}"
+        details = inspect._get_details_for_cli(module, nominal_target, target)
+        self._check_details(module, details, error=expected_error)
+
+    @unittest.skipIf(not os.path.exists(os.path.__file__), "Needs frozen source file")
+    def test_get_cli_details_for_aliased_module(self):
+        # os.path is an alias for a platform dependent implementation module
+        # Test is skipped if the source file is missing (as the output changes),
+        # which may happen if running the test suite after deployment.
+        module_name = "os.path"
+        module = importlib.import_module(module_name)
+        details = inspect._get_details_for_cli(module, module_name, module)
+        self._check_details(module, details, {"loader"}, alias=module_name)
+        nominal_module = importlib.import_module("os")
+        nominal_target = "os:path.join"
+        target = module.join
+        details = inspect._get_details_for_cli(nominal_module, nominal_target, target)
+        self._check_details(module, details, {"lineno"}, alias=nominal_target)
+        self.assertEqual(inspect.findsource(target)[1], details["lineno"])
 
 
 class TestReload(unittest.TestCase):
@@ -6098,12 +6803,14 @@ class TestRepl(unittest.TestCase):
         object.
         """
 
+        # TODO(picnixz): refactor this as it's used by test_repl.py
+
         # To run the REPL without using a terminal, spawn python with the command
         # line option '-i' and the process name set to '<stdin>'.
         # The directory of argv[0] must match the directory of the Python
         # executable for the Popen() call to python to succeed as the directory
-        # path may be used by Py_GetPath() to build the default module search
-        # path.
+        # path may be used by PyConfig_Get("module_search_paths") to build the
+        # default module search path.
         stdin_fname = os.path.join(os.path.dirname(sys.executable), "<stdin>")
         cmd_line = [stdin_fname, '-E', '-i']
         cmd_line.extend(args)
@@ -6146,8 +6853,6 @@ class TestRepl(unittest.TestCase):
 
         expected = "The source is: <<<def f():\n    print(0)\n    return 1 + 2\n>>>"
         self.assertIn(expected, output)
-
-
 
 
 if __name__ == "__main__":

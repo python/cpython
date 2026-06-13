@@ -14,10 +14,6 @@
 #include <ffi.h>
 #include "ctypes.h"
 
-#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
-#  include "../_complex.h"        // complex
-#endif
-
 #define CTYPES_CFIELD_CAPSULE_NAME_PYMEM "_ctypes/cfield.c pymem"
 
 /*[clinic input]
@@ -99,7 +95,12 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
                      "type of field %R must be a C type", name);
         goto error;
     }
-    assert(byte_size == info->size);
+    if (byte_size != info->size) {
+        PyErr_Format(PyExc_ValueError,
+                     "byte size of field %R (%zd) does not match type size (%zd)",
+                     name, byte_size, info->size);
+        goto error;
+    }
 
     Py_ssize_t bitfield_size = 0;
     Py_ssize_t bit_offset = 0;
@@ -159,8 +160,8 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
         if ((bitfield_size + bit_offset) > byte_size * 8) {
             PyErr_Format(
                 PyExc_ValueError,
-                "bit field %R overflows its type (%zd + %zd >= %zd)",
-                name, bit_offset, byte_size*8);
+                "bit field %R overflows its type (%zd + %zd > %zd)",
+                name, bit_offset, bitfield_size, byte_size * 8);
             goto error;
         }
     }
@@ -243,7 +244,7 @@ _pack_legacy_size(CFieldObject *field)
 }
 
 static int
-PyCField_set(PyObject *op, PyObject *inst, PyObject *value)
+PyCField_set_lock_held(PyObject *op, PyObject *inst, PyObject *value)
 {
     CDataObject *dst;
     char *ptr;
@@ -265,6 +266,16 @@ PyCField_set(PyObject *op, PyObject *inst, PyObject *value)
                        self->index, _pack_legacy_size(self), ptr);
 }
 
+static int
+PyCField_set(PyObject *op, PyObject *inst, PyObject *value)
+{
+    int res;
+    Py_BEGIN_CRITICAL_SECTION(inst);
+    res = PyCField_set_lock_held(op, inst, value);
+    Py_END_CRITICAL_SECTION();
+    return res;
+}
+
 static PyObject *
 PyCField_get(PyObject *op, PyObject *inst, PyObject *type)
 {
@@ -280,9 +291,13 @@ PyCField_get(PyObject *op, PyObject *inst, PyObject *type)
         return NULL;
     }
     src = _CDataObject_CAST(inst);
-    return PyCData_get(st, self->proto, self->getfunc, inst,
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(inst);
+    res = PyCData_get(st, self->proto, self->getfunc, inst,
                        self->index, _pack_legacy_size(self),
                        src->b_ptr + self->byte_offset);
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 static PyObject *
@@ -744,82 +759,166 @@ d_get(void *ptr, Py_ssize_t size)
     return PyFloat_FromDouble(val);
 }
 
-#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
-/* C: double complex */
+#if defined(_Py_FFI_SUPPORT_C_COMPLEX)
+
+/* We don't use _Complex types here, using arrays instead, as the C11+
+   standard says: "Each complex type has the same representation and alignment
+   requirements as an array type containing exactly two elements of the
+   corresponding real type; the first element is equal to the real part, and
+   the second element to the imaginary part, of the complex number." */
+
+/* Zd: double complex */
 static PyObject *
-C_set(void *ptr, PyObject *value, Py_ssize_t size)
+Zd_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
-    assert(NUM_BITS(size) || (size == sizeof(double complex)));
+    assert(NUM_BITS(size) || (size == 2*sizeof(double)));
     Py_complex c = PyComplex_AsCComplex(value);
 
     if (c.real == -1 && PyErr_Occurred()) {
         return NULL;
     }
-    double complex x = CMPLX(c.real, c.imag);
+    double x[2] = {c.real, c.imag};
     memcpy(ptr, &x, sizeof(x));
     _RET(value);
 }
 
 static PyObject *
-C_get(void *ptr, Py_ssize_t size)
+Zd_get(void *ptr, Py_ssize_t size)
 {
-    assert(NUM_BITS(size) || (size == sizeof(double complex)));
-    double complex x;
+    assert(NUM_BITS(size) || (size == 2*sizeof(double)));
+    double x[2];
 
     memcpy(&x, ptr, sizeof(x));
-    return PyComplex_FromDoubles(creal(x), cimag(x));
+    return PyComplex_FromDoubles(x[0], x[1]);
 }
 
-/* E: float complex */
 static PyObject *
-E_set(void *ptr, PyObject *value, Py_ssize_t size)
+Zd_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 {
-    assert(NUM_BITS(size) || (size == sizeof(float complex)));
+    assert(NUM_BITS(size) || (size == 2*sizeof(double)));
     Py_complex c = PyComplex_AsCComplex(value);
 
     if (c.real == -1 && PyErr_Occurred()) {
         return NULL;
     }
-    float complex x = CMPLXF((float)c.real, (float)c.imag);
-    memcpy(ptr, &x, sizeof(x));
-    _RET(value);
-}
-
-static PyObject *
-E_get(void *ptr, Py_ssize_t size)
-{
-    assert(NUM_BITS(size) || (size == sizeof(float complex)));
-    float complex x;
-
-    memcpy(&x, ptr, sizeof(x));
-    return PyComplex_FromDoubles(crealf(x), cimagf(x));
-}
-
-/* F: long double complex */
-static PyObject *
-F_set(void *ptr, PyObject *value, Py_ssize_t size)
-{
-    assert(NUM_BITS(size) || (size == sizeof(long double complex)));
-    Py_complex c = PyComplex_AsCComplex(value);
-
-    if (c.real == -1 && PyErr_Occurred()) {
+#ifdef WORDS_BIGENDIAN
+    if (PyFloat_Pack8(c.real, ptr, 1)
+        || PyFloat_Pack8(c.imag, ptr + sizeof(double), 1))
+    {
         return NULL;
     }
-    long double complex x = CMPLXL(c.real, c.imag);
-    memcpy(ptr, &x, sizeof(x));
-    _RET(value);
-}
-
-static PyObject *
-F_get(void *ptr, Py_ssize_t size)
-{
-    assert(NUM_BITS(size) || (size == sizeof(long double complex)));
-    long double complex x;
-
-    memcpy(&x, ptr, sizeof(x));
-    return PyComplex_FromDoubles((double)creall(x), (double)cimagl(x));
-}
+#else
+    if (PyFloat_Pack8(c.real, ptr, 0)
+        || PyFloat_Pack8(c.imag, ptr + sizeof(double), 0))
+    {
+        return NULL;
+    }
 #endif
+    _RET(value);
+}
+
+static PyObject *
+Zd_get_sw(void *ptr, Py_ssize_t size)
+{
+    assert(NUM_BITS(size) || (size == 2*sizeof(double)));
+#ifdef WORDS_BIGENDIAN
+    return PyComplex_FromDoubles(PyFloat_Unpack8(ptr, 1),
+                                 PyFloat_Unpack8(ptr + sizeof(double), 1));
+#else
+    return PyComplex_FromDoubles(PyFloat_Unpack8(ptr, 0),
+                                 PyFloat_Unpack8(ptr + sizeof(double), 0));
+#endif
+}
+
+/* Zf: float complex */
+static PyObject *
+Zf_set(void *ptr, PyObject *value, Py_ssize_t size)
+{
+    assert(NUM_BITS(size) || (size == 2*sizeof(float)));
+    Py_complex c = PyComplex_AsCComplex(value);
+
+    if (c.real == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    float x[2] = {(float)c.real, (float)c.imag};
+    memcpy(ptr, &x, sizeof(x));
+    _RET(value);
+}
+
+static PyObject *
+Zf_get(void *ptr, Py_ssize_t size)
+{
+    assert(NUM_BITS(size) || (size == 2*sizeof(float)));
+    float x[2];
+
+    memcpy(&x, ptr, sizeof(x));
+    return PyComplex_FromDoubles(x[0], x[1]);
+}
+
+static PyObject *
+Zf_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
+{
+    assert(NUM_BITS(size) || (size == 2*sizeof(float)));
+    Py_complex c = PyComplex_AsCComplex(value);
+
+    if (c.real == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+#ifdef WORDS_BIGENDIAN
+    if (PyFloat_Pack4(c.real, ptr, 1)
+        || PyFloat_Pack4(c.imag, ptr + sizeof(float), 1))
+    {
+        return NULL;
+    }
+#else
+    if (PyFloat_Pack4(c.real, ptr, 0)
+        || PyFloat_Pack4(c.imag, ptr + sizeof(float), 0))
+    {
+        return NULL;
+    }
+#endif
+    _RET(value);
+}
+
+static PyObject *
+Zf_get_sw(void *ptr, Py_ssize_t size)
+{
+    assert(NUM_BITS(size) || (size == 2*sizeof(float)));
+#ifdef WORDS_BIGENDIAN
+    return PyComplex_FromDoubles(PyFloat_Unpack4(ptr, 1),
+                                 PyFloat_Unpack4(ptr + sizeof(float), 1));
+#else
+    return PyComplex_FromDoubles(PyFloat_Unpack4(ptr, 0),
+                                 PyFloat_Unpack4(ptr + sizeof(float), 0));
+#endif
+}
+
+/* Zg: long double complex */
+static PyObject *
+Zg_set(void *ptr, PyObject *value, Py_ssize_t size)
+{
+    assert(NUM_BITS(size) || (size == 2*sizeof(long double)));
+    Py_complex c = PyComplex_AsCComplex(value);
+
+    if (c.real == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    long double x[2] = {c.real, c.imag};
+    memcpy(ptr, &x, sizeof(x));
+    _RET(value);
+}
+
+static PyObject *
+Zg_get(void *ptr, Py_ssize_t size)
+{
+    assert(NUM_BITS(size) || (size == 2*sizeof(long double)));
+    long double x[2];
+
+    memcpy(&x, ptr, sizeof(x));
+    return PyComplex_FromDoubles((double)x[0], (double)x[1]);
+}
+#endif  // _Py_FFI_SUPPORT_C_COMPLEX
+
 
 /* d: double */
 static PyObject *
@@ -1231,7 +1330,7 @@ Z_get(void *ptr, Py_ssize_t size)
     wchar_t *p;
     p = *(wchar_t **)ptr;
     if (p) {
-        return PyUnicode_FromWideChar(p, wcslen(p));
+        return PyUnicode_FromWideChar(p, -1);
     } else {
         Py_RETURN_NONE;
     }
@@ -1353,7 +1452,7 @@ struct formattable {
 for nbytes in 8, 16, 32, 64:
     for sgn in 'i', 'u':
         print(f'    struct fielddesc fmt_{sgn}{nbytes};')
-for code in 'sbBcdCEFgfhHiIlLqQPzuUZXvO':
+for code in 'sbBcdgfhHiIlLqQPzuUZXvO':
     print(f'    struct fielddesc fmt_{code};')
 [python start generated code]*/
     struct fielddesc fmt_i8;
@@ -1369,9 +1468,6 @@ for code in 'sbBcdCEFgfhHiIlLqQPzuUZXvO':
     struct fielddesc fmt_B;
     struct fielddesc fmt_c;
     struct fielddesc fmt_d;
-    struct fielddesc fmt_C;
-    struct fielddesc fmt_E;
-    struct fielddesc fmt_F;
     struct fielddesc fmt_g;
     struct fielddesc fmt_f;
     struct fielddesc fmt_h;
@@ -1390,7 +1486,10 @@ for code in 'sbBcdCEFgfhHiIlLqQPzuUZXvO':
     struct fielddesc fmt_X;
     struct fielddesc fmt_v;
     struct fielddesc fmt_O;
-/*[python end generated code: output=fa648744ec7f919d input=087d58357d4bf2c5]*/
+/*[python end generated code: output=266ae6d30b6286a1 input=a1b7a263c7cf681f]*/
+    struct fielddesc fmt_Zf;
+    struct fielddesc fmt_Zd;
+    struct fielddesc fmt_Zg;
 
     // bool has code '?':
     struct fielddesc fmt_bool;
@@ -1400,7 +1499,7 @@ for code in 'sbBcdCEFgfhHiIlLqQPzuUZXvO':
 
     // Result of _ctypes_get_simple_type_chars. Initialized just after
     // the rest of formattable, so we stash it here.
-    char simple_type_chars[26];
+    char simple_type_chars[23];
 };
 
 static struct formattable formattable;
@@ -1461,8 +1560,8 @@ _Py_COMP_DIAG_PUSH
 
 /* Delayed initialization. Windows cannot statically reference dynamically
    loaded addresses from DLLs. */
-static void
-_ctypes_init_fielddesc_locked(void)
+void
+_ctypes_init_fielddesc(void)
 {
     /* Fixed-width integers */
 
@@ -1480,7 +1579,7 @@ for nbytes in 8, 16, 32, 64:
             f'{sgn}{nbytes}_get_sw',
         ]
         print(f'    formattable.fmt_{sgn}{nbytes} = (struct fielddesc){{')
-        print(f'            {', '.join(parts)} }};')
+        print(f'            {", ".join(parts)} }};')
 [python start generated code]*/
     formattable.fmt_i8 = (struct fielddesc){
             0, &ffi_type_sint8, i8_set, i8_get, i8_set_sw, i8_get_sw };
@@ -1498,7 +1597,7 @@ for nbytes in 8, 16, 32, 64:
             0, &ffi_type_sint64, i64_set, i64_get, i64_set_sw, i64_get_sw };
     formattable.fmt_u64 = (struct fielddesc){
             0, &ffi_type_uint64, u64_set, u64_get, u64_set_sw, u64_get_sw };
-/*[python end generated code: output=16806fe0ca3a9c4c input=850b8dd6388b1b10]*/
+/*[python end generated code: output=16806fe0ca3a9c4c input=96348a06e575f801]*/
 
 
     /* Native C integers.
@@ -1519,7 +1618,7 @@ for base_code, base_c_type in [
         (base_code.upper(), 'unsigned ' + base_c_type, 'u' + base_c_type),
     ]:
         print(f'    formattable.fmt_{code} = *FIXINT_FIELDDESC_FOR({c_type});')
-        print(f"    formattable.fmt_{code}.code = '{code}';")
+        print(f'    formattable.fmt_{code}.code = "{code}";')
         if base_code == 'q':
             # ffi doesn't have `long long`; keep use the fixint type
             pass
@@ -1527,34 +1626,34 @@ for base_code, base_c_type in [
             print(f'    formattable.fmt_{code}.pffi_type = &ffi_type_{ffi_type};')
 [python start generated code]*/
     formattable.fmt_b = *FIXINT_FIELDDESC_FOR(signed char);
-    formattable.fmt_b.code = 'b';
+    formattable.fmt_b.code = "b";
     formattable.fmt_b.pffi_type = &ffi_type_schar;
     formattable.fmt_B = *FIXINT_FIELDDESC_FOR(unsigned char);
-    formattable.fmt_B.code = 'B';
+    formattable.fmt_B.code = "B";
     formattable.fmt_B.pffi_type = &ffi_type_uchar;
     formattable.fmt_h = *FIXINT_FIELDDESC_FOR(signed short);
-    formattable.fmt_h.code = 'h';
+    formattable.fmt_h.code = "h";
     formattable.fmt_h.pffi_type = &ffi_type_sshort;
     formattable.fmt_H = *FIXINT_FIELDDESC_FOR(unsigned short);
-    formattable.fmt_H.code = 'H';
+    formattable.fmt_H.code = "H";
     formattable.fmt_H.pffi_type = &ffi_type_ushort;
     formattable.fmt_i = *FIXINT_FIELDDESC_FOR(signed int);
-    formattable.fmt_i.code = 'i';
+    formattable.fmt_i.code = "i";
     formattable.fmt_i.pffi_type = &ffi_type_sint;
     formattable.fmt_I = *FIXINT_FIELDDESC_FOR(unsigned int);
-    formattable.fmt_I.code = 'I';
+    formattable.fmt_I.code = "I";
     formattable.fmt_I.pffi_type = &ffi_type_uint;
     formattable.fmt_l = *FIXINT_FIELDDESC_FOR(signed long);
-    formattable.fmt_l.code = 'l';
+    formattable.fmt_l.code = "l";
     formattable.fmt_l.pffi_type = &ffi_type_slong;
     formattable.fmt_L = *FIXINT_FIELDDESC_FOR(unsigned long);
-    formattable.fmt_L.code = 'L';
+    formattable.fmt_L.code = "L";
     formattable.fmt_L.pffi_type = &ffi_type_ulong;
     formattable.fmt_q = *FIXINT_FIELDDESC_FOR(signed long long);
-    formattable.fmt_q.code = 'q';
+    formattable.fmt_q.code = "q";
     formattable.fmt_Q = *FIXINT_FIELDDESC_FOR(unsigned long long);
-    formattable.fmt_Q.code = 'Q';
-/*[python end generated code: output=873c87a2e6b5075a input=ee814ca263aac18e]*/
+    formattable.fmt_Q.code = "Q";
+/*[python end generated code: output=b91080b4b821a6da input=7356e281df4debd3]*/
 
 
     /* Other types have bespoke setters and getters named `@_set` and `@_get`,
@@ -1564,7 +1663,7 @@ for base_code, base_c_type in [
 
 #define _TABLE_ENTRY(SYMBOL, FFI_TYPE, ...)                                   \
     formattable.fmt_ ## SYMBOL =                                              \
-        (struct fielddesc){(#SYMBOL)[0], (FFI_TYPE), __VA_ARGS__};            \
+        (struct fielddesc){(#SYMBOL), (FFI_TYPE), __VA_ARGS__};            \
     ///////////////////////////////////////////////////////////////////////////
 
 #define TABLE_ENTRY(SYMBOL, FFI_TYPE)                                         \
@@ -1577,11 +1676,13 @@ for base_code, base_c_type in [
     ///////////////////////////////////////////////////////////////////////////
 
     TABLE_ENTRY_SW(d, &ffi_type_double);
-#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
+#if defined(_Py_FFI_SUPPORT_C_COMPLEX)
     if (Py_FFI_COMPLEX_AVAILABLE) {
-        TABLE_ENTRY(C, &ffi_type_complex_double);
-        TABLE_ENTRY(E, &ffi_type_complex_float);
-        TABLE_ENTRY(F, &ffi_type_complex_longdouble);
+        TABLE_ENTRY(Zd, &ffi_type_complex_double);
+        TABLE_ENTRY_SW(Zd, &ffi_type_complex_double);
+        TABLE_ENTRY(Zf, &ffi_type_complex_float);
+        TABLE_ENTRY_SW(Zf, &ffi_type_complex_float);
+        TABLE_ENTRY(Zg, &ffi_type_complex_longdouble);
     }
 #endif
     TABLE_ENTRY(g, &ffi_type_longdouble);
@@ -1611,12 +1712,12 @@ for base_code, base_c_type in [
 
     // ctypes.c_bool is unsigned for FFI, even where C bool is signed.
     formattable.fmt_bool = *_ctypes_fixint_fielddesc(sizeof(bool), false);
-    formattable.fmt_bool.code = '?';
+    formattable.fmt_bool.code = "?";
     formattable.fmt_bool.setfunc = bool_set;
     formattable.fmt_bool.getfunc = bool_get;
 
 /*[python input]
-all_chars = "cbBhHiIlLdCEFfuzZqQPXOv?g"
+all_chars = "cbBhHiIlLdfuzZqQPXOv?g"
 print(f'    assert(sizeof(formattable.simple_type_chars) == {len(all_chars)+1});')
 print(f'    int i = 0;')
 for char in all_chars:
@@ -1625,7 +1726,7 @@ for char in all_chars:
           + f"formattable.simple_type_chars[i++] = '{char}';")
 print(f"    formattable.simple_type_chars[i] = 0;")
 [python start generated code]*/
-    assert(sizeof(formattable.simple_type_chars) == 26);
+    assert(sizeof(formattable.simple_type_chars) == 23);
     int i = 0;
     if (formattable.fmt_c.code) formattable.simple_type_chars[i++] = 'c';
     if (formattable.fmt_b.code) formattable.simple_type_chars[i++] = 'b';
@@ -1637,9 +1738,6 @@ print(f"    formattable.simple_type_chars[i] = 0;")
     if (formattable.fmt_l.code) formattable.simple_type_chars[i++] = 'l';
     if (formattable.fmt_L.code) formattable.simple_type_chars[i++] = 'L';
     if (formattable.fmt_d.code) formattable.simple_type_chars[i++] = 'd';
-    if (formattable.fmt_C.code) formattable.simple_type_chars[i++] = 'C';
-    if (formattable.fmt_E.code) formattable.simple_type_chars[i++] = 'E';
-    if (formattable.fmt_F.code) formattable.simple_type_chars[i++] = 'F';
     if (formattable.fmt_f.code) formattable.simple_type_chars[i++] = 'f';
     if (formattable.fmt_u.code) formattable.simple_type_chars[i++] = 'u';
     if (formattable.fmt_z.code) formattable.simple_type_chars[i++] = 'z';
@@ -1653,40 +1751,34 @@ print(f"    formattable.simple_type_chars[i] = 0;")
     if (formattable.fmt_bool.code) formattable.simple_type_chars[i++] = '?';
     if (formattable.fmt_g.code) formattable.simple_type_chars[i++] = 'g';
     formattable.simple_type_chars[i] = 0;
-/*[python end generated code: output=e6e5098a02f4b606 input=72031a625eac00c1]*/
+/*[python end generated code: output=b78c8b7eed73d45a input=30ddc50637dd8ee4]*/
 
 }
 #undef FIXINT_FIELDDESC_FOR
 _Py_COMP_DIAG_POP
 
-static void
-_ctypes_init_fielddesc(void)
-{
-    static bool initialized = false;
-    static PyMutex mutex = {0};
-    PyMutex_Lock(&mutex);
-    if (!initialized) {
-        _ctypes_init_fielddesc_locked();
-        initialized = true;
-    }
-    PyMutex_Unlock(&mutex);
+const char*
+_ctypes_get_simple_type_chars(void) {
+    return formattable.simple_type_chars;
 }
 
-char *
-_ctypes_get_simple_type_chars(void) {
-    _ctypes_init_fielddesc();
-    return formattable.simple_type_chars;
+const char*
+_ctypes_get_complex_type_formats(void) {
+    if (Py_FFI_COMPLEX_AVAILABLE) {
+        return "'Zf', 'Zd', 'Zg'";
+    }
+    else {
+        return NULL;
+    }
 }
 
 struct fielddesc *
 _ctypes_get_fielddesc(const char *fmt)
 {
-    _ctypes_init_fielddesc();
-
     struct fielddesc *result = NULL;
     switch(fmt[0]) {
 /*[python input]
-for code in 'sbBcdCEFgfhHiIlLqQPzuUZXvO':
+for code in 'sbBcdgfhHiIlLqQPzuUXvO':
     print(f"        case '{code}': result = &formattable.fmt_{code}; break;")
 [python start generated code]*/
         case 's': result = &formattable.fmt_s; break;
@@ -1694,9 +1786,6 @@ for code in 'sbBcdCEFgfhHiIlLqQPzuUZXvO':
         case 'B': result = &formattable.fmt_B; break;
         case 'c': result = &formattable.fmt_c; break;
         case 'd': result = &formattable.fmt_d; break;
-        case 'C': result = &formattable.fmt_C; break;
-        case 'E': result = &formattable.fmt_E; break;
-        case 'F': result = &formattable.fmt_F; break;
         case 'g': result = &formattable.fmt_g; break;
         case 'f': result = &formattable.fmt_f; break;
         case 'h': result = &formattable.fmt_h; break;
@@ -1711,15 +1800,33 @@ for code in 'sbBcdCEFgfhHiIlLqQPzuUZXvO':
         case 'z': result = &formattable.fmt_z; break;
         case 'u': result = &formattable.fmt_u; break;
         case 'U': result = &formattable.fmt_U; break;
-        case 'Z': result = &formattable.fmt_Z; break;
         case 'X': result = &formattable.fmt_X; break;
         case 'v': result = &formattable.fmt_v; break;
         case 'O': result = &formattable.fmt_O; break;
-/*[python end generated code: output=81a8223dda9f81f7 input=2f59666d3c024edf]*/
+/*[python end generated code: output=8e95bd0d49efb1c8 input=82d4ee1538b9b282]*/
+        case 'Z': {
+            switch(fmt[1]) {
+                case '\0': result = &formattable.fmt_Z; break;
+                case 'd': result = &formattable.fmt_Zd; break;
+                case 'f': result = &formattable.fmt_Zf; break;
+                case 'g': result = &formattable.fmt_Zg; break;
+            }
+            break;
+        }
         case '?': result = &formattable.fmt_bool; break;
     }
     if (!result || !result->code) {
         return NULL;
+    }
+    if (fmt[1] != '\0') {
+        if (fmt[0] == 'Z') {
+            if (fmt[2] != '\0') {
+                return NULL;
+            }
+        }
+        else {
+            return NULL;
+        }
     }
     assert(result->pffi_type);
     assert(result->setfunc);

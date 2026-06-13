@@ -4,8 +4,6 @@
 .. module:: tempfile
    :synopsis: Generate temporary files and directories.
 
-.. sectionauthor:: Zack Weinberg <zack@codesourcery.com>
-
 **Source code:** :source:`Lib/tempfile.py`
 
 .. index::
@@ -225,8 +223,9 @@ The module defines the following user-callable items:
    properly implements the :const:`os.O_EXCL` flag for :func:`os.open`.  The
    file is readable and writable only by the creating user ID.  If the
    platform uses permission bits to indicate whether a file is executable,
-   the file is executable by no one.  The file descriptor is not inherited
-   by child processes.
+   the file is executable by no one.
+
+   The file descriptor is :ref:`not inherited by child processes <fd_inheritance>`.
 
    Unlike :func:`TemporaryFile`, the user of :func:`mkstemp` is responsible
    for deleting the temporary file when done with it.
@@ -385,7 +384,7 @@ not surprise other unsuspecting code by changing global API behavior.
 Examples
 --------
 
-Here are some examples of typical usage of the :mod:`tempfile` module::
+Here are some examples of typical usage of the :mod:`!tempfile` module::
 
     >>> import tempfile
 

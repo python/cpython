@@ -190,12 +190,10 @@ def make_escapes(pass_nonascii):
         # Allow non-ascii characters to pass through so that e.g. 'msgid
         # "Höhe"' would not result in 'msgid "H\366he"'.  Otherwise we
         # escape any character outside the 32..126 range.
-        mod = 128
         escape = escape_ascii
     else:
-        mod = 256
         escape = escape_nonascii
-    escapes = [r"\%03o" % i for i in range(mod)]
+    escapes = [fr"\{i:03o}" for i in range(256)]
     for i in range(32, 127):
         escapes[i] = chr(i)
     escapes[ord('\\')] = r'\\'
@@ -206,7 +204,9 @@ def make_escapes(pass_nonascii):
 
 
 def escape_ascii(s, encoding):
-    return ''.join(escapes[ord(c)] if ord(c) < 128 else c for c in s)
+    return ''.join(escapes[ord(c)] if ord(c) < 128 else c
+                   if c.isprintable() else escape_nonascii(c, encoding)
+                   for c in s)
 
 
 def escape_nonascii(s, encoding):
@@ -282,15 +282,15 @@ def getFilesForName(name):
 # Key is the function name, value is a dictionary mapping argument positions to the
 # type of the argument. The type is one of 'msgid', 'msgid_plural', or 'msgctxt'.
 DEFAULTKEYWORDS = {
-    '_': {0: 'msgid'},
-    'gettext': {0: 'msgid'},
-    'ngettext': {0: 'msgid', 1: 'msgid_plural'},
-    'pgettext': {0: 'msgctxt', 1: 'msgid'},
-    'npgettext': {0: 'msgctxt', 1: 'msgid', 2: 'msgid_plural'},
-    'dgettext': {1: 'msgid'},
-    'dngettext': {1: 'msgid', 2: 'msgid_plural'},
-    'dpgettext': {1: 'msgctxt', 2: 'msgid'},
-    'dnpgettext': {1: 'msgctxt', 2: 'msgid', 3: 'msgid_plural'},
+    '_': {'msgid': 0},
+    'gettext': {'msgid': 0},
+    'ngettext': {'msgid': 0, 'msgid_plural': 1},
+    'pgettext': {'msgctxt': 0, 'msgid': 1},
+    'npgettext': {'msgctxt': 0, 'msgid': 1, 'msgid_plural': 2},
+    'dgettext': {'msgid': 1},
+    'dngettext': {'msgid': 1, 'msgid_plural': 2},
+    'dpgettext': {'msgctxt': 1, 'msgid': 2},
+    'dnpgettext': {'msgctxt': 1, 'msgid': 2, 'msgid_plural': 3},
 }
 
 
@@ -327,7 +327,7 @@ def parse_spec(spec):
     parts = spec.strip().split(':', 1)
     if len(parts) == 1:
         name = parts[0]
-        return name, {0: 'msgid'}
+        return name, {'msgid': 0}
 
     name, args = parts
     if not args:
@@ -373,7 +373,41 @@ def parse_spec(spec):
         raise ValueError(f'Invalid keyword spec {spec!r}: '
                          'msgctxt cannot appear without msgid')
 
-    return name, {v: k for k, v in result.items()}
+    return name, result
+
+
+def unparse_spec(name, spec):
+    """Unparse a keyword spec dictionary into a string."""
+    if spec == {'msgid': 0}:
+        return name
+
+    parts = []
+    for arg, pos in sorted(spec.items(), key=lambda x: x[1]):
+        if arg == 'msgctxt':
+            parts.append(f'{pos + 1}c')
+        else:
+            parts.append(str(pos + 1))
+    return f'{name}:{','.join(parts)}'
+
+
+def process_keywords(keywords, *, no_default_keywords):
+    custom_keywords = {}
+    for spec in dict.fromkeys(keywords):
+        name, spec = parse_spec(spec)
+        if name not in custom_keywords:
+            custom_keywords[name] = []
+        custom_keywords[name].append(spec)
+
+    if no_default_keywords:
+        return custom_keywords
+
+    # custom keywords override default keywords
+    for name, spec in DEFAULTKEYWORDS.items():
+        if name not in custom_keywords:
+            custom_keywords[name] = []
+        if spec not in custom_keywords[name]:
+            custom_keywords[name].append(spec)
+    return custom_keywords
 
 
 @dataclass(frozen=True)
@@ -459,32 +493,53 @@ class GettextVisitor(ast.NodeVisitor):
 
     def _extract_message(self, node):
         func_name = self._get_func_name(node)
-        spec = self.options.keywords.get(func_name)
-        if spec is None:
-            return
+        errors = []
+        specs = self.options.keywords.get(func_name, [])
+        for spec in specs:
+            err = self._extract_message_with_spec(node, spec)
+            if err is None:
+                return
+            errors.append(err)
 
-        max_index = max(spec)
+        if not errors:
+            return
+        if len(errors) == 1:
+            print(f'*** {self.filename}:{node.lineno}: {errors[0]}',
+                  file=sys.stderr)
+        else:
+            # There are multiple keyword specs for the function name and
+            # none of them could be extracted. Print a general error
+            # message and list the errors for each keyword spec.
+            print(f'*** {self.filename}:{node.lineno}: '
+                  f'No keywords matched gettext call "{func_name}":',
+                  file=sys.stderr)
+            for spec, err in zip(specs, errors, strict=True):
+                unparsed = unparse_spec(func_name, spec)
+                print(f'\tkeyword="{unparsed}": {err}', file=sys.stderr)
+
+    def _extract_message_with_spec(self, node, spec):
+        """Extract a gettext call with the given spec.
+
+        Return None if the gettext call was successfully extracted,
+        otherwise return an error message.
+        """
+        max_index = max(spec.values())
         has_var_positional = any(isinstance(arg, ast.Starred) for
                                  arg in node.args[:max_index+1])
         if has_var_positional:
-            print(f'*** {self.filename}:{node.lineno}: Variable positional '
-                  f'arguments are not allowed in gettext calls', file=sys.stderr)
-            return
+            return ('Variable positional arguments are not '
+                    'allowed in gettext calls')
 
         if max_index >= len(node.args):
-            print(f'*** {self.filename}:{node.lineno}: Expected at least '
-                  f'{max(spec) + 1} positional argument(s) in gettext call, '
-                  f'got {len(node.args)}', file=sys.stderr)
-            return
+            return (f'Expected at least {max_index + 1} positional '
+                    f'argument(s) in gettext call, got {len(node.args)}')
 
         msg_data = {}
-        for position, arg_type in spec.items():
+        for arg_type, position in spec.items():
             arg = node.args[position]
             if not self._is_string_const(arg):
-                print(f'*** {self.filename}:{arg.lineno}: Expected a string '
-                      f'constant for argument {position + 1}, '
-                      f'got {ast.unparse(arg)}', file=sys.stderr)
-                return
+                return (f'Expected a string constant for argument '
+                        f'{position + 1}, got {ast.unparse(arg)}')
             msg_data[arg_type] = arg.value
 
         lineno = node.lineno
@@ -672,7 +727,7 @@ def main():
         if opt in ('-h', '--help'):
             usage(0)
         elif opt in ('-a', '--extract-all'):
-            print("DepreciationWarning: -a/--extract-all is not implemented and will be removed in a future version",
+            print("DeprecationWarning: -a/--extract-all is not implemented and will be removed in a future version",
                   file=sys.stderr)
             options.extractall = 1
         elif opt in ('-c', '--add-comments'):
@@ -729,22 +784,19 @@ def main():
 
     # calculate all keywords
     try:
-        custom_keywords = dict(parse_spec(spec) for spec in options.keywords)
+        options.keywords = process_keywords(
+            options.keywords,
+            no_default_keywords=no_default_keywords)
     except ValueError as e:
         print(e, file=sys.stderr)
         sys.exit(1)
-    options.keywords = {}
-    if not no_default_keywords:
-        options.keywords |= DEFAULTKEYWORDS
-    # custom keywords override default keywords
-    options.keywords |= custom_keywords
 
     # initialize list of strings to exclude
     if options.excludefilename:
         try:
             with open(options.excludefilename) as fp:
                 options.toexclude = fp.readlines()
-        except IOError:
+        except OSError:
             print(f"Can't read --exclude-file: {options.excludefilename}",
                   file=sys.stderr)
             sys.exit(1)

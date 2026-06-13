@@ -195,8 +195,8 @@ PyDoc_STRVAR(marshal_dumps__doc__,
 "  allow_code\n"
 "    Allow to write code objects.\n"
 "\n"
-"Raise a ValueError exception if value has (or contains an object that has) an\n"
-"unsupported type.");
+"Raise a ValueError exception if value has (or contains an object that\n"
+"has) an unsupported type.");
 
 #define MARSHAL_DUMPS_METHODDEF    \
     {"dumps", _PyCFunction_CAST(marshal_dumps), METH_FASTCALL|METH_KEYWORDS, marshal_dumps__doc__},
@@ -280,8 +280,8 @@ PyDoc_STRVAR(marshal_loads__doc__,
 "  allow_code\n"
 "    Allow to load code objects.\n"
 "\n"
-"If no valid value is found, raise EOFError, ValueError or TypeError.  Extra\n"
-"bytes in the input are ignored.");
+"If no valid value is found, raise EOFError, ValueError or TypeError.\n"
+"Extra bytes in the input are ignored.");
 
 #define MARSHAL_LOADS_METHODDEF    \
     {"loads", _PyCFunction_CAST(marshal_loads), METH_FASTCALL|METH_KEYWORDS, marshal_loads__doc__},
@@ -351,4 +351,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=3e4bfc070a3c78ac input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a574570c3717f60e input=a9049054013a1b77]*/

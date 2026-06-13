@@ -1,3 +1,4 @@
+import sys
 import collections.abc
 import concurrent.futures
 import contextvars
@@ -392,6 +393,60 @@ class ContextTest(unittest.TestCase):
             tp.shutdown()
         self.assertEqual(results, list(range(10)))
 
+    @isolated_context
+    @threading_helper.requires_working_threading()
+    def test_context_thread_inherit(self):
+        import threading
+
+        cvar = contextvars.ContextVar('cvar')
+
+        def run_context_none():
+            if sys.flags.thread_inherit_context:
+                expected = 1
+            else:
+                expected = None
+            self.assertEqual(cvar.get(None), expected)
+
+        # By default, context is inherited based on the
+        # sys.flags.thread_inherit_context option.
+        cvar.set(1)
+        thread = threading.Thread(target=run_context_none)
+        thread.start()
+        thread.join()
+
+        # Passing 'None' explicitly should have same behaviour as not
+        # passing parameter.
+        thread = threading.Thread(target=run_context_none, context=None)
+        thread.start()
+        thread.join()
+
+        # An explicit Context value can also be passed
+        custom_ctx = contextvars.Context()
+        custom_var = None
+
+        def setup_context():
+            nonlocal custom_var
+            custom_var = contextvars.ContextVar('custom')
+            custom_var.set(2)
+
+        custom_ctx.run(setup_context)
+
+        def run_custom():
+            self.assertEqual(custom_var.get(), 2)
+
+        thread = threading.Thread(target=run_custom, context=custom_ctx)
+        thread.start()
+        thread.join()
+
+        # You can also pass a new Context() object to start with an empty context
+        def run_empty():
+            with self.assertRaises(LookupError):
+                cvar.get()
+
+        thread = threading.Thread(target=run_empty, context=contextvars.Context())
+        thread.start()
+        thread.join()
+
     def test_token_contextmanager_with_default(self):
         ctx = contextvars.Context()
         c = contextvars.ContextVar('c', default=42)
@@ -500,6 +555,36 @@ class ContextTest(unittest.TestCase):
             self.assertEqual(c.get(), 42)
 
         ctx.run(fun)
+
+    def test_context_eq_reentrant_contextvar_set(self):
+        var = contextvars.ContextVar("v")
+        ctx1 = contextvars.Context()
+        ctx2 = contextvars.Context()
+
+        class ReentrantEq:
+            def __eq__(self, other):
+                ctx1.run(lambda: var.set(object()))
+                return True
+
+        ctx1.run(var.set, ReentrantEq())
+        ctx2.run(var.set, object())
+        ctx1 == ctx2
+
+    def test_context_eq_reentrant_contextvar_set_in_hash(self):
+        var = contextvars.ContextVar("v")
+        ctx1 = contextvars.Context()
+        ctx2 = contextvars.Context()
+
+        class ReentrantHash:
+            def __hash__(self):
+                ctx1.run(lambda: var.set(object()))
+                return 0
+            def __eq__(self, other):
+                return isinstance(other, ReentrantHash)
+
+        ctx1.run(var.set, ReentrantHash())
+        ctx2.run(var.set, ReentrantHash())
+        ctx1 == ctx2
 
 
 # HAMT Tests

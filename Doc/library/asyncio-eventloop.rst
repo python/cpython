@@ -4,7 +4,7 @@
 .. _asyncio-event-loop:
 
 ==========
-Event Loop
+Event loop
 ==========
 
 **Source code:** :source:`Lib/asyncio/events.py`,
@@ -65,17 +65,13 @@ an event loop:
    .. note::
 
       The :mod:`!asyncio` policy system is deprecated and will be removed
-      in Python 3.16; from there on, this function will always return the
-      running event loop.
-
+      in Python 3.16; from there on, this function will return the current
+      running event loop if present else it will return the
+      loop set by :func:`set_event_loop`.
 
 .. function:: set_event_loop(loop)
 
    Set *loop* as the current event loop for the current OS thread.
-
-   .. deprecated:: 3.14
-      The :func:`set_event_loop` function is deprecated and will be removed
-      in Python 3.16.
 
 .. function:: new_event_loop()
 
@@ -109,7 +105,7 @@ This documentation page contains the following sections:
 
 .. _asyncio-event-loop-methods:
 
-Event Loop Methods
+Event loop methods
 ==================
 
 Event loops have **low-level** APIs for the following:
@@ -301,12 +297,19 @@ clocks to track time.
    are called is undefined.
 
    The optional positional *args* will be passed to the callback when
-   it is called. If you want the callback to be called with keyword
-   arguments use :func:`functools.partial`.
+   it is called. Use :func:`functools.partial`
+   :ref:`to pass keyword arguments <asyncio-pass-keywords>` to
+   *callback*.
 
    An optional keyword-only *context* argument allows specifying a
    custom :class:`contextvars.Context` for the *callback* to run in.
    The current context is used when no *context* is provided.
+
+   .. note::
+
+      For performance, callbacks scheduled with :meth:`loop.call_later`
+      may run up to one clock-resolution early (see
+      ``time.get_clock_info('monotonic').resolution``).
 
    .. versionchanged:: 3.7
       The *context* keyword-only parameter was added. See :pep:`567`
@@ -327,6 +330,12 @@ clocks to track time.
 
    An instance of :class:`asyncio.TimerHandle` is returned which can
    be used to cancel the callback.
+
+   .. note::
+
+      For performance, callbacks scheduled with :meth:`loop.call_at`
+      may run up to one clock-resolution early (see
+      ``time.get_clock_info('monotonic').resolution``).
 
    .. versionchanged:: 3.7
       The *context* keyword-only parameter was added. See :pep:`567`
@@ -352,7 +361,7 @@ clocks to track time.
    The :func:`asyncio.sleep` function.
 
 
-Creating Futures and Tasks
+Creating futures and tasks
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. method:: loop.create_future()
@@ -365,7 +374,7 @@ Creating Futures and Tasks
 
    .. versionadded:: 3.5.2
 
-.. method:: loop.create_task(coro, *, name=None, context=None)
+.. method:: loop.create_task(coro, *, name=None, context=None, eager_start=None, **kwargs)
 
    Schedule the execution of :ref:`coroutine <coroutine>` *coro*.
    Return a :class:`Task` object.
@@ -374,6 +383,10 @@ Creating Futures and Tasks
    for interoperability. In this case, the result type is a subclass
    of :class:`Task`.
 
+   The full function signature is largely the same as that of the
+   :class:`Task` constructor (or factory) - all of the keyword arguments to
+   this function are passed through to that interface.
+
    If the *name* argument is provided and not ``None``, it is set as
    the name of the task using :meth:`Task.set_name`.
 
@@ -381,11 +394,26 @@ Creating Futures and Tasks
    custom :class:`contextvars.Context` for the *coro* to run in.
    The current context copy is created when no *context* is provided.
 
+   An optional keyword-only *eager_start* argument allows specifying
+   if the task should execute eagerly during the call to create_task,
+   or be scheduled later. If *eager_start* is not passed the mode set
+   by :meth:`loop.set_task_factory` will be used.
+
    .. versionchanged:: 3.8
       Added the *name* parameter.
 
    .. versionchanged:: 3.11
       Added the *context* parameter.
+
+   .. versionchanged:: 3.13.3
+      Added ``kwargs`` which passes on arbitrary extra parameters, including  ``name`` and ``context``.
+
+   .. versionchanged:: 3.13.4
+      Rolled back the change that passes on *name* and *context* (if it is None),
+      while still passing on other arbitrary keyword arguments (to avoid breaking backwards compatibility with 3.13.3).
+
+   .. versionchanged:: 3.14
+      All *kwargs* are now passed on. The *eager_start* parameter works with eager task factories.
 
 .. method:: loop.set_task_factory(factory)
 
@@ -397,6 +425,16 @@ Creating Futures and Tasks
    ``(loop, coro, **kwargs)``, where *loop* is a reference to the active
    event loop, and *coro* is a coroutine object.  The callable
    must pass on all *kwargs*, and return a :class:`asyncio.Task`-compatible object.
+
+   .. versionchanged:: 3.13.3
+      Required that all *kwargs* are passed on to :class:`asyncio.Task`.
+
+   .. versionchanged:: 3.13.4
+      *name* is no longer passed to task factories. *context* is no longer passed
+      to task factories if it is ``None``.
+
+      .. versionchanged:: 3.14
+         *name* and *context* are now unconditionally passed on to task factories again.
 
 .. method:: loop.get_task_factory()
 
@@ -585,6 +623,12 @@ Opening network connections
    * *local_addr*, if given, is a ``(local_host, local_port)`` tuple used
      to bind the socket locally.  The *local_host* and *local_port*
      are looked up using :meth:`getaddrinfo`.
+
+     .. note::
+
+        On Windows, when using the proactor event loop with ``local_addr=None``,
+        an :exc:`OSError` with :attr:`!errno.WSAEINVAL` will be raised
+        when running it.
 
    * *remote_addr*, if given, is a ``(remote_host, remote_port)`` tuple used
      to connect the socket to a remote address.  The *remote_host* and
@@ -918,7 +962,7 @@ Transferring files
    .. versionadded:: 3.7
 
 
-TLS Upgrade
+TLS upgrade
 ^^^^^^^^^^^
 
 .. method:: loop.start_tls(transport, protocol, \
@@ -991,8 +1035,8 @@ Watching file descriptors
 .. method:: loop.add_writer(fd, callback, *args)
 
    Start monitoring the *fd* file descriptor for write availability and
-   invoke *callback* with the specified arguments once *fd* is available for
-   writing.
+   invoke *callback* with the specified arguments *args* once *fd* is
+   available for writing.
 
    Any preexisting callback registered for *fd* is cancelled and replaced by
    *callback*.
@@ -1265,7 +1309,8 @@ Unix signals
 
 .. method:: loop.add_signal_handler(signum, callback, *args)
 
-   Set *callback* as the handler for the *signum* signal.
+   Set *callback* as the handler for the *signum* signal,
+   passing *args* as positional arguments.
 
    The callback will be invoked by *loop*, along with other queued callbacks
    and runnable coroutines of that event loop. Unlike signal handlers
@@ -1300,7 +1345,8 @@ Executing code in thread or process pools
 
 .. awaitablemethod:: loop.run_in_executor(executor, func, *args)
 
-   Arrange for *func* to be called in the specified executor.
+   Arrange for *func* to be called in the specified executor
+   passing *args* as positional arguments.
 
    The *executor* argument should be an :class:`concurrent.futures.Executor`
    instance. The default executor is used if *executor* is ``None``.
@@ -1385,7 +1431,7 @@ Executing code in thread or process pools
       :class:`~concurrent.futures.ThreadPoolExecutor`.
 
 
-Error Handling API
+Error handling API
 ^^^^^^^^^^^^^^^^^^
 
 Allows customizing how exceptions are handled in the event loop.
@@ -1444,6 +1490,8 @@ Allows customizing how exceptions are handled in the event loop.
    * 'protocol' (optional): :ref:`Protocol <asyncio-protocol>` instance;
    * 'transport' (optional): :ref:`Transport <asyncio-transport>` instance;
    * 'socket' (optional): :class:`socket.socket` instance;
+   * 'source_traceback' (optional): Traceback of the source;
+   * 'handle_traceback' (optional): Traceback of the handle;
    * 'asyncgen' (optional): Asynchronous generator that caused
                             the exception.
 
@@ -1486,7 +1534,7 @@ Enabling debug mode
    The :ref:`debug mode of asyncio <asyncio-debug-mode>`.
 
 
-Running Subprocesses
+Running subprocesses
 ^^^^^^^^^^^^^^^^^^^^
 
 Methods described in this subsections are low-level.  In regular
@@ -1586,6 +1634,9 @@ async/await code consider using the high-level
    conforms to the :class:`asyncio.SubprocessTransport` base class and
    *protocol* is an object instantiated by the *protocol_factory*.
 
+   If the transport is closed or is garbage collected, the child process
+   is killed if it is still running.
+
 .. method:: loop.subprocess_shell(protocol_factory, cmd, *, \
                stdin=subprocess.PIPE, stdout=subprocess.PIPE, \
                stderr=subprocess.PIPE, **kwargs)
@@ -1609,6 +1660,9 @@ async/await code consider using the high-level
    conforms to the :class:`SubprocessTransport` base class and
    *protocol* is an object instantiated by the *protocol_factory*.
 
+   If the transport is closed or is garbage collected, the child process
+   is killed if it is still running.
+
 .. note::
    It is the application's responsibility to ensure that all whitespace
    and special characters are quoted appropriately to avoid `shell injection
@@ -1618,7 +1672,7 @@ async/await code consider using the high-level
    are going to be used to construct shell commands.
 
 
-Callback Handles
+Callback handles
 ================
 
 .. class:: Handle
@@ -1661,7 +1715,7 @@ Callback Handles
       .. versionadded:: 3.7
 
 
-Server Objects
+Server objects
 ==============
 
 Server objects are created by :meth:`loop.create_server`,
@@ -1804,7 +1858,7 @@ Do not instantiate the :class:`Server` class directly.
 .. _asyncio-event-loops:
 .. _asyncio-event-loop-implementations:
 
-Event Loop Implementations
+Event loop implementations
 ==========================
 
 asyncio ships with two different event loop implementations:
@@ -1917,10 +1971,10 @@ callback uses the :meth:`loop.call_later` method to reschedule itself
 after 5 seconds, and then stops the event loop::
 
     import asyncio
-    import datetime
+    import datetime as dt
 
     def display_date(end_time, loop):
-        print(datetime.datetime.now())
+        print(dt.datetime.now())
         if (loop.time() + 1.0) < end_time:
             loop.call_later(1, display_date, end_time, loop)
         else:
@@ -2001,7 +2055,7 @@ Wait until a file descriptor received some data using the
 Set signal handlers for SIGINT and SIGTERM
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-(This ``signals`` example only works on Unix.)
+(This ``signal`` example only works on Unix.)
 
 Register handlers for signals :const:`~signal.SIGINT` and :const:`~signal.SIGTERM`
 using the :meth:`loop.add_signal_handler` method::

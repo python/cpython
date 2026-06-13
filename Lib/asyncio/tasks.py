@@ -386,19 +386,13 @@ else:
     Task = _CTask = _asyncio.Task
 
 
-def create_task(coro, *, name=None, context=None):
+def create_task(coro, **kwargs):
     """Schedule the execution of a coroutine object in a spawn task.
 
     Return a Task object.
     """
     loop = events.get_running_loop()
-    if context is None:
-        # Use legacy API if context is not needed
-        task = loop.create_task(coro, name=name)
-    else:
-        task = loop.create_task(coro, name=name, context=context)
-
-    return task
+    return loop.create_task(coro, **kwargs)
 
 
 # wait() and as_completed() similar to those in PEP 3148.
@@ -630,10 +624,11 @@ def as_completed(fs, *, timeout=None):
     Run the supplied awaitables concurrently. The returned object can be
     iterated to obtain the results of the awaitables as they finish.
 
-    The object returned can be iterated as an asynchronous iterator or a plain
-    iterator. When asynchronous iteration is used, the originally-supplied
-    awaitables are yielded if they are tasks or futures. This makes it easy to
-    correlate previously-scheduled tasks with their results:
+    The object returned can be iterated as an asynchronous iterator or
+    a plain iterator.  When asynchronous iteration is used, the
+    originally-supplied awaitables are yielded if they are tasks or
+    futures.  This makes it easy to correlate previously-scheduled tasks
+    with their results:
 
         ipv4_connect = create_task(open_connection("127.0.0.1", 80))
         ipv6_connect = create_task(open_connection("::1", 80))
@@ -649,26 +644,27 @@ def as_completed(fs, *, timeout=None):
             else:
                 print("IPv4 connection established.")
 
-    During asynchronous iteration, implicitly-created tasks will be yielded for
-    supplied awaitables that aren't tasks or futures.
+    During asynchronous iteration, implicitly-created tasks will be
+    yielded for supplied awaitables that aren't tasks or futures.
 
-    When used as a plain iterator, each iteration yields a new coroutine that
-    returns the result or raises the exception of the next completed awaitable.
-    This pattern is compatible with Python versions older than 3.13:
+    When used as a plain iterator, each iteration yields a new coroutine
+    that returns the result or raises the exception of the next completed
+    awaitable.  This pattern is compatible with Python versions older than
+    3.13:
 
         ipv4_connect = create_task(open_connection("127.0.0.1", 80))
         ipv6_connect = create_task(open_connection("::1", 80))
         tasks = [ipv4_connect, ipv6_connect]
 
         for next_connect in as_completed(tasks):
-            # next_connect is not one of the original task objects. It must be
-            # awaited to obtain the result value or raise the exception of the
-            # awaitable that finishes next.
+            # next_connect is not one of the original task objects. It must
+            # be awaited to obtain the result value or raise the exception
+            # of the awaitable that finishes next.
             reader, writer = await next_connect
 
-    A TimeoutError is raised if the timeout occurs before all awaitables are
-    done. This is raised by the async for loop during asynchronous iteration or
-    by the coroutines yielded during plain iteration.
+    A TimeoutError is raised if the timeout occurs before all awaitables
+    are done.  This is raised by the async for loop during asynchronous
+    iteration or by the coroutines yielded during plain iteration.
     """
     if inspect.isawaitable(fs):
         raise TypeError(
@@ -914,6 +910,25 @@ def gather(*coros_or_futures, return_exceptions=False):
     return outer
 
 
+def _log_on_exception(fut):
+    if fut.cancelled():
+        return
+
+    exc = fut.exception()
+    if exc is None:
+        return
+
+    context = {
+        'message':
+        f'{exc.__class__.__name__} exception in shielded future',
+        'exception': exc,
+        'future': fut,
+    }
+    if fut._source_traceback:
+        context['source_traceback'] = fut._source_traceback
+    fut._loop.call_exception_handler(context)
+
+
 def shield(arg):
     """Wait for a future, shielding it from cancellation.
 
@@ -959,14 +974,11 @@ def shield(arg):
     else:
         cur_task = None
 
-    def _inner_done_callback(inner, cur_task=cur_task):
-        if cur_task is not None:
-            futures.future_discard_from_awaited_by(inner, cur_task)
+    def _clear_awaited_by_callback(inner):
+        futures.future_discard_from_awaited_by(inner, cur_task)
 
+    def _inner_done_callback(inner):
         if outer.cancelled():
-            if not inner.cancelled():
-                # Mark inner's result as retrieved.
-                inner.exception()
             return
 
         if inner.cancelled():
@@ -978,10 +990,16 @@ def shield(arg):
             else:
                 outer.set_result(inner.result())
 
-
     def _outer_done_callback(outer):
         if not inner.done():
             inner.remove_done_callback(_inner_done_callback)
+            # Keep only one callback to log on cancel
+            inner.remove_done_callback(_log_on_exception)
+            inner.add_done_callback(_log_on_exception)
+
+    if cur_task is not None:
+        inner.add_done_callback(_clear_awaited_by_callback)
+
 
     inner.add_done_callback(_inner_done_callback)
     outer.add_done_callback(_outer_done_callback)
@@ -1014,25 +1032,26 @@ def run_coroutine_threadsafe(coro, loop):
 def create_eager_task_factory(custom_task_constructor):
     """Create a function suitable for use as a task factory on an event-loop.
 
-        Example usage:
+    Example usage:
 
-            loop.set_task_factory(
-                asyncio.create_eager_task_factory(my_task_constructor))
+        loop.set_task_factory(
+            asyncio.create_eager_task_factory(my_task_constructor))
 
-        Now, tasks created will be started immediately (rather than being first
-        scheduled to an event loop). The constructor argument can be any callable
-        that returns a Task-compatible object and has a signature compatible
-        with `Task.__init__`; it must have the `eager_start` keyword argument.
+    Now, tasks created will be started immediately (rather than being first
+    scheduled to an event loop).  The constructor argument can be any
+    callable that returns a Task-compatible object and has a signature
+    compatible with `Task.__init__`; it must have the `eager_start`
+    keyword argument.
 
-        Most applications will use `Task` for `custom_task_constructor` and in
-        this case there's no need to call `create_eager_task_factory()`
-        directly. Instead the  global `eager_task_factory` instance can be
-        used. E.g. `loop.set_task_factory(asyncio.eager_task_factory)`.
-        """
+    Most applications will use `Task` for `custom_task_constructor` and in
+    this case there's no need to call `create_eager_task_factory()`
+    directly. Instead the  global `eager_task_factory` instance can be
+    used. E.g. `loop.set_task_factory(asyncio.eager_task_factory)`.
+    """
 
-    def factory(loop, coro, *, name=None, context=None):
+    def factory(loop, coro, *, eager_start=True, **kwargs):
         return custom_task_constructor(
-            coro, loop=loop, name=name, context=context, eager_start=True)
+            coro, loop=loop, eager_start=eager_start, **kwargs)
 
     return factory
 

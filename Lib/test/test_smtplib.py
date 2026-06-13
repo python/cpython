@@ -17,6 +17,7 @@ import textwrap
 import threading
 
 import unittest
+import unittest.mock as mock
 from test import support, mock_socket
 from test.support import hashlib_helper
 from test.support import socket_helper
@@ -926,11 +927,14 @@ class SimSMTPChannel(smtpd.SMTPChannel):
             except ValueError as e:
                 self.push('535 Splitting response {!r} into user and password '
                           'failed: {}'.format(logpass, e))
-                return False
-            valid_hashed_pass = hmac.HMAC(
-                sim_auth[1].encode('ascii'),
-                self._decode_base64(sim_cram_md5_challenge).encode('ascii'),
-                'md5').hexdigest()
+                return
+            pwd = sim_auth[1].encode('ascii')
+            msg = self._decode_base64(sim_cram_md5_challenge).encode('ascii')
+            try:
+                valid_hashed_pass = hmac.HMAC(pwd, msg, 'md5').hexdigest()
+            except ValueError:
+                self.push('504 CRAM-MD5 is not supported')
+                return
             self._authenticated(user, hashed_pass == valid_hashed_pass)
     # end AUTH related stuff.
 
@@ -1180,6 +1184,39 @@ class SMTPSimTests(unittest.TestCase):
         resp = smtp.login(sim_auth[0], sim_auth[1])
         self.assertEqual(resp, (235, b'Authentication Succeeded'))
         smtp.close()
+
+    @hashlib_helper.block_algorithm('md5')
+    @mock.patch("smtplib._have_cram_md5_support", False)
+    def testAUTH_CRAM_MD5_blocked(self):
+        # CRAM-MD5 is the only "known" method by the server,
+        # but it is not supported by the client. In particular,
+        # no challenge will ever be sent.
+        self.serv.add_feature("AUTH CRAM-MD5")
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
+                            timeout=support.LOOPBACK_TIMEOUT)
+        self.addCleanup(smtp.close)
+        msg = re.escape("No suitable authentication method found.")
+        with self.assertRaisesRegex(smtplib.SMTPException, msg):
+            smtp.login(sim_auth[0], sim_auth[1])
+
+    @hashlib_helper.block_algorithm('md5')
+    @mock.patch("smtplib._have_cram_md5_support", False)
+    def testAUTH_CRAM_MD5_blocked_and_fallback(self):
+        # Test that PLAIN is tried after CRAM-MD5 failed
+        self.serv.add_feature("AUTH CRAM-MD5 PLAIN")
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
+                            timeout=support.LOOPBACK_TIMEOUT)
+        self.addCleanup(smtp.close)
+        with (
+            mock.patch.object(smtp, "auth_cram_md5") as smtp_auth_cram_md5,
+            mock.patch.object(
+                smtp, "auth_plain", wraps=smtp.auth_plain
+            ) as smtp_auth_plain
+        ):
+            resp = smtp.login(sim_auth[0], sim_auth[1])
+        smtp_auth_plain.assert_called_once()
+        smtp_auth_cram_md5.assert_not_called()
+        self.assertEqual(resp, (235, b'Authentication Succeeded'))
 
     @hashlib_helper.requires_hashdigest('md5', openssl=True)
     def testAUTH_multiple(self):

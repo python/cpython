@@ -294,7 +294,28 @@ class CAPIFileTest(unittest.TestCase):
         # CRASHES py_fopen(NULL, 'rb')
         # CRASHES py_fopen(__file__, NULL)
 
-    # TODO: Test Py_UniversalNewlineFgets()
+    def test_py_universalnewlinefgets(self):
+        py_universalnewlinefgets = _testcapi.py_universalnewlinefgets
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
+
+        with open(filename, "wb") as fp:
+            fp.write(b"line1\nline2")
+
+        line = py_universalnewlinefgets(filename, 1000)
+        self.assertEqual(line, b"line1\n")
+
+        with open(filename, "wb") as fp:
+            fp.write(b"line2\r\nline3")
+
+        line = py_universalnewlinefgets(filename, 1000)
+        self.assertEqual(line, b"line2\n")
+
+        with open(filename, "wb") as fp:
+            fp.write(b"line3\rline4")
+
+        line = py_universalnewlinefgets(filename, 1000)
+        self.assertEqual(line, b"line3\n")
 
     # PyFile_SetOpenCodeHook() and PyFile_OpenCode() are tested by
     # test_embed.test_open_code_hook()

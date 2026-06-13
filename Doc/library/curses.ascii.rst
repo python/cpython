@@ -4,14 +4,11 @@
 .. module:: curses.ascii
    :synopsis: Constants and set-membership functions for ASCII characters.
 
-.. moduleauthor:: Eric S. Raymond <esr@thyrsus.com>
-.. sectionauthor:: Eric S. Raymond <esr@thyrsus.com>
-
 **Source code:** :source:`Lib/curses/ascii.py`
 
 --------------
 
-The :mod:`curses.ascii` module supplies name constants for ASCII characters and
+The :mod:`!curses.ascii` module supplies name constants for ASCII characters and
 functions to test membership in various ASCII character classes.  The constants
 supplied are names for control characters as follows:
 
@@ -133,7 +130,7 @@ C library:
 
 .. function:: isgraph(c)
 
-   Checks for ASCII any printable character except space.
+   Checks for any ASCII printable character except space.
 
 
 .. function:: islower(c)
@@ -148,7 +145,7 @@ C library:
 
 .. function:: ispunct(c)
 
-   Checks for any printable ASCII character which is not a space or an alphanumeric
+   Checks for any ASCII printable character which is not a space or an alphanumeric
    character.
 
 
