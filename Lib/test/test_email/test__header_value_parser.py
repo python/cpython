@@ -892,13 +892,90 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     # get_unstructured
 
+    @params
+    def test_get_unstructured(self, s, *args, **kw):
+        result = self._test_parse(
+            parser.get_unstructured,
+            C(s),
+            *args,
+            test_start=False,
+            warnings=...,   # XXX XXX ignore warnings until after refactor.
+            **kw,
+            )
+        self.assertIsInstance(result, parser.UnstructuredTokenList)
+        self.verify_terminal_types(result, 'utext', 'fws')
+
+    # get_unstructured should correctly decode anything get_encoded_word does,
+    # so it should correctly handle most get_encoded_word parameters.
+    @params_map(with_namelist=True)
+    def adapt_get_encoded_word_tests_for_get_unstructured(nl, *args, **kw):
+        kw.pop('test_start')
+        kw.pop('charset', None)
+        kw.pop('terminal_type', None)
+        kw.pop('lang', None)
+        # get_unstructured parses all of its input, so it will also parse and
+        # return anything get_encoded_word treats as a remainder.
+        remainder = kw.pop('remainder', '')
+        if '=?' in remainder or 'ew_followed_by' in nl:
+            # The remainder includes something get_unstructured would decode,
+            # or might contain something it would treat as a defect.  Either
+            # way, parse_unstructured isn't expected to handle those parameters.
+            return
+        if 'stringified' in kw:
+            stringified = kw['stringified']
+            kw['stringified'] = stringified + remainder
+        rstripped = remainder.lstrip(RFC_WSP)
+        if remainder != rstripped:
+            kw['value'] = kw.get('value', stringified) + ' ' + rstripped
+        # Drop the 'warning=...' added by only_old_api; we're doing it ourselves
+        # in the test method.
+        kw.pop('warnings')
+        yield 'from_test_get_encoded_word', C(*args, **kw)
+
+    @params_map(with_namelist=True)
+    def adapt_get_encoded_word_invalid_input_for_get_unstructured(nl, s, **kw):
+        # Get unstructured should return the inputs unaltered,
+        # except for the ones where the ew itself is valid.
+        if 'character_before_valid_ew' in nl:
+            return
+        yield 'from_test_get_encoded_word_invalid_input', C(s)
+
+    @params_map
+    def add_unstructured_prefix_and_suffix(s, *args, **kw):
+        # Make sure the reused parameters are correctly interpreted when
+        # intermixed with other text by adding some text.
+        pad = lambda s: f'pre fix {s} suf fix'
+        if not s:
+            # null value is a special case, and we already have a test for it.
+            return
+        s = pad(s)
+        kw = {n: (pad(v) if n in ('stringified', 'value') else v)
+              for n, v in kw.items()
+              }
+        yield '', C(s, *args, **kw)
+
+    params_test_get_unstructured = Params(
+
+        add_unstructured_prefix_and_suffix(
+            adapt_get_encoded_word_tests_for_get_unstructured(
+                params_test_get_encoded_word,
+                ),
+            adapt_get_encoded_word_invalid_input_for_get_unstructured(
+                params_test_get_encoded_word__invalid_input,
+                ),
+            ),
+
+        )
+
     def _get_unst(self, value):
         token = parser.get_unstructured(value)
         return token, ''
 
+        # XXX XXX TEMP test1
     def test_get_unstructured_null(self):
         self._test_get_x(self._get_unst, '', '', '', [], '')
 
+        # XXX XXX TEMP test2
     def test_get_unstructured_one_word(self):
         self._test_get_x(self._get_unst, 'foo', 'foo', 'foo', [], '')
 
