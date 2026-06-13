@@ -1090,8 +1090,14 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
                 goto cleanup;
             }
             borrowed_arg = PySequence_Fast_GET_ITEM(fast_args, arg_num);
-            if (PyUnicode_FSConverter(borrowed_arg, &converted_arg) == 0)
+            /* borrowed_arg is only borrowed; its __fspath__() may run Python
+               that drops fast_args' last reference to it. */
+            Py_INCREF(borrowed_arg);
+            if (PyUnicode_FSConverter(borrowed_arg, &converted_arg) == 0) {
+                Py_DECREF(borrowed_arg);
                 goto cleanup;
+            }
+            Py_DECREF(borrowed_arg);
             PyTuple_SET_ITEM(converted_args, arg_num, converted_arg);
         }
 
