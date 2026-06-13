@@ -219,7 +219,7 @@ the input is incorrectly padded or if there are non-alphabet
 characters present in the input.
 '''
 _B32_DECODE_MAP01_DOCSTRING = '''
-RFC 3548 allows for optional mapping of the digit 0 (zero) to the
+RFC 4648 allows for optional mapping of the digit 0 (zero) to the
 letter O (oh), and for optional mapping of the digit 1 (one) to
 either the letter I (eye) or letter L (el).  The optional argument
 map01 when not None, specifies which letter the digit 1 should be
@@ -266,9 +266,8 @@ b32hexdecode.__doc__ = _B32_DECODE_DOCSTRING.format(encoding='base32hex',
                                                     extra_args='')
 
 
-# RFC 3548, Base 16 Alphabet specifies uppercase, but hexlify() returns
-# lowercase.  The RFC also recommends against accepting input case
-# insensitively.
+# RFC 4648, Base 16 Alphabet specifies uppercase, but hexlify() returns
+# lowercase.
 def b16encode(s, *, wrapcol=0):
     """Encode the bytes-like object s using Base16 and return a bytes object.
 
