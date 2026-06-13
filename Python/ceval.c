@@ -442,7 +442,7 @@ _PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys)
         goto fail;
     }
     // dummy = object()
-    dummy = _PyObject_CallNoArgs((PyObject *)&PyBaseObject_Type);
+    dummy = _PyObject_CallNoArgsTstate(tstate, (PyObject *)&PyBaseObject_Type);
     if (dummy == NULL) {
         goto fail;
     }
@@ -464,10 +464,10 @@ _PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys)
         PyObject *args[] = { self_obj, key, dummy };
         PyObject *value = NULL;
         if (!PyStackRef_IsNull(self.ref)) {
-            value = PyObject_Vectorcall(get, args, 3, NULL);
+            value = _PyObject_VectorcallTstate(tstate, get, args, 3, NULL);
         }
         else {
-            value = PyObject_Vectorcall(get, &args[1], 2, NULL);
+            value = _PyObject_VectorcallTstate(tstate, get, &args[1], 2, NULL);
         }
         if (value == NULL) {
             goto fail;
@@ -704,6 +704,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
 PyObject *
 _Py_VectorCall_StackRefSteal(
+    PyThreadState *tstate,
     _PyStackRef callable,
     _PyStackRef *arguments,
     int total_args,
@@ -721,12 +722,12 @@ _Py_VectorCall_StackRefSteal(
     if (kwnames_o != NULL) {
         positional_args -= (int)PyTuple_GET_SIZE(kwnames_o);
     }
-    res = PyObject_Vectorcall(
+    res = _PyObject_VectorcallTstate(tstate,
         callable_o, args_o,
         positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
         kwnames_o);
     STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
-    assert((res != NULL) ^ (PyErr_Occurred() != NULL));
+    assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 cleanup:
     PyStackRef_XCLOSE(kwnames);
     // arguments is a pointer into the GC visible stack,
@@ -763,7 +764,8 @@ _Py_VectorCallInstrumentation_StackRefSteal(
     if (kwnames_o != NULL) {
         positional_args -= (int)PyTuple_GET_SIZE(kwnames_o);
     }
-    res = PyObject_Vectorcall(
+    res = _PyObject_VectorcallTstate(
+        tstate,
         callable_o, args_o,
         positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
         kwnames_o);
@@ -3003,7 +3005,7 @@ _PyEval_ImportNameWithImport(PyThreadState *tstate, PyObject *import_func,
     }
 
     PyObject *args[5] = {name, globals, locals, fromlist, level};
-    PyObject *res = PyObject_Vectorcall(import_func, args, 5, NULL);
+    PyObject *res = _PyObject_VectorcallTstate(tstate, import_func, args, 5, NULL);
     return res;
 }
 
@@ -3117,7 +3119,7 @@ _PyEval_LazyImportName(PyThreadState *tstate, PyObject *builtins,
     }
 
     PyObject *args[6] = {name, globals, locals, fromlist, level, builtins};
-    res = PyObject_Vectorcall(lazy_import_func, args, 6, NULL);
+    res = _PyObject_VectorcallTstate(tstate, lazy_import_func, args, 6, NULL);
 error:
     Py_XDECREF(lazy_import_func);
     return res;

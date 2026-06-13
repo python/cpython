@@ -411,6 +411,7 @@ PyAPI_DATA(const _Py_CODEUNIT *) _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR;
 
 PyAPI_FUNC(PyObject *)
 _Py_VectorCall_StackRefSteal(
+    PyThreadState *tstate,
     _PyStackRef callable,
     _PyStackRef *arguments,
     int total_args,

@@ -383,16 +383,21 @@ PyCFunction_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
 
 
 PyObject *
-PyObject_CallOneArg(PyObject *func, PyObject *arg)
+_PyObject_CallOneArgTstate(PyThreadState *tstate, PyObject *func, PyObject *arg)
 {
     EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_API, func);
     assert(arg != NULL);
     PyObject *_args[2];
     PyObject **args = _args + 1;  // For PY_VECTORCALL_ARGUMENTS_OFFSET
     args[0] = arg;
-    PyThreadState *tstate = _PyThreadState_GET();
     size_t nargsf = 1 | PY_VECTORCALL_ARGUMENTS_OFFSET;
     return _PyObject_VectorcallTstate(tstate, func, args, nargsf, NULL);
+}
+
+PyObject *
+PyObject_CallOneArg(PyObject *func, PyObject *arg)
+{
+    return _PyObject_CallOneArgTstate(_PyThreadState_GET(), func, arg);
 }
 
 

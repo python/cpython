@@ -211,6 +211,12 @@ extern int _PyUnicodeError_GetParams(
     Py_ssize_t *slen,
     int as_bytes);
 
+PyAPI_FUNC(void)
+_PyErr_FormatUnraisable(PyThreadState *tstate, const char *format, ...);
+
+PyAPI_FUNC(void)
+_PyErr_WriteUnraisable(PyThreadState *tstate, PyObject *obj);
+
 #ifdef __cplusplus
 }
 #endif

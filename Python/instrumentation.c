@@ -2982,6 +2982,7 @@ branch_handler_vectorcall(
     PyObject *op, PyObject *const *args,
     size_t nargsf, PyObject *kwnames
 ) {
+    PyThreadState *tstate = _PyThreadState_GET();
     _PyLegacyBranchEventHandler *self = _PyLegacyBranchEventHandler_CAST(op);
     // Find the other instrumented instruction and remove tool
     // The spec (PEP 669) allows spurious events after a DISABLE,
@@ -2997,7 +2998,7 @@ branch_handler_vectorcall(
         /* Already disabled */
         return &_PyInstrumentation_DISABLE;
     }
-    PyObject *res = PyObject_Vectorcall(self->handler, args, nargsf, kwnames);
+    PyObject *res = _PyObject_VectorcallTstate(tstate, self->handler, args, nargsf, kwnames);
     if (res == &_PyInstrumentation_DISABLE) {
         /* We need FOR_ITER and POP_JUMP_ to be the same size */
         assert(INLINE_CACHE_ENTRIES_FOR_ITER == 1);

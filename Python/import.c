@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_audit.h"         // _PySys_Audit()
+#include "pycore_call.h"          // _PyObject_VectorcallTstate()
 #include "pycore_ceval.h"
 #include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_dict.h"          // _PyDict_Contains_KnownHash()
@@ -4545,7 +4546,7 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
             fromlist = Py_NewRef(Py_None);
         }
         PyObject *args[] = {modname, abs_name, fromlist};
-        PyObject *res = PyObject_Vectorcall(filter, args, 3, NULL);
+        PyObject *res = _PyObject_VectorcallTstate(tstate, filter, args, 3, NULL);
 
         Py_DECREF(modname);
         Py_DECREF(filter);

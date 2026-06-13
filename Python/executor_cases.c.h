@@ -16038,7 +16038,7 @@
                 stack_pointer += 3;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                res_o = PyObject_Vectorcall(exit_func_o, stack + 2 - has_self,
+                res_o = _PyObject_VectorcallTstate(tstate, exit_func_o, stack + 2 - has_self,
                     (3 + has_self) | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
@@ -16886,6 +16886,7 @@
             }
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyObject *res_o = _Py_VectorCall_StackRefSteal(
+                tstate,
                 callable,
                 arguments,
                 total_args,
@@ -19794,6 +19795,7 @@
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyObject *res_o = _Py_VectorCall_StackRefSteal(
+                tstate,
                 callable,
                 arguments,
                 total_args,
@@ -20152,7 +20154,7 @@
             stack_pointer += 3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyObject *result_o = PyObject_Call(func, callargs, kwargs);
+            PyObject *result_o = _PyObject_Call(tstate, func, callargs, kwargs);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);

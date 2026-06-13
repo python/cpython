@@ -2743,7 +2743,7 @@ dummy_func(
             {
                 // scope to tell MSVC that stack is not escaping
                 PyObject *stack[] = {class, self};
-                super = PyObject_Vectorcall(global_super, stack, oparg & 2, NULL);
+                super = _PyObject_VectorcallTstate(tstate, global_super, stack, oparg & 2, NULL);
             }
             if (opcode == INSTRUMENTED_LOAD_SUPER_ATTR) {
                 PyObject *arg = oparg & 2 ? class : &_PyInstrumentation_MISSING;
@@ -4211,7 +4211,7 @@ dummy_func(
                 // scope to tell MSVC that stack is not escaping
                 PyObject *stack[5] = {NULL, PyStackRef_AsPyObjectBorrow(exit_self), exc, val_o, tb};
                 int has_self = !PyStackRef_IsNull(exit_self);
-                res_o = PyObject_Vectorcall(exit_func_o, stack + 2 - has_self,
+                res_o = _PyObject_VectorcallTstate(tstate, exit_func_o, stack + 2 - has_self,
                         (3 + has_self) | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
             }
             Py_XDECREF(original_tb);
@@ -4581,6 +4581,7 @@ dummy_func(
                 total_args++;
             }
             PyObject *res_o = _Py_VectorCall_StackRefSteal(
+                tstate,
                 callable,
                 arguments,
                 total_args,
@@ -5616,6 +5617,7 @@ dummy_func(
                 total_args++;
             }
             PyObject *res_o = _Py_VectorCall_StackRefSteal(
+                tstate,
                 callable,
                 arguments,
                 total_args,
@@ -5679,7 +5681,7 @@ dummy_func(
                 if (err) {
                     ERROR_NO_POP();
                 }
-                result_o = PyObject_Call(func, callargs, kwargs);
+                result_o = _PyObject_Call(tstate, func, callargs, kwargs);
 
                 if (!PyFunction_Check(func) && !PyMethod_Check(func)) {
                     if (result_o == NULL) {
@@ -5726,7 +5728,7 @@ dummy_func(
                 assert(PyTuple_CheckExact(callargs));
                 PyObject *kwargs = PyStackRef_AsPyObjectBorrow(kwargs_st);
                 assert(kwargs == NULL || PyDict_CheckExact(kwargs));
-                result_o = PyObject_Call(func, callargs, kwargs);
+                result_o = _PyObject_Call(tstate, func, callargs, kwargs);
             }
             PyStackRef_XCLOSE(kwargs_st);
             PyStackRef_CLOSE(callargs_st);
@@ -5805,7 +5807,7 @@ dummy_func(
             assert(PyTuple_CheckExact(callargs));
             PyObject *kwargs = PyStackRef_AsPyObjectBorrow(kwargs_st);
             assert(kwargs == NULL || PyDict_CheckExact(kwargs));
-            PyObject *result_o = PyObject_Call(func, callargs, kwargs);
+            PyObject *result_o = _PyObject_Call(tstate, func, callargs, kwargs);
             PyStackRef_XCLOSE(kwargs_st);
             PyStackRef_CLOSE(callargs_st);
             DEAD(null);

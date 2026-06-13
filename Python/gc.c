@@ -4,7 +4,9 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _Py_set_eval_breaker_bit()
+#include "pycore_call.h"          // _PyObject_VectorcallTstate()
 #include "pycore_dict.h"          // _PyInlineValuesSize()
+#include "pycore_pyerrors.h"
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_context.h"
 #include "pycore_interp.h"        // PyInterpreterState.gc
@@ -1277,7 +1279,7 @@ invoke_gc_callback(PyThreadState *tstate, const char *phase,
             "candidates", stats->candidates,
             "duration", stats->duration);
         if (info == NULL) {
-            PyErr_FormatUnraisable("Exception ignored on invoking gc callbacks");
+            _PyErr_FormatUnraisable(tstate, "Exception ignored on invoking gc callbacks");
             return;
         }
     }
@@ -1285,7 +1287,7 @@ invoke_gc_callback(PyThreadState *tstate, const char *phase,
     PyObject *phase_obj = PyUnicode_FromString(phase);
     if (phase_obj == NULL) {
         Py_XDECREF(info);
-        PyErr_FormatUnraisable("Exception ignored on invoking gc callbacks");
+        _PyErr_FormatUnraisable(tstate, "Exception ignored on invoking gc callbacks");
         return;
     }
 
@@ -1293,10 +1295,10 @@ invoke_gc_callback(PyThreadState *tstate, const char *phase,
     for (Py_ssize_t i=0; i<PyList_GET_SIZE(gcstate->callbacks); i++) {
         PyObject *r, *cb = PyList_GET_ITEM(gcstate->callbacks, i);
         Py_INCREF(cb); /* make sure cb doesn't go away */
-        r = PyObject_Vectorcall(cb, stack, 2, NULL);
+        r = _PyObject_VectorcallTstate(tstate, cb, stack, 2, NULL);
         if (r == NULL) {
-            PyErr_FormatUnraisable("Exception ignored while "
-                                   "calling GC callback %R", cb);
+            _PyErr_FormatUnraisable(tstate, "Exception ignored while "
+                                    "calling GC callback %R", cb);
         }
         else {
             Py_DECREF(r);
