@@ -1,31 +1,24 @@
-.. image:: https://www.python.org/static/community_logos/python-logo-master-v3-TM.png
-   :align: center
-   :alt: Python Logo
-   :width: 400px
-
 This is Python version 3.16.0 alpha 0
 =====================================
 
 .. image:: https://github.com/python/cpython/actions/workflows/build.yml/badge.svg?branch=main&event=push
    :alt: CPython build status on GitHub Actions
    :target: https://github.com/python/cpython/actions
+
 .. image:: https://dev.azure.com/python/cpython/_apis/build/status/Azure%20Pipelines%20CI?branchName=main
    :alt: CPython build status on Azure DevOps
    :target: https://dev.azure.com/python/cpython/_build/latest?definitionId=4&branchName=main
+
 .. image:: https://img.shields.io/badge/discourse-join_chat-brightgreen.svg
    :alt: Python Discourse chat
    :target: https://discuss.python.org/
 
 
-**Copyright © 2001 Python Software Foundation.  All rights reserved.**
+Copyright © 2001 Python Software Foundation.  All rights reserved.
 
-*See the end of this file for further copyright and license information.*
+See the end of this file for further copyright and license information.
 
-.. contents:: Table of Contents
-   :local:
-   :depth: 2
-
-----
+.. contents::
 
 General Information
 -------------------
@@ -52,14 +45,10 @@ Installable Python kits, and information about using Python, are available at
 
 .. _python.org: https://www.python.org/
 
-----
-
 Build Instructions
 ------------------
 
-On Unix, Linux, BSD, macOS, and Cygwin:
-
-.. code-block:: shell
+On Unix, Linux, BSD, macOS, and Cygwin::
 
     ./configure
     make
@@ -91,9 +80,7 @@ To build Windows installer, see `Tools/msi/README.txt
 <https://github.com/python/cpython/blob/main/Tools/msi/README.txt>`_.
 
 If you wish, you can create a subdirectory and invoke configure from there.
-For example:
-
-.. code-block:: shell
+For example::
 
     mkdir debug
     cd debug
@@ -135,6 +122,7 @@ The final step is to build the actual interpreter, using the information
 collected from the instrumented one.  The end result will be a Python binary
 that is optimized; suitable for distribution or production installation.
 
+
 Link Time Optimization
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -143,7 +131,6 @@ ability of recent compiler toolchains to optimize across the otherwise
 arbitrary ``.o`` file boundary when building final executables or shared
 libraries for additional performance gains.
 
-----
 
 What's New
 ----------
@@ -157,6 +144,7 @@ accounting of changes can only be gleaned from the `commit history
 
 If you want to install multiple versions of Python, see the section below
 entitled "Installing multiple versions".
+
 
 Documentation
 -------------
@@ -172,7 +160,6 @@ formatting requirements.
 For information about building Python's documentation, refer to `Doc/README.rst
 <https://github.com/python/cpython/blob/main/Doc/README.rst>`_.
 
-----
 
 Testing
 -------
@@ -187,9 +174,7 @@ By default, tests are prevented from overusing resources like disk space and
 memory.  To enable these tests, run ``make buildbottest``.
 
 If any tests fail, you can re-run the failing test(s) in verbose mode.  For
-example, if ``test_os`` and ``test_gdb`` failed, you can run:
-
-.. code-block:: shell
+example, if ``test_os`` and ``test_gdb`` failed, you can run::
 
     make test TESTOPTS="-v test_os test_gdb"
 
@@ -219,15 +204,16 @@ For example, if you want to install Python 2.7, 3.6, and 3.15 with 3.15 being th
 primary version, you would execute ``make install`` in your 3.15 build directory
 and ``make altinstall`` in the others.
 
+
 Release Schedule
 ----------------
 
 See `PEP 826 <https://peps.python.org/pep-0826/>`__ for Python 3.16 release details.
 
-----
 
 Copyright and License Information
 ---------------------------------
+
 
 Copyright © 2001 Python Software Foundation.  All rights reserved.
 
