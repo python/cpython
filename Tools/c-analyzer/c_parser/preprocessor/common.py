@@ -6,6 +6,7 @@ import shlex
 import subprocess
 import sys
 
+from ..info import FileInfo, SourceLine
 from .errors import (
     PreprocessorFailure,
     ErrorDirectiveError,
