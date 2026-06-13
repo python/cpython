@@ -469,11 +469,9 @@ class _ExecutorManagerThread(threading.Thread):
             executor._shutdown_thread = True
             executor = None
 
-        # All pending tasks are to be marked failed with the following
-        # BrokenProcessPool error
-        bpe = BrokenProcessPool("A process in the process pool was "
-                                "terminated abruptly while the future was "
-                                "running or pending.")
+        # All pending tasks are to be marked failed with a
+        # BrokenProcessPool error, as separate instances to avoid sharing
+        # a traceback (gh-101267).
         cause_str = None
         if cause is not None:
             cause_str = ''.join(cause)
@@ -489,11 +487,15 @@ class _ExecutorManagerThread(threading.Thread):
                                   f"with exit code {p.exitcode}")
             if errors:
                 cause_str = "\n".join(errors)
-        if cause_str:
-            bpe.__cause__ = _RemoteTraceback(f"\n'''\n{cause_str}'''")
+        cause_tb = f"\n'''\n{cause_str}'''" if cause_str else None
 
         # Mark pending tasks as failed.
         for work_id, work_item in self.pending_work_items.items():
+            bpe = BrokenProcessPool("A process in the process pool was "
+                                    "terminated abruptly while the future was "
+                                    "running or pending.")
+            if cause_tb is not None:
+                bpe.__cause__ = _RemoteTraceback(cause_tb)
             try:
                 work_item.future.set_exception(bpe)
             except _base.InvalidStateError:
