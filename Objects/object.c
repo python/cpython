@@ -420,28 +420,28 @@ _Py_DecRefSharedIsDead(PyObject *o, const char *filename, int lineno)
 }
 
 void
-_Py_DecRefSharedDebug(PyObject *o, const char *filename, int lineno)
+_Py_DecRefSharedDebug(PyThreadState *tstate, PyObject *o, const char *filename, int lineno)
 {
     if (_Py_DecRefSharedIsDead(o, filename, lineno)) {
-        _Py_Dealloc(o);
+        _Py_Dealloc(tstate, o);
     }
 }
 
 void
-_Py_DecRefShared(PyObject *o)
+_Py_DecRefShared(PyThreadState *tstate, PyObject *o)
 {
-    _Py_DecRefSharedDebug(o, NULL, 0);
+    _Py_DecRefSharedDebug(tstate, o, NULL, 0);
 }
 
 void
-_Py_MergeZeroLocalRefcount(PyObject *op)
+_Py_MergeZeroLocalRefcount(PyThreadState *tstate, PyObject *op)
 {
     assert(op->ob_ref_local == 0);
 
     Py_ssize_t shared = _Py_atomic_load_ssize_acquire(&op->ob_ref_shared);
     if (shared == 0) {
         // Fast-path: shared refcount is zero (including flags)
-        _Py_Dealloc(op);
+        _Py_DeallocTstate(tstate, op);
         return;
     }
 
@@ -460,7 +460,7 @@ _Py_MergeZeroLocalRefcount(PyObject *op)
     if (new_shared == _Py_REF_MERGED) {
         // i.e., the shared refcount is zero (only the flags are set) so we
         // deallocate the object.
-        _Py_Dealloc(op);
+        _Py_DeallocTstate(tstate, op);
     }
 }
 
@@ -3320,12 +3320,11 @@ To avoid that, if the C stack is nearing its limit, instead of calling
 dealloc on the object, it is added to a queue to be freed later when the
 stack is shallower */
 void
-_Py_Dealloc(PyObject *op)
+_Py_DeallocTstate(PyThreadState *tstate, PyObject *op)
 {
     PyTypeObject *type = Py_TYPE(op);
     unsigned long gc_flag = type->tp_flags & Py_TPFLAGS_HAVE_GC;
     destructor dealloc = type->tp_dealloc;
-    PyThreadState *tstate = _PyThreadState_GET();
     intptr_t margin = _Py_RecursionLimit_GetMargin(tstate);
     if (margin < 2 && gc_flag) {
         _PyTrash_thread_deposit_object(tstate, (PyObject *)op);
@@ -3378,6 +3377,11 @@ _Py_Dealloc(PyObject *op)
     }
 }
 
+void
+_Py_Dealloc(PyObject *op)
+{
+    _Py_DeallocTstate(_PyThreadState_GET(), op);
+}
 
 PyObject **
 PyObject_GET_WEAKREFS_LISTPTR(PyObject *op)

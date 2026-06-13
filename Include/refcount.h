@@ -237,6 +237,9 @@ PyAPI_FUNC(void) _Py_INCREF_IncRefTotal(void);
 PyAPI_FUNC(void) _Py_DECREF_DecRefTotal(void);
 #endif  // Py_REF_DEBUG && !Py_LIMITED_API
 
+#if !defined(Py_LIMITED_API)
+PyAPI_FUNC(void) _Py_DeallocTstate(PyThreadState *, PyObject *);
+#endif
 PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
 
 
@@ -313,14 +316,14 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 #if !defined(Py_LIMITED_API)
 #if defined(Py_GIL_DISABLED)
 // Implements Py_DECREF on objects not owned by the current thread.
-PyAPI_FUNC(void) _Py_DecRefShared(PyObject *);
-PyAPI_FUNC(void) _Py_DecRefSharedDebug(PyObject *, const char *, int);
+PyAPI_FUNC(void) _Py_DecRefShared(PyThreadState *, PyObject *);
+PyAPI_FUNC(void) _Py_DecRefSharedDebug(PyThreadState *, PyObject *, const char *, int);
 
 // Called from Py_DECREF by the owning thread when the local refcount reaches
 // zero. The call will deallocate the object if the shared refcount is also
 // zero. Otherwise, the thread gives up ownership and merges the reference
 // count fields.
-PyAPI_FUNC(void) _Py_MergeZeroLocalRefcount(PyObject *);
+PyAPI_FUNC(void) _Py_MergeZeroLocalRefcount(PyThreadState *, PyObject *);
 #endif  // Py_GIL_DISABLED
 #endif  // Py_LIMITED_API
 
@@ -364,6 +367,7 @@ static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
     }
 }
 #define Py_DECREF(op) Py_DECREF(__FILE__, __LINE__, _PyObject_CAST(op))
+#define _Py_DECREF(tstate, op) Py_DECREF(op)
 
 #elif defined(Py_GIL_DISABLED)
 static inline void Py_DECREF(PyObject *op)
@@ -386,6 +390,26 @@ static inline void Py_DECREF(PyObject *op)
     }
 }
 #define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
+
+static inline void _Py_DECREF(PyThreadState *tstate, PyObject *op)
+{
+    uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
+    if (local == _Py_IMMORTAL_REFCNT_LOCAL) {
+        _Py_DECREF_IMMORTAL_STAT_INC();
+        return;
+    }
+    _Py_DECREF_STAT_INC();
+    if (_Py_IsOwnedByCurrentThread(op)) {
+        local--;
+        _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, local);
+        if (local == 0) {
+            _Py_MergeZeroLocalRefcount(tstate, op);
+        }
+    }
+    else {
+        _Py_DecRefShared(tstate, op);
+    }
+}
 
 #elif defined(Py_REF_DEBUG)
 
@@ -411,10 +435,11 @@ static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
     }
 }
 #define Py_DECREF(op) Py_DECREF(__FILE__, __LINE__, _PyObject_CAST(op))
+#define _Py_DECREF(tstate, op) Py_DECREF(op)
 
 #else
 
-static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
+static inline Py_ALWAYS_INLINE void _Py_DECREF(PyThreadState *tstate, PyObject *op)
 {
     // Non-limited C API and limited C API for Python 3.9 and older access
     // directly PyObject.ob_refcnt.
@@ -424,7 +449,22 @@ static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
     }
     _Py_DECREF_STAT_INC();
     if (--op->ob_refcnt == 0) {
-        _Py_Dealloc(op);
+        _Py_DeallocTstate(tstate, op);
+    }
+}
+
+// We copy the implementation instead of doing _Py_DECREF(_PyThreadState_GET(), op)
+// because we don't necessarily need a thread state for every Py_DECREF() call, so
+// we get it lazily.
+static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
+{
+    if (_Py_IsImmortal(op)) {
+        _Py_DECREF_IMMORTAL_STAT_INC();
+        return;
+    }
+    _Py_DECREF_STAT_INC();
+    if (--op->ob_refcnt == 0) {
+        _Py_DeallocTstate(_PyThreadState_GET(), op);
     }
 }
 #define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
@@ -480,6 +520,29 @@ static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
  * Py_CLEAR().
  */
 #ifdef _Py_TYPEOF
+#define _Py_CLEAR(tstate, op) \
+    do { \
+        _Py_TYPEOF(op)* _tmp_op_ptr = &(op); \
+        _Py_TYPEOF(op) _tmp_old_op = (*_tmp_op_ptr); \
+        if (_tmp_old_op != NULL) { \
+            *_tmp_op_ptr = _Py_NULL; \
+            _Py_DECREF(tstate, _tmp_old_op); \
+        } \
+    } while (0)
+#else
+#define _Py_CLEAR(tstate, op) \
+    do { \
+        PyObject **_tmp_op_ptr = _Py_CAST(PyObject**, &(op)); \
+        PyObject *_tmp_old_op = (*_tmp_op_ptr); \
+        if (_tmp_old_op != NULL) { \
+            PyObject *_null_ptr = _Py_NULL; \
+            memcpy(_tmp_op_ptr, &_null_ptr, sizeof(PyObject*)); \
+            _Py_DECREF(tstate, _tmp_old_op); \
+        } \
+    } while (0)
+#endif
+
+#ifdef _Py_TYPEOF
 #define Py_CLEAR(op) \
     do { \
         _Py_TYPEOF(op)* _tmp_op_ptr = &(op); \
@@ -501,7 +564,6 @@ static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
         } \
     } while (0)
 #endif
-
 
 /* Function to use in case the object pointer can be NULL: */
 static inline void Py_XINCREF(PyObject *op)

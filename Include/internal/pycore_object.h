@@ -420,6 +420,7 @@ static inline void Py_DECREF_MORTAL(const char *filename, int lineno, PyObject *
     }
 }
 #define Py_DECREF_MORTAL(op) Py_DECREF_MORTAL(__FILE__, __LINE__, _PyObject_CAST(op))
+#define _Py_DECREF_MORTAL(tstate, op) Py_DECREF_MORTAL(op)
 
 static inline void _Py_DECREF_MORTAL_SPECIALIZED(const char *filename, int lineno, PyObject *op, destructor destruct)
 {
@@ -442,6 +443,16 @@ static inline void _Py_DECREF_MORTAL_SPECIALIZED(const char *filename, int linen
 #define Py_DECREF_MORTAL_SPECIALIZED(op, destruct) _Py_DECREF_MORTAL_SPECIALIZED(__FILE__, __LINE__, op, destruct)
 
 #else
+
+static inline void _Py_DECREF_MORTAL(PyThreadState *tstate, PyObject *op)
+{
+    assert(!_Py_IsStaticImmortal(op));
+    _Py_DECREF_STAT_INC();
+    if (--op->ob_refcnt == 0) {
+        _Py_DeallocTstate(tstate, op);
+    }
+}
+#define _Py_DECREF_MORTAL(tstate, op) _Py_DECREF_MORTAL(tstate, _PyObject_CAST(op))
 
 static inline void Py_DECREF_MORTAL(PyObject *op)
 {
@@ -466,6 +477,7 @@ static inline void Py_DECREF_MORTAL_SPECIALIZED(PyObject *op, destructor destruc
 
 #endif
 #else  // Py_GIL_DISABLED
+# define _Py_DECREF_MORTAL(tstate, op) _Py_DECREF(tstate, op)
 # define Py_DECREF_MORTAL(op) Py_DECREF(op)
 # define Py_DECREF_MORTAL_SPECIALIZED(op, destruct) Py_DECREF(op)
 #endif

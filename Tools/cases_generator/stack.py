@@ -667,15 +667,15 @@ class Storage:
                 out.emit(f"tmp = {name};\n")
                 out.emit(f"{name} = {overwrite};\n")
                 self.stack.save_variables(out)
-                out.emit(f"{close}(tmp);\n")
+                out.emit(f"{close}(tstate, tmp);\n")
             else:
-                out.emit(f"{close}({name});\n")
+                out.emit(f"{close}(tstate, {name});\n")
 
         def close_variable(var: Local, overwrite: str) -> None:
             nonlocal tmp_defined
-            close = "PyStackRef_CLOSE"
+            close = "_PyStackRef_CLOSE"
             if "null" in var.name:
-                close = "PyStackRef_XCLOSE"
+                close = "_PyStackRef_XCLOSE"
             var.memory_offset = None
             self.save(out)
             out.start_line()

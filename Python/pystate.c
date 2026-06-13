@@ -854,7 +854,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
      */
     // XXX Make sure we properly deal with problematic finalizers.
 
-    Py_CLEAR(interp->audit_hooks);
+    _Py_CLEAR(tstate, interp->audit_hooks);
 
     // gh-140257: Threads have already been cleared, but daemon threads may
     // still access eval_breaker atomically via take_gil() right before they
@@ -867,11 +867,11 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     }
     for (int t = 0; t < PY_MONITORING_TOOL_IDS; t++) {
         for (int e = 0; e < _PY_MONITORING_EVENTS; e++) {
-            Py_CLEAR(interp->monitoring_callables[t][e]);
+            _Py_CLEAR(tstate, interp->monitoring_callables[t][e]);
         }
     }
     for (int t = 0; t < PY_MONITORING_TOOL_IDS; t++) {
-        Py_CLEAR(interp->monitoring_tool_names[t]);
+        _Py_CLEAR(tstate, interp->monitoring_tool_names[t]);
     }
     interp->_code_object_generation = 0;
 #ifdef Py_GIL_DISABLED
@@ -886,13 +886,13 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     assert(interp->imports.importlib == NULL);
     assert(interp->imports.import_func == NULL);
 
-    Py_CLEAR(interp->sysdict_copy);
-    Py_CLEAR(interp->builtins_copy);
-    Py_CLEAR(interp->dict);
+    _Py_CLEAR(tstate, interp->sysdict_copy);
+    _Py_CLEAR(tstate, interp->builtins_copy);
+    _Py_CLEAR(tstate, interp->dict);
 #ifdef HAVE_FORK
-    Py_CLEAR(interp->before_forkers);
-    Py_CLEAR(interp->after_forkers_parent);
-    Py_CLEAR(interp->after_forkers_child);
+    _Py_CLEAR(tstate, interp->before_forkers);
+    _Py_CLEAR(tstate, interp->after_forkers_parent);
+    _Py_CLEAR(tstate, interp->after_forkers_child);
 #endif
 
 
@@ -933,8 +933,8 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
        which requires sysdict and builtins. */
     PyDict_Clear(interp->sysdict);
     PyDict_Clear(interp->builtins);
-    Py_CLEAR(interp->sysdict);
-    Py_CLEAR(interp->builtins);
+    _Py_CLEAR(tstate, interp->sysdict);
+    _Py_CLEAR(tstate, interp->builtins);
     common_constants_clear(interp);
 
 #if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
@@ -1820,11 +1820,11 @@ PyThreadState_Clear(PyThreadState *tstate)
 
     /* Don't clear tstate->pyframe: it is a borrowed reference */
 
-    Py_CLEAR(tstate->threading_local_key);
-    Py_CLEAR(tstate->threading_local_sentinel);
+    _Py_CLEAR(tstate, tstate->threading_local_key);
+    _Py_CLEAR(tstate, tstate->threading_local_sentinel);
 
-    Py_CLEAR(((_PyThreadStateImpl *)tstate)->asyncio_running_loop);
-    Py_CLEAR(((_PyThreadStateImpl *)tstate)->asyncio_running_task);
+    _Py_CLEAR(tstate, ((_PyThreadStateImpl *)tstate)->asyncio_running_loop);
+    _Py_CLEAR(tstate, ((_PyThreadStateImpl *)tstate)->asyncio_running_task);
 
 
     PyMutex_Lock(&tstate->interp->asyncio_tasks_lock);
@@ -1834,12 +1834,12 @@ PyThreadState_Clear(PyThreadState *tstate)
                  &((_PyThreadStateImpl *)tstate)->asyncio_tasks_head);
     PyMutex_Unlock(&tstate->interp->asyncio_tasks_lock);
 
-    Py_CLEAR(tstate->dict);
-    Py_CLEAR(tstate->async_exc);
+    _Py_CLEAR(tstate, tstate->dict);
+    _Py_CLEAR(tstate, tstate->async_exc);
 
-    Py_CLEAR(tstate->current_exception);
+    _Py_CLEAR(tstate, tstate->current_exception);
 
-    Py_CLEAR(tstate->exc_state.exc_value);
+    _Py_CLEAR(tstate, tstate->exc_state.exc_value);
 
     /* The stack of exception states should contain just this thread. */
     if (verbose && tstate->exc_info != &tstate->exc_state) {
@@ -1856,13 +1856,13 @@ PyThreadState_Clear(PyThreadState *tstate)
         tstate->c_tracefunc = NULL;
     }
 
-    Py_CLEAR(tstate->c_profileobj);
-    Py_CLEAR(tstate->c_traceobj);
+    _Py_CLEAR(tstate, tstate->c_profileobj);
+    _Py_CLEAR(tstate, tstate->c_traceobj);
 
-    Py_CLEAR(tstate->async_gen_firstiter);
-    Py_CLEAR(tstate->async_gen_finalizer);
+    _Py_CLEAR(tstate, tstate->async_gen_firstiter);
+    _Py_CLEAR(tstate, tstate->async_gen_finalizer);
 
-    Py_CLEAR(tstate->context);
+    _Py_CLEAR(tstate, tstate->context);
 
 #ifdef Py_GIL_DISABLED
     // Each thread should clear own freelists in free-threading builds.
