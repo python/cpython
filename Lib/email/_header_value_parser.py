@@ -1102,12 +1102,12 @@ def get_encoded_word(value, terminal_type='vtext'):
     except (ValueError, KeyError):
         raise _InvalidEwError(
             "encoded word format invalid: '{}'".format(ew.cte))
-    ew.charset = charset
-    ew.lang = lang
     if any(isinstance(x, errors.InvalidBase64LengthDefect) for x in defects):
         raise _InvalidEwError(
             "encoded word could not be decoded: '{}'".format(ew.cte),
             )
+    ew.charset = charset.strip()
+    ew.lang = lang.strip()
     ew.defects.extend(defects)
     while text:
         if text[0] in WSP:
