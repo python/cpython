@@ -17,6 +17,7 @@ from pegen.grammar import (
     Gather,
     Group,
     Item,
+    Lookahead,
     LookaheadOrCut,
     MetaTuple,
     MetaList,
