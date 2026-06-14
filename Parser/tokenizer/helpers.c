@@ -152,7 +152,7 @@ _PyTokenizer_warn_invalid_escape_sequence(struct tok_state *tok, int first_inval
 }
 
 void
-_PyTokenizer_init_error(PyObject *filename)
+_PyTokenizer_raise_init_error(PyObject *filename)
 {
     if (!(PyErr_ExceptionMatches(PyExc_LookupError)
           || PyErr_ExceptionMatches(PyExc_SyntaxError)
@@ -468,7 +468,7 @@ _PyTokenizer_check_coding_spec(const char* line, Py_ssize_t size, struct tok_sta
         assert(tok->decoding_readline == NULL);
         if (strcmp(cs, "utf-8") != 0 && !set_readline(tok, cs)) {
             _PyTokenizer_error_ret(tok);
-            _PyTokenizer_init_error(tok->filename);
+            _PyTokenizer_raise_init_error(tok->filename);
             PyMem_Free(cs);
             return 0;
         }
