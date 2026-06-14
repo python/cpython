@@ -554,6 +554,11 @@ class FileSourceEncodingTest(AbstractSourceEncodingTest, unittest.TestCase):
                b'print("\xc4\x85")\n')
         self.check_script_error(src, br"'shift_jis' codec can't decode byte")
 
+    def test_coding_spec_non_text_encoding(self):
+        src = (b'# coding: hex_codec\n'
+               b'print("Test")\n')
+        self.check_script_error(src, br"'hex_codec' is not a text encoding")
+
 
 if __name__ == "__main__":
     unittest.main()
