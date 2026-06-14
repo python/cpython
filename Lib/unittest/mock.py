@@ -24,7 +24,6 @@ __all__ = (
 )
 
 
-import asyncio
 import contextlib
 import io
 import inspect

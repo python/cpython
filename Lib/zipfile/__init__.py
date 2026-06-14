@@ -4,7 +4,6 @@ Read and write ZIP files.
 XXX references to utf-8 need further investigation.
 """
 import binascii
-import importlib.util
 import io
 import os
 import shutil
