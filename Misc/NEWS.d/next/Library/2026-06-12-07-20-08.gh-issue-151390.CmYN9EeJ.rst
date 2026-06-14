@@ -1,2 +1,1 @@
-Fix the :term:`REPL` not colorizing ``match`` as a soft keyword when followed
-by a unary ``+`` or ``-`` operator. Patch by Bartosz Sławecki.
+Colorize ``match`` in the :term:`REPL` when followed by a unary ``+`` or ``-`` operator. Patch by Bartosz Sławecki.
