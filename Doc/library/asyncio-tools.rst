@@ -24,7 +24,7 @@ The following commands inspect the process identified by ``PID``:
 
 The commands read the target process state without executing any code in it.
 They are only available on supported platforms and may require permission to
-inspect another process.  See :ref:`permission-requirements` for details.
+inspect another process.  See the :ref:`permission-requirements` for details.
 
 .. seealso::
 
@@ -36,6 +36,7 @@ The command examples below use this program, which creates a task hierarchy
 suitable for inspection and prints its process ID:
 
 .. code-block:: python
+   :caption: example.py
 
    import asyncio
    import os
