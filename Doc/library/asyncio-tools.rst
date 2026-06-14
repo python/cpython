@@ -79,15 +79,8 @@ Command-line options
 .. option:: ps PID
 
    Display a flat table of all pending tasks in the process *PID*.  Each row
-   contains:
-
-   * **tid** — OS thread ID of the thread running the event loop
-   * **task id** — memory address of the :class:`~asyncio.Task` object
-   * **task name** — name assigned to the task (see :meth:`~asyncio.Task.get_name`)
-   * **coroutine stack** — chain of coroutine frame names from outermost to innermost
-   * **awaiter chain** — coroutine frames of the task that is awaiting this task
-   * **awaiter name** — name of the awaiting task
-   * **awaiter id** — memory address of the awaiting task (``0x0`` if none)
+   shows the event-loop thread ID, task ID and name, coroutine stack, and the
+   awaiting task's stack, name, and ID, if any.
 
    This subcommand prints all tasks regardless of whether the await graph
    contains cycles.  Use it when you need to filter or process task data
