@@ -1,6 +1,8 @@
 #include "Python.h"
 #include "errcode.h"
+#include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_token.h"
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 
 #include "../lexer/state.h"
 
@@ -147,6 +149,53 @@ _PyTokenizer_warn_invalid_escape_sequence(struct tok_state *tok, int first_inval
 
     Py_DECREF(msg);
     return 0;
+}
+
+void
+_PyTokenizer_raise_init_error(PyObject *filename)
+{
+    if (!(PyErr_ExceptionMatches(PyExc_LookupError)
+          || PyErr_ExceptionMatches(PyExc_SyntaxError)
+          || PyErr_ExceptionMatches(PyExc_ValueError)
+          || PyErr_ExceptionMatches(PyExc_UnicodeDecodeError))) {
+        return;
+    }
+    PyObject *errstr = NULL;
+    PyObject *tuple = NULL;
+    PyObject *type;
+    PyObject *value;
+    PyObject *tback;
+    PyErr_Fetch(&type, &value, &tback);
+    if (PyErr_GivenExceptionMatches(value, PyExc_SyntaxError)) {
+        if (PyObject_SetAttr(value, &_Py_ID(filename), filename)) {
+            goto error;
+        }
+        PyErr_Restore(type, value, tback);
+        return;
+    }
+    errstr = PyObject_Str(value);
+    if (!errstr) {
+        goto error;
+    }
+
+    PyObject *tmp = Py_BuildValue("(OiiO)", filename, 0, -1, Py_None);
+    if (!tmp) {
+        goto error;
+    }
+
+    tuple = _PyTuple_FromPair(errstr, tmp);
+    Py_DECREF(tmp);
+    if (!tuple) {
+        goto error;
+    }
+    PyErr_SetObject(PyExc_SyntaxError, tuple);
+
+error:
+    Py_XDECREF(type);
+    Py_XDECREF(value);
+    Py_XDECREF(tback);
+    Py_XDECREF(errstr);
+    Py_XDECREF(tuple);
 }
 
 int
@@ -418,8 +467,8 @@ _PyTokenizer_check_coding_spec(const char* line, Py_ssize_t size, struct tok_sta
     if (tok->encoding == NULL) {
         assert(tok->decoding_readline == NULL);
         if (strcmp(cs, "utf-8") != 0 && !set_readline(tok, cs)) {
+            _PyTokenizer_raise_init_error(tok->filename);
             _PyTokenizer_error_ret(tok);
-            PyErr_Format(PyExc_SyntaxError, "encoding problem: %s", cs);
             PyMem_Free(cs);
             return 0;
         }
