@@ -86,6 +86,9 @@ class MimeTypes:
         is already known the extension will be added
         to the list of known extensions.
 
+        Registered lower-case extensions are matched
+        case-insensitively.
+
         If strict is true, information will be added to
         list of standard types, else to the list of non-standard
         types.
@@ -395,6 +398,9 @@ def add_type(type, ext, strict=True):
     type will replace the old one. When the type
     is already known the extension will be added
     to the list of known extensions.
+
+    Registered lower-case extensions are matched
+    case-insensitively.
 
     If strict is true, information will be added to
     list of standard types, else to the list of non-standard
