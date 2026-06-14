@@ -4,7 +4,6 @@
 #include "pycore_token.h"
 #include "pycore_tuple.h"         // _PyTuple_FromPair
 
-#include "../pegen.h"
 #include "../lexer/state.h"
 
 
