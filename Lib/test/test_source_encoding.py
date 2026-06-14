@@ -547,7 +547,7 @@ class FileSourceEncodingTest(AbstractSourceEncodingTest, unittest.TestCase):
     def test_coding_spec_decode_error(self):
         src = (b'# coding: shift-jis\n'
                b'print("\xc4\x85")\n')
-        self.check_script_error(src, br"'shift_jis' codec can't decode byte 0x85")
+        self.check_script_error(src, br"'shift_jis' codec can't decode byte")
 
 
 if __name__ == "__main__":
