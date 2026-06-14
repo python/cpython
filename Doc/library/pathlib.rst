@@ -575,6 +575,21 @@ Pure paths provide the following methods and properties:
       >>> PurePath('/a/b/c.py').full_match('**/*.py')
       True
 
+   A pattern ending with "``/**``" matches any path that begins with the
+   pattern's prefix followed by a separator.  For example "``/a/**``" matches
+   "``/a/b``" and "``/a/b/c``", but not "``/a``", because "``/a``" does not
+   begin with "``/a/``".  The recursive wildcard "``**``" can match zero
+   segments, but the separator before it must still be present in the path,
+   and :class:`PurePath` objects do not preserve trailing slashes (so
+   "``/a/``" is normalized to "``/a``")::
+
+      >>> PurePath('/a/b').full_match('/a/**')
+      True
+      >>> PurePath('/a').full_match('/a/**')
+      False
+      >>> PurePath('/a/').full_match('/a/**')
+      False
+
    .. seealso::
       :ref:`pathlib-pattern-language` documentation.
 
@@ -1795,7 +1810,10 @@ The following wildcards are supported in patterns for
 :meth:`~PurePath.full_match`, :meth:`~Path.glob` and :meth:`~Path.rglob`:
 
 ``**`` (entire segment)
-  Matches any number of file or directory segments, including zero.
+  Matches any number of file or directory segments, including zero.  Note that
+  in :meth:`~PurePath.full_match`, a pattern ending with "``/**``" requires the
+  separator before "``**``" to be present in the path; see that method for an
+  example.
 ``*`` (entire segment)
   Matches one file or directory segment.
 ``*`` (part of a segment)
