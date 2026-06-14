@@ -3532,12 +3532,12 @@ while 1:
 
     def test_diamond_operator(self):
         self._check_error(
-            "1 < > 2",
-            "Maybe you meant '!=' instead of '<>'?",
+            "1<>2",
+            r'Are you trying to overthrow the SC\?  Use operator "!="!',
             lineno=1,
             end_lineno=1,
-            offset=3,
-            end_offset=6,
+            offset=2,
+            end_offset=4,
         )
 
     def test_diamond_operator_barry_as_flufl(self):
@@ -3553,7 +3553,7 @@ while 1:
     def test_triple_equal(self):
         self._check_error(
             "a === b",
-            "Maybe you meant '==' instead of '==='?",
+            "Maybe you meant 'is' instead of '==='?",
             lineno=1,
             end_lineno=1,
             offset=3,

@@ -931,6 +931,10 @@ _PyPegen_check_barry_as_flufl(Parser *p, Token* t) {
         return -1;
     }
     if (!(p->flags & PyPARSE_BARRY_AS_BDFL)) {
+        if (strcmp(tok_str, "<>") == 0) {
+            RAISE_SYNTAX_ERROR("Are you trying to overthrow the SC?  Use operator \"!=\"!");
+            return -1;
+        }
         return strcmp(tok_str, "!=");
     }
     return 0;
