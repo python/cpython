@@ -1,1 +1,1 @@
-Fix ``PyREPL`` and :mode:`code` REPL mishandling a :exc:`SystemError` from the compiler. Patch by Bartosz Sławecki.
+Handle :exc:`SystemError` from the compiler in ``PyREPL``, :mod:`code`, and :mod:`codeop`. Patch by Bartosz Sławecki.

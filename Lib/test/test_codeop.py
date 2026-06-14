@@ -324,6 +324,18 @@ class CodeopTests(unittest.TestCase):
                    pass
             """), "duplicate parameter 'x' in function definition")
 
+    def test_system_error(self):
+        # SystemError from the compiler should propagate with context suppressed.
+        # The first call raises SyntaxError to enter the inner try block;
+        # the second (source + "\n") raises SystemError.
+        import unittest.mock as mock
+        err = SystemError("compiler internal error")
+        with mock.patch('codeop._compile', side_effect=[SyntaxError(), err]):
+            with self.assertRaises(SystemError) as cm:
+                compile_command("x = 1")
+        self.assertIs(cm.exception, err)
+        self.assertIsNone(err.__cause__)
+        self.assertTrue(err.__suppress_context__)
 
 
 if __name__ == "__main__":
