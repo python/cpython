@@ -47,7 +47,7 @@ asyncio provides a set of **high-level** APIs to:
 
 * :ref:`synchronize <asyncio-sync>` concurrent code;
 
-There are also **introspection** APIs and tools for:
+For **introspection**, asyncio provides APIs and tools for:
 
 * inspecting the :ref:`async call graph <asyncio-graph>` of tasks and futures;
 
