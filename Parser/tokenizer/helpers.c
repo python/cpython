@@ -2,7 +2,6 @@
 #include "errcode.h"
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_token.h"
-#include "pycore_tuple.h"         // _PyTuple_FromPair
 
 #include "../lexer/state.h"
 
@@ -183,7 +182,7 @@ _PyTokenizer_raise_init_error(PyObject *filename)
         goto error;
     }
 
-    tuple = _PyTuple_FromPair(errstr, tmp);
+    tuple = PyTuple_Pack(2, errstr, tmp);
     Py_DECREF(tmp);
     if (!tuple) {
         goto error;
