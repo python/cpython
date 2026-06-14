@@ -3525,6 +3525,26 @@ while 1:
             end_offset=5,
         )
 
+    def test_ampersand_with_space(self):
+        self._check_error(
+            "a & & b",
+            "invalid syntax",
+            lineno=1,
+            end_lineno=1,
+            offset=5,
+            end_offset=6,
+        )
+
+    def test_pipe_with_space(self):
+        self._check_error(
+            "a | | b",
+            "invalid syntax",
+            lineno=1,
+            end_lineno=1,
+            offset=5,
+            end_offset=6,
+        )
+
 
 class LazyImportRestrictionTestCase(SyntaxErrorTestCase):
     """Test syntax restrictions for lazy imports."""
