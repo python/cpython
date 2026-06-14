@@ -580,6 +580,14 @@ collect_frames_with_cache(
         return full_hit < 0 ? -1 : 0;
     }
 
+    assert(ctx->chunks != NULL);
+
+    if (ctx->chunks->count == 0) {
+        if (copy_stack_chunks(unwinder, ctx->thread_state_addr, ctx->chunks) < 0) {
+            PyErr_Clear();
+        }
+    }
+
     Py_ssize_t frames_before = PyList_GET_SIZE(ctx->frame_info);
 
     if (process_frame_chain(unwinder, ctx) < 0) {

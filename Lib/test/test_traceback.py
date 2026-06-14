@@ -206,7 +206,7 @@ class TracebackCases(unittest.TestCase):
                 sys.setrecursionlimit(15)
 
                 def f():
-                    ref(lambda: 0, [])
+                    ref(lambda: 0, ord)
                     f()
 
                 try:
