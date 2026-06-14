@@ -622,14 +622,9 @@ Available Context Managers
       - ``line``: the line of source code (if available), or ``None``
       - ``source``: the original object that generated the warning (if
         available), or ``None``
-      - ``module``: the module name where the warning occurred
-        (:class:`str`), or ``None``
 
     .. versionchanged:: 3.6
       The ``source`` attribute was added.
-
-    .. versionchanged:: 3.15
-      The ``module`` attribute was added.
 
     The type of these objects is not specified and may change; only the
     presence of these attributes is guaranteed.
