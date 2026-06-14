@@ -3508,7 +3508,7 @@ while 1:
     def test_double_ampersand(self):
         self._check_error(
             "a && b",
-            "Maybe you meant 'and' or '&' instead of '&&'?",
+            r"Maybe you meant 'and' or '&' instead of '&&'\?",
             lineno=1,
             end_lineno=1,
             offset=3,
@@ -3522,11 +3522,19 @@ while 1:
             offset=5,
             end_offset=6,
         )
+        self._check_error(
+            "(a &\n    & b)",
+            "invalid syntax",
+            lineno=2,
+            end_lineno=2,
+            offset=5,
+            end_offset=6,
+        )
 
     def test_double_pipe(self):
         self._check_error(
             "a || b",
-            "Maybe you meant 'or' or '|' instead of '||'?",
+            r"Maybe you meant 'or' or '|' instead of '||'\?",
             lineno=1,
             end_lineno=1,
             offset=3,
