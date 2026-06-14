@@ -47,7 +47,7 @@ suitable for inspection and prints its process ID:
                tg.create_task(play(track), name=track)
 
    async def main():
-       print(f"PID: {os.getpid()}", flush=True)
+       print(f"PID: {os.getpid()}")
        async with asyncio.TaskGroup() as tg:
            tg.create_task(
                album("Sundowning", ["TNDNBTG", "Levitate"]),
@@ -75,30 +75,6 @@ source layouts.
 
 Command-line options
 ====================
-
-.. option:: ps PID
-
-   Display a flat table of all pending tasks in the process *PID*.  Each row
-   shows the event-loop thread ID, task ID and name, coroutine stack, and the
-   awaiting task's stack, name, and ID, if any.
-
-   This subcommand prints all tasks regardless of whether the await graph
-   contains cycles.  Use it when you need to filter or process task data
-   programmatically, or when the task count is large enough that a tree
-   would be unwieldy:
-
-   .. code-block:: shell-session
-
-      $ python -m asyncio ps 12345
-      tid        task id              task name            coroutine stack                                    awaiter chain                                      awaiter name    awaiter id
-      ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-      18445801   0x10a456060          Task-1               TaskGroup._aexit -> TaskGroup.__aexit__ -> main                                                                       0x0
-      18445801   0x10a439f60          Sundowning           TaskGroup._aexit -> TaskGroup.__aexit__ -> album   TaskGroup._aexit -> TaskGroup.__aexit__ -> main    Task-1          0x10a456060
-      18445801   0x10a439d70          TMBTE                TaskGroup._aexit -> TaskGroup.__aexit__ -> album   TaskGroup._aexit -> TaskGroup.__aexit__ -> main    Task-1          0x10a456060
-      18445801   0x10a2a3a80          TNDNBTG              sleep -> play                                      TaskGroup._aexit -> TaskGroup.__aexit__ -> album   Sundowning      0x10a439f60
-      18445801   0x10a2a38a0          Levitate             sleep -> play                                      TaskGroup._aexit -> TaskGroup.__aexit__ -> album   Sundowning      0x10a439f60
-      18445801   0x10a2d7150          DYWTYLM              sleep -> play                                      TaskGroup._aexit -> TaskGroup.__aexit__ -> album   TMBTE           0x10a439d70
-      18445801   0x10a6bdaa0          Aqua Regia           sleep -> play                                      TaskGroup._aexit -> TaskGroup.__aexit__ -> album   TMBTE           0x10a439d70
 
 .. option:: pstree PID
 
@@ -146,6 +122,28 @@ Command-line options
       ERROR: await-graph contains cycles - cannot print a tree!
 
       cycle: Task-2 → Task-3 → Task-2
+
+.. option:: ps PID
+
+   Display a flat table of all pending tasks in the process *PID*.  Each row
+   shows the event-loop thread ID, task ID and name, coroutine stack, and the
+   awaiting task's stack, name, and ID, if any.
+
+   This subcommand prints all tasks regardless of whether the await graph
+   contains cycles:
+
+   .. code-block:: shell-session
+
+      $ python -m asyncio ps 12345
+      tid        task id              task name            coroutine stack                                    awaiter chain                                      awaiter name    awaiter id
+      ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+      18445801   0x10a456060          Task-1               TaskGroup._aexit -> TaskGroup.__aexit__ -> main                                                                       0x0
+      18445801   0x10a439f60          Sundowning           TaskGroup._aexit -> TaskGroup.__aexit__ -> album   TaskGroup._aexit -> TaskGroup.__aexit__ -> main    Task-1          0x10a456060
+      18445801   0x10a439d70          TMBTE                TaskGroup._aexit -> TaskGroup.__aexit__ -> album   TaskGroup._aexit -> TaskGroup.__aexit__ -> main    Task-1          0x10a456060
+      18445801   0x10a2a3a80          TNDNBTG              sleep -> play                                      TaskGroup._aexit -> TaskGroup.__aexit__ -> album   Sundowning      0x10a439f60
+      18445801   0x10a2a38a0          Levitate             sleep -> play                                      TaskGroup._aexit -> TaskGroup.__aexit__ -> album   Sundowning      0x10a439f60
+      18445801   0x10a2d7150          DYWTYLM              sleep -> play                                      TaskGroup._aexit -> TaskGroup.__aexit__ -> album   TMBTE           0x10a439d70
+      18445801   0x10a6bdaa0          Aqua Regia           sleep -> play                                      TaskGroup._aexit -> TaskGroup.__aexit__ -> album   TMBTE           0x10a439d70
 
 .. option:: --retries N
 
