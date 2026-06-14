@@ -1642,7 +1642,15 @@ invalid_type_params:
             "Type parameter list cannot be empty")}
 
 invalid_bitwise_and:
-    | a=bitwise_and b='&' c='&' { RAISE_SYNTAX_ERROR_KNOWN_RANGE(b, c, "invalid syntax.  Maybe you meant 'and' or '&' instead of '&&'?") }
+    | a=bitwise_and b='&' c='&' {
+        _PyPegen_tokens_are_adjacent(b, c)
+        ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(b, c, "invalid syntax.  Maybe you meant 'and' or '&' instead of '&&'?")
+        : NULL
+    }
 
 invalid_bitwise_or:
-    | a=bitwise_or b='|' c='|' { RAISE_SYNTAX_ERROR_KNOWN_RANGE(b, c, "invalid syntax.  Maybe you meant 'or' or '|' instead of '||'?") }
+    | a=bitwise_or b='|' c='|' {
+        _PyPegen_tokens_are_adjacent(b, c)
+        ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(b, c, "invalid syntax.  Maybe you meant 'or' or '|' instead of '||'?")
+        : NULL
+    }
