@@ -10,18 +10,21 @@ Command-line introspection tools
 
 -------------------------------------
 
-The :mod:`!asyncio` module can be executed as a script to inspect the task
-graph of another running Python process without modifying it or restarting it:
+The :mod:`!asyncio` module can be invoked as a script via ``python -m
+asyncio`` to inspect the task graph of another running Python process without
+modifying it or restarting it.  The :mod:`!asyncio.tools` submodule implements
+this interface.
+
+The following commands inspect the process identified by ``PID``:
 
 .. code-block:: shell-session
 
-   $ python -m asyncio ps [--retries N] PID
    $ python -m asyncio pstree [--retries N] PID
+   $ python -m asyncio ps [--retries N] PID
 
-``PID`` is the process ID of the Python process to inspect.  The commands read
-the target process state without executing any code in it.  They are only
-available on supported platforms and may require permission to inspect another
-process.  See :ref:`permission-requirements` for details.
+The commands read the target process state without executing any code in it.
+They are only available on supported platforms and may require permission to
+inspect another process.  See :ref:`permission-requirements` for details.
 
 .. seealso::
 
