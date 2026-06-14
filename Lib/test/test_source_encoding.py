@@ -387,8 +387,7 @@ class AbstractSourceEncodingTest:
                b'#third\xa4\n'
                b'raise RuntimeError\n')
         self.check_script_error(src,
-                br"'utf-8' codec can't decode byte|"
-                br"encoding problem: utf8")
+                br"'utf-8' codec can't decode byte")
 
     def test_crlf(self):
         src = (b'print(ascii("""\r\n"""))\n')
@@ -540,6 +539,15 @@ class FileSourceEncodingTest(AbstractSourceEncodingTest, unittest.TestCase):
                 line = line.removeprefix('\ufeff')
             self.assertIn(line.encode(), err)
 
+    def test_coding_spec_unknown_encoding(self):
+        src = (b'# coding: dict-unpacking-at-home\n'
+               b'{foo} = {"foo": "bar"}\n')
+        self.check_script_error(src, br"unknown encoding: dict-unpacking-at-home")
+
+    def test_coding_spec_decode_error(self):
+        src = (b'# coding: shift-jis\n'
+               b'print("\xc4\x85")\n')
+        self.check_script_error(src, br"'shift_jis' codec can't decode byte 0x85")
 
 
 if __name__ == "__main__":

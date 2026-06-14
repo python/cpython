@@ -2,6 +2,7 @@
 #include "errcode.h"
 #include "pycore_token.h"
 
+#include "../pegen.h"
 #include "../lexer/state.h"
 
 
@@ -419,7 +420,7 @@ _PyTokenizer_check_coding_spec(const char* line, Py_ssize_t size, struct tok_sta
         assert(tok->decoding_readline == NULL);
         if (strcmp(cs, "utf-8") != 0 && !set_readline(tok, cs)) {
             _PyTokenizer_error_ret(tok);
-            PyErr_Format(PyExc_SyntaxError, "encoding problem: %s", cs);
+            _PyPegen_raise_tokenizer_init_error(tok->filename);
             PyMem_Free(cs);
             return 0;
         }
