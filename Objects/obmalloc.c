@@ -326,7 +326,7 @@ _PyObject_MiCalloc(void *ctx, size_t nelem, size_t elsize)
 void *
 _PyObject_MiRealloc(void *ctx, void *ptr, size_t nbytes)
 {
-#ifdef Py_GIL_DIABLED
+#ifdef Py_GIL_DISABLED
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
     // Implement our own realloc logic so that we can copy PyObject header
     // in a thread-safe way.
