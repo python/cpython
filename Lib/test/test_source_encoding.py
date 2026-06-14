@@ -540,9 +540,14 @@ class FileSourceEncodingTest(AbstractSourceEncodingTest, unittest.TestCase):
             self.assertIn(line.encode(), err)
 
     def test_coding_spec_unknown_encoding(self):
-        src = (b'# coding: dict-unpacking-at-home\n'
-               b'{foo} = {"foo": "bar"}\n')
-        self.check_script_error(src, br"unknown encoding: dict-unpacking-at-home")
+        src = (b'# coding: c1252\n'
+               b'print("Hi!")\n')
+        self.check_script_error(src, br"unknown encoding: c1252")
+
+    def test_coding_spec_decode_error(self):
+        src = (b'# coding: shift-jis\n'
+               b'print("\xc4\x85")\n')
+        self.check_script_error(src, br"'shift_jis' codec can't decode byte")
 
     def test_coding_spec_decode_error(self):
         src = (b'# coding: shift-jis\n'
