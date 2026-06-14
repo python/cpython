@@ -277,7 +277,7 @@ class _NetlocResultMixinBytes(_NetlocResultMixinBase, _ResultMixinBytes):
         return hostname, port
 
 
-_UNSPECIFIED = ['not specified']
+_UNSPECIFIED = sentinel("_UNSPECIFIED", repr="<not specified>")
 _MISSING_AS_NONE_DEFAULT = False
 
 class _ResultBase:

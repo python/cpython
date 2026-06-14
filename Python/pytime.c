@@ -320,23 +320,27 @@ _PyTime_windows_filetime(time_t timer, struct tm *tm, int is_local)
     ft.dwLowDateTime = (DWORD)(ticks); // cast to DWORD truncates to low 32 bits
     ft.dwHighDateTime = (DWORD)(ticks >> 32);
 
-    /* Convert FILETIME to SYSTEMTIME */
+    /* Convert FILETIME to SYSTEMTIME (UTC) */
+    SYSTEMTIME st_utc;
+    if (!FileTimeToSystemTime(&ft, &st_utc)) {
+        PyErr_SetFromWindowsErr(0);
+        return -1;
+    }
+
     SYSTEMTIME st_result;
     if (is_local) {
-        /* Convert to local time */
-        FILETIME ft_local;
-        if (!FileTimeToLocalFileTime(&ft, &ft_local) ||
-            !FileTimeToSystemTime(&ft_local, &st_result)) {
+        /* Convert UTC SYSTEMTIME to local SYSTEMTIME.
+         * We use SystemTimeToTzSpecificLocalTime instead of
+         * FileTimeToLocalFileTime because the latter always applies the
+         * _current_ DST bias, whereas the former applies the correct
+         * DST rules for the date being converted (gh-80620). */
+        if (!SystemTimeToTzSpecificLocalTime(NULL, &st_utc, &st_result)) {
             PyErr_SetFromWindowsErr(0);
             return -1;
         }
     }
     else {
-        /* Convert to UTC */
-        if (!FileTimeToSystemTime(&ft, &st_result)) {
-            PyErr_SetFromWindowsErr(0);
-            return -1;
-        }
+        st_result = st_utc;
     }
 
     /* Convert SYSTEMTIME to struct tm */

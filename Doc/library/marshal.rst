@@ -72,7 +72,7 @@ this module.  The following types are supported:
 
    Added format version 5, which allows marshalling slices.
 
-.. versionchanged:: next
+.. versionchanged:: 3.15
 
    Added format version 6, which allows marshalling :class:`frozendict`.
 

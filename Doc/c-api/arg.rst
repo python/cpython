@@ -524,7 +524,7 @@ API Functions
    Returns true on success; on failure, it returns false and raises the
    appropriate exception.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. c:function:: int PyArg_ParseArrayAndKeywords(PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames, const char *format, const char * const *kwlist, ...)
@@ -535,7 +535,7 @@ API Functions
    Returns true on success; on failure, it returns false and raises the
    appropriate exception.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. c:function:: int PyArg_UnpackTuple(PyObject *args, const char *name, Py_ssize_t min, Py_ssize_t max, ...)

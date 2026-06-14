@@ -1,3 +1,0 @@
-Added the :option:`-X pathconfig_warnings<-X>` and
-:envvar:`PYTHON_PATHCONFIG_WARNINGS` options, allowing to disable warnings
-from :ref:`sys-path-init`.

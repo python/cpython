@@ -291,6 +291,7 @@ unicodedata_UCD_numeric_impl(PyObject *self, int chr,
 }
 
 /*[clinic input]
+@permit_long_summary
 unicodedata.UCD.category
 
     self: self
@@ -302,7 +303,7 @@ Returns the general category assigned to the character chr as string.
 
 static PyObject *
 unicodedata_UCD_category_impl(PyObject *self, int chr)
-/*[clinic end generated code: output=8571539ee2e6783a input=27d6f3d85050bc06]*/
+/*[clinic end generated code: output=8571539ee2e6783a input=1d729c67299e8a31]*/
 {
     int index;
     Py_UCS4 c = (Py_UCS4)chr;
@@ -316,6 +317,7 @@ unicodedata_UCD_category_impl(PyObject *self, int chr)
 }
 
 /*[clinic input]
+@permit_long_summary
 unicodedata.UCD.bidirectional
 
     self: self
@@ -329,7 +331,7 @@ If no such value is defined, an empty string is returned.
 
 static PyObject *
 unicodedata_UCD_bidirectional_impl(PyObject *self, int chr)
-/*[clinic end generated code: output=d36310ce2039bb92 input=b3d8f42cebfcf475]*/
+/*[clinic end generated code: output=d36310ce2039bb92 input=838f8a2203bd2990]*/
 {
     int index;
     Py_UCS4 c = (Py_UCS4)chr;
@@ -373,6 +375,7 @@ unicodedata_UCD_combining_impl(PyObject *self, int chr)
 }
 
 /*[clinic input]
+@permit_long_summary
 unicodedata.UCD.mirrored -> int
 
     self: self
@@ -387,7 +390,7 @@ character in bidirectional text, 0 otherwise.
 
 static int
 unicodedata_UCD_mirrored_impl(PyObject *self, int chr)
-/*[clinic end generated code: output=2532dbf8121b50e6 input=5dd400d351ae6f3b]*/
+/*[clinic end generated code: output=2532dbf8121b50e6 input=6db28989e49cd9c8]*/
 {
     int index;
     Py_UCS4 c = (Py_UCS4)chr;
@@ -403,6 +406,7 @@ unicodedata_UCD_mirrored_impl(PyObject *self, int chr)
 }
 
 /*[clinic input]
+@permit_long_summary
 unicodedata.UCD.east_asian_width
 
     self: self
@@ -414,7 +418,7 @@ Returns the east asian width assigned to the character chr as string.
 
 static PyObject *
 unicodedata_UCD_east_asian_width_impl(PyObject *self, int chr)
-/*[clinic end generated code: output=484e8537d9ee8197 input=c4854798aab026e0]*/
+/*[clinic end generated code: output=484e8537d9ee8197 input=207c5f68fa475516]*/
 {
     int index;
     Py_UCS4 c = (Py_UCS4)chr;
@@ -552,19 +556,80 @@ get_decomp_record(PyObject *self, Py_UCS4 code,
     (*index)++;
 }
 
+/* Small combining runs are usually cheaper with insertion sort. */
+#define CANONICAL_ORDERING_COUNTING_SORT_THRESHOLD 20
+
+static void
+canonical_ordering_sort_insertion(int kind, void *data,
+                                  Py_ssize_t start, Py_ssize_t end)
+{
+    for (Py_ssize_t i = start + 1; i < end; i++) {
+        Py_UCS4 code = PyUnicode_READ(kind, data, i);
+        unsigned char combining = _getrecord_ex(code)->combining;
+        Py_ssize_t j = i;
+
+        while (j > start) {
+            Py_UCS4 previous = PyUnicode_READ(kind, data, j - 1);
+            if (_getrecord_ex(previous)->combining <= combining) {
+                break;
+            }
+            PyUnicode_WRITE(kind, data, j, previous);
+            j--;
+        }
+        if (j != i) {
+            PyUnicode_WRITE(kind, data, j, code);
+        }
+    }
+}
+
+static void
+canonical_ordering_sort_counting(int kind, void *data,
+                                 Py_ssize_t start, Py_ssize_t end,
+                                 Py_UCS4 *sortbuf)
+{
+    Py_ssize_t counts[256] = {0};
+    Py_ssize_t run_length = end - start;
+    Py_ssize_t total = 0;
+
+    for (Py_ssize_t i = start; i < end; i++) {
+        Py_UCS4 code = PyUnicode_READ(kind, data, i);
+        unsigned char combining = _getrecord_ex(code)->combining;
+        counts[combining]++;
+    }
+
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(counts); i++) {
+        Py_ssize_t count = counts[i];
+        counts[i] = total;
+        total += count;
+    }
+
+    /* Reuse counts[] as the next output slot for each CCC. */
+    for (Py_ssize_t i = start; i < end; i++) {
+        Py_UCS4 code = PyUnicode_READ(kind, data, i);
+        unsigned char combining = _getrecord_ex(code)->combining;
+        sortbuf[counts[combining]++] = code;
+    }
+    for (Py_ssize_t i = 0; i < run_length; i++) {
+        PyUnicode_WRITE(kind, data, start + i, sortbuf[i]);
+    }
+}
+
 static PyObject*
 nfd_nfkd(PyObject *self, PyObject *input, int k)
 {
     PyObject *result;
     Py_UCS4 *output;
     Py_ssize_t i, o, osize;
-    int kind;
-    const void *data;
+    int input_kind, result_kind;
+    const void *input_data;
+    void *result_data;
     /* Longest decomposition in Unicode 3.2: U+FDFA */
     Py_UCS4 stack[20];
     Py_ssize_t space, isize;
     int index, prefix, count, stackptr;
     unsigned char prev, cur;
+    Py_UCS4 *sortbuf = NULL;
+    Py_ssize_t sortbuflen = 0;
 
     stackptr = 0;
     isize = PyUnicode_GET_LENGTH(input);
@@ -584,11 +649,11 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
         return NULL;
     }
     i = o = 0;
-    kind = PyUnicode_KIND(input);
-    data = PyUnicode_DATA(input);
+    input_kind = PyUnicode_KIND(input);
+    input_data = PyUnicode_DATA(input);
 
     while (i < isize) {
-        stack[stackptr++] = PyUnicode_READ(kind, data, i++);
+        stack[stackptr++] = PyUnicode_READ(input_kind, input_data, i++);
         while(stackptr) {
             Py_UCS4 code = stack[--stackptr];
             /* Hangul Decomposition adds three characters in
@@ -656,49 +721,83 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
     if (!result)
         return NULL;
 
-    kind = PyUnicode_KIND(result);
-    data = PyUnicode_DATA(result);
+    result_kind = PyUnicode_KIND(result);
+    result_data = PyUnicode_DATA(result);
 
-    /* Sort canonically. */
+    /* Sort each consecutive combining-character run canonically. */
     i = 0;
-    prev = _getrecord_ex(PyUnicode_READ(kind, data, i))->combining;
-    for (i++; i < PyUnicode_GET_LENGTH(result); i++) {
-        cur = _getrecord_ex(PyUnicode_READ(kind, data, i))->combining;
-        if (prev == 0 || cur == 0 || prev <= cur) {
-            prev = cur;
+    while (i < o) {
+        Py_ssize_t run_length, run_start;
+        int needs_sort = 0;
+
+        Py_UCS4 ch = PyUnicode_READ(result_kind, result_data, i);
+        prev = _getrecord_ex(ch)->combining;
+        if (prev == 0) {
+            i++;
             continue;
         }
-        /* Non-canonical order. Need to switch *i with previous. */
-        o = i - 1;
-        while (1) {
-            Py_UCS4 tmp = PyUnicode_READ(kind, data, o+1);
-            PyUnicode_WRITE(kind, data, o+1,
-                            PyUnicode_READ(kind, data, o));
-            PyUnicode_WRITE(kind, data, o, tmp);
-            o--;
-            if (o < 0)
+
+        run_start = i++;
+        while (i < o) {
+            Py_UCS4 ch = PyUnicode_READ(result_kind, result_data, i);
+            cur = _getrecord_ex(ch)->combining;
+            if (cur == 0) {
                 break;
-            prev = _getrecord_ex(PyUnicode_READ(kind, data, o))->combining;
-            if (prev == 0 || prev <= cur)
-                break;
+            }
+            if (prev > cur) {
+                needs_sort = 1;
+            }
+            prev = cur;
+            i++;
         }
-        prev = _getrecord_ex(PyUnicode_READ(kind, data, i))->combining;
+        if (!needs_sort) {
+            continue;
+        }
+
+        run_length = i - run_start;
+        if (run_length < CANONICAL_ORDERING_COUNTING_SORT_THRESHOLD) {
+            canonical_ordering_sort_insertion(result_kind, result_data,
+                                              run_start, i);
+            continue;
+        }
+
+        if (run_length > sortbuflen) {
+            Py_UCS4 *new_sortbuf = PyMem_Resize(sortbuf,
+                                                Py_UCS4,
+                                                run_length);
+            if (new_sortbuf == NULL) {
+                PyErr_NoMemory();
+                PyMem_Free(sortbuf);
+                Py_DECREF(result);
+                return NULL;
+            }
+            sortbuf = new_sortbuf;
+            sortbuflen = run_length;
+        }
+
+        canonical_ordering_sort_counting(result_kind, result_data,
+                                         run_start, i, sortbuf);
     }
+    PyMem_Free(sortbuf);
     return result;
 }
 
 static int
 find_nfc_index(const struct reindex* nfc, Py_UCS4 code)
 {
-    unsigned int index;
-    for (index = 0; nfc[index].start; index++) {
-        unsigned int start = nfc[index].start;
-        if (code < start)
-            return -1;
-        if (code <= start + nfc[index].count) {
-            unsigned int delta = code - start;
-            return nfc[index].index + delta;
-        }
+    /* The table is sorted by .start ascending with disjoint [start, start+count]
+       ranges and ends with a sentinel whose .start exceeds every codepoint, so
+       a single .start <= code test per entry also stops at the sentinel.  Find
+       the first entry past code, then range-check the candidate (entry i - 1). */
+    unsigned int i;
+    for (i = 0; (Py_UCS4)nfc[i].start <= code; i++) {
+    }
+    if (i == 0) {
+        return -1;
+    }
+    unsigned int start = nfc[i - 1].start;
+    if (code <= start + nfc[i - 1].count) {
+        return nfc[i - 1].index + (code - start);
     }
     return -1;
 }
@@ -911,6 +1010,7 @@ is_normalized_quickcheck(PyObject *self, PyObject *input, bool nfc, bool k,
 }
 
 /*[clinic input]
+@permit_long_summary
 unicodedata.UCD.is_normalized
 
     self: self
@@ -926,7 +1026,7 @@ Valid values for form are 'NFC', 'NFKC', 'NFD', and 'NFKD'.
 static PyObject *
 unicodedata_UCD_is_normalized_impl(PyObject *self, PyObject *form,
                                    PyObject *input)
-/*[clinic end generated code: output=11e5a3694e723ca5 input=a544f14cea79e508]*/
+/*[clinic end generated code: output=11e5a3694e723ca5 input=de66aa679265300b]*/
 {
     if (PyUnicode_GET_LENGTH(input) == 0) {
         /* special case empty input strings. */
@@ -1543,32 +1643,17 @@ capi_getcode(const char* name, int namelen, Py_UCS4* code,
     return _check_alias_and_seq(code, with_named_seq);
 }
 
-static void
-unicodedata_destroy_capi(PyObject *capsule)
-{
-    void *capi = PyCapsule_GetPointer(capsule, PyUnicodeData_CAPSULE_NAME);
-    PyMem_Free(capi);
-}
-
 static PyObject *
 unicodedata_create_capi(void)
 {
-    _PyUnicode_Name_CAPI *capi = PyMem_Malloc(sizeof(_PyUnicode_Name_CAPI));
-    if (capi == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    capi->getname = capi_getucname;
-    capi->getcode = capi_getcode;
-
-    PyObject *capsule = PyCapsule_New(capi,
-                                      PyUnicodeData_CAPSULE_NAME,
-                                      unicodedata_destroy_capi);
-    if (capsule == NULL) {
-        PyMem_Free(capi);
-    }
-    return capsule;
-};
+    // Statically allocated so that any cached pointers stay valid after unicodedata
+    // is removed from sys.modules and the capsule is gc'd (gh-149449).
+    static _PyUnicode_Name_CAPI capi = {
+        .getname = capi_getucname,
+        .getcode = capi_getcode,
+    };
+    return PyCapsule_New(&capi, PyUnicodeData_CAPSULE_NAME, NULL);
+}
 
 
 /* -------------------------------------------------------------------- */
@@ -2303,6 +2388,7 @@ unicodedata_exec(PyObject *module)
 }
 
 static PyModuleDef_Slot unicodedata_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, unicodedata_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

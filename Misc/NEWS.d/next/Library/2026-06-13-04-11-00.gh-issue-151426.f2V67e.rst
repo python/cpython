@@ -1,0 +1,4 @@
+Fix impossible stack traces (callers and callees cross called, orphans and
+incorrect lines) in the Tachyon profiler when caching frames, by snapshotting
+the stack chunks before walking the frame chain on a cache miss. Patch by
+Maurycy Pawłowski-Wieroński.

@@ -530,7 +530,7 @@ tests.  In addition, it supports marking a test as an "expected failure," a test
 that is broken and will fail, but shouldn't be counted as a failure on a
 :class:`TestResult`.
 
-Skipping a test is simply a matter of using the :func:`skip` :term:`decorator`
+Skipping a test is simply a matter of using the :deco:`skip` :term:`decorator`
 or one of its conditional variants, calling :meth:`TestCase.skipTest` within a
 :meth:`~TestCase.setUp` or test method, or raising :exc:`SkipTest` directly.
 
@@ -581,7 +581,7 @@ Classes can be skipped just like methods::
 :meth:`TestCase.setUp` can also skip the test.  This is useful when a resource
 that needs to be set up is not available.
 
-Expected failures use the :func:`expectedFailure` decorator. ::
+Expected failures use the :deco:`expectedFailure` decorator. ::
 
    class ExpectedFailureTestCase(unittest.TestCase):
        @unittest.expectedFailure
@@ -763,7 +763,7 @@ Test cases
 
       A class method called before tests in an individual class are run.
       ``setUpClass`` is called with the class as the only argument
-      and must be decorated as a :func:`classmethod`::
+      and must be decorated as a :deco:`classmethod`::
 
         @classmethod
         def setUpClass(cls):
@@ -778,7 +778,7 @@ Test cases
 
       A class method called after tests in an individual class have run.
       ``tearDownClass`` is called with the class as the only argument
-      and must be decorated as a :meth:`classmethod`::
+      and must be decorated as a :deco:`classmethod`::
 
         @classmethod
         def tearDownClass(cls):
@@ -1095,6 +1095,13 @@ Test cases
          self.assertIn('myfile.py', cm.filename)
          self.assertEqual(320, cm.lineno)
 
+      The context managers can be nested to test that multiple different
+      warnings are emitted::
+
+         with (self.assertWarns(SomeWarning),
+               self.assertWarns(OtherWarning)):
+             do_something()
+
       This method works regardless of the warning filters in place when it
       is called.
 
@@ -1103,6 +1110,10 @@ Test cases
       .. versionchanged:: 3.3
          Added the *msg* keyword argument when used as a context manager.
 
+      .. versionchanged:: 3.15
+         Warnings that do not match the specified category are no longer
+         swallowed.
+         Nested context managers are now supported.
 
    .. method:: assertWarnsRegex(warning, regex, callable, *args, **kwds)
                assertWarnsRegex(warning, regex, *, msg=None)
@@ -1121,10 +1132,22 @@ Test cases
          with self.assertWarnsRegex(RuntimeWarning, 'unsafe frobnicating'):
              frobnicate('/etc/passwd')
 
+      The context managers can be nested to test that multiple different
+      warnings are emitted::
+
+         with (self.assertWarns(SomeWarning, regex1),
+               self.assertWarns(OtherWarning, regex2)):
+             do_something()
+
       .. versionadded:: 3.2
 
       .. versionchanged:: 3.3
          Added the *msg* keyword argument when used as a context manager.
+
+      .. versionchanged:: 3.15
+         Warnings that do not match the specified category or regex are
+         no longer swallowed.
+         Nested context managers are now supported.
 
    .. method:: assertLogs(logger=None, level=None, formatter=None)
 
@@ -1223,9 +1246,9 @@ Test cases
    | :meth:`assertNotRegex(s, r)           | ``not r.search(s)``            | 3.2          |
    | <TestCase.assertNotRegex>`            |                                |              |
    +---------------------------------------+--------------------------------+--------------+
-   | :meth:`assertCountEqual(a, b)         | *a* and *b* have the same      | 3.2          |
-   | <TestCase.assertCountEqual>`          | elements in the same number,   |              |
-   |                                       | regardless of their order.     |              |
+   | :meth:`assertCountEqual(a, b)         | *a* contains the same elements | 3.2          |
+   | <TestCase.assertCountEqual>`          | as *b*, regardless of their    |              |
+   |                                       | order.                         |              |
    +---------------------------------------+--------------------------------+--------------+
    | :meth:`assertStartsWith(a, b)         | ``a.startswith(b)``            | 3.14         |
    | <TestCase.assertStartsWith>`          |                                |              |
@@ -1239,10 +1262,10 @@ Test cases
    | :meth:`assertNotEndsWith(a, b)        | ``not a.endswith(b)``          | 3.14         |
    | <TestCase.assertNotEndsWith>`         |                                |              |
    +---------------------------------------+--------------------------------+--------------+
-   | :meth:`assertHasAttr(a, b)            | ``hastattr(a, b)``             | 3.14         |
+   | :meth:`assertHasAttr(a, b)            | ``hasattr(a, b)``              | 3.14         |
    | <TestCase.assertHasAttr>`             |                                |              |
    +---------------------------------------+--------------------------------+--------------+
-   | :meth:`assertNotHasAttr(a, b)         | ``not hastattr(a, b)``         | 3.14         |
+   | :meth:`assertNotHasAttr(a, b)         | ``not hasattr(a, b)``          | 3.14         |
    | <TestCase.assertNotHasAttr>`          |                                |              |
    +---------------------------------------+--------------------------------+--------------+
 
@@ -2133,7 +2156,7 @@ Loading and running tests
 
       .. versionchanged:: 3.4
          Returns ``False`` if there were any :attr:`unexpectedSuccesses`
-         from tests marked with the :func:`expectedFailure` decorator.
+         from tests marked with the :deco:`expectedFailure` decorator.
 
    .. method:: stop()
 
@@ -2216,7 +2239,7 @@ Loading and running tests
    .. method:: addExpectedFailure(test, err)
 
       Called when the test case *test* fails or errors, but was marked with
-      the :func:`expectedFailure` decorator.
+      the :deco:`expectedFailure` decorator.
 
       The default implementation appends a tuple ``(test, formatted_err)`` to
       the instance's :attr:`expectedFailures` attribute, where *formatted_err*
@@ -2226,7 +2249,7 @@ Loading and running tests
    .. method:: addUnexpectedSuccess(test)
 
       Called when the test case *test* was marked with the
-      :func:`expectedFailure` decorator, but succeeded.
+      :deco:`expectedFailure` decorator, but succeeded.
 
       The default implementation appends the test to the instance's
       :attr:`unexpectedSuccesses` attribute.

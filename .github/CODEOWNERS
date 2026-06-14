@@ -63,7 +63,7 @@
 .azure-pipelines/             @AA-Turner
 
 # GitHub & related scripts
-.github/                                    @ezio-melotti @hugovk @AA-Turner @webknjaz
+.github/                                    @ezio-melotti @hugovk @AA-Turner @webknjaz @itamaro
 Tools/build/compute-changes.py              @AA-Turner @hugovk @webknjaz
 Lib/test/test_tools/test_compute_changes.py @AA-Turner @hugovk @webknjaz
 Tools/build/verify_ensurepip_wheels.py      @AA-Turner @pfmoore @pradyunsg
@@ -73,7 +73,7 @@ Tools/build/verify_ensurepip_wheels.py      @AA-Turner @pfmoore @pradyunsg
 .ruff.toml                    @hugovk @AlexWaygood @AA-Turner
 
 # Patchcheck
-Tools/patchcheck/             @AA-Turner
+Tools/patchcheck/             @AA-Turner @itamaro
 
 
 # ----------------------------------------------------------------------------
@@ -81,11 +81,11 @@ Tools/patchcheck/             @AA-Turner
 # ----------------------------------------------------------------------------
 
 # Autotools
-configure*                       @erlend-aasland @corona10 @AA-Turner @emmatyping
-Makefile.pre.in                  @erlend-aasland @AA-Turner @emmatyping
-Modules/makesetup                @erlend-aasland @AA-Turner @emmatyping
-Modules/Setup*                   @erlend-aasland @AA-Turner @emmatyping
-Tools/build/regen-configure.sh   @AA-Turner
+configure*                       @erlend-aasland @corona10 @AA-Turner @emmatyping @itamaro
+Makefile.pre.in                  @erlend-aasland @AA-Turner @emmatyping @itamaro
+Modules/makesetup                @erlend-aasland @AA-Turner @emmatyping @itamaro
+Modules/Setup*                   @erlend-aasland @AA-Turner @emmatyping @itamaro
+Tools/build/regen-configure.sh   @AA-Turner @itamaro
 
 # generate-build-details
 Tools/build/generate-build-details.py   @FFY00
@@ -100,12 +100,12 @@ Lib/test/test_build_details.py          @FFY00
 InternalDocs/                 @AA-Turner
 
 # Tools, Configuration, etc
-Doc/Makefile                  @AA-Turner @hugovk
-Doc/_static/                  @AA-Turner @hugovk
-Doc/conf.py                   @AA-Turner @hugovk
-Doc/make.bat                  @AA-Turner @hugovk
-Doc/requirements.txt          @AA-Turner @hugovk
-Doc/tools/                    @AA-Turner @hugovk
+Doc/Makefile                  @AA-Turner @hugovk @StanFromIreland
+Doc/_static/                  @AA-Turner @hugovk @StanFromIreland
+Doc/conf.py                   @AA-Turner @hugovk @StanFromIreland
+Doc/make.bat                  @AA-Turner @hugovk @StanFromIreland
+Doc/requirements.txt          @AA-Turner @hugovk @StanFromIreland
+Doc/tools/                    @AA-Turner @hugovk @StanFromIreland
 
 # PR Previews
 .readthedocs.yml              @AA-Turner
@@ -132,7 +132,9 @@ Tools/c-analyzer/             @ericsnowcurrently
 Tools/check-c-api-docs/       @ZeroIntensity
 
 # Fuzzing
-Modules/_xxtestfuzz/          @ammaraskar
+Modules/_xxtestfuzz/                    @python/fuzzers
+Lib/test/test_xxtestfuzz.py             @python/fuzzers
+.github/workflows/reusable-cifuzz.yml   @python/fuzzers
 
 # Limited C API & Stable ABI
 Doc/c-api/stable.rst          @encukou
@@ -154,7 +156,7 @@ Misc/libabigail.abignore      @encukou
 # ----------------------------------------------------------------------------
 
 # Android
-Android/                      @mhsmith @freakboy3742
+Platforms/Android/            @mhsmith @freakboy3742
 Doc/using/android.rst         @mhsmith @freakboy3742
 Lib/_android_support.py       @mhsmith @freakboy3742
 Lib/test/test_android.py      @mhsmith @freakboy3742
@@ -162,8 +164,7 @@ Lib/test/test_android.py      @mhsmith @freakboy3742
 # iOS
 Doc/using/ios.rst             @freakboy3742
 Lib/_ios_support.py           @freakboy3742
-Apple/                        @freakboy3742
-iOS/                          @freakboy3742
+Platforms/Apple/              @freakboy3742
 
 # macOS
 Mac/                          @python/macos-team
@@ -174,8 +175,8 @@ Lib/test/test__osx_support.py @python/macos-team
 Tools/wasm/README.md          @brettcannon @freakboy3742 @emmatyping
 
 # WebAssembly (Emscripten)
-Tools/wasm/config.site-wasm32-emscripten  @freakboy3742 @emmatyping
-Tools/wasm/emscripten                     @freakboy3742 @emmatyping
+Platforms/emscripten          @freakboy3742 @emmatyping
+Tools/wasm/emscripten         @freakboy3742 @emmatyping
 
 # WebAssembly (WASI)
 Platforms/WASI                @brettcannon @emmatyping @savannahostrowski
@@ -425,19 +426,19 @@ Lib/dataclasses.py            @ericvsmith
 Lib/test/test_dataclasses/    @ericvsmith
 
 # Dates and times
-Doc/**/*time.rst                 @pganssle @abalkin @StanFromIreland
+Doc/**/*time.rst                 @pganssle @StanFromIreland
 Doc/library/datetime-*           @pganssle @StanFromIreland
 Doc/library/zoneinfo.rst         @pganssle @StanFromIreland
-Include/datetime.h               @pganssle @abalkin @StanFromIreland
-Include/internal/pycore_time.h   @pganssle @abalkin @StanFromIreland
+Include/datetime.h               @pganssle @StanFromIreland
+Include/internal/pycore_time.h   @pganssle @StanFromIreland
 Lib/test/test_zoneinfo/          @pganssle @StanFromIreland
 Lib/zoneinfo/                    @pganssle @StanFromIreland
-Lib/*time.py                     @pganssle @abalkin @StanFromIreland
-Lib/test/datetimetester.py       @pganssle @abalkin @StanFromIreland
-Lib/test/test_*time.py           @pganssle @abalkin @StanFromIreland
+Lib/*time.py                     @pganssle @StanFromIreland
+Lib/test/datetimetester.py       @pganssle @StanFromIreland
+Lib/test/test_*time.py           @pganssle @StanFromIreland
 Modules/*zoneinfo*               @pganssle @StanFromIreland
-Modules/*time*                   @pganssle @abalkin @StanFromIreland
-Python/pytime.c                  @pganssle @abalkin @StanFromIreland
+Modules/*time*                   @pganssle @StanFromIreland
+Python/pytime.c                  @pganssle @StanFromIreland
 
 # Dbm
 Doc/library/dbm.rst           @corona10 @erlend-aasland @serhiy-storchaka
@@ -572,9 +573,9 @@ Lib/shutil.py                 @giampaolo
 Lib/test/test_shutil.py       @giampaolo
 
 # Site
-Lib/site.py                   @FFY00
-Lib/test/test_site.py         @FFY00
-Doc/library/site.rst          @FFY00
+Lib/site.py                   @FFY00 @warsaw
+Lib/test/test_site.py         @FFY00 @warsaw
+Doc/library/site.rst          @FFY00 @warsaw
 
 # string.templatelib
 Doc/library/string.templatelib.rst        @lysnikolaou @AA-Turner
@@ -585,10 +586,10 @@ Lib/test/test_string/test_templatelib.py  @lysnikolaou @AA-Turner
 **/*sysconfig*                @FFY00
 
 # SQLite 3
-Doc/library/sqlite3.rst       @berkerpeksag @erlend-aasland
-Lib/sqlite3/                  @berkerpeksag @erlend-aasland
-Lib/test/test_sqlite3/        @berkerpeksag @erlend-aasland
-Modules/_sqlite/              @berkerpeksag @erlend-aasland
+Doc/library/sqlite3.rst       @erlend-aasland
+Lib/sqlite3/                  @erlend-aasland
+Lib/test/test_sqlite3/        @erlend-aasland
+Modules/_sqlite/              @erlend-aasland
 
 # Subprocess
 Lib/subprocess.py             @gpshead
@@ -620,9 +621,6 @@ Modules/_typesmodule.c        @AA-Turner
 # Unittest
 Lib/unittest/mock.py             @cjw296
 Lib/test/test_unittest/testmock/ @cjw296
-
-# Urllib
-**/*robotparser*              @berkerpeksag
 
 # Venv
 **/*venv*                     @vsajip @FFY00

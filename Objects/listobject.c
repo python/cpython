@@ -234,7 +234,7 @@ _PyList_DebugMallocStats(FILE *out)
     _PyDebugAllocatorStats(out,
                            "free PyListObject",
                             _Py_FREELIST_SIZE(lists),
-                           sizeof(PyListObject));
+                           _PyType_PreHeaderSize(&PyList_Type) + sizeof(PyListObject));
 }
 
 PyObject *
@@ -601,7 +601,7 @@ list_repr_impl(PyListObject *v)
        so must refetch the list size on each iteration. */
     for (Py_ssize_t i = 0; i < Py_SIZE(v); ++i) {
         /* Hold a strong reference since repr(item) can mutate the list */
-        item = Py_NewRef(v->ob_item[i]);
+        item = Py_XNewRef(v->ob_item[i]);
 
         if (i > 0) {
             if (PyUnicodeWriter_WriteChar(writer, ',') < 0) {
@@ -798,8 +798,8 @@ list_concat_lock_held(PyListObject *a, PyListObject *b)
     return (PyObject *)np;
 }
 
-static PyObject *
-list_concat(PyObject *aa, PyObject *bb)
+PyObject *
+_PyList_Concat(PyObject *aa, PyObject *bb)
 {
     if (!PyList_Check(bb)) {
         PyErr_Format(PyExc_TypeError,
@@ -1437,9 +1437,9 @@ list_extend_dictitems(PyListObject *self, PyDictObject *dict)
     PyObject **dest = self->ob_item + m;
     Py_ssize_t pos = 0;
     Py_ssize_t i = 0;
-    PyObject *key_value[2];
-    while (_PyDict_Next((PyObject *)dict, &pos, &key_value[0], &key_value[1], NULL)) {
-        PyObject *item = PyTuple_FromArray(key_value, 2);
+    PyObject *key, *value;
+    while (_PyDict_Next((PyObject *)dict, &pos, &key, &value, NULL)) {
+        PyObject *item = _PyTuple_FromPair(key, value);
         if (item == NULL) {
             Py_SET_SIZE(self, m + i);
             return -1;
@@ -2795,11 +2795,12 @@ unsafe_object_compare(PyObject *v, PyObject *w, MergeState *ms)
 
     if (PyBool_Check(res_obj)) {
         res = (res_obj == Py_True);
+        assert(_Py_IsImmortal(res_obj));
     }
     else {
         res = PyObject_IsTrue(res_obj);
+        Py_DECREF(res_obj);
     }
-    Py_DECREF(res_obj);
 
     /* Note that we can't assert
      *     res == PyObject_RichCompareBool(v, w, Py_LT);
@@ -2921,7 +2922,6 @@ unsafe_tuple_compare(PyObject *v, PyObject *w, MergeState *ms)
  * duplicated).
  */
 /*[clinic input]
-@permit_long_docstring_body
 @critical_section
 list.sort
 
@@ -2931,18 +2931,18 @@ list.sort
 
 Sort the list in ascending order and return None.
 
-The sort is in-place (i.e. the list itself is modified) and stable (i.e. the
-order of two equal elements is maintained).
+The sort is in-place (i.e. the list itself is modified) and stable
+(i.e. the order of two equal elements is maintained).
 
-If a key function is given, apply it once to each list item and sort them,
-ascending or descending, according to their function values.
+If a key function is given, apply it once to each list item and sort
+them, ascending or descending, according to their function values.
 
 The reverse flag can be set to sort in descending order.
 [clinic start generated code]*/
 
 static PyObject *
 list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
-/*[clinic end generated code: output=57b9f9c5e23fbe42 input=e4f6b6069181ad7d]*/
+/*[clinic end generated code: output=57b9f9c5e23fbe42 input=c145526281e1fb9f]*/
 {
     MergeState ms;
     Py_ssize_t nremaining;
@@ -3282,10 +3282,8 @@ _PyList_AsTupleAndClear(PyListObject *self)
     Py_BEGIN_CRITICAL_SECTION(self);
     PyObject **items = self->ob_item;
     Py_ssize_t size = Py_SIZE(self);
-    self->ob_item = NULL;
     Py_SET_SIZE(self, 0);
     ret = _PyTuple_FromArraySteal(items, size);
-    free_list_items(items, false);
     Py_END_CRITICAL_SECTION();
     return ret;
 }
@@ -3582,8 +3580,14 @@ list___sizeof___impl(PyListObject *self)
 /*[clinic end generated code: output=3417541f95f9a53e input=b8030a5d5ce8a187]*/
 {
     size_t res = _PyObject_SIZE(Py_TYPE(self));
-    Py_ssize_t allocated = FT_ATOMIC_LOAD_SSIZE_RELAXED(self->allocated);
-    res += (size_t)allocated * sizeof(void*);
+#ifdef Py_GIL_DISABLED
+    PyObject **ob_item = _Py_atomic_load_ptr(&self->ob_item);
+    if (ob_item != NULL) {
+        res += list_capacity(ob_item) * sizeof(PyObject *);
+    }
+#else
+    res += (size_t)self->allocated * sizeof(PyObject *);
+#endif
     return PyLong_FromSize_t(res);
 }
 
@@ -3606,13 +3610,14 @@ static PyMethodDef list_methods[] = {
     LIST_COUNT_METHODDEF
     LIST_REVERSE_METHODDEF
     LIST_SORT_METHODDEF
-    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
+     PyDoc_STR("lists are generic over the type of their contents")},
     {NULL,              NULL}           /* sentinel */
 };
 
 static PySequenceMethods list_as_sequence = {
     list_length,                                /* sq_length */
-    list_concat,                                /* sq_concat */
+    _PyList_Concat,                             /* sq_concat */
     list_repeat,                                /* sq_repeat */
     list_item,                                  /* sq_item */
     0,                                          /* sq_slice */
@@ -3788,16 +3793,13 @@ list_ass_subscript_lock_held(PyObject *_self, PyObject *item, PyObject *value)
                     lim = Py_SIZE(self) - cur - 1;
                 }
 
-                memmove(self->ob_item + cur - i,
-                    self->ob_item + cur + 1,
-                    lim * sizeof(PyObject *));
+                ptr_wise_atomic_memmove(self, self->ob_item + cur - i,
+                    self->ob_item + cur + 1, lim);
             }
             cur = start + (size_t)slicelength * step;
             if (cur < (size_t)Py_SIZE(self)) {
-                memmove(self->ob_item + cur - slicelength,
-                    self->ob_item + cur,
-                    (Py_SIZE(self) - cur) *
-                     sizeof(PyObject *));
+                ptr_wise_atomic_memmove(self, self->ob_item + cur - slicelength,
+                    self->ob_item + cur, Py_SIZE(self) - cur);
             }
 
             Py_SET_SIZE(self, Py_SIZE(self) - slicelength);
@@ -3908,6 +3910,13 @@ list_ass_subscript(PyObject *self, PyObject *item, PyObject *value)
     return res;
 }
 
+static _PyObjectIndexPair
+list_iteritem(PyObject *obj, Py_ssize_t index)
+{
+    PyObject *result = list_get_item_ref((PyListObject *)obj, index);
+    return (_PyObjectIndexPair) { .object = result, .index = index + 1 };
+}
+
 static PyMappingMethods list_as_mapping = {
     list_length,
     list_subscript,
@@ -3958,6 +3967,7 @@ PyTypeObject PyList_Type = {
     PyObject_GC_Del,                            /* tp_free */
     .tp_vectorcall = list_vectorcall,
     .tp_version_tag = _Py_TYPE_VERSION_LIST,
+    ._tp_iteritem = list_iteritem,
 };
 
 /*********************** List Iterator **************************/
@@ -4294,7 +4304,9 @@ listiter_reduce_general(void *_it, int forward)
     }
     /* empty iterator, create an empty list */
     list = PyList_New(0);
-    if (list == NULL)
+    if (list == NULL) {
+        Py_DECREF(iter);
         return NULL;
+    }
     return Py_BuildValue("N(N)", iter, list);
 }

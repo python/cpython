@@ -1881,8 +1881,8 @@ Improve error message when :exc:`TypeError` occurs during
 .. nonce: BS3uVt
 .. section: Core and Builtins
 
-String arguments passed to "-c" are now automatically dedented as if by
-:func:`textwrap.dedent`. This allows "python -c" invocations to be indented
+String arguments passed to "-c" are now automatically dedented.
+This allows "python -c" invocations to be indented
 in shell scripts without causing indentation errors. (Patch by Jon Crall and
 Steven Sun)
 

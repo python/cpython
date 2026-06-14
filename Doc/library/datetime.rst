@@ -606,12 +606,11 @@ Other constructors, all class methods:
 
    .. note::
 
-      If *format* specifies a day of month without a year a
-      :exc:`DeprecationWarning` is emitted.  This is to avoid a quadrennial
+      If *format* specifies a day of month (``%d``) without a year,
+      :exc:`ValueError` is raised.  This is to avoid a quadrennial
       leap year bug in code seeking to parse only a month and day as the
       default year used in absence of one in the format is not a leap year.
-      Such *format* values may raise an error as of Python 3.15.  The
-      workaround is to always include a year in your *format*.  If parsing
+      The workaround is to always include a year in your *format*.  If parsing
       *date_string* values that do not have a year, explicitly add a year that
       is a leap year before parsing:
 
@@ -1180,14 +1179,13 @@ Other constructors, all class methods:
    time tuple.  See also :ref:`strftime-strptime-behavior` and
    :meth:`datetime.fromisoformat`.
 
-   .. versionchanged:: 3.13
+   .. versionchanged:: 3.15
 
-      If *format* specifies a day of month without a year a
-      :exc:`DeprecationWarning` is now emitted.  This is to avoid a quadrennial
+      If *format* specifies a day of month (``%d``) without a year,
+      :exc:`ValueError` is raised.  This is to avoid a quadrennial
       leap year bug in code seeking to parse only a month and day as the
       default year used in absence of one in the format is not a leap year.
-      Such *format* values may raise an error as of Python 3.15.  The
-      workaround is to always include a year in your *format*.  If parsing
+      The workaround is to always include a year in your *format*.  If parsing
       *date_string* values that do not have a year, explicitly add a year that
       is a leap year before parsing:
 
@@ -2572,13 +2570,13 @@ requires, and these work on all supported platforms.
 |           | truncated to an integer as a   |                        |       |
 |           | zero-padded decimal number.    |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-|  ``%d``   | Day of the month as a          | 01, 02, ..., 31        | \(9)  |
-|           | zero-padded decimal number.    |                        |       |
+|  ``%d``   | Day of the month as a          | 01, 02, ..., 31        | \(9), |
+|           | zero-padded decimal number.    |                        | \(10) |
 +-----------+--------------------------------+------------------------+-------+
 |  ``%D``   | Equivalent to ``%m/%d/%y``.    | 11/28/25               | \(9)  |
 |           |                                |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-|  ``%e``   | The day of the month as a      | ␣1, ␣2, ..., 31        |       |
+|  ``%e``   | The day of the month as a      | ␣1, ␣2, ..., 31        | \(10) |
 |           | space-padded decimal number.   |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 |  ``%F``   | Equivalent to ``%Y-%m-%d``,    | 2025-10-11,            |       |
@@ -2611,8 +2609,10 @@ requires, and these work on all supported platforms.
 |  ``%M``   | Minute as a zero-padded        | 00, 01, ..., 59        | \(9)  |
 |           | decimal number.                |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-|  ``%n``   | The newline character          | ``\n``                 | \(0)  |
-|           | (``'\n'``).                    |                        |       |
+|  ``%n``   | The newline character          | ``\n``                 |       |
+|           | (``'\n'``). For                |                        |       |
+|           | :meth:`!strptime`, zero or     |                        |       |
+|           | more whitespace.               |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 |  ``%p``   | Locale's equivalent of either  || AM, PM (en_US);       | \(1), |
 |           | AM or PM.                      || am, pm (de_DE)        | \(3)  |
@@ -2625,8 +2625,9 @@ requires, and these work on all supported platforms.
 |  ``%S``   | Second as a zero-padded        | 00, 01, ..., 59        | \(4), |
 |           | decimal number.                |                        | \(9)  |
 +-----------+--------------------------------+------------------------+-------+
-|  ``%t``   | The tab character              | ``\t``                 | \(0)  |
-|           | (``'\t'``).                    |                        |       |
+|  ``%t``   | The tab character (``'\t'``).  | ``\t``                 |       |
+|           | For :meth:`!strptime`,         |                        |       |
+|           | zero or more whitespace.       |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 |  ``%T``   | ISO 8601 time format,          | 10:01:59               |       |
 |           | equivalent to ``%H:%M:%S``.    |                        |       |
@@ -2717,7 +2718,8 @@ differences between platforms in handling of unsupported format specifiers.
    ``%:z`` was added for :meth:`~.datetime.strftime`.
 
 .. versionadded:: 3.15
-   ``%:z``, ``%F``, and ``%D`` were added for :meth:`~.datetime.strptime`.
+   ``%D``, ``%F``, ``%n``, ``%t``, and ``%:z`` were added for
+   :meth:`~.datetime.strptime`.
 
 
 Technical detail
@@ -2915,11 +2917,12 @@ Notes:
       >>> dt.datetime.strptime(f"{month_day};1984", "%m/%d;%Y")  # No leap year bug.
       datetime.datetime(1984, 2, 29, 0, 0)
 
-   .. deprecated-removed:: 3.13 3.15
+   .. versionchanged:: 3.15
+      Using ``%d`` without a year now raises :exc:`ValueError`.
+
+   .. deprecated-removed:: 3.15 3.17
       :meth:`~.datetime.strptime` calls using a format string containing
-      a day of month without a year now emit a
-      :exc:`DeprecationWarning`. In 3.15 or later we may change this into
-      an error or change the default year to a leap year. See :gh:`70647`.
+      ``%e`` without a year now emit a :exc:`DeprecationWarning`.
 
 .. rubric:: Footnotes
 
