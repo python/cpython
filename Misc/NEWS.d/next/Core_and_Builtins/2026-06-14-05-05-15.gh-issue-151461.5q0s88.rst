@@ -1,3 +1,3 @@
-Fixed the tokenizer to no longer show a generic ``SyntaxError: encoding
-problem`` message and distinguish whether a codec was not found or a file
-could not be decoded. Patch by Bartosz Sławecki.
+Fix direct execution of files with invalid source encodings to report the
+underlying codec lookup or decoding error instead of the generic
+``SyntaxError: encoding problem`` message. Patch by Bartosz Sławecki.
