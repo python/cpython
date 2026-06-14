@@ -551,7 +551,7 @@ class FileSourceEncodingTest(AbstractSourceEncodingTest, unittest.TestCase):
 
     def test_coding_spec_non_text_encoding(self):
         src = (b'# coding: hex_codec\n'
-               b'print("Test")\n')
+               b'print("eggs")\n')
         self.check_script_error(src, br"'hex_codec' is not a text encoding")
 
 
