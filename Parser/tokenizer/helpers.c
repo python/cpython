@@ -467,8 +467,8 @@ _PyTokenizer_check_coding_spec(const char* line, Py_ssize_t size, struct tok_sta
     if (tok->encoding == NULL) {
         assert(tok->decoding_readline == NULL);
         if (strcmp(cs, "utf-8") != 0 && !set_readline(tok, cs)) {
-            _PyTokenizer_error_ret(tok);
             _PyTokenizer_raise_init_error(tok->filename);
+            _PyTokenizer_error_ret(tok);
             PyMem_Free(cs);
             return 0;
         }
