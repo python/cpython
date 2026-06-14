@@ -24,6 +24,11 @@ repos:
         args: [--exit-non-zero-on-fix, --config=Platforms/WASI/.ruff.toml]
         files: ^Platforms/WASI/
       - id: ruff-check
+        name: Run Ruff (lint) on Tools/
+        args: [--exit-non-zero-on-fix]
+        files: ^Tools/
+        exclude: ^Tools/(build|clinic|i18n|peg_generator|wasm)/
+      - id: ruff-check
         name: Run Ruff (lint) on Tools/build/
         args: [--exit-non-zero-on-fix, --config=Tools/build/.ruff.toml]
         files: ^Tools/build/
