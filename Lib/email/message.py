@@ -352,9 +352,7 @@ class Message:
                 return
             if not isinstance(charset, Charset):
                 charset = Charset(charset)
-            if not utils._has_surrogates(payload):
-                payload = payload.encode(charset.output_charset,
-                                          'surrogateescape')
+            payload = payload.encode(charset.output_charset, 'surrogateescape')
         if hasattr(payload, 'decode'):
             self._payload = payload.decode('ascii', 'surrogateescape')
         else:

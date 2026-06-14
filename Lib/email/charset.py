@@ -16,7 +16,6 @@ import email.base64mime
 import email.quoprimime
 
 from email import errors
-from email import utils
 from email.encoders import encode_7or8bit
 
 
@@ -439,12 +438,5 @@ class Charset:
             return email.quoprimime.body_encode(string)
         else:
             if isinstance(string, str):
-                if utils._has_surrogates(string):
-                    string = string.encode('ascii', 'surrogateescape')
-                    if self.input_charset != self.output_charset:
-                        string = (string.decode(self.input_codec)
-                                  .encode(self.output_codec))
-                    string = string.decode('ascii', 'surrogateescape')
-                else:
-                    string = string.encode(self.output_charset).decode('ascii')
+                string = string.encode(self.output_charset).decode('ascii')
             return string
