@@ -800,7 +800,7 @@ process and user.
       single: gethostbyaddr() (in module socket)
 
    Returns information identifying the current operating system.
-   The return value is a :class:`uname_result` object. These attributes
+   The return value is a :class:`uname_result` object whose attributes
    correspond to the members described in :manpage:`uname(2)`.
 
    On macOS, iOS and Android, this returns the *kernel* name and version (i.e.,
