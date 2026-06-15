@@ -1,0 +1,4 @@
+:meth:`wave.Wave_read.readframes` no longer attempts to pre-allocate a huge
+buffer when the data chunk header of a truncated or malformed WAV file claims
+a size larger than the file actually contains.  When the underlying file is
+seekable, reads are now clamped to the number of bytes really available.

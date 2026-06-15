@@ -10,6 +10,30 @@ import sys
 import wave
 
 
+class _ReadSizeRecorder(io.BytesIO):
+    # A seekable file that remembers the largest size ever passed to read()
+    # (so a test can check that wave does not request far more data than the
+    # file actually holds, which on a real file would pre-allocate it), and
+    # that rejects seeks to offsets overflowing a C ssize_t the way a 32-bit
+    # platform such as WASI does (so a test can check that wave never seeks
+    # to an untrusted chunk size).
+    _SSIZE_MAX = (1 << 31) - 1
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.max_read_size = 0
+
+    def read(self, size=-1):
+        if size is not None and size >= 0:
+            self.max_read_size = max(self.max_read_size, size)
+        return super().read(size)
+
+    def seek(self, pos, whence=0):
+        if abs(pos) > self._SSIZE_MAX:
+            raise OverflowError("Python int too large to convert to C ssize_t")
+        return super().seek(pos, whence)
+
+
 class WaveTest(audiotests.AudioWriteTests,
                audiotests.AudioTestsWithSourceFile):
     module = wave
@@ -332,6 +356,25 @@ class WaveLowLevelTest(unittest.TestCase):
         b += b'data' + struct.pack('<L', 0)
         with self.assertRaisesRegex(wave.Error, 'bad sample width'):
             wave.open(io.BytesIO(b))
+
+    def test_read_data_chunk_size_larger_than_file(self):
+        # gh-151308: a data chunk header may claim far more data than the
+        # file actually contains.  readframes() must not request (and so,
+        # on a real file, pre-allocate) the claimed size; reads on a
+        # seekable file are clamped to the bytes actually available.
+        real_data = b'\x00' * 10
+        b = b'RIFF' + struct.pack('<L', 0xFFFFFFFF) + b'WAVE'
+        b += b'fmt ' + struct.pack('<LHHLLHH', 16, 1, 1, 11025, 11025, 1, 8)
+        b += b'data' + struct.pack('<L', 0xFFFFFFFF)  # bogus, ~4 GiB
+        b += real_data
+        # _ReadSizeRecorder also raises OverflowError on a huge seek offset,
+        # so this exercises the 32-bit (e.g. WASI) path too.
+        f = _ReadSizeRecorder(b)
+        with wave.open(f, 'rb') as r:
+            data = r.readframes(r.getnframes())
+        self.assertEqual(data, real_data)
+        # The bogus ~4 GiB size must never reach the underlying read().
+        self.assertLessEqual(f.max_read_size, len(b))
 
     def test_open_in_write_raises(self):
         # gh-136523: Wave_write.__del__ should not throw
