@@ -185,7 +185,7 @@ def main():
             progname = args[0]
             sys.path.insert(0, os.path.dirname(progname))
             with io.open_code(progname) as fp:
-                code = compile(fp.read(), progname, 'exec')
+                code = compile(fp.read(), progname, 'exec', module='__main__')
             spec = importlib.machinery.ModuleSpec(name='__main__', loader=None,
                                                   origin=progname)
             module = importlib.util.module_from_spec(spec)
@@ -201,7 +201,6 @@ def main():
                 '__file__': spec.origin,
                 '__name__': spec.name,
                 '__package__': None,
-                '__cached__': None,
             })
 
         try:

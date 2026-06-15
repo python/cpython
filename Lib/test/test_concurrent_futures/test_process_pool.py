@@ -3,6 +3,7 @@ import queue
 import sys
 import threading
 import time
+import traceback
 import unittest
 import unittest.mock
 from concurrent import futures
@@ -63,6 +64,32 @@ class ProcessPoolExecutorTest(ExecutorTest):
         self.assertRaises(BrokenProcessPool, self.executor.submit, pow, 2, 8)
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_broken_process_pool_traceback(self):
+        # When a child process is abruptly terminated, the whole pool gets
+        # "broken", and a BrokenProcessPool exception should be created
+        # for each future instead of sharing one exception among all futures.
+        event = self.create_event()
+        futures = [self.executor.submit(event.wait) for _ in range(3)]
+        p = next(iter(self.executor._processes.values()))
+        p.terminate()
+        for fut in futures:
+            # Don't use assertRaises(): it clears the traceback off exc.
+            try:
+                fut.result()
+            except BrokenProcessPool as exc:
+                tb = exc.__traceback__
+            else:
+                self.fail("BrokenProcessPool not raised")
+            count = sum(
+                1
+                for frame_summary in traceback.extract_tb(tb)
+                if frame_summary.filename == __file__
+            )
+            # This code file should appear exactly once in the traceback.
+            # A shared exception would accumulate a frame per result() call.
+            self.assertEqual(count, 1)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_map_chunksize(self):
         def bad_map():
             list(self.executor.map(pow, range(40), range(40), chunksize=-1))
@@ -105,6 +132,22 @@ class ProcessPoolExecutorTest(ExecutorTest):
                 sys.excepthook(*sys.exc_info())
         self.assertIn('raise RuntimeError(123) # some comment',
                       f1.getvalue())
+
+    def test_traceback_when_child_process_terminates_abruptly(self):
+        # gh-139462 enhancement - BrokenProcessPool exceptions
+        # should describe which process terminated.
+        exit_code = 99
+        with self.executor_type(max_workers=1) as executor:
+            future = executor.submit(os._exit, exit_code)
+            with self.assertRaises(BrokenProcessPool) as bpe:
+                future.result()
+
+        if sys.platform != 'cygwin':
+            cause = bpe.exception.__cause__
+            self.assertIsInstance(cause, futures.process._RemoteTraceback)
+            self.assertIn(
+                f"terminated abruptly with exit code {exit_code}", cause.tb
+            )
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @hashlib_helper.requires_hashdigest('md5')

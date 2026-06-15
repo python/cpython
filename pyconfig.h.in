@@ -32,10 +32,6 @@
 /* The Android API level. */
 #undef ANDROID_API_LEVEL
 
-/* Define if C doubles are 64-bit IEEE 754 binary format, stored in ARM
-   mixed-endian order (byte order 45670123) */
-#undef DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754
-
 /* Define if C doubles are 64-bit IEEE 754 binary format, stored with the most
    significant byte first */
 #undef DOUBLE_IS_BIG_ENDIAN_IEEE754
@@ -59,6 +55,9 @@
 /* Define to 1 if you have the 'acosh' function. */
 #undef HAVE_ACOSH
 
+/* Define to 1 if you have the 'acospi' function. */
+#undef HAVE_ACOSPI
+
 /* struct addrinfo (netdb.h) */
 #undef HAVE_ADDRINFO
 
@@ -77,11 +76,20 @@
 /* Define to 1 if you have the 'asinh' function. */
 #undef HAVE_ASINH
 
+/* Define to 1 if you have the 'asinpi' function. */
+#undef HAVE_ASINPI
+
 /* Define to 1 if you have the <asm/types.h> header file. */
 #undef HAVE_ASM_TYPES_H
 
+/* Define to 1 if you have the 'atan2pi' function. */
+#undef HAVE_ATAN2PI
+
 /* Define to 1 if you have the 'atanh' function. */
 #undef HAVE_ATANH
+
+/* Define to 1 if you have the 'atanpi' function. */
+#undef HAVE_ATANPI
 
 /* Define to 1 if you have the 'backtrace' function. */
 #undef HAVE_BACKTRACE
@@ -183,6 +191,9 @@
 /* Define to 1 if you have the 'copy_file_range' function. */
 #undef HAVE_COPY_FILE_RANGE
 
+/* Define to 1 if you have the 'cospi' function. */
+#undef HAVE_COSPI
+
 /* Define to 1 if you have the 'ctermid' function. */
 #undef HAVE_CTERMID
 
@@ -227,6 +238,10 @@
 
 /* Define to 1 if you have the <db.h> header file. */
 #undef HAVE_DB_H
+
+/* Define to 1 if you have the declaration of 'PR_SET_VMA_ANON_NAME', and to 0
+   if you don't. */
+#undef HAVE_DECL_PR_SET_VMA_ANON_NAME
 
 /* Define to 1 if you have the declaration of 'RTLD_DEEPBIND', and to 0 if you
    don't. */
@@ -975,6 +990,9 @@
    function. */
 #undef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSEFROM_NP
 
+/* Define to 1 if you have the 'ppoll' function. */
+#undef HAVE_PPOLL
+
 /* Define to 1 if you have the 'pread' function. */
 #undef HAVE_PREAD
 
@@ -1252,6 +1270,9 @@
 /* Define to 1 if you have the 'sigwaitinfo' function. */
 #undef HAVE_SIGWAITINFO
 
+/* Define to 1 if you have the 'sinpi' function. */
+#undef HAVE_SINPI
+
 /* Define to 1 if you have the 'snprintf' function. */
 #undef HAVE_SNPRINTF
 
@@ -1524,6 +1545,9 @@
 /* Define to 1 if you have the <sys/xattr.h> header file. */
 #undef HAVE_SYS_XATTR_H
 
+/* Define to 1 if you have the 'tanpi' function. */
+#undef HAVE_TANPI
+
 /* Define to 1 if you have the 'tcgetpgrp' function. */
 #undef HAVE_TCGETPGRP
 
@@ -1728,6 +1752,9 @@
 
 /* Define as the preferred size in bits of long digits */
 #undef PYLONG_BITS_IN_DIGIT
+
+/* Define to use huge pages for pymalloc arenas */
+#undef PYMALLOC_USE_HUGEPAGES
 
 /* enabled builtin hash modules */
 #undef PY_BUILTIN_HASHLIB_HASHES
@@ -2029,7 +2056,7 @@
 /* Define on NetBSD to activate all library features */
 #undef _NETBSD_SOURCE
 
-/* Define to activate features from IEEE Stds 1003.1-2008 */
+/* Define to activate features from IEEE Std 1003.1-2024 */
 #undef _POSIX_C_SOURCE
 
 /* Define if you have POSIX threads, and your system does not define that. */
@@ -2050,8 +2077,26 @@
 /* HACL* library can compile SIMD256 implementations */
 #undef _Py_HACL_CAN_COMPILE_VEC256
 
+/* Define if compiler supports __builtin_shufflevector with 128-bit vectors
+   AND the target architecture has native SIMD (not just API availability) */
+#undef _Py_HAVE_EFFICIENT_BUILTIN_SHUFFLEVECTOR
+
+/* Define to 1 if libgcc __register_frame and __deregister_frame are linkable.
+   */
+#undef _Py_HAVE_LIBGCC_EH_FRAME_REGISTRATION
+
+/* Define if you have the 'PR_SET_VMA_ANON_NAME' constant. */
+#undef _Py_HAVE_PR_SET_VMA_ANON_NAME
+
+/* Define to 1 if the machine stack grows down (default); 0 if it grows up. */
+#undef _Py_STACK_GROWS_DOWN
+
 /* Define if you want to use tail-calling interpreters in CPython. */
 #undef _Py_TAIL_CALL_INTERP
+
+/* Define to 1 if frame unwinding via pointers is expected to work, 0 if not.
+   Leave undefined if unknown. */
+#undef _Py_WITH_FRAME_POINTERS
 
 /* Define to force use of thread-safe errno, h_errno, and other functions */
 #undef _REENTRANT

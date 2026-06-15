@@ -38,11 +38,18 @@ Recursion checks are performed by `_Py_EnterRecursiveCall()` or `_Py_EnterRecurs
 
 ```python
 kb_used = (stack_top - stack_pointer)>>10
-if stack_pointer < hard_limit:
+if stack_pointer < bottom_of_machine_stack:
+    pass # Our stack limits could be wrong so it is safest to do nothing.
+elif stack_pointer < hard_limit:
     FatalError(f"Unrecoverable stack overflow (used {kb_used} kB)")
 elif stack_pointer < soft_limit:
     raise RecursionError(f"Stack overflow (used {kb_used} kB)")
 ```
+
+### User space threads and other oddities
+
+Some libraries provide user-space threads. These will change the C stack at runtime.
+To guard against this we only raise if the stack pointer is in the window between the expected stack base and the soft limit.
 
 ### Diagnosing and fixing stack overflows
 

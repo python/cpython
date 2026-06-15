@@ -67,6 +67,10 @@ def load_data(fobj):
             f">{timecnt}{time_type}", fobj.read(timecnt * time_size)
         )
         trans_idx = struct.unpack(f">{timecnt}B", fobj.read(timecnt))
+
+        if max(trans_idx) >= typecnt:
+            raise ValueError("Invalid transition index found while reading TZif: "
+                            f"{max(trans_idx)}")
     else:
         trans_list_utc = ()
         trans_idx = ()
@@ -118,11 +122,10 @@ def load_data(fobj):
         c = fobj.read(1)  # Should be \n
         assert c == b"\n", c
 
-        tz_bytes = b""
-        while (c := fobj.read(1)) != b"\n":
-            tz_bytes += c
-
-        tz_str = tz_bytes
+        line = fobj.readline()
+        if not line.endswith(b"\n"):
+            raise ValueError("Invalid TZif file: unexpected end of file")
+        tz_str = line.rstrip(b"\n")
     else:
         tz_str = None
 

@@ -176,8 +176,9 @@ class TestDictWatchers(unittest.TestCase):
 
     def test_unwatch_non_dict(self):
         with self.watcher() as wid:
-            with self.assertRaisesRegex(ValueError, r"Cannot watch non-dictionary"):
-                self.unwatch(wid, 1)
+            for wrong_type in (frozendict(), 5, [123], object()):
+                with self.assertRaisesRegex(ValueError, r"Cannot watch non-dictionary"):
+                    self.unwatch(wid, wrong_type)
 
     def test_unwatch_out_of_range_watcher_id(self):
         d = {}
@@ -207,6 +208,7 @@ class TestTypeWatchers(unittest.TestCase):
     TYPES = 0    # appends modified types to global event list
     ERROR = 1    # unconditionally sets and signals a RuntimeException
     WRAP = 2     # appends modified type wrapped in list to global event list
+    NAME = 3     # appends type name (string) to global event list
 
     # duplicating the C constant
     TYPE_MAX_WATCHERS = 8
@@ -375,6 +377,27 @@ class TestTypeWatchers(unittest.TestCase):
     def test_clear_unassigned_watcher_id(self):
         with self.assertRaisesRegex(ValueError, r"No type watcher set for ID 1"):
             self.clear_watcher(1)
+
+    def test_watch_type_dealloc(self):
+        # Use the NAME watcher (kind=3) which records the type's name as a
+        # string, avoiding any reference to the type object itself during
+        # deallocation.
+        with self.watcher(kind=self.NAME) as wid:
+            class MyTestType: pass
+            self.watch(wid, MyTestType)
+            del MyTestType
+            gc_collect()
+            events = _testcapi.get_type_modified_events()
+            self.assertIn("MyTestType", events)
+
+    def test_watch_type_dealloc_error(self):
+        with self.watcher(kind=self.ERROR) as wid:
+            class MyTestType2: pass
+            self.watch(wid, MyTestType2)
+            with catch_unraisable_exception() as cm:
+                del MyTestType2
+                gc_collect()
+                self.assertEqual(str(cm.unraisable.exc_value), "boom!")
 
     def test_no_more_ids_available(self):
         with self.assertRaisesRegex(RuntimeError, r"no more type watcher IDs"):

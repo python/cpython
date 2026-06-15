@@ -33,6 +33,8 @@ from test import support
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import infinite_recursion
+from test.support import requires_root_user
+from test.support import requires_non_root_user
 from test.support import warnings_helper
 from platform import win32_is_iot
 from .utils import create_file
@@ -66,10 +68,6 @@ from test.support.script_helper import assert_python_ok
 from test.support import unix_shell
 from test.support.os_helper import FakePath
 
-
-root_in_posix = False
-if hasattr(os, 'geteuid'):
-    root_in_posix = (os.geteuid() == 0)
 
 # Detect whether we're on a Linux system that uses the (now outdated
 # and unmaintained) linuxthreads threading library.  There's an issue
@@ -748,69 +746,116 @@ class StatAttributeTests(unittest.TestCase):
             if name.startswith('STATX_'):
                 maximal_mask |= getattr(os, name)
         result = os.statx(filename, maximal_mask)
-        basic_result = os.stat(filename)
+        stat_result = os.stat(filename)
 
-        time_attributes = ('st_atime', 'st_mtime', 'st_ctime', 'st_birthtime')
-        # gh-83714: st_birthtime can be None on tmpfs even if STATX_BTIME mask
+        time_attributes = ('stx_atime', 'stx_btime', 'stx_ctime', 'stx_mtime')
+        # gh-83714: stx_btime can be None on tmpfs even if STATX_BTIME mask
         # is used
         time_attributes = [name for name in time_attributes
                            if getattr(result, name) is not None]
         self.check_timestamp_agreement(result, time_attributes)
 
-        # Check that valid attributes match os.stat.
+        def getmask(name):
+            return getattr(os, name, 0)
+
         requirements = (
-            ('st_mode', os.STATX_TYPE | os.STATX_MODE),
-            ('st_nlink', os.STATX_NLINK),
-            ('st_uid', os.STATX_UID),
-            ('st_gid', os.STATX_GID),
-            ('st_atime', os.STATX_ATIME),
-            ('st_atime_ns', os.STATX_ATIME),
-            ('st_mtime', os.STATX_MTIME),
-            ('st_mtime_ns', os.STATX_MTIME),
-            ('st_ctime', os.STATX_CTIME),
-            ('st_ctime_ns', os.STATX_CTIME),
-            ('st_ino', os.STATX_INO),
-            ('st_size', os.STATX_SIZE),
-            ('st_blocks', os.STATX_BLOCKS),
-            ('st_birthtime', os.STATX_BTIME),
-            ('st_birthtime_ns', os.STATX_BTIME),
-            # unconditionally valid members
-            ('st_blksize', 0),
-            ('st_rdev', 0),
-            ('st_dev', 0),
+            ('stx_atime', os.STATX_ATIME),
+            ('stx_atime_ns', os.STATX_ATIME),
+            ('stx_atomic_write_segments_max', getmask('STATX_WRITE_ATOMIC')),
+            ('stx_atomic_write_unit_max', getmask('STATX_WRITE_ATOMIC')),
+            ('stx_atomic_write_unit_max_opt', getmask('STATX_WRITE_ATOMIC')),
+            ('stx_atomic_write_unit_min', getmask('STATX_WRITE_ATOMIC')),
+            ('stx_attributes', 0),
+            ('stx_attributes_mask', 0),
+            ('stx_blksize', 0),
+            ('stx_blocks', os.STATX_BLOCKS),
+            ('stx_btime', os.STATX_BTIME),
+            ('stx_btime_ns', os.STATX_BTIME),
+            ('stx_ctime', os.STATX_CTIME),
+            ('stx_ctime_ns', os.STATX_CTIME),
+            ('stx_dev', 0),
+            ('stx_dev_major', 0),
+            ('stx_dev_minor', 0),
+            ('stx_dio_mem_align', getmask('STATX_DIOALIGN')),
+            ('stx_dio_offset_align', getmask('STATX_DIOALIGN')),
+            ('stx_dio_read_offset_align', getmask('STATX_DIO_READ_ALIGN')),
+            ('stx_gid', os.STATX_GID),
+            ('stx_ino', os.STATX_INO),
+            ('stx_mask', 0),
+            ('stx_mnt_id', getmask('STATX_MNT_ID')),
+            ('stx_mode', os.STATX_TYPE | os.STATX_MODE),
+            ('stx_mtime', os.STATX_MTIME),
+            ('stx_mtime_ns', os.STATX_MTIME),
+            ('stx_nlink', os.STATX_NLINK),
+            ('stx_rdev', 0),
+            ('stx_rdev_major', 0),
+            ('stx_rdev_minor', 0),
+            ('stx_size', os.STATX_SIZE),
+            ('stx_subvol', getmask('STATX_SUBVOL')),
+            ('stx_uid', os.STATX_UID),
         )
-        for name, bits in requirements:
-            if result.stx_mask & bits == bits and hasattr(basic_result, name):
-                x = getattr(result, name)
-                b = getattr(basic_result, name)
-                self.assertEqual(type(x), type(b))
-                if isinstance(x, float):
-                    self.assertAlmostEqual(x, b, msg=name)
+        optional_members = {
+            'stx_atomic_write_segments_max',
+            'stx_atomic_write_unit_max',
+            'stx_atomic_write_unit_max_opt',
+            'stx_atomic_write_unit_min',
+            'stx_dio_mem_align',
+            'stx_dio_offset_align',
+            'stx_dio_read_offset_align',
+            'stx_mnt_id',
+            'stx_subvol',
+        }
+        float_type = {
+            'stx_atime',
+            'stx_btime',
+            'stx_ctime',
+            'stx_mtime',
+        }
+
+        members = set(name for name in dir(result)
+                      if name.startswith('stx_'))
+        tested = set(name for name, mask in requirements)
+        if members - tested:
+            raise ValueError(f"statx members not tested: {members - tested}")
+
+        for name, mask in requirements:
+            with self.subTest(name=name):
+                try:
+                    x = getattr(result, name)
+                except AttributeError:
+                    if name in optional_members:
+                        continue
+                    else:
+                        raise
+
+                if not(result.stx_mask & mask == mask):
+                    self.assertIsNone(x)
+                    continue
+
+                if name in float_type:
+                    self.assertIsInstance(x, float)
                 else:
-                    self.assertEqual(x, b, msg=name)
+                    self.assertIsInstance(x, int)
 
-        self.assertEqual(result.stx_rdev_major, os.major(result.st_rdev))
-        self.assertEqual(result.stx_rdev_minor, os.minor(result.st_rdev))
-        self.assertEqual(result.stx_dev_major, os.major(result.st_dev))
-        self.assertEqual(result.stx_dev_minor, os.minor(result.st_dev))
+                # Compare with stat_result
+                try:
+                    b = getattr(stat_result, "st_" + name[4:])
+                except AttributeError:
+                    pass
+                else:
+                    self.assertEqual(type(x), type(b))
+                    if isinstance(x, float):
+                        self.assertAlmostEqual(x, b)
+                    else:
+                        self.assertEqual(x, b)
 
-        members = [name for name in dir(result)
-                   if name.startswith('st_') or name.startswith('stx_')]
-        for name in members:
-            try:
-                setattr(result, name, 1)
-                self.fail("No exception raised")
-            except AttributeError:
-                pass
+        self.assertEqual(result.stx_rdev_major, os.major(result.stx_rdev))
+        self.assertEqual(result.stx_rdev_minor, os.minor(result.stx_rdev))
+        self.assertEqual(result.stx_dev_major, os.major(result.stx_dev))
+        self.assertEqual(result.stx_dev_minor, os.minor(result.stx_dev))
 
         self.assertEqual(result.stx_attributes & result.stx_attributes_mask,
                          result.stx_attributes)
-
-        # statx_result is not a tuple or tuple-like object.
-        with self.assertRaisesRegex(TypeError, 'not subscriptable'):
-            result[0]
-        with self.assertRaisesRegex(TypeError, 'cannot unpack'):
-            _, _ = result
 
     @unittest.skipUnless(hasattr(os, 'statx'), 'test needs os.statx()')
     def test_statx_attributes(self):
@@ -827,6 +872,27 @@ class StatAttributeTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, 'statx'), 'test needs os.statx()')
     def test_statx_attributes_pathlike(self):
         self.check_statx_attributes(FakePath(self.fname))
+
+    @unittest.skipUnless(hasattr(os, 'statx'), 'test needs os.statx()')
+    def test_statx_result(self):
+        result = os.statx(self.fname, os.STATX_BASIC_STATS)
+
+        # Check that attributes are read-only
+        members = [name for name in dir(result)
+                   if name.startswith('stx_')]
+        for name in members:
+            try:
+                setattr(result, name, 1)
+            except AttributeError:
+                pass
+            else:
+                self.fail("No exception raised")
+
+        # statx_result is not a tuple or tuple-like object.
+        with self.assertRaisesRegex(TypeError, 'not subscriptable'):
+            result[0]
+        with self.assertRaisesRegex(TypeError, 'cannot unpack'):
+            _, _ = result
 
     @unittest.skipUnless(hasattr(os, 'statvfs'), 'test needs os.statvfs()')
     def test_statvfs_attributes(self):
@@ -1801,7 +1867,9 @@ class WalkTests(unittest.TestCase):
 
         walk_it = self.walk(self.tmp1_path, follow_symlinks=True)
         if self.is_fwalk:
-            self.assertRaises(NotADirectoryError, next, walk_it)
+            with self.assertRaises(OSError) as cm:
+                next(walk_it)
+            self.assertIn(cm.exception.errno, (errno.ENOTDIR, errno.EINVAL))
         self.assertRaises(StopIteration, next, walk_it)
 
     @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
@@ -2072,6 +2140,94 @@ class MakedirTests(unittest.TestCase):
                 self.assertEqual(os.stat(parent).st_mode & 0o777, 0o775)
 
     @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "umask is not implemented on Emscripten/WASI."
+    )
+    @unittest.skipIf(
+        sys.platform == "android",
+        "Android filesystem may not honor requested permissions."
+    )
+    def test_mode_with_parent_mode(self):
+        # Test the parent_mode parameter
+        parent = os.path.join(os_helper.TESTFN, 'dir1')
+        path = os.path.join(parent, 'dir2')
+        with os_helper.temp_umask(0o002):
+            # Specify mode for both leaf and parent directories
+            os.makedirs(path, 0o770, parent_mode=0o750)
+            self.assertTrue(os.path.exists(path))
+            self.assertTrue(os.path.isdir(path))
+            if os.name != 'nt':
+                # Leaf directory gets the mode parameter
+                self.assertEqual(os.stat(path).st_mode & 0o777, 0o770)
+                # Parent directory gets the parent_mode parameter
+                self.assertEqual(os.stat(parent).st_mode & 0o777, 0o750)
+
+    @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "umask is not implemented on Emscripten/WASI."
+    )
+    @unittest.skipIf(
+        sys.platform == "android",
+        "Android filesystem may not honor requested permissions."
+    )
+    def test_parent_mode_deep_hierarchy(self):
+        # Test parent_mode with deep directory hierarchy
+        base = os.path.join(os_helper.TESTFN, 'dir1', 'dir2', 'dir3')
+        with os_helper.temp_umask(0o002):
+            os.makedirs(base, 0o755, parent_mode=0o700)
+            self.assertTrue(os.path.exists(base))
+            if os.name != 'nt':
+                # Check that all parent directories have parent_mode
+                level1 = os.path.join(os_helper.TESTFN, 'dir1')
+                level2 = os.path.join(level1, 'dir2')
+                self.assertEqual(os.stat(level1).st_mode & 0o777, 0o700)
+                self.assertEqual(os.stat(level2).st_mode & 0o777, 0o700)
+                # Leaf directory has the regular mode
+                self.assertEqual(os.stat(base).st_mode & 0o777, 0o755)
+
+    @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "umask is not implemented on Emscripten/WASI."
+    )
+    @unittest.skipIf(
+        sys.platform == "android",
+        "Android filesystem may not honor requested permissions."
+    )
+    def test_parent_mode_same_as_mode(self):
+        # Test emulating Python 3.6 behavior by setting parent_mode=mode
+        parent = os.path.join(os_helper.TESTFN, 'dir1')
+        path = os.path.join(parent, 'dir2')
+        with os_helper.temp_umask(0o002):
+            os.makedirs(path, 0o705, parent_mode=0o705)
+            self.assertTrue(os.path.exists(path))
+            if os.name != 'nt':
+                # Both directories should have the same mode
+                self.assertEqual(os.stat(path).st_mode & 0o777, 0o705)
+                self.assertEqual(os.stat(parent).st_mode & 0o777, 0o705)
+
+    @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "umask is not implemented on Emscripten/WASI."
+    )
+    @unittest.skipIf(
+        sys.platform == "android",
+        "Android filesystem may not honor requested permissions."
+    )
+    def test_parent_mode_combined_with_umask(self):
+        # parent_mode, like mode, is combined with the process umask; it does
+        # not bypass it.
+        parent = os.path.join(os_helper.TESTFN, 'dir1')
+        path = os.path.join(parent, 'dir2')
+        with os_helper.temp_umask(0o022):
+            os.makedirs(path, 0o777, parent_mode=0o777)
+            self.assertTrue(os.path.isdir(path))
+            if os.name != 'nt':
+                # 0o777 is masked down to 0o755 by the 0o022 umask, for both
+                # the leaf (mode) and the parent (parent_mode).
+                self.assertEqual(os.stat(path).st_mode & 0o777, 0o755)
+                self.assertEqual(os.stat(parent).st_mode & 0o777, 0o755)
+
+    @unittest.skipIf(
         support.is_wasi,
         "WASI's umask is a stub."
     )
@@ -2144,15 +2300,9 @@ class MakedirTests(unittest.TestCase):
         )
 
     def tearDown(self):
-        path = os.path.join(os_helper.TESTFN, 'dir1', 'dir2', 'dir3',
-                            'dir4', 'dir5', 'dir6')
-        # If the tests failed, the bottom-most directory ('../dir6')
-        # may not have been created, so we look for the outermost directory
-        # that exists.
-        while not os.path.exists(path) and path != os_helper.TESTFN:
-            path = os.path.dirname(path)
-
-        os.removedirs(path)
+        # Remove the whole tree regardless of which sub-directories a test
+        # created and regardless of their permission bits.
+        os_helper.rmtree(os_helper.TESTFN)
 
 
 @unittest.skipUnless(hasattr(os, "chown"), "requires os.chown()")
@@ -2189,8 +2339,8 @@ class ChownFileTests(unittest.TestCase):
         gid = os.stat(os_helper.TESTFN).st_gid
         self.assertEqual(gid, gid_2)
 
-    @unittest.skipUnless(root_in_posix and len(all_users) > 1,
-                         "test needs root privilege and more than one user")
+    @requires_root_user
+    @unittest.skipUnless(len(all_users) > 1, "test needs more than one user")
     def test_chown_with_root(self):
         uid_1, uid_2 = all_users[:2]
         gid = os.stat(os_helper.TESTFN).st_gid
@@ -2201,8 +2351,10 @@ class ChownFileTests(unittest.TestCase):
         uid = os.stat(os_helper.TESTFN).st_uid
         self.assertEqual(uid, uid_2)
 
-    @unittest.skipUnless(not root_in_posix and len(all_users) > 1,
-                         "test needs non-root account and more than one user")
+    @requires_non_root_user
+    @unittest.skipUnless(len(all_users) > 1, "test needs and more than one user")
+    @unittest.skipIf(sys.platform == 'cygwin',
+                         'chown() can set any uid on Cygwin')
     def test_chown_without_permission(self):
         uid_1, uid_2 = all_users[:2]
         gid = os.stat(os_helper.TESTFN).st_gid
@@ -2556,6 +2708,45 @@ class ExecTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             os.execve(args[0], args, newenv)
 
+    # See https://github.com/python/cpython/issues/137934 and the other
+    # related issues for the reason why we cannot test this on Windows.
+    @unittest.skipIf(os.name == "nt", "POSIX-specific test")
+    @unittest.skipUnless(unix_shell and os.path.exists(unix_shell),
+                        "requires a shell")
+    def test_execve_env_concurrent_mutation_with_fspath_posix(self):
+        # Prevent crash when mutating environment during parsing.
+        # Regression test for https://github.com/python/cpython/issues/143309.
+
+        message = "hello from execve"
+        code = """
+        import os, sys
+
+        class MyPath:
+            def __fspath__(self):
+                mutated.clear()
+                return b"pwn"
+
+        mutated = KEYS = VALUES = [MyPath()]
+
+        class MyEnv:
+            def __getitem__(self): raise RuntimeError("must not be called")
+            def __len__(self): return 1
+            def keys(self): return KEYS
+            def values(self): return VALUES
+
+        args = [{unix_shell!r}, '-c', 'echo \"{message!s}\"']
+        os.execve(args[0], args, MyEnv())
+        """.format(unix_shell=unix_shell, message=message)
+
+        # Make sure to forward "LD_*" variables so that assert_python_ok()
+        # can run correctly.
+        minimal = {k: v for k, v in os.environ.items() if k.startswith("LD_")}
+        with os_helper.EnvironmentVarGuard() as env:
+            env.clear()
+            env.update(minimal)
+            _, out, _ = assert_python_ok('-c', code, **env)
+        self.assertIn(bytes(message, "ascii"), out)
+
     @unittest.skipUnless(sys.platform == "win32", "Win32-specific test")
     def test_execve_with_empty_path(self):
         # bpo-32890: Check GetLastError() misuse
@@ -2670,6 +2861,68 @@ class TestInvalidFD(unittest.TestCase):
     def test_fpathconf_bad_fd(self):
         self.check(os.pathconf, "PC_NAME_MAX")
         self.check(os.fpathconf, "PC_NAME_MAX")
+
+    @unittest.skipUnless(hasattr(os, 'pathconf'), 'test needs os.pathconf()')
+    @unittest.skipIf(
+        support.linked_to_musl(),
+        'musl fpathconf ignores the file descriptor and returns a constant',
+        )
+    def test_pathconf_negative_fd_uses_fd_semantics(self):
+        if os.pathconf not in os.supports_fd:
+            self.skipTest('needs fpathconf()')
+
+        with self.assertRaises(OSError) as ctx:
+            os.pathconf(-1, 1)
+        self.assertEqual(ctx.exception.errno, errno.EBADF)
+
+    @support.subTests("fd", [-1, -5])
+    def test_negative_fd_ebadf(self, fd):
+        tests = [(os.stat, fd)]
+        if hasattr(os, "statx"):
+            tests.append((os.statx, fd, 0))
+        if os.chdir in os.supports_fd:
+            tests.append((os.chdir, fd))
+        if os.chmod in os.supports_fd:
+            tests.append((os.chmod, fd, 0o777))
+        if hasattr(os, "chown") and os.chown in os.supports_fd:
+            tests.append((os.chown, fd, 0, 0))
+        if os.listdir in os.supports_fd:
+            tests.append((os.listdir, fd))
+        if os.utime in os.supports_fd:
+            tests.append((os.utime, fd, (0, 0)))
+        if hasattr(os, "truncate") and os.truncate in os.supports_fd:
+            tests.append((os.truncate, fd, 0))
+        if hasattr(os, 'statvfs') and os.statvfs in os.supports_fd:
+            tests.append((os.statvfs, fd))
+        if hasattr(os, "setxattr"):
+            tests.append((os.getxattr, fd, b"user.test"))
+            tests.append((os.setxattr, fd, b"user.test", b"1"))
+            tests.append((os.removexattr, fd, b"user.test"))
+            tests.append((os.listxattr, fd))
+        if os.scandir in os.supports_fd:
+            tests.append((os.scandir, fd))
+
+        for func, *args in tests:
+            with self.subTest(func=func, args=args):
+                with self.assertRaises(OSError) as ctx:
+                    func(*args)
+                self.assertEqual(ctx.exception.errno, errno.EBADF)
+
+        if (hasattr(os, "execve") and os.execve in os.supports_fd
+            and support.has_subprocess_support):
+            # glibc fails with EINVAL, musl fails with EBADF
+            with self.assertRaises(OSError) as ctx:
+                os.execve(fd, [sys.executable, "-c", "pass"], os.environ)
+            self.assertIn(ctx.exception.errno, (errno.EBADF, errno.EINVAL))
+
+        if support.MS_WINDOWS:
+            import nt
+            self.assertFalse(nt._path_exists(fd))
+            self.assertFalse(nt._path_lexists(fd))
+            self.assertFalse(nt._path_isdir(fd))
+            self.assertFalse(nt._path_isfile(fd))
+            self.assertFalse(nt._path_islink(fd))
+            self.assertFalse(nt._path_isjunction(fd))
 
     @unittest.skipUnless(hasattr(os, 'ftruncate'), 'test needs os.ftruncate()')
     def test_ftruncate(self):
@@ -3540,7 +3793,6 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
     @requires_headers_trailers
     @requires_32b
     async def test_headers_overflow_32bits(self):
-        self.server.handler_instance.accumulate = False
         with self.assertRaises(OSError) as cm:
             await self.async_sendfile(self.sockno, self.fileno, 0, 0,
                                       headers=[b"x" * 2**16] * 2**15)
@@ -3549,7 +3801,6 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
     @requires_headers_trailers
     @requires_32b
     async def test_trailers_overflow_32bits(self):
-        self.server.handler_instance.accumulate = False
         with self.assertRaises(OSError) as cm:
             await self.async_sendfile(self.sockno, self.fileno, 0, 0,
                                       trailers=[b"x" * 2**16] * 2**15)
@@ -3884,10 +4135,11 @@ class TimerfdTests(unittest.TestCase):
         initial_expiration = 0.1
         os.timerfd_settime(fd, initial=initial_expiration, interval=0)
 
-        # read() raises OSError with errno is EAGAIN for non-blocking timer.
-        with self.assertRaises(OSError) as ctx:
-            self.read_count_signaled(fd)
-        self.assertEqual(ctx.exception.errno, errno.EAGAIN)
+        if sys.platform != 'cygwin':
+            # read() raises OSError with errno is EAGAIN for non-blocking timer.
+            with self.assertRaises(OSError) as ctx:
+                self.read_count_signaled(fd)
+            self.assertEqual(ctx.exception.errno, errno.EAGAIN)
 
         # Wait more than 0.1 seconds
         time.sleep(initial_expiration + 0.1)
@@ -4068,12 +4320,19 @@ class TimerfdTests(unittest.TestCase):
 
         # 2nd call
         next_expiration_ns, interval_ns2 = os.timerfd_settime_ns(fd, initial=initial_expiration_ns, interval=interval_ns)
-        self.assertEqual(interval_ns2, interval_ns)
+        CYGWIN = (sys.platform == 'cygwin')
+        if not CYGWIN:
+            self.assertEqual(interval_ns2, interval_ns)
+        else:
+            self.assertEqual(interval_ns2, 0)
         self.assertEqual(next_expiration_ns, initial_expiration_ns)
 
         # timerfd_gettime
         next_expiration_ns, interval_ns2 = os.timerfd_gettime_ns(fd)
-        self.assertEqual(interval_ns2, interval_ns)
+        if not CYGWIN:
+            self.assertEqual(interval_ns2, interval_ns)
+        else:
+            self.assertEqual(interval_ns2, 0)
         self.assertLessEqual(next_expiration_ns, initial_expiration_ns)
 
         self.assertAlmostEqual(next_expiration_ns, initial_expiration_ns, delta=limit_error)

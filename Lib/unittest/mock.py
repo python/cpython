@@ -24,7 +24,6 @@ __all__ = (
 )
 
 
-import asyncio
 import contextlib
 import io
 import inspect
@@ -34,6 +33,7 @@ import builtins
 import pkgutil
 from inspect import iscoroutinefunction
 import threading
+from annotationlib import Format
 from dataclasses import fields, is_dataclass
 from types import CodeType, ModuleType, MethodType
 from unittest.util import safe_repr
@@ -119,7 +119,7 @@ def _get_signature_object(func, as_instance, eat_self):
     else:
         sig_func = func
     try:
-        return func, inspect.signature(sig_func)
+        return func, inspect.signature(sig_func, annotation_format=Format.FORWARDREF)
     except ValueError:
         # Certain callable types are not supported by inspect.signature()
         return None
@@ -280,7 +280,6 @@ def _setup_func(funcopy, mock, sig):
 
 
 def _setup_async_mock(mock):
-    mock._is_coroutine = asyncio.coroutines._is_coroutine
     mock.await_count = 0
     mock.await_args = None
     mock.await_args_list = _CallList()
@@ -1180,14 +1179,20 @@ class CallableMixin(Base):
 
     def _increment_mock_call(self, /, *args, **kwargs):
         self.called = True
-        self.call_count += 1
 
         # handle call_args
         # needs to be set here so assertions on call arguments pass before
         # execution in the case of awaited calls
-        _call = _Call((args, kwargs), two=True)
-        self.call_args = _call
-        self.call_args_list.append(_call)
+        with NonCallableMock._lock:
+            # Lock is used here so that call_args_list and call_count are
+            # set atomically otherwise it is possible that by the time call_count
+            # is set another thread may have appended to call_args_list.
+            # The rest of this function relies on list.append being atomic and
+            # skips locking.
+            _call = _Call((args, kwargs), two=True)
+            self.call_args = _call
+            self.call_args_list.append(_call)
+            self.call_count = len(self.call_args_list)
 
         # initial stuff for method_calls:
         do_method_calls = self._mock_parent is not None
@@ -2280,13 +2285,6 @@ class AsyncMockMixin(Base):
 
     def __init__(self, /, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # iscoroutinefunction() checks _is_coroutine property to say if an
-        # object is a coroutine. Without this check it looks to see if it is a
-        # function/method, which in this case it is not (since it is an
-        # AsyncMock).
-        # It is set through __dict__ because when spec_set is True, this
-        # attribute is likely undefined.
-        self.__dict__['_is_coroutine'] = asyncio.coroutines._is_coroutine
         self.__dict__['_mock_await_count'] = 0
         self.__dict__['_mock_await_args'] = None
         self.__dict__['_mock_await_args_list'] = _CallList()
@@ -3113,6 +3111,10 @@ class ThreadingMixin(Base):
         self._mock_event.set()
 
         return ret_value
+
+    def _increment_mock_call(self, /, *args, **kwargs):
+        with self._mock_calls_events_lock:
+            super()._increment_mock_call(*args, **kwargs)
 
     def wait_until_called(self, *, timeout=_timeout_unset):
         """Wait until the mock object is called.

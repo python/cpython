@@ -1,5 +1,7 @@
 import difflib
+from test import support
 from test.support import findfile, force_colorized
+from test.support.import_helper import ensure_lazy_imports
 import unittest
 import doctest
 import sys
@@ -642,6 +644,12 @@ class TestRestore(unittest.TestCase):
 
 def setUpModule():
     difflib.HtmlDiff._default_prefix = 0
+
+
+class LazyImportTest(unittest.TestCase):
+    @support.cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("difflib", {"_colorize"})
 
 
 def load_tests(loader, tests, pattern):

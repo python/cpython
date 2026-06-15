@@ -473,6 +473,32 @@ class PydocDocTest(unittest.TestCase):
         result, doc_loc = get_pydoc_text(xml.etree)
         self.assertEqual(doc_loc, "", "MODULE DOCS incorrectly includes a link")
 
+    def test_online_docs_link(self):
+        import encodings.idna
+        import importlib._bootstrap
+
+        module_docs = {
+            'encodings': 'codecs#module-encodings',
+            'encodings.idna': 'codecs#module-encodings.idna',
+        }
+
+        with unittest.mock.patch('pydoc_data.module_docs.module_docs', module_docs):
+            doc = pydoc.TextDoc()
+
+            basedir = os.path.dirname(encodings.__file__)
+            doc_link = doc.getdocloc(encodings, basedir=basedir)
+            self.assertIsNotNone(doc_link)
+            self.assertIn('codecs#module-encodings', doc_link)
+            self.assertNotIn('encodings.html', doc_link)
+
+            doc_link = doc.getdocloc(encodings.idna, basedir=basedir)
+            self.assertIsNotNone(doc_link)
+            self.assertIn('codecs#module-encodings.idna', doc_link)
+            self.assertNotIn('encodings.idna.html', doc_link)
+
+            doc_link = doc.getdocloc(importlib._bootstrap, basedir=basedir)
+            self.assertIsNone(doc_link)
+
     def test_getpager_with_stdin_none(self):
         previous_stdin = sys.stdin
         try:
@@ -980,6 +1006,8 @@ class PydocDocTest(unittest.TestCase):
         os = import_helper.import_fresh_module('os')
         expected = os.__doc__.splitlines()[0]
         filename = os.__spec__.cached
+        if not filename:
+            raise unittest.SkipTest('requires .pyc files')
         synopsis = pydoc.synopsis(filename)
 
         self.assertEqual(synopsis, expected)
@@ -987,10 +1015,10 @@ class PydocDocTest(unittest.TestCase):
     def test_synopsis_sourceless_empty_doc(self):
         with os_helper.temp_cwd() as test_dir:
             init_path = os.path.join(test_dir, 'foomod42.py')
-            cached_path = importlib.util.cache_from_source(init_path)
+            cached_path = init_path + 'c'
             with open(init_path, 'w') as fobj:
                 fobj.write("foo = 1")
-            py_compile.compile(init_path)
+            py_compile.compile(init_path, cached_path)
             synopsis = pydoc.synopsis(init_path, {})
             self.assertIsNone(synopsis)
             synopsis_cached = pydoc.synopsis(cached_path, {})
@@ -1216,6 +1244,71 @@ function_with_really_long_name_so_annotations_can_be_rather_small(
 
 <lambda> lambda very_long_parameter_name_that_should_not_fit_into_a_single_line, second_very_long_parameter_name
 ''' % __name__)
+
+    @requires_docstrings
+    def test_long_summaries(self):
+        from . import longsummary
+        doc = pydoc.render_doc(longsummary)
+        doc = clean_text(doc)
+        self.assertEqual(doc, '''Python Library Documentation: module test.test_pydoc.longsummary in test.test_pydoc
+
+NAME
+    test.test_pydoc.longsummary
+
+CLASSES
+    builtins.object
+        C
+
+    class C(builtins.object)
+     |  This is a class summary that consists of a very long single line,
+     |  exceeding the recommended PEP 8 limit.
+     |
+     |  The rest of the docstring body, separated from the summary by a blank line, can also contain very long lines.
+     |
+     |  Methods defined here:
+     |
+     |  meth(self)
+     |      This is a method summary that consists of a very long single line,
+     |      exceeding the recommended PEP 8 limit.
+     |
+     |      The rest of the docstring body, separated from the summary by a blank line, can also contain very long lines.
+     |
+     |  ----------------------------------------------------------------------
+     |  Readonly properties defined here:
+     |
+     |  prop
+     |      This is a property summary that consists of a very long single line,
+     |      exceeding the recommended PEP 8 limit.
+     |
+     |      The rest of the docstring body, separated from the summary by a blank line, can also contain very long lines.
+     |
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |
+     |  __dict__
+     |      dictionary for instance variables
+     |
+     |  __weakref__
+     |      list of weak references to the object
+
+FUNCTIONS
+    func(self)
+        This is a function summary that consists of a very long single line,
+        exceeding the recommended PEP 8 limit.
+
+        The rest of the docstring body, separated from the summary by a blank line, can also contain very long lines.
+
+DATA
+    data = <test.test_pydoc.longsummary.C object>
+        This is a data summary that consists of a very long single line,
+        exceeding the recommended PEP 8 limit.
+
+        The rest of the docstring body, separated from the summary by a blank line, can also contain very long lines.
+
+FILE
+    %s
+
+''' % inspect.getabsfile(longsummary))
 
     def test__future__imports(self):
         # __future__ features are excluded from module help,
@@ -2121,9 +2214,46 @@ class PydocUrlHandlerTest(PydocBaseTest):
 
 
 class TestHelper(unittest.TestCase):
+    def mock_interactive_session(self, inputs):
+        """
+        Given a list of inputs, run an interactive help session.  Returns a string
+        of what would be shown on screen.
+        """
+        input_iter = iter(inputs)
+
+        def mock_getline(prompt):
+            output.write(prompt)
+            next_input = next(input_iter)
+            output.write(next_input + os.linesep)
+            return next_input
+
+        with captured_stdout() as output:
+            helper = pydoc.Helper(output=output)
+            with unittest.mock.patch.object(helper, "getline", mock_getline):
+                helper.interact()
+
+        # handle different line endings across platforms consistently
+        return output.getvalue().strip().splitlines(keepends=False)
+
     def test_keywords(self):
         self.assertEqual(sorted(pydoc.Helper.keywords),
-                         sorted(keyword.kwlist))
+                         sorted(keyword.kwlist + ['lazy']))
+
+    def test_interact_empty_line_continues(self):
+        # gh-138568: test pressing Enter without input should continue in help session
+        self.assertEqual(
+            self.mock_interactive_session(["", "    ", "quit"]),
+            ["help> ", "help>     ", "help> quit"],
+        )
+
+    def test_interact_quit_commands_exit(self):
+        quit_commands = ["quit", "q", "exit"]
+        for quit_cmd in quit_commands:
+            with self.subTest(quit_command=quit_cmd):
+                self.assertEqual(
+                    self.mock_interactive_session([quit_cmd]),
+                    [f"help> {quit_cmd}"],
+                )
 
 
 class PydocWithMetaClasses(unittest.TestCase):
@@ -2304,6 +2434,32 @@ class TestInternalUtilities(unittest.TestCase):
                 self.assertIsNone(self._get_revised_path(leading_argv0dir))
                 trailing_argv0dir = trailing_curdir + [self.argv0dir]
                 self.assertIsNone(self._get_revised_path(trailing_argv0dir))
+
+    def test__get_version(self):
+        import json
+        import warnings
+
+        class MyModule:
+            __name__ = 'my_module'
+
+            @property
+            def __version__(self):
+                warnings._deprecated("__version__", remove=(3, 20))
+                return "1.2.3"
+
+        module = MyModule()
+        doc = pydoc.Doc()
+        with warnings.catch_warnings(record=True) as w: # TODO: remove in 3.20
+            warnings.simplefilter("always")
+            version = doc._get_version(json)
+            self.assertEqual(version, "2.0.9")
+            self.assertEqual(len(w), 0)
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            version = doc._get_version(module)
+            self.assertEqual(version, "1.2.3")
+            self.assertEqual(len(w), 1)
 
 
 def setUpModule():

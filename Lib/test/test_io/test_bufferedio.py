@@ -10,7 +10,7 @@ import weakref
 from collections import deque, UserList
 from itertools import cycle, count
 from test import support
-from test.support import os_helper, threading_helper
+from test.support import check_sanitizer, os_helper, threading_helper
 from .utils import byteslike, CTestCase, PyTestCase
 
 
@@ -623,6 +623,25 @@ class CBufferedReaderTest(BufferedReaderTest, SizeofTest, CTestCase):
             bufio.readline()
         self.assertIsInstance(cm.exception.__cause__, TypeError)
 
+    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
+    @unittest.skipIf(check_sanitizer(thread=True),
+                     'ThreadSanitizer aborts on huge allocations (exit code 66).')
+    def test_read1_error_does_not_cause_reentrant_failure(self):
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        with self.open(os_helper.TESTFN, "wb") as f:
+            f.write(b"hello")
+
+        with self.open(os_helper.TESTFN, "rb", buffering=0) as raw:
+            bufio = self.tp(raw, buffer_size=8)
+            # To request a size that is far too huge to ever be satisfied,
+            # so that the internal buffer allocation reliably fails with MemoryError.
+            huge = sys.maxsize // 2 + 1
+            with self.assertRaises(MemoryError):
+                bufio.read1(huge)
+
+            # Used to crash before gh-143689:
+            self.assertEqual(bufio.read1(1), b"h")
+
 
 class PyBufferedReaderTest(BufferedReaderTest, PyTestCase):
     tp = pyio.BufferedReader
@@ -962,6 +981,27 @@ class CBufferedWriterTest(BufferedWriterTest, SizeofTest, CTestCase):
         with self.assertRaisesRegex(TypeError, "BufferedWriter"):
             self.tp(self.BytesIO(), 1024, 1024, 1024)
 
+    def test_non_boolean_closed_attr(self):
+        # gh-140650: check TypeError is raised
+        class MockRawIOWithoutClosed(self.MockRawIO):
+            closed = NotImplemented
+
+        bufio = self.tp(MockRawIOWithoutClosed())
+        self.assertRaises(TypeError, bufio.write, b"")
+        self.assertRaises(TypeError, bufio.flush)
+        self.assertRaises(TypeError, bufio.close)
+
+    def test_closed_attr_raises(self):
+        class MockRawIOClosedRaises(self.MockRawIO):
+            @property
+            def closed(self):
+                raise ValueError("test")
+
+        bufio = self.tp(MockRawIOClosedRaises())
+        self.assertRaisesRegex(ValueError, "test", bufio.write, b"")
+        self.assertRaisesRegex(ValueError, "test", bufio.flush)
+        self.assertRaisesRegex(ValueError, "test", bufio.close)
+
 
 class PyBufferedWriterTest(BufferedWriterTest, PyTestCase):
     tp = pyio.BufferedWriter
@@ -1256,7 +1296,8 @@ class BufferedRandomTest(BufferedReaderTest, BufferedWriterTest):
         def _readinto(bufio, n=-1):
             b = bytearray(n if n >= 0 else 9999)
             n = bufio.readinto(b)
-            return bytes(b[:n])
+            b.resize(n)
+            return b.take_bytes()
         self.check_flush_and_read(_readinto)
 
     def test_flush_and_peek(self):

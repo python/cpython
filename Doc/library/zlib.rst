@@ -8,9 +8,9 @@
 --------------
 
 For applications that require data compression, the functions in this module
-allow compression and decompression, using the zlib library. The zlib library
-has its own home page at https://www.zlib.net.  zlib 1.2.2.1 is the minium
-supported version.
+allow compression and decompression, using the `zlib library <https://www.zlib.net>`_.
+
+.. include:: ../includes/optional-module.rst
 
 zlib's functions have many options and often need to be used in a particular
 order.  This documentation doesn't attempt to cover all of the permutations;
@@ -308,6 +308,11 @@ Decompression objects support the following methods and attributes:
    :attr:`unconsumed_tail`. This bytestring must be passed to a subsequent call to
    :meth:`decompress` if decompression is to continue.  If *max_length* is zero
    then the whole input is decompressed, and :attr:`unconsumed_tail` is empty.
+   For example, the full content could be read like::
+
+     process_output(d.decompress(data, max_length))
+     while chunk := d.decompress(d.unconsumed_tail, max_length):
+         process_output(chunk)
 
    .. versionchanged:: 3.6
       *max_length* can be used as a keyword argument.
