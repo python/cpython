@@ -128,9 +128,6 @@ class SubprocessTransportTests(test_utils.TestCase):
         exit_waiter = self.loop.create_future()
         transport._exit_waiters.append(exit_waiter)
 
-        # _connect_pipes hasn't completed, so _pipes_connected is False.
-        self.assertFalse(transport._pipes_connected)
-
         # Simulate process exit. _try_finish() will set the result on
         # exit_waiter because _pipes_connected is False, and then schedule
         # _call_connection_lost() because _pipes is empty (vacuously all
@@ -140,6 +137,32 @@ class SubprocessTransportTests(test_utils.TestCase):
         self.loop.run_until_complete(waiter)
 
         self.assertEqual(exit_waiter.result(), 6)
+
+        transport.close()
+
+    def test_wait_returns_on_exit_with_open_pipe(self):
+        # gh-119710: wait() must resolve when the process exits even if a
+        # pipe is still open and never reaches EOF (e.g. inherited by a
+        # grandchild). Otherwise _call_connection_lost() never runs and
+        # _wait() would hang forever despite the returncode being known.
+        transport, protocol = self.create_transport()
+
+        # Pipes are fully connected, but fd 1 stays open (never disconnects).
+        pipe = mock.Mock()
+        pipe.disconnected = False
+        transport._pipes[1] = pipe
+
+        # A waiter registered via _wait() before the process exits.
+        exit_waiter = self.loop.create_future()
+        transport._exit_waiters.append(exit_waiter)
+
+        # _process_exited() must resolve exit_waiter even though the pipe
+        # never disconnects (so _call_connection_lost() never runs). Without
+        # the fix, exit_waiter stays pending forever and this hangs.
+        transport._process_exited(7)
+        self.loop.run_until_complete(exit_waiter)
+
+        self.assertEqual(exit_waiter.result(), 7)
 
         transport.close()
 
@@ -435,6 +458,47 @@ class SubprocessMixin:
         output, exitcode = self.loop.run_until_complete(len_message(b'abc'))
         self.assertEqual(output.rstrip(), b'3')
         self.assertEqual(exitcode, 0)
+
+    def test_wait_even_if_pipe_is_open(self):
+        # gh-119710: Process.wait() must return once the process exits even
+        # if its stdout pipe is inherited by a grandchild that keeps it open,
+        # so the pipe never reaches EOF. Otherwise wait() hangs forever
+        # despite the returncode being known.
+
+        async def run():
+            # Just setup a pipe to pass to the grandchild for reading to ensure it dies.
+            # Inheritable is to allow it to be passed on windows
+            r, w = os.pipe()
+            os.set_inheritable(r, True)
+
+            code = textwrap.dedent(f"""\
+                import subprocess, sys
+                subprocess.run([sys.executable, "-c", "import sys;sys.stdin.read()"])
+                """)
+
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable, "-c", code,
+                # This will be inherited by granchild and should not prevent
+                # *this* process from firing .wait().
+                stdout=subprocess.PIPE,
+                stdin=r,
+                pass_fds=(r,) if sys.platform != "win32" else (),
+                close_fds=False if sys.platform == "win32" else True,
+            )
+            os.close(r)
+
+            try:
+                # Ensure we start waiting before the process is killed.
+                wait_proc = asyncio.create_task(proc.wait())
+                await asyncio.sleep(0.1)
+                proc.kill()
+                await asyncio.wait_for(wait_proc, timeout=2.0)
+            finally:
+                os.close(w) # Allows the grandchild to exit
+                if proc.stdout is not None:
+                    await proc.stdout.read()
+
+        self.loop.run_until_complete(run())
 
     def test_empty_input(self):
 
