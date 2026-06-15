@@ -81,8 +81,6 @@ static struct _inittab *inittab_copy = NULL;
 #define LAST_MODULE_INDEX _PyRuntime.imports.last_module_index
 #define EXTENSIONS _PyRuntime.imports.extensions
 
-#define PKGCONTEXT (_PyRuntime.imports.pkgcontext)
-
 
 /*******************************/
 /* interpreter import state */
