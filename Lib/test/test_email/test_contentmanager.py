@@ -375,6 +375,12 @@ class TestRawDataManager(TestEmailBase):
 
             \x1b$BF|K\\8l\x1b(B
             """))
+        self.assertEqual(bytes(m), textwrap.dedent("""\
+            Content-Type: text/plain; charset="iso-2022-jp"
+            Content-Transfer-Encoding: 7bit
+
+            \x1b$BF|K\\8l\x1b(B
+            """).encode('iso-2022-jp'))
 
     def test_set_text_charset_euc_jp(self):
         m = self._make_message()
@@ -389,6 +395,12 @@ class TestRawDataManager(TestEmailBase):
 
             \x1b$BF|K\\8l\x1b(B
             """))
+        self.assertEqual(bytes(m), textwrap.dedent("""\
+            Content-Type: text/plain; charset="iso-2022-jp"
+            Content-Transfer-Encoding: 7bit
+
+            \x1b$BF|K\\8l\x1b(B
+            """).encode('iso-2022-jp'))
 
     def test_set_text_plain_long_line_heuristics(self):
         m = self._make_message()
