@@ -81,8 +81,6 @@ static struct _inittab *inittab_copy = NULL;
 #define LAST_MODULE_INDEX _PyRuntime.imports.last_module_index
 #define EXTENSIONS _PyRuntime.imports.extensions
 
-#define PKGCONTEXT (_PyRuntime.imports.pkgcontext)
-
 
 /*******************************/
 /* interpreter import state */
@@ -883,7 +881,6 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
 */
 
 static _Py_thread_local const char *pkgcontext = NULL;
-# undef PKGCONTEXT
 # define PKGCONTEXT pkgcontext
 
 const char *
