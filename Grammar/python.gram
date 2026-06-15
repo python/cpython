@@ -801,18 +801,15 @@ compare_op_bitwise_or_pair[CmpopExprPair*]:
     | in_bitwise_or
     | isnot_bitwise_or
     | is_bitwise_or
-    | invalid_diamond_op
     | invalid_eqeqeq
 
-invalid_diamond_op:
-    | a='<' b='>' {
-        (p->flags & PyPARSE_BARRY_AS_BDFL)
-        ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax.  Maybe you meant '<>' instead of '< >'?")
-        : RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax.  Maybe you meant '!=' instead of '<>'?")
-    }
 eq_bitwise_or[CmpopExprPair*]: '==' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, Eq, a) }
 invalid_eqeqeq:
-    | a='==' b='=' { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax.  Maybe you meant 'is' instead of '==='?") }
+    | a='==' b='=' {
+        _PyPegen_tokens_are_adjacent(a, b)
+        ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax.  Maybe you meant 'is' instead of '==='?")
+        : NULL
+    }
 noteq_bitwise_or[CmpopExprPair*]:
     | (tok='!=' { _PyPegen_check_barry_as_flufl(p, tok) ? NULL : tok}) a=bitwise_or {_PyPegen_cmpop_expr_pair(p, NotEq, a) }
 lte_bitwise_or[CmpopExprPair*]: '<=' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, LtE, a) }
@@ -1325,9 +1322,21 @@ invalid_assignment:
             "'%s' is an illegal expression for augmented assignment",
             _PyPegen_get_expr_name(a)
         )}
-    | star_expressions a='=' b='<' { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax.  Maybe you meant '<=' instead of '=<'?") }
-    | star_expressions a='=' b='>' { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax.  Maybe you meant '>=' instead of '=>'?") }
-    | star_expressions a='=' b='!' { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax.  Maybe you meant '!=' instead of '=!'?") }
+    | star_expressions a='=' b='<' {
+        _PyPegen_tokens_are_adjacent(a, b)
+        ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax.  Maybe you meant '<=' instead of '=<'?")
+        : NULL
+    }
+    | star_expressions a='=' b='>' {
+        _PyPegen_tokens_are_adjacent(a, b)
+        ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax.  Maybe you meant '>=' instead of '=>'?")
+        : NULL
+    }
+    | star_expressions a='=' b='!' {
+        _PyPegen_tokens_are_adjacent(a, b)
+        ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax.  Maybe you meant '!=' instead of '=!'?")
+        : NULL
+    }
 invalid_ann_assign_target[expr_ty]:
     | list
     | tuple
