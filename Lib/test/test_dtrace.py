@@ -1,6 +1,7 @@
 import dis
 import os.path
 import re
+import signal
 import subprocess
 import sys
 import sysconfig
@@ -48,6 +49,26 @@ def normalize_trace_output(output):
         raise AssertionError(
             "tracer produced unparsable output:\n{}".format(output)
         )
+
+
+USE_PROCESS_GROUP = (hasattr(os, "setsid") and hasattr(os, "killpg"))
+
+def create_process_group(*args, **kwargs):
+    if USE_PROCESS_GROUP:
+        kwargs['start_new_session'] = True
+    return subprocess.Popen(*args, **kwargs)
+
+def kill_process_group(proc):
+    use_killpg = USE_PROCESS_GROUP
+    if use_killpg:
+        parent_sid = os.getsid(0)
+        sid = os.getsid(proc.pid)
+        use_killpg = (sid != parent_sid)
+
+    if use_killpg:
+        os.killpg(proc.pid, signal.SIGKILL)
+    else:
+        proc.kill()
 
 
 class TraceBackend:
@@ -205,7 +226,7 @@ gc__done:1""",
         program = self.PROGRAMS[name].format(python=sys.executable)
 
         try:
-            proc = subprocess.Popen(
+            proc = create_process_group(
                 ["bpftrace", "-e", program, "-c", " ".join(subcommand)],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -213,7 +234,7 @@ gc__done:1""",
             )
             stdout, stderr = proc.communicate(timeout=60)
         except subprocess.TimeoutExpired:
-            proc.kill()
+            kill_process_group(proc)
             raise AssertionError("bpftrace timed out")
         except (FileNotFoundError, PermissionError) as e:
             raise unittest.SkipTest(f"bpftrace not available: {e}")
@@ -243,7 +264,7 @@ gc__done:1""",
         # Check if bpftrace is available and can attach to USDT probes
         program = f'usdt:{sys.executable}:python:function__entry {{ printf("probe: success\\n"); exit(); }}'
         try:
-            proc = subprocess.Popen(
+            proc = create_process_group(
                 ["bpftrace", "-e", program, "-c", f"{sys.executable} -c pass"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -251,7 +272,7 @@ gc__done:1""",
             )
             stdout, stderr = proc.communicate(timeout=10)
         except subprocess.TimeoutExpired:
-            proc.kill()
+            kill_process_group(proc)
             proc.communicate()  # Clean up
             raise unittest.SkipTest("bpftrace timed out during usability check")
         except OSError as e:
