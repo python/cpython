@@ -881,7 +881,6 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
 */
 
 static _Py_thread_local const char *pkgcontext = NULL;
-# undef PKGCONTEXT
 # define PKGCONTEXT pkgcontext
 
 const char *
