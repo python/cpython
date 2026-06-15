@@ -1076,9 +1076,7 @@ _match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
 
         /* Fast path for integers with at most 19 digits (excluding the
            optional minus sign): the magnitude always fits in an unsigned
-           long long, so construct the result from it directly and skip the
-           PyBytes allocation and the generic PyLong_FromString parser.
-           Integers with more digits fall back below. */
+           long long, so we construct the result from it directly. */
         int neg = (PyUnicode_READ(kind, str, start) == '-');
         if (!is_float && idx - start - neg <= 19) {
             unsigned long long value = 0;
