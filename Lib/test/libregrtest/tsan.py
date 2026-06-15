@@ -20,6 +20,7 @@ TSAN_TESTS = [
     'test_socket',
     'test_sqlite3',
     'test_ssl',
+    'test_sys',
     'test_syslog',
     'test_thread',
     'test_thread_local_bytecode',

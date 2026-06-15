@@ -1349,6 +1349,40 @@ class SysModuleTest(unittest.TestCase):
     def test_disable_gil_abi(self):
         self.assertEqual('t' in sys.abiflags, support.Py_GIL_DISABLED)
 
+    def test_int_max_str_digits(self):
+        old_limit = sys.get_int_max_str_digits()
+        self.assertIsInstance(old_limit, int)
+        self.assertGreaterEqual(old_limit, 0)
+        self.addCleanup(sys.set_int_max_str_digits, old_limit)
+
+        sys.set_int_max_str_digits(0)
+        self.assertEqual(sys.get_int_max_str_digits(), 0)
+
+        sys.set_int_max_str_digits(2_048)
+        self.assertEqual(sys.get_int_max_str_digits(), 2_048)
+
+        with self.assertRaises(ValueError):
+            # the minimum is 640 digits
+            sys.set_int_max_str_digits(5)
+        with self.assertRaises(ValueError):
+            sys.set_int_max_str_digits(-2)
+        with self.assertRaises(TypeError):
+            sys.set_int_max_str_digits(2_048.0)
+
+    def test_int_max_str_digits_thread(self):
+        # gh-151218: Check that it's safe to call set_int_max_str_digits()
+        # in parallel. Previously, this test triggered warnings in TSan
+        # on a free threaded build.
+
+        old_limit = sys.get_int_max_str_digits()
+        self.addCleanup(sys.set_int_max_str_digits, old_limit)
+
+        def worker():
+            for i in range (20_000):
+                sys.set_int_max_str_digits(4300 + (i & 7))
+
+        threading_helper.run_concurrently(worker, nthreads=4)
+
 
 @test.support.cpython_only
 @test.support.force_not_colorized_test_class
