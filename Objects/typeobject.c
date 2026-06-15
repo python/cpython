@@ -99,9 +99,13 @@ types_world_is_stopped(void)
 // PyType_FromMetaclass() to indicate that a newly initialized type might be
 // revealed.  We only have ob_flags on 64-bit platforms.
 #if SIZEOF_VOID_P > 4
-#define TYPE_IS_REVEALED(tp) ((((PyObject *)(tp))->ob_flags & _Py_TYPE_REVEALED_FLAG) != 0)
+#define TYPE_IS_REVEALED(tp) \
+    ((FT_ATOMIC_LOAD_UINT16_RELAXED(((PyObject *)(tp))->ob_flags) & _Py_TYPE_REVEALED_FLAG) != 0)
+#define TYPE_SET_REVEALED(tp) \
+    ((void)_Py_atomic_or_uint16(&((PyObject *)(tp))->ob_flags, _Py_TYPE_REVEALED_FLAG))
 #else
 #define TYPE_IS_REVEALED(tp) 0
+#define TYPE_SET_REVEALED(tp) ((void)0)
 #endif
 
 #ifdef Py_DEBUG
@@ -187,6 +191,7 @@ type_lock_allow_release(void)
 #define END_TYPE_DICT_LOCK()
 #define ASSERT_TYPE_LOCK_HELD()
 #define TYPE_IS_REVEALED(tp) 0
+#define TYPE_SET_REVEALED(tp) ((void)0)
 #define ASSERT_WORLD_STOPPED_OR_NEW_TYPE(tp)
 #define ASSERT_NEW_TYPE_OR_LOCKED(tp)
 #define types_world_is_stopped() 1
@@ -4979,8 +4984,8 @@ type_new_impl(type_new_ctx *ctx)
 
     assert(_PyType_CheckConsistency(type));
 #if defined(Py_GIL_DISABLED) && defined(Py_DEBUG) && SIZEOF_VOID_P > 4
-    // After this point, other threads can potentally use this type.
-    ((PyObject*)type)->ob_flags |= _Py_TYPE_REVEALED_FLAG;
+    // After this point, other threads can potentially use this type.
+    TYPE_SET_REVEALED(type);
 #endif
 
     return (PyObject *)type;
@@ -5776,7 +5781,7 @@ type_from_slots_or_spec(
     assert(_PyType_CheckConsistency(type));
 #if defined(Py_GIL_DISABLED) && defined(Py_DEBUG) && SIZEOF_VOID_P > 4
     // After this point, other threads can potentally use this type.
-    ((PyObject*)type)->ob_flags |= _Py_TYPE_REVEALED_FLAG;
+    TYPE_SET_REVEALED(type);
 #endif
 
  finally:
