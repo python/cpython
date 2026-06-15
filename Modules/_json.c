@@ -1116,8 +1116,9 @@ _match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
             double d = PyOS_string_to_double(buf, NULL, NULL);
             rval = (d == -1.0 && PyErr_Occurred()) ? NULL : PyFloat_FromDouble(d);
         }
-        else
+        else {
             rval = PyLong_FromString(buf, NULL, 10);
+        }
         Py_XDECREF(numstr);
     }
     *next_idx_ptr = idx;
