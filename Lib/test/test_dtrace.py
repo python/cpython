@@ -59,13 +59,7 @@ def create_process_group(*args, **kwargs):
     return subprocess.Popen(*args, **kwargs)
 
 def kill_process_group(proc):
-    use_killpg = USE_PROCESS_GROUP
-    if use_killpg:
-        parent_sid = os.getsid(0)
-        sid = os.getsid(proc.pid)
-        use_killpg = (sid != parent_sid)
-
-    if use_killpg:
+    if USE_PROCESS_GROUP:
         os.killpg(proc.pid, signal.SIGKILL)
     else:
         proc.kill()
