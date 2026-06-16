@@ -4060,7 +4060,7 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
     /* implementation */
     SET_SYS("implementation", make_impl_info(version_info));
 
-    // sys.flags: updated in-place later by _PySys_UpdateConfig()
+    // sys.flags: updated later by _PySys_UpdateConfig()
     ENSURE_INFO_TYPE(FlagsType, flags_desc);
     SET_SYS("flags", make_flags(tstate->interp));
 
@@ -4190,14 +4190,8 @@ _PySys_UpdateConfig(PyThreadState *tstate)
         return -1;
     }
 
-    PyObject *flags_str = PyUnicode_FromString("flags");
-    if (flags_str == NULL) {
-        Py_DECREF(new_flags);
-        return -1;
-    }
-    res = _PySys_SetAttr(flags_str, new_flags);
+    res = _PySys_SetAttr(&_Py_ID(flags), new_flags);
     Py_DECREF(new_flags);
-    Py_DECREF(flags_str);
     if (res < 0) {
         return -1;
     }
