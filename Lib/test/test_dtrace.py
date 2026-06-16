@@ -60,9 +60,13 @@ def create_process_group(*args, **kwargs):
 
 def kill_process_group(proc):
     if USE_PROCESS_GROUP:
-        os.killpg(proc.pid, signal.SIGKILL)
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
     else:
         proc.kill()
+    proc.communicate()  # Clean up
 
 
 class TraceBackend:
@@ -267,7 +271,6 @@ gc__done:1""",
             stdout, stderr = proc.communicate(timeout=10)
         except subprocess.TimeoutExpired:
             kill_process_group(proc)
-            proc.communicate()  # Clean up
             raise unittest.SkipTest("bpftrace timed out during usability check")
         except OSError as e:
             raise unittest.SkipTest(f"bpftrace not available: {e}")
