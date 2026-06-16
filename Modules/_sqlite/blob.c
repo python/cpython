@@ -531,21 +531,25 @@ ass_subscript_slice(pysqlite_Blob *self, PyObject *item, PyObject *value)
         return -1;
     }
 
-    if (len == 0) {
-        return 0;
-    }
-
     Py_buffer vbuf;
     if (PyObject_GetBuffer(value, &vbuf, PyBUF_SIMPLE) < 0) {
         return -1;
     }
 
-    int rc = -1;
     if (vbuf.len != len) {
         PyErr_SetString(PyExc_IndexError,
                         "Blob slice assignment is wrong size");
+        PyBuffer_Release(&vbuf);
+        return -1;
     }
-    else if (step == 1) {
+
+    if (len == 0) {
+        PyBuffer_Release(&vbuf);
+        return 0;
+    }
+
+    int rc = -1;
+    if (step == 1) {
         rc = inner_write(self, vbuf.buf, len, start);
     }
     else {

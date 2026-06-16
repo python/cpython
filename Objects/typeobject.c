@@ -1526,7 +1526,12 @@ type_set_qualname(PyObject *tp, PyObject *value, void *context)
     }
 
     et = (PyHeapTypeObject*)type;
-    Py_SETREF(et->ht_qualname, Py_NewRef(value));
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    PyObject *old_qualname = et->ht_qualname;
+    et->ht_qualname = Py_NewRef(value);
+    _PyEval_StartTheWorld(interp);
+    Py_DECREF(old_qualname);
     return 0;
 }
 
@@ -3720,7 +3725,7 @@ solid_base(PyTypeObject *type)
 // or when __bases__ is re-assigned.  Since the slots are read without atomic
 // operations and without locking, we can only safely update them while the
 // world is stopped.  However, with the world stopped, we are very limited on
-// which APIs can be safely used.  For example, calling _PyObject_HashFast()
+// which APIs can be safely used.  For example, calling _PyObject_HashDictKey()
 // or _PyDict_GetItemRef_KnownHash() are not safe and can potentially cause
 // deadlocks.  Hashing can be re-entrant and _PyDict_GetItemRef_KnownHash can
 // acquire a lock if the dictionary is not owned by the current thread, to
@@ -6061,7 +6066,7 @@ PyObject_GetItemData(PyObject *obj)
 static int
 find_name_in_mro(PyTypeObject *type, PyObject *name, _PyStackRef *out)
 {
-    Py_hash_t hash = _PyObject_HashFast(name);
+    Py_hash_t hash = _PyObject_HashDictKey(name);
     if (hash == -1) {
         PyErr_Clear();
         return -1;
@@ -6868,7 +6873,7 @@ type_dealloc(PyObject *self)
     Py_XDECREF(et->ht_qualname);
     Py_XDECREF(et->ht_slots);
     if (et->ht_cached_keys) {
-        _PyDictKeys_DecRef(et->ht_cached_keys);
+        _PyDict_RemoveKeysForClass(et);
     }
     Py_XDECREF(et->ht_module);
     PyMem_Free(et->_ht_tpname);
@@ -11179,6 +11184,7 @@ slot_bf_getbuffer(PyObject *self, Py_buffer *buffer, int flags)
 
     wrapper = PyObject_GC_New(PyBufferWrapper, &_PyBufferWrapper_Type);
     if (wrapper == NULL) {
+        PyBuffer_Release(buffer);
         goto fail;
     }
     wrapper->mv = ret;

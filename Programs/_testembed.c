@@ -2715,8 +2715,8 @@ do_tstate_ensure(void *arg)
     PyThreadState_Release(tokens[2]);
     PyThreadState_Release(tokens[1]);
     PyThreadState_Release(tokens[0]);
-    PyInterpreterGuard_Close(guard);
     _Py_atomic_store_int(&data->done, 1);
+    PyInterpreterGuard_Close(guard);
 }
 
 static int

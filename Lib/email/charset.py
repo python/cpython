@@ -9,6 +9,7 @@ __all__ = [
     'add_codec',
     ]
 
+import codecs
 from functools import partial
 
 import email.base64mime
@@ -58,37 +59,71 @@ CHARSETS = {
     'shift_jis':   (BASE64,    None,    'iso-2022-jp'),
     'iso-2022-jp': (BASE64,    None,    None),
     'koi8-r':      (BASE64,    BASE64,  None),
-    'utf-8':       (SHORTEST,  BASE64, 'utf-8'),
     }
 
-# Aliases for other commonly-used names for character sets.  Map
-# them to the real ones used in email.
+# Map Python codec names to their corresponding MIME/IANA names.
 ALIASES = {
-    'latin_1': 'iso-8859-1',
-    'latin-1': 'iso-8859-1',
-    'latin_2': 'iso-8859-2',
-    'latin-2': 'iso-8859-2',
-    'latin_3': 'iso-8859-3',
-    'latin-3': 'iso-8859-3',
-    'latin_4': 'iso-8859-4',
-    'latin-4': 'iso-8859-4',
-    'latin_5': 'iso-8859-9',
-    'latin-5': 'iso-8859-9',
-    'latin_6': 'iso-8859-10',
-    'latin-6': 'iso-8859-10',
-    'latin_7': 'iso-8859-13',
-    'latin-7': 'iso-8859-13',
-    'latin_8': 'iso-8859-14',
-    'latin-8': 'iso-8859-14',
-    'latin_9': 'iso-8859-15',
-    'latin-9': 'iso-8859-15',
-    'latin_10':'iso-8859-16',
-    'latin-10':'iso-8859-16',
-    'cp949':   'ks_c_5601-1987',
-    'euc_jp':  'euc-jp',
-    'euc_kr':  'euc-kr',
-    'ascii':   'us-ascii',
-    }
+    'ascii': 'us-ascii',
+    'big5hkscs': 'big5-hkscs',
+    'cp037': 'ibm037',
+    'cp1026': 'ibm1026',
+    'cp1140': 'ibm01140',
+    'cp1250': 'windows-1250',
+    'cp1251': 'windows-1251',
+    'cp1252': 'windows-1252',
+    'cp1253': 'windows-1253',
+    'cp1254': 'windows-1254',
+    'cp1255': 'windows-1255',
+    'cp1256': 'windows-1256',
+    'cp1257': 'windows-1257',
+    'cp1258': 'windows-1258',
+    'cp273': 'ibm273',
+    'cp424': 'ibm424',
+    'cp437': 'ibm437',
+    'cp500': 'ibm500',
+    'cp775': 'ibm775',
+    'cp850': 'ibm850',
+    'cp852': 'ibm852',
+    'cp855': 'ibm855',
+    'cp857': 'ibm857',
+    'cp858': 'ibm00858',
+    'cp860': 'ibm860',
+    'cp861': 'ibm861',
+    'cp862': 'ibm862',
+    'cp863': 'ibm863',
+    'cp864': 'ibm864',
+    'cp865': 'ibm865',
+    'cp866': 'ibm866',
+    'cp869': 'ibm869',
+    'cp874': 'windows-874',
+    'euc_jp': 'euc-jp',
+    'euc_kr': 'euc-kr',
+    'hz': 'hz-gb-2312',
+    'iso2022_jp': 'iso-2022-jp',
+    'iso2022_jp_2': 'iso-2022-jp-2',
+    'iso2022_kr': 'iso-2022-kr',
+    'iso8859-1': 'iso-8859-1',
+    'iso8859-10': 'iso-8859-10',
+    'iso8859-11': 'iso-8859-11',
+    'iso8859-13': 'iso-8859-13',
+    'iso8859-14': 'iso-8859-14',
+    'iso8859-15': 'iso-8859-15',
+    'iso8859-16': 'iso-8859-16',
+    'iso8859-2': 'iso-8859-2',
+    'iso8859-3': 'iso-8859-3',
+    'iso8859-4': 'iso-8859-4',
+    'iso8859-5': 'iso-8859-5',
+    'iso8859-6': 'iso-8859-6',
+    'iso8859-7': 'iso-8859-7',
+    'iso8859-8': 'iso-8859-8-i',
+    'iso8859-9': 'iso-8859-9',
+    'kz1048': 'kz-1048',
+    'mac-roman': 'macintosh',
+
+    # CP949 is not registered in IANA. KS_C_5601-1987 is not the same,
+    # but the closest registered option.
+    'cp949': 'ks_c_5601-1987',
+}
 
 
 # Map charsets to their Unicode codec strings.
@@ -215,7 +250,18 @@ class Charset:
             raise errors.CharsetError(input_charset)
         input_charset = input_charset.lower()
         # Set the input charset after filtering through the aliases
-        self.input_charset = ALIASES.get(input_charset, input_charset)
+        # For backward compatibility, try ALIASES first to let the user
+        # override it.
+        if input_charset in ALIASES:
+            input_charset = ALIASES[input_charset]
+        else:
+            try:
+                input_codec = codecs.lookup(input_charset).name
+            except LookupError:
+                pass
+            else:
+                input_charset = ALIASES.get(input_codec, input_codec)
+        self.input_charset = input_charset
         # We can try to guess which encoding and conversion to use by the
         # charset_map dictionary.  Try that first, but let the user override
         # it.
