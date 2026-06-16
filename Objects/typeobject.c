@@ -6134,11 +6134,6 @@ is_dunder_name(PyObject *name)
     return 0;
 }
 
-void
-_PyTypes_AfterFork(void)
-{
-}
-
 /* Internal API to look for a name through the MRO.
    This returns a strong reference, and doesn't set an exception!
    If nonzero, version is set to the value of type->tp_version at the time of

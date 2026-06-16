@@ -420,8 +420,6 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
     }
 #endif
 
-    _PyTypes_AfterFork();
-
     _PyThread_AfterFork(&runtime->threads);
 
     return _PyStatus_OK();
