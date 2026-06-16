@@ -1,2 +1,0 @@
-Avoid comparing the result of a ``sys.monitoring`` callback after
-decrementing its reference count.
