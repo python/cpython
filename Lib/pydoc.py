@@ -1240,6 +1240,17 @@ class TextDoc(Doc):
         lines = [(prefix + line).rstrip() for line in text.split('\n')]
         return '\n'.join(lines)
 
+    def _format_doc(self, text, width=68):
+        """Wraps the single-line summary if it is too long."""
+        if not text: return ''
+        lines = text.split('\n', 2)
+        if len(lines) > 1 and lines[1]:
+            return text
+        lines[:1] = textwrap.wrap(lines[0], width,
+                                  break_long_words=False,
+                                  break_on_hyphens=False)
+        return '\n'.join(lines)
+
     def section(self, title, contents):
         """Format a section with a given heading."""
         clean_contents = self.indent(contents).rstrip()
@@ -1344,7 +1355,7 @@ location listed above.
         if data:
             contents = []
             for key, value in data:
-                contents.append(self.docother(value, key, name, maxlen=70))
+                contents.append(self.docother(value, key, name, maxlen=76))
             result = result + self.section('DATA', '\n'.join(contents))
 
         if version := self._get_version(object):
@@ -1390,6 +1401,7 @@ location listed above.
 
         doc = getdoc(object)
         if doc:
+            doc = self._format_doc(doc)
             push(doc + '\n')
 
         # List the mro, if non-trivial.
@@ -1466,7 +1478,7 @@ location listed above.
                         obj = getattr(object, name)
                     except AttributeError:
                         obj = homecls.__dict__[name]
-                    push(self.docother(obj, name, mod, maxlen=70, doc=doc) +
+                    push(self.docother(obj, name, mod, maxlen=72, doc=doc) +
                          '\n')
             return attrs
 
@@ -1590,6 +1602,7 @@ location listed above.
             return decl + '\n'
         else:
             doc = getdoc(object) or ''
+            doc = self._format_doc(doc)
             return decl + '\n' + (doc and self.indent(doc).rstrip() + '\n')
 
     def docdata(self, object, name=None, mod=None, cl=None, *ignored):
@@ -1602,6 +1615,7 @@ location listed above.
             push('\n')
         doc = getdoc(object) or ''
         if doc:
+            doc = self._format_doc(doc)
             push(self.indent(doc))
             push('\n')
         return ''.join(results)
@@ -1615,12 +1629,13 @@ location listed above.
         if maxlen:
             line = (name and name + ' = ' or '') + repr
             chop = maxlen - len(line)
-            if chop < 0: repr = repr[:chop] + '...'
+            if chop < 0: repr = repr[:chop-3] + '...'
         line = (name and self.bold(name) + ' = ' or '') + repr
         if not doc:
             doc = getdoc(object)
         if doc:
-            line += '\n' + self.indent(str(doc)) + '\n'
+            doc = self._format_doc(str(doc))
+            line += '\n' + self.indent(doc) + '\n'
         return line
 
 class _PlainTextDoc(TextDoc):
