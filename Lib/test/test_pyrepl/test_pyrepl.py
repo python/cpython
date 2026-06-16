@@ -850,6 +850,79 @@ class TestPyReplOutput(ScreenEqualMixin, TestCase):
         self.assertEqual(output, "1+1")
         self.assert_screen_equal(reader, "1+1", clean=True)
 
+    def test_history_navigation_with_ctrl_up(self):
+        # Submit two multiline blocks, then use ctrl+up to jump directly
+        # to the previous history entry (unlike up which moves line-by-line)
+        code = "def foo():\nx = 1\n\ndef bar():\ny = 2\n\n"
+        events = itertools.chain(
+            code_to_events(code),
+            [
+                # Single ctrl+up should recall the entire previous entry
+                Event(evt="key", data="ctrl up", raw=bytearray(b"\x1b[1;5A")),
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+            ],
+        )
+
+        reader = self.prepare_reader(events)
+
+        output = multiline_input(reader)
+        self.assertEqual(output, "def foo():\n    x = 1\n    ")
+        output = multiline_input(reader)
+        self.assertEqual(output, "def bar():\n    y = 2\n    ")
+        # One ctrl+up jumps straight to previous history item
+        output = multiline_input(reader)
+        self.assertEqual(output, "def foo():\n    x = 1\n    ")
+
+    def test_history_navigation_with_ctrl_down(self):
+        # Submit two multiline entries, ctrl+up twice then ctrl+down once
+        # With multiline entries, regular down would only move one line,
+        # but ctrl+down jumps to the next history entry entirely.
+        code = "def foo():\nx = 1\n\ndef bar():\ny = 2\n\n"
+        events = itertools.chain(
+            code_to_events(code),
+            [
+                Event(evt="key", data="ctrl up", raw=bytearray(b"\x1b[1;5A")),
+                Event(evt="key", data="ctrl up", raw=bytearray(b"\x1b[1;5A")),
+                Event(evt="key", data="ctrl down", raw=bytearray(b"\x1b[1;5B")),
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+            ],
+        )
+
+        reader = self.prepare_reader(events)
+
+        output = multiline_input(reader)
+        self.assertEqual(output, "def foo():\n    x = 1\n    ")
+        output = multiline_input(reader)
+        self.assertEqual(output, "def bar():\n    y = 2\n    ")
+        # ctrl+up twice (to foo), ctrl+down once (back to bar)
+        output = multiline_input(reader)
+        self.assertEqual(output, "def bar():\n    y = 2\n    ")
+
+    def test_ctrl_up_at_start_of_history(self):
+        # Submit a multiline block, then try ctrl+up twice
+        # (second one should error since we're already at the oldest entry)
+        code = "def foo():\nx = 1\n\n"
+        events = itertools.chain(
+            code_to_events(code),
+            [
+                # Already at oldest item; second ctrl+up should error but not crash
+                Event(evt="key", data="ctrl up", raw=bytearray(b"\x1b[1;5A")),
+                Event(evt="key", data="ctrl up", raw=bytearray(b"\x1b[1;5A")),
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+            ],
+        )
+
+        reader = self.prepare_reader(events)
+
+        output = multiline_input(reader)
+        self.assertEqual(output, "def foo():\n    x = 1\n    ")
+        # Second ctrl+up at start of history stays on first item
+        output = multiline_input(reader)
+        self.assertEqual(output, "def foo():\n    x = 1\n    ")
+
     def test_history_search(self):
         events = itertools.chain(
             code_to_events("1+1\n2+2\n3+3\n"),

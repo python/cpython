@@ -48,6 +48,12 @@ class TestParseKeys(unittest.TestCase):
         self.assertEqual(parse_keys("\\C-a\\n\\<up>"), ["\x01", "\n", "up"])
         self.assertEqual(parse_keys("\\M-a\\t\\<down>"), ["\033", "a", "\t", "down"])
 
+    def test_control_arrow_keys(self):
+        self.assertEqual(parse_keys("\\C-\\<left>"), ["ctrl left"])
+        self.assertEqual(parse_keys("\\C-\\<right>"), ["ctrl right"])
+        self.assertEqual(parse_keys("\\C-\\<up>"), ["ctrl up"])
+        self.assertEqual(parse_keys("\\C-\\<down>"), ["ctrl down"])
+
     def test_keyspec_errors(self):
         cases = [
             ("\\Ca", "\\C must be followed by `-'"),
