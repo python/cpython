@@ -71,6 +71,13 @@ The :mod:`!csv` module defines the following functions:
    automatic data type conversion is performed unless the :data:`QUOTE_NONNUMERIC` format
    option is specified (in which case unquoted fields are transformed into floats).
 
+   Assume that :file:`eggs.csv` contains:
+
+   .. code-block:: text
+
+      Spam Spam Spam Spam Spam |Baked Beans|
+      Spam |Lovely Spam| |Wonderful Spam|
+
    A short usage example::
 
       >>> import csv
@@ -100,6 +107,13 @@ The :mod:`!csv` module defines the following functions:
    reversible transformation, it makes it easier to dump SQL NULL data values to
    CSV files without preprocessing the data returned from a ``cursor.fetch*`` call.
    All other non-string data are stringified with :func:`str` before being written.
+
+   The example below writes :file:`eggs.csv` with this content:
+
+   .. code-block:: text
+
+      Spam Spam Spam Spam Spam |Baked Beans|
+      Spam |Lovely Spam| |Wonderful Spam|
 
    A short usage example::
 
@@ -177,6 +191,14 @@ The :mod:`!csv` module defines the following classes:
    .. versionchanged:: 3.8
       Returned rows are now of type :class:`dict`.
 
+   Assume that :file:`names.csv` contains:
+
+   .. code-block:: text
+
+      first_name,last_name
+      Eric,Idle
+      John,Cleese
+
    A short usage example::
 
        >>> import csv
@@ -214,6 +236,15 @@ The :mod:`!csv` module defines the following classes:
    of the :class:`DictWriter` class is not optional.
 
    If the argument passed to *fieldnames* is an iterator, it will be coerced to a :class:`list`.
+
+   The example below writes :file:`names.csv` with this content:
+
+   .. code-block:: text
+
+      first_name,last_name
+      Baked,Beans
+      Lovely,Spam
+      Wonderful,Spam
 
    A short usage example::
 
