@@ -53,6 +53,10 @@ Copyright (C) 1994 Steen Lumholt.
 #  include <tk.h>
 #endif
 
+#if defined(MS_WINDOWS) && TK_MAJOR_VERSION >= 9
+#  include <tkPlatDecls.h>
+#endif
+
 #include "tkinter.h"
 
 #if TK_HEX_VERSION < 0x0805020c
@@ -174,6 +178,39 @@ _get_tcl_lib_path(void)
     return tcl_library_path;
 }
 #endif /* MS_WINDOWS */
+
+#if defined(MS_WINDOWS) && TK_MAJOR_VERSION >= 9
+static void
+mount_tk_dll_zip(void)
+{
+    HINSTANCE tk_module = Tk_GetHINSTANCE();
+    wchar_t tk_path[MAX_PATH];
+    DWORD path_len = GetModuleFileNameW(tk_module, tk_path, MAX_PATH);
+
+    if (path_len == 0 || path_len >= MAX_PATH) {
+        return;
+    }
+
+    Tcl_DString utf8_path;
+
+    Tcl_DStringInit(&utf8_path);
+    Tcl_WCharToUtfDString(tk_path, path_len, &utf8_path);
+    (void) TclZipfs_Mount(NULL, Tcl_DStringValue(&utf8_path),
+                          "//zipfs:/lib/tk", NULL);
+    Tcl_DStringFree(&utf8_path);
+}
+#endif
+
+int
+Tkinter_TkInit(Tcl_Interp *interp)
+{
+#if defined(MS_WINDOWS) && TK_MAJOR_VERSION >= 9
+    /* Tcl/Tk 9 may embed the tk_library in the Tk DLL which tcl_findLibrary
+       does not search. Mount the DLL using Zipfs if possible.  */
+    mount_tk_dll_zip();
+#endif
+    return Tk_Init(interp);
+}
 
 /* The threading situation is complicated.  Tcl is not thread-safe, except
    when configured with --enable-threads.
@@ -544,7 +581,7 @@ Tcl_AppInit(Tcl_Interp *interp)
         return TCL_OK;
     }
 
-    if (Tk_Init(interp) == TCL_ERROR) {
+    if (Tkinter_TkInit(interp) == TCL_ERROR) {
         PySys_WriteStderr("Tk_Init error: %s\n", Tcl_GetStringResult(interp));
         return TCL_ERROR;
     }
@@ -2988,7 +3025,7 @@ _tkinter_tkapp_loadtk_impl(TkappObject *self)
         return NULL;
     }
     if (_tk_exists == NULL || strcmp(_tk_exists, "1") != 0)     {
-        if (Tk_Init(interp)             == TCL_ERROR) {
+        if (Tkinter_TkInit(interp)      == TCL_ERROR) {
             Tkinter_Error(self);
             return NULL;
         }
