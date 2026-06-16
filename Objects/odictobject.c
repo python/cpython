@@ -1251,32 +1251,92 @@ OrderedDict_copy_impl(PyObject *od)
     if (od_copy == NULL)
         return NULL;
 
+    /* Building the copy runs arbitrary Python code: a key's __hash__/__eq__,
+       a subclass' __getitem__/__setitem__, or a value's __del__ may mutate od
+       and free the nodes we are iterating over.  Keep od's state to detect
+       such mutations and raise instead of dereferencing freed memory
+       (see gh-148660), mirroring what is already done when comparing
+       OrderedDicts (see gh-119004). */
+    const size_t state = _PyODictObject_CAST(od)->od_state;
+
     if (PyODict_CheckExact(od)) {
-        _odict_FOREACH(od, node) {
-            PyObject *key = _odictnode_KEY(node);
-            PyObject *value = _odictnode_VALUE(node, od);
-            if (value == NULL) {
-                if (!PyErr_Occurred())
-                    PyErr_SetObject(PyExc_KeyError, key);
+        node = _odict_FIRST(od);
+        while (node != NULL) {
+            PyObject *key = Py_NewRef(_odictnode_KEY(node));
+            Py_hash_t hash = _odictnode_HASH(node);
+            /* The value lookup may run the key's __eq__ or __hash__. */
+            PyObject *value = PyODict_GetItemWithError((PyObject *)od, key);
+            /* Propagate an exception raised by that re-entrant call before
+               reporting a mutation, as OrderedDict.__eq__ does (gh-119004). */
+            if (value == NULL && PyErr_Occurred()) {
+                Py_DECREF(key);
                 goto fail;
             }
-            if (_PyODict_SetItem_KnownHash_LockHeld((PyObject *)od_copy, key, value,
-                                                    _odictnode_HASH(node)) != 0)
+            if (_PyODictObject_CAST(od)->od_state != state) {
+                Py_DECREF(key);
+                PyErr_SetString(PyExc_RuntimeError,
+                                "OrderedDict mutated during iteration");
                 goto fail;
+            }
+            if (value == NULL) {
+                PyErr_SetObject(PyExc_KeyError, key);
+                Py_DECREF(key);
+                goto fail;
+            }
+            /* value is borrowed, but the insert refs it before running any
+               __eq__ of its own, so it cannot be freed under us here. */
+            int res = _PyODict_SetItem_KnownHash_LockHeld((PyObject *)od_copy,
+                                                          key, value, hash);
+            Py_DECREF(key);
+            if (res != 0)
+                goto fail;
+            /* The destination insert may run the key's __eq__ and mutate od. */
+            if (_PyODictObject_CAST(od)->od_state != state) {
+                PyErr_SetString(PyExc_RuntimeError,
+                                "OrderedDict mutated during iteration");
+                goto fail;
+            }
+            node = _odictnode_NEXT(node);
         }
     }
     else {
-        _odict_FOREACH(od, node) {
-            int res;
-            PyObject *value = PyObject_GetItem((PyObject *)od,
-                                               _odictnode_KEY(node));
-            if (value == NULL)
+        node = _odict_FIRST(od);
+        while (node != NULL) {
+            PyObject *key = Py_NewRef(_odictnode_KEY(node));
+            /* __getitem__ (or the key's __eq__ during the lookup) may run
+               Python code that mutates od. */
+            PyObject *value = PyObject_GetItem((PyObject *)od, key);
+            if (value == NULL) {
+                /* A re-entrant mutation that drops the key makes __getitem__
+                   raise KeyError; report the mutation instead, but let any
+                   other exception propagate (as OrderedDict.__eq__ does). */
+                if (_PyODictObject_CAST(od)->od_state != state
+                        && PyErr_ExceptionMatches(PyExc_KeyError)) {
+                    PyErr_SetString(PyExc_RuntimeError,
+                                    "OrderedDict mutated during iteration");
+                }
+                Py_DECREF(key);
                 goto fail;
-            res = PyObject_SetItem((PyObject *)od_copy,
-                                   _odictnode_KEY(node), value);
+            }
+            if (_PyODictObject_CAST(od)->od_state != state) {
+                Py_DECREF(value);
+                Py_DECREF(key);
+                PyErr_SetString(PyExc_RuntimeError,
+                                "OrderedDict mutated during iteration");
+                goto fail;
+            }
+            int res = PyObject_SetItem((PyObject *)od_copy, key, value);
             Py_DECREF(value);
+            Py_DECREF(key);
             if (res != 0)
                 goto fail;
+            /* __setitem__ on the copy, or a value's __del__, may mutate od. */
+            if (_PyODictObject_CAST(od)->od_state != state) {
+                PyErr_SetString(PyExc_RuntimeError,
+                                "OrderedDict mutated during iteration");
+                goto fail;
+            }
+            node = _odictnode_NEXT(node);
         }
     }
     return od_copy;

@@ -1,0 +1,5 @@
+Fix a use-after-free in :class:`collections.OrderedDict`'s ``copy()`` method
+when the dict is mutated while being copied, for example by a key's ``__eq__``
+or ``__hash__``, a subclass' ``__getitem__`` or ``__setitem__``, or a value's
+``__del__``.  It now raises :exc:`RuntimeError`, like other operations that
+mutate the dict during iteration.  Patch by Harjoth Khara.

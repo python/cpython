@@ -879,6 +879,149 @@ class CPythonOrderedDictSideEffects:
         self.assertDictEqual(dict1, dict.fromkeys((0, 4.2)))
         self.assertDictEqual(dict2, dict.fromkeys((0, Key(), 4.2)))
 
+    def check_copy_runtime_error_issue148660(self, od):
+        msg = re.escape("OrderedDict mutated during iteration")
+        self.assertRaisesRegex(RuntimeError, msg, od.copy)
+        self.assertEqual(len(od), 0)  # the side effect cleared it
+
+    def test_issue148660_copy_clear_in_source_lookup(self):
+        # gh-148660: a key's __eq__ clears od while od.copy() looks the value
+        # up in the source dict; the loop must not read the freed nodes.
+        OrderedDict = self.OrderedDict
+        armed = False
+
+        class Key:
+            def __hash__(self):
+                return 42  # force collisions so __eq__ runs during copy
+            def __eq__(self, other):
+                if armed:
+                    od.clear()
+                return self is other
+
+        od = OrderedDict([(Key(), 'v1'), (Key(), 'v2')])
+        armed = True
+        self.check_copy_runtime_error_issue148660(od)
+
+    def test_issue148660_copy_clear_in_dest_insert(self):
+        # gh-148660: this is the ASan-reported path -- the key's __eq__ clears
+        # od while od.copy() inserts into the *destination* dict (the collision
+        # probe into od_copy), not during the source lookup.
+        OrderedDict = self.OrderedDict
+        armed = False
+        eq_calls = 0
+
+        class Key:
+            def __hash__(self):
+                return 42  # force collisions so __eq__ runs during copy
+            def __eq__(self, other):
+                nonlocal eq_calls
+                if armed:
+                    eq_calls += 1
+                    # 1st armed __eq__ is the source lookup, 2nd is the
+                    # collision probe while inserting into od_copy.
+                    if eq_calls == 2:
+                        od.clear()
+                return self is other
+
+        od = OrderedDict([(Key(), 'v1'), (Key(), 'v2')])
+        armed = True
+        self.check_copy_runtime_error_issue148660(od)
+
+    def test_issue148660_copy_clear_in_hash(self):
+        # gh-148660: a key's __hash__ clears od while od.copy() re-hashes it.
+        OrderedDict = self.OrderedDict
+        armed = False
+
+        class Key:
+            def __init__(self, n):
+                self.n = n
+            def __hash__(self):
+                if armed:
+                    od.clear()
+                return 42
+            def __eq__(self, other):
+                return self is other
+
+        od = OrderedDict([(Key(1), 'v1'), (Key(2), 'v2')])
+        armed = True
+        self.check_copy_runtime_error_issue148660(od)
+
+    def test_issue148660_copy_key_eq_exception_is_preserved(self):
+        # gh-148660: if a key's __eq__ both mutates od and raises, the raised
+        # exception is preserved, matching OrderedDict.__eq__ (gh-119004).
+        OrderedDict = self.OrderedDict
+        armed = False
+
+        class Boom(Exception):
+            pass
+
+        class Key:
+            def __hash__(self):
+                return 42
+            def __eq__(self, other):
+                if armed:
+                    od.clear()
+                    raise Boom
+                return self is other
+
+        od = OrderedDict([(Key(), 'v1'), (Key(), 'v2')])
+        armed = True
+        self.assertRaises(Boom, od.copy)
+
+    def test_issue148660_copy_clear_in_subclass_getitem(self):
+        # gh-148660: a subclass __getitem__ clears od during od.copy().
+        OrderedDict = self.OrderedDict
+        armed = False
+
+        class OD(OrderedDict):
+            def __getitem__(self, key):
+                if armed:
+                    od.clear()
+                    return 'dummy'
+                return OrderedDict.__getitem__(self, key)
+
+        od = OD([(1, 'v1'), (2, 'v2')])
+        armed = True
+        self.check_copy_runtime_error_issue148660(od)
+
+    def test_issue148660_copy_clear_in_subclass_setitem(self):
+        # gh-148660: a subclass __setitem__ clears od during od.copy().
+        OrderedDict = self.OrderedDict
+        armed = False
+
+        class OD(OrderedDict):
+            def __setitem__(self, key, value):
+                if armed:
+                    od.clear()
+                OrderedDict.__setitem__(self, key, value)
+
+        od = OD([(1, 'v1'), (2, 'v2')])
+        armed = True
+        self.check_copy_runtime_error_issue148660(od)
+
+    def test_issue148660_copy_clear_in_value_del(self):
+        # gh-148660: a value's __del__ (run by Py_DECREF) clears od during
+        # od.copy().
+        OrderedDict = self.OrderedDict
+        armed = False
+
+        class V:
+            def __del__(self):
+                if armed:
+                    od.clear()
+
+        class OD(OrderedDict):
+            def __getitem__(self, key):
+                return V()
+            def __setitem__(self, key, value):
+                pass
+
+        od = OD()
+        OrderedDict.__setitem__(od, 1, 'v1')
+        OrderedDict.__setitem__(od, 2, 'v2')
+        armed = True
+        self.check_copy_runtime_error_issue148660(od)
+
 
 @unittest.skipUnless(c_coll, 'requires the C version of the collections module')
 class CPythonOrderedDictTests(OrderedDictTests,
