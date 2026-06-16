@@ -23,16 +23,16 @@ struct type_cache_entry {
 // see _PyTypeCache_Lookup().
 struct type_cache {
     uint32_t mask;                                              // mask for indexing into hashtable, i.e. size of hashtable is mask + 1
-    uint32_t version_tag;                                       // initialized from type->tp_version_tag
     uint32_t available;                                         // number of available entries in hashtable
     uint32_t used;                                              // number of used entries in hashtable
+    unsigned int version_tag;                                   // initialized from type->tp_version_tag
     struct type_cache_entry hashtable[_Py_TYPECACHE_MINSIZE];   // hashtable entries
 };
 
 struct _PyTypeCacheLookupResult {
     _PyStackRef value;      // value is a stack reference to the cached attribute or method, or NULL if not found
     int cache_hit;          // 1 if the cache entry is valid and matches the type's version tag, 0 otherwise
-    uint32_t version_tag;   // version tag of the type when the value was cached
+    unsigned int version_tag;   // version tag of the type when the value was cached
 };
 
 
