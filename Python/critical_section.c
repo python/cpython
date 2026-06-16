@@ -78,8 +78,9 @@ _PyCriticalSection2_BeginSlow(PyThreadState *tstate, PyCriticalSection2 *c, PyMu
         tstate->critical_section & _Py_CRITICAL_SECTION_TWO_MUTEXES) {
         PyCriticalSection2 *prev2 = (PyCriticalSection2 *)
             untag_critical_section(tstate->critical_section);
-        assert(m1 < m2);
-        assert(prev2->_cs_base._cs_mutex < prev2->_cs_mutex2);
+        assert((uintptr_t)m1 < (uintptr_t)m2);
+        assert((uintptr_t)prev2->_cs_base._cs_mutex <
+            (uintptr_t)prev2->_cs_mutex2);
         if (prev2->_cs_base._cs_mutex == m1 && prev2->_cs_mutex2 == m2) {
             c->_cs_base._cs_mutex = NULL;
             c->_cs_mutex2 = NULL;
