@@ -3941,10 +3941,6 @@
             break;
         }
 
-        case _GUARD_KEYS_VERSION: {
-            break;
-        }
-
         case _LOAD_ATTR_METHOD_WITH_VALUES: {
             JitOptRef owner;
             JitOptRef attr;

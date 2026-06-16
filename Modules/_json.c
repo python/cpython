@@ -11,6 +11,8 @@
 #include "Python.h"
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION_SEQUENCE_FAST()
+#include "pycore_dict.h"          // _PyDict_SetItem_Take2()
+#include "pycore_list.h"          // _PyList_AppendTakeRef()
 #include "pycore_global_strings.h" // _Py_ID()
 #include "pycore_pyerrors.h"      // _PyErr_FormatNote
 #include "pycore_runtime.h"       // _PyRuntime
@@ -752,7 +754,6 @@ _parse_object_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ss
     const void *str;
     int kind;
     Py_ssize_t end_idx;
-    PyObject *val = NULL;
     PyObject *rval = NULL;
     PyObject *key = NULL;
     int has_pairs_hook = (s->object_pairs_hook != Py_None);
@@ -802,13 +803,16 @@ _parse_object_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ss
             while (idx <= end_idx && IS_WHITESPACE(PyUnicode_READ(kind, str, idx))) idx++;
 
             /* read any JSON term */
-            val = scan_once_unicode(s, memo, pystr, idx, &next_idx);
+            PyObject *val = scan_once_unicode(s, memo, pystr, idx, &next_idx);
             if (val == NULL)
                 goto bail;
 
+            /* The steal below takes our references to both key and val
+               (releasing them on failure).  Only key is reset for the bail
+               path; val is never live there, so it needs no cleanup. */
             if (has_pairs_hook) {
                 PyObject *item = _PyTuple_FromPairSteal(key, val);
-                key = val = NULL;
+                key = NULL;
                 if (item == NULL)
                     goto bail;
                 if (PyList_Append(rval, item) == -1) {
@@ -818,10 +822,10 @@ _parse_object_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ss
                 Py_DECREF(item);
             }
             else {
-                if (PyDict_SetItem(rval, key, val) < 0)
+                int err = _PyDict_SetItem_Take2((PyDictObject *)rval, key, val);
+                key = NULL;
+                if (err < 0)
                     goto bail;
-                Py_CLEAR(key);
-                Py_CLEAR(val);
             }
             idx = next_idx;
 
@@ -851,21 +855,20 @@ _parse_object_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ss
     *next_idx_ptr = idx + 1;
 
     if (has_pairs_hook) {
-        val = PyObject_CallOneArg(s->object_pairs_hook, rval);
+        PyObject *res = PyObject_CallOneArg(s->object_pairs_hook, rval);
         Py_DECREF(rval);
-        return val;
+        return res;
     }
 
     /* if object_hook is not None: rval = object_hook(rval) */
     if (s->object_hook != Py_None) {
-        val = PyObject_CallOneArg(s->object_hook, rval);
+        PyObject *res = PyObject_CallOneArg(s->object_hook, rval);
         Py_DECREF(rval);
-        return val;
+        return res;
     }
     return rval;
 bail:
     Py_XDECREF(key);
-    Py_XDECREF(val);
     Py_XDECREF(rval);
     return NULL;
 }
@@ -882,7 +885,6 @@ _parse_array_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ssi
     const void *str;
     int kind;
     Py_ssize_t end_idx;
-    PyObject *val = NULL;
     PyObject *rval;
     Py_ssize_t next_idx;
     Py_ssize_t comma_idx;
@@ -903,14 +905,12 @@ _parse_array_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ssi
         while (1) {
 
             /* read any JSON term  */
-            val = scan_once_unicode(s, memo, pystr, idx, &next_idx);
+            PyObject *val = scan_once_unicode(s, memo, pystr, idx, &next_idx);
             if (val == NULL)
                 goto bail;
 
-            if (PyList_Append(rval, val) == -1)
+            if (_PyList_AppendTakeRef((PyListObject *)rval, val) < 0)
                 goto bail;
-
-            Py_CLEAR(val);
             idx = next_idx;
 
             /* skip whitespace between term and , */
@@ -944,13 +944,12 @@ _parse_array_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ssi
     *next_idx_ptr = idx + 1;
     /* if array_hook is not None: return array_hook(rval) */
     if (!Py_IsNone(s->array_hook)) {
-        val = PyObject_CallOneArg(s->array_hook, rval);
+        PyObject *res = PyObject_CallOneArg(s->array_hook, rval);
         Py_DECREF(rval);
-        return val;
+        return res;
     }
     return rval;
 bail:
-    Py_XDECREF(val);
     Py_DECREF(rval);
     return NULL;
 }
