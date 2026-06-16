@@ -3491,16 +3491,10 @@ sys_set_flag(PyObject *flags, Py_ssize_t pos, PyObject *value)
 int
 _PySys_SetFlagObj(Py_ssize_t pos, PyObject *value)
 {
-    PyObject *old_flags = NULL;
     PyObject *new_flags = NULL;
-    PyObject *flags_str = NULL;
+    PyObject *flags_str = &_Py_ID(flags);  // immortal ref
 
-    flags_str = PyUnicode_FromString("flags");
-    if (flags_str == NULL) {
-        goto error;
-    }
-
-    old_flags = PySys_GetAttr(flags_str);
+    PyObject *old_flags = PySys_GetAttr(flags_str);
     if (old_flags == NULL) {
         goto error;
     }
@@ -3525,15 +3519,13 @@ _PySys_SetFlagObj(Py_ssize_t pos, PyObject *value)
     }
 
     int res = _PySys_SetAttr(flags_str, new_flags);
-    Py_DECREF(flags_str);
     Py_DECREF(old_flags);
     Py_DECREF(new_flags);
     return res;
 
 error:
-    Py_DECREF(flags_str);
-    Py_DECREF(old_flags);
-    Py_DECREF(new_flags);
+    Py_XDECREF(old_flags);
+    Py_XDECREF(new_flags);
     return -1;
 }
 
