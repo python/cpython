@@ -1,7 +1,7 @@
 extend = "../.ruff.toml"  # Inherit the project-wide settings
 
 [per-file-target-version]
-"jit/example_trace_dump.py" = "py312"  # Reused-quote f-strings (PEP 701)
+"jit/*.py" = "py312"  # Reused-quote f-strings (PEP 701)
 
 [lint]
 select = [
