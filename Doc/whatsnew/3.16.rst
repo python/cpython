@@ -102,6 +102,28 @@ lzma
   requires ``lzma`` 5.4.0 or newer while RISC-V requires 5.6.0 or newer.
   (Contributed by Chien Wong in :gh:`115988`.)
 
+logging
+-------
+
+* :class:`~logging.handlers.TimedRotatingFileHandler` now uses the creation
+  time instead of the last modification time of an existing log file as
+  the basis for the first rotation after handler creation, if supported by
+  the OS and file system.
+  This allows it to be used in short-running programs that start and end
+  before the rotation interval expires.
+  (Contributed by Iván Márton and Serhiy Storchaka in :gh:`84649`.)
+
+math
+----
+
+* Added trigonometric functions that work in units of half turns, rather than
+  radians. The new functions :func:`math.acospi`, :func:`math.asinpi`,
+  :func:`math.atanpi`, and :func:`math.atan2pi` return half-turn angles. The
+  new functions :func:`math.cospi`, :func:`math.sinpi`, and :func:`math.tanpi`
+  take half-turn angle arguments. These functions are recommended by IEEE
+  754-2019 and standardized in C23.
+  (Contributed by Jeff Epler in :gh:`150534`.)
+
 os
 --
 
@@ -253,9 +275,13 @@ Deprecated
 
 .. include:: ../deprecations/pending-removal-in-3.17.rst
 
+.. include:: ../deprecations/pending-removal-in-3.18.rst
+
 .. include:: ../deprecations/pending-removal-in-3.19.rst
 
 .. include:: ../deprecations/pending-removal-in-3.20.rst
+
+.. include:: ../deprecations/pending-removal-in-3.21.rst
 
 .. include:: ../deprecations/pending-removal-in-future.rst
 
@@ -304,9 +330,19 @@ Porting to Python 3.16
 Deprecated C APIs
 -----------------
 
-* TODO
+* :c:func:`PyGen_New`, :c:func:`PyGen_NewWithQualName`, :c:func:`PyCoro_New`,
+  and :c:func:`PyAsyncGen_New` are deprecated.
+  They are scheduled for removal in 3.18.
 
 .. Add C API deprecations above alphabetically, not here at the end.
+
+.. include:: ../deprecations/c-api-pending-removal-in-3.18.rst
+
+.. include:: ../deprecations/c-api-pending-removal-in-3.19.rst
+
+.. include:: ../deprecations/c-api-pending-removal-in-3.20.rst
+
+.. include:: ../deprecations/c-api-pending-removal-in-future.rst
 
 Removed C APIs
 --------------
