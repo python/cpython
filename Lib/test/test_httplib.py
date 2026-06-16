@@ -1043,6 +1043,22 @@ class BasicTest(TestCase):
         cookies = r.getheader("Set-Cookie")
         self.assertEqual(cookies, hdr)
 
+    def test_url_set_at_init(self):
+        # bpo-42062: HTTPResponse.url (returned by geturl()) is initialized in
+        # __init__, so it is available on responses created directly via
+        # http.client and not only on those returned by urllib.  Accessing it
+        # previously raised AttributeError.
+        body = 'HTTP/1.1 200 OK\r\n\r\nText'
+        url = 'http://www.python.org/'
+        resp = client.HTTPResponse(FakeSocket(body), url=url)
+        self.assertEqual(resp.url, url)
+        self.assertEqual(resp.geturl(), url)
+
+        # When no URL is supplied, geturl() returns None instead of raising.
+        resp = client.HTTPResponse(FakeSocket(body))
+        self.assertIsNone(resp.url)
+        self.assertIsNone(resp.geturl())
+
     def test_read_head(self):
         # Test that the library doesn't attempt to read any data
         # from a HEAD request.  (Tickles SF bug #622042.)
