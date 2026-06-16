@@ -8,6 +8,7 @@ import sys
 import types
 from importlib.machinery import ModuleSpec
 from importlib.resources.abc import ResourceReader, Traversable, TraversableResources
+from importlib.abc import MetaPathFinder, Loader
 
 from test.support import import_helper, os_helper
 
@@ -218,7 +219,7 @@ class MemorySetup(ModuleSetup):
         yield
         sys.meta_path.remove(finder_instance)
 
-    class MemoryFinder(importlib.abc.MetaPathFinder):
+    class MemoryFinder(MetaPathFinder):
         def __init__(self, module):
             self._module = module
 
@@ -232,7 +233,7 @@ class MemorySetup(ModuleSetup):
                 is_package=True,
             )
 
-    class MemoryLoader(importlib.abc.Loader):
+    class MemoryLoader(Loader):
         def __init__(self, module):
             self._module = module
 
