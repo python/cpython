@@ -183,7 +183,7 @@ def _parse_single_key_sequence(key: str, s: int) -> tuple[list[str], int]:
     if ctrl:
         if len(ret) == 1:
             ret = chr(ord(ret) & 0x1F)  # curses.ascii.ctrl()
-        elif ret in {"left", "right"}:
+        elif ret in {"left", "right", "up", "down"}:
             ret = f"ctrl {ret}"
         else:
             raise KeySpecError("\\C- followed by invalid key")

@@ -135,7 +135,9 @@ default_keymap: Keymap = tuple(
     + [(c, "self-insert") for c in map(chr, range(128, 256)) if c.isalpha()]
     + [
         (r"\<up>", "up"),
+        (r"\C-\<up>", "up_history"),
         (r"\<down>", "down"),
+        (r"\C-\<down>", "down_history"),
         (r"\<left>", "left"),
         (r"\C-\<left>", "backward-word"),
         (r"\<right>", "right"),

@@ -371,6 +371,23 @@ class backward_word(MotionCommand):
         for i in range(r.get_arg()):
             r.pos = r.bow()
 
+class up_history(MotionCommand):
+    def do(self) -> None:
+        r = self.reader
+        if r.historyi > 0:
+            r.select_item(r.historyi - 1)
+        else:
+            r.error("start of history")
+            return
+
+class down_history(MotionCommand):
+    def do(self) -> None:
+        r = self.reader
+        if r.historyi < len(r.history):
+            r.select_item(r.historyi + 1)
+        else:
+            r.error("end of history")
+            return
 
 class self_insert(EditCommand):
     def do(self) -> None:

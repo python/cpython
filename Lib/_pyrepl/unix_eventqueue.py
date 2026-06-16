@@ -49,9 +49,13 @@ CTRL_ARROW_KEYCODES= {
     # for xterm, gnome-terminal, xfce terminal, etc.
     b'\033[1;5D': 'ctrl left',
     b'\033[1;5C': 'ctrl right',
+    b'\033[1;5A': 'ctrl up',
+    b'\033[1;5B': 'ctrl down',
     # for rxvt
     b'\033Od': 'ctrl left',
     b'\033Oc': 'ctrl right',
+    b'\033Oa': 'ctrl up',
+    b'\033Ob': 'ctrl down',
 }
 
 def get_terminal_keycodes(ti: TermInfo) -> dict[bytes, str]:

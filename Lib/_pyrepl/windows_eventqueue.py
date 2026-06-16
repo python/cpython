@@ -13,6 +13,8 @@ VT_MAP: dict[bytes, str] = {
     b'\x1b[D': 'left',
     b'\x1b[1;5D': 'ctrl left',
     b'\x1b[1;5C': 'ctrl right',
+    b'\x1b[1;5A': 'ctrl up',
+    b'\x1b[1;5B': 'ctrl down',
 
     b'\x1b[H': 'home',
     b'\x1b[F': 'end',
