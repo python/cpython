@@ -3508,9 +3508,6 @@ _PySys_SetFlagObj(Py_ssize_t pos, PyObject *value)
         if (i != pos) {
             PyObject *old_value;
             old_value = PyStructSequence_GET_ITEM(old_flags, i);  // borrowed ref
-            if (old_value == NULL) {
-                goto error;
-            }
             sys_set_flag(new_flags, i, old_value);
         }
         else {
