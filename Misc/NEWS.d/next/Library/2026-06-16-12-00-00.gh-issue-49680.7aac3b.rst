@@ -1,0 +1,5 @@
+:meth:`imaplib.IMAP4.append` now sends the message verbatim instead of
+rewriting bare CR or LF bytes to CRLF.  Since :rfc:`3501` requires messages to
+use CRLF line endings, callers must now supply them themselves; for example,
+serialize :mod:`email` messages with :class:`email.policy.SMTP` (which emits
+CRLF) rather than the default policy.

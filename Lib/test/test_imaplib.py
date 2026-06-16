@@ -2,6 +2,7 @@ from test import support
 from test.support import socket_helper
 
 from contextlib import contextmanager
+from email.message import EmailMessage
 import imaplib
 import os.path
 import socketserver
@@ -25,6 +26,25 @@ support.requires_working_socket(module=True)
 
 CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "certdata", "keycert3.pem")
 CAFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "certdata", "pycacert.pem")
+
+
+def _read_append_literal(handler, args):
+    literal = args[-1]
+    trailer = b'\r\n'
+    if literal.startswith('('):
+        literal = literal[1:]
+        trailer = b')\r\n'
+    if literal.startswith('~'):
+        literal = literal[1:]
+    match = re.fullmatch(r'\{(\d+)\}', literal)
+    if match is None:
+        raise AssertionError(f"unexpected APPEND literal marker: {args[-1]!r}")
+    literal_size = int(match.group(1))
+
+    handler._send_textline('+')
+    payload = handler.rfile.read(literal_size)
+    received_trailer = handler.rfile.read(len(trailer))
+    return payload, received_trailer
 
 
 class TestImaplib(unittest.TestCase):
@@ -371,12 +391,9 @@ class NewIMAPTestsMixin:
                 self.server.response = yield
                 self._send_tagged(tag, 'OK', 'FAKEAUTH successful')
             def cmd_APPEND(self, tag, args):
-                self._send_textline('+')
                 self.server.response = args
-                literal = yield
-                self.server.response.append(literal)
-                literal = yield
-                self.server.response.append(literal)
+                payload, trailer = _read_append_literal(self, args)
+                self.server.response.extend([payload, trailer])
                 self._send_tagged(tag, 'OK', 'okay')
         client, server = self._setup(UTF8AppendServer)
         self.assertEqual(client._encoding, 'ascii')
@@ -387,13 +404,44 @@ class NewIMAPTestsMixin:
         self.assertEqual(code, 'OK')
         self.assertEqual(client._encoding, 'utf-8')
         msg_string = 'Subject: üñí©öðé'
-        typ, data = client.append(
-            None, None, None, (msg_string + '\n').encode('utf-8'))
+        msg = (msg_string + '\n').encode('utf-8')
+        self.assertEqual(len(msg), 24)
+        typ, data = client.append(None, None, None, msg)
         self.assertEqual(typ, 'OK')
         self.assertEqual(server.response,
             ['INBOX', 'UTF8',
-             '(~{25}', ('%s\r\n' % msg_string).encode('utf-8'),
+             '(~{24}', msg,
              b')\r\n' ])
+
+    def test_append_preserves_message_line_endings(self):
+        class AppendServer(SimpleIMAPHandler):
+            def cmd_APPEND(self, tag, args):
+                payload, trailer = _read_append_literal(self, args)
+                self.server.responses.append(args + [payload, trailer])
+                self._send_tagged(tag, 'OK', 'okay')
+
+        client, server = self._setup(AppendServer)
+        server.responses = []
+        typ, _ = client.login('user', 'pass')
+        self.assertEqual(typ, 'OK')
+
+        msg = b"one\ntwo\rthree\r\nfour"
+        self.assertEqual(len(msg), 19)
+        typ, _ = client.append(None, None, None, msg)
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.responses[-1],
+                         ['INBOX', '{19}', msg, b'\r\n'])
+
+        email = EmailMessage()
+        email['Subject'] = 'line endings'
+        email.set_content('body line\n')
+        msg = email.as_bytes()
+        self.assertIn(b'\n', msg)
+        self.assertNotIn(b'\r\n', msg)
+        typ, _ = client.append(None, None, None, msg)
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.responses[-1],
+                         ['INBOX', f'{{{len(msg)}}}', msg, b'\r\n'])
 
     def test_search_disallows_charset_in_utf8_mode(self):
         class UTF8Server(SimpleIMAPHandler):
@@ -925,12 +973,9 @@ class ThreadedNetworkedTests(unittest.TestCase):
 
         class UTF8AppendServer(self.UTF8Server):
             def cmd_APPEND(self, tag, args):
-                self._send_textline('+')
                 self.server.response = args
-                literal = yield
-                self.server.response.append(literal)
-                literal = yield
-                self.server.response.append(literal)
+                payload, trailer = _read_append_literal(self, args)
+                self.server.response.extend([payload, trailer])
                 self._send_tagged(tag, 'OK', 'okay')
 
         with self.reaped_pair(UTF8AppendServer) as (server, client):
@@ -943,13 +988,46 @@ class ThreadedNetworkedTests(unittest.TestCase):
             self.assertEqual(code, 'OK')
             self.assertEqual(client._encoding, 'utf-8')
             msg_string = 'Subject: üñí©öðé'
-            typ, data = client.append(
-                None, None, None, (msg_string + '\n').encode('utf-8'))
+            msg = (msg_string + '\n').encode('utf-8')
+            self.assertEqual(len(msg), 24)
+            typ, data = client.append(None, None, None, msg)
             self.assertEqual(typ, 'OK')
             self.assertEqual(server.response,
                 ['INBOX', 'UTF8',
-                 '(~{25}', ('%s\r\n' % msg_string).encode('utf-8'),
+                 '(~{24}', msg,
                  b')\r\n' ])
+
+    @threading_helper.reap_threads
+    def test_append_preserves_message_line_endings(self):
+
+        class AppendServer(SimpleIMAPHandler):
+            def cmd_APPEND(self, tag, args):
+                payload, trailer = _read_append_literal(self, args)
+                self.server.responses.append(args + [payload, trailer])
+                self._send_tagged(tag, 'OK', 'okay')
+
+        with self.reaped_pair(AppendServer) as (server, client):
+            server.responses = []
+            typ, _ = client.login('user', 'pass')
+            self.assertEqual(typ, 'OK')
+
+            msg = b"one\ntwo\rthree\r\nfour"
+            self.assertEqual(len(msg), 19)
+            typ, _ = client.append(None, None, None, msg)
+            self.assertEqual(typ, 'OK')
+            self.assertEqual(server.responses[-1],
+                             ['INBOX', '{19}', msg, b'\r\n'])
+
+            email = EmailMessage()
+            email['Subject'] = 'line endings'
+            email.set_content('body line\n')
+            msg = email.as_bytes()
+            self.assertIn(b'\n', msg)
+            self.assertNotIn(b'\r\n', msg)
+            typ, _ = client.append(None, None, None, msg)
+            self.assertEqual(typ, 'OK')
+            self.assertEqual(server.responses[-1],
+                             ['INBOX', f'{{{len(msg)}}}', msg, b'\r\n'])
 
     # XXX also need a test that makes sure that the Literal and Untagged_status
     # regexes uses unicode in UTF8 mode instead of the default ASCII.

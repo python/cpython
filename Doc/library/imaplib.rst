@@ -199,10 +199,20 @@ An :class:`IMAP4` instance has the following methods:
 
    Append *message* to named mailbox.
 
+   *message* is sent verbatim, without any line-ending conversion.
+   :rfc:`3501` requires messages to use CRLF line endings, so callers must
+   ensure this themselves; for example, serialize :mod:`email` messages using
+   :class:`email.policy.SMTP` (which emits CRLF) rather than the default
+   policy.
+
    *flags* may be ``None`` or a string of IMAP flag tokens.  Multiple
    flags are separated by spaces, for example ``r'\Seen \Answered'``.
    If *flags* is not already enclosed in parentheses, parentheses are
    added automatically.
+
+   .. versionchanged:: 3.16
+      *message* is now sent verbatim.  Previously, bare CR or LF characters
+      were rewritten to CRLF.
 
 
 .. method:: IMAP4.authenticate(mechanism, authobject)

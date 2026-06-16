@@ -502,8 +502,7 @@ class IMAP4:
             date_time = Time2Internaldate(date_time)
         else:
             date_time = None
-        literal = MapCRLF.sub(CRLF, message)
-        self.literal = literal
+        self.literal = message
         return self._simple_command(name, mailbox, flags, date_time)
 
 
