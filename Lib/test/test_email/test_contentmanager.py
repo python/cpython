@@ -379,7 +379,7 @@ class TestRawDataManager(TestEmailBase):
             Content-Type: text/plain; charset="iso-2022-jp"
             Content-Transfer-Encoding: 7bit
 
-            \x1b$BF|K\\8l\x1b(B
+            \u65e5\u672c\u8a9e
             """).encode('iso-2022-jp'))
 
     def test_set_text_charset_euc_jp(self):
@@ -399,7 +399,7 @@ class TestRawDataManager(TestEmailBase):
             Content-Type: text/plain; charset="iso-2022-jp"
             Content-Transfer-Encoding: 7bit
 
-            \x1b$BF|K\\8l\x1b(B
+            \u65e5\u672c\u8a9e
             """).encode('iso-2022-jp'))
 
     def test_set_text_plain_long_line_heuristics(self):
