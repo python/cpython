@@ -4415,6 +4415,7 @@ class TestExtractionFilters(unittest.TestCase):
 
     @symlink_test
     def test_sneaky_hardlink_fallback_deep(self):
+        # (CVE-2026-11940)
         with ArchiveMaker() as arc:
             arc.add("a/b/s", symlink_to=os.path.join("..", "escape"))
             arc.add("s", hardlink_to=os.path.join("a", "b", "s"))
