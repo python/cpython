@@ -2463,8 +2463,9 @@ AS_CASE([$ac_sys_system],
 )
 
 dnl On Linux, check the thread stack size. musl (ex: Alpine Linux) uses
-dnl a default thread stack size of 128 kB, whereas the glibc uses 8 MiB.
-dnl Python needs at least 1 MiB.
+dnl a default thread stack size of 128 kiB, whereas the glibc uses 8 MiB.
+dnl Python needs at least 2 MiB to run test_threading on Free Threading
+dnl (gh-151542).
 if test "$ac_sys_system" = "Linux" -a "$cross_compiling" = no; then
     AC_CACHE_CHECK([for thread stack size], [ac_cv_thread_stack_size], [
     cat > conftest.c <<EOF
@@ -2485,7 +2486,7 @@ int main()
         return 2;
     }
 
-    if (size < 1024 * 1024) {
+    if (size < 2 * 1024 * 1024) {
         return 1;
     }
     return 0;
@@ -2497,7 +2498,7 @@ EOF
         ./conftest &>/dev/null
         exitcode=$?
         if test $exitcode -eq 1; then
-            ac_cv_thread_stack_size=1048576
+            ac_cv_thread_stack_size=2097152  # 2 MiB
         elif test $exitcode -eq 0; then
             ac_cv_thread_stack_size="default"
         fi

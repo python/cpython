@@ -9901,7 +9901,7 @@ int main()
         return 2;
     }
 
-    if (size < 1024 * 1024) {
+    if (size < 2 * 1024 * 1024) {
         return 1;
     }
     return 0;
@@ -9913,7 +9913,7 @@ EOF
         ./conftest &>/dev/null
         exitcode=$?
         if test $exitcode -eq 1; then
-            ac_cv_thread_stack_size=1048576
+            ac_cv_thread_stack_size=2097152  # 2 MiB
         elif test $exitcode -eq 0; then
             ac_cv_thread_stack_size="default"
         fi
