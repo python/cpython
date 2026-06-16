@@ -324,19 +324,22 @@ def prepare_predicate(next, token):
                 index = -1
         def select(context, result):
             parent_map = get_parent_map(context)
-            sibling_cache = {}
+            cache = {}
             for elem in result:
                 try:
                     parent = parent_map[elem]
+                except KeyError:
+                    continue
+                key = (parent, elem.tag)
+                if key not in cache:
                     # FIXME: what if the selector is "*" ?
-                    cache_key = (parent, elem.tag)
-                    if cache_key not in sibling_cache:
-                        sibling_cache[cache_key] = list(parent.findall(elem.tag))
-                    elems = sibling_cache[cache_key]
-                    if elems[index] is elem:
-                        yield elem
-                except (IndexError, KeyError):
-                    pass
+                    elems = parent.findall(elem.tag)
+                    try:
+                        cache[key] = elems[index]
+                    except IndexError:
+                        cache[key] = None
+                if cache[key] is elem:
+                    yield elem
         return select
     raise SyntaxError("invalid predicate")
 
