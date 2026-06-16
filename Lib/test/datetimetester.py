@@ -22,7 +22,7 @@ from operator import lt, le, gt, ge, eq, ne, truediv, floordiv, mod
 
 from test import support
 from test.support import is_resource_enabled, ALWAYS_EQ, LARGEST, SMALLEST
-from test.support import os_helper, script_helper, warnings_helper
+from test.support import os_helper, script_helper
 
 import datetime as datetime_module
 from datetime import MINYEAR, MAXYEAR
@@ -1206,15 +1206,20 @@ class TestDateOnly(unittest.TestCase):
                 newdate = strptime(string, format)
                 self.assertEqual(newdate, target, msg=reason)
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_strptime_leap_year(self):
-        # GH-70647: warns if parsing a format with a day and no year.
+        # GH-70647: %d errors if parsing a format with a day and no year.
         with self.assertRaises(ValueError):
             # The existing behavior that GH-70647 seeks to change.
             date.strptime('02-29', '%m-%d')
+        # %e without a year is deprecated, scheduled for removal in 3.17.
+        _strptime._regex_cache.clear()
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r'.*day of month without a year.*'):
+            date.strptime('02-01', '%m-%e')
         with self._assertNotWarns(DeprecationWarning):
             date.strptime('20-03-14', '%y-%m-%d')
             date.strptime('02-29,2024', '%m-%d,%Y')
+            date.strptime('02-29,2024', '%m-%e,%Y')
 
 class SubclassDate(date):
     sub_var = 1
@@ -3119,19 +3124,24 @@ class TestDateTime(TestDate):
                 newdate = strptime(string, format)
                 self.assertEqual(newdate, target, msg=reason)
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_strptime_leap_year(self):
-        # GH-70647: warns if parsing a format with a day and no year.
+        # GH-70647: %d errors if parsing a format with a day and no year.
         with self.assertRaises(ValueError):
             # The existing behavior that GH-70647 seeks to change.
             self.theclass.strptime('02-29', '%m-%d')
+        with self.assertRaises(ValueError):
+            self.theclass.strptime('03-14.159265', '%m-%d.%f')
+        # %e without a year is deprecated, scheduled for removal in 3.17.
+        _strptime._regex_cache.clear()
         with self.assertWarnsRegex(DeprecationWarning,
                                    r'.*day of month without a year.*'):
-            self.theclass.strptime('03-14.159265', '%m-%d.%f')
+            self.theclass.strptime('03-14.159265', '%m-%e.%f')
         with self._assertNotWarns(DeprecationWarning):
             self.theclass.strptime('20-03-14.159265', '%y-%m-%d.%f')
         with self._assertNotWarns(DeprecationWarning):
             self.theclass.strptime('02-29,2024', '%m-%d,%Y')
+        with self._assertNotWarns(DeprecationWarning):
+            self.theclass.strptime('02-29,2024', '%m-%e,%Y')
 
     def test_strptime_z_empty(self):
         for directive in ('z', ':z'):
@@ -7498,6 +7508,36 @@ class ExtensionModuleTests(unittest.TestCase):
         self.assertEqual(rc, 0)
         self.assertEqual(out, b"a" * 8)
         self.assertEqual(err, b"")
+
+    @support.cpython_only
+    @support.subTests(("setup", "call"), [
+        ("obj = _datetime.timedelta", "obj(seconds=2)"),
+        ("obj = _datetime.timedelta(seconds=2)", "obj.total_seconds()"),
+        ("obj = _datetime.date(2026, 6, 7)", "obj.isocalendar()"),
+    ])
+    def test_static_datetime_types_outlive_collected_module(self, setup, call):
+        # gh-151039: This code used to crash
+        script = f"""if True:
+            import sys, gc
+            import _datetime
+
+            {setup}                          # static C type, survives the module
+            del sys.modules['_datetime']
+            del _datetime
+            sys.modules['_datetime'] = None  # block re-import
+            gc.collect()                     # module object is collected
+
+            try:
+                {call}                       # used to be a segmentation fault
+            except ImportError:
+                pass
+            else:
+                raise AssertionError("ImportError not raised")
+        """
+        rc, out, err = script_helper.assert_python_ok("-c", script)
+        self.assertEqual(rc, 0)
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
 
 
 def load_tests(loader, standard_tests, pattern):

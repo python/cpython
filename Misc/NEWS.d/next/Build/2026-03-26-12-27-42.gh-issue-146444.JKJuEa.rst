@@ -1,1 +1,0 @@
-The Apple/iOS build script has been moved to the Platforms directory.

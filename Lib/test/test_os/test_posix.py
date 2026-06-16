@@ -142,8 +142,8 @@ class PosixTester(unittest.TestCase):
         self.assertRaises(TypeError, posix.initgroups, "foo", 3, object())
 
         # If a non-privileged user invokes it, it should fail with OSError
-        # EPERM.
-        if os.getuid() != 0:
+        # EPERM. On Cygwin, initgroups(name, 13) does not fail.
+        if os.getuid() != 0 and sys.platform != 'cygwin':
             try:
                 name = pwd.getpwuid(posix.getuid()).pw_name
             except KeyError:
@@ -597,7 +597,9 @@ class PosixTester(unittest.TestCase):
             posix.sysconf(1.23)
 
         arg_max = posix.sysconf("SC_ARG_MAX")
-        self.assertGreater(arg_max, 0)
+        # SC_ARG_MAX is -1 on Cygwin
+        if sys.platform != 'cygwin':
+            self.assertGreater(arg_max, 0)
         self.assertEqual(
             posix.sysconf(posix.sysconf_names["SC_ARG_MAX"]), arg_max)
 
@@ -1602,6 +1604,34 @@ class PosixTester(unittest.TestCase):
         self.assertEqual(cm.exception.errno, errno.EINVAL)
         os.close(os.pidfd_open(os.getpid(), 0))
 
+    @unittest.skipUnless(hasattr(os, "pidfd_getfd"), "pidfd_getfd unavailable")
+    def test_pidfd_getfd(self):
+        fd = os.open(__file__, os.O_RDONLY)
+        self.addCleanup(os.close, fd)
+        pidfd = os.pidfd_open(os.getpid(), 0)
+        self.addCleanup(os.close, pidfd)
+        try:
+            dupfd = os.pidfd_getfd(pidfd, fd)
+        except OSError as exc:
+            if exc.errno == errno.ENOSYS:
+                self.skipTest("system does not support pidfd_getfd")
+            if isinstance(exc, PermissionError):
+                self.skipTest(f"pidfd_getfd syscall blocked: {exc!r}")
+            raise
+        self.addCleanup(os.close, dupfd)
+
+        self.assertFalse(os.get_inheritable(dupfd))     # PEP 446
+        self.assertEqual(os.fstat(fd), os.fstat(dupfd))
+
+        with self.assertRaises(OSError) as cm:
+            os.pidfd_getfd(-1, 0)
+        self.assertEqual(cm.exception.errno, errno.EBADF)
+
+        with self.assertRaises(OSError) as cm:
+            bad_fd = os_helper.make_bad_fd()
+            os.pidfd_getfd(pidfd, bad_fd)
+        self.assertEqual(cm.exception.errno, errno.EBADF)
+
     @os_helper.skip_unless_hardlink
     @os_helper.skip_unless_symlink
     def test_link_follow_symlinks(self):
@@ -1943,6 +1973,14 @@ class _PosixSpawnMixin:
         # directories in the $PATH that are not accessible.
         except (FileNotFoundError, PermissionError) as exc:
             self.assertEqual(exc.filename, no_such_executable)
+
+            # On Cygwin, os.posix_spawn() creates a child process even if the
+            # executable doesn't exist. We have to reap this process.
+            if sys.platform == 'cygwin':
+                for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+                    pid, status = os.waitpid(-1, os.WNOHANG)
+                    if pid != 0:
+                        break
         else:
             pid2, status = os.waitpid(pid, 0)
             self.assertEqual(pid2, pid)

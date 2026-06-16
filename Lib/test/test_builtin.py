@@ -4,6 +4,7 @@ import ast
 import builtins
 import collections
 import contextlib
+import copy
 import decimal
 import fractions
 import gc
@@ -21,6 +22,7 @@ import types
 import typing
 import unittest
 import warnings
+import weakref
 from contextlib import ExitStack
 from functools import partial
 from inspect import CO_COROUTINE
@@ -37,7 +39,7 @@ from test.support.os_helper import (EnvironmentVarGuard, TESTFN, unlink)
 from test.support.script_helper import assert_python_ok
 from test.support.testcase import ComplexesAreIdenticalMixin
 from test.support.warnings_helper import check_warnings
-from test.support import requires_IEEE_754
+from test.support import requires_IEEE_754, skip_if_double_rounding
 from unittest.mock import MagicMock, patch
 try:
     import pty, signal
@@ -45,13 +47,12 @@ except ImportError:
     pty = signal = None
 
 
-# Detect evidence of double-rounding: sum() does not always
-# get improved accuracy on machines that suffer from double rounding.
-x, y = 1e16, 2.9999 # use temporary values to defeat peephole optimizer
-HAVE_DOUBLE_ROUNDING = (x + y == 1e16 + 4)
-
 # used as proof of globals being used
 A_GLOBAL_VALUE = 123
+A_SENTINEL = sentinel("A_SENTINEL")
+
+class SentinelContainer:
+    CLASS_SENTINEL = sentinel("SentinelContainer.CLASS_SENTINEL")
 
 class Squares:
 
@@ -262,7 +263,10 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         def f_set():
             return set(2*x for x in [1,2,3])
 
-        funcs = [f_all, f_any, f_tuple, f_list, f_set]
+        def f_frozenset():
+            return frozenset(2*x for x in [1,2,3])
+
+        funcs = [f_all, f_any, f_tuple, f_list, f_set, f_frozenset]
 
         for f in funcs:
             # check that generator code object is not duplicated
@@ -272,35 +276,58 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
         # check the overriding the builtins works
 
-        global all, any, tuple, list, set
-        saved = all, any, tuple, list, set
+        global all, any, tuple, list, set, frozenset
+        saved = all, any, tuple, list, set, frozenset
         try:
             all = lambda x : "all"
             any = lambda x : "any"
             tuple = lambda x : "tuple"
             list = lambda x : "list"
             set = lambda x : "set"
+            frozenset = lambda x : "frozenset"
 
             overridden_outputs = [f() for f in funcs]
         finally:
-            all, any, tuple, list, set = saved
+            all, any, tuple, list, set, frozenset = saved
 
-        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple', 'list', 'set'])
+        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple', 'list', 'set', 'frozenset'])
         # Now repeat, overriding the builtins module as well
-        saved = all, any, tuple, list, set
+        saved = all, any, tuple, list, set, frozenset
         try:
             builtins.all = all = lambda x : "all"
             builtins.any = any = lambda x : "any"
             builtins.tuple = tuple = lambda x : "tuple"
             builtins.list = list = lambda x : "list"
             builtins.set = set = lambda x : "set"
+            builtins.frozenset = frozenset = lambda x : "frozenset"
 
             overridden_outputs = [f() for f in funcs]
         finally:
-            all, any, tuple, list, set = saved
-            builtins.all, builtins.any, builtins.tuple, builtins.list, builtins.set = saved
+            all, any, tuple, list, set, frozenset = saved
+            builtins.all, builtins.any, builtins.tuple, builtins.list, builtins.set, builtins.frozenset = saved
 
-        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple', 'list', 'set'])
+        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple', 'list', 'set', 'frozenset'])
+
+    def test_builtin_call_async_genexpr_no_crash(self):
+        async def f_all():
+            return all(await 2 for _ in [])
+
+        async def f_any():
+            return any(await 2 for _ in [])
+
+        async def f_tuple():
+            return tuple(await 2 for _ in [])
+
+        async def f_list():
+            return list(await 2 for _ in [])
+
+        async def f_set():
+            return set(await 2 for _ in [])
+
+        for f in (f_all, f_any, f_tuple, f_list, f_set):
+            with self.subTest(func=f.__name__):
+                with self.assertRaises(TypeError):
+                    run_yielding_async_fn(f)
 
     def test_ascii(self):
         self.assertEqual(ascii(''), '\'\'')
@@ -1903,6 +1930,115 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             __repr__ = None
         self.assertRaises(TypeError, repr, C())
 
+    def test_sentinel(self):
+        missing = sentinel("MISSING")
+        other = sentinel("MISSING")
+
+        self.assertIsInstance(missing, sentinel)
+        self.assertIs(type(missing), sentinel)
+        self.assertEqual(missing.__name__, "MISSING")
+        self.assertEqual(missing.__module__, __name__)
+        self.assertIsNot(missing, other)
+        self.assertEqual(repr(missing), "MISSING")
+        self.assertTrue(missing)
+        self.assertIs(copy.copy(missing), missing)
+        self.assertIs(copy.deepcopy(missing), missing)
+        self.assertEqual(missing, missing)
+        self.assertNotEqual(missing, other)
+        self.assertRaises(TypeError, sentinel)
+        self.assertRaises(TypeError, sentinel, "MISSING", "EXTRA")
+        self.assertRaises(TypeError, sentinel, name="MISSING")
+        with self.assertRaisesRegex(TypeError, "must be str"):
+            sentinel(1)
+        self.assertTrue(sentinel.__flags__ & support._TPFLAGS_IMMUTABLETYPE)
+        self.assertTrue(sentinel.__flags__ & support._TPFLAGS_HAVE_GC)
+        self.assertFalse(sentinel.__flags__ & support._TPFLAGS_BASETYPE)
+        with self.assertRaises(TypeError):
+            class SubSentinel(sentinel):
+                pass
+
+    def test_sentinel_attributes(self):
+        missing = sentinel("MISSING")
+        with self.assertRaises(TypeError):
+            sentinel.attribute = "value"
+        with self.assertRaises(AttributeError):
+            missing.attribute = "value"
+        with self.assertRaises(AttributeError):
+            missing.__name__ = "CHANGED"
+        missing.__module__ = "changed"
+        self.assertEqual(missing.__module__, "changed")
+        with self.assertRaises(AttributeError):
+            del missing.__name__
+        del missing.__module__
+        with self.assertRaises(AttributeError):
+            missing.__module__
+
+    def test_sentinel_repr(self):
+        with_repr = sentinel("WITH_REPR", repr="custom")
+        without_repr = sentinel("WITHOUT_REPR", repr=None)
+        self.assertEqual(repr(with_repr), "custom")
+        self.assertEqual(repr(without_repr), "WITHOUT_REPR")
+        self.assertEqual(str(with_repr), "custom")
+        self.assertEqual(str(without_repr), "WITHOUT_REPR")
+
+        with self.assertRaisesRegex(TypeError, "repr.*str or None"):
+            sentinel("BAD_REPR", repr=42)
+
+    def test_sentinel_pickle(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=proto):
+                self.assertIs(
+                    pickle.loads(pickle.dumps(A_SENTINEL, protocol=proto)),
+                    A_SENTINEL)
+                self.assertIs(
+                    pickle.loads(pickle.dumps(
+                        SentinelContainer.CLASS_SENTINEL, protocol=proto)),
+                    SentinelContainer.CLASS_SENTINEL)
+
+        missing = sentinel("MISSING")
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=proto):
+                with self.assertRaises(pickle.PicklingError):
+                    pickle.dumps(missing, protocol=proto)
+
+    def test_sentinel_str_subclass_name_cycle(self):
+        class Name(str):
+            pass
+
+        name = Name("MISSING")
+        missing = sentinel(name)
+        self.assertIs(missing.__name__, name)
+        self.assertTrue(gc.is_tracked(missing))
+
+        name.missing = missing
+        ref = weakref.ref(name)
+        del name, missing
+        support.gc_collect()
+        self.assertIsNone(ref())
+
+    def test_sentinel_union(self):
+        missing = sentinel("MISSING")
+
+        self.assertIsInstance(missing | int, typing.Union)
+        self.assertEqual((missing | int).__args__, (missing, int))
+        self.assertIsInstance(int | missing, typing.Union)
+        self.assertEqual((int | missing).__args__, (int, missing))
+        self.assertIs(missing | missing, missing)
+        self.assertEqual(repr(int | missing), "int | MISSING")
+        self.assertIsInstance(missing | None, typing.Union)
+        self.assertEqual((missing | None).__args__, (missing, type(None)))
+        self.assertIsInstance(None | missing, typing.Union)
+        self.assertEqual((None | missing).__args__, (type(None), missing))
+        self.assertIsInstance(missing | list[int], typing.Union)
+        self.assertEqual((missing | list[int]).__args__, (missing, list[int]))
+        self.assertIsInstance(missing | (int | str), typing.Union)
+        self.assertEqual((missing | (int | str)).__args__, (missing, int, str))
+
+        with self.assertRaises(TypeError):
+            missing | 1
+        with self.assertRaises(TypeError):
+            1 | missing
+
     def test_round(self):
         self.assertEqual(round(0.0), 0.0)
         self.assertEqual(type(round(0.0)), int)
@@ -2094,8 +2230,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                                          complex(2, -0.0))
 
     @requires_IEEE_754
-    @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
-                         "sum accuracy not guaranteed on machines with double rounding")
+    @skip_if_double_rounding
     @support.cpython_only    # Other implementations may choose a different algorithm
     def test_sum_accuracy(self):
         self.assertEqual(sum([0.1] * 10), 1.0)

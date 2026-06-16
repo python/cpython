@@ -1283,16 +1283,6 @@ class SysModuleTest(unittest.TestCase):
     def test_no_duplicates_in_meta_path(self):
         self.assertEqual(len(sys.meta_path), len(set(sys.meta_path)))
 
-    @unittest.skipUnless(hasattr(sys, "_enablelegacywindowsfsencoding"),
-                         'needs sys._enablelegacywindowsfsencoding()')
-    def test__enablelegacywindowsfsencoding(self):
-        code = ('import sys',
-                'sys._enablelegacywindowsfsencoding()',
-                'print(sys.getfilesystemencoding(), sys.getfilesystemencodeerrors())')
-        rc, out, err = assert_python_ok('-c', '; '.join(code))
-        out = out.decode('ascii', 'replace').rstrip()
-        self.assertEqual(out, 'mbcs replace')
-
     @support.requires_subprocess()
     def test_orig_argv(self):
         code = textwrap.dedent('''
@@ -1798,7 +1788,7 @@ class SizeofTest(unittest.TestCase):
         check((1,2,3), vsize('') + self.P + 3*self.P)
         # type
         # static type: PyTypeObject
-        fmt = 'P2nPI13Pl4Pn9Pn12PIPc'
+        fmt = 'P2nPI13Pl4Pn9Pn12PI2Pc'
         s = vsize(fmt)
         check(int, s)
         typeid = 'n' if support.Py_GIL_DISABLED else ''
@@ -1908,7 +1898,7 @@ class SizeofTest(unittest.TestCase):
         check = self.check_sizeof
         # _ast.AST
         import _ast
-        check(_ast.AST(), size('P'))
+        check(_ast.Module(), size('3P'))
         try:
             raise TypeError
         except TypeError as e:

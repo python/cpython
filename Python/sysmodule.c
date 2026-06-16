@@ -34,6 +34,7 @@ Data members:
 #include "pycore_pymem.h"         // _PyMem_DefaultRawFree()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_pystats.h"       // _Py_PrintSpecializationStats()
+#include "pycore_runtime.h"       // _PyRuntimeState_Get*()
 #include "pycore_structseq.h"     // _PyStructSequence_InitBuiltinWithFlags()
 #include "pycore_sysmodule.h"     // export _PySys_GetSizeOf()
 #include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal()
@@ -471,7 +472,7 @@ PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
        PySys_AddAuditHook() can be called before Python is initialized. */
     _PyRuntimeState *runtime = &_PyRuntime;
     PyThreadState *tstate;
-    if (runtime->initialized) {
+    if (_PyRuntimeState_GetInitialized(runtime)) {
         tstate = _PyThreadState_GET();
     }
     else {
@@ -1789,36 +1790,6 @@ error:
 }
 
 #pragma warning(pop)
-
-/*[clinic input]
-sys._enablelegacywindowsfsencoding
-
-Changes the default filesystem encoding to mbcs:replace.
-
-This is done for consistency with earlier versions of Python. See PEP
-529 for more information.
-
-This is equivalent to defining the PYTHONLEGACYWINDOWSFSENCODING
-environment variable before launching Python.
-[clinic start generated code]*/
-
-static PyObject *
-sys__enablelegacywindowsfsencoding_impl(PyObject *module)
-/*[clinic end generated code: output=f5c3855b45e24fe9 input=2bfa931a20704492]*/
-{
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-        "sys._enablelegacywindowsfsencoding() is deprecated and will be "
-        "removed in Python 3.16. Use PYTHONLEGACYWINDOWSFSENCODING "
-        "instead.", 1))
-    {
-        return NULL;
-    }
-    if (_PyUnicode_EnableLegacyWindowsFSEncoding() < 0) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
 #endif /* MS_WINDOWS */
 
 #ifdef HAVE_DLOPEN
@@ -1892,6 +1863,7 @@ sys_mdebug_impl(PyObject *module, int flag)
 
 
 /*[clinic input]
+@permit_long_summary
 sys.get_int_max_str_digits
 
 Return the maximum string digits limit for non-binary int<->str conversions.
@@ -1899,7 +1871,7 @@ Return the maximum string digits limit for non-binary int<->str conversions.
 
 static PyObject *
 sys_get_int_max_str_digits_impl(PyObject *module)
-/*[clinic end generated code: output=0042f5e8ae0e8631 input=61bf9f99bc8b112d]*/
+/*[clinic end generated code: output=0042f5e8ae0e8631 input=77fb74e987ba7ecb]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     return PyLong_FromLong(interp->long_state.max_str_digits);
@@ -1907,6 +1879,7 @@ sys_get_int_max_str_digits_impl(PyObject *module)
 
 
 /*[clinic input]
+@permit_long_summary
 sys.set_int_max_str_digits
 
     maxdigits: int
@@ -1916,7 +1889,7 @@ Set the maximum string digits limit for non-binary int<->str conversions.
 
 static PyObject *
 sys_set_int_max_str_digits_impl(PyObject *module, int maxdigits)
-/*[clinic end generated code: output=734d4c2511f2a56d input=d7e3f325db6910c5]*/
+/*[clinic end generated code: output=734d4c2511f2a56d input=d4c0bf50c466d57a]*/
 {
     if (_PySys_SetIntMaxStrDigits(maxdigits) < 0) {
         return NULL;
@@ -2128,6 +2101,7 @@ sys__getframe_impl(PyObject *module, int depth)
 }
 
 /*[clinic input]
+@permit_long_summary
 sys._current_frames
 
 Return a dict mapping each thread's thread id to its current stack frame.
@@ -2137,7 +2111,7 @@ This function should be used for specialized purposes only.
 
 static PyObject *
 sys__current_frames_impl(PyObject *module)
-/*[clinic end generated code: output=d2a41ac0a0a3809a input=2a9049c5f5033691]*/
+/*[clinic end generated code: output=d2a41ac0a0a3809a input=e1ce34f43501e0d6]*/
 {
     return _PyThread_CurrentFrames();
 }
@@ -2316,17 +2290,17 @@ sys__stats_clear_impl(PyObject *module)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 sys._stats_dump -> bool
 
 Dump stats to file, and clears the stats.
 
-Return False if no statistics were not dumped because stats gathering was off.
+Return False if no statistics were not dumped because stats gathering
+was off.
 [clinic start generated code]*/
 
 static int
 sys__stats_dump_impl(PyObject *module)
-/*[clinic end generated code: output=6e346b4ba0de4489 input=5a3ab40d2fb5af47]*/
+/*[clinic end generated code: output=6e346b4ba0de4489 input=7f3b7758cb59d2ff]*/
 {
     int res = _Py_PrintSpecializationStats(1);
     _Py_StatsClear();
@@ -2470,16 +2444,16 @@ sys.remote_exec
 Executes a file containing Python code in a given remote Python process.
 
 This function returns immediately, and the code will be executed by the
-target process's main thread at the next available opportunity, similarly
-to how signals are handled. There is no interface to determine when the
-code has been executed. The caller is responsible for making sure that
-the file still exists whenever the remote process tries to read it and that
-it hasn't been overwritten.
+target process's main thread at the next available opportunity,
+similarly to how signals are handled.  There is no interface to
+determine when the code has been executed.  The caller is responsible
+for making sure that the file still exists whenever the remote process
+tries to read it and that it hasn't been overwritten.
 
-The remote process must be running a CPython interpreter of the same major
-and minor version as the local process. If either the local or remote
-interpreter is pre-release (alpha, beta, or release candidate) then the
-local and remote interpreters must be the same exact version.
+The remote process must be running a CPython interpreter of the same
+major and minor version as the local process.  If either the local or
+remote interpreter is pre-release (alpha, beta, or release candidate)
+then the local and remote interpreters must be the same exact version.
 
 Args:
      pid (int): The process ID of the target Python process.
@@ -2489,7 +2463,7 @@ Args:
 
 static PyObject *
 sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
-/*[clinic end generated code: output=7d94c56afe4a52c0 input=39908ca2c5fe1eb0]*/
+/*[clinic end generated code: output=7d94c56afe4a52c0 input=7bd58f8da20cb74c]*/
 {
     PyObject *path;
     const char *debugger_script_path;
@@ -2706,7 +2680,7 @@ PyAPI_FUNC(int) PyUnstable_PerfMapState_Init(void) {
 
 PyAPI_FUNC(int) PyUnstable_WritePerfMapEntry(
     const void *code_addr,
-    unsigned int code_size,
+    size_t code_size,
     const char *entry_name
 ) {
 #ifndef MS_WINDOWS
@@ -2717,7 +2691,7 @@ PyAPI_FUNC(int) PyUnstable_WritePerfMapEntry(
         }
     }
     PyThread_acquire_lock(perf_map_state.map_lock, 1);
-    fprintf(perf_map_state.perf_map, "%" PRIxPTR " %x %s\n", (uintptr_t) code_addr, code_size, entry_name);
+    fprintf(perf_map_state.perf_map, "%" PRIxPTR " %zx %s\n", (uintptr_t) code_addr, code_size, entry_name);
     fflush(perf_map_state.perf_map);
     PyThread_release_lock(perf_map_state.map_lock);
 #endif
@@ -2796,14 +2770,14 @@ The filter is a callable which disables lazy imports when they
 would otherwise be enabled. Returns True if the import is still enabled
 or False to disable it. The callable is called with:
 
-(importing_module_name, imported_module_name, [fromlist])
+(importing_module_name, resolved_imported_module_name, [fromlist])
 
 Pass None to clear the filter.
 [clinic start generated code]*/
 
 static PyObject *
 sys_set_lazy_imports_filter_impl(PyObject *module, PyObject *filter)
-/*[clinic end generated code: output=10251d49469c278c input=2eb48786bdd4ee42]*/
+/*[clinic end generated code: output=10251d49469c278c input=fd51ed8df6ab54b7]*/
 {
     if (PyImport_SetLazyImportsFilter(filter) < 0) {
         return NULL;
@@ -2841,8 +2815,8 @@ Sets the global lazy imports mode.
 
 The mode parameter must be one of the following strings:
 - "all": All top-level imports become potentially lazy
-- "none": All lazy imports are suppressed (even explicitly marked ones)
-- "normal": Only explicitly marked imports (with 'lazy' keyword) are lazy
+- "normal": Only explicitly marked imports (with 'lazy' keyword) are
+  lazy
 
 In addition to the mode, lazy imports can be controlled via the filter
 provided to sys.set_lazy_imports_filter
@@ -2851,12 +2825,12 @@ provided to sys.set_lazy_imports_filter
 
 static PyObject *
 sys_set_lazy_imports_impl(PyObject *module, PyObject *mode)
-/*[clinic end generated code: output=1ff34ba6c4feaf73 input=f04e70d8bf9fe4f6]*/
+/*[clinic end generated code: output=1ff34ba6c4feaf73 input=db3242f0ff6e5dcc]*/
 {
     PyImport_LazyImportsMode lazy_mode;
     if (!PyUnicode_Check(mode)) {
         PyErr_SetString(PyExc_TypeError,
-                        "mode must be a string: 'normal', 'all', or 'none'");
+                        "mode must be a string: 'normal' or 'all'");
         return NULL;
     }
     if (PyUnicode_CompareWithASCIIString(mode, "normal") == 0) {
@@ -2865,12 +2839,9 @@ sys_set_lazy_imports_impl(PyObject *module, PyObject *mode)
     else if (PyUnicode_CompareWithASCIIString(mode, "all") == 0) {
         lazy_mode = PyImport_LAZY_ALL;
     }
-    else if (PyUnicode_CompareWithASCIIString(mode, "none") == 0) {
-        lazy_mode = PyImport_LAZY_NONE;
-    }
     else {
         PyErr_SetString(PyExc_ValueError,
-                        "mode must be 'normal', 'all', or 'none'");
+                        "mode must be 'normal' or 'all'");
         return NULL;
     }
 
@@ -2886,22 +2857,19 @@ sys.get_lazy_imports
 Gets the global lazy imports mode.
 
 Returns "all" if all top level imports are potentially lazy.
-Returns "none" if all explicitly marked lazy imports are suppressed.
 Returns "normal" if only explicitly marked imports are lazy.
 
 [clinic start generated code]*/
 
 static PyObject *
 sys_get_lazy_imports_impl(PyObject *module)
-/*[clinic end generated code: output=4147dec48c51ae99 input=8cb574f1e4e3003c]*/
+/*[clinic end generated code: output=4147dec48c51ae99 input=6f8dd4f2c82893f2]*/
 {
     switch (PyImport_GetLazyImportsMode()) {
         case PyImport_LAZY_NORMAL:
             return PyUnicode_FromString("normal");
         case PyImport_LAZY_ALL:
             return PyUnicode_FromString("all");
-        case PyImport_LAZY_NONE:
-            return PyUnicode_FromString("none");
         default:
             PyErr_SetString(PyExc_RuntimeError, "unknown lazy imports mode");
             return NULL;
@@ -2940,7 +2908,6 @@ static PyMethodDef sys_methods[] = {
     SYS__GETFRAME_METHODDEF
     SYS__GETFRAMEMODULENAME_METHODDEF
     SYS_GETWINDOWSVERSION_METHODDEF
-    SYS__ENABLELEGACYWINDOWSFSENCODING_METHODDEF
     SYS__IS_IMMORTAL_METHODDEF
     SYS_INTERN_METHODDEF
     SYS__IS_INTERNED_METHODDEF
@@ -3435,13 +3402,6 @@ winver -- [Windows only] version number of the Python DLL\n\
 "
 )
 #endif /* MS_COREDLL */
-#ifdef MS_WINDOWS
-/* concatenating string here */
-PyDoc_STR(
-"_enablelegacywindowsfsencoding -- [Windows only]\n\
-"
-)
-#endif
 PyDoc_STR(
 "__stdin__ -- the original stdin; don't touch!\n\
 __stdout__ -- the original stdout; don't touch!\n\

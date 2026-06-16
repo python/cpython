@@ -80,9 +80,9 @@ assemble_init(struct assembler *a, int firstlineno)
     }
     return SUCCESS;
 error:
-    Py_XDECREF(a->a_bytecode);
-    Py_XDECREF(a->a_linetable);
-    Py_XDECREF(a->a_except_table);
+    Py_CLEAR(a->a_bytecode);
+    Py_CLEAR(a->a_linetable);
+    Py_CLEAR(a->a_except_table);
     return ERROR;
 }
 
@@ -418,6 +418,7 @@ assemble_emit_instr(struct assembler *a, instruction *instr)
     int size = instr_size(instr);
     if (a->a_offset + size >= len / (int)sizeof(_Py_CODEUNIT)) {
         if (len > PY_SSIZE_T_MAX / 2) {
+            PyErr_NoMemory();
             return ERROR;
         }
         RETURN_IF_ERROR(_PyBytes_Resize(&a->a_bytecode, len * 2));

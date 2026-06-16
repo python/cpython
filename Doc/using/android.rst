@@ -30,7 +30,7 @@ Adding Python to an Android app
 Most app developers should use one of the following tools, which will provide a
 much easier experience:
 
-* `Briefcase <https://briefcase.readthedocs.io>`__, from the BeeWare project
+* `Briefcase <https://briefcase.beeware.org>`__, from the BeeWare project
 * `Buildozer <https://buildozer.readthedocs.io>`__, from the Kivy project
 * `Chaquopy <https://chaquo.com/chaquopy>`__
 * `pyqtdeploy <https://www.riverbankcomputing.com/static/Docs/pyqtdeploy/>`__

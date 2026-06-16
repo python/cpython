@@ -735,15 +735,15 @@ int PyABIInfo_Check(PyABIInfo *info, const char *module_name)
                 return _abiinfo_raise(
                     module_name,
                     "incompatible future stable ABI version (%d.%d)",
-                    ((info->abi_version) >> 24) % 0xff,
-                    ((info->abi_version) >> 16) % 0xff);
+                    ((info->abi_version) >> 24) & 0xff,
+                    ((info->abi_version) >> 16) & 0xff);
             }
             if (info->abi_version < Py_PACK_VERSION(3, 2)) {
                 return _abiinfo_raise(
                     module_name,
                     "invalid stable ABI version (%d.%d)",
-                    ((info->abi_version) >> 24) % 0xff,
-                    ((info->abi_version) >> 16) % 0xff);
+                    ((info->abi_version) >> 24) & 0xff,
+                    ((info->abi_version) >> 16) & 0xff);
             }
         }
         if (info->flags & PyABIInfo_INTERNAL) {
@@ -758,8 +758,8 @@ int PyABIInfo_Check(PyABIInfo *info, const char *module_name)
                 return _abiinfo_raise(
                     module_name,
                     "incompatible ABI version (%d.%d)",
-                    ((info->abi_version) >> 24) % 0xff,
-                    ((info->abi_version) >> 16) % 0xff);
+                    ((info->abi_version) >> 24) & 0xff,
+                    ((info->abi_version) >> 16) & 0xff);
             }
         }
     }

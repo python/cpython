@@ -11,7 +11,7 @@ class DiscoverableFinder:
         self._discovered_values = discover
 
     def find_spec(self, fullname, path=None, target=None):
-        raise NotImplemented
+        raise NotImplementedError
 
     def discover(self, parent=None):
         yield from self._discovered_values

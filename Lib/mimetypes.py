@@ -86,6 +86,9 @@ class MimeTypes:
         is already known the extension will be added
         to the list of known extensions.
 
+        Registered lower-case extensions are matched
+        case-insensitively.
+
         If strict is true, information will be added to
         list of standard types, else to the list of non-standard
         types.
@@ -93,14 +96,7 @@ class MimeTypes:
         Valid extensions are empty or start with a '.'.
         """
         if ext and not ext.startswith('.'):
-            from warnings import _deprecated
-
-            _deprecated(
-                "Undotted extensions",
-                "Using undotted extensions is deprecated and "
-                "will raise a ValueError in Python {remove}",
-                remove=(3, 16),
-            )
+            raise ValueError(f"Extension {ext!r} must start with '.'")
 
         if not type:
             return
@@ -179,23 +175,33 @@ class MimeTypes:
 
     def _guess_file_type(self, path, strict, splitext):
         base, ext = splitext(path)
-        while (ext_lower := ext.lower()) in self.suffix_map:
-            base, ext = splitext(base + self.suffix_map[ext_lower])
+        while True:
+            if ext in self.suffix_map:
+                suffix = self.suffix_map[ext]
+            elif (ext_lower := ext.lower()) in self.suffix_map:
+                suffix = self.suffix_map[ext_lower]
+            else:
+                break
+            base, ext = splitext(base + suffix)
         # encodings_map is case sensitive
         if ext in self.encodings_map:
             encoding = self.encodings_map[ext]
             base, ext = splitext(base)
         else:
             encoding = None
-        ext = ext.lower()
+        ext_lower = ext.lower()
         types_map = self.types_map[True]
         if ext in types_map:
             return types_map[ext], encoding
+        if ext_lower in types_map:
+            return types_map[ext_lower], encoding
         elif strict:
             return None, encoding
         types_map = self.types_map[False]
         if ext in types_map:
             return types_map[ext], encoding
+        if ext_lower in types_map:
+            return types_map[ext_lower], encoding
         else:
             return None, encoding
 
@@ -392,6 +398,9 @@ def add_type(type, ext, strict=True):
     type will replace the old one. When the type
     is already known the extension will be added
     to the list of known extensions.
+
+    Registered lower-case extensions are matched
+    case-insensitively.
 
     If strict is true, information will be added to
     list of standard types, else to the list of non-standard
@@ -599,10 +608,14 @@ def _default_mime_types():
         '.ra'     : 'audio/x-pn-realaudio',
         '.wav'    : 'audio/vnd.wave',
         '.weba'   : 'audio/webm',
+        '.ttc'    : 'font/collection',
         '.otf'    : 'font/otf',
         '.ttf'    : 'font/ttf',
         '.woff'   : 'font/woff',
         '.woff2'  : 'font/woff2',
+        '.hjif'   : 'haptics/hjif',
+        '.hmpg'   : 'haptics/hmpg',
+        '.ivs'    : 'haptics/ivs',
         '.avif'   : 'image/avif',
         '.bmp'    : 'image/bmp',
         '.emf'    : 'image/emf',
@@ -708,7 +721,7 @@ def _parse_args(args):
     from argparse import ArgumentParser
 
     parser = ArgumentParser(
-        description='map filename extensions to MIME types', color=True
+        description='map filename extensions to MIME types',
     )
     parser.add_argument(
         '-e', '--extension',

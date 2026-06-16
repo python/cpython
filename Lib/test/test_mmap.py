@@ -354,6 +354,8 @@ class MmapTests(unittest.TestCase):
         self.assertEqual(m.find(b'one', 1, -1), 8)
         self.assertEqual(m.find(b'one', 1, -2), -1)
         self.assertEqual(m.find(bytearray(b'one')), 0)
+        self.assertEqual(m.find(b'', n + 1), -1)
+        self.assertEqual(m.rfind(b'', n + 1), -1)
 
         for i in range(-n-1, n+1):
             for j in range(-n-1, n+1):

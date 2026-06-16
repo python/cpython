@@ -885,10 +885,14 @@ def move(src, dst, copy_function=copy2):
     If dst already exists but is not a directory, it may be overwritten
     depending on os.rename() semantics.
 
-    If the destination is on our current filesystem, then rename() is used.
-    Otherwise, src is copied to the destination and then removed. Symlinks are
-    recreated under the new name if os.rename() fails because of cross
-    filesystem renames.
+    os.rename() is preferably used if the source and destination are on the
+    same filesystem. In case os.rename() fails due to OSError (e.g. the user
+    has write permission to *dst* file but not to its parent directory),
+    this method falls back to using *copy_function* silently.
+    Symlinks are also recreated under the new name if os.rename() fails
+    because of cross filesystem renames.
+
+    It's recommended to use os.rename() if atomic move is strictly required.
 
     The optional `copy_function` argument is a callable that will be used
     to copy the source or it will be delegated to `copytree`.
@@ -940,8 +944,8 @@ def move(src, dst, copy_function=copy2):
     return real_dst
 
 def _destinsrc(src, dst):
-    src = os.path.abspath(src)
-    dst = os.path.abspath(dst)
+    src = os.path.realpath(src)
+    dst = os.path.realpath(dst)
     if not src.endswith(os.path.sep):
         src += os.path.sep
     if not dst.endswith(os.path.sep):
@@ -1303,12 +1307,6 @@ def unregister_unpack_format(name):
     """Removes the pack format from the registry."""
     del _UNPACK_FORMATS[name]
 
-def _ensure_directory(path):
-    """Ensure that the parent directory of `path` exists"""
-    dirname = os.path.dirname(path)
-    if not os.path.isdir(dirname):
-        os.makedirs(dirname)
-
 def _unpack_zipfile(filename, extract_dir):
     """Unpack zip `filename` to `extract_dir`
     """
@@ -1317,27 +1315,9 @@ def _unpack_zipfile(filename, extract_dir):
     if not zipfile.is_zipfile(filename):
         raise ReadError("%s is not a zip file" % filename)
 
-    zip = zipfile.ZipFile(filename)
-    try:
-        for info in zip.infolist():
-            name = info.filename
-
-            # don't extract absolute paths or ones with .. in them
-            if name.startswith('/') or '..' in name:
-                continue
-
-            targetpath = os.path.join(extract_dir, *name.split('/'))
-            if not targetpath:
-                continue
-
-            _ensure_directory(targetpath)
-            if not name.endswith('/'):
-                # file
-                with zip.open(name, 'r') as source, \
-                        open(targetpath, 'wb') as target:
-                    copyfileobj(source, target)
-    finally:
-        zip.close()
+    with zipfile.ZipFile(filename) as zip:
+        zip._ignore_invalid_names = True
+        zip.extractall(extract_dir)
 
 def _unpack_tarfile(filename, extract_dir, *, filter=None):
     """Unpack tar/tar.gz/tar.bz2/tar.xz/tar.zst `filename` to `extract_dir`
@@ -1656,15 +1636,3 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
                 if _access_check(name, mode):
                     return name
     return None
-
-def __getattr__(name):
-    if name == "ExecError":
-        import warnings
-        warnings._deprecated(
-            "shutil.ExecError",
-            f"{warnings._DEPRECATED_MSG}; it "
-            "isn't raised by any shutil function.",
-            remove=(3, 16)
-        )
-        return RuntimeError
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
