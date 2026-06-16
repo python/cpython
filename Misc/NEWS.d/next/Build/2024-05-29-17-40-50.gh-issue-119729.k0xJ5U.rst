@@ -1,5 +1,0 @@
-On POSIX systems, the pkg-config (``.pc``) filenames now include the ABI
-flags, which may include debug ("d") and free-threaded ("t").  For example:
-* ``python-3.14.pc`` (default, non-debug build)
-* ``python-3.14d.pc`` (default, debug build)
-* ``python-3.14t.pc`` (free-threaded build)

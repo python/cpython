@@ -158,6 +158,17 @@ gc_set_threshold_impl(PyObject *module, int threshold0, int group_right_1,
 {
     GCState *gcstate = get_gc_state();
 
+#ifndef Py_GIL_DISABLED
+    gcstate->generations[0].threshold = threshold0;
+    if (group_right_1) {
+        gcstate->generations[1].threshold = threshold1;
+    }
+    if (group_right_2) {
+        gcstate->generations[2].threshold = threshold2;
+    }
+#else
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
     gcstate->young.threshold = threshold0;
     if (group_right_1) {
         gcstate->old[0].threshold = threshold1;
@@ -165,6 +176,8 @@ gc_set_threshold_impl(PyObject *module, int threshold0, int group_right_1,
     if (group_right_2) {
         gcstate->old[1].threshold = threshold2;
     }
+    _PyEval_StartTheWorld(interp);
+#endif
     Py_RETURN_NONE;
 }
 
@@ -179,10 +192,17 @@ gc_get_threshold_impl(PyObject *module)
 /*[clinic end generated code: output=7902bc9f41ecbbd8 input=286d79918034d6e6]*/
 {
     GCState *gcstate = get_gc_state();
+#ifndef Py_GIL_DISABLED
+    return Py_BuildValue("(iii)",
+                         gcstate->generations[0].threshold,
+                         gcstate->generations[1].threshold,
+                         gcstate->generations[2].threshold);
+#else
     return Py_BuildValue("(iii)",
                          gcstate->young.threshold,
                          gcstate->old[0].threshold,
-                         0);
+                         gcstate->old[1].threshold);
+#endif
 }
 
 /*[clinic input]
@@ -206,30 +226,37 @@ gc_get_count_impl(PyObject *module)
     gc->alloc_count = 0;
 #endif
 
+#ifndef Py_GIL_DISABLED
     return Py_BuildValue("(iii)",
-                         gcstate->young.count,
-                         gcstate->old[gcstate->visited_space].count,
-                         gcstate->old[gcstate->visited_space^1].count);
+                         gcstate->generations[0].count,
+                         gcstate->generations[1].count,
+                         gcstate->generations[2].count);
+#else
+    return Py_BuildValue("(iii)",
+                         _Py_atomic_load_int_relaxed(&gcstate->young.count),
+                         gcstate->old[0].count,
+                         gcstate->old[1].count);
+#endif
 }
 
 /*[clinic input]
 gc.get_referrers
 
-    *objs as args: object
+    *objs: tuple
 
 Return the list of objects that directly refer to any of 'objs'.
 [clinic start generated code]*/
 
 static PyObject *
-gc_get_referrers_impl(PyObject *module, PyObject *args)
-/*[clinic end generated code: output=296a09587f6a86b5 input=bae96961b14a0922]*/
+gc_get_referrers_impl(PyObject *module, PyObject *objs)
+/*[clinic end generated code: output=929d6dff26f609b9 input=9102be7ebee69ee3]*/
 {
-    if (PySys_Audit("gc.get_referrers", "(O)", args) < 0) {
+    if (PySys_Audit("gc.get_referrers", "(O)", objs) < 0) {
         return NULL;
     }
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return _PyGC_GetReferrers(interp, args);
+    return _PyGC_GetReferrers(interp, objs);
 }
 
 /* Append obj to list; return true if error (out of memory), false if OK. */
@@ -263,27 +290,28 @@ append_referrents(PyObject *result, PyObject *args)
 /*[clinic input]
 gc.get_referents
 
-    *objs as args: object
+    *objs: tuple
 
 Return the list of objects that are directly referred to by 'objs'.
 [clinic start generated code]*/
 
 static PyObject *
-gc_get_referents_impl(PyObject *module, PyObject *args)
-/*[clinic end generated code: output=d47dc02cefd06fe8 input=b3ceab0c34038cbf]*/
+gc_get_referents_impl(PyObject *module, PyObject *objs)
+/*[clinic end generated code: output=6dfde40cd1588e1d input=55c078a6d0248fe0]*/
 {
-    if (PySys_Audit("gc.get_referents", "(O)", args) < 0) {
+    if (PySys_Audit("gc.get_referents", "(O)", objs) < 0) {
         return NULL;
     }
     PyInterpreterState *interp = _PyInterpreterState_GET();
     PyObject *result = PyList_New(0);
 
-    if (result == NULL)
+    if (result == NULL) {
         return NULL;
+    }
 
     // NOTE: stop the world is a no-op in default build
     _PyEval_StopTheWorld(interp);
-    int err = append_referrents(result, args);
+    int err = append_referrents(result, objs);
     _PyEval_StartTheWorld(interp);
 
     if (err < 0) {
@@ -294,19 +322,20 @@ gc_get_referents_impl(PyObject *module, PyObject *args)
 }
 
 /*[clinic input]
+@permit_long_summary
 gc.get_objects
     generation: Py_ssize_t(accept={int, NoneType}, c_default="-1") = None
         Generation to extract the objects from.
 
 Return a list of objects tracked by the collector (excluding the list returned).
 
-If generation is not None, return only the objects tracked by the collector
-that are in that generation.
+If generation is not None, return only the objects tracked by the
+collector that are in that generation.
 [clinic start generated code]*/
 
 static PyObject *
 gc_get_objects_impl(PyObject *module, Py_ssize_t generation)
-/*[clinic end generated code: output=48b35fea4ba6cb0e input=ef7da9df9806754c]*/
+/*[clinic end generated code: output=48b35fea4ba6cb0e input=89bca0d4a64e0135]*/
 {
     if (PySys_Audit("gc.get_objects", "n", generation) < 0) {
         return NULL;
@@ -345,9 +374,9 @@ gc_get_stats_impl(PyObject *module)
     /* To get consistent values despite allocations while constructing
        the result list, we use a snapshot of the running stats. */
     GCState *gcstate = get_gc_state();
-    for (i = 0; i < NUM_GENERATIONS; i++) {
-        stats[i] = gcstate->generation_stats[i];
-    }
+    stats[0] = gcstate->generation_stats->young.items[gcstate->generation_stats->young.index];
+    stats[1] = gcstate->generation_stats->old[0].items[gcstate->generation_stats->old[0].index];
+    stats[2] = gcstate->generation_stats->old[1].items[gcstate->generation_stats->old[1].index];
 
     PyObject *result = PyList_New(0);
     if (result == NULL)
@@ -356,10 +385,12 @@ gc_get_stats_impl(PyObject *module)
     for (i = 0; i < NUM_GENERATIONS; i++) {
         PyObject *dict;
         st = &stats[i];
-        dict = Py_BuildValue("{snsnsn}",
+        dict = Py_BuildValue("{snsnsnsnsd}",
                              "collections", st->collections,
                              "collected", st->collected,
-                             "uncollectable", st->uncollectable
+                             "uncollectable", st->uncollectable,
+                             "candidates", st->candidates,
+                             "duration", st->duration
                             );
         if (dict == NULL)
             goto error;
@@ -412,18 +443,20 @@ gc_is_finalized_impl(PyObject *module, PyObject *obj)
 }
 
 /*[clinic input]
+@permit_long_summary
 gc.freeze
 
 Freeze all current tracked objects and ignore them for future collections.
 
-This can be used before a POSIX fork() call to make the gc copy-on-write friendly.
-Note: collection before a POSIX fork() call may free pages for future allocation
-which can cause copy-on-write.
+This can be used before a POSIX fork() call to make the gc copy-on-write
+friendly.
+Note: collection before a POSIX fork() call may free pages for future
+allocation which can cause copy-on-write.
 [clinic start generated code]*/
 
 static PyObject *
 gc_freeze_impl(PyObject *module)
-/*[clinic end generated code: output=502159d9cdc4c139 input=b602b16ac5febbe5]*/
+/*[clinic end generated code: output=502159d9cdc4c139 input=02674706fc9c0de6]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     _PyGC_Freeze(interp);
@@ -474,7 +507,7 @@ PyDoc_STRVAR(gc__doc__,
 "set_debug() -- Set debugging flags.\n"
 "get_debug() -- Get debugging flags.\n"
 "set_threshold() -- Set the collection thresholds.\n"
-"get_threshold() -- Return the current the collection thresholds.\n"
+"get_threshold() -- Return the current collection thresholds.\n"
 "get_objects() -- Return a list of all objects tracked by the collector.\n"
 "is_tracked() -- Returns true if a given object is tracked.\n"
 "is_finalized() -- Returns true if a given object has been already finalized.\n"
@@ -533,6 +566,7 @@ gcmodule_exec(PyObject *module)
 }
 
 static PyModuleDef_Slot gcmodule_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, gcmodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

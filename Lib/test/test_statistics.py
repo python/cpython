@@ -16,7 +16,8 @@ import random
 import sys
 import unittest
 from test import support
-from test.support import import_helper, requires_IEEE_754
+from test.support import (import_helper, requires_IEEE_754,
+                          skip_if_double_rounding, skip_on_newlib)
 
 from decimal import Decimal
 from fractions import Fraction
@@ -27,12 +28,6 @@ import statistics
 
 
 # === Helper functions and class ===
-
-# Test copied from Lib/test/test_math.py
-# detect evidence of double-rounding: fsum is not always correctly
-# rounded on machines that suffer from double rounding.
-x, y = 1e16, 2.9999 # use temporary values to defeat peephole optimizer
-HAVE_DOUBLE_ROUNDING = (x + y == 1e16 + 4)
 
 def sign(x):
     """Return -1.0 for negatives, including -0.0, otherwise +1.0."""
@@ -645,7 +640,7 @@ class TestNumericTestCase(unittest.TestCase):
 
     def test_numerictestcase_is_testcase(self):
         # Ensure that NumericTestCase actually is a TestCase.
-        self.assertTrue(issubclass(NumericTestCase, unittest.TestCase))
+        self.assertIsSubclass(NumericTestCase, unittest.TestCase)
 
     def test_error_msg_numeric(self):
         # Test the error message generated for numeric comparisons.
@@ -683,32 +678,23 @@ class GlobalsTest(unittest.TestCase):
     def test_meta(self):
         # Test for the existence of metadata.
         for meta in self.expected_metadata:
-            self.assertTrue(hasattr(self.module, meta),
-                            "%s not present" % meta)
+            self.assertHasAttr(self.module, meta)
 
     def test_check_all(self):
         # Check everything in __all__ exists and is public.
         module = self.module
         for name in module.__all__:
             # No private names in __all__:
-            self.assertFalse(name.startswith("_"),
+            self.assertNotStartsWith(name, "_",
                              'private name "%s" in __all__' % name)
             # And anything in __all__ must exist:
-            self.assertTrue(hasattr(module, name),
-                            'missing name "%s" in __all__' % name)
+            self.assertHasAttr(module, name)
 
 
 class StatisticsErrorTest(unittest.TestCase):
     def test_has_exception(self):
-        errmsg = (
-                "Expected StatisticsError to be a ValueError, but got a"
-                " subclass of %r instead."
-                )
-        self.assertTrue(hasattr(statistics, 'StatisticsError'))
-        self.assertTrue(
-                issubclass(statistics.StatisticsError, ValueError),
-                errmsg % statistics.StatisticsError.__base__
-                )
+        self.assertHasAttr(statistics, 'StatisticsError')
+        self.assertIsSubclass(statistics.StatisticsError, ValueError)
 
 
 # === Tests for private utility functions ===
@@ -1072,7 +1058,7 @@ class UnivariateCommonMixin:
     def test_order_doesnt_matter(self):
         # Test that the order of data points doesn't change the result.
 
-        # CAUTION: due to floating point rounding errors, the result actually
+        # CAUTION: due to floating-point rounding errors, the result actually
         # may depend on the order. Consider this test representing an ideal.
         # To avoid this test failing, only test with exact values such as ints
         # or Fractions.
@@ -2014,7 +2000,6 @@ class VarianceStdevMixin(UnivariateCommonMixin):
         expected = self.func(data)
         self.assertEqual(self.func(iter(data)), expected)
 
-
 class TestPVariance(VarianceStdevMixin, NumericTestCase, UnivariateTypeMixin):
     # Tests for population variance.
     def setUp(self):
@@ -2121,6 +2106,14 @@ class TestPStdev(VarianceStdevMixin, NumericTestCase):
         data = (3, 6, 7, 10)
         self.assertEqual(self.func(data), 2.5)
         self.assertEqual(self.func(data, mu=0.5), 6.5)
+
+    def test_gh_140938(self):
+        # Inputs with inf/nan should raise a ValueError
+        with self.assertRaises(ValueError):
+            self.func([1.0, math.inf])
+        with self.assertRaises(ValueError):
+            self.func([1.0, math.nan])
+
 
 class TestSqrtHelpers(unittest.TestCase):
 
@@ -2355,6 +2348,7 @@ class TestGeometricMean(unittest.TestCase):
 
 class TestKDE(unittest.TestCase):
 
+    @support.requires_resource('cpu')
     def test_kde(self):
         kde = statistics.kde
         StatisticsError = statistics.StatisticsError
@@ -2797,9 +2791,9 @@ class TestCorrelationAndCovariance(unittest.TestCase):
                 self.assertEqual(sign(actual), sign(expected))
 
     @requires_IEEE_754
-    @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
-                     "accuracy not guaranteed on machines with double rounding")
-    @support.cpython_only    # Allow for a weaker sumprod() implmentation
+    @skip_if_double_rounding
+    @support.cpython_only    # Allow for a weaker sumprod() implementation
+    @skip_on_newlib
     def test_sqrtprod_helper_function_improved_accuracy(self):
         # Test a known example where accuracy is improved
         x, y, target = 0.8035720646477457, 0.7957468097636939, 0.7996498651651661
@@ -3327,7 +3321,8 @@ class TestNormalDistC(unittest.TestCase, TestNormalDist):
 def load_tests(loader, tests, ignore):
     """Used for doctest/unittest integration."""
     tests.addTests(doctest.DocTestSuite())
-    tests.addTests(doctest.DocTestSuite(statistics))
+    if sys.float_repr_style == 'short':
+        tests.addTests(doctest.DocTestSuite(statistics))
     return tests
 
 

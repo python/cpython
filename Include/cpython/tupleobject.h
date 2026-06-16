@@ -4,6 +4,8 @@
 
 typedef struct {
     PyObject_VAR_HEAD
+    /* Cached hash.  Initially set to -1. */
+    Py_hash_t ob_hash;
     /* ob_item contains space for 'ob_size' elements.
        Items must normally not be NULL, except during construction when
        the tuple is not yet visible outside the function that builds it. */
@@ -36,3 +38,7 @@ PyTuple_SET_ITEM(PyObject *op, Py_ssize_t index, PyObject *value) {
 }
 #define PyTuple_SET_ITEM(op, index, value) \
     PyTuple_SET_ITEM(_PyObject_CAST(op), (index), _PyObject_CAST(value))
+
+PyAPI_FUNC(PyObject*) PyTuple_FromArray(
+    PyObject *const *array,
+    Py_ssize_t size);

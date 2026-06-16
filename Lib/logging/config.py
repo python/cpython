@@ -21,7 +21,7 @@ by Apache's log4j system.
 
 Copyright (C) 2001-2022 Vinay Sajip. All Rights Reserved.
 
-To use, simply 'import logging' and log away!
+To use, simply 'import logging.config' and log away!
 """
 
 import errno
@@ -36,6 +36,7 @@ import struct
 import threading
 import traceback
 
+from bisect import bisect_left
 from socketserver import ThreadingTCPServer, StreamRequestHandler
 
 
@@ -186,9 +187,8 @@ def _handle_existing_loggers(existing, child_loggers, disable_existing):
     what was intended by the user. Also, allow existing loggers to NOT be
     disabled if disable_existing is false.
     """
-    root = logging.root
     for log in existing:
-        logger = root.manager.loggerDict[log]
+        logger = logging.root.manager.loggerDict[log]
         if log in child_loggers:
             if not isinstance(logger, logging.PlaceHolder):
                 logger.setLevel(logging.NOTSET)
@@ -196,6 +196,20 @@ def _handle_existing_loggers(existing, child_loggers, disable_existing):
                 logger.propagate = True
         else:
             logger.disabled = disable_existing
+
+def _forget_existing_logger(name, existing, existing_set, child_loggers):
+    """Forget a configured logger and record its existing children."""
+    prefixed = name + "."
+    i = bisect_left(existing, prefixed)
+    num_existing = len(existing)
+    while i < num_existing:
+        child = existing[i]
+        if not child.startswith(prefixed):
+            break
+        if child in existing_set:
+            child_loggers[child] = None
+        i += 1
+    existing_set.remove(name)
 
 def _install_loggers(cp, handlers, disable_existing):
     """Create and install loggers"""
@@ -235,25 +249,18 @@ def _install_loggers(cp, handlers, disable_existing):
     #named loggers. With a sorted list it is easier
     #to find the child loggers.
     existing.sort()
+    existing_set = set(existing)
     #We'll keep the list of existing loggers
     #which are children of named loggers here...
-    child_loggers = []
+    child_loggers = {}
     #now set up the new ones...
     for log in llist:
         section = cp["logger_%s" % log]
         qn = section["qualname"]
         propagate = section.getint("propagate", fallback=1)
         logger = logging.getLogger(qn)
-        if qn in existing:
-            i = existing.index(qn) + 1 # start with the entry after qn
-            prefixed = qn + "."
-            pflen = len(prefixed)
-            num_existing = len(existing)
-            while i < num_existing:
-                if existing[i][:pflen] == prefixed:
-                    child_loggers.append(existing[i])
-                i += 1
-            existing.remove(qn)
+        if qn in existing_set:
+            _forget_existing_logger(qn, existing, existing_set, child_loggers)
         if "level" in section:
             level = section["level"]
             logger.setLevel(level)
@@ -281,6 +288,7 @@ def _install_loggers(cp, handlers, disable_existing):
     #        logger.propagate = 1
     #    elif disable_existing_loggers:
     #        logger.disabled = 1
+    existing = [name for name in existing if name in existing_set]
     _handle_existing_loggers(existing, child_loggers, disable_existing)
 
 
@@ -497,6 +505,33 @@ class BaseConfigurator(object):
             value = tuple(value)
         return value
 
+def _is_queue_like_object(obj):
+    """Check that *obj* implements the Queue API."""
+    if isinstance(obj, (queue.Queue, queue.SimpleQueue)):
+        return True
+    # defer importing multiprocessing as much as possible
+    from multiprocessing.queues import Queue as MPQueue
+    if isinstance(obj, MPQueue):
+        return True
+    # Depending on the multiprocessing start context, we cannot create
+    # a multiprocessing.managers.BaseManager instance 'mm' to get the
+    # runtime type of mm.Queue() or mm.JoinableQueue() (see gh-119819).
+    #
+    # Since we only need an object implementing the Queue API, we only
+    # do a protocol check, but we do not use typing.runtime_checkable()
+    # and typing.Protocol to reduce import time (see gh-121723).
+    #
+    # Ideally, we would have wanted to simply use strict type checking
+    # instead of a protocol-based type checking since the latter does
+    # not check the method signatures.
+    #
+    # Note that only 'put_nowait' and 'get' are required by the logging
+    # queue handler and queue listener (see gh-124653) and that other
+    # methods are either optional or unused.
+    minimal_queue_interface = ['put_nowait', 'get']
+    return all(callable(getattr(obj, method, None))
+               for method in minimal_queue_interface)
+
 class DictConfigurator(BaseConfigurator):
     """
     Configure logging using a dictionary-like object to describe the
@@ -611,22 +646,16 @@ class DictConfigurator(BaseConfigurator):
                 #named loggers. With a sorted list it is easier
                 #to find the child loggers.
                 existing.sort()
+                existing_set = set(existing)
                 #We'll keep the list of existing loggers
                 #which are children of named loggers here...
-                child_loggers = []
+                child_loggers = {}
                 #now set up the new ones...
                 loggers = config.get('loggers', EMPTY_DICT)
                 for name in loggers:
-                    if name in existing:
-                        i = existing.index(name) + 1 # look after name
-                        prefixed = name + "."
-                        pflen = len(prefixed)
-                        num_existing = len(existing)
-                        while i < num_existing:
-                            if existing[i][:pflen] == prefixed:
-                                child_loggers.append(existing[i])
-                            i += 1
-                        existing.remove(name)
+                    if name in existing_set:
+                        _forget_existing_logger(name, existing, existing_set,
+                                                child_loggers)
                     try:
                         self.configure_logger(name, loggers[name])
                     except Exception as e:
@@ -646,6 +675,7 @@ class DictConfigurator(BaseConfigurator):
                 #        logger.propagate = True
                 #    elif disable_existing:
                 #        logger.disabled = True
+                existing = [name for name in existing if name in existing_set]
                 _handle_existing_loggers(existing, child_loggers,
                                          disable_existing)
 
@@ -780,25 +810,20 @@ class DictConfigurator(BaseConfigurator):
                 # if 'handlers' not in config:
                     # raise ValueError('No handlers specified for a QueueHandler')
                 if 'queue' in config:
-                    from multiprocessing.queues import Queue as MPQueue
-                    from multiprocessing import Manager as MM
-                    proxy_queue = MM().Queue()
-                    proxy_joinable_queue = MM().JoinableQueue()
                     qspec = config['queue']
-                    if not isinstance(qspec, (queue.Queue, MPQueue,
-                                      type(proxy_queue), type(proxy_joinable_queue))):
-                        if isinstance(qspec, str):
-                            q = self.resolve(qspec)
-                            if not callable(q):
-                                raise TypeError('Invalid queue specifier %r' % qspec)
-                            q = q()
-                        elif isinstance(qspec, dict):
-                            if '()' not in qspec:
-                                raise TypeError('Invalid queue specifier %r' % qspec)
-                            q = self.configure_custom(dict(qspec))
-                        else:
+
+                    if isinstance(qspec, str):
+                        q = self.resolve(qspec)
+                        if not callable(q):
                             raise TypeError('Invalid queue specifier %r' % qspec)
-                        config['queue'] = q
+                        config['queue'] = q()
+                    elif isinstance(qspec, dict):
+                        if '()' not in qspec:
+                            raise TypeError('Invalid queue specifier %r' % qspec)
+                        config['queue'] = self.configure_custom(dict(qspec))
+                    elif not _is_queue_like_object(qspec):
+                        raise TypeError('Invalid queue specifier %r' % qspec)
+
                 if 'listener' in config:
                     lspec = config['listener']
                     if isinstance(lspec, type):
@@ -843,17 +868,7 @@ class DictConfigurator(BaseConfigurator):
             else:
                 factory = klass
         kwargs = {k: config[k] for k in config if (k != '.' and valid_ident(k))}
-        try:
-            result = factory(**kwargs)
-        except TypeError as te:
-            if "'stream'" not in str(te):
-                raise
-            #The argument name changed from strm to stream
-            #Retry with old name.
-            #This is so that code can be used with older Python versions
-            #(e.g. by Django)
-            kwargs['strm'] = kwargs.pop('stream')
-            result = factory(**kwargs)
+        result = factory(**kwargs)
         if formatter:
             result.setFormatter(formatter)
         if level is not None:
@@ -985,7 +1000,7 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
         """
 
         allow_reuse_address = True
-        allow_reuse_port = True
+        allow_reuse_port = False
 
         def __init__(self, host='localhost', port=DEFAULT_LOGGING_CONFIG_PORT,
                      handler=None, ready=None, verify=None):

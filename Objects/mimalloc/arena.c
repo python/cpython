@@ -269,7 +269,7 @@ static mi_decl_noinline void* mi_arena_try_alloc_at(mi_arena_t* arena, size_t ar
   return p;
 }
 
-// allocate in a speficic arena
+// allocate in a specific arena
 static void* mi_arena_try_alloc_at_id(mi_arena_id_t arena_id, bool match_numa_node, int numa_node, size_t size, size_t alignment,
                                        bool commit, bool allow_large, mi_arena_id_t req_arena_id, mi_memid_t* memid, mi_os_tld_t* tld )
 {
@@ -493,7 +493,7 @@ static bool mi_arena_purge_range(mi_arena_t* arena, size_t idx, size_t startidx,
   size_t bitidx = startidx;
   bool all_purged = false;
   while (bitidx < endidx) {
-    // count consequetive ones in the purge mask
+    // count consecutive ones in the purge mask
     size_t count = 0;
     while (bitidx + count < endidx && (purge & ((size_t)1 << (bitidx + count))) != 0) {
       count++;
@@ -530,7 +530,7 @@ static bool mi_arena_try_purge(mi_arena_t* arena, mi_msecs_t now, bool force, mi
     if (purge != 0) {
       size_t bitidx = 0;
       while (bitidx < MI_BITMAP_FIELD_BITS) {
-        // find consequetive range of ones in the purge mask
+        // find consecutive range of ones in the purge mask
         size_t bitlen = 0;
         while (bitidx + bitlen < MI_BITMAP_FIELD_BITS && (purge & ((size_t)1 << (bitidx + bitlen))) != 0) {
           bitlen++;

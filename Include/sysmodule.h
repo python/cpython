@@ -4,6 +4,12 @@
 extern "C" {
 #endif
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030f0000
+PyAPI_FUNC(PyObject *) PySys_GetAttr(PyObject *);
+PyAPI_FUNC(PyObject *) PySys_GetAttrString(const char *);
+PyAPI_FUNC(int) PySys_GetOptionalAttr(PyObject *, PyObject **);
+PyAPI_FUNC(int) PySys_GetOptionalAttrString(const char *, PyObject **);
+#endif
 PyAPI_FUNC(PyObject *) PySys_GetObject(const char *);
 PyAPI_FUNC(int) PySys_SetObject(const char *, PyObject *);
 
@@ -17,26 +23,7 @@ PyAPI_FUNC(void) PySys_WriteStderr(const char *format, ...)
 PyAPI_FUNC(void) PySys_FormatStdout(const char *format, ...);
 PyAPI_FUNC(void) PySys_FormatStderr(const char *format, ...);
 
-Py_DEPRECATED(3.13) PyAPI_FUNC(void) PySys_ResetWarnOptions(void);
-
 PyAPI_FUNC(PyObject *) PySys_GetXOptions(void);
-
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
-PyAPI_FUNC(int) PySys_Audit(
-    const char *event,
-    const char *argFormat,
-    ...);
-
-PyAPI_FUNC(int) PySys_AuditTuple(
-    const char *event,
-    PyObject *args);
-#endif
-
-#ifndef Py_LIMITED_API
-#  define Py_CPYTHON_SYSMODULE_H
-#  include "cpython/sysmodule.h"
-#  undef Py_CPYTHON_SYSMODULE_H
-#endif
 
 #ifdef __cplusplus
 }

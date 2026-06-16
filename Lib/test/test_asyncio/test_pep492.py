@@ -11,7 +11,7 @@ from test.test_asyncio import utils as test_utils
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio.events._set_event_loop_policy(None)
 
 
 # Test that asyncio.iscoroutine() uses collections.abc.Coroutine
@@ -123,11 +123,6 @@ class CoroutineTests(BaseTest):
         def foo(): yield
 
         self.assertFalse(asyncio.iscoroutine(foo()))
-
-
-    def test_iscoroutinefunction(self):
-        async def foo(): pass
-        self.assertTrue(asyncio.iscoroutinefunction(foo))
 
     def test_async_def_coroutines(self):
         async def bar():

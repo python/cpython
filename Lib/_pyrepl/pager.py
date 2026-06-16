@@ -36,6 +36,8 @@ def get_pager() -> Pager:
         return plain_pager
     if sys.platform == 'win32':
         return lambda text, title='': tempfile_pager(plain(text), 'more <')
+    if hasattr(os, 'system') and os.system('(pager) 2>/dev/null') == 0:
+        return lambda text, title='': pipe_pager(text, 'pager', title)
     if hasattr(os, 'system') and os.system('(less) 2>/dev/null') == 0:
         return lambda text, title='': pipe_pager(text, 'less', title)
 
@@ -136,7 +138,7 @@ def pipe_pager(text: str, cmd: str, title: str = '') -> None:
         '.'
         '?e (END):?pB %pB\\%..'
         ' (press h for help or q to quit)')
-    env['LESS'] = '-RmPm{0}$PM{0}$'.format(prompt_string)
+    env['LESS'] = '-RcmPm{0}$PM{0}$'.format(prompt_string)
     proc = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE,
                             errors='backslashreplace', env=env)
     assert proc.stdin is not None

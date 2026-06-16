@@ -9,7 +9,11 @@ HoleKind: typing.TypeAlias = typing.Literal[
     "ARM64_RELOC_PAGE21",
     "ARM64_RELOC_PAGEOFF12",
     "ARM64_RELOC_UNSIGNED",
+    "CUSTOM_AARCH64_BRANCH19",
+    "CUSTOM_AARCH64_CONST_16",
+    "CUSTOM_AARCH64_CONST_32",
     "IMAGE_REL_AMD64_REL32",
+    "IMAGE_REL_ARM64_BRANCH19",
     "IMAGE_REL_ARM64_BRANCH26",
     "IMAGE_REL_ARM64_PAGEBASE_REL21",
     "IMAGE_REL_ARM64_PAGEOFFSET_12A",
@@ -20,6 +24,7 @@ HoleKind: typing.TypeAlias = typing.Literal[
     "R_AARCH64_ADR_GOT_PAGE",
     "R_AARCH64_ADR_PREL_PG_HI21",
     "R_AARCH64_CALL26",
+    "R_AARCH64_CONDBR19",
     "R_AARCH64_JUMP26",
     "R_AARCH64_ADD_ABS_LO12_NC",
     "R_AARCH64_LD64_GOT_LO12_NC",
@@ -87,6 +92,7 @@ class COFFSection(typing.TypedDict):
     Characteristics: dict[
         typing.Literal["Flags"], list[dict[typing.Literal["Name"], str]]
     ]
+    Name: dict[typing.Literal["Value"], str]
     Number: int
     RawDataSize: int
     Relocations: list[dict[typing.Literal["Relocation"], COFFRelocation]]

@@ -1,7 +1,9 @@
 """
 Test the API of the symtable module.
 """
+
 import symtable
+import warnings
 import unittest
 
 from test import support
@@ -13,7 +15,7 @@ import sys
 
 glob = 42
 some_var = 12
-some_non_assigned_global_var = 11
+some_non_assigned_global_var: int
 some_assigned_global_var = 11
 
 class Mine:
@@ -53,6 +55,120 @@ class GenericMine[T: int, U: (int, str) = int]:
     pass
 """
 
+TEST_COMPLEX_CLASS_CODE = """
+# The following symbols are defined in ComplexClass
+# without being introduced by a 'global' statement.
+glob_unassigned_meth: Any
+glob_unassigned_meth_pep_695: Any
+
+glob_unassigned_async_meth: Any
+glob_unassigned_async_meth_pep_695: Any
+
+def glob_assigned_meth(): pass
+def glob_assigned_meth_pep_695[T](): pass
+
+async def glob_assigned_async_meth(): pass
+async def glob_assigned_async_meth_pep_695[T](): pass
+
+# The following symbols are defined in ComplexClass after
+# being introduced by a 'global' statement (and therefore
+# are not considered as local symbols of ComplexClass).
+glob_unassigned_meth_ignore: Any
+glob_unassigned_meth_pep_695_ignore: Any
+
+glob_unassigned_async_meth_ignore: Any
+glob_unassigned_async_meth_pep_695_ignore: Any
+
+def glob_assigned_meth_ignore(): pass
+def glob_assigned_meth_pep_695_ignore[T](): pass
+
+async def glob_assigned_async_meth_ignore(): pass
+async def glob_assigned_async_meth_pep_695_ignore[T](): pass
+
+class ComplexClass:
+    a_var = 1234
+    a_genexpr = (x for x in [])
+    a_lambda = lambda x: x
+
+    type a_type_alias = int
+    type a_type_alias_pep_695[T] = list[T]
+
+    class a_class: pass
+    class a_class_pep_695[T]: pass
+
+    def a_method(self): pass
+    def a_method_pep_695[T](self): pass
+
+    async def an_async_method(self): pass
+    async def an_async_method_pep_695[T](self): pass
+
+    @classmethod
+    def a_classmethod(cls): pass
+    @classmethod
+    def a_classmethod_pep_695[T](self): pass
+
+    @classmethod
+    async def an_async_classmethod(cls): pass
+    @classmethod
+    async def an_async_classmethod_pep_695[T](self): pass
+
+    @staticmethod
+    def a_staticmethod(): pass
+    @staticmethod
+    def a_staticmethod_pep_695[T](self): pass
+
+    @staticmethod
+    async def an_async_staticmethod(): pass
+    @staticmethod
+    async def an_async_staticmethod_pep_695[T](self): pass
+
+    # These ones will be considered as methods because of the 'def' although
+    # they are *not* valid methods at runtime since they are not decorated
+    # with @staticmethod.
+    def a_fakemethod(): pass
+    def a_fakemethod_pep_695[T](): pass
+
+    async def an_async_fakemethod(): pass
+    async def an_async_fakemethod_pep_695[T](): pass
+
+    # Check that those are still considered as methods
+    # since they are not using the 'global' keyword.
+    def glob_unassigned_meth(): pass
+    def glob_unassigned_meth_pep_695[T](): pass
+
+    async def glob_unassigned_async_meth(): pass
+    async def glob_unassigned_async_meth_pep_695[T](): pass
+
+    def glob_assigned_meth(): pass
+    def glob_assigned_meth_pep_695[T](): pass
+
+    async def glob_assigned_async_meth(): pass
+    async def glob_assigned_async_meth_pep_695[T](): pass
+
+    # The following are not picked as local symbols because they are not
+    # visible by the class at runtime (this is equivalent to having the
+    # definitions outside of the class).
+    global glob_unassigned_meth_ignore
+    def glob_unassigned_meth_ignore(): pass
+    global glob_unassigned_meth_pep_695_ignore
+    def glob_unassigned_meth_pep_695_ignore[T](): pass
+
+    global glob_unassigned_async_meth_ignore
+    async def glob_unassigned_async_meth_ignore(): pass
+    global glob_unassigned_async_meth_pep_695_ignore
+    async def glob_unassigned_async_meth_pep_695_ignore[T](): pass
+
+    global glob_assigned_meth_ignore
+    def glob_assigned_meth_ignore(): pass
+    global glob_assigned_meth_pep_695_ignore
+    def glob_assigned_meth_pep_695_ignore[T](): pass
+
+    global glob_assigned_async_meth_ignore
+    async def glob_assigned_async_meth_ignore(): pass
+    global glob_assigned_async_meth_pep_695_ignore
+    async def glob_assigned_async_meth_pep_695_ignore[T](): pass
+"""
+
 
 def find_block(block, name):
     for ch in block.get_children():
@@ -65,6 +181,7 @@ class SymtableTest(unittest.TestCase):
     top = symtable.symtable(TEST_CODE, "?", "exec")
     # These correspond to scopes in TEST_CODE
     Mine = find_block(top, "Mine")
+
     a_method = find_block(Mine, "a_method")
     spam = find_block(top, "spam")
     internal = find_block(spam, "internal")
@@ -136,6 +253,7 @@ class SymtableTest(unittest.TestCase):
         self.assertEqual(sorted(func.get_locals()), expected)
         self.assertEqual(sorted(func.get_globals()), ["bar", "glob", "some_assigned_global_var"])
         self.assertEqual(self.internal.get_frees(), ("x",))
+        self.assertEqual(self.spam.get_cells(), ("some_var", "x",))
 
     def test_globals(self):
         self.assertTrue(self.spam.lookup("glob").is_global())
@@ -164,6 +282,9 @@ class SymtableTest(unittest.TestCase):
 
     def test_free(self):
         self.assertTrue(self.internal.lookup("x").is_free())
+
+    def test_cells(self):
+        self.assertTrue(self.spam.lookup("x").is_cell())
 
     def test_referenced(self):
         self.assertTrue(self.internal.lookup("x").is_referenced())
@@ -240,9 +361,6 @@ class SymtableTest(unittest.TestCase):
         self.assertEqual(self.spam.get_name(), "spam")
         self.assertEqual(self.spam.lookup("x").get_name(), "x")
         self.assertEqual(self.Mine.get_name(), "Mine")
-
-    def test_class_info(self):
-        self.assertEqual(self.Mine.get_methods(), ('a_method',))
 
     def test_filename_correct(self):
         ### Bug tickler: SyntaxError file name correct whether error raised
@@ -330,6 +448,110 @@ class SymtableTest(unittest.TestCase):
     def test_symtable_entry_repr(self):
         expected = f"<symtable entry top({self.top.get_id()}), line {self.top.get_lineno()}>"
         self.assertEqual(repr(self.top._table), expected)
+
+    def test_lambda(self):
+        st = symtable.symtable("lambda x: x", "?", "exec")
+        self.assertEqual(len(st.get_children()), 1)
+        st = st.get_children()[0]
+        self.assertIs(st.get_type(), symtable.SymbolTableType.FUNCTION)
+        self.assertEqual(st.get_name(), "<lambda>")
+        self.assertFalse(st.is_nested())
+        self.assertEqual(sorted(st.get_identifiers()), ["x"])
+        self.assertEqual(st.get_children(), [])
+
+    def test_nested_lambda(self):
+        st = symtable.symtable("lambda x: lambda y=x: y", "?", "exec")
+        self.assertEqual(len(st.get_children()), 1)
+        st = st.get_children()[0]
+        self.assertIs(st.get_type(), symtable.SymbolTableType.FUNCTION)
+        self.assertEqual(st.get_name(), "<lambda>")
+        self.assertFalse(st.is_nested())
+        self.assertEqual(sorted(st.get_identifiers()), ["x"])
+        self.assertEqual(len(st.get_children()), 1)
+        st = st.get_children()[0]
+        self.assertIs(st.get_type(), symtable.SymbolTableType.FUNCTION)
+        self.assertEqual(st.get_name(), "<lambda>")
+        self.assertTrue(st.is_nested())
+        self.assertEqual(sorted(st.get_identifiers()), ["y"])
+        self.assertEqual(st.get_children(), [])
+
+    def test_genexpr(self):
+        st = symtable.symtable("(x for x in a)", "?", "exec")
+        self.assertEqual(len(st.get_children()), 1)
+        st = st.get_children()[0]
+        self.assertIs(st.get_type(), symtable.SymbolTableType.FUNCTION)
+        self.assertEqual(st.get_name(), "<genexpr>")
+        self.assertFalse(st.is_nested())
+        self.assertEqual(sorted(st.get_identifiers()), [".0", "x"])
+        self.assertEqual(st.get_children(), [])
+
+    def test_nested_genexpr(self):
+        st = symtable.symtable("((y for y in x) for x in a)", "?", "exec")
+        self.assertEqual(len(st.get_children()), 1)
+        st = st.get_children()[0]
+        self.assertIs(st.get_type(), symtable.SymbolTableType.FUNCTION)
+        self.assertEqual(st.get_name(), "<genexpr>")
+        self.assertFalse(st.is_nested())
+        self.assertEqual(sorted(st.get_identifiers()), [".0", "x"])
+        self.assertEqual(len(st.get_children()), 1)
+        st = st.get_children()[0]
+        self.assertIs(st.get_type(), symtable.SymbolTableType.FUNCTION)
+        self.assertEqual(st.get_name(), "<genexpr>")
+        self.assertTrue(st.is_nested())
+        self.assertEqual(sorted(st.get_identifiers()), [".0", "y"])
+        self.assertEqual(st.get_children(), [])
+
+    def test__symtable_refleak(self):
+        # Regression test for reference leak in PyUnicode_FSDecoder.
+        # See https://github.com/python/cpython/issues/139748.
+        mortal_str = 'this is a mortal string'
+        # check error path when 'compile_type' AC conversion failed
+        self.assertRaises(TypeError, symtable.symtable, '', mortal_str, 1)
+
+    def test_filter_syntax_warnings_by_module(self):
+        filename = support.findfile('test_import/data/syntax_warnings.py')
+        with open(filename, 'rb') as f:
+            source = f.read()
+        module_re = r'test\.test_import\.data\.syntax_warnings\z'
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=module_re)
+            symtable.symtable(source, filename, 'exec')
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10])
+        for wm in wlog:
+            self.assertEqual(wm.filename, filename)
+            self.assertIs(wm.category, SyntaxWarning)
+
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=r'package\.module\z')
+            warnings.filterwarnings('error', module=module_re)
+            symtable.symtable(source, filename, 'exec', module='package.module')
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10])
+        for wm in wlog:
+            self.assertEqual(wm.filename, filename)
+            self.assertIs(wm.category, SyntaxWarning)
+
+
+class ComprehensionTests(unittest.TestCase):
+    def get_identifiers_recursive(self, st, res):
+        res.extend(st.get_identifiers())
+        for ch in st.get_children():
+            self.get_identifiers_recursive(ch, res)
+
+    def test_loopvar_in_only_one_scope(self):
+        # ensure that the loop variable appears only once in the symtable
+        comps = [
+            "[x for x in [1]]",
+            "{x for x in [1]}",
+            "{x:x*x for x in [1]}",
+        ]
+        for comp in comps:
+            with self.subTest(comp=comp):
+                st = symtable.symtable(comp, "?", "exec")
+                ids = []
+                self.get_identifiers_recursive(st, ids)
+                self.assertEqual(len([x for x in ids if x == 'x']), 1)
 
 
 class CommandLineTest(unittest.TestCase):

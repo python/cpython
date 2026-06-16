@@ -9,20 +9,20 @@ PyDoc_STRVAR(subprocess_fork_exec__doc__,
 "          env, p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite,\n"
 "          errpipe_read, errpipe_write, restore_signals, call_setsid,\n"
 "          pgid_to_set, gid, extra_groups, uid, child_umask, preexec_fn,\n"
-"          allow_vfork, /)\n"
+"          /)\n"
 "--\n"
 "\n"
 "Spawn a fresh new child process.\n"
 "\n"
-"Fork a child process, close parent file descriptors as appropriate in the\n"
-"child and duplicate the few that are needed before calling exec() in the\n"
-"child process.\n"
+"Fork a child process, close parent file descriptors as appropriate in\n"
+"the child and duplicate the few that are needed before calling exec() in\n"
+"the child process.\n"
 "\n"
-"If close_fds is True, close file descriptors 3 and higher, except those listed\n"
-"in the sorted tuple pass_fds.\n"
+"If close_fds is True, close file descriptors 3 and higher, except those\n"
+"listed in the sorted tuple pass_fds.\n"
 "\n"
-"The preexec_fn, if supplied, will be called immediately before closing file\n"
-"descriptors and exec.\n"
+"The preexec_fn, if supplied, will be called immediately before closing\n"
+"file descriptors and exec.\n"
 "\n"
 "WARNING: preexec_fn is NOT SAFE if your application uses threads.\n"
 "         It may trigger infrequent, difficult to debug deadlocks.\n"
@@ -48,7 +48,7 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
                           pid_t pgid_to_set, PyObject *gid_object,
                           PyObject *extra_groups_packed,
                           PyObject *uid_object, int child_umask,
-                          PyObject *preexec_fn, int allow_vfork);
+                          PyObject *preexec_fn);
 
 static PyObject *
 subprocess_fork_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -76,9 +76,8 @@ subprocess_fork_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *uid_object;
     int child_umask;
     PyObject *preexec_fn;
-    int allow_vfork;
 
-    if (!_PyArg_CheckPositional("fork_exec", nargs, 23, 23)) {
+    if (!_PyArg_CheckPositional("fork_exec", nargs, 22, 22)) {
         goto exit;
     }
     process_args = args[0];
@@ -146,13 +145,9 @@ subprocess_fork_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     preexec_fn = args[21];
-    allow_vfork = PyObject_IsTrue(args[22]);
-    if (allow_vfork < 0) {
-        goto exit;
-    }
-    return_value = subprocess_fork_exec_impl(module, process_args, executable_list, close_fds, py_fds_to_keep, cwd_obj, env_list, p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite, errpipe_read, errpipe_write, restore_signals, call_setsid, pgid_to_set, gid_object, extra_groups_packed, uid_object, child_umask, preexec_fn, allow_vfork);
+    return_value = subprocess_fork_exec_impl(module, process_args, executable_list, close_fds, py_fds_to_keep, cwd_obj, env_list, p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite, errpipe_read, errpipe_write, restore_signals, call_setsid, pgid_to_set, gid_object, extra_groups_packed, uid_object, child_umask, preexec_fn);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=48555f5965a871be input=a9049054013a1b77]*/
+/*[clinic end generated code: output=138941c284792aa1 input=a9049054013a1b77]*/

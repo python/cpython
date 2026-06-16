@@ -403,7 +403,7 @@ SOCK_CLOEXEC.
 .. nonce: zmO8G2
 .. section: Library
 
-Add :class:`importlib.abc.ResourceReader` as an ABC for loaders to provide a
+Add :class:`!importlib.abc.ResourceReader` as an ABC for loaders to provide a
 unified API for reading resources contained within packages.  Also add
 :mod:`importlib.resources` as the port of ``importlib_resources``.
 
@@ -434,7 +434,7 @@ loop.getaddrinfo, loop.getnameinfo.
 .. nonce: ideco
 .. section: Library
 
-:func:`urllib.parse.urlsplit()` does not convert zone-id (scope) to lower
+:func:`urllib.parse.urlsplit` does not convert zone-id (scope) to lower
 case for scoped IPv6 addresses in hostnames now.
 
 ..
@@ -463,7 +463,7 @@ Fix ``stop_serving`` in asyncio proactor loop kill all listening servers
 .. nonce: CUbsb2
 .. section: Library
 
-:func:`re.sub()` now replaces empty matches adjacent to a previous non-empty
+:func:`re.sub` now replaces empty matches adjacent to a previous non-empty
 match.
 
 ..

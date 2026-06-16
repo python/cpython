@@ -4,14 +4,11 @@
 .. module:: pprint
    :synopsis: Data pretty printer.
 
-.. moduleauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
 **Source code:** :source:`Lib/pprint.py`
 
 --------------
 
-The :mod:`pprint` module provides a capability to "pretty-print" arbitrary
+The :mod:`!pprint` module provides a capability to "pretty-print" arbitrary
 Python data structures in a form which can be used as input to the interpreter.
 If the formatted structures include objects which are not fundamental Python
 types, the representation may not be loadable.  This may be the case if objects
@@ -21,8 +18,6 @@ objects which are not representable as Python literals.
 The formatted representation keeps objects on a single line if it can, and
 breaks them onto multiple lines if they don't fit within the allowed width,
 adjustable by the *width* parameter defaulting to 80 characters.
-
-Dictionaries are sorted by key before the display is computed.
 
 .. versionchanged:: 3.9
    Added support for pretty-printing :class:`types.SimpleNamespace`.
@@ -35,52 +30,95 @@ Dictionaries are sorted by key before the display is computed.
 Functions
 ---------
 
-.. function:: pp(object, *args, sort_dicts=False, **kwargs)
+.. function:: pp(object, stream=None, indent=1, width=80, depth=None, *, \
+                 compact=False, expand=False, sort_dicts=False, \
+                 underscore_numbers=False)
 
-   Prints the formatted representation of *object* followed by a newline.
-   If *sort_dicts* is false (the default), dictionaries will be displayed with
-   their keys in insertion order, otherwise the dict keys will be sorted.
-   *args* and *kwargs* will be passed to :func:`~pprint.pprint` as formatting
-   parameters.
+   Prints the formatted representation of *object*, followed by a newline.
+   This function may be used in the interactive interpreter
+   instead of the :func:`print` function for inspecting values.
+   Tip: you can reassign ``print = pprint.pp`` for use within a scope.
 
-      >>> import pprint
-      >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
-      >>> stuff.insert(0, stuff)
-      >>> pprint.pp(stuff)
-      [<Recursion on list with id=...>,
-       'spam',
-       'eggs',
-       'lumberjack',
-       'knights',
-       'ni']
+   :param object:
+      The object to be printed.
+
+   :param stream:
+      A file-like object to which the output will be written
+      by calling its :meth:`!write` method.
+      If ``None`` (the default), :data:`sys.stdout` is used.
+   :type stream: :term:`file-like object` | None
+
+   :param int indent:
+      The amount of indentation added for each nesting level.
+
+   :param int width:
+      The desired maximum number of characters per line in the output.
+      If a structure cannot be formatted within the width constraint,
+      a best effort will be made.
+
+   :param depth:
+      The number of nesting levels which may be printed.
+      If the data structure being printed is too deep,
+      the next contained level is replaced by ``...``.
+      If ``None`` (the default), there is no constraint
+      on the depth of the objects being formatted.
+   :type depth: int | None
+
+   :param bool compact:
+      Control the way long :term:`sequences <sequence>` are formatted.
+      If ``False`` (the default),
+      each item of a sequence will be formatted on a separate line,
+      otherwise as many items as will fit within the *width*
+      will be formatted on each output line.
+      Incompatible with *expand*.
+
+   :param bool expand:
+      If ``True``,
+      opening parentheses and brackets will be followed by a newline and the
+      following content will be indented by one level, similar to
+      pretty-printed JSON. Incompatible with *compact*.
+
+   :param bool sort_dicts:
+      If ``True``, dictionaries will be formatted with
+      their keys sorted, otherwise
+      they will be displayed in insertion order (the default).
+
+   :param bool underscore_numbers:
+      If ``True``,
+      integers will be formatted with the ``_`` character for a thousands separator,
+      otherwise underscores are not displayed (the default).
+
+   >>> import pprint
+   >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
+   >>> stuff.insert(0, stuff)
+   >>> pprint.pp(stuff)
+   [<Recursion on list with id=...>,
+    'spam',
+    'eggs',
+    'lumberjack',
+    'knights',
+    'ni']
 
    .. versionadded:: 3.8
 
 
 .. function:: pprint(object, stream=None, indent=1, width=80, depth=None, *, \
-                     compact=False, sort_dicts=True, underscore_numbers=False)
+                     compact=False, expand=False, sort_dicts=True, \
+                     underscore_numbers=False)
 
-   Prints the formatted representation of *object* on *stream*, followed by a
-   newline.  If *stream* is ``None``, :data:`sys.stdout` is used. This may be used
-   in the interactive interpreter instead of the :func:`print` function for
-   inspecting values (you can even reassign ``print = pprint.pprint`` for use
-   within a scope).
+   Alias for :func:`~pprint.pp` with *sort_dicts* set to ``True`` by default,
+   which would automatically sort the dictionaries' keys,
+   you might want to use :func:`~pprint.pp` instead where it is ``False`` by default.
 
-   The configuration parameters *stream*, *indent*, *width*, *depth*,
-   *compact*, *sort_dicts* and *underscore_numbers* are passed to the
-   :class:`PrettyPrinter` constructor and their meanings are as
-   described in its documentation below.
-
-   Note that *sort_dicts* is ``True`` by default and you might want to use
-   :func:`~pprint.pp` instead where it is ``False`` by default.
 
 .. function:: pformat(object, indent=1, width=80, depth=None, *, \
-                      compact=False, sort_dicts=True, underscore_numbers=False)
+                      compact=False, expand=False, sort_dicts=True, \
+                      underscore_numbers=False)
 
    Return the formatted representation of *object* as a string.  *indent*,
-   *width*, *depth*, *compact*, *sort_dicts* and *underscore_numbers* are
+   *width*, *depth*, *compact*, *expand*, *sort_dicts* and *underscore_numbers* are
    passed to the :class:`PrettyPrinter` constructor as formatting parameters
-   and their meanings are as described in its documentation below.
+   and their meanings are as described in the documentation above.
 
 
 .. function:: isreadable(object)
@@ -119,51 +157,56 @@ Functions
 PrettyPrinter Objects
 ---------------------
 
-This module defines one class:
-
-.. First the implementation class:
-
-
 .. index:: single: ...; placeholder
 
 .. class:: PrettyPrinter(indent=1, width=80, depth=None, stream=None, *, \
-                         compact=False, sort_dicts=True, underscore_numbers=False)
+                         compact=False, expand=False, sort_dicts=True, \
+                         underscore_numbers=False)
 
-   Construct a :class:`PrettyPrinter` instance.  This constructor understands
-   several keyword parameters.
+   Construct a :class:`PrettyPrinter` instance.
 
-   *stream* (default :data:`!sys.stdout`) is a :term:`file-like object` to
-   which the output will be written by calling its :meth:`!write` method.
-   If both *stream* and :data:`!sys.stdout` are ``None``, then
-   :meth:`~PrettyPrinter.pprint` silently returns.
+   Arguments have the same meaning as for :func:`~pprint.pp`.
+   Note that they are in a different order, and that *sort_dicts* defaults to ``True``.
 
-   Other values configure the manner in which nesting of complex data
-   structures is displayed.
+   >>> import pprint
+   >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
+   >>> stuff.insert(0, stuff[:])
+   >>> pp = pprint.PrettyPrinter(indent=4)
+   >>> pp.pprint(stuff)
+   [   ['spam', 'eggs', 'lumberjack', 'knights', 'ni'],
+       'spam',
+       'eggs',
+       'lumberjack',
+       'knights',
+       'ni']
+   >>> pp = pprint.PrettyPrinter(width=41, compact=True)
+   >>> pp.pprint(stuff)
+   [['spam', 'eggs', 'lumberjack',
+     'knights', 'ni'],
+    'spam', 'eggs', 'lumberjack', 'knights',
+    'ni']
+   >>> pp = pprint.PrettyPrinter(width=41, expand=True, indent=3)
+   >>> pp.pprint(stuff)
+   [
+      [
+         'spam',
+         'eggs',
+         'lumberjack',
+         'knights',
+         'ni',
+      ],
+      'spam',
+      'eggs',
+      'lumberjack',
+      'knights',
+      'ni',
+   ]
+   >>> tup = ('spam', ('eggs', ('lumberjack', ('knights', ('ni', ('dead',
+   ... ('parrot', ('fresh fruit',))))))))
+   >>> pp = pprint.PrettyPrinter(depth=6)
+   >>> pp.pprint(tup)
+   ('spam', ('eggs', ('lumberjack', ('knights', ('ni', ('dead', (...)))))))
 
-   *indent* (default 1) specifies the amount of indentation added for
-   each nesting level.
-
-   *depth* controls the number of nesting levels which may be printed; if
-   the data structure being printed is too deep, the next contained level
-   is replaced by ``...``.  By default, there is no constraint on the
-   depth of the objects being formatted.
-
-   *width* (default 80) specifies the desired maximum number of characters per
-   line in the output. If a structure cannot be formatted within the width
-   constraint, a best effort will be made.
-
-   *compact* impacts the way that long sequences (lists, tuples, sets, etc)
-   are formatted. If *compact* is false (the default) then each item of a
-   sequence will be formatted on a separate line.  If *compact* is true, as
-   many items as will fit within the *width* will be formatted on each output
-   line.
-
-   If *sort_dicts* is true (the default), dictionaries will be formatted with
-   their keys sorted, otherwise they will display in insertion order.
-
-   If *underscore_numbers* is true, integers will be formatted with the
-   ``_`` character for a thousands separator, otherwise underscores are not
-   displayed (the default).
 
    .. versionchanged:: 3.4
       Added the *compact* parameter.
@@ -177,28 +220,8 @@ This module defines one class:
    .. versionchanged:: 3.11
       No longer attempts to write to :data:`!sys.stdout` if it is ``None``.
 
-      >>> import pprint
-      >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
-      >>> stuff.insert(0, stuff[:])
-      >>> pp = pprint.PrettyPrinter(indent=4)
-      >>> pp.pprint(stuff)
-      [   ['spam', 'eggs', 'lumberjack', 'knights', 'ni'],
-          'spam',
-          'eggs',
-          'lumberjack',
-          'knights',
-          'ni']
-      >>> pp = pprint.PrettyPrinter(width=41, compact=True)
-      >>> pp.pprint(stuff)
-      [['spam', 'eggs', 'lumberjack',
-        'knights', 'ni'],
-       'spam', 'eggs', 'lumberjack', 'knights',
-       'ni']
-      >>> tup = ('spam', ('eggs', ('lumberjack', ('knights', ('ni', ('dead',
-      ... ('parrot', ('fresh fruit',))))))))
-      >>> pp = pprint.PrettyPrinter(depth=6)
-      >>> pp.pprint(tup)
-      ('spam', ('eggs', ('lumberjack', ('knights', ('ni', ('dead', (...)))))))
+   .. versionchanged:: 3.15
+      Added the *expand* parameter.
 
 
 :class:`PrettyPrinter` instances have the following methods:
@@ -269,7 +292,7 @@ let's fetch information about a project from `PyPI <https://pypi.org>`_::
    >>> import json
    >>> import pprint
    >>> from urllib.request import urlopen
-   >>> with urlopen('https://pypi.org/pypi/sampleproject/json') as resp:
+   >>> with urlopen('https://pypi.org/pypi/sampleproject/1.2.0/json') as resp:
    ...     project_info = json.load(resp)['info']
 
 In its basic form, :func:`~pprint.pp` shows the whole object::
@@ -422,3 +445,72 @@ cannot be split, the specified width will be exceeded::
     'requires_python': None,
     'summary': 'A sample Python project',
     'version': '1.2.0'}
+
+Lastly, we can format like pretty-printed JSON with the *expand* parameter.
+Best results are achieved with a higher *indent* value::
+
+   >>> pprint.pp(project_info, indent=4, expand=True)
+   {
+      'author': 'The Python Packaging Authority',
+      'author_email': 'pypa-dev@googlegroups.com',
+      'bugtrack_url': None,
+      'classifiers': [
+         'Development Status :: 3 - Alpha',
+         'Intended Audience :: Developers',
+         'License :: OSI Approved :: MIT License',
+         'Programming Language :: Python :: 2',
+         'Programming Language :: Python :: 2.6',
+         'Programming Language :: Python :: 2.7',
+         'Programming Language :: Python :: 3',
+         'Programming Language :: Python :: 3.2',
+         'Programming Language :: Python :: 3.3',
+         'Programming Language :: Python :: 3.4',
+         'Topic :: Software Development :: Build Tools',
+      ],
+      'description': 'A sample Python project\n'
+      '=======================\n'
+      '\n'
+      'This is the description file for the project.\n'
+      '\n'
+      'The file should use UTF-8 encoding and be written using ReStructured '
+      'Text. It\n'
+      'will be used to generate the project webpage on PyPI, and should be '
+      'written for\n'
+      'that purpose.\n'
+      '\n'
+      'Typical contents for this file would include an overview of the project, '
+      'basic\n'
+      'usage examples, etc. Generally, including the project changelog in here '
+      'is not\n'
+      'a good idea, although a simple "What\'s New" section for the most recent '
+      'version\n'
+      'may be appropriate.',
+      'description_content_type': None,
+      'docs_url': None,
+      'download_url': 'UNKNOWN',
+      'downloads': {'last_day': -1, 'last_month': -1, 'last_week': -1},
+      'dynamic': None,
+      'home_page': 'https://github.com/pypa/sampleproject',
+      'keywords': 'sample setuptools development',
+      'license': 'MIT',
+      'license_expression': None,
+      'license_files': None,
+      'maintainer': None,
+      'maintainer_email': None,
+      'name': 'sampleproject',
+      'package_url': 'https://pypi.org/project/sampleproject/',
+      'platform': 'UNKNOWN',
+      'project_url': 'https://pypi.org/project/sampleproject/',
+      'project_urls': {
+         'Download': 'UNKNOWN',
+         'Homepage': 'https://github.com/pypa/sampleproject',
+      },
+      'provides_extra': None,
+      'release_url': 'https://pypi.org/project/sampleproject/1.2.0/',
+      'requires_dist': None,
+      'requires_python': None,
+      'summary': 'A sample Python project',
+      'version': '1.2.0',
+      'yanked': False,
+      'yanked_reason': None,
+   }

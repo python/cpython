@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Literal, Final
 from operator import attrgetter
 from collections.abc import Iterable
 
-import libclinic
+import libclinic.cpp
 from libclinic import (
     unspecified, fail, Sentinels, VersionTuple)
 from libclinic.codegen import CRenderData, TemplateDict, CodeGen
@@ -19,6 +19,16 @@ from libclinic.converters import self_converter
 from libclinic.parse_args import ParseArgsCodeGen
 if TYPE_CHECKING:
     from libclinic.app import Clinic
+
+
+def c_id(name: str) -> str:
+    if len(name) == 1 and ord(name) < 256:
+        if name.isalnum():
+            return f"_Py_LATIN1_CHR('{name}')"
+        else:
+            return f'_Py_LATIN1_CHR({ord(name)})'
+    else:
+        return f'&_Py_ID({name})'
 
 
 class CLanguage(Language):
@@ -91,7 +101,7 @@ class CLanguage(Language):
         code = self.COMPILER_DEPRECATION_WARNING_PROTOTYPE.format(
             major=minversion[0],
             minor=minversion[1],
-            message=libclinic.c_repr(message),
+            message=libclinic.c_str_repr(message),
         )
         return libclinic.normalize_snippet(code)
 
@@ -167,11 +177,11 @@ class CLanguage(Language):
                 if argname_fmt:
                     conditions.append(f"nargs < {i+1} && {argname_fmt % i}")
                 elif fastcall:
-                    conditions.append(f"nargs < {i+1} && PySequence_Contains(kwnames, &_Py_ID({p.name}))")
+                    conditions.append(f"nargs < {i+1} && PySequence_Contains(kwnames, {c_id(p.name)})")
                     containscheck = "PySequence_Contains"
                     codegen.add_include('pycore_runtime.h', '_Py_ID()')
                 else:
-                    conditions.append(f"nargs < {i+1} && PyDict_Contains(kwargs, &_Py_ID({p.name}))")
+                    conditions.append(f"nargs < {i+1} && PyDict_Contains(kwargs, {c_id(p.name)})")
                     containscheck = "PyDict_Contains"
                     codegen.add_include('pycore_runtime.h', '_Py_ID()')
             else:
@@ -394,9 +404,6 @@ class CLanguage(Language):
             if (i != -1) and (p.default is not unspecified):
                 first_optional = min(first_optional, i)
 
-            if p.is_vararg():
-                data.cleanup.append(f"Py_XDECREF({c.parser_name});")
-
             # insert group variable
             group = p.group
             if last_group != group:
@@ -416,14 +423,14 @@ class CLanguage(Language):
 
         # HACK
         # when we're METH_O, but have a custom return converter,
-        # we use "impl_parameters" for the parsing function
+        # we use "parser_parameters" for the parsing function
         # because that works better.  but that means we must
         # suppress actually declaring the impl's parameters
         # as variables in the parsing function.  but since it's
         # METH_O, we have exactly one anyway, so we know exactly
         # where it is.
         if ("METH_O" in templates['methoddef_define'] and
-            '{impl_parameters}' in templates['parser_prototype']):
+            '{parser_parameters}' in templates['parser_prototype']):
             data.declarations.pop(0)
 
         full_name = f.full_name
@@ -459,7 +466,7 @@ class CLanguage(Language):
         template_dict['keywords_c'] = ' '.join('"' + k + '",'
                                                for k in data.keywords)
         keywords = [k for k in data.keywords if k]
-        template_dict['keywords_py'] = ' '.join('&_Py_ID(' + k + '),'
+        template_dict['keywords_py'] = ' '.join(c_id(k) + ','
                                                 for k in keywords)
         template_dict['format_units'] = ''.join(data.format_units)
         template_dict['parse_arguments'] = ', '.join(data.parse_arguments)
@@ -468,6 +475,7 @@ class CLanguage(Language):
         else:
             template_dict['parse_arguments_comma'] = '';
         template_dict['impl_parameters'] = ", ".join(data.impl_parameters)
+        template_dict['parser_parameters'] = ", ".join(data.impl_parameters[1:])
         template_dict['impl_arguments'] = ", ".join(data.impl_arguments)
 
         template_dict['return_conversion'] = libclinic.format_escape("".join(data.return_conversion).rstrip())

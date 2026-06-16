@@ -177,7 +177,7 @@ Support keyword arguments to zlib.decompress().  Patch by Xiang Zhang.
 .. section: Library
 
 Prevent segfault after interpreter re-initialization due to ref count
-problem introduced in code for Issue #27038 in 3.6.0a3. Patch by Xiang
+problem introduced in code for issue #27038 in 3.6.0a3. Patch by Xiang
 Zhang.
 
 ..

@@ -40,6 +40,9 @@ class TclTest(unittest.TestCase):
         self.interp = Tcl()
         self.wantobjects = self.interp.tk.wantobjects()
 
+    def passValue(self, value):
+        return self.interp.call('set', '_', value)
+
     def testEval(self):
         tcl = self.interp
         tcl.eval('set a 1')
@@ -51,7 +54,11 @@ class TclTest(unittest.TestCase):
 
     def test_eval_surrogates_in_result(self):
         tcl = self.interp
-        self.assertIn(tcl.eval(r'set a "<\ud83d\udcbb>"'), '<\U0001f4bb>')
+        result = tcl.eval(r'set a "<\ud83d\udcbb>"')
+        if sys.platform == 'win32' and tcl_version >= (9, 0):
+            self.assertEqual('<\ud83d\udcbb>', result)
+        else:
+            self.assertEqual('<\U0001f4bb>', result)
 
     def testEvalException(self):
         tcl = self.interp
@@ -61,10 +68,29 @@ class TclTest(unittest.TestCase):
         tcl = self.interp
         self.assertRaises(TclError,tcl.eval,'this is wrong')
 
+    def test_eval_returns_tcl_obj(self):
+        tcl = self.interp.tk
+        tcl.eval(r'set a "\u20ac \ud83d\udcbb \0 \udcab"; regexp -about $a')
+        a = tcl.eval('set a')
+        expected = '\u20ac \U0001f4bb \0 \udced\udcb2\udcab'
+        self.assertEqual(a, expected)
+
     def testCall(self):
         tcl = self.interp
         tcl.call('set','a','1')
         self.assertEqual(tcl.call('set','a'),'1')
+
+    def test_call_passing_null(self):
+        tcl = self.interp
+        tcl.call('set', 'a', 'a\0b')  # ASCII-only
+        self.assertEqual(tcl.getvar('a'), 'a\x00b')
+        self.assertEqual(tcl.call('set', 'a'), 'a\x00b')
+        self.assertEqual(tcl.eval('set a'), 'a\x00b')
+
+        tcl.call('set', 'a', '\u20ac\0')  # non-ASCII
+        self.assertEqual(tcl.getvar('a'), '\u20ac\x00')
+        self.assertEqual(tcl.call('set', 'a'), '\u20ac\x00')
+        self.assertEqual(tcl.eval('set a'), '\u20ac\x00')
 
     def testCallException(self):
         tcl = self.interp
@@ -74,10 +100,34 @@ class TclTest(unittest.TestCase):
         tcl = self.interp
         self.assertRaises(TclError,tcl.call,'this','is','wrong')
 
+    def test_call_returns_tcl_obj(self):
+        tcl = self.interp.tk
+        tcl.eval(r'set a "\u20ac \ud83d\udcbb \0 \udcab"; regexp -about $a')
+        a = tcl.call('set', 'a')
+        expected = '\u20ac \U0001f4bb \0 \udced\udcb2\udcab'
+        if self.wantobjects:
+            self.assertEqual(str(a), expected)
+            self.assertEqual(a.string, expected)
+            self.assertEqual(a.typename, 'regexp')
+        else:
+            self.assertEqual(a, expected)
+
     def testSetVar(self):
         tcl = self.interp
         tcl.setvar('a','1')
         self.assertEqual(tcl.eval('set a'),'1')
+
+    def test_setvar_passing_null(self):
+        tcl = self.interp
+        tcl.setvar('a', 'a\0b')  # ASCII-only
+        self.assertEqual(tcl.getvar('a'), 'a\x00b')
+        self.assertEqual(tcl.call('set', 'a'), 'a\x00b')
+        self.assertEqual(tcl.eval('set a'), 'a\x00b')
+
+        tcl.setvar('a', '\u20ac\0')  # non-ASCII
+        self.assertEqual(tcl.getvar('a'), '\u20ac\x00')
+        self.assertEqual(tcl.call('set', 'a'), '\u20ac\x00')
+        self.assertEqual(tcl.eval('set a'), '\u20ac\x00')
 
     def testSetVarArray(self):
         tcl = self.interp
@@ -101,6 +151,18 @@ class TclTest(unittest.TestCase):
     def testGetVarArrayException(self):
         tcl = self.interp
         self.assertRaises(TclError,tcl.getvar,'a(1)')
+
+    def test_getvar_returns_tcl_obj(self):
+        tcl = self.interp.tk
+        tcl.eval(r'set a "\u20ac \ud83d\udcbb \0 \udcab"; regexp -about $a')
+        a = tcl.getvar('a')
+        expected = '\u20ac \U0001f4bb \0 \udced\udcb2\udcab'
+        if self.wantobjects:
+            self.assertEqual(str(a), expected)
+            self.assertEqual(a.string, expected)
+            self.assertEqual(a.typename, 'regexp')
+        else:
+            self.assertEqual(a, expected)
 
     def testUnsetVar(self):
         tcl = self.interp
@@ -219,11 +281,23 @@ class TclTest(unittest.TestCase):
         with open(filename, 'wb') as f:
             f.write(b"""
             set a "<\xed\xa0\xbd\xed\xb2\xbb>"
+            """)
+        if tcl_version >= (9, 0):
+            self.assertRaises(TclError, tcl.evalfile, filename)
+        else:
+            tcl.evalfile(filename)
+            self.assertEqual(tcl.eval('set a'), '<\U0001f4bb>')
+
+        with open(filename, 'wb') as f:
+            f.write(b"""
             set b "<\\ud83d\\udcbb>"
             """)
         tcl.evalfile(filename)
-        self.assertEqual(tcl.eval('set a'), '<\U0001f4bb>')
-        self.assertEqual(tcl.eval('set b'), '<\U0001f4bb>')
+        result = tcl.eval('set b')
+        if sys.platform == 'win32' and tcl_version >= (9, 0):
+            self.assertEqual('<\ud83d\udcbb>', result)
+        else:
+            self.assertEqual('<\U0001f4bb>', result)
 
     def testEvalFileException(self):
         tcl = self.interp
@@ -427,8 +501,7 @@ class TclTest(unittest.TestCase):
                 self.assertIsInstance(result, str)
 
     def test_passing_values(self):
-        def passValue(value):
-            return self.interp.call('set', '_', value)
+        passValue = self.passValue
 
         self.assertEqual(passValue(True), True if self.wantobjects else '1')
         self.assertEqual(passValue(False), False if self.wantobjects else '0')
@@ -473,6 +546,24 @@ class TclTest(unittest.TestCase):
                          (1, '2', (3.4,)) if self.wantobjects else '1 2 3.4')
         self.assertEqual(passValue(['a', ['b', 'c']]),
                          ('a', ('b', 'c')) if self.wantobjects else 'a {b c}')
+
+    def test_set_object_concurrent_mutation_in_sequence_conversion(self):
+        # Prevent SIGSEV when the object to convert is concurrently mutated.
+        # See: https://github.com/python/cpython/issues/143310.
+
+        string = "value"
+
+        class Value:
+            def __str__(self):
+                values.clear()
+                return string
+
+        class List(list):
+            pass
+
+        expect = (string, "pad") if self.wantobjects else f"{string} pad"
+        self.assertEqual(self.passValue(values := [Value(), "pad"]), expect)
+        self.assertEqual(self.passValue(values := List([Value(), "pad"])), expect)
 
     def test_user_command(self):
         result = None
@@ -540,6 +631,24 @@ class TclTest(unittest.TestCase):
         check([1, [2,], [3, 4], '5 6', []],
               '1 2 {3 4} {5 6} {}',
               (1, (2,), (3, 4), '5 6', ''))
+
+    def test_passing_tcl_obj(self):
+        tcl = self.interp.tk
+        a = None
+        def testfunc(arg):
+            nonlocal a
+            a = arg
+        self.interp.createcommand('testfunc', testfunc)
+        self.addCleanup(self.interp.tk.deletecommand, 'testfunc')
+        tcl.eval(r'set a "\u20ac \ud83d\udcbb \0 \udcab"; regexp -about $a')
+        tcl.eval(r'testfunc $a')
+        expected = '\u20ac \U0001f4bb \0 \udced\udcb2\udcab'
+        if self.wantobjects >= 2:
+            self.assertEqual(str(a), expected)
+            self.assertEqual(a.string, expected)
+            self.assertEqual(a.typename, 'regexp')
+        else:
+            self.assertEqual(a, expected)
 
     def test_splitlist(self):
         splitlist = self.interp.tk.splitlist
@@ -665,6 +774,7 @@ class TclTest(unittest.TestCase):
         support.check_disallow_instantiation(self, _tkinter.TkttType)
         support.check_disallow_instantiation(self, _tkinter.TkappType)
 
+
 class BigmemTclTest(unittest.TestCase):
 
     def setUp(self):
@@ -715,6 +825,10 @@ class BigmemTclTest(unittest.TestCase):
 
 
 def setUpModule():
+    wantobjects = support.get_resource_value('wantobjects')
+    if wantobjects is not None:
+        unittest.enterModuleContext(
+            support.swap_attr(tkinter, 'wantobjects', int(wantobjects)))
     if support.verbose:
         tcl = Tcl()
         print('patchlevel =', tcl.call('info', 'patchlevel'), flush=True)

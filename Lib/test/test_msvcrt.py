@@ -4,6 +4,7 @@ import sys
 import unittest
 from textwrap import dedent
 
+from test import support
 from test.support import os_helper, requires_resource
 from test.support.os_helper import TESTFN, TESTFN_ASCII
 
@@ -64,11 +65,15 @@ class TestConsoleIO(unittest.TestCase):
     # CREATE_NEW_CONSOLE creates a "popup" window.
     @requires_resource('gui')
     def run_in_separated_process(self, code):
-        # Run test in a seprated process to avoid stdin conflicts.
+        # Run test in a separated process to avoid stdin conflicts.
         # See: gh-110147
         cmd = [sys.executable, '-c', code]
-        subprocess.run(cmd, check=True, capture_output=True,
-                       creationflags=subprocess.CREATE_NEW_CONSOLE)
+        try:
+            subprocess.run(cmd, check=True, capture_output=True,
+                           creationflags=subprocess.CREATE_NEW_CONSOLE)
+        except subprocess.CalledProcessError as exc:
+            support.skip_on_low_desktop_heap_memory_subprocess(exc.returncode)
+            raise
 
     def test_kbhit(self):
         code = dedent('''

@@ -87,8 +87,8 @@ class PropertyTests(unittest.TestCase):
         self.assertEqual(base.spam, 10)
         self.assertEqual(base._spam, 10)
         delattr(base, "spam")
-        self.assertTrue(not hasattr(base, "spam"))
-        self.assertTrue(not hasattr(base, "_spam"))
+        self.assertNotHasAttr(base, "spam")
+        self.assertNotHasAttr(base, "_spam")
         base.spam = 20
         self.assertEqual(base.spam, 20)
         self.assertEqual(base._spam, 20)
@@ -438,7 +438,7 @@ class PropertySubclassTests(unittest.TestCase):
         self.assertEqual(p2.__doc__, "doc-A")
 
         # Case-3: with no user-provided doc new getter doc
-        #         takes precendence
+        #         takes precedence
         p = property(getter2, None, None, None)
 
         p2 = p.getter(getter3)

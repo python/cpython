@@ -4,9 +4,6 @@
 .. module:: gc
    :synopsis: Interface to the cycle-detecting garbage collector.
 
-.. moduleauthor:: Neil Schemenauer <nas@arctrix.com>
-.. sectionauthor:: Neil Schemenauer <nas@arctrix.com>
-
 --------------
 
 This module provides an interface to the optional garbage collector.  It
@@ -20,7 +17,7 @@ can be disabled by calling ``gc.disable()``.  To debug a leaking program call
 ``gc.DEBUG_SAVEALL``, causing garbage-collected objects to be saved in
 gc.garbage for inspection.
 
-The :mod:`gc` module provides the following functions:
+The :mod:`!gc` module provides the following functions:
 
 
 .. function:: enable()
@@ -42,7 +39,7 @@ The :mod:`gc` module provides the following functions:
 
    With no arguments, run a full collection.  The optional argument *generation*
    may be an integer specifying which generation to collect (from 0 to 2).  A
-   :exc:`ValueError` is raised if the generation number  is invalid. The sum of
+   :exc:`ValueError` is raised if the generation number is invalid. The sum of
    collected objects and uncollectable objects is returned.
 
    The free lists maintained for a number of built-in types are cleared
@@ -52,6 +49,12 @@ The :mod:`gc` module provides the following functions:
 
    The effect of calling ``gc.collect()`` while the interpreter is already
    performing a collection is undefined.
+
+   .. versionchanged:: 3.14
+      ``generation=1`` performs an increment of collection.
+
+   .. versionchanged:: 3.14.5
+      ``generation=1`` performs collection of the middle generation.
 
 
 .. function:: set_debug(flags)
@@ -75,6 +78,12 @@ The :mod:`gc` module provides the following functions:
    .. versionchanged:: 3.8
       New *generation* parameter.
 
+   .. versionchanged:: 3.14
+      Generation 1 is removed
+
+   .. versionchanged:: 3.14.5
+      Generation 1 is reintroduced to maintain GC behavior from 3.13.
+
    .. audit-event:: gc.get_objects generation gc.get_objects
 
 .. function:: get_stats()
@@ -91,9 +100,18 @@ The :mod:`gc` module provides the following functions:
 
    * ``uncollectable`` is the total number of objects which were found
      to be uncollectable (and were therefore moved to the :data:`garbage`
-     list) inside this generation.
+     list) inside this generation;
+
+   * ``candidates`` is the total number of objects in this generation which were
+     considered for collection and traversed;
+
+   * ``duration`` is the total time in seconds spent in collections for this
+     generation.
 
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.15
+      Add ``duration`` and ``candidates``.
 
 
 .. function:: set_threshold(threshold0, [threshold1, [threshold2]])
@@ -113,7 +131,15 @@ The :mod:`gc` module provides the following functions:
    been examined more than *threshold1* times since generation ``1`` has been
    examined, then generation ``1`` is examined as well.
    With the third generation, things are a bit more complicated,
-   see `Collecting the oldest generation <https://devguide.python.org/garbage_collector/#collecting-the-oldest-generation>`_ for more information.
+   see `Collecting the oldest generation <https://github.com/python/cpython/blob/ff0ef0a54bef26fc507fbf9b7a6009eb7d3f17f5/InternalDocs/garbage_collector.md#collecting-the-oldest-generation>`_ for more information.
+
+   See `Garbage collector design <https://github.com/python/cpython/blob/3.15/InternalDocs/garbage_collector.md>`_ for more information.
+
+   .. versionchanged:: 3.14
+      *threshold2* is ignored
+
+   .. versionchanged:: 3.14.5
+      *threshold2* is restored to match Python 3.13 behavior.
 
 
 .. function:: get_count()
@@ -179,8 +205,6 @@ The :mod:`gc` module provides the following functions:
       >>> gc.is_tracked({})
       False
       >>> gc.is_tracked({"a": 1})
-      False
-      >>> gc.is_tracked({"a": []})
       True
 
    .. versionadded:: 3.1
@@ -285,6 +309,12 @@ values but should not rebind them):
       "uncollectable": When *phase* is "stop", the number of objects
       that could not be collected and were put in :data:`garbage`.
 
+      "candidates": When *phase* is "stop", the total number of objects in this
+      generation which were considered for collection and traversed.
+
+      "duration": When *phase* is "stop", the time in seconds spent in the
+      collection.
+
    Applications can add their own callbacks to this list.  The primary
    use cases are:
 
@@ -296,6 +326,9 @@ values but should not rebind them):
       types when they appear in :data:`garbage`.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.15
+      Add "duration" and "candidates".
 
 
 The following constants are provided for use with :func:`set_debug`:

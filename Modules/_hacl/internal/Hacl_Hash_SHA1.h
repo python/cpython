@@ -23,15 +23,15 @@
  */
 
 
-#ifndef __internal_Hacl_Hash_SHA1_H
-#define __internal_Hacl_Hash_SHA1_H
+#ifndef internal_Hacl_Hash_SHA1_H
+#define internal_Hacl_Hash_SHA1_H
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
 #include <string.h>
-#include "krml/types.h"
+#include "krml/internal/types.h"
 #include "krml/lowstar_endianness.h"
 #include "krml/internal/target.h"
 
@@ -52,5 +52,5 @@ void Hacl_Hash_SHA1_hash_oneshot(uint8_t *output, uint8_t *input, uint32_t input
 }
 #endif
 
-#define __internal_Hacl_Hash_SHA1_H_DEFINED
-#endif
+#define internal_Hacl_Hash_SHA1_H_DEFINED
+#endif /* internal_Hacl_Hash_SHA1_H */

@@ -111,7 +111,7 @@ str.decode().
 .. nonce: m15TTX
 .. section: Core and Builtins
 
-Fix possible refleaks in :mod:`_json`, memo of PyScannerObject should be
+Fix possible refleaks in :mod:`!_json`, memo of PyScannerObject should be
 traversed.
 
 ..
@@ -403,7 +403,7 @@ after encoding it to utf-8, not before.
 .. nonce: pDZR6V
 .. section: Library
 
-Added :meth:`pathlib.Path.with_stem()` to create a new Path with the stem
+Added :meth:`pathlib.Path.with_stem` to create a new Path with the stem
 replaced.
 
 ..
@@ -666,8 +666,8 @@ for _main_thread, instead of a _DummyThread instance.
 .. nonce: VTq_8s
 .. section: Library
 
-Add a private ``_at_fork_reinit()`` method to :class:`_thread.Lock`,
-:class:`_thread.RLock`, :class:`threading.RLock` and
+Add a private ``_at_fork_reinit()`` method to :class:`!_thread.Lock`,
+:class:`!_thread.RLock`, :class:`threading.RLock` and
 :class:`threading.Condition` classes: reinitialize the lock at fork in the
 child process, reset the lock to the unlocked state. Rename also the private
 ``_reset_internal_locks()`` method of :class:`threading.Event` to
@@ -866,7 +866,7 @@ of source of the class. Patch by Karthikeyan Singaravelan.
 .. nonce: vHC7YQ
 .. section: Library
 
-Deprecate passing None as an argument for :func:`shlex.split()`'s ``s``
+Deprecate passing None as an argument for :func:`shlex.split`'s ``s``
 parameter.  Patch by Zackery Spytz.
 
 ..

@@ -4,8 +4,6 @@
 Logging HOWTO
 =============
 
-:Author: Vinay Sajip <vinay_sajip at red-dove dot com>
-
 .. _logging-basic-tutorial:
 
 .. currentmodule:: logging
@@ -28,7 +26,7 @@ When to use logging
 ^^^^^^^^^^^^^^^^^^^
 
 You can access logging functionality by creating a logger via ``logger =
-getLogger(__name__)``, and then calling the logger's :meth:`~Logger.debug`,
+logging.getLogger(__name__)``, and then calling the logger's :meth:`~Logger.debug`,
 :meth:`~Logger.info`, :meth:`~Logger.warning`, :meth:`~Logger.error` and
 :meth:`~Logger.critical` methods. To determine when to use logging, and to see
 which logger methods to use when, see the table below. It states, for each of a
@@ -127,7 +125,7 @@ that; formatting options will also be explained later.
 
 Notice that in this example, we use functions directly on the ``logging``
 module, like ``logging.debug``, rather than creating a logger and calling
-functions on it. These functions operation on the root logger, but can be useful
+functions on it. These functions operate on the root logger, but can be useful
 as they will call :func:`~logging.basicConfig` for you if it has not been called yet, like in
 this example.  In larger programs you'll usually want to control the logging
 configuration explicitly however - so for that reason as well as others, it's
@@ -302,10 +300,10 @@ reading the following sections. If you're ready for that, grab some of your
 favourite beverage and carry on.
 
 If your logging needs are simple, then use the above examples to incorporate
-logging into your own scripts, and if you run into problems or don't
-understand something, please post a question on the comp.lang.python Usenet
-group (available at https://groups.google.com/g/comp.lang.python) and you
-should receive help before too long.
+logging into your own scripts, and if you run into problems or don't understand
+something, please post a question in the Help category of the `Python
+discussion forum <https://discuss.python.org/c/help/7>`_ and you should receive
+help before too long.
 
 Still here? You can carry on reading the next few sections, which provide a
 slightly more advanced/in-depth tutorial than the basic one above. After that,
@@ -382,8 +380,52 @@ Logging Flow
 The flow of log event information in loggers and handlers is illustrated in the
 following diagram.
 
-.. image:: logging_flow.png
-   :class: invert-in-dark-mode
+.. only:: not html
+
+   .. image:: logging_flow.*
+
+.. raw:: html
+   :file: logging_flow.svg
+
+.. raw:: html
+
+   <script>
+   /*
+    * This snippet is needed to handle the case where a light or dark theme is
+    * chosen via the theme is selected in the page. We call the existing handler
+    * and then add a dark-theme class to the body when the dark theme is selected.
+    * The SVG styling (above) then does the rest.
+    *
+    * If the pydoc theme is updated to set the dark-theme class, this snippet
+    * won't be needed any more.
+    */
+   (function() {
+     var oldActivateTheme = activateTheme;
+
+     function updateBody(theme) {
+        let elem = document.body;
+
+        elem.classList.remove('dark-theme');
+        elem.classList.remove('light-theme');
+        if (theme === 'dark') {
+            elem.classList.add('dark-theme');
+        }
+        else if (theme === 'light') {
+            elem.classList.add('light-theme');
+        }
+     }
+
+     activateTheme = function(theme) {
+        oldActivateTheme(theme);
+        updateBody(theme);
+     };
+     /*
+      * If the page is refreshed, make sure we update the body - the overriding
+      * of activateTheme won't have taken effect yet.
+      */
+      updateBody(localStorage.getItem('currentTheme') || 'auto');
+   })();
+   </script>
 
 Loggers
 ^^^^^^^

@@ -1,1 +1,0 @@
-Drop support for passing keyword arguments to :class:`pathlib.Path`.

@@ -57,10 +57,11 @@ _bin_openflags = _text_openflags
 if hasattr(_os, 'O_BINARY'):
     _bin_openflags |= _os.O_BINARY
 
-if hasattr(_os, 'TMP_MAX'):
-    TMP_MAX = _os.TMP_MAX
-else:
-    TMP_MAX = 10000
+# This is more than enough.
+# Each name contains over 40 random bits.  Even with a million temporary
+# files, the chance of a conflict is less than 1 in a million, and with
+# 20 attempts, it is less than 1e-120.
+TMP_MAX = 20
 
 # This variable _was_ unused for legacy reasons, see issue 10354.
 # But as of 3.5 we actually use it at runtime so changing it would
@@ -180,7 +181,7 @@ def _candidate_tempdir_list():
 
     return dirlist
 
-def _get_default_tempdir():
+def _get_default_tempdir(dirlist=None):
     """Calculate the default directory to use for temporary files.
     This routine should be called exactly once.
 
@@ -190,13 +191,13 @@ def _get_default_tempdir():
     service, the name of the test file must be randomized."""
 
     namer = _RandomNameSequence()
-    dirlist = _candidate_tempdir_list()
+    if dirlist is None:
+        dirlist = _candidate_tempdir_list()
 
     for dir in dirlist:
         if dir != _os.curdir:
             dir = _os.path.abspath(dir)
-        # Try only a few names per directory.
-        for seq in range(100):
+        for seq in range(TMP_MAX):
             name = next(namer)
             filename = _os.path.join(dir, name)
             try:
@@ -212,10 +213,8 @@ def _get_default_tempdir():
             except FileExistsError:
                 pass
             except PermissionError:
-                # This exception is thrown when a directory with the chosen name
-                # already exists on windows.
-                if (_os.name == 'nt' and _os.path.isdir(dir) and
-                    _os.access(dir, _os.W_OK)):
+                # See the comment in mkdtemp().
+                if _os.name == 'nt' and _os.path.isdir(dir):
                     continue
                 break   # no point trying more names in this directory
             except OSError:
@@ -257,10 +256,8 @@ def _mkstemp_inner(dir, pre, suf, flags, output_type):
         except FileExistsError:
             continue    # try again
         except PermissionError:
-            # This exception is thrown when a directory with the chosen name
-            # already exists on windows.
-            if (_os.name == 'nt' and _os.path.isdir(dir) and
-                _os.access(dir, _os.W_OK)):
+            # See the comment in mkdtemp().
+            if _os.name == 'nt' and _os.path.isdir(dir) and seq < TMP_MAX - 1:
                 continue
             else:
                 raise
@@ -385,10 +382,14 @@ def mkdtemp(suffix=None, prefix=None, dir=None):
         except FileExistsError:
             continue    # try again
         except PermissionError:
-            # This exception is thrown when a directory with the chosen name
-            # already exists on windows.
-            if (_os.name == 'nt' and _os.path.isdir(dir) and
-                _os.access(dir, _os.W_OK)):
+            # On Posix, this exception is raised when the user has no
+            # write access to the parent directory.
+            # On Windows, it is also raised when a directory with
+            # the chosen name already exists, or if the parent directory
+            # is not a directory.
+            # We cannot distinguish between "directory-exists-error" and
+            # "access-denied-error".
+            if _os.name == 'nt' and _os.path.isdir(dir) and seq < TMP_MAX - 1:
                 continue
             else:
                 raise
@@ -437,11 +438,19 @@ class _TemporaryFileCloser:
     cleanup_called = False
     close_called = False
 
-    def __init__(self, file, name, delete=True, delete_on_close=True):
+    def __init__(
+        self,
+        file,
+        name,
+        delete=True,
+        delete_on_close=True,
+        warn_message="Implicitly cleaning up unknown file",
+    ):
         self.file = file
         self.name = name
         self.delete = delete
         self.delete_on_close = delete_on_close
+        self.warn_message = warn_message
 
     def cleanup(self, windows=(_os.name == 'nt'), unlink=_os.unlink):
         if not self.cleanup_called:
@@ -469,7 +478,10 @@ class _TemporaryFileCloser:
                     self.cleanup()
 
     def __del__(self):
+        close_called = self.close_called
         self.cleanup()
+        if not close_called:
+            _warnings.warn(self.warn_message, ResourceWarning)
 
 
 class _TemporaryFileWrapper:
@@ -483,8 +495,17 @@ class _TemporaryFileWrapper:
     def __init__(self, file, name, delete=True, delete_on_close=True):
         self.file = file
         self.name = name
-        self._closer = _TemporaryFileCloser(file, name, delete,
-                                            delete_on_close)
+        self._closer = _TemporaryFileCloser(
+            file,
+            name,
+            delete,
+            delete_on_close,
+            warn_message=f"Implicitly cleaning up {self!r}",
+        )
+
+    def __repr__(self):
+        file = self.__dict__['file']
+        return f"<{type(self).__name__} {file=}>"
 
     def __getattr__(self, name):
         # Attribute lookups are delegated to the underlying file
@@ -635,7 +656,7 @@ else:
             fd = None
             def opener(*args):
                 nonlocal fd
-                flags2 = (flags | _os.O_TMPFILE) & ~_os.O_CREAT
+                flags2 = (flags | _os.O_TMPFILE) & ~_os.O_CREAT & ~_os.O_EXCL
                 fd = _os.open(dir, flags2, 0o600)
                 return fd
             try:
@@ -670,7 +691,7 @@ else:
             fd, name = _mkstemp_inner(dir, prefix, suffix, flags, output_type)
             try:
                 _os.unlink(name)
-            except BaseException as e:
+            except BaseException:
                 _os.close(fd)
                 raise
             return fd
@@ -848,10 +869,14 @@ class SpooledTemporaryFile(_io.IOBase):
         return rv
 
     def writelines(self, iterable):
-        file = self._file
-        rv = file.writelines(iterable)
-        self._check(file)
-        return rv
+        if self._max_size == 0 or self._rolled:
+            return self._file.writelines(iterable)
+
+        it = iter(iterable)
+        for line in it:
+            self.write(line)
+            if self._rolled:
+                return self._file.writelines(it)
 
     def detach(self):
         return self._file.detach()

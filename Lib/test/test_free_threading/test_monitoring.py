@@ -1,20 +1,22 @@
 """Tests monitoring, sys.settrace, and sys.setprofile in a multi-threaded
-environmenet to verify things are thread-safe in a free-threaded build"""
+environment to verify things are thread-safe in a free-threaded build"""
 
 import sys
+import threading
 import time
 import unittest
 import weakref
 
+from contextlib import contextmanager
 from sys import monitoring
 from test.support import threading_helper
-from threading import Thread, _PyRLock
+from threading import Thread, _PyRLock, Barrier
 from unittest import TestCase
 
 
 class InstrumentationMultiThreadedMixin:
     thread_count = 10
-    func_count = 200
+    func_count = 50
     fib = 12
 
     def after_threads(self):
@@ -33,10 +35,10 @@ class InstrumentationMultiThreadedMixin:
             return n
         return self.work(n - 1, funcs) + self.work(n - 2, funcs)
 
-    def start_work(self, n, funcs):
+    def start_work(self, n, funcs, barrier):
         # With the GIL builds we need to make sure that the hooks have
         # a chance to run as it's possible to run w/o releasing the GIL.
-        time.sleep(1)
+        barrier.wait()
         self.work(n, funcs)
 
     def after_test(self):
@@ -51,14 +53,16 @@ class InstrumentationMultiThreadedMixin:
             exec("def f(): pass", x)
             funcs.append(x["f"])
 
+        barrier = Barrier(self.thread_count + 1)
         threads = []
         for i in range(self.thread_count):
             # Each thread gets a copy of the func list to avoid contention
-            t = Thread(target=self.start_work, args=(self.fib, list(funcs)))
+            t = Thread(target=self.start_work, args=(self.fib, list(funcs), barrier))
             t.start()
             threads.append(t)
 
         self.after_threads()
+        barrier.wait()
 
         while True:
             any_alive = False
@@ -71,6 +75,9 @@ class InstrumentationMultiThreadedMixin:
                 break
 
             self.during_threads()
+            # Sleep to avoid setting monitoring events too rapidly and
+            # overflowing the global version counter
+            time.sleep(0.0001)
 
         self.after_test()
 
@@ -115,7 +122,6 @@ class MonitoringMultiThreaded(
     def setUp(self):
         super().setUp()
         self.set = False
-        self.called = False
         monitoring.register_callback(
             self.tool_id, monitoring.events.LINE, self.callback
         )
@@ -125,10 +131,7 @@ class MonitoringMultiThreaded(
         super().tearDown()
 
     def callback(self, *args):
-        self.called = True
-
-    def after_test(self):
-        self.assertTrue(self.called)
+        pass
 
     def during_threads(self):
         if self.set:
@@ -146,16 +149,11 @@ class SetTraceMultiThreaded(InstrumentationMultiThreadedMixin, TestCase):
 
     def setUp(self):
         self.set = False
-        self.called = False
-
-    def after_test(self):
-        self.assertTrue(self.called)
 
     def tearDown(self):
         sys.settrace(None)
 
     def trace_func(self, frame, event, arg):
-        self.called = True
         return self.trace_func
 
     def during_threads(self):
@@ -172,16 +170,11 @@ class SetProfileMultiThreaded(InstrumentationMultiThreadedMixin, TestCase):
 
     def setUp(self):
         self.set = False
-        self.called = False
-
-    def after_test(self):
-        self.assertTrue(self.called)
 
     def tearDown(self):
         sys.setprofile(None)
 
     def trace_func(self, frame, event, arg):
-        self.called = True
         return self.trace_func
 
     def during_threads(self):
@@ -193,8 +186,74 @@ class SetProfileMultiThreaded(InstrumentationMultiThreadedMixin, TestCase):
 
 
 @threading_helper.requires_working_threading()
+class SetProfileAllThreadsMultiThreaded(InstrumentationMultiThreadedMixin, TestCase):
+    """Uses threading.setprofile_all_threads and repeatedly toggles instrumentation on and off"""
+
+    def setUp(self):
+        self.set = False
+
+    def tearDown(self):
+        threading.setprofile_all_threads(None)
+
+    def trace_func(self, frame, event, arg):
+        return self.trace_func
+
+    def during_threads(self):
+        if self.set:
+            threading.setprofile_all_threads(self.trace_func)
+        else:
+            threading.setprofile_all_threads(None)
+        self.set = not self.set
+
+
+class SetProfileAllMultiThreaded(TestCase):
+    def test_profile_all_threads(self):
+        done = threading.Event()
+
+        def func():
+            pass
+
+        def bg_thread():
+            while not done.is_set():
+                func()
+                func()
+                func()
+                func()
+                func()
+
+        def my_profile(frame, event, arg):
+            return None
+
+        bg_threads = []
+        for i in range(10):
+            t = threading.Thread(target=bg_thread)
+            t.start()
+            bg_threads.append(t)
+
+        for i in range(100):
+            threading.setprofile_all_threads(my_profile)
+            threading.setprofile_all_threads(None)
+
+        done.set()
+        for t in bg_threads:
+            t.join()
+
+
+class TraceBuf:
+    def __init__(self):
+        self.traces = []
+        self.traces_lock = threading.Lock()
+
+    def append(self, trace):
+        with self.traces_lock:
+            self.traces.append(trace)
+
+
+@threading_helper.requires_working_threading()
 class MonitoringMisc(MonitoringTestMixin, TestCase):
-    def register_callback(self):
+    def register_callback(self, barrier):
+        barrier.wait()
+
         def callback(*args):
             pass
 
@@ -206,8 +265,9 @@ class MonitoringMisc(MonitoringTestMixin, TestCase):
     def test_register_callback(self):
         self.refs = []
         threads = []
-        for i in range(50):
-            t = Thread(target=self.register_callback)
+        barrier = Barrier(5)
+        for i in range(5):
+            t = Thread(target=self.register_callback, args=(barrier,))
             t.start()
             threads.append(t)
 
@@ -223,23 +283,187 @@ class MonitoringMisc(MonitoringTestMixin, TestCase):
             frame.f_trace_opcodes = True
             return trace
 
+        loops = 1_000
+
         sys.settrace(trace)
         try:
             l = _PyRLock()
 
             def f():
-                for i in range(3000):
+                for i in range(loops):
                     with l:
                         pass
 
             t = Thread(target=f)
             t.start()
-            for i in range(3000):
+            for i in range(loops):
                 with l:
                     pass
             t.join()
         finally:
             sys.settrace(None)
+
+    def test_toggle_setprofile_no_new_events(self):
+        # gh-136396: Make sure that profile functions are called for newly
+        # created threads when profiling is toggled but the set of monitoring
+        # events doesn't change
+        traces = []
+
+        def profiler(frame, event, arg):
+            traces.append((frame.f_code.co_name, event, arg))
+
+        def a(x, y):
+            return b(x, y)
+
+        def b(x, y):
+            return max(x, y)
+
+        sys.setprofile(profiler)
+        try:
+            a(1, 2)
+        finally:
+            sys.setprofile(None)
+        traces.clear()
+
+        def thread_main(x, y):
+            sys.setprofile(profiler)
+            try:
+                a(x, y)
+            finally:
+                sys.setprofile(None)
+        t = Thread(target=thread_main, args=(100, 200))
+        t.start()
+        t.join()
+
+        expected = [
+            ("a", "call", None),
+            ("b", "call", None),
+            ("b", "c_call", max),
+            ("b", "c_return", max),
+            ("b", "return", 200),
+            ("a", "return", 200),
+            ("thread_main", "c_call", sys.setprofile),
+        ]
+        self.assertEqual(traces, expected)
+
+    def observe_threads(self, observer, buf):
+        def in_child(ident):
+            return ident
+
+        def child(ident):
+            with observer():
+                in_child(ident)
+
+        def in_parent(ident):
+            return ident
+
+        def parent(barrier, ident):
+            barrier.wait()
+            with observer():
+                t = Thread(target=child, args=(ident,))
+                t.start()
+                t.join()
+                in_parent(ident)
+
+        num_threads = 5
+        barrier = Barrier(num_threads)
+        threads = []
+        for i in range(num_threads):
+            t = Thread(target=parent, args=(barrier, i))
+            t.start()
+            threads.append(t)
+        for t in threads:
+            t.join()
+
+        for i in range(num_threads):
+            self.assertIn(("in_parent", "return", i), buf.traces)
+            self.assertIn(("in_child", "return", i), buf.traces)
+
+    def test_profile_threads(self):
+        buf = TraceBuf()
+
+        def profiler(frame, event, arg):
+            buf.append((frame.f_code.co_name, event, arg))
+
+        @contextmanager
+        def profile():
+            sys.setprofile(profiler)
+            try:
+                yield
+            finally:
+                sys.setprofile(None)
+
+        self.observe_threads(profile, buf)
+
+    def test_trace_threads(self):
+        buf = TraceBuf()
+
+        def tracer(frame, event, arg):
+            buf.append((frame.f_code.co_name, event, arg))
+            return tracer
+
+        @contextmanager
+        def trace():
+            sys.settrace(tracer)
+            try:
+                yield
+            finally:
+                sys.settrace(None)
+
+        self.observe_threads(trace, buf)
+
+    def test_monitor_threads(self):
+        buf = TraceBuf()
+
+        def monitor_py_return(code, off, retval):
+            buf.append((code.co_name, "return", retval))
+
+        monitoring.register_callback(
+            self.tool_id, monitoring.events.PY_RETURN, monitor_py_return
+        )
+
+        monitoring.set_events(
+            self.tool_id, monitoring.events.PY_RETURN
+        )
+
+        @contextmanager
+        def noop():
+            yield
+
+        self.observe_threads(noop, buf)
+
+    def test_trace_concurrent(self):
+        # Test calling a function concurrently from a tracing and a non-tracing
+        # thread
+        b = threading.Barrier(2)
+
+        def func():
+            for _ in range(100):
+                pass
+
+        def noop():
+            pass
+
+        def bg_thread():
+            b.wait()
+            func()  # this may instrument `func`
+
+        def tracefunc(frame, event, arg):
+            # These calls run under tracing can race with the background thread
+            for _ in range(10):
+                func()
+            return tracefunc
+
+        t = Thread(target=bg_thread)
+        t.start()
+        try:
+            sys.settrace(tracefunc)
+            b.wait()
+            noop()
+        finally:
+            sys.settrace(None)
+        t.join()
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -11,6 +11,7 @@ import sys
 import traceback
 import types
 import unittest
+import inspect
 from unittest import mock
 from types import GenericAlias
 
@@ -23,7 +24,7 @@ from test.support.script_helper import assert_python_ok
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio.events._set_event_loop_policy(None)
 
 
 async def coroutine_function():
@@ -86,9 +87,10 @@ class BaseTaskTests:
 
     Task = None
     Future = None
+    all_tasks = None
 
-    def new_task(self, loop, coro, name='TestTask', context=None):
-        return self.__class__.Task(coro, loop=loop, name=name, context=context)
+    def new_task(self, loop, coro, name='TestTask', context=None, eager_start=None):
+        return self.__class__.Task(coro, loop=loop, name=name, context=context, eager_start=eager_start)
 
     def new_future(self, loop):
         return self.__class__.Future(loop=loop)
@@ -108,7 +110,7 @@ class BaseTaskTests:
         async def coro():
             pass
         t = self.new_task(self.loop, coro())
-        self.assertTrue(hasattr(t, '_cancel_message'))
+        self.assertHasAttr(t, '_cancel_message')
         self.assertEqual(t._cancel_message, None)
 
         t.cancel('my message')
@@ -544,7 +546,7 @@ class BaseTaskTests:
             try:
                 await asyncio.sleep(10)
             except asyncio.CancelledError:
-                asyncio.current_task().uncancel()
+                self.current_task().uncancel()
                 await asyncio.sleep(10)
 
         try:
@@ -596,7 +598,7 @@ class BaseTaskTests:
         loop = asyncio.new_event_loop()
 
         async def make_request_with_timeout(*, sleep: float, timeout: float):
-            task = asyncio.current_task()
+            task = self.current_task()
             loop = task.get_loop()
 
             timed_out = False
@@ -1938,28 +1940,11 @@ class BaseTaskTests:
         self.assertFalse(task.cancelled())
         self.assertIs(task.exception(), base_exc)
 
-    def test_iscoroutinefunction(self):
-        def fn():
-            pass
-
-        self.assertFalse(asyncio.iscoroutinefunction(fn))
-
-        def fn1():
-            yield
-        self.assertFalse(asyncio.iscoroutinefunction(fn1))
-
-        async def fn2():
-            pass
-        self.assertTrue(asyncio.iscoroutinefunction(fn2))
-
-        self.assertFalse(asyncio.iscoroutinefunction(mock.Mock()))
-        self.assertTrue(asyncio.iscoroutinefunction(mock.AsyncMock()))
-
     def test_coroutine_non_gen_function(self):
         async def func():
             return 'test'
 
-        self.assertTrue(asyncio.iscoroutinefunction(func))
+        self.assertTrue(inspect.iscoroutinefunction(func))
 
         coro = func()
         self.assertTrue(asyncio.iscoroutine(coro))
@@ -1983,41 +1968,41 @@ class BaseTaskTests:
         self.assertIsNone(t2.result())
 
     def test_current_task(self):
-        self.assertIsNone(asyncio.current_task(loop=self.loop))
+        self.assertIsNone(self.current_task(loop=self.loop))
 
         async def coro(loop):
-            self.assertIs(asyncio.current_task(), task)
+            self.assertIs(self.current_task(), task)
 
-            self.assertIs(asyncio.current_task(None), task)
-            self.assertIs(asyncio.current_task(), task)
+            self.assertIs(self.current_task(None), task)
+            self.assertIs(self.current_task(), task)
 
         task = self.new_task(self.loop, coro(self.loop))
         self.loop.run_until_complete(task)
-        self.assertIsNone(asyncio.current_task(loop=self.loop))
+        self.assertIsNone(self.current_task(loop=self.loop))
 
     def test_current_task_with_interleaving_tasks(self):
-        self.assertIsNone(asyncio.current_task(loop=self.loop))
+        self.assertIsNone(self.current_task(loop=self.loop))
 
         fut1 = self.new_future(self.loop)
         fut2 = self.new_future(self.loop)
 
         async def coro1(loop):
-            self.assertTrue(asyncio.current_task() is task1)
+            self.assertTrue(self.current_task() is task1)
             await fut1
-            self.assertTrue(asyncio.current_task() is task1)
+            self.assertTrue(self.current_task() is task1)
             fut2.set_result(True)
 
         async def coro2(loop):
-            self.assertTrue(asyncio.current_task() is task2)
+            self.assertTrue(self.current_task() is task2)
             fut1.set_result(True)
             await fut2
-            self.assertTrue(asyncio.current_task() is task2)
+            self.assertTrue(self.current_task() is task2)
 
         task1 = self.new_task(self.loop, coro1(self.loop))
         task2 = self.new_task(self.loop, coro2(self.loop))
 
         self.loop.run_until_complete(asyncio.wait((task1, task2)))
-        self.assertIsNone(asyncio.current_task(loop=self.loop))
+        self.assertIsNone(self.current_task(loop=self.loop))
 
     # Some thorough tests for cancellation propagation through
     # coroutines, tasks and wait().
@@ -2111,6 +2096,46 @@ class BaseTaskTests:
         test_utils.run_briefly(self.loop)
         self.assertTrue(outer.cancelled())
         self.assertEqual(0, 0 if outer._callbacks is None else len(outer._callbacks))
+
+    def test_shield_cancel_outer_result(self):
+        mock_handler = mock.Mock()
+        self.loop.set_exception_handler(mock_handler)
+        inner = self.new_future(self.loop)
+        outer = asyncio.shield(inner)
+        test_utils.run_briefly(self.loop)
+        outer.cancel()
+        test_utils.run_briefly(self.loop)
+        inner.set_result(1)
+        test_utils.run_briefly(self.loop)
+        mock_handler.assert_not_called()
+
+    def test_shield_cancel_outer_exception(self):
+        mock_handler = mock.Mock()
+        self.loop.set_exception_handler(mock_handler)
+        inner = self.new_future(self.loop)
+        outer = asyncio.shield(inner)
+        test_utils.run_briefly(self.loop)
+        outer.cancel()
+        test_utils.run_briefly(self.loop)
+        inner.set_exception(Exception('foo'))
+        test_utils.run_briefly(self.loop)
+        mock_handler.assert_called_once()
+
+    def test_shield_duplicate_log_once(self):
+        mock_handler = mock.Mock()
+        self.loop.set_exception_handler(mock_handler)
+        inner = self.new_future(self.loop)
+        outer = asyncio.shield(inner)
+        test_utils.run_briefly(self.loop)
+        outer.cancel()
+        test_utils.run_briefly(self.loop)
+        outer = asyncio.shield(inner)
+        test_utils.run_briefly(self.loop)
+        outer.cancel()
+        test_utils.run_briefly(self.loop)
+        inner.set_exception(Exception('foo'))
+        test_utils.run_briefly(self.loop)
+        mock_handler.assert_called_once()
 
     def test_shield_shortcut(self):
         fut = self.new_future(self.loop)
@@ -2250,7 +2275,6 @@ class BaseTaskTests:
             asyncio.wait([]))
 
     def test_log_destroyed_pending_task(self):
-        Task = self.__class__.Task
 
         async def kill_me(loop):
             future = self.new_future(loop)
@@ -2265,14 +2289,12 @@ class BaseTaskTests:
 
         # schedule the task
         coro = kill_me(self.loop)
-        task = asyncio.ensure_future(coro, loop=self.loop)
+        task = self.new_task(self.loop, coro)
 
-        self.assertEqual(asyncio.all_tasks(loop=self.loop), {task})
-
-        asyncio.set_event_loop(None)
+        self.assertEqual(self.all_tasks(loop=self.loop), {task})
 
         # execute the task so it waits for future
-        self.loop._run_once()
+        self.loop.run_until_complete(asyncio.sleep(0))
         self.assertEqual(len(self.loop._ready), 0)
 
         coro = None
@@ -2282,14 +2304,36 @@ class BaseTaskTests:
         # no more reference to kill_me() task: the task is destroyed by the GC
         support.gc_collect()
 
-        self.assertEqual(asyncio.all_tasks(loop=self.loop), set())
-
         mock_handler.assert_called_with(self.loop, {
             'message': 'Task was destroyed but it is pending!',
             'task': mock.ANY,
             'source_traceback': source_traceback,
         })
         mock_handler.reset_mock()
+        # task got resurrected by the exception handler
+        support.gc_collect()
+
+        self.assertEqual(self.all_tasks(loop=self.loop), set())
+
+    def test_task_not_crash_without_finalization(self):
+        Task = self.__class__.Task
+
+        class Subclass(Task):
+            def __del__(self):
+                pass
+
+        async def corofn():
+            await asyncio.sleep(0.01)
+
+        coro = corofn()
+        task = Subclass(coro, loop = self.loop)
+        task._log_destroy_pending = False
+
+        del task
+
+        support.gc_collect()
+
+        coro.close()
 
     @mock.patch('asyncio.base_events.logger')
     def test_tb_logger_not_called_after_cancel(self, m_log):
@@ -2431,7 +2475,7 @@ class BaseTaskTests:
         message = m_log.error.call_args[0][0]
         self.assertIn('Task was destroyed but it is pending', message)
 
-        self.assertEqual(asyncio.all_tasks(self.loop), set())
+        self.assertEqual(self.all_tasks(self.loop), set())
 
     def test_create_task_with_noncoroutine(self):
         with self.assertRaisesRegex(TypeError,
@@ -2663,6 +2707,35 @@ class BaseTaskTests:
 
         self.assertEqual([None, 1, 2], ret)
 
+    def test_eager_start_true(self):
+        name = None
+
+        async def asyncfn():
+            nonlocal name
+            name = self.current_task().get_name()
+
+        async def main():
+            t = self.new_task(coro=asyncfn(), loop=asyncio.get_running_loop(), eager_start=True, name="example")
+            self.assertTrue(t.done())
+            self.assertEqual(name, "example")
+            await t
+
+    def test_eager_start_false(self):
+        name = None
+
+        async def asyncfn():
+            nonlocal name
+            name = self.current_task().get_name()
+
+        async def main():
+            t = self.new_task(coro=asyncfn(), loop=asyncio.get_running_loop(), eager_start=False, name="example")
+            self.assertFalse(t.done())
+            self.assertIsNone(name)
+            await t
+            self.assertEqual(name, "example")
+
+        asyncio.run(main(), loop_factory=asyncio.EventLoop)
+
     def test_get_coro(self):
         loop = asyncio.new_event_loop()
         coro = coroutine_function()
@@ -2684,6 +2757,17 @@ class BaseTaskTests:
         finally:
             loop.close()
 
+    def test_task_disallow_multiple_initialization(self):
+        async def foo():
+            pass
+
+        coro = foo()
+        self.addCleanup(coro.close)
+        task = self.new_task(self.loop, coro)
+        task._log_destroy_pending = False
+
+        with self.assertRaises(RuntimeError, msg="is already initialized"):
+            task.__init__(coro, loop=self.loop)
 
 def add_subclass_tests(cls):
     BaseTask = cls.Task
@@ -2804,19 +2888,8 @@ class CTask_CFuture_Tests(BaseTaskTests, SetMethodsTest,
 
     Task = getattr(tasks, '_CTask', None)
     Future = getattr(futures, '_CFuture', None)
-
-    @support.refcount_test
-    def test_refleaks_in_task___init__(self):
-        gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
-        async def coro():
-            pass
-        task = self.new_task(self.loop, coro())
-        self.loop.run_until_complete(task)
-        refs_before = gettotalrefcount()
-        for i in range(100):
-            task.__init__(coro(), loop=self.loop)
-            self.loop.run_until_complete(task)
-        self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
+    all_tasks = getattr(tasks, '_c_all_tasks', None)
+    current_task = staticmethod(getattr(tasks, '_c_current_task', None))
 
     def test_del__log_destroy_pending_segfault(self):
         async def coro():
@@ -2835,6 +2908,8 @@ class CTask_CFuture_SubclassTests(BaseTaskTests, test_utils.TestCase):
 
     Task = getattr(tasks, '_CTask', None)
     Future = getattr(futures, '_CFuture', None)
+    all_tasks = getattr(tasks, '_c_all_tasks', None)
+    current_task = staticmethod(getattr(tasks, '_c_current_task', None))
 
 
 @unittest.skipUnless(hasattr(tasks, '_CTask'),
@@ -2844,6 +2919,8 @@ class CTaskSubclass_PyFuture_Tests(BaseTaskTests, test_utils.TestCase):
 
     Task = getattr(tasks, '_CTask', None)
     Future = futures._PyFuture
+    all_tasks = getattr(tasks, '_c_all_tasks', None)
+    current_task = staticmethod(getattr(tasks, '_c_current_task', None))
 
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
@@ -2853,6 +2930,8 @@ class PyTask_CFutureSubclass_Tests(BaseTaskTests, test_utils.TestCase):
 
     Future = getattr(futures, '_CFuture', None)
     Task = tasks._PyTask
+    all_tasks = staticmethod(tasks._py_all_tasks)
+    current_task = staticmethod(tasks._py_current_task)
 
 
 @unittest.skipUnless(hasattr(tasks, '_CTask'),
@@ -2861,6 +2940,8 @@ class CTask_PyFuture_Tests(BaseTaskTests, test_utils.TestCase):
 
     Task = getattr(tasks, '_CTask', None)
     Future = futures._PyFuture
+    all_tasks = getattr(tasks, '_c_all_tasks', None)
+    current_task = staticmethod(getattr(tasks, '_c_current_task', None))
 
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
@@ -2869,6 +2950,8 @@ class PyTask_CFuture_Tests(BaseTaskTests, test_utils.TestCase):
 
     Task = tasks._PyTask
     Future = getattr(futures, '_CFuture', None)
+    all_tasks = staticmethod(tasks._py_all_tasks)
+    current_task = staticmethod(tasks._py_current_task)
 
 
 class PyTask_PyFuture_Tests(BaseTaskTests, SetMethodsTest,
@@ -2876,13 +2959,16 @@ class PyTask_PyFuture_Tests(BaseTaskTests, SetMethodsTest,
 
     Task = tasks._PyTask
     Future = futures._PyFuture
+    all_tasks = staticmethod(tasks._py_all_tasks)
+    current_task = staticmethod(tasks._py_current_task)
 
 
 @add_subclass_tests
 class PyTask_PyFuture_SubclassTests(BaseTaskTests, test_utils.TestCase):
     Task = tasks._PyTask
     Future = futures._PyFuture
-
+    all_tasks = staticmethod(tasks._py_all_tasks)
+    current_task = staticmethod(tasks._py_current_task)
 
 @unittest.skipUnless(hasattr(tasks, '_CTask'),
                      'requires the C _asyncio module')
@@ -2915,6 +3001,27 @@ class BaseTaskIntrospectionTests:
     _unregister_task = None
     _enter_task = None
     _leave_task = None
+    all_tasks = None
+    Task = None
+
+    def test_register_task_resurrection(self):
+        register_task = self._register_task
+        class EvilLoop:
+            def get_debug(self):
+                return False
+
+            def call_exception_handler(self, context):
+                register_task(context["task"])
+
+        async def coro_fn ():
+            pass
+
+        coro = coro_fn()
+        self.addCleanup(coro.close)
+        loop = EvilLoop()
+        with self.assertRaises(AttributeError):
+            self.Task(coro, loop=loop)
+
 
     def test__register_task_1(self):
         class TaskLike:
@@ -2928,9 +3035,9 @@ class BaseTaskIntrospectionTests:
         task = TaskLike()
         loop = mock.Mock()
 
-        self.assertEqual(asyncio.all_tasks(loop), set())
+        self.assertEqual(self.all_tasks(loop), set())
         self._register_task(task)
-        self.assertEqual(asyncio.all_tasks(loop), {task})
+        self.assertEqual(self.all_tasks(loop), {task})
         self._unregister_task(task)
 
     def test__register_task_2(self):
@@ -2944,9 +3051,9 @@ class BaseTaskIntrospectionTests:
         task = TaskLike()
         loop = mock.Mock()
 
-        self.assertEqual(asyncio.all_tasks(loop), set())
+        self.assertEqual(self.all_tasks(loop), set())
         self._register_task(task)
-        self.assertEqual(asyncio.all_tasks(loop), {task})
+        self.assertEqual(self.all_tasks(loop), {task})
         self._unregister_task(task)
 
     def test__register_task_3(self):
@@ -2960,52 +3067,68 @@ class BaseTaskIntrospectionTests:
         task = TaskLike()
         loop = mock.Mock()
 
-        self.assertEqual(asyncio.all_tasks(loop), set())
+        self.assertEqual(self.all_tasks(loop), set())
         self._register_task(task)
-        self.assertEqual(asyncio.all_tasks(loop), set())
+        self.assertEqual(self.all_tasks(loop), set())
         self._unregister_task(task)
 
     def test__enter_task(self):
         task = mock.Mock()
         loop = mock.Mock()
-        self.assertIsNone(asyncio.current_task(loop))
+        # _enter_task is called by Task.__step while the loop
+        # is running, so set the loop as the running loop
+        # for a more realistic test.
+        asyncio._set_running_loop(loop)
+        self.assertIsNone(self.current_task(loop))
         self._enter_task(loop, task)
-        self.assertIs(asyncio.current_task(loop), task)
+        self.assertIs(self.current_task(loop), task)
         self._leave_task(loop, task)
+        asyncio._set_running_loop(None)
 
     def test__enter_task_failure(self):
         task1 = mock.Mock()
         task2 = mock.Mock()
         loop = mock.Mock()
+        asyncio._set_running_loop(loop)
         self._enter_task(loop, task1)
         with self.assertRaises(RuntimeError):
             self._enter_task(loop, task2)
-        self.assertIs(asyncio.current_task(loop), task1)
+        self.assertIs(self.current_task(loop), task1)
         self._leave_task(loop, task1)
+        asyncio._set_running_loop(None)
 
     def test__leave_task(self):
         task = mock.Mock()
         loop = mock.Mock()
+        asyncio._set_running_loop(loop)
         self._enter_task(loop, task)
         self._leave_task(loop, task)
-        self.assertIsNone(asyncio.current_task(loop))
+        self.assertIsNone(self.current_task(loop))
+        asyncio._set_running_loop(None)
 
     def test__leave_task_failure1(self):
         task1 = mock.Mock()
         task2 = mock.Mock()
         loop = mock.Mock()
+        # _leave_task is called by Task.__step while the loop
+        # is running, so set the loop as the running loop
+        # for a more realistic test.
+        asyncio._set_running_loop(loop)
         self._enter_task(loop, task1)
         with self.assertRaises(RuntimeError):
             self._leave_task(loop, task2)
-        self.assertIs(asyncio.current_task(loop), task1)
+        self.assertIs(self.current_task(loop), task1)
         self._leave_task(loop, task1)
+        asyncio._set_running_loop(None)
 
     def test__leave_task_failure2(self):
         task = mock.Mock()
         loop = mock.Mock()
+        asyncio._set_running_loop(loop)
         with self.assertRaises(RuntimeError):
             self._leave_task(loop, task)
-        self.assertIsNone(asyncio.current_task(loop))
+        self.assertIsNone(self.current_task(loop))
+        asyncio._set_running_loop(None)
 
     def test__unregister_task(self):
         task = mock.Mock()
@@ -3013,13 +3136,13 @@ class BaseTaskIntrospectionTests:
         task.get_loop = lambda: loop
         self._register_task(task)
         self._unregister_task(task)
-        self.assertEqual(asyncio.all_tasks(loop), set())
+        self.assertEqual(self.all_tasks(loop), set())
 
     def test__unregister_task_not_registered(self):
         task = mock.Mock()
         loop = mock.Mock()
         self._unregister_task(task)
-        self.assertEqual(asyncio.all_tasks(loop), set())
+        self.assertEqual(self.all_tasks(loop), set())
 
 
 class PyIntrospectionTests(test_utils.TestCase, BaseTaskIntrospectionTests):
@@ -3027,6 +3150,9 @@ class PyIntrospectionTests(test_utils.TestCase, BaseTaskIntrospectionTests):
     _unregister_task = staticmethod(tasks._py_unregister_task)
     _enter_task = staticmethod(tasks._py_enter_task)
     _leave_task = staticmethod(tasks._py_leave_task)
+    all_tasks = staticmethod(tasks._py_all_tasks)
+    current_task = staticmethod(tasks._py_current_task)
+    Task = tasks._PyTask
 
 
 @unittest.skipUnless(hasattr(tasks, '_c_register_task'),
@@ -3037,8 +3163,12 @@ class CIntrospectionTests(test_utils.TestCase, BaseTaskIntrospectionTests):
         _unregister_task = staticmethod(tasks._c_unregister_task)
         _enter_task = staticmethod(tasks._c_enter_task)
         _leave_task = staticmethod(tasks._c_leave_task)
+        all_tasks = staticmethod(tasks._c_all_tasks)
+        current_task = staticmethod(tasks._c_current_task)
+        Task = tasks._CTask
     else:
         _register_task = _unregister_task = _enter_task = _leave_task = None
+
 
 
 class BaseCurrentLoopTests:
@@ -3094,7 +3224,7 @@ class CCurrentLoopTests(BaseCurrentLoopTests, test_utils.TestCase):
 class GenericTaskTests(test_utils.TestCase):
 
     def test_future_subclass(self):
-        self.assertTrue(issubclass(asyncio.Task, asyncio.Future))
+        self.assertIsSubclass(asyncio.Task, asyncio.Future)
 
     @support.cpython_only
     def test_asyncio_module_compiled(self):
@@ -3103,14 +3233,14 @@ class GenericTaskTests(test_utils.TestCase):
         # fail on systems where C modules were successfully compiled
         # (hence the test for _functools etc), but _asyncio somehow didn't.
         try:
-            import _functools
-            import _json
-            import _pickle
+            import _functools  # noqa: F401
+            import _json       # noqa: F401
+            import _pickle     # noqa: F401
         except ImportError:
             self.skipTest('C modules are not available')
         else:
             try:
-                import _asyncio
+                import _asyncio  # noqa: F401
             except ImportError:
                 self.fail('_asyncio module is missing')
 
@@ -3529,6 +3659,30 @@ class RunCoroutineThreadsafeTests(test_utils.TestCase):
         self.assertEqual(len(callback.call_args_list), 1)
         (loop, context), kwargs = callback.call_args
         self.assertEqual(context['exception'], exc_context.exception)
+
+    def test_run_coroutine_threadsafe_and_cancel(self):
+        task = None
+        thread_future = None
+        # Use a custom task factory to capture the created Task
+        def task_factory(loop, coro):
+            nonlocal task
+            task = asyncio.Task(coro, loop=loop)
+            return task
+
+        self.addCleanup(self.loop.set_task_factory,
+                        self.loop.get_task_factory())
+
+        async def target():
+            nonlocal thread_future
+            self.loop.set_task_factory(task_factory)
+            thread_future = asyncio.run_coroutine_threadsafe(asyncio.sleep(10), self.loop)
+            await asyncio.sleep(0)
+
+            thread_future.cancel()
+
+        self.loop.run_until_complete(target())
+        self.assertTrue(task.cancelled())
+        self.assertTrue(thread_future.cancelled())
 
 
 class SleepTests(test_utils.TestCase):

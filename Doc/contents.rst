@@ -14,6 +14,7 @@
    installing/index.rst
    howto/index.rst
    faq/index.rst
+   deprecations/index.rst
    glossary.rst
 
    about.rst

@@ -23,18 +23,17 @@
  */
 
 
-#ifndef __internal_Hacl_Hash_SHA2_H
-#define __internal_Hacl_Hash_SHA2_H
+#ifndef internal_Hacl_Hash_SHA2_H
+#define internal_Hacl_Hash_SHA2_H
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
 #include <string.h>
-#include "krml/types.h"
+#include "krml/internal/types.h"
 #include "krml/lowstar_endianness.h"
 #include "krml/internal/target.h"
-
 
 #include "../Hacl_Hash_SHA2.h"
 
@@ -123,6 +122,8 @@ void Hacl_Hash_SHA2_sha256_finish(uint32_t *st, uint8_t *h);
 
 void Hacl_Hash_SHA2_sha224_init(uint32_t *hash);
 
+void Hacl_Hash_SHA2_sha224_update_nblocks(uint32_t len, uint8_t *b, uint32_t *st);
+
 void
 Hacl_Hash_SHA2_sha224_update_last(uint64_t totlen, uint32_t len, uint8_t *b, uint32_t *st);
 
@@ -160,5 +161,5 @@ void Hacl_Hash_SHA2_sha384_finish(uint64_t *st, uint8_t *h);
 }
 #endif
 
-#define __internal_Hacl_Hash_SHA2_H_DEFINED
-#endif
+#define internal_Hacl_Hash_SHA2_H_DEFINED
+#endif /* internal_Hacl_Hash_SHA2_H */

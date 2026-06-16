@@ -1,6 +1,6 @@
-"""Decimal fixed point and floating point arithmetic.
+"""Decimal fixed-point and floating-point arithmetic.
 
-This is an implementation of decimal floating point arithmetic based on
+This is an implementation of decimal floating-point arithmetic based on
 the General Decimal Arithmetic Specification:
 
     http://speleotrove.com/decimal/decarith.html
@@ -100,9 +100,10 @@ NaN
 
 try:
     from _decimal import *
-    from _decimal import __version__  # noqa: F401
     from _decimal import __libmpdec_version__  # noqa: F401
+    from _decimal import __getattr__  # noqa: F401
 except ImportError:
-    from _pydecimal import *
-    from _pydecimal import __version__  # noqa: F401
-    from _pydecimal import __libmpdec_version__  # noqa: F401
+    import _pydecimal
+    import sys
+    _pydecimal.__doc__ = __doc__
+    sys.modules[__name__] = _pydecimal
