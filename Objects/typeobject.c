@@ -960,7 +960,6 @@ unsigned int
 PyType_ClearCache(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-
     return NEXT_VERSION_TAG(interp) - 1;
 }
 
