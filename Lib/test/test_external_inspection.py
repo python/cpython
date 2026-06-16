@@ -1191,6 +1191,11 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                 async def leaf():
                     while not started.is_set():
                         await asyncio.sleep(0)
+                    # The whole awaited_by chain is built and this is now the
+                    # running task at the bottom of it. Signal here, then
+                    # busy-spin, so the observer inspects while the chain is
+                    # fully present and rooted at a running task.
+                    sock.sendall(b"ready")
                     end = time.time() + 10_000
                     while time.time() < end:
                         pass
@@ -1209,7 +1214,6 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                 for _ in range(5):
                     await asyncio.sleep(0)
 
-                sock.sendall(b"ready")
                 started.set()
                 try:
                     await leaf_t
