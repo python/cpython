@@ -989,8 +989,9 @@ call_one_instrument(
     if (res == NULL) {
         return -1;
     }
+    int is_disable = (res == &_PyInstrumentation_DISABLE);
     Py_DECREF(res);
-    return (res == &_PyInstrumentation_DISABLE);
+    return is_disable;
 }
 
 static const int8_t MOST_SIGNIFICANT_BITS[16] = {
