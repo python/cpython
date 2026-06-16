@@ -621,11 +621,11 @@ Some options are read from the :mod:`sys` attributes. For example, the option
 
    .. audit-event:: cpython.PyConfig_Set name,value c.PyConfig_Set
 
+   .. versionadded:: 3.14
+
    .. versionchanged:: next
       The function now replaces :data:`sys.flags` (create a new object),
       instead of modifying :data:`sys.flags` in-place.
-
-   .. versionadded:: 3.14
 
 
 .. _pyconfig_api:
