@@ -1,12 +1,11 @@
 """Wrap content lines to the terminal width before rendering."""
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 from typing import Self
 
 from .content import ContentFragment, ContentLine
-from .types import CursorXY, ScreenInfoRow
+
+lazy from .types import CursorXY, ScreenInfoRow
 
 
 @dataclass(frozen=True, slots=True)
