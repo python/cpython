@@ -1169,6 +1169,85 @@ class TestGetStackTrace(RemoteInspectionTestBase):
         sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
         "Test only runs on Linux with process_vm_readv support",
     )
+    def test_async_deep_awaited_by_chain_is_bounded(self):
+        # A very deep awaited_by chain in the target (which a corrupted or
+        # concurrently-mutated remote process can also present as a cycle) must
+        # not drive unbounded C recursion in the debugger. get_async_stack_trace
+        # should raise instead of overflowing the stack.
+        depth = 2000
+        port = find_unused_port()
+        script = textwrap.dedent(
+            f"""\
+            import asyncio
+            import socket
+            import time
+
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect(('localhost', {port}))
+
+            async def main():
+                started = asyncio.Event()
+
+                async def leaf():
+                    while not started.is_set():
+                        await asyncio.sleep(0)
+                    end = time.time() + 10_000
+                    while time.time() < end:
+                        pass
+
+                leaf_t = asyncio.ensure_future(leaf())
+
+                async def waiter(child):
+                    await child
+
+                cur = leaf_t
+                tasks = [cur]
+                for _ in range({depth}):
+                    cur = asyncio.ensure_future(waiter(cur))
+                    tasks.append(cur)
+
+                for _ in range(5):
+                    await asyncio.sleep(0)
+
+                sock.sendall(b"ready")
+                started.set()
+                try:
+                    await leaf_t
+                finally:
+                    for t in tasks:
+                        t.cancel()
+
+            asyncio.run(main())
+            """
+        )
+
+        with os_helper.temp_dir() as work_dir:
+            script_dir = os.path.join(work_dir, "script_pkg")
+            os.mkdir(script_dir)
+
+            server_socket = _create_server_socket(port)
+            script_name = _make_test_script(script_dir, "script", script)
+            client_socket = None
+            try:
+                with _managed_subprocess([sys.executable, script_name]) as p:
+                    client_socket, _ = server_socket.accept()
+                    server_socket.close()
+                    server_socket = None
+
+                    _wait_for_signal(client_socket, b"ready")
+
+                    unwinder = RemoteUnwinder(p.pid)
+                    with self.assertRaises(RuntimeError) as cm:
+                        unwinder.get_async_stack_trace()
+                    self.assertIn("too deep or cyclic", str(cm.exception))
+            finally:
+                _cleanup_sockets(client_socket, server_socket)
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
     def test_async_global_awaited_by(self):
         # Reduced from 1000 to 100 to avoid file descriptor exhaustion
         # when running tests in parallel (e.g., -j 20)

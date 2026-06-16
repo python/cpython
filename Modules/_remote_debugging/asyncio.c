@@ -516,6 +516,17 @@ error:
 // Forward declaration for mutual recursion
 static int process_waiter_task(RemoteUnwinderObject *unwinder, uintptr_t key_addr, void *context);
 
+// Carries the recursion depth so a cyclic or corrupted remote awaited_by graph
+// cannot drive unbounded C recursion and overflow the debugger's stack.
+typedef struct {
+    PyObject *result;
+    int depth;
+} waiter_context_t;
+
+static int process_task_and_waiters_impl(
+    RemoteUnwinderObject *unwinder, uintptr_t task_addr, PyObject *result,
+    int depth);
+
 // Processor function for parsing tasks in sets
 static int
 process_task_parser(
@@ -658,11 +669,12 @@ error:
     return -1;
 }
 
-int
-process_task_and_waiters(
+static int
+process_task_and_waiters_impl(
     RemoteUnwinderObject *unwinder,
     uintptr_t task_addr,
-    PyObject *result
+    PyObject *result,
+    int depth
 ) {
     // First, add this task to the result
     if (process_single_task_node(unwinder, task_addr, NULL, result) < 0) {
@@ -670,7 +682,17 @@ process_task_and_waiters(
     }
 
     // Now find all tasks that are waiting for this task and process them
-    return process_task_awaited_by(unwinder, task_addr, process_waiter_task, result);
+    waiter_context_t ctx = {result, depth};
+    return process_task_awaited_by(unwinder, task_addr, process_waiter_task, &ctx);
+}
+
+int
+process_task_and_waiters(
+    RemoteUnwinderObject *unwinder,
+    uintptr_t task_addr,
+    PyObject *result
+) {
+    return process_task_and_waiters_impl(unwinder, task_addr, result, 0);
 }
 
 // Processor function for task waiters
@@ -680,8 +702,17 @@ process_waiter_task(
     uintptr_t key_addr,
     void *context
 ) {
-    PyObject *result = (PyObject *)context;
-    return process_task_and_waiters(unwinder, key_addr, result);
+    waiter_context_t *ctx = (waiter_context_t *)context;
+    if (ctx->depth >= MAX_TASK_AWAITED_BY_DEPTH) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "Task awaited_by chain is too deep or cyclic "
+                        "(corrupted remote memory)");
+        set_exception_cause(unwinder, PyExc_RuntimeError,
+                            "Task awaited_by recursion limit exceeded");
+        return -1;
+    }
+    return process_task_and_waiters_impl(unwinder, key_addr, ctx->result,
+                                         ctx->depth + 1);
 }
 
 /* ============================================================================
@@ -978,7 +1009,8 @@ process_running_task_chain(
     }
 
     // Now find all tasks that are waiting for this task and process them
-    if (process_task_awaited_by(unwinder, running_task_addr, process_waiter_task, result) < 0) {
+    waiter_context_t ctx = {result, 0};
+    if (process_task_awaited_by(unwinder, running_task_addr, process_waiter_task, &ctx) < 0) {
         return -1;
     }
 
