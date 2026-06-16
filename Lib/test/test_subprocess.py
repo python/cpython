@@ -2449,6 +2449,16 @@ class POSIXProcessTestCase(BaseTestCase):
         error_string = str(err)
         self.assertIn("non-zero exit status 2.", error_string)
 
+    def test_CalledProcessError_str_quote_in_cmd(self):
+        err = subprocess.CalledProcessError(2, "fake ' cmd")
+        error_string = str(err)
+        self.assertStartsWith(error_string, 'Command "fake \' cmd" ')
+
+    def test_CalledProcessError_str_list_cmd(self):
+        err = subprocess.CalledProcessError(2, ["fake", "cmd"])
+        error_string = str(err)
+        self.assertStartsWith(error_string, "Command ['fake', 'cmd'] ")
+
     def test_preexec(self):
         # DISCLAIMER: Setting environment variables is *not* a good use
         # of a preexec_fn.  This is merely a test.
