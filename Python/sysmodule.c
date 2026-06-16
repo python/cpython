@@ -3504,7 +3504,7 @@ _PySys_SetFlagObj(Py_ssize_t pos, PyObject *value)
         goto error;
     }
 
-    for (Py_ssize_t i=0; i < (Py_ssize_t)(Py_ARRAY_LENGTH(flags_fields) - 1); i++) {
+    for (Py_ssize_t i = 0; i < (Py_ssize_t)(Py_ARRAY_LENGTH(flags_fields) - 1); i++) {
         if (i != pos) {
             PyObject *old_value;
             old_value = PyStructSequence_GET_ITEM(old_flags, i);  // borrowed ref
