@@ -4421,16 +4421,12 @@ class TestExtractionFilters(unittest.TestCase):
             arc.add("s", hardlink_to=os.path.join("a", "b", "s"))
 
         with self.check_context(arc.open(), 'data'):
-            if not os_helper.can_symlink() or sys.platform == "win32":
-                # See notes in test_sneaky_hardlink_fallback.
-                self.expect_exception(tarfile.LinkOutsideDestinationError)
-            else:
-                e = self.expect_exception(
-                    tarfile.LinkFallbackError,
-                    "link 's' would be extracted as a copy of "
-                    + "'a/b/s', which was rejected")
-                self.assertIsInstance(e.__cause__,
-                                      tarfile.LinkOutsideDestinationError)
+            e = self.expect_exception(
+                tarfile.LinkFallbackError,
+                "link 's' would be extracted as a copy of "
+                + "'a/b/s', which was rejected")
+            self.assertIsInstance(e.__cause__,
+                                  tarfile.LinkOutsideDestinationError)
 
         for filter in 'tar', 'fully_trusted':
             with self.subTest(filter), self.check_context(arc.open(), filter):
