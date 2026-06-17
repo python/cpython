@@ -23,7 +23,7 @@ get_ast_state(void)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     struct ast_state *state = &interp->ast;
     assert(!state->finalized);
-    if (_PyOnceFlag_CallOnce(&state->once, (_Py_once_fn_t *)&init_types, state) < 0) {
+    if (_PyOnceFlag_CallOnce(&state->once, &init_types, state) < 0) {
         return NULL;
     }
     return state;
