@@ -61,6 +61,7 @@ class IOBinding:
         self.filename_change_hook = hook
 
     filename = None
+    file_timestamp = None
     dirname = None
 
     def set_filename(self, filename):
@@ -127,6 +128,7 @@ class IOBinding:
                     chars = f.read()
                     fileencoding = f.encoding
                     eol_convention = f.newlines
+                    file_timestamp = self.getmtime(filename)
                     converted = False
             except (UnicodeDecodeError, SyntaxError):
                 # Wait for the editor window to appear
@@ -142,6 +144,7 @@ class IOBinding:
                     chars = f.read()
                     fileencoding = f.encoding
                     eol_convention = f.newlines
+                    file_timestamp = self.getmtime(filename)
                     converted = True
         except OSError as err:
             messagebox.showerror("I/O Error", str(err), parent=self.text)
@@ -170,6 +173,7 @@ class IOBinding:
         self.text.insert("1.0", chars)
         self.reset_undo()
         self.set_filename(filename)
+        self.file_timestamp = file_timestamp
         if converted:
             # We need to save the conversion results first
             # before being able to execute the code
@@ -206,7 +210,26 @@ class IOBinding:
         if not self.filename:
             self.save_as(event)
         else:
+            # Check the time of most recent content modification so the
+            # user doesn't accidentally overwrite a newer version of the file.
+            try:
+                file_timestamp = self.getmtime(self.filename)
+            except OSError:
+                pass
+            else:
+                if self.file_timestamp != file_timestamp:
+                    confirm = messagebox.askokcancel(
+                        title="File has changed",
+                        message=(
+                            "The file has changed on disk since reading it!\n\n"
+                            "Do you really want to overwrite it?"),
+                        default=messagebox.CANCEL,
+                        parent=self.text)
+                    if not confirm:
+                        return "break"
+
             if self.writefile(self.filename):
+                self.file_timestamp = self.getmtime(self.filename)
                 self.set_saved(True)
                 try:
                     self.editwin.store_file_breaks()
@@ -219,6 +242,7 @@ class IOBinding:
         filename = self.asksavefile()
         if filename:
             if self.writefile(filename):
+                self.file_timestamp = self.getmtime(filename)
                 self.set_filename(filename)
                 self.set_saved(1)
                 try:
@@ -250,6 +274,9 @@ class IOBinding:
             messagebox.showerror("I/O Error", str(msg),
                                    parent=self.text)
             return False
+
+    def getmtime(self, filename):
+        return os.stat(filename).st_mtime
 
     def fixnewlines(self):
         """Return text with os eols.
