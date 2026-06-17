@@ -28,6 +28,7 @@
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_setobject.h"     // _PySet_NextEntry()
+#include "pycore_stackref.h"      // PyStackRef_FromPyObjectBorrow()
 #include "pycore_stats.h"         // _PyStats_InterpInit()
 #include "pycore_sysmodule.h"     // _PySys_ClearAttrString()
 #include "pycore_traceback.h"     // PyUnstable_TracebackThreads()
@@ -878,25 +879,28 @@ pycore_init_builtins(PyThreadState *tstate)
         goto error;
     }
 
-    interp->common_consts[CONSTANT_ASSERTIONERROR] = PyExc_AssertionError;
-    interp->common_consts[CONSTANT_NOTIMPLEMENTEDERROR] = PyExc_NotImplementedError;
-    interp->common_consts[CONSTANT_BUILTIN_TUPLE] = (PyObject *)&PyTuple_Type;
-    interp->common_consts[CONSTANT_BUILTIN_ALL] = all;
-    interp->common_consts[CONSTANT_BUILTIN_ANY] = any;
-    interp->common_consts[CONSTANT_BUILTIN_LIST] = (PyObject *)&PyList_Type;
-    interp->common_consts[CONSTANT_BUILTIN_SET] = (PyObject *)&PySet_Type;
-    interp->common_consts[CONSTANT_NONE] = Py_None;
-    interp->common_consts[CONSTANT_EMPTY_STR] =
+    PyObject *common_objs[NUM_COMMON_CONSTANTS] = {NULL};
+    common_objs[CONSTANT_ASSERTIONERROR] = PyExc_AssertionError;
+    common_objs[CONSTANT_NOTIMPLEMENTEDERROR] = PyExc_NotImplementedError;
+    common_objs[CONSTANT_BUILTIN_TUPLE] = (PyObject *)&PyTuple_Type;
+    common_objs[CONSTANT_BUILTIN_ALL] = all;
+    common_objs[CONSTANT_BUILTIN_ANY] = any;
+    common_objs[CONSTANT_BUILTIN_LIST] = (PyObject *)&PyList_Type;
+    common_objs[CONSTANT_BUILTIN_SET] = (PyObject *)&PySet_Type;
+    common_objs[CONSTANT_NONE] = Py_None;
+    common_objs[CONSTANT_EMPTY_STR] =
         Py_GetConstantBorrowed(Py_CONSTANT_EMPTY_STR);
-    interp->common_consts[CONSTANT_TRUE] = Py_True;
-    interp->common_consts[CONSTANT_FALSE] = Py_False;
-    interp->common_consts[CONSTANT_MINUS_ONE] =
+    common_objs[CONSTANT_TRUE] = Py_True;
+    common_objs[CONSTANT_FALSE] = Py_False;
+    common_objs[CONSTANT_MINUS_ONE] =
         (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS - 1];
-    interp->common_consts[CONSTANT_BUILTIN_FROZENSET] = (PyObject *)&PyFrozenSet_Type;
-    interp->common_consts[CONSTANT_EMPTY_TUPLE] =
+    common_objs[CONSTANT_BUILTIN_FROZENSET] = (PyObject *)&PyFrozenSet_Type;
+    common_objs[CONSTANT_EMPTY_TUPLE] =
         Py_GetConstantBorrowed(Py_CONSTANT_EMPTY_TUPLE);
     for (int i = 0; i < NUM_COMMON_CONSTANTS; i++) {
-        assert(interp->common_consts[i] != NULL);
+        assert(common_objs[i] != NULL);
+        _Py_SetImmortal(common_objs[i]);
+        interp->common_consts[i] = PyStackRef_FromPyObjectBorrow(common_objs[i]);
     }
 
     PyObject *list_append = _PyType_Lookup(&PyList_Type, &_Py_ID(append));
@@ -3323,7 +3327,9 @@ apple_log_write_impl(PyObject *self, PyObject *args)
 
     // Pass the user-provided text through explicit %s formatting
     // to avoid % literals being interpreted as a formatting directive.
-    os_log_with_type(OS_LOG_DEFAULT, logtype, "%s", text);
+    // Using {public} ensures "dynamic" string messages are visible
+    // in the log without special configuration.
+    os_log_with_type(OS_LOG_DEFAULT, logtype, "%{public}s", text);
     Py_RETURN_NONE;
 }
 
@@ -3725,7 +3731,9 @@ fatal_error(int fd, int header, const char *prefix, const char *msg,
        This function already did its best to display a traceback.
        Disable faulthandler to prevent writing a second traceback
        on abort(). */
-    _PyFaulthandler_Fini();
+    if (has_tstate_and_gil) {
+        _PyFaulthandler_Fini();
+    }
 
     /* Check if the current Python thread hold the GIL */
     if (has_tstate_and_gil) {

@@ -2055,21 +2055,33 @@ whichmodule(PickleState *st, PyObject *global, PyObject *global_name, PyObject *
             return NULL;
         }
         if (PyDict_CheckExact(modules)) {
+            PyObject *found_name = NULL;
+            int error = 0;
             i = 0;
+            Py_BEGIN_CRITICAL_SECTION(modules);
             while (PyDict_Next(modules, &i, &module_name, &module)) {
                 Py_INCREF(module_name);
                 Py_INCREF(module);
                 if (_checkmodule(module_name, module, global, dotted_path) == 0) {
                     Py_DECREF(module);
-                    Py_DECREF(modules);
-                    return module_name;
+                    found_name = module_name;
+                    break;
                 }
                 Py_DECREF(module);
                 Py_DECREF(module_name);
                 if (PyErr_Occurred()) {
-                    Py_DECREF(modules);
-                    return NULL;
+                    error = 1;
+                    break;
                 }
+            }
+            Py_END_CRITICAL_SECTION();
+            if (error) {
+                Py_DECREF(modules);
+                return NULL;
+            }
+            if (found_name != NULL) {
+                Py_DECREF(modules);
+                return found_name;
             }
         }
         else {

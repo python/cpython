@@ -4,7 +4,6 @@ import subprocess
 import sys
 import contextlib
 import tempfile
-import os
 import argparse
 from _colorize import get_colors, can_colorize
 

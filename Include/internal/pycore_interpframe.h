@@ -224,7 +224,9 @@ _PyFrame_GetLocalsArray(_PyInterpreterFrame *frame)
 static inline _PyStackRef*
 _PyFrame_GetStackPointer(_PyInterpreterFrame *frame)
 {
+#ifndef _Py_JIT
     assert(frame->stackpointer != NULL);
+#endif
     _PyStackRef *sp = frame->stackpointer;
 #ifndef NDEBUG
     frame->stackpointer = NULL;
@@ -235,7 +237,10 @@ _PyFrame_GetStackPointer(_PyInterpreterFrame *frame)
 static inline void
 _PyFrame_SetStackPointer(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer)
 {
+/* Avoid bloating the JIT code */
+#ifndef _Py_JIT
     assert(frame->stackpointer == NULL);
+#endif
     frame->stackpointer = stack_pointer;
 }
 
