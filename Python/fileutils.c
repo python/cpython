@@ -351,6 +351,7 @@ encode_ascii(const wchar_t *text, char **str,
         result = PyMem_Malloc(len + 1);
     }
     if (result == NULL) {
+        PyErr_NoMemory();
         return -1;
     }
 
@@ -421,6 +422,7 @@ decode_ascii(const char *arg, wchar_t **wstr, size_t *wlen,
     }
     res = PyMem_RawMalloc(argsize * sizeof(wchar_t));
     if (!res) {
+        PyErr_NoMemory();
         return -1;
     }
 
@@ -487,6 +489,7 @@ decode_current_locale(const char* arg, wchar_t **wstr, size_t *wlen,
         }
         res = (wchar_t *)PyMem_RawMalloc((argsize + 1) * sizeof(wchar_t));
         if (!res) {
+            PyErr_NoMemory();
             return -1;
         }
 
@@ -513,6 +516,7 @@ decode_current_locale(const char* arg, wchar_t **wstr, size_t *wlen,
     }
     res = (wchar_t*)PyMem_RawMalloc(argsize * sizeof(wchar_t));
     if (!res) {
+        PyErr_NoMemory();
         return -1;
     }
 
@@ -743,6 +747,7 @@ encode_current_locale(const wchar_t *text, char **str,
             result = PyMem_Malloc(size);
         }
         if (result == NULL) {
+            PyErr_NoMemory();
             return -1;
         }
         bytes = result;
@@ -2448,6 +2453,7 @@ _Py_join_relfile(const wchar_t *dirname, const wchar_t *relfile)
     size_t bufsize = maxlen + 1;
     wchar_t *filename = PyMem_RawMalloc(bufsize * sizeof(wchar_t));
     if (filename == NULL) {
+        PyErr_NoMemory();
         return NULL;
     }
     assert(wcslen(dirname) < MAXPATHLEN);

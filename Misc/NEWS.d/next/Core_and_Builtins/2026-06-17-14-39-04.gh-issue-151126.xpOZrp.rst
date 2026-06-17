@@ -1,0 +1,3 @@
+Avoid possible crash in ``fileutils.c`` where a device has no memory left.
+Now it properly raises a :exc:`MemoryError`.
+Patch by Ivy Xu.
