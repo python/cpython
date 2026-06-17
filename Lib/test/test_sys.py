@@ -641,7 +641,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertIsInstance(sys.exec_prefix, str)
         self.assertIsInstance(sys.base_exec_prefix, str)
         self.assertIsInstance(sys.executable, str)
-        self.assertEqual(len(sys.float_info), 12)
+        self.assertEqual(len(sys.float_info), 11)
         self.assertEqual(sys.float_info.radix, 2)
         self.assertEqual(len(sys.int_info), 4)
         self.assertTrue(sys.int_info.bits_per_digit % 5 == 0)
@@ -1283,16 +1283,6 @@ class SysModuleTest(unittest.TestCase):
     def test_no_duplicates_in_meta_path(self):
         self.assertEqual(len(sys.meta_path), len(set(sys.meta_path)))
 
-    @unittest.skipUnless(hasattr(sys, "_enablelegacywindowsfsencoding"),
-                         'needs sys._enablelegacywindowsfsencoding()')
-    def test__enablelegacywindowsfsencoding(self):
-        code = ('import sys',
-                'sys._enablelegacywindowsfsencoding()',
-                'print(sys.getfilesystemencoding(), sys.getfilesystemencodeerrors())')
-        rc, out, err = assert_python_ok('-c', '; '.join(code))
-        out = out.decode('ascii', 'replace').rstrip()
-        self.assertEqual(out, 'mbcs replace')
-
     @support.requires_subprocess()
     def test_orig_argv(self):
         code = textwrap.dedent('''
@@ -1358,6 +1348,26 @@ class SysModuleTest(unittest.TestCase):
     @unittest.skipUnless(hasattr(sys, 'abiflags'), 'need sys.abiflags')
     def test_disable_gil_abi(self):
         self.assertEqual('t' in sys.abiflags, support.Py_GIL_DISABLED)
+
+    def test_int_max_str_digits(self):
+        old_limit = sys.get_int_max_str_digits()
+        self.assertIsInstance(old_limit, int)
+        self.assertGreaterEqual(old_limit, 0)
+        self.addCleanup(sys.set_int_max_str_digits, old_limit)
+
+        sys.set_int_max_str_digits(0)
+        self.assertEqual(sys.get_int_max_str_digits(), 0)
+
+        sys.set_int_max_str_digits(2_048)
+        self.assertEqual(sys.get_int_max_str_digits(), 2_048)
+
+        with self.assertRaises(ValueError):
+            # the minimum is 640 digits
+            sys.set_int_max_str_digits(5)
+        with self.assertRaises(ValueError):
+            sys.set_int_max_str_digits(-2)
+        with self.assertRaises(TypeError):
+            sys.set_int_max_str_digits(2_048.0)
 
 
 @test.support.cpython_only
@@ -1798,7 +1808,7 @@ class SizeofTest(unittest.TestCase):
         check((1,2,3), vsize('') + self.P + 3*self.P)
         # type
         # static type: PyTypeObject
-        fmt = 'P2nPI13Pl4Pn9Pn12PIPc'
+        fmt = 'P2nPI13Pl4Pn9Pn12PI2Pc'
         s = vsize(fmt)
         check(int, s)
         typeid = 'n' if support.Py_GIL_DISABLED else ''
@@ -1908,7 +1918,7 @@ class SizeofTest(unittest.TestCase):
         check = self.check_sizeof
         # _ast.AST
         import _ast
-        check(_ast.AST(), size('P'))
+        check(_ast.Module(), size('3P'))
         try:
             raise TypeError
         except TypeError as e:

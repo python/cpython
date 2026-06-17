@@ -47,6 +47,9 @@
 #if defined(HAVE_DLADDR) && !defined(__wasi__)
 #  include <dlfcn.h>
 #endif
+#if defined(HAVE_EXECINFO_H)
+#  include <execinfo.h>
+#endif
 #ifdef MS_WINDOWS
 #  include <windows.h>
 #  include <intrin.h>
@@ -58,6 +61,47 @@
 
 
 static const uintptr_t min_frame_pointer_addr = 0x1000;
+#define MAX_UNWIND_FRAMES 200
+
+#ifdef __s390x__
+// Linux's s390 "Stack Frame Layout" table documents that z/Architecture
+// backchain frames start with the backchain at offset 0 and store "saved r14
+// of caller function" at offset 112.  The same document's register table
+// identifies r14 as the return-address register, so this backchain unwinder
+// reads the return address from fp + 112.
+// https://www.kernel.org/doc/html/v5.3/s390/debugging390.html#stack-frame-layout
+//
+// This is only for Linux s390x backchain frames.  The s390x ELF ABI does not
+// generally mandate where RA and FP are saved, or whether they are saved at all.
+// https://sourceware.org/binutils/docs/sframe-spec.html#s390x
+#  define S390X_FRAME_RETURN_ADDRESS_OFFSET 112
+#endif
+
+// The generic manual unwinder treats the frame pointer as a two-word record:
+// fp[0] is the previous frame pointer and fp[1] is the return address.  That is
+// not true for every architecture, even with frame pointers enabled, so these
+// offsets describe the actual slots used by each supported frame layout.
+#if defined(__arm__) && !defined(__thumb__) && !defined(__clang__)
+// GCC ARM mode keeps the caller's fp one word below fp and the saved LR at
+// fp[0], so the return address is not in the generic fp[1] slot.
+#  define FRAME_POINTER_NEXT_OFFSET (-1)
+#  define FRAME_POINTER_RETURN_OFFSET 0
+#elif defined(__s390x__)
+// s390x backchain frames keep the previous frame pointer at fp[0], but save the
+// return-address register in the ABI register save area rather than fp[1].
+#  define FRAME_POINTER_NEXT_OFFSET 0
+#  define FRAME_POINTER_RETURN_OFFSET \
+    (S390X_FRAME_RETURN_ADDRESS_OFFSET / (Py_ssize_t)sizeof(uintptr_t))
+#elif defined(__powerpc64__) || defined(__ppc64__)
+// ppc64le puts the return address at fp[2]; it saves the Condition Register
+// in fp[1]. See:
+// https://refspecs.linuxfoundation.org/ELF/ppc64/PPC-elf64abi-1.9.html#STACK
+#  define FRAME_POINTER_NEXT_OFFSET 0
+#  define FRAME_POINTER_RETURN_OFFSET 2
+#else
+#  define FRAME_POINTER_NEXT_OFFSET 0
+#  define FRAME_POINTER_RETURN_OFFSET 1
+#endif
 
 
 static PyObject *
@@ -196,10 +240,17 @@ classify_address(uintptr_t addr, int jit_enabled, PyInterpreterState *interp)
         if (strncmp(base, "python", 6) == 0) {
             return "python";
         }
+#ifdef __CYGWIN__
+        // Match Cygwin "cygpython3.16.dll"
+        if (strncmp(base, "cygpython", 9) == 0) {
+            return "python";
+        }
+#else
         // Match "libpython3.15.so.1.0"
         if (strncmp(base, "libpython", 9) == 0) {
             return "python";
         }
+#endif
         return "other";
     }
 #ifdef _Py_JIT
@@ -325,14 +376,94 @@ get_jit_backend(PyObject *self, PyObject *Py_UNUSED(args))
 #endif
 }
 
+static int
+stack_address_is_valid(uintptr_t addr, uintptr_t stack_min, uintptr_t stack_max)
+{
+    if (addr < min_frame_pointer_addr) {
+        return 0;
+    }
+    if (stack_min != 0 && (addr < stack_min || addr >= stack_max)) {
+        return 0;
+    }
+    return 1;
+}
+
+static int
+frame_pointer_slot_is_valid(uintptr_t *frame_pointer, Py_ssize_t offset,
+                            uintptr_t stack_min, uintptr_t stack_max)
+{
+    uintptr_t fp_addr = (uintptr_t)frame_pointer;
+    uintptr_t slot_addr;
+    uintptr_t delta = (uintptr_t)Py_ABS(offset) * sizeof(uintptr_t);
+    if (offset < 0) {
+        if (fp_addr < delta) {
+            return 0;
+        }
+        slot_addr = fp_addr - delta;
+    }
+    else {
+        if (fp_addr > UINTPTR_MAX - delta) {
+            return 0;
+        }
+        slot_addr = fp_addr + delta;
+    }
+    if (!stack_address_is_valid(slot_addr, stack_min, stack_max)) {
+        return 0;
+    }
+    if (stack_max != 0) {
+        if (slot_addr > UINTPTR_MAX - sizeof(uintptr_t)) {
+            return 0;
+        }
+        if (slot_addr + sizeof(uintptr_t) > stack_max) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+static int
+next_frame_pointer_is_valid(uintptr_t *frame_pointer, uintptr_t *next_fp,
+                            uintptr_t stack_min, uintptr_t stack_max)
+{
+    uintptr_t fp_addr = (uintptr_t)frame_pointer;
+    uintptr_t next_addr = (uintptr_t)next_fp;
+    if (!stack_address_is_valid(next_addr, stack_min, stack_max)) {
+        return 0;
+    }
+    if ((next_addr % sizeof(uintptr_t)) != 0) {
+        return 0;
+    }
+#if _Py_STACK_GROWS_DOWN
+    return next_addr > fp_addr;
+#else
+    return next_addr < fp_addr;
+#endif
+}
+
 static PyObject *
 manual_unwind_from_fp(uintptr_t *frame_pointer)
 {
-    Py_ssize_t max_depth = 200;
-    int stack_grows_down = _Py_STACK_GROWS_DOWN;
+    uintptr_t stack_min = 0;
+    uintptr_t stack_max = 0;
+
+#ifdef __s390x__
+    Py_BUILD_ASSERT(S390X_FRAME_RETURN_ADDRESS_OFFSET % sizeof(uintptr_t) == 0);
+#endif
 
     if (frame_pointer == NULL) {
         return PyList_New(0);
+    }
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (tstate != NULL) {
+        _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+#if _Py_STACK_GROWS_DOWN
+        stack_min = tstate_impl->c_stack_hard_limit;
+        stack_max = tstate_impl->c_stack_top;
+#else
+        stack_min = tstate_impl->c_stack_top;
+        stack_max = tstate_impl->c_stack_hard_limit;
+#endif
     }
 
     PyObject *result = PyList_New(0);
@@ -340,15 +471,35 @@ manual_unwind_from_fp(uintptr_t *frame_pointer)
         return NULL;
     }
 
-    for (Py_ssize_t depth = 0;
-         depth < max_depth && frame_pointer != NULL;
-         depth++)
-    {
+    Py_ssize_t depth = 0;
+    while (frame_pointer != NULL) {
         uintptr_t fp_addr = (uintptr_t)frame_pointer;
         if ((fp_addr % sizeof(uintptr_t)) != 0) {
             break;
         }
-        uintptr_t return_addr = frame_pointer[1];
+        if (depth >= MAX_UNWIND_FRAMES) {
+            Py_DECREF(result);
+            PyErr_Format(
+                PyExc_RuntimeError,
+                "manual frame pointer unwind returned more than %d frames",
+                MAX_UNWIND_FRAMES);
+            return NULL;
+        }
+        if (!stack_address_is_valid(fp_addr, stack_min, stack_max)) {
+            break;
+        }
+        if (!frame_pointer_slot_is_valid(frame_pointer,
+                                         FRAME_POINTER_NEXT_OFFSET,
+                                         stack_min, stack_max)) {
+            break;
+        }
+        if (!frame_pointer_slot_is_valid(frame_pointer,
+                                         FRAME_POINTER_RETURN_OFFSET,
+                                         stack_min, stack_max)) {
+            break;
+        }
+        uintptr_t *next_fp = (uintptr_t *)frame_pointer[FRAME_POINTER_NEXT_OFFSET];
+        uintptr_t return_addr = frame_pointer[FRAME_POINTER_RETURN_OFFSET];
 
         PyObject *addr_obj = PyLong_FromUnsignedLongLong(return_addr);
         if (addr_obj == NULL) {
@@ -361,28 +512,60 @@ manual_unwind_from_fp(uintptr_t *frame_pointer)
             return NULL;
         }
         Py_DECREF(addr_obj);
+        depth++;
 
-        uintptr_t *next_fp = (uintptr_t *)frame_pointer[0];
-        // Stop if the frame pointer is extremely low.
-        if ((uintptr_t)next_fp < min_frame_pointer_addr) {
+        if (!next_frame_pointer_is_valid(frame_pointer, next_fp,
+                                         stack_min, stack_max)) {
             break;
-        }
-        uintptr_t next_addr = (uintptr_t)next_fp;
-        if (stack_grows_down) {
-            if (next_addr <= fp_addr) {
-                break;
-            }
-        }
-        else {
-            if (next_addr >= fp_addr) {
-                break;
-            }
         }
         frame_pointer = next_fp;
     }
 
     return result;
 }
+
+#if defined(HAVE_EXECINFO_H) && defined(HAVE_BACKTRACE)
+static PyObject *
+gnu_backtrace_unwind(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    void *addresses[MAX_UNWIND_FRAMES + 1];
+    int frame_count = backtrace(addresses, (int)Py_ARRAY_LENGTH(addresses));
+    if (frame_count < 0) {
+        PyErr_SetString(PyExc_RuntimeError, "backtrace() failed");
+        return NULL;
+    }
+    if (frame_count > MAX_UNWIND_FRAMES) {
+        PyErr_Format(
+            PyExc_RuntimeError,
+            "backtrace() returned more than %d frames",
+            MAX_UNWIND_FRAMES);
+        return NULL;
+    }
+
+    PyObject *result = PyList_New(frame_count);
+    if (result == NULL) {
+        return NULL;
+    }
+    for (int i = 0; i < frame_count; i++) {
+        PyObject *addr_obj = PyLong_FromUnsignedLongLong((uintptr_t)addresses[i]);
+        if (addr_obj == NULL) {
+            Py_DECREF(result);
+            return NULL;
+        }
+        PyList_SET_ITEM(result, i, addr_obj);
+    }
+    return result;
+}
+#else
+static PyObject *
+gnu_backtrace_unwind(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyErr_SetString(PyExc_RuntimeError,
+                    "gnu_backtrace_unwind is not supported on this platform");
+    return NULL;
+}
+#endif
+
 #if defined(__GNUC__) || defined(__clang__)
 static PyObject *
 manual_frame_pointer_unwind(PyObject *self, PyObject *args)
@@ -417,14 +600,14 @@ test_bswap(PyObject *self, PyObject *Py_UNUSED(args))
     uint16_t u16 = _Py_bswap16(UINT16_C(0x3412));
     if (u16 != UINT16_C(0x1234)) {
         PyErr_Format(PyExc_AssertionError,
-                     "_Py_bswap16(0x3412) returns %u", u16);
+                     "_Py_bswap16(0x3412) returns %d", u16);
         return NULL;
     }
 
     uint32_t u32 = _Py_bswap32(UINT32_C(0x78563412));
     if (u32 != UINT32_C(0x12345678)) {
         PyErr_Format(PyExc_AssertionError,
-                     "_Py_bswap32(0x78563412) returns %lu", u32);
+                     "_Py_bswap32(0x78563412) returns %u", u32);
         return NULL;
     }
 
@@ -703,7 +886,7 @@ test_edit_cost(PyObject *self, PyObject *Py_UNUSED(args))
 
 static int
 check_bytes_find(const char *haystack0, const char *needle0,
-                 int offset, Py_ssize_t expected)
+                 Py_ssize_t offset, Py_ssize_t expected)
 {
     Py_ssize_t len_haystack = strlen(haystack0);
     Py_ssize_t len_needle = strlen(needle0);
@@ -929,7 +1112,7 @@ static PyObject *
 set_eval_frame_default(PyObject *self, PyObject *Py_UNUSED(args))
 {
     module_state *state = get_module_state(self);
-    _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), _PyEval_EvalFrameDefault);
+    _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), NULL);
     Py_CLEAR(state->record_list);
     Py_RETURN_NONE;
 }
@@ -996,10 +1179,49 @@ get_eval_frame_stats(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 static PyObject *
-set_eval_frame_interp(PyObject *self, PyObject *Py_UNUSED(args))
+record_eval_interp(PyThreadState *tstate, struct _PyInterpreterFrame *f, int exc)
 {
-    _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), Test_EvalFrame);
+    if (PyStackRef_FunctionCheck(f->f_funcobj)) {
+        PyFunctionObject *func = _PyFrame_GetFunction(f);
+        PyObject *module = _get_current_module();
+        assert(module != NULL);
+        module_state *state = get_module_state(module);
+        Py_DECREF(module);
+        int res = PyList_Append(state->record_list, func->func_name);
+        if (res < 0) {
+            return NULL;
+        }
+    }
+
+    return Test_EvalFrame(tstate, f, exc);
+}
+
+static PyObject *
+set_eval_frame_interp(PyObject *self, PyObject *args)
+{
+    if (PyTuple_GET_SIZE(args) == 1) {
+        module_state *state = get_module_state(self);
+        PyObject *list = PyTuple_GET_ITEM(args, 0);
+        if (!PyList_Check(list)) {
+            PyErr_SetString(PyExc_TypeError, "argument must be a list");
+            return NULL;
+        }
+        Py_XSETREF(state->record_list, Py_NewRef(list));
+        _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), record_eval_interp);
+        _PyInterpreterState_SetEvalFrameAllowSpecialization(_PyInterpreterState_GET(), 1);
+    } else {
+        _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), Test_EvalFrame);
+        _PyInterpreterState_SetEvalFrameAllowSpecialization(_PyInterpreterState_GET(), 1);
+    }
+
     Py_RETURN_NONE;
+}
+
+static PyObject *
+is_specialization_enabled(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    return PyBool_FromLong(
+        _PyInterpreterState_IsSpecializationEnabled(_PyInterpreterState_GET()));
 }
 
 /*[clinic input]
@@ -1042,13 +1264,17 @@ _testinternalcapi.compiler_codegen -> object
   compile_mode: int = 0
 
 Apply compiler code generation to an AST.
+
+Return (instruction_sequence, metadata).  metadata maps "argcount",
+"posonlyargcount", "kwonlyargcount" to ints and "consts" to the list of
+constants in LOAD_CONST index order (for use with optimize_cfg).
 [clinic start generated code]*/
 
 static PyObject *
 _testinternalcapi_compiler_codegen_impl(PyObject *module, PyObject *ast,
                                         PyObject *filename, int optimize,
                                         int compile_mode)
-/*[clinic end generated code: output=40a68f6e13951cc8 input=a0e00784f1517cd7]*/
+/*[clinic end generated code: output=40a68f6e13951cc8 input=e0c65e5c80efe30e]*/
 {
     PyCompilerFlags *flags = NULL;
     return _PyCompile_CodeGen(ast, filename, flags, optimize, compile_mode);
@@ -1064,12 +1290,15 @@ _testinternalcapi.optimize_cfg -> object
   nlocals: int
 
 Apply compiler optimizations to an instruction list.
+
+consts must be a list aligned with LOAD_CONST opargs (the "consts" entry
+from the metadata dict returned by compiler_codegen for the same unit).
 [clinic start generated code]*/
 
 static PyObject *
 _testinternalcapi_optimize_cfg_impl(PyObject *module, PyObject *instructions,
                                     PyObject *consts, int nlocals)
-/*[clinic end generated code: output=57c53c3a3dfd1df0 input=6a96d1926d58d7e5]*/
+/*[clinic end generated code: output=57c53c3a3dfd1df0 input=905c3d935e063b27]*/
 {
     return _PyCompile_OptimizeCfg(instructions, consts, nlocals);
 }
@@ -1158,7 +1387,7 @@ get_interp_settings(PyObject *self, PyObject *args)
     }
     else {
         PyErr_Format(PyExc_NotImplementedError,
-                     "%zd", interpid);
+                     "%d", interpid);
         return NULL;
     }
     assert(interp != NULL);
@@ -1210,13 +1439,19 @@ write_perf_map_entry(PyObject *self, PyObject *args)
 {
     PyObject *code_addr_v;
     const void *code_addr;
-    unsigned int code_size;
+    PyObject *code_size_s;
+    size_t code_size;
     const char *entry_name;
 
-    if (!PyArg_ParseTuple(args, "OIs", &code_addr_v, &code_size, &entry_name))
+    if (!PyArg_ParseTuple(args, "OOs", &code_addr_v, &code_size_s, &entry_name))
         return NULL;
     code_addr = PyLong_AsVoidPtr(code_addr_v);
     if (code_addr == NULL) {
+        return NULL;
+    }
+
+    code_size = PyLong_AsSize_t(code_size_s);
+    if (code_size == (size_t)-1 && PyErr_Occurred()) {
         return NULL;
     }
 
@@ -2837,6 +3072,129 @@ test_threadstate_set_stack_protection(PyObject *self, PyObject *Py_UNUSED(args))
     Py_RETURN_NONE;
 }
 
+#define NUM_GUARDS 100
+
+static PyObject *
+test_interp_guard_countdown(PyObject *self, PyObject *unused)
+{
+    PyThreadState *save_tstate = PyThreadState_Swap(NULL);
+
+    // This test assumes that the interpreter has no guards active.
+    // While this is currently true for the main interpreter as of writing,
+    // this won't necessarily be true in the future. For the sake of
+    // maintainance, we create a new interpreter to be sure that there aren't
+    // any other guards.
+    PyThreadState *interp_tstate = Py_NewInterpreter();
+    assert(interp_tstate != NULL);
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    assert(_PyInterpreterState_GuardCountdown(interp) == 0);
+
+    PyInterpreterGuard *guards[NUM_GUARDS];
+    for (int i = 0; i < NUM_GUARDS; ++i) {
+        guards[i] = PyInterpreterGuard_FromCurrent();
+        assert(guards[i] != 0);
+        assert(_PyInterpreterState_GuardCountdown(interp) == i + 1);
+    }
+
+    for (int i = 0; i < NUM_GUARDS; ++i) {
+        PyInterpreterGuard_Close(guards[i]);
+        assert(_PyInterpreterState_GuardCountdown(interp) == (NUM_GUARDS - i - 1));
+    }
+
+    Py_EndInterpreter(interp_tstate);
+    PyThreadState_Swap(save_tstate);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+test_interp_view_countdown(PyObject *self, PyObject *unused)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterView *view = PyInterpreterView_FromCurrent();
+    if (view == NULL) {
+        return NULL;
+    }
+    assert(_PyInterpreterState_GuardCountdown(interp) == 0);
+
+    PyInterpreterGuard *guards[NUM_GUARDS];
+
+    for (int i = 0; i < NUM_GUARDS; ++i) {
+        guards[i] = PyInterpreterGuard_FromView(view);
+        assert(guards[i] != 0);
+        assert(_PyInterpreterGuard_GetInterpreter(guards[i]) == interp);
+        assert(_PyInterpreterState_GuardCountdown(interp) == i + 1);
+    }
+
+    for (int i = 0; i < NUM_GUARDS; ++i) {
+        PyInterpreterGuard_Close(guards[i]);
+        assert(_PyInterpreterState_GuardCountdown(interp) == (NUM_GUARDS - i - 1));
+    }
+
+    PyInterpreterView_Close(view);
+    Py_RETURN_NONE;
+}
+
+#undef NUM_LOCKS
+
+static PyObject *
+_pyerr_setkeyerror(PyObject *self, PyObject *arg)
+{
+    // Test that _PyErr_SetKeyError() overrides the current exception
+    // if an exception is set
+    PyErr_NoMemory();
+
+    _PyErr_SetKeyError(arg);
+
+    assert(PyErr_Occurred());
+    return NULL;
+}
+
+static PyObject *
+test_thread_state_ensure_from_view_interp_switch(PyObject *self, PyObject *unused)
+{
+    /* The main tstate is already attached and was NOT created by
+     * PyThreadState_Ensure, so delete_on_release == 0. */
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(interp != NULL);
+    PyInterpreterView *view = PyInterpreterView_FromCurrent();
+    assert(view != NULL);
+
+    /* First Ensure/Release pair on this pre-existing tstate. */
+    assert(_PyThreadState_GET() != NULL);
+    PyThreadStateToken *t1 = PyThreadState_EnsureFromView(view);
+    assert(t1 != NULL);
+    assert(_PyInterpreterState_GuardCountdown(interp) == 1);
+    PyThreadState_Release(t1);
+    assert(_PyInterpreterState_GuardCountdown(interp) == 0);
+    assert(_PyThreadState_GET() != NULL);
+
+    /* tstate->ensure.owned_guard now points at the freed guard. */
+
+    /* Re-attach: Bug B detaches us as a side effect (separate repro). */
+    PyThreadState *save = PyThreadState_Swap(NULL);
+
+    PyThreadStateToken *t2 = PyThreadState_EnsureFromView(view);
+    assert(_PyInterpreterState_GuardCountdown(interp) == 1);
+    assert(t2 != NULL);
+    PyThreadState_Release(t2);
+    assert(_PyInterpreterState_GuardCountdown(interp) == 0);
+    assert(_PyThreadState_GET() == NULL);
+
+    PyThreadState_Swap(save);
+
+    /* In a release build (no assertion) the second Ensure silently
+     * skipped storing its guard and Release decremented the global
+     * counter from 0, wrapping it to GUARDS_NOT_ALLOWED.  All future
+     * guard acquisitions then fail: */
+    PyInterpreterGuard *g = PyInterpreterGuard_FromCurrent();
+    assert(g != NULL);
+    assert(_PyInterpreterState_GuardCountdown(interp) == 1);
+    PyInterpreterGuard_Close(g);
+    assert(_PyInterpreterState_GuardCountdown(interp) == 0);
+
+    PyInterpreterView_Close(view);
+    Py_RETURN_NONE;
+}
 
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
@@ -2848,6 +3206,7 @@ static PyMethodDef module_functions[] = {
     {"classify_stack_addresses", classify_stack_addresses, METH_VARARGS},
     {"get_jit_code_ranges", get_jit_code_ranges, METH_NOARGS},
     {"get_jit_backend", get_jit_backend, METH_NOARGS},
+    {"gnu_backtrace_unwind", gnu_backtrace_unwind, METH_NOARGS},
     {"manual_frame_pointer_unwind", manual_frame_pointer_unwind, METH_NOARGS},
     {"test_bswap", test_bswap, METH_NOARGS},
     {"test_popcount", test_popcount, METH_NOARGS},
@@ -2861,8 +3220,9 @@ static PyMethodDef module_functions[] = {
     {"EncodeLocaleEx", encode_locale_ex, METH_VARARGS},
     {"DecodeLocaleEx", decode_locale_ex, METH_VARARGS},
     {"set_eval_frame_default", set_eval_frame_default, METH_NOARGS, NULL},
-    {"set_eval_frame_interp", set_eval_frame_interp, METH_NOARGS, NULL},
+    {"set_eval_frame_interp", set_eval_frame_interp, METH_VARARGS, NULL},
     {"set_eval_frame_record", set_eval_frame_record, METH_O, NULL},
+    {"is_specialization_enabled", is_specialization_enabled, METH_NOARGS, NULL},
     _TESTINTERNALCAPI_COMPILER_CLEANDOC_METHODDEF
     _TESTINTERNALCAPI_NEW_INSTRUCTION_SEQUENCE_METHODDEF
     _TESTINTERNALCAPI_COMPILER_CODEGEN_METHODDEF
@@ -2959,6 +3319,10 @@ static PyMethodDef module_functions[] = {
     {"module_get_gc_hooks", module_get_gc_hooks, METH_O},
     {"test_threadstate_set_stack_protection",
      test_threadstate_set_stack_protection, METH_NOARGS},
+    {"_pyerr_setkeyerror", _pyerr_setkeyerror, METH_O},
+    {"test_interp_guard_countdown", test_interp_guard_countdown, METH_NOARGS},
+    {"test_interp_view_countdown", test_interp_view_countdown, METH_NOARGS},
+    {"test_thread_state_ensure_from_view_interp_switch", test_thread_state_ensure_from_view_interp_switch, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -3047,6 +3411,12 @@ module_exec(PyObject *module)
     if (PyModule_AddIntMacro(module, _PY_NSMALLPOSINTS) < 0) {
         return 1;
     }
+
+#ifdef _Py_WITH_FRAME_POINTERS
+    if (PyModule_AddIntMacro(module, _Py_WITH_FRAME_POINTERS) < 0) {
+        return 1;
+    }
+#endif
 
     return 0;
 }

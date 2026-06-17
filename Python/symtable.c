@@ -108,6 +108,7 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_id = k; /* ste owns reference to k */
 
     ste->ste_name = Py_NewRef(name);
+    ste->ste_function_name = NULL;
 
     ste->ste_symbols = NULL;
     ste->ste_varnames = NULL;
@@ -186,6 +187,7 @@ ste_dealloc(PyObject *op)
     ste->ste_table = NULL;
     Py_XDECREF(ste->ste_id);
     Py_XDECREF(ste->ste_name);
+    Py_XDECREF(ste->ste_function_name);
     Py_XDECREF(ste->ste_symbols);
     Py_XDECREF(ste->ste_varnames);
     Py_XDECREF(ste->ste_children);
@@ -832,17 +834,22 @@ inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
             return 0;
         }
         // __class__, __classdict__ and __conditional_annotations__ are
-        // never allowed to be free through a class scope (see
-        // drop_class_free)
+        // not allowed to be free through a class scope (see
+        // drop_class_free) unless children scopes need it
         if (scope == FREE && ste->ste_type == ClassBlock &&
                 (_PyUnicode_EqualToASCIIString(k, "__class__") ||
                  _PyUnicode_EqualToASCIIString(k, "__classdict__") ||
                  _PyUnicode_EqualToASCIIString(k, "__conditional_annotations__"))) {
             scope = GLOBAL_IMPLICIT;
-            if (PySet_Discard(comp_free, k) < 0) {
+            int child_needs_free = is_free_in_any_child(comp, k);
+            if (child_needs_free < 0) {
                 return 0;
             }
-
+            if (!child_needs_free) {
+                if (PySet_Discard(comp_free, k) < 0) {
+                    return 0;
+                }
+            }
             if (_PyUnicode_EqualToASCIIString(k, "__class__")) {
                 remove_dunder_class = 1;
             }
@@ -1706,7 +1713,7 @@ symtable_enter_type_param_block(struct symtable *st, identifier name,
     return 1;
 }
 
-/* VISIT, VISIT_SEQ and VIST_SEQ_TAIL take an ASDL type as their second argument.
+/* VISIT, VISIT_SEQ and VISIT_SEQ_TAIL take an ASDL type as their second argument.
    They use the ASDL name to synthesize the name of the C type and the visit
    function.
 
@@ -2868,6 +2875,7 @@ symtable_visit_annotation(struct symtable *st, expr_ty annotation, void *key)
         int future_annotations = st->st_future->ff_features & CO_FUTURE_ANNOTATIONS;
         if (current_type == ClassBlock && !future_annotations) {
             st->st_cur->ste_can_see_class_scope = 1;
+            parent_ste->ste_needs_classdict = 1;
             if (!symtable_add_def(st, &_Py_ID(__classdict__), USE, LOCATION(annotation))) {
                 return 0;
             }
@@ -2918,6 +2926,7 @@ symtable_visit_annotations(struct symtable *st, stmt_ty o, arguments_ty a, expr_
                               (void *)a, LOCATION(o))) {
         return 0;
     }
+    Py_XSETREF(st->st_cur->ste_function_name, Py_NewRef(function_ste->ste_name));
     if (is_in_class || current_type == ClassBlock) {
         st->st_cur->ste_can_see_class_scope = 1;
         if (!symtable_add_def(st, &_Py_ID(__classdict__), USE, LOCATION(o))) {

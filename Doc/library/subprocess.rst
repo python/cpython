@@ -627,6 +627,12 @@ functions.
    the value in ``pw_uid`` will be used. If the value is an integer, it will
    be passed verbatim. (POSIX only)
 
+   .. note::
+
+      Specifying *user* will not drop existing supplementary group memberships!
+      The caller must also pass ``extra_groups=()`` to reduce the group membership
+      of the child process for security purposes.
+
    .. availability:: POSIX
    .. versionadded:: 3.9
 

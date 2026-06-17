@@ -12,6 +12,7 @@
 
 #include "multibytecodec.h"
 #include "clinic/multibytecodec.c.h"
+#include "pycore_tuple.h"         // _PyTuple_FromPairSteal
 
 #include <stddef.h>               // offsetof()
 
@@ -102,26 +103,17 @@ static PyObject *multibytecodec_encode(const MultibyteCodec *,
 static PyObject *
 make_tuple(PyObject *object, Py_ssize_t len)
 {
-    PyObject *v, *w;
-
-    if (object == NULL)
+    if (object == NULL) {
         return NULL;
+    }
 
-    v = PyTuple_New(2);
-    if (v == NULL) {
+    PyObject* len_obj = PyLong_FromSsize_t(len);
+    if (len_obj == NULL) {
         Py_DECREF(object);
         return NULL;
     }
-    PyTuple_SET_ITEM(v, 0, object);
 
-    w = PyLong_FromSsize_t(len);
-    if (w == NULL) {
-        Py_DECREF(v);
-        return NULL;
-    }
-    PyTuple_SET_ITEM(v, 1, w);
-
-    return v;
+    return _PyTuple_FromPairSteal(object, len_obj);
 }
 
 static PyObject *
@@ -590,7 +582,6 @@ errorexit:
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 _multibytecodec.MultibyteCodec.encode
 
   input: object
@@ -598,17 +589,18 @@ _multibytecodec.MultibyteCodec.encode
 
 Return an encoded string version of 'input'.
 
-'errors' may be given to set a different error handling scheme. Default is
-'strict' meaning that encoding errors raise a UnicodeEncodeError. Other possible
-values are 'ignore', 'replace' and 'xmlcharrefreplace' as well as any other name
-registered with codecs.register_error that can handle UnicodeEncodeErrors.
+'errors' may be given to set a different error handling scheme.
+Default is 'strict' meaning that encoding errors raise
+a UnicodeEncodeError.  Other possible values are 'ignore', 'replace'
+and 'xmlcharrefreplace' as well as any other name registered with
+codecs.register_error that can handle UnicodeEncodeErrors.
 [clinic start generated code]*/
 
 static PyObject *
 _multibytecodec_MultibyteCodec_encode_impl(MultibyteCodecObject *self,
                                            PyObject *input,
                                            const char *errors)
-/*[clinic end generated code: output=7b26652045ba56a9 input=0980aede2c564df8]*/
+/*[clinic end generated code: output=7b26652045ba56a9 input=980002ed1447697b]*/
 {
     MultibyteCodec_State state;
     PyObject *errorcb, *r, *ucvt;
@@ -656,7 +648,6 @@ errorexit:
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 _multibytecodec.MultibyteCodec.decode
 
   input: Py_buffer
@@ -664,9 +655,10 @@ _multibytecodec.MultibyteCodec.decode
 
 Decodes 'input'.
 
-'errors' may be given to set a different error handling scheme. Default is
-'strict' meaning that encoding errors raise a UnicodeDecodeError. Other possible
-values are 'ignore' and 'replace' as well as any other name registered with
+'errors' may be given to set a different error handling scheme.
+Default is 'strict' meaning that encoding errors raise
+a UnicodeDecodeError.  Other possible values are 'ignore' and
+'replace' as well as any other name registered with
 codecs.register_error that is able to handle UnicodeDecodeErrors."
 [clinic start generated code]*/
 
@@ -674,7 +666,7 @@ static PyObject *
 _multibytecodec_MultibyteCodec_decode_impl(MultibyteCodecObject *self,
                                            Py_buffer *input,
                                            const char *errors)
-/*[clinic end generated code: output=ff419f65bad6cc77 input=2c657ef914600c7c]*/
+/*[clinic end generated code: output=ff419f65bad6cc77 input=dbf93d8bb98ca440]*/
 {
     MultibyteCodec_State state;
     MultibyteDecodeBuffer buf;

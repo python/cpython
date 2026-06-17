@@ -367,7 +367,7 @@ no_tools_for_global_event(PyThreadState *tstate, int event)
 static inline bool
 no_tools_for_local_event(PyThreadState *tstate, _PyInterpreterFrame *frame, int event)
 {
-    assert(event < _PY_MONITORING_LOCAL_EVENTS);
+    assert(event < _PY_MONITORING_UNGROUPED_EVENTS);
     _PyCoMonitoringData *data = _PyFrame_GetCode(frame)->_co_monitoring;
     if (data) {
         return data->active_monitors.tools[event] == 0;
@@ -382,7 +382,7 @@ monitor_handled(PyThreadState *tstate,
                 _PyInterpreterFrame *frame,
                 _Py_CODEUNIT *instr, PyObject *exc)
 {
-    if (no_tools_for_global_event(tstate, PY_MONITORING_EVENT_EXCEPTION_HANDLED)) {
+    if (no_tools_for_local_event(tstate, frame, PY_MONITORING_EVENT_EXCEPTION_HANDLED)) {
         return 0;
     }
     return _Py_call_instrumentation_arg(tstate, PY_MONITORING_EVENT_EXCEPTION_HANDLED, frame, instr, exc);
@@ -393,7 +393,7 @@ monitor_throw(PyThreadState *tstate,
               _PyInterpreterFrame *frame,
               _Py_CODEUNIT *instr)
 {
-    if (no_tools_for_global_event(tstate, PY_MONITORING_EVENT_PY_THROW)) {
+    if (no_tools_for_local_event(tstate, frame, PY_MONITORING_EVENT_PY_THROW)) {
         return;
     }
     do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_PY_THROW);
@@ -403,7 +403,7 @@ static void
 monitor_reraise(PyThreadState *tstate, _PyInterpreterFrame *frame,
               _Py_CODEUNIT *instr)
 {
-    if (no_tools_for_global_event(tstate, PY_MONITORING_EVENT_RERAISE)) {
+    if (no_tools_for_local_event(tstate, frame, PY_MONITORING_EVENT_RERAISE)) {
         return;
     }
     do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_RERAISE);
@@ -431,7 +431,7 @@ monitor_unwind(PyThreadState *tstate,
                _PyInterpreterFrame *frame,
                _Py_CODEUNIT *instr)
 {
-    if (no_tools_for_global_event(tstate, PY_MONITORING_EVENT_PY_UNWIND)) {
+    if (no_tools_for_local_event(tstate, frame, PY_MONITORING_EVENT_PY_UNWIND)) {
         return;
     }
     do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_PY_UNWIND);

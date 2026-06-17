@@ -14,8 +14,8 @@ PyDoc_STRVAR(_thread_lock_acquire__doc__,
 "\n"
 "Lock the lock.\n"
 "\n"
-"Without argument, this blocks if the lock is already\n"
-"locked (even by the same thread), waiting for another thread to release\n"
+"Without argument, this blocks if the lock is already locked\n"
+"(even by the same thread), waiting for another thread to release\n"
 "the lock, and return True once the lock is acquired.\n"
 "With an argument, this will only block if the argument is true,\n"
 "and the return value reflects whether the lock is acquired.\n"
@@ -445,14 +445,14 @@ PyDoc_STRVAR(_thread_RLock_release__doc__,
 "\n"
 "Release the lock.\n"
 "\n"
-"Allows another thread that is blocked waiting for\n"
-"the lock to acquire the lock.  The lock must be in the locked state,\n"
+"Allows another thread that is blocked waiting for the lock\n"
+"to acquire the lock.  The lock must be in the locked state,\n"
 "and must be locked by the same thread that unlocks it; otherwise a\n"
 "`RuntimeError` is raised.\n"
 "\n"
-"Do note that if the lock was acquire()d several times in a row by the\n"
-"current thread, release() needs to be called as many times for the lock\n"
-"to be available for other threads.");
+"Do note that if the lock was acquire()d several times in a row by\n"
+"the current thread, release() needs to be called as many times for\n"
+"the lock to be available for other threads.");
 
 #define _THREAD_RLOCK_RELEASE_METHODDEF    \
     {"release", (PyCFunction)_thread_RLock_release, METH_NOARGS, _thread_RLock_release__doc__},
@@ -740,4 +740,4 @@ exit:
 #ifndef _THREAD_SET_NAME_METHODDEF
     #define _THREAD_SET_NAME_METHODDEF
 #endif /* !defined(_THREAD_SET_NAME_METHODDEF) */
-/*[clinic end generated code: output=1255a1520f43f97a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0f1707cbafc0e8f2 input=a9049054013a1b77]*/

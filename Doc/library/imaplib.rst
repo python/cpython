@@ -199,6 +199,11 @@ An :class:`IMAP4` instance has the following methods:
 
    Append *message* to named mailbox.
 
+   *flags* may be ``None`` or a string of IMAP flag tokens.  Multiple
+   flags are separated by spaces, for example ``r'\Seen \Answered'``.
+   If *flags* is not already enclosed in parentheses, parentheses are
+   added automatically.
+
 
 .. method:: IMAP4.authenticate(mechanism, authobject)
 
@@ -693,6 +698,16 @@ The following attributes are defined on instances of :class:`IMAP4`:
    capability.
 
    .. versionadded:: 3.5
+
+
+.. property:: IMAP4.file
+
+   Internal :class:`~io.BufferedReader` associated with the underlying socket.
+   This property is documented for legacy purposes but not part of the public
+   interface. The caller is responsible to ensure that the current file is
+   closed before changing it.
+
+   .. deprecated-removed:: 3.15 3.19
 
 
 .. _imap4-example:

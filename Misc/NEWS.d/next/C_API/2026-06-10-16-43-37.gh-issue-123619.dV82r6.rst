@@ -1,0 +1,3 @@
+:c:func:`PyUnstable_Object_EnableDeferredRefcount` now returns ``0`` if the
+object is not tracked by the garbage collector: if :func:`gc.is_tracked` is
+false. Patch by Victor Stinner.

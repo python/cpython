@@ -53,7 +53,7 @@ def _test_selector_event(selector, fd, event):
 class BaseSelectorEventLoop(base_events.BaseEventLoop):
     """Selector event loop.
 
-    See events.EventLoop for API specification.
+    See events.AbstractEventLoop for API specification.
     """
 
     def __init__(self, selector=None):
@@ -533,11 +533,12 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
     async def sock_sendall(self, sock, data):
         """Send data to the socket.
 
-        The socket must be connected to a remote socket. This method continues
-        to send data from data until either all data has been sent or an
-        error occurs. None is returned on success. On error, an exception is
-        raised, and there is no way to determine how much data, if any, was
-        successfully processed by the receiving end of the connection.
+        The socket must be connected to a remote socket.  This method
+        continues to send data from data until either all data has been
+        sent or an error occurs.  None is returned on success.  On error,
+        an exception is raised, and there is no way to determine how much
+        data, if any, was successfully processed by the receiving end of
+        the connection.
         """
         base_events._check_ssl_socket(sock)
         if self._debug and sock.gettimeout() != 0:
@@ -586,11 +587,12 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
     async def sock_sendto(self, sock, data, address):
         """Send data to the socket.
 
-        The socket must be connected to a remote socket. This method continues
-        to send data from data until either all data has been sent or an
-        error occurs. None is returned on success. On error, an exception is
-        raised, and there is no way to determine how much data, if any, was
-        successfully processed by the receiving end of the connection.
+        The socket must be connected to a remote socket.  This method
+        continues to send data from data until either all data has been
+        sent or an error occurs.  None is returned on success.  On error,
+        an exception is raised, and there is no way to determine how much
+        data, if any, was successfully processed by the receiving end of
+        the connection.
         """
         base_events._check_ssl_socket(sock)
         if self._debug and sock.gettimeout() != 0:
@@ -701,10 +703,11 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
     async def sock_accept(self, sock):
         """Accept a connection.
 
-        The socket must be bound to an address and listening for connections.
-        The return value is a pair (conn, address) where conn is a new socket
-        object usable to send and receive data on the connection, and address
-        is the address bound to the socket on the other end of the connection.
+        The socket must be bound to an address and listening for
+        connections.  The return value is a pair (conn, address) where
+        conn is a new socket object usable to send and receive data on the
+        connection, and address is the address bound to the socket on the
+        other end of the connection.
         """
         base_events._check_ssl_socket(sock)
         if self._debug and sock.gettimeout() != 0:
@@ -793,6 +796,7 @@ class _SelectorTransport(transports._FlowControlMixin,
 
         self._server = server
         self._buffer = collections.deque()
+        self._buffer_size = 0
         self._conn_lost = 0  # Set when call to connection_lost scheduled.
         self._closing = False  # Set when close() called.
         self._paused = False  # Set when pause_reading() called
@@ -897,6 +901,7 @@ class _SelectorTransport(transports._FlowControlMixin,
             return
         if self._buffer:
             self._buffer.clear()
+            self._buffer_size = 0
             self._loop._remove_writer(self._sock_fd)
         if not self._closing:
             self._closing = True
@@ -919,7 +924,7 @@ class _SelectorTransport(transports._FlowControlMixin,
                 self._server = None
 
     def get_write_buffer_size(self):
-        return sum(map(len, self._buffer))
+        return self._buffer_size
 
     def _add_reader(self, fd, callback, *args):
         if not self.is_reading():
@@ -1090,6 +1095,7 @@ class _SelectorSocketTransport(_SelectorTransport):
 
         # Add it to the buffer.
         self._buffer.append(data)
+        self._buffer_size += len(data)
         self._maybe_pause_protocol()
 
     def _get_sendmsg_buffer(self):
@@ -1109,6 +1115,7 @@ class _SelectorSocketTransport(_SelectorTransport):
         except BaseException as exc:
             self._loop._remove_writer(self._sock_fd)
             self._buffer.clear()
+            self._buffer_size = 0
             self._fatal_error(exc, 'Fatal write error on socket transport')
             if self._empty_waiter is not None:
                 self._empty_waiter.set_exception(exc)
@@ -1124,6 +1131,7 @@ class _SelectorSocketTransport(_SelectorTransport):
                     self._sock.shutdown(socket.SHUT_WR)
 
     def _adjust_leftover_buffer(self, nbytes: int) -> None:
+        self._buffer_size -= nbytes
         buffer = self._buffer
         while nbytes:
             b = buffer.popleft()
@@ -1144,13 +1152,16 @@ class _SelectorSocketTransport(_SelectorTransport):
             if n != len(buffer):
                 # Not all data was written
                 self._buffer.appendleft(buffer[n:])
+            self._buffer_size -= n
         except (BlockingIOError, InterruptedError):
-            pass
+            self._buffer.appendleft(buffer)
+            return
         except (SystemExit, KeyboardInterrupt):
             raise
         except BaseException as exc:
             self._loop._remove_writer(self._sock_fd)
             self._buffer.clear()
+            self._buffer_size = 0
             self._fatal_error(exc, 'Fatal write error on socket transport')
             if self._empty_waiter is not None:
                 self._empty_waiter.set_exception(exc)
@@ -1186,7 +1197,9 @@ class _SelectorSocketTransport(_SelectorTransport):
             self._conn_lost += 1
             return
 
-        self._buffer.extend([memoryview(data) for data in list_of_data])
+        for data in list_of_data:
+            self._buffer.append(memoryview(data))
+            self._buffer_size += len(data)
         self._write_ready()
         # If the entire buffer couldn't be written, register a write handler
         if self._buffer:
@@ -1223,7 +1236,6 @@ class _SelectorSocketTransport(_SelectorTransport):
 
 class _SelectorDatagramTransport(_SelectorTransport, transports.DatagramTransport):
 
-    _buffer_factory = collections.deque
     _header_size = 8
 
     def __init__(self, loop, sock, protocol, address=None,

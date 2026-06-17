@@ -12,7 +12,17 @@ import sys
 import sysconfig
 import tempfile
 import textwrap
+import types
 from collections.abc import Callable
+_winapi: types.ModuleType | None
+try:
+    import _winapi
+except ImportError:
+    _winapi = None
+try:
+    from _testcapi import get_process_memory_usage as _get_process_memory_usage
+except ImportError:
+    _get_process_memory_usage = None
 
 from test import support
 from test.support import os_helper
@@ -746,3 +756,61 @@ def _sanitize_xml_replace(regs):
 
 def sanitize_xml(text: str) -> str:
     return ILLEGAL_XML_CHARS_RE.sub(_sanitize_xml_replace, text)
+
+
+def display_title(title):
+    print(title)
+    print("#" * len(title))
+    print(flush=True)
+
+
+def _get_process_memory_usage_linux(pid: int) -> int | None:
+    # Linux implementation: read the private memory in bytes from
+    # /proc/pid/smaps.
+    try:
+        fp = open(f"/proc/{pid}/smaps", "rb")
+    except OSError:
+        return None
+
+    try:
+        total = 0
+        with fp:
+            for line in fp:
+                # Include both Private_Clean and Private_Dirty sections.
+                line = line.rstrip()
+                if line.startswith(b"Private_") and line.endswith(b'kB'):
+                    parts = line.split()
+                    total += int(parts[1]) * 1024
+        return total
+    except ProcessLookupError:
+        return None
+
+
+def _get_process_memory_usage_windows(pid: int) -> int | None:
+    assert _winapi is not None  # to make mypy happy
+    try:
+        handle = _winapi.OpenProcess(_winapi.PROCESS_QUERY_LIMITED_INFORMATION,
+                                     False, pid)
+    except OSError:
+        return None
+    try:
+        mem_info = _winapi.GetProcessMemoryInfo(handle)
+    finally:
+        _winapi.CloseHandle(handle)
+    return mem_info['WorkingSetSize']
+
+
+if _get_process_memory_usage is not None:
+    def get_process_memory_usage(pid: int) -> int | None:
+        try:
+            return _get_process_memory_usage(pid)
+        except ProcessLookupError:
+            return None
+elif _winapi is not None:
+    get_process_memory_usage = _get_process_memory_usage_windows
+elif sys.platform == 'linux':
+    get_process_memory_usage = _get_process_memory_usage_linux
+else:
+    def get_process_memory_usage(pid: int) -> int | None:
+        return None
+get_process_memory_usage.__doc__ = "Get process memory usage in bytes."

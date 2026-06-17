@@ -1,5 +1,8 @@
 """Test script for the grp module."""
 
+import random
+import string
+import sys
 import unittest
 from test.support import import_helper
 
@@ -33,7 +36,15 @@ class GroupDatabaseTestCase(unittest.TestCase):
             self.skipTest('huge group file, extended test skipped')
 
         for e in entries:
-            e2 = grp.getgrgid(e.gr_gid)
+            try:
+                e2 = grp.getgrgid(e.gr_gid)
+            except KeyError:
+                # On Cygwin, some groups returned by getgrall() cannot be
+                # retrieved by getgrgid()
+                if sys.platform == 'cygwin':
+                    continue
+                raise
+
             self.check_value(e2)
             self.assertEqual(e2.gr_gid, e.gr_gid)
             name = e.gr_name
@@ -50,61 +61,51 @@ class GroupDatabaseTestCase(unittest.TestCase):
     def test_errors(self):
         self.assertRaises(TypeError, grp.getgrgid)
         self.assertRaises(TypeError, grp.getgrgid, 3.14)
+        self.assertRaises(TypeError, grp.getgrgid, 0.0)
+        self.assertRaises(TypeError, grp.getgrgid, 0, 0)
+        # should be out of gid_t range
+        self.assertRaises(OverflowError, grp.getgrgid, 2**128)
+        self.assertRaises(OverflowError, grp.getgrgid, -2**128)
         self.assertRaises(TypeError, grp.getgrnam)
         self.assertRaises(TypeError, grp.getgrnam, 42)
-        self.assertRaises(TypeError, grp.getgrall, 42)
+        self.assertRaises(TypeError, grp.getgrnam, b'root')
+        self.assertRaises(TypeError, grp.getgrnam, 'root', 0)
         # embedded null character
         self.assertRaisesRegex(ValueError, 'null', grp.getgrnam, 'a\x00b')
+        self.assertRaisesRegex(ValueError, 'null', grp.getgrnam, 'root\x00')
+        self.assertRaises(UnicodeEncodeError, grp.getgrnam, 'roo\udc74')
+        self.assertRaises(KeyError, grp.getgrnam, '')
+        self.assertRaises(TypeError, grp.getgrall, 42)
 
-        # try to get some errors
-        bynames = {}
-        bygids = {}
-        for (n, p, g, mem) in grp.getgrall():
-            if not n or n == '+':
-                continue # skip NIS entries etc.
-            bynames[n] = g
-            bygids[g] = n
+        # Find a non-existent group name.
+        # getgrall() will not necessarily report all existing groups
+        # (typical for LDAP based directories in big organizations).
+        for _ in range(30):
+            fakename = ''.join(random.choices(string.ascii_lowercase, k=6))
+            try:
+                grp.getgrnam(fakename)
+            except KeyError:
+                break
+        else:
+            self.fail('Cannot find non-existent group name')
 
-        allnames = list(bynames.keys())
-        namei = 0
-        fakename = allnames[namei]
-        while fakename in bynames:
-            chars = list(fakename)
-            for i in range(len(chars)):
-                if chars[i] == 'z':
-                    chars[i] = 'A'
-                    break
-                elif chars[i] == 'Z':
-                    continue
+        # Find a non-existent gid.
+        maxgid = 2**31
+        for _ in range(30):
+            fakegid = random.randrange(maxgid)
+            try:
+                grp.getgrgid(fakegid)
+            except KeyError:
+                break
+            except OverflowError:
+                if maxgid == 2**31:
+                    maxgid = 2**16-1
+                elif maxgid == 2**16-1:
+                    maxgid = 2**15
                 else:
-                    chars[i] = chr(ord(chars[i]) + 1)
-                    break
-            else:
-                namei = namei + 1
-                try:
-                    fakename = allnames[namei]
-                except IndexError:
-                    # should never happen... if so, just forget it
-                    break
-            fakename = ''.join(chars)
-
-        self.assertRaises(KeyError, grp.getgrnam, fakename)
-
-        # Choose a non-existent gid.
-        fakegid = 4127
-        while fakegid in bygids:
-            fakegid = (fakegid * 3) % 0x10000
-
-        self.assertRaises(KeyError, grp.getgrgid, fakegid)
-
-    def test_noninteger_gid(self):
-        entries = grp.getgrall()
-        if not entries:
-            self.skipTest('no groups')
-        # Choose an existent gid.
-        gid = entries[0][2]
-        self.assertRaises(TypeError, grp.getgrgid, float(gid))
-        self.assertRaises(TypeError, grp.getgrgid, str(gid))
+                    raise
+        else:
+            self.fail('Cannot find non-existent gid')
 
 
 if __name__ == "__main__":

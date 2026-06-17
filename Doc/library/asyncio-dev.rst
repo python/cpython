@@ -304,7 +304,7 @@ generator can occur in an unexpected order::
       try:
           yield 2
       finally:
-          await asyncio.sleep(0.1) # immitate some async work
+          await asyncio.sleep(0.1) # imitate some async work
           work_done = True
 
 
