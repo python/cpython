@@ -3453,6 +3453,90 @@ sock.connect(('localhost', {port}))
 
     @skip_if_not_supported
     @unittest.skipIf(
+        sys.platform != "linux" or not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_cache_rejects_reused_frame_address_aba(self):
+        """Test that frame address reuse cannot splice cached parent frames."""
+        script_body = """\
+            sock.sendall(b"ready")
+
+            def burn_a():
+                total = 0
+                for i in range(20000):
+                    total += i
+                return total
+
+            def burn_b():
+                total = 0
+                for i in range(20000):
+                    total += i
+                return total
+
+            def a_leaf():
+                return burn_a()
+
+            def b_leaf():
+                return burn_b()
+
+            def a_parent():
+                return a_leaf()
+
+            def b_parent():
+                return b_leaf()
+
+            while True:
+                a_parent()
+                b_parent()
+            """
+
+        with self._target_process(script_body) as (p, client_socket, _):
+            _wait_for_signal(client_socket, b"ready")
+            unwinder = RemoteUnwinder(
+                p.pid, cache_frames=True, stats=True
+            )
+            bad_stacks = []
+            seen = 0
+            branch_a = {"a_parent", "a_leaf", "burn_a"}
+            branch_b = {"b_parent", "b_leaf", "burn_b"}
+
+            for _ in range(8000):
+                try:
+                    traces = unwinder.get_stack_trace()
+                except TRANSIENT_ERRORS:
+                    continue
+                for interp in traces:
+                    for thread in interp.threads:
+                        in_a = False
+                        in_b = False
+                        for frame in thread.frame_info:
+                            name = frame.funcname
+                            if name in branch_a:
+                                in_a = True
+                            elif name in branch_b:
+                                in_b = True
+                            if in_a and in_b:
+                                break
+                        if not (in_a or in_b):
+                            continue
+                        seen += 1
+                        if in_a and in_b:
+                            funcs = [f.funcname for f in thread.frame_info]
+                            bad_stacks.append(funcs)
+                if len(bad_stacks) >= 3:
+                    break
+
+            stats = unwinder.get_stats()
+
+        self.assertGreater(seen, 0)
+        self.assertGreater(
+            stats["frame_cache_hits"] + stats["frame_cache_partial_hits"], 0
+        )
+        self.assertGreater(stats["frames_read_from_cache"], 0)
+        self.assertEqual(bad_stacks, [])
+
+    @skip_if_not_supported
+    @unittest.skipIf(
         sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
         "Test only runs on Linux with process_vm_readv support",
     )
