@@ -498,9 +498,13 @@ Querying the error indicator
 
 .. c:function:: void PyErr_SetRaisedException(PyObject *exc)
 
-   A stolen reference to *exc* is set as the exception currently being raised,
-   clearing the existing exception if one is set.  *exc* may be ``NULL`` in
-   which case any current exception is cleared.
+   Set *exc* as the exception currently being raised, clearing the existing
+   exception if one is set.  *exc* may be ``NULL`` in which case any current
+   exception is cleared.
+
+   .. note::
+
+      This function "steals" a reference to *exc*.
 
    .. versionadded:: 3.12
 
