@@ -75,6 +75,10 @@ although there is currently no date scheduled for their removal.
 * :mod:`mailbox`: Use of StringIO input and text mode is deprecated, use
   BytesIO and binary mode instead.
 
+* :mod:`mimetypes`: Passing a file path (including path-like objects and bytes
+  paths) to :func:`~mimetypes.guess_type`. Use
+  :func:`~mimetypes.guess_file_type` instead. (:gh:`134447`)
+
 * :mod:`os`: Calling :func:`os.register_at_fork` in a multi-threaded process.
 
 * :mod:`os.path`: :func:`os.path.commonprefix` is deprecated, use

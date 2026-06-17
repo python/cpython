@@ -106,7 +106,11 @@ class MimeTypes:
             exts.append(ext)
 
     def guess_type(self, url, strict=True):
-        """Guess the type of a file which is either a URL or a path-like object.
+        """Guess the type of a file based on its URL.
+
+        .. deprecated:: 3.16
+           Passing a file path (or path-like object) is deprecated.
+           Use :meth:`guess_file_type` instead.
 
         Return value is a tuple (type, encoding) where type is None if
         the type can't be guessed (no or unknown suffix) or a string
@@ -127,14 +131,21 @@ class MimeTypes:
         # Lazy import to improve module import time
         import os
         import urllib.parse
+        import warnings
 
-        # TODO: Deprecate accepting file paths (in particular path-like objects).
         url = os.fspath(url)
         p = urllib.parse.urlparse(url)
         if p.scheme and len(p.scheme) > 1:
             scheme = p.scheme
             url = p.path
         else:
+            # Input has no URL scheme — it is a file path, not a URL.
+            warnings.warn(
+                "Passing a file path to guess_type() is deprecated and will be "
+                "removed in a future version. Use guess_file_type() instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             return self.guess_file_type(url, strict=strict)
         if scheme == 'data':
             # syntax of data URLs:
