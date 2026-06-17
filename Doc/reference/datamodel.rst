@@ -2646,6 +2646,19 @@ Attribute lookup speed can be significantly improved as well.
    and *__weakref__* for each instance.
 
 
+.. attribute:: object.__weakref__
+
+   A descriptor added by the implementation to some classes whose instances
+   support weak references.
+
+   This attribute is either ``None`` or a weak reference or proxy object
+   associated with the instance. Use :func:`weakref.getweakrefs` to retrieve
+   all weak references and proxy objects that refer to an object.
+   .. impl-detail::
+
+      This attribute may not exist in all Python implementations.
+
+
 .. _datamodel-note-slots:
 
 Notes on using *__slots__*:
