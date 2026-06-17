@@ -158,7 +158,7 @@ the modern themed widget set and API::
       instead of it being created as an independent toplevel window. *id* must
       be specified in the same way as the value for the -use option for
       toplevel widgets (that is, it has a form like that returned by
-      :meth:`winfo_id`).
+      :meth:`~Misc.winfo_id`).
 
       Note that on some platforms this will only work correctly if *id* refers
       to a Tk frame or toplevel that has its -container option enabled.
@@ -179,13 +179,15 @@ the modern themed widget set and API::
 
    .. attribute:: master
 
-      The widget object that contains this widget.  For :class:`Tk`, the
-      :attr:`!master` is :const:`None` because it is the main window.  The terms
-      *master* and *parent* are similar and sometimes used interchangeably
-      as argument names; however, calling :meth:`winfo_parent` returns a
-      string of the widget name whereas :attr:`!master` returns the object.
-      *parent*/*child* reflects the tree-like relationship while
-      *master* (or *container*)/*content* reflects the container structure.
+      The widget object that contains this widget.
+      For :class:`Tk`, the :attr:`!master` is :const:`None` because it is the
+      main window.
+      The terms *master* and *parent* are similar and sometimes used
+      interchangeably as argument names; however, calling
+      :meth:`~Misc.winfo_parent` returns a string of the widget name whereas
+      :attr:`!master` returns the object.
+      *parent*/*child* reflects the tree-like relationship while *master* (or
+      *container*)/*content* reflects the container structure.
 
    .. attribute:: children
 
@@ -226,13 +228,15 @@ the modern themed widget set and API::
 
 .. function:: Tcl(screenName=None, baseName=None, className='Tk', useTk=False)
 
-   The :func:`Tcl` function is a factory function which creates an object much like
-   that created by the :class:`Tk` class, except that it does not initialize the Tk
-   subsystem.  This is most often useful when driving the Tcl interpreter in an
-   environment where one doesn't want to create extraneous toplevel windows, or
-   where one cannot (such as Unix/Linux systems without an X server).  An object
-   created by the :func:`Tcl` object can have a Toplevel window created (and the Tk
-   subsystem initialized) by calling its :meth:`loadtk` method.
+   The :func:`Tcl` function is a factory function which creates an object much
+   like that created by the :class:`Tk` class, except that it does not
+   initialize the Tk subsystem.
+   This is most often useful when driving the Tcl interpreter in an environment
+   where one doesn't want to create extraneous toplevel windows, or where one
+   cannot (such as Unix/Linux systems without an X server).
+   An object created by the :func:`Tcl` object can have a Toplevel window
+   created (and the Tk subsystem initialized) by calling its :meth:`~Tk.loadtk`
+   method.
 
 
 The modules that provide Tk support include:
@@ -281,7 +285,7 @@ Additional modules:
    Python's Integrated Development and Learning Environment (IDLE). Based
    on :mod:`!tkinter`.
 
-:mod:`tkinter.constants`
+:mod:`!tkinter.constants`
    Symbolic constants that can be used in place of strings when passing
    various parameters to Tkinter calls. Automatically imported by the
    main :mod:`!tkinter` module.
@@ -292,6 +296,8 @@ Additional modules:
 
 :mod:`turtle`
    Turtle graphics in a Tk window.
+
+.. currentmodule:: tkinter
 
 
 Tkinter Life Preserver
@@ -337,12 +343,13 @@ The following line creates a frame widget, which in this case will contain
 a label and a button we'll create next. The frame is fit inside the root
 window.
 
-The next line creates a label widget holding a static text string. The
-:meth:`grid` method is used to specify the relative layout (position) of the
-label within its containing frame widget, similar to how tables in HTML work.
+The next line creates a label widget holding a static text string.
+The :meth:`~Grid.grid` method is used to specify the relative layout (position)
+of the label within its containing frame widget, similar to how tables in HTML
+work.
 
-A button widget is then created, and placed to the right of the label. When
-pressed, it will call the :meth:`destroy` method of the root window.
+A button widget is then created, and placed to the right of the label.
+When pressed, it will call the :meth:`~Misc.destroy` method of the root window.
 
 Finally, the :meth:`mainloop` method puts everything on the display, and
 responds to user input until the program terminates.
@@ -449,9 +456,9 @@ interactive Python shell or with :func:`print`, can help you identify what
 you need.
 
 To find out what configuration options are available on any widget, call its
-:meth:`configure` method, which returns a dictionary containing a variety of
-information about each object, including its default and current values. Use
-:meth:`keys` to get just the names of each option.
+:meth:`~Misc.configure` method, which returns a dictionary containing a variety
+of information about each object, including its default and current values.
+Use :meth:`~Misc.keys` to get just the names of each option.
 
 ::
 
@@ -523,7 +530,8 @@ You'll find many common options and methods in the
 pages, while others are found in the man page for a specific widget class.
 
 You'll also find that many Tkinter methods have compound names, e.g.,
-:func:`winfo_x`, :func:`winfo_height`, :func:`winfo_viewable`.
+:meth:`~Misc.winfo_x`, :meth:`~Misc.winfo_height`,
+:meth:`~Misc.winfo_viewable`.
 You'd find documentation for all of these in the
 `winfo <https://www.tcl-lang.org/man/tcl9.0/TkCmd/winfo.html>`_ man page.
 
@@ -554,14 +562,16 @@ from a thread other than the one that created the :class:`Tk` object, an event
 is posted to the interpreter's event queue, and when executed, the result is
 returned to the calling Python thread.
 
-Tcl/Tk applications are normally event-driven, meaning that after initialization,
-the interpreter runs an event loop (i.e. :func:`Tk.mainloop`) and responds to events.
-Because it is single-threaded, event handlers must respond quickly, otherwise they
-will block other events from being processed. To avoid this, any long-running
-computations should not run in an event handler, but are either broken into smaller
-pieces using timers, or run in another thread. This is different from many GUI
-toolkits where the GUI runs in a completely separate thread from all application
-code including event handlers.
+Tcl/Tk applications are normally event-driven, meaning that after
+initialization, the interpreter runs an event loop (i.e.
+:meth:`Tk.mainloop <Misc.mainloop>`) and responds to events.
+Because it is single-threaded, event handlers must respond quickly, otherwise
+they will block other events from being processed.
+To avoid this, any long-running computations should not run in an event
+handler, but are either broken into smaller pieces using timers, or run in
+another thread.
+This is different from many GUI toolkits where the GUI runs in a completely
+separate thread from all application code including event handlers.
 
 If the Tcl interpreter is not running the event loop and processing events, any
 :mod:`!tkinter` calls made from threads other than the one running the Tcl
@@ -633,11 +643,11 @@ document.  Some options don't apply to some kinds of widgets. Whether a given
 widget responds to a particular option depends on the class of the widget;
 buttons have a ``command`` option, labels do not.
 
-The options supported by a given widget are listed in that widget's man page, or
-can be queried at runtime by calling the :meth:`config` method without
-arguments, or by calling the :meth:`keys` method on that widget.  The return
-value of these calls is a dictionary whose key is the name of the option as a
-string (for example, ``'relief'``) and whose values are 5-tuples.
+The options supported by a given widget are listed in that widget's man page,
+or can be queried at runtime by calling the :meth:`~Misc.config` method without
+arguments, or by calling the :meth:`~Misc.keys` method on that widget.
+The return value of these calls is a dictionary whose key is the name of the
+option as a string (for example, ``'relief'``) and whose values are 5-tuples.
 
 Some options, like ``bg`` are synonyms for common options with long names
 (``bg`` is shorthand for "background"). Passing the ``config()`` method the name
@@ -691,10 +701,11 @@ Additionally, the arrangement is dynamically adjusted to accommodate incremental
 changes to the configuration, once it is packed.
 
 Note that widgets do not appear until they have had their geometry specified
-with a geometry manager.  It's a common early mistake to leave out the geometry
-specification, and then be surprised when the widget is created but nothing
-appears.  A widget will appear only after it has had, for example, the packer's
-:meth:`pack` method applied to it.
+with a geometry manager.
+It's a common early mistake to leave out the geometry specification, and then
+be surprised when the widget is created but nothing appears.
+A widget will appear only after it has had, for example, the packer's
+:meth:`~Pack.pack` method applied to it.
 
 The pack() method can be called with keyword-option/value pairs that control
 where the widget is to appear within its container, and how it is to behave when
@@ -749,10 +760,11 @@ defined in :mod:`!tkinter`.
 
 There are many useful subclasses of Variable already defined:
 :class:`StringVar`, :class:`IntVar`, :class:`DoubleVar`, and
-:class:`BooleanVar`.  To read the current value of such a variable, call the
-:meth:`get` method on it, and to change its value you call the :meth:`!set`
-method.  If you follow this protocol, the widget will always track the value of
-the variable, with no further intervention on your part.
+:class:`BooleanVar`.
+To read the current value of such a variable, call the :meth:`~Variable.get`
+method on it, and to change its value you call the :meth:`!set` method.
+If you follow this protocol, the widget will always track the value of the
+variable, with no further intervention on your part.
 
 For example::
 
@@ -799,12 +811,12 @@ subclassed from the :class:`Wm` class, and so can call the :class:`Wm` methods
 directly.
 
 To get at the toplevel window that contains a given widget, you can often just
-refer to the widget's :attr:`master`.
+refer to the widget's :attr:`~Tk.master`.
 Of course if the widget has been packed inside of a frame, the :attr:`!master`
 won't represent a toplevel window.
 To get at the toplevel window that contains an arbitrary widget, you can call
-the :meth:`winfo_toplevel` method.
-There is also a :meth:`_root` method; it begins with an underscore to denote
+the :meth:`~Misc.winfo_toplevel` method.
+There is also a :meth:`!_root` method; it begins with an underscore to denote
 the fact that this function is part of the implementation, and not an interface
 to Tk functionality.
 It returns the application's root window rather than the nearest enclosing
@@ -866,7 +878,7 @@ color
 
 cursor
    The standard X cursor names from :file:`cursorfont.h` can be used, without the
-   ``XC_`` prefix.  For example to get a hand cursor (:const:`XC_hand2`), use the
+   ``XC_`` prefix.  For example to get a hand cursor (``XC_hand2``), use the
    string ``"hand2"``.  You can also specify a bitmap and mask file of your own.
    See page 179 of Ousterhout's book.
 
@@ -1116,6 +1128,11 @@ This section documents the classes, methods, functions and constants of the
 :mod:`!tkinter` module.
 Most of them wrap Tcl/Tk commands; consult the official Tcl/Tk manual pages for
 the full list of widget options and further details.
+
+.. exception:: TclError
+
+   The exception raised when a call into the Tcl interpreter fails, for example
+   when a widget is given an unknown option or an invalid value.
 
 Base and mixin classes
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -3272,7 +3289,7 @@ Widget classes
 
       Return the current value of the configuration option *option* for the
       item given by *tagOrId* (the lowest matching item if it matches several).
-      This is like :meth:`~Widget.cget` but applies to an individual item.
+      This is like :meth:`~Misc.cget` but applies to an individual item.
 
    .. method:: itemconfig(tagOrId, cnf=None, **kw)
       :no-typesetting:
@@ -3281,7 +3298,7 @@ Widget classes
 
       Query or modify the configuration options of the items given by
       *tagOrId*.
-      This mirrors :meth:`~Widget.configure`, except that it applies to
+      This mirrors :meth:`~Misc.configure`, except that it applies to
       individual items rather than to the canvas as a whole.
       With no options, it returns a dictionary describing the current options
       of the first matching item; otherwise it sets the given options on every
@@ -3431,8 +3448,9 @@ Widget classes
       Bind the callback *func* to the event *sequence* for all items given by
       *tagOrId*, so that *func* is invoked whenever that event occurs for one
       of the items.
-      This is like :meth:`Widget.bind` but operates on canvas items rather than
-      on whole widgets; only mouse, keyboard and virtual events may be bound.
+      This is like :meth:`Widget.bind <Misc.bind>` but operates on canvas items
+      rather than on whole widgets; only mouse, keyboard and virtual events may
+      be bound.
       Mouse events are directed to the current item and keyboard events to the
       focus item (see :meth:`focus`).
       If *add* is true the new binding is added to any existing bindings for
@@ -3909,10 +3927,13 @@ Widget classes
       Return the current value of the configuration option *option* for the
       item given by *index*.
 
+   .. method:: itemconfig(index, cnf=None, **kw)
+      :no-typesetting:
+
    .. method:: itemconfigure(index, cnf=None, **kw)
 
       Query or modify the configuration options of the item given by *index*.
-      This mirrors :meth:`~Widget.configure`, except that it applies to an
+      This mirrors :meth:`~Misc.configure`, except that it applies to an
       individual item rather than to the listbox as a whole.
       With no options, it returns a dictionary describing the current options
       of the item; otherwise it sets the given options.
@@ -4051,7 +4072,7 @@ Widget classes
    .. method:: entryconfigure(index, cnf=None, **kw)
 
       Query or modify the configuration options of the entry given by *index*.
-      This mirrors :meth:`~Widget.configure`, except that it applies to an
+      This mirrors :meth:`~Misc.configure`, except that it applies to an
       individual entry rather than to the menu as a whole.
       With no options, it returns a dictionary describing the current options
       of the entry; otherwise it sets the given options.
@@ -4768,7 +4789,7 @@ Widget classes
    .. method:: tag_configure(tagName, cnf=None, **kw)
 
       Query or modify the configuration options of the tag *tagName*.
-      This mirrors :meth:`~Widget.configure`, except that it applies to a tag
+      This mirrors :meth:`~Misc.configure`, except that it applies to a tag
       rather than to the widget as a whole: with no options it returns a
       dictionary describing the current options, otherwise it sets the given
       options.
@@ -4866,7 +4887,7 @@ Widget classes
    .. method:: image_configure(index, cnf=None, **kw)
 
       Query or modify the configuration options of the embedded image at
-      *index*, like :meth:`~Widget.configure` but applied to that image.
+      *index*, like :meth:`~Misc.configure` but applied to that image.
 
    .. method:: image_names()
 
@@ -4891,7 +4912,7 @@ Widget classes
    .. method:: window_configure(index, cnf=None, **kw)
 
       Query or modify the configuration options of the embedded window at
-      *index*, like :meth:`~Widget.configure` but applied to that window.
+      *index*, like :meth:`~Misc.configure` but applied to that window.
 
       :meth:`window_config` is an alias of :meth:`!window_configure`.
 
@@ -5666,7 +5687,7 @@ Constants
 ^^^^^^^^^
 
 The following symbolic constants are available in both the :mod:`!tkinter`
-and :mod:`tkinter.constants` namespaces.
+and :mod:`!tkinter.constants` namespaces.
 
 .. data:: TRUE
           YES
