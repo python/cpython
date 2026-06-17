@@ -30,6 +30,7 @@
 #endif
 
 #include <Python.h>
+#include "pycore_context.h"       // _PyContextVar_GetChanged()
 #include "pycore_object.h"        // _PyObject_VisitType()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_typeobject.h"
@@ -1937,8 +1938,8 @@ current_context(decimal_state *state)
 {
     PyObject *tl_context;
     int changed;
-    if (PyContextVar_GetChanged(state->current_context_var, NULL, &tl_context,
-                                &changed) < 0) {
+    if (_PyContextVar_GetChanged(state->current_context_var, NULL, &tl_context,
+                                 &changed) < 0) {
         return NULL;
     }
 

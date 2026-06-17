@@ -447,8 +447,8 @@ contextvar_check_changed(PyContext *ctx, PyContextVar *var, PyObject *cur_val)
 
 
 int
-PyContextVar_GetChanged(PyObject *ovar, PyObject *def, PyObject **val,
-                        int *changed)
+_PyContextVar_GetChanged(PyObject *ovar, PyObject *def, PyObject **val,
+                         int *changed)
 {
     ENSURE_ContextVar(ovar, -1)
     PyContextVar *var = (PyContextVar *)ovar;
@@ -1204,7 +1204,7 @@ _contextvars_ContextVar_reset_impl(PyContextVar *self, PyObject *token)
 
 /*[clinic input]
 @permit_long_docstring_body
-_contextvars.ContextVar.get_changed
+_contextvars.ContextVar._get_changed
     default: object = NULL
     /
 
@@ -1225,13 +1225,13 @@ When the value is found via a default, *changed* is always False.
 [clinic start generated code]*/
 
 static PyObject *
-_contextvars_ContextVar_get_changed_impl(PyContextVar *self,
-                                         PyObject *default_value)
-/*[clinic end generated code: output=2418683613ac96e7 input=2dacfcf7b43f9719]*/
+_contextvars_ContextVar__get_changed_impl(PyContextVar *self,
+                                          PyObject *default_value)
+/*[clinic end generated code: output=16b72be2c79429e9 input=aa6c784a3846a840]*/
 {
     PyObject *val;
     int changed;
-    if (PyContextVar_GetChanged(
+    if (_PyContextVar_GetChanged(
             (PyObject *)self, default_value, &val, &changed) < 0) {
         return NULL;
     }
@@ -1257,7 +1257,7 @@ static PyMethodDef PyContextVar_methods[] = {
     _CONTEXTVARS_CONTEXTVAR_GET_METHODDEF
     _CONTEXTVARS_CONTEXTVAR_SET_METHODDEF
     _CONTEXTVARS_CONTEXTVAR_RESET_METHODDEF
-    _CONTEXTVARS_CONTEXTVAR_GET_CHANGED_METHODDEF
+    _CONTEXTVARS_CONTEXTVAR__GET_CHANGED_METHODDEF
     {"__class_getitem__", Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL, NULL}

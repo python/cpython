@@ -361,7 +361,7 @@ def getcontext():
     New contexts are copies of DefaultContext.
     """
     try:
-        context, changed = _current_context_var.get_changed()
+        context, changed = _current_context_var._get_changed()
     except LookupError:
         context = Context()
         _current_context_var.set(context)

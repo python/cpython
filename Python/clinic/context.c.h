@@ -206,8 +206,8 @@ _contextvars_ContextVar_reset(PyObject *self, PyObject *token)
     return return_value;
 }
 
-PyDoc_STRVAR(_contextvars_ContextVar_get_changed__doc__,
-"get_changed($self, default=<unrepresentable>, /)\n"
+PyDoc_STRVAR(_contextvars_ContextVar__get_changed__doc__,
+"_get_changed($self, default=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Return a tuple of (value, changed) for the context variable.\n"
@@ -225,20 +225,20 @@ PyDoc_STRVAR(_contextvars_ContextVar_get_changed__doc__,
 "\n"
 "When the value is found via a default, *changed* is always False.");
 
-#define _CONTEXTVARS_CONTEXTVAR_GET_CHANGED_METHODDEF    \
-    {"get_changed", _PyCFunction_CAST(_contextvars_ContextVar_get_changed), METH_FASTCALL, _contextvars_ContextVar_get_changed__doc__},
+#define _CONTEXTVARS_CONTEXTVAR__GET_CHANGED_METHODDEF    \
+    {"_get_changed", _PyCFunction_CAST(_contextvars_ContextVar__get_changed), METH_FASTCALL, _contextvars_ContextVar__get_changed__doc__},
 
 static PyObject *
-_contextvars_ContextVar_get_changed_impl(PyContextVar *self,
-                                         PyObject *default_value);
+_contextvars_ContextVar__get_changed_impl(PyContextVar *self,
+                                          PyObject *default_value);
 
 static PyObject *
-_contextvars_ContextVar_get_changed(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+_contextvars_ContextVar__get_changed(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *default_value = NULL;
 
-    if (!_PyArg_CheckPositional("get_changed", nargs, 0, 1)) {
+    if (!_PyArg_CheckPositional("_get_changed", nargs, 0, 1)) {
         goto exit;
     }
     if (nargs < 1) {
@@ -246,7 +246,7 @@ _contextvars_ContextVar_get_changed(PyObject *self, PyObject *const *args, Py_ss
     }
     default_value = args[0];
 skip_optional:
-    return_value = _contextvars_ContextVar_get_changed_impl((PyContextVar *)self, default_value);
+    return_value = _contextvars_ContextVar__get_changed_impl((PyContextVar *)self, default_value);
 
 exit:
     return return_value;
@@ -302,4 +302,4 @@ token_exit(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0adcad33b8abcf29 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cc072c96b14bdbd3 input=a9049054013a1b77]*/
