@@ -764,7 +764,7 @@ def _main(args=None):
         return results
     else:
         for gtype in args.type:
-            guess, encoding = guess_type(gtype, not args.lenient)
+            guess, encoding = guess_file_type(gtype, strict=not args.lenient)
             if guess:
                 results.append(f"type: {guess} encoding: {encoding}")
             else:

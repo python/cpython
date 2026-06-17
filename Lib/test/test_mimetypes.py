@@ -235,14 +235,14 @@ class MimeTypesModuleTestCase(unittest.TestCase):
 
     def test_added_types_are_used(self):
         mimetypes.add_type('testing/default-type', '')
-        mime_type, _ = mimetypes.guess_type('')
+        mime_type, _ = mimetypes.guess_file_type('')
         self.assertEqual(mime_type, 'testing/default-type')
 
-        mime_type, _ = mimetypes.guess_type('test.myext')
+        mime_type, _ = mimetypes.guess_file_type('test.myext')
         self.assertEqual(mime_type, None)
 
         mimetypes.add_type('testing/type', '.myext')
-        mime_type, _ = mimetypes.guess_type('test.myext')
+        mime_type, _ = mimetypes.guess_file_type('test.myext')
         self.assertEqual(mime_type, 'testing/type')
 
     def test_add_type_with_undotted_extension_not_supported(self):
@@ -392,21 +392,26 @@ class MimeTypesClassTestCase(unittest.TestCase):
                 path = prefix + name
                 with self.subTest(path=path):
                     eq(self.db.guess_file_type(path), gzip_expected)
-                    eq(self.db.guess_type(path), gzip_expected)
+                    with self.assertWarns(DeprecationWarning):
+                        eq(self.db.guess_type(path), gzip_expected)
             expected = (None, None) if os.name == 'nt' else gzip_expected
             for prefix in ('//', '\\\\', '//share/', '\\\\share\\'):
                 path = prefix + name
                 with self.subTest(path=path):
                     eq(self.db.guess_file_type(path), expected)
-                    eq(self.db.guess_type(path), expected)
+                    with self.assertWarns(DeprecationWarning):
+                        eq(self.db.guess_type(path), expected)
         eq(self.db.guess_file_type(r" \"\`;b&b&c |.tar.gz"), gzip_expected)
-        eq(self.db.guess_type(r" \"\`;b&b&c |.tar.gz"), gzip_expected)
+        with self.assertWarns(DeprecationWarning):
+            eq(self.db.guess_type(r" \"\`;b&b&c |.tar.gz"), gzip_expected)
 
         eq(self.db.guess_file_type(r'foo/.tar.gz'), (None, 'gzip'))
-        eq(self.db.guess_type(r'foo/.tar.gz'), (None, 'gzip'))
+        with self.assertWarns(DeprecationWarning):
+            eq(self.db.guess_type(r'foo/.tar.gz'), (None, 'gzip'))
         expected = (None, 'gzip') if os.name == 'nt' else gzip_expected
         eq(self.db.guess_file_type(r'foo\.tar.gz'), expected)
-        eq(self.db.guess_type(r'foo\.tar.gz'), expected)
+        with self.assertWarns(DeprecationWarning):
+            eq(self.db.guess_type(r'foo\.tar.gz'), expected)
         eq(self.db.guess_type(r'scheme:foo\.tar.gz'), gzip_expected)
 
     def test_url(self):
@@ -464,16 +469,20 @@ class MimeTypesClassTestCase(unittest.TestCase):
         expected = self.db.guess_file_type(filename)
 
         self.assertEqual(self.db.guess_file_type(filepath), expected)
-        self.assertEqual(self.db.guess_type(filepath), expected)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(self.db.guess_type(filepath), expected)
         self.assertEqual(self.db.guess_file_type(
             filepath_with_abs_dir), expected)
-        self.assertEqual(self.db.guess_type(
-            filepath_with_abs_dir), expected)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(self.db.guess_type(
+                filepath_with_abs_dir), expected)
         self.assertEqual(self.db.guess_file_type(filepath_relative), expected)
-        self.assertEqual(self.db.guess_type(filepath_relative), expected)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(self.db.guess_type(filepath_relative), expected)
 
         self.assertEqual(self.db.guess_file_type(path_dir), (None, None))
-        self.assertEqual(self.db.guess_type(path_dir), (None, None))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(self.db.guess_type(path_dir), (None, None))
 
     def test_bytes_path(self):
         self.assertEqual(self.db.guess_file_type(b'foo.html'),
@@ -601,9 +610,9 @@ class Win32MimeTypesTestCase(unittest.TestCase):
         # Windows registry is undocumented AFAIK.
         # Use file types that should *always* exist:
         eq = self.assertEqual
-        eq(self.db.guess_type("foo.txt"), ("text/plain", None))
-        eq(self.db.guess_type("image.jpg"), ("image/jpeg", None))
-        eq(self.db.guess_type("image.png"), ("image/png", None))
+        eq(self.db.guess_file_type("foo.txt"), ("text/plain", None))
+        eq(self.db.guess_file_type("image.jpg"), ("image/jpeg", None))
+        eq(self.db.guess_file_type("image.png"), ("image/png", None))
 
     @unittest.skipIf(not hasattr(_winapi, "_mimetypes_read_windows_registry"),
                      "read_windows_registry accelerator unavailable")
