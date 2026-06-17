@@ -294,6 +294,10 @@ def configure_wasi_python(context, working_dir):
         file.write(f'#!/bin/sh\nexec {host_runner} {python_wasm} "$@"\n')
     exec_script.chmod(0o755)
     print(f"🏃‍♀️ Created {exec_script} ... ")
+    pybuilddir_txt = working_dir / "pybuilddir.txt"
+    if not pybuilddir_txt.exists():
+        os.symlink(CHECKOUT / "pybuilddir.txt", pybuilddir_txt)
+        log("📝", f"Symlinked {pybuilddir_txt} to normal location")
     sys.stdout.flush()
 
 
