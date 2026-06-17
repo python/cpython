@@ -59,10 +59,7 @@ CAN_IGNORE_UNKNOWN_OPENSSL_SIGALGS = ssl.OPENSSL_VERSION_INFO >= (3, 3)
 CAN_GET_SELECTED_OPENSSL_SIGALG = ssl.OPENSSL_VERSION_INFO >= (3, 5)
 PY_SSL_DEFAULT_CIPHERS = sysconfig.get_config_var('PY_SSL_DEFAULT_CIPHERS')
 
-HAS_KEYLOG = hasattr(ssl.SSLContext, 'keylog_filename')
-requires_keylog = unittest.skipUnless(
-    HAS_KEYLOG, 'test requires OpenSSL 1.1.1 with keylog callback')
-CAN_SET_KEYLOG = HAS_KEYLOG and os.name != "nt"
+CAN_SET_KEYLOG = (os.name != "nt")
 requires_keylog_setter = unittest.skipUnless(
     CAN_SET_KEYLOG,
     "cannot set 'keylog_filename' on Windows"
@@ -5453,7 +5450,6 @@ class TestSSLDebug(unittest.TestCase):
         with open(fname) as f:
             return len(list(f))
 
-    @requires_keylog
     def test_keylog_defaults(self):
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -5481,7 +5477,6 @@ class TestSSLDebug(unittest.TestCase):
         with self.assertRaises(TypeError):
             ctx.keylog_filename = 1
 
-    @requires_keylog
     def test_keylog_filename(self):
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         client_context, server_context, hostname = testing_context()
@@ -5522,7 +5517,6 @@ class TestSSLDebug(unittest.TestCase):
         client_context.keylog_filename = None
         server_context.keylog_filename = None
 
-    @requires_keylog
     @unittest.skipIf(sys.flags.ignore_environment,
                      "test is not compatible with ignore_environment")
     def test_keylog_env(self):
@@ -5698,17 +5692,24 @@ class TestPreHandshakeClose(unittest.TestCase):
             return  # Expect the full test setup to always work on Linux.
         if (isinstance(err, (ConnectionResetError, ConnectionAbortedError)) or
             (isinstance(err, OSError) and err.errno == errno.EINVAL) or
-            re.search('wrong.version.number', str(getattr(err, "reason", "")), re.I) or
-            re.search('record.layer.failure', str(getattr(err, "reason", "")), re.I)
+            re.search(
+                # Matches the following error messages:
+                # '[SSL: WRONG_VERSION_NUMBER] wrong version number (_ssl.c:1123)'
+                # '[SSL: RECORD_LAYER_FAILURE] record layer failure (_ssl.c:1109)'
+                # '[SSL: HTTP_REQUEST] http request (_ssl.c:1143)'
+                r'wrong.version.number|record.layer.failure|http.request',
+                str(getattr(err, "reason", "")),
+                re.IGNORECASE,
+            )
         ):
             # On Windows the TCP RST leads to a ConnectionResetError
             # (ECONNRESET) which Linux doesn't appear to surface to userspace.
             # If wrap_socket() winds up on the "if connected:" path and doing
             # the actual wrapping... we get an SSLError from OpenSSL. This is
             # typically WRONG_VERSION_NUMBER. The same happens on iOS, but
-            # RECORD_LAYER_FAILURE is the error.
+            # RECORD_LAYER_FAILURE or HTTP_REQUEST is the error.
             #
-            # While appropriate, neither is the scenario we're specifically
+            # While appropriate, these scenarios aren't what we're specifically
             # trying to test. The way this test is written is known to work on
             # Linux. We'll skip it anywhere else that it does not present as
             # doing so.

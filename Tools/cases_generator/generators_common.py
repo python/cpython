@@ -7,14 +7,12 @@ from analyzer import (
     analysis_error,
     Label,
     CodeSection,
-    Uop,
 )
 from cwriter import CWriter
 from typing import Callable, TextIO, Iterator, Iterable
 from lexer import Token
 from stack import Storage, StackError
 from parser import Stmt, SimpleStmt, BlockStmt, IfStmt, ForStmt, WhileStmt, MacroIfStmt
-from stack import PRINT_STACKS
 DEBUG = False
 
 class TokenIterator:

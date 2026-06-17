@@ -1473,6 +1473,9 @@ pyexpat_encoding_create(const char *name, PyObject *mapping)
 static int
 pyexpat_encoding_convert(void *data, const char *s)
 {
+    if (PyErr_Occurred()) {
+        return -1;
+    }
     pyexpat_encoding_info *info = (pyexpat_encoding_info *)data;
     int i = (unsigned char)s[0];
     assert(info->map[i] < -1);
