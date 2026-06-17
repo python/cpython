@@ -2507,6 +2507,9 @@ EOF
 
     if test "$ac_cv_thread_stack_size" != "default" -a "$ac_cv_thread_stack_size" != "unknown"; then
         LDFLAGS="$LDFLAGS -Wl,-z,stack-size=$ac_cv_thread_stack_size"
+        # Stack size used by Python/ceval.c to set Py_C_STACK_SIZE
+        AC_DEFINE_UNQUOTED([_Py_LINKER_THREAD_STACK_SIZE], [$ac_cv_thread_stack_size],
+                  [Thread stack size set by the linker (in bytes).])
     fi
 fi
 
@@ -8447,9 +8450,11 @@ PY_STDLIB_MOD([_testmultiphase], [test "$TEST_MODULES" = yes], [test "$ac_cv_fun
 PY_STDLIB_MOD([_testsinglephase], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 PY_STDLIB_MOD([xxsubtype], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_xxtestfuzz], [test "$TEST_MODULES" = yes])
+dnl Check have_libffi so _ctypes_test is only built if _ctypes is built.
+dnl _ctypes_test doesn't use libffi directly.
 PY_STDLIB_MOD([_ctypes_test],
   [test "$TEST_MODULES" = yes], [test "$have_libffi" = yes -a "$ac_cv_func_dlopen" = yes],
-  [$LIBFFI_CFLAGS], [$LIBFFI_LIBS $LIBM])
+  [], [$LIBM])
 
 dnl Limited API template modules.
 dnl Emscripten does not support shared libraries yet.

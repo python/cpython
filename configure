@@ -9927,6 +9927,10 @@ printf "%s\n" "$ac_cv_thread_stack_size" >&6; }
 
     if test "$ac_cv_thread_stack_size" != "default" -a "$ac_cv_thread_stack_size" != "unknown"; then
         LDFLAGS="$LDFLAGS -Wl,-z,stack-size=$ac_cv_thread_stack_size"
+        # Stack size used by Python/ceval.c to set Py_C_STACK_SIZE
+
+printf "%s\n" "#define _Py_LINKER_THREAD_STACK_SIZE $ac_cv_thread_stack_size" >>confdefs.h
+
     fi
 fi
 
@@ -35116,8 +35120,8 @@ fi
   if test "x$py_cv_module__ctypes_test" = xyes
 then :
 
-    as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST_CFLAGS=$LIBFFI_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST_LDFLAGS=$LIBFFI_LIBS $LIBM$as_nl"
+
+    as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST_LDFLAGS=$LIBM$as_nl"
 
 fi
    if test "$py_cv_module__ctypes_test" = yes; then
