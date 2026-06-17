@@ -150,9 +150,9 @@ scrollbar.
 |                | calls the *xscrollcommand* callback.                    |
 |                |                                                         |
 |                | Usually this option consists of the method              |
-|                | :meth:`Scrollbar.set` of some scrollbar. This will cause|
-|                | the scrollbar to be updated whenever the view in the    |
-|                | window changes.                                         |
+|                | :meth:`Scrollbar.set <tkinter.Scrollbar.set>` of some   |
+|                | scrollbar. This will cause the scrollbar to be updated  |
+|                | whenever the view in the window changes.                |
 +----------------+---------------------------------------------------------+
 | yscrollcommand | Used to communicate with vertical scrollbars.           |
 |                | For some more information, see above.                   |
@@ -261,7 +261,8 @@ ttk.Widget
 ^^^^^^^^^^
 
 Besides the methods described below, the :class:`ttk.Widget` supports the
-methods :meth:`tkinter.Widget.cget` and :meth:`tkinter.Widget.configure`.
+methods :meth:`tkinter.Widget.cget` and
+:meth:`tkinter.Widget.configure <tkinter.Misc.configure>`.
 
 .. class:: Widget
 
@@ -298,8 +299,9 @@ The :class:`ttk.Combobox` widget combines a text field with a pop-down list of
 values. This widget is a subclass of :class:`Entry`.
 
 Besides the methods inherited from :class:`Widget`: :meth:`Widget.cget`,
-:meth:`Widget.configure`, :meth:`Widget.identify`, :meth:`Widget.instate`
-and :meth:`Widget.state`, and the following inherited from :class:`Entry`:
+:meth:`Widget.configure <tkinter.Misc.configure>`, :meth:`Widget.identify`,
+:meth:`Widget.instate` and :meth:`Widget.state`, and the following inherited
+from :class:`Entry`:
 :meth:`Entry.bbox`, :meth:`Entry.delete`, :meth:`Entry.icursor`,
 :meth:`Entry.index`, :meth:`Entry.insert`, :meth:`Entry.selection`,
 :meth:`Entry.xview`, it has some other methods, described at
@@ -391,8 +393,9 @@ and decrement arrows.  It can be used for numbers or lists of string values.
 This widget is a subclass of :class:`Entry`.
 
 Besides the methods inherited from :class:`Widget`: :meth:`Widget.cget`,
-:meth:`Widget.configure`, :meth:`Widget.identify`, :meth:`Widget.instate`
-and :meth:`Widget.state`, and the following inherited from :class:`Entry`:
+:meth:`Widget.configure <tkinter.Misc.configure>`, :meth:`Widget.identify`,
+:meth:`Widget.instate` and :meth:`Widget.state`, and the following inherited
+from :class:`Entry`:
 :meth:`Entry.bbox`, :meth:`Entry.delete`, :meth:`Entry.icursor`,
 :meth:`Entry.index`, :meth:`Entry.insert`, :meth:`Entry.xview`,
 it has some other methods, described at :class:`ttk.Spinbox`.
@@ -1803,12 +1806,14 @@ and inherits the common methods of :class:`Widget`.
 
    .. method:: configure(cnf=None, **kw)
 
-      Modify or query the widget options, like :meth:`Widget.configure`.
+      Modify or query the widget options, like
+      :meth:`Widget.configure <tkinter.Misc.configure>`.
       In addition, this method clips the ``from`` and ``to`` values so that the
       current value stays within the range defined by them.
 
       .. versionchanged:: 3.9
-         Now returns the configuration value, like :meth:`Widget.configure`.
+         Now returns the configuration value, like
+         :meth:`Widget.configure <tkinter.Misc.configure>`.
 
 
    .. method:: get(x=None, y=None)
@@ -1849,8 +1854,9 @@ and inherits the common methods of :class:`Widget`.
 
    A :class:`Frame` containing a :class:`Scale` and a :class:`Label` that shows
    the scale's current value.
-   *variable* is the :class:`IntVar` tracked by the scale (one is created if it
-   is not given), and *from_* and *to* define the range of the scale.
+   *variable* is the :class:`~tkinter.IntVar` tracked by the scale (one is
+   created if it is not given), and *from_* and *to* define the range of the
+   scale.
 
    .. method:: destroy()
 

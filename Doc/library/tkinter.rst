@@ -511,7 +511,7 @@ name of a method to call).
 
 In the official Tcl/Tk reference documentation, you'll find most operations
 that look like method calls on the man page for a specific widget (e.g.,
-you'll find the :meth:`invoke` method on the
+you'll find the :meth:`~tkinter.ttk.Button.invoke` method on the
 `ttk::button <https://www.tcl-lang.org/man/tcl9.0/TkCmd/ttk_button.html>`_
 man page), while functions that take a widget as a parameter often have
 their own man page (e.g.,
