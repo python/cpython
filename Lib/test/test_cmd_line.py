@@ -1314,6 +1314,17 @@ class CmdLineTest(unittest.TestCase):
         proc = assert_python_ok("-X", f"presite={entrypoint}", "-c", "pass")
         self.assertEqual(proc.out.rstrip(), b"presite func")
 
+    def test_dump_path_config(self):
+        # gh-151253: At the first import (import encodings) during Python
+        # startup, if the import fails, dump the Python path configuration.
+        nonexistent = '/nonexistent-python-path'
+        # Use -X frozen_modules=off to disable frozen encodings module
+        # on release build.
+        cmd = ["-X", "frozen_modules=off", "-c", "pass"]
+        proc = assert_python_failure(*cmd, PYTHONHOME=nonexistent)
+        self.assertIn(b'Python path configuration:', proc.err)
+        self.assertIn(f"PYTHONHOME = '{nonexistent}'".encode(), proc.err)
+
 
 @unittest.skipIf(interpreter_requires_environment(),
                  'Cannot run -I tests when PYTHON env vars are required.')
