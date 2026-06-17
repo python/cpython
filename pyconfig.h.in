@@ -2067,6 +2067,9 @@
 /* Define if you have the 'PR_SET_VMA_ANON_NAME' constant. */
 #undef _Py_HAVE_PR_SET_VMA_ANON_NAME
 
+/* Thread stack size set by the linker (in bytes). */
+#undef _Py_LINKER_THREAD_STACK_SIZE
+
 /* Define to 1 if the machine stack grows down (default); 0 if it grows up. */
 #undef _Py_STACK_GROWS_DOWN
 
