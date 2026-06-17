@@ -4431,8 +4431,8 @@ class TestExtractionFilters(unittest.TestCase):
         for filter in 'tar', 'fully_trusted':
             with self.subTest(filter), self.check_context(arc.open(), filter):
                 if not os_helper.can_symlink():
-                    self.expect_file("a/b/s")
-                    self.expect_file("s")
+                    self.expect_file("a/")
+                    self.expect_file("a/b/")
                 else:
                     self.expect_file("a/b/s", symlink_to=os.path.join('..', 'escape'))
                     self.expect_file("s", symlink_to=os.path.join('..', 'escape'))
