@@ -297,7 +297,7 @@ def configure_wasi_python(context, working_dir):
     pybuilddir_txt = working_dir / "pybuilddir.txt"
     if not pybuilddir_txt.exists():
         os.symlink(CHECKOUT / "pybuilddir.txt", pybuilddir_txt)
-        log("📝", f"Symlinked {pybuilddir_txt} to normal location")
+        print(f"📝 Symlinked {pybuilddir_txt} to normal location")
     sys.stdout.flush()
 
 
