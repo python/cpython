@@ -243,8 +243,8 @@ These do not emulate the native look-and-feel of the platform.
 
    .. method:: ok_command()
 
-      Test that a file is provided and that the selection
-      indicates an already existing file.
+      Test that a file is provided and that the selection indicates an
+      already existing file.
 
 .. class:: SaveFileDialog(master, title=None)
 
@@ -254,8 +254,8 @@ These do not emulate the native look-and-feel of the platform.
    .. method:: ok_command()
 
       Test whether or not the selection points to a valid file that is not a
-      directory.
-      Confirmation is required if an already existing file is selected.
+      directory. Confirmation is required if an already existing file is
+      selected.
 
 :mod:`!tkinter.commondialog` --- Dialog window templates
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
