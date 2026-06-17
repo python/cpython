@@ -4666,7 +4666,9 @@ dummy_func(
             tstate->py_recursion_remaining--;
             RELOAD_STACK();
             LOAD_IP(0);
+            #ifdef Py_DEBUG
             assert(frame->previous->stackpointer_valid == 1);
+            #endif
             DTRACE_FUNCTION_ENTRY();
             LLTRACE_RESUME_FRAME();
         }
@@ -6480,7 +6482,7 @@ dummy_func(
         }
 
         label(error) {
-            assert(frame->stackpointer_valid == 0);
+            _PyFrame_StackAssertInvalid(frame);
             /* Double-check exception status. */
 #ifdef NDEBUG
             if (!_PyErr_Occurred(tstate)) {
@@ -6599,7 +6601,9 @@ dummy_func(
         }
 
         spilled label(start_frame) {
+            #ifdef Py_DEBUG
             assert(frame->stackpointer_valid == 1);
+            #endif
             int too_deep = _Py_EnterRecursivePy(tstate);
             if (too_deep) {
                 goto exit_unwind_notrace;

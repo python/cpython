@@ -17612,7 +17612,9 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             _PyFrame_StackPointerInvalidate(frame);
             LOAD_IP(0);
+            #ifdef Py_DEBUG
             assert(frame->previous->stackpointer_valid == 1);
+            #endif
             DTRACE_FUNCTION_ENTRY();
             LLTRACE_RESUME_FRAME();
             SET_CURRENT_CACHED_VALUES(0);

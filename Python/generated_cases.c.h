@@ -796,7 +796,9 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 LOAD_IP(0);
+                #ifdef Py_DEBUG
                 assert(frame->previous->stackpointer_valid == 1);
+                #endif
                 DTRACE_FUNCTION_ENTRY();
                 LLTRACE_RESUME_FRAME();
             }
@@ -2072,7 +2074,9 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 LOAD_IP(0);
+                #ifdef Py_DEBUG
                 assert(frame->previous->stackpointer_valid == 1);
+                #endif
                 DTRACE_FUNCTION_ENTRY();
                 LLTRACE_RESUME_FRAME();
             }
@@ -2220,7 +2224,9 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 LOAD_IP(0);
+                #ifdef Py_DEBUG
                 assert(frame->previous->stackpointer_valid == 1);
+                #endif
                 DTRACE_FUNCTION_ENTRY();
                 LLTRACE_RESUME_FRAME();
             }
@@ -2354,7 +2360,9 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 LOAD_IP(0);
+                #ifdef Py_DEBUG
                 assert(frame->previous->stackpointer_valid == 1);
+                #endif
                 DTRACE_FUNCTION_ENTRY();
                 LLTRACE_RESUME_FRAME();
             }
@@ -2984,7 +2992,9 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 LOAD_IP(0);
+                #ifdef Py_DEBUG
                 assert(frame->previous->stackpointer_valid == 1);
+                #endif
                 DTRACE_FUNCTION_ENTRY();
                 LLTRACE_RESUME_FRAME();
             }
@@ -3614,7 +3624,9 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 LOAD_IP(0);
+                #ifdef Py_DEBUG
                 assert(frame->previous->stackpointer_valid == 1);
+                #endif
                 DTRACE_FUNCTION_ENTRY();
                 LLTRACE_RESUME_FRAME();
             }
@@ -3809,7 +3821,9 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 LOAD_IP(0);
+                #ifdef Py_DEBUG
                 assert(frame->previous->stackpointer_valid == 1);
+                #endif
                 DTRACE_FUNCTION_ENTRY();
                 LLTRACE_RESUME_FRAME();
             }
@@ -4681,7 +4695,9 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 LOAD_IP(0);
+                #ifdef Py_DEBUG
                 assert(frame->previous->stackpointer_valid == 1);
+                #endif
                 DTRACE_FUNCTION_ENTRY();
                 LLTRACE_RESUME_FRAME();
             }
@@ -4786,7 +4802,9 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 LOAD_IP(0);
+                #ifdef Py_DEBUG
                 assert(frame->previous->stackpointer_valid == 1);
+                #endif
                 DTRACE_FUNCTION_ENTRY();
                 LLTRACE_RESUME_FRAME();
             }
@@ -6499,7 +6517,9 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 LOAD_IP(0);
+                #ifdef Py_DEBUG
                 assert(frame->previous->stackpointer_valid == 1);
+                #endif
                 DTRACE_FUNCTION_ENTRY();
                 LLTRACE_RESUME_FRAME();
             }
@@ -7850,7 +7870,7 @@
                 _PyFrame_StackPointerInvalidate(frame);
                 // Explicit stack reload
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                assert(frame->stackpointer_valid == 0);
+                _PyFrame_StackAssertInvalid(frame);
                 if (original_opcode < 0) {
                     next_instr = this_instr+1;
                     JUMP_TO_LABEL(error);
@@ -8244,7 +8264,7 @@
                 _PyFrame_StackPointerInvalidate(frame);
                 // Explicit stack reload
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                assert(frame->stackpointer_valid == 0);
+                _PyFrame_StackAssertInvalid(frame);
                 if (err) {
                     JUMP_TO_LABEL(error);
                 }
@@ -8340,13 +8360,13 @@
                 if (err) {
                     // Explicit stack reload
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    assert(frame->stackpointer_valid == 0);
+                    _PyFrame_StackAssertInvalid(frame);
                     JUMP_TO_LABEL(error);
                 }
                 if (frame->instr_ptr != this_instr) {
                     // Explicit stack reload
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    assert(frame->stackpointer_valid == 0);
+                    _PyFrame_StackAssertInvalid(frame);
                     next_instr = frame->instr_ptr;
                     DISPATCH();
                 }
@@ -8997,7 +9017,9 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 LOAD_IP(0);
+                #ifdef Py_DEBUG
                 assert(frame->previous->stackpointer_valid == 1);
+                #endif
                 DTRACE_FUNCTION_ENTRY();
                 LLTRACE_RESUME_FRAME();
             }
@@ -9519,7 +9541,9 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 LOAD_IP(0);
+                #ifdef Py_DEBUG
                 assert(frame->previous->stackpointer_valid == 1);
+                #endif
                 DTRACE_FUNCTION_ENTRY();
                 LLTRACE_RESUME_FRAME();
             }
@@ -11858,7 +11882,9 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 LOAD_IP(0);
+                #ifdef Py_DEBUG
                 assert(frame->previous->stackpointer_valid == 1);
+                #endif
                 DTRACE_FUNCTION_ENTRY();
                 LLTRACE_RESUME_FRAME();
             }
@@ -13775,7 +13801,7 @@ JUMP_TO_LABEL(error);
 
         LABEL(error)
         {
-            assert(frame->stackpointer_valid == 0);
+            _PyFrame_StackAssertInvalid(frame);
             #ifdef NDEBUG
             if (!_PyErr_Occurred(tstate)) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -13901,7 +13927,9 @@ JUMP_TO_LABEL(error);
 
         LABEL(start_frame)
         {
+            #ifdef Py_DEBUG
             assert(frame->stackpointer_valid == 1);
+            #endif
             int too_deep = _Py_EnterRecursivePy(tstate);
             if (too_deep) {
                 JUMP_TO_LABEL(exit_unwind_notrace);

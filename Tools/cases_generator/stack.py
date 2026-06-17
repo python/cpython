@@ -381,7 +381,7 @@ class Stack:
         if spilled:
             out.emit_str("_PyFrame_StackPointerInvalidate(frame);\n")
         else:
-            out.emit_str("assert(frame->stackpointer_valid == 0);\n")
+            out.emit_str("_PyFrame_StackAssertInvalid(frame);\n")
 
     def is_flushed(self) -> bool:
         for var in self.variables:

@@ -265,6 +265,18 @@ _PyFrame_StackPointerInvalidate(_PyInterpreterFrame *frame)
 #endif
 }
 
+static inline void
+_PyFrame_StackAssertInvalid(_PyInterpreterFrame *frame)
+{
+#ifdef Py_DEBUG
+/* Avoid bloating the JIT code */
+#ifndef _Py_JIT
+    assert(frame->stackpointer_valid == 0);
+#endif
+#endif
+}
+
+
 /* Determine whether a frame is incomplete.
  * A frame is incomplete if it is part way through
  * creating cell objects or a generator or coroutine.

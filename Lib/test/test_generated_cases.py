@@ -1536,7 +1536,7 @@ class TestGeneratedCases(unittest.TestCase):
             INSTRUCTION_STATS(BALANCED);
             // Explicit stack reload
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            assert(frame->stackpointer_valid == 0);
+            _PyFrame_StackAssertInvalid(frame);
             DISPATCH();
         }
         """
