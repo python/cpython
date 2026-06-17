@@ -1149,6 +1149,9 @@ ttk.Treeview
       Otherwise, sets the options to the corresponding values as given by *kw*.
 
 
+   .. method:: reattach(item, parent, index)
+      :no-typesetting:
+
    .. method:: move(item, parent, index)
 
       Moves *item* to position *index* in *parent*'s list of children.
@@ -1157,6 +1160,8 @@ ttk.Treeview
       less than or equal to zero, *item* is moved to the beginning; if greater
       than or equal to the number of children, it is moved to the end. If *item*
       was detached it is reattached.
+
+      :meth:`reattach` is an alias of :meth:`!move`.
 
 
    .. method:: next(item)
@@ -1175,11 +1180,6 @@ ttk.Treeview
 
       Returns the identifier of *item*'s previous sibling, or '' if *item* is
       the first child of its parent.
-
-
-   .. method:: reattach(item, parent, index)
-
-      An alias for :meth:`Treeview.move`.
 
 
    .. method:: see(item)

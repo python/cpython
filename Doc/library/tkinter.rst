@@ -1128,8 +1128,10 @@ Base and mixin classes
       widget, as a string.  The expression ``widget[key]`` is equivalent and may
       be used instead.
 
+   .. method:: config(cnf=None, **kw)
+      :no-typesetting:
+
    .. method:: configure(cnf=None, **kw)
-               config(cnf=None, **kw)
 
       Query or modify the configuration options of the widget.  With no
       arguments, return a dictionary mapping every available option name to a
@@ -1140,7 +1142,7 @@ Base and mixin classes
       corresponding value; the expression ``widget[key] = value`` sets a single
       option in the same way.
 
-      ``config`` is an alias of :meth:`!configure`.
+      :meth:`config` is an alias of :meth:`!configure`.
 
    .. method:: keys()
 
@@ -1212,14 +1214,16 @@ Base and mixin classes
       Destroy this widget and all of its descendant widgets, and delete the Tcl
       commands associated with them.
 
+   .. method:: lift(aboveThis=None)
+      :no-typesetting:
+
    .. method:: tkraise(aboveThis=None)
-               lift(aboveThis=None)
 
       Raise this widget in the stacking order so that it is drawn on top of its
       siblings.  If *aboveThis* is given, the widget is moved to be just above
       it in the stacking order instead.
 
-      ``lift`` is an alias of :meth:`!tkraise`.
+      :meth:`lift` is an alias of :meth:`!tkraise`.
 
    .. method:: lower(belowThis=None)
 
@@ -1236,8 +1240,10 @@ Base and mixin classes
 
       Return the available image types, such as ``'photo'`` and ``'bitmap'``.
 
+   .. method:: anchor(anchor=None)
+      :no-typesetting:
+
    .. method:: grid_anchor(anchor=None)
-               anchor(anchor=None)
 
       Set the anchor that controls where the grid is placed inside this
       container when the container is larger than the grid and no row or column
@@ -1245,12 +1251,14 @@ Base and mixin classes
       as ``'nw'`` (the default) or ``'center'``.  Called with no argument, this
       method has no effect.
 
-      ``anchor`` is an alias of :meth:`!grid_anchor`.
+      :meth:`anchor` is an alias of :meth:`!grid_anchor`.
 
       .. versionadded:: 3.3
 
+   .. method:: bbox(column=None, row=None, col2=None, row2=None)
+      :no-typesetting:
+
    .. method:: grid_bbox(column=None, row=None, col2=None, row2=None)
-               bbox(column=None, row=None, col2=None, row2=None)
 
       Return the bounding box, in pixels, of a region of the grid laid out in
       this container, as a 4-tuple ``(xoffset, yoffset, width, height)``.  With
@@ -1259,10 +1267,12 @@ Base and mixin classes
       that cell; if *col2* and *row2* are also given, it spans from the cell
       (*column*, *row*) to the cell (*col2*, *row2*).
 
-      ``bbox`` is an alias of :meth:`!grid_bbox`.
+      :meth:`bbox` is an alias of :meth:`!grid_bbox`.
+
+   .. method:: columnconfigure(index, cnf={}, **kw)
+      :no-typesetting:
 
    .. method:: grid_columnconfigure(index, cnf={}, **kw)
-               columnconfigure(index, cnf={}, **kw)
 
       Query or set the properties of the column (or columns) *index* of the grid
       managed by this container.  The valid options are *minsize* (the column's
@@ -1272,16 +1282,18 @@ Base and mixin classes
       the column).  With a single option name, return that option's value; with
       no options, return a dictionary of all of them.
 
-      ``columnconfigure`` is an alias of :meth:`!grid_columnconfigure`.
+      :meth:`columnconfigure` is an alias of :meth:`!grid_columnconfigure`.
+
+   .. method:: rowconfigure(index, cnf={}, **kw)
+      :no-typesetting:
 
    .. method:: grid_rowconfigure(index, cnf={}, **kw)
-               rowconfigure(index, cnf={}, **kw)
 
       Query or set the properties of the row (or rows) *index* of the grid
       managed by this container.  The valid options are the same as for
       :meth:`grid_columnconfigure`, applied to a row instead of a column.
 
-      ``rowconfigure`` is an alias of :meth:`!grid_rowconfigure`.
+      :meth:`rowconfigure` is an alias of :meth:`!grid_rowconfigure`.
 
    .. method:: grid_location(x, y)
 
@@ -1298,13 +1310,15 @@ Base and mixin classes
       it is false, its size is left under your control.  Called with no argument,
       return the current setting as a boolean.
 
+   .. method:: size()
+      :no-typesetting:
+
    .. method:: grid_size()
-               size()
 
       Return the size of the grid managed by this container as a
       ``(columns, rows)`` tuple.
 
-      ``size`` is an alias of :meth:`!grid_size`.
+      :meth:`size` is an alias of :meth:`!grid_size`.
 
    .. method:: grid_slaves(row=None, column=None)
 
@@ -1320,8 +1334,10 @@ Base and mixin classes
       .. versionadded:: 3.15
 
 
+   .. method:: propagate(flag=['_noarg_'])
+      :no-typesetting:
+
    .. method:: pack_propagate(flag=['_noarg_'])
-               propagate(flag=['_noarg_'])
 
       Enable or disable geometry propagation for this container when it manages
       its children with the pack geometry manager.  When *flag* is true, the
@@ -1329,23 +1345,27 @@ Base and mixin classes
       it is false, its size is left under your control.  Called with no argument,
       return the current setting as a boolean.
 
-      ``propagate`` is an alias of :meth:`!pack_propagate`.
+      :meth:`propagate` is an alias of :meth:`!pack_propagate`.
+
+   .. method:: slaves()
+      :no-typesetting:
 
    .. method:: pack_slaves()
-               slaves()
 
       Return a list of the child widgets managed by this container with the pack
       geometry manager, in packing order.
 
-      ``slaves`` is an alias of :meth:`!pack_slaves`.
+      :meth:`slaves` is an alias of :meth:`!pack_slaves`.
+
+   .. method:: content()
+      :no-typesetting:
 
    .. method:: pack_content()
-               content()
 
       Same as :meth:`pack_slaves`: return the child widgets managed by this
       container with the pack geometry manager, in packing order.
 
-      ``content`` is an alias of :meth:`!pack_content`.
+      :meth:`content` is an alias of :meth:`!pack_content`.
 
       .. versionadded:: 3.15
 
@@ -1550,15 +1570,17 @@ Base and mixin classes
       This updates the display of windows, for example after geometry changes,
       but does not process events caused by the user.
 
+   .. method:: waitvar(name='PY_VAR')
+      :no-typesetting:
+
    .. method:: wait_variable(name='PY_VAR')
-               waitvar(name='PY_VAR')
 
       Wait until the Tcl variable *name* is modified, continuing to process
       events in the meantime so that the application stays responsive.  *name*
       is usually a :class:`Variable` instance, such as an :class:`IntVar` or
       :class:`StringVar`.
 
-      ``waitvar`` is an alias of :meth:`!wait_variable`.
+      :meth:`waitvar` is an alias of :meth:`!wait_variable`.
 
    .. method:: wait_window(window=None)
 
@@ -1572,14 +1594,16 @@ Base and mixin classes
       first appears on the screen, continuing to process events in the meantime.
       If *window* is omitted, this widget is used.  This is typically used to
       wait for a newly created window to become visible before acting on it.
+   .. method:: focus_set()
+      :no-typesetting:
+
    .. method:: focus()
-               focus_set()
 
       Direct the keyboard input focus for this widget's display to this widget.
       If the application does not currently have the input focus on this
       widget's display, the widget is remembered as the focus window for its
       top level, and the focus will be redirected to it the next time the
-      window manager gives the focus to the top level.  ``focus`` is an alias
+      window manager gives the focus to the top level.  :meth:`focus` is an alias
       of :meth:`!focus_set`.
 
    .. method:: focus_force()
@@ -1812,10 +1836,16 @@ Base and mixin classes
       A true *boolean* value enables strict Motif compliance (for example, no
       color change when the mouse passes over a slider).  Return the resulting
       setting.
+   .. method:: busy(**kw)
+      :no-typesetting:
+
+   .. method:: busy_hold(**kw)
+      :no-typesetting:
+
+   .. method:: tk_busy(**kw)
+      :no-typesetting:
+
    .. method:: tk_busy_hold(**kw)
-               busy(**kw)
-               busy_hold(**kw)
-               tk_busy(**kw)
 
       Make this widget appear busy.  A transparent window is placed in front of
       the widget, so that it and all of its descendants in the widget hierarchy
@@ -1827,15 +1857,22 @@ Base and mixin classes
       displayed while the widget is busy; it may have any of the values accepted
       by :meth:`!configure`.
 
-      These are equivalent spellings of the same method.
+      :meth:`busy_hold`, :meth:`busy` and :meth:`tk_busy` are aliases of
+      :meth:`!tk_busy_hold`.
 
       .. versionadded:: 3.13
 
 
+   .. method:: busy_configure(cnf=None, **kw)
+      :no-typesetting:
+
+   .. method:: busy_config(cnf=None, **kw)
+      :no-typesetting:
+
+   .. method:: tk_busy_config(cnf=None, **kw)
+      :no-typesetting:
+
    .. method:: tk_busy_configure(cnf=None, **kw)
-               busy_configure(cnf=None, **kw)
-               busy_config(cnf=None, **kw)
-               tk_busy_config(cnf=None, **kw)
 
       Query or modify the configuration options of the busy window.  The widget
       must have been previously made busy by :meth:`tk_busy_hold`.  With no
@@ -1851,53 +1888,62 @@ Base and mixin classes
          w.option_add('*frame.busyCursor', 'gumby')
          w.option_add('*Frame.BusyCursor', 'gumby')
 
-      These are equivalent spellings of the same method.
+      :meth:`busy_configure`, :meth:`busy_config` and :meth:`tk_busy_config` are aliases of
+      :meth:`!tk_busy_configure`.
 
       .. versionadded:: 3.13
 
 
+   .. method:: busy_cget(option)
+      :no-typesetting:
+
    .. method:: tk_busy_cget(option)
-               busy_cget(option)
 
       Return the current value of the busy configuration *option*.  The widget
       must have been previously made busy by :meth:`tk_busy_hold`, and *option*
       may have any of the values accepted by that method.
 
-      These are equivalent spellings of the same method.
+      :meth:`busy_cget` is an alias of :meth:`!tk_busy_cget`.
 
       .. versionadded:: 3.13
 
 
+   .. method:: busy_forget()
+      :no-typesetting:
+
    .. method:: tk_busy_forget()
-               busy_forget()
 
       Make this widget no longer busy, releasing the resources (including the
       transparent window) allocated when it was made busy.  User events will
       again be received by the widget.  These resources are also released when
       the widget is destroyed.
 
-      These are equivalent spellings of the same method.
+      :meth:`busy_forget` is an alias of :meth:`!tk_busy_forget`.
 
       .. versionadded:: 3.13
 
 
+   .. method:: busy_status()
+      :no-typesetting:
+
    .. method:: tk_busy_status()
-               busy_status()
 
       Return ``True`` if the widget is currently busy, ``False`` otherwise.
 
-      These are equivalent spellings of the same method.
+      :meth:`busy_status` is an alias of :meth:`!tk_busy_status`.
 
       .. versionadded:: 3.13
 
 
+   .. method:: busy_current(pattern=None)
+      :no-typesetting:
+
    .. method:: tk_busy_current(pattern=None)
-               busy_current(pattern=None)
 
       Return a list of widgets that are currently busy.  If *pattern* is given,
       only busy widgets whose path names match the pattern are returned.
 
-      These are equivalent spellings of the same method.
+      :meth:`busy_current` is an alias of :meth:`!tk_busy_current`.
 
       .. versionadded:: 3.13
 
@@ -2186,10 +2232,12 @@ Base and mixin classes
    manager protocols.  It is mixed into :class:`Tk` and :class:`Toplevel`, so
    its methods are available on every top-level window.  Each method has two
    equivalent spellings: a short name and a ``wm_``-prefixed name (for example,
-   :meth:`title` and :meth:`!wm_title`).
+   :meth:`title` and :meth:`wm_title`).
+
+   .. method:: wm_aspect(minNumer=None, minDenom=None, maxNumer=None, maxDenom=None)
+      :no-typesetting:
 
    .. method:: aspect(minNumer=None, minDenom=None, maxNumer=None, maxDenom=None)
-               wm_aspect(minNumer=None, minDenom=None, maxNumer=None, maxDenom=None)
 
       Constrain the aspect ratio (the ratio of width to height) of the window.
       If all four arguments are given, the window manager keeps the ratio
@@ -2197,10 +2245,12 @@ Base and mixin classes
       strings removes any existing restriction.  With no arguments, return a
       tuple of the four current values, or an empty string if no aspect
       restriction is in effect.
-      The ``wm_``-prefixed spelling (e.g. ``wm_aspect``) is an equivalent alias.
+      The ``wm_``-prefixed spelling (e.g. :meth:`wm_aspect`) is an equivalent alias.
+
+   .. method:: wm_attributes(*args, return_python_dict=False, **kwargs)
+      :no-typesetting:
 
    .. method:: attributes(*args, return_python_dict=False, **kwargs)
-               wm_attributes(*args, return_python_dict=False, **kwargs)
 
       Query or set platform-specific attributes of the window.  With no
       arguments, return the platform-specific flags and their values; pass
@@ -2212,7 +2262,7 @@ Base and mixin classes
       ``-fullscreen`` and ``-topmost``, while Windows, macOS and X11 each add
       further options.  On X11 changes are applied asynchronously, so a queried
       value may not yet reflect the most recent request.
-      The ``wm_``-prefixed spelling (e.g. ``wm_attributes``) is an equivalent
+      The ``wm_``-prefixed spelling (e.g. :meth:`wm_attributes`) is an equivalent
       alias.
 
       .. versionchanged:: 3.13
@@ -2221,17 +2271,21 @@ Base and mixin classes
          *return_python_dict* parameter was added.
 
 
+   .. method:: wm_client(name=None)
+      :no-typesetting:
+
    .. method:: client(name=None)
-               wm_client(name=None)
 
       Store *name*, which should be the name of the host on which the
       application is running, in the window's ``WM_CLIENT_MACHINE`` property for
       use by the window or session manager.  An empty string deletes the
       property.  With no argument, return the last name set, or an empty string.
-      The ``wm_``-prefixed spelling (e.g. ``wm_client``) is an equivalent alias.
+      The ``wm_``-prefixed spelling (e.g. :meth:`wm_client`) is an equivalent alias.
+
+   .. method:: wm_colormapwindows(*wlist)
+      :no-typesetting:
 
    .. method:: colormapwindows(*wlist)
-               wm_colormapwindows(*wlist)
 
       Manipulate the ``WM_COLORMAP_WINDOWS`` property, which tells the window
       manager about windows that have private colormaps.  If *wlist* is given,
@@ -2241,29 +2295,35 @@ Base and mixin classes
       The ``wm_``-prefixed spelling (e.g. ``wm_colormapwindows``) is an
       equivalent alias.
 
+   .. method:: wm_command(value=None)
+      :no-typesetting:
+
    .. method:: command(value=None)
-               wm_command(value=None)
 
       Store *value* in the window's ``WM_COMMAND`` property for use by the
       window or session manager; it should be a list giving the words of the
       command used to invoke the application.  An empty string deletes the
       property.  With no argument, return the last value set, or an empty
       string.
-      The ``wm_``-prefixed spelling (e.g. ``wm_command``) is an equivalent
+      The ``wm_``-prefixed spelling (e.g. :meth:`wm_command`) is an equivalent
       alias.
 
+   .. method:: wm_deiconify()
+      :no-typesetting:
+
    .. method:: deiconify()
-               wm_deiconify()
 
       Display the window in normal (non-iconified) form by mapping it.  If the
       window has never been mapped, this ensures it appears de-iconified when it
       is first mapped.  On Windows the window is also raised and given the
       focus.
-      The ``wm_``-prefixed spelling (e.g. ``wm_deiconify``) is an equivalent
+      The ``wm_``-prefixed spelling (e.g. :meth:`wm_deiconify`) is an equivalent
       alias.
 
+   .. method:: wm_focusmodel(model=None)
+      :no-typesetting:
+
    .. method:: focusmodel(model=None)
-               wm_focusmodel(model=None)
 
       Set or query the focus model for the window.  *model* is either
       ``'active'`` (the window claims the input focus for itself or its
@@ -2271,31 +2331,37 @@ Base and mixin classes
       ``'passive'`` (the window relies on the window manager to give it the
       focus).  With no argument, return the current model.  The default is
       ``'passive'``, which is what the :meth:`!focus` command assumes.
-      The ``wm_``-prefixed spelling (e.g. ``wm_focusmodel``) is an equivalent
+      The ``wm_``-prefixed spelling (e.g. :meth:`wm_focusmodel`) is an equivalent
       alias.
 
+   .. method:: wm_forget(window)
+      :no-typesetting:
+
    .. method:: forget(window)
-               wm_forget(window)
 
       Unmap *window* from the screen so that it is no longer managed by the
       window manager.  A :class:`Toplevel` is then treated like a :class:`Frame`,
       although its ``-menu`` configuration is remembered and the menu reappears
       if the widget is managed again.
-      The ``wm_``-prefixed spelling (e.g. ``wm_forget``) is an equivalent alias.
+      The ``wm_``-prefixed spelling (e.g. :meth:`wm_forget`) is an equivalent alias.
 
       .. versionadded:: 3.3
 
+   .. method:: wm_frame()
+      :no-typesetting:
+
    .. method:: frame()
-               wm_frame()
 
       Return the platform-specific window identifier for the outermost
       decorative frame containing the window, if the window manager has
       reparented it into such a frame; otherwise return the identifier of the
       window itself.
-      The ``wm_``-prefixed spelling (e.g. ``wm_frame``) is an equivalent alias.
+      The ``wm_``-prefixed spelling (e.g. :meth:`wm_frame`) is an equivalent alias.
+
+   .. method:: wm_geometry(newGeometry=None)
+      :no-typesetting:
 
    .. method:: geometry(newGeometry=None)
-               wm_geometry(newGeometry=None)
 
       Set or query the geometry of the window.  *newGeometry* has the form
       ``=widthxheight+x+y``, where any of ``=``, ``widthxheight`` and the
@@ -2305,11 +2371,13 @@ Base and mixin classes
       right or bottom edge.  An empty string cancels any user-specified geometry,
       letting the window revert to its natural size.  With no argument, return
       the current geometry as a string of the form ``'200x200+10+10'``.
-      The ``wm_``-prefixed spelling (e.g. ``wm_geometry``) is an equivalent
+      The ``wm_``-prefixed spelling (e.g. :meth:`wm_geometry`) is an equivalent
       alias.
 
+   .. method:: wm_grid(baseWidth=None, baseHeight=None, widthInc=None, heightInc=None)
+      :no-typesetting:
+
    .. method:: grid(baseWidth=None, baseHeight=None, widthInc=None, heightInc=None)
-               wm_grid(baseWidth=None, baseHeight=None, widthInc=None, heightInc=None)
 
       Manage the window as a gridded window and define the relationship between
       grid units and pixels.  *baseWidth* and *baseHeight* are the numbers of
@@ -2318,20 +2386,24 @@ Base and mixin classes
       Empty strings turn off gridded management.  With no arguments, return a
       tuple of the four current values, or an empty string if the window is not
       gridded.
-      The ``wm_``-prefixed spelling (e.g. ``wm_grid``) is an equivalent alias.
+      The ``wm_``-prefixed spelling (e.g. :meth:`wm_grid`) is an equivalent alias.
+
+   .. method:: wm_group(pathName=None)
+      :no-typesetting:
 
    .. method:: group(pathName=None)
-               wm_group(pathName=None)
 
       Set or query the leader of a group of related windows.  *pathName* gives
       the path name of the group leader; the window manager may, for example,
       unmap all windows in the group when the leader is iconified.  An empty
       string removes the window from any group.  With no argument, return the
       path name of the current group leader, or an empty string.
-      The ``wm_``-prefixed spelling (e.g. ``wm_group``) is an equivalent alias.
+      The ``wm_``-prefixed spelling (e.g. :meth:`wm_group`) is an equivalent alias.
+
+   .. method:: wm_iconbitmap(bitmap=None, default=None)
+      :no-typesetting:
 
    .. method:: iconbitmap(bitmap=None, default=None)
-               wm_iconbitmap(bitmap=None, default=None)
 
       Set or query the bitmap used by the window manager for the window's icon.
       *bitmap* names a bitmap in one of the standard forms accepted by Tk; an
@@ -2339,40 +2411,48 @@ Base and mixin classes
       the name of the current icon bitmap, or an empty string.  On Windows the
       *default* argument names an icon (for example an ``.ico`` file) applied to
       all top-level windows that have no icon of their own.
-      The ``wm_``-prefixed spelling (e.g. ``wm_iconbitmap``) is an equivalent
+      The ``wm_``-prefixed spelling (e.g. :meth:`wm_iconbitmap`) is an equivalent
       alias.
 
+   .. method:: wm_iconify()
+      :no-typesetting:
+
    .. method:: iconify()
-               wm_iconify()
 
       Iconify the window.  If the window has not yet been mapped for the first
       time, arrange for it to appear in the iconified state when it is
       eventually mapped.
-      The ``wm_``-prefixed spelling (e.g. ``wm_iconify``) is an equivalent alias.
+      The ``wm_``-prefixed spelling (e.g. :meth:`wm_iconify`) is an equivalent alias.
+
+   .. method:: wm_iconmask(bitmap=None)
+      :no-typesetting:
 
    .. method:: iconmask(bitmap=None)
-               wm_iconmask(bitmap=None)
 
       Set or query the bitmap used as a mask for the icon (see
       :meth:`iconbitmap`).  Where the mask is zero no icon is displayed; where it
       is one, the corresponding bits of the icon bitmap are shown.  An empty
       string cancels the current mask.  With no argument, return the name of the
       current icon mask, or an empty string.
-      The ``wm_``-prefixed spelling (e.g. ``wm_iconmask``) is an equivalent
+      The ``wm_``-prefixed spelling (e.g. :meth:`wm_iconmask`) is an equivalent
       alias.
 
+   .. method:: wm_iconname(newName=None)
+      :no-typesetting:
+
    .. method:: iconname(newName=None)
-               wm_iconname(newName=None)
 
       Set or query the name displayed by the window manager inside the window's
       icon.  With no argument, return the current icon name, or an empty string
       if none has been set (in which case the window manager normally displays
       the window's title).
-      The ``wm_``-prefixed spelling (e.g. ``wm_iconname``) is an equivalent
+      The ``wm_``-prefixed spelling (e.g. :meth:`wm_iconname`) is an equivalent
       alias.
 
+   .. method:: wm_iconphoto(default=False, *images)
+      :no-typesetting:
+
    .. method:: iconphoto(default=False, *images)
-               wm_iconphoto(default=False, *images)
 
       Set the titlebar icon for the window from one or more
       :class:`PhotoImage` objects given in *images*.  Several images of different
@@ -2382,23 +2462,27 @@ Base and mixin classes
       reflected.  If *default* is true, the icon is also applied to all
       top-level windows created in the future.  On macOS only the first image is
       used.
-      The ``wm_``-prefixed spelling (e.g. ``wm_iconphoto``) is an equivalent
+      The ``wm_``-prefixed spelling (e.g. :meth:`wm_iconphoto`) is an equivalent
       alias.
 
       .. versionadded:: 3.3
 
+   .. method:: wm_iconposition(x=None, y=None)
+      :no-typesetting:
+
    .. method:: iconposition(x=None, y=None)
-               wm_iconposition(x=None, y=None)
 
       Set or query a hint to the window manager about where the window's icon
       should be positioned.  Empty strings cancel an existing hint.  With no
       arguments, return a tuple of the two current values, or an empty string if
       no hint is in effect.
-      The ``wm_``-prefixed spelling (e.g. ``wm_iconposition``) is an equivalent
+      The ``wm_``-prefixed spelling (e.g. :meth:`wm_iconposition`) is an equivalent
       alias.
 
+   .. method:: wm_iconwindow(pathName=None)
+      :no-typesetting:
+
    .. method:: iconwindow(pathName=None)
-               wm_iconwindow(pathName=None)
 
       Set or query the window used as the icon for the window.  When the window
       is iconified, *pathName* is mapped to serve as its icon and unmapped again
@@ -2406,42 +2490,50 @@ Base and mixin classes
       argument, return the path name of the current icon window, or an empty
       string.  Not all window managers support icon windows, and the concept is
       meaningless on non-X11 platforms.
-      The ``wm_``-prefixed spelling (e.g. ``wm_iconwindow``) is an equivalent
+      The ``wm_``-prefixed spelling (e.g. :meth:`wm_iconwindow`) is an equivalent
       alias.
 
+   .. method:: wm_manage(widget)
+      :no-typesetting:
+
    .. method:: manage(widget)
-               wm_manage(widget)
 
       Make *widget* a stand-alone top-level window, decorated by the window
       manager with a title bar and so on.  Only :class:`Frame`,
       :class:`LabelFrame` and :class:`Toplevel` widgets may be used; passing any
       other widget type raises an error.
-      The ``wm_``-prefixed spelling (e.g. ``wm_manage``) is an equivalent alias.
+      The ``wm_``-prefixed spelling (e.g. :meth:`wm_manage`) is an equivalent alias.
 
       .. versionadded:: 3.3
 
+   .. method:: wm_maxsize(width=None, height=None)
+      :no-typesetting:
+
    .. method:: maxsize(width=None, height=None)
-               wm_maxsize(width=None, height=None)
 
       Set or query the maximum permissible dimensions of the window, in pixels
       (or grid units for a gridded window).  The window manager restricts the
       window to be no larger than *width* and *height*.  With no arguments,
       return a tuple of the current maximum width and height.  The maximum size
       defaults to the size of the screen.
-      The ``wm_``-prefixed spelling (e.g. ``wm_maxsize``) is an equivalent alias.
+      The ``wm_``-prefixed spelling (e.g. :meth:`wm_maxsize`) is an equivalent alias.
+
+   .. method:: wm_minsize(width=None, height=None)
+      :no-typesetting:
 
    .. method:: minsize(width=None, height=None)
-               wm_minsize(width=None, height=None)
 
       Set or query the minimum permissible dimensions of the window, in pixels
       (or grid units for a gridded window).  The window manager restricts the
       window to be no smaller than *width* and *height*.  With no arguments,
       return a tuple of the current minimum width and height.  The minimum size
       defaults to one pixel in each dimension.
-      The ``wm_``-prefixed spelling (e.g. ``wm_minsize``) is an equivalent alias.
+      The ``wm_``-prefixed spelling (e.g. :meth:`wm_minsize`) is an equivalent alias.
+
+   .. method:: wm_overrideredirect(boolean=None)
+      :no-typesetting:
 
    .. method:: overrideredirect(boolean=None)
-               wm_overrideredirect(boolean=None)
 
       Set or query the override-redirect flag for the window.  When this flag is
       set, the window is ignored by the window manager: it is not reparented into
@@ -2452,8 +2544,10 @@ Base and mixin classes
       The ``wm_``-prefixed spelling (e.g. ``wm_overrideredirect``) is an
       equivalent alias.
 
+   .. method:: wm_positionfrom(who=None)
+      :no-typesetting:
+
    .. method:: positionfrom(who=None)
-               wm_positionfrom(who=None)
 
       Set or query the source of the window's current position.  *who* is either
       ``'program'`` or ``'user'`` and indicates whether the position was
@@ -2462,11 +2556,13 @@ Base and mixin classes
       string if none has been set.  Tk automatically sets the source to
       ``'user'`` when :meth:`geometry` is called, unless it has been set
       explicitly to ``'program'``.
-      The ``wm_``-prefixed spelling (e.g. ``wm_positionfrom``) is an equivalent
+      The ``wm_``-prefixed spelling (e.g. :meth:`wm_positionfrom`) is an equivalent
       alias.
 
+   .. method:: wm_protocol(name=None, func=None)
+      :no-typesetting:
+
    .. method:: protocol(name=None, func=None)
-               wm_protocol(name=None, func=None)
 
       Register *func* as the handler for the window manager protocol *name*, an
       atom such as ``'WM_DELETE_WINDOW'``, ``'WM_SAVE_YOURSELF'`` or
@@ -2478,33 +2574,39 @@ Base and mixin classes
       string if none is set (the default ``WM_DELETE_WINDOW`` handler is not
       reported); with no arguments, return a tuple of the protocols that
       currently have handlers.
-      The ``wm_``-prefixed spelling (e.g. ``wm_protocol``) is an equivalent
+      The ``wm_``-prefixed spelling (e.g. :meth:`wm_protocol`) is an equivalent
       alias.
 
+   .. method:: wm_resizable(width=None, height=None)
+      :no-typesetting:
+
    .. method:: resizable(width=None, height=None)
-               wm_resizable(width=None, height=None)
 
       Control whether the user may interactively resize the window.  *width* and
       *height* are boolean values that determine whether the window's width and
       height may be changed.  With no arguments, return a tuple of two ``0``/``1``
       values indicating whether each dimension is currently resizable.  By
       default a window is resizable in both dimensions.
-      The ``wm_``-prefixed spelling (e.g. ``wm_resizable``) is an equivalent
+      The ``wm_``-prefixed spelling (e.g. :meth:`wm_resizable`) is an equivalent
       alias.
 
+   .. method:: wm_sizefrom(who=None)
+      :no-typesetting:
+
    .. method:: sizefrom(who=None)
-               wm_sizefrom(who=None)
 
       Set or query the source of the window's current size.  *who* is either
       ``'program'`` or ``'user'`` and indicates whether the size was requested by
       the program or by the user; an empty string cancels the current source.
       With no argument, return the current source, or an empty string if none has
       been set.
-      The ``wm_``-prefixed spelling (e.g. ``wm_sizefrom``) is an equivalent
+      The ``wm_``-prefixed spelling (e.g. :meth:`wm_sizefrom`) is an equivalent
       alias.
 
+   .. method:: wm_state(newstate=None)
+      :no-typesetting:
+
    .. method:: state(newstate=None)
-               wm_state(newstate=None)
 
       Set or query the state of the window.  With no argument, return the current
       state: one of ``'normal'``, ``'iconic'``, ``'withdrawn'``, ``'icon'`` or,
@@ -2512,18 +2614,22 @@ Base and mixin classes
       that has been iconified, while ``'icon'`` refers to a window serving as the
       icon for another window (see :meth:`iconwindow`); the ``'icon'`` state
       cannot be set.
-      The ``wm_``-prefixed spelling (e.g. ``wm_state``) is an equivalent alias.
+      The ``wm_``-prefixed spelling (e.g. :meth:`wm_state`) is an equivalent alias.
+
+   .. method:: wm_title(string=None)
+      :no-typesetting:
 
    .. method:: title(string=None)
-               wm_title(string=None)
 
       Set or query the title for the window, which the window manager should
       display in the window's title bar.  With no argument, return the current
       title.  The title defaults to the window's name.
-      The ``wm_``-prefixed spelling (e.g. ``wm_title``) is an equivalent alias.
+      The ``wm_``-prefixed spelling (e.g. :meth:`wm_title`) is an equivalent alias.
+
+   .. method:: wm_transient(master=None)
+      :no-typesetting:
 
    .. method:: transient(master=None)
-               wm_transient(master=None)
 
       Mark the window as a transient window (such as a pull-down menu or dialog)
       working on behalf of *master*, the path name of another top-level window.
@@ -2531,18 +2637,20 @@ Base and mixin classes
       path name of the current master, or an empty string.  A transient window
       mirrors state changes in its master and may be decorated differently by the
       window manager; it is an error to make a window a transient of itself.
-      The ``wm_``-prefixed spelling (e.g. ``wm_transient``) is an equivalent
+      The ``wm_``-prefixed spelling (e.g. :meth:`wm_transient`) is an equivalent
       alias.
 
+   .. method:: wm_withdraw()
+      :no-typesetting:
+
    .. method:: withdraw()
-               wm_withdraw()
 
       Withdraw the window from the screen, unmapping it and causing the window
       manager to forget about it.  If the window has never been mapped, it is
       instead mapped in the withdrawn state.  It is sometimes necessary to
       withdraw a window and then re-map it (for example with :meth:`deiconify`)
       to make some window managers notice changes to window attributes.
-      The ``wm_``-prefixed spelling (e.g. ``wm_withdraw``) is an equivalent
+      The ``wm_``-prefixed spelling (e.g. :meth:`wm_withdraw`) is an equivalent
       alias.
 
 
@@ -2553,50 +2661,64 @@ Base and mixin classes
    (through :class:`Widget`) and provides the methods for managing a widget with
    the *pack* geometry manager.  See also :ref:`pack-the-packer`.
 
+   .. method:: configure(cnf={}, **kw)
+      :no-typesetting:
+
+   .. method:: config(cnf={}, **kw)
+      :no-typesetting:
+
    .. method:: pack_configure(cnf={}, **kw)
                pack(cnf={}, **kw)
-               configure(cnf={}, **kw)
-               config(cnf={}, **kw)
 
       Pack the widget inside its container, positioning it relative to the
       siblings already packed there.  Options such as *side*
       (``'top'``, ``'bottom'``, ``'left'`` or ``'right'``), *fill*
       (``'x'``, ``'y'``, ``'both'`` or ``'none'``), *expand*, *anchor*,
       *padx*/*pady*, *ipadx*/*ipady* and *in_* control the placement; see the Tk
-      ``pack`` manual page for the full list.  :meth:`!pack`, :meth:`!configure`
-      and :meth:`!config` are aliases of :meth:`!pack_configure`.
+      ``pack`` manual page for the full list.  :meth:`pack`, :meth:`configure`
+      and :meth:`config` are aliases of :meth:`!pack_configure`.
+
+   .. method:: forget()
+      :no-typesetting:
 
    .. method:: pack_forget()
-               forget()
 
       Unmap the widget and remove it from the packing order, forgetting its
       packing options.  It can be packed again later with
-      :meth:`pack_configure`.  :meth:`!forget` is an alias of
+      :meth:`pack_configure`.  :meth:`forget` is an alias of
       :meth:`!pack_forget`.
 
+   .. method:: info()
+      :no-typesetting:
+
    .. method:: pack_info()
-               info()
 
       Return a dictionary of the widget's current packing options.
-      :meth:`!info` is an alias of :meth:`!pack_info`.
+      :meth:`info` is an alias of :meth:`!pack_info`.
+
+   .. method:: propagate(flag=['_noarg_'])
+      :no-typesetting:
 
    .. method:: pack_propagate(flag=['_noarg_'])
-               propagate(flag=['_noarg_'])
 
       Same as :meth:`Misc.pack_propagate`, treating this widget as a container:
-      enable or disable geometry propagation.  :meth:`!propagate` is an alias of
+      enable or disable geometry propagation.  :meth:`propagate` is an alias of
       :meth:`!pack_propagate`.
 
+   .. method:: slaves()
+      :no-typesetting:
+
    .. method:: pack_slaves()
-               slaves()
 
       Same as :meth:`Misc.pack_slaves`: return the list of widgets packed in
-      this widget.  :meth:`!slaves` is an alias of :meth:`!pack_slaves`.
+      this widget.  :meth:`slaves` is an alias of :meth:`!pack_slaves`.
+
+   .. method:: content()
+      :no-typesetting:
 
    .. method:: pack_content()
-               content()
 
-      Same as :meth:`Misc.pack_content`.  :meth:`!content` is an alias of
+      Same as :meth:`Misc.pack_content`.  :meth:`content` is an alias of
       :meth:`!pack_content`.
 
 
@@ -2606,40 +2728,52 @@ Base and mixin classes
    their container.  The :class:`!Place` mix-in is inherited by all widgets
    (through :class:`Widget`).
 
+   .. method:: configure(cnf={}, **kw)
+      :no-typesetting:
+
+   .. method:: config(cnf={}, **kw)
+      :no-typesetting:
+
    .. method:: place_configure(cnf={}, **kw)
                place(cnf={}, **kw)
-               configure(cnf={}, **kw)
-               config(cnf={}, **kw)
 
       Place the widget inside its container at an absolute or relative position.
       Options include *x*/*y* and *relx*/*rely* (absolute and fractional
       position), *width*/*height* and *relwidth*/*relheight* (absolute and
       fractional size), *anchor*, *bordermode* and *in_*; see the Tk ``place``
-      manual page.  :meth:`!place`, :meth:`!configure` and :meth:`!config` are
+      manual page.  :meth:`place`, :meth:`configure` and :meth:`config` are
       aliases of :meth:`!place_configure`.
 
+   .. method:: forget()
+      :no-typesetting:
+
    .. method:: place_forget()
-               forget()
 
       Unmap the widget and remove it from the placement, forgetting its place
-      options.  :meth:`!forget` is an alias of :meth:`!place_forget`.
+      options.  :meth:`forget` is an alias of :meth:`!place_forget`.
+
+   .. method:: info()
+      :no-typesetting:
 
    .. method:: place_info()
-               info()
 
       Return a dictionary of the widget's current place options.
-      :meth:`!info` is an alias of :meth:`!place_info`.
+      :meth:`info` is an alias of :meth:`!place_info`.
+
+   .. method:: slaves()
+      :no-typesetting:
 
    .. method:: place_slaves()
-               slaves()
 
       Same as :meth:`Misc.place_slaves`: return the list of widgets placed in
-      this widget.  :meth:`!slaves` is an alias of :meth:`!place_slaves`.
+      this widget.  :meth:`slaves` is an alias of :meth:`!place_slaves`.
+
+   .. method:: content()
+      :no-typesetting:
 
    .. method:: place_content()
-               content()
 
-      Same as :meth:`Misc.place_content`.  :meth:`!content` is an alias of
+      Same as :meth:`Misc.place_content`.  :meth:`content` is an alias of
       :meth:`!place_content`.
 
 
@@ -2649,89 +2783,115 @@ Base and mixin classes
    columns within their container.  The :class:`!Grid` mix-in is inherited by
    all widgets (through :class:`Widget`).
 
+   .. method:: configure(cnf={}, **kw)
+      :no-typesetting:
+
+   .. method:: config(cnf={}, **kw)
+      :no-typesetting:
+
    .. method:: grid_configure(cnf={}, **kw)
                grid(cnf={}, **kw)
-               configure(cnf={}, **kw)
-               config(cnf={}, **kw)
 
       Position the widget in a cell of its container's grid.  Options include
       *row*/*column*, *rowspan*/*columnspan*, *sticky*, *padx*/*pady*,
-      *ipadx*/*ipady* and *in_*; see the Tk ``grid`` manual page.  :meth:`!grid`,
-      :meth:`!configure` and :meth:`!config` are aliases of
+      *ipadx*/*ipady* and *in_*; see the Tk ``grid`` manual page.  :meth:`grid`,
+      :meth:`configure` and :meth:`config` are aliases of
       :meth:`!grid_configure`.
 
+   .. method:: forget()
+      :no-typesetting:
+
    .. method:: grid_forget()
-               forget()
 
       Unmap the widget and remove it from the grid, forgetting its grid options.
-      :meth:`!forget` is an alias of :meth:`!grid_forget`.
+      :meth:`forget` is an alias of :meth:`!grid_forget`.
 
    .. method:: grid_remove()
 
       Unmap the widget and remove it from the grid, but remember its grid
       options so that it is restored to the same cell if it is gridded again.
 
+   .. method:: info()
+      :no-typesetting:
+
    .. method:: grid_info()
-               info()
 
       Return a dictionary of the widget's current grid options.
-      :meth:`!info` is an alias of :meth:`!grid_info`.
+      :meth:`info` is an alias of :meth:`!grid_info`.
+
+   .. method:: anchor(anchor=None)
+      :no-typesetting:
 
    .. method:: grid_anchor(anchor=None)
-               anchor(anchor=None)
 
-      Same as :meth:`Misc.grid_anchor`.  :meth:`!anchor` is an alias of
+      Same as :meth:`Misc.grid_anchor`.  :meth:`anchor` is an alias of
       :meth:`!grid_anchor`.
 
-   .. method:: grid_bbox(column=None, row=None, col2=None, row2=None)
-               bbox(column=None, row=None, col2=None, row2=None)
+   .. method:: bbox(column=None, row=None, col2=None, row2=None)
+      :no-typesetting:
 
-      Same as :meth:`Misc.grid_bbox`.  :meth:`!bbox` is an alias of
+   .. method:: grid_bbox(column=None, row=None, col2=None, row2=None)
+
+      Same as :meth:`Misc.grid_bbox`.  :meth:`bbox` is an alias of
       :meth:`!grid_bbox`.
 
+   .. method:: columnconfigure(index, cnf={}, **kw)
+      :no-typesetting:
+
    .. method:: grid_columnconfigure(index, cnf={}, **kw)
-               columnconfigure(index, cnf={}, **kw)
 
       Same as :meth:`Misc.grid_columnconfigure`: query or set the options
       (such as *weight*, *minsize*, *pad* and *uniform*) of a grid column.
-      :meth:`!columnconfigure` is an alias of :meth:`!grid_columnconfigure`.
+      :meth:`columnconfigure` is an alias of :meth:`!grid_columnconfigure`.
+
+   .. method:: rowconfigure(index, cnf={}, **kw)
+      :no-typesetting:
 
    .. method:: grid_rowconfigure(index, cnf={}, **kw)
-               rowconfigure(index, cnf={}, **kw)
 
       Same as :meth:`Misc.grid_rowconfigure`: query or set the options of a grid
-      row.  :meth:`!rowconfigure` is an alias of :meth:`!grid_rowconfigure`.
+      row.  :meth:`rowconfigure` is an alias of :meth:`!grid_rowconfigure`.
+
+   .. method:: location(x, y)
+      :no-typesetting:
 
    .. method:: grid_location(x, y)
-               location(x, y)
 
       Same as :meth:`Misc.grid_location`: return the ``(column, row)`` of the
-      cell that covers the pixel at *x*, *y*.  :meth:`!location` is an alias of
+      cell that covers the pixel at *x*, *y*.  :meth:`location` is an alias of
       :meth:`!grid_location`.
 
+   .. method:: size()
+      :no-typesetting:
+
    .. method:: grid_size()
-               size()
 
       Same as :meth:`Misc.grid_size`: return a ``(columns, rows)`` tuple giving
-      the size of the grid.  :meth:`!size` is an alias of :meth:`!grid_size`.
+      the size of the grid.  :meth:`size` is an alias of :meth:`!grid_size`.
+
+   .. method:: propagate(flag=['_noarg_'])
+      :no-typesetting:
 
    .. method:: grid_propagate(flag=['_noarg_'])
-               propagate(flag=['_noarg_'])
 
-      Same as :meth:`Misc.grid_propagate`.  :meth:`!propagate` is an alias of
+      Same as :meth:`Misc.grid_propagate`.  :meth:`propagate` is an alias of
       :meth:`!grid_propagate`.
 
+   .. method:: slaves(row=None, column=None)
+      :no-typesetting:
+
    .. method:: grid_slaves(row=None, column=None)
-               slaves(row=None, column=None)
 
       Same as :meth:`Misc.grid_slaves`: return the widgets managed in the grid,
-      optionally restricted to a *row* and/or *column*.  :meth:`!slaves` is an
+      optionally restricted to a *row* and/or *column*.  :meth:`slaves` is an
       alias of :meth:`!grid_slaves`.
 
-   .. method:: grid_content(row=None, column=None)
-               content(row=None, column=None)
+   .. method:: content(row=None, column=None)
+      :no-typesetting:
 
-      Same as :meth:`Misc.grid_content`.  :meth:`!content` is an alias of
+   .. method:: grid_content(row=None, column=None)
+
+      Same as :meth:`Misc.grid_content`.  :meth:`content` is an alias of
       :meth:`!grid_content`.
 
 
@@ -2981,8 +3141,10 @@ Widget classes
       given by *tagOrId* (the lowest matching item if it matches several).  This
       is like :meth:`~Widget.cget` but applies to an individual item.
 
+   .. method:: itemconfig(tagOrId, cnf=None, **kw)
+      :no-typesetting:
+
    .. method:: itemconfigure(tagOrId, cnf=None, **kw)
-               itemconfig(tagOrId, cnf=None, **kw)
 
       Query or modify the configuration options of the items given by *tagOrId*.
       This mirrors :meth:`~Widget.configure`, except that it applies to
@@ -2990,7 +3152,7 @@ Widget classes
       returns a dictionary describing the current options of the first matching
       item; otherwise it sets the given options on every matching item.  The
       legal options are those accepted by the corresponding ``create_*`` method.
-      :meth:`!itemconfig` is an alias of :meth:`!itemconfigure`.
+      :meth:`itemconfig` is an alias of :meth:`!itemconfigure`.
 
    .. method:: type(tagOrId)
 
@@ -3096,9 +3258,13 @@ Widget classes
 
       Return a tuple of the ids of all items given by *tagOrId*.
 
+   .. method:: lift(tagOrId, aboveThis=None, /)
+      :no-typesetting:
+
+   .. method:: tkraise(tagOrId, aboveThis=None, /)
+      :no-typesetting:
+
    .. method:: tag_raise(tagOrId, aboveThis=None, /)
-               lift(tagOrId, aboveThis=None, /)
-               tkraise(tagOrId, aboveThis=None, /)
 
       Move all items given by *tagOrId* to a new position in the display list
       just above the item given by *aboveThis*, or to the top of the display
@@ -3106,16 +3272,18 @@ Widget classes
       relative order is preserved.
       This has no effect on embedded window items, whose stacking order is
       controlled by :meth:`Misc.tkraise` and :meth:`Misc.lower` instead.
-      :meth:`!lift` and :meth:`!tkraise` are aliases of :meth:`!tag_raise`.
+      :meth:`lift` and :meth:`tkraise` are aliases of :meth:`!tag_raise`.
+
+   .. method:: lower(tagOrId, belowThis=None, /)
+      :no-typesetting:
 
    .. method:: tag_lower(tagOrId, belowThis=None, /)
-               lower(tagOrId, belowThis=None, /)
 
       Move all items given by *tagOrId* to a new position in the display list
       just below the item given by *belowThis*, or to the bottom of the display
       list if *belowThis* is omitted.  When several items are moved their
       relative order is preserved.
-      This has no effect on embedded window items.  :meth:`!lower` is an alias of
+      This has no effect on embedded window items.  :meth:`lower` is an alias of
       :meth:`!tag_lower`.
 
    .. method:: tag_bind(tagOrId, sequence=None, func=None, add=None)
@@ -3333,46 +3501,58 @@ Widget classes
 
       Return the numerical index corresponding to *index*.
 
+   .. method:: select_adjust(index)
+      :no-typesetting:
+
    .. method:: selection_adjust(index)
-               select_adjust(index)
 
       Locate the end of the selection nearest to the character given by
       *index*, and adjust that end to be at *index* (including but not going
       beyond it); the other end becomes the anchor point for future
       :meth:`selection_to` calls.  If there is no selection in the entry, a new
       one is created between *index* and the most recent anchor point,
-      inclusive.  ``select_adjust`` is an alias of :meth:`!selection_adjust`.
+      inclusive.  :meth:`select_adjust` is an alias of :meth:`!selection_adjust`.
+
+   .. method:: select_clear()
+      :no-typesetting:
 
    .. method:: selection_clear()
-               select_clear()
 
       Clear the selection if it is currently in this widget.  If the selection
-      is not in this widget the method has no effect.  ``select_clear`` is an
+      is not in this widget the method has no effect.  :meth:`select_clear` is an
       alias of :meth:`!selection_clear`.
 
+   .. method:: select_from(index)
+      :no-typesetting:
+
    .. method:: selection_from(index)
-               select_from(index)
 
       Set the selection anchor point to just before the character given by
-      *index*, without changing the selection.  ``select_from`` is an alias of
+      *index*, without changing the selection.  :meth:`select_from` is an alias of
       :meth:`!selection_from`.
 
+   .. method:: select_present()
+      :no-typesetting:
+
    .. method:: selection_present()
-               select_present()
 
       Return ``True`` if there are characters selected in the entry, ``False``
-      otherwise.  ``select_present`` is an alias of :meth:`!selection_present`.
+      otherwise.  :meth:`select_present` is an alias of :meth:`!selection_present`.
+
+   .. method:: select_range(start, end)
+      :no-typesetting:
 
    .. method:: selection_range(start, end)
-               select_range(start, end)
 
       Set the selection to include the characters starting with the one indexed
       by *start* and ending with the one just before *end*.  If *end* refers to
       the same character as *start* or an earlier one, the selection is cleared.
-      ``select_range`` is an alias of :meth:`!selection_range`.
+      :meth:`select_range` is an alias of :meth:`!selection_range`.
+
+   .. method:: select_to(index)
+      :no-typesetting:
 
    .. method:: selection_to(index)
-               select_to(index)
 
       Set the selection between the anchor point and *index*: if *index* is
       before the anchor point, the selection runs from *index* up to but not
@@ -3380,7 +3560,7 @@ Widget classes
       not including *index*; if they coincide, nothing happens.  The anchor
       point is the one set by the most recent :meth:`selection_from` or
       :meth:`selection_adjust` call.  If there is no selection in the entry, a
-      new one is created using the most recent anchor point.  ``select_to`` is
+      new one is created using the most recent anchor point.  :meth:`select_to` is
       an alias of :meth:`!selection_to`.
 
    .. method:: scan_mark(x)
@@ -3513,32 +3693,44 @@ Widget classes
       Return a tuple containing the numerical indices of all of the items that
       are currently selected, or an empty tuple if no items are selected.
 
+   .. method:: select_anchor(index)
+      :no-typesetting:
+
    .. method:: selection_anchor(index)
 
       Set the selection anchor to the item given by *index*.  If *index* refers
       to a non-existent item, the closest item is used.  The selection anchor
       is the end of the selection that is fixed while dragging out a selection
       with the mouse, and may afterwards be referred to with the ``'anchor'``
-      index.  :meth:`!select_anchor` is an alias of :meth:`!selection_anchor`.
+      index.  :meth:`select_anchor` is an alias of :meth:`!selection_anchor`.
+
+   .. method:: select_clear(first, last=None)
+      :no-typesetting:
 
    .. method:: selection_clear(first, last=None)
 
       Deselect any of the items in the range from *first* to *last* inclusive
       that are selected.  The selection state of items outside this range is
-      not changed.  :meth:`!select_clear` is an alias of
+      not changed.  :meth:`select_clear` is an alias of
       :meth:`!selection_clear`.
+
+   .. method:: select_includes(index)
+      :no-typesetting:
 
    .. method:: selection_includes(index)
 
       Return ``True`` if the item given by *index* is currently selected,
-      ``False`` otherwise.  :meth:`!select_includes` is an alias of
+      ``False`` otherwise.  :meth:`select_includes` is an alias of
       :meth:`!selection_includes`.
+
+   .. method:: select_set(first, last=None)
+      :no-typesetting:
 
    .. method:: selection_set(first, last=None)
 
       Select all of the items in the range from *first* to *last* inclusive,
       without affecting the selection state of items outside that range.
-      :meth:`!select_set` is an alias of :meth:`!selection_set`.
+      :meth:`select_set` is an alias of :meth:`!selection_set`.
 
    .. method:: itemcget(index, option)
 
@@ -3553,7 +3745,7 @@ Widget classes
       it returns a dictionary describing the current options of the item;
       otherwise it sets the given options.  The supported item options are
       *background*, *foreground*, *selectbackground* and *selectforeground*.
-      :meth:`!itemconfig` is an alias of :meth:`!itemconfigure`.
+      :meth:`itemconfig` is an alias of :meth:`!itemconfigure`.
 
    .. method:: scan_mark(x, y)
 
@@ -3672,14 +3864,16 @@ Widget classes
       Return the current value of the configuration option *option* for the
       entry given by *index*.
 
+   .. method:: entryconfig(index, cnf=None, **kw)
+      :no-typesetting:
+
    .. method:: entryconfigure(index, cnf=None, **kw)
-               entryconfig(index, cnf=None, **kw)
 
       Query or modify the configuration options of the entry given by *index*.
       This mirrors :meth:`~Widget.configure`, except that it applies to an
       individual entry rather than to the menu as a whole.  With no options, it
       returns a dictionary describing the current options of the entry;
-      otherwise it sets the given options.  :meth:`!entryconfig` is an alias of
+      otherwise it sets the given options.  :meth:`entryconfig` is an alias of
       :meth:`!entryconfigure`.
 
    .. method:: index(index)
@@ -3799,11 +3993,13 @@ Widget classes
       *child*; they may be any of the options accepted by
       :meth:`paneconfigure`.
 
+   .. method:: forget(child)
+      :no-typesetting:
+
    .. method:: remove(child)
-               forget(child)
 
       Remove the pane containing *child* from the panedwindow.  All geometry
-      management options for *child* are forgotten.  :meth:`!forget` is an
+      management options for *child* are forgotten.  :meth:`forget` is an
       alias of :meth:`!remove`.
 
    .. method:: panes()
@@ -3817,8 +4013,10 @@ Widget classes
       containing *child*.  *option* may be any value allowed by
       :meth:`paneconfigure`.
 
+   .. method:: paneconfig(tagOrId, cnf=None, **kw)
+      :no-typesetting:
+
    .. method:: paneconfigure(tagOrId, cnf=None, **kw)
-               paneconfig(tagOrId, cnf=None, **kw)
 
       Query or modify the management options of the pane containing the widget
       *tagOrId*.  With no options, it returns a dictionary describing all of
@@ -3833,7 +4031,7 @@ Widget classes
       characters ``n``, ``s``, ``e`` and ``w``), *hide* (hide the pane while
       keeping it in the list of panes) and *stretch* (how extra space is
       allocated to the pane: one of ``'always'``, ``'first'``, ``'last'``,
-      ``'middle'`` or ``'never'``).  :meth:`!paneconfig` is an alias of
+      ``'middle'`` or ``'never'``).  :meth:`paneconfig` is an alias of
       :meth:`!paneconfigure`.
 
    .. method:: identify(x, y)
@@ -4343,8 +4541,10 @@ Widget classes
       Delete each of the tags named in *tagNames*, removing them from all
       characters and discarding their options and bindings.
 
+   .. method:: tag_config(tagName, cnf=None, **kw)
+      :no-typesetting:
+
    .. method:: tag_configure(tagName, cnf=None, **kw)
-               tag_config(tagName, cnf=None, **kw)
 
       Query or modify the configuration options of the tag *tagName*.  This
       mirrors :meth:`~Widget.configure`, except that it applies to a tag rather
@@ -4356,7 +4556,7 @@ Widget classes
       *elide* (whether the text is hidden).  Defining a tag this way also gives
       it a priority higher than any existing tag.
 
-      :meth:`!tag_config` is an alias of :meth:`!tag_configure`.
+      :meth:`tag_config` is an alias of :meth:`!tag_configure`.
 
    .. method:: tag_cget(tagName, option)
 
@@ -4454,13 +4654,15 @@ Widget classes
       Return the current value of the configuration option *option* for the
       embedded window at *index*.
 
+   .. method:: window_config(index, cnf=None, **kw)
+      :no-typesetting:
+
    .. method:: window_configure(index, cnf=None, **kw)
-               window_config(index, cnf=None, **kw)
 
       Query or modify the configuration options of the embedded window at
       *index*, like :meth:`~Widget.configure` but applied to that window.
 
-      :meth:`!window_config` is an alias of :meth:`!window_configure`.
+      :meth:`window_config` is an alias of :meth:`!window_configure`.
 
    .. method:: window_names()
 
@@ -4625,8 +4827,10 @@ Variable classes
       is returned as a string; the typed subclasses convert it to the
       appropriate Python type.
 
+   .. method:: initialize(value)
+      :no-typesetting:
+
    .. method:: set(value)
-               initialize(value)
 
       Set the variable to *value*.
 
@@ -4664,8 +4868,10 @@ Variable classes
 
       .. versionadded:: 3.6
 
+   .. method:: trace(mode, callback)
+      :no-typesetting:
+
    .. method:: trace_variable(mode, callback)
-               trace(mode, callback)
 
       Register *callback* to be called when the variable is accessed according
       to *mode*.  *mode* is one of the strings ``'r'``, ``'w'`` or ``'u'``, for
@@ -4735,8 +4941,10 @@ Variable classes
       Return the value of the variable as a :class:`bool`.  Raise a
       :exc:`ValueError` if the value cannot be interpreted as a boolean.
 
+   .. method:: initialize(value)
+      :no-typesetting:
+
    .. method:: set(value)
-               initialize(value)
 
       Set the variable to *value*, converting it to a boolean.
 
@@ -4760,12 +4968,14 @@ Image classes
    queried and changed later with the mapping protocol (using ``image[key]``)
    or with the :meth:`configure` method.
 
+   .. method:: config(**kw)
+      :no-typesetting:
+
    .. method:: configure(**kw)
-               config(**kw)
 
       Modify one or more configuration options of the image.  The valid options
       depend on the image type; see :class:`PhotoImage` and :class:`BitmapImage`.
-      :meth:`!config` is an alias of :meth:`!configure`.
+      :meth:`config` is an alias of :meth:`!configure`.
 
    .. method:: height()
 

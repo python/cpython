@@ -59,11 +59,15 @@ The different font weights and slants are:
 
       Retrieve an attribute of the font.
 
+   .. method:: config(**options)
+      :no-typesetting:
+
    .. method:: configure(**options)
-               config(**options)
 
       Modify one or more attributes of the font.  With no arguments, return a
       dictionary of the current attributes.
+
+      :meth:`config` is an alias of :meth:`!configure`.
 
    .. method:: copy()
 
