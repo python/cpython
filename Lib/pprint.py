@@ -737,18 +737,13 @@ class PrettyPrinter:
 
     def _pprint_template(self, object, stream, indent, allowance, context, level):
         cls_name = object.__class__.__name__
-        if self._expand:
-            indent += self._indent_per_level
-        else:
-            indent += len(cls_name) + 1
 
-        items = (
-            ("strings", object.strings),
-            ("interpolations", object.interpolations),
-        )
+        if not self._expand:
+            indent += len(cls_name)
+
         stream.write(self._format_block_start(cls_name + "(", indent))
-        self._format_namespace_items(
-            items, stream, indent, allowance, context, level
+        self._format_items(
+            object, stream, indent, allowance, context, level
         )
         stream.write(
             self._format_block_end(")", indent - self._indent_per_level)
