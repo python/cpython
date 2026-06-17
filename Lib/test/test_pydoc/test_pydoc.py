@@ -1006,6 +1006,8 @@ class PydocDocTest(unittest.TestCase):
         os = import_helper.import_fresh_module('os')
         expected = os.__doc__.splitlines()[0]
         filename = os.__spec__.cached
+        if not filename:
+            raise unittest.SkipTest('requires .pyc files')
         synopsis = pydoc.synopsis(filename)
 
         self.assertEqual(synopsis, expected)
@@ -1013,10 +1015,10 @@ class PydocDocTest(unittest.TestCase):
     def test_synopsis_sourceless_empty_doc(self):
         with os_helper.temp_cwd() as test_dir:
             init_path = os.path.join(test_dir, 'foomod42.py')
-            cached_path = importlib.util.cache_from_source(init_path)
+            cached_path = init_path + 'c'
             with open(init_path, 'w') as fobj:
                 fobj.write("foo = 1")
-            py_compile.compile(init_path)
+            py_compile.compile(init_path, cached_path)
             synopsis = pydoc.synopsis(init_path, {})
             self.assertIsNone(synopsis)
             synopsis_cached = pydoc.synopsis(cached_path, {})
@@ -1242,6 +1244,71 @@ function_with_really_long_name_so_annotations_can_be_rather_small(
 
 <lambda> lambda very_long_parameter_name_that_should_not_fit_into_a_single_line, second_very_long_parameter_name
 ''' % __name__)
+
+    @requires_docstrings
+    def test_long_summaries(self):
+        from . import longsummary
+        doc = pydoc.render_doc(longsummary)
+        doc = clean_text(doc)
+        self.assertEqual(doc, '''Python Library Documentation: module test.test_pydoc.longsummary in test.test_pydoc
+
+NAME
+    test.test_pydoc.longsummary
+
+CLASSES
+    builtins.object
+        C
+
+    class C(builtins.object)
+     |  This is a class summary that consists of a very long single line,
+     |  exceeding the recommended PEP 8 limit.
+     |
+     |  The rest of the docstring body, separated from the summary by a blank line, can also contain very long lines.
+     |
+     |  Methods defined here:
+     |
+     |  meth(self)
+     |      This is a method summary that consists of a very long single line,
+     |      exceeding the recommended PEP 8 limit.
+     |
+     |      The rest of the docstring body, separated from the summary by a blank line, can also contain very long lines.
+     |
+     |  ----------------------------------------------------------------------
+     |  Readonly properties defined here:
+     |
+     |  prop
+     |      This is a property summary that consists of a very long single line,
+     |      exceeding the recommended PEP 8 limit.
+     |
+     |      The rest of the docstring body, separated from the summary by a blank line, can also contain very long lines.
+     |
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |
+     |  __dict__
+     |      dictionary for instance variables
+     |
+     |  __weakref__
+     |      list of weak references to the object
+
+FUNCTIONS
+    func(self)
+        This is a function summary that consists of a very long single line,
+        exceeding the recommended PEP 8 limit.
+
+        The rest of the docstring body, separated from the summary by a blank line, can also contain very long lines.
+
+DATA
+    data = <test.test_pydoc.longsummary.C object>
+        This is a data summary that consists of a very long single line,
+        exceeding the recommended PEP 8 limit.
+
+        The rest of the docstring body, separated from the summary by a blank line, can also contain very long lines.
+
+FILE
+    %s
+
+''' % inspect.getabsfile(longsummary))
 
     def test__future__imports(self):
         # __future__ features are excluded from module help,
@@ -2170,7 +2237,7 @@ class TestHelper(unittest.TestCase):
 
     def test_keywords(self):
         self.assertEqual(sorted(pydoc.Helper.keywords),
-                         sorted(keyword.kwlist))
+                         sorted(keyword.kwlist + ['lazy']))
 
     def test_interact_empty_line_continues(self):
         # gh-138568: test pressing Enter without input should continue in help session

@@ -65,6 +65,23 @@ class MiscSourceEncodingTest(unittest.TestCase):
         # two bytes in common with the UTF-8 BOM
         self.assertRaises(SyntaxError, eval, b'\xef\xbb\x20')
 
+    def test_truncated_utf8_at_eof(self):
+        # Regression test for https://issues.oss-fuzz.com/issues/451112368
+        # Truncated multi-byte UTF-8 sequences at end of input caused an
+        # out-of-bounds read in Parser/tokenizer/helpers.c:valid_utf8().
+        truncated = [
+            b'\xc2',              # 2-byte lead, missing 1 continuation
+            b'\xdf',              # 2-byte lead, missing 1 continuation
+            b'\xe0',              # 3-byte lead, missing 2 continuations
+            b'\xe0\xa0',          # 3-byte lead, missing 1 continuation
+            b'\xf0\x90',          # 4-byte lead, missing 2 continuations
+            b'\xf0\x90\x80',      # 4-byte lead, missing 1 continuation
+            b'\xf3',              # 4-byte lead, missing 3 (the oss-fuzz reproducer)
+        ]
+        for seq in truncated:
+            with self.subTest(seq=seq):
+                self.assertRaises(SyntaxError, compile, seq, '<test>', 'exec')
+
     @support.requires_subprocess()
     def test_20731(self):
         sub = subprocess.Popen([sys.executable,
@@ -370,8 +387,7 @@ class AbstractSourceEncodingTest:
                b'#third\xa4\n'
                b'raise RuntimeError\n')
         self.check_script_error(src,
-                br"'utf-8' codec can't decode byte|"
-                br"encoding problem: utf8")
+                br"'utf-8' codec can't decode byte")
 
     def test_crlf(self):
         src = (b'print(ascii("""\r\n"""))\n')
@@ -523,6 +539,20 @@ class FileSourceEncodingTest(AbstractSourceEncodingTest, unittest.TestCase):
                 line = line.removeprefix('\ufeff')
             self.assertIn(line.encode(), err)
 
+    def test_coding_spec_unknown_encoding(self):
+        src = (b'# coding: c1252\n'
+               b'print("Hi!")\n')
+        self.check_script_error(src, br"unknown encoding: c1252")
+
+    def test_coding_spec_decode_error(self):
+        src = (b'# coding: shift-jis\n'
+               b'print("\xc4\x85")\n')
+        self.check_script_error(src, br"'shift_jis' codec can't decode byte")
+
+    def test_coding_spec_non_text_encoding(self):
+        src = (b'# coding: hex_codec\n'
+               b'print("eggs")\n')
+        self.check_script_error(src, br"'hex_codec' is not a text encoding")
 
 
 if __name__ == "__main__":

@@ -1,1 +1,0 @@
-Improve performance of :class:`io.BufferedReader` line iteration by ~49%.

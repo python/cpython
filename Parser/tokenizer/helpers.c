@@ -1,6 +1,8 @@
 #include "Python.h"
 #include "errcode.h"
+#include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_token.h"
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 
 #include "../lexer/state.h"
 
@@ -149,6 +151,53 @@ _PyTokenizer_warn_invalid_escape_sequence(struct tok_state *tok, int first_inval
     return 0;
 }
 
+void
+_PyTokenizer_raise_init_error(PyObject *filename)
+{
+    if (!(PyErr_ExceptionMatches(PyExc_LookupError)
+          || PyErr_ExceptionMatches(PyExc_SyntaxError)
+          || PyErr_ExceptionMatches(PyExc_ValueError)
+          || PyErr_ExceptionMatches(PyExc_UnicodeDecodeError))) {
+        return;
+    }
+    PyObject *errstr = NULL;
+    PyObject *tuple = NULL;
+    PyObject *type;
+    PyObject *value;
+    PyObject *tback;
+    PyErr_Fetch(&type, &value, &tback);
+    if (PyErr_GivenExceptionMatches(value, PyExc_SyntaxError)) {
+        if (PyObject_SetAttr(value, &_Py_ID(filename), filename)) {
+            goto error;
+        }
+        PyErr_Restore(type, value, tback);
+        return;
+    }
+    errstr = PyObject_Str(value);
+    if (!errstr) {
+        goto error;
+    }
+
+    PyObject *tmp = Py_BuildValue("(OiiO)", filename, 0, -1, Py_None);
+    if (!tmp) {
+        goto error;
+    }
+
+    tuple = _PyTuple_FromPair(errstr, tmp);
+    Py_DECREF(tmp);
+    if (!tuple) {
+        goto error;
+    }
+    PyErr_SetObject(PyExc_SyntaxError, tuple);
+
+error:
+    Py_XDECREF(type);
+    Py_XDECREF(value);
+    Py_XDECREF(tback);
+    Py_XDECREF(errstr);
+    Py_XDECREF(tuple);
+}
+
 int
 _PyTokenizer_parser_warn(struct tok_state *tok, PyObject *category, const char *format, ...)
 {
@@ -193,6 +242,7 @@ _PyTokenizer_new_string(const char *s, Py_ssize_t len, struct tok_state *tok)
     char* result = (char *)PyMem_Malloc(len + 1);
     if (!result) {
         tok->done = E_NOMEM;
+        PyErr_NoMemory();
         return NULL;
     }
     memcpy(result, s, len);
@@ -221,6 +271,7 @@ _PyTokenizer_translate_newlines(const char *s, int exec_input, int preserve_crlf
     buf = PyMem_Malloc(needed_length);
     if (buf == NULL) {
         tok->done = E_NOMEM;
+        PyErr_NoMemory();
         return NULL;
     }
     for (current = buf; *s; s++, current++) {
@@ -416,8 +467,8 @@ _PyTokenizer_check_coding_spec(const char* line, Py_ssize_t size, struct tok_sta
     if (tok->encoding == NULL) {
         assert(tok->decoding_readline == NULL);
         if (strcmp(cs, "utf-8") != 0 && !set_readline(tok, cs)) {
+            _PyTokenizer_raise_init_error(tok->filename);
             _PyTokenizer_error_ret(tok);
-            PyErr_Format(PyExc_SyntaxError, "encoding problem: %s", cs);
             PyMem_Free(cs);
             return 0;
         }
@@ -494,9 +545,11 @@ valid_utf8(const unsigned char* s)
         return 0;
     }
     length = expected + 1;
-    for (; expected; expected--)
-        if (s[expected] < 0x80 || s[expected] >= 0xC0)
+    for (int i = 1; i <= expected; i++) {
+        if (s[i] < 0x80 || s[i] >= 0xC0) {
             return 0;
+        }
+    }
     return length;
 }
 

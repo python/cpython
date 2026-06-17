@@ -4,9 +4,6 @@
 .. module:: zipfile
    :synopsis: Read and write ZIP-format archive files.
 
-.. moduleauthor:: James C. Ahlstrom <jim@interet.com>
-.. sectionauthor:: James C. Ahlstrom <jim@interet.com>
-
 **Source code:** :source:`Lib/zipfile/`
 
 --------------
@@ -82,7 +79,7 @@ The module defines the following items:
 
    Class used to represent information about a member of an archive. Instances
    of this class are returned by the :meth:`.getinfo` and :meth:`.infolist`
-   methods of :class:`ZipFile` objects.  Most users of the :mod:`zipfile` module
+   methods of :class:`ZipFile` objects.  Most users of the :mod:`!zipfile` module
    will not need to create these, but only use those created by this
    module. *filename* should be the full name of the archive member, and
    *date_time* should be a tuple containing six fields which describe the time
@@ -209,7 +206,7 @@ ZipFile objects
 
    If *allowZip64* is ``True`` (the default) zipfile will create ZIP files that
    use the ZIP64 extensions when the zipfile is larger than 4 GiB. If it is
-   ``false`` :mod:`zipfile` will raise an exception when the ZIP file would
+   ``false`` :mod:`!zipfile` will raise an exception when the ZIP file would
    require ZIP64 extensions.
 
    The *compresslevel* parameter controls the compression level to use when
@@ -414,9 +411,9 @@ ZipFile objects
    .. warning::
 
       Never extract archives from untrusted sources without prior inspection.
-      It is possible that files are created outside of *path*, e.g. members
-      that have absolute filenames starting with ``"/"`` or filenames with two
-      dots ``".."``.  This module attempts to prevent that.
+      It is possible that files are created outside of *path*, for example, members
+      that have absolute filenames or filenames with ".." components.
+      This module attempts to prevent that.
       See :meth:`extract` note.
 
    .. versionchanged:: 3.6
@@ -536,6 +533,11 @@ ZipFile objects
       a closed ZipFile will raise a :exc:`ValueError`.  Previously,
       a :exc:`RuntimeError` was raised.
 
+   .. versionchanged:: 3.14
+      Now respects the :envvar:`SOURCE_DATE_EPOCH` environment variable.
+      If set, it uses this value as the modification timestamp for the file
+      written into the ZIP archive, instead of using the current time.
+
 .. method:: ZipFile.mkdir(zinfo_or_directory, mode=511)
 
    Create a directory inside the archive.  If *zinfo_or_directory* is a string,
@@ -588,7 +590,7 @@ Path objects
       The :class:`Path` class does not sanitize filenames within the ZIP archive. Unlike
       the :meth:`ZipFile.extract` and :meth:`ZipFile.extractall` methods, it is the
       caller's responsibility to validate or sanitize filenames to prevent path traversal
-      vulnerabilities (e.g., filenames containing ".." or absolute paths). When handling
+      vulnerabilities (for example, absolute paths or paths with ".." components). When handling
       untrusted archives, consider resolving filenames using :func:`os.path.abspath`
       and checking against the target directory with :func:`os.path.commonpath`.
 
@@ -957,7 +959,7 @@ Instances have the following methods and attributes:
 Command-line interface
 ----------------------
 
-The :mod:`zipfile` module provides a simple command-line interface to interact
+The :mod:`!zipfile` module provides a simple command-line interface to interact
 with ZIP archives.
 
 If you want to create a new ZIP archive, specify its name after the :option:`-c`

@@ -361,7 +361,7 @@ set_unhashable_type(PyObject *key)
 int
 _PySet_AddTakeRef(PySetObject *so, PyObject *key)
 {
-    Py_hash_t hash = _PyObject_HashFast(key);
+    Py_hash_t hash = PyObject_Hash(key);
     if (hash == -1) {
         set_unhashable_type(key);
         Py_DECREF(key);
@@ -600,7 +600,7 @@ set_discard_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
 static int
 set_add_key(PySetObject *so, PyObject *key)
 {
-    Py_hash_t hash = _PyObject_HashFast(key);
+    Py_hash_t hash = PyObject_Hash(key);
     if (hash == -1) {
         set_unhashable_type(key);
         return -1;
@@ -611,7 +611,7 @@ set_add_key(PySetObject *so, PyObject *key)
 static int
 set_contains_key(PySetObject *so, PyObject *key)
 {
-    Py_hash_t hash = _PyObject_HashFast(key);
+    Py_hash_t hash = PyObject_Hash(key);
     if (hash == -1) {
         set_unhashable_type(key);
         return -1;
@@ -622,7 +622,7 @@ set_contains_key(PySetObject *so, PyObject *key)
 static int
 set_discard_key(PySetObject *so, PyObject *key)
 {
-    Py_hash_t hash = _PyObject_HashFast(key);
+    Py_hash_t hash = PyObject_Hash(key);
     if (hash == -1) {
         set_unhashable_type(key);
         return -1;
@@ -964,7 +964,10 @@ _shuffle_bits(Py_uhash_t h)
 
    This hash algorithm can be used on either a frozenset or a set.
    When it is used on a set, it computes the hash value of the equivalent
-   frozenset without creating a new frozenset object. */
+   frozenset without creating a new frozenset object.
+
+   If you update this code, update also frozendict_hash() which copied this
+   code. */
 
 static Py_hash_t
 frozenset_hash_impl(PyObject *self)
@@ -1183,10 +1186,14 @@ set_iter(PyObject *so)
 static int
 set_update_dict_lock_held(PySetObject *so, PyObject *other)
 {
-    assert(PyDict_CheckExact(other));
+    assert(PyAnyDict_CheckExact(other));
 
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(so);
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(other);
+#ifdef Py_DEBUG
+    if (!PyFrozenDict_CheckExact(other)) {
+        _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(other);
+    }
+#endif
 
     /* Do one big resize at the start, rather than
     * incrementally resizing as we insert new keys.  Expect
@@ -1242,7 +1249,7 @@ set_update_lock_held(PySetObject *so, PyObject *other)
     if (PyAnySet_Check(other)) {
         return set_merge_lock_held(so, other);
     }
-    else if (PyDict_CheckExact(other)) {
+    else if (PyAnyDict_CheckExact(other)) {
         return set_update_dict_lock_held(so, other);
     }
     return set_update_iterable_lock_held(so, other);
@@ -1267,6 +1274,9 @@ set_update_local(PySetObject *so, PyObject *other)
         Py_END_CRITICAL_SECTION();
         return rv;
     }
+    else if (PyFrozenDict_CheckExact(other)) {
+        return set_update_dict_lock_held(so, other);
+    }
     return set_update_iterable_lock_held(so, other);
 }
 
@@ -1288,6 +1298,13 @@ set_update_internal(PySetObject *so, PyObject *other)
         Py_BEGIN_CRITICAL_SECTION2(so, other);
         rv = set_update_dict_lock_held(so, other);
         Py_END_CRITICAL_SECTION2();
+        return rv;
+    }
+    else if (PyFrozenDict_CheckExact(other)) {
+        int rv;
+        Py_BEGIN_CRITICAL_SECTION(so);
+        rv = set_update_dict_lock_held(so, other);
+        Py_END_CRITICAL_SECTION();
         return rv;
     }
     else {
@@ -1526,6 +1543,16 @@ set_swap_bodies(PySetObject *a, PySetObject *b)
     }
     FT_ATOMIC_STORE_PTR_RELEASE(a->table, a_table);
     FT_ATOMIC_STORE_PTR_RELEASE(b->table, b_table);
+}
+
+PyObject *
+_PySet_Freeze(PyObject *set)
+{
+    assert(set != NULL);
+    assert(PySet_CheckExact(set));
+    assert(_PyObject_IsUniquelyReferenced(set));
+    set->ob_type = &PyFrozenSet_Type;
+    return Py_NewRef(set);
 }
 
 /*[clinic input]
@@ -2030,7 +2057,7 @@ set_difference(PySetObject *so, PyObject *other)
     if (PyAnySet_Check(other)) {
         other_size = PySet_GET_SIZE(other);
     }
-    else if (PyDict_CheckExact(other)) {
+    else if (PyAnyDict_CheckExact(other)) {
         other_size = PyDict_GET_SIZE(other);
     }
     else {
@@ -2047,7 +2074,7 @@ set_difference(PySetObject *so, PyObject *other)
     if (result == NULL)
         return NULL;
 
-    if (PyDict_CheckExact(other)) {
+    if (PyAnyDict_CheckExact(other)) {
         while (set_next(so, &pos, &entry)) {
             key = entry->key;
             hash = entry->hash;
@@ -2094,6 +2121,7 @@ set_difference(PySetObject *so, PyObject *other)
 }
 
 /*[clinic input]
+@permit_long_summary
 set.difference as set_difference_multi
     so: setobject
     *others: array
@@ -2104,7 +2132,7 @@ Return a new set with elements in the set that are not in the others.
 static PyObject *
 set_difference_multi_impl(PySetObject *so, PyObject * const *others,
                           Py_ssize_t others_length)
-/*[clinic end generated code: output=b0d33fb05d5477a7 input=c1eb448d483416ad]*/
+/*[clinic end generated code: output=b0d33fb05d5477a7 input=e0fbedbf79d91d4e]*/
 {
     Py_ssize_t i;
     PyObject *result, *other;
@@ -2169,7 +2197,11 @@ static int
 set_symmetric_difference_update_dict(PySetObject *so, PyObject *other)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(so);
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(other);
+#ifdef Py_DEBUG
+    if (!PyFrozenDict_CheckExact(other)) {
+        _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(other);
+    }
+#endif
 
     Py_ssize_t pos = 0;
     PyObject *key, *value;
@@ -2243,6 +2275,11 @@ set_symmetric_difference_update_impl(PySetObject *so, PyObject *other)
         rv = set_symmetric_difference_update_dict(so, other);
         Py_END_CRITICAL_SECTION2();
     }
+    else if (PyFrozenDict_CheckExact(other)) {
+        Py_BEGIN_CRITICAL_SECTION(so);
+        rv = set_symmetric_difference_update_dict(so, other);
+        Py_END_CRITICAL_SECTION();
+    }
     else if (PyAnySet_Check(other)) {
         Py_BEGIN_CRITICAL_SECTION2(so, other);
         rv = set_symmetric_difference_update_set(so, (PySetObject *)other);
@@ -2267,6 +2304,7 @@ set_symmetric_difference_update_impl(PySetObject *so, PyObject *other)
 }
 
 /*[clinic input]
+@permit_long_summary
 @critical_section so other
 set.symmetric_difference
     so: setobject
@@ -2278,7 +2316,7 @@ Return a new set with elements in either the set or other but not both.
 
 static PyObject *
 set_symmetric_difference_impl(PySetObject *so, PyObject *other)
-/*[clinic end generated code: output=270ee0b5d42b0797 input=624f6e7bbdf70db1]*/
+/*[clinic end generated code: output=270ee0b5d42b0797 input=8c29b0be90d47feb]*/
 {
     PySetObject *result = (PySetObject *)make_new_set_basetype(Py_TYPE(so), NULL);
     if (result == NULL) {
@@ -2476,7 +2514,7 @@ _PySet_Contains(PySetObject *so, PyObject *key)
 {
     assert(so);
 
-    Py_hash_t hash = _PyObject_HashFast(key);
+    Py_hash_t hash = PyObject_Hash(key);
     if (hash == -1) {
         if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError)) {
             set_unhashable_type(key);
@@ -2536,7 +2574,7 @@ static PyObject *
 frozenset___contains___impl(PySetObject *so, PyObject *key)
 /*[clinic end generated code: output=2301ed91bc3a6dd5 input=2f04922a98d8bab7]*/
 {
-    Py_hash_t hash = _PyObject_HashFast(key);
+    Py_hash_t hash = PyObject_Hash(key);
     if (hash == -1) {
         if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError)) {
             set_unhashable_type(key);
@@ -2764,7 +2802,8 @@ static PyMethodDef set_methods[] = {
     SET_SYMMETRIC_DIFFERENCE_UPDATE_METHODDEF
     SET_UNION_METHODDEF
     SET_UPDATE_METHODDEF
-    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
+     PyDoc_STR("sets are generic over the type of their elements")},
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -2868,7 +2907,8 @@ static PyMethodDef frozenset_methods[] = {
     SET___SIZEOF___METHODDEF
     SET_SYMMETRIC_DIFFERENCE_METHODDEF
     SET_UNION_METHODDEF
-    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
+     PyDoc_STR("frozensets are generic over the type of their elements")},
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -2997,14 +3037,14 @@ PySet_Contains(PyObject *anyset, PyObject *key)
         PyErr_BadInternalCall();
         return -1;
     }
-    if (PyFrozenSet_CheckExact(anyset)) {
-        return set_contains_key((PySetObject *)anyset, key);
+
+    PySetObject *so = (PySetObject *)anyset;
+    Py_hash_t hash = PyObject_Hash(key);
+    if (hash == -1) {
+        set_unhashable_type(key);
+        return -1;
     }
-    int rv;
-    Py_BEGIN_CRITICAL_SECTION(anyset);
-    rv = set_contains_key((PySetObject *)anyset, key);
-    Py_END_CRITICAL_SECTION();
-    return rv;
+    return set_contains_entry(so, key, hash);
 }
 
 int

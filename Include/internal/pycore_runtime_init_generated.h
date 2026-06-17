@@ -1444,6 +1444,8 @@ extern "C" {
     INIT_ID(__iter__), \
     INIT_ID(__itruediv__), \
     INIT_ID(__ixor__), \
+    INIT_ID(__lazy_import__), \
+    INIT_ID(__lazy_modules__), \
     INIT_ID(__le__), \
     INIT_ID(__len__), \
     INIT_ID(__length_hint__), \
@@ -1572,13 +1574,16 @@ extern "C" {
     INIT_ID(aclose), \
     INIT_ID(add), \
     INIT_ID(add_done_callback), \
+    INIT_ID(adobe), \
     INIT_ID(after_in_child), \
     INIT_ID(after_in_parent), \
     INIT_ID(alias), \
     INIT_ID(align), \
     INIT_ID(all), \
+    INIT_ID(all_interpreters), \
     INIT_ID(all_threads), \
     INIT_ID(allow_code), \
+    INIT_ID(alphabet), \
     INIT_ID(any), \
     INIT_ID(append), \
     INIT_ID(arg), \
@@ -1630,6 +1635,7 @@ extern "C" {
     INIT_ID(callable), \
     INIT_ID(callback), \
     INIT_ID(cancel), \
+    INIT_ID(canonical), \
     INIT_ID(capath), \
     INIT_ID(capitals), \
     INIT_ID(category), \
@@ -1767,6 +1773,7 @@ extern "C" {
     INIT_ID(flags), \
     INIT_ID(flush), \
     INIT_ID(fold), \
+    INIT_ID(foldspaces), \
     INIT_ID(follow_symlinks), \
     INIT_ID(format), \
     INIT_ID(format_spec), \
@@ -1889,6 +1896,7 @@ extern "C" {
     INIT_ID(mask), \
     INIT_ID(match), \
     INIT_ID(max_length), \
+    INIT_ID(max_threads), \
     INIT_ID(maxdigits), \
     INIT_ID(maxevents), \
     INIT_ID(maxlen), \
@@ -1966,6 +1974,8 @@ extern "C" {
     INIT_ID(outpath), \
     INIT_ID(overlapped), \
     INIT_ID(owner), \
+    INIT_ID(pad), \
+    INIT_ID(padded), \
     INIT_ID(pages), \
     INIT_ID(parameter), \
     INIT_ID(parent), \
@@ -1978,6 +1988,7 @@ extern "C" {
     INIT_ID(person), \
     INIT_ID(pi_factory), \
     INIT_ID(pid), \
+    INIT_ID(pidfd), \
     INIT_ID(pointer_bits), \
     INIT_ID(policy), \
     INIT_ID(pos), \
@@ -2019,6 +2030,7 @@ extern "C" {
     INIT_ID(repeat), \
     INIT_ID(repl), \
     INIT_ID(replace), \
+    INIT_ID(repr), \
     INIT_ID(reqrefs), \
     INIT_ID(require_ready), \
     INIT_ID(reserved), \
@@ -2096,6 +2108,7 @@ extern "C" {
     INIT_ID(take_bytes), \
     INIT_ID(target), \
     INIT_ID(target_is_directory), \
+    INIT_ID(targetfd), \
     INIT_ID(task), \
     INIT_ID(tb_frame), \
     INIT_ID(tb_lasti), \
@@ -2138,6 +2151,7 @@ extern "C" {
     INIT_ID(updates), \
     INIT_ID(uri), \
     INIT_ID(usedforsecurity), \
+    INIT_ID(utcoffset), \
     INIT_ID(value), \
     INIT_ID(values), \
     INIT_ID(version), \

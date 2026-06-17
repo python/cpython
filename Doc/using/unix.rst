@@ -6,9 +6,6 @@
  Using Python on Unix platforms
 ********************************
 
-.. sectionauthor:: Shriphani Palakodety
-
-
 Getting and installing the latest version of Python
 ===================================================
 
