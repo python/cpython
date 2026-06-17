@@ -712,7 +712,10 @@ class Emitter:
         self.out.emit(stmt.for_)
         for tkn in stmt.header:
             self.out.emit(tkn)
-        return self._emit_stmt(stmt.body, uop, storage, inst)
+        reachable, brace, body_storage = self._emit_stmt(stmt.body, uop, storage.copy(), inst)
+        body_storage.merge(storage, self.out)
+        self.out.emit(brace)
+        return reachable, None, storage
 
     def emit_WhileStmt(
         self,

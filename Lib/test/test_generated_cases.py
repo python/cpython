@@ -2080,6 +2080,42 @@ class TestGeneratedCases(unittest.TestCase):
                                     "non-recording, non-specializing uops"):
             self.run_cases_test(input, "")
 
+    def test_escaping_in_loop(self):
+        input = """
+        inst(TEST_LOOP_SPILL, (a -- a)) {
+            int n = (int)oparg;
+            for (int i = 0; i < n; i++) {
+                escaping_inside_loop(a);
+            }
+            escaping_after_loop(a);
+        }
+        """
+        output = """
+        TARGET(TEST_LOOP_SPILL) {
+            #if _Py_TAIL_CALL_INTERP
+            int opcode = TEST_LOOP_SPILL;
+            (void)(opcode);
+            #endif
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(TEST_LOOP_SPILL);
+            _PyStackRef a;
+            a = stack_pointer[-1];
+            int n = (int)oparg;
+            for (int i = 0; i < n; i++) {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyFrame_StackPointerValidate(frame);
+                escaping_inside_loop(a);
+                _PyFrame_StackPointerInvalidate(frame);
+            }
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
+            escaping_after_loop(a);
+            _PyFrame_StackPointerInvalidate(frame);
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
 
 class TestRecorderTableGeneration(unittest.TestCase):
 
