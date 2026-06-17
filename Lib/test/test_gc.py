@@ -468,6 +468,19 @@ class GCTests(unittest.TestCase):
                 v = {1: v, 2: Ouch()}
         gc.disable()
 
+    def test_trashcan_nested_tuple_deep(self):
+        # gh-149146: deallocating a deeply nested ``(b, None)``-style tuple
+        # chain must not blow the C stack.  The trashcan inside
+        # ``_Py_Dealloc`` has two complementary triggers: the
+        # stack-pointer-based ``_Py_RecursionLimit_GetMargin`` check and a
+        # per-thread dealloc-depth counter.  The counter ensures that the
+        # trashcan still fires when the stack-pointer check cannot, e.g.
+        # when ``RLIMIT_AS`` prevents the kernel from growing the C stack.
+        b = None
+        for _ in range(100_000):
+            b = (b, None)
+        del b  # must not segfault
+
     @threading_helper.requires_working_threading()
     def test_trashcan_threads(self):
         # Issue #13992: trashcan mechanism should be thread-safe

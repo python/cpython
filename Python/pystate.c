@@ -1628,6 +1628,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     _tstate->jit_tracer_state = NULL;
 #endif
     tstate->delete_later = NULL;
+    tstate->c_dealloc_depth = 0;
 
     llist_init(&_tstate->mem_free_queue);
     llist_init(&_tstate->asyncio_tasks_head);

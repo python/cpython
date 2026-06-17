@@ -3201,6 +3201,11 @@ _PyTrash_thread_deposit_object(PyThreadState *tstate, PyObject *op)
 void
 _PyTrash_thread_destroy_chain(PyThreadState *tstate)
 {
+    /* gh-149146: bump c_dealloc_depth for the duration of the drain so
+     * that _Py_Dealloc invoked from the deallocators below does not see
+     * depth == 0 and re-enter destroy_chain recursively.  Mirrors the
+     * historical _PyTrash_end / delete_nesting bookkeeping. */
+    tstate->c_dealloc_depth++;
     while (tstate->delete_later) {
         PyObject *op = tstate->delete_later;
         destructor dealloc = Py_TYPE(op)->tp_dealloc;
@@ -3226,6 +3231,7 @@ _PyTrash_thread_destroy_chain(PyThreadState *tstate)
         _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
         (*dealloc)(op);
     }
+    tstate->c_dealloc_depth--;
 }
 
 void _Py_NO_RETURN
@@ -3286,6 +3292,19 @@ next" object in the chain to 0.  This can easily lead to stack overflows.
 To avoid that, if the C stack is nearing its limit, instead of calling
 dealloc on the object, it is added to a queue to be freed later when the
 stack is shallower */
+
+/* gh-149146: Fallback trigger for the trashcan.
+ *
+ * The primary trigger above (margin < 2) compares the machine stack pointer
+ * with c_stack_soft_limit.  Under RLIMIT_AS the kernel can refuse to grow
+ * the C stack and SIGSEGV while the stack pointer is still well above
+ * c_stack_soft_limit, so the primary trigger never fires.  This counter
+ * deposits into the trashcan once we have recursed through _Py_Dealloc
+ * enough times to be sure no realistic dealloc chain would overflow the
+ * stack first.  The value matches the historical _PyTrash_UNWIND_LEVEL
+ * (50) used before the trashcan was consolidated into _Py_Dealloc. */
+#define _Py_DEALLOC_DEPTH_LIMIT 50
+
 void
 _Py_Dealloc(PyObject *op)
 {
@@ -3294,9 +3313,13 @@ _Py_Dealloc(PyObject *op)
     destructor dealloc = type->tp_dealloc;
     PyThreadState *tstate = _PyThreadState_GET();
     intptr_t margin = _Py_RecursionLimit_GetMargin(tstate);
-    if (margin < 2 && gc_flag) {
+    if (gc_flag && (margin < 2
+                    || tstate->c_dealloc_depth >= _Py_DEALLOC_DEPTH_LIMIT)) {
         _PyTrash_thread_deposit_object(tstate, (PyObject *)op);
         return;
+    }
+    if (gc_flag) {
+        tstate->c_dealloc_depth++;
     }
 #ifdef Py_DEBUG
 #if !defined(Py_GIL_DISABLED) && !defined(Py_STACKREF_DEBUG)
@@ -3340,7 +3363,15 @@ _Py_Dealloc(PyObject *op)
     Py_XDECREF(old_exc);
     Py_DECREF(type);
 #endif
-    if (tstate->delete_later && margin >= 4 && gc_flag) {
+    if (gc_flag) {
+        tstate->c_dealloc_depth--;
+    }
+    /* gh-149146: only drain at the very top of the dealloc chain.
+     * _PyTrash_thread_destroy_chain itself bumps c_dealloc_depth so any
+     * _Py_Dealloc invoked while draining cannot recursively re-enter the
+     * drain (which would otherwise rebuild the same unbounded recursion
+     * the trashcan exists to prevent). */
+    if (tstate->delete_later && gc_flag && tstate->c_dealloc_depth == 0) {
         _PyTrash_thread_destroy_chain(tstate);
     }
 }

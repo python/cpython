@@ -1,0 +1,6 @@
+Fix a crash in :c:func:`!_Py_Dealloc` when deallocating deeply nested
+container objects under memory pressure (for example after a
+:exc:`MemoryError`). The trashcan now also deposits objects based on a
+per-thread dealloc-depth counter, not only on the stack-pointer margin,
+so it still defers cleanup when ``RLIMIT_AS`` prevents the kernel from
+growing the C stack. Patch by Bhuvi.

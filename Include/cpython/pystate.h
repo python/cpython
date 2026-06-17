@@ -177,6 +177,14 @@ struct _ts {
      */
     PyObject *delete_later;
 
+    /* gh-149146: per-thread recursion counter for _Py_Dealloc.  Acts as a
+     * fallback trigger for the trashcan in scenarios where the
+     * stack-pointer-based _Py_RecursionLimit_GetMargin cannot fire (most
+     * notably when RLIMIT_AS prevents the kernel from growing the C stack,
+     * so the kernel SIGSEGVs while the stack pointer is still well above
+     * c_stack_soft_limit). */
+    int c_dealloc_depth;
+
     /* Tagged pointer to top-most critical section, or zero if there is no
      * active critical section. Critical sections are only used in
      * `--disable-gil` builds (i.e., when Py_GIL_DISABLED is defined to 1). In the
