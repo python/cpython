@@ -224,6 +224,33 @@ Unless using :pep:`523`, you will not need this.
 
    .. versionadded:: 3.11
 
+The allocation-free raw-frame APIs added in Python 3.15 —
+:c:func:`PyUnstable_ThreadState_GetCurrentFrame`,
+:c:func:`PyUnstable_InterpreterFrame_GetCaller`,
+:c:func:`PyUnstable_InterpreterFrame_GetCodeBorrowed`, and
+:c:func:`PyUnstable_InterpreterFrame_GetLineChecked` — are intended for
+low-level observability and diagnostic tools that need to inspect the Python
+call stack without materializing Python frame objects.  Examples include native
+profilers, crash reporters, custom allocator hooks, and C callbacks used with
+:mod:`sys.monitoring`.
+
+Unlike :c:func:`PyThreadState_GetFrame`, :c:func:`PyFrame_GetBack`,
+:c:func:`PyFrame_GetCode`, and :c:func:`PyFrame_GetLineNumber`, these APIs do
+not allocate memory, do not create :c:type:`PyFrameObject` instances, do not
+change reference counts, do not set exceptions, do not call Python code, and do
+not acquire or release the GIL.
+
+They provide best-effort, read-only access to raw interpreter frames.  Returned
+frame and code object pointers are borrowed and must not be stored.  If frame
+state appears invalid or concurrently torn down, these APIs may return ``NULL``
+or ``-1``.  Freed-memory checks are heuristic and are not guaranteed to detect
+all races.
+
+When used from a C callable registered with :mod:`sys.monitoring`, these APIs
+can be used to collect additional stack context beyond the code object and
+offset supplied to the callback.  They do not make Python-level monitoring
+callbacks allocation-free or non-reentrant.
+
 .. c:function:: PyObject* PyUnstable_InterpreterFrame_GetCode(struct _PyInterpreterFrame *frame);
 
    Return a :term:`strong reference` to the code object for the frame.
