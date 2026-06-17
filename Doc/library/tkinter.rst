@@ -1302,7 +1302,8 @@ Base and mixin classes
       locations above or to the left of the grid, ``-1`` is returned for the
       corresponding coordinate.
 
-   .. method:: grid_propagate(flag=['_noarg_'])
+   .. method:: grid_propagate()
+               grid_propagate(flag)
 
       Enable or disable geometry propagation for this container when it manages
       its children with the grid geometry manager.  When *flag* is true, the
@@ -1334,10 +1335,12 @@ Base and mixin classes
       .. versionadded:: 3.15
 
 
-   .. method:: propagate(flag=['_noarg_'])
+   .. method:: propagate()
+               propagate(flag)
       :no-typesetting:
 
-   .. method:: pack_propagate(flag=['_noarg_'])
+   .. method:: pack_propagate()
+               pack_propagate(flag)
 
       Enable or disable geometry propagation for this container when it manages
       its children with the pack geometry manager.  When *flag* is true, the
@@ -2696,10 +2699,12 @@ Base and mixin classes
       Return a dictionary of the widget's current packing options.
       :meth:`info` is an alias of :meth:`!pack_info`.
 
-   .. method:: propagate(flag=['_noarg_'])
+   .. method:: propagate()
+               propagate(flag)
       :no-typesetting:
 
-   .. method:: pack_propagate(flag=['_noarg_'])
+   .. method:: pack_propagate()
+               pack_propagate(flag)
 
       Same as :meth:`Misc.pack_propagate`, treating this widget as a container:
       enable or disable geometry propagation.  :meth:`propagate` is an alias of
@@ -2869,10 +2874,12 @@ Base and mixin classes
       Same as :meth:`Misc.grid_size`: return a ``(columns, rows)`` tuple giving
       the size of the grid.  :meth:`size` is an alias of :meth:`!grid_size`.
 
-   .. method:: propagate(flag=['_noarg_'])
+   .. method:: propagate()
+               propagate(flag)
       :no-typesetting:
 
-   .. method:: grid_propagate(flag=['_noarg_'])
+   .. method:: grid_propagate()
+               grid_propagate(flag)
 
       Same as :meth:`Misc.grid_propagate`.  :meth:`propagate` is an alias of
       :meth:`!grid_propagate`.
