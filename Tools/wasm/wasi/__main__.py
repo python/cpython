@@ -368,6 +368,10 @@ def configure_wasi_python(context, working_dir):
         file.write(f'#!/bin/sh\nexec {host_runner} {python_wasm} "$@"\n')
     exec_script.chmod(0o755)
     log("🏃", f"Created {exec_script} (--host-runner)... ")
+    pybuilddir_txt = working_dir / "pybuilddir.txt"
+    if not pybuilddir_txt.exists():
+        os.symlink(CHECKOUT / "pybuilddir.txt", pybuilddir_txt)
+        log("📝", f"Symlinked {pybuilddir_txt} to normal location")
     sys.stdout.flush()
 
 
@@ -399,6 +403,11 @@ def clean_contents(context):
         if LOCAL_SETUP.read_bytes() == LOCAL_SETUP_MARKER:
             log("🧹", f"Deleting generated {LOCAL_SETUP} ...")
 
+    pybuilddir_txt = working_dir / "pybuilddir.txt"
+    if pybuilddir_txt.exists():
+        log("🧹", f"Deleting {pybuilddir_txt} ...")
+        pybuilddir_txt.unlink()
+
 
 def build_steps(*steps):
     """Construct a command from other steps."""
@@ -421,8 +430,6 @@ def main():
         "--wasm max-wasm-stack=16777216 "
         # Enable thread support; causes use of preview1.
         # "--wasm threads=y --wasi threads=y "
-        # Set argv0 to the Python process
-        "--argv0 {PYTHON_WASM} "
         # Map the checkout to / to load the stdlib from /Lib.
         "--dir {HOST_DIR}::{GUEST_DIR} "
         # Set PYTHONPATH to the sysconfig data.
