@@ -10,10 +10,12 @@
 
 The :mod:`!tkinter.messagebox` module provides a template base class as well as
 a variety of convenience methods for commonly used configurations. The message
-boxes are modal and will return a subset of (``True``, ``False``, ``None``,
-:data:`OK`, :data:`CANCEL`, :data:`YES`, :data:`NO`) based on
-the user's selection. Common message box styles and layouts include but are not
-limited to:
+boxes are modal: each blocks until the user responds, then returns a value that
+depends on the function. The ``show*`` functions and :meth:`Message.show` return
+the symbolic name of the button the user pressed, as a string (such as
+:data:`OK` or :data:`YES`), while the ``ask*`` functions return a :class:`bool`
+or ``None`` (see each function below). Common message box styles and layouts
+include but are not limited to:
 
 .. figure:: tk_msg.png
 
@@ -77,19 +79,19 @@ limited to:
 .. function:: showinfo(title=None, message=None, **options)
 
    Creates and displays an information message box with the specified title
-   and message.
+   and message.  Return the symbolic name :data:`OK` (the string ``'ok'``).
 
 **Warning message boxes**
 
 .. function:: showwarning(title=None, message=None, **options)
 
    Creates and displays a warning message box with the specified title
-   and message.
+   and message.  Return the symbolic name :data:`OK` (the string ``'ok'``).
 
 .. function:: showerror(title=None, message=None, **options)
 
    Creates and displays an error message box with the specified title
-   and message.
+   and message.  Return the symbolic name :data:`OK` (the string ``'ok'``).
 
 **Question message boxes**
 
