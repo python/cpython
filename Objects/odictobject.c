@@ -2206,13 +2206,14 @@ update       __setitem__
 static int
 mutablemapping_add_pairs(PyObject *self, PyObject *pairs)
 {
+    assert(!PyErr_Occurred());
+
     PyObject *pair, *iterator, *unexpected;
     int res = 0;
 
     iterator = PyObject_GetIter(pairs);
     if (iterator == NULL)
         return -1;
-    PyErr_Clear();
 
     while ((pair = PyIter_Next(iterator)) != NULL) {
         /* could be more efficient (see UNPACK_SEQUENCE in ceval.c) */

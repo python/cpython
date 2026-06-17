@@ -361,7 +361,7 @@ set_unhashable_type(PyObject *key)
 int
 _PySet_AddTakeRef(PySetObject *so, PyObject *key)
 {
-    Py_hash_t hash = _PyObject_HashFast(key);
+    Py_hash_t hash = PyObject_Hash(key);
     if (hash == -1) {
         set_unhashable_type(key);
         Py_DECREF(key);
@@ -600,7 +600,7 @@ set_discard_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
 static int
 set_add_key(PySetObject *so, PyObject *key)
 {
-    Py_hash_t hash = _PyObject_HashFast(key);
+    Py_hash_t hash = PyObject_Hash(key);
     if (hash == -1) {
         set_unhashable_type(key);
         return -1;
@@ -611,7 +611,7 @@ set_add_key(PySetObject *so, PyObject *key)
 static int
 set_contains_key(PySetObject *so, PyObject *key)
 {
-    Py_hash_t hash = _PyObject_HashFast(key);
+    Py_hash_t hash = PyObject_Hash(key);
     if (hash == -1) {
         set_unhashable_type(key);
         return -1;
@@ -622,7 +622,7 @@ set_contains_key(PySetObject *so, PyObject *key)
 static int
 set_discard_key(PySetObject *so, PyObject *key)
 {
-    Py_hash_t hash = _PyObject_HashFast(key);
+    Py_hash_t hash = PyObject_Hash(key);
     if (hash == -1) {
         set_unhashable_type(key);
         return -1;
@@ -2514,7 +2514,7 @@ _PySet_Contains(PySetObject *so, PyObject *key)
 {
     assert(so);
 
-    Py_hash_t hash = _PyObject_HashFast(key);
+    Py_hash_t hash = PyObject_Hash(key);
     if (hash == -1) {
         if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError)) {
             set_unhashable_type(key);
@@ -2574,7 +2574,7 @@ static PyObject *
 frozenset___contains___impl(PySetObject *so, PyObject *key)
 /*[clinic end generated code: output=2301ed91bc3a6dd5 input=2f04922a98d8bab7]*/
 {
-    Py_hash_t hash = _PyObject_HashFast(key);
+    Py_hash_t hash = PyObject_Hash(key);
     if (hash == -1) {
         if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError)) {
             set_unhashable_type(key);
@@ -2802,7 +2802,8 @@ static PyMethodDef set_methods[] = {
     SET_SYMMETRIC_DIFFERENCE_UPDATE_METHODDEF
     SET_UNION_METHODDEF
     SET_UPDATE_METHODDEF
-    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
+     PyDoc_STR("sets are generic over the type of their elements")},
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -2906,7 +2907,8 @@ static PyMethodDef frozenset_methods[] = {
     SET___SIZEOF___METHODDEF
     SET_SYMMETRIC_DIFFERENCE_METHODDEF
     SET_UNION_METHODDEF
-    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
+     PyDoc_STR("frozensets are generic over the type of their elements")},
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -3037,7 +3039,7 @@ PySet_Contains(PyObject *anyset, PyObject *key)
     }
 
     PySetObject *so = (PySetObject *)anyset;
-    Py_hash_t hash = _PyObject_HashFast(key);
+    Py_hash_t hash = PyObject_Hash(key);
     if (hash == -1) {
         set_unhashable_type(key);
         return -1;

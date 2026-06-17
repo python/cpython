@@ -513,10 +513,6 @@ specifically:
   purpose in :pep:`793`, with a new :c:type:`PySlot` structure
   introduced in :pep:`820`.
 
-The reference documentation for these features is complete, but currently
-aimed at early adopters.
-A migration guide is planned for an upcoming beta release.
-
 Note that Stable ABI does not offer all the functionality that CPython
 has to offer.
 Extensions that cannot switch to ``abi3t`` should continue to build for
@@ -531,6 +527,9 @@ If this is the case for your tool, compile for ``cp315t`` separately.
 If not using a build tool -- or when writing such a tool -- you can select
 ``abi3t`` by setting the macro :c:macro:`!Py_TARGET_ABI3T` as discussed
 in :ref:`abi3-compiling`.
+
+A practical :ref:`migration guide <abi3t-migration-howto>` for switching to
+``abi3t`` is available.
 
 .. seealso:: :pep:`803` for further details.
 
@@ -2152,7 +2151,7 @@ typing
   or ``TD = TypedDict("TD", {})`` instead.
   (Contributed by Bénédikt Tran in :gh:`133823`.)
 
-* Deprecated :func:`!typing.no_type_check_decorator` has been removed.
+* Deprecated :deco:`!typing.no_type_check_decorator` has been removed.
   (Contributed by Nikita Sobolev in :gh:`133601`.)
 
 
