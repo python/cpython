@@ -5492,6 +5492,7 @@ type_from_slots_or_spec(
     Py_ssize_t name_buf_len = strlen(it.name) + 1;
     _ht_tpname = PyMem_Malloc(name_buf_len);
     if (_ht_tpname == NULL) {
+        PyErr_NoMemory();
         goto finally;
     }
     memcpy(_ht_tpname, it.name, name_buf_len);
