@@ -4626,15 +4626,12 @@ Variable classes
       appropriate Python type.
 
    .. method:: set(value)
+               initialize(value)
 
       Set the variable to *value*.
 
-   .. method:: initialize(value)
-
-      Set the initial value of the variable.  This is an alias for
-      :meth:`set`.
-
       .. versionadded:: 3.3
+         The *initialize* spelling.
 
    .. method:: trace_add(mode, callback)
 
@@ -4668,6 +4665,7 @@ Variable classes
       .. versionadded:: 3.6
 
    .. method:: trace_variable(mode, callback)
+               trace(mode, callback)
 
       Register *callback* to be called when the variable is accessed according
       to *mode*.  *mode* is one of the strings ``'r'``, ``'w'`` or ``'u'``, for
@@ -4677,13 +4675,6 @@ Variable classes
       .. deprecated:: 3.6
          Use :meth:`trace_add` instead.  This method wraps a Tcl feature that
          was removed in Tcl 9.0.
-
-   .. method:: trace(mode, callback)
-
-      An alias for :meth:`trace_variable`.
-
-      .. deprecated:: 3.6
-         Use :meth:`trace_add` instead.
 
    .. method:: trace_vdelete(mode, cbname)
 
@@ -4745,13 +4736,12 @@ Variable classes
       :exc:`ValueError` if the value cannot be interpreted as a boolean.
 
    .. method:: set(value)
+               initialize(value)
 
       Set the variable to *value*, converting it to a boolean.
 
-   .. method:: initialize(value)
-
-      Set the initial value of the variable.  This is an alias for
-      :meth:`set`.
+      .. versionadded:: 3.3
+         The *initialize* spelling.
 
 
 Image classes

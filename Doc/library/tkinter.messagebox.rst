@@ -79,19 +79,19 @@ include but are not limited to:
 .. function:: showinfo(title=None, message=None, **options)
 
    Creates and displays an information message box with the specified title
-   and message.  Return the symbolic name :data:`OK` (the string ``'ok'``).
+   and message.
 
 **Warning message boxes**
 
 .. function:: showwarning(title=None, message=None, **options)
 
    Creates and displays a warning message box with the specified title
-   and message.  Return the symbolic name :data:`OK` (the string ``'ok'``).
+   and message.
 
 .. function:: showerror(title=None, message=None, **options)
 
    Creates and displays an error message box with the specified title
-   and message.  Return the symbolic name :data:`OK` (the string ``'ok'``).
+   and message.
 
 **Question message boxes**
 
