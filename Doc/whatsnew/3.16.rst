@@ -271,6 +271,13 @@ Deprecated
     3.9, now issues a deprecation warning on use. This property is slated for
     removal in 3.21. Use ``ast.Tuple.elts`` instead.
 
+* :mod:`mimetypes`:
+
+  * Passing a file path (or :term:`path-like object`) to
+    :func:`mimetypes.guess_type` is now deprecated.
+    Use :func:`mimetypes.guess_file_type` instead.
+    (Contributed by Naveen Kumar G in :gh:`151575`.)
+
 .. Add deprecations above alphabetically, not here at the end.
 
 .. include:: ../deprecations/pending-removal-in-3.17.rst
