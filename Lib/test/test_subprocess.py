@@ -3719,8 +3719,9 @@ class Win32ProcessTestCase(BaseTestCase):
         # Since Python is a console process, it won't be affected
         # by wShowWindow, but the argument should be silently
         # ignored
-        subprocess.call(ZERO_RETURN_CMD,
-                        startupinfo=startupinfo)
+        rc = subprocess.call(ZERO_RETURN_CMD,
+                             startupinfo=startupinfo)
+        self.assertEqual(rc, 0)
 
     def test_startupinfo_keywords(self):
         # startupinfo argument
@@ -3735,8 +3736,9 @@ class Win32ProcessTestCase(BaseTestCase):
         # Since Python is a console process, it won't be affected
         # by wShowWindow, but the argument should be silently
         # ignored
-        subprocess.call(ZERO_RETURN_CMD,
-                        startupinfo=startupinfo)
+        rc = subprocess.call(ZERO_RETURN_CMD,
+                             startupinfo=startupinfo)
+        self.assertEqual(rc, 0)
 
     def test_startupinfo_copy(self):
         # bpo-34044: Popen must not modify input STARTUPINFO structure
@@ -3853,14 +3855,16 @@ class Win32ProcessTestCase(BaseTestCase):
     def test_empty_attribute_list(self):
         startupinfo = subprocess.STARTUPINFO()
         startupinfo.lpAttributeList = {}
-        subprocess.call(ZERO_RETURN_CMD,
-                        startupinfo=startupinfo)
+        rc = subprocess.call(ZERO_RETURN_CMD,
+                             startupinfo=startupinfo)
+        self.assertEqual(rc, 0)
 
     def test_empty_handle_list(self):
         startupinfo = subprocess.STARTUPINFO()
         startupinfo.lpAttributeList = {"handle_list": []}
-        subprocess.call(ZERO_RETURN_CMD,
-                        startupinfo=startupinfo)
+        rc = subprocess.call(ZERO_RETURN_CMD,
+                             startupinfo=startupinfo)
+        self.assertEqual(rc, 0)
 
     def test_shell_sequence(self):
         # Run command through the shell (sequence)
@@ -3871,6 +3875,8 @@ class Win32ProcessTestCase(BaseTestCase):
                              env=newenv)
         with p:
             self.assertIn(b"physalis", p.stdout.read())
+            p.communicate()
+            self.assertEqual(p.returncode, 0)
 
     def test_shell_string(self):
         # Run command through the shell (string)
@@ -3881,6 +3887,8 @@ class Win32ProcessTestCase(BaseTestCase):
                              env=newenv)
         with p:
             self.assertIn(b"physalis", p.stdout.read())
+            p.communicate()
+            self.assertEqual(p.returncode, 0)
 
     def test_shell_encodings(self):
         # Run command through the shell (string)
@@ -3893,6 +3901,8 @@ class Win32ProcessTestCase(BaseTestCase):
                                  encoding=enc)
             with p:
                 self.assertIn("physalis", p.stdout.read(), enc)
+                p.communicate()
+                self.assertEqual(p.returncode, 0)
 
     def test_call_string(self):
         # call() function with string argument on Windows
