@@ -377,8 +377,7 @@ class up_history(MotionCommand):
         if r.historyi > 0:
             r.select_item(r.historyi - 1)
         else:
-            r.error("start of history")
-            return
+            r.error("start of buffer")
 
 class down_history(MotionCommand):
     def do(self) -> None:
@@ -386,8 +385,7 @@ class down_history(MotionCommand):
         if r.historyi < len(r.history):
             r.select_item(r.historyi + 1)
         else:
-            r.error("end of history")
-            return
+            r.error("end of buffer")
 
 class self_insert(EditCommand):
     def do(self) -> None:
