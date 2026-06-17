@@ -1,6 +1,7 @@
 import dis
 import os.path
 import re
+import signal
 import subprocess
 import sys
 import sysconfig
@@ -46,6 +47,24 @@ def normalize_trace_output(output):
         raise AssertionError(
             "tracer produced unparsable output:\n{}".format(output)
         )
+
+
+USE_PROCESS_GROUP = (hasattr(os, "setsid") and hasattr(os, "killpg"))
+
+def create_process_group(*args, **kwargs):
+    if USE_PROCESS_GROUP:
+        kwargs['start_new_session'] = True
+    return subprocess.Popen(*args, **kwargs)
+
+def kill_process_group(proc):
+    if USE_PROCESS_GROUP:
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+    else:
+        proc.kill()
+    proc.communicate()  # Clean up
 
 
 class TraceBackend:
