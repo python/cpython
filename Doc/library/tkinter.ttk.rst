@@ -1868,21 +1868,3 @@ and inherits the common methods of :class:`Widget`.
 
    Alias of :class:`Panedwindow`, kept for naming compatibility with
    :class:`tkinter.PanedWindow`.
-
-
-Utility functions
------------------
-
-.. function:: tclobjs_to_py(adict)
-
-   Return a copy of the dictionary *adict* in which any Tcl object values have
-   been converted to their Python equivalents.
-   This is a helper used internally to post-process the option dictionaries
-   returned by Tk.
-
-.. function:: setup_master(master=None)
-
-   Return a master widget to use as the parent of a new widget.
-   If *master* is ``None``, the default root window is used, creating it if
-   necessary.
-   This is a helper used internally when constructing widgets.
