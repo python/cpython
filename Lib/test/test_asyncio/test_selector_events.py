@@ -1,6 +1,7 @@
 """Tests for selector_events.py"""
 
 import collections
+import errno
 import selectors
 import socket
 import sys
@@ -401,6 +402,24 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         # warnings by using asyncio.sleep(0)
         self.loop.run_until_complete(asyncio.sleep(0))
         self.assertEqual(sock.accept.call_count, backlog + 1)
+
+    def test_accept_connection_reschedules_once_on_resource_error(self):
+        # When accept() fails with a resource error (EMFILE), _accept_connection
+        # re-runs the error branch backlog+1 times, logging and rescheduling
+        # _start_serving once per iteration. With early return after first
+        # exception we avoid this behaviour
+        sock = mock.Mock()
+        sock.accept.side_effect = OSError(errno.EMFILE, 'too many open files')
+
+        self.loop.call_exception_handler = mock.Mock()
+        self.loop._remove_reader = mock.Mock()
+        self.loop.call_later = mock.Mock()
+
+        self.loop._accept_connection(mock.Mock(), sock, backlog=100)
+
+        self.assertEqual(sock.accept.call_count, 1)
+        self.assertEqual(self.loop.call_exception_handler.call_count, 1)
+        self.assertEqual(self.loop.call_later.call_count, 1)
 
 class SelectorTransportTests(test_utils.TestCase):
 
