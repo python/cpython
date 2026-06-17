@@ -403,11 +403,6 @@ def clean_contents(context):
         if LOCAL_SETUP.read_bytes() == LOCAL_SETUP_MARKER:
             log("🧹", f"Deleting generated {LOCAL_SETUP} ...")
 
-    pybuilddir_txt = working_dir / "pybuilddir.txt"
-    if pybuilddir_txt.exists():
-        log("🧹", f"Deleting {pybuilddir_txt} ...")
-        pybuilddir_txt.unlink()
-
 
 def build_steps(*steps):
     """Construct a command from other steps."""
