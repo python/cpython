@@ -420,28 +420,40 @@ _Py_DecRefSharedIsDead(PyObject *o, const char *filename, int lineno)
 }
 
 void
-_Py_DecRefSharedDebug(PyObject *o, const char *filename, int lineno)
+_Py_DecRefSharedDebugTstate(PyThreadState *tstate, PyObject *o, const char *filename, int lineno)
 {
     if (_Py_DecRefSharedIsDead(o, filename, lineno)) {
-        _Py_Dealloc(o);
+        _Py_DeallocTstate(tstate, o);
     }
+}
+
+void
+_Py_DecRefSharedDebug(PyObject *o, const char *filename, int lineno)
+{
+    _Py_DecRefSharedDebugTstate(_PyThreadState_GET(), o, filename, lineno);
+}
+
+void
+_Py_DecRefSharedTstate(PyThreadState *tstate, PyObject *o)
+{
+    _Py_DecRefSharedDebugTstate(tstate, o, NULL, 0);
 }
 
 void
 _Py_DecRefShared(PyObject *o)
 {
-    _Py_DecRefSharedDebug(o, NULL, 0);
+    _Py_DecRefSharedTstate(_PyThreadState_GET(), o);
 }
 
 void
-_Py_MergeZeroLocalRefcount(PyObject *op)
+_Py_MergeZeroLocalRefcountTstate(PyThreadState *tstate, PyObject *op)
 {
     assert(op->ob_ref_local == 0);
 
     Py_ssize_t shared = _Py_atomic_load_ssize_acquire(&op->ob_ref_shared);
     if (shared == 0) {
         // Fast-path: shared refcount is zero (including flags)
-        _Py_Dealloc(op);
+        _Py_DeallocTstate(tstate, op);
         return;
     }
 
@@ -460,8 +472,14 @@ _Py_MergeZeroLocalRefcount(PyObject *op)
     if (new_shared == _Py_REF_MERGED) {
         // i.e., the shared refcount is zero (only the flags are set) so we
         // deallocate the object.
-        _Py_Dealloc(op);
+        _Py_DeallocTstate(tstate, op);
     }
+}
+
+void
+_Py_MergeZeroLocalRefcount(PyObject *op)
+{
+    _Py_MergeZeroLocalRefcountTstate(_PyThreadState_GET(), op);
 }
 
 Py_ssize_t
@@ -1096,9 +1114,8 @@ do_richcompare(PyThreadState *tstate, PyObject *v, PyObject *w, int op)
    with a check for NULL arguments and a recursion check. */
 
 PyObject *
-PyObject_RichCompare(PyObject *v, PyObject *w, int op)
+_PyObject_RichCompare(PyThreadState *tstate, PyObject *v, PyObject *w, int op)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
 
     assert(Py_LT <= op && op <= Py_GE);
     if (v == NULL || w == NULL) {
@@ -1115,10 +1132,16 @@ PyObject_RichCompare(PyObject *v, PyObject *w, int op)
     return res;
 }
 
+PyObject *
+PyObject_RichCompare(PyObject *v, PyObject *w, int op)
+{
+    return _PyObject_RichCompare(_PyThreadState_GET(), v, w, op);
+}
+
 /* Perform a rich comparison with integer result.  This wraps
    PyObject_RichCompare(), returning -1 for error, 0 for false, 1 for true. */
 int
-PyObject_RichCompareBool(PyObject *v, PyObject *w, int op)
+_PyObject_RichCompareBool(PyThreadState *tstate, PyObject *v, PyObject *w, int op)
 {
     PyObject *res;
     int ok;
@@ -1132,7 +1155,7 @@ PyObject_RichCompareBool(PyObject *v, PyObject *w, int op)
             return 0;
     }
 
-    res = PyObject_RichCompare(v, w, op);
+    res = _PyObject_RichCompare(tstate, v, w, op);
     if (res == NULL)
         return -1;
     if (PyBool_Check(res)) {
@@ -1144,6 +1167,12 @@ PyObject_RichCompareBool(PyObject *v, PyObject *w, int op)
         Py_DECREF(res);
     }
     return ok;
+}
+
+int
+PyObject_RichCompareBool(PyObject *v, PyObject *w, int op)
+{
+    return _PyObject_RichCompareBool(_PyThreadState_GET(), v, w, op);
 }
 
 Py_hash_t
@@ -1279,14 +1308,14 @@ _Py_COMP_DIAG_POP
 }
 
 int
-_PyObject_SetAttributeErrorContext(PyObject* v, PyObject* name)
+_PyObject_SetAttributeErrorContext(PyThreadState *tstate, PyObject* v, PyObject* name)
 {
-    assert(PyErr_Occurred());
-    if (!PyErr_ExceptionMatches(PyExc_AttributeError)){
+    assert(_PyErr_Occurred(tstate));
+    if (!_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)){
         return 0;
     }
     // Intercept AttributeError exceptions and augment them to offer suggestions later.
-    PyObject *exc = PyErr_GetRaisedException();
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
     if (!PyErr_GivenExceptionMatches(exc, PyExc_AttributeError)) {
         goto restore;
     }
@@ -1302,18 +1331,18 @@ _PyObject_SetAttributeErrorContext(PyObject* v, PyObject* name)
         return 1;
     }
 restore:
-    PyErr_SetRaisedException(exc);
+    _PyErr_SetRaisedException(tstate, exc);
     return 0;
 }
 
 PyObject *
-PyObject_GetAttr(PyObject *v, PyObject *name)
+_PyObject_GetAttr(PyThreadState *tstate, PyObject *v, PyObject *name)
 {
     PyTypeObject *tp = Py_TYPE(v);
     if (!PyUnicode_Check(name)) {
-        PyErr_Format(PyExc_TypeError,
-                     "attribute name must be string, not '%.200s'",
-                     Py_TYPE(name)->tp_name);
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "attribute name must be string, not '%.200s'",
+                      Py_TYPE(name)->tp_name);
         return NULL;
     }
 
@@ -1335,30 +1364,36 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
     }
 
     if (result == NULL) {
-        _PyObject_SetAttributeErrorContext(v, name);
+        _PyObject_SetAttributeErrorContext(tstate, v, name);
     }
     return result;
+}
+
+PyObject *
+PyObject_GetAttr(PyObject *v, PyObject *name)
+{
+    return _PyObject_GetAttr(_PyThreadState_GET(), v, name);
 }
 
 /* Like PyObject_GetAttr but returns a _PyStackRef.
    For types (tp_getattro == _Py_type_getattro), this can return
    a deferred reference to reduce reference count contention. */
 _PyStackRef
-_PyObject_GetAttrStackRef(PyObject *v, PyObject *name)
+_PyObject_GetAttrStackRef(PyThreadState *tstate, PyObject *v, PyObject *name)
 {
     PyTypeObject *tp = Py_TYPE(v);
     if (!PyUnicode_Check(name)) {
-        PyErr_Format(PyExc_TypeError,
-                     "attribute name must be string, not '%.200s'",
-                     Py_TYPE(name)->tp_name);
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "attribute name must be string, not '%.200s'",
+                      Py_TYPE(name)->tp_name);
         return PyStackRef_NULL;
     }
 
     /* Fast path for types - can return deferred references */
     if (tp->tp_getattro == _Py_type_getattro) {
-        _PyStackRef result = _Py_type_getattro_stackref((PyTypeObject *)v, name, NULL);
+        _PyStackRef result = _Py_type_getattro_stackref(tstate, (PyTypeObject *)v, name, NULL);
         if (PyStackRef_IsNull(result)) {
-            _PyObject_SetAttributeErrorContext(v, name);
+            _PyObject_SetAttributeErrorContext(tstate, v, name);
         }
         return result;
     }
@@ -1376,44 +1411,45 @@ _PyObject_GetAttrStackRef(PyObject *v, PyObject *name)
         result = (*tp->tp_getattr)(v, (char *)name_str);
     }
     else {
-        PyErr_Format(PyExc_AttributeError,
-                    "'%.100s' object has no attribute '%U'",
-                    tp->tp_name, name);
+        _PyErr_Format(tstate, PyExc_AttributeError,
+                      "'%.100s' object has no attribute '%U'",
+                      tp->tp_name, name);
     }
 
     if (result == NULL) {
-        _PyObject_SetAttributeErrorContext(v, name);
+        _PyObject_SetAttributeErrorContext(tstate, v, name);
         return PyStackRef_NULL;
     }
     return PyStackRef_FromPyObjectSteal(result);
 }
 
 int
-PyObject_GetOptionalAttr(PyObject *v, PyObject *name, PyObject **result)
+_PyObject_GetOptionalAttr(PyThreadState *tstate,
+                          PyObject *v, PyObject *name, PyObject **result)
 {
     PyTypeObject *tp = Py_TYPE(v);
 
     if (!PyUnicode_Check(name)) {
-        PyErr_Format(PyExc_TypeError,
-                     "attribute name must be string, not '%.200s'",
-                     Py_TYPE(name)->tp_name);
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "attribute name must be string, not '%.200s'",
+                      Py_TYPE(name)->tp_name);
         *result = NULL;
         return -1;
     }
 
     if (tp->tp_getattro == PyObject_GenericGetAttr) {
-        *result = _PyObject_GenericGetAttrWithDict(v, name, NULL, 1);
+        *result = _PyObject_GenericGetAttrWithDict(tstate, v, name, NULL, 1);
         if (*result != NULL) {
             return 1;
         }
-        if (PyErr_Occurred()) {
+        if (_PyErr_Occurred(tstate)) {
             return -1;
         }
         return 0;
     }
     if (tp->tp_getattro == _Py_type_getattro) {
         int suppress_missing_attribute_exception = 0;
-        *result = _Py_type_getattro_impl((PyTypeObject*)v, name, &suppress_missing_attribute_exception);
+        *result = _Py_type_getattro_impl(tstate, (PyTypeObject*)v, name, &suppress_missing_attribute_exception);
         if (suppress_missing_attribute_exception) {
             // return 0 without having to clear the exception
             return 0;
@@ -1421,7 +1457,7 @@ PyObject_GetOptionalAttr(PyObject *v, PyObject *name, PyObject **result)
     }
     else if (tp->tp_getattro == (getattrofunc)_Py_module_getattro) {
         // optimization: suppress attribute error from module getattro method
-        *result = _Py_module_getattro_impl((PyModuleObject*)v, name, 1);
+        *result = _Py_module_getattro_impl(tstate, (PyModuleObject*)v, name, 1);
         if (*result != NULL) {
             return 1;
         }
@@ -1454,6 +1490,12 @@ PyObject_GetOptionalAttr(PyObject *v, PyObject *name, PyObject **result)
     }
     PyErr_Clear();
     return 0;
+}
+
+int
+PyObject_GetOptionalAttr(PyObject *v, PyObject *name, PyObject **result)
+{
+    return _PyObject_GetOptionalAttr(_PyThreadState_GET(), v, name, result);
 }
 
 int
@@ -1505,9 +1547,8 @@ PyObject_HasAttr(PyObject *obj, PyObject *name)
 }
 
 int
-PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
+_PyObject_SetAttr(PyThreadState *tstate, PyObject *v, PyObject *name, PyObject *value)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
     if (value == NULL && _PyErr_Occurred(tstate)) {
         PyObject *exc = _PyErr_GetRaisedException(tstate);
         _PyErr_SetString(tstate, PyExc_SystemError,
@@ -1521,9 +1562,9 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
     int err;
 
     if (!PyUnicode_Check(name)) {
-        PyErr_Format(PyExc_TypeError,
-                     "attribute name must be string, not '%.200s'",
-                     Py_TYPE(name)->tp_name);
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "attribute name must be string, not '%.200s'",
+                      Py_TYPE(name)->tp_name);
         return -1;
     }
     Py_INCREF(name);
@@ -1547,26 +1588,38 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
     Py_DECREF(name);
     _PyObject_ASSERT(name, Py_REFCNT(name) >= 1);
     if (tp->tp_getattr == NULL && tp->tp_getattro == NULL)
-        PyErr_Format(PyExc_TypeError,
-                     "'%.100s' object has no attributes "
-                     "(%s .%U)",
-                     tp->tp_name,
-                     value==NULL ? "del" : "assign to",
-                     name);
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "'%.100s' object has no attributes "
+                      "(%s .%U)",
+                      tp->tp_name,
+                      value==NULL ? "del" : "assign to",
+                      name);
     else
-        PyErr_Format(PyExc_TypeError,
-                     "'%.100s' object has only read-only attributes "
-                     "(%s .%U)",
-                     tp->tp_name,
-                     value==NULL ? "del" : "assign to",
-                     name);
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "'%.100s' object has only read-only attributes "
+                      "(%s .%U)",
+                      tp->tp_name,
+                      value==NULL ? "del" : "assign to",
+                      name);
     return -1;
+}
+
+int
+PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
+{
+    return _PyObject_SetAttr(_PyThreadState_GET(), v, name, value);
+}
+
+int
+_PyObject_DelAttr(PyThreadState *tstate, PyObject *v, PyObject *name)
+{
+    return _PyObject_SetAttr(tstate, v, name, NULL);
 }
 
 int
 PyObject_DelAttr(PyObject *v, PyObject *name)
 {
-    return PyObject_SetAttr(v, name, NULL);
+    return _PyObject_DelAttr(_PyThreadState_GET(), v, name);
 }
 
 PyObject **
@@ -1653,7 +1706,7 @@ _PyObject_NextNotImplemented(PyObject *self)
    latter case, an error will be set.
 */
 int
-_PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
+_PyObject_GetMethod(PyThreadState *tstate, PyObject *obj, PyObject *name, PyObject **method)
 {
     int meth_found = 0;
 
@@ -1667,7 +1720,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     }
 
     if (tp->tp_getattro != PyObject_GenericGetAttr || !PyUnicode_CheckExact(name)) {
-        *method = PyObject_GetAttr(obj, name);
+        *method = _PyObject_GetAttr(tstate, obj, name);
         return 0;
     }
 
@@ -1740,7 +1793,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
                  "'%.100s' object has no attribute '%U'",
                  tp->tp_name, name);
 
-    _PyObject_SetAttributeErrorContext(obj, name);
+    _PyObject_SetAttributeErrorContext(tstate, obj, name);
     return 0;
 }
 
@@ -1764,14 +1817,14 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, _PyStackRef *self,
     PyTypeObject *tp = Py_TYPE(obj);
     if (!_PyType_IsReady(tp)) {
         if (PyType_Ready(tp) < 0) {
-            PyStackRef_CLEAR(*self);
+            _PyStackRef_CLEAR(ts, *self);
             return -1;
         }
     }
 
     if (tp->tp_getattro != PyObject_GenericGetAttr || !PyUnicode_CheckExact(name)) {
-        PyObject *res = PyObject_GetAttr(obj, name);
-        PyStackRef_CLEAR(*self);
+        PyObject *res = _PyObject_GetAttr(ts, obj, name);
+        _PyStackRef_CLEAR(ts, *self);
         if (res != NULL) {
             *method = PyStackRef_FromPyObjectSteal(res);
             return 0;
@@ -1790,8 +1843,8 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, _PyStackRef *self,
             f = Py_TYPE(descr)->tp_descr_get;
             if (f != NULL && PyDescr_IsData(descr)) {
                 PyObject *value = f(descr, obj, (PyObject *)Py_TYPE(obj));
-                PyStackRef_CLEAR(*method);
-                PyStackRef_CLEAR(*self);
+                _PyStackRef_CLEAR(ts, *method);
+                _PyStackRef_CLEAR(ts, *self);
                 if (value != NULL) {
                     *method = PyStackRef_FromPyObjectSteal(value);
                     return 0;
@@ -1805,7 +1858,7 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, _PyStackRef *self,
          _PyObject_TryGetInstanceAttribute(obj, name, &attr)) {
         if (attr != NULL) {
             PyStackRef_XSETREF(*method, PyStackRef_FromPyObjectSteal(attr));
-            PyStackRef_CLEAR(*self);
+            _PyStackRef_CLEAR(ts, *self);
             return 0;
         }
         dict = NULL;
@@ -1827,11 +1880,11 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, _PyStackRef *self,
         int found = _PyDict_GetMethodStackRef((PyDictObject *)dict, name, method);
         if (found < 0) {
             assert(PyStackRef_IsNull(*method));
-            PyStackRef_CLEAR(*self);
+            _PyStackRef_CLEAR(ts, *self);
             return -1;
         }
         else if (found) {
-            PyStackRef_CLEAR(*self);
+            _PyStackRef_CLEAR(ts, *self);
             return 0;
         }
     }
@@ -1851,12 +1904,12 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, _PyStackRef *self,
         else if (Py_IS_TYPE(descr, &PyStaticMethod_Type)) {
             PyObject *callable = _PyStaticMethod_GetFunc(descr);
             PyStackRef_XSETREF(*method, PyStackRef_FromPyObjectNew(callable));
-            PyStackRef_CLEAR(*self);
+            _PyStackRef_CLEAR(ts, *self);
             return 0;
         }
         PyObject *value = f(descr, obj, (PyObject *)tp);
-        PyStackRef_CLEAR(*method);
-        PyStackRef_CLEAR(*self);
+        _PyStackRef_CLEAR(ts, *method);
+        _PyStackRef_CLEAR(ts, *self);
         if (value) {
             *method = PyStackRef_FromPyObjectSteal(value);
             return 0;
@@ -1866,17 +1919,17 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, _PyStackRef *self,
 
     if (descr != NULL) {
         assert(!PyStackRef_IsNull(*method));
-        PyStackRef_CLEAR(*self);
+        _PyStackRef_CLEAR(ts, *self);
         return 0;
     }
 
-    PyErr_Format(PyExc_AttributeError,
-                 "'%.100s' object has no attribute '%U'",
-                 tp->tp_name, name);
+    _PyErr_Format(ts, PyExc_AttributeError,
+                  "'%.100s' object has no attribute '%U'",
+                  tp->tp_name, name);
 
-    _PyObject_SetAttributeErrorContext(obj, name);
+    _PyObject_SetAttributeErrorContext(ts, obj, name);
     assert(PyStackRef_IsNull(*method));
-    PyStackRef_CLEAR(*self);
+    _PyStackRef_CLEAR(ts, *self);
     return -1;
 }
 
@@ -1884,7 +1937,7 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, _PyStackRef *self,
 /* Generic GetAttr functions - put these in your tp_[gs]etattro slot. */
 
 PyObject *
-_PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
+_PyObject_GenericGetAttrWithDict(PyThreadState *tstate, PyObject *obj, PyObject *name,
                                  PyObject *dict, int suppress)
 {
     /* Make sure the logic of _PyObject_GetMethod is in sync with
@@ -1899,9 +1952,9 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
     descrgetfunc f;
 
     if (!PyUnicode_Check(name)){
-        PyErr_Format(PyExc_TypeError,
-                     "attribute name must be string, not '%.200s'",
-                     Py_TYPE(name)->tp_name);
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "attribute name must be string, not '%.200s'",
+                      Py_TYPE(name)->tp_name);
         return NULL;
     }
 
@@ -1912,7 +1965,6 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
 
     Py_INCREF(name);
 
-    PyThreadState *tstate = _PyThreadState_GET();
     _PyCStackRef cref;
     _PyThreadState_PushCStackRef(tstate, &cref);
 
@@ -1925,8 +1977,8 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
         if (f != NULL && PyDescr_IsData(descr)) {
             res = f(descr, obj, (PyObject *)Py_TYPE(obj));
             if (res == NULL && suppress &&
-                    PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                PyErr_Clear();
+                    _PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
+                _PyErr_Clear(tstate);
             }
             goto done;
         }
@@ -1969,8 +2021,8 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
             goto done;
         }
         else if (rc < 0) {
-            if (suppress && PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                PyErr_Clear();
+            if (suppress && _PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
+                _PyErr_Clear(tstate);
             }
             else {
                 goto done;
@@ -1981,8 +2033,8 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
     if (f != NULL) {
         res = f(descr, obj, (PyObject *)Py_TYPE(obj));
         if (res == NULL && suppress &&
-                PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            PyErr_Clear();
+                _PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
+            _PyErr_Clear(tstate);
         }
         goto done;
     }
@@ -1994,11 +2046,11 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
     }
 
     if (!suppress) {
-        PyErr_Format(PyExc_AttributeError,
-                     "'%.100s' object has no attribute '%U'",
-                     tp->tp_name, name);
+        _PyErr_Format(tstate, PyExc_AttributeError,
+                      "'%.100s' object has no attribute '%U'",
+                      tp->tp_name, name);
 
-        _PyObject_SetAttributeErrorContext(obj, name);
+        _PyObject_SetAttributeErrorContext(tstate, obj, name);
     }
   done:
     _PyThreadState_PopCStackRef(tstate, &cref);
@@ -2009,11 +2061,11 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
 PyObject *
 PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 {
-    return _PyObject_GenericGetAttrWithDict(obj, name, NULL, 0);
+    return _PyObject_GenericGetAttrWithDict(_PyThreadState_GET(), obj, name, NULL, 0);
 }
 
 int
-_PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
+_PyObject_GenericSetAttrWithDict(PyThreadState *tstate, PyObject *obj, PyObject *name,
                                  PyObject *value, PyObject *dict)
 {
     PyTypeObject *tp = Py_TYPE(obj);
@@ -2023,9 +2075,9 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
 
     assert(!PyType_IsSubtype(tp, &PyType_Type));
     if (!PyUnicode_Check(name)){
-        PyErr_Format(PyExc_TypeError,
-                     "attribute name must be string, not '%.200s'",
-                     Py_TYPE(name)->tp_name);
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "attribute name must be string, not '%.200s'",
+                      Py_TYPE(name)->tp_name);
         return -1;
     }
 
@@ -2036,7 +2088,6 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
     Py_INCREF(name);
     _Py_INCREF_TYPE(tp);
 
-    PyThreadState *tstate = _PyThreadState_GET();
     _PyCStackRef cref;
     _PyThreadState_PushCStackRef(tstate, &cref);
 
@@ -2069,22 +2120,22 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
         if (dictptr == NULL) {
             if (descr == NULL) {
                 if (tp->tp_setattro == PyObject_GenericSetAttr) {
-                    PyErr_Format(PyExc_AttributeError,
-                                "'%.100s' object has no attribute '%U' and no "
-                                "__dict__ for setting new attributes",
-                                tp->tp_name, name);
+                    _PyErr_Format(tstate, PyExc_AttributeError,
+                                  "'%.100s' object has no attribute '%U' and no "
+                                  "__dict__ for setting new attributes",
+                                  tp->tp_name, name);
                 }
                 else {
-                    PyErr_Format(PyExc_AttributeError,
-                                "'%.100s' object has no attribute '%U'",
-                                tp->tp_name, name);
+                    _PyErr_Format(tstate, PyExc_AttributeError,
+                                  "'%.100s' object has no attribute '%U'",
+                                  tp->tp_name, name);
                 }
-                _PyObject_SetAttributeErrorContext(obj, name);
+                _PyObject_SetAttributeErrorContext(tstate, obj, name);
             }
             else {
-                PyErr_Format(PyExc_AttributeError,
-                            "'%.100s' object attribute '%U' is read-only",
-                            tp->tp_name, name);
+                _PyErr_Format(tstate, PyExc_AttributeError,
+                              "'%.100s' object attribute '%U' is read-only",
+                              tp->tp_name, name);
             }
             goto done;
         }
@@ -2102,10 +2153,10 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
     }
   error_check:
     if (res < 0 && PyErr_ExceptionMatches(PyExc_KeyError)) {
-        PyErr_Format(PyExc_AttributeError,
+        _PyErr_Format(tstate, PyExc_AttributeError,
                         "'%.100s' object has no attribute '%U'",
                         tp->tp_name, name);
-        _PyObject_SetAttributeErrorContext(obj, name);
+        _PyObject_SetAttributeErrorContext(tstate, obj, name);
     }
   done:
     _PyThreadState_PopCStackRef(tstate, &cref);
@@ -2117,7 +2168,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
 int
 PyObject_GenericSetAttr(PyObject *obj, PyObject *name, PyObject *value)
 {
-    return _PyObject_GenericSetAttrWithDict(obj, name, value, NULL);
+    return _PyObject_GenericSetAttrWithDict(_PyThreadState_GET(), obj, name, value, NULL);
 }
 
 int
@@ -3287,12 +3338,11 @@ To avoid that, if the C stack is nearing its limit, instead of calling
 dealloc on the object, it is added to a queue to be freed later when the
 stack is shallower */
 void
-_Py_Dealloc(PyObject *op)
+_Py_DeallocTstate(PyThreadState *tstate, PyObject *op)
 {
     PyTypeObject *type = Py_TYPE(op);
     unsigned long gc_flag = type->tp_flags & Py_TPFLAGS_HAVE_GC;
     destructor dealloc = type->tp_dealloc;
-    PyThreadState *tstate = _PyThreadState_GET();
     intptr_t margin = _Py_RecursionLimit_GetMargin(tstate);
     if (margin < 2 && gc_flag) {
         _PyTrash_thread_deposit_object(tstate, (PyObject *)op);
@@ -3345,6 +3395,11 @@ _Py_Dealloc(PyObject *op)
     }
 }
 
+void
+_Py_Dealloc(PyObject *op)
+{
+    _Py_DeallocTstate(_PyThreadState_GET(), op);
+}
 
 PyObject **
 PyObject_GET_WEAKREFS_LISTPTR(PyObject *op)

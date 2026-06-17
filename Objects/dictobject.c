@@ -7374,10 +7374,11 @@ store_instance_attr_lock_held(PyObject *obj, PyDictValues *values,
 
     PyObject *old_value = values->values[ix];
     if (old_value == NULL && value == NULL) {
-        PyErr_Format(PyExc_AttributeError,
+        PyThreadState *tstate = _PyThreadState_GET();
+        _PyErr_Format(tstate, PyExc_AttributeError,
                         "'%.100s' object has no attribute '%U'",
                         Py_TYPE(obj)->tp_name, name);
-        (void)_PyObject_SetAttributeErrorContext(obj, name);
+        (void)_PyObject_SetAttributeErrorContext(tstate, obj, name);
         return -1;
     }
 

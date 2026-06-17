@@ -444,7 +444,7 @@ _PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys)
         goto fail;
     }
     // dummy = object()
-    dummy = _PyObject_CallNoArgs((PyObject *)&PyBaseObject_Type);
+    dummy = _PyObject_CallNoArgsTstate(tstate, (PyObject *)&PyBaseObject_Type);
     if (dummy == NULL) {
         goto fail;
     }
@@ -466,18 +466,18 @@ _PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys)
         PyObject *args[] = { self_obj, key, dummy };
         PyObject *value = NULL;
         if (!PyStackRef_IsNull(self.ref)) {
-            value = PyObject_Vectorcall(get, args, 3, NULL);
+            value = _PyObject_VectorcallTstate(tstate, get, args, 3, NULL);
         }
         else {
-            value = PyObject_Vectorcall(get, &args[1], 2, NULL);
+            value = _PyObject_VectorcallTstate(tstate, get, &args[1], 2, NULL);
         }
         if (value == NULL) {
             goto fail;
         }
         if (value == dummy) {
             // key not in map!
-            Py_DECREF(value);
-            Py_DECREF(values);
+            _Py_DECREF(tstate, value);
+            _Py_DECREF(tstate, values);
             // Return None:
             values = Py_NewRef(Py_None);
             goto done;
@@ -488,15 +488,15 @@ _PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys)
 done:
     _PyThreadState_PopCStackRef(tstate, &method);
     _PyThreadState_PopCStackRef(tstate, &self);
-    Py_DECREF(seen);
-    Py_DECREF(dummy);
+    _Py_DECREF(tstate, seen);
+    _Py_DECREF(tstate, dummy);
     return values;
 fail:
     _PyThreadState_PopCStackRef(tstate, &method);
     _PyThreadState_PopCStackRef(tstate, &self);
-    Py_XDECREF(seen);
-    Py_XDECREF(dummy);
-    Py_XDECREF(values);
+    _Py_XDECREF(tstate, seen);
+    _Py_XDECREF(tstate, dummy);
+    _Py_XDECREF(tstate, values);
     return NULL;
 }
 
@@ -677,7 +677,7 @@ PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
     }
     EVAL_CALL_STAT_INC(EVAL_CALL_LEGACY);
     PyObject *res = _PyEval_Vector(tstate, func, locals, NULL, 0, NULL);
-    Py_DECREF(func);
+    _Py_DECREF(tstate, func);
     return res;
 }
 
@@ -706,6 +706,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
 PyObject *
 _Py_VectorCall_StackRefSteal(
+    PyThreadState *tstate,
     _PyStackRef callable,
     _PyStackRef *arguments,
     int total_args,
@@ -723,22 +724,22 @@ _Py_VectorCall_StackRefSteal(
     if (kwnames_o != NULL) {
         positional_args -= (int)PyTuple_GET_SIZE(kwnames_o);
     }
-    res = PyObject_Vectorcall(
+    res = _PyObject_VectorcallTstate(tstate,
         callable_o, args_o,
         positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
         kwnames_o);
     STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
-    assert((res != NULL) ^ (PyErr_Occurred() != NULL));
+    assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 cleanup:
-    PyStackRef_XCLOSE(kwnames);
+    _PyStackRef_XCLOSE(tstate, kwnames);
     // arguments is a pointer into the GC visible stack,
     // so we must NULL out values as we clear them.
     for (int i = total_args-1; i >= 0; i--) {
         _PyStackRef tmp = arguments[i];
         arguments[i] = PyStackRef_NULL;
-        PyStackRef_CLOSE(tmp);
+        _PyStackRef_CLOSE(tstate, tmp);
     }
-    PyStackRef_CLOSE(callable);
+    _PyStackRef_CLOSE(tstate, callable);
     return res;
 }
 
@@ -765,7 +766,8 @@ _Py_VectorCallInstrumentation_StackRefSteal(
     if (kwnames_o != NULL) {
         positional_args -= (int)PyTuple_GET_SIZE(kwnames_o);
     }
-    res = PyObject_Vectorcall(
+    res = _PyObject_VectorcallTstate(
+        tstate,
         callable_o, args_o,
         positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
         kwnames_o);
@@ -789,15 +791,15 @@ _Py_VectorCallInstrumentation_StackRefSteal(
     }
     assert((res != NULL) ^ (PyErr_Occurred() != NULL));
 cleanup:
-    PyStackRef_XCLOSE(kwnames);
+    _PyStackRef_XCLOSE(tstate, kwnames);
     // arguments is a pointer into the GC visible stack,
     // so we must NULL out values as we clear them.
     for (int i = total_args - 1; i >= 0; i--) {
         _PyStackRef tmp = arguments[i];
         arguments[i] = PyStackRef_NULL;
-        PyStackRef_CLOSE(tmp);
+        _PyStackRef_CLOSE(tstate, tmp);
     }
-    PyStackRef_CLOSE(callable);
+    _PyStackRef_CLOSE(tstate, callable);
     return res;
 }
 
@@ -1113,7 +1115,7 @@ stop_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
 
 
 _PyStackRef
-_PyEval_GetIter(_PyStackRef iterable, _PyStackRef *index_or_null, int yield_from)
+_PyEval_GetIter(PyThreadState *tstate, _PyStackRef iterable, _PyStackRef *index_or_null, int yield_from)
 {
     PyTypeObject *tp = PyStackRef_TYPE(iterable);
     if (tp->_tp_iteritem != NULL) {
@@ -1130,17 +1132,17 @@ _PyEval_GetIter(_PyStackRef iterable, _PyStackRef *index_or_null, int yield_from
         if (yield_from == GET_ITER_YIELD_FROM_CORO_CHECK) {
             /* `iterable` is a coroutine and it is used in a 'yield from'
             * expression of a regular generator. */
-            PyErr_SetString(PyExc_TypeError,
-                            "cannot 'yield from' a coroutine object "
-                            "in a non-coroutine generator");
-            PyStackRef_CLOSE(iterable);
+            _PyErr_SetString(tstate, PyExc_TypeError,
+                             "cannot 'yield from' a coroutine object "
+                             "in a non-coroutine generator");
+            _PyStackRef_CLOSE(tstate, iterable);
             return PyStackRef_ERROR;
         }
         return iterable;
     }
     /* Pop iterable, and push iterator then NULL */
     PyObject *iter_o = PyObject_GetIter(PyStackRef_AsPyObjectBorrow(iterable));
-    PyStackRef_CLOSE(iterable);
+    _PyStackRef_CLOSE(tstate, iterable);
     if (iter_o == NULL) {
         return PyStackRef_ERROR;
     }
@@ -1497,24 +1499,24 @@ format_missing(PyThreadState *tstate, const char *kind,
            fail, but we can't be too careful. */
         err = PyList_SetSlice(names, len - 2, len, NULL);
         if (err == -1) {
-            Py_DECREF(tail);
+            _Py_DECREF(tstate, tail);
             return;
         }
         /* Stitch everything up into a nice comma-separated list. */
         comma = PyUnicode_FromString(", ");
         if (comma == NULL) {
-            Py_DECREF(tail);
+            _Py_DECREF(tstate, tail);
             return;
         }
         tmp = PyUnicode_Join(comma, names);
-        Py_DECREF(comma);
+        _Py_DECREF(tstate, comma);
         if (tmp == NULL) {
-            Py_DECREF(tail);
+            _Py_DECREF(tstate, tail);
             return;
         }
         name_str = PyUnicode_Concat(tmp, tail);
-        Py_DECREF(tmp);
-        Py_DECREF(tail);
+        _Py_DECREF(tstate, tmp);
+        _Py_DECREF(tstate, tail);
         break;
     }
     if (name_str == NULL)
@@ -1526,7 +1528,7 @@ format_missing(PyThreadState *tstate, const char *kind,
                   kind,
                   len == 1 ? "" : "s",
                   name_str);
-    Py_DECREF(name_str);
+    _Py_DECREF(tstate, name_str);
 }
 
 static void
@@ -1557,7 +1559,7 @@ missing_arguments(PyThreadState *tstate, PyCodeObject *co,
             PyObject *raw = PyTuple_GET_ITEM(co->co_localsplusnames, i);
             PyObject *name = PyObject_Repr(raw);
             if (name == NULL) {
-                Py_DECREF(missing_names);
+                _Py_DECREF(tstate, missing_names);
                 return;
             }
             PyList_SET_ITEM(missing_names, j++, name);
@@ -1565,7 +1567,7 @@ missing_arguments(PyThreadState *tstate, PyCodeObject *co,
     }
     assert(j == missing);
     format_missing(tstate, kind, co, missing_names, qualname);
-    Py_DECREF(missing_names);
+    _Py_DECREF(tstate, missing_names);
 }
 
 static void
@@ -1605,7 +1607,7 @@ too_many_positional(PyThreadState *tstate, PyCodeObject *co,
                                           kwonly_given,
                                           kwonly_given != 1 ? "s" : "");
         if (kwonly_sig == NULL) {
-            Py_DECREF(sig);
+            _Py_DECREF(tstate, sig);
             return;
         }
     }
@@ -1622,8 +1624,8 @@ too_many_positional(PyThreadState *tstate, PyCodeObject *co,
                   given,
                   kwonly_sig,
                   given == 1 && !kwonly_given ? "was" : "were");
-    Py_DECREF(sig);
-    Py_DECREF(kwonly_sig);
+    _Py_DECREF(tstate, sig);
+    _Py_DECREF(tstate, kwonly_sig);
 }
 
 static int
@@ -1650,7 +1652,7 @@ positional_only_passed_as_keyword(PyThreadState *tstate, PyCodeObject *co,
                 continue;
             }
 
-            int cmp = PyObject_RichCompareBool(posonly_name, kwname, Py_EQ);
+            int cmp = _PyObject_RichCompareBool(tstate, posonly_name, kwname, Py_EQ);
 
             if ( cmp > 0) {
                 if(PyList_Append(posonly_names, kwname) != 0) {
@@ -1669,7 +1671,7 @@ positional_only_passed_as_keyword(PyThreadState *tstate, PyCodeObject *co,
             goto fail;
         }
         PyObject* error_names = PyUnicode_Join(comma, posonly_names);
-        Py_DECREF(comma);
+        _Py_DECREF(tstate, comma);
         if (error_names == NULL) {
             goto fail;
         }
@@ -1677,15 +1679,15 @@ positional_only_passed_as_keyword(PyThreadState *tstate, PyCodeObject *co,
                       "%U() got some positional-only arguments passed"
                       " as keyword arguments: '%U'",
                       qualname, error_names);
-        Py_DECREF(error_names);
+        _Py_DECREF(tstate, error_names);
         goto fail;
     }
 
-    Py_DECREF(posonly_names);
+    _Py_DECREF(tstate, posonly_names);
     return 0;
 
 fail:
-    Py_XDECREF(posonly_names);
+    _Py_XDECREF(tstate, posonly_names);
     return 1;
 
 }
@@ -1739,7 +1741,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
             u = _PyTuple_FromStackRefStealOnSuccess(args + n, argcount - n);
             if (u == NULL) {
                 for (Py_ssize_t i = n; i < argcount; i++) {
-                    PyStackRef_CLOSE(args[i]);
+                    _PyStackRef_CLOSE(tstate, args[i]);
                 }
             }
         }
@@ -1752,7 +1754,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
     else if (argcount > n) {
         /* Too many positional args. Error is reported later */
         for (j = n; j < argcount; j++) {
-            PyStackRef_CLOSE(args[j]);
+            _PyStackRef_CLOSE(tstate, args[j]);
         }
     }
 
@@ -1785,7 +1787,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
             /* Slow fallback, just in case */
             for (j = co->co_posonlyargcount; j < total_args; j++) {
                 PyObject *varname = co_varnames[j];
-                int cmp = PyObject_RichCompareBool( keyword, varname, Py_EQ);
+                int cmp = _PyObject_RichCompareBool(tstate, keyword, varname, Py_EQ);
                 if (cmp > 0) {
                     goto kw_found;
                 }
@@ -1810,14 +1812,14 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
                     PyObject* possible_keywords = PyList_New(total_args - co->co_posonlyargcount);
 
                     if (!possible_keywords) {
-                        PyErr_Clear();
+                        _PyErr_Clear(tstate);
                     } else {
                         for (Py_ssize_t k = co->co_posonlyargcount; k < total_args; k++) {
                             PyList_SET_ITEM(possible_keywords, k - co->co_posonlyargcount, co_varnames[k]);
                         }
 
                         suggestion_keyword = _Py_CalculateSuggestions(possible_keywords, keyword);
-                        Py_DECREF(possible_keywords);
+                        _Py_DECREF(tstate, possible_keywords);
                     }
                 }
 
@@ -1825,7 +1827,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
                     _PyErr_Format(tstate, PyExc_TypeError,
                                 "%U() got an unexpected keyword argument '%S'. Did you mean '%S'?",
                                 func->func_qualname, keyword, suggestion_keyword);
-                    Py_DECREF(suggestion_keyword);
+                    _Py_DECREF(tstate, suggestion_keyword);
                 } else {
                     _PyErr_Format(tstate, PyExc_TypeError,
                                 "%U() got an unexpected keyword argument '%S'",
@@ -1838,12 +1840,12 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
             if (PyDict_SetItem(kwdict, keyword, PyStackRef_AsPyObjectBorrow(value_stackref)) == -1) {
                 goto kw_fail;
             }
-            PyStackRef_CLOSE(value_stackref);
+            _PyStackRef_CLOSE(tstate, value_stackref);
             continue;
 
         kw_fail:
             for (;i < kwcount; i++) {
-                PyStackRef_CLOSE(args[i+argcount]);
+                _PyStackRef_CLOSE(tstate, args[i+argcount]);
             }
             goto fail_post_args;
 
@@ -1924,14 +1926,14 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
 
 fail_pre_positional:
     for (j = 0; j < argcount; j++) {
-        PyStackRef_CLOSE(args[j]);
+        _PyStackRef_CLOSE(tstate, args[j]);
     }
     /* fall through */
 fail_post_positional:
     if (kwnames) {
         Py_ssize_t kwcount = PyTuple_GET_SIZE(kwnames);
         for (j = argcount; j < argcount+kwcount; j++) {
-            PyStackRef_CLOSE(args[j]);
+            _PyStackRef_CLOSE(tstate, args[j]);
         }
     }
     /* fall through */
@@ -1949,7 +1951,7 @@ clear_thread_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
         tstate->datastack_top);
     assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
     _PyFrame_ClearExceptCode(frame);
-    PyStackRef_CLEAR(frame->f_executable);
+    _PyStackRef_CLEAR(tstate, frame->f_executable);
     _PyThreadState_PopFrame(tstate, frame);
 }
 
@@ -2014,18 +2016,18 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, _PyStackRef func,
     return frame;
 fail:
     /* Consume the references */
-    PyStackRef_CLOSE(func);
-    Py_XDECREF(locals);
+    _PyStackRef_CLOSE(tstate, func);
+    _Py_XDECREF(tstate, locals);
     for (size_t i = 0; i < argcount; i++) {
-        PyStackRef_CLOSE(args[i]);
+        _PyStackRef_CLOSE(tstate, args[i]);
     }
     if (kwnames) {
         Py_ssize_t kwcount = PyTuple_GET_SIZE(kwnames);
         for (Py_ssize_t i = 0; i < kwcount; i++) {
-            PyStackRef_CLOSE(args[i+argcount]);
+            _PyStackRef_CLOSE(tstate, args[i+argcount]);
         }
     }
-    PyErr_NoMemory();
+    _PyErr_NoMemory(tstate);
     return NULL;
 }
 
@@ -2044,7 +2046,7 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
     if (has_dict) {
         object_array = _PyStack_UnpackDict(tstate, _PyTuple_ITEMS(callargs), nargs, kwargs, &kwnames);
         if (object_array == NULL) {
-            PyStackRef_CLOSE(func);
+            _PyStackRef_CLOSE(tstate, func);
             goto error;
         }
         size_t nkwargs = PyDict_GET_SIZE(kwargs);
@@ -2066,8 +2068,8 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
         else {
             newargs = PyMem_Malloc(sizeof(_PyStackRef) *nargs);
             if (newargs == NULL) {
-                PyErr_NoMemory();
-                PyStackRef_CLOSE(func);
+                _PyErr_NoMemory(tstate);
+                _PyStackRef_CLOSE(tstate, func);
                 goto error;
             }
         }
@@ -2089,12 +2091,12 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
     /* No need to decref func here because the reference has been stolen by
        _PyEvalFramePushAndInit.
     */
-    Py_DECREF(callargs);
-    Py_XDECREF(kwargs);
+    _Py_DECREF(tstate, callargs);
+    _Py_XDECREF(tstate, kwargs);
     return new_frame;
 error:
-    Py_DECREF(callargs);
-    Py_XDECREF(kwargs);
+    _Py_DECREF(tstate, callargs);
+    _Py_XDECREF(tstate, kwargs);
     return NULL;
 }
 
@@ -2116,7 +2118,7 @@ _PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,
     else {
         arguments = PyMem_Malloc(sizeof(_PyStackRef) * total_args);
         if (arguments == NULL) {
-            return PyErr_NoMemory();
+            return _PyErr_NoMemory(tstate);
         }
     }
     /* _PyEvalFramePushAndInit consumes the references
@@ -2210,11 +2212,11 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
                          allargs, argcount,
                          kwnames);
 fail:
-    Py_XDECREF(func);
-    Py_XDECREF(kwnames);
+    _Py_XDECREF(tstate, func);
+    _Py_XDECREF(tstate, kwnames);
     PyMem_Free(newargs);
     _Py_DECREF_BUILTINS(builtins);
-    Py_DECREF(defaults);
+    _Py_DECREF(tstate, defaults);
     return res;
 }
 
@@ -2368,10 +2370,10 @@ _PyEval_UnpackIterableStackRef(PyThreadState *tstate, PyObject *v,
         if (w == NULL) {
             if (_PyErr_Occurred(tstate))
                 goto Error;
-            Py_DECREF(it);
+            _Py_DECREF(tstate, it);
             return 1;
         }
-        Py_DECREF(w);
+        _Py_DECREF(tstate, w);
 
         if (PyList_CheckExact(v) || PyTuple_CheckExact(v)
               || PyDict_CheckExact(v)) {
@@ -2409,14 +2411,14 @@ _PyEval_UnpackIterableStackRef(PyThreadState *tstate, PyObject *v,
     }
     /* Resize the list. */
     Py_SET_SIZE(l, ll - argcntafter);
-    Py_DECREF(it);
+    _Py_DECREF(tstate, it);
     return 1;
 
 Error:
     for (; i > 0; i--, sp++) {
-        PyStackRef_CLOSE(*sp);
+        _PyStackRef_CLOSE(tstate, *sp);
     }
-    Py_XDECREF(it);
+    _Py_XDECREF(tstate, it);
     return 0;
 }
 
@@ -2640,7 +2642,7 @@ PyEval_GetLocals(void)
     if (PyFrameLocalsProxy_Check(locals)) {
         PyFrameObject *f = _PyFrame_GetFrameObject(current_frame);
         if (f == NULL) {
-            Py_DECREF(locals);
+            _Py_DECREF(tstate, locals);
             return NULL;
         }
 
@@ -2648,7 +2650,7 @@ PyEval_GetLocals(void)
         if (ret == NULL) {
             ret = PyDict_New();
             if (ret == NULL) {
-                Py_DECREF(locals);
+                _Py_DECREF(tstate, locals);
                 return NULL;
             }
             f->f_locals_cache = ret;
@@ -2658,13 +2660,13 @@ PyEval_GetLocals(void)
             // trying to clean it up or replace it will just cause other problems
             ret = NULL;
         }
-        Py_DECREF(locals);
+        _Py_DECREF(tstate, locals);
         return ret;
     }
 
     assert(PyMapping_Check(locals));
     assert(Py_REFCNT(locals) > 1);
-    Py_DECREF(locals);
+    _Py_DECREF(tstate, locals);
 
     return locals;
 }
@@ -2687,15 +2689,15 @@ _PyEval_GetFrameLocals(void)
     if (PyFrameLocalsProxy_Check(locals)) {
         PyObject* ret = PyDict_New();
         if (ret == NULL) {
-            Py_DECREF(locals);
+            _Py_DECREF(tstate, locals);
             return NULL;
         }
         if (PyDict_Update(ret, locals) < 0) {
-            Py_DECREF(ret);
-            Py_DECREF(locals);
+            _Py_DECREF(tstate, ret);
+            _Py_DECREF(tstate, locals);
             return NULL;
         }
-        Py_DECREF(locals);
+        _Py_DECREF(tstate, locals);
         return ret;
     }
 
@@ -2728,11 +2730,11 @@ _PyEval_GetGlobalsFromRunningMain(PyThreadState *tstate)
     }
     PyObject *mod = _Py_GetMainModule(tstate);
     if (_Py_CheckMainModule(mod) < 0) {
-        Py_XDECREF(mod);
+        _Py_XDECREF(tstate, mod);
         return NULL;
     }
     PyObject *globals = PyModule_GetDict(mod);  // borrowed
-    Py_DECREF(mod);
+    _Py_DECREF(tstate, mod);
     return globals;
 }
 
@@ -2791,7 +2793,7 @@ _PyEval_EnsureBuiltins(PyThreadState *tstate, PyObject *globals,
         }
         Py_INCREF(builtins);
         if (set_globals_builtins(globals, builtins) < 0) {
-            Py_DECREF(builtins);
+            _Py_DECREF(tstate, builtins);
             return -1;
         }
     }
@@ -2799,7 +2801,7 @@ _PyEval_EnsureBuiltins(PyThreadState *tstate, PyObject *globals,
         *p_builtins = builtins;
     }
     else {
-        Py_DECREF(builtins);
+        _Py_DECREF(tstate, builtins);
     }
     return 0;
 }
@@ -2818,7 +2820,7 @@ _PyEval_EnsureBuiltinsWithModule(PyThreadState *tstate, PyObject *globals,
             return -1;
         }
         if (set_globals_builtins(globals, builtins) < 0) {
-            Py_DECREF(builtins);
+            _Py_DECREF(tstate, builtins);
             return -1;
         }
     }
@@ -2826,7 +2828,7 @@ _PyEval_EnsureBuiltinsWithModule(PyThreadState *tstate, PyObject *globals,
         *p_builtins = builtins;
     }
     else {
-        Py_DECREF(builtins);
+        _Py_DECREF(tstate, builtins);
     }
     return 0;
 }
@@ -2977,7 +2979,7 @@ _PyEval_ImportName(PyThreadState *tstate, PyObject *builtins,
 
     PyObject *res = _PyEval_ImportNameWithImport(
         tstate, import_func, globals, locals, name, fromlist, level);
-    Py_DECREF(import_func);
+    _Py_DECREF(tstate, import_func);
     return res;
 }
 
@@ -3005,7 +3007,7 @@ _PyEval_ImportNameWithImport(PyThreadState *tstate, PyObject *import_func,
     }
 
     PyObject *args[5] = {name, globals, locals, fromlist, level};
-    PyObject *res = PyObject_Vectorcall(import_func, args, 5, NULL);
+    PyObject *res = _PyObject_VectorcallTstate(tstate, import_func, args, 5, NULL);
     return res;
 }
 
@@ -3119,7 +3121,7 @@ _PyEval_LazyImportName(PyThreadState *tstate, PyObject *builtins,
     }
 
     PyObject *args[6] = {name, globals, locals, fromlist, level, builtins};
-    res = PyObject_Vectorcall(lazy_import_func, args, 6, NULL);
+    res = _PyObject_VectorcallTstate(tstate, lazy_import_func, args, 6, NULL);
 error:
     Py_XDECREF(lazy_import_func);
     return res;
@@ -3146,15 +3148,15 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
     }
     fullmodname = PyUnicode_FromFormat("%U.%U", mod_name, name);
     if (fullmodname == NULL) {
-        Py_DECREF(mod_name);
+        _Py_DECREF(tstate, mod_name);
         return NULL;
     }
     x = PyImport_GetModule(fullmodname);
-    Py_DECREF(fullmodname);
+    _Py_DECREF(tstate, fullmodname);
     if (x == NULL && !_PyErr_Occurred(tstate)) {
         goto error;
     }
-    Py_DECREF(mod_name);
+    _Py_DECREF(tstate, mod_name);
     return x;
 
  error:
@@ -3172,7 +3174,7 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
 
     origin = NULL;
     if (PyObject_GetOptionalAttr(v, &_Py_ID(__spec__), &spec) < 0) {
-        Py_DECREF(mod_name_or_unknown);
+        _Py_DECREF(tstate, mod_name_or_unknown);
         return NULL;
     }
     if (spec == NULL) {
@@ -3199,7 +3201,7 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
         if (stdlib_modules && PyAnySet_Check(stdlib_modules)) {
             is_possibly_shadowing_stdlib = PySet_Contains(stdlib_modules, mod_name_or_unknown);
             if (is_possibly_shadowing_stdlib < 0) {
-                Py_DECREF(stdlib_modules);
+                _Py_DECREF(tstate, stdlib_modules);
                 goto done;
             }
         }
@@ -3283,13 +3285,13 @@ done_with_errmsg:
     if (errmsg != NULL) {
         /* NULL checks for mod_name and origin done by _PyErr_SetImportErrorWithNameFrom */
         _PyErr_SetImportErrorWithNameFrom(errmsg, mod_name, origin, name);
-        Py_DECREF(errmsg);
+        _Py_DECREF(tstate, errmsg);
     }
 
 done:
-    Py_XDECREF(origin);
-    Py_XDECREF(spec);
-    Py_DECREF(mod_name_or_unknown);
+    _Py_XDECREF(tstate, origin);
+    _Py_XDECREF(tstate, spec);
+    _Py_DECREF(tstate, mod_name_or_unknown);
     return NULL;
 }
 
@@ -3309,16 +3311,16 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObje
             PyObject *mod_dict = PyModule_GetDict(mod);
             if (mod_dict != NULL) {
                 if (PyDict_GetItemRef(mod_dict, name, &ret) < 0) {
-                    Py_DECREF(mod);
+                    _Py_DECREF(tstate, mod);
                     return NULL;
                 }
                 if (ret != NULL) {
-                    Py_DECREF(mod);
+                    _Py_DECREF(tstate, mod);
                     return ret;
                 }
             }
         }
-        Py_DECREF(mod);
+        _Py_DECREF(tstate, mod);
     }
 
     if (d->lz_attr != NULL) {
@@ -3329,7 +3331,7 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObje
                 return NULL;
             }
             ret = _PyLazyImport_New(frame, d->lz_builtins, from, name);
-            Py_DECREF(from);
+            _Py_DECREF(tstate, from);
             return ret;
         }
     }
@@ -3343,7 +3345,7 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObje
                 return NULL;
             }
             ret = _PyLazyImport_New(frame, d->lz_builtins, from, name);
-            Py_DECREF(from);
+            _Py_DECREF(tstate, from);
             return ret;
         }
     }
@@ -3457,7 +3459,7 @@ _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwarg
                 tstate, PyExc_TypeError,
                 "Value after ** must be a mapping, not %T",
                 kwargs);
-            Py_DECREF(exc);
+            _Py_DECREF(tstate, exc);
         }
         else {
             _PyErr_ChainExceptions1Tstate(tstate, exc);
@@ -3654,8 +3656,9 @@ _PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name
 
     PyObject *res_o = PyStackRef_AsPyObjectBorrow(*writeto);
     if (res_o != NULL && PyLazyImport_CheckExact(res_o)) {
-        PyObject *l_v = _PyImport_LoadLazyImportTstate(PyThreadState_GET(), res_o);
-        PyStackRef_CLOSE(writeto[0]);
+        PyThreadState *tstate = PyThreadState_GET();
+        PyObject *l_v = _PyImport_LoadLazyImportTstate(tstate, res_o);
+        _PyStackRef_CLOSE(tstate, writeto[0]);
         if (l_v == NULL) {
             assert(PyErr_Occurred());
             *writeto = PyStackRef_NULL;
@@ -3663,7 +3666,7 @@ _PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name
         }
         int err = PyDict_SetItem(globals, name, l_v);
         if (err < 0) {
-            Py_DECREF(l_v);
+            _Py_DECREF(tstate, l_v);
             *writeto = PyStackRef_NULL;
             return;
         }

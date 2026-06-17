@@ -111,10 +111,10 @@ _PyType_IsReady(PyTypeObject *type)
     return _PyType_GetDict(type) != NULL;
 }
 
-extern PyObject* _Py_type_getattro_impl(PyTypeObject *type, PyObject *name,
+extern PyObject* _Py_type_getattro_impl(PyThreadState *tstate, PyTypeObject *type, PyObject *name,
                                         int *suppress_missing_attribute);
 extern PyObject* _Py_type_getattro(PyObject *type, PyObject *name);
-extern _PyStackRef _Py_type_getattro_stackref(PyTypeObject *type, PyObject *name,
+extern _PyStackRef _Py_type_getattro_stackref(PyThreadState *tstate, PyTypeObject *type, PyObject *name,
                                               int *suppress_missing_attribute);
 
 extern PyObject* _Py_BaseObject_RichCompare(PyObject* self, PyObject* other, int op);

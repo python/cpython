@@ -38,6 +38,8 @@
 #include "pycore_tuple.h"
 #include "pycore_unicodeobject.h"
 
+#include <string.h>
+
 #include "ceval_macros.h"
 
 #include "jit.h"

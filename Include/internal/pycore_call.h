@@ -46,7 +46,7 @@ extern PyObject* _PyObject_VectorcallDictTstate(
     size_t nargsf,
     PyObject *kwargs);
 
-extern PyObject* _PyObject_Call(
+PyAPI_FUNC(PyObject*) _PyObject_Call(
     PyThreadState *tstate,
     PyObject *callable,
     PyObject *args,
@@ -175,6 +175,9 @@ PyAPI_FUNC(void) _PyStack_UnpackDict_Free(
 PyAPI_FUNC(void) _PyStack_UnpackDict_FreeNoDecRef(
     PyObject *const *stack,
     PyObject *kwnames);
+
+PyAPI_FUNC(PyObject *)
+_PyObject_CallOneArgTstate(PyThreadState *tstate, PyObject *func, PyObject *arg);
 
 #ifdef __cplusplus
 }

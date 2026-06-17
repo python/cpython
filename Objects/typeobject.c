@@ -1779,7 +1779,7 @@ type_get_mro(PyObject *tp, void *Py_UNUSED(closure))
 static PyTypeObject *find_best_base(PyObject *);
 static int mro_internal(PyTypeObject *, int, PyObject **);
 static int type_is_subtype_base_chain(PyTypeObject *, PyTypeObject *);
-static int compatible_for_assignment(PyTypeObject *, PyTypeObject *, const char *, int);
+static int compatible_for_assignment(PyThreadState *, PyTypeObject *, PyTypeObject *, const char *, int);
 static int add_subclass(PyTypeObject*, PyTypeObject*);
 static int add_all_subclasses(PyTypeObject *type, PyObject *bases);
 static void remove_subclass(PyTypeObject *, PyTypeObject *);
@@ -1863,7 +1863,7 @@ mro_hierarchy_for_complete_type(PyTypeObject *type, PyObject *temp)
 }
 
 static int
-type_check_new_bases(PyTypeObject *type, PyObject *new_bases, PyTypeObject **best_base)
+type_check_new_bases(PyThreadState *tstate, PyTypeObject *type, PyObject *new_bases, PyTypeObject **best_base)
 {
     // Check arguments, this is re-entrant due to the PySys_Audit() call
     if (!check_set_special_type_attr(type, new_bases, "__bases__")) {
@@ -1872,13 +1872,13 @@ type_check_new_bases(PyTypeObject *type, PyObject *new_bases, PyTypeObject **bes
     assert(new_bases != NULL);
 
     if (!PyTuple_Check(new_bases)) {
-        PyErr_Format(PyExc_TypeError,
+        _PyErr_Format(tstate, PyExc_TypeError,
              "can only assign tuple to %s.__bases__, not %s",
                  type->tp_name, Py_TYPE(new_bases)->tp_name);
         return -1;
     }
     if (PyTuple_GET_SIZE(new_bases) == 0) {
-        PyErr_Format(PyExc_TypeError,
+        _PyErr_Format(tstate, PyExc_TypeError,
              "can only assign non-empty tuple to %s.__bases__, not ()",
                  type->tp_name);
         return -1;
@@ -1887,9 +1887,9 @@ type_check_new_bases(PyTypeObject *type, PyObject *new_bases, PyTypeObject **bes
     for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *ob = PyTuple_GET_ITEM(new_bases, i);
         if (!PyType_Check(ob)) {
-            PyErr_Format(PyExc_TypeError,
-                         "%s.__bases__ must be tuple of classes, not '%s'",
-                         type->tp_name, Py_TYPE(ob)->tp_name);
+            _PyErr_Format(tstate, PyExc_TypeError,
+                          "%s.__bases__ must be tuple of classes, not '%s'",
+                          type->tp_name, Py_TYPE(ob)->tp_name);
             return -1;
         }
         PyTypeObject *base = (PyTypeObject*)ob;
@@ -1907,7 +1907,7 @@ type_check_new_bases(PyTypeObject *type, PyObject *new_bases, PyTypeObject **bes
             (lookup_tp_mro(base) != NULL
              && type_is_subtype_base_chain(base, type)))
         {
-            PyErr_SetString(PyExc_TypeError,
+            _PyErr_SetString(tstate, PyExc_TypeError,
                             "a __bases__ item causes an inheritance cycle");
             return -1;
         }
@@ -1918,7 +1918,7 @@ type_check_new_bases(PyTypeObject *type, PyObject *new_bases, PyTypeObject **bes
     if (*best_base == NULL)
         return -1;
 
-    if (!compatible_for_assignment(type, *best_base, "__bases__", 0)) {
+    if (!compatible_for_assignment(tstate, type, *best_base, "__bases__", 0)) {
         return -1;
     }
 
@@ -2027,7 +2027,7 @@ type_set_bases(PyObject *tp, PyObject *new_bases, void *Py_UNUSED(closure))
     PyTypeObject *best_base;
     int res;
     BEGIN_TYPE_LOCK();
-    res = type_check_new_bases(type, new_bases, &best_base);
+    res = type_check_new_bases(_PyThreadState_GET(), type, new_bases, &best_base);
     if (res == 0) {
         res = type_set_bases_unlocked(type, new_bases, best_base);
     }
@@ -2511,6 +2511,9 @@ _PyType_NewManagedObject(PyTypeObject *type)
 PyObject *
 _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
+    assert(tstate != NULL);
+
     PyObject *obj;
     /* The +1 on nitems is needed for most types but not all. We could save a
      * bit of space by allocating one less item in certain cases, depending on
@@ -2527,7 +2530,7 @@ _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems)
     }
     char *alloc = _PyObject_MallocWithType(type, size + presize);
     if (alloc  == NULL) {
-        return PyErr_NoMemory();
+        return _PyErr_NoMemory(tstate);
     }
     obj = (PyObject *)(alloc + presize);
     if (presize) {
@@ -2535,7 +2538,7 @@ _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems)
         ((PyObject **)alloc)[1] = NULL;
     }
     if (PyType_IS_GC(type)) {
-        _PyObject_GC_Link(obj);
+        _PyObject_GC_Link(tstate, obj);
     }
     // Zero out the object after the PyObject header. The header fields are
     // initialized by _PyObject_Init[Var]().
@@ -6531,9 +6534,10 @@ _PyType_SetFlagsRecursive(PyTypeObject *self, unsigned long mask, unsigned long 
 
    */
 PyObject *
-_Py_type_getattro_impl(PyTypeObject *type, PyObject *name, int *suppress_missing_attribute)
+_Py_type_getattro_impl(PyThreadState *tstate,
+                       PyTypeObject *type, PyObject *name, int *suppress_missing_attribute)
 {
-    _PyStackRef ref = _Py_type_getattro_stackref(type, name, suppress_missing_attribute);
+    _PyStackRef ref = _Py_type_getattro_stackref(tstate, type, name, suppress_missing_attribute);
     if (PyStackRef_IsNull(ref)) {
         return NULL;
     }
@@ -6546,7 +6550,7 @@ PyObject *
 _Py_type_getattro(PyObject *tp, PyObject *name)
 {
     PyTypeObject *type = PyTypeObject_CAST(tp);
-    return _Py_type_getattro_impl(type, name, NULL);
+    return _Py_type_getattro_impl(_PyThreadState_GET(), type, name, NULL);
 }
 
 /* Like _Py_type_getattro but returns a _PyStackRef.
@@ -6560,7 +6564,7 @@ _Py_type_getattro(PyObject *tp, PyObject *name)
      having suppressed the exception (other exceptions are not suppressed)
 */
 _PyStackRef
-_Py_type_getattro_stackref(PyTypeObject *type, PyObject *name,
+_Py_type_getattro_stackref(PyThreadState *tstate, PyTypeObject *type, PyObject *name,
                            int *suppress_missing_attribute)
 {
     PyTypeObject *metatype = Py_TYPE(type);
@@ -6581,7 +6585,6 @@ _Py_type_getattro_stackref(PyTypeObject *type, PyObject *name,
 
     /* Set up GC-visible stack refs */
     _PyCStackRef result_ref, meta_attribute_ref, attribute_ref;
-    PyThreadState *tstate = _PyThreadState_GET();
     _PyThreadState_PushCStackRef(tstate, &result_ref);
     _PyThreadState_PushCStackRef(tstate, &meta_attribute_ref);
     _PyThreadState_PushCStackRef(tstate, &attribute_ref);
@@ -6683,7 +6686,7 @@ done:
 // Called by type_setattro().  Updates both the type dict and
 // the type versions.
 static int
-type_update_dict(PyTypeObject *type, PyDictObject *dict, PyObject *name,
+type_update_dict(PyThreadState *tstate, PyTypeObject *type, PyDictObject *dict, PyObject *name,
                  PyObject *value, PyObject **old_value)
 {
     // We don't want any re-entrancy between when we update the dict
@@ -6704,10 +6707,10 @@ type_update_dict(PyTypeObject *type, PyDictObject *dict, PyObject *name,
     type_modified_unlocked(type);
 
     if (_PyDict_SetItem_LockHeld(dict, name, value) < 0) {
-        PyErr_Format(PyExc_AttributeError,
-                     "type object '%.50s' has no attribute '%U'",
-                     ((PyTypeObject*)type)->tp_name, name);
-        _PyObject_SetAttributeErrorContext((PyObject *)type, name);
+        _PyErr_Format(tstate, PyExc_AttributeError,
+                      "type object '%.50s' has no attribute '%U'",
+                      ((PyTypeObject*)type)->tp_name, name);
+        _PyObject_SetAttributeErrorContext(tstate, (PyObject *)type, name);
         return -1;
     }
 
@@ -6742,18 +6745,20 @@ static int
 type_setattro(PyObject *self, PyObject *name, PyObject *value)
 {
     PyTypeObject *type = PyTypeObject_CAST(self);
+    PyThreadState *tstate = _PyThreadState_GET();
     int res;
     if (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) {
-        PyErr_Format(
+        _PyErr_Format(
+            tstate,
             PyExc_TypeError,
             "cannot set %R attribute of immutable type '%s'",
             name, type->tp_name);
         return -1;
     }
     if (!PyUnicode_Check(name)) {
-        PyErr_Format(PyExc_TypeError,
-                     "attribute name must be string, not '%.200s'",
-                     Py_TYPE(name)->tp_name);
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "attribute name must be string, not '%.200s'",
+                      Py_TYPE(name)->tp_name);
         return -1;
     }
 
@@ -6766,11 +6771,10 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
             return -1;
     }
     if (!PyUnicode_CHECK_INTERNED(name)) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        _PyUnicode_InternMortal(interp, &name);
+        _PyUnicode_InternMortal(tstate->interp, &name);
         if (!PyUnicode_CHECK_INTERNED(name)) {
-            PyErr_SetString(PyExc_MemoryError,
-                            "Out of memory interning an attribute name");
+            _PyErr_SetString(tstate, PyExc_MemoryError,
+                             "Out of memory interning an attribute name");
             Py_DECREF(name);
             return -1;
         }
@@ -6819,7 +6823,7 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
     }
 
     BEGIN_TYPE_DICT_LOCK(dict);
-    res = type_update_dict(type, (PyDictObject *)dict, name, value, &old_value);
+    res = type_update_dict(tstate, type, (PyDictObject *)dict, name, value, &old_value);
     assert(_PyType_CheckConsistency(type));
     if (res == 0) {
         if (is_dunder_name(name) && has_slotdef(name)) {
@@ -7577,7 +7581,7 @@ compatible_with_tp_base(PyTypeObject *child)
 }
 
 static int
-same_slots_added(PyTypeObject *a, PyTypeObject *b)
+same_slots_added(PyThreadState *tstate, PyTypeObject *a, PyTypeObject *b)
 {
     PyTypeObject *base = a->tp_base;
     Py_ssize_t size;
@@ -7598,7 +7602,7 @@ same_slots_added(PyTypeObject *a, PyTypeObject *b)
     slots_a = ((PyHeapTypeObject *)a)->ht_slots;
     slots_b = ((PyHeapTypeObject *)b)->ht_slots;
     if (slots_a && slots_b) {
-        if (PyObject_RichCompareBool(slots_a, slots_b, Py_EQ) != 1)
+        if (_PyObject_RichCompareBool(tstate, slots_a, slots_b, Py_EQ) != 1)
             return 0;
         size += sizeof(PyObject *) * PyTuple_GET_SIZE(slots_a);
     }
@@ -7617,19 +7621,19 @@ compatible_flags(int setclass, PyTypeObject *origto, PyTypeObject *newto, unsign
 }
 
 static int
-compatible_for_assignment(PyTypeObject *origto, PyTypeObject *newto,
+compatible_for_assignment(PyThreadState *tstate, PyTypeObject *origto, PyTypeObject *newto,
                           const char *attr, int setclass)
 {
     PyTypeObject *newbase, *oldbase;
     PyTypeObject *oldto = setclass ? origto : origto->tp_base;
 
     if (setclass && newto->tp_free != oldto->tp_free) {
-        PyErr_Format(PyExc_TypeError,
-                     "%s assignment: "
-                     "'%s' deallocator differs from '%s'",
-                     attr,
-                     newto->tp_name,
-                     oldto->tp_name);
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "%s assignment: "
+                      "'%s' deallocator differs from '%s'",
+                      attr,
+                      newto->tp_name,
+                      oldto->tp_name);
         return 0;
     }
     if (!compatible_flags(setclass, origto, newto,
@@ -7672,12 +7676,12 @@ compatible_for_assignment(PyTypeObject *origto, PyTypeObject *newto,
         oldbase = oldbase->tp_base;
     if (newbase != oldbase &&
         (newbase->tp_base != oldbase->tp_base ||
-         !same_slots_added(newbase, oldbase))) {
+         !same_slots_added(tstate, newbase, oldbase))) {
         goto differs;
     }
     return 1;
 differs:
-    PyErr_Format(PyExc_TypeError,
+    _PyErr_Format(tstate, PyExc_TypeError,
                     "%s assignment: "
                     "'%s' object layout differs from '%s'",
                     attr,
@@ -7689,7 +7693,7 @@ differs:
 
 
 static int
-object_set_class_world_stopped(PyObject *self, PyTypeObject *newto)
+object_set_class_world_stopped(PyThreadState *tstate, PyObject *self, PyTypeObject *newto)
 {
     PyTypeObject *oldto = Py_TYPE(self);
 
@@ -7746,13 +7750,13 @@ object_set_class_world_stopped(PyObject *self, PyTypeObject *newto)
           PyType_IsSubtype(oldto, &PyModule_Type)) &&
         (_PyType_HasFeature(newto, Py_TPFLAGS_IMMUTABLETYPE) ||
          _PyType_HasFeature(oldto, Py_TPFLAGS_IMMUTABLETYPE))) {
-        PyErr_Format(PyExc_TypeError,
-                     "__class__ assignment only supported for mutable types "
-                     "or ModuleType subclasses");
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "__class__ assignment only supported for mutable types "
+                      "or ModuleType subclasses");
         return -1;
     }
 
-    if (compatible_for_assignment(oldto, newto, "__class__", 1)) {
+    if (compatible_for_assignment(tstate, oldto, newto, "__class__", 1)) {
         /* Changing the class will change the implicit dict keys,
          * so we must materialize the dictionary first. */
         if (oldto->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
@@ -7791,14 +7795,14 @@ object_set_class_world_stopped(PyObject *self, PyTypeObject *newto)
 static int
 object_set_class(PyObject *self, PyObject *value, void *closure)
 {
-
+    PyThreadState *tstate = _PyThreadState_GET();
     if (value == NULL) {
-        PyErr_SetString(PyExc_TypeError,
-                        "can't delete __class__ attribute");
+        _PyErr_SetString(tstate, PyExc_TypeError,
+                         "can't delete __class__ attribute");
         return -1;
     }
     if (!PyType_Check(value)) {
-        PyErr_Format(PyExc_TypeError,
+        _PyErr_Format(tstate, PyExc_TypeError,
           "__class__ must be set to a class, not '%s' object",
           Py_TYPE(value)->tp_name);
         return -1;
@@ -7815,7 +7819,7 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
         types_stop_world();
     }
     PyTypeObject *oldto = Py_TYPE(self);
-    int res = object_set_class_world_stopped(self, newto);
+    int res = object_set_class_world_stopped(tstate, self, newto);
     if (!unique) {
         types_start_world();
     }
@@ -10999,6 +11003,7 @@ _Py_slot_tp_getattr_hook(PyObject *self, PyObject *name)
 #endif
         return _Py_slot_tp_getattro(self, name);
     }
+    PyThreadState *tstate = _PyThreadState_GET();
     /* speed hack: we could use lookup_maybe, but that would resolve the
        method fully for each attribute lookup for classes with
        __getattr__, even when self has the default __getattribute__
@@ -11010,18 +11015,18 @@ _Py_slot_tp_getattr_hook(PyObject *self, PyObject *name)
          ((PyWrapperDescrObject *)getattribute)->d_wrapped ==
              (void *)PyObject_GenericGetAttr)) {
         Py_XDECREF(getattribute);
-        res = _PyObject_GenericGetAttrWithDict(self, name, NULL, 1);
+        res = _PyObject_GenericGetAttrWithDict(tstate, self, name, NULL, 1);
         /* if res == NULL with no exception set, then it must be an
            AttributeError suppressed by us. */
-        if (res == NULL && !PyErr_Occurred()) {
+        if (res == NULL && !_PyErr_Occurred(tstate)) {
             res = call_attribute(self, getattr, name);
         }
     }
     else {
         res = call_attribute(self, getattribute, name);
         Py_DECREF(getattribute);
-        if (res == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            PyErr_Clear();
+        if (res == NULL && _PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
+            _PyErr_Clear(tstate);
             res = call_attribute(self, getattr, name);
         }
     }
@@ -11193,7 +11198,7 @@ slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     _PyCStackRef func_ref;
     _PyThreadState_PushCStackRef(tstate, &func_ref);
-    func_ref.ref = _PyObject_GetAttrStackRef((PyObject *)type, &_Py_ID(__new__));
+    func_ref.ref = _PyObject_GetAttrStackRef(tstate, (PyObject *)type, &_Py_ID(__new__));
     if (PyStackRef_IsNull(func_ref.ref)) {
         _PyThreadState_PopCStackRef(tstate, &func_ref);
         return NULL;

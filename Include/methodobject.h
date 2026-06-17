@@ -117,7 +117,7 @@ PyAPI_FUNC(PyObject *) PyCMethod_New(PyMethodDef *, PyObject *,
 
 /* This bit is preserved for Stackless Python */
 #ifdef STACKLESS
-#  define METH_STACKLESS 0x0100
+#  define METH_STACKLESS 0x0000
 #else
 #  define METH_STACKLESS 0x0000
 #endif

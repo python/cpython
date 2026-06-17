@@ -420,6 +420,7 @@ static inline void Py_DECREF_MORTAL(const char *filename, int lineno, PyObject *
     }
 }
 #define Py_DECREF_MORTAL(op) Py_DECREF_MORTAL(__FILE__, __LINE__, _PyObject_CAST(op))
+#define _Py_DECREF_MORTAL(tstate, op) Py_DECREF_MORTAL(op)
 
 static inline void _Py_DECREF_MORTAL_SPECIALIZED(const char *filename, int lineno, PyObject *op, destructor destruct)
 {
@@ -442,6 +443,16 @@ static inline void _Py_DECREF_MORTAL_SPECIALIZED(const char *filename, int linen
 #define Py_DECREF_MORTAL_SPECIALIZED(op, destruct) _Py_DECREF_MORTAL_SPECIALIZED(__FILE__, __LINE__, op, destruct)
 
 #else
+
+static inline void _Py_DECREF_MORTAL(PyThreadState *tstate, PyObject *op)
+{
+    assert(!_Py_IsStaticImmortal(op));
+    _Py_DECREF_STAT_INC();
+    if (--op->ob_refcnt == 0) {
+        _Py_DeallocTstate(tstate, op);
+    }
+}
+#define _Py_DECREF_MORTAL(tstate, op) _Py_DECREF_MORTAL(tstate, _PyObject_CAST(op))
 
 static inline void Py_DECREF_MORTAL(PyObject *op)
 {
@@ -466,6 +477,7 @@ static inline void Py_DECREF_MORTAL_SPECIALIZED(PyObject *op, destructor destruc
 
 #endif
 #else  // Py_GIL_DISABLED
+# define _Py_DECREF_MORTAL(tstate, op) _Py_DECREF(tstate, op)
 # define Py_DECREF_MORTAL(op) Py_DECREF(op)
 # define Py_DECREF_MORTAL_SPECIALIZED(op, destruct) Py_DECREF(op)
 #endif
@@ -859,7 +871,7 @@ _PyType_PreHeaderSize(PyTypeObject *tp)
     );
 }
 
-void _PyObject_GC_Link(PyObject *op);
+void _PyObject_GC_Link(PyThreadState *tstate, PyObject *op);
 
 // Usage: assert(_Py_CheckSlotResult(obj, "__getitem__", result != NULL));
 extern int _Py_CheckSlotResult(
@@ -879,7 +891,7 @@ extern PyTypeObject* _PyType_CalculateMetaclass(PyTypeObject *, PyObject *);
 extern PyObject* _PyType_GetDocFromInternalDoc(const char *, const char *);
 extern PyObject* _PyType_GetTextSignatureFromInternalDoc(const char *, const char *, int);
 // Exported for external JIT support
-PyAPI_FUNC(int) _PyObject_SetAttributeErrorContext(PyObject *v, PyObject* name);
+PyAPI_FUNC(int) _PyObject_SetAttributeErrorContext(PyThreadState *tstate, PyObject *v, PyObject* name);
 
 void _PyObject_InitInlineValues(PyObject *obj, PyTypeObject *tp);
 extern int _PyObject_StoreInstanceAttribute(PyObject *obj,
@@ -901,7 +913,7 @@ extern int _PyObject_GetMethodStackRef(PyThreadState *ts, _PyStackRef *self,
 
 // Like PyObject_GetAttr but returns a _PyStackRef. For types, this can
 // return a deferred reference to reduce reference count contention.
-PyAPI_FUNC(_PyStackRef) _PyObject_GetAttrStackRef(PyObject *obj, PyObject *name);
+PyAPI_FUNC(_PyStackRef) _PyObject_GetAttrStackRef(PyThreadState *tstate, PyObject *obj, PyObject *name);
 
 // Cache the provided init method in the specialization cache of type if the
 // provided type version matches the current version of the type.
@@ -970,7 +982,7 @@ _PyObject_MaybeCallSpecialOneArg(PyObject *self, PyObject *attr, PyObject *arg);
 
 extern int _PyObject_IsAbstract(PyObject *);
 
-PyAPI_FUNC(int) _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method);
+PyAPI_FUNC(int) _PyObject_GetMethod(PyThreadState *tstate, PyObject *obj, PyObject *name, PyObject **method);
 extern PyObject* _PyObject_NextNotImplemented(PyObject *);
 
 // Pickle support.
@@ -1037,6 +1049,10 @@ static inline Py_ALWAYS_INLINE void _Py_INCREF_MORTAL(PyObject *op)
 /* Utility for the tp_traverse slot of mutable heap types that have no other
  * references. */
 PyAPI_FUNC(int) _PyObject_VisitType(PyObject *op, visitproc visit, void *arg);
+
+PyAPI_FUNC(PyObject *) _PyObject_RichCompare(PyThreadState *, PyObject *, PyObject *, int);
+PyAPI_FUNC(int) _PyObject_RichCompareBool(PyThreadState *, PyObject *, PyObject *, int);
+PyAPI_FUNC(PyObject *) _PyObject_GetAttr(PyThreadState *, PyObject *, PyObject *);
 
 #ifdef __cplusplus
 }

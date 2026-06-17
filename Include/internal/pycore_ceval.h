@@ -328,7 +328,7 @@ PyAPI_FUNC(PyObject *) _PyEval_GetAwaitable(PyObject *iterable, int oparg);
 PyAPI_FUNC(PyObject *) _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *name);
 PyAPI_FUNC(int)
 _Py_Check_ArgsIterable(PyThreadState *tstate, PyObject *func, PyObject *args);
-PyAPI_FUNC(_PyStackRef) _PyEval_GetIter(_PyStackRef iterable, _PyStackRef *null_or_index, int yield_from);
+PyAPI_FUNC(_PyStackRef) _PyEval_GetIter(PyThreadState *tstate, _PyStackRef iterable, _PyStackRef *null_or_index, int yield_from);
 
 /*
  * Indicate whether a special method of given 'oparg' can use the (improved)
@@ -411,6 +411,7 @@ PyAPI_DATA(const _Py_CODEUNIT *) _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR;
 
 PyAPI_FUNC(PyObject *)
 _Py_VectorCall_StackRefSteal(
+    PyThreadState *tstate,
     _PyStackRef callable,
     _PyStackRef *arguments,
     int total_args,

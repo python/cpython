@@ -13,6 +13,7 @@
 #include "pycore_ast.h"           // PyAST_mod2obj()
 #include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
+#include "pycore_call.h"          // _PyObject_VectorcallTstate()
 #include "pycore_compile.h"       // _PyAST_Compile()
 #include "pycore_fileutils.h"     // _PyFile_Flush
 #include "pycore_import.h"        // _PyImport_GetImportlibExternalLoader()
@@ -730,7 +731,7 @@ _PyErr_PrintEx(PyThreadState *tstate, int set_sys_last_vars)
     }
     if (hook) {
         PyObject* args[3] = {typ, exc, tb};
-        PyObject *result = PyObject_Vectorcall(hook, args, 3, NULL);
+        PyObject *result = _PyObject_VectorcallTstate(tstate, hook, args, 3, NULL);
         if (result == NULL) {
             handle_system_exit();
 

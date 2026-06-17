@@ -799,10 +799,11 @@ def escaping_call_in_simple_stmt(stmt: SimpleStmt, result: dict[SimpleStmt, Esca
                 continue
         elif tkn.kind != "RBRACKET":
             continue
-        if tkn.text in ("PyStackRef_CLOSE", "PyStackRef_XCLOSE"):
-            if len(tokens) <= idx+2:
+        if tkn.text.endswith(("PyStackRef_CLOSE", "PyStackRef_XCLOSE")):
+            amount = 4 if tkn.text.startswith("_") else 2
+            if len(tokens) <= idx+amount:
                 raise analysis_error("Unexpected end of file", next_tkn)
-            kills = tokens[idx+2]
+            kills = tokens[idx+amount]
             if kills.kind != "IDENTIFIER":
                 raise analysis_error(f"Expected identifier, got '{kills.text}'", kills)
         else:

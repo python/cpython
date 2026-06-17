@@ -2920,7 +2920,7 @@
                 }
                 if (oparg & 16) {
                     int res_bool = PyObject_IsTrue(res_o);
-                    Py_DECREF(res_o);
+                    _Py_DECREF(tstate, res_o);
                     if (res_bool < 0) {
                         goto error;
                     }

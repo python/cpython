@@ -285,11 +285,12 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
             PyCell_SetTakeRef((PyCellObject *)cell, value);
         } else if (value != PyStackRef_AsPyObjectBorrow(oldvalue)) {
             PyObject *old_obj = PyStackRef_AsPyObjectBorrow(fast[i]);
+            PyThreadState *tstate = _PyThreadState_GET();
             if (old_obj != NULL && !_Py_IsImmortal(old_obj)) {
                 if (add_overwritten_fast_local(frame, old_obj) < 0) {
                     return -1;
                 }
-                PyStackRef_CLOSE(fast[i]);
+                _PyStackRef_CLOSE(tstate, fast[i]);
             }
             fast[i] = PyStackRef_FromPyObjectNew(value);
         }
@@ -1924,6 +1925,8 @@ static PyGetSetDef frame_getsetlist[] = {
 static void
 frame_dealloc(PyObject *op)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
+
     /* It is the responsibility of the owning generator/coroutine
      * to have cleared the generator pointer */
     PyFrameObject *f = PyFrameObject_CAST(op);
@@ -1939,21 +1942,21 @@ frame_dealloc(PyObject *op)
 
     /* Kill all local variables including specials, if we own them */
     if (f->f_frame == frame && frame->owner == FRAME_OWNED_BY_FRAME_OBJECT) {
-        PyStackRef_CLEAR(frame->f_executable);
-        PyStackRef_CLEAR(frame->f_funcobj);
-        Py_CLEAR(frame->f_locals);
+        _PyStackRef_CLEAR(tstate, frame->f_executable);
+        _PyStackRef_CLEAR(tstate, frame->f_funcobj);
+        _Py_CLEAR(tstate, frame->f_locals);
         _PyStackRef *locals = _PyFrame_GetLocalsArray(frame);
         _PyStackRef *sp = frame->stackpointer;
         while (sp > locals) {
             sp--;
-            PyStackRef_CLEAR(*sp);
+            _PyStackRef_CLEAR(tstate, *sp);
         }
     }
-    Py_CLEAR(f->f_back);
-    Py_CLEAR(f->f_trace);
-    Py_CLEAR(f->f_extra_locals);
-    Py_CLEAR(f->f_locals_cache);
-    Py_CLEAR(f->f_overwritten_fast_locals);
+    _Py_CLEAR(tstate, f->f_back);
+    _Py_CLEAR(tstate, f->f_trace);
+    _Py_CLEAR(tstate, f->f_extra_locals);
+    _Py_CLEAR(tstate, f->f_locals_cache);
+    _Py_CLEAR(tstate, f->f_overwritten_fast_locals);
     PyObject_GC_Del(f);
 }
 
@@ -1976,11 +1979,12 @@ frame_traverse(PyObject *op, visitproc visit, void *arg)
 static int
 frame_tp_clear(PyObject *op)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     PyFrameObject *f = PyFrameObject_CAST(op);
-    Py_CLEAR(f->f_trace);
-    Py_CLEAR(f->f_extra_locals);
-    Py_CLEAR(f->f_locals_cache);
-    Py_CLEAR(f->f_overwritten_fast_locals);
+    _Py_CLEAR(tstate, f->f_trace);
+    _Py_CLEAR(tstate, f->f_extra_locals);
+    _Py_CLEAR(tstate, f->f_locals_cache);
+    _Py_CLEAR(tstate, f->f_overwritten_fast_locals);
 
     /* locals and stack */
     _PyStackRef *locals = _PyFrame_GetLocalsArray(f->f_frame);
@@ -1988,10 +1992,10 @@ frame_tp_clear(PyObject *op)
     assert(sp >= locals);
     while (sp > locals) {
         sp--;
-        PyStackRef_CLEAR(*sp);
+        _PyStackRef_CLEAR(tstate, *sp);
     }
     f->f_frame->stackpointer = locals;
-    Py_CLEAR(f->f_frame->f_locals);
+    _Py_CLEAR(tstate, f->f_frame->f_locals);
     return 0;
 }
 

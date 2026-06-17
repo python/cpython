@@ -29,25 +29,25 @@ _PyErr_SetRaisedException(PyThreadState *tstate, PyObject *exc)
 }
 
 static PyObject*
-_PyErr_CreateException(PyObject *exception_type, PyObject *value)
+_PyErr_CreateException(PyThreadState *tstate, PyObject *exception_type, PyObject *value)
 {
     PyObject *exc;
 
     if (value == NULL || value == Py_None) {
-        exc = _PyObject_CallNoArgs(exception_type);
+        exc = _PyObject_CallNoArgsTstate(tstate, exception_type);
     }
     else if (PyTuple_Check(value)) {
-        exc = PyObject_Call(exception_type, value, NULL);
+        exc = _PyObject_Call(tstate, exception_type, value, NULL);
     }
     else {
-        exc = PyObject_CallOneArg(exception_type, value);
+        exc = _PyObject_CallOneArgTstate(tstate, exception_type, value);
     }
 
     if (exc != NULL && !PyExceptionInstance_Check(exc)) {
-        PyErr_Format(PyExc_TypeError,
-                     "calling %R should have returned an instance of "
-                     "BaseException, not %s",
-                     exception_type, Py_TYPE(exc)->tp_name);
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "calling %R should have returned an instance of "
+                      "BaseException, not %s",
+                      exception_type, Py_TYPE(exc)->tp_name);
         Py_CLEAR(exc);
     }
 
@@ -74,7 +74,7 @@ _PyErr_Restore(PyThreadState *tstate, PyObject *type, PyObject *value,
 #endif
     }
     else {
-        PyObject *exc = _PyErr_CreateException(type, value);
+        PyObject *exc = _PyErr_CreateException(tstate, type, value);
         Py_XDECREF(value);
         if (exc == NULL) {
             Py_DECREF(type);
@@ -177,7 +177,7 @@ _PyErr_SetObject(PyThreadState *tstate, PyObject *exception, PyObject *value)
             exception set */
         _PyErr_Clear(tstate);
 
-        PyObject *fixed_value = _PyErr_CreateException(exception, value);
+        PyObject *fixed_value = _PyErr_CreateException(tstate, exception, value);
         if (fixed_value == NULL) {
             PyObject *exc = _PyErr_GetRaisedException(tstate);
             assert(PyExceptionInstance_Check(exc));
@@ -429,7 +429,7 @@ _PyErr_NormalizeException(PyThreadState *tstate, PyObject **exc,
            class.
         */
         if (!is_subclass) {
-            PyObject *fixed_value = _PyErr_CreateException(type, value);
+            PyObject *fixed_value = _PyErr_CreateException(tstate, type, value);
             if (fixed_value == NULL) {
                 goto error;
             }
@@ -1504,7 +1504,7 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
                                                                    "_print_exception_bltin");
     if (print_exception_fn != NULL && PyCallable_Check(print_exception_fn)) {
         PyObject *args[2] = {exc_value, file};
-        PyObject *result = PyObject_Vectorcall(print_exception_fn, args, 2, NULL);
+        PyObject *result = _PyObject_VectorcallTstate(tstate, print_exception_fn, args, 2, NULL);
         int ok = (result != NULL);
         Py_DECREF(print_exception_fn);
         Py_XDECREF(result);
@@ -1659,11 +1659,9 @@ _PyErr_WriteUnraisableDefaultHook(PyObject *args)
    An exception must be set when calling this function. */
 
 static void
-format_unraisable_v(const char *format, va_list va, PyObject *obj)
+format_unraisable_v(PyThreadState *tstate, const char *format, va_list va, PyObject *obj)
 {
     const char *err_msg_str;
-    PyThreadState *tstate = _PyThreadState_GET();
-    _Py_EnsureTstateNotNULL(tstate);
 
     PyObject *err_msg = NULL;
     PyObject *hook = NULL;
@@ -1769,29 +1767,45 @@ done:
 }
 
 void
-PyErr_FormatUnraisable(const char *format, ...)
+_PyErr_FormatUnraisable(PyThreadState *tstate, const char *format, ...)
 {
     va_list va;
 
     va_start(va, format);
-    format_unraisable_v(format, va, NULL);
+    format_unraisable_v(tstate, format, va, NULL);
+    va_end(va);
+}
+
+void
+PyErr_FormatUnraisable(const char *format, ...)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    va_list va;
+    va_start(va, format);
+    format_unraisable_v(tstate, format, va, NULL);
     va_end(va);
 }
 
 static void
-format_unraisable(PyObject *obj, const char *format, ...)
+format_unraisable(PyThreadState *tstate, PyObject *obj, const char *format, ...)
 {
     va_list va;
 
     va_start(va, format);
-    format_unraisable_v(format, va, obj);
+    format_unraisable_v(tstate, format, va, obj);
     va_end(va);
+}
+
+void
+_PyErr_WriteUnraisable(PyThreadState *tstate, PyObject *obj)
+{
+    format_unraisable(tstate, obj, NULL);
 }
 
 void
 PyErr_WriteUnraisable(PyObject *obj)
 {
-    format_unraisable(obj, NULL);
+    _PyErr_WriteUnraisable(_PyThreadState_GET(), obj);
 }
 
 

@@ -1752,18 +1752,20 @@ local_setattro(PyObject *op, PyObject *name, PyObject *v)
         goto err;
     }
 
-    int r = PyObject_RichCompareBool(name, &_Py_ID(__dict__), Py_EQ);
+    PyThreadState *tstate = _PyThreadState_GET();
+
+    int r = _PyObject_RichCompareBool(tstate, name, &_Py_ID(__dict__), Py_EQ);
     if (r == -1) {
         goto err;
     }
     if (r == 1) {
-        PyErr_Format(PyExc_AttributeError,
+        _PyErr_Format(tstate, PyExc_AttributeError,
                      "'%.100s' object attribute %R is read-only",
                      Py_TYPE(self)->tp_name, name);
         goto err;
     }
 
-    int st = _PyObject_GenericSetAttrWithDict(op, name, v, ldict);
+    int st = _PyObject_GenericSetAttrWithDict(tstate, op, name, v, ldict);
     Py_DECREF(ldict);
     return st;
 
@@ -1806,6 +1808,7 @@ local_getattro(PyObject *op, PyObject *name)
     PyObject *module = PyType_GetModuleByDef(Py_TYPE(self), &thread_module);
     assert(module != NULL);
     thread_module_state *state = get_thread_state(module);
+    PyThreadState *tstate = _PyThreadState_GET();
 
     PyObject *ldict = _ldict(self, state);
     if (ldict == NULL)
@@ -1822,7 +1825,7 @@ local_getattro(PyObject *op, PyObject *name)
 
     if (!Py_IS_TYPE(self, state->local_type)) {
         /* use generic lookup for subtypes */
-        PyObject *res = _PyObject_GenericGetAttrWithDict(op, name, ldict, 0);
+        PyObject *res = _PyObject_GenericGetAttrWithDict(tstate, op, name, ldict, 0);
         Py_DECREF(ldict);
         return res;
     }
@@ -1836,7 +1839,7 @@ local_getattro(PyObject *op, PyObject *name)
     }
 
     /* Fall back on generic to get __class__ and __dict__ */
-    PyObject *res = _PyObject_GenericGetAttrWithDict(op, name, ldict, 0);
+    PyObject *res = _PyObject_GenericGetAttrWithDict(tstate, op, name, ldict, 0);
     Py_DECREF(ldict);
     return res;
 }
