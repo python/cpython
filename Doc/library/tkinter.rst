@@ -2324,8 +2324,7 @@ Base and mixin classes
       strings removes any existing restriction.
       With no arguments, return a tuple of the four current values, or an empty
       string if no aspect restriction is in effect.
-      The ``wm_``-prefixed spelling (e.g. :meth:`wm_aspect`) is an equivalent
-      alias.
+      :meth:`wm_aspect` is an alias of :meth:`!aspect`.
 
    .. method:: wm_attributes(*args, return_python_dict=False, **kwargs)
       :no-typesetting:
@@ -2343,8 +2342,7 @@ Base and mixin classes
       ``-topmost``, while Windows, macOS and X11 each add further options.
       On X11 changes are applied asynchronously, so a queried value may not yet
       reflect the most recent request.
-      The ``wm_``-prefixed spelling (e.g. :meth:`wm_attributes`) is an
-      equivalent alias.
+      :meth:`wm_attributes` is an alias of :meth:`!attributes`.
 
       .. versionchanged:: 3.13
          A single attribute may now be queried by name without the leading
@@ -2362,8 +2360,7 @@ Base and mixin classes
       for use by the window or session manager.
       An empty string deletes the property.
       With no argument, return the last name set, or an empty string.
-      The ``wm_``-prefixed spelling (e.g. :meth:`wm_client`) is an equivalent
-      alias.
+      :meth:`wm_client` is an alias of :meth:`!client`.
 
    .. method:: wm_colormapwindows(*wlist)
       :no-typesetting:
@@ -2376,8 +2373,7 @@ Base and mixin classes
       order is a priority order for installing colormaps).
       With no arguments, return the list of windows currently named in the
       property.
-      The ``wm_``-prefixed spelling (e.g. ``wm_colormapwindows``) is an
-      equivalent alias.
+      :meth:`wm_colormapwindows` is an alias of :meth:`!colormapwindows`.
 
    .. method:: wm_command(value=None)
       :no-typesetting:
@@ -2389,8 +2385,7 @@ Base and mixin classes
       command used to invoke the application.
       An empty string deletes the property.
       With no argument, return the last value set, or an empty string.
-      The ``wm_``-prefixed spelling (e.g. :meth:`wm_command`) is an equivalent
-      alias.
+      :meth:`wm_command` is an alias of :meth:`!command`.
 
    .. method:: wm_deiconify()
       :no-typesetting:
@@ -2401,8 +2396,7 @@ Base and mixin classes
       If the window has never been mapped, this ensures it appears de-iconified
       when it is first mapped.
       On Windows the window is also raised and given the focus.
-      The ``wm_``-prefixed spelling (e.g. :meth:`wm_deiconify`) is an
-      equivalent alias.
+      :meth:`wm_deiconify` is an alias of :meth:`!deiconify`.
 
    .. method:: wm_focusmodel(model=None)
       :no-typesetting:
@@ -2417,8 +2411,7 @@ Base and mixin classes
       With no argument, return the current model.
       The default is ``'passive'``, which is what the :meth:`!focus` command
       assumes.
-      The ``wm_``-prefixed spelling (e.g. :meth:`wm_focusmodel`) is an
-      equivalent alias.
+      :meth:`wm_focusmodel` is an alias of :meth:`!focusmodel`.
 
    .. method:: wm_forget(window)
       :no-typesetting:
@@ -2430,8 +2423,7 @@ Base and mixin classes
       A :class:`Toplevel` is then treated like a :class:`Frame`, although its
       ``-menu`` configuration is remembered and the menu reappears if the
       widget is managed again.
-      The ``wm_``-prefixed spelling (e.g. :meth:`wm_forget`) is an equivalent
-      alias.
+      :meth:`wm_forget` is an alias of :meth:`!forget`.
 
       .. versionadded:: 3.3
 
@@ -2444,8 +2436,7 @@ Base and mixin classes
       decorative frame containing the window, if the window manager has
       reparented it into such a frame; otherwise return the identifier of the
       window itself.
-      The ``wm_``-prefixed spelling (e.g. :meth:`wm_frame`) is an equivalent
-      alias.
+      :meth:`wm_frame` is an alias of :meth:`!frame`.
 
    .. method:: wm_geometry(newGeometry=None)
       :no-typesetting:
@@ -2462,8 +2453,7 @@ Base and mixin classes
       revert to its natural size.
       With no argument, return the current geometry as a string of the form
       ``'200x200+10+10'``.
-      The ``wm_``-prefixed spelling (e.g. :meth:`wm_geometry`) is an equivalent
-      alias.
+      :meth:`wm_geometry` is an alias of :meth:`!geometry`.
 
    .. method:: wm_grid(baseWidth=None, baseHeight=None, widthInc=None, heightInc=None)
       :no-typesetting:
@@ -2478,8 +2468,7 @@ Base and mixin classes
       Empty strings turn off gridded management.
       With no arguments, return a tuple of the four current values, or an empty
       string if the window is not gridded.
-      The ``wm_``-prefixed spelling (e.g. :meth:`wm_grid`) is an equivalent
-      alias.
+      :meth:`wm_grid` is an alias of :meth:`!grid`.
 
    .. method:: wm_group(pathName=None)
       :no-typesetting:
@@ -2493,8 +2482,7 @@ Base and mixin classes
       An empty string removes the window from any group.
       With no argument, return the path name of the current group leader, or an
       empty string.
-      The ``wm_``-prefixed spelling (e.g. :meth:`wm_group`) is an equivalent
-      alias.
+      :meth:`wm_group` is an alias of :meth:`!group`.
 
    .. method:: wm_iconbitmap(bitmap=None, default=None)
       :no-typesetting:
@@ -2508,8 +2496,7 @@ Base and mixin classes
       string.
       On Windows the *default* argument names an icon (for example an ``.ico``
       file) applied to all top-level windows that have no icon of their own.
-      The ``wm_``-prefixed spelling (e.g. :meth:`wm_iconbitmap`) is an
-      equivalent alias.
+      :meth:`wm_iconbitmap` is an alias of :meth:`!iconbitmap`.
 
    .. method:: wm_iconify()
       :no-typesetting:
@@ -2519,8 +2506,7 @@ Base and mixin classes
       Iconify the window.
       If the window has not yet been mapped for the first time, arrange for it
       to appear in the iconified state when it is eventually mapped.
-      The ``wm_``-prefixed spelling (e.g. :meth:`wm_iconify`) is an equivalent
-      alias.
+      :meth:`wm_iconify` is an alias of :meth:`!iconify`.
 
    .. method:: wm_iconmask(bitmap=None)
       :no-typesetting:
@@ -2534,8 +2520,7 @@ Base and mixin classes
       An empty string cancels the current mask.
       With no argument, return the name of the current icon mask, or an empty
       string.
-      The ``wm_``-prefixed spelling (e.g. :meth:`wm_iconmask`) is an equivalent
-      alias.
+      :meth:`wm_iconmask` is an alias of :meth:`!iconmask`.
 
    .. method:: wm_iconname(newName=None)
       :no-typesetting:
@@ -2547,8 +2532,7 @@ Base and mixin classes
       With no argument, return the current icon name, or an empty string if
       none has been set (in which case the window manager normally displays the
       window's title).
-      The ``wm_``-prefixed spelling (e.g. :meth:`wm_iconname`) is an equivalent
-      alias.
+      :meth:`wm_iconname` is an alias of :meth:`!iconname`.
 
    .. method:: wm_iconphoto(default=False, *images)
       :no-typesetting:
@@ -2564,8 +2548,7 @@ Base and mixin classes
       If *default* is true, the icon is also applied to all top-level windows
       created in the future.
       On macOS only the first image is used.
-      The ``wm_``-prefixed spelling (e.g. :meth:`wm_iconphoto`) is an
-      equivalent alias.
+      :meth:`wm_iconphoto` is an alias of :meth:`!iconphoto`.
 
       .. versionadded:: 3.3
 
@@ -2579,8 +2562,7 @@ Base and mixin classes
       Empty strings cancel an existing hint.
       With no arguments, return a tuple of the two current values, or an empty
       string if no hint is in effect.
-      The ``wm_``-prefixed spelling (e.g. :meth:`wm_iconposition`) is an
-      equivalent alias.
+      :meth:`wm_iconposition` is an alias of :meth:`!iconposition`.
 
    .. method:: wm_iconwindow(pathName=None)
       :no-typesetting:
@@ -2595,8 +2577,7 @@ Base and mixin classes
       empty string.
       Not all window managers support icon windows, and the concept is
       meaningless on non-X11 platforms.
-      The ``wm_``-prefixed spelling (e.g. :meth:`wm_iconwindow`) is an
-      equivalent alias.
+      :meth:`wm_iconwindow` is an alias of :meth:`!iconwindow`.
 
    .. method:: wm_manage(widget)
       :no-typesetting:
@@ -2607,8 +2588,7 @@ Base and mixin classes
       manager with a title bar and so on.
       Only :class:`Frame`, :class:`LabelFrame` and :class:`Toplevel` widgets
       may be used; passing any other widget type raises an error.
-      The ``wm_``-prefixed spelling (e.g. :meth:`wm_manage`) is an equivalent
-      alias.
+      :meth:`wm_manage` is an alias of :meth:`!manage`.
 
       .. versionadded:: 3.3
 
@@ -2624,8 +2604,7 @@ Base and mixin classes
       With no arguments, return a tuple of the current maximum width and
       height.
       The maximum size defaults to the size of the screen.
-      The ``wm_``-prefixed spelling (e.g. :meth:`wm_maxsize`) is an equivalent
-      alias.
+      :meth:`wm_maxsize` is an alias of :meth:`!maxsize`.
 
    .. method:: wm_minsize(width=None, height=None)
       :no-typesetting:
@@ -2639,8 +2618,7 @@ Base and mixin classes
       With no arguments, return a tuple of the current minimum width and
       height.
       The minimum size defaults to one pixel in each dimension.
-      The ``wm_``-prefixed spelling (e.g. :meth:`wm_minsize`) is an equivalent
-      alias.
+      :meth:`wm_minsize` is an alias of :meth:`!minsize`.
 
    .. method:: wm_overrideredirect(boolean=None)
       :no-typesetting:
@@ -2654,8 +2632,7 @@ Base and mixin classes
       With no argument, return a boolean indicating whether the flag is set.
       The flag is reliably honored only when the window is first mapped or
       remapped from the withdrawn state.
-      The ``wm_``-prefixed spelling (e.g. ``wm_overrideredirect``) is an
-      equivalent alias.
+      :meth:`wm_overrideredirect` is an alias of :meth:`!overrideredirect`.
 
    .. method:: wm_positionfrom(who=None)
       :no-typesetting:
@@ -2670,8 +2647,7 @@ Base and mixin classes
       has been set.
       Tk automatically sets the source to ``'user'`` when :meth:`geometry` is
       called, unless it has been set explicitly to ``'program'``.
-      The ``wm_``-prefixed spelling (e.g. :meth:`wm_positionfrom`) is an
-      equivalent alias.
+      :meth:`wm_positionfrom` is an alias of :meth:`!positionfrom`.
 
    .. method:: wm_protocol(name=None, func=None)
       :no-typesetting:
@@ -2689,8 +2665,7 @@ Base and mixin classes
       an empty string if none is set (the default ``WM_DELETE_WINDOW`` handler
       is not reported); with no arguments, return a tuple of the protocols that
       currently have handlers.
-      The ``wm_``-prefixed spelling (e.g. :meth:`wm_protocol`) is an equivalent
-      alias.
+      :meth:`wm_protocol` is an alias of :meth:`!protocol`.
 
    .. method:: wm_resizable(width=None, height=None)
       :no-typesetting:
@@ -2703,8 +2678,7 @@ Base and mixin classes
       With no arguments, return a tuple of two ``0``/``1`` values indicating
       whether each dimension is currently resizable.
       By default a window is resizable in both dimensions.
-      The ``wm_``-prefixed spelling (e.g. :meth:`wm_resizable`) is an
-      equivalent alias.
+      :meth:`wm_resizable` is an alias of :meth:`!resizable`.
 
    .. method:: wm_sizefrom(who=None)
       :no-typesetting:
@@ -2717,8 +2691,7 @@ Base and mixin classes
       the current source.
       With no argument, return the current source, or an empty string if none
       has been set.
-      The ``wm_``-prefixed spelling (e.g. :meth:`wm_sizefrom`) is an equivalent
-      alias.
+      :meth:`wm_sizefrom` is an alias of :meth:`!sizefrom`.
 
    .. method:: wm_state(newstate=None)
       :no-typesetting:
@@ -2732,8 +2705,7 @@ Base and mixin classes
       ``'iconic'`` refers to a window that has been iconified, while ``'icon'``
       refers to a window serving as the icon for another window (see
       :meth:`iconwindow`); the ``'icon'`` state cannot be set.
-      The ``wm_``-prefixed spelling (e.g. :meth:`wm_state`) is an equivalent
-      alias.
+      :meth:`wm_state` is an alias of :meth:`!state`.
 
    .. method:: wm_title(string=None)
       :no-typesetting:
@@ -2744,8 +2716,7 @@ Base and mixin classes
       display in the window's title bar.
       With no argument, return the current title.
       The title defaults to the window's name.
-      The ``wm_``-prefixed spelling (e.g. :meth:`wm_title`) is an equivalent
-      alias.
+      :meth:`wm_title` is an alias of :meth:`!title`.
 
    .. method:: wm_transient(master=None)
       :no-typesetting:
@@ -2761,8 +2732,7 @@ Base and mixin classes
       A transient window mirrors state changes in its master and may be
       decorated differently by the window manager; it is an error to make a
       window a transient of itself.
-      The ``wm_``-prefixed spelling (e.g. :meth:`wm_transient`) is an
-      equivalent alias.
+      :meth:`wm_transient` is an alias of :meth:`!transient`.
 
    .. method:: wm_withdraw()
       :no-typesetting:
@@ -2776,8 +2746,7 @@ Base and mixin classes
       It is sometimes necessary to withdraw a window and then re-map it (for
       example with :meth:`deiconify`) to make some window managers notice
       changes to window attributes.
-      The ``wm_``-prefixed spelling (e.g. :meth:`wm_withdraw`) is an equivalent
-      alias.
+      :meth:`wm_withdraw` is an alias of :meth:`!withdraw`.
 
 
 .. class:: Pack()
