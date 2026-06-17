@@ -421,6 +421,8 @@ def main():
         "--wasm max-wasm-stack=16777216 "
         # Enable thread support; causes use of preview1.
         # "--wasm threads=y --wasi threads=y "
+        # Set argv0 to the Python process
+        "--argv0 {PYTHON_WASM} "
         # Map the checkout to / to load the stdlib from /Lib.
         "--dir {HOST_DIR}::{GUEST_DIR} "
         # Set PYTHONPATH to the sysconfig data.
