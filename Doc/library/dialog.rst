@@ -38,16 +38,19 @@ functions for creating simple modal dialogs to get a value from the user.
 
    .. method:: validate()
 
-      Validate the data entered by the user.  Return true if it is valid, in
-      which case the dialog proceeds to :meth:`apply`; return false to keep the
-      dialog open.  The default implementation always returns true; override it
-      to check the input.
+      Validate the data entered by the user.
+      Return true if it is valid, in which case the dialog proceeds to
+      :meth:`apply`; return false to keep the dialog open.
+      The default implementation always returns true; override it to check the
+      input.
 
    .. method:: apply()
 
-      Process the data entered by the user.  Called after :meth:`validate`
-      succeeds and just before the dialog is destroyed.  The default
-      implementation does nothing; override it to act on or store the result.
+      Process the data entered by the user.
+      Called after :meth:`validate` succeeds and just before the dialog is
+      destroyed.
+      The default implementation does nothing; override it to act on or store
+      the result.
 
    .. method:: destroy()
 
@@ -59,10 +62,10 @@ functions for creating simple modal dialogs to get a value from the user.
 
    A simple modal dialog that displays the message *text* above a row of push
    buttons whose labels are given by *buttons*, and returns the index of the
-   button the user presses.  *default* is the index of the button activated by
-   the Return key, *cancel* the index returned when the window is closed through
-   the window manager, *title* the window title, and *class_* the Tk class name
-   of the window.
+   button the user presses.
+   *default* is the index of the button activated by the Return key, *cancel*
+   the index returned when the window is closed through the window manager,
+   *title* the window title, and *class_* the Tk class name of the window.
 
    .. method:: go()
 
@@ -110,43 +113,46 @@ listed below:
 **Static factory functions**
 
 The below functions when called create a modal, native look-and-feel dialog,
-wait for the user's selection, and return it.  The exact return value depends on
-the function (see below); when the dialog is cancelled it is an empty string, an
-empty tuple, an empty list or ``None``.
+wait for the user's selection, and return it.
+The exact return value depends on the function (see below); when the dialog is
+cancelled it is an empty string, an empty tuple, an empty list or ``None``.
 
 .. function:: askopenfile(mode="r", **options)
               askopenfiles(mode="r", **options)
 
-   Create an :class:`Open` dialog.  :func:`askopenfile` returns the opened file
-   object, or ``None`` if the dialog is cancelled.  :func:`askopenfiles` returns
-   a list of the opened file objects, or an empty list if cancelled.  The files
-   are opened in mode *mode* (read-only ``'r'`` by default).
+   Create an :class:`Open` dialog.
+   :func:`askopenfile` returns the opened file object, or ``None`` if the
+   dialog is cancelled.
+   :func:`askopenfiles` returns a list of the opened file objects, or an empty
+   list if cancelled.
+   The files are opened in mode *mode* (read-only ``'r'`` by default).
 
 .. function:: asksaveasfile(mode="w", **options)
 
-   Create a :class:`SaveAs` dialog and return the opened file object, or ``None``
-   if the dialog is cancelled.  The file is opened in mode *mode* (``'w'`` by
-   default).
+   Create a :class:`SaveAs` dialog and return the opened file object, or
+   ``None`` if the dialog is cancelled.
+   The file is opened in mode *mode* (``'w'`` by default).
 
 .. function:: askopenfilename(**options)
               askopenfilenames(**options)
 
-   Create an :class:`Open` dialog.  :func:`askopenfilename` returns the selected
-   filename as a string, or an empty string if the dialog is cancelled.
+   Create an :class:`Open` dialog.
+   :func:`askopenfilename` returns the selected filename as a string, or an
+   empty string if the dialog is cancelled.
    :func:`askopenfilenames` returns a tuple of the selected filenames, or an
    empty tuple if cancelled.
 
 .. function:: asksaveasfilename(**options)
 
-   Create a :class:`SaveAs` dialog and return the selected filename as a string,
-   or an empty string if the dialog is cancelled.
+   Create a :class:`SaveAs` dialog and return the selected filename as a
+   string, or an empty string if the dialog is cancelled.
 
 .. function:: askdirectory(**options)
 
-   Prompt the user to select a directory, and return its path as a string, or an
-   empty string if the dialog is cancelled.  Additional keyword option:
-   *mustexist* - if true, the user may only select an existing directory (false
-   by default).
+   Prompt the user to select a directory, and return its path as a string, or
+   an empty string if the dialog is cancelled.
+   Additional keyword option: *mustexist* - if true, the user may only select
+   an existing directory (false by default).
 
 .. class:: Open(master=None, **options)
            SaveAs(master=None, **options)
@@ -212,8 +218,8 @@ These do not emulate the native look-and-feel of the platform.
 
    .. method:: ok_command()
 
-      Called when the user confirms the current selection.  The base
-      implementation accepts the selection and closes the dialog;
+      Called when the user confirms the current selection.
+      The base implementation accepts the selection and closes the dialog;
       :class:`LoadFileDialog` and :class:`SaveFileDialog` override it to check
       the selection first.
 
@@ -247,9 +253,9 @@ These do not emulate the native look-and-feel of the platform.
 
    .. method:: ok_command()
 
-      Test whether or not the selection points to a valid file
-      that is not a directory. Confirmation is required if an already existing
-      file is selected.
+      Test whether or not the selection points to a valid file that is not a
+      directory.
+      Confirmation is required if an already existing file is selected.
 
 :mod:`!tkinter.commondialog` --- Dialog window templates
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -291,13 +297,14 @@ the classic (non-themed) Tk widgets.
 
 .. class:: Dialog(master=None, cnf={}, **kw)
 
-   Display a modal dialog box built from the classic (non-themed) Tk widgets and
-   wait for the user to press one of its buttons.  The options, given through
-   *cnf* or as keyword arguments, include *title* (the window title), *text*
-   (the message), *bitmap* (an icon, :data:`DIALOG_ICON` by default), *default*
-   (the index of the default button) and *strings* (the sequence of button
-   labels).  After construction, the :attr:`!num` attribute holds the index of
-   the button the user pressed.
+   Display a modal dialog box built from the classic (non-themed) Tk widgets
+   and wait for the user to press one of its buttons.
+   The options, given through *cnf* or as keyword arguments, include *title*
+   (the window title), *text* (the message), *bitmap* (an icon,
+   :data:`DIALOG_ICON` by default), *default* (the index of the default button)
+   and *strings* (the sequence of button labels).
+   After construction, the :attr:`!num` attribute holds the index of the button
+   the user pressed.
 
    .. method:: destroy()
 

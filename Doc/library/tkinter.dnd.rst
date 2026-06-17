@@ -57,9 +57,9 @@ Selection of a target object occurs as follows:
 
 .. function:: dnd_start(source, event)
 
-   Factory function for the drag-and-drop process.  Return the
-   :class:`DndHandler` instance managing the drag, or ``None`` if a drag could
-   not be started.
+   Factory function for the drag-and-drop process.
+   Return the :class:`DndHandler` instance managing the drag, or ``None`` if a
+   drag could not be started.
 
 .. seealso::
 

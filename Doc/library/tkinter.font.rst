@@ -51,9 +51,9 @@ The different font weights and slants are:
    .. method:: actual(option=None, displayof=None)
 
       Return the actual attributes of the font, which may differ from the
-      requested ones because of platform limitations.  With no *option*, return
-      a dictionary of all the attributes; if *option* is given, return the value
-      of that single attribute.
+      requested ones because of platform limitations.
+      With no *option*, return a dictionary of all the attributes; if *option*
+      is given, return the value of that single attribute.
 
    .. method:: cget(option)
 
@@ -64,8 +64,8 @@ The different font weights and slants are:
 
    .. method:: configure(**options)
 
-      Modify one or more attributes of the font.  With no arguments, return a
-      dictionary of the current attributes.
+      Modify one or more attributes of the font.
+      With no arguments, return a dictionary of the current attributes.
 
       :meth:`config` is an alias of :meth:`!configure`.
 
@@ -76,14 +76,15 @@ The different font weights and slants are:
    .. method:: measure(text, displayof=None)
 
       Return amount of space the text would occupy on the specified display
-      when formatted in the current font, as an integer number of pixels. If no
-      display is specified then the main application window is assumed.
+      when formatted in the current font, as an integer number of pixels.
+      If no display is specified then the main application window is assumed.
 
    .. method:: metrics(*options, **kw)
 
-      Return font-specific data.  With no options, return a dictionary mapping
-      each metric name to its integer value; if one option name is given, return
-      that metric's value as an integer.
+      Return font-specific data.
+      With no options, return a dictionary mapping each metric name to its
+      integer value; if one option name is given, return that metric's value as
+      an integer.
       Options include:
 
       *ascent* - distance between baseline and highest point that a

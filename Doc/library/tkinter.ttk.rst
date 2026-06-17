@@ -652,8 +652,9 @@ ttk.Notebook
         select that tab.
 
       Multiple notebooks in a single toplevel may be enabled for traversal,
-      including nested notebooks. However, notebook traversal only works
-      properly if all panes are direct children of the notebook.
+      including nested notebooks.
+      However, notebook traversal only works properly if all panes are direct
+      children of the notebook.
 
 
 Progressbar
@@ -856,12 +857,13 @@ This widget accepts the following specific options:
 
 .. note::
 
-   Tk 9.0 added several :class:`Treeview` features.  The *selectmode* option
-   gained the values ``"single"`` and ``"multiple"``; the new widget options
-   *selecttype* (``"item"`` or ``"cell"`` selection), *striped* (zebra-striped
-   rows), and *titlecolumns* / *titleitems* (columns or rows frozen against
-   scrolling) were introduced; and items gained a *hidden* option.  Tk 9.1
-   added the *rowheight* and *headingheight* options.
+   Tk 9.0 added several :class:`Treeview` features.
+   The *selectmode* option gained the values ``"single"`` and ``"multiple"``;
+   the new widget options *selecttype* (``"item"`` or ``"cell"`` selection),
+   *striped* (zebra-striped rows), and *titlecolumns* / *titleitems* (columns
+   or rows frozen against scrolling) were introduced; and items gained a
+   *hidden* option.
+   Tk 9.1 added the *rowheight* and *headingheight* options.
 
 
 Item Options
@@ -1260,8 +1262,8 @@ ttk.Treeview
    .. method:: tag_has(tagname, item=None)
 
       If *item* is specified, returns ``True`` if the specified *item* has the
-      given *tagname* and ``False`` otherwise. Otherwise, returns a tuple of all
-      items that have the specified tag.
+      given *tagname* and ``False`` otherwise.
+      Otherwise, returns a tuple of all items that have the specified tag.
 
       Availability: Tk 8.6
 
@@ -1625,16 +1627,16 @@ The valid options/values are:
 Additional widgets
 ------------------
 
-The following themed widgets complete the :mod:`tkinter.ttk` widget set.  Each
-is the themed counterpart of the like-named classic :mod:`tkinter` widget and
-inherits the common methods of :class:`Widget`.
+The following themed widgets complete the :mod:`tkinter.ttk` widget set.
+Each is the themed counterpart of the like-named classic :mod:`tkinter` widget
+and inherits the common methods of :class:`Widget`.
 
 .. class:: Button(master=None, **kw)
 
    Ttk :class:`Button` widget, displays a textual label and/or image, and
-   evaluates a command when pressed.  It is the themed counterpart of
-   :class:`tkinter.Button` and inherits the common widget methods from
-   :class:`Widget`.
+   evaluates a command when pressed.
+   It is the themed counterpart of :class:`tkinter.Button` and inherits the
+   common widget methods from :class:`Widget`.
 
    .. method:: invoke()
 
@@ -1644,9 +1646,9 @@ inherits the common methods of :class:`Widget`.
 .. class:: Checkbutton(master=None, **kw)
 
    Ttk :class:`Checkbutton` widget, used to control a Boolean variable that is
-   toggled on and off.  It is the themed counterpart of
-   :class:`tkinter.Checkbutton` and inherits the common widget methods from
-   :class:`Widget`.
+   toggled on and off.
+   It is the themed counterpart of :class:`tkinter.Checkbutton` and inherits
+   the common widget methods from :class:`Widget`.
 
    .. method:: invoke()
 
@@ -1657,9 +1659,10 @@ inherits the common methods of :class:`Widget`.
 .. class:: Entry(master=None, widget=None, **kw)
 
    Ttk :class:`Entry` widget, displays a one-line text string and allows the
-   user to edit it.  It is the themed counterpart of :class:`tkinter.Entry` and
-   inherits the common widget methods from :class:`Widget` as well as the
-   editing methods from :class:`tkinter.Entry`.
+   user to edit it.
+   It is the themed counterpart of :class:`tkinter.Entry` and inherits the
+   common widget methods from :class:`Widget` as well as the editing methods
+   from :class:`tkinter.Entry`.
 
    .. method:: bbox(index)
 
@@ -1673,55 +1676,58 @@ inherits the common methods of :class:`Widget`.
 
    .. method:: validate()
 
-      Force validation of the entry and return ``True`` if validation succeeded,
-      and ``False`` otherwise.
+      Force validation of the entry and return ``True`` if validation
+      succeeded, and ``False`` otherwise.
 
 
 .. class:: Frame(master=None, **kw)
 
    Ttk :class:`Frame` widget, a container used to group and lay out other
-   widgets.  It is the themed counterpart of :class:`tkinter.Frame` and inherits
-   the common widget methods from :class:`Widget`.
+   widgets.
+   It is the themed counterpart of :class:`tkinter.Frame` and inherits the
+   common widget methods from :class:`Widget`.
 
 
 .. class:: Label(master=None, **kw)
 
-   Ttk :class:`Label` widget, displays a textual label and/or image.  It is the
-   themed counterpart of :class:`tkinter.Label` and inherits the common widget
-   methods from :class:`Widget`.
+   Ttk :class:`Label` widget, displays a textual label and/or image.
+   It is the themed counterpart of :class:`tkinter.Label` and inherits the
+   common widget methods from :class:`Widget`.
 
 
 .. class:: Labelframe(master=None, **kw)
 
    Ttk :class:`Labelframe` widget, a container that draws a border and a title
-   label around its contents.  It is the themed counterpart of
-   :class:`tkinter.LabelFrame` and inherits the common widget methods from
-   :class:`Widget`.
+   label around its contents.
+   It is the themed counterpart of :class:`tkinter.LabelFrame` and inherits the
+   common widget methods from :class:`Widget`.
 
 
 .. class:: Menubutton(master=None, **kw)
 
    Ttk :class:`Menubutton` widget, displays a textual label and/or image, and
-   pops up a menu when pressed.  It is the themed counterpart of
-   :class:`tkinter.Menubutton` and inherits the common widget methods from
-   :class:`Widget`.
+   pops up a menu when pressed.
+   It is the themed counterpart of :class:`tkinter.Menubutton` and inherits the
+   common widget methods from :class:`Widget`.
 
 
 .. class:: OptionMenu(master, variable, default=None, *values, **kwargs)
 
    Ttk :class:`OptionMenu` widget, a :class:`Menubutton` that pops up a menu of
-   mutually exclusive choices.  *variable* is the variable that tracks the
-   currently selected value, *default* is the value to set initially, and
-   *values* are the entries to display in the menu.  A *command* keyword
-   argument may be given to specify a callable that is invoked with the selected
-   value whenever the selection changes; the *style* keyword argument sets the
-   style used by the underlying menubutton; and the *name* keyword argument sets
-   the Tk widget name.
+   mutually exclusive choices.
+   *variable* is the variable that tracks the currently selected value,
+   *default* is the value to set initially, and *values* are the entries to
+   display in the menu.
+   A *command* keyword argument may be given to specify a callable that is
+   invoked with the selected value whenever the selection changes; the *style*
+   keyword argument sets the style used by the underlying menubutton; and the
+   *name* keyword argument sets the Tk widget name.
 
    .. method:: set_menu(default=None, *values)
 
-      Replace the entries of the menu with *values*.  If *default* is given,
-      also set it as the current value of the *variable*.
+      Replace the entries of the menu with *values*.
+      If *default* is given, also set it as the current value of the
+      *variable*.
 
    .. method:: destroy()
 
@@ -1735,18 +1741,21 @@ inherits the common methods of :class:`Widget`.
 .. class:: Panedwindow(master=None, **kw)
 
    Ttk :class:`Panedwindow` widget, displays a number of subwindows stacked
-   either vertically or horizontally.  The user may adjust the relative sizes of
-   the subwindows by dragging the sash between panes.  It is the themed
-   counterpart of :class:`tkinter.PanedWindow` and inherits the common widget
-   methods from :class:`Widget`, as well as the :meth:`!add` and :meth:`!panes`
-   methods from :class:`tkinter.PanedWindow`.
+   either vertically or horizontally.
+   The user may adjust the relative sizes of the subwindows by dragging the
+   sash between panes.
+   It is the themed counterpart of :class:`tkinter.PanedWindow` and inherits
+   the common widget methods from :class:`Widget`, as well as the :meth:`!add`
+   and :meth:`!panes` methods from :class:`tkinter.PanedWindow`.
 
    .. method:: insert(pos, child, **kw)
 
-      Insert a pane containing *child* at the position *pos*.  *pos* is either
-      the string ``'end'``, an integer index, or the name of a managed
-      subwindow.  If *child* is already managed by the paned window, move it to
-      the specified position.  Any keyword arguments set pane options.
+      Insert a pane containing *child* at the position *pos*.
+      *pos* is either the string ``'end'``, an integer index, or the name of a
+      managed subwindow.
+      If *child* is already managed by the paned window, move it to the
+      specified position.
+      Any keyword arguments set pane options.
 
    .. method:: forget(child)
 
@@ -1756,26 +1765,28 @@ inherits the common methods of :class:`Widget`.
    .. method:: pane(pane, option=None, **kw)
 
       Query or modify the options of the specified *pane*, where *pane* is
-      either an integer index or the name of a managed subwindow.  If no
-      arguments are given, return a dictionary of the pane option values.  If
-      *option* is specified, return the value of that option.  Otherwise, set
-      the options given as keyword arguments to their corresponding values.
+      either an integer index or the name of a managed subwindow.
+      If no arguments are given, return a dictionary of the pane option values.
+      If *option* is specified, return the value of that option.
+      Otherwise, set the options given as keyword arguments to their
+      corresponding values.
 
    .. method:: sashpos(index, newpos=None)
 
       If *newpos* is specified, set the position of sash number *index* and
-      return its new position.  This may adjust the positions of adjacent sashes
-      to ensure that positions are monotonically increasing; positions are also
-      constrained to be between 0 and the total size of the widget.  If *newpos*
-      is omitted, return the current position of the sash.
+      return its new position.
+      This may adjust the positions of adjacent sashes to ensure that positions
+      are monotonically increasing; positions are also constrained to be
+      between 0 and the total size of the widget.
+      If *newpos* is omitted, return the current position of the sash.
 
 
 .. class:: Radiobutton(master=None, **kw)
 
    Ttk :class:`Radiobutton` widget, used as part of a group to control a single
-   shared variable by selecting one of several mutually exclusive values.  It is
-   the themed counterpart of :class:`tkinter.Radiobutton` and inherits the
-   common widget methods from :class:`Widget`.
+   shared variable by selecting one of several mutually exclusive values.
+   It is the themed counterpart of :class:`tkinter.Radiobutton` and inherits
+   the common widget methods from :class:`Widget`.
 
    .. method:: invoke()
 
@@ -1786,14 +1797,14 @@ inherits the common methods of :class:`Widget`.
 .. class:: Scale(master=None, **kw)
 
    Ttk :class:`Scale` widget, displays a slider that lets the user select a
-   numeric value from a range by moving the slider along a trough.  It is the
-   themed counterpart of :class:`tkinter.Scale` and inherits the common widget
-   methods from :class:`Widget`.
+   numeric value from a range by moving the slider along a trough.
+   It is the themed counterpart of :class:`tkinter.Scale` and inherits the
+   common widget methods from :class:`Widget`.
 
    .. method:: configure(cnf=None, **kw)
 
-      Modify or query the widget options, like :meth:`Widget.configure`.  In
-      addition, this method clips the ``from`` and ``to`` values so that the
+      Modify or query the widget options, like :meth:`Widget.configure`.
+      In addition, this method clips the ``from`` and ``to`` values so that the
       current value stays within the range defined by them.
 
       .. versionchanged:: 3.9
@@ -1802,24 +1813,26 @@ inherits the common methods of :class:`Widget`.
 
    .. method:: get(x=None, y=None)
 
-      Return the current value of the scale.  If *x* and *y* are given, return
-      the value corresponding to the pixel coordinate *x*, *y* instead.
+      Return the current value of the scale.
+      If *x* and *y* are given, return the value corresponding to the pixel
+      coordinate *x*, *y* instead.
 
 
 .. class:: Scrollbar(master=None, **kw)
 
    Ttk :class:`Scrollbar` widget, controls the viewport of an associated
    scrollable widget such as a :class:`Treeview`, :class:`Entry` or
-   :class:`tkinter.Text`.  It is the themed counterpart of
-   :class:`tkinter.Scrollbar` and inherits the common widget methods from
-   :class:`Widget`, as well as the :meth:`!set` and :meth:`!get` methods from
-   :class:`tkinter.Scrollbar`.
+   :class:`tkinter.Text`.
+   It is the themed counterpart of :class:`tkinter.Scrollbar` and inherits the
+   common widget methods from :class:`Widget`, as well as the :meth:`!set` and
+   :meth:`!get` methods from :class:`tkinter.Scrollbar`.
 
 
 .. class:: Separator(master=None, **kw)
 
    Ttk :class:`Separator` widget, displays a horizontal or vertical separator
-   line.  It has no direct counterpart in :mod:`tkinter` and inherits the common
+   line.
+   It has no direct counterpart in :mod:`tkinter` and inherits the common
    widget methods from :class:`Widget`.
 
 
@@ -1827,16 +1840,17 @@ inherits the common methods of :class:`Widget`.
 
    Ttk :class:`Sizegrip` widget, displays a grip that allows the user to resize
    the containing toplevel window by pressing and dragging the grip, typically
-   placed in the bottom-right corner.  It has no direct counterpart in
-   :mod:`tkinter` and inherits the common widget methods from :class:`Widget`.
+   placed in the bottom-right corner.
+   It has no direct counterpart in :mod:`tkinter` and inherits the common
+   widget methods from :class:`Widget`.
 
 
 .. class:: LabeledScale(master=None, variable=None, from_=0, to=10, **kw)
 
    A :class:`Frame` containing a :class:`Scale` and a :class:`Label` that shows
-   the scale's current value.  *variable* is the :class:`IntVar` tracked by the
-   scale (one is created if it is not given), and *from_* and *to* define the
-   range of the scale.
+   the scale's current value.
+   *variable* is the :class:`IntVar` tracked by the scale (one is created if it
+   is not given), and *from_* and *to* define the range of the scale.
 
    .. method:: destroy()
 
@@ -1862,11 +1876,13 @@ Utility functions
 .. function:: tclobjs_to_py(adict)
 
    Return a copy of the dictionary *adict* in which any Tcl object values have
-   been converted to their Python equivalents.  This is a helper used
-   internally to post-process the option dictionaries returned by Tk.
+   been converted to their Python equivalents.
+   This is a helper used internally to post-process the option dictionaries
+   returned by Tk.
 
 .. function:: setup_master(master=None)
 
-   Return a master widget to use as the parent of a new widget.  If *master* is
-   ``None``, the default root window is used, creating it if necessary.  This is
-   a helper used internally when constructing widgets.
+   Return a master widget to use as the parent of a new widget.
+   If *master* is ``None``, the default root window is used, creating it if
+   necessary.
+   This is a helper used internally when constructing widgets.
