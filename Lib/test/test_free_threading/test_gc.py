@@ -1,10 +1,14 @@
 import unittest
 
+import subprocess
+import sys
+import textwrap
 import threading
 from threading import Thread
 from unittest import TestCase
 import gc
 
+from test import support
 from test.support import threading_helper
 
 
@@ -152,6 +156,50 @@ class TestGC(TestCase):
 
         with threading_helper.start_threads(threads):
             pass
+
+    @support.requires_subprocess()
+    def test_tight_gc_loop_does_not_starve_attach(self):
+        script = textwrap.dedent("""
+            import gc
+            import importlib
+            import threading
+            import time
+
+            modules = (
+                "abc", "argparse", "collections", "contextlib",
+                "decimal", "enum", "functools", "heapq",
+                "importlib", "inspect", "itertools", "json",
+                "math", "operator", "random", "re",
+            )
+            for name in modules:
+                importlib.import_module(name)
+
+            stop = threading.Event()
+
+            def collect():
+                while not stop.is_set():
+                    gc.collect()
+
+            thread = threading.Thread(target=collect, daemon=True)
+            thread.start()
+            time.sleep(1.0)
+            stop.set()
+            thread.join(5.0)
+            if thread.is_alive():
+                raise SystemExit("GC thread did not stop")
+        """)
+        proc = subprocess.run(
+            [sys.executable, "-I", "-X", "faulthandler", "-c", script],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=support.SHORT_TIMEOUT,
+        )
+        self.assertEqual(
+            proc.returncode,
+            0,
+            f"stdout:\n{proc.stdout}\nstderr:\n{proc.stderr}",
+        )
 
 
 if __name__ == "__main__":
