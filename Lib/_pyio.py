@@ -1016,7 +1016,7 @@ class BytesIO(BufferedIOBase):
                     pos = pos_index()
                 if pos < 0:
                     raise ValueError("negative truncate position %r" % (pos,))
-            del self._buffer[pos:]
+            self._buffer.resize(pos)
         return pos
 
     def readable(self):

@@ -785,6 +785,13 @@ than raw I/O does.
 
       .. versionadded:: 3.5
 
+   .. method:: truncate(size=None, /)
+
+      In :class:`BytesIO`, this is the same as :meth:`IOBase.truncate`.
+
+      .. versionchanged:: next
+         Now extends the underlying buffer as :meth:`IOBase.truncate` documents.
+
 .. class:: BufferedReader(raw, buffer_size=DEFAULT_BUFFER_SIZE)
 
    A buffered binary stream providing higher-level access to a readable, non
