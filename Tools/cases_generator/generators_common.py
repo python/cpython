@@ -714,7 +714,8 @@ class Emitter:
             self.out.emit(tkn)
         reachable, brace, body_storage = self._emit_stmt(stmt.body, uop, storage.copy(), inst)
         body_storage.merge(storage, self.out)
-        self.out.emit(brace)
+        if brace is not None:
+            self.out.emit(brace)
         return reachable, None, storage
 
     def emit_WhileStmt(
