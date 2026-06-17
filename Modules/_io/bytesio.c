@@ -667,10 +667,17 @@ _io_BytesIO_truncate_impl(bytesio *self, PyObject *size)
         }
     }
 
-    if (new_size < self->string_size) {
+    if (new_size != self->string_size) {
+        Py_ssize_t orig_size = self->string_size;
         self->string_size = new_size;
-        if (resize_buffer_lock_held(self, new_size) < 0)
+        if (resize_buffer_lock_held(self, new_size) < 0) {
             return NULL;
+        }
+        /* Fill new space with zeros */
+        if (new_size > orig_size) {
+            memset(PyBytes_AS_STRING(self->buf) + orig_size, '\0',
+                   (new_size - orig_size) * sizeof(char));
+        }
     }
 
     return PyLong_FromSsize_t(new_size);
