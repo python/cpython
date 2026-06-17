@@ -46,12 +46,12 @@ That code causes several :mod:`!tkinter.ttk` widgets (:class:`Button`,
 :class:`Radiobutton`, :class:`Scale` and :class:`Scrollbar`) to
 automatically replace the Tk widgets.
 
-This has the direct benefit of using the new widgets which gives a better
-look and feel across platforms; however, the replacement widgets are not
-completely compatible. The main difference is that widget options such as
-"fg", "bg" and others related to widget styling are no
-longer present in Ttk widgets.  Instead, use  the :class:`ttk.Style` class
-for improved styling effects.
+This has the direct benefit of using the new widgets which gives a better look
+and feel across platforms; however, the replacement widgets are not completely
+compatible.
+The main difference is that widget options such as "fg", "bg" and others
+related to widget styling are no longer present in Ttk widgets.
+Instead, use the :class:`ttk.Style <Style>` class for improved styling effects.
 
 
 .. seealso::
@@ -95,14 +95,14 @@ documentation.
 Widget
 ------
 
-:class:`ttk.Widget` defines standard options and methods supported by Tk
-themed widgets and is not supposed to be directly instantiated.
+:class:`ttk.Widget <Widget>` defines standard options and methods supported by
+Tk themed widgets and is not supposed to be directly instantiated.
 
 
 Standard Options
 ^^^^^^^^^^^^^^^^
 
-All the :mod:`ttk` Widgets accept the following options:
+All the :mod:`!ttk` Widgets accept the following options:
 
 .. tabularcolumns:: |l|L|
 
@@ -260,8 +260,8 @@ an exclamation point indicating that the bit is off.
 ttk.Widget
 ^^^^^^^^^^
 
-Besides the methods described below, the :class:`ttk.Widget` supports the
-methods :meth:`tkinter.Widget.cget` and
+Besides the methods described below, the :class:`ttk.Widget <Widget>` supports
+the methods :meth:`tkinter.Widget.cget <tkinter.Misc.cget>` and
 :meth:`tkinter.Widget.configure <tkinter.Misc.configure>`.
 
 .. class:: Widget
@@ -295,17 +295,19 @@ methods :meth:`tkinter.Widget.cget` and
 Combobox
 --------
 
-The :class:`ttk.Combobox` widget combines a text field with a pop-down list of
-values. This widget is a subclass of :class:`Entry`.
+The :class:`ttk.Combobox <Combobox>` widget combines a text field with a
+pop-down list of values.
+This widget is a subclass of :class:`Entry`.
 
-Besides the methods inherited from :class:`Widget`: :meth:`Widget.cget`,
-:meth:`Widget.configure <tkinter.Misc.configure>`, :meth:`Widget.identify`,
-:meth:`Widget.instate` and :meth:`Widget.state`, and the following inherited
-from :class:`Entry`:
-:meth:`Entry.bbox`, :meth:`Entry.delete`, :meth:`Entry.icursor`,
-:meth:`Entry.index`, :meth:`Entry.insert`, :meth:`Entry.selection`,
-:meth:`Entry.xview`, it has some other methods, described at
-:class:`ttk.Combobox`.
+Besides the methods inherited from :class:`Widget`: :meth:`~tkinter.Misc.cget`,
+:meth:`~tkinter.Misc.configure`, :meth:`~Widget.identify`,
+:meth:`~Widget.instate` and :meth:`~Widget.state`, and the following inherited
+from :class:`Entry`: :meth:`~Entry.bbox`, :meth:`~tkinter.Entry.delete`,
+:meth:`~tkinter.Entry.icursor`, :meth:`~tkinter.Entry.index`,
+:meth:`~tkinter.Entry.insert`,
+:meth:`selection* <tkinter.Entry.selection_adjust>`,
+:meth:`xview* <tkinter.XView.xview>`, it has some other methods, described at
+:class:`ttk.Combobox <Combobox>`.
 
 
 Options
@@ -388,17 +390,18 @@ ttk.Combobox
 
 Spinbox
 -------
-The :class:`ttk.Spinbox` widget is a :class:`ttk.Entry` enhanced with increment
-and decrement arrows.  It can be used for numbers or lists of string values.
-This widget is a subclass of :class:`Entry`.
 
-Besides the methods inherited from :class:`Widget`: :meth:`Widget.cget`,
-:meth:`Widget.configure <tkinter.Misc.configure>`, :meth:`Widget.identify`,
-:meth:`Widget.instate` and :meth:`Widget.state`, and the following inherited
-from :class:`Entry`:
-:meth:`Entry.bbox`, :meth:`Entry.delete`, :meth:`Entry.icursor`,
-:meth:`Entry.index`, :meth:`Entry.insert`, :meth:`Entry.xview`,
-it has some other methods, described at :class:`ttk.Spinbox`.
+The :class:`ttk.Spinbox <Spinbox>` widget is a :class:`ttk.Entry <Entry>`
+enhanced with increment and decrement arrows.
+It can be used for numbers or lists of string values.
+This widget is a subclass of :class:`Entry`.
+Besides the methods inherited from :class:`Widget`: :meth:`~tkinter.Misc.cget`,
+:meth:`~tkinter.Misc.configure`, :meth:`~Widget.identify`,
+:meth:`~Widget.instate` and :meth:`~Widget.state`, and the following inherited
+from :class:`Entry`: :meth:`~Entry.bbox`, :meth:`~tkinter.Entry.delete`,
+:meth:`~tkinter.Entry.icursor`, :meth:`~tkinter.Entry.index`,
+:meth:`~tkinter.Entry.insert`, :meth:`xview* <tkinter.XView.xview>`, it has
+some other methods, described at :class:`ttk.Spinbox <Spinbox>`.
 
 Options
 ^^^^^^^
@@ -523,7 +526,8 @@ There are also specific options for tabs:
 |           | area. Value is a string containing zero or more of the       |
 |           | characters "n", "s", "e" or "w". Each letter refers to a     |
 |           | side (north, south, east or west) that the child window will |
-|           | stick to, as per the :meth:`grid` geometry manager.          |
+|           | stick to, as per the :meth:`grid <tkinter.Grid.grid>`        |
+|           | geometry manager.                                            |
 +-----------+--------------------------------------------------------------+
 | padding   | Specifies the amount of extra space to add between the       |
 |           | notebook and this pane. Syntax is the same as for the option |
@@ -548,8 +552,8 @@ There are also specific options for tabs:
 Tab Identifiers
 ^^^^^^^^^^^^^^^
 
-The tab_id present in several methods of :class:`ttk.Notebook` may take any
-of the following forms:
+The tab_id present in several methods of :class:`ttk.Notebook <Notebook>` may
+take any of the following forms:
 
 * An integer between zero and the number of tabs
 * The name of a child window
@@ -663,9 +667,10 @@ ttk.Notebook
 Progressbar
 -----------
 
-The :class:`ttk.Progressbar` widget shows the status of a long-running
-operation. It can operate in two modes:  1) the determinate mode which shows the
-amount completed relative to the total amount of work to be done and 2) the
+The :class:`ttk.Progressbar <Progressbar>` widget shows the status of a
+long-running operation.
+It can operate in two modes: 1) the determinate mode which shows the amount
+completed relative to the total amount of work to be done and 2) the
 indeterminate mode which provides an animated display to let the user know that
 work is progressing.
 
@@ -735,10 +740,11 @@ ttk.Progressbar
 Separator
 ---------
 
-The :class:`ttk.Separator` widget displays a horizontal or vertical separator
-bar.
+The :class:`ttk.Separator <Separator>` widget displays a horizontal or vertical
+separator bar.
 
-It has no other methods besides the ones inherited from :class:`ttk.Widget`.
+It has no other methods besides the ones inherited from
+:class:`ttk.Widget <Widget>`.
 
 
 Options
@@ -759,11 +765,12 @@ This widget accepts the following specific option:
 Sizegrip
 --------
 
-The :class:`ttk.Sizegrip` widget (also known as a grow box) allows the user to
-resize the containing toplevel window by pressing and dragging the grip.
+The :class:`ttk.Sizegrip <Sizegrip>` widget (also known as a grow box) allows
+the user to resize the containing toplevel window by pressing and dragging the
+grip.
 
 This widget has neither specific options nor specific methods, besides the
-ones inherited from :class:`ttk.Widget`.
+ones inherited from :class:`ttk.Widget <Widget>`.
 
 
 Platform-specific notes
@@ -786,10 +793,11 @@ Bugs
 Treeview
 --------
 
-The :class:`ttk.Treeview` widget displays a hierarchical collection of items.
+The :class:`ttk.Treeview <Treeview>` widget displays a hierarchical collection
+of items.
 Each item has a textual label, an optional image, and an optional list of data
-values. The data values are displayed in successive columns after the tree
-label.
+values.
+The data values are displayed in successive columns after the tree label.
 
 The order in which data values are displayed may be controlled by setting
 the widget option ``displaycolumns``. The tree widget can also display column
@@ -1286,12 +1294,13 @@ ttk.Treeview
 Ttk Styling
 -----------
 
-Each widget in :mod:`ttk` is assigned a style, which specifies the set of
-elements making up the widget and how they are arranged, along with dynamic
-and default settings for element options. By default the style name is the
-same as the widget's class name, but it may be overridden by the widget's style
-option. If you don't know the class name of a widget, use the method
-:meth:`Misc.winfo_class` (somewidget.winfo_class()).
+Each widget in :mod:`!ttk` is assigned a style, which specifies the set of
+elements making up the widget and how they are arranged, along with dynamic and
+default settings for element options.
+By default the style name is the same as the widget's class name, but it may be
+overridden by the widget's style option.
+If you don't know the class name of a widget, use the method
+:meth:`Misc.winfo_class <tkinter.Misc.winfo_class>` (somewidget.winfo_class()).
 
 .. seealso::
 
