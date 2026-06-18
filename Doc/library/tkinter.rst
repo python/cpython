@@ -2333,7 +2333,13 @@ Base and mixin classes
 
    .. method:: info_patchlevel()
 
-      Return the Tcl/Tk patch level as a string, for example ``'9.1.0'``.
+      Return the Tcl/Tk patch level as a named tuple with the same five fields
+      as :data:`sys.version_info`: *major*, *minor*, *micro*, *releaselevel*
+      and *serial*.
+      *releaselevel* is ``'alpha'``, ``'beta'`` or ``'final'``.
+      Converting it to a string gives the version in the usual Tcl/Tk notation,
+      for example ``'9.0.3'`` for a final release or ``'9.1b2'`` for a
+      pre-release.
 
       .. versionadded:: 3.11
 
