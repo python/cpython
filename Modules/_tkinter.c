@@ -210,6 +210,8 @@ mount_tk_dll_zip(void)
 
     Tcl_DStringInit(&utf8_path);
     Tcl_WCharToUtfDString(tk_path, path_len, &utf8_path);
+    /* Failure is harmless if the DLL has no embedded ZIP or if another
+       interpreter has already mounted it. */
     (void) TclZipfs_Mount(NULL, Tcl_DStringValue(&utf8_path),
                           "//zipfs:/lib/tk", NULL);
     Tcl_DStringFree(&utf8_path);
