@@ -108,9 +108,9 @@ Ttk
    bindings are provided in a separate module, :mod:`tkinter.ttk`.
 
 Internally, Tk and Ttk use facilities of the underlying operating system,
-i.e., Xlib on Unix/X11, Cocoa on macOS, GDI on Windows.
+that is, Xlib on Unix/X11, Cocoa on macOS, GDI on Windows.
 
-When your Python application uses a class in Tkinter, e.g., to create a widget,
+When your Python application uses a class in Tkinter, for example, to create a widget,
 the :mod:`!tkinter` module first assembles a Tcl/Tk command string. It passes that
 Tcl command string to an internal :mod:`_tkinter` binary module, which then
 calls the Tcl interpreter to evaluate it. The Tcl interpreter will then call into the
@@ -498,7 +498,7 @@ still have a few places to look.
 While all operations in Tkinter are implemented as method calls on widget
 objects, you've seen that many Tcl/Tk operations appear as commands that
 take a widget pathname as its first parameter, followed by optional
-parameters, e.g.
+parameters, for example
 
 ::
 
@@ -517,7 +517,7 @@ name of a method to call).
 
 
 In the official Tcl/Tk reference documentation, you'll find most operations
-that look like method calls on the man page for a specific widget (e.g.,
+that look like method calls on the man page for a specific widget (for example,
 you'll find the :meth:`~tkinter.ttk.Button.invoke` method on the
 `ttk::button <https://www.tcl-lang.org/man/tcl9.0/TkCmd/ttk_button.html>`_
 man page), while functions that take a widget as a parameter often have
@@ -726,7 +726,7 @@ anchor
    Anchor type.  Denotes where the packer is to place each content in its parcel.
 
 expand
-   Boolean, ``0`` or ``1``.
+   boolean, ``0`` or ``1``.
 
 fill
    Legal values: ``'x'``, ``'y'``, ``'both'``, ``'none'``.
@@ -1059,7 +1059,7 @@ option (other options are available as well).
    :meth:`!copy`.
 
 The image object can then be used wherever an ``image`` option is supported by
-some widget (e.g. labels, buttons, menus). In these cases, Tk will not keep a
+some widget (for example, labels, buttons, menus). In these cases, Tk will not keep a
 reference to the image. When the last Python reference to the image object is
 deleted, the image data is deleted as well, and Tk will display an empty box
 wherever the image was used.

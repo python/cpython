@@ -38,7 +38,7 @@ The different font weights and slants are:
 
     additional keyword options (ignored if *font* is specified):
 
-       | *family* - font family i.e. Courier, Times
+       | *family* - font family, for example, Courier, Times
        | *size* - font size
        |     If *size* is positive it is interpreted as size in points.
        |     If *size* is a negative number its absolute value is treated

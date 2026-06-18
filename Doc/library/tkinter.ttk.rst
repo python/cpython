@@ -785,8 +785,8 @@ Bugs
 ^^^^
 
 * If the containing toplevel's position was specified relative to the right
-  or bottom of the screen (e.g. ....), the :class:`Sizegrip` widget will
-  not resize the window.
+  or bottom of the screen (for example, ....), the :class:`Sizegrip` widget
+  will not resize the window.
 * This widget supports only "southeast" resizing.
 
 
@@ -859,7 +859,7 @@ This widget accepts the following specific options:
 |                | * tree: display tree labels in column #0.              |
 |                | * headings: display the heading row.                   |
 |                |                                                        |
-|                | The default is "tree headings", i.e., show all         |
+|                | The default is "tree headings", that is, show all      |
 |                | elements.                                              |
 |                |                                                        |
 |                | **Note**: Column #0 always refers to the tree column,  |
@@ -985,8 +985,8 @@ ttk.Treeview
       the specified *item* in the form (x, y, width, height).
 
       If *column* is specified, returns the bounding box of that cell. If the
-      *item* is not visible (i.e., if it is a descendant of a closed item or is
-      scrolled offscreen), returns an empty string.
+      *item* is not visible (that is, if it is a descendant of a closed item
+      or is scrolled offscreen), returns an empty string.
 
 
    .. method:: get_children(item=None)
