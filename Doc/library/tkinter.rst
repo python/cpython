@@ -22,7 +22,7 @@ installed, so you can read the Tcl/Tk documentation specific to that version.
 Tkinter supports a range of Tcl/Tk versions, built either with or without
 thread support.
 Tcl/Tk 8.5.12 is the minimum supported version; the official Python binary
-release bundles Tcl/Tk 9.0.
+release bundles Tcl/Tk 8.6.
 See the source code for the :mod:`_tkinter` module for more information about
 supported versions.
 
@@ -581,9 +581,9 @@ interpreter will fail.
 
 A number of special cases exist:
 
-* Tcl/Tk libraries built without thread support are now rare: Tcl/Tk 9.0 (the
-  bundled version) is always thread-aware, so this case only arises with some
-  older 8.x builds. When the library is not thread-aware,
+* Tcl/Tk libraries built without thread support are now rare: the bundled
+  Tcl/Tk 8.6 is built with thread support, so this case only arises with some
+  older non-threaded builds. When the library is not thread-aware,
   :mod:`!tkinter` calls the library from the originating Python thread, even
   if this is different than the thread that created the Tcl interpreter. A global
   lock ensures only one call occurs at a time.
@@ -1389,14 +1389,6 @@ Base and mixin classes
       If *row* or *column* is given, only the children in that row or column
       are returned.
 
-   .. method:: grid_content(row=None, column=None)
-
-      Same as :meth:`grid_slaves`: return the child widgets managed in this
-      container's grid, optionally restricted to a given *row* or *column*.
-
-      .. versionadded:: 3.15
-
-
    .. method:: propagate()
                propagate(flag)
       :no-typesetting:
@@ -1423,30 +1415,10 @@ Base and mixin classes
 
       :meth:`slaves` is an alias of :meth:`!pack_slaves`.
 
-   .. method:: content()
-      :no-typesetting:
-
-   .. method:: pack_content()
-
-      Same as :meth:`pack_slaves`: return the child widgets managed by this
-      container with the pack geometry manager, in packing order.
-
-      :meth:`content` is an alias of :meth:`!pack_content`.
-
-      .. versionadded:: 3.15
-
-
    .. method:: place_slaves()
 
       Return a list of the child widgets managed by this container with the
       place geometry manager.
-
-   .. method:: place_content()
-
-      Same as :meth:`place_slaves`: return the child widgets managed by this
-      container with the place geometry manager.
-
-      .. versionadded:: 3.15
 
    .. method:: bind(sequence=None, func=None, add=None)
 
@@ -2335,7 +2307,7 @@ Base and mixin classes
 
    .. method:: info_patchlevel()
 
-      Return the Tcl/Tk patch level as a string, for example ``'9.1.0'``.
+      Return the Tcl/Tk patch level as a string, for example ``'8.6.15'``.
 
       .. versionadded:: 3.11
 
@@ -2460,7 +2432,7 @@ Base and mixin classes
          ``-``, and attributes may be set using keyword arguments.
          The *return_python_dict* parameter was added.
 
-      .. deprecated:: next
+      .. deprecated:: 3.13
          Setting an attribute by passing the option name (with a leading
          ``-``) and its value as two positional arguments, as in
          ``w.attributes('-alpha', 0.5)``, is deprecated; use keyword arguments
@@ -2967,14 +2939,6 @@ Base and mixin classes
       this widget.
       :meth:`slaves` is an alias of :meth:`!pack_slaves`.
 
-   .. method:: content()
-      :no-typesetting:
-
-   .. method:: pack_content()
-
-      Same as :meth:`Misc.pack_content`.
-      :meth:`content` is an alias of :meth:`!pack_content`.
-
 
 .. class:: Place()
 
@@ -3060,14 +3024,6 @@ Base and mixin classes
       Same as :meth:`Misc.place_slaves`: return the list of widgets placed in
       this widget.
       :meth:`slaves` is an alias of :meth:`!place_slaves`.
-
-   .. method:: content()
-      :no-typesetting:
-
-   .. method:: place_content()
-
-      Same as :meth:`Misc.place_content`.
-      :meth:`content` is an alias of :meth:`!place_content`.
 
 
 .. class:: Grid()
@@ -3208,14 +3164,6 @@ Base and mixin classes
       Same as :meth:`Misc.grid_slaves`: return the widgets managed in the grid,
       optionally restricted to a *row* and/or *column*.
       :meth:`slaves` is an alias of :meth:`!grid_slaves`.
-
-   .. method:: content(row=None, column=None)
-      :no-typesetting:
-
-   .. method:: grid_content(row=None, column=None)
-
-      Same as :meth:`Misc.grid_content`.
-      :meth:`content` is an alias of :meth:`!grid_content`.
 
 
 .. class:: XView()
@@ -5496,7 +5444,7 @@ Widget classes
       Separators are inserted automatically when the *autoseparators* option is
       true.
 
-   .. method:: search(pattern, index, stopindex=None, forwards=None, backwards=None, exact=None, regexp=None, nocase=None, count=None, elide=None, *, nolinestop=None, strictlimits=None)
+   .. method:: search(pattern, index, stopindex=None, forwards=None, backwards=None, exact=None, regexp=None, nocase=None, count=None, elide=None)
 
       Search for *pattern* starting at *index* and return the index of the
       first character of the first match, or an empty string if there is no
@@ -5506,28 +5454,10 @@ Widget classes
       The following boolean keyword flags control the search: *forwards* or
       *backwards* select the direction (forward is the default); *exact* (the
       default) or *regexp* select literal or regular-expression matching;
-      *nocase* makes the match case-insensitive; *elide* causes hidden text to
-      be searched as well; *nolinestop* (regexp only) lets ``.`` and ``[^``
-      match newlines; and *strictlimits* requires the whole match to lie within
-      *index* and *stopindex*.
+      *nocase* makes the match case-insensitive; and *elide* causes hidden text
+      to be searched as well.
       If *count* is a :class:`Variable`, the number of index positions in the
       match is stored in it.
-
-      .. versionchanged:: 3.15
-         Added the *nolinestop* and *strictlimits* parameters.
-
-
-   .. method:: search_all(pattern, index, stopindex=None, *, forwards=None, backwards=None, exact=None, regexp=None, nocase=None, count=None, elide=None, nolinestop=None, overlap=None, strictlimits=None)
-
-      Like :meth:`search`, but find every match in the searched range and
-      return a tuple of the starting indices of all matches (empty if there are
-      none).
-      By default overlapping matches are not reported; passing a true *overlap*
-      returns every match that is not wholly contained in another.
-      If *count* is a :class:`Variable`, it receives a list with one element
-      per match.
-
-      .. versionadded:: 3.15
 
 
    .. method:: scan_mark(x, y)
@@ -6128,22 +6058,6 @@ Other classes
    .. attribute:: delta
 
       The amount the mouse wheel was rotated (for ``MouseWheel`` events).
-
-   .. attribute:: user_data
-
-      The data string of a virtual event, as passed to the *data* option of
-      :meth:`Misc.event_generate`.
-      It is ``'??'`` for non-virtual events.
-
-      .. versionadded:: 3.15
-
-   .. attribute:: detail
-
-      A fixed detail string for ``Enter``, ``Leave``, ``FocusIn``, ``FocusOut``
-      and ``ConfigureRequest`` events (see the Tcl/Tk documentation).
-      It is ``'??'`` for other events.
-
-      .. versionadded:: 3.15
 
 
 .. class:: EventType(*values)
