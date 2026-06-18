@@ -243,7 +243,7 @@ The module :mod:`!curses` defines the following functions:
 
 .. function:: getwin(file)
 
-   Read window related data stored in the file by an earlier :meth:`window.putwin` call.
+   Read window-related data stored in the file by an earlier :meth:`window.putwin` call.
    The routine then creates and initializes a new window using that data, returning
    the new window object.  The *file* argument must be a file object opened for
    reading in binary mode.
@@ -409,7 +409,7 @@ The module :mod:`!curses` defines the following functions:
    methods of a pad require 6 arguments to specify the part of the pad to be
    displayed and the location on the screen to be used for the display. The
    arguments are *pminrow*, *pmincol*, *sminrow*, *smincol*, *smaxrow*, *smaxcol*; the *p*
-   arguments refer to the upper left corner of the pad region to be displayed and
+   arguments refer to the upper-left corner of the pad region to be displayed and
    the *s* arguments define a clipping box on the screen within which the pad region
    is to be displayed.
 
@@ -755,7 +755,7 @@ Window objects
    .. note::
 
       Writing outside the window, subwindow, or pad raises a :exc:`curses.error`.
-      Attempting to write to the lower right corner of a window, subwindow,
+      Attempting to write to the lower-right corner of a window, subwindow,
       or pad will cause an exception to be raised after the character is printed.
 
 
@@ -776,7 +776,7 @@ Window objects
    .. note::
 
       * Writing outside the window, subwindow, or pad raises :exc:`curses.error`.
-        Attempting to write to the lower right corner of a window, subwindow,
+        Attempting to write to the lower-right corner of a window, subwindow,
         or pad will cause an exception to be raised after the string is printed.
 
       * A bug in ncurses, the backend for this Python module, could cause
@@ -1243,10 +1243,10 @@ Window objects
 
    The 6 arguments can only be specified, and are then required, when the window
    is a pad created with :func:`newpad`.  The additional parameters are needed to indicate what part
-   of the pad and screen are involved. *pminrow* and *pmincol* specify the upper
-   left-hand corner of the rectangle to be displayed in the pad.  *sminrow*,
+   of the pad and screen are involved. *pminrow* and *pmincol* specify the
+   upper-left corner of the rectangle to be displayed in the pad.  *sminrow*,
    *smincol*, *smaxrow*, and *smaxcol* specify the edges of the rectangle to be
-   displayed on the screen.  The lower right-hand corner of the rectangle to be
+   displayed on the screen.  The lower-right corner of the rectangle to be
    displayed in the pad is calculated from the screen coordinates, since the
    rectangles must be the same size.  Both rectangles must be entirely contained
    within their respective structures.  Negative values of *pminrow*, *pmincol*,
@@ -1725,7 +1725,7 @@ falls back on a crude printable ASCII approximation.
 +------------------------+------------------------------------------+
 | ACS code               | Meaning                                  |
 +========================+==========================================+
-| .. data:: ACS_BBSS     | alternate name for upper right corner    |
+| .. data:: ACS_BBSS     | alternate name for upper-right corner    |
 +------------------------+------------------------------------------+
 | .. data:: ACS_BLOCK    | solid square block                       |
 +------------------------+------------------------------------------+
@@ -1733,7 +1733,7 @@ falls back on a crude printable ASCII approximation.
 +------------------------+------------------------------------------+
 | .. data:: ACS_BSBS     | alternate name for horizontal line       |
 +------------------------+------------------------------------------+
-| .. data:: ACS_BSSB     | alternate name for upper left corner     |
+| .. data:: ACS_BSSB     | alternate name for upper-left corner     |
 +------------------------+------------------------------------------+
 | .. data:: ACS_BSSS     | alternate name for top tee               |
 +------------------------+------------------------------------------+
@@ -1759,9 +1759,9 @@ falls back on a crude printable ASCII approximation.
 +------------------------+------------------------------------------+
 | .. data:: ACS_LEQUAL   | less-than-or-equal-to                    |
 +------------------------+------------------------------------------+
-| .. data:: ACS_LLCORNER | lower left-hand corner                   |
+| .. data:: ACS_LLCORNER | lower-left corner                        |
 +------------------------+------------------------------------------+
-| .. data:: ACS_LRCORNER | lower right-hand corner                  |
+| .. data:: ACS_LRCORNER | lower-right corner                       |
 +------------------------+------------------------------------------+
 | .. data:: ACS_LTEE     | left tee                                 |
 +------------------------+------------------------------------------+
@@ -1785,13 +1785,13 @@ falls back on a crude printable ASCII approximation.
 +------------------------+------------------------------------------+
 | .. data:: ACS_S9       | scan line 9                              |
 +------------------------+------------------------------------------+
-| .. data:: ACS_SBBS     | alternate name for lower right corner    |
+| .. data:: ACS_SBBS     | alternate name for lower-right corner    |
 +------------------------+------------------------------------------+
 | .. data:: ACS_SBSB     | alternate name for vertical line         |
 +------------------------+------------------------------------------+
 | .. data:: ACS_SBSS     | alternate name for right tee             |
 +------------------------+------------------------------------------+
-| .. data:: ACS_SSBB     | alternate name for lower left corner     |
+| .. data:: ACS_SSBB     | alternate name for lower-left corner     |
 +------------------------+------------------------------------------+
 | .. data:: ACS_SSBS     | alternate name for bottom tee            |
 +------------------------+------------------------------------------+
@@ -1805,9 +1805,9 @@ falls back on a crude printable ASCII approximation.
 +------------------------+------------------------------------------+
 | .. data:: ACS_UARROW   | up arrow                                 |
 +------------------------+------------------------------------------+
-| .. data:: ACS_ULCORNER | upper left corner                        |
+| .. data:: ACS_ULCORNER | upper-left corner                        |
 +------------------------+------------------------------------------+
-| .. data:: ACS_URCORNER | upper right corner                       |
+| .. data:: ACS_URCORNER | upper-right corner                       |
 +------------------------+------------------------------------------+
 | .. data:: ACS_VLINE    | vertical line                            |
 +------------------------+------------------------------------------+
@@ -1880,9 +1880,9 @@ The module :mod:`!curses.textpad` defines the following function:
 
    Draw a rectangle.  The first argument must be a window object; the remaining
    arguments are coordinates relative to that window.  The second and third
-   arguments are the y and x coordinates of the upper left hand corner of the
+   arguments are the y and x coordinates of the upper-left corner of the
    rectangle to be drawn; the fourth and fifth arguments are the y and x
-   coordinates of the lower right hand corner. The rectangle will be drawn using
+   coordinates of the lower-right corner. The rectangle will be drawn using
    VT100/IBM PC forms characters on terminals that make this possible (including
    xterm and most other software terminal emulators).  Otherwise it will be drawn
    with ASCII  dashes, vertical bars, and plus signs.
@@ -1903,7 +1903,7 @@ You can instantiate a :class:`Textbox` object as follows:
    be contained.  If *insert_mode* is true, the textbox inserts typed
    characters, shifting existing text to the right, rather than overwriting it.
    The edit cursor of the textbox is initially located at the
-   upper left hand corner of the containing window, with coordinates ``(0, 0)``.
+   upper-left corner of the containing window, with coordinates ``(0, 0)``.
    The instance's :attr:`stripspaces` flag is initially on.
 
    :class:`Textbox` objects have the following methods:
