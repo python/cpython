@@ -1045,6 +1045,7 @@ _queues_list_all(_queues *queues, int64_t *p_count)
     struct queue_id_and_info *ids = PyMem_NEW(struct queue_id_and_info,
                                               (Py_ssize_t)(queues->count));
     if (ids == NULL) {
+        PyErr_NoMemory();
         goto done;
     }
     _queueref *ref = queues->head;
@@ -1328,6 +1329,7 @@ _queueid_xid_new(int64_t qid)
     struct _queueid_xid *data = PyMem_RawMalloc(sizeof(struct _queueid_xid));
     if (data == NULL) {
         _queues_decref(queues, qid);
+        PyErr_NoMemory();
         return NULL;
     }
     data->qid = qid;
