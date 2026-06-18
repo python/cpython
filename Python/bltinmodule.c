@@ -313,6 +313,12 @@ builtin___lazy_import___impl(PyObject *module, PyObject *name,
     PyThreadState *tstate = PyThreadState_GET();
     if (globals == NULL) {
         globals = PyEval_GetGlobals();
+        if (globals == NULL) {
+            PyErr_SetString(PyExc_TypeError,
+                            "__lazy_import__() missing globals "
+                            "when called without a frame");
+            return NULL;
+        }
     }
     if (locals == NULL) {
         locals = globals;
