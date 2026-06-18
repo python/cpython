@@ -3831,13 +3831,37 @@ features:
    See :manpage:`statvfs(3)` for the meaning of each member.
 
    .. attribute:: f_bsize
+
+      Block size.
+
    .. attribute:: f_frsize
+
+      Fragment size.
+
    .. attribute:: f_blocks
+
+      Number of :attr:`~startvfs_result.f_frsize` sized blocks the filesystem
+      can contain.
+
    .. attribute:: f_bfree
+
+      Number of free blocks.
+
    .. attribute:: f_bavail
+
+      Number of free blocks for unprivileged users.
+
    .. attribute:: f_files
+
+      Number of file entries, inodes, the filesystem can contain.
+
    .. attribute:: f_ffree
+
+      Number of free files entries.
+
    .. attribute:: f_favail
+
+      Number of free file entries for unprivileged users.
 
    .. attribute:: f_flag
 
@@ -3849,7 +3873,13 @@ features:
 
    .. attribute:: f_namemax
 
+      Filesystem max filename length. OS specific limitations such as
+      :ref:`Windows MAX_PATH <max-path>` and those described in Linux
+      :manpage:`pathname(7)` may exist.
+
    .. attribute:: f_fsid
+
+      Filesystem ID.
 
       .. versionadded:: 3.7
 
