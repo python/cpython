@@ -1,0 +1,2 @@
+:program:`msgfmt.py` is now able to merge more than one po file into a compiled mo
+file. When an entry exists in more than on input file, the last file wins.
