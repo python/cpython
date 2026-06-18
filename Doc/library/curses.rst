@@ -257,7 +257,7 @@ The module :mod:`!curses` defines the following functions:
 
    Return ``True`` if the module supports extended colors; otherwise, return
    ``False``. Extended color support allows more than 256 color pairs for
-   terminals that support more than 16 colors (e.g. xterm-256color).
+   terminals that support more than 16 colors (for example, xterm-256color).
 
    Extended color support requires ncurses version 6.1 or later.
 
@@ -646,7 +646,7 @@ The module :mod:`!curses` defines the following functions:
 .. function:: tparm(str[, ...])
 
    Instantiate the bytes object *str* with the supplied parameters, where *str* should
-   be a parameterized string obtained from the terminfo database.  E.g.
+   be a parameterized string obtained from the terminfo database.  For example,
    ``tparm(tigetstr("cup"), 5, 3)`` could result in ``b'\033[6;4H'``, the exact
    result depending on terminal type.  Up to nine integer parameters may be supplied.
 
@@ -1415,14 +1415,14 @@ The :mod:`!curses` module defines the following data members:
 
 .. data:: COLS
 
-   The width of the screen, i.e., the number of columns.
+   The width of the screen, that is, the number of columns.
    It is defined only after the call to :func:`initscr`.
    Updated by :func:`update_lines_cols`, :func:`resizeterm` and
    :func:`resize_term`.
 
 .. data:: LINES
 
-   The height of the screen, i.e., the number of lines.
+   The height of the screen, that is, the number of lines.
    It is defined only after the call to :func:`initscr`.
    Updated by :func:`update_lines_cols`, :func:`resizeterm` and
    :func:`resize_term`.
