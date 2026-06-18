@@ -184,10 +184,25 @@ static void
 mount_tk_dll_zip(void)
 {
     HINSTANCE tk_module = Tk_GetHINSTANCE();
-    wchar_t tk_path[MAX_PATH];
-    DWORD path_len = GetModuleFileNameW(tk_module, tk_path, MAX_PATH);
+    wchar_t *tk_path = NULL;
+    DWORD path_len = 0;
+    for (DWORD buffer_len = 256;
+         tk_path == NULL && buffer_len < (1024 * 1024);
+         buffer_len *= 2)
+    {
+        tk_path = (wchar_t *)PyMem_RawMalloc(
+            buffer_len * sizeof(*tk_path));
+        if (tk_path != NULL) {
+            path_len = GetModuleFileNameW(tk_module, tk_path, buffer_len);
+            if (path_len == buffer_len) {
+                PyMem_RawFree(tk_path);
+                tk_path = NULL;
+            }
+        }
+    }
 
-    if (path_len == 0 || path_len >= MAX_PATH) {
+    if (tk_path == NULL || path_len == 0) {
+        PyMem_RawFree(tk_path);
         return;
     }
 
@@ -198,6 +213,7 @@ mount_tk_dll_zip(void)
     (void) TclZipfs_Mount(NULL, Tcl_DStringValue(&utf8_path),
                           "//zipfs:/lib/tk", NULL);
     Tcl_DStringFree(&utf8_path);
+    PyMem_RawFree(tk_path);
 }
 #endif
 
