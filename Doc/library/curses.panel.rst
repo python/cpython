@@ -45,7 +45,7 @@ The module :mod:`!curses.panel` defines the following functions:
 
 .. _curses-panel-objects:
 
-Panel Objects
+Panel objects
 -------------
 
 Panel objects, as returned by :func:`new_panel` above, are windows with a
