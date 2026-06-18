@@ -420,7 +420,7 @@ _io_BytesIO_tell_impl(bytesio *self)
     return PyLong_FromSsize_t(self->pos);
 }
 
-// Read without advancing position
+/* Read without advancing position. */
 static PyObject *
 peek_bytes_lock_held(bytesio *self, Py_ssize_t size)
 {
