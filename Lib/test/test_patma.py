@@ -2852,7 +2852,7 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(x, 0)
         self.assertEqual(y, 1)
 
-    def test_patma_267(self):
+    def test_patma_frozendict_class_self(self):
         x = frozendict()
         match x:
             case frozendict(z):
