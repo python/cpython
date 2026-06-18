@@ -1,0 +1,4 @@
+Eliminate unnecessary reference count operations in ``BUILD_INTERPOLATION``
+and ``BUILD_TEMPLATE`` bytecode instructions by making
+:c:func:`!_PyInterpolation_Build` and :c:func:`!_PyTemplate_Build` steal
+references to their arguments.
