@@ -616,8 +616,11 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         # Length greater than DEFAULT_BUFFER_SIZE
         buf = self.buftype("1234567890" * io.DEFAULT_BUFFER_SIZE)
         with self.ioclass(buf) as memio:
-            self.assertEqual(memio.peek(), buf)
+            self.assertEqual(memio.peek(), buf[:io.DEFAULT_BUFFER_SIZE])
+            self.assertEqual(memio.peek(0), buf[:io.DEFAULT_BUFFER_SIZE])
+            self.assertEqual(memio.peek(-1), buf[:io.DEFAULT_BUFFER_SIZE])
             self.assertEqual(memio.peek(io.DEFAULT_BUFFER_SIZE + 100), buf[:io.DEFAULT_BUFFER_SIZE + 100])
+            self.assertEqual(memio.peek(io.DEFAULT_BUFFER_SIZE * 100), buf)
 
         # Current position beyond buffer end
         with self.ioclass(buf) as memio:

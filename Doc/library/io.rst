@@ -775,7 +775,7 @@ than raw I/O does.
 
       Return a copy of the buffer from the current position onwards without advancing the position.
 
-      If *size* is zero or omitted, the returned :class:`bytes` object extends to EOF.
+      If *size* is less than one or omitted, at most `DEFAULT_BUFFER_SIZE` bytes are returned.
       Otherwise, at most *size* bytes are returned.
       Return an empty :class:`bytes` object at EOF.
 

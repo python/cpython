@@ -527,10 +527,13 @@ _io_BytesIO_peek_impl(bytesio *self, Py_ssize_t size)
 {
     CHECK_CLOSED(self);
 
+    if (size < 1) {
+        size = DEFAULT_BUFFER_SIZE;
+    }
+
     /* adjust invalid sizes */
     Py_ssize_t n = self->string_size - self->pos;
-
-    if (size < 1 || size > n) {
+    if (size > n) {
         size = n;
         /* n can be negative after truncate() or seek() */
         if (size < 0) {
