@@ -3828,7 +3828,7 @@ features:
 .. class:: statvfs_result
 
    Filesystem statistics returned by :func:`os.statvfs` and :func:`os.fstatvfs`.
-   See :manpage:`statvfs(3)` for the meaning of each member.
+   See :manpage:`statvfs(3)` for more details.
 
    .. attribute:: f_bsize
 
@@ -3883,6 +3883,7 @@ features:
 
       .. versionadded:: 3.7
 
+The following flags are used in :attr:`statvfs_result.f_flag`.
 
 .. data:: ST_RDONLY
 
