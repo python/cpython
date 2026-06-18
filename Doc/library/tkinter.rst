@@ -2458,7 +2458,7 @@ Base and mixin classes
          ``-``, and attributes may be set using keyword arguments.
          The *return_python_dict* parameter was added.
 
-      .. deprecated:: next
+      .. deprecated:: 3.13
          Setting an attribute by passing the option name (with a leading
          ``-``) and its value as two positional arguments, as in
          ``w.attributes('-alpha', 0.5)``, is deprecated; use keyword arguments
