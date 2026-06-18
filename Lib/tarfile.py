@@ -2227,7 +2227,7 @@ class TarFile(object):
             type = FIFOTYPE
         elif stat.S_ISLNK(stmd):
             type = SYMTYPE
-            linkname = os.readlink(name)
+            linkname = os.readlink(name).replace(os.sep, "/")
         elif stat.S_ISCHR(stmd):
             type = CHRTYPE
         elif stat.S_ISBLK(stmd):
