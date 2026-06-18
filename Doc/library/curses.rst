@@ -226,7 +226,7 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: getwin(file)
 
-   Read window related data stored in the file by an earlier :func:`window.putwin` call.
+   Read window-related data stored in the file by an earlier :func:`window.putwin` call.
    The routine then creates and initializes a new window using that data, returning
    the new window object.
 
@@ -239,7 +239,7 @@ The module :mod:`curses` defines the following functions:
 
    Return ``True`` if the module supports extended colors; otherwise, return
    ``False``. Extended color support allows more than 256 color pairs for
-   terminals that support more than 16 colors (e.g. xterm-256color).
+   terminals that support more than 16 colors (for example, xterm-256color).
 
    Extended color support requires ncurses version 6.1 or later.
 
@@ -386,7 +386,7 @@ The module :mod:`curses` defines the following functions:
    methods of a pad require 6 arguments to specify the part of the pad to be
    displayed and the location on the screen to be used for the display. The
    arguments are *pminrow*, *pmincol*, *sminrow*, *smincol*, *smaxrow*, *smaxcol*; the *p*
-   arguments refer to the upper left corner of the pad region to be displayed and
+   arguments refer to the upper-left corner of the pad region to be displayed and
    the *s* arguments define a clipping box on the screen within which the pad region
    is to be displayed.
 
@@ -609,7 +609,7 @@ The module :mod:`curses` defines the following functions:
 .. function:: tparm(str[, ...])
 
    Instantiate the bytes object *str* with the supplied parameters, where *str* should
-   be a parameterized string obtained from the terminfo database.  E.g.
+   be a parameterized string obtained from the terminfo database.  For example,
    ``tparm(tigetstr("cup"), 5, 3)`` could result in ``b'\033[6;4H'``, the exact
    result depending on terminal type.
 
@@ -701,7 +701,7 @@ The module :mod:`curses` defines the following functions:
 
 .. _curses-window-objects:
 
-Window Objects
+Window objects
 --------------
 
 .. class:: window
@@ -720,7 +720,7 @@ Window Objects
    .. note::
 
       Writing outside the window, subwindow, or pad raises a :exc:`curses.error`.
-      Attempting to write to the lower right corner of a window, subwindow,
+      Attempting to write to the lower-right corner of a window, subwindow,
       or pad will cause an exception to be raised after the character is printed.
 
 
@@ -741,7 +741,7 @@ Window Objects
    .. note::
 
       * Writing outside the window, subwindow, or pad raises :exc:`curses.error`.
-        Attempting to write to the lower right corner of a window, subwindow,
+        Attempting to write to the lower-right corner of a window, subwindow,
         or pad will cause an exception to be raised after the string is printed.
 
       * A `bug in ncurses <https://bugs.python.org/issue35924>`_, the backend
@@ -1188,10 +1188,10 @@ Window Objects
 
    The 6 optional arguments can only be specified when the window is a pad created
    with :func:`newpad`.  The additional parameters are needed to indicate what part
-   of the pad and screen are involved. *pminrow* and *pmincol* specify the upper
-   left-hand corner of the rectangle to be displayed in the pad.  *sminrow*,
+   of the pad and screen are involved. *pminrow* and *pmincol* specify the
+   upper-left corner of the rectangle to be displayed in the pad.  *sminrow*,
    *smincol*, *smaxrow*, and *smaxcol* specify the edges of the rectangle to be
-   displayed on the screen.  The lower right-hand corner of the rectangle to be
+   displayed on the screen.  The lower-right corner of the rectangle to be
    displayed in the pad is calculated from the screen coordinates, since the
    rectangles must be the same size.  Both rectangles must be entirely contained
    within their respective structures.  Negative values of *pminrow*, *pmincol*,
@@ -1356,14 +1356,14 @@ The :mod:`curses` module defines the following data members:
 
 .. data:: COLS
 
-   The width of the screen, i.e., the number of columns.
+   The width of the screen, that is, the number of columns.
    It is defined only after the call to :func:`initscr`.
    Updated by :func:`update_lines_cols`, :func:`resizeterm` and
    :func:`resize_term`.
 
 .. data:: LINES
 
-   The height of the screen, i.e., the number of lines.
+   The height of the screen, that is, the number of lines.
    It is defined only after the call to :func:`initscr`.
    Updated by :func:`update_lines_cols`, :func:`resizeterm` and
    :func:`resize_term`.
@@ -1666,7 +1666,7 @@ falls back on a crude printable ASCII approximation.
 +------------------------+------------------------------------------+
 | ACS code               | Meaning                                  |
 +========================+==========================================+
-| .. data:: ACS_BBSS     | alternate name for upper right corner    |
+| .. data:: ACS_BBSS     | alternate name for upper-right corner    |
 +------------------------+------------------------------------------+
 | .. data:: ACS_BLOCK    | solid square block                       |
 +------------------------+------------------------------------------+
@@ -1674,7 +1674,7 @@ falls back on a crude printable ASCII approximation.
 +------------------------+------------------------------------------+
 | .. data:: ACS_BSBS     | alternate name for horizontal line       |
 +------------------------+------------------------------------------+
-| .. data:: ACS_BSSB     | alternate name for upper left corner     |
+| .. data:: ACS_BSSB     | alternate name for upper-left corner     |
 +------------------------+------------------------------------------+
 | .. data:: ACS_BSSS     | alternate name for top tee               |
 +------------------------+------------------------------------------+
@@ -1700,9 +1700,9 @@ falls back on a crude printable ASCII approximation.
 +------------------------+------------------------------------------+
 | .. data:: ACS_LEQUAL   | less-than-or-equal-to                    |
 +------------------------+------------------------------------------+
-| .. data:: ACS_LLCORNER | lower left-hand corner                   |
+| .. data:: ACS_LLCORNER | lower-left corner                        |
 +------------------------+------------------------------------------+
-| .. data:: ACS_LRCORNER | lower right-hand corner                  |
+| .. data:: ACS_LRCORNER | lower-right corner                       |
 +------------------------+------------------------------------------+
 | .. data:: ACS_LTEE     | left tee                                 |
 +------------------------+------------------------------------------+
@@ -1726,13 +1726,13 @@ falls back on a crude printable ASCII approximation.
 +------------------------+------------------------------------------+
 | .. data:: ACS_S9       | scan line 9                              |
 +------------------------+------------------------------------------+
-| .. data:: ACS_SBBS     | alternate name for lower right corner    |
+| .. data:: ACS_SBBS     | alternate name for lower-right corner    |
 +------------------------+------------------------------------------+
 | .. data:: ACS_SBSB     | alternate name for vertical line         |
 +------------------------+------------------------------------------+
 | .. data:: ACS_SBSS     | alternate name for right tee             |
 +------------------------+------------------------------------------+
-| .. data:: ACS_SSBB     | alternate name for lower left corner     |
+| .. data:: ACS_SSBB     | alternate name for lower-left corner     |
 +------------------------+------------------------------------------+
 | .. data:: ACS_SSBS     | alternate name for bottom tee            |
 +------------------------+------------------------------------------+
@@ -1746,9 +1746,9 @@ falls back on a crude printable ASCII approximation.
 +------------------------+------------------------------------------+
 | .. data:: ACS_UARROW   | up arrow                                 |
 +------------------------+------------------------------------------+
-| .. data:: ACS_ULCORNER | upper left corner                        |
+| .. data:: ACS_ULCORNER | upper-left corner                        |
 +------------------------+------------------------------------------+
-| .. data:: ACS_URCORNER | upper right corner                       |
+| .. data:: ACS_URCORNER | upper-right corner                       |
 +------------------------+------------------------------------------+
 | .. data:: ACS_VLINE    | vertical line                            |
 +------------------------+------------------------------------------+
@@ -1824,9 +1824,9 @@ The module :mod:`curses.textpad` defines the following function:
 
    Draw a rectangle.  The first argument must be a window object; the remaining
    arguments are coordinates relative to that window.  The second and third
-   arguments are the y and x coordinates of the upper left hand corner of the
+   arguments are the y and x coordinates of the upper-left corner of the
    rectangle to be drawn; the fourth and fifth arguments are the y and x
-   coordinates of the lower right hand corner. The rectangle will be drawn using
+   coordinates of the lower-right corner. The rectangle will be drawn using
    VT100/IBM PC forms characters on terminals that make this possible (including
    xterm and most other software terminal emulators).  Otherwise it will be drawn
    with ASCII  dashes, vertical bars, and plus signs.
@@ -1845,7 +1845,7 @@ You can instantiate a :class:`Textbox` object as follows:
    Return a textbox widget object.  The *win* argument should be a curses
    :ref:`window <curses-window-objects>` object in which the textbox is to
    be contained. The edit cursor of the textbox is initially located at the
-   upper left hand corner of the containing window, with coordinates ``(0, 0)``.
+   upper-left corner of the containing window, with coordinates ``(0, 0)``.
    The instance's :attr:`stripspaces` flag is initially on.
 
    :class:`Textbox` objects have the following methods:
