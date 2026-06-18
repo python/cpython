@@ -28,7 +28,8 @@ The module :mod:`curses.panel` defines the following functions:
 
 .. function:: new_panel(win)
 
-   Returns a panel object, associating it with the given window *win*. Be aware
+   Returns a panel object, associating it with the given window *win* and
+   placing the new panel on top of the panel stack.  Be aware
    that you need to keep the returned panel object referenced explicitly.  If you
    don't, the panel object is garbage collected and removed from the panel stack.
 
@@ -101,7 +102,8 @@ Panel objects have the following methods:
 
 .. method:: Panel.show()
 
-   Display the panel (which might have been hidden).
+   Display the panel (which might have been hidden), placing it on top of
+   the panel stack.
 
 
 .. method:: Panel.top()
