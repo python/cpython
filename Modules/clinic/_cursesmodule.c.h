@@ -1859,7 +1859,13 @@ exit:
 PyDoc_STRVAR(_curses_filter__doc__,
 "filter($module, /)\n"
 "--\n"
-"\n");
+"\n"
+"Restrict screen updates to the current line.\n"
+"\n"
+"Must be called before initscr().  Afterwards curses confines the cursor\n"
+"and screen updates to a single line, which is useful for enabling\n"
+"character-at-a-time line editing without touching the rest of the\n"
+"screen.");
 
 #define _CURSES_FILTER_METHODDEF    \
     {"filter", (PyCFunction)_curses_filter, METH_NOARGS, _curses_filter__doc__},
@@ -2917,7 +2923,12 @@ exit:
 PyDoc_STRVAR(_curses_intrflush__doc__,
 "intrflush($module, flag, /)\n"
 "--\n"
-"\n");
+"\n"
+"Control flushing of the output buffer when an interrupt key is pressed.\n"
+"\n"
+"If flag is true, pressing an interrupt key (interrupt, break, or quit)\n"
+"flushes all output in the terminal driver queue.  If flag is false, no\n"
+"flushing is done.");
 
 #define _CURSES_INTRFLUSH_METHODDEF    \
     {"intrflush", (PyCFunction)_curses_intrflush, METH_O, _curses_intrflush__doc__},
@@ -3593,7 +3604,10 @@ exit:
 PyDoc_STRVAR(_curses_update_lines_cols__doc__,
 "update_lines_cols($module, /)\n"
 "--\n"
-"\n");
+"\n"
+"Update the LINES and COLS module variables.\n"
+"\n"
+"This is useful for detecting manual screen resize.");
 
 #define _CURSES_UPDATE_LINES_COLS_METHODDEF    \
     {"update_lines_cols", (PyCFunction)_curses_update_lines_cols, METH_NOARGS, _curses_update_lines_cols__doc__},
@@ -4457,4 +4471,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=1078826fefbbc07a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e0fb3129157f3af8 input=a9049054013a1b77]*/
