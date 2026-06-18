@@ -1,4 +1,4 @@
-Tkinter Dialogs
+Tkinter dialogs
 ===============
 
 :mod:`!tkinter.simpledialog` --- Standard Tkinter input dialogs
@@ -87,7 +87,7 @@ functions for creating simple modal dialogs to get a value from the user.
 The :mod:`!tkinter.filedialog` module provides classes and factory functions for
 creating file/directory selection windows.
 
-Native Load/Save Dialogs
+Native load/save dialogs
 ------------------------
 
 The following classes and functions provide file dialog windows that combine a

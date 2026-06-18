@@ -1,4 +1,4 @@
-:mod:`!tkinter.scrolledtext` --- Scrolled Text Widget
+:mod:`!tkinter.scrolledtext` --- Scrolled text widget
 =====================================================
 
 .. module:: tkinter.scrolledtext
