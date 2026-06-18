@@ -1312,10 +1312,29 @@ Base and mixin classes
 
       Query or set the properties of the column (or columns) *index* of the
       grid managed by this container.
-      The valid options are *minsize* (the column's minimum size in pixels),
-      *weight* (how much of any extra space is given to the column), *uniform*
-      (a group name; columns sharing a group are kept the same width in
-      proportion to their weights) and *pad* (extra space added to the column).
+      *index* may be a column number; when setting options it may also be a
+      list of column numbers, the string ``'all'`` to affect every column, or
+      a child widget whose occupied columns are affected.
+      The supported options are:
+
+      *minsize*
+         The column's minimum size, in pixels.
+
+      *weight*
+         An integer setting how much of any extra space is apportioned to the
+         column.
+         A weight of ``0`` keeps the column at its requested size, and a column
+         of weight two grows twice as fast as a column of weight one.
+
+      *uniform*
+         The name of a uniform group.
+         Columns sharing a non-empty group name are kept in sizes that are
+         strictly proportional to their weights.
+
+      *pad*
+         Extra space, in pixels, added to the largest widget in the column when
+         computing the column's size.
+
       With a single option name, return that option's value; with no options,
       return a dictionary of all of them.
 
@@ -1328,8 +1347,9 @@ Base and mixin classes
 
       Query or set the properties of the row (or rows) *index* of the grid
       managed by this container.
-      The valid options are the same as for :meth:`grid_columnconfigure`,
-      applied to a row instead of a column.
+      *index* is interpreted as for :meth:`grid_columnconfigure`, and the
+      supported options (*minsize*, *weight*, *uniform* and *pad*) are the
+      same, applied to a row instead of a column.
 
       :meth:`rowconfigure` is an alias of :meth:`!grid_rowconfigure`.
 
@@ -2351,20 +2371,98 @@ Base and mixin classes
       Query or set platform-specific attributes of the window.
       With no arguments, return the platform-specific flags and their values;
       pass *return_python_dict* as true to get them as a dictionary.
-      A single option name such as ``'-alpha'`` returns the value of that
-      option, and options may be set either positionally (``'-alpha', 0.5``) or
-      as keyword arguments (``alpha=0.5``).
-      The available attributes differ by platform; all platforms support
-      ``-alpha`` (transparency from ``0.0`` to ``1.0``), ``-fullscreen`` and
-      ``-topmost``, while Windows, macOS and X11 each add further options.
+      A single option name such as ``'alpha'`` returns the value of that
+      option, and options are set using keyword arguments (``alpha=0.5``).
+
+      The available attributes differ by platform.
+      All platforms support:
+
+      *alpha*
+         The window's opacity, from ``0.0`` (fully transparent) to ``1.0``
+         (opaque).
+         Where transparency is unsupported the value stays at ``1.0``.
+
+      *appearance*
+         Whether the window is rendered in dark mode on Windows and macOS:
+         ``'auto'``, ``'light'`` or ``'dark'`` (this has no effect on X11).
+
+      *fullscreen*
+         Whether the window takes up the entire screen and has no borders.
+
+      *topmost*
+         Whether the window is displayed above all other windows.
+
+      Windows additionally supports:
+
+      *disabled*
+         Whether the window is in a disabled state.
+
+      *toolwindow*
+         Whether the window uses the tool window style.
+
+      *transparentcolor*
+         The color that is made fully transparent, or an empty string for none.
+
+      macOS additionally supports:
+
+      *class*
+         Whether the underlying Aqua window is an ``nswindow`` or an
+         ``nspanel``; this can only be set before the window is created.
+
+      *modified*
+         The modification state shown by the window's close button and proxy
+         icon.
+
+      *notify*
+         Whether the application's dock icon bounces to request attention.
+
+      *stylemask*
+         The style mask of the underlying Aqua window, given as a list of bit
+         names such as ``titled`` or ``resizable``.
+
+      *tabbingid*
+         The identifier of the tab group that the window belongs to.
+
+      *tabbingmode*
+         Whether the window may be opened as a tab: ``'auto'``, ``'preferred'``
+         or ``'disallowed'``.
+
+      *titlepath*
+         The path of the file represented by the window's proxy icon.
+
+      *transparent*
+         Whether the content area is transparent and the window shadow is
+         turned off.
+
+      X11 additionally supports:
+
+      *type*
+         The window type, or a list of types in order of preference, that the
+         window manager should use to interpret the window, such as
+         ``'dialog'`` or ``'splash'``.
+
+      *zoomed*
+         Whether the window is maximized.
+
+      .. note::
+
+         Tk 8.6 added the *type* attribute, and Tk 9.0 added the *appearance*,
+         *class*, *stylemask*, *tabbingid* and *tabbingmode* attributes.
+
       On X11 changes are applied asynchronously, so a queried value may not yet
       reflect the most recent request.
       :meth:`wm_attributes` is an alias of :meth:`!attributes`.
 
       .. versionchanged:: 3.13
          A single attribute may now be queried by name without the leading
-         ``-``, attributes may be set using keyword arguments, and the
-         *return_python_dict* parameter was added.
+         ``-``, and attributes may be set using keyword arguments.
+         The *return_python_dict* parameter was added.
+
+      .. deprecated:: next
+         Setting an attribute by passing the option name (with a leading
+         ``-``) and its value as two positional arguments, as in
+         ``w.attributes('-alpha', 0.5)``, is deprecated; use keyword arguments
+         instead.
 
 
    .. method:: wm_client(name=None)
@@ -2786,10 +2884,46 @@ Base and mixin classes
 
       Pack the widget inside its container, positioning it relative to the
       siblings already packed there.
-      Options such as *side* (``'top'``, ``'bottom'``, ``'left'`` or
-      ``'right'``), *fill* (``'x'``, ``'y'``, ``'both'`` or ``'none'``),
-      *expand*, *anchor*, *padx*/*pady*, *ipadx*/*ipady* and *in_* control the
-      placement; see the Tk ``pack`` manual page for the full list.
+      The supported options are:
+
+      *side*
+         Which side of the container to pack the widget against: ``'top'`` (the
+         default), ``'bottom'``, ``'left'`` or ``'right'``.
+
+      *fill*
+         Whether to stretch the widget to fill its parcel: ``'none'`` (the
+         default), ``'x'``, ``'y'`` or ``'both'``.
+
+      *expand*
+         Whether the widget should expand to consume any extra space in its
+         container (a boolean, default false).
+
+      *anchor*
+         Where to position the widget in its parcel when the parcel is larger
+         than the widget: an anchor such as ``'n'`` or ``'sw'`` (default
+         ``'center'``).
+
+      *ipadx*, *ipady*
+         Internal padding added on the left and right (*ipadx*) or top and
+         bottom (*ipady*) of the widget, as a screen distance (default ``0``).
+
+      *padx*, *pady*
+         External padding left on the left and right (*padx*) or top and bottom
+         (*pady*) of the widget, as a screen distance or a pair of two
+         distances for the two sides (default ``0``).
+
+      *after*
+         Pack the widget after the given widget in the packing order, using the
+         same container.
+
+      *before*
+         Pack the widget before the given widget in the packing order, using
+         the same container.
+
+      *in_*
+         The container in which to pack the widget; it defaults to the parent
+         widget.
+
       :meth:`pack`, :meth:`configure` and :meth:`config` are aliases of
       :meth:`!pack_configure`.
 
@@ -2858,10 +2992,44 @@ Base and mixin classes
 
       Place the widget inside its container at an absolute or relative
       position.
-      Options include *x*/*y* and *relx*/*rely* (absolute and fractional
-      position), *width*/*height* and *relwidth*/*relheight* (absolute and
-      fractional size), *anchor*, *bordermode* and *in_*; see the Tk ``place``
-      manual page.
+      The supported options are:
+
+      *x*, *y*
+         The absolute horizontal and vertical position of the widget's anchor
+         point, as a screen distance (default ``0``).
+
+      *relx*, *rely*
+         The horizontal and vertical position of the widget's anchor point as a
+         fraction of the container's width and height, where ``0.0`` is the
+         left or top edge and ``1.0`` is the right or bottom edge.
+         If both the absolute and the relative option are given, their values
+         are summed.
+
+      *anchor*
+         Which point of the widget is placed at the given position: an anchor
+         such as ``'n'`` or ``'se'`` (default ``'nw'``).
+
+      *width*, *height*
+         The absolute width and height of the widget, as a screen distance.
+         By default the widget's requested size is used.
+
+      *relwidth*, *relheight*
+         The width and height of the widget as a fraction of the container's
+         width and height.
+         If both the absolute and the relative option are given, their values
+         are summed.
+
+      *bordermode*
+         How the container's border affects placement: ``'inside'`` (the
+         default) measures the area inside the border, ``'outside'`` measures
+         the area including the border, and ``'ignore'`` uses the official X
+         area.
+
+      *in_*
+         The container relative to which the widget is placed; it must be the
+         widget's parent or a descendant of the parent, and defaults to the
+         parent.
+
       :meth:`place`, :meth:`configure` and :meth:`config` are aliases of
       :meth:`!place_configure`.
 
@@ -2917,9 +3085,40 @@ Base and mixin classes
                grid(cnf={}, **kw)
 
       Position the widget in a cell of its container's grid.
-      Options include *row*/*column*, *rowspan*/*columnspan*, *sticky*,
-      *padx*/*pady*, *ipadx*/*ipady* and *in_*; see the Tk ``grid`` manual
-      page.
+      The supported options are:
+
+      *row*, *column*
+         The row and column of the cell to place the widget in, counting from
+         ``0``.
+         *column* defaults to the column after the previous widget placed in
+         the same :meth:`!grid_configure` call (or ``0``), and *row* defaults
+         to the next empty row.
+
+      *rowspan*, *columnspan*
+         The number of rows and columns the widget should span (default ``1``).
+
+      *sticky*
+         How to position or stretch the widget when its cell is larger than the
+         widget: a string containing zero or more of the characters ``'n'``,
+         ``'s'``, ``'e'`` and ``'w'``, naming the cell sides the widget sticks
+         to.
+         Specifying both ``'n'`` and ``'s'`` (or ``'e'`` and ``'w'``) stretches
+         the widget to fill the height (or width) of the cell.
+         The default is ``''``, which centers the widget at its requested size.
+
+      *ipadx*, *ipady*
+         Internal padding added on the left and right (*ipadx*) or top and
+         bottom (*ipady*) of the widget, as a screen distance (default ``0``).
+
+      *padx*, *pady*
+         External padding left on the left and right (*padx*) or top and bottom
+         (*pady*) of the widget, as a screen distance or a pair of two
+         distances for the two sides (default ``0``).
+
+      *in_*
+         The container in whose grid to place the widget; it defaults to the
+         parent widget.
+
       :meth:`grid`, :meth:`configure` and :meth:`config` are aliases of
       :meth:`!grid_configure`.
 
@@ -3209,6 +3408,185 @@ Widget classes
       ``x1, y1, x2, y2``); ``text`` (a string of text positioned at a point
       ``x, y``); and ``window`` (a child widget embedded in the canvas at a
       point ``x, y``, specified with the *window* option).
+
+      Most item types accept a common set of *standard item options*, plus a
+      few options specific to each type.
+      Option names are passed as keyword arguments, without the leading
+      hyphen.
+
+      The standard item options are:
+
+      *fill*
+         The color used to fill the item's interior, or to draw a *line*
+         item or the characters of a *text* item.
+         An empty string (the default for all types except *line* and *text*)
+         leaves the item unfilled.
+
+      *outline*
+         The color used to draw the item's outline.
+         An empty string draws no outline.
+
+      *width*
+         The width of the outline, defaulting to ``1.0``.
+         Has no effect if *outline* is empty.
+
+      *dash*
+         A dash pattern for the outline, given either as a sequence of
+         segment lengths in pixels or as a string of the characters
+         ``'.'``, ``','``, ``'-'``, ``'_'`` and space.
+         An empty pattern (the default) draws a solid outline.
+
+      *dashoffset*
+         The starting offset in pixels into the *dash* pattern.
+         Ignored if there is no *dash* pattern.
+
+      *stipple*
+         A bitmap used as a stipple pattern when filling the item.
+         Only well supported on X11.
+
+      *outlinestipple*
+         A bitmap used as a stipple pattern when drawing the outline.
+         Has no effect if *outline* is empty.
+
+      *offset*, *outlineoffset*
+         The offset of the fill and outline stipple patterns, given as
+         ``'x,y'`` or as a side such as ``'n'``, ``'se'`` or ``'center'``.
+         Stipple offsets are only supported on X11.
+
+      *state*
+         Overrides the canvas state for this item; one of ``'normal'``,
+         ``'disabled'`` or ``'hidden'``.
+
+      *tags*
+         A single tag or a sequence of tags to associate with the item,
+         replacing any existing tags.
+
+      Many of these options have *active...* and *disabled...* variants
+      (such as *activefill*, *disabledfill*, *activewidth*, *disableddash*,
+      *activeoutline*, *disabledstipple*) that override the base option when
+      the item is the active item (under the mouse pointer) or is in the
+      disabled state.
+
+      The following item types support additional options.
+
+      For ``arc`` items:
+
+      *start*
+         The start of the arc's angular range, in degrees measured
+         counter-clockwise from the 3-o'clock position.
+
+      *extent*
+         The size of the angular range, in degrees counter-clockwise from
+         *start*.
+
+      *style*
+         How the arc is drawn: ``'pieslice'`` (the default), ``'chord'`` or
+         ``'arc'``.
+
+      For ``line`` items:
+
+      *arrow*
+         Where to draw arrowheads: ``'none'`` (the default), ``'first'``,
+         ``'last'`` or ``'both'``.
+
+      *arrowshape*
+         A sequence of three distances describing the shape of the
+         arrowheads.
+
+      *capstyle*
+         How line ends are drawn: ``'butt'`` (the default), ``'projecting'``
+         or ``'round'``.
+
+      *joinstyle*
+         How line vertices are drawn: ``'round'`` (the default), ``'bevel'``
+         or ``'miter'``.
+
+      *smooth*
+         The smoothing method: a false value (the default) for no smoothing,
+         or ``'true'``/``'bezier'`` or ``'raw'`` to draw the line as a curve.
+
+      *splinesteps*
+         The number of line segments approximating each spline when
+         *smooth* is enabled.
+
+      For ``polygon`` items:
+
+      *joinstyle*, *smooth*, *splinesteps*
+         As for ``line`` items, applied to the polygon's outline.
+
+      For ``text`` items:
+
+      *text*
+         The string to display; newline characters start new lines.
+
+      *font*
+         The font used for the text.
+
+      *justify*
+         How lines are justified: ``'left'`` (the default), ``'right'`` or
+         ``'center'``.
+
+      *anchor*
+         How the text is positioned relative to its point, defaulting to
+         ``'center'``.
+
+      *width*
+         The maximum line length; if non-zero, lines are wrapped at spaces.
+
+      *angle*
+         How many degrees to rotate the text counter-clockwise about its
+         positioning point, from ``0.0`` to ``360.0`` (default ``0.0``).
+
+      *underline*
+         The index of a character to underline, or ``-1`` for none.
+
+      For ``bitmap`` items:
+
+      *bitmap*
+         The bitmap to display.
+
+      *anchor*
+         How the bitmap is positioned relative to its point.
+
+      *background*, *foreground*
+         The colors used for the bitmap's ``0`` and ``1`` pixels; an empty
+         *background* makes the ``0`` pixels transparent.
+         Both have *active...* and *disabled...* variants, and *bitmap* has
+         *activebitmap* and *disabledbitmap* variants.
+
+      For ``image`` items:
+
+      *image*
+         The Tk image to display, previously created with the image
+         protocols.
+
+      *anchor*
+         How the image is positioned relative to its point.
+
+      Both options have *active...* and *disabled...* variants
+      (*activeimage*, *disabledimage*) used in the active and disabled
+      states.
+
+      For ``window`` items:
+
+      *window*
+         The widget to embed; it must be a child of the canvas or of one of
+         its ancestors, and may not be a top-level window.
+
+      *anchor*
+         How the window is positioned relative to its point.
+
+      *width*, *height*
+         The size to assign to the window; if zero (the default), the window
+         is given its requested size.
+
+      ``oval`` and ``rectangle`` items have no type-specific options; they
+      use only the standard item options.
+
+      .. note::
+
+         Tk 8.6 added the *angle* option and Tk 9.0 added the *underline*
+         option for ``text`` items.
 
    .. method:: coords(tagOrId)
                coords(tagOrId, coordList, /)
@@ -3975,6 +4353,83 @@ Widget classes
       :meth:`!add_radiobutton` and :meth:`!add_separator` convenience methods
       call this method with the corresponding *itemType*.
 
+      The entry is configured by the following options, although not every
+      option applies to every entry type (a separator accepts none of them):
+
+      *label*
+         The text to display in the entry.
+
+      *command*
+         The function to call when the entry is invoked (command, checkbutton
+         and radiobutton entries).
+
+      *accelerator*
+         A string displayed at the right of the entry to advertise an
+         accelerator keystroke; it does not itself create the binding.
+
+      *underline*
+         The index of a character in the label to underline for keyboard
+         traversal.
+
+      *state*
+         One of ``'normal'``, ``'active'`` or ``'disabled'``.
+
+      *image*
+         An image to display instead of, or together with, the text label.
+
+      *compound*
+         Where to show the image relative to the text: ``'none'`` (the
+         default), ``'text'``, ``'image'``, ``'top'``, ``'bottom'``, ``'left'``
+         or ``'right'``.
+
+      *bitmap*
+         A bitmap to display instead of the text label.
+
+      *font*
+         The font to use for the text.
+
+      *background*, *foreground*
+         The entry's background and foreground colors in its normal state
+         (ignored on macOS).
+
+      *activebackground*, *activeforeground*
+         The background and foreground colors used when the entry is active
+         (ignored on macOS).
+
+      *columnbreak*
+         If true, the entry starts a new column instead of being placed below
+         the previous entry.
+
+      *hidemargin*
+         If true, the standard margin around the entry is omitted, which is
+         useful when a menu is used as a palette.
+
+      *menu*
+         The submenu posted by a cascade entry; it must be a child of this
+         menu.
+
+      *variable*
+         The variable associated with a checkbutton or radiobutton entry.
+
+      *onvalue*, *offvalue*
+         The values stored in *variable* when a checkbutton entry is selected
+         or cleared.
+
+      *value*
+         The value stored in *variable* when a radiobutton entry is selected.
+
+      *indicatoron*
+         Whether to display the indicator of a checkbutton or radiobutton
+         entry.
+
+      *selectcolor*
+         The color of the indicator of a checkbutton or radiobutton entry when
+         it is selected.
+
+      *selectimage*
+         The image displayed when a checkbutton or radiobutton entry is
+         selected and *image* is also given.
+
    .. method:: add_cascade(cnf={}, **kw)
 
       Add a new cascade entry to the bottom of the menu.
@@ -4068,6 +4523,8 @@ Widget classes
       individual entry rather than to the menu as a whole.
       With no options, it returns a dictionary describing the current options
       of the entry; otherwise it sets the given options.
+      The supported options are those accepted by :meth:`add` for the entry's
+      type.
       :meth:`entryconfig` is an alias of :meth:`!entryconfigure`.
 
    .. method:: index(index)
@@ -4785,12 +5242,91 @@ Widget classes
       rather than to the widget as a whole: with no options it returns a
       dictionary describing the current options, otherwise it sets the given
       options.
-      Supported tag options control the appearance of the tagged text and
-      include *background*, *foreground*, *font*, *justify*, *underline*,
-      *overstrike*, *relief*, *borderwidth*, the margin and spacing options,
-      and *elide* (whether the text is hidden).
       Defining a tag this way also gives it a priority higher than any existing
       tag.
+
+      The supported tag options, all controlling the appearance of the tagged
+      text, are:
+
+      *font*
+         The font to use for the text.
+
+      *foreground*
+         The color to use for the text.
+
+      *background*
+         The color to use for the area behind the text.
+
+      *fgstipple*, *bgstipple*
+         Bitmaps used to stipple the foreground (text) and the background;
+         only well supported on X11.
+
+      *borderwidth*
+         The width of the border drawn around the text according to *relief*
+         (default ``0``).
+
+      *relief*
+         The 3-D appearance of the text's border: ``'flat'`` (the default),
+         ``'raised'``, ``'sunken'``, ``'ridge'``, ``'groove'`` or ``'solid'``.
+
+      *offset*
+         How far the text is raised above (or, if negative, lowered below) the
+         baseline, for superscripts and subscripts.
+
+      *underline*
+         Whether to underline the text.
+
+      *underlinefg*
+         The color of the underline; it defaults to the text color.
+
+      *overstrike*
+         Whether to draw a line through the middle of the text.
+
+      *overstrikefg*
+         The color of the overstrike line; it defaults to the text color.
+
+      *elide*
+         Whether the text is elided (hidden).
+
+      *justify*
+         How to justify the first character of a display line: ``'left'`` (the
+         default), ``'right'`` or ``'center'``.
+
+      *wrap*
+         How to wrap lines that are too long: ``'char'``, ``'word'`` or
+         ``'none'``.
+
+      *lmargin1*, *lmargin2*
+         The indentation, in pixels, of the first display line of a logical
+         line and of the remaining display lines.
+
+      *lmargincolor*
+         The color of the left margin area.
+
+      *rmargin*
+         The right-hand margin, in pixels.
+
+      *rmargincolor*
+         The color of the right margin area.
+
+      *spacing1*, *spacing2*, *spacing3*
+         Extra space, in pixels, above the first display line of a logical
+         line, between its display lines, and below its last display line.
+
+      *tabs*
+         The set of tab stops, in the same form as the widget's *tabs* option.
+
+      *tabstyle*
+         How tab stops are interpreted: ``'tabular'`` or ``'wordprocessor'``.
+
+      *selectbackground*, *selectforeground*
+         The background and foreground colors used for the text while it is
+         selected.
+
+      .. note::
+
+         Tk 8.6 added the *lmargincolor*, *overstrikefg*, *rmargincolor*,
+         *selectbackground*, *selectforeground* and *underlinefg* options.
 
       :meth:`tag_config` is an alias of :meth:`!tag_configure`.
 

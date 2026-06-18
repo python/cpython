@@ -69,6 +69,10 @@ Common message box styles and layouts include but are not limited to:
          Arranges for a :ref:`predefined set of buttons <messagebox-types>`
          to be displayed.
 
+   .. note::
+
+      Tk 8.6 added the *command* option.
+
    .. method:: show(**options)
 
       Display a message window and wait for the user to select one of the buttons. Then return the symbolic name of the selected button.
