@@ -9803,6 +9803,8 @@ fi
     as_fn_append LINKFORSHARED " -sSTACK_SIZE=5MB"
         as_fn_append LINKFORSHARED " -sTEXTDECODER=2"
 
+            as_fn_append LDFLAGS_NODIST " -Wl,--wrap=getentropy"
+
     if test "x$enable_wasm_dynamic_linking" = xyes
 then :
 
