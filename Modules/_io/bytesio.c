@@ -371,6 +371,10 @@ _io_BytesIO_getvalue_impl(bytesio *self)
 /*[clinic end generated code: output=b3f6a3233c8fd628 input=c91bff398df0c352]*/
 {
     CHECK_CLOSED(self);
+#ifdef Py_GIL_DISABLED
+    return PyBytes_FromStringAndSize(PyBytes_AS_STRING(self->buf),
+                                     self->string_size);
+#else
     if (self->string_size <= 1 || FT_ATOMIC_LOAD_SSIZE_RELAXED(self->exports) > 0)
         return PyBytes_FromStringAndSize(PyBytes_AS_STRING(self->buf),
                                          self->string_size);
@@ -386,6 +390,7 @@ _io_BytesIO_getvalue_impl(bytesio *self)
         }
     }
     return Py_NewRef(self->buf);
+#endif
 }
 
 /*[clinic input]
@@ -430,11 +435,13 @@ peek_bytes_lock_held(bytesio *self, Py_ssize_t size)
 
     assert(self->buf != NULL);
     assert(size <= self->string_size);
+#ifndef Py_GIL_DISABLED
     if (size > 1 &&
         self->pos == 0 && size == PyBytes_GET_SIZE(self->buf) &&
         FT_ATOMIC_LOAD_SSIZE_RELAXED(self->exports) == 0) {
         return Py_NewRef(self->buf);
     }
+#endif
 
     /* gh-141311: Avoid undefined behavior when self->pos (limit PY_SSIZE_T_MAX)
        is beyond the size of self->buf. Assert above validates size is always in
