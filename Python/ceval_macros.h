@@ -198,7 +198,7 @@ do { \
 /* Do interpreter dispatch accounting for tracing and instrumentation */
 #define DISPATCH() \
     { \
-        assert(frame->stackpointer_valid == 0); \
+        _PyFrame_StackAssertInvalid(frame); \
         NEXTOPARG(); \
         PRE_DISPATCH_GOTO(); \
         DISPATCH_GOTO(); \
@@ -206,7 +206,7 @@ do { \
 
 #define DISPATCH_NON_TRACING() \
     { \
-        assert(frame->stackpointer_valid == 0); \
+        _PyFrame_StackAssertInvalid(frame); \
         NEXTOPARG(); \
         PRE_DISPATCH_GOTO(); \
         DISPATCH_GOTO_NON_TRACING(); \
