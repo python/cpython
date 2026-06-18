@@ -2612,7 +2612,6 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
             else {
                 newval = PyNumber_Add(oldval, one);
                 Py_DECREF(oldval);
-                oldval = NULL;
                 if (newval == NULL) {
                     cs_err = -1;
                 }
