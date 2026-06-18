@@ -28,7 +28,8 @@ class Textbox:
     Ctrl-F      Cursor right, wrapping to next line when appropriate.
     Ctrl-G      Terminate, returning the window contents.
     Ctrl-H      Delete character backward.
-    Ctrl-J      Terminate if the window is 1 line, otherwise insert newline.
+    Ctrl-J      Terminate if the window is 1 line, otherwise move to start
+                of next line.
     Ctrl-K      If line is blank, delete it, otherwise clear to end of line.
     Ctrl-L      Refresh screen.
     Ctrl-N      Cursor down; move down one line.
