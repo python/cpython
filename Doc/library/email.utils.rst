@@ -89,7 +89,7 @@ of the new API.
    .. versionchanged:: 3.3
       Added the *charset* option.
 
-   .. versionchanged:: 3.16
+   .. versionchanged:: next
       Added the *strict* parameter.
 
 

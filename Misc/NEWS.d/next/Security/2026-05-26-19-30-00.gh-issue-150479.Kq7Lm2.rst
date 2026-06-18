@@ -1,3 +1,0 @@
-:func:`email.utils.formataddr` now raises :exc:`ValueError` when the name or
-address contains a carriage return or line feed, preventing header injection
-and matching :class:`email.headerregistry.Address`.
