@@ -1402,13 +1402,16 @@ _curses.window.delch
     ]
     /
 
-Delete any character at (y, x).
+Delete the character under the cursor, or at (y, x) if specified.
+
+All characters to the right on the same line are shifted one
+position left.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_window_delch_impl(PyCursesWindowObject *self, int group_right_1,
                           int y, int x)
-/*[clinic end generated code: output=22e77bb9fa11b461 input=d2f79e630a4fc6d0]*/
+/*[clinic end generated code: output=22e77bb9fa11b461 input=61db3c7f4885e90c]*/
 {
     if (!group_right_1) {
         return PyCursesCheckERR_ForWin(self, wdelch(self->win), "wdelch");
@@ -1919,10 +1922,12 @@ PyDoc_STRVAR(_curses_window_instr__doc__,
 "  n\n"
 "    Maximal number of characters.\n"
 "\n"
-"Return a string of characters, extracted from the window starting at the\n"
-"current cursor position, or at y, x if specified.  Attributes are stripped\n"
-"from the characters.  If n is specified, instr() returns a string at most\n"
-"n characters long (exclusive of the trailing NUL).");
+"Return a string of characters, extracted from the window starting\n"
+"at the current cursor position, or at y, x if specified, and\n"
+"stopping at the end of the line.  Attributes and color\n"
+"information are stripped from the characters.  If n is specified,\n"
+"instr() returns a string at most n characters long (exclusive of\n"
+"the trailing NUL).");
 
 static PyObject *
 PyCursesWindow_instr(PyObject *op, PyObject *args)
@@ -3869,18 +3874,17 @@ _curses.mousemask
     newmask: unsigned_long(bitwise=True)
     /
 
-Set the mouse events to be reported, and return a tuple (availmask, oldmask).
+Set the mouse events to be reported, and return (availmask, oldmask).
 
 Return a tuple (availmask, oldmask).  availmask indicates which of the
 specified mouse events can be reported; on complete failure it returns
-0.  oldmask is the previous value of the given window's mouse event
-mask.  If this function is never called, no mouse events are ever
-reported.
+0.  oldmask is the previous value of the mouse event mask.  If this
+function is never called, no mouse events are ever reported.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_mousemask_impl(PyObject *module, unsigned long newmask)
-/*[clinic end generated code: output=9406cf1b8a36e485 input=e0b02b620ab30644]*/
+/*[clinic end generated code: output=9406cf1b8a36e485 input=b8a9a4ccbce633f4]*/
 {
     mmask_t oldmask, availmask;
 
