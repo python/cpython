@@ -152,6 +152,7 @@ static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *
     // visited is GC bookkeeping for the current stack walk, not frame state.
     dest->visited = 0;
 #ifdef Py_DEBUG
+    dest->stackpointer_valid =  src->stackpointer_valid;
     dest->lltrace = src->lltrace;
 #endif
     for (int i = 0; i < stacktop; i++) {
@@ -207,6 +208,7 @@ _PyFrame_Initialize(
     frame->owner = FRAME_OWNED_BY_THREAD;
     frame->visited = 0;
 #ifdef Py_DEBUG
+    frame->stackpointer_valid = 1;
     frame->lltrace = 0;
 #endif
 
@@ -230,25 +232,50 @@ _PyFrame_GetLocalsArray(_PyInterpreterFrame *frame)
 static inline _PyStackRef*
 _PyFrame_GetStackPointer(_PyInterpreterFrame *frame)
 {
-#ifndef _Py_JIT
-    assert(frame->stackpointer != NULL);
-#endif
-    _PyStackRef *sp = frame->stackpointer;
-#ifndef NDEBUG
-    frame->stackpointer = NULL;
-#endif
-    return sp;
+    return frame->stackpointer;
 }
 
 static inline void
 _PyFrame_SetStackPointer(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer)
 {
-/* Avoid bloating the JIT code */
-#ifndef _Py_JIT
-    assert(frame->stackpointer == NULL);
-#endif
     frame->stackpointer = stack_pointer;
 }
+
+static inline void
+_PyFrame_StackPointerValidate(_PyInterpreterFrame *frame)
+{
+#ifdef Py_DEBUG
+/* Avoid bloating the JIT code */
+#ifndef _Py_JIT
+    assert(frame->stackpointer_valid == 0);
+#endif
+    frame->stackpointer_valid = 1;
+#endif
+}
+
+static inline void
+_PyFrame_StackPointerInvalidate(_PyInterpreterFrame *frame)
+{
+#ifdef Py_DEBUG
+/* Avoid bloating the JIT code */
+#ifndef _Py_JIT
+    assert(frame->stackpointer_valid == 1);
+#endif
+    frame->stackpointer_valid = 0;
+#endif
+}
+
+static inline void
+_PyFrame_StackAssertInvalid(_PyInterpreterFrame *frame)
+{
+#ifdef Py_DEBUG
+/* Avoid bloating the JIT code */
+#ifndef _Py_JIT
+    assert(frame->stackpointer_valid == 0);
+#endif
+#endif
+}
+
 
 /* Determine whether a frame is incomplete.
  * A frame is incomplete if it is part way through
@@ -411,6 +438,7 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     frame->owner = FRAME_OWNED_BY_THREAD;
     frame->visited = 0;
 #ifdef Py_DEBUG
+    frame->stackpointer_valid = 1;
     frame->lltrace = 0;
 #endif
     frame->return_offset = 0;
