@@ -292,6 +292,12 @@ and substitute your own values.
 See the :c:type:`PySlot` and :c:ref:`export hook <extension-export-hook>`
 documentation for details on this API.
 
+As in the example, your ``PyModExport_`` function should *only* return a
+pointer to static data.
+If you cannot avoid additional code, refer to the
+:ref:`caveats in PyModExport documentation <pymodexport-api-caveats>`.
+
+
 Existing slots
 --------------
 

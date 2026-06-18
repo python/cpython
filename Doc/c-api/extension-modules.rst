@@ -100,11 +100,29 @@ For example, a module called ``spam`` would be defined like this::
 The export hook is typically the only non-\ ``static``
 item defined in the module's C source.
 
-The hook should be kept short -- ideally, one line as above.
-If you do need to use Python C API in this function, it is recommended to call
-``PyABIInfo_Check(&abi_info, "modulename")`` first to raise an exception,
-rather than crash, in common cases of ABI mismatch.
+.. _pymodexport-api-caveats:
 
+The hook should be kept short -- ideally, one line as above.
+If you need to use any Python C API, it is recommended to call
+:c:func:`PyABIInfo_Check` first to raise an exception,
+rather than crash, in common cases of ABI mismatch.
+Also, note that in :term:`free-threaded <free threading>` builds the export
+function may be called without the :term:`GIL` held even if the extension
+specifies that the GIL is required.
+For example::
+
+   PyMODEXPORT_FUNC
+   PyModExport_modulename(void)
+   {
+      if (PyABIInfo_Check(&abi_info, "modulename") < 0) {
+         /* ABI mismatch. It's not safe to examine the raised exception. */
+         return NULL;
+      }
+
+      /* use Python API (as little as possible); don't rely on GIL */
+
+      return modulename_slots;
+   }
 
 .. note::
 
