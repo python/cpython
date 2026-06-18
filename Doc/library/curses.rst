@@ -1013,8 +1013,8 @@ Window Objects
             window.getstr(y, x, n)
 
    Read a bytes object from the user, with primitive line editing capacity.
-   At most *n* characters are read (2047 by default).
-   The maximum value for *n* is 2047.
+   At most *n* characters are read;
+   *n* defaults to and cannot exceed 2047.
 
    .. versionchanged:: 3.14
       The maximum value for *n* was increased from 1023 to 2047.
