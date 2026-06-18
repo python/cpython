@@ -33,3 +33,17 @@ reference/expressions.html: grammar-token-python-grammar-set_display
 # Moved to a different page
 c-api/typeobj.html: c.Py_tp_base
 c-api/typeobj.html: c.Py_tp_bases
+
+# curses.panel.panel is the correct class name.
+library/curses.panel.html: curses.panel.Panel.above
+library/curses.panel.html: curses.panel.Panel.below
+library/curses.panel.html: curses.panel.Panel.bottom
+library/curses.panel.html: curses.panel.Panel.hidden
+library/curses.panel.html: curses.panel.Panel.hide
+library/curses.panel.html: curses.panel.Panel.move
+library/curses.panel.html: curses.panel.Panel.replace
+library/curses.panel.html: curses.panel.Panel.set_userptr
+library/curses.panel.html: curses.panel.Panel.show
+library/curses.panel.html: curses.panel.Panel.top
+library/curses.panel.html: curses.panel.Panel.userptr
+library/curses.panel.html: curses.panel.Panel.window
