@@ -2945,14 +2945,6 @@ Base and mixin classes
       Return a dictionary of the widget's current grid options.
       :meth:`info` is an alias of :meth:`!grid_info`.
 
-   .. method:: anchor(anchor=None)
-      :no-typesetting:
-
-   .. method:: grid_anchor(anchor=None)
-
-      Same as :meth:`Misc.grid_anchor`.
-      :meth:`anchor` is an alias of :meth:`!grid_anchor`.
-
    .. method:: bbox(column=None, row=None, col2=None, row2=None)
       :no-typesetting:
 
