@@ -2267,6 +2267,28 @@ _curses_erasechar(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_erasechar_impl(module);
 }
 
+#if defined(HAVE_NCURSESW)
+
+PyDoc_STRVAR(_curses_erasewchar__doc__,
+"erasewchar($module, /)\n"
+"--\n"
+"\n"
+"Return the user\'s current wide-character erase character.");
+
+#define _CURSES_ERASEWCHAR_METHODDEF    \
+    {"erasewchar", (PyCFunction)_curses_erasewchar, METH_NOARGS, _curses_erasewchar__doc__},
+
+static PyObject *
+_curses_erasewchar_impl(PyObject *module);
+
+static PyObject *
+_curses_erasewchar(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_erasewchar_impl(module);
+}
+
+#endif /* defined(HAVE_NCURSESW) */
+
 PyDoc_STRVAR(_curses_flash__doc__,
 "flash($module, /)\n"
 "--\n"
@@ -3089,6 +3111,28 @@ _curses_killchar(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _curses_killchar_impl(module);
 }
+
+#if defined(HAVE_NCURSESW)
+
+PyDoc_STRVAR(_curses_killwchar__doc__,
+"killwchar($module, /)\n"
+"--\n"
+"\n"
+"Return the user\'s current wide-character line kill character.");
+
+#define _CURSES_KILLWCHAR_METHODDEF    \
+    {"killwchar", (PyCFunction)_curses_killwchar, METH_NOARGS, _curses_killwchar__doc__},
+
+static PyObject *
+_curses_killwchar_impl(PyObject *module);
+
+static PyObject *
+_curses_killwchar(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_killwchar_impl(module);
+}
+
+#endif /* defined(HAVE_NCURSESW) */
 
 PyDoc_STRVAR(_curses_longname__doc__,
 "longname($module, /)\n"
@@ -4266,6 +4310,22 @@ PyDoc_STRVAR(_curses_unctrl__doc__,
 #define _CURSES_UNCTRL_METHODDEF    \
     {"unctrl", (PyCFunction)_curses_unctrl, METH_O, _curses_unctrl__doc__},
 
+#if defined(HAVE_NCURSESW)
+
+PyDoc_STRVAR(_curses_wunctrl__doc__,
+"wunctrl($module, ch, /)\n"
+"--\n"
+"\n"
+"Return a printable representation of the wide character ch.\n"
+"\n"
+"Control characters are displayed as a caret followed by the character,\n"
+"for example as ^C.  Printing characters are left as they are.");
+
+#define _CURSES_WUNCTRL_METHODDEF    \
+    {"wunctrl", (PyCFunction)_curses_wunctrl, METH_O, _curses_wunctrl__doc__},
+
+#endif /* defined(HAVE_NCURSESW) */
+
 PyDoc_STRVAR(_curses_ungetch__doc__,
 "ungetch($module, ch, /)\n"
 "--\n"
@@ -4437,6 +4497,10 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
     #define _CURSES_NOFILTER_METHODDEF
 #endif /* !defined(_CURSES_NOFILTER_METHODDEF) */
 
+#ifndef _CURSES_ERASEWCHAR_METHODDEF
+    #define _CURSES_ERASEWCHAR_METHODDEF
+#endif /* !defined(_CURSES_ERASEWCHAR_METHODDEF) */
+
 #ifndef _CURSES_GETSYX_METHODDEF
     #define _CURSES_GETSYX_METHODDEF
 #endif /* !defined(_CURSES_GETSYX_METHODDEF) */
@@ -4473,6 +4537,10 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
     #define _CURSES_IS_TERM_RESIZED_METHODDEF
 #endif /* !defined(_CURSES_IS_TERM_RESIZED_METHODDEF) */
 
+#ifndef _CURSES_KILLWCHAR_METHODDEF
+    #define _CURSES_KILLWCHAR_METHODDEF
+#endif /* !defined(_CURSES_KILLWCHAR_METHODDEF) */
+
 #ifndef _CURSES_MOUSEINTERVAL_METHODDEF
     #define _CURSES_MOUSEINTERVAL_METHODDEF
 #endif /* !defined(_CURSES_MOUSEINTERVAL_METHODDEF) */
@@ -4501,6 +4569,10 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
     #define _CURSES_TYPEAHEAD_METHODDEF
 #endif /* !defined(_CURSES_TYPEAHEAD_METHODDEF) */
 
+#ifndef _CURSES_WUNCTRL_METHODDEF
+    #define _CURSES_WUNCTRL_METHODDEF
+#endif /* !defined(_CURSES_WUNCTRL_METHODDEF) */
+
 #ifndef _CURSES_UNGET_WCH_METHODDEF
     #define _CURSES_UNGET_WCH_METHODDEF
 #endif /* !defined(_CURSES_UNGET_WCH_METHODDEF) */
@@ -4516,4 +4588,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=7494804bf2c4d1f5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0bce70b538541c9e input=a9049054013a1b77]*/
