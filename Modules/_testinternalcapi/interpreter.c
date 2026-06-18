@@ -18,8 +18,13 @@ int Test_EvalFrame_Resumes, Test_EvalFrame_Loads;
 static int
 stop_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
 {
-    (void)(tstate);
     (void)(frame);
+    // Don't actually JIT-compile in this test eval-frame, but we still must
+    // finalize the tracer so the thread-global is_tracing flag is reset.
+    // Otherwise a trace started inside this duplicated interpreter loop
+    // (reachable under low JIT thresholds, e.g. PYTHON_JIT_STRESS=1) would
+    // leave is_tracing stuck true and permanently disable the JIT.
+    _PyJit_FinalizeTracing(tstate, 0);
     return 0;
 }
 #endif
