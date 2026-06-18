@@ -736,7 +736,7 @@ The module :mod:`!curses` defines the following functions:
 
 .. _curses-window-objects:
 
-Window Objects
+Window objects
 --------------
 
 .. class:: window
