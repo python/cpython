@@ -3840,7 +3840,7 @@ features:
 
    .. attribute:: f_blocks
 
-      Number of :attr:`~startvfs_result.f_frsize` sized blocks the filesystem
+      Number of :attr:`~statvfs_result.f_frsize` sized blocks the filesystem
       can contain.
 
    .. attribute:: f_bfree
