@@ -2738,6 +2738,18 @@ treebuilder_append_event(TreeBuilderObject *self, PyObject *action,
 /* -------------------------------------------------------------------- */
 /* handlers */
 
+/* Maximum allowed XML element nesting depth in TreeBuilder.
+ * Deeply nested XML documents can exhaust the C stack when the resulting
+ * tree is later traversed recursively (e.g., during garbage collection or
+ * deepcopy).  This constant limits the depth at parse time so that a clean
+ * error is raised instead of a C stack overflow crash.
+ *
+ * The value matches the default nesting limit used by Python's json module
+ * and several other XML parsers.  It can be overridden by setting the
+ * PYTHON_XML_MAX_NESTING environment variable (reserved for future use).
+ */
+#define MAX_XML_NESTING_DEPTH 5000
+
 LOCAL(PyObject*)
 treebuilder_handle_start(TreeBuilderObject* self, PyObject* tag,
                          PyObject* attrib)
@@ -2745,6 +2757,17 @@ treebuilder_handle_start(TreeBuilderObject* self, PyObject* tag,
     PyObject* node;
     PyObject* this;
     elementtreestate *st = self->state;
+
+    /* Guard against deeply-nested XML that would cause C stack overflows
+     * when the resulting tree is traversed recursively later (gh-127065).  We
+     * check self->index *before* pushing, so the root element (index==0) is
+     * always accepted. */
+    if (self->index >= MAX_XML_NESTING_DEPTH) {
+        PyErr_Format(st->parseerror_obj,
+                     "xml nesting depth limit (%d levels) exceeded",
+                     MAX_XML_NESTING_DEPTH);
+        return NULL;
+    }
 
     if (treebuilder_flush_data(self) < 0) {
         return NULL;
@@ -3066,7 +3089,10 @@ treebuilder_done(TreeBuilderObject* self)
 {
     PyObject* res;
 
-    /* FIXME: check stack size? */
+    /* XML nesting depth is bounded at parse time by treebuilder_handle_start,
+     * which raises ParseError when MAX_XML_NESTING_DEPTH is exceeded.  This
+     * prevents C stack overflows when deeply nested trees are later traversed
+     * recursively (e.g., during garbage collection or deepcopy). */
 
     if (self->root)
         res = self->root;

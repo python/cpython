@@ -4952,5 +4952,90 @@ def setUpModule(module=None):
         unittest.addModuleCleanup(ET._set_factories, *old_factories)
 
 
+
+# --------------------------------------------------------------------
+
+
+class NestingDepthTest(unittest.TestCase):
+    """Tests for deeply-nested XML documents (gh-127065).
+
+    xml.etree.ElementTree must raise ParseError instead of crashing
+    (SIGSEGV / C stack overflow) when element nesting depth exceeds the
+    internal MAX_XML_NESTING_DEPTH limit (5000 levels).
+
+    The guard lives in the C accelerator (_elementtree.c) so these tests
+    are skipped when running against the pure-Python implementation.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        # The nesting depth guard is implemented in the C accelerator only.
+        if ET is pyET:
+            raise unittest.SkipTest('nesting depth guard requires the C accelerator')
+
+    # Must match MAX_XML_NESTING_DEPTH in Modules/_elementtree.c
+    MAX_DEPTH = 5000
+
+    def _make_deeply_nested_xml(self, depth):
+        """Return bytes of a well-formed XML document with *depth* nested elements."""
+        return b'<a>' * depth + b'</a>' * depth
+
+    def test_deeply_nested_xml_raises_parse_error(self):
+        """Parsing XML deeper than MAX_XML_NESTING_DEPTH must raise ParseError."""
+        depth = self.MAX_DEPTH + 100
+        xml_data = self._make_deeply_nested_xml(depth)
+        with self.assertRaises(ET.ParseError) as cm:
+            ET.fromstring(xml_data)
+        self.assertIn("nesting depth", str(cm.exception))
+
+    def test_moderately_nested_xml_succeeds(self):
+        """XML nesting within the limit must parse successfully."""
+        depth = 100  # well within any reasonable limit
+        xml_data = self._make_deeply_nested_xml(depth)
+        root = ET.fromstring(xml_data)
+        # Walk down the chain of first-children to verify structure
+        elem = root
+        for _ in range(depth - 1):
+            self.assertEqual(len(elem), 1)
+            elem = elem[0]
+        self.assertEqual(len(elem), 0)  # innermost element has no children
+
+    def test_at_exactly_max_depth_raises_parse_error(self):
+        """XML at exactly MAX_DEPTH + 1 levels must raise ParseError."""
+        # MAX_DEPTH + 1 because the root element itself counts as depth 0,
+        # so nesting one more child than the limit must fail.
+        xml_data = self._make_deeply_nested_xml(self.MAX_DEPTH + 1)
+        with self.assertRaises(ET.ParseError):
+            ET.fromstring(xml_data)
+
+    def test_at_max_depth_succeeds(self):
+        """XML at exactly MAX_DEPTH levels must succeed (boundary check)."""
+        xml_data = self._make_deeply_nested_xml(self.MAX_DEPTH)
+        # Should parse successfully — the limit is "strictly greater than"
+        root = ET.fromstring(xml_data)
+        self.assertIsNotNone(root)
+
+    def test_treebuilder_nesting_limit(self):
+        """TreeBuilder.start() must raise ParseError when depth exceeds limit."""
+        tb = ET.TreeBuilder()
+        # Fill to just below the limit
+        for _ in range(self.MAX_DEPTH):
+            tb.start('a', {})
+        # One more push should raise ParseError
+        with self.assertRaises(ET.ParseError) as cm:
+            tb.start('a', {})
+        self.assertIn("nesting depth", str(cm.exception))
+
+    def test_xmlparser_deeply_nested_raises_parse_error(self):
+        """XMLParser.feed() with deeply nested XML must raise ParseError."""
+        depth = self.MAX_DEPTH + 100
+        xml_data = self._make_deeply_nested_xml(depth)
+        parser = ET.XMLParser()
+        with self.assertRaises(ET.ParseError):
+            parser.feed(xml_data)
+
+
+# --------------------------------------------------------------------
+
 if __name__ == '__main__':
     unittest.main()

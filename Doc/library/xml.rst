@@ -125,6 +125,12 @@ large tokens
   be used to cause denial of service in the application parsing XML.
   The issue is known as :cve:`2023-52425`.
 
+deeply nested elements
+  An attacker can send XML with an arbitrarily large element nesting depth
+  to exhaust available stack space or memory.  :mod:`xml.etree.ElementTree`
+  limits nesting depth to 5000 levels and raises
+  :exc:`~xml.etree.ElementTree.ParseError` when the limit is exceeded.
+
 .. _libexpat: https://github.com/libexpat/libexpat
 .. _Billion Laughs: https://en.wikipedia.org/wiki/Billion_laughs
 .. _ZIP bomb: https://en.wikipedia.org/wiki/Zip_bomb

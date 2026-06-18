@@ -1,0 +1,5 @@
+Add a nesting depth limit (5000 levels) to :mod:`xml.etree.ElementTree`'s
+``TreeBuilder`` to prevent C stack overflows when deeply nested XML documents
+are garbage-collected or copied. :exc:`~xml.etree.ElementTree.ParseError` is
+now raised for documents exceeding the limit. Also document "deeply nested
+elements" as an XML security attack vector in :doc:`/library/xml`.
