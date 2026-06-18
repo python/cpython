@@ -1,5 +1,6 @@
+import threading
 import unittest
-from collections import deque
+from collections import Counter, deque
 from copy import copy
 from test.support import threading_helper
 
@@ -47,6 +48,22 @@ class TestDeque(unittest.TestCase):
         threading_helper.run_concurrently(
             [index, *[mutate for _ in range(3)]],
         )
+
+
+class TestCounter(unittest.TestCase):
+    def test_update_concurrent(self):
+        # gh-151633: concurrent Counter.update calls must not cause use-after-free
+        # under free-threading.
+        NTHREADS = 4
+        PER_THREAD = 5000
+        c = Counter()
+        data = ['x'] * PER_THREAD
+        threads = [threading.Thread(target=c.update, args=(data,))
+                   for _ in range(NTHREADS)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
 
 
 if __name__ == "__main__":
