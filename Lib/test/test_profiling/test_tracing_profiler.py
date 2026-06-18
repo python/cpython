@@ -1,5 +1,5 @@
 """Test suite for the cProfile module."""
-
+import subprocess
 import sys
 import unittest
 
@@ -9,6 +9,12 @@ import tempfile
 import textwrap
 from test.test_profile import ProfileTest, regenerate_expected_output
 from test.support.script_helper import assert_python_failure, assert_python_ok
+from test.support import (
+    SHORT_TIMEOUT,
+    SuppressCrashReport,
+    os_helper,
+    script_helper,
+)
 from test import support
 
 
@@ -191,6 +197,52 @@ class TestCommandLine(unittest.TestCase):
                 """))
             f.close()
             assert_python_ok('-m', "cProfile", f.name)
+
+
+class TestProcessRunSupport(unittest.TestCase):
+    """
+    Test that Process works correctly with cProfile.
+    """
+
+    def test_process_run_pickle(self):
+        # gh-140729: test use Process in cProfile.
+        val = 10
+        test_script = f'''
+import multiprocessing
+
+def worker(x):
+    print(__name__)
+    exit(x ** 2)
+
+if __name__ == "__main__":
+    multiprocessing.set_start_method("spawn")
+    p = multiprocessing.Process(target=worker, args=({val},))
+    p.start()
+    p.join()
+    print("p.exitcode =", p.exitcode)
+'''
+
+        with os_helper.temp_dir() as temp_dir:
+            script = script_helper.make_script(
+                temp_dir, 'test_process_run_pickle', test_script
+            )
+            with SuppressCrashReport():
+                with script_helper.spawn_python(
+                    "-m", "cProfile",
+                    script,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True
+                ) as proc:
+                    try:
+                        stdout, stderr = proc.communicate(timeout=SHORT_TIMEOUT)
+                    except subprocess.TimeoutExpired:
+                        proc.kill()
+                        stdout, stderr = proc.communicate()
+
+        self.assertIn("__mp_main__", stdout)
+        self.assertIn(f"exitcode = {val**2}", stdout)
+        self.assertNotIn("Can't pickle", stderr)
 
 
 def main():
