@@ -117,7 +117,7 @@ calls the Tcl interpreter to evaluate it. The Tcl interpreter will then call int
 Tk and/or Ttk packages, which will in turn make calls to Xlib, Cocoa, or GDI.
 
 
-Tkinter Modules
+Tkinter modules
 ---------------
 
 Support for Tkinter is spread across several modules. Most applications will need the
@@ -300,7 +300,7 @@ Additional modules:
 .. currentmodule:: tkinter
 
 
-Tkinter Life Preserver
+Tkinter life preserver
 ----------------------
 
 This section is not designed to be an exhaustive tutorial on either Tk or
@@ -315,7 +315,7 @@ find more detailed documentation on them, including in the official Tcl/Tk
 reference manual.
 
 
-A Hello World Program
+A Hello World program
 ^^^^^^^^^^^^^^^^^^^^^
 
 We'll start by walking through a "Hello World" application in Tkinter. This
@@ -356,7 +356,7 @@ responds to user input until the program terminates.
 
 
 
-Important Tk Concepts
+Important Tk concepts
 ^^^^^^^^^^^^^^^^^^^^^
 
 Even this simple program illustrates the following key Tk concepts:
@@ -388,7 +388,7 @@ event loop
   isn't running the event loop, your user interface won't update.
 
 
-Understanding How Tkinter Wraps Tcl/Tk
+Understanding how Tkinter wraps Tcl/Tk
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When your application uses Tkinter's classes and methods, internally Tkinter
@@ -601,13 +601,13 @@ A number of special cases exist:
   called from the thread that created the Tcl interpreter.
 
 
-Handy Reference
+Handy reference
 ---------------
 
 
 .. _tkinter-setting-options:
 
-Setting Options
+Setting options
 ^^^^^^^^^^^^^^^
 
 Options control things like the color and border width of a widget. Options can
@@ -681,7 +681,7 @@ their values.  This is meant only as an example.
 
 .. _pack-the-packer:
 
-The Packer
+The packer
 ^^^^^^^^^^
 
 .. index:: single: packing (widgets)
@@ -716,7 +716,7 @@ the main application window is resized.  Here are some examples::
    fred.pack(expand=1)
 
 
-Packer Options
+Packer options
 ^^^^^^^^^^^^^^
 
 For more extensive information on the packer and the options that it can take,
@@ -798,7 +798,7 @@ For example::
    myapp = App(root)
    myapp.mainloop()
 
-The Window Manager
+The window manager
 ^^^^^^^^^^^^^^^^^^
 
 .. index:: single: window manager (widgets)
@@ -844,7 +844,7 @@ Here are some examples of typical usage::
    myapp.mainloop()
 
 
-Tk Option Data Types
+Tk option data types
 ^^^^^^^^^^^^^^^^^^^^
 
 .. index:: single: Tk Option Data Types
@@ -923,7 +923,7 @@ wrap
 
 .. _Bindings-and-Events:
 
-Bindings and Events
+Bindings and events
 ^^^^^^^^^^^^^^^^^^^
 
 .. index::
@@ -994,7 +994,7 @@ they are denoted in Tk, which can be useful when referring to the Tk man pages.
 +----+---------------------+----+---------------------+
 
 
-The index Parameter
+The index parameter
 ^^^^^^^^^^^^^^^^^^^
 
 A number of widgets require "index" parameters to be passed.  These are used to
@@ -1071,7 +1071,7 @@ wherever the image was used.
 
 .. _tkinter-file-handlers:
 
-File Handlers
+File handlers
 -------------
 
 Tk allows you to register and unregister a callback function which will be

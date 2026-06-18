@@ -61,7 +61,7 @@ Instead, use the :class:`ttk.Style <Style>` class for improved styling effects.
      encountered when moving applications to use the new widgets.
 
 
-Ttk Widgets
+Ttk widgets
 -----------
 
 Ttk comes with 18 widgets, twelve of which already existed in tkinter:
@@ -99,7 +99,7 @@ Widget
 Tk themed widgets and is not supposed to be directly instantiated.
 
 
-Standard Options
+Standard options
 ^^^^^^^^^^^^^^^^
 
 All the :mod:`!ttk` Widgets accept the following options:
@@ -133,7 +133,7 @@ All the :mod:`!ttk` Widgets accept the following options:
 +-----------+--------------------------------------------------------------+
 
 
-Scrollable Widget Options
+Scrollable widget options
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The following options are supported by widgets that are controlled by a
@@ -159,7 +159,7 @@ scrollbar.
 +----------------+---------------------------------------------------------+
 
 
-Label Options
+Label options
 ^^^^^^^^^^^^^
 
 The following options are supported by labels, buttons and other button-like
@@ -205,7 +205,7 @@ widgets.
 +--------------+-----------------------------------------------------------+
 
 
-Compatibility Options
+Compatibility options
 ^^^^^^^^^^^^^^^^^^^^^
 
 .. tabularcolumns:: |l|L|
@@ -219,7 +219,7 @@ Compatibility Options
 |        | affect this option.                                            |
 +--------+----------------------------------------------------------------+
 
-Widget States
+Widget states
 ^^^^^^^^^^^^^
 
 The widget state is a bitmap of independent state flags.
@@ -508,7 +508,7 @@ This widget accepts the following specific options:
 +---------+----------------------------------------------------------------+
 
 
-Tab Options
+Tab options
 ^^^^^^^^^^^
 
 There are also specific options for tabs:
@@ -549,7 +549,7 @@ There are also specific options for tabs:
 +-----------+--------------------------------------------------------------+
 
 
-Tab Identifiers
+Tab identifiers
 ^^^^^^^^^^^^^^^
 
 The tab_id present in several methods of :class:`ttk.Notebook <Notebook>` may
@@ -563,7 +563,7 @@ take any of the following forms:
   :meth:`Notebook.index`)
 
 
-Virtual Events
+Virtual events
 ^^^^^^^^^^^^^^
 
 This widget generates a **<<NotebookTabChanged>>** virtual event after a new
@@ -877,7 +877,7 @@ This widget accepts the following specific options:
    Tk 9.1 added the *rowheight* and *headingheight* options.
 
 
-Item Options
+Item options
 ^^^^^^^^^^^^
 
 The following item options may be specified for items in the insert and item
@@ -906,7 +906,7 @@ widget commands.
 +--------+---------------------------------------------------------------+
 
 
-Tag Options
+Tag options
 ^^^^^^^^^^^
 
 The following options may be specified on tags:
@@ -927,7 +927,7 @@ The following options may be specified on tags:
 +------------+-----------------------------------------------------------+
 
 
-Column Identifiers
+Column identifiers
 ^^^^^^^^^^^^^^^^^^
 
 Column identifiers take any of the following forms:
@@ -951,7 +951,7 @@ then data column n is displayed in column #n+1. Again, **column #0 always
 refers to the tree column**.
 
 
-Virtual Events
+Virtual events
 ^^^^^^^^^^^^^^
 
 The Treeview widget generates the following virtual events.
@@ -1291,7 +1291,7 @@ ttk.Treeview
 
 .. _TtkStyling:
 
-Ttk Styling
+Ttk styling
 -----------
 
 Each widget in :mod:`!ttk` is assigned a style, which specifies the set of
