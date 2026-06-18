@@ -2979,6 +2979,8 @@ Base and mixin classes
       Same as :meth:`Misc.pack_content`.
       :meth:`content` is an alias of :meth:`!pack_content`.
 
+      .. versionadded:: 3.15
+
 
 .. class:: Place()
 
@@ -3072,6 +3074,8 @@ Base and mixin classes
 
       Same as :meth:`Misc.place_content`.
       :meth:`content` is an alias of :meth:`!place_content`.
+
+      .. versionadded:: 3.15
 
 
 .. class:: Grid()
@@ -3220,6 +3224,8 @@ Base and mixin classes
 
       Same as :meth:`Misc.grid_content`.
       :meth:`content` is an alias of :meth:`!grid_content`.
+
+      .. versionadded:: 3.15
 
 
 .. class:: XView()
