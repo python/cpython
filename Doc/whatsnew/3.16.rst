@@ -138,6 +138,14 @@ shlex
   a string, even if it is already safe for a shell without being quoted.
   (Contributed by Jay Berry in :gh:`148846`.)
 
+tkinter
+-------
+
+* Added new :class:`!tkinter.Text` methods :meth:`~tkinter.Text.sync` and
+  :meth:`~tkinter.Text.pendingsync` which control and report the
+  synchronization of the displayed view with the underlying text.
+  (Contributed by Serhiy Storchaka in :gh:`151675`.)
+
 xml
 ---
 
