@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: e05c5c0818279e5ac248ac9e954431ba58865e61  # frozen: v0.15.7
+    rev: 3b3f7c3f57fe9925356faf5fe6230835138be230  # frozen: v0.15.17
     hooks:
       - id: ruff-check
         name: Run Ruff (lint) on Platforms/Apple/
@@ -11,6 +11,11 @@ repos:
         args: [--exit-non-zero-on-fix]
         files: ^Doc/
       - id: ruff-check
+        name: Run Ruff (lint) on Lib/
+        args: [--exit-non-zero-on-fix]
+        files: ^Lib/
+        exclude: ^Lib/test/
+      - id: ruff-check
         name: Run Ruff (lint) on Lib/test/
         args: [--exit-non-zero-on-fix]
         files: ^Lib/test/
@@ -18,6 +23,11 @@ repos:
         name: Run Ruff (lint) on Platforms/WASI/
         args: [--exit-non-zero-on-fix, --config=Platforms/WASI/.ruff.toml]
         files: ^Platforms/WASI/
+      - id: ruff-check
+        name: Run Ruff (lint) on Tools/
+        args: [--exit-non-zero-on-fix]
+        files: ^Tools/
+        exclude: ^Tools/(build|clinic|i18n|peg_generator|wasm)/
       - id: ruff-check
         name: Run Ruff (lint) on Tools/build/
         args: [--exit-non-zero-on-fix, --config=Tools/build/.ruff.toml]

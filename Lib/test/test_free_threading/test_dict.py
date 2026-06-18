@@ -296,6 +296,24 @@ class TestDict(TestCase):
 
         threading_helper.run_concurrently([clearer, reader, reader])
 
+    def test_racing_embedded_values_clear_and_lookup(self):
+        class C:
+            pass
+
+        obj = C()
+        def writer():
+            for _ in range(1000):
+                obj.x = 1
+                obj.y = 2
+                obj.z = 3
+                obj.__dict__.clear()
+
+        def reader():
+            for _ in range(1000):
+                obj.__dict__.get('x')
+
+        threading_helper.run_concurrently([writer, reader, reader])
+
     def test_racing_dict_update_and_method_lookup(self):
         # gh-144295: test race between dict modifications and method lookups.
         # Uses BytesIO because the race requires a type without Py_TPFLAGS_INLINE_VALUES

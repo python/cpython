@@ -1233,7 +1233,7 @@ variants of :deco:`functools.lru_cache`:
 .. testcode::
 
     from collections import OrderedDict
-    from time import time
+    from time import monotonic
 
     class TimeBoundedLRU:
         "LRU Cache that invalidates and refreshes old entries."
@@ -1248,10 +1248,10 @@ variants of :deco:`functools.lru_cache`:
             if args in self.cache:
                 self.cache.move_to_end(args)
                 timestamp, result = self.cache[args]
-                if time() - timestamp <= self.maxage:
+                if monotonic() - timestamp <= self.maxage:
                     return result
             result = self.func(*args)
-            self.cache[args] = time(), result
+            self.cache[args] = monotonic(), result
             if len(self.cache) > self.maxsize:
                 self.cache.popitem(last=False)
             return result
