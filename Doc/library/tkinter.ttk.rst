@@ -1657,7 +1657,7 @@ and inherits the common methods of :class:`Widget`.
 
 .. class:: Checkbutton(master=None, **kw)
 
-   Ttk :class:`Checkbutton` widget, used to control a Boolean variable that is
+   Ttk :class:`Checkbutton` widget, used to control a boolean variable that is
    toggled on and off.
    It is the themed counterpart of :class:`tkinter.Checkbutton` and inherits
    the common widget methods from :class:`Widget`.

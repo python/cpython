@@ -485,7 +485,7 @@ is helpful.
     print(set(dir(btn)) - set(dir(frm)))
 
 
-Navigating the Tcl/Tk Reference Manual
+Navigating the Tcl/Tk reference manual
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 As noted, the official
@@ -521,7 +521,7 @@ that look like method calls on the man page for a specific widget (e.g.,
 you'll find the :meth:`~tkinter.ttk.Button.invoke` method on the
 `ttk::button <https://www.tcl-lang.org/man/tcl9.0/TkCmd/ttk_button.html>`_
 man page), while functions that take a widget as a parameter often have
-their own man page (e.g.,
+their own man page (for example,
 `grid <https://www.tcl-lang.org/man/tcl9.0/TkCmd/grid.html>`_).
 
 You'll find many common options and methods in the
@@ -529,7 +529,7 @@ You'll find many common options and methods in the
 `ttk::widget <https://www.tcl-lang.org/man/tcl9.0/TkCmd/ttk_widget.html>`_ man
 pages, while others are found in the man page for a specific widget class.
 
-You'll also find that many Tkinter methods have compound names, e.g.,
+You'll also find that many Tkinter methods have compound names, for example,
 :meth:`~Misc.winfo_x`, :meth:`~Misc.winfo_height`,
 :meth:`~Misc.winfo_viewable`.
 You'd find documentation for all of these in the
@@ -563,7 +563,7 @@ is posted to the interpreter's event queue, and when executed, the result is
 returned to the calling Python thread.
 
 Tcl/Tk applications are normally event-driven, meaning that after
-initialization, the interpreter runs an event loop (i.e.
+initialization, the interpreter runs an event loop (that is,
 :meth:`Tk.mainloop <Misc.mainloop>`) and responds to events.
 Because it is single-threaded, event handlers must respond quickly, otherwise
 they will block other events from being processed.
@@ -743,7 +743,7 @@ side
 
 .. _coupling-widget-variables:
 
-Coupling Widget Variables
+Coupling widget variables
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The current-value setting of some widgets (like text entry widgets) can be
@@ -1957,7 +1957,7 @@ Base and mixin classes
       With no arguments, return a dictionary describing all of the available
       options; if *cnf* is the name of an option, return a tuple describing
       that one option.
-      Otherwise set the given option(s) to the given value(s).
+      Otherwise set the given options to the given values.
       Options may have any of the values accepted by :meth:`tk_busy_hold`.
 
       The option database is referenced through the widget name or class.
@@ -2083,8 +2083,8 @@ Base and mixin classes
    .. method:: winfo_fpixels(number)
 
       Return a floating-point value giving the number of pixels in the widget
-      corresponding to the screen distance *number* (e.g. ``"2.0c"`` or
-      ``"1i"``).
+      corresponding to the screen distance *number* (for example,
+      ``"2.0c"`` or ``"1i"``).
       The result may be fractional; for a rounded integer value use
       :meth:`winfo_pixels`.
 
@@ -2143,7 +2143,7 @@ Base and mixin classes
    .. method:: winfo_pixels(number)
 
       Return the number of pixels in the widget corresponding to the screen
-      distance *number* (e.g. ``"2.0c"`` or ``"1i"``).
+      distance *number* (for example, ``"2.0c"`` or ``"1i"``).
       The result is rounded to the nearest integer; for a fractional result use
       :meth:`winfo_fpixels`.
 
