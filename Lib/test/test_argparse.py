@@ -4087,6 +4087,13 @@ class TestMutuallyInclusiveGroupErrors(TestCase):
                                'mutually inclusive groups cannot be nested',
                                g.add_mutually_inclusive_group)
 
+    def test_required_argument_in_group(self):
+        parser = argparse.ArgumentParser(prog='PROG')
+        g = parser.add_mutually_inclusive_group()
+        self.assertRaisesRegex(ValueError,
+                               'mutually inclusive arguments cannot be required',
+                               g.add_argument, '--spam', required=True)
+
     @force_not_colorized
     def test_help(self):
         parser = ErrorRaisingArgumentParser(prog='PROG')

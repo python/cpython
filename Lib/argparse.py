@@ -1957,6 +1957,9 @@ class _MutuallyInclusiveGroup(_ArgumentGroup):
         self._separator = ' &'
 
     def _add_action(self, action):
+        if action.required:
+            msg = 'mutually inclusive arguments cannot be required'
+            raise ValueError(msg)
         action = self._container._add_action(action)
         self._group_actions.append(action)
         return action
