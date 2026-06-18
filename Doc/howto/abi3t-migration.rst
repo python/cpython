@@ -577,7 +577,7 @@ For example, if a user makes a subclass like this:
    class Sub(YourCustomClass):
       __slots__ = ('a', 'b')
 
-then ``Py_TYPE(obj)`` is ``YourCustomClass``, and the underlying memory may
+then ``Py_TYPE(obj)`` is ``Sub``, and the underlying memory may
 look like this:
 
 .. code-block:: text
