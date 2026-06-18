@@ -540,12 +540,15 @@ exit:
 
 PyDoc_STRVAR(_curses_window_delch__doc__,
 "delch([y, x])\n"
-"Delete any character at (y, x).\n"
+"Delete the character under the cursor, or at (y, x) if specified.\n"
 "\n"
 "  y\n"
 "    Y-coordinate.\n"
 "  x\n"
-"    X-coordinate.");
+"    X-coordinate.\n"
+"\n"
+"All characters to the right on the same line are shifted one\n"
+"position left.");
 
 #define _CURSES_WINDOW_DELCH_METHODDEF    \
     {"delch", (PyCFunction)_curses_window_delch, METH_VARARGS, _curses_window_delch__doc__},
@@ -3147,13 +3150,12 @@ PyDoc_STRVAR(_curses_mousemask__doc__,
 "mousemask($module, newmask, /)\n"
 "--\n"
 "\n"
-"Set the mouse events to be reported, and return a tuple (availmask, oldmask).\n"
+"Set the mouse events to be reported, and return (availmask, oldmask).\n"
 "\n"
 "Return a tuple (availmask, oldmask).  availmask indicates which of the\n"
 "specified mouse events can be reported; on complete failure it returns\n"
-"0.  oldmask is the previous value of the given window\'s mouse event\n"
-"mask.  If this function is never called, no mouse events are ever\n"
-"reported.");
+"0.  oldmask is the previous value of the mouse event mask.  If this\n"
+"function is never called, no mouse events are ever reported.");
 
 #define _CURSES_MOUSEMASK_METHODDEF    \
     {"mousemask", (PyCFunction)_curses_mousemask, METH_O, _curses_mousemask__doc__},
@@ -4470,4 +4472,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=e7c7932f4a4e9bce input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ab9b5057eeaf0f33 input=a9049054013a1b77]*/
