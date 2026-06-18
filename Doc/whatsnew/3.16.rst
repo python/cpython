@@ -96,7 +96,7 @@ gzip
 io
 --
 
-* Add :meth:`io.BytesIO.peek`.
+* Add :meth:`io.BytesIO.peek` method to read without advancing position.
   (Contributed by Marcel Martin in :gh:`90533`.)
 
 lzma
