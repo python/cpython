@@ -314,6 +314,13 @@ The module :mod:`curses` defines the following functions:
       cause the interpreter to exit.
 
 
+.. function:: intrflush(flag)
+
+   If *flag* is ``True``, pressing an interrupt key (interrupt, break, or quit)
+   will flush all output in the terminal driver queue.  If *flag* is ``False``,
+   no flushing is done.
+
+
 .. function:: is_term_resized(nlines, ncols)
 
    Return ``True`` if :func:`resize_term` would modify the window structure,
