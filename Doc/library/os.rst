@@ -5107,7 +5107,7 @@ written in Python, such as a mail server's external command delivery program.
    Lock program segments into memory.  The value of *op* (defined in
    ``<sys/lock.h>``) determines which segments are locked.
 
-   .. availability:: Unix, not WASI, not iOS.
+   .. availability:: Unix, not WASI, not macOS, not iOS.
 
 
 .. function:: popen(cmd, mode='r', buffering=-1)
