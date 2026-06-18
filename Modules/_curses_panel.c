@@ -252,11 +252,13 @@ _curses_panel.panel.show
     cls: defining_class
 
 Display the panel (which might have been hidden).
+
+The panel is placed on top of the panel stack.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_panel_panel_show_impl(PyCursesPanelObject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=dc3421de375f0409 input=8122e80151cb4379]*/
+/*[clinic end generated code: output=dc3421de375f0409 input=59375ba57303320d]*/
 {
     _curses_panel_state *state = PyType_GetModuleState(cls);
     return PyCursesCheckERR(state, show_panel(self->pan), "show");
@@ -634,11 +636,13 @@ _curses_panel.new_panel
     /
 
 Return a panel object, associating it with the given window win.
+
+The new panel is placed on top of the panel stack.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_panel_new_panel_impl(PyObject *module, PyCursesWindowObject *win)
-/*[clinic end generated code: output=45e948e0176a9bd2 input=74d4754e0ebe4800]*/
+/*[clinic end generated code: output=45e948e0176a9bd2 input=3b6fea647b808fd7]*/
 {
     _curses_panel_state *state = get_curses_panel_state(module);
 

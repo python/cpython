@@ -102,7 +102,8 @@ The module :mod:`curses` defines the following functions:
    Return the intensity of the red, green, and blue (RGB) components in the color
    *color_number*, which must be between ``0`` and ``COLORS - 1``.  Return a 3-tuple,
    containing the R,G,B values for the given color, which will be between
-   ``0`` (no component) and ``1000`` (maximum amount of component).
+   ``0`` (no component) and ``1000`` (maximum amount of component).  Raise an
+   exception if the color is not supported.
 
 
 .. function:: color_pair(pair_number)
@@ -148,7 +149,7 @@ The module :mod:`curses` defines the following functions:
 
    Update the physical screen.  The curses library keeps two data structures, one
    representing the current physical screen contents and a virtual screen
-   representing the desired next state.  The :func:`doupdate` ground updates the
+   representing the desired next state.  The :func:`doupdate` function updates the
    physical screen to match the virtual screen.
 
    The virtual screen may be updated by a :meth:`~window.noutrefresh` call after write
@@ -180,7 +181,7 @@ The module :mod:`curses` defines the following functions:
 .. function:: filter()
 
    The :func:`.filter` routine, if used, must be called before :func:`initscr` is
-   called.  The effect is that, during those calls, :envvar:`LINES` is set to ``1``; the
+   called.  The effect is that, during the initialization, :envvar:`LINES` is set to ``1``; the
    capabilities ``clear``, ``cup``, ``cud``, ``cud1``, ``cuu1``, ``cuu``, ``vpa`` are disabled; and the ``home``
    string is set to the value of ``cr``. The effect is that the cursor is confined to
    the current line, and so are screen updates.  This may be used for enabling
@@ -226,9 +227,10 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: getwin(file)
 
-   Read window-related data stored in the file by an earlier :func:`window.putwin` call.
+   Read window-related data stored in the file by an earlier :meth:`window.putwin` call.
    The routine then creates and initializes a new window using that data, returning
-   the new window object.
+   the new window object.  The *file* argument must be a file object opened for
+   reading in binary mode.
 
 
 .. function:: has_colors()
@@ -331,6 +333,8 @@ The module :mod:`curses` defines the following functions:
    bytes object consisting of the prefix ``b'M-'`` followed by the name of the corresponding
    ASCII character.
 
+   Raise a :exc:`ValueError` if *k* is negative.
+
 
 .. function:: killchar()
 
@@ -356,7 +360,8 @@ The module :mod:`curses` defines the following functions:
 
    Set the maximum time in milliseconds that can elapse between press and release
    events in order for them to be recognized as a click, and return the previous
-   interval value.  The default value is 200 milliseconds, or one fifth of a second.
+   interval value.  The default value is 166 milliseconds, or one sixth of a second.
+   Use a negative *interval* to obtain the interval value without changing it.
 
 
 .. function:: mousemask(mousemask)
@@ -364,7 +369,7 @@ The module :mod:`curses` defines the following functions:
    Set the mouse events to be reported, and return a tuple ``(availmask,
    oldmask)``.   *availmask* indicates which of the specified mouse events can be
    reported; on complete failure it returns ``0``.  *oldmask* is the previous value of
-   the given window's mouse event mask.  If this function is never called, no mouse
+   the mouse event mask.  If this function is never called, no mouse
    events are ever reported.
 
 
@@ -401,11 +406,13 @@ The module :mod:`curses` defines the following functions:
    right corner of the screen.
 
 
-.. function:: nl()
+.. function:: nl(flag=True)
 
    Enter newline mode.  This mode translates the return key into newline on input,
    and translates newline into return and line-feed on output. Newline mode is
    initially on.
+
+   If *flag* is ``False``, the effect is the same as calling :func:`nonl`.
 
 
 .. function:: nocbreak()
@@ -458,6 +465,8 @@ The module :mod:`curses` defines the following functions:
    Equivalent to ``tputs(str, 1, putchar)``; emit the value of a specified
    terminfo capability for the current terminal.  Note that the output of :func:`putp`
    always goes to standard output.
+
+   :func:`setupterm` (or :func:`initscr`) must be called first.
 
 
 .. function:: qiflush([flag])
@@ -555,6 +564,10 @@ The module :mod:`curses` defines the following functions:
    file descriptor to which any initialization sequences will be sent; if not
    supplied or ``-1``, the file descriptor for ``sys.stdout`` will be used.
 
+   Raise a :exc:`curses.error` if the terminal could not be found or its
+   terminfo database entry could not be read.  If the terminal has already
+   been initialized, this function has no effect.
+
 
 .. function:: start_color()
 
@@ -589,6 +602,8 @@ The module :mod:`curses` defines the following functions:
    Boolean capability, or ``0`` if it is canceled or absent from the terminal
    description.
 
+   :func:`setupterm` (or :func:`initscr`) must be called first.
+
 
 .. function:: tigetnum(capname)
 
@@ -596,6 +611,8 @@ The module :mod:`curses` defines the following functions:
    capability name *capname* as an integer.  Return the value ``-2`` if *capname* is not a
    numeric capability, or ``-1`` if it is canceled or absent from the terminal
    description.
+
+   :func:`setupterm` (or :func:`initscr`) must be called first.
 
 
 .. function:: tigetstr(capname)
@@ -605,13 +622,17 @@ The module :mod:`curses` defines the following functions:
    is not a terminfo "string capability", or is canceled or absent from the
    terminal description.
 
+   :func:`setupterm` (or :func:`initscr`) must be called first.
+
 
 .. function:: tparm(str[, ...])
 
    Instantiate the bytes object *str* with the supplied parameters, where *str* should
    be a parameterized string obtained from the terminfo database.  For example,
    ``tparm(tigetstr("cup"), 5, 3)`` could result in ``b'\033[6;4H'``, the exact
-   result depending on terminal type.
+   result depending on terminal type.  Up to nine integer parameters may be supplied.
+
+   :func:`setupterm` (or :func:`initscr`) must be called first.
 
 
 .. function:: typeahead(fd)
@@ -876,7 +897,8 @@ Window objects
 
 .. method:: window.delch([y, x])
 
-   Delete any character at ``(y, x)``.
+   Delete the character under the cursor, or at ``(y, x)`` if specified.  All
+   characters to the right on the same line are shifted one position left.
 
 
 .. method:: window.deleteln()
@@ -978,6 +1000,8 @@ Window objects
             window.getstr(y, x, n)
 
    Read a bytes object from the user, with primitive line editing capacity.
+   At most *n* characters are read (1023 by default).
+   The maximum value for *n* is 1023.
 
 
 .. method:: window.getyx()
@@ -986,11 +1010,12 @@ Window objects
    upper-left corner.
 
 
-.. method:: window.hline(ch, n)
-            window.hline(y, x, ch, n)
+.. method:: window.hline(ch, n[, attr])
+            window.hline(y, x, ch, n[, attr])
 
    Display a horizontal line starting at ``(y, x)`` with length *n* consisting of
-   the character *ch*.
+   the character *ch* with attributes *attr*.  The line stops at the right edge
+   of the window if fewer than *n* cells are available.
 
 
 .. method:: window.idcok(flag)
@@ -1024,8 +1049,10 @@ Window objects
 .. method:: window.insch(ch[, attr])
             window.insch(y, x, ch[, attr])
 
-   Paint character *ch* at ``(y, x)`` with attributes *attr*, moving the line from
-   position *x* right by one character.
+   Insert character *ch* with attributes *attr* before the character under the
+   cursor, or at ``(y, x)`` if specified.  All characters to the right of the
+   cursor are shifted one position right, with the rightmost character on the
+   line being lost.  The cursor position does not change.
 
 
 .. method:: window.insdelln(nlines)
@@ -1066,7 +1093,8 @@ Window objects
             window.instr(y, x[, n])
 
    Return a bytes object of characters, extracted from the window starting at the
-   current cursor position, or at *y*, *x* if specified. Attributes are stripped
+   current cursor position, or at *y*, *x* if specified, and stopping at the end
+   of the line. Attributes and color information are stripped
    from the characters.  If *n* is specified, :meth:`instr` returns a string
    at most *n* characters long (exclusive of the trailing NUL).
 
@@ -1094,8 +1122,7 @@ Window objects
 .. method:: window.leaveok(flag)
 
    If *flag* is ``True``, cursor is left where it is on update, instead of being at "cursor
-   position."  This reduces cursor movement where possible. If possible the cursor
-   will be made invisible.
+   position."  This reduces cursor movement where possible.
 
    If *flag* is ``False``, cursor will always be at "cursor position" after an update.
 
@@ -1116,6 +1143,9 @@ Window objects
 
    Move the window so its upper-left corner is at ``(new_y, new_x)``.
 
+   Moving the window so that any part of it would be off the screen is an error:
+   the window is not moved and :exc:`curses.error` is raised.
+
 
 .. method:: window.nodelay(flag)
 
@@ -1131,10 +1161,15 @@ Window objects
 
 
 .. method:: window.noutrefresh()
+            window.noutrefresh(pminrow, pmincol, sminrow, smincol, smaxrow, smaxcol)
 
    Mark for refresh but wait.  This function updates the data structure
    representing the desired state of the window, but does not force an update of
    the physical screen.  To accomplish that, call  :func:`doupdate`.
+
+   The 6 arguments can only be specified, and are then required, when the window
+   is a pad created with :func:`newpad`; they have the same meaning as for
+   :meth:`refresh`.
 
 
 .. method:: window.overlay(destwin[, sminrow, smincol, dminrow, dmincol, dmaxrow, dmaxcol])
@@ -1186,8 +1221,8 @@ Window objects
    Update the display immediately (sync actual screen with previous
    drawing/deleting methods).
 
-   The 6 optional arguments can only be specified when the window is a pad created
-   with :func:`newpad`.  The additional parameters are needed to indicate what part
+   The 6 arguments can only be specified, and are then required, when the window
+   is a pad created with :func:`newpad`.  The additional parameters are needed to indicate what part
    of the pad and screen are involved. *pminrow* and *pmincol* specify the
    upper-left corner of the rectangle to be displayed in the pad.  *sminrow*,
    *smincol*, *smaxrow*, and *smaxcol* specify the edges of the rectangle to be
@@ -1208,7 +1243,9 @@ Window objects
 
 .. method:: window.scroll([lines=1])
 
-   Scroll the screen or scrolling region upward by *lines* lines.
+   Scroll the screen or scrolling region.  Scroll upward by *lines* lines if
+   *lines* is positive, or downward if it is negative.  Scrolling has no effect
+   unless it has been enabled for the window with :meth:`scrollok`.
 
 
 .. method:: window.scrollok(flag)
@@ -1241,15 +1278,17 @@ Window objects
 .. method:: window.subpad(begin_y, begin_x)
             window.subpad(nlines, ncols, begin_y, begin_x)
 
-   Return a sub-window, whose upper-left corner is at ``(begin_y, begin_x)``, and
-   whose width/height is *ncols*/*nlines*.
+   Return a sub-pad, whose upper-left corner is at ``(begin_y, begin_x)``, and
+   whose width/height is *ncols*/*nlines*.  The coordinates are relative to the
+   parent pad (unlike :meth:`subwin`, which uses screen coordinates).  This
+   method is only available for pads created with :func:`newpad`.
 
 
 .. method:: window.subwin(begin_y, begin_x)
             window.subwin(nlines, ncols, begin_y, begin_x)
 
-   Return a sub-window, whose upper-left corner is at ``(begin_y, begin_x)``, and
-   whose width/height is *ncols*/*nlines*.
+   Return a sub-window, whose upper-left corner is at the screen-relative
+   coordinates ``(begin_y, begin_x)``, and whose width/height is *ncols*/*nlines*.
 
    By default, the sub-window will extend from the specified position to the lower
    right corner of the window.
@@ -1772,7 +1811,7 @@ The following table lists mouse button constants used by :meth:`getmouse`:
 +----------------------------------+---------------------------------------------+
 | .. data:: BUTTON_CTRL            | Control was down during button state change |
 +----------------------------------+---------------------------------------------+
-| .. data:: BUTTON_ALT             | Control was down during button state change |
+| .. data:: BUTTON_ALT             | Alt was down during button state change     |
 +----------------------------------+---------------------------------------------+
 
 .. versionchanged:: 3.10
@@ -1840,32 +1879,36 @@ Textbox objects
 You can instantiate a :class:`Textbox` object as follows:
 
 
-.. class:: Textbox(win)
+.. class:: Textbox(win, insert_mode=False)
 
    Return a textbox widget object.  The *win* argument should be a curses
    :ref:`window <curses-window-objects>` object in which the textbox is to
-   be contained. The edit cursor of the textbox is initially located at the
+   be contained.  If *insert_mode* is true, the textbox inserts typed
+   characters, shifting existing text to the right, rather than overwriting it.
+   The edit cursor of the textbox is initially located at the
    upper-left corner of the containing window, with coordinates ``(0, 0)``.
    The instance's :attr:`stripspaces` flag is initially on.
 
    :class:`Textbox` objects have the following methods:
 
 
-   .. method:: edit([validator])
+   .. method:: edit(validate=None)
 
       This is the entry point you will normally use.  It accepts editing
       keystrokes until one of the termination keystrokes is entered.  If
-      *validator* is supplied, it must be a function.  It will be called for
+      *validate* is supplied, it must be a function.  It will be called for
       each keystroke entered with the keystroke as a parameter; command dispatch
-      is done on the result. This method returns the window contents as a
+      is done on the result.  If it returns a false value, the keystroke is
+      ignored.  This method returns the window contents as a
       string; whether blanks in the window are included is affected by the
       :attr:`stripspaces` attribute.
 
 
    .. method:: do_command(ch)
 
-      Process a single command keystroke.  Here are the supported special
-      keystrokes:
+      Process a single command keystroke.  Returns ``1`` to continue editing,
+      or ``0`` if a termination keystroke was processed.  Here are the supported
+      special keystrokes:
 
       +------------------+-------------------------------------------+
       | Keystroke        | Action                                    |
@@ -1888,7 +1931,8 @@ You can instantiate a :class:`Textbox` object as follows:
       | :kbd:`Control-H` | Delete character backward.                |
       +------------------+-------------------------------------------+
       | :kbd:`Control-J` | Terminate if the window is 1 line,        |
-      |                  | otherwise insert newline.                 |
+      |                  | otherwise move to the start of the next   |
+      |                  | line.                                     |
       +------------------+-------------------------------------------+
       | :kbd:`Control-K` | If line is blank, delete it, otherwise    |
       |                  | clear to end of line.                     |
