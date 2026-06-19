@@ -1773,11 +1773,26 @@ class ScreenTests(unittest.TestCase):
         self.save_signals = SaveSignals()
         self.save_signals.save()
         self.addCleanup(self.save_signals.restore)
+        self.pty_masters = []
+
+    def drain_ptys(self):
+        # Discard whatever curses has written to the screens.  Nothing reads
+        # the master end, so on platforms such as macOS (but not Linux) the
+        # tcdrain() that curses performs inside endwin() -- and even a plain
+        # write() -- blocks once the unread output fills the pty buffer.
+        # Draining here, before endwin(), leaves room for its output to drain.
+        for master in self.pty_masters:
+            try:
+                while os.read(master, 65536):
+                    pass
+            except BlockingIOError:
+                pass
 
     def tearDown(self):
         # Leave visual mode and reclaim the screens the test created, while
         # their pseudo-terminals are still open (closing them happens later,
         # via the make_pty() cleanups).
+        self.drain_ptys()
         try:
             curses.endwin()
         except curses.error:
@@ -1786,6 +1801,8 @@ class ScreenTests(unittest.TestCase):
 
     def make_pty(self):
         master, slave = os.openpty()
+        os.set_blocking(master, False)
+        self.pty_masters.append(master)
         self.addCleanup(os.close, master)
         self.addCleanup(os.close, slave)
         return slave

@@ -3723,7 +3723,18 @@ De-initialize the library, and return terminal to normal status.
 static PyObject *
 _curses_endwin_impl(PyObject *module)
 /*[clinic end generated code: output=c0150cd96d2f4128 input=e172cfa43062f3fa]*/
-NoArgNoReturnFunctionBody(endwin)
+{
+    PyCursesStatefulInitialised(module);
+
+    /* endwin() writes to the terminal and may call tcdrain(), which can block
+       (e.g. on a pty whose output is not being read); release the GIL so other
+       threads -- including one draining that terminal -- can run meanwhile. */
+    int code;
+    Py_BEGIN_ALLOW_THREADS
+    code = endwin();
+    Py_END_ALLOW_THREADS
+    return curses_check_err(module, code, "endwin", NULL);
+}
 
 /*[clinic input]
 _curses.erasechar
