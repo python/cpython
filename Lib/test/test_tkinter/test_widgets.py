@@ -208,6 +208,23 @@ class ButtonTest(AbstractLabelTest, unittest.TestCase):
         widget = self.create()
         self.checkEnumParam(widget, 'default', 'active', 'disabled', 'normal')
 
+    def test_invoke(self):
+        success = []
+        widget = self.create(command=lambda: success.append(1))
+        widget.pack()
+        widget.invoke()
+        self.assertEqual(success, [1])
+        # invoke does nothing for a disabled button.
+        widget.configure(state='disabled')
+        widget.invoke()
+        self.assertEqual(success, [1])
+
+    def test_flash(self):
+        widget = self.create()
+        widget.pack()
+        widget.update_idletasks()
+        widget.flash()  # No exception.
+
 
 @add_configure_tests(StandardOptionsTests)
 class CheckbuttonTest(AbstractLabelTest, unittest.TestCase):
@@ -263,6 +280,39 @@ class CheckbuttonTest(AbstractLabelTest, unittest.TestCase):
         b2.deselect()
         self.assertEqual(v.get(), 0)
 
+    def test_invoke(self):
+        success = []
+        v = tkinter.IntVar(self.root)
+        widget = self.create(variable=v, onvalue=1, offvalue=0,
+                             command=lambda: success.append(v.get()))
+        widget.pack()
+        widget.invoke()
+        self.assertEqual(v.get(), 1)
+        self.assertEqual(success, [1])
+        widget.invoke()
+        self.assertEqual(v.get(), 0)
+        self.assertEqual(success, [1, 0])
+        # A disabled checkbutton is not toggled and its command is not called.
+        widget.configure(state='disabled')
+        widget.invoke()
+        self.assertEqual(v.get(), 0)
+        self.assertEqual(success, [1, 0])
+
+    def test_toggle(self):
+        v = tkinter.IntVar(self.root)
+        widget = self.create(variable=v, onvalue=1, offvalue=0)
+        self.assertEqual(v.get(), 0)
+        widget.toggle()
+        self.assertEqual(v.get(), 1)
+        widget.toggle()
+        self.assertEqual(v.get(), 0)
+
+    def test_flash(self):
+        widget = self.create()
+        widget.pack()
+        widget.update_idletasks()
+        widget.flash()  # No exception.
+
 @add_configure_tests(StandardOptionsTests)
 class RadiobuttonTest(AbstractLabelTest, unittest.TestCase):
     OPTIONS = (
@@ -284,6 +334,28 @@ class RadiobuttonTest(AbstractLabelTest, unittest.TestCase):
     def test_configure_value(self):
         widget = self.create()
         self.checkParams(widget, 'value', 1, 2.3, '', 'any string')
+
+    def test_invoke(self):
+        success = []
+        v = tkinter.StringVar(self.root)
+        widget = self.create(variable=v, value='on',
+                             command=lambda: success.append(v.get()))
+        widget.pack()
+        widget.invoke()
+        self.assertEqual(v.get(), 'on')
+        self.assertEqual(success, ['on'])
+        # invoke does nothing for a disabled radiobutton.
+        v.set('')
+        widget.configure(state='disabled')
+        widget.invoke()
+        self.assertEqual(v.get(), '')
+        self.assertEqual(success, ['on'])
+
+    def test_flash(self):
+        widget = self.create()
+        widget.pack()
+        widget.update_idletasks()
+        widget.flash()  # No exception.
 
 
 @add_configure_tests(StandardOptionsTests)
@@ -476,6 +548,47 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(widget.selection_get(), '12345')
         widget.selection_adjust(0)
 
+    def test_delete(self):
+        widget = self.create()
+        widget.insert(0, 'abcdef')
+        widget.delete(1, 3)
+        self.assertEqual(widget.get(), 'adef')
+        widget.delete(1)
+        self.assertEqual(widget.get(), 'aef')
+        widget.delete(0, 'end')
+        self.assertEqual(widget.get(), '')
+        self.assertRaisesRegex(TclError, r'bad (entry|spinbox) index "xyz"',
+                               widget.delete, 'xyz')
+        self.assertRaises(TypeError, widget.delete)
+
+    def test_icursor(self):
+        widget = self.create()
+        widget.insert(0, 'abcdef')
+        widget.icursor(3)
+        widget.insert('insert', 'XYZ')
+        self.assertEqual(widget.get(), 'abcXYZdef')
+        self.assertRaisesRegex(TclError, r'bad (entry|spinbox) index "xyz"',
+                               widget.icursor, 'xyz')
+        self.assertRaises(TypeError, widget.icursor)
+
+    def test_select_aliases(self):
+        # The select_* methods are aliases of the selection_* methods.
+        widget = self.create()
+        widget.insert(0, '12345')
+        self.assertFalse(widget.select_present())
+        widget.select_range(0, 'end')
+        self.assertTrue(widget.select_present())
+        self.assertEqual(widget.selection_get(), '12345')
+        widget.select_from(1)
+        widget.select_to(3)
+        self.assertEqual(widget.selection_get(), '23')
+        widget.select_adjust(4)
+        self.assertEqual(widget.selection_get(), '234')
+        widget.select_clear()
+        self.assertFalse(widget.select_present())
+        self.assertRaisesRegex(TclError, 'bad entry index "xyz"',
+                               widget.select_range, 'xyz', 'end')
+
 
 @add_configure_tests(StandardOptionsTests)
 class SpinboxTest(EntryTest, unittest.TestCase):
@@ -623,6 +736,38 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         self.assertEqual(widget.selection_element(), "buttonup")
         widget.selection_element("buttondown")
         self.assertEqual(widget.selection_element(), "buttondown")
+
+    # Spinbox has no select_* aliases, unlike Entry.
+    test_select_aliases = None
+
+    def test_invoke(self):
+        widget = self.create(from_=0, to=10)
+        widget.delete(0, 'end')
+        widget.insert(0, '5')
+        widget.invoke('buttonup')
+        self.assertEqual(widget.get(), '6')
+        widget.invoke('buttondown')
+        self.assertEqual(widget.get(), '5')
+        self.assertRaisesRegex(TclError, 'bad element "spam"',
+                               widget.invoke, 'spam')
+
+    def test_identify(self):
+        widget = self.create()
+        widget.pack()
+        widget.update_idletasks()
+        # The empty string is returned for a point over no element.
+        self.assertIn(widget.identify(5, 5),
+                      ('entry', 'buttonup', 'buttondown', 'none', ''))
+        self.assertRaises(TclError, widget.identify, 'a', 'b')
+
+    def test_scan(self):
+        widget = self.create()
+        widget.insert(0, 'a' * 100)
+        widget.pack()
+        widget.update_idletasks()
+        self.assertEqual(widget.scan_mark(10), ())
+        self.assertEqual(widget.scan_dragto(0), ())
+        self.assertRaises(TypeError, widget.scan_mark)
 
 
 @add_configure_tests(StandardOptionsTests)
@@ -1249,6 +1394,14 @@ class ScaleTest(AbstractWidgetTest, unittest.TestCase):
         self.checkFloatParam(widget, 'to', 300, 14.9, 15.1, -10,
                              conv=float_round)
 
+    def test_identify(self):
+        widget = self.create()
+        widget.pack()
+        widget.update_idletasks()
+        self.assertIn(widget.identify(5, 5),
+                      ('slider', 'trough1', 'trough2', ''))
+        self.assertRaises(TclError, widget.identify, 'a', 'b')
+
 
 @add_configure_tests(PixelSizeTests, StandardOptionsTests)
 class ScrollbarTest(AbstractWidgetTest, unittest.TestCase):
@@ -1301,6 +1454,34 @@ class ScrollbarTest(AbstractWidgetTest, unittest.TestCase):
         self.assertRaises(TclError, sb.set, 0.6, None)
         self.assertRaises(TypeError, sb.set, 0.6)
         self.assertRaises(TypeError, sb.set, 0.6, 0.7, 0.8)
+
+    def test_fraction(self):
+        sb = self.create()
+        sb.pack(fill='y', expand=True)
+        sb.update_idletasks()
+        self.assertIsInstance(sb.fraction(0, 0), float)
+        f = sb.fraction(0, 1000)
+        self.assertIsInstance(f, float)
+        self.assertGreaterEqual(f, 0.0)
+        self.assertLessEqual(f, 1.0)
+        self.assertRaises(TclError, sb.fraction, 'a', 'b')
+        self.assertRaises(TypeError, sb.fraction, 0)
+
+    def test_delta(self):
+        sb = self.create()
+        sb.pack(fill='y', expand=True)
+        sb.update_idletasks()
+        self.assertIsInstance(sb.delta(0, 10), float)
+        self.assertRaises(TclError, sb.delta, 'a', 'b')
+        self.assertRaises(TypeError, sb.delta, 0)
+
+    def test_identify(self):
+        sb = self.create()
+        sb.pack(fill='y', expand=True)
+        sb.update_idletasks()
+        self.assertIn(sb.identify(5, 5),
+                      ('arrow1', 'arrow2', 'slider', 'trough1', 'trough2', ''))
+        self.assertRaises(TclError, sb.identify, 'a', 'b')
 
 
 @add_configure_tests(PixelSizeTests, StandardOptionsTests)
@@ -1378,6 +1559,75 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
         p.add(b)
         p.add(c)
         return p, b, c
+
+    def test_panes(self):
+        p, b, c = self.create2()
+        self.assertEqual([str(x) for x in p.panes()], [str(b), str(c)])
+
+    def test_remove(self):
+        p, b, c = self.create2()
+        p.remove(b)
+        self.assertEqual([str(x) for x in p.panes()], [str(c)])
+        p.forget(c)  # forget is an alias of remove.
+        self.assertEqual(p.panes(), ())
+
+    def test_sash(self):
+        p, b, c = self.create2()
+        p.configure(width=200, height=50)
+        p.pack()
+        p.update()
+        x, y = p.sash_coord(0)
+        self.assertIsInstance(x, int)
+        self.assertIsInstance(y, int)
+        p.sash_place(0, 120, 0)
+        p.update()
+        self.assertEqual(p.sash_coord(0)[0], 120)
+        p.sash_mark(0)  # No exception.
+        self.assertRaises(TclError, p.sash_coord, 5)
+
+    def test_proxy(self):
+        p, b, c = self.create2()
+        p.configure(width=200, height=50)
+        p.pack()
+        p.update()
+        p.proxy_place(100, 10)
+        p.update()
+        self.assertEqual(p.proxy_coord()[0], 100)
+        p.proxy_forget()
+        p.update()
+
+    def test_identify(self):
+        p, b, c = self.create2()
+        p.configure(width=200, height=50)
+        p.pack()
+        p.update()
+        x, y = p.sash_coord(0)
+        # A point over the sash reports the sash.
+        self.assertIn('sash', p.identify(x + 1, y + 5))
+        # A point over a pane reports nothing.
+        self.assertFalse(p.identify(2, 2))
+        self.assertRaises(TclError, p.identify, 'a', 'b')
+
+    def test_add_options(self):
+        p = self.create()
+        b = tkinter.Button(p)
+        p.add(b, minsize=40, padx=3, sticky='ns')
+        self.assertEqual(p.panecget(b, 'minsize'),
+                         40 if self.wantobjects else '40')
+        self.assertEqual(p.panecget(b, 'padx'),
+                         3 if self.wantobjects else '3')
+        self.assertEqual(p.panecget(b, 'sticky'), 'ns')
+        self.assertRaisesRegex(TclError, 'unknown option "-spam"',
+                               p.add, tkinter.Button(p), spam='x')
+        self.assertRaisesRegex(TclError, 'bad window path name "spam"',
+                               p.add, 'spam')
+
+    def test_paneconfigure_errors(self):
+        p, b, c = self.create2()
+        self.assertRaisesRegex(TclError, 'unknown option "-spam"',
+                               p.paneconfigure, b, spam='x')
+        self.assertRaises(TclError, p.panecget, b, 'spam')
+        self.assertRaises(TclError, p.paneconfigure, 'spam')
 
     def test_paneconfigure(self):
         p, b, c = self.create2()
