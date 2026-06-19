@@ -374,6 +374,14 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
     """
     sys.audit("os.walk", top, topdown, onerror, followlinks)
 
+    try:
+        top_stat = stat(fspath(top))
+    except OSError:
+        pass  # non-existing: fall through, scandir will handle it via onerror
+    else:
+        if not path.isdir(fspath(top)) and not path.islink(fspath(top)):
+            raise NotADirectoryError(20, "Not a directory", top)
+
     stack = [fspath(top)]
     islink, join = path.islink, path.join
     while stack:
@@ -540,11 +548,14 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
         stack.append((_fwalk_close, topfd))
         if not follow_symlinks:
             if isroot and not st.S_ISDIR(orig_st.st_mode):
-                return
+                raise NotADirectoryError(20, "Not a directory", toppath)
             if not path.samestat(orig_st, stat(topfd)):
                 return
 
-        scandir_it = scandir(topfd)
+        try:
+            scandir_it = scandir(topfd)
+        except NotADirectoryError:
+            raise NotADirectoryError(20, "Not a directory", toppath)
         dirs = []
         nondirs = []
         entries = None if topdown or follow_symlinks else []
