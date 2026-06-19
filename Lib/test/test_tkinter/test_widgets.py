@@ -1361,7 +1361,7 @@ class CanvasTest(AbstractWidgetTest, unittest.TestCase):
         c.create_rectangle(10, 10, 30, 30, fill='black')
         ps = c.postscript()
         self.assertIsInstance(ps, str)
-        self.assertStartsWith(ps, '%!PS-Adobe')
+        self.assertTrue(ps.startswith('%!PS-Adobe'), ps[:20])
         self.assertRaises(TclError, c.postscript, badoption='spam')
 
     def assertCommandExist(self, widget, funcid):
