@@ -1664,7 +1664,7 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         # The Treeitem.indicator element is packed at the left of the row in
         # the Item layout on every platform and theme.
         element = self.tv.identify_element(x + 8, y + h // 2)
-        self.assertRegex(element, r'.*indicator\z')
+        self.assertRegex(element, r'.*indicator\Z')
         # The empty string is returned outside the widget.
         self.assertEqual(self.tv.identify_element(-1, -1), '')
         self.assertRaises(tkinter.TclError, self.tv.identify_element, None, 5)
