@@ -693,7 +693,10 @@ class WinfoTest(AbstractTkTest, unittest.TestCase):
         self.assertIsInstance(self.root.winfo_fpixels('1i'), float)
         self.assertAlmostEqual(self.root.winfo_fpixels('1i'),
                                self.root.winfo_fpixels('72p'))
-        self.assertRaisesRegex(TclError, 'bad screen distance "spam"',
+        # Tk < 9 reports 'bad screen distance "spam"', Tk 9 reports
+        # 'expected screen distance ... but got "spam"'.
+        self.assertRaisesRegex(TclError,
+                               r'(bad|expected) screen distance.*"spam"',
                                self.root.winfo_fpixels, 'spam')
 
     def test_winfo_screen(self):
@@ -833,8 +836,9 @@ class WmTest(AbstractTkTest, unittest.TestCase):
 
     def test_wm_minsize_maxsize(self):
         t = tkinter.Toplevel(self.root)
-        t.minsize(50, 60)
-        self.assertEqual(t.minsize(), (50, 60))
+        # Use a width above the minimum enforced by some platforms (72 on Aqua).
+        t.minsize(150, 100)
+        self.assertEqual(t.minsize(), (150, 100))
         t.maxsize(500, 600)
         self.assertEqual(t.maxsize(), (500, 600))
 
@@ -878,13 +882,14 @@ class WmTest(AbstractTkTest, unittest.TestCase):
         self.assertIn(t.iconname(), ('Icon', ''))
 
     def test_wm_client_command(self):
-        # WM_CLIENT_MACHINE and WM_COMMAND are X11 properties and may be
-        # no-ops on other platforms.
         t = tkinter.Toplevel(self.root)
         t.client('myhost')
-        self.assertIn(t.client(), ('myhost', ''))
         t.wm_command('myapp -x')
-        self.assertIn(t.wm_command(), ('myapp -x', ''))
+        # WM_CLIENT_MACHINE and WM_COMMAND are X11 properties; elsewhere the
+        # setters may be no-ops and wm_command may return a split list.
+        if t._windowingsystem == 'x11':
+            self.assertEqual(t.client(), 'myhost')
+            self.assertEqual(t.wm_command(), 'myapp -x')
 
     def test_wm_overrideredirect(self):
         t = tkinter.Toplevel(self.root)
