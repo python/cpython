@@ -1,0 +1,2 @@
+Fixed :func:`http.cookies.BaseCookie.load()` to consistently throw errors on
+invalid cookies. Patch by Bar Harel.
