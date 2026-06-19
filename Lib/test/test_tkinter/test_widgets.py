@@ -1030,7 +1030,9 @@ class CanvasTest(AbstractWidgetTest, unittest.TestCase):
                             foreground='red', background='blue')
         self.assertEqual(str(c.itemcget(i, 'foreground')), 'red')
         self.assertEqual(str(c.itemcget(i, 'background')), 'blue')
-        self.assertRaises(TclError, c.create_bitmap, 10, 20, bitmap='spam')
+        if c._windowingsystem != 'aqua':
+            # Aqua resolves bitmaps lazily and does not report a bad name here.
+            self.assertRaises(TclError, c.create_bitmap, 10, 20, bitmap='spam')
 
     def test_create_image(self):
         c = self.create()
