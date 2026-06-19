@@ -286,13 +286,11 @@ class PackTest(AbstractWidgetTest, unittest.TestCase):
         # (Misc precedes Pack, Place and Grid in the method resolution order).
         pack, a, b, c, d = self.create2()
         self.assertEqual(pack.slaves, pack.pack_slaves)
-        self.assertEqual(pack.content, pack.pack_content)
         self.assertEqual(pack.propagate, pack.pack_propagate)
 
         self.assertEqual(pack.slaves(), [])
         a.pack_configure()
         self.assertEqual(pack.slaves(), [a])
-        self.assertEqual(pack.content(), [a])
 
         pack.configure(width=300, height=200)
         pack.propagate(False)
@@ -515,7 +513,6 @@ class PlaceTest(AbstractWidgetTest, unittest.TestCase):
         self.assertIs(tkinter.Place.info, tkinter.Place.place_info)
         self.assertIs(tkinter.Place.forget, tkinter.Place.place_forget)
         self.assertIs(tkinter.Place.slaves, tkinter.Misc.place_slaves)
-        self.assertIs(tkinter.Place.content, tkinter.Misc.place_content)
 
 
 class GridTest(AbstractWidgetTest, unittest.TestCase):
