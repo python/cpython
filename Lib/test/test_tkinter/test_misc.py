@@ -4,6 +4,7 @@ import tkinter
 from tkinter import TclError
 import enum
 from test import support
+from test.support import os_helper
 from test.test_tkinter.support import setUpModule  # noqa: F401
 from test.test_tkinter.support import (AbstractTkTest, AbstractDefaultRootTest,
                                        requires_tk, get_tk_patchlevel)
@@ -354,6 +355,19 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.root.option_clear()
         self.assertEqual(b.option_get('background', 'Background'), '')
 
+    def test_option_readfile(self):
+        self.addCleanup(self.root.option_clear)
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        with open(os_helper.TESTFN, 'w') as f:
+            f.write('*Button.background: red\n')
+        self.root.option_readfile(os_helper.TESTFN)
+        b = tkinter.Button(self.root)
+        self.assertEqual(b.option_get('background', 'Background'), 'red')
+        self.assertRaises(TclError, self.root.option_readfile,
+                          os_helper.TESTFN + '.nonexistent')
+        self.assertRaises(TypeError, self.root.option_readfile)
+        self.assertRaises(TypeError, self.root.option_readfile, 'a', 'b', 'c')
+
     def test_nametowidget(self):
         b = tkinter.Button(self.root, name='btn')
         self.assertIs(self.root.nametowidget('btn'), b)
@@ -413,6 +427,38 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
     def test_bell(self):
         self.root.bell()  # No exception.
         self.root.bell(displayof=self.root)
+
+    def test_tk_focusNext_focusPrev(self):
+        f = tkinter.Frame(self.root)
+        f.pack()
+        entries = [tkinter.Entry(f) for _ in range(3)]
+        for entry in entries:
+            entry.pack()
+        # tk_focusNext skips widgets that are not viewable.
+        entries[-1].wait_visibility()
+        self.assertIs(entries[0].tk_focusNext(), entries[1])
+        self.assertIs(entries[1].tk_focusNext(), entries[2])
+        self.assertIs(entries[2].tk_focusPrev(), entries[1])
+        self.assertIs(entries[1].tk_focusPrev(), entries[0])
+        self.assertRaises(TypeError, entries[0].tk_focusNext, 'x')
+        self.assertRaises(TypeError, entries[0].tk_focusPrev, 'x')
+
+    def test_tk_strictMotif(self):
+        self.addCleanup(self.root.tk_strictMotif, False)
+        self.assertIs(self.root.tk_strictMotif(), False)
+        self.assertIs(self.root.tk_strictMotif(True), True)
+        self.assertIs(self.root.tk_strictMotif(), True)
+        self.assertIs(self.root.tk_strictMotif(False), False)
+        self.assertRaises(TypeError, self.root.tk_strictMotif, 1, 2)
+
+    def test_tk_bisque(self):
+        # tk_bisque resets the color palette; use a separate root so that
+        # the shared one is not affected.
+        root = tkinter.Tk()
+        self.addCleanup(root.destroy)
+        root.tk_bisque()
+        self.assertEqual(root['background'], '#ffe4c4')
+        self.assertRaises(TypeError, root.tk_bisque, 'x')
 
     def test_event_repr_defaults(self):
         e = tkinter.Event()
@@ -789,6 +835,13 @@ class WmTest(AbstractTkTest, unittest.TestCase):
             self.assertEqual(t.wm_iconbitmap(), '')
 
         t.destroy()
+
+    def test_wm_iconphoto(self):
+        t = tkinter.Toplevel(self.root)
+        img = tkinter.PhotoImage(master=t, width=16, height=16)
+        t.wm_iconphoto(False, img)  # No exception.
+        t.wm_iconphoto(True, img)
+        self.assertRaises(tkinter.TclError, t.wm_iconphoto, False, 'spam')
 
     def test_wm_title(self):
         t = tkinter.Toplevel(self.root)
