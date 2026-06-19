@@ -282,6 +282,20 @@ _PyThreadState_GetFrame(PyThreadState *tstate)
     return _PyFrame_GetFirstComplete(tstate->current_frame);
 }
 
+// Update last_profiled_frame for remote profiler frame caching.
+// Only update if we're removing the exact frame that was last profiled.
+// This avoids corrupting the cache when transient frames (called and returned
+// between profiler samples) update last_profiled_frame to addresses the
+// profiler never saw.
+#define _PyThreadState_UpdateLastProfiledFrame(tstate, frame, previous) \
+    do { \
+        PyThreadState *tstate_ = (tstate); \
+        _PyInterpreterFrame *frame_ = (frame); \
+        if (tstate_->last_profiled_frame == frame_) { \
+            tstate_->last_profiled_frame = (previous); \
+        } \
+    } while (0)
+
 /* For use by _PyFrame_GetFrameObject
   Do not call directly. */
 PyAPI_FUNC(PyFrameObject *)
