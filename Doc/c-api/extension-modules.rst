@@ -102,13 +102,19 @@ item defined in the module's C source.
 
 .. _pymodexport-api-caveats:
 
-The hook should be kept short -- ideally, one line as above.
-If you need to use any Python C API, it is recommended to call
-:c:func:`PyABIInfo_Check` first to raise an exception,
-rather than crash, in common cases of ABI mismatch.
-Also, note that in :term:`free-threaded <free threading>` builds the export
-function may be called without the :term:`GIL` held even if the extension
-specifies that the GIL is required.
+The hook should be kept short.
+If it does more than ``return`` a static array, several caveats apply:
+
+- If you need to use any Python C API, it is recommended to call
+  :c:func:`PyABIInfo_Check` first to raise an exception,
+  rather than crash, in common cases of ABI mismatch.
+- Code in the export hook must never rely on the :term:`GIL`:
+  :term:`free-threaded builds <free-threaded build>` of Python can only check
+  the :c:macro:`Py_mod_gil` slot (or the lack of it) after the hook returns,
+- Similarly, the hook may be called in any subinterpreter, since the
+  :c:macro:`Py_mod_multiple_interpreters` slot (or lack of it)
+  is only checked after the hook returns.
+
 For example::
 
    PyMODEXPORT_FUNC
