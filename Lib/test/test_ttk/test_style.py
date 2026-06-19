@@ -124,6 +124,22 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
 
         self.style.theme_use(curr_theme)
 
+    def test_theme_settings(self):
+        style = self.style
+        theme = style.theme_use()
+        style.theme_settings(theme, {
+            'Test.TLabel': {
+                'configure': {'foreground': 'red', 'background': 'blue'},
+                'map': {'foreground': [('active', 'green')]},
+            },
+        })
+        self.assertEqual(style.lookup('Test.TLabel', 'foreground'), 'red')
+        self.assertEqual(style.lookup('Test.TLabel', 'background'), 'blue')
+        self.assertEqual(style.map('Test.TLabel', 'foreground'),
+                         [('active', 'green')])
+        self.assertRaises(tkinter.TclError, style.theme_settings,
+                          'nonexistingname', {})
+
     def test_configure_custom_copy(self):
         style = self.style
 
