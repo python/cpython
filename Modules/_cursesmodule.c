@@ -3220,6 +3220,28 @@ _curses_filter_impl(PyObject *module)
 }
 #endif
 
+#ifdef HAVE_CURSES_NOFILTER
+/*[clinic input]
+_curses.nofilter
+
+Undo the effect of a preceding filter() call.
+
+Must be called before initscr().  It restores the normal behaviour
+disabled by filter(), so that the next initscr() uses the full screen
+rather than a single line.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_nofilter_impl(PyObject *module)
+/*[clinic end generated code: output=d95ca4d48a6bdbdf input=58aea83b1a5c969f]*/
+{
+    /* not checking for PyCursesInitialised here since nofilter() must
+       be called before initscr() */
+    nofilter();
+    Py_RETURN_NONE;
+}
+#endif
+
 /*[clinic input]
 _curses.baudrate
 
@@ -5321,6 +5343,7 @@ static PyMethodDef cursesmodule_methods[] = {
     _CURSES_ENDWIN_METHODDEF
     _CURSES_ERASECHAR_METHODDEF
     _CURSES_FILTER_METHODDEF
+    _CURSES_NOFILTER_METHODDEF
     _CURSES_FLASH_METHODDEF
     _CURSES_FLUSHINP_METHODDEF
     _CURSES_GETMOUSE_METHODDEF
