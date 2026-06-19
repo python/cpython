@@ -375,7 +375,7 @@ _io_BytesIO_getvalue_impl(bytesio *self)
     return PyBytes_FromStringAndSize(PyBytes_AS_STRING(self->buf),
                                      self->string_size);
 #else
-    if (self->string_size <= 1 || FT_ATOMIC_LOAD_SSIZE_RELAXED(self->exports) > 0)
+    if (self->string_size <= 1 || self->exports > 0)
         return PyBytes_FromStringAndSize(PyBytes_AS_STRING(self->buf),
                                          self->string_size);
 
@@ -438,7 +438,7 @@ peek_bytes_lock_held(bytesio *self, Py_ssize_t size)
 #ifndef Py_GIL_DISABLED
     if (size > 1 &&
         self->pos == 0 && size == PyBytes_GET_SIZE(self->buf) &&
-        FT_ATOMIC_LOAD_SSIZE_RELAXED(self->exports) == 0) {
+        self->exports == 0) {
         return Py_NewRef(self->buf);
     }
 #endif
