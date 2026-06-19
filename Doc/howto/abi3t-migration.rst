@@ -343,7 +343,7 @@ defining several functions instead.)
 Multiple ``py_mod_exec``
 ........................
 
-If you have *more than one* :c:macro:`Py_mod_exec` entries, consolidate them:
+If you have *more than one* :c:macro:`Py_mod_exec` entry, consolidate them:
 create a new function that calls the others, and replace existing slots
 with it.
 
