@@ -1038,6 +1038,122 @@ class CanvasTest(AbstractWidgetTest, unittest.TestCase):
         self._test_option_smooth(c,
                 lambda **kwargs: c.create_polygon(20, 30, 40, 50, 60, 10, **kwargs))
 
+    def test_create_arc(self):
+        c = self.create()
+        i = c.create_arc(10, 20, 30, 40)
+        self.assertEqual(c.coords(i), [10.0, 20.0, 30.0, 40.0])
+        self.assertEqual(c.itemcget(i, 'style'), 'pieslice')
+        self.assertEqual(float(c.itemcget(i, 'start')), 0.0)
+        self.assertEqual(float(c.itemcget(i, 'extent')), 90.0)
+
+        for style in 'pieslice', 'chord', 'arc':
+            i = c.create_arc(10, 20, 30, 40, style=style)
+            self.assertEqual(c.itemcget(i, 'style'), style)
+        self.assertRaises(TclError, c.create_arc, 10, 20, 30, 40, style='spam')
+
+        i = c.create_arc(10, 20, 30, 40, start=45, extent=120,
+                         outline='red', fill='blue', width=3)
+        self.assertEqual(float(c.itemcget(i, 'start')), 45.0)
+        self.assertEqual(float(c.itemcget(i, 'extent')), 120.0)
+        self.assertEqual(str(c.itemcget(i, 'outline')), 'red')
+        self.assertEqual(str(c.itemcget(i, 'fill')), 'blue')
+        self.assertEqual(float(c.itemcget(i, 'width')), 3.0)
+        self.assertRaises(TclError, c.create_arc, 10, 20, 30, 40, extent='spam')
+
+    def test_create_oval(self):
+        c = self.create()
+        i = c.create_oval(10, 20, 30, 40)
+        self.assertEqual(c.coords(i), [10.0, 20.0, 30.0, 40.0])
+        self.assertEqual(c.bbox(i), (9, 19, 31, 41))
+        self.assertEqual(c.itemcget(i, 'stipple'), '')
+
+        i = c.create_oval(10, 20, 30, 40, fill='red', outline='blue', width=2)
+        self.assertEqual(str(c.itemcget(i, 'fill')), 'red')
+        self.assertEqual(str(c.itemcget(i, 'outline')), 'blue')
+        self.assertEqual(float(c.itemcget(i, 'width')), 2.0)
+        self.assertRaises(TclError, c.create_oval, 10, 20, 30, 40, width='spam')
+
+    def test_create_bitmap(self):
+        c = self.create()
+        i = c.create_bitmap(10, 20, bitmap='gray50')
+        self.assertEqual(c.coords(i), [10.0, 20.0])
+        self.assertEqual(c.itemcget(i, 'bitmap'), 'gray50')
+        self.assertEqual(c.itemcget(i, 'anchor'), 'center')
+
+        for anchor in 'n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw', 'center':
+            i = c.create_bitmap(10, 20, bitmap='gray50', anchor=anchor)
+            self.assertEqual(c.itemcget(i, 'anchor'), anchor)
+        self.assertRaises(TclError, c.create_bitmap, 10, 20,
+                          bitmap='gray50', anchor='spam')
+
+        i = c.create_bitmap(10, 20, bitmap='gray50',
+                            foreground='red', background='blue')
+        self.assertEqual(str(c.itemcget(i, 'foreground')), 'red')
+        self.assertEqual(str(c.itemcget(i, 'background')), 'blue')
+        if c._windowingsystem != 'aqua':
+            # Aqua resolves bitmaps lazily and does not report a bad name here.
+            self.assertRaises(TclError, c.create_bitmap, 10, 20, bitmap='spam')
+
+    def test_create_image(self):
+        c = self.create()
+        image = tkinter.PhotoImage(master=self.root, width=10, height=10)
+        i = c.create_image(10, 20, image=image)
+        self.assertEqual(c.coords(i), [10.0, 20.0])
+        self.assertEqual(str(c.itemcget(i, 'image')), str(image))
+        self.assertEqual(c.itemcget(i, 'anchor'), 'center')
+
+        for anchor in 'n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw', 'center':
+            i = c.create_image(10, 20, image=image, anchor=anchor)
+            self.assertEqual(c.itemcget(i, 'anchor'), anchor)
+        self.assertRaises(TclError, c.create_image, 10, 20,
+                          image=image, anchor='spam')
+
+    def test_create_text(self):
+        c = self.create()
+        i = c.create_text(10, 20, text='Hello')
+        self.assertEqual(c.coords(i), [10.0, 20.0])
+        self.assertEqual(c.itemcget(i, 'text'), 'Hello')
+        self.assertEqual(c.itemcget(i, 'anchor'), 'center')
+        self.assertEqual(c.itemcget(i, 'justify'), 'left')
+
+        for justify in 'left', 'right', 'center':
+            i = c.create_text(10, 20, text='Hello', justify=justify)
+            self.assertEqual(c.itemcget(i, 'justify'), justify)
+        self.assertRaises(TclError, c.create_text, 10, 20, justify='spam')
+
+        for anchor in 'n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw', 'center':
+            i = c.create_text(10, 20, text='Hello', anchor=anchor)
+            self.assertEqual(c.itemcget(i, 'anchor'), anchor)
+        self.assertRaises(TclError, c.create_text, 10, 20, anchor='spam')
+
+        i = c.create_text(10, 20, text='Hello', fill='red', angle=45,
+                          font='TkFixedFont')
+        self.assertEqual(str(c.itemcget(i, 'fill')), 'red')
+        self.assertEqual(float(c.itemcget(i, 'angle')), 45.0)
+        self.assertEqual(str(c.itemcget(i, 'font')), 'TkFixedFont')
+        self.assertRaises(TclError, c.create_text, 10, 20, angle='spam')
+
+    def test_create_window(self):
+        c = self.create()
+        button = tkinter.Button(c, text='ok')
+        i = c.create_window(10, 20, window=button)
+        self.assertEqual(c.coords(i), [10.0, 20.0])
+        self.assertEqual(c.itemcget(i, 'window'), str(button))
+        self.assertEqual(c.itemcget(i, 'anchor'), 'center')
+
+        for anchor in 'n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw', 'center':
+            i = c.create_window(10, 20, window=tkinter.Button(c), anchor=anchor)
+            self.assertEqual(c.itemcget(i, 'anchor'), anchor)
+        self.assertRaises(TclError, c.create_window, 10, 20,
+                          window=button, anchor='spam')
+
+        i = c.create_window(10, 20, window=tkinter.Button(c),
+                            width=30, height=40)
+        self.assertEqual(int(c.itemcget(i, 'width')), 30)
+        self.assertEqual(int(c.itemcget(i, 'height')), 40)
+        self.assertRaises(TclError, c.create_window, 10, 20,
+                          window=button, width='spam')
+
     def test_coords(self):
         c = self.create()
         i = c.create_line(20, 30, 40, 50, 60, 10, tags='x')
@@ -1097,6 +1213,391 @@ class CanvasTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(x2_3, x2_2)
         self.assertEqual(x2_2 - x1_2, x2_3 - x1_3)
         self.assertEqual(y2_2 - y1_2, y2_3 - y1_3)
+
+    def test_create_items(self):
+        c = self.create()
+        image = tkinter.PhotoImage(master=self.root, width=10, height=10)
+        button = tkinter.Button(c, text='ok')
+        items = {
+            'arc': c.create_arc(10, 20, 30, 40),
+            'bitmap': c.create_bitmap(10, 20, bitmap='gray50'),
+            'image': c.create_image(10, 20, image=image),
+            'line': c.create_line(10, 20, 30, 40),
+            'oval': c.create_oval(10, 20, 30, 40),
+            'polygon': c.create_polygon(10, 20, 30, 40, 50, 20),
+            'rectangle': c.create_rectangle(10, 20, 30, 40),
+            'text': c.create_text(10, 20, text='hello'),
+            'window': c.create_window(10, 20, window=button),
+        }
+        for itemtype, item in items.items():
+            self.assertIsInstance(item, int)
+            self.assertEqual(c.type(item), itemtype)
+        # All items are reported by find_all in creation (stacking) order.
+        self.assertEqual(c.find_all(), tuple(sorted(items.values())))
+
+        # No coordinates at all is an IndexError; a bad number is a TclError.
+        self.assertRaises(IndexError, c.create_arc)
+        self.assertRaises(TclError, c.create_arc, 1, 2, 3)
+        self.assertRaises(TclError, c.create_oval, 1, 2)
+
+    def test_type(self):
+        c = self.create()
+        rect = c.create_rectangle(10, 20, 30, 40)
+        self.assertEqual(c.type(rect), 'rectangle')
+        # An unmatched tag or id is not an error.
+        self.assertIsNone(c.type('nonexistent'))
+        self.assertIsNone(c.type(9999))
+        self.assertRaises(TypeError, c.type)
+        self.assertRaises(TypeError, c.type, rect, 'extra')
+
+    def test_bbox(self):
+        c = self.create()
+        rect = c.create_rectangle(10, 10, 30, 30)
+        bbox = c.bbox(rect)
+        self.assertIsInstance(bbox, tuple)
+        self.assertEqual(len(bbox), 4)
+        for v in bbox:
+            self.assertIsInstance(v, int)
+        # The bounding box encloses the item (with a small margin).
+        self.assertEqual(bbox, (9, 9, 31, 31))
+        # bbox over several items is their union.
+        rect2 = c.create_rectangle(50, 50, 70, 70)
+        self.assertEqual(c.bbox(rect, rect2), (9, 9, 71, 71))
+        # An unmatched tag has no bounding box.
+        self.assertIsNone(c.bbox('nonexistent'))
+        # At least one tag or id is required.
+        self.assertRaises(TclError, c.bbox)
+
+    def test_canvasx_canvasy(self):
+        c = self.create(borderwidth=0, highlightthickness=0)
+        self.assertEqual(c.canvasx(0), 0.0)
+        self.assertEqual(c.canvasx(10), 10.0)
+        self.assertIsInstance(c.canvasx(10), float)
+        # gridspacing rounds to the nearest multiple.
+        self.assertEqual(c.canvasx(13, 5), 15.0)
+        self.assertEqual(c.canvasy(0), 0.0)
+        self.assertEqual(c.canvasy(10), 10.0)
+        self.assertRaises(TypeError, c.canvasx)
+        self.assertRaises(TypeError, c.canvasx, 0, 5, 1)
+        self.assertRaises(TypeError, c.canvasy)
+        self.assertRaises(TypeError, c.canvasy, 0, 5, 1)
+        self.assertRaises(TclError, c.canvasx, 'spam')
+        self.assertRaises(TclError, c.canvasy, 'spam')
+
+    def test_move(self):
+        c = self.create()
+        rect = c.create_rectangle(10, 10, 30, 30)
+        c.move(rect, 5, 7)
+        self.assertEqual(c.coords(rect), [15.0, 17.0, 35.0, 37.0])
+        c.move(rect, -5, -7)
+        self.assertEqual(c.coords(rect), [10.0, 10.0, 30.0, 30.0])
+        # move() takes variable arguments; bad or missing values reach Tcl.
+        self.assertRaises(TclError, c.move, rect, 'spam', 0)
+        self.assertRaises(TclError, c.move, rect)
+
+    def test_scale(self):
+        c = self.create()
+        rect = c.create_rectangle(10, 10, 30, 30)
+        c.scale(rect, 0, 0, 2, 2)
+        self.assertEqual(c.coords(rect), [20.0, 20.0, 60.0, 60.0])
+        c.scale(rect, 0, 0, 0.5, 0.5)
+        self.assertEqual(c.coords(rect), [10.0, 10.0, 30.0, 30.0])
+        self.assertRaises(TclError, c.scale, rect, 0, 0, 'spam', 2)
+        self.assertRaises(TclError, c.scale, rect, 0, 0)  # missing factors
+
+    def test_delete(self):
+        c = self.create()
+        r1 = c.create_rectangle(10, 10, 30, 30)
+        r2 = c.create_rectangle(50, 50, 70, 70)
+        r3 = c.create_rectangle(90, 90, 110, 110)
+        self.assertEqual(c.find_all(), (r1, r2, r3))
+        c.delete(r2)
+        self.assertEqual(c.find_all(), (r1, r3))
+        # Deleting a non-existent item is not an error.
+        c.delete(9999)
+        c.delete('all')
+        self.assertEqual(c.find_all(), ())
+
+    def test_find(self):
+        c = self.create()
+        r1 = c.create_rectangle(10, 10, 30, 30)
+        r2 = c.create_rectangle(50, 50, 70, 70)
+        r3 = c.create_rectangle(100, 100, 120, 120)
+
+        self.assertEqual(c.find_all(), (r1, r2, r3))
+        # find_above/find_below return the single adjacent item.
+        self.assertEqual(c.find_above(r1), (r2,))
+        self.assertEqual(c.find_below(r3), (r2,))
+        self.assertEqual(c.find_above(r3), ())  # nothing above the top item
+        self.assertEqual(c.find_withtag(r2), (r2,))
+        self.assertEqual(c.find_closest(60, 60), (r2,))
+        self.assertEqual(c.find_enclosed(0, 0, 80, 80), (r1, r2))
+        self.assertEqual(c.find_overlapping(0, 0, 20, 20), (r1,))
+        # An unmatched query returns an empty tuple.
+        self.assertEqual(c.find_withtag('nonexistent'), ())
+        for result in (c.find_all(), c.find_withtag(r1)):
+            self.assertIsInstance(result, tuple)
+
+        self.assertRaises(TclError, c.find_closest, 'spam', 0)
+        self.assertRaises(TclError, c.find_enclosed, 0, 0, 'spam', 0)
+        self.assertRaises(TclError, c.find_overlapping, 0, 0, 'spam', 0)
+        self.assertRaises(TypeError, c.find_withtag)
+        self.assertRaises(TypeError, c.find_withtag, r1, 'extra')
+        self.assertRaises(TypeError, c.find_above)
+        self.assertRaises(TypeError, c.find_above, r1, 'extra')
+        self.assertRaises(TypeError, c.find_below)
+        self.assertRaises(TypeError, c.find_closest)
+        self.assertRaises(TypeError, c.find_closest, 0, 0, 1, 2, 3)
+        self.assertRaises(TypeError, c.find_enclosed, 0, 0, 1)
+        self.assertRaises(TypeError, c.find_enclosed, 0, 0, 1, 2, 3)
+
+    def test_addtag_gettags_dtag(self):
+        c = self.create()
+        r1 = c.create_rectangle(10, 10, 30, 30)
+        r2 = c.create_rectangle(50, 50, 70, 70)
+
+        self.assertEqual(c.gettags(r1), ())
+        c.addtag_withtag('spam', r1)
+        self.assertEqual(c.gettags(r1), ('spam',))
+        self.assertEqual(c.find_withtag('spam'), (r1,))
+
+        c.addtag_all('all')
+        self.assertIn('all', c.gettags(r1))
+        self.assertIn('all', c.gettags(r2))
+
+        c.addtag_above('above1', r1)
+        self.assertIn('above1', c.gettags(r2))
+        c.addtag_below('below2', r2)
+        self.assertIn('below2', c.gettags(r1))
+
+        c.addtag_enclosed('enc', 0, 0, 40, 40)
+        self.assertEqual(c.find_withtag('enc'), (r1,))
+        c.addtag_overlapping('ov', 0, 0, 20, 20)
+        self.assertEqual(c.find_withtag('ov'), (r1,))
+        c.addtag_closest('close', 60, 60)
+        self.assertEqual(c.find_withtag('close'), (r2,))
+
+        # gettags of an unmatched tag is empty.
+        self.assertEqual(c.gettags('nonexistent'), ())
+
+        # dtag removes a tag from an item.
+        c.dtag(r1, 'spam')
+        self.assertNotIn('spam', c.gettags(r1))
+
+        self.assertRaises(TypeError, c.addtag_withtag, 'tag')
+        self.assertRaises(TypeError, c.addtag_withtag, 'tag', r1, 'extra')
+        self.assertRaises(TypeError, c.addtag_all)
+        self.assertRaises(TypeError, c.addtag_enclosed, 'tag', 0, 0, 1)
+        self.assertRaises(TypeError, c.addtag_enclosed, 'tag', 0, 0, 1, 2, 3)
+        self.assertRaises(TclError, c.addtag_closest, 'tag', 'spam', 0)
+        self.assertRaises(TclError, c.addtag_enclosed, 'tag', 0, 0, 'spam', 0)
+        self.assertRaises(TclError, c.gettags)  # needs an item
+
+    def test_itemconfigure(self):
+        c = self.create()
+        rect = c.create_rectangle(10, 10, 30, 30)
+        c.itemconfigure(rect, fill='red', width=3)
+        self.assertEqual(str(c.itemcget(rect, 'fill')), 'red')
+        self.assertEqual(float(c.itemcget(rect, 'width')), 3.0)
+
+        # Querying all options returns a dict; a single one returns its spec.
+        cnf = c.itemconfigure(rect)
+        self.assertIsInstance(cnf, dict)
+        self.assertIn('fill', cnf)
+        self.assertEqual(c.itemconfigure(rect, 'fill')[-1], 'red')
+
+        # itemconfig is an alias of itemconfigure.
+        self.assertEqual(c.itemconfig, c.itemconfigure)
+
+        self.assertRaises(TclError, c.itemcget, rect, 'badoption')
+        self.assertRaises(TclError, c.itemconfigure, rect, badoption='x')
+        self.assertRaises(TypeError, c.itemcget, rect)
+        self.assertRaises(TypeError, c.itemcget, rect, 'fill', 'extra')
+
+    def test_tag_raise_lower(self):
+        c = self.create()
+        r1 = c.create_rectangle(10, 10, 30, 30)
+        r2 = c.create_rectangle(50, 50, 70, 70)
+        r3 = c.create_rectangle(90, 90, 110, 110)
+        self.assertEqual(c.find_all(), (r1, r2, r3))
+
+        c.tag_raise(r1)
+        self.assertEqual(c.find_all(), (r2, r3, r1))
+        c.tag_lower(r1)
+        self.assertEqual(c.find_all(), (r1, r2, r3))
+        # Raise above / lower below a specific item.
+        c.tag_raise(r1, r2)
+        self.assertEqual(c.find_all(), (r2, r1, r3))
+        c.tag_lower(r3, r2)
+        self.assertEqual(c.find_all(), (r3, r2, r1))
+
+        # lower/lift are aliases of tag_lower/tag_raise.
+        self.assertEqual(c.lower, c.tag_lower)
+        self.assertEqual(c.lift, c.tag_raise)
+
+        # raise/lower need at least an item; an unmatched tag is not an error.
+        self.assertRaises(TclError, c.tag_raise)
+        self.assertRaises(TclError, c.tag_lower)
+        self.assertIsNone(c.tag_raise('nonexistent'))
+
+    def test_text_item(self):
+        c = self.create()
+        item = c.create_text(10, 10, text='Hello')
+        self.assertEqual(c.index(item, 'end'), 5)
+        self.assertIsInstance(c.index(item, 'end'), int)
+
+        c.insert(item, 'end', ' world')
+        self.assertEqual(c.itemcget(item, 'text'), 'Hello world')
+        self.assertEqual(c.index(item, 'end'), 11)
+        c.insert(item, 0, '>> ')
+        self.assertEqual(c.itemcget(item, 'text'), '>> Hello world')
+
+        c.dchars(item, 0, 2)
+        self.assertEqual(c.itemcget(item, 'text'), 'Hello world')
+        c.icursor(item, 3)
+
+        # index requires an indexable (text) item and a valid index.
+        self.assertRaises(TclError, c.index, item, 'badspec')
+        self.assertRaises(TclError, c.index, item)  # missing index
+        self.assertRaises(TclError, c.dchars, item, 'badspec', 'end')
+        rect = c.create_rectangle(10, 10, 30, 30)
+        self.assertRaises(TclError, c.index, rect, 'end')
+
+    def test_select(self):
+        c = self.create()
+        item = c.create_text(10, 10, text='Hello world')
+        self.assertIsNone(c.select_item())
+
+        c.select_from(item, 0)
+        c.select_to(item, 4)
+        self.assertEqual(int(c.select_item()), item)
+        c.select_adjust(item, 6)
+
+        c.select_clear()
+        self.assertIsNone(c.select_item())
+        self.assertRaises(TypeError, c.select_from, item)
+        self.assertRaises(TypeError, c.select_from, item, 0, 'extra')
+        # A bad index reaches Tcl; selection applies only to text items.
+        self.assertRaises(TclError, c.select_from, item, 'badspec')
+        rect = c.create_rectangle(10, 10, 30, 30)
+        self.assertRaises(TclError, c.select_from, rect, 0)
+
+    def test_focus(self):
+        c = self.create()
+        item = c.create_text(10, 10, text='Hello')
+        # Only text items can take the focus.
+        c.focus(item)
+        self.assertEqual(int(c.focus()), item)
+        c.focus('')
+        self.assertIn(c.focus(), ('', None))
+
+    def test_scan(self):
+        c = self.create()
+        c.create_rectangle(10, 10, 300, 300)
+        c.scan_mark(0, 0)
+        c.scan_dragto(5, 5)  # default gain=10
+        c.scan_dragto(5, 5, 1)
+        self.assertRaises(TypeError, c.scan_mark)
+        self.assertRaises(TypeError, c.scan_mark, 0, 0, 0)
+        self.assertRaises(TclError, c.scan_mark, 'spam', 0)
+
+    def test_postscript(self):
+        c = self.create()
+        c.create_rectangle(10, 10, 30, 30, fill='black')
+        ps = c.postscript()
+        self.assertIsInstance(ps, str)
+        self.assertTrue(ps.startswith('%!PS-Adobe'), ps[:20])
+        self.assertRaises(TclError, c.postscript, badoption='spam')
+
+    def assertCommandExist(self, widget, funcid):
+        self.assertEqual(
+            widget.tk.splitlist(widget.tk.call('info', 'commands', funcid)),
+            (funcid,))
+
+    def assertCommandNotExist(self, widget, funcid):
+        self.assertEqual(
+            widget.tk.splitlist(widget.tk.call('info', 'commands', funcid)),
+            ())
+
+    def test_tag_bind(self):
+        c = self.create()
+        c.pack()
+        item = c.create_rectangle(20, 20, 100, 100, fill='red')
+        self.assertEqual(c.tag_bind(item), ())
+        self.assertEqual(c.tag_bind(item, '<Button-1>'), '')
+
+        events = []
+        def test1(e): events.append('a')
+        def test2(e): events.append('b')
+
+        funcid = c.tag_bind(item, '<Button-1>', test1)
+        self.assertEqual(c.tag_bind(item), ('<Button-1>',))
+        script = c.tag_bind(item, '<Button-1>')
+        self.assertIn(funcid, script)
+        self.assertCommandExist(c, funcid)
+
+        funcid2 = c.tag_bind(item, '<Button-1>', test2, add=True)
+        script = c.tag_bind(item, '<Button-1>')
+        self.assertIn(funcid, script)
+        self.assertIn(funcid2, script)
+        self.assertCommandExist(c, funcid)
+        self.assertCommandExist(c, funcid2)
+
+        c.wait_visibility()
+        c.focus_force()
+        c.update()
+        c.event_generate('<Button-1>', x=50, y=50)
+        c.update()
+        self.assertEqual(events, ['a', 'b'])
+
+        # Binding to a tag applies to all items carrying it.
+        c.addtag_withtag('spam', item)
+        events.clear()
+        c.tag_bind('spam', '<Button-3>', test1)
+        c.event_generate('<Button-3>', x=50, y=50)
+        c.update()
+        self.assertEqual(events, ['a'])
+
+    def test_tag_unbind(self):
+        c = self.create()
+        c.pack()
+        item = c.create_rectangle(20, 20, 100, 100, fill='red')
+
+        events = []
+        def test1(e): events.append('a')
+        def test2(e): events.append('b')
+
+        funcid = c.tag_bind(item, '<Button-1>', test1)
+        funcid2 = c.tag_bind(item, '<Button-1>', test2, add=True)
+        c.wait_visibility()
+        c.focus_force()
+        c.update()
+        c.event_generate('<Button-1>', x=50, y=50)
+        c.update()
+        self.assertEqual(events, ['a', 'b'])
+
+        # Removing one function leaves the other in place.
+        c.tag_unbind(item, '<Button-1>', funcid)
+        script = c.tag_bind(item, '<Button-1>')
+        self.assertNotIn(funcid, script)
+        self.assertIn(funcid2, script)
+        self.assertCommandNotExist(c, funcid)
+        self.assertCommandExist(c, funcid2)
+        events.clear()
+        c.event_generate('<Button-1>', x=50, y=50)
+        c.update()
+        self.assertEqual(events, ['b'])
+
+        # Without a funcid all bindings for the sequence are removed.
+        c.tag_unbind(item, '<Button-1>')
+        self.assertEqual(c.tag_bind(item, '<Button-1>'), '')
+        self.assertEqual(c.tag_bind(item), ())
+        events.clear()
+        c.event_generate('<Button-1>', x=50, y=50)
+        c.update()
+        self.assertEqual(events, [])
+
+        self.assertRaises(TypeError, c.tag_unbind, item)
 
 
 @add_standard_options(IntegerSizeTests, StandardOptionsTests)
