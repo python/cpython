@@ -3698,7 +3698,7 @@ dict_length(PyObject *self)
 static Py_ssize_t
 frozendict_length(PyObject *self)
 {
-    return _PyAnyDict_CAST(self)->ma_used;
+    return GET_USED(_PyAnyDict_CAST(self));
 }
 
 PyObject *
@@ -4386,7 +4386,7 @@ copy_lock_held(PyObject *o, int as_frozendict)
     }
 
     mp = (PyDictObject *)o;
-    if (mp->ma_used == 0) {
+    if (GET_USED(mp) == 0) {
         /* The dict is empty; just return a new dict. */
         if (as_frozendict) {
             return PyFrozenDict_New(NULL);
@@ -8264,11 +8264,14 @@ static PyObject *
 frozendict_repr(PyObject *self)
 {
     PyDictObject *mp = _PyAnyDict_CAST(self);
-    if (mp->ma_used == 0) {
+    if (GET_USED(mp) == 0) {
         return PyUnicode_FromFormat("%s()", Py_TYPE(self)->tp_name);
     }
 
-    PyObject *repr = anydict_repr_impl(self);
+    PyObject *repr;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    repr = anydict_repr_impl(self);
+    Py_END_CRITICAL_SECTION();
     if (repr == NULL) {
         return NULL;
     }
@@ -8322,14 +8325,9 @@ frozendict_pair_hash(Py_hash_t key_hash, PyObject *value)
 
 // Code copied from frozenset_hash()
 static Py_hash_t
-frozendict_hash(PyObject *op)
+frozendict_hash_lock_held(PyObject *op)
 {
-    PyFrozenDictObject *self = _PyFrozenDictObject_CAST(op);
-    Py_hash_t shash = FT_ATOMIC_LOAD_SSIZE_RELAXED(self->ma_hash);
-    if (shash != -1) {
-        return shash;
-    }
-
+    ASSERT_DICT_LOCKED(op);
     PyDictObject *mp = _PyAnyDict_CAST(op);
     Py_uhash_t hash = 0;
 
@@ -8345,7 +8343,7 @@ frozendict_hash(PyObject *op)
     }
 
     /* Factor in the number of active entries */
-    hash ^= ((Py_uhash_t)mp->ma_used + 1) * 1927868237UL;
+    hash ^= ((Py_uhash_t)GET_USED(mp) + 1) * 1927868237UL;
 
     /* Disperse patterns arising in nested frozendicts */
     hash ^= (hash >> 11) ^ (hash >> 25);
@@ -8356,8 +8354,28 @@ frozendict_hash(PyObject *op)
         hash = 590923713UL;
     }
 
-    FT_ATOMIC_STORE_SSIZE_RELAXED(self->ma_hash, (Py_hash_t)hash);
     return (Py_hash_t)hash;
+}
+
+static Py_hash_t
+frozendict_hash(PyObject *op)
+{
+    PyFrozenDictObject *self = _PyFrozenDictObject_CAST(op);
+    Py_hash_t shash = FT_ATOMIC_LOAD_SSIZE_RELAXED(self->ma_hash);
+    if (shash != -1) {
+        return shash;
+    }
+
+    Py_hash_t hash;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    hash = frozendict_hash_lock_held(op);
+    Py_END_CRITICAL_SECTION();
+    if (hash == -1) {
+        return -1;
+    }
+
+    FT_ATOMIC_STORE_SSIZE_RELAXED(self->ma_hash, hash);
+    return hash;
 }
 
 

@@ -1,0 +1,4 @@
+Fix a data race in the free-threading build where :func:`len`, :func:`repr`
+and :func:`hash` on a :class:`frozendict` could observe internal state being
+concurrently mutated while the ``frozendict`` was still being constructed from
+a user mapping.
