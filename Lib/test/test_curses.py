@@ -53,9 +53,11 @@ def requires_colors(test):
 term = os.environ.get('TERM')
 SHORT_MAX = 0x7fff
 
-# If newterm was supported we could use it instead of initscr and not exit
+# newterm() is used when available (it reports errors instead of exiting), but
+# initscr() is still the fallback, and an unusable $TERM has no terminal to
+# drive either way.
 @unittest.skipIf(not term or term == 'unknown',
-                 "$TERM=%r, calling initscr() may cause exit" % term)
+                 "$TERM=%r, no usable terminal" % term)
 @unittest.skipIf(sys.platform == "cygwin",
                  "cygwin's curses mostly just hangs")
 class TestCurses(unittest.TestCase):
@@ -110,7 +112,23 @@ class TestCurses(unittest.TestCase):
             sys.stderr.flush()
             sys.stdout.flush()
             print(file=self.output, flush=True)
-        self.stdscr = curses.initscr()
+        if hasattr(curses, 'newterm'):
+            # Use newterm() rather than initscr(): it reports errors instead of
+            # exiting, and gives each test a fresh screen, which also lets
+            # ScreenTests run newterm()/set_term() in the same process.
+            try:
+                infd = sys.__stdin__.fileno()
+            except (AttributeError, ValueError, OSError):
+                infd = stdout_fd
+            self.screen = curses.newterm(term, stdout_fd, infd)
+            self.stdscr = self.screen.stdscr
+            # Drop the screen after the test so the screens do not pile up: a
+            # window keeps its screen alive through a reference cycle, and
+            # unittest keeps every test instance for the whole run.
+            self.addCleanup(setattr, self, 'screen', None)
+            self.addCleanup(setattr, self, 'stdscr', None)
+        else:
+            self.stdscr = curses.initscr()
         if self.isatty:
             curses.savetty()
             self.addCleanup(curses.endwin)
@@ -119,10 +137,12 @@ class TestCurses(unittest.TestCase):
 
     @requires_curses_func('filter')
     def test_filter(self):
-        # TODO: Should be called before initscr() or newterm() are called.
+        # filter() must be called before initscr()/newterm(); it confines
+        # curses to a single line.  Undo it with nofilter() afterwards so that
+        # it does not shrink the screens created by later tests.
         curses.filter()
         if hasattr(curses, 'nofilter'):
-            curses.nofilter()
+            self.addCleanup(curses.nofilter)
 
     @requires_curses_func('use_env')
     def test_use_env(self):
@@ -1089,6 +1109,22 @@ class TestCurses(unittest.TestCase):
             self.skipTest('cannot change color (use_default_colors() failed)')
         self.assertEqual(curses.pair_content(0), (-1, -1))
 
+    @requires_curses_window_meth('use')
+    def test_use_window(self):
+        win = self.stdscr
+        self.assertEqual(win.use(lambda w, a, b: (w is win, a, b), 5, b=6),
+                         (True, 5, 6))
+        with self.assertRaises(ZeroDivisionError):
+            win.use(lambda w: 1 / 0)
+
+    @unittest.skipUnless(hasattr(curses.screen, 'use'),
+                         'requires screen.use()')
+    def test_use_screen(self):
+        screen = self.screen
+        self.assertEqual(
+            screen.use(lambda sc, flag: (sc is screen, flag), flag=True),
+            (True, True))
+
     @requires_curses_func('assume_default_colors')
     @requires_colors
     def test_assume_default_colors(self):
@@ -1387,9 +1423,11 @@ class TestCurses(unittest.TestCase):
             curses.resize_term(35000, 1)
         with self.assertRaises(OverflowError):
             curses.resize_term(1, 35000)
-        # GH-120378: Overflow failure in resize_term() causes refresh to fail
-        tmp = curses.initscr()
-        tmp.erase()
+        # GH-120378: a failed resize can leave refresh broken; restore the
+        # original size to recover.  Avoid initscr(), which would switch away
+        # from the shared newterm() screen and corrupt later tests.
+        curses.resize_term(lines, cols)
+        self.stdscr.erase()
 
     @requires_curses_func('resizeterm')
     def test_resizeterm(self):
@@ -1409,9 +1447,11 @@ class TestCurses(unittest.TestCase):
             curses.resizeterm(35000, 1)
         with self.assertRaises(OverflowError):
             curses.resizeterm(1, 35000)
-        # GH-120378: Overflow failure in resizeterm() causes refresh to fail
-        tmp = curses.initscr()
-        tmp.erase()
+        # GH-120378: a failed resize can leave refresh broken; restore the
+        # original size to recover.  Avoid initscr(), which would switch away
+        # from the shared newterm() screen and corrupt later tests.
+        curses.resizeterm(lines, cols)
+        self.stdscr.erase()
 
     def test_ungetch(self):
         curses.ungetch(b'A')
@@ -1715,6 +1755,99 @@ class TextboxTest(unittest.TestCase):
         self.textbox.do_command(curses.KEY_DOWN)
         self.mock_win.move.assert_called_with(2, 1)
         self.mock_win.reset_mock()
+
+
+@unittest.skipUnless(hasattr(curses, 'newterm'), 'requires curses.newterm()')
+@unittest.skipIf(not term or term == 'unknown',
+                 "$TERM=%r, newterm() may not work" % term)
+@unittest.skipIf(sys.platform == "cygwin",
+                 "cygwin's curses mostly just hangs")
+class ScreenTests(unittest.TestCase):
+    # newterm()/set_term() mutate global curses state, but each test drives its
+    # own pseudo-terminal(s) and never touches the screen shared by TestCurses,
+    # whose setUp() makes that screen current again.  So these can run in this
+    # process, without a real terminal and without a subprocess.
+
+    def setUp(self):
+        # newterm() may install signal handlers; restore them afterwards.
+        self.save_signals = SaveSignals()
+        self.save_signals.save()
+        self.addCleanup(self.save_signals.restore)
+
+    def tearDown(self):
+        # Leave visual mode and reclaim the screens the test created, while
+        # their pseudo-terminals are still open (closing them happens later,
+        # via the make_pty() cleanups).
+        try:
+            curses.endwin()
+        except curses.error:
+            pass
+        gc_collect()
+
+    def make_pty(self):
+        master, slave = os.openpty()
+        self.addCleanup(os.close, master)
+        self.addCleanup(os.close, slave)
+        return slave
+
+    def test_newterm(self):
+        s = self.make_pty()
+        screen = curses.newterm('xterm', s, s)
+        self.assertIsInstance(screen, curses.screen)
+        win = screen.stdscr
+        self.assertIsInstance(win, curses.window)
+        self.assertEqual(win.getmaxyx(), (24, 80))
+        win.addstr(0, 0, 'hello')
+        win.refresh()
+
+    def test_newterm_file_object(self):
+        # type=None uses $TERM; the file arguments accept file objects too.
+        s = self.make_pty()
+        out = os.fdopen(os.dup(s), 'wb', buffering=0)
+        self.addCleanup(out.close)
+        screen = curses.newterm(None, out, s)
+        self.assertIsInstance(screen, curses.screen)
+
+    def test_set_term(self):
+        s = self.make_pty()
+        s2 = self.make_pty()
+        a = curses.newterm('xterm', s, s)     # current screen is a
+        b = curses.newterm('xterm', s2, s2)   # current screen is b
+        self.assertIs(curses.set_term(a), b)  # returns the previous one
+        self.assertIs(curses.set_term(b), a)
+
+    def test_window_keeps_screen_alive(self):
+        # The standard window keeps its screen alive; dropping every other
+        # reference and collecting must not invalidate the window.
+        s = self.make_pty()
+        win = curses.newterm('xterm', s, s).stdscr
+        gc_collect()
+        win.addstr(0, 0, 'still alive')
+        win.refresh()
+
+    def test_screen_freed(self):
+        # Dropping all references to a (non-current) screen and its windows
+        # frees it without error.
+        s = self.make_pty()
+        s2 = self.make_pty()
+        a = curses.newterm('xterm', s, s)
+        b = curses.newterm('xterm', s2, s2)   # a is no longer current
+        del a
+        gc_collect()
+
+    @unittest.skipUnless(hasattr(curses, 'new_prescr'),
+                         'requires curses.new_prescr()')
+    def test_new_prescr(self):
+        screen = curses.new_prescr()
+        self.assertIsInstance(screen, curses.screen)
+        self.assertIsNone(screen.stdscr)
+        del screen
+        gc_collect()
+
+    @cpython_only
+    def test_disallow_instantiation(self):
+        # The screen type cannot be instantiated directly (bpo-43916).
+        check_disallow_instantiation(self, curses.screen)
 
 
 if __name__ == '__main__':

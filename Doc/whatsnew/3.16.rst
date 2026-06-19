@@ -89,6 +89,13 @@ Improved modules
 curses
 ------
 
+* Add support for multiple terminals to the :mod:`curses` module:
+  the new functions :func:`curses.newterm`, :func:`curses.set_term`
+  and :func:`curses.new_prescr`,
+  the corresponding :ref:`screen <curses-screen-objects>` object,
+  and the :meth:`window.use` method.
+  (Contributed by Serhiy Storchaka in :gh:`90092`.)
+
 * Add :func:`curses.nofilter`, which undoes the effect of :func:`curses.filter`.
   (Contributed by Serhiy Storchaka in :gh:`151744`.)
 
