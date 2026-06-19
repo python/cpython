@@ -354,7 +354,8 @@ COVERAGE_REPORT_OPTIONS=--rc lcov_branch_coverage=1 --branch-coverage --title "C
 MODULE_OBJS=	\
 		Modules/config.o \
 		Modules/main.o \
-		Modules/gcmodule.o
+		Modules/gcmodule.o \
+		Modules/_timeoutmodule.o
 
 IO_H=		Modules/_io/_iomodule.h
 

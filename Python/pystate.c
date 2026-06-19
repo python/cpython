@@ -1637,6 +1637,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     }
 
     tstate->_status.initialized = 1;
+    tstate->timeout_block = NULL;
 }
 
 static void
@@ -3622,4 +3623,58 @@ PyThreadState_Release(PyThreadStateToken *token)
     if (owned_guard != NULL) {
         PyInterpreterGuard_Close(owned_guard);
     }
+}
+
+int
+_PyTimeout_Push(PyThreadState *tstate, PyTime_t deadline)
+{
+    _PyTimeoutBlock *block = PyMem_Malloc(sizeof(_PyTimeoutBlock));
+    if (block == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    block->skip_counter = 0;
+    block->deadline = deadline;
+    block->prev = tstate->timeout_block;
+    tstate->timeout_block = block;
+
+    _Py_set_eval_breaker_bit(tstate, _PY_EVAL_TIMEOUT_BIT);
+    return 0;
+}
+
+int
+_PyTimeout_Pop(PyThreadState *tstate)
+{
+    _PyTimeoutBlock *block = tstate->timeout_block;
+    if (block == NULL) return 0;
+    tstate->timeout_block = block->prev;
+    PyMem_Free(block);
+    if (tstate->timeout_block == NULL) {
+        _Py_unset_eval_breaker_bit(tstate, _PY_EVAL_TIMEOUT_BIT);
+    }
+    return 0;
+}
+
+/* Check if current tstate has reached a timeout
+   when you want instant timeout check, skip_interval should be 0
+*/
+int
+Py_CheckTimeOut(PyThreadState *tstate, int skip_interval)
+{
+    _PyTimeoutBlock *block = tstate->timeout_block;
+    if (block == NULL) {
+        return 0;
+    }
+    if (skip_interval && ++block->skip_counter < skip_interval) {
+        return 0;
+    }
+    PyTime_t now;
+    PyTime_Monotonic(&now);
+    block->skip_counter = 0;
+    if (now > block->deadline) {
+        block->deadline = (PyTime_t)INT64_MAX;
+        PyErr_SetString(PyExc_TimeoutError, "Timeout");
+        return -1;
+    }
+    return 0;
 }

@@ -12,12 +12,13 @@ lazy from inspect import (
     isgeneratorfunction as _isgeneratorfunction,
 )
 from types import GenericAlias
+import _timeout
 
 __all__ = ["asynccontextmanager", "contextmanager", "closing", "nullcontext",
            "AbstractContextManager", "AbstractAsyncContextManager",
            "AsyncExitStack", "ContextDecorator", "ExitStack",
            "redirect_stdout", "redirect_stderr", "suppress", "aclosing",
-           "chdir"]
+           "chdir", "timeout"]
 
 
 class AbstractContextManager(abc.ABC):
@@ -857,3 +858,21 @@ class chdir(AbstractContextManager):
 
     def __exit__(self, *excinfo):
         os.chdir(self._old_cwd.pop())
+
+
+class timeout(AbstractContextManager):
+    """Context Manager for creating a timeout block
+    
+    If time is reach within block execution,
+    a `TimeoutError` will be raised
+    """
+    def __init__(self, seconds):
+        self.seconds = seconds
+
+    def __enter__(self):
+        _timeout.enter(self.seconds)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        _timeout.leave()
+        return False

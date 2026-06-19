@@ -61,6 +61,15 @@ typedef struct _stack_chunk {
     PyObject * data[1]; /* Variable sized */
 } _PyStackChunk;
 
+/* To lower the frequency of time check
+   only when step reaches TIMEOUTCHECK_INTERVAL check is performed */
+#define TIMEOUTCHECK_INTERVAL 16
+typedef struct _timeout_block {
+    int skip_counter;
+    PyTime_t deadline;
+    struct _timeout_block *prev; /* the outter timeout block */
+} _PyTimeoutBlock;
+
 /* Minimum size of data stack chunk */
 #define _PY_DATA_STACK_CHUNK_SIZE (16*1024)
 struct _ts {
@@ -253,6 +262,8 @@ struct _ts {
         /* The interpreter guard owned by PyThreadState_EnsureFromView(), if any. */
         PyInterpreterGuard *owned_guard;
     } ensure;
+
+    _PyTimeoutBlock *timeout_block;
 };
 
 /* other API */
@@ -338,3 +349,8 @@ PyAPI_FUNC(void) _PyInterpreterState_SetEvalFrameAllowSpecialization(
     int allow_specialization);
 PyAPI_FUNC(int) _PyInterpreterState_IsSpecializationEnabled(
     PyInterpreterState *interp);
+
+
+PyAPI_FUNC(int) _PyTimeout_Push(PyThreadState *, PyTime_t);
+PyAPI_FUNC(int) _PyTimeout_Pop(PyThreadState *);
+PyAPI_FUNC(int) Py_CheckTimeOut(PyThreadState *, int);

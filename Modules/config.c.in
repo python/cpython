@@ -22,6 +22,7 @@ extern PyObject* PyInit__tokenize(void);
 extern PyObject* PyInit__contextvars(void);
 extern PyObject* _PyWarnings_Init(void);
 extern PyObject* PyInit__string(void);
+extern PyObject* PyInit__timeout(void);
 
 struct _inittab _PyImport_Inittab[] = {
 
@@ -54,6 +55,9 @@ struct _inittab _PyImport_Inittab[] = {
 
     /* This lives in Objects/unicodeobject.c */
     {"_string", PyInit__string},
+
+    /* This lives in Modules/timeoutmodule.c */
+    {"_timeout", PyInit__timeout},
 
     /* Sentinel */
     {0, 0}

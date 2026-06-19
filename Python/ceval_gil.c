@@ -1428,6 +1428,11 @@ _Py_HandlePending(PyThreadState *tstate)
         }
     }
 
+    if ((breaker & _PY_EVAL_TIMEOUT_BIT) != 0) {
+        if (Py_CheckTimeOut(tstate, TIMEOUTCHECK_INTERVAL) != 0) {
+            return -1;
+        }
+    }
 #if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
     _PyRunRemoteDebugger(tstate);
 #endif

@@ -2,6 +2,7 @@
 
 #include "ceval.h"
 #include "pycore_long.h"
+#include "pycore_time.h"
 
 int
 Py_GetRecursionLimit(void)
