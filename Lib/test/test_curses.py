@@ -120,8 +120,9 @@ class TestCurses(unittest.TestCase):
     @requires_curses_func('filter')
     def test_filter(self):
         # TODO: Should be called before initscr() or newterm() are called.
-        # TODO: nofilter()
         curses.filter()
+        if hasattr(curses, 'nofilter'):
+            curses.nofilter()
 
     @requires_curses_func('use_env')
     def test_use_env(self):

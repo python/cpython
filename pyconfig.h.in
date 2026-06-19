@@ -218,6 +218,9 @@
 /* Define if you have the 'is_term_resized' function. */
 #undef HAVE_CURSES_IS_TERM_RESIZED
 
+/* Define if you have the 'nofilter' function. */
+#undef HAVE_CURSES_NOFILTER
+
 /* Define if you have the 'resizeterm' function. */
 #undef HAVE_CURSES_RESIZETERM
 
