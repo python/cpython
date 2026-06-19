@@ -1071,10 +1071,7 @@ as internal buffering of data.
    Force write of file with filedescriptor *fd* to disk. Does not force update of
    metadata.
 
-   .. availability:: Unix.
-
-   .. note::
-      This function is not available on MacOS.
+   .. availability:: Unix, not macOS.
 
 
 .. function:: fpathconf(fd, name, /)
