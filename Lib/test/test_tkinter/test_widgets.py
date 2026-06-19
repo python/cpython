@@ -1542,6 +1542,192 @@ class MenuTest(AbstractWidgetTest, unittest.TestCase):
         m1.entryconfigure(1, variable=v2)
         self.assertEqual(str(m1.entrycget(1, 'variable')), str(v2))
 
+    def test_add(self):
+        m = self.create(tearoff=False)
+        m.add_command(label='Command')
+        m.add_checkbutton(label='Checkbutton')
+        m.add_radiobutton(label='Radiobutton')
+        m.add_separator()
+        m.add_cascade(label='Cascade', menu=tkinter.Menu(m, tearoff=False))
+        self.assertEqual(m.index('end'), 4)
+        self.assertEqual([m.type(i) for i in range(5)],
+                         ['command', 'checkbutton', 'radiobutton',
+                          'separator', 'cascade'])
+        self.assertEqual(m.entrycget(0, 'label'), 'Command')
+        self.assertRaisesRegex(TclError, 'bad menu entry type "spam"',
+                               m.add, 'spam')
+
+    def test_insert(self):
+        m = self.create(tearoff=False)
+        m.add_command(label='A')
+        m.add_command(label='C')
+        m.insert_command(1, label='B')
+        m.insert_separator(0)
+        m.insert_checkbutton('end', label='D')
+        m.insert_radiobutton(0, label='top')
+        m.insert_cascade(2, label='sub',
+                         menu=tkinter.Menu(m, tearoff=False))
+        self.assertEqual(
+            [m.type(i) for i in range(m.index('end') + 1)],
+            ['radiobutton', 'separator', 'cascade', 'command',
+             'command', 'command', 'checkbutton'])
+        self.assertEqual(
+            [m.entrycget(i, 'label') for i in (3, 4, 5)],
+            ['A', 'B', 'C'])
+        self.assertRaisesRegex(TclError, 'bad menu entry type "spam"',
+                               m.insert, 0, 'spam')
+        self.assertRaisesRegex(TclError, 'bad menu entry index "spam"',
+                               m.insert_command, 'spam', label='z')
+
+    def test_delete(self):
+        m = self.create(tearoff=False)
+        commands = []
+        for label in 'ABCDE':
+            m.add_command(label=label,
+                          command=lambda label=label: commands.append(label))
+        # The Tcl command for a deleted item is cleaned up.
+        funcid = str(m.entrycget(2, 'command'))
+        self.assertEqual(
+            m.tk.splitlist(m.tk.call('info', 'commands', funcid)), (funcid,))
+
+        m.delete(2)  # Delete a single item ('C').
+        self.assertEqual([m.entrycget(i, 'label') for i in range(4)],
+                         ['A', 'B', 'D', 'E'])
+        self.assertEqual(
+            m.tk.splitlist(m.tk.call('info', 'commands', funcid)), ())
+
+        m.delete(1, 2)  # Delete a range ('B' and 'D').
+        self.assertEqual([m.entrycget(i, 'label') for i in range(2)],
+                         ['A', 'E'])
+        self.assertRaises(TypeError, m.delete)
+
+    def test_index(self):
+        m = self.create(tearoff=False)
+        self.assertIsNone(m.index('end'))
+        m.add_command(label='First')
+        m.add_command(label='Second')
+        self.assertEqual(m.index('end'), 1)
+        self.assertEqual(m.index('last'), 1)
+        self.assertEqual(m.index('Second'), 1)
+        self.assertEqual(m.index(0), 0)
+        # 'active' and 'none' map to None when no item is active.
+        self.assertIsNone(m.index('active'))
+        self.assertIsNone(m.index('none'))
+        self.assertRaisesRegex(TclError, 'bad menu entry index "spam"',
+                               m.index, 'spam')
+
+    def test_invoke(self):
+        m = self.create(tearoff=False)
+        commands = []
+        m.add_command(label='Command',
+                      command=lambda: commands.append('invoked'))
+        var = tkinter.IntVar(self.root)
+        m.add_checkbutton(label='Check', variable=var,
+                          onvalue=1, offvalue=0)
+        rvar = tkinter.StringVar(self.root)
+        m.add_radiobutton(label='Radio', variable=rvar, value='on')
+
+        m.invoke(0)
+        self.assertEqual(commands, ['invoked'])
+        m.invoke(1)
+        self.assertEqual(var.get(), 1)
+        m.invoke(1)
+        self.assertEqual(var.get(), 0)
+        m.invoke(2)
+        self.assertEqual(rvar.get(), 'on')
+        self.assertRaisesRegex(TclError, 'bad menu entry index "spam"',
+                               m.invoke, 'spam')
+
+    def test_xposition_yposition(self):
+        m = self.create(tearoff=False)
+        m.add_command(label='First')
+        m.add_command(label='Second')
+        m.update_idletasks()
+        self.assertIsInstance(m.xposition(0), int)
+        y0 = m.yposition(0)
+        y1 = m.yposition(1)
+        self.assertIsInstance(y0, int)
+        self.assertLess(y0, y1)
+        # An out-of-range index gives the position past the last item.
+        self.assertEqual(m.xposition('end'), m.xposition(1))
+        self.assertRaisesRegex(TclError, 'bad menu entry index "spam"',
+                               m.xposition, 'spam')
+        self.assertRaisesRegex(TclError, 'bad menu entry index "spam"',
+                               m.yposition, 'spam')
+
+    def test_post_unpost(self):
+        m = self.create(tearoff=False)
+        if m._windowingsystem != 'x11':
+            # Posting a menu is modal on Windows and uses a native, unmapped
+            # menu on Aqua, so it cannot be tested synchronously there.
+            self.skipTest('menu posting is not testable on this platform')
+        m.add_command(label='First')
+        m.add_command(label='Second')
+        self.assertFalse(m.winfo_ismapped())
+
+        m.post(0, 0)
+        m.update()
+        self.assertTrue(m.winfo_ismapped())
+        m.unpost()
+        m.update()
+        self.assertFalse(m.winfo_ismapped())
+
+        m.tk_popup(0, 0)
+        m.update()
+        self.assertTrue(m.winfo_ismapped())
+        m.unpost()
+        m.update()
+        self.assertFalse(m.winfo_ismapped())
+
+    def check_entry_option(self, m, index, option, value, expected=None):
+        if expected is None:
+            expected = value
+        m.entryconfigure(index, **{option: value})
+        self.assertEqual(str(m.entrycget(index, option)), str(expected))
+        self.assertEqual(str(m.entryconfigure(index, option)[4]), str(expected))
+
+    def test_entry_options(self):
+        m = self.create(tearoff=False)
+        m.add_command(label='Command')
+        self.check_entry_option(m, 0, 'accelerator', 'Ctrl+O')
+        self.check_entry_option(m, 0, 'underline', 2)
+        self.check_entry_option(m, 0, 'state', 'disabled')
+        self.check_entry_option(m, 0, 'background', 'red')
+        self.check_entry_option(m, 0, 'foreground', 'blue')
+        self.check_entry_option(m, 0, 'columnbreak', 1)
+        self.check_entry_option(m, 0, 'hidemargin', 1)
+
+        m.add_checkbutton(label='Checkbutton')
+        self.check_entry_option(m, 1, 'onvalue', 'Y')
+        self.check_entry_option(m, 1, 'offvalue', 'N')
+        self.check_entry_option(m, 1, 'indicatoron', 0)
+
+        m.add_radiobutton(label='Radiobutton')
+        self.check_entry_option(m, 2, 'value', 'V')
+        self.check_entry_option(m, 2, 'selectcolor', 'green')
+
+    def test_entry_options_invalid(self):
+        m = self.create(tearoff=False)
+        m.add_command(label='Command')
+        self.assertRaisesRegex(TclError, 'unknown option "-spam"',
+                               m.entrycget, 0, 'spam')
+        self.assertRaisesRegex(TclError, 'unknown option "-spam"',
+                               m.entryconfigure, 0, spam='x')
+        self.assertRaisesRegex(TclError, 'bad state "spam"',
+                               m.entryconfigure, 0, state='spam')
+        # Tk < 9 reports "expected integer but got ...", while Tk 9, where
+        # underline accepts an index, reports "bad index ...".
+        self.assertRaisesRegex(TclError,
+                               r'(expected integer but got|bad index) "spam"',
+                               m.entryconfigure, 0, underline='spam')
+        self.assertRaisesRegex(TclError, 'unknown color name "spam"',
+                               m.entryconfigure, 0, background='spam')
+        self.assertRaisesRegex(TclError, 'expected boolean value but got "spam"',
+                               m.entryconfigure, 0, columnbreak='spam')
+        # onvalue applies only to checkbutton and radiobutton entries.
+        self.assertRaisesRegex(TclError, 'unknown option "-onvalue"',
+                               m.entrycget, 0, 'onvalue')
+
 
 @add_configure_tests(PixelSizeTests, StandardOptionsTests)
 class MessageTest(AbstractWidgetTest, unittest.TestCase):
