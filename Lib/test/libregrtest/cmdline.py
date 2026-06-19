@@ -194,6 +194,7 @@ class Namespace(argparse.Namespace):
         self._add_python_opts = True
         self.xmlpath = None
         self.single_process = False
+        self.single_process_per_case = False
 
         super().__init__(**kwargs)
 
@@ -368,6 +369,11 @@ def _create_parser():
     group.add_argument('--list-cases', action='store_true',
                        help='only write the name of test cases that will be run, '
                             'don\'t execute them')
+    group.add_argument('--single-process-per-case', action='store_true',
+                       help='run each test case in its own process. '
+                            '(slow; for debugging order dependencies '
+                            "and environment leaks). Test cases from "
+                            'the same module run sequentially.')
     group.add_argument('-P', '--pgo', dest='pgo', action='store_true',
                        help='enable Profile Guided Optimization (PGO) training')
     group.add_argument('--pgo-extended', action='store_true',

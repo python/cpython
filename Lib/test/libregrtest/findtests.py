@@ -94,19 +94,43 @@ def list_cases(tests: TestTuple, *,
                test_dir: StrPath | None = None) -> None:
     support.verbose = False
     set_match_tests(match_tests)
-
-    skipped = []
-    for test_name in tests:
-        module_name = abs_module_name(test_name, test_dir)
-        try:
-            suite = unittest.defaultTestLoader.loadTestsFromName(module_name)
-            _list_cases(suite)
-        except unittest.SkipTest:
-            skipped.append(test_name)
-
+    cases_by_module, skipped = collect_cases(tests, match_tests=match_tests,
+                                             test_dir=test_dir)
+    for cases in cases_by_module.values():
+        for case_id in cases:
+            print(case_id)
     if skipped:
         sys.stdout.flush()
         stderr = sys.stderr
         print(file=stderr)
         print(count(len(skipped), "test"), "skipped:", file=stderr)
         printlist(skipped, file=stderr)
+
+def collect_cases(tests: TestTuple, *,
+                  match_tests: TestFilter | None = None,
+                  test_dir: StrPath | None = None
+                  ) -> tuple[dict[TestName, list[str]], list[TestName]]:
+    result: dict[TestName, list[str]] = {}
+    skipped: list[TestName] = []
+    for test_name in tests:
+        module_name = abs_module_name(test_name, test_dir)
+        cases: list[str] = []
+        try:
+            suite = unittest.defaultTestLoader.loadTestsFromName(module_name)
+            _collect_cases(suite, cases)
+        except unittest.SkipTest:
+            skipped.append(test_name)
+            continue
+        if cases:
+            result[test_name] = cases
+    return result, skipped
+
+def _collect_cases(suite: unittest.TestSuite, out: list[str]) -> None:
+    for test in suite:
+        if isinstance(test, unittest.loader._FailedTest):
+            continue
+        if isinstance(test, unittest.TestSuite):
+            _collect_cases(test, out)
+        elif isinstance(test, unittest.TestCase):
+            if match_test(test):
+                out.append(test.id())

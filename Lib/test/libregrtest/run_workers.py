@@ -70,6 +70,26 @@ class MultiprocessIterator:
         with self.lock:
             self.tests_iter = None
 
+class GroupedMultiprocessIterator:
+    """Provide test groups safely across multiple worker threads."""
+
+    def __init__(self, groups_iter):
+        self.lock = threading.Lock()
+        self.groups_iter = groups_iter
+
+    def next_group(self):
+        with self.lock:
+            if self.groups_iter is None:
+                return None
+            try:
+                return next(self.groups_iter)
+            except StopIteration:
+                return None
+
+    def stop(self):
+        with self.lock:
+            self.groups_iter = None
+
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class MultiprocessResult:
@@ -119,6 +139,7 @@ class WorkerThread(threading.Thread):
         self._popen: subprocess.Popen[str] | None = None
         self._killed = False
         self._stopped = False
+        self.current_module: TestName = ""
 
     def __repr__(self) -> str:
         info = [f'WorkerThread #{self.worker_id}']
@@ -267,15 +288,18 @@ class WorkerThread(threading.Thread):
         return (json_file, json_tmpfile)
 
     def create_worker_runtests(self, test_name: TestName, json_file: JsonFile) -> WorkerRunTests:
-        tests = (test_name,)
-        if self.runtests.rerun:
-            match_tests = self.runtests.get_match_tests(test_name)
-        else:
-            match_tests = None
-
         kwargs: dict[str, Any] = {}
-        if match_tests:
-            kwargs['match_tests'] = [(test, True) for test in match_tests]
+
+        if self.runtests.single_process_per_case:
+            tests = (self.current_module,)
+            kwargs['match_tests'] = [(test_name, True)]
+        else:
+            tests = (test_name,)
+            if self.runtests.rerun:
+                match_tests = self.runtests.get_match_tests(test_name)
+                if match_tests:
+                    kwargs['match_tests'] = [(test, True) for test in match_tests]
+
         if self.runtests.output_on_failure:
             kwargs['verbose'] = True
             kwargs['output_on_failure'] = False
@@ -388,6 +412,13 @@ class WorkerThread(threading.Thread):
         return MultiprocessResult(result, stdout)
 
     def run(self) -> None:
+        if self.runtests.single_process_per_case:
+            self._run_grouped()
+        else:
+            self._run_flat()
+
+    def _run_flat(self) -> None:
+        """Original behavior: one test name (module) per iteration."""
         fail_fast = self.runtests.fail_fast
         fail_env_changed = self.runtests.fail_env_changed
         try:
@@ -409,6 +440,52 @@ class WorkerThread(threading.Thread):
                 self.output.put((False, mp_result))
 
                 if mp_result.result.must_stop(fail_fast, fail_env_changed):
+                    break
+        except ExitThread:
+            pass
+        except BaseException:
+            self.output.put((True, traceback.format_exc()))
+        finally:
+            self.output.put(WorkerThreadExited())
+
+    def _run_grouped(self) -> None:
+        """Execute all tests in a group on the same thread before moving on."""
+        fail_fast = self.runtests.fail_fast
+        fail_env_changed = self.runtests.fail_env_changed
+        try:
+            while not self._stopped:
+                group = self.pending.next_group()
+                if group is None:
+                    break
+
+                module_name, case_ids = group
+                must_stop = False
+                for test_name in case_ids:
+                    if self._stopped:
+                        break
+                    self.current_module = module_name
+                    self.start_time = time.monotonic()
+                    self.test_name = test_name
+                    try:
+                        mp_result = self._runtest(test_name)
+                    except WorkerError as exc:
+                        mp_result = exc.mp_result
+                    finally:
+                        self.test_name = _NOT_RUNNING
+
+                    mp_result = dataclasses.replace(
+                        mp_result,
+                        result=dataclasses.replace(
+                            mp_result.result,
+                            test_name=test_name,
+                            duration=time.monotonic() - self.start_time))
+
+                    self.output.put((False, mp_result))
+                    if mp_result.result.must_stop(fail_fast, fail_env_changed):
+                        must_stop = True
+                        break
+
+                if must_stop:
                     break
         except ExitThread:
             pass
@@ -486,8 +563,12 @@ class RunWorkers:
         self.live_worker_count = 0
 
         self.output: queue.Queue[QueueContent] = queue.Queue()
-        tests_iter = runtests.iter_tests()
-        self.pending = MultiprocessIterator(tests_iter)
+        if runtests.single_process_per_case:
+            groups_iter = runtests.iter_case_groups()
+            self.pending = GroupedMultiprocessIterator(groups_iter)
+        else:
+            tests_iter = runtests.iter_tests()
+            self.pending = MultiprocessIterator(tests_iter)
         self.timeout = runtests.timeout
         if self.timeout is not None:
             # Rely on faulthandler to kill a worker process. This timouet is
