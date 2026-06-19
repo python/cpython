@@ -1,0 +1,1 @@
+Make released and installed tkinter work after import on Windows.

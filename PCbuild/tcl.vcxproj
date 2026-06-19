@@ -55,15 +55,15 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   
   <PropertyGroup>
-    <TclOpts>msvcrt</TclOpts>
-    <TclOpts Condition="$(Configuration) == 'Debug'">symbols,msvcrt</TclOpts>
+    <TclOpts>noembed,msvcrt</TclOpts>
+    <TclOpts Condition="$(Configuration) == 'Debug'">symbols,noembed,msvcrt</TclOpts>
     <TclDirs>BUILDDIRTOP="$(BuildDirTop)" INSTALLDIR="$(OutDir.TrimEnd(`\`))" INSTALL_DIR="$(OutDir.TrimEnd(`\`))"</TclDirs>
     <DebugFlags Condition="'$(Configuration)' == 'Debug'">DEBUGFLAGS="-wd4456 -wd4457 -wd4458 -wd4459 -wd4996"</DebugFlags>
     <WarningsFlags>WARNINGS="-W3 -wd4311 -wd4312"</WarningsFlags>
     <NMakeBuildCommandLine>setlocal
 set VCINSTALLDIR=$(VCInstallDir)
 cd /D "$(tclDir)win"
-nmake -f makefile.vc MACHINE=$(TclMachine) OPTS=$(TclOpts) $(TclDirs) $(DebugFlags) $(WarningsFlags) $(TclshNativeFlag) core shell dlls
+nmake -f makefile.vc MACHINE=$(TclMachine) OPTS=$(TclOpts) $(TclDirs) $(DebugFlags) $(WarningsFlags) $(TclshNativeFlag) core shell dlls libtclzip
 nmake -f makefile.vc MACHINE=$(TclMachine) OPTS=$(TclOpts) $(TclDirs) $(DebugFlags) $(WarningsFlags) $(TclshNativeFlag) install-binaries install-libraries
 copy /Y ..\license.terms "$(OutDir)\tcllicense.terms"
 </NMakeBuildCommandLine>
