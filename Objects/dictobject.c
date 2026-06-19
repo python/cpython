@@ -35,7 +35,7 @@ layout:
 
 
 The layout of the dictionary keys consists of three sections:
-the indicies (the actual hashtable),  the header, and the entries.
+the indicies (the actual hashtable), the header, and the entries.
 PyDictKeysObject * points to the header of the struct.
 
 The dk_indices table is stored immediately before the header in memory (see gh-142889).
@@ -827,12 +827,12 @@ new_keys_object(uint8_t log2_size, bool unicode)
     }
 
     void *base = NULL;
-    size_t indices_size = (size_t)1 << log2_bytes;
+    const size_t indices_size = (size_t)1 << log2_bytes;
     if (log2_size == PyDict_LOG_MINSIZE && unicode) {
         base = _Py_FREELIST_POP_MEM(dictkeys);
     }
     if (base == NULL) {
-        base = PyMem_Malloc(sizeof(PyDictKeysObject)
+        base = PyMem_Malloc(sizeof(PyDictKeysObject) - sizeof(PyDictKeyEntry)
                           + indices_size + entry_size * usable);
         if (base == NULL) {
             PyErr_NoMemory();
