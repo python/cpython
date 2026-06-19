@@ -208,7 +208,11 @@ static int curses_initscr_called = FALSE;
 /* Tells whether start_color() has been called to initialise color usage. */
 static int curses_start_color_called = FALSE;
 
-static const char *curses_screen_encoding = NULL;
+/* Encoding of the initial screen, used by module-level functions that have
+   no window object to take it from (e.g. unctrl(), ungetch()).  This is a
+   private copy: the window object that initscr() returns may be deallocated
+   while these functions are still in use. */
+static char *curses_screen_encoding = NULL;
 
 /* Utility Error Procedures */
 
@@ -3799,6 +3803,21 @@ _curses_init_pair_impl(PyObject *module, int pair_number, int fg, int bg)
     Py_RETURN_NONE;
 }
 
+/* Refresh the private copy of the screen encoding from a freshly created
+   stdscr window object.  Returns 0 on success, -1 with an exception set. */
+static int
+curses_update_screen_encoding(PyObject *winobj)
+{
+    char *copy = _PyMem_Strdup(((PyCursesWindowObject *)winobj)->encoding);
+    if (copy == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    PyMem_Free(curses_screen_encoding);
+    curses_screen_encoding = copy;
+    return 0;
+}
+
 /*[clinic input]
 _curses.initscr
 
@@ -3820,7 +3839,15 @@ _curses_initscr_impl(PyObject *module)
             _curses_set_null_error(state, "wrefresh", "initscr");
             return NULL;
         }
-        return PyCursesWindow_New(state, stdscr, NULL, NULL);
+        PyObject *winobj = PyCursesWindow_New(state, stdscr, NULL, NULL);
+        if (winobj == NULL) {
+            return NULL;
+        }
+        if (curses_update_screen_encoding(winobj) < 0) {
+            Py_DECREF(winobj);
+            return NULL;
+        }
+        return winobj;
     }
 
     win = initscr();
@@ -3927,7 +3954,10 @@ _curses_initscr_impl(PyObject *module)
     if (winobj == NULL) {
         return NULL;
     }
-    curses_screen_encoding = ((PyCursesWindowObject *)winobj)->encoding;
+    if (curses_update_screen_encoding(winobj) < 0) {
+        Py_DECREF(winobj);
+        return NULL;
+    }
     return winobj;
 }
 
@@ -5480,6 +5510,8 @@ static void
 cursesmodule_free(void *mod)
 {
     (void)cursesmodule_clear((PyObject *)mod);
+    PyMem_Free(curses_screen_encoding);
+    curses_screen_encoding = NULL;
     curses_module_loaded = 0;  // allow reloading once garbage-collected
 }
 
