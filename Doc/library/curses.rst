@@ -204,6 +204,17 @@ The module :mod:`!curses` defines the following functions:
    character-at-a-time  line editing without touching the rest of the screen.
 
 
+.. function:: nofilter()
+
+   Undo the effect of a previous :func:`.filter` call.
+   Like :func:`.filter`, it must be called before :func:`initscr` so that the
+   next initialization uses the full screen again.
+
+   Availability: if the underlying curses library provides ``nofilter()``.
+
+   .. versionadded:: next
+
+
 .. function:: flash()
 
    Flash the screen.  That is, change it to reverse-video and then change it back

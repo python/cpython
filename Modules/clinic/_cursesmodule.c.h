@@ -1866,6 +1866,32 @@ _curses_filter(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(HAVE_CURSES_FILTER) */
 
+#if defined(HAVE_CURSES_NOFILTER)
+
+PyDoc_STRVAR(_curses_nofilter__doc__,
+"nofilter($module, /)\n"
+"--\n"
+"\n"
+"Undo the effect of a preceding filter() call.\n"
+"\n"
+"Must be called before initscr().  It restores the normal behaviour\n"
+"disabled by filter(), so that the next initscr() uses the full screen\n"
+"rather than a single line.");
+
+#define _CURSES_NOFILTER_METHODDEF    \
+    {"nofilter", (PyCFunction)_curses_nofilter, METH_NOARGS, _curses_nofilter__doc__},
+
+static PyObject *
+_curses_nofilter_impl(PyObject *module);
+
+static PyObject *
+_curses_nofilter(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_nofilter_impl(module);
+}
+
+#endif /* defined(HAVE_CURSES_NOFILTER) */
+
 PyDoc_STRVAR(_curses_baudrate__doc__,
 "baudrate($module, /)\n"
 "--\n"
@@ -4407,6 +4433,10 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
     #define _CURSES_FILTER_METHODDEF
 #endif /* !defined(_CURSES_FILTER_METHODDEF) */
 
+#ifndef _CURSES_NOFILTER_METHODDEF
+    #define _CURSES_NOFILTER_METHODDEF
+#endif /* !defined(_CURSES_NOFILTER_METHODDEF) */
+
 #ifndef _CURSES_GETSYX_METHODDEF
     #define _CURSES_GETSYX_METHODDEF
 #endif /* !defined(_CURSES_GETSYX_METHODDEF) */
@@ -4486,4 +4516,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=11ab7c93cbc13e75 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7494804bf2c4d1f5 input=a9049054013a1b77]*/
