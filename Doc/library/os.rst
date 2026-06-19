@@ -510,7 +510,7 @@ process and user.
    Return a tuple (ruid, euid, suid) denoting the current process's
    real, effective, and saved user ids.
 
-   .. availability:: Unix, not WASI.
+   .. availability:: Unix, not WASI, not macOS, not iOS.
 
    .. versionadded:: 3.2
 
@@ -520,7 +520,7 @@ process and user.
    Return a tuple (rgid, egid, sgid) denoting the current process's
    real, effective, and saved group ids.
 
-   .. availability:: Unix, not WASI.
+   .. availability:: Unix, not WASI, not macOS, not iOS.
 
    .. versionadded:: 3.2
 
@@ -692,7 +692,7 @@ process and user.
 
    Set the current process's real, effective, and saved group ids.
 
-   .. availability:: Unix, not WASI, not Android.
+   .. availability:: Unix, not WASI, not Android, not macOS, not iOS.
 
    .. versionadded:: 3.2
 
@@ -701,7 +701,7 @@ process and user.
 
    Set the current process's real, effective, and saved user ids.
 
-   .. availability:: Unix, not WASI, not Android.
+   .. availability:: Unix, not WASI, not Android, not macOS, not iOS.
 
    .. versionadded:: 3.2
 
@@ -1036,10 +1036,7 @@ as internal buffering of data.
    Force write of file with filedescriptor *fd* to disk. Does not force update of
    metadata.
 
-   .. availability:: Unix.
-
-   .. note::
-      This function is not available on MacOS.
+   .. availability:: Unix, not macOS, not iOS.
 
 
 .. function:: fpathconf(fd, name, /)
@@ -1391,7 +1388,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Return a pair of file descriptors ``(r, w)`` usable for reading and writing,
    respectively.
 
-   .. availability:: Unix, not WASI.
+   .. availability:: Unix, not WASI, not macOS, not iOS.
 
    .. versionadded:: 3.3
 
@@ -1401,7 +1398,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Ensures that enough disk space is allocated for the file specified by *fd*
    starting from *offset* and continuing for *len* bytes.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not macOS, not iOS.
 
    .. versionadded:: 3.3
 
@@ -1416,7 +1413,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    :data:`POSIX_FADV_RANDOM`, :data:`POSIX_FADV_NOREUSE`,
    :data:`POSIX_FADV_WILLNEED` or :data:`POSIX_FADV_DONTNEED`.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not macOS, not iOS.
 
    .. versionadded:: 3.3
 
@@ -4599,7 +4596,7 @@ written in Python, such as a mail server's external command delivery program.
    Lock program segments into memory.  The value of *op* (defined in
    ``<sys/lock.h>``) determines which segments are locked.
 
-   .. availability:: Unix, not WASI, not iOS.
+   .. availability:: Unix, not WASI, not macOS, not iOS.
 
 
 .. function:: popen(cmd, mode='r', buffering=-1)
