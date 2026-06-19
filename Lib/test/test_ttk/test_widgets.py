@@ -973,6 +973,27 @@ class ProgressbarTest(AbstractWidgetTest, unittest.TestCase):
 
     test_configure_wraplength = requires_tk(8, 7)(StandardOptionsTests.test_configure_wraplength)
 
+    def test_step(self):
+        widget = self.create(maximum=100, mode='determinate')
+        self.assertEqual(float(widget['value']), 0.0)
+        widget.step()  # The default increment is 1.0.
+        self.assertEqual(float(widget['value']), 1.0)
+        widget.step(5)
+        self.assertEqual(float(widget['value']), 6.0)
+        widget.step(-2)
+        self.assertEqual(float(widget['value']), 4.0)
+
+    def test_start_stop(self):
+        widget = self.create(maximum=100, mode='determinate')
+        widget.pack()
+        widget.start()  # Schedule autoincrement; no exception.
+        widget.update()
+        widget.stop()   # Cancel it.
+        # After stopping, the value no longer changes.
+        value = float(widget['value'])
+        widget.update()
+        self.assertEqual(float(widget['value']), value)
+
 
 @unittest.skipIf(sys.platform == 'darwin',
                  'ttk.Scrollbar is special on MacOSX')
@@ -1638,6 +1659,50 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         # tk.call(treeview, "exists") which should result in an error
         # in the tcl interpreter since tk requires an item.
         self.assertRaises(tkinter.TclError, self.tv.exists, None)
+
+    def test_parent(self):
+        a = self.tv.insert('', 'end')
+        b = self.tv.insert(a, 'end')
+        self.assertEqual(self.tv.parent(b), a)
+        self.assertEqual(self.tv.parent(a), '')
+        self.assertRaises(tkinter.TclError, self.tv.parent, 'nonexistent')
+
+    def test_next_prev(self):
+        a = self.tv.insert('', 'end')
+        b = self.tv.insert('', 'end')
+        c = self.tv.insert('', 'end')
+        self.assertEqual(self.tv.next(a), b)
+        self.assertEqual(self.tv.next(b), c)
+        self.assertEqual(self.tv.next(c), '')
+        self.assertEqual(self.tv.prev(c), b)
+        self.assertEqual(self.tv.prev(b), a)
+        self.assertEqual(self.tv.prev(a), '')
+        self.assertRaises(tkinter.TclError, self.tv.next, 'nonexistent')
+        self.assertRaises(tkinter.TclError, self.tv.prev, 'nonexistent')
+
+    def test_see(self):
+        a = self.tv.insert('', 'end')
+        b = self.tv.insert(a, 'end')
+        # see() opens all of the item's ancestors.
+        self.assertFalse(self.tv.tk.getboolean(self.tv.item(a, 'open')))
+        self.tv.see(b)
+        self.assertTrue(self.tv.tk.getboolean(self.tv.item(a, 'open')))
+        self.assertRaises(tkinter.TclError, self.tv.see, 'nonexistent')
+
+    def test_identify_element(self):
+        self.tv.pack()
+        self.tv.wait_visibility()
+        parent = self.tv.insert('', 'end', text='parent')
+        self.tv.insert(parent, 'end', text='child')
+        self.tv.update()
+        x, y, w, h = self.tv.bbox(parent)
+        # The Treeitem.indicator element is packed at the left of the row in
+        # the Item layout on every platform and theme.
+        element = self.tv.identify_element(x + 8, y + h // 2)
+        self.assertRegex(element, r'.*indicator\z')
+        # The empty string is returned outside the widget.
+        self.assertEqual(self.tv.identify_element(-1, -1), '')
+        self.assertRaises(tkinter.TclError, self.tv.identify_element, None, 5)
 
     def test_focus(self):
         # nothing is focused right now

@@ -86,6 +86,12 @@ New modules
 Improved modules
 ================
 
+curses
+------
+
+* Add :func:`curses.nofilter`, which undoes the effect of :func:`curses.filter`.
+  (Contributed by Serhiy Storchaka in :gh:`151744`.)
+
 gzip
 ----
 
