@@ -138,6 +138,7 @@ As a consequence of this, split keys have a maximum size of 16.
 // Forward declarations
 static PyObject* frozendict_new(PyTypeObject *type, PyObject *args,
                                 PyObject *kwds);
+static PyObject* frozendict_new_untracked(PyTypeObject *type);
 static PyObject* dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 static int dict_merge(PyObject *a, PyObject *b, int override, PyObject **dupkey);
 static int dict_contains(PyObject *op, PyObject *key);
@@ -5242,7 +5243,7 @@ static PyNumberMethods dict_as_number = {
 };
 
 static PyObject *
-dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+dict_new_untracked(PyTypeObject *type)
 {
     assert(type != NULL);
     assert(type->tp_alloc != NULL);
@@ -5262,8 +5263,18 @@ dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     d->ma_keys = Py_EMPTY_KEYS;
     d->ma_values = NULL;
     ASSERT_CONSISTENT(d);
-    if (!_PyObject_GC_IS_TRACKED(d)) {
-        _PyObject_GC_TRACK(d);
+    return self;
+}
+
+static PyObject *
+dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    PyObject *self = dict_new_untracked(type);
+    if (self == NULL) {
+        return NULL;
+    }
+    if (!_PyObject_GC_IS_TRACKED(self)) {
+        _PyObject_GC_TRACK(self);
     }
     return self;
 }
@@ -5323,7 +5334,9 @@ frozendict_vectorcall(PyObject *type, PyObject * const*args,
         return Py_NewRef(args[0]);
     }
 
-    PyObject *self = frozendict_new(_PyType_CAST(type), NULL, NULL);
+    /* Keep the frozendict untracked until it is fully built, so a half-built
+       object is never reachable from another thread. */
+    PyObject *self = frozendict_new_untracked(_PyType_CAST(type));
     if (self == NULL) {
         return NULL;
     }
@@ -5342,6 +5355,10 @@ frozendict_vectorcall(PyObject *type, PyObject * const*args,
                 return NULL;
             }
         }
+    }
+    /* Track only once fully built. */
+    if (!_PyObject_GC_IS_TRACKED(self)) {
+        _PyObject_GC_TRACK(self);
     }
     return self;
 }
@@ -8361,17 +8378,28 @@ frozendict_hash(PyObject *op)
 }
 
 
+/* Allocate an empty, GC-untracked frozendict.  Staying untracked while it is
+   filled keeps a half-built frozendict so another thread can't observe it
+   changing.  Callers must GC-track it once fully built. */
 static PyObject *
-frozendict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+frozendict_new_untracked(PyTypeObject *type)
 {
-    PyObject *d = dict_new(type, args, kwds);
+    PyObject *d = dict_new_untracked(type);
     if (d == NULL) {
         return NULL;
     }
     assert(can_modify_dict(_PyAnyDict_CAST(d)));
+    _PyFrozenDictObject_CAST(d)->ma_hash = -1;
+    return d;
+}
 
-    PyFrozenDictObject *self = _PyFrozenDictObject_CAST(d);
-    self->ma_hash = -1;
+static PyObject *
+frozendict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    PyObject *d = frozendict_new_untracked(type);
+    if (d == NULL) {
+        return NULL;
+    }
 
     if (args != NULL) {
         if (dict_update_common(d, args, kwds, "frozendict") < 0) {
@@ -8383,6 +8411,10 @@ frozendict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         assert(kwds == NULL);
     }
 
+    /* Track only once fully built. */
+    if (!_PyObject_GC_IS_TRACKED(d)) {
+        _PyObject_GC_TRACK(d);
+    }
     return d;
 }
 
