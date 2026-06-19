@@ -179,6 +179,10 @@ static int initialised = FALSE;
 /* Tells whether start_color() has been called to initialise color usage. */
 static int initialisedcolors = FALSE;
 
+/* Encoding of the initial screen, used by module-level functions that have
+   no window object to take it from (e.g. unctrl(), ungetch()).  This is a
+   private copy: the window object that initscr() returns may be deallocated
+   while these functions are still in use. */
 static char *screen_encoding = NULL;
 
 /* Utility Macros */
@@ -3274,6 +3278,21 @@ _curses_init_pair_impl(PyObject *module, int pair_number, int fg, int bg)
 
 static PyObject *ModDict;
 
+/* Refresh the private copy of the screen encoding from a freshly created
+   stdscr window object.  Returns 0 on success, -1 with an exception set. */
+static int
+curses_update_screen_encoding(PyObject *winobj)
+{
+    char *copy = _PyMem_Strdup(((PyCursesWindowObject *)winobj)->encoding);
+    if (copy == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    PyMem_Free(screen_encoding);
+    screen_encoding = copy;
+    return 0;
+}
+
 /*[clinic input]
 _curses.initscr
 
@@ -3287,11 +3306,18 @@ _curses_initscr_impl(PyObject *module)
 /*[clinic end generated code: output=619fb68443810b7b input=514f4bce1821f6b5]*/
 {
     WINDOW *win;
-    PyCursesWindowObject *winobj;
 
     if (initialised) {
         wrefresh(stdscr);
-        return (PyObject *)PyCursesWindow_New(stdscr, NULL, NULL);
+        PyObject *winobj = PyCursesWindow_New(stdscr, NULL, NULL);
+        if (winobj == NULL) {
+            return NULL;
+        }
+        if (curses_update_screen_encoding(winobj) < 0) {
+            Py_DECREF(winobj);
+            return NULL;
+        }
+        return winobj;
     }
 
     win = initscr();
@@ -3383,9 +3409,15 @@ _curses_initscr_impl(PyObject *module)
     SetDictInt("LINES", LINES);
     SetDictInt("COLS", COLS);
 
-    winobj = (PyCursesWindowObject *)PyCursesWindow_New(win, NULL, NULL);
-    screen_encoding = winobj->encoding;
-    return (PyObject *)winobj;
+    PyObject *winobj = PyCursesWindow_New(win, NULL, NULL);
+    if (winobj == NULL) {
+        return NULL;
+    }
+    if (curses_update_screen_encoding(winobj) < 0) {
+        Py_DECREF(winobj);
+        return NULL;
+    }
+    return winobj;
 }
 
 /*[clinic input]
