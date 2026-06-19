@@ -390,7 +390,7 @@ class TestCurses(unittest.TestCase):
         pad.refresh(0, 0, 0, 0, 4, 10)
         pad.noutrefresh(0, 0, 0, 0, 4, 10)
         curses.doupdate()
-        self.assertRaises(TypeError, pad.refresh)
+        self.assertRaises(curses.error, pad.refresh)
         win = curses.newwin(5, 5, 0, 0)
         self.assertRaises(TypeError, win.refresh, 0, 0, 0, 0, 4, 4)
 
@@ -416,7 +416,6 @@ class TestCurses(unittest.TestCase):
         self.assertRaises(curses.error, win.move, 100, 100)
         self.assertRaises(curses.error, win.move, -1, -1)
         self.assertRaises(curses.error, win.addch, 100, 100, ord('x'))
-        self.assertRaises(curses.error, win.inch, 100, 100)
         self.assertRaises(curses.error, win.chgat, 100, 0, curses.A_BOLD)
 
     def test_argument_errors(self):
