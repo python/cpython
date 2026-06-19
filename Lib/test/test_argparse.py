@@ -4072,6 +4072,161 @@ class TestMutuallyExclusiveOptionalsAndPositionalsMixedParent(
     MEPBase, TestMutuallyExclusiveOptionalsAndPositionalsMixed):
     pass
 
+# =============================
+# Mutually inclusive group tests
+# =============================
+
+@force_not_colorized_test_class
+class TestMutuallyInclusiveGroupErrors(TestCase):
+
+    def test_nested_inclusive_groups(self):
+        parser = argparse.ArgumentParser(prog='PROG')
+        g = parser.add_mutually_inclusive_group()
+        g.add_argument('--spam')
+        self.assertRaisesRegex(ValueError,
+                               'mutually inclusive groups cannot be nested',
+                               g.add_mutually_inclusive_group)
+
+    def test_required_argument_in_group(self):
+        parser = argparse.ArgumentParser(prog='PROG')
+        g = parser.add_mutually_inclusive_group()
+        self.assertRaisesRegex(ValueError,
+                               'mutually inclusive arguments cannot be required',
+                               g.add_argument, '--spam', required=True)
+
+    @force_not_colorized
+    def test_help(self):
+        parser = ErrorRaisingArgumentParser(prog='PROG')
+        group1 = parser.add_mutually_inclusive_group()
+        group1.add_argument('--foo', action='store_true')
+        group1.add_argument('--bar', action='store_false')
+        group2 = parser.add_mutually_inclusive_group()
+        group2.add_argument('--soup', action='store_true')
+        group2.add_argument('--nuts', action='store_false')
+        expected = '''\
+            usage: PROG [-h] [--foo & --bar] [--soup & --nuts]
+
+            options:
+              -h, --help  show this help message and exit
+              --foo
+              --bar
+              --soup
+              --nuts
+              '''
+        self.assertEqual(parser.format_help(), textwrap.dedent(expected))
+
+    def test_usage_empty_group(self):
+        parser = ErrorRaisingArgumentParser(prog='PROG')
+        group = parser.add_mutually_inclusive_group()
+        self.assertEqual(parser.format_usage(), 'usage: PROG [-h]\n')
+
+
+class MIMixin(object):
+
+    def test_failures_when_not_required(self):
+        parse_args = self.get_parser(required=False).parse_args
+        error = ArgumentParserError
+        for args_string in self.failures:
+            with self.subTest(args=args_string):
+                self.assertRaises(error, parse_args, args_string.split())
+
+    def test_failures_when_required(self):
+        parse_args = self.get_parser(required=True).parse_args
+        error = ArgumentParserError
+        for args_string in self.failures + ['']:
+            with self.subTest(args=args_string):
+                self.assertRaises(error, parse_args, args_string.split())
+
+    def test_successes_when_not_required(self):
+        parse_args = self.get_parser(required=False).parse_args
+        successes = self.successes + self.successes_when_not_required
+        for args_string, expected_ns in successes:
+            with self.subTest(args=args_string):
+                actual_ns = parse_args(args_string.split())
+                self.assertEqual(actual_ns, expected_ns)
+
+    def test_successes_when_required(self):
+        parse_args = self.get_parser(required=True).parse_args
+        for args_string, expected_ns in self.successes:
+            with self.subTest(args=args_string):
+                actual_ns = parse_args(args_string.split())
+                self.assertEqual(actual_ns, expected_ns)
+
+    @force_not_colorized
+    def test_usage_when_not_required(self):
+        format_usage = self.get_parser(required=False).format_usage
+        self.assertEqual(format_usage(), textwrap.dedent(self.usage_when_not_required))
+
+    @force_not_colorized
+    def test_usage_when_required(self):
+        format_usage = self.get_parser(required=True).format_usage
+        self.assertEqual(format_usage(), textwrap.dedent(self.usage_when_required))
+
+    @force_not_colorized
+    def test_help_when_not_required(self):
+        format_help = self.get_parser(required=False).format_help
+        self.assertEqual(format_help(), textwrap.dedent(self.usage_when_not_required + self.help))
+
+    @force_not_colorized
+    def test_help_when_required(self):
+        format_help = self.get_parser(required=True).format_help
+        self.assertEqual(format_help(), textwrap.dedent(self.usage_when_required + self.help))
+
+
+class TestMutuallyInclusiveSimple(MIMixin, TestCase):
+
+    def get_parser(self, required=None):
+        parser = ErrorRaisingArgumentParser(prog='PROG')
+        group = parser.add_mutually_inclusive_group(required=required)
+        group.add_argument('--bar', help='bar help')
+        group.add_argument('--baz', help='baz help')
+        return parser
+
+    failures = ['--bar X', '--baz Y']
+    successes = [
+        ('--bar X --baz Y', NS(bar='X', baz='Y')),
+    ]
+    successes_when_not_required = [
+        ('', NS(bar=None, baz=None)),
+    ]
+
+    usage_when_not_required = '''\
+        usage: PROG [-h] [--bar BAR & --baz BAZ]
+        '''
+    usage_when_required = '''\
+        usage: PROG [-h] (--bar BAR & --baz BAZ)
+        '''
+    help = '''\
+
+        options:
+          -h, --help  show this help message and exit
+          --bar BAR   bar help
+          --baz BAZ   baz help
+        '''
+
+
+# =====================================================
+# Mutually inclusive group in parent parser tests
+# =====================================================
+
+class MIPBase(object):
+
+    def get_parser(self, required=None):
+        parent = super(MIPBase, self).get_parser(required=required)
+        parser = ErrorRaisingArgumentParser(
+            prog=parent.prog, add_help=False, parents=[parent])
+        return parser
+
+
+class TestMutuallyInclusiveGroupErrorsParent(
+    MIPBase, TestMutuallyInclusiveGroupErrors):
+    pass
+
+
+class TestMutuallyInclusiveSimpleParent(
+    MIPBase, TestMutuallyInclusiveSimple):
+    pass
+
 # =================
 # Set default tests
 # =================

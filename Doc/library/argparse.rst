@@ -2118,6 +2118,38 @@ Mutual exclusion
       exposed through inheritance.
 
 
+.. method:: ArgumentParser.add_mutually_inclusive_group(required=False)
+
+   Create a mutually inclusive group. :mod:`!argparse` will make sure that
+   either all or none of the arguments in the group are present on the command
+   line::
+
+     >>> parser = argparse.ArgumentParser(prog='PROG')
+     >>> group = parser.add_mutually_inclusive_group()
+     >>> group.add_argument('--foo')
+     >>> group.add_argument('--bar')
+     >>> parser.parse_args(['--foo', 'X', '--bar', 'Y'])
+     Namespace(foo='X', bar='Y')
+     >>> parser.parse_args([])
+     Namespace(foo=None, bar=None)
+     >>> parser.parse_args(['--foo', 'X'])
+     usage: PROG [-h] [--foo FOO & --bar BAR]
+     PROG: error: the following arguments must be used together: --foo --bar
+
+   The *required* argument indicates that the group must be used; providing
+   none of the arguments is an error::
+
+     >>> parser = argparse.ArgumentParser(prog='PROG')
+     >>> group = parser.add_mutually_inclusive_group(required=True)
+     >>> group.add_argument('--foo')
+     >>> group.add_argument('--bar')
+     >>> parser.parse_args([])
+     usage: PROG [-h] (--foo FOO & --bar BAR)
+     PROG: error: the following arguments are required: --foo --bar
+
+   .. versionadded:: next
+
+
 Parser defaults
 ^^^^^^^^^^^^^^^
 

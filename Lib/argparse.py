@@ -467,9 +467,9 @@ class HelpFormatter(object):
                         if action2.option_strings and
                            action_groups.pop(action2, None)
                     ] + [action]
-                    positionals.append((group.required, group_actions))
+                    positionals.append((group.required, group_actions, group._separator))
                 else:
-                    positionals.append((None, [action]))
+                    positionals.append((None, [action], None))
         # the remaining optional arguments are sorted by the position of
         # the first option in the group
         optionals = []
@@ -482,15 +482,15 @@ class HelpFormatter(object):
                         if action2.option_strings and
                            action_groups.pop(action2, None)
                     ]
-                    optionals.append((group.required, group_actions))
+                    optionals.append((group.required, group_actions, group._separator))
                 else:
-                    optionals.append((None, [action]))
+                    optionals.append((None, [action], None))
 
         # collect all actions format strings
         parts = []
         t = self._theme
         pos_start = None
-        for i, (required, group) in enumerate(optionals + positionals):
+        for i, (required, group, separator) in enumerate(optionals + positionals):
             start = len(parts)
             if i == len(optionals):
                 pos_start = start
@@ -540,7 +540,7 @@ class HelpFormatter(object):
             if in_group:
                 parts[start] = ('(' if required else '[') + parts[start]
                 for i in range(start, len(parts) - 1):
-                    parts[i] += ' |'
+                    parts[i] += separator
                 parts[-1] += ')' if required else ']'
 
         if pos_start is None:
@@ -1562,6 +1562,7 @@ class _ActionsContainer(object):
         # groups
         self._action_groups = []
         self._mutually_exclusive_groups = []
+        self._mutually_inclusive_groups = []
 
         # defaults storage
         self._defaults = {}
@@ -1677,6 +1678,11 @@ class _ActionsContainer(object):
         self._mutually_exclusive_groups.append(group)
         return group
 
+    def add_mutually_inclusive_group(self, **kwargs):
+        group = _MutuallyInclusiveGroup(self, **kwargs)
+        self._mutually_inclusive_groups.append(group)
+        return group
+
     def _add_action(self, action):
         # resolve any conflicts
         self._check_conflict(action)
@@ -1742,6 +1748,19 @@ class _ActionsContainer(object):
             # map the actions to their new mutex group
             for action in group._group_actions:
                 group_map[action] = mutex_group
+
+        # add container's mutually inclusive groups
+        for group in container._mutually_inclusive_groups:
+            if group._container is container:
+                cont = self
+            else:
+                cont = title_group_map[group._container.title]
+            inc_group = cont.add_mutually_inclusive_group(
+                required=group.required)
+
+            # map the actions to their new inclusive group
+            for action in group._group_actions:
+                group_map[action] = inc_group
 
         # add all actions to this container or their group
         for action in container._actions:
@@ -1892,6 +1911,7 @@ class _ArgumentGroup(_ActionsContainer):
         self._has_negative_number_optionals = \
             container._has_negative_number_optionals
         self._mutually_exclusive_groups = container._mutually_exclusive_groups
+        self._mutually_inclusive_groups = container._mutually_inclusive_groups
 
     def _add_action(self, action):
         action = super(_ArgumentGroup, self)._add_action(action)
@@ -1911,6 +1931,7 @@ class _MutuallyExclusiveGroup(_ArgumentGroup):
         super(_MutuallyExclusiveGroup, self).__init__(container)
         self.required = required
         self._container = container
+        self._separator = ' |'
 
     def _add_action(self, action):
         if action.required:
@@ -1926,6 +1947,29 @@ class _MutuallyExclusiveGroup(_ArgumentGroup):
 
     def add_mutually_exclusive_group(self, **kwargs):
         raise ValueError('mutually exclusive groups cannot be nested')
+
+class _MutuallyInclusiveGroup(_ArgumentGroup):
+
+    def __init__(self, container, required=False):
+        super(_MutuallyInclusiveGroup, self).__init__(container)
+        self.required = required
+        self._container = container
+        self._separator = ' &'
+
+    def _add_action(self, action):
+        if action.required:
+            msg = 'mutually inclusive arguments cannot be required'
+            raise ValueError(msg)
+        action = self._container._add_action(action)
+        self._group_actions.append(action)
+        return action
+
+    def _remove_action(self, action):
+        self._container._remove_action(action)
+        self._group_actions.remove(action)
+
+    def add_mutually_inclusive_group(self, **kwargs):
+        raise ValueError('mutually inclusive groups cannot be nested')
 
 def _prog_name(prog=None):
     if prog is not None:
@@ -2079,7 +2123,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             positionals = self._get_positional_actions()
             required_optionals = [action for action in self._get_optional_actions()
                                   if action.required]
-            groups = self._mutually_exclusive_groups
+            groups = self._mutually_exclusive_groups + self._mutually_inclusive_groups
             formatter.add_usage(None, required_optionals + positionals, groups, '')
             kwargs['prog'] = formatter.format_help().strip()
 
@@ -2469,6 +2513,22 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                     msg = _('one of the arguments %s is required')
                     raise ArgumentError(None, msg % ' '.join(names))
 
+        # make sure mutually inclusive groups were used together
+        for group in self._mutually_inclusive_groups:
+            seen_in_group = seen_non_default_actions.intersection(group._group_actions)
+            if seen_in_group and len(seen_in_group) != len(group._group_actions):
+                names = [_get_action_name(action)
+                         for action in group._group_actions
+                         if action.help is not SUPPRESS]
+                msg = _('the following arguments must be used together: %s')
+                raise ArgumentError(None, msg % ' '.join(names))
+            if group.required and not seen_in_group:
+                names = [_get_action_name(action)
+                         for action in group._group_actions
+                         if action.help is not SUPPRESS]
+                msg = _('the following arguments are required: %s')
+                raise ArgumentError(None, msg % ' '.join(names))
+
         # return the updated namespace and the extra arguments
         return namespace, extras
 
@@ -2813,7 +2873,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         if formatter is None:
             formatter = self._get_formatter()
         formatter.add_usage(self.usage, self._actions,
-                            self._mutually_exclusive_groups)
+                            self._mutually_exclusive_groups + self._mutually_inclusive_groups)
         return formatter.format_help()
 
     def format_help(self, formatter=None):
@@ -2822,7 +2882,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
         # usage
         formatter.add_usage(self.usage, self._actions,
-                            self._mutually_exclusive_groups)
+                            self._mutually_exclusive_groups + self._mutually_inclusive_groups)
 
         # description
         formatter.add_text(self.description)

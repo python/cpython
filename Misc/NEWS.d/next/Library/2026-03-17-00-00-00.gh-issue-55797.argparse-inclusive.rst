@@ -1,0 +1,2 @@
+Add :meth:`argparse.ArgumentParser.add_mutually_inclusive_group` to support
+argument groups where all arguments must be used together or not at all.
