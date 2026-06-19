@@ -1180,6 +1180,106 @@ class ListboxTest(AbstractWidgetTest, unittest.TestCase):
         self.assertRaises(TypeError, lb.get, 1, 2, 3)
         self.assertRaises(TclError, lb.get, 2.4)
 
+    def test_size(self):
+        lb = self.create()
+        self.assertEqual(lb.size(), 0)
+        lb.insert(0, *('el%d' % i for i in range(8)))
+        self.assertEqual(lb.size(), 8)
+        lb.delete(0, 2)
+        self.assertEqual(lb.size(), 5)
+        self.assertRaises(TypeError, lb.size, 0)
+
+    def test_delete(self):
+        lb = self.create()
+        lb.insert(0, *('el%d' % i for i in range(8)))
+        lb.delete(0)
+        self.assertEqual(lb.get(0, 'end'),
+                         ('el1', 'el2', 'el3', 'el4', 'el5', 'el6', 'el7'))
+        lb.delete(2, 4)
+        self.assertEqual(lb.get(0, 'end'), ('el1', 'el2', 'el6', 'el7'))
+        lb.delete(0, 'end')
+        self.assertEqual(lb.size(), 0)
+        self.assertRaises(TclError, lb.delete, 'noindex')
+        self.assertRaises(TypeError, lb.delete)
+
+    def test_index(self):
+        lb = self.create()
+        lb.insert(0, *('el%d' % i for i in range(8)))
+        self.assertEqual(lb.index(3), 3)
+        self.assertEqual(lb.index('end'), 8)  # the number of elements
+        lb.activate(4)
+        self.assertEqual(lb.index('active'), 4)
+        lb.selection_anchor(2)
+        self.assertEqual(lb.index('anchor'), 2)
+        self.assertRaisesRegex(TclError, 'bad listbox index "spam"',
+                               lb.index, 'spam')
+
+    def test_nearest(self):
+        lb = self.create()
+        lb.insert(0, *('el%d' % i for i in range(8)))
+        lb.pack()
+        lb.wait_visibility()
+        lb.update()
+        # Derive the line height from the first item, which is always
+        # displayed (bbox() returns None for items that are not).
+        x, y, w, h = lb.bbox(0)
+        self.assertEqual(lb.nearest(y + h // 2), 0)
+        self.assertEqual(lb.nearest(y + 3 * h + h // 2), 3)
+        self.assertRaises(TclError, lb.nearest, 'spam')
+        self.assertRaises(TypeError, lb.nearest)
+
+    def test_see(self):
+        lb = self.create(height=5)
+        lb.insert(0, *('el%d' % i for i in range(20)))
+        lb.pack()
+        lb.update_idletasks()
+        lb.see('end')
+        lb.update_idletasks()
+        self.assertEqual(lb.yview()[1], 1.0)
+        lb.see(0)
+        lb.update_idletasks()
+        self.assertEqual(lb.yview()[0], 0.0)
+        self.assertRaises(TclError, lb.see, 'spam')
+
+    def test_activate(self):
+        lb = self.create()
+        lb.insert(0, *('el%d' % i for i in range(8)))
+        lb.activate(3)
+        self.assertEqual(lb.index('active'), 3)
+        lb.activate('end')
+        self.assertEqual(lb.index('active'), 7)
+        self.assertRaises(TclError, lb.activate, 'spam')
+        self.assertRaises(TypeError, lb.activate)
+
+    def test_selection(self):
+        lb = self.create()
+        lb.insert(0, *('el%d' % i for i in range(8)))
+        self.assertEqual(lb.curselection(), ())
+        self.assertFalse(lb.selection_includes(0))
+
+        lb.selection_set(2, 4)
+        lb.selection_set(6)
+        self.assertEqual(lb.curselection(), (2, 3, 4, 6))
+        self.assertTrue(lb.selection_includes(3))
+        self.assertFalse(lb.selection_includes(5))
+
+        lb.selection_clear(3, 4)
+        self.assertEqual(lb.curselection(), (2, 6))
+
+        lb.selection_anchor(5)
+        self.assertEqual(lb.index('anchor'), 5)
+
+        # select_* are aliases of the selection_* methods.
+        lb.select_clear(0, 'end')
+        self.assertEqual(lb.curselection(), ())
+        lb.select_set(1)
+        self.assertTrue(lb.select_includes(1))
+        lb.select_anchor(1)
+        self.assertEqual(lb.index('anchor'), 1)
+
+        self.assertRaisesRegex(TclError, 'bad listbox index "spam"',
+                               lb.selection_includes, 'spam')
+
 
 @add_configure_tests(PixelSizeTests, StandardOptionsTests)
 class ScaleTest(AbstractWidgetTest, unittest.TestCase):
