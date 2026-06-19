@@ -1,0 +1,1 @@
+Added :func:`tempfile._TemporaryFileWrapper.__next__` so that the object returned by :func:`tempfile.NamedTemporaryFile` can be used to iterate over the contents of the file.
