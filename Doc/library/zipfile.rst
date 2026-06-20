@@ -555,7 +555,9 @@ ZipFile objects
    Removes a member entry from the archive's central directory.
    *zinfo_or_arcname* may be the full path of the member or a :class:`ZipInfo`
    instance.  If multiple members share the same full path and the path is
-   provided, only one of them is removed.
+   given as a string, only one of them is removed and which one is unspecified;
+   it should not be relied upon.  Pass the specific :class:`ZipInfo` instance to
+   remove a particular member.
 
    The archive must be opened with mode ``'w'``, ``'x'`` or ``'a'``.
 
