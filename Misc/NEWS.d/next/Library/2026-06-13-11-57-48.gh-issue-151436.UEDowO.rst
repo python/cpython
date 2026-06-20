@@ -1,0 +1,4 @@
+Fix skewed stack trackes in the Tachyon profiler when caching is enabled and
+when generators and coroutines are profiled, by updating
+``tstate->last_profiled_frame`` at every frame-removal site. The issue resulted
+in total erasure of some callers. Patch by Maurycy Pawłowski-Wieroński.
