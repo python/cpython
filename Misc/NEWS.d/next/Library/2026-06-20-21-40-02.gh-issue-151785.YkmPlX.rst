@@ -1,0 +1,2 @@
+Fix :attr:`ipaddress.IPv4Interface.is_loopback` to also consider the
+interface's network, matching :class:`ipaddress.IPv6Interface`.
