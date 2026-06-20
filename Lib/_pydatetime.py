@@ -55,7 +55,7 @@ def _days_before_year(year):
 
 def _days_in_month(year, month):
     "year, month -> number of days in that month in that year."
-    assert 1 <= month <= 12, month
+    assert 1 <= month <= 12, f"month must be in 1..12, not {month}"
     if month == 2 and _is_leap(year):
         return 29
     return _DAYS_IN_MONTH[month]
@@ -1987,7 +1987,7 @@ class datetime(date):
                 if became_next_day:
                     year, month, day = date_components
                     # Only wrap day/month when it was previously valid
-                    if month <= 12 and day <= (days_in_month := _days_in_month(year, month)):
+                    if 1 <= month <= 12 and day <= (days_in_month := _days_in_month(year, month)):
                         # Calculate midnight of the next day
                         day += 1
                         if day > days_in_month:
