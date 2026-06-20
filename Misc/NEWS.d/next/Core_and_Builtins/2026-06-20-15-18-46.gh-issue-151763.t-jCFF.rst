@@ -1,0 +1,4 @@
+Fix a possible NULL dereference in ``os.path.normpath()`` for bytes paths
+when memory allocation fails. The function now correctly propagates
+``MemoryError`` instead of passing a NULL object to
+``PyUnicode_EncodeFSDefault()``.
