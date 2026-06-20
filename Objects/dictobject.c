@@ -4148,8 +4148,11 @@ dict_dict_merge(PyDictObject *mp, PyDictObject *other, int override, PyObject **
             STORE_USED(mp, other->ma_used);
             ASSERT_CONSISTENT(mp);
 
-            if (_PyObject_GC_IS_TRACKED(other) && !_PyObject_GC_IS_TRACKED(mp)) {
-                /* Maintain tracking. */
+            if (_PyObject_GC_IS_TRACKED(other) && !_PyObject_GC_IS_TRACKED(mp)
+                    && !PyFrozenDict_Check(mp)) {
+                /* Maintain tracking.  A frozendict is left untracked while it is
+                   built and GC-tracked once by its constructor when fully
+                   built, so don't track it here. */
                 _PyObject_GC_TRACK(mp);
             }
 
@@ -5357,8 +5360,7 @@ frozendict_vectorcall(PyObject *type, PyObject * const*args,
             }
         }
     }
-    /* Track only once fully built.  Only ever reached for the exact frozendict
-       type, so self is still untracked here. */
+    assert(!_PyObject_GC_IS_TRACKED(self));
     _PyObject_GC_TRACK(self);
     return self;
 }
@@ -8378,17 +8380,28 @@ frozendict_hash(PyObject *op)
 }
 
 
-/* Allocate an empty, GC-untracked frozendict.  Staying untracked while it is
-   filled keeps a half-built frozendict so another thread can't observe it
-   changing.  Callers must GC-track it once fully built. */
+/* Allocate an empty, GC-untracked frozendict.  Allocation never tracks the
+   object -- even for subclasses, whose tp_alloc is PyType_GenericAlloc -- so it
+   stays untracked for the whole construction and a half-built frozendict is kept
+   out of gc.get_objects().  The constructor GC-tracks it exactly once, when
+   fully built. */
 static PyObject *
 frozendict_new_untracked(PyTypeObject *type)
 {
-    PyObject *d = dict_new_untracked(type);
+    assert(_PyType_IS_GC(type));
+    PyObject *d = _PyType_AllocNoTrack(type, 0);
     if (d == NULL) {
         return NULL;
     }
-    assert(can_modify_dict(_PyAnyDict_CAST(d)));
+    PyDictObject *mp = (PyDictObject *)d;
+    mp->ma_used = 0;
+    mp->_ma_watcher_tag = 0;
+    // Py_EMPTY_KEYS is immortal, so it is not incref'd.
+    assert((Py_EMPTY_KEYS)->dk_refcnt == _Py_DICT_IMMORTAL_INITIAL_REFCNT);
+    mp->ma_keys = Py_EMPTY_KEYS;
+    mp->ma_values = NULL;
+    ASSERT_CONSISTENT(mp);
+    assert(can_modify_dict(mp));
     _PyFrozenDictObject_CAST(d)->ma_hash = -1;
     return d;
 }
@@ -8411,10 +8424,8 @@ frozendict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         assert(kwds == NULL);
     }
 
-    /* Track only once fully built. */
-    if (!_PyObject_GC_IS_TRACKED(d)) {
-        _PyObject_GC_TRACK(d);
-    }
+    assert(!_PyObject_GC_IS_TRACKED(d));
+    _PyObject_GC_TRACK(d);
     return d;
 }
 
