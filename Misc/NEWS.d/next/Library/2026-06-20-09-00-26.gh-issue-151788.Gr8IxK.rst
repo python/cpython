@@ -1,0 +1,4 @@
+Speed up :class:`http.server.SimpleHTTPRequestHandler` directory listings by
+using :func:`os.scandir` instead of :func:`os.listdir` plus an :func:`os.stat`
+call per entry. This is faster on all filesystems and especially on network
+filesystems such as NFS.
