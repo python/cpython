@@ -5981,7 +5981,7 @@ datetime_fromisoformat(PyObject *cls, PyObject *dtstr)
         goto error;
     }
 
-    if ((hour == 24) && (month <= 12))  {
+    if ((hour == 24) && (month >= 1 && month <= 12))  {
         int d_in_month = days_in_month(year, month);
         if (day <= d_in_month) {
             if (minute == 0 && second == 0 && microsecond == 0) {
