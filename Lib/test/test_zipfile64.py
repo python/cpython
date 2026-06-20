@@ -225,7 +225,9 @@ class TestRepack(unittest.TestCase):
 
         with zipfile.ZipFile(f, 'a') as zh:
             zh.remove(file1)
-            zh.repack()
+            # strict_descriptor=False to scan the unsigned data descriptor
+            # (scanning is disabled under the strict_descriptor=True default)
+            zh.repack(strict_descriptor=False)
             self.assertIsNone(zh.testzip())
 
     @requires_zlib()
@@ -255,7 +257,9 @@ class TestRepack(unittest.TestCase):
 
         with zipfile.ZipFile(f, 'a') as zh:
             zh.remove(file1)
-            zh.repack()
+            # strict_descriptor=False to detect the unsigned data descriptor
+            # (scanning is disabled under the strict_descriptor=True default)
+            zh.repack(strict_descriptor=False)
             self.assertIsNone(zh.testzip())
 
 

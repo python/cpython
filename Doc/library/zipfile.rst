@@ -576,7 +576,7 @@ ZipFile objects
 
 
 .. method:: ZipFile.repack(removed=None, *, \
-                           strict_descriptor=False[, chunk_size])
+                           strict_descriptor=True[, chunk_size])
 
    Rewrites the archive to remove unreferenced local file entries, shrinking
    its file size.  The archive must be opened with mode ``'a'``.
@@ -587,12 +587,22 @@ ZipFile objects
    locate and remove local file entries that are no longer referenced in the
    central directory.
 
-   When scanning, setting ``strict_descriptor=True`` disables detection of any
-   entry using an unsigned data descriptor (a format deprecated by the ZIP
-   specification since version 6.3.0, released on 2006-09-29, and used only by
-   some legacy tools), which is significantly slower to scan—around 100 to
-   1000 times in the worst case. This does not affect performance on entries
-   without such feature.
+   When scanning, *strict_descriptor* controls how entries written with an
+   unsigned *data descriptor* are handled.  A data descriptor is an optional
+   record holding an entry's CRC and sizes, stored just after the entry's data;
+   it is used when the archive is written to a non-seekable stream, and is
+   *signed* when it begins with a marker signature or *unsigned* otherwise.
+   Unsigned descriptors have been deprecated by the `PKZIP Application Note`_
+   since version 6.3.0 (released in 2006) and are written only by some legacy
+   tools; signed descriptors—written by Python and other modern tools—are always
+   detected.  When *strict_descriptor* is true (the default), only signed data
+   descriptors are detected, so an unreferenced entry written with an unsigned
+   descriptor is not located and its space is not reclaimed by the scan.
+   Setting ``strict_descriptor=False`` additionally detects unsigned
+   descriptors, at the cost of a significantly slower scan—around 100 to 1000
+   times in the worst case—which may be exploitable as a denial-of-service
+   vector on untrusted input.  This does not affect entries without a data
+   descriptor, and is not needed when *removed* is provided.
 
    *chunk_size* may be specified to control the buffer size when moving
    entry data (default is 1 MiB).

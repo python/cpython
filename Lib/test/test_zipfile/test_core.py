@@ -2134,6 +2134,52 @@ class AbstractRepackTests(RepackHelperMixin):
                     with self.assertRaisesRegex(zipfile.BadZipFile, 'Overlapped entries'):
                         zh.repack()
 
+    def test_repack_scan_unsigned_data_descriptor(self):
+        """By default (strict_descriptor=True) the scan does not reclaim an
+        unreferenced entry written with an unsigned data descriptor, but keeps
+        the archive valid; strict_descriptor=False reclaims it."""
+        removed_name, removed_data = self.test_files[1]
+        remaining = [n for n, _ in self.test_files if n != removed_name]
+
+        # Build an archive whose entries use *unsigned* data descriptors by
+        # writing to an unseekable stream with the descriptor signature stripped.
+        buf = io.BytesIO()
+        with mock.patch.object(struct, 'pack', side_effect=struct_pack_no_dd_sig):
+            with zipfile.ZipFile(Unseekable(buf), 'w', self.compression) as zh:
+                for file, data in self.test_files:
+                    with zh.open(file, 'w') as fh:
+                        fh.write(data)
+        archive = buf.getvalue()
+
+        # sanity: the removed entry really uses a data descriptor (flag bit 3);
+        # it is unsigned by construction above
+        with zipfile.ZipFile(io.BytesIO(archive)) as zh:
+            self.assertTrue(zh.getinfo(removed_name).flag_bits & 0x08)
+
+        # default repack(): strict_descriptor=True does not locate the unsigned
+        # data descriptor, so the local data is preserved (not reclaimed).
+        fz = io.BytesIO(archive)
+        with zipfile.ZipFile(fz, 'a', self.compression) as zh:
+            zh.remove(removed_name)
+            zh.repack()
+        default_size = len(fz.getvalue())
+        with zipfile.ZipFile(fz) as zh:
+            self.assertEqual(zh.namelist(), remaining)
+            self.assertIsNone(zh.testzip())
+
+        # strict_descriptor=False: the unsigned data descriptor is detected, so
+        # the local data is reclaimed and the archive shrinks.
+        fz = io.BytesIO(archive)
+        with zipfile.ZipFile(fz, 'a', self.compression) as zh:
+            zh.remove(removed_name)
+            zh.repack(strict_descriptor=False)
+        strict_false_size = len(fz.getvalue())
+        with zipfile.ZipFile(fz) as zh:
+            self.assertEqual(zh.namelist(), remaining)
+            self.assertIsNone(zh.testzip())
+
+        self.assertLess(strict_false_size, default_size)
+
     def test_repack_removed_basic(self):
         """Should remove local file entries for provided deleted files."""
         ln = len(self.test_files)
@@ -2628,7 +2674,9 @@ class ZipRepackerTests(unittest.TestCase):
         self._test_validate_local_file_entry(method=zipfile.ZIP_ZSTANDARD)
 
     def _test_validate_local_file_entry(self, method):
-        repacker = zipfile._ZipRepacker()
+        # strict_descriptor=False to exercise unsigned data descriptor scanning
+        # (the default is strict_descriptor=True, tested separately below)
+        repacker = zipfile._ZipRepacker(strict_descriptor=False)
 
         # basic
         bytes_ = self._generate_local_file_entry(
@@ -2799,7 +2847,9 @@ class ZipRepackerTests(unittest.TestCase):
         self._test_validate_local_file_entry_zip64(method=zipfile.ZIP_ZSTANDARD)
 
     def _test_validate_local_file_entry_zip64(self, method):
-        repacker = zipfile._ZipRepacker()
+        # strict_descriptor=False to exercise unsigned data descriptor scanning
+        # (the default is strict_descriptor=True, tested separately below)
+        repacker = zipfile._ZipRepacker(strict_descriptor=False)
 
         # zip64
         bytes_ = self._generate_local_file_entry(
@@ -2870,7 +2920,9 @@ class ZipRepackerTests(unittest.TestCase):
         m_sddns.assert_not_called()
 
     def test_validate_local_file_entry_encrypted(self):
-        repacker = zipfile._ZipRepacker()
+        # strict_descriptor=False to exercise unsigned data descriptor scanning
+        # of an encrypted entry (the default strict_descriptor=True is tested below)
+        repacker = zipfile._ZipRepacker(strict_descriptor=False)
 
         bytes_ = (
             b'PK\x03\x04'
@@ -2902,6 +2954,21 @@ class ZipRepackerTests(unittest.TestCase):
         m_sdd.assert_called_once_with(fz, 38, len(bytes_), False)
         m_sddnsbd.assert_not_called()
         m_sddns.assert_called_once_with(fz, 38, len(bytes_), False)
+
+        # return None for the unsigned data descriptor if `strict_descriptor=True`
+        repacker = zipfile._ZipRepacker(strict_descriptor=True)
+        fz = io.BytesIO(bytes_)
+        with mock.patch.object(repacker, '_scan_data_descriptor',
+                               wraps=repacker._scan_data_descriptor) as m_sdd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig_by_decompression',
+                               wraps=repacker._scan_data_descriptor_no_sig_by_decompression) as m_sddnsbd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig',
+                               wraps=repacker._scan_data_descriptor_no_sig) as m_sddns:
+            result = repacker._validate_local_file_entry(fz, 0, len(bytes_))
+        self.assertEqual(result, None)
+        m_sdd.assert_called_once_with(fz, 38, len(bytes_), False)
+        m_sddnsbd.assert_not_called()
+        m_sddns.assert_not_called()
 
     def test_iter_scan_signature(self):
         bytes_ = b'sig__sig__sig__sig'
