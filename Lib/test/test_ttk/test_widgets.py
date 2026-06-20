@@ -1276,6 +1276,19 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         self.spin.update()
         self.assertEqual(len(success), 2)
 
+    def test_increment_decrement_events(self):
+        # Clicking the arrows fires the <<Increment>> and <<Decrement>>
+        # virtual events.
+        events = []
+        self.spin.bind('<<Increment>>', lambda e: events.append('increment'))
+        self.spin.bind('<<Decrement>>', lambda e: events.append('decrement'))
+        self.spin.update()
+        self._click_increment_arrow()
+        self.spin.update()
+        self._click_decrement_arrow()
+        self.spin.update()
+        self.assertEqual(events, ['increment', 'decrement'])
+
     def test_configure_to(self):
         self.spin['from'] = 0
         self.spin['to'] = 5
@@ -1909,6 +1922,37 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(self.tv.selection(), (c1, item2))
         self.tv.selection_toggle((c1, c3))
         self.assertEqual(self.tv.selection(), (c3, item2))
+
+    def test_virtual_events(self):
+        # Keyboard navigation fires the <<TreeviewSelect>>, <<TreeviewOpen>>
+        # and <<TreeviewClose>> virtual events.
+        parent = self.tv.insert('', 'end')
+        self.tv.insert(parent, 'end')
+        item2 = self.tv.insert('', 'end')
+        self.tv.pack()
+        self.tv.update()
+        selects, opens, closes = [], [], []
+        self.tv.bind('<<TreeviewSelect>>',
+                     lambda e: selects.append(self.tv.selection()))
+        self.tv.bind('<<TreeviewOpen>>', lambda e: opens.append(self.tv.focus()))
+        self.tv.bind('<<TreeviewClose>>', lambda e: closes.append(self.tv.focus()))
+        self.tv.focus_force()
+        self.tv.focus(parent)
+        self.tv.selection_set(parent)
+        self.tv.update()
+
+        self.tv.event_generate('<Right>')  # Open the focused parent.
+        self.tv.update()
+        self.assertEqual(opens, [parent])
+
+        self.tv.event_generate('<Left>')  # Close it again.
+        self.tv.update()
+        self.assertEqual(closes, [parent])
+
+        self.tv.event_generate('<Down>')  # Move the selection.
+        self.tv.update()
+        self.assertEqual(self.tv.selection(), (item2,))
+        self.assertIn((item2,), selects)
 
     def test_set(self):
         self.tv['columns'] = ['A', 'B']
