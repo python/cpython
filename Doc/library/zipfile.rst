@@ -570,7 +570,9 @@ ZipFile objects
       making it inaccessible to most tools.  The member's local file entry,
       including content and metadata, remains in the archive and is still
       recoverable using forensic tools.  Call :meth:`repack` afterwards to
-      completely remove the member and reclaim space.
+      remove the local file entry and reclaim space; pass the returned
+      :class:`ZipInfo` to :meth:`repack` to ensure the data is removed
+      regardless of how the entry was written.
 
    .. versionadded:: next
 
@@ -586,6 +588,17 @@ ZipFile objects
    local file entries will be removed.  Otherwise, the archive is scanned to
    locate and remove local file entries that are no longer referenced in the
    central directory.
+
+   Passing *removed* is the most reliable way to reclaim space: the
+   corresponding local file entries are located directly from the central
+   directory and removed regardless of how they were written, whereas the scan
+   used when *removed* is omitted may leave some entries in place (see
+   *strict_descriptor* below).  To remove members and reclaim their space in a
+   single step::
+
+      with ZipFile('spam.zip', 'a') as myzip:
+          removed = [myzip.remove(name) for name in ('ham.txt', 'eggs.txt')]
+          myzip.repack(removed)
 
    When scanning, *strict_descriptor* controls how entries written with an
    unsigned *data descriptor* are handled.  A data descriptor is an optional
