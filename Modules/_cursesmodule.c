@@ -3339,7 +3339,23 @@ PyCursesScreen_use(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 #endif /* HAVE_CURSES_USE_SCREEN */
 
+PyDoc_STRVAR(PyCursesScreen_close__doc__,
+"close($self, /)\n--\n\n"
+"Detach the screen's standard window, breaking their reference cycle.\n\n"
+"Afterwards the stdscr attribute is None and the window it returned earlier\n"
+"can no longer be used.  The screen is released once it and its windows are\n"
+"no longer referenced.");
+
+static PyObject *
+PyCursesScreen_close(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    (void)PyCursesScreen_clear(self);
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef PyCursesScreen_methods[] = {
+    {"close", PyCursesScreen_close, METH_NOARGS,
+     PyCursesScreen_close__doc__},
 #ifdef HAVE_CURSES_USE_SCREEN
     {"use", _PyCFunction_CAST(PyCursesScreen_use),
      METH_VARARGS | METH_KEYWORDS, PyCursesScreen_use__doc__},

@@ -1462,6 +1462,20 @@ Screen objects
    .. versionadded:: next
 
 
+.. method:: screen.close()
+
+   Detach the screen's standard window,
+   breaking the reference cycle between them
+   so the screen can be reclaimed promptly instead of waiting for a
+   garbage collection.
+   Afterwards :attr:`~screen.stdscr` is ``None``
+   and the window it returned earlier can no longer be used.
+   The screen's resources are released
+   once it and all its windows are no longer referenced.
+
+   .. versionadded:: next
+
+
 .. attribute:: screen.stdscr
 
    The standard :ref:`window <curses-window-objects>` of the screen,

@@ -124,11 +124,12 @@ class TestCurses(unittest.TestCase):
                 infd = stdout_fd
             self.screen = curses.newterm(term, stdout_fd, infd)
             self.stdscr = self.screen.stdscr
-            # Drop the screen after the test, and collect the window<->screen
-            # reference cycle while the screen is still current, so delwin()
-            # succeeds; collected later, on a non-current screen, it fails
-            # (unraisable on macOS).
-            self.addCleanup(gc_collect)
+            # Close the screen after the test: it breaks the window<->screen
+            # reference cycle and detaches the standard window so its delwin()
+            # is skipped.  Otherwise the window is collected during a later test
+            # whose screen is no longer current, and delwin() fails (unraisable
+            # on macOS).
+            self.addCleanup(self.screen.close)
             self.addCleanup(setattr, self, 'screen', None)
             self.addCleanup(setattr, self, 'stdscr', None)
         else:
@@ -1868,6 +1869,19 @@ class ScreenTests(unittest.TestCase):
         b = curses.newterm('xterm', s2, s2)   # a is no longer current
         del a
         gc_collect()
+
+    def test_close(self):
+        s = self.make_pty()
+        screen = curses.newterm('xterm', s, s)
+        win = screen.stdscr
+        self.assertIsInstance(win, curses.window)
+        screen.close()
+        # After close() the standard window is detached and unusable, and
+        # stdscr is None.  No reference cycle remains.
+        self.assertIsNone(screen.stdscr)
+        self.assertRaises(curses.error, win.addstr, 0, 0, 'x')
+        # close() is idempotent.
+        screen.close()
 
     @unittest.skipUnless(hasattr(curses, 'new_prescr'),
                          'requires curses.new_prescr()')
