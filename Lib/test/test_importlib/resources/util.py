@@ -6,9 +6,9 @@ import io
 import pathlib
 import sys
 import types
+from importlib.abc import Loader, MetaPathFinder
 from importlib.machinery import ModuleSpec
 from importlib.resources.abc import ResourceReader, Traversable, TraversableResources
-from importlib.abc import MetaPathFinder, Loader
 
 from test.support import import_helper, os_helper
 
