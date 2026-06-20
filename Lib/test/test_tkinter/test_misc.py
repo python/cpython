@@ -490,9 +490,14 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
     def test_grab_set_global(self):
         # A successful global grab directs all events on the display to this
         # application, so only the error paths are tested here.
-        f = tkinter.Frame(self.root)  # not yet viewable
-        self.assertRaisesRegex(TclError, 'grab failed', f.grab_set_global)
         self.assertRaises(TypeError, self.root.grab_set_global, 'extra')
+        with self.subTest('non-viewable window'):
+            if self.root._windowingsystem != 'x11':
+                # Grabbing a non-viewable window fails only on X11; elsewhere
+                # it would actually grab the whole display.
+                self.skipTest('only X11 fails the grab')
+            f = tkinter.Frame(self.root)  # not yet viewable
+            self.assertRaisesRegex(TclError, 'grab failed', f.grab_set_global)
 
     def test_send(self):
         if self.root._windowingsystem != 'x11':
