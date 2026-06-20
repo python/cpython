@@ -902,13 +902,22 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         for entry in entries:
             name = entry.name
             displayname = linkname = name
-            # Append / for directories or @ for symbolic links.
-            # Use cached os.DirEntry methods to avoid a stat() per entry,
-            # which is costly on network filesystems such as NFS.
-            if entry.is_dir():
+            # Append / for directories or @ for symbolic links. Use the cached
+            # os.DirEntry methods to avoid a stat() per entry. Fall back to
+            # False on OSError to mirror os.path.isdir()/islink(), whose result
+            # would otherwise differ (e.g. a symlink to an unreadable target).
+            try:
+                is_dir = entry.is_dir()
+            except OSError:
+                is_dir = False
+            try:
+                is_symlink = entry.is_symlink()
+            except OSError:
+                is_symlink = False
+            if is_dir:
                 displayname = name + "/"
                 linkname = name + "/"
-            if entry.is_symlink():
+            if is_symlink:
                 displayname = name + "@"
                 # Note: a link to a directory displays with @ and links with /
             r.append('<li><a href="%s">%s</a></li>'
