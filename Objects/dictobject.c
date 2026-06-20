@@ -4148,14 +4148,6 @@ dict_dict_merge(PyDictObject *mp, PyDictObject *other, int override, PyObject **
             STORE_USED(mp, other->ma_used);
             ASSERT_CONSISTENT(mp);
 
-            if (_PyObject_GC_IS_TRACKED(other) && !_PyObject_GC_IS_TRACKED(mp)
-                    && !PyFrozenDict_Check(mp)) {
-                /* Maintain tracking.  A frozendict is left untracked while it is
-                   built and GC-tracked once by its constructor when fully
-                   built, so don't track it here. */
-                _PyObject_GC_TRACK(mp);
-            }
-
             return 0;
         }
     }
