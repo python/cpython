@@ -5249,11 +5249,10 @@ static PyObject *
 dict_new_untracked(PyTypeObject *type)
 {
     assert(type != NULL);
-    assert(type->tp_alloc != NULL);
     // dict subclasses must implement the GC protocol
     assert(_PyType_IS_GC(type));
 
-    PyObject *self = type->tp_alloc(type, 0);
+    PyObject *self = _PyType_AllocNoTrack(type, 0);
     if (self == NULL) {
         return NULL;
     }
@@ -5277,9 +5276,8 @@ dict_new(PyTypeObject *type, PyObject *Py_UNUSED(args), PyObject *Py_UNUSED(kwds
     if (self == NULL) {
         return NULL;
     }
-    if (!_PyObject_GC_IS_TRACKED(self)) {
-        _PyObject_GC_TRACK(self);
-    }
+    assert(!_PyObject_GC_IS_TRACKED(self));
+    _PyObject_GC_TRACK(self);
     return self;
 }
 
@@ -8380,28 +8378,16 @@ frozendict_hash(PyObject *op)
 }
 
 
-/* Allocate an empty, GC-untracked frozendict.  Allocation never tracks the
-   object -- even for subclasses, whose tp_alloc is PyType_GenericAlloc -- so it
-   stays untracked for the whole construction and a half-built frozendict is kept
-   out of gc.get_objects().  The constructor GC-tracks it exactly once, when
+/* Allocate an empty, GC-untracked frozendict; the constructor tracks it once
    fully built. */
 static PyObject *
 frozendict_new_untracked(PyTypeObject *type)
 {
-    assert(_PyType_IS_GC(type));
-    PyObject *d = _PyType_AllocNoTrack(type, 0);
+    PyObject *d = dict_new_untracked(type);
     if (d == NULL) {
         return NULL;
     }
-    PyDictObject *mp = (PyDictObject *)d;
-    mp->ma_used = 0;
-    mp->_ma_watcher_tag = 0;
-    // Py_EMPTY_KEYS is immortal, so it is not incref'd.
-    assert((Py_EMPTY_KEYS)->dk_refcnt == _Py_DICT_IMMORTAL_INITIAL_REFCNT);
-    mp->ma_keys = Py_EMPTY_KEYS;
-    mp->ma_values = NULL;
-    ASSERT_CONSISTENT(mp);
-    assert(can_modify_dict(mp));
+    assert(can_modify_dict(_PyAnyDict_CAST(d)));
     _PyFrozenDictObject_CAST(d)->ma_hash = -1;
     return d;
 }
