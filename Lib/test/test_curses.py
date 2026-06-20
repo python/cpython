@@ -1795,16 +1795,17 @@ class ScreenTests(unittest.TestCase):
 
     def make_pty(self):
         master, slave = os.openpty()
-        # Nothing reads the master end, so writing to the slave -- and the
-        # tcdrain() inside endwin() -- can block once the pty buffer fills (on
-        # macOS, not Linux).  Drain it from a background thread; endwin()
-        # releases the GIL so the thread runs while endwin() blocks.
+        # Nothing reads the master end, so writing to the slave and the
+        # tcdrain() in endwin() can block on macOS once the pty buffer fills;
+        # drain it from a background thread (endwin() releases the GIL).
         reader = threading.Thread(target=self._drain_pty, args=(master,),
                                   daemon=True)
         reader.start()
         self.addCleanup(reader.join, SHORT_TIMEOUT)
-        self.addCleanup(os.close, master)
+        # Close the master first (cleanups run in reverse): on macOS, closing
+        # the slave first blocks until its pending output drains.
         self.addCleanup(os.close, slave)
+        self.addCleanup(os.close, master)
         return slave
 
     def test_newterm(self):
