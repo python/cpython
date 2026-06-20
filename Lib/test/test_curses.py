@@ -124,9 +124,11 @@ class TestCurses(unittest.TestCase):
                 infd = stdout_fd
             self.screen = curses.newterm(term, stdout_fd, infd)
             self.stdscr = self.screen.stdscr
-            # Drop the screen after the test so the screens do not pile up: a
-            # window keeps its screen alive through a reference cycle, and
-            # unittest keeps every test instance for the whole run.
+            # Drop the screen after the test, and collect the window<->screen
+            # reference cycle while the screen is still current, so delwin()
+            # succeeds; collected later, on a non-current screen, it fails
+            # (unraisable on macOS).
+            self.addCleanup(gc_collect)
             self.addCleanup(setattr, self, 'screen', None)
             self.addCleanup(setattr, self, 'stdscr', None)
         else:
