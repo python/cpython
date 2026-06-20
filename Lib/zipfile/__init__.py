@@ -1394,9 +1394,13 @@ class _ZipWriteFile(io.BufferedIOBase):
             self._zipfile._writing = False
 
 
+_REPACK_CHUNK_SIZE = 2**20
+
+
 class _ZipRepacker:
     """Class for ZipFile repacking."""
-    def __init__(self, *, strict_descriptor=True, chunk_size=2**20, debug=0):
+    def __init__(self, *, strict_descriptor=True,
+                 chunk_size=_REPACK_CHUNK_SIZE, debug=0):
         self.debug = debug  # Level of printing: 0 through 3
         self.chunk_size = chunk_size
         self.strict_descriptor = strict_descriptor
@@ -2388,7 +2392,8 @@ class ZipFile:
 
         return zinfo
 
-    def repack(self, removed=None, *, strict_descriptor=True, chunk_size=2**20):
+    def repack(self, removed=None, *, strict_descriptor=True,
+               chunk_size=_REPACK_CHUNK_SIZE):
         """Repack a zip file, removing non-referenced file entries.
 
         The archive must be opened with mode 'a', as mode 'w'/'x' do not
