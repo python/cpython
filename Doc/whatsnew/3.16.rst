@@ -86,6 +86,12 @@ New modules
 Improved modules
 ================
 
+curses
+------
+
+* Add :func:`curses.nofilter`, which undoes the effect of :func:`curses.filter`.
+  (Contributed by Serhiy Storchaka in :gh:`151744`.)
+
 gzip
 ----
 
@@ -137,6 +143,19 @@ shlex
 * Add keyword-only parameter *force* to :func:`shlex.quote` to force quoting
   a string, even if it is already safe for a shell without being quoted.
   (Contributed by Jay Berry in :gh:`148846`.)
+
+tkinter
+-------
+
+* Added new :class:`!tkinter.Text` methods :meth:`~tkinter.Text.edit_canundo`
+  and :meth:`~tkinter.Text.edit_canredo` which return whether an undo or redo
+  is possible.
+  (Contributed by Serhiy Storchaka in :gh:`151674`.)
+
+* Added new :class:`!tkinter.Text` methods :meth:`~tkinter.Text.sync` and
+  :meth:`~tkinter.Text.pendingsync` which control and report the
+  synchronization of the displayed view with the underlying text.
+  (Contributed by Serhiy Storchaka in :gh:`151675`.)
 
 xml
 ---

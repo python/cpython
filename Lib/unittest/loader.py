@@ -1,5 +1,6 @@
 """Loading unittests."""
 
+import inspect
 import os
 import re
 import sys
@@ -84,8 +85,10 @@ class TestLoader(object):
             raise TypeError("Test cases should not be derived from "
                             "TestSuite. Maybe you meant to derive from "
                             "TestCase?")
-        if testCaseClass in (case.TestCase, case.FunctionTestCase):
-            # We don't load any tests from base types that should not be loaded.
+        if (testCaseClass in (case.TestCase, case.FunctionTestCase) or
+            inspect.isabstract(testCaseClass)):
+            # We don't load any tests from base types that should not be loaded,
+            # and abstract base classes that can't be instantiated
             testCaseNames = []
         else:
             testCaseNames = self.getTestCaseNames(testCaseClass)
@@ -103,6 +106,7 @@ class TestLoader(object):
                 isinstance(obj, type)
                 and issubclass(obj, case.TestCase)
                 and obj not in (case.TestCase, case.FunctionTestCase)
+                and not inspect.isabstract(obj)
             ):
                 tests.append(self.loadTestsFromTestCase(obj))
 
@@ -181,6 +185,9 @@ class TestLoader(object):
         elif (isinstance(obj, types.FunctionType) and
               isinstance(parent, type) and
               issubclass(parent, case.TestCase)):
+            if inspect.isabstract(parent):
+                raise TypeError(
+                    "Cannot instantiate abstract test case %s" % parent.__name__)
             name = parts[-1]
             inst = parent(name)
             # static methods follow a different path
