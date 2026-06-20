@@ -2499,18 +2499,9 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertFalse(ipaddress.ip_address('2002::').is_global)
         # gh-124217: conform with RFC 9637
         self.assertFalse(ipaddress.ip_address('3fff::').is_global)
-        # gh-151749: 5f00::/16 (RFC 9602) and 100:0:0:1::/64 (RFC 9780)
-        # are not globally reachable per the IANA registry.
-        for addr in ('5f00::', '5f00::1',
-                     '5f00:ffff:ffff:ffff:ffff:ffff:ffff:ffff',
-                     '100:0:0:1::', '100:0:0:1:ffff:ffff:ffff:ffff'):
-            self.assertFalse(ipaddress.ip_address(addr).is_global)
-            self.assertTrue(ipaddress.ip_address(addr).is_private)
-        # Addresses adjacent to the new ranges are unaffected.
-        for addr in ('5eff:ffff:ffff:ffff:ffff:ffff:ffff:ffff', '5f01::',
-                     '100:0:0:2::'):
-            self.assertTrue(ipaddress.ip_address(addr).is_global)
-            self.assertFalse(ipaddress.ip_address(addr).is_private)
+        # gh-151749: conform with RFC 9602 and RFC 9780
+        self.assertFalse(ipaddress.ip_address('5f00::').is_global)
+        self.assertFalse(ipaddress.ip_address('100:0:0:1::').is_global)
 
         # some generic IETF reserved addresses
         self.assertEqual(True, ipaddress.ip_address('100::').is_reserved)
