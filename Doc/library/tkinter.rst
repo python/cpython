@@ -5608,6 +5608,29 @@ Widget classes
 
       .. versionadded:: 3.3
 
+   .. method:: sync(command=None)
+
+      Control the synchronization of the displayed view with the underlying
+      text, which may lag behind when line heights have not yet been computed
+      (for example, for lines that have never been displayed).
+      If *command* is omitted, bring the line metrics up to date immediately by
+      forcing computation of any outdated line heights, and return once they
+      are current.
+      Otherwise schedule *command* to be called, with no arguments, exactly
+      once as soon as all line heights are up to date; if there are no pending
+      calculations, it is called immediately.
+
+      .. versionadded:: next
+
+   .. method:: pendingsync()
+
+      Return ``True`` if the line height calculations are not up to date, and
+      ``False`` otherwise.
+      The ``<<WidgetViewSync>>`` virtual event fires whenever this state
+      changes, with the *detail* field set to the new value.
+
+      .. versionadded:: next
+
    .. method:: yview_pickplace(*what)
 
       Adjust the view so that the location given by *what* is visible.

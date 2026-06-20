@@ -26,6 +26,18 @@ class TextTest(AbstractTkTest, unittest.TestCase):
             text.debug(olddebug)
             self.assertEqual(text.debug(), olddebug)
 
+    def test_sync(self):
+        text = self.text
+        # sync() returns None and brings line metrics up to date.
+        self.assertIsNone(text.sync())
+        self.assertIs(text.pendingsync(), False)
+
+        # sync(command) schedules a one-shot callback.
+        events = []
+        text.sync(command=lambda: events.append('synced'))
+        text.update()
+        self.assertEqual(events, ['synced'])
+
     def test_index(self):
         text = self.text
         text.insert('1.0', 'Lorem ipsum\ndolor sit amet')
