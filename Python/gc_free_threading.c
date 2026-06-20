@@ -2281,7 +2281,11 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         }
     }
 
-    /* Update stats */
+    /* Update stats.  Hold stats_mutex so a concurrent gc.get_stats() reader
+       sees a consistent snapshot rather than racing on these fields
+       (gh-151646).  get_stats() reads buffer->index inside the lock so that
+       both writer and reader resolve the same slot under the same mutex. */
+    PyMutex_Lock(&gcstate->stats_mutex);
     struct gc_generation_stats *stats = get_stats(gcstate, generation);
     stats->ts_start = start;
     stats->ts_stop = stop;
@@ -2290,6 +2294,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     stats->uncollectable += n;
     stats->duration += duration;
     stats->candidates += state.candidates;
+    PyMutex_Unlock(&gcstate->stats_mutex);
 
     GC_STAT_ADD(generation, objects_collected, m);
 #ifdef Py_STATS
