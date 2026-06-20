@@ -1418,7 +1418,7 @@ class _ZipRepacker:
 
         2. Data before the first referenced entry is stripped only when it
            appears to be a sequence of consecutive entries with no extra
-           following bytes; extra preceeding bytes are preserved.
+           following bytes; extra preceding bytes are preserved.
 
         3. Data between referenced entries is stripped only when it appears to
            be a sequence of consecutive entries with no extra preceding bytes;
@@ -2394,7 +2394,7 @@ class ZipFile:
         """Repack a zip file, removing non-referenced file entries.
 
         The archive must be opened with mode 'a', as mode 'w'/'x' do not
-        truncate the file when closed. This cannot be simplely changed as
+        truncate the file when closed. This cannot be simply changed as
         they may be used on an unseekable file buffer, which disallows
         truncation."""
         if self.mode != 'a':
