@@ -1,6 +1,7 @@
 import functools
 import inspect
 import os
+import select
 import string
 import sys
 import tempfile
@@ -1785,27 +1786,40 @@ class ScreenTests(unittest.TestCase):
         gc_collect()
 
     @staticmethod
-    def _drain_pty(master):
-        # Read and discard whatever curses writes to the screen.
-        try:
-            while os.read(master, 1024):
-                pass
-        except OSError:
-            pass
+    def _drain_pty(master, stop):
+        # Read and discard whatever curses writes to the screen, until asked to
+        # stop and nothing more is pending.  poll() rather than a blocking
+        # read() so we can stop without closing the fd (closing it while this
+        # thread is blocked in read() hangs on macOS).
+        poller = select.poll()
+        poller.register(master, select.POLLIN)
+        while True:
+            if poller.poll(100):
+                try:
+                    if not os.read(master, 1024):
+                        break  # EOF
+                except OSError:
+                    break
+            elif stop.is_set():
+                break
 
     def make_pty(self):
         master, slave = os.openpty()
         # Nothing reads the master end, so writing to the slave and the
         # tcdrain() in endwin() can block on macOS once the pty buffer fills;
         # drain it from a background thread (endwin() releases the GIL).
-        reader = threading.Thread(target=self._drain_pty, args=(master,),
+        stop = threading.Event()
+        reader = threading.Thread(target=self._drain_pty, args=(master, stop),
                                   daemon=True)
         reader.start()
-        self.addCleanup(reader.join, SHORT_TIMEOUT)
-        # Close the master first (cleanups run in reverse): on macOS, closing
-        # the slave first blocks until its pending output drains.
-        self.addCleanup(os.close, slave)
+        # Stop and join the reader before closing the fds: on macOS, closing
+        # either end while the reader is blocked in read() hangs.
+        def stop_reader():
+            stop.set()
+            reader.join(SHORT_TIMEOUT)
         self.addCleanup(os.close, master)
+        self.addCleanup(os.close, slave)
+        self.addCleanup(stop_reader)
         return slave
 
     def test_newterm(self):
