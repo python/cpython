@@ -2307,6 +2307,10 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertFalse(ipaddress.ip_interface('0.0.0.0/31').is_unspecified)
         self.assertFalse(ipaddress.ip_interface('1.2.3.4/32').is_unspecified)
 
+        self.assertTrue(ipaddress.ip_interface('127.0.0.1/8').is_loopback)
+        self.assertFalse(ipaddress.ip_interface('127.0.0.1/4').is_loopback)
+        self.assertFalse(ipaddress.ip_interface('1.2.3.4/32').is_loopback)
+
         self.assertEqual(True, ipaddress.ip_interface(
                 '192.168.1.1/17').is_private)
         self.assertEqual(False, ipaddress.ip_network('192.169.0.0').is_private)
