@@ -902,10 +902,9 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         for entry in entries:
             name = entry.name
             displayname = linkname = name
-            # Append / for directories or @ for symbolic links. Use the cached
-            # os.DirEntry methods to avoid a stat() per entry. Fall back to
-            # False on OSError to mirror os.path.isdir()/islink(), whose result
-            # would otherwise differ (e.g. a symlink to an unreadable target).
+            # Append / for directories or @ for symbolic links. is_dir() and
+            # is_symlink() can raise OSError where os.path.isdir()/islink()
+            # return False, so fall back to False to keep the same behavior.
             try:
                 is_dir = entry.is_dir()
             except OSError:
