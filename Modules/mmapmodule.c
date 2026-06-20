@@ -620,8 +620,6 @@ mmap_gfind_lock_held(mmap_object *self, Py_buffer *view, PyObject *start_obj,
         start += self->size;
     if (start < 0)
         start = 0;
-    else if (start > self->size)
-        start = self->size;
 
     if (end < 0)
         end += self->size;
@@ -2432,6 +2430,7 @@ mmap_exec(PyObject *module)
 }
 
 static PyModuleDef_Slot mmap_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, mmap_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

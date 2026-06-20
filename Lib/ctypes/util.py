@@ -1,7 +1,8 @@
 import os
-import shutil
-import subprocess
 import sys
+
+lazy import shutil
+lazy import subprocess
 
 # find_library(name) returns the pathname of a library, or None.
 if os.name == "nt":

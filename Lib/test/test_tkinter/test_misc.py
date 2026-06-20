@@ -1,10 +1,13 @@
 import collections.abc
 import functools
+import platform
+import sys
 import unittest
 import tkinter
 from tkinter import TclError
 import enum
 from test import support
+from test.support import os_helper
 from test.test_tkinter.support import setUpModule  # noqa: F401
 from test.test_tkinter.support import (AbstractTkTest, AbstractDefaultRootTest,
                                        requires_tk, get_tk_patchlevel)
@@ -319,44 +322,146 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         with self.assertRaises(tkinter.TclError):
             root.clipboard_get()
 
-    def test_winfo_rgb(self):
+    def test_getint(self):
+        self.assertEqual(self.root.getint('42'), 42)
+        self.assertEqual(self.root.getint(42), 42)
+        self.assertEqual(self.root.getint('-5'), -5)
+        self.assertRaises(ValueError, self.root.getint, 'spam')
 
-        def assertApprox(col1, col2):
-            # A small amount of flexibility is required (bpo-45496)
-            # 33 is ~0.05% of 65535, which is a reasonable margin
-            for col1_channel, col2_channel in zip(col1, col2):
-                self.assertAlmostEqual(col1_channel, col2_channel, delta=33)
+    def test_getdouble(self):
+        self.assertEqual(self.root.getdouble('3.5'), 3.5)
+        self.assertEqual(self.root.getdouble(3), 3.0)
+        self.assertRaises(ValueError, self.root.getdouble, 'spam')
 
-        root = self.root
-        rgb = root.winfo_rgb
+    def test_getvar(self):
+        self.root.setvar('test_var', 'hello')
+        self.assertEqual(self.root.getvar('test_var'), 'hello')
 
-        # Color name.
-        self.assertEqual(rgb('red'), (65535, 0, 0))
-        self.assertEqual(rgb('dark slate blue'), (18504, 15677, 35723))
-        # #RGB - extends each 4-bit hex value to be 16-bit.
-        self.assertEqual(rgb('#F0F'), (0xFFFF, 0x0000, 0xFFFF))
-        # #RRGGBB - extends each 8-bit hex value to be 16-bit.
-        assertApprox(rgb('#4a3c8c'), (0x4a4a, 0x3c3c, 0x8c8c))
-        # #RRRRGGGGBBBB
-        assertApprox(rgb('#dede14143939'), (0xdede, 0x1414, 0x3939))
-        # Invalid string.
-        with self.assertRaises(tkinter.TclError):
-            rgb('#123456789a')
-        # RGB triplet is invalid input.
-        with self.assertRaises(tkinter.TclError):
-            rgb((111, 78, 55))
+    def test_register(self):
+        result = []
+        def callback():
+            result.append(1)
+            return 'spam'
+        name = self.root.register(callback)
+        self.assertIsInstance(name, str)
+        self.assertEqual(self.root.tk.call(name), 'spam')
+        self.assertEqual(result, [1])
+        self.root.deletecommand(name)
+        self.assertRaises(TclError, self.root.tk.call, name)
 
-    def test_winfo_pathname(self):
-        t = tkinter.Toplevel(self.root)
-        w = tkinter.Button(t)
-        wid = w.winfo_id()
-        self.assertIsInstance(wid, int)
-        self.assertEqual(self.root.winfo_pathname(hex(wid)), str(w))
-        self.assertEqual(self.root.winfo_pathname(hex(wid), displayof=None), str(w))
-        self.assertEqual(self.root.winfo_pathname(hex(wid), displayof=t), str(w))
-        self.assertEqual(self.root.winfo_pathname(wid), str(w))
-        self.assertEqual(self.root.winfo_pathname(wid, displayof=None), str(w))
-        self.assertEqual(self.root.winfo_pathname(wid, displayof=t), str(w))
+    def test_option(self):
+        self.addCleanup(self.root.option_clear)
+        self.root.option_add('*Button.background', 'red')
+        b = tkinter.Button(self.root)
+        self.assertEqual(b.option_get('background', 'Background'), 'red')
+        self.assertEqual(b.option_get('foreground', 'Foreground'), '')
+        self.root.option_clear()
+        self.assertEqual(b.option_get('background', 'Background'), '')
+
+    def test_option_readfile(self):
+        self.addCleanup(self.root.option_clear)
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        with open(os_helper.TESTFN, 'w') as f:
+            f.write('*Button.background: red\n')
+        self.root.option_readfile(os_helper.TESTFN)
+        b = tkinter.Button(self.root)
+        self.assertEqual(b.option_get('background', 'Background'), 'red')
+        self.assertRaises(TclError, self.root.option_readfile,
+                          os_helper.TESTFN + '.nonexistent')
+        self.assertRaises(TypeError, self.root.option_readfile)
+        self.assertRaises(TypeError, self.root.option_readfile, 'a', 'b', 'c')
+
+    def test_nametowidget(self):
+        b = tkinter.Button(self.root, name='btn')
+        self.assertIs(self.root.nametowidget('btn'), b)
+        self.assertIs(self.root.nametowidget(str(b)), b)
+        self.assertRaises(KeyError, self.root.nametowidget, '.nonexistent')
+
+    def test_focus_methods(self):
+        f = tkinter.Frame(self.root, width=150, height=100)
+        f.pack()
+        self.root.wait_visibility()  # needed on Windows
+        self.root.update_idletasks()
+        f.focus_force()
+        self.root.update()
+        self.assertIs(self.root.focus_get(), f)
+        self.assertIs(self.root.focus_displayof(), f)
+        self.assertIs(f.focus_lastfor(), f)
+        b = tkinter.Button(f)
+        b.pack()
+        self.root.update()
+        b.focus_set()
+        self.root.update()
+        self.assertIs(self.root.focus_get(), b)
+
+    def test_grab(self):
+        f = tkinter.Frame(self.root)
+        f.pack()
+        self.root.wait_visibility()
+        self.assertIsNone(self.root.grab_current())
+        self.assertIsNone(f.grab_status())
+        f.grab_set()
+        self.assertEqual(f.grab_status(), 'local')
+        self.assertIs(self.root.grab_current(), f)
+        f.grab_release()
+        self.assertIsNone(f.grab_status())
+        self.assertIsNone(self.root.grab_current())
+
+    def test_selection_own(self):
+        self.root.selection_own()
+        self.assertIs(self.root.selection_own_get(), self.root)
+        f = tkinter.Frame(self.root)
+        f.selection_own()
+        self.assertIs(self.root.selection_own_get(), f)
+
+    def test_event_add_delete_info(self):
+        self.addCleanup(self.root.event_delete, '<<TestEvent>>')
+        self.root.event_add('<<TestEvent>>', '<Control-z>', '<Control-y>')
+        self.assertEqual(self.root.event_info('<<TestEvent>>'),
+                         ('<Control-Key-z>', '<Control-Key-y>'))
+        self.assertIn('<<TestEvent>>', self.root.event_info())
+        self.root.event_delete('<<TestEvent>>', '<Control-y>')
+        self.assertEqual(self.root.event_info('<<TestEvent>>'),
+                         ('<Control-Key-z>',))
+        self.root.event_delete('<<TestEvent>>')
+        self.assertEqual(self.root.event_info('<<TestEvent>>'), ())
+        self.assertRaises(TypeError, self.root.event_delete)
+
+    def test_bell(self):
+        self.root.bell()  # No exception.
+        self.root.bell(displayof=self.root)
+
+    def test_tk_focusNext_focusPrev(self):
+        f = tkinter.Frame(self.root)
+        f.pack()
+        entries = [tkinter.Entry(f) for _ in range(3)]
+        for entry in entries:
+            entry.pack()
+        # tk_focusNext skips widgets that are not viewable.
+        entries[-1].wait_visibility()
+        self.assertIs(entries[0].tk_focusNext(), entries[1])
+        self.assertIs(entries[1].tk_focusNext(), entries[2])
+        self.assertIs(entries[2].tk_focusPrev(), entries[1])
+        self.assertIs(entries[1].tk_focusPrev(), entries[0])
+        self.assertRaises(TypeError, entries[0].tk_focusNext, 'x')
+        self.assertRaises(TypeError, entries[0].tk_focusPrev, 'x')
+
+    def test_tk_strictMotif(self):
+        self.addCleanup(self.root.tk_strictMotif, False)
+        self.assertIs(self.root.tk_strictMotif(), False)
+        self.assertIs(self.root.tk_strictMotif(True), True)
+        self.assertIs(self.root.tk_strictMotif(), True)
+        self.assertIs(self.root.tk_strictMotif(False), False)
+        self.assertRaises(TypeError, self.root.tk_strictMotif, 1, 2)
+
+    def test_tk_bisque(self):
+        # tk_bisque resets the color palette; use a separate root so that
+        # the shared one is not affected.
+        root = tkinter.Tk()
+        self.addCleanup(root.destroy)
+        root.tk_bisque()
+        self.assertEqual(root['background'], '#ffe4c4')
+        self.assertRaises(TypeError, root.tk_bisque, 'x')
 
     def test_event_repr_defaults(self):
         e = tkinter.Event()
@@ -522,6 +627,150 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
             widget in widget
 
 
+class WinfoTest(AbstractTkTest, unittest.TestCase):
+
+    def test_winfo_rgb(self):
+
+        def assertApprox(col1, col2):
+            # A small amount of flexibility is required (bpo-45496)
+            # 33 is ~0.05% of 65535, which is a reasonable margin
+            for col1_channel, col2_channel in zip(col1, col2):
+                self.assertAlmostEqual(col1_channel, col2_channel, delta=33)
+
+        root = self.root
+        rgb = root.winfo_rgb
+
+        # Color name.
+        self.assertEqual(rgb('red'), (65535, 0, 0))
+        self.assertEqual(rgb('dark slate blue'), (18504, 15677, 35723))
+        # #RGB - extends each 4-bit hex value to be 16-bit.
+        self.assertEqual(rgb('#F0F'), (0xFFFF, 0x0000, 0xFFFF))
+        # #RRGGBB - extends each 8-bit hex value to be 16-bit.
+        assertApprox(rgb('#4a3c8c'), (0x4a4a, 0x3c3c, 0x8c8c))
+        # #RRRRGGGGBBBB
+        assertApprox(rgb('#dede14143939'), (0xdede, 0x1414, 0x3939))
+        # Invalid string.
+        with self.assertRaises(tkinter.TclError):
+            rgb('#123456789a')
+        # RGB triplet is invalid input.
+        with self.assertRaises(tkinter.TclError):
+            rgb((111, 78, 55))
+
+    def test_winfo_pathname(self):
+        t = tkinter.Toplevel(self.root)
+        w = tkinter.Button(t)
+        wid = w.winfo_id()
+        self.assertIsInstance(wid, int)
+        self.assertEqual(self.root.winfo_pathname(hex(wid)), str(w))
+        self.assertEqual(self.root.winfo_pathname(hex(wid), displayof=None), str(w))
+        self.assertEqual(self.root.winfo_pathname(hex(wid), displayof=t), str(w))
+        self.assertEqual(self.root.winfo_pathname(wid), str(w))
+        self.assertEqual(self.root.winfo_pathname(wid, displayof=None), str(w))
+        self.assertEqual(self.root.winfo_pathname(wid, displayof=t), str(w))
+
+    def test_winfo_class_name_parent(self):
+        f = tkinter.Frame(self.root)
+        b = tkinter.Button(f)
+        self.assertEqual(f.winfo_class(), 'Frame')
+        self.assertEqual(b.winfo_class(), 'Button')
+        self.assertEqual(b.winfo_name(), str(b).rsplit('.', 1)[-1])
+        self.assertEqual(b.winfo_parent(), str(f))
+        self.assertEqual(f.winfo_parent(), str(self.root))
+        self.assertIs(f.winfo_toplevel(), self.root)
+        t = tkinter.Toplevel(self.root)
+        self.assertIs(tkinter.Button(t).winfo_toplevel(), t)
+        self.assertEqual(self.root.nametowidget(b.winfo_parent()), f)
+
+    def test_winfo_children(self):
+        self.assertEqual(self.root.winfo_children(), [])
+        f = tkinter.Frame(self.root)
+        b = tkinter.Button(f)
+        self.assertEqual(self.root.winfo_children(), [f])
+        self.assertEqual(f.winfo_children(), [b])
+
+    def test_winfo_visual_info(self):
+        f = tkinter.Frame(self.root)
+        self.assertIsInstance(f.winfo_depth(), int)
+        self.assertIsInstance(f.winfo_cells(), int)
+        self.assertIsInstance(f.winfo_visual(), str)
+        self.assertIsInstance(f.winfo_visualid(), str)
+        self.assertIsInstance(f.winfo_colormapfull(), bool)
+        visuals = self.root.winfo_visualsavailable()
+        self.assertIsInstance(visuals, list)
+        for name, depth in visuals:
+            self.assertIsInstance(name, str)
+            self.assertIsInstance(depth, int)
+
+    def test_winfo_viewable(self):
+        f = tkinter.Frame(self.root)
+        self.assertFalse(f.winfo_viewable())
+        f.pack()
+        f.wait_visibility()
+        self.root.update()
+        self.assertTrue(f.winfo_viewable())
+
+    def test_winfo_atom(self):
+        atom = self.root.winfo_atom('PRIMARY')
+        self.assertIsInstance(atom, int)
+        self.assertEqual(self.root.winfo_atomname(atom), 'PRIMARY')
+        self.assertEqual(
+            self.root.winfo_atomname(atom, displayof=self.root), 'PRIMARY')
+        self.assertEqual(
+            self.root.winfo_atom('PRIMARY', displayof=self.root), atom)
+        self.assertRaisesRegex(TclError, 'no atom exists',
+                               self.root.winfo_atomname, 10 ** 9)
+
+    def test_winfo_pointer(self):
+        self.assertIsInstance(self.root.winfo_pointerx(), int)
+        self.assertIsInstance(self.root.winfo_pointery(), int)
+        xy = self.root.winfo_pointerxy()
+        self.assertIsInstance(xy, tuple)
+        self.assertEqual(len(xy), 2)
+        self.assertTrue(all(isinstance(v, int) for v in xy))
+
+    def test_winfo_containing(self):
+        self.root.update()
+        # No window contains a point far off the screen.
+        self.assertIsNone(self.root.winfo_containing(-10000, -10000))
+        self.assertIsNone(
+            self.root.winfo_containing(-10000, -10000, displayof=self.root))
+
+    def test_winfo_fpixels(self):
+        self.assertIsInstance(self.root.winfo_fpixels('1i'), float)
+        self.assertAlmostEqual(self.root.winfo_fpixels('1i'),
+                               self.root.winfo_fpixels('72p'))
+        # Tk < 9 reports 'bad screen distance "spam"', Tk 9 reports
+        # 'expected screen distance ... but got "spam"'.
+        self.assertRaisesRegex(TclError,
+                               r'(bad|expected) screen distance.*"spam"',
+                               self.root.winfo_fpixels, 'spam')
+
+    def test_winfo_screen(self):
+        for name in ('winfo_screenwidth', 'winfo_screenheight',
+                     'winfo_screenmmwidth', 'winfo_screenmmheight',
+                     'winfo_screencells', 'winfo_screendepth'):
+            value = getattr(self.root, name)()
+            self.assertIsInstance(value, int)
+            self.assertGreater(value, 0)
+        self.assertIsInstance(self.root.winfo_screenvisual(), str)
+        self.assertIsInstance(self.root.winfo_screen(), str)
+        self.assertIsInstance(self.root.winfo_server(), str)
+
+    def test_winfo_vroot(self):
+        for name in ('winfo_vrootwidth', 'winfo_vrootheight',
+                     'winfo_vrootx', 'winfo_vrooty'):
+            self.assertIsInstance(getattr(self.root, name)(), int)
+
+    def test_winfo_interps(self):
+        interps = self.root.winfo_interps()
+        self.assertIsInstance(interps, tuple)
+        # The registry of interpreters is only populated where "send" is
+        # supported (i.e. X11), so do not require this interpreter's name.
+        if self.root._windowingsystem == 'x11':
+            self.assertIn(self.root.tk.call('tk', 'appname'), interps)
+        self.assertEqual(self.root.winfo_interps(displayof=self.root), interps)
+
+
 class WmTest(AbstractTkTest, unittest.TestCase):
 
     def test_wm_attribute(self):
@@ -578,12 +827,27 @@ class WmTest(AbstractTkTest, unittest.TestCase):
 
     def test_wm_iconbitmap(self):
         t = tkinter.Toplevel(self.root)
+        patchlevel = get_tk_patchlevel(t)
+
+        if (
+            t._windowingsystem == 'aqua'
+            and sys.platform == 'darwin'
+            and platform.machine() == 'x86_64'
+            and platform.mac_ver()[0].startswith('26.')
+            and (
+                patchlevel[:3] <= (8, 6, 17)
+                or (9, 0) <= patchlevel[:3] <= (9, 0, 3)
+            )
+        ):
+            # https://github.com/python/cpython/issues/146531
+            # Tk bug 4a2070f0d3a99aa412bc582d386d575ca2f37323
+            self.skipTest('wm iconbitmap hangs on macOS 26 Intel')
+
         self.assertEqual(t.wm_iconbitmap(), '')
         t.wm_iconbitmap('hourglass')
         bug = False
         if t._windowingsystem == 'aqua':
             # Tk bug 13ac26b35dc55f7c37f70b39d59d7ef3e63017c8.
-            patchlevel = get_tk_patchlevel(t)
             if patchlevel < (8, 6, 17) or (9, 0) <= patchlevel < (9, 0, 2):
                 bug = True
         if not bug:
@@ -600,6 +864,127 @@ class WmTest(AbstractTkTest, unittest.TestCase):
             self.assertEqual(t.wm_iconbitmap(), '')
 
         t.destroy()
+
+    def test_wm_iconphoto(self):
+        t = tkinter.Toplevel(self.root)
+        img = tkinter.PhotoImage(master=t, width=16, height=16)
+        t.wm_iconphoto(False, img)  # No exception.
+        t.wm_iconphoto(True, img)
+        self.assertRaises(tkinter.TclError, t.wm_iconphoto, False, 'spam')
+
+    def test_wm_title(self):
+        t = tkinter.Toplevel(self.root)
+        t.title('Hello')
+        self.assertEqual(t.title(), 'Hello')
+        self.assertEqual(t.wm_title(), 'Hello')
+        t.wm_title('Spam')
+        self.assertEqual(t.title(), 'Spam')
+
+    def test_wm_geometry(self):
+        t = tkinter.Toplevel(self.root)
+        t.geometry('200x100+10+20')
+        t.update()
+        self.assertRegex(t.geometry(), r'^200x100\+-?\d+\+-?\d+$')
+        self.assertEqual(t.wm_geometry(), t.geometry())
+
+    def test_wm_minsize_maxsize(self):
+        t = tkinter.Toplevel(self.root)
+        # Use a width above the minimum enforced by some platforms (72 on Aqua).
+        t.minsize(150, 100)
+        self.assertEqual(t.minsize(), (150, 100))
+        t.maxsize(500, 600)
+        self.assertEqual(t.maxsize(), (500, 600))
+
+    def test_wm_resizable(self):
+        t = tkinter.Toplevel(self.root)
+        t.resizable(False, True)
+        self.assertEqual(t.resizable(), (0, 1))
+        self.assertRaisesRegex(TclError, 'expected boolean value',
+                               t.resizable, 'spam', True)
+
+    def test_wm_aspect(self):
+        t = tkinter.Toplevel(self.root)
+        self.assertEqual(t.aspect(), None)
+        t.aspect(1, 2, 3, 4)
+        self.assertEqual(t.aspect(), (1, 2, 3, 4))
+
+    def test_wm_grid(self):
+        t = tkinter.Toplevel(self.root)
+        t.wm_grid(10, 10, 5, 5)
+        self.assertEqual(t.wm_grid(), (10, 10, 5, 5))
+
+    def test_wm_positionfrom_sizefrom(self):
+        # These set X11 size hints and may be no-ops on other platforms.
+        t = tkinter.Toplevel(self.root)
+        t.positionfrom('user')
+        self.assertIn(t.positionfrom(), ('user', ''))
+        t.sizefrom('program')
+        self.assertIn(t.sizefrom(), ('program', ''))
+
+    def test_wm_focusmodel(self):
+        t = tkinter.Toplevel(self.root)
+        self.assertEqual(t.focusmodel(), 'passive')
+        t.focusmodel('active')
+        self.assertEqual(t.focusmodel(), 'active')
+        self.assertRaises(TclError, t.focusmodel, 'spam')
+
+    def test_wm_iconname(self):
+        # WM_ICON_NAME is an X11 property and may be a no-op elsewhere.
+        t = tkinter.Toplevel(self.root)
+        t.iconname('Icon')
+        self.assertIn(t.iconname(), ('Icon', ''))
+
+    def test_wm_client_command(self):
+        t = tkinter.Toplevel(self.root)
+        t.client('myhost')
+        t.wm_command('myapp -x')
+        # WM_CLIENT_MACHINE and WM_COMMAND are X11 properties; elsewhere the
+        # setters may be no-ops and wm_command may return a split list.
+        if t._windowingsystem == 'x11':
+            self.assertEqual(t.client(), 'myhost')
+            self.assertEqual(t.wm_command(), 'myapp -x')
+
+    def test_wm_overrideredirect(self):
+        t = tkinter.Toplevel(self.root)
+        self.assertFalse(t.overrideredirect())
+        t.overrideredirect(True)
+        self.assertTrue(t.overrideredirect())
+
+    def test_wm_state(self):
+        t = tkinter.Toplevel(self.root)
+        t.update()
+        self.assertEqual(t.state(), 'normal')
+        t.withdraw()
+        self.assertEqual(t.state(), 'withdrawn')
+        t.deiconify()
+        t.update()
+        self.assertEqual(t.state(), 'normal')
+        self.assertRaises(TclError, t.state, 'spam')
+
+    def test_wm_frame(self):
+        t = tkinter.Toplevel(self.root)
+        t.update()
+        self.assertIsInstance(t.frame(), str)
+
+    def test_wm_group(self):
+        # The window group is an X11 concept and may be a no-op elsewhere.
+        t = tkinter.Toplevel(self.root)
+        t.group(self.root)
+        self.assertIn(t.group(), (str(self.root), ''))
+
+    def test_wm_protocol(self):
+        t = tkinter.Toplevel(self.root)
+        self.assertIsInstance(t.protocol(), tuple)
+        t.protocol('WM_SAVE_YOURSELF', lambda: None)
+        self.assertIn('WM_SAVE_YOURSELF', t.protocol())
+        # Querying a single protocol returns the bound command name.
+        self.assertTrue(t.protocol('WM_SAVE_YOURSELF'))
+
+    def test_wm_transient(self):
+        t = tkinter.Toplevel(self.root)
+        self.assertEqual(t.transient(), '')
+        t.transient(self.root)
+        self.assertEqual(str(t.transient()), str(self.root))
 
 
 class EventTest(AbstractTkTest, unittest.TestCase):

@@ -65,6 +65,32 @@ extern "C" {
 static_assert(FILE_HEADER_SIZE <= FILE_HEADER_PLACEHOLDER_SIZE,
               "FILE_HEADER_SIZE exceeds FILE_HEADER_PLACEHOLDER_SIZE");
 
+/* Sample header field offsets and sizes */
+#define SMP_OFF_THREAD_ID        0
+#define SMP_SIZE_THREAD_ID       sizeof(uint64_t)
+#define SMP_OFF_INTERPRETER_ID   (SMP_OFF_THREAD_ID + SMP_SIZE_THREAD_ID)
+#define SMP_SIZE_INTERPRETER_ID  sizeof(uint32_t)
+#define SMP_OFF_ENCODING         (SMP_OFF_INTERPRETER_ID + SMP_SIZE_INTERPRETER_ID)
+#define SMP_SIZE_ENCODING        sizeof(uint8_t)
+#define SAMPLE_HEADER_FIXED_SIZE (SMP_OFF_ENCODING + SMP_SIZE_ENCODING)
+
+static_assert(SAMPLE_HEADER_FIXED_SIZE == 13,
+             "SAMPLE_HEADER_FIXED_SIZE must remain 13");
+
+/* Footer field offsets and sizes */
+#define FTR_OFF_STRINGS       0
+#define FTR_SIZE_STRINGS      sizeof(uint32_t)
+#define FTR_OFF_FRAMES        (FTR_OFF_STRINGS + FTR_SIZE_STRINGS)
+#define FTR_SIZE_FRAMES       sizeof(uint32_t)
+#define FTR_OFF_FILE_SIZE     (FTR_OFF_FRAMES + FTR_SIZE_FRAMES)
+#define FTR_SIZE_FILE_SIZE    sizeof(uint64_t)
+#define FTR_OFF_CHECKSUM      (FTR_OFF_FILE_SIZE + FTR_SIZE_FILE_SIZE)
+#define FTR_SIZE_CHECKSUM     (2 * sizeof(uint64_t))
+#define FILE_FOOTER_SIZE      (FTR_OFF_CHECKSUM + FTR_SIZE_CHECKSUM)
+
+static_assert(FILE_FOOTER_SIZE == 32,
+             "FILE_FOOTER_SIZE must remain 32");
+
 /* Buffer sizes: 512KB balances syscall amortization against memory use,
  * and aligns well with filesystem block sizes and zstd dictionary windows */
 #define WRITE_BUFFER_SIZE       (512 * 1024)
@@ -227,7 +253,6 @@ typedef struct {
 /* Main binary writer structure */
 typedef struct {
     FILE *fp;
-    char *filename;
 
     /* Write buffer for batched I/O */
     uint8_t *write_buffer;
@@ -285,10 +310,7 @@ typedef struct {
 
 /* Main binary reader structure */
 typedef struct {
-    char *filename;
-
 #if USE_MMAP
-    int fd;
     uint8_t *mapped_data;
     size_t mapped_size;
 #else
@@ -415,8 +437,8 @@ decode_varint_u32(const uint8_t *data, size_t *offset, size_t max_size)
 {
     size_t saved_offset = *offset;
     uint64_t value = decode_varint_u64(data, offset, max_size);
-    if (PyErr_Occurred()) {
-        return 0;
+    if (*offset == saved_offset) {
+        return 0;  /* decode_varint_u64 already set PyErr */
     }
     if (UNLIKELY(value > UINT32_MAX)) {
         *offset = saved_offset;
@@ -430,9 +452,10 @@ decode_varint_u32(const uint8_t *data, size_t *offset, size_t max_size)
 static inline int32_t
 decode_varint_i32(const uint8_t *data, size_t *offset, size_t max_size)
 {
+    size_t saved_offset = *offset;
     uint32_t zigzag = decode_varint_u32(data, offset, max_size);
-    if (PyErr_Occurred()) {
-        return 0;
+    if (*offset == saved_offset) {
+        return 0;  /* decode_varint_u32 already set PyErr */
     }
     return (int32_t)((zigzag >> 1) ^ -(int32_t)(zigzag & 1));
 }
@@ -495,7 +518,7 @@ grow_array_inplace(void **ptr_addr, size_t count, size_t *capacity, size_t elem_
  * Create a new binary writer.
  *
  * Arguments:
- *   filename: Path to output file
+ *   path: Path to output file
  *   sample_interval_us: Sampling interval in microseconds
  *   compression_type: COMPRESSION_NONE or COMPRESSION_ZSTD
  *   start_time_us: Start timestamp in microseconds (from time.monotonic() * 1e6)
@@ -504,7 +527,7 @@ grow_array_inplace(void **ptr_addr, size_t count, size_t *capacity, size_t elem_
  *   New BinaryWriter* on success, NULL on failure (PyErr set)
  */
 BinaryWriter *binary_writer_create(
-    const char *filename,
+    PyObject *path,
     uint64_t sample_interval_us,
     int compression_type,
     uint64_t start_time_us
@@ -556,12 +579,12 @@ void binary_writer_destroy(BinaryWriter *writer);
  * Open a binary file for reading.
  *
  * Arguments:
- *   filename: Path to input file
+ *   path: Path to input file
  *
  * Returns:
  *   New BinaryReader* on success, NULL on failure (PyErr set)
  */
-BinaryReader *binary_reader_open(const char *filename);
+BinaryReader *binary_reader_open(PyObject *path);
 
 /*
  * Replay samples from binary file through a collector.

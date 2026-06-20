@@ -1714,6 +1714,20 @@ class ExceptionTests(unittest.TestCase):
         gc_collect()  # For PyPy or other GCs.
         self.assertEqual(wr(), None)
 
+    def test_oserror_reinit_leak(self):
+        # gh-150988: Check for memory leak when re-initializing OSError.
+        # Previously, setting OSError attributes in a subclass
+        # before calling super().__init__() leaked memory.
+        class LeakingOSError(OSError):
+            def __init__(self, code, message, filename, filename2):
+                self.strerror = message
+                self.filename = filename
+                self.filename2 = filename2
+                super().__init__(code, message, filename, None, filename2)
+
+        exc = LeakingOSError(1, "some message", "filename.py", "filename2.py")
+        exc.__init__(2, "another message", "filename3.py", "filename4.py")
+
     def test_errno_ENOTDIR(self):
         # Issue #12802: "not a directory" errors are ENOTDIR even on Windows
         with self.assertRaises(OSError) as cm:
@@ -2560,6 +2574,30 @@ class SyntaxErrorTests(unittest.TestCase):
 
         args = ("bad.py", 1, 2, "abcdefg", 1)
         self.assertRaises(TypeError, SyntaxError, "bad bad", args)
+
+    def test_syntax_error_memory_leak(self):
+        # gh-146250: memory leak with re-initialization of SyntaxError
+        e = SyntaxError("msg", ("file.py", 1, 2, "txt", 2, 3))
+        e.__init__("new_msg", ("new_file.py", 2, 3, "new_txt", 3, 4))
+        self.assertEqual(e.msg, "new_msg")
+        self.assertEqual(e.args, ("new_msg", ("new_file.py", 2, 3, "new_txt", 3, 4)))
+        self.assertEqual(e.filename, "new_file.py")
+        self.assertEqual(e.lineno, 2)
+        self.assertEqual(e.offset, 3)
+        self.assertEqual(e.text, "new_txt")
+        self.assertEqual(e.end_lineno, 3)
+        self.assertEqual(e.end_offset, 4)
+
+        e = SyntaxError("msg", ("file.py", 1, 2, "txt", 2, 3))
+        e.__init__("new_msg", ("new_file.py", 2, 3, "new_txt"))
+        self.assertEqual(e.msg, "new_msg")
+        self.assertEqual(e.args, ("new_msg", ("new_file.py", 2, 3, "new_txt")))
+        self.assertEqual(e.filename, "new_file.py")
+        self.assertEqual(e.lineno, 2)
+        self.assertEqual(e.offset, 3)
+        self.assertEqual(e.text, "new_txt")
+        self.assertIsNone(e.end_lineno)
+        self.assertIsNone(e.end_offset)
 
 
 class TestInvalidExceptionMatcher(unittest.TestCase):

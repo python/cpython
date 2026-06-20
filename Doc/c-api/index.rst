@@ -18,6 +18,7 @@ document the API functions in detail.
    refcounting.rst
    exceptions.rst
    extension-modules.rst
+   slots.rst
    utilities.rst
    abstract.rst
    concrete.rst

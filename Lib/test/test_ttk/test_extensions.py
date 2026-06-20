@@ -281,6 +281,24 @@ class OptionMenuTest(AbstractTkTest, unittest.TestCase):
 
         optmenu.destroy()
 
+    def test_set_menu(self):
+        optmenu = ttk.OptionMenu(self.root, self.textvar, 'a', 'a', 'b', 'c')
+        menu = optmenu['menu']
+        self.assertEqual(menu.index('end'), 2)
+
+        # set_menu rebuilds the menu with new values and an optional default.
+        optmenu.set_menu('y', 'x', 'y', 'z')
+        self.assertEqual(self.textvar.get(), 'y')
+        self.assertEqual([menu.entrycget(i, 'label') for i in range(3)],
+                         ['x', 'y', 'z'])
+
+        # Without a default the variable is left unchanged.
+        optmenu.set_menu(None, 'p', 'q')
+        self.assertEqual(self.textvar.get(), 'y')
+        self.assertEqual([menu.entrycget(i, 'label') for i in range(2)],
+                         ['p', 'q'])
+        optmenu.destroy()
+
     def test_unique_radiobuttons(self):
         # check that radiobuttons are unique across instances (bpo25684)
         items = ('a', 'b', 'c')

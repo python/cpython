@@ -38,23 +38,18 @@ static int fuzz_builtin_float(const char* data, size_t size) {
 static int fuzz_builtin_int(const char* data, size_t size) {
     /* Ignore test cases with very long ints to avoid timeouts
        int("9" * 1000000) is not a very interesting test caase */
-    if (size > MAX_INT_TEST_SIZE) {
+    if (size < 1 || size > MAX_INT_TEST_SIZE) {
         return 0;
     }
-    /* Pick a random valid base. (When the fuzzed function takes extra
-       parameters, it's somewhat normal to hash the input to generate those
-       parameters. We want to exercise all code paths, so we do so here.) */
-    int base = Py_HashBuffer(data, size) % 37;
+    // Use the first byte to pick a base
+    int base = ((unsigned char) data[0]) % 37;
     if (base == 1) {
         // 1 is the only number between 0 and 36 that is not a valid base.
         base = 0;
     }
-    if (base == -1) {
-        return 0;  // An error occurred, bail early.
-    }
-    if (base < 0) {
-        base = -base;
-    }
+
+    data += 1;
+    size -= 1;
 
     PyObject* s = PyUnicode_FromStringAndSize(data, size);
     if (s == NULL) {
