@@ -1,0 +1,3 @@
+Fix debug assertion failure in ``unsafe_latin_compare``,
+``unsafe_long_compare``, and ``unsafe_float_compare`` when
+:c:func:`PyObject_RichCompareBool` returns ``-1`` on error.

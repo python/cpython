@@ -2830,7 +2830,10 @@ unsafe_latin_compare(PyObject *v, PyObject *w, MergeState *ms)
            res < 0 :
            PyUnicode_GET_LENGTH(v) < PyUnicode_GET_LENGTH(w));
 
-    assert(res == PyObject_RichCompareBool(v, w, Py_LT));;
+#ifndef NDEBUG
+    int cmp = PyObject_RichCompareBool(v, w, Py_LT);
+    assert(cmp < 0 || res == cmp);
+#endif
     return res;
 }
 
@@ -2855,7 +2858,10 @@ unsafe_long_compare(PyObject *v, PyObject *w, MergeState *ms)
     w0 = _PyLong_CompactValue(wl);
 
     res = v0 < w0;
-    assert(res == PyObject_RichCompareBool(v, w, Py_LT));
+#ifndef NDEBUG
+    int cmp = PyObject_RichCompareBool(v, w, Py_LT);
+    assert(cmp < 0 || res == cmp);
+#endif
     return res;
 }
 
@@ -2870,7 +2876,10 @@ unsafe_float_compare(PyObject *v, PyObject *w, MergeState *ms)
     assert(Py_IS_TYPE(w, &PyFloat_Type));
 
     res = PyFloat_AS_DOUBLE(v) < PyFloat_AS_DOUBLE(w);
-    assert(res == PyObject_RichCompareBool(v, w, Py_LT));
+#ifndef NDEBUG
+    int cmp = PyObject_RichCompareBool(v, w, Py_LT);
+    assert(cmp < 0 || res == cmp);
+#endif
     return res;
 }
 
