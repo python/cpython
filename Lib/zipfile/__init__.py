@@ -1757,10 +1757,7 @@ class _ZipRepacker:
             mv = memoryview(chunk)
             for i in range(len(chunk) - dd_size + 1):
                 dd = mv[i:i + dd_size]
-                try:
-                    crc, compress_size, file_size = struct.unpack(dd_fmt, dd)
-                except struct.error:
-                    continue
+                crc, compress_size, file_size = struct.unpack(dd_fmt, dd)
                 if delta + i != compress_size:
                     continue
 
