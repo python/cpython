@@ -2920,6 +2920,34 @@ class ZipRepackerTests(unittest.TestCase):
         m_sddnsbd.assert_not_called()
         m_sddns.assert_not_called()
 
+    def test_validate_local_file_entry_overshoot(self):
+        """A header whose compress_size points past end_offset is rejected."""
+        repacker = zipfile._ZipRepacker()
+
+        bytes_ = self._generate_local_file_entry('file.txt', b'dummy')
+        fz = io.BytesIO(bytes_)
+        # exact fit at end_offset is accepted
+        self.assertEqual(
+            repacker._validate_local_file_entry(fz, 0, len(bytes_)),
+            len(bytes_),
+        )
+        # one byte short: entry would extend past end_offset
+        self.assertIsNone(
+            repacker._validate_local_file_entry(fz, 0, len(bytes_) - 1),
+        )
+
+        # zip64 extra supplying the oversized compress_size
+        bytes_ = self._generate_local_file_entry(
+            'file.txt', b'dummy', force_zip64=True)
+        fz = io.BytesIO(bytes_)
+        self.assertEqual(
+            repacker._validate_local_file_entry(fz, 0, len(bytes_)),
+            len(bytes_),
+        )
+        self.assertIsNone(
+            repacker._validate_local_file_entry(fz, 0, len(bytes_) - 1),
+        )
+
     def test_validate_local_file_entry_encrypted(self):
         # strict_descriptor=False to exercise unsigned data descriptor scanning
         # of an encrypted entry (the default strict_descriptor=True is tested below)
@@ -3517,6 +3545,13 @@ class ZipRepackerTests(unittest.TestCase):
         self.assertEqual(fp.getvalue(), b'abcdef123456abcdef')
         self.assertEqual(m_read.mock_calls, [
             mock.call(1), mock.call(1), mock.call(1), mock.call(1), mock.call(1), mock.call(1)])
+
+    def test_copy_bytes_short_read(self):
+        """Raise rather than loop forever if EOF is hit before size bytes."""
+        repacker = zipfile._ZipRepacker()
+        fp = io.BytesIO(b'abc123')
+        with self.assertRaises(zipfile.BadZipFile):
+            repacker._copy_bytes(fp, 0, 0, 100)
 
 
 class PyZipFileTests(unittest.TestCase):
