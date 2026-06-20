@@ -318,6 +318,29 @@ class TextTest(AbstractTkTest, unittest.TestCase):
         text.edit_reset()
         self.assertRaises(TclError, text.edit_undo)
 
+    def test_edit_canundo_canredo(self):
+        text = self.text
+        text.configure(undo=True)
+
+        self.assertIs(text.edit_canundo(), False)
+        self.assertIs(text.edit_canredo(), False)
+
+        text.insert('1.0', 'spam')
+        self.assertIs(text.edit_canundo(), True)
+        self.assertIs(text.edit_canredo(), False)
+
+        text.edit_undo()
+        self.assertIs(text.edit_canundo(), False)
+        self.assertIs(text.edit_canredo(), True)
+
+        text.edit_redo()
+        self.assertIs(text.edit_canundo(), True)
+        self.assertIs(text.edit_canredo(), False)
+
+        text.edit_reset()
+        self.assertIs(text.edit_canundo(), False)
+        self.assertIs(text.edit_canredo(), False)
+
     def test_dump(self):
         text = self.text
         text.insert('1.0', 'hello')

@@ -3970,6 +3970,22 @@ class Text(Widget, XView, YView):
         """
         return self.tk.call(self._w, 'edit', *args)
 
+    def edit_canredo(self):
+        """Return whether redo is possible.
+
+        Return True if redo is possible, i.e. when the redo stack is
+        not empty, and False otherwise.
+        """
+        return self.tk.getboolean(self.edit("canredo"))
+
+    def edit_canundo(self):
+        """Return whether undo is possible.
+
+        Return True if undo is possible, i.e. when the undo stack is
+        not empty, and False otherwise.
+        """
+        return self.tk.getboolean(self.edit("canundo"))
+
     def edit_modified(self, arg=None):
         """Get or Set the modified flag
 

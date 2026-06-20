@@ -147,6 +147,11 @@ shlex
 tkinter
 -------
 
+* Added new :class:`!tkinter.Text` methods :meth:`~tkinter.Text.edit_canundo`
+  and :meth:`~tkinter.Text.edit_canredo` which return whether an undo or redo
+  is possible.
+  (Contributed by Serhiy Storchaka in :gh:`151674`.)
+
 * Added new :class:`!tkinter.Text` methods :meth:`~tkinter.Text.sync` and
   :meth:`~tkinter.Text.pendingsync` which control and report the
   synchronization of the displayed view with the underlying text.
