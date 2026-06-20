@@ -21,35 +21,14 @@ PyAPI_FUNC(void) PyErr_DisplayException(PyObject *);
 /* Stuff with no proper home (yet) */
 PyAPI_DATA(int) (*PyOS_InputHook)(void);
 
-/* Stack size, in "pointers". This must be large enough, so
- * no two calls to check recursion depth are more than this far
- * apart. In practice, that means it must be larger than the C
- * stack consumption of PyEval_EvalDefault */
-#if defined(_Py_ADDRESS_SANITIZER) || defined(_Py_THREAD_SANITIZER)
-#  define PYOS_LOG2_STACK_MARGIN 12
-#elif defined(Py_DEBUG) && defined(WIN32)
-#  define PYOS_LOG2_STACK_MARGIN 12
-#else
-#  define PYOS_LOG2_STACK_MARGIN 11
-#endif
-#define PYOS_STACK_MARGIN (1 << PYOS_LOG2_STACK_MARGIN)
-#define PYOS_STACK_MARGIN_BYTES (PYOS_STACK_MARGIN * sizeof(void *))
-
-#if SIZEOF_VOID_P == 8
-#define PYOS_STACK_MARGIN_SHIFT (PYOS_LOG2_STACK_MARGIN + 3)
-#else
-#define PYOS_STACK_MARGIN_SHIFT (PYOS_LOG2_STACK_MARGIN + 2)
-#endif
-
-
 #if defined(WIN32)
-#define USE_STACKCHECK
+#  define USE_STACKCHECK
 #endif
-
 #ifdef USE_STACKCHECK
 /* Check that we aren't overflowing our stack */
 PyAPI_FUNC(int) PyOS_CheckStack(void);
 #endif
+
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_PYTHONRUN_H

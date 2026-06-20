@@ -315,12 +315,15 @@ class ParsingError(Error):
 
     def append(self, lineno, line):
         self.errors.append((lineno, line))
-        self.message += '\n\t[line %2d]: %s' % (lineno, repr(line))
+        self.message += f'\n\t[line {lineno:2d}]: {line!r}'
 
     def combine(self, others):
+        messages = [self.message]
         for other in others:
-            for error in other.errors:
-                self.append(*error)
+            for lineno, line in other.errors:
+                self.errors.append((lineno, line))
+                messages.append(f'\n\t[line {lineno:2d}]: {line!r}')
+        self.message = "".join(messages)
         return self
 
     @staticmethod
@@ -613,7 +616,9 @@ class RawConfigParser(MutableMapping):
         \]                                 # ]
         """
     _OPT_TMPL = r"""
-        (?P<option>.*?)                    # very permissive!
+        (?P<option>                        # very permissive!
+            (?:(?!{delim})\S)*             # non-delimiter non-whitespace
+            (?:\s+(?:(?!{delim})\S)+)*)    # optionally more words
         \s*(?P<vi>{delim})\s*              # any number of space/tab,
                                            # followed by any of the
                                            # allowed delimiters,
@@ -621,7 +626,9 @@ class RawConfigParser(MutableMapping):
         (?P<value>.*)$                     # everything up to eol
         """
     _OPT_NV_TMPL = r"""
-        (?P<option>.*?)                    # very permissive!
+        (?P<option>                        # very permissive!
+            (?:(?!{delim})\S)*             # non-delimiter non-whitespace
+            (?:\s+(?:(?!{delim})\S)+)*)    # optionally more words
         \s*(?:                             # any number of space/tab,
         (?P<vi>{delim})\s*                 # optionally followed by
                                            # any of the allowed
@@ -794,7 +801,8 @@ class RawConfigParser(MutableMapping):
         """
         elements_added = set()
         for section, keys in dictionary.items():
-            section = str(section)
+            if section is not UNNAMED_SECTION:
+                section = str(section)
             try:
                 self.add_section(section)
             except (DuplicateSectionError, ValueError):
@@ -1218,11 +1226,14 @@ class RawConfigParser(MutableMapping):
 
     def _validate_key_contents(self, key):
         """Raises an InvalidWriteError for any keys containing
-        delimiters or that match the section header pattern"""
+        delimiters or that begins with the section header pattern"""
         if re.match(self.SECTCRE, key):
-            raise InvalidWriteError("Cannot write keys matching section pattern")
-        if any(delim in key for delim in self._delimiters):
-            raise InvalidWriteError("Cannot write key that contains delimiters")
+            raise InvalidWriteError(
+                f"Cannot write key {key}; begins with section pattern")
+        for delim in self._delimiters:
+            if delim in key:
+                raise InvalidWriteError(
+                    f"Cannot write key {key}; contains delimiter {delim}")
 
     def _validate_value_types(self, *, section="", option="", value=""):
         """Raises a TypeError for illegal non-string values.

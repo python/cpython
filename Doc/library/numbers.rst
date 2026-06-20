@@ -69,11 +69,11 @@ The numeric tower
 
    .. attribute:: numerator
 
-      Abstract.
+      Abstract.  The numerator of this rational number.
 
    .. attribute:: denominator
 
-      Abstract.
+      Abstract.  The denominator of this rational number.
 
 
 .. class:: Integral

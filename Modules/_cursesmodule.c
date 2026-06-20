@@ -108,7 +108,6 @@ static const char PyCursesVersion[] = "2.2";
 #include "pycore_capsule.h"     // _PyCapsule_SetTraverse()
 #include "pycore_long.h"        // _PyLong_GetZero()
 #include "pycore_structseq.h"   // _PyStructSequence_NewType()
-#include "pycore_sysmodule.h"   // _PySys_GetOptionalAttrString()
 #include "pycore_fileutils.h"   // _Py_set_inheritable
 
 #ifdef __hpux
@@ -209,7 +208,11 @@ static int curses_initscr_called = FALSE;
 /* Tells whether start_color() has been called to initialise color usage. */
 static int curses_start_color_called = FALSE;
 
-static const char *curses_screen_encoding = NULL;
+/* Encoding of the initial screen, used by module-level functions that have
+   no window object to take it from (e.g. unctrl(), ungetch()).  This is a
+   private copy: the window object that initscr() returns may be deallocated
+   while these functions are still in use. */
+static char *curses_screen_encoding = NULL;
 
 /* Utility Error Procedures */
 
@@ -932,8 +935,10 @@ PyCursesWindow_dealloc(PyObject *self)
     PyObject_GC_UnTrack(self);
     PyCursesWindowObject *wo = (PyCursesWindowObject *)self;
     if (wo->win != stdscr && wo->win != NULL) {
-        // silently ignore errors in delwin(3)
-        (void)delwin(wo->win);
+        if (delwin(wo->win) == ERR) {
+            curses_window_set_error(wo, "delwin", "__del__");
+            PyErr_FormatUnraisable("Exception ignored in delwin()");
+        }
     }
     if (wo->encoding != NULL) {
         PyMem_Free(wo->encoding);
@@ -1001,7 +1006,11 @@ _curses_window_addch_impl(PyCursesWindowObject *self, int group_left_1,
     type = PyCurses_ConvertToCchar_t(self, ch, &cch, wstr);
     if (type == 2) {
         wstr[1] = L'\0';
-        setcchar(&wcval, wstr, attr, PAIR_NUMBER(attr), NULL);
+        rtn = setcchar(&wcval, wstr, attr, PAIR_NUMBER(attr), NULL);
+        if (rtn == ERR) {
+            curses_window_set_error(self, "setcchar", "addch");
+            return NULL;
+        }
         if (coordinates_group) {
             rtn = mvwadd_wch(self->win,y,x, &wcval);
             funcname = "mvwadd_wch";
@@ -1029,6 +1038,27 @@ _curses_window_addch_impl(PyCursesWindowObject *self, int group_left_1,
         return NULL;
     }
     return curses_window_check_err(self, rtn, funcname, "addch");
+}
+
+#ifdef HAVE_NCURSESW
+#define curses_release_wstr(STRTYPE, WSTR)  \
+    do {                                    \
+        if ((STRTYPE) == 2) {               \
+            PyMem_Free((WSTR));             \
+        }                                   \
+    } while (0)
+#else
+#define curses_release_wstr(_STRTYPE, _WSTR)
+#endif
+
+static int
+curses_wattrset(PyCursesWindowObject *self, long attr, const char *funcname)
+{
+    if (wattrset(self->win, attr) == ERR) {
+        curses_window_set_error(self, "wattrset", funcname);
+        return -1;
+    }
+    return 0;
 }
 
 /*[clinic input]
@@ -1084,10 +1114,15 @@ _curses_window_addstr_impl(PyCursesWindowObject *self, int group_left_1,
     }
     if (use_attr) {
         attr_old = getattrs(self->win);
-        (void)wattrset(self->win,attr);
+        if (curses_wattrset(self, attr, "addstr") < 0) {
+            curses_release_wstr(strtype, wstr);
+            Py_XDECREF(bytesobj);
+            return NULL;
+        }
     }
 #ifdef HAVE_NCURSESW
     if (strtype == 2) {
+        assert(bytesobj == NULL);
         if (use_xy) {
             rtn = mvwaddwstr(self->win,y,x,wstr);
             funcname = "mvwaddwstr";
@@ -1101,6 +1136,9 @@ _curses_window_addstr_impl(PyCursesWindowObject *self, int group_left_1,
     else
 #endif
     {
+#ifdef HAVE_NCURSESW
+        assert(wstr == NULL);
+#endif
         const char *str = PyBytes_AS_STRING(bytesobj);
         if (use_xy) {
             rtn = mvwaddstr(self->win,y,x,str);
@@ -1112,9 +1150,15 @@ _curses_window_addstr_impl(PyCursesWindowObject *self, int group_left_1,
         }
         Py_DECREF(bytesobj);
     }
-    if (use_attr)
-        (void)wattrset(self->win,attr_old);
-    return curses_window_check_err(self, rtn, funcname, "addstr");
+    if (rtn == ERR) {
+        curses_window_set_error(self, funcname, "addstr");
+        return NULL;
+    }
+    if (use_attr) {
+        rtn = wattrset(self->win, attr_old);
+        return curses_window_check_err(self, rtn, "wattrset", "addstr");
+    }
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]
@@ -1173,7 +1217,11 @@ _curses_window_addnstr_impl(PyCursesWindowObject *self, int group_left_1,
 
     if (use_attr) {
         attr_old = getattrs(self->win);
-        (void)wattrset(self->win,attr);
+        if (curses_wattrset(self, attr, "addnstr") < 0) {
+            curses_release_wstr(strtype, wstr);
+            Py_XDECREF(bytesobj);
+            return NULL;
+        }
     }
 #ifdef HAVE_NCURSESW
     if (strtype == 2) {
@@ -1201,9 +1249,15 @@ _curses_window_addnstr_impl(PyCursesWindowObject *self, int group_left_1,
         }
         Py_DECREF(bytesobj);
     }
-    if (use_attr)
-        (void)wattrset(self->win,attr_old);
-    return curses_window_check_err(self, rtn, funcname, "addnstr");
+    if (rtn == ERR) {
+        curses_window_set_error(self, funcname, "addnstr");
+        return NULL;
+    }
+    if (use_attr) {
+        rtn = wattrset(self->win, attr_old);
+        return curses_window_check_err(self, rtn, "wattrset", "addnstr");
+    }
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]
@@ -1254,12 +1308,12 @@ _curses.window.attron
     attr: long
     /
 
-Add attribute attr from the "background" set.
+Add attribute attr to the "background" set.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_window_attron_impl(PyCursesWindowObject *self, long attr)
-/*[clinic end generated code: output=7afea43b237fa870 input=5a88fba7b1524f32]*/
+/*[clinic end generated code: output=7afea43b237fa870 input=b57f824e1bf58326]*/
 {
     int rtn = wattron(self->win, (attr_t)attr);
     return curses_window_check_err(self, rtn, "wattron", "attron");
@@ -1331,10 +1385,10 @@ _curses.window.border
 
 Draw a border around the edges of the window.
 
-Each parameter specifies the character to use for a specific part of the
-border.  The characters can be specified as integers or as one-character
-strings.  A 0 value for any parameter will cause the default character to be
-used for that parameter.
+Each parameter specifies the character to use for a specific part of
+the border.  The characters can be specified as integers or as
+one-character strings.  A 0 value for any parameter will cause the
+default character to be used for that parameter.
 [clinic start generated code]*/
 
 static PyObject *
@@ -1342,10 +1396,10 @@ _curses_window_border_impl(PyCursesWindowObject *self, PyObject *ls,
                            PyObject *rs, PyObject *ts, PyObject *bs,
                            PyObject *tl, PyObject *tr, PyObject *bl,
                            PyObject *br)
-/*[clinic end generated code: output=670ef38d3d7c2aa3 input=e015f735d67a240b]*/
+/*[clinic end generated code: output=670ef38d3d7c2aa3 input=42568c1458221d24]*/
 {
     chtype ch[8];
-    int i;
+    int i, rtn;
 
     /* Clear the array of parameters */
     for(i=0; i<8; i++)
@@ -1366,10 +1420,10 @@ _curses_window_border_impl(PyCursesWindowObject *self, PyObject *ls,
 
 #undef CONVERTTOCHTYPE
 
-    wborder(self->win,
-            ch[0], ch[1], ch[2], ch[3],
-            ch[4], ch[5], ch[6], ch[7]);
-    Py_RETURN_NONE;
+    rtn = wborder(self->win,
+                  ch[0], ch[1], ch[2], ch[3],
+                  ch[4], ch[5], ch[6], ch[7]);
+    return curses_window_check_err(self, rtn, "wborder", "border");
 }
 
 /*[clinic input]
@@ -1385,14 +1439,15 @@ _curses.window.box
 
 Draw a border around the edges of the window.
 
-Similar to border(), but both ls and rs are verch and both ts and bs are
-horch.  The default corner characters are always used by this function.
+Similar to border(), but both ls and rs are verch and both ts and bs
+are horch.  The default corner characters are always used by this
+function.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_window_box_impl(PyCursesWindowObject *self, int group_right_1,
                         PyObject *verch, PyObject *horch)
-/*[clinic end generated code: output=f3fcb038bb287192 input=f00435f9c8c98f60]*/
+/*[clinic end generated code: output=f3fcb038bb287192 input=e11acb7dbf6790b6]*/
 {
     chtype ch1 = 0, ch2 = 0;
     if (group_right_1) {
@@ -1403,8 +1458,7 @@ _curses_window_box_impl(PyCursesWindowObject *self, int group_right_1,
             return NULL;
         }
     }
-    box(self->win,ch1,ch2);
-    Py_RETURN_NONE;
+    return curses_window_check_err(self, box(self->win, ch1, ch2), "box", NULL);
 }
 
 #if defined(HAVE_NCURSES_H) || defined(MVWDELCH_IS_EXPRESSION)
@@ -1429,32 +1483,27 @@ int py_mvwdelch(WINDOW *w, int y, int x)
 
 /* chgat, added by Fabian Kreutz <fabian.kreutz at gmx.net> */
 #ifdef HAVE_CURSES_WCHGAT
-/*[-clinic input]
-_curses.window.chgat
 
-    [
-    y: int
-        Y-coordinate.
-    x: int
-        X-coordinate.
-    ]
+PyDoc_STRVAR(_curses_window_chgat__doc__,
+"chgat([y, x,] [n=-1,] attr)\n"
+"Set the attributes of characters.\n"
+"\n"
+"  y\n"
+"    Y-coordinate.\n"
+"  x\n"
+"    X-coordinate.\n"
+"  n\n"
+"    Number of characters.\n"
+"  attr\n"
+"    Attributes for characters.\n"
+"\n"
+"Set the attributes of num characters at the current cursor position, or at\n"
+"position (y, x) if supplied.  If no value of num is given or num = -1, the\n"
+"attribute will be set on all the characters to the end of the line.  This\n"
+"function does not move the cursor.  The changed line will be touched using\n"
+"the touchline() method so that the contents will be redisplayed by the next\n"
+"window refresh.");
 
-    n: int = -1
-        Number of characters.
-
-    attr: long
-        Attributes for characters.
-    /
-
-Set the attributes of characters.
-
-Set the attributes of num characters at the current cursor position, or at
-position (y, x) if supplied.  If no value of num is given or num = -1, the
-attribute will be set on all the characters to the end of the line.  This
-function does not move the cursor.  The changed line will be touched using
-the touchline() method so that the contents will be redisplayed by the next
-window refresh.
-[-clinic start generated code]*/
 static PyObject *
 PyCursesWindow_ChgAt(PyObject *op, PyObject *args)
 {
@@ -1481,19 +1530,20 @@ PyCursesWindow_ChgAt(PyObject *op, PyObject *args)
         attr = lattr;
         break;
     case 3:
-        if (!PyArg_ParseTuple(args,"iil;int,int,attr", &y, &x, &lattr))
+        if (!PyArg_ParseTuple(args,"iil;y,x,attr", &y, &x, &lattr))
             return NULL;
         attr = lattr;
         use_xy = TRUE;
         break;
     case 4:
-        if (!PyArg_ParseTuple(args,"iiil;int,int,n,attr", &y, &x, &num, &lattr))
+        if (!PyArg_ParseTuple(args,"iiil;y,x,n,attr", &y, &x, &num, &lattr))
             return NULL;
         attr = lattr;
         use_xy = TRUE;
         break;
     default:
-        PyErr_SetString(PyExc_TypeError, "chgat requires 1 to 4 arguments");
+        PyErr_SetString(PyExc_TypeError,
+                        "_curses.window.chgat requires 1 to 4 arguments");
         return NULL;
     }
 
@@ -1502,15 +1552,18 @@ PyCursesWindow_ChgAt(PyObject *op, PyObject *args)
 
     if (use_xy) {
         rtn = mvwchgat(self->win,y,x,num,attr,color,NULL);
-        touchline(self->win,y,1);
         funcname = "mvwchgat";
     } else {
         getyx(self->win,y,x);
         rtn = wchgat(self->win,num,attr,color,NULL);
-        touchline(self->win,y,1);
         funcname = "wchgat";
     }
-    return curses_window_check_err(self, rtn, funcname, "chgat");
+    if (rtn == ERR) {
+        curses_window_set_error(self, funcname, "chgat");
+        return NULL;
+    }
+    rtn = touchline(self->win,y,1);
+    return curses_window_check_err(self, rtn, "touchline", "chgat");
 }
 #endif
 
@@ -1525,13 +1578,16 @@ _curses.window.delch
     ]
     /
 
-Delete any character at (y, x).
+Delete the character under the cursor, or at (y, x) if specified.
+
+All characters to the right on the same line are shifted one
+position left.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_window_delch_impl(PyCursesWindowObject *self, int group_right_1,
                           int y, int x)
-/*[clinic end generated code: output=22e77bb9fa11b461 input=d2f79e630a4fc6d0]*/
+/*[clinic end generated code: output=22e77bb9fa11b461 input=61db3c7f4885e90c]*/
 {
     int rtn;
     const char *funcname;
@@ -1563,15 +1619,15 @@ _curses.window.derwin
 
 Create a sub-window (window-relative coordinates).
 
-derwin() is the same as calling subwin(), except that begin_y and begin_x
-are relative to the origin of the window, rather than relative to the entire
-screen.
+derwin() is the same as calling subwin(), except that begin_y and
+begin_x are relative to the origin of the window, rather than
+relative to the entire screen.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_window_derwin_impl(PyCursesWindowObject *self, int group_left_1,
                            int nlines, int ncols, int begin_y, int begin_x)
-/*[clinic end generated code: output=7924b112d9f70d6e input=966d9481f7f5022e]*/
+/*[clinic end generated code: output=7924b112d9f70d6e input=6efb50722be444ba]*/
 {
     WINDOW *win;
 
@@ -1627,6 +1683,7 @@ _curses_window_echochar_impl(PyCursesWindowObject *self, PyObject *ch,
 
 #ifdef NCURSES_MOUSE_VERSION
 /*[clinic input]
+@permit_long_summary
 _curses.window.enclose
 
     y: int
@@ -1640,27 +1697,47 @@ Return True if the screen-relative coordinates are enclosed by the window.
 
 static PyObject *
 _curses_window_enclose_impl(PyCursesWindowObject *self, int y, int x)
-/*[clinic end generated code: output=8679beef50502648 input=4fd3355d723f7bc9]*/
+/*[clinic end generated code: output=8679beef50502648 input=9ba7c894cffe5507]*/
 {
     return PyBool_FromLong(wenclose(self->win, y, x));
 }
 #endif
 
 /*[clinic input]
-_curses.window.getbkgd -> long
+_curses.window.getbkgd
 
 Return the window's current background character/attribute pair.
 [clinic start generated code]*/
 
-static long
+static PyObject *
 _curses_window_getbkgd_impl(PyCursesWindowObject *self)
-/*[clinic end generated code: output=c52b25dc16b215c3 input=a69db882fa35426c]*/
+/*[clinic end generated code: output=3ff953412b0e6028 input=7cf1f59a31f89df4]*/
 {
-    return (long) getbkgd(self->win);
+    chtype rtn = getbkgd(self->win);
+    if (rtn == (chtype)ERR) {
+        curses_window_set_error(self, "getbkgd", NULL);
+        return NULL;
+    }
+    return PyLong_FromLong(rtn);
+}
+
+static PyObject *
+curses_check_signals_on_input_error(PyCursesWindowObject *self,
+                                    const char *curses_funcname,
+                                    const char *python_funcname)
+{
+    assert(!PyErr_Occurred());
+    if (PyErr_CheckSignals()) {
+        return NULL;
+    }
+    cursesmodule_state *state = get_cursesmodule_state_by_win(self);
+    PyErr_Format(state->error, "%s() (called by %s()): no input",
+                 curses_funcname, python_funcname);
+    return NULL;
 }
 
 /*[clinic input]
-_curses.window.getch -> int
+_curses.window.getch
 
     [
     y: int
@@ -1672,15 +1749,16 @@ _curses.window.getch -> int
 
 Get a character code from terminal keyboard.
 
-The integer returned does not have to be in ASCII range: function keys,
-keypad keys and so on return numbers higher than 256.  In no-delay mode, -1
-is returned if there is no input, else getch() waits until a key is pressed.
+The integer returned does not have to be in ASCII range: function
+keys, keypad keys and so on return numbers higher than 256.  In
+no-delay mode, -1 is returned if there is no input, else getch()
+waits until a key is pressed.
 [clinic start generated code]*/
 
-static int
+static PyObject *
 _curses_window_getch_impl(PyCursesWindowObject *self, int group_right_1,
                           int y, int x)
-/*[clinic end generated code: output=980aa6af0c0ca387 input=bb24ebfb379f991f]*/
+/*[clinic end generated code: output=e1639e87d545e676 input=0dc5ff40e079787a]*/
 {
     int rtn;
 
@@ -1693,7 +1771,17 @@ _curses_window_getch_impl(PyCursesWindowObject *self, int group_right_1,
     }
     Py_END_ALLOW_THREADS
 
-    return rtn;
+    if (rtn == ERR) {
+        // We suppress ERR returned by wgetch() in nodelay mode
+        // after we handled possible interruption signals.
+        if (PyErr_CheckSignals()) {
+            return NULL;
+        }
+        // ERR is an implementation detail, so to be on the safe side,
+        // we forcibly set the return value to -1 as documented above.
+        rtn = -1;
+    }
+    return PyLong_FromLong(rtn);
 }
 
 /*[clinic input]
@@ -1709,15 +1797,16 @@ _curses.window.getkey
 
 Get a character (string) from terminal keyboard.
 
-Returning a string instead of an integer, as getch() does.  Function keys,
-keypad keys and other special keys return a multibyte string containing the
-key name.  In no-delay mode, an exception is raised if there is no input.
+Returning a string instead of an integer, as getch() does.  Function
+keys, keypad keys and other special keys return a multibyte string
+containing the key name.  In no-delay mode, an exception is raised
+if there is no input.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_window_getkey_impl(PyCursesWindowObject *self, int group_right_1,
                            int y, int x)
-/*[clinic end generated code: output=8490a182db46b10f input=be2dee34f5cf57f8]*/
+/*[clinic end generated code: output=8490a182db46b10f input=bd24a7da1ed9c73b]*/
 {
     int rtn;
 
@@ -1731,14 +1820,9 @@ _curses_window_getkey_impl(PyCursesWindowObject *self, int group_right_1,
     Py_END_ALLOW_THREADS
 
     if (rtn == ERR) {
-        /* getch() returns ERR in nodelay mode */
-        PyErr_CheckSignals();
-        if (!PyErr_Occurred()) {
-            cursesmodule_state *state = get_cursesmodule_state_by_win(self);
-            const char *funcname = group_right_1 ? "mvwgetch" : "wgetch";
-            PyErr_Format(state->error, "getkey(): %s(): no input", funcname);
-        }
-        return NULL;
+        /* wgetch() returns ERR in nodelay mode */
+        const char *funcname = group_right_1 ? "mvwgetch" : "wgetch";
+        return curses_check_signals_on_input_error(self, funcname, "getkey");
     } else if (rtn <= 255) {
 #ifdef NCURSES_VERSION_MAJOR
 #if NCURSES_VERSION_MAJOR*100+NCURSES_VERSION_MINOR <= 507
@@ -1791,14 +1875,9 @@ _curses_window_get_wch_impl(PyCursesWindowObject *self, int group_right_1,
     Py_END_ALLOW_THREADS
 
     if (ct == ERR) {
-        if (PyErr_CheckSignals())
-            return NULL;
-
-        /* get_wch() returns ERR in nodelay mode */
-        cursesmodule_state *state = get_cursesmodule_state_by_win(self);
+        /* wget_wch() returns ERR in nodelay mode */
         const char *funcname = group_right_1 ? "mvwget_wch" : "wget_wch";
-        PyErr_Format(state->error, "get_wch(): %s(): no input", funcname);
-        return NULL;
+        return curses_check_signals_on_input_error(self, funcname, "get_wch");
     }
     if (ct == KEY_CODE_YES)
         return PyLong_FromLong(rtn);
@@ -1807,102 +1886,100 @@ _curses_window_get_wch_impl(PyCursesWindowObject *self, int group_right_1,
 }
 #endif
 
-/*[-clinic input]
-_curses.window.getstr
+/*
+ * Helper function for parsing parameters from getstr() and instr().
+ * This function is necessary because Argument Clinic does not know
+ * how to handle nested optional groups with default values inside.
+ *
+ * Return 1 on success and 0 on failure, similar to PyArg_ParseTuple().
+ */
+static int
+curses_clinic_parse_optional_xy_n(PyObject *args,
+                                  int *y, int *x, unsigned int *n, int *use_xy,
+                                  const char *qualname)
+{
+    switch (PyTuple_GET_SIZE(args)) {
+        case 0: {
+            *use_xy = 0;
+            return 1;
+        }
+        case 1: {
+            *use_xy = 0;
+            return PyArg_ParseTuple(args, "O&;n",
+                                    _PyLong_UnsignedInt_Converter, n);
+        }
+        case 2: {
+            *use_xy = 1;
+            return PyArg_ParseTuple(args, "ii;y,x", y, x);
+        }
+        case 3: {
+            *use_xy = 1;
+            return PyArg_ParseTuple(args, "iiO&;y,x,n", y, x,
+                                    _PyLong_UnsignedInt_Converter, n);
+        }
+        default: {
+            *use_xy = 0;
+            PyErr_Format(PyExc_TypeError, "%s requires 0 to 3 arguments",
+                         qualname);
+            return 0;
+        }
+    }
+}
 
-    [
-    y: int
-        Y-coordinate.
-    x: int
-        X-coordinate.
-    ]
-    n: int = 2047
-        Maximal number of characters.
-    /
-
-Read a string from the user, with primitive line editing capacity.
-[-clinic start generated code]*/
+PyDoc_STRVAR(_curses_window_getstr__doc__,
+"getstr([[y, x,] n=2047])\n"
+"Read a string from the user, with primitive line editing capacity.\n"
+"\n"
+"  y\n"
+"    Y-coordinate.\n"
+"  x\n"
+"    X-coordinate.\n"
+"  n\n"
+"    Maximal number of characters.");
 
 static PyObject *
-PyCursesWindow_GetStr(PyObject *op, PyObject *args)
+PyCursesWindow_getstr(PyObject *op, PyObject *args)
 {
     PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
+    int rtn, use_xy = 0, y = 0, x = 0;
+    unsigned int max_buf_size = 2048;
+    unsigned int n = max_buf_size - 1;
 
-    int x, y, n;
-    int rtn;
-
-    /* could make the buffer size larger/dynamic */
-    Py_ssize_t max_buf_size = 2048;
-    PyObject *result = PyBytes_FromStringAndSize(NULL, max_buf_size);
-    if (result == NULL)
+    if (!curses_clinic_parse_optional_xy_n(args, &y, &x, &n, &use_xy,
+                                           "_curses.window.instr"))
+    {
         return NULL;
-    char *buf = PyBytes_AS_STRING(result);
+    }
 
-    switch (PyTuple_Size(args)) {
-    case 0:
-        Py_BEGIN_ALLOW_THREADS
-        rtn = wgetnstr(self->win, buf, max_buf_size - 1);
-        Py_END_ALLOW_THREADS
-        break;
-    case 1:
-        if (!PyArg_ParseTuple(args,"i;n", &n))
-            goto error;
-        if (n < 0) {
-            PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
-            goto error;
-        }
-        Py_BEGIN_ALLOW_THREADS
-        rtn = wgetnstr(self->win, buf, Py_MIN(n, max_buf_size - 1));
-        Py_END_ALLOW_THREADS
-        break;
-    case 2:
-        if (!PyArg_ParseTuple(args,"ii;y,x",&y,&x))
-            goto error;
+    n = Py_MIN(n, max_buf_size - 1);
+    PyBytesWriter *writer = PyBytesWriter_Create(n + 1);
+    if (writer == NULL) {
+        return NULL;
+    }
+    char *buf = PyBytesWriter_GetData(writer);
+
+    if (use_xy) {
         Py_BEGIN_ALLOW_THREADS
 #ifdef STRICT_SYSV_CURSES
-        rtn = wmove(self->win,y,x)==ERR ? ERR : wgetnstr(self->win, rtn, max_buf_size - 1);
+        rtn = wmove(self->win, y, x) == ERR
+                ? ERR
+                : wgetnstr(self->win, buf, n);
 #else
-        rtn = mvwgetnstr(self->win,y,x,buf, max_buf_size - 1);
+        rtn = mvwgetnstr(self->win, y, x, buf, n);
 #endif
         Py_END_ALLOW_THREADS
-        break;
-    case 3:
-        if (!PyArg_ParseTuple(args,"iii;y,x,n", &y, &x, &n))
-            goto error;
-        if (n < 0) {
-            PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
-            goto error;
-        }
-#ifdef STRICT_SYSV_CURSES
+    }
+    else {
         Py_BEGIN_ALLOW_THREADS
-        rtn = wmove(self->win,y,x)==ERR ? ERR :
-        wgetnstr(self->win, rtn, Py_MIN(n, max_buf_size - 1));
+        rtn = wgetnstr(self->win, buf, n);
         Py_END_ALLOW_THREADS
-#else
-        Py_BEGIN_ALLOW_THREADS
-        rtn = mvwgetnstr(self->win, y, x, buf, Py_MIN(n, max_buf_size - 1));
-        Py_END_ALLOW_THREADS
-#endif
-        break;
-    default:
-        PyErr_SetString(PyExc_TypeError, "getstr requires 0 to 3 arguments");
-        goto error;
     }
 
     if (rtn == ERR) {
-        Py_DECREF(result);
+        PyBytesWriter_Discard(writer);
         return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
-
-    if (_PyBytes_Resize(&result, strlen(buf)) < 0) {
-        return NULL;
-    }
-
-    return result;
-
-error:
-    Py_DECREF(result);
-    return NULL;
+    return PyBytesWriter_FinishWithSize(writer, strlen(buf));
 }
 
 /*[clinic input]
@@ -1970,15 +2047,15 @@ _curses.window.insch
 
 Insert a character before the current or specified position.
 
-All characters to the right of the cursor are shifted one position right, with
-the rightmost characters on the line being lost.
+All characters to the right of the cursor are shifted one position
+right, with the rightmost characters on the line being lost.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_window_insch_impl(PyCursesWindowObject *self, int group_left_1,
                           int y, int x, PyObject *ch, int group_right_1,
                           long attr)
-/*[clinic end generated code: output=ade8cfe3a3bf3e34 input=336342756ee19812]*/
+/*[clinic end generated code: output=ade8cfe3a3bf3e34 input=d662a0f96f33e15a]*/
 {
     int rtn;
     chtype ch_ = 0;
@@ -2000,7 +2077,7 @@ _curses_window_insch_impl(PyCursesWindowObject *self, int group_left_1,
 }
 
 /*[clinic input]
-_curses.window.inch -> unsigned_long
+_curses.window.inch
 
     [
     y: int
@@ -2012,107 +2089,84 @@ _curses.window.inch -> unsigned_long
 
 Return the character at the given position in the window.
 
-The bottom 8 bits are the character proper, and upper bits are the attributes.
+The bottom 8 bits are the character proper, and upper bits are the
+attributes.
 [clinic start generated code]*/
 
-static unsigned long
+static PyObject *
 _curses_window_inch_impl(PyCursesWindowObject *self, int group_right_1,
                          int y, int x)
-/*[clinic end generated code: output=6c4719fe978fe86a input=fac23ee11e3b3a66]*/
+/*[clinic end generated code: output=97ca8581baaafd06 input=7a03956d94dc9a69]*/
 {
-    unsigned long rtn;
+    chtype rtn;
+    const char *funcname;
 
     if (!group_right_1) {
         rtn = winch(self->win);
+        funcname = "winch";
     }
     else {
         rtn = mvwinch(self->win, y, x);
+        funcname = "mvwinch";
     }
-
-    return rtn;
+    if (rtn == (chtype)ERR) {
+        curses_window_set_error(self, funcname, "inch");
+        return NULL;
+    }
+    return PyLong_FromUnsignedLong(rtn);
 }
 
-/*[-clinic input]
-_curses.window.instr
+PyDoc_STRVAR(_curses_window_instr__doc__,
+"instr([y, x,] n=2047)\n"
+"Return a string of characters, extracted from the window.\n"
+"\n"
+"  y\n"
+"    Y-coordinate.\n"
+"  x\n"
+"    X-coordinate.\n"
+"  n\n"
+"    Maximal number of characters.\n"
+"\n"
+"Return a string of characters, extracted from the window starting\n"
+"at the current cursor position, or at y, x if specified, and\n"
+"stopping at the end of the line.  Attributes and color\n"
+"information are stripped from the characters.  If n is specified,\n"
+"instr() returns a string at most n characters long (exclusive of\n"
+"the trailing NUL).");
 
-    [
-    y: int
-        Y-coordinate.
-    x: int
-        X-coordinate.
-    ]
-    n: int = 2047
-        Maximal number of characters.
-    /
-
-Return a string of characters, extracted from the window.
-
-Return a string of characters, extracted from the window starting at the
-current cursor position, or at y, x if specified.  Attributes are stripped
-from the characters.  If n is specified, instr() returns a string at most
-n characters long (exclusive of the trailing NUL).
-[-clinic start generated code]*/
 static PyObject *
-PyCursesWindow_InStr(PyObject *op, PyObject *args)
+PyCursesWindow_instr(PyObject *op, PyObject *args)
 {
     PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
+    int rtn, use_xy = 0, y = 0, x = 0;
+    unsigned int max_buf_size = 2048;
+    unsigned int n = max_buf_size - 1;
 
-    int x, y, n;
-    int rtn;
-
-    /* could make the buffer size larger/dynamic */
-    Py_ssize_t max_buf_size = 2048;
-    PyObject *result = PyBytes_FromStringAndSize(NULL, max_buf_size);
-    if (result == NULL)
+    if (!curses_clinic_parse_optional_xy_n(args, &y, &x, &n, &use_xy,
+                                           "_curses.window.instr"))
+    {
         return NULL;
-    char *buf = PyBytes_AS_STRING(result);
+    }
 
-    switch (PyTuple_Size(args)) {
-    case 0:
-        rtn = winnstr(self->win, buf, max_buf_size - 1);
-        break;
-    case 1:
-        if (!PyArg_ParseTuple(args,"i;n", &n))
-            goto error;
-        if (n < 0) {
-            PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
-            goto error;
-        }
-        rtn = winnstr(self->win, buf, Py_MIN(n, max_buf_size - 1));
-        break;
-    case 2:
-        if (!PyArg_ParseTuple(args,"ii;y,x",&y,&x))
-            goto error;
-        rtn = mvwinnstr(self->win, y, x, buf, max_buf_size - 1);
-        break;
-    case 3:
-        if (!PyArg_ParseTuple(args, "iii;y,x,n", &y, &x, &n))
-            goto error;
-        if (n < 0) {
-            PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
-            goto error;
-        }
-        rtn = mvwinnstr(self->win, y, x, buf, Py_MIN(n, max_buf_size - 1));
-        break;
-    default:
-        PyErr_SetString(PyExc_TypeError, "instr requires 0 or 3 arguments");
-        goto error;
+    n = Py_MIN(n, max_buf_size - 1);
+    PyBytesWriter *writer = PyBytesWriter_Create(n + 1);
+    if (writer == NULL) {
+        return NULL;
+    }
+    char *buf = PyBytesWriter_GetData(writer);
+
+    if (use_xy) {
+        rtn = mvwinnstr(self->win, y, x, buf, n);
+    }
+    else {
+        rtn = winnstr(self->win, buf, n);
     }
 
     if (rtn == ERR) {
-        Py_DECREF(result);
+        PyBytesWriter_Discard(writer);
         return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
-
-    if (_PyBytes_Resize(&result, strlen(buf)) < 0) {
-        return NULL;
-    }
-
-    return result;
-
-error:
-    Py_DECREF(result);
-    return NULL;
+    return PyBytesWriter_FinishWithSize(writer, strlen(buf));
 }
 
 /*[clinic input]
@@ -2136,18 +2190,18 @@ _curses.window.insstr
 
 Insert the string before the current or specified position.
 
-Insert a character string (as many characters as will fit on the line)
-before the character under the cursor.  All characters to the right of
-the cursor are shifted right, with the rightmost characters on the line
-being lost.  The cursor position does not change (after moving to y, x,
-if specified).
+Insert a character string (as many characters as will fit on the
+line) before the character under the cursor.  All characters to the
+right of the cursor are shifted right, with the rightmost characters
+on the line being lost.  The cursor position does not change (after
+moving to y, x, if specified).
 [clinic start generated code]*/
 
 static PyObject *
 _curses_window_insstr_impl(PyCursesWindowObject *self, int group_left_1,
                            int y, int x, PyObject *str, int group_right_1,
                            long attr)
-/*[clinic end generated code: output=c259a5265ad0b777 input=6827cddc6340a7f3]*/
+/*[clinic end generated code: output=c259a5265ad0b777 input=dbfbdd3892155ea6]*/
 {
     int rtn;
     int strtype;
@@ -2169,7 +2223,11 @@ _curses_window_insstr_impl(PyCursesWindowObject *self, int group_left_1,
 
     if (use_attr) {
         attr_old = getattrs(self->win);
-        (void)wattrset(self->win, (attr_t)attr);
+        if (curses_wattrset(self, attr, "insstr") < 0) {
+            curses_release_wstr(strtype, wstr);
+            Py_XDECREF(bytesobj);
+            return NULL;
+        }
     }
 #ifdef HAVE_NCURSESW
     if (strtype == 2) {
@@ -2197,9 +2255,15 @@ _curses_window_insstr_impl(PyCursesWindowObject *self, int group_left_1,
         }
         Py_DECREF(bytesobj);
     }
-    if (use_attr)
-        (void)wattrset(self->win,attr_old);
-    return curses_window_check_err(self, rtn, funcname, "insstr");
+    if (rtn == ERR) {
+        curses_window_set_error(self, funcname, "insstr");
+        return NULL;
+    }
+    if (use_attr) {
+        rtn = wattrset(self->win, attr_old);
+        return curses_window_check_err(self, rtn, "wattrset", "insstr");
+    }
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]
@@ -2226,19 +2290,19 @@ _curses.window.insnstr
 
 Insert at most n characters of the string.
 
-Insert a character string (as many characters as will fit on the line)
-before the character under the cursor, up to n characters.  If n is zero
-or negative, the entire string is inserted.  All characters to the right
-of the cursor are shifted right, with the rightmost characters on the line
-being lost.  The cursor position does not change (after moving to y, x, if
-specified).
+Insert a character string (as many characters as will fit on the
+line) before the character under the cursor, up to n characters.  If
+n is zero or negative, the entire string is inserted.  All
+characters to the right of the cursor are shifted right, with the
+rightmost characters on the line being lost.  The cursor position
+does not change (after moving to y, x, if specified).
 [clinic start generated code]*/
 
 static PyObject *
 _curses_window_insnstr_impl(PyCursesWindowObject *self, int group_left_1,
                             int y, int x, PyObject *str, int n,
                             int group_right_1, long attr)
-/*[clinic end generated code: output=971a32ea6328ec8b input=70fa0cd543901a4c]*/
+/*[clinic end generated code: output=971a32ea6328ec8b input=fd0a9b65b84b385f]*/
 {
     int rtn;
     int strtype;
@@ -2260,7 +2324,10 @@ _curses_window_insnstr_impl(PyCursesWindowObject *self, int group_left_1,
 
     if (use_attr) {
         attr_old = getattrs(self->win);
-        (void)wattrset(self->win, (attr_t)attr);
+        if (curses_wattrset(self, attr, "insnstr") < 0) {
+            curses_release_wstr(strtype, wstr);
+            return NULL;
+        }
     }
 #ifdef HAVE_NCURSESW
     if (strtype == 2) {
@@ -2288,12 +2355,19 @@ _curses_window_insnstr_impl(PyCursesWindowObject *self, int group_left_1,
         }
         Py_DECREF(bytesobj);
     }
-    if (use_attr)
-        (void)wattrset(self->win,attr_old);
-    return curses_window_check_err(self, rtn, funcname, "insnstr");
+    if (rtn == ERR) {
+        curses_window_set_error(self, funcname, "insnstr");
+        return NULL;
+    }
+    if (use_attr) {
+        rtn = wattrset(self->win, attr_old);
+        return curses_window_check_err(self, rtn, "wattrset", "insnstr");
+    }
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]
+@permit_long_summary
 _curses.window.is_linetouched
 
     line: int
@@ -2302,12 +2376,13 @@ _curses.window.is_linetouched
 
 Return True if the specified line was modified, otherwise return False.
 
-Raise a curses.error exception if line is not valid for the given window.
+Raise a curses.error exception if line is not valid for the given
+window.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_window_is_linetouched_impl(PyCursesWindowObject *self, int line)
-/*[clinic end generated code: output=ad4a4edfee2db08c input=a7be0c189f243914]*/
+/*[clinic end generated code: output=ad4a4edfee2db08c input=18924dfac25ab7f1]*/
 {
     int erg;
     erg = is_linetouched(self->win, line);
@@ -2334,9 +2409,9 @@ _curses.window.noutrefresh
 
 Mark for refresh but wait.
 
-This function updates the data structure representing the desired state of the
-window, but does not force an update of the physical screen.  To accomplish
-that, call doupdate().
+This function updates the data structure representing the desired
+state of the window, but does not force an update of the physical
+screen.  To accomplish that, call doupdate().
 [clinic start generated code]*/
 
 static PyObject *
@@ -2344,21 +2419,21 @@ _curses_window_noutrefresh_impl(PyCursesWindowObject *self,
                                 int group_right_1, int pminrow, int pmincol,
                                 int sminrow, int smincol, int smaxrow,
                                 int smaxcol)
-/*[clinic end generated code: output=809a1f3c6a03e23e input=3e56898388cd739e]*/
+/*[clinic end generated code: output=809a1f3c6a03e23e input=8b4c74bf55008803]*/
 #else
 /*[clinic input]
 _curses.window.noutrefresh
 
 Mark for refresh but wait.
 
-This function updates the data structure representing the desired state of the
-window, but does not force an update of the physical screen.  To accomplish
-that, call doupdate().
+This function updates the data structure representing the desired
+state of the window, but does not force an update of the physical
+screen.  To accomplish that, call doupdate().
 [clinic start generated code]*/
 
 static PyObject *
 _curses_window_noutrefresh_impl(PyCursesWindowObject *self)
-/*[clinic end generated code: output=6ef6dec666643fee input=876902e3fa431dbd]*/
+/*[clinic end generated code: output=6ef6dec666643fee input=a7c6306f8af9d0dd]*/
 #endif
 {
     int rtn;
@@ -2366,8 +2441,7 @@ _curses_window_noutrefresh_impl(PyCursesWindowObject *self)
 #ifdef py_is_pad
     if (py_is_pad(self->win)) {
         if (!group_right_1) {
-            cursesmodule_state *state = get_cursesmodule_state_by_win(self);
-            PyErr_SetString(state->error,
+            PyErr_SetString(PyExc_TypeError,
                             "noutrefresh() called for a pad "
                             "requires 6 arguments");
             return NULL;
@@ -2408,14 +2482,15 @@ _curses.window.overlay
 
 Overlay the window on top of destwin.
 
-The windows need not be the same size, only the overlapping region is copied.
-This copy is non-destructive, which means that the current background
-character does not overwrite the old contents of destwin.
+The windows need not be the same size, only the overlapping region
+is copied.  This copy is non-destructive, which means that the
+current background character does not overwrite the old contents of
+destwin.
 
-To get fine-grained control over the copied region, the second form of
-overlay() can be used.  sminrow and smincol are the upper-left coordinates
-of the source window, and the other variables mark a rectangle in the
-destination window.
+To get fine-grained control over the copied region, the second form
+of overlay() can be used.  sminrow and smincol are the upper-left
+coordinates of the source window, and the other variables mark
+a rectangle in the destination window.
 [clinic start generated code]*/
 
 static PyObject *
@@ -2423,7 +2498,7 @@ _curses_window_overlay_impl(PyCursesWindowObject *self,
                             PyCursesWindowObject *destwin, int group_right_1,
                             int sminrow, int smincol, int dminrow,
                             int dmincol, int dmaxrow, int dmaxcol)
-/*[clinic end generated code: output=82bb2c4cb443ca58 input=6e4b32a7c627a356]*/
+/*[clinic end generated code: output=82bb2c4cb443ca58 input=da0cec7f7bda1b3f]*/
 {
     int rtn;
 
@@ -2455,14 +2530,15 @@ _curses.window.overwrite
 
 Overwrite the window on top of destwin.
 
-The windows need not be the same size, in which case only the overlapping
-region is copied.  This copy is destructive, which means that the current
-background character overwrites the old contents of destwin.
+The windows need not be the same size, in which case only the
+overlapping region is copied.  This copy is destructive, which means
+that the current background character overwrites the old contents of
+destwin.
 
-To get fine-grained control over the copied region, the second form of
-overwrite() can be used. sminrow and smincol are the upper-left coordinates
-of the source window, the other variables mark a rectangle in the destination
-window.
+To get fine-grained control over the copied region, the second form
+of overwrite() can be used. sminrow and smincol are the upper-left
+coordinates of the source window, the other variables mark
+a rectangle in the destination window.
 [clinic start generated code]*/
 
 static PyObject *
@@ -2471,7 +2547,7 @@ _curses_window_overwrite_impl(PyCursesWindowObject *self,
                               int group_right_1, int sminrow, int smincol,
                               int dminrow, int dmincol, int dmaxrow,
                               int dmaxcol)
-/*[clinic end generated code: output=12ae007d1681be28 input=d83dd8b24ff2bcc9]*/
+/*[clinic end generated code: output=12ae007d1681be28 input=4244ab8a97087898]*/
 {
     int rtn;
 
@@ -2487,6 +2563,7 @@ _curses_window_overwrite_impl(PyCursesWindowObject *self,
 }
 
 /*[clinic input]
+@permit_long_summary
 _curses.window.putwin
 
     file: object
@@ -2499,7 +2576,7 @@ This information can be later retrieved using the getwin() function.
 
 static PyObject *
 _curses_window_putwin_impl(PyCursesWindowObject *self, PyObject *file)
-/*[clinic end generated code: output=fdae68ac59b0281b input=0608648e09c8ea0a]*/
+/*[clinic end generated code: output=fdae68ac59b0281b input=959fc85a9e4a31c2]*/
 {
     /* We have to simulate this by writing to a temporary FILE*,
        then reading back, then writing to the argument file. */
@@ -2570,31 +2647,31 @@ _curses.window.refresh
 Update the display immediately.
 
 Synchronize actual screen with previous drawing/deleting methods.
-The 6 optional arguments can only be specified when the window is a pad
-created with newpad().  The additional parameters are needed to indicate
-what part of the pad and screen are involved.  pminrow and pmincol specify
-the upper left-hand corner of the rectangle to be displayed in the pad.
-sminrow, smincol, smaxrow, and smaxcol specify the edges of the rectangle to
-be displayed on the screen.  The lower right-hand corner of the rectangle to
-be displayed in the pad is calculated from the screen coordinates, since the
-rectangles must be the same size.  Both rectangles must be entirely contained
-within their respective structures.  Negative values of pminrow, pmincol,
-sminrow, or smincol are treated as if they were zero.
+The 6 optional arguments can only be specified when the window is
+a pad created with newpad().  The additional parameters are needed
+to indicate what part of the pad and screen are involved.  pminrow
+and pmincol specify the upper left-hand corner of the rectangle to
+be displayed in the pad.  sminrow, smincol, smaxrow, and smaxcol
+specify the edges of the rectangle to be displayed on the screen.
+The lower right-hand corner of the rectangle to be displayed in the
+pad is calculated from the screen coordinates, since the rectangles
+must be the same size.  Both rectangles must be entirely contained
+within their respective structures.  Negative values of pminrow,
+pmincol, sminrow, or smincol are treated as if they were zero.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_window_refresh_impl(PyCursesWindowObject *self, int group_right_1,
                             int pminrow, int pmincol, int sminrow,
                             int smincol, int smaxrow, int smaxcol)
-/*[clinic end generated code: output=42199543115e6e63 input=95e01cb5ffc635d0]*/
+/*[clinic end generated code: output=42199543115e6e63 input=ff2e900c6b2696b1]*/
 {
     int rtn;
 
 #ifdef py_is_pad
     if (py_is_pad(self->win)) {
         if (!group_right_1) {
-            cursesmodule_state *state = get_cursesmodule_state_by_win(self);
-            PyErr_SetString(state->error,
+            PyErr_SetString(PyExc_TypeError,
                             "refresh() for a pad requires 6 arguments");
             return NULL;
         }
@@ -2656,14 +2733,14 @@ _curses.window.subwin
 
 Create a sub-window (screen-relative coordinates).
 
-By default, the sub-window will extend from the specified position to the
-lower right corner of the window.
+By default, the sub-window will extend from the specified position
+to the lower right corner of the window.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_window_subwin_impl(PyCursesWindowObject *self, int group_left_1,
                            int nlines, int ncols, int begin_y, int begin_x)
-/*[clinic end generated code: output=93e898afc348f59a input=2129fa47fd57721c]*/
+/*[clinic end generated code: output=93e898afc348f59a input=07b5058cb8820595]*/
 {
     WINDOW *win;
     const char *funcname;
@@ -2701,13 +2778,14 @@ _curses.window.scroll
 
 Scroll the screen or scrolling region.
 
-Scroll upward if the argument is positive and downward if it is negative.
+Scroll upward if the argument is positive and downward if it is
+negative.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_window_scroll_impl(PyCursesWindowObject *self, int group_right_1,
                            int lines)
-/*[clinic end generated code: output=4541a8a11852d360 input=c969ca0cfabbdbec]*/
+/*[clinic end generated code: output=4541a8a11852d360 input=d8d81a5b52b9b40f]*/
 {
     int rtn;
     const char *funcname;
@@ -2734,14 +2812,15 @@ _curses.window.touchline
 
 Pretend count lines have been changed, starting with line start.
 
-If changed is supplied, it specifies whether the affected lines are marked
-as having been changed (changed=True) or unchanged (changed=False).
+If changed is supplied, it specifies whether the affected lines are
+marked as having been changed (changed=True) or unchanged
+(changed=False).
 [clinic start generated code]*/
 
 static PyObject *
 _curses_window_touchline_impl(PyCursesWindowObject *self, int start,
                               int count, int group_right_1, int changed)
-/*[clinic end generated code: output=65d05b3f7438c61d input=a98aa4f79b6be845]*/
+/*[clinic end generated code: output=65d05b3f7438c61d input=e0dc62f90d9dea55]*/
 {
     int rtn;
     const char *funcname;
@@ -2854,79 +2933,158 @@ static PyMethodDef PyCursesWindow_methods[] = {
     _CURSES_WINDOW_ATTRSET_METHODDEF
     _CURSES_WINDOW_BKGD_METHODDEF
 #ifdef HAVE_CURSES_WCHGAT
-    {"chgat",           PyCursesWindow_ChgAt, METH_VARARGS},
+    {
+        "chgat", PyCursesWindow_ChgAt, METH_VARARGS,
+        _curses_window_chgat__doc__
+    },
 #endif
     _CURSES_WINDOW_BKGDSET_METHODDEF
     _CURSES_WINDOW_BORDER_METHODDEF
     _CURSES_WINDOW_BOX_METHODDEF
-    {"clear",           PyCursesWindow_wclear, METH_NOARGS},
-    {"clearok",         PyCursesWindow_clearok, METH_VARARGS},
-    {"clrtobot",        PyCursesWindow_wclrtobot, METH_NOARGS},
-    {"clrtoeol",        PyCursesWindow_wclrtoeol, METH_NOARGS},
-    {"cursyncup",       PyCursesWindow_wcursyncup, METH_NOARGS},
+    {"clear", PyCursesWindow_wclear, METH_NOARGS,
+     "clear($self, /)\n--\n\n"
+     "Clear the window and repaint it completely on the next refresh()."},
+    {"clearok", PyCursesWindow_clearok, METH_VARARGS,
+     "clearok($self, flag, /)\n--\n\n"
+     "Clear the window on the next refresh() if flag is true."},
+    {"clrtobot", PyCursesWindow_wclrtobot, METH_NOARGS,
+     "clrtobot($self, /)\n--\n\n"
+     "Erase from the cursor to the end of the window."},
+    {"clrtoeol", PyCursesWindow_wclrtoeol, METH_NOARGS,
+     "clrtoeol($self, /)\n--\n\n"
+     "Erase from the cursor to the end of the line."},
+    {"cursyncup", PyCursesWindow_wcursyncup, METH_NOARGS,
+     "cursyncup($self, /)\n--\n\n"
+     "Update the cursor position of all ancestor windows to match."},
     _CURSES_WINDOW_DELCH_METHODDEF
-    {"deleteln",        PyCursesWindow_wdeleteln, METH_NOARGS},
+    {"deleteln", PyCursesWindow_wdeleteln, METH_NOARGS,
+     "deleteln($self, /)\n--\n\n"
+     "Delete the line under the cursor; move following lines up by one."},
     _CURSES_WINDOW_DERWIN_METHODDEF
     _CURSES_WINDOW_ECHOCHAR_METHODDEF
     _CURSES_WINDOW_ENCLOSE_METHODDEF
-    {"erase",           PyCursesWindow_werase, METH_NOARGS},
-    {"getbegyx",        PyCursesWindow_getbegyx, METH_NOARGS},
+    {"erase", PyCursesWindow_werase, METH_NOARGS,
+     "erase($self, /)\n--\n\n"
+     "Clear the window."},
+    {"getbegyx", PyCursesWindow_getbegyx, METH_NOARGS,
+     "getbegyx($self, /)\n--\n\n"
+     "Return a tuple (y, x) of the upper-left corner coordinates."},
     _CURSES_WINDOW_GETBKGD_METHODDEF
     _CURSES_WINDOW_GETCH_METHODDEF
     _CURSES_WINDOW_GETKEY_METHODDEF
     _CURSES_WINDOW_GET_WCH_METHODDEF
-    {"getmaxyx",        PyCursesWindow_getmaxyx, METH_NOARGS},
-    {"getparyx",        PyCursesWindow_getparyx, METH_NOARGS},
-    {"getstr",          PyCursesWindow_GetStr, METH_VARARGS},
-    {"getyx",           PyCursesWindow_getyx, METH_NOARGS},
+    {"getmaxyx", PyCursesWindow_getmaxyx, METH_NOARGS,
+     "getmaxyx($self, /)\n--\n\n"
+     "Return a tuple (y, x) of the window height and width."},
+    {"getparyx", PyCursesWindow_getparyx, METH_NOARGS,
+     "getparyx($self, /)\n--\n\n"
+     "Return (y, x) relative to the parent window, or (-1, -1) if none."},
+    {
+        "getstr", PyCursesWindow_getstr, METH_VARARGS,
+        _curses_window_getstr__doc__
+    },
+    {"getyx", PyCursesWindow_getyx, METH_NOARGS,
+     "getyx($self, /)\n--\n\n"
+     "Return a tuple (y, x) of the current cursor position."},
     _CURSES_WINDOW_HLINE_METHODDEF
-    {"idcok",           PyCursesWindow_idcok, METH_VARARGS},
-    {"idlok",           PyCursesWindow_idlok, METH_VARARGS},
+    {"idcok", PyCursesWindow_idcok, METH_VARARGS,
+     "idcok($self, flag, /)\n--\n\n"
+     "Enable or disable the hardware insert/delete character feature."},
+    {"idlok", PyCursesWindow_idlok, METH_VARARGS,
+     "idlok($self, flag, /)\n--\n\n"
+     "Enable or disable the hardware insert/delete line feature."},
 #ifdef HAVE_CURSES_IMMEDOK
-    {"immedok",         PyCursesWindow_immedok, METH_VARARGS},
+    {"immedok", PyCursesWindow_immedok, METH_VARARGS,
+     "immedok($self, flag, /)\n--\n\n"
+     "If flag is true, refresh the window on every change to it."},
 #endif
     _CURSES_WINDOW_INCH_METHODDEF
     _CURSES_WINDOW_INSCH_METHODDEF
-    {"insdelln",        PyCursesWindow_winsdelln, METH_VARARGS},
-    {"insertln",        PyCursesWindow_winsertln, METH_NOARGS},
+    {"insdelln", PyCursesWindow_winsdelln, METH_VARARGS,
+     "insdelln($self, nlines, /)\n--\n\n"
+     "Insert (nlines > 0) or delete (nlines < 0) lines above the cursor."},
+    {"insertln", PyCursesWindow_winsertln, METH_NOARGS,
+     "insertln($self, /)\n--\n\n"
+     "Insert a blank line under the cursor; move following lines down."},
     _CURSES_WINDOW_INSNSTR_METHODDEF
     _CURSES_WINDOW_INSSTR_METHODDEF
-    {"instr",           PyCursesWindow_InStr, METH_VARARGS},
+    {
+        "instr", PyCursesWindow_instr, METH_VARARGS,
+        _curses_window_instr__doc__
+    },
     _CURSES_WINDOW_IS_LINETOUCHED_METHODDEF
-    {"is_wintouched",   PyCursesWindow_is_wintouched, METH_NOARGS},
-    {"keypad",          PyCursesWindow_keypad, METH_VARARGS},
-    {"leaveok",         PyCursesWindow_leaveok, METH_VARARGS},
-    {"move",            PyCursesWindow_wmove, METH_VARARGS},
-    {"mvderwin",        PyCursesWindow_mvderwin, METH_VARARGS},
-    {"mvwin",           PyCursesWindow_mvwin, METH_VARARGS},
-    {"nodelay",         PyCursesWindow_nodelay, METH_VARARGS},
-    {"notimeout",       PyCursesWindow_notimeout, METH_VARARGS},
+    {"is_wintouched", PyCursesWindow_is_wintouched, METH_NOARGS,
+     "is_wintouched($self, /)\n--\n\n"
+     "Return True if the window changed since the last refresh()."},
+    {"keypad", PyCursesWindow_keypad, METH_VARARGS,
+     "keypad($self, flag, /)\n--\n\n"
+     "Interpret escape sequences for special keys if flag is true."},
+    {"leaveok", PyCursesWindow_leaveok, METH_VARARGS,
+     "leaveok($self, flag, /)\n--\n\n"
+     "If flag is true, leave the cursor where the update leaves it."},
+    {"move", PyCursesWindow_wmove, METH_VARARGS,
+     "move($self, new_y, new_x, /)\n--\n\n"
+     "Move the cursor to (new_y, new_x)."},
+    {"mvderwin", PyCursesWindow_mvderwin, METH_VARARGS,
+     "mvderwin($self, y, x, /)\n--\n\n"
+     "Move the window inside its parent window."},
+    {"mvwin", PyCursesWindow_mvwin, METH_VARARGS,
+     "mvwin($self, new_y, new_x, /)\n--\n\n"
+     "Move the window so its upper-left corner is at (new_y, new_x)."},
+    {"nodelay", PyCursesWindow_nodelay, METH_VARARGS,
+     "nodelay($self, flag, /)\n--\n\n"
+     "If flag is true, getch() becomes non-blocking."},
+    {"notimeout", PyCursesWindow_notimeout, METH_VARARGS,
+     "notimeout($self, flag, /)\n--\n\n"
+     "If flag is true, do not time out escape sequences."},
     _CURSES_WINDOW_NOUTREFRESH_METHODDEF
     _CURSES_WINDOW_OVERLAY_METHODDEF
     _CURSES_WINDOW_OVERWRITE_METHODDEF
     _CURSES_WINDOW_PUTWIN_METHODDEF
     _CURSES_WINDOW_REDRAWLN_METHODDEF
-    {"redrawwin",       PyCursesWindow_redrawwin, METH_NOARGS},
+    {"redrawwin", PyCursesWindow_redrawwin, METH_NOARGS,
+     "redrawwin($self, /)\n--\n\n"
+     "Mark the entire window for redraw on the next refresh()."},
     _CURSES_WINDOW_REFRESH_METHODDEF
 #ifndef STRICT_SYSV_CURSES
-    {"resize",          PyCursesWindow_wresize, METH_VARARGS},
+    {"resize", PyCursesWindow_wresize, METH_VARARGS,
+     "resize($self, nlines, ncols, /)\n--\n\n"
+     "Resize the window to nlines rows and ncols columns."},
 #endif
     _CURSES_WINDOW_SCROLL_METHODDEF
-    {"scrollok",        PyCursesWindow_scrollok, METH_VARARGS},
+    {"scrollok", PyCursesWindow_scrollok, METH_VARARGS,
+     "scrollok($self, flag, /)\n--\n\n"
+     "Control whether the window scrolls when the cursor moves off it."},
     _CURSES_WINDOW_SETSCRREG_METHODDEF
-    {"standend",        PyCursesWindow_wstandend, METH_NOARGS},
-    {"standout",        PyCursesWindow_wstandout, METH_NOARGS},
+    {"standend", PyCursesWindow_wstandend, METH_NOARGS,
+     "standend($self, /)\n--\n\n"
+     "Turn off the standout attribute."},
+    {"standout", PyCursesWindow_wstandout, METH_NOARGS,
+     "standout($self, /)\n--\n\n"
+     "Turn on the A_STANDOUT attribute."},
     {"subpad",          _curses_window_subwin, METH_VARARGS, _curses_window_subwin__doc__},
     _CURSES_WINDOW_SUBWIN_METHODDEF
-    {"syncdown",        PyCursesWindow_wsyncdown, METH_NOARGS},
+    {"syncdown", PyCursesWindow_wsyncdown, METH_NOARGS,
+     "syncdown($self, /)\n--\n\n"
+     "Touch each location changed in any ancestor of the window."},
 #ifdef HAVE_CURSES_SYNCOK
-    {"syncok",          PyCursesWindow_syncok, METH_VARARGS},
+    {"syncok", PyCursesWindow_syncok, METH_VARARGS,
+     "syncok($self, flag, /)\n--\n\n"
+     "If flag is true, call syncup() on every change to the window."},
 #endif
-    {"syncup",          PyCursesWindow_wsyncup, METH_NOARGS},
-    {"timeout",         PyCursesWindow_wtimeout, METH_VARARGS},
+    {"syncup", PyCursesWindow_wsyncup, METH_NOARGS,
+     "syncup($self, /)\n--\n\n"
+     "Touch locations in ancestors that changed in this window."},
+    {"timeout", PyCursesWindow_wtimeout, METH_VARARGS,
+     "timeout($self, delay, /)\n--\n\n"
+     "Set blocking or non-blocking read behavior for the window."},
     _CURSES_WINDOW_TOUCHLINE_METHODDEF
-    {"touchwin",        PyCursesWindow_touchwin, METH_NOARGS},
-    {"untouchwin",      PyCursesWindow_untouchwin, METH_NOARGS},
+    {"touchwin", PyCursesWindow_touchwin, METH_NOARGS,
+     "touchwin($self, /)\n--\n\n"
+     "Mark the whole window as changed."},
+    {"untouchwin", PyCursesWindow_untouchwin, METH_NOARGS,
+     "untouchwin($self, /)\n--\n\n"
+     "Mark all lines in the window as unchanged since last refresh()."},
     _CURSES_WINDOW_VLINE_METHODDEF
     {NULL,                  NULL}   /* sentinel */
 };
@@ -2974,12 +3132,15 @@ static PyType_Spec PyCursesWindow_Type_spec = {
  *
  * These macros should only be used for generating the body of
  * the module's methods since they need a module reference.
+ *
+ * The Python function name must be the same as the curses function name (X).
  */
 
-#define NoArgNoReturnFunctionBody(X) \
-{ \
-  PyCursesStatefulInitialised(module); \
-  return curses_check_err(module, X(), # X, NULL); }
+#define NoArgNoReturnFunctionBody(X)                    \
+{                                                       \
+    PyCursesStatefulInitialised(module);                \
+    return curses_check_err(module, X(), # X, NULL);    \
+}
 
 #define NoArgOrFlagNoReturnFunctionBody(X, FLAG)            \
 {                                                           \
@@ -2997,26 +3158,40 @@ static PyType_Spec PyCursesWindow_Type_spec = {
     return curses_check_err(module, rtn, funcname, # X);    \
 }
 
-#define NoArgReturnIntFunctionBody(X) \
-{ \
- PyCursesStatefulInitialised(module); \
- return PyLong_FromLong((long) X()); }
+#define NoArgReturnIntFunctionBody(X)           \
+{                                               \
+    PyCursesStatefulInitialised(module);        \
+    int rtn = X();                              \
+    if (rtn == ERR) {                           \
+        curses_set_error(module, # X, NULL);    \
+        return NULL;                            \
+    }                                           \
+    return PyLong_FromLong(rtn);                \
+}
 
-#define NoArgReturnStringFunctionBody(X) \
-{ \
-  PyCursesStatefulInitialised(module); \
-  return PyBytes_FromString(X()); }
+#define NoArgReturnStringFunctionBody(X)            \
+{                                                   \
+    PyCursesStatefulInitialised(module);            \
+    const char *res = X();                          \
+    if (res == NULL) {                              \
+        curses_set_null_error(module, # X, NULL);   \
+        return NULL;                                \
+    }                                               \
+    return PyBytes_FromString(res);                 \
+}
 
-#define NoArgTrueFalseFunctionBody(X) \
-{ \
-  PyCursesStatefulInitialised(module); \
-  return PyBool_FromLong(X()); }
+#define NoArgTrueFalseFunctionBody(X)       \
+{                                           \
+    PyCursesStatefulInitialised(module);    \
+    return PyBool_FromLong(X());            \
+}
 
-#define NoArgNoReturnVoidFunctionBody(X) \
-{ \
-  PyCursesStatefulInitialised(module); \
-  X(); \
-  Py_RETURN_NONE; }
+#define NoArgNoReturnVoidFunctionBody(X)    \
+{                                           \
+  PyCursesStatefulInitialised(module);      \
+  X();                                      \
+  Py_RETURN_NONE;                           \
+}
 
 /*********************************************************************
  Global Functions
@@ -3026,15 +3201,43 @@ static PyType_Spec PyCursesWindow_Type_spec = {
 /*[clinic input]
 _curses.filter
 
+Restrict screen updates to the current line.
+
+Must be called before initscr().  Afterwards curses confines the cursor
+and screen updates to a single line, which is useful for enabling
+character-at-a-time line editing without touching the rest of the
+screen.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_filter_impl(PyObject *module)
-/*[clinic end generated code: output=fb5b8a3642eb70b5 input=668c75a6992d3624]*/
+/*[clinic end generated code: output=fb5b8a3642eb70b5 input=e3c64d6ab2106132]*/
 {
     /* not checking for PyCursesInitialised here since filter() must
        be called before initscr() */
     filter();
+    Py_RETURN_NONE;
+}
+#endif
+
+#ifdef HAVE_CURSES_NOFILTER
+/*[clinic input]
+_curses.nofilter
+
+Undo the effect of a preceding filter() call.
+
+Must be called before initscr().  It restores the normal behaviour
+disabled by filter(), so that the next initscr() uses the full screen
+rather than a single line.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_nofilter_impl(PyObject *module)
+/*[clinic end generated code: output=d95ca4d48a6bdbdf input=58aea83b1a5c969f]*/
+{
+    /* not checking for PyCursesInitialised here since nofilter() must
+       be called before initscr() */
+    nofilter();
     Py_RETURN_NONE;
 }
 #endif
@@ -3062,6 +3265,7 @@ _curses_beep_impl(PyObject *module)
 NoArgNoReturnFunctionBody(beep)
 
 /*[clinic input]
+@permit_long_summary
 _curses.can_change_color
 
 Return True if the programmer can change the colors displayed by the terminal.
@@ -3069,7 +3273,7 @@ Return True if the programmer can change the colors displayed by the terminal.
 
 static PyObject *
 _curses_can_change_color_impl(PyObject *module)
-/*[clinic end generated code: output=359df8c3c77d8bf1 input=d7718884de0092f2]*/
+/*[clinic end generated code: output=359df8c3c77d8bf1 input=8315c364ba1e5b4c]*/
 NoArgTrueFalseFunctionBody(can_change_color)
 
 /*[clinic input]
@@ -3081,16 +3285,17 @@ _curses.cbreak
 
 Enter cbreak mode.
 
-In cbreak mode (sometimes called "rare" mode) normal tty line buffering is
-turned off and characters are available to be read one by one.  However,
-unlike raw mode, special characters (interrupt, quit, suspend, and flow
-control) retain their effects on the tty driver and calling program.
-Calling first raw() then cbreak() leaves the terminal in cbreak mode.
+In cbreak mode (sometimes called "rare" mode) normal tty line buffering
+is turned off and characters are available to be read one by one.
+However, unlike raw mode, special characters (interrupt, quit, suspend,
+and flow control) retain their effects on the tty driver and calling
+program.  Calling first raw() then cbreak() leaves the terminal in
+cbreak mode.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_cbreak_impl(PyObject *module, int flag)
-/*[clinic end generated code: output=9f9dee9664769751 input=c7d0bddda93016c1]*/
+/*[clinic end generated code: output=9f9dee9664769751 input=42d81687f11ddbf3]*/
 NoArgOrFlagNoReturnFunctionBody(cbreak, flag)
 
 /*[clinic input]
@@ -3102,13 +3307,14 @@ _curses.color_content
 
 Return the red, green, and blue (RGB) components of the specified color.
 
-A 3-tuple is returned, containing the R, G, B values for the given color,
-which will be between 0 (no component) and 1000 (maximum amount of component).
+A 3-tuple is returned, containing the R, G, B values for the given
+color, which will be between 0 (no component) and 1000 (maximum amount
+of component).
 [clinic start generated code]*/
 
 static PyObject *
 _curses_color_content_impl(PyObject *module, int color_number)
-/*[clinic end generated code: output=17b466df7054e0de input=03b5ed0472662aea]*/
+/*[clinic end generated code: output=17b466df7054e0de input=c95fb50093fa0be0]*/
 {
     _CURSES_COLOR_VAL_TYPE r,g,b;
 
@@ -3134,12 +3340,13 @@ _curses.color_pair
 Return the attribute value for displaying text in the specified color.
 
 This attribute value can be combined with A_STANDOUT, A_REVERSE, and the
-other A_* attributes.  pair_number() is the counterpart to this function.
+other A_* attributes.  pair_number() is the counterpart to this
+function.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_color_pair_impl(PyObject *module, int pair_number)
-/*[clinic end generated code: output=60718abb10ce9feb input=6034e9146f343802]*/
+/*[clinic end generated code: output=60718abb10ce9feb input=cf74bb81d3cc3370]*/
 {
     PyCursesStatefulInitialised(module);
     PyCursesStatefulInitialisedColor(module);
@@ -3157,14 +3364,14 @@ _curses.curs_set
 Set the cursor state.
 
 If the terminal supports the visibility requested, the previous cursor
-state is returned; otherwise, an exception is raised.  On many terminals,
-the "visible" mode is an underline cursor and the "very visible" mode is
-a block cursor.
+state is returned; otherwise, an exception is raised.  On many
+terminals, the "visible" mode is an underline cursor and the "very
+visible" mode is a block cursor.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_curs_set_impl(PyObject *module, int visibility)
-/*[clinic end generated code: output=ee8e62483b1d6cd4 input=81a7924a65d29504]*/
+/*[clinic end generated code: output=ee8e62483b1d6cd4 input=e010767a328f322b]*/
 {
     int erg;
 
@@ -3199,14 +3406,15 @@ _curses.def_shell_mode
 
 Save the current terminal mode as the "shell" mode.
 
-The "shell" mode is the mode when the running program is not using curses.
+The "shell" mode is the mode when the running program is not using
+curses.
 
 Subsequent calls to reset_shell_mode() will restore this mode.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_def_shell_mode_impl(PyObject *module)
-/*[clinic end generated code: output=d6e42f5c768f860f input=5ead21f6f0baa894]*/
+/*[clinic end generated code: output=d6e42f5c768f860f input=3809f85615c0b693]*/
 NoArgNoReturnFunctionBody(def_shell_mode)
 
 /*[clinic input]
@@ -3248,12 +3456,13 @@ _curses.echo
 
 Enter echo mode.
 
-In echo mode, each character input is echoed to the screen as it is entered.
+In echo mode, each character input is echoed to the screen as it is
+entered.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_echo_impl(PyObject *module, int flag)
-/*[clinic end generated code: output=03acb2ddfa6c8729 input=86cd4d5bb1d569c0]*/
+/*[clinic end generated code: output=03acb2ddfa6c8729 input=b4e9064326da9da4]*/
 NoArgOrFlagNoReturnFunctionBody(echo, flag)
 
 /*[clinic input]
@@ -3291,12 +3500,13 @@ _curses.flash
 
 Flash the screen.
 
-That is, change it to reverse-video and then change it back in a short interval.
+That is, change it to reverse-video and then change it back in a short
+interval.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_flash_impl(PyObject *module)
-/*[clinic end generated code: output=488b8a0ebd9ea9b8 input=02fdfb06c8fc3171]*/
+/*[clinic end generated code: output=488b8a0ebd9ea9b8 input=90878e305432add9]*/
 NoArgNoReturnFunctionBody(flash)
 
 /*[clinic input]
@@ -3304,13 +3514,13 @@ _curses.flushinp
 
 Flush all input buffers.
 
-This throws away any typeahead that has been typed by the user and has not
-yet been processed by the program.
+This throws away any typeahead that has been typed by the user and has
+not yet been processed by the program.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_flushinp_impl(PyObject *module)
-/*[clinic end generated code: output=7e7a1fc1473960f5 input=59d042e705cef5ec]*/
+/*[clinic end generated code: output=7e7a1fc1473960f5 input=3a63c7213be8043c]*/
 NoArgNoReturnVoidFunctionBody(flushinp)
 
 #ifdef getsyx
@@ -3496,6 +3706,7 @@ _curses_has_colors_impl(PyObject *module)
 NoArgTrueFalseFunctionBody(has_colors)
 
 /*[clinic input]
+@permit_long_summary
 _curses.has_ic
 
 Return True if the terminal has insert- and delete-character capabilities.
@@ -3503,7 +3714,7 @@ Return True if the terminal has insert- and delete-character capabilities.
 
 static PyObject *
 _curses_has_ic_impl(PyObject *module)
-/*[clinic end generated code: output=6be24da9cb1268fe input=9bc2d3a797cc7324]*/
+/*[clinic end generated code: output=6be24da9cb1268fe input=e37fa080d879f7a9]*/
 NoArgTrueFalseFunctionBody(has_ic)
 
 /*[clinic input]
@@ -3519,6 +3730,7 @@ NoArgTrueFalseFunctionBody(has_il)
 
 #ifdef HAVE_CURSES_HAS_KEY
 /*[clinic input]
+@permit_long_summary
 _curses.has_key
 
     key: int
@@ -3530,7 +3742,7 @@ Return True if the current terminal type recognizes a key with that value.
 
 static PyObject *
 _curses_has_key_impl(PyObject *module, int key)
-/*[clinic end generated code: output=19ad48319414d0b1 input=78bd44acf1a4997c]*/
+/*[clinic end generated code: output=19ad48319414d0b1 input=046ac6c72bbc9587]*/
 {
     PyCursesStatefulInitialised(module);
 
@@ -3585,13 +3797,14 @@ _curses.init_pair
 
 Change the definition of a color-pair.
 
-If the color-pair was previously initialized, the screen is refreshed and
-all occurrences of that color-pair are changed to the new definition.
+If the color-pair was previously initialized, the screen is refreshed
+and all occurrences of that color-pair are changed to the new
+definition.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_init_pair_impl(PyObject *module, int pair_number, int fg, int bg)
-/*[clinic end generated code: output=a0bba03d2bbc3ee6 input=54b421b44c12c389]*/
+/*[clinic end generated code: output=a0bba03d2bbc3ee6 input=5486c3a105130dae]*/
 {
     PyCursesStatefulInitialised(module);
     PyCursesStatefulInitialisedColor(module);
@@ -3612,6 +3825,21 @@ _curses_init_pair_impl(PyObject *module, int pair_number, int fg, int bg)
     Py_RETURN_NONE;
 }
 
+/* Refresh the private copy of the screen encoding from a freshly created
+   stdscr window object.  Returns 0 on success, -1 with an exception set. */
+static int
+curses_update_screen_encoding(PyObject *winobj)
+{
+    char *copy = _PyMem_Strdup(((PyCursesWindowObject *)winobj)->encoding);
+    if (copy == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    PyMem_Free(curses_screen_encoding);
+    curses_screen_encoding = copy;
+    return 0;
+}
+
 /*[clinic input]
 _curses.initscr
 
@@ -3627,9 +3855,21 @@ _curses_initscr_impl(PyObject *module)
     WINDOW *win;
 
     if (curses_initscr_called) {
-        wrefresh(stdscr);
         cursesmodule_state *state = get_cursesmodule_state(module);
-        return PyCursesWindow_New(state, stdscr, NULL, NULL);
+        int code = wrefresh(stdscr);
+        if (code == ERR) {
+            _curses_set_null_error(state, "wrefresh", "initscr");
+            return NULL;
+        }
+        PyObject *winobj = PyCursesWindow_New(state, stdscr, NULL, NULL);
+        if (winobj == NULL) {
+            return NULL;
+        }
+        if (curses_update_screen_encoding(winobj) < 0) {
+            Py_DECREF(winobj);
+            return NULL;
+        }
+        return winobj;
     }
 
     win = initscr();
@@ -3736,7 +3976,10 @@ _curses_initscr_impl(PyObject *module)
     if (winobj == NULL) {
         return NULL;
     }
-    curses_screen_encoding = ((PyCursesWindowObject *)winobj)->encoding;
+    if (curses_update_screen_encoding(winobj) < 0) {
+        Py_DECREF(winobj);
+        return NULL;
+    }
     return winobj;
 }
 
@@ -3762,7 +4005,7 @@ _curses_setupterm_impl(PyObject *module, const char *term, int fd)
     if (fd == -1) {
         PyObject* sys_stdout;
 
-        if (_PySys_GetOptionalAttrString("stdout", &sys_stdout) < 0) {
+        if (PySys_GetOptionalAttrString("stdout", &sys_stdout) < 0) {
             return NULL;
         }
 
@@ -3807,14 +4050,14 @@ _curses.get_escdelay
 
 Gets the curses ESCDELAY setting.
 
-Gets the number of milliseconds to wait after reading an escape character,
-to distinguish between an individual escape character entered on the
-keyboard from escape sequences sent by cursor and function keys.
+Gets the number of milliseconds to wait after reading an escape
+character, to distinguish between an individual escape character entered
+on the keyboard from escape sequences sent by cursor and function keys.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_get_escdelay_impl(PyObject *module)
-/*[clinic end generated code: output=222fa1a822555d60 input=be2d5b3dd974d0a4]*/
+/*[clinic end generated code: output=222fa1a822555d60 input=b39eeae4b8f169ab]*/
 {
     return PyLong_FromLong(ESCDELAY);
 }
@@ -3826,14 +4069,14 @@ _curses.set_escdelay
 
 Sets the curses ESCDELAY setting.
 
-Sets the number of milliseconds to wait after reading an escape character,
-to distinguish between an individual escape character entered on the
-keyboard from escape sequences sent by cursor and function keys.
+Sets the number of milliseconds to wait after reading an escape
+character, to distinguish between an individual escape character entered
+on the keyboard from escape sequences sent by cursor and function keys.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_set_escdelay_impl(PyObject *module, int ms)
-/*[clinic end generated code: output=43818efbf7980ac4 input=7796fe19f111e250]*/
+/*[clinic end generated code: output=43818efbf7980ac4 input=cc2529bcdda3b06c]*/
 {
     if (ms <= 0) {
         PyErr_SetString(PyExc_ValueError, "ms must be > 0");
@@ -3848,13 +4091,13 @@ _curses.get_tabsize
 
 Gets the curses TABSIZE setting.
 
-Gets the number of columns used by the curses library when converting a tab
-character to spaces as it adds the tab to a window.
+Gets the number of columns used by the curses library when converting
+a tab character to spaces as it adds the tab to a window.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_get_tabsize_impl(PyObject *module)
-/*[clinic end generated code: output=7e9e51fb6126fbdf input=74af86bf6c9f5d7e]*/
+/*[clinic end generated code: output=7e9e51fb6126fbdf input=58bdaacb337c103b]*/
 {
     return PyLong_FromLong(TABSIZE);
 }
@@ -3866,13 +4109,13 @@ _curses.set_tabsize
 
 Sets the curses TABSIZE setting.
 
-Sets the number of columns used by the curses library when converting a tab
-character to spaces as it adds the tab to a window.
+Sets the number of columns used by the curses library when converting
+a tab character to spaces as it adds the tab to a window.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_set_tabsize_impl(PyObject *module, int size)
-/*[clinic end generated code: output=c1de5a76c0daab1e input=78cba6a3021ad061]*/
+/*[clinic end generated code: output=c1de5a76c0daab1e input=34c1be9a78cd28a2]*/
 {
     if (size <= 0) {
         PyErr_SetString(PyExc_ValueError, "size must be > 0");
@@ -3889,11 +4132,16 @@ _curses.intrflush
     flag: bool
     /
 
+Control flushing of the output buffer when an interrupt key is pressed.
+
+If flag is true, pressing an interrupt key (interrupt, break, or quit)
+flushes all output in the terminal driver queue.  If flag is false, no
+flushing is done.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_intrflush_impl(PyObject *module, int flag)
-/*[clinic end generated code: output=c1986df35e999a0f input=c65fe2ef973fe40a]*/
+/*[clinic end generated code: output=c1986df35e999a0f input=66588c2bccc7e8fa]*/
 {
     PyCursesStatefulInitialised(module);
 
@@ -3913,6 +4161,7 @@ NoArgTrueFalseFunctionBody(isendwin)
 
 #ifdef HAVE_CURSES_IS_TERM_RESIZED
 /*[clinic input]
+@permit_long_summary
 _curses.is_term_resized
 
     nlines: int
@@ -3926,7 +4175,7 @@ Return True if resize_term() would modify the window structure, False otherwise.
 
 static PyObject *
 _curses_is_term_resized_impl(PyObject *module, int nlines, int ncols)
-/*[clinic end generated code: output=aafe04afe50f1288 input=ca9c0bd0fb8ab444]*/
+/*[clinic end generated code: output=aafe04afe50f1288 input=5792a3f40cecb010]*/
 {
     PyCursesStatefulInitialised(module);
 
@@ -3983,13 +4232,13 @@ _curses.longname
 
 Return the terminfo long name field describing the current terminal.
 
-The maximum length of a verbose description is 128 characters.  It is defined
-only after the call to initscr().
+The maximum length of a verbose description is 128 characters.  It is
+defined only after the call to initscr().
 [clinic start generated code]*/
 
 static PyObject *
 _curses_longname_impl(PyObject *module)
-/*[clinic end generated code: output=fdf30433727ef568 input=84c3f20201b1098e]*/
+/*[clinic end generated code: output=fdf30433727ef568 input=a924fabba0de78a6]*/
 NoArgReturnStringFunctionBody(longname)
 
 /*[clinic input]
@@ -4024,13 +4273,13 @@ _curses.mouseinterval
 Set and retrieve the maximum time between press and release in a click.
 
 Set the maximum time that can elapse between press and release events in
-order for them to be recognized as a click, and return the previous interval
-value.
+order for them to be recognized as a click, and return the previous
+interval value.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_mouseinterval_impl(PyObject *module, int interval)
-/*[clinic end generated code: output=c4f5ff04354634c5 input=75aaa3f0db10ac4e]*/
+/*[clinic end generated code: output=c4f5ff04354634c5 input=b90249254389c080]*/
 {
     PyCursesStatefulInitialised(module);
     int value = mouseinterval(interval);
@@ -4047,17 +4296,17 @@ _curses.mousemask
     newmask: unsigned_long(bitwise=True)
     /
 
-Set the mouse events to be reported, and return a tuple (availmask, oldmask).
+Set the mouse events to be reported, and return (availmask, oldmask).
 
 Return a tuple (availmask, oldmask).  availmask indicates which of the
-specified mouse events can be reported; on complete failure it returns 0.
-oldmask is the previous value of the given window's mouse event mask.
-If this function is never called, no mouse events are ever reported.
+specified mouse events can be reported; on complete failure it returns
+0.  oldmask is the previous value of the mouse event mask.  If this
+function is never called, no mouse events are ever reported.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_mousemask_impl(PyObject *module, unsigned long newmask)
-/*[clinic end generated code: output=9406cf1b8a36e485 input=bdf76b7568a3c541]*/
+/*[clinic end generated code: output=9406cf1b8a36e485 input=b8a9a4ccbce633f4]*/
 {
     mmask_t oldmask, availmask;
 
@@ -4139,14 +4388,14 @@ _curses.newwin
 
 Return a new window.
 
-By default, the window will extend from the specified position to the lower
-right corner of the screen.
+By default, the window will extend from the specified position to the
+lower right corner of the screen.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_newwin_impl(PyObject *module, int nlines, int ncols,
                     int group_right_1, int begin_y, int begin_x)
-/*[clinic end generated code: output=c1e0a8dc8ac2826c input=29312c15a72a003d]*/
+/*[clinic end generated code: output=c1e0a8dc8ac2826c input=a1517cbfea4ab24b]*/
 {
     WINDOW *win;
 
@@ -4171,13 +4420,14 @@ _curses.nl
 
 Enter newline mode.
 
-This mode translates the return key into newline on input, and translates
-newline into return and line-feed on output.  Newline mode is initially on.
+This mode translates the return key into newline on input, and
+translates newline into return and line-feed on output.  Newline mode
+is initially on.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_nl_impl(PyObject *module, int flag)
-/*[clinic end generated code: output=b39cc0ffc9015003 input=18e3e9c6e8cfcf6f]*/
+/*[clinic end generated code: output=b39cc0ffc9015003 input=3fb21dcf55521ee4]*/
 NoArgOrFlagNoReturnFunctionBody(nl, flag)
 
 /*[clinic input]
@@ -4211,13 +4461,13 @@ _curses.nonl
 
 Leave newline mode.
 
-Disable translation of return into newline on input, and disable low-level
-translation of newline into newline/return on output.
+Disable translation of return into newline on input, and disable
+low-level translation of newline into newline/return on output.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_nonl_impl(PyObject *module)
-/*[clinic end generated code: output=99e917e9715770c6 input=9d37dd122d3022fc]*/
+/*[clinic end generated code: output=99e917e9715770c6 input=75cce08e4b6b3ef1]*/
 NoArgNoReturnFunctionBody(nonl)
 
 /*[clinic input]
@@ -4248,6 +4498,7 @@ _curses_noraw_impl(PyObject *module)
 NoArgNoReturnFunctionBody(noraw)
 
 /*[clinic input]
+@permit_long_summary
 _curses.pair_content
 
     pair_number: pair
@@ -4259,7 +4510,7 @@ Return a tuple (fg, bg) containing the colors for the requested color pair.
 
 static PyObject *
 _curses_pair_content_impl(PyObject *module, int pair_number)
-/*[clinic end generated code: output=4a726dd0e6885f3f input=03970f840fc7b739]*/
+/*[clinic end generated code: output=4a726dd0e6885f3f input=faede9e26f1f2ca4]*/
 {
     _CURSES_COLOR_NUM_TYPE f, b;
 
@@ -4283,6 +4534,7 @@ _curses_pair_content_impl(PyObject *module, int pair_number)
 }
 
 /*[clinic input]
+@permit_long_summary
 _curses.pair_number
 
     attr: int
@@ -4295,7 +4547,7 @@ color_pair() is the counterpart to this function.
 
 static PyObject *
 _curses_pair_number_impl(PyObject *module, int attr)
-/*[clinic end generated code: output=85bce7d65c0aa3f4 input=d478548e33f5e61a]*/
+/*[clinic end generated code: output=85bce7d65c0aa3f4 input=b11152a78c2f9abf]*/
 {
     PyCursesStatefulInitialised(module);
     PyCursesStatefulInitialisedColor(module);
@@ -4304,6 +4556,7 @@ _curses_pair_number_impl(PyObject *module, int attr)
 }
 
 /*[clinic input]
+@permit_long_summary
 _curses.putp
 
     string: str(accept={robuffer})
@@ -4316,7 +4569,7 @@ Note that the output of putp() always goes to standard output.
 
 static PyObject *
 _curses_putp_impl(PyObject *module, const char *string)
-/*[clinic end generated code: output=e98081d1b8eb5816 input=1601faa828b44cb3]*/
+/*[clinic end generated code: output=e98081d1b8eb5816 input=2f3b9e0f22829ee7]*/
 {
     return curses_check_err(module, putp(string), "putp", NULL);
 }
@@ -4405,11 +4658,14 @@ error:
 /*[clinic input]
 _curses.update_lines_cols
 
+Update the LINES and COLS module variables.
+
+This is useful for detecting manual screen resize.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_update_lines_cols_impl(PyObject *module)
-/*[clinic end generated code: output=423f2b1e63ed0f75 input=5f065ab7a28a5d90]*/
+/*[clinic end generated code: output=423f2b1e63ed0f75 input=1d8ea7c356b61a8b]*/
 {
     if (!update_lines_cols(module)) {
         return NULL;
@@ -4429,16 +4685,17 @@ _curses.raw
 Enter raw mode.
 
 In raw mode, normal line buffering and processing of interrupt, quit,
-suspend, and flow control keys are turned off; characters are presented to
-curses input functions one by one.
+suspend, and flow control keys are turned off; characters are presented
+to curses input functions one by one.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_raw_impl(PyObject *module, int flag)
-/*[clinic end generated code: output=a750e4b342be015b input=4b447701389fb4df]*/
+/*[clinic end generated code: output=a750e4b342be015b input=18a7de7eef16987a]*/
 NoArgOrFlagNoReturnFunctionBody(raw, flag)
 
 /*[clinic input]
+@permit_long_summary
 _curses.reset_prog_mode
 
 Restore the terminal to "program" mode, as previously saved by def_prog_mode().
@@ -4446,10 +4703,11 @@ Restore the terminal to "program" mode, as previously saved by def_prog_mode().
 
 static PyObject *
 _curses_reset_prog_mode_impl(PyObject *module)
-/*[clinic end generated code: output=15eb765abf0b6575 input=3d82bea2b3243471]*/
+/*[clinic end generated code: output=15eb765abf0b6575 input=a8b44b5261c8cf3a]*/
 NoArgNoReturnFunctionBody(reset_prog_mode)
 
 /*[clinic input]
+@permit_long_summary
 _curses.reset_shell_mode
 
 Restore the terminal to "shell" mode, as previously saved by def_shell_mode().
@@ -4457,7 +4715,7 @@ Restore the terminal to "shell" mode, as previously saved by def_shell_mode().
 
 static PyObject *
 _curses_reset_shell_mode_impl(PyObject *module)
-/*[clinic end generated code: output=0238de2962090d33 input=1c738fa64bd1a24f]*/
+/*[clinic end generated code: output=0238de2962090d33 input=f5224034a2c95931]*/
 NoArgNoReturnFunctionBody(reset_shell_mode)
 
 /*[clinic input]
@@ -4483,13 +4741,13 @@ _curses.resizeterm
 
 Resize the standard and current windows to the specified dimensions.
 
-Adjusts other bookkeeping data used by the curses library that record the
-window dimensions (in particular the SIGWINCH handler).
+Adjusts other bookkeeping data used by the curses library that record
+the window dimensions (in particular the SIGWINCH handler).
 [clinic start generated code]*/
 
 static PyObject *
 _curses_resizeterm_impl(PyObject *module, short nlines, short ncols)
-/*[clinic end generated code: output=4de3abab50c67f02 input=414e92a63e3e9899]*/
+/*[clinic end generated code: output=4de3abab50c67f02 input=7f0f077df2da1cf5]*/
 {
     PyObject *result;
     int code;
@@ -4522,15 +4780,16 @@ _curses.resize_term
 Backend function used by resizeterm(), performing most of the work.
 
 When resizing the windows, resize_term() blank-fills the areas that are
-extended.  The calling application should fill in these areas with appropriate
-data.  The resize_term() function attempts to resize all windows.  However,
-due to the calling convention of pads, it is not possible to resize these
-without additional interaction with the application.
+extended.  The calling application should fill in these areas with
+appropriate data.  The resize_term() function attempts to resize all
+windows.  However, due to the calling convention of pads, it is not
+possible to resize these without additional interaction with the
+application.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_resize_term_impl(PyObject *module, short nlines, short ncols)
-/*[clinic end generated code: output=46c6d749fa291dbd input=276afa43d8ea7091]*/
+/*[clinic end generated code: output=46c6d749fa291dbd input=ff4baaf2320c8ac9]*/
 {
     PyObject *result;
     int code;
@@ -4588,21 +4847,22 @@ _curses_setsyx_impl(PyObject *module, int y, int x)
 #endif
 
 /*[clinic input]
+@permit_long_summary
 _curses.start_color
 
 Initializes eight basic colors and global variables COLORS and COLOR_PAIRS.
 
-Must be called if the programmer wants to use colors, and before any other
-color manipulation routine is called.  It is good practice to call this
-routine right after initscr().
+Must be called if the programmer wants to use colors, and before any
+other color manipulation routine is called.  It is good practice to call
+this routine right after initscr().
 
-It also restores the colors on the terminal to the values they had when the
-terminal was just turned on.
+It also restores the colors on the terminal to the values they had when
+the terminal was just turned on.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_start_color_impl(PyObject *module)
-/*[clinic end generated code: output=8b772b41d8090ede input=0ca0ecb2b77e1a12]*/
+/*[clinic end generated code: output=8b772b41d8090ede input=7daacc6b6baba643]*/
 {
     PyCursesStatefulInitialised(module);
 
@@ -4649,6 +4909,7 @@ _curses_termattrs_impl(PyObject *module)
 NoArgReturnIntFunctionBody(termattrs)
 
 /*[clinic input]
+@permit_long_summary
 _curses.termname
 
 Return the value of the environment variable TERM, truncated to 14 characters.
@@ -4656,7 +4917,7 @@ Return the value of the environment variable TERM, truncated to 14 characters.
 
 static PyObject *
 _curses_termname_impl(PyObject *module)
-/*[clinic end generated code: output=96375577ebbd67fd input=33c08d000944f33f]*/
+/*[clinic end generated code: output=96375577ebbd67fd input=c34f724d8ce8fc4e]*/
 NoArgReturnStringFunctionBody(termname)
 
 /*[clinic input]
@@ -4690,13 +4951,13 @@ _curses.tigetnum
 
 Return the value of the numeric capability.
 
-The value -2 is returned if capname is not a numeric capability, or -1 if
-it is canceled or absent from the terminal description.
+The value -2 is returned if capname is not a numeric capability, or -1
+if it is canceled or absent from the terminal description.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_tigetnum_impl(PyObject *module, const char *capname)
-/*[clinic end generated code: output=46f8b0a1b5dff42f input=5cdf2f410b109720]*/
+/*[clinic end generated code: output=46f8b0a1b5dff42f input=87a64beec16ae077]*/
 {
     PyCursesStatefulSetupTermCalled(module);
 
@@ -4712,13 +4973,13 @@ _curses.tigetstr
 
 Return the value of the string capability.
 
-None is returned if capname is not a string capability, or is canceled or
-absent from the terminal description.
+None is returned if capname is not a string capability, or is canceled
+or absent from the terminal description.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_tigetstr_impl(PyObject *module, const char *capname)
-/*[clinic end generated code: output=f22b576ad60248f3 input=36644df25c73c0a7]*/
+/*[clinic end generated code: output=f22b576ad60248f3 input=00bf0feda2207724]*/
 {
     PyCursesStatefulSetupTermCalled(module);
 
@@ -4812,7 +5073,12 @@ _curses_unctrl(PyObject *module, PyObject *ch)
     if (!PyCurses_ConvertToChtype(NULL, ch, &ch_))
         return NULL;
 
-    return PyBytes_FromString(unctrl(ch_));
+    const char *res = unctrl(ch_);
+    if (res == NULL) {
+        curses_set_null_error(module, "unctrl", NULL);
+        return NULL;
+    }
+    return PyBytes_FromString(res);
 }
 
 /*[clinic input]
@@ -4918,19 +5184,19 @@ _curses.use_env
 
 Use environment variables LINES and COLUMNS.
 
-If used, this function should be called before initscr() or newterm() are
-called.
+If used, this function should be called before initscr() or newterm()
+are called.
 
-When flag is False, the values of lines and columns specified in the terminfo
-database will be used, even if environment variables LINES and COLUMNS (used
-by default) are set, or if curses is running in a window (in which case
-default behavior would be to use the window size if LINES and COLUMNS are
-not set).
+When flag is False, the values of lines and columns specified in the
+terminfo database will be used, even if environment variables LINES and
+COLUMNS (used by default) are set, or if curses is running in a window
+(in which case default behavior would be to use the window size if LINES
+and COLUMNS are not set).
 [clinic start generated code]*/
 
 static PyObject *
 _curses_use_env_impl(PyObject *module, int flag)
-/*[clinic end generated code: output=b2c445e435c0b164 input=06ac30948f2d78e4]*/
+/*[clinic end generated code: output=b2c445e435c0b164 input=8e8feed746cf7fc1]*/
 {
     use_env(flag);
     Py_RETURN_NONE;
@@ -4958,6 +5224,7 @@ _curses_use_default_colors_impl(PyObject *module)
 }
 
 /*[clinic input]
+@permit_long_summary
 _curses.assume_default_colors
     fg: int
     bg: int
@@ -4973,7 +5240,7 @@ Use this to support transparency in your application.
 
 static PyObject *
 _curses_assume_default_colors_impl(PyObject *module, int fg, int bg)
-/*[clinic end generated code: output=54985397a7d2b3a5 input=7fe301712ef3e9fb]*/
+/*[clinic end generated code: output=54985397a7d2b3a5 input=8945333c09893cf2]*/
 {
     int code;
 
@@ -4981,13 +5248,7 @@ _curses_assume_default_colors_impl(PyObject *module, int fg, int bg)
     PyCursesStatefulInitialisedColor(module);
 
     code = assume_default_colors(fg, bg);
-    if (code != ERR) {
-        Py_RETURN_NONE;
-    } else {
-        cursesmodule_state *state = get_cursesmodule_state(module);
-        PyErr_SetString(state->error, "assume_default_colors() returned ERR");
-        return NULL;
-    }
+    return curses_check_err(module, code, "assume_default_colors", NULL);
 }
 #endif /* STRICT_SYSV_CURSES */
 
@@ -5048,6 +5309,7 @@ make_ncurses_version(PyTypeObject *type)
 #endif /* NCURSES_VERSION */
 
 /*[clinic input]
+@permit_long_summary
 _curses.has_extended_color_support
 
 Return True if the module supports extended colors; otherwise, return False.
@@ -5058,7 +5320,7 @@ that support more than 16 colors (e.g. xterm-256color).
 
 static PyObject *
 _curses_has_extended_color_support_impl(PyObject *module)
-/*[clinic end generated code: output=68f1be2b57d92e22 input=4b905f046e35ee9f]*/
+/*[clinic end generated code: output=68f1be2b57d92e22 input=40d673471c5056f0]*/
 {
     return PyBool_FromLong(_NCURSES_EXTENDED_COLOR_FUNCS);
 }
@@ -5081,6 +5343,7 @@ static PyMethodDef cursesmodule_methods[] = {
     _CURSES_ENDWIN_METHODDEF
     _CURSES_ERASECHAR_METHODDEF
     _CURSES_FILTER_METHODDEF
+    _CURSES_NOFILTER_METHODDEF
     _CURSES_FLASH_METHODDEF
     _CURSES_FLUSHINP_METHODDEF
     _CURSES_GETMOUSE_METHODDEF
@@ -5270,6 +5533,8 @@ static void
 cursesmodule_free(void *mod)
 {
     (void)cursesmodule_clear((PyObject *)mod);
+    PyMem_Free(curses_screen_encoding);
+    curses_screen_encoding = NULL;
     curses_module_loaded = 0;  // allow reloading once garbage-collected
 }
 
@@ -5517,6 +5782,7 @@ cursesmodule_exec(PyObject *module)
 /* Initialization function for the module */
 
 static PyModuleDef_Slot cursesmodule_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, cursesmodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

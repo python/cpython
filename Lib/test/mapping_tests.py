@@ -4,7 +4,7 @@ import collections
 from test import support
 
 
-class BasicTestMappingProtocol(unittest.TestCase):
+class BasicTestImmutableMappingProtocol(unittest.TestCase):
     # This base class can be used to check that an object conforms to the
     # mapping protocol
 
@@ -20,12 +20,9 @@ class BasicTestMappingProtocol(unittest.TestCase):
         """Return an empty mapping object"""
         return self.type2test()
     def _full_mapping(self, data):
-        """Return a mapping object with the value contained in data
+        """Return a mapping object with the values contained in data
         dictionary"""
-        x = self._empty_mapping()
-        for key, value in data.items():
-            x[key] = value
-        return x
+        return self.type2test(data)
 
     def __init__(self, *args, **kw):
         unittest.TestCase.__init__(self, *args, **kw)
@@ -88,6 +85,72 @@ class BasicTestMappingProtocol(unittest.TestCase):
         self.assertEqual(d.get(knownkey, knownvalue), knownvalue)
         self.assertNotIn(knownkey, d)
 
+    def test_constructor(self):
+        self.assertEqual(self._empty_mapping(), self._empty_mapping())
+
+    def test_bool(self):
+        self.assertTrue(not self._empty_mapping())
+        self.assertTrue(self.reference)
+        self.assertFalse(bool(self._empty_mapping()))
+        self.assertTrue(bool(self.reference))
+
+    def test_keys(self):
+        d = self._empty_mapping()
+        self.assertEqual(list(d.keys()), [])
+        d = self.reference
+        self.assertIn(list(self.inmapping.keys())[0], d.keys())
+        self.assertNotIn(list(self.other.keys())[0], d.keys())
+        self.assertRaises(TypeError, d.keys, None)
+
+    def test_values(self):
+        d = self._empty_mapping()
+        self.assertEqual(list(d.values()), [])
+
+        self.assertRaises(TypeError, d.values, None)
+
+    def test_items(self):
+        d = self._empty_mapping()
+        self.assertEqual(list(d.items()), [])
+
+        self.assertRaises(TypeError, d.items, None)
+
+    def test_len(self):
+        d = self._empty_mapping()
+        self.assertEqual(len(d), 0)
+
+    def test_getitem(self):
+        d = self.reference
+        self.assertEqual(d[list(self.inmapping.keys())[0]],
+                         list(self.inmapping.values())[0])
+
+        self.assertRaises(TypeError, d.__getitem__)
+
+    # no test_fromkeys or test_copy as both os.environ and selves don't support it
+
+    def test_get(self):
+        d = self._empty_mapping()
+        self.assertIsNone(d.get(list(self.other.keys())[0]))
+        self.assertEqual(d.get(list(self.other.keys())[0], 3), 3)
+        d = self.reference
+        self.assertIsNone(d.get(list(self.other.keys())[0]))
+        self.assertEqual(d.get(list(self.other.keys())[0], 3), 3)
+        self.assertEqual(d.get(list(self.inmapping.keys())[0]),
+                         list(self.inmapping.values())[0])
+        self.assertEqual(d.get(list(self.inmapping.keys())[0], 3),
+                         list(self.inmapping.values())[0])
+        self.assertRaises(TypeError, d.get)
+        self.assertRaises(TypeError, d.get, None, None, None)
+
+
+class BasicTestMappingProtocol(BasicTestImmutableMappingProtocol):
+    def _full_mapping(self, data):
+        """Return a mapping object with the values contained in data
+        dictionary"""
+        x = self._empty_mapping()
+        for key, value in data.items():
+            x[key] = value
+        return x
+
     def test_write(self):
         # Test for write operations on mapping
         p = self._empty_mapping()
@@ -129,46 +192,6 @@ class BasicTestMappingProtocol(unittest.TestCase):
         self.assertEqual(value, self.reference[key])
         p=self._empty_mapping()
         self.assertRaises(KeyError, p.popitem)
-
-    def test_constructor(self):
-        self.assertEqual(self._empty_mapping(), self._empty_mapping())
-
-    def test_bool(self):
-        self.assertTrue(not self._empty_mapping())
-        self.assertTrue(self.reference)
-        self.assertTrue(bool(self._empty_mapping()) is False)
-        self.assertTrue(bool(self.reference) is True)
-
-    def test_keys(self):
-        d = self._empty_mapping()
-        self.assertEqual(list(d.keys()), [])
-        d = self.reference
-        self.assertIn(list(self.inmapping.keys())[0], d.keys())
-        self.assertNotIn(list(self.other.keys())[0], d.keys())
-        self.assertRaises(TypeError, d.keys, None)
-
-    def test_values(self):
-        d = self._empty_mapping()
-        self.assertEqual(list(d.values()), [])
-
-        self.assertRaises(TypeError, d.values, None)
-
-    def test_items(self):
-        d = self._empty_mapping()
-        self.assertEqual(list(d.items()), [])
-
-        self.assertRaises(TypeError, d.items, None)
-
-    def test_len(self):
-        d = self._empty_mapping()
-        self.assertEqual(len(d), 0)
-
-    def test_getitem(self):
-        d = self.reference
-        self.assertEqual(d[list(self.inmapping.keys())[0]],
-                         list(self.inmapping.values())[0])
-
-        self.assertRaises(TypeError, d.__getitem__)
 
     def test_update(self):
         # mapping argument
@@ -264,22 +287,6 @@ class BasicTestMappingProtocol(unittest.TestCase):
         self.assertRaises(Exc, d.update, badseq())
 
         self.assertRaises(ValueError, d.update, [(1, 2, 3)])
-
-    # no test_fromkeys or test_copy as both os.environ and selves don't support it
-
-    def test_get(self):
-        d = self._empty_mapping()
-        self.assertTrue(d.get(list(self.other.keys())[0]) is None)
-        self.assertEqual(d.get(list(self.other.keys())[0], 3), 3)
-        d = self.reference
-        self.assertTrue(d.get(list(self.other.keys())[0]) is None)
-        self.assertEqual(d.get(list(self.other.keys())[0], 3), 3)
-        self.assertEqual(d.get(list(self.inmapping.keys())[0]),
-                         list(self.inmapping.values())[0])
-        self.assertEqual(d.get(list(self.inmapping.keys())[0], 3),
-                         list(self.inmapping.values())[0])
-        self.assertRaises(TypeError, d.get)
-        self.assertRaises(TypeError, d.get, None, None, None)
 
     def test_setdefault(self):
         d = self._empty_mapping()

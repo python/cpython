@@ -166,6 +166,48 @@ class Test(unittest.TestCase, StructCheckMixin):
         self.assertEqual(s.value, math.pi)
         self.assertEqual(bin(struct.pack(">d", math.pi)), bin(s))
 
+    @unittest.skipUnless(hasattr(ctypes, 'c_float_complex'), "No complex types")
+    def test_endian_float_complex(self):
+        c_float_complex = ctypes.c_float_complex
+        if sys.byteorder == "little":
+            self.assertIs(c_float_complex.__ctype_le__, c_float_complex)
+            self.assertIs(c_float_complex.__ctype_be__.__ctype_le__,
+                          c_float_complex)
+        else:
+            self.assertIs(c_float_complex.__ctype_be__, c_float_complex)
+            self.assertIs(c_float_complex.__ctype_le__.__ctype_be__,
+                          c_float_complex)
+        s = c_float_complex(math.pi+1j)
+        self.assertEqual(bin(struct.pack("F", math.pi+1j)), bin(s))
+        self.assertAlmostEqual(s.value, math.pi+1j, places=6)
+        s = c_float_complex.__ctype_le__(math.pi+1j)
+        self.assertAlmostEqual(s.value, math.pi+1j, places=6)
+        self.assertEqual(bin(struct.pack("<F", math.pi+1j)), bin(s))
+        s = c_float_complex.__ctype_be__(math.pi+1j)
+        self.assertAlmostEqual(s.value, math.pi+1j, places=6)
+        self.assertEqual(bin(struct.pack(">F", math.pi+1j)), bin(s))
+
+    @unittest.skipUnless(hasattr(ctypes, 'c_double_complex'), "No complex types")
+    def test_endian_double_complex(self):
+        c_double_complex = ctypes.c_double_complex
+        if sys.byteorder == "little":
+            self.assertIs(c_double_complex.__ctype_le__, c_double_complex)
+            self.assertIs(c_double_complex.__ctype_be__.__ctype_le__,
+                          c_double_complex)
+        else:
+            self.assertIs(c_double_complex.__ctype_be__, c_double_complex)
+            self.assertIs(c_double_complex.__ctype_le__.__ctype_be__,
+                          c_double_complex)
+        s = c_double_complex(math.pi+1j)
+        self.assertEqual(bin(struct.pack("D", math.pi+1j)), bin(s))
+        self.assertAlmostEqual(s.value, math.pi+1j, places=6)
+        s = c_double_complex.__ctype_le__(math.pi+1j)
+        self.assertAlmostEqual(s.value, math.pi+1j, places=6)
+        self.assertEqual(bin(struct.pack("<D", math.pi+1j)), bin(s))
+        s = c_double_complex.__ctype_be__(math.pi+1j)
+        self.assertAlmostEqual(s.value, math.pi+1j, places=6)
+        self.assertEqual(bin(struct.pack(">D", math.pi+1j)), bin(s))
+
     def test_endian_other(self):
         self.assertIs(c_byte.__ctype_le__, c_byte)
         self.assertIs(c_byte.__ctype_be__, c_byte)

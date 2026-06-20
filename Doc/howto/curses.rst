@@ -6,9 +6,6 @@
 
 .. currentmodule:: curses
 
-:Author: A.M. Kuchling, Eric S. Raymond
-:Release: 2.04
-
 
 .. topic:: Abstract
 
@@ -160,6 +157,8 @@ the state of the terminal, and then re-raises the exception.  Therefore
 your terminal won't be left in a funny state on exception and you'll be
 able to read the exception's message and traceback.
 
+
+.. _windows-and-pads:
 
 Windows and Pads
 ================

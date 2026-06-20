@@ -5,6 +5,7 @@ from tkinter import ttk
 from tkinter import TclError
 from test import support
 from test.support import requires
+from test.test_tkinter.support import setUpModule  # noqa: F401
 from test.test_tkinter.support import AbstractTkTest, get_tk_patchlevel
 
 requires('gui')
@@ -122,6 +123,22 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
         self.assertFalse(new_theme != self.style.theme_use())
 
         self.style.theme_use(curr_theme)
+
+    def test_theme_settings(self):
+        style = self.style
+        theme = style.theme_use()
+        style.theme_settings(theme, {
+            'Test.TLabel': {
+                'configure': {'foreground': 'red', 'background': 'blue'},
+                'map': {'foreground': [('active', 'green')]},
+            },
+        })
+        self.assertEqual(style.lookup('Test.TLabel', 'foreground'), 'red')
+        self.assertEqual(style.lookup('Test.TLabel', 'background'), 'blue')
+        self.assertEqual(style.map('Test.TLabel', 'foreground'),
+                         [('active', 'green')])
+        self.assertRaises(tkinter.TclError, style.theme_settings,
+                          'nonexistingname', {})
 
     def test_configure_custom_copy(self):
         style = self.style

@@ -349,10 +349,12 @@ class ListTest(list_tests.CommonTest):
         # gh-132011: it used to crash, because
         # of `CALL_LIST_APPEND` specialization failure.
         code = textwrap.dedent("""
+            import _testinternalcapi
+
             l = []
             def lappend(l, x, y):
                 l.append((x, y))
-            for x in range(3):
+            for x in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
                 lappend(l, None, None)
             try:
                 lappend(list, None, None)
@@ -364,6 +366,21 @@ class ListTest(list_tests.CommonTest):
 
         rc, _, _ = assert_python_ok("-c", code)
         self.assertEqual(rc, 0)
+
+    def test_list_overwrite_local(self):
+        """Test that overwriting the last reference to the
+           iterable doesn't prematurely free the iterable"""
+
+        def foo(x):
+            self.assertEqual(sys.getrefcount(x), 1)
+            r = 0
+            for i in x:
+                r += i
+                x = None
+            return r
+
+        self.assertEqual(foo(list(range(10))), 45)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -14,6 +14,12 @@ typedef unsigned int pymem_uint;  /* assuming >= 16 bits */
 #undef  uint
 #define uint pymem_uint
 
+/* NOTE: the following overviews were in the initial checkin, in 1998. In
+ * 2026, they're still helpful, but some details have changed. For example,
+ * we now use 32 size classes 16 bytes apart, and an arena is generally at
+ * least 1MB. Use sys._debugmallocstats() to see exact current details for
+ * the specific version of CPython used.
+ */
 
 /* An object allocator for Python.
 
@@ -208,7 +214,11 @@ typedef unsigned int pymem_uint;  /* assuming >= 16 bits */
  * mappings to reduce heap fragmentation.
  */
 #ifdef USE_LARGE_ARENAS
-#define ARENA_BITS              20                    /* 1 MiB */
+#  ifdef PYMALLOC_USE_HUGEPAGES
+#    define ARENA_BITS            21                    /* 2 MiB */
+#  else
+#    define ARENA_BITS            20                    /* 1 MiB */
+#  endif
 #else
 #define ARENA_BITS              18                    /* 256 KiB */
 #endif
@@ -469,7 +479,7 @@ nfp free pools in usable_arenas.
 */
 
 /* How many arena_objects do we initially allocate?
- * 16 = can allocate 16 arenas = 16 * ARENA_SIZE = 4MB before growing the
+ * 16 = can allocate 16 arenas = 16 * ARENA_SIZE before growing the
  * `arenas` vector.
  */
 #define INITIAL_ARENA_OBJECTS 16
@@ -512,11 +522,23 @@ struct _obmalloc_mgmt {
 
    memory address bit allocation for keys
 
-   64-bit pointers, IGNORE_BITS=0 and 2^20 arena size:
+   ARENA_BITS is configurable: 20 (1 MiB) by default on 64-bit, or
+   21 (2 MiB) when PYMALLOC_USE_HUGEPAGES is enabled.  All bit widths
+   below are derived from ARENA_BITS automatically.
+
+   64-bit pointers, IGNORE_BITS=0 and 2^20 arena size (default):
      15 -> MAP_TOP_BITS
      15 -> MAP_MID_BITS
      14 -> MAP_BOT_BITS
      20 -> ideal aligned arena
+   ----
+     64
+
+   64-bit pointers, IGNORE_BITS=0 and 2^21 arena size (hugepages):
+     15 -> MAP_TOP_BITS
+     15 -> MAP_MID_BITS
+     13 -> MAP_BOT_BITS
+     21 -> ideal aligned arena
    ----
      64
 
@@ -675,7 +697,11 @@ struct _obmalloc_state {
 
 
 /* Allocate memory directly from the O/S virtual memory system,
- * where supported. Otherwise fallback on malloc */
+ * where supported. Otherwise fallback on malloc.
+ *
+ * Large-page and huge-page backends may round the mapped size up
+ * internally, so pass the original requested size back to
+ * _PyObject_VirtualFree(). */
 void *_PyObject_VirtualAlloc(size_t size);
 void _PyObject_VirtualFree(void *, size_t size);
 
