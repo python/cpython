@@ -9,11 +9,14 @@
 --------------
 
 The :mod:`!tkinter.messagebox` module provides a template base class as well as
-a variety of convenience methods for commonly used configurations. The message
-boxes are modal and will return a subset of (``True``, ``False``, ``None``,
-:data:`OK`, :data:`CANCEL`, :data:`YES`, :data:`NO`) based on
-the user's selection. Common message box styles and layouts include but are not
-limited to:
+a variety of convenience methods for commonly used configurations.
+The message boxes are modal: each blocks until the user responds, then returns
+a value that depends on the function.
+The ``show*`` functions and :meth:`Message.show` return the symbolic name of
+the button the user pressed, as a string (such as :data:`OK` or :data:`YES`),
+while the ``ask*`` functions return a :class:`bool` or ``None`` (see each
+function below).
+Common message box styles and layouts include but are not limited to:
 
 .. figure:: tk_msg.png
 
@@ -65,6 +68,10 @@ limited to:
       *type*
          Arranges for a :ref:`predefined set of buttons <messagebox-types>`
          to be displayed.
+
+   .. note::
+
+      Tk 8.6 added the *command* option.
 
    .. method:: show(**options)
 

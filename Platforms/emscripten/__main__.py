@@ -518,6 +518,10 @@ def configure_emscripten_python(context, working_dir):
         EMSCRIPTEN_DIR / "node_entry.mjs", working_dir / "node_entry.mjs"
     )
 
+    shutil.copy(
+        EMSCRIPTEN_DIR / "streams.mjs", working_dir / "streams.mjs"
+    )
+
     node_entry = working_dir / "node_entry.mjs"
     exec_script = working_dir / "python.sh"
     exec_script.write_text(
@@ -646,7 +650,7 @@ def add_cross_build_dir_option(subcommand):
         help=(
             "Path to the cross-build directory "
             f"(default: {DEFAULT_CROSS_BUILD_DIR}). "
-            "Can also be set with the CROSS_BUILD_DIR environment variable.",
+            "Can also be set with the CROSS_BUILD_DIR environment variable."
         ),
     )
 
@@ -739,7 +743,7 @@ def main():
         nargs=argparse.REMAINDER,
         help=(
             "Arguments to pass to the emscripten Python "
-            "(use '--' to separate from run options)",
+            "(use '--' to separate from run options)"
         ),
     )
     add_cross_build_dir_option(run)

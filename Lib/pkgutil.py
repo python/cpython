@@ -9,6 +9,9 @@ import os
 import os.path
 import sys
 
+lazy import re
+
+
 __all__ = [
     'get_importer', 'iter_importers',
     'walk_packages', 'iter_modules', 'get_data',
@@ -393,17 +396,15 @@ def get_data(package, resource):
     # signature - an os.path format "filename" starting with the dirname of
     # the package's __file__
     parts = resource.split('/')
-    if os.path.isabs(resource) or '..' in parts:
-        raise ValueError("resource must be a relative path with no "
-                         "parent directory components")
     parts.insert(0, os.path.dirname(mod.__file__))
     resource_name = os.path.join(*parts)
     return loader.get_data(resource_name)
 
 
-_NAME_PATTERN = None
+_LENIENT_PATTERN = None
+_STRICT_PATTERN = None
 
-def resolve_name(name):
+def resolve_name(name, *, strict=False):
     """
     Resolve a name to an object.
 
@@ -413,6 +414,7 @@ def resolve_name(name):
 
     W(.W)*
     W(.W)*:(W(.W)*)?
+    W(.W)*:(W(.W)*)
 
     The first form is intended for backward compatibility only. It assumes that
     some part of the dotted name is a package, and the rest is an object
@@ -427,6 +429,11 @@ def resolve_name(name):
     hierarchy within that package. Only one import is needed in this form. If
     it ends with the colon, then a module object is returned.
 
+    The first two forms are accepted when `strict=False` (the default).
+
+    The third form requires both the module name and callable, separated by
+    a colon. Only this form is accepted when `strict=True`.
+
     The function will return an object (which might be a module), or raise one
     of the following exceptions:
 
@@ -435,18 +442,26 @@ def resolve_name(name):
     AttributeError - if a failure occurred when traversing the object hierarchy
                      within the imported package to get to the desired object.
     """
-    global _NAME_PATTERN
-    if _NAME_PATTERN is None:
-        # Lazy import to speedup Python startup time
-        import re
-        dotted_words = r'(?!\d)(\w+)(\.(?!\d)(\w+))*'
-        _NAME_PATTERN = re.compile(f'^(?P<pkg>{dotted_words})'
-                                   f'(?P<cln>:(?P<obj>{dotted_words})?)?$',
-                                   re.UNICODE)
+    global _LENIENT_PATTERN, _STRICT_PATTERN
+    dotted_words = r'(?!\d)(\w+)(\.(?!\d)(\w+))*'
+    if strict:
+        if _STRICT_PATTERN is None:
+            _STRICT_PATTERN = re.compile(
+                f'^(?P<pkg>{dotted_words})'
+                f'(?P<cln>:(?P<obj>{dotted_words}))$',
+                re.UNICODE)
+        pattern = _STRICT_PATTERN
+    else:
+        if _LENIENT_PATTERN is None:
+            _LENIENT_PATTERN = re.compile(
+                f'^(?P<pkg>{dotted_words})'
+                f'(?P<cln>:(?P<obj>{dotted_words})?)?$',
+                re.UNICODE)
+        pattern = _LENIENT_PATTERN
 
-    m = _NAME_PATTERN.match(name)
-    if not m:
+    if (m := pattern.match(name)) is None:
         raise ValueError(f'invalid format: {name!r}')
+
     gd = m.groupdict()
     if gd.get('cln'):
         # there is a colon - a one-step import is all that's needed

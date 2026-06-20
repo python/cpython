@@ -99,6 +99,9 @@ LIBRARY_FUZZER_PATHS = frozenset({
     Path("Modules/pyexpat.c"),
     # zipfile
     Path("Lib/zipfile/"),
+    # zoneinfo
+    Path("Lib/zoneinfo/"),
+    Path("Modules/_zoneinfo.c"),
 })
 
 
@@ -235,7 +238,7 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
                 run_tests = run_ci_fuzz = run_ci_fuzz_stdlib = run_windows_tests = True
                 has_platform_specific_change = False
                 continue
-            if file.name == "reusable-docs.yml":
+            if file.name in ("reusable-docs.yml", "reusable-check-html-ids.yml"):
                 run_docs = True
                 continue
             if file.name == "reusable-windows.yml":

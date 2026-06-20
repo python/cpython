@@ -1,1 +1,0 @@
-Avoid a pathological case where repeated calls at a specific stack depth could be significantly slower.
