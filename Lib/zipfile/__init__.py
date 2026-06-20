@@ -1696,12 +1696,19 @@ class _ZipRepacker:
 
             zinfo.CRC, zinfo.compress_size, zinfo.file_size, dd_size = dd
 
-        return (
+        entry_size = (
             sizeFileHeader +
             fheader[_FH_FILENAME_LENGTH] + fheader[_FH_EXTRA_FIELD_LENGTH] +
             zinfo.compress_size +
             dd_size
         )
+
+        # Treat as a false positive if the entry would extend past end_offset,
+        # so callers never strip more bytes than the gap actually holds.
+        if offset + entry_size > end_offset:
+            return None
+
+        return entry_size
 
     def _read_local_file_header(self, fp):
         fheader = fp.read(sizeFileHeader)
