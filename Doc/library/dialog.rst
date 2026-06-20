@@ -21,10 +21,20 @@ functions for creating simple modal dialogs to get a value from the user.
 
    The above three functions provide dialogs that prompt the user to enter a value
    of the desired type.
+   They use the themed :mod:`tkinter.ttk` widgets; pass ``use_ttk=False`` for
+   the classic widgets.
 
-.. class:: Dialog(parent, title=None)
+.. class:: Dialog(parent, title=None, *, use_ttk=False)
 
    The base class for custom dialogs.
+   When *use_ttk* is false (the default), the dialog is built from the classic
+   :mod:`tkinter` widgets, modelled on the classic ``tk_dialog``; when true,
+   from the themed :mod:`tkinter.ttk` widgets, modelled on the Tk message box.
+   The default is classic for compatibility, since the themed widgets set a
+   themed background that classic widgets added in :meth:`body` would not match.
+
+   .. versionchanged:: next
+      Added the *use_ttk* parameter.
 
    .. method:: body(master)
 
@@ -58,14 +68,32 @@ functions for creating simple modal dialogs to get a value from the user.
       the initial focus.
 
 
-.. class:: SimpleDialog(master, text='', buttons=[], default=None, cancel=None, title=None, class_=None)
+.. class:: SimpleDialog(master, text='', buttons=[], default=None, cancel=None, title=None, class_=None, *, bitmap=None, detail='', use_ttk=True)
 
    A simple modal dialog that displays the message *text* above a row of push
-   buttons whose labels are given by *buttons*, and returns the index of the
-   button the user presses.
-   *default* is the index of the button activated by the Return key, *cancel*
-   the index returned when the window is closed through the window manager,
-   *title* the window title, and *class_* the Tk class name of the window.
+   buttons given by *buttons*, and returns the index of the button the user
+   presses.
+   Each entry of *buttons* is either a button label, or a mapping of button
+   options such as ``{'text': 'OK', 'underline': 0}``; an ``underline`` option
+   makes :kbd:`Alt` plus the underlined character invoke the button.
+   *default* is the index of the default button, activated by the Return key
+   when no button has the focus, *cancel* the index returned when the window is
+   closed through the window manager, *title* the window title, and *class_*
+   the Tk class name of the window.
+   *bitmap* is the name of a bitmap displayed beside the message
+   (for example ``'warning'`` or ``'question'``); the standard names
+   ``'error'``, ``'info'``, ``'question'`` and ``'warning'`` are shown as
+   themed icons when *use_ttk* is true.
+   *detail* is a secondary message displayed below *text*.
+   When *use_ttk* is true (the default), the dialog is built from the themed
+   :mod:`tkinter.ttk` widgets, modelled on the Tk message box; when false, from
+   the classic :mod:`tkinter` widgets, modelled on ``tk_dialog``.
+
+   .. versionchanged:: next
+      The dialog is now built from the themed :mod:`tkinter.ttk` widgets by
+      default, instead of the classic :mod:`tkinter` widgets.
+      Added the *bitmap*, *detail* and *use_ttk* parameters.
+      Entries of *buttons* may be mappings of button options.
 
    .. method:: go()
 
