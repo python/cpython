@@ -24,6 +24,7 @@ ZERO_WIDTH_TRANS = str.maketrans({"\x01": "", "\x02": ""})
 IDENTIFIERS_AFTER = frozenset({"def", "class"})
 KEYWORD_CONSTANTS = frozenset({"True", "False", "None"})
 BUILTINS = frozenset({str(name) for name in dir(builtins) if not name.startswith('_')})
+COMMANDS = frozenset({"exit", "quit", "copyright", "help", "clear"})
 
 
 def THEME(**kwargs):
@@ -235,6 +236,13 @@ def gen_colors_from_token_stream(
                 ):
                     span = Span.from_token(token, line_lengths)
                     yield ColorSpan(span, "soft_keyword")
+                elif (
+                    token.string in COMMANDS
+                    and not prev_token
+                    and next_token.type == T.NEWLINE
+                ):
+                    span = Span.from_token(token, line_lengths)
+                    yield ColorSpan(span, "command")
                 elif (
                     token.string in BUILTINS
                     and not (prev_token and prev_token.exact_type == T.DOT)
