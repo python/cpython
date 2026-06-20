@@ -144,6 +144,14 @@ shlex
   a string, even if it is already safe for a shell without being quoted.
   (Contributed by Jay Berry in :gh:`148846`.)
 
+sqlite3
+-------
+
+* :class:`sqlite3.Blob` now supports negative-step slices for reading and
+  writing (e.g. ``blob[9:0:-2]``).  Previously, such slices would raise
+  :exc:`SystemError` or :exc:`ValueError`.
+  (Contributed by Jiseok CHOI in :gh:`150449`.)
+
 xml
 ---
 

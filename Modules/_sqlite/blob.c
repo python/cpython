@@ -445,7 +445,14 @@ subscript_slice(pysqlite_Blob *self, PyObject *item)
         return read_multiple(self, len, start);
     }
 
-    PyObject *blob = read_multiple(self, stop - start, start);
+    // Compute the contiguous blob region covering all slice elements, then
+    // copy each element using the standard size_t-cursor pattern that handles
+    // both positive and negative steps via unsigned arithmetic.
+    Py_ssize_t last = start + (len - 1) * step;
+    Py_ssize_t read_offset = Py_MIN(start, last);
+    Py_ssize_t read_length = Py_ABS(start - last) + 1;
+
+    PyObject *blob = read_multiple(self, read_length, read_offset);
     if (blob == NULL) {
         return NULL;
     }
@@ -456,10 +463,12 @@ subscript_slice(pysqlite_Blob *self, PyObject *item)
         return NULL;
     }
     char *res_buf = PyBytesWriter_GetData(writer);
-
     char *blob_buf = PyBytes_AS_STRING(blob);
-    for (Py_ssize_t i = 0, j = 0; i < len; i++, j += step) {
-        res_buf[i] = blob_buf[j];
+
+    size_t cur;
+    Py_ssize_t i;
+    for (cur = (size_t)start, i = 0; i < len; cur += (size_t)step, i++) {
+        res_buf[i] = blob_buf[(Py_ssize_t)cur - read_offset];
     }
     Py_DECREF(blob);
     return PyBytesWriter_Finish(writer);
@@ -553,13 +562,23 @@ ass_subscript_slice(pysqlite_Blob *self, PyObject *item, PyObject *value)
         rc = inner_write(self, vbuf.buf, len, start);
     }
     else {
-        PyObject *blob_bytes = read_multiple(self, stop - start, start);
+        // Compute the contiguous blob region covering all slice elements, then
+        // update each element using the standard size_t-cursor pattern that
+        // handles both positive and negative steps via unsigned arithmetic.
+        Py_ssize_t last = start + (len - 1) * step;
+        Py_ssize_t write_offset = Py_MIN(start, last);
+        Py_ssize_t write_length = Py_ABS(start - last) + 1;
+        PyObject *blob_bytes = read_multiple(self, write_length, write_offset);
         if (blob_bytes != NULL) {
             char *blob_buf = PyBytes_AS_STRING(blob_bytes);
-            for (Py_ssize_t i = 0, j = 0; i < len; i++, j += step) {
-                blob_buf[j] = ((char *)vbuf.buf)[i];
+            size_t cur;
+            Py_ssize_t i;
+            for (cur = (size_t)start, i = 0; i < len;
+                 cur += (size_t)step, i++) {
+                blob_buf[(Py_ssize_t)cur - write_offset] =
+                    ((char *)vbuf.buf)[i];
             }
-            rc = inner_write(self, blob_buf, stop - start, start);
+            rc = inner_write(self, blob_buf, write_length, write_offset);
             Py_DECREF(blob_bytes);
         }
     }
