@@ -2701,6 +2701,154 @@ exit:
     return return_value;
 }
 
+#if (_NCURSES_EXTENDED_COLOR_FUNCS)
+
+PyDoc_STRVAR(_curses_alloc_pair__doc__,
+"alloc_pair($module, fg, bg, /)\n"
+"--\n"
+"\n"
+"Allocate a color pair for the given foreground and background colors.\n"
+"\n"
+"  fg\n"
+"    Foreground color number.\n"
+"  bg\n"
+"    Background color number.\n"
+"\n"
+"If a color pair for the same colors already exists, return its number.\n"
+"Otherwise allocate a new color pair and return its number.");
+
+#define _CURSES_ALLOC_PAIR_METHODDEF    \
+    {"alloc_pair", _PyCFunction_CAST(_curses_alloc_pair), METH_FASTCALL, _curses_alloc_pair__doc__},
+
+static PyObject *
+_curses_alloc_pair_impl(PyObject *module, int fg, int bg);
+
+static PyObject *
+_curses_alloc_pair(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int fg;
+    int bg;
+
+    if (!_PyArg_CheckPositional("alloc_pair", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!color_allow_default_converter(args[0], &fg)) {
+        goto exit;
+    }
+    if (!color_allow_default_converter(args[1], &bg)) {
+        goto exit;
+    }
+    return_value = _curses_alloc_pair_impl(module, fg, bg);
+
+exit:
+    return return_value;
+}
+
+#endif /* (_NCURSES_EXTENDED_COLOR_FUNCS) */
+
+#if (_NCURSES_EXTENDED_COLOR_FUNCS)
+
+PyDoc_STRVAR(_curses_find_pair__doc__,
+"find_pair($module, fg, bg, /)\n"
+"--\n"
+"\n"
+"Return the number of a color pair for the given colors, or -1.\n"
+"\n"
+"  fg\n"
+"    Foreground color number.\n"
+"  bg\n"
+"    Background color number.\n"
+"\n"
+"Return -1 if no color pair for this combination of foreground and\n"
+"background colors has been allocated.");
+
+#define _CURSES_FIND_PAIR_METHODDEF    \
+    {"find_pair", _PyCFunction_CAST(_curses_find_pair), METH_FASTCALL, _curses_find_pair__doc__},
+
+static PyObject *
+_curses_find_pair_impl(PyObject *module, int fg, int bg);
+
+static PyObject *
+_curses_find_pair(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int fg;
+    int bg;
+
+    if (!_PyArg_CheckPositional("find_pair", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!color_allow_default_converter(args[0], &fg)) {
+        goto exit;
+    }
+    if (!color_allow_default_converter(args[1], &bg)) {
+        goto exit;
+    }
+    return_value = _curses_find_pair_impl(module, fg, bg);
+
+exit:
+    return return_value;
+}
+
+#endif /* (_NCURSES_EXTENDED_COLOR_FUNCS) */
+
+#if (_NCURSES_EXTENDED_COLOR_FUNCS)
+
+PyDoc_STRVAR(_curses_free_pair__doc__,
+"free_pair($module, pair, /)\n"
+"--\n"
+"\n"
+"Free a color pair allocated by alloc_pair().\n"
+"\n"
+"  pair\n"
+"    The number of the color pair to free.");
+
+#define _CURSES_FREE_PAIR_METHODDEF    \
+    {"free_pair", (PyCFunction)_curses_free_pair, METH_O, _curses_free_pair__doc__},
+
+static PyObject *
+_curses_free_pair_impl(PyObject *module, int pair);
+
+static PyObject *
+_curses_free_pair(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int pair;
+
+    if (!pair_converter(arg, &pair)) {
+        goto exit;
+    }
+    return_value = _curses_free_pair_impl(module, pair);
+
+exit:
+    return return_value;
+}
+
+#endif /* (_NCURSES_EXTENDED_COLOR_FUNCS) */
+
+#if (_NCURSES_EXTENDED_COLOR_FUNCS)
+
+PyDoc_STRVAR(_curses_reset_color_pairs__doc__,
+"reset_color_pairs($module, /)\n"
+"--\n"
+"\n"
+"Discard all color-pair definitions.");
+
+#define _CURSES_RESET_COLOR_PAIRS_METHODDEF    \
+    {"reset_color_pairs", (PyCFunction)_curses_reset_color_pairs, METH_NOARGS, _curses_reset_color_pairs__doc__},
+
+static PyObject *
+_curses_reset_color_pairs_impl(PyObject *module);
+
+static PyObject *
+_curses_reset_color_pairs(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_reset_color_pairs_impl(module);
+}
+
+#endif /* (_NCURSES_EXTENDED_COLOR_FUNCS) */
+
 PyDoc_STRVAR(_curses_initscr__doc__,
 "initscr($module, /)\n"
 "--\n"
@@ -4453,6 +4601,22 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
     #define _CURSES_HAS_KEY_METHODDEF
 #endif /* !defined(_CURSES_HAS_KEY_METHODDEF) */
 
+#ifndef _CURSES_ALLOC_PAIR_METHODDEF
+    #define _CURSES_ALLOC_PAIR_METHODDEF
+#endif /* !defined(_CURSES_ALLOC_PAIR_METHODDEF) */
+
+#ifndef _CURSES_FIND_PAIR_METHODDEF
+    #define _CURSES_FIND_PAIR_METHODDEF
+#endif /* !defined(_CURSES_FIND_PAIR_METHODDEF) */
+
+#ifndef _CURSES_FREE_PAIR_METHODDEF
+    #define _CURSES_FREE_PAIR_METHODDEF
+#endif /* !defined(_CURSES_FREE_PAIR_METHODDEF) */
+
+#ifndef _CURSES_RESET_COLOR_PAIRS_METHODDEF
+    #define _CURSES_RESET_COLOR_PAIRS_METHODDEF
+#endif /* !defined(_CURSES_RESET_COLOR_PAIRS_METHODDEF) */
+
 #ifndef _CURSES_GET_ESCDELAY_METHODDEF
     #define _CURSES_GET_ESCDELAY_METHODDEF
 #endif /* !defined(_CURSES_GET_ESCDELAY_METHODDEF) */
@@ -4516,4 +4680,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=7494804bf2c4d1f5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cb008c07b319db6e input=a9049054013a1b77]*/
