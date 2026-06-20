@@ -1863,14 +1863,10 @@ class WalkTests(unittest.TestCase):
         self.assertRaises(StopIteration, next, walk_it)
 
         walk_it = self.walk(self.tmp1_path)
-        self.assertRaises(StopIteration, next, walk_it)
+        self.assertRaises(NotADirectoryError, next, walk_it)
 
         walk_it = self.walk(self.tmp1_path, follow_symlinks=True)
-        if self.is_fwalk:
-            with self.assertRaises(OSError) as cm:
-                next(walk_it)
-            self.assertIn(cm.exception.errno, (errno.ENOTDIR, errno.EINVAL))
-        self.assertRaises(StopIteration, next, walk_it)
+        self.assertRaises(NotADirectoryError, next, walk_it)
 
     @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
     @unittest.skipIf(sys.platform == "vxworks",
@@ -1881,12 +1877,10 @@ class WalkTests(unittest.TestCase):
         self.addCleanup(os.unlink, path)
 
         walk_it = self.walk(path)
-        self.assertRaises(StopIteration, next, walk_it)
+        self.assertRaises(NotADirectoryError, next, walk_it)
 
         walk_it = self.walk(path, follow_symlinks=True)
-        if self.is_fwalk:
-            self.assertRaises(NotADirectoryError, next, walk_it)
-        self.assertRaises(StopIteration, next, walk_it)
+        self.assertRaises(NotADirectoryError, next, walk_it)
 
     @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
     @unittest.skipIf(sys.platform == "vxworks",
