@@ -11,7 +11,7 @@ from io import BytesIO, StringIO
 from textwrap import dedent
 from unittest import TestCase, mock
 from test import support
-from test.support import os_helper
+from test.support import import_helper, os_helper
 from test.support.script_helper import run_test_script, make_script, run_python_until_end
 from test.support.numbers import (
     VALID_UNDERSCORE_LITERALS,
@@ -2265,6 +2265,67 @@ class CTokenizeTest(TestCase):
                     encoding=encoding,
                 ))
                 self.assertEqual(tokens, expected)
+
+    @unittest.skipIf(support.Py_TRACE_REFS,
+                     '_testcapi.set_nomemory() is unreliable with Py_TRACE_REFS')
+    def test_col_offset_conversion_oom(self):
+        import_helper.import_module('_testcapi')
+        code = dedent(r"""
+            import _testcapi
+            import _tokenize
+
+            def check_indented_name(start):
+                source = "if True:\n  \u00e9 = 1\n"
+                it = _tokenize.TokenizerIter(
+                    iter(source.splitlines(True)).__next__,
+                    extra_tokens=False,
+                )
+                for _ in range(5):
+                    next(it)
+
+                _testcapi.set_nomemory(start, start + 1)
+                try:
+                    next(it)
+                except MemoryError:
+                    return True
+                finally:
+                    _testcapi.remove_mem_hooks()
+                return False
+
+            def check_multiline_string(start):
+                source = "x = '''abc\ndef'''\n"
+                it = _tokenize.TokenizerIter(
+                    iter(source.splitlines(True)).__next__,
+                    extra_tokens=False,
+                )
+                next(it)
+                next(it)
+
+                _testcapi.set_nomemory(start, start + 1)
+                try:
+                    next(it)
+                except MemoryError:
+                    return True
+                finally:
+                    _testcapi.remove_mem_hooks()
+                return False
+
+            def check_range(name, func):
+                seen_memory_error = False
+                for index in range(20):
+                    if func(index):
+                        seen_memory_error = True
+                if not seen_memory_error:
+                    raise AssertionError(f"{name}: MemoryError not raised")
+
+            check_range("line", check_indented_name)
+            check_range("raw", check_multiline_string)
+            print("MemoryError")
+        """)
+        with support.SuppressCrashReport():
+            res, _ = run_python_until_end("-c", code)
+        self.assertEqual(res.rc, 0, res.err.decode("ascii", "replace"))
+        self.assertIn(b"MemoryError", res.out)
 
     def test_int(self):
 
