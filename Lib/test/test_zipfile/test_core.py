@@ -1366,7 +1366,15 @@ class ComparableZipInfo:
     keys = [i for i in zipfile.ZipInfo.__slots__ if not i.startswith('_')]
 
     def __new__(cls, zinfo):
-        return {i: getattr(zinfo, i) for i in cls.keys}
+        attrs = {i: getattr(zinfo, i) for i in cls.keys}
+
+        # Since patch gh-84353, the _MASK_UTF_FILENAME (0x800) bit may be
+        # changed when writing to the end record depending on whether filename
+        # can be encoded with ascii or cp437. Skip checking this bit by
+        # pretending it's always set.
+        attrs['flag_bits'] |= 0x800
+
+        return attrs
 
 _struct_pack = struct.pack
 
