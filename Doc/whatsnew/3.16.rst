@@ -144,6 +144,14 @@ shlex
   a string, even if it is already safe for a shell without being quoted.
   (Contributed by Jay Berry in :gh:`148846`.)
 
+tkinter
+-------
+
+* Added new :class:`!tkinter.Text` methods :meth:`~tkinter.Text.edit_canundo`
+  and :meth:`~tkinter.Text.edit_canredo` which return whether an undo or redo
+  is possible.
+  (Contributed by Serhiy Storchaka in :gh:`151674`.)
+
 xml
 ---
 
