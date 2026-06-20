@@ -1742,7 +1742,8 @@ class _ZipRepacker:
 
         return None
 
-    def _scan_data_descriptor_no_sig(self, fp, offset, end_offset, zip64, chunk_size=8192):
+    def _scan_data_descriptor_no_sig(self, fp, offset, end_offset, zip64,
+                                     chunk_size=io.DEFAULT_BUFFER_SIZE):
         dd_fmt = '<LQQ' if zip64 else '<LLL'
         dd_size = struct.calcsize(dd_fmt)
 
