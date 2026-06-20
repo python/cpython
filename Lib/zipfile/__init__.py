@@ -2390,7 +2390,7 @@ class ZipFile:
 
         return zinfo
 
-    def repack(self, removed=None, **opts):
+    def repack(self, removed=None, *, strict_descriptor=True, chunk_size=2**20):
         """Repack a zip file, removing non-referenced file entries.
 
         The archive must be opened with mode 'a', as mode 'w'/'x' do not
@@ -2410,7 +2410,11 @@ class ZipFile:
         with self._lock:
             self._writing = True
             try:
-                _ZipRepacker(**opts).repack(self, removed)
+                repacker = _ZipRepacker(
+                    strict_descriptor=strict_descriptor,
+                    chunk_size=chunk_size,
+                )
+                repacker.repack(self, removed)
             finally:
                 self._writing = False
 

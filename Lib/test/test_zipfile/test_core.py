@@ -1828,15 +1828,15 @@ class AbstractRepackTests(RepackHelperMixin):
             with mock.patch.object(zipfile._ZipRepacker, 'repack') as m_rp, \
                  mock.patch.object(zipfile, '_ZipRepacker', wraps=zipfile._ZipRepacker) as m_zr:
                 zh.repack()
-        m_zr.assert_called_once_with()
+        m_zr.assert_called_once_with(strict_descriptor=True, chunk_size=2**20)
         m_rp.assert_called_once_with(zh, None)
 
         with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
             zi = zh.remove(zh.infolist()[0])
             with mock.patch.object(zipfile._ZipRepacker, 'repack') as m_rp, \
                  mock.patch.object(zipfile, '_ZipRepacker', wraps=zipfile._ZipRepacker) as m_zr:
-                zh.repack([zi], strict_descriptor=True, chunk_size=1024)
-        m_zr.assert_called_once_with(strict_descriptor=True, chunk_size=1024)
+                zh.repack([zi], strict_descriptor=False, chunk_size=1024)
+        m_zr.assert_called_once_with(strict_descriptor=False, chunk_size=1024)
         m_rp.assert_called_once_with(zh, [zi])
 
     def test_repack_bytes_before_first_file(self):
