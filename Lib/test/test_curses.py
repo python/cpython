@@ -4,12 +4,13 @@ import os
 import string
 import sys
 import tempfile
+import threading
 import unittest
 from unittest.mock import MagicMock
 
 from test.support import (requires, verbose, SaveSignals, cpython_only,
                           check_disallow_instantiation, MISSING_C_DOCSTRINGS,
-                          gc_collect)
+                          gc_collect, SHORT_TIMEOUT)
 from test.support.import_helper import import_module
 
 # Optionally test curses module.  This currently requires that the
@@ -1773,36 +1774,35 @@ class ScreenTests(unittest.TestCase):
         self.save_signals = SaveSignals()
         self.save_signals.save()
         self.addCleanup(self.save_signals.restore)
-        self.pty_masters = []
-
-    def drain_ptys(self):
-        # Discard whatever curses has written to the screens.  Nothing reads
-        # the master end, so on platforms such as macOS (but not Linux) the
-        # tcdrain() that curses performs inside endwin() -- and even a plain
-        # write() -- blocks once the unread output fills the pty buffer.
-        # Draining here, before endwin(), leaves room for its output to drain.
-        for master in self.pty_masters:
-            try:
-                while os.read(master, 65536):
-                    pass
-            except BlockingIOError:
-                pass
 
     def tearDown(self):
-        # Leave visual mode and reclaim the screens the test created, while
-        # their pseudo-terminals are still open (closing them happens later,
-        # via the make_pty() cleanups).
-        self.drain_ptys()
+        # Leave visual mode and reclaim the test's screens while their
+        # pseudo-terminals are still open (make_pty() closes them later).
         try:
             curses.endwin()
         except curses.error:
             pass
         gc_collect()
 
+    @staticmethod
+    def _drain_pty(master):
+        # Read and discard whatever curses writes to the screen.
+        try:
+            while os.read(master, 1024):
+                pass
+        except OSError:
+            pass
+
     def make_pty(self):
         master, slave = os.openpty()
-        os.set_blocking(master, False)
-        self.pty_masters.append(master)
+        # Nothing reads the master end, so writing to the slave -- and the
+        # tcdrain() inside endwin() -- can block once the pty buffer fills (on
+        # macOS, not Linux).  Drain it from a background thread; endwin()
+        # releases the GIL so the thread runs while endwin() blocks.
+        reader = threading.Thread(target=self._drain_pty, args=(master,),
+                                  daemon=True)
+        reader.start()
+        self.addCleanup(reader.join, SHORT_TIMEOUT)
         self.addCleanup(os.close, master)
         self.addCleanup(os.close, slave)
         return slave
