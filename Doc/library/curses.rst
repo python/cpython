@@ -989,6 +989,55 @@ Window objects
    ``0`` (no attributes).
 
 
+.. method:: window.attr_get()
+
+   Return the window's current rendition as a ``(attrs, pair)`` tuple,
+   where *attrs* is the set of attributes and *pair* is the color pair number.
+
+   Unlike :meth:`attron` and friends, which take packed ``A_*`` attributes,
+   this method and the other ``attr_*`` methods work with the
+   :ref:`WA_* attributes <curses-wa-constants>` and keep the color pair as a
+   separate number, which lets them use color pairs that do not fit alongside
+   the attributes in a single value.
+
+   .. versionadded:: next
+
+
+.. method:: window.attr_set(attr, pair=0)
+
+   Set the window's rendition to the attributes *attr* and the color pair *pair*.
+
+   .. versionadded:: next
+
+
+.. method:: window.attr_on(attr)
+
+   Turn on the attributes *attr* without affecting any others.
+
+   .. versionadded:: next
+
+
+.. method:: window.attr_off(attr)
+
+   Turn off the attributes *attr* without affecting any others.
+
+   .. versionadded:: next
+
+
+.. method:: window.color_set(pair)
+
+   Set the window's color pair to *pair*, leaving the other attributes unchanged.
+
+   .. versionadded:: next
+
+
+.. method:: window.getattrs()
+
+   Return the window's current attributes.
+
+   .. versionadded:: next
+
+
 .. method:: window.bkgd(ch[, attr])
 
    Set the background property of the window to the character *ch*, with
@@ -1887,6 +1936,24 @@ The exact constants available are system dependent.
 
 .. versionadded:: 3.7
    ``A_ITALIC`` was added.
+
+.. _curses-wa-constants:
+
+The :meth:`~window.attr_get`, :meth:`~window.attr_set`, :meth:`~window.attr_on`
+and :meth:`~window.attr_off` methods use a parallel set of ``WA_*`` constants.
+These have the same meaning as the corresponding ``A_*`` attributes above
+(``WA_BOLD`` like :const:`A_BOLD`, and so on), but belong to the ``attr_t`` type
+rather than being packed into a character.  In ncurses the two sets share the
+same values, but other curses implementations may give them different ones, so
+use the ``WA_*`` constants with the ``attr_*`` methods.  The available names are
+``WA_ATTRIBUTES``, ``WA_NORMAL``, ``WA_STANDOUT``, ``WA_UNDERLINE``,
+``WA_REVERSE``, ``WA_BLINK``, ``WA_DIM``, ``WA_BOLD``, ``WA_ALTCHARSET``,
+``WA_INVIS``, ``WA_PROTECT``, ``WA_HORIZONTAL``, ``WA_LEFT``, ``WA_LOW``,
+``WA_RIGHT``, ``WA_TOP``, ``WA_VERTICAL`` and ``WA_ITALIC`` (each available only
+where the platform defines it).
+
+.. versionadded:: next
+   The ``WA_*`` constants were added.
 
 Several constants are available to extract corresponding attributes returned
 by some methods.

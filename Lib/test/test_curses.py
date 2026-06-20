@@ -651,7 +651,6 @@ class TestCurses(unittest.TestCase):
         win.scrollok(False)
 
     def test_attributes(self):
-        # TODO: attr_get(), attr_set(), ...
         win = curses.newwin(5, 15, 5, 2)
         win.attron(curses.A_BOLD)
         win.attroff(curses.A_BOLD)
@@ -659,6 +658,45 @@ class TestCurses(unittest.TestCase):
 
         win.standout()
         win.standend()
+
+        # The attr_*() family works on attr_t attributes paired with a color
+        # pair, unlike the chtype-based attron()/attroff()/attrset().
+        win.attr_set(curses.A_BOLD | curses.A_UNDERLINE)
+        attrs, pair = win.attr_get()
+        self.assertTrue(attrs & curses.A_BOLD)
+        self.assertTrue(attrs & curses.A_UNDERLINE)
+        self.assertEqual(pair, 0)
+        self.assertEqual(win.getattrs(), attrs)
+
+        win.attr_on(curses.A_REVERSE)
+        self.assertTrue(win.attr_get()[0] & curses.A_REVERSE)
+        win.attr_off(curses.A_REVERSE)
+        self.assertFalse(win.attr_get()[0] & curses.A_REVERSE)
+
+        # color_set() with a real pair needs start_color(); see
+        # test_attr_color_pair.  Here only the argument validation is checked,
+        # which fails before wcolor_set() is reached.
+        self.assertRaises(TypeError, win.attr_set, 'x')
+        self.assertRaises(TypeError, win.attr_set, curses.A_BOLD, 'x')
+        self.assertRaises(TypeError, win.attr_on, 'x')
+        self.assertRaises(TypeError, win.color_set, 'x')
+        self.assertRaises(ValueError, win.color_set, -1)
+        self.assertRaises(ValueError, win.attr_set, curses.A_BOLD, -1)
+        # attr_t is unsigned: a negative or too-large attribute overflows.
+        self.assertRaises(OverflowError, win.attr_set, -1)
+        self.assertRaises(OverflowError, win.attr_on, -1)
+        self.assertRaises(OverflowError, win.attr_set, 1 << 64)
+
+    @requires_colors
+    def test_attr_color_pair(self):
+        win = curses.newwin(5, 15, 5, 2)
+        curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
+        win.attr_set(curses.A_BOLD, 1)
+        attrs, pair = win.attr_get()
+        self.assertTrue(attrs & curses.A_BOLD)
+        self.assertEqual(pair, 1)
+        win.color_set(0)
+        self.assertEqual(win.attr_get()[1], 0)
 
     @requires_curses_window_meth('chgat')
     def test_chgat(self):
@@ -690,6 +728,11 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(win.inch(3, 10), b'a'[0] | curses.A_BLINK)
         self.assertEqual(win.inch(3, 11), b'm'[0] | curses.A_UNDERLINE)
         self.assertEqual(win.inch(3, 14), b' '[0] | curses.A_UNDERLINE)
+
+        # attr_t is unsigned: a negative or too-large attribute overflows.
+        self.assertRaises(TypeError, win.chgat, 'x')
+        self.assertRaises(OverflowError, win.chgat, -1)
+        self.assertRaises(OverflowError, win.chgat, 1 << 64)
 
     def test_background(self):
         win = curses.newwin(5, 15, 5, 2)

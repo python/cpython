@@ -353,6 +353,162 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_curses_window_attr_get__doc__,
+"attr_get($self, /)\n"
+"--\n"
+"\n"
+"Return the window\'s attributes and color pair as (attrs, pair).");
+
+#define _CURSES_WINDOW_ATTR_GET_METHODDEF    \
+    {"attr_get", (PyCFunction)_curses_window_attr_get, METH_NOARGS, _curses_window_attr_get__doc__},
+
+static PyObject *
+_curses_window_attr_get_impl(PyCursesWindowObject *self);
+
+static PyObject *
+_curses_window_attr_get(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_window_attr_get_impl((PyCursesWindowObject *)self);
+}
+
+PyDoc_STRVAR(_curses_window_attr_set__doc__,
+"attr_set($self, attr, pair=0, /)\n"
+"--\n"
+"\n"
+"Set the window\'s attributes and color pair.");
+
+#define _CURSES_WINDOW_ATTR_SET_METHODDEF    \
+    {"attr_set", _PyCFunction_CAST(_curses_window_attr_set), METH_FASTCALL, _curses_window_attr_set__doc__},
+
+static PyObject *
+_curses_window_attr_set_impl(PyCursesWindowObject *self, attr_t attr,
+                             int pair);
+
+static PyObject *
+_curses_window_attr_set(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    attr_t attr;
+    int pair = 0;
+
+    if (!_PyArg_CheckPositional("attr_set", nargs, 1, 2)) {
+        goto exit;
+    }
+    if (!attr_converter(args[0], &attr)) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!pair_converter(args[1], &pair)) {
+        goto exit;
+    }
+skip_optional:
+    return_value = _curses_window_attr_set_impl((PyCursesWindowObject *)self, attr, pair);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_curses_window_attr_on__doc__,
+"attr_on($self, attr, /)\n"
+"--\n"
+"\n"
+"Turn on the given attributes without affecting any others.");
+
+#define _CURSES_WINDOW_ATTR_ON_METHODDEF    \
+    {"attr_on", (PyCFunction)_curses_window_attr_on, METH_O, _curses_window_attr_on__doc__},
+
+static PyObject *
+_curses_window_attr_on_impl(PyCursesWindowObject *self, attr_t attr);
+
+static PyObject *
+_curses_window_attr_on(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    attr_t attr;
+
+    if (!attr_converter(arg, &attr)) {
+        goto exit;
+    }
+    return_value = _curses_window_attr_on_impl((PyCursesWindowObject *)self, attr);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_curses_window_attr_off__doc__,
+"attr_off($self, attr, /)\n"
+"--\n"
+"\n"
+"Turn off the given attributes without affecting any others.");
+
+#define _CURSES_WINDOW_ATTR_OFF_METHODDEF    \
+    {"attr_off", (PyCFunction)_curses_window_attr_off, METH_O, _curses_window_attr_off__doc__},
+
+static PyObject *
+_curses_window_attr_off_impl(PyCursesWindowObject *self, attr_t attr);
+
+static PyObject *
+_curses_window_attr_off(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    attr_t attr;
+
+    if (!attr_converter(arg, &attr)) {
+        goto exit;
+    }
+    return_value = _curses_window_attr_off_impl((PyCursesWindowObject *)self, attr);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_curses_window_color_set__doc__,
+"color_set($self, pair, /)\n"
+"--\n"
+"\n"
+"Set the window\'s color pair attribute.");
+
+#define _CURSES_WINDOW_COLOR_SET_METHODDEF    \
+    {"color_set", (PyCFunction)_curses_window_color_set, METH_O, _curses_window_color_set__doc__},
+
+static PyObject *
+_curses_window_color_set_impl(PyCursesWindowObject *self, int pair);
+
+static PyObject *
+_curses_window_color_set(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int pair;
+
+    if (!pair_converter(arg, &pair)) {
+        goto exit;
+    }
+    return_value = _curses_window_color_set_impl((PyCursesWindowObject *)self, pair);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_curses_window_getattrs__doc__,
+"getattrs($self, /)\n"
+"--\n"
+"\n"
+"Return the window\'s current attributes.");
+
+#define _CURSES_WINDOW_GETATTRS_METHODDEF    \
+    {"getattrs", (PyCFunction)_curses_window_getattrs, METH_NOARGS, _curses_window_getattrs__doc__},
+
+static PyObject *
+_curses_window_getattrs_impl(PyCursesWindowObject *self);
+
+static PyObject *
+_curses_window_getattrs(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_window_getattrs_impl((PyCursesWindowObject *)self);
+}
+
 PyDoc_STRVAR(_curses_window_bkgdset__doc__,
 "bkgdset($self, ch, attr=_curses.A_NORMAL, /)\n"
 "--\n"
@@ -4966,4 +5122,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=fd0f4e65dc594a65 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3d8d59f44ded2226 input=a9049054013a1b77]*/

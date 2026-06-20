@@ -131,6 +131,13 @@ curses
   available when built against an ncurses with ``NCURSES_EXT_FUNCS``.
   (Contributed by Serhiy Storchaka in :gh:`151776`.)
 
+* Add the :mod:`curses` window methods :meth:`~curses.window.attr_get`,
+  :meth:`~curses.window.attr_set`, :meth:`~curses.window.attr_on`,
+  :meth:`~curses.window.attr_off` and :meth:`~curses.window.color_set`, which
+  pass the color pair as a separate argument instead of packing it into the
+  attribute value, and the corresponding ``WA_*`` attribute constants.
+  (Contributed by Serhiy Storchaka in :gh:`152219`.)
+
 gzip
 ----
 
