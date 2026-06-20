@@ -5475,6 +5475,20 @@ Widget classes
       inserted or deleted.
       Otherwise set the flag to the boolean *arg*.
 
+   .. method:: edit_canundo()
+
+      Return ``True`` if there is an edit action on the undo stack that can be
+      undone, and ``False`` otherwise.
+
+      .. versionadded:: next
+
+   .. method:: edit_canredo()
+
+      Return ``True`` if there is an edit action on the redo stack that can be
+      reapplied, and ``False`` otherwise.
+
+      .. versionadded:: next
+
    .. method:: edit_undo()
 
       Undo the most recent edit action, that is, all the inserts and deletes
