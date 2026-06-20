@@ -350,16 +350,18 @@ The module :mod:`!curses` defines the following functions:
 
 .. function:: is_cbreak()
 
-   Return ``True`` if cbreak mode (see :func:`cbreak`) is enabled, ``False``
-   otherwise.
+   Return ``True`` if cbreak mode (see :func:`cbreak`) is enabled,
+   ``False`` otherwise.
+   Availability: ncurses 6.5 or later.
 
    .. versionadded:: next
 
 
 .. function:: is_echo()
 
-   Return ``True`` if echo mode (see :func:`echo`) is enabled, ``False``
-   otherwise.
+   Return ``True`` if echo mode (see :func:`echo`) is enabled,
+   ``False`` otherwise.
+   Availability: ncurses 6.5 or later.
 
    .. versionadded:: next
 
@@ -367,14 +369,16 @@ The module :mod:`!curses` defines the following functions:
 .. function:: is_nl()
 
    Return ``True`` if nl mode (see :func:`nl`) is enabled, ``False`` otherwise.
+   Availability: ncurses 6.5 or later.
 
    .. versionadded:: next
 
 
 .. function:: is_raw()
 
-   Return ``True`` if raw mode (see :func:`raw`) is enabled, ``False``
-   otherwise.
+   Return ``True`` if raw mode (see :func:`raw`) is enabled,
+   ``False`` otherwise.
+   Availability: ncurses 6.5 or later.
 
    .. versionadded:: next
 
@@ -1038,9 +1042,10 @@ Window objects
 
 .. method:: window.getdelay()
 
-   Return the window's read timeout in milliseconds, as set by :meth:`nodelay`
-   or :meth:`timeout`: ``-1`` for blocking, ``0`` for non-blocking, or a
-   positive number of milliseconds.
+   Return the window's read timeout in milliseconds,
+   as set by :meth:`nodelay` or :meth:`timeout`:
+   ``-1`` for blocking, ``0`` for non-blocking,
+   or a positive number of milliseconds.
 
    .. versionadded:: next
 
@@ -1060,8 +1065,8 @@ Window objects
 
 .. method:: window.getparent()
 
-   Return the parent window of this subwindow, or ``None`` if this window is
-   not a subwindow.
+   Return the parent window of this subwindow,
+   or ``None`` if this window is not a subwindow.
 
    .. versionadded:: next
 

@@ -1991,7 +1991,7 @@ exit:
     return return_value;
 }
 
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404)
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427)
 
 PyDoc_STRVAR(_curses_is_cbreak__doc__,
 "is_cbreak($module, /)\n"
@@ -2011,9 +2011,9 @@ _curses_is_cbreak(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_is_cbreak_impl(module);
 }
 
-#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404) */
+#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427) */
 
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404)
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427)
 
 PyDoc_STRVAR(_curses_is_echo__doc__,
 "is_echo($module, /)\n"
@@ -2033,9 +2033,9 @@ _curses_is_echo(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_is_echo_impl(module);
 }
 
-#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404) */
+#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427) */
 
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404)
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427)
 
 PyDoc_STRVAR(_curses_is_nl__doc__,
 "is_nl($module, /)\n"
@@ -2055,9 +2055,9 @@ _curses_is_nl(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_is_nl_impl(module);
 }
 
-#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404) */
+#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427) */
 
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404)
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427)
 
 PyDoc_STRVAR(_curses_is_raw__doc__,
 "is_raw($module, /)\n"
@@ -2077,7 +2077,7 @@ _curses_is_raw(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_is_raw_impl(module);
 }
 
-#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404) */
+#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427) */
 
 PyDoc_STRVAR(_curses_color_content__doc__,
 "color_content($module, color_number, /)\n"
@@ -4620,4 +4620,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=3b988826847b3985 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=68f33f61fb666127 input=a9049054013a1b77]*/

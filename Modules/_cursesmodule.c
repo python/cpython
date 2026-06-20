@@ -3398,7 +3398,8 @@ _curses_cbreak_impl(PyObject *module, int flag)
 /*[clinic end generated code: output=9f9dee9664769751 input=42d81687f11ddbf3]*/
 NoArgOrFlagNoReturnFunctionBody(cbreak, flag)
 
-#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404
+/* is_cbreak()/is_echo()/is_nl()/is_raw() were added in ncurses 6.5. */
+#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427
 /*[clinic input]
 _curses.is_cbreak
 
