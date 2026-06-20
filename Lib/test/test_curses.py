@@ -124,11 +124,10 @@ class TestCurses(unittest.TestCase):
                 infd = stdout_fd
             self.screen = curses.newterm(term, stdout_fd, infd)
             self.stdscr = self.screen.stdscr
-            # Close the screen after the test: it breaks the window<->screen
-            # reference cycle and detaches the standard window so its delwin()
-            # is skipped.  Otherwise the window is collected during a later test
-            # whose screen is no longer current, and delwin() fails (unraisable
-            # on macOS).
+            # Close the screen after the test to break its window<->screen
+            # reference cycle deterministically, rather than leaving it for the
+            # cyclic GC to collect during a much later test (where a window's
+            # delwin() can fail -- an unraisable error on macOS).
             self.addCleanup(self.screen.close)
             self.addCleanup(setattr, self, 'screen', None)
             self.addCleanup(setattr, self, 'stdscr', None)
@@ -1196,6 +1195,10 @@ class TestCurses(unittest.TestCase):
     def test_userptr_segfault(self):
         w = curses.newwin(10, 10)
         panel = curses.panel.new_panel(w)
+        # set_userptr(A()) makes a panel<->userptr reference cycle (A.__del__
+        # closes over panel); clean it up so the panel and its window do not
+        # linger until a later test collects them.
+        self.addCleanup(self._delete_panels, panel)
         class A:
             def __del__(self):
                 panel.set_userptr(None)
