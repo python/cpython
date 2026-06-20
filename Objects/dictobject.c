@@ -5267,8 +5267,9 @@ dict_new_untracked(PyTypeObject *type)
 }
 
 static PyObject *
-dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+dict_new(PyTypeObject *type, PyObject *Py_UNUSED(args), PyObject *Py_UNUSED(kwds))
 {
+    /* tp_new only allocates; args/kwds are consumed by dict_init (tp_init). */
     PyObject *self = dict_new_untracked(type);
     if (self == NULL) {
         return NULL;
@@ -5356,10 +5357,9 @@ frozendict_vectorcall(PyObject *type, PyObject * const*args,
             }
         }
     }
-    /* Track only once fully built. */
-    if (!_PyObject_GC_IS_TRACKED(self)) {
-        _PyObject_GC_TRACK(self);
-    }
+    /* Track only once fully built.  Only ever reached for the exact frozendict
+       type, so self is still untracked here. */
+    _PyObject_GC_TRACK(self);
     return self;
 }
 
