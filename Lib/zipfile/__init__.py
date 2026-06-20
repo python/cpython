@@ -1851,6 +1851,11 @@ class _ZipRepacker:
         while read_size < size:
             fp.seek(old_offset + read_size)
             data = fp.read(min(size - read_size, self.chunk_size))
+            if not data:
+                raise BadZipFile(
+                    "Truncated data while repacking "
+                    f"(expected {size} bytes at offset {old_offset})"
+                )
             fp.seek(new_offset + read_size)
             fp.write(data)
             fp.flush()
