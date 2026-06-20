@@ -1,0 +1,3 @@
+Fix a crash in :func:`warnings.warn` when the ``"<sys>"`` fallback filename
+could not be allocated under memory pressure: :c:func:`!setup_context` left
+the filename ``NULL`` and it was later passed to :c:func:`Py_DECREF`.
