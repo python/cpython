@@ -2720,6 +2720,10 @@ class Parameter:
                 raise ValueError(msg)
             self._kind = _POSITIONAL_ONLY
             name = 'implicit{}'.format(name[1:])
+        elif name == '.format':
+            # gh-151665: Hidden parameter of compiler-generated annotation and type
+            # alias/typevar evaluators. Show it as "format".
+            name = 'format'
 
         # It's possible for C functions to have a positional-only parameter
         # where the name is a keyword, so for compatibility we'll allow it.
