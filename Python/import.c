@@ -81,8 +81,6 @@ static struct _inittab *inittab_copy = NULL;
 #define LAST_MODULE_INDEX _PyRuntime.imports.last_module_index
 #define EXTENSIONS _PyRuntime.imports.extensions
 
-#define PKGCONTEXT (_PyRuntime.imports.pkgcontext)
-
 
 /*******************************/
 /* interpreter import state */
@@ -883,7 +881,6 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
 */
 
 static _Py_thread_local const char *pkgcontext = NULL;
-# undef PKGCONTEXT
 # define PKGCONTEXT pkgcontext
 
 const char *
@@ -3174,7 +3171,7 @@ find_frozen(PyObject *nameobj, struct frozen_info *info)
     if (nameobj == NULL || nameobj == Py_None) {
         return FROZEN_BAD_NAME;
     }
-    const char *name = PyUnicode_AsUTF8(nameobj);
+    const char *name = _PyUnicode_AsUTF8NoNUL(nameobj);
     if (name == NULL) {
         // Note that this function previously used
         // _PyUnicode_EqualToASCIIString().  We clear the error here

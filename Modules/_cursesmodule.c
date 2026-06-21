@@ -208,7 +208,11 @@ static int curses_initscr_called = FALSE;
 /* Tells whether start_color() has been called to initialise color usage. */
 static int curses_start_color_called = FALSE;
 
-static const char *curses_screen_encoding = NULL;
+/* Encoding of the initial screen, used by module-level functions that have
+   no window object to take it from (e.g. unctrl(), ungetch()).  This is a
+   private copy: the window object that initscr() returns may be deallocated
+   while these functions are still in use. */
+static char *curses_screen_encoding = NULL;
 
 /* Utility Error Procedures */
 
@@ -1574,13 +1578,16 @@ _curses.window.delch
     ]
     /
 
-Delete any character at (y, x).
+Delete the character under the cursor, or at (y, x) if specified.
+
+All characters to the right on the same line are shifted one
+position left.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_window_delch_impl(PyCursesWindowObject *self, int group_right_1,
                           int y, int x)
-/*[clinic end generated code: output=22e77bb9fa11b461 input=d2f79e630a4fc6d0]*/
+/*[clinic end generated code: output=22e77bb9fa11b461 input=61db3c7f4885e90c]*/
 {
     int rtn;
     const char *funcname;
@@ -2120,10 +2127,12 @@ PyDoc_STRVAR(_curses_window_instr__doc__,
 "  n\n"
 "    Maximal number of characters.\n"
 "\n"
-"Return a string of characters, extracted from the window starting at the\n"
-"current cursor position, or at y, x if specified.  Attributes are stripped\n"
-"from the characters.  If n is specified, instr() returns a string at most\n"
-"n characters long (exclusive of the trailing NUL).");
+"Return a string of characters, extracted from the window starting\n"
+"at the current cursor position, or at y, x if specified, and\n"
+"stopping at the end of the line.  Attributes and color\n"
+"information are stripped from the characters.  If n is specified,\n"
+"instr() returns a string at most n characters long (exclusive of\n"
+"the trailing NUL).");
 
 static PyObject *
 PyCursesWindow_instr(PyObject *op, PyObject *args)
@@ -2932,39 +2941,71 @@ static PyMethodDef PyCursesWindow_methods[] = {
     _CURSES_WINDOW_BKGDSET_METHODDEF
     _CURSES_WINDOW_BORDER_METHODDEF
     _CURSES_WINDOW_BOX_METHODDEF
-    {"clear",           PyCursesWindow_wclear, METH_NOARGS},
-    {"clearok",         PyCursesWindow_clearok, METH_VARARGS},
-    {"clrtobot",        PyCursesWindow_wclrtobot, METH_NOARGS},
-    {"clrtoeol",        PyCursesWindow_wclrtoeol, METH_NOARGS},
-    {"cursyncup",       PyCursesWindow_wcursyncup, METH_NOARGS},
+    {"clear", PyCursesWindow_wclear, METH_NOARGS,
+     "clear($self, /)\n--\n\n"
+     "Clear the window and repaint it completely on the next refresh()."},
+    {"clearok", PyCursesWindow_clearok, METH_VARARGS,
+     "clearok($self, flag, /)\n--\n\n"
+     "Clear the window on the next refresh() if flag is true."},
+    {"clrtobot", PyCursesWindow_wclrtobot, METH_NOARGS,
+     "clrtobot($self, /)\n--\n\n"
+     "Erase from the cursor to the end of the window."},
+    {"clrtoeol", PyCursesWindow_wclrtoeol, METH_NOARGS,
+     "clrtoeol($self, /)\n--\n\n"
+     "Erase from the cursor to the end of the line."},
+    {"cursyncup", PyCursesWindow_wcursyncup, METH_NOARGS,
+     "cursyncup($self, /)\n--\n\n"
+     "Update the cursor position of all ancestor windows to match."},
     _CURSES_WINDOW_DELCH_METHODDEF
-    {"deleteln",        PyCursesWindow_wdeleteln, METH_NOARGS},
+    {"deleteln", PyCursesWindow_wdeleteln, METH_NOARGS,
+     "deleteln($self, /)\n--\n\n"
+     "Delete the line under the cursor; move following lines up by one."},
     _CURSES_WINDOW_DERWIN_METHODDEF
     _CURSES_WINDOW_ECHOCHAR_METHODDEF
     _CURSES_WINDOW_ENCLOSE_METHODDEF
-    {"erase",           PyCursesWindow_werase, METH_NOARGS},
-    {"getbegyx",        PyCursesWindow_getbegyx, METH_NOARGS},
+    {"erase", PyCursesWindow_werase, METH_NOARGS,
+     "erase($self, /)\n--\n\n"
+     "Clear the window."},
+    {"getbegyx", PyCursesWindow_getbegyx, METH_NOARGS,
+     "getbegyx($self, /)\n--\n\n"
+     "Return a tuple (y, x) of the upper-left corner coordinates."},
     _CURSES_WINDOW_GETBKGD_METHODDEF
     _CURSES_WINDOW_GETCH_METHODDEF
     _CURSES_WINDOW_GETKEY_METHODDEF
     _CURSES_WINDOW_GET_WCH_METHODDEF
-    {"getmaxyx",        PyCursesWindow_getmaxyx, METH_NOARGS},
-    {"getparyx",        PyCursesWindow_getparyx, METH_NOARGS},
+    {"getmaxyx", PyCursesWindow_getmaxyx, METH_NOARGS,
+     "getmaxyx($self, /)\n--\n\n"
+     "Return a tuple (y, x) of the window height and width."},
+    {"getparyx", PyCursesWindow_getparyx, METH_NOARGS,
+     "getparyx($self, /)\n--\n\n"
+     "Return (y, x) relative to the parent window, or (-1, -1) if none."},
     {
         "getstr", PyCursesWindow_getstr, METH_VARARGS,
         _curses_window_getstr__doc__
     },
-    {"getyx",           PyCursesWindow_getyx, METH_NOARGS},
+    {"getyx", PyCursesWindow_getyx, METH_NOARGS,
+     "getyx($self, /)\n--\n\n"
+     "Return a tuple (y, x) of the current cursor position."},
     _CURSES_WINDOW_HLINE_METHODDEF
-    {"idcok",           PyCursesWindow_idcok, METH_VARARGS},
-    {"idlok",           PyCursesWindow_idlok, METH_VARARGS},
+    {"idcok", PyCursesWindow_idcok, METH_VARARGS,
+     "idcok($self, flag, /)\n--\n\n"
+     "Enable or disable the hardware insert/delete character feature."},
+    {"idlok", PyCursesWindow_idlok, METH_VARARGS,
+     "idlok($self, flag, /)\n--\n\n"
+     "Enable or disable the hardware insert/delete line feature."},
 #ifdef HAVE_CURSES_IMMEDOK
-    {"immedok",         PyCursesWindow_immedok, METH_VARARGS},
+    {"immedok", PyCursesWindow_immedok, METH_VARARGS,
+     "immedok($self, flag, /)\n--\n\n"
+     "If flag is true, refresh the window on every change to it."},
 #endif
     _CURSES_WINDOW_INCH_METHODDEF
     _CURSES_WINDOW_INSCH_METHODDEF
-    {"insdelln",        PyCursesWindow_winsdelln, METH_VARARGS},
-    {"insertln",        PyCursesWindow_winsertln, METH_NOARGS},
+    {"insdelln", PyCursesWindow_winsdelln, METH_VARARGS,
+     "insdelln($self, nlines, /)\n--\n\n"
+     "Insert (nlines > 0) or delete (nlines < 0) lines above the cursor."},
+    {"insertln", PyCursesWindow_winsertln, METH_NOARGS,
+     "insertln($self, /)\n--\n\n"
+     "Insert a blank line under the cursor; move following lines down."},
     _CURSES_WINDOW_INSNSTR_METHODDEF
     _CURSES_WINDOW_INSSTR_METHODDEF
     {
@@ -2972,40 +3013,78 @@ static PyMethodDef PyCursesWindow_methods[] = {
         _curses_window_instr__doc__
     },
     _CURSES_WINDOW_IS_LINETOUCHED_METHODDEF
-    {"is_wintouched",   PyCursesWindow_is_wintouched, METH_NOARGS},
-    {"keypad",          PyCursesWindow_keypad, METH_VARARGS},
-    {"leaveok",         PyCursesWindow_leaveok, METH_VARARGS},
-    {"move",            PyCursesWindow_wmove, METH_VARARGS},
-    {"mvderwin",        PyCursesWindow_mvderwin, METH_VARARGS},
-    {"mvwin",           PyCursesWindow_mvwin, METH_VARARGS},
-    {"nodelay",         PyCursesWindow_nodelay, METH_VARARGS},
-    {"notimeout",       PyCursesWindow_notimeout, METH_VARARGS},
+    {"is_wintouched", PyCursesWindow_is_wintouched, METH_NOARGS,
+     "is_wintouched($self, /)\n--\n\n"
+     "Return True if the window changed since the last refresh()."},
+    {"keypad", PyCursesWindow_keypad, METH_VARARGS,
+     "keypad($self, flag, /)\n--\n\n"
+     "Interpret escape sequences for special keys if flag is true."},
+    {"leaveok", PyCursesWindow_leaveok, METH_VARARGS,
+     "leaveok($self, flag, /)\n--\n\n"
+     "If flag is true, leave the cursor where the update leaves it."},
+    {"move", PyCursesWindow_wmove, METH_VARARGS,
+     "move($self, new_y, new_x, /)\n--\n\n"
+     "Move the cursor to (new_y, new_x)."},
+    {"mvderwin", PyCursesWindow_mvderwin, METH_VARARGS,
+     "mvderwin($self, y, x, /)\n--\n\n"
+     "Move the window inside its parent window."},
+    {"mvwin", PyCursesWindow_mvwin, METH_VARARGS,
+     "mvwin($self, new_y, new_x, /)\n--\n\n"
+     "Move the window so its upper-left corner is at (new_y, new_x)."},
+    {"nodelay", PyCursesWindow_nodelay, METH_VARARGS,
+     "nodelay($self, flag, /)\n--\n\n"
+     "If flag is true, getch() becomes non-blocking."},
+    {"notimeout", PyCursesWindow_notimeout, METH_VARARGS,
+     "notimeout($self, flag, /)\n--\n\n"
+     "If flag is true, do not time out escape sequences."},
     _CURSES_WINDOW_NOUTREFRESH_METHODDEF
     _CURSES_WINDOW_OVERLAY_METHODDEF
     _CURSES_WINDOW_OVERWRITE_METHODDEF
     _CURSES_WINDOW_PUTWIN_METHODDEF
     _CURSES_WINDOW_REDRAWLN_METHODDEF
-    {"redrawwin",       PyCursesWindow_redrawwin, METH_NOARGS},
+    {"redrawwin", PyCursesWindow_redrawwin, METH_NOARGS,
+     "redrawwin($self, /)\n--\n\n"
+     "Mark the entire window for redraw on the next refresh()."},
     _CURSES_WINDOW_REFRESH_METHODDEF
 #ifndef STRICT_SYSV_CURSES
-    {"resize",          PyCursesWindow_wresize, METH_VARARGS},
+    {"resize", PyCursesWindow_wresize, METH_VARARGS,
+     "resize($self, nlines, ncols, /)\n--\n\n"
+     "Resize the window to nlines rows and ncols columns."},
 #endif
     _CURSES_WINDOW_SCROLL_METHODDEF
-    {"scrollok",        PyCursesWindow_scrollok, METH_VARARGS},
+    {"scrollok", PyCursesWindow_scrollok, METH_VARARGS,
+     "scrollok($self, flag, /)\n--\n\n"
+     "Control whether the window scrolls when the cursor moves off it."},
     _CURSES_WINDOW_SETSCRREG_METHODDEF
-    {"standend",        PyCursesWindow_wstandend, METH_NOARGS},
-    {"standout",        PyCursesWindow_wstandout, METH_NOARGS},
+    {"standend", PyCursesWindow_wstandend, METH_NOARGS,
+     "standend($self, /)\n--\n\n"
+     "Turn off the standout attribute."},
+    {"standout", PyCursesWindow_wstandout, METH_NOARGS,
+     "standout($self, /)\n--\n\n"
+     "Turn on the A_STANDOUT attribute."},
     {"subpad",          _curses_window_subwin, METH_VARARGS, _curses_window_subwin__doc__},
     _CURSES_WINDOW_SUBWIN_METHODDEF
-    {"syncdown",        PyCursesWindow_wsyncdown, METH_NOARGS},
+    {"syncdown", PyCursesWindow_wsyncdown, METH_NOARGS,
+     "syncdown($self, /)\n--\n\n"
+     "Touch each location changed in any ancestor of the window."},
 #ifdef HAVE_CURSES_SYNCOK
-    {"syncok",          PyCursesWindow_syncok, METH_VARARGS},
+    {"syncok", PyCursesWindow_syncok, METH_VARARGS,
+     "syncok($self, flag, /)\n--\n\n"
+     "If flag is true, call syncup() on every change to the window."},
 #endif
-    {"syncup",          PyCursesWindow_wsyncup, METH_NOARGS},
-    {"timeout",         PyCursesWindow_wtimeout, METH_VARARGS},
+    {"syncup", PyCursesWindow_wsyncup, METH_NOARGS,
+     "syncup($self, /)\n--\n\n"
+     "Touch locations in ancestors that changed in this window."},
+    {"timeout", PyCursesWindow_wtimeout, METH_VARARGS,
+     "timeout($self, delay, /)\n--\n\n"
+     "Set blocking or non-blocking read behavior for the window."},
     _CURSES_WINDOW_TOUCHLINE_METHODDEF
-    {"touchwin",        PyCursesWindow_touchwin, METH_NOARGS},
-    {"untouchwin",      PyCursesWindow_untouchwin, METH_NOARGS},
+    {"touchwin", PyCursesWindow_touchwin, METH_NOARGS,
+     "touchwin($self, /)\n--\n\n"
+     "Mark the whole window as changed."},
+    {"untouchwin", PyCursesWindow_untouchwin, METH_NOARGS,
+     "untouchwin($self, /)\n--\n\n"
+     "Mark all lines in the window as unchanged since last refresh()."},
     _CURSES_WINDOW_VLINE_METHODDEF
     {NULL,                  NULL}   /* sentinel */
 };
@@ -3122,15 +3201,43 @@ static PyType_Spec PyCursesWindow_Type_spec = {
 /*[clinic input]
 _curses.filter
 
+Restrict screen updates to the current line.
+
+Must be called before initscr().  Afterwards curses confines the cursor
+and screen updates to a single line, which is useful for enabling
+character-at-a-time line editing without touching the rest of the
+screen.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_filter_impl(PyObject *module)
-/*[clinic end generated code: output=fb5b8a3642eb70b5 input=668c75a6992d3624]*/
+/*[clinic end generated code: output=fb5b8a3642eb70b5 input=e3c64d6ab2106132]*/
 {
     /* not checking for PyCursesInitialised here since filter() must
        be called before initscr() */
     filter();
+    Py_RETURN_NONE;
+}
+#endif
+
+#ifdef HAVE_CURSES_NOFILTER
+/*[clinic input]
+_curses.nofilter
+
+Undo the effect of a preceding filter() call.
+
+Must be called before initscr().  It restores the normal behaviour
+disabled by filter(), so that the next initscr() uses the full screen
+rather than a single line.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_nofilter_impl(PyObject *module)
+/*[clinic end generated code: output=d95ca4d48a6bdbdf input=58aea83b1a5c969f]*/
+{
+    /* not checking for PyCursesInitialised here since nofilter() must
+       be called before initscr() */
+    nofilter();
     Py_RETURN_NONE;
 }
 #endif
@@ -3718,6 +3825,21 @@ _curses_init_pair_impl(PyObject *module, int pair_number, int fg, int bg)
     Py_RETURN_NONE;
 }
 
+/* Refresh the private copy of the screen encoding from a freshly created
+   stdscr window object.  Returns 0 on success, -1 with an exception set. */
+static int
+curses_update_screen_encoding(PyObject *winobj)
+{
+    char *copy = _PyMem_Strdup(((PyCursesWindowObject *)winobj)->encoding);
+    if (copy == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    PyMem_Free(curses_screen_encoding);
+    curses_screen_encoding = copy;
+    return 0;
+}
+
 /*[clinic input]
 _curses.initscr
 
@@ -3739,7 +3861,15 @@ _curses_initscr_impl(PyObject *module)
             _curses_set_null_error(state, "wrefresh", "initscr");
             return NULL;
         }
-        return PyCursesWindow_New(state, stdscr, NULL, NULL);
+        PyObject *winobj = PyCursesWindow_New(state, stdscr, NULL, NULL);
+        if (winobj == NULL) {
+            return NULL;
+        }
+        if (curses_update_screen_encoding(winobj) < 0) {
+            Py_DECREF(winobj);
+            return NULL;
+        }
+        return winobj;
     }
 
     win = initscr();
@@ -3846,7 +3976,10 @@ _curses_initscr_impl(PyObject *module)
     if (winobj == NULL) {
         return NULL;
     }
-    curses_screen_encoding = ((PyCursesWindowObject *)winobj)->encoding;
+    if (curses_update_screen_encoding(winobj) < 0) {
+        Py_DECREF(winobj);
+        return NULL;
+    }
     return winobj;
 }
 
@@ -3999,11 +4132,16 @@ _curses.intrflush
     flag: bool
     /
 
+Control flushing of the output buffer when an interrupt key is pressed.
+
+If flag is true, pressing an interrupt key (interrupt, break, or quit)
+flushes all output in the terminal driver queue.  If flag is false, no
+flushing is done.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_intrflush_impl(PyObject *module, int flag)
-/*[clinic end generated code: output=c1986df35e999a0f input=c65fe2ef973fe40a]*/
+/*[clinic end generated code: output=c1986df35e999a0f input=66588c2bccc7e8fa]*/
 {
     PyCursesStatefulInitialised(module);
 
@@ -4153,24 +4291,22 @@ _curses_mouseinterval_impl(PyObject *module, int interval)
 }
 
 /*[clinic input]
-@permit_long_summary
 _curses.mousemask
 
     newmask: unsigned_long(bitwise=True)
     /
 
-Set the mouse events to be reported, and return a tuple (availmask, oldmask).
+Set the mouse events to be reported, and return (availmask, oldmask).
 
 Return a tuple (availmask, oldmask).  availmask indicates which of the
 specified mouse events can be reported; on complete failure it returns
-0.  oldmask is the previous value of the given window's mouse event
-mask.  If this function is never called, no mouse events are ever
-reported.
+0.  oldmask is the previous value of the mouse event mask.  If this
+function is never called, no mouse events are ever reported.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_mousemask_impl(PyObject *module, unsigned long newmask)
-/*[clinic end generated code: output=9406cf1b8a36e485 input=78990ec6c52aa888]*/
+/*[clinic end generated code: output=9406cf1b8a36e485 input=b8a9a4ccbce633f4]*/
 {
     mmask_t oldmask, availmask;
 
@@ -4522,11 +4658,14 @@ error:
 /*[clinic input]
 _curses.update_lines_cols
 
+Update the LINES and COLS module variables.
+
+This is useful for detecting manual screen resize.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_update_lines_cols_impl(PyObject *module)
-/*[clinic end generated code: output=423f2b1e63ed0f75 input=5f065ab7a28a5d90]*/
+/*[clinic end generated code: output=423f2b1e63ed0f75 input=1d8ea7c356b61a8b]*/
 {
     if (!update_lines_cols(module)) {
         return NULL;
@@ -5204,6 +5343,7 @@ static PyMethodDef cursesmodule_methods[] = {
     _CURSES_ENDWIN_METHODDEF
     _CURSES_ERASECHAR_METHODDEF
     _CURSES_FILTER_METHODDEF
+    _CURSES_NOFILTER_METHODDEF
     _CURSES_FLASH_METHODDEF
     _CURSES_FLUSHINP_METHODDEF
     _CURSES_GETMOUSE_METHODDEF
@@ -5393,6 +5533,8 @@ static void
 cursesmodule_free(void *mod)
 {
     (void)cursesmodule_clear((PyObject *)mod);
+    PyMem_Free(curses_screen_encoding);
+    curses_screen_encoding = NULL;
     curses_module_loaded = 0;  // allow reloading once garbage-collected
 }
 
