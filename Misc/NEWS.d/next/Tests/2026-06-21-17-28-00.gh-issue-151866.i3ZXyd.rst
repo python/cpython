@@ -1,0 +1,1 @@
+Remove unneeded ``zlib`` dependency in some ``zipfile`` tests.
