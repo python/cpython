@@ -232,18 +232,8 @@ def get_message_lines(typ, exc, tb):
     "Return line composing the exception message."
     if typ in (AttributeError, NameError):
         # 3.10+ hints are not directly accessible from python (#44026).
-        err = io.StringIO()
-        with contextlib.redirect_stderr(err):
-            sys.__excepthook__(typ, exc, tb)
-        err_list = err.getvalue().split("\n")[1:]
-
-        for i in range(len(err_list)):
-            if err_list[i].startswith(" "):
-                continue
-            else:
-                err_list = err_list[i:-1]
-                break
-        return ["\n".join(err_list) + "\n"]
+        traceback_exception = traceback.TracebackException(typ, exc, tb)
+        return list(traceback_exception.format_exception_only())
     else:
         return traceback.format_exception_only(typ, exc)
 
