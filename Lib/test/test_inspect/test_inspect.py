@@ -2266,6 +2266,22 @@ class TestGetcallargsFunctions(unittest.TestCase):
         self.assertEqualCallArgs(f, '2, **collections.UserDict(b=3)')
         self.assertEqualCallArgs(f, 'b=2, **collections.UserDict(a=3)')
 
+    def test_positional_only(self):
+        # gh-107831: positional-only parameters cannot be filled by keyword,
+        # so getcallargs must match a real call (raise rather than bind).
+        f = self.makeCallable('a, b, /, c, d=1, *, e')
+        self.assertEqualCallArgs(f, '1, 2, 3, e=4')
+        self.assertEqualCallArgs(f, '1, 2, c=3, e=4')
+        self.assertEqualCallArgs(f, '1, 2, 3, 4, e=5')
+        self.assertEqualException(f, 'a=1, b=2, c=3, e=4')
+        self.assertEqualException(f, '1, b=2, c=3, e=4')
+        # With **kwargs the positional-only name is absorbed into it and the
+        # parameter itself is left unfilled (a missing-argument error).
+        g = self.makeCallable('a, /, **kw')
+        self.assertEqualCallArgs(g, '1')
+        self.assertEqualCallArgs(g, '1, x=2')
+        self.assertEqualException(g, 'a=1')
+
     def test_varargs(self):
         f = self.makeCallable('a, b=1, *c')
         self.assertEqualCallArgs(f, '2')
