@@ -1,11 +1,37 @@
 #include "Python.h"
 #include "errcode.h"
 #include "internal/pycore_critical_section.h"   // Py_BEGIN_CRITICAL_SECTION
+#include "internal/pycore_global_strings.h"     // _Py_DECLARE_STR()
 #include "internal/pycore_tuple.h"              // _PyTuple_FromPair
 #include "../Parser/lexer/state.h"
 #include "../Parser/lexer/lexer.h"
 #include "../Parser/tokenizer/tokenizer.h"
 #include "../Parser/pegen.h"                    // _PyPegen_byte_offset_to_character_offset()
+
+_Py_DECLARE_STR(token_atequal, "@=")
+_Py_DECLARE_STR(token_circumflexequal, "^=")
+_Py_DECLARE_STR(token_colonequal, ":=")
+_Py_DECLARE_STR(token_double_slash, "//")
+_Py_DECLARE_STR(token_double_slashequal, "//=")
+_Py_DECLARE_STR(token_doublestar, "**")
+_Py_DECLARE_STR(token_doublestarequal, "**=")
+_Py_DECLARE_STR(token_ellipsis, "...")
+_Py_DECLARE_STR(token_eqequal, "==")
+_Py_DECLARE_STR(token_greaterequal, ">=")
+_Py_DECLARE_STR(token_leftshift, "<<")
+_Py_DECLARE_STR(token_leftshiftequal, "<<=")
+_Py_DECLARE_STR(token_lessequal, "<=")
+_Py_DECLARE_STR(token_minequal, "-=")
+_Py_DECLARE_STR(token_notequal, "!=")
+_Py_DECLARE_STR(token_percentequal, "%=")
+_Py_DECLARE_STR(token_plusequal, "+=")
+_Py_DECLARE_STR(token_rarrow, "->")
+_Py_DECLARE_STR(token_rightshift, ">>")
+_Py_DECLARE_STR(token_rightshiftequal, ">>=")
+_Py_DECLARE_STR(token_slashequal, "/=")
+_Py_DECLARE_STR(token_starequal, "*=")
+_Py_DECLARE_STR(token_vbarequal, "|=")
+_Py_DECLARE_STR(token_amperequal, "&=")
 
 static struct PyModuleDef _tokenizemodule;
 
@@ -41,6 +67,49 @@ typedef struct
     Py_ssize_t last_end_lineno;
     Py_ssize_t byte_col_offset_diff;
 } tokenizeriterobject;
+
+static PyObject *
+get_static_exact_token_str(int type, const char *start, Py_ssize_t len)
+{
+#define RETURN_STATIC_TOKEN_STR(TYPE, NAME, LITERAL) \
+    case TYPE: \
+        if (len == (Py_ssize_t)(sizeof(LITERAL) - 1) \
+            && memcmp(start, LITERAL, sizeof(LITERAL) - 1) == 0) \
+        { \
+            return Py_NewRef(&_Py_STR(NAME)); \
+        } \
+        break
+
+    switch (type) {
+        RETURN_STATIC_TOKEN_STR(ATEQUAL, token_atequal, "@=");
+        RETURN_STATIC_TOKEN_STR(CIRCUMFLEXEQUAL, token_circumflexequal, "^=");
+        RETURN_STATIC_TOKEN_STR(COLONEQUAL, token_colonequal, ":=");
+        RETURN_STATIC_TOKEN_STR(DOUBLESLASH, token_double_slash, "//");
+        RETURN_STATIC_TOKEN_STR(DOUBLESLASHEQUAL, token_double_slashequal, "//=");
+        RETURN_STATIC_TOKEN_STR(DOUBLESTAR, token_doublestar, "**");
+        RETURN_STATIC_TOKEN_STR(DOUBLESTAREQUAL, token_doublestarequal, "**=");
+        RETURN_STATIC_TOKEN_STR(ELLIPSIS, token_ellipsis, "...");
+        RETURN_STATIC_TOKEN_STR(EQEQUAL, token_eqequal, "==");
+        RETURN_STATIC_TOKEN_STR(GREATEREQUAL, token_greaterequal, ">=");
+        RETURN_STATIC_TOKEN_STR(LEFTSHIFT, token_leftshift, "<<");
+        RETURN_STATIC_TOKEN_STR(LEFTSHIFTEQUAL, token_leftshiftequal, "<<=");
+        RETURN_STATIC_TOKEN_STR(LESSEQUAL, token_lessequal, "<=");
+        RETURN_STATIC_TOKEN_STR(MINEQUAL, token_minequal, "-=");
+        RETURN_STATIC_TOKEN_STR(NOTEQUAL, token_notequal, "!=");
+        RETURN_STATIC_TOKEN_STR(PERCENTEQUAL, token_percentequal, "%=");
+        RETURN_STATIC_TOKEN_STR(PLUSEQUAL, token_plusequal, "+=");
+        RETURN_STATIC_TOKEN_STR(RARROW, token_rarrow, "->");
+        RETURN_STATIC_TOKEN_STR(RIGHTSHIFT, token_rightshift, ">>");
+        RETURN_STATIC_TOKEN_STR(RIGHTSHIFTEQUAL, token_rightshiftequal, ">>=");
+        RETURN_STATIC_TOKEN_STR(SLASHEQUAL, token_slashequal, "/=");
+        RETURN_STATIC_TOKEN_STR(STAREQUAL, token_starequal, "*=");
+        RETURN_STATIC_TOKEN_STR(VBAREQUAL, token_vbarequal, "|=");
+        RETURN_STATIC_TOKEN_STR(AMPEREQUAL, token_amperequal, "&=");
+    }
+
+#undef RETURN_STATIC_TOKEN_STR
+    return NULL;
+}
 
 /*[clinic input]
 @classmethod
@@ -268,7 +337,11 @@ tokenizeriter_next(PyObject *op)
         str = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     }
     else {
-        str = PyUnicode_FromStringAndSize(token.start, token.end - token.start);
+        Py_ssize_t len = token.end - token.start;
+        str = get_static_exact_token_str(type, token.start, len);
+        if (str == NULL) {
+            str = PyUnicode_FromStringAndSize(token.start, len);
+        }
     }
     if (str == NULL) {
         goto exit;

@@ -1885,6 +1885,45 @@ class TestTokenize(TestCase):
                                   token.NAME, token.AMPER, token.NUMBER,
                                   token.RPAR)
 
+    def test_exact_operator_token_strings_are_reused(self):
+        operators = (
+            '...', '->', '!=', '%=', '&=', '**', '**=', '*=',
+            '+=', '-=', '//', '//=', '/=', ':=', '<<', '<<=',
+            '<=', '==', '>=', '>>', '>>=', '@=', '^=', '|=',
+        )
+        for op in operators:
+            with self.subTest(op=op):
+                source = f'{op} {op}\n'.encode()
+                tokens = list(tokenize.tokenize(BytesIO(source).readline))
+                matches = [tok.string for tok in tokens if tok.string == op]
+                self.assertEqual(len(matches), 2)
+                self.assertIs(matches[0], matches[1])
+
+    def test_exact_operator_token_strings_are_reused_by_c_tokenizer(self):
+        operators = (
+            '...', '->', '!=', '%=', '&=', '**', '**=', '*=',
+            '+=', '-=', '//', '//=', '/=', ':=', '<<', '<<=',
+            '<=', '==', '>=', '>>', '>>=', '@=', '^=', '|=',
+        )
+        for op in operators:
+            with self.subTest(op=op):
+                source = BytesIO(f'{op} {op}\n'.encode())
+                tokens = list(tokenize._tokenize.TokenizerIter(
+                    source.readline, encoding='utf-8', extra_tokens=True))
+                matches = [tok[1] for tok in tokens if tok[1] == op]
+                self.assertEqual(len(matches), 2)
+                self.assertIs(matches[0], matches[1])
+
+    def test_old_not_equal_spelling_is_not_rewritten(self):
+        source = BytesIO(
+            b'from __future__ import barry_as_FLUFL\n'
+            b'a <> b\n'
+        )
+        tokens = list(tokenize._tokenize.TokenizerIter(
+            source.readline, encoding='utf-8', extra_tokens=True))
+        self.assertIn('<>', [tok[1] for tok in tokens])
+        self.assertNotIn('!=', [tok[1] for tok in tokens])
+
     def test_pathological_trailing_whitespace(self):
         # See http://bugs.python.org/issue16152
         self.assertExactTypeEqual('@          ', token.AT)
