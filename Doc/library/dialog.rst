@@ -15,18 +15,28 @@ The :mod:`!tkinter.simpledialog` module contains convenience classes and
 functions for creating simple modal dialogs to get a value from the user.
 
 
-.. function:: askfloat(title, prompt, **kw)
-              askinteger(title, prompt, **kw)
-              askstring(title, prompt, **kw)
+.. function:: askfloat(title, prompt, *, initialvalue=None, minvalue=None, maxvalue=None, parent=None, use_ttk=True)
+              askinteger(title, prompt, *, initialvalue=None, minvalue=None, maxvalue=None, parent=None, use_ttk=True)
+              askstring(title, prompt, *, initialvalue=None, show=None, parent=None, use_ttk=True)
 
-   The above three functions provide dialogs that prompt the user to enter a value
-   of the desired type.
+   Prompt the user to enter a value of the desired type and return it, or
+   ``None`` if the dialog is cancelled.
+
+   *title* is the dialog title and *prompt* the message shown above the entry.
+   *initialvalue* is the value initially placed in the entry.
+   *parent* is the window over which the dialog is shown.
+   :func:`askinteger` and :func:`askfloat` also accept *minvalue* and
+   *maxvalue*, which bound the accepted value.
+   :func:`askstring` also accepts *show*, a character used to mask the entered
+   text, for example ``'*'`` to hide a password.
    They use the themed :mod:`tkinter.ttk` widgets; pass ``use_ttk=False`` for
    the classic widgets.
 
 .. class:: Dialog(parent, title=None, *, use_ttk=False)
 
    The base class for custom dialogs.
+   Instantiating it shows the dialog modally and returns once the user closes
+   it; the entered value is then available in the :attr:`!result` attribute.
    When *use_ttk* is false (the default), the dialog is built from the classic
    :mod:`tkinter` widgets, modelled on the classic ``tk_dialog``; when true,
    from the themed :mod:`tkinter.ttk` widgets, modelled on the Tk message box.
@@ -35,6 +45,11 @@ functions for creating simple modal dialogs to get a value from the user.
 
    .. versionchanged:: next
       Added the *use_ttk* parameter.
+
+   .. attribute:: result
+
+      The value produced by :meth:`apply`, or ``None`` if the dialog was
+      cancelled.
 
    .. method:: body(master)
 
@@ -56,7 +71,8 @@ functions for creating simple modal dialogs to get a value from the user.
 
    .. method:: apply()
 
-      Process the data entered by the user.
+      Process the data entered by the user, for example by storing it in the
+      :attr:`!result` attribute.
       Called after :meth:`validate` succeeds and just before the dialog is
       destroyed.
       The default implementation does nothing; override it to act on or store

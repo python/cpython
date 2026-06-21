@@ -188,6 +188,15 @@ xml
   instead of failing later, when encounter non-ASCII data.
   (Contributed by Serhiy Storchaka in :gh:`62259`.)
 
+zipfile
+-------
+
+* Add :meth:`ZipFile.remove() <zipfile.ZipFile.remove>` to remove a member
+  from an archive's central directory, and
+  :meth:`ZipFile.repack() <zipfile.ZipFile.repack>` to reclaim the space used
+  by the local file entries of removed members.
+  (Contributed by Danny Lin in :gh:`51067`.)
+
 .. Add improved modules above alphabetically, not here at the end.
 
 Optimizations
