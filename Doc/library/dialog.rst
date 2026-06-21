@@ -216,9 +216,19 @@ These do not emulate the native look-and-feel of the platform.
 .. note::  The *FileDialog* class should be subclassed for custom event
    handling and behaviour.
 
-.. class:: FileDialog(master, title=None)
+.. class:: FileDialog(master, title=None, *, use_ttk=True)
 
    Create a basic file selection dialog.
+   Its layout -- a filter entry, side-by-side directory and file lists, and a
+   selection entry -- follows the classic Motif file selection dialog.
+   When *use_ttk* is true (the default), the dialog is built from the themed
+   :mod:`tkinter.ttk` widgets; when false, from the classic :mod:`tkinter`
+   widgets.
+
+   .. versionchanged:: next
+      The dialog is now built from the themed :mod:`tkinter.ttk` widgets by
+      default, instead of the classic :mod:`tkinter` widgets.
+      Added the *use_ttk* parameter.
 
    .. method:: cancel_command(event=None)
 
@@ -280,20 +290,26 @@ These do not emulate the native look-and-feel of the platform.
       Update the current file selection to *file*.
 
 
-.. class:: LoadFileDialog(master, title=None)
+.. class:: LoadFileDialog(master, title=None, *, use_ttk=True)
 
    A subclass of FileDialog that creates a dialog window for selecting an
    existing file.
+
+   .. versionchanged:: next
+      Added the *use_ttk* parameter.
 
    .. method:: ok_command()
 
       Test that a file is provided and that the selection indicates an
       already existing file.
 
-.. class:: SaveFileDialog(master, title=None)
+.. class:: SaveFileDialog(master, title=None, *, use_ttk=True)
 
    A subclass of FileDialog that creates a dialog window for selecting a
    destination file.
+
+   .. versionchanged:: next
+      Added the *use_ttk* parameter.
 
    .. method:: ok_command()
 

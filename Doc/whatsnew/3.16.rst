@@ -236,6 +236,14 @@ tkinter
   ttk version, and accepts mappings of button options as *buttons* entries.
   (Contributed by Serhiy Storchaka in :gh:`59396`.)
 
+* The :class:`!tkinter.filedialog.FileDialog` dialog and its
+  :class:`!tkinter.filedialog.LoadFileDialog` and
+  :class:`!tkinter.filedialog.SaveFileDialog` subclasses are now built from the
+  themed :mod:`tkinter.ttk` widgets by default instead of the classic
+  :mod:`tkinter` widgets, and gained a *use_ttk* parameter to select between
+  them.
+  (Contributed by Serhiy Storchaka in :gh:`59396`.)
+
 xml
 ---
 
