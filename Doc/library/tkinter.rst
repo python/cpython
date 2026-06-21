@@ -2134,6 +2134,16 @@ Base and mixin classes
       window; otherwise it refers to the display of the application's main
       window.
 
+   .. method:: winfo_isdark()
+
+      On macOS and Windows, return ``True`` if the widget is in "dark mode",
+      and ``False`` otherwise.
+      Always return ``False`` on X11.
+
+      .. versionadded:: next
+
+         Requires Tk 9.1 or newer.
+
    .. method:: winfo_ismapped()
 
       Return ``1`` if the widget is currently mapped, ``0`` otherwise.
@@ -2605,6 +2615,24 @@ Base and mixin classes
       empty string.
       :meth:`wm_group` is an alias of :meth:`!group`.
 
+   .. method:: wm_iconbadge(badge)
+      :no-typesetting:
+
+   .. method:: iconbadge(badge)
+
+      Set a badge for the window's icon, intended for display in the Dock
+      (macOS), taskbar (Windows) or app panel (X11).
+      *badge* may be a positive integer (for example a count of unread
+      messages) or an exclamation point to denote that attention is needed;
+      an empty string removes the badge.
+      On X11 the variable ``::tk::icons::base_icon(window)`` must be set to the
+      window's icon image for the badge to appear.
+      :meth:`wm_iconbadge` is an alias of :meth:`!iconbadge`.
+
+      .. versionadded:: next
+
+         Requires Tk 9.0 or newer.
+
    .. method:: wm_iconbitmap(bitmap=None, default=None)
       :no-typesetting:
 
@@ -2813,6 +2841,22 @@ Base and mixin classes
       With no argument, return the current source, or an empty string if none
       has been set.
       :meth:`wm_sizefrom` is an alias of :meth:`!sizefrom`.
+
+   .. method:: wm_stackorder(relation=None, window=None)
+      :no-typesetting:
+
+   .. method:: stackorder(relation=None, window=None)
+
+      Query the stacking order of top-level windows.
+      With no arguments, return a list of the mapped top-level widgets in
+      stacking order, from lowest to highest, recursively including this
+      window's top-level children.
+      If *relation* is ``'isabove'`` or ``'isbelow'`` and *window* is another
+      top-level, return ``True`` if this window is respectively above or below
+      *window* in the stacking order, and ``False`` otherwise.
+      :meth:`wm_stackorder` is an alias of :meth:`!stackorder`.
+
+      .. versionadded:: next
 
    .. method:: wm_state(newstate=None)
       :no-typesetting:
