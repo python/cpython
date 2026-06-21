@@ -7546,20 +7546,26 @@ class FreeThreadingTests(unittest.TestCase):
 
         def check_servbyname(name, proto, expected):
             for _ in range(loops):
-                if socket.getservbyname(name, proto) != expected:
-                    errors.append('getservbyname')
+                got = socket.getservbyname(name, proto)
+                if got != expected:
+                    errors.append(f'getservbyname({name!r}, {proto!r}): '
+                                  f'{got!r} != {expected!r}')
                     return
 
         def check_servbyport(port, proto, expected):
             for _ in range(loops):
-                if socket.getservbyport(port, proto) != expected:
-                    errors.append('getservbyport')
+                got = socket.getservbyport(port, proto)
+                if got != expected:
+                    errors.append(f'getservbyport({port!r}, {proto!r}): '
+                                  f'{got!r} != {expected!r}')
                     return
 
         def check_protobyname(name, expected):
             for _ in range(loops):
-                if socket.getprotobyname(name) != expected:
-                    errors.append('getprotobyname')
+                got = socket.getprotobyname(name)
+                if got != expected:
+                    errors.append(f'getprotobyname({name!r}): '
+                                  f'{got!r} != {expected!r}')
                     return
 
         threads = [

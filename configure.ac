@@ -6211,8 +6211,9 @@ AC_SUBST([HAVE_GETHOSTBYNAME_R])
 AC_SUBST([HAVE_GETHOSTBYNAME])
 
 # Check for the reentrant getservbyname_r(), getservbyport_r() and
-# getprotobyname_r() functions. Unlike gethostbyname_r() they have a single,
-# POSIX-style signature, so a compile test with that prototype is enough.
+# getprotobyname_r() functions. These compile tests use the glibc/POSIX-TSF
+# 6-argument form; platforms with a different arity (e.g. the 5-argument
+# Solaris/illumos form) fail the probe and fall back to the netdb lock.
 OLD_CFLAGS=$CFLAGS
 CFLAGS="$CFLAGS $MY_CPPFLAGS $MY_THREAD_CPPFLAGS $MY_CFLAGS"
 

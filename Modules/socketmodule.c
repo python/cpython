@@ -6379,7 +6379,7 @@ socket_getservbyname(PyObject *self, PyObject *args)
 #ifdef HAVE_GETSERVBYNAME_R
     struct servent serv;
     char *buf = NULL;
-    size_t buf_len = 1024;
+    size_t buf_len = 16384;
     int err = 0;
 #endif
     if (!PyArg_ParseTuple(args, "s|s:getservbyname", &name, &proto))
@@ -6450,7 +6450,7 @@ socket_getservbyport(PyObject *self, PyObject *args)
 #ifdef HAVE_GETSERVBYPORT_R
     struct servent serv;
     char *buf = NULL;
-    size_t buf_len = 1024;
+    size_t buf_len = 16384;
     int err = 0;
 #endif
     if (!PyArg_ParseTuple(args, "i|s:getservbyport", &port, &proto))
@@ -6527,7 +6527,7 @@ socket_getprotobyname(PyObject *self, PyObject *args)
 #ifdef HAVE_GETPROTOBYNAME_R
     struct protoent proto;
     char *buf = NULL;
-    size_t buf_len = 1024;
+    size_t buf_len = 16384;
     int err = 0;
 #endif
     if (!PyArg_ParseTuple(args, "s:getprotobyname", &name))
