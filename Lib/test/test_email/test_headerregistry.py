@@ -1426,6 +1426,16 @@ class TestAddressHeader(TestHeaderBase):
         self.assertIsInstance(h.groups, tuple)
         self.assertIsInstance(h.groups[0], Group)
 
+    def test_comment_only_group_display_name(self):
+        # A group whose display name is only a comment used to raise an
+        # uncaught IndexError while parsing; it now degrades gracefully.
+        h = self.make_header('to', '(c):')
+        self.assertEqual(h.groups[0].display_name, '')
+        self.assertEqual(h.addresses, ())
+        h = self.make_header('cc', '(x): a@b.com;')
+        self.assertEqual(h.groups[0].display_name, '')
+        self.assertEqual(h.addresses[0].addr_spec, 'a@b.com')
+
     def test_set_from_Address(self):
         h = self.make_header('to', Address('me', 'foo', 'example.com'))
         self.assertEqual(h, 'me <foo@example.com>')
