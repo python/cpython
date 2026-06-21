@@ -1327,6 +1327,17 @@ class ConfigParserTestCaseExtendedInterpolation(BasicTestCase, unittest.TestCase
 class ConfigParserTestCaseNoValue(ConfigParserTestCase):
     allow_no_value = True
 
+    def test_items_reports_none_for_no_value(self):
+        # gh-82113: items() must report None (not '') for value-less options,
+        # consistent with get(), mapping access and dict(section).
+        cf = self.fromstring("[s]\nno_value\nspam = ham\n")
+        self.assertIsNone(cf.get("s", "no_value"))
+        self.assertIsNone(cf["s"]["no_value"])
+        self.assertEqual(sorted(cf.items("s")),
+                         [("no_value", None), ("spam", "ham")])
+        self.assertEqual(sorted(cf.items("s", raw=True)),
+                         [("no_value", None), ("spam", "ham")])
+
 
 class NoValueAndExtendedInterpolation(CfgParserTestCaseClass):
     interpolation = configparser.ExtendedInterpolation()
