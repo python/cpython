@@ -96,21 +96,24 @@ Glossary
       :meth:`~object.__aexit__` methods.  Introduced by :pep:`492`.
 
    asynchronous generator
-      A function which returns an :term:`asynchronous generator iterator`.  It
-      looks like a coroutine function defined with :keyword:`async def` except
-      that it contains :keyword:`yield` expressions for producing a series of
-      values usable in an :keyword:`async for` loop.
+      Informally used to mean either an :term:`asynchronous generator
+      function` or an :term:`asynchronous generator iterator`, depending on
+      context.  The formal terms :term:`asynchronous generator function` and
+      :term:`asynchronous generator iterator` are uncommon in practice;
+      "asynchronous generator" alone is almost always sufficient.
 
-      Usually refers to an asynchronous generator function, but may refer to an
-      *asynchronous generator iterator* in some contexts.  In cases where the
-      intended meaning isn't clear, using the full terms avoids ambiguity.
+   asynchronous generator function
+      A function which returns an :term:`asynchronous generator iterator`.
+      It looks like a coroutine function defined with :keyword:`async def`
+      except that it contains :keyword:`yield` expressions for producing a
+      series of values usable in an :keyword:`async for` loop.  See :pep:`525`.
 
       An asynchronous generator function may contain :keyword:`await`
       expressions as well as :keyword:`async for`, and :keyword:`async with`
       statements.
 
    asynchronous generator iterator
-      An object created by an :term:`asynchronous generator` function.
+      An object created by an :term:`asynchronous generator function`.
 
       This is an :term:`asynchronous iterator` which when called using the
       :meth:`~object.__anext__` method returns an awaitable object which will execute
@@ -641,23 +644,33 @@ Glossary
       .. index:: single: generator
 
    generator
-      A function which returns a :term:`generator iterator`.  It looks like a
-      normal function except that it contains :keyword:`yield` expressions
-      for producing a series of values usable in a for-loop or that can be
-      retrieved one at a time with the :func:`next` function.
+      Informally used to mean either a :term:`generator function` or a
+      :term:`generator iterator`, depending on context.  The formal terms
+      :term:`generator function` and :term:`generator iterator` are uncommon
+      in practice; "generator" alone is almost always sufficient.
 
-      Usually refers to a generator function, but may refer to a
-      *generator iterator* in some contexts.  In cases where the intended
-      meaning isn't clear, using the full terms avoids ambiguity.
+      .. index:: single: generator function
+
+   generator function
+      A function which returns a :term:`generator` object.  It looks like a
+      normal function except that it contains :keyword:`yield` expressions
+      for producing a series of values usable in a :keyword:`for`\-loop or
+      that can be retrieved one at a time with the :func:`next` function.
+      See :ref:`yieldexpr`.
 
    generator iterator
-      An object created by a :term:`generator` function.
+      An object created by a :term:`generator function` or a
+      :term:`generator expression`.
 
       Each :keyword:`yield` temporarily suspends processing, remembering the
-      execution state (including local variables and pending
-      try-statements).  When the *generator iterator* resumes, it picks up where
-      it left off (in contrast to functions which start fresh on every
-      invocation).
+      execution state (including local variables and pending try-statements).
+      When the *generator iterator* resumes, it picks up where it left off
+      (in contrast to functions which start fresh on every invocation).
+
+      Generator iterators also implement the :meth:`~generator.send` method
+      to send a value into the suspended generator, and the
+      :meth:`~generator.throw` method to raise an exception at the point
+      where the generator was paused.  See :ref:`generator-methods`.
 
       .. index:: single: generator expression
 
