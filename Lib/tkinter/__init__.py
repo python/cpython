@@ -4469,6 +4469,13 @@ class PhotoImage(Image):
         """Display a transparent image."""
         self.tk.call(self.name, 'blank')
 
+    def redither(self):
+        """Recalculate the dithered image in each window where it is displayed.
+
+        Useful when the image data was supplied in pieces, in which case the
+        dithered image may not be exactly correct."""
+        self.tk.call(self.name, 'redither')
+
     def cget(self, option):
         """Return the value of OPTION."""
         return self.tk.call(self.name, 'cget', '-' + option)

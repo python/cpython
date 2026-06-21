@@ -157,6 +157,10 @@ tkinter
   synchronization of the displayed view with the underlying text.
   (Contributed by Serhiy Storchaka in :gh:`151675`.)
 
+* Added the :meth:`~tkinter.PhotoImage.redither` method which recalculates the
+  dithered image when its data was supplied in pieces.
+  (Contributed by Serhiy Storchaka in :gh:`151888`.)
+
 xml
 ---
 
