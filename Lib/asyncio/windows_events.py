@@ -16,7 +16,6 @@ import struct
 import time
 import weakref
 
-from . import events
 from . import base_subprocess
 from . import futures
 from . import exceptions
