@@ -142,8 +142,8 @@ class CodeTestCase(unittest.TestCase):
         self.assertEqual(co2.co_filename, "f2")
 
     def test_inconsistent_code_object(self):
-        # len(localsplusnames) must equal len(localspluskinds); marshal data that
-        # breaks this must raise ValueError, not a leaked SystemError (gh-151830).
+        # localsplusnames and localspluskinds must have equal length; if
+        # not, marshal must raise ValueError, not SystemError (gh-151830).
         co = compile("def f(a, b):\n x = a\n", "<test>", "exec").co_consts[0]
         n = len(co.co_varnames) + len(co.co_cellvars) + len(co.co_freevars)
         blob = marshal.dumps(co)
