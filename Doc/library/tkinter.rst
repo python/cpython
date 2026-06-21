@@ -5927,7 +5927,7 @@ Image classes
 
 
    .. method:: data(format=None, *, from_coords=None, background=None, \
-                    grayscale=False)
+                    grayscale=False, metadata=None)
 
       Return the image data.
 
@@ -5951,16 +5951,27 @@ Image classes
       If *grayscale* is true, the data does not contain color information; all
       pixel data is transformed into grayscale.
 
+      *metadata* is a dictionary passed to the image format driver.
+      It requires Tcl/Tk 9.0 or newer.
+
       .. versionadded:: 3.13
 
+      .. versionchanged:: next
+         Added the *metadata* parameter.
 
-   .. method:: get(x, y)
+
+   .. method:: get(x, y, *, withalpha=False)
 
       Return the color of the pixel at coordinates (*x*, *y*) as an
       ``(r, g, b)`` tuple of three integers between 0 and 255, representing the
       red, green and blue components respectively.
+      If *withalpha* is true, the returned tuple has a fourth element giving
+      the alpha (opacity) value of the pixel.
 
-   .. method:: put(data, to=None)
+      .. versionchanged:: next
+         Added the *withalpha* parameter, which requires Tcl/Tk 9.0 or newer.
+
+   .. method:: put(data, to=None, *, format=None, metadata=None)
 
       Set pixels of the image to the colors given in *data*, which must be a
       string or a nested sequence of horizontal rows of pixel colors (for
@@ -5973,12 +5984,24 @@ Image classes
       bottom-right corner, of the region.
       The default position is ``(0, 0)``.
 
+      *format* specifies the format of the image *data*, so that only image
+      file format handlers whose names begin with it are tried.
+
+      *metadata* is a dictionary passed to the image format driver.
+      It requires Tcl/Tk 9.0 or newer.
+
+      .. versionchanged:: next
+         Added the *format* and *metadata* parameters.
+
    .. method:: read(filename, format=None, *, from_coords=None, to=None, \
-                    shrink=False)
+                    shrink=False, metadata=None)
 
       Read image data from the file named *filename* into the image.
 
       *format* specifies the format of the image data in the file.
+
+      *metadata* is a dictionary passed to the image format driver.
+      It requires Tcl/Tk 9.0 or newer.
 
       *from_coords* specifies a rectangular sub-region of the image file data
       to be copied to the destination image.
@@ -5999,6 +6022,9 @@ Image classes
       corner of the image.
 
       .. versionadded:: 3.13
+
+      .. versionchanged:: next
+         Added the *metadata* parameter.
 
 
    .. method:: subsample(x, y='', *, from_coords=None)
@@ -6032,7 +6058,7 @@ Image classes
 
 
    .. method:: write(filename, format=None, from_coords=None, *, \
-                     background=None, grayscale=False)
+                     background=None, grayscale=False, metadata=None)
 
       Write image data from the image to the file named *filename*.
 
@@ -6054,8 +6080,14 @@ Image classes
       If *grayscale* is true, the data does not contain color information; all
       pixel data is transformed into grayscale.
 
+      *metadata* is a dictionary passed to the image format driver.
+      It requires Tcl/Tk 9.0 or newer.
+
       .. versionchanged:: 3.13
          Added the *background* and *grayscale* parameters.
+
+      .. versionchanged:: next
+         Added the *metadata* parameter.
 
 
    .. method:: zoom(x, y='', *, from_coords=None)

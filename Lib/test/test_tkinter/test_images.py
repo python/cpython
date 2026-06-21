@@ -509,6 +509,16 @@ class PhotoImageTest(BaseImageTest, AbstractTkTest, unittest.TestCase):
         self.assertEqual(image.get(0, 1), self.colorlist(0, 0, 255))
         self.assertEqual(image.get(1, 1), self.colorlist(255, 255, 0))
 
+    def test_put_format(self):
+        image = self.create()
+        with open(self.testfile, 'rb') as f:
+            data = f.read()
+        image2 = tkinter.PhotoImage(master=self.root)
+        image2.put(data, format='gif')
+        self.assertEqual(image2.width(), 16)
+        self.assertEqual(image2.height(), 16)
+        self.assertEqual(image2.get(4, 6), image.get(4, 6))
+
     def test_get(self):
         image = self.create()
         self.assertEqual(image.get(4, 6), self.colorlist(62, 116, 162))
@@ -518,6 +528,29 @@ class PhotoImageTest(BaseImageTest, AbstractTkTest, unittest.TestCase):
         self.assertRaises(tkinter.TclError, image.get, 0, -1)
         self.assertRaises(tkinter.TclError, image.get, 16, 15)
         self.assertRaises(tkinter.TclError, image.get, 15, 16)
+
+    @requires_tk(9, 0)
+    def test_get_withalpha(self):
+        image = self.create()
+        rgb = image.get(4, 6)
+        rgba = image.get(4, 6, withalpha=True)
+        if self.wantobjects:
+            self.assertEqual(rgba[:3], rgb)
+            self.assertEqual(len(rgba), 4)
+            self.assertIn(rgba[3], (0, 255))  # GIF alpha is fully on or off
+        else:
+            self.assertTrue(rgba.startswith(rgb + ' '))
+
+    @requires_tk(9, 0)
+    def test_metadata(self):
+        image = self.create()
+        # The -metadata configuration option holds the image's metadata.
+        image.configure(metadata=('Comment', 'spam'))
+        self.assertIn('Comment', str(image.cget('metadata')))
+        # put() and data() accept a metadata dictionary, passed to the image
+        # format driver.  put() does not change the image's own metadata.
+        image.put('{red green} {blue yellow}', metadata={'Comment': 'spam'})
+        self.assertTrue(image.data(metadata={'Comment': 'spam'}))
 
     def test_read(self):
         # Due to the Tk bug https://core.tcl-lang.org/tk/tktview/1576528

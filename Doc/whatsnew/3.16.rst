@@ -157,6 +157,13 @@ tkinter
   synchronization of the displayed view with the underlying text.
   (Contributed by Serhiy Storchaka in :gh:`151675`.)
 
+* Added support for more options in :class:`!tkinter.PhotoImage` methods: the
+  *format* parameter of :meth:`~tkinter.PhotoImage.put`, the *metadata*
+  parameter of :meth:`~tkinter.PhotoImage.put`, :meth:`~tkinter.PhotoImage.read`,
+  :meth:`~tkinter.PhotoImage.write` and :meth:`~tkinter.PhotoImage.data`, and
+  the *withalpha* parameter of :meth:`~tkinter.PhotoImage.get`.
+  (Contributed by Serhiy Storchaka in :gh:`151890`.)
+
 xml
 ---
 
