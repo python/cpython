@@ -733,14 +733,8 @@ codegen_setup_annotations_scope(compiler *c, location loc,
 }
 
 static int
-codegen_leave_annotations_scope(compiler *c, location loc)
+codegen_rename_annotations_format_param(PyCodeObject *co)
 {
-    ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
-    PyCodeObject *co = _PyCompile_OptimizeAndAssemble(c, 1);
-    if (co == NULL) {
-        return ERROR;
-    }
-
     // We want the parameter to __annotate__ to be named "format" in the
     // signature  shown by inspect.signature(), but we need to use a
     // different name (.format) in the symtable; if the name
@@ -749,19 +743,16 @@ codegen_leave_annotations_scope(compiler *c, location loc)
     // co->co_localsplusnames = ("format", *co->co_localsplusnames[1:])
     const Py_ssize_t size = PyObject_Size(co->co_localsplusnames);
     if (size == -1) {
-        Py_DECREF(co);
         return ERROR;
     }
     PyObject *new_names = PyTuple_New(size);
     if (new_names == NULL) {
-        Py_DECREF(co);
         return ERROR;
     }
     PyTuple_SET_ITEM(new_names, 0, Py_NewRef(&_Py_ID(format)));
     for (int i = 1; i < size; i++) {
         PyObject *item = PyTuple_GetItem(co->co_localsplusnames, i);
         if (item == NULL) {
-            Py_DECREF(co);
             Py_DECREF(new_names);
             return ERROR;
         }
@@ -769,6 +760,22 @@ codegen_leave_annotations_scope(compiler *c, location loc)
         PyTuple_SET_ITEM(new_names, i, item);
     }
     Py_SETREF(co->co_localsplusnames, new_names);
+    return SUCCESS;
+}
+
+static int
+codegen_leave_annotations_scope(compiler *c, location loc)
+{
+    ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
+    PyCodeObject *co = _PyCompile_OptimizeAndAssemble(c, 1);
+    if (co == NULL) {
+        return ERROR;
+    }
+
+    if (codegen_rename_annotations_format_param(co) < 0) {
+        Py_DECREF(co);
+        return ERROR;
+    }
 
     _PyCompile_ExitScope(c);
     int ret = codegen_make_closure(c, loc, co, 0);
@@ -1267,6 +1274,10 @@ codegen_type_param_bound_or_default(compiler *c, expr_ty e,
     PyCodeObject *co = _PyCompile_OptimizeAndAssemble(c, 1);
     _PyCompile_ExitScope(c);
     if (co == NULL) {
+        return ERROR;
+    }
+    if (codegen_rename_annotations_format_param(co) < 0) {
+        Py_DECREF(co);
         return ERROR;
     }
     int ret = codegen_make_closure(c, LOC(e), co, MAKE_FUNCTION_DEFAULTS);
@@ -1768,6 +1779,10 @@ codegen_typealias_body(compiler *c, stmt_ty s)
     PyCodeObject *co = _PyCompile_OptimizeAndAssemble(c, 0);
     _PyCompile_ExitScope(c);
     if (co == NULL) {
+        return ERROR;
+    }
+    if (codegen_rename_annotations_format_param(co) < 0) {
+        Py_DECREF(co);
         return ERROR;
     }
     int ret = codegen_make_closure(c, loc, co, MAKE_FUNCTION_DEFAULTS);
