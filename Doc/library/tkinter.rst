@@ -1932,6 +1932,38 @@ Base and mixin classes
       A true *boolean* value enables strict Motif compliance (for example, no
       color change when the mouse passes over a slider).
       Return the resulting setting.
+
+   .. method:: tk_appname(name=None)
+
+      Query or set the name used to communicate with this application through
+      the ``send`` command.
+      With no argument, return the current name; otherwise change it to *name*
+      and return the actual name set, which may have a suffix appended to keep
+      it unique among the applications on the display.
+
+      .. versionadded:: next
+
+   .. method:: tk_useinputmethods(boolean=None, *, displayof=0)
+
+      Query or set whether Tk uses the X Input Methods (XIM) for filtering
+      events, and return the resulting state.
+      This is significant only on X11; if XIM support is not available it
+      always returns ``False``.
+
+      .. versionadded:: next
+
+   .. method:: tk_caret(*, x=None, y=None, height=None)
+
+      Set or query the caret location for the widget's display.
+      The caret is the per-display insertion position used for global focus
+      indication (for accessibility) and for placing the input method
+      (XIM or IME) window.
+      With no argument, return the current location as a dictionary with the
+      keys ``'x'``, ``'y'`` and ``'height'``; otherwise update the given
+      coordinates.
+
+      .. versionadded:: next
+
    .. method:: busy(**kw)
       :no-typesetting:
 
