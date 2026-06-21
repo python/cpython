@@ -389,6 +389,30 @@ class DialogTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(invoked, ['ok'])
 
 
+class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
+
+    def test_askinteger(self):
+        @staticmethod
+        def mock_wait_window(w):
+            nonlocal ismapped
+            ismapped = w.master.winfo_ismapped()
+            w.destroy()
+
+        with swap_attr(Dialog, 'wait_window', mock_wait_window):
+            ismapped = None
+            askinteger("Go To Line", "Line number")
+            self.assertEqual(ismapped, False)
+
+            root = tkinter.Tk()
+            ismapped = None
+            askinteger("Go To Line", "Line number")
+            self.assertEqual(ismapped, True)
+            root.destroy()
+
+            tkinter.NoDefaultRoot()
+            self.assertRaises(RuntimeError, askinteger, "Go To Line", "Line number")
+
+
 class QueryDialogTest(AbstractTkTest, unittest.TestCase):
     # The query dialogs are modal: their __init__ blocks in wait_window().
     # Mock that out so the dialog stays alive and can be driven with generated
@@ -396,7 +420,7 @@ class QueryDialogTest(AbstractTkTest, unittest.TestCase):
 
     def open(self, query, **kw):
         with swap_attr(Dialog, 'wait_window', staticmethod(lambda w: None)):
-            d = query('Title', 'Prompt', parent=self.root, **kw)
+            d = query("Title", "Prompt", parent=self.root, **kw)
         self.addCleanup(lambda: d.winfo_exists() and d.destroy())
         d.focus_force()
         d.update()
@@ -515,29 +539,5 @@ class QueryDialogTest(AbstractTkTest, unittest.TestCase):
             self.assertIsNone(askstring('Title', 'Prompt', parent=self.root))
 
 
-class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
-
-    def test_askinteger(self):
-        @staticmethod
-        def mock_wait_window(w):
-            nonlocal ismapped
-            ismapped = w.master.winfo_ismapped()
-            w.destroy()
-
-        with swap_attr(Dialog, 'wait_window', mock_wait_window):
-            ismapped = None
-            askinteger('Go To Line', 'Line number')
-            self.assertEqual(ismapped, False)
-
-            root = tkinter.Tk()
-            ismapped = None
-            askinteger('Go To Line', 'Line number')
-            self.assertEqual(ismapped, True)
-            root.destroy()
-
-            tkinter.NoDefaultRoot()
-            self.assertRaises(RuntimeError, askinteger, 'Go To Line', 'Line number')
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
