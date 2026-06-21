@@ -1709,6 +1709,11 @@ _PyXI_NewExcInfo(PyObject *exc)
 void
 _PyXI_FreeExcInfo(_PyXI_excinfo *info)
 {
+    if (info == NULL) {
+        // Matches the PyMem_RawFree(NULL) idiom: callers may pass NULL when
+        // _PyXI_NewExcInfo() failed (e.g. under OOM) before any allocation.
+        return;
+    }
     _PyXI_excinfo_clear(info);
     PyMem_RawFree(info);
 }
