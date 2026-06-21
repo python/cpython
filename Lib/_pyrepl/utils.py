@@ -239,7 +239,7 @@ def gen_colors_from_token_stream(
                 elif (
                     token.string in COMMANDS
                     and not prev_token
-                    and next_token.type == T.NEWLINE
+                    and (not next_token or next_token.type == T.NEWLINE)
                 ):
                     span = Span.from_token(token, line_lengths)
                     yield ColorSpan(span, "command")
