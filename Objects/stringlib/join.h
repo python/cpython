@@ -72,11 +72,11 @@ STRINGLIB(bytes_join)(PyObject *sep, PyObject *iterable)
                drops the sequence's last reference to it. */
             Py_INCREF(item);
             if (PyObject_GetBuffer(item, &buffers[i], PyBUF_SIMPLE) != 0) {
-                Py_DECREF(item);
                 PyErr_Format(PyExc_TypeError,
                              "sequence item %zd: expected a bytes-like object, "
                              "%.80s found",
                              i, Py_TYPE(item)->tp_name);
+                Py_DECREF(item);
                 goto error;
             }
             Py_DECREF(item);

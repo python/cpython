@@ -1355,7 +1355,7 @@ location listed above.
         if data:
             contents = []
             for key, value in data:
-                contents.append(self.docother(value, key, name, maxlen=70))
+                contents.append(self.docother(value, key, name, maxlen=76))
             result = result + self.section('DATA', '\n'.join(contents))
 
         if version := self._get_version(object):
@@ -1478,7 +1478,7 @@ location listed above.
                         obj = getattr(object, name)
                     except AttributeError:
                         obj = homecls.__dict__[name]
-                    push(self.docother(obj, name, mod, maxlen=70, doc=doc) +
+                    push(self.docother(obj, name, mod, maxlen=72, doc=doc) +
                          '\n')
             return attrs
 
@@ -1629,7 +1629,7 @@ location listed above.
         if maxlen:
             line = (name and name + ' = ' or '') + repr
             chop = maxlen - len(line)
-            if chop < 0: repr = repr[:chop] + '...'
+            if chop < 0: repr = repr[:chop-3] + '...'
         line = (name and self.bold(name) + ' = ' or '') + repr
         if not doc:
             doc = getdoc(object)

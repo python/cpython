@@ -53,6 +53,10 @@ Copyright (C) 1994 Steen Lumholt.
 #  include <tk.h>
 #endif
 
+#if defined(MS_WINDOWS) && TK_MAJOR_VERSION >= 9
+#  include <tkPlatDecls.h>
+#endif
+
 #include "tkinter.h"
 
 #if TK_HEX_VERSION < 0x0805020c
@@ -128,18 +132,20 @@ _get_tcl_lib_path(void)
         }
 
         /* Check expected location for an installed Python first */
-        tcl_library_path = PyUnicode_FromString("\\tcl\\tcl" TCL_VERSION);
-        if (tcl_library_path == NULL) {
+        PyObject* tmp_tcl_library_path = PyUnicode_FromString("\\tcl\\tcl" TCL_VERSION);
+        if (tmp_tcl_library_path == NULL) {
             Py_DECREF(prefix);
             return NULL;
         }
-        tcl_library_path = PyUnicode_Concat(prefix, tcl_library_path);
+        tcl_library_path = PyUnicode_Concat(prefix, tmp_tcl_library_path);
+        Py_DECREF(tmp_tcl_library_path);
         Py_DECREF(prefix);
         if (tcl_library_path == NULL) {
             return NULL;
         }
         stat_return_value = _Py_stat(tcl_library_path, &stat_buf);
         if (stat_return_value == -2) {
+            Py_DECREF(tcl_library_path);
             return NULL;
         }
         if (stat_return_value == -1) {
@@ -154,16 +160,17 @@ _get_tcl_lib_path(void)
             }
             stat_return_value = _Py_stat(tcl_library_path, &stat_buf);
             if (stat_return_value == -2) {
+                Py_DECREF(tcl_library_path);
                 return NULL;
             }
             if (stat_return_value == -1) {
                 /* tcltkDir for a repository build doesn't exist either,
                    reset errno and leave Tcl to its own devices */
                 errno = 0;
-                tcl_library_path = NULL;
+                Py_CLEAR(tcl_library_path);
             }
 #else
-            tcl_library_path = NULL;
+            Py_CLEAR(tcl_library_path);
 #endif
         }
         already_checked = 1;
@@ -171,6 +178,57 @@ _get_tcl_lib_path(void)
     return tcl_library_path;
 }
 #endif /* MS_WINDOWS */
+
+#if defined(MS_WINDOWS) && TK_MAJOR_VERSION >= 9
+static void
+mount_tk_dll_zip(void)
+{
+    HINSTANCE tk_module = Tk_GetHINSTANCE();
+    wchar_t *tk_path = NULL;
+    DWORD path_len = 0;
+    for (DWORD buffer_len = 256;
+         tk_path == NULL && buffer_len < (1024 * 1024);
+         buffer_len *= 2)
+    {
+        tk_path = (wchar_t *)PyMem_RawMalloc(
+            buffer_len * sizeof(*tk_path));
+        if (tk_path != NULL) {
+            path_len = GetModuleFileNameW(tk_module, tk_path, buffer_len);
+            if (path_len == buffer_len) {
+                PyMem_RawFree(tk_path);
+                tk_path = NULL;
+            }
+        }
+    }
+
+    if (tk_path == NULL || path_len == 0) {
+        PyMem_RawFree(tk_path);
+        return;
+    }
+
+    Tcl_DString utf8_path;
+
+    Tcl_DStringInit(&utf8_path);
+    Tcl_WCharToUtfDString(tk_path, path_len, &utf8_path);
+    /* Failure is harmless if the DLL has no embedded ZIP or if another
+       interpreter has already mounted it. */
+    (void) TclZipfs_Mount(NULL, Tcl_DStringValue(&utf8_path),
+                          "//zipfs:/lib/tk", NULL);
+    Tcl_DStringFree(&utf8_path);
+    PyMem_RawFree(tk_path);
+}
+#endif
+
+int
+Tkinter_TkInit(Tcl_Interp *interp)
+{
+#if defined(MS_WINDOWS) && TK_MAJOR_VERSION >= 9
+    /* Tcl/Tk 9 may embed the tk_library in the Tk DLL which tcl_findLibrary
+       does not search. Mount the DLL using Zipfs if possible.  */
+    mount_tk_dll_zip();
+#endif
+    return Tk_Init(interp);
+}
 
 /* The threading situation is complicated.  Tcl is not thread-safe, except
    when configured with --enable-threads.
@@ -541,7 +599,7 @@ Tcl_AppInit(Tcl_Interp *interp)
         return TCL_OK;
     }
 
-    if (Tk_Init(interp) == TCL_ERROR) {
+    if (Tkinter_TkInit(interp) == TCL_ERROR) {
         PySys_WriteStderr("Tk_Init error: %s\n", Tcl_GetStringResult(interp));
         return TCL_ERROR;
     }
@@ -707,11 +765,13 @@ Tkapp_New(const char *screenName, const char *className,
         if (!ret && GetLastError() == ERROR_ENVVAR_NOT_FOUND) {
             str_path = _get_tcl_lib_path();
             if (str_path == NULL && PyErr_Occurred()) {
+                Py_DECREF(v);
                 return NULL;
             }
             if (str_path != NULL) {
                 utf8_path = PyUnicode_AsUTF8String(str_path);
                 if (utf8_path == NULL) {
+                    Py_DECREF(v);
                     return NULL;
                 }
                 Tcl_SetVar(v->interp,
@@ -2983,7 +3043,7 @@ _tkinter_tkapp_loadtk_impl(TkappObject *self)
         return NULL;
     }
     if (_tk_exists == NULL || strcmp(_tk_exists, "1") != 0)     {
-        if (Tk_Init(interp)             == TCL_ERROR) {
+        if (Tkinter_TkInit(interp)      == TCL_ERROR) {
             Tkinter_Error(self);
             return NULL;
         }

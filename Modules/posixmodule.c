@@ -5699,7 +5699,7 @@ os__path_splitroot_impl(PyObject *module, path_t *path)
 
     buffer = (wchar_t*)PyMem_Malloc(sizeof(wchar_t) * (wcslen(path->wide) + 1));
     if (!buffer) {
-        return NULL;
+        return PyErr_NoMemory();
     }
     wcscpy(buffer, path->wide);
     for (wchar_t *p = wcschr(buffer, L'/'); p; p = wcschr(p, L'/')) {
