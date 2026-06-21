@@ -1,1 +1,1 @@
-Added missing ``size`` positional argument to :meth:`io.TextIOBase.readline`
+Added missing ``size`` positional argument to :meth:`_pyio.TextIOBase.readline`
