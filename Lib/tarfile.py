@@ -268,7 +268,7 @@ def _safe_read(fileobj, size):
     """Read up to *size* bytes from *fileobj* in bounded chunks.
 
     Returns the same bytes as ``fileobj.read(size)`` would (including a short
-    result at end of file), but never pre-allocates *size* bytes, so an
+    result at end of file), but limits pre-allocation, so an
     oversized size field in a crafted header cannot force a huge allocation.
     """
     if size <= _EXTHEADER_READ_CHUNK:
