@@ -1427,8 +1427,7 @@ class TestAddressHeader(TestHeaderBase):
         self.assertIsInstance(h.groups[0], Group)
 
     def test_comment_only_group_display_name(self):
-        # A group whose display name is only a comment used to raise an
-        # uncaught IndexError while parsing; it now degrades gracefully.
+        # gh-151857: a comment-only group display name raised IndexError.
         h = self.make_header('to', '(c):')
         self.assertEqual(h.groups[0].display_name, '')
         self.assertEqual(h.addresses, ())
