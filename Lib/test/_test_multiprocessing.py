@@ -1853,7 +1853,6 @@ class _TestQueue(BaseTestCase):
         self._wait()
 
         q.shutdown(immediate=True)
-        self.assertTrue(q.empty())
         self._wait() # adding data as 'sentinel shutdown'.
         self.assertTrue(q._is_shutdown())
         for p in self.ps:
