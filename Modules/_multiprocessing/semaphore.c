@@ -436,12 +436,6 @@ _init_shm_names(pid_t pid)
                   "%s%ld", SHMLOCK_NAME, (long)pid);
 }
 
-static void
-_init_sem_max_from_kern_posix(int value)
-{
-    shm_semlock_counters.max_open_sems = value/2;
-}
-
 /*
 Public entry point called from multiprocessing_exec().
 Builds names from getpid(), get 'kern.posix.sem.max' value and exposes them as module attributes.
@@ -454,7 +448,7 @@ _get_sem_max_from_kern_posix(void)
     size_t len = sizeof(value);
 
     if (sysctlbyname("kern.posix.sem.max", &value, &len, NULL, 0) < 0) {
-        value = sysconf(_SC_SEM_NSEMS_MAX);
+        value = SC_PAGESIZE;
         if (value < 0) {
             return 5000;
         }
@@ -474,17 +468,17 @@ _PyMp_init_module_constants(PyObject *module)
         return -1;
 
     // A mutex is associated to each semaphore, so we could only open
-    // value//2 MacOSX semaphores.
+    // the half of max MacOSX semaphore number.
     int value = _get_sem_max_from_kern_posix();
-    _init_sem_max_from_kern_posix(value);
+    shm_semlock_counters.max_open_sems = value/2;
     if (PyModule_AddIntConstant(module, "_MACOSX_MAX_OPEN_SEMS",
-                                   value/2) < 0)
+                                shm_semlock_counters.max_open_sems) < 0)
         return -1;
     return 0;
 }
 
 /*
-Python-callable: child processes (in spawn.py) call this to get the
+Child processes (in spawn.py) call this to get the
 names built by the main process instead of generating their own.
 */
 PyObject *
@@ -812,12 +806,10 @@ connect_shm_semlock_counters(const char *from_sem_name)
 Build name of mutex, thus associated with each Semaphore.
 Name is unique and create from SemLock python class.
 */
-static char *gh_name = "-gh125828";
-
 static char *
 build_mutex_name(char *buf, int size, const char *name)
 {
-    PyOS_snprintf(buf, size, "%s%s", name, gh_name);
+    PyOS_snprintf(buf, size, MASK_MUTEX_NAME, name);
     return buf;
 }
 

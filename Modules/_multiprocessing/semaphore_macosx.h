@@ -25,8 +25,6 @@ typedef struct {
     short unlink;                   // Indicate if already unlink.
 #ifdef Py_REF_DEBUG
     time_t ctimestamp;              // Created timestamp (debug log).
-#else
-    #pragma unused(ctimestamp);
 #endif
 } CounterObject;
 
@@ -34,12 +32,13 @@ typedef struct {
 Structure, constants and macros of static memory:
 */
 
-#define SC_PAGESIZE             sysconf(_SC_PAGESIZE)
-#define CALC_SIZE_SHM           (shm_semlock_counters.max_open_sems * sizeof(CounterObject)) + sizeof(HeaderObject)
-#define ALIGN_SHM_PAGE(n)       ((int)((n)/SC_PAGESIZE)+1)*SC_PAGESIZE
+#define SC_PAGESIZE         sysconf(_SC_PAGESIZE)
+#define CALC_SIZE_SHM       (shm_semlock_counters.max_open_sems * sizeof(CounterObject)) + sizeof(HeaderObject)
+#define ALIGN_SHM_PAGE(n)   ((int)((n)/SC_PAGESIZE)+1)*SC_PAGESIZE
 
-#define SHAREDMEM_NAME  "/psm-gh125828-"
-#define SHMLOCK_NAME    "/mp-gh125828-"
+#define SHAREDMEM_NAME      "/psm-gh125828-"
+#define SHMLOCK_NAME        "/mp-gh125828-"
+#define MASK_MUTEX_NAME     "%s-gh125828"
 
 #define SIZE_SHM_NAME      (SIZE_SEM_NAME<<1)  /* "/psm-gh125828-" (14) + 6 digits PID + '\0' */
 #define SIZE_SHMLOCK_NAME  (SIZE_SEM_NAME<<1)  /* "/mp-gh125828-"  (13) + 6 digits PID + '\0' */
