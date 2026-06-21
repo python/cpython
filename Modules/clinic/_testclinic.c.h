@@ -4676,21 +4676,19 @@ vc_plain_vectorcall(PyObject *type, PyObject *const *args,
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     PyObject *a = Py_None;
 
-    if (kwnames == NULL) {
-        if (!_PyArg_CheckPositional("VcNew", nargs, 0, 1)) {
-            goto exit;
-        }
-        if (nargs < 1) {
-            goto skip_optional_vc_fast;
-        }
-        a = args[0];
-    skip_optional_vc_fast:
-        goto vc_fast_end;
+    if (kwnames != NULL) {
+        return vc_plain_new_parse_args(_PyType_CAST(type), args, nargs,
+            PyTuple_GET_SIZE(kwnames),
+            NULL, kwnames);
     }
-    return vc_plain_new_parse_args(_PyType_CAST(type), args, nargs,
-        kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
-        NULL, kwnames);
-vc_fast_end:
+    if (!_PyArg_CheckPositional("VcNew", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    a = args[0];
+skip_optional:
     return_value = vc_plain_new_impl(_PyType_CAST(type), a);
 
 exit:
@@ -4772,29 +4770,19 @@ vc_posorkw_vectorcall(PyObject *type, PyObject *const *args,
 {
     PyObject *return_value = NULL;
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *self;
+    int _result;
     PyObject *a;
     PyObject *b = Py_None;
 
-    if (kwnames == NULL) {
-        if (!_PyArg_CheckPositional("VcInit", nargs, 1, 2)) {
-            goto exit;
-        }
-        a = args[0];
-        if (nargs < 2) {
-            goto skip_optional_vc_fast;
-        }
-        b = args[1];
-    skip_optional_vc_fast:
-        goto vc_fast_end;
-    }
-    {
-        PyObject *self = _PyType_CAST(type)->tp_alloc(
+    if (kwnames != NULL) {
+        self = _PyType_CAST(type)->tp_alloc(
             _PyType_CAST(type), 0);
         if (self == NULL) {
             return NULL;
         }
-        int _result = vc_posorkw_init_parse_args(self, args, nargs,
-            kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+        _result = vc_posorkw_init_parse_args(self, args, nargs,
+            PyTuple_GET_SIZE(kwnames),
             NULL, kwnames);
         if (_result != 0) {
             Py_DECREF(self);
@@ -4802,23 +4790,28 @@ vc_posorkw_vectorcall(PyObject *type, PyObject *const *args,
         }
         return self;
     }
-vc_fast_end:
-    {
-        PyObject *self = _PyType_CAST(type)->tp_alloc(
-            _PyType_CAST(type), 0);
-        if (self == NULL) {
-            goto exit;
-        }
-        int _result;
-        Py_BEGIN_CRITICAL_SECTION(self);
-        _result = vc_posorkw_init_impl((PyObject *)self, a, b);
-        Py_END_CRITICAL_SECTION();
-        if (_result != 0) {
-            Py_DECREF(self);
-            goto exit;
-        }
-        return_value = self;
+    if (!_PyArg_CheckPositional("VcInit", nargs, 1, 2)) {
+        goto exit;
     }
+    a = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    b = args[1];
+skip_optional:
+    self = _PyType_CAST(type)->tp_alloc(
+        _PyType_CAST(type), 0);
+    if (self == NULL) {
+        goto exit;
+    }
+    Py_BEGIN_CRITICAL_SECTION(self);
+    _result = vc_posorkw_init_impl((PyObject *)self, a, b);
+    Py_END_CRITICAL_SECTION();
+    if (_result != 0) {
+        Py_DECREF(self);
+        goto exit;
+    }
+    return_value = self;
 
 exit:
     return return_value;
@@ -4905,22 +4898,20 @@ vc_exact_vectorcall(PyObject *type, PyObject *const *args,
         return _PyObject_MakeTpCall(tstate, type, args,
                                     nargs, kwnames);
     }
-    if (kwnames == NULL) {
-        if (!_PyArg_CheckPositional("VcNewExact", nargs, 1, 2)) {
-            goto exit;
-        }
-        a = args[0];
-        if (nargs < 2) {
-            goto skip_optional_vc_fast;
-        }
-        b = args[1];
-    skip_optional_vc_fast:
-        goto vc_fast_end;
+    if (kwnames != NULL) {
+        return vc_exact_new_parse_args(_PyType_CAST(type), args, nargs,
+            PyTuple_GET_SIZE(kwnames),
+            NULL, kwnames);
     }
-    return vc_exact_new_parse_args(_PyType_CAST(type), args, nargs,
-        kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
-        NULL, kwnames);
-vc_fast_end:
+    if (!_PyArg_CheckPositional("VcNewExact", nargs, 1, 2)) {
+        goto exit;
+    }
+    a = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    b = args[1];
+skip_optional:
     return_value = vc_exact_new_impl(_PyType_CAST(type), a, b);
 
 exit:
@@ -5004,4 +4995,4 @@ vc_kwonly_vectorcall(PyObject *type, PyObject *const *args,
         kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
         NULL, kwnames);
 }
-/*[clinic end generated code: output=23aef355930eeb8f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6a1a2714a58e2fe7 input=a9049054013a1b77]*/

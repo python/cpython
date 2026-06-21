@@ -1,3 +1,3 @@
-Add a ``@vectorcall`` decorator to Argument Clinic that can be used on
-``__init__`` and ``__new__``  which generates :ref:`vectorcall` argument
-parsing.
+Add a ``@vectorcall`` decorator to Argument Clinic that generates additoinal
+:ref:`vectorcall` parsing code for :func:`object.__init__` and
+:func:`object.__new__` :ref:`vectorcall`.

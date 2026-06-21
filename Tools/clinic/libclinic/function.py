@@ -133,6 +133,21 @@ class Function:
             return self.name
 
     @functools.cached_property
+    def c_basename_vectorcall(self) -> str:
+        """C function name for vectorcall parser.
+
+        Strips the __init__/__new__ suffix from c_basename and appends
+        _vectorcall.  Respects 'as' renaming in clinic input, e.g.
+        'str.__new__ as unicode_new' produces 'unicode_vectorcall'.
+        """
+        name = self.c_basename
+        for suffix in ('___init__', '___new__', '_new', '_init'):
+            if name.endswith(suffix):
+                name = name[:-len(suffix)]
+                break
+        return f'{name}_vectorcall'
+
+    @functools.cached_property
     def fulldisplayname(self) -> str:
         parent: Class | Module | Clinic | None
         if self.kind.new_or_init:

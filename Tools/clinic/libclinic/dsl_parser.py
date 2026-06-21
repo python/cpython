@@ -1637,6 +1637,24 @@ class DSLParser:
             fail(f"Function {self.function.name!r} uses '*' more than once.")
 
 
+    def check_vectorcall_parameters(self, lineno: int) -> None:
+        assert self.function is not None
+        if not self.function.vectorcall:
+            return
+        for i, p in enumerate(self.function.parameters.values()):
+            if p.is_vararg() or p.is_var_keyword():
+                continue
+            if isinstance(p.converter, (self_converter,
+                                        defining_class_converter)):
+                continue
+            parse_arg = p.converter.parse_arg(f'args[{i}]',
+                                              p.get_displayname(i),
+                                              limited_capi=False)
+            if parse_arg is None:
+                fail("@vectorcall requires all converters to support "
+                     f"parse_arg(); parameter {p.name!r} does not",
+                     line_number=lineno)
+
     def do_post_block_processing_cleanup(self, lineno: int) -> None:
         """
         Called when processing the block is done.
@@ -1645,6 +1663,7 @@ class DSLParser:
             return
 
         self.check_remaining_star(lineno)
+        self.check_vectorcall_parameters(lineno)
         try:
             self.function.docstring = self.format_docstring()
         except ClinicError as exc:

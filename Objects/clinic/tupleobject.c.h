@@ -126,10 +126,10 @@ tuple_vectorcall(PyObject *type, PyObject *const *args,
         goto exit;
     }
     if (nargs < 1) {
-        goto skip_optional_vc;
+        goto skip_optional;
     }
     iterable = args[0];
-skip_optional_vc:
+skip_optional:
     return_value = tuple_new_impl(_PyType_CAST(type), iterable);
 
 exit:
@@ -152,4 +152,4 @@ tuple___getnewargs__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return tuple___getnewargs___impl((PyTupleObject *)self);
 }
-/*[clinic end generated code: output=56cf5ffc37c3e748 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dc105349d5f2e048 input=a9049054013a1b77]*/

@@ -625,7 +625,7 @@ class ClinicWholeFileTest(TestCase):
              - 'methoddef_define'
              - 'impl_prototype'
              - 'parser_prototype'
-             - 'parser_helper_definition'
+             - 'parser_helper'
              - 'parser_definition'
              - 'vectorcall_definition'
              - 'cpp_endif'
@@ -2761,6 +2761,21 @@ class ClinicParserTest(TestCase):
             Foo.__init__
         """
         self.expect_failure(block, err, lineno=2)
+
+    def test_vectorcall_unsupported_converter(self):
+        # str(encoding=...) has no parse_arg() implementation.
+        err = ("@vectorcall requires all converters to support "
+               "parse_arg(); parameter 's' does not")
+        block = """
+            module m
+            class Foo "FooObject *" "Foo_Type"
+            @classmethod
+            @vectorcall
+            Foo.__new__
+                s: str(encoding="utf-8")
+                /
+        """
+        self.expect_failure(block, err, lineno=6)
 
     def test_unused_param(self):
         block = self.parse("""
