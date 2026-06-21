@@ -534,7 +534,20 @@ class PlatformTest(unittest.TestCase):
 
     def test_libc_ver(self):
         if support.is_emscripten:
-            assert platform.libc_ver() == ("emscripten", "4.0.12")
+            import tomllib
+            from pathlib import Path
+
+            # Get expected emscripten version from emscripten config
+            config_path = (
+                Path(__file__).parents[2] / "Platforms/emscripten/config.toml"
+            )
+            with open(config_path, "rb") as fp:
+                emscripten_version = tomllib.load(fp)["emscripten-version"]
+
+            self.assertEqual(
+                platform.libc_ver(), ("emscripten", emscripten_version)
+            )
+
             return
         # check that libc_ver(executable) doesn't raise an exception
         if os.path.isdir(sys.executable) and \
@@ -569,6 +582,8 @@ class PlatformTest(unittest.TestCase):
                 (b'/aports/main/musl/src/musl-1.2.5.7', ('musl', '1.2.5.7')),
                 (b'libc.musl.so.1', ('musl', '1')),
                 (b'libc.musl-x86_64.so.1.2.5', ('musl', '1.2.5')),
+                (b'ld-musl.so.1', ('musl', '1')),
+                (b'ld-musl-x86_64.so.1.2.5', ('musl', '1.2.5')),
                 (b'', ('', '')),
             ):
                 with open(filename, 'wb') as fp:
@@ -589,6 +604,10 @@ class PlatformTest(unittest.TestCase):
                 (b'musl-1.4.1\0musl-2.1.1\0musl-2.0.1\0', ('musl', '2.1.1')),
                 (
                     b'libc.musl-x86_64.so.1.4.1\0libc.musl-x86_64.so.2.1.1\0libc.musl-x86_64.so.2.0.1',
+                    ('musl', '2.1.1'),
+                ),
+                (
+                    b'ld-musl-x86_64.so.1.4.1\0ld-musl-x86_64.so.2.1.1\0ld-musl-x86_64.so.2.0.1',
                     ('musl', '2.1.1'),
                 ),
                 (b'no match here, so defaults are used', ('test', '100.1.0')),
@@ -770,13 +789,14 @@ class CommandLineTest(unittest.TestCase):
             platform._main(args=flags)
         return output.getvalue()
 
+    @support.force_not_colorized
     def test_unknown_flag(self):
+        output = io.StringIO()
         with self.assertRaises(SystemExit):
-            output = io.StringIO()
             # suppress argparse error message
             with contextlib.redirect_stderr(output):
                 _ = self.invoke_platform('--unknown')
-            self.assertStartsWith(output, "usage: ")
+        self.assertStartsWith(output.getvalue(), "usage: ")
 
     def test_invocation(self):
         flags = (

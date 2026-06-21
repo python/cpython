@@ -1,2 +1,0 @@
-:func:`ast.dump` now only omits ``None`` and ``[]`` values if they are
-default values.

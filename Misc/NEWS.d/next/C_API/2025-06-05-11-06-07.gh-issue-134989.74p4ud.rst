@@ -1,3 +1,0 @@
-Fix ``Py_RETURN_NONE``, ``Py_RETURN_TRUE`` and ``Py_RETURN_FALSE`` macros in
-the limited C API 3.11 and older: don't treat ``Py_None``, ``Py_True`` and
-``Py_False`` as immortal. Patch by Victor Stinner.

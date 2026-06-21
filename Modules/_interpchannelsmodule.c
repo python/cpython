@@ -511,12 +511,12 @@ _waiting_release(_waiting_t *waiting, int received)
     assert(!waiting->received);
 
     waiting->status = WAITING_RELEASING;
-    PyThread_release_lock(waiting->mutex);
     if (waiting->received != received) {
         assert(received == 1);
         waiting->received = received;
     }
     waiting->status = WAITING_RELEASED;
+    PyThread_release_lock(waiting->mutex);
 }
 
 static void
@@ -580,7 +580,7 @@ _channelitem_clear_data(_channelitem *item, int removed)
 {
     if (item->data != NULL) {
         // It was allocated in channel_send().
-        (void)_release_xid_data(item->data, XID_IGNORE_EXC & XID_FREE);
+        (void)_release_xid_data(item->data, XID_IGNORE_EXC | XID_FREE);
         item->data = NULL;
     }
 
@@ -921,7 +921,8 @@ static _channelends *
 _channelends_new(void)
 {
     _channelends *ends = GLOBAL_MALLOC(_channelends);
-    if (ends== NULL) {
+    if (ends == NULL) {
+        PyErr_NoMemory();
         return NULL;
     }
     ends->numsendopen = 0;
@@ -1115,6 +1116,7 @@ _channel_new(PyThread_type_lock mutex, struct _channeldefaults defaults)
     assert(check_unbound(defaults.unboundop));
     _channel_state *chan = GLOBAL_MALLOC(_channel_state);
     if (chan == NULL) {
+        PyErr_NoMemory();
         return NULL;
     }
     chan->mutex = mutex;
@@ -1313,6 +1315,7 @@ _channelref_new(int64_t cid, _channel_state *chan)
 {
     _channelref *ref = GLOBAL_MALLOC(_channelref);
     if (ref == NULL) {
+        PyErr_NoMemory();
         return NULL;
     }
     ref->cid = cid;
@@ -1644,14 +1647,16 @@ _channels_list_all(_channels *channels, int64_t *count)
     if (ids == NULL) {
         goto done;
     }
-    _channelref *ref = channels->head;
-    for (int64_t i=0; ref != NULL; ref = ref->next, i++) {
-        ids[i] = (struct channel_id_and_info){
-            .id = ref->cid,
-            .defaults = ref->chan->defaults,
-        };
+    int64_t i = 0;
+    for (_channelref *ref = channels->head; ref != NULL; ref = ref->next) {
+        if (ref->chan != NULL) {
+            ids[i++] = (struct channel_id_and_info){
+                .id = ref->cid,
+                .defaults = ref->chan->defaults,
+            };
+        }
     }
-    *count = channels->numopen;
+    *count = i;
 
     cids = ids;
 done:
@@ -1696,6 +1701,7 @@ _channel_set_closing(_channelref *ref, PyThread_type_lock mutex) {
     }
     chan->closing = GLOBAL_MALLOC(struct _channel_closing);
     if (chan->closing == NULL) {
+        PyErr_NoMemory();
         goto done;
     }
     chan->closing->ref = ref;
@@ -2584,6 +2590,7 @@ static PyObject *
 _channelid_from_xid(_PyXIData_t *data)
 {
     struct _channelid_xid *xid = (struct _channelid_xid *)_PyXIData_DATA(data);
+    PyObject *cidobj = NULL;
 
     // It might not be imported yet, so we can't use _get_current_module().
     PyObject *mod = PyImport_ImportModule(MODULE_NAME_STR);
@@ -2593,11 +2600,10 @@ _channelid_from_xid(_PyXIData_t *data)
     assert(mod != Py_None);
     module_state *state = get_module_state(mod);
     if (state == NULL) {
-        return NULL;
+        goto done;
     }
 
     // Note that we do not preserve the "resolve" flag.
-    PyObject *cidobj = NULL;
     int err = newchannelid(state->ChannelIDType, xid->cid, xid->end,
                            _global_channels(), 0, 0,
                            (channelid **)&cidobj);
@@ -3603,6 +3609,7 @@ error:
 }
 
 static struct PyModuleDef_Slot module_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

@@ -1,18 +1,17 @@
-Tkinter Dialogs
+Tkinter dialogs
 ===============
 
-:mod:`tkinter.simpledialog` --- Standard Tkinter input dialogs
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:mod:`!tkinter.simpledialog` --- Standard Tkinter input dialogs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. module:: tkinter.simpledialog
-   :platform: Tk
    :synopsis: Simple dialog windows
 
 **Source code:** :source:`Lib/tkinter/simpledialog.py`
 
 --------------
 
-The :mod:`tkinter.simpledialog` module contains convenience classes and
+The :mod:`!tkinter.simpledialog` module contains convenience classes and
 functions for creating simple modal dialogs to get a value from the user.
 
 
@@ -37,23 +36,58 @@ functions for creating simple modal dialogs to get a value from the user.
       Default behaviour adds OK and Cancel buttons. Override for custom button
       layouts.
 
+   .. method:: validate()
+
+      Validate the data entered by the user.
+      Return true if it is valid, in which case the dialog proceeds to
+      :meth:`apply`; return false to keep the dialog open.
+      The default implementation always returns true; override it to check the
+      input.
+
+   .. method:: apply()
+
+      Process the data entered by the user.
+      Called after :meth:`validate` succeeds and just before the dialog is
+      destroyed.
+      The default implementation does nothing; override it to act on or store
+      the result.
+
+   .. method:: destroy()
+
+      Destroy the dialog window, clearing the reference to the widget that had
+      the initial focus.
 
 
-:mod:`tkinter.filedialog` --- File selection dialogs
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. class:: SimpleDialog(master, text='', buttons=[], default=None, cancel=None, title=None, class_=None)
+
+   A simple modal dialog that displays the message *text* above a row of push
+   buttons whose labels are given by *buttons*, and returns the index of the
+   button the user presses.
+   *default* is the index of the button activated by the Return key, *cancel*
+   the index returned when the window is closed through the window manager,
+   *title* the window title, and *class_* the Tk class name of the window.
+
+   .. method:: go()
+
+      Display the dialog, wait until the user presses a button or closes the
+      window, and return the index of the chosen button.
+
+
+
+:mod:`!tkinter.filedialog` --- File selection dialogs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. module:: tkinter.filedialog
-   :platform: Tk
    :synopsis: Dialog classes for file selection
 
 **Source code:** :source:`Lib/tkinter/filedialog.py`
 
 --------------
 
-The :mod:`tkinter.filedialog` module provides classes and factory functions for
+The :mod:`!tkinter.filedialog` module provides classes and factory functions for
 creating file/directory selection windows.
 
-Native Load/Save Dialogs
+Native load/save dialogs
 ------------------------
 
 The following classes and functions provide file dialog windows that combine a
@@ -79,34 +113,46 @@ listed below:
 **Static factory functions**
 
 The below functions when called create a modal, native look-and-feel dialog,
-wait for the user's selection, then return the selected value(s) or ``None`` to the
-caller.
+wait for the user's selection, and return it.
+The exact return value depends on the function (see below); when the dialog is
+cancelled it is an empty string, an empty tuple, an empty list or ``None``.
 
 .. function:: askopenfile(mode="r", **options)
               askopenfiles(mode="r", **options)
 
-   The above two functions create an :class:`Open` dialog and return the opened
-   file object(s) in read-only mode.
+   Create an :class:`Open` dialog.
+   :func:`askopenfile` returns the opened file object, or ``None`` if the
+   dialog is cancelled.
+   :func:`askopenfiles` returns a list of the opened file objects, or an empty
+   list if cancelled.
+   The files are opened in mode *mode* (read-only ``'r'`` by default).
 
 .. function:: asksaveasfile(mode="w", **options)
 
-   Create a :class:`SaveAs` dialog and return a file object opened in write-only mode.
+   Create a :class:`SaveAs` dialog and return the opened file object, or
+   ``None`` if the dialog is cancelled.
+   The file is opened in mode *mode* (``'w'`` by default).
 
 .. function:: askopenfilename(**options)
               askopenfilenames(**options)
 
-   The above two functions create an :class:`Open` dialog and return the
-   selected filename(s) that correspond to existing file(s).
+   Create an :class:`Open` dialog.
+   :func:`askopenfilename` returns the selected filename as a string, or an
+   empty string if the dialog is cancelled.
+   :func:`askopenfilenames` returns a tuple of the selected filenames, or an
+   empty tuple if cancelled.
 
 .. function:: asksaveasfilename(**options)
 
-   Create a :class:`SaveAs` dialog and return the selected filename.
+   Create a :class:`SaveAs` dialog and return the selected filename as a
+   string, or an empty string if the dialog is cancelled.
 
 .. function:: askdirectory(**options)
 
- | Prompt user to select a directory.
- | Additional keyword option:
- |  *mustexist* - determines if selection must be an existing directory.
+   Prompt the user to select a directory, and return its path as a string, or
+   an empty string if the dialog is cancelled.
+   Additional keyword option: *mustexist* - if true, the user may only select
+   an existing directory (false by default).
 
 .. class:: Open(master=None, **options)
            SaveAs(master=None, **options)
@@ -170,6 +216,13 @@ These do not emulate the native look-and-feel of the platform.
 
       Exit dialog returning current selection.
 
+   .. method:: ok_command()
+
+      Called when the user confirms the current selection.
+      The base implementation accepts the selection and closes the dialog;
+      :class:`LoadFileDialog` and :class:`SaveFileDialog` override it to check
+      the selection first.
+
    .. method:: quit(how=None)
 
       Exit dialog returning filename, if any.
@@ -204,18 +257,17 @@ These do not emulate the native look-and-feel of the platform.
       directory. Confirmation is required if an already existing file is
       selected.
 
-:mod:`tkinter.commondialog` --- Dialog window templates
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:mod:`!tkinter.commondialog` --- Dialog window templates
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. module:: tkinter.commondialog
-   :platform: Tk
    :synopsis: Tkinter base class for dialogs
 
 **Source code:** :source:`Lib/tkinter/commondialog.py`
 
 --------------
 
-The :mod:`tkinter.commondialog` module provides the :class:`Dialog` class that
+The :mod:`!tkinter.commondialog` module provides the :class:`Dialog` class that
 is the base class for dialogs defined in other supporting modules.
 
 .. class:: Dialog(master=None, **options)
@@ -223,6 +275,40 @@ is the base class for dialogs defined in other supporting modules.
    .. method:: show(**options)
 
       Render the Dialog window.
+
+
+:mod:`!tkinter.dialog` --- Classic Tk dialog boxes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. module:: tkinter.dialog
+   :synopsis: A simple dialog box built on the classic Tk widgets.
+
+**Source code:** :source:`Lib/tkinter/dialog.py`
+
+--------------
+
+The :mod:`!tkinter.dialog` module provides a simple modal dialog box built on
+the classic (non-themed) Tk widgets.
+
+.. data:: DIALOG_ICON
+
+   The name of the default bitmap (``'questhead'``) displayed by a
+   :class:`Dialog`.
+
+.. class:: Dialog(master=None, cnf={}, **kw)
+
+   Display a modal dialog box built from the classic (non-themed) Tk widgets
+   and wait for the user to press one of its buttons.
+   The options, given through *cnf* or as keyword arguments, include *title*
+   (the window title), *text* (the message), *bitmap* (an icon,
+   :data:`DIALOG_ICON` by default), *default* (the index of the default button)
+   and *strings* (the sequence of button labels).
+   After construction, the :attr:`!num` attribute holds the index of the button
+   the user pressed.
+
+   .. method:: destroy()
+
+      Destroy the dialog window.
 
 
 .. seealso::

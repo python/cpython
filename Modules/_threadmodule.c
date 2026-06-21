@@ -11,6 +11,7 @@
 #include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"       // _PyThreadState_SetCurrent()
 #include "pycore_time.h"          // _PyTime_FromSeconds()
+#include "pycore_tuple.h"         // _PyTuple_FromPairSteal
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 #include <stddef.h>               // offsetof()
@@ -429,7 +430,7 @@ force_done(void *arg)
 
 static int
 ThreadHandle_start(ThreadHandle *self, PyObject *func, PyObject *args,
-                   PyObject *kwargs)
+                   PyObject *kwargs, int daemon)
 {
     // Mark the handle as starting to prevent any other threads from doing so
     PyMutex_Lock(&self->mutex);
@@ -453,7 +454,8 @@ ThreadHandle_start(ThreadHandle *self, PyObject *func, PyObject *args,
         goto start_failed;
     }
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    boot->tstate = _PyThreadState_New(interp, _PyThreadState_WHENCE_THREADING);
+    uint8_t whence = daemon ? _PyThreadState_WHENCE_THREADING_DAEMON : _PyThreadState_WHENCE_THREADING;
+    boot->tstate = _PyThreadState_New(interp, whence);
     if (boot->tstate == NULL) {
         PyMem_RawFree(boot);
         if (!PyErr_Occurred()) {
@@ -711,6 +713,9 @@ PyThreadHandleObject_is_done(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     PyThreadHandleObject *self = PyThreadHandleObject_CAST(op);
     if (_PyEvent_IsSet(&self->handle->thread_is_exiting)) {
+        if (_PyOnceFlag_CallOnce(&self->handle->once, join_thread, self->handle) == -1) {
+            return NULL;
+        }
         Py_RETURN_TRUE;
     }
     else {
@@ -815,8 +820,8 @@ _thread.lock.acquire
 
 Lock the lock.
 
-Without argument, this blocks if the lock is already
-locked (even by the same thread), waiting for another thread to release
+Without argument, this blocks if the lock is already locked
+(even by the same thread), waiting for another thread to release
 the lock, and return True once the lock is acquired.
 With an argument, this will only block if the argument is true,
 and the return value reflects whether the lock is acquired.
@@ -826,7 +831,7 @@ The blocking operation is interruptible.
 static PyObject *
 _thread_lock_acquire_impl(lockobject *self, int blocking,
                           PyObject *timeoutobj)
-/*[clinic end generated code: output=569d6b25d508bf6f input=13e999649bc1c798]*/
+/*[clinic end generated code: output=569d6b25d508bf6f input=73e75b3d2ec32677]*/
 {
     PyTime_t timeout;
 
@@ -1126,19 +1131,19 @@ _thread.RLock.release
 
 Release the lock.
 
-Allows another thread that is blocked waiting for
-the lock to acquire the lock.  The lock must be in the locked state,
+Allows another thread that is blocked waiting for the lock
+to acquire the lock.  The lock must be in the locked state,
 and must be locked by the same thread that unlocks it; otherwise a
 `RuntimeError` is raised.
 
-Do note that if the lock was acquire()d several times in a row by the
-current thread, release() needs to be called as many times for the lock
-to be available for other threads.
+Do note that if the lock was acquire()d several times in a row by
+the current thread, release() needs to be called as many times for
+the lock to be available for other threads.
 [clinic start generated code]*/
 
 static PyObject *
 _thread_RLock_release_impl(rlockobject *self)
-/*[clinic end generated code: output=51f4a013c5fae2c5 input=d425daf1a5782e63]*/
+/*[clinic end generated code: output=51f4a013c5fae2c5 input=7c188f60189be13a]*/
 {
     if (_PyRecursiveMutex_TryUnlock(&self->lock) < 0) {
         PyErr_SetString(PyExc_RuntimeError,
@@ -1476,13 +1481,11 @@ create_sentinel_wr(localobject *self)
         return NULL;
     }
 
-    PyObject *args = PyTuple_New(2);
+    PyObject *args = _PyTuple_FromPairSteal(self_wr,
+                                            Py_NewRef(tstate->threading_local_key));
     if (args == NULL) {
-        Py_DECREF(self_wr);
         return NULL;
     }
-    PyTuple_SET_ITEM(args, 0, self_wr);
-    PyTuple_SET_ITEM(args, 1, Py_NewRef(tstate->threading_local_key));
 
     PyObject *cb = PyCFunction_New(&wr_callback_def, args);
     Py_DECREF(args);
@@ -1913,7 +1916,7 @@ do_start_new_thread(thread_module_state *state, PyObject *func, PyObject *args,
         add_to_shutdown_handles(state, handle);
     }
 
-    if (ThreadHandle_start(handle, func, args, kwargs) < 0) {
+    if (ThreadHandle_start(handle, func, args, kwargs, daemon) < 0) {
         if (!daemon) {
             remove_from_shutdown_handles(handle);
         }
@@ -2196,9 +2199,10 @@ thread_stack_size(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "|n:stack_size", &new_size))
         return NULL;
 
-    if (new_size < 0) {
-        PyErr_SetString(PyExc_ValueError,
-                        "size must be 0 or a positive value");
+    Py_ssize_t min_size = _PyOS_MIN_STACK_SIZE + SYSTEM_PAGE_SIZE;
+    if (new_size != 0 && new_size < min_size) {
+        PyErr_Format(PyExc_ValueError,
+                     "size must be at least %zi bytes", min_size);
         return NULL;
     }
 
@@ -2425,10 +2429,8 @@ thread_shutdown(PyObject *self, PyObject *args)
         // Wait for the thread to finish. If we're interrupted, such
         // as by a ctrl-c we print the error and exit early.
         if (ThreadHandle_join(handle, -1) < 0) {
-            PyErr_FormatUnraisable("Exception ignored while joining a thread "
-                                   "in _thread._shutdown()");
             ThreadHandle_decref(handle);
-            Py_RETURN_NONE;
+            return NULL;
         }
 
         ThreadHandle_decref(handle);
@@ -2854,6 +2856,7 @@ PyDoc_STRVAR(thread_doc,
 The 'threading' module provides a more convenient interface.");
 
 static PyModuleDef_Slot thread_module_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, thread_module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

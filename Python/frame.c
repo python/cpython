@@ -54,7 +54,7 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
     _PyFrame_Copy(frame, new_frame);
     // _PyFrame_Copy takes the reference to the executable,
     // so we need to restore it.
-    frame->f_executable = PyStackRef_DUP(new_frame->f_executable);
+    new_frame->f_executable = PyStackRef_DUP(new_frame->f_executable);
     f->f_frame = new_frame;
     new_frame->owner = FRAME_OWNED_BY_FRAME_OBJECT;
     if (_PyFrame_IsIncomplete(new_frame)) {
@@ -109,7 +109,7 @@ _PyFrame_ClearExceptCode(_PyInterpreterFrame *frame)
     /* It is the responsibility of the owning generator/coroutine
      * to have cleared the enclosing generator, if any. */
     assert(frame->owner != FRAME_OWNED_BY_GENERATOR ||
-        _PyGen_GetGeneratorFromFrame(frame)->gi_frame_state == FRAME_CLEARED);
+           FT_ATOMIC_LOAD_INT8_RELAXED(_PyGen_GetGeneratorFromFrame(frame)->gi_frame_state) == FRAME_CLEARED);
     // GH-99729: Clearing this frame can expose the stack (via finalizers). It's
     // crucial that this frame has been unlinked, and is no longer visible:
     assert(_PyThreadState_GET()->current_frame != frame);
@@ -135,14 +135,14 @@ PyUnstable_InterpreterFrame_GetCode(struct _PyInterpreterFrame *frame)
     return PyStackRef_AsPyObjectNew(frame->f_executable);
 }
 
-int
+// NOTE: We allow racy accesses to the instruction pointer from other threads
+// for sys._current_frames() and similar APIs.
+int _Py_NO_SANITIZE_THREAD
 PyUnstable_InterpreterFrame_GetLasti(struct _PyInterpreterFrame *frame)
 {
     return _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);
 }
 
-// NOTE: We allow racy accesses to the instruction pointer from other threads
-// for sys._current_frames() and similar APIs.
 int _Py_NO_SANITIZE_THREAD
 PyUnstable_InterpreterFrame_GetLine(_PyInterpreterFrame *frame)
 {

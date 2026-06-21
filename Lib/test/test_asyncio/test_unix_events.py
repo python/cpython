@@ -1180,32 +1180,68 @@ class TestFunctional(unittest.TestCase):
 
 
 @support.requires_fork()
-class TestFork(unittest.IsolatedAsyncioTestCase):
+class TestFork(unittest.TestCase):
 
-    async def test_fork_not_share_event_loop(self):
-        with warnings_helper.ignore_fork_in_thread_deprecation_warnings():
-            # The forked process should not share the event loop with the parent
-            loop = asyncio.get_running_loop()
-            r, w = os.pipe()
-            self.addCleanup(os.close, r)
-            self.addCleanup(os.close, w)
-            pid = os.fork()
-            if pid == 0:
-                # child
-                try:
-                    loop = asyncio.get_event_loop()
-                    os.write(w, b'LOOP:' + str(id(loop)).encode())
-                except RuntimeError:
-                    os.write(w, b'NO LOOP')
-                except BaseException as e:
-                    os.write(w, b'ERROR:' + ascii(e).encode())
-                finally:
-                    os._exit(0)
-            else:
-                # parent
-                result = os.read(r, 100)
-                self.assertEqual(result, b'NO LOOP')
-                wait_process(pid, exitcode=0)
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_fork_not_share_current_task(self):
+        loop = object()
+        task = object()
+        asyncio._set_running_loop(loop)
+        self.addCleanup(asyncio._set_running_loop, None)
+        asyncio.tasks._enter_task(loop, task)
+        self.addCleanup(asyncio.tasks._leave_task, loop, task)
+        self.assertIs(asyncio.current_task(), task)
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        self.addCleanup(os.close, w)
+        pid = os.fork()
+        if pid == 0:
+            # child
+            try:
+                asyncio._set_running_loop(loop)
+                current_task = asyncio.current_task()
+                if current_task is None:
+                    os.write(w, b'NO TASK')
+                else:
+                    os.write(w, b'TASK:' + str(id(current_task)).encode())
+            except BaseException as e:
+                os.write(w, b'ERROR:' + ascii(e).encode())
+            finally:
+                asyncio._set_running_loop(None)
+                os._exit(0)
+        else:
+            # parent
+            result = os.read(r, 100)
+            self.assertEqual(result, b'NO TASK')
+            wait_process(pid, exitcode=0)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_fork_not_share_event_loop(self):
+        # The forked process should not share the event loop with the parent
+        loop = object()
+        asyncio._set_running_loop(loop)
+        self.assertIs(asyncio.get_running_loop(), loop)
+        self.addCleanup(asyncio._set_running_loop, None)
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        self.addCleanup(os.close, w)
+        pid = os.fork()
+        if pid == 0:
+            # child
+            try:
+                loop = asyncio.get_event_loop()
+                os.write(w, b'LOOP:' + str(id(loop)).encode())
+            except RuntimeError:
+                os.write(w, b'NO LOOP')
+            except BaseException as e:
+                os.write(w, b'ERROR:' + ascii(e).encode())
+            finally:
+                os._exit(0)
+        else:
+            # parent
+            result = os.read(r, 100)
+            self.assertEqual(result, b'NO LOOP')
+            wait_process(pid, exitcode=0)
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @hashlib_helper.requires_hashdigest('md5')
@@ -1296,6 +1332,46 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
         process.join()
 
         self.assertEqual(result.value, 0)
+
+
+@unittest.skipUnless(
+    unix_events.can_use_pidfd(),
+    "operating system does not support pidfd",
+)
+class PidfdChildWatcherTests(test_utils.TestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.loop = asyncio.new_event_loop()
+        self.set_event_loop(self.loop)
+
+    def test_pidfd_closed_when_waitpid_raises(self):
+        # _do_wait() must close the pidfd even when waitpid()
+        # fails with something other than ChildProcessError, otherwise the
+        # pidfd is leaked
+        self.loop.set_exception_handler(lambda loop, context: None)
+
+        async def coro():
+            before = os_helper.fd_count()
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable, '-c', 'import sys; sys.stdin.read()',
+                stdin=asyncio.subprocess.PIPE
+            )
+
+            with mock.patch.object(os, 'waitpid',
+                                   side_effect=OSError('unexpected')) as m:
+                proc.stdin.close()
+                while not m.called:
+                    await asyncio.sleep(0)
+
+            os.waitpid(proc.pid, 0)
+            proc._transport._process_exited(0)
+            await proc.wait()
+
+            self.assertEqual(os_helper.fd_count(), before)
+
+        self.loop.run_until_complete(coro())
+
 
 if __name__ == '__main__':
     unittest.main()

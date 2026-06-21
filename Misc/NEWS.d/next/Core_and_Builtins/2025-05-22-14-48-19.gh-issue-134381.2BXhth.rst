@@ -1,1 +1,0 @@
-Fix :exc:`RuntimeError` when using a not-started :class:`threading.Thread` after calling :func:`os.fork`

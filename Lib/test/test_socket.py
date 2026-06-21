@@ -8,7 +8,9 @@ from test.support.import_helper import ensure_lazy_imports
 import _thread as thread
 import array
 import contextlib
+import decimal
 import errno
+import fractions
 import gc
 import io
 import itertools
@@ -203,6 +205,25 @@ def _have_socket_hyperv():
     return True
 
 
+def _have_udp_lite():
+    if not hasattr(socket, "IPPROTO_UDPLITE"):
+        return False
+    # Older Android versions block UDPLITE with SELinux.
+    if support.is_android and platform.android_ver().api_level < 29:
+        return False
+
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDPLITE)
+    except OSError as exc:
+        # Linux 7.1 removed UDP Lite support
+        if exc.errno == errno.EPROTONOSUPPORT:
+            return False
+        raise
+    sock.close()
+
+    return True
+
+
 @contextlib.contextmanager
 def socket_setdefaulttimeout(timeout):
     old_timeout = socket.getdefaulttimeout()
@@ -245,10 +266,7 @@ HAVE_SOCKET_QIPCRTR = _have_socket_qipcrtr()
 
 HAVE_SOCKET_VSOCK = _have_socket_vsock()
 
-# Older Android versions block UDPLITE with SELinux.
-HAVE_SOCKET_UDPLITE = (
-    hasattr(socket, "IPPROTO_UDPLITE")
-    and not (support.is_android and platform.android_ver().api_level < 29))
+HAVE_SOCKET_UDPLITE = _have_udp_lite()
 
 HAVE_SOCKET_BLUETOOTH = _have_socket_bluetooth()
 
@@ -561,8 +579,8 @@ class ThreadedRDSSocketTest(SocketRDSTest, ThreadableTest):
 @unittest.skipIf(WSL, 'VSOCK does not work on Microsoft WSL')
 @unittest.skipUnless(HAVE_SOCKET_VSOCK,
           'VSOCK sockets required for this test.')
-@unittest.skipUnless(get_cid() != 2,  # VMADDR_CID_HOST
-                     "This test can only be run on a virtual guest.")
+@unittest.skipIf(get_cid() == getattr(socket, 'VMADDR_CID_HOST', 2),
+                 "This test can only be run on a virtual guest.")
 class ThreadedVSOCKSocketStreamTest(unittest.TestCase, ThreadableTest):
 
     def __init__(self, methodName='runTest'):
@@ -572,7 +590,16 @@ class ThreadedVSOCKSocketStreamTest(unittest.TestCase, ThreadableTest):
     def setUp(self):
         self.serv = socket.socket(socket.AF_VSOCK, socket.SOCK_STREAM)
         self.addCleanup(self.serv.close)
-        self.serv.bind((socket.VMADDR_CID_ANY, VSOCKPORT))
+        cid = get_cid()
+        if cid in (socket.VMADDR_CID_HOST, socket.VMADDR_CID_ANY):
+            cid = socket.VMADDR_CID_LOCAL
+        try:
+            self.serv.bind((cid, VSOCKPORT))
+        except OSError as exc:
+            if exc.errno == errno.EADDRNOTAVAIL:
+                self.skipTest(f"bind() failed with {exc!r}")
+            else:
+                raise
         self.serv.listen()
         self.serverExplicitReady()
         self.serv.settimeout(support.LOOPBACK_TIMEOUT)
@@ -1174,7 +1201,10 @@ class GeneralModuleTests(unittest.TestCase):
                          'socket.if_indextoname() not available.')
     @support.skip_android_selinux('if_indextoname')
     def testInvalidInterfaceIndexToName(self):
-        self.assertRaises(OSError, socket.if_indextoname, 0)
+        with self.assertRaises(OSError) as cm:
+            socket.if_indextoname(0)
+        self.assertIsNotNone(cm.exception.errno)
+
         self.assertRaises(ValueError, socket.if_indextoname, -1)
         self.assertRaises(OverflowError, socket.if_indextoname, 2**1000)
         self.assertRaises(TypeError, socket.if_indextoname, '_DEADBEEF')
@@ -1194,8 +1224,11 @@ class GeneralModuleTests(unittest.TestCase):
                          'socket.if_nametoindex() not available.')
     @support.skip_android_selinux('if_nametoindex')
     def testInvalidInterfaceNameToIndex(self):
+        with self.assertRaises(OSError) as cm:
+            socket.if_nametoindex("_DEADBEEF")
+        self.assertIsNotNone(cm.exception.errno)
+
         self.assertRaises(TypeError, socket.if_nametoindex, 0)
-        self.assertRaises(OSError, socket.if_nametoindex, '_DEADBEEF')
 
     @unittest.skipUnless(hasattr(sys, 'getrefcount'),
                          'test needs sys.getrefcount()')
@@ -1310,10 +1343,20 @@ class GeneralModuleTests(unittest.TestCase):
             self.assertEqual(s.gettimeout(), None)
 
         # Set the default timeout to 10, and see if it propagates
-        with socket_setdefaulttimeout(10):
-            self.assertEqual(socket.getdefaulttimeout(), 10)
+        with socket_setdefaulttimeout(10.125):
+            self.assertEqual(socket.getdefaulttimeout(), 10.125)
             with socket.socket() as sock:
-                self.assertEqual(sock.gettimeout(), 10)
+                self.assertEqual(sock.gettimeout(), 10.125)
+
+            socket.setdefaulttimeout(decimal.Decimal('11.125'))
+            self.assertEqual(socket.getdefaulttimeout(), 11.125)
+            with socket.socket() as sock:
+                self.assertEqual(sock.gettimeout(), 11.125)
+
+            socket.setdefaulttimeout(fractions.Fraction(97, 8))
+            self.assertEqual(socket.getdefaulttimeout(), 12.125)
+            with socket.socket() as sock:
+                self.assertEqual(sock.gettimeout(), 12.125)
 
             # Reset the default timeout to None, and see if it propagates
             socket.setdefaulttimeout(None)
@@ -1411,7 +1454,7 @@ class GeneralModuleTests(unittest.TestCase):
         assertInvalid('1:2:3:4:5:6:')
         assertInvalid('1:2:3:4:5:6:7:8:0')
         # bpo-29972: inet_pton() doesn't fail on AIX
-        if not AIX:
+        if not AIX and sys.platform != 'cygwin':
             assertInvalid('1:2:3:4:5:6:7:8:')
 
         self.assertEqual(b'\x00' * 12 + b'\xfe\x2a\x17\x40',
@@ -1958,7 +2001,8 @@ class GeneralModuleTests(unittest.TestCase):
         self.assertEqual(socket.getfqdn(), socket.getfqdn("::"))
 
     @unittest.skipUnless(socket_helper.IPV6_ENABLED, 'IPv6 required for this test.')
-    @unittest.skipIf(sys.platform == 'win32', 'does not work on Windows')
+    @unittest.skipIf(sys.platform in ('win32', 'cygwin'),
+                     'does not work on Windows')
     @unittest.skipIf(AIX, 'Symbolic scope id does not work')
     @unittest.skipUnless(hasattr(socket, 'if_nameindex'), "test needs socket.if_nameindex()")
     @support.skip_android_selinux('if_nameindex')
@@ -1992,7 +2036,7 @@ class GeneralModuleTests(unittest.TestCase):
         self.assertEqual(sockaddr, ('ff02::1de:c0:face:8d', 1234, 0, ifindex))
 
     @unittest.skipUnless(socket_helper.IPV6_ENABLED, 'IPv6 required for this test.')
-    @unittest.skipIf(sys.platform == 'win32', 'does not work on Windows')
+    @unittest.skipIf(sys.platform in ('win32', 'cygwin'), 'does not work on Windows')
     @unittest.skipIf(AIX, 'Symbolic scope id does not work')
     @unittest.skipUnless(hasattr(socket, 'if_nameindex'), "test needs socket.if_nameindex()")
     @support.skip_android_selinux('if_nameindex')
@@ -2204,6 +2248,24 @@ class GeneralModuleTests(unittest.TestCase):
                 source=_socket)
         enum._test_simple_enum(CheckedAddressInfo, socket.AddressInfo)
 
+    @unittest.skipUnless(hasattr(socket.socket, "sendmsg"),"sendmsg not supported")
+    def test_sendmsg_reentrant_ancillary_mutation(self):
+
+        class Mut:
+            def __index__(self):
+                seq.clear()
+                return socket.SCM_RIGHTS
+
+        seq = [
+            (socket.SOL_SOCKET, Mut(), b'xxxx'),
+            (socket.SOL_SOCKET, socket.SCM_RIGHTS, b'xxxx'),
+        ]
+
+        left, right = socket.socketpair()
+        self.addCleanup(left.close)
+        self.addCleanup(right.close)
+        self.assertRaises(OSError, left.sendmsg, [b'x'], seq)
+
 
 @unittest.skipUnless(HAVE_SOCKET_CAN, 'SocketCan required for this test.')
 class BasicCANTest(unittest.TestCase):
@@ -2392,6 +2454,45 @@ class ISOTPTest(unittest.TestCase):
         socket.PF_CAN
         socket.CAN_ISOTP
         socket.SOCK_DGRAM
+
+    @unittest.skipUnless(hasattr(socket, "SOL_CAN_ISOTP"),
+                         "missing <linux/can/isotp.h>")
+    def testISOTP(self):
+        socket.SOL_CAN_ISOTP
+
+        socket.CAN_ISOTP_OPTS
+        socket.CAN_ISOTP_RECV_FC
+
+        socket.CAN_ISOTP_TX_STMIN
+        socket.CAN_ISOTP_RX_STMIN
+        socket.CAN_ISOTP_LL_OPTS
+
+        socket.CAN_ISOTP_LISTEN_MODE
+        socket.CAN_ISOTP_EXTEND_ADDR
+        socket.CAN_ISOTP_TX_PADDING
+        socket.CAN_ISOTP_RX_PADDING
+        socket.CAN_ISOTP_CHK_PAD_LEN
+        socket.CAN_ISOTP_CHK_PAD_DATA
+        socket.CAN_ISOTP_HALF_DUPLEX
+        socket.CAN_ISOTP_FORCE_TXSTMIN
+        socket.CAN_ISOTP_FORCE_RXSTMIN
+        socket.CAN_ISOTP_RX_EXT_ADDR
+        socket.CAN_ISOTP_WAIT_TX_DONE
+        # This constant is not always available
+        # socket.CAN_ISOTP_SF_BROADCAST
+
+        socket.CAN_ISOTP_DEFAULT_FLAGS
+        socket.CAN_ISOTP_DEFAULT_EXT_ADDRESS
+        socket.CAN_ISOTP_DEFAULT_PAD_CONTENT
+        socket.CAN_ISOTP_DEFAULT_FRAME_TXTIME
+        socket.CAN_ISOTP_DEFAULT_RECV_BS
+        socket.CAN_ISOTP_DEFAULT_EXT_ADDRESS
+        socket.CAN_ISOTP_DEFAULT_RECV_STMIN
+        socket.CAN_ISOTP_DEFAULT_RECV_WFTMAX
+
+        socket.CAN_ISOTP_DEFAULT_LL_MTU
+        socket.CAN_ISOTP_DEFAULT_LL_TX_DL
+        socket.CAN_ISOTP_DEFAULT_LL_TX_FLAGS
 
     def testCreateSocket(self):
         with socket.socket(socket.PF_CAN, socket.SOCK_RAW, socket.CAN_RAW) as s:
@@ -7088,7 +7189,7 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
             self.assertEqual(len(dec), msglen * multiplier)
             self.assertEqual(dec, msg * multiplier)
 
-    @support.requires_linux_version(4, 9)  # see issue29324
+    @support.requires_linux_version(4, 9)  # see gh-73510
     def test_aead_aes_gcm(self):
         key = bytes.fromhex('c939cc13397c1d37de6ae0e1cb7c423c')
         iv = bytes.fromhex('b3d8cc017cbb89b39e0f67e2')
@@ -7426,6 +7527,62 @@ class FreeThreadingTests(unittest.TestCase):
 
         with threading_helper.start_threads([t1, t2]):
             pass
+
+
+class ReentrantMutationTests(unittest.TestCase):
+    """Regression tests for re-entrant mutation in sendmsg/recvmsg_into.
+
+    These tests verify that mutating sequences during argument parsing
+    via __buffer__ protocol does not cause crashes.
+
+    See: https://github.com/python/cpython/issues/143988
+    """
+
+    @unittest.skipUnless(hasattr(socket.socket, "sendmsg"),
+                         "sendmsg not supported")
+    def test_sendmsg_reentrant_data_mutation(self):
+        seq = []
+
+        class MutBuffer:
+            def __init__(self):
+                self.tripped = False
+
+            def __buffer__(self, flags):
+                if not self.tripped:
+                    self.tripped = True
+                    seq.clear()
+                return memoryview(b'Hello')
+
+        seq = [MutBuffer(), b'World', b'Test']
+
+        left, right = socket.socketpair()
+        with left, right:
+            left.sendmsg(seq)
+            self.assertEqual(right.recv(1024), b'HelloWorldTest')
+
+    @unittest.skipUnless(hasattr(socket.socket, "recvmsg_into"),
+                         "recvmsg_into not supported")
+    def test_recvmsg_into_reentrant_buffer_mutation(self):
+        seq = []
+        buf1 = bytearray(100)
+
+        class MutBuffer:
+            def __init__(self):
+                self.tripped = False
+
+            def __buffer__(self, flags):
+                if not self.tripped:
+                    self.tripped = True
+                    seq.clear()
+                return memoryview(buf1)
+
+        seq = [MutBuffer(), bytearray(100), bytearray(100)]
+
+        left, right = socket.socketpair()
+        with left, right:
+            left.send(b'Hello World!')
+            right.recvmsg_into(seq)
+        self.assertEqual(buf1, b'Hello World!'.ljust(100, b'\x00'))
 
 
 def setUpModule():

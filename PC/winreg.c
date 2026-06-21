@@ -53,6 +53,7 @@ PyDoc_STRVAR(module_doc,
 "DeleteKey() - Deletes the specified key.\n"
 "DeleteKeyEx() - Deletes the specified key.\n"
 "DeleteValue() - Removes a named value from the specified registry key.\n"
+"DeleteTree() - Deletes the specified key and all its subkeys and values recursively.\n"
 "EnumKey() - Enumerates subkeys of the specified open registry key.\n"
 "EnumValue() - Enumerates values of the specified open registry key.\n"
 "ExpandEnvironmentStrings() - Expand the env strings in a REG_EXPAND_SZ\n"
@@ -107,7 +108,9 @@ PyDoc_STRVAR(PyHKEY_doc,
 "Operations:\n"
 "__bool__ - Handles with an open object return true, otherwise false.\n"
 "__int__ - Converting a handle to an integer returns the Win32 handle.\n"
-"rich comparison - Handle objects are compared using the handle value.");
+"__enter__, __exit__ - Context manager support for 'with' statement,\n"
+"automatically closes handle.\n"
+"__eq__, __ne__ - Equality comparison based on Windows handle value.");
 
 
 
@@ -181,13 +184,38 @@ PyHKEY_strFunc(PyObject *ob)
     return PyUnicode_FromFormat("<PyHKEY:%p>", pyhkey->hkey);
 }
 
-static int
-PyHKEY_compareFunc(PyObject *ob1, PyObject *ob2)
+static PyObject *
+PyHKEY_richcompare(PyObject *ob1, PyObject *ob2, int op)
 {
+    /* Both objects must be PyHKEY objects from the same module */
+    if (Py_TYPE(ob1) != Py_TYPE(ob2)) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+
     PyHKEYObject *pyhkey1 = (PyHKEYObject *)ob1;
     PyHKEYObject *pyhkey2 = (PyHKEYObject *)ob2;
-    return pyhkey1 == pyhkey2 ? 0 :
-         (pyhkey1 < pyhkey2 ? -1 : 1);
+    HKEY hkey1 = pyhkey1->hkey;
+    HKEY hkey2 = pyhkey2->hkey;
+    int result;
+
+    switch (op) {
+        case Py_EQ:
+            result = (hkey1 == hkey2);
+            break;
+        case Py_NE:
+            result = (hkey1 != hkey2);
+            break;
+        default:
+            /* Only support equality comparisons, not ordering */
+            Py_RETURN_NOTIMPLEMENTED;
+    }
+
+    if (result) {
+        Py_RETURN_TRUE;
+    }
+    else {
+        Py_RETURN_FALSE;
+    }
 }
 
 static Py_hash_t
@@ -236,19 +264,8 @@ class HKEY_return_converter(CReturnConverter):
         self.err_occurred_if_null_pointer("_return_value", data)
         data.return_conversion.append(
             'return_value = PyHKEY_FromHKEY(_PyModule_GetState(module), _return_value);\n')
-
-# HACK: this only works for PyHKEYObjects, nothing else.
-#       Should this be generalized and enshrined in clinic.py,
-#       destroy this converter with prejudice.
-class self_return_converter(CReturnConverter):
-    type = 'PyHKEYObject *'
-
-    def render(self, function, data):
-        self.declare(data)
-        data.return_conversion.append(
-            'return_value = (PyObject *)_return_value;\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=4979f33998ffb6f8]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=b34c8217647f5fef]*/
 
 #include "clinic/winreg.c.h"
 
@@ -305,14 +322,14 @@ winreg_HKEYType_Detach_impl(PyHKEYObject *self)
 }
 
 /*[clinic input]
-winreg.HKEYType.__enter__ -> self
+winreg.HKEYType.__enter__
 [clinic start generated code]*/
 
-static PyHKEYObject *
+static PyObject *
 winreg_HKEYType___enter___impl(PyHKEYObject *self)
-/*[clinic end generated code: output=52c34986dab28990 input=c40fab1f0690a8e2]*/
+/*[clinic end generated code: output=70ec10933068a08c input=85f6abf60774c88c]*/
 {
-    return (PyHKEYObject*)Py_XNewRef(self);
+    return Py_XNewRef(self);
 }
 
 
@@ -365,6 +382,7 @@ static PyType_Slot pyhkey_type_slots[] = {
     {Py_tp_traverse, _PyObject_VisitType},
     {Py_tp_hash, PyHKEY_hashFunc},
     {Py_tp_str, PyHKEY_strFunc},
+    {Py_tp_richcompare, PyHKEY_richcompare},
 
     // Number protocol
     {Py_nb_add, PyHKEY_binaryFailureFunc},
@@ -399,19 +417,6 @@ static PyType_Spec pyhkey_type_spec = {
 /************************************************************************
    The public PyHKEY API (well, not public yet :-)
 ************************************************************************/
-PyObject *
-PyHKEY_New(PyObject *m, HKEY hInit)
-{
-    winreg_state *st = _PyModule_GetState(m);
-    PyHKEYObject *key = PyObject_GC_New(PyHKEYObject, st->PyHKEY_Type);
-    if (key == NULL) {
-        return NULL;
-    }
-    key->hkey = hInit;
-    PyObject_GC_Track(key);
-    return (PyObject *)key;
-}
-
 BOOL
 PyHKEY_Close(winreg_state *st, PyObject *ob_handle)
 {
@@ -484,48 +489,6 @@ PyHKEY_FromHKEY(winreg_state *st, HKEY h)
     op->hkey = h;
     PyObject_GC_Track(op);
     return (PyObject *)op;
-}
-
-
-/************************************************************************
-  The module methods
-************************************************************************/
-BOOL
-PyWinObject_CloseHKEY(winreg_state *st, PyObject *obHandle)
-{
-    BOOL ok;
-    if (PyHKEY_Check(st, obHandle)) {
-        ok = PyHKEY_Close(st, obHandle);
-    }
-#if SIZEOF_LONG >= SIZEOF_HKEY
-    else if (PyLong_Check(obHandle)) {
-        long rc;
-        Py_BEGIN_ALLOW_THREADS
-        rc = RegCloseKey((HKEY)PyLong_AsLong(obHandle));
-        Py_END_ALLOW_THREADS
-        ok = (rc == ERROR_SUCCESS);
-        if (!ok)
-            PyErr_SetFromWindowsErrWithFunction(rc, "RegCloseKey");
-    }
-#else
-    else if (PyLong_Check(obHandle)) {
-        long rc;
-        HKEY hkey = (HKEY)PyLong_AsVoidPtr(obHandle);
-        Py_BEGIN_ALLOW_THREADS
-        rc = RegCloseKey(hkey);
-        Py_END_ALLOW_THREADS
-        ok = (rc == ERROR_SUCCESS);
-        if (!ok)
-            PyErr_SetFromWindowsErrWithFunction(rc, "RegCloseKey");
-    }
-#endif
-    else {
-        PyErr_SetString(
-            PyExc_TypeError,
-            "A handle must be a HKEY object or an integer");
-        return FALSE;
-    }
-    return ok;
 }
 
 
@@ -1677,7 +1640,7 @@ winreg_QueryValueEx_impl(PyObject *module, HKEY key, const wchar_t *name)
         return PyErr_SetFromWindowsErrWithFunction(rc,
                                                    "RegQueryValueEx");
     }
-    obData = Reg2Py(retBuf, bufSize, typ);
+    obData = Reg2Py(retBuf, retSize, typ);
     PyMem_Free(retBuf);
     if (obData == NULL)
         return NULL;

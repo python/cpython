@@ -61,7 +61,9 @@ _PySemaphore_Init(_PySemaphore *sema)
         NULL    //  unnamed
     );
     if (!sema->platform_sem) {
-        Py_FatalError("parking_lot: CreateSemaphore failed");
+        _Py_FatalErrorFormat(__func__,
+            "parking_lot: CreateSemaphore failed (error: %u)",
+            GetLastError());
     }
 #elif defined(_Py_USE_SEMAPHORES)
     if (sem_init(&sema->platform_sem, /*pshared=*/0, /*value=*/0) < 0) {
@@ -91,8 +93,8 @@ _PySemaphore_Destroy(_PySemaphore *sema)
 #endif
 }
 
-static int
-_PySemaphore_PlatformWait(_PySemaphore *sema, PyTime_t timeout)
+int
+_PySemaphore_Wait(_PySemaphore *sema, PyTime_t timeout)
 {
     int res;
 #if defined(MS_WINDOWS)
@@ -141,8 +143,8 @@ _PySemaphore_PlatformWait(_PySemaphore *sema, PyTime_t timeout)
     }
     else {
         _Py_FatalErrorFormat(__func__,
-            "unexpected error from semaphore: %u (error: %u)",
-            wait, GetLastError());
+            "unexpected error from semaphore: %u (error: %u, handle: %p)",
+            wait, GetLastError(), sema->platform_sem);
     }
 #elif defined(_Py_USE_SEMAPHORES)
     int err;
@@ -225,33 +227,14 @@ _PySemaphore_PlatformWait(_PySemaphore *sema, PyTime_t timeout)
     return res;
 }
 
-int
-_PySemaphore_Wait(_PySemaphore *sema, PyTime_t timeout, int detach)
-{
-    PyThreadState *tstate = NULL;
-    if (detach) {
-        tstate = _PyThreadState_GET();
-        if (tstate && _PyThreadState_IsAttached(tstate)) {
-            // Only detach if we are attached
-            PyEval_ReleaseThread(tstate);
-        }
-        else {
-            tstate = NULL;
-        }
-    }
-    int res = _PySemaphore_PlatformWait(sema, timeout);
-    if (tstate) {
-        PyEval_AcquireThread(tstate);
-    }
-    return res;
-}
-
 void
 _PySemaphore_Wakeup(_PySemaphore *sema)
 {
 #if defined(MS_WINDOWS)
     if (!ReleaseSemaphore(sema->platform_sem, 1, NULL)) {
-        Py_FatalError("parking_lot: ReleaseSemaphore failed");
+        _Py_FatalErrorFormat(__func__,
+            "parking_lot: ReleaseSemaphore failed (error: %u, handle: %p)",
+            GetLastError(), sema->platform_sem);
     }
 #elif defined(_Py_USE_SEMAPHORES)
     int err = sem_post(&sema->platform_sem);
@@ -342,7 +325,19 @@ _PyParkingLot_Park(const void *addr, const void *expected, size_t size,
     enqueue(bucket, addr, &wait);
     _PyRawMutex_Unlock(&bucket->mutex);
 
-    int res = _PySemaphore_Wait(&wait.sema, timeout_ns, detach);
+    PyThreadState *tstate = NULL;
+    if (detach) {
+        tstate = _PyThreadState_GET();
+        if (tstate && _PyThreadState_IsAttached(tstate)) {
+            // Only detach if we are attached
+            PyEval_ReleaseThread(tstate);
+        }
+        else {
+            tstate = NULL;
+        }
+    }
+
+    int res = _PySemaphore_Wait(&wait.sema, timeout_ns);
     if (res == Py_PARK_OK) {
         goto done;
     }
@@ -354,7 +349,7 @@ _PyParkingLot_Park(const void *addr, const void *expected, size_t size,
         // Another thread has started to unpark us. Wait until we process the
         // wakeup signal.
         do {
-            res = _PySemaphore_Wait(&wait.sema, -1, detach);
+            res = _PySemaphore_Wait(&wait.sema, -1);
         } while (res != Py_PARK_OK);
         goto done;
     }
@@ -366,6 +361,9 @@ _PyParkingLot_Park(const void *addr, const void *expected, size_t size,
 
 done:
     _PySemaphore_Destroy(&wait.sema);
+    if (tstate) {
+        PyEval_AcquireThread(tstate);
+    }
     return res;
 
 }

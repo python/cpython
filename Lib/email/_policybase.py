@@ -380,7 +380,7 @@ class Compat32(Policy):
             h = value
         if h is not None:
             # The Header class interprets a value of None for maxlinelen as the
-            # default value of 78, as recommended by RFC 2822.
+            # default value of 78, as recommended by RFC 5322 section 2.1.1.
             maxlinelen = 0
             if self.max_line_length is not None:
                 maxlinelen = self.max_line_length

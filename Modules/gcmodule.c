@@ -8,7 +8,6 @@
 #include "pycore_gc.h"
 #include "pycore_object.h"      // _PyObject_IS_GC()
 #include "pycore_pystate.h"     // _PyInterpreterState_GET()
-#include "pycore_tuple.h"       // _PyTuple_FromArray()
 
 typedef struct _gc_runtime_state GCState;
 
@@ -159,6 +158,17 @@ gc_set_threshold_impl(PyObject *module, int threshold0, int group_right_1,
 {
     GCState *gcstate = get_gc_state();
 
+#ifndef Py_GIL_DISABLED
+    gcstate->generations[0].threshold = threshold0;
+    if (group_right_1) {
+        gcstate->generations[1].threshold = threshold1;
+    }
+    if (group_right_2) {
+        gcstate->generations[2].threshold = threshold2;
+    }
+#else
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
     gcstate->young.threshold = threshold0;
     if (group_right_1) {
         gcstate->old[0].threshold = threshold1;
@@ -166,6 +176,8 @@ gc_set_threshold_impl(PyObject *module, int threshold0, int group_right_1,
     if (group_right_2) {
         gcstate->old[1].threshold = threshold2;
     }
+    _PyEval_StartTheWorld(interp);
+#endif
     Py_RETURN_NONE;
 }
 
@@ -180,10 +192,17 @@ gc_get_threshold_impl(PyObject *module)
 /*[clinic end generated code: output=7902bc9f41ecbbd8 input=286d79918034d6e6]*/
 {
     GCState *gcstate = get_gc_state();
+#ifndef Py_GIL_DISABLED
+    return Py_BuildValue("(iii)",
+                         gcstate->generations[0].threshold,
+                         gcstate->generations[1].threshold,
+                         gcstate->generations[2].threshold);
+#else
     return Py_BuildValue("(iii)",
                          gcstate->young.threshold,
                          gcstate->old[0].threshold,
-                         0);
+                         gcstate->old[1].threshold);
+#endif
 }
 
 /*[clinic input]
@@ -207,10 +226,17 @@ gc_get_count_impl(PyObject *module)
     gc->alloc_count = 0;
 #endif
 
+#ifndef Py_GIL_DISABLED
     return Py_BuildValue("(iii)",
-                         gcstate->young.count,
-                         gcstate->old[gcstate->visited_space].count,
-                         gcstate->old[gcstate->visited_space^1].count);
+                         gcstate->generations[0].count,
+                         gcstate->generations[1].count,
+                         gcstate->generations[2].count);
+#else
+    return Py_BuildValue("(iii)",
+                         _Py_atomic_load_int_relaxed(&gcstate->young.count),
+                         gcstate->old[0].count,
+                         gcstate->old[1].count);
+#endif
 }
 
 /*[clinic input]
@@ -303,13 +329,13 @@ gc.get_objects
 
 Return a list of objects tracked by the collector (excluding the list returned).
 
-If generation is not None, return only the objects tracked by the collector
-that are in that generation.
+If generation is not None, return only the objects tracked by the
+collector that are in that generation.
 [clinic start generated code]*/
 
 static PyObject *
 gc_get_objects_impl(PyObject *module, Py_ssize_t generation)
-/*[clinic end generated code: output=48b35fea4ba6cb0e input=a887f1d9924be7cf]*/
+/*[clinic end generated code: output=48b35fea4ba6cb0e input=89bca0d4a64e0135]*/
 {
     if (PySys_Audit("gc.get_objects", "n", generation) < 0) {
         return NULL;
@@ -348,9 +374,9 @@ gc_get_stats_impl(PyObject *module)
     /* To get consistent values despite allocations while constructing
        the result list, we use a snapshot of the running stats. */
     GCState *gcstate = get_gc_state();
-    for (i = 0; i < NUM_GENERATIONS; i++) {
-        stats[i] = gcstate->generation_stats[i];
-    }
+    stats[0] = gcstate->generation_stats->young.items[gcstate->generation_stats->young.index];
+    stats[1] = gcstate->generation_stats->old[0].items[gcstate->generation_stats->old[0].index];
+    stats[2] = gcstate->generation_stats->old[1].items[gcstate->generation_stats->old[1].index];
 
     PyObject *result = PyList_New(0);
     if (result == NULL)
@@ -359,10 +385,12 @@ gc_get_stats_impl(PyObject *module)
     for (i = 0; i < NUM_GENERATIONS; i++) {
         PyObject *dict;
         st = &stats[i];
-        dict = Py_BuildValue("{snsnsn}",
+        dict = Py_BuildValue("{snsnsnsnsd}",
                              "collections", st->collections,
                              "collected", st->collected,
-                             "uncollectable", st->uncollectable
+                             "uncollectable", st->uncollectable,
+                             "candidates", st->candidates,
+                             "duration", st->duration
                             );
         if (dict == NULL)
             goto error;
@@ -415,19 +443,20 @@ gc_is_finalized_impl(PyObject *module, PyObject *obj)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
+@permit_long_summary
 gc.freeze
 
 Freeze all current tracked objects and ignore them for future collections.
 
-This can be used before a POSIX fork() call to make the gc copy-on-write friendly.
-Note: collection before a POSIX fork() call may free pages for future allocation
-which can cause copy-on-write.
+This can be used before a POSIX fork() call to make the gc copy-on-write
+friendly.
+Note: collection before a POSIX fork() call may free pages for future
+allocation which can cause copy-on-write.
 [clinic start generated code]*/
 
 static PyObject *
 gc_freeze_impl(PyObject *module)
-/*[clinic end generated code: output=502159d9cdc4c139 input=11fb59b0a75dcf3d]*/
+/*[clinic end generated code: output=502159d9cdc4c139 input=02674706fc9c0de6]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     _PyGC_Freeze(interp);
@@ -478,7 +507,7 @@ PyDoc_STRVAR(gc__doc__,
 "set_debug() -- Set debugging flags.\n"
 "get_debug() -- Get debugging flags.\n"
 "set_threshold() -- Set the collection thresholds.\n"
-"get_threshold() -- Return the current the collection thresholds.\n"
+"get_threshold() -- Return the current collection thresholds.\n"
 "get_objects() -- Return a list of all objects tracked by the collector.\n"
 "is_tracked() -- Returns true if a given object is tracked.\n"
 "is_finalized() -- Returns true if a given object has been already finalized.\n"
@@ -537,6 +566,7 @@ gcmodule_exec(PyObject *module)
 }
 
 static PyModuleDef_Slot gcmodule_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, gcmodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

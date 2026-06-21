@@ -11,13 +11,12 @@ import os
 import os.path
 import pathlib
 import re
+import shlex
 import shutil
-import struct
 import subprocess
 import sys
 import sysconfig
 import tempfile
-import shlex
 from test.support import (captured_stdout, captured_stderr,
                           skip_if_broken_multiprocessing_synchronize, verbose,
                           requires_subprocess, is_android, is_apple_mobile,
@@ -138,14 +137,9 @@ class BasicTest(BaseTest):
         self.isdir(self.bindir)
         self.isdir(self.include)
         self.isdir(*self.lib)
-        # Issue 21197
         p = self.get_env_file('lib64')
-        conditions = ((struct.calcsize('P') == 8) and (os.name == 'posix') and
-                      (sys.platform != 'darwin'))
-        if conditions:
-            self.assertTrue(os.path.islink(p))
-        else:
-            self.assertFalse(os.path.exists(p))
+        if os.path.exists(p):
+            self.assertFalse(os.path.islink(p))
         data = self.get_text_file_contents('pyvenv.cfg')
         executable = sys._base_executable
         path = os.path.dirname(executable)
@@ -307,9 +301,9 @@ class BasicTest(BaseTest):
                 self.assertEqual(out.strip(), expected, err)
         for attr, expected in (
             ('executable', self.envpy()),
-            # Usually compare to sys.executable, but if we're running in our own
-            # venv then we really need to compare to our base executable
-            ('_base_executable', sys._base_executable),
+            # Usually compare to sys.prefix, but if we're running in our own
+            # venv then we really need to compare to our base prefix
+            ('base_prefix', sys.base_prefix),
         ):
             with self.subTest(attr):
                 cmd[2] = f'import sys; print(sys.{attr})'
@@ -378,6 +372,16 @@ class BasicTest(BaseTest):
             fn = os.path.join(d, filename)
             with open(fn, 'wb') as f:
                 f.write(b'Still here?')
+
+    @unittest.skipUnless(hasattr(os, 'listxattr'), 'test requires os.listxattr')
+    def test_install_scripts_selinux(self):
+        """
+        gh-145417: Test that install_scripts does not copy SELinux context
+        when copying scripts.
+        """
+        with patch('os.listxattr') as listxattr_mock:
+            venv.create(self.env_dir)
+            listxattr_mock.assert_not_called()
 
     def test_overwrite_existing(self):
         """
@@ -496,6 +500,7 @@ class BasicTest(BaseTest):
 
     # gh-124651: test quoted strings
     @unittest.skipIf(os.name == 'nt', 'contains invalid characters on Windows')
+    @unittest.skipIf(sys.platform == 'cygwin', 'fail to locate cygpython DLL')
     def test_special_chars_bash(self):
         """
         Test that the template strings are quoted properly (bash)
@@ -522,6 +527,8 @@ class BasicTest(BaseTest):
 
     # gh-124651: test quoted strings
     @unittest.skipIf(os.name == 'nt', 'contains invalid characters on Windows')
+    @unittest.skipIf(sys.platform.startswith('netbsd'),
+                     "NetBSD csh fails with quoted special chars; see gh-139308")
     def test_special_chars_csh(self):
         """
         Test that the template strings are quoted properly (csh)
@@ -585,6 +592,51 @@ class BasicTest(BaseTest):
             encoding='oem',
         )
         self.assertEqual(out.strip(), '0')
+
+    @unittest.skipUnless(os.name == 'nt', 'only relevant on Windows')
+    def test_activate_bat_respects_disable_prompt(self):
+        rmtree(self.env_dir)
+        env_dir = os.path.join(os.path.realpath(self.env_dir), 'venv')
+        builder = venv.EnvBuilder(clear=True)
+        builder.create(env_dir)
+        activate = os.path.join(env_dir, self.bindir, 'activate.bat')
+        test_batch = os.path.join(self.env_dir, 'test_disable_prompt.bat')
+        with open(test_batch, "w") as f:
+            f.write('@echo off\n'
+                    'set "PROMPT=base$G"\n'
+                    'set "VIRTUAL_ENV_DISABLE_PROMPT=1"\n'
+                    f'call "{activate}"\n'
+                    'echo ACTIVE_PROMPT:%PROMPT%\n'
+                    'echo VIRTUAL_ENV:%VIRTUAL_ENV%\n'
+                    'set "PROMPT=changed$G"\n'
+                    'call deactivate\n'
+                    'echo FINAL_PROMPT:%PROMPT%\n')
+        out, err = check_output([test_batch])
+        lines = out.splitlines()
+        self.assertEqual(lines[0], b'ACTIVE_PROMPT:base$G')
+        self.assertEndsWith(lines[1], os.fsencode(env_dir))
+        self.assertEqual(lines[2], b'FINAL_PROMPT:changed$G')
+
+    @unittest.skipUnless(os.name == 'nt', 'only relevant on Windows')
+    def test_activate_bat_prefixes_prompt_by_default(self):
+        rmtree(self.env_dir)
+        env_dir = os.path.join(os.path.realpath(self.env_dir), 'venv')
+        builder = venv.EnvBuilder(clear=True)
+        builder.create(env_dir)
+        activate = os.path.join(env_dir, self.bindir, 'activate.bat')
+        test_batch = os.path.join(self.env_dir, 'test_enable_prompt.bat')
+        with open(test_batch, "w") as f:
+            f.write('@echo off\n'
+                    'set "PROMPT=base) $G"\n'
+                    'set "VIRTUAL_ENV_DISABLE_PROMPT="\n'
+                    f'call "{activate}"\n'
+                    'echo ACTIVE_PROMPT:%PROMPT%\n'
+                    'call deactivate\n'
+                    'echo FINAL_PROMPT:%PROMPT%\n')
+        out, err = check_output([test_batch])
+        lines = out.splitlines()
+        self.assertEqual(lines[0], b'ACTIVE_PROMPT:(venv) base) $G')
+        self.assertEqual(lines[1], b'FINAL_PROMPT:base) $G')
 
     @unittest.skipUnless(os.name == 'nt' and can_symlink(),
                          'symlinks on Windows')
@@ -650,6 +702,26 @@ class BasicTest(BaseTest):
         self.assertEqual(out, "".encode())
         self.assertEqual(err, "".encode())
 
+    # gh-149701: Test exit code is zero even when hashing is disabled
+    @unittest.skipIf(os.name == 'nt', 'not relevant on Windows')
+    def test_deactivate_with_strict_bash_opts_and_hashing_disabled(self):
+        bash = shutil.which("bash")
+        if bash is None:
+            self.skipTest("bash required for this test")
+        rmtree(self.env_dir)
+        builder = venv.EnvBuilder(clear=True)
+        builder.create(self.env_dir)
+        activate = os.path.join(self.env_dir, self.bindir, "activate")
+        test_script = os.path.join(self.env_dir, "test_hash_disabled.sh")
+        with open(test_script, "w") as f:
+            f.write("set -euo pipefail\n"
+                    "set +h\n"  # disable hashing
+                    f"source {activate}\n"
+                    "deactivate")
+        out, err = check_output([bash, test_script])
+        self.assertEqual(out, "".encode())
+        self.assertEqual(err, "".encode())
+
 
     @unittest.skipUnless(sys.platform == 'darwin', 'only relevant on macOS')
     def test_macos_env(self):
@@ -688,6 +760,12 @@ class BasicTest(BaseTest):
         os.mkdir(bindir)
         python_exe = os.path.basename(sys.executable)
         shutil.copy2(sys.executable, os.path.join(bindir, python_exe))
+        if sys.platform == 'cygwin':
+            # Copy libpython DLL
+            exe_path = os.path.dirname(sys.executable)
+            libpython_dll = sysconfig.get_config_var('DLLLIBRARY')
+            shutil.copy2(os.path.join(exe_path, libpython_dll),
+                         os.path.join(bindir, libpython_dll))
         libdir = os.path.join(non_installed_dir, platlibdir, self.lib[1])
         os.makedirs(libdir)
         landmark = os.path.join(libdir, "os.py")
@@ -890,10 +968,10 @@ class BasicTest(BaseTest):
             exename = exename.replace("python", "pythonw")
         envpyw = os.path.join(self.env_dir, self.bindir, exename)
         try:
-            subprocess.check_call([envpyw, "-c", "import sys; "
-                "assert sys._base_executable.endswith('%s')" % exename])
+            subprocess.check_call([envpyw, "-c", "import fnmatch, sys; "
+                "assert fnmatch.fnmatch(sys._base_executable, '**/pythonw*.exe')"])
         except subprocess.CalledProcessError:
-            self.fail("venvwlauncher.exe did not run %s" % exename)
+            self.fail("venvwlauncher.exe did not run pythonw.exe")
 
 
 @requireVenvCreate

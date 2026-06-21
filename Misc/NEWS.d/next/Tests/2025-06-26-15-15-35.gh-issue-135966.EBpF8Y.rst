@@ -1,1 +1,0 @@
-The iOS testbed now handles the ``app_packages`` folder as a site directory.
