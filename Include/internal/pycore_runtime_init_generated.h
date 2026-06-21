@@ -1791,7 +1791,6 @@ extern "C" {
     INIT_ID(generation), \
     INIT_ID(get), \
     INIT_ID(get_debug), \
-    INIT_ID(get_event_loop), \
     INIT_ID(get_loop), \
     INIT_ID(get_source), \
     INIT_ID(getattr), \

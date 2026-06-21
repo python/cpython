@@ -1793,7 +1793,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(generation));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(get));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(get_debug));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(get_event_loop));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(get_loop));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(get_source));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(getattr));
