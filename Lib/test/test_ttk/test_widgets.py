@@ -973,6 +973,27 @@ class ProgressbarTest(AbstractWidgetTest, unittest.TestCase):
 
     test_configure_wraplength = requires_tk(8, 7)(StandardOptionsTests.test_configure_wraplength)
 
+    def test_step(self):
+        widget = self.create(maximum=100, mode='determinate')
+        self.assertEqual(float(widget['value']), 0.0)
+        widget.step()  # The default increment is 1.0.
+        self.assertEqual(float(widget['value']), 1.0)
+        widget.step(5)
+        self.assertEqual(float(widget['value']), 6.0)
+        widget.step(-2)
+        self.assertEqual(float(widget['value']), 4.0)
+
+    def test_start_stop(self):
+        widget = self.create(maximum=100, mode='determinate')
+        widget.pack()
+        widget.start()  # Schedule autoincrement; no exception.
+        widget.update()
+        widget.stop()   # Cancel it.
+        # After stopping, the value no longer changes.
+        value = float(widget['value'])
+        widget.update()
+        self.assertEqual(float(widget['value']), value)
+
 
 @unittest.skipIf(sys.platform == 'darwin',
                  'ttk.Scrollbar is special on MacOSX')
@@ -1285,6 +1306,19 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         self._click_decrement_arrow()
         self.spin.update()
         self.assertEqual(len(success), 2)
+
+    def test_increment_decrement_events(self):
+        # Clicking the arrows fires the <<Increment>> and <<Decrement>>
+        # virtual events.
+        events = []
+        self.spin.bind('<<Increment>>', lambda e: events.append('increment'))
+        self.spin.bind('<<Decrement>>', lambda e: events.append('decrement'))
+        self.spin.update()
+        self._click_increment_arrow()
+        self.spin.update()
+        self._click_decrement_arrow()
+        self.spin.update()
+        self.assertEqual(events, ['increment', 'decrement'])
 
     def test_configure_to(self):
         self.spin['from'] = 0
@@ -1639,6 +1673,50 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         # in the tcl interpreter since tk requires an item.
         self.assertRaises(tkinter.TclError, self.tv.exists, None)
 
+    def test_parent(self):
+        a = self.tv.insert('', 'end')
+        b = self.tv.insert(a, 'end')
+        self.assertEqual(self.tv.parent(b), a)
+        self.assertEqual(self.tv.parent(a), '')
+        self.assertRaises(tkinter.TclError, self.tv.parent, 'nonexistent')
+
+    def test_next_prev(self):
+        a = self.tv.insert('', 'end')
+        b = self.tv.insert('', 'end')
+        c = self.tv.insert('', 'end')
+        self.assertEqual(self.tv.next(a), b)
+        self.assertEqual(self.tv.next(b), c)
+        self.assertEqual(self.tv.next(c), '')
+        self.assertEqual(self.tv.prev(c), b)
+        self.assertEqual(self.tv.prev(b), a)
+        self.assertEqual(self.tv.prev(a), '')
+        self.assertRaises(tkinter.TclError, self.tv.next, 'nonexistent')
+        self.assertRaises(tkinter.TclError, self.tv.prev, 'nonexistent')
+
+    def test_see(self):
+        a = self.tv.insert('', 'end')
+        b = self.tv.insert(a, 'end')
+        # see() opens all of the item's ancestors.
+        self.assertFalse(self.tv.tk.getboolean(self.tv.item(a, 'open')))
+        self.tv.see(b)
+        self.assertTrue(self.tv.tk.getboolean(self.tv.item(a, 'open')))
+        self.assertRaises(tkinter.TclError, self.tv.see, 'nonexistent')
+
+    def test_identify_element(self):
+        self.tv.pack()
+        self.tv.wait_visibility()
+        parent = self.tv.insert('', 'end', text='parent')
+        self.tv.insert(parent, 'end', text='child')
+        self.tv.update()
+        x, y, w, h = self.tv.bbox(parent)
+        # The Treeitem.indicator element is packed at the left of the row in
+        # the Item layout on every platform and theme.
+        element = self.tv.identify_element(x + 8, y + h // 2)
+        self.assertRegex(element, r'.*indicator\z')
+        # The empty string is returned outside the widget.
+        self.assertEqual(self.tv.identify_element(-1, -1), '')
+        self.assertRaises(tkinter.TclError, self.tv.identify_element, None, 5)
+
     def test_focus(self):
         # nothing is focused right now
         self.assertEqual(self.tv.focus(), '')
@@ -1879,6 +1957,37 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(self.tv.selection(), (c1, item2))
         self.tv.selection_toggle((c1, c3))
         self.assertEqual(self.tv.selection(), (c3, item2))
+
+    def test_virtual_events(self):
+        # Keyboard navigation fires the <<TreeviewSelect>>, <<TreeviewOpen>>
+        # and <<TreeviewClose>> virtual events.
+        parent = self.tv.insert('', 'end')
+        self.tv.insert(parent, 'end')
+        item2 = self.tv.insert('', 'end')
+        self.tv.pack()
+        self.tv.update()
+        selects, opens, closes = [], [], []
+        self.tv.bind('<<TreeviewSelect>>',
+                     lambda e: selects.append(self.tv.selection()))
+        self.tv.bind('<<TreeviewOpen>>', lambda e: opens.append(self.tv.focus()))
+        self.tv.bind('<<TreeviewClose>>', lambda e: closes.append(self.tv.focus()))
+        self.tv.focus_force()
+        self.tv.focus(parent)
+        self.tv.selection_set(parent)
+        self.tv.update()
+
+        self.tv.event_generate('<Right>')  # Open the focused parent.
+        self.tv.update()
+        self.assertEqual(opens, [parent])
+
+        self.tv.event_generate('<Left>')  # Close it again.
+        self.tv.update()
+        self.assertEqual(closes, [parent])
+
+        self.tv.event_generate('<Down>')  # Move the selection.
+        self.tv.update()
+        self.assertEqual(self.tv.selection(), (item2,))
+        self.assertIn((item2,), selects)
 
     def test_set(self):
         self.tv['columns'] = ['A', 'B']
