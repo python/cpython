@@ -560,6 +560,10 @@ unicode_format_arg_parse(struct unicode_formatter_t *ctx,
         }
         if (arg->width < 0) {
             arg->flags |= F_LJUST;
+            if (arg->width < -PY_SSIZE_T_MAX) {
+                FORMAT_ERROR(PyExc_OverflowError, "too big for width%s", "");
+                return -1;
+            }
             arg->width = -arg->width;
         }
         if (--ctx->fmtcnt >= 0) {
