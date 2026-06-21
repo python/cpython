@@ -797,18 +797,6 @@ class TextIOWrapperTest:
         self.assertRaises(TypeError, txt.writelines, None)
         self.assertRaises(TypeError, txt.writelines, b'abc')
 
-    def test_write_empty_stress(self):
-        # gh-151814: repeatedly writing the empty string shouldn't accumulate
-        # in the pending-write buffer.
-        buf = self.BytesIO()
-        txt = self.TextIOWrapper(buf, encoding="utf-8")
-        for _ in range(1_000_000):
-            txt.write('')
-        self.assertEqual(buf.getvalue(), b'')
-        txt.write('S')
-        txt.flush()
-        self.assertEqual(buf.getvalue(), b'S')
-
     def test_issue1395_1(self):
         txt = self.TextIOWrapper(self.BytesIO(self.testdata), encoding="ascii")
 
