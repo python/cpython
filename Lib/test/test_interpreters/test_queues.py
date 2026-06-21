@@ -381,6 +381,53 @@ class TestQueueOps(TestBase):
                 self.assertEqual(obj, obj2)
                 self.assertIsNot(obj, obj2)
 
+    def _check_unpickle_attributeerror_arg(self, arg):
+        # Put an object whose class is then removed so that get() must
+        # unpickle it via a module __getattr__ that raises AttributeError
+        # with the given arg, then confirm get() raises NotShareableError
+        # without crashing.
+        source = dedent("""
+            _attrerr_arg = None
+
+            class Thing:
+                pass
+
+            def break_module(mod, arg):
+                del mod.Thing
+                mod._attrerr_arg = arg
+                def __getattr__(name):
+                    raise AttributeError(mod._attrerr_arg)
+                mod.__getattr__ = __getattr__
+            """)
+        with import_helper.ready_to_import('_xi_attrerr', source) as (name, _):
+            mod = importlib.import_module(name)
+            queue = queues.create()
+            queue.put(mod.Thing())
+            mod.break_module(mod, arg)
+            with self.assertRaises(interpreters.NotShareableError):
+                queue.get()
+
+    def test_get_unpickle_fails_with_bad_attributeerror_arg(self):
+        # gh-151862: getting an object that fails to unpickle with an
+        # AttributeError whose first argument cannot be encoded to UTF-8
+        # used to crash (NULL dereference in check_missing___main___attr()).
+        # Two distinct branches NULL the PyUnicode_AsUTF8() result: a
+        # non-str arg (fails the type check) and a surrogate str (is unicode
+        # but fails UTF-8 encoding).
+        for arg in [42, b'x', None, '\ud800']:
+            with self.subTest(arg=arg):
+                self._check_unpickle_attributeerror_arg(arg)
+
+    def test_get_unpickle_fails_with_str_attributeerror_arg(self):
+        # Positive control: a normal str arg (including the genuine missing
+        # __main__ attribute message shape) must not crash and is handled
+        # normally.  This locks in the non-NULL strncmp() path so a future
+        # "skip the guard when the arg is a str" change cannot silently
+        # reintroduce the NULL dereference.
+        for arg in ['boom', "module '__main__' has no attribute 'Thing'"]:
+            with self.subTest(arg=arg):
+                self._check_unpickle_attributeerror_arg(arg)
+
     def test_put_get_same_interpreter(self):
         interp = interpreters.create()
         interp.exec(dedent("""
