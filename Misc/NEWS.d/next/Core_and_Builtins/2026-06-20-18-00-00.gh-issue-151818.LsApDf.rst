@@ -1,2 +1,2 @@
-Fix double-free crash in :opcode:`CALL_LIST_APPEND` when the list's backing
+Fix double-free crash in ``CALL_LIST_APPEND`` when the list's backing
 array fails to grow under :exc:`MemoryError`.
