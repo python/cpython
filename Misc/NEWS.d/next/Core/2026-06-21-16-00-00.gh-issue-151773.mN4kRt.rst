@@ -1,0 +1,2 @@
+Fix a crash in :func:`contextvars.ContextVar.set` when
+:func:`!token_new` fails under memory pressure.
