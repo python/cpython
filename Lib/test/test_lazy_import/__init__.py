@@ -447,11 +447,15 @@ class PackageTests(LazyImportTestCase):
 
     def test_lazy_submodule_stored_in_parent_dict(self):
         """Accessing a lazy submodule should store it in the parent's __dict__."""
-        import test.test_lazy_import.data.lazy_import_pkg
+        out = io.StringIO()
+
+        with contextlib.redirect_stdout(out):
+            import test.test_lazy_import.data.lazy_import_pkg
 
         pkg = sys.modules["test.test_lazy_import.data.pkg"]
         self.assertIn("bar", pkg.__dict__)
         self.assertIs(pkg.__dict__["bar"], sys.modules["test.test_lazy_import.data.pkg.bar"])
+        self.assertIn("BAR_MODULE_LOADED", out.getvalue())
 
     def test_lazy_import_pkg_cross_import(self):
         """Cross-imports within package should preserve lazy imports."""
@@ -1944,6 +1948,17 @@ class LazyCApiTests(LazyImportTestCase):
 
     def test_set_bad_filter(self):
         self.assertRaises(ValueError, _testcapi.PyImport_SetLazyImportsFilter, 42)
+
+    def test_dunder_lazy_import_without_frame(self):
+        # gh-151510: __lazy_import__() called with no globals and no running
+        # Python frame must raise TypeError instead of crashing.
+        with self.assertRaisesRegex(
+            TypeError,
+            r"__lazy_import__\(\) missing globals when called without a frame",
+        ):
+            _testcapi.lazy_import_without_frame(
+                "test.test_lazy_import.data.basic2"
+            )
 
 
 if __name__ == '__main__':

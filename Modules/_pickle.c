@@ -12,6 +12,7 @@
 #include "pycore_bytesobject.h"   // _PyBytesWriter
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_dict.h"          // _PyDict_SetItem_Take2()
 #include "pycore_long.h"          // _PyLong_AsByteArray()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyNone_Type
@@ -5147,9 +5148,7 @@ _pickle_PicklerMemoProxy_copy_impl(PicklerMemoProxyObject *self)
                 Py_DECREF(key);
                 goto error;
             }
-            status = PyDict_SetItem(new_memo, key, value);
-            Py_DECREF(key);
-            Py_DECREF(value);
+            status = _PyDict_SetItem_Take2((PyDictObject *)new_memo, key, value);
             if (status < 0)
                 goto error;
         }

@@ -900,6 +900,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(updates)
         STRUCT_FOR_ID(uri)
         STRUCT_FOR_ID(usedforsecurity)
+        STRUCT_FOR_ID(utcoffset)
         STRUCT_FOR_ID(value)
         STRUCT_FOR_ID(values)
         STRUCT_FOR_ID(version)
