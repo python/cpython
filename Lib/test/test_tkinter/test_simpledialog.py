@@ -276,9 +276,18 @@ class DialogTest(AbstractTkTest, unittest.TestCase):
         self.assertTrue(invoked)
 
     def test_background(self):
+        # The ttk dialog adopts the ttk background, even a customized one,
+        # while the classic dialog keeps the default Toplevel background.
+        style = ttk.Style(self.root)
+        old = style.lookup('.', 'background')
+        style.configure('.', background='#123456')
+        self.addCleanup(style.configure, '.', background=old)
         d = self.open()
-        self.assertEqual(str(d.cget('background')),
-                         ttk.Style(d).lookup('.', 'background'))
+        self.assertEqual(str(d.cget('background')), '#123456')
+        d = self.open(use_ttk=False)
+        ref = tkinter.Toplevel(self.root)
+        self.addCleanup(ref.destroy)
+        self.assertEqual(str(d.cget('background')), str(ref.cget('background')))
 
     def test_base_classic_by_default(self):
         # The Dialog base defaults to classic widgets so that subclasses adding
