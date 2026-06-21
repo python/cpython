@@ -677,7 +677,7 @@ are always available.  They are listed here in alphabetical order.
       untrusted user-supplied input will lead to security vulnerabilities.
 
    This function supports dynamic execution of Python code. *source* must be
-   a string, a bytes-like object or a code object.
+   a string, a bytes-like object, or a code object.
    If it is a string or a bytes-like object, it is parsed as
    a suite of Python statements which is then executed (unless a syntax error
    occurs). [#]_ If it is a code object, it is simply executed.  In all cases,
