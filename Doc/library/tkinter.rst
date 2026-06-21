@@ -3648,6 +3648,15 @@ Widget classes
       *yOrigin* changes by a factor of *yScale* (a factor of ``1.0`` leaves the
       coordinate unchanged).
 
+   .. method:: rotate(tagOrId, xOrigin, yOrigin, angle, /)
+
+      Rotate the coordinates of all items given by *tagOrId* in canvas
+      coordinate space about the origin (*xOrigin*, *yOrigin*) by *angle*
+      degrees anticlockwise.
+      Negative values of *angle* rotate clockwise.
+
+      .. versionadded:: next
+
    .. method:: delete(*tagOrIds)
 
       Delete each of the items given by the *tagOrIds* arguments.
@@ -3666,6 +3675,17 @@ Widget classes
       character or coordinate whose index is *beforeThis*.
       For line and polygon items *string* must be a valid sequence of
       coordinates.
+
+   .. method:: rchars(tagOrId, first, last, string, /)
+
+      Replace the characters (for text items) or coordinates (for line and
+      polygon items) in the range from *first* to *last* inclusive of each of
+      the items given by *tagOrId* with *string*.
+      For line and polygon items *string* must be a valid sequence of
+      coordinates.
+      Items that do not support indexing ignore this operation.
+
+      .. versionadded:: next
 
    .. method:: itemcget(tagOrId, option)
 

@@ -157,6 +157,11 @@ tkinter
   synchronization of the displayed view with the underlying text.
   (Contributed by Serhiy Storchaka in :gh:`151675`.)
 
+* Added new :class:`!tkinter.Canvas` methods :meth:`~tkinter.Canvas.rchars`
+  which replaces the text or coordinates of canvas items, and
+  :meth:`~tkinter.Canvas.rotate` which rotates the coordinates of canvas items.
+  (Contributed by Serhiy Storchaka in :gh:`151876`.)
+
 xml
 ---
 
