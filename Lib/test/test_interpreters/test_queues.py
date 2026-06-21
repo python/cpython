@@ -382,10 +382,8 @@ class TestQueueOps(TestBase):
                 self.assertIsNot(obj, obj2)
 
     def _check_unpickle_attributeerror_arg(self, arg):
-        # Put an object whose class is then removed so that get() must
-        # unpickle it via a module __getattr__ that raises AttributeError
-        # with the given arg, then confirm get() raises NotShareableError
-        # without crashing.
+        # Cross an object through a queue where get() must re-import its
+        # class via a module __getattr__ that raises AttributeError(arg).
         source = dedent("""
             _attrerr_arg = None
 
@@ -408,22 +406,15 @@ class TestQueueOps(TestBase):
                 queue.get()
 
     def test_get_unpickle_fails_with_bad_attributeerror_arg(self):
-        # gh-151862: getting an object that fails to unpickle with an
-        # AttributeError whose first argument cannot be encoded to UTF-8
-        # used to crash (NULL dereference in check_missing___main___attr()).
-        # Two distinct branches NULL the PyUnicode_AsUTF8() result: a
-        # non-str arg (fails the type check) and a surrogate str (is unicode
-        # but fails UTF-8 encoding).
+        # gh-151862: an AttributeError arg that can't be UTF-8 encoded used
+        # to crash (NULL deref); covers both non-str and surrogate-str args.
         for arg in [42, b'x', None, '\ud800']:
             with self.subTest(arg=arg):
                 self._check_unpickle_attributeerror_arg(arg)
 
     def test_get_unpickle_fails_with_str_attributeerror_arg(self):
-        # Positive control: a normal str arg (including the genuine missing
-        # __main__ attribute message shape) must not crash and is handled
-        # normally.  This locks in the non-NULL strncmp() path so a future
-        # "skip the guard when the arg is a str" change cannot silently
-        # reintroduce the NULL dereference.
+        # Positive control: a normal str arg (incl. the real missing-__main__
+        # message) must not crash, locking in the non-NULL strncmp() path.
         for arg in ['boom', "module '__main__' has no attribute 'Thing'"]:
             with self.subTest(arg=arg):
                 self._check_unpickle_attributeerror_arg(arg)
