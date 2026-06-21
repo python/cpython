@@ -360,17 +360,17 @@ _curses_panel_panel_bottom_impl(PyCursesPanelObject *self)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 _curses_panel.panel.hide
 
 Hide the panel.
 
-This does not delete the object, it just makes the window on screen invisible.
+This does not delete the object, it just makes the window on screen
+invisible.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_panel_panel_hide_impl(PyCursesPanelObject *self)
-/*[clinic end generated code: output=a7bbbd523e1eab49 input=9071b463a39a1a6a]*/
+/*[clinic end generated code: output=a7bbbd523e1eab49 input=9456aca9b264dde1]*/
 {
     int rtn = hide_panel(self->pan);
     return curses_panel_panel_check_err(self, rtn, "hide_panel", "hide");
@@ -380,11 +380,13 @@ _curses_panel_panel_hide_impl(PyCursesPanelObject *self)
 _curses_panel.panel.show
 
 Display the panel (which might have been hidden).
+
+The panel is placed on top of the panel stack.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_panel_panel_show_impl(PyCursesPanelObject *self)
-/*[clinic end generated code: output=6b4553ab45c97769 input=57b167bbefaa3755]*/
+/*[clinic end generated code: output=6b4553ab45c97769 input=9997cf364ca71422]*/
 {
     int rtn = show_panel(self->pan);
     return curses_panel_panel_check_err(self, rtn, "show_panel", "show");
@@ -724,11 +726,13 @@ _curses_panel.new_panel
     /
 
 Return a panel object, associating it with the given window win.
+
+The new panel is placed on top of the panel stack.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_panel_new_panel_impl(PyObject *module, PyCursesWindowObject *win)
-/*[clinic end generated code: output=45e948e0176a9bd2 input=74d4754e0ebe4800]*/
+/*[clinic end generated code: output=45e948e0176a9bd2 input=3b6fea647b808fd7]*/
 {
     PANEL *pan = new_panel(win->win);
     if (pan == NULL) {
@@ -772,12 +776,13 @@ _curses_panel.update_panels
 
 Updates the virtual screen after changes in the panel stack.
 
-This does not call curses.doupdate(), so you'll have to do this yourself.
+This does not call curses.doupdate(), so you'll have to do this
+yourself.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_panel_update_panels_impl(PyObject *module)
-/*[clinic end generated code: output=2f3b4c2e03d90ded input=5299624c9a708621]*/
+/*[clinic end generated code: output=2f3b4c2e03d90ded input=0d0db79f05ec3ef4]*/
 {
     PyCursesInitialised;
     update_panels();

@@ -98,6 +98,26 @@ class TransportTests(unittest.TestCase):
         self.assertTrue(transport._protocol_paused)
         self.assertEqual(transport.get_write_buffer_limits(), (128, 256))
 
+    def test_flowcontrol_mixin_compute_write_limits(self):
+
+        class MyTransport(transports._FlowControlMixin,
+                          transports.Transport):
+
+            def get_write_buffer_size(self):
+                return 0
+
+        loop = mock.Mock()
+        transport = MyTransport(loop=loop)
+
+        self.assertEqual(transport.get_write_buffer_limits(),
+                         (16 * 1024, 64 * 1024))
+
+        transport.set_write_buffer_limits(low=100)
+        self.assertEqual(transport.get_write_buffer_limits(), (100, 400))
+
+        transport.set_write_buffer_limits(high=200)
+        self.assertEqual(transport.get_write_buffer_limits(), (50, 200))
+
 
 if __name__ == '__main__':
     unittest.main()

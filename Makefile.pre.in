@@ -215,6 +215,8 @@ MACOSX_DEPLOYMENT_TARGET=@CONFIGURE_MACOSX_DEPLOYMENT_TARGET@
 # the build, and is only listed here so it will be included in sysconfigdata.
 IPHONEOS_DEPLOYMENT_TARGET=@IPHONEOS_DEPLOYMENT_TARGET@
 
+BUILD_DETAILS=@BUILD_DETAILS@
+
 # Option to install to strip binaries
 STRIPFLAG=-s
 
@@ -231,7 +233,6 @@ RUNSHARED=       @RUNSHARED@
 ENSUREPIP=      @ENSUREPIP@
 
 # Internal static libraries
-LIBMPDEC_A= Modules/_decimal/libmpdec/libmpdec.a
 LIBEXPAT_A= Modules/expat/libexpat.a
 
 # HACL* build configuration
@@ -470,6 +471,7 @@ PYTHON_OBJS=	\
 		Python/instruction_sequence.o \
 		Python/intrinsics.o \
 		Python/jit.o \
+		Python/jit_publish.o \
 		$(JIT_OBJS) \
 		Python/legacy_tracing.o \
 		Python/lock.o \
@@ -497,6 +499,8 @@ PYTHON_OBJS=	\
 		Python/qsbr.o \
 		Python/bootstrap_hash.o \
 		Python/specialize.o \
+		Python/slots.o \
+		Python/slots_generated.o \
 		Python/stackrefs.o \
 		Python/structmember.o \
 		Python/symtable.o \
@@ -514,6 +518,7 @@ PYTHON_OBJS=	\
 		Python/suggestions.o \
 		Python/perf_trampoline.o \
 		Python/perf_jit_trampoline.o \
+		Python/jit_unwind.o \
 		Python/remote_debugging.o \
 		Python/$(DYNLOADFILE) \
 		$(LIBOBJS) \
@@ -560,6 +565,7 @@ OBJECT_OBJS=	\
 		Objects/obmalloc.o \
 		Objects/picklebufobject.o \
 		Objects/rangeobject.o \
+		Objects/sentinelobject.o \
 		Objects/setobject.o \
 		Objects/sliceobject.o \
 		Objects/structseq.o \
@@ -600,45 +606,6 @@ LINK_PYTHON_OBJS=@LINK_PYTHON_OBJS@
 # in-place by dtrace(1).
 DTRACE_DEPS = \
 	Python/ceval.o Python/gc.o Python/import.o Python/sysmodule.o
-
-##########################################################################
-# decimal's libmpdec
-
-LIBMPDEC_OBJS= \
-		Modules/_decimal/libmpdec/basearith.o \
-		Modules/_decimal/libmpdec/constants.o \
-		Modules/_decimal/libmpdec/context.o \
-		Modules/_decimal/libmpdec/convolute.o \
-		Modules/_decimal/libmpdec/crt.o \
-		Modules/_decimal/libmpdec/difradix2.o \
-		Modules/_decimal/libmpdec/fnt.o \
-		Modules/_decimal/libmpdec/fourstep.o \
-		Modules/_decimal/libmpdec/io.o \
-		Modules/_decimal/libmpdec/mpalloc.o \
-		Modules/_decimal/libmpdec/mpdecimal.o \
-		Modules/_decimal/libmpdec/numbertheory.o \
-		Modules/_decimal/libmpdec/sixstep.o \
-		Modules/_decimal/libmpdec/transpose.o
-		# _decimal does not use signaling API
-		# Modules/_decimal/libmpdec/mpsignal.o
-
-LIBMPDEC_HEADERS= \
-		$(srcdir)/Modules/_decimal/libmpdec/basearith.h \
-		$(srcdir)/Modules/_decimal/libmpdec/bits.h \
-		$(srcdir)/Modules/_decimal/libmpdec/constants.h \
-		$(srcdir)/Modules/_decimal/libmpdec/convolute.h \
-		$(srcdir)/Modules/_decimal/libmpdec/crt.h \
-		$(srcdir)/Modules/_decimal/libmpdec/difradix2.h \
-		$(srcdir)/Modules/_decimal/libmpdec/fnt.h \
-		$(srcdir)/Modules/_decimal/libmpdec/fourstep.h \
-		$(srcdir)/Modules/_decimal/libmpdec/io.h \
-		$(srcdir)/Modules/_decimal/libmpdec/mpalloc.h \
-		$(srcdir)/Modules/_decimal/libmpdec/mpdecimal.h \
-		$(srcdir)/Modules/_decimal/libmpdec/numbertheory.h \
-		$(srcdir)/Modules/_decimal/libmpdec/sixstep.h \
-		$(srcdir)/Modules/_decimal/libmpdec/transpose.h \
-		$(srcdir)/Modules/_decimal/libmpdec/typearith.h \
-		$(srcdir)/Modules/_decimal/libmpdec/umodarith.h
 
 ##########################################################################
 # pyexpat's expat library
@@ -809,11 +776,11 @@ list-targets:
 
 .PHONY: build_all
 build_all:	check-clean-src check-app-store-compliance $(BUILDPYTHON) platform sharedmods \
-		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil build-details.json
+		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil $(BUILD_DETAILS)
 
 .PHONY: build_wasm
 build_wasm: check-clean-src $(BUILDPYTHON) platform sharedmods \
-		python-config checksharedmods build-details.json
+		python-config checksharedmods $(BUILD_DETAILS)
 
 .PHONY: build_emscripten
 build_emscripten: build_wasm web_example web_example_pyrepl_jspi
@@ -830,7 +797,7 @@ check-clean-src:
 		echo "Building Python out of the source tree (in $(abs_builddir)) requires a clean source tree ($(abs_srcdir))" ; \
 		echo "Build artifacts such as .o files, executables, and Python/frozen_modules/*.h must not exist within $(srcdir)." ; \
 		echo "Try to run:" ; \
-		echo "  (cd \"$(srcdir)\" && make clean || git clean -fdx -e Doc/venv)" ; \
+		echo "  (cd \"$(srcdir)\" && make distclean || git clean -fdx -e Doc/venv)" ; \
 		exit 1; \
 	fi
 
@@ -957,7 +924,6 @@ coverage-lcov:
 	@lcov $(COVERAGE_LCOV_OPTIONS) --remove $(COVERAGE_INFO) \
 	    '*/Modules/_hacl/*' \
 	    '*/Modules/_ctypes/libffi*/*' \
-	    '*/Modules/_decimal/libmpdec/*' \
 	    '*/Modules/expat/*' \
 	    '*/Modules/xx*.c' \
 	    '*/Python/pyfpe.c' \
@@ -1015,8 +981,8 @@ pybuilddir.txt: $(PYTHON_FOR_BUILD_DEPS)
 		exit 1 ; \
 	fi
 
-build-details.json: pybuilddir.txt
-	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/generate-build-details.py `cat pybuilddir.txt`/build-details.json
+$(BUILD_DETAILS): pybuilddir.txt
+	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/generate-build-details.py `cat pybuilddir.txt`/$(BUILD_DETAILS)
 
 # Build static library
 $(LIBRARY): $(LIBRARY_OBJS)
@@ -1069,7 +1035,7 @@ $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK): \
 	$(INSTALL) -d -m $(DIRMODE) $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)
 	$(CC) -o $(LDLIBRARY) $(PY_CORE_LDFLAGS) -dynamiclib \
 		-all_load $(LIBRARY) \
-		-install_name $(DESTDIR)$(PYTHONFRAMEWORKINSTALLNAMEPREFIX)/$(PYTHONFRAMEWORK) \
+		-install_name $(PYTHONFRAMEWORKINSTALLNAMEPREFIX)/$(PYTHONFRAMEWORK) \
 		-compatibility_version $(VERSION) \
 		-current_version $(VERSION) \
 		-framework CoreFoundation $(LIBS);
@@ -1242,12 +1208,13 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/refcount.h \
 		$(srcdir)/Include/setobject.h \
 		$(srcdir)/Include/sliceobject.h \
+		$(srcdir)/Include/slots.h \
+		$(srcdir)/Include/slots_generated.h \
 		$(srcdir)/Include/structmember.h \
 		$(srcdir)/Include/structseq.h \
 		$(srcdir)/Include/sysmodule.h \
 		$(srcdir)/Include/traceback.h \
 		$(srcdir)/Include/tupleobject.h \
-		$(srcdir)/Include/typeslots.h \
 		$(srcdir)/Include/unicodeobject.h \
 		$(srcdir)/Include/warnings.h \
 		$(srcdir)/Include/weakrefobject.h \
@@ -1307,6 +1274,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/pystats.h \
 		$(srcdir)/Include/cpython/pythonrun.h \
 		$(srcdir)/Include/cpython/pythread.h \
+		$(srcdir)/Include/cpython/sentinelobject.h \
 		$(srcdir)/Include/cpython/setobject.h \
 		$(srcdir)/Include/cpython/sliceobject.h \
 		$(srcdir)/Include/cpython/structseq.h \
@@ -1429,6 +1397,8 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_setobject.h \
 		$(srcdir)/Include/internal/pycore_signal.h \
 		$(srcdir)/Include/internal/pycore_sliceobject.h \
+		$(srcdir)/Include/internal/pycore_slots.h \
+		$(srcdir)/Include/internal/pycore_slots_generated.h \
 		$(srcdir)/Include/internal/pycore_stats.h \
 		$(srcdir)/Include/internal/pycore_strhex.h \
 		$(srcdir)/Include/internal/pycore_stackref.h \
@@ -1461,60 +1431,6 @@ PYTHON_HEADERS= \
 		@PLATFORM_HEADERS@ \
 		\
 		$(srcdir)/Python/stdlib_module_names.h
-
-##########################################################################
-# Build static libmpdec.a
-LIBMPDEC_CFLAGS=@LIBMPDEC_CFLAGS@ $(PY_STDMODULE_CFLAGS) $(CCSHARED)
-
-# "%.o: %c" is not portable
-Modules/_decimal/libmpdec/basearith.o: $(srcdir)/Modules/_decimal/libmpdec/basearith.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/basearith.c
-
-Modules/_decimal/libmpdec/constants.o: $(srcdir)/Modules/_decimal/libmpdec/constants.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/constants.c
-
-Modules/_decimal/libmpdec/context.o: $(srcdir)/Modules/_decimal/libmpdec/context.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/context.c
-
-Modules/_decimal/libmpdec/convolute.o: $(srcdir)/Modules/_decimal/libmpdec/convolute.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/convolute.c
-
-Modules/_decimal/libmpdec/crt.o: $(srcdir)/Modules/_decimal/libmpdec/crt.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/crt.c
-
-Modules/_decimal/libmpdec/difradix2.o: $(srcdir)/Modules/_decimal/libmpdec/difradix2.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/difradix2.c
-
-Modules/_decimal/libmpdec/fnt.o: $(srcdir)/Modules/_decimal/libmpdec/fnt.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/fnt.c
-
-Modules/_decimal/libmpdec/fourstep.o: $(srcdir)/Modules/_decimal/libmpdec/fourstep.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/fourstep.c
-
-Modules/_decimal/libmpdec/io.o: $(srcdir)/Modules/_decimal/libmpdec/io.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/io.c
-
-Modules/_decimal/libmpdec/mpalloc.o: $(srcdir)/Modules/_decimal/libmpdec/mpalloc.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/mpalloc.c
-
-Modules/_decimal/libmpdec/mpdecimal.o: $(srcdir)/Modules/_decimal/libmpdec/mpdecimal.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/mpdecimal.c
-
-Modules/_decimal/libmpdec/mpsignal.o: $(srcdir)/Modules/_decimal/libmpdec/mpsignal.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/mpsignal.c
-
-Modules/_decimal/libmpdec/numbertheory.o: $(srcdir)/Modules/_decimal/libmpdec/numbertheory.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/numbertheory.c
-
-Modules/_decimal/libmpdec/sixstep.o: $(srcdir)/Modules/_decimal/libmpdec/sixstep.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/sixstep.c
-
-Modules/_decimal/libmpdec/transpose.o: $(srcdir)/Modules/_decimal/libmpdec/transpose.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/transpose.c
-
-$(LIBMPDEC_A): $(LIBMPDEC_OBJS)
-	-rm -f $@
-	$(AR) $(ARFLAGS) $@ $(LIBMPDEC_OBJS)
 
 ##########################################################################
 # Build static libexpat.a
@@ -1700,6 +1616,8 @@ Programs/_bootstrap_python.o: Programs/_bootstrap_python.c $(BOOTSTRAP_HEADERS) 
 _bootstrap_python: $(LIBRARY_OBJS_OMIT_FROZEN) Programs/_bootstrap_python.o Modules/getpath.o Modules/Setup.local
 	$(LINKCC) $(PY_LDFLAGS_NOLTO) -o $@ $(LIBRARY_OBJS_OMIT_FROZEN) \
 		Programs/_bootstrap_python.o Modules/getpath.o $(LIBS) $(MODLIBS) $(SYSLIBS)
+	# Dummy pybuilddir.txt  is needed for _bootstrap_python to be runnable
+	@echo "none" > ./pybuilddir.txt
 
 
 ############################################################################
@@ -1938,7 +1856,7 @@ regen-unicodedata:
 
 # "clinic" is regenerated implicitly via "regen-global-objects".
 .PHONY: regen-all
-regen-all: regen-cases regen-typeslots \
+regen-all: regen-cases regen-slots \
 	regen-token regen-ast regen-keyword regen-sre regen-frozen \
 	regen-pegen-metaparser regen-pegen regen-test-frozenmain \
 	regen-test-levenshtein regen-global-objects
@@ -2311,16 +2229,17 @@ Python/import.o: $(srcdir)/Include/pydtrace.h
 Python/pydtrace.o: $(srcdir)/Include/pydtrace.d $(DTRACE_DEPS)
 	CC="$(CC)" CFLAGS="$(CFLAGS)" $(DTRACE) $(DFLAGS) -o $@ -G -s $(srcdir)/Include/pydtrace.d $(DTRACE_DEPS)
 
-Objects/typeobject.o: Objects/typeslots.inc
-
 .PHONY: regen-typeslots
 regen-typeslots:
-	# Regenerate Objects/typeslots.inc from Include/typeslotsh
-	# using Objects/typeslots.py
-	$(PYTHON_FOR_REGEN) $(srcdir)/Objects/typeslots.py \
-		< $(srcdir)/Include/typeslots.h \
-		$(srcdir)/Objects/typeslots.inc.new
-	$(UPDATE_FILE) $(srcdir)/Objects/typeslots.inc $(srcdir)/Objects/typeslots.inc.new
+	echo 'NOTE: "regen-typeslots" was renamed to "regen-slots"'
+	$(MAKE) regen-slots
+
+.PHONY: regen-slots
+regen-slots: Python/slots.toml
+	# Regenerate {Python,Include}/slots_generated.{c,h}
+	# from Python/slots.toml using Tools/build/generate_slots.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_slots.py \
+		--generate-all
 
 $(LIBRARY_OBJS) $(MODOBJS) Programs/python.o: $(PYTHON_HEADERS)
 
@@ -2434,7 +2353,7 @@ multissltest: all
 # Only the main install gets a build-details.json.
 .PHONY: install
 install: @FRAMEWORKINSTALLFIRST@ @INSTALLTARGETS@ @FRAMEWORKINSTALLLAST@
-	$(INSTALL_DATA) `cat pybuilddir.txt`/build-details.json $(DESTDIR)$(LIBDEST); \
+	$(INSTALL_DATA) `cat pybuilddir.txt`/$(BUILD_DETAILS) $(DESTDIR)$(LIBDEST); \
 	if test "x$(ENSUREPIP)" != "xno"  ; then \
 		case $(ENSUREPIP) in \
 			upgrade) ensurepip="--upgrade" ;; \
@@ -3196,18 +3115,40 @@ config.status:	$(srcdir)/configure
 
 .PRECIOUS: config.status $(BUILDPYTHON) Makefile Makefile.pre
 
-Python/asm_trampoline.o: $(srcdir)/Python/asm_trampoline.S
+Python/asm_trampoline_x86_64.o: $(srcdir)/Python/asm_trampoline_x86_64.S
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
+
+Python/asm_trampoline_aarch64.o: $(srcdir)/Python/asm_trampoline_aarch64.S
+	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
+
+Python/asm_trampoline_riscv64.o: $(srcdir)/Python/asm_trampoline_riscv64.S
+	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
+
+# On macOS universal2 builds, $(PY_CORE_CFLAGS) contains "-arch arm64 -arch x86_64",
+# which would produce fat .o files containing both architectures for each .S input.
+# lipo -create then refuses to combine them because they share architectures.
+# Build each per-arch object with a single -arch flag before merging with lipo.
+Python/asm_trampoline_universal2.o: $(srcdir)/Python/asm_trampoline_aarch64.S $(srcdir)/Python/asm_trampoline_x86_64.S
+	$(CC) -c $(filter-out -arch arm64 x86_64,$(PY_CORE_CFLAGS)) -arch arm64 \
+		-o Python/asm_trampoline_arm64-apple-darwin.o $(srcdir)/Python/asm_trampoline_aarch64.S
+	$(CC) -c $(filter-out -arch arm64 x86_64,$(PY_CORE_CFLAGS)) -arch x86_64 \
+		-o Python/asm_trampoline_x86_64-apple-darwin.o $(srcdir)/Python/asm_trampoline_x86_64.S
+	lipo -create -output $@ \
+		Python/asm_trampoline_arm64-apple-darwin.o \
+		Python/asm_trampoline_x86_64-apple-darwin.o
+	rm -f Python/asm_trampoline_arm64-apple-darwin.o \
+	  Python/asm_trampoline_x86_64-apple-darwin.o
 
 Python/emscripten_trampoline_inner.wasm: $(srcdir)/Python/emscripten_trampoline_inner.c
 	# emcc has a path that ends with emsdk/upstream/emscripten/emcc, we're looking for emsdk/upstream/bin/clang.
-	$$(dirname $$(dirname $(CC)))/bin/clang -o $@ $< -mgc -O2 -Wl,--no-entry -Wl,--import-table -Wl,--import-memory -target wasm32-unknown-unknown -nostdlib
+	$$(em-config LLVM_ROOT)/clang -o $@ $< -mgc -O2 -Wl,--no-entry -Wl,--import-table -Wl,--import-memory -target wasm32-unknown-unknown -nostdlib
 
 Python/emscripten_trampoline_wasm.c: Python/emscripten_trampoline_inner.wasm
 	$(PYTHON_FOR_REGEN) $(srcdir)/Platforms/emscripten/prepare_external_wasm.py $< $@ getWasmTrampolineModule
 
 JIT_SHIM_BUILD_OBJS=	@JIT_SHIM_BUILD_O@
-JIT_BUILD_TARGETS=	jit_stencils.h @JIT_STENCILS_H@ $(JIT_SHIM_BUILD_OBJS)
+JIT_UNWIND_INFO_H=	$(if $(JIT_OBJS),jit_unwind_info.h $(patsubst jit_stencils-%.h,jit_unwind_info-%.h,@JIT_STENCILS_H@))
+JIT_BUILD_TARGETS=	jit_stencils.h @JIT_STENCILS_H@ $(JIT_UNWIND_INFO_H) $(JIT_SHIM_BUILD_OBJS)
 JIT_TARGETS=	$(JIT_BUILD_TARGETS) $(filter-out $(JIT_SHIM_BUILD_OBJS),$(JIT_OBJS))
 JIT_GENERATED_STAMP=	.jit-stamp
 
@@ -3233,6 +3174,9 @@ jit_shim-universal2-apple-darwin.o: jit_shim-aarch64-apple-darwin.o jit_shim-x86
 	lipo -create -output $@ jit_shim-aarch64-apple-darwin.o jit_shim-x86_64-apple-darwin.o
 
 Python/jit.o: $(srcdir)/Python/jit.c @JIT_STENCILS_H@
+	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
+
+Python/jit_unwind.o: $(srcdir)/Python/jit_unwind.c $(JIT_UNWIND_INFO_H)
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
 
 .PHONY: regen-jit
@@ -3316,7 +3260,9 @@ docclean:
 # data.  The PGO data is only valid if source code remains unchanged.
 .PHONY: clean-retain-profile
 clean-retain-profile: pycremoval
-	find . -name '*.[oa]' -exec rm -f {} ';'
+	# Keep the generated JIT shim objects with the rest of the JIT generated
+	# files: they are regenerated as a group and tracked by .jit-stamp.
+	find . -name '*.[oa]' ! -name 'jit_shim*.o' -exec rm -f {} ';'
 	find . -name '*.s[ol]' -exec rm -f {} ';'
 	find . -name '*.so.[0-9]*.[0-9]*' -exec rm -f {} ';'
 	find . -name '*.lto' -exec rm -f {} ';'
@@ -3360,7 +3306,7 @@ clean-profile: clean-retain-profile clean-bolt
 # gh-141808: The JIT stencils are deliberately kept in clean-profile
 .PHONY: clean-jit-stencils
 clean-jit-stencils:
-	-rm -f $(JIT_TARGETS) $(JIT_GENERATED_STAMP) jit_stencils*.h jit_shim*.o
+	-rm -f $(JIT_TARGETS) $(JIT_GENERATED_STAMP) jit_stencils*.h jit_unwind_info*.h jit_shim*.o
 
 .PHONY: clean
 clean: clean-profile clean-jit-stencils
@@ -3485,11 +3431,10 @@ MODULE_UNICODEDATA_DEPS=$(srcdir)/Modules/unicodedata_db.h $(srcdir)/Modules/uni
 MODULE__CTYPES_DEPS=$(srcdir)/Modules/_ctypes/ctypes.h
 MODULE__CTYPES_TEST_DEPS=$(srcdir)/Modules/_ctypes/_ctypes_test_generated.c.h
 MODULE__CTYPES_MALLOC_CLOSURE=@MODULE__CTYPES_MALLOC_CLOSURE@
-MODULE__DECIMAL_DEPS=@LIBMPDEC_INTERNAL@
 MODULE__ELEMENTTREE_DEPS=$(srcdir)/Modules/pyexpat.c @LIBEXPAT_INTERNAL@
 MODULE__HASHLIB_DEPS=$(srcdir)/Modules/hashlib.h
 MODULE__IO_DEPS=$(srcdir)/Modules/_io/_iomodule.h
-MODULE__REMOTE_DEBUGGING_DEPS=$(srcdir)/Modules/_remote_debugging/_remote_debugging.h
+MODULE__REMOTE_DEBUGGING_DEPS=$(srcdir)/Modules/_remote_debugging/_remote_debugging.h $(srcdir)/Modules/_remote_debugging/gc_stats.h
 
 # HACL*-based cryptographic primitives
 MODULE__MD5_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_MD5_HEADERS) $(LIBHACL_MD5_LIB_@LIBHACL_LDEPS_LIBTYPE@)

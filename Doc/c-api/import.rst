@@ -393,11 +393,6 @@ Importing Modules
 
       Make all imports lazy by default.
 
-   .. c:enumerator:: PyImport_LAZY_NONE
-
-      Disable lazy imports entirely. Even explicit ``lazy`` statements become
-      eager imports.
-
    .. versionadded:: 3.15
 
 .. c:function:: PyObject* PyImport_CreateModuleFromInitfunc(PyObject *spec, PyObject* (*initfunc)(void))

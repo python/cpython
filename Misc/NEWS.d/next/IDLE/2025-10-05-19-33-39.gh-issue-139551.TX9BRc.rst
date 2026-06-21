@@ -1,1 +1,0 @@
-Support rendering :exc:`BaseExceptionGroup` in IDLE.

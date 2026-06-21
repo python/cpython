@@ -25,9 +25,10 @@ PyDoc_STRVAR(builtin___import____doc__,
 "empty list to emulate ``import name``.\n"
 "When importing a module from a package, note that __import__(\'A.B\', ...)\n"
 "returns package A when fromlist is empty, but its submodule B when\n"
-"fromlist is not empty.  The level argument is used to determine whether to\n"
-"perform absolute or relative imports: 0 is absolute, while a positive number\n"
-"is the number of parent directories to search relative to the current module.");
+"fromlist is not empty.  The level argument is used to determine whether\n"
+"to perform absolute or relative imports: 0 is absolute, while a positive\n"
+"number is the number of parent directories to search relative to the\n"
+"current module.");
 
 #define BUILTIN___IMPORT___METHODDEF    \
     {"__import__", _PyCFunction_CAST(builtin___import__), METH_FASTCALL|METH_KEYWORDS, builtin___import____doc__},
@@ -120,8 +121,8 @@ PyDoc_STRVAR(builtin___lazy_import____doc__,
 "\n"
 "Lazily imports a module.\n"
 "\n"
-"Returns either the module to be imported or a imp.lazy_module object which\n"
-"indicates the module to be lazily imported.");
+"Returns either the module to be imported or a imp.lazy_module object\n"
+"which indicates the module to be lazily imported.");
 
 #define BUILTIN___LAZY_IMPORT___METHODDEF    \
     {"__lazy_import__", _PyCFunction_CAST(builtin___lazy_import__), METH_FASTCALL|METH_KEYWORDS, builtin___lazy_import____doc__},
@@ -339,16 +340,17 @@ PyDoc_STRVAR(builtin_compile__doc__,
 "\n"
 "Compile source into a code object that can be executed by exec() or eval().\n"
 "\n"
-"The source code may represent a Python module, statement or expression.\n"
+"The source code may represent a Python module, statement or\n"
+"expression.\n"
 "The filename will be used for run-time error messages.\n"
 "The mode must be \'exec\' to compile a module, \'single\' to compile a\n"
 "single (interactive) statement, or \'eval\' to compile an expression.\n"
-"The flags argument, if present, controls which future statements influence\n"
-"the compilation of the code.\n"
+"The flags argument, if present, controls which future statements\n"
+"influence the compilation of the code.\n"
 "The dont_inherit argument, if true, stops the compilation inheriting\n"
 "the effects of any future statements in effect in the code calling\n"
-"compile; if absent or false these statements do influence the compilation,\n"
-"in addition to any features explicitly specified.");
+"compile; if absent or false these statements do influence the\n"
+"compilation, in addition to any features explicitly specified.");
 
 #define BUILTIN_COMPILE_METHODDEF    \
     {"compile", _PyCFunction_CAST(builtin_compile), METH_FASTCALL|METH_KEYWORDS, builtin_compile__doc__},
@@ -683,8 +685,8 @@ PyDoc_STRVAR(builtin_globals__doc__,
 "\n"
 "Return the dictionary containing the current scope\'s global variables.\n"
 "\n"
-"NOTE: Updates to this dictionary *will* affect name lookups in the current\n"
-"global scope and vice-versa.");
+"NOTE: Updates to this dictionary *will* affect name lookups in the\n"
+"current global scope and vice-versa.");
 
 #define BUILTIN_GLOBALS_METHODDEF    \
     {"globals", (PyCFunction)builtin_globals, METH_NOARGS, builtin_globals__doc__},
@@ -826,10 +828,12 @@ PyDoc_STRVAR(builtin_hash__doc__,
 "hash($module, obj, /)\n"
 "--\n"
 "\n"
-"Return the hash value for the given object.\n"
+"Return the integer hash value for the given object.\n"
 "\n"
-"Two objects that compare equal must also have the same hash value, but the\n"
-"reverse is not necessarily true.");
+"Two objects that compare equal must also have the same hash value, but\n"
+"the reverse is not necessarily true.  Hash values may differ between\n"
+"Python processes.  Not all objects are hashable; calling hash() on an\n"
+"unhashable object raises TypeError.");
 
 #define BUILTIN_HASH_METHODDEF    \
     {"hash", (PyCFunction)builtin_hash, METH_O, builtin_hash__doc__},
@@ -908,9 +912,10 @@ PyDoc_STRVAR(builtin_locals__doc__,
 "\n"
 "Return a dictionary containing the current scope\'s local variables.\n"
 "\n"
-"NOTE: Whether or not updates to this dictionary will affect name lookups in\n"
-"the local scope and vice-versa is *implementation dependent* and not\n"
-"covered by any backwards compatibility guarantees.");
+"NOTE: Whether or not updates to this dictionary will affect name\n"
+"lookups in the local scope and vice-versa is *implementation\n"
+"dependent* and not covered by any backwards compatibility\n"
+"guarantees.");
 
 #define BUILTIN_LOCALS_METHODDEF    \
     {"locals", (PyCFunction)builtin_locals, METH_NOARGS, builtin_locals__doc__},
@@ -957,8 +962,8 @@ PyDoc_STRVAR(builtin_pow__doc__,
 "\n"
 "Equivalent to base**exp with 2 arguments or base**exp % mod with 3 arguments\n"
 "\n"
-"Some types, such as ints, are able to use a more efficient algorithm when\n"
-"invoked using the three argument form.");
+"Some types, such as ints, are able to use a more efficient algorithm\n"
+"when invoked using the three argument form.");
 
 #define BUILTIN_POW_METHODDEF    \
     {"pow", _PyCFunction_CAST(builtin_pow), METH_FASTCALL|METH_KEYWORDS, builtin_pow__doc__},
@@ -1134,7 +1139,8 @@ PyDoc_STRVAR(builtin_input__doc__,
 "The prompt string, if given, is printed to standard output without a\n"
 "trailing newline before reading input.\n"
 "\n"
-"If the user hits EOF (*nix: Ctrl-D, Windows: Ctrl-Z+Return), raise EOFError.\n"
+"If the user hits EOF (*nix: Ctrl-D, Windows: Ctrl-Z+Return), raise\n"
+"EOFError.\n"
 "On *nix systems, readline is used if available.");
 
 #define BUILTIN_INPUT_METHODDEF    \
@@ -1180,8 +1186,9 @@ PyDoc_STRVAR(builtin_round__doc__,
 "\n"
 "Round a number to a given precision in decimal digits.\n"
 "\n"
-"The return value is an integer if ndigits is omitted or None.  Otherwise\n"
-"the return value has the same type as the number.  ndigits may be negative.");
+"The return value is an integer if ndigits is omitted or None.\n"
+"Otherwise the return value has the same type as the number.  ndigits\n"
+"may be negative.");
 
 #define BUILTIN_ROUND_METHODDEF    \
     {"round", _PyCFunction_CAST(builtin_round), METH_FASTCALL|METH_KEYWORDS, builtin_round__doc__},
@@ -1249,8 +1256,8 @@ PyDoc_STRVAR(builtin_sum__doc__,
 "Return the sum of a \'start\' value (default: 0) plus an iterable of numbers\n"
 "\n"
 "When the iterable is empty, return the start value.\n"
-"This function is intended specifically for use with numeric values and may\n"
-"reject non-numeric types.");
+"This function is intended specifically for use with numeric values and\n"
+"may reject non-numeric types.");
 
 #define BUILTIN_SUM_METHODDEF    \
     {"sum", _PyCFunction_CAST(builtin_sum), METH_FASTCALL|METH_KEYWORDS, builtin_sum__doc__},
@@ -1317,9 +1324,9 @@ PyDoc_STRVAR(builtin_isinstance__doc__,
 "\n"
 "Return whether an object is an instance of a class or of a subclass thereof.\n"
 "\n"
-"A tuple, as in ``isinstance(x, (A, B, ...))``, may be given as the target to\n"
-"check against. This is equivalent to ``isinstance(x, A) or isinstance(x, B)\n"
-"or ...`` etc.");
+"A tuple, as in ``isinstance(x, (A, B, ...))``, may be given as the\n"
+"target to check against.  This is equivalent to ``isinstance(x, A) or\n"
+"isinstance(x, B) or ...`` etc.");
 
 #define BUILTIN_ISINSTANCE_METHODDEF    \
     {"isinstance", _PyCFunction_CAST(builtin_isinstance), METH_FASTCALL, builtin_isinstance__doc__},
@@ -1352,9 +1359,9 @@ PyDoc_STRVAR(builtin_issubclass__doc__,
 "\n"
 "Return whether \'cls\' is derived from another class or is the same class.\n"
 "\n"
-"A tuple, as in ``issubclass(x, (A, B, ...))``, may be given as the target to\n"
-"check against. This is equivalent to ``issubclass(x, A) or issubclass(x, B)\n"
-"or ...``.");
+"A tuple, as in ``issubclass(x, (A, B, ...))``, may be given as the\n"
+"target to check against.  This is equivalent to ``issubclass(x, A) or\n"
+"issubclass(x, B) or ...``.");
 
 #define BUILTIN_ISSUBCLASS_METHODDEF    \
     {"issubclass", _PyCFunction_CAST(builtin_issubclass), METH_FASTCALL, builtin_issubclass__doc__},
@@ -1380,4 +1387,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0eb1b9566604f5e4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d55e3e1d90ee22d1 input=a9049054013a1b77]*/

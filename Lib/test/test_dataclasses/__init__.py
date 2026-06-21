@@ -27,10 +27,20 @@ import typing       # Needed for the string "typing.ClassVar[int]" to work as an
 import dataclasses  # Needed for the string "dataclasses.InitVar[int]" to work as an annotation.
 
 from test import support
-from test.support import import_helper
+from test.support import cpython_only, import_helper
 
 # Just any custom exception we can catch.
 class CustomError(Exception): pass
+
+
+class TestImportTime(unittest.TestCase):
+
+    @cpython_only
+    def test_lazy_import(self):
+        import_helper.ensure_lazy_imports(
+            "dataclasses", {"inspect", "re", "copy"}
+        )
+
 
 class TestCase(unittest.TestCase):
     def test_no_fields(self):
@@ -985,7 +995,7 @@ class TestCase(unittest.TestCase):
         self.assertNotIn('x', D.__dict__)
 
     def test_missing_repr(self):
-        self.assertIn('MISSING_TYPE object', repr(MISSING))
+        self.assertEqual(repr(MISSING), 'MISSING')
 
     def test_dont_include_other_annotations(self):
         @dataclass
@@ -2309,6 +2319,20 @@ class TestDocString(unittest.TestCase):
 
         self.assertDocStrEqual(C.__doc__, "C()")
 
+    def test_docstring_slotted(self):
+        @dataclass(slots=True)
+        class C:
+            x: int
+
+        self.assertDocStrEqual(C.__doc__, "C(x:int)")
+
+    def test_docstring_recursive(self):
+        @dataclass()
+        class C:
+            x: list[C]
+
+        self.assertDocStrEqual(C.__doc__, "C(x:list[test.test_dataclasses.TestDocString.test_docstring_recursive.<locals>.C])")
+
     def test_docstring_one_field(self):
         @dataclass
         class C:
@@ -2767,6 +2791,55 @@ class TestEq(unittest.TestCase):
                 return other == 5
         self.assertEqual(C(1), 5)
         self.assertNotEqual(C(1), 1)
+
+    def test_eq_field_by_field(self):
+        @dataclasses.dataclass
+        class Point:
+            x: int
+            y: int
+
+        p1 = Point(1, 2)
+        p2 = Point(1, 2)
+        p3 = Point(2, 1)
+        self.assertEqual(p1, p2)
+        self.assertNotEqual(p1, p3)
+
+    def test_eq_type_check(self):
+        @dataclasses.dataclass
+        class A:
+            x: int
+
+        @dataclasses.dataclass
+        class B:
+            x: int
+
+        a = A(1)
+        b = B(1)
+        self.assertNotEqual(a, b)
+
+    def test_eq_custom_field(self):
+        class AlwaysEqual(int):
+            def __eq__(self, other):
+                return True
+
+        @dataclasses.dataclass
+        class Foo:
+            x: AlwaysEqual
+            y: int
+
+        f1 = Foo(AlwaysEqual(1), 2)
+        f2 = Foo(AlwaysEqual(2), 2)
+        self.assertEqual(f1, f2)
+
+    def test_eq_nan_field(self):
+        @dataclasses.dataclass
+        class D:
+            x: float
+
+        nan = float('nan')
+        d1 = D(nan)
+        d2 = D(nan)
+        self.assertNotEqual(d1, d2)
 
 
 class TestOrdering(unittest.TestCase):
@@ -4329,10 +4402,17 @@ class TestStringAnnotations(unittest.TestCase):
         from test.test_dataclasses import dataclass_module_1_str
         from test.test_dataclasses import dataclass_module_2
         from test.test_dataclasses import dataclass_module_2_str
+        from test.test_dataclasses import dataclass_module_3
+        from test.test_dataclasses import dataclass_module_3_str
+        from test.test_dataclasses import dataclass_module_4
+        from test.test_dataclasses import dataclass_module_4_str
 
-        for m in (dataclass_module_1, dataclass_module_1_str,
-                  dataclass_module_2, dataclass_module_2_str,
-                  ):
+        for m in (
+            dataclass_module_1, dataclass_module_1_str,
+            dataclass_module_2, dataclass_module_2_str,
+            dataclass_module_3, dataclass_module_3_str,
+            dataclass_module_4, dataclass_module_4_str,
+        ):
             with self.subTest(m=m):
                 # There's a difference in how the ClassVars are
                 # interpreted when using string annotations or
@@ -4635,6 +4715,14 @@ class TestMakeDataclass(unittest.TestCase):
         c = C(10)
         self.assertEqual(c.x, 10)
         self.assertEqual(c.__custom__, True)
+
+    def test_empty_annotation_string(self):
+        @dataclass
+        class DataclassWithEmptyTypeAnnotation:
+            x: ""
+
+        c = DataclassWithEmptyTypeAnnotation(10)
+        self.assertEqual(c.x, 10)
 
 
 class TestReplace(unittest.TestCase):
@@ -5250,6 +5338,15 @@ class TestKeywordArgs(unittest.TestCase):
         self.assertEqual(len(fs), 1)
         self.assertEqual(fs[0].name, 'x')
 
+    def test_makedataclass_with_qualname(self):
+        A = make_dataclass("A", ['a'], qualname='ClassA')
+        self.assertEqual(A.__qualname__, 'ClassA')
+
+        B = make_dataclass("B", ['b'], qualname='module1.ClassB')
+        self.assertEqual(B.__qualname__, 'module1.ClassB')
+
+        C = make_dataclass("C", ['c'])
+        self.assertEqual(C.__qualname__, 'C')
 
 class TestZeroArgumentSuperWithSlots(unittest.TestCase):
     def test_zero_argument_super(self):
@@ -5374,6 +5471,52 @@ class TestZeroArgumentSuperWithSlots(unittest.TestCase):
         # in A.foo() to B.  This normally isn't a problem, because no
         # one will be keeping a reference to the underlying class A.
         self.assertIs(A().cls(), B)
+
+    def test_empty_class_cell(self):
+        # gh-148947: Make sure that we explicitly handle the empty class cell.
+        def maker():
+            if False:
+                __class__ = 42
+
+            def method(self):
+                return __class__
+            return method
+
+        from dataclasses import dataclass
+
+        @dataclass(slots=True)
+        class X:
+            a: int
+
+            meth = maker()
+
+        with self.assertRaisesRegex(NameError, '__class__'):
+            X(1).meth()
+
+    def test_class_cell_from_other_class(self):
+        # This test fails without the "is oldcls" check in
+        # _update_func_cell_for__class__.
+        class Base:
+            def meth(self):
+                return "Base"
+
+        class Child(Base):
+            def meth(self):
+                return super().meth() + " Child"
+
+        @dataclass(slots=True)
+        class DC(Child):
+            a: int
+
+            meth = Child.meth
+
+        closure = DC.meth.__closure__
+        self.assertEqual(len(closure), 1)
+        self.assertIs(closure[0].cell_contents, Child)
+
+        self.assertEqual(DC(1).meth(), "Base Child")
+
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -38,7 +38,7 @@ Extension export hook
 
 The export hook must be an exported function with the following signature:
 
-.. c:function:: PyModuleDef_Slot *PyModExport_modulename(void)
+.. c:function:: PySlot *PyModExport_modulename(void)
 
 For modules with ASCII-only names, the :ref:`export hook <extension-export-hook>`
 must be named :samp:`PyModExport_{<name>}`,
@@ -57,7 +57,7 @@ Python's *punycode* encoding with hyphens replaced by underscores. In Python:
             suffix = b'U_' + name.encode('punycode').replace(b'-', b'_')
         return b'PyModExport' + suffix
 
-The export hook returns an array of :c:type:`PyModuleDef_Slot` entries,
+The export hook returns an array of :c:type:`PySlot` entries,
 terminated by an entry with a slot ID of ``0``.
 These slots describe how the module should be created and initialized.
 
@@ -75,7 +75,7 @@ It is recommended to define the export hook function using a helper macro:
    Declare an extension module export hook.
    This macro:
 
-   * specifies the :c:expr:`PyModuleDef_Slot*` return type,
+   * specifies the :c:expr:`PySlot*` return type,
    * adds any special linkage declarations required by the platform, and
    * for C++, declares the function as ``extern "C"``.
 
@@ -83,12 +83,12 @@ For example, a module called ``spam`` would be defined like this::
 
    PyABIInfo_VAR(abi_info);
 
-   static PyModuleDef_Slot spam_slots[] = {
-       {Py_mod_abi, &abi_info},
-       {Py_mod_name, "spam"},
-       {Py_mod_init, spam_init_function},
+   static PySlot spam_slots[] = {
+       PySlot_STATIC_DATA(Py_mod_abi, &abi_info),
+       PySlot_STATIC_DATA(Py_mod_name, "spam"),
+       PySlot_FUNC(Py_mod_init, spam_init_function),
        ...
-       {0, NULL},
+       PySlot_END
    };
 
    PyMODEXPORT_FUNC

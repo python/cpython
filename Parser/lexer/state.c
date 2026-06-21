@@ -15,8 +15,11 @@ _PyTokenizer_tok_new(void)
     struct tok_state *tok = (struct tok_state *)PyMem_Calloc(
                                             1,
                                             sizeof(struct tok_state));
-    if (tok == NULL)
+    if (tok == NULL) {
+        PyErr_NoMemory();
         return NULL;
+    }
+
     tok->buf = tok->cur = tok->inp = NULL;
     tok->fp_interactive = 0;
     tok->interactive_src_start = NULL;
