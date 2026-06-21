@@ -3773,6 +3773,7 @@ class TestDateTime(TestDate):
             "2009-04-01T12:30:90",          # Second out of range
             "2009-04-01T12:90:45",          # Minute out of range
             "2009-04-01T25:30:45",          # Hour out of range
+            "2009-00-01T24:00:00",          # Month below range
             "2009-13-01T24:00:00",          # Month out of range
             "9999-12-31T24:00:00",          # Year out of range
         ]
@@ -7508,6 +7509,36 @@ class ExtensionModuleTests(unittest.TestCase):
         self.assertEqual(rc, 0)
         self.assertEqual(out, b"a" * 8)
         self.assertEqual(err, b"")
+
+    @support.cpython_only
+    @support.subTests(("setup", "call"), [
+        ("obj = _datetime.timedelta", "obj(seconds=2)"),
+        ("obj = _datetime.timedelta(seconds=2)", "obj.total_seconds()"),
+        ("obj = _datetime.date(2026, 6, 7)", "obj.isocalendar()"),
+    ])
+    def test_static_datetime_types_outlive_collected_module(self, setup, call):
+        # gh-151039: This code used to crash
+        script = f"""if True:
+            import sys, gc
+            import _datetime
+
+            {setup}                          # static C type, survives the module
+            del sys.modules['_datetime']
+            del _datetime
+            sys.modules['_datetime'] = None  # block re-import
+            gc.collect()                     # module object is collected
+
+            try:
+                {call}                       # used to be a segmentation fault
+            except ImportError:
+                pass
+            else:
+                raise AssertionError("ImportError not raised")
+        """
+        rc, out, err = script_helper.assert_python_ok("-c", script)
+        self.assertEqual(rc, 0)
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
 
 
 def load_tests(loader, standard_tests, pattern):

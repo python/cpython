@@ -183,7 +183,7 @@ eager:
    import myapp.slow_module  # lazy (matches filter)
    import json               # eager (does not match filter)
 
-The proxy type itself is available as :data:`types.LazyImportType` for code
+The proxy type itself is available as :class:`types.LazyImportType` for code
 that needs to detect lazy imports programmatically.
 
 There are some restrictions on where the ``lazy`` keyword can be used. Lazy
@@ -478,7 +478,18 @@ matching :file:`.start` file is found, ``import`` lines in :file:`.pth` files
 are ignored.  There is no change to :data:`sys.path` extension lines in
 :file:`.pth` files.
 
-(Contributed by Barry Warsaw in :gh:`148641`.)
+The :mod:`site` module also provides :class:`site.StartupState` to batch
+startup processing for multiple site directories, ensuring all static path
+extensions are applied before any startup code is executed.  :func:`site.main`
+uses an instance of this class implicitly to batch process all startup
+configuration files during normal interpreter startup.  Callers needing the
+same batching behavior can build a :class:`~site.StartupState` directly and
+drive it with :meth:`~site.StartupState.addsitedir`,
+:meth:`~site.StartupState.addusersitepackages`, and
+:meth:`~site.StartupState.addsitepackages`, then call
+:meth:`~site.StartupState.process` once at the end of the batch.
+
+(Contributed by Barry Warsaw in :gh:`148641` and :gh:`150228`.)
 
 
 .. _whatsnew315-abi3t:
@@ -502,10 +513,6 @@ specifically:
   purpose in :pep:`793`, with a new :c:type:`PySlot` structure
   introduced in :pep:`820`.
 
-The reference documentation for these features is complete, but currently
-aimed at early adopters.
-A migration guide is planned for an upcoming beta release.
-
 Note that Stable ABI does not offer all the functionality that CPython
 has to offer.
 Extensions that cannot switch to ``abi3t`` should continue to build for
@@ -520,6 +527,9 @@ If this is the case for your tool, compile for ``cp315t`` separately.
 If not using a build tool -- or when writing such a tool -- you can select
 ``abi3t`` by setting the macro :c:macro:`!Py_TARGET_ABI3T` as discussed
 in :ref:`abi3-compiling`.
+
+A practical :ref:`migration guide <abi3t-migration-howto>` for switching to
+``abi3t`` is available.
 
 .. seealso:: :pep:`803` for further details.
 
@@ -1650,7 +1660,7 @@ types
 -----
 
 * Expose the write-through :func:`locals` proxy type
-  as :data:`types.FrameLocalsProxyType`.
+  as :class:`types.FrameLocalsProxyType`.
   This represents the type of the :attr:`frame.f_locals` attribute,
   as described in :pep:`667`.
 
@@ -2141,7 +2151,7 @@ typing
   or ``TD = TypedDict("TD", {})`` instead.
   (Contributed by Bénédikt Tran in :gh:`133823`.)
 
-* Deprecated :func:`!typing.no_type_check_decorator` has been removed.
+* Deprecated :deco:`!typing.no_type_check_decorator` has been removed.
   (Contributed by Nikita Sobolev in :gh:`133601`.)
 
 
@@ -2335,6 +2345,8 @@ New deprecations
 
 .. include:: ../deprecations/pending-removal-in-3.20.rst
 
+.. include:: ../deprecations/pending-removal-in-3.21.rst
+
 .. include:: ../deprecations/pending-removal-in-future.rst
 
 .. include:: ../deprecations/soft-deprecations.rst
@@ -2463,6 +2475,12 @@ New features
   * :c:func:`PyModule_FromDefAndSpec`
   * :c:func:`PyModule_FromDefAndSpec2`
   * :c:func:`PyModule_ExecDef`
+
+
+  The slots :c:macro:`Py_tp_bases` and :c:macro:`Py_tp_base` are now
+  equivalent: they can be set either to a single type or a tuple of types.
+  The :c:macro:`Py_tp_bases` slot is preferred; the other is ignored if both
+  are specified.
 
   (Contributed by Petr Viktorin in :gh:`149044`.)
 

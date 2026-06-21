@@ -3970,6 +3970,22 @@ class Text(Widget, XView, YView):
         """
         return self.tk.call(self._w, 'edit', *args)
 
+    def edit_canredo(self):
+        """Return whether redo is possible.
+
+        Return True if redo is possible, i.e. when the redo stack is
+        not empty, and False otherwise.
+        """
+        return self.tk.getboolean(self.edit("canredo"))
+
+    def edit_canundo(self):
+        """Return whether undo is possible.
+
+        Return True if undo is possible, i.e. when the undo stack is
+        not empty, and False otherwise.
+        """
+        return self.tk.getboolean(self.edit("canundo"))
+
     def edit_modified(self, arg=None):
         """Get or Set the modified flag
 
@@ -4093,6 +4109,44 @@ class Text(Widget, XView, YView):
         """Returns a list of peers of this widget (this does not include
         the widget itself)."""
         return self.tk.splitlist(self.tk.call(self._w, 'peer', 'names'))
+
+    def pendingsync(self): # new in Tk 8.5
+        """Return whether the line heights calculations are not up-to-date.
+
+        Return True if the line heights calculations are not up-to-date,
+        and False otherwise.
+        """
+        return self.tk.getboolean(self.tk.call(self._w, 'pendingsync'))
+
+    def sync(self, command=None): # new in Tk 8.5
+        """Control the synchronization of the view of the text widget.
+
+        If command is not specified, immediately bring the line metrics
+        up-to-date by forcing computation of any outdated line heights.
+        The command returns immediately if there is no such outdated line.
+
+        If command is specified, schedule it to be executed (by the event
+        loop) exactly once as soon as all line heights are up-to-date.
+        If there are no pending line metrics calculations, command is
+        executed immediately.
+        """
+        if command is None:
+            self.tk.call(self._w, 'sync')
+        else:
+            def callit():
+                try:
+                    command()
+                finally:
+                    try:
+                        self.deletecommand(name)
+                    except TclError:
+                        pass
+            try:
+                callit.__name__ = command.__name__
+            except AttributeError:
+                callit.__name__ = type(command).__name__
+            name = self._register(callit)
+            self.tk.call(self._w, 'sync', '-command', name)
 
     def replace(self, index1, index2, chars, *args): # new in Tk 8.5
         """Replaces the range of characters between index1 and index2 with
