@@ -5105,11 +5105,13 @@ dummy_func(
 
             DEOPT_IF(!LOCK_OBJECT(self_o));
             STAT_INC(CALL, hit);
-            int err = _PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
+            PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
+            int err = _PyList_AppendTakeRef((PyListObject *)self_o, Py_NewRef(arg_o));
             UNLOCK_OBJECT(self_o);
             if (err) {
                 ERROR_NO_POP();
             }
+            PyStackRef_CLOSE(arg);
             c = callable;
             s = self;
             DEAD(callable);
