@@ -772,26 +772,44 @@ if __name__ == '__main__':
 
     def test():
         root = Tk()
-        def doit(root=root):
+        use_ttk = tkinter.BooleanVar(root, value=True)
+
+        def test_dialog():
             d = SimpleDialog(root,
                          text="This is a test dialog.  "
                               "Would this have been an actual dialog, "
                               "the buttons below would have been glowing "
                               "in soft pink light.\n"
                               "Do you believe this?",
-                         buttons=["Yes", "No", "Cancel"],
+                         buttons=[{'text': 'Yes', 'underline': 0},
+                                  {'text': 'No', 'underline': 0},
+                                  {'text': 'Cancel', 'underline': 0}],
                          default=0,
                          cancel=2,
-                         title="Test Dialog")
+                         title="Test Dialog",
+                         bitmap='question',
+                         detail="Alt+Y, Alt+N and Alt+C work too.",
+                         use_ttk=use_ttk.get())
             print(d.go())
-            print(askinteger("Spam", "Egg count", initialvalue=12*12))
+
+        def test_integer():
+            print(askinteger("Spam", "Egg count", initialvalue=12*12,
+                             use_ttk=use_ttk.get()))
+
+        def test_float():
             print(askfloat("Spam", "Egg weight\n(in tons)", minvalue=1,
-                           maxvalue=100))
-            print(askstring("Spam", "Egg label"))
-        t = Button(root, text='Test', command=doit)
-        t.pack()
-        q = Button(root, text='Quit', command=t.quit)
-        q.pack()
-        t.mainloop()
+                           maxvalue=100, use_ttk=use_ttk.get()))
+
+        def test_string():
+            print(askstring("Spam", "Egg label", use_ttk=use_ttk.get()))
+
+        tkinter.Checkbutton(root, text='Use themed (ttk) widgets',
+                            variable=use_ttk).pack(fill=X)
+        Button(root, text='SimpleDialog', command=test_dialog).pack(fill=X)
+        Button(root, text='askinteger', command=test_integer).pack(fill=X)
+        Button(root, text='askfloat', command=test_float).pack(fill=X)
+        Button(root, text='askstring', command=test_string).pack(fill=X)
+        Button(root, text='Quit', command=root.quit).pack(fill=X)
+        root.mainloop()
 
     test()
