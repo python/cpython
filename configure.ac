@@ -6210,6 +6210,62 @@ AC_SUBST([HAVE_GETHOSTBYNAME_R_3_ARG])
 AC_SUBST([HAVE_GETHOSTBYNAME_R])
 AC_SUBST([HAVE_GETHOSTBYNAME])
 
+# Check for the reentrant getservbyname_r(), getservbyport_r() and
+# getprotobyname_r() functions. Unlike gethostbyname_r() they have a single,
+# POSIX-style signature, so a compile test with that prototype is enough.
+OLD_CFLAGS=$CFLAGS
+CFLAGS="$CFLAGS $MY_CPPFLAGS $MY_THREAD_CPPFLAGS $MY_CFLAGS"
+
+AC_MSG_CHECKING([for getservbyname_r])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <netdb.h>
+]], [[
+  char buffer[2048];
+  struct servent serv, *res;
+
+  (void) getservbyname_r("name", "proto", &serv, buffer, sizeof(buffer), &res);
+]])], [
+  AC_DEFINE([HAVE_GETSERVBYNAME_R], [1],
+    [Define this if you have the reentrant version of getservbyname_r().])
+  AC_MSG_RESULT([yes])
+], [
+  AC_MSG_RESULT([no])
+])
+
+AC_MSG_CHECKING([for getservbyport_r])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <netdb.h>
+]], [[
+  char buffer[2048];
+  struct servent serv, *res;
+
+  (void) getservbyport_r(80, "proto", &serv, buffer, sizeof(buffer), &res);
+]])], [
+  AC_DEFINE([HAVE_GETSERVBYPORT_R], [1],
+    [Define this if you have the reentrant version of getservbyport_r().])
+  AC_MSG_RESULT([yes])
+], [
+  AC_MSG_RESULT([no])
+])
+
+AC_MSG_CHECKING([for getprotobyname_r])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <netdb.h>
+]], [[
+  char buffer[2048];
+  struct protoent prot, *res;
+
+  (void) getprotobyname_r("name", &prot, buffer, sizeof(buffer), &res);
+]])], [
+  AC_DEFINE([HAVE_GETPROTOBYNAME_R], [1],
+    [Define this if you have the reentrant version of getprotobyname_r().])
+  AC_MSG_RESULT([yes])
+], [
+  AC_MSG_RESULT([no])
+])
+
+CFLAGS=$OLD_CFLAGS
+
 # checks for system services
 # (none yet)
 

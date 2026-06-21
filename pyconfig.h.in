@@ -588,6 +588,9 @@
 /* Define if you have the 'getprotobyname' function. */
 #undef HAVE_GETPROTOBYNAME
 
+/* Define this if you have the reentrant version of getprotobyname_r(). */
+#undef HAVE_GETPROTOBYNAME_R
+
 /* Define to 1 if you have the 'getpwent' function. */
 #undef HAVE_GETPWENT
 
@@ -618,8 +621,14 @@
 /* Define if you have the 'getservbyname' function. */
 #undef HAVE_GETSERVBYNAME
 
+/* Define this if you have the reentrant version of getservbyname_r(). */
+#undef HAVE_GETSERVBYNAME_R
+
 /* Define if you have the 'getservbyport' function. */
 #undef HAVE_GETSERVBYPORT
+
+/* Define this if you have the reentrant version of getservbyport_r(). */
+#undef HAVE_GETSERVBYPORT_R
 
 /* Define to 1 if you have the 'getsid' function. */
 #undef HAVE_GETSID

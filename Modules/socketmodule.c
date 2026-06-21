@@ -205,6 +205,19 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 # define USE_GETHOSTBYNAME_LOCK
 #endif
 
+/* These return a pointer to a static buffer shared between threads; a lock is
+   needed wherever the reentrant *_r() variants are unavailable. */
+#if (!defined(HAVE_GETSERVBYNAME_R) || !defined(HAVE_GETSERVBYPORT_R) || \
+     !defined(HAVE_GETPROTOBYNAME_R)) && !defined(MS_WINDOWS)
+# define USE_GETSERVBYNAME_LOCK
+#endif
+
+/* netdb_lock is needed if any of the netdb lookups falls back to the
+   non-reentrant function. */
+#if defined(USE_GETHOSTBYNAME_LOCK) || defined(USE_GETSERVBYNAME_LOCK)
+# define USE_NETDB_LOCK
+#endif
+
 #if defined(__APPLE__) || defined(__CYGWIN__) || defined(__NetBSD__)
 #  include <sys/ioctl.h>
 #endif
@@ -1168,8 +1181,9 @@ new_sockobject(socket_state *state, SOCKET_T fd, int family, int type,
 
 
 /* Lock to allow python interpreter to continue, but only allow one
-   thread to be in gethostbyname or getaddrinfo */
-#if defined(USE_GETHOSTBYNAME_LOCK)
+   thread to be in gethostbyname, getaddrinfo, getservby*() or
+   getprotobyname() */
+#if defined(USE_NETDB_LOCK)
 static PyThread_type_lock netdb_lock;
 #endif
 
@@ -6361,6 +6375,13 @@ socket_getservbyname(PyObject *self, PyObject *args)
 {
     const char *name, *proto=NULL;
     struct servent *sp;
+    PyObject *ret = NULL;
+#ifdef HAVE_GETSERVBYNAME_R
+    struct servent serv;
+    char *buf = NULL;
+    size_t buf_len = 1024;
+    int err = 0;
+#endif
     if (!PyArg_ParseTuple(args, "s|s:getservbyname", &name, &proto))
         return NULL;
 
@@ -6368,14 +6389,41 @@ socket_getservbyname(PyObject *self, PyObject *args)
         return NULL;
     }
 
+#ifdef HAVE_GETSERVBYNAME_R
+    do {
+        char *new_buf = PyMem_RawRealloc(buf, buf_len);
+        if (new_buf == NULL) {
+            PyMem_RawFree(buf);
+            return PyErr_NoMemory();
+        }
+        buf = new_buf;
+        Py_BEGIN_ALLOW_THREADS
+        err = getservbyname_r(name, proto, &serv, buf, buf_len, &sp);
+        Py_END_ALLOW_THREADS
+        buf_len *= 2;
+    } while (err == ERANGE);
+#else
     Py_BEGIN_ALLOW_THREADS
+#ifdef USE_GETSERVBYNAME_LOCK
+    PyThread_acquire_lock(netdb_lock, 1);
+#endif
     sp = getservbyname(name, proto);
     Py_END_ALLOW_THREADS
+#endif /* HAVE_GETSERVBYNAME_R */
     if (sp == NULL) {
         PyErr_SetString(PyExc_OSError, "service/proto not found");
-        return NULL;
     }
-    return PyLong_FromLong((long) ntohs(sp->s_port));
+    else {
+        ret = PyLong_FromLong((long) ntohs(sp->s_port));
+    }
+#ifdef HAVE_GETSERVBYNAME_R
+    PyMem_RawFree(buf);
+#else
+#ifdef USE_GETSERVBYNAME_LOCK
+    PyThread_release_lock(netdb_lock);
+#endif
+#endif /* HAVE_GETSERVBYNAME_R */
+    return ret;
 }
 
 PyDoc_STRVAR(getservbyname_doc,
@@ -6398,6 +6446,13 @@ socket_getservbyport(PyObject *self, PyObject *args)
     int port;
     const char *proto=NULL;
     struct servent *sp;
+    PyObject *ret = NULL;
+#ifdef HAVE_GETSERVBYPORT_R
+    struct servent serv;
+    char *buf = NULL;
+    size_t buf_len = 1024;
+    int err = 0;
+#endif
     if (!PyArg_ParseTuple(args, "i|s:getservbyport", &port, &proto))
         return NULL;
     if (port < 0 || port > 0xffff) {
@@ -6411,14 +6466,42 @@ socket_getservbyport(PyObject *self, PyObject *args)
         return NULL;
     }
 
+#ifdef HAVE_GETSERVBYPORT_R
+    do {
+        char *new_buf = PyMem_RawRealloc(buf, buf_len);
+        if (new_buf == NULL) {
+            PyMem_RawFree(buf);
+            return PyErr_NoMemory();
+        }
+        buf = new_buf;
+        Py_BEGIN_ALLOW_THREADS
+        err = getservbyport_r(htons((short)port), proto, &serv, buf, buf_len,
+                              &sp);
+        Py_END_ALLOW_THREADS
+        buf_len *= 2;
+    } while (err == ERANGE);
+#else
     Py_BEGIN_ALLOW_THREADS
+#ifdef USE_GETSERVBYNAME_LOCK
+    PyThread_acquire_lock(netdb_lock, 1);
+#endif
     sp = getservbyport(htons((short)port), proto);
     Py_END_ALLOW_THREADS
+#endif /* HAVE_GETSERVBYPORT_R */
     if (sp == NULL) {
         PyErr_SetString(PyExc_OSError, "port/proto not found");
-        return NULL;
     }
-    return PyUnicode_FromString(sp->s_name);
+    else {
+        ret = PyUnicode_FromString(sp->s_name);
+    }
+#ifdef HAVE_GETSERVBYPORT_R
+    PyMem_RawFree(buf);
+#else
+#ifdef USE_GETSERVBYNAME_LOCK
+    PyThread_release_lock(netdb_lock);
+#endif
+#endif /* HAVE_GETSERVBYPORT_R */
+    return ret;
 }
 
 PyDoc_STRVAR(getservbyport_doc,
@@ -6440,16 +6523,50 @@ socket_getprotobyname(PyObject *self, PyObject *args)
 {
     const char *name;
     struct protoent *sp;
+    PyObject *ret = NULL;
+#ifdef HAVE_GETPROTOBYNAME_R
+    struct protoent proto;
+    char *buf = NULL;
+    size_t buf_len = 1024;
+    int err = 0;
+#endif
     if (!PyArg_ParseTuple(args, "s:getprotobyname", &name))
         return NULL;
+#ifdef HAVE_GETPROTOBYNAME_R
+    do {
+        char *new_buf = PyMem_RawRealloc(buf, buf_len);
+        if (new_buf == NULL) {
+            PyMem_RawFree(buf);
+            return PyErr_NoMemory();
+        }
+        buf = new_buf;
+        Py_BEGIN_ALLOW_THREADS
+        err = getprotobyname_r(name, &proto, buf, buf_len, &sp);
+        Py_END_ALLOW_THREADS
+        buf_len *= 2;
+    } while (err == ERANGE);
+#else
     Py_BEGIN_ALLOW_THREADS
+#ifdef USE_GETSERVBYNAME_LOCK
+    PyThread_acquire_lock(netdb_lock, 1);
+#endif
     sp = getprotobyname(name);
     Py_END_ALLOW_THREADS
+#endif /* HAVE_GETPROTOBYNAME_R */
     if (sp == NULL) {
         PyErr_SetString(PyExc_OSError, "protocol not found");
-        return NULL;
     }
-    return PyLong_FromLong((long) sp->p_proto);
+    else {
+        ret = PyLong_FromLong((long) sp->p_proto);
+    }
+#ifdef HAVE_GETPROTOBYNAME_R
+    PyMem_RawFree(buf);
+#else
+#ifdef USE_GETSERVBYNAME_LOCK
+    PyThread_release_lock(netdb_lock);
+#endif
+#endif /* HAVE_GETPROTOBYNAME_R */
+    return ret;
 }
 
 PyDoc_STRVAR(getprotobyname_doc,
@@ -9292,8 +9409,7 @@ socket_exec(PyObject *m)
 #endif
 #endif /* _MSTCPIP_ */
 
-    /* Initialize gethostbyname lock */
-#if defined(USE_GETHOSTBYNAME_LOCK)
+#if defined(USE_NETDB_LOCK)
     netdb_lock = PyThread_allocate_lock();
     if (netdb_lock == NULL) {
         goto error;
