@@ -157,6 +157,11 @@ tkinter
   synchronization of the displayed view with the underlying text.
   (Contributed by Serhiy Storchaka in :gh:`151675`.)
 
+* Added a :meth:`!validate` method to the :class:`!tkinter.Entry` and
+  :class:`!tkinter.Spinbox` widgets, which forces an evaluation of the
+  validation command.
+  (Contributed by Serhiy Storchaka in :gh:`151878`.)
+
 xml
 ---
 
