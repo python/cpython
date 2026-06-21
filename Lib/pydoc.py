@@ -544,7 +544,12 @@ class Doc:
             if srcdir:
                 basedir = os.path.join(srcdir, 'Lib')
 
-        basedir = os.path.normcase(basedir)
+        # Resolve symlinks so that the prefix comparison below is not defeated
+        # when ``basedir`` and ``file`` have symlinks resolved inconsistently,
+        # e.g. a source tree that is referenced through a symlink (gh-148314).
+        basedir = os.path.normcase(os.path.realpath(basedir))
+        if file != '(built-in)':
+            file = os.path.normcase(os.path.realpath(file))
         return (isinstance(object, type(os)) and
                 (object.__name__ in ('errno', 'exceptions', 'gc',
                                      'marshal', 'posix', 'signal', 'sys',

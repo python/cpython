@@ -1,0 +1,4 @@
+Fix :mod:`pydoc` failing to recognise standard library modules (for example
+when deciding whether to link to the online documentation) when CPython's
+source tree is referenced through a symbolic link.  :mod:`pydoc` now resolves
+symbolic links before comparing module paths.

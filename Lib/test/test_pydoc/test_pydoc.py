@@ -2461,6 +2461,32 @@ class TestInternalUtilities(unittest.TestCase):
             self.assertEqual(version, "1.2.3")
             self.assertEqual(len(w), 1)
 
+    @os_helper.skip_unless_symlink
+    def test_is_stdlib_module_resolves_symlinks(self):
+        # gh-148314: _is_stdlib_module() must resolve symlinks so that a
+        # module whose file is reached through a symlink is still recognised
+        # as part of the standard library when basedir points at the real
+        # (symlink-resolved) location.
+        tmpdir = tempfile.TemporaryDirectory()
+        self.addCleanup(tmpdir.cleanup)
+        real = os.path.join(tmpdir.name, "real")
+        os.mkdir(real)
+        with open(os.path.join(real, "fakestdlibmod.py"), "w") as f:
+            f.write("x = 1\n")
+        link = os.path.join(tmpdir.name, "link")
+        os.symlink(real, link)
+
+        module = types.ModuleType("fakestdlibmod")
+        module.__file__ = os.path.join(link, "fakestdlibmod.py")
+
+        doc = pydoc.Doc()
+        # Force the explicit basedir to be honoured by bypassing the
+        # python-build branch that would override it with sysconfig's srcdir.
+        with unittest.mock.patch.object(
+            pydoc.sysconfig, "is_python_build", return_value=False
+        ):
+            self.assertTrue(doc._is_stdlib_module(module, basedir=real))
+
 
 def setUpModule():
     thread_info = threading_helper.threading_setup()
