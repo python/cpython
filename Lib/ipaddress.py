@@ -2002,6 +2002,21 @@ class IPv6Address(_BaseV6, _BaseAddress):
     def __hash__(self):
         return hash((self._ip, self._scope_id))
 
+    def __lt__(self, other):
+        if not isinstance(other, IPv6Address):
+            return NotImplemented
+        if self._ip != other._ip:
+            return self._ip < other._ip
+        self_scope = self._scope_id
+        other_scope = other._scope_id
+        if self_scope is None and other_scope is None:
+            return False
+        if other_scope is None:
+            return False
+        if self_scope is None:
+            return True
+        return self_scope < other_scope
+
     def __eq__(self, other):
         address_equal = super().__eq__(other)
         if address_equal is NotImplemented:
