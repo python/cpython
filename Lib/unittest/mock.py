@@ -3010,7 +3010,7 @@ def mock_open(mock=None, read_data=''):
             return handle.readline.return_value
         return next(_state[0])
 
-    def _exit_side_effect(exctype, excinst, exctb):
+    def _exit_side_effect(*args):
         handle.close()
 
     global file_spec
