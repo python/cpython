@@ -2547,6 +2547,35 @@ class MenuTest(AbstractWidgetTest, unittest.TestCase):
         m.update()
         self.assertFalse(m.winfo_ismapped())
 
+    def test_postcascade(self):
+        m = self.create(tearoff=False)
+        submenu = tkinter.Menu(m, tearoff=False)
+        submenu.add_command(label='Item')
+        m.add_cascade(label='Cascade', menu=submenu)
+        m.add_command(label='Plain')
+        # No effect (but no error) when the menu is not posted, when the index
+        # is not a cascade entry, or when given a label.
+        m.postcascade(0)
+        m.postcascade(1)
+        m.postcascade('Cascade')
+
+        with self.subTest('posted menu'):
+            if m._windowingsystem != 'x11':
+                # Posting a menu is modal on Windows and uses a native,
+                # unmapped menu on Aqua, so it cannot be tested synchronously
+                # there.
+                self.skipTest('menu posting is not testable on this platform')
+            m.post(0, 0)
+            m.update()
+            m.postcascade('Cascade')
+            m.update()
+            self.assertTrue(submenu.winfo_ismapped())
+            # A non-cascade index unposts the currently posted submenu.
+            m.postcascade(1)
+            m.update()
+            self.assertFalse(submenu.winfo_ismapped())
+            m.unpost()
+
     def check_entry_option(self, m, index, option, value, expected=None):
         if expected is None:
             expected = value

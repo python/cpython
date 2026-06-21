@@ -463,6 +463,24 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(root['background'], '#ffe4c4')
         self.assertRaises(TypeError, root.tk_bisque, 'x')
 
+    def test_tk_scaling(self):
+        old = self.root.tk_scaling()
+        self.assertIsInstance(old, float)
+        self.assertGreater(old, 0)
+        self.addCleanup(self.root.tk_scaling, old)
+        # Setting the factor is reflected by a subsequent query.  Tk may round
+        # it slightly when converting to and from its internal representation.
+        self.root.tk_scaling(2.0)
+        self.assertAlmostEqual(self.root.tk_scaling(), 2.0, delta=0.1)
+
+    def test_tk_inactive(self):
+        ms = self.root.tk_inactive()
+        self.assertIsInstance(ms, int)
+        # A count of milliseconds, or -1 if the windowing system lacks support.
+        self.assertGreaterEqual(ms, -1)
+        # Resetting the timer returns None and does not raise.
+        self.assertIsNone(self.root.tk_inactive(reset=True))
+
     def test_wait_variable(self):
         var = tkinter.StringVar(self.root)
         self.assertEqual(self.root.waitvar, self.root.wait_variable)

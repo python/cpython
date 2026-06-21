@@ -1932,6 +1932,26 @@ Base and mixin classes
       A true *boolean* value enables strict Motif compliance (for example, no
       color change when the mouse passes over a slider).
       Return the resulting setting.
+
+   .. method:: tk_scaling(number=None, *, displayof=0)
+
+      Query or set the scaling factor used by Tk to convert between physical
+      units (such as points, inches or millimeters) and pixels, expressed as
+      the number of pixels per point (where a point is 1/72 inch).
+      With no argument, return the current factor; otherwise set it to the
+      floating-point *number*.
+
+      .. versionadded:: next
+
+   .. method:: tk_inactive(reset=False, *, displayof=0)
+
+      Return the number of milliseconds since the last time the user interacted
+      with the system, or ``-1`` if the windowing system does not support this.
+      If *reset* is true, reset the inactivity timer to zero instead and return
+      ``None``.
+
+      .. versionadded:: next
+
    .. method:: busy(**kw)
       :no-typesetting:
 
@@ -4571,6 +4591,15 @@ Widget classes
       *y*, adjusting them if necessary so that the whole menu is visible.
       If the *postcommand* option has been specified, it is evaluated before
       the menu is posted.
+
+   .. method:: postcascade(index)
+
+      Post the submenu associated with the cascade entry given by *index*,
+      unposting any previously posted submenu.
+      This has no effect if *index* does not name a cascade entry or if the
+      menu itself is not posted.
+
+      .. versionadded:: next
 
    .. method:: tk_popup(x, y, entry='')
 

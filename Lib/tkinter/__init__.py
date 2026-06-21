@@ -745,6 +745,32 @@ class Misc:
         self.tk.call(('tk_setPalette',)
               + _flatten(args) + _flatten(list(kw.items())))
 
+    def tk_scaling(self, number=None, *, displayof=0):
+        """Query or set the scaling factor used by Tk to convert between
+        physical units and pixels.
+
+        The scaling factor is the number of pixels per point on the display,
+        where a point is 1/72 inch.  With no argument, return the current
+        factor; otherwise set it to the floating-point NUMBER."""
+        args = ('tk', 'scaling') + self._displayof(displayof)
+        if number is not None:
+            self.tk.call(args + (number,))
+        else:
+            return self.tk.getdouble(self.tk.call(args))
+
+    def tk_inactive(self, reset=False, *, displayof=0):
+        """Return the number of milliseconds since the last time the user
+        interacted with the system, or -1 if the windowing system does not
+        support this.
+
+        If RESET is true, reset the inactivity timer to zero instead and
+        return None."""
+        args = ('tk', 'inactive') + self._displayof(displayof)
+        if reset:
+            self.tk.call(args + ('reset',))
+        else:
+            return self.tk.getint(self.tk.call(args))
+
     def wait_variable(self, name='PY_VAR'):
         """Wait until the variable is modified.
 
@@ -3672,6 +3698,14 @@ class Menu(Widget):
     def post(self, x, y):
         """Display a menu at position X,Y."""
         self.tk.call(self._w, 'post', x, y)
+
+    def postcascade(self, index):
+        """Post the submenu of the cascade entry at INDEX, unposting any
+        previously posted submenu.
+
+        Has no effect if INDEX does not name a cascade entry or if this menu
+        is not posted."""
+        self.tk.call(self._w, 'postcascade', index)
 
     def type(self, index):
         """Return the type of the menu item at INDEX."""
