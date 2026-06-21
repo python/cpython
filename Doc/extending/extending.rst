@@ -232,9 +232,7 @@ imaginable.
 
 Fortunately, the Python interpreter is easily called recursively, and there is a
 standard interface to call a Python function.  (If you're interested in how to call the
-Python parser with a particular string as input, have a look at the implementation of
-the :option:`-c` command line option in :file:`Modules/main.c` from the Python source
-code.)
+Python parser with a particular string as input, see :ref:`veryhigh`.)
 
 Calling a Python function is easy.  First, the Python program must somehow pass
 you the Python function object.  You should provide a function (or some other
