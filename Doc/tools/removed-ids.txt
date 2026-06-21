@@ -34,3 +34,6 @@ reference/expressions.html: grammar-token-python-grammar-set_display
 # Moved to a different page
 c-api/typeobj.html: c.Py_tp_base
 c-api/typeobj.html: c.Py_tp_bases
+
+# Removed pages
+library/asyncio-policy.html: (page missing)
