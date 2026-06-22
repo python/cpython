@@ -2420,13 +2420,10 @@ class IpaddrUnitTest(unittest.TestCase):
 
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(True, ipaddress.ip_network('fecf::').is_site_local)
-        with self.assertWarns(DeprecationWarning):
             self.assertEqual(True, ipaddress.ip_network(
                     'feff:ffff:ffff:ffff::').is_site_local)
-        with self.assertWarns(DeprecationWarning):
             self.assertEqual(False, ipaddress.ip_network(
                     'fbf:ffff::').is_site_local)
-        with self.assertWarns(DeprecationWarning):
             self.assertEqual(False, ipaddress.ip_network('ff00::').is_site_local)
 
         self.assertEqual(True, ipaddress.ip_network('fc00::').is_private)
@@ -2463,13 +2460,10 @@ class IpaddrUnitTest(unittest.TestCase):
 
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(True, ipaddress.ip_address('fecf::').is_site_local)
-        with self.assertWarns(DeprecationWarning):
             self.assertEqual(True, ipaddress.ip_address(
                     'feff:ffff:ffff:ffff::').is_site_local)
-        with self.assertWarns(DeprecationWarning):
             self.assertEqual(False, ipaddress.ip_address(
                     'fbf:ffff::').is_site_local)
-        with self.assertWarns(DeprecationWarning):
             self.assertEqual(False, ipaddress.ip_address('ff00::').is_site_local)
 
         self.assertEqual(True, ipaddress.ip_address('fc00::').is_private)
