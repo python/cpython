@@ -34,6 +34,9 @@ end
 deactivate nondestructive
 
 set -gx VIRTUAL_ENV __VENV_DIR__
+if string match -qr 'CYGWIN|MSYS|MINGW' (uname)
+    set -gx VIRTUAL_ENV (cygpath -u $VIRTUAL_ENV)
+end
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/"__VENV_BIN_NAME__ $PATH
