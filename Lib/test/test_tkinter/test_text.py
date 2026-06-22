@@ -26,6 +26,18 @@ class TextTest(AbstractTkTest, unittest.TestCase):
             text.debug(olddebug)
             self.assertEqual(text.debug(), olddebug)
 
+    def test_sync(self):
+        text = self.text
+        # sync() returns None and brings line metrics up to date.
+        self.assertIsNone(text.sync())
+        self.assertIs(text.pendingsync(), False)
+
+        # sync(command) schedules a one-shot callback.
+        events = []
+        text.sync(command=lambda: events.append('synced'))
+        text.update()
+        self.assertEqual(events, ['synced'])
+
     def test_index(self):
         text = self.text
         text.insert('1.0', 'Lorem ipsum\ndolor sit amet')
@@ -306,6 +318,29 @@ class TextTest(AbstractTkTest, unittest.TestCase):
         text.edit_reset()
         self.assertRaises(TclError, text.edit_undo)
 
+    def test_edit_canundo_canredo(self):
+        text = self.text
+        text.configure(undo=True)
+
+        self.assertIs(text.edit_canundo(), False)
+        self.assertIs(text.edit_canredo(), False)
+
+        text.insert('1.0', 'spam')
+        self.assertIs(text.edit_canundo(), True)
+        self.assertIs(text.edit_canredo(), False)
+
+        text.edit_undo()
+        self.assertIs(text.edit_canundo(), False)
+        self.assertIs(text.edit_canredo(), True)
+
+        text.edit_redo()
+        self.assertIs(text.edit_canundo(), True)
+        self.assertIs(text.edit_canredo(), False)
+
+        text.edit_reset()
+        self.assertIs(text.edit_canundo(), False)
+        self.assertIs(text.edit_canredo(), False)
+
     def test_dump(self):
         text = self.text
         text.insert('1.0', 'hello')
@@ -505,6 +540,7 @@ class TextTest(AbstractTkTest, unittest.TestCase):
         self.assertIsInstance(cnf, dict)
         self.assertIn('stretch', cnf)
         self.assertRaises(TclError, text.window_cget, '1.1', 'spam')
+        self.assertEqual(text.window_config, text.window_configure)
         button.destroy()
 
     def test_peer(self):
@@ -561,6 +597,11 @@ class TextTest(AbstractTkTest, unittest.TestCase):
         self.assertRaises(TclError, text.see, 'invalid')
         self.assertRaises(TypeError, text.see)
         self.assertRaises(TypeError, text.see, '1.0', '2.0')
+
+        # yview_pickplace is a deprecated way to make an index visible.
+        text.yview_pickplace('1.0')
+        text.update()
+        self.assertIsNotNone(text.bbox('1.0'))
 
     def test_search(self):
         text = self.text
