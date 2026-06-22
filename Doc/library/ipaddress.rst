@@ -366,10 +366,9 @@ write code that handles both IP versions correctly.  Address objects are
       :attr:`~IPv4Address.is_private` to test if this address is in the
       space of unique local addresses as defined by :RFC:`4193`.
 
-      .. deprecated:: next
+      .. deprecated-removed:: next 3.21
          Site-local addresses (``fec0::/10``) were deprecated by :rfc:`3879`.
-         Use :attr:`~IPv6Address.is_private` instead.  This attribute is
-         slated for removal in Python 3.21.
+         Use :attr:`~IPv6Address.is_private` instead.
 
    .. attribute:: ipv4_mapped
 
@@ -806,10 +805,9 @@ dictionaries.
       This attribute is true for the network as a whole if it is true
       for both the network address and the broadcast address.
 
-      .. deprecated:: next
+      .. deprecated-removed:: next 3.21
          Site-local addresses (``fec0::/10``) were deprecated by :rfc:`3879`.
-         Use :attr:`~IPv6Network.is_private` instead.  This attribute is
-         slated for removal in Python 3.21.
+         Use :attr:`~IPv6Network.is_private` instead.
 
 
 Operators
