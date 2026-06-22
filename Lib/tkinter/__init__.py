@@ -786,6 +786,32 @@ class Misc:
             return {values[i][1:]: self.tk.getint(values[i + 1])
                     for i in range(0, len(values), 2)}
 
+    def tk_scaling(self, number=None, *, displayof=0):
+        """Query or set the scaling factor used by Tk to convert between
+        physical units and pixels.
+
+        The scaling factor is the number of pixels per point on the display,
+        where a point is 1/72 inch.  With no argument, return the current
+        factor; otherwise set it to the floating-point NUMBER."""
+        args = ('tk', 'scaling') + self._displayof(displayof)
+        if number is not None:
+            self.tk.call(args + (number,))
+        else:
+            return self.tk.getdouble(self.tk.call(args))
+
+    def tk_inactive(self, reset=False, *, displayof=0):
+        """Return the number of milliseconds since the last time the user
+        interacted with the system, or -1 if the windowing system does not
+        support this.
+
+        If RESET is true, reset the inactivity timer to zero instead and
+        return None."""
+        args = ('tk', 'inactive') + self._displayof(displayof)
+        if reset:
+            self.tk.call(args + ('reset',))
+        else:
+            return self.tk.getint(self.tk.call(args))
+
     def wait_variable(self, name='PY_VAR'):
         """Wait until the variable is modified.
 
@@ -3311,6 +3337,22 @@ class Canvas(Widget, XView, YView):
 
     lift = tkraise = tag_raise  # overrides Misc.tkraise
 
+    def rchars(self, *args):
+        """Replace the text or coordinates between indices FIRST and LAST of
+        the items identified by TAGORID with STRING.
+
+        Text items replace their text; line and polygon items replace their
+        coordinates, in which case STRING is a list of coordinates. Other
+        items ignore this operation."""
+        self.tk.call((self._w, 'rchars') + args)
+
+    def rotate(self, *args): # new in Tk 9.0
+        """Rotate the coordinates of the items identified by TAGORID about the
+        origin (XORIGIN, YORIGIN) by ANGLE degrees anticlockwise.
+
+        Negative values of ANGLE rotate clockwise."""
+        self.tk.call((self._w, 'rotate') + args)
+
     def scale(self, *args):
         """Scale item TAGORID with XORIGIN, YORIGIN, XSCALE, YSCALE."""
         self.tk.call((self._w, 'scale') + args)
@@ -3765,6 +3807,14 @@ class Menu(Widget):
     def post(self, x, y):
         """Display a menu at position X,Y."""
         self.tk.call(self._w, 'post', x, y)
+
+    def postcascade(self, index):
+        """Post the submenu of the cascade entry at INDEX, unposting any
+        previously posted submenu.
+
+        Has no effect if INDEX does not name a cascade entry or if this menu
+        is not posted."""
+        self.tk.call(self._w, 'postcascade', index)
 
     def type(self, index):
         """Return the type of the menu item at INDEX."""
@@ -4562,6 +4612,13 @@ class PhotoImage(Image):
         """Display a transparent image."""
         self.tk.call(self.name, 'blank')
 
+    def redither(self):
+        """Recalculate the dithered image in each window where it is displayed.
+
+        Useful when the image data was supplied in pieces, in which case the
+        dithered image may not be exactly correct."""
+        self.tk.call(self.name, 'redither')
+
     def cget(self, option):
         """Return the value of OPTION."""
         return self.tk.call(self.name, 'cget', '-' + option)
@@ -4676,25 +4733,58 @@ class PhotoImage(Image):
             options.extend(('-compositingrule', compositingrule))
         self.tk.call(self.name, 'copy', sourceImage, *options)
 
-    def get(self, x, y):
-        """Return the color (red, green, blue) of the pixel at X,Y."""
-        return self.tk.call(self.name, 'get', x, y)
+    @staticmethod
+    def _metadata(metadata):
+        # A Tcl dict is a flat list of alternating keys and values.  A Python
+        # dict passed directly would expand to its keys only, so flatten it.
+        flat = ()
+        for key, value in metadata.items():
+            flat += (key, value)
+        return flat
 
-    def put(self, data, to=None):
+    def get(self, x, y, *, withalpha=False):
+        """Return the color of the pixel at X,Y as a tuple of its red, green
+        and blue components.
+
+        If WITHALPHA is true, the returned tuple has a fourth element giving
+        the alpha (opacity) value of the pixel.  This requires Tcl/Tk 9.0 or
+        newer.
+        """
+        args = (self.name, 'get', x, y)
+        if withalpha:
+            args += ('-withalpha',)
+        return self.tk.call(args)
+
+    def put(self, data, to=None, *, format=None, metadata=None):
         """Put row formatted colors to image starting from
-        position TO, e.g. image.put("{red green} {blue yellow}", to=(4,6))"""
+        position TO, e.g. image.put("{red green} {blue yellow}", to=(4,6))
+
+        The FORMAT option specifies the format of the image DATA, so that only
+        image file format handlers whose names begin with it are tried.
+
+        The METADATA option, a dictionary passed to the image format driver,
+        requires Tcl/Tk 9.0 or newer.
+        """
         args = (self.name, 'put', data)
+        if format is not None:
+            args += ('-format', format)
+        if metadata is not None:
+            args += ('-metadata', self._metadata(metadata))
         if to:
             if to[0] == '-to':
                 to = to[1:]
-            args = args + ('-to',) + tuple(to)
+            args += ('-to',) + tuple(to)
         self.tk.call(args)
 
-    def read(self, filename, format=None, *, from_coords=None, to=None, shrink=False):
+    def read(self, filename, format=None, *, from_coords=None, to=None,
+             shrink=False, metadata=None):
         """Reads image data from the file named FILENAME into the image.
 
         The FORMAT option specifies the format of the image data in the
         file.
+
+        The METADATA option, a dictionary passed to the image format driver,
+        requires Tcl/Tk 9.0 or newer.
 
         The FROM_COORDS option specifies a rectangular sub-region of the image
         file data to be copied to the destination image.  It must be a tuple
@@ -4715,6 +4805,8 @@ class PhotoImage(Image):
         options = ()
         if format is not None:
             options += ('-format', format)
+        if metadata is not None:
+            options += ('-metadata', self._metadata(metadata))
         if from_coords is not None:
             options += ('-from', *from_coords)
         if shrink:
@@ -4724,12 +4816,15 @@ class PhotoImage(Image):
         self.tk.call(self.name, 'read', filename, *options)
 
     def write(self, filename, format=None, from_coords=None, *,
-              background=None, grayscale=False):
+              background=None, grayscale=False, metadata=None):
         """Writes image data from the image to a file named FILENAME.
 
         The FORMAT option specifies the name of the image file format
         handler to be used to write the data to the file.  If this option
         is not given, the format is guessed from the file extension.
+
+        The METADATA option, a dictionary passed to the image format driver,
+        requires Tcl/Tk 9.0 or newer.
 
         The FROM_COORDS option specifies a rectangular region of the image
         to be written to the image file.  It must be a tuple or a list of 1
@@ -4749,6 +4844,8 @@ class PhotoImage(Image):
         options = ()
         if format is not None:
             options += ('-format', format)
+        if metadata is not None:
+            options += ('-metadata', self._metadata(metadata))
         if from_coords is not None:
             options += ('-from', *from_coords)
         if grayscale:
@@ -4758,8 +4855,11 @@ class PhotoImage(Image):
         self.tk.call(self.name, 'write', filename, *options)
 
     def data(self, format=None, *, from_coords=None,
-             background=None, grayscale=False):
+             background=None, grayscale=False, metadata=None):
         """Returns image data.
+
+        The METADATA option, a dictionary passed to the image format driver,
+        requires Tcl/Tk 9.0 or newer.
 
         The FORMAT option specifies the name of the image file format
         handler to be used.  If this option is not given, this method uses
@@ -4787,6 +4887,8 @@ class PhotoImage(Image):
         options = ()
         if format is not None:
             options += ('-format', format)
+        if metadata is not None:
+            options += ('-metadata', self._metadata(metadata))
         if from_coords is not None:
             options += ('-from', *from_coords)
         if grayscale:

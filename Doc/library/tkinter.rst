@@ -1986,6 +1986,25 @@ Base and mixin classes
 
       .. versionadded:: next
 
+   .. method:: tk_scaling(number=None, *, displayof=0)
+
+      Query or set the scaling factor used by Tk to convert between physical
+      units (such as points, inches or millimeters) and pixels, expressed as
+      the number of pixels per point (where a point is 1/72 inch).
+      With no argument, return the current factor; otherwise set it to the
+      floating-point *number*.
+
+      .. versionadded:: next
+
+   .. method:: tk_inactive(reset=False, *, displayof=0)
+
+      Return the number of milliseconds since the last time the user interacted
+      with the system, or ``-1`` if the windowing system does not support this.
+      If *reset* is true, reset the inactivity timer to zero instead and return
+      ``None``.
+
+      .. versionadded:: next
+
    .. method:: busy(**kw)
       :no-typesetting:
 
@@ -3775,6 +3794,15 @@ Widget classes
       *yOrigin* changes by a factor of *yScale* (a factor of ``1.0`` leaves the
       coordinate unchanged).
 
+   .. method:: rotate(tagOrId, xOrigin, yOrigin, angle, /)
+
+      Rotate the coordinates of all items given by *tagOrId* in canvas
+      coordinate space about the origin (*xOrigin*, *yOrigin*) by *angle*
+      degrees anticlockwise.
+      Negative values of *angle* rotate clockwise.
+
+      .. versionadded:: next
+
    .. method:: delete(*tagOrIds)
 
       Delete each of the items given by the *tagOrIds* arguments.
@@ -3793,6 +3821,17 @@ Widget classes
       character or coordinate whose index is *beforeThis*.
       For line and polygon items *string* must be a valid sequence of
       coordinates.
+
+   .. method:: rchars(tagOrId, first, last, string, /)
+
+      Replace the characters (for text items) or coordinates (for line and
+      polygon items) in the range from *first* to *last* inclusive of each of
+      the items given by *tagOrId* with *string*.
+      For line and polygon items *string* must be a valid sequence of
+      coordinates.
+      Items that do not support indexing ignore this operation.
+
+      .. versionadded:: next
 
    .. method:: itemcget(tagOrId, option)
 
@@ -4738,6 +4777,15 @@ Widget classes
       *y*, adjusting them if necessary so that the whole menu is visible.
       If the *postcommand* option has been specified, it is evaluated before
       the menu is posted.
+
+   .. method:: postcascade(index)
+
+      Post the submenu associated with the cascade entry given by *index*,
+      unposting any previously posted submenu.
+      This has no effect if *index* does not name a cascade entry or if the
+      menu itself is not posted.
+
+      .. versionadded:: next
 
    .. method:: tk_popup(x, y, entry='')
 
@@ -6059,6 +6107,14 @@ Image classes
       it is displayed as transparent and the background of whatever window it
       is displayed in shows through.
 
+   .. method:: redither()
+
+      Recalculate the dithered image in each window where it is displayed.
+      This is useful when the image data was supplied in pieces, in which case
+      the dithered image may not be exactly correct.
+
+      .. versionadded:: next
+
    .. method:: cget(option)
 
       Return the current value of the configuration option *option*.
@@ -6126,7 +6182,7 @@ Image classes
 
 
    .. method:: data(format=None, *, from_coords=None, background=None, \
-                    grayscale=False)
+                    grayscale=False, metadata=None)
 
       Return the image data.
 
@@ -6150,16 +6206,27 @@ Image classes
       If *grayscale* is true, the data does not contain color information; all
       pixel data is transformed into grayscale.
 
+      *metadata* is a dictionary passed to the image format driver.
+      It requires Tcl/Tk 9.0 or newer.
+
       .. versionadded:: 3.13
 
+      .. versionchanged:: next
+         Added the *metadata* parameter.
 
-   .. method:: get(x, y)
+
+   .. method:: get(x, y, *, withalpha=False)
 
       Return the color of the pixel at coordinates (*x*, *y*) as an
       ``(r, g, b)`` tuple of three integers between 0 and 255, representing the
       red, green and blue components respectively.
+      If *withalpha* is true, the returned tuple has a fourth element giving
+      the alpha (opacity) value of the pixel.
 
-   .. method:: put(data, to=None)
+      .. versionchanged:: next
+         Added the *withalpha* parameter, which requires Tcl/Tk 9.0 or newer.
+
+   .. method:: put(data, to=None, *, format=None, metadata=None)
 
       Set pixels of the image to the colors given in *data*, which must be a
       string or a nested sequence of horizontal rows of pixel colors (for
@@ -6172,12 +6239,24 @@ Image classes
       bottom-right corner, of the region.
       The default position is ``(0, 0)``.
 
+      *format* specifies the format of the image *data*, so that only image
+      file format handlers whose names begin with it are tried.
+
+      *metadata* is a dictionary passed to the image format driver.
+      It requires Tcl/Tk 9.0 or newer.
+
+      .. versionchanged:: next
+         Added the *format* and *metadata* parameters.
+
    .. method:: read(filename, format=None, *, from_coords=None, to=None, \
-                    shrink=False)
+                    shrink=False, metadata=None)
 
       Read image data from the file named *filename* into the image.
 
       *format* specifies the format of the image data in the file.
+
+      *metadata* is a dictionary passed to the image format driver.
+      It requires Tcl/Tk 9.0 or newer.
 
       *from_coords* specifies a rectangular sub-region of the image file data
       to be copied to the destination image.
@@ -6198,6 +6277,9 @@ Image classes
       corner of the image.
 
       .. versionadded:: 3.13
+
+      .. versionchanged:: next
+         Added the *metadata* parameter.
 
 
    .. method:: subsample(x, y='', *, from_coords=None)
@@ -6231,7 +6313,7 @@ Image classes
 
 
    .. method:: write(filename, format=None, from_coords=None, *, \
-                     background=None, grayscale=False)
+                     background=None, grayscale=False, metadata=None)
 
       Write image data from the image to the file named *filename*.
 
@@ -6253,8 +6335,14 @@ Image classes
       If *grayscale* is true, the data does not contain color information; all
       pixel data is transformed into grayscale.
 
+      *metadata* is a dictionary passed to the image format driver.
+      It requires Tcl/Tk 9.0 or newer.
+
       .. versionchanged:: 3.13
          Added the *background* and *grayscale* parameters.
+
+      .. versionchanged:: next
+         Added the *metadata* parameter.
 
 
    .. method:: zoom(x, y='', *, from_coords=None)
