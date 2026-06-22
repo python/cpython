@@ -793,6 +793,21 @@ class ListComprehensionTest(unittest.TestCase):
                 self.assertEqual(f.line[f.colno - indent : f.end_colno - indent],
                                  expected)
 
+    def test_optimization_with_side_effects(self):
+        # List comprehensions that aren't used as a value are optimized
+        # to avoid creating a list. Ensure that side effects are still
+        # retained when this happens.
+        with self.assertRaises(ZeroDivisionError):
+            [0/0 for _ in [1]]
+
+        count = 0
+        def increment():
+            nonlocal count
+            count += 1
+
+        [increment() for _ in range(5)]
+        self.assertEqual(count, 5)
+
 __test__ = {'doctests' : doctests}
 
 def load_tests(loader, tests, pattern):
