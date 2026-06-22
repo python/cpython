@@ -3096,6 +3096,14 @@ codegen_stmt_expr(compiler *c, location loc, expr_ty value)
         return codegen_listcomp_impl(c, value, /*avoid_creation=*/true);
     }
 
+    if (value->kind == SetComp_kind) {
+        return codegen_setcomp_impl(c, value, /*avoid_creation=*/true);
+    }
+
+    if (value->kind == DictComp_kind) {
+        return codegen_dictcomp_impl(c, value, /*avoid_creation=*/true);
+    }
+
     VISIT(c, expr, value);
     ADDOP(c, NO_LOCATION, POP_TOP); /* artificial */
     return SUCCESS;
