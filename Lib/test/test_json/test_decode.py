@@ -87,6 +87,13 @@ class TestDecode:
 
         self.assertEqual(self.loads('[]', array_hook=tuple), ())
 
+    def test_load_array_hook(self):
+        # json.load must forward array_hook to loads
+        fp = StringIO('[10, 20, 30]')
+        result = self.json.load(fp, array_hook=tuple)
+        self.assertEqual(result, (10, 20, 30))
+        self.assertEqual(type(result), tuple)
+
     def test_decoder_optimizations(self):
         # Several optimizations were made that skip over calls to
         # the whitespace regex, so this test is designed to try and

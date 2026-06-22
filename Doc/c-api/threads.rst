@@ -736,10 +736,10 @@ Low-level APIs
 .. c:function:: PyObject* PyThreadState_GetDict()
 
    Return a dictionary in which extensions can store thread-specific state
-   information.  Each extension should use a unique key to use to store state in
+   information.  Each extension should use a unique key to store a state in
    the dictionary.  It is okay to call this function when no :term:`thread state`
    is :term:`attached <attached thread state>`. If this function returns
-   ``NULL``, no exception has been raised and the caller should assume no
+   ``NULL`` and no exception has been raised, then the caller should assume no
    thread state is attached.
 
 

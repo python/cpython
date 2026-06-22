@@ -439,6 +439,7 @@ def parse_config_h(fp, vars=None):
     import re
     define_rx = re.compile("#define ([A-Z][A-Za-z0-9_]+) (.*)\n")
     undef_rx = re.compile("/[*] #undef ([A-Z][A-Za-z0-9_]+) [*]/\n")
+    quoted_re = re.compile('^"(.*)"$')
 
     while True:
         line = fp.readline()
@@ -447,6 +448,8 @@ def parse_config_h(fp, vars=None):
         m = define_rx.match(line)
         if m:
             n, v = m.group(1, 2)
+            if mq := quoted_re.match(v):
+                v = mq.group(1)
             try:
                 if n in _ALWAYS_STR:
                     raise ValueError

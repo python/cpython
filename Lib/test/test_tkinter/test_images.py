@@ -288,6 +288,11 @@ class PhotoImageTest(BaseImageTest, AbstractTkTest, unittest.TestCase):
         image.configure(height=10)
         self.assertEqual(image['width'], '20')
         self.assertEqual(image['height'], '10')
+        self.assertEqual(image.cget('width'), image['width'])
+        self.assertEqual(image.cget('height'), image['height'])
+        self.assertRaises(TypeError, image.cget)
+        self.assertRaises(TypeError, image.cget, 'width', 'height')
+        self.assertEqual(image.config, image.configure)
         self.assertEqual(image.width(), 20)
         self.assertEqual(image.height(), 10)
 
@@ -305,6 +310,12 @@ class PhotoImageTest(BaseImageTest, AbstractTkTest, unittest.TestCase):
         self.assertEqual(image.width(), 16)
         self.assertEqual(image.height(), 16)
         self.assertEqual(image.get(4, 6), self.colorlist(0, 0, 0))
+
+    def test_redither(self):
+        image = self.create()
+        pixel = image.get(4, 6)
+        image.redither()  # Recalculates the dithering; the data is unchanged.
+        self.assertEqual(image.get(4, 6), pixel)
 
     def test_copy(self):
         image = self.create()
@@ -656,6 +667,14 @@ class PhotoImageTest(BaseImageTest, AbstractTkTest, unittest.TestCase):
         self.assertEqual(image.transparency_get(4, 6), True)
         image.transparency_set(4, 6, False)
         self.assertEqual(image.transparency_get(4, 6), False)
+        self.assertRaises(tkinter.TclError, image.transparency_get, -1, 0)
+        self.assertRaises(tkinter.TclError, image.transparency_get, 16, 0)
+        self.assertRaises(tkinter.TclError, image.transparency_set, -1, 0, True)
+        self.assertRaises(tkinter.TclError, image.transparency_set, 16, 0, True)
+        self.assertRaises(TypeError, image.transparency_get, 0)
+        self.assertRaises(TypeError, image.transparency_get, 0, 0, 0)
+        self.assertRaises(TypeError, image.transparency_set, 0, 0)
+        self.assertRaises(TypeError, image.transparency_set, 0, 0, True, 0)
 
 
 if __name__ == "__main__":
