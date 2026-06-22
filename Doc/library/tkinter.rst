@@ -1391,8 +1391,9 @@ Base and mixin classes
       ``(columns, rows)`` tuple.
 
       :meth:`size` is an alias of :meth:`!grid_size`,
-      except on the :class:`Listbox` widget,
-      which provides its own :meth:`!size` method.
+      except on :class:`Listbox` and
+      :class:`ttk.Treeview <tkinter.ttk.Treeview>`,
+      which provide their own :meth:`!size` method.
 
    .. method:: grid_slaves(row=None, column=None)
 
@@ -3291,8 +3292,9 @@ Base and mixin classes
       Same as :meth:`Misc.grid_size`: return a ``(columns, rows)`` tuple giving
       the size of the grid.
       :meth:`size` is an alias of :meth:`!grid_size`,
-      except on the :class:`Listbox` widget,
-      which provides its own :meth:`!size` method.
+      except on :class:`Listbox` and
+      :class:`ttk.Treeview <tkinter.ttk.Treeview>`,
+      which provide their own :meth:`!size` method.
 
    .. method:: propagate()
                propagate(flag)
