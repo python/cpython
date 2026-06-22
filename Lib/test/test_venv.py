@@ -311,6 +311,226 @@ class BasicTest(BaseTest):
                 self.assertEqual(out.strip(), expected, err)
 
     @requireVenvCreate
+    def test_version_mismatch_warning(self):
+        """
+        Test that a warning is emitted when running a venv created for a
+        different minor Python version.
+        """
+        rmtree(self.env_dir)
+
+        wrong_minor = sys.version_info.minor + 1
+        self.run_with_capture(venv.create, self.env_dir, with_pip=False)
+
+        cfg_path = self.get_env_file('pyvenv.cfg')
+        with open(cfg_path, 'r', encoding='utf-8') as f:
+            cfg_content = f.read()
+
+        new_version = f"{sys.version_info.major}.{wrong_minor}"
+        if 'version =' in cfg_content:
+            cfg_content = re.sub(r'version = \d+\.\d+', f'version = {new_version}', cfg_content)
+
+        cfg_content += f'\nversion_info = {new_version}\n'
+
+        with open(cfg_path, 'w', encoding='utf-8') as f:
+            f.write(cfg_content)
+
+        envpy = self.envpy(real_env_dir=True)
+
+        proc = subprocess.run(
+            [envpy, '-c', 'import sys; print("done")'],
+            capture_output=True,
+            text=True,
+            env={**os.environ, "PYTHONHOME": ""}
+        )
+
+        self.assertIn(f"Python {sys.version_info.major}.{wrong_minor}", proc.stderr)
+        self.assertIn("Consider running `python -m venv --upgrade`", proc.stderr)
+
+    @requireVenvCreate
+    def test_version_info_mismatch_warning(self):
+        """
+        Test that a warning is emitted when version_info (used by virtualenv)
+        indicates a different minor version.
+        """
+        rmtree(self.env_dir)
+        wrong_minor = sys.version_info.minor + 1
+        self.run_with_capture(venv.create, self.env_dir, with_pip=False)
+
+        cfg_path = self.get_env_file('pyvenv.cfg')
+        with open(cfg_path, 'r', encoding='utf-8') as f:
+            cfg_content = f.read()
+
+        # Add only version_info, don't modify version
+        new_version = f"{sys.version_info.major}.{wrong_minor}"
+        cfg_content += f'\nversion_info = {new_version}\n'
+
+        with open(cfg_path, 'w', encoding='utf-8') as f:
+            f.write(cfg_content)
+
+        envpy = self.envpy(real_env_dir=True)
+        proc = subprocess.run(
+            [envpy, '-c', 'import sys; print("done")'],
+            capture_output=True,
+            text=True,
+            env={**os.environ, "PYTHONHOME": ""}
+        )
+
+        self.assertIn(f"Python {sys.version_info.major}.{wrong_minor}", proc.stderr)
+        self.assertIn("Consider running `python -m venv --upgrade`", proc.stderr)
+
+    @requireVenvCreate
+    def test_version_match_no_warning(self):
+        """
+        Test that no warning is emitted when the venv version matches.
+        """
+        rmtree(self.env_dir)
+
+        self.run_with_capture(venv.create, self.env_dir, with_pip=False)
+        cfg_path = self.get_env_file('pyvenv.cfg')
+        with open(cfg_path, 'r', encoding='utf-8') as f:
+            cfg_content = f.read()
+        expected_version = f"{sys.version_info.major}.{sys.version_info.minor}"
+
+        with open(cfg_path, 'w', encoding='utf-8') as f:
+            f.write(cfg_content)
+        envpy = self.envpy(real_env_dir=True)
+        proc = subprocess.run(
+            [envpy, '-c', 'import sys; print("done")'],
+            capture_output=True,
+            text=True,
+            env={**os.environ, "PYTHONHOME": ""}
+        )
+
+        self.assertNotIn("Consider running `python -m venv --upgrade`", proc.stderr)
+
+    @requireVenvCreate
+    def test_malformed_version_warning(self):
+        """
+        Test that a warning is emitted on malformed version string
+        in pyenv.cfg
+        """
+        rmtree(self.env_dir)
+
+        self.run_with_capture(venv.create, self.env_dir, with_pip=False)
+
+        cfg_path = self.get_env_file('pyvenv.cfg')
+        with open(cfg_path, 'r', encoding='utf-8') as f:
+            cfg_content = f.read()
+
+        malformed_version = "not.a.version"
+        if 'version =' in cfg_content:
+            cfg_content = re.sub(r'version = .+', f'version = {malformed_version}', cfg_content)
+
+        with open(cfg_path, 'w', encoding='utf-8') as f:
+            f.write(cfg_content)
+
+        envpy = self.envpy(real_env_dir=True)
+        proc = subprocess.run(
+            [envpy, '-c', 'import sys; print("done")'],
+            capture_output=True,
+            text=True,
+            env={**os.environ, "PYTHONHOME": ""}
+        )
+        self.assertIn("Malformed version string", proc.stderr)
+        self.assertIn(malformed_version, proc.stderr)
+
+    @requireVenvCreate
+    def test_malformed_version_info_warning(self):
+        """
+        Test that a warning is emitted on malformed version_info string
+        in pyenv.cfg
+        """
+        rmtree(self.env_dir)
+        self.run_with_capture(venv.create, self.env_dir, with_pip=False)
+
+        cfg_path = self.get_env_file('pyvenv.cfg')
+        with open(cfg_path, 'r', encoding='utf-8') as f:
+            cfg_content = f.read()
+
+        malformed_version = "invalid.version"
+        cfg_content += f'\nversion_info = {malformed_version}\n'
+
+        with open(cfg_path, 'w', encoding='utf-8') as f:
+            f.write(cfg_content)
+
+        envpy = self.envpy(real_env_dir=True)
+        proc = subprocess.run(
+            [envpy, '-c', 'import sys; print("done")'],
+            capture_output=True,
+            text=True,
+            env={**os.environ, "PYTHONHOME": ""}
+        )
+
+        self.assertIn("Malformed version_info string", proc.stderr)
+        self.assertIn(malformed_version, proc.stderr)
+
+    @requireVenvCreate
+    def test_conflicting_version_fields(self):
+        """
+        Test behavior when both version and version_info are present
+        but contain different values. Should warn based on first mismatch found.
+        """
+        rmtree(self.env_dir)
+        wrong_minor = sys.version_info.minor + 1
+        self.run_with_capture(venv.create, self.env_dir, with_pip=False)
+
+        cfg_path = self.get_env_file('pyvenv.cfg')
+        with open(cfg_path, 'r', encoding='utf-8') as f:
+            cfg_content = f.read()
+
+        version_wrong = f"{sys.version_info.major}.{wrong_minor}"
+        if 'version =' in cfg_content:
+            cfg_content = re.sub(r'version = \d+\.\d+', f'version = {version_wrong}', cfg_content)
+
+        version_info_wrong = f"{sys.version_info.major}.{wrong_minor + 1}"
+        cfg_content += f'\nversion_info = {version_info_wrong}\n'
+
+        with open(cfg_path, 'w', encoding='utf-8') as f:
+            f.write(cfg_content)
+
+        envpy = self.envpy(real_env_dir=True)
+        proc = subprocess.run(
+            [envpy, '-c', 'import sys; print("done")'],
+            capture_output=True,
+            text=True,
+            env={**os.environ, "PYTHONHOME": ""}
+        )
+
+        self.assertIn("Consider running `python -m venv --upgrade`", proc.stderr)
+        self.assertEqual(proc.stderr.count("Consider running `python -m venv --upgrade`"), 1)
+
+    @requireVenvCreate
+    def test_different_major_version_no_warning(self):
+        """
+        Test that no warning is emitted when major version differs.
+        The warning should only trigger for same major, different minor.
+        """
+        rmtree(self.env_dir)
+        self.run_with_capture(venv.create, self.env_dir, with_pip=False)
+
+        cfg_path = self.get_env_file('pyvenv.cfg')
+        with open(cfg_path, 'r', encoding='utf-8') as f:
+            cfg_content = f.read()
+
+        different_major = sys.version_info.major + 1
+        new_version = f"{different_major}.{sys.version_info.minor}"
+
+        if 'version =' in cfg_content:
+            cfg_content = re.sub(r'version = \d+\.\d+', f'version = {new_version}', cfg_content)
+        with open(cfg_path, 'w', encoding='utf-8') as f:
+            f.write(cfg_content)
+
+        envpy = self.envpy(real_env_dir=True)
+        proc = subprocess.run(
+            [envpy, '-c', 'import sys; print("done")'],
+            capture_output=True,
+            text=True,
+            env={**os.environ, "PYTHONHOME": ""}
+        )
+
+        self.assertNotIn("Consider running `python -m venv --upgrade`", proc.stderr)
+
+    @requireVenvCreate
     @unittest.skipUnless(can_symlink(), 'Needs symlinks')
     def test_sysconfig_symlinks(self):
         """
