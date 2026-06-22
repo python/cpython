@@ -201,6 +201,10 @@ tkinter
   the *withalpha* parameter of :meth:`~tkinter.PhotoImage.get`.
   (Contributed by Serhiy Storchaka in :gh:`151890`.)
 
+* Added the :meth:`~tkinter.PhotoImage.redither` method which recalculates the
+  dithered image when its data was supplied in pieces.
+  (Contributed by Serhiy Storchaka in :gh:`151888`.)
+
 
 xml
 ---
