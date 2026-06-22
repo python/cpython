@@ -309,6 +309,22 @@ class Tokenizer:
             msg = "bad character in group name %r" % name
             raise self.error(msg, len(name) + offset)
 
+def _property_escape(source, escape, in_set=False):
+    # handle \p{...} and \P{...} (UTS #18 1.2.4, "Property Syntax")
+    from . import _properties
+    if not source.match('{'):
+        raise source.error("missing {, expected property name")
+    name = source.getuntil('}', 'property name')
+    code = _properties.parse_property(name, escape[1] == 'P')
+    if code is None:
+        raise source.error("unknown property name %r" % name,
+                           len(name) + len(r'\p{}'))
+    if in_set and code[1][0] == (NEGATE, None):
+        # A negated multi-range property cannot be a member of a set.
+        raise source.error("bad escape %s in character class" % escape,
+                           len(name) + len(r'\p{}'))
+    return code
+
 def _class_escape(source, escape):
     # handle escape code inside character class
     code = ESCAPES.get(escape)
@@ -351,6 +367,8 @@ def _class_escape(source, escape):
                 raise source.error("undefined character name %r" % charname,
                                    len(charname) + len(r'\N{}')) from None
             return LITERAL, c
+        elif c in "pP" and source.istext:
+            return _property_escape(source, escape, in_set=True)
         elif c in OCTDIGITS:
             # octal escape (up to three digits)
             escape += source.getwhile(2, OCTDIGITS)
@@ -411,6 +429,8 @@ def _escape(source, escape, state):
                 raise source.error("undefined character name %r" % charname,
                                    len(charname) + len(r'\N{}')) from None
             return LITERAL, c
+        elif c in "pP" and source.istext:
+            return _property_escape(source, escape)
         elif c == "0":
             # octal escape
             escape += source.getwhile(2, OCTDIGITS)
@@ -591,8 +611,9 @@ def _parse(source, state, verbose, nested, first=False):
                                            source.tell() - here)
                     if that == "]":
                         if code1[0] is IN:
-                            code1 = code1[1][0]
-                        setappend(code1)
+                            set.extend(code1[1])
+                        else:
+                            setappend(code1)
                         setappend((LITERAL, _ord("-")))
                         break
                     if that[0] == "\\":
@@ -617,8 +638,9 @@ def _parse(source, state, verbose, nested, first=False):
                     setappend((RANGE, (lo, hi)))
                 else:
                     if code1[0] is IN:
-                        code1 = code1[1][0]
-                    setappend(code1)
+                        set.extend(code1[1])
+                    else:
+                        setappend(code1)
 
             set = _uniq(set)
             # XXX: <fl> should move set optimization to compiler!

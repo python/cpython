@@ -900,6 +900,172 @@ class ReTests(unittest.TestCase):
         self.checkPatternError(br'\N{LESS-THAN SIGN}', r'bad escape \N', 0)
         self.checkPatternError(br'[\N{LESS-THAN SIGN}]', r'bad escape \N', 1)
 
+    def test_property_escapes(self):
+        import unicodedata
+        # Properties that reuse the engine categories behave exactly like
+        # \d, \s and \w, and honour the ASCII/UNICODE flags.
+        self.assertTrue(re.fullmatch(r'\p{digit}+', '0123456789'))
+        self.assertTrue(re.fullmatch(r'\p{word}+', 'foo_bar123'))
+        self.assertTrue(re.fullmatch(r'\p{space}+', ' \t\n\r\f\v'))
+        self.assertTrue(re.fullmatch(r'\p{whitespace}+', ' \t\n'))
+        self.assertTrue(re.match(r'\P{digit}', 'a'))
+        self.assertIsNone(re.match(r'\P{digit}', '5'))
+        # Arabic-Indic digit five is a digit only in Unicode mode.
+        self.assertTrue(re.fullmatch(r'\p{digit}', '٥'))
+        self.assertIsNone(re.fullmatch(r'(?a)\p{digit}', '٥'))
+        for prop, esc in [('digit', r'\d'), ('space', r'\s'), ('word', r'\w')]:
+            with self.subTest(prop=prop):
+                self.assertEqual(re.fullmatch(r'\p{%s}' % prop, '٥') is None,
+                                 re.fullmatch(esc, '٥') is None)
+
+        # General_Category values; L, Lu, Nd are engine categories.
+        self.assertTrue(re.fullmatch(r'\p{Lu}+', 'ABC'))
+        self.assertIsNone(re.fullmatch(r'\p{Lu}+', 'abc'))
+        self.assertTrue(re.fullmatch(r'\p{L}+', 'fo\xf6Д日'))
+        self.assertTrue(re.fullmatch(r'\p{Nd}+', '12٥'))
+        self.assertTrue(re.fullmatch(r'\P{L}+', '123 .,'))
+        # gc=<value> spelling and loose matching of names.
+        self.assertTrue(re.fullmatch(r'\p{gc=Lu}+', 'ABC'))
+        self.assertTrue(re.fullmatch(r'\p{General_Category=Lu}+', 'ABC'))
+        self.assertTrue(re.fullmatch(r'\p{ lu }+', 'ABC'))
+        self.assertTrue(re.fullmatch(r'\p{LU}+', 'ABC'))
+        # An initial "is" prefix is ignored (UAX44-LM3), on the property name
+        # and on a gc value; "is" alone is not a prefix (cf. lb=IS).
+        self.assertTrue(re.fullmatch(r'\p{isLu}+', 'ABC'))
+        self.assertTrue(re.fullmatch(r'\p{Is_Lu}+', 'ABC'))
+        self.assertTrue(re.fullmatch(r'\p{gc=isLu}+', 'ABC'))
+        self.assertTrue(re.fullmatch(r'\p{isUppercase}+', 'ABC'))
+        # Engine categories L, Lt, Nd, Lu, N, Lm, Nl, No, Cf, Z, Zs and the
+        # fixed ranges Cc, Cs, Co, Zl, Zp.
+        self.assertTrue(re.fullmatch(r'\p{Lt}+', 'ǅǈǋ'))
+        self.assertIsNone(re.fullmatch(r'\p{Lt}', 'A'))
+        self.assertTrue(re.fullmatch(r'\p{Cc}+', '\x00\x1f\x7f\x9f'))
+        self.assertTrue(re.fullmatch(r'\p{Co}+', '\U0010fffd'))
+        # Cn (unassigned) and the C group are also engine categories.
+        self.assertTrue(re.fullmatch(r'\p{Cn}+', '\U00040000\U000e0fff'))
+        self.assertIsNone(re.fullmatch(r'\p{Cn}', 'a'))
+        self.assertTrue(re.fullmatch(r'\p{C}+', '\x00\u200b\U00040000'))  # Cc Cf Cn
+        self.assertTrue(re.fullmatch(r'\p{assigned}+', 'a\u0410!'))
+        self.assertIsNone(re.fullmatch(r'\p{assigned}', '\U00040000'))
+        self.assertTrue(re.fullmatch(r'[\P{Lt}]+', 'aA1'))      # category negation
+        self.assertTrue(re.fullmatch(r'\p{Lu}+', 'ABC\xc0'))
+        self.assertIsNone(re.fullmatch(r'\p{Lu}', 'a'))
+        # N includes Nd, Nl (Roman numerals) and No (superscripts/fractions).
+        self.assertTrue(re.fullmatch(r'\p{N}+', '12\u0665\u2167\u216b\u00b2\u00bd'))
+        self.assertIsNone(re.fullmatch(r'\p{N}', 'A'))
+        self.assertTrue(re.fullmatch(r'[\P{Lu}\p{N}]+', 'ab12'))
+        # More compound/analytic categories: Lm, Nl, No, Cf, Z, Zs, Zl, Zp.
+        self.assertTrue(re.fullmatch(r'\p{Lm}+', '\u02b0\u02b1\u02c6'))  # modifiers
+        self.assertTrue(re.fullmatch(r'\p{Nl}+', '\u2167\u216b'))         # Roman
+        self.assertTrue(re.fullmatch(r'\p{No}+', '\u00b2\u00bd\u00be'))  # super/frac
+        self.assertTrue(re.fullmatch(r'\p{Cf}+', '\u200b\u00ad\u2060'))  # format
+        self.assertIsNone(re.fullmatch(r'\p{Cf}', 'a'))
+        self.assertTrue(re.fullmatch(r'\p{Z}+', '  \xa0\u2028\u2029'))
+        self.assertTrue(re.fullmatch(r'\p{Zs}+', ' \xa0 '))
+        self.assertIsNone(re.fullmatch(r'\p{Zs}', '\u2028'))
+        self.assertTrue(re.fullmatch(r'\p{Zl}', '\u2028'))
+        self.assertTrue(re.fullmatch(r'\p{Zp}', '\u2029'))
+        self.assertTrue(re.fullmatch(r'[\P{Cf}\p{Lm}\p{No}]+', 'a\u02b0\u00bd'))
+        # \p{Nd} reuses the \d category and so follows the ASCII flag,
+        # while \p{L} stays a Unicode property.
+        self.assertIsNone(re.fullmatch(r'(?a)\p{Nd}', '٥'))
+        self.assertTrue(re.fullmatch(r'(?a)\p{L}+', 'abД'))
+
+        # Properties inside a character class.
+        self.assertTrue(re.fullmatch(r'[\p{digit}x]+', '12x34'))
+        self.assertTrue(re.fullmatch(r'[\P{digit}]+', 'abc'))
+        self.assertTrue(re.fullmatch(r'[\p{Lu}\p{Nd}]+', 'AB12'))
+        self.assertIsNone(re.fullmatch(r'[\p{Lu}\p{Nd}]+', 'ab'))
+
+        # XID_Start and XID_Continue.
+        self.assertTrue(re.fullmatch(r'\p{XID_Start}+', 'fo\xf6Д'))
+        self.assertIsNone(re.fullmatch(r'\p{XID_Start}', '1'))
+        self.assertTrue(re.fullmatch(r'\p{XID_Continue}+', 'foo_123'))
+        self.assertTrue(re.fullmatch(r'\p{XIDS}+', 'abc'))
+        self.assertTrue(re.fullmatch(r'\p{XID_Start=Yes}+', 'abc'))
+        self.assertTrue(re.fullmatch(r'\p{XID_Start=No}+', '123 '))
+        self.assertTrue(re.fullmatch(r'\P{XID_Start}+', '123 '))
+
+        # Binary properties from str predicates.
+        self.assertTrue(re.fullmatch(r'\p{Alphabetic}+', 'fo\xf6Д日'))
+        self.assertTrue(re.fullmatch(r'\p{Lowercase}+', 'abc'))
+        self.assertTrue(re.fullmatch(r'\p{Uppercase}+', 'ABC'))
+        self.assertTrue(re.fullmatch(r'\p{Numeric}+', '12½'))   # ½
+        self.assertTrue(re.fullmatch(r'\p{Printable}+', 'a b!'))
+        self.assertIsNone(re.fullmatch(r'\p{Printable}', '\n'))
+        # Cased == Lowercase | Uppercase | Lt (via _PyUnicode_IsCased).
+        self.assertTrue(re.fullmatch(r'\p{Cased}+', 'aAǅ'))
+        self.assertTrue(re.fullmatch(r'\P{Cased}+', '123 .'))
+        # Case_Ignorable == gc in {Mn,Me,Cf,Lm,Sk} plus the Word_Break
+        # MidLetter/MidNumLet/Single_Quote characters (via
+        # _PyUnicode_IsCaseIgnorable).
+        word_break = {'\u0027', '\u002e', '\u003a', '\u00b7', '\u0387',
+                      '\u055f', '\u05f4', '\u2018', '\u2019', '\u2024',
+                      '\u2027', '\ufe13', '\ufe52', '\ufe55', '\uff07',
+                      '\uff0e', '\uff1a'}
+        ci = re.compile(r'\p{Case_Ignorable}')
+        for c in [chr(i) for i in range(0x100)] + ['\u02b0', '\u0301']:
+            expect = (unicodedata.category(c) in ('Mn','Me','Cf','Lm','Sk')
+                      or c in word_break)
+            with self.subTest(char=c):
+                self.assertEqual(bool(ci.fullmatch(c)), expect)
+        self.assertTrue(re.fullmatch(r'\p{Alphabetic=No}+', '123 '))
+        # These are engine categories, so (unlike \P of a multi-range
+        # property) they can be negated inside a character class.
+        self.assertTrue(re.fullmatch(r'[\P{Alphabetic}]+', '123 .'))
+        self.assertTrue(re.fullmatch(r'[\p{XID_Start}_]+', 'foo_bar'))
+
+        # POSIX / UTS #18 Annex C compatibility classes.
+        self.assertTrue(re.fullmatch(r'\p{alpha}+', 'abcД'))
+        self.assertTrue(re.fullmatch(r'\p{alnum}+', 'abc123'))
+        self.assertTrue(re.fullmatch(r'\p{upper}+', 'ABC'))
+        self.assertTrue(re.fullmatch(r'\p{lower}+', 'abc'))
+        self.assertTrue(re.fullmatch(r'\p{blank}+', ' \t'))
+        self.assertIsNone(re.fullmatch(r'\p{blank}', '\n'))
+        self.assertTrue(re.fullmatch(r'\p{cntrl}+', '\x00\x1f\x7f'))
+        self.assertTrue(re.fullmatch(r'\p{graph}+', 'a!~'))
+        self.assertIsNone(re.fullmatch(r'\p{graph}', ' '))
+        self.assertTrue(re.fullmatch(r'\p{print}+', 'a b!'))
+        self.assertTrue(re.fullmatch(r'\p{xdigit}+', '0123456789abcdefABCDEF'))
+        self.assertIsNone(re.fullmatch(r'\p{xdigit}', 'g'))
+
+        # Pattern_Syntax and Pattern_White_Space (immutable, fixed ranges).
+        self.assertTrue(re.fullmatch(r'\p{Pattern_Syntax}+', '+-*/=<>!@#~'))
+        self.assertIsNone(re.fullmatch(r'\p{Pattern_Syntax}', 'a'))
+        self.assertTrue(re.fullmatch(r'\p{Pat_Syn}+', '()[]{}'))
+        self.assertTrue(re.fullmatch(r'\p{Pattern_White_Space}+',
+                                     ' \t\n\r\x0b\x0c\x85\u200e\u2028'))
+        self.assertTrue(re.fullmatch(r'\p{Pat_WS}+', '\u200f\u2029'))
+        self.assertIsNone(re.fullmatch(r'\p{Pattern_White_Space}', '\xa0'))
+        self.assertTrue(re.fullmatch(r'\P{Pattern_Syntax}+', 'abc123'))
+
+        # Properties derivable from the code point alone.
+        self.assertTrue(re.fullmatch(r'\p{ASCII}+', 'AZ09~\x7f'))
+        self.assertIsNone(re.fullmatch(r'\p{ASCII}', '\x80'))
+        self.assertTrue(re.fullmatch(r'\P{ASCII}+', 'Дé日'))
+        self.assertTrue(re.fullmatch(r'\p{Any}', '\U0010ffff'))
+        self.assertTrue(re.fullmatch(r'\p{Assigned}+', 'Aд'))
+        self.assertIsNone(re.fullmatch(r'\p{Assigned}', '\U000e0fff'))
+        self.assertTrue(re.fullmatch(r'\p{Noncharacter_Code_Point}+',
+                                     '\uFDD0\uFFFE\U0010FFFF'))
+        self.assertTrue(re.fullmatch(r'\p{Join_Control}+', '\u200C\u200D'))
+
+        # Errors.
+        self.checkPatternError(r'\p', 'missing {, expected property name', 2)
+        self.checkPatternError(r'[\p]', 'missing {, expected property name', 3)
+        self.checkPatternError(r'\p{}', 'missing property name', 3)
+        self.checkPatternError(r'\p{Spam}', "unknown property name 'Spam'", 0)
+        # "is" by itself is not an ignorable prefix, so it stays unknown.
+        self.checkPatternError(r'\p{is}', "unknown property name 'is'", 0)
+        self.checkPatternError(r'\p{Lu', 'missing }, unterminated name', 3)
+        # \p is not special in bytes patterns.
+        self.checkPatternError(br'\p{Lu}', r'bad escape \p', 0)
+        self.checkPatternError(br'\P{Lu}', r'bad escape \P', 0)
+        # A negated multi-range property (one not backed by an engine
+        # category) cannot be a set member.
+        self.checkPatternError(r'[\P{ASCII}]',
+                               r'bad escape \P in character class', 1)
+
     def test_word_boundaries(self):
         # See http://bugs.python.org/issue10713
         self.assertEqual(re.search(r"\b(abc)\b", "abc").group(1), "abc")

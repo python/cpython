@@ -142,6 +142,17 @@ os
   (Contributed by Maurycy Pawłowski-Wieroński in :gh:`149464`.)
 
 
+re
+--
+
+* Regular expressions now support Unicode property escapes ``\p{...}`` and
+  ``\P{...}``, which match a character by a Unicode property -- for example
+  ``\p{Lu}`` (an uppercase letter), ``\p{Cased}`` or ``\p{ASCII}``.  See
+  :ref:`the regular expression syntax <re-syntax>` for the supported
+  properties.
+  (Contributed by Serhiy Storchaka in :gh:`95555`.)
+
+
 shlex
 -----
 
