@@ -751,6 +751,12 @@ class WinfoTest(AbstractTkTest, unittest.TestCase):
         self.root.update()
         self.assertTrue(f.winfo_viewable())
 
+    @requires_tk(9, 1)
+    def test_winfo_isdark(self):
+        self.assertIsInstance(self.root.winfo_isdark(), bool)
+        if self.root._windowingsystem == 'x11':
+            self.assertFalse(self.root.winfo_isdark())
+
     def test_winfo_atom(self):
         atom = self.root.winfo_atom('PRIMARY')
         self.assertIsInstance(atom, int)
@@ -1056,6 +1062,37 @@ class WmTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(t.transient(), '')
         t.transient(self.root)
         self.assertEqual(str(t.transient()), str(self.root))
+
+    def test_wm_stackorder(self):
+        t1 = tkinter.Toplevel(self.root)
+        t2 = tkinter.Toplevel(self.root)
+        t1.deiconify()
+        t2.deiconify()
+        self.root.update()
+        t1.lift(t2)  # Raise t1 above t2.
+        self.root.update()
+        order = self.root.wm_stackorder()
+        self.assertIsInstance(order, list)
+        self.assertTrue(all(isinstance(w, tkinter.Misc) for w in order))
+        names = [str(w) for w in order]
+        self.assertIn(str(t1), names)
+        self.assertIn(str(t2), names)
+        # The list is ordered from lowest to highest, consistently with the
+        # isabove/isbelow queries.
+        self.assertGreater(names.index(str(t1)), names.index(str(t2)))
+        self.assertIs(t1.wm_stackorder('isabove', t2), True)
+        self.assertIs(t1.wm_stackorder('isbelow', t2), False)
+        self.assertIs(t2.wm_stackorder('isbelow', t1), True)
+
+    @requires_tk(9, 0)
+    def test_wm_iconbadge(self):
+        if self.root._windowingsystem == 'x11':
+            # On X11 the badge requires ::tk::icons::base_icon to be set.
+            self.skipTest('iconbadge needs a base icon on X11')
+        # The badge is not queryable, so just check the call does not fail.
+        self.root.wm_iconbadge('3')
+        self.root.wm_iconbadge('!')
+        self.root.wm_iconbadge('')
 
 
 class EventTest(AbstractTkTest, unittest.TestCase):
