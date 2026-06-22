@@ -2223,13 +2223,21 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         self.assertFalse(tv.detached('a'))
         tv.detach('a')
         self.assertEqual(tv.detached(), ('a',))  # not the descendants
-        self.assertEqual(set(tv.detached_all()),
-                         {'a', 'a1', 'a2', 'a2x'})  # with descendants
         self.assertTrue(tv.detached('a'))
-        self.assertTrue(tv.detached('a2x'))  # an ancestor is detached
         self.assertFalse(tv.detached('b'))
         tv.move('a', '', 'end')  # reattach
         self.assertEqual(tv.detached(), ())
+
+    @requires_tk(9, 1)
+    def test_detached_all(self):
+        # The -all form and the ancestor-aware item query require Tk 9.1.
+        tv = self.build_tree()
+        self.assertEqual(tv.detached_all(), ())
+        tv.detach('a')
+        self.assertEqual(set(tv.detached_all()),
+                         {'a', 'a1', 'a2', 'a2x'})  # with descendants
+        self.assertEqual(tv.detached(), ('a',))  # without descendants
+        self.assertTrue(tv.detached('a2x'))  # an ancestor is detached
 
     @requires_tk(9, 1)
     def test_cellfocus(self):

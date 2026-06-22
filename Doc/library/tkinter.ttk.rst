@@ -1354,7 +1354,8 @@ ttk.Treeview
       (see :meth:`detach`).
       Without arguments, returns a tuple of all detached items,
       but not their descendants (see :meth:`detached_all`).
-      With *item*, returns whether *item* or an ancestor of it is detached.
+      With *item*, returns whether *item* is detached; since Tk 9.1, also
+      returns true if an ancestor of *item* is detached.
 
       Requires Tk 9.0 or newer.
 
@@ -1366,7 +1367,7 @@ ttk.Treeview
       Returns a tuple of all detached items and all of their descendants
       (see :meth:`detach`).
 
-      Requires Tk 9.0 or newer.
+      Requires Tk 9.1 or newer.
 
       .. versionadded:: next
 

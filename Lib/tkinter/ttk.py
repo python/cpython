@@ -1577,7 +1577,8 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
 
         Without arguments, return a tuple of all detached items (but not
         their descendants; see detached_all).  With item, return whether item
-        or an ancestor of it is detached.
+        is detached; since Tk 9.1, also return true if an ancestor of item
+        is detached.
 
         * Availability: Tk 9.0"""
         if item is None:
@@ -1588,7 +1589,7 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
     def detached_all(self):
         """Return a tuple of all detached items and all of their descendants.
 
-        * Availability: Tk 9.0"""
+        * Availability: Tk 9.1"""
         return self.tk.splitlist(self.tk.call(self._w, "detached", "-all"))
 
 
