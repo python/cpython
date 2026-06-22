@@ -7426,23 +7426,149 @@ store_instance_attr_dict(PyObject *obj, PyDictObject *dict, PyObject *name, PyOb
     return res;
 }
 
+static inline int
+store_instance_attr_dict_lock_held(PyObject *obj, PyDictObject *dict, PyObject *name, PyObject *value)
+{
+    // in some scenario, the dict is created so it is not locked, but the object is locked.
+    // ASSERT_WORLD_STOPPED_OR_OBJ_LOCKED(obj);
+    // ASSERT_WORLD_STOPPED_OR_OBJ_LOCKED(dict);
+    int res;
+    PyDictValues *values = _PyObject_InlineValues(obj);
+    if (dict->ma_values == values) {
+        res = store_instance_attr_lock_held(obj, values, name, value);
+    }
+    else {
+        res = _PyDict_SetItem_LockHeld(dict, name, value);
+    }
+    return res;
+}
+
+static int try_store_instance_attr_invalid_inline(PyObject *obj, PyObject *name, PyObject *value, int *res)
+{
+    bool valid;
+    bool error_occurred = false;
+    bool lock_dict = false;
+    PyDictObject *dict;
+    PyDictValues *values = _PyObject_InlineValues(obj);
+    Py_BEGIN_CRITICAL_SECTION(obj);
+    if ((valid = FT_ATOMIC_LOAD_UINT8(values->valid))) {
+      goto unlock;
+    }
+    dict = _PyObject_GetManagedDict(obj);
+    if (dict == NULL) {
+      dict = (PyDictObject *)PyObject_GenericGetDict(obj, NULL);
+      if (dict == NULL) {
+        *res = -1;
+        error_occurred = true;
+        goto unlock;
+      }
+      lock_dict = true;
+    } else {
+      dict = (PyDictObject *)Py_NewRef(dict);
+      lock_dict = true;
+    }
+    unlock:
+    Py_END_CRITICAL_SECTION();
+    if (error_occurred) {
+        return -1;
+    }
+
+    if (valid) {
+        return 2;
+    }
+
+    if (!valid && !lock_dict) {
+        return 0;
+    }
+
+    if (lock_dict) {
+        bool success = false;
+        Py_BEGIN_CRITICAL_SECTION2(obj, dict);
+        PyDictObject *current_dict = _PyObject_GetManagedDict(obj);
+        if (current_dict == dict &&
+            !(valid = FT_ATOMIC_LOAD_UINT8(values->valid))) {
+            success = true;
+            *res = store_instance_attr_dict_lock_held(obj, dict, name, value);
+        }
+        Py_END_CRITICAL_SECTION2();
+        Py_DECREF(dict);
+        if (success) {
+            return 0;
+        }
+        if (valid) {
+            return 2;
+        }
+        if (!success) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 int
 _PyObject_StoreInstanceAttribute(PyObject *obj, PyObject *name, PyObject *value)
 {
     PyDictValues *values = _PyObject_InlineValues(obj);
-    if (!FT_ATOMIC_LOAD_UINT8(values->valid)) {
-        PyDictObject *dict = _PyObject_GetManagedDict(obj);
-        if (dict == NULL) {
-            dict = (PyDictObject *)PyObject_GenericGetDict(obj, NULL);
-            if (dict == NULL) {
-                return -1;
-            }
-            int res = store_instance_attr_dict(obj, dict, name, value);
-            Py_DECREF(dict);
-            return res;
-        }
-        return store_instance_attr_dict(obj, dict, name, value);
+    int try_res = 2;
+    int res;
+    while ((!FT_ATOMIC_LOAD_UINT8(values->valid) &&
+            (try_res = try_store_instance_attr_invalid_inline(
+                 obj, name, value, &res)) == 1)) {
+      // Loop until we can store the attribute successfully.  We only need to
+      // loop if we raced with another thread materializing the dict or storing
+      // the attribute for an object without a dict.
     }
+    if (try_res < 0) {
+      return res;
+    }
+    if (try_res == 0) {
+      return res;
+    }
+
+//     if (!FT_ATOMIC_LOAD_UINT8(values->valid)) {
+//         bool valid;
+//         int res;
+//         PyDictObject *dict;
+//         bool lock_dict = false;
+//         Py_BEGIN_CRITICAL_SECTION(obj);
+//         if ((valid = FT_ATOMIC_LOAD_UINT8(values->valid))) {
+//             goto unlock;
+//         }
+//         dict = _PyObject_GetManagedDict(obj);
+//         if (dict == NULL) {
+//             dict = (PyDictObject *)PyObject_GenericGetDict(obj, NULL);
+//             if (dict == NULL) {
+//                 res = -1;
+//                 goto unlock;
+//             }
+//             res = store_instance_attr_dict_lock_held(obj, dict, name, value);
+//             Py_DECREF(dict);
+//         } else {
+//             dict = (PyDictObject *)Py_XNewRef(dict);
+//             lock_dict = true;
+//             // res = store_instance_attr_dict(obj, dict, name, value);
+//         }
+// unlock:
+//         Py_END_CRITICAL_SECTION();
+//         if (!valid && !lock_dict) {
+//             return res;
+//         }
+//         if (lock_dict) {
+//             bool success = false;
+//             Py_BEGIN_CRITICAL_SECTION2(obj, dict);
+//             PyDictObject *current_dict = _PyObject_GetManagedDict(obj);
+//             if (current_dict == dict) {
+//                 success = true;
+//                 res = store_instance_attr_dict_lock_held(obj, dict, name, value);
+//             }
+//             Py_END_CRITICAL_SECTION2();
+//             Py_DECREF(dict);
+//             if (!success) {
+//                 res = _PyObject_StoreInstanceAttribute(obj, name, value);
+//             }
+//             return res;
+//         }
+//     }
 
 #ifdef Py_GIL_DISABLED
     // We have a valid inline values, at least for now...  There are two potential
@@ -7457,7 +7583,7 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyObject *name, PyObject *value)
     // prevent resizing.
     PyDictObject *dict = _PyObject_GetManagedDict(obj);
     if (dict == NULL) {
-        int res;
+        // int res;
         Py_BEGIN_CRITICAL_SECTION(obj);
         dict = _PyObject_GetManagedDict(obj);
 
