@@ -99,14 +99,6 @@ gzip
   which is passed on to the constructor of the :class:`~gzip.GzipFile` class.
   (Contributed by Marin Misur in :gh:`91372`.)
 
-lzma
-----
-
-* Add support of new BCJ filters ARM64 and RISC-V via
-  :const:`!lzma.FILTER_ARM64` and :const:`!lzma.FILTER_RISCV`.  Note that the
-  new filters will work only if runtime library supports them. ARM64 filter
-  requires ``lzma`` 5.4.0 or newer while RISC-V requires 5.6.0 or newer.
-  (Contributed by Chien Wong in :gh:`115988`.)
 
 logging
 -------
@@ -119,6 +111,17 @@ logging
   before the rotation interval expires.
   (Contributed by Iván Márton and Serhiy Storchaka in :gh:`84649`.)
 
+
+lzma
+----
+
+* Add support of new BCJ filters ARM64 and RISC-V via
+  :const:`!lzma.FILTER_ARM64` and :const:`!lzma.FILTER_RISCV`.  Note that the
+  new filters will work only if runtime library supports them. ARM64 filter
+  requires ``lzma`` 5.4.0 or newer while RISC-V requires 5.6.0 or newer.
+  (Contributed by Chien Wong in :gh:`115988`.)
+
+
 math
 ----
 
@@ -130,6 +133,7 @@ math
   754-2019 and standardized in C23.
   (Contributed by Jeff Epler in :gh:`150534`.)
 
+
 os
 --
 
@@ -137,12 +141,14 @@ os
   process via a pidfd.  Available on Linux 5.6+.
   (Contributed by Maurycy Pawłowski-Wieroński in :gh:`149464`.)
 
+
 shlex
 -----
 
 * Add keyword-only parameter *force* to :func:`shlex.quote` to force quoting
   a string, even if it is already safe for a shell without being quoted.
   (Contributed by Jay Berry in :gh:`148846`.)
+
 
 tkinter
 -------
@@ -156,6 +162,7 @@ tkinter
   :meth:`~tkinter.Text.pendingsync` which control and report the
   synchronization of the displayed view with the underlying text.
   (Contributed by Serhiy Storchaka in :gh:`151675`.)
+
 
 xml
 ---
