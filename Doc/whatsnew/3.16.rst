@@ -157,6 +157,11 @@ tkinter
   synchronization of the displayed view with the underlying text.
   (Contributed by Serhiy Storchaka in :gh:`151675`.)
 
+* Added the :meth:`ttk.Style.theme_styles
+  <tkinter.ttk.Style.theme_styles>` method which returns the list of styles
+  defined in a theme.
+  (Contributed by Serhiy Storchaka in :gh:`151920`.)
+
 xml
 ---
 
