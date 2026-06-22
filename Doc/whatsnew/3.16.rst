@@ -173,6 +173,11 @@ tkinter
   synchronization of the displayed view with the underlying text.
   (Contributed by Serhiy Storchaka in :gh:`151675`.)
 
+* Added the :meth:`ttk.Style.theme_styles
+  <tkinter.ttk.Style.theme_styles>` method which returns the list of styles
+  defined in a theme.
+  (Contributed by Serhiy Storchaka in :gh:`151920`.)
+
 * Added new :class:`!tkinter.Canvas` methods :meth:`~tkinter.Canvas.rchars`
   which replaces the text or coordinates of canvas items, and
   :meth:`~tkinter.Canvas.rotate` which rotates the coordinates of canvas items.
@@ -210,7 +215,6 @@ tkinter
 * Added the :meth:`~tkinter.PhotoImage.redither` method which recalculates the
   dithered image when its data was supplied in pieces.
   (Contributed by Serhiy Storchaka in :gh:`151888`.)
-
 
 xml
 ---
