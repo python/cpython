@@ -1,0 +1,1 @@
+Fix OOM in :c:func:PyFrame_GetBack when :c:func:_PyFrame_GetFrameObject fails: propagate the raised MemoryError instead of masking it as None,
