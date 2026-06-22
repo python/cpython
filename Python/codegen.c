@@ -235,10 +235,6 @@ typedef enum {
 
 static int
 codegen_listcomp_impl(compiler *c, expr_ty e, bool avoid_creation);
-static int
-codegen_setcomp_impl(compiler *c, expr_ty e, bool avoid_creation);
-static int
-codegen_dictcomp_impl(compiler *c, expr_ty e, bool avoid_creation);
 static int codegen_sync_comprehension_generator(
                                       compiler *c, location loc,
                                       asdl_comprehension_seq *generators, int gen_index,
@@ -3096,14 +3092,6 @@ codegen_stmt_expr(compiler *c, location loc, expr_ty value)
         return codegen_listcomp_impl(c, value, /*avoid_creation=*/true);
     }
 
-    if (value->kind == SetComp_kind) {
-        return codegen_setcomp_impl(c, value, /*avoid_creation=*/true);
-    }
-
-    if (value->kind == DictComp_kind) {
-        return codegen_dictcomp_impl(c, value, /*avoid_creation=*/true);
-    }
-
     VISIT(c, expr, value);
     ADDOP(c, NO_LOCATION, POP_TOP); /* artificial */
     return SUCCESS;
@@ -4696,11 +4684,6 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
             }
             break;
         case COMP_SETCOMP:
-            if (avoid_creation) {
-                VISIT(c, expr, elt);
-                ADDOP(c, elt_loc, POP_TOP);
-                break;
-            }
             if (elt->kind == Starred_kind) {
                 VISIT(c, expr, elt->v.Starred.value);
                 ADDOP_I(c, elt_loc, SET_UPDATE, depth + 1);
@@ -4711,11 +4694,6 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
             }
             break;
         case COMP_DICTCOMP:
-            if (avoid_creation) {
-                VISIT(c, expr, elt);
-                ADDOP(c, elt_loc, POP_TOP);
-                break;
-            }
             if (val == NULL) {
                 /* unpacking (**) case */
                 VISIT(c, expr, elt);
@@ -5210,35 +5188,24 @@ codegen_listcomp(compiler *c, expr_ty e)
 }
 
 static int
-codegen_setcomp_impl(compiler *c, expr_ty e, bool avoid_creation)
+codegen_setcomp(compiler *c, expr_ty e)
 {
     assert(e->kind == SetComp_kind);
     _Py_DECLARE_STR(anon_setcomp, "<setcomp>");
     return codegen_comprehension(c, e, COMP_SETCOMP, &_Py_STR(anon_setcomp),
                                  e->v.SetComp.generators,
-                                 e->v.SetComp.elt, NULL, avoid_creation);
+                                 e->v.SetComp.elt, NULL, /*avoid_creation=*/false);
 }
 
-static int
-codegen_setcomp(compiler *c, expr_ty e)
-{
-    return codegen_setcomp_impl(c, e, false);
-}
 
 static int
-codegen_dictcomp_impl(compiler *c, expr_ty e, bool avoid_creation)
+codegen_dictcomp(compiler *c, expr_ty e)
 {
     assert(e->kind == DictComp_kind);
     _Py_DECLARE_STR(anon_dictcomp, "<dictcomp>");
     return codegen_comprehension(c, e, COMP_DICTCOMP, &_Py_STR(anon_dictcomp),
                                  e->v.DictComp.generators,
-                                 e->v.DictComp.key, e->v.DictComp.value, avoid_creation);
-}
-
-static int
-codegen_dictcomp(compiler *c, expr_ty e)
-{
-    return codegen_dictcomp_impl(c, e, false);
+                                 e->v.DictComp.key, e->v.DictComp.value, /*avoid_creation=*/false);
 }
 
 
