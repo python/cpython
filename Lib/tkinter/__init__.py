@@ -1275,6 +1275,15 @@ class Misc:
         args = ('winfo', 'interps') + self._displayof(displayof)
         return self.tk.splitlist(self.tk.call(args))
 
+    def winfo_isdark(self): # new in Tk 9.1
+        """Return whether this widget is in "dark mode".
+
+        On macOS and Windows return True if the widget is in "dark mode",
+        and False otherwise.  Always return False on X11.
+        """
+        return self.tk.getboolean(
+            self.tk.call('winfo', 'isdark', self._w))
+
     def winfo_ismapped(self):
         """Return true if this widget is mapped."""
         return self.tk.getint(
@@ -2330,6 +2339,22 @@ class Wm:
 
     group = wm_group
 
+    def wm_iconbadge(self, badge): # new in Tk 9.0
+        """Set a badge for the icon of this widget.
+
+        BADGE can be a positive integer number, for instance the number of
+        new or unread messages, or an exclamation point denoting attention
+        needed. If BADGE is an empty string, the badge image is removed from
+        the application icon.
+
+        The badge is intended for display in the Dock (macOS), taskbar
+        (Windows) or app panel (X11). On X11, the variable
+        ::tk::icons::base_icon(WINDOW) must be set to the image used for the
+        window icon for this command to work."""
+        return self.tk.call('wm', 'iconbadge', self._w, badge)
+
+    iconbadge = wm_iconbadge
+
     def wm_iconbitmap(self, bitmap=None, default=None):
         """Set bitmap for the iconified widget to BITMAP. Return
         the bitmap if None is given.
@@ -2478,6 +2503,25 @@ class Wm:
         return self.tk.call('wm', 'sizefrom', self._w, who)
 
     sizefrom = wm_sizefrom
+
+    def wm_stackorder(self, relation=None, window=None):
+        """Query the stacking order of toplevel windows.
+
+        If called with no arguments, return a list of toplevel widgets in
+        stacking order, from lowest to highest.  The list recursively
+        includes all of this window's children that are toplevels; only
+        toplevels currently mapped to the screen are included.
+
+        If RELATION is "isabove" or "isbelow" and WINDOW is another toplevel,
+        return True if this window is respectively above or below WINDOW in
+        the stacking order, and False otherwise."""
+        if relation is None:
+            return [self._nametowidget(x) for x in self.tk.splitlist(
+                self.tk.call('wm', 'stackorder', self._w))]
+        return self.tk.getboolean(
+            self.tk.call('wm', 'stackorder', self._w, relation, window))
+
+    stackorder = wm_stackorder
 
     def wm_state(self, newstate=None):
         """Query or set the state of this widget as one of normal, icon,
