@@ -6076,6 +6076,14 @@ Image classes
       it is displayed as transparent and the background of whatever window it
       is displayed in shows through.
 
+   .. method:: redither()
+
+      Recalculate the dithered image in each window where it is displayed.
+      This is useful when the image data was supplied in pieces, in which case
+      the dithered image may not be exactly correct.
+
+      .. versionadded:: next
+
    .. method:: cget(option)
 
       Return the current value of the configuration option *option*.
