@@ -1727,9 +1727,8 @@ class TestInterpreterCall(TestBase):
                 interp.call(func, op, 'eggs!')
 
     def test_call_result_unpickling_raises(self):
-        # gh-151892: caller-side result unpickling that raised left the
-        # exception set when _PyXI_Exit() applied the "preserve failed"
-        # override, tripping an assertion instead of propagating cleanly.
+        # gh-151892: a caller-side result-unpickle failure left the exception
+        # set in _PyXI_Exit(), tripping an assertion instead of propagating.
         source = dedent("""
             from concurrent import interpreters
 
@@ -1775,9 +1774,8 @@ class TestInterpreterCall(TestBase):
                 with self.assertRaises(
                         interpreters.NotShareableError) as cm:
                     interp.call(eval, 'mod.make_bad_result()')
-                # __cause__ is a cross-interp _PyXI_excinfo wrapper (a generic
-                # Exception); the original type cannot cross the boundary, so
-                # don't tighten this to assertIsInstance(..., ValueError).
+                # __cause__ is a generic Exception (the type cannot cross
+                # interpreters); don't tighten this to assertIsInstance.
                 self.assertIn('ValueError', str(cm.exception.__cause__))
                 self.assertIn('unpickling failed',
                               str(cm.exception.__cause__))
