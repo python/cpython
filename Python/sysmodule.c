@@ -1933,8 +1933,8 @@ _PySys_GetSizeOf(PyObject *o)
         return (size_t)-1;
 
     if (size < 0) {
-        _PyErr_SetString(tstate, PyExc_ValueError,
-                          "__sizeof__() should return >= 0");
+        _PyErr_Format(tstate, PyExc_ValueError,
+                          "%T.__sizeof__() must return >= 0", o);
         return (size_t)-1;
     }
 
