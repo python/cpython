@@ -3486,6 +3486,14 @@ class Entry(Widget, XView):
 
     select_to = selection_to
 
+    def validate(self):
+        """Force an evaluation of the validation command.
+
+        This evaluates the command given by the validatecommand option,
+        independently of the conditions specified by the validate option.
+        Return whether the value is considered valid."""
+        return self.tk.getboolean(self.tk.call(self._w, 'validate'))
+
 
 class Frame(Widget):
     """Frame widget which may contain other widgets and can have a 3D border."""
@@ -4997,6 +5005,14 @@ class Spinbox(Widget, XView):
     def selection_to(self, index):
         """Set the variable end of a selection to INDEX."""
         self.selection('to', index)
+
+    def validate(self):
+        """Force an evaluation of the validation command.
+
+        This evaluates the command given by the validatecommand option,
+        independently of the conditions specified by the validate option.
+        Return whether the value is considered valid."""
+        return self.tk.getboolean(self.tk.call(self._w, 'validate'))
 
 ###########################################################################
 
