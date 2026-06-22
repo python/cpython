@@ -463,6 +463,47 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(root['background'], '#ffe4c4')
         self.assertRaises(TypeError, root.tk_bisque, 'x')
 
+    def test_tk_appname(self):
+        old = self.root.tk_appname()
+        self.assertIsInstance(old, str)
+        self.addCleanup(self.root.tk_appname, old)
+        # Setting the name returns the actual name (possibly with a suffix
+        # appended to keep it unique).
+        new = self.root.tk_appname('PythonTkTest')
+        self.assertIsInstance(new, str)
+        self.assertEqual(self.root.tk_appname(), new)
+
+    def test_tk_useinputmethods(self):
+        old = self.root.tk_useinputmethods()
+        self.assertIsInstance(old, bool)
+        self.addCleanup(self.root.tk_useinputmethods, old)
+        # Setting returns the resulting state.  On systems without XIM support
+        # the state is always False, so only check the True->False direction.
+        self.assertIs(self.root.tk_useinputmethods(False), False)
+
+    def test_tk_caret(self):
+        self.assertIsNone(self.root.tk_caret(x=5, y=10, height=20))
+        caret = self.root.tk_caret()
+        self.assertEqual(caret, {'x': 5, 'y': 10, 'height': 20})
+
+    def test_tk_scaling(self):
+        old = self.root.tk_scaling()
+        self.assertIsInstance(old, float)
+        self.assertGreater(old, 0)
+        self.addCleanup(self.root.tk_scaling, old)
+        # Setting the factor is reflected by a subsequent query.  Tk may round
+        # it slightly when converting to and from its internal representation.
+        self.root.tk_scaling(2.0)
+        self.assertAlmostEqual(self.root.tk_scaling(), 2.0, delta=0.1)
+
+    def test_tk_inactive(self):
+        ms = self.root.tk_inactive()
+        self.assertIsInstance(ms, int)
+        # A count of milliseconds, or -1 if the windowing system lacks support.
+        self.assertGreaterEqual(ms, -1)
+        # Resetting the timer returns None and does not raise.
+        self.assertIsNone(self.root.tk_inactive(reset=True))
+
     def test_wait_variable(self):
         var = tkinter.StringVar(self.root)
         self.assertEqual(self.root.waitvar, self.root.wait_variable)
@@ -750,6 +791,12 @@ class WinfoTest(AbstractTkTest, unittest.TestCase):
         f.wait_visibility()
         self.root.update()
         self.assertTrue(f.winfo_viewable())
+
+    @requires_tk(9, 1)
+    def test_winfo_isdark(self):
+        self.assertIsInstance(self.root.winfo_isdark(), bool)
+        if self.root._windowingsystem == 'x11':
+            self.assertFalse(self.root.winfo_isdark())
 
     def test_winfo_atom(self):
         atom = self.root.winfo_atom('PRIMARY')
@@ -1056,6 +1103,37 @@ class WmTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(t.transient(), '')
         t.transient(self.root)
         self.assertEqual(str(t.transient()), str(self.root))
+
+    def test_wm_stackorder(self):
+        t1 = tkinter.Toplevel(self.root)
+        t2 = tkinter.Toplevel(self.root)
+        t1.deiconify()
+        t2.deiconify()
+        self.root.update()
+        t1.lift(t2)  # Raise t1 above t2.
+        self.root.update()
+        order = self.root.wm_stackorder()
+        self.assertIsInstance(order, list)
+        self.assertTrue(all(isinstance(w, tkinter.Misc) for w in order))
+        names = [str(w) for w in order]
+        self.assertIn(str(t1), names)
+        self.assertIn(str(t2), names)
+        # The list is ordered from lowest to highest, consistently with the
+        # isabove/isbelow queries.
+        self.assertGreater(names.index(str(t1)), names.index(str(t2)))
+        self.assertIs(t1.wm_stackorder('isabove', t2), True)
+        self.assertIs(t1.wm_stackorder('isbelow', t2), False)
+        self.assertIs(t2.wm_stackorder('isbelow', t1), True)
+
+    @requires_tk(9, 0)
+    def test_wm_iconbadge(self):
+        if self.root._windowingsystem == 'x11':
+            # On X11 the badge requires ::tk::icons::base_icon to be set.
+            self.skipTest('iconbadge needs a base icon on X11')
+        # The badge is not queryable, so just check the call does not fail.
+        self.root.wm_iconbadge('3')
+        self.root.wm_iconbadge('!')
+        self.root.wm_iconbadge('')
 
 
 class EventTest(AbstractTkTest, unittest.TestCase):
