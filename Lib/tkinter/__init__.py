@@ -745,6 +745,32 @@ class Misc:
         self.tk.call(('tk_setPalette',)
               + _flatten(args) + _flatten(list(kw.items())))
 
+    def tk_scaling(self, number=None, *, displayof=0):
+        """Query or set the scaling factor used by Tk to convert between
+        physical units and pixels.
+
+        The scaling factor is the number of pixels per point on the display,
+        where a point is 1/72 inch.  With no argument, return the current
+        factor; otherwise set it to the floating-point NUMBER."""
+        args = ('tk', 'scaling') + self._displayof(displayof)
+        if number is not None:
+            self.tk.call(args + (number,))
+        else:
+            return self.tk.getdouble(self.tk.call(args))
+
+    def tk_inactive(self, reset=False, *, displayof=0):
+        """Return the number of milliseconds since the last time the user
+        interacted with the system, or -1 if the windowing system does not
+        support this.
+
+        If RESET is true, reset the inactivity timer to zero instead and
+        return None."""
+        args = ('tk', 'inactive') + self._displayof(displayof)
+        if reset:
+            self.tk.call(args + ('reset',))
+        else:
+            return self.tk.getint(self.tk.call(args))
+
     def wait_variable(self, name='PY_VAR'):
         """Wait until the variable is modified.
 
@@ -1274,6 +1300,15 @@ class Misc:
         """Return the name of all Tcl interpreters for this display."""
         args = ('winfo', 'interps') + self._displayof(displayof)
         return self.tk.splitlist(self.tk.call(args))
+
+    def winfo_isdark(self): # new in Tk 9.1
+        """Return whether this widget is in "dark mode".
+
+        On macOS and Windows return True if the widget is in "dark mode",
+        and False otherwise.  Always return False on X11.
+        """
+        return self.tk.getboolean(
+            self.tk.call('winfo', 'isdark', self._w))
 
     def winfo_ismapped(self):
         """Return true if this widget is mapped."""
@@ -2330,6 +2365,22 @@ class Wm:
 
     group = wm_group
 
+    def wm_iconbadge(self, badge): # new in Tk 9.0
+        """Set a badge for the icon of this widget.
+
+        BADGE can be a positive integer number, for instance the number of
+        new or unread messages, or an exclamation point denoting attention
+        needed. If BADGE is an empty string, the badge image is removed from
+        the application icon.
+
+        The badge is intended for display in the Dock (macOS), taskbar
+        (Windows) or app panel (X11). On X11, the variable
+        ::tk::icons::base_icon(WINDOW) must be set to the image used for the
+        window icon for this command to work."""
+        return self.tk.call('wm', 'iconbadge', self._w, badge)
+
+    iconbadge = wm_iconbadge
+
     def wm_iconbitmap(self, bitmap=None, default=None):
         """Set bitmap for the iconified widget to BITMAP. Return
         the bitmap if None is given.
@@ -2478,6 +2529,25 @@ class Wm:
         return self.tk.call('wm', 'sizefrom', self._w, who)
 
     sizefrom = wm_sizefrom
+
+    def wm_stackorder(self, relation=None, window=None):
+        """Query the stacking order of toplevel windows.
+
+        If called with no arguments, return a list of toplevel widgets in
+        stacking order, from lowest to highest.  The list recursively
+        includes all of this window's children that are toplevels; only
+        toplevels currently mapped to the screen are included.
+
+        If RELATION is "isabove" or "isbelow" and WINDOW is another toplevel,
+        return True if this window is respectively above or below WINDOW in
+        the stacking order, and False otherwise."""
+        if relation is None:
+            return [self._nametowidget(x) for x in self.tk.splitlist(
+                self.tk.call('wm', 'stackorder', self._w))]
+        return self.tk.getboolean(
+            self.tk.call('wm', 'stackorder', self._w, relation, window))
+
+    stackorder = wm_stackorder
 
     def wm_state(self, newstate=None):
         """Query or set the state of this widget as one of normal, icon,
@@ -3011,7 +3081,7 @@ class Canvas(Widget, XView, YView):
         """Add tag NEWTAG to all items with TAGORID."""
         self.addtag(newtag, 'withtag', tagOrId)
 
-    def bbox(self, *args):
+    def bbox(self, *args):  # overrides Misc.bbox
         """Return a tuple of X1,Y1,X2,Y2 coordinates for a rectangle
         which encloses all items with tags specified as arguments."""
         return self._getints(
@@ -3150,7 +3220,7 @@ class Canvas(Widget, XView, YView):
         """Return all items with TAGORID."""
         return self.find('withtag', tagOrId)
 
-    def focus(self, *args):
+    def focus(self, *args):  # overrides Misc.focus
         """Set focus to the first item specified in ARGS."""
         return self.tk.call((self._w, 'focus') + args)
 
@@ -3196,7 +3266,7 @@ class Canvas(Widget, XView, YView):
         (optional below another item)."""
         self.tk.call((self._w, 'lower') + args)
 
-    lower = tag_lower
+    lower = tag_lower  # overrides Misc.lower
 
     def move(self, *args):
         """Move an item TAGORID given in ARGS."""
@@ -3224,7 +3294,23 @@ class Canvas(Widget, XView, YView):
         (optional above another item)."""
         self.tk.call((self._w, 'raise') + args)
 
-    lift = tkraise = tag_raise
+    lift = tkraise = tag_raise  # overrides Misc.tkraise
+
+    def rchars(self, *args):
+        """Replace the text or coordinates between indices FIRST and LAST of
+        the items identified by TAGORID with STRING.
+
+        Text items replace their text; line and polygon items replace their
+        coordinates, in which case STRING is a list of coordinates. Other
+        items ignore this operation."""
+        self.tk.call((self._w, 'rchars') + args)
+
+    def rotate(self, *args): # new in Tk 9.0
+        """Rotate the coordinates of the items identified by TAGORID about the
+        origin (XORIGIN, YORIGIN) by ANGLE degrees anticlockwise.
+
+        Negative values of ANGLE rotate clockwise."""
+        self.tk.call((self._w, 'rotate') + args)
 
     def scale(self, *args):
         """Scale item TAGORID with XORIGIN, YORIGIN, XSCALE, YSCALE."""
@@ -3369,7 +3455,7 @@ class Entry(Widget, XView):
 
     select_adjust = selection_adjust
 
-    def selection_clear(self):
+    def selection_clear(self):  # overrides Misc.selection_clear
         """Clear the selection if it is in this widget."""
         self.tk.call(self._w, 'selection', 'clear')
 
@@ -3400,6 +3486,14 @@ class Entry(Widget, XView):
         self.tk.call(self._w, 'selection', 'to', index)
 
     select_to = selection_to
+
+    def validate(self):
+        """Force an evaluation of the validation command.
+
+        This evaluates the command given by the validatecommand option,
+        independently of the conditions specified by the validate option.
+        Return whether the value is considered valid."""
+        return self.tk.getboolean(self.tk.call(self._w, 'validate'))
 
 
 class Frame(Widget):
@@ -3463,7 +3557,7 @@ class Listbox(Widget, XView, YView):
         """Activate item identified by INDEX."""
         self.tk.call(self._w, 'activate', index)
 
-    def bbox(self, index):
+    def bbox(self, index):  # overrides Misc.bbox
         """Return a tuple of X1,Y1,X2,Y2 coordinates for a rectangle
         which encloses the item identified by the given index."""
         return self._getints(self.tk.call(self._w, 'bbox', index)) or None
@@ -3519,7 +3613,7 @@ class Listbox(Widget, XView, YView):
 
     select_anchor = selection_anchor
 
-    def selection_clear(self, first, last=None):
+    def selection_clear(self, first, last=None):  # overrides Misc.selection_clear
         """Clear the selection from FIRST to LAST (included)."""
         self.tk.call(self._w,
                  'selection', 'clear', first, last)
@@ -3540,7 +3634,7 @@ class Listbox(Widget, XView, YView):
 
     select_set = selection_set
 
-    def size(self):
+    def size(self):  # overrides Misc.size
         """Return the number of elements in the listbox."""
         return self.tk.getint(self.tk.call(self._w, 'size'))
 
@@ -3672,6 +3766,14 @@ class Menu(Widget):
     def post(self, x, y):
         """Display a menu at position X,Y."""
         self.tk.call(self._w, 'post', x, y)
+
+    def postcascade(self, index):
+        """Post the submenu of the cascade entry at INDEX, unposting any
+        previously posted submenu.
+
+        Has no effect if INDEX does not name a cascade entry or if this menu
+        is not posted."""
+        self.tk.call(self._w, 'postcascade', index)
 
     def type(self, index):
         """Return the type of the menu item at INDEX."""
@@ -3856,7 +3958,7 @@ class Text(Widget, XView, YView):
         """
         Widget.__init__(self, master, 'text', cnf, kw)
 
-    def bbox(self, index):
+    def bbox(self, index):  # overrides Misc.bbox
         """Return a tuple of (x,y,width,height) which gives the bounding
         box of the visible part of the character at the given index."""
         return self._getints(
@@ -4057,7 +4159,7 @@ class Text(Widget, XView, YView):
                  self._w, "image", "create", index,
                  *self._options(cnf, kw))
 
-    def image_names(self):
+    def image_names(self):  # overrides Misc.image_names
         """Return all names of embedded images in this widget."""
         return self.tk.call(self._w, "image", "names")
 
@@ -4469,6 +4571,13 @@ class PhotoImage(Image):
         """Display a transparent image."""
         self.tk.call(self.name, 'blank')
 
+    def redither(self):
+        """Recalculate the dithered image in each window where it is displayed.
+
+        Useful when the image data was supplied in pieces, in which case the
+        dithered image may not be exactly correct."""
+        self.tk.call(self.name, 'redither')
+
     def cget(self, option):
         """Return the value of OPTION."""
         return self.tk.call(self.name, 'cget', '-' + option)
@@ -4583,25 +4692,58 @@ class PhotoImage(Image):
             options.extend(('-compositingrule', compositingrule))
         self.tk.call(self.name, 'copy', sourceImage, *options)
 
-    def get(self, x, y):
-        """Return the color (red, green, blue) of the pixel at X,Y."""
-        return self.tk.call(self.name, 'get', x, y)
+    @staticmethod
+    def _metadata(metadata):
+        # A Tcl dict is a flat list of alternating keys and values.  A Python
+        # dict passed directly would expand to its keys only, so flatten it.
+        flat = ()
+        for key, value in metadata.items():
+            flat += (key, value)
+        return flat
 
-    def put(self, data, to=None):
+    def get(self, x, y, *, withalpha=False):
+        """Return the color of the pixel at X,Y as a tuple of its red, green
+        and blue components.
+
+        If WITHALPHA is true, the returned tuple has a fourth element giving
+        the alpha (opacity) value of the pixel.  This requires Tcl/Tk 9.0 or
+        newer.
+        """
+        args = (self.name, 'get', x, y)
+        if withalpha:
+            args += ('-withalpha',)
+        return self.tk.call(args)
+
+    def put(self, data, to=None, *, format=None, metadata=None):
         """Put row formatted colors to image starting from
-        position TO, e.g. image.put("{red green} {blue yellow}", to=(4,6))"""
+        position TO, e.g. image.put("{red green} {blue yellow}", to=(4,6))
+
+        The FORMAT option specifies the format of the image DATA, so that only
+        image file format handlers whose names begin with it are tried.
+
+        The METADATA option, a dictionary passed to the image format driver,
+        requires Tcl/Tk 9.0 or newer.
+        """
         args = (self.name, 'put', data)
+        if format is not None:
+            args += ('-format', format)
+        if metadata is not None:
+            args += ('-metadata', self._metadata(metadata))
         if to:
             if to[0] == '-to':
                 to = to[1:]
-            args = args + ('-to',) + tuple(to)
+            args += ('-to',) + tuple(to)
         self.tk.call(args)
 
-    def read(self, filename, format=None, *, from_coords=None, to=None, shrink=False):
+    def read(self, filename, format=None, *, from_coords=None, to=None,
+             shrink=False, metadata=None):
         """Reads image data from the file named FILENAME into the image.
 
         The FORMAT option specifies the format of the image data in the
         file.
+
+        The METADATA option, a dictionary passed to the image format driver,
+        requires Tcl/Tk 9.0 or newer.
 
         The FROM_COORDS option specifies a rectangular sub-region of the image
         file data to be copied to the destination image.  It must be a tuple
@@ -4622,6 +4764,8 @@ class PhotoImage(Image):
         options = ()
         if format is not None:
             options += ('-format', format)
+        if metadata is not None:
+            options += ('-metadata', self._metadata(metadata))
         if from_coords is not None:
             options += ('-from', *from_coords)
         if shrink:
@@ -4631,12 +4775,15 @@ class PhotoImage(Image):
         self.tk.call(self.name, 'read', filename, *options)
 
     def write(self, filename, format=None, from_coords=None, *,
-              background=None, grayscale=False):
+              background=None, grayscale=False, metadata=None):
         """Writes image data from the image to a file named FILENAME.
 
         The FORMAT option specifies the name of the image file format
         handler to be used to write the data to the file.  If this option
         is not given, the format is guessed from the file extension.
+
+        The METADATA option, a dictionary passed to the image format driver,
+        requires Tcl/Tk 9.0 or newer.
 
         The FROM_COORDS option specifies a rectangular region of the image
         to be written to the image file.  It must be a tuple or a list of 1
@@ -4656,6 +4803,8 @@ class PhotoImage(Image):
         options = ()
         if format is not None:
             options += ('-format', format)
+        if metadata is not None:
+            options += ('-metadata', self._metadata(metadata))
         if from_coords is not None:
             options += ('-from', *from_coords)
         if grayscale:
@@ -4665,8 +4814,11 @@ class PhotoImage(Image):
         self.tk.call(self.name, 'write', filename, *options)
 
     def data(self, format=None, *, from_coords=None,
-             background=None, grayscale=False):
+             background=None, grayscale=False, metadata=None):
         """Returns image data.
+
+        The METADATA option, a dictionary passed to the image format driver,
+        requires Tcl/Tk 9.0 or newer.
 
         The FORMAT option specifies the name of the image file format
         handler to be used.  If this option is not given, this method uses
@@ -4694,6 +4846,8 @@ class PhotoImage(Image):
         options = ()
         if format is not None:
             options += ('-format', format)
+        if metadata is not None:
+            options += ('-metadata', self._metadata(metadata))
         if from_coords is not None:
             options += ('-from', *from_coords)
         if grayscale:
@@ -4770,7 +4924,7 @@ class Spinbox(Widget, XView):
         """
         Widget.__init__(self, master, 'spinbox', cnf, kw)
 
-    def bbox(self, index):
+    def bbox(self, index):  # overrides Misc.bbox
         """Return a tuple of X1,Y1,X2,Y2 coordinates for a
         rectangle which encloses the character given by index.
 
@@ -4879,7 +5033,7 @@ class Spinbox(Widget, XView):
         """
         return self.selection("adjust", index)
 
-    def selection_clear(self):
+    def selection_clear(self):  # overrides Misc.selection_clear
         """Clear the selection
 
         If the selection isn't in this widget then the
@@ -4912,6 +5066,14 @@ class Spinbox(Widget, XView):
     def selection_to(self, index):
         """Set the variable end of a selection to INDEX."""
         self.selection('to', index)
+
+    def validate(self):
+        """Force an evaluation of the validation command.
+
+        This evaluates the command given by the validatecommand option,
+        independently of the conditions specified by the validate option.
+        Return whether the value is considered valid."""
+        return self.tk.getboolean(self.tk.call(self._w, 'validate'))
 
 ###########################################################################
 
@@ -4976,7 +5138,7 @@ class PanedWindow(Widget):
         """
         self.tk.call(self._w, 'forget', child)
 
-    forget = remove
+    forget = remove  # overrides Pack.forget
 
     def identify(self, x, y):
         """Identify the panedwindow component at point x, y

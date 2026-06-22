@@ -1266,10 +1266,18 @@ Base and mixin classes
       If *belowThis* is given, the widget is moved to be just below it in the
       stacking order instead.
 
+      :meth:`tkraise`/:meth:`lift` and :meth:`lower` are overridden by the
+      :class:`Canvas` widget,
+      where they restack canvas items instead.
+
    .. method:: image_names()
 
       Return the names of all images that currently exist in the Tcl
       interpreter.
+
+      This is overridden by the :class:`Text` widget,
+      where :meth:`!image_names` returns the names of its embedded images
+      instead.
 
    .. method:: image_types()
 
@@ -1303,7 +1311,11 @@ Base and mixin classes
       column 0 to that cell; if *col2* and *row2* are also given, it spans from
       the cell (*column*, *row*) to the cell (*col2*, *row2*).
 
-      :meth:`bbox` is an alias of :meth:`!grid_bbox`.
+      :meth:`bbox` is an alias of :meth:`!grid_bbox`,
+      except on :class:`Canvas`, :class:`Listbox`, :class:`Spinbox`,
+      :class:`Text`, :class:`ttk.Entry <tkinter.ttk.Entry>` and
+      :class:`ttk.Treeview <tkinter.ttk.Treeview>`,
+      which provide their own :meth:`!bbox` method.
 
    .. method:: columnconfigure(index, cnf={}, **kw)
       :no-typesetting:
@@ -1378,7 +1390,10 @@ Base and mixin classes
       Return the size of the grid managed by this container as a
       ``(columns, rows)`` tuple.
 
-      :meth:`size` is an alias of :meth:`!grid_size`.
+      :meth:`size` is an alias of :meth:`!grid_size`,
+      except on :class:`Listbox` and
+      :class:`ttk.Treeview <tkinter.ttk.Treeview>`,
+      which provide their own :meth:`!size` method.
 
    .. method:: grid_slaves(row=None, column=None)
 
@@ -1681,7 +1696,10 @@ Base and mixin classes
       widget's display, the widget is remembered as the focus window for its
       top level, and the focus will be redirected to it the next time the
       window manager gives the focus to the top level.
-      :meth:`focus` is an alias of :meth:`!focus_set`.
+      :meth:`focus` is an alias of :meth:`!focus_set`,
+      except on the :class:`Canvas` and
+      :class:`ttk.Treeview <tkinter.ttk.Treeview>` widgets,
+      which provide their own :meth:`!focus` method.
 
    .. method:: focus_force()
 
@@ -1783,6 +1801,10 @@ Base and mixin classes
       The *displayof* keyword argument names a widget that determines the
       display on which to operate, and defaults to this widget.
 
+      This is overridden by the :class:`Entry`, :class:`Listbox` and
+      :class:`Spinbox` widgets,
+      where :meth:`!selection_clear` clears the widget's own selection instead.
+
    .. method:: selection_get(**kw)
 
       Return the contents of the current X selection.
@@ -1860,7 +1882,7 @@ Base and mixin classes
       first and ``STRING`` is used as a fallback.
       The *displayof* keyword argument names a widget that determines the
       display, and defaults to the root window of the application.
-      This is equivalent to ``selection_get(selection= 'CLIPBOARD')``.
+      This is equivalent to ``selection_get(selection='CLIPBOARD')``.
 
    .. method:: option_add(pattern, value, priority=None)
 
@@ -1932,6 +1954,26 @@ Base and mixin classes
       A true *boolean* value enables strict Motif compliance (for example, no
       color change when the mouse passes over a slider).
       Return the resulting setting.
+
+   .. method:: tk_scaling(number=None, *, displayof=0)
+
+      Query or set the scaling factor used by Tk to convert between physical
+      units (such as points, inches or millimeters) and pixels, expressed as
+      the number of pixels per point (where a point is 1/72 inch).
+      With no argument, return the current factor; otherwise set it to the
+      floating-point *number*.
+
+      .. versionadded:: next
+
+   .. method:: tk_inactive(reset=False, *, displayof=0)
+
+      Return the number of milliseconds since the last time the user interacted
+      with the system, or ``-1`` if the windowing system does not support this.
+      If *reset* is true, reset the inactivity timer to zero instead and return
+      ``None``.
+
+      .. versionadded:: next
+
    .. method:: busy(**kw)
       :no-typesetting:
 
@@ -2133,6 +2175,16 @@ Base and mixin classes
       If *displayof* is given, the return value refers to the display of that
       window; otherwise it refers to the display of the application's main
       window.
+
+   .. method:: winfo_isdark()
+
+      On macOS and Windows, return ``True`` if the widget is in "dark mode",
+      and ``False`` otherwise.
+      Always return ``False`` on X11.
+
+      .. versionadded:: next
+
+         Requires Tk 9.1 or newer.
 
    .. method:: winfo_ismapped()
 
@@ -2546,6 +2598,8 @@ Base and mixin classes
       widget is managed again.
       :meth:`wm_forget` is an alias of :meth:`!forget`.
 
+      Not to be confused with :meth:`Pack.forget`.
+
       .. versionadded:: 3.3
 
    .. method:: wm_frame()
@@ -2591,6 +2645,8 @@ Base and mixin classes
       string if the window is not gridded.
       :meth:`wm_grid` is an alias of :meth:`!grid`.
 
+      Not to be confused with the grid geometry manager :meth:`Grid.grid`.
+
    .. method:: wm_group(pathName=None)
       :no-typesetting:
 
@@ -2604,6 +2660,24 @@ Base and mixin classes
       With no argument, return the path name of the current group leader, or an
       empty string.
       :meth:`wm_group` is an alias of :meth:`!group`.
+
+   .. method:: wm_iconbadge(badge)
+      :no-typesetting:
+
+   .. method:: iconbadge(badge)
+
+      Set a badge for the window's icon, intended for display in the Dock
+      (macOS), taskbar (Windows) or app panel (X11).
+      *badge* may be a positive integer (for example a count of unread
+      messages) or an exclamation point to denote that attention is needed;
+      an empty string removes the badge.
+      On X11 the variable ``::tk::icons::base_icon(window)`` must be set to the
+      window's icon image for the badge to appear.
+      :meth:`wm_iconbadge` is an alias of :meth:`!iconbadge`.
+
+      .. versionadded:: next
+
+         Requires Tk 9.0 or newer.
 
    .. method:: wm_iconbitmap(bitmap=None, default=None)
       :no-typesetting:
@@ -2814,6 +2888,22 @@ Base and mixin classes
       has been set.
       :meth:`wm_sizefrom` is an alias of :meth:`!sizefrom`.
 
+   .. method:: wm_stackorder(relation=None, window=None)
+      :no-typesetting:
+
+   .. method:: stackorder(relation=None, window=None)
+
+      Query the stacking order of top-level windows.
+      With no arguments, return a list of the mapped top-level widgets in
+      stacking order, from lowest to highest, recursively including this
+      window's top-level children.
+      If *relation* is ``'isabove'`` or ``'isbelow'`` and *window* is another
+      top-level, return ``True`` if this window is respectively above or below
+      *window* in the stacking order, and ``False`` otherwise.
+      :meth:`wm_stackorder` is an alias of :meth:`!stackorder`.
+
+      .. versionadded:: next
+
    .. method:: wm_state(newstate=None)
       :no-typesetting:
 
@@ -2827,6 +2917,9 @@ Base and mixin classes
       refers to a window serving as the icon for another window (see
       :meth:`iconwindow`); the ``'icon'`` state cannot be set.
       :meth:`wm_state` is an alias of :meth:`!state`.
+
+      Not to be confused with :meth:`ttk.Widget.state
+      <tkinter.ttk.Widget.state>`.
 
    .. method:: wm_title(string=None)
       :no-typesetting:
@@ -2878,6 +2971,21 @@ Base and mixin classes
    :class:`Widget`) and provides the methods for managing a widget with the
    *pack* geometry manager.
    See also :ref:`pack-the-packer`.
+
+   .. note::
+
+      :class:`Pack`, :class:`Place` and :class:`Grid` all define the short
+      method names :meth:`!forget`, :meth:`!info`, :meth:`!slaves`,
+      :meth:`!content` and :meth:`!propagate`.
+      On a widget the bare names resolve to the *pack* manager's versions,
+      since :class:`Pack` and :class:`Misc` precede :class:`Place` and
+      :class:`Grid` in the method resolution order,
+      whatever manager actually manages the widget;
+      and :meth:`!configure`/:meth:`!config` configure the widget's options,
+      not its geometry.
+      Use the explicit ``pack_*``, ``grid_*`` and ``place_*`` methods
+      (and ``pack``, ``grid``, ``place`` for geometry configuration)
+      to act on a specific geometry manager.
 
    .. method:: configure(cnf={}, **kw)
       :no-typesetting:
@@ -2941,7 +3049,13 @@ Base and mixin classes
       Unmap the widget and remove it from the packing order, forgetting its
       packing options.
       It can be packed again later with :meth:`pack_configure`.
-      :meth:`forget` is an alias of :meth:`!pack_forget`.
+      :meth:`forget` is an alias of :meth:`!pack_forget`,
+      except on :class:`PanedWindow`,
+      :class:`ttk.Notebook <tkinter.ttk.Notebook>` and
+      :class:`ttk.PanedWindow <tkinter.ttk.PanedWindow>`,
+      which provide their own :meth:`!forget` method.
+
+      Not to be confused with :meth:`Wm.forget`.
 
    .. method:: info()
       :no-typesetting:
@@ -3048,7 +3162,6 @@ Base and mixin classes
 
       Unmap the widget and remove it from the placement, forgetting its place
       options.
-      :meth:`forget` is an alias of :meth:`!place_forget`.
 
    .. method:: info()
       :no-typesetting:
@@ -3056,7 +3169,6 @@ Base and mixin classes
    .. method:: place_info()
 
       Return a dictionary of the widget's current place options.
-      :meth:`info` is an alias of :meth:`!place_info`.
 
    .. method:: slaves()
       :no-typesetting:
@@ -3065,7 +3177,6 @@ Base and mixin classes
 
       Same as :meth:`Misc.place_slaves`: return the list of widgets placed in
       this widget.
-      :meth:`slaves` is an alias of :meth:`!place_slaves`.
 
    .. method:: content()
       :no-typesetting:
@@ -3073,7 +3184,6 @@ Base and mixin classes
    .. method:: place_content()
 
       Same as :meth:`Misc.place_content`.
-      :meth:`content` is an alias of :meth:`!place_content`.
 
       .. versionadded:: 3.15
 
@@ -3095,6 +3205,9 @@ Base and mixin classes
                grid(cnf={}, **kw)
 
       Position the widget in a cell of its container's grid.
+
+      Not to be confused with :meth:`Wm.grid`.
+
       The supported options are:
 
       *row*, *column*
@@ -3139,7 +3252,6 @@ Base and mixin classes
 
       Unmap the widget and remove it from the grid, forgetting its grid
       options.
-      :meth:`forget` is an alias of :meth:`!grid_forget`.
 
    .. method:: grid_remove()
 
@@ -3152,7 +3264,6 @@ Base and mixin classes
    .. method:: grid_info()
 
       Return a dictionary of the widget's current grid options.
-      :meth:`info` is an alias of :meth:`!grid_info`.
 
    .. method:: bbox(column=None, row=None, col2=None, row2=None)
       :no-typesetting:
@@ -3160,7 +3271,11 @@ Base and mixin classes
    .. method:: grid_bbox(column=None, row=None, col2=None, row2=None)
 
       Same as :meth:`Misc.grid_bbox`.
-      :meth:`bbox` is an alias of :meth:`!grid_bbox`.
+      :meth:`bbox` is an alias of :meth:`!grid_bbox`,
+      except on :class:`Canvas`, :class:`Listbox`, :class:`Spinbox`,
+      :class:`Text`, :class:`ttk.Entry <tkinter.ttk.Entry>` and
+      :class:`ttk.Treeview <tkinter.ttk.Treeview>`,
+      which provide their own :meth:`!bbox` method.
 
    .. method:: columnconfigure(index, cnf={}, **kw)
       :no-typesetting:
@@ -3196,7 +3311,10 @@ Base and mixin classes
 
       Same as :meth:`Misc.grid_size`: return a ``(columns, rows)`` tuple giving
       the size of the grid.
-      :meth:`size` is an alias of :meth:`!grid_size`.
+      :meth:`size` is an alias of :meth:`!grid_size`,
+      except on :class:`Listbox` and
+      :class:`ttk.Treeview <tkinter.ttk.Treeview>`,
+      which provide their own :meth:`!size` method.
 
    .. method:: propagate()
                propagate(flag)
@@ -3206,7 +3324,6 @@ Base and mixin classes
                grid_propagate(flag)
 
       Same as :meth:`Misc.grid_propagate`.
-      :meth:`propagate` is an alias of :meth:`!grid_propagate`.
 
    .. method:: slaves(row=None, column=None)
       :no-typesetting:
@@ -3215,7 +3332,6 @@ Base and mixin classes
 
       Same as :meth:`Misc.grid_slaves`: return the widgets managed in the grid,
       optionally restricted to a *row* and/or *column*.
-      :meth:`slaves` is an alias of :meth:`!grid_slaves`.
 
    .. method:: content(row=None, column=None)
       :no-typesetting:
@@ -3223,7 +3339,6 @@ Base and mixin classes
    .. method:: grid_content(row=None, column=None)
 
       Same as :meth:`Misc.grid_content`.
-      :meth:`content` is an alias of :meth:`!grid_content`.
 
       .. versionadded:: 3.15
 
@@ -3648,6 +3763,15 @@ Widget classes
       *yOrigin* changes by a factor of *yScale* (a factor of ``1.0`` leaves the
       coordinate unchanged).
 
+   .. method:: rotate(tagOrId, xOrigin, yOrigin, angle, /)
+
+      Rotate the coordinates of all items given by *tagOrId* in canvas
+      coordinate space about the origin (*xOrigin*, *yOrigin*) by *angle*
+      degrees anticlockwise.
+      Negative values of *angle* rotate clockwise.
+
+      .. versionadded:: next
+
    .. method:: delete(*tagOrIds)
 
       Delete each of the items given by the *tagOrIds* arguments.
@@ -3666,6 +3790,17 @@ Widget classes
       character or coordinate whose index is *beforeThis*.
       For line and polygon items *string* must be a valid sequence of
       coordinates.
+
+   .. method:: rchars(tagOrId, first, last, string, /)
+
+      Replace the characters (for text items) or coordinates (for line and
+      polygon items) in the range from *first* to *last* inclusive of each of
+      the items given by *tagOrId* with *string*.
+      For line and polygon items *string* must be a valid sequence of
+      coordinates.
+      Items that do not support indexing ignore this operation.
+
+      .. versionadded:: next
 
    .. method:: itemcget(tagOrId, option)
 
@@ -3825,6 +3960,14 @@ Widget classes
       This has no effect on embedded window items.
       :meth:`lower` is an alias of :meth:`!tag_lower`.
 
+      .. note::
+
+         On a :class:`Canvas`, :meth:`tkraise`/:meth:`lift` and :meth:`lower`
+         restack canvas items,
+         shadowing the inherited :meth:`Misc.tkraise`/:meth:`Misc.lift` and
+         :meth:`Misc.lower` methods that restack the widget itself,
+         which are therefore not available.
+
    .. method:: tag_bind(tagOrId, sequence=None, func=None, add=None)
 
       Bind the callback *func* to the event *sequence* for all items given by
@@ -3860,6 +4003,9 @@ Widget classes
       Return ``None`` if no item matches or the matching items have nothing to
       display.
 
+      This shadows the inherited :meth:`!Misc.bbox`;
+      use :meth:`~Misc.grid_bbox` for the grid bounding box.
+
    .. method:: canvasx(screenx, gridspacing=None)
 
       Given a window x-coordinate *screenx*, return the canvas x-coordinate
@@ -3885,6 +4031,9 @@ Widget classes
       or an empty string if none does.
       An item only displays the insertion cursor when both it is the focus item
       and its canvas has the input focus.
+
+      This shadows the inherited :meth:`!Misc.focus`;
+      use :meth:`~Misc.focus_set` to focus the widget itself.
 
    .. method:: icursor(tagOrId, index, /)
 
@@ -4083,6 +4232,12 @@ Widget classes
       If the selection is not in this widget the method has no effect.
       :meth:`select_clear` is an alias of :meth:`!selection_clear`.
 
+      .. note::
+
+         This shadows the inherited :meth:`Misc.selection_clear`,
+         which clears the X selection;
+         that method is not available on an :class:`Entry`.
+
    .. method:: select_from(index)
       :no-typesetting:
 
@@ -4140,6 +4295,14 @@ Widget classes
       that difference.
       Typically associated with mouse motion events, to produce the effect of
       dragging the entry at high speed through the window.
+
+   .. method:: validate()
+
+      Force an evaluation of the command given by the *validatecommand* option,
+      independently of the conditions specified by the *validate* option, and
+      return whether the value is considered valid.
+
+      .. versionadded:: next
 
 
 .. class:: Frame(master=None, cnf={}, **kw)
@@ -4222,6 +4385,9 @@ Widget classes
 
       Return the total number of items in the listbox.
 
+      This shadows the inherited :meth:`!Misc.size`;
+      use :meth:`~Misc.grid_size` for the grid size.
+
    .. method:: index(index)
 
       Return the integer index value corresponding to *index*, or ``None`` if
@@ -4237,6 +4403,9 @@ Widget classes
       *index* refers to a non-existent item; if the item is only partly
       visible, the result still gives the full area of the item, including the
       parts that are not visible.
+
+      This shadows the inherited :meth:`!Misc.bbox`;
+      use :meth:`~Misc.grid_bbox` for the grid bounding box.
 
    .. method:: nearest(y)
 
@@ -4285,6 +4454,12 @@ Widget classes
       that are selected.
       The selection state of items outside this range is not changed.
       :meth:`select_clear` is an alias of :meth:`!selection_clear`.
+
+      .. note::
+
+         This shadows the inherited :meth:`Misc.selection_clear`,
+         which clears the X selection;
+         that method is not available on a :class:`Listbox`.
 
    .. method:: select_includes(index)
       :no-typesetting:
@@ -4572,6 +4747,15 @@ Widget classes
       If the *postcommand* option has been specified, it is evaluated before
       the menu is posted.
 
+   .. method:: postcascade(index)
+
+      Post the submenu associated with the cascade entry given by *index*,
+      unposting any previously posted submenu.
+      This has no effect if *index* does not name a cascade entry or if the
+      menu itself is not posted.
+
+      .. versionadded:: next
+
    .. method:: tk_popup(x, y, entry='')
 
       Post the menu as a popup at the root-window coordinates *x* and *y*.
@@ -4670,6 +4854,9 @@ Widget classes
       Remove the pane containing *child* from the panedwindow.
       All geometry management options for *child* are forgotten.
       :meth:`forget` is an alias of :meth:`!remove`.
+      This shadows the inherited geometry-manager :meth:`!forget`;
+      use :meth:`~Pack.pack_forget`, :meth:`~Grid.grid_forget` or
+      :meth:`~Place.place_forget` to remove the widget itself from its manager.
 
    .. method:: panes()
 
@@ -4961,6 +5148,9 @@ Widget classes
       The bounding box may refer to a region outside the visible area of the
       window.
 
+      This shadows the inherited :meth:`!Misc.bbox`;
+      use :meth:`~Misc.grid_bbox` for the grid bounding box.
+
    .. method:: identify(x, y)
 
       Return the name of the window element at the pixel coordinates *x*, *y*:
@@ -5022,6 +5212,12 @@ Widget classes
       Clear the selection if it is currently in this widget.
       If the selection is not in this widget, the method has no effect.
 
+      .. note::
+
+         This shadows the inherited :meth:`Misc.selection_clear`,
+         which clears the X selection;
+         that method is not available on a :class:`Spinbox`.
+
    .. method:: selection_element(element=None)
 
       Set or get the currently selected element.
@@ -5068,6 +5264,14 @@ Widget classes
       the most recent anchor point.
 
       .. versionadded:: 3.8
+
+   .. method:: validate()
+
+      Force an evaluation of the command given by the *validatecommand* option,
+      independently of the conditions specified by the *validate* option, and
+      return whether the value is considered valid.
+
+      .. versionadded:: next
 
 
 
@@ -5178,6 +5382,9 @@ Widget classes
       Return a tuple ``(x, y, width, height)`` giving the bounding box, in
       pixels, of the visible part of the character at *index*, or ``None`` if
       that character is not visible on the screen.
+
+      This shadows the inherited :meth:`!Misc.bbox`;
+      use :meth:`~Misc.grid_bbox` for the grid bounding box.
 
    .. method:: dlineinfo(index)
 
@@ -5433,6 +5640,12 @@ Widget classes
 
       Return a tuple of the names of all images embedded in the widget.
 
+      .. note::
+
+         This shadows the inherited :meth:`Misc.image_names`,
+         which returns the names of all images in the Tcl interpreter;
+         that method is not available on a :class:`Text`.
+
    .. method:: window_create(index, cnf={}, **kw)
 
       Embed a window (any widget) at *index*.
@@ -5678,6 +5891,7 @@ Variable classes
    .. method:: set(value)
 
       Set the variable to *value*.
+      :meth:`initialize` is an alias of :meth:`!set`.
 
       .. versionadded:: 3.3
          The *initialize* spelling.
@@ -5724,6 +5938,7 @@ Variable classes
       *mode* is one of the strings ``'r'``, ``'w'`` or ``'u'``, for read, write
       or unset.
       Return the internal name of the registered callback.
+      :meth:`trace` is an alias of :meth:`!trace_variable`.
 
       .. deprecated:: 3.6
          Use :meth:`trace_add` instead.  This method wraps a Tcl feature that
@@ -5795,6 +6010,7 @@ Variable classes
    .. method:: set(value)
 
       Set the variable to *value*, converting it to a boolean.
+      :meth:`initialize` is an alias of :meth:`!set`.
 
       .. versionadded:: 3.3
          The *initialize* spelling.
@@ -5859,6 +6075,14 @@ Image classes
       Blank the image; that is, set the entire image to have no data, so that
       it is displayed as transparent and the background of whatever window it
       is displayed in shows through.
+
+   .. method:: redither()
+
+      Recalculate the dithered image in each window where it is displayed.
+      This is useful when the image data was supplied in pieces, in which case
+      the dithered image may not be exactly correct.
+
+      .. versionadded:: next
 
    .. method:: cget(option)
 
@@ -5927,7 +6151,7 @@ Image classes
 
 
    .. method:: data(format=None, *, from_coords=None, background=None, \
-                    grayscale=False)
+                    grayscale=False, metadata=None)
 
       Return the image data.
 
@@ -5951,16 +6175,27 @@ Image classes
       If *grayscale* is true, the data does not contain color information; all
       pixel data is transformed into grayscale.
 
+      *metadata* is a dictionary passed to the image format driver.
+      It requires Tcl/Tk 9.0 or newer.
+
       .. versionadded:: 3.13
 
+      .. versionchanged:: next
+         Added the *metadata* parameter.
 
-   .. method:: get(x, y)
+
+   .. method:: get(x, y, *, withalpha=False)
 
       Return the color of the pixel at coordinates (*x*, *y*) as an
       ``(r, g, b)`` tuple of three integers between 0 and 255, representing the
       red, green and blue components respectively.
+      If *withalpha* is true, the returned tuple has a fourth element giving
+      the alpha (opacity) value of the pixel.
 
-   .. method:: put(data, to=None)
+      .. versionchanged:: next
+         Added the *withalpha* parameter, which requires Tcl/Tk 9.0 or newer.
+
+   .. method:: put(data, to=None, *, format=None, metadata=None)
 
       Set pixels of the image to the colors given in *data*, which must be a
       string or a nested sequence of horizontal rows of pixel colors (for
@@ -5973,12 +6208,24 @@ Image classes
       bottom-right corner, of the region.
       The default position is ``(0, 0)``.
 
+      *format* specifies the format of the image *data*, so that only image
+      file format handlers whose names begin with it are tried.
+
+      *metadata* is a dictionary passed to the image format driver.
+      It requires Tcl/Tk 9.0 or newer.
+
+      .. versionchanged:: next
+         Added the *format* and *metadata* parameters.
+
    .. method:: read(filename, format=None, *, from_coords=None, to=None, \
-                    shrink=False)
+                    shrink=False, metadata=None)
 
       Read image data from the file named *filename* into the image.
 
       *format* specifies the format of the image data in the file.
+
+      *metadata* is a dictionary passed to the image format driver.
+      It requires Tcl/Tk 9.0 or newer.
 
       *from_coords* specifies a rectangular sub-region of the image file data
       to be copied to the destination image.
@@ -5999,6 +6246,9 @@ Image classes
       corner of the image.
 
       .. versionadded:: 3.13
+
+      .. versionchanged:: next
+         Added the *metadata* parameter.
 
 
    .. method:: subsample(x, y='', *, from_coords=None)
@@ -6032,7 +6282,7 @@ Image classes
 
 
    .. method:: write(filename, format=None, from_coords=None, *, \
-                     background=None, grayscale=False)
+                     background=None, grayscale=False, metadata=None)
 
       Write image data from the image to the file named *filename*.
 
@@ -6054,8 +6304,14 @@ Image classes
       If *grayscale* is true, the data does not contain color information; all
       pixel data is transformed into grayscale.
 
+      *metadata* is a dictionary passed to the image format driver.
+      It requires Tcl/Tk 9.0 or newer.
+
       .. versionchanged:: 3.13
          Added the *background* and *grayscale* parameters.
+
+      .. versionchanged:: next
+         Added the *metadata* parameter.
 
 
    .. method:: zoom(x, y='', *, from_coords=None)
