@@ -311,6 +311,12 @@ class PhotoImageTest(BaseImageTest, AbstractTkTest, unittest.TestCase):
         self.assertEqual(image.height(), 16)
         self.assertEqual(image.get(4, 6), self.colorlist(0, 0, 0))
 
+    def test_redither(self):
+        image = self.create()
+        pixel = image.get(4, 6)
+        image.redither()  # Recalculates the dithering; the data is unchanged.
+        self.assertEqual(image.get(4, 6), pixel)
+
     def test_copy(self):
         image = self.create()
         image2 = image.copy()
