@@ -458,12 +458,10 @@ class BugsTestCase(unittest.TestCase):
         # allocation that registers it in the reference list failed.
         data = b'\xfbi\x01\x00\x00\x00i\x02\x00\x00\x000'  # {1: 2}, FLAG_REF
         self.assertEqual(marshal.loads(data), {1: 2})
-        # The reference-list allocation fails early; 16 is ample headroom.
         for index in range(16):
             with self.subTest(index=index):
-                # Capture the outcome before touching memory again: any
-                # allocation made by an assertion would also fail while the
-                # nomemory hook is active.
+                # Capture the outcome first: an assertion would itself
+                # allocate and fail while the nomemory hook is active.
                 result = error = None
                 _testcapi.set_nomemory(index, index + 1)
                 try:
