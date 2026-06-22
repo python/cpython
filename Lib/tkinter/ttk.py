@@ -1457,7 +1457,7 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
         return self.tk.getboolean(self.tk.call(self._w, "visible", item))
 
 
-    def size(self, item, *, hidden=False, recurse=False):
+    def size(self, item, *, hidden=False, recurse=False):  # overrides Misc.size
         """Return the number of children of item.
 
         If hidden is true, hidden items are included.  If recurse is true,
