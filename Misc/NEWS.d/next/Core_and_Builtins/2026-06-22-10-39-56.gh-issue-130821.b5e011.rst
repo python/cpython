@@ -1,0 +1,2 @@
+Add type information to error messages for ``__len__()`` and ``__sizeof__()``.
+Patch by tangyuan0821.
