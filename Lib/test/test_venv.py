@@ -773,6 +773,46 @@ class BasicTest(BaseTest):
         self.assertTrue(env_name.encode() in lines[0])
         self.assertEndsWith(lines[1], env_name.encode())
 
+    # gh-140006: the fish prompt override must keep working when a user
+    # function shadows a builtin it relies on.
+    @unittest.skipIf(os.name == 'nt', 'fish is not available on Windows')
+    def test_fish_activate_shadowed_builtins(self):
+        """
+        The fish prompt override restores the exit status through `source` and
+        prints through `printf`/`echo`/`set_color`.  A user function that
+        shadows one of those builtins (a common pattern for `.`-style directory
+        navigators) must not hijack the prompt or break status restoration.
+        """
+        fish = shutil.which('fish')
+        if fish is None:
+            self.skipTest('fish required for this test')
+        rmtree(self.env_dir)
+        builder = venv.EnvBuilder(clear=True)
+        builder.create(self.env_dir)
+        activate = os.path.join(self.env_dir, self.bindir, 'activate.fish')
+        test_script = os.path.join(self.env_dir, 'test_shadowed_builtins.fish')
+        with open(test_script, "w") as f:
+            f.write(
+                # The pre-existing prompt reports the status it receives;
+                # activation copies it to _old_fish_prompt.
+                'function fish_prompt; builtin echo "OLDSTATUS=$status"; end\n'
+                f'source {shlex.quote(activate)}\n'
+                # Shadow every builtin the override uses.  A dot-navigator that
+                # lists the directory is the reported failure.
+                'function .; builtin echo DOT_LEAK; end\n'
+                'function source; builtin echo SOURCE_LEAK; end\n'
+                'function echo; command echo ECHO_LEAK; end\n'
+                'function printf; command printf PRINTF_LEAK; end\n'
+                'function set_color; command true; end\n'
+                'function _exit7; return 7; end\n'
+                '_exit7\n'
+                'fish_prompt\n'
+            )
+        out, err = check_output([fish, '--no-config', test_script])
+        text = out.decode()
+        self.assertNotIn('LEAK', text)
+        self.assertIn('OLDSTATUS=7', text)
+
     # gh-124651: test quoted strings on Windows
     @unittest.skipUnless(os.name == 'nt', 'only relevant on Windows')
     def test_special_chars_windows(self):
