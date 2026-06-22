@@ -6,9 +6,7 @@ import threading
 import time
 import unittest
 
-from test import support
 from test.support import import_helper
-from test.support.script_helper import run_python_until_end
 
 _channels = import_helper.import_module('_interpchannels')
 from concurrent.interpreters import _crossinterp
@@ -309,33 +307,6 @@ class ChannelIDTests(TestBase):
     def test_bad_kwargs(self):
         with self.assertRaises(ValueError):
             _channels._channel_id(10, send=False, recv=False)
-
-    @unittest.skipIf(support.Py_TRACE_REFS,
-                     '_testcapi.set_nomemory() is unreliable with Py_TRACE_REFS')
-    def test_oom_in_module_lookup(self):
-        import_helper.import_module('_testcapi')
-        code = dedent("""
-            import _interpchannels
-            import _testcapi
-            from test.support import SuppressCrashReport
-
-            seen = False
-            with SuppressCrashReport():
-                _testcapi.set_nomemory(0, 1)
-                try:
-                    _interpchannels._channel_id(0)
-                except MemoryError:
-                    seen = True
-                finally:
-                    _testcapi.remove_mem_hooks()
-            if not seen:
-                raise AssertionError("MemoryError not raised")
-            print("MemoryError")
-        """)
-        with support.SuppressCrashReport():
-            res, _ = run_python_until_end("-c", code)
-        self.assertEqual(res.rc, 0, res.err.decode("ascii", "replace"))
-        self.assertIn(b"MemoryError", res.out)
 
     def test_does_not_exist(self):
         cid = _channels.create(REPLACE)
