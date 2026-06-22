@@ -183,6 +183,12 @@ tkinter
   validation command.
   (Contributed by Serhiy Storchaka in :gh:`151878`.)
 
+* Added the :meth:`tkinter.Menu.postcascade` method, and the
+  :meth:`~tkinter.Misc.tk_scaling` and :meth:`~tkinter.Misc.tk_inactive`
+  methods which respectively query or set the display scaling factor and
+  report the user idle time.
+  (Contributed by Serhiy Storchaka in :gh:`151881`.)
+
 * Added new window-management methods :meth:`~tkinter.Misc.winfo_isdark`
   (dark mode detection), :meth:`~tkinter.Wm.wm_iconbadge` (application icon
   badge) and :meth:`~tkinter.Wm.wm_stackorder` (toplevel stacking order).
