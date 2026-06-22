@@ -1881,7 +1881,7 @@ Base and mixin classes
       first and ``STRING`` is used as a fallback.
       The *displayof* keyword argument names a widget that determines the
       display, and defaults to the root window of the application.
-      This is equivalent to ``selection_get(selection= 'CLIPBOARD')``.
+      This is equivalent to ``selection_get(selection='CLIPBOARD')``.
 
    .. method:: option_add(pattern, value, priority=None)
 
@@ -5780,6 +5780,7 @@ Variable classes
    .. method:: set(value)
 
       Set the variable to *value*.
+      :meth:`initialize` is an alias of :meth:`!set`.
 
       .. versionadded:: 3.3
          The *initialize* spelling.
@@ -5826,6 +5827,7 @@ Variable classes
       *mode* is one of the strings ``'r'``, ``'w'`` or ``'u'``, for read, write
       or unset.
       Return the internal name of the registered callback.
+      :meth:`trace` is an alias of :meth:`!trace_variable`.
 
       .. deprecated:: 3.6
          Use :meth:`trace_add` instead.  This method wraps a Tcl feature that
@@ -5897,6 +5899,7 @@ Variable classes
    .. method:: set(value)
 
       Set the variable to *value*, converting it to a boolean.
+      :meth:`initialize` is an alias of :meth:`!set`.
 
       .. versionadded:: 3.3
          The *initialize* spelling.
