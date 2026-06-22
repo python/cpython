@@ -3270,6 +3270,22 @@ class Canvas(Widget, XView, YView):
 
     lift = tkraise = tag_raise  # overrides Misc.tkraise
 
+    def rchars(self, *args):
+        """Replace the text or coordinates between indices FIRST and LAST of
+        the items identified by TAGORID with STRING.
+
+        Text items replace their text; line and polygon items replace their
+        coordinates, in which case STRING is a list of coordinates. Other
+        items ignore this operation."""
+        self.tk.call((self._w, 'rchars') + args)
+
+    def rotate(self, *args): # new in Tk 9.0
+        """Rotate the coordinates of the items identified by TAGORID about the
+        origin (XORIGIN, YORIGIN) by ANGLE degrees anticlockwise.
+
+        Negative values of ANGLE rotate clockwise."""
+        self.tk.call((self._w, 'rotate') + args)
+
     def scale(self, *args):
         """Scale item TAGORID with XORIGIN, YORIGIN, XSCALE, YSCALE."""
         self.tk.call((self._w, 'scale') + args)

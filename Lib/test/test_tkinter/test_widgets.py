@@ -1409,6 +1409,34 @@ class CanvasTest(AbstractWidgetTest, unittest.TestCase):
         self.assertRaises(TclError, c.scale, rect, 0, 0, 'spam', 2)
         self.assertRaises(TclError, c.scale, rect, 0, 0)  # missing factors
 
+    @requires_tk(8, 6)
+    def test_rchars(self):
+        c = self.create()
+        # On a line item, rchars replaces a range of the coordinate list.
+        line = c.create_line(0, 0, 10, 10, 20, 0)
+        c.rchars(line, 2, 5, (30, 30, 40, 40))
+        self.assertEqual(c.coords(line), [0.0, 0.0, 30.0, 30.0, 40.0, 40.0])
+        # On a text item, rchars replaces a range of characters.
+        text = c.create_text(10, 10, text='hello')
+        c.rchars(text, 0, 2, 'HE')
+        self.assertEqual(c.itemcget(text, 'text'), 'HElo')
+        self.assertRaises(TclError, c.rchars)
+
+    @requires_tk(9, 0)
+    def test_rotate(self):
+        c = self.create()
+        line = c.create_line(10, 0, 20, 0)
+        # The canvas y-axis points down, so an anticlockwise rotation about
+        # the origin maps (x, y) to (y, -x).
+        c.rotate(line, 0, 0, 90)
+        for got, expected in zip(c.coords(line), [0, -10, 0, -20]):
+            self.assertAlmostEqual(got, expected, places=3)
+        # A negative angle rotates clockwise, restoring the original position.
+        c.rotate(line, 0, 0, -90)
+        for got, expected in zip(c.coords(line), [10, 0, 20, 0]):
+            self.assertAlmostEqual(got, expected, places=3)
+        self.assertRaises(TclError, c.rotate, line, 0, 0, 'spam')
+
     def test_delete(self):
         c = self.create()
         r1 = c.create_rectangle(10, 10, 30, 30)
