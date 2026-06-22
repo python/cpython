@@ -745,6 +745,47 @@ class Misc:
         self.tk.call(('tk_setPalette',)
               + _flatten(args) + _flatten(list(kw.items())))
 
+    def tk_appname(self, name=None):
+        """Query or set the name used to communicate with this application
+        through the send command.
+
+        With no argument, return the current name; otherwise change it to NAME
+        and return the actual name set (which may have a suffix appended to
+        keep it unique)."""
+        if name is None:
+            return self.tk.call('tk', 'appname')
+        return self.tk.call('tk', 'appname', name)
+
+    def tk_useinputmethods(self, boolean=None, *, displayof=0):
+        """Query or set whether Tk uses the X Input Methods (XIM) for filtering
+        events, and return the resulting state.
+
+        This is significant only on X11; if XIM support is not available it
+        always returns False."""
+        args = ('tk', 'useinputmethods') + self._displayof(displayof)
+        if boolean is not None:
+            args += (boolean,)
+        return self.tk.getboolean(self.tk.call(args))
+
+    def tk_caret(self, *, x=None, y=None, height=None):
+        """Set or query the caret location for this widget's display.
+
+        The caret is the per-display insertion position used for global focus
+        indication (for accessibility) and for placing the input method
+        (XIM or IME) window.  With no argument, return the current location as
+        a dictionary with keys 'x', 'y' and 'height'; otherwise update the
+        given coordinates."""
+        args = ('tk', 'caret', self._w)
+        for option, value in (('-x', x), ('-y', y), ('-height', height)):
+            if value is not None:
+                args += (option, value)
+        if len(args) > 3:
+            self.tk.call(args)
+        else:
+            values = self.tk.splitlist(self.tk.call(args))
+            return {values[i][1:]: self.tk.getint(values[i + 1])
+                    for i in range(0, len(values), 2)}
+
     def tk_scaling(self, number=None, *, displayof=0):
         """Query or set the scaling factor used by Tk to convert between
         physical units and pixels.
