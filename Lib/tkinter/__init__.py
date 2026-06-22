@@ -3055,7 +3055,7 @@ class Canvas(Widget, XView, YView):
         """Add tag NEWTAG to all items with TAGORID."""
         self.addtag(newtag, 'withtag', tagOrId)
 
-    def bbox(self, *args):
+    def bbox(self, *args):  # overrides Misc.bbox
         """Return a tuple of X1,Y1,X2,Y2 coordinates for a rectangle
         which encloses all items with tags specified as arguments."""
         return self._getints(
@@ -3194,7 +3194,7 @@ class Canvas(Widget, XView, YView):
         """Return all items with TAGORID."""
         return self.find('withtag', tagOrId)
 
-    def focus(self, *args):
+    def focus(self, *args):  # overrides Misc.focus
         """Set focus to the first item specified in ARGS."""
         return self.tk.call((self._w, 'focus') + args)
 
@@ -3240,7 +3240,7 @@ class Canvas(Widget, XView, YView):
         (optional below another item)."""
         self.tk.call((self._w, 'lower') + args)
 
-    lower = tag_lower
+    lower = tag_lower  # overrides Misc.lower
 
     def move(self, *args):
         """Move an item TAGORID given in ARGS."""
@@ -3268,7 +3268,7 @@ class Canvas(Widget, XView, YView):
         (optional above another item)."""
         self.tk.call((self._w, 'raise') + args)
 
-    lift = tkraise = tag_raise
+    lift = tkraise = tag_raise  # overrides Misc.tkraise
 
     def scale(self, *args):
         """Scale item TAGORID with XORIGIN, YORIGIN, XSCALE, YSCALE."""
@@ -3413,7 +3413,7 @@ class Entry(Widget, XView):
 
     select_adjust = selection_adjust
 
-    def selection_clear(self):
+    def selection_clear(self):  # overrides Misc.selection_clear
         """Clear the selection if it is in this widget."""
         self.tk.call(self._w, 'selection', 'clear')
 
@@ -3507,7 +3507,7 @@ class Listbox(Widget, XView, YView):
         """Activate item identified by INDEX."""
         self.tk.call(self._w, 'activate', index)
 
-    def bbox(self, index):
+    def bbox(self, index):  # overrides Misc.bbox
         """Return a tuple of X1,Y1,X2,Y2 coordinates for a rectangle
         which encloses the item identified by the given index."""
         return self._getints(self.tk.call(self._w, 'bbox', index)) or None
@@ -3563,7 +3563,7 @@ class Listbox(Widget, XView, YView):
 
     select_anchor = selection_anchor
 
-    def selection_clear(self, first, last=None):
+    def selection_clear(self, first, last=None):  # overrides Misc.selection_clear
         """Clear the selection from FIRST to LAST (included)."""
         self.tk.call(self._w,
                  'selection', 'clear', first, last)
@@ -3584,7 +3584,7 @@ class Listbox(Widget, XView, YView):
 
     select_set = selection_set
 
-    def size(self):
+    def size(self):  # overrides Misc.size
         """Return the number of elements in the listbox."""
         return self.tk.getint(self.tk.call(self._w, 'size'))
 
@@ -3900,7 +3900,7 @@ class Text(Widget, XView, YView):
         """
         Widget.__init__(self, master, 'text', cnf, kw)
 
-    def bbox(self, index):
+    def bbox(self, index):  # overrides Misc.bbox
         """Return a tuple of (x,y,width,height) which gives the bounding
         box of the visible part of the character at the given index."""
         return self._getints(
@@ -4101,7 +4101,7 @@ class Text(Widget, XView, YView):
                  self._w, "image", "create", index,
                  *self._options(cnf, kw))
 
-    def image_names(self):
+    def image_names(self):  # overrides Misc.image_names
         """Return all names of embedded images in this widget."""
         return self.tk.call(self._w, "image", "names")
 
@@ -4814,7 +4814,7 @@ class Spinbox(Widget, XView):
         """
         Widget.__init__(self, master, 'spinbox', cnf, kw)
 
-    def bbox(self, index):
+    def bbox(self, index):  # overrides Misc.bbox
         """Return a tuple of X1,Y1,X2,Y2 coordinates for a
         rectangle which encloses the character given by index.
 
@@ -4923,7 +4923,7 @@ class Spinbox(Widget, XView):
         """
         return self.selection("adjust", index)
 
-    def selection_clear(self):
+    def selection_clear(self):  # overrides Misc.selection_clear
         """Clear the selection
 
         If the selection isn't in this widget then the
@@ -5020,7 +5020,7 @@ class PanedWindow(Widget):
         """
         self.tk.call(self._w, 'forget', child)
 
-    forget = remove
+    forget = remove  # overrides Pack.forget
 
     def identify(self, x, y):
         """Identify the panedwindow component at point x, y
