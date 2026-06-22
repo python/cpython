@@ -7,6 +7,7 @@ import datetime
 import functools
 import gc
 import importlib
+import importlib.util
 import inspect
 import io
 import linecache
@@ -6576,12 +6577,18 @@ class TestModuleCLI(unittest.TestCase):
         args = support.optim_args_from_interpreter_flags()
         rc, out, err = assert_python_ok(*args, '-m', 'inspect',
                                         module_name, '--details')
+        # assert_python_ok() runs the subprocess in isolated mode (-I), which
+        # ignores PYTHONPYCACHEPREFIX, so compute the expected cached path the
+        # same way (i.e. without any pycache prefix) to stay independent of the
+        # environment the test suite is run in.
+        with support.swap_attr(sys, 'pycache_prefix', None):
+            cached = importlib.util.cache_from_source(module.__spec__.origin)
         # Full rendering check on the expected output
         expected_lines = [
             f"Target: {module.__name__}",  # No aliasing
             f"Origin: {module.__spec__.origin}",
             f"Source: {module.__file__}",
-            f"Cached: {module.__spec__.cached}",  # None is still displayed
+            f"Cached: {cached}",  # None is still displayed
             f"Loader: {_clean_object_ids(repr(module.__spec__.loader))}",
             f"Submodule search paths: {module.__path__}",
             "",
@@ -6619,13 +6626,19 @@ class TestModuleCLI(unittest.TestCase):
         args = support.optim_args_from_interpreter_flags()
         rc, out, err = assert_python_ok(*args, '-m', 'inspect',
                                         cli_target, '--details')
+        # assert_python_ok() runs the subprocess in isolated mode (-I), which
+        # ignores PYTHONPYCACHEPREFIX, so compute the expected cached path the
+        # same way (i.e. without any pycache prefix) to stay independent of the
+        # environment the test suite is run in.
+        with support.swap_attr(sys, 'pycache_prefix', None):
+            cached = importlib.util.cache_from_source(module.__spec__.origin)
         # Full rendering check on the expected output
         # The error is only informational when reading source details
         expected_lines = [
             f"Target: {cli_target}",  # No aliasing
             f"Origin: {module.__spec__.origin}",
             f"Source: {module.__file__}",
-            f"Cached: {module.__spec__.cached}",  # None is still displayed
+            f"Cached: {cached}",  # None is still displayed
             self.NO_SOURCE_TARGET_ERROR,
             "",
         ]
@@ -6644,12 +6657,18 @@ class TestModuleCLI(unittest.TestCase):
         args = support.optim_args_from_interpreter_flags()
         rc, out, err = assert_python_ok(*args, '-m', 'inspect',
                                         cli_target, '--details')
+        # assert_python_ok() runs the subprocess in isolated mode (-I), which
+        # ignores PYTHONPYCACHEPREFIX, so compute the expected cached path the
+        # same way (i.e. without any pycache prefix) to stay independent of the
+        # environment the test suite is run in.
+        with support.swap_attr(sys, 'pycache_prefix', None):
+            cached = importlib.util.cache_from_source(module.__spec__.origin)
         # Full rendering check on the expected output
         expected_lines = [
             f'Target: {defining_target} (looked up as "{cli_target}")',
             f"Origin: {module.__spec__.origin}",
             f"Source: {module.__file__}",
-            f"Cached: {module.__spec__.cached}",  # None is still displayed
+            f"Cached: {cached}",  # None is still displayed
             f"Line: {inspect.findsource(target)[1]}",
             "",
         ]
