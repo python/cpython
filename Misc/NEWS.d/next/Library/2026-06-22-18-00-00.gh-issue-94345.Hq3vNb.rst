@@ -1,0 +1,4 @@
+:func:`dataclasses.asdict` and :func:`dataclasses.astuple` now raise
+:exc:`ValueError` when the dataclass instance contains a circular reference,
+instead of recursing until a :exc:`RecursionError` (or crashing on a release
+build).

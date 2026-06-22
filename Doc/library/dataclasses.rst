@@ -409,7 +409,12 @@ Module contents
      {field.name: getattr(obj, field.name) for field in fields(obj)}
 
    :func:`!asdict` raises :exc:`TypeError` if *obj* is not a dataclass
-   instance.
+   instance.  It raises :exc:`ValueError` if *obj* contains a circular
+   reference.
+
+   .. versionchanged:: next
+      A circular reference now raises :exc:`ValueError` instead of
+      :exc:`RecursionError`.
 
 .. function:: astuple(obj, *, tuple_factory=tuple)
 
@@ -429,7 +434,12 @@ Module contents
      tuple(getattr(obj, field.name) for field in dataclasses.fields(obj))
 
    :func:`!astuple` raises :exc:`TypeError` if *obj* is not a dataclass
-   instance.
+   instance.  It raises :exc:`ValueError` if *obj* contains a circular
+   reference.
+
+   .. versionchanged:: next
+      A circular reference now raises :exc:`ValueError` instead of
+      :exc:`RecursionError`.
 
 .. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False, weakref_slot=False, module=None, qualname=None, decorator=dataclass)
 
