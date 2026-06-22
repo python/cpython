@@ -255,6 +255,7 @@ def configure_wasi_python(context, working_dir):
         "ENV_VAR_NAME": "PYTHONPATH",
         "ENV_VAR_VALUE": f"/{sysconfig_data}",
         "PYTHON_WASM": working_dir / "python.wasm",
+        "ARGV0": wasi_build_dir / "python.wasm",
     }
     # Check dynamically for wasmtime in case it was specified manually via
     # `--host-runner`.
@@ -344,6 +345,8 @@ def main():
         "--wasm max-wasm-stack=8388608 "
         # Use WASI 0.2 primitives.
         "--wasi preview2 "
+        # Explicitly set the argv[0] value
+        "--argv0 {ARGV0} "
         # Enable thread support; causes use of preview1.
         # "--wasm threads=y --wasi threads=y "
         # Map the checkout to / to load the stdlib from /Lib.
