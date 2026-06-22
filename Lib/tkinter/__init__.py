@@ -4692,25 +4692,58 @@ class PhotoImage(Image):
             options.extend(('-compositingrule', compositingrule))
         self.tk.call(self.name, 'copy', sourceImage, *options)
 
-    def get(self, x, y):
-        """Return the color (red, green, blue) of the pixel at X,Y."""
-        return self.tk.call(self.name, 'get', x, y)
+    @staticmethod
+    def _metadata(metadata):
+        # A Tcl dict is a flat list of alternating keys and values.  A Python
+        # dict passed directly would expand to its keys only, so flatten it.
+        flat = ()
+        for key, value in metadata.items():
+            flat += (key, value)
+        return flat
 
-    def put(self, data, to=None):
+    def get(self, x, y, *, withalpha=False):
+        """Return the color of the pixel at X,Y as a tuple of its red, green
+        and blue components.
+
+        If WITHALPHA is true, the returned tuple has a fourth element giving
+        the alpha (opacity) value of the pixel.  This requires Tcl/Tk 9.0 or
+        newer.
+        """
+        args = (self.name, 'get', x, y)
+        if withalpha:
+            args += ('-withalpha',)
+        return self.tk.call(args)
+
+    def put(self, data, to=None, *, format=None, metadata=None):
         """Put row formatted colors to image starting from
-        position TO, e.g. image.put("{red green} {blue yellow}", to=(4,6))"""
+        position TO, e.g. image.put("{red green} {blue yellow}", to=(4,6))
+
+        The FORMAT option specifies the format of the image DATA, so that only
+        image file format handlers whose names begin with it are tried.
+
+        The METADATA option, a dictionary passed to the image format driver,
+        requires Tcl/Tk 9.0 or newer.
+        """
         args = (self.name, 'put', data)
+        if format is not None:
+            args += ('-format', format)
+        if metadata is not None:
+            args += ('-metadata', self._metadata(metadata))
         if to:
             if to[0] == '-to':
                 to = to[1:]
-            args = args + ('-to',) + tuple(to)
+            args += ('-to',) + tuple(to)
         self.tk.call(args)
 
-    def read(self, filename, format=None, *, from_coords=None, to=None, shrink=False):
+    def read(self, filename, format=None, *, from_coords=None, to=None,
+             shrink=False, metadata=None):
         """Reads image data from the file named FILENAME into the image.
 
         The FORMAT option specifies the format of the image data in the
         file.
+
+        The METADATA option, a dictionary passed to the image format driver,
+        requires Tcl/Tk 9.0 or newer.
 
         The FROM_COORDS option specifies a rectangular sub-region of the image
         file data to be copied to the destination image.  It must be a tuple
@@ -4731,6 +4764,8 @@ class PhotoImage(Image):
         options = ()
         if format is not None:
             options += ('-format', format)
+        if metadata is not None:
+            options += ('-metadata', self._metadata(metadata))
         if from_coords is not None:
             options += ('-from', *from_coords)
         if shrink:
@@ -4740,12 +4775,15 @@ class PhotoImage(Image):
         self.tk.call(self.name, 'read', filename, *options)
 
     def write(self, filename, format=None, from_coords=None, *,
-              background=None, grayscale=False):
+              background=None, grayscale=False, metadata=None):
         """Writes image data from the image to a file named FILENAME.
 
         The FORMAT option specifies the name of the image file format
         handler to be used to write the data to the file.  If this option
         is not given, the format is guessed from the file extension.
+
+        The METADATA option, a dictionary passed to the image format driver,
+        requires Tcl/Tk 9.0 or newer.
 
         The FROM_COORDS option specifies a rectangular region of the image
         to be written to the image file.  It must be a tuple or a list of 1
@@ -4765,6 +4803,8 @@ class PhotoImage(Image):
         options = ()
         if format is not None:
             options += ('-format', format)
+        if metadata is not None:
+            options += ('-metadata', self._metadata(metadata))
         if from_coords is not None:
             options += ('-from', *from_coords)
         if grayscale:
@@ -4774,8 +4814,11 @@ class PhotoImage(Image):
         self.tk.call(self.name, 'write', filename, *options)
 
     def data(self, format=None, *, from_coords=None,
-             background=None, grayscale=False):
+             background=None, grayscale=False, metadata=None):
         """Returns image data.
+
+        The METADATA option, a dictionary passed to the image format driver,
+        requires Tcl/Tk 9.0 or newer.
 
         The FORMAT option specifies the name of the image file format
         handler to be used.  If this option is not given, this method uses
@@ -4803,6 +4846,8 @@ class PhotoImage(Image):
         options = ()
         if format is not None:
             options += ('-format', format)
+        if metadata is not None:
+            options += ('-metadata', self._metadata(metadata))
         if from_coords is not None:
             options += ('-from', *from_coords)
         if grayscale:
