@@ -589,6 +589,25 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
         self.assertRaisesRegex(TclError, 'bad entry index "xyz"',
                                widget.select_range, 'xyz', 'end')
 
+    def test_validate(self):
+        calls = []
+        def validatecommand(value):
+            calls.append(value)
+            return value.isdigit()
+        # validate='none' means validation is never triggered automatically,
+        # so validate() exercises the forced evaluation.
+        widget = self.create(validate='none',
+                validatecommand=(self.root.register(validatecommand), '%P'))
+        widget.insert(0, '123')
+        result = widget.validate()
+        self.assertIs(result, True)
+        self.assertEqual(calls, ['123'])
+        widget.delete(0, 'end')
+        widget.insert(0, 'abc')
+        calls.clear()
+        self.assertIs(widget.validate(), False)
+        self.assertEqual(calls, ['abc'])
+
 
 @add_configure_tests(StandardOptionsTests)
 class SpinboxTest(EntryTest, unittest.TestCase):
