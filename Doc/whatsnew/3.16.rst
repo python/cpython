@@ -168,6 +168,11 @@ tkinter
   validation command.
   (Contributed by Serhiy Storchaka in :gh:`151878`.)
 
+* Added new window-management methods :meth:`~tkinter.Misc.winfo_isdark`
+  (dark mode detection), :meth:`~tkinter.Wm.wm_iconbadge` (application icon
+  badge) and :meth:`~tkinter.Wm.wm_stackorder` (toplevel stacking order).
+  (Contributed by Serhiy Storchaka in :gh:`151874`.)
+
 
 xml
 ---
