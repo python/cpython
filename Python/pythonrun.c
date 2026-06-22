@@ -567,6 +567,7 @@ _PyRun_SimpleStringFlagsWithName(const char *command, const char* name, PyCompil
         PyObject* the_name = PyUnicode_FromString(name);
         if (!the_name) {
             PyErr_Print();
+            Py_DECREF(main_module);
             return -1;
         }
         res = _PyRun_StringFlagsWithName(command, the_name, Py_file_input, dict, dict, flags, 0);
@@ -1381,11 +1382,11 @@ get_interactive_filename(PyObject *filename, Py_ssize_t count)
         if (middle == NULL) {
             return NULL;
         }
-        result = PyUnicode_FromFormat("<%U-%d>", middle, count);
+        result = PyUnicode_FromFormat("<%U-%zd>", middle, count);
         Py_DECREF(middle);
     } else {
         result = PyUnicode_FromFormat(
-            "%U-%d", filename, count);
+            "%U-%zd", filename, count);
     }
     return result;
 

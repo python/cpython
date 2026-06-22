@@ -1,3 +1,4 @@
+import builtins
 import os
 import sys
 
@@ -15,7 +16,6 @@ if False:
 
 class ANSIColors:
     RESET = "\x1b[0m"
-
     BLACK = "\x1b[30m"
     BLUE = "\x1b[34m"
     CYAN = "\x1b[36m"
@@ -190,6 +190,25 @@ class Argparse(ThemeSection):
 
 
 @dataclass(frozen=True, kw_only=True)
+class Ast(ThemeSection):
+    node: str = ANSIColors.CYAN
+    field: str = ANSIColors.BLUE
+    attribute: str = ANSIColors.GREY
+    string: str = ANSIColors.GREEN
+    number: str = ANSIColors.YELLOW
+    keyword: str = ANSIColors.BOLD_BLUE
+    reset: str = ANSIColors.RESET
+
+
+@dataclass(frozen=True, kw_only=True)
+class Calendar(ThemeSection):
+    header: str = ANSIColors.BOLD
+    highlight: str = ANSIColors.BLACK + ANSIColors.BACKGROUND_YELLOW
+    weekday: str = ANSIColors.CYAN
+    reset: str = ANSIColors.RESET
+
+
+@dataclass(frozen=True, kw_only=True)
 class Difflib(ThemeSection):
     """A 'git diff'-like theme for `difflib.unified_diff`."""
     added: str = ANSIColors.GREEN
@@ -197,6 +216,46 @@ class Difflib(ThemeSection):
     header: str = ANSIColors.BOLD  # eg "---" and "+++" lines
     hunk: str = ANSIColors.CYAN  # the "@@" lines
     removed: str = ANSIColors.RED
+    reset: str = ANSIColors.RESET
+
+
+@dataclass(frozen=True, kw_only=True)
+class FancyCompleter(ThemeSection):
+    # functions and methods
+    function: builtins.str = ANSIColors.BOLD_BLUE
+    builtin_function_or_method: builtins.str = ANSIColors.BOLD_BLUE
+    method: builtins.str = ANSIColors.BOLD_CYAN
+    method_wrapper: builtins.str = ANSIColors.BOLD_CYAN
+    wrapper_descriptor: builtins.str = ANSIColors.BOLD_CYAN
+    method_descriptor: builtins.str = ANSIColors.BOLD_CYAN
+
+    # numbers
+    int: builtins.str = ANSIColors.BOLD_YELLOW
+    float: builtins.str = ANSIColors.BOLD_YELLOW
+    complex: builtins.str = ANSIColors.BOLD_YELLOW
+    bool: builtins.str = ANSIColors.BOLD_YELLOW
+
+    # others
+    type: builtins.str = ANSIColors.BOLD_MAGENTA
+    module: builtins.str = ANSIColors.CYAN
+    NoneType: builtins.str = ANSIColors.GREY
+    bytes: builtins.str = ANSIColors.BOLD_GREEN
+    str: builtins.str = ANSIColors.BOLD_GREEN
+
+
+@dataclass(frozen=True, kw_only=True)
+class HttpServer(ThemeSection):
+    error: str = ANSIColors.YELLOW
+    path: str = ANSIColors.CYAN
+    serving: str = ANSIColors.GREEN
+    size: str = ANSIColors.GREY
+    status_informational: str = ANSIColors.RESET
+    status_ok: str = ANSIColors.GREEN
+    status_redirect: str = ANSIColors.INTENSE_CYAN
+    status_client_error: str = ANSIColors.YELLOW
+    status_server_error: str = ANSIColors.RED
+    timestamp: str = ANSIColors.GREY
+    url: str = ANSIColors.CYAN
     reset: str = ANSIColors.RESET
 
 
@@ -309,6 +368,40 @@ LiveProfilerLight = LiveProfiler(
 
 
 @dataclass(frozen=True, kw_only=True)
+class ProfilerDump(ThemeSection):
+    header: str = ANSIColors.BOLD_BLUE
+    interpreter: str = ANSIColors.GREY
+    thread: str = ANSIColors.BOLD_CYAN
+    status: str = ANSIColors.YELLOW
+    frame_index: str = ANSIColors.GREY
+    frame: str = ANSIColors.BOLD_GREEN
+    filename: str = ANSIColors.CYAN
+    line_no: str = ANSIColors.YELLOW
+    source: str = ANSIColors.WHITE
+    source_highlight: str = ANSIColors.BOLD_YELLOW
+    opcode: str = ANSIColors.GREY
+    warning: str = ANSIColors.YELLOW
+    reset: str = ANSIColors.RESET
+
+
+@dataclass(frozen=True, kw_only=True)
+class Pickletools(ThemeSection):
+    annotation: str = ANSIColors.GREY
+    arg_number: str = ANSIColors.YELLOW
+    arg_string: str = ANSIColors.GREEN
+    mark: str = ANSIColors.GREY
+    op_call: str = ANSIColors.GREEN
+    op_container: str = ANSIColors.INTENSE_BLUE
+    op_memo: str = ANSIColors.MAGENTA
+    op_meta: str = ANSIColors.GREY
+    op_stack: str = ANSIColors.BOLD_RED
+    opcode_code: str = ANSIColors.CYAN
+    position: str = ANSIColors.GREY
+    proto: str = ANSIColors.YELLOW
+    reset: str = ANSIColors.RESET
+
+
+@dataclass(frozen=True, kw_only=True)
 class Syntax(ThemeSection):
     prompt: str = ANSIColors.BOLD_MAGENTA
     keyword: str = ANSIColors.BOLD_BLUE
@@ -324,9 +417,30 @@ class Syntax(ThemeSection):
 
 
 @dataclass(frozen=True, kw_only=True)
+class Timeit(ThemeSection):
+    timing: str = ANSIColors.CYAN
+    best: str = ANSIColors.BOLD_GREEN
+    per_loop: str = ANSIColors.GREEN
+    punctuation: str = ANSIColors.GREY
+    warning: str = ANSIColors.YELLOW
+    warning_worst: str = ANSIColors.MAGENTA
+    warning_best: str = ANSIColors.GREEN
+    reset: str = ANSIColors.RESET
+
+
+@dataclass(frozen=True, kw_only=True)
+class Tokenize(ThemeSection):
+    whitespace: str = ANSIColors.GREY
+    error: str = ANSIColors.BOLD_RED
+    position: str = ANSIColors.GREY
+    delimiter: str = ANSIColors.RESET
+
+
+@dataclass(frozen=True, kw_only=True)
 class Traceback(ThemeSection):
     type: str = ANSIColors.BOLD_MAGENTA
     message: str = ANSIColors.MAGENTA
+    note: str = ANSIColors.CYAN
     filename: str = ANSIColors.MAGENTA
     line_no: str = ANSIColors.MAGENTA
     frame: str = ANSIColors.MAGENTA
@@ -352,9 +466,17 @@ class Theme:
     below.
     """
     argparse: Argparse = field(default_factory=Argparse)
+    ast: Ast = field(default_factory=Ast)
+    calendar: Calendar = field(default_factory=Calendar)
     difflib: Difflib = field(default_factory=Difflib)
+    fancycompleter: FancyCompleter = field(default_factory=FancyCompleter)
+    http_server: HttpServer = field(default_factory=HttpServer)
     live_profiler: LiveProfiler = field(default_factory=LiveProfiler)
+    pickletools: Pickletools = field(default_factory=Pickletools)
+    profiler_dump: ProfilerDump = field(default_factory=ProfilerDump)
     syntax: Syntax = field(default_factory=Syntax)
+    timeit: Timeit = field(default_factory=Timeit)
+    tokenize: Tokenize = field(default_factory=Tokenize)
     traceback: Traceback = field(default_factory=Traceback)
     unittest: Unittest = field(default_factory=Unittest)
 
@@ -362,9 +484,17 @@ class Theme:
         self,
         *,
         argparse: Argparse | None = None,
+        ast: Ast | None = None,
+        calendar: Calendar | None = None,
         difflib: Difflib | None = None,
+        fancycompleter: FancyCompleter | None = None,
+        http_server: HttpServer | None = None,
         live_profiler: LiveProfiler | None = None,
+        pickletools: Pickletools | None = None,
+        profiler_dump: ProfilerDump | None = None,
         syntax: Syntax | None = None,
+        timeit: Timeit | None = None,
+        tokenize: Tokenize | None = None,
         traceback: Traceback | None = None,
         unittest: Unittest | None = None,
     ) -> Self:
@@ -375,9 +505,17 @@ class Theme:
         """
         return type(self)(
             argparse=argparse or self.argparse,
+            ast=ast or self.ast,
+            calendar=calendar or self.calendar,
             difflib=difflib or self.difflib,
+            fancycompleter=fancycompleter or self.fancycompleter,
+            http_server=http_server or self.http_server,
             live_profiler=live_profiler or self.live_profiler,
+            pickletools=pickletools or self.pickletools,
+            profiler_dump=profiler_dump or self.profiler_dump,
             syntax=syntax or self.syntax,
+            timeit=timeit or self.timeit,
+            tokenize=tokenize or self.tokenize,
             traceback=traceback or self.traceback,
             unittest=unittest or self.unittest,
         )
@@ -392,9 +530,17 @@ class Theme:
         """
         return cls(
             argparse=Argparse.no_colors(),
+            ast=Ast.no_colors(),
+            calendar=Calendar.no_colors(),
             difflib=Difflib.no_colors(),
+            fancycompleter=FancyCompleter.no_colors(),
+            http_server=HttpServer.no_colors(),
             live_profiler=LiveProfiler.no_colors(),
+            pickletools=Pickletools.no_colors(),
+            profiler_dump=ProfilerDump.no_colors(),
             syntax=Syntax.no_colors(),
+            timeit=Timeit.no_colors(),
+            tokenize=Tokenize.no_colors(),
             traceback=Traceback.no_colors(),
             unittest=Unittest.no_colors(),
         )

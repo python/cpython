@@ -145,7 +145,13 @@ class BaseContext(object):
         '''Check whether this is a fake forked process in a frozen executable.
         If so then run code specified by commandline and exit.
         '''
-        if self.get_start_method() == 'spawn' and getattr(sys, 'frozen', False):
+        # gh-140814: allow_none=True avoids locking in the default start
+        # method, which would cause a later set_start_method() to fail.
+        # None is safe to pass through: spawn.freeze_support()
+        # independently detects whether this process is a spawned
+        # child, so the start method check here is only an optimization.
+        if (getattr(sys, 'frozen', False)
+                and self.get_start_method(allow_none=True) in ('spawn', None)):
             from .spawn import freeze_support
             freeze_support()
 
@@ -320,8 +326,10 @@ if sys.platform != 'win32':
     _concrete_contexts = {
         'fork': ForkContext(),
         'spawn': SpawnContext(),
-        'forkserver': ForkServerContext(),
     }
+    if reduction.HAVE_SEND_HANDLE:
+        _concrete_contexts['forkserver'] = ForkServerContext()
+
     # bpo-33725: running arbitrary code after fork() is no longer reliable
     # on macOS since macOS 10.14 (Mojave). Use spawn by default instead.
     # gh-84559: We changed everyones default to a thread safeish one in 3.14.

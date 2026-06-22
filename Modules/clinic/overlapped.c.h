@@ -529,8 +529,9 @@ PyDoc_STRVAR(_overlapped_Overlapped_getresult__doc__,
 "\n"
 "Retrieve result of operation.\n"
 "\n"
-"If wait is true then it blocks until the operation is finished.  If wait\n"
-"is false and the operation is still pending then an error is raised.");
+"If wait is true then it blocks until the operation is finished.  If\n"
+"wait is false and the operation is still pending then an error is\n"
+"raised.");
 
 #define _OVERLAPPED_OVERLAPPED_GETRESULT_METHODDEF    \
     {"getresult", _PyCFunction_CAST(_overlapped_Overlapped_getresult), METH_FASTCALL, _overlapped_Overlapped_getresult__doc__},
@@ -1242,4 +1243,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=3e4cb2b55342cd96 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0ecaf45a09539599 input=a9049054013a1b77]*/
