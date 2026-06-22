@@ -117,7 +117,7 @@ lzma
 
 * Add support of new BCJ filters ARM64 and RISC-V via
   :const:`!lzma.FILTER_ARM64` and :const:`!lzma.FILTER_RISCV`.  Note that the
-  new filters will work only if runtime library supports them. ARM64 filter
+  new filters will work only if the runtime library supports them. ARM64 filter
   requires ``lzma`` 5.4.0 or newer while RISC-V requires 5.6.0 or newer.
   (Contributed by Chien Wong in :gh:`115988`.)
 
@@ -168,15 +168,15 @@ xml
 ---
 
 * Add support for multiple multi-byte encodings in the :mod:`XML parser
-  <xml.parsers.expat>`: "cp932", "cp949", "cp950", "Big5","EUC-JP",
+  <xml.parsers.expat>`: "cp932", "cp949", "cp950", "Big5", "EUC-JP",
   "GB2312", "GBK", "johab", and "Shift_JIS".
   Add partial support (only BMP characters) for multi-byte encodings
   "Big5-HKSCS", "EUC_JIS-2004", "EUC_JISX0213", "Shift_JIS-2004",
   "Shift_JISX0213", "utf-8-sig" and non-standard aliases like "UTF8"
   (without hyphen).
   The parser now raises :exc:`ValueError` for known unsupported
-  multi-byte encodings such us "ISO-2022-JP" or "raw-unicode-escape"
-  instead of failing later, when encounter non-ASCII data.
+  multi-byte encodings such as "ISO-2022-JP" or "raw-unicode-escape"
+  instead of failing later, when encountering non-ASCII data.
   (Contributed by Serhiy Storchaka in :gh:`62259`.)
 
 zipfile
