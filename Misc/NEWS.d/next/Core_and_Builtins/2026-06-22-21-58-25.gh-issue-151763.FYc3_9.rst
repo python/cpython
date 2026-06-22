@@ -1,3 +1,3 @@
 Fix a possible double-free of ```PyObject* error_line``` in
 ```_PyPegen_raise_error_known_location``` in ```pegen_errors.c``` by
-resetting it to ```NULL```. It now correctly raises MemoryError.
+resetting it to ```NULL```. It now correctly raises ```MemoryError```.
