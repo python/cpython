@@ -463,6 +463,29 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(root['background'], '#ffe4c4')
         self.assertRaises(TypeError, root.tk_bisque, 'x')
 
+    def test_tk_appname(self):
+        old = self.root.tk_appname()
+        self.assertIsInstance(old, str)
+        self.addCleanup(self.root.tk_appname, old)
+        # Setting the name returns the actual name (possibly with a suffix
+        # appended to keep it unique).
+        new = self.root.tk_appname('PythonTkTest')
+        self.assertIsInstance(new, str)
+        self.assertEqual(self.root.tk_appname(), new)
+
+    def test_tk_useinputmethods(self):
+        old = self.root.tk_useinputmethods()
+        self.assertIsInstance(old, bool)
+        self.addCleanup(self.root.tk_useinputmethods, old)
+        # Setting returns the resulting state.  On systems without XIM support
+        # the state is always False, so only check the True->False direction.
+        self.assertIs(self.root.tk_useinputmethods(False), False)
+
+    def test_tk_caret(self):
+        self.assertIsNone(self.root.tk_caret(x=5, y=10, height=20))
+        caret = self.root.tk_caret()
+        self.assertEqual(caret, {'x': 5, 'y': 10, 'height': 20})
+
     def test_tk_scaling(self):
         old = self.root.tk_scaling()
         self.assertIsInstance(old, float)
