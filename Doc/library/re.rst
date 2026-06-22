@@ -508,9 +508,17 @@ The special characters are:
    Will try to match with ``yes-pattern`` if the group with given *id* or
    *name* exists, and with ``no-pattern`` if it doesn't. ``no-pattern`` is
    optional and can be omitted. For example,
-   ``(<)?(\w+@\w+(?:\.\w+)+)(?(1)>|$)`` is a poor email matching pattern, which
-   will match with ``'<user@host.com>'`` as well as ``'user@host.com'``, but
-   not with ``'<user@host.com'`` nor ``'user@host.com>'``.
+   ``(<)?(\w+@\w+(?:\.\w+)+)(?(1)>|$)`` is a poor email matching pattern,
+   which will match with ``'<user@host.com>'`` as well as ``'user@host.com'``,
+   and will not match with ``'user@host.com>'``.
+
+   Note that when ``yes-pattern`` is not matched while the captured group
+   was set, backtracking clears the capture (the optional group falls
+   back to its no-match state). For example,
+   ``(<)?\w+(?(1)>)`` applied to ``'<3'`` matches only ``'3'`` at
+   position 1 with ``group(1) is None``: the engine first consumes the
+   leading ``<`` to satisfy group 1, fails to match ``>`` at position
+   2, then retries without consuming ``<``.
 
    .. versionchanged:: 3.12
       Group *id* can only contain ASCII digits.

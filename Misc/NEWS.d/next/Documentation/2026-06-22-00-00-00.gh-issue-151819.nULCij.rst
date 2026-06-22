@@ -1,0 +1,4 @@
+Clarify the :ref:`re-syntax` for ``(?(id/name)yes-pattern|no-pattern)``:
+add a paragraph documenting that backtracking can clear an optional
+capture group whose ``yes-pattern`` fails to match. Also correct the
+embedded example pattern's expected matches.  Issue #151819.

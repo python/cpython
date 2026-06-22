@@ -706,6 +706,37 @@ class ReTests(unittest.TestCase):
         self.checkPatternError(r'()(?(2)a)',
                                "invalid group reference 2", 5)
 
+    def test_re_conditional_drops_capture_on_backtrack(self):
+        # Issue: a captured optional group is cleared when backtracking
+        # causes the ``yes-pattern`` of a (?(id/name)yes|no) construct
+        # to not match after the capture was set. See:
+        # https://github.com/python/cpython/issues/151819
+        # Minimal reproduction from the issue:
+        m = re.search(r'(<)?\w+(?(1)>)', '<3')
+        self.assertEqual(m.group(), '3')
+        self.assertEqual(m.span(), (1, 2))
+        self.assertEqual(m.group(1), None)
+
+        # The successful case keeps the capture intact:
+        m = re.search(r'(<)?\w+(?(1)>)', '<body>')
+        self.assertEqual(m.group(), '<body>')
+        self.assertEqual(m.span(), (0, 6))
+        self.assertEqual(m.group(1), '<')
+
+        # Same effect with ``\w`` style groups and a longer input:
+        m = re.search(r'(<)?[A-Za-z]+(?(1)>)', '<abcXYZ')
+        self.assertEqual(m.group(), 'abcXYZ')
+        self.assertEqual(m.span(), (1, 7))
+        self.assertEqual(m.group(1), None)
+
+        # The pattern documented in Re.rst: with yes-pattern failing
+        # the leading "<" is rerolled.
+        m = re.search(r'(<)?(\w+@\w+(?:\.\w+)+)(?(1)>|$)', '<user@host.com')
+        self.assertEqual(m.group(), 'user@host.com')
+        self.assertEqual(m.span(), (1, 14))
+        self.assertEqual(m.group(1), None)
+        self.assertEqual(m.group(2), 'user@host.com')
+
     def test_re_groupref_exists_validation_bug(self):
         for i in range(256):
             with self.subTest(code=i):
