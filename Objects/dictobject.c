@@ -4147,7 +4147,9 @@ dict_dict_merge(PyDictObject *mp, PyDictObject *other, int override, PyObject **
             set_keys(mp, keys);
             STORE_USED(mp, other->ma_used);
             ASSERT_CONSISTENT(mp);
-
+            if (PyDict_Check(mp)) {
+                assert(_PyObject_GC_IS_TRACKED(mp));
+            }
             return 0;
         }
     }
@@ -5263,7 +5265,7 @@ dict_new_untracked(PyTypeObject *type)
 static PyObject *
 dict_new(PyTypeObject *type, PyObject *Py_UNUSED(args), PyObject *Py_UNUSED(kwds))
 {
-    /* tp_new only allocates; args/kwds are consumed by dict_init (tp_init). */
+    /* tp_new ignores args/kwds; args/kwds are consumed by dict_init (tp_init). */
     PyObject *self = dict_new_untracked(type);
     if (self == NULL) {
         return NULL;
@@ -5328,8 +5330,8 @@ frozendict_vectorcall(PyObject *type, PyObject * const*args,
         return Py_NewRef(args[0]);
     }
 
-    /* Keep the frozendict untracked until it is fully built, so a half-built
-       object is never reachable from another thread. */
+    /* gh-151722: Keep the frozendict untracked until it is fully built,
+       so a half-built object is never reachable from another thread (using the gc module). */
     PyObject *self = frozendict_new_untracked(_PyType_CAST(type));
     if (self == NULL) {
         return NULL;
