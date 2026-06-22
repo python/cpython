@@ -71,13 +71,6 @@ The :mod:`!csv` module defines the following functions:
    automatic data type conversion is performed unless the :data:`QUOTE_NONNUMERIC` format
    option is specified (in which case unquoted fields are transformed into floats).
 
-   Assume that :file:`eggs.csv` contains:
-
-   .. code-block:: text
-
-      Spam Spam Spam Spam Spam |Baked Beans|
-      Spam |Lovely Spam| |Wonderful Spam|
-
    A short usage example::
 
       >>> import csv
@@ -87,6 +80,13 @@ The :mod:`!csv` module defines the following functions:
       ...         print(', '.join(row))
       Spam, Spam, Spam, Spam, Spam, Baked Beans
       Spam, Lovely Spam, Wonderful Spam
+
+   where :file:`eggs.csv` contains:
+
+   .. code-block:: text
+
+      Spam Spam Spam Spam Spam |Baked Beans|
+      Spam |Lovely Spam| |Wonderful Spam|
 
 
 .. function:: writer(csvfile, /, dialect='excel', **fmtparams)
@@ -191,14 +191,6 @@ The :mod:`!csv` module defines the following classes:
    .. versionchanged:: 3.8
       Returned rows are now of type :class:`dict`.
 
-   Assume that :file:`names.csv` contains:
-
-   .. code-block:: text
-
-      first_name,last_name
-      Eric,Idle
-      John,Cleese
-
    A short usage example::
 
        >>> import csv
@@ -212,6 +204,14 @@ The :mod:`!csv` module defines the following classes:
 
        >>> print(row)
        {'first_name': 'John', 'last_name': 'Cleese'}
+
+   where :file:`names.csv` contains:
+
+   .. code-block:: text
+
+      first_name,last_name
+      Eric,Idle
+      John,Cleese
 
 
 .. class:: DictWriter(f, fieldnames, restval='', extrasaction='raise', \
