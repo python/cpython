@@ -246,8 +246,9 @@ write code that handles both IP versions correctly.  Address objects are
       .. note:: For IPv4, ``is_reserved`` is not related to the address block value of the
         ``Reserved-by-Protocol`` column in iana-ipv4-special-registry_.
 
-      .. caution:: For IPv6, ``fec0::/10`` a former Site-Local scoped address prefix is
-         currently excluded from that list (see :attr:`~IPv6Address.is_site_local` & :rfc:`3879`).
+      .. versionchanged:: next
+         For IPv6, ``fec0::/10`` (the former Site-Local scoped address prefix
+         deprecated by :rfc:`3879`) is now included in the reserved range.
 
    .. attribute:: is_loopback
 
@@ -364,6 +365,11 @@ write code that handles both IP versions correctly.  Address objects are
       the site-local address space has been deprecated by :RFC:`3879`. Use
       :attr:`~IPv4Address.is_private` to test if this address is in the
       space of unique local addresses as defined by :RFC:`4193`.
+
+      .. deprecated:: next
+         Site-local addresses (``fec0::/10``) were deprecated by :rfc:`3879`.
+         Use :attr:`~IPv6Address.is_private` instead.  This attribute is
+         slated for removal in Python 3.21.
 
    .. attribute:: ipv4_mapped
 
@@ -799,6 +805,11 @@ dictionaries.
 
       This attribute is true for the network as a whole if it is true
       for both the network address and the broadcast address.
+
+      .. deprecated:: next
+         Site-local addresses (``fec0::/10``) were deprecated by :rfc:`3879`.
+         Use :attr:`~IPv6Network.is_private` instead.  This attribute is
+         slated for removal in Python 3.21.
 
 
 Operators

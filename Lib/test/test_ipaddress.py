@@ -2418,12 +2418,16 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(True, ipaddress.ip_network('ff00::').is_multicast)
         self.assertEqual(False, ipaddress.ip_network('fdff::').is_multicast)
 
-        self.assertEqual(True, ipaddress.ip_network('fecf::').is_site_local)
-        self.assertEqual(True, ipaddress.ip_network(
-                'feff:ffff:ffff:ffff::').is_site_local)
-        self.assertEqual(False, ipaddress.ip_network(
-                'fbf:ffff::').is_site_local)
-        self.assertEqual(False, ipaddress.ip_network('ff00::').is_site_local)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(True, ipaddress.ip_network('fecf::').is_site_local)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(True, ipaddress.ip_network(
+                    'feff:ffff:ffff:ffff::').is_site_local)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(False, ipaddress.ip_network(
+                    'fbf:ffff::').is_site_local)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(False, ipaddress.ip_network('ff00::').is_site_local)
 
         self.assertEqual(True, ipaddress.ip_network('fc00::').is_private)
         self.assertEqual(True, ipaddress.ip_network(
@@ -2457,12 +2461,16 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(True, ipaddress.ip_address('ff00::').is_multicast)
         self.assertEqual(False, ipaddress.ip_address('fdff::').is_multicast)
 
-        self.assertEqual(True, ipaddress.ip_address('fecf::').is_site_local)
-        self.assertEqual(True, ipaddress.ip_address(
-                'feff:ffff:ffff:ffff::').is_site_local)
-        self.assertEqual(False, ipaddress.ip_address(
-                'fbf:ffff::').is_site_local)
-        self.assertEqual(False, ipaddress.ip_address('ff00::').is_site_local)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(True, ipaddress.ip_address('fecf::').is_site_local)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(True, ipaddress.ip_address(
+                    'feff:ffff:ffff:ffff::').is_site_local)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(False, ipaddress.ip_address(
+                    'fbf:ffff::').is_site_local)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(False, ipaddress.ip_address('ff00::').is_site_local)
 
         self.assertEqual(True, ipaddress.ip_address('fc00::').is_private)
         self.assertEqual(True, ipaddress.ip_address(
@@ -2503,6 +2511,9 @@ class IpaddrUnitTest(unittest.TestCase):
         # some generic IETF reserved addresses
         self.assertEqual(True, ipaddress.ip_address('100::').is_reserved)
         self.assertEqual(True, ipaddress.ip_network('4000::1/128').is_reserved)
+        # gh-136832: fec0::/10 (former site-local prefix) is reserved
+        self.assertEqual(True, ipaddress.ip_address('fec0::1').is_reserved)
+        self.assertEqual(True, ipaddress.ip_network('fec0::/10').is_reserved)
 
     def testIpv4Mapped(self):
         self.assertEqual(
