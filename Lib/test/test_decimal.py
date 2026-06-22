@@ -1849,7 +1849,10 @@ class ThreadingTest:
             results['parent_after_prec'] = getcontext().prec
             return results
 
-        results = asyncio.run(parent())
+        # Pass loop_factory so asyncio.run() doesn't lazily initialize the
+        # global event loop policy, which would be reported as "env changed"
+        # by regrtest (e.g. on iOS/Android where the policy starts as None).
+        results = asyncio.run(parent(), loop_factory=asyncio.EventLoop)
 
         # Child inherits the parent's precision value...
         self.assertEqual(results['child_initial_prec'], 33)
