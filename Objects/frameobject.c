@@ -1117,7 +1117,7 @@ frame_back_get_impl(PyFrameObject *self)
 /*[clinic end generated code: output=3a84c22a55a63c79 input=9e528570d0e1f44a]*/
 {
     PyObject *res = (PyObject *)PyFrame_GetBack(self);
-    if (res == NULL) {
+    if (res == NULL && !PyErr_Occurred()) {
         Py_RETURN_NONE;
     }
     return res;
@@ -2405,6 +2405,9 @@ PyFrame_GetBack(PyFrameObject *frame)
         prev = _PyFrame_GetFirstComplete(prev);
         if (prev) {
             back = _PyFrame_GetFrameObject(prev);
+            if (back == NULL) {
+                return NULL;
+            }
         }
     }
     return (PyFrameObject*)Py_XNewRef(back);
