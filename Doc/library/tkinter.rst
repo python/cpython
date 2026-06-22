@@ -4254,6 +4254,14 @@ Widget classes
       Typically associated with mouse motion events, to produce the effect of
       dragging the entry at high speed through the window.
 
+   .. method:: validate()
+
+      Force an evaluation of the command given by the *validatecommand* option,
+      independently of the conditions specified by the *validate* option, and
+      return whether the value is considered valid.
+
+      .. versionadded:: next
+
 
 .. class:: Frame(master=None, cnf={}, **kw)
 
@@ -5205,6 +5213,14 @@ Widget classes
       the most recent anchor point.
 
       .. versionadded:: 3.8
+
+   .. method:: validate()
+
+      Force an evaluation of the command given by the *validatecommand* option,
+      independently of the conditions specified by the *validate* option, and
+      return whether the value is considered valid.
+
+      .. versionadded:: next
 
 
 

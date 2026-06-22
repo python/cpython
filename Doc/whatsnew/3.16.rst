@@ -163,6 +163,11 @@ tkinter
   synchronization of the displayed view with the underlying text.
   (Contributed by Serhiy Storchaka in :gh:`151675`.)
 
+* Added a :meth:`!validate` method to the :class:`!tkinter.Entry` and
+  :class:`!tkinter.Spinbox` widgets, which forces an evaluation of the
+  validation command.
+  (Contributed by Serhiy Storchaka in :gh:`151878`.)
+
 * Added new window-management methods :meth:`~tkinter.Misc.winfo_isdark`
   (dark mode detection), :meth:`~tkinter.Wm.wm_iconbadge` (application icon
   badge) and :meth:`~tkinter.Wm.wm_stackorder` (toplevel stacking order).
