@@ -1,1 +1,1 @@
-Fix OOM error handling in :c:func:`PyFrame_GetBack` and :c:func:`frame_back_get_impl`: propagate exceptions instead of masking them as None.
+Fix OOM error handling in :c:func:`PyFrame_GetBack` to propagate exceptions instead of masking them as None.
