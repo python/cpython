@@ -2016,6 +2016,16 @@ If you don't know the class name of a widget, use the method
       Returns a tuple of all known themes.
 
 
+   .. method:: theme_styles(themename=None)
+
+      Returns a tuple of all styles in *themename*.
+      If *themename* is not given, the current theme is used.
+
+      .. versionadded:: next
+
+      Availability: Tk 9.0.
+
+
    .. method:: theme_use(themename=None)
 
       If *themename* is not given, returns the theme in use.  Otherwise, sets

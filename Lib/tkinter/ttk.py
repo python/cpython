@@ -492,6 +492,20 @@ class Style(object):
         return self.tk.splitlist(self.tk.call(self._name, "theme", "names"))
 
 
+    def theme_styles(self, themename=None):
+        """Returns a list of all styles in themename.
+
+        If themename is omitted, the current theme is used.
+
+        Availability: Tk 9.0.
+        """
+        if themename is None:
+            return self.tk.splitlist(
+                self.tk.call(self._name, "theme", "styles"))
+        return self.tk.splitlist(
+            self.tk.call(self._name, "theme", "styles", themename))
+
+
     def theme_use(self, themename=None):
         """If themename is None, returns the theme in use, otherwise, set
         the current theme to themename, refreshes all widgets and emits
