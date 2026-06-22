@@ -99,14 +99,6 @@ gzip
   which is passed on to the constructor of the :class:`~gzip.GzipFile` class.
   (Contributed by Marin Misur in :gh:`91372`.)
 
-lzma
-----
-
-* Add support of new BCJ filters ARM64 and RISC-V via
-  :const:`!lzma.FILTER_ARM64` and :const:`!lzma.FILTER_RISCV`.  Note that the
-  new filters will work only if runtime library supports them. ARM64 filter
-  requires ``lzma`` 5.4.0 or newer while RISC-V requires 5.6.0 or newer.
-  (Contributed by Chien Wong in :gh:`115988`.)
 
 logging
 -------
@@ -119,6 +111,17 @@ logging
   before the rotation interval expires.
   (Contributed by Iván Márton and Serhiy Storchaka in :gh:`84649`.)
 
+
+lzma
+----
+
+* Add support of new BCJ filters ARM64 and RISC-V via
+  :const:`!lzma.FILTER_ARM64` and :const:`!lzma.FILTER_RISCV`.  Note that the
+  new filters will work only if the runtime library supports them. ARM64 filter
+  requires ``lzma`` 5.4.0 or newer while RISC-V requires 5.6.0 or newer.
+  (Contributed by Chien Wong in :gh:`115988`.)
+
+
 math
 ----
 
@@ -130,6 +133,7 @@ math
   754-2019 and standardized in C23.
   (Contributed by Jeff Epler in :gh:`150534`.)
 
+
 os
 --
 
@@ -137,12 +141,14 @@ os
   process via a pidfd.  Available on Linux 5.6+.
   (Contributed by Maurycy Pawłowski-Wieroński in :gh:`149464`.)
 
+
 shlex
 -----
 
 * Add keyword-only parameter *force* to :func:`shlex.quote` to force quoting
   a string, even if it is already safe for a shell without being quoted.
   (Contributed by Jay Berry in :gh:`148846`.)
+
 
 tkinter
 -------
@@ -157,19 +163,20 @@ tkinter
   synchronization of the displayed view with the underlying text.
   (Contributed by Serhiy Storchaka in :gh:`151675`.)
 
+
 xml
 ---
 
 * Add support for multiple multi-byte encodings in the :mod:`XML parser
-  <xml.parsers.expat>`: "cp932", "cp949", "cp950", "Big5","EUC-JP",
+  <xml.parsers.expat>`: "cp932", "cp949", "cp950", "Big5", "EUC-JP",
   "GB2312", "GBK", "johab", and "Shift_JIS".
   Add partial support (only BMP characters) for multi-byte encodings
   "Big5-HKSCS", "EUC_JIS-2004", "EUC_JISX0213", "Shift_JIS-2004",
   "Shift_JISX0213", "utf-8-sig" and non-standard aliases like "UTF8"
   (without hyphen).
   The parser now raises :exc:`ValueError` for known unsupported
-  multi-byte encodings such us "ISO-2022-JP" or "raw-unicode-escape"
-  instead of failing later, when encounter non-ASCII data.
+  multi-byte encodings such as "ISO-2022-JP" or "raw-unicode-escape"
+  instead of failing later, when encountering non-ASCII data.
   (Contributed by Serhiy Storchaka in :gh:`62259`.)
 
 zipfile
@@ -279,14 +286,17 @@ tarfile
 Deprecated
 ==========
 
+New deprecations
+----------------
+
 * :mod:`abc`
 
-   * Soft-deprecated since Python 3.3 :class:`abc.abstractclassmethod`,
-     :class:`abc.abstractstaticmethod`, and :class:`abc.abstractproperty`
-     now raise a :exc:`DeprecationWarning`.
-     These classes will be removed in Python 3.21, instead
-     use :func:`abc.abstractmethod` with :func:`classmethod`,
-     :func:`staticmethod`, and :class:`property` respectively.
+  * Soft-deprecated since Python 3.3 :class:`abc.abstractclassmethod`,
+    :class:`abc.abstractstaticmethod`, and :class:`abc.abstractproperty`
+    now raise a :exc:`DeprecationWarning`.
+    These classes will be removed in Python 3.21, instead
+    use :func:`abc.abstractmethod` with :func:`classmethod`,
+    :func:`staticmethod`, and :class:`property` respectively.
 
 * :mod:`ast`:
 
@@ -325,7 +335,7 @@ Build changes
 =============
 
 * Remove the bundled copy of the libmpdec_ decimal library from the CPython source tree
-  to simplify maintenence and updates. The :mod:`decimal` module will now
+  to simplify maintenance and updates. The :mod:`decimal` module will now
   unconditionally use the system's libmpdec decimal library. Also remove the
   now unused :option:`!--with-system-libmpdec` :program:`configure` flag.
   This change has no impact on binary releases of Python, which have been
