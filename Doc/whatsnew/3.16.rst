@@ -153,6 +153,16 @@ shlex
 tkinter
 -------
 
+* Added many :class:`tkinter.ttk.Treeview` methods wrapping the enhanced
+  ``ttk::treeview`` widget commands from Tk 9.1, such as
+  :meth:`~tkinter.ttk.Treeview.sort`, :meth:`~tkinter.ttk.Treeview.search`,
+  :meth:`~tkinter.ttk.Treeview.expand`, :meth:`~tkinter.ttk.Treeview.collapse`,
+  :meth:`~tkinter.ttk.Treeview.hide`, :meth:`~tkinter.ttk.Treeview.unhide`, and
+  methods for cell focus, selection and tagging.  The
+  :meth:`~tkinter.ttk.Treeview.expand` and :meth:`~tkinter.ttk.Treeview.collapse`
+  methods (without recursion) also work on Tk older than 9.1.
+  (Contributed by Serhiy Storchaka in :gh:`151910`.)
+
 * Added new :class:`!tkinter.Text` methods :meth:`~tkinter.Text.edit_canundo`
   and :meth:`~tkinter.Text.edit_canredo` which return whether an undo or redo
   is possible.
@@ -172,7 +182,6 @@ tkinter
   (dark mode detection), :meth:`~tkinter.Wm.wm_iconbadge` (application icon
   badge) and :meth:`~tkinter.Wm.wm_stackorder` (toplevel stacking order).
   (Contributed by Serhiy Storchaka in :gh:`151874`.)
-
 
 xml
 ---
