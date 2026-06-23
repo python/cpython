@@ -2347,43 +2347,57 @@ s_pack_internal(PyStructObject *soself, PyObject *const *args,
             PyObject *v = args[i++];
             if (strcmp(e->format, "s") == 0) {
                 Py_ssize_t n;
-                int isstring;
                 const void *p;
-                isstring = PyBytes_Check(v);
-                if (!isstring && !PyByteArray_Check(v)) {
-                    PyErr_SetString(state->StructError,
-                                    "argument for 's' must be a bytes object");
-                    return -1;
-                }
-                if (isstring) {
+                Py_buffer view;
+                int gotview = 0;
+                if (PyBytes_Check(v)) {
                     n = PyBytes_GET_SIZE(v);
                     p = PyBytes_AS_STRING(v);
                 }
-                else {
+                else if (PyByteArray_Check(v)) {
                     n = PyByteArray_GET_SIZE(v);
                     p = PyByteArray_AS_STRING(v);
+                }
+                else if (PyObject_GetBuffer(v, &view, PyBUF_SIMPLE) == 0) {
+                    n = view.len;
+                    p = view.buf;
+                    gotview = 1;
+                }
+                else {
+                    PyErr_Format(state->StructError,
+                                 "argument for 's' must be a bytes-like object, "
+                                 "not %.200s", Py_TYPE(v)->tp_name);
+                    return -1;
                 }
                 if (n > code->size)
                     n = code->size;
                 if (n > 0)
                     memcpy(res, p, n);
+                if (gotview)
+                    PyBuffer_Release(&view);
             } else if (strcmp(e->format, "p") == 0) {
                 Py_ssize_t n;
-                int isstring;
                 const void *p;
-                isstring = PyBytes_Check(v);
-                if (!isstring && !PyByteArray_Check(v)) {
-                    PyErr_SetString(state->StructError,
-                                    "argument for 'p' must be a bytes object");
-                    return -1;
-                }
-                if (isstring) {
+                Py_buffer view;
+                int gotview = 0;
+                if (PyBytes_Check(v)) {
                     n = PyBytes_GET_SIZE(v);
                     p = PyBytes_AS_STRING(v);
                 }
-                else {
+                else if (PyByteArray_Check(v)) {
                     n = PyByteArray_GET_SIZE(v);
                     p = PyByteArray_AS_STRING(v);
+                }
+                else if (PyObject_GetBuffer(v, &view, PyBUF_SIMPLE) == 0) {
+                    n = view.len;
+                    p = view.buf;
+                    gotview = 1;
+                }
+                else {
+                    PyErr_Format(state->StructError,
+                                 "argument for 'p' must be a bytes-like object, "
+                                 "not %.200s", Py_TYPE(v)->tp_name);
+                    return -1;
                 }
                 if (code->size == 0) {
                     n = 0;
@@ -2396,6 +2410,8 @@ s_pack_internal(PyStructObject *soself, PyObject *const *args,
                 if (n > 255)
                     n = 255;
                 *res = Py_SAFE_DOWNCAST(n, Py_ssize_t, unsigned char);
+                if (gotview)
+                    PyBuffer_Release(&view);
             } else {
                 if (e->pack(state, res, v, e) < 0) {
                     if (PyLong_Check(v) && PyErr_ExceptionMatches(PyExc_OverflowError))

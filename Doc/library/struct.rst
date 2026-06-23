@@ -357,8 +357,11 @@ Notes:
    are used.  Note that for :func:`unpack`, the ``'p'`` type code consumes
    ``count`` bytes, but that the :class:`!bytes` object returned can never contain more than 255
    bytes.
-   When packing, arguments of types :class:`bytes` and :class:`bytearray`
-   are accepted.
+   When packing, any contiguous :term:`bytes-like object` is accepted.
+
+   .. versionchanged:: next
+      Previously only :class:`bytes` and :class:`bytearray` objects were
+      accepted.
 
 (9)
    For the ``'s'`` type code, the count is interpreted as the length of the
@@ -373,8 +376,11 @@ Notes:
    unpacking, the resulting :class:`!bytes` object always has exactly the specified number
    of bytes.  As a special case, ``'0s'`` means a single, empty byte string (while
    ``'0c'`` means 0 characters).
-   When packing, arguments of types :class:`bytes` and :class:`bytearray`
-   are accepted.
+   When packing, any contiguous :term:`bytes-like object` is accepted.
+
+   .. versionchanged:: next
+      Previously only :class:`bytes` and :class:`bytearray` objects were
+      accepted.
 
 (10)
    For the ``'F'`` and ``'D'`` type codes, the packed representation uses

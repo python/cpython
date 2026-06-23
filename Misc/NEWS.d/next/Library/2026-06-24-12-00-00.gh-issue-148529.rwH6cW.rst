@@ -1,0 +1,4 @@
+:func:`struct.pack`, :func:`struct.pack_into` and :meth:`struct.Struct.pack`
+now accept any contiguous :term:`bytes-like object` (such as
+:class:`memoryview` or :class:`array.array`) for the ``'s'`` and ``'p'``
+format codes, instead of only :class:`bytes` and :class:`bytearray`.
