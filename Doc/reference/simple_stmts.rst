@@ -181,7 +181,7 @@ Assignment of an object to a single target is recursively defined as follows.
      inst.x = inst.x + 1   # writes inst.x as 4 leaving Cls.x as 3
 
   This description does not necessarily apply to descriptor attributes, such as
-  properties created with :func:`property`.
+  properties created with :deco:`property`.
 
   .. index::
      pair: subscription; assignment
@@ -743,14 +743,15 @@ The :keyword:`!import` statement
    pair: name; binding
    pair: keyword; from
    pair: keyword; as
+   pair: keyword; lazy
    pair: exception; ImportError
    single: , (comma); import statement
 
 .. productionlist:: python-grammar
-   import_stmt: "import" `module` ["as" `identifier`] ("," `module` ["as" `identifier`])*
-              : | "from" `relative_module` "import" `identifier` ["as" `identifier`]
+   import_stmt: ["lazy"] "import" `module` ["as" `identifier`] ("," `module` ["as" `identifier`])*
+              : | ["lazy"] "from" `relative_module` "import" `identifier` ["as" `identifier`]
               : ("," `identifier` ["as" `identifier`])*
-              : | "from" `relative_module` "import" "(" `identifier` ["as" `identifier`]
+              : | ["lazy"] "from" `relative_module` "import" "(" `identifier` ["as" `identifier`]
               : ("," `identifier` ["as" `identifier`])* [","] ")"
               : | "from" `relative_module` "import" "*"
    module: (`identifier` ".")* `identifier`
@@ -760,8 +761,9 @@ The basic import statement (no :keyword:`from` clause) is executed in two
 steps:
 
 #. find a module, loading and initializing it if necessary
-#. define a name or names in the local namespace for the scope where
-   the :keyword:`import` statement occurs.
+#. define a name or names in the current namespace for the scope where
+   the :keyword:`import` statement occurs, just as an assignment statement
+   would (including :keyword:`global` and :keyword:`nonlocal` semantics).
 
 When the statement contains multiple clauses (separated by
 commas) the two steps are carried out separately for each clause, just
@@ -806,7 +808,7 @@ The :keyword:`from` form uses a slightly more complex process:
    #. if not, attempt to import a submodule with that name and then
       check the imported module again for that attribute
    #. if the attribute is not found, :exc:`ImportError` is raised.
-   #. otherwise, a reference to that value is stored in the local namespace,
+   #. otherwise, a reference to that value is stored in the current namespace,
       using the name in the :keyword:`!as` clause if it is present,
       otherwise using the attribute name
 
@@ -868,6 +870,102 @@ determine dynamically the modules to be loaded.
 .. audit-event:: import module,filename,sys.path,sys.meta_path,sys.path_hooks import
 
 .. _normalization form: https://www.unicode.org/reports/tr15/#Norm_Forms
+
+.. _lazy-imports:
+.. _lazy:
+
+Lazy imports
+------------
+
+.. index::
+   pair: lazy; import
+   single: lazy import
+
+The :keyword:`lazy` keyword is a :ref:`soft keyword <soft-keywords>` that
+only has special meaning when it appears immediately before an
+:keyword:`import` or :keyword:`from` statement. When an import statement is
+preceded by the :keyword:`lazy` keyword, the import becomes *lazy*: the
+module is not loaded immediately at the import statement. Instead, a lazy
+proxy object is created and bound to the name. The actual module is loaded
+on first use of that name.
+
+Lazy imports are only permitted at module scope. Using :keyword:`lazy`
+inside a function, class body, or
+:keyword:`try`/:keyword:`except`/:keyword:`finally` block raises a
+:exc:`SyntaxError`. Star imports cannot be lazy (``lazy from module import
+*`` is a syntax error), and :ref:`future statements <future>` cannot be
+lazy.
+
+When using ``lazy from ... import``, each imported name is bound to a lazy
+proxy object. The first access to any of these names triggers loading of the
+entire module and resolves only that specific name to its actual value.
+Other names remain as lazy proxies until they are accessed.
+
+Example::
+
+   lazy import json
+   import sys
+
+   print('json' in sys.modules)  # False - json module not yet loaded
+
+   # First use triggers loading
+   result = json.dumps({"hello": "world"})
+
+   print('json' in sys.modules)  # True - now loaded
+
+If an error occurs during module loading (such as :exc:`ImportError` or
+:exc:`SyntaxError`), it is raised at the point where the lazy import is first
+used, not at the import statement itself.
+
+See :pep:`810` for the full specification of lazy imports.
+
+.. versionadded:: 3.15
+
+.. _lazy-modules-compat:
+
+Compatibility via ``__lazy_modules__``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. index::
+   single: __lazy_modules__
+
+As an alternative to using the :keyword:`lazy` keyword, a module can opt
+into lazy loading for specific imports by defining a module-level
+:attr:`~module.__lazy_modules__` variable.  When present, it must be a
+container of fully qualified module name strings.  Any regular (non-``lazy``)
+:keyword:`import` statement at module scope whose target appears in
+:attr:`!__lazy_modules__` is treated as a lazy import, exactly as if the
+:keyword:`lazy` keyword had been used.
+
+This provides a way to enable lazy loading for specific dependencies without
+changing individual ``import`` statements. This is useful when supporting
+Python versions older than 3.15 while using lazy imports in 3.15+::
+
+   __lazy_modules__ = ["json", "pathlib"]
+
+   import json     # loaded lazily (name is in __lazy_modules__)
+   import os       # loaded eagerly (name not in __lazy_modules__)
+
+   import pathlib  # loaded lazily
+
+Relative imports are resolved to their absolute name before the lookup, so
+:attr:`!__lazy_modules__` must always contain fully qualified module names.
+
+For ``from``-style imports, the relevant name is the module following
+``from``, not the names of its members::
+
+   # In mypackage/mymodule.py
+   __lazy_modules__ = ["mypackage", "mypackage.sub.utils"]
+
+   from . import helper         # loaded lazily: . resolves to mypackage
+   from .sub.utils import func  # loaded lazily: .sub.utils resolves to mypackage.sub.utils
+   import json                  # loaded eagerly (not in __lazy_modules__)
+
+Imports inside functions, class bodies, or
+:keyword:`try`/:keyword:`except`/:keyword:`finally` blocks are always eager,
+regardless of :attr:`!__lazy_modules__`.
+
+.. versionadded:: 3.15
 
 .. _future:
 

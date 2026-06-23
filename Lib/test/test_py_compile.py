@@ -239,6 +239,14 @@ class PyCompileTestsBase:
             with self.assertRaises(py_compile.PyCompileError):
                 py_compile.compile(bad_coding, self.pyc_path, doraise=True, quiet=1)
 
+    def test_utf7_decoded_cr_compiles(self):
+        with open(self.source_path, 'wb') as file:
+            file.write(b"#coding=U7+AA0''\n")
+
+        pyc_path = py_compile.compile(self.source_path, self.pyc_path, doraise=True)
+        self.assertEqual(pyc_path, self.pyc_path)
+        self.assertTrue(os.path.exists(self.pyc_path))
+
 
 class PyCompileTestsWithSourceEpoch(PyCompileTestsBase,
                                     unittest.TestCase,
@@ -318,6 +326,12 @@ class PyCompileCLITestCase(unittest.TestCase):
         self.assertEqual(rc, 1)
         self.assertEqual(stdout, b'')
         self.assertEqual(stderr, b'')
+
+    def test_bad_syntax_stderr_ends_with_newline(self):
+        with open(self.source_path, 'w') as file:
+            file.write('  print("hello world")\n')
+        rc, stdout, stderr = self.pycompilecmd_failure(self.source_path)
+        self.assertTrue(stderr.endswith(b'\n'))
 
     def test_file_not_exists(self):
         should_not_exists = os.path.join(os.path.dirname(__file__), 'should_not_exists.py')

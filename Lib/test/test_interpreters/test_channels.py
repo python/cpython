@@ -47,6 +47,12 @@ class TestChannels(TestBase):
         after = set(channels.list_all())
         self.assertEqual(after, created)
 
+    def test_list_all_closed(self):
+        created = [channels.create() for _ in range(3)]
+        rch, sch = created.pop(1)
+        rch.close()
+        self.assertEqual(set(channels.list_all()), set(created))
+
     def test_shareable(self):
         interp = interpreters.create()
         rch, sch = channels.create()

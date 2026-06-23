@@ -1,1 +1,0 @@
-Fix an issue where :func:`inspect.getgeneratorstate` and :func:`inspect.getcoroutinestate` could fail for generators wrapped by :func:`types.coroutine` in the suspended state.

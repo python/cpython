@@ -1,3 +1,0 @@
-The Android testbed now distinguishes between stdout/stderr messages which
-were triggered by a newline, and those triggered by a manual call to
-``flush``. This fixes logging of progress indicators and similar content.

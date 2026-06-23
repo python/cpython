@@ -1,0 +1,3 @@
+Removed the :func:`!sysconfig.expand_makefile_vars` function which has been
+deprecated since Python 3.14. Use the ``vars`` argument of
+:func:`sysconfig.get_paths` instead.

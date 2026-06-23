@@ -4,9 +4,6 @@
 .. module:: optparse
    :synopsis: Command-line option parsing library.
 
-.. moduleauthor:: Greg Ward <gward@python.net>
-.. sectionauthor:: Greg Ward <gward@python.net>
-
 **Source code:** :source:`Lib/optparse.py`
 
 --------------

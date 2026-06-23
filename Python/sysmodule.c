@@ -34,6 +34,7 @@ Data members:
 #include "pycore_pymem.h"         // _PyMem_DefaultRawFree()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_pystats.h"       // _Py_PrintSpecializationStats()
+#include "pycore_runtime.h"       // _PyRuntimeState_Get*()
 #include "pycore_structseq.h"     // _PyStructSequence_InitBuiltinWithFlags()
 #include "pycore_sysmodule.h"     // export _PySys_GetSizeOf()
 #include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal()
@@ -471,7 +472,7 @@ PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
        PySys_AddAuditHook() can be called before Python is initialized. */
     _PyRuntimeState *runtime = &_PyRuntime;
     PyThreadState *tstate;
-    if (runtime->initialized) {
+    if (_PyRuntimeState_GetInitialized(runtime)) {
         tstate = _PyThreadState_GET();
     }
     else {
@@ -1762,7 +1763,7 @@ sys_getwindowsversion_impl(PyObject *module)
     PyObject *realVersion = _sys_getwindowsversion_from_kernel32();
     if (!realVersion) {
         if (!PyErr_ExceptionMatches(PyExc_WindowsError)) {
-            return NULL;
+            goto error;
         }
 
         PyErr_Clear();
@@ -1789,36 +1790,6 @@ error:
 }
 
 #pragma warning(pop)
-
-/*[clinic input]
-sys._enablelegacywindowsfsencoding
-
-Changes the default filesystem encoding to mbcs:replace.
-
-This is done for consistency with earlier versions of Python. See PEP
-529 for more information.
-
-This is equivalent to defining the PYTHONLEGACYWINDOWSFSENCODING
-environment variable before launching Python.
-[clinic start generated code]*/
-
-static PyObject *
-sys__enablelegacywindowsfsencoding_impl(PyObject *module)
-/*[clinic end generated code: output=f5c3855b45e24fe9 input=2bfa931a20704492]*/
-{
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-        "sys._enablelegacywindowsfsencoding() is deprecated and will be "
-        "removed in Python 3.16. Use PYTHONLEGACYWINDOWSFSENCODING "
-        "instead.", 1))
-    {
-        return NULL;
-    }
-    if (_PyUnicode_EnableLegacyWindowsFSEncoding() < 0) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
 #endif /* MS_WINDOWS */
 
 #ifdef HAVE_DLOPEN
@@ -1892,6 +1863,7 @@ sys_mdebug_impl(PyObject *module, int flag)
 
 
 /*[clinic input]
+@permit_long_summary
 sys.get_int_max_str_digits
 
 Return the maximum string digits limit for non-binary int<->str conversions.
@@ -1899,14 +1871,16 @@ Return the maximum string digits limit for non-binary int<->str conversions.
 
 static PyObject *
 sys_get_int_max_str_digits_impl(PyObject *module)
-/*[clinic end generated code: output=0042f5e8ae0e8631 input=61bf9f99bc8b112d]*/
+/*[clinic end generated code: output=0042f5e8ae0e8631 input=77fb74e987ba7ecb]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return PyLong_FromLong(interp->long_state.max_str_digits);
+    int maxdigits = _Py_atomic_load_int(&interp->long_state.max_str_digits);
+    return PyLong_FromLong(maxdigits);
 }
 
 
 /*[clinic input]
+@permit_long_summary
 sys.set_int_max_str_digits
 
     maxdigits: int
@@ -1916,7 +1890,7 @@ Set the maximum string digits limit for non-binary int<->str conversions.
 
 static PyObject *
 sys_set_int_max_str_digits_impl(PyObject *module, int maxdigits)
-/*[clinic end generated code: output=734d4c2511f2a56d input=d7e3f325db6910c5]*/
+/*[clinic end generated code: output=734d4c2511f2a56d input=d4c0bf50c466d57a]*/
 {
     if (_PySys_SetIntMaxStrDigits(maxdigits) < 0) {
         return NULL;
@@ -2128,6 +2102,7 @@ sys__getframe_impl(PyObject *module, int depth)
 }
 
 /*[clinic input]
+@permit_long_summary
 sys._current_frames
 
 Return a dict mapping each thread's thread id to its current stack frame.
@@ -2137,7 +2112,7 @@ This function should be used for specialized purposes only.
 
 static PyObject *
 sys__current_frames_impl(PyObject *module)
-/*[clinic end generated code: output=d2a41ac0a0a3809a input=2a9049c5f5033691]*/
+/*[clinic end generated code: output=d2a41ac0a0a3809a input=e1ce34f43501e0d6]*/
 {
     return _PyThread_CurrentFrames();
 }
@@ -2316,17 +2291,17 @@ sys__stats_clear_impl(PyObject *module)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 sys._stats_dump -> bool
 
 Dump stats to file, and clears the stats.
 
-Return False if no statistics were not dumped because stats gathering was off.
+Return False if no statistics were not dumped because stats gathering
+was off.
 [clinic start generated code]*/
 
 static int
 sys__stats_dump_impl(PyObject *module)
-/*[clinic end generated code: output=6e346b4ba0de4489 input=5a3ab40d2fb5af47]*/
+/*[clinic end generated code: output=6e346b4ba0de4489 input=7f3b7758cb59d2ff]*/
 {
     int res = _Py_PrintSpecializationStats(1);
     _Py_StatsClear();
@@ -2470,16 +2445,16 @@ sys.remote_exec
 Executes a file containing Python code in a given remote Python process.
 
 This function returns immediately, and the code will be executed by the
-target process's main thread at the next available opportunity, similarly
-to how signals are handled. There is no interface to determine when the
-code has been executed. The caller is responsible for making sure that
-the file still exists whenever the remote process tries to read it and that
-it hasn't been overwritten.
+target process's main thread at the next available opportunity,
+similarly to how signals are handled.  There is no interface to
+determine when the code has been executed.  The caller is responsible
+for making sure that the file still exists whenever the remote process
+tries to read it and that it hasn't been overwritten.
 
-The remote process must be running a CPython interpreter of the same major
-and minor version as the local process. If either the local or remote
-interpreter is pre-release (alpha, beta, or release candidate) then the
-local and remote interpreters must be the same exact version.
+The remote process must be running a CPython interpreter of the same
+major and minor version as the local process.  If either the local or
+remote interpreter is pre-release (alpha, beta, or release candidate)
+then the local and remote interpreters must be the same exact version.
 
 Args:
      pid (int): The process ID of the target Python process.
@@ -2489,7 +2464,7 @@ Args:
 
 static PyObject *
 sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
-/*[clinic end generated code: output=7d94c56afe4a52c0 input=39908ca2c5fe1eb0]*/
+/*[clinic end generated code: output=7d94c56afe4a52c0 input=7bd58f8da20cb74c]*/
 {
     PyObject *path;
     const char *debugger_script_path;
@@ -2499,7 +2474,7 @@ sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
     }
 
     if (PySys_Audit("sys.remote_exec", "iO", pid, script) < 0) {
-        return NULL;
+        goto error;
     }
 
     debugger_script_path = PyBytes_AS_STRING(path);
@@ -2706,7 +2681,7 @@ PyAPI_FUNC(int) PyUnstable_PerfMapState_Init(void) {
 
 PyAPI_FUNC(int) PyUnstable_WritePerfMapEntry(
     const void *code_addr,
-    unsigned int code_size,
+    size_t code_size,
     const char *entry_name
 ) {
 #ifndef MS_WINDOWS
@@ -2717,7 +2692,7 @@ PyAPI_FUNC(int) PyUnstable_WritePerfMapEntry(
         }
     }
     PyThread_acquire_lock(perf_map_state.map_lock, 1);
-    fprintf(perf_map_state.perf_map, "%" PRIxPTR " %x %s\n", (uintptr_t) code_addr, code_size, entry_name);
+    fprintf(perf_map_state.perf_map, "%" PRIxPTR " %zx %s\n", (uintptr_t) code_addr, code_size, entry_name);
     fflush(perf_map_state.perf_map);
     PyThread_release_lock(perf_map_state.map_lock);
 #endif
@@ -2785,6 +2760,122 @@ PyAPI_FUNC(int) PyUnstable_CopyPerfMapFile(const char* parent_filename) {
     return 0;
 }
 
+/*[clinic input]
+sys.set_lazy_imports_filter
+
+    filter: object
+
+Set the lazy imports filter callback.
+
+The filter is a callable which disables lazy imports when they
+would otherwise be enabled. Returns True if the import is still enabled
+or False to disable it. The callable is called with:
+
+(importing_module_name, resolved_imported_module_name, [fromlist])
+
+Pass None to clear the filter.
+[clinic start generated code]*/
+
+static PyObject *
+sys_set_lazy_imports_filter_impl(PyObject *module, PyObject *filter)
+/*[clinic end generated code: output=10251d49469c278c input=fd51ed8df6ab54b7]*/
+{
+    if (PyImport_SetLazyImportsFilter(filter) < 0) {
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+sys.get_lazy_imports_filter
+
+Get the current lazy imports filter callback.
+
+Returns the filter callable or None if no filter is set.
+[clinic start generated code]*/
+
+static PyObject *
+sys_get_lazy_imports_filter_impl(PyObject *module)
+/*[clinic end generated code: output=3bf73022892165af input=cf1e07cb8e203c94]*/
+{
+    PyObject *filter = PyImport_GetLazyImportsFilter();
+    if (filter == NULL) {
+        assert(!PyErr_Occurred());
+        Py_RETURN_NONE;
+    }
+    return filter;
+}
+
+/*[clinic input]
+sys.set_lazy_imports
+
+    mode: object
+
+Sets the global lazy imports mode.
+
+The mode parameter must be one of the following strings:
+- "all": All top-level imports become potentially lazy
+- "normal": Only explicitly marked imports (with 'lazy' keyword) are
+  lazy
+
+In addition to the mode, lazy imports can be controlled via the filter
+provided to sys.set_lazy_imports_filter
+
+[clinic start generated code]*/
+
+static PyObject *
+sys_set_lazy_imports_impl(PyObject *module, PyObject *mode)
+/*[clinic end generated code: output=1ff34ba6c4feaf73 input=db3242f0ff6e5dcc]*/
+{
+    PyImport_LazyImportsMode lazy_mode;
+    if (!PyUnicode_Check(mode)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "mode must be a string: 'normal' or 'all'");
+        return NULL;
+    }
+    if (PyUnicode_CompareWithASCIIString(mode, "normal") == 0) {
+        lazy_mode = PyImport_LAZY_NORMAL;
+    }
+    else if (PyUnicode_CompareWithASCIIString(mode, "all") == 0) {
+        lazy_mode = PyImport_LAZY_ALL;
+    }
+    else {
+        PyErr_SetString(PyExc_ValueError,
+                        "mode must be 'normal' or 'all'");
+        return NULL;
+    }
+
+    if (PyImport_SetLazyImportsMode(lazy_mode)) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+sys.get_lazy_imports
+
+Gets the global lazy imports mode.
+
+Returns "all" if all top level imports are potentially lazy.
+Returns "normal" if only explicitly marked imports are lazy.
+
+[clinic start generated code]*/
+
+static PyObject *
+sys_get_lazy_imports_impl(PyObject *module)
+/*[clinic end generated code: output=4147dec48c51ae99 input=6f8dd4f2c82893f2]*/
+{
+    switch (PyImport_GetLazyImportsMode()) {
+        case PyImport_LAZY_NORMAL:
+            return PyUnicode_FromString("normal");
+        case PyImport_LAZY_ALL:
+            return PyUnicode_FromString("all");
+        default:
+            PyErr_SetString(PyExc_RuntimeError, "unknown lazy imports mode");
+            return NULL;
+    }
+}
 
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
@@ -2818,7 +2909,6 @@ static PyMethodDef sys_methods[] = {
     SYS__GETFRAME_METHODDEF
     SYS__GETFRAMEMODULENAME_METHODDEF
     SYS_GETWINDOWSVERSION_METHODDEF
-    SYS__ENABLELEGACYWINDOWSFSENCODING_METHODDEF
     SYS__IS_IMMORTAL_METHODDEF
     SYS_INTERN_METHODDEF
     SYS__IS_INTERNED_METHODDEF
@@ -2850,6 +2940,10 @@ static PyMethodDef sys_methods[] = {
     SYS_UNRAISABLEHOOK_METHODDEF
     SYS_GET_INT_MAX_STR_DIGITS_METHODDEF
     SYS_SET_INT_MAX_STR_DIGITS_METHODDEF
+    SYS_GET_LAZY_IMPORTS_METHODDEF
+    SYS_SET_LAZY_IMPORTS_METHODDEF
+    SYS_GET_LAZY_IMPORTS_FILTER_METHODDEF
+    SYS_SET_LAZY_IMPORTS_FILTER_METHODDEF
     SYS__BASEREPL_METHODDEF
 #ifdef Py_STATS
     SYS__STATS_ON_METHODDEF
@@ -3309,13 +3403,6 @@ winver -- [Windows only] version number of the Python DLL\n\
 "
 )
 #endif /* MS_COREDLL */
-#ifdef MS_WINDOWS
-/* concatenating string here */
-PyDoc_STR(
-"_enablelegacywindowsfsencoding -- [Windows only]\n\
-"
-)
-#endif
 PyDoc_STR(
 "__stdin__ -- the original stdin; don't touch!\n\
 __stdout__ -- the original stdout; don't touch!\n\
@@ -3369,11 +3456,13 @@ static PyStructSequence_Field flags_fields[] = {
     {"dev_mode",                "-X dev"},
     {"utf8_mode",               "-X utf8"},
     {"warn_default_encoding",   "-X warn_default_encoding"},
-    {"safe_path", "-P"},
+    {"safe_path",               "-P"},
     {"int_max_str_digits",      "-X int_max_str_digits"},
+    // Fields below are only usable by sys.flags attribute name, not index:
     {"gil",                     "-X gil"},
     {"thread_inherit_context",  "-X thread_inherit_context"},
-    {"context_aware_warnings",    "-X context_aware_warnings"},
+    {"context_aware_warnings",  "-X context_aware_warnings"},
+    {"lazy_imports",            "-X lazy_imports"},
     {0}
 };
 
@@ -3383,7 +3472,9 @@ static PyStructSequence_Desc flags_desc = {
     "sys.flags",        /* name */
     flags__doc__,       /* doc */
     flags_fields,       /* fields */
-    18
+    18  /* NB - do not increase beyond 3.13's value of 18. */
+    // New sys.flags fields should NOT be tuple addressable per
+    // https://github.com/python/cpython/issues/122575#issuecomment-2416497086
 };
 
 static void
@@ -3400,14 +3491,39 @@ sys_set_flag(PyObject *flags, Py_ssize_t pos, PyObject *value)
 int
 _PySys_SetFlagObj(Py_ssize_t pos, PyObject *value)
 {
-    PyObject *flags = PySys_GetAttrString("flags");
-    if (flags == NULL) {
-        return -1;
+    PyObject *new_flags = NULL;
+    PyObject *flags_str = &_Py_ID(flags);  // immortal ref
+
+    PyObject *old_flags = PySys_GetAttr(flags_str);
+    if (old_flags == NULL) {
+        goto error;
     }
 
-    sys_set_flag(flags, pos, value);
-    Py_DECREF(flags);
-    return 0;
+    new_flags = PyStructSequence_New(&FlagsType);
+    if (new_flags == NULL) {
+        goto error;
+    }
+
+    for (Py_ssize_t i = 0; i < (Py_ssize_t)(Py_ARRAY_LENGTH(flags_fields) - 1); i++) {
+        if (i != pos) {
+            PyObject *old_value;
+            old_value = PyStructSequence_GET_ITEM(old_flags, i);  // borrowed ref
+            sys_set_flag(new_flags, i, old_value);
+        }
+        else {
+            sys_set_flag(new_flags, pos, value);
+        }
+    }
+
+    int res = _PySys_SetAttr(flags_str, new_flags);
+    Py_DECREF(old_flags);
+    Py_DECREF(new_flags);
+    return res;
+
+error:
+    Py_XDECREF(old_flags);
+    Py_XDECREF(new_flags);
+    return -1;
 }
 
 
@@ -3431,8 +3547,6 @@ set_flags_from_config(PyInterpreterState *interp, PyObject *flags)
     const PyPreConfig *preconfig = &interp->runtime->preconfig;
     const PyConfig *config = _PyInterpreterState_GetConfig(interp);
 
-    // _PySys_UpdateConfig() modifies sys.flags in-place:
-    // Py_XDECREF() is needed in this case.
     Py_ssize_t pos = 0;
 #define SetFlagObj(expr) \
     do { \
@@ -3476,6 +3590,7 @@ set_flags_from_config(PyInterpreterState *interp, PyObject *flags)
 #endif
     SetFlag(config->thread_inherit_context);
     SetFlag(config->context_aware_warnings);
+    SetFlag(config->lazy_imports);
 #undef SetFlagObj
 #undef SetFlag
     return 0;
@@ -3747,20 +3862,38 @@ static PyStructSequence_Desc emscripten_info_desc = {
 
 EM_JS(char *, _Py_emscripten_runtime, (void), {
     var info;
-    if (typeof navigator == 'object') {
+    if (typeof process === "object") {
+        if (process.versions?.bun) {
+            info = `bun v${process.versions.bun}`;
+        } else if (process.versions?.deno) {
+            info = `deno v${process.versions.deno}`;
+        } else {
+            // As far as I can tell, every JavaScript runtime puts "node" in
+            // process.release.name. Pyodide once checked for
+            //
+            // process.release.name === "node"
+            //
+            // and this is apparently part of the reason other runtimes started
+            // lying about it. Similar to the situation with userAgent.
+            //
+            // But just in case some other JS runtime decides to tell us what it
+            // is, we'll pick it up.
+            const name = process.release?.name ?? "node";
+            info = `${name} ${process.version}`;
+        }
+        // Include v8 version if we know it
+        if (process.versions?.v8) {
+            info +=  ` (v8 ${process.versions.v8})`;
+        }
+    } else if (typeof navigator === "object") {
         info = navigator.userAgent;
-    } else if (typeof process == 'object') {
-        info = "Node.js ".concat(process.version);
     } else {
         info = "UNKNOWN";
     }
-    var len = lengthBytesUTF8(info) + 1;
-    var res = _malloc(len);
-    if (res) stringToUTF8(info, res, len);
 #if __wasm64__
-    return BigInt(res);
+    return BigInt(stringToNewUTF8(info));
 #else
-    return res;
+    return stringToNewUTF8(info);
 #endif
 });
 
@@ -3924,7 +4057,7 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
     /* implementation */
     SET_SYS("implementation", make_impl_info(version_info));
 
-    // sys.flags: updated in-place later by _PySys_UpdateConfig()
+    // sys.flags: updated later by _PySys_UpdateConfig()
     ENSURE_INFO_TYPE(FlagsType, flags_desc);
     SET_SYS("flags", make_flags(tstate->interp));
 
@@ -4044,16 +4177,21 @@ _PySys_UpdateConfig(PyThreadState *tstate)
 #undef COPY_LIST
 #undef COPY_WSTR
 
-    // sys.flags
-    PyObject *flags = PySys_GetAttrString("flags");
-    if (flags == NULL) {
+    // replace sys.flags
+    PyObject *new_flags = PyStructSequence_New(&FlagsType);
+    if (new_flags == NULL) {
         return -1;
     }
-    if (set_flags_from_config(interp, flags) < 0) {
-        Py_DECREF(flags);
+    if (set_flags_from_config(interp, new_flags) < 0) {
+        Py_DECREF(new_flags);
         return -1;
     }
-    Py_DECREF(flags);
+
+    res = _PySys_SetAttr(&_Py_ID(flags), new_flags);
+    Py_DECREF(new_flags);
+    if (res < 0) {
+        return -1;
+    }
 
     SET_SYS("dont_write_bytecode", PyBool_FromLong(!config->write_bytecode));
 
@@ -4200,6 +4338,15 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
     }
 
     if (PyDict_SetItemString(sysdict, "modules", modules) < 0) {
+        goto error;
+    }
+
+    PyObject *lazy_modules = _PyImport_InitLazyModules(interp); // borrowed reference
+    if (lazy_modules == NULL) {
+        goto error;
+    }
+
+    if (PyDict_SetItemString(sysdict, "lazy_modules", lazy_modules) < 0) {
         goto error;
     }
 
@@ -4557,7 +4704,7 @@ _PySys_SetIntMaxStrDigits(int maxdigits)
     // Set PyInterpreterState.long_state.max_str_digits
     // and PyInterpreterState.config.int_max_str_digits.
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    interp->long_state.max_str_digits = maxdigits;
-    interp->config.int_max_str_digits = maxdigits;
+    _Py_atomic_store_int(&interp->long_state.max_str_digits, maxdigits);
+    _Py_atomic_store_int(&interp->config.int_max_str_digits, maxdigits);
     return 0;
 }

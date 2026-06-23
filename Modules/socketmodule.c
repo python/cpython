@@ -111,6 +111,7 @@ Local naming conventions:
 #include "pycore_moduleobject.h"  // _PyModule_GetState
 #include "pycore_object.h"        // _PyObject_VisitType()
 #include "pycore_time.h"          // _PyTime_AsMilliseconds()
+#include "pycore_tuple.h"         // _PyTuple_FromPairSteal
 #include "pycore_pystate.h"       // _Py_AssertHoldsTstate()
 
 #ifdef _Py_MEMORY_SANITIZER
@@ -151,7 +152,7 @@ listen([n]) -- start listening for incoming connections\n\
 recv(buflen[, flags]) -- receive data\n\
 recv_into(buffer[, nbytes[, flags]]) -- receive data (into a buffer)\n\
 recvfrom(buflen[, flags]) -- receive data and sender\'s address\n\
-recvfrom_into(buffer[, nbytes, [, flags])\n\
+recvfrom_into(buffer[, nbytes, [, flags]])\n\
   -- receive data and sender\'s address (into a buffer)\n\
 sendall(data[, flags]) -- send all data\n\
 send(data[, flags]) -- send data, may not send all of it\n\
@@ -655,10 +656,6 @@ class _socket.socket "PySocketSockObject *" "clinic_state()->sock_type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=2db2489bd2219fd8]*/
 
-#define clinic_state() (find_module_state_by_def(type))
-#include "clinic/socketmodule.c.h"
-#undef clinic_state
-
 /* XXX There's a problem here: *static* functions are not supposed to have
    a Py prefix (or use CapitalizedWords).  Later... */
 
@@ -688,6 +685,18 @@ class _socket.socket "PySocketSockObject *" "clinic_state()->sock_type"
  * little white lie. */
 #define IS_SELECTABLE(s) (_PyIsSelectable_fd((s)->sock_fd) || (s)->sock_timeout <= 0)
 #endif
+
+// SCM_RIGHTS, sendmsg(), recvmsg() and sethostname() don't work properly on
+// Cygwin: disable these features.
+#ifdef __CYGWIN__
+#  undef CMSG_LEN
+#  undef SCM_RIGHTS
+#  undef HAVE_SETHOSTNAME
+#endif
+
+#define clinic_state() (find_module_state_by_def(type))
+#include "clinic/socketmodule.c.h"
+#undef clinic_state
 
 static PyObject*
 select_error(void)
@@ -3078,7 +3087,6 @@ sock_accept(PyObject *self, PyObject *Py_UNUSED(ignored))
     socklen_t addrlen;
     PyObject *sock = NULL;
     PyObject *addr = NULL;
-    PyObject *res = NULL;
     struct sock_accept ctx;
 
     if (!getsockaddrlen(s, &addrlen))
@@ -3104,7 +3112,7 @@ sock_accept(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (!SetHandleInformation((HANDLE)newfd, HANDLE_FLAG_INHERIT, 0)) {
         PyErr_SetFromWindowsErr(0);
         SOCKETCLOSE(newfd);
-        goto finally;
+        goto error;
     }
 #endif
 #else
@@ -3115,7 +3123,7 @@ sock_accept(PyObject *self, PyObject *Py_UNUSED(ignored))
     {
         if (_Py_set_inheritable(newfd, 0, NULL) < 0) {
             SOCKETCLOSE(newfd);
-            goto finally;
+            goto error;
         }
     }
 #endif
@@ -3123,20 +3131,20 @@ sock_accept(PyObject *self, PyObject *Py_UNUSED(ignored))
     sock = PyLong_FromSocket_t(newfd);
     if (sock == NULL) {
         SOCKETCLOSE(newfd);
-        goto finally;
+        goto error;
     }
 
     addr = makesockaddr(get_sock_fd(s), SAS2SA(&addrbuf),
                         addrlen, s->sock_proto);
     if (addr == NULL)
-        goto finally;
+        goto error;
 
-    res = PyTuple_Pack(2, sock, addr);
+    return _PyTuple_FromPairSteal(sock, addr);
 
-finally:
+error:
     Py_XDECREF(sock);
     Py_XDECREF(addr);
-    return res;
+    return NULL;
 }
 
 PyDoc_STRVAR(accept_doc,
@@ -3359,8 +3367,7 @@ sock_setsockopt(PyObject *self, PyObject *args)
     arglen = PyTuple_Size(args);
     if (arglen == 3 && optval == Py_None) {
         PyErr_Format(PyExc_TypeError,
-                     "setsockopt() requires 4 arguments when the third argument is None",
-                     arglen);
+                     "setsockopt() requires 4 arguments when the third argument is None");
         return NULL;
     }
     if (arglen == 4 && optval != Py_None) {
@@ -4169,7 +4176,6 @@ sock_recvfrom(PyObject *self, PyObject *args)
     PySocketSockObject *s = _PySocketSockObject_CAST(self);
 
     PyObject *addr = NULL;
-    PyObject *ret = NULL;
     int flags = 0;
     Py_ssize_t recvlen, outlen;
 
@@ -4191,20 +4197,19 @@ sock_recvfrom(PyObject *self, PyObject *args)
                                 recvlen, flags, &addr);
     if (outlen < 0) {
         PyBytesWriter_Discard(writer);
-        goto finally;
+        goto error;
     }
 
     PyObject *buf = PyBytesWriter_FinishWithSize(writer, outlen);
     if (buf == NULL) {
-        goto finally;
+        goto error;
     }
 
-    ret = PyTuple_Pack(2, buf, addr);
-    Py_DECREF(buf);
+    return _PyTuple_FromPairSteal(buf, addr);
 
-finally:
+error:
     Py_XDECREF(addr);
-    return ret;
+    return NULL;
 }
 
 PyDoc_STRVAR(recvfrom_doc,
@@ -4523,17 +4528,19 @@ sock_recvmsg_into(PyObject *self, PyObject *args)
     struct iovec *iovs = NULL;
     Py_ssize_t i, nitems, nbufs = 0;
     Py_buffer *bufs = NULL;
-    PyObject *buffers_arg, *fast, *retval = NULL;
+    PyObject *buffers_arg, *buffers_tuple, *retval = NULL;
 
     if (!PyArg_ParseTuple(args, "O|ni:recvmsg_into",
                           &buffers_arg, &ancbufsize, &flags))
         return NULL;
 
-    if ((fast = PySequence_Fast(buffers_arg,
-                                "recvmsg_into() argument 1 must be an "
-                                "iterable")) == NULL)
+    buffers_tuple = PySequence_Tuple(buffers_arg);
+    if (buffers_tuple == NULL) {
+        PyErr_SetString(PyExc_TypeError,
+                        "recvmsg_into() argument 1 must be an iterable");
         return NULL;
-    nitems = PySequence_Fast_GET_SIZE(fast);
+    }
+    nitems = PyTuple_GET_SIZE(buffers_tuple);
     if (nitems > INT_MAX) {
         PyErr_SetString(PyExc_OSError, "recvmsg_into() argument 1 is too long");
         goto finally;
@@ -4547,7 +4554,7 @@ sock_recvmsg_into(PyObject *self, PyObject *args)
         goto finally;
     }
     for (; nbufs < nitems; nbufs++) {
-        if (!PyArg_Parse(PySequence_Fast_GET_ITEM(fast, nbufs),
+        if (!PyArg_Parse(PyTuple_GET_ITEM(buffers_tuple, nbufs),
                          "w*;recvmsg_into() argument 1 must be an iterable "
                          "of single-segment read-write buffers",
                          &bufs[nbufs]))
@@ -4563,7 +4570,7 @@ finally:
         PyBuffer_Release(&bufs[i]);
     PyMem_Free(bufs);
     PyMem_Free(iovs);
-    Py_DECREF(fast);
+    Py_DECREF(buffers_tuple);
     return retval;
 }
 
@@ -4625,7 +4632,6 @@ sock_send_impl(PySocketSockObject *s, void *data)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 _socket.socket.send
     self as s: self(type="PySocketSockObject *")
     data as pbuf: Py_buffer
@@ -4635,12 +4641,13 @@ _socket.socket.send
 Send a data string to the socket.
 
 For the optional flags argument, see the Unix manual.
-Return the number of bytes sent; this may be less than len(data) if the network is busy.
+Return the number of bytes sent; this may be less than len(data) if
+the network is busy.
 [clinic start generated code]*/
 
 static PyObject *
 _socket_socket_send_impl(PySocketSockObject *s, Py_buffer *pbuf, int flags)
-/*[clinic end generated code: output=3ddf83f17d0c875b input=e776a48af2e3d615]*/
+/*[clinic end generated code: output=3ddf83f17d0c875b input=d2b8af9bf99cfafb]*/
 
 {
     struct sock_send ctx;
@@ -4670,13 +4677,14 @@ Send a data string to the socket.
 
 For the optional flags argument, see the Unix manual.
 This calls send() repeatedly until all data is sent.
-If an error occurs, it's impossible to tell how much data has been sent.
+If an error occurs, it's impossible to tell how much data has been
+sent.
 [clinic start generated code]*/
 
 static PyObject *
 _socket_socket_sendall_impl(PySocketSockObject *s, Py_buffer *pbuf,
                             int flags)
-/*[clinic end generated code: output=ec92861424d3faa8 input=732b15b9ca64dce6]*/
+/*[clinic end generated code: output=ec92861424d3faa8 input=2600de13b4614893]*/
 
 {
     char *buf;
@@ -4810,6 +4818,7 @@ sock_sendto(PyObject *self, PyObject *args)
     }
 
     if (PySys_Audit("socket.sendto", "OO", s, addro) < 0) {
+        PyBuffer_Release(&pbuf);
         return NULL;
     }
 
@@ -4856,14 +4865,14 @@ sock_sendmsg_iovec(PySocketSockObject *s, PyObject *data_arg,
 
     /* Fill in an iovec for each message part, and save the Py_buffer
        structs to release afterwards. */
-    data_fast = PySequence_Fast(data_arg,
-                                "sendmsg() argument 1 must be an "
-                                "iterable");
+    data_fast = PySequence_Tuple(data_arg);
     if (data_fast == NULL) {
+        PyErr_SetString(PyExc_TypeError,
+                        "sendmsg() argument 1 must be an iterable");
         goto finally;
     }
 
-    ndataparts = PySequence_Fast_GET_SIZE(data_fast);
+    ndataparts = PyTuple_GET_SIZE(data_fast);
     if (ndataparts > INT_MAX) {
         PyErr_SetString(PyExc_OSError, "sendmsg() argument 1 is too long");
         goto finally;
@@ -4885,7 +4894,7 @@ sock_sendmsg_iovec(PySocketSockObject *s, PyObject *data_arg,
         }
     }
     for (; ndatabufs < ndataparts; ndatabufs++) {
-        if (PyObject_GetBuffer(PySequence_Fast_GET_ITEM(data_fast, ndatabufs),
+        if (PyObject_GetBuffer(PyTuple_GET_ITEM(data_fast, ndatabufs),
             &databufs[ndatabufs], PyBUF_SIMPLE) < 0)
             goto finally;
         iovs[ndatabufs].iov_base = databufs[ndatabufs].buf;
@@ -4925,20 +4934,20 @@ The buffers argument specifies the non-ancillary
 data as an iterable of bytes-like objects (e.g. bytes objects).
 The ancdata argument specifies the ancillary data (control messages)
 as an iterable of zero or more tuples (cmsg_level, cmsg_type,
-cmsg_data), where cmsg_level and cmsg_type are integers specifying the
-protocol level and protocol-specific type respectively, and cmsg_data
-is a bytes-like object holding the associated data.  The flags
-argument defaults to 0 and has the same meaning as for send().  If
-address is supplied and not None, it sets a destination address for
-the message.  The return value is the number of bytes of non-ancillary
-data sent.
+cmsg_data), where cmsg_level and cmsg_type are integers specifying
+the protocol level and protocol-specific type respectively, and
+cmsg_data is a bytes-like object holding the associated data.  The
+flags argument defaults to 0 and has the same meaning as for send().
+If address is supplied and not None, it sets a destination address
+for the message.  The return value is the number of bytes of
+non-ancillary data sent.
 [clinic start generated code]*/
 
 static PyObject *
 _socket_socket_sendmsg_impl(PySocketSockObject *s, PyObject *data_arg,
                             PyObject *cmsg_arg, int flags,
                             PyObject *addr_arg)
-/*[clinic end generated code: output=3b4cb1110644ce39 input=479c13d90bd2f88b]*/
+/*[clinic end generated code: output=3b4cb1110644ce39 input=8ae408971a3aa329]*/
 
 {
     Py_ssize_t i, ndatabufs = 0, ncmsgs, ncmsgbufs = 0;
@@ -4985,11 +4994,13 @@ _socket_socket_sendmsg_impl(PySocketSockObject *s, PyObject *data_arg,
     if (cmsg_arg == NULL)
         ncmsgs = 0;
     else {
-        if ((cmsg_fast = PySequence_Fast(cmsg_arg,
-                                         "sendmsg() argument 2 must be an "
-                                         "iterable")) == NULL)
+        cmsg_fast = PySequence_Tuple(cmsg_arg);
+        if (cmsg_fast == NULL) {
+            PyErr_SetString(PyExc_TypeError,
+                "sendmsg() argument 2 must be an iterable");
             goto finally;
-        ncmsgs = PySequence_Fast_GET_SIZE(cmsg_fast);
+        }
+        ncmsgs = PyTuple_GET_SIZE(cmsg_fast);
     }
 
 #ifndef CMSG_SPACE
@@ -5009,8 +5020,9 @@ _socket_socket_sendmsg_impl(PySocketSockObject *s, PyObject *data_arg,
     controllen = controllen_last = 0;
     while (ncmsgbufs < ncmsgs) {
         size_t bufsize, space;
+        PyObject *item = PyTuple_GET_ITEM(cmsg_fast, ncmsgbufs);
 
-        if (!PyArg_Parse(PySequence_Fast_GET_ITEM(cmsg_fast, ncmsgbufs),
+        if (!PyArg_Parse(item,
                          "(iiy*):[sendmsg() ancillary data items]",
                          &cmsgs[ncmsgbufs].level,
                          &cmsgs[ncmsgbufs].type,
@@ -6260,7 +6272,7 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
        gethostbyaddr_r is 8-byte aligned, which at least llvm-gcc
        does not ensure. The attribute below instructs the compiler
        to maintain this alignment. */
-    char buf[16384] Py_ALIGNED(8);
+    _Py_ALIGNED_DEF(8, char) buf[16384];
     int buf_len = (sizeof buf) - 1;
     int errnop;
 #endif
@@ -6542,7 +6554,6 @@ socket_socketpair(PyObject *self, PyObject *args)
     PySocketSockObject *s0 = NULL, *s1 = NULL;
     SOCKET_T sv[2];
     int family, type = SOCK_STREAM, proto = 0;
-    PyObject *res = NULL;
     socket_state *state = get_module_state(self);
 #ifdef SOCK_CLOEXEC
     int *atomic_flag_works = &sock_cloexec_works;
@@ -6587,28 +6598,26 @@ socket_socketpair(PyObject *self, PyObject *args)
         return set_error();
 
     if (_Py_set_inheritable(sv[0], 0, atomic_flag_works) < 0)
-        goto finally;
+        goto error;
     if (_Py_set_inheritable(sv[1], 0, atomic_flag_works) < 0)
-        goto finally;
+        goto error;
 
     s0 = new_sockobject(state, sv[0], family, type, proto);
     if (s0 == NULL)
-        goto finally;
+        goto error;
     s1 = new_sockobject(state, sv[1], family, type, proto);
     if (s1 == NULL)
-        goto finally;
-    res = PyTuple_Pack(2, s0, s1);
+        goto error;
+    return _PyTuple_FromPairSteal((PyObject *)s0, (PyObject *)s1);
 
-finally:
-    if (res == NULL) {
-        if (s0 == NULL)
-            SOCKETCLOSE(sv[0]);
-        if (s1 == NULL)
-            SOCKETCLOSE(sv[1]);
-    }
+error:
+    if (s0 == NULL)
+        SOCKETCLOSE(sv[0]);
+    if (s1 == NULL)
+        SOCKETCLOSE(sv[1]);
     Py_XDECREF(s0);
     Py_XDECREF(s1);
-    return res;
+    return NULL;
 }
 
 PyDoc_STRVAR(socketpair_doc,
@@ -6981,7 +6990,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
 
     if (PySys_Audit("socket.getaddrinfo", "OOiii",
                     hobj, pobj, family, socktype, protocol) < 0) {
-        return NULL;
+        goto err;
     }
 
     memset(&hints, 0, sizeof(hints));
@@ -7314,6 +7323,7 @@ _socket_if_nametoindex_impl(PyObject *module, PyObject *oname)
 
 
 /*[clinic input]
+@permit_long_summary
 _socket.if_indextoname
     if_index as index: NET_IFINDEX
     /
@@ -7323,7 +7333,7 @@ Returns the interface name corresponding to the interface index if_index.
 
 static PyObject *
 _socket_if_indextoname_impl(PyObject *module, NET_IFINDEX index)
-/*[clinic end generated code: output=e48bc324993052e0 input=c93f753d0cf6d7d1]*/
+/*[clinic end generated code: output=e48bc324993052e0 input=2a0026b271cd43ae]*/
 {
     errno = ENXIO;  // in case 'if_indextoname' does not set errno
     char name[IF_NAMESIZE + 1];
@@ -8279,6 +8289,9 @@ socket_exec(PyObject *m)
 #endif
 #ifdef  SO_BINDTODEVICE
     ADD_INT_MACRO(m, SO_BINDTODEVICE);
+#endif
+#ifdef  SO_PASSRIGHTS
+    ADD_INT_MACRO(m, SO_PASSRIGHTS);
 #endif
 #ifdef  SO_BINDTOIFINDEX
     ADD_INT_MACRO(m, SO_BINDTOIFINDEX);
@@ -9284,6 +9297,9 @@ socket_exec(PyObject *m)
     /* Initialize gethostbyname lock */
 #if defined(USE_GETHOSTBYNAME_LOCK)
     netdb_lock = PyThread_allocate_lock();
+    if (netdb_lock == NULL) {
+        goto error;
+    }
 #endif
 
 #ifdef MS_WINDOWS
@@ -9304,6 +9320,7 @@ error:
 }
 
 static struct PyModuleDef_Slot socket_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, socket_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

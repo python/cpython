@@ -21,9 +21,9 @@ Functions and classes provided:
 .. class:: AbstractContextManager
 
    An :term:`abstract base class` for classes that implement
-   :meth:`object.__enter__` and :meth:`object.__exit__`. A default
-   implementation for :meth:`object.__enter__` is provided which returns
-   ``self`` while :meth:`object.__exit__` is an abstract method which by default
+   :meth:`~object.__enter__` and :meth:`~object.__exit__`. A default
+   implementation for :meth:`~object.__enter__` is provided which returns
+   ``self`` while :meth:`~object.__exit__` is an abstract method which by default
    returns ``None``. See also the definition of :ref:`typecontextmanager`.
 
    .. versionadded:: 3.6
@@ -32,9 +32,9 @@ Functions and classes provided:
 .. class:: AbstractAsyncContextManager
 
    An :term:`abstract base class` for classes that implement
-   :meth:`object.__aenter__` and :meth:`object.__aexit__`. A default
-   implementation for :meth:`object.__aenter__` is provided which returns
-   ``self`` while :meth:`object.__aexit__` is an abstract method which by default
+   :meth:`~object.__aenter__` and :meth:`~object.__aexit__`. A default
+   implementation for :meth:`~object.__aenter__` is provided which returns
+   ``self`` while :meth:`~object.__aexit__` is an abstract method which by default
    returns ``None``. See also the definition of
    :ref:`async-context-managers`.
 
@@ -88,11 +88,11 @@ Functions and classes provided:
    the exception has been handled, and execution will resume with the statement
    immediately following the :keyword:`!with` statement.
 
-   :func:`contextmanager` uses :class:`ContextDecorator` so the context managers
+   :deco:`contextmanager` uses :class:`ContextDecorator` so the context managers
    it creates can be used as decorators as well as in :keyword:`with` statements.
    When used as a decorator, a new generator instance is implicitly created on
    each function call (this allows the otherwise "one-shot" context managers
-   created by :func:`contextmanager` to meet the requirement that context
+   created by :deco:`contextmanager` to meet the requirement that context
    managers support multiple invocations in order to be used as decorators).
 
    .. versionchanged:: 3.2
@@ -101,7 +101,7 @@ Functions and classes provided:
 
 .. decorator:: asynccontextmanager
 
-   Similar to :func:`~contextlib.contextmanager`, but creates an
+   Similar to :deco:`~contextlib.contextmanager`, but creates an
    :ref:`asynchronous context manager <async-context-managers>`.
 
    This function is a :term:`decorator` that can be used to define a factory
@@ -128,7 +128,7 @@ Functions and classes provided:
 
    .. versionadded:: 3.7
 
-   Context managers defined with :func:`asynccontextmanager` can be used
+   Context managers defined with :deco:`asynccontextmanager` can be used
    either as decorators or with :keyword:`async with` statements::
 
      import time
@@ -148,11 +148,11 @@ Functions and classes provided:
 
    When used as a decorator, a new generator instance is implicitly created on
    each function call. This allows the otherwise "one-shot" context managers
-   created by :func:`asynccontextmanager` to meet the requirement that context
+   created by :deco:`asynccontextmanager` to meet the requirement that context
    managers support multiple invocations in order to be used as decorators.
 
    .. versionchanged:: 3.10
-      Async context managers created with :func:`asynccontextmanager` can
+      Async context managers created with :deco:`asynccontextmanager` can
       be used as decorators.
 
 
@@ -228,7 +228,7 @@ Functions and classes provided:
 
 .. function:: nullcontext(enter_result=None)
 
-   Return a context manager that returns *enter_result* from ``__enter__``, but
+   Return a context manager that returns *enter_result* from :meth:`~object.__enter__`, but
    otherwise does nothing. It is intended to be used as a stand-in for an
    optional context manager, for example::
 
@@ -335,7 +335,7 @@ Functions and classes provided:
    For example, the output of :func:`help` normally is sent to *sys.stdout*.
    You can capture that output in a string by redirecting the output to an
    :class:`io.StringIO` object. The replacement stream is returned from the
-   ``__enter__`` method and so is available as the target of the
+   :meth:`~object.__enter__` method and so is available as the target of the
    :keyword:`with` statement::
 
         with redirect_stdout(io.StringIO()) as f:
@@ -396,10 +396,11 @@ Functions and classes provided:
    A base class that enables a context manager to also be used as a decorator.
 
    Context managers inheriting from ``ContextDecorator`` have to implement
-   ``__enter__`` and ``__exit__`` as normal. ``__exit__`` retains its optional
+   :meth:`~object.__enter__` and :meth:`~object.__exit__` as normal.
+   ``__exit__`` retains its optional
    exception handling even when used as a decorator.
 
-   ``ContextDecorator`` is used by :func:`contextmanager`, so you get this
+   ``ContextDecorator`` is used by :deco:`contextmanager`, so you get this
    functionality automatically.
 
    Example of ``ContextDecorator``::
@@ -466,12 +467,40 @@ Functions and classes provided:
       statements. If this is not the case, then the original construct with the
       explicit :keyword:`!with` statement inside the function should be used.
 
+   When the decorated callable is a generator function, coroutine function, or
+   asynchronous generator function, the returned wrapper is of the same kind
+   and keeps the context manager open for the lifetime of the iteration or
+   await rather than only for the call that creates the generator or coroutine
+   object.  Wrapped generators and asynchronous generators are explicitly
+   closed when iteration ends, as if by :func:`closing` or :func:`aclosing`.
+
+   .. note::
+      For asynchronous generators the wrapper re-yields each value with
+      ``async for``; values sent with :meth:`~agen.asend` and exceptions
+      thrown with :meth:`~agen.athrow` are not forwarded to the wrapped
+      generator.
+
    .. versionadded:: 3.2
+
+   .. versionchanged:: 3.15
+      Decorating a generator function, coroutine function, or asynchronous
+      generator function now keeps the context manager open across iteration
+      or await.  Previously the context manager exited as soon as the
+      generator or coroutine object was created.
 
 
 .. class:: AsyncContextDecorator
 
-   Similar to :class:`ContextDecorator` but only for asynchronous functions.
+   Similar to :class:`ContextDecorator`, but the context manager is entered
+   and exited with :keyword:`async with`.  Decorate coroutine functions and
+   asynchronous generator functions with this class; the returned wrapper is
+   of the same kind.
+
+   .. note::
+      Synchronous functions and generators are accepted, but the wrapper is
+      always asynchronous, so the decorated callable must then be awaited or
+      iterated with ``async for``.  If that change of calling convention is
+      not intended, use :class:`ContextDecorator` instead.
 
    Example of ``AsyncContextDecorator``::
 
@@ -508,6 +537,13 @@ Functions and classes provided:
       Finishing
 
    .. versionadded:: 3.10
+
+   .. versionchanged:: 3.15
+      Decorating an asynchronous generator function now keeps the context
+      manager open across iteration.  Previously the context manager exited
+      as soon as the generator object was created.  Synchronous functions
+      and synchronous generator functions are also now accepted, with an
+      asynchronous wrapper returned.
 
 
 .. class:: ExitStack()
@@ -564,7 +600,7 @@ Functions and classes provided:
          Raises :exc:`TypeError` instead of :exc:`AttributeError` if *cm*
          is not a context manager.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.15
          Added support for arbitrary descriptors :meth:`!__enter__` and
          :meth:`!__exit__`.
 
@@ -586,7 +622,7 @@ Functions and classes provided:
       The passed in object is returned from the function, allowing this
       method to be used as a function decorator.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.15
          Added support for arbitrary descriptors :meth:`!__exit__`.
 
    .. method:: callback(callback, /, *args, **kwds)
@@ -646,7 +682,7 @@ Functions and classes provided:
          Raises :exc:`TypeError` instead of :exc:`AttributeError` if *cm*
          is not an asynchronous context manager.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.15
          Added support for arbitrary descriptors :meth:`!__aenter__` and :meth:`!__aexit__`.
 
    .. method:: push_async_exit(exit)
@@ -654,7 +690,7 @@ Functions and classes provided:
       Similar to :meth:`ExitStack.push` but expects either an asynchronous context manager
       or a coroutine function.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.15
          Added support for arbitrary descriptors :meth:`!__aexit__`.
 
    .. method:: push_async_callback(callback, /, *args, **kwds)
@@ -666,7 +702,7 @@ Functions and classes provided:
 
       Similar to :meth:`ExitStack.close` but properly handles awaitables.
 
-   Continuing the example for :func:`asynccontextmanager`::
+   Continuing the example for :deco:`asynccontextmanager`::
 
       async with AsyncExitStack() as stack:
           connections = [await stack.enter_async_context(get_connection())
@@ -710,9 +746,9 @@ context management protocol.
 Catching exceptions from ``__enter__`` methods
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-It is occasionally desirable to catch exceptions from an ``__enter__``
+It is occasionally desirable to catch exceptions from an :meth:`~object.__enter__`
 method implementation, *without* inadvertently catching exceptions from
-the :keyword:`with` statement body or the context manager's ``__exit__``
+the :keyword:`with` statement body or the context manager's :meth:`~object.__exit__`
 method. By using :class:`ExitStack` the steps in the context management
 protocol can be separated slightly in order to allow this::
 
@@ -924,7 +960,7 @@ Files are an example of effectively single use context managers, since
 the first :keyword:`with` statement will close the file, preventing any
 further IO operations using that file object.
 
-Context managers created using :func:`contextmanager` are also single use
+Context managers created using :deco:`contextmanager` are also single use
 context managers, and will complain about the underlying generator failing
 to yield if an attempt is made to use them a second time::
 

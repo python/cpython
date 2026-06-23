@@ -29,6 +29,8 @@ extern "C" {
 #include "internal/pycore_interpframe.h"    // FRAME_OWNED_BY_INTERPRETER
 #include "internal/pycore_llist.h"          // struct llist_node
 #include "internal/pycore_long.h"           // _PyLong_GetZero
+#include "internal/pycore_pyerrors.h"       // _PyErr_FormatFromCause
+#include "internal/pycore_pyhash.h"        // _Py_HashPointerRaw
 #include "internal/pycore_stackref.h"       // Py_TAG_BITS
 #include "../../Python/remote_debug.h"
 
@@ -119,9 +121,10 @@ typedef enum _WIN32_THREADSTATE {
  * MACROS AND CONSTANTS
  * ============================================================================ */
 
-#define GET_MEMBER(type, obj, offset) (*(type*)((char*)(obj) + (offset)))
+#define GET_MEMBER(type, obj, offset) \
+    (*(const type *)memcpy(&(type){0}, (const char *)(obj) + (offset), sizeof(type)))
 #define CLEAR_PTR_TAG(ptr) (((uintptr_t)(ptr) & ~Py_TAG_BITS))
-#define GET_MEMBER_NO_TAG(type, obj, offset) (type)(CLEAR_PTR_TAG(*(type*)((char*)(obj) + (offset))))
+#define GET_MEMBER_NO_TAG(type, obj, offset) (type)(CLEAR_PTR_TAG(GET_MEMBER(type, obj, offset)))
 
 /* Size macros for opaque buffers */
 #define SIZEOF_BYTES_OBJ sizeof(PyBytesObject)
@@ -171,12 +174,16 @@ typedef enum _WIN32_THREADSTATE {
 #define THREAD_STATUS_UNKNOWN             (1 << 2)
 #define THREAD_STATUS_GIL_REQUESTED       (1 << 3)
 #define THREAD_STATUS_HAS_EXCEPTION       (1 << 4)
+#define THREAD_STATUS_MAIN_THREAD         (1 << 5)
 
 /* Exception cause macro */
-#define set_exception_cause(unwinder, exc_type, message) \
-    if (unwinder->debug) { \
-        _set_debug_exception_cause(exc_type, message); \
-    }
+#define set_exception_cause(unwinder, exc_type, message)                              \
+    do {                                                                              \
+        assert(PyErr_Occurred() && "function returned -1 without setting exception"); \
+        if (unwinder->debug && !_Py_RemoteDebug_HasPermissionError()) {               \
+            _set_debug_exception_cause(exc_type, message);                            \
+        }                                                                             \
+    } while (0)
 
 /* ============================================================================
  * TYPE DEFINITIONS
@@ -209,6 +216,8 @@ typedef struct {
     PyObject *file_name;
     int first_lineno;
     PyObject *linetable;  // bytes
+    PyObject *last_frame_info;
+    ptrdiff_t last_addrq;
     uintptr_t addr_code_adaptive;
 } CachedCodeMetadata;
 
@@ -218,10 +227,40 @@ typedef struct {
 
 typedef struct {
     uint64_t thread_id;                      // 0 = empty slot
+    uintptr_t thread_state_addr;
     uintptr_t addrs[FRAME_CACHE_MAX_FRAMES];
     Py_ssize_t num_addrs;
+    PyObject *thread_id_obj;                 // owned reference, NULL if empty
     PyObject *frame_list;                    // owned reference, NULL if empty
 } FrameCacheEntry;
+
+#define INTERPRETER_THREAD_CACHE_SIZE 32
+#if (INTERPRETER_THREAD_CACHE_SIZE & (INTERPRETER_THREAD_CACHE_SIZE - 1)) != 0
+#  error "INTERPRETER_THREAD_CACHE_SIZE must be a power of two"
+#endif
+
+// The two per-interpreter L2 caches below are split into per-field tables so
+// that a writer rebinding one slot cannot leave stale data in a field owned by
+// the other when the slot is reused across interpreters.
+typedef struct {
+    uintptr_t interpreter_addr;
+    uintptr_t thread_state_addr;
+} InterpreterTstateCacheEntry;
+typedef struct {
+    uintptr_t interpreter_addr;
+    uint64_t code_object_generation;
+} InterpreterGenerationCacheEntry;
+
+// Carries already-read thread state and/or frame buffers across helpers so the
+// downstream callee can skip a remote read. Address fields are caller-supplied
+// inputs; buffer pointers (tstate, frame) are NULL unless a prior batched read
+// successfully populated them.
+typedef struct {
+    const char *tstate;
+    uintptr_t tstate_addr;
+    const char *frame;
+    uintptr_t frame_addr;
+} RemoteReadPrefetch;
 
 /* Statistics for profiling performance analysis */
 typedef struct {
@@ -236,14 +275,44 @@ typedef struct {
     uint64_t code_object_cache_hits;         // Code object cache hits
     uint64_t code_object_cache_misses;       // Code object cache misses
     uint64_t stale_cache_invalidations;      // Times stale entries were cleared
+    uint64_t batched_read_attempts;          // Batched remote-read attempts
+    uint64_t batched_read_successes;         // Attempts that read all requested segments
+    uint64_t batched_read_misses;            // Attempts that fell back or partially read
+    uint64_t batched_read_segments_requested; // Segments requested by batched reads
+    uint64_t batched_read_segments_completed; // Segments completed by batched reads
 } UnwinderStats;
+
+#if defined(__GNUC__) || defined(__clang__)
+#  define REMOTE_DEBUG_UNLIKELY(value) __builtin_expect(!!(value), 0)
+#else
+#  define REMOTE_DEBUG_UNLIKELY(value) (value)
+#endif
 
 /* Stats tracking macros - no-op when stats collection is disabled */
 #define STATS_INC(unwinder, field) \
-    do { if ((unwinder)->collect_stats) (unwinder)->stats.field++; } while(0)
+    do { if (REMOTE_DEBUG_UNLIKELY((unwinder)->collect_stats)) (unwinder)->stats.field++; } while(0)
 
 #define STATS_ADD(unwinder, field, val) \
-    do { if ((unwinder)->collect_stats) (unwinder)->stats.field += (val); } while(0)
+    do { if (REMOTE_DEBUG_UNLIKELY((unwinder)->collect_stats)) (unwinder)->stats.field += (val); } while(0)
+
+#if HAVE_PROCESS_VM_READV
+#  define STATS_BATCHED_READ(unwinder, requested, completed) \
+    do { \
+        if (REMOTE_DEBUG_UNLIKELY((unwinder)->collect_stats)) { \
+            (unwinder)->stats.batched_read_attempts++; \
+            (unwinder)->stats.batched_read_segments_requested += (uint64_t)(requested); \
+            (unwinder)->stats.batched_read_segments_completed += (uint64_t)(completed); \
+            if ((completed) == (requested)) { \
+                (unwinder)->stats.batched_read_successes++; \
+            } \
+            else { \
+                (unwinder)->stats.batched_read_misses++; \
+            } \
+        } \
+    } while(0)
+#else
+#  define STATS_BATCHED_READ(unwinder, requested, completed) ((void)0)
+#endif
 
 typedef struct {
     PyTypeObject *RemoteDebugging_Type;
@@ -254,8 +323,10 @@ typedef struct {
     PyTypeObject *ThreadInfo_Type;
     PyTypeObject *InterpreterInfo_Type;
     PyTypeObject *AwaitedInfo_Type;
+    PyTypeObject *GCStatsInfo_Type;
     PyTypeObject *BinaryWriter_Type;
     PyTypeObject *BinaryReader_Type;
+    PyTypeObject *GCMonitor_Type;
 } RemoteDebuggingState;
 
 enum _ThreadState {
@@ -282,7 +353,6 @@ typedef struct {
     struct _Py_AsyncioModuleDebugOffsets async_debug_offsets;
     uintptr_t interpreter_addr;
     uintptr_t tstate_addr;
-    uint64_t code_object_generation;
     _Py_hashtable_t *code_object_cache;
     int debug;
     int only_active_thread;
@@ -294,15 +364,24 @@ typedef struct {
     int cache_frames;
     int collect_stats;  // whether to collect statistics
     uint32_t stale_invalidation_counter;  // counter for throttling frame_cache_invalidate_stale
+    // L1 single-entry shortcut over cached_tstates[]: most workloads sample one
+    // interpreter, so check these pairs before hashing into the table below.
+    uintptr_t cached_tstate_interpreter_addr;
+    uintptr_t cached_tstate_addr;
+    uintptr_t cached_generation_interpreter_addr;
+    uint64_t cached_code_object_generation;
     RemoteDebuggingState *cached_state;
     FrameCacheEntry *frame_cache;  // preallocated array of FRAME_CACHE_MAX_THREADS entries
     UnwinderStats stats;  // statistics for performance analysis
+    InterpreterTstateCacheEntry cached_tstates[INTERPRETER_THREAD_CACHE_SIZE];
+    InterpreterGenerationCacheEntry cached_generations[INTERPRETER_THREAD_CACHE_SIZE];
 #ifdef Py_GIL_DISABLED
     uint32_t tlbc_generation;
     _Py_hashtable_t *tlbc_cache;
 #endif
 #ifdef __APPLE__
     uint64_t thread_id_offset;
+    int thread_id_offset_initialized;
 #endif
 #ifdef MS_WINDOWS
     PVOID win_process_buffer;
@@ -339,17 +418,26 @@ typedef struct {
     size_t count;
 } StackChunkList;
 
+typedef struct {
+    proc_handle_t handle;
+    uintptr_t runtime_start_address;
+    struct _Py_DebugOffsets debug_offsets;
+    int debug;
+} RuntimeOffsets;
+
 /*
  * Context for frame chain traversal operations.
  */
 typedef struct {
     /* Inputs */
     uintptr_t frame_addr;           // Starting frame address
+    uintptr_t thread_state_addr;    // Owning thread state address
     uintptr_t base_frame_addr;      // Sentinel at bottom (for validation)
     uintptr_t gc_frame;             // GC frame address (0 if not tracking)
     uintptr_t last_profiled_frame;  // Last cached frame (0 if no cache)
     StackChunkList *chunks;         // Pre-copied stack chunks
     int skip_first_frame;           // Skip frame_addr itself (continue from its caller)
+    RemoteReadPrefetch prefetch;     // Optional already-read thread/frame buffers
 
     /* Outputs */
     PyObject *frame_info;           // List to append FrameInfo objects
@@ -369,6 +457,13 @@ typedef struct {
     int32_t tlbc_index;             // Thread-local bytecode index (free-threading)
 } CodeObjectContext;
 
+typedef struct {
+    PyObject_HEAD
+    RuntimeOffsets offsets;
+} GCMonitorObject;
+
+#define GCMonitor_CAST(op) ((GCMonitorObject *)(op))
+
 /* Function pointer types for iteration callbacks */
 typedef int (*thread_processor_func)(
     RemoteUnwinderObject *unwinder,
@@ -383,6 +478,14 @@ typedef int (*set_entry_processor_func)(
     void *context
 );
 
+typedef int (*interpreter_processor_func)(
+    RuntimeOffsets *offsets,
+    uintptr_t interpreter_state_addr,
+    int64_t iid,
+    void *context
+);
+
+
 /* ============================================================================
  * STRUCTSEQ DESCRIPTORS (extern declarations)
  * ============================================================================ */
@@ -394,6 +497,7 @@ extern PyStructSequence_Desc CoroInfo_desc;
 extern PyStructSequence_Desc ThreadInfo_desc;
 extern PyStructSequence_Desc InterpreterInfo_desc;
 extern PyStructSequence_Desc AwaitedInfo_desc;
+extern PyStructSequence_Desc GCStatsInfo_desc;
 
 /* ============================================================================
  * UTILITY FUNCTION DECLARATIONS
@@ -411,6 +515,7 @@ extern void cached_code_metadata_destroy(void *ptr);
 /* Validation */
 extern int is_prerelease_version(uint64_t version);
 extern int validate_debug_offsets(struct _Py_DebugOffsets *debug_offsets);
+#define PY_REMOTE_DEBUG_INVALID_ASYNC_DEBUG_OFFSETS (-2)
 
 /* ============================================================================
  * MEMORY READING FUNCTION DECLARATIONS
@@ -515,6 +620,7 @@ extern int process_frame_chain(
 extern int frame_cache_init(RemoteUnwinderObject *unwinder);
 extern void frame_cache_cleanup(RemoteUnwinderObject *unwinder);
 extern FrameCacheEntry *frame_cache_find(RemoteUnwinderObject *unwinder, uint64_t thread_id);
+extern FrameCacheEntry *frame_cache_find_by_tstate(RemoteUnwinderObject *unwinder, uintptr_t tstate_addr);
 extern int clear_last_profiled_frames(RemoteUnwinderObject *unwinder);
 extern void frame_cache_invalidate_stale(RemoteUnwinderObject *unwinder, PyObject *result);
 extern int frame_cache_lookup_and_extend(
@@ -533,6 +639,7 @@ extern int frame_cache_store(
     PyObject *frame_list,
     const uintptr_t *addrs,
     Py_ssize_t num_addrs,
+    uintptr_t thread_state_addr,
     uintptr_t base_frame_addr,
     uintptr_t last_frame_visited);
 
@@ -571,13 +678,26 @@ extern PyObject* unwind_stack_for_thread(
     RemoteUnwinderObject *unwinder,
     uintptr_t *current_tstate,
     uintptr_t gil_holder_tstate,
-    uintptr_t gc_frame
+    uintptr_t gc_frame,
+    uintptr_t main_thread_tstate,
+    const RemoteReadPrefetch *prefetch
 );
 
 /* Thread stopping functions (for blocking mode) */
 extern void _Py_RemoteDebug_InitThreadsState(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_ThreadsState *st);
 extern int _Py_RemoteDebug_StopAllThreads(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_ThreadsState *st);
 extern void _Py_RemoteDebug_ResumeAllThreads(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_ThreadsState *st);
+
+/* ============================================================================
+ * INTERPRETER FUNCTION DECLARATIONS
+ * ============================================================================ */
+
+extern int
+iterate_interpreters(
+    RuntimeOffsets *offsets,
+    interpreter_processor_func processor,
+    void *context
+);
 
 /* ============================================================================
  * ASYNCIO FUNCTION DECLARATIONS

@@ -1,2 +1,0 @@
-Fix a crash in :meth:`array.array.fromlist` when an element's :meth:`~object.__index__` method mutates
-the input list during conversion.

@@ -1,4 +1,0 @@
-Previously, :class:`~typing.Protocol` classes that were not decorated with :deco:`~typing.runtime_checkable`,
-but that inherited from another ``Protocol`` class that did have this decorator, could be used in :func:`isinstance`
-and :func:`issubclass` checks. This behavior is now deprecated and such checks will throw a :exc:`TypeError`
-in Python 3.20. Patch by Bartosz Sławecki.
