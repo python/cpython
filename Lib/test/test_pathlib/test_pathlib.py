@@ -2860,7 +2860,7 @@ class PathTest(PurePathTest):
     @unittest.skipIf(
         is_wasi, "Cannot create socket on WASI."
     )
-    @unittest.skipIf(sys.platform=='win32',
+    @unittest.skipIf(sys.platform == 'win32',
                      "detecting if file is socket is not supported by Windows")
     def test_is_socket_true(self):
         P = self.cls(self.base, 'mysock')
@@ -2879,7 +2879,7 @@ class PathTest(PurePathTest):
         self.assertIs(self.cls(self.base, 'mysock\x00').is_socket(), False)
 
     @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
-    @unittest.skipUnless(sys.platform=='win32',
+    @unittest.skipUnless(sys.platform == 'win32',
                          "socket file on Windows is a normal file")
     def test_is_socket_on_windows(self):
         P = self.cls(self.base, 'mysock')
