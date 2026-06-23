@@ -1469,6 +1469,8 @@ class BindTest(AbstractTkTest, unittest.TestCase):
         self.assertNotIn(funcid, script)
         self.assertNotIn(funcid2, script)
         self.assertIn(funcid3, script)
+        self.assertCommandNotExist(funcid)
+        self.assertCommandNotExist(funcid2)
         self.assertCommandExist(funcid3)
 
     def test_bind_class(self):
@@ -1513,8 +1515,8 @@ class BindTest(AbstractTkTest, unittest.TestCase):
         unbind_class('Test', event)
         self.assertEqual(bind_class('Test', event), '')
         self.assertEqual(bind_class('Test'), ())
-        self.assertCommandExist(funcid)
-        self.assertCommandExist(funcid2)
+        self.assertCommandNotExist(funcid)
+        self.assertCommandNotExist(funcid2)
 
         unbind_class('Test', event)  # idempotent
 
@@ -1542,8 +1544,8 @@ class BindTest(AbstractTkTest, unittest.TestCase):
         self.assertNotIn(funcid, script)
         self.assertNotIn(funcid2, script)
         self.assertIn(funcid3, script)
-        self.assertCommandExist(funcid)
-        self.assertCommandExist(funcid2)
+        self.assertCommandNotExist(funcid)
+        self.assertCommandNotExist(funcid2)
         self.assertCommandExist(funcid3)
 
     def test_bind_all(self):
@@ -1585,8 +1587,8 @@ class BindTest(AbstractTkTest, unittest.TestCase):
         unbind_all(event)
         self.assertEqual(bind_all(event), '')
         self.assertNotIn(event, bind_all())
-        self.assertCommandExist(funcid)
-        self.assertCommandExist(funcid2)
+        self.assertCommandNotExist(funcid)
+        self.assertCommandNotExist(funcid2)
 
         unbind_all(event)  # idempotent
 
@@ -1614,8 +1616,8 @@ class BindTest(AbstractTkTest, unittest.TestCase):
         self.assertNotIn(funcid, script)
         self.assertNotIn(funcid2, script)
         self.assertIn(funcid3, script)
-        self.assertCommandExist(funcid)
-        self.assertCommandExist(funcid2)
+        self.assertCommandNotExist(funcid)
+        self.assertCommandNotExist(funcid2)
         self.assertCommandExist(funcid3)
 
     def _test_tag_bind(self, w):
