@@ -495,7 +495,7 @@ def _get_charset_prefix(pattern, flags):
         if iscased and iscased(av):
             return None
         return [(op, av)]
-    elif op is CHARSET:
+    elif op is CATEGORY:
         return [(op, av)]
     elif op is BRANCH:
         charset = []
