@@ -2806,6 +2806,9 @@ class TarFile(object):
                     "makelink_with_filter: if filter_function is not None, "
                     + "extraction_root must also not be None")
             try:
+                filter_function(
+                    unfiltered.replace(name=tarinfo.name, deep=False),
+                    extraction_root)
                 filtered = filter_function(unfiltered, extraction_root)
             except _FILTER_ERRORS as cause:
                 raise LinkFallbackError(tarinfo, unfiltered.name) from cause
