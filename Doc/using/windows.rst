@@ -455,6 +455,12 @@ customization.
        Python runtimes, or false to prevent it.
        By default, true.
 
+   * - ``shebang_templates``
+     - (none)
+     - Mapping from shebang line template to alternative command, such as
+       ``py -V:<tag>`` or a substitute string.
+       See :ref:`pymanager-shebang` for more details.
+
    * - ``log_level``
      - ``PYMANAGER_VERBOSE``, ``PYMANAGER_DEBUG``
      - Set the default level of output (0-50).
@@ -567,6 +573,30 @@ shells. These paths may be quoted, and may include multiple arguments, after
 which the path to the script and any additional arguments will be appended.
 This functionality may be disabled by the ``shebang_can_run_anything``
 configuration option.
+
+Since version 26.3 of the Python install manager, custom shebang templates may
+be added to your configuration file. Add the ``shebang_templates`` object with
+one member for each template (the string to match) and the command to use when
+the template is matched. Most commands should be ``py -V:<tag>`` (or ``pyw``) to
+launch one of your installed runtimes. The ``py -3.<version>`` form is also
+allowed, as is a plain ``py`` to launch the default. No other arguments are
+supported.
+
+.. code:: json5
+
+   {
+       "shebang_templates": {
+           "/usr/bin/python": "py",
+           "/usr/bin/my_custom_python": "py -V:MyCustomPython/3"
+       }
+   }
+
+If the substitute command is not ``py`` or ``pyw``, it will be written back into
+the shebang and regular handling continues. If launching arbitrary executables
+is permitted, then providing a full path will allow you to redirect from Python
+to any executable. The template should match either the entire line (ignoring
+leading and trailing whitespace), or up to the first space in the shebang line.
+
 
 .. note::
 
@@ -778,6 +808,14 @@ directory containing the configuration file that specified them.
      - True to suppress visible warnings when a shebang launches an application
        other than a Python runtime.
 
+   * - ``source_settings``
+     - A mapping from source URL to settings specific to that index.
+       When multiple configuration files include this section, URL settings are
+       added or overwritten, but individual settings are not merged.
+       These settings are currently only for :ref:`index signatures
+       <pymanager-index-signatures>`.
+
+
 .. _install-freethreaded-windows:
 
 Installing free-threaded binaries
@@ -798,6 +836,101 @@ This will install and register as normal. If you have no other runtimes
 installed, then ``python`` will launch this one. Otherwise, you will need to use
 ``py -V:3.14t ...`` or, if you have added the global aliases directory to your
 :envvar:`PATH` environment variable, the ``python3.14t.exe`` commands.
+
+
+.. _pymanager-index-signatures:
+
+Index signatures
+----------------
+
+.. versionadded:: 26.2
+
+Index files may be signed to detect tampering. A signature is a catalog file
+at the same URL as the index with ``.cat`` added to the filename. The catalog
+file should contain the hash of its matching index file, and should be signed
+with a valid Authenticode signature. This allows standard tooling (on Windows)
+to generate a signature, and any certificate may be used as long as the client
+operating system already trusts its certification authority (root CA).
+
+Index signatures are only downloaded and checked when the local configuration's
+``source_settings`` section includes the index URL and ``requires_signature`` is
+true, or the index JSON contains ``requires_signature`` set to true. When the
+setting exists in local configuration, even when false, settings in the index
+are ignored.
+
+As well as requiring a valid signature, the ``required_root_subject`` and
+``required_publisher_subject`` settings can further restrict acceptable
+signatures based on the certificate Subject fields. Any attribute specified in
+the configuration must match the attribute in the certificate (additional
+attributes in the certificate are ignored). Typical attributes are ``CN=`` for
+the common name, ``O=`` for the organizational unit, and ``C=`` for the
+publisher's country.
+
+Finally, the ``required_publisher_eku`` setting allows requiring that a specific
+Enhanced Key Usage (EKU) has been assigned to the publisher certificate. For
+example, the EKU ``1.3.6.1.5.5.7.3.3`` indicates that the certificate was
+intended for code signing (as opposed to server or client authentication).
+In combination with a specific root CA, this provides another mechanism to
+verify a legitimate signature.
+
+This is an example ``source_settings`` section from a configuration file. In
+this case, the publisher of the feed is uniquely identified by the combination
+of the Microsoft Identity Verification root and the EKU assigned by that root.
+The signature for this case would be found at
+``https://www.python.org/ftp/python/index-windows.json.cat``.
+
+.. code:: json5
+
+   {
+     "source_settings": {
+       "https://www.python.org/ftp/python/index-windows.json": {
+         "requires_signature": true,
+         "required_root_subject": "CN=Microsoft Identity Verification Root Certificate Authority 2020",
+         "required_publisher_subject": "CN=Python Software Foundation",
+         "required_publisher_eku": "1.3.6.1.4.1.311.97.608394634.79987812.305991749.578777327"
+       }
+     }
+   }
+
+The same settings could be specified in the ``index.json`` file instead. In this
+case, the root and EKU are omitted, meaning that the signature must be valid and
+have a specific common name in the publisher's certificate, but no other checks
+are used.
+
+.. code:: json5
+
+   {
+     "requires_signature": true,
+     "required_publisher_subject": "CN=Python Software Foundation",
+     "versions": [
+       // ...
+     ]
+   }
+
+When settings from inside a feed are used, the user is notified and the settings
+are shown in the log file or verbose output. It is recommended to copy these
+settings into a local configuration file for feeds that will be used frequently,
+so that unauthorised modifications to the feed cannot disable verification.
+
+It is not possible to override the location of the signature file in the feed or
+through a configuration file. Administrators can provide their own
+``source_settings`` in a mandatory configuration file (see
+:ref:`pymanager-admin-config`).
+
+If signature validation fails, you will be notified and prompted to continue.
+When interactive confirmation is not allowed (for example, because ``--yes`` was
+specified), it will always abort. To use a feed with invalid configuration in
+this scenario, you must provide a configuration file that disables signature
+checking for that feed.
+
+.. code:: json5
+
+   "source_settings": {
+     "https://www.example.com/feed-with-invalid-signature.json": {
+       "requires_signature": false
+     }
+   }
+
 
 .. _pymanager-troubleshoot:
 

@@ -50,8 +50,8 @@ additional methods of invocation:
 * When called with ``-c command``, it executes the Python statement(s) given as
   *command*.  Here *command* may contain multiple statements separated by
   newlines.
-* When called with ``-m module-name``, the given module is located on the
-  Python module path and executed as a script.
+* When called with ``-m module-name``, the given module is located using the standard
+  import mechanism and executed as a script.
 
 In non-interactive mode, the entire input is parsed before it is executed.
 
@@ -78,8 +78,8 @@ source.
 
 .. option:: -m <module-name>
 
-   Search :data:`sys.path` for the named module and execute its contents as
-   the :mod:`__main__` module.
+   Locate the module using the standard import mechanism and execute its contents
+   as the :mod:`__main__` module.
 
    Since the argument is a *module* name, you must not give a file extension
    (``.py``).  The module name should be a valid absolute Python module name, but
@@ -654,12 +654,16 @@ Miscellaneous options
 
      .. versionadded:: 3.13
 
-   * :samp:`-X presite={package.module}` specifies a module that should be
-     imported before the :mod:`site` module is executed and before the
+   * :samp:`-X presite={module}` or :samp:`-X presite={module:func}` specifies
+     an entry point that should be executed before the :mod:`site` module is
+     executed and before the
      :mod:`__main__` module exists.  Therefore, the imported module isn't
      :mod:`__main__`. This can be used to execute code early during Python
      initialization. Python needs to be :ref:`built in debug mode <debug-build>`
      for this option to exist.  See also :envvar:`PYTHON_PRESITE`.
+
+     .. versionchanged:: 3.15
+        Accept also ``module:func`` entry point format.
 
      .. versionadded:: 3.13
 
@@ -701,10 +705,9 @@ Miscellaneous options
 
      .. versionadded:: 3.14
 
-   * :samp:`-X lazy_imports={all,none,normal}` controls lazy import behavior.
-     ``all`` makes all imports lazy by default, ``none`` disables lazy imports
-     entirely (even explicit ``lazy`` statements become eager), and ``normal``
-     (the default) respects the ``lazy`` keyword in source code.
+   * :samp:`-X lazy_imports={all,normal}` controls lazy import behavior.
+     ``all`` makes all imports lazy by default, and ``normal`` (the default)
+     respects the ``lazy`` keyword in source code.
      See also :envvar:`PYTHON_LAZY_IMPORTS`.
 
      .. versionadded:: 3.15
@@ -1132,6 +1135,14 @@ conflict.
       and kill the process.  Only enable this in environments where the
       huge-page pool is properly sized and fork-safety is not a concern.
 
+      On Windows you need a special privilege. See the
+      `Windows documentation for large pages
+      <https://learn.microsoft.com/windows/win32/memory/large-page-support>`_
+      for details. Python will fail on startup if the required privilege
+      `SeLockMemoryPrivilege
+      <https://learn.microsoft.com/previous-versions/windows/it-pro/windows-10/security/threat-protection/security-policy-settings/lock-pages-in-memory>`_
+      is not held by the user.
+
    .. versionadded:: 3.15
 
 
@@ -1141,9 +1152,6 @@ conflict.
    error handler` mode will revert to their pre-3.6 values of 'mbcs' and
    'replace', respectively.  Otherwise, the new defaults 'utf-8' and
    'surrogatepass' are used.
-
-   This may also be enabled at runtime with
-   :func:`sys._enablelegacywindowsfsencoding`.
 
    .. availability:: Windows.
 
@@ -1330,6 +1338,13 @@ conflict.
 
    .. versionadded:: 3.13
 
+.. envvar:: PYTHON_BASIC_COMPLETER
+
+   If this variable is set to any value, PyREPL will use :mod:`rlcompleter` to
+   implement tab completion, instead of the default one which uses colors.
+
+   .. versionadded:: 3.15
+
 .. envvar:: PYTHON_HISTORY
 
    This environment variable can be used to set the location of a
@@ -1397,10 +1412,9 @@ conflict.
 
 .. envvar:: PYTHON_LAZY_IMPORTS
 
-   Controls lazy import behavior. Accepts three values: ``all`` makes all
-   imports lazy by default, ``none`` disables lazy imports entirely (even
-   explicit ``lazy`` statements become eager), and ``normal`` (the default)
-   respects the ``lazy`` keyword in source code.
+   Controls lazy import behavior. Accepts two values: ``all`` makes all
+   imports lazy by default, and ``normal`` (the default) respects the
+   ``lazy`` keyword in source code.
 
    See also the :option:`-X lazy_imports <-X>` command-line option.
 
@@ -1442,5 +1456,8 @@ Debug-mode variables
    which takes precedence over this variable.
 
    Needs Python configured with the :option:`--with-pydebug` build option.
+
+   .. versionchanged:: 3.15
+      Accept also ``module:func`` entry point format.
 
    .. versionadded:: 3.13

@@ -19,6 +19,8 @@ The basic idea for :mod:`!tkinter.ttk` is to separate, to the extent possible,
 the code implementing a widget's behavior from the code implementing its
 appearance.
 
+.. versionadded:: 3.1
+
 
 .. seealso::
 
@@ -44,12 +46,12 @@ That code causes several :mod:`!tkinter.ttk` widgets (:class:`Button`,
 :class:`Radiobutton`, :class:`Scale` and :class:`Scrollbar`) to
 automatically replace the Tk widgets.
 
-This has the direct benefit of using the new widgets which gives a better
-look and feel across platforms; however, the replacement widgets are not
-completely compatible. The main difference is that widget options such as
-"fg", "bg" and others related to widget styling are no
-longer present in Ttk widgets.  Instead, use  the :class:`ttk.Style` class
-for improved styling effects.
+This has the direct benefit of using the new widgets which gives a better look
+and feel across platforms; however, the replacement widgets are not completely
+compatible.
+The main difference is that widget options such as "fg", "bg" and others
+related to widget styling are no longer present in Ttk widgets.
+Instead, use the :class:`ttk.Style <Style>` class for improved styling effects.
 
 
 .. seealso::
@@ -59,7 +61,7 @@ for improved styling effects.
      encountered when moving applications to use the new widgets.
 
 
-Ttk Widgets
+Ttk widgets
 -----------
 
 Ttk comes with 18 widgets, twelve of which already existed in tkinter:
@@ -93,14 +95,14 @@ documentation.
 Widget
 ------
 
-:class:`ttk.Widget` defines standard options and methods supported by Tk
-themed widgets and is not supposed to be directly instantiated.
+:class:`ttk.Widget <Widget>` defines standard options and methods supported by
+Tk themed widgets and is not supposed to be directly instantiated.
 
 
-Standard Options
+Standard options
 ^^^^^^^^^^^^^^^^
 
-All the :mod:`ttk` Widgets accept the following options:
+All the :mod:`!ttk` Widgets accept the following options:
 
 .. tabularcolumns:: |l|L|
 
@@ -116,7 +118,7 @@ All the :mod:`ttk` Widgets accept the following options:
 +-----------+--------------------------------------------------------------+
 | cursor    | Specifies the mouse cursor to be used for the widget. If set |
 |           | to the empty string (the default), the cursor is inherited   |
-|           | for the parent widget.                                       |
+|           | from the parent widget.                                      |
 +-----------+--------------------------------------------------------------+
 | takefocus | Determines whether the window accepts the focus during       |
 |           | keyboard traversal. 0, 1 or an empty string is returned.     |
@@ -131,7 +133,7 @@ All the :mod:`ttk` Widgets accept the following options:
 +-----------+--------------------------------------------------------------+
 
 
-Scrollable Widget Options
+Scrollable widget options
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The following options are supported by widgets that are controlled by a
@@ -144,20 +146,20 @@ scrollbar.
 +================+=========================================================+
 | xscrollcommand | Used to communicate with horizontal scrollbars.         |
 |                |                                                         |
-|                | When the view in the widget's window change, the widget |
-|                | will generate a Tcl command based on the scrollcommand. |
+|                | When the view in the widget's window changes, the widget|
+|                | calls the *xscrollcommand* callback.                    |
 |                |                                                         |
 |                | Usually this option consists of the method              |
-|                | :meth:`Scrollbar.set` of some scrollbar. This will cause|
-|                | the scrollbar to be updated whenever the view in the    |
-|                | window changes.                                         |
+|                | :meth:`Scrollbar.set <tkinter.Scrollbar.set>` of some   |
+|                | scrollbar. This will cause the scrollbar to be updated  |
+|                | whenever the view in the window changes.                |
 +----------------+---------------------------------------------------------+
 | yscrollcommand | Used to communicate with vertical scrollbars.           |
 |                | For some more information, see above.                   |
 +----------------+---------------------------------------------------------+
 
 
-Label Options
+Label options
 ^^^^^^^^^^^^^
 
 The following options are supported by labels, buttons and other button-like
@@ -203,7 +205,7 @@ widgets.
 +--------------+-----------------------------------------------------------+
 
 
-Compatibility Options
+Compatibility options
 ^^^^^^^^^^^^^^^^^^^^^
 
 .. tabularcolumns:: |l|L|
@@ -217,7 +219,7 @@ Compatibility Options
 |        | affect this option.                                            |
 +--------+----------------------------------------------------------------+
 
-Widget States
+Widget states
 ^^^^^^^^^^^^^
 
 The widget state is a bitmap of independent state flags.
@@ -258,8 +260,9 @@ an exclamation point indicating that the bit is off.
 ttk.Widget
 ^^^^^^^^^^
 
-Besides the methods described below, the :class:`ttk.Widget` supports the
-methods :meth:`tkinter.Widget.cget` and :meth:`tkinter.Widget.configure`.
+Besides the methods described below, the :class:`ttk.Widget <Widget>` supports
+the methods :meth:`tkinter.Widget.cget <tkinter.Misc.cget>` and
+:meth:`tkinter.Widget.configure <tkinter.Misc.configure>`.
 
 .. class:: Widget
 
@@ -286,22 +289,27 @@ methods :meth:`tkinter.Widget.cget` and :meth:`tkinter.Widget.configure`.
       which flags were changed. If *statespec* is not specified, returns
       the currently enabled state flags.
 
+      Not to be confused with :meth:`Wm.state <tkinter.Wm.state>`.
+
    *statespec* will usually be a list or a tuple.
 
 
 Combobox
 --------
 
-The :class:`ttk.Combobox` widget combines a text field with a pop-down list of
-values. This widget is a subclass of :class:`Entry`.
+The :class:`ttk.Combobox <Combobox>` widget combines a text field with a
+pop-down list of values.
+This widget is a subclass of :class:`Entry`.
 
-Besides the methods inherited from :class:`Widget`: :meth:`Widget.cget`,
-:meth:`Widget.configure`, :meth:`Widget.identify`, :meth:`Widget.instate`
-and :meth:`Widget.state`, and the following inherited from :class:`Entry`:
-:meth:`Entry.bbox`, :meth:`Entry.delete`, :meth:`Entry.icursor`,
-:meth:`Entry.index`, :meth:`Entry.insert`, :meth:`Entry.selection`,
-:meth:`Entry.xview`, it has some other methods, described at
-:class:`ttk.Combobox`.
+Besides the methods inherited from :class:`Widget`: :meth:`~tkinter.Misc.cget`,
+:meth:`~tkinter.Misc.configure`, :meth:`~Widget.identify`,
+:meth:`~Widget.instate` and :meth:`~Widget.state`, and the following inherited
+from :class:`Entry`: :meth:`~Entry.bbox`, :meth:`~tkinter.Entry.delete`,
+:meth:`~tkinter.Entry.icursor`, :meth:`~tkinter.Entry.index`,
+:meth:`~tkinter.Entry.insert`,
+:meth:`selection* <tkinter.Entry.selection_adjust>`,
+:meth:`xview* <tkinter.XView.xview>`, it has some other methods, described at
+:class:`ttk.Combobox <Combobox>`.
 
 
 Options
@@ -315,7 +323,7 @@ This widget accepts the following specific options:
 | Option          | Description                                            |
 +=================+========================================================+
 | exportselection | Boolean value. If set, the widget selection is linked  |
-|                 | to the Window Manager selection (which can be returned |
+|                 | to the X selection (which can be returned              |
 |                 | by invoking Misc.selection_get, for example).          |
 +-----------------+--------------------------------------------------------+
 | justify         | Specifies how the text is aligned within the widget.   |
@@ -329,7 +337,7 @@ This widget accepts the following specific options:
 +-----------------+--------------------------------------------------------+
 | state           | One of "normal", "readonly", or "disabled". In the     |
 |                 | "readonly" state, the value may not be edited directly,|
-|                 | and the user can only selection of the values from the |
+|                 | and the user can only select one of the values from the|
 |                 | dropdown list. In the "normal" state, the text field is|
 |                 | directly editable. In the "disabled" state, no         |
 |                 | interaction is possible.                               |
@@ -346,6 +354,11 @@ This widget accepts the following specific options:
 |                 | of the entry window, in average-size characters of the |
 |                 | widget's font.                                         |
 +-----------------+--------------------------------------------------------+
+
+.. note::
+
+   Tk 9.1 added the *locale* option, which selects the locale used to determine
+   word and character boundaries within the text (``"C"`` by default).
 
 
 Virtual events
@@ -379,16 +392,18 @@ ttk.Combobox
 
 Spinbox
 -------
-The :class:`ttk.Spinbox` widget is a :class:`ttk.Entry` enhanced with increment
-and decrement arrows.  It can be used for numbers or lists of string values.
-This widget is a subclass of :class:`Entry`.
 
-Besides the methods inherited from :class:`Widget`: :meth:`Widget.cget`,
-:meth:`Widget.configure`, :meth:`Widget.identify`, :meth:`Widget.instate`
-and :meth:`Widget.state`, and the following inherited from :class:`Entry`:
-:meth:`Entry.bbox`, :meth:`Entry.delete`, :meth:`Entry.icursor`,
-:meth:`Entry.index`, :meth:`Entry.insert`, :meth:`Entry.xview`,
-it has some other methods, described at :class:`ttk.Spinbox`.
+The :class:`ttk.Spinbox <Spinbox>` widget is a :class:`ttk.Entry <Entry>`
+enhanced with increment and decrement arrows.
+It can be used for numbers or lists of string values.
+This widget is a subclass of :class:`Entry`.
+Besides the methods inherited from :class:`Widget`: :meth:`~tkinter.Misc.cget`,
+:meth:`~tkinter.Misc.configure`, :meth:`~Widget.identify`,
+:meth:`~Widget.instate` and :meth:`~Widget.state`, and the following inherited
+from :class:`Entry`: :meth:`~Entry.bbox`, :meth:`~tkinter.Entry.delete`,
+:meth:`~tkinter.Entry.icursor`, :meth:`~tkinter.Entry.index`,
+:meth:`~tkinter.Entry.insert`, :meth:`xview* <tkinter.XView.xview>`, it has
+some other methods, described at :class:`ttk.Spinbox <Spinbox>`.
 
 Options
 ^^^^^^^
@@ -448,6 +463,8 @@ ttk.Spinbox
 
 .. class:: Spinbox
 
+   .. versionadded:: 3.8
+
    .. method:: get()
 
       Returns the current value of the spinbox.
@@ -456,6 +473,7 @@ ttk.Spinbox
    .. method:: set(value)
 
       Sets the value of the spinbox to *value*.
+
 
 
 Notebook
@@ -492,7 +510,7 @@ This widget accepts the following specific options:
 +---------+----------------------------------------------------------------+
 
 
-Tab Options
+Tab options
 ^^^^^^^^^^^
 
 There are also specific options for tabs:
@@ -510,7 +528,8 @@ There are also specific options for tabs:
 |           | area. Value is a string containing zero or more of the       |
 |           | characters "n", "s", "e" or "w". Each letter refers to a     |
 |           | side (north, south, east or west) that the child window will |
-|           | stick to, as per the :meth:`grid` geometry manager.          |
+|           | stick to, as per the :meth:`grid <tkinter.Grid.grid>`        |
+|           | geometry manager.                                            |
 +-----------+--------------------------------------------------------------+
 | padding   | Specifies the amount of extra space to add between the       |
 |           | notebook and this pane. Syntax is the same as for the option |
@@ -532,11 +551,11 @@ There are also specific options for tabs:
 +-----------+--------------------------------------------------------------+
 
 
-Tab Identifiers
+Tab identifiers
 ^^^^^^^^^^^^^^^
 
-The tab_id present in several methods of :class:`ttk.Notebook` may take any
-of the following forms:
+The tab_id present in several methods of :class:`ttk.Notebook <Notebook>` may
+take any of the following forms:
 
 * An integer between zero and the number of tabs
 * The name of a child window
@@ -546,7 +565,7 @@ of the following forms:
   :meth:`Notebook.index`)
 
 
-Virtual Events
+Virtual events
 ^^^^^^^^^^^^^^
 
 This widget generates a **<<NotebookTabChanged>>** virtual event after a new
@@ -572,6 +591,11 @@ ttk.Notebook
 
       Removes the tab specified by *tab_id*, unmaps and unmanages the
       associated window.
+
+      This shadows the inherited geometry-manager :meth:`!forget`;
+      use :meth:`~tkinter.Pack.pack_forget`, :meth:`~tkinter.Grid.grid_forget`
+      or :meth:`~tkinter.Place.place_forget` to remove the widget itself from
+      its manager.
 
 
    .. method:: hide(tab_id)
@@ -626,7 +650,7 @@ ttk.Notebook
 
    .. method:: tabs()
 
-      Returns a list of windows managed by the notebook.
+      Returns a tuple of windows managed by the notebook.
 
 
    .. method:: enable_traversal()
@@ -642,16 +666,18 @@ ttk.Notebook
         select that tab.
 
       Multiple notebooks in a single toplevel may be enabled for traversal,
-      including nested notebooks. However, notebook traversal only works
-      properly if all panes have the notebook they are in as master.
+      including nested notebooks.
+      However, notebook traversal only works properly if all panes are direct
+      children of the notebook.
 
 
 Progressbar
 -----------
 
-The :class:`ttk.Progressbar` widget shows the status of a long-running
-operation. It can operate in two modes:  1) the determinate mode which shows the
-amount completed relative to the total amount of work to be done and 2) the
+The :class:`ttk.Progressbar <Progressbar>` widget shows the status of a
+long-running operation.
+It can operate in two modes: 1) the determinate mode which shows the amount
+completed relative to the total amount of work to be done and 2) the
 indeterminate mode which provides an animated display to let the user know that
 work is progressing.
 
@@ -721,10 +747,11 @@ ttk.Progressbar
 Separator
 ---------
 
-The :class:`ttk.Separator` widget displays a horizontal or vertical separator
-bar.
+The :class:`ttk.Separator <Separator>` widget displays a horizontal or vertical
+separator bar.
 
-It has no other methods besides the ones inherited from :class:`ttk.Widget`.
+It has no other methods besides the ones inherited from
+:class:`ttk.Widget <Widget>`.
 
 
 Options
@@ -745,11 +772,12 @@ This widget accepts the following specific option:
 Sizegrip
 --------
 
-The :class:`ttk.Sizegrip` widget (also known as a grow box) allows the user to
-resize the containing toplevel window by pressing and dragging the grip.
+The :class:`ttk.Sizegrip <Sizegrip>` widget (also known as a grow box) allows
+the user to resize the containing toplevel window by pressing and dragging the
+grip.
 
 This widget has neither specific options nor specific methods, besides the
-ones inherited from :class:`ttk.Widget`.
+ones inherited from :class:`ttk.Widget <Widget>`.
 
 
 Platform-specific notes
@@ -764,18 +792,19 @@ Bugs
 ^^^^
 
 * If the containing toplevel's position was specified relative to the right
-  or bottom of the screen (e.g. ....), the :class:`Sizegrip` widget will
-  not resize the window.
+  or bottom of the screen (for example, ....), the :class:`Sizegrip` widget
+  will not resize the window.
 * This widget supports only "southeast" resizing.
 
 
 Treeview
 --------
 
-The :class:`ttk.Treeview` widget displays a hierarchical collection of items.
+The :class:`ttk.Treeview <Treeview>` widget displays a hierarchical collection
+of items.
 Each item has a textual label, an optional image, and an optional list of data
-values. The data values are displayed in successive columns after the tree
-label.
+values.
+The data values are displayed in successive columns after the tree label.
 
 The order in which data values are displayed may be controlled by setting
 the widget option ``displaycolumns``. The tree widget can also display column
@@ -837,15 +866,25 @@ This widget accepts the following specific options:
 |                | * tree: display tree labels in column #0.              |
 |                | * headings: display the heading row.                   |
 |                |                                                        |
-|                | The default is "tree headings", i.e., show all         |
+|                | The default is "tree headings", that is, show all      |
 |                | elements.                                              |
 |                |                                                        |
 |                | **Note**: Column #0 always refers to the tree column,  |
 |                | even if show="tree" is not specified.                  |
 +----------------+--------------------------------------------------------+
 
+.. note::
 
-Item Options
+   Tk 9.0 added several :class:`Treeview` features.
+   The *selectmode* option gained the values ``"single"`` and ``"multiple"``;
+   the new widget options *selecttype* (``"item"`` or ``"cell"`` selection),
+   *striped* (zebra-striped rows), and *titlecolumns* / *titleitems* (columns
+   or rows frozen against scrolling) were introduced; and items gained a
+   *hidden* option.
+   Tk 9.1 added the *rowheight* and *headingheight* options.
+
+
+Item options
 ^^^^^^^^^^^^
 
 The following item options may be specified for items in the insert and item
@@ -874,7 +913,7 @@ widget commands.
 +--------+---------------------------------------------------------------+
 
 
-Tag Options
+Tag options
 ^^^^^^^^^^^
 
 The following options may be specified on tags:
@@ -895,7 +934,7 @@ The following options may be specified on tags:
 +------------+-----------------------------------------------------------+
 
 
-Column Identifiers
+Column identifiers
 ^^^^^^^^^^^^^^^^^^
 
 Column identifiers take any of the following forms:
@@ -919,7 +958,7 @@ then data column n is displayed in column #n+1. Again, **column #0 always
 refers to the tree column**.
 
 
-Virtual Events
+Virtual events
 ^^^^^^^^^^^^^^
 
 The Treeview widget generates the following virtual events.
@@ -953,20 +992,23 @@ ttk.Treeview
       the specified *item* in the form (x, y, width, height).
 
       If *column* is specified, returns the bounding box of that cell. If the
-      *item* is not visible (i.e., if it is a descendant of a closed item or is
-      scrolled offscreen), returns an empty string.
+      *item* is not visible (that is, if it is a descendant of a closed item
+      or is scrolled offscreen), returns an empty string.
+
+      This shadows the inherited :meth:`!Misc.bbox`;
+      use :meth:`~tkinter.Misc.grid_bbox` for the grid bounding box.
 
 
    .. method:: get_children(item=None)
 
-      Returns the list of children belonging to *item*.
+      Returns a tuple of children belonging to *item*.
 
       If *item* is not specified, returns root children.
 
 
    .. method:: set_children(item, *newchildren)
 
-      Replaces *item*'s child with *newchildren*.
+      Replaces *item*'s children with *newchildren*.
 
       Children present in *item* that are not present in *newchildren* are
       detached from the tree. No items in *newchildren* may be an ancestor of
@@ -1020,13 +1062,17 @@ ttk.Treeview
 
    .. method:: exists(item)
 
-      Returns ``True`` if the specified *item* is present in the tree.
+      Returns ``True`` if the specified *item* is present in the tree,
+      ``False`` otherwise.
 
 
    .. method:: focus(item=None)
 
       If *item* is specified, sets the focus item to *item*. Otherwise, returns
       the current focus item, or '' if there is none.
+
+      This shadows the inherited :meth:`!Misc.focus`;
+      use :meth:`~tkinter.Misc.focus_set` to focus the widget itself.
 
 
    .. method:: heading(column, option=None, **kw)
@@ -1066,7 +1112,7 @@ ttk.Treeview
 
    .. method:: identify_column(x)
 
-      Returns the data column identifier of the cell at position *x*.
+      Returns the display column identifier of the cell at position *x*.
 
       The tree column has ID #0.
 
@@ -1129,6 +1175,9 @@ ttk.Treeview
       Otherwise, sets the options to the corresponding values as given by *kw*.
 
 
+   .. method:: reattach(item, parent, index)
+      :no-typesetting:
+
    .. method:: move(item, parent, index)
 
       Moves *item* to position *index* in *parent*'s list of children.
@@ -1138,11 +1187,14 @@ ttk.Treeview
       than or equal to the number of children, it is moved to the end. If *item*
       was detached it is reattached.
 
+      :meth:`reattach` is an alias of :meth:`!move`.
+
 
    .. method:: next(item)
 
-      Returns the identifier of *item*'s next sibling, or '' if *item* is the
-      last child of its parent.
+      Returns the identifier of *item*'s next sibling,
+      or '' if *item* is the last child of its parent.
+      Equivalent to ``after_item(item, hidden=True, recurse=False)``.
 
 
    .. method:: parent(item)
@@ -1153,13 +1205,412 @@ ttk.Treeview
 
    .. method:: prev(item)
 
-      Returns the identifier of *item*'s previous sibling, or '' if *item* is
-      the first child of its parent.
+      Returns the identifier of *item*'s previous sibling,
+      or '' if *item* is the first child of its parent.
+      Equivalent to ``before_item(item, hidden=True, recurse=False)``.
 
 
-   .. method:: reattach(item, parent, index)
+   .. method:: after_item(item, *, hidden=False, recurse=True)
 
-      An alias for :meth:`Treeview.move`.
+      Returns the identifier of the item after *item*
+      (the first child, a next sibling, or a next sibling of an ancestor),
+      or '' if there is none.
+      By default only visible items are considered;
+      if *hidden* is true, hidden items are included too.
+      If *recurse* is false, only siblings of *item* are considered
+      (see :meth:`next`).
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: before_item(item, *, hidden=False, recurse=True)
+
+      Returns the identifier of the item before *item*
+      (a previous sibling or the parent of *item*),
+      or '' if there is none.
+      By default only visible items are considered;
+      if *hidden* is true, hidden items are included too.
+      If *recurse* is false, only siblings of *item* are considered
+      (see :meth:`prev`).
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: depth(item)
+
+      Returns the number of levels between *item* and the root item.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: haschildren(item)
+
+      Returns ``True`` if *item* has children, ``False`` otherwise.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: visible(item)
+
+      Returns ``True`` if *item* is visible, ``False`` otherwise.
+      An item is visible if it is not detached, not hidden,
+      and all of its ancestors are open and not hidden.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: size(item, *, hidden=False, recurse=False)
+
+      Returns the number of children of *item*.
+      If *hidden* is true, hidden items are included.
+      If *recurse* is true, all descendants of *item* are included.
+      Use ``''`` for the root item.
+      ``size(item, hidden=True)`` equals ``len(get_children(item))``
+      (which always includes hidden items).
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: range(first, last, *, hidden=False, recurse=True)
+
+      Returns a tuple of items from *first* through *last*, inclusive.
+      If *hidden* is true, hidden items are included.
+      If *recurse* is false, descendants and ancestors are excluded.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: identifier(item, index)
+
+      Returns the identifier of the item at *index*
+      within *item*'s list of children.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: current()
+
+      Returns the current item id and column id as a 2-tuple,
+      or an empty tuple if there is none.
+      The current item is the item under the mouse pointer.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: expand(*items, recurse=False)
+
+      Set all of the specified items to the open state.
+      If *recurse* is true, also open all of their descendants;
+      this requires Tk 9.1.
+      Use ``''`` for the root item.
+      ``expand(item)`` is equivalent to ``item(item, open=True)``.
+
+      .. versionadded:: next
+
+
+   .. method:: collapse(*items, recurse=False)
+
+      Set all of the specified items to the closed state.
+      If *recurse* is true, also close all of their descendants;
+      this requires Tk 9.1.
+      Use ``''`` for the root item.
+      ``collapse(item)`` is equivalent to ``item(item, open=False)``.
+
+      .. versionadded:: next
+
+
+   .. method:: hide(*items, recurse=False)
+
+      Hide all of the specified items and all of their child items.
+      If *recurse* is true, also hide all of their descendants.
+      Use ``''`` for the root item.
+      ``hide(item)`` is equivalent to ``item(item, hidden=True)``.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: unhide(*items, recurse=False)
+
+      Unhide all of the specified items.
+      If *recurse* is true, also unhide all of their descendants.
+      Use ``''`` for the root item.
+      ``unhide(item)`` is equivalent to ``item(item, hidden=False)``.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: detached(item=None)
+
+      Returns information about detached items
+      (see :meth:`detach`).
+      Without arguments, returns a tuple of all detached items,
+      but not their descendants (see :meth:`detached_all`).
+      With *item*, returns whether *item* is detached; since Tk 9.1, also
+      returns true if an ancestor of *item* is detached.
+
+      Requires Tk 9.0 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: detached_all()
+
+      Returns a tuple of all detached items and all of their descendants
+      (see :meth:`detach`).
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: cellfocus(cell=None)
+
+      Get or set the focus cell.
+      Without *cell*, returns the focus cell as an ``(item, column)`` 2-tuple,
+      or an empty tuple if there is none.
+      With *cell*, sets the focus cell; use ``''`` to clear it.
+      A cell is specified as an ``(item, column)`` pair.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: sort(parent, *, column=None, command=None, dictionary=False, integer=False, real=False, nocase=False, decreasing=False, ignoreempty=False, recurse=False)
+
+      Sort the children of *parent*.
+      By default the children are sorted by the value of the first display
+      column, as Unicode strings, in increasing order.
+      *column* selects the column to sort on.
+      *dictionary*, *integer* and *real* select the comparison type;
+      *nocase* makes string comparison case-insensitive.
+      *command* is a function of two values
+      returning a negative, zero or positive number.
+      *decreasing* reverses the order.
+      *ignoreempty* skips empty values (with *integer* or *real*).
+      *recurse* also sorts all descendants.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: search(parent, pattern, *, columns=None, start=None, stop=None, dictionary=False, integer=False, real=False, nocase=False, glob=False, regexp=False, backwards=False, hidden=False, recurse=False, wraparound=False)
+
+      Search *parent*'s children for *pattern*
+      and return the identifier of the first matching item,
+      or ``''`` if there is no match.
+      By default *pattern* is matched for exact equality
+      against the value of each displayed column, as Unicode strings,
+      searching forwards through the direct children of *parent*.
+      *glob* or *regexp* select glob-style or regular expression matching;
+      *dictionary*, *integer* and *real* select the comparison type;
+      *nocase* makes it case-insensitive.
+      *columns* limits the search to the given columns.
+      *start* and *stop* bound the search;
+      *backwards* reverses its direction;
+      *wraparound* continues from the other end.
+      *hidden* also searches hidden and closed items;
+      *recurse* searches all descendants.
+
+      See :meth:`search_all`, :meth:`search_cell` and :meth:`search_all_cells`.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: search_all(parent, pattern, **kwargs)
+
+      Like :meth:`search`,
+      but returns a tuple of the identifiers of all matching items.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: search_cell(parent, pattern, **kwargs)
+
+      Like :meth:`search`,
+      but returns the first matching cell as an ``(item, column)`` 2-tuple,
+      or an empty tuple if there is no match.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: search_all_cells(parent, pattern, **kwargs)
+
+      Like :meth:`search`,
+      but returns a tuple of all matching cells,
+      each an ``(item, column)`` 2-tuple.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: cellselection()
+
+      Returns a tuple of the selected cells, each an ``(item, column)``
+      2-tuple.
+      The cell selection is independent from the item selection
+      (see :meth:`selection`).
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: cellselection_set(*cells)
+
+      The specified cells become the new cell selection.
+      Each cell is an ``(item, column)`` pair.
+      Call without arguments to clear the cell selection.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: cellselection_add(*cells)
+
+      Add the specified cells to the cell selection.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: cellselection_remove(*cells)
+
+      Remove the specified cells from the cell selection.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: cellselection_set_range(first, last, *, hidden=True, recurse=True)
+
+      Set the cell selection to the rectangle of cells from *first* to *last*.
+      *first* and *last* are the opposite corner cells,
+      each an ``(item, column)`` pair, and must be in displayed columns.
+      All other cells are unselected.
+      If *hidden* is false, hidden cells are excluded;
+      if *recurse* is false, cells in descendant items are excluded.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: cellselection_add_range(first, last, *, hidden=True, recurse=True)
+
+      Like :meth:`cellselection_set_range`,
+      but adds the rectangle of cells to the cell selection
+      instead of replacing it.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: cellselection_remove_range(first, last, *, hidden=True, recurse=True)
+
+      Like :meth:`cellselection_set_range`,
+      but removes the rectangle of cells from the cell selection.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: cellselection_anchor(cell=None)
+
+      Get or set the cell selection anchor.
+      Without *cell*, returns the anchor as an ``(item, column)`` 2-tuple,
+      or an empty tuple if it is unset.
+      With *cell*, sets the anchor; use ``''`` to unset it.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: cellselection_includes(*cells)
+
+      Returns whether all of the specified cells are selected.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: cellselection_present()
+
+      Returns whether any cell is selected.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: tag_cell_add(tagname, *cells)
+
+      Add the given tag to each of the specified cells.
+      Each cell is an ``(item, column)`` pair.
+      Cell tags are independent from item tags.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: tag_cell_remove(tagname, *cells)
+
+      Remove the given tag from each of the specified cells.
+      If no cell is specified, the tag is removed from all cells.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: tag_cell_has(tagname, cell=None)
+
+      Test for a cell tag, or list the cells that have it.
+      If *cell* is specified, returns whether that cell has the given tag.
+      Otherwise returns a tuple of all cells (as ``(item, column)`` 2-tuples)
+      that have the tag.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
 
 
    .. method:: see(item)
@@ -1239,9 +1690,9 @@ ttk.Treeview
 
    .. method:: tag_has(tagname, item=None)
 
-      If *item* is specified, returns 1 or 0 depending on whether the specified
-      *item* has the given *tagname*. Otherwise, returns a list of all items
-      that have the specified tag.
+      If *item* is specified, returns ``True`` if the specified *item* has the
+      given *tagname* and ``False`` otherwise.
+      Otherwise, returns a tuple of all items that have the specified tag.
 
       Availability: Tk 8.6
 
@@ -1258,15 +1709,16 @@ ttk.Treeview
 
 .. _TtkStyling:
 
-Ttk Styling
+Ttk styling
 -----------
 
-Each widget in :mod:`ttk` is assigned a style, which specifies the set of
-elements making up the widget and how they are arranged, along with dynamic
-and default settings for element options. By default the style name is the
-same as the widget's class name, but it may be overridden by the widget's style
-option. If you don't know the class name of a widget, use the method
-:meth:`Misc.winfo_class` (somewidget.winfo_class()).
+Each widget in :mod:`!ttk` is assigned a style, which specifies the set of
+elements making up the widget and how they are arranged, along with dynamic and
+default settings for element options.
+By default the style name is the same as the widget's class name, but it may be
+overridden by the widget's style option.
+If you don't know the class name of a widget, use the method
+:meth:`Misc.winfo_class <tkinter.Misc.winfo_class>` (somewidget.winfo_class()).
 
 .. seealso::
 
@@ -1334,6 +1786,12 @@ option. If you don't know the class name of a widget, use the method
       matter, if the order is changed to ``[('active', 'blue'), ('pressed',
       'red')]`` in the foreground option, for example, the result would be a
       blue foreground when the widget were in active or pressed states.
+
+      When called to query the map (without specifying values to set), it
+      returns a dictionary mapping each option to its list of statespecs.
+
+      .. versionchanged:: 3.10
+         The value returned when querying the map was corrected.
 
 
    .. method:: lookup(style, option, state=None, default=None)
@@ -1498,12 +1956,12 @@ option. If you don't know the class name of a widget, use the method
 
    .. method:: element_names()
 
-      Returns the list of elements defined in the current theme.
+      Returns a tuple of elements defined in the current theme.
 
 
    .. method:: element_options(elementname)
 
-      Returns the list of *elementname*'s options.
+      Returns a tuple of *elementname*'s options.
 
 
    .. method:: theme_create(themename, parent=None, settings=None)
@@ -1555,7 +2013,17 @@ option. If you don't know the class name of a widget, use the method
 
    .. method:: theme_names()
 
-      Returns a list of all known themes.
+      Returns a tuple of all known themes.
+
+
+   .. method:: theme_styles(themename=None)
+
+      Returns a tuple of all styles in *themename*.
+      If *themename* is not given, the current theme is used.
+
+      .. versionadded:: next
+
+      Availability: Tk 9.0.
 
 
    .. method:: theme_use(themename=None)
@@ -1594,3 +2062,260 @@ The valid options/values are:
    the layout name, and the other is a `Layout`_.
 
 .. _Layout: `Layouts`_
+
+
+Additional widgets
+------------------
+
+The following themed widgets complete the :mod:`tkinter.ttk` widget set.
+Each is the themed counterpart of the like-named classic :mod:`tkinter` widget
+and inherits the common methods of :class:`Widget`.
+
+.. class:: Button(master=None, **kw)
+
+   Ttk :class:`Button` widget, displays a textual label and/or image, and
+   evaluates a command when pressed.
+   It is the themed counterpart of :class:`tkinter.Button` and inherits the
+   common widget methods from :class:`Widget`.
+
+   .. method:: invoke()
+
+      Invoke the command associated with the button and return its result.
+
+
+.. class:: Checkbutton(master=None, **kw)
+
+   Ttk :class:`Checkbutton` widget, used to control a boolean variable that is
+   toggled on and off.
+   It is the themed counterpart of :class:`tkinter.Checkbutton` and inherits
+   the common widget methods from :class:`Widget`.
+
+   .. method:: invoke()
+
+      Toggle the button between its selected and deselected states, invoke the
+      command associated with the button, and return its result.
+
+
+.. class:: Entry(master=None, widget=None, **kw)
+
+   Ttk :class:`Entry` widget, displays a one-line text string and allows the
+   user to edit it.
+   It is the themed counterpart of :class:`tkinter.Entry` and inherits the
+   common widget methods from :class:`Widget` as well as the editing methods
+   from :class:`tkinter.Entry`.
+
+   .. method:: bbox(index)
+
+      Return a tuple ``(x, y, width, height)`` giving the bounding box of the
+      character at the given *index*.
+
+      This shadows the inherited :meth:`!Misc.bbox`;
+      use :meth:`~tkinter.Misc.grid_bbox` for the grid bounding box.
+
+   .. method:: identify(x, y)
+
+      Return the name of the element under the point given by *x* and *y*, or
+      the empty string if no element is present at that location.
+
+   .. method:: validate()
+
+      Force validation of the entry and return ``True`` if validation
+      succeeded, and ``False`` otherwise.
+
+
+.. class:: Frame(master=None, **kw)
+
+   Ttk :class:`Frame` widget, a container used to group and lay out other
+   widgets.
+   It is the themed counterpart of :class:`tkinter.Frame` and inherits the
+   common widget methods from :class:`Widget`.
+
+
+.. class:: Label(master=None, **kw)
+
+   Ttk :class:`Label` widget, displays a textual label and/or image.
+   It is the themed counterpart of :class:`tkinter.Label` and inherits the
+   common widget methods from :class:`Widget`.
+
+
+.. class:: Labelframe(master=None, **kw)
+
+   Ttk :class:`Labelframe` widget, a container that draws a border and a title
+   label around its contents.
+   It is the themed counterpart of :class:`tkinter.LabelFrame` and inherits the
+   common widget methods from :class:`Widget`.
+
+
+.. class:: Menubutton(master=None, **kw)
+
+   Ttk :class:`Menubutton` widget, displays a textual label and/or image, and
+   pops up a menu when pressed.
+   It is the themed counterpart of :class:`tkinter.Menubutton` and inherits the
+   common widget methods from :class:`Widget`.
+
+
+.. class:: OptionMenu(master, variable, default=None, *values, **kwargs)
+
+   Ttk :class:`OptionMenu` widget, a :class:`Menubutton` that pops up a menu of
+   mutually exclusive choices.
+   *variable* is the variable that tracks the currently selected value,
+   *default* is the value to set initially, and *values* are the entries to
+   display in the menu.
+   A *command* keyword argument may be given to specify a callable that is
+   invoked with the selected value whenever the selection changes; the *style*
+   keyword argument sets the style used by the underlying menubutton; and the
+   *name* keyword argument sets the Tk widget name.
+
+   .. method:: set_menu(default=None, *values)
+
+      Replace the entries of the menu with *values*.
+      If *default* is given, also set it as the current value of the
+      *variable*.
+
+   .. method:: destroy()
+
+      Destroy this widget and its associated menu.
+
+   .. versionchanged:: 3.14
+      Added support for the *name* keyword argument.
+
+
+
+.. class:: Panedwindow(master=None, **kw)
+
+   Ttk :class:`Panedwindow` widget, displays a number of subwindows stacked
+   either vertically or horizontally.
+   The user may adjust the relative sizes of the subwindows by dragging the
+   sash between panes.
+   It is the themed counterpart of :class:`tkinter.PanedWindow` and inherits
+   the common widget methods from :class:`Widget`, as well as the :meth:`!add`
+   and :meth:`!panes` methods from :class:`tkinter.PanedWindow`.
+
+   .. method:: insert(pos, child, **kw)
+
+      Insert a pane containing *child* at the position *pos*.
+      *pos* is either the string ``'end'``, an integer index, or the name of a
+      managed subwindow.
+      If *child* is already managed by the paned window, move it to the
+      specified position.
+      Any keyword arguments set pane options.
+
+   .. method:: forget(child)
+
+      Remove *child*, which may be either an integer index or the name of a
+      managed subwindow, from the panes.
+
+      This shadows the inherited geometry-manager :meth:`!forget`;
+      use :meth:`~tkinter.Pack.pack_forget`, :meth:`~tkinter.Grid.grid_forget`
+      or :meth:`~tkinter.Place.place_forget` to remove the widget itself from
+      its manager.
+
+   .. method:: pane(pane, option=None, **kw)
+
+      Query or modify the options of the specified *pane*, where *pane* is
+      either an integer index or the name of a managed subwindow.
+      If no arguments are given, return a dictionary of the pane option values.
+      If *option* is specified, return the value of that option.
+      Otherwise, set the options given as keyword arguments to their
+      corresponding values.
+
+   .. method:: sashpos(index, newpos=None)
+
+      If *newpos* is specified, set the position of sash number *index* and
+      return its new position.
+      This may adjust the positions of adjacent sashes to ensure that positions
+      are monotonically increasing; positions are also constrained to be
+      between 0 and the total size of the widget.
+      If *newpos* is omitted, return the current position of the sash.
+
+
+.. class:: Radiobutton(master=None, **kw)
+
+   Ttk :class:`Radiobutton` widget, used as part of a group to control a single
+   shared variable by selecting one of several mutually exclusive values.
+   It is the themed counterpart of :class:`tkinter.Radiobutton` and inherits
+   the common widget methods from :class:`Widget`.
+
+   .. method:: invoke()
+
+      Set the option variable to the button's value, select the button, invoke
+      the command associated with the button, and return its result.
+
+
+.. class:: Scale(master=None, **kw)
+
+   Ttk :class:`Scale` widget, displays a slider that lets the user select a
+   numeric value from a range by moving the slider along a trough.
+   It is the themed counterpart of :class:`tkinter.Scale` and inherits the
+   common widget methods from :class:`Widget`.
+
+   .. method:: configure(cnf=None, **kw)
+
+      Modify or query the widget options, like
+      :meth:`Widget.configure <tkinter.Misc.configure>`.
+      In addition, this method clips the ``from`` and ``to`` values so that the
+      current value stays within the range defined by them.
+
+      .. versionchanged:: 3.9
+         Now returns the configuration value, like
+         :meth:`Widget.configure <tkinter.Misc.configure>`.
+
+
+   .. method:: get(x=None, y=None)
+
+      Return the current value of the scale.
+      If *x* and *y* are given, return the value corresponding to the pixel
+      coordinate *x*, *y* instead.
+
+
+.. class:: Scrollbar(master=None, **kw)
+
+   Ttk :class:`Scrollbar` widget, controls the viewport of an associated
+   scrollable widget such as a :class:`Treeview`, :class:`Entry` or
+   :class:`tkinter.Text`.
+   It is the themed counterpart of :class:`tkinter.Scrollbar` and inherits the
+   common widget methods from :class:`Widget`, as well as the :meth:`!set` and
+   :meth:`!get` methods from :class:`tkinter.Scrollbar`.
+
+
+.. class:: Separator(master=None, **kw)
+
+   Ttk :class:`Separator` widget, displays a horizontal or vertical separator
+   line.
+   It has no direct counterpart in :mod:`tkinter` and inherits the common
+   widget methods from :class:`Widget`.
+
+
+.. class:: Sizegrip(master=None, **kw)
+
+   Ttk :class:`Sizegrip` widget, displays a grip that allows the user to resize
+   the containing toplevel window by pressing and dragging the grip, typically
+   placed in the bottom-right corner.
+   It has no direct counterpart in :mod:`tkinter` and inherits the common
+   widget methods from :class:`Widget`.
+
+
+.. class:: LabeledScale(master=None, variable=None, from_=0, to=10, **kw)
+
+   A :class:`Frame` containing a :class:`Scale` and a :class:`Label` that shows
+   the scale's current value.
+   *variable* is the :class:`~tkinter.IntVar` tracked by the scale (one is
+   created if it is not given), and *from_* and *to* define the range of the
+   scale.
+
+   .. method:: destroy()
+
+      Destroy this widget and remove the trace callback registered on the
+      associated variable.
+
+
+.. class:: LabelFrame(master=None, **kw)
+
+   Alias of :class:`Labelframe`, kept for naming compatibility with
+   :class:`tkinter.LabelFrame`.
+
+
+.. class:: PanedWindow(master=None, **kw)
+
+   Alias of :class:`Panedwindow`, kept for naming compatibility with
+   :class:`tkinter.PanedWindow`.

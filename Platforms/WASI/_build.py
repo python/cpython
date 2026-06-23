@@ -222,10 +222,8 @@ def wasi_sdk(context):
     if wasi_sdk_path := context.wasi_sdk_path:
         if not wasi_sdk_path.exists():
             raise ValueError(
-                "WASI SDK not found; "
-                "download from "
-                "https://github.com/WebAssembly/wasi-sdk and/or "
-                "specify via $WASI_SDK_PATH or --wasi-sdk"
+                "WASI SDK not found at "
+                f"{os.fsdecode(wasi_sdk_path)!r} (via --wasi-sdk)"
             )
         return wasi_sdk_path
 
@@ -237,7 +235,8 @@ def wasi_sdk(context):
         wasi_sdk_path = pathlib.Path(wasi_sdk_path_env_var)
         if not wasi_sdk_path.exists():
             raise ValueError(
-                f"WASI SDK not found at $WASI_SDK_PATH ({wasi_sdk_path})"
+                f"WASI SDK not found at {os.fsdecode(wasi_sdk_path)!r} "
+                "(via $WASI_SDK_PATH)"
             )
     else:
         opt_path = pathlib.Path("/opt")
@@ -272,6 +271,14 @@ def wasi_sdk(context):
                 f" Found WASI SDK {major_version}, "
                 f"but WASI SDK {wasi_sdk_version} is the supported version",
             )
+    elif not wasi_sdk_path:
+        raise ValueError(
+            f"WASI SDK {wasi_sdk_version} not found; "
+            "download from "
+            "https://github.com/WebAssembly/wasi-sdk and install in "
+            f"{os.fsdecode(opt_path)!r} or specify the SDK via "
+            "$WASI_SDK_PATH or --wasi-sdk"
+        )
 
     # Cache the result.
     context.wasi_sdk_path = wasi_sdk_path

@@ -258,7 +258,9 @@ readonly, format
 
    .. c:macro:: PyBUF_WRITEABLE
 
-      This is a :term:`soft deprecated` alias to :c:macro:`PyBUF_WRITABLE`.
+      This is an alias to :c:macro:`PyBUF_WRITABLE`.
+
+      .. soft-deprecated:: 3.13
 
    .. c:macro:: PyBUF_FORMAT
 
@@ -500,10 +502,11 @@ Buffer-related functions
    *indices* must point to an array of ``view->ndim`` indices.
 
 
-.. c:function:: int PyBuffer_FromContiguous(const Py_buffer *view, const void *buf, Py_ssize_t len, char fort)
+.. c:function:: int PyBuffer_FromContiguous(const Py_buffer *view, const void *buf, Py_ssize_t len, char order)
 
    Copy contiguous *len* bytes from *buf* to *view*.
-   *fort* can be ``'C'`` or ``'F'`` (for C-style or Fortran-style ordering).
+   *order* can be ``'C'`` or ``'F'`` or ``'A'`` (for C-style or Fortran-style
+   ordering or either one).
    ``0`` is returned on success, ``-1`` on error.
 
 

@@ -144,7 +144,7 @@ static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
         new_refcnt = _Py_IMMORTAL_INITIAL_REFCNT;
     }
 #  if SIZEOF_VOID_P > 4
-    op->ob_refcnt = (PY_UINT32_T)new_refcnt;
+    op->ob_refcnt = (uint32_t)new_refcnt;
 #  else
     op->ob_refcnt = new_refcnt;
 #  endif
@@ -264,12 +264,6 @@ static inline int
 _Py_REF_IS_MERGED(Py_ssize_t ob_ref_shared)
 {
     return (ob_ref_shared & _Py_REF_SHARED_FLAG_MASK) == _Py_REF_MERGED;
-}
-
-static inline int
-_Py_REF_IS_QUEUED(Py_ssize_t ob_ref_shared)
-{
-    return (ob_ref_shared & _Py_REF_SHARED_FLAG_MASK) == _Py_REF_QUEUED;
 }
 
 // Merge the local and shared reference count fields and add `extra` to the
@@ -836,9 +830,14 @@ _PyObject_IS_GC(PyObject *obj)
             && (type->tp_is_gc == NULL || type->tp_is_gc(obj)));
 }
 
-// Fast inlined version of PyObject_Hash()
-static inline Py_hash_t
-_PyObject_HashFast(PyObject *op)
+// Fast inlined version of PyObject_Hash(). Dictionaries are very
+// likely to include string keys (class and instance attributes,
+// json, ...) so we include a fast path for strings.
+// This function should not be used in a collection if str is not
+// very likely, since it is slower than PyObject_Hash() on types
+// other than str. See gh-137759.
+static inline Py_ALWAYS_INLINE Py_hash_t
+_PyObject_HashDictKey(PyObject *op)
 {
     if (PyUnicode_CheckExact(op)) {
         Py_hash_t hash = PyUnstable_Unicode_GET_CACHED_HASH(op);
@@ -879,14 +878,16 @@ PyAPI_FUNC(PyObject *) _PyType_NewManagedObject(PyTypeObject *type);
 extern PyTypeObject* _PyType_CalculateMetaclass(PyTypeObject *, PyObject *);
 extern PyObject* _PyType_GetDocFromInternalDoc(const char *, const char *);
 extern PyObject* _PyType_GetTextSignatureFromInternalDoc(const char *, const char *, int);
-extern int _PyObject_SetAttributeErrorContext(PyObject *v, PyObject* name);
+// Exported for external JIT support
+PyAPI_FUNC(int) _PyObject_SetAttributeErrorContext(PyObject *v, PyObject* name);
 
 void _PyObject_InitInlineValues(PyObject *obj, PyTypeObject *tp);
 extern int _PyObject_StoreInstanceAttribute(PyObject *obj,
                                             PyObject *name, PyObject *value);
 extern bool _PyObject_TryGetInstanceAttribute(PyObject *obj, PyObject *name,
                                               PyObject **attr);
-extern PyObject *_PyType_LookupRefAndVersion(PyTypeObject *, PyObject *,
+// Exported for external JIT support
+PyAPI_FUNC(PyObject *) _PyType_LookupRefAndVersion(PyTypeObject *, PyObject *,
                                              unsigned int *);
 
 // Internal API to look for a name through the MRO.
@@ -910,7 +911,9 @@ PyAPI_FUNC(_PyStackRef) _PyObject_GetAttrStackRef(PyObject *obj, PyObject *name)
 // deferred reference counting.
 //
 // Returns 1 if the value was cached or 0 otherwise.
-extern int _PyType_CacheInitForSpecialization(PyHeapTypeObject *type,
+//
+// Exported for external JIT support
+PyAPI_FUNC(int) _PyType_CacheInitForSpecialization(PyHeapTypeObject *type,
                                               PyObject *init,
                                               unsigned int tp_version);
 

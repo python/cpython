@@ -1,0 +1,77 @@
+name: Reusable Emscripten
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_COLOR: 1
+
+jobs:
+  build-emscripten-reusable:
+    name: 'build and test'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      with:
+        persist-credentials: false
+    - name: "Read Emscripten config"
+      id: emscripten-config
+      shell: python
+      run: |
+        import hashlib
+        import json
+        import os
+        import tomllib
+        from pathlib import Path
+
+        config = tomllib.loads(Path("Platforms/emscripten/config.toml").read_text())
+        h = hashlib.sha256()
+        h.update(json.dumps(config["dependencies"], sort_keys=True).encode())
+        h.update(Path("Platforms/emscripten/make_libffi.sh").read_bytes())
+        h.update(b'1') # Update to explicitly bust cache
+        emsdk_cache = Path(os.environ["RUNNER_TEMP"]) / "emsdk-cache"
+        with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+            f.write(f"emscripten-version={config['emscripten-version']}\n")
+            f.write(f"node-version={config['node-version']}\n")
+            f.write(f"deps-hash={h.hexdigest()}\n")
+        with open(os.environ["GITHUB_ENV"], "a") as f:
+            f.write(f"EMSDK_CACHE={emsdk_cache}\n")
+    - name: "Install Node.js"
+      uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+      with:
+        node-version: ${{ steps.emscripten-config.outputs.node-version }}
+    - name: "Cache Emscripten SDK"
+      id: emsdk-cache
+      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      with:
+        path: ${{ env.EMSDK_CACHE }}
+        key: emsdk-${{ steps.emscripten-config.outputs.emscripten-version }}-${{ steps.emscripten-config.outputs.deps-hash }}
+        restore-keys: emsdk-${{ steps.emscripten-config.outputs.emscripten-version }}
+    - name: "Install Python"
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      with:
+        python-version: '3.x'
+    - name: "Runner image version"
+      run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
+    - name: "Install Emscripten"
+      run: python3 Platforms/emscripten install-emscripten
+    - name: "Configure build Python"
+      run: python3 Platforms/emscripten configure-build-python -- --config-cache --with-pydebug
+    - name: "Make build Python"
+      run: python3 Platforms/emscripten make-build-python
+    - name: "Make dependencies"
+      run: >-
+        python3 Platforms/emscripten make-dependencies
+        ${{ steps.emsdk-cache.outputs.cache-hit == 'true' && '--check-up-to-date' || '' }}
+    - name: "Configure host Python"
+      run: python3 Platforms/emscripten configure-host --host-runner node -- --config-cache
+    - name: "Make host Python"
+      run: python3 Platforms/emscripten make-host
+    - name: "Display build info"
+      run: python3 Platforms/emscripten run --pythoninfo
+    - name: "Test"
+      run: python3 Platforms/emscripten run --test

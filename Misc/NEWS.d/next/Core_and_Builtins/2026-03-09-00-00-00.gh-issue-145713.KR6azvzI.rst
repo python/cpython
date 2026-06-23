@@ -1,3 +1,0 @@
-Make :meth:`bytearray.resize` thread-safe in the free-threaded build by
-using a critical section and calling the lock-held variant of the resize
-function.
