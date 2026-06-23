@@ -2462,6 +2462,67 @@ class TestInternalUtilities(unittest.TestCase):
             self.assertEqual(len(w), 1)
 
 
+@support.force_not_colorized_test_class
+class TestPydocCLI(unittest.TestCase):
+    """Tests for the pydoc command-line interface."""
+
+    def test_show_doc(self):
+        rc, out, err = assert_python_ok('-m', 'pydoc', 'os')
+        self.assertEqual(rc, 0)
+        self.assertIn(b'os', out)
+        self.assertEqual(err, b'')
+
+    def test_show_doc_builtin(self):
+        rc, out, err = assert_python_ok('-m', 'pydoc', 'list')
+        self.assertEqual(rc, 0)
+        self.assertIn(b'list', out)
+        self.assertEqual(err, b'')
+
+    def test_show_doc_keyword(self):
+        rc, out, err = assert_python_ok('-m', 'pydoc', 'for')
+        self.assertEqual(rc, 0)
+        self.assertIn(b'for', out)
+        self.assertEqual(err, b'')
+
+    def test_keyword_search(self):
+        rc, out, err = assert_python_ok('-m', 'pydoc', '-k', 'thread')
+        self.assertEqual(rc, 0)
+        # Either matching modules are listed or no documentation is found.
+        self.assertTrue(
+            b'thread' in out.lower() or
+            b'no Python documentation found' in out,
+            out
+        )
+        self.assertEqual(err, b'')
+
+    def test_write_html(self):
+        with os_helper.temp_dir() as tmpdir:
+            rc, out, err = assert_python_ok('-m', 'pydoc', '-w', 'os',
+                                            __cwd=tmpdir)
+            self.assertEqual(rc, 0)
+            self.assertIn(b'wrote os.html', out.lower())
+            self.assertEqual(err, b'')
+            self.assertTrue(os.path.exists(os.path.join(tmpdir, 'os.html')))
+
+    def test_nonexistent_module(self):
+        rc, out, err = assert_python_failure('-m', 'pydoc', 'nonexistent_module')
+        self.assertEqual(rc, 1)
+        self.assertIn(b'nonexistent_module', out)
+        self.assertEqual(err, b'')
+
+    def test_no_args(self):
+        rc, out, err = assert_python_failure('-m', 'pydoc')
+        self.assertEqual(rc, 1)
+        self.assertIn(b'pydoc - the Python documentation tool', out)
+        self.assertEqual(err, b'')
+
+    def test_invalid_flag(self):
+        rc, out, err = assert_python_failure('-m', 'pydoc', '--xyz')
+        self.assertEqual(rc, 1)
+        self.assertIn(b'pydoc - the Python documentation tool', out)
+        self.assertEqual(err, b'')
+
+
 def setUpModule():
     thread_info = threading_helper.threading_setup()
     unittest.addModuleCleanup(threading_helper.threading_cleanup, *thread_info)
