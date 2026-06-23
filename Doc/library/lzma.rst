@@ -154,33 +154,33 @@ Compressing and decompressing data in memory
    The *format* argument specifies what container format should be used.
    Possible values are:
 
-   * :const:`FORMAT_XZ`: The ``.xz`` container format.
+   * :data:`FORMAT_XZ`: The ``.xz`` container format.
       This is the default format.
 
-   * :const:`FORMAT_ALONE`: The legacy ``.lzma`` container format.
+   * :data:`FORMAT_ALONE`: The legacy ``.lzma`` container format.
       This format is more limited than ``.xz`` -- it does not support integrity
       checks or multiple filters.
 
-   * :const:`FORMAT_RAW`: A raw data stream, not using any container format.
+   * :data:`FORMAT_RAW`: A raw data stream, not using any container format.
       This format specifier does not support integrity checks, and requires that
       you always specify a custom filter chain (for both compression and
       decompression). Additionally, data compressed in this manner cannot be
-      decompressed using :const:`FORMAT_AUTO` (see :class:`LZMADecompressor`).
+      decompressed using :data:`FORMAT_AUTO` (see :class:`LZMADecompressor`).
 
    The *check* argument specifies the type of integrity check to include in the
    compressed data. This check is used when decompressing, to ensure that the
    data has not been corrupted. Possible values are:
 
-   * :const:`CHECK_NONE`: No integrity check.
+   * :data:`CHECK_NONE`: No integrity check.
      This is the default (and the only acceptable value) for
-     :const:`FORMAT_ALONE` and :const:`FORMAT_RAW`.
+     :data:`FORMAT_ALONE` and :data:`FORMAT_RAW`.
 
-   * :const:`CHECK_CRC32`: 32-bit Cyclic Redundancy Check.
+   * :data:`CHECK_CRC32`: 32-bit Cyclic Redundancy Check.
 
-   * :const:`CHECK_CRC64`: 64-bit Cyclic Redundancy Check.
-     This is the default for :const:`FORMAT_XZ`.
+   * :data:`CHECK_CRC64`: 64-bit Cyclic Redundancy Check.
+     This is the default for :data:`FORMAT_XZ`.
 
-   * :const:`CHECK_SHA256`: 256-bit Secure Hash Algorithm.
+   * :data:`CHECK_SHA256`: 256-bit Secure Hash Algorithm.
 
    If the specified check is not supported, an :class:`LZMAError` is raised.
 
@@ -190,8 +190,8 @@ Compressing and decompressing data in memory
 
    The *preset* argument (if provided) should be an integer between ``0`` and
    ``9`` (inclusive), optionally OR-ed with the constant
-   :const:`PRESET_EXTREME`. If neither *preset* nor *filters* are given, the
-   default behavior is to use :const:`PRESET_DEFAULT` (preset level ``6``).
+   :data:`PRESET_EXTREME`. If neither *preset* nor *filters* are given, the
+   default behavior is to use :data:`PRESET_DEFAULT` (preset level ``6``).
    Higher presets produce smaller output, but make the compression process
    slower.
 
@@ -231,9 +231,9 @@ Compressing and decompressing data in memory
    once, see :func:`decompress`.
 
    The *format* argument specifies the container format that should be used. The
-   default is :const:`FORMAT_AUTO`, which can decompress both ``.xz`` and
-   ``.lzma`` files. Other possible values are :const:`FORMAT_XZ`,
-   :const:`FORMAT_ALONE`, and :const:`FORMAT_RAW`.
+   default is :data:`FORMAT_AUTO`, which can decompress both ``.xz`` and
+   ``.lzma`` files. Other possible values are :data:`FORMAT_XZ`,
+   :data:`FORMAT_ALONE`, and :data:`FORMAT_RAW`.
 
    The *memlimit* argument specifies a limit (in bytes) on the amount of memory
    that the decompressor can use. When this argument is used, decompression will
@@ -242,7 +242,7 @@ Compressing and decompressing data in memory
 
    The *filters* argument specifies the filter chain that was used to create
    the stream being decompressed. This argument is required if *format* is
-   :const:`FORMAT_RAW`, but should not be used for other formats.
+   :data:`FORMAT_RAW`, but should not be used for other formats.
    See :ref:`filter-chain-specs` for more information about filter chains.
 
    .. note::
@@ -281,7 +281,7 @@ Compressing and decompressing data in memory
    .. attribute:: check
 
       The ID of the integrity check used by the input stream. This may be
-      :const:`CHECK_UNKNOWN` until enough of the input has been decoded to
+      :data:`CHECK_UNKNOWN` until enough of the input has been decoded to
       determine what integrity check it uses.
 
    .. attribute:: eof
@@ -329,8 +329,8 @@ Miscellaneous
 
    Return ``True`` if the given integrity check is supported on this system.
 
-   :const:`CHECK_NONE` and :const:`CHECK_CRC32` are always supported.
-   :const:`CHECK_CRC64` and :const:`CHECK_SHA256` may be unavailable if you are
+   :data:`CHECK_NONE` and :data:`CHECK_CRC32` are always supported.
+   :data:`CHECK_CRC64` and :data:`CHECK_SHA256` may be unavailable if you are
    using a version of :program:`liblzma` that was compiled with a limited
    feature set.
 
@@ -347,31 +347,31 @@ options. Valid filter IDs are as follows:
 
 * Compression filters:
 
-  * :const:`FILTER_LZMA1` (for use with :const:`FORMAT_ALONE`)
-  * :const:`FILTER_LZMA2` (for use with :const:`FORMAT_XZ` and :const:`FORMAT_RAW`)
+  * :data:`FILTER_LZMA1` (for use with :data:`FORMAT_ALONE`)
+  * :data:`FILTER_LZMA2` (for use with :data:`FORMAT_XZ` and :data:`FORMAT_RAW`)
 
 * Delta filter:
 
-  * :const:`FILTER_DELTA`
+  * :data:`FILTER_DELTA`
 
 * Branch-Call-Jump (BCJ) filters:
 
-  * :const:`!FILTER_X86`
-  * :const:`!FILTER_IA64`
-  * :const:`!FILTER_ARM`
-  * :const:`!FILTER_ARMTHUMB`
-  * :const:`!FILTER_POWERPC`
-  * :const:`!FILTER_SPARC`
+  * :data:`!FILTER_X86`
+  * :data:`!FILTER_IA64`
+  * :data:`!FILTER_ARM`
+  * :data:`!FILTER_ARMTHUMB`
+  * :data:`!FILTER_POWERPC`
+  * :data:`!FILTER_SPARC`
 
     The above work on all lzma runtime library versions.
 
-  * :const:`!FILTER_ARM64`
+  * :data:`!FILTER_ARM64`
 
     Only works if the lzma version is 5.4.0 or later.
 
     .. versionadded:: next
 
-  * :const:`!FILTER_RISCV`
+  * :data:`!FILTER_RISCV`
 
     Only works if the lzma version is 5.6.0 or later.
 
@@ -392,11 +392,11 @@ entries in the dictionary representing the filter):
 * ``lp``: Number of literal position bits. The sum ``lc + lp`` must be at
   most 4.
 * ``pb``: Number of position bits; must be at most 4.
-* ``mode``: :const:`MODE_FAST` or :const:`MODE_NORMAL`.
+* ``mode``: :data:`MODE_FAST` or :data:`MODE_NORMAL`.
 * ``nice_len``: What should be considered a "nice length" for a match.
   This should be 273 or less.
-* ``mf``: What match finder to use -- :const:`MF_HC3`, :const:`MF_HC4`,
-  :const:`MF_BT2`, :const:`MF_BT3`, or :const:`MF_BT4`.
+* ``mf``: What match finder to use -- :data:`MF_HC3`, :data:`MF_HC4`,
+  :data:`MF_BT2`, :data:`MF_BT3`, or :data:`MF_BT4`.
 * ``depth``: Maximum search depth used by match finder. 0 (default) means to
   select automatically based on other filter options.
 
