@@ -4844,6 +4844,8 @@ Widget classes
    is the initial choice, and *values* are the remaining menu entries.
    The keyword argument *command* may be given a callback that is invoked with
    the selected value, and the keyword argument *name* sets the Tk widget name.
+   Other keyword arguments are passed to the underlying :class:`Menubutton`
+   and may override its default appearance.
 
    .. method:: destroy()
 
@@ -4851,6 +4853,9 @@ Widget classes
 
    .. versionchanged:: 3.14
       Added support for the *name* keyword argument.
+
+   .. versionchanged:: next
+      Other :class:`Menubutton` options can now be passed as keyword arguments.
 
 
 

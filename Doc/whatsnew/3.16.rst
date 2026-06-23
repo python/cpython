@@ -216,6 +216,10 @@ tkinter
   dithered image when its data was supplied in pieces.
   (Contributed by Serhiy Storchaka in :gh:`151888`.)
 
+* :class:`tkinter.OptionMenu` now accepts arbitrary :class:`!tkinter.Menubutton`
+  options as keyword arguments, which can also override its default appearance.
+  (Contributed by Serhiy Storchaka in :gh:`101284`.)
+
 xml
 ---
 
