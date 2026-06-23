@@ -5375,15 +5375,17 @@ class MiscTest(unittest.TestCase):
         hint = f'Although a module with this name was found for a different Python version ({incompatible_module}).'
         self.assertIn(hint, stderr.decode())
 
-    def test_module_not_found_with_blocked_parent(self):
-        # gh-151631: formatting a ModuleNotFoundError for a submodule must not
-        # raise when the parent package is blocked via sys.modules[parent]=None.
+    def _module_not_found_blocked_by_sys_modules(self):
         sys.modules['pkg'] = None
         self.addCleanup(sys.modules.pop, 'pkg', None)
         with self.assertRaises(ModuleNotFoundError) as cm:
             from pkg.mod import name  # noqa: F401
-        exc = cm.exception
+        return cm.exception
 
+    def test_module_not_found_blocked_parent_traceback_exception(self):
+        # gh-151631: TracebackException must not re-raise when the parent
+        # package is blocked via sys.modules[parent]=None.
+        exc = self._module_not_found_blocked_by_sys_modules()
         self.assertIsNone(
             traceback._find_incompatible_extension_module('pkg.mod'))
         te = traceback.TracebackException(
@@ -5391,10 +5393,16 @@ class MiscTest(unittest.TestCase):
         formatted = ''.join(te.format())
         self.assertIn("No module named 'pkg.mod'", formatted)
 
-        formatted2 = ''.join(traceback.format_exception(exc))
-        self.assertIn("No module named 'pkg.mod'", formatted2)
+    def test_module_not_found_blocked_parent_format_exception(self):
+        # gh-151631
+        exc = self._module_not_found_blocked_by_sys_modules()
+        formatted = ''.join(traceback.format_exception(exc))
+        self.assertIn("No module named 'pkg.mod'", formatted)
 
+    def test_module_not_found_blocked_parent_logging_exception(self):
+        # gh-151631
         import logging
+        exc = self._module_not_found_blocked_by_sys_modules()
         with self.assertLogs('test_traceback', level='ERROR') as cm_logs:
             logging.getLogger('test_traceback').exception('fail', exc_info=exc)
         self.assertIn("No module named 'pkg.mod'", cm_logs.output[0])
