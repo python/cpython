@@ -389,6 +389,9 @@ class TextTest(AbstractTkTest, unittest.TestCase):
         # An embedded image occupies a single index position.
         self.assertEqual(text.index('end - 1 char'), '1.3')
 
+        # The image name can be used as an index; it is matched as a whole.
+        self.assertEqual(text.index(name), '1.1')
+
         # Either a name or an image is required, and the index must be valid.
         self.assertRaises(TclError, text.image_create, '1.0')
         self.assertRaises(TclError, text.image_create, 'invalid',
@@ -404,6 +407,11 @@ class TextTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(self.root.splitlist(text.window_names()),
                          (str(button),))
         self.assertEqual(text.window_cget('1.1', 'window'), str(button))
+
+        # The window can be addressed by its name where an index is expected;
+        # the name is matched as a whole rather than parsed (gh-143070).
+        self.assertEqual(text.index(str(button)), '1.1')
+        self.assertEqual(text.window_cget(str(button), 'window'), str(button))
 
         text.window_configure('1.1', padx=5)
         self.assertEqual(text.window_cget('1.1', 'padx'), 5)

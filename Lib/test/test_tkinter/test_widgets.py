@@ -1483,6 +1483,12 @@ class CanvasTest(AbstractWidgetTest, unittest.TestCase):
         for result in (c.find_all(), c.find_withtag(r1)):
             self.assertIsInstance(result, tuple)
 
+        # An automatically generated widget name can be used as a tag
+        # (gh-143070).
+        w = tkinter.Frame(c)
+        r4 = c.create_window(0, 0, window=w, tags=str(w))
+        self.assertEqual(c.find_withtag(str(w)), (r4,))
+
         self.assertRaises(TclError, c.find_closest, 'spam', 0)
         self.assertRaises(TclError, c.find_enclosed, 0, 0, 'spam', 0)
         self.assertRaises(TclError, c.find_overlapping, 0, 0, 'spam', 0)
