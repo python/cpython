@@ -1928,7 +1928,7 @@ class TextIOBase(IOBase):
         """Truncate size to pos, where pos is an int."""
         self._unsupported("truncate")
 
-    def readline(self):
+    def readline(self, size=-1, /):
         """Read until newline or EOF.
 
         Returns an empty string if EOF is hit immediately.
