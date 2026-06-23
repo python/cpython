@@ -4516,20 +4516,23 @@ class OptionMenu(Menubutton):
         """Construct an optionmenu widget with the parent MASTER, with
         the option textvariable set to VARIABLE, the initially selected
         value VALUE, the other menu values VALUES and an additional
-        keyword argument command."""
-        kw = {"borderwidth": 2, "textvariable": variable,
-              "indicatoron": 1, "relief": RAISED, "anchor": "c",
-              "highlightthickness": 2, "name": kwargs.pop("name", None)}
+        keyword argument command.
+
+        Other keyword arguments are passed to the underlying menubutton
+        and may override its default appearance."""
+        name = kwargs.pop("name", None)
+        callback = kwargs.pop("command", None)
+        # Default appearance, which may be overridden by keyword arguments.
+        kw = {"borderwidth": 2, "indicatoron": 1, "relief": RAISED,
+              "anchor": "c", "highlightthickness": 2}
+        kw.update(kwargs)
+        # These options are controlled by OptionMenu itself.
+        kw["textvariable"] = variable
+        kw["name"] = name
         Widget.__init__(self, master, "menubutton", kw)
         self.widgetName = 'tk_optionMenu'
         menu = self.__menu = Menu(self, name="menu", tearoff=0)
         self.menuname = menu._w
-        # 'command' is the only supported keyword
-        callback = kwargs.get('command')
-        if 'command' in kwargs:
-            del kwargs['command']
-        if kwargs:
-            raise TclError('unknown option -'+next(iter(kwargs)))
         menu.add_command(label=value,
                  command=_setit(variable, value, callback))
         for v in values:
