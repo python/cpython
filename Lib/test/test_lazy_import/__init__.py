@@ -1961,5 +1961,135 @@ class LazyCApiTests(LazyImportTestCase):
             )
 
 
+class SubmoduleLazinessTests(unittest.TestCase):
+    """Tests that module-level lazy imports remain lazy until accessed."""
+
+    def tearDown(self):
+        for key in list(sys.modules.keys()):
+            if key.startswith('test.test_lazy_import.data'):
+                del sys.modules[key]
+        sys.set_lazy_imports_filter(None)
+        sys.set_lazy_imports("normal")
+
+    def test_unaccessed_imports_stay_lazy(self):
+        """Imports in 'all' mode should stay lazy until accessed."""
+        sys.set_lazy_imports("all")
+        from test.test_lazy_import.data.metasyntactic import names
+        self.assertIsInstance(names.__dict__["Foo"], types.LazyImportType)
+        self.assertNotIn(
+            "test.test_lazy_import.data.metasyntactic.foo", sys.modules
+        )
+        _ = names.Foo
+        self.assertEqual(names.Foo, "Foo")
+        self.assertIn(
+            "test.test_lazy_import.data.metasyntactic.foo", sys.modules
+        )
+        self.assertIsInstance(names.__dict__["Ack"], types.LazyImportType)
+        self.assertNotIn(
+            "test.test_lazy_import.data.metasyntactic.foo.ack", sys.modules
+        )
+
+
+class AttributeSideEffectTests(unittest.TestCase):
+    """Tests that submodule imports don't overwrite parent attributes."""
+
+    def tearDown(self):
+        for key in list(sys.modules.keys()):
+            if key.startswith('test.test_lazy_import.data'):
+                del sys.modules[key]
+        sys.set_lazy_imports_filter(None)
+        sys.set_lazy_imports("normal")
+
+    def test_version_submodule_does_not_overwrite(self):
+        """A __version__ submodule should not overwrite the parent's
+        __version__ attribute imported in __init__.py."""
+        import test.test_lazy_import.data.versioned as versioned
+        self.assertEqual(versioned.__version__, "1.0")
+        self.assertEqual(
+            versioned.__copyright__,
+            "Copyright (c) 2001-2022 Python Software Foundation.",
+        )
+
+
+class ModuleVariableNameCollisionTests(unittest.TestCase):
+    """Tests for name collision between a submodule and a variable."""
+
+    def tearDown(self):
+        for key in list(sys.modules.keys()):
+            if key.startswith('test.test_lazy_import.data'):
+                del sys.modules[key]
+        sys.set_lazy_imports_filter(None)
+        sys.set_lazy_imports("normal")
+
+    def test_variable_after_import_wins(self):
+        """Variable assigned after import should overwrite the submodule."""
+        from test.test_lazy_import.data import module_same_name_var_order1
+        self.assertEqual(module_same_name_var_order1.bar, "Blah")
+
+    def test_import_after_variable_wins(self):
+        """Import after variable assignment should overwrite the variable."""
+        from test.test_lazy_import.data import module_same_name_var_order2
+        bar_mod = sys.modules[
+            "test.test_lazy_import.data.module_same_name_var_order2.bar"
+        ]
+        self.assertIs(module_same_name_var_order2.bar, bar_mod)
+
+
+class DeletedModuleReimportTests(unittest.TestCase):
+    """Tests for reimporting after module deletion from sys.modules."""
+
+    def tearDown(self):
+        for key in list(sys.modules.keys()):
+            if key.startswith('test.test_lazy_import.data'):
+                del sys.modules[key]
+        sys.set_lazy_imports_filter(None)
+        sys.set_lazy_imports("normal")
+
+    def test_reimport_creates_new_module(self):
+        """Deleting and reimporting should create a new module object."""
+        import test.test_lazy_import.data.metasyntactic.foo
+        import test.test_lazy_import.data.metasyntactic.foo.bar.baz
+
+        first_bar = test.test_lazy_import.data.metasyntactic.foo.bar
+
+        del sys.modules[
+            "test.test_lazy_import.data.metasyntactic.foo.bar"
+        ]
+
+        import test.test_lazy_import.data.metasyntactic.foo.bar.thud
+
+        second_bar = test.test_lazy_import.data.metasyntactic.foo.bar
+
+        self.assertIsNot(first_bar, second_bar)
+        self.assertIn("baz", dir(first_bar))
+        self.assertNotIn("thud", dir(first_bar))
+        self.assertIn("thud", dir(second_bar))
+        self.assertNotIn("baz", dir(second_bar))
+
+
+@support.requires_subprocess()
+class CircularImportLazyTests(unittest.TestCase):
+    """Tests that lazy imports can break circular import patterns."""
+
+    def test_succeeds_with_lazy(self):
+        """Same-level circular imports should succeed with lazy mode."""
+        proc = assert_python_ok(
+            "-X", "lazy_imports=all", "-c",
+            "import test.test_lazy_import.data.circular_import_pkg.main;"
+            "print('OK')",
+        )
+        self.assertIn(b"OK", proc.out)
+
+    def test_fails_without_lazy(self):
+        """Same-level circular imports should fail without lazy mode."""
+        result = subprocess.run(
+            [sys.executable, "-c",
+             "import test.test_lazy_import.data.circular_import_pkg.main"],
+            capture_output=True, text=True,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("ImportError", result.stderr)
+
+
 if __name__ == '__main__':
     unittest.main()
