@@ -4516,103 +4516,71 @@ class TestExtractionFilters(unittest.TestCase):
                     self.assertNotEqual(st_mode & 0o777, 0o777)
 
     @symlink_test
-    def test_chown_links_on_extract(self):
-        for link_type in (tarfile.SYMTYPE, tarfile.LNKTYPE):
-            buf = io.BytesIO()
-            with tarfile.open(fileobj=buf, mode='w') as tf:
-                # Create a regular file entry with uid/gid
-                info = tarfile.TarInfo(name="test.txt")
-                info.uid = 1337
-                info.gid = 1337
-                info.uname = ""
-                info.gname = ""
-                info.mode = 0o755
-                tf.addfile(info, io.BytesIO(b""))
+    @support.subTests('link_type', (tarfile.SYMTYPE, tarfile.LNKTYPE))
+    def test_chown_links_on_extract(self, link_type):
+        with ArchiveMaker() as arc:
+            arc.add("test.txt",
+                    uid=1337, gid=1337, uname="", gname="", mode='-rwxr-xr-x')
+            arc.add("link",
+                    type=link_type,
+                    linkname='test.txt',
+                    uid=1337, gid=1337, uname="", gname="", mode='-rwxr-xr-x')
 
-                # Create a link to the normal file.
-                link_info = tarfile.TarInfo(name="link")
-                link_info.type = link_type
-                link_info.linkname = "test.txt"
-                link_info.uid = 1337
-                link_info.gid = 1337
-                link_info.uname = ""
-                link_info.gname = ""
-                link_info.mode = 0o644
-                tf.addfile(link_info)
+        with (
+            os_helper.temp_dir() as tmpdir,
+            arc.open() as tar,
+            unittest.mock.patch("os.chown") as mock_chown,
+            unittest.mock.patch("os.lchown") as mock_lchown,
+            unittest.mock.patch("os.geteuid") as mock_geteuid,
+        ):
+            # Set UID to 0 so chown() is attempted.
+            mock_geteuid.return_value = 0
+            tar.extract("link", path=tmpdir, filter='data')
+            extract_path = os.path.join(tmpdir, "link")
 
-            buf.seek(0)
-            with (
-                self.subTest(f"type={link_type!r}"),
-                os_helper.temp_dir() as tmpdir,
-                tarfile.open(fileobj=buf) as tar,
-                unittest.mock.patch("os.chown") as mock_chown,
-                unittest.mock.patch("os.lchown") as mock_lchown,
-                unittest.mock.patch("os.geteuid") as mock_geteuid,
-            ):
-                # Set UID to 0 so chown() is attempted.
-                mock_geteuid.return_value = 0
-                tar.extract("link", path=tmpdir, filter='data')
-                extract_path = os.path.join(tmpdir, "link")
-
-                if link_type == tarfile.SYMTYPE:
-                    mock_chown.assert_not_called()
-                    mock_lchown.assert_called_once_with(extract_path, -1, -1)
-                else:
-                    mock_chown.assert_has_calls([
-                        unittest.mock.call(extract_path, -1, -1),
-                        unittest.mock.call(extract_path, -1, -1)
-                    ])
-                    mock_lchown.assert_not_called()
+            if link_type == tarfile.SYMTYPE:
+                mock_chown.assert_not_called()
+                mock_lchown.assert_called_once_with(extract_path, -1, -1)
+            else:
+                mock_chown.assert_has_calls([
+                    unittest.mock.call(extract_path, -1, -1),
+                    unittest.mock.call(extract_path, -1, -1)
+                ])
+                mock_lchown.assert_not_called()
 
     @symlink_test
-    def test_chown_links_on_extractall(self):
-        for link_type in (tarfile.SYMTYPE, tarfile.LNKTYPE):
-            buf = io.BytesIO()
-            with tarfile.open(fileobj=buf, mode='w') as tf:
-                # Create a regular file entry with uid/gid
-                info = tarfile.TarInfo(name="test.txt")
-                info.uid = 1337
-                info.gid = 1337
-                info.uname = ""
-                info.gname = ""
-                info.mode = 0o755
-                tf.addfile(info, io.BytesIO(b""))
+    @support.subTests('link_type', (tarfile.SYMTYPE, tarfile.LNKTYPE))
+    def test_chown_links_on_extractall(self, link_type):
+        with ArchiveMaker() as arc:
+            arc.add("test.txt",
+                    uid=1337, gid=1337, uname="", gname="", mode='-rwxr-xr-x')
+            arc.add("link",
+                    type=link_type,
+                    linkname='test.txt',
+                    uid=1337, gid=1337, uname="", gname="", mode='-rwxr-xr-x')
 
-                # Create a link to the normal file.
-                link_info = tarfile.TarInfo(name="link")
-                link_info.type = link_type
-                link_info.linkname = "test.txt"
-                link_info.uid = 1337
-                link_info.gid = 1337
-                link_info.uname = ""
-                link_info.gname = ""
-                link_info.mode = 0o644
-                tf.addfile(link_info)
+        with (
+            os_helper.temp_dir() as tmpdir,
+            arc.open() as tar,
+            unittest.mock.patch("os.chown") as mock_chown,
+            unittest.mock.patch("os.lchown") as mock_lchown,
+            unittest.mock.patch("os.geteuid") as mock_geteuid,
+        ):
+            # Set UID to 0 so chown() is attempted.
+            mock_geteuid.return_value = 0
+            tar.extractall(path=tmpdir, filter='data')
+            extract_link_path = os.path.join(tmpdir, "link")
+            extract_file_path = os.path.join(tmpdir, "test.txt")
 
-            buf.seek(0)
-            with (
-                self.subTest(f"type={link_type!r}"),
-                os_helper.temp_dir() as tmpdir,
-                tarfile.open(fileobj=buf) as tar,
-                unittest.mock.patch("os.chown") as mock_chown,
-                unittest.mock.patch("os.lchown") as mock_lchown,
-                unittest.mock.patch("os.geteuid") as mock_geteuid,
-            ):
-                # Set UID to 0 so chown() is attempted.
-                mock_geteuid.return_value = 0
-                tar.extractall(path=tmpdir, filter='data')
-                extract_link_path = os.path.join(tmpdir, "link")
-                extract_file_path = os.path.join(tmpdir, "test.txt")
-
-                if link_type == tarfile.SYMTYPE:
-                    mock_chown.assert_called_once_with(extract_file_path, -1, -1)
-                    mock_lchown.assert_called_once_with(extract_link_path, -1, -1)
-                else:
-                    mock_chown.assert_has_calls([
-                        unittest.mock.call(extract_file_path, -1, -1),
-                        unittest.mock.call(extract_link_path, -1, -1)
-                    ])
-                    mock_lchown.assert_not_called()
+            if link_type == tarfile.SYMTYPE:
+                mock_chown.assert_called_once_with(extract_file_path, -1, -1)
+                mock_lchown.assert_called_once_with(extract_link_path, -1, -1)
+            else:
+                mock_chown.assert_has_calls([
+                    unittest.mock.call(extract_file_path, -1, -1),
+                    unittest.mock.call(extract_link_path, -1, -1)
+                ])
+                mock_lchown.assert_not_called()
 
     def test_extract_filters_target(self):
         # Test that when extract() falls back to extracting (rather than
