@@ -2891,6 +2891,7 @@ class PathTest(PurePathTest):
             if (isinstance(e, PermissionError) or
                     "AF_UNIX path too long" in str(e)):
                 self.skipTest("cannot bind Unix socket: " + str(e))
+            raise
         self.assertFalse(P.is_socket())
         self.assertFalse(P.is_fifo())
         self.assertTrue(P.is_file())
