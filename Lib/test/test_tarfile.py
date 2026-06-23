@@ -534,6 +534,53 @@ class CommonReadTest(ReadTest):
             self.assertIs(fobj.seekable(), True)
 
 
+class ReadSizeRecorder(io.BytesIO):
+    # Records the largest size ever passed to read(), so a test can check
+    # that tarfile does not request far more data than the archive holds
+    # (which on a real file would pre-allocate it).
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.max_read_size = 0
+
+    def read(self, size=-1):
+        if size is not None and size >= 0:
+            self.max_read_size = max(self.max_read_size, size)
+        return super().read(size)
+
+
+@support.cpython_only
+class ExtendedHeaderMemoryTest(unittest.TestCase):
+    # gh-151497: the size of a GNU long name/link or a pax extended header is
+    # read from the archive and is untrusted.  A crafted header can claim a
+    # size far larger than the file actually contains; opening such an archive
+    # must not try to read (and so pre-allocate) the claimed size in one go.
+
+    def crafted_archive(self, hdrtype):
+        tarinfo = tarfile.TarInfo("A")
+        tarinfo.type = hdrtype
+        tarinfo.size = 0xFFFFFFFF  # ~4 GiB claimed in a 512-byte header
+        return tarinfo.tobuf(format=tarfile.GNU_FORMAT)
+
+    def check(self, hdrtype):
+        fobj = ReadSizeRecorder(self.crafted_archive(hdrtype))
+        try:
+            with tarfile.open(fileobj=fobj, mode="r:") as tar:
+                tar.getmembers()
+        except tarfile.ReadError:
+            pass  # a truncated header is fine; we only check the allocation
+        # The bogus ~4 GiB size must never reach a single read() call.
+        self.assertLessEqual(fobj.max_read_size, tarfile._EXTHEADER_READ_CHUNK)
+
+    def test_gnu_longname_oversized_size(self):
+        self.check(tarfile.GNUTYPE_LONGNAME)
+
+    def test_gnu_longlink_oversized_size(self):
+        self.check(tarfile.GNUTYPE_LONGLINK)
+
+    def test_pax_header_oversized_size(self):
+        self.check(tarfile.XHDTYPE)
+
+
 class MiscReadTestBase(CommonReadTest):
     is_stream = False
 
