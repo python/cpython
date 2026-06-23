@@ -900,7 +900,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         r.append(f'<body>\n<h1>{title}</h1>')
         r.append('<hr>\n<ul>')
         for entry in entries:
-            displayname = linkname = entry.name
+            displayname = linkname = name = entry.name
             # Ignore any OSError raised by the os.DirEntry methods
             # to match the behavior of their os.path.* counterpart.
             try:
@@ -913,10 +913,10 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 is_symlink = False
             # Append / for directories or @ for symbolic links
             if is_dir:
-                displayname = entry.name + "/"
-                linkname = entry.name + "/"
+                displayname = name + "/"
+                linkname = name + "/"
             if is_symlink:
-                displayname = entry.name + "@"
+                displayname = name + "@"
                 # Note: a link to a directory displays with @ and links with /
             r.append('<li><a href="%s">%s</a></li>'
                     % (urllib.parse.quote(linkname,
