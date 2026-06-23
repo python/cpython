@@ -4516,6 +4516,9 @@ class TestExtractionFilters(unittest.TestCase):
                     self.assertNotEqual(st_mode & 0o777, 0o777)
 
     @symlink_test
+    @unittest.skipUnless(hasattr(os, 'chown'), "missing os.chown")
+    @unittest.skipUnless(hasattr(os, 'lchown'), "missing os.lchown")
+    @unittest.skipUnless(hasattr(os, 'geteuid'), "missing os.geteuid")
     @support.subTests('link_type', (tarfile.SYMTYPE, tarfile.LNKTYPE))
     def test_chown_links_on_extract(self, link_type):
         with ArchiveMaker() as arc:
@@ -4549,6 +4552,9 @@ class TestExtractionFilters(unittest.TestCase):
                 mock_lchown.assert_not_called()
 
     @symlink_test
+    @unittest.skipUnless(hasattr(os, 'chown'), "missing os.chown")
+    @unittest.skipUnless(hasattr(os, 'lchown'), "missing os.lchown")
+    @unittest.skipUnless(hasattr(os, 'geteuid'), "missing os.geteuid")
     @support.subTests('link_type', (tarfile.SYMTYPE, tarfile.LNKTYPE))
     def test_chown_links_on_extractall(self, link_type):
         with ArchiveMaker() as arc:
