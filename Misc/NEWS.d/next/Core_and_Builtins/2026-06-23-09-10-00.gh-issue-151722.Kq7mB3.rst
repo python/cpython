@@ -1,0 +1,3 @@
+Defer GC tracking of a :class:`frozendict` created by ``frozendict.fromkeys()``
+until the end of construction, so a half-built instance is no longer observable
+from another thread in the free threading build.
