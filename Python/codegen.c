@@ -247,7 +247,7 @@ static int codegen_async_comprehension_generator(
                                       asdl_comprehension_seq *generators, int gen_index,
                                       int depth,
                                       expr_ty elt, expr_ty val, int type,
-                                      IterStackPosition iter_pos);
+                                      IterStackPosition iter_pos, bool avoid_creation);
 
 static int codegen_pattern(compiler *, pattern_ty, pattern_context *);
 static int codegen_match(compiler *, stmt_ty);
@@ -4556,7 +4556,7 @@ codegen_comprehension_generator(compiler *c, location loc,
     if (gen->is_async) {
         return codegen_async_comprehension_generator(
             c, loc, generators, gen_index, depth, elt, val, type,
-            iter_pos);
+            iter_pos, avoid_creation);
     } else {
         return codegen_sync_comprehension_generator(
             c, loc, generators, gen_index, depth, elt, val, type,
@@ -4737,7 +4737,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
                                       asdl_comprehension_seq *generators,
                                       int gen_index, int depth,
                                       expr_ty elt, expr_ty val, int type,
-                                      IterStackPosition iter_pos)
+                                      IterStackPosition iter_pos, bool avoid_creation)
 {
     NEW_JUMP_TARGET_LABEL(c, start);
     NEW_JUMP_TARGET_LABEL(c, send);
@@ -4787,7 +4787,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
         RETURN_IF_ERROR(
             codegen_comprehension_generator(c, loc,
                                             generators, gen_index, depth,
-                                            elt, val, type, 0, false));
+                                            elt, val, type, 0, avoid_creation));
     }
 
     location elt_loc = LOC(elt);
@@ -4796,6 +4796,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
         /* comprehension specific code */
         switch (type) {
         case COMP_GENEXP:
+            assert(!avoid_creation);
             if (elt->kind == Starred_kind) {
                 NEW_JUMP_TARGET_LABEL(c, unpack_start);
                 NEW_JUMP_TARGET_LABEL(c, unpack_end);
@@ -4817,6 +4818,11 @@ codegen_async_comprehension_generator(compiler *c, location loc,
             }
             break;
         case COMP_LISTCOMP:
+            if (avoid_creation) {
+                VISIT(c, expr, elt);
+                ADDOP(c, elt_loc, POP_TOP);
+                break;
+            }
             if (elt->kind == Starred_kind) {
                 VISIT(c, expr, elt->v.Starred.value);
                 ADDOP_I(c, elt_loc, LIST_EXTEND, depth + 1);
@@ -4827,6 +4833,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
             }
             break;
         case COMP_SETCOMP:
+            assert(!avoid_creation);
             if (elt->kind == Starred_kind) {
                 VISIT(c, expr, elt->v.Starred.value);
                 ADDOP_I(c, elt_loc, SET_UPDATE, depth + 1);
@@ -4837,6 +4844,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
             }
             break;
         case COMP_DICTCOMP:
+            assert(!avoid_creation);
             if (val == NULL) {
                 /* unpacking (**) case */
                 VISIT(c, expr, elt);
@@ -5156,19 +5164,13 @@ error:
 }
 
 static int
-codegen_genexp_impl(compiler *c, expr_ty e, bool avoid_creation)
+codegen_genexp(compiler *c, expr_ty e)
 {
     assert(e->kind == GeneratorExp_kind);
     _Py_DECLARE_STR(anon_genexpr, "<genexpr>");
     return codegen_comprehension(c, e, COMP_GENEXP, &_Py_STR(anon_genexpr),
                                  e->v.GeneratorExp.generators,
-                                 e->v.GeneratorExp.elt, NULL, avoid_creation);
-}
-
-static int
-codegen_genexp(compiler *c, expr_ty e)
-{
-    return codegen_genexp_impl(c, e, false);
+                                 e->v.GeneratorExp.elt, NULL, false);
 }
 
 static int

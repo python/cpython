@@ -808,6 +808,29 @@ class ListComprehensionTest(unittest.TestCase):
         [increment() for _ in range(5)]
         self.assertEqual(count, 5)
 
+    def test_async_optimization_with_side_effects(self):
+        import asyncio
+
+        async def gen1(aiterator):
+            with self.assertRaises(ZeroDivisionError):
+                [0/0 async for _ in aiterator]
+
+        async def gen2(aiterator):
+            [increment() async for _ in aiterator]
+
+        async def numbers():
+            for i in range(5):
+                yield i
+
+        count = 0
+        def increment():
+            nonlocal count
+            count += 1
+
+        asyncio.run(gen1(numbers()))
+        asyncio.run(gen2(numbers()))
+        self.assertEqual(count, 5)
+
 __test__ = {'doctests' : doctests}
 
 def load_tests(loader, tests, pattern):
