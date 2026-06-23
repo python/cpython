@@ -208,7 +208,7 @@ code.
    .. versionchanged:: 3.14
       Added the *show_positions* parameter.
 
-   .. versionchanged:: 3.16
+   .. versionchanged:: next
       Added the *show_jit* parameter.
 
 Example:
@@ -314,7 +314,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.14
       Added the *show_positions* parameter.
 
-   .. versionchanged:: 3.16
+   .. versionchanged:: next
       Added the *show_jit* parameter.
 
 .. function:: distb(tb=None, *, file=None, show_caches=False, adaptive=False,\
@@ -339,7 +339,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.14
       Added the *show_positions* parameter.
 
-   .. versionchanged:: 3.16
+   .. versionchanged:: next
       Added the *show_jit* parameter.
 
 .. function:: disassemble(code, lasti=-1, *, file=None, show_caches=False,\
@@ -379,7 +379,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.14
       Added the *show_positions* parameter.
 
-   .. versionchanged:: 3.16
+   .. versionchanged:: next
       Added the *show_jit* parameter.
 
 .. function:: get_instructions(x, *, first_line=None, show_caches=False, adaptive=False, show_jit=False)
@@ -410,7 +410,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
       field populated (regardless of the value of *show_caches*) and it no longer
       generates separate items for the cache entries.
 
-   .. versionchanged:: 3.16
+   .. versionchanged:: next
       Added the *show_jit* parameter.
 
 .. function:: findlinestarts(code)
