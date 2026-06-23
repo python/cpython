@@ -242,8 +242,8 @@ object.
 
    *eventmask* is an optional bitmask describing the type of events you want to
    check for. The constants are the same as with :c:func:`!poll`
-   object. The default value is a combination of the constants ``POLLIN``,
-   ``POLLPRI``, and ``POLLOUT``.
+   object. The default value is a combination of the constants :const:`POLLIN`,
+   :const:`POLLPRI`, and :const:`POLLOUT`.
 
    .. warning::
 
@@ -275,8 +275,8 @@ object.
    Polls the set of registered file descriptors, and returns a possibly empty list
    containing ``(fd, event)`` 2-tuples for the descriptors that have events or
    errors to report. *fd* is the file descriptor, and *event* is a bitmask with
-   bits set for the reported events for that descriptor --- ``POLLIN`` for
-   waiting input, ``POLLOUT`` to indicate that the descriptor can be written
+   bits set for the reported events for that descriptor --- :const:`POLLIN` for
+   waiting input, :const:`POLLOUT` to indicate that the descriptor can be written
    to, and so forth. An empty list indicates that the call timed out and no file
    descriptors had any events to report. If *timeout* is given, it specifies the
    length of time in milliseconds which the system will wait for events before
@@ -305,49 +305,49 @@ Edge and level trigger polling (epoll) objects
    +-------------------------+------------------------------------------------+
    | Constant                | Meaning                                        |
    +=========================+================================================+
-   | ``EPOLLIN``             | Available for read.                            |
+   | .. data:: EPOLLIN       | Available for read.                            |
    +-------------------------+------------------------------------------------+
-   | ``EPOLLOUT``            | Available for write.                           |
+   | .. data:: EPOLLOUT      | Available for write.                           |
    +-------------------------+------------------------------------------------+
-   | ``EPOLLPRI``            | Urgent data for read.                          |
+   | .. data:: EPOLLPRI      | Urgent data for read.                          |
    +-------------------------+------------------------------------------------+
-   | ``EPOLLERR``            | Error condition happened on the associated fd. |
+   | .. data:: EPOLLERR      | Error condition happened on the associated fd. |
    +-------------------------+------------------------------------------------+
-   | ``EPOLLHUP``            | Hang up happened on the associated fd.         |
+   | .. data:: EPOLLHUP      | Hang up happened on the associated fd.         |
    +-------------------------+------------------------------------------------+
-   | ``EPOLLET``             | Set Edge Trigger behavior, the default is      |
+   | .. data:: EPOLLET       | Set Edge Trigger behavior, the default is      |
    |                         | Level Trigger behavior.                        |
    +-------------------------+------------------------------------------------+
-   | ``EPOLLONESHOT``        | Set one-shot behavior. After one event is      |
+   | .. data:: EPOLLONESHOT  | Set one-shot behavior. After one event is      |
    |                         | pulled out, the fd is internally disabled.     |
    +-------------------------+------------------------------------------------+
-   | ``EPOLLEXCLUSIVE``      | Wake only one epoll object when the            |
+   | .. data:: EPOLLEXCLUSIVE| Wake only one epoll object when the            |
    |                         | associated fd has an event. The default (if    |
    |                         | this flag is not set) is to wake all epoll     |
    |                         | objects polling on an fd.                      |
    +-------------------------+------------------------------------------------+
-   | ``EPOLLRDHUP``          | Stream socket peer closed connection or shut   |
+   | .. data:: EPOLLRDHUP    | Stream socket peer closed connection or shut   |
    |                         | down writing half of connection.               |
    +-------------------------+------------------------------------------------+
-   | ``EPOLLRDNORM``         | Equivalent to ``EPOLLIN``                      |
+   | .. data:: EPOLLRDNORM   | Equivalent to :const:`EPOLLIN`                 |
    +-------------------------+------------------------------------------------+
-   | ``EPOLLRDBAND``         | Priority data band can be read.                |
+   | .. data:: EPOLLRDBAND   | Priority data band can be read.                |
    +-------------------------+------------------------------------------------+
-   | ``EPOLLWRNORM``         | Equivalent to ``EPOLLOUT``.                    |
+   | .. data:: EPOLLWRNORM   | Equivalent to :const:`EPOLLOUT`.               |
    +-------------------------+------------------------------------------------+
-   | ``EPOLLWRBAND``         | Priority data may be written.                  |
+   | .. data:: EPOLLWRBAND   | Priority data may be written.                  |
    +-------------------------+------------------------------------------------+
-   | ``EPOLLMSG``            | Ignored.                                       |
+   | .. data:: EPOLLMSG      | Ignored.                                       |
    +-------------------------+------------------------------------------------+
-   | ``EPOLLWAKEUP``         | Prevents sleep during event waiting.           |
+   | .. data:: EPOLLWAKEUP   | Prevents sleep during event waiting.           |
    +-------------------------+------------------------------------------------+
 
    .. versionadded:: 3.6
-      ``EPOLLEXCLUSIVE`` was added.  It's only supported by Linux Kernel 4.5
-      or later.
+      :const:`EPOLLEXCLUSIVE` was added.  It's only supported by Linux Kernel
+      4.5 or later.
 
    .. versionadded:: 3.14
-      ``EPOLLWAKEUP`` was added. It's only supported by Linux Kernel 3.5
+      :const:`EPOLLWAKEUP` was added. It's only supported by Linux Kernel 3.5
       or later.
 
 .. method:: epoll.close()
@@ -417,6 +417,28 @@ on bits for the fds of interest, and then afterward the whole bitmap has to be
 linearly scanned again. :c:func:`!select` is *O*\ (*highest file descriptor*), while
 :c:func:`!poll` is *O*\ (*number of file descriptors*).
 
+The event masks that can be used with polling objects are combinations of the
+following constants:
+
+   +--------------------+-------------------------------------------+
+   | Constant           | Meaning                                   |
+   +====================+===========================================+
+   | .. data:: POLLIN   | There is data to read.                    |
+   +--------------------+-------------------------------------------+
+   | .. data:: POLLPRI  | There is urgent data to read.             |
+   +--------------------+-------------------------------------------+
+   | .. data:: POLLOUT  | Ready for output: writing will not block. |
+   +--------------------+-------------------------------------------+
+   | .. data:: POLLERR  | Error condition of some sort.             |
+   +--------------------+-------------------------------------------+
+   | .. data:: POLLHUP  | Hung up.                                  |
+   +--------------------+-------------------------------------------+
+   | .. data:: POLLRDHUP| Stream socket peer closed connection, or  |
+   |                    | shut down writing half of connection.     |
+   +--------------------+-------------------------------------------+
+   | .. data:: POLLNVAL | Invalid request: descriptor not open.     |
+   +--------------------+-------------------------------------------+
+
 
 .. method:: poll.register(fd[, eventmask])
 
@@ -427,28 +449,9 @@ linearly scanned again. :c:func:`!select` is *O*\ (*highest file descriptor*), w
    implement :meth:`!fileno`, so they can also be used as the argument.
 
    *eventmask* is an optional bitmask describing the type of events you want to
-   check for, and can be a combination of the constants ``POLLIN``,
-   ``POLLPRI``, and ``POLLOUT``, described in the table below.  If not
+   check for, and can be a combination of the constants :const:`POLLIN`,
+   :const:`POLLPRI`, and :const:`POLLOUT`, described in the table above.  If not
    specified, the default value used will check for all 3 types of events.
-
-   +-------------------+-------------------------------------------+
-   | Constant          | Meaning                                   |
-   +===================+===========================================+
-   | ``POLLIN``        | There is data to read.                    |
-   +-------------------+-------------------------------------------+
-   | ``POLLPRI``       | There is urgent data to read.             |
-   +-------------------+-------------------------------------------+
-   | ``POLLOUT``       | Ready for output: writing will not block. |
-   +-------------------+-------------------------------------------+
-   | ``POLLERR``       | Error condition of some sort.             |
-   +-------------------+-------------------------------------------+
-   | ``POLLHUP``       | Hung up.                                  |
-   +-------------------+-------------------------------------------+
-   | ``POLLRDHUP``     | Stream socket peer closed connection, or  |
-   |                   | shut down writing half of connection.     |
-   +-------------------+-------------------------------------------+
-   | ``POLLNVAL``      | Invalid request: descriptor not open.     |
-   +-------------------+-------------------------------------------+
 
    Registering a file descriptor that's already registered is not an error, and has
    the same effect as registering the descriptor exactly once.
@@ -477,8 +480,8 @@ linearly scanned again. :c:func:`!select` is *O*\ (*highest file descriptor*), w
    Polls the set of registered file descriptors, and returns a possibly empty list
    containing ``(fd, event)`` 2-tuples for the descriptors that have events or
    errors to report. *fd* is the file descriptor, and *event* is a bitmask with
-   bits set for the reported events for that descriptor --- ``POLLIN`` for
-   waiting input, ``POLLOUT`` to indicate that the descriptor can be written
+   bits set for the reported events for that descriptor --- :const:`POLLIN` for
+   waiting input, :const:`POLLOUT` to indicate that the descriptor can be written
    to, and so forth. An empty list indicates that the call timed out and no file
    descriptors had any events to report. If *timeout* is given, it specifies the
    length of time in milliseconds which the system will wait for events before
@@ -562,26 +565,26 @@ https://man.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
    +---------------------------+---------------------------------------------+
    | Constant                  | Meaning                                     |
    +===========================+=============================================+
-   | ``KQ_FILTER_READ``        | Takes a descriptor and returns whenever     |
+   | .. data:: KQ_FILTER_READ  | Takes a descriptor and returns whenever     |
    |                           | there is data available to read.            |
    +---------------------------+---------------------------------------------+
-   | ``KQ_FILTER_WRITE``       | Takes a descriptor and returns whenever     |
+   | .. data:: KQ_FILTER_WRITE | Takes a descriptor and returns whenever     |
    |                           | there is data available to write.           |
    +---------------------------+---------------------------------------------+
-   | ``KQ_FILTER_AIO``         | AIO requests.                               |
+   | .. data:: KQ_FILTER_AIO   | AIO requests.                               |
    +---------------------------+---------------------------------------------+
-   | ``KQ_FILTER_VNODE``       | Returns when one or more of the requested   |
+   | .. data:: KQ_FILTER_VNODE | Returns when one or more of the requested   |
    |                           | events watched in *fflag* occurs.           |
    +---------------------------+---------------------------------------------+
-   | ``KQ_FILTER_PROC``        | Watch for events on a process ID.           |
+   | .. data:: KQ_FILTER_PROC  | Watch for events on a process ID.           |
    +---------------------------+---------------------------------------------+
-   | ``KQ_FILTER_NETDEV``      | Watch for events on a network device        |
+   | .. data:: KQ_FILTER_NETDEV| Watch for events on a network device        |
    |                           | (not available on macOS).                   |
    +---------------------------+---------------------------------------------+
-   | ``KQ_FILTER_SIGNAL``      | Returns whenever the watched signal is      |
+   | .. data:: KQ_FILTER_SIGNAL| Returns whenever the watched signal is      |
    |                           | delivered to the process.                   |
    +---------------------------+---------------------------------------------+
-   | ``KQ_FILTER_TIMER``       | Establishes an arbitrary timer.             |
+   | .. data:: KQ_FILTER_TIMER | Establishes an arbitrary timer.             |
    +---------------------------+---------------------------------------------+
 
 .. attribute:: kevent.flags
@@ -591,25 +594,25 @@ https://man.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
    +---------------------------+----------------------------------------------+
    | Constant                  | Meaning                                      |
    +===========================+==============================================+
-   | ``KQ_EV_ADD``             | Adds or modifies an event.                   |
+   | .. data:: KQ_EV_ADD       | Adds or modifies an event.                   |
    +---------------------------+----------------------------------------------+
-   | ``KQ_EV_DELETE``          | Removes an event from the queue.             |
+   | .. data:: KQ_EV_DELETE    | Removes an event from the queue.             |
    +---------------------------+----------------------------------------------+
-   | ``KQ_EV_ENABLE``          | Permits control() to return the event.       |
+   | .. data:: KQ_EV_ENABLE    | Permits control() to return the event.       |
    +---------------------------+----------------------------------------------+
-   | ``KQ_EV_DISABLE``         | Disables event.                              |
+   | .. data:: KQ_EV_DISABLE   | Disables event.                              |
    +---------------------------+----------------------------------------------+
-   | ``KQ_EV_ONESHOT``         | Removes event after first occurrence.        |
+   | .. data:: KQ_EV_ONESHOT   | Removes event after first occurrence.        |
    +---------------------------+----------------------------------------------+
-   | ``KQ_EV_CLEAR``           | Reset the state after an event is retrieved. |
+   | .. data:: KQ_EV_CLEAR     | Reset the state after an event is retrieved. |
    +---------------------------+----------------------------------------------+
-   | ``KQ_EV_SYSFLAGS``        | Internal event.                              |
+   | .. data:: KQ_EV_SYSFLAGS  | Internal event.                              |
    +---------------------------+----------------------------------------------+
-   | ``KQ_EV_FLAG1``           | Internal event.                              |
+   | .. data:: KQ_EV_FLAG1     | Internal event.                              |
    +---------------------------+----------------------------------------------+
-   | ``KQ_EV_EOF``             | Filter-specific EOF condition.               |
+   | .. data:: KQ_EV_EOF       | Filter-specific EOF condition.               |
    +---------------------------+----------------------------------------------+
-   | ``KQ_EV_ERROR``           | See return values.                           |
+   | .. data:: KQ_EV_ERROR     | See return values.                           |
    +---------------------------+----------------------------------------------+
 
 
@@ -617,67 +620,67 @@ https://man.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
 
    Filter-specific flags.
 
-   ``KQ_FILTER_READ`` and  ``KQ_FILTER_WRITE`` filter flags:
+   :const:`KQ_FILTER_READ` and  :const:`KQ_FILTER_WRITE` filter flags:
 
    +----------------------------+--------------------------------------------+
    | Constant                   | Meaning                                    |
    +============================+============================================+
-   | ``KQ_NOTE_LOWAT``          | Low water mark of a socket buffer.         |
+   | .. data:: KQ_NOTE_LOWAT    | Low water mark of a socket buffer.         |
    +----------------------------+--------------------------------------------+
 
-   ``KQ_FILTER_VNODE`` filter flags:
-
-   +----------------------------+--------------------------------------------+
-   | Constant                   | Meaning                                    |
-   +============================+============================================+
-   | ``KQ_NOTE_DELETE``         | *unlink()* was called.                     |
-   +----------------------------+--------------------------------------------+
-   | ``KQ_NOTE_WRITE``          | A write occurred.                          |
-   +----------------------------+--------------------------------------------+
-   | ``KQ_NOTE_EXTEND``         | The file was extended.                     |
-   +----------------------------+--------------------------------------------+
-   | ``KQ_NOTE_ATTRIB``         | An attribute was changed.                  |
-   +----------------------------+--------------------------------------------+
-   | ``KQ_NOTE_LINK``           | The link count has changed.                |
-   +----------------------------+--------------------------------------------+
-   | ``KQ_NOTE_RENAME``         | The file was renamed.                      |
-   +----------------------------+--------------------------------------------+
-   | ``KQ_NOTE_REVOKE``         | Access to the file was revoked.            |
-   +----------------------------+--------------------------------------------+
-
-   ``KQ_FILTER_PROC`` filter flags:
+   :const:`KQ_FILTER_VNODE` filter flags:
 
    +----------------------------+--------------------------------------------+
    | Constant                   | Meaning                                    |
    +============================+============================================+
-   | ``KQ_NOTE_EXIT``           | The process has exited.                    |
+   | .. data:: KQ_NOTE_DELETE   | *unlink()* was called.                     |
    +----------------------------+--------------------------------------------+
-   | ``KQ_NOTE_FORK``           | The process has called *fork()*.           |
+   | .. data:: KQ_NOTE_WRITE    | A write occurred.                          |
    +----------------------------+--------------------------------------------+
-   | ``KQ_NOTE_EXEC``           | The process has executed a new process.    |
+   | .. data:: KQ_NOTE_EXTEND   | The file was extended.                     |
    +----------------------------+--------------------------------------------+
-   | ``KQ_NOTE_PCTRLMASK``      | Internal filter flag.                      |
+   | .. data:: KQ_NOTE_ATTRIB   | An attribute was changed.                  |
    +----------------------------+--------------------------------------------+
-   | ``KQ_NOTE_PDATAMASK``      | Internal filter flag.                      |
+   | .. data:: KQ_NOTE_LINK     | The link count has changed.                |
    +----------------------------+--------------------------------------------+
-   | ``KQ_NOTE_TRACK``          | Follow a process across *fork()*.          |
+   | .. data:: KQ_NOTE_RENAME   | The file was renamed.                      |
    +----------------------------+--------------------------------------------+
-   | ``KQ_NOTE_CHILD``          | Returned on the child process for          |
+   | .. data:: KQ_NOTE_REVOKE   | Access to the file was revoked.            |
+   +----------------------------+--------------------------------------------+
+
+   :const:`KQ_FILTER_PROC` filter flags:
+
+   +----------------------------+--------------------------------------------+
+   | Constant                   | Meaning                                    |
+   +============================+============================================+
+   | .. data:: KQ_NOTE_EXIT     | The process has exited.                    |
+   +----------------------------+--------------------------------------------+
+   | .. data:: KQ_NOTE_FORK     | The process has called *fork()*.           |
+   +----------------------------+--------------------------------------------+
+   | .. data:: KQ_NOTE_EXEC     | The process has executed a new process.    |
+   +----------------------------+--------------------------------------------+
+   | .. data:: KQ_NOTE_PCTRLMASK| Internal filter flag.                      |
+   +----------------------------+--------------------------------------------+
+   | .. data:: KQ_NOTE_PDATAMASK| Internal filter flag.                      |
+   +----------------------------+--------------------------------------------+
+   | .. data:: KQ_NOTE_TRACK    | Follow a process across *fork()*.          |
+   +----------------------------+--------------------------------------------+
+   | .. data:: KQ_NOTE_CHILD    | Returned on the child process for          |
    |                            | *NOTE_TRACK*.                              |
    +----------------------------+--------------------------------------------+
-   | ``KQ_NOTE_TRACKERR``       | Unable to attach to a child.               |
+   | .. data:: KQ_NOTE_TRACKERR | Unable to attach to a child.               |
    +----------------------------+--------------------------------------------+
 
-   ``KQ_FILTER_NETDEV`` filter flags (not available on macOS):
+   :const:`KQ_FILTER_NETDEV` filter flags (not available on macOS):
 
    +----------------------------+--------------------------------------------+
    | Constant                   | Meaning                                    |
    +============================+============================================+
-   | ``KQ_NOTE_LINKUP``         | Link is up.                                |
+   | .. data:: KQ_NOTE_LINKUP   | Link is up.                                |
    +----------------------------+--------------------------------------------+
-   | ``KQ_NOTE_LINKDOWN``       | Link is down.                              |
+   | .. data:: KQ_NOTE_LINKDOWN | Link is down.                              |
    +----------------------------+--------------------------------------------+
-   | ``KQ_NOTE_LINKINV``        | Link state is invalid.                     |
+   | .. data:: KQ_NOTE_LINKINV  | Link state is invalid.                     |
    +----------------------------+--------------------------------------------+
 
 
