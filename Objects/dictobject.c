@@ -140,6 +140,7 @@ static PyObject* frozendict_new(PyTypeObject *type, PyObject *args,
                                 PyObject *kwds);
 static PyObject* frozendict_new_untracked(PyTypeObject *type);
 static PyObject* dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
+static PyObject* dict_new_untracked(PyTypeObject *type);
 static int dict_merge(PyObject *a, PyObject *b, int override, PyObject **dupkey);
 static int dict_contains(PyObject *op, PyObject *key);
 static int dict_merge_from_seq2(PyObject *d, PyObject *seq2, int override);
@@ -3419,22 +3420,26 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
     PyObject *d;
     int status;
 
+    PyTypeObject *cls_type = _PyType_CAST(cls);
     d = _PyObject_CallNoArgs(cls);
     if (d == NULL) {
         return NULL;
     }
+    // The constructor returns a tracked object; keep it untracked while it is
+    // filled and GC-track it once complete (done:), so a half-built frozendict
+    // is never observable.
+    _PyObject_GC_UNTRACK(d);
 
     // If cls is a dict or frozendict subclass with overridden constructor,
     // copy the frozendict.
-    PyTypeObject *cls_type = _PyType_CAST(cls);
     if (PyFrozenDict_Check(d) && cls_type->tp_new != frozendict_new) {
         // Subclass-friendly copy
         PyObject *copy;
         if (PyObject_IsSubclass(cls, (PyObject*)&PyFrozenDict_Type)) {
-            copy = frozendict_new(cls_type, NULL, NULL);
+            copy = frozendict_new_untracked(cls_type);
         }
         else {
-            copy = dict_new(cls_type, NULL, NULL);
+            copy = dict_new_untracked(cls_type);
         }
         if (copy == NULL) {
             Py_DECREF(d);
@@ -3456,7 +3461,7 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
             Py_BEGIN_CRITICAL_SECTION2(d, iterable);
             d = (PyObject *)dict_dict_fromkeys(mp, iterable, value);
             Py_END_CRITICAL_SECTION2();
-            return d;
+            goto done;
         }
         else if (PyFrozenDict_CheckExact(iterable)) {
             PyDictObject *mp = (PyDictObject *)d;
@@ -3464,7 +3469,7 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
             Py_BEGIN_CRITICAL_SECTION(d);
             d = (PyObject *)dict_dict_fromkeys(mp, iterable, value);
             Py_END_CRITICAL_SECTION();
-            return d;
+            goto done;
         }
         else if (PyAnySet_CheckExact(iterable)) {
             PyDictObject *mp = (PyDictObject *)d;
@@ -3472,7 +3477,7 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
             Py_BEGIN_CRITICAL_SECTION2(d, iterable);
             d = (PyObject *)dict_set_fromkeys(mp, iterable, value);
             Py_END_CRITICAL_SECTION2();
-            return d;
+            goto done;
         }
     }
     else if (PyFrozenDict_CheckExact(d)) {
@@ -3482,12 +3487,12 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
             Py_BEGIN_CRITICAL_SECTION(iterable);
             d = (PyObject *)dict_dict_fromkeys(mp, iterable, value);
             Py_END_CRITICAL_SECTION();
-            return d;
+            goto done;
         }
         else if (PyFrozenDict_CheckExact(iterable)) {
             PyDictObject *mp = (PyDictObject *)d;
             d = (PyObject *)dict_dict_fromkeys(mp, iterable, value);
-            return d;
+            goto done;
         }
         else if (PyAnySet_CheckExact(iterable)) {
             PyDictObject *mp = (PyDictObject *)d;
@@ -3495,7 +3500,7 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
             Py_BEGIN_CRITICAL_SECTION(iterable);
             d = (PyObject *)dict_set_fromkeys(mp, iterable, value);
             Py_END_CRITICAL_SECTION();
-            return d;
+            goto done;
         }
     }
 
@@ -3541,12 +3546,20 @@ dict_iter_exit:;
     if (PyErr_Occurred())
         goto Fail;
     Py_DECREF(it);
-    return d;
+    goto done;
 
 Fail:
     Py_DECREF(it);
     Py_DECREF(d);
     return NULL;
+
+done:
+    // Built untracked above; GC-track now that it is complete.
+    if (d != NULL) {
+        assert(!_PyObject_GC_IS_TRACKED(d));
+        _PyObject_GC_TRACK(d);
+    }
+    return d;
 }
 
 /* Methods */
