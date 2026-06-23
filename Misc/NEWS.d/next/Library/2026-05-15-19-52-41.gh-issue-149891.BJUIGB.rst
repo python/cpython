@@ -1,1 +1,0 @@
-Add support for more encoding aliases `officially registered in IANA <https://www.iana.org/assignments/character-sets/character-sets.xhtml>`__.

@@ -1,1 +1,0 @@
-Add more tests for ``PyWeakref_*`` C API.
