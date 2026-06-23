@@ -378,6 +378,10 @@ The AF_* and SOCK_* constants are now :class:`AddressFamily` and
    defined then this protocol is unsupported.  More constants may be available
    depending on the system.
 
+   .. versionchanged:: next
+      :const:`AF_UNIX` is now available on Windows. It requires Windows 10
+      version 1803 or newer.
+
 .. data:: AF_UNSPEC
 
    :const:`AF_UNSPEC` means that

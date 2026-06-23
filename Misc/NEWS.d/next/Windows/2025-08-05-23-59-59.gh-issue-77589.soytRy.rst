@@ -1,1 +1,2 @@
-Add Unix domain socket on Windows. Patched by AN Long.
+Unix domain sockets (:const:`socket.AF_UNIX`) are now supported on Windows,
+which requires Windows 10 version 1803 or newer. Patch by AN Long.
