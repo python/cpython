@@ -343,8 +343,8 @@ Edge and level trigger polling (epoll) objects
    +-------------------------+------------------------------------------------+
 
    .. versionadded:: 3.6
-      :const:`EPOLLEXCLUSIVE` was added.  It's only supported by Linux Kernel
-      4.5 or later.
+      :const:`EPOLLEXCLUSIVE` was added.  It's only supported by Linux Kernel 4.5
+      or later.
 
    .. versionadded:: 3.14
       :const:`EPOLLWAKEUP` was added. It's only supported by Linux Kernel 3.5
