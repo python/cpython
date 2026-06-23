@@ -198,7 +198,7 @@ do { \
 /* Do interpreter dispatch accounting for tracing and instrumentation */
 #define DISPATCH() \
     { \
-        assert(frame->stackpointer == NULL); \
+        _PyFrame_StackAssertInvalid(frame); \
         NEXTOPARG(); \
         PRE_DISPATCH_GOTO(); \
         DISPATCH_GOTO(); \
@@ -206,7 +206,7 @@ do { \
 
 #define DISPATCH_NON_TRACING() \
     { \
-        assert(frame->stackpointer == NULL); \
+        _PyFrame_StackAssertInvalid(frame); \
         NEXTOPARG(); \
         PRE_DISPATCH_GOTO(); \
         DISPATCH_GOTO_NON_TRACING(); \
@@ -223,6 +223,7 @@ do { \
     do {                                                         \
         assert(!IS_PEP523_HOOKED(tstate));                       \
         _PyFrame_SetStackPointer(frame, stack_pointer);          \
+        _PyFrame_StackPointerValidate(frame);                    \
         assert((NEW_FRAME)->previous == frame);                  \
         frame = tstate->current_frame = (NEW_FRAME);             \
         CALL_STAT_INC(inlined_py_calls);                         \
@@ -290,7 +291,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         STAT_INC(opcode, miss);                                  \
         STAT_INC((INSTNAME), miss);                              \
         /* The counter is always the first cache entry: */       \
-        if (ADAPTIVE_COUNTER_TRIGGERS(next_instr->cache)) {       \
+        if (ADAPTIVE_COUNTER_TRIGGERS(next_instr->cache)) {      \
             STAT_INC((INSTNAME), deopt);                         \
         }                                                        \
     } while (0)

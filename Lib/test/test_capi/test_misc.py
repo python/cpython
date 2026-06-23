@@ -924,7 +924,7 @@ class CAPITest(unittest.TestCase):
     def test_tp_bases_slot_none(self):
         self.assertRaisesRegex(
             TypeError,
-            "metaclass conflict",
+            "bases must be types",
             _testcapi.create_heapctype_with_none_bases_slot
         )
 
