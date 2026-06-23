@@ -4880,7 +4880,7 @@ class TestExtractionFilters(unittest.TestCase):
 
     @support.subTests('format', [tarfile.GNU_FORMAT, tarfile.PAX_FORMAT])
     def test_getmembers_big_size(self, format):
-        # gh-NNNNN: A loop in seek() for streaming files tried to read the
+        # gh-151981: A loop in seek() for streaming files tried to read the
         # declared number of blocks even at EOF
         tinfo = tarfile.TarInfo("huge-file")
         tinfo.size = 1 << 64
