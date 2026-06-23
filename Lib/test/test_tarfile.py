@@ -2,7 +2,6 @@ import errno
 import sys
 import os
 import io
-import tempfile
 from hashlib import sha256
 from contextlib import contextmanager, ExitStack
 from random import Random
@@ -4333,7 +4332,7 @@ class TestExtractionFilters(unittest.TestCase):
             buf.seek(0)
             with (
                 self.subTest(f"type={link_type!r}"),
-                tempfile.TemporaryDirectory() as tmpdir,
+                os_helper.temp_dir() as tmpdir,
                 tarfile.open(fileobj=buf) as tar,
                 unittest.mock.patch("os.chown") as mock_chown,
                 unittest.mock.patch("os.lchown") as mock_lchown,
@@ -4382,7 +4381,7 @@ class TestExtractionFilters(unittest.TestCase):
             buf.seek(0)
             with (
                 self.subTest(f"type={link_type!r}"),
-                tempfile.TemporaryDirectory() as tmpdir,
+                os_helper.temp_dir() as tmpdir,
                 tarfile.open(fileobj=buf) as tar,
                 unittest.mock.patch("os.chown") as mock_chown,
                 unittest.mock.patch("os.lchown") as mock_lchown,
