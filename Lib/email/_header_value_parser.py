@@ -1668,6 +1668,11 @@ def get_domain(value):
             domain[:] = domain[0]
         while value and value[0] == '.':
             domain.append(DOT)
+            # A trailing dot leaves get_atom an empty string, whose error
+            # ("expected atext but found ''") hides the real problem.
+            if len(value) == 1:
+                raise errors.HeaderParseError(
+                    "expected atom after '.' but found end of domain")
             token, value = get_atom(value[1:])
             domain.append(token)
     return domain, value
