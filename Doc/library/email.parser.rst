@@ -48,7 +48,7 @@ methods.
 FeedParser API
 ^^^^^^^^^^^^^^
 
-The :class:`BytesFeedParser`, imported from the :mod:`email.feedparser` module,
+The :class:`BytesFeedParser`, imported from the :mod:`!email.feedparser` module,
 provides an API that is conducive to incremental parsing of email messages,
 such as would be necessary when reading the text of an email message from a
 source that can block (such as a socket).  The :class:`BytesFeedParser` can of
