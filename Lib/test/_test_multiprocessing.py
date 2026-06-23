@@ -2131,6 +2131,7 @@ class _TestEvent(BaseTestCase):
         p.join()
 
     def test_repr(self) -> None:
+        # Change repr, see gh-149399.
         event = self.Event()
         if self.TYPE == 'processes':
             self.assertIn("<Event(unset)>", repr(event))
@@ -2505,6 +2506,7 @@ class _TestBarrier(BaseTestCase):
                 self.assertEqual(conn.recv(), i)
 
     def test_repr(self):
+        # Add repr, see gh-149399.
         b = self.barrier
         if self.TYPE == 'process':
             self.assertIn(f"waiters=0/{self.N}", repr(b))
