@@ -236,6 +236,12 @@ tkinter
   ttk version, and accepts mappings of button options as *buttons* entries.
   (Contributed by Serhiy Storchaka in :gh:`59396`.)
 
+* :class:`tkinter.font.Font` can now wrap a font description without creating a
+  new named font, by passing it as *font* with ``exists=True`` and no *name*.
+  This avoids a loss of precision in :meth:`~tkinter.font.Font.actual`,
+  :meth:`~tkinter.font.Font.measure` and :meth:`~tkinter.font.Font.metrics`.
+  (Contributed by Serhiy Storchaka in :gh:`143990`.)
+
 xml
 ---
 
