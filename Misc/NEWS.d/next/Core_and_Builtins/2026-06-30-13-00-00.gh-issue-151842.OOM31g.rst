@@ -1,5 +1,0 @@
-Fix a segfault in ``_interpreters.capture_exception()`` under memory
-pressure. When ``_PyXI_NewExcInfo()`` failed to allocate, the cleanup path
-called ``_PyXI_FreeExcInfo(NULL)``, which then dereferenced offset 0 in
-``_excinfo_clear_type()``. ``_PyXI_FreeExcInfo()`` now accepts ``NULL`` like
-the surrounding ``PyMem_RawFree`` idiom. Patch by Amrutha Modela.
