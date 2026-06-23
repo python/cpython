@@ -79,7 +79,7 @@ def _copy_archive(archive, new_archive, interpreter=None):
             dst.write(first_2)
             shutil.copyfileobj(src, dst)
 
-    if interpreter and isinstance(new_archive, str):
+    if interpreter and isinstance(new_archive, (str, os.PathLike)):
         _make_executable(new_archive)
 
 
