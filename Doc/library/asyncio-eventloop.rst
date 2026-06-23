@@ -1919,13 +1919,14 @@ By default asyncio is configured to use :class:`EventLoop`.
 
 .. class:: BaseEventLoop
 
-   Abstract base class for asyncio-compliant event loops.
-   Inherits from :class:`AbstractEventLoop` directly.
+   A base class that partially implements :class:`AbstractEventLoop`
+   to simplify writing custom event loops.
 
-   Has many methods of ``AbstractEventLoop`` implemented, so end users
-   would have less methods to implement themselfs.
-   But, instead forces to implement some internal protected API methods.
-   See :ref:`writting_custom_event_loop` for more information.
+   It provides default implementations of many :class:`AbstractEventLoop`
+   methods, so subclasses have fewer methods to implement themselves.
+   In return, a subclass is expected to implement a number of internal,
+   protected methods.
+   See :ref:`writing_custom_event_loop` for more information.
 
 
 Examples
