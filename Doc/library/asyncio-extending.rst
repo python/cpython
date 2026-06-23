@@ -17,7 +17,7 @@ classes. Asyncio has helpers that could be used to simplify this task.
 
 .. _writing_custom_event_loop:
 
-Writing a Custom Event Loop
+Writing a custom event loop
 ===========================
 
 :class:`asyncio.AbstractEventLoop` declares very many methods.
