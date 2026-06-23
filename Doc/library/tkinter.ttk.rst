@@ -291,6 +291,8 @@ the methods :meth:`tkinter.Widget.cget <tkinter.Misc.cget>` and
       which flags were changed. If *statespec* is not specified, returns
       the currently enabled state flags.
 
+      Not to be confused with :meth:`Wm.state <tkinter.Wm.state>`.
+
    *statespec* will usually be a list or a tuple.
 
 
@@ -591,6 +593,11 @@ ttk.Notebook
 
       Removes the tab specified by *tab_id*, unmaps and unmanages the
       associated window.
+
+      This shadows the inherited geometry-manager :meth:`!forget`;
+      use :meth:`~tkinter.Pack.pack_forget`, :meth:`~tkinter.Grid.grid_forget`
+      or :meth:`~tkinter.Place.place_forget` to remove the widget itself from
+      its manager.
 
 
    .. method:: hide(tab_id)
@@ -990,6 +997,9 @@ ttk.Treeview
       *item* is not visible (that is, if it is a descendant of a closed item
       or is scrolled offscreen), returns an empty string.
 
+      This shadows the inherited :meth:`!Misc.bbox`;
+      use :meth:`~tkinter.Misc.grid_bbox` for the grid bounding box.
+
 
    .. method:: get_children(item=None)
 
@@ -1062,6 +1072,9 @@ ttk.Treeview
 
       If *item* is specified, sets the focus item to *item*. Otherwise, returns
       the current focus item, or '' if there is none.
+
+      This shadows the inherited :meth:`!Misc.focus`;
+      use :meth:`~tkinter.Misc.focus_set` to focus the widget itself.
 
 
    .. method:: heading(column, option=None, **kw)
@@ -1683,6 +1696,9 @@ and inherits the common methods of :class:`Widget`.
       Return a tuple ``(x, y, width, height)`` giving the bounding box of the
       character at the given *index*.
 
+      This shadows the inherited :meth:`!Misc.bbox`;
+      use :meth:`~tkinter.Misc.grid_bbox` for the grid bounding box.
+
    .. method:: identify(x, y)
 
       Return the name of the element under the point given by *x* and *y*, or
@@ -1775,6 +1791,11 @@ and inherits the common methods of :class:`Widget`.
 
       Remove *child*, which may be either an integer index or the name of a
       managed subwindow, from the panes.
+
+      This shadows the inherited geometry-manager :meth:`!forget`;
+      use :meth:`~tkinter.Pack.pack_forget`, :meth:`~tkinter.Grid.grid_forget`
+      or :meth:`~tkinter.Place.place_forget` to remove the widget itself from
+      its manager.
 
    .. method:: pane(pane, option=None, **kw)
 
