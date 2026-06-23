@@ -99,14 +99,6 @@ gzip
   which is passed on to the constructor of the :class:`~gzip.GzipFile` class.
   (Contributed by Marin Misur in :gh:`91372`.)
 
-lzma
-----
-
-* Add support of new BCJ filters ARM64 and RISC-V via
-  :const:`!lzma.FILTER_ARM64` and :const:`!lzma.FILTER_RISCV`.  Note that the
-  new filters will work only if runtime library supports them. ARM64 filter
-  requires ``lzma`` 5.4.0 or newer while RISC-V requires 5.6.0 or newer.
-  (Contributed by Chien Wong in :gh:`115988`.)
 
 logging
 -------
@@ -119,6 +111,17 @@ logging
   before the rotation interval expires.
   (Contributed by Iván Márton and Serhiy Storchaka in :gh:`84649`.)
 
+
+lzma
+----
+
+* Add support of new BCJ filters ARM64 and RISC-V via
+  :const:`!lzma.FILTER_ARM64` and :const:`!lzma.FILTER_RISCV`.  Note that the
+  new filters will work only if the runtime library supports them. ARM64 filter
+  requires ``lzma`` 5.4.0 or newer while RISC-V requires 5.6.0 or newer.
+  (Contributed by Chien Wong in :gh:`115988`.)
+
+
 math
 ----
 
@@ -130,12 +133,14 @@ math
   754-2019 and standardized in C23.
   (Contributed by Jeff Epler in :gh:`150534`.)
 
+
 os
 --
 
 * Add :func:`os.pidfd_getfd` for duplicating a file descriptor from another
   process via a pidfd.  Available on Linux 5.6+.
   (Contributed by Maurycy Pawłowski-Wieroński in :gh:`149464`.)
+
 
 shlex
 -----
@@ -144,8 +149,19 @@ shlex
   a string, even if it is already safe for a shell without being quoted.
   (Contributed by Jay Berry in :gh:`148846`.)
 
+
 tkinter
 -------
+
+* Added many :class:`tkinter.ttk.Treeview` methods wrapping the enhanced
+  ``ttk::treeview`` widget commands from Tk 9.1, such as
+  :meth:`~tkinter.ttk.Treeview.sort`, :meth:`~tkinter.ttk.Treeview.search`,
+  :meth:`~tkinter.ttk.Treeview.expand`, :meth:`~tkinter.ttk.Treeview.collapse`,
+  :meth:`~tkinter.ttk.Treeview.hide`, :meth:`~tkinter.ttk.Treeview.unhide`, and
+  methods for cell focus, selection and tagging.  The
+  :meth:`~tkinter.ttk.Treeview.expand` and :meth:`~tkinter.ttk.Treeview.collapse`
+  methods (without recursion) also work on Tk older than 9.1.
+  (Contributed by Serhiy Storchaka in :gh:`151910`.)
 
 * Added new :class:`!tkinter.Text` methods :meth:`~tkinter.Text.edit_canundo`
   and :meth:`~tkinter.Text.edit_canredo` which return whether an undo or redo
@@ -156,6 +172,53 @@ tkinter
   :meth:`~tkinter.Text.pendingsync` which control and report the
   synchronization of the displayed view with the underlying text.
   (Contributed by Serhiy Storchaka in :gh:`151675`.)
+
+* Added the :meth:`ttk.Style.theme_styles
+  <tkinter.ttk.Style.theme_styles>` method which returns the list of styles
+  defined in a theme.
+  (Contributed by Serhiy Storchaka in :gh:`151920`.)
+
+* Added new :class:`!tkinter.Canvas` methods :meth:`~tkinter.Canvas.rchars`
+  which replaces the text or coordinates of canvas items, and
+  :meth:`~tkinter.Canvas.rotate` which rotates the coordinates of canvas items.
+  (Contributed by Serhiy Storchaka in :gh:`151876`.)
+
+* Added a :meth:`!validate` method to the :class:`!tkinter.Entry` and
+  :class:`!tkinter.Spinbox` widgets, which forces an evaluation of the
+  validation command.
+  (Contributed by Serhiy Storchaka in :gh:`151878`.)
+
+* Added the :meth:`tkinter.Menu.postcascade` method, and the
+  :meth:`~tkinter.Misc.tk_scaling` and :meth:`~tkinter.Misc.tk_inactive`
+  methods which respectively query or set the display scaling factor and
+  report the user idle time.
+  (Contributed by Serhiy Storchaka in :gh:`151881`.)
+
+* Added new window-management methods :meth:`~tkinter.Misc.winfo_isdark`
+  (dark mode detection), :meth:`~tkinter.Wm.wm_iconbadge` (application icon
+  badge) and :meth:`~tkinter.Wm.wm_stackorder` (toplevel stacking order).
+  (Contributed by Serhiy Storchaka in :gh:`151874`.)
+
+* Added the :meth:`~tkinter.Misc.tk_appname`,
+  :meth:`~tkinter.Misc.tk_useinputmethods` and :meth:`~tkinter.Misc.tk_caret`
+  methods, exposing the application send name, the X Input Methods state and
+  the input method caret location.
+  (Contributed by Serhiy Storchaka in :gh:`151886`.)
+
+* Added support for more options in :class:`!tkinter.PhotoImage` methods: the
+  *format* parameter of :meth:`~tkinter.PhotoImage.put`, the *metadata*
+  parameter of :meth:`~tkinter.PhotoImage.put`, :meth:`~tkinter.PhotoImage.read`,
+  :meth:`~tkinter.PhotoImage.write` and :meth:`~tkinter.PhotoImage.data`, and
+  the *withalpha* parameter of :meth:`~tkinter.PhotoImage.get`.
+  (Contributed by Serhiy Storchaka in :gh:`151890`.)
+
+* Added the :meth:`~tkinter.PhotoImage.redither` method which recalculates the
+  dithered image when its data was supplied in pieces.
+  (Contributed by Serhiy Storchaka in :gh:`151888`.)
+
+* :class:`tkinter.OptionMenu` now accepts arbitrary :class:`!tkinter.Menubutton`
+  options as keyword arguments, which can also override its default appearance.
+  (Contributed by Serhiy Storchaka in :gh:`101284`.)
 
 * The :mod:`tkinter.simpledialog` dialogs were modernized to match the look
   and feel of the native Tk dialogs.
@@ -177,15 +240,15 @@ xml
 ---
 
 * Add support for multiple multi-byte encodings in the :mod:`XML parser
-  <xml.parsers.expat>`: "cp932", "cp949", "cp950", "Big5","EUC-JP",
+  <xml.parsers.expat>`: "cp932", "cp949", "cp950", "Big5", "EUC-JP",
   "GB2312", "GBK", "johab", and "Shift_JIS".
   Add partial support (only BMP characters) for multi-byte encodings
   "Big5-HKSCS", "EUC_JIS-2004", "EUC_JISX0213", "Shift_JIS-2004",
   "Shift_JISX0213", "utf-8-sig" and non-standard aliases like "UTF8"
   (without hyphen).
   The parser now raises :exc:`ValueError` for known unsupported
-  multi-byte encodings such us "ISO-2022-JP" or "raw-unicode-escape"
-  instead of failing later, when encounter non-ASCII data.
+  multi-byte encodings such as "ISO-2022-JP" or "raw-unicode-escape"
+  instead of failing later, when encountering non-ASCII data.
   (Contributed by Serhiy Storchaka in :gh:`62259`.)
 
 zipfile
@@ -295,14 +358,17 @@ tarfile
 Deprecated
 ==========
 
+New deprecations
+----------------
+
 * :mod:`abc`
 
-   * Soft-deprecated since Python 3.3 :class:`abc.abstractclassmethod`,
-     :class:`abc.abstractstaticmethod`, and :class:`abc.abstractproperty`
-     now raise a :exc:`DeprecationWarning`.
-     These classes will be removed in Python 3.21, instead
-     use :func:`abc.abstractmethod` with :func:`classmethod`,
-     :func:`staticmethod`, and :class:`property` respectively.
+  * Soft-deprecated since Python 3.3 :class:`abc.abstractclassmethod`,
+    :class:`abc.abstractstaticmethod`, and :class:`abc.abstractproperty`
+    now raise a :exc:`DeprecationWarning`.
+    These classes will be removed in Python 3.21, instead
+    use :func:`abc.abstractmethod` with :func:`classmethod`,
+    :func:`staticmethod`, and :class:`property` respectively.
 
 * :mod:`ast`:
 
@@ -341,7 +407,7 @@ Build changes
 =============
 
 * Remove the bundled copy of the libmpdec_ decimal library from the CPython source tree
-  to simplify maintenence and updates. The :mod:`decimal` module will now
+  to simplify maintenance and updates. The :mod:`decimal` module will now
   unconditionally use the system's libmpdec decimal library. Also remove the
   now unused :option:`!--with-system-libmpdec` :program:`configure` flag.
   This change has no impact on binary releases of Python, which have been
