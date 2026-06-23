@@ -6341,7 +6341,9 @@ class TestUnixDomain(unittest.TestCase):
     @unittest.skipUnless(sys.platform == 'win32',
                          'Windows-specific behavior')
     def test_unbound_on_windows(self):
-        self.assertRaisesRegex(OSError, 'WinError 10022', self.sock.getsockname)
+        with self.assertRaises(OSError) as cm:
+            self.sock.getsockname()
+        self.assertEqual(cm.exception.winerror, errno.WSAEINVAL)
 
     def testStrAddr(self):
         # Test binding to and retrieving a normal string pathname.
