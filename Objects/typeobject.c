@@ -5114,6 +5114,7 @@ PyType_FromMetaclass(
     Py_ssize_t name_buf_len = strlen(spec->name) + 1;
     _ht_tpname = PyMem_Malloc(name_buf_len);
     if (_ht_tpname == NULL) {
+        PyErr_NoMemory();
         goto finally;
     }
     memcpy(_ht_tpname, spec->name, name_buf_len);
@@ -5397,7 +5398,7 @@ PyType_FromMetaclass(
 
     assert(_PyType_CheckConsistency(type));
 
- finally:
+finally:
     if (PyErr_Occurred()) {
         Py_CLEAR(res);
     }
