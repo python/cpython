@@ -109,6 +109,11 @@ struct _tracemalloc_runtime_state {
     struct tracemalloc_traceback *empty_traceback;
 
     Py_tss_t reentrant_key;
+
+    /* Sampling state used by Python/tracemalloc.c. */
+    uint64_t sampling_seed_counter;
+    uint64_t sampling_state;
+    uint64_t sampling_prng;
 };
 
 #define _tracemalloc_runtime_state_INIT \

@@ -97,6 +97,10 @@ tracemalloc_error(const char *format, ...)
 
 
 #define tracemalloc_reentrant_key _PyRuntime.tracemalloc.reentrant_key
+#define tracemalloc_sampling_seed_counter \
+    _PyRuntime.tracemalloc.sampling_seed_counter
+#define tracemalloc_sampling_state _PyRuntime.tracemalloc.sampling_state
+#define tracemalloc_sampling_prng _PyRuntime.tracemalloc.sampling_prng
 
 /* Any non-NULL pointer can be used */
 #define REENTRANT Py_True
@@ -211,8 +215,8 @@ new_sampling_seed(void)
        This counter is intentionally not reset between tracing sessions.
        Return an initial SplitMix64 state; splitmix64_next() performs the
        avalanche before producing each random value. */
-    static uint64_t sampling_seed_counter;
-    uint64_t seq = _Py_atomic_add_uint64(&sampling_seed_counter, 1) + 1;
+    uint64_t seq = _Py_atomic_add_uint64(
+        &tracemalloc_sampling_seed_counter, 1) + 1;
     uint64_t seed = (uint64_t)PyThread_get_thread_ident() ^ seq;
     return seed ? seed : 1;
 }
@@ -234,9 +238,6 @@ init_sampling_state(tracemalloc_sampling_state_t *state, size_t interval)
    Counter is stored in the high 32 bits and threshold in the low 32 bits.
    Thresholds are clamped to 32 bits; counters are reset whenever a sample
    is claimed. */
-static uint64_t g_sampling_state;        /* hi32=counter, lo32=threshold */
-static uint64_t g_sampling_prng;         /* 0 = needs seed */
-
 #define GS_COUNTER(s)    ((uint32_t)((s) >> 32))
 #define GS_THRESHOLD(s)  ((uint32_t)(s))
 #define GS_PACK(thresh, counter) \
@@ -253,20 +254,20 @@ saturate_threshold_to_uint32(size_t threshold)
 static uint64_t
 init_global_sampling(size_t interval)
 {
-    /* Use g_sampling_prng as an initialization guard so concurrent
-       initializers don't repeatedly reset g_sampling_state. */
+    /* Use tracemalloc_sampling_prng as an initialization guard so concurrent
+       initializers don't repeatedly reset tracemalloc_sampling_state. */
     uint64_t seed = new_sampling_seed();
     uint32_t thresh = saturate_threshold_to_uint32(
         new_sample_threshold(interval, &seed));
 
     uint64_t expected = 0;
     if (!_Py_atomic_compare_exchange_uint64(
-            &g_sampling_prng, &expected, seed)) {
-        return _Py_atomic_load_uint64_relaxed(&g_sampling_state);
+            &tracemalloc_sampling_prng, &expected, seed)) {
+        return _Py_atomic_load_uint64_relaxed(&tracemalloc_sampling_state);
     }
 
     uint64_t state = GS_PACK(thresh, 0);
-    _Py_atomic_store_uint64_relaxed(&g_sampling_state, state);
+    _Py_atomic_store_uint64_relaxed(&tracemalloc_sampling_state, state);
     return state;
 }
 
@@ -278,13 +279,13 @@ init_global_sampling(size_t interval)
 static uint32_t
 new_global_threshold(size_t interval)
 {
-    uint64_t prng = _Py_atomic_load_uint64_relaxed(&g_sampling_prng);
+    uint64_t prng = _Py_atomic_load_uint64_relaxed(&tracemalloc_sampling_prng);
     if (prng == 0) {
         prng = new_sampling_seed();
     }
     uint32_t threshold = saturate_threshold_to_uint32(
         new_sample_threshold(interval, &prng));
-    _Py_atomic_store_uint64_relaxed(&g_sampling_prng, prng);
+    _Py_atomic_store_uint64_relaxed(&tracemalloc_sampling_prng, prng);
     return threshold;
 }
 
@@ -333,7 +334,7 @@ should_sample_slow(size_t byte_size, size_t interval,
        progress, but an individual thread can theoretically retry under
        contention.  No locks or GIL are taken, so this cannot deadlock with
        allocator or tracemalloc locks. */
-    uint64_t state = _Py_atomic_load_uint64_relaxed(&g_sampling_state);
+    uint64_t state = _Py_atomic_load_uint64_relaxed(&tracemalloc_sampling_state);
     uint64_t total;
     bool sampled;
     uint64_t new_state;
@@ -346,7 +347,8 @@ should_sample_slow(size_t byte_size, size_t interval,
             thresh = GS_THRESHOLD(state);
             if (thresh == 0) {
                 /* Another thread won initialization but has not published
-                   g_sampling_state yet.  Skip tracing this allocation rather
+                   tracemalloc_sampling_state yet.  Skip tracing this
+                   allocation rather
                    than spin in an allocator hook. */
                 return false;
             }
@@ -362,7 +364,7 @@ should_sample_slow(size_t byte_size, size_t interval,
             new_state = GS_PACK(thresh, total);
         }
     } while (!_Py_atomic_compare_exchange_uint64(
-                 &g_sampling_state, &state, new_state));
+                 &tracemalloc_sampling_state, &state, new_state));
 
     if (!sampled) {
         return false;
@@ -1134,8 +1136,8 @@ _PyTraceMalloc_Start(int max_nframe, size_t sample_interval)
     }
 
     /* Reset global sampling state for non-Python threads. */
-    _Py_atomic_store_uint64_relaxed(&g_sampling_state, 0);
-    _Py_atomic_store_uint64_relaxed(&g_sampling_prng, 0);
+    _Py_atomic_store_uint64_relaxed(&tracemalloc_sampling_state, 0);
+    _Py_atomic_store_uint64_relaxed(&tracemalloc_sampling_prng, 0);
 
     /* allocate a buffer to store a new traceback */
     size_t size = TRACEBACK_SIZE(max_nframe);
