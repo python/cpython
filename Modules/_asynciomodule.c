@@ -2190,6 +2190,9 @@ register_task(_PyThreadStateImpl *ts, TaskObj *task)
         assert(task->task_node.prev != NULL);
         return;
     }
+#ifdef Py_GIL_DISABLED
+    _PyObject_SetMaybeWeakref((PyObject *)task);
+#endif
     struct llist_node *head = &ts->asyncio_tasks_head;
     llist_insert_tail(head, &task->task_node);
 }
@@ -2384,11 +2387,6 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
     if (task_call_step_soon(state, self, NULL)) {
         return -1;
     }
-#ifdef Py_GIL_DISABLED
-    // This is required so that _Py_TryIncref(self)
-    // works correctly in non-owning threads.
-    _PyObject_SetMaybeWeakref((PyObject *)self);
-#endif
     register_task(ts, self);
     return 0;
 }
