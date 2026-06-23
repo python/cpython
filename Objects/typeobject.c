@@ -5778,7 +5778,7 @@ type_from_slots_or_spec(
     ((PyObject*)type)->ob_flags |= _Py_TYPE_REVEALED_FLAG;
 #endif
 
- finally:
+  finally:
     if (PyErr_Occurred()) {
         Py_CLEAR(res);
     }
