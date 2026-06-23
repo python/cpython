@@ -4403,6 +4403,25 @@ class TestExtractionFilters(unittest.TestCase):
                     ])
                     mock_lchown.assert_not_called()
 
+    def test_extract_filters_target(self):
+        # Test that when extract() falls back to extracting (rather than
+        # linking) a hardlink target, it filters the target.
+        with ArchiveMaker() as arc:
+            arc.add("target")
+            arc.add("link", hardlink_to="target")
+        def testing_filter(member, path):
+            if member.name == 'target':
+                # target: set read-only
+                return member.replace(mode=stat.S_IRUSR)
+            # link: don't overwrite the mode
+            return member.replace(mode=None)
+        tempdir = pathlib.Path(TEMPDIR) / 'extract'
+        with os_helper.temp_dir(tempdir), arc.open() as tar:
+            tar.extract("link", path=tempdir, filter=testing_filter)
+            path = tempdir / 'link'
+            if os_helper.can_chmod():
+                self.assertFalse(path.stat().st_mode & stat.S_IWUSR)
+
     def test_link_fallback_normalizes(self):
         # Make sure hardlink fallbacks work for non-normalized paths for all
         # filters
