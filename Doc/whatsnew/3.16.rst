@@ -220,6 +220,22 @@ tkinter
   options as keyword arguments, which can also override its default appearance.
   (Contributed by Serhiy Storchaka in :gh:`101284`.)
 
+* The :mod:`tkinter.simpledialog` dialogs were modernized to match the look
+  and feel of the native Tk dialogs.
+  :class:`!tkinter.simpledialog.SimpleDialog` and the
+  :func:`~tkinter.simpledialog.askinteger`,
+  :func:`~tkinter.simpledialog.askfloat` and
+  :func:`~tkinter.simpledialog.askstring` dialogs are now built from the themed
+  :mod:`tkinter.ttk` widgets instead of the classic :mod:`tkinter` widgets;
+  the :class:`!tkinter.simpledialog.Dialog` base class still defaults to the
+  classic widgets for compatibility.  Both :class:`!Dialog` and
+  :class:`!SimpleDialog` gained a *use_ttk* parameter that selects between the
+  classic Tk widgets and the themed ttk widgets.  :class:`!SimpleDialog` also
+  gained *bitmap* and
+  *detail* parameters, draws the standard icons with themed images in the
+  ttk version, and accepts mappings of button options as *buttons* entries.
+  (Contributed by Serhiy Storchaka in :gh:`59396`.)
+
 xml
 ---
 
