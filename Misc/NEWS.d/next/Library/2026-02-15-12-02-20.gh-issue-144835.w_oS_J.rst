@@ -1,2 +1,0 @@
-Added missing explanations for some parameters in :func:`glob.glob` and
-:func:`glob.iglob`.

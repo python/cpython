@@ -44,11 +44,14 @@ The :mod:`!shlex` module defines the following functions:
    .. versionadded:: 3.8
 
 
-.. function:: quote(s)
+.. function:: quote(s, *, force=False)
 
    Return a shell-escaped version of the string *s*.  The returned value is a
    string that can safely be used as one token in a shell command line, for
    cases where you cannot use a list.
+
+   If *force* is :const:`True`, then *s* is unconditionally quoted,
+   even if it is already safe for a shell without being quoted.
 
    .. _shlex-quote-warning:
 
@@ -91,7 +94,22 @@ The :mod:`!shlex` module defines the following functions:
       >>> command
       ['ls', '-l', 'somefile; rm -rf ~']
 
+   The *force* keyword can be used to produce consistent behavior when
+   escaping multiple strings:
+
+      >>> from shlex import quote
+      >>> filenames = ['my first file', 'file2', 'file 3']
+      >>> filenames_some_escaped = [quote(f) for f in filenames]
+      >>> filenames_some_escaped
+      ["'my first file'", 'file2', "'file 3'"]
+      >>> filenames_all_escaped = [quote(f, force=True) for f in filenames]
+      >>> filenames_all_escaped
+      ["'my first file'", "'file2'", "'file 3'"]
+
    .. versionadded:: 3.3
+
+   .. versionchanged:: next
+      The *force* keyword was added.
 
 The :mod:`!shlex` module defines the following class:
 

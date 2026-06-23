@@ -111,8 +111,9 @@ class PipeHandle:
 
     def close(self, *, CloseHandle=_winapi.CloseHandle):
         if self._handle is not None:
-            CloseHandle(self._handle)
+            handle = self._handle
             self._handle = None
+            CloseHandle(handle)
 
     def __del__(self, _warn=warnings.warn):
         if self._handle is not None:

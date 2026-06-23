@@ -551,10 +551,10 @@ class BaseBytesTest:
         self.assertEqual(three_bytes.hex('*', -2), 'b901*ef')
         self.assertEqual(three_bytes.hex(sep=':', bytes_per_sep=2), 'b9:01ef')
         self.assertEqual(three_bytes.hex(sep='*', bytes_per_sep=-2), 'b901*ef')
-        for bytes_per_sep in 3, -3, 2**31-1, -(2**31-1):
+        for bytes_per_sep in 3, -3, sys.maxsize, -sys.maxsize:
             with self.subTest(bytes_per_sep=bytes_per_sep):
                 self.assertEqual(three_bytes.hex(':', bytes_per_sep), 'b901ef')
-        for bytes_per_sep in 2**31, -2**31, 2**1000, -2**1000:
+        for bytes_per_sep in sys.maxsize+1, -sys.maxsize-1, 2**1000, -2**1000:
             with self.subTest(bytes_per_sep=bytes_per_sep):
                 try:
                     self.assertEqual(three_bytes.hex(':', bytes_per_sep), 'b901ef')
@@ -644,6 +644,32 @@ class BaseBytesTest:
             dot_join([bytearray(b"ab"), "cd", b"ef"])
         with self.assertRaises(TypeError):
             dot_join([memoryview(b"ab"), "cd", b"ef"])
+
+    def test_join_concurrent_buffer_mutation(self):
+        # __buffer__() can release the GIL, letting another thread concurrently
+        # mutate the joined sequence (simulated here by mutating in __buffer__).
+        # See: https://github.com/python/cpython/issues/151295
+        def make_seq(mutate):
+            # Item is only referenced from the list slot, so mutate() frees it.
+            class Item:
+                def __buffer__(self, flags):
+                    mutate(seq)
+                    return memoryview(b'x')
+            seq = [b'a', Item(), b'c']
+            return seq
+
+        for sep in (self.type2test(b''), self.type2test(b'::')):
+            with self.subTest(sep=sep):
+                # Changing the list length is reported as a RuntimeError.
+                seq = make_seq(lambda seq: seq.clear())
+                self.assertRaises(RuntimeError, sep.join, seq)
+
+                # The list length is unchanged, so the size-change recheck
+                # cannot fire: only keeping the item alive avoids the crash.
+                def replace(seq):
+                    seq[1] = b'z'
+                seq = make_seq(replace)
+                self.assertEqual(sep.join(seq), sep.join([b'a', b'x', b'c']))
 
     def test_count(self):
         b = self.type2test(b'mississippi')
@@ -877,6 +903,13 @@ class BaseBytesTest:
         b = self.type2test(b'mississippi')
         self.assertEqual(b.replace(b'i', b'a'), b'massassappa')
         self.assertEqual(b.replace(b'ss', b'x'), b'mixixippi')
+
+    def test_replace_count_keyword(self):
+        b = self.type2test(b'aa')
+        self.assertEqual(b.replace(b'a', b'b', count=0), b'aa')
+        self.assertEqual(b.replace(b'a', b'b', count=1), b'ba')
+        self.assertEqual(b.replace(b'a', b'b', count=2), b'bb')
+        self.assertEqual(b.replace(b'a', b'b', count=3), b'bb')
 
     def test_replace_int_error(self):
         self.assertRaises(TypeError, self.type2test(b'a b').replace, 32, b'')
@@ -2363,12 +2396,19 @@ class FixedStringTest(test.string_tests.BaseTest):
 
     contains_bytes = True
 
+    def test_mixed_cmp(self):
+        a = self.type2test(b'ab')
+        for t in bytes, bytearray, BytesSubclass, ByteArraySubclass:
+            with self.subTest(t.__name__):
+                self._assert_cmp(a, t(b'ab'), 0)
+                self._assert_cmp(a, t(b'a'), 1)
+                self._assert_cmp(a, t(b'ac'), -1)
+
 class ByteArrayAsStringTest(FixedStringTest, unittest.TestCase):
     type2test = bytearray
 
 class BytesAsStringTest(FixedStringTest, unittest.TestCase):
     type2test = bytes
-
 
 class SubclassTest:
 
@@ -2686,10 +2726,6 @@ class FreeThreadingTest(unittest.TestCase):
             b.wait()
             a += c
 
-        def irepeat(b, a):  # MODIFIES!
-            b.wait()
-            a *= 2
-
         def subscript(b, a):
             b.wait()
             try: assert a[0] != 0xdd
@@ -2823,9 +2859,10 @@ class FreeThreadingTest(unittest.TestCase):
 
         check([clear] + [repeat] * 10)
         check([clear] + [iconcat] * 10)
-        check([clear] + [irepeat] * 10)
         check([clear] + [ass_subscript] * 10)
         check([clear] + [repr_] * 10)
+        # gh-148605: Do not test "a *= 2" since it allocates up to 4 GiB using
+        # 10 threads
 
         # value errors
 
@@ -2908,6 +2945,22 @@ class FreeThreadingTest(unittest.TestCase):
             check([iter_next] + [iter_reduce] * 10, iter(ba))  # for tsan
             check([iter_next] + [iter_setstate] * 10, iter(ba))  # for tsan
 
+    @unittest.skipUnless(support.Py_GIL_DISABLED, 'this test can only possibly fail with GIL disabled')
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_free_threading_bytearray_resize(self):
+        def resize_stress(ba):
+            for _ in range(1000):
+                try:
+                    ba.resize(1000)
+                    ba.resize(1)
+                except (BufferError, ValueError):
+                    pass
+
+        ba = bytearray(100)
+        threads = [threading.Thread(target=resize_stress, args=(ba,)) for _ in range(4)]
+        with threading_helper.start_threads(threads):
+            pass
 
 if __name__ == "__main__":
     unittest.main()

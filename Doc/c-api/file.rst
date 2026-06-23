@@ -2,7 +2,7 @@
 
 .. _fileobjects:
 
-File Objects
+File objects
 ------------
 
 .. index:: pair: object; file
@@ -123,9 +123,12 @@ the :mod:`io` APIs instead.
 
    Write object *obj* to file object *p*.  The only supported flag for *flags* is
    :c:macro:`Py_PRINT_RAW`; if given, the :func:`str` of the object is written
-   instead of the :func:`repr`.  Return ``0`` on success or ``-1`` on failure; the
-   appropriate exception will be set.
+   instead of the :func:`repr`.
 
+   If *obj* is ``NULL``, write the string ``"<NULL>"``.
+
+   Return ``0`` on success or ``-1`` on failure; the
+   appropriate exception will be set.
 
 .. c:function:: int PyFile_WriteString(const char *s, PyObject *p)
 
@@ -133,11 +136,12 @@ the :mod:`io` APIs instead.
    failure; the appropriate exception will be set.
 
 
-Deprecated API
-^^^^^^^^^^^^^^
+Soft-deprecated API
+^^^^^^^^^^^^^^^^^^^
 
+.. soft-deprecated:: 3.15
 
-These are :term:`soft deprecated` APIs that were included in Python's C API
+These are APIs that were included in Python's C API
 by mistake. They are documented solely for completeness; use other
 ``PyFile*`` APIs instead.
 
