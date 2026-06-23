@@ -4075,6 +4075,23 @@ class TestExtractionFilters(unittest.TestCase):
         with self.check_context(arc.open(errorlevel='boo!'), filtererror_filter):
             self.expect_exception(TypeError)  # errorlevel is not int
 
+    def test_getmembers_big_size(self):
+        # gh-151981: A loop in seek() for streaming files tried to read the
+        # declared number of blocks even at EOF
+        for format in [tarfile.GNU_FORMAT, tarfile.PAX_FORMAT]:
+            with self.subTest(format=format):
+                tinfo = tarfile.TarInfo("huge-file")
+                tinfo.size = 1 << 64
+                bio = io.BytesIO()
+                # Write header without data
+                bio.write(tinfo.tobuf(format))
+
+                # Reset & try to get contents
+                bio.seek(0)
+                with tarfile.open(fileobj=bio, mode="r|") as tar:
+                    with self.assertRaises(tarfile.ReadError):
+                        tar.getmembers()
+
 
 class OffsetValidationTests(unittest.TestCase):
     tarname = tmpname
