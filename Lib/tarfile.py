@@ -546,7 +546,9 @@ class _Stream:
         if pos - self.pos >= 0:
             blocks, remainder = divmod(pos - self.pos, self.bufsize)
             for i in range(blocks):
-                self.read(self.bufsize)
+                data = self.read(self.bufsize)
+                if not data:
+                    break
             self.read(remainder)
         else:
             raise StreamError("seeking backwards is not allowed")
