@@ -4461,6 +4461,30 @@ class TestExtractionFilters(unittest.TestCase):
                     self.expect_file("c", symlink_to='b')
 
     @symlink_test
+    def test_sneaky_hardlink_fallback_deep(self):
+        # (CVE-2026-11940)
+        with ArchiveMaker() as arc:
+            arc.add("a/b/s", symlink_to=os.path.join("..", "escape"))
+            arc.add("s", hardlink_to=os.path.join("a", "b", "s"))
+
+        with self.check_context(arc.open(), 'data'):
+            e = self.expect_exception(
+                tarfile.LinkFallbackError,
+                "link 's' would be extracted as a copy of "
+                + "'a/b/s', which was rejected")
+            self.assertIsInstance(e.__cause__,
+                                  tarfile.LinkOutsideDestinationError)
+
+        for filter in 'tar', 'fully_trusted':
+            with self.subTest(filter), self.check_context(arc.open(), filter):
+                if not os_helper.can_symlink():
+                    self.expect_file("a/")
+                    self.expect_file("a/b/")
+                else:
+                    self.expect_file("a/b/s", symlink_to=os.path.join('..', 'escape'))
+                    self.expect_file("s", symlink_to=os.path.join('..', 'escape'))
+
+    @symlink_test
     def test_exfiltration_via_symlink(self):
         # (CVE-2025-4138)
         # Test changing symlinks that result in a symlink pointing outside
@@ -4877,6 +4901,22 @@ class TestExtractionFilters(unittest.TestCase):
 
         with self.check_context(arc.open(errorlevel='boo!'), filtererror_filter):
             self.expect_exception(TypeError)  # errorlevel is not int
+
+    @support.subTests('format', [tarfile.GNU_FORMAT, tarfile.PAX_FORMAT])
+    def test_getmembers_big_size(self, format):
+        # gh-151981: A loop in seek() for streaming files tried to read the
+        # declared number of blocks even at EOF
+        tinfo = tarfile.TarInfo("huge-file")
+        tinfo.size = 1 << 64
+        bio = io.BytesIO()
+        # Write header without data
+        bio.write(tinfo.tobuf(format))
+
+        # Reset & try to get contents
+        bio.seek(0)
+        with tarfile.open(fileobj=bio, mode="r|") as tar:
+            with self.assertRaises(tarfile.ReadError):
+                tar.getmembers()
 
 
 class OverwriteTests(archiver_tests.OverwriteTests, unittest.TestCase):
