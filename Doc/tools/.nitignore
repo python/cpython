@@ -6,7 +6,6 @@ Doc/c-api/init_config.rst
 Doc/c-api/intro.rst
 Doc/c-api/stable.rst
 Doc/library/ast.rst
-Doc/library/asyncio-extending.rst
 Doc/library/email.charset.rst
 Doc/library/email.parser.rst
 Doc/library/http.cookiejar.rst
