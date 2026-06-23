@@ -117,7 +117,7 @@ The :mod:`!csv` module defines the following functions:
           spamwriter.writerow(['Spam'] * 5 + ['Baked Beans'])
           spamwriter.writerow(['Spam', 'Lovely Spam', 'Wonderful Spam'])
 
-   The example writes :file:`eggs.csv` with this content:
+   which writes :file:`eggs.csv` containing:
 
    .. code-block:: text
 
@@ -250,7 +250,7 @@ The :mod:`!csv` module defines the following classes:
            writer.writerow({'first_name': 'Lovely', 'last_name': 'Spam'})
            writer.writerow({'first_name': 'Wonderful', 'last_name': 'Spam'})
 
-   The example writes :file:`names.csv` with this content:
+   which writes :file:`names.csv` containing:
 
    .. code-block:: text
 
