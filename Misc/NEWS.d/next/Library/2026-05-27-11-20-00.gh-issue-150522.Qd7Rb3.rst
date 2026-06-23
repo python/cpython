@@ -1,3 +1,3 @@
-:func:`http.cookiejar.domain_match` now requires the second domain to be a
+``http.cookiejar.domain_match`` now requires the second domain to be a
 suffix of the first instead of merely an interior substring, so a host such
 as ``www.example.com.evil`` no longer domain-matches ``.example.com``.
