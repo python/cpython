@@ -1,6 +1,7 @@
 import dis
 import os.path
 import re
+import signal
 import subprocess
 import sys
 import sysconfig
@@ -48,6 +49,24 @@ def normalize_trace_output(output):
         raise AssertionError(
             "tracer produced unparsable output:\n{}".format(output)
         )
+
+
+USE_PROCESS_GROUP = (hasattr(os, "setsid") and hasattr(os, "killpg"))
+
+def create_process_group(*args, **kwargs):
+    if USE_PROCESS_GROUP:
+        kwargs['start_new_session'] = True
+    return subprocess.Popen(*args, **kwargs)
+
+def kill_process_group(proc):
+    if USE_PROCESS_GROUP:
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+    else:
+        proc.kill()
+    proc.communicate()  # Clean up
 
 
 class TraceBackend:
@@ -205,7 +224,7 @@ gc__done:1""",
         program = self.PROGRAMS[name].format(python=sys.executable)
 
         try:
-            proc = subprocess.Popen(
+            proc = create_process_group(
                 ["bpftrace", "-e", program, "-c", " ".join(subcommand)],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -213,7 +232,7 @@ gc__done:1""",
             )
             stdout, stderr = proc.communicate(timeout=60)
         except subprocess.TimeoutExpired:
-            proc.kill()
+            kill_process_group(proc)
             raise AssertionError("bpftrace timed out")
         except (FileNotFoundError, PermissionError) as e:
             raise unittest.SkipTest(f"bpftrace not available: {e}")
@@ -243,7 +262,7 @@ gc__done:1""",
         # Check if bpftrace is available and can attach to USDT probes
         program = f'usdt:{sys.executable}:python:function__entry {{ printf("probe: success\\n"); exit(); }}'
         try:
-            proc = subprocess.Popen(
+            proc = create_process_group(
                 ["bpftrace", "-e", program, "-c", f"{sys.executable} -c pass"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -251,8 +270,7 @@ gc__done:1""",
             )
             stdout, stderr = proc.communicate(timeout=10)
         except subprocess.TimeoutExpired:
-            proc.kill()
-            proc.communicate()  # Clean up
+            kill_process_group(proc)
             raise unittest.SkipTest("bpftrace timed out during usability check")
         except OSError as e:
             raise unittest.SkipTest(f"bpftrace not available: {e}")
@@ -378,11 +396,14 @@ class CheckDtraceProbes(unittest.TestCase):
     def get_readelf_version():
         try:
             cmd = ["readelf", "--version"]
+            # Force the C locale to disable localization.
+            env = dict(os.environ, LC_ALL="C")
             proc = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 universal_newlines=True,
+                env=env,
             )
             with proc:
                 version, stderr = proc.communicate()
@@ -405,12 +426,36 @@ class CheckDtraceProbes(unittest.TestCase):
         return int(match.group(1)), int(match.group(2))
 
     def get_readelf_output(self):
-        command = ["readelf", "-n", sys.executable]
+        binary = sys.executable
+        if sysconfig.get_config_var("Py_ENABLE_SHARED"):
+            lib_dir = sysconfig.get_config_var("LIBDIR")
+            if not lib_dir or sysconfig.is_python_build():
+                lib_dir = os.path.abspath(os.path.dirname(sys.executable))
+
+            lib_names = []
+            for name in (
+                sysconfig.get_config_var("INSTSONAME"),
+                sysconfig.get_config_var("LDLIBRARY"),
+            ):
+                if name and name not in lib_names:
+                    lib_names.append(name)
+
+            if lib_dir:
+                for name in lib_names:
+                    libpython_path = os.path.join(lib_dir, name)
+                    if os.path.exists(libpython_path):
+                        binary = libpython_path
+                        break
+
+        command = ["readelf", "-n", binary]
+        # Force the C locale to disable localization.
+        env = dict(os.environ, LC_ALL="C")
         stdout, _ = subprocess.Popen(
             command,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             universal_newlines=True,
+            env=env,
         ).communicate()
         return stdout
 

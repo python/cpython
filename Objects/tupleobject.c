@@ -954,11 +954,19 @@ tuple___getnewargs___impl(PyTupleObject *self)
     return Py_BuildValue("(N)", tuple_slice(self, 0, Py_SIZE(self)));
 }
 
+
+PyDoc_STRVAR(tuple_class_getitem_doc,
+"Tuples are generic over the types of their contents.\n\n\
+For example, use ``tuple[int, str]`` for a pair whose first element\n\
+is an int and second element is a string.\n\n\
+Tuples also support the form ``tuple[T, ...]`` to indicate\n\
+an arbitrary length tuple of elements of type T.");
+
 static PyMethodDef tuple_methods[] = {
     TUPLE___GETNEWARGS___METHODDEF
     TUPLE_INDEX_METHODDEF
     TUPLE_COUNT_METHODDEF
-    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, tuple_class_getitem_doc},
     {NULL,              NULL}           /* sentinel */
 };
 

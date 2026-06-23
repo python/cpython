@@ -276,7 +276,9 @@ class ParseTest(unittest.TestCase):
                           expat.errors.XML_ERROR_FINISHED)
 
     @support.subTests('encoding', [
-        'utf-8', 'utf-16', 'utf-16be', 'utf-16le',
+        # built-in Expat encodings
+        'iso-8859-1', 'utf-8', 'utf-16', 'utf-16be', 'utf-16le',
+        # 8-bit Python encodings
         'iso8859-1', 'iso8859-2', 'iso8859-3', 'iso8859-4', 'iso8859-5',
         'iso8859-6', 'iso8859-7', 'iso8859-8', 'iso8859-9', 'iso8859-10',
         'iso8859-13', 'iso8859-14', 'iso8859-15', 'iso8859-16',
@@ -288,6 +290,12 @@ class ParseTest(unittest.TestCase):
         'mac-cyrillic', 'mac-greek', 'mac-iceland', 'mac-latin2',
         'mac-roman', 'mac-turkish',
         'koi8-r', 'koi8-t', 'koi8-u', 'kz1048', 'ptcp154',
+        # multi-byte Python encodings
+        "cp932", "cp949", "cp950",
+        "Big5","EUC-JP", "GB2312", "GBK", "johab", "Shift_JIS",
+        'UTF8', 'utf-8-sig',
+        "Big5-HKSCS", "EUC_JIS-2004", "EUC_JISX0213",
+        "Shift_JIS-2004", "Shift_JISX0213",
     ])
     def test_supported_encodings(self, encoding):
         out = self.Outputter()
@@ -305,7 +313,7 @@ class ParseTest(unittest.TestCase):
         ])
 
     @support.subTests('encoding', [
-        'UTF-8', 'utf-8', 'utf-16', 'utf-16le', 'utf-16be',
+        'UTF-8', 'utf-8', 'utf8', 'utf-16', 'utf-16le', 'utf-16be',
         'koi8-u', 'cp1125', 'cp1251', 'iso8859-5', 'mac-cyrillic',
     ])
     def test_supported_encodings2(self, encoding):
@@ -325,14 +333,45 @@ class ParseTest(unittest.TestCase):
         ])
 
     @support.subTests('encoding', [
+        'utf-8', 'utf-16', 'utf-16be', 'utf-16le',
+    ])
+    def test_supported_non_bmp(self, encoding):
+        out = self.Outputter()
+        parser = expat.ParserCreate()
+        self._hookup_callbacks(parser, out)
+        c = '\U00020e6d\U00028e36'
+        data = (f'<?xml version="1.0" encoding="{encoding}"?>\n'
+                f'<root>{c}</root>').encode(encoding)
+        parser.Parse(data, True)
+        self.assertEqual(out.out, [
+            ('XML declaration', ('1.0', encoding, -1)),
+            "Start element: 'root' {}",
+            f'Character data: {c!r}',
+            "End element: 'root'",
+        ])
+
+    @support.subTests('encoding', [
+        'UTF8', 'utf-8-sig',
+        "Big5-HKSCS", "EUC_JIS-2004", "EUC_JISX0213",
+        "Shift_JIS-2004", "Shift_JISX0213",
+    ])
+    def test_unsupported_non_bmp(self, encoding):
+        parser = expat.ParserCreate()
+        c = '\U00020e6d\U00028e36'
+        data = (f'<?xml version="1.0" encoding="{encoding}"?>\n'
+                f'<root>{c}</root>').encode(encoding)
+        with self.assertRaises(expat.ExpatError):
+            parser.Parse(data, True)
+
+    @support.subTests('encoding', [
         'UTF-7',
-        "Big5-HKSCS", "Big5",
-        "cp932", "cp949", "cp950",
-        "EUC_JIS-2004", "EUC_JISX0213", "EUC-JP", "EUC-KR",
-        "GB18030", "GB2312", "GBK",
+        "unicode-escape", "raw-unicode-escape",
+        "EUC-KR",
+        "GB18030",
+        "HZ-GB-2312",
+        "ISO-2022-JP", "ISO-2022-JP-1", "ISO-2022-JP-2004",
+        "ISO-2022-JP-2", "ISO-2022-JP-3", "ISO-2022-JP-EXT",
         "ISO-2022-KR",
-        "johab",
-        "Shift_JIS", "Shift_JIS-2004", "Shift_JISX0213",
     ])
     def test_unsupported_encodings(self, encoding):
         parser = expat.ParserCreate()
@@ -387,6 +426,16 @@ class ParseTest(unittest.TestCase):
         with self.assertRaises(LookupError):
             parser.Parse(data, True)
 
+    @support.subTests('sample,exception', [
+        (b'<x> \xa1</x>', UnicodeDecodeError),  # crashed
+        (b'<x> \xa1</x', UnicodeDecodeError),  # crashed
+        (b'<x> \xa1', expat.ExpatError),
+    ])
+    def test_multibyte_encoding_errors(self, sample, exception):
+        parser = expat.ParserCreate()
+        data = b'<?xml version="1.0" encoding="EUC-JP"?>\n' + sample
+        with self.assertRaises(exception):
+            parser.Parse(data, True)
 
 class NamespaceSeparatorTest(unittest.TestCase):
     def test_legal(self):
@@ -827,7 +876,7 @@ class ChardataBufferTest(unittest.TestCase):
     @support.requires_resource('cpu')
     @support.requires_resource('walltime')
     @support.bigmemtest(size=2**31, memuse=4, dry_run=False)
-    def test_large_character_data_does_not_crash(self):
+    def test_large_character_data_does_not_crash(self, size):
         # See https://github.com/python/cpython/issues/148441
         parser = expat.ParserCreate()
         parser.buffer_text = True
@@ -861,7 +910,7 @@ class ElementDeclHandlerTest(unittest.TestCase):
     def test_deeply_nested_content_model(self):
         # This should raise a RecursionError and not crash.
         # See https://github.com/python/cpython/issues/145986.
-        N = 500_000
+        N = 800_000
         data = (
             b'<!DOCTYPE root [\n<!ELEMENT root '
             + b'(a, ' * N + b'a' + b')' * N

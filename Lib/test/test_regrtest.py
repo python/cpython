@@ -41,7 +41,11 @@ if not support.has_subprocess_support:
 
 ROOT_DIR = os.path.join(os.path.dirname(__file__), '..', '..')
 ROOT_DIR = os.path.abspath(os.path.normpath(ROOT_DIR))
-LOG_PREFIX = r'[0-9]+:[0-9]+:[0-9]+ (?:load avg: [0-9]+\.[0-9]{2} )?'
+LOG_PREFIX = (
+    r'[0-9]+:[0-9]+:[0-9]+ '
+    r'(?:load avg: [0-9]+\.[0-9]{2} )?'
+    r'(?:mem: [0-9]+\.[0-9] (?:MiB|GiB) )?'
+)
 RESULT_REGEX = (
     'passed',
     'failed',
@@ -2283,7 +2287,8 @@ class ArgsTestCase(BaseTestCase):
         proc = subprocess.run(cmd,
                               stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT,
-                              text=True)
+                              text=True,
+                              env=support.make_clean_env())
         self.assertEqual(proc.returncode, 0, proc)
 
     def test_add_python_opts(self):

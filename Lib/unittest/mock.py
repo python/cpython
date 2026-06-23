@@ -24,7 +24,6 @@ __all__ = (
 )
 
 
-import asyncio
 import contextlib
 import io
 import inspect
@@ -3112,6 +3111,10 @@ class ThreadingMixin(Base):
         self._mock_event.set()
 
         return ret_value
+
+    def _increment_mock_call(self, /, *args, **kwargs):
+        with self._mock_calls_events_lock:
+            super()._increment_mock_call(*args, **kwargs)
 
     def wait_until_called(self, *, timeout=_timeout_unset):
         """Wait until the mock object is called.

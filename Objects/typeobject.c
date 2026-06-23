@@ -1594,7 +1594,12 @@ type_set_qualname(PyObject *tp, PyObject *value, void *context)
     }
 
     et = (PyHeapTypeObject*)type;
-    Py_SETREF(et->ht_qualname, Py_NewRef(value));
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    PyObject *old_qualname = et->ht_qualname;
+    et->ht_qualname = Py_NewRef(value);
+    _PyEval_StartTheWorld(interp);
+    Py_DECREF(old_qualname);
     return 0;
 }
 
@@ -3712,9 +3717,9 @@ find_best_base(PyObject *bases)
     for (i = 0; i < n; i++) {
         PyObject *base_proto = PyTuple_GET_ITEM(bases, i);
         if (!PyType_Check(base_proto)) {
-            PyErr_SetString(
+            PyErr_Format(
                 PyExc_TypeError,
-                "bases must be types");
+                "bases must be types; got '%T'", base_proto);
             return NULL;
         }
         PyTypeObject *base_i = (PyTypeObject *)base_proto;
@@ -3788,7 +3793,7 @@ solid_base(PyTypeObject *type)
 // or when __bases__ is re-assigned.  Since the slots are read without atomic
 // operations and without locking, we can only safely update them while the
 // world is stopped.  However, with the world stopped, we are very limited on
-// which APIs can be safely used.  For example, calling _PyObject_HashFast()
+// which APIs can be safely used.  For example, calling _PyObject_HashDictKey()
 // or _PyDict_GetItemRef_KnownHash() are not safe and can potentially cause
 // deadlocks.  Hashing can be re-entrant and _PyDict_GetItemRef_KnownHash can
 // acquire a lock if the dictionary is not owned by the current thread, to
@@ -4162,8 +4167,9 @@ _PyType_CalculateMetaclass(PyTypeObject *metatype, PyObject *bases)
     for (i = 0; i < nbases; i++) {
         tmp = PyTuple_GET_ITEM(bases, i);
         tmptype = Py_TYPE(tmp);
-        if (PyType_IsSubtype(winner, tmptype))
+        if (PyType_IsSubtype(winner, tmptype)) {
             continue;
+        }
         if (PyType_IsSubtype(tmptype, winner)) {
             winner = tmptype;
             continue;
@@ -5524,6 +5530,12 @@ type_from_slots_or_spec(
         }
     }
 
+    /* Calculate best base, and check that all bases are type objects */
+    PyTypeObject *base = find_best_base(bases);  // borrowed ref
+    if (base == NULL) {
+        goto finally;
+    }
+
     /* Calculate the metaclass */
 
     if (!metaclass) {
@@ -5546,11 +5558,6 @@ type_from_slots_or_spec(
         goto finally;
     }
 
-    /* Calculate best base, and check that all bases are type objects */
-    PyTypeObject *base = find_best_base(bases);  // borrowed ref
-    if (base == NULL) {
-        goto finally;
-    }
     // find_best_base() should check Py_TPFLAGS_BASETYPE & raise a proper
     // exception, here we just check its work
     assert(_PyType_HasFeature(base, Py_TPFLAGS_BASETYPE));
@@ -6129,7 +6136,7 @@ PyObject_GetItemData(PyObject *obj)
 static int
 find_name_in_mro(PyTypeObject *type, PyObject *name, _PyStackRef *out)
 {
-    Py_hash_t hash = _PyObject_HashFast(name);
+    Py_hash_t hash = _PyObject_HashDictKey(name);
     if (hash == -1) {
         PyErr_Clear();
         return -1;
@@ -6490,9 +6497,25 @@ set_flags_recursive(PyTypeObject *self, unsigned long mask, unsigned long flags)
 void
 _PyType_SetFlagsRecursive(PyTypeObject *self, unsigned long mask, unsigned long flags)
 {
+    BEGIN_TYPE_LOCK();
+    /* Ideally, changing flags and invalidating the old version tag would
+       happen in one step. But type_modified_unlocked() is re-entrant and
+       cannot run with the world stopped, so we must invalidate first.
+       Immutable/static-builtin types are skipped because
+       set_flags_recursive() does not modify them. */
+    if (!PyType_HasFeature(self, Py_TPFLAGS_IMMUTABLETYPE) &&
+        (self->tp_flags & mask) != flags)
+    {
+        type_modified_unlocked(self);
+    }
+    /* Keep TYPE_LOCK held while waiting for stop-the-world so no thread
+       can reassign a version tag before the flag update. */
+    type_lock_prevent_release();
     types_stop_world();
     set_flags_recursive(self, mask, flags);
     types_start_world();
+    type_lock_allow_release();
+    END_TYPE_LOCK();
 }
 
 /* This is similar to PyObject_GenericGetAttr(),
@@ -7002,7 +7025,7 @@ type_dealloc(PyObject *self)
     Py_XDECREF(et->ht_qualname);
     Py_XDECREF(et->ht_slots);
     if (et->ht_cached_keys) {
-        _PyDictKeys_DecRef(et->ht_cached_keys);
+        _PyDict_RemoveKeysForClass(et);
     }
     Py_XDECREF(et->ht_module);
     PyMem_Free(et->_ht_tpname);
@@ -11311,6 +11334,7 @@ slot_bf_getbuffer(PyObject *self, Py_buffer *buffer, int flags)
 
     wrapper = PyObject_GC_New(PyBufferWrapper, &_PyBufferWrapper_Type);
     if (wrapper == NULL) {
+        PyBuffer_Release(buffer);
         goto fail;
     }
     wrapper->mv = ret;
@@ -12925,7 +12949,8 @@ PyDoc_STRVAR(super_doc,
 "super() -> same as super(__class__, <first argument>)\n"
 "super(type) -> unbound super object\n"
 "super(type, obj) -> bound super object; requires isinstance(obj, type)\n"
-"super(type, type2) -> bound super object; requires issubclass(type2, type)\n"
+"super(type, type2) -> bound super object; requires\n"
+"    issubclass(type2, type)\n"
 "Typical use to call a cooperative superclass method:\n"
 "class C(B):\n"
 "    def meth(self, arg):\n"

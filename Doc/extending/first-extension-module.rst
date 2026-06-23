@@ -164,7 +164,7 @@ Then, create ``meson.build`` containing the following:
 
 .. note::
 
-   See `meson-python documentation <meson-python>`_ for details on
+   See the `meson-python documentation <meson-python_>`_ for details on
    configuration.
 
 Now, build install the *project in the current directory* (``.``) via ``pip``:

@@ -4173,6 +4173,30 @@ class ConfigDictTest(BaseTest):
         # Logger should be enabled, since explicitly mentioned
         self.assertFalse(logger.disabled)
 
+    def test_disable_existing_loggers_preserves_children(self):
+        parent = logging.getLogger('many')
+        child = logging.getLogger('many.child')
+        child.setLevel(logging.CRITICAL)
+        self.assertFalse(child.isEnabledFor(logging.INFO))
+        cousin = logging.getLogger('many-child')
+        for i in range(20):
+            logging.getLogger(f'many-sibling-{i}')
+
+        self.apply_config({
+            'version': 1,
+            'loggers': {
+                'many': {
+                    'level': 'INFO',
+                },
+            },
+        })
+
+        self.assertFalse(parent.disabled)
+        self.assertFalse(child.disabled)
+        self.assertEqual(child.level, logging.NOTSET)
+        self.assertTrue(child.isEnabledFor(logging.INFO))
+        self.assertTrue(cousin.disabled)
+
     def test_111615(self):
         # See gh-111615
         import_helper.import_module('_multiprocessing')  # see gh-113692
@@ -4244,6 +4268,43 @@ class ManagerTest(BaseTest):
         expected = object()
         man.setLogRecordFactory(expected)
         self.assertEqual(man.logRecordFactory, expected)
+
+    @threading_helper.requires_working_threading()
+    def test_getLogger_fast_path_never_returns_unwired_logger(self):
+        # getLogger()'s lock-free fast path returns a logger straight out of
+        # loggerDict, so a logger must be published there only after
+        # _fixupParents() has set its parent; otherwise a concurrent caller
+        # observes it detached from the hierarchy (gh-150818 follow-up).
+        manager = logging.Manager(logging.RootLogger(logging.WARNING))
+        name = 'a.b.c'
+
+        paused = threading.Event()
+        seen = []
+        real_fixup = manager._fixupParents
+
+        # Pause the creating thread between publishing rv and wiring its
+        # parent, then read loggerDict the way the fast path does and snapshot
+        # the parent at that instant (rv is wired in place soon after).
+        def fixup(alogger):
+            paused.set()
+            reader.join()
+            real_fixup(alogger)
+
+        def read():
+            paused.wait()
+            rv = manager.loggerDict.get(name)
+            if rv is not None and not isinstance(rv, logging.PlaceHolder):
+                seen.append(rv.parent)
+
+        reader = threading.Thread(target=read)
+        manager._fixupParents = fixup
+        try:
+            reader.start()
+            manager.getLogger(name)
+        finally:
+            manager._fixupParents = real_fixup
+
+        self.assertNotIn(None, seen)
 
 class ChildLoggerTest(BaseTest):
     def test_child_loggers(self):
@@ -6591,22 +6652,71 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
                     print(tf.read())
         self.assertTrue(found, msg=msg)
 
+    @unittest.skipUnless(hasattr(os.stat_result, 'st_birthtime') or hasattr(os, 'statx'),
+        "st_birthtime and statx() not available or supported by Python on this OS")
+    @support.requires_resource('walltime')
+    def test_rollover_based_on_st_birthtime_only(self):
+        def add_record(message: str) -> None:
+            fh = logging.handlers.TimedRotatingFileHandler(
+                    self.fn, when='S', interval=4, encoding="utf-8", backupCount=1)
+            fmt = logging.Formatter('%(asctime)s %(message)s')
+            fh.setFormatter(fmt)
+            record = logging.makeLogRecord({'msg': message})
+            fh.emit(record)
+            fh.close()
+
+        add_record('testing - initial')
+        self.assertLogFile(self.fn)
+        # Sleep a little over the half of rollover time - and this value
+        # must be over 2 seconds, since this is the mtime resolution on
+        # FAT32 filesystems.
+        time.sleep(2.1)
+        add_record('testing - update before rollover to renew the st_mtime')
+        time.sleep(2.1)    # a little over the half of rollover time
+        add_record('testing - new record supposedly in the new file after rollover')
+
+        # At this point, the log file should be rotated if the rotation
+        # is based on creation time but should be not if it's based on
+        # modification time.
+        found = False
+        now = datetime.datetime.now()
+        GO_BACK = 5 # seconds
+        for secs in range(GO_BACK + 1):
+            prev = now - datetime.timedelta(seconds=secs)
+            fn = self.fn + prev.strftime(".%Y-%m-%d_%H-%M-%S")
+            found = os.path.exists(fn)
+            if found:
+                self.rmfiles.append(fn)
+                break
+        msg = 'No rotated files found, went back %d seconds' % GO_BACK
+        if not found:
+            # print additional diagnostics
+            dn, fn = os.path.split(self.fn)
+            files = [f for f in os.listdir(dn) if f.startswith(fn)]
+            print('Test time: %s' % now.strftime("%Y-%m-%d %H-%M-%S"), file=sys.stderr)
+            print('The only matching files are: %s' % files, file=sys.stderr)
+            for f in files:
+                print('Contents of %s:' % f)
+                path = os.path.join(dn, f)
+                print(os.stat(path))
+                with open(path, 'r') as tf:
+                    print(tf.read())
+        self.assertTrue(found, msg=msg)
+
     def test_rollover_at_midnight(self, weekly=False):
         os_helper.unlink(self.fn)
+        # Emit the first records a little after the beginning of a whole
+        # second, so that their file times fall inside that second and not the
+        # previous one, which would cause an unwanted rollover.
         now = datetime.datetime.now()
-        atTime = now.time()
-        if not 0.1 < atTime.microsecond/1e6 < 0.9:
-            # The test requires all records to be emitted within
-            # the range of the same whole second.
-            time.sleep((0.1 - atTime.microsecond/1e6) % 1.0)
+        if not 0.1 < now.microsecond/1e6 < 0.9:
+            time.sleep((0.1 - now.microsecond/1e6) % 1.0)
             now = datetime.datetime.now()
-            atTime = now.time()
-        atTime = atTime.replace(microsecond=0)
         fmt = logging.Formatter('%(asctime)s %(message)s')
         when = f'W{now.weekday()}' if weekly else 'MIDNIGHT'
         for i in range(3):
             fh = logging.handlers.TimedRotatingFileHandler(
-                self.fn, encoding="utf-8", when=when, atTime=atTime)
+                self.fn, encoding="utf-8", when=when, atTime=now.time())
             fh.setFormatter(fmt)
             r2 = logging.makeLogRecord({'msg': f'testing1 {i}'})
             fh.emit(r2)
@@ -6616,7 +6726,13 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
             for i, line in enumerate(f):
                 self.assertIn(f'testing1 {i}', line)
 
-        os.utime(self.fn, (now.timestamp() - 1,)*2)
+        # The creation time, used to compute the rollover time, cannot be
+        # changed, so the rollover cannot be forced by back-dating the file.
+        # Wait until the clock reaches a rollover time set one second ahead.
+        rollover = int(time.time()) + 1
+        atTime = datetime.datetime.fromtimestamp(rollover).time()
+        while time.time() < rollover:
+            time.sleep(rollover - time.time())
         for i in range(2):
             fh = logging.handlers.TimedRotatingFileHandler(
                 self.fn, encoding="utf-8", when=when, atTime=atTime)
@@ -6624,7 +6740,8 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
             r2 = logging.makeLogRecord({'msg': f'testing2 {i}'})
             fh.emit(r2)
             fh.close()
-        rolloverDate = now - datetime.timedelta(days=7 if weekly else 1)
+        rolloverDate = (datetime.datetime.fromtimestamp(rollover)
+                        - datetime.timedelta(days=7 if weekly else 1))
         otherfn = f'{self.fn}.{rolloverDate:%Y-%m-%d}'
         self.assertLogFile(otherfn)
         with open(self.fn, encoding="utf-8") as f:

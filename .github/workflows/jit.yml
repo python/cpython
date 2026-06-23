@@ -64,10 +64,10 @@ jobs:
         include:
           - target: i686-pc-windows-msvc/msvc
             architecture: Win32
-            runner: windows-2025-vs2026
+            runner: windows-2025
           - target: x86_64-pc-windows-msvc/msvc
             architecture: x64
-            runner: windows-2025-vs2026
+            runner: windows-2025
           - target: aarch64-pc-windows-msvc/msvc
             architecture: ARM64
             runner: windows-11-arm
@@ -183,6 +183,9 @@ jobs:
           - name: JIT without optimizations (Debug)
             configure_flags: --enable-experimental-jit --with-pydebug
             test_env: "PYTHON_UOPS_OPTIMIZE=0"
+          - name: JIT with stress testing (Debug)
+            configure_flags: --enable-experimental-jit --with-pydebug
+            test_env: "PYTHON_JIT_STRESS=1"
           - name: JIT with tail calling interpreter
             configure_flags: --enable-experimental-jit --with-tail-call-interp --with-pydebug
             use_clang: true

@@ -63,12 +63,26 @@ The :mod:`!xml.parsers.expat` module contains two functions:
 
 .. function:: ParserCreate(encoding=None, namespace_separator=None)
 
-   Creates and returns a new :class:`xmlparser` object.   *encoding*, if specified,
-   must be a string naming the encoding  used by the XML data.  Expat doesn't
-   support as many encodings as Python does, and its repertoire of encodings can't
-   be extended; it supports UTF-8, UTF-16, ISO-8859-1 (Latin1), and ASCII.  If
-   *encoding* [1]_ is given it will override the implicit or explicit encoding of the
-   document.
+   Creates and returns a new :class:`xmlparser` object.
+   *encoding* [1]_, if specified, must be a string naming the encoding
+   used by the XML data.
+   If it is given it will override the implicit or explicit encoding
+   of the document.
+
+   .. impl-detail::
+
+      Expat natively understands and processes UTF-8, UTF-16, UTF-16BE,
+      UTF-16LE, ISO-8859-1, and US-ASCII.
+      For other encodings (including aliases like Latin1 and ASCII) it
+      falls back to Python.
+      It supports most of 8-bit encodings and many multi-byte encodings
+      like Shift_JIS, although only BMP characters (``U+0000-U+FFFF``)
+      are supported with non-native encodings (this restriction is also
+      applied to aliases like UTF8).
+      These restrictions only apply if *encoding* is not given.
+
+      .. versionchanged:: next
+         Added support for multi-byte encodings.
 
    .. _xmlparser-non-root:
 
@@ -112,7 +126,6 @@ The :mod:`!xml.parsers.expat` module contains two functions:
    the :class:`xmlparser` instance returned can only be used to parse a single
    XML document.  Call ``ParserCreate`` for each document to provide unique
    parser instances.
-
 
 .. seealso::
 
@@ -1083,9 +1096,11 @@ The ``errors`` module has the following attributes:
 
 .. rubric:: Footnotes
 
-.. [1] The encoding string included in XML output should conform to the
-   appropriate standards. For example, "UTF-8" is valid, but "UTF8" is
-   not. See https://www.w3.org/TR/2006/REC-xml11-20060816/#NT-EncodingDecl
+.. [1] The encoding string included in XML output should conform to
+   the appropriate standards. For example, "UTF-8" is valid, but
+   "UTF8" is not valid in an XML document's declaration, even though
+   Python accepts it as an encoding name.
+   See https://www.w3.org/TR/2006/REC-xml11-20060816/#NT-EncodingDecl
    and https://www.iana.org/assignments/character-sets/character-sets.xhtml.
 
 
