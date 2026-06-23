@@ -223,7 +223,7 @@ The grammar for a replacement field is as follows:
    attribute_name: <any source character except "{", "}", "[", ".", "!", or ":"> +
    element_index: `decimal_number` | `index_string`
    index_string: <any source character except "]"> +
-   decimal_number: <a string of one or more Unicode decimal digit characters>
+   decimal_number: <any Unicode decimal digit character> +
    conversion: "r" | "s" | "a"
    format_spec: `format-spec:format_spec`
 
