@@ -789,6 +789,7 @@ class RadiobuttonTest(AbstractLabelTest, unittest.TestCase):
         self.assertEqual(str(cbtn['variable']), str(cbtn2['variable']))
 
 
+@add_configure_tests(StandardTtkOptionsTests)
 class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
     OPTIONS = (
         'class', 'compound', 'cursor', 'direction',
