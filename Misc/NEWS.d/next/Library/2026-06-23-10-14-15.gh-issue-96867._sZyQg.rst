@@ -1,0 +1,2 @@
+Fix :mod:`zipapp` to set executable bits on archives with shebangs based on
+their readable permission bits. Contributed by Xiao Yuan.
