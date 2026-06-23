@@ -941,10 +941,8 @@ _PyPegen_run_parser(Parser *p)
     void *res = _PyPegen_parse(p);
     assert(p->level == 0);
     if (res != NULL && PyErr_Occurred()) {
-        // The parser produced a result but left an exception pending, which
-        // happens when an allocation fails in a path the parser recovers from
-        // (for example while memoizing).  The result cannot be trusted, so
-        // discard it and let the pending exception (a MemoryError) propagate.
+        // Discard a result returned with an exception still pending
+        // (e.g. a MemoryError from a recovered-from allocation failure).
         return NULL;
     }
     if (res == NULL) {
