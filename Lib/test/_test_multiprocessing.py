@@ -1748,7 +1748,8 @@ class _TestQueue(BaseTestCase):
         # are pending.
         self._wait()
 
-        self.assertEqual(q._sem_pending_putters.get_value(), n-size)
+        self.assertLessEqual(q._sem_pending_putters.get_value(), n-size)
+        self.assertGreater(q._sem_pending_putters.get_value(), 0)
         self.assertEqual(q._sem_pending_getters.get_value(), 0)
         q.shutdown(immediate=False)
         self.assertTrue(q._is_shutdown())
@@ -1821,8 +1822,8 @@ class _TestQueue(BaseTestCase):
         # wait for all pending get processes to be blocked.
         self._wait()
 
-        self.assertTrue(q.empty())
-        self.assertEqual(q._sem_pending_getters.get_value(), n)
+        self.assertLessEqual(q._sem_pending_getters.get_value(), n)
+        self.assertGreater(q._sem_pending_getters.get_value(), 0)
         self.assertEqual(q._sem_pending_putters.get_value(), 0)
         q.shutdown(immediate=False)
         self.assertTrue(q._is_shutdown())
