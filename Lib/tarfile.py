@@ -546,8 +546,8 @@ class _Stream:
         if pos - self.pos >= 0:
             blocks, remainder = divmod(pos - self.pos, self.bufsize)
             for i in range(blocks):
-                size = self.read(self.bufsize)
-                if not size:
+                data = self.read(self.bufsize)
+                if not data:
                     break
             self.read(remainder)
         else:
