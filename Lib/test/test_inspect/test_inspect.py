@@ -6660,9 +6660,13 @@ class TestModuleCLI(unittest.TestCase):
         # assert_python_ok() runs the subprocess in isolated mode (-I), which
         # ignores PYTHONPYCACHEPREFIX, so compute the expected cached path the
         # same way (i.e. without any pycache prefix) to stay independent of the
-        # environment the test suite is run in.
-        with support.swap_attr(sys, 'pycache_prefix', None):
-            cached = importlib.util.cache_from_source(module.__spec__.origin)
+        # environment the test suite is run in.  For frozen modules (e.g.
+        # ntpath on Windows) there is no cached path; keep it None.
+        if module.__spec__.cached is not None:
+            with support.swap_attr(sys, 'pycache_prefix', None):
+                cached = importlib.util.cache_from_source(module.__spec__.origin)
+        else:
+            cached = None
         # Full rendering check on the expected output
         expected_lines = [
             f'Target: {defining_target} (looked up as "{cli_target}")',
