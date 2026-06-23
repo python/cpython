@@ -745,6 +745,47 @@ class Misc:
         self.tk.call(('tk_setPalette',)
               + _flatten(args) + _flatten(list(kw.items())))
 
+    def tk_appname(self, name=None):
+        """Query or set the name used to communicate with this application
+        through the send command.
+
+        With no argument, return the current name; otherwise change it to NAME
+        and return the actual name set (which may have a suffix appended to
+        keep it unique)."""
+        if name is None:
+            return self.tk.call('tk', 'appname')
+        return self.tk.call('tk', 'appname', name)
+
+    def tk_useinputmethods(self, boolean=None, *, displayof=0):
+        """Query or set whether Tk uses the X Input Methods (XIM) for filtering
+        events, and return the resulting state.
+
+        This is significant only on X11; if XIM support is not available it
+        always returns False."""
+        args = ('tk', 'useinputmethods') + self._displayof(displayof)
+        if boolean is not None:
+            args += (boolean,)
+        return self.tk.getboolean(self.tk.call(args))
+
+    def tk_caret(self, *, x=None, y=None, height=None):
+        """Set or query the caret location for this widget's display.
+
+        The caret is the per-display insertion position used for global focus
+        indication (for accessibility) and for placing the input method
+        (XIM or IME) window.  With no argument, return the current location as
+        a dictionary with keys 'x', 'y' and 'height'; otherwise update the
+        given coordinates."""
+        args = ('tk', 'caret', self._w)
+        for option, value in (('-x', x), ('-y', y), ('-height', height)):
+            if value is not None:
+                args += (option, value)
+        if len(args) > 3:
+            self.tk.call(args)
+        else:
+            values = self.tk.splitlist(self.tk.call(args))
+            return {values[i][1:]: self.tk.getint(values[i + 1])
+                    for i in range(0, len(values), 2)}
+
     def tk_scaling(self, number=None, *, displayof=0):
         """Query or set the scaling factor used by Tk to convert between
         physical units and pixels.
@@ -1538,13 +1579,26 @@ class Misc:
         else:
             self.tk.call('bindtags', self._w, tagList)
 
-    def _bind(self, what, sequence, func, add, needcleanup=1):
+    def _delete_bind_commands(self, *what):
+        lines = self.tk.call(what).split('\n')
+        p = re.compile(r'if \{"\[([^ ]+) .*\]" == "break"\} break')
+        for line in lines:
+            m = p.fullmatch(line)
+            if m:
+                funcid = m[1]
+                try:
+                    self.deletecommand(funcid)
+                except TclError:
+                    pass
+
+    def _bind(self, what, sequence, func, add):
         """Internal function."""
         if isinstance(func, str):
             self.tk.call(what + (sequence, func))
         elif func:
-            funcid = self._register(func, self._substitute,
-                        needcleanup)
+            if not add:
+                self._delete_bind_commands(*what, sequence)
+            funcid = self._register(func, self._substitute, needcleanup=True)
             cmd = ('%sif {"[%s %s]" == "break"} break\n'
                    %
                    (add and '+' or '',
@@ -1610,6 +1664,7 @@ class Misc:
 
     def _unbind(self, what, funcid=None):
         if funcid is None:
+            self._delete_bind_commands(*what)
             self.tk.call(*what, '')
         else:
             lines = self.tk.call(what).split('\n')
@@ -1626,7 +1681,7 @@ class Misc:
         An additional boolean parameter ADD specifies whether FUNC will
         be called additionally to the other bound function or whether
         it will replace the previous function. See bind for the return value."""
-        return self._root()._bind(('bind', 'all'), sequence, func, add, True)
+        return self._root()._bind(('bind', 'all'), sequence, func, add)
 
     def unbind_all(self, sequence):
         """Unbind for all widgets for event SEQUENCE all functions."""
@@ -1640,7 +1695,7 @@ class Misc:
         whether it will replace the previous function. See bind for
         the return value."""
 
-        return self._root()._bind(('bind', className), sequence, func, add, True)
+        return self._root()._bind(('bind', className), sequence, func, add)
 
     def unbind_class(self, className, sequence):
         """Unbind for all widgets with bindtag CLASSNAME for event SEQUENCE
@@ -4461,20 +4516,23 @@ class OptionMenu(Menubutton):
         """Construct an optionmenu widget with the parent MASTER, with
         the option textvariable set to VARIABLE, the initially selected
         value VALUE, the other menu values VALUES and an additional
-        keyword argument command."""
-        kw = {"borderwidth": 2, "textvariable": variable,
-              "indicatoron": 1, "relief": RAISED, "anchor": "c",
-              "highlightthickness": 2, "name": kwargs.pop("name", None)}
+        keyword argument command.
+
+        Other keyword arguments are passed to the underlying menubutton
+        and may override its default appearance."""
+        name = kwargs.pop("name", None)
+        callback = kwargs.pop("command", None)
+        # Default appearance, which may be overridden by keyword arguments.
+        kw = {"borderwidth": 2, "indicatoron": 1, "relief": RAISED,
+              "anchor": "c", "highlightthickness": 2}
+        kw.update(kwargs)
+        # These options are controlled by OptionMenu itself.
+        kw["textvariable"] = variable
+        kw["name"] = name
         Widget.__init__(self, master, "menubutton", kw)
         self.widgetName = 'tk_optionMenu'
         menu = self.__menu = Menu(self, name="menu", tearoff=0)
         self.menuname = menu._w
-        # 'command' is the only supported keyword
-        callback = kwargs.get('command')
-        if 'command' in kwargs:
-            del kwargs['command']
-        if kwargs:
-            raise TclError('unknown option -'+next(iter(kwargs)))
         menu.add_command(label=value,
                  command=_setit(variable, value, callback))
         for v in values:
@@ -4692,25 +4750,58 @@ class PhotoImage(Image):
             options.extend(('-compositingrule', compositingrule))
         self.tk.call(self.name, 'copy', sourceImage, *options)
 
-    def get(self, x, y):
-        """Return the color (red, green, blue) of the pixel at X,Y."""
-        return self.tk.call(self.name, 'get', x, y)
+    @staticmethod
+    def _metadata(metadata):
+        # A Tcl dict is a flat list of alternating keys and values.  A Python
+        # dict passed directly would expand to its keys only, so flatten it.
+        flat = ()
+        for key, value in metadata.items():
+            flat += (key, value)
+        return flat
 
-    def put(self, data, to=None):
+    def get(self, x, y, *, withalpha=False):
+        """Return the color of the pixel at X,Y as a tuple of its red, green
+        and blue components.
+
+        If WITHALPHA is true, the returned tuple has a fourth element giving
+        the alpha (opacity) value of the pixel.  This requires Tcl/Tk 9.0 or
+        newer.
+        """
+        args = (self.name, 'get', x, y)
+        if withalpha:
+            args += ('-withalpha',)
+        return self.tk.call(args)
+
+    def put(self, data, to=None, *, format=None, metadata=None):
         """Put row formatted colors to image starting from
-        position TO, e.g. image.put("{red green} {blue yellow}", to=(4,6))"""
+        position TO, e.g. image.put("{red green} {blue yellow}", to=(4,6))
+
+        The FORMAT option specifies the format of the image DATA, so that only
+        image file format handlers whose names begin with it are tried.
+
+        The METADATA option, a dictionary passed to the image format driver,
+        requires Tcl/Tk 9.0 or newer.
+        """
         args = (self.name, 'put', data)
+        if format is not None:
+            args += ('-format', format)
+        if metadata is not None:
+            args += ('-metadata', self._metadata(metadata))
         if to:
             if to[0] == '-to':
                 to = to[1:]
-            args = args + ('-to',) + tuple(to)
+            args += ('-to',) + tuple(to)
         self.tk.call(args)
 
-    def read(self, filename, format=None, *, from_coords=None, to=None, shrink=False):
+    def read(self, filename, format=None, *, from_coords=None, to=None,
+             shrink=False, metadata=None):
         """Reads image data from the file named FILENAME into the image.
 
         The FORMAT option specifies the format of the image data in the
         file.
+
+        The METADATA option, a dictionary passed to the image format driver,
+        requires Tcl/Tk 9.0 or newer.
 
         The FROM_COORDS option specifies a rectangular sub-region of the image
         file data to be copied to the destination image.  It must be a tuple
@@ -4731,6 +4822,8 @@ class PhotoImage(Image):
         options = ()
         if format is not None:
             options += ('-format', format)
+        if metadata is not None:
+            options += ('-metadata', self._metadata(metadata))
         if from_coords is not None:
             options += ('-from', *from_coords)
         if shrink:
@@ -4740,12 +4833,15 @@ class PhotoImage(Image):
         self.tk.call(self.name, 'read', filename, *options)
 
     def write(self, filename, format=None, from_coords=None, *,
-              background=None, grayscale=False):
+              background=None, grayscale=False, metadata=None):
         """Writes image data from the image to a file named FILENAME.
 
         The FORMAT option specifies the name of the image file format
         handler to be used to write the data to the file.  If this option
         is not given, the format is guessed from the file extension.
+
+        The METADATA option, a dictionary passed to the image format driver,
+        requires Tcl/Tk 9.0 or newer.
 
         The FROM_COORDS option specifies a rectangular region of the image
         to be written to the image file.  It must be a tuple or a list of 1
@@ -4765,6 +4861,8 @@ class PhotoImage(Image):
         options = ()
         if format is not None:
             options += ('-format', format)
+        if metadata is not None:
+            options += ('-metadata', self._metadata(metadata))
         if from_coords is not None:
             options += ('-from', *from_coords)
         if grayscale:
@@ -4774,8 +4872,11 @@ class PhotoImage(Image):
         self.tk.call(self.name, 'write', filename, *options)
 
     def data(self, format=None, *, from_coords=None,
-             background=None, grayscale=False):
+             background=None, grayscale=False, metadata=None):
         """Returns image data.
+
+        The METADATA option, a dictionary passed to the image format driver,
+        requires Tcl/Tk 9.0 or newer.
 
         The FORMAT option specifies the name of the image file format
         handler to be used.  If this option is not given, this method uses
@@ -4803,6 +4904,8 @@ class PhotoImage(Image):
         options = ()
         if format is not None:
             options += ('-format', format)
+        if metadata is not None:
+            options += ('-metadata', self._metadata(metadata))
         if from_coords is not None:
             options += ('-from', *from_coords)
         if grayscale:

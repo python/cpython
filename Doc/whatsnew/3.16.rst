@@ -173,6 +173,11 @@ tkinter
   synchronization of the displayed view with the underlying text.
   (Contributed by Serhiy Storchaka in :gh:`151675`.)
 
+* Added the :meth:`ttk.Style.theme_styles
+  <tkinter.ttk.Style.theme_styles>` method which returns the list of styles
+  defined in a theme.
+  (Contributed by Serhiy Storchaka in :gh:`151920`.)
+
 * Added new :class:`!tkinter.Canvas` methods :meth:`~tkinter.Canvas.rchars`
   which replaces the text or coordinates of canvas items, and
   :meth:`~tkinter.Canvas.rotate` which rotates the coordinates of canvas items.
@@ -194,10 +199,42 @@ tkinter
   badge) and :meth:`~tkinter.Wm.wm_stackorder` (toplevel stacking order).
   (Contributed by Serhiy Storchaka in :gh:`151874`.)
 
+* Added the :meth:`~tkinter.Misc.tk_appname`,
+  :meth:`~tkinter.Misc.tk_useinputmethods` and :meth:`~tkinter.Misc.tk_caret`
+  methods, exposing the application send name, the X Input Methods state and
+  the input method caret location.
+  (Contributed by Serhiy Storchaka in :gh:`151886`.)
+
+* Added support for more options in :class:`!tkinter.PhotoImage` methods: the
+  *format* parameter of :meth:`~tkinter.PhotoImage.put`, the *metadata*
+  parameter of :meth:`~tkinter.PhotoImage.put`, :meth:`~tkinter.PhotoImage.read`,
+  :meth:`~tkinter.PhotoImage.write` and :meth:`~tkinter.PhotoImage.data`, and
+  the *withalpha* parameter of :meth:`~tkinter.PhotoImage.get`.
+  (Contributed by Serhiy Storchaka in :gh:`151890`.)
+
 * Added the :meth:`~tkinter.PhotoImage.redither` method which recalculates the
   dithered image when its data was supplied in pieces.
   (Contributed by Serhiy Storchaka in :gh:`151888`.)
 
+* :class:`tkinter.OptionMenu` now accepts arbitrary :class:`!tkinter.Menubutton`
+  options as keyword arguments, which can also override its default appearance.
+  (Contributed by Serhiy Storchaka in :gh:`101284`.)
+
+* The :mod:`tkinter.simpledialog` dialogs were modernized to match the look
+  and feel of the native Tk dialogs.
+  :class:`!tkinter.simpledialog.SimpleDialog` and the
+  :func:`~tkinter.simpledialog.askinteger`,
+  :func:`~tkinter.simpledialog.askfloat` and
+  :func:`~tkinter.simpledialog.askstring` dialogs are now built from the themed
+  :mod:`tkinter.ttk` widgets instead of the classic :mod:`tkinter` widgets;
+  the :class:`!tkinter.simpledialog.Dialog` base class still defaults to the
+  classic widgets for compatibility.  Both :class:`!Dialog` and
+  :class:`!SimpleDialog` gained a *use_ttk* parameter that selects between the
+  classic Tk widgets and the themed ttk widgets.  :class:`!SimpleDialog` also
+  gained *bitmap* and
+  *detail* parameters, draws the standard icons with themed images in the
+  ttk version, and accepts mappings of button options as *buttons* entries.
+  (Contributed by Serhiy Storchaka in :gh:`59396`.)
 
 xml
 ---

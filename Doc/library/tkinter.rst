@@ -1955,6 +1955,37 @@ Base and mixin classes
       color change when the mouse passes over a slider).
       Return the resulting setting.
 
+   .. method:: tk_appname(name=None)
+
+      Query or set the name used to communicate with this application through
+      the ``send`` command.
+      With no argument, return the current name; otherwise change it to *name*
+      and return the actual name set, which may have a suffix appended to keep
+      it unique among the applications on the display.
+
+      .. versionadded:: next
+
+   .. method:: tk_useinputmethods(boolean=None, *, displayof=0)
+
+      Query or set whether Tk uses the X Input Methods (XIM) for filtering
+      events, and return the resulting state.
+      This is significant only on X11; if XIM support is not available it
+      always returns ``False``.
+
+      .. versionadded:: next
+
+   .. method:: tk_caret(*, x=None, y=None, height=None)
+
+      Set or query the caret location for the widget's display.
+      The caret is the per-display insertion position used for global focus
+      indication (for accessibility) and for placing the input method
+      (XIM or IME) window.
+      With no argument, return the current location as a dictionary with the
+      keys ``'x'``, ``'y'`` and ``'height'``; otherwise update the given
+      coordinates.
+
+      .. versionadded:: next
+
    .. method:: tk_scaling(number=None, *, displayof=0)
 
       Query or set the scaling factor used by Tk to convert between physical
@@ -4813,6 +4844,8 @@ Widget classes
    is the initial choice, and *values* are the remaining menu entries.
    The keyword argument *command* may be given a callback that is invoked with
    the selected value, and the keyword argument *name* sets the Tk widget name.
+   Other keyword arguments are passed to the underlying :class:`Menubutton`
+   and may override its default appearance.
 
    .. method:: destroy()
 
@@ -4820,6 +4853,9 @@ Widget classes
 
    .. versionchanged:: 3.14
       Added support for the *name* keyword argument.
+
+   .. versionchanged:: next
+      Other :class:`Menubutton` options can now be passed as keyword arguments.
 
 
 
@@ -6151,7 +6187,7 @@ Image classes
 
 
    .. method:: data(format=None, *, from_coords=None, background=None, \
-                    grayscale=False)
+                    grayscale=False, metadata=None)
 
       Return the image data.
 
@@ -6175,16 +6211,27 @@ Image classes
       If *grayscale* is true, the data does not contain color information; all
       pixel data is transformed into grayscale.
 
+      *metadata* is a dictionary passed to the image format driver.
+      It requires Tcl/Tk 9.0 or newer.
+
       .. versionadded:: 3.13
 
+      .. versionchanged:: next
+         Added the *metadata* parameter.
 
-   .. method:: get(x, y)
+
+   .. method:: get(x, y, *, withalpha=False)
 
       Return the color of the pixel at coordinates (*x*, *y*) as an
       ``(r, g, b)`` tuple of three integers between 0 and 255, representing the
       red, green and blue components respectively.
+      If *withalpha* is true, the returned tuple has a fourth element giving
+      the alpha (opacity) value of the pixel.
 
-   .. method:: put(data, to=None)
+      .. versionchanged:: next
+         Added the *withalpha* parameter, which requires Tcl/Tk 9.0 or newer.
+
+   .. method:: put(data, to=None, *, format=None, metadata=None)
 
       Set pixels of the image to the colors given in *data*, which must be a
       string or a nested sequence of horizontal rows of pixel colors (for
@@ -6197,12 +6244,24 @@ Image classes
       bottom-right corner, of the region.
       The default position is ``(0, 0)``.
 
+      *format* specifies the format of the image *data*, so that only image
+      file format handlers whose names begin with it are tried.
+
+      *metadata* is a dictionary passed to the image format driver.
+      It requires Tcl/Tk 9.0 or newer.
+
+      .. versionchanged:: next
+         Added the *format* and *metadata* parameters.
+
    .. method:: read(filename, format=None, *, from_coords=None, to=None, \
-                    shrink=False)
+                    shrink=False, metadata=None)
 
       Read image data from the file named *filename* into the image.
 
       *format* specifies the format of the image data in the file.
+
+      *metadata* is a dictionary passed to the image format driver.
+      It requires Tcl/Tk 9.0 or newer.
 
       *from_coords* specifies a rectangular sub-region of the image file data
       to be copied to the destination image.
@@ -6223,6 +6282,9 @@ Image classes
       corner of the image.
 
       .. versionadded:: 3.13
+
+      .. versionchanged:: next
+         Added the *metadata* parameter.
 
 
    .. method:: subsample(x, y='', *, from_coords=None)
@@ -6256,7 +6318,7 @@ Image classes
 
 
    .. method:: write(filename, format=None, from_coords=None, *, \
-                     background=None, grayscale=False)
+                     background=None, grayscale=False, metadata=None)
 
       Write image data from the image to the file named *filename*.
 
@@ -6278,8 +6340,14 @@ Image classes
       If *grayscale* is true, the data does not contain color information; all
       pixel data is transformed into grayscale.
 
+      *metadata* is a dictionary passed to the image format driver.
+      It requires Tcl/Tk 9.0 or newer.
+
       .. versionchanged:: 3.13
          Added the *background* and *grayscale* parameters.
+
+      .. versionchanged:: next
+         Added the *metadata* parameter.
 
 
    .. method:: zoom(x, y='', *, from_coords=None)
