@@ -1,5 +1,5 @@
-Fix several tests in :mod:`test.test_inspect`, :mod:`test.test_import`,
-:mod:`test.test_importlib`, :mod:`test.test_py_compile` and
-:mod:`test.test_compileall` that failed when the test suite was run with
+Fix several tests in ``test.test_inspect``, ``test.test_import``,
+``test.test_importlib``, ``test.test_py_compile`` and
+``test.test_compileall`` that failed when the test suite was run with
 :envvar:`PYTHONPYCACHEPREFIX` set.  These tests now neutralize the pycache
 prefix where they assume the default ``__pycache__`` bytecode layout.
