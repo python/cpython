@@ -20,8 +20,9 @@
 #   Co, Zl and Zp as fixed ranges (see _GC_ANALYTIC).
 #
 # * Code-point classes given by fixed ranges (see _analytic_ranges): ASCII,
-#   Any, Noncharacter_Code_Point, Join_Control, xdigit, cntrl, and the
-#   immutable Pattern_Syntax and Pattern_White_Space.
+#   Any, Noncharacter_Code_Point, Join_Control, Regional_Indicator, xdigit,
+#   ASCII_Hex_Digit, Hex_Digit, cntrl, and the immutable Pattern_Syntax and
+#   Pattern_White_Space.
 #
 
 from ._constants import (
@@ -177,16 +178,27 @@ def _analytic_ranges():
     noncharacter = [(0xFDD0, 0xFDEF)]
     noncharacter += [(plane | 0xFFFE, plane | 0xFFFF)
                      for plane in range(0, MAXUNICODE + 1, 0x10000)]
+    # Regional_Indicator (RI): the 26 enclosed symbols A..Z, a complete fixed
+    # block (PropList.txt binary property).
+    regional_indicator = [(0x1F1E6, 0x1F1FF)]
+    # ASCII_Hex_Digit (= POSIX xdigit) and Hex_Digit, which adds the fullwidth
+    # forms.  Both are complete, fixed sets (PropList.txt binary properties).
+    ascii_hex = [(0x30, 0x39), (0x41, 0x46), (0x61, 0x66)]
+    hex_digit = ascii_hex + [(0xFF10, 0xFF19), (0xFF21, 0xFF26), (0xFF41, 0xFF46)]
     return {
         "ascii":                 [(0, 0x7F)],
         "any":                   [(0, MAXUNICODE)],
         # Join_Control (U+200C ZWNJ, U+200D ZWJ; the Unicode Standard 23.2,
         # "Layout Controls"), a PropList.txt binary property.
         "joincontrol":           [(0x200C, 0x200D)],
+        "regionalindicator":     regional_indicator,
+        "ri":                    regional_indicator,
         "noncharactercodepoint": noncharacter,
-        # ASCII hexadecimal digits; the Unicode Hex_Digit property is not
-        # available from Python.
-        "xdigit":                [(0x30, 0x39), (0x41, 0x46), (0x61, 0x66)],
+        "xdigit":                ascii_hex,   # POSIX, ASCII only
+        "asciihexdigit":         ascii_hex,
+        "ahex":                  ascii_hex,
+        "hexdigit":              hex_digit,
+        "hex":                   hex_digit,
         # POSIX cntrl is the General_Category Cc, a fixed set of code points.
         "cntrl":                 _CC_RANGES,
         "patternwhitespace":     _PATTERN_WHITE_SPACE_RANGES,

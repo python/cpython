@@ -1049,6 +1049,17 @@ class ReTests(unittest.TestCase):
         self.assertTrue(re.fullmatch(r'\p{Noncharacter_Code_Point}+',
                                      '\uFDD0\uFFFE\U0010FFFF'))
         self.assertTrue(re.fullmatch(r'\p{Join_Control}+', '\u200C\u200D'))
+        self.assertTrue(re.fullmatch(r'\p{Regional_Indicator}+',
+                                     '\U0001F1E6\U0001F1FF'))
+        self.assertTrue(re.fullmatch(r'\p{RI}', '\U0001F1FA'))   # symbol U
+        self.assertIsNone(re.fullmatch(r'\p{RI}', 'U'))
+        # Hex_Digit (ASCII hex plus fullwidth) and ASCII_Hex_Digit (= xdigit).
+        self.assertTrue(re.fullmatch(r'\p{Hex_Digit}+', '0123456789abcdefABCDEF'))
+        self.assertTrue(re.fullmatch(r'\p{Hex}+', '０Ａｆ'))  # fullwidth
+        self.assertTrue(re.fullmatch(r'\p{ASCII_Hex_Digit}+', '0aF'))
+        self.assertTrue(re.fullmatch(r'\p{AHex}+', '0aF'))
+        self.assertIsNone(re.fullmatch(r'\p{ASCII_Hex_Digit}', '０'))
+        self.assertIsNone(re.fullmatch(r'\p{Hex_Digit}', 'g'))
 
         # Errors.
         self.checkPatternError(r'\p', 'missing {, expected property name', 2)

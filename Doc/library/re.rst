@@ -682,7 +682,8 @@ character ``'$'``.
      ``cntrl``, ``digit``, ``graph``, ``lower``, ``print``, ``space``,
      ``upper``, ``word`` and ``xdigit``.
    * The properties ``ASCII``, ``Any``, ``Assigned``,
-     ``Noncharacter_Code_Point``, ``Join_Control``, ``Pattern_Syntax`` and
+     ``Noncharacter_Code_Point``, ``Join_Control``, ``Regional_Indicator``,
+     ``ASCII_Hex_Digit``, ``Hex_Digit``, ``Pattern_Syntax`` and
      ``Pattern_White_Space``.
 
    Where a supported property corresponds to a :mod:`unicodedata` accessor or
