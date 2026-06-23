@@ -3426,8 +3426,7 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
         return NULL;
     }
     // The constructor returns a tracked object; keep it untracked while it is
-    // filled and GC-track it once complete (done:), so a half-built frozendict
-    // is never observable.
+    // filled and GC-track it once complete (done:).
     _PyObject_GC_UNTRACK(d);
 
     // If cls is a dict or frozendict subclass with overridden constructor,
