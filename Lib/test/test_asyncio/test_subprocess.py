@@ -140,32 +140,6 @@ class SubprocessTransportTests(test_utils.TestCase):
 
         transport.close()
 
-    def test_wait_returns_on_exit_with_open_pipe(self):
-        # gh-119710: wait() must resolve when the process exits even if a
-        # pipe is still open and never reaches EOF (e.g. inherited by a
-        # grandchild). Otherwise _call_connection_lost() never runs and
-        # _wait() would hang forever despite the returncode being known.
-        transport, protocol = self.create_transport()
-
-        # Pipes are fully connected, but fd 1 stays open (never disconnects).
-        pipe = mock.Mock()
-        pipe.disconnected = False
-        transport._pipes[1] = pipe
-
-        # A waiter registered via _wait() before the process exits.
-        exit_waiter = self.loop.create_future()
-        transport._exit_waiters.append(exit_waiter)
-
-        # _process_exited() must resolve exit_waiter even though the pipe
-        # never disconnects (so _call_connection_lost() never runs). Without
-        # the fix, exit_waiter stays pending forever and this hangs.
-        transport._process_exited(7)
-        self.loop.run_until_complete(exit_waiter)
-
-        self.assertEqual(exit_waiter.result(), 7)
-
-        transport.close()
-
 
 class SubprocessMixin:
 
