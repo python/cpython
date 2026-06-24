@@ -77,6 +77,9 @@ union _PyStackRef;
 PyAPI_FUNC(PyObject *)_PyList_FromStackRefStealOnSuccess(const union _PyStackRef *src, Py_ssize_t n);
 PyAPI_FUNC(PyObject *)_PyList_AsTupleAndClear(PyListObject *v);
 
+// Export for '_testinternalcapi' shared extension
+PyAPI_FUNC(Py_ssize_t) _PyList_Capacity(PyListObject *self);
+
 #ifdef __cplusplus
 }
 #endif

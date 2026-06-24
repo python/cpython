@@ -3569,6 +3569,23 @@ list_vectorcall(PyObject *type, PyObject * const*args,
 }
 
 
+Py_ssize_t
+_PyList_Capacity(PyListObject *self)
+{
+#ifdef Py_GIL_DISABLED
+    PyObject **ob_item = _Py_atomic_load_ptr(&self->ob_item);
+    if (ob_item != NULL) {
+        return list_capacity(ob_item);
+    }
+    else {
+        return 0;
+    }
+#else
+    return self->allocated;
+#endif
+}
+
+
 /*[clinic input]
 list.__sizeof__
 
@@ -3580,14 +3597,8 @@ list___sizeof___impl(PyListObject *self)
 /*[clinic end generated code: output=3417541f95f9a53e input=b8030a5d5ce8a187]*/
 {
     size_t res = _PyObject_SIZE(Py_TYPE(self));
-#ifdef Py_GIL_DISABLED
-    PyObject **ob_item = _Py_atomic_load_ptr(&self->ob_item);
-    if (ob_item != NULL) {
-        res += list_capacity(ob_item) * sizeof(PyObject *);
-    }
-#else
-    res += (size_t)self->allocated * sizeof(PyObject *);
-#endif
+    Py_ssize_t capacity = _PyList_Capacity(self);
+    res += (size_t)capacity * sizeof(PyObject *);
     return PyLong_FromSize_t(res);
 }
 
