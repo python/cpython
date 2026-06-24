@@ -3204,6 +3204,20 @@ _tkinter_create_impl(PyObject *module, const char *screenName,
     CHECK_STRING_LENGTH(className);
     CHECK_STRING_LENGTH(use);
 
+#if TCL_MAJOR_VERSION < 9
+    /* className is title-cased during Tk initialization.  Tcl 8.x does not
+     * support non-BMP characters (encoded as 4-byte UTF-8 sequences) there
+     * and crashes in Tcl_UtfToTitle (see gh-126219).  Reject them up front. */
+    for (const unsigned char *p = (const unsigned char *)className; *p; p++) {
+        if (*p >= 0xF0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "className must not contain non-BMP characters "
+                            "with this version of Tcl/Tk");
+            return NULL;
+        }
+    }
+#endif
+
     return (PyObject *) Tkapp_New(screenName, className,
                                   interactive, wantobjects, wantTk,
                                   sync, use);
