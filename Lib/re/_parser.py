@@ -27,6 +27,7 @@ WHITESPACE = frozenset(" \t\n\r\v\f")
 
 _REPEATCODES = frozenset({MIN_REPEAT, MAX_REPEAT, POSSESSIVE_REPEAT})
 _UNITCODES = frozenset({ANY, RANGE, IN, LITERAL, NOT_LITERAL, CATEGORY})
+_SETITEMCODES = frozenset({LITERAL, CATEGORY})
 
 ESCAPES = {
     r"\a": (LITERAL, ord("\a")),
@@ -43,12 +44,12 @@ CATEGORIES = {
     r"\A": (AT, AT_BEGINNING_STRING), # start of string
     r"\b": (AT, AT_BOUNDARY),
     r"\B": (AT, AT_NON_BOUNDARY),
-    r"\d": (IN, [(CATEGORY, CATEGORY_DIGIT)]),
-    r"\D": (IN, [(CATEGORY, CATEGORY_NOT_DIGIT)]),
-    r"\s": (IN, [(CATEGORY, CATEGORY_SPACE)]),
-    r"\S": (IN, [(CATEGORY, CATEGORY_NOT_SPACE)]),
-    r"\w": (IN, [(CATEGORY, CATEGORY_WORD)]),
-    r"\W": (IN, [(CATEGORY, CATEGORY_NOT_WORD)]),
+    r"\d": (CATEGORY, CATEGORY_DIGIT),
+    r"\D": (CATEGORY, CATEGORY_NOT_DIGIT),
+    r"\s": (CATEGORY, CATEGORY_SPACE),
+    r"\S": (CATEGORY, CATEGORY_NOT_SPACE),
+    r"\w": (CATEGORY, CATEGORY_WORD),
+    r"\W": (CATEGORY, CATEGORY_NOT_WORD),
     r"\z": (AT, AT_END_STRING), # end of string
     r"\Z": (AT, AT_END_STRING), # end of string (obsolete)
 }
@@ -315,7 +316,7 @@ def _class_escape(source, escape):
     if code:
         return code
     code = CATEGORIES.get(escape)
-    if code and code[0] is IN:
+    if code and code[0] is CATEGORY:
         return code
     try:
         c = escape[1:2]
@@ -493,7 +494,7 @@ def _parse_sub(source, state, verbose, nested):
         if len(item) != 1:
             break
         op, av = item[0]
-        if op is LITERAL:
+        if op in _SETITEMCODES:
             set.append((op, av))
         elif op is IN and av[0][0] is not NEGATE:
             set.extend(av)
@@ -590,8 +591,6 @@ def _parse(source, state, verbose, nested, first=False):
                         raise source.error("unterminated character set",
                                            source.tell() - here)
                     if that == "]":
-                        if code1[0] is IN:
-                            code1 = code1[1][0]
                         setappend(code1)
                         setappend((LITERAL, _ord("-")))
                         break
@@ -616,8 +615,6 @@ def _parse(source, state, verbose, nested, first=False):
                         raise source.error(msg, len(this) + 1 + len(that))
                     setappend((RANGE, (lo, hi)))
                 else:
-                    if code1[0] is IN:
-                        code1 = code1[1][0]
                     setappend(code1)
 
             set = _uniq(set)
