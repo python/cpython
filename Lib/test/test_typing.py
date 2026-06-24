@@ -1318,6 +1318,9 @@ class TypeVarTupleTests(BaseTestCase):
         self.assertIs(Ts_bound.__bound__, int)
         Ts_tuple_bound = TypeVarTuple('Ts_tuple_bound', bound=(int, str))
         self.assertEqual(Ts_tuple_bound.__bound__, (int, str))
+        obj = object()
+        Ts_object = TypeVarTuple('Ts_object', bound=obj)
+        self.assertIs(Ts_object.__bound__, obj)
         Ts_no_bound = TypeVarTuple('Ts_no_bound')
         self.assertIsNone(Ts_no_bound.__bound__)
 
@@ -10541,8 +10544,11 @@ class ParamSpecTests(BaseTestCase):
         self.assertEqual(P.__bound__, [int, str])
         P2 = ParamSpec('P2', bound=(int, str))
         self.assertEqual(P2.__bound__, (int, str))
-        P3 = ParamSpec('P3')
-        self.assertIs(P3.__bound__, None)
+        obj = object()
+        P3 = ParamSpec('P3', bound=obj)
+        self.assertIs(P3.__bound__, obj)
+        P4 = ParamSpec('P4')
+        self.assertIs(P4.__bound__, None)
 
     def test_paramspec_gets_copied(self):
         # bpo-46581

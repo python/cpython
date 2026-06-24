@@ -1342,7 +1342,6 @@ paramspec_new_impl(PyTypeObject *type, PyObject *name, PyObject *bound,
     }
     PyObject *module = caller();
     if (module == NULL) {
-        Py_XDECREF(bound);
         return NULL;
     }
     PyObject *ps = (PyObject *)paramspec_alloc(
@@ -1627,12 +1626,8 @@ typevartuple_impl(PyTypeObject *type, PyObject *name, PyObject *bound,
         PyErr_SetString(PyExc_ValueError, "Variance cannot be specified with infer_variance.");
         return NULL;
     }
-    if (Py_IsNone(bound)) {
-        bound = NULL;
-    }
     PyObject *module = caller();
     if (module == NULL) {
-        Py_XDECREF(bound);
         return NULL;
     }
     PyObject *result = (PyObject *)typevartuple_alloc(
