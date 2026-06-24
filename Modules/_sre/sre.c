@@ -1987,6 +1987,84 @@ bad_template:
 #define GET_SKIP GET_SKIP_ADJ(0)
 
 static int
+_validate_category(SRE_CODE arg)
+{
+    switch (arg) {
+    case SRE_CATEGORY_DIGIT:
+    case SRE_CATEGORY_NOT_DIGIT:
+    case SRE_CATEGORY_SPACE:
+    case SRE_CATEGORY_NOT_SPACE:
+    case SRE_CATEGORY_WORD:
+    case SRE_CATEGORY_NOT_WORD:
+    case SRE_CATEGORY_LINEBREAK:
+    case SRE_CATEGORY_NOT_LINEBREAK:
+    case SRE_CATEGORY_LOC_WORD:
+    case SRE_CATEGORY_LOC_NOT_WORD:
+    case SRE_CATEGORY_UNI_DIGIT:
+    case SRE_CATEGORY_UNI_NOT_DIGIT:
+    case SRE_CATEGORY_UNI_SPACE:
+    case SRE_CATEGORY_UNI_NOT_SPACE:
+    case SRE_CATEGORY_UNI_WORD:
+    case SRE_CATEGORY_UNI_NOT_WORD:
+    case SRE_CATEGORY_UNI_LINEBREAK:
+    case SRE_CATEGORY_UNI_NOT_LINEBREAK:
+    case SRE_CATEGORY_ALPHA:
+    case SRE_CATEGORY_NOT_ALPHA:
+    case SRE_CATEGORY_LOWER:
+    case SRE_CATEGORY_NOT_LOWER:
+    case SRE_CATEGORY_UPPER:
+    case SRE_CATEGORY_NOT_UPPER:
+    case SRE_CATEGORY_NUMERIC:
+    case SRE_CATEGORY_NOT_NUMERIC:
+    case SRE_CATEGORY_PRINTABLE:
+    case SRE_CATEGORY_NOT_PRINTABLE:
+    case SRE_CATEGORY_ALNUM:
+    case SRE_CATEGORY_NOT_ALNUM:
+    case SRE_CATEGORY_XID_START:
+    case SRE_CATEGORY_NOT_XID_START:
+    case SRE_CATEGORY_XID_CONTINUE:
+    case SRE_CATEGORY_NOT_XID_CONTINUE:
+    case SRE_CATEGORY_TITLE:
+    case SRE_CATEGORY_NOT_TITLE:
+    case SRE_CATEGORY_CASED:
+    case SRE_CATEGORY_NOT_CASED:
+    case SRE_CATEGORY_CASE_IGNORABLE:
+    case SRE_CATEGORY_NOT_CASE_IGNORABLE:
+    case SRE_CATEGORY_LU:
+    case SRE_CATEGORY_NOT_LU:
+    case SRE_CATEGORY_N:
+    case SRE_CATEGORY_NOT_N:
+    case SRE_CATEGORY_LM:
+    case SRE_CATEGORY_NOT_LM:
+    case SRE_CATEGORY_NL:
+    case SRE_CATEGORY_NOT_NL:
+    case SRE_CATEGORY_NO:
+    case SRE_CATEGORY_NOT_NO:
+    case SRE_CATEGORY_CF:
+    case SRE_CATEGORY_NOT_CF:
+    case SRE_CATEGORY_Z:
+    case SRE_CATEGORY_NOT_Z:
+    case SRE_CATEGORY_ZS:
+    case SRE_CATEGORY_NOT_ZS:
+    case SRE_CATEGORY_C:
+    case SRE_CATEGORY_NOT_C:
+    case SRE_CATEGORY_CN:
+    case SRE_CATEGORY_NOT_CN:
+    case SRE_CATEGORY_ASSIGNED:
+    case SRE_CATEGORY_NOT_ASSIGNED:
+    case SRE_CATEGORY_BLANK:
+    case SRE_CATEGORY_NOT_BLANK:
+    case SRE_CATEGORY_GRAPH:
+    case SRE_CATEGORY_NOT_GRAPH:
+    case SRE_CATEGORY_PRINT:
+    case SRE_CATEGORY_NOT_PRINT:
+        return 1;
+    default:
+        return 0;
+    }
+}
+
+static int
 _validate_charset(SRE_CODE *code, SRE_CODE *end)
 {
     /* Some variables are manipulated by the macros above */
@@ -2038,77 +2116,7 @@ _validate_charset(SRE_CODE *code, SRE_CODE *end)
 
         case SRE_OP_CATEGORY:
             GET_ARG;
-            switch (arg) {
-            case SRE_CATEGORY_DIGIT:
-            case SRE_CATEGORY_NOT_DIGIT:
-            case SRE_CATEGORY_SPACE:
-            case SRE_CATEGORY_NOT_SPACE:
-            case SRE_CATEGORY_WORD:
-            case SRE_CATEGORY_NOT_WORD:
-            case SRE_CATEGORY_LINEBREAK:
-            case SRE_CATEGORY_NOT_LINEBREAK:
-            case SRE_CATEGORY_LOC_WORD:
-            case SRE_CATEGORY_LOC_NOT_WORD:
-            case SRE_CATEGORY_UNI_DIGIT:
-            case SRE_CATEGORY_UNI_NOT_DIGIT:
-            case SRE_CATEGORY_UNI_SPACE:
-            case SRE_CATEGORY_UNI_NOT_SPACE:
-            case SRE_CATEGORY_UNI_WORD:
-            case SRE_CATEGORY_UNI_NOT_WORD:
-            case SRE_CATEGORY_UNI_LINEBREAK:
-            case SRE_CATEGORY_UNI_NOT_LINEBREAK:
-            case SRE_CATEGORY_ALPHA:
-            case SRE_CATEGORY_NOT_ALPHA:
-            case SRE_CATEGORY_LOWER:
-            case SRE_CATEGORY_NOT_LOWER:
-            case SRE_CATEGORY_UPPER:
-            case SRE_CATEGORY_NOT_UPPER:
-            case SRE_CATEGORY_NUMERIC:
-            case SRE_CATEGORY_NOT_NUMERIC:
-            case SRE_CATEGORY_PRINTABLE:
-            case SRE_CATEGORY_NOT_PRINTABLE:
-            case SRE_CATEGORY_ALNUM:
-            case SRE_CATEGORY_NOT_ALNUM:
-            case SRE_CATEGORY_XID_START:
-            case SRE_CATEGORY_NOT_XID_START:
-            case SRE_CATEGORY_XID_CONTINUE:
-            case SRE_CATEGORY_NOT_XID_CONTINUE:
-            case SRE_CATEGORY_TITLE:
-            case SRE_CATEGORY_NOT_TITLE:
-            case SRE_CATEGORY_CASED:
-            case SRE_CATEGORY_NOT_CASED:
-            case SRE_CATEGORY_CASE_IGNORABLE:
-            case SRE_CATEGORY_NOT_CASE_IGNORABLE:
-            case SRE_CATEGORY_LU:
-            case SRE_CATEGORY_NOT_LU:
-            case SRE_CATEGORY_N:
-            case SRE_CATEGORY_NOT_N:
-            case SRE_CATEGORY_LM:
-            case SRE_CATEGORY_NOT_LM:
-            case SRE_CATEGORY_NL:
-            case SRE_CATEGORY_NOT_NL:
-            case SRE_CATEGORY_NO:
-            case SRE_CATEGORY_NOT_NO:
-            case SRE_CATEGORY_CF:
-            case SRE_CATEGORY_NOT_CF:
-            case SRE_CATEGORY_Z:
-            case SRE_CATEGORY_NOT_Z:
-            case SRE_CATEGORY_ZS:
-            case SRE_CATEGORY_NOT_ZS:
-            case SRE_CATEGORY_C:
-            case SRE_CATEGORY_NOT_C:
-            case SRE_CATEGORY_CN:
-            case SRE_CATEGORY_NOT_CN:
-            case SRE_CATEGORY_ASSIGNED:
-            case SRE_CATEGORY_NOT_ASSIGNED:
-            case SRE_CATEGORY_BLANK:
-            case SRE_CATEGORY_NOT_BLANK:
-            case SRE_CATEGORY_GRAPH:
-            case SRE_CATEGORY_NOT_GRAPH:
-            case SRE_CATEGORY_PRINT:
-            case SRE_CATEGORY_NOT_PRINT:
-                break;
-            default:
+            if (!_validate_category(arg)) {
                 FAIL;
             }
             break;
@@ -2185,6 +2193,13 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
             case SRE_AT_UNI_NON_BOUNDARY:
                 break;
             default:
+                FAIL;
+            }
+            break;
+
+        case SRE_OP_CATEGORY:
+            GET_ARG;
+            if (!_validate_category(arg)) {
                 FAIL;
             }
             break;

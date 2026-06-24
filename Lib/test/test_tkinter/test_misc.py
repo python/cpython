@@ -463,6 +463,47 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(root['background'], '#ffe4c4')
         self.assertRaises(TypeError, root.tk_bisque, 'x')
 
+    def test_tk_appname(self):
+        old = self.root.tk_appname()
+        self.assertIsInstance(old, str)
+        self.addCleanup(self.root.tk_appname, old)
+        # Setting the name returns the actual name (possibly with a suffix
+        # appended to keep it unique).
+        new = self.root.tk_appname('PythonTkTest')
+        self.assertIsInstance(new, str)
+        self.assertEqual(self.root.tk_appname(), new)
+
+    def test_tk_useinputmethods(self):
+        old = self.root.tk_useinputmethods()
+        self.assertIsInstance(old, bool)
+        self.addCleanup(self.root.tk_useinputmethods, old)
+        # Setting returns the resulting state.  On systems without XIM support
+        # the state is always False, so only check the True->False direction.
+        self.assertIs(self.root.tk_useinputmethods(False), False)
+
+    def test_tk_caret(self):
+        self.assertIsNone(self.root.tk_caret(x=5, y=10, height=20))
+        caret = self.root.tk_caret()
+        self.assertEqual(caret, {'x': 5, 'y': 10, 'height': 20})
+
+    def test_tk_scaling(self):
+        old = self.root.tk_scaling()
+        self.assertIsInstance(old, float)
+        self.assertGreater(old, 0)
+        self.addCleanup(self.root.tk_scaling, old)
+        # Setting the factor is reflected by a subsequent query.  Tk may round
+        # it slightly when converting to and from its internal representation.
+        self.root.tk_scaling(2.0)
+        self.assertAlmostEqual(self.root.tk_scaling(), 2.0, delta=0.1)
+
+    def test_tk_inactive(self):
+        ms = self.root.tk_inactive()
+        self.assertIsInstance(ms, int)
+        # A count of milliseconds, or -1 if the windowing system lacks support.
+        self.assertGreaterEqual(ms, -1)
+        # Resetting the timer returns None and does not raise.
+        self.assertIsNone(self.root.tk_inactive(reset=True))
+
     def test_wait_variable(self):
         var = tkinter.StringVar(self.root)
         self.assertEqual(self.root.waitvar, self.root.wait_variable)
@@ -1523,6 +1564,8 @@ class BindTest(AbstractTkTest, unittest.TestCase):
         self.assertNotIn(funcid, script)
         self.assertNotIn(funcid2, script)
         self.assertIn(funcid3, script)
+        self.assertCommandNotExist(funcid)
+        self.assertCommandNotExist(funcid2)
         self.assertCommandExist(funcid3)
 
     def test_bind_class(self):
@@ -1567,8 +1610,8 @@ class BindTest(AbstractTkTest, unittest.TestCase):
         unbind_class('Test', event)
         self.assertEqual(bind_class('Test', event), '')
         self.assertEqual(bind_class('Test'), ())
-        self.assertCommandExist(funcid)
-        self.assertCommandExist(funcid2)
+        self.assertCommandNotExist(funcid)
+        self.assertCommandNotExist(funcid2)
 
         unbind_class('Test', event)  # idempotent
 
@@ -1596,8 +1639,8 @@ class BindTest(AbstractTkTest, unittest.TestCase):
         self.assertNotIn(funcid, script)
         self.assertNotIn(funcid2, script)
         self.assertIn(funcid3, script)
-        self.assertCommandExist(funcid)
-        self.assertCommandExist(funcid2)
+        self.assertCommandNotExist(funcid)
+        self.assertCommandNotExist(funcid2)
         self.assertCommandExist(funcid3)
 
     def test_bind_all(self):
@@ -1639,8 +1682,8 @@ class BindTest(AbstractTkTest, unittest.TestCase):
         unbind_all(event)
         self.assertEqual(bind_all(event), '')
         self.assertNotIn(event, bind_all())
-        self.assertCommandExist(funcid)
-        self.assertCommandExist(funcid2)
+        self.assertCommandNotExist(funcid)
+        self.assertCommandNotExist(funcid2)
 
         unbind_all(event)  # idempotent
 
@@ -1668,8 +1711,8 @@ class BindTest(AbstractTkTest, unittest.TestCase):
         self.assertNotIn(funcid, script)
         self.assertNotIn(funcid2, script)
         self.assertIn(funcid3, script)
-        self.assertCommandExist(funcid)
-        self.assertCommandExist(funcid2)
+        self.assertCommandNotExist(funcid)
+        self.assertCommandNotExist(funcid2)
         self.assertCommandExist(funcid3)
 
     def _test_tag_bind(self, w):

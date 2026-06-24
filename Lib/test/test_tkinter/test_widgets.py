@@ -437,9 +437,22 @@ class OptionMenuTest(MenubuttonTest, unittest.TestCase):
     def create(self, default='b', values=('a', 'b', 'c'), **kwargs):
         return tkinter.OptionMenu(self.root, None, default, *values, **kwargs)
 
+    def test_kwargs(self):
+        # Menubutton options can be passed at construction (gh-101284).
+        widget = tkinter.OptionMenu(self.root, None, 'b',
+                                    width=10, direction='right')
+        self.assertEqual(int(widget['width']), 10)
+        self.assertEqual(str(widget['direction']), 'right')
+        # They override OptionMenu's own appearance defaults,
+        widget = tkinter.OptionMenu(self.root, None, 'b', relief='flat')
+        self.assertEqual(str(widget['relief']), 'flat')
+        # which otherwise keep their historical values.
+        widget = tkinter.OptionMenu(self.root, None, 'b')
+        self.assertEqual(str(widget['relief']), 'raised')
+
     def test_bad_kwarg(self):
-        with self.assertRaisesRegex(TclError, r"^unknown option -image$"):
-            tkinter.OptionMenu(self.root, None, 'b', image='')
+        with self.assertRaisesRegex(TclError, r'^unknown option "-spam"$'):
+            tkinter.OptionMenu(self.root, None, 'b', spam='')
 
     def test_specify_name(self):
         widget = tkinter.OptionMenu(self.root, None, ':)', name="option_menu")
@@ -588,6 +601,25 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
         self.assertFalse(widget.select_present())
         self.assertRaisesRegex(TclError, 'bad entry index "xyz"',
                                widget.select_range, 'xyz', 'end')
+
+    def test_validate(self):
+        calls = []
+        def validatecommand(value):
+            calls.append(value)
+            return value.isdigit()
+        # validate='none' means validation is never triggered automatically,
+        # so validate() exercises the forced evaluation.
+        widget = self.create(validate='none',
+                validatecommand=(self.root.register(validatecommand), '%P'))
+        widget.insert(0, '123')
+        result = widget.validate()
+        self.assertIs(result, True)
+        self.assertEqual(calls, ['123'])
+        widget.delete(0, 'end')
+        widget.insert(0, 'abc')
+        calls.clear()
+        self.assertIs(widget.validate(), False)
+        self.assertEqual(calls, ['abc'])
 
 
 @add_configure_tests(StandardOptionsTests)
@@ -1389,6 +1421,34 @@ class CanvasTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(c.coords(rect), [10.0, 10.0, 30.0, 30.0])
         self.assertRaises(TclError, c.scale, rect, 0, 0, 'spam', 2)
         self.assertRaises(TclError, c.scale, rect, 0, 0)  # missing factors
+
+    @requires_tk(8, 6)
+    def test_rchars(self):
+        c = self.create()
+        # On a line item, rchars replaces a range of the coordinate list.
+        line = c.create_line(0, 0, 10, 10, 20, 0)
+        c.rchars(line, 2, 5, (30, 30, 40, 40))
+        self.assertEqual(c.coords(line), [0.0, 0.0, 30.0, 30.0, 40.0, 40.0])
+        # On a text item, rchars replaces a range of characters.
+        text = c.create_text(10, 10, text='hello')
+        c.rchars(text, 0, 2, 'HE')
+        self.assertEqual(c.itemcget(text, 'text'), 'HElo')
+        self.assertRaises(TclError, c.rchars)
+
+    @requires_tk(9, 0)
+    def test_rotate(self):
+        c = self.create()
+        line = c.create_line(10, 0, 20, 0)
+        # The canvas y-axis points down, so an anticlockwise rotation about
+        # the origin maps (x, y) to (y, -x).
+        c.rotate(line, 0, 0, 90)
+        for got, expected in zip(c.coords(line), [0, -10, 0, -20]):
+            self.assertAlmostEqual(got, expected, places=3)
+        # A negative angle rotates clockwise, restoring the original position.
+        c.rotate(line, 0, 0, -90)
+        for got, expected in zip(c.coords(line), [10, 0, 20, 0]):
+            self.assertAlmostEqual(got, expected, places=3)
+        self.assertRaises(TclError, c.rotate, line, 0, 0, 'spam')
 
     def test_delete(self):
         c = self.create()
@@ -2546,6 +2606,35 @@ class MenuTest(AbstractWidgetTest, unittest.TestCase):
         m.unpost()
         m.update()
         self.assertFalse(m.winfo_ismapped())
+
+    def test_postcascade(self):
+        m = self.create(tearoff=False)
+        submenu = tkinter.Menu(m, tearoff=False)
+        submenu.add_command(label='Item')
+        m.add_cascade(label='Cascade', menu=submenu)
+        m.add_command(label='Plain')
+        # No effect (but no error) when the menu is not posted, when the index
+        # is not a cascade entry, or when given a label.
+        m.postcascade(0)
+        m.postcascade(1)
+        m.postcascade('Cascade')
+
+        with self.subTest('posted menu'):
+            if m._windowingsystem != 'x11':
+                # Posting a menu is modal on Windows and uses a native,
+                # unmapped menu on Aqua, so it cannot be tested synchronously
+                # there.
+                self.skipTest('menu posting is not testable on this platform')
+            m.post(0, 0)
+            m.update()
+            m.postcascade('Cascade')
+            m.update()
+            self.assertTrue(submenu.winfo_ismapped())
+            # A non-cascade index unposts the currently posted submenu.
+            m.postcascade(1)
+            m.update()
+            self.assertFalse(submenu.winfo_ismapped())
+            m.unpost()
 
     def check_entry_option(self, m, index, option, value, expected=None):
         if expected is None:
