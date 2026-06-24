@@ -214,6 +214,7 @@ set_values(PyDictObject *mp, PyDictValues *values)
     _Py_atomic_store_ptr_release(&mp->ma_values, values);
 }
 
+// Note: you must not acquire other locks while holding this.
 #define LOCK_KEYS(keys) PyMutex_LockFlags(&keys->dk_mutex, _Py_LOCK_DONT_DETACH)
 #define UNLOCK_KEYS(keys) PyMutex_Unlock(&keys->dk_mutex)
 
@@ -1923,21 +1924,27 @@ insert_split_key(PyDictKeysObject *keys, PyObject *key, Py_hash_t hash)
     }
 #endif
 
+    bool inserted = false;
     LOCK_KEYS(keys);
     ix = unicodekeys_lookup_unicode(keys, key, hash);
     if (ix == DKIX_EMPTY && keys->dk_usable > 0) {
         // Insert into new slot
         FT_ATOMIC_STORE_UINT32_RELAXED(keys->dk_version, 0);
-        _PyDict_SplitKeysInvalidated(keys);
         Py_ssize_t hashpos = find_empty_slot(keys, hash);
         ix = keys->dk_nentries;
         dictkeys_set_index(keys, hashpos, ix);
         PyDictUnicodeEntry *ep = &DK_UNICODE_ENTRIES(keys)[ix];
         STORE_SHARED_KEY(ep->me_key, Py_NewRef(key));
         split_keys_entry_added(keys);
+        inserted = true;
     }
     assert (ix < SHARED_KEYS_MAX_SIZE);
     UNLOCK_KEYS(keys);
+    if (inserted) {
+        // This may result in TYPE_LOCK being acquired and we are not allowed
+        // to acquire other locks inside LOCK_KEYS.
+        _PyDict_SplitKeysInvalidated(keys);
+    }
     return ix;
 }
 

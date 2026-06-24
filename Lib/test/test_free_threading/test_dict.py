@@ -336,5 +336,108 @@ class TestDict(TestCase):
         with threading_helper.start_threads([t1, t2]):
             pass
 
+
+@threading_helper.requires_working_threading()
+class TestDictDeadlock(TestCase):
+    """Regression test for the free-threaded deadlock fixed in gh-151593.
+
+    The deadlock needs several threads and was only triggered intermittently by
+    normal test runs (e.g. ``test_abc --parallel-threads=10``); this test sets up
+    the required roles directly so a regression shows up reliably.
+
+    The bug: ``insert_split_key()`` called ``PyType_Modified()`` while still holding
+    the dictobject.c shared-keys lock (``LOCK_KEYS``).  ``PyType_Modified()`` wants
+    the typeobject.c ``TYPE_LOCK``, so a thread could hold ``LOCK_KEYS`` and block on
+    ``TYPE_LOCK`` -- a lock-ordering inversion.  The fix moves the
+    ``PyType_Modified()`` call to after ``LOCK_KEYS`` is released.
+
+    The cycle that hangs:
+
+      * one mutator thread holds ``LOCK_KEYS`` and waits for ``TYPE_LOCK``
+        (``insert_split_key`` -> ``PyType_Modified``);
+      * the "stopper" thread holds ``TYPE_LOCK`` and runs ``types_stop_world()``
+        (here via assigning ``__abstractmethods__``), waiting for every thread to
+        reach a safe point;
+      * the remaining mutator threads are parked acquiring ``LOCK_KEYS`` without
+        detaching, so they never reach a safe point and the world never stops.
+
+    The stopper therefore never finishes and never drops ``TYPE_LOCK``, the first
+    mutator never makes progress, and ``LOCK_KEYS`` is never released.  Several
+    mutator threads are required so that some are blocked on ``LOCK_KEYS`` while
+    another holds it.
+    """
+
+    # Each round operates on one fresh class so that ``insert_split_key()`` keeps
+    # taking the slow path that inserts a brand new shared key.
+    NROUNDS = 100
+
+    # Mutator threads racing to insert new shared keys / allocate inline values.
+    NMUTATORS = 4
+
+    def test_insert_split_key_vs_type_modified(self):
+        box = [None]
+        # +1 for the type-modifying "stopper" thread, +1 for the main thread
+        # which produces a fresh class for each round.
+        nparties = self.NMUTATORS + 2
+        round_start = Barrier(nparties)
+        round_end = Barrier(nparties)
+
+        def fresh_class():
+            class C:
+                pass
+
+            # Prime the type: give it a non-zero tp_version_tag (so that the
+            # later PyType_Modified() actually takes the type lock instead of
+            # returning early) and create its shared keys / inline values.
+            c = C()
+            c.warm = 0
+            getattr(c, "warm")
+            return C
+
+        def mutator(tid):
+            for _ in range(self.NROUNDS):
+                round_start.wait()
+                cls = box[0]
+                # Allocating exercises _PyObject_InitInlineValues (LOCK_KEYS);
+                # setting fresh attributes exercises insert_split_key, whose
+                # first insertion invalidates the type while holding LOCK_KEYS.
+                obj = cls()
+                setattr(obj, f"x{tid}_a", 1)
+                setattr(obj, f"x{tid}_b", 2)
+                setattr(obj, f"x{tid}_c", 3)
+                round_end.wait()
+
+        def stopper():
+            for _ in range(self.NROUNDS):
+                round_start.wait()
+                cls = box[0]
+                # type_set_abstractmethods() holds the type lock and calls
+                # types_stop_world().  An empty set keeps the class
+                # instantiable while still stopping the world.
+                cls.__abstractmethods__ = frozenset()
+                cls.__abstractmethods__ = frozenset()
+                cls.__abstractmethods__ = frozenset()
+                round_end.wait()
+
+        with threading_helper.catch_threading_exception() as cm:
+            threads = [
+                Thread(target=mutator, args=(i,))
+                for i in range(self.NMUTATORS)
+            ]
+            threads.append(Thread(target=stopper))
+            for t in threads:
+                t.start()
+
+            for r in range(self.NROUNDS):
+                box[0] = fresh_class()
+                round_start.wait()
+                round_end.wait()
+
+            for t in threads:
+                t.join()
+
+            self.assertIsNone(cm.exc_value)
+
+
 if __name__ == "__main__":
     unittest.main()
