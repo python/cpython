@@ -5507,6 +5507,7 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
     used = GET_USED(dict);
     di->di_used = used;
     di->len = used;
+    di->di_result = NULL;
     if (itertype == &PyDictRevIterKey_Type ||
          itertype == &PyDictRevIterItem_Type ||
          itertype == &PyDictRevIterValue_Type) {
@@ -5520,6 +5521,10 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
     else {
         di->di_pos = 0;
     }
+    /* gh-152107: track before allocating di_result. A dictiter with a NULL
+    di_result is a valid state for dictiter_traverse()/dictiter_dealloc(),
+    so a failure of the allocation below can safely DECREF a tracked di. */
+    _PyObject_GC_TRACK(di);
     if (itertype == &PyDictIterItem_Type ||
         itertype == &PyDictRevIterItem_Type) {
         di->di_result = _PyTuple_FromPairSteal(Py_None, Py_None);
@@ -5528,10 +5533,6 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
             return NULL;
         }
     }
-    else {
-        di->di_result = NULL;
-    }
-    _PyObject_GC_TRACK(di);
     return (PyObject *)di;
 }
 
