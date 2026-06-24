@@ -2190,9 +2190,6 @@ register_task(_PyThreadStateImpl *ts, TaskObj *task)
         assert(task->task_node.prev != NULL);
         return;
     }
-#ifdef Py_GIL_DISABLED
-    _PyObject_SetMaybeWeakref((PyObject *)task);
-#endif
     struct llist_node *head = &ts->asyncio_tasks_head;
     llist_insert_tail(head, &task->task_node);
 }
