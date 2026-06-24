@@ -253,13 +253,23 @@ class TestCurses(unittest.TestCase):
                 self.assertIs(win.is_wintouched(), syncok)
                 self.assertIs(stdscr.is_wintouched(), syncok)
 
+    def _encodable(self, s):
+        # Wide characters are only supported in a locale that can encode them.
+        try:
+            s.encode(self.stdscr.encoding)
+        except UnicodeEncodeError:
+            return False
+        return True
+
     @requires_curses_window_meth('get_wch')
     def test_addch_combining(self):
-        # A character cell may hold a spacing char plus combining marks.
         stdscr = self.stdscr
         stdscr.move(0, 0)
-        stdscr.addch('e\u0301')              # 'e' + COMBINING ACUTE ACCENT
-        stdscr.addch(1, 0, 'a\u0323\u0300')  # base plus two combining marks
+        # A character cell may hold a spacing char plus combining marks.
+        if self._encodable('e\u0301'):
+            stdscr.addch('e\u0301')              # 'e' + COMBINING ACUTE ACCENT
+        if self._encodable('a\u0323\u0300'):
+            stdscr.addch(1, 0, 'a\u0323\u0300')  # base plus two combining marks
         # Too many code points to fit in a single character cell.
         self.assertRaises(TypeError, stdscr.addch, 'e' + '\u0301' * 10)
         # Only the first code point may be a spacing character.
@@ -278,8 +288,10 @@ class TestCurses(unittest.TestCase):
         # character plus zero-width combining characters.  A lone emoji fits,
         # as does an emoji with a zero-width variation selector.
         stdscr = self.stdscr
-        stdscr.addch(0, 0, '\U0001f600')          # single emoji
-        stdscr.addch(1, 0, '\u263a\ufe0f')        # WHITE SMILING FACE + VS-16
+        if self._encodable('\U0001f600'):
+            stdscr.addch(0, 0, '\U0001f600')          # single emoji
+        if self._encodable('\u263a\ufe0f'):
+            stdscr.addch(1, 0, '\u263a\ufe0f')        # WHITE SMILING FACE + VS-16
         # An emoji ZWJ sequence or an emoji with a modifier is more than one
         # spacing character and cannot share a single cell.
         self.assertRaises(ValueError, stdscr.addch,
@@ -294,14 +306,18 @@ class TestCurses(unittest.TestCase):
         combining = 'e\u0301'              # 'e' + COMBINING ACUTE ACCENT
         vline, hline = '\u2502', '\u2500'  # box-drawing vertical/horizontal
         stdscr.move(0, 0)
-        stdscr.echochar(combining)
-        stdscr.insch(1, 0, combining)
-        stdscr.hline(2, 0, hline, 5)
-        stdscr.vline(3, 0, vline, 3)
-        stdscr.bkgdset(combining)
-        stdscr.bkgd(combining)
-        stdscr.border(vline, vline, hline, hline)
-        stdscr.box(vline, hline)
+        if self._encodable(combining):
+            stdscr.echochar(combining)
+            stdscr.insch(1, 0, combining)
+            stdscr.bkgdset(combining)
+            stdscr.bkgd(combining)
+        if self._encodable(hline):
+            stdscr.hline(2, 0, hline, 5)
+        if self._encodable(vline):
+            stdscr.vline(3, 0, vline, 3)
+        if self._encodable(vline + hline):
+            stdscr.border(vline, vline, hline, hline)
+            stdscr.box(vline, hline)
         # border() and box() cannot mix integer and wide-string characters.
         self.assertRaises(TypeError, stdscr.box, vline, ord('-'))
 
