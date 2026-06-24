@@ -963,7 +963,7 @@ static PyObject *
 frame_getback(PyFrameObject *f, void *closure)
 {
     PyObject *res = (PyObject *)PyFrame_GetBack(f);
-    if (res == NULL) {
+    if (res == NULL  && !PyErr_Occurred()) {
         Py_RETURN_NONE;
     }
     return res;
@@ -2203,6 +2203,9 @@ PyFrame_GetBack(PyFrameObject *frame)
         prev = _PyFrame_GetFirstComplete(prev);
         if (prev) {
             back = _PyFrame_GetFrameObject(prev);
+            if (back == NULL) {
+                 return NULL;
+             }
         }
     }
     return (PyFrameObject*)Py_XNewRef(back);
