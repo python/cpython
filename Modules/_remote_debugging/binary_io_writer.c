@@ -138,15 +138,6 @@ writer_write_varint_u32(BinaryWriter *writer, uint32_t value)
     return writer_write_bytes(writer, buf, len);
 }
 
-/* Encode and write a varint u64 - returns 0 on success, -1 on error */
-static inline int
-writer_write_varint_u64(BinaryWriter *writer, uint64_t value)
-{
-    uint8_t buf[MAX_VARINT_SIZE];
-    size_t len = encode_varint_u64(buf, value);
-    return writer_write_bytes(writer, buf, len);
-}
-
 
 /* ============================================================================
  * UTILITY FUNCTIONS
