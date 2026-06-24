@@ -1579,13 +1579,26 @@ class Misc:
         else:
             self.tk.call('bindtags', self._w, tagList)
 
-    def _bind(self, what, sequence, func, add, needcleanup=1):
+    def _delete_bind_commands(self, *what):
+        lines = self.tk.call(what).split('\n')
+        p = re.compile(r'if \{"\[([^ ]+) .*\]" == "break"\} break')
+        for line in lines:
+            m = p.fullmatch(line)
+            if m:
+                funcid = m[1]
+                try:
+                    self.deletecommand(funcid)
+                except TclError:
+                    pass
+
+    def _bind(self, what, sequence, func, add):
         """Internal function."""
         if isinstance(func, str):
             self.tk.call(what + (sequence, func))
         elif func:
-            funcid = self._register(func, self._substitute,
-                        needcleanup)
+            if not add:
+                self._delete_bind_commands(*what, sequence)
+            funcid = self._register(func, self._substitute, needcleanup=True)
             cmd = ('%sif {"[%s %s]" == "break"} break\n'
                    %
                    (add and '+' or '',
@@ -1651,6 +1664,7 @@ class Misc:
 
     def _unbind(self, what, funcid=None):
         if funcid is None:
+            self._delete_bind_commands(*what)
             self.tk.call(*what, '')
         else:
             lines = self.tk.call(what).split('\n')
@@ -1667,7 +1681,7 @@ class Misc:
         An additional boolean parameter ADD specifies whether FUNC will
         be called additionally to the other bound function or whether
         it will replace the previous function. See bind for the return value."""
-        return self._root()._bind(('bind', 'all'), sequence, func, add, True)
+        return self._root()._bind(('bind', 'all'), sequence, func, add)
 
     def unbind_all(self, sequence):
         """Unbind for all widgets for event SEQUENCE all functions."""
@@ -1681,7 +1695,7 @@ class Misc:
         whether it will replace the previous function. See bind for
         the return value."""
 
-        return self._root()._bind(('bind', className), sequence, func, add, True)
+        return self._root()._bind(('bind', className), sequence, func, add)
 
     def unbind_class(self, className, sequence):
         """Unbind for all widgets with bindtag CLASSNAME for event SEQUENCE
@@ -4502,20 +4516,23 @@ class OptionMenu(Menubutton):
         """Construct an optionmenu widget with the parent MASTER, with
         the option textvariable set to VARIABLE, the initially selected
         value VALUE, the other menu values VALUES and an additional
-        keyword argument command."""
-        kw = {"borderwidth": 2, "textvariable": variable,
-              "indicatoron": 1, "relief": RAISED, "anchor": "c",
-              "highlightthickness": 2, "name": kwargs.pop("name", None)}
+        keyword argument command.
+
+        Other keyword arguments are passed to the underlying menubutton
+        and may override its default appearance."""
+        name = kwargs.pop("name", None)
+        callback = kwargs.pop("command", None)
+        # Default appearance, which may be overridden by keyword arguments.
+        kw = {"borderwidth": 2, "indicatoron": 1, "relief": RAISED,
+              "anchor": "c", "highlightthickness": 2}
+        kw.update(kwargs)
+        # These options are controlled by OptionMenu itself.
+        kw["textvariable"] = variable
+        kw["name"] = name
         Widget.__init__(self, master, "menubutton", kw)
         self.widgetName = 'tk_optionMenu'
         menu = self.__menu = Menu(self, name="menu", tearoff=0)
         self.menuname = menu._w
-        # 'command' is the only supported keyword
-        callback = kwargs.get('command')
-        if 'command' in kwargs:
-            del kwargs['command']
-        if kwargs:
-            raise TclError('unknown option -'+next(iter(kwargs)))
         menu.add_command(label=value,
                  command=_setit(variable, value, callback))
         for v in values:

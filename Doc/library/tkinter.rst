@@ -4844,6 +4844,8 @@ Widget classes
    is the initial choice, and *values* are the remaining menu entries.
    The keyword argument *command* may be given a callback that is invoked with
    the selected value, and the keyword argument *name* sets the Tk widget name.
+   Other keyword arguments are passed to the underlying :class:`Menubutton`
+   and may override its default appearance.
 
    .. method:: destroy()
 
@@ -4851,6 +4853,9 @@ Widget classes
 
    .. versionchanged:: 3.14
       Added support for the *name* keyword argument.
+
+   .. versionchanged:: next
+      Other :class:`Menubutton` options can now be passed as keyword arguments.
 
 
 
@@ -5037,6 +5042,9 @@ Widget classes
    dropped; *from* is spelled ``from_`` because :keyword:`from` is a Python
    keyword.
 
+   With a non-integer *resolution*, see :ref:`numeric values and the locale
+   <tkinter-numeric-locale>`.
+
    .. method:: get()
 
       Return the current value of the scale.
@@ -5134,6 +5142,9 @@ Widget classes
    are formatted; and the *validate* option enables validation of the entered
    text.
    Inherits from :class:`Widget` and :class:`XView`.
+
+   With a non-integer *increment*, see :ref:`numeric values and the locale
+   <tkinter-numeric-locale>`.
 
    Many of the methods take an *index* argument identifying a character in the
    spinbox's string.
@@ -6022,6 +6033,18 @@ Variable classes
    .. method:: get()
 
       Return the value of the variable as a :class:`float`.
+
+   .. _tkinter-numeric-locale:
+
+   .. note::
+
+      A floating-point value is always parsed with a period (``.``) as the
+      decimal separator, but :class:`Spinbox`, :class:`Scale` and
+      :class:`ttk.Spinbox <tkinter.ttk.Spinbox>` format it according to the
+      ``LC_NUMERIC`` locale.  Under a locale that uses a comma they produce a
+      value that :meth:`get` cannot read, raising :exc:`TclError`.  Set
+      ``LC_NUMERIC`` to a locale that uses a period (such as ``'C'``) to avoid
+      this.
 
 
 .. class:: BooleanVar(master=None, value=None, name=None)

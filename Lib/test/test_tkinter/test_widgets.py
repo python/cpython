@@ -437,9 +437,22 @@ class OptionMenuTest(MenubuttonTest, unittest.TestCase):
     def create(self, default='b', values=('a', 'b', 'c'), **kwargs):
         return tkinter.OptionMenu(self.root, None, default, *values, **kwargs)
 
+    def test_kwargs(self):
+        # Menubutton options can be passed at construction (gh-101284).
+        widget = tkinter.OptionMenu(self.root, None, 'b',
+                                    width=10, direction='right')
+        self.assertEqual(int(widget['width']), 10)
+        self.assertEqual(str(widget['direction']), 'right')
+        # They override OptionMenu's own appearance defaults,
+        widget = tkinter.OptionMenu(self.root, None, 'b', relief='flat')
+        self.assertEqual(str(widget['relief']), 'flat')
+        # which otherwise keep their historical values.
+        widget = tkinter.OptionMenu(self.root, None, 'b')
+        self.assertEqual(str(widget['relief']), 'raised')
+
     def test_bad_kwarg(self):
-        with self.assertRaisesRegex(TclError, r"^unknown option -image$"):
-            tkinter.OptionMenu(self.root, None, 'b', image='')
+        with self.assertRaisesRegex(TclError, r'^unknown option "-spam"$'):
+            tkinter.OptionMenu(self.root, None, 'b', spam='')
 
     def test_specify_name(self):
         widget = tkinter.OptionMenu(self.root, None, ':)', name="option_menu")
