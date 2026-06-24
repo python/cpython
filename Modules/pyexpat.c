@@ -1452,8 +1452,9 @@ pyexpat_encoding_create(const char *name, PyObject *mapping)
                         "_expat_decoding_table must be a 256-tuple of integers");
         return NULL;
     }
+    size_t name_len = strlen(name) + 1;
     pyexpat_encoding_info *info = (pyexpat_encoding_info *)PyMem_Malloc(
-        sizeof(pyexpat_encoding_info) + strlen(name) + 1);
+        sizeof(pyexpat_encoding_info) + name_len);
     if (info == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -1466,7 +1467,7 @@ pyexpat_encoding_create(const char *name, PyObject *mapping)
         }
         info->map[i] = j;
     }
-    strcpy(info->name, name);
+    memcpy(info->name, name, name_len);
     return info;
 }
 
